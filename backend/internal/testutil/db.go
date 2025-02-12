@@ -61,3 +61,53 @@ func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 
 	return err
 }
+
+// InsertTestWallet inserts a test wallet into the database
+func InsertTestWallet(ctx context.Context, db db.DB, wallet model.Wallet) error {
+	query := `
+		INSERT INTO wallets (
+			id, user_id, public_key, balance, last_updated
+		) VALUES (
+			$1, $2, $3, $4, $5
+		)
+	`
+
+	_, err := db.Exec(ctx, query,
+		wallet.ID,
+		wallet.UserID,
+		wallet.PublicKey,
+		wallet.Balance,
+		wallet.LastUpdated,
+	)
+
+	return err
+}
+
+// GetUserPortfolio gets a user's holdings for a specific coin
+func GetUserPortfolio(ctx context.Context, db db.DB, userID string, coinID string) (*model.MemeHolding, error) {
+	query := `
+		SELECT 
+			coin_id, amount, average_buy_price,
+			COALESCE(amount, 0) as quantity,
+			COALESCE(amount * average_buy_price, 0) as value,
+			CURRENT_TIMESTAMP as updated_at
+		FROM portfolios
+		WHERE user_id = $1 AND coin_id = $2
+	`
+
+	holding := &model.MemeHolding{}
+	err := db.QueryRow(ctx, query, userID, coinID).Scan(
+		&holding.CoinID,
+		&holding.Amount,
+		&holding.AverageBuyPrice,
+		&holding.Quantity,
+		&holding.Value,
+		&holding.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return holding, nil
+}

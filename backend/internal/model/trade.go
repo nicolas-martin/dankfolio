@@ -58,11 +58,3 @@ type PriceUpdate struct {
 	Timestamp       time.Time `json:"timestamp"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
-
-// MemeHolding represents a single meme holding in a portfolio
-type MemeHolding struct {
-	MemeID    string    `json:"meme_id"`
-	Quantity  float64   `json:"quantity"`
-	Value     float64   `json:"value"`
-	UpdatedAt time.Time `json:"updated_at"`
-}

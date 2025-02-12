@@ -57,12 +57,6 @@ func (s *TradeService) PreviewTrade(ctx context.Context, req model.TradeRequest)
 }
 
 func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*model.Trade, error) {
-	// Get coin information
-	coin, err := s.coinService.GetCoinByID(ctx, req.CoinID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get coin: %w", err)
-	}
-
 	// Start transaction
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -70,23 +64,52 @@ func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest)
 	}
 	defer tx.Rollback(ctx)
 
+	// Get current coin price
+	coin, err := s.coinService.GetCoinByID(ctx, req.CoinID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get coin: %w", err)
+	}
+	if coin == nil {
+		return nil, fmt.Errorf("coin not found: %s", req.CoinID)
+	}
+
+	// For sell orders, verify user has enough coins
+	if req.Type == "sell" {
+		var currentAmount float64
+		err := tx.QueryRow(ctx, `
+			SELECT COALESCE(amount, 0)
+			FROM portfolios
+			WHERE user_id = $1 AND coin_id = $2
+		`, req.UserID, req.CoinID).Scan(&currentAmount)
+
+		if err != nil && err != pgx.ErrNoRows {
+			return nil, fmt.Errorf("failed to check portfolio balance: %w", err)
+		}
+
+		if currentAmount < req.Amount {
+			return nil, fmt.Errorf("insufficient balance: have %.2f, want %.2f", currentAmount, req.Amount)
+		}
+	}
+
 	// Create trade record
 	trade := &model.Trade{
-		UserID:     req.UserID,
-		CoinID:     req.CoinID,
-		CoinSymbol: coin.Symbol,
-		Type:       req.Type,
-		Amount:     req.Amount,
-		Price:      coin.Price,
-		Fee:        calculateTradeFee(req.Amount, coin.Price),
-		Status:     "pending",
-		CreatedAt:  time.Now(),
+		ID:          fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		UserID:      req.UserID,
+		CoinID:      req.CoinID,
+		CoinSymbol:  coin.Symbol,
+		Type:        req.Type,
+		Amount:      req.Amount,
+		Price:       coin.Price,
+		Fee:         calculateTradeFee(req.Amount, coin.Price),
+		Status:      "completed", // Set status to completed immediately
+		CreatedAt:   time.Now(),
+		CompletedAt: time.Now(), // Set completed_at timestamp
 	}
 
 	// Insert trade record
 	err = s.insertTrade(ctx, tx, trade)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create trade: %w", err)
+		return nil, fmt.Errorf("failed to insert trade: %w", err)
 	}
 
 	// Update portfolio
@@ -95,22 +118,9 @@ func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest)
 		return nil, fmt.Errorf("failed to update portfolio: %w", err)
 	}
 
-	// Execute trade transaction
-	err = s.walletService.ExecuteTradeTransaction(ctx, tx, trade.UserID, trade)
+	// Commit transaction
+	err = tx.Commit(ctx)
 	if err != nil {
-		trade.Status = "failed"
-		s.updateTradeStatus(ctx, trade.ID, "failed", "")
-		return nil, fmt.Errorf("trade transaction failed: %w", err)
-	}
-
-	trade.Status = "completed"
-
-	err = s.updateTradeStatus(ctx, trade.ID, "completed", trade.TransactionHash)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -153,26 +163,42 @@ func (s *TradeService) GetTradeHistory(ctx context.Context, userID string) ([]mo
 }
 
 func (s *TradeService) updatePortfolio(ctx context.Context, tx pgx.Tx, trade *model.Trade) error {
-	var query string
 	if trade.Type == "buy" {
-		query = `
-			INSERT INTO portfolios (user_id, coin_id, amount, average_buy_price)
-			VALUES ($1, $2, $3, $4)
+		query := `
+			INSERT INTO portfolios (id, user_id, coin_id, amount, average_buy_price)
+			SELECT 
+				'portfolio_' || $1 || '_' || $2,  -- Generate ID
+				$1,  -- user_id
+				$2,  -- coin_id
+				$3,  -- amount
+				$4   -- price
 			ON CONFLICT (user_id, coin_id) DO UPDATE
 			SET amount = portfolios.amount + $3,
 				average_buy_price = (portfolios.amount * portfolios.average_buy_price + $3 * $4) / (portfolios.amount + $3)
 		`
+		_, err := tx.Exec(ctx, query,
+			trade.UserID,
+			trade.CoinID,
+			trade.Amount,
+			trade.Price,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update portfolio: %w", err)
+		}
 	} else {
-		query = `
+		query := `
 			UPDATE portfolios
 			SET amount = amount - $3
 			WHERE user_id = $1 AND coin_id = $2
 		`
-	}
-
-	_, err := tx.Exec(ctx, query, trade.UserID, trade.CoinID, trade.Amount, trade.Price)
-	if err != nil {
-		return fmt.Errorf("failed to update portfolio: %w", err)
+		_, err := tx.Exec(ctx, query,
+			trade.UserID,
+			trade.CoinID,
+			trade.Amount,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update portfolio: %w", err)
+		}
 	}
 
 	return nil
@@ -189,13 +215,13 @@ func calculateSlippage(tradeAmount, volume24h float64) float64 {
 func (s *TradeService) insertTrade(ctx context.Context, tx pgx.Tx, trade *model.Trade) error {
 	query := `
 		INSERT INTO trades (
-			user_id, coin_id, coin_symbol, type, amount, price,
-			fee, status, transaction_hash, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		RETURNING id
+			id, user_id, coin_id, coin_symbol, type, amount, price,
+			fee, status, transaction_hash, created_at, completed_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
-	err := tx.QueryRow(ctx, query,
+	_, err := tx.Exec(ctx, query,
+		trade.ID,
 		trade.UserID,
 		trade.CoinID,
 		trade.CoinSymbol,
@@ -206,7 +232,8 @@ func (s *TradeService) insertTrade(ctx context.Context, tx pgx.Tx, trade *model.
 		trade.Status,
 		trade.TransactionHash,
 		trade.CreatedAt,
-	).Scan(&trade.ID)
+		trade.CompletedAt,
+	)
 
 	if err != nil {
 		return fmt.Errorf("failed to insert trade: %w", err)
@@ -218,7 +245,9 @@ func (s *TradeService) insertTrade(ctx context.Context, tx pgx.Tx, trade *model.
 func (s *TradeService) updateTradeStatus(ctx context.Context, tradeID string, status string, txHash string) error {
 	query := `
 		UPDATE trades
-		SET status = $1, transaction_hash = $2, completed_at = CASE WHEN $1 = 'completed' THEN NOW() ELSE NULL END
+		SET status = $1::varchar, 
+		    transaction_hash = $2,
+		    completed_at = CASE WHEN $1::varchar = 'completed' THEN NOW() ELSE NULL END
 		WHERE id = $3
 	`
 

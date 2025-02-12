@@ -14,17 +14,28 @@ type Portfolio struct {
 	UpdatedAt                 time.Time        `json:"updated_at"`
 }
 
-// PortfolioAsset represents a single asset in a portfolio
+// MemeHolding represents a user's holdings of a specific meme coin
+type MemeHolding struct {
+	CoinID          string    `json:"coin_id"`
+	Amount          float64   `json:"amount"`
+	Quantity        float64   `json:"quantity"`
+	Value           float64   `json:"value"`
+	AverageBuyPrice float64   `json:"average_buy_price"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+// PortfolioAsset represents an asset in a user's portfolio
 type PortfolioAsset struct {
-	CoinID               string  `json:"coin_id"`
-	Symbol               string  `json:"symbol"`
-	Name                 string  `json:"name"`
-	Amount               float64 `json:"amount"`
-	Value                float64 `json:"value"`
-	AverageBuyPrice      float64 `json:"average_buy_price"`
-	CurrentPrice         float64 `json:"current_price"`
-	ProfitLoss           float64 `json:"profit_loss"`
-	ProfitLossPercentage float64 `json:"profit_loss_percentage"`
+	CoinID          string    `json:"coin_id"`
+	Symbol          string    `json:"symbol"`
+	Name            string    `json:"name"`
+	Amount          float64   `json:"amount"`
+	CurrentPrice    float64   `json:"current_price"`
+	Value           float64   `json:"value"`
+	AverageBuyPrice float64   `json:"average_buy_price"`
+	ProfitLoss      float64   `json:"profit_loss"`
+	ProfitLossPerc  float64   `json:"profit_loss_percentage"`
+	LastUpdated     time.Time `json:"last_updated"`
 }
 
 // PortfolioSnapshot represents a point-in-time snapshot of a user's portfolio

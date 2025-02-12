@@ -70,7 +70,7 @@ func (s *PortfolioService) GetPortfolio(ctx context.Context, userID string) (*mo
 
 		asset.Value = asset.Amount * asset.CurrentPrice
 		asset.ProfitLoss = asset.Value - (asset.Amount * asset.AverageBuyPrice)
-		asset.ProfitLossPercentage = (asset.CurrentPrice - asset.AverageBuyPrice) / asset.AverageBuyPrice * 100
+		asset.ProfitLossPerc = (asset.CurrentPrice - asset.AverageBuyPrice) / asset.AverageBuyPrice * 100
 
 		portfolio.Assets = append(portfolio.Assets, asset)
 		portfolio.TotalValue += asset.Value
@@ -289,4 +289,33 @@ func (s *PortfolioService) GetPortfolioStats(ctx context.Context, userID string)
 	}
 
 	return stats, nil
+}
+
+func (s *PortfolioService) calculatePortfolioAssets(ctx context.Context, holdings []model.MemeHolding) ([]model.PortfolioAsset, error) {
+	var assets []model.PortfolioAsset
+	for _, holding := range holdings {
+		coin, err := s.coinService.GetCoinByID(ctx, holding.CoinID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get coin %s: %w", holding.CoinID, err)
+		}
+
+		value := holding.Amount * coin.CurrentPrice
+		profitLoss := value - (holding.Amount * holding.AverageBuyPrice)
+		profitLossPerc := (profitLoss / (holding.Amount * holding.AverageBuyPrice)) * 100
+
+		asset := model.PortfolioAsset{
+			CoinID:          coin.ID,
+			Symbol:          coin.Symbol,
+			Name:            coin.Name,
+			Amount:          holding.Amount,
+			CurrentPrice:    coin.CurrentPrice,
+			Value:           value,
+			AverageBuyPrice: holding.AverageBuyPrice,
+			ProfitLoss:      profitLoss,
+			ProfitLossPerc:  profitLossPerc,
+			LastUpdated:     time.Now(),
+		}
+		assets = append(assets, asset)
+	}
+	return assets, nil
 }
