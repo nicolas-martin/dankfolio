@@ -24,6 +24,7 @@ func setupTestTradeService(t *testing.T) (*TradeService, *CoinService, *WalletSe
 		"wss://api.testnet.solana.com",
 		"your-test-program-id",
 		"your-test-pool-wallet",
+		testDB,
 	)
 	require.NoError(t, err)
 	tradeService := NewTradeService(testDB, coinService, walletService, solanaService)

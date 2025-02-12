@@ -55,9 +55,8 @@ func (r *Router) Setup() http.Handler {
 	router := chi.NewRouter()
 
 	// Middleware
-	router.Use(middleware.RequestLogger)
+	router.Use(middleware.DetailedRequestLogger())
 	router.Use(middleware.ErrorHandler)
-	router.Use(chimiddleware.Logger)
 	router.Use(chimiddleware.Recoverer)
 	router.Use(chimiddleware.RealIP)
 	router.Use(chimiddleware.ThrottleBacklog(100, 200, time.Second)) // 100 requests per second with burst of 200
