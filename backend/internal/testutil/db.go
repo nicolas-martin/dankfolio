@@ -1,0 +1,63 @@
+package testutil
+
+import (
+	"context"
+	"testing"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stretchr/testify/require"
+
+	"github.com/nicolas-martin/dankfolio/internal/db"
+	"github.com/nicolas-martin/dankfolio/internal/model"
+)
+
+// SetupTestDB creates a test database connection and returns a cleanup function
+func SetupTestDB(t *testing.T) (db.DB, func()) {
+	// Use environment variable or default to test database
+	dbURL := "postgres://postgres:postgres@localhost:5432/dankfolio_test?sslmode=disable"
+
+	config, err := pgxpool.ParseConfig(dbURL)
+	require.NoError(t, err)
+
+	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	require.NoError(t, err)
+
+	// Create a cleanup function
+	cleanup := func() {
+		pool.Close()
+	}
+
+	return db.NewDB(pool), cleanup
+}
+
+// InsertTestCoin inserts a test coin into the database
+func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
+	query := `
+		INSERT INTO meme_coins (
+			id, symbol, name, description, contract_address,
+			price, current_price, change_24h, volume_24h,
+			market_cap, supply, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+			$11, $12, $13
+		)
+	`
+
+	_, err := db.Exec(ctx, query,
+		coin.ID,
+		coin.Symbol,
+		coin.Name,
+		coin.Description,
+		coin.ContractAddress,
+		coin.Price,
+		coin.CurrentPrice,
+		coin.Change24h,
+		coin.Volume24h,
+		coin.MarketCap,
+		coin.Supply,
+		coin.CreatedAt,
+		coin.UpdatedAt,
+	)
+
+	return err
+}

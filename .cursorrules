@@ -63,3 +63,15 @@
 - Link to relevant issue/PR numbers where applicable
 - Keep changelog entries user-focused, explaining impact and required actions
 - Update changelog before each release or significant feature deployment
+
+// Database Management & Migration Rules
+- Keep database models and migration files synchronized with all schema changes
+- Use descriptive names for migrations that clearly indicate their purpose (e.g., AddMemeTradeHistoryTable)
+- Include both 'up' and 'down' migrations for all database changes
+- Document model relationships and constraints in model files
+- Update TypeScript types/interfaces when modifying database schemas
+- Run migrations in CI/CD pipeline to catch potential issues early
+- Maintain seed data for development and testing environments
+- Version control all migration files and track their deployment status
+- Back up data before running migrations in production
+- Test migrations on staging environment before production deployment

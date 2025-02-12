@@ -31,7 +31,7 @@ clean-backend:
 build: build-backend
 
 build-backend:
-	cd backend && make docker-build
+	cd backend && make check-docker && make docker-build
 
 # Database
 db-up:

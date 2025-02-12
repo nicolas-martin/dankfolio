@@ -35,7 +35,7 @@ func (s *CoinService) GetTopMemeCoins(ctx context.Context, limit int) ([]model.M
 			mc.symbol,
 			mc.name,
 			mc.contract_address,
-			mc.logo_url,
+			COALESCE(mc.logo_url, ''),
 			lp.price,
 			lp.market_cap,
 			lp.volume_24h
@@ -89,7 +89,7 @@ func (s *CoinService) GetPriceHistory(
 		ORDER BY timestamp ASC
 	`
 
-	rows, err := s.db.Query(ctx, query, coinID, startTime)
+	rows, err := s.db.Query(ctx, query, coinID, startTime.Unix())
 	if err != nil {
 		return nil, fmt.Errorf("failed to query price history: %w", err)
 	}
@@ -98,16 +98,18 @@ func (s *CoinService) GetPriceHistory(
 	var prices []model.PricePoint
 	for rows.Next() {
 		var point model.PricePoint
+		var timestamp int64
 		err := rows.Scan(
 			&point.Price,
 			&point.MarketCap,
 			&point.Volume,
-			&point.Timestamp,
+			&timestamp,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan price point row: %w", err)
 		}
-		point.Time = time.Unix(point.Timestamp, 0)
+		point.Time = time.Unix(timestamp, 0)
+		point.Timestamp = timestamp
 		prices = append(prices, point)
 	}
 
@@ -135,7 +137,7 @@ func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpd
 			update.Price,
 			update.MarketCap,
 			update.Volume24h,
-			update.Timestamp,
+			update.Timestamp.Unix(),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to insert price update: %w", err)
@@ -152,7 +154,8 @@ func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpd
 func (s *CoinService) GetCoinByID(ctx context.Context, coinID string) (*model.MemeCoin, error) {
 	query := `
 		SELECT 
-			id, symbol, name, description, image_url, logo_url,
+			id, symbol, name, description, 
+			COALESCE(image_url, ''), COALESCE(logo_url, ''),
 			contract_address, price, current_price, change_24h,
 			volume_24h, market_cap, supply, created_at, updated_at
 		FROM meme_coins
@@ -190,5 +193,44 @@ func (s *CoinService) GetTopCoins(ctx context.Context, limit int) ([]model.MemeC
 
 func (s *CoinService) GetCoinPriceHistory(ctx context.Context, coinID string, timeframe string) ([]model.PricePoint, error) {
 	startTime := util.GetStartTimeForTimeframe(timeframe)
-	return s.GetPriceHistory(ctx, coinID, startTime)
+	endTime := time.Now()
+
+	query := `
+		SELECT price, market_cap, volume_24h, timestamp
+		FROM price_history
+		WHERE coin_id = $1 
+		AND timestamp >= $2 
+		AND timestamp <= $3
+		ORDER BY timestamp ASC
+	`
+
+	rows, err := s.db.Query(ctx, query, coinID, startTime.Unix(), endTime.Unix())
+	if err != nil {
+		return nil, fmt.Errorf("failed to query price history: %w", err)
+	}
+	defer rows.Close()
+
+	var prices []model.PricePoint
+	for rows.Next() {
+		var point model.PricePoint
+		var timestamp int64
+		err := rows.Scan(
+			&point.Price,
+			&point.MarketCap,
+			&point.Volume,
+			&timestamp,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan price point row: %w", err)
+		}
+		point.Time = time.Unix(timestamp, 0)
+		point.Timestamp = timestamp
+		prices = append(prices, point)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating price history rows: %w", err)
+	}
+
+	return prices, nil
 }

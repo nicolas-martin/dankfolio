@@ -10,43 +10,46 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// DB is an interface that defines database operations
+// DB is the interface that wraps the basic database operations
 type DB interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
 	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
 	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
-	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
-// PgxPool implements the DB interface
-type PgxPool struct {
+// PgxDB implements the DB interface using pgx
+type PgxDB struct {
 	pool *pgxpool.Pool
 }
 
-func NewPgxPool(pool *pgxpool.Pool) *PgxPool {
-	return &PgxPool{pool: pool}
+// NewDB creates a new database instance
+func NewDB(pool *pgxpool.Pool) DB {
+	return &PgxDB{pool: pool}
 }
 
-func (p *PgxPool) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
-	return p.pool.Query(ctx, sql, args...)
+func (db *PgxDB) Begin(ctx context.Context) (pgx.Tx, error) {
+	return db.pool.Begin(ctx)
 }
 
-func (p *PgxPool) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	return p.pool.QueryRow(ctx, sql, args...)
+func (db *PgxDB) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	return db.pool.Query(ctx, sql, args...)
 }
 
-func (p *PgxPool) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
-	return p.pool.Exec(ctx, sql, args...)
+func (db *PgxDB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+	return db.pool.QueryRow(ctx, sql, args...)
 }
 
-func (p *PgxPool) Begin(ctx context.Context) (pgx.Tx, error) {
-	return p.pool.Begin(ctx)
+func (db *PgxDB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
+	return db.pool.Exec(ctx, sql, args...)
 }
 
+// Database provides additional functionality on top of the basic DB interface
 type Database struct {
 	pool *pgxpool.Pool
 }
 
+// Connect creates a new database connection pool with configured settings
 func Connect(connString string) (*Database, error) {
 	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
@@ -67,12 +70,14 @@ func Connect(connString string) (*Database, error) {
 	return &Database{pool: pool}, nil
 }
 
+// Close closes the database connection pool
 func (db *Database) Close() {
 	if db.pool != nil {
 		db.pool.Close()
 	}
 }
 
+// GetPool returns the underlying connection pool
 func (db *Database) GetPool() *pgxpool.Pool {
 	return db.pool
 }
