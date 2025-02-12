@@ -2,40 +2,49 @@ package api
 
 import (
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/nicolas-martin/dankfolio/internal/service"
+	"github.com/go-redis/redis/v8"
+	httpSwagger "github.com/swaggo/http-swagger"
+
 	"github.com/nicolas-martin/dankfolio/internal/middleware"
-	"golang.org/x/time/rate"
+	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
 type Router struct {
 	authService      *service.AuthService
-	coinService     *service.CoinService
-	tradeService    *service.TradeService
+	userService      *service.UserService
+	coinService      *service.CoinService
+	tradeService     *service.TradeService
 	portfolioService *service.PortfolioService
-	walletService   *service.WalletService
-	redisClient     *redis.Client
+	walletService    *service.WalletService
+	wsService        *service.WebSocketService
+	redisClient      *redis.Client
 }
 
 func NewRouter(
 	as *service.AuthService,
+	us *service.UserService,
 	cs *service.CoinService,
 	ts *service.TradeService,
 	ps *service.PortfolioService,
 	ws *service.WalletService,
+	wss *service.WebSocketService,
 	redisClient *redis.Client,
 ) *Router {
 	return &Router{
 		authService:      as,
-		coinService:     cs,
-		tradeService:    ts,
+		userService:      us,
+		coinService:      cs,
+		tradeService:     ts,
 		portfolioService: ps,
-		walletService:   ws,
-		redisClient:     redisClient,
+		walletService:    ws,
+		wsService:        wss,
+		redisClient:      redisClient,
 	}
 }
 
@@ -45,10 +54,10 @@ func (r *Router) Setup() http.Handler {
 	// Middleware
 	router.Use(middleware.RequestLogger)
 	router.Use(middleware.ErrorHandler)
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.RealIP)
-	router.Use(middleware.NewRateLimiter(rate.Limit(100), 200).Limit) // 100 requests per second with burst of 200
+	router.Use(chimiddleware.Logger)
+	router.Use(chimiddleware.Recoverer)
+	router.Use(chimiddleware.RealIP)
+	router.Use(chimiddleware.ThrottleBacklog(100, 200, time.Second)) // 100 requests per second with burst of 200
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -65,43 +74,43 @@ func (r *Router) Setup() http.Handler {
 	r.setupSwagger(router)
 
 	// Public routes
-	router.Group(func(r chi.Router) {
-		r.Use(cache.Cache)
-		r.Post("/api/auth/register", r.handleRegister())
-		r.Post("/api/auth/login", r.handleLogin())
-		r.Post("/api/auth/social-login", r.handleSocialLogin())
-		
+	router.Group(func(router chi.Router) {
+		router.Use(cache.Cache)
+		router.Post("/api/auth/register", r.handleRegister())
+		router.Post("/api/auth/login", r.handleLogin())
+		router.Post("/api/auth/social-login", r.handleSocialLogin())
+
 		// Public coin data
-		r.Get("/api/coins", r.handleGetTopCoins())
-		r.Get("/api/coins/{id}", r.handleGetCoinDetails())
-		r.Get("/api/coins/{id}/price-history", r.handleGetCoinPriceHistory())
+		router.Get("/api/coins", r.handleGetTopCoins())
+		router.Get("/api/coins/{id}", r.handleGetCoinDetails())
+		router.Get("/api/coins/{id}/price-history", r.handleGetCoinPriceHistory())
 	})
 
 	// Protected routes
-	router.Group(func(r chi.Router) {
-		r.Use(authMiddleware.Authenticate)
+	router.Group(func(router chi.Router) {
+		router.Use(middleware.Authenticate(r.authService))
 
 		// WebSocket
-		r.Get("/ws", r.handleWebSocket())
+		router.Get("/ws", r.handleWebSocket())
 
 		// Trading
-		r.Post("/api/trades/preview", r.handlePreviewTrade())
-		r.Post("/api/trades/execute", r.handleExecuteTrade())
-		r.Get("/api/trades/history", r.handleGetTradeHistory())
+		router.Post("/api/trades/preview", r.handlePreviewTrade())
+		router.Post("/api/trades/execute", r.handleExecuteTrade())
+		router.Get("/api/trades/history", r.handleGetTradeHistory())
 
 		// Portfolio
-		r.Get("/api/portfolio", r.handleGetPortfolio())
-		r.Get("/api/portfolio/history", r.handleGetPortfolioHistory())
-		
+		router.Get("/api/portfolio", r.handleGetPortfolio())
+		router.Get("/api/portfolio/history", r.handleGetPortfolioHistory())
+
 		// Wallet
-		r.Get("/api/wallet", r.handleGetWallet())
-		r.Post("/api/wallet/deposit", r.handleInitiateDeposit())
-		r.Post("/api/wallet/withdraw", r.handleInitiateWithdrawal())
+		router.Get("/api/wallet", r.handleGetWallet())
+		router.Post("/api/wallet/deposit", r.handleInitiateDeposit())
+		router.Post("/api/wallet/withdraw", r.handleInitiateWithdrawal())
 
 		// User
-		r.Get("/api/user/profile", r.handleGetProfile())
-		r.Put("/api/user/profile", r.handleUpdateProfile())
-		r.Put("/api/user/password", r.handleChangePassword())
+		router.Get("/api/user/profile", r.handleGetProfile())
+		router.Put("/api/user/profile", r.handleUpdateProfile())
+		router.Put("/api/user/password", r.handleChangePassword())
 	})
 
 	return router
@@ -118,4 +127,4 @@ func (r *Router) setupSwagger(router chi.Router) {
 		httpSwagger.URL("/swagger.yaml"),
 		httpSwagger.DocExpansion("none"),
 	))
-} 
+}

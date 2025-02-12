@@ -8,16 +8,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/your-username/meme-coin-trader/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 type DexScreenService struct {
-	httpClient    *http.Client
-	baseURL       string
-	coinService   *CoinService
-	wsService     *WebSocketService
-	updateTicker  *time.Ticker
-	stopChan      chan struct{}
+	httpClient   *http.Client
+	baseURL      string
+	coinService  *CoinService
+	wsService    *WebSocketService
+	updateTicker *time.Ticker
+	stopChan     chan struct{}
 }
 
 func NewDexScreenService(cs *CoinService, ws *WebSocketService) *DexScreenService {
@@ -44,22 +44,22 @@ func (s *DexScreenService) Stop() {
 
 type DexScreenResponse struct {
 	Pairs []struct {
-		ChainID    string `json:"chainId"`
-		DexID      string `json:"dexId"`
+		ChainID     string `json:"chainId"`
+		DexID       string `json:"dexId"`
 		PairAddress string `json:"pairAddress"`
-		BaseToken struct {
-			Address  string `json:"address"`
-			Name     string `json:"name"`
-			Symbol   string `json:"symbol"`
+		BaseToken   struct {
+			Address string `json:"address"`
+			Name    string `json:"name"`
+			Symbol  string `json:"symbol"`
 		} `json:"baseToken"`
 		QuoteToken struct {
 			Symbol string `json:"symbol"`
 		} `json:"quoteToken"`
-		PriceUSD     string `json:"priceUsd"`
-		Volume24h    string `json:"volume24h"`
-		MarketCap    string `json:"marketCap"`
+		PriceUSD    string `json:"priceUsd"`
+		Volume24h   string `json:"volume24h"`
+		MarketCap   string `json:"marketCap"`
 		PriceChange struct {
-			H24    float64 `json:"h24"`
+			H24 float64 `json:"h24"`
 		} `json:"priceChange"`
 	} `json:"pairs"`
 }
@@ -102,13 +102,13 @@ func (s *DexScreenService) fetchAndUpdatePrices(ctx context.Context) error {
 
 		update := model.PriceUpdate{
 			ContractAddress: pair.BaseToken.Address,
-			Symbol:         pair.BaseToken.Symbol,
-			Name:           pair.BaseToken.Name,
-			Price:          mustParseFloat(pair.PriceUSD),
-			Volume24h:      mustParseFloat(pair.Volume24h),
-			MarketCap:      mustParseFloat(pair.MarketCap),
-			PriceChange24h: pair.PriceChange.H24,
-			Timestamp:      time.Now(),
+			Symbol:          pair.BaseToken.Symbol,
+			Name:            pair.BaseToken.Name,
+			Price:           mustParseFloat(pair.PriceUSD),
+			Volume24h:       mustParseFloat(pair.Volume24h),
+			MarketCap:       mustParseFloat(pair.MarketCap),
+			PriceChange24h:  pair.PriceChange.H24,
+			Timestamp:       time.Now(),
 		}
 		updates = append(updates, update)
 
@@ -127,4 +127,4 @@ func (s *DexScreenService) fetchAndUpdatePrices(ctx context.Context) error {
 func mustParseFloat(s string) float64 {
 	f, _ := strconv.ParseFloat(s, 64)
 	return f
-} 
+}

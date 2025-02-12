@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 type LeaderboardService struct {
-	db *pgxpool.Pool
+	db db.DB
 }
 
-func NewLeaderboardService(db *pgxpool.Pool) *LeaderboardService {
+func NewLeaderboardService(db db.DB) *LeaderboardService {
 	return &LeaderboardService{db: db}
 }
 
@@ -156,4 +156,4 @@ func getStartTimeForTimeframe(timeframe string) time.Time {
 	default:
 		return now.AddDate(0, 0, -1)
 	}
-} 
+}

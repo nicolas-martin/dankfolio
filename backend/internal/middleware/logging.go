@@ -1,13 +1,14 @@
 package middleware
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
-	"github.com/nicolas-martin/dankfolio/internal/logger"
 	"github.com/nicolas-martin/dankfolio/internal/errors"
+	"github.com/nicolas-martin/dankfolio/internal/logger"
+	"go.uber.org/zap"
 )
 
 func RequestLogger(next http.Handler) http.Handler {
@@ -20,7 +21,7 @@ func RequestLogger(next http.Handler) http.Handler {
 		w.Header().Set("X-Request-ID", requestID)
 
 		// Create a response wrapper to capture the status code
-		rw := &responseWriter{ResponseWriter: w}
+		rw := &loggingResponseWriter{ResponseWriter: w}
 
 		logger.Info(ctx, "Request started",
 			zap.String("method", r.Method),
@@ -35,25 +36,25 @@ func RequestLogger(next http.Handler) http.Handler {
 		logger.Info(ctx, "Request completed",
 			zap.Int("status", rw.status),
 			zap.Duration("duration", duration),
-			zap.Int64("response_size", rw.size),
+			zap.Int64("responseSize", rw.responseSize),
 		)
 	})
 }
 
-type responseWriter struct {
+type loggingResponseWriter struct {
 	http.ResponseWriter
-	status int
-	size   int64
+	status       int
+	responseSize int64
 }
 
-func (rw *responseWriter) WriteHeader(status int) {
+func (rw *loggingResponseWriter) WriteHeader(status int) {
 	rw.status = status
 	rw.ResponseWriter.WriteHeader(status)
 }
 
-func (rw *responseWriter) Write(b []byte) (int, error) {
+func (rw *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := rw.ResponseWriter.Write(b)
-	rw.size += int64(size)
+	rw.responseSize += int64(size)
 	return size, err
 }
 
@@ -79,4 +80,4 @@ func respondError(w http.ResponseWriter, err *errors.AppError) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(err.Code)
 	json.NewEncoder(w).Encode(err)
-} 
+}

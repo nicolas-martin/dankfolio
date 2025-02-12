@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nicolas-martin/dankfolio/internal/model"
 	"github.com/nicolas-martin/dankfolio/internal/errors"
+	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 func (r *Router) handleRegister() http.HandlerFunc {
@@ -18,7 +18,19 @@ func (r *Router) handleRegister() http.HandlerFunc {
 
 		user, err := r.authService.RegisterUser(req.Context(), registerReq)
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			var status int
+			var message string
+
+			switch e := err.(type) {
+			case *errors.AppError:
+				status = e.Code
+				message = e.Message
+			default:
+				status = http.StatusInternalServerError
+				message = "Internal server error"
+			}
+
+			respondError(w, status, message)
 			return
 		}
 
@@ -30,17 +42,25 @@ func (r *Router) handleLogin() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var loginReq model.LoginRequest
 		if err := json.NewDecoder(req.Body).Decode(&loginReq); err != nil {
-			respondError(w, errors.NewValidationError("Invalid request body"))
+			respondError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
 		authResp, err := r.authService.Login(req.Context(), loginReq.Email, loginReq.Password)
 		if err != nil {
-			if err == errors.ErrorTypeAuth {
-				respondError(w, errors.NewAuthError(err.Error()))
-			} else {
-				respondError(w, errors.NewInternalError(err))
+			var status int
+			var message string
+
+			switch e := err.(type) {
+			case *errors.AppError:
+				status = e.Code
+				message = e.Message
+			default:
+				status = http.StatusInternalServerError
+				message = "Internal server error"
 			}
+
+			respondError(w, status, message)
 			return
 		}
 
@@ -61,10 +81,22 @@ func (r *Router) handleSocialLogin() http.HandlerFunc {
 
 		authResp, err := r.authService.SocialLogin(req.Context(), socialReq.Provider, socialReq.Token)
 		if err != nil {
-			respondError(w, http.StatusUnauthorized, err.Error())
+			var status int
+			var message string
+
+			switch e := err.(type) {
+			case *errors.AppError:
+				status = e.Code
+				message = e.Message
+			default:
+				status = http.StatusUnauthorized
+				message = err.Error()
+			}
+
+			respondError(w, status, message)
 			return
 		}
 
 		respondJSON(w, http.StatusOK, authResp)
 	}
-} 
+}

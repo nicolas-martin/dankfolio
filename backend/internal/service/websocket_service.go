@@ -1,13 +1,11 @@
 package service
 
 import (
-	"context"
-	"encoding/json"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/your-username/meme-coin-trader/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 type WebSocketService struct {
@@ -42,7 +40,7 @@ func (s *WebSocketService) RemoveClient(conn *websocket.Conn) {
 
 func (s *WebSocketService) BroadcastPriceUpdate(update model.PriceUpdate) {
 	s.broadcast <- struct {
-		Type    string           `json:"type"`
+		Type    string            `json:"type"`
 		Payload model.PriceUpdate `json:"payload"`
 	}{
 		Type:    "price_update",
@@ -52,7 +50,7 @@ func (s *WebSocketService) BroadcastPriceUpdate(update model.PriceUpdate) {
 
 func (s *WebSocketService) BroadcastTradeUpdate(trade *model.Trade) {
 	s.broadcast <- struct {
-		Type    string      `json:"type"`
+		Type    string       `json:"type"`
 		Payload *model.Trade `json:"payload"`
 	}{
 		Type:    "trade_update",
@@ -62,7 +60,7 @@ func (s *WebSocketService) BroadcastTradeUpdate(trade *model.Trade) {
 
 func (s *WebSocketService) SendPortfolioUpdate(userID string, portfolio *model.Portfolio) {
 	msg := struct {
-		Type    string          `json:"type"`
+		Type    string           `json:"type"`
 		Payload *model.Portfolio `json:"payload"`
 	}{
 		Type:    "portfolio_update",
@@ -115,4 +113,20 @@ func (s *WebSocketService) readPump(conn *websocket.Conn) {
 			break
 		}
 	}
-} 
+}
+
+// Start initializes the WebSocket service
+func (s *WebSocketService) Start() {
+	go s.broadcastLoop()
+}
+
+// Stop gracefully shuts down the WebSocket service
+func (s *WebSocketService) Stop() {
+	close(s.broadcast)
+	s.clientsMux.Lock()
+	for conn := range s.clients {
+		conn.Close()
+	}
+	s.clients = make(map[*websocket.Conn]string)
+	s.clientsMux.Unlock()
+}

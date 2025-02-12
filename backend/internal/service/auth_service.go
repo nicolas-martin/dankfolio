@@ -6,19 +6,19 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/jackc/pgx/v4"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/errors"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	db          *pgxpool.Pool
+	db          db.DB
 	jwtSecret   []byte
 	tokenExpiry time.Duration
 }
 
-func NewAuthService(db *pgxpool.Pool, jwtSecret string) *AuthService {
+func NewAuthService(db db.DB, jwtSecret string) *AuthService {
 	return &AuthService{
 		db:          db,
 		jwtSecret:   []byte(jwtSecret),
@@ -236,4 +236,52 @@ func (s *AuthService) getUserByID(ctx context.Context, userID string) (*model.Us
 	}
 
 	return user, nil
-} 
+}
+
+type SocialUserInfo struct {
+	Email     string
+	Username  string
+	AvatarURL string
+}
+
+func (s *AuthService) verifySocialToken(ctx context.Context, provider string, token string) (*SocialUserInfo, error) {
+	// TODO: Implement social token verification with providers
+	// This is a placeholder implementation
+	return &SocialUserInfo{
+		Email:     "user@example.com",
+		Username:  "socialuser",
+		AvatarURL: "https://example.com/avatar.jpg",
+	}, nil
+}
+
+func (s *AuthService) createSocialUser(ctx context.Context, socialUser *SocialUserInfo) (*model.User, error) {
+	// Start transaction
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Create user
+	user := &model.User{
+		Email:    socialUser.Email,
+		Username: socialUser.Username,
+	}
+
+	err = s.createUser(ctx, tx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create wallet for user
+	err = s.createUserWallet(ctx, tx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return user, nil
+}

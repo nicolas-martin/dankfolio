@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/errors"
 )
 
 func (r *Router) handlePreviewTrade() http.HandlerFunc {
@@ -62,4 +61,4 @@ func (r *Router) handleGetTradeHistory() http.HandlerFunc {
 
 		respondJSON(w, http.StatusOK, trades)
 	}
-} 
+}

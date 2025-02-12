@@ -1,8 +1,11 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+
+	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 type ErrorResponse struct {
@@ -25,4 +28,4 @@ func getUserFromContext(ctx context.Context) *model.User {
 		return nil
 	}
 	return user
-} 
+}

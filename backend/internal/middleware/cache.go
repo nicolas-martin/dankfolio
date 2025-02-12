@@ -2,12 +2,12 @@ package middleware
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -27,18 +27,18 @@ func NewCacheMiddleware(redisClient *redis.Client, ttl time.Duration, prefix str
 	}
 }
 
-type responseWriter struct {
+type cacheResponseWriter struct {
 	http.ResponseWriter
 	body   *bytes.Buffer
 	status int
 }
 
-func (rw *responseWriter) Write(b []byte) (int, error) {
+func (rw *cacheResponseWriter) Write(b []byte) (int, error) {
 	rw.body.Write(b)
 	return rw.ResponseWriter.Write(b)
 }
 
-func (rw *responseWriter) WriteHeader(status int) {
+func (rw *cacheResponseWriter) WriteHeader(status int) {
 	rw.status = status
 	rw.ResponseWriter.WriteHeader(status)
 }
@@ -66,9 +66,9 @@ func (cm *CacheMiddleware) Cache(next http.Handler) http.Handler {
 		}
 
 		// Cache miss, capture the response
-		rw := &responseWriter{
+		rw := &cacheResponseWriter{
 			ResponseWriter: w,
-			body:          &bytes.Buffer{},
+			body:           &bytes.Buffer{},
 		}
 
 		next.ServeHTTP(rw, r)
@@ -89,7 +89,7 @@ func (cm *CacheMiddleware) generateCacheKey(r *http.Request) string {
 	h := sha256.New()
 	io.WriteString(h, cm.prefix)
 	io.WriteString(h, r.URL.String())
-	
+
 	// Add relevant headers to the cache key
 	relevantHeaders := []string{"Accept", "Accept-Language"}
 	for _, header := range relevantHeaders {
@@ -112,4 +112,4 @@ func (cm *CacheMiddleware) InvalidateCache(pattern string) error {
 		}
 	}
 	return iter.Err()
-} 
+}

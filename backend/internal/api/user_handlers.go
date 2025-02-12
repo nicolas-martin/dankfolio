@@ -5,14 +5,13 @@ import (
 	"net/http"
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/errors"
 )
 
 func (r *Router) handleGetProfile() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		user := getUserFromContext(req.Context())
 		if user == nil {
-			respondError(w, http.StatusUnauthorized, "User not found")
+			respondError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -30,7 +29,7 @@ func (r *Router) handleUpdateProfile() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		user := getUserFromContext(req.Context())
 		if user == nil {
-			respondError(w, http.StatusUnauthorized, "User not found")
+			respondError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -54,22 +53,23 @@ func (r *Router) handleChangePassword() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		user := getUserFromContext(req.Context())
 		if user == nil {
-			respondError(w, http.StatusUnauthorized, "User not found")
+			respondError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
-		var pwdReq model.ChangePasswordRequest
-		if err := json.NewDecoder(req.Body).Decode(&pwdReq); err != nil {
+		var changeReq model.ChangePasswordRequest
+		if err := json.NewDecoder(req.Body).Decode(&changeReq); err != nil {
 			respondError(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
-		if err := r.userService.ChangePassword(req.Context(), user.ID, pwdReq); err != nil {
+		err := r.userService.ChangePassword(req.Context(), user.ID, changeReq)
+		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		respondJSON(w, http.StatusOK, map[string]string{"message": "Password updated successfully"})
+		respondJSON(w, http.StatusOK, map[string]string{"message": "Password changed successfully"})
 	}
 }
 
@@ -77,7 +77,7 @@ func (r *Router) handleUpdateNotificationSettings() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		user := getUserFromContext(req.Context())
 		if user == nil {
-			respondError(w, http.StatusUnauthorized, "User not found")
+			respondError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -95,4 +95,4 @@ func (r *Router) handleUpdateNotificationSettings() http.HandlerFunc {
 
 		respondJSON(w, http.StatusOK, updatedSettings)
 	}
-} 
+}

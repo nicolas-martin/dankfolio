@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v4"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/errors"
 )
 
 type TradeService struct {
-	db           *pgxpool.Pool
-	coinService  *CoinService
+	db            db.DB
+	coinService   *CoinService
 	walletService *WalletService
 }
 
-func NewTradeService(db *pgxpool.Pool, cs *CoinService, ws *WalletService) *TradeService {
+func NewTradeService(db db.DB, cs *CoinService, ws *WalletService) *TradeService {
 	return &TradeService{
-		db:           db,
-		coinService:  cs,
+		db:            db,
+		coinService:   cs,
 		walletService: ws,
 	}
 }
@@ -36,7 +36,7 @@ func (s *TradeService) PreviewTrade(ctx context.Context, req model.TradeRequest)
 	price := coin.CurrentPrice
 	fee := calculateTradeFee(amount, price)
 	slippage := calculateSlippage(amount, coin.Volume24h)
-	
+
 	finalAmount := amount
 	if req.Type == "buy" {
 		finalAmount = amount - fee
@@ -45,18 +45,25 @@ func (s *TradeService) PreviewTrade(ctx context.Context, req model.TradeRequest)
 	}
 
 	return &model.TradePreview{
-		CoinSymbol:    coin.Symbol,
-		Type:          req.Type,
-		Amount:        amount,
-		Price:         price,
-		Fee:           fee,
-		Slippage:      slippage,
-		FinalAmount:   finalAmount,
-		TotalCost:     amount * price,
+		CoinSymbol:  coin.Symbol,
+		Type:        req.Type,
+		Amount:      amount,
+		Price:       price,
+		Fee:         fee,
+		Slippage:    slippage,
+		FinalAmount: finalAmount,
+		TotalCost:   amount * price,
 	}, nil
 }
 
 func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*model.Trade, error) {
+	// Get coin information
+	coin, err := s.coinService.GetCoinByID(ctx, req.CoinID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get coin: %w", err)
+	}
+
+	// Start transaction
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -65,40 +72,40 @@ func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest)
 
 	// Create trade record
 	trade := &model.Trade{
-		UserID:    req.UserID,
-		CoinID:    req.CoinID,
-		Type:      req.Type,
-		Amount:    req.Amount,
-		Price:     req.Price,
-		Fee:       calculateTradeFee(req.Amount, req.Price),
-		Status:    "pending",
-		CreatedAt: time.Now(),
+		UserID:     req.UserID,
+		CoinID:     req.CoinID,
+		CoinSymbol: coin.Symbol,
+		Type:       req.Type,
+		Amount:     req.Amount,
+		Price:      coin.Price,
+		Fee:        calculateTradeFee(req.Amount, coin.Price),
+		Status:     "pending",
+		CreatedAt:  time.Now(),
 	}
 
 	// Insert trade record
 	err = s.insertTrade(ctx, tx, trade)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create trade: %w", err)
 	}
 
 	// Update portfolio
 	err = s.updatePortfolio(ctx, tx, trade)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to update portfolio: %w", err)
 	}
 
-	// Execute blockchain transaction
-	txHash, err := s.walletService.ExecuteTradeTransaction(ctx, trade)
+	// Execute trade transaction
+	err = s.walletService.ExecuteTradeTransaction(ctx, tx, trade.UserID, trade)
 	if err != nil {
 		trade.Status = "failed"
-		s.updateTradeStatus(ctx, tx, trade.ID, "failed")
-		return nil, fmt.Errorf("blockchain transaction failed: %w", err)
+		s.updateTradeStatus(ctx, trade.ID, "failed", "")
+		return nil, fmt.Errorf("trade transaction failed: %w", err)
 	}
 
-	trade.TransactionHash = txHash
 	trade.Status = "completed"
-	
-	err = s.updateTradeStatus(ctx, tx, trade.ID, "completed")
+
+	err = s.updateTradeStatus(ctx, trade.ID, "completed", trade.TransactionHash)
 	if err != nil {
 		return nil, err
 	}
@@ -177,4 +184,48 @@ func calculateTradeFee(amount, price float64) float64 {
 
 func calculateSlippage(tradeAmount, volume24h float64) float64 {
 	return (tradeAmount / volume24h) * 100
-} 
+}
+
+func (s *TradeService) insertTrade(ctx context.Context, tx pgx.Tx, trade *model.Trade) error {
+	query := `
+		INSERT INTO trades (
+			user_id, coin_id, coin_symbol, type, amount, price,
+			fee, status, transaction_hash, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		RETURNING id
+	`
+
+	err := tx.QueryRow(ctx, query,
+		trade.UserID,
+		trade.CoinID,
+		trade.CoinSymbol,
+		trade.Type,
+		trade.Amount,
+		trade.Price,
+		trade.Fee,
+		trade.Status,
+		trade.TransactionHash,
+		trade.CreatedAt,
+	).Scan(&trade.ID)
+
+	if err != nil {
+		return fmt.Errorf("failed to insert trade: %w", err)
+	}
+
+	return nil
+}
+
+func (s *TradeService) updateTradeStatus(ctx context.Context, tradeID string, status string, txHash string) error {
+	query := `
+		UPDATE trades
+		SET status = $1, transaction_hash = $2, completed_at = CASE WHEN $1 = 'completed' THEN NOW() ELSE NULL END
+		WHERE id = $3
+	`
+
+	_, err := s.db.Exec(ctx, query, status, txHash, tradeID)
+	if err != nil {
+		return fmt.Errorf("failed to update trade status: %w", err)
+	}
+
+	return nil
+}

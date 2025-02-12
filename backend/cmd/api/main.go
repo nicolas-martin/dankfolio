@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nicolas-martin/dankfolio/internal/api"
 	"github.com/nicolas-martin/dankfolio/internal/config"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/logger"
 	"github.com/nicolas-martin/dankfolio/internal/service"
 	"go.uber.org/zap"
@@ -32,6 +33,9 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	// Wrap pgxpool.Pool with db.PgxPool
+	dbWrapper := db.NewPgxPool(dbPool)
+
 	// Initialize Redis client
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     cfg.RedisAddr,
@@ -41,24 +45,22 @@ func main() {
 	defer redisClient.Close()
 
 	// Initialize services
-	authService := service.NewAuthService(dbPool)
-	coinService := service.NewCoinService(dbPool)
-	tradeService := service.NewTradeService(dbPool)
-	portfolioService := service.NewPortfolioService(dbPool)
-	walletService := service.NewWalletService(dbPool)
-	userService := service.NewUserService(dbPool)
-	leaderboardService := service.NewLeaderboardService(dbPool)
+	authService := service.NewAuthService(dbWrapper, cfg.JWTSecret)
+	userService := service.NewUserService(dbWrapper)
+	coinService := service.NewCoinService(dbWrapper)
+	walletService := service.NewWalletService(dbWrapper)
+	tradeService := service.NewTradeService(dbWrapper, coinService, walletService)
+	portfolioService := service.NewPortfolioService(dbWrapper, coinService)
 	wsService := service.NewWebSocketService()
 
 	// Initialize router
 	router := api.NewRouter(
 		authService,
+		userService,
 		coinService,
 		tradeService,
 		portfolioService,
 		walletService,
-		userService,
-		leaderboardService,
 		wsService,
 		redisClient,
 	)
@@ -70,7 +72,7 @@ func main() {
 	}
 
 	// Start WebSocket service
-	wsService.Start(context.Background())
+	wsService.Start()
 
 	// Start server in a goroutine
 	go func() {
@@ -101,4 +103,4 @@ func main() {
 	}
 
 	logger.Info(context.Background(), "Server stopped gracefully")
-} 
+}

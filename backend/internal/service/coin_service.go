@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/util"
 )
 
 type CoinService struct {
-	db *pgxpool.Pool
+	db db.DB
 }
 
-func NewCoinService(db *pgxpool.Pool) *CoinService {
+func NewCoinService(db db.DB) *CoinService {
 	return &CoinService{db: db}
 }
 
@@ -69,6 +70,10 @@ func (s *CoinService) GetTopMemeCoins(ctx context.Context, limit int) ([]model.M
 		coins = append(coins, coin)
 	}
 
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating meme coins rows: %w", err)
+	}
+
 	return coins, nil
 }
 
@@ -102,7 +107,12 @@ func (s *CoinService) GetPriceHistory(
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan price point row: %w", err)
 		}
+		point.Time = time.Unix(point.Timestamp, 0)
 		prices = append(prices, point)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating price history rows: %w", err)
 	}
 
 	return prices, nil
@@ -137,4 +147,48 @@ func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpd
 	}
 
 	return nil
-} 
+}
+
+func (s *CoinService) GetCoinByID(ctx context.Context, coinID string) (*model.MemeCoin, error) {
+	query := `
+		SELECT 
+			id, symbol, name, description, image_url, logo_url,
+			contract_address, price, current_price, change_24h,
+			volume_24h, market_cap, supply, created_at, updated_at
+		FROM meme_coins
+		WHERE id = $1
+	`
+
+	coin := &model.MemeCoin{}
+	err := s.db.QueryRow(ctx, query, coinID).Scan(
+		&coin.ID,
+		&coin.Symbol,
+		&coin.Name,
+		&coin.Description,
+		&coin.ImageURL,
+		&coin.LogoURL,
+		&coin.ContractAddress,
+		&coin.Price,
+		&coin.CurrentPrice,
+		&coin.Change24h,
+		&coin.Volume24h,
+		&coin.MarketCap,
+		&coin.Supply,
+		&coin.CreatedAt,
+		&coin.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get coin: %w", err)
+	}
+
+	return coin, nil
+}
+
+func (s *CoinService) GetTopCoins(ctx context.Context, limit int) ([]model.MemeCoin, error) {
+	return s.GetTopMemeCoins(ctx, limit)
+}
+
+func (s *CoinService) GetCoinPriceHistory(ctx context.Context, coinID string, timeframe string) ([]model.PricePoint, error) {
+	startTime := util.GetStartTimeForTimeframe(timeframe)
+	return s.GetPriceHistory(ctx, coinID, startTime)
+}

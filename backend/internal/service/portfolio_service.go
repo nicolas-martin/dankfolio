@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/util"
 )
 
 type PortfolioService struct {
-	db          *pgxpool.Pool
+	db          db.DB
 	coinService *CoinService
 }
 
-func NewPortfolioService(db *pgxpool.Pool, cs *CoinService) *PortfolioService {
+func NewPortfolioService(db db.DB, cs *CoinService) *PortfolioService {
 	return &PortfolioService{
 		db:          db,
 		coinService: cs,
@@ -88,7 +89,7 @@ func (s *PortfolioService) GetPortfolioHistory(
 	userID string,
 	timeframe string,
 ) ([]model.PortfolioSnapshot, error) {
-	startTime := getStartTimeForTimeframe(timeframe)
+	startTime := util.GetStartTimeForTimeframe(timeframe)
 
 	query := `
 		WITH daily_prices AS (
@@ -129,18 +130,163 @@ func (s *PortfolioService) GetPortfolioHistory(
 	return history, nil
 }
 
-func getStartTimeForTimeframe(timeframe string) time.Time {
-	now := time.Now()
-	switch timeframe {
-	case "day":
-		return now.AddDate(0, 0, -1)
-	case "week":
-		return now.AddDate(0, 0, -7)
-	case "month":
-		return now.AddDate(0, -1, 0)
-	case "year":
-		return now.AddDate(-1, 0, 0)
-	default:
-		return now.AddDate(0, -1, 0)
+func (s *PortfolioService) GetLeaderboard(ctx context.Context, timeframe string, limit int) (*model.Leaderboard, error) {
+	startTime := util.GetStartTimeForTimeframe(timeframe)
+
+	query := `
+		WITH user_stats AS (
+			SELECT 
+				u.id as user_id,
+				u.username,
+				u.avatar_url,
+				SUM(CASE 
+					WHEN t.type = 'sell' THEN t.amount * (t.price - t.average_buy_price)
+					ELSE 0 
+				END) as profit_loss,
+				COUNT(*) as total_trades,
+				COUNT(CASE WHEN t.type = 'sell' AND t.price > t.average_buy_price THEN 1 END) as winning_trades
+			FROM users u
+			JOIN trades t ON t.user_id = u.id
+			WHERE t.created_at >= $1
+			GROUP BY u.id, u.username, u.avatar_url
+		)
+		SELECT 
+			ROW_NUMBER() OVER (ORDER BY profit_loss DESC) as rank,
+			user_id,
+			username,
+			avatar_url,
+			profit_loss,
+			CASE WHEN total_trades > 0 
+				THEN (winning_trades::float / total_trades::float) * 100 
+				ELSE 0 
+			END as win_rate,
+			total_trades
+		FROM user_stats
+		ORDER BY profit_loss DESC
+		LIMIT $2
+	`
+
+	rows, err := s.db.Query(ctx, query, startTime, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query leaderboard: %w", err)
 	}
-} 
+	defer rows.Close()
+
+	var entries []model.LeaderboardEntry
+	for rows.Next() {
+		var entry model.LeaderboardEntry
+		err := rows.Scan(
+			&entry.Rank,
+			&entry.UserID,
+			&entry.Username,
+			&entry.AvatarURL,
+			&entry.ProfitLoss,
+			&entry.WinRate,
+			&entry.TotalTrades,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan leaderboard entry: %w", err)
+		}
+		entries = append(entries, entry)
+	}
+
+	// Get total users for the timeframe
+	var totalUsers int
+	err = s.db.QueryRow(ctx, `
+		SELECT COUNT(DISTINCT user_id) 
+		FROM trades 
+		WHERE created_at >= $1
+	`, startTime).Scan(&totalUsers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total users: %w", err)
+	}
+
+	return &model.Leaderboard{
+		Timeframe:  timeframe,
+		Entries:    entries,
+		TotalUsers: totalUsers,
+		UpdatedAt:  time.Now(),
+	}, nil
+}
+
+func (s *PortfolioService) GetUserRank(ctx context.Context, userID string, timeframe string) (*model.UserRank, error) {
+	startTime := util.GetStartTimeForTimeframe(timeframe)
+
+	query := `
+		WITH user_profits AS (
+			SELECT 
+				user_id,
+				SUM(CASE 
+					WHEN type = 'sell' THEN amount * (price - average_buy_price)
+					ELSE 0 
+				END) as profit_loss
+			FROM trades
+			WHERE created_at >= $1
+			GROUP BY user_id
+		),
+		user_ranks AS (
+			SELECT 
+				user_id,
+				profit_loss,
+				ROW_NUMBER() OVER (ORDER BY profit_loss DESC) as rank,
+				COUNT(*) OVER () as total_users
+			FROM user_profits
+		)
+		SELECT rank, profit_loss, total_users
+		FROM user_ranks
+		WHERE user_id = $2
+	`
+
+	var rank model.UserRank
+	err := s.db.QueryRow(ctx, query, startTime, userID).Scan(
+		&rank.Rank,
+		&rank.ProfitLoss,
+		&rank.TotalUsers,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user rank: %w", err)
+	}
+
+	// Calculate percentile
+	rank.TopPercentile = (float64(rank.Rank) / float64(rank.TotalUsers)) * 100
+
+	return &rank, nil
+}
+
+func (s *PortfolioService) GetPortfolioStats(ctx context.Context, userID string) (*model.PortfolioStats, error) {
+	query := `
+		WITH trade_stats AS (
+			SELECT 
+				COUNT(*) as total_trades,
+				COUNT(CASE WHEN type = 'sell' AND price > average_buy_price THEN 1 END) as winning_trades,
+				SUM(CASE 
+					WHEN type = 'sell' THEN amount * (price - average_buy_price)
+					ELSE 0 
+				END) as total_profit_loss
+			FROM trades
+			WHERE user_id = $1 AND status = 'completed'
+		)
+		SELECT 
+			total_trades,
+			winning_trades,
+			total_profit_loss,
+			CASE WHEN total_trades > 0 
+				THEN (winning_trades::float / total_trades::float) * 100 
+				ELSE 0 
+			END as win_rate
+		FROM trade_stats
+	`
+
+	stats := &model.PortfolioStats{}
+	err := s.db.QueryRow(ctx, query, userID).Scan(
+		&stats.TotalTrades,
+		&stats.WinningTrades,
+		&stats.TotalProfitLoss,
+		&stats.WinRate,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get portfolio stats: %w", err)
+	}
+
+	return stats, nil
+}

@@ -3,18 +3,17 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
-	db *pgxpool.Pool
+	db db.DB
 }
 
-func NewUserService(db *pgxpool.Pool) *UserService {
+func NewUserService(db db.DB) *UserService {
 	return &UserService{db: db}
 }
 
@@ -148,4 +147,4 @@ func (s *UserService) UpdateNotificationSettings(ctx context.Context, userID str
 	}
 
 	return &updatedSettings, nil
-} 
+}

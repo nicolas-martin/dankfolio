@@ -3,8 +3,9 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
-	"github.com/nicolas-martin/meme-coin-trader/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 func (r *Router) handleGetWallet() http.HandlerFunc {
@@ -53,7 +54,7 @@ func (r *Router) handleInitiateWithdrawal() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		user := getUserFromContext(req.Context())
 		if user == nil {
-			respondError(w, http.StatusUnauthorized, "User not found")
+			respondError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -63,12 +64,13 @@ func (r *Router) handleInitiateWithdrawal() http.HandlerFunc {
 			return
 		}
 
-		// Validate withdrawal amount
-		if err := r.walletService.ValidateWithdrawal(req.Context(), user.ID, withdrawalReq.Amount); err != nil {
+		// Validate withdrawal request
+		if err := r.walletService.ValidateWithdrawal(req.Context(), user.ID, withdrawalReq); err != nil {
 			respondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
+		// Process withdrawal
 		withdrawalInfo, err := r.walletService.InitiateWithdrawal(req.Context(), user.ID, withdrawalReq)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
@@ -88,7 +90,7 @@ func (r *Router) handleGetTransactionHistory() http.HandlerFunc {
 		}
 
 		txType := req.URL.Query().Get("type") // "deposit" or "withdrawal"
-		limit := 50 // Default limit
+		limit := 50                           // Default limit
 		if limitStr := req.URL.Query().Get("limit"); limitStr != "" {
 			if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
 				limit = parsedLimit
@@ -103,4 +105,4 @@ func (r *Router) handleGetTransactionHistory() http.HandlerFunc {
 
 		respondJSON(w, http.StatusOK, history)
 	}
-} 
+}

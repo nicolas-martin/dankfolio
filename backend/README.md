@@ -3,10 +3,8 @@
 ## Overview
 DankFolio is the ultimate platform for trading and managing your meme coin portfolio. Our API provides comprehensive endpoints for trading meme coins, managing portfolios, and competing on the leaderboard.
 
-## Getting Started
-
-### Prerequisites
-- Go 1.19 or higher
+## Prerequisites
+- Go 1.22 or higher
 - PostgreSQL 13 or higher
 - Redis 6 or higher
 

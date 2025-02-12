@@ -15,6 +15,10 @@ const (
 	ErrorTypeRateLimit    ErrorType = "RATE_LIMIT_ERROR"
 	ErrorTypeUnavailable  ErrorType = "SERVICE_UNAVAILABLE"
 	ErrorTypeTransaction  ErrorType = "TRANSACTION_ERROR"
+	ErrInvalidCredentials           = "invalid_credentials"
+	ErrValidation                   = "validation_error"
+	ErrNotFound                     = "not_found"
+	ErrInternal                     = "internal_error"
 )
 
 type AppError struct {
@@ -38,7 +42,7 @@ func (e *AppError) Unwrap() error {
 
 func NewValidationError(message string) *AppError {
 	return &AppError{
-		Type:    ErrorTypeValidation,
+		Type:    ErrValidation,
 		Message: message,
 		Code:    http.StatusBadRequest,
 	}
@@ -54,7 +58,7 @@ func NewAuthError(message string) *AppError {
 
 func NewNotFoundError(message string) *AppError {
 	return &AppError{
-		Type:    ErrorTypeNotFound,
+		Type:    ErrNotFound,
 		Message: message,
 		Code:    http.StatusNotFound,
 	}
@@ -62,10 +66,9 @@ func NewNotFoundError(message string) *AppError {
 
 func NewInternalError(err error) *AppError {
 	return &AppError{
-		Type:    ErrorTypeInternal,
-		Message: "An internal error occurred",
+		Type:    ErrInternal,
+		Message: err.Error(),
 		Code:    http.StatusInternalServerError,
-		Err:     err,
 	}
 }
 
@@ -76,4 +79,12 @@ func NewTransactionError(message string, err error) *AppError {
 		Code:    http.StatusBadRequest,
 		Err:     err,
 	}
-} 
+}
+
+func NewInvalidCredentialsError() *AppError {
+	return &AppError{
+		Type:    ErrInvalidCredentials,
+		Message: "Invalid credentials",
+		Code:    http.StatusUnauthorized,
+	}
+}

@@ -1,18 +1,15 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func (r *Router) handleGetPortfolio() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		user := getUserFromContext(req.Context())
 		if user == nil {
-			respondError(w, http.StatusUnauthorized, "User not found")
+			respondError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -30,13 +27,13 @@ func (r *Router) handleGetPortfolioHistory() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		user := getUserFromContext(req.Context())
 		if user == nil {
-			respondError(w, http.StatusUnauthorized, "User not found")
+			respondError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
 		timeframe := req.URL.Query().Get("timeframe")
 		if timeframe == "" {
-			timeframe = "month" // default timeframe
+			timeframe = "24h" // Default timeframe
 		}
 
 		history, err := r.portfolioService.GetPortfolioHistory(req.Context(), user.ID, timeframe)
@@ -49,11 +46,29 @@ func (r *Router) handleGetPortfolioHistory() http.HandlerFunc {
 	}
 }
 
+func getStartTimeForTimeframe(timeframe string) time.Time {
+	now := time.Now()
+	switch timeframe {
+	case "24h":
+		return now.Add(-24 * time.Hour)
+	case "7d":
+		return now.AddDate(0, 0, -7)
+	case "30d":
+		return now.AddDate(0, 0, -30)
+	case "90d":
+		return now.AddDate(0, 0, -90)
+	case "1y":
+		return now.AddDate(-1, 0, 0)
+	default:
+		return time.Time{}
+	}
+}
+
 func (r *Router) handleGetPortfolioStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		user := getUserFromContext(req.Context())
 		if user == nil {
-			respondError(w, http.StatusUnauthorized, "User not found")
+			respondError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -65,4 +80,4 @@ func (r *Router) handleGetPortfolioStats() http.HandlerFunc {
 
 		respondJSON(w, http.StatusOK, stats)
 	}
-} 
+}

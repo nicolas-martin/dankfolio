@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/jackc/pgx/v4"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/errors"
+	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 type WalletService struct {
-	db *pgxpool.Pool
+	db db.DB
 }
 
-func NewWalletService(db *pgxpool.Pool) *WalletService {
+func NewWalletService(db db.DB) *WalletService {
 	return &WalletService{db: db}
 }
 
@@ -35,6 +36,44 @@ func (s *WalletService) GetWallet(ctx context.Context, userID string) (*model.Wa
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallet: %w", err)
+	}
+
+	return wallet, nil
+}
+
+func (s *WalletService) CreateWallet(ctx context.Context, userID string) (*model.Wallet, error) {
+	// Start transaction
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	wallet := &model.Wallet{
+		UserID:      userID,
+		PublicKey:   generateWalletAddress(),
+		Balance:     0,
+		LastUpdated: time.Now(),
+	}
+
+	query := `
+		INSERT INTO wallets (user_id, public_key, balance, last_updated)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
+	`
+
+	err = tx.QueryRow(ctx, query,
+		wallet.UserID,
+		wallet.PublicKey,
+		wallet.Balance,
+		wallet.LastUpdated,
+	).Scan(&wallet.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create wallet: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return wallet, nil
@@ -111,9 +150,9 @@ func (s *WalletService) InitiateWithdrawal(ctx context.Context, userID string, r
 	// Create withdrawal record
 	withdrawalInfo := &model.WithdrawalInfo{
 		Amount:        req.Amount,
-		Fee:          fee,
-		TotalAmount:  totalAmount,
-		Status:       "pending",
+		Fee:           fee,
+		TotalAmount:   totalAmount,
+		Status:        "pending",
 		EstimatedTime: "10-30 minutes",
 	}
 
@@ -210,266 +249,72 @@ func generateQRCode(url string) string {
 	return "data:image/png;base64,..."
 }
 
-func (s *WalletService) CreateWallet(ctx context.Context, userID string) (*model.Wallet, error) {
-	// Start transaction
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	wallet := &model.Wallet{
-		UserID:      userID,
-		PublicKey:   generateWalletAddress(),
-		Balance:     0,
-		LastUpdated: time.Now(),
-	}
-
-	query := `
-		INSERT INTO wallets (user_id, public_key, balance, last_updated)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id
-	`
-
-	err = tx.QueryRow(ctx, query,
-		wallet.UserID,
-		wallet.PublicKey,
-		wallet.Balance,
-		wallet.LastUpdated,
-	).Scan(&wallet.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create wallet: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return wallet, nil
-}
-
 func generateWalletAddress() string {
 	// Implementation for generating wallet address
-	// In production, this would use proper cryptographic functions
 	return "0x..."
 }
 
-func (s *WalletService) GetWallet(userId int) (*model.Wallet, error) {
-	// Implementation of GetWallet method
-	return nil, nil
-}
+func (s *WalletService) ExecuteTradeTransaction(ctx context.Context, tx pgx.Tx, userID string, trade *model.Trade) error {
+	// Get current wallet balance
+	var balance float64
+	err := tx.QueryRow(ctx, "SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE", userID).Scan(&balance)
+	if err != nil {
+		return fmt.Errorf("failed to get wallet balance: %w", err)
+	}
 
-func (s *WalletService) CreateWallet(userId int) (*model.Wallet, error) {
-	// Implementation of CreateWallet method
-	return nil, nil
-}
+	// Calculate total cost including fee
+	totalCost := trade.Amount * trade.Price
+	if trade.Type == "buy" {
+		totalCost += trade.Fee
+		if balance < totalCost {
+			return errors.NewValidationError("insufficient balance")
+		}
+		// Deduct total cost from balance
+		_, err = tx.Exec(ctx,
+			"UPDATE wallets SET balance = balance - $1 WHERE user_id = $2",
+			totalCost, userID,
+		)
+	} else { // sell
+		// Add proceeds minus fee to balance
+		_, err = tx.Exec(ctx,
+			"UPDATE wallets SET balance = balance + $1 WHERE user_id = $2",
+			totalCost-trade.Fee, userID,
+		)
+	}
 
-func (s *WalletService) UpdateWallet(userId int, amount float64) (*model.Wallet, error) {
-	// Implementation of UpdateWallet method
-	return nil, nil
-}
+	if err != nil {
+		return fmt.Errorf("failed to update wallet balance: %w", err)
+	}
 
-func (s *WalletService) DeleteWallet(userId int) error {
-	// Implementation of DeleteWallet method
 	return nil
 }
 
-func (s *WalletService) GetTransactions(userId int) ([]*model.Transaction, error) {
-	// Implementation of GetTransactions method
-	return nil, nil
-}
+func (s *WalletService) ValidateWithdrawal(ctx context.Context, userID string, req model.WithdrawalRequest) error {
+	// Get current wallet balance
+	var balance float64
+	err := s.db.QueryRow(ctx, "SELECT balance FROM wallets WHERE user_id = $1", userID).Scan(&balance)
+	if err != nil {
+		return fmt.Errorf("failed to get wallet balance: %w", err)
+	}
 
-func (s *WalletService) GetTransaction(userId, transactionId int) (*model.Transaction, error) {
-	// Implementation of GetTransaction method
-	return nil, nil
-}
+	// Calculate fee
+	fee := calculateWithdrawalFee(req.Amount)
+	totalAmount := req.Amount + fee
 
-func (s *WalletService) CreateTransaction(userId int, amount float64) (*model.Transaction, error) {
-	// Implementation of CreateTransaction method
-	return nil, nil
-}
+	// Check if user has sufficient balance
+	if balance < totalAmount {
+		return errors.NewValidationError("insufficient balance")
+	}
 
-func (s *WalletService) DeleteTransaction(userId, transactionId int) error {
-	// Implementation of DeleteTransaction method
+	// Validate destination address format
+	if !isValidAddress(req.DestinationAddress) {
+		return errors.NewValidationError("invalid destination address")
+	}
+
 	return nil
 }
 
-func (s *WalletService) GetWalletHistory(userId int) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistory method
-	return nil, nil
+func isValidAddress(address string) bool {
+	// TODO: Implement proper address validation based on the blockchain/network
+	return len(address) > 0
 }
-
-func (s *WalletService) GetWalletHistoryByDate(userId int, date string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByDate method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByType(userId int, transactionType string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByType method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByAmount(userId int, amount float64) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByAmount method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCategory(userId int, category string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCategory method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatus(userId int, status string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatus method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCurrency(userId int, currency string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCurrency method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByMethod(userId int, method string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByMethod method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryBySource(userId int, source string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryBySource method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByDestination(userId int, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndCurrency(userId int, status string, currency string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndCurrency method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndMethod(userId int, status string, method string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndMethod method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndSource(userId int, status string, source string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndSource method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndDestination(userId int, status string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCurrencyAndMethod(userId int, currency string, method string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCurrencyAndMethod method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCurrencyAndSource(userId int, currency string, source string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCurrencyAndSource method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCurrencyAndDestination(userId int, currency string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCurrencyAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByMethodAndSource(userId int, method string, source string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByMethodAndSource method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByMethodAndDestination(userId int, method string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByMethodAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryBySourceAndDestination(userId int, source string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryBySourceAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndCurrencyAndMethod(userId int, status string, currency string, method string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndCurrencyAndMethod method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndCurrencyAndSource(userId int, status string, currency string, source string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndCurrencyAndSource method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndCurrencyAndDestination(userId int, status string, currency string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndCurrencyAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndMethodAndSource(userId int, status string, method string, source string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndMethodAndSource method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndMethodAndDestination(userId int, status string, method string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndMethodAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndSourceAndDestination(userId int, status string, source string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndSourceAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCurrencyAndMethodAndSource(userId int, currency string, method string, source string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCurrencyAndMethodAndSource method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCurrencyAndMethodAndDestination(userId int, currency string, method string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCurrencyAndMethodAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCurrencyAndSourceAndDestination(userId int, currency string, source string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCurrencyAndSourceAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByMethodAndSourceAndDestination(userId int, method string, source string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByMethodAndSourceAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndCurrencyAndMethodAndSource(userId int, status string, currency string, method string, source string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndCurrencyAndMethodAndSource method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndCurrencyAndMethodAndDestination(userId int, status string, currency string, method string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndCurrencyAndMethodAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndCurrencyAndSourceAndDestination(userId int, status string, currency string, source string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndCurrencyAndSourceAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndMethodAndSourceAndDestination(userId int, status string, method string, source string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndMethodAndSourceAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByCurrencyAndMethodAndSourceAndDestination(userId int, currency string, method string, source string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByCurrencyAndMethodAndSourceAndDestination method
-	return nil, nil
-}
-
-func (s *WalletService) GetWalletHistoryByStatusAndCurrencyAndMethodAndSourceAndDestination(userId int, status string, currency string, method string, source string, destination string) ([]*model.WalletHistory, error) {
-	// Implementation of GetWalletHistoryByStatusAndCurrencyAndMethodAndSourceAndDestination method
-	return nil, nil
-} 
