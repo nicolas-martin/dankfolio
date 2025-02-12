@@ -14,6 +14,12 @@ type Config struct {
 	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
 	JWTSecret     string `mapstructure:"JWT_SECRET"`
 	CorsOrigins   string `mapstructure:"CORS_ORIGINS"`
+
+	// Solana configuration
+	SolanaRPCEndpoint string `mapstructure:"SOLANA_RPC_ENDPOINT"`
+	SolanaWSEndpoint  string `mapstructure:"SOLANA_WS_ENDPOINT"`
+	SolanaProgramID   string `mapstructure:"SOLANA_PROGRAM_ID"`
+	SolanaPoolWallet  string `mapstructure:"SOLANA_POOL_WALLET"`
 }
 
 func Load() (*Config, error) {
@@ -38,6 +44,12 @@ func Load() (*Config, error) {
 	if config.Environment == "" {
 		config.Environment = "development"
 	}
+	if config.SolanaRPCEndpoint == "" {
+		config.SolanaRPCEndpoint = "https://api.mainnet-beta.solana.com"
+	}
+	if config.SolanaWSEndpoint == "" {
+		config.SolanaWSEndpoint = "wss://api.mainnet-beta.solana.com"
+	}
 
 	return &config, nil
-} 
+}

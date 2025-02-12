@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gagliardetto/solana-go"
 	"github.com/jackc/pgx/v4"
 	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
@@ -14,13 +15,15 @@ type TradeService struct {
 	db            db.DB
 	coinService   *CoinService
 	walletService *WalletService
+	solanaService *SolanaTradeService
 }
 
-func NewTradeService(db db.DB, cs *CoinService, ws *WalletService) *TradeService {
+func NewTradeService(db db.DB, cs *CoinService, ws *WalletService, ss *SolanaTradeService) *TradeService {
 	return &TradeService{
 		db:            db,
 		coinService:   cs,
 		walletService: ws,
+		solanaService: ss,
 	}
 }
 
@@ -93,17 +96,16 @@ func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest)
 
 	// Create trade record
 	trade := &model.Trade{
-		ID:          fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		UserID:      req.UserID,
-		CoinID:      req.CoinID,
-		CoinSymbol:  coin.Symbol,
-		Type:        req.Type,
-		Amount:      req.Amount,
-		Price:       coin.Price,
-		Fee:         calculateTradeFee(req.Amount, coin.Price),
-		Status:      "completed", // Set status to completed immediately
-		CreatedAt:   time.Now(),
-		CompletedAt: time.Now(), // Set completed_at timestamp
+		ID:         fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		UserID:     req.UserID,
+		CoinID:     req.CoinID,
+		CoinSymbol: coin.Symbol,
+		Type:       req.Type,
+		Amount:     req.Amount,
+		Price:      coin.Price,
+		Fee:        calculateTradeFee(req.Amount, coin.Price),
+		Status:     "pending", // Set initial status to pending
+		CreatedAt:  time.Now(),
 	}
 
 	// Insert trade record
@@ -112,10 +114,39 @@ func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest)
 		return nil, fmt.Errorf("failed to insert trade: %w", err)
 	}
 
+	// Get user's wallet
+	wallet, err := s.walletService.GetWallet(ctx, req.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user wallet: %w", err)
+	}
+
+	// Convert wallet public key
+	userWallet, err := solana.PublicKeyFromBase58(wallet.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("invalid wallet public key: %w", err)
+	}
+
+	// Execute trade on Solana blockchain
+	err = s.solanaService.ExecuteTrade(ctx, trade, userWallet)
+	if err != nil {
+		// Update trade status to failed
+		trade.Status = "failed"
+		_ = s.updateTradeStatus(ctx, tx, trade.ID, "failed", "")
+		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", err)
+	}
+
 	// Update portfolio
 	err = s.updatePortfolio(ctx, tx, trade)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update portfolio: %w", err)
+	}
+
+	// Update trade status to completed
+	trade.Status = "completed"
+	trade.CompletedAt = time.Now()
+	err = s.updateTradeStatus(ctx, tx, trade.ID, "completed", "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to update trade status: %w", err)
 	}
 
 	// Commit transaction
@@ -242,7 +273,7 @@ func (s *TradeService) insertTrade(ctx context.Context, tx pgx.Tx, trade *model.
 	return nil
 }
 
-func (s *TradeService) updateTradeStatus(ctx context.Context, tradeID string, status string, txHash string) error {
+func (s *TradeService) updateTradeStatus(ctx context.Context, tx pgx.Tx, tradeID string, status string, txHash string) error {
 	query := `
 		UPDATE trades
 		SET status = $1::varchar, 
@@ -251,7 +282,7 @@ func (s *TradeService) updateTradeStatus(ctx context.Context, tradeID string, st
 		WHERE id = $3
 	`
 
-	_, err := s.db.Exec(ctx, query, status, txHash, tradeID)
+	_, err := tx.Exec(ctx, query, status, txHash, tradeID)
 	if err != nil {
 		return fmt.Errorf("failed to update trade status: %w", err)
 	}

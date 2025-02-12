@@ -12,18 +12,25 @@ import (
 	"github.com/nicolas-martin/dankfolio/internal/testutil"
 )
 
-func setupTestTradeService(t *testing.T) (*TradeService, *CoinService, *WalletService, func()) {
+func setupTestTradeService(t *testing.T) (*TradeService, *CoinService, *WalletService, *SolanaTradeService, func()) {
 	// Setup test database
 	testDB, cleanup := testutil.SetupTestDB(t)
 
 	// Create service instances
 	coinService := NewCoinService(testDB)
 	walletService := NewWalletService(testDB)
-	tradeService := NewTradeService(testDB, coinService, walletService)
+	solanaService, err := NewSolanaTradeService(
+		"https://api.testnet.solana.com",
+		"wss://api.testnet.solana.com",
+		"your-test-program-id",
+		"your-test-pool-wallet",
+	)
+	require.NoError(t, err)
+	tradeService := NewTradeService(testDB, coinService, walletService, solanaService)
 
 	// Clean up any existing test data
 	ctx := context.Background()
-	_, err := testDB.Exec(ctx, "DELETE FROM price_history")
+	_, err = testDB.Exec(ctx, "DELETE FROM price_history")
 	require.NoError(t, err)
 	_, err = testDB.Exec(ctx, "DELETE FROM portfolios")
 	require.NoError(t, err)
@@ -34,7 +41,7 @@ func setupTestTradeService(t *testing.T) (*TradeService, *CoinService, *WalletSe
 	_, err = testDB.Exec(ctx, "DELETE FROM wallets")
 	require.NoError(t, err)
 
-	return tradeService, coinService, walletService, cleanup
+	return tradeService, coinService, walletService, solanaService, cleanup
 }
 
 func setupTestUser(t *testing.T, ctx context.Context, walletService *WalletService) string {
@@ -61,7 +68,7 @@ func setupTestUser(t *testing.T, ctx context.Context, walletService *WalletServi
 
 func TestTradeService_PreviewTrade(t *testing.T) {
 	// Setup
-	tradeService, coinService, _, cleanup := setupTestTradeService(t)
+	tradeService, coinService, _, _, cleanup := setupTestTradeService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -122,7 +129,7 @@ func TestTradeService_PreviewTrade(t *testing.T) {
 
 func TestTradeService_ExecuteTrade(t *testing.T) {
 	// Setup
-	tradeService, coinService, walletService, cleanup := setupTestTradeService(t)
+	tradeService, coinService, walletService, _, cleanup := setupTestTradeService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -199,7 +206,7 @@ func TestTradeService_ExecuteTrade(t *testing.T) {
 
 func TestTradeService_GetTradeHistory(t *testing.T) {
 	// Setup
-	tradeService, coinService, walletService, cleanup := setupTestTradeService(t)
+	tradeService, coinService, walletService, _, cleanup := setupTestTradeService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -278,7 +285,7 @@ func TestTradeService_GetTradeHistory(t *testing.T) {
 
 func TestTradeService_InvalidTrades(t *testing.T) {
 	// Setup
-	tradeService, coinService, walletService, cleanup := setupTestTradeService(t)
+	tradeService, coinService, walletService, _, cleanup := setupTestTradeService(t)
 	defer cleanup()
 
 	ctx := context.Background()

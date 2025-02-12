@@ -49,7 +49,19 @@ func main() {
 	userService := service.NewUserService(dbWrapper)
 	coinService := service.NewCoinService(dbWrapper)
 	walletService := service.NewWalletService(dbWrapper)
-	tradeService := service.NewTradeService(dbWrapper, coinService, walletService)
+
+	// Initialize Solana trade service
+	solanaService, err := service.NewSolanaTradeService(
+		cfg.SolanaRPCEndpoint,
+		cfg.SolanaWSEndpoint,
+		cfg.SolanaProgramID,
+		cfg.SolanaPoolWallet,
+	)
+	if err != nil {
+		logger.Fatal(context.Background(), "Failed to initialize Solana trade service", zap.Error(err))
+	}
+
+	tradeService := service.NewTradeService(dbWrapper, coinService, walletService, solanaService)
 	portfolioService := service.NewPortfolioService(dbWrapper, coinService)
 	wsService := service.NewWebSocketService()
 
