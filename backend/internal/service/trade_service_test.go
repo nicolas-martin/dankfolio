@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gagliardetto/solana-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -18,12 +19,12 @@ func setupTestTradeService(t *testing.T) (*TradeService, *CoinService, *WalletSe
 
 	// Create service instances
 	coinService := NewCoinService(testDB)
-	walletService := NewWalletService(testDB)
+	walletService := NewWalletService(testDB, testnetRPCEndpoint)
 	solanaService, err := NewSolanaTradeService(
-		"https://api.testnet.solana.com",
-		"wss://api.testnet.solana.com",
-		"your-test-program-id",
-		"your-test-pool-wallet",
+		testnetRPCEndpoint,
+		testnetWSEndpoint,
+		testProgramID,
+		testPoolWallet,
 		testDB,
 	)
 	require.NoError(t, err)
@@ -53,12 +54,17 @@ func setupTestUser(t *testing.T, ctx context.Context, walletService *WalletServi
 	require.NoError(t, err)
 
 	// Create a test wallet with some initial balance
+	testWallet := solana.NewWallet()
+	privateKeyStr := testWallet.PrivateKey.String()
+
 	wallet := model.Wallet{
-		ID:          "test_wallet",
-		UserID:      userID,
-		PublicKey:   "0x123...",
-		Balance:     1000.0, // Initial balance for testing
-		LastUpdated: time.Now(),
+		ID:                  "test_wallet",
+		UserID:              userID,
+		PublicKey:           testWallet.PublicKey().String(),
+		PrivateKey:          privateKeyStr,
+		EncryptedPrivateKey: privateKeyStr, // In tests, we don't need real encryption
+		Balance:             1000.0,        // Initial balance for testing
+		LastUpdated:         time.Now(),
 	}
 
 	err = testutil.InsertTestWallet(ctx, walletService.db, wallet)
@@ -75,7 +81,7 @@ func TestTradeService_PreviewTrade(t *testing.T) {
 	ctx := context.Background()
 
 	// Insert test coin
-	coinID := "doge1"
+	coinID := testTokenMint // Use the wrapped SOL mint address
 	insertTestCoin(t, ctx, coinService, coinID)
 
 	// Insert current price
@@ -139,7 +145,7 @@ func TestTradeService_ExecuteTrade(t *testing.T) {
 	userID := setupTestUser(t, ctx, walletService)
 
 	// Insert test coin
-	coinID := "doge2"
+	coinID := testTokenMint // Use the wrapped SOL mint address
 	insertTestCoin(t, ctx, coinService, coinID)
 
 	// Insert current price
@@ -216,7 +222,7 @@ func TestTradeService_GetTradeHistory(t *testing.T) {
 	userID := setupTestUser(t, ctx, walletService)
 
 	// Insert test coin
-	coinID := "doge3"
+	coinID := testTokenMint // Use the wrapped SOL mint address
 	insertTestCoin(t, ctx, coinService, coinID)
 
 	// Insert current price
@@ -295,7 +301,7 @@ func TestTradeService_InvalidTrades(t *testing.T) {
 	userID := setupTestUser(t, ctx, walletService)
 
 	// Insert test coin
-	coinID := "doge4"
+	coinID := testTokenMint // Use the wrapped SOL mint address
 	insertTestCoin(t, ctx, coinService, coinID)
 
 	// Insert current price

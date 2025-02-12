@@ -17,10 +17,14 @@ func setupTestCoinService(t *testing.T) (*CoinService, func()) {
 	// Setup test database
 	testDB, cleanup := testutil.SetupTestDB(t)
 
-	// Create coin service instance
-	coinService := NewCoinService(testDB)
+	// Clean up any existing test data
+	ctx := context.Background()
+	_, err := testDB.Exec(ctx, "DELETE FROM price_history")
+	require.NoError(t, err)
+	_, err = testDB.Exec(ctx, "DELETE FROM meme_coins")
+	require.NoError(t, err)
 
-	return coinService, cleanup
+	return NewCoinService(testDB), cleanup
 }
 
 func insertTestCoin(t *testing.T, ctx context.Context, coinService *CoinService, id string) {

@@ -5,141 +5,115 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/nicolas-martin/dankfolio/internal/db"
+	"encoding/base64"
+
+	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/google/uuid"
 	"github.com/nicolas-martin/dankfolio/internal/errors"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/repository"
 )
 
 type WalletService struct {
-	db db.DB
+	client     *rpc.Client
+	walletRepo repository.WalletRepository
 }
 
-func NewWalletService(db db.DB) *WalletService {
-	return &WalletService{db: db}
+func NewWalletService(rpcEndpoint string, walletRepo repository.WalletRepository) *WalletService {
+	return &WalletService{
+		client:     rpc.New(rpcEndpoint),
+		walletRepo: walletRepo,
+	}
 }
 
 func (s *WalletService) GetWallet(ctx context.Context, userID string) (*model.Wallet, error) {
-	query := `
-		SELECT id, user_id, public_key, balance, last_updated
-		FROM wallets
-		WHERE user_id = $1
-	`
+	wallet, err := s.walletRepo.GetWallet(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 
-	wallet := &model.Wallet{}
-	err := s.db.QueryRow(ctx, query, userID).Scan(
-		&wallet.ID,
-		&wallet.UserID,
-		&wallet.PublicKey,
-		&wallet.Balance,
-		&wallet.LastUpdated,
+	// Get real-time balance from Solana network
+	pubKey, err := solana.PublicKeyFromBase58(wallet.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("invalid public key: %w", err)
+	}
+
+	balance, err := s.client.GetBalance(
+		ctx,
+		pubKey,
+		rpc.CommitmentFinalized,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get wallet: %w", err)
+		return nil, fmt.Errorf("failed to get Solana balance: %w", err)
 	}
+
+	// Convert lamports to SOL
+	wallet.Balance = float64(balance.Value) / 1e9
 
 	return wallet, nil
 }
 
 func (s *WalletService) CreateWallet(ctx context.Context, userID string) (*model.Wallet, error) {
-	// Start transaction
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
+	// Generate new Solana wallet
+	newWallet := solana.NewWallet()
 
 	wallet := &model.Wallet{
 		UserID:      userID,
-		PublicKey:   generateWalletAddress(),
+		PublicKey:   newWallet.PublicKey().String(),
 		Balance:     0,
 		LastUpdated: time.Now(),
 	}
 
-	query := `
-		INSERT INTO wallets (user_id, public_key, balance, last_updated)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id
-	`
+	// Convert private key to bytes for storage
+	privateKeyBytes := newWallet.PrivateKey
+	privateKeyStr := string(solana.Base58(privateKeyBytes))
 
-	err = tx.QueryRow(ctx, query,
-		wallet.UserID,
-		wallet.PublicKey,
-		wallet.Balance,
-		wallet.LastUpdated,
-	).Scan(&wallet.ID)
+	// TODO: Implement proper encryption of private key before storage
+	encryptedPrivateKey := privateKeyStr // This should be properly encrypted in production
+
+	err := s.walletRepo.CreateWalletWithBalance(ctx, wallet, privateKeyStr, encryptedPrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create wallet: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return wallet, nil
 }
 
-func (s *WalletService) InitiateDeposit(ctx context.Context, userID string, req model.DepositRequest) (*model.DepositInfo, error) {
-	// Start transaction
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	// Create deposit record
+func (s *WalletService) InitiateDeposit(ctx context.Context, userID string, req *model.DepositRequest) (*model.DepositInfo, error) {
 	depositInfo := &model.DepositInfo{
-		Address:   generateDepositAddress(),
-		Amount:    req.Amount,
-		ExpiresAt: time.Now().Add(24 * time.Hour),
+		ID:          uuid.New().String(),
+		Amount:      req.Amount,
+		Status:      "pending",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		PaymentType: req.PaymentType,
 	}
 
-	if req.PaymentType != "crypto" {
+	if req.PaymentType == "crypto" {
+		depositInfo.Address = generateDepositAddress()
+		depositInfo.ExpiresAt = time.Now().Add(24 * time.Hour)
+	} else {
 		depositInfo.PaymentURL = generatePaymentURL(req.PaymentType, req.Amount)
 		depositInfo.QRCode = generateQRCode(depositInfo.PaymentURL)
 	}
 
-	// Insert deposit record
-	query := `
-		INSERT INTO deposits (
-			user_id, amount, payment_type, address, 
-			payment_url, qr_code, expires_at, status
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-		RETURNING id
-	`
-
-	var depositID string
-	err = tx.QueryRow(ctx, query,
-		userID, req.Amount, req.PaymentType, depositInfo.Address,
-		depositInfo.PaymentURL, depositInfo.QRCode, depositInfo.ExpiresAt,
-	).Scan(&depositID)
+	err := s.walletRepo.ExecuteDeposit(ctx, depositInfo, userID, req.PaymentType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create deposit record: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		return nil, fmt.Errorf("failed to create deposit: %w", err)
 	}
 
 	return depositInfo, nil
 }
 
-func (s *WalletService) InitiateWithdrawal(ctx context.Context, userID string, req model.WithdrawalRequest) (*model.WithdrawalInfo, error) {
-	// Start transaction
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
+func (s *WalletService) InitiateWithdrawal(ctx context.Context, userID string, req *model.WithdrawalRequest) (*model.WithdrawalInfo, error) {
 	// Check balance
-	var balance float64
-	err = tx.QueryRow(ctx, "SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE", userID).Scan(&balance)
+	wallet, err := s.walletRepo.GetWallet(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get wallet balance: %w", err)
+		return nil, err
 	}
 
-	if balance < req.Amount {
+	if wallet.Balance < req.Amount {
 		return nil, errors.NewValidationError("insufficient balance")
 	}
 
@@ -147,152 +121,59 @@ func (s *WalletService) InitiateWithdrawal(ctx context.Context, userID string, r
 	fee := calculateWithdrawalFee(req.Amount)
 	totalAmount := req.Amount + fee
 
-	// Create withdrawal record
 	withdrawalInfo := &model.WithdrawalInfo{
-		Amount:        req.Amount,
-		Fee:           fee,
-		TotalAmount:   totalAmount,
-		Status:        "pending",
-		EstimatedTime: "10-30 minutes",
+		ID:               uuid.New().String(),
+		Amount:           req.Amount,
+		Fee:              fee,
+		TotalAmount:      totalAmount,
+		Status:           "pending",
+		EstimatedTime:    "10-30 minutes",
+		DestinationChain: req.DestinationChain,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
 	}
 
-	query := `
-		INSERT INTO withdrawals (
-			user_id, amount, fee, destination_address, status
-		) VALUES ($1, $2, $3, $4, 'pending')
-		RETURNING id
-	`
-
-	err = tx.QueryRow(ctx, query,
-		userID, req.Amount, fee, req.DestinationAddress,
-	).Scan(&withdrawalInfo.ID)
+	err = s.walletRepo.ExecuteWithdrawal(ctx, withdrawalInfo, userID, req.DestinationAddress, -totalAmount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create withdrawal record: %w", err)
-	}
-
-	// Update wallet balance
-	_, err = tx.Exec(ctx,
-		"UPDATE wallets SET balance = balance - $1 WHERE user_id = $2",
-		totalAmount, userID,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update wallet balance: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		return nil, fmt.Errorf("failed to process withdrawal: %w", err)
 	}
 
 	return withdrawalInfo, nil
 }
 
 func (s *WalletService) GetTransactionHistory(ctx context.Context, userID string, txType string, limit int) ([]model.Transaction, error) {
-	query := `
-		SELECT 
-			id, type, amount, status, tx_hash, created_at, updated_at
-		FROM (
-			SELECT 
-				id, 'deposit' as type, amount, status, 
-				tx_hash, created_at, updated_at
-			FROM deposits
-			WHERE user_id = $1
-			UNION ALL
-			SELECT 
-				id, 'withdrawal' as type, amount, status,
-				tx_hash, created_at, updated_at
-			FROM withdrawals
-			WHERE user_id = $1
-		) t
-		WHERE ($2 = '' OR type = $2)
-		ORDER BY created_at DESC
-		LIMIT $3
-	`
-
-	rows, err := s.db.Query(ctx, query, userID, txType, limit)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query transaction history: %w", err)
-	}
-	defer rows.Close()
-
-	var transactions []model.Transaction
-	for rows.Next() {
-		var tx model.Transaction
-		err := rows.Scan(
-			&tx.ID, &tx.Type, &tx.Amount, &tx.Status,
-			&tx.TxHash, &tx.CreatedAt, &tx.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan transaction row: %w", err)
-		}
-		transactions = append(transactions, tx)
-	}
-
-	return transactions, nil
-}
-
-func calculateWithdrawalFee(amount float64) float64 {
-	return amount * 0.001 // 0.1% fee
+	return s.walletRepo.GetTransactionHistory(ctx, userID, txType, limit)
 }
 
 func generateDepositAddress() string {
-	// Implementation for generating deposit address
-	return "0x..."
+	// Generate a new Solana wallet address for deposits
+	account := solana.NewWallet()
+	return account.PublicKey().String()
 }
 
 func generatePaymentURL(paymentType string, amount float64) string {
-	// Implementation for generating payment URL
-	return "https://payment.provider.com/..."
+	// Generate a payment URL based on the payment type and amount
+	// This is a placeholder implementation
+	baseURL := "https://api.memetrading.com/pay"
+	return fmt.Sprintf("%s/%s?amount=%.2f", baseURL, paymentType, amount)
 }
 
 func generateQRCode(url string) string {
-	// Implementation for generating QR code
-	return "data:image/png;base64,..."
+	// Generate a QR code for the payment URL
+	// This is a placeholder implementation that would typically use a QR code library
+	return fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString([]byte(url)))
 }
 
-func generateWalletAddress() string {
-	// Implementation for generating wallet address
-	return "0x..."
-}
-
-func (s *WalletService) ExecuteTradeTransaction(ctx context.Context, tx pgx.Tx, userID string, trade *model.Trade) error {
-	// Get current wallet balance
-	var balance float64
-	err := tx.QueryRow(ctx, "SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE", userID).Scan(&balance)
-	if err != nil {
-		return fmt.Errorf("failed to get wallet balance: %w", err)
-	}
-
-	// Calculate total cost including fee
-	totalCost := trade.Amount * trade.Price
-	if trade.Type == "buy" {
-		totalCost += trade.Fee
-		if balance < totalCost {
-			return errors.NewValidationError("insufficient balance")
-		}
-		// Deduct total cost from balance
-		_, err = tx.Exec(ctx,
-			"UPDATE wallets SET balance = balance - $1 WHERE user_id = $2",
-			totalCost, userID,
-		)
-	} else { // sell
-		// Add proceeds minus fee to balance
-		_, err = tx.Exec(ctx,
-			"UPDATE wallets SET balance = balance + $1 WHERE user_id = $2",
-			totalCost-trade.Fee, userID,
-		)
-	}
-
-	if err != nil {
-		return fmt.Errorf("failed to update wallet balance: %w", err)
-	}
-
-	return nil
+func calculateWithdrawalFee(amount float64) float64 {
+	// Calculate the withdrawal fee based on the amount
+	// This is a placeholder implementation
+	baseFee := 0.001 // 0.1%
+	return amount * baseFee
 }
 
 func (s *WalletService) ValidateWithdrawal(ctx context.Context, userID string, req model.WithdrawalRequest) error {
-	// Get current wallet balance
-	var balance float64
-	err := s.db.QueryRow(ctx, "SELECT balance FROM wallets WHERE user_id = $1", userID).Scan(&balance)
+	// Get current wallet balance from Solana network
+	wallet, err := s.GetWallet(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get wallet balance: %w", err)
 	}
@@ -302,13 +183,14 @@ func (s *WalletService) ValidateWithdrawal(ctx context.Context, userID string, r
 	totalAmount := req.Amount + fee
 
 	// Check if user has sufficient balance
-	if balance < totalAmount {
+	if wallet.Balance < totalAmount {
 		return errors.NewValidationError("insufficient balance")
 	}
 
-	// Validate destination address format
-	if !isValidAddress(req.DestinationAddress) {
-		return errors.NewValidationError("invalid destination address")
+	// Validate Solana destination address format
+	_, err = solana.PublicKeyFromBase58(req.DestinationAddress)
+	if err != nil {
+		return errors.NewValidationError("invalid Solana destination address")
 	}
 
 	return nil

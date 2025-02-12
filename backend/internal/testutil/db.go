@@ -66,9 +66,9 @@ func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 func InsertTestWallet(ctx context.Context, db db.DB, wallet model.Wallet) error {
 	query := `
 		INSERT INTO wallets (
-			id, user_id, public_key, balance, last_updated
+			id, user_id, public_key, private_key, encrypted_private_key, balance, last_updated
 		) VALUES (
-			$1, $2, $3, $4, $5
+			$1, $2, $3, $4, $5, $6, $7
 		)
 	`
 
@@ -76,6 +76,8 @@ func InsertTestWallet(ctx context.Context, db db.DB, wallet model.Wallet) error 
 		wallet.ID,
 		wallet.UserID,
 		wallet.PublicKey,
+		wallet.PrivateKey,
+		wallet.EncryptedPrivateKey,
 		wallet.Balance,
 		wallet.LastUpdated,
 	)

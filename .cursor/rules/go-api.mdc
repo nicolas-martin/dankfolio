@@ -1,0 +1,9 @@
+---
+description: this is for api services written in golang
+globs: 
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
