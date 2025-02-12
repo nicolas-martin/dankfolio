@@ -59,15 +59,16 @@ func (s *WalletService) CreateWallet(ctx context.Context, userID string) (*model
 	newWallet := solana.NewWallet()
 
 	wallet := &model.Wallet{
+		ID:          uuid.New().String(),
 		UserID:      userID,
 		PublicKey:   newWallet.PublicKey().String(),
 		Balance:     0,
+		CreatedAt:   time.Now(),
 		LastUpdated: time.Now(),
 	}
 
-	// Convert private key to bytes for storage
-	privateKeyBytes := newWallet.PrivateKey
-	privateKeyStr := string(solana.Base58(privateKeyBytes))
+	// Convert private key to base58 string
+	privateKeyStr := newWallet.PrivateKey.String()
 
 	// TODO: Implement proper encryption of private key before storage
 	encryptedPrivateKey := privateKeyStr // This should be properly encrypted in production

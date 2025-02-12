@@ -68,23 +68,33 @@ func (r *walletRepository) CreateWallet(ctx context.Context, tx pgx.Tx, userID s
 }
 
 func (r *walletRepository) CreateDeposit(ctx context.Context, tx pgx.Tx, deposit *model.DepositInfo, userID string, paymentType string) (string, error) {
-	var depositID string
-	err := tx.QueryRow(ctx, `
+	query := `
 		INSERT INTO deposits (
-			user_id, amount, payment_type, address, 
-			payment_url, qr_code, expires_at, status
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-		RETURNING id
-	`,
-		userID, deposit.Amount, paymentType, deposit.Address,
-		deposit.PaymentURL, deposit.QRCode, deposit.ExpiresAt,
-	).Scan(&depositID)
+			id, user_id, amount, payment_type, address, 
+			payment_url, qr_code, expires_at, status,
+			created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	`
+
+	_, err := tx.Exec(ctx, query,
+		deposit.ID,
+		userID,
+		deposit.Amount,
+		paymentType,
+		deposit.Address,
+		deposit.PaymentURL,
+		deposit.QRCode,
+		deposit.ExpiresAt,
+		deposit.Status,
+		deposit.CreatedAt,
+		deposit.UpdatedAt,
+	)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to create deposit record: %w", err)
 	}
 
-	return depositID, nil
+	return deposit.ID, nil
 }
 
 func (r *walletRepository) CreateWithdrawal(ctx context.Context, tx pgx.Tx, withdrawal *model.WithdrawalInfo, userID string, destinationAddress string) error {
@@ -119,21 +129,9 @@ func (r *walletRepository) UpdateWalletBalance(ctx context.Context, tx pgx.Tx, u
 func (r *walletRepository) GetTransactionHistory(ctx context.Context, userID string, txType string, limit int) ([]model.Transaction, error) {
 	query := `
 		SELECT 
-			id, type, amount, status, tx_hash, created_at, updated_at
-		FROM (
-			SELECT 
-				id, 'deposit' as type, amount, status, 
-				tx_hash, created_at, updated_at
-			FROM deposits
-			WHERE user_id = $1
-			UNION ALL
-			SELECT 
-				id, 'withdrawal' as type, amount, status,
-				tx_hash, created_at, updated_at
-			FROM withdrawals
-			WHERE user_id = $1
-		) t
-		WHERE ($2 = '' OR type = $2)
+			id, type, amount, status, COALESCE(tx_hash, ''), created_at, updated_at
+		FROM transactions
+		WHERE user_id = $1 AND ($2 = '' OR type = $2)
 		ORDER BY created_at DESC
 		LIMIT $3
 	`
@@ -148,13 +146,22 @@ func (r *walletRepository) GetTransactionHistory(ctx context.Context, userID str
 	for rows.Next() {
 		var tx model.Transaction
 		err := rows.Scan(
-			&tx.ID, &tx.Type, &tx.Amount, &tx.Status,
-			&tx.TxHash, &tx.CreatedAt, &tx.UpdatedAt,
+			&tx.ID,
+			&tx.Type,
+			&tx.Amount,
+			&tx.Status,
+			&tx.TxHash,
+			&tx.CreatedAt,
+			&tx.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transaction row: %w", err)
 		}
 		transactions = append(transactions, tx)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating transaction rows: %w", err)
 	}
 
 	return transactions, nil
@@ -168,19 +175,20 @@ func (r *walletRepository) CreateWalletWithBalance(ctx context.Context, wallet *
 	defer tx.Rollback(ctx)
 
 	query := `
-		INSERT INTO wallets (user_id, public_key, private_key, encrypted_private_key, balance, last_updated)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id
+		INSERT INTO wallets (id, user_id, public_key, private_key, encrypted_private_key, balance, created_at, last_updated)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
-	err = tx.QueryRow(ctx, query,
+	_, err = tx.Exec(ctx, query,
+		wallet.ID,
 		wallet.UserID,
 		wallet.PublicKey,
 		privateKeyStr,
 		encryptedPrivateKey,
 		wallet.Balance,
+		wallet.CreatedAt,
 		wallet.LastUpdated,
-	).Scan(&wallet.ID)
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create wallet: %w", err)
 	}

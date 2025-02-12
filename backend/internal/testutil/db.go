@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -66,7 +67,7 @@ func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 func InsertTestWallet(ctx context.Context, db db.DB, wallet model.Wallet) error {
 	query := `
 		INSERT INTO wallets (
-			id, user_id, public_key, private_key, encrypted_private_key, balance, last_updated
+			id, user_id, public_key, private_key, balance, created_at, last_updated
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7
 		)
@@ -77,8 +78,8 @@ func InsertTestWallet(ctx context.Context, db db.DB, wallet model.Wallet) error 
 		wallet.UserID,
 		wallet.PublicKey,
 		wallet.PrivateKey,
-		wallet.EncryptedPrivateKey,
 		wallet.Balance,
+		wallet.CreatedAt,
 		wallet.LastUpdated,
 	)
 
@@ -112,4 +113,85 @@ func GetUserPortfolio(ctx context.Context, db db.DB, userID string, coinID strin
 	}
 
 	return holding, nil
+}
+
+// SetupTestSchema creates the necessary tables for testing
+func SetupTestSchema(ctx context.Context, db db.DB) error {
+	queries := []string{
+		`CREATE TABLE IF NOT EXISTS wallets (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL,
+			public_key TEXT NOT NULL,
+			private_key TEXT,
+			encrypted_private_key TEXT,
+			balance DECIMAL DEFAULT 0,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+			last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS deposits (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL,
+			amount DECIMAL NOT NULL,
+			payment_type TEXT NOT NULL,
+			address TEXT,
+			payment_url TEXT,
+			qr_code TEXT,
+			status TEXT NOT NULL,
+			tx_hash TEXT,
+			expires_at TIMESTAMP WITH TIME ZONE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS withdrawals (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL,
+			amount DECIMAL NOT NULL,
+			fee DECIMAL NOT NULL,
+			total_amount DECIMAL NOT NULL,
+			destination_chain TEXT NOT NULL,
+			destination_address TEXT NOT NULL,
+			status TEXT NOT NULL,
+			tx_hash TEXT,
+			estimated_time TEXT,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+		)`,
+		`CREATE OR REPLACE VIEW transactions AS
+			SELECT 
+				id, 'deposit' as type, user_id, amount, status, tx_hash, created_at, updated_at
+			FROM deposits
+			UNION ALL
+			SELECT 
+				id, 'withdrawal' as type, user_id, amount, status, tx_hash, created_at, updated_at
+			FROM withdrawals
+		`,
+	}
+
+	for _, query := range queries {
+		_, err := db.Exec(ctx, query)
+		if err != nil {
+			return fmt.Errorf("failed to execute query: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// CleanupTestSchema drops all test tables
+func CleanupTestSchema(ctx context.Context, db db.DB) error {
+	queries := []string{
+		"DROP VIEW IF EXISTS transactions",
+		"DROP TABLE IF EXISTS withdrawals",
+		"DROP TABLE IF EXISTS deposits",
+		"DROP TABLE IF EXISTS wallets",
+	}
+
+	for _, query := range queries {
+		_, err := db.Exec(ctx, query)
+		if err != nil {
+			return fmt.Errorf("failed to execute query: %w", err)
+		}
+	}
+
+	return nil
 }
