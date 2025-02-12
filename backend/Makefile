@@ -22,8 +22,36 @@ clean:
 	rm -f .env
 
 run:
+	echo "🔍 Checking for existing backend processes..."
+	-lsof -ti :8080 | xargs kill -9 || true
 	echo "🚀 Starting server..."
-	go run cmd/api/main.go
+	go run cmd/api/main.go > server.log 2>&1 &
+	echo "⏳ Waiting for server to start..."
+	for i in $$(seq 1 30); do \
+		if curl -s http://localhost:8080/health > /dev/null; then \
+			echo "✅ Server is ready!"; \
+			break; \
+		fi; \
+		if [ $$i -eq 30 ]; then \
+			echo "❌ Server failed to start"; \
+			exit 1; \
+		fi; \
+		sleep 1; \
+	done
+
+wait-for-server:
+	@echo "⏳ Waiting for server to respond..."
+	@for i in $$(seq 1 30); do \
+		if curl -s http://localhost:8080/health > /dev/null; then \
+			echo "✅ Server is ready!"; \
+			break; \
+		fi; \
+		if [ $$i -eq 30 ]; then \
+			echo "❌ Server failed to start"; \
+			exit 1; \
+		fi; \
+		sleep 1; \
+	done
 
 test:
 	go test -v -race ./...
@@ -50,7 +78,7 @@ docker-run:
 	docker run -p 8080:8080 --env-file .env meme-trader-api
 
 # Testing
-test-api:
+test-api: wait-for-server test-solana-trades
 	echo "🧪 Testing API endpoints..."
 	curl -s -X POST http://localhost:8080/api/auth/register \
 		-H "Content-Type: application/json" \
@@ -61,4 +89,57 @@ test-api:
 		-d '{"email":"test@example.com","password":"password123"}' | \
 		grep -o '"token":"[^"]*' | cut -d'"' -f4); \
 	curl -s -H "Authorization: Bearer $$TOKEN" http://localhost:8080/api/portfolio
-	echo "\n✅ Tested authenticated endpoints" 
+	echo "\n✅ Tested authenticated endpoints"
+
+# Solana Trade Testing
+test-solana-trades: wait-for-server
+	@echo "🧪 Testing Solana Trade Service..."
+	@echo "1️⃣ Registering test user..."
+	@curl -s -X POST http://localhost:8080/api/auth/register \
+		-H "Content-Type: application/json" \
+		-d '{"username":"solana_trader","email":"trader@example.com","password":"trading123"}'
+	
+	@echo "\n2️⃣ Getting auth token..."
+	@TOKEN=$$(curl -s -X POST http://localhost:8080/api/auth/login \
+		-H "Content-Type: application/json" \
+		-d '{"email":"trader@example.com","password":"trading123"}' | \
+		grep -o '"token":"[^"]*' | cut -d'"' -f4); \
+	\
+	echo "3️⃣ Funding wallet on testnet..."; \
+	curl -s -X POST http://localhost:8080/api/v1/solana/testnet/fund \
+		-H "Authorization: Bearer $$TOKEN" \
+		-H "Content-Type: application/json"; \
+	echo "\n"; \
+	\
+	echo "4️⃣ Preview buy trade for Wrapped SOL..."; \
+	curl -s -X POST http://localhost:8080/api/trades/preview \
+		-H "Content-Type: application/json" \
+		-H "Authorization: Bearer $$TOKEN" \
+		-d '{"coin_id":"So11111111111111111111111111111111111111112","type":"buy","amount":0.1}'; \
+	echo "\n"; \
+	\
+	echo "5️⃣ Execute buy trade for Wrapped SOL..."; \
+	curl -s -X POST http://localhost:8080/api/trades/execute \
+		-H "Content-Type: application/json" \
+		-H "Authorization: Bearer $$TOKEN" \
+		-d '{"coin_id":"So11111111111111111111111111111111111111112","type":"buy","amount":0.1}'; \
+	echo "\n"; \
+	\
+	echo "6️⃣ Preview sell trade for Wrapped SOL..."; \
+	curl -s -X POST http://localhost:8080/api/trades/preview \
+		-H "Content-Type: application/json" \
+		-H "Authorization: Bearer $$TOKEN" \
+		-d '{"coin_id":"So11111111111111111111111111111111111111112","type":"sell","amount":0.05}'; \
+	echo "\n"; \
+	\
+	echo "7️⃣ Execute sell trade for Wrapped SOL..."; \
+	curl -s -X POST http://localhost:8080/api/trades/execute \
+		-H "Content-Type: application/json" \
+		-H "Authorization: Bearer $$TOKEN" \
+		-d '{"coin_id":"So11111111111111111111111111111111111111112","type":"sell","amount":0.05}'; \
+	echo "\n"; \
+	\
+	echo "8️⃣ Check trade history..."; \
+	curl -s -X GET http://localhost:8080/api/trades/history \
+		-H "Authorization: Bearer $$TOKEN"; \
+	echo "\n✅ Completed Solana trade tests" 

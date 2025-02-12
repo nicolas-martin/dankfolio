@@ -1,4 +1,4 @@
-.PHONY: dev test clean install build
+.PHONY: dev test clean install build run-backend test-solana
 
 # Default target
 all: install build
@@ -9,6 +9,11 @@ dev: dev-backend
 dev-backend:
 	cd backend && make dev
 
+# Running Services
+run-backend:
+	@echo "🚀 Starting backend server..."
+	cd backend && make run
+
 # Installation
 install: install-backend
 
@@ -16,10 +21,14 @@ install-backend:
 	cd backend && go mod download
 
 # Testing
-test: test-backend
+test: test-backend test-solana
 
 test-backend:
 	cd backend && make test
+
+test-solana:
+	@echo "🧪 Running Solana integration tests..."
+	cd backend && make test-solana-trades
 
 # Cleaning
 clean: clean-backend
@@ -57,5 +66,7 @@ help:
 	@echo "  make db-up        - Run database migrations"
 	@echo "  make db-down      - Rollback database migrations"
 	@echo "  make test-api     - Test API endpoints"
+	@echo "  make run-backend  - Run the backend server"
+	@echo "  make test-solana  - Run Solana integration tests"
 
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/dankfolio?sslmode=disable 

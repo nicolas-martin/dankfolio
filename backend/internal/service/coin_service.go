@@ -153,13 +153,31 @@ func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpd
 
 func (s *CoinService) GetCoinByID(ctx context.Context, coinID string) (*model.MemeCoin, error) {
 	query := `
+		WITH latest_price AS (
+			SELECT DISTINCT ON (coin_id) 
+				coin_id, 
+				price,
+				market_cap,
+				volume_24h,
+				timestamp
+			FROM price_history
+			WHERE coin_id = $1
+			ORDER BY coin_id, timestamp DESC
+		)
 		SELECT 
-			id, symbol, name, description, 
-			COALESCE(image_url, ''), COALESCE(logo_url, ''),
-			contract_address, price, current_price, change_24h,
-			volume_24h, market_cap, supply, created_at, updated_at
-		FROM meme_coins
-		WHERE id = $1
+			mc.id,
+			mc.symbol,
+			mc.name,
+			mc.contract_address,
+			COALESCE(mc.logo_url, ''),
+			COALESCE(lp.price, mc.price) as current_price,
+			COALESCE(lp.market_cap, mc.market_cap, 0) as market_cap,
+			COALESCE(lp.volume_24h, mc.volume_24h, 0) as volume_24h,
+			mc.created_at,
+			mc.updated_at
+		FROM meme_coins mc
+		LEFT JOIN latest_price lp ON lp.coin_id = mc.id
+		WHERE mc.id = $1
 	`
 
 	coin := &model.MemeCoin{}
@@ -167,16 +185,11 @@ func (s *CoinService) GetCoinByID(ctx context.Context, coinID string) (*model.Me
 		&coin.ID,
 		&coin.Symbol,
 		&coin.Name,
-		&coin.Description,
-		&coin.ImageURL,
-		&coin.LogoURL,
 		&coin.ContractAddress,
-		&coin.Price,
+		&coin.LogoURL,
 		&coin.CurrentPrice,
-		&coin.Change24h,
-		&coin.Volume24h,
 		&coin.MarketCap,
-		&coin.Supply,
+		&coin.Volume24h,
 		&coin.CreatedAt,
 		&coin.UpdatedAt,
 	)

@@ -23,6 +23,7 @@ type Router struct {
 	portfolioService *service.PortfolioService
 	walletService    *service.WalletService
 	wsService        *service.WebSocketService
+	solanaService    *service.SolanaTradeService
 	redisClient      *redis.Client
 }
 
@@ -34,6 +35,7 @@ func NewRouter(
 	ps *service.PortfolioService,
 	ws *service.WalletService,
 	wss *service.WebSocketService,
+	ss *service.SolanaTradeService,
 	redisClient *redis.Client,
 ) *Router {
 	return &Router{
@@ -44,6 +46,7 @@ func NewRouter(
 		portfolioService: ps,
 		walletService:    ws,
 		wsService:        wss,
+		solanaService:    ss,
 		redisClient:      redisClient,
 	}
 }
@@ -73,6 +76,12 @@ func (r *Router) Setup() http.Handler {
 	// API Documentation
 	r.setupSwagger(router)
 
+	// Health check endpoint
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	// Public routes
 	router.Group(func(router chi.Router) {
 		router.Use(cache.Cache)
@@ -97,6 +106,10 @@ func (r *Router) Setup() http.Handler {
 		router.Post("/api/trades/preview", r.handlePreviewTrade())
 		router.Post("/api/trades/execute", r.handleExecuteTrade())
 		router.Get("/api/trades/history", r.handleGetTradeHistory())
+
+		// Solana Trading
+		router.Get("/api/v1/solana/coins/trading-pairs", r.handleGetSolanaTradingPairs())
+		router.Post("/api/v1/solana/testnet/fund", r.handleTestnetFunding())
 
 		// Portfolio
 		router.Get("/api/portfolio", r.handleGetPortfolio())

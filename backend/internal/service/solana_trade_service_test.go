@@ -33,10 +33,44 @@ func skipIfAirdropLimitReached(t *testing.T, err error) {
 	}
 }
 
-func TestSolanaTradeService_Integration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
+// verifyTestnetConnection verifies that we are connected to testnet
+func verifyTestnetConnection(ctx context.Context, client *rpc.Client) error {
+	// Get the genesis hash which is unique to each network
+	genesis, err := client.GetGenesisHash(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get genesis hash: %w", err)
 	}
+
+	// Testnet genesis hash - this should be updated if testnet is reset
+	// You can get the current testnet genesis hash by running: solana genesis-hash --url testnet
+	expectedGenesisHash := "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY"
+	if genesis.String() != expectedGenesisHash {
+		return fmt.Errorf("not connected to testnet. Expected genesis hash %s, got %s", expectedGenesisHash, genesis.String())
+	}
+	return nil
+}
+
+// verifyWalletFunding verifies that the wallet has sufficient funds for testing
+func verifyWalletFunding(ctx context.Context, client *rpc.Client, wallet solana.PublicKey) error {
+	balanceResult, err := client.GetBalance(
+		ctx,
+		wallet,
+		rpc.CommitmentFinalized,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to get wallet balance: %w", err)
+	}
+
+	// Require at least 1 SOL for testing
+	minBalance := uint64(1_000_000_000) // 1 SOL in lamports
+	if balanceResult.Value < minBalance {
+		return fmt.Errorf("insufficient wallet balance for testing. Required: %d lamports, got: %d", minBalance, balanceResult.Value)
+	}
+	return nil
+}
+
+func setupTestEnvironment(t *testing.T) (*SolanaTradeService, *solana.Wallet, error) {
+	ctx := context.Background()
 
 	// Initialize service with testnet configuration
 	service, err := NewSolanaTradeService(
@@ -44,19 +78,46 @@ func TestSolanaTradeService_Integration(t *testing.T) {
 		testnetWSEndpoint,
 		testProgramID,
 		testPoolWallet,
+		nil, // We don't need DB for these tests
 	)
-	require.NoError(t, err)
-	require.NotNil(t, service)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create service: %w", err)
+	}
+
+	// Verify testnet connection
+	if err := verifyTestnetConnection(ctx, service.client); err != nil {
+		return nil, nil, fmt.Errorf("testnet verification failed: %w", err)
+	}
 
 	// Create a test wallet
 	testWallet := solana.NewWallet()
-	require.NotNil(t, testWallet)
 
 	// Request airdrop for test wallet
-	ctx := context.Background()
 	err = requestTestnetAirdrop(t, service.client, testWallet.PublicKey())
 	skipIfAirdropLimitReached(t, err)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fund test wallet: %w", err)
+	}
+
+	// Verify wallet funding
+	if err := verifyWalletFunding(ctx, service.client, testWallet.PublicKey()); err != nil {
+		return nil, nil, fmt.Errorf("wallet funding verification failed: %w", err)
+	}
+
+	return service, testWallet, nil
+}
+
+func TestSolanaTradeService_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	service, testWallet, err := setupTestEnvironment(t)
+	if err != nil {
+		t.Fatalf("Failed to setup test environment: %v", err)
+	}
+	require.NotNil(t, service)
 
 	// Create a test trade
 	trade := &model.Trade{
@@ -86,24 +147,11 @@ func TestSolanaTradeService_CreateAssociatedTokenAccount(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	// Initialize service with testnet configuration
-	service, err := NewSolanaTradeService(
-		testnetRPCEndpoint,
-		testnetWSEndpoint,
-		testProgramID,
-		testPoolWallet,
-	)
-	require.NoError(t, err)
-
-	// Create a test wallet
-	testWallet := solana.NewWallet()
-	require.NotNil(t, testWallet)
-
-	// Request airdrop for test wallet
 	ctx := context.Background()
-	err = requestTestnetAirdrop(t, service.client, testWallet.PublicKey())
-	skipIfAirdropLimitReached(t, err)
-	require.NoError(t, err)
+	service, testWallet, err := setupTestEnvironment(t)
+	if err != nil {
+		t.Fatalf("Failed to setup test environment: %v", err)
+	}
 
 	// Create a test trade with a new token
 	trade := &model.Trade{
@@ -158,17 +206,11 @@ func TestSolanaTradeService_InvalidTrades(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	// Initialize service with testnet configuration
-	service, err := NewSolanaTradeService(
-		testnetRPCEndpoint,
-		testnetWSEndpoint,
-		testProgramID,
-		testPoolWallet,
-	)
-	require.NoError(t, err)
-
 	ctx := context.Background()
-	testWallet := solana.NewWallet()
+	service, testWallet, err := setupTestEnvironment(t)
+	if err != nil {
+		t.Fatalf("Failed to setup test environment: %v", err)
+	}
 
 	// Test invalid coin ID first, before any blockchain interaction
 	invalidTrade := &model.Trade{
@@ -188,11 +230,6 @@ func TestSolanaTradeService_InvalidTrades(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "invalid coin ID")
 	require.Nil(t, instruction)
-
-	// Request airdrop for subsequent tests
-	err = requestTestnetAirdrop(t, service.client, testWallet.PublicKey())
-	skipIfAirdropLimitReached(t, err)
-	require.NoError(t, err)
 
 	// Test insufficient balance with valid coin ID
 	insufficientTrade := &model.Trade{

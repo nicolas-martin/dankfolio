@@ -2,14 +2,17 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
 	associatedtoken "github.com/gagliardetto/solana-go/programs/associated-token-account"
+	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
@@ -19,10 +22,11 @@ type SolanaTradeService struct {
 	wsClient   *ws.Client
 	programID  solana.PublicKey
 	poolWallet solana.PublicKey
+	db         db.DB
 }
 
 // NewSolanaTradeService creates a new instance of SolanaTradeService
-func NewSolanaTradeService(rpcEndpoint string, wsEndpoint string, programID string, poolWallet string) (*SolanaTradeService, error) {
+func NewSolanaTradeService(rpcEndpoint string, wsEndpoint string, programID string, poolWallet string, db db.DB) (*SolanaTradeService, error) {
 	client := rpc.New(rpcEndpoint)
 	wsClient, err := ws.Connect(context.Background(), wsEndpoint)
 	if err != nil {
@@ -44,13 +48,14 @@ func NewSolanaTradeService(rpcEndpoint string, wsEndpoint string, programID stri
 		wsClient:   wsClient,
 		programID:  programPubkey,
 		poolWallet: poolPubkey,
+		db:         db,
 	}, nil
 }
 
 // ExecuteTrade executes a trade on the Solana blockchain
 func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trade, userWallet solana.PublicKey) error {
 	// Get recent blockhash for transaction
-	recent, err := s.client.GetRecentBlockhash(ctx, rpc.CommitmentFinalized)
+	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
@@ -85,15 +90,42 @@ func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trad
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	// Sign transaction (in production, this would be done by the user's wallet)
-	// Here we're just returning the serialized transaction
+	// Get the user's private key from the database
+	var privateKeyStr string
+	err = s.db.QueryRow(ctx, `
+		SELECT private_key
+		FROM wallets
+		WHERE user_id = $1
+	`, trade.UserID).Scan(&privateKeyStr)
+	if err != nil {
+		return fmt.Errorf("failed to get user's private key: %w", err)
+	}
+
+	// Convert private key string to Solana private key
+	privateKey, err := solana.PrivateKeyFromBase58(privateKeyStr)
+	if err != nil {
+		return fmt.Errorf("invalid private key: %w", err)
+	}
+
+	// Sign transaction
+	tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
+		if key.Equals(userWallet) {
+			return &privateKey
+		}
+		return nil
+	})
+
+	// Serialize and encode transaction
 	serializedTx, err := tx.MarshalBinary()
 	if err != nil {
 		return fmt.Errorf("failed to serialize transaction: %w", err)
 	}
 
+	// Base64 encode the transaction
+	encodedTx := base64.StdEncoding.EncodeToString(serializedTx)
+
 	// Submit transaction
-	sig, err := s.client.SendEncodedTransaction(ctx, string(serializedTx))
+	sig, err := s.client.SendEncodedTransaction(ctx, encodedTx)
 	if err != nil {
 		return fmt.Errorf("failed to submit transaction: %w", err)
 	}
@@ -125,11 +157,7 @@ func (s *SolanaTradeService) createAssociatedTokenAccountInstruction(ctx context
 
 	// Check if account exists
 	account, err := s.client.GetAccountInfo(ctx, ata)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get account info: %w", err)
-	}
-
-	if account == nil {
+	if err != nil || account == nil {
 		// Create ATA instruction using SPL Token program
 		instruction := associatedtoken.NewCreateInstruction(
 			userWallet,
@@ -149,7 +177,22 @@ func (s *SolanaTradeService) createTradeInstruction(trade *model.Trade, userWall
 		return nil, fmt.Errorf("invalid coin ID: %w", err)
 	}
 
-	// Get associated token accounts
+	// Convert amount to lamports (smallest unit)
+	amountLamports := uint64(trade.Amount * 1e9) // Convert SOL to lamports
+
+	// Check if this is a native SOL trade
+	isNativeSOL := mint.Equals(solana.SolMint)
+
+	if isNativeSOL {
+		// For native SOL, use system program transfer
+		return system.NewTransferInstruction(
+			amountLamports,
+			userWallet,
+			s.poolWallet,
+		).Build(), nil
+	}
+
+	// For token trades
 	userATA, _, err := solana.FindAssociatedTokenAddress(userWallet, mint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find user token address: %w", err)
@@ -160,24 +203,23 @@ func (s *SolanaTradeService) createTradeInstruction(trade *model.Trade, userWall
 		return nil, fmt.Errorf("failed to find pool token address: %w", err)
 	}
 
-	// Create instruction data
-	data := []byte{
-		0x00, // instruction index for trade
+	if trade.Type == "buy" {
+		// For buy trades, transfer SOL from user to pool
+		return system.NewTransferInstruction(
+			amountLamports,
+			userWallet,
+			s.poolWallet,
+		).Build(), nil
+	} else {
+		// For sell trades, transfer tokens from user to pool
+		return token.NewTransferInstruction(
+			amountLamports,
+			userATA,
+			poolATA,
+			userWallet,
+			[]solana.PublicKey{},
+		).Build(), nil
 	}
-	data = append(data, uint64ToBytes(uint64(trade.Amount))...)
-	data = append(data, uint64ToBytes(uint64(trade.Price))...)
-
-	// Create instruction
-	accounts := solana.AccountMetaSlice{
-		{PublicKey: userWallet, IsWritable: true, IsSigner: true},
-		{PublicKey: userATA, IsWritable: true, IsSigner: false},
-		{PublicKey: s.poolWallet, IsWritable: true, IsSigner: false},
-		{PublicKey: poolATA, IsWritable: true, IsSigner: false},
-		{PublicKey: mint, IsWritable: false, IsSigner: false},
-		{PublicKey: token.ProgramID, IsWritable: false, IsSigner: false},
-	}
-
-	return solana.NewInstruction(s.programID, accounts, data), nil
 }
 
 // waitForSignatureConfirmation waits for a transaction to be confirmed
@@ -214,4 +256,9 @@ func uint64ToBytes(n uint64) []byte {
 		b[i] = byte(n >> (i * 8))
 	}
 	return b
+}
+
+// GetClient returns the RPC client for direct blockchain interactions
+func (s *SolanaTradeService) GetClient() *rpc.Client {
+	return s.client
 }

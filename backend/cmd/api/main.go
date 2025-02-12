@@ -33,8 +33,8 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	// Wrap pgxpool.Pool with db.PgxPool
-	dbWrapper := db.NewPgxPool(dbPool)
+	// Initialize database wrapper
+	dbWrapper := db.NewDB(dbPool)
 
 	// Initialize Redis client
 	redisClient := redis.NewClient(&redis.Options{
@@ -56,6 +56,7 @@ func main() {
 		cfg.SolanaWSEndpoint,
 		cfg.SolanaProgramID,
 		cfg.SolanaPoolWallet,
+		dbWrapper,
 	)
 	if err != nil {
 		logger.Fatal(context.Background(), "Failed to initialize Solana trade service", zap.Error(err))
