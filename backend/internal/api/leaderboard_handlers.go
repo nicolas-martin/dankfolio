@@ -36,14 +36,14 @@ func (h *LeaderboardHandlers) GetLeaderboard(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *LeaderboardHandlers) GetUserRank(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserID(r.Context())
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		http.Error(w, "User not found in context", http.StatusUnauthorized)
 		return
 	}
 
 	timeframe := chi.URLParam(r, "timeframe")
-	rank, err := h.leaderboardService.GetUserRank(r.Context(), user.ID, timeframe)
+	rank, err := h.leaderboardService.GetUserRank(r.Context(), userID, timeframe)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

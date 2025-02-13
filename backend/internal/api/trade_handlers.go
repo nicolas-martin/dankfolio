@@ -31,14 +31,14 @@ func (h *TradeHandlers) PreviewTrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, ok := GetUserID(r.Context())
-	if !ok {
+	userID := r.Context().Value("user_id").(string)
+	if userID == "" {
 		http.Error(w, "User not found in context", http.StatusUnauthorized)
 		return
 	}
 
 	preview, err := h.tradeService.PreviewTrade(r.Context(), model.TradeRequest{
-		UserID: user.ID,
+		UserID: userID,
 		CoinID: req.CoinID,
 		Type:   req.Type,
 		Amount: req.Amount,
@@ -58,14 +58,14 @@ func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, ok := GetUserID(r.Context())
-	if !ok {
+	userID := r.Context().Value("user_id").(string)
+	if userID == "" {
 		http.Error(w, "User not found in context", http.StatusUnauthorized)
 		return
 	}
 
 	trade, err := h.tradeService.ExecuteTrade(r.Context(), model.TradeRequest{
-		UserID: user.ID,
+		UserID: userID,
 		CoinID: req.CoinID,
 		Type:   req.Type,
 		Amount: req.Amount,
@@ -79,13 +79,13 @@ func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TradeHandlers) GetTradeHistory(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserID(r.Context())
-	if !ok {
+	userID := r.Context().Value("user_id").(string)
+	if userID == "" {
 		http.Error(w, "User not found in context", http.StatusUnauthorized)
 		return
 	}
 
-	trades, err := h.tradeService.GetTradeHistory(r.Context(), user.ID)
+	trades, err := h.tradeService.GetTradeHistory(r.Context(), userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

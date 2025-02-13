@@ -33,17 +33,35 @@ func (s *TradeService) PreviewTrade(ctx context.Context, req model.TradeRequest)
 		return nil, fmt.Errorf("failed to get coin: %w", err)
 	}
 
+	// Get user wallet for balance check
+	userWallet, err := s.walletService.GetWallet(ctx, req.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user wallet: %w", err)
+	}
+
 	// Calculate trade details
 	amount := req.Amount
 	price := coin.CurrentPrice
 	fee := calculateTradeFee(amount, price)
 	slippage := calculateSlippage(amount, coin.Volume24h)
 
-	finalAmount := amount
+	// Calculate final amount and validate balance
+	totalCost := amount * price
 	if req.Type == "buy" {
-		finalAmount = amount - fee
+		if userWallet.Balance < totalCost+fee {
+			return nil, fmt.Errorf("insufficient balance for trade")
+		}
+		amount = amount - fee
 	} else {
-		finalAmount = amount + fee
+		// For sell trades, check token balance
+		tokenBalance, err := s.solanaService.GetTokenBalance(ctx, userWallet.PublicKey, req.CoinID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get token balance: %w", err)
+		}
+		if float64(tokenBalance) < amount {
+			return nil, fmt.Errorf("insufficient token balance for trade")
+		}
+		amount = amount - fee
 	}
 
 	return &model.TradePreview{
@@ -53,8 +71,8 @@ func (s *TradeService) PreviewTrade(ctx context.Context, req model.TradeRequest)
 		Price:       price,
 		Fee:         fee,
 		Slippage:    slippage,
-		FinalAmount: finalAmount,
-		TotalCost:   amount * price,
+		FinalAmount: amount,
+		TotalCost:   totalCost,
 	}, nil
 }
 
@@ -91,6 +109,17 @@ func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest)
 		CreatedAt:  time.Now(),
 	}
 
+	// For buy trades, ensure ATA exists
+	if req.Type == "buy" {
+		// Create ATA if it doesn't exist
+		err = s.solanaService.CreateAssociatedTokenAccountIfNeeded(ctx, trade, pubKey)
+		if err != nil {
+			trade.Status = "failed"
+			_ = s.tradeRepo.ExecuteTradeTransaction(ctx, trade)
+			return nil, fmt.Errorf("failed to create associated token account: %w", err)
+		}
+	}
+
 	// Execute trade on blockchain
 	err = s.solanaService.ExecuteTrade(ctx, trade, pubKey)
 	if err != nil {
@@ -104,7 +133,7 @@ func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest)
 	trade.CompletedAt = time.Now()
 	err = s.tradeRepo.ExecuteTradeTransaction(ctx, trade)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to save trade: %w", err)
 	}
 
 	return trade, nil

@@ -282,17 +282,26 @@ func (r *coinRepository) GetCoinPriceHistory(ctx context.Context, coinID string,
 func (r *coinRepository) UpsertCoin(ctx context.Context, coin model.MemeCoin) error {
 	query := `
 		INSERT INTO meme_coins (
-			id, symbol, name, contract_address, description,
-			logo_url, website_url, price, current_price,
-			change_24h, volume_24h, market_cap, supply,
-			labels, socials,
-			created_at, updated_at
+			id,
+			symbol,
+			name,
+			contract_address,
+			description,
+			logo_url,
+			website_url,
+			image_url,
+			price,
+			current_price,
+			change_24h,
+			volume_24h,
+			market_cap,
+			supply,
+			labels,
+			socials,
+			created_at,
+			updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5,
-			$6, $7, $8, $9,
-			$10, $11, $12, $13,
-			$14, $15,
-			$16, $17
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
 		)
 		ON CONFLICT (id) DO UPDATE SET
 			symbol = EXCLUDED.symbol,
@@ -301,6 +310,7 @@ func (r *coinRepository) UpsertCoin(ctx context.Context, coin model.MemeCoin) er
 			description = EXCLUDED.description,
 			logo_url = EXCLUDED.logo_url,
 			website_url = EXCLUDED.website_url,
+			image_url = EXCLUDED.image_url,
 			price = EXCLUDED.price,
 			current_price = EXCLUDED.current_price,
 			change_24h = EXCLUDED.change_24h,
@@ -320,6 +330,7 @@ func (r *coinRepository) UpsertCoin(ctx context.Context, coin model.MemeCoin) er
 		coin.Description,
 		coin.LogoURL,
 		coin.WebsiteURL,
+		coin.ImageURL,
 		coin.Price,
 		coin.CurrentPrice,
 		coin.Change24h,

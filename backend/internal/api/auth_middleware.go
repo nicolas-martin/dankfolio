@@ -11,15 +11,19 @@ import (
 
 type contextKey string
 
-const userIDKey contextKey = "userID"
+const (
+	userIDKey contextKey = "user_id"
+	userKey   contextKey = "user"
+)
 
 func WithUserID(ctx context.Context, user *model.User) context.Context {
-	return context.WithValue(ctx, userIDKey, user)
+	ctx = context.WithValue(ctx, userKey, user)
+	return context.WithValue(ctx, userIDKey, user.ID)
 }
 
-func GetUserID(ctx context.Context) (*model.User, bool) {
-	user, ok := ctx.Value(userIDKey).(*model.User)
-	return user, ok
+func GetUserID(ctx context.Context) (string, bool) {
+	userID, ok := ctx.Value(userIDKey).(string)
+	return userID, ok
 }
 
 func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Handler {
@@ -44,7 +48,7 @@ func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Ha
 				return
 			}
 
-			// Add user ID to request context
+			// Add user and user ID to request context
 			ctx := WithUserID(r.Context(), user)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

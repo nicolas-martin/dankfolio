@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
 	associatedtoken "github.com/gagliardetto/solana-go/programs/associated-token-account"
+	computebudget "github.com/gagliardetto/solana-go/programs/compute-budget"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
@@ -16,13 +18,24 @@ import (
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
+var (
+	// Default compute unit limits for transactions
+	defaultComputeUnitLimit uint32 = 70000
+	// Error definitions
+	ErrInvalidCoin = errors.New("invalid coin")
+	ErrATAFailure  = errors.New("failed to handle associated token account")
+)
+
 // SolanaTradeService handles the execution of trades on the Solana blockchain
 type SolanaTradeService struct {
-	client     *rpc.Client
-	wsClient   *ws.Client
-	programID  solana.PublicKey
-	poolWallet solana.PublicKey
-	db         db.DB
+	client           *rpc.Client
+	wsClient         *ws.Client
+	programID        solana.PublicKey
+	poolWallet       solana.PublicKey
+	db               db.DB
+	computeUnitLimit uint32
+	feeMicroLamports uint64
+	skipATALookup    bool
 }
 
 // NewSolanaTradeService creates a new instance of SolanaTradeService
@@ -44,26 +57,71 @@ func NewSolanaTradeService(rpcEndpoint string, wsEndpoint string, programID stri
 	}
 
 	return &SolanaTradeService{
-		client:     client,
-		wsClient:   wsClient,
-		programID:  programPubkey,
-		poolWallet: poolPubkey,
-		db:         db,
+		client:           client,
+		wsClient:         wsClient,
+		programID:        programPubkey,
+		poolWallet:       poolPubkey,
+		db:               db,
+		computeUnitLimit: defaultComputeUnitLimit,
+		feeMicroLamports: 0,     // Default to 0, can be set via method
+		skipATALookup:    false, // Default to false, can be set via method
 	}, nil
+}
+
+// SetComputeUnitLimit sets the compute unit limit for transactions
+func (s *SolanaTradeService) SetComputeUnitLimit(limit uint32) {
+	s.computeUnitLimit = limit
+}
+
+// SetFeeMicroLamports sets the fee in micro lamports for transactions
+func (s *SolanaTradeService) SetFeeMicroLamports(fee uint64) {
+	s.feeMicroLamports = fee
+}
+
+// SetSkipATALookup sets whether to skip ATA lookup
+func (s *SolanaTradeService) SetSkipATALookup(skip bool) {
+	s.skipATALookup = skip
 }
 
 // ExecuteTrade executes a trade on the Solana blockchain
 func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trade, userWallet solana.PublicKey) error {
+	if trade == nil {
+		return ErrInvalidCoin
+	}
+
 	// Get recent blockhash for transaction
 	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
 	if err != nil {
 		return fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
 
-	// Create token account instruction if buying
-	var instructions []solana.Instruction
-	if trade.Type == "buy" {
-		// Create associated token account for user if it doesn't exist
+	// Create compute budget instructions
+	culInst := computebudget.NewSetComputeUnitLimitInstruction(s.computeUnitLimit)
+	cupInst := computebudget.NewSetComputeUnitPriceInstruction(s.feeMicroLamports)
+
+	// Initialize instructions array with compute budget instructions
+	instructions := []solana.Instruction{
+		culInst.Build(),
+		cupInst.Build(),
+	}
+
+	// Handle ATA creation if needed
+	var shouldCreateATA bool
+	if s.skipATALookup {
+		shouldCreateATA = true
+	} else {
+		ata, _, err := solana.FindAssociatedTokenAddress(userWallet, solana.MustPublicKeyFromBase58(trade.CoinID))
+		if err != nil {
+			return fmt.Errorf("failed to find associated token address: %w", err)
+		}
+
+		// Check if account exists
+		account, err := s.client.GetAccountInfo(ctx, ata)
+		shouldCreateATA = (err != nil || account == nil)
+	}
+
+	// Create ATA instruction if needed
+	if shouldCreateATA {
 		ataInstruction, err := s.createAssociatedTokenAccountInstruction(ctx, trade, userWallet)
 		if err != nil {
 			return fmt.Errorf("failed to create ATA instruction: %w", err)
@@ -130,14 +188,17 @@ func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trad
 		return fmt.Errorf("failed to submit transaction: %w", err)
 	}
 
-	// Wait for confirmation
+	// Wait for confirmation with improved error handling
 	confirmed, err := s.waitForSignatureConfirmation(ctx, sig)
 	if err != nil {
-		return fmt.Errorf("failed to confirm transaction: %w", err)
+		if err == context.DeadlineExceeded {
+			return fmt.Errorf("transaction confirmation timeout: %s", sig.String())
+		}
+		return fmt.Errorf("transaction failed: %w", err)
 	}
 
 	if !confirmed {
-		return fmt.Errorf("transaction failed to confirm")
+		return fmt.Errorf("transaction failed to confirm: %s", sig.String())
 	}
 
 	return nil
@@ -261,4 +322,138 @@ func uint64ToBytes(n uint64) []byte {
 // GetClient returns the RPC client for direct blockchain interactions
 func (s *SolanaTradeService) GetClient() *rpc.Client {
 	return s.client
+}
+
+// GetTokenBalance gets the token balance for a specific token account
+func (s *SolanaTradeService) GetTokenBalance(ctx context.Context, walletAddress string, tokenMint string) (uint64, error) {
+	pubKey, err := solana.PublicKeyFromBase58(walletAddress)
+	if err != nil {
+		return 0, fmt.Errorf("invalid wallet address: %w", err)
+	}
+
+	mint, err := solana.PublicKeyFromBase58(tokenMint)
+	if err != nil {
+		return 0, fmt.Errorf("invalid token mint: %w", err)
+	}
+
+	ata, _, err := solana.FindAssociatedTokenAddress(pubKey, mint)
+	if err != nil {
+		return 0, fmt.Errorf("failed to find associated token address: %w", err)
+	}
+
+	account, err := s.client.GetTokenAccountBalance(ctx, ata, rpc.CommitmentFinalized)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get token balance: %w", err)
+	}
+
+	var balance uint64
+	_, err = fmt.Sscanf(account.Value.Amount, "%d", &balance)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse token amount: %w", err)
+	}
+
+	return balance, nil
+}
+
+// CreateAssociatedTokenAccountIfNeeded creates an ATA if it doesn't exist
+func (s *SolanaTradeService) CreateAssociatedTokenAccountIfNeeded(ctx context.Context, trade *model.Trade, userWallet solana.PublicKey) error {
+	mint, err := solana.PublicKeyFromBase58(trade.CoinID)
+	if err != nil {
+		return fmt.Errorf("invalid coin ID: %w", err)
+	}
+
+	ata, _, err := solana.FindAssociatedTokenAddress(userWallet, mint)
+	if err != nil {
+		return fmt.Errorf("failed to find associated token address: %w", err)
+	}
+
+	// Check if account exists
+	account, err := s.client.GetAccountInfo(ctx, ata)
+	if err == nil && account != nil {
+		// ATA already exists
+		return nil
+	}
+
+	// Get recent blockhash
+	recent, err := s.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return fmt.Errorf("failed to get recent blockhash: %w", err)
+	}
+
+	// Create compute budget instructions
+	culInst := computebudget.NewSetComputeUnitLimitInstruction(s.computeUnitLimit)
+	cupInst := computebudget.NewSetComputeUnitPriceInstruction(s.feeMicroLamports)
+
+	// Create ATA instruction
+	ataInstruction := associatedtoken.NewCreateInstruction(
+		userWallet,
+		userWallet,
+		mint,
+	).Build()
+
+	// Build transaction
+	tx, err := solana.NewTransaction(
+		[]solana.Instruction{
+			culInst.Build(),
+			cupInst.Build(),
+			ataInstruction,
+		},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(userWallet),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	// Get the user's private key from the database
+	var privateKeyStr string
+	err = s.db.QueryRow(ctx, `
+		SELECT private_key
+		FROM wallets
+		WHERE user_id = $1
+	`, trade.UserID).Scan(&privateKeyStr)
+	if err != nil {
+		return fmt.Errorf("failed to get user's private key: %w", err)
+	}
+
+	// Convert private key string to Solana private key
+	privateKey, err := solana.PrivateKeyFromBase58(privateKeyStr)
+	if err != nil {
+		return fmt.Errorf("invalid private key: %w", err)
+	}
+
+	// Sign transaction
+	tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
+		if key.Equals(userWallet) {
+			return &privateKey
+		}
+		return nil
+	})
+
+	// Serialize and encode transaction
+	serializedTx, err := tx.MarshalBinary()
+	if err != nil {
+		return fmt.Errorf("failed to serialize transaction: %w", err)
+	}
+
+	// Base64 encode the transaction
+	encodedTx := base64.StdEncoding.EncodeToString(serializedTx)
+
+	// Submit transaction
+	sig, err := s.client.SendEncodedTransaction(ctx, encodedTx)
+	if err != nil {
+		return fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	// Wait for confirmation
+	confirmed, err := s.waitForSignatureConfirmation(ctx, sig)
+	if err != nil {
+		return fmt.Errorf("failed to confirm transaction: %w", err)
+	}
+
+	if !confirmed {
+		return fmt.Errorf("transaction failed to confirm")
+	}
+
+	return nil
 }

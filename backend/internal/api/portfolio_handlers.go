@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
@@ -17,13 +18,13 @@ func NewPortfolioHandlers(portfolioService service.PortfolioService) *PortfolioH
 }
 
 func (h *PortfolioHandlers) GetPortfolioStats(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserID(r.Context())
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		http.Error(w, "User not found in context", http.StatusUnauthorized)
 		return
 	}
 
-	stats, err := h.portfolioService.GetPortfolioStats(r.Context(), user.ID)
+	stats, err := h.portfolioService.GetPortfolioStats(r.Context(), userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -32,19 +33,35 @@ func (h *PortfolioHandlers) GetPortfolioStats(w http.ResponseWriter, r *http.Req
 	respondJSON(w, http.StatusOK, stats)
 }
 
-func (h *PortfolioHandlers) GetPortfolioHistory(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserID(r.Context())
+func (h *PortfolioHandlers) GetPortfolio(w http.ResponseWriter, r *http.Request) {
+	userID, ok := GetUserID(r.Context())
 	if !ok {
-		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		respondError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	timeframe := r.URL.Query().Get("timeframe")
+	portfolio, err := h.portfolioService.GetPortfolioStats(r.Context(), userID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, portfolio)
+}
+
+func (h *PortfolioHandlers) GetPortfolioHistory(w http.ResponseWriter, r *http.Request) {
+	userID, ok := GetUserID(r.Context())
+	if !ok {
+		respondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	timeframe := chi.URLParam(r, "timeframe")
 	if timeframe == "" {
 		timeframe = "24h"
 	}
 
-	history, err := h.portfolioService.GetPortfolioHistory(r.Context(), user.ID, timeframe)
+	history, err := h.portfolioService.GetPortfolioHistory(r.Context(), userID, timeframe)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

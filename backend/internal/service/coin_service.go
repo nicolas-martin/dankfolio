@@ -93,6 +93,31 @@ func NewCoinService(repo repository.CoinRepository) *CoinService {
 	}
 }
 
+// InitializeTestData initializes test data for development and testing
+func (s *CoinService) InitializeTestData(ctx context.Context) error {
+	// Initialize Wrapped SOL data
+	wrappedSOL := model.MemeCoin{
+		ID:              "So11111111111111111111111111111111111111112",
+		Symbol:          "wSOL",
+		Name:            "Wrapped SOL",
+		Description:     "Wrapped SOL token for Solana DeFi",
+		ContractAddress: "So11111111111111111111111111111111111111112",
+		Price:           100.0, // Example price in USD
+		CurrentPrice:    100.0,
+		Change24h:       1.0,
+		Volume24h:       1000000.0,
+		MarketCap:       10000000000.0,
+		Supply:          10000000.0,
+		Labels:          []string{"defi", "wrapped"},
+		Socials:         []model.SocialLink{},
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+	}
+
+	// Store in repository
+	return s.repo.UpsertCoin(ctx, wrappedSOL)
+}
+
 // fetchDexScreenerData fetches meme coin data from DexScreener API
 func (s *CoinService) fetchDexScreenerData(ctx context.Context, search string) ([]model.MemePair, error) {
 	url := fmt.Sprintf("%s/latest/dex/search?q=%s/SOL", dexscreenerBaseURL, search)

@@ -75,3 +75,13 @@
 - Version control all migration files and track their deployment status
 - Back up data before running migrations in production
 - Test migrations on staging environment before production deployment
+
+// Project specific rules
+- The postgres data base should run in a docker, not locally
+- There should be 2 distinct postgres instances running in the docker. Port 5432 is the normal one 5434 is the test db
+- Only write 1 migration script for now since we have not released it in production. Keep it simple.
+- When modifying the model make sure the migration scripts are also updated
+- When writing test run the tests and fix any issues that comes up.
+- Use a lot of emojis in your responses
+- To run the backend always use the makefile in `./backend/Makefile run` or using the root makefile `./Makefile run-backend` 
+- Any interaction with the database should be done through a repository. When needed that repository interface should be injected in the consumer.

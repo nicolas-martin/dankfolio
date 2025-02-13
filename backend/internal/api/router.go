@@ -17,6 +17,7 @@ type Router struct {
 	leaderboardService *service.LeaderboardService
 	wsService          service.WebsocketService
 	coinService        *service.CoinService
+	tradeService       *service.TradeService
 }
 
 func NewRouter(
@@ -27,6 +28,7 @@ func NewRouter(
 	leaderboardService *service.LeaderboardService,
 	wsService service.WebsocketService,
 	coinService *service.CoinService,
+	tradeService *service.TradeService,
 ) *Router {
 	r := &Router{
 		router:             chi.NewRouter(),
@@ -37,6 +39,7 @@ func NewRouter(
 		leaderboardService: leaderboardService,
 		wsService:          wsService,
 		coinService:        coinService,
+		tradeService:       tradeService,
 	}
 
 	r.setupRoutes()
@@ -97,13 +100,13 @@ func (r *Router) setupRoutes() {
 
 			// Coin routes
 			coinHandlers := NewCoinHandlers(r.coinService)
-			router.Route("/coins", func(r chi.Router) {
-				r.Post("/fetch", coinHandlers.FetchCoins)
-				r.Get("/top", coinHandlers.GetTopCoins)
-				r.Get("/contract/{address}", coinHandlers.GetCoinByContractAddress)
-				r.Get("/{id}/history", coinHandlers.GetCoinPriceHistory)
-				r.Get("/{id}", coinHandlers.GetCoinByID)
-			})
+			coinHandlers.RegisterRoutes(router)
+
+			// Trade routes
+			tradeHandlers := NewTradeHandlers(r.tradeService)
+			router.Post("/trades/preview", tradeHandlers.PreviewTrade)
+			router.Post("/trades/execute", tradeHandlers.ExecuteTrade)
+			router.Get("/trades/history", tradeHandlers.GetTradeHistory)
 		})
 	})
 }

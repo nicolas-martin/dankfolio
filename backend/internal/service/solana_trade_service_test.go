@@ -76,7 +76,9 @@ func verifyWalletFunding(ctx context.Context, client *rpc.Client, wallet solana.
 }
 
 // mockDB implements the db.DB interface for testing
-type mockDB struct{}
+type mockDB struct {
+	testWallet *solana.Wallet // Added to store test wallet for private key retrieval
+}
 
 func (m *mockDB) Begin(ctx context.Context) (pgx.Tx, error) {
 	return nil, nil
@@ -91,14 +93,36 @@ func (m *mockDB) Query(ctx context.Context, sql string, args ...interface{}) (pg
 }
 
 func (m *mockDB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	return nil
+	// Check if this is a private key query
+	if strings.Contains(strings.ToLower(sql), "private_key") {
+		return &mockRow{privateKey: m.testWallet.PrivateKey.String()}
+	}
+	return &mockRow{}
+}
+
+// mockRow implements pgx.Row for testing
+type mockRow struct {
+	privateKey string
+}
+
+func (m *mockRow) Scan(dest ...interface{}) error {
+	if len(dest) > 0 {
+		if strPtr, ok := dest[0].(*string); ok && m.privateKey != "" {
+			*strPtr = m.privateKey
+			return nil
+		}
+	}
+	return fmt.Errorf("no data available")
 }
 
 func setupTestEnvironment(t *testing.T) (*SolanaTradeService, *solana.Wallet, error) {
 	ctx := context.Background()
 
-	// Initialize service with testnet configuration and mock DB
-	mockDB := &mockDB{}
+	// Create test wallet first
+	testWallet := solana.NewWallet()
+
+	// Initialize service with testnet configuration and mock DB with test wallet
+	mockDB := &mockDB{testWallet: testWallet}
 	service, err := NewSolanaTradeService(
 		testnetRPCEndpoint,
 		testnetWSEndpoint,
@@ -114,9 +138,6 @@ func setupTestEnvironment(t *testing.T) (*SolanaTradeService, *solana.Wallet, er
 	if err := verifyTestnetConnection(ctx, service.client); err != nil {
 		return nil, nil, fmt.Errorf("testnet verification failed: %w", err)
 	}
-
-	// Create a test wallet
-	testWallet := solana.NewWallet()
 
 	// Request airdrop for test wallet
 	err = requestTestnetAirdrop(t, service.client, testWallet.PublicKey())
@@ -461,4 +482,134 @@ func TestSolanaTradeService_Airdrop(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, newBalance.Value, uint64(0), "Balance should be greater than 0 after airdrop")
 	t.Logf("Wallet received %d lamports from airdrop", newBalance.Value)
+}
+
+func TestSolanaTradeService_ComputeBudgetSettings(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	service, testWallet, err := setupTestEnvironment(t)
+	if err != nil {
+		t.Fatalf("Failed to setup test environment: %v", err)
+	}
+
+	// Test setting compute unit limit
+	customComputeLimit := uint32(100000)
+	service.SetComputeUnitLimit(customComputeLimit)
+	require.Equal(t, customComputeLimit, service.computeUnitLimit)
+
+	// Test setting fee in micro lamports
+	customFee := uint64(1000)
+	service.SetFeeMicroLamports(customFee)
+	require.Equal(t, customFee, service.feeMicroLamports)
+
+	// Create a test trade
+	trade := &model.Trade{
+		ID:         "test_trade_compute_budget",
+		UserID:     "test_user",
+		CoinID:     testTokenMint,
+		CoinSymbol: "TEST",
+		Type:       "buy",
+		Amount:     0.1, // Small amount for testing
+		Price:      0.1,
+		Status:     "pending",
+		CreatedAt:  time.Now(),
+	}
+
+	// Execute trade with custom compute budget settings
+	err = service.ExecuteTrade(ctx, trade, testWallet.PublicKey())
+	require.NoError(t, err)
+}
+
+func TestSolanaTradeService_ATAHandling(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	service, testWallet, err := setupTestEnvironment(t)
+	if err != nil {
+		t.Fatalf("Failed to setup test environment: %v", err)
+	}
+
+	// Test with skipATALookup enabled
+	service.SetSkipATALookup(true)
+	require.True(t, service.skipATALookup)
+
+	// Create a test trade
+	trade := &model.Trade{
+		ID:         "test_trade_ata",
+		UserID:     "test_user",
+		CoinID:     testTokenMint,
+		CoinSymbol: "TEST",
+		Type:       "buy",
+		Amount:     0.1,
+		Price:      0.1,
+		Status:     "pending",
+		CreatedAt:  time.Now(),
+	}
+
+	// Execute trade with skipATALookup enabled
+	err = service.ExecuteTrade(ctx, trade, testWallet.PublicKey())
+	require.NoError(t, err)
+
+	// Test with skipATALookup disabled
+	service.SetSkipATALookup(false)
+	require.False(t, service.skipATALookup)
+
+	trade.ID = "test_trade_ata_2"
+	err = service.ExecuteTrade(ctx, trade, testWallet.PublicKey())
+	require.NoError(t, err)
+}
+
+func TestSolanaTradeService_ErrorHandling(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	service, testWallet, err := setupTestEnvironment(t)
+	if err != nil {
+		t.Fatalf("Failed to setup test environment: %v", err)
+	}
+
+	// Test nil trade
+	err = service.ExecuteTrade(ctx, nil, testWallet.PublicKey())
+	require.Error(t, err)
+	require.Equal(t, ErrInvalidCoin, err)
+
+	// Test invalid coin ID
+	invalidTrade := &model.Trade{
+		ID:         "test_trade_invalid",
+		UserID:     "test_user",
+		CoinID:     "invalid_coin_id", // Invalid coin ID
+		CoinSymbol: "TEST",
+		Type:       "buy",
+		Amount:     0.1,
+		Price:      0.1,
+		Status:     "pending",
+		CreatedAt:  time.Now(),
+	}
+	err = service.ExecuteTrade(ctx, invalidTrade, testWallet.PublicKey())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid coin ID")
+
+	// Test with cancelled context
+	cancelledCtx, cancel := context.WithCancel(ctx)
+	cancel()
+	trade := &model.Trade{
+		ID:         "test_trade_timeout",
+		UserID:     "test_user",
+		CoinID:     testTokenMint,
+		CoinSymbol: "TEST",
+		Type:       "buy",
+		Amount:     0.1,
+		Price:      0.1,
+		Status:     "pending",
+		CreatedAt:  time.Now(),
+	}
+	err = service.ExecuteTrade(cancelledCtx, trade, testWallet.PublicKey())
+	require.Error(t, err)
 }
