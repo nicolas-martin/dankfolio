@@ -10,6 +10,7 @@ type MemeCoin struct {
 	Description     string    `json:"description"`
 	ImageURL        string    `json:"image_url"`
 	LogoURL         string    `json:"logo_url"`
+	WebsiteURL      string    `json:"website_url"`
 	ContractAddress string    `json:"contract_address"`
 	Price           float64   `json:"price"`
 	CurrentPrice    float64   `json:"current_price"`

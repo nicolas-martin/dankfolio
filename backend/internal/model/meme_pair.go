@@ -27,4 +27,14 @@ type MemePair struct {
 	ChainId       string  `json:"chainId"`
 	DexId         string  `json:"dexId"`
 	PairAddress   string  `json:"pairAddress"`
+	Info          struct {
+		ImageURL string `json:"imageUrl"`
+		Websites []struct {
+			URL string `json:"url"`
+		} `json:"websites"`
+		Socials []struct {
+			Platform string `json:"platform"`
+			Handle   string `json:"handle"`
+		} `json:"socials"`
+	} `json:"info"`
 }

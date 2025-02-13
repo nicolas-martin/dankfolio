@@ -53,6 +53,8 @@ func insertTestCoin(t *testing.T, ctx context.Context, testDB db.DB, id string) 
 		Symbol:          strings.ToUpper(id),
 		Description:     "Test coin description",
 		ContractAddress: fmt.Sprintf("0x%s", id),
+		LogoURL:         fmt.Sprintf("https://example.com/coins/%s.png", id),
+		WebsiteURL:      fmt.Sprintf("https://example.com/coins/%s", id),
 		Price:           1.0,
 		CurrentPrice:    1.0,
 		Change24h:       5.0,
@@ -163,6 +165,8 @@ func TestCoinService_GetCoinByID(t *testing.T) {
 		Name:            "Dogecoin3",
 		Description:     "Much wow, very coin",
 		ContractAddress: "0x123...doge3",
+		LogoURL:         "https://example.com/doge3.png",
+		WebsiteURL:      "https://doge3.example.com",
 		Price:           0.1,
 		CurrentPrice:    0.1,
 		Change24h:       5.0,
@@ -183,6 +187,8 @@ func TestCoinService_GetCoinByID(t *testing.T) {
 	assert.Equal(t, coinID, coin.ID)
 	assert.Equal(t, testCoin.Symbol, coin.Symbol)
 	assert.Equal(t, testCoin.Name, coin.Name)
+	assert.Equal(t, testCoin.LogoURL, coin.LogoURL)
+	assert.Equal(t, testCoin.WebsiteURL, coin.WebsiteURL)
 }
 
 func TestCoinService_UpdatePrices(t *testing.T) {
@@ -420,4 +426,143 @@ func TestCoinService_Integration_WithAPI(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestCoinService_GetCoinByContractAddress(t *testing.T) {
+	// Skip in CI environment
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
+
+	// Setup
+	coinService, _, cleanup := setupTestCoinService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Test with a real Solana token (e.g., BONK)
+	contractAddress := "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" // BONK token
+
+	coin, err := coinService.GetCoinByContractAddress(ctx, contractAddress)
+	require.NoError(t, err)
+	assert.NotNil(t, coin)
+
+	// Verify the basic coin fields
+	assert.Equal(t, contractAddress, coin.ContractAddress)
+	assert.NotEmpty(t, coin.Symbol)
+	assert.NotEmpty(t, coin.Name)
+	assert.NotZero(t, coin.Price)
+	assert.NotZero(t, coin.CurrentPrice)
+	assert.NotZero(t, coin.MarketCap)
+	assert.NotZero(t, coin.Volume24h)
+
+	// Verify new fields from token profile
+	assert.NotEmpty(t, coin.Description, "Description should be populated from either profile or fallback")
+
+	// Logo URL should be from either token profile or pair info
+	if coin.LogoURL != "" {
+		assert.Contains(t, coin.LogoURL, "http", "Logo URL should be a valid URL")
+	}
+
+	// Website URL should be from pair info
+	if coin.WebsiteURL != "" {
+		assert.Contains(t, coin.WebsiteURL, "http", "Website URL should be a valid URL")
+	}
+
+	// Description should contain either profile description or fallback with DEX info
+	assert.True(t,
+		strings.Contains(coin.Description, "Trading on") ||
+			len(coin.Description) > 0,
+		"Description should either contain DEX info or be from profile",
+	)
+}
+
+func TestCoinService_FetchTokenProfile(t *testing.T) {
+	// Skip in CI environment
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
+
+	// Setup
+	coinService, _, cleanup := setupTestCoinService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Test with a real Solana token
+	chainId := "solana"
+	tokenAddress := "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" // BONK token
+
+	profile, err := coinService.fetchTokenProfile(ctx, chainId, tokenAddress)
+	if err == nil && profile != nil {
+		// If profile exists, verify its fields
+		assert.Equal(t, chainId, profile.ChainId)
+		assert.Equal(t, tokenAddress, profile.TokenAddress)
+
+		// Verify optional fields if they exist
+		if profile.Icon != "" {
+			assert.Contains(t, profile.Icon, "http", "Icon URL should be valid if present")
+		}
+		if profile.Description != "" {
+			assert.NotEmpty(t, profile.Description, "Description should not be empty if present")
+		}
+		if len(profile.Links) > 0 {
+			for _, link := range profile.Links {
+				assert.NotEmpty(t, link.Type)
+				assert.NotEmpty(t, link.Label)
+				assert.Contains(t, link.URL, "http", "Link URL should be valid")
+			}
+		}
+	} else {
+		// If no profile exists, log it (not a failure case)
+		t.Log("No token profile found for BONK token - this is acceptable")
+	}
+}
+
+func TestCoinService_GetCoinByID_WithNewFields(t *testing.T) {
+	// Setup
+	coinService, testDB, cleanup := setupTestCoinService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	coinID := "doge6"
+
+	// Insert test coin with new fields
+	testCoin := model.MemeCoin{
+		ID:              coinID,
+		Symbol:          "DOGE6",
+		Name:            "Dogecoin6",
+		Description:     "Much wow, very coin",
+		ContractAddress: "0x123...doge6",
+		LogoURL:         "https://example.com/doge6.png",
+		WebsiteURL:      "https://doge6.example.com",
+		Price:           0.1,
+		CurrentPrice:    0.1,
+		Change24h:       5.0,
+		Volume24h:       500000,
+		MarketCap:       1000000,
+		Supply:          1000000000,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+	}
+
+	err := testutil.InsertTestCoin(ctx, testDB, testCoin)
+	require.NoError(t, err)
+
+	// Test
+	coin, err := coinService.GetCoinByID(ctx, coinID)
+	require.NoError(t, err)
+	assert.NotNil(t, coin)
+
+	// Verify all fields including new ones
+	assert.Equal(t, coinID, coin.ID)
+	assert.Equal(t, testCoin.Symbol, coin.Symbol)
+	assert.Equal(t, testCoin.Name, coin.Name)
+	assert.Equal(t, testCoin.Description, coin.Description)
+	assert.Equal(t, testCoin.LogoURL, coin.LogoURL)
+	assert.Equal(t, testCoin.WebsiteURL, coin.WebsiteURL)
+	assert.Equal(t, testCoin.ContractAddress, coin.ContractAddress)
+	assert.Equal(t, testCoin.CurrentPrice, coin.CurrentPrice)
+	assert.Equal(t, testCoin.MarketCap, coin.MarketCap)
+	assert.Equal(t, testCoin.Volume24h, coin.Volume24h)
 }

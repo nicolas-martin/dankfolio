@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gagliardetto/solana-go v1.8.4
+	github.com/gin-gonic/gin v1.10.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-chi/cors v1.2.1
 	github.com/go-redis/redis/v8 v8.11.5
@@ -13,7 +14,7 @@ require (
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgproto3/v2 v2.3.3
 	github.com/jackc/pgx/v4 v4.18.3
-	github.com/shopspring/decimal v1.3.1
+	github.com/lib/pq v1.10.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.10.0
@@ -34,7 +35,6 @@ require (
 	github.com/bytedance/sonic/loader v0.2.3 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
-	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -44,7 +44,6 @@ require (
 	github.com/gagliardetto/binary v0.7.7 // indirect
 	github.com/gagliardetto/treeout v0.1.4 // indirect
 	github.com/gin-contrib/sse v1.0.0 // indirect
-	github.com/gin-gonic/gin v1.10.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/spec v0.20.6 // indirect

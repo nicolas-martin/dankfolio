@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	dexscreenerBaseURL = "https://api.dexscreener.com/latest/dex"
-	defaultLimit       = 50
+	dexscreenerBaseURL    = "https://api.dexscreener.com"
+	dexscreenerProfileURL = "https://api.dexscreener.com/token-profiles/latest/v1"
+	defaultLimit          = 50
 )
 
 // DexScreenerPair represents a trading pair from the DexScreener API
@@ -49,12 +50,35 @@ type DexScreenerPair struct {
 	} `json:"liquidity"`
 	PairCreatedAt int64   `json:"pairCreatedAt"`
 	MarketCap     float64 `json:"marketCap"`
+	Info          struct {
+		ImageURL string `json:"imageUrl"`
+		Websites []struct {
+			URL string `json:"url"`
+		} `json:"websites"`
+		Socials []struct {
+			Platform string `json:"platform"`
+			Handle   string `json:"handle"`
+		} `json:"socials"`
+	} `json:"info"`
 }
 
 // DexScreenerResponse represents the response from the DexScreener API
 type DexScreenerResponse struct {
 	SchemaVersion string            `json:"schemaVersion"`
 	Pairs         []DexScreenerPair `json:"pairs"`
+}
+
+// TokenProfile represents the response from DexScreener token profiles API
+type TokenProfile struct {
+	ChainId      string `json:"chainId"`
+	TokenAddress string `json:"tokenAddress"`
+	Icon         string `json:"icon"`
+	Description  string `json:"description"`
+	Links        []struct {
+		Type  string `json:"type"`
+		Label string `json:"label"`
+		URL   string `json:"url"`
+	} `json:"links"`
 }
 
 type CoinService struct {
@@ -71,7 +95,7 @@ func NewCoinService(repo repository.CoinRepository) *CoinService {
 
 // fetchDexScreenerData fetches meme coin data from DexScreener API
 func (s *CoinService) fetchDexScreenerData(ctx context.Context) ([]model.MemePair, error) {
-	url := fmt.Sprintf("%s/search?q=solana", dexscreenerBaseURL)
+	url := fmt.Sprintf("%s/latest/dex/search?q=solana", dexscreenerBaseURL)
 	fmt.Printf("Fetching data from %s\n", url)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -345,7 +369,7 @@ func (s *CoinService) GetCoinPriceHistory(ctx context.Context, coinID string, ti
 // fetchSpecificPair fetches data for a specific trading pair from DexScreener API
 func (s *CoinService) fetchSpecificPair(ctx context.Context, contractAddress string) (*DexScreenerPair, error) {
 	// DexScreener API endpoint for specific pair by token address
-	url := fmt.Sprintf("%s/dex/tokens/%s", dexscreenerBaseURL, contractAddress)
+	url := fmt.Sprintf("%s/latest/dex/tokens/%s", dexscreenerBaseURL, contractAddress)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -359,7 +383,8 @@ func (s *CoinService) fetchSpecificPair(ctx context.Context, contractAddress str
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code from DexScreener: %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code from DexScreener: %d, body: %s", resp.StatusCode, string(body))
 	}
 
 	var dexResp DexScreenerResponse
@@ -395,6 +420,33 @@ func (s *CoinService) fetchSpecificPair(ctx context.Context, contractAddress str
 	return bestPair, nil
 }
 
+// fetchTokenProfile fetches additional token information from DexScreener
+func (s *CoinService) fetchTokenProfile(ctx context.Context, chainId, tokenAddress string) (*TokenProfile, error) {
+	url := fmt.Sprintf("%s/%s/%s", dexscreenerProfileURL, chainId, tokenAddress)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error response from DexScreener (status %d)", resp.StatusCode)
+	}
+
+	var profile TokenProfile
+	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return &profile, nil
+}
+
 // GetCoinByContractAddress fetches detailed information about a specific coin by its contract address
 func (s *CoinService) GetCoinByContractAddress(ctx context.Context, contractAddress string) (*model.MemeCoin, error) {
 	pair, err := s.fetchSpecificPair(ctx, contractAddress)
@@ -402,12 +454,18 @@ func (s *CoinService) GetCoinByContractAddress(ctx context.Context, contractAddr
 		return nil, fmt.Errorf("error fetching pair data: %w", err)
 	}
 
+	// Fetch additional token profile information
+	profile, err := s.fetchTokenProfile(ctx, pair.ChainId, pair.BaseToken.Address)
+	if err != nil {
+		// Log the error but continue without profile data
+		fmt.Printf("Warning: Could not fetch token profile: %v\n", err)
+	}
+
 	price, _ := util.ParseFloat64(pair.PriceUsd)
 	coin := &model.MemeCoin{
 		ID:              pair.BaseToken.Address,
 		Symbol:          pair.BaseToken.Symbol,
 		Name:            pair.BaseToken.Name,
-		Description:     fmt.Sprintf("Meme coin trading on %s", pair.DexId),
 		ContractAddress: pair.BaseToken.Address,
 		Price:           price,
 		CurrentPrice:    price,
@@ -417,6 +475,36 @@ func (s *CoinService) GetCoinByContractAddress(ctx context.Context, contractAddr
 		Supply:          pair.MarketCap / price,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
+	}
+
+	// Add profile information if available
+	if profile != nil {
+		coin.Description = profile.Description
+		coin.LogoURL = profile.Icon
+	}
+
+	// Use pair info as fallback for logo URL
+	if coin.LogoURL == "" && pair.Info.ImageURL != "" {
+		coin.LogoURL = pair.Info.ImageURL
+	}
+
+	// Add website URL if available from pair info
+	if len(pair.Info.Websites) > 0 {
+		coin.WebsiteURL = pair.Info.Websites[0].URL
+	}
+
+	// If no description from profile, create one from available info
+	if coin.Description == "" {
+		var socials []string
+		for _, social := range pair.Info.Socials {
+			socials = append(socials, fmt.Sprintf("%s: %s", social.Platform, social.Handle))
+		}
+
+		description := fmt.Sprintf("Trading on %s", pair.DexId)
+		if len(socials) > 0 {
+			description += fmt.Sprintf(". Social links: %s", strings.Join(socials, ", "))
+		}
+		coin.Description = description
 	}
 
 	return coin, nil

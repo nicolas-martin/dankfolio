@@ -324,7 +324,7 @@ func TestTradeService_InvalidTrades(t *testing.T) {
 	assert.Error(t, err)
 
 	// Verify portfolio still has original amount
-	portfolio, err := testutil.GetUserPortfolio(ctx, testDB, userID, testCoin.ID)
+	portfolio, err := testutil.GetUserPortfolio(ctx, testDB, userID.String(), testCoin.ID)
 	require.NoError(t, err)
 	assert.Equal(t, 100.0, portfolio.Amount)
 }

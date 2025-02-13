@@ -3,35 +3,44 @@ package testutil
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
-// SetupTestDB creates a test database connection and returns a cleanup function
-func SetupTestDB(t *testing.T) (db.DB, func()) {
-	// Use environment variable or default to test database
-	dbURL := "postgres://postgres:postgres@localhost:5432/dankfolio_test?sslmode=disable"
+const (
+	testDBHost     = "localhost"
+	testDBPort     = "5434" // Changed from 5433 to avoid conflicts
+	testDBUser     = "postgres"
+	testDBPassword = "postgres"
+	testDBName     = "meme_trader_test"
+)
 
+// SetupTestDB creates a new test database and returns it with a cleanup function
+func SetupTestDB(t *testing.T) (db.DB, func()) {
+	// Get database connection string from environment variable
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://postgres:postgres@localhost:5434/meme_trader_test?sslmode=disable"
+	}
+
+	// Create database connection pool
 	config, err := pgxpool.ParseConfig(dbURL)
 	require.NoError(t, err)
 
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
 	require.NoError(t, err)
 
-	// Drop all tables first
-	ctx := context.Background()
-	CleanupTestSchema(ctx, db.NewDB(pool))
-
-	// Create test schema
-	err = SetupTestSchema(ctx, db.NewDB(pool))
-	require.NoError(t, err)
-
-	// Create a cleanup function
+	// Return cleanup function
 	cleanup := func() {
 		pool.Close()
 	}
@@ -39,16 +48,83 @@ func SetupTestDB(t *testing.T) (db.DB, func()) {
 	return db.NewDB(pool), cleanup
 }
 
+// startPostgresContainer starts a PostgreSQL container for testing
+func startPostgresContainer(t *testing.T) (string, error) {
+	cmd := exec.Command("docker", "run", "-d",
+		"-e", fmt.Sprintf("POSTGRES_USER=%s", testDBUser),
+		"-e", fmt.Sprintf("POSTGRES_PASSWORD=%s", testDBPassword),
+		"-e", fmt.Sprintf("POSTGRES_DB=%s", testDBName),
+		"-p", fmt.Sprintf("%s:5432", testDBPort),
+		"postgres:13-alpine")
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to start postgres container: %w\nOutput: %s", err, string(output))
+	}
+
+	containerID := string(output)[:12] // First 12 chars of container ID
+	return containerID, nil
+}
+
+// stopContainer stops and removes the test container
+func stopContainer(t *testing.T, containerID string) {
+	exec.Command("docker", "stop", containerID).Run()
+	exec.Command("docker", "rm", containerID).Run()
+}
+
+// waitForDB waits for the database to be ready
+func waitForDB(dbURL string) error {
+	var db *pgxpool.Pool
+	var err error
+	maxRetries := 30
+	for i := 0; i < maxRetries; i++ {
+		db, err = pgxpool.Connect(context.Background(), dbURL)
+		if err == nil {
+			db.Close()
+			return nil
+		}
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("database not ready after %d attempts: %w", maxRetries, err)
+}
+
+// runMigrations runs the database migrations
+func runMigrations(t *testing.T, dbURL string) error {
+	// Find migrations directory relative to the project root
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	// Navigate up to find the migrations directory
+	migrationsPath := filepath.Join(filepath.Dir(filepath.Dir(wd)), "db", "migrations")
+
+	// Run migrate command
+	cmd := exec.Command("migrate",
+		"-path", migrationsPath,
+		"-database", dbURL,
+		"up",
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to run migrations: %w\nOutput: %s", err, output)
+	}
+
+	return nil
+}
+
 // InsertTestCoin inserts a test coin into the database
 func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 	query := `
 		INSERT INTO meme_coins (
 			id, symbol, name, description, contract_address,
+			logo_url, website_url, image_url,
 			price, current_price, change_24h, volume_24h,
 			market_cap, supply, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-			$11, $12, $13
+			$11, $12, $13, $14, $15, $16
 		)
 	`
 
@@ -58,6 +134,9 @@ func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 		coin.Name,
 		coin.Description,
 		coin.ContractAddress,
+		coin.LogoURL,
+		coin.WebsiteURL,
+		coin.ImageURL,
 		coin.Price,
 		coin.CurrentPrice,
 		coin.Change24h,
@@ -121,123 +200,50 @@ func GetUserPortfolio(ctx context.Context, db db.DB, userID string, coinID strin
 	return holding, nil
 }
 
-// SetupTestSchema creates the necessary tables for testing
+// SetupTestSchema sets up the test database schema
 func SetupTestSchema(ctx context.Context, db db.DB) error {
-	queries := []string{
-		`CREATE TABLE IF NOT EXISTS users (
-			id TEXT PRIMARY KEY,
-			email VARCHAR(255) UNIQUE NOT NULL,
-			username VARCHAR(50) UNIQUE NOT NULL,
-			password_hash VARCHAR(255) NOT NULL,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS wallets (
-			id TEXT PRIMARY KEY,
-			user_id TEXT NOT NULL REFERENCES users(id),
-			public_key VARCHAR(255) NOT NULL,
-			private_key TEXT NOT NULL,
-			encrypted_private_key TEXT NOT NULL,
-			balance DECIMAL(24,12) NOT NULL DEFAULT 0,
-			last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS meme_coins (
-			id TEXT PRIMARY KEY,
-			symbol TEXT NOT NULL,
-			name TEXT NOT NULL,
+	// Create tables
+	_, err := db.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS meme_coins (
+			id VARCHAR(255) PRIMARY KEY,
+			symbol VARCHAR(50) NOT NULL,
+			name VARCHAR(255) NOT NULL,
 			description TEXT,
-			contract_address TEXT NOT NULL,
+			contract_address VARCHAR(255) NOT NULL,
 			logo_url TEXT,
-			image_url TEXT,
-			price DECIMAL,
-			current_price DECIMAL,
-			change_24h DECIMAL,
-			volume_24h DECIMAL,
-			market_cap DECIMAL,
-			supply DECIMAL,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS price_history (
-			id TEXT PRIMARY KEY,
-			coin_id TEXT NOT NULL REFERENCES meme_coins(id),
-			price DECIMAL NOT NULL,
-			market_cap DECIMAL,
-			volume_24h DECIMAL,
+			website_url TEXT,
+			price DECIMAL(18,8),
+			current_price DECIMAL(18,8),
+			change_24h DECIMAL(18,8),
+			volume_24h DECIMAL(18,8),
+			market_cap DECIMAL(18,8),
+			supply DECIMAL(18,8),
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+
+		CREATE TABLE IF NOT EXISTS price_history (
+			id SERIAL PRIMARY KEY,
+			coin_id VARCHAR(255) REFERENCES meme_coins(id),
+			price DECIMAL(18,8) NOT NULL,
+			market_cap DECIMAL(18,8),
+			volume_24h DECIMAL(18,8),
 			timestamp BIGINT NOT NULL,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS deposits (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			user_id UUID NOT NULL REFERENCES users(id),
-			amount DECIMAL NOT NULL,
-			payment_type TEXT NOT NULL,
-			address TEXT,
-			payment_url TEXT,
-			qr_code TEXT,
-			status TEXT NOT NULL,
-			tx_hash TEXT,
-			expires_at TIMESTAMP WITH TIME ZONE,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS withdrawals (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			user_id UUID NOT NULL REFERENCES users(id),
-			amount DECIMAL NOT NULL,
-			fee DECIMAL NOT NULL,
-			total_amount DECIMAL NOT NULL,
-			destination_chain TEXT NOT NULL,
-			destination_address TEXT NOT NULL,
-			status TEXT NOT NULL,
-			tx_hash TEXT,
-			estimated_time TEXT,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-		)`,
-		`CREATE OR REPLACE VIEW transactions AS
-			SELECT 
-				id, 'deposit' as type, user_id, amount, status, tx_hash, created_at, updated_at
-			FROM deposits
-			UNION ALL
-			SELECT 
-				id, 'withdrawal' as type, user_id, amount, status, tx_hash, created_at, updated_at
-			FROM withdrawals
-		`,
-		`CREATE INDEX IF NOT EXISTS idx_price_history_coin_id_timestamp ON price_history(coin_id, timestamp)`,
-	}
+			created_at TIMESTAMP NOT NULL DEFAULT NOW()
+		);
 
-	for _, query := range queries {
-		_, err := db.Exec(ctx, query)
-		if err != nil {
-			return fmt.Errorf("failed to execute query: %w", err)
-		}
-	}
+		CREATE INDEX IF NOT EXISTS idx_price_history_coin_id ON price_history(coin_id);
+		CREATE INDEX IF NOT EXISTS idx_price_history_timestamp ON price_history(timestamp);
+	`)
 
-	return nil
+	return err
 }
 
 // CleanupTestSchema drops all test tables
 func CleanupTestSchema(ctx context.Context, db db.DB) error {
-	queries := []string{
-		"DROP VIEW IF EXISTS transactions",
-		"DROP TABLE IF EXISTS withdrawals",
-		"DROP TABLE IF EXISTS deposits",
-		"DROP TABLE IF EXISTS portfolios",
-		"DROP TABLE IF EXISTS trades",
-		"DROP TABLE IF EXISTS price_history",
-		"DROP TABLE IF EXISTS wallets",
-		"DROP TABLE IF EXISTS meme_coins",
-	}
-
-	for _, query := range queries {
-		_, err := db.Exec(ctx, query)
-		if err != nil {
-			return fmt.Errorf("failed to execute query: %w", err)
-		}
-	}
-
-	return nil
+	_, err := db.Exec(ctx, `
+		DROP TABLE IF EXISTS price_history;
+		DROP TABLE IF EXISTS meme_coins;
+	`)
+	return err
 }
