@@ -13,18 +13,21 @@ type Router struct {
 	solanaService *service.SolanaTradeService
 	coinService   *service.CoinService
 	tradeService  *service.TradeService
+	walletService *service.WalletService
 }
 
 func NewRouter(
 	solanaService *service.SolanaTradeService,
 	coinService *service.CoinService,
 	tradeService *service.TradeService,
+	walletService *service.WalletService,
 ) *Router {
 	r := &Router{
 		router:        chi.NewRouter(),
 		solanaService: solanaService,
 		coinService:   coinService,
 		tradeService:  tradeService,
+		walletService: walletService,
 	}
 
 	r.setupRoutes()
@@ -55,5 +58,9 @@ func (r *Router) setupRoutes() {
 		// Trade routes
 		tradeHandlers := NewTradeHandlers(r.tradeService)
 		tradeHandlers.RegisterRoutes(router)
+
+		// Wallet routes
+		walletHandlers := NewWalletHandlers(r.walletService)
+		walletHandlers.RegisterRoutes(router)
 	})
 }

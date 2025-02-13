@@ -3,30 +3,42 @@ package service
 import (
 	"context"
 	"fmt"
+	"sort"
+	"sync"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/google/uuid"
 	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/repository"
 )
 
 // WalletService handles wallet operations
 type WalletService struct {
-	rpcEndpoint string
-	walletRepo  repository.WalletRepository
+	rpcEndpoint  string
+	mu           sync.RWMutex
+	wallets      map[string]*model.Wallet      // In-memory storage using userID as key
+	transactions map[string]*model.Transaction // In-memory storage using transaction ID as key
 }
 
 // NewWalletService creates a new WalletService
-func NewWalletService(rpcEndpoint string, walletRepo repository.WalletRepository) *WalletService {
+func NewWalletService(rpcEndpoint string) *WalletService {
 	return &WalletService{
-		rpcEndpoint: rpcEndpoint,
-		walletRepo:  walletRepo,
+		rpcEndpoint:  rpcEndpoint,
+		wallets:      make(map[string]*model.Wallet),
+		transactions: make(map[string]*model.Transaction),
 	}
 }
 
 // CreateWallet creates a new wallet for a user
 func (s *WalletService) CreateWallet(ctx context.Context, userID string) (*model.Wallet, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Check if wallet already exists
+	if _, exists := s.wallets[userID]; exists {
+		return nil, fmt.Errorf("wallet already exists for user")
+	}
+
 	// Generate new Solana wallet
 	wallet := solana.NewWallet()
 
@@ -41,22 +53,29 @@ func (s *WalletService) CreateWallet(ctx context.Context, userID string) (*model
 		LastUpdated: now,
 	}
 
-	// Save wallet to repository
-	err := s.walletRepo.CreateWallet(ctx, walletModel)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create wallet: %w", err)
-	}
+	// Store in memory
+	s.wallets[userID] = walletModel
 
 	return walletModel, nil
 }
 
 // GetWallet retrieves a user's wallet
 func (s *WalletService) GetWallet(ctx context.Context, userID string) (*model.Wallet, error) {
-	return s.walletRepo.GetWallet(ctx, userID)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	wallet, exists := s.wallets[userID]
+	if !exists {
+		return nil, fmt.Errorf("wallet not found")
+	}
+	return wallet, nil
 }
 
 // CreateDeposit creates a new deposit request
 func (s *WalletService) CreateDeposit(ctx context.Context, userID string, req model.DepositRequest) (*model.Transaction, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	// Create deposit transaction
 	now := time.Now()
 	tx := &model.Transaction{
@@ -69,11 +88,18 @@ func (s *WalletService) CreateDeposit(ctx context.Context, userID string, req mo
 		UpdatedAt: now,
 	}
 
-	// Save transaction
-	err := s.walletRepo.CreateTransaction(ctx, tx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create deposit: %w", err)
+	// Store transaction
+	s.transactions[tx.ID] = tx
+
+	// Update wallet balance
+	wallet, exists := s.wallets[userID]
+	if !exists {
+		return nil, fmt.Errorf("wallet not found")
 	}
+
+	wallet.Balance += req.Amount
+	wallet.LastUpdated = now
+	s.wallets[userID] = wallet
 
 	return tx, nil
 }
@@ -103,6 +129,9 @@ func (s *WalletService) RequestWithdrawal(ctx context.Context, userID string, re
 		return err
 	}
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	// Create withdrawal transaction
 	now := time.Now()
 	tx := &model.Transaction{
@@ -115,16 +144,40 @@ func (s *WalletService) RequestWithdrawal(ctx context.Context, userID string, re
 		UpdatedAt: now,
 	}
 
-	// Save transaction and update wallet balance
-	err := s.walletRepo.ExecuteWithdrawal(ctx, tx, userID)
-	if err != nil {
-		return fmt.Errorf("failed to execute withdrawal: %w", err)
-	}
+	// Store transaction
+	s.transactions[tx.ID] = tx
+
+	// Update wallet balance
+	wallet := s.wallets[userID]
+	fee := req.Amount * 0.001
+	wallet.Balance -= (req.Amount + fee)
+	wallet.LastUpdated = now
+	s.wallets[userID] = wallet
 
 	return nil
 }
 
 // GetTransactionHistory retrieves transaction history for a user
 func (s *WalletService) GetTransactionHistory(ctx context.Context, userID string, txType string, limit int) ([]model.Transaction, error) {
-	return s.walletRepo.GetTransactions(ctx, userID, txType, limit)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var transactions []model.Transaction
+	for _, tx := range s.transactions {
+		if tx.UserID == userID && (txType == "" || tx.Type == txType) {
+			transactions = append(transactions, *tx)
+		}
+	}
+
+	// Sort by created time (newest first)
+	sort.Slice(transactions, func(i, j int) bool {
+		return transactions[i].CreatedAt.After(transactions[j].CreatedAt)
+	})
+
+	// Apply limit
+	if limit > 0 && len(transactions) > limit {
+		transactions = transactions[:limit]
+	}
+
+	return transactions, nil
 }

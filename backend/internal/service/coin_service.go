@@ -8,13 +8,13 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/repository"
-	"github.com/nicolas-martin/dankfolio/internal/util"
 )
 
 const (
@@ -82,14 +82,15 @@ type TokenProfile struct {
 }
 
 type CoinService struct {
-	repo   repository.CoinRepository
 	client *http.Client
+	mu     sync.RWMutex
+	coins  map[string]model.MemeCoin // In-memory storage using contract address as key
 }
 
-func NewCoinService(repo repository.CoinRepository) *CoinService {
+func NewCoinService() *CoinService {
 	return &CoinService{
-		repo:   repo,
 		client: &http.Client{Timeout: 10 * time.Second},
+		coins:  make(map[string]model.MemeCoin),
 	}
 }
 
@@ -114,8 +115,10 @@ func (s *CoinService) InitializeTestData(ctx context.Context) error {
 		UpdatedAt:       time.Now(),
 	}
 
-	// Store in repository
-	return s.repo.UpsertCoin(ctx, wrappedSOL)
+	s.mu.Lock()
+	s.coins[wrappedSOL.ContractAddress] = wrappedSOL
+	s.mu.Unlock()
+	return nil
 }
 
 // fetchDexScreenerData fetches meme coin data from DexScreener API
@@ -335,47 +338,13 @@ func isValidQuoteCurrency(symbol string) bool {
 	return validQuotes[cleanSymbol]
 }
 
+// GetTopMemeCoins returns the top meme coins by market cap
 func (s *CoinService) GetTopMemeCoins(ctx context.Context, limit int) ([]model.MemeCoin, error) {
-	pairs, err := s.fetchDexScreenerData(ctx, "meme")
-	if err != nil {
-		return nil, fmt.Errorf("error fetching DexScreener data: %w", err)
-	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	var coins []model.MemeCoin
-	for _, pair := range pairs {
-		price, _ := util.ParseFloat64(pair.PriceUsd)
-
-		// Convert social media info to our model
-		var socials []model.SocialLink
-		for _, social := range pair.Info.Socials {
-			socials = append(socials, model.SocialLink{
-				Platform: social.Platform,
-				Handle:   social.Handle,
-			})
-		}
-
-		coin := model.MemeCoin{
-			ID:              pair.BaseToken.Address,
-			Symbol:          pair.BaseToken.Symbol,
-			Name:            pair.BaseToken.Name,
-			ContractAddress: pair.BaseToken.Address,
-			LogoURL:         pair.Info.ImageURL,
-			Price:           price,
-			CurrentPrice:    price,
-			Change24h:       pair.PriceChange.H24,
-			Volume24h:       pair.Volume.H24,
-			MarketCap:       pair.MarketCap,
-			Labels:          pair.Labels,
-			Socials:         socials,
-			CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
-			UpdatedAt:       time.Now(),
-		}
-
-		// Add website URL if available
-		if len(pair.Info.Websites) > 0 {
-			coin.WebsiteURL = pair.Info.Websites[0].URL
-		}
-
+	for _, coin := range s.coins {
 		coins = append(coins, coin)
 	}
 
@@ -384,41 +353,83 @@ func (s *CoinService) GetTopMemeCoins(ctx context.Context, limit int) ([]model.M
 		return coins[i].MarketCap > coins[j].MarketCap
 	})
 
-	if limit > 0 && len(coins) > limit {
-		coins = coins[:limit]
+	if limit <= 0 {
+		limit = defaultLimit
+	}
+	if limit > len(coins) {
+		limit = len(coins)
 	}
 
-	return coins, nil
+	return coins[:limit], nil
 }
 
-func (s *CoinService) GetPriceHistory(ctx context.Context, coinID string, startTime time.Time) ([]model.PricePoint, error) {
-	return s.repo.GetPriceHistory(ctx, coinID, startTime)
-}
-
-func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpdate) error {
-	return s.repo.UpdatePrices(ctx, updates)
-}
-
+// GetCoinByID returns a coin by its ID
 func (s *CoinService) GetCoinByID(ctx context.Context, coinID string) (*model.MemeCoin, error) {
-	return s.repo.GetCoinByID(ctx, coinID)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, coin := range s.coins {
+		if coin.ID == coinID {
+			return &coin, nil
+		}
+	}
+	return nil, fmt.Errorf("coin not found")
 }
 
-func (s *CoinService) GetCoinPriceHistory(ctx context.Context, coinID string, timeframe string) ([]model.PricePoint, error) {
-	var startTime time.Time
-	now := time.Now()
+// GetCoinByContractAddress returns a coin by its contract address
+func (s *CoinService) GetCoinByContractAddress(ctx context.Context, contractAddress string) (*model.MemeCoin, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
-	switch timeframe {
-	case "day":
-		startTime = now.AddDate(0, 0, -1)
-	case "week":
-		startTime = now.AddDate(0, 0, -7)
-	case "month":
-		startTime = now.AddDate(0, -1, 0)
-	default:
-		return nil, fmt.Errorf("invalid timeframe: %s", timeframe)
+	if coin, exists := s.coins[contractAddress]; exists {
+		return &coin, nil
 	}
 
-	return s.GetPriceHistory(ctx, coinID, startTime)
+	// If not found in memory, try to fetch from DexScreener
+	pair, err := s.fetchSpecificPair(ctx, contractAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch coin data: %w", err)
+	}
+
+	// Convert to MemeCoin and store
+	coin := model.MemeCoin{
+		ID:              pair.BaseToken.Address,
+		Symbol:          pair.BaseToken.Symbol,
+		Name:            pair.BaseToken.Name,
+		ContractAddress: pair.BaseToken.Address,
+		Price:           stringToFloat64(pair.PriceUsd),
+		CurrentPrice:    stringToFloat64(pair.PriceUsd),
+		Change24h:       pair.PriceChange.H24,
+		Volume24h:       pair.Volume.H24,
+		MarketCap:       pair.MarketCap,
+		CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
+		UpdatedAt:       time.Now(),
+	}
+
+	s.mu.Lock()
+	s.coins[contractAddress] = coin
+	s.mu.Unlock()
+
+	return &coin, nil
+}
+
+// UpdatePrices updates the prices of coins in memory
+func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpdate) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, update := range updates {
+		if coin, exists := s.coins[update.ContractAddress]; exists {
+			coin.Price = update.Price
+			coin.CurrentPrice = update.Price
+			coin.Change24h = update.Change24h
+			coin.Volume24h = update.Volume24h
+			coin.MarketCap = update.MarketCap
+			coin.UpdatedAt = time.Now()
+			s.coins[update.ContractAddress] = coin
+		}
+	}
+	return nil
 }
 
 // fetchSpecificPair fetches data for a specific trading pair from DexScreener API
@@ -502,61 +513,6 @@ func (s *CoinService) fetchTokenProfile(ctx context.Context, chainId, tokenAddre
 	return &profile, nil
 }
 
-// GetCoinByContractAddress fetches detailed information about a specific coin by its contract address
-func (s *CoinService) GetCoinByContractAddress(ctx context.Context, contractAddress string) (*model.MemeCoin, error) {
-	pair, err := s.fetchSpecificPair(ctx, contractAddress)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching pair data: %w", err)
-	}
-
-	if pair == nil {
-		return nil, fmt.Errorf("no pair found for contract address: %s", contractAddress)
-	}
-
-	// Fetch token profile for additional information
-	profile, err := s.fetchTokenProfile(ctx, pair.ChainId, contractAddress)
-	if err != nil {
-		// Log the error but continue, as profile is optional
-		fmt.Printf("Warning: could not fetch token profile: %v\n", err)
-	}
-
-	price, _ := util.ParseFloat64(pair.PriceUsd)
-	coin := &model.MemeCoin{
-		ID:              contractAddress,
-		Symbol:          pair.BaseToken.Symbol,
-		Name:            pair.BaseToken.Name,
-		ContractAddress: contractAddress,
-		Price:           price,
-		CurrentPrice:    price,
-		Change24h:       pair.PriceChange.H24,
-		Volume24h:       pair.Volume.H24,
-		MarketCap:       pair.MarketCap,
-		CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
-		UpdatedAt:       time.Now(),
-	}
-
-	// Add profile information if available
-	if profile != nil {
-		coin.Description = profile.Description
-		coin.LogoURL = profile.Icon
-		if len(profile.Links) > 0 {
-			for _, link := range profile.Links {
-				if link.Type == "website" {
-					coin.WebsiteURL = link.URL
-					break
-				}
-			}
-		}
-	}
-
-	// If no description from profile, create a fallback description
-	if coin.Description == "" {
-		coin.Description = fmt.Sprintf("%s is trading on %s", coin.Name, pair.DexId)
-	}
-
-	return coin, nil
-}
-
 func isMemeCoin(text string) bool {
 	// Convert to lowercase for case-insensitive matching
 	text = strings.ToLower(text)
@@ -591,75 +547,69 @@ func isMemeCoin(text string) bool {
 	return false
 }
 
+// FetchAndStoreRealMemeCoins fetches real meme coins from DexScreener and stores them in memory
 func (s *CoinService) FetchAndStoreRealMemeCoins(ctx context.Context) error {
 	pairs, err := s.fetchDexScreenerData(ctx, "meme")
 	if err != nil {
-		return fmt.Errorf("error fetching meme coin data: %w", err)
+		return fmt.Errorf("failed to fetch meme coins: %w", err)
 	}
 
-	var updates []model.PriceUpdate
-	now := time.Now()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	for _, pair := range pairs {
-		price, _ := util.ParseFloat64(pair.PriceUsd)
-
-		// Convert social media info to our model
-		var socials []model.SocialLink
-		for _, social := range pair.Info.Socials {
-			socials = append(socials, model.SocialLink{
-				Platform: social.Platform,
-				Handle:   social.Handle,
-			})
-		}
-
-		// Create or update the coin first
 		coin := model.MemeCoin{
 			ID:              pair.BaseToken.Address,
 			Symbol:          pair.BaseToken.Symbol,
 			Name:            pair.BaseToken.Name,
 			ContractAddress: pair.BaseToken.Address,
-			LogoURL:         pair.Info.ImageURL,
-			Price:           price,
-			CurrentPrice:    price,
+			Price:           stringToFloat64(pair.PriceUsd),
+			CurrentPrice:    stringToFloat64(pair.PriceUsd),
 			Change24h:       pair.PriceChange.H24,
 			Volume24h:       pair.Volume.H24,
 			MarketCap:       pair.MarketCap,
-			Labels:          pair.Labels,
-			Socials:         socials,
 			CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
-			UpdatedAt:       now,
+			UpdatedAt:       time.Now(),
 		}
-
-		// Add website URL if available
-		if len(pair.Info.Websites) > 0 {
-			coin.WebsiteURL = pair.Info.Websites[0].URL
-		}
-
-		// Upsert the coin first to ensure we have the latest metadata
-		err := s.repo.UpsertCoin(ctx, coin)
-		if err != nil {
-			return fmt.Errorf("failed to upsert coin: %w", err)
-		}
-
-		// Then create the price update
-		update := model.PriceUpdate{
-			CoinID:          pair.BaseToken.Address,
-			ContractAddress: pair.BaseToken.Address,
-			Symbol:          pair.BaseToken.Symbol,
-			Name:            pair.BaseToken.Name,
-			Price:           price,
-			Volume24h:       pair.Volume.H24,
-			MarketCap:       pair.MarketCap,
-			PriceChange24h:  pair.PriceChange.H24,
-			Timestamp:       now,
-		}
-		updates = append(updates, update)
-	}
-
-	err = s.repo.UpdatePrices(ctx, updates)
-	if err != nil {
-		return fmt.Errorf("failed to store price updates: %w", err)
+		s.coins[coin.ContractAddress] = coin
 	}
 
 	return nil
+}
+
+// GetPriceHistory returns price history for a coin (in-memory implementation)
+func (s *CoinService) GetPriceHistory(ctx context.Context, coinID string, startTime time.Time) ([]model.PricePoint, error) {
+	// For now, return empty slice since we're not storing historical data in memory
+	return []model.PricePoint{}, nil
+}
+
+// GetCoinPriceHistory returns price history for a coin based on timeframe
+func (s *CoinService) GetCoinPriceHistory(ctx context.Context, coinID string, timeframe string) ([]model.PricePoint, error) {
+	var startTime time.Time
+	now := time.Now()
+
+	switch timeframe {
+	case "day":
+		startTime = now.AddDate(0, 0, -1)
+	case "week":
+		startTime = now.AddDate(0, 0, -7)
+	case "month":
+		startTime = now.AddDate(0, -1, 0)
+	default:
+		return nil, fmt.Errorf("invalid timeframe: %s", timeframe)
+	}
+
+	return s.GetPriceHistory(ctx, coinID, startTime)
+}
+
+// Helper function to convert string to float64
+func stringToFloat64(s string) float64 {
+	if s == "" {
+		return 0
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0
+	}
+	return f
 }

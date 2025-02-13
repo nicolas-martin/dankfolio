@@ -19,53 +19,63 @@ func NewTradeHandlers(tradeService *service.TradeService) *TradeHandlers {
 	}
 }
 
-func (h *TradeHandlers) RegisterRoutes(router chi.Router) {
-	router.Post("/trades/preview", h.PreviewTrade)
-	router.Post("/trades/execute", h.ExecuteTrade)
-}
-
-type TradeRequest struct {
-	CoinID string  `json:"coin_id"`
-	Type   string  `json:"type"`
-	Amount float64 `json:"amount"`
+func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
+	r.Post("/trades/preview", h.PreviewTrade)
+	r.Post("/trades", h.ExecuteTrade)
+	r.Get("/trades/{id}", h.GetTradeByID)
+	r.Get("/trades", h.ListTrades)
 }
 
 func (h *TradeHandlers) PreviewTrade(w http.ResponseWriter, r *http.Request) {
-	var req TradeRequest
+	var req model.TradeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		respondError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	preview, err := h.tradeService.PreviewTrade(r.Context(), model.TradeRequest{
-		CoinID: req.CoinID,
-		Type:   req.Type,
-		Amount: req.Amount,
-	})
+	preview, err := h.tradeService.PreviewTrade(r.Context(), req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondError(w, "Failed to preview trade", http.StatusInternalServerError)
 		return
 	}
 
-	respondJSON(w, http.StatusOK, preview)
+	respondJSON(w, preview, http.StatusOK)
 }
 
 func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
-	var req TradeRequest
+	var req model.TradeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		respondError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	trade, err := h.tradeService.ExecuteTrade(r.Context(), model.TradeRequest{
-		CoinID: req.CoinID,
-		Type:   req.Type,
-		Amount: req.Amount,
-	})
+	trade, err := h.tradeService.ExecuteTrade(r.Context(), req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondError(w, "Failed to execute trade", http.StatusInternalServerError)
 		return
 	}
 
-	respondJSON(w, http.StatusOK, trade)
+	respondJSON(w, trade, http.StatusOK)
+}
+
+func (h *TradeHandlers) GetTradeByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	trade, err := h.tradeService.GetTradeByID(r.Context(), id)
+	if err != nil {
+		respondError(w, "Trade not found", http.StatusNotFound)
+		return
+	}
+
+	respondJSON(w, trade, http.StatusOK)
+}
+
+func (h *TradeHandlers) ListTrades(w http.ResponseWriter, r *http.Request) {
+	trades, err := h.tradeService.ListTrades(r.Context())
+	if err != nil {
+		respondError(w, "Failed to list trades", http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, trades, http.StatusOK)
 }

@@ -1,24 +1,14 @@
-.PHONY: run test lint migrate-up migrate-down generate-mocks dev clean backend-kill
+.PHONY: run test lint generate-mocks dev clean backend-kill
 
 # Development
 dev: clean setup run
 
-setup: check-docker
-	@echo "📦 Starting infrastructure..."
-	@docker-compose up -d
-	@echo "⏳ Waiting for PostgreSQL..."
-	@sleep 5
+setup:
 	@echo "📝 Creating .env file..."
 	@cp .env.example .env
-	@echo "🗃️ Running migrations..."
-	@make migrate-up
-
-check-docker:
-	@docker info > /dev/null 2>&1 || (echo "❌ Docker is not running. Please start Docker first." && exit 1)
 
 clean:
 	@echo "🧹 Cleaning up..."
-	@docker-compose down -v 2>/dev/null || true
 	@rm -f .env
 
 run:
@@ -49,17 +39,6 @@ lint:
 	@echo "🔍 Running linter..."
 	@golangci-lint run
 	@echo "✅ Linting completed"
-
-# Database
-migrate-up:
-	@echo "⬆️  Running migrations up..."
-	@migrate -path internal/db/migrations -database "postgresql://postgres:postgres@localhost:5432/dankfolio?sslmode=disable" up
-	@echo "✅ Migrations completed"
-
-migrate-down:
-	@echo "⬇️  Running migrations down..."
-	@migrate -path internal/db/migrations -database "postgresql://postgres:postgres@localhost:5432/dankfolio?sslmode=disable" down
-	@echo "✅ Migrations rolled back"
 
 # Code generation
 generate-mocks:

@@ -10,12 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 
 	"github.com/nicolas-martin/dankfolio/internal/api"
-	"github.com/nicolas-martin/dankfolio/internal/db"
-	"github.com/nicolas-martin/dankfolio/internal/repository"
 	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
@@ -25,21 +22,8 @@ func main() {
 		log.Printf("Warning: .env file not found")
 	}
 
-	// Initialize database connection
-	dbpool, err := pgxpool.Connect(context.Background(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer dbpool.Close()
-
-	database := db.NewDB(dbpool)
-
-	// Initialize repositories
-	coinRepo := repository.NewCoinRepository(database)
-	tradeRepo := repository.NewTradeRepository(database)
-
 	// Initialize services
-	coinService := service.NewCoinService(coinRepo)
+	coinService := service.NewCoinService()
 	solanaService, err := service.NewSolanaTradeService(
 		os.Getenv("SOLANA_RPC_ENDPOINT"),
 		os.Getenv("SOLANA_WS_ENDPOINT"),
@@ -51,11 +35,17 @@ func main() {
 		log.Fatalf("Failed to initialize Solana service: %v", err)
 	}
 
-	tradeService := service.NewTradeService(coinService, solanaService, tradeRepo)
+	tradeService := service.NewTradeService(coinService, solanaService)
+	walletService := service.NewWalletService(os.Getenv("SOLANA_RPC_ENDPOINT"))
 	wsService := service.NewWebSocketService()
 
+	// Initialize test data for development
+	if err := coinService.InitializeTestData(context.Background()); err != nil {
+		log.Printf("Warning: Failed to initialize test data: %v", err)
+	}
+
 	// Initialize router
-	router := api.NewRouter(solanaService, coinService, tradeService)
+	router := api.NewRouter(solanaService, coinService, tradeService, walletService)
 
 	// Start WebSocket service
 	go wsService.Run(context.Background())
