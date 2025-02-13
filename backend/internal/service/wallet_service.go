@@ -196,3 +196,75 @@ func isValidAddress(address string) bool {
 	// TODO: Implement proper address validation based on the blockchain/network
 	return len(address) > 0
 }
+
+func (s *WalletService) InitiateDeposit(ctx context.Context, userID string, req *model.DepositRequest) (*model.DepositInfo, error) {
+	// Get user's wallet
+	wallet, err := s.GetWallet(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wallet: %w", err)
+	}
+
+	// Create deposit info
+	deposit := &model.DepositInfo{
+		ID:          fmt.Sprintf("dep_%d", time.Now().UnixNano()),
+		Amount:      req.Amount,
+		Status:      "pending",
+		PaymentType: req.PaymentType,
+		Address:     wallet.PublicKey,
+		ExpiresAt:   time.Now().Add(24 * time.Hour),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	// Generate payment URL and QR code if needed
+	if req.PaymentType == "crypto" {
+		deposit.PaymentURL = generatePaymentURL(req.PaymentType, req.Amount)
+		deposit.QRCode = generateQRCode(deposit.PaymentURL)
+	}
+
+	// Execute deposit transaction
+	err = s.walletRepo.ExecuteDeposit(ctx, deposit, userID, req.PaymentType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create deposit: %w", err)
+	}
+
+	return deposit, nil
+}
+
+func (s *WalletService) InitiateWithdrawal(ctx context.Context, userID string, req *model.WithdrawalRequest) (*model.WithdrawalInfo, error) {
+	// Get user's wallet
+	wallet, err := s.GetWallet(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wallet: %w", err)
+	}
+
+	// Check if user has sufficient balance
+	if wallet.Balance < req.Amount {
+		return nil, fmt.Errorf("insufficient balance")
+	}
+
+	// Calculate withdrawal fee
+	fee := calculateWithdrawalFee(req.Amount)
+	totalAmount := req.Amount + fee
+
+	// Create withdrawal info
+	withdrawal := &model.WithdrawalInfo{
+		ID:               fmt.Sprintf("wdr_%d", time.Now().UnixNano()),
+		Amount:           req.Amount,
+		Fee:              fee,
+		TotalAmount:      totalAmount,
+		Status:           "pending",
+		EstimatedTime:    "10-30 minutes",
+		DestinationChain: req.DestinationChain,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+	}
+
+	// Execute withdrawal transaction
+	err = s.walletRepo.ExecuteWithdrawal(ctx, withdrawal, userID, req.DestinationAddress, req.Amount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create withdrawal: %w", err)
+	}
+
+	return withdrawal, nil
+}

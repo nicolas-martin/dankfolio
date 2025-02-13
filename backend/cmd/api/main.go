@@ -15,6 +15,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/internal/config"
 	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/logger"
+	"github.com/nicolas-martin/dankfolio/internal/repository"
 	"github.com/nicolas-martin/dankfolio/internal/service"
 	"go.uber.org/zap"
 )
@@ -44,11 +45,18 @@ func main() {
 	})
 	defer redisClient.Close()
 
+	// Initialize repositories
+	userRepo := repository.NewUserRepository(dbWrapper)
+	coinRepo := repository.NewCoinRepository(dbWrapper)
+	walletRepo := repository.NewWalletRepository(dbWrapper)
+	tradeRepo := repository.NewTradeRepository(dbWrapper)
+	portfolioRepo := repository.NewPortfolioRepository(dbWrapper)
+
 	// Initialize services
 	authService := service.NewAuthService(dbWrapper, cfg.JWTSecret)
-	userService := service.NewUserService(dbWrapper)
-	coinService := service.NewCoinService(dbWrapper)
-	walletService := service.NewWalletService(dbWrapper)
+	userService := service.NewUserService(userRepo)
+	coinService := service.NewCoinService(coinRepo)
+	walletService := service.NewWalletService(cfg.SolanaRPCEndpoint, walletRepo)
 
 	// Initialize Solana trade service
 	solanaService, err := service.NewSolanaTradeService(
@@ -62,9 +70,10 @@ func main() {
 		logger.Fatal(context.Background(), "Failed to initialize Solana trade service", zap.Error(err))
 	}
 
-	tradeService := service.NewTradeService(dbWrapper, coinService, walletService, solanaService)
-	portfolioService := service.NewPortfolioService(dbWrapper, coinService)
+	tradeService := service.NewTradeService(coinService, walletService, solanaService, tradeRepo)
+	portfolioService := service.NewPortfolioService(portfolioRepo, coinService)
 	wsService := service.NewWebSocketService()
+	leaderboardService := service.NewLeaderboardService(dbWrapper)
 
 	// Initialize router
 	router := api.NewRouter(
@@ -72,9 +81,11 @@ func main() {
 		userService,
 		coinService,
 		tradeService,
-		portfolioService,
+		&portfolioService,
 		walletService,
 		wsService,
+		solanaService,
+		leaderboardService,
 		redisClient,
 	)
 

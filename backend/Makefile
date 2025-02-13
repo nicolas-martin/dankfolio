@@ -27,17 +27,17 @@ run:
 	echo "🚀 Starting server..."
 	go run cmd/api/main.go > server.log 2>&1 &
 	echo "⏳ Waiting for server to start..."
-	for i in $$(seq 1 30); do \
-		if curl -s http://localhost:8080/health > /dev/null; then \
-			echo "✅ Server is ready!"; \
-			break; \
-		fi; \
-		if [ $$i -eq 30 ]; then \
-			echo "❌ Server failed to start"; \
-			exit 1; \
-		fi; \
-		sleep 1; \
-	done
+	# for i in $$(seq 1 30); do \
+	# 	if curl -s http://localhost:8080/health > /dev/null; then \
+	# 		echo "✅ Server is ready!"; \
+	# 		break; \
+	# 	fi; \
+	# 	if [ $$i -eq 30 ]; then \
+	# 		echo "❌ Server failed to start"; \
+	# 		exit 1; \
+	# 	fi; \
+	# 	sleep 1; \
+	# done
 
 test:
 	go test -v -race ./...

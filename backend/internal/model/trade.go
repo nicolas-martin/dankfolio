@@ -32,12 +32,15 @@ type TradeRequest struct {
 
 // TradePreview represents a preview of a trade before execution
 type TradePreview struct {
-	Type      string    `json:"type"`
-	Amount    float64   `json:"amount"`
-	Price     float64   `json:"price"`
-	TotalCost float64   `json:"total_cost"`
-	Fee       float64   `json:"fee"`
-	CreatedAt time.Time `json:"created_at"`
+	Type        string    `json:"type"`
+	CoinSymbol  string    `json:"coin_symbol"`
+	Amount      float64   `json:"amount"`
+	Price       float64   `json:"price"`
+	TotalCost   float64   `json:"total_cost"`
+	Fee         float64   `json:"fee"`
+	Slippage    float64   `json:"slippage"`
+	FinalAmount float64   `json:"final_amount"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // PriceUpdate represents a real-time price update for a meme

@@ -13,7 +13,7 @@ func (r *Router) handleGetPortfolio() http.HandlerFunc {
 			return
 		}
 
-		portfolio, err := r.portfolioService.GetPortfolio(req.Context(), user.ID)
+		portfolio, err := (*r.portfolioService).GetPortfolio(req.Context(), user.ID)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -36,7 +36,7 @@ func (r *Router) handleGetPortfolioHistory() http.HandlerFunc {
 			timeframe = "24h" // Default timeframe
 		}
 
-		history, err := r.portfolioService.GetPortfolioHistory(req.Context(), user.ID, timeframe)
+		history, err := (*r.portfolioService).GetPortfolioHistory(req.Context(), user.ID, timeframe)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -72,7 +72,7 @@ func (r *Router) handleGetPortfolioStats() http.HandlerFunc {
 			return
 		}
 
-		stats, err := r.portfolioService.GetPortfolioStats(req.Context(), user.ID)
+		stats, err := (*r.portfolioService).GetPortfolioStats(req.Context(), user.ID)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
 			return

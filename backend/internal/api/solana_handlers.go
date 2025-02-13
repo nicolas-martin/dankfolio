@@ -297,7 +297,7 @@ func (r *Router) handleGetSolanaTradingPairs() http.HandlerFunc {
 func (r *SolanaRouter) GetWallet(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
 
-	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID.String())
+	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get wallet: %v", err)})
 		return
@@ -309,7 +309,7 @@ func (r *SolanaRouter) GetWallet(c *gin.Context) {
 func (r *SolanaRouter) FundTestnetWallet(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
 
-	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID.String())
+	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get wallet: %v", err)})
 		return
@@ -328,7 +328,7 @@ func (r *SolanaRouter) FundTestnetWallet(c *gin.Context) {
 func (r *SolanaRouter) GetBalance(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
 
-	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID.String())
+	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get wallet: %v", err)})
 		return
