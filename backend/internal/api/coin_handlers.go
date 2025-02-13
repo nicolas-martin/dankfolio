@@ -16,7 +16,7 @@ func (r *Router) handleGetTopCoins() http.HandlerFunc {
 			}
 		}
 
-		coins, err := r.coinService.GetTopCoins(req.Context(), limit)
+		coins, err := r.coinService.GetTopMemeCoins(req.Context(), limit)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
 			return

@@ -34,4 +34,4 @@ type SocialUser struct {
 	Name      string
 	Provider  string
 	AvatarURL string
-} 
+}

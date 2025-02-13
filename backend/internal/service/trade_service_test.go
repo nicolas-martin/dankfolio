@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/google/uuid"
 	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 	"github.com/nicolas-martin/dankfolio/internal/repository"
@@ -62,9 +63,9 @@ func setupTestTradeService(t *testing.T) (*TradeService, *CoinService, *WalletSe
 	return tradeService, coinService, walletService, solanaService, cleanup
 }
 
-func setupTestUser(t *testing.T, ctx context.Context, walletService *WalletService) string {
-	userID := "test_user"
-	wallet, err := walletService.CreateWallet(ctx, userID)
+func setupTestUser(t *testing.T, ctx context.Context, walletService *WalletService) uuid.UUID {
+	userID := uuid.New()
+	wallet, err := walletService.CreateWallet(ctx, userID.String())
 	require.NoError(t, err)
 	require.NotNil(t, wallet)
 	return userID
@@ -144,7 +145,7 @@ func TestTradeService_Integration(t *testing.T) {
 	t.Run("Trade Preview", func(t *testing.T) {
 		// Test buy preview
 		buyReq := model.TradeRequest{
-			UserID:    userID,
+			UserID:    userID.String(),
 			CoinID:    testCoin.ID,
 			Type:      "buy",
 			Amount:    100,
@@ -162,7 +163,7 @@ func TestTradeService_Integration(t *testing.T) {
 
 		// Test sell preview
 		sellReq := model.TradeRequest{
-			UserID:    userID,
+			UserID:    userID.String(),
 			CoinID:    testCoin.ID,
 			Type:      "sell",
 			Amount:    50,
@@ -182,7 +183,7 @@ func TestTradeService_Integration(t *testing.T) {
 	t.Run("Execute Trade", func(t *testing.T) {
 		// Test buy execution
 		buyReq := model.TradeRequest{
-			UserID:    userID,
+			UserID:    userID.String(),
 			CoinID:    testCoin.ID,
 			Type:      "buy",
 			Amount:    100,
@@ -197,7 +198,7 @@ func TestTradeService_Integration(t *testing.T) {
 
 		// Test sell execution
 		sellReq := model.TradeRequest{
-			UserID:    userID,
+			UserID:    userID.String(),
 			CoinID:    testCoin.ID,
 			Type:      "sell",
 			Amount:    50,
@@ -212,7 +213,7 @@ func TestTradeService_Integration(t *testing.T) {
 	})
 
 	t.Run("Trade History", func(t *testing.T) {
-		history, err := tradeService.GetTradeHistory(ctx, userID)
+		history, err := tradeService.GetTradeHistory(ctx, userID.String())
 		require.NoError(t, err)
 		require.NotNil(t, history)
 
@@ -222,7 +223,7 @@ func TestTradeService_Integration(t *testing.T) {
 		// Verify trade properties
 		for _, trade := range history {
 			assert.NotEmpty(t, trade.ID)
-			assert.Equal(t, userID, trade.UserID)
+			assert.Equal(t, userID.String(), trade.UserID)
 			assert.Equal(t, testCoin.ID, trade.CoinID)
 			assert.NotZero(t, trade.Amount)
 			assert.NotZero(t, trade.Price)
@@ -287,7 +288,7 @@ func TestTradeService_InvalidTrades(t *testing.T) {
 
 	// Test invalid coin ID
 	invalidCoinReq := model.TradeRequest{
-		UserID:    userID,
+		UserID:    userID.String(),
 		CoinID:    "invalid_coin",
 		Type:      "buy",
 		Amount:    100,
@@ -300,7 +301,7 @@ func TestTradeService_InvalidTrades(t *testing.T) {
 	// Test selling more than owned
 	// First buy some coins
 	buyReq := model.TradeRequest{
-		UserID:    userID,
+		UserID:    userID.String(),
 		CoinID:    testCoin.ID,
 		Type:      "buy",
 		Amount:    100,
@@ -312,7 +313,7 @@ func TestTradeService_InvalidTrades(t *testing.T) {
 
 	// Try to sell more than owned
 	invalidSellReq := model.TradeRequest{
-		UserID:    userID,
+		UserID:    userID.String(),
 		CoinID:    testCoin.ID,
 		Type:      "sell",
 		Amount:    200, // More than the 100 bought

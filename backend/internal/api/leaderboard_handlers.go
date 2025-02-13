@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,9 +22,9 @@ func (r *Router) handleGetLeaderboard() http.HandlerFunc {
 			}
 		}
 
-		leaderboard, err := r.portfolioService.GetLeaderboard(req.Context(), timeframe, limit)
+		leaderboard, err := r.leaderboardService.GetLeaderboard(req.Context(), timeframe, limit)
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			respondError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get leaderboard: %v", err))
 			return
 		}
 
@@ -44,9 +45,9 @@ func (r *Router) handleGetUserRank() http.HandlerFunc {
 			timeframe = "all" // Default to all-time
 		}
 
-		rank, err := r.portfolioService.GetUserRank(req.Context(), user.ID, timeframe)
+		rank, err := r.leaderboardService.GetUserRank(req.Context(), user.ID, timeframe)
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			respondError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get user rank: %v", err))
 			return
 		}
 

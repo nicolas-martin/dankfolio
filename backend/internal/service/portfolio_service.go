@@ -7,45 +7,57 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
 	"github.com/nicolas-martin/dankfolio/internal/repository"
-	"github.com/nicolas-martin/dankfolio/internal/util"
 )
 
-type PortfolioService struct {
-	portfolioRepo repository.PortfolioRepository
-	coinService   *CoinService
+type PortfolioService interface {
+	GetPortfolio(ctx context.Context, userID string) (*model.Portfolio, error)
+	GetPortfolioHistory(ctx context.Context, userID string, timeframe string) ([]model.PortfolioSnapshot, error)
+	GetPortfolioStats(ctx context.Context, userID string) (*model.PortfolioStats, error)
+	GetUserRank(ctx context.Context, userID string) (*model.UserRank, error)
 }
 
-func NewPortfolioService(portfolioRepo repository.PortfolioRepository, cs *CoinService) *PortfolioService {
-	return &PortfolioService{
-		portfolioRepo: portfolioRepo,
-		coinService:   cs,
+type portfolioService struct {
+	repo        repository.PortfolioRepository
+	coinService *CoinService
+}
+
+func NewPortfolioService(repo repository.PortfolioRepository, cs *CoinService) PortfolioService {
+	return &portfolioService{repo: repo, coinService: cs}
+}
+
+func (s *portfolioService) GetPortfolio(ctx context.Context, userID string) (*model.Portfolio, error) {
+	return s.repo.GetPortfolio(ctx, userID)
+}
+
+func (s *portfolioService) GetPortfolioHistory(ctx context.Context, userID string, timeframe string) ([]model.PortfolioSnapshot, error) {
+	var startTime time.Time
+	now := time.Now()
+	switch timeframe {
+	case "24h":
+		startTime = now.Add(-24 * time.Hour)
+	case "7d":
+		startTime = now.AddDate(0, 0, -7)
+	case "30d":
+		startTime = now.AddDate(0, 0, -30)
+	case "90d":
+		startTime = now.AddDate(0, 0, -90)
+	case "1y":
+		startTime = now.AddDate(-1, 0, 0)
+	default:
+		startTime = now.Add(-24 * time.Hour)
 	}
+	return s.repo.GetPortfolioHistory(ctx, userID, startTime)
 }
 
-func (s *PortfolioService) GetPortfolio(ctx context.Context, userID string) (*model.Portfolio, error) {
-	return s.portfolioRepo.GetPortfolio(ctx, userID)
+func (s *portfolioService) GetPortfolioStats(ctx context.Context, userID string) (*model.PortfolioStats, error) {
+	return s.repo.GetPortfolioStats(ctx, userID)
 }
 
-func (s *PortfolioService) GetPortfolioHistory(ctx context.Context, userID string, timeframe string) ([]model.PortfolioSnapshot, error) {
-	startTime := util.GetStartTimeForTimeframe(timeframe)
-	return s.portfolioRepo.GetPortfolioHistory(ctx, userID, startTime)
+func (s *portfolioService) GetUserRank(ctx context.Context, userID string) (*model.UserRank, error) {
+	return s.repo.GetUserRank(ctx, userID)
 }
 
-func (s *PortfolioService) GetLeaderboard(ctx context.Context, timeframe string, limit int) (*model.Leaderboard, error) {
-	startTime := util.GetStartTimeForTimeframe(timeframe)
-	return s.portfolioRepo.GetLeaderboard(ctx, startTime, limit)
-}
-
-func (s *PortfolioService) GetUserRank(ctx context.Context, userID string, timeframe string) (*model.UserRank, error) {
-	startTime := util.GetStartTimeForTimeframe(timeframe)
-	return s.portfolioRepo.GetUserRank(ctx, userID, startTime)
-}
-
-func (s *PortfolioService) GetPortfolioStats(ctx context.Context, userID string) (*model.PortfolioStats, error) {
-	return s.portfolioRepo.GetPortfolioStats(ctx, userID)
-}
-
-func (s *PortfolioService) calculatePortfolioAssets(ctx context.Context, holdings []model.MemeHolding) ([]model.PortfolioAsset, error) {
+func (s *portfolioService) calculatePortfolioAssets(ctx context.Context, holdings []model.MemeHolding) ([]model.PortfolioAsset, error) {
 	var assets []model.PortfolioAsset
 	for _, holding := range holdings {
 		coin, err := s.coinService.GetCoinByID(ctx, holding.CoinID)

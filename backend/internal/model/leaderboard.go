@@ -14,7 +14,7 @@ type LeaderboardEntry struct {
 	WinRate              float64 `json:"win_rate"`
 }
 
-// UserRank represents a user's ranking information
+// UserRank represents a user's position in the leaderboard
 type UserRank struct {
 	Rank                 int     `json:"rank"`
 	ProfitLoss           float64 `json:"profit_loss"`
@@ -23,7 +23,7 @@ type UserRank struct {
 	TopPercentile        float64 `json:"top_percentile"`
 }
 
-// Leaderboard represents the overall leaderboard data
+// Leaderboard represents the overall leaderboard
 type Leaderboard struct {
 	Timeframe  string             `json:"timeframe"`
 	Entries    []LeaderboardEntry `json:"entries"`

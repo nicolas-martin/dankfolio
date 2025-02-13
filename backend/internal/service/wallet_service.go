@@ -9,7 +9,6 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/google/uuid"
 	"github.com/nicolas-martin/dankfolio/internal/errors"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 	"github.com/nicolas-martin/dankfolio/internal/repository"
@@ -55,25 +54,25 @@ func (s *WalletService) GetWallet(ctx context.Context, userID string) (*model.Wa
 }
 
 func (s *WalletService) CreateWallet(ctx context.Context, userID string) (*model.Wallet, error) {
-	// Generate new Solana wallet
-	newWallet := solana.NewWallet()
+	// Generate new Solana keypair
+	account := solana.NewWallet()
+	publicKey := account.PublicKey().String()
+	privateKey := base64.StdEncoding.EncodeToString(account.PrivateKey)
 
+	// TODO: Encrypt private key before storing
+	encryptedPrivateKey := privateKey // For now, just store as is
+
+	// Create wallet with initial balance
 	wallet := &model.Wallet{
-		ID:          uuid.New().String(),
+		ID:          userID,
 		UserID:      userID,
-		PublicKey:   newWallet.PublicKey().String(),
+		PublicKey:   publicKey,
 		Balance:     0,
 		CreatedAt:   time.Now(),
 		LastUpdated: time.Now(),
 	}
 
-	// Convert private key to base58 string
-	privateKeyStr := newWallet.PrivateKey.String()
-
-	// TODO: Implement proper encryption of private key before storage
-	encryptedPrivateKey := privateKeyStr // This should be properly encrypted in production
-
-	err := s.walletRepo.CreateWalletWithBalance(ctx, wallet, privateKeyStr, encryptedPrivateKey)
+	err := s.walletRepo.CreateWalletWithBalance(ctx, wallet, privateKey, encryptedPrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create wallet: %w", err)
 	}
@@ -81,69 +80,66 @@ func (s *WalletService) CreateWallet(ctx context.Context, userID string) (*model
 	return wallet, nil
 }
 
-func (s *WalletService) InitiateDeposit(ctx context.Context, userID string, req *model.DepositRequest) (*model.DepositInfo, error) {
-	depositInfo := &model.DepositInfo{
-		ID:          uuid.New().String(),
-		Amount:      req.Amount,
-		Status:      "pending",
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		PaymentType: req.PaymentType,
-	}
-
-	if req.PaymentType == "crypto" {
-		depositInfo.Address = generateDepositAddress()
-		depositInfo.ExpiresAt = time.Now().Add(24 * time.Hour)
-	} else {
-		depositInfo.PaymentURL = generatePaymentURL(req.PaymentType, req.Amount)
-		depositInfo.QRCode = generateQRCode(depositInfo.PaymentURL)
-	}
-
-	err := s.walletRepo.ExecuteDeposit(ctx, depositInfo, userID, req.PaymentType)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create deposit: %w", err)
-	}
-
-	return depositInfo, nil
-}
-
-func (s *WalletService) InitiateWithdrawal(ctx context.Context, userID string, req *model.WithdrawalRequest) (*model.WithdrawalInfo, error) {
-	// Check balance
+func (s *WalletService) CreateDeposit(ctx context.Context, userID string, req model.DepositRequest) (*model.DepositInfo, error) {
+	// Get user's wallet
 	wallet, err := s.walletRepo.GetWallet(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if wallet.Balance < req.Amount {
-		return nil, errors.NewValidationError("insufficient balance")
+	// Create deposit info
+	deposit := &model.DepositInfo{
+		ID:          fmt.Sprintf("dep_%d", time.Now().UnixNano()),
+		Amount:      req.Amount,
+		Status:      "pending",
+		PaymentType: req.PaymentType,
+		Address:     wallet.PublicKey,
+		ExpiresAt:   time.Now().Add(24 * time.Hour),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
-	// Calculate fee
-	fee := calculateWithdrawalFee(req.Amount)
-	totalAmount := req.Amount + fee
-
-	withdrawalInfo := &model.WithdrawalInfo{
-		ID:               uuid.New().String(),
-		Amount:           req.Amount,
-		Fee:              fee,
-		TotalAmount:      totalAmount,
-		Status:           "pending",
-		EstimatedTime:    "10-30 minutes",
-		DestinationChain: req.DestinationChain,
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-	}
-
-	err = s.walletRepo.ExecuteWithdrawal(ctx, withdrawalInfo, userID, req.DestinationAddress, -totalAmount)
+	// Execute deposit transaction
+	err = s.walletRepo.ExecuteDeposit(ctx, deposit, userID, req.PaymentType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to process withdrawal: %w", err)
+		return nil, err
 	}
 
-	return withdrawalInfo, nil
+	return deposit, nil
 }
 
 func (s *WalletService) GetTransactionHistory(ctx context.Context, userID string, txType string, limit int) ([]model.Transaction, error) {
 	return s.walletRepo.GetTransactionHistory(ctx, userID, txType, limit)
+}
+
+func (s *WalletService) RequestWithdrawal(ctx context.Context, userID string, req model.WithdrawalRequest) error {
+	// Get user's wallet
+	wallet, err := s.walletRepo.GetWallet(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	// Check if user has sufficient balance
+	if wallet.Balance < req.Amount {
+		return fmt.Errorf("insufficient balance")
+	}
+
+	// Create withdrawal info
+	withdrawal := &model.WithdrawalInfo{
+		ID:        fmt.Sprintf("wdr_%d", time.Now().UnixNano()),
+		Amount:    req.Amount,
+		Status:    "pending",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Execute withdrawal
+	err = s.walletRepo.ExecuteWithdrawal(ctx, withdrawal, userID, req.DestinationAddress, req.Amount)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func generateDepositAddress() string {

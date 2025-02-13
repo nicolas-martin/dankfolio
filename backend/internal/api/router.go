@@ -15,16 +15,29 @@ import (
 	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
+// Router handles all HTTP routing and middleware
 type Router struct {
-	authService      *service.AuthService
-	userService      *service.UserService
-	coinService      *service.CoinService
-	tradeService     *service.TradeService
-	portfolioService *service.PortfolioService
-	walletService    *service.WalletService
-	wsService        *service.WebSocketService
-	solanaService    *service.SolanaTradeService
-	redisClient      *redis.Client
+	authService        *service.AuthService
+	userService        *service.UserService
+	coinService        *service.CoinService
+	tradeService       *service.TradeService
+	portfolioService   *service.PortfolioService
+	walletService      *service.WalletService
+	wsService          *service.WebSocketService
+	solanaService      *service.SolanaTradeService
+	leaderboardService *service.LeaderboardService
+	redisClient        *redis.Client
+}
+
+// TradeRouter handles trade-related routes
+type TradeRouter struct {
+	tradeService service.TradeService
+}
+
+// SolanaRouter handles Solana blockchain related routes
+type SolanaRouter struct {
+	walletService service.WalletService
+	solanaService service.SolanaService
 }
 
 func NewRouter(
@@ -36,18 +49,35 @@ func NewRouter(
 	ws *service.WalletService,
 	wss *service.WebSocketService,
 	ss *service.SolanaTradeService,
+	ls *service.LeaderboardService,
 	redisClient *redis.Client,
 ) *Router {
 	return &Router{
-		authService:      as,
-		userService:      us,
-		coinService:      cs,
-		tradeService:     ts,
-		portfolioService: ps,
-		walletService:    ws,
-		wsService:        wss,
-		solanaService:    ss,
-		redisClient:      redisClient,
+		authService:        as,
+		userService:        us,
+		coinService:        cs,
+		tradeService:       ts,
+		portfolioService:   ps,
+		walletService:      ws,
+		wsService:          wss,
+		solanaService:      ss,
+		leaderboardService: ls,
+		redisClient:        redisClient,
+	}
+}
+
+// NewTradeRouter creates a new TradeRouter instance
+func NewTradeRouter(ts service.TradeService) *TradeRouter {
+	return &TradeRouter{
+		tradeService: ts,
+	}
+}
+
+// NewSolanaRouter creates a new SolanaRouter instance
+func NewSolanaRouter(ws service.WalletService, ss service.SolanaService) *SolanaRouter {
+	return &SolanaRouter{
+		walletService: ws,
+		solanaService: ss,
 	}
 }
 

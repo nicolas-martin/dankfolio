@@ -23,6 +23,14 @@ func SetupTestDB(t *testing.T) (db.DB, func()) {
 	pool, err := pgxpool.ConnectConfig(context.Background(), config)
 	require.NoError(t, err)
 
+	// Drop all tables first
+	ctx := context.Background()
+	CleanupTestSchema(ctx, db.NewDB(pool))
+
+	// Create test schema
+	err = SetupTestSchema(ctx, db.NewDB(pool))
+	require.NoError(t, err)
+
 	// Create a cleanup function
 	cleanup := func() {
 		pool.Close()
@@ -66,11 +74,8 @@ func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 // InsertTestWallet inserts a test wallet into the database
 func InsertTestWallet(ctx context.Context, db db.DB, wallet model.Wallet) error {
 	query := `
-		INSERT INTO wallets (
-			id, user_id, public_key, private_key, encrypted_private_key, balance, created_at, last_updated
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8
-		)
+		INSERT INTO wallets (id, user_id, public_key, private_key, encrypted_private_key, balance, created_at, last_updated)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	_, err := db.Exec(ctx, query,
@@ -119,6 +124,25 @@ func GetUserPortfolio(ctx context.Context, db db.DB, userID string, coinID strin
 // SetupTestSchema creates the necessary tables for testing
 func SetupTestSchema(ctx context.Context, db db.DB) error {
 	queries := []string{
+		`CREATE TABLE IF NOT EXISTS users (
+			id TEXT PRIMARY KEY,
+			email VARCHAR(255) UNIQUE NOT NULL,
+			username VARCHAR(50) UNIQUE NOT NULL,
+			password_hash VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS wallets (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL REFERENCES users(id),
+			public_key VARCHAR(255) NOT NULL,
+			private_key TEXT NOT NULL,
+			encrypted_private_key TEXT NOT NULL,
+			balance DECIMAL(24,12) NOT NULL DEFAULT 0,
+			last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS meme_coins (
 			id TEXT PRIMARY KEY,
 			symbol TEXT NOT NULL,
@@ -137,7 +161,7 @@ func SetupTestSchema(ctx context.Context, db db.DB) error {
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 		)`,
 		`CREATE TABLE IF NOT EXISTS price_history (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			id TEXT PRIMARY KEY,
 			coin_id TEXT NOT NULL REFERENCES meme_coins(id),
 			price DECIMAL NOT NULL,
 			market_cap DECIMAL,
@@ -145,19 +169,9 @@ func SetupTestSchema(ctx context.Context, db db.DB) error {
 			timestamp BIGINT NOT NULL,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 		)`,
-		`CREATE TABLE IF NOT EXISTS wallets (
-			id TEXT PRIMARY KEY,
-			user_id TEXT NOT NULL,
-			public_key TEXT NOT NULL,
-			private_key TEXT,
-			encrypted_private_key TEXT,
-			balance DECIMAL DEFAULT 0,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-			last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-		)`,
 		`CREATE TABLE IF NOT EXISTS deposits (
-			id TEXT PRIMARY KEY,
-			user_id TEXT NOT NULL,
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES users(id),
 			amount DECIMAL NOT NULL,
 			payment_type TEXT NOT NULL,
 			address TEXT,
@@ -170,8 +184,8 @@ func SetupTestSchema(ctx context.Context, db db.DB) error {
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 		)`,
 		`CREATE TABLE IF NOT EXISTS withdrawals (
-			id TEXT PRIMARY KEY,
-			user_id TEXT NOT NULL,
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES users(id),
 			amount DECIMAL NOT NULL,
 			fee DECIMAL NOT NULL,
 			total_amount DECIMAL NOT NULL,

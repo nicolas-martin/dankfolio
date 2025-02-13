@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
@@ -61,4 +63,44 @@ func (r *Router) handleGetTradeHistory() http.HandlerFunc {
 
 		respondJSON(w, http.StatusOK, trades)
 	}
+}
+
+func (r *TradeRouter) PreviewTrade(c *gin.Context) {
+	user := c.MustGet("user").(*model.User)
+
+	var req model.TradeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid request: %v", err)})
+		return
+	}
+
+	req.UserID = user.ID // Using UUID directly
+
+	preview, err := r.tradeService.PreviewTrade(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to preview trade: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, preview)
+}
+
+func (r *TradeRouter) ExecuteTrade(c *gin.Context) {
+	user := c.MustGet("user").(*model.User)
+
+	var req model.TradeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid request: %v", err)})
+		return
+	}
+
+	req.UserID = user.ID // Using UUID directly
+
+	trade, err := r.tradeService.ExecuteTrade(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to execute trade: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, trade)
 }

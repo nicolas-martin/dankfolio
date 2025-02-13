@@ -1,30 +1,26 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 // Portfolio represents a user's portfolio of meme coins
 type Portfolio struct {
-	UserID                    string           `json:"user_id"`
-	Balance                   float64          `json:"balance"`
-	Holdings                  []MemeHolding    `json:"holdings"`
-	Assets                    []PortfolioAsset `json:"assets"`
-	TotalValue                float64          `json:"total_value"`
-	TotalProfitLoss           float64          `json:"total_profit_loss"`
-	TotalProfitLossPercentage float64          `json:"total_profit_loss_percentage"`
-	UpdatedAt                 time.Time        `json:"updated_at"`
+	UserID   string        `json:"user_id"`
+	Holdings []MemeHolding `json:"holdings"`
 }
 
-// MemeHolding represents a user's holdings of a specific meme coin
+// MemeHolding represents a user's holding of a specific meme coin
 type MemeHolding struct {
 	CoinID          string    `json:"coin_id"`
 	Amount          float64   `json:"amount"`
+	AverageBuyPrice float64   `json:"average_buy_price"`
 	Quantity        float64   `json:"quantity"`
 	Value           float64   `json:"value"`
-	AverageBuyPrice float64   `json:"average_buy_price"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-// PortfolioAsset represents an asset in a user's portfolio
+// PortfolioAsset represents a portfolio asset with current market value and profit/loss calculations
 type PortfolioAsset struct {
 	CoinID          string    `json:"coin_id"`
 	Symbol          string    `json:"symbol"`
@@ -38,21 +34,24 @@ type PortfolioAsset struct {
 	LastUpdated     time.Time `json:"last_updated"`
 }
 
-// PortfolioSnapshot represents a point-in-time snapshot of a user's portfolio
+// PortfolioSnapshot represents a point-in-time snapshot of a portfolio's value
 type PortfolioSnapshot struct {
-	ID         string        `json:"id"`
-	UserID     string        `json:"user_id"`
-	Balance    float64       `json:"balance"`
-	Holdings   []MemeHolding `json:"holdings"`
-	TotalValue float64       `json:"total_value"`
-	Value      float64       `json:"value"`
-	Timestamp  time.Time     `json:"timestamp"`
+	Timestamp          time.Time `json:"timestamp"`
+	TotalValue         float64   `json:"total_value"`
+	DailyChange        float64   `json:"daily_change"`
+	DailyChangePercent float64   `json:"daily_change_percent"`
 }
 
-// PortfolioStats represents statistics about a user's trading performance
+// PortfolioStats represents detailed statistics about a portfolio's performance
 type PortfolioStats struct {
-	TotalTrades     int     `json:"total_trades"`
-	WinningTrades   int     `json:"winning_trades"`
-	TotalProfitLoss float64 `json:"total_profit_loss"`
-	WinRate         float64 `json:"win_rate"`
+	TotalValue           float64 `json:"total_value"`
+	TotalCost            float64 `json:"total_cost"`
+	TotalProfit          float64 `json:"total_profit"`
+	TotalProfitPercent   float64 `json:"total_profit_percent"`
+	DailyProfit          float64 `json:"daily_profit"`
+	DailyProfitPercent   float64 `json:"daily_profit_percent"`
+	WeeklyProfit         float64 `json:"weekly_profit"`
+	WeeklyProfitPercent  float64 `json:"weekly_profit_percent"`
+	MonthlyProfit        float64 `json:"monthly_profit"`
+	MonthlyProfitPercent float64 `json:"monthly_profit_percent"`
 }

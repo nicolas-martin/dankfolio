@@ -9,6 +9,8 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gin-gonic/gin"
+	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 // verifyTestnetConnection verifies that we are connected to testnet
@@ -290,4 +292,47 @@ func (r *Router) handleGetSolanaTradingPairs() http.HandlerFunc {
 
 		respondJSON(w, http.StatusOK, tradingPairs)
 	}
+}
+
+func (r *SolanaRouter) GetWallet(c *gin.Context) {
+	user := c.MustGet("user").(*model.User)
+
+	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID.String())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get wallet: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, wallet)
+}
+
+func (r *SolanaRouter) FundTestnetWallet(c *gin.Context) {
+	user := c.MustGet("user").(*model.User)
+
+	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID.String())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get wallet: %v", err)})
+		return
+	}
+
+	// Fund the wallet with test SOL
+	err = r.solanaService.FundTestnetWallet(c.Request.Context(), wallet.PublicKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to fund wallet: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Wallet funded successfully"})
+}
+
+func (r *SolanaRouter) GetBalance(c *gin.Context) {
+	user := c.MustGet("user").(*model.User)
+
+	wallet, err := r.walletService.GetWallet(c.Request.Context(), user.ID.String())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get wallet: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"balance": wallet.Balance})
 }

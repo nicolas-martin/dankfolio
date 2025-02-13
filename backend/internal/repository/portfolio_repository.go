@@ -13,9 +13,9 @@ import (
 type PortfolioRepository interface {
 	GetPortfolio(ctx context.Context, userID string) (*model.Portfolio, error)
 	GetPortfolioHistory(ctx context.Context, userID string, startTime time.Time) ([]model.PortfolioSnapshot, error)
-	GetLeaderboard(ctx context.Context, startTime time.Time, limit int) (*model.Leaderboard, error)
-	GetUserRank(ctx context.Context, userID string, startTime time.Time) (*model.UserRank, error)
 	GetPortfolioStats(ctx context.Context, userID string) (*model.PortfolioStats, error)
+	GetUserRank(ctx context.Context, userID string) (*model.UserRank, error)
+	GetLeaderboard(ctx context.Context, startTime time.Time, limit int) (*model.Leaderboard, error)
 }
 
 // portfolioRepository implements PortfolioRepository interface
@@ -31,22 +31,14 @@ func NewPortfolioRepository(db db.DB) PortfolioRepository {
 func (r *portfolioRepository) GetPortfolio(ctx context.Context, userID string) (*model.Portfolio, error) {
 	query := `
 		SELECT 
-			p.coin_id,
-			mc.symbol,
-			mc.name,
-			p.amount,
-			p.average_buy_price,
-			COALESCE(ph.price, 0) as current_price
-		FROM portfolios p
-		JOIN meme_coins mc ON mc.id = p.coin_id
-		LEFT JOIN LATERAL (
-			SELECT price
-			FROM price_history
-			WHERE coin_id = p.coin_id
-			ORDER BY timestamp DESC
-			LIMIT 1
-		) ph ON true
-		WHERE p.user_id = $1 AND p.amount > 0
+			h.coin_id,
+			h.amount,
+			h.average_buy_price,
+			COALESCE(h.amount, 0) as quantity,
+			COALESCE(h.amount * h.average_buy_price, 0) as value,
+			h.updated_at
+		FROM portfolios h
+		WHERE h.user_id = $1
 	`
 
 	rows, err := r.db.Query(ctx, query, userID)
@@ -55,60 +47,43 @@ func (r *portfolioRepository) GetPortfolio(ctx context.Context, userID string) (
 	}
 	defer rows.Close()
 
-	portfolio := &model.Portfolio{
-		UserID: userID,
-		Assets: make([]model.PortfolioAsset, 0),
-	}
-
+	var holdings []model.MemeHolding
 	for rows.Next() {
-		var asset model.PortfolioAsset
+		var holding model.MemeHolding
 		err := rows.Scan(
-			&asset.CoinID,
-			&asset.Symbol,
-			&asset.Name,
-			&asset.Amount,
-			&asset.AverageBuyPrice,
-			&asset.CurrentPrice,
+			&holding.CoinID,
+			&holding.Amount,
+			&holding.AverageBuyPrice,
+			&holding.Quantity,
+			&holding.Value,
+			&holding.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan portfolio row: %w", err)
 		}
-
-		asset.Value = asset.Amount * asset.CurrentPrice
-		asset.ProfitLoss = asset.Value - (asset.Amount * asset.AverageBuyPrice)
-		asset.ProfitLossPerc = (asset.CurrentPrice - asset.AverageBuyPrice) / asset.AverageBuyPrice * 100
-
-		portfolio.Assets = append(portfolio.Assets, asset)
-		portfolio.TotalValue += asset.Value
-		portfolio.TotalProfitLoss += asset.ProfitLoss
+		holdings = append(holdings, holding)
 	}
 
-	if len(portfolio.Assets) > 0 {
-		portfolio.TotalProfitLossPercentage = portfolio.TotalProfitLoss / portfolio.TotalValue * 100
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating portfolio rows: %w", err)
 	}
 
-	return portfolio, nil
+	return &model.Portfolio{
+		UserID:   userID,
+		Holdings: holdings,
+	}, nil
 }
 
 func (r *portfolioRepository) GetPortfolioHistory(ctx context.Context, userID string, startTime time.Time) ([]model.PortfolioSnapshot, error) {
 	query := `
-		WITH daily_prices AS (
-			SELECT 
-				coin_id,
-				date_trunc('day', timestamp) as date,
-				last(price, timestamp) as price
-			FROM price_history
-			WHERE timestamp >= $2
-			GROUP BY coin_id, date_trunc('day', timestamp)
-		)
 		SELECT 
-			dp.date,
-			SUM(p.amount * dp.price) as total_value
-		FROM portfolios p
-		JOIN daily_prices dp ON dp.coin_id = p.coin_id
-		WHERE p.user_id = $1
-		GROUP BY dp.date
-		ORDER BY dp.date ASC
+			timestamp,
+			total_value,
+			daily_change,
+			daily_change_percent
+		FROM portfolio_history
+		WHERE user_id = $1 AND timestamp >= $2
+		ORDER BY timestamp ASC
 	`
 
 	rows, err := r.db.Query(ctx, query, userID, startTime)
@@ -117,54 +92,109 @@ func (r *portfolioRepository) GetPortfolioHistory(ctx context.Context, userID st
 	}
 	defer rows.Close()
 
-	var history []model.PortfolioSnapshot
+	var snapshots []model.PortfolioSnapshot
 	for rows.Next() {
 		var snapshot model.PortfolioSnapshot
-		err := rows.Scan(&snapshot.Timestamp, &snapshot.Value)
+		err := rows.Scan(
+			&snapshot.Timestamp,
+			&snapshot.TotalValue,
+			&snapshot.DailyChange,
+			&snapshot.DailyChangePercent,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan portfolio history row: %w", err)
 		}
-		history = append(history, snapshot)
+		snapshots = append(snapshots, snapshot)
 	}
 
-	return history, nil
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating portfolio history rows: %w", err)
+	}
+
+	return snapshots, nil
+}
+
+func (r *portfolioRepository) GetPortfolioStats(ctx context.Context, userID string) (*model.PortfolioStats, error) {
+	query := `
+		SELECT 
+			total_value,
+			total_cost,
+			total_profit,
+			total_profit_percent,
+			daily_profit,
+			daily_profit_percent,
+			weekly_profit,
+			weekly_profit_percent,
+			monthly_profit,
+			monthly_profit_percent
+		FROM portfolio_stats
+		WHERE user_id = $1
+	`
+
+	stats := &model.PortfolioStats{}
+	err := r.db.QueryRow(ctx, query, userID).Scan(
+		&stats.TotalValue,
+		&stats.TotalCost,
+		&stats.TotalProfit,
+		&stats.TotalProfitPercent,
+		&stats.DailyProfit,
+		&stats.DailyProfitPercent,
+		&stats.WeeklyProfit,
+		&stats.WeeklyProfitPercent,
+		&stats.MonthlyProfit,
+		&stats.MonthlyProfitPercent,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get portfolio stats: %w", err)
+	}
+
+	return stats, nil
+}
+
+func (r *portfolioRepository) GetUserRank(ctx context.Context, userID string) (*model.UserRank, error) {
+	query := `
+		WITH user_stats AS (
+			SELECT 
+				total_value,
+				total_profit_percent,
+				ROW_NUMBER() OVER (ORDER BY total_value DESC) as rank
+			FROM portfolio_stats
+		)
+		SELECT 
+			rank,
+			total_value,
+			total_profit_percent
+		FROM user_stats
+		WHERE user_id = $1
+	`
+
+	rank := &model.UserRank{}
+	err := r.db.QueryRow(ctx, query, userID).Scan(
+		&rank.Rank,
+		&rank.TotalValue,
+		&rank.TotalProfitPercent,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user rank: %w", err)
+	}
+
+	return rank, nil
 }
 
 func (r *portfolioRepository) GetLeaderboard(ctx context.Context, startTime time.Time, limit int) (*model.Leaderboard, error) {
 	query := `
-		WITH user_stats AS (
-			SELECT 
-				u.id as user_id,
-				u.username,
-				u.avatar_url,
-				SUM(CASE 
-					WHEN t.type = 'sell' THEN t.amount * (t.price - t.average_buy_price)
-					ELSE 0 
-				END) as profit_loss,
-				COUNT(*) as total_trades,
-				COUNT(CASE WHEN t.type = 'sell' AND t.price > t.average_buy_price THEN 1 END) as winning_trades
-			FROM users u
-			JOIN trades t ON t.user_id = u.id
-			WHERE t.created_at >= $1
-			GROUP BY u.id, u.username, u.avatar_url
-		)
 		SELECT 
-			ROW_NUMBER() OVER (ORDER BY profit_loss DESC) as rank,
-			user_id,
-			username,
-			avatar_url,
-			profit_loss,
-			CASE WHEN total_trades > 0 
-				THEN (winning_trades::float / total_trades::float) * 100 
-				ELSE 0 
-			END as win_rate,
-			total_trades
-		FROM user_stats
-		ORDER BY profit_loss DESC
-		LIMIT $2
+			u.username,
+			ps.total_value,
+			ps.total_profit_percent,
+			ROW_NUMBER() OVER (ORDER BY ps.total_value DESC) as rank
+		FROM portfolio_stats ps
+		JOIN users u ON u.id = ps.user_id
+		ORDER BY ps.total_value DESC
+		LIMIT $1
 	`
 
-	rows, err := r.db.Query(ctx, query, startTime, limit)
+	rows, err := r.db.Query(ctx, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query leaderboard: %w", err)
 	}
@@ -174,115 +204,25 @@ func (r *portfolioRepository) GetLeaderboard(ctx context.Context, startTime time
 	for rows.Next() {
 		var entry model.LeaderboardEntry
 		err := rows.Scan(
-			&entry.Rank,
-			&entry.UserID,
 			&entry.Username,
-			&entry.AvatarURL,
-			&entry.ProfitLoss,
-			&entry.WinRate,
-			&entry.TotalTrades,
+			&entry.TotalValue,
+			&entry.TotalProfitPercent,
+			&entry.Rank,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan leaderboard entry: %w", err)
+			return nil, fmt.Errorf("failed to scan leaderboard row: %w", err)
 		}
 		entries = append(entries, entry)
 	}
 
-	// Get total users for the timeframe
-	var totalUsers int
-	err = r.db.QueryRow(ctx, `
-		SELECT COUNT(DISTINCT user_id) 
-		FROM trades 
-		WHERE created_at >= $1
-	`, startTime).Scan(&totalUsers)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get total users: %w", err)
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating leaderboard rows: %w", err)
 	}
 
 	return &model.Leaderboard{
-		Timeframe:  "custom",
 		Entries:    entries,
-		TotalUsers: totalUsers,
 		UpdatedAt:  time.Now(),
+		StartTime:  startTime,
+		TotalUsers: len(entries),
 	}, nil
-}
-
-func (r *portfolioRepository) GetUserRank(ctx context.Context, userID string, startTime time.Time) (*model.UserRank, error) {
-	query := `
-		WITH user_profits AS (
-			SELECT 
-				user_id,
-				SUM(CASE 
-					WHEN type = 'sell' THEN amount * (price - average_buy_price)
-					ELSE 0 
-				END) as profit_loss
-			FROM trades
-			WHERE created_at >= $1
-			GROUP BY user_id
-		),
-		user_ranks AS (
-			SELECT 
-				user_id,
-				profit_loss,
-				ROW_NUMBER() OVER (ORDER BY profit_loss DESC) as rank,
-				COUNT(*) OVER () as total_users
-			FROM user_profits
-		)
-		SELECT rank, profit_loss, total_users
-		FROM user_ranks
-		WHERE user_id = $2
-	`
-
-	var rank model.UserRank
-	err := r.db.QueryRow(ctx, query, startTime, userID).Scan(
-		&rank.Rank,
-		&rank.ProfitLoss,
-		&rank.TotalUsers,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user rank: %w", err)
-	}
-
-	// Calculate percentile
-	rank.TopPercentile = (float64(rank.Rank) / float64(rank.TotalUsers)) * 100
-
-	return &rank, nil
-}
-
-func (r *portfolioRepository) GetPortfolioStats(ctx context.Context, userID string) (*model.PortfolioStats, error) {
-	query := `
-		WITH trade_stats AS (
-			SELECT 
-				COUNT(*) as total_trades,
-				COUNT(CASE WHEN type = 'sell' AND price > average_buy_price THEN 1 END) as winning_trades,
-				SUM(CASE 
-					WHEN type = 'sell' THEN amount * (price - average_buy_price)
-					ELSE 0 
-				END) as total_profit_loss
-			FROM trades
-			WHERE user_id = $1 AND status = 'completed'
-		)
-		SELECT 
-			total_trades,
-			winning_trades,
-			total_profit_loss,
-			CASE WHEN total_trades > 0 
-				THEN (winning_trades::float / total_trades::float) * 100 
-				ELSE 0 
-			END as win_rate
-		FROM trade_stats
-	`
-
-	stats := &model.PortfolioStats{}
-	err := r.db.QueryRow(ctx, query, userID).Scan(
-		&stats.TotalTrades,
-		&stats.WinningTrades,
-		&stats.TotalProfitLoss,
-		&stats.WinRate,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get portfolio stats: %w", err)
-	}
-
-	return stats, nil
 }

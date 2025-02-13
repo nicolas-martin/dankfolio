@@ -1,6 +1,6 @@
 -- Users table
 CREATE TABLE users (
-    id VARCHAR(50) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -10,8 +10,8 @@ CREATE TABLE users (
 
 -- Wallets table
 CREATE TABLE wallets (
-    id VARCHAR(50) PRIMARY KEY,
-    user_id VARCHAR(50) NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
     public_key VARCHAR(255) NOT NULL,
     private_key TEXT NOT NULL,
     encrypted_private_key TEXT NOT NULL,

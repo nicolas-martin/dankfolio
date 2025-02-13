@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 // Trade represents a meme trading transaction
 type Trade struct {
@@ -16,31 +18,26 @@ type Trade struct {
 	TransactionHash string    `json:"transaction_hash,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	CompletedAt     time.Time `json:"completed_at,omitempty"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-// TradeRequest represents a request to execute a trade
+// TradeRequest represents a request to trade meme coins
 type TradeRequest struct {
 	UserID    string  `json:"user_id"`
-	CoinID    string  `json:"coin_id"`
-	Type      string  `json:"type"` // "buy" or "sell"
-	Amount    float64 `json:"amount"`
-	Price     float64 `json:"price,omitempty"` // Optional limit price
-	OrderType string  `json:"order_type"`      // "market" or "limit"
+	CoinID    string  `json:"coin_id" validate:"required"`
+	Type      string  `json:"type" validate:"required,oneof=buy sell"`
+	Amount    float64 `json:"amount" validate:"required,gt=0"`
+	OrderType string  `json:"order_type" validate:"required,oneof=market limit"`
 }
 
-// TradePreview represents a preview of a potential trade
+// TradePreview represents a preview of a trade before execution
 type TradePreview struct {
-	CoinSymbol     string  `json:"coin_symbol"`
-	Type           string  `json:"type"`
-	Amount         float64 `json:"amount"`
-	Price          float64 `json:"price"`
-	EstimatedPrice float64 `json:"estimated_price"`
-	TotalCost      float64 `json:"total_cost"`
-	Fee            float64 `json:"fee"`
-	Slippage       float64 `json:"slippage"`
-	FinalAmount    float64 `json:"final_amount"`
-	CanExecute     bool    `json:"can_execute"`
-	ErrorMessage   string  `json:"error_message,omitempty"`
+	Type      string    `json:"type"`
+	Amount    float64   `json:"amount"`
+	Price     float64   `json:"price"`
+	TotalCost float64   `json:"total_cost"`
+	Fee       float64   `json:"fee"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // PriceUpdate represents a real-time price update for a meme

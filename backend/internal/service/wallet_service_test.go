@@ -79,8 +79,8 @@ func TestWalletService_DepositFlow(t *testing.T) {
 		PaymentType: "crypto",
 	}
 
-	// Initiate deposit
-	depositInfo, err := walletService.InitiateDeposit(ctx, userID, depositReq)
+	// Create deposit
+	depositInfo, err := walletService.CreateDeposit(ctx, userID, *depositReq)
 	require.NoError(t, err)
 	require.NotNil(t, depositInfo)
 
@@ -126,7 +126,7 @@ func TestWalletService_WithdrawalFlow(t *testing.T) {
 		Amount:      100.0,
 		PaymentType: "crypto",
 	}
-	depositInfo, err := walletService.InitiateDeposit(ctx, userID, depositReq)
+	depositInfo, err := walletService.CreateDeposit(ctx, userID, *depositReq)
 	require.NoError(t, err)
 	err = walletRepo.ExecuteDeposit(ctx, depositInfo, userID, depositReq.PaymentType)
 	require.NoError(t, err)
@@ -149,22 +149,14 @@ func TestWalletService_WithdrawalFlow(t *testing.T) {
 	require.NoError(t, err)
 
 	// Initiate withdrawal
-	withdrawalInfo, err := walletService.InitiateWithdrawal(ctx, userID, withdrawalReq)
+	err = walletService.RequestWithdrawal(ctx, userID, *withdrawalReq)
 	require.NoError(t, err)
-	require.NotNil(t, withdrawalInfo)
 
-	// Verify withdrawal info
-	assert.NotEmpty(t, withdrawalInfo.ID)
-	assert.Equal(t, withdrawalReq.Amount, withdrawalInfo.Amount)
-	assert.Equal(t, "pending", withdrawalInfo.Status)
-	assert.Equal(t, withdrawalReq.DestinationChain, withdrawalInfo.DestinationChain)
-	assert.False(t, withdrawalInfo.CreatedAt.IsZero())
-	assert.False(t, withdrawalInfo.UpdatedAt.IsZero())
-
-	// Verify wallet balance after withdrawal
+	// Verify wallet balance after withdrawal (including fee)
 	wallet, err = walletService.GetWallet(ctx, userID)
 	require.NoError(t, err)
-	assert.Equal(t, initialBalance-withdrawalReq.Amount-withdrawalInfo.Fee, wallet.Balance)
+	withdrawalFee := withdrawalReq.Amount * 0.001 // 0.1% fee as defined in wallet_service.go
+	assert.Equal(t, initialBalance-withdrawalReq.Amount-withdrawalFee, wallet.Balance)
 
 	// Try to withdraw more than available balance
 	invalidWithdrawalReq := &model.WithdrawalRequest{
@@ -179,7 +171,7 @@ func TestWalletService_WithdrawalFlow(t *testing.T) {
 	assert.Contains(t, err.Error(), "insufficient balance")
 
 	// Try to initiate invalid withdrawal
-	_, err = walletService.InitiateWithdrawal(ctx, userID, invalidWithdrawalReq)
+	err = walletService.RequestWithdrawal(ctx, userID, *invalidWithdrawalReq)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "insufficient balance")
 }
@@ -201,7 +193,7 @@ func TestWalletService_TransactionHistory(t *testing.T) {
 		Amount:      100.0,
 		PaymentType: "crypto",
 	}
-	depositInfo, err := walletService.InitiateDeposit(ctx, userID, depositReq)
+	depositInfo, err := walletService.CreateDeposit(ctx, userID, *depositReq)
 	require.NoError(t, err)
 	err = walletRepo.ExecuteDeposit(ctx, depositInfo, userID, depositReq.PaymentType)
 	require.NoError(t, err)
@@ -212,7 +204,7 @@ func TestWalletService_TransactionHistory(t *testing.T) {
 		DestinationChain:   "solana",
 		DestinationAddress: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
 	}
-	_, err = walletService.InitiateWithdrawal(ctx, userID, withdrawalReq)
+	err = walletService.RequestWithdrawal(ctx, userID, *withdrawalReq)
 	require.NoError(t, err)
 
 	// Get transaction history

@@ -68,7 +68,7 @@ func InsertTestCoin(t *testing.T, ctx context.Context, db db.DB, coinID string) 
 
 // SetupTestUser creates a test user with a wallet
 func SetupTestUser(t *testing.T, ctx context.Context, db db.DB) string {
-	userID := "test_user"
+	userID := fmt.Sprintf("test_user_%d", time.Now().UnixNano())
 
 	// Clean up any existing wallets for this user
 	_, err := db.Exec(ctx, "DELETE FROM wallets WHERE user_id = $1", userID)
@@ -79,7 +79,7 @@ func SetupTestUser(t *testing.T, ctx context.Context, db db.DB) string {
 	privateKeyStr := testWallet.PrivateKey.String()
 
 	wallet := model.Wallet{
-		ID:          "test_wallet",
+		ID:          fmt.Sprintf("wallet_%d", time.Now().UnixNano()),
 		UserID:      userID,
 		PublicKey:   testWallet.PublicKey().String(),
 		PrivateKey:  privateKeyStr,
@@ -94,7 +94,7 @@ func SetupTestUser(t *testing.T, ctx context.Context, db db.DB) string {
 }
 
 // SetupTestDB creates a new test database and returns it with a cleanup function
-func SetupTestDB(t *testing.T) *TestDB {
+func SetupTestDB(t *testing.T) (*TestDB, func()) {
 	// Setup test database
 	testDB, cleanup := testutil.SetupTestDB(t)
 
@@ -114,7 +114,7 @@ func SetupTestDB(t *testing.T) *TestDB {
 	return &TestDB{
 		DB:      testDB,
 		Cleanup: cleanup,
-	}
+	}, cleanup
 }
 
 // SetupTestTradeService creates a new test trade service with all dependencies

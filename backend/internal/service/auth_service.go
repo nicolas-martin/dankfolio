@@ -52,9 +52,11 @@ func (s *AuthService) RegisterUser(ctx context.Context, req model.RegisterReques
 
 	// Create user
 	user := &model.User{
+		ID:           fmt.Sprintf("user_%d", time.Now().UnixNano()),
 		Email:        req.Email,
 		Username:     req.Username,
 		PasswordHash: string(hashedPassword),
+		CreatedAt:    time.Now(),
 	}
 
 	err = s.createUser(ctx, tx, user)
@@ -172,16 +174,18 @@ func (s *AuthService) userExists(ctx context.Context, email string) (bool, error
 }
 
 func (s *AuthService) createUser(ctx context.Context, tx pgx.Tx, user *model.User) error {
+	var userID string
 	err := tx.QueryRow(ctx, `
-		INSERT INTO users (email, username, password_hash)
-		VALUES ($1, $2, $3)
+		INSERT INTO users (id, email, username, password_hash)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at
-	`, user.Email, user.Username, user.PasswordHash).Scan(&user.ID, &user.CreatedAt)
+	`, user.ID, user.Email, user.Username, user.PasswordHash).Scan(&userID, &user.CreatedAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
 
+	user.ID = userID
 	return nil
 }
 
@@ -198,10 +202,11 @@ func (s *AuthService) createUserWallet(ctx context.Context, tx pgx.Tx, userID st
 		return fmt.Errorf("failed to encrypt private key: %w", err)
 	}
 
+	walletID := fmt.Sprintf("wallet_%d", time.Now().UnixNano())
 	_, err = tx.Exec(ctx, `
-		INSERT INTO wallets (user_id, public_key, private_key, encrypted_private_key)
-		VALUES ($1, $2, $3, $4)
-	`, userID, keypair.PublicKey, keypair.PrivateKey, encryptedPrivateKey)
+		INSERT INTO wallets (id, user_id, public_key, private_key, encrypted_private_key, balance, created_at, last_updated)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`, walletID, userID, keypair.PublicKey, keypair.PrivateKey, encryptedPrivateKey, 0.0, time.Now(), time.Now())
 
 	if err != nil {
 		return fmt.Errorf("failed to create user wallet: %w", err)

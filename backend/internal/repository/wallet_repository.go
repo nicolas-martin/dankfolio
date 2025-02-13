@@ -56,9 +56,9 @@ func (r *walletRepository) GetWallet(ctx context.Context, userID string) (*model
 
 func (r *walletRepository) CreateWallet(ctx context.Context, tx pgx.Tx, userID string, publicKey string, privateKey string, encryptedPrivateKey string) error {
 	_, err := tx.Exec(ctx, `
-		INSERT INTO wallets (user_id, public_key, private_key, encrypted_private_key)
-		VALUES ($1, $2, $3, $4)
-	`, userID, publicKey, privateKey, encryptedPrivateKey)
+		INSERT INTO wallets (id, user_id, public_key, private_key, encrypted_private_key)
+		VALUES ($1, $2, $3, $4, $5)
+	`, userID, userID, publicKey, privateKey, encryptedPrivateKey)
 
 	if err != nil {
 		return fmt.Errorf("failed to create user wallet: %w", err)
