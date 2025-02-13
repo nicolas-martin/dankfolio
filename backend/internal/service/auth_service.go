@@ -7,6 +7,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gagliardetto/solana-go"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
@@ -52,7 +53,7 @@ func (s *AuthService) RegisterUser(ctx context.Context, req model.RegisterReques
 
 	// Create user
 	user := &model.User{
-		ID:           fmt.Sprintf("user_%d", time.Now().UnixNano()),
+		ID:           uuid.New().String(),
 		Email:        req.Email,
 		Username:     req.Username,
 		PasswordHash: string(hashedPassword),
@@ -175,12 +176,27 @@ func (s *AuthService) userExists(ctx context.Context, email string) (bool, error
 
 func (s *AuthService) createUser(ctx context.Context, tx pgx.Tx, user *model.User) error {
 	var userID string
-	err := tx.QueryRow(ctx, `
-		INSERT INTO users (id, email, username, password_hash)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at
-	`, user.ID, user.Email, user.Username, user.PasswordHash).Scan(&userID, &user.CreatedAt)
+	var query string
+	var args []interface{}
 
+	if user.PasswordHash != "" {
+		query = `
+			INSERT INTO users (id, email, username, password_hash)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id, created_at
+		`
+		args = []interface{}{user.ID, user.Email, user.Username, user.PasswordHash}
+	} else {
+		// For social users without password
+		query = `
+			INSERT INTO users (id, email, username)
+			VALUES ($1, $2, $3)
+			RETURNING id, created_at
+		`
+		args = []interface{}{user.ID, user.Email, user.Username}
+	}
+
+	err := tx.QueryRow(ctx, query, args...).Scan(&userID, &user.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
@@ -202,7 +218,7 @@ func (s *AuthService) createUserWallet(ctx context.Context, tx pgx.Tx, userID st
 		return fmt.Errorf("failed to encrypt private key: %w", err)
 	}
 
-	walletID := fmt.Sprintf("wallet_%d", time.Now().UnixNano())
+	walletID := uuid.New().String()
 	_, err = tx.Exec(ctx, `
 		INSERT INTO wallets (id, user_id, public_key, private_key, encrypted_private_key, balance, created_at, last_updated)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -307,6 +323,7 @@ func (s *AuthService) createSocialUser(ctx context.Context, socialUser *SocialUs
 
 	// Create user
 	user := &model.User{
+		ID:       uuid.New().String(),
 		Email:    socialUser.Email,
 		Username: socialUser.Username,
 	}

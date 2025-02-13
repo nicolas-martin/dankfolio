@@ -10,6 +10,7 @@ import (
 
 type Router struct {
 	router             chi.Router
+	authService        *service.AuthService
 	portfolioService   service.PortfolioService
 	solanaService      service.SolanaService
 	userService        *service.UserService
@@ -18,6 +19,7 @@ type Router struct {
 }
 
 func NewRouter(
+	authService *service.AuthService,
 	portfolioService service.PortfolioService,
 	solanaService service.SolanaService,
 	userService *service.UserService,
@@ -26,6 +28,7 @@ func NewRouter(
 ) *Router {
 	r := &Router{
 		router:             chi.NewRouter(),
+		authService:        authService,
 		portfolioService:   portfolioService,
 		solanaService:      solanaService,
 		userService:        userService,
@@ -54,6 +57,12 @@ func (r *Router) setupRoutes() {
 	})
 
 	r.router.Route("/api/v1", func(router chi.Router) {
+		// Auth routes
+		authHandlers := NewAuthHandlers(r.authService)
+		router.Post("/auth/register", authHandlers.Register)
+		router.Post("/auth/login", authHandlers.Login)
+		router.Post("/auth/social", authHandlers.SocialLogin)
+
 		// Portfolio routes
 		portfolioHandlers := NewPortfolioHandlers(r.portfolioService)
 		router.Get("/portfolio/stats", portfolioHandlers.GetPortfolioStats)

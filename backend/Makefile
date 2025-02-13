@@ -23,7 +23,7 @@ clean:
 
 run:
 	@lsof -ti :8080 | xargs kill -9 2>/dev/null || true
-	@go run cmd/api/main.go > server.log 2>&1 &
+	@set -a && source .env && set +a && go run cmd/api/main.go > server.log 2>&1 &
 	@echo "🚀 Starting server on port 8080..."
 	@for i in {1..5}; do \
 		if curl -s http://localhost:8080/health > /dev/null; then \
@@ -31,8 +31,7 @@ run:
 			break; \
 		fi; \
 		if [ $$i -eq 5 ]; then \
-			echo "❌ API failed to start. Check server.log for details"; 
-			@cat server.log \
+			echo "❌ API failed to start. Check server.log for details"; \
 			exit 1; \
 		fi; \
 		echo "⏳ Waiting for API to be ready... ($$i/5)"; \
