@@ -78,27 +78,27 @@ docker-run:
 # Testing
 test-api: run test-solana-trades test-coins
 	@echo "🧪 Testing API endpoints..."
-	@curl -s -X POST http://localhost:8080/api/auth/register \
+	@curl -s -X POST http://localhost:8080/api/v1/auth/register \
 		-H "Content-Type: application/json" \
 		-d '{"username":"testuser","email":"test@example.com","password":"password123"}' > /dev/null
 	@echo "✅ Registered test user"
-	@TOKEN=$$(curl -s -X POST http://localhost:8080/api/auth/login \
+	@TOKEN=$$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
 		-H "Content-Type: application/json" \
 		-d '{"email":"test@example.com","password":"password123"}' | \
 		grep -o '"token":"[^"]*' | cut -d'"' -f4); \
-	curl -s -H "Authorization: Bearer $$TOKEN" http://localhost:8080/api/portfolio > /dev/null
+	curl -s -H "Authorization: Bearer $$TOKEN" http://localhost:8080/api/v1/portfolio > /dev/null
 	@echo "✅ Tested authenticated endpoints"
 
 # Solana Trade Testing
 test-solana-trades: run
 	@echo "🧪 Testing Solana Trade Service..."
 	@echo "1️⃣ Registering test user..."
-	@curl -s -X POST http://localhost:8080/api/auth/register \
+	@curl -s -X POST http://localhost:8080/api/v1/auth/register \
 		-H "Content-Type: application/json" \
 		-d '{"username":"solana_trader","email":"trader@example.com","password":"trading123"}'
 	
 	@echo "\n2️⃣ Getting auth token..."
-	@TOKEN=$$(curl -s -X POST http://localhost:8080/api/auth/login \
+	@TOKEN=$$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
 		-H "Content-Type: application/json" \
 		-d '{"email":"trader@example.com","password":"trading123"}' | \
 		grep -o '"token":"[^"]*' | cut -d'"' -f4); \
@@ -110,35 +110,35 @@ test-solana-trades: run
 	echo "\n"; \
 	\
 	echo "4️⃣ Preview buy trade for Wrapped SOL..."; \
-	curl -s -X POST http://localhost:8080/api/trades/preview \
+	curl -s -X POST http://localhost:8080/api/v1/trades/preview \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-d '{"coin_id":"So11111111111111111111111111111111111111112","type":"buy","amount":0.1}'; \
 	echo "\n"; \
 	\
 	echo "5️⃣ Execute buy trade for Wrapped SOL..."; \
-	curl -s -X POST http://localhost:8080/api/trades/execute \
+	curl -s -X POST http://localhost:8080/api/v1/trades/execute \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-d '{"coin_id":"So11111111111111111111111111111111111111112","type":"buy","amount":0.1}'; \
 	echo "\n"; \
 	\
 	echo "6️⃣ Preview sell trade for Wrapped SOL..."; \
-	curl -s -X POST http://localhost:8080/api/trades/preview \
+	curl -s -X POST http://localhost:8080/api/v1/trades/preview \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-d '{"coin_id":"So11111111111111111111111111111111111111112","type":"sell","amount":0.05}'; \
 	echo "\n"; \
 	\
 	echo "7️⃣ Execute sell trade for Wrapped SOL..."; \
-	curl -s -X POST http://localhost:8080/api/trades/execute \
+	curl -s -X POST http://localhost:8080/api/v1/trades/execute \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-d '{"coin_id":"So11111111111111111111111111111111111111112","type":"sell","amount":0.05}'; \
 	echo "\n"; \
 	\
 	echo "8️⃣ Check trade history..."; \
-	curl -s -X GET http://localhost:8080/api/trades/history \
+	curl -s -X GET http://localhost:8080/api/v1/trades/history \
 		-H "Authorization: Bearer $$TOKEN"; \
 	echo "\n✅ Completed Solana trade tests"
 
@@ -146,43 +146,43 @@ test-solana-trades: run
 test-coins: run
 	@echo "🧪 Testing Coin Service..."
 	@echo "1️⃣ Registering test user..."
-	@curl -s -X POST http://localhost:8080/api/auth/register \
+	@curl -s -X POST http://localhost:8080/api/v1/auth/register \
 		-H "Content-Type: application/json" \
 		-d '{"username":"coin_tester","email":"coins@example.com","password":"testing123"}'
 	
 	@echo "\n2️⃣ Getting auth token..."
-	@TOKEN=$$(curl -s -X POST http://localhost:8080/api/auth/login \
+	@TOKEN=$$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
 		-H "Content-Type: application/json" \
 		-d '{"email":"coins@example.com","password":"testing123"}' | \
 		grep -o '"token":"[^"]*' | cut -d'"' -f4); \
 	\
 	echo "3️⃣ Fetching initial meme coins..."; \
-	curl -s -X POST http://localhost:8080/api/coins/fetch \
+	curl -s -X POST http://localhost:8080/api/v1/coins/fetch \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \
 	echo "\n"; \
 	\
 	echo "4️⃣ Fetching top meme coins..."; \
-	curl -s -X GET http://localhost:8080/api/coins/top \
+	curl -s -X GET http://localhost:8080/api/v1/coins/top \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \
 	echo "\n"; \
 	\
 	echo "5️⃣ Getting price history for a specific coin..."; \
-	COIN_ID=$$(curl -s -X GET http://localhost:8080/api/coins/top | jq -r '.[0].id'); \
-	curl -s -X GET "http://localhost:8080/api/coins/$$COIN_ID/history?timeframe=day" \
+	COIN_ID=$$(curl -s -X GET http://localhost:8080/api/v1/coins/top | jq -r '.[0].id'); \
+	curl -s -X GET "http://localhost:8080/api/v1/coins/$$COIN_ID/history?timeframe=day" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \
 	echo "\n"; \
 	\
 	echo "6️⃣ Getting coin details by contract address..."; \
-	curl -s -X GET "http://localhost:8080/api/coins/contract/So11111111111111111111111111111111111111112" \
+	curl -s -X GET "http://localhost:8080/api/v1/coins/contract/So11111111111111111111111111111111111111112" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \
 	echo "\n"; \
 	\
 	echo "7️⃣ Getting coin details by ID..."; \
-	curl -s -X GET "http://localhost:8080/api/coins/$$COIN_ID" \
+	curl -s -X GET "http://localhost:8080/api/v1/coins/$$COIN_ID" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \
 	echo "\n✅ Completed coin service tests"
