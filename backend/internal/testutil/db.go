@@ -121,10 +121,11 @@ func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 			id, symbol, name, description, contract_address,
 			logo_url, website_url, image_url,
 			price, current_price, change_24h, volume_24h,
-			market_cap, supply, created_at, updated_at
+			market_cap, supply, labels, socials,
+			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-			$11, $12, $13, $14, $15, $16
+			$11, $12, $13, $14, $15, $16, $17, $18
 		)
 	`
 
@@ -143,6 +144,8 @@ func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 		coin.Volume24h,
 		coin.MarketCap,
 		coin.Supply,
+		coin.Labels,
+		coin.Socials,
 		coin.CreatedAt,
 		coin.UpdatedAt,
 	)
@@ -243,6 +246,8 @@ func SetupTestSchema(ctx context.Context, db db.DB) error {
 			volume_24h DECIMAL(24,2),
 			market_cap DECIMAL(24,2),
 			supply DECIMAL(24,12),
+			labels JSONB DEFAULT '[]',
+			socials JSONB DEFAULT '[]',
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		);

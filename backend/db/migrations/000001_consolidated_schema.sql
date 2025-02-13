@@ -1,9 +1,11 @@
+-- Up
+
 -- Users table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255), -- Allowing NULL passwords
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -36,6 +38,8 @@ CREATE TABLE meme_coins (
     volume_24h DECIMAL(24,2),
     market_cap DECIMAL(24,2),
     supply DECIMAL(24,12),
+    labels JSONB DEFAULT '[]',
+    socials JSONB DEFAULT '[]',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -117,4 +121,12 @@ INSERT INTO meme_coins (
     0.0,
     0.0,
     0.0
-); 
+);
+
+-- Down
+DROP TABLE trades;
+DROP TABLE portfolios;
+DROP TABLE price_history;
+DROP TABLE meme_coins;
+DROP TABLE wallets;
+DROP TABLE users; 

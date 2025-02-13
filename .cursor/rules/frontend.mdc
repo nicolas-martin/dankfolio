@@ -1,0 +1,9 @@
+---
+description: this is front end rules
+globs: 
+---
+// User Interface Guidelines
+- Provide immediate visual feedback on user actions (e.g., drag-and-drop for meme trading).
+- Use animations and transitions to enhance the trading experience, but keep performance in mind.
+- Maintain a consistent, meme-inspired visual language (e.g., playful icons, vibrant colors).
+- Ensure the interface is responsive and accessible across devices.

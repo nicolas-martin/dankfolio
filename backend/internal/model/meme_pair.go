@@ -22,11 +22,12 @@ type MemePair struct {
 	Liquidity struct {
 		Usd float64 `json:"usd"`
 	} `json:"liquidity"`
-	PairCreatedAt int64   `json:"pairCreatedAt"`
-	MarketCap     float64 `json:"marketCap"`
-	ChainId       string  `json:"chainId"`
-	DexId         string  `json:"dexId"`
-	PairAddress   string  `json:"pairAddress"`
+	PairCreatedAt int64    `json:"pairCreatedAt"`
+	MarketCap     float64  `json:"marketCap"`
+	ChainId       string   `json:"chainId"`
+	DexId         string   `json:"dexId"`
+	PairAddress   string   `json:"pairAddress"`
+	Labels        []string `json:"labels"`
 	Info          struct {
 		ImageURL string `json:"imageUrl"`
 		Websites []struct {

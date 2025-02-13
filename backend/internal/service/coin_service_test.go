@@ -527,7 +527,7 @@ func TestCoinService_GetCoinByID_WithNewFields(t *testing.T) {
 	ctx := context.Background()
 	coinID := "doge6"
 
-	// Insert test coin with new fields
+	// Insert test coin with all fields
 	testCoin := model.MemeCoin{
 		ID:              coinID,
 		Symbol:          "DOGE6",
@@ -535,6 +535,7 @@ func TestCoinService_GetCoinByID_WithNewFields(t *testing.T) {
 		Description:     "Much wow, very coin",
 		ContractAddress: "0x123...doge6",
 		LogoURL:         "https://example.com/doge6.png",
+		ImageURL:        "https://example.com/doge6_large.png",
 		WebsiteURL:      "https://doge6.example.com",
 		Price:           0.1,
 		CurrentPrice:    0.1,
@@ -542,8 +543,21 @@ func TestCoinService_GetCoinByID_WithNewFields(t *testing.T) {
 		Volume24h:       500000,
 		MarketCap:       1000000,
 		Supply:          1000000000,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		Labels:          []string{"meme", "dog"},
+		Socials: []model.SocialLink{
+			{
+				Platform: "twitter",
+				Handle:   "@doge6",
+				URL:      "https://twitter.com/doge6",
+			},
+			{
+				Platform: "telegram",
+				Handle:   "doge6official",
+				URL:      "https://t.me/doge6official",
+			},
+		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	err := testutil.InsertTestCoin(ctx, testDB, testCoin)
@@ -560,9 +574,121 @@ func TestCoinService_GetCoinByID_WithNewFields(t *testing.T) {
 	assert.Equal(t, testCoin.Name, coin.Name)
 	assert.Equal(t, testCoin.Description, coin.Description)
 	assert.Equal(t, testCoin.LogoURL, coin.LogoURL)
+	assert.Equal(t, testCoin.ImageURL, coin.ImageURL)
 	assert.Equal(t, testCoin.WebsiteURL, coin.WebsiteURL)
 	assert.Equal(t, testCoin.ContractAddress, coin.ContractAddress)
 	assert.Equal(t, testCoin.CurrentPrice, coin.CurrentPrice)
 	assert.Equal(t, testCoin.MarketCap, coin.MarketCap)
 	assert.Equal(t, testCoin.Volume24h, coin.Volume24h)
+	assert.Equal(t, testCoin.Supply, coin.Supply)
+	assert.Equal(t, testCoin.Change24h, coin.Change24h)
+
+	// Verify new fields
+	assert.ElementsMatch(t, testCoin.Labels, coin.Labels)
+	assert.Len(t, coin.Socials, len(testCoin.Socials))
+	for i, social := range testCoin.Socials {
+		assert.Equal(t, social.Platform, coin.Socials[i].Platform)
+		assert.Equal(t, social.Handle, coin.Socials[i].Handle)
+		assert.Equal(t, social.URL, coin.Socials[i].URL)
+	}
+}
+
+func TestCoinService_FetchDexScreenerData(t *testing.T) {
+	// Skip in CI/short mode as this is an integration test
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	// Setup
+	coinService, _, cleanup := setupTestCoinService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	testCases := []struct {
+		name        string
+		searchTerm  string
+		shouldMatch string
+		pairAddress string // Add specific pair address to test
+	}{
+		{
+			name:        "Search for BABYSOL token",
+			searchTerm:  "BABYSOL",
+			shouldMatch: "BABYSOL",
+			pairAddress: "Dw8UujP9RZiUC8u6udtGfXue2BSUhES7MppNWvySNxmG", // Raydium BABYSOL/SOL pair
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Test
+			pairs, err := coinService.fetchDexScreenerData(ctx, tc.searchTerm)
+			require.NoError(t, err)
+			require.NotNil(t, pairs)
+			require.NotEmpty(t, pairs)
+
+			foundMatch := false
+			// Verify the response contains valid data
+			for _, pair := range pairs {
+				if pair.PairAddress == tc.pairAddress {
+					foundMatch = true
+					t.Run(fmt.Sprintf("Pair_%s_%s", pair.BaseToken.Symbol, pair.QuoteToken.Symbol), func(t *testing.T) {
+						// Basic pair information
+						assert.NotEmpty(t, pair.ChainId, "Chain ID should not be empty")
+						assert.NotEmpty(t, pair.DexId, "DEX ID should not be empty")
+						assert.NotEmpty(t, pair.PairAddress, "Pair address should not be empty")
+
+						// Base token verification
+						assert.NotEmpty(t, pair.BaseToken.Address, "Base token address should not be empty")
+						assert.NotEmpty(t, pair.BaseToken.Symbol, "Base token symbol should not be empty")
+						assert.NotEmpty(t, pair.BaseToken.Name, "Base token name should not be empty")
+
+						// Quote token verification
+						assert.NotEmpty(t, pair.QuoteToken.Address, "Quote token address should not be empty")
+						assert.NotEmpty(t, pair.QuoteToken.Symbol, "Quote token symbol should not be empty")
+						assert.NotEmpty(t, pair.QuoteToken.Name, "Quote token name should not be empty")
+						assert.True(t, isValidQuoteCurrency(pair.QuoteToken.Symbol),
+							"Quote token %s should be a valid quote currency", pair.QuoteToken.Symbol)
+
+						// Price information
+						assert.NotEmpty(t, pair.PriceUsd, "Price USD should not be empty")
+
+						// Volume data
+						assert.NotZero(t, pair.Volume.H24, "24h volume should not be zero")
+
+						// Price change data
+						if pair.PriceChange.H24 != 0 {
+							t.Logf("24h price change: %.2f%%", pair.PriceChange.H24)
+						}
+
+						// Required field verification
+						assert.NotZero(t, pair.MarketCap, "Market cap should not be zero")
+
+						// Image URL verification
+						if pair.Info.ImageURL != "" {
+							assert.Contains(t, pair.Info.ImageURL, "http", "Image URL should be a valid URL")
+						}
+
+						// Website verification
+						if len(pair.Info.Websites) > 0 {
+							for _, website := range pair.Info.Websites {
+								assert.Contains(t, website.URL, "Website URL should be a valid URL")
+							}
+						}
+
+						// Social media verification
+						if len(pair.Info.Socials) > 0 {
+							for _, social := range pair.Info.Socials {
+								assert.NotEmpty(t, social.Platform, "Social platform should not be empty")
+								assert.NotEmpty(t, social.Handle, "Social handle should not be empty")
+							}
+						}
+					})
+					break
+				}
+			}
+
+			assert.True(t, foundMatch, "Should find the specific BABYSOL/SOL pair with address %s", tc.pairAddress)
+		})
+	}
 }

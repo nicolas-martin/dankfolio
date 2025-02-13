@@ -47,10 +47,17 @@ func (r *coinRepository) GetTopMemeCoins(ctx context.Context, limit int) ([]mode
 			mc.symbol,
 			mc.name,
 			mc.contract_address,
+			COALESCE(mc.description, ''),
 			COALESCE(mc.logo_url, ''),
-			lp.price,
-			lp.market_cap,
-			lp.volume_24h
+			COALESCE(mc.website_url, ''),
+			COALESCE(lp.price, mc.price) as current_price,
+			COALESCE(lp.market_cap, mc.market_cap, 0) as market_cap,
+			COALESCE(lp.volume_24h, mc.volume_24h, 0) as volume_24h,
+			COALESCE(mc.supply, 0) as supply,
+			COALESCE(mc.labels, '[]'::jsonb) as labels,
+			COALESCE(mc.socials, '[]'::jsonb) as socials,
+			mc.created_at,
+			mc.updated_at
 		FROM meme_coins mc
 		JOIN latest_prices lp ON lp.coin_id = mc.id
 		ORDER BY lp.volume_24h DESC
@@ -71,10 +78,17 @@ func (r *coinRepository) GetTopMemeCoins(ctx context.Context, limit int) ([]mode
 			&coin.Symbol,
 			&coin.Name,
 			&coin.ContractAddress,
+			&coin.Description,
 			&coin.LogoURL,
+			&coin.WebsiteURL,
 			&coin.CurrentPrice,
 			&coin.MarketCap,
 			&coin.Volume24h,
+			&coin.Supply,
+			&coin.Labels,
+			&coin.Socials,
+			&coin.CreatedAt,
+			&coin.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan meme coin row: %w", err)
@@ -180,9 +194,15 @@ func (r *coinRepository) GetCoinByID(ctx context.Context, coinID string) (*model
 			COALESCE(mc.description, ''),
 			COALESCE(mc.logo_url, ''),
 			COALESCE(mc.website_url, ''),
+			COALESCE(mc.image_url, ''),
+			COALESCE(lp.price, mc.price) as price,
 			COALESCE(lp.price, mc.price) as current_price,
-			COALESCE(lp.market_cap, mc.market_cap, 0) as market_cap,
+			COALESCE(mc.change_24h, 0) as change_24h,
 			COALESCE(lp.volume_24h, mc.volume_24h, 0) as volume_24h,
+			COALESCE(lp.market_cap, mc.market_cap, 0) as market_cap,
+			COALESCE(mc.supply, 0) as supply,
+			COALESCE(mc.labels, '[]'::jsonb) as labels,
+			COALESCE(mc.socials, '[]'::jsonb) as socials,
 			mc.created_at,
 			mc.updated_at
 		FROM meme_coins mc
@@ -199,9 +219,15 @@ func (r *coinRepository) GetCoinByID(ctx context.Context, coinID string) (*model
 		&coin.Description,
 		&coin.LogoURL,
 		&coin.WebsiteURL,
+		&coin.ImageURL,
+		&coin.Price,
 		&coin.CurrentPrice,
-		&coin.MarketCap,
+		&coin.Change24h,
 		&coin.Volume24h,
+		&coin.MarketCap,
+		&coin.Supply,
+		&coin.Labels,
+		&coin.Socials,
 		&coin.CreatedAt,
 		&coin.UpdatedAt,
 	)
@@ -256,31 +282,56 @@ func (r *coinRepository) GetCoinPriceHistory(ctx context.Context, coinID string,
 func (r *coinRepository) UpsertCoin(ctx context.Context, coin model.MemeCoin) error {
 	query := `
 		INSERT INTO meme_coins (
-			id, symbol, name, description, contract_address, logo_url,
-			price, current_price, change_24h, volume_24h, market_cap,
+			id, symbol, name, contract_address, description,
+			logo_url, website_url, price, current_price,
+			change_24h, volume_24h, market_cap, supply,
+			labels, socials,
 			created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+			$1, $2, $3, $4, $5,
+			$6, $7, $8, $9,
+			$10, $11, $12, $13,
+			$14, $15,
+			$16, $17
 		)
 		ON CONFLICT (id) DO UPDATE SET
 			symbol = EXCLUDED.symbol,
 			name = EXCLUDED.name,
-			description = EXCLUDED.description,
 			contract_address = EXCLUDED.contract_address,
+			description = EXCLUDED.description,
 			logo_url = EXCLUDED.logo_url,
+			website_url = EXCLUDED.website_url,
 			price = EXCLUDED.price,
 			current_price = EXCLUDED.current_price,
 			change_24h = EXCLUDED.change_24h,
 			volume_24h = EXCLUDED.volume_24h,
 			market_cap = EXCLUDED.market_cap,
+			supply = EXCLUDED.supply,
+			labels = EXCLUDED.labels,
+			socials = EXCLUDED.socials,
 			updated_at = EXCLUDED.updated_at
 	`
 
 	_, err := r.db.Exec(ctx, query,
-		coin.ID, coin.Symbol, coin.Name, coin.Description, coin.ContractAddress,
-		coin.LogoURL, coin.Price, coin.CurrentPrice, coin.Change24h,
-		coin.Volume24h, coin.MarketCap, coin.CreatedAt, coin.UpdatedAt,
+		coin.ID,
+		coin.Symbol,
+		coin.Name,
+		coin.ContractAddress,
+		coin.Description,
+		coin.LogoURL,
+		coin.WebsiteURL,
+		coin.Price,
+		coin.CurrentPrice,
+		coin.Change24h,
+		coin.Volume24h,
+		coin.MarketCap,
+		coin.Supply,
+		coin.Labels,
+		coin.Socials,
+		coin.CreatedAt,
+		coin.UpdatedAt,
 	)
+
 	if err != nil {
 		return fmt.Errorf("failed to upsert coin: %w", err)
 	}

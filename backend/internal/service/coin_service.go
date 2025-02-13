@@ -94,8 +94,8 @@ func NewCoinService(repo repository.CoinRepository) *CoinService {
 }
 
 // fetchDexScreenerData fetches meme coin data from DexScreener API
-func (s *CoinService) fetchDexScreenerData(ctx context.Context) ([]model.MemePair, error) {
-	url := fmt.Sprintf("%s/latest/dex/search?q=solana", dexscreenerBaseURL)
+func (s *CoinService) fetchDexScreenerData(ctx context.Context, search string) ([]model.MemePair, error) {
+	url := fmt.Sprintf("%s/latest/dex/search?q=%s/SOL", dexscreenerBaseURL, search)
 	fmt.Printf("Fetching data from %s\n", url)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -190,6 +190,9 @@ func (s *CoinService) fetchDexScreenerData(ctx context.Context) ([]model.MemePai
 				Liquidity:     dexPair.Liquidity,
 				PairCreatedAt: dexPair.PairCreatedAt,
 				MarketCap:     dexPair.MarketCap,
+				ChainId:       dexPair.ChainId,
+				DexId:         dexPair.DexId,
+				PairAddress:   dexPair.PairAddress,
 			}
 			pairs = append(pairs, memePair)
 		} else {
@@ -308,7 +311,7 @@ func isValidQuoteCurrency(symbol string) bool {
 }
 
 func (s *CoinService) GetTopMemeCoins(ctx context.Context, limit int) ([]model.MemeCoin, error) {
-	pairs, err := s.fetchDexScreenerData(ctx)
+	pairs, err := s.fetchDexScreenerData(ctx, "meme")
 	if err != nil {
 		return nil, fmt.Errorf("error fetching DexScreener data: %w", err)
 	}
@@ -316,19 +319,38 @@ func (s *CoinService) GetTopMemeCoins(ctx context.Context, limit int) ([]model.M
 	var coins []model.MemeCoin
 	for _, pair := range pairs {
 		price, _ := util.ParseFloat64(pair.PriceUsd)
+
+		// Convert social media info to our model
+		var socials []model.SocialLink
+		for _, social := range pair.Info.Socials {
+			socials = append(socials, model.SocialLink{
+				Platform: social.Platform,
+				Handle:   social.Handle,
+			})
+		}
+
 		coin := model.MemeCoin{
 			ID:              pair.BaseToken.Address,
 			Symbol:          pair.BaseToken.Symbol,
 			Name:            pair.BaseToken.Name,
 			ContractAddress: pair.BaseToken.Address,
+			LogoURL:         pair.Info.ImageURL,
 			Price:           price,
 			CurrentPrice:    price,
 			Change24h:       pair.PriceChange.H24,
 			Volume24h:       pair.Volume.H24,
 			MarketCap:       pair.MarketCap,
+			Labels:          pair.Labels,
+			Socials:         socials,
 			CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
 			UpdatedAt:       time.Now(),
 		}
+
+		// Add website URL if available
+		if len(pair.Info.Websites) > 0 {
+			coin.WebsiteURL = pair.Info.Websites[0].URL
+		}
+
 		coins = append(coins, coin)
 	}
 
@@ -545,7 +567,7 @@ func isMemeCoin(text string) bool {
 }
 
 func (s *CoinService) FetchAndStoreRealMemeCoins(ctx context.Context) error {
-	pairs, err := s.fetchDexScreenerData(ctx)
+	pairs, err := s.fetchDexScreenerData(ctx, "meme")
 	if err != nil {
 		return fmt.Errorf("error fetching meme coin data: %w", err)
 	}
@@ -556,6 +578,45 @@ func (s *CoinService) FetchAndStoreRealMemeCoins(ctx context.Context) error {
 	for _, pair := range pairs {
 		price, _ := util.ParseFloat64(pair.PriceUsd)
 
+		// Convert social media info to our model
+		var socials []model.SocialLink
+		for _, social := range pair.Info.Socials {
+			socials = append(socials, model.SocialLink{
+				Platform: social.Platform,
+				Handle:   social.Handle,
+			})
+		}
+
+		// Create or update the coin first
+		coin := model.MemeCoin{
+			ID:              pair.BaseToken.Address,
+			Symbol:          pair.BaseToken.Symbol,
+			Name:            pair.BaseToken.Name,
+			ContractAddress: pair.BaseToken.Address,
+			LogoURL:         pair.Info.ImageURL,
+			Price:           price,
+			CurrentPrice:    price,
+			Change24h:       pair.PriceChange.H24,
+			Volume24h:       pair.Volume.H24,
+			MarketCap:       pair.MarketCap,
+			Labels:          pair.Labels,
+			Socials:         socials,
+			CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
+			UpdatedAt:       now,
+		}
+
+		// Add website URL if available
+		if len(pair.Info.Websites) > 0 {
+			coin.WebsiteURL = pair.Info.Websites[0].URL
+		}
+
+		// Upsert the coin first to ensure we have the latest metadata
+		err := s.repo.UpsertCoin(ctx, coin)
+		if err != nil {
+			return fmt.Errorf("failed to upsert coin: %w", err)
+		}
+
+		// Then create the price update
 		update := model.PriceUpdate{
 			CoinID:          pair.BaseToken.Address,
 			ContractAddress: pair.BaseToken.Address,
