@@ -6,7 +6,51 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/nicolas-martin/dankfolio/internal/service"
 )
+
+type LeaderboardHandlers struct {
+	leaderboardService *service.LeaderboardService
+}
+
+func NewLeaderboardHandlers(leaderboardService *service.LeaderboardService) *LeaderboardHandlers {
+	return &LeaderboardHandlers{
+		leaderboardService: leaderboardService,
+	}
+}
+
+func (h *LeaderboardHandlers) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
+	timeframe := chi.URLParam(r, "timeframe")
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 10 // default limit
+	}
+
+	leaderboard, err := h.leaderboardService.GetLeaderboard(r.Context(), timeframe, limit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, leaderboard)
+}
+
+func (h *LeaderboardHandlers) GetUserRank(w http.ResponseWriter, r *http.Request) {
+	user, ok := GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	timeframe := chi.URLParam(r, "timeframe")
+	rank, err := h.leaderboardService.GetUserRank(r.Context(), user.ID, timeframe)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, rank)
+}
 
 func (r *Router) handleGetLeaderboard() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {

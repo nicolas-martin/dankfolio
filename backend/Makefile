@@ -31,7 +31,8 @@ run:
 			break; \
 		fi; \
 		if [ $$i -eq 5 ]; then \
-			echo "❌ API failed to start. Check server.log for details"; \
+			echo "❌ API failed to start. Check server.log for details"; 
+			@cat server.log \
 			exit 1; \
 		fi; \
 		echo "⏳ Waiting for API to be ready... ($$i/5)"; \
@@ -156,26 +157,32 @@ test-coins: run
 		-d '{"email":"coins@example.com","password":"testing123"}' | \
 		grep -o '"token":"[^"]*' | cut -d'"' -f4); \
 	\
-	echo "\n3️⃣ Fetching top meme coins..."; \
+	echo "3️⃣ Fetching initial meme coins..."; \
+	curl -s -X POST http://localhost:8080/api/coins/fetch \
+		-H "Authorization: Bearer $$TOKEN" \
+		-H "Content-Type: application/json"; \
+	echo "\n"; \
+	\
+	echo "4️⃣ Fetching top meme coins..."; \
 	curl -s -X GET http://localhost:8080/api/coins/top \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \
 	echo "\n"; \
 	\
-	echo "4️⃣ Getting price history for a specific coin..."; \
+	echo "5️⃣ Getting price history for a specific coin..."; \
 	COIN_ID=$$(curl -s -X GET http://localhost:8080/api/coins/top | jq -r '.[0].id'); \
 	curl -s -X GET "http://localhost:8080/api/coins/$$COIN_ID/history?timeframe=day" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \
 	echo "\n"; \
 	\
-	echo "5️⃣ Getting coin details by contract address..."; \
+	echo "6️⃣ Getting coin details by contract address..."; \
 	curl -s -X GET "http://localhost:8080/api/coins/contract/So11111111111111111111111111111111111111112" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \
 	echo "\n"; \
 	\
-	echo "6️⃣ Getting coin details by ID..."; \
+	echo "7️⃣ Getting coin details by ID..."; \
 	curl -s -X GET "http://localhost:8080/api/coins/$$COIN_ID" \
 		-H "Authorization: Bearer $$TOKEN" \
 		-H "Content-Type: application/json"; \

@@ -2,105 +2,94 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
-func (r *Router) handlePreviewTrade() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		var tradeReq model.TradeRequest
-		if err := json.NewDecoder(req.Body).Decode(&tradeReq); err != nil {
-			respondError(w, http.StatusBadRequest, "Invalid request body")
-			return
-		}
+type TradeHandlers struct {
+	tradeService *service.TradeService
+}
 
-		user := getUserFromContext(req.Context())
-		tradeReq.UserID = user.ID
-
-		preview, err := r.tradeService.PreviewTrade(req.Context(), tradeReq)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		respondJSON(w, http.StatusOK, preview)
+func NewTradeHandlers(tradeService *service.TradeService) *TradeHandlers {
+	return &TradeHandlers{
+		tradeService: tradeService,
 	}
 }
 
-func (r *Router) handleExecuteTrade() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		var tradeReq model.TradeRequest
-		if err := json.NewDecoder(req.Body).Decode(&tradeReq); err != nil {
-			respondError(w, http.StatusBadRequest, "Invalid request body")
-			return
-		}
-
-		user := getUserFromContext(req.Context())
-		tradeReq.UserID = user.ID
-
-		trade, err := r.tradeService.ExecuteTrade(req.Context(), tradeReq)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		respondJSON(w, http.StatusOK, trade)
-	}
+type TradeRequest struct {
+	CoinID string  `json:"coin_id"`
+	Type   string  `json:"type"`
+	Amount float64 `json:"amount"`
 }
 
-func (r *Router) handleGetTradeHistory() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		user := getUserFromContext(req.Context())
-
-		trades, err := r.tradeService.GetTradeHistory(req.Context(), user.ID)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		respondJSON(w, http.StatusOK, trades)
-	}
-}
-
-func (r *TradeRouter) PreviewTrade(c *gin.Context) {
-	user := c.MustGet("user").(*model.User)
-
-	var req model.TradeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid request: %v", err)})
+func (h *TradeHandlers) PreviewTrade(w http.ResponseWriter, r *http.Request) {
+	var req TradeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	req.UserID = user.ID // Using UUID directly
+	user, ok := GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		return
+	}
 
-	preview, err := r.tradeService.PreviewTrade(c.Request.Context(), req)
+	preview, err := h.tradeService.PreviewTrade(r.Context(), model.TradeRequest{
+		UserID: user.ID,
+		CoinID: req.CoinID,
+		Type:   req.Type,
+		Amount: req.Amount,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to preview trade: %v", err)})
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	c.JSON(http.StatusOK, preview)
+	respondJSON(w, http.StatusOK, preview)
 }
 
-func (r *TradeRouter) ExecuteTrade(c *gin.Context) {
-	user := c.MustGet("user").(*model.User)
-
-	var req model.TradeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid request: %v", err)})
+func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
+	var req TradeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	req.UserID = user.ID // Using UUID directly
+	user, ok := GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		return
+	}
 
-	trade, err := r.tradeService.ExecuteTrade(c.Request.Context(), req)
+	trade, err := h.tradeService.ExecuteTrade(r.Context(), model.TradeRequest{
+		UserID: user.ID,
+		CoinID: req.CoinID,
+		Type:   req.Type,
+		Amount: req.Amount,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to execute trade: %v", err)})
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	c.JSON(http.StatusOK, trade)
+	respondJSON(w, http.StatusOK, trade)
+}
+
+func (h *TradeHandlers) GetTradeHistory(w http.ResponseWriter, r *http.Request) {
+	user, ok := GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	trades, err := h.tradeService.GetTradeHistory(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, trades)
 }

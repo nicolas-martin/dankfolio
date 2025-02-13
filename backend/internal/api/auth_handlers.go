@@ -5,124 +5,113 @@ import (
 	"net/http"
 
 	"github.com/nicolas-martin/dankfolio/internal/errors"
-	"github.com/nicolas-martin/dankfolio/internal/logger"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
-func (r *Router) handleRegister() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		var registerReq model.RegisterRequest
-		if err := json.NewDecoder(req.Body).Decode(&registerReq); err != nil {
-			logger.Error(req.Context(), "Failed to decode register request", err)
-			respondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
-			return
-		}
+type AuthHandlers struct {
+	authService *service.AuthService
+}
 
-		// Validate request
-		if registerReq.Email == "" {
-			respondError(w, http.StatusBadRequest, "Email is required")
-			return
-		}
-		if registerReq.Username == "" {
-			respondError(w, http.StatusBadRequest, "Username is required")
-			return
-		}
-		if registerReq.Password == "" {
-			respondError(w, http.StatusBadRequest, "Password is required")
-			return
-		}
-		if len(registerReq.Password) < 8 {
-			respondError(w, http.StatusBadRequest, "Password must be at least 8 characters long")
-			return
-		}
-
-		user, err := r.authService.RegisterUser(req.Context(), registerReq)
-		if err != nil {
-			logger.Error(req.Context(), "Failed to register user", err)
-			var status int
-			var message string
-
-			switch e := err.(type) {
-			case *errors.AppError:
-				status = e.Code
-				message = e.Message
-			default:
-				if err.Error() == "user with email already exists" {
-					status = http.StatusConflict
-					message = "Email already registered"
-				} else {
-					status = http.StatusInternalServerError
-					message = "Failed to register user: " + err.Error()
-				}
-			}
-
-			respondError(w, status, message)
-			return
-		}
-
-		respondJSON(w, http.StatusCreated, user)
+func NewAuthHandlers(authService *service.AuthService) *AuthHandlers {
+	return &AuthHandlers{
+		authService: authService,
 	}
 }
 
-func (r *Router) handleLogin() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		var loginReq model.LoginRequest
-		if err := json.NewDecoder(req.Body).Decode(&loginReq); err != nil {
-			respondError(w, http.StatusBadRequest, "Invalid request body")
-			return
-		}
-
-		authResp, err := r.authService.Login(req.Context(), loginReq.Email, loginReq.Password)
-		if err != nil {
-			var status int
-			var message string
-
-			switch e := err.(type) {
-			case *errors.AppError:
-				status = e.Code
-				message = e.Message
-			default:
-				status = http.StatusInternalServerError
-				message = "Internal server error"
-			}
-
-			respondError(w, status, message)
-			return
-		}
-
-		respondJSON(w, http.StatusOK, authResp)
-	}
+type RegisterRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func (r *Router) handleSocialLogin() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		var socialReq struct {
-			Provider string `json:"provider"`
-			Token    string `json:"token"`
-		}
-		if err := json.NewDecoder(req.Body).Decode(&socialReq); err != nil {
-			respondError(w, http.StatusBadRequest, "Invalid request body")
-			return
-		}
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
-		authResp, err := r.authService.SocialLogin(req.Context(), socialReq.Provider, socialReq.Token)
-		if err != nil {
-			var status int
-			var message string
+type AuthResponse struct {
+	Token string      `json:"token"`
+	User  *model.User `json:"user"`
+}
 
-			switch e := err.(type) {
-			case *errors.AppError:
-				status = e.Code
-				message = e.Message
-			default:
-				status = http.StatusUnauthorized
-				message = err.Error()
-			}
-
-			respondError(w, status, message)
-			return
-		}
-
-		respondJSON(w, http.StatusOK, authResp)
+func (h *AuthHandlers) Register(w http.ResponseWriter, r *http.Request) {
+	var req RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
+
+	registerReq := model.RegisterRequest{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: req.Password,
+	}
+
+	_, err := h.authService.RegisterUser(r.Context(), registerReq)
+	if err != nil {
+		http.Error(w, "Failed to register user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	authResp, err := h.authService.Login(r.Context(), req.Email, req.Password)
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, AuthResponse{
+		Token: authResp.Token,
+		User:  authResp.User,
+	})
+}
+
+func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	authResp, err := h.authService.Login(r.Context(), req.Email, req.Password)
+	if err != nil {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, AuthResponse{
+		Token: authResp.Token,
+		User:  authResp.User,
+	})
+}
+
+func (h *AuthHandlers) SocialLogin(w http.ResponseWriter, r *http.Request) {
+	var socialReq struct {
+		Provider string `json:"provider"`
+		Token    string `json:"token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&socialReq); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	authResp, err := h.authService.SocialLogin(r.Context(), socialReq.Provider, socialReq.Token)
+	if err != nil {
+		var status int
+		var message string
+
+		switch e := err.(type) {
+		case *errors.AppError:
+			status = e.Code
+			message = e.Message
+		default:
+			status = http.StatusUnauthorized
+			message = err.Error()
+		}
+
+		http.Error(w, message, status)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, authResp)
 }

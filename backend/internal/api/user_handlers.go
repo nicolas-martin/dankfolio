@@ -5,94 +5,75 @@ import (
 	"net/http"
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
-func (r *Router) handleGetProfile() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		user := getUserFromContext(req.Context())
-		if user == nil {
-			respondError(w, http.StatusUnauthorized, "Unauthorized")
-			return
-		}
+type UserHandlers struct {
+	userService *service.UserService
+}
 
-		profile, err := r.userService.GetProfile(req.Context(), user.ID)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		respondJSON(w, http.StatusOK, profile)
+func NewUserHandlers(userService *service.UserService) *UserHandlers {
+	return &UserHandlers{
+		userService: userService,
 	}
 }
 
-func (r *Router) handleUpdateProfile() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		user := getUserFromContext(req.Context())
-		if user == nil {
-			respondError(w, http.StatusUnauthorized, "Unauthorized")
-			return
-		}
-
-		var updateReq model.ProfileUpdateRequest
-		if err := json.NewDecoder(req.Body).Decode(&updateReq); err != nil {
-			respondError(w, http.StatusBadRequest, "Invalid request body")
-			return
-		}
-
-		profile, err := r.userService.UpdateProfile(req.Context(), user.ID, updateReq)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		respondJSON(w, http.StatusOK, profile)
+func (h *UserHandlers) GetProfile(w http.ResponseWriter, r *http.Request) {
+	user, ok := GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		return
 	}
+
+	profile, err := h.userService.GetProfile(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, profile)
 }
 
-func (r *Router) handleChangePassword() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		user := getUserFromContext(req.Context())
-		if user == nil {
-			respondError(w, http.StatusUnauthorized, "Unauthorized")
-			return
-		}
-
-		var changeReq model.ChangePasswordRequest
-		if err := json.NewDecoder(req.Body).Decode(&changeReq); err != nil {
-			respondError(w, http.StatusBadRequest, "Invalid request body")
-			return
-		}
-
-		err := r.userService.ChangePassword(req.Context(), user.ID, changeReq)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		respondJSON(w, http.StatusOK, map[string]string{"message": "Password changed successfully"})
+func (h *UserHandlers) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	var req model.ProfileUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
+
+	user, ok := GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	updatedProfile, err := h.userService.UpdateProfile(r.Context(), user.ID, req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, updatedProfile)
 }
 
-func (r *Router) handleUpdateNotificationSettings() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		user := getUserFromContext(req.Context())
-		if user == nil {
-			respondError(w, http.StatusUnauthorized, "Unauthorized")
-			return
-		}
-
-		var settings model.NotificationSettings
-		if err := json.NewDecoder(req.Body).Decode(&settings); err != nil {
-			respondError(w, http.StatusBadRequest, "Invalid request body")
-			return
-		}
-
-		updatedSettings, err := r.userService.UpdateNotificationSettings(req.Context(), user.ID, settings)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		respondJSON(w, http.StatusOK, updatedSettings)
+func (h *UserHandlers) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	var req model.ChangePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
+
+	user, ok := GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	err := h.userService.ChangePassword(r.Context(), user.ID, req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }
