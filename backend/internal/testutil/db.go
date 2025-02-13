@@ -67,9 +67,9 @@ func InsertTestCoin(ctx context.Context, db db.DB, coin model.MemeCoin) error {
 func InsertTestWallet(ctx context.Context, db db.DB, wallet model.Wallet) error {
 	query := `
 		INSERT INTO wallets (
-			id, user_id, public_key, private_key, balance, created_at, last_updated
+			id, user_id, public_key, private_key, encrypted_private_key, balance, created_at, last_updated
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7
+			$1, $2, $3, $4, $5, $6, $7, $8
 		)
 	`
 
@@ -78,6 +78,7 @@ func InsertTestWallet(ctx context.Context, db db.DB, wallet model.Wallet) error 
 		wallet.UserID,
 		wallet.PublicKey,
 		wallet.PrivateKey,
+		wallet.PrivateKey, // Using private key as encrypted key for testing
 		wallet.Balance,
 		wallet.CreatedAt,
 		wallet.LastUpdated,
@@ -118,6 +119,32 @@ func GetUserPortfolio(ctx context.Context, db db.DB, userID string, coinID strin
 // SetupTestSchema creates the necessary tables for testing
 func SetupTestSchema(ctx context.Context, db db.DB) error {
 	queries := []string{
+		`CREATE TABLE IF NOT EXISTS meme_coins (
+			id TEXT PRIMARY KEY,
+			symbol TEXT NOT NULL,
+			name TEXT NOT NULL,
+			description TEXT,
+			contract_address TEXT NOT NULL,
+			logo_url TEXT,
+			image_url TEXT,
+			price DECIMAL,
+			current_price DECIMAL,
+			change_24h DECIMAL,
+			volume_24h DECIMAL,
+			market_cap DECIMAL,
+			supply DECIMAL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS price_history (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			coin_id TEXT NOT NULL REFERENCES meme_coins(id),
+			price DECIMAL NOT NULL,
+			market_cap DECIMAL,
+			volume_24h DECIMAL,
+			timestamp BIGINT NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+		)`,
 		`CREATE TABLE IF NOT EXISTS wallets (
 			id TEXT PRIMARY KEY,
 			user_id TEXT NOT NULL,
@@ -165,6 +192,7 @@ func SetupTestSchema(ctx context.Context, db db.DB) error {
 				id, 'withdrawal' as type, user_id, amount, status, tx_hash, created_at, updated_at
 			FROM withdrawals
 		`,
+		`CREATE INDEX IF NOT EXISTS idx_price_history_coin_id_timestamp ON price_history(coin_id, timestamp)`,
 	}
 
 	for _, query := range queries {
@@ -183,7 +211,11 @@ func CleanupTestSchema(ctx context.Context, db db.DB) error {
 		"DROP VIEW IF EXISTS transactions",
 		"DROP TABLE IF EXISTS withdrawals",
 		"DROP TABLE IF EXISTS deposits",
+		"DROP TABLE IF EXISTS portfolios",
+		"DROP TABLE IF EXISTS trades",
+		"DROP TABLE IF EXISTS price_history",
 		"DROP TABLE IF EXISTS wallets",
+		"DROP TABLE IF EXISTS meme_coins",
 	}
 
 	for _, query := range queries {

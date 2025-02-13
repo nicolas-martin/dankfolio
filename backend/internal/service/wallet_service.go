@@ -154,7 +154,6 @@ func generateDepositAddress() string {
 
 func generatePaymentURL(paymentType string, amount float64) string {
 	// Generate a payment URL based on the payment type and amount
-	// This is a placeholder implementation
 	baseURL := "https://api.memetrading.com/pay"
 	return fmt.Sprintf("%s/%s?amount=%.2f", baseURL, paymentType, amount)
 }

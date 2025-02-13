@@ -40,7 +40,7 @@ func (r *Router) handleInitiateDeposit() http.HandlerFunc {
 			return
 		}
 
-		depositInfo, err := r.walletService.InitiateDeposit(req.Context(), user.ID, depositReq)
+		depositInfo, err := r.walletService.InitiateDeposit(req.Context(), user.ID, &depositReq)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -71,7 +71,7 @@ func (r *Router) handleInitiateWithdrawal() http.HandlerFunc {
 		}
 
 		// Process withdrawal
-		withdrawalInfo, err := r.walletService.InitiateWithdrawal(req.Context(), user.ID, withdrawalReq)
+		withdrawalInfo, err := r.walletService.InitiateWithdrawal(req.Context(), user.ID, &withdrawalReq)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
 			return

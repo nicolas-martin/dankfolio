@@ -16,6 +16,8 @@ type CoinRepository interface {
 	UpdatePrices(ctx context.Context, updates []model.PriceUpdate) error
 	GetCoinByID(ctx context.Context, coinID string) (*model.MemeCoin, error)
 	GetCoinPriceHistory(ctx context.Context, coinID string, startTime time.Time, endTime time.Time) ([]model.PricePoint, error)
+	UpsertCoin(ctx context.Context, coin model.MemeCoin) error
+	SaveMemeCoins(ctx context.Context, coins []model.MemeCoin) error
 }
 
 // coinRepository implements CoinRepository interface
@@ -245,4 +247,84 @@ func (r *coinRepository) GetCoinPriceHistory(ctx context.Context, coinID string,
 	}
 
 	return prices, nil
+}
+
+func (r *coinRepository) UpsertCoin(ctx context.Context, coin model.MemeCoin) error {
+	query := `
+		INSERT INTO meme_coins (
+			id, symbol, name, description, contract_address, logo_url,
+			price, current_price, change_24h, volume_24h, market_cap,
+			created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+		)
+		ON CONFLICT (id) DO UPDATE SET
+			symbol = EXCLUDED.symbol,
+			name = EXCLUDED.name,
+			description = EXCLUDED.description,
+			contract_address = EXCLUDED.contract_address,
+			logo_url = EXCLUDED.logo_url,
+			price = EXCLUDED.price,
+			current_price = EXCLUDED.current_price,
+			change_24h = EXCLUDED.change_24h,
+			volume_24h = EXCLUDED.volume_24h,
+			market_cap = EXCLUDED.market_cap,
+			updated_at = EXCLUDED.updated_at
+	`
+
+	_, err := r.db.Exec(ctx, query,
+		coin.ID, coin.Symbol, coin.Name, coin.Description, coin.ContractAddress,
+		coin.LogoURL, coin.Price, coin.CurrentPrice, coin.Change24h,
+		coin.Volume24h, coin.MarketCap, coin.CreatedAt, coin.UpdatedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to upsert coin: %w", err)
+	}
+
+	return nil
+}
+
+func (r *coinRepository) SaveMemeCoins(ctx context.Context, coins []model.MemeCoin) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	for _, coin := range coins {
+		_, err := tx.Exec(ctx, `
+			INSERT INTO meme_coins (
+				id, symbol, name, contract_address, logo_url, price, market_cap, volume_24h, created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			ON CONFLICT (id) DO UPDATE SET
+				symbol = EXCLUDED.symbol,
+				name = EXCLUDED.name,
+				contract_address = EXCLUDED.contract_address,
+				logo_url = EXCLUDED.logo_url,
+				price = EXCLUDED.price,
+				market_cap = EXCLUDED.market_cap,
+				volume_24h = EXCLUDED.volume_24h,
+				updated_at = EXCLUDED.updated_at
+		`,
+			coin.ID,
+			coin.Symbol,
+			coin.Name,
+			coin.ContractAddress,
+			coin.LogoURL,
+			coin.Price,
+			coin.MarketCap,
+			coin.Volume24h,
+			coin.CreatedAt,
+			coin.UpdatedAt,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to save meme coin: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit meme coins: %w", err)
+	}
+
+	return nil
 }

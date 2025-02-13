@@ -3,61 +3,80 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/internal/repository"
 	"github.com/nicolas-martin/dankfolio/internal/testutil"
 )
 
-func setupTestCoinService(t *testing.T) (*CoinService, func()) {
+func setupTestCoinService(t *testing.T) (*CoinService, db.DB, func()) {
 	// Setup test database
-	testDB, cleanup := testutil.SetupTestDB(t)
+	testDB, dbCleanup := testutil.SetupTestDB(t)
+
+	// Setup test schema
+	ctx := context.Background()
+	err := testutil.SetupTestSchema(ctx, testDB)
+	require.NoError(t, err)
 
 	// Clean up any existing test data
-	ctx := context.Background()
-	_, err := testDB.Exec(ctx, "DELETE FROM price_history")
+	_, err = testDB.Exec(ctx, "DELETE FROM price_history")
 	require.NoError(t, err)
 	_, err = testDB.Exec(ctx, "DELETE FROM meme_coins")
 	require.NoError(t, err)
 
-	return NewCoinService(testDB), cleanup
+	// Create a CoinRepository wrapper around the test DB
+	coinRepo := repository.NewCoinRepository(testDB)
+
+	// Create CoinService with real DexScreener API
+	coinService := NewCoinService(coinRepo)
+
+	cleanup := func() {
+		err := testutil.CleanupTestSchema(ctx, testDB)
+		require.NoError(t, err)
+		dbCleanup()
+	}
+
+	return coinService, testDB, cleanup
 }
 
-func insertTestCoin(t *testing.T, ctx context.Context, coinService *CoinService, id string) {
-	testCoin := model.MemeCoin{
+func insertTestCoin(t *testing.T, ctx context.Context, testDB db.DB, id string) {
+	testCoin := &model.MemeCoin{
 		ID:              id,
-		Symbol:          fmt.Sprintf("%s_symbol", id),
-		Name:            fmt.Sprintf("%s coin", id),
-		Description:     "Test coin",
-		ContractAddress: fmt.Sprintf("0x123...%s", id),
-		Price:           0.1,
-		CurrentPrice:    0.1,
+		Name:            fmt.Sprintf("Test Coin %s", id),
+		Symbol:          strings.ToUpper(id),
+		Description:     "Test coin description",
+		ContractAddress: fmt.Sprintf("0x%s", id),
+		Price:           1.0,
+		CurrentPrice:    1.0,
 		Change24h:       5.0,
-		Volume24h:       500000,
-		MarketCap:       1000000,
-		Supply:          1000000000,
+		Volume24h:       100000.0,
+		MarketCap:       1000000.0,
+		Supply:          1000000.0,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 	}
 
-	err := testutil.InsertTestCoin(ctx, coinService.db, testCoin)
+	err := testutil.InsertTestCoin(ctx, testDB, *testCoin)
 	require.NoError(t, err)
 }
 
 func TestCoinService_GetTopMemeCoins(t *testing.T) {
 	// Setup
-	coinService, cleanup := setupTestCoinService(t)
+	coinService, testDB, cleanup := setupTestCoinService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	// Insert test coins first
-	insertTestCoin(t, ctx, coinService, "doge1")
-	insertTestCoin(t, ctx, coinService, "shib1")
+	insertTestCoin(t, ctx, testDB, "doge1")
+	insertTestCoin(t, ctx, testDB, "shib1")
 
 	// Insert test price data
 	now := time.Now()
@@ -90,14 +109,14 @@ func TestCoinService_GetTopMemeCoins(t *testing.T) {
 
 func TestCoinService_GetPriceHistory(t *testing.T) {
 	// Setup
-	coinService, cleanup := setupTestCoinService(t)
+	coinService, testDB, cleanup := setupTestCoinService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	coinID := "doge2"
 
 	// Insert test coin first
-	insertTestCoin(t, ctx, coinService, coinID)
+	insertTestCoin(t, ctx, testDB, coinID)
 
 	// Insert historical price data
 	now := time.Now()
@@ -131,7 +150,7 @@ func TestCoinService_GetPriceHistory(t *testing.T) {
 
 func TestCoinService_GetCoinByID(t *testing.T) {
 	// Setup
-	coinService, cleanup := setupTestCoinService(t)
+	coinService, testDB, cleanup := setupTestCoinService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -154,7 +173,7 @@ func TestCoinService_GetCoinByID(t *testing.T) {
 		UpdatedAt:       time.Now(),
 	}
 
-	err := testutil.InsertTestCoin(ctx, coinService.db, testCoin)
+	err := testutil.InsertTestCoin(ctx, testDB, testCoin)
 	require.NoError(t, err)
 
 	// Test
@@ -168,14 +187,14 @@ func TestCoinService_GetCoinByID(t *testing.T) {
 
 func TestCoinService_UpdatePrices(t *testing.T) {
 	// Setup
-	coinService, cleanup := setupTestCoinService(t)
+	coinService, testDB, cleanup := setupTestCoinService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
 	// Insert test coins first
-	insertTestCoin(t, ctx, coinService, "doge4")
-	insertTestCoin(t, ctx, coinService, "shib4")
+	insertTestCoin(t, ctx, testDB, "doge4")
+	insertTestCoin(t, ctx, testDB, "shib4")
 
 	// Test data
 	now := time.Now()
@@ -215,14 +234,14 @@ func TestCoinService_UpdatePrices(t *testing.T) {
 
 func TestCoinService_GetCoinPriceHistory(t *testing.T) {
 	// Setup
-	coinService, cleanup := setupTestCoinService(t)
+	coinService, testDB, cleanup := setupTestCoinService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	coinID := "doge5"
 
 	// Insert test coin first
-	insertTestCoin(t, ctx, coinService, coinID)
+	insertTestCoin(t, ctx, testDB, coinID)
 
 	// Insert historical data
 	now := time.Now()
@@ -266,4 +285,139 @@ func TestCoinService_GetCoinPriceHistory(t *testing.T) {
 			assert.Len(t, prices, tc.expected)
 		})
 	}
+}
+
+func TestCoinService_GetTopMemeCoins_WithAPI(t *testing.T) {
+	// Skip in CI environment
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
+
+	// Setup
+	coinService, _, cleanup := setupTestCoinService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	// Test real API call
+	coins, err := coinService.GetTopMemeCoins(ctx, 10)
+	require.NoError(t, err)
+	assert.NotEmpty(t, coins)
+
+	// Verify we got real data
+	assert.LessOrEqual(t, len(coins), 10)
+	if len(coins) > 0 {
+		coin := coins[0]
+		assert.NotEmpty(t, coin.ID)
+		assert.NotEmpty(t, coin.Symbol)
+		assert.NotEmpty(t, coin.Name)
+		assert.NotZero(t, coin.CurrentPrice)
+		assert.NotZero(t, coin.Volume24h)
+		assert.NotZero(t, coin.MarketCap)
+	}
+}
+
+func TestCoinService_Integration_WithAPI(t *testing.T) {
+	// Skip in CI environment
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
+
+	ctx := context.Background()
+
+	// Setup test database
+	coinService, testDB, cleanup := setupTestCoinService(t)
+	defer cleanup()
+
+	// Setup test schema
+	err := testutil.SetupTestSchema(ctx, testDB)
+	require.NoError(t, err)
+	defer func() {
+		err := testutil.CleanupTestSchema(ctx, testDB)
+		require.NoError(t, err)
+	}()
+
+	t.Run("Fetch and Store Real Meme Coins", func(t *testing.T) {
+		// First fetch coins from real API
+		coins, err := coinService.GetTopMemeCoins(ctx, 10)
+		require.NoError(t, err)
+		require.NotEmpty(t, coins)
+
+		// Get first coin for testing
+		coin := coins[0]
+		assert.NotEmpty(t, coin.ID)
+		assert.NotEmpty(t, coin.Symbol)
+		assert.NotEmpty(t, coin.Name)
+
+		// Store real price updates
+		updates := []model.PriceUpdate{
+			{
+				CoinID:    coin.ID,
+				Price:     coin.CurrentPrice,
+				MarketCap: coin.MarketCap,
+				Volume24h: coin.Volume24h,
+				Timestamp: time.Now(),
+			},
+		}
+
+		err = coinService.UpdatePrices(ctx, updates)
+		require.NoError(t, err)
+
+		// Verify stored data
+		storedCoin, err := coinService.GetCoinByID(ctx, coin.ID)
+		require.NoError(t, err)
+		assert.Equal(t, coin.ID, storedCoin.ID)
+		assert.Equal(t, coin.Symbol, storedCoin.Symbol)
+		assert.Equal(t, coin.Name, storedCoin.Name)
+		assert.Equal(t, coin.CurrentPrice, storedCoin.CurrentPrice)
+	})
+
+	t.Run("Price History Integration", func(t *testing.T) {
+		// Get a real coin from the API
+		coins, err := coinService.GetTopMemeCoins(ctx, 1)
+		require.NoError(t, err)
+		require.NotEmpty(t, coins)
+		coin := coins[0]
+
+		// Insert historical price data
+		now := time.Now()
+		historicalPrices := []model.PriceUpdate{
+			{
+				CoinID:    coin.ID,
+				Price:     coin.CurrentPrice * 0.9, // 10% lower price for history
+				MarketCap: coin.MarketCap * 0.9,
+				Volume24h: coin.Volume24h * 0.9,
+				Timestamp: time.Unix(now.Unix()-86400, 0), // 24 hours ago
+			},
+			{
+				CoinID:    coin.ID,
+				Price:     coin.CurrentPrice,
+				MarketCap: coin.MarketCap,
+				Volume24h: coin.Volume24h,
+				Timestamp: time.Unix(now.Unix(), 0),
+			},
+		}
+
+		err = coinService.UpdatePrices(ctx, historicalPrices)
+		require.NoError(t, err)
+
+		// Test different timeframes
+		timeframes := []string{"day", "week", "month"}
+		for _, timeframe := range timeframes {
+			t.Run(timeframe, func(t *testing.T) {
+				prices, err := coinService.GetCoinPriceHistory(ctx, coin.ID, timeframe)
+				require.NoError(t, err)
+				assert.NotEmpty(t, prices)
+
+				// Verify price points
+				for _, point := range prices {
+					assert.NotZero(t, point.Price)
+					assert.NotZero(t, point.MarketCap)
+					assert.NotZero(t, point.Volume)
+					assert.False(t, point.Time.IsZero())
+					assert.NotZero(t, point.Timestamp)
+				}
+			})
+		}
+	})
 }
