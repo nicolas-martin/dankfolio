@@ -329,23 +329,15 @@ func TestCoinService_Integration_WithAPI(t *testing.T) {
 		t.Skip("Skipping test in short mode")
 	}
 
-	ctx := context.Background()
-
-	// Setup test database
-	coinService, testDB, cleanup := setupTestCoinService(t)
+	// Setup with real API client
+	coinService, _, cleanup := setupTestCoinService(t)
 	defer cleanup()
 
-	// Setup test schema
-	err := testutil.SetupTestSchema(ctx, testDB)
-	require.NoError(t, err)
-	defer func() {
-		err := testutil.CleanupTestSchema(ctx, testDB)
-		require.NoError(t, err)
-	}()
+	ctx := context.Background()
 
 	t.Run("Fetch and Store Real Meme Coins", func(t *testing.T) {
-		// First fetch coins from real API
-		coins, err := coinService.GetTopMemeCoins(ctx, 10)
+		// Get real coins from the API
+		coins, err := coinService.GetTopMemeCoins(ctx, 1)
 		require.NoError(t, err)
 		require.NotEmpty(t, coins)
 
@@ -354,6 +346,10 @@ func TestCoinService_Integration_WithAPI(t *testing.T) {
 		assert.NotEmpty(t, coin.ID)
 		assert.NotEmpty(t, coin.Symbol)
 		assert.NotEmpty(t, coin.Name)
+
+		// First save the coin to the database
+		err = coinService.repo.UpsertCoin(ctx, coin)
+		require.NoError(t, err)
 
 		// Store real price updates
 		updates := []model.PriceUpdate{
@@ -369,13 +365,13 @@ func TestCoinService_Integration_WithAPI(t *testing.T) {
 		err = coinService.UpdatePrices(ctx, updates)
 		require.NoError(t, err)
 
-		// Verify stored data
+		// Verify stored data with delta comparison for floating point values
 		storedCoin, err := coinService.GetCoinByID(ctx, coin.ID)
 		require.NoError(t, err)
 		assert.Equal(t, coin.ID, storedCoin.ID)
 		assert.Equal(t, coin.Symbol, storedCoin.Symbol)
 		assert.Equal(t, coin.Name, storedCoin.Name)
-		assert.Equal(t, coin.CurrentPrice, storedCoin.CurrentPrice)
+		assert.InDelta(t, coin.CurrentPrice, storedCoin.CurrentPrice, 1e-10, "Current price should match within delta")
 	})
 
 	t.Run("Price History Integration", func(t *testing.T) {
@@ -385,14 +381,18 @@ func TestCoinService_Integration_WithAPI(t *testing.T) {
 		require.NotEmpty(t, coins)
 		coin := coins[0]
 
-		// Insert historical price data
+		// First save the coin to the database
+		err = coinService.repo.UpsertCoin(ctx, coin)
+		require.NoError(t, err)
+
+		// Insert historical price data with real market data
 		now := time.Now()
 		historicalPrices := []model.PriceUpdate{
 			{
 				CoinID:    coin.ID,
-				Price:     coin.CurrentPrice * 0.9, // 10% lower price for history
-				MarketCap: coin.MarketCap * 0.9,
-				Volume24h: coin.Volume24h * 0.9,
+				Price:     coin.CurrentPrice * 0.9, // Simulate historical price
+				MarketCap: coin.MarketCap,
+				Volume24h: coin.Volume24h,
 				Timestamp: time.Unix(now.Unix()-86400, 0), // 24 hours ago
 			},
 			{
@@ -407,7 +407,7 @@ func TestCoinService_Integration_WithAPI(t *testing.T) {
 		err = coinService.UpdatePrices(ctx, historicalPrices)
 		require.NoError(t, err)
 
-		// Test different timeframes
+		// Test different timeframes with real data
 		timeframes := []string{"day", "week", "month"}
 		for _, timeframe := range timeframes {
 			t.Run(timeframe, func(t *testing.T) {
@@ -415,7 +415,7 @@ func TestCoinService_Integration_WithAPI(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotEmpty(t, prices)
 
-				// Verify price points
+				// Verify real price data points
 				for _, point := range prices {
 					assert.NotZero(t, point.Price)
 					assert.NotZero(t, point.MarketCap)

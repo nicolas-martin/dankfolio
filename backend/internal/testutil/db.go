@@ -202,38 +202,100 @@ func GetUserPortfolio(ctx context.Context, db db.DB, userID string, coinID strin
 
 // SetupTestSchema sets up the test database schema
 func SetupTestSchema(ctx context.Context, db db.DB) error {
-	// Create tables
+	// Create tables in correct order (parent tables first)
 	_, err := db.Exec(ctx, `
+		-- Users table
+		CREATE TABLE IF NOT EXISTS users (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			email VARCHAR(255) UNIQUE NOT NULL,
+			username VARCHAR(50) UNIQUE NOT NULL,
+			password_hash VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Wallets table
+		CREATE TABLE IF NOT EXISTS wallets (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES users(id),
+			public_key VARCHAR(255) NOT NULL,
+			private_key TEXT NOT NULL,
+			encrypted_private_key TEXT NOT NULL,
+			balance DECIMAL(24,12) NOT NULL DEFAULT 0,
+			last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Meme coins table
 		CREATE TABLE IF NOT EXISTS meme_coins (
-			id VARCHAR(255) PRIMARY KEY,
-			symbol VARCHAR(50) NOT NULL,
-			name VARCHAR(255) NOT NULL,
-			description TEXT,
+			id VARCHAR(50) PRIMARY KEY,
+			symbol VARCHAR(20) NOT NULL,
+			name VARCHAR(100) NOT NULL,
 			contract_address VARCHAR(255) NOT NULL,
+			description TEXT,
 			logo_url TEXT,
 			website_url TEXT,
-			price DECIMAL(18,8),
-			current_price DECIMAL(18,8),
-			change_24h DECIMAL(18,8),
-			volume_24h DECIMAL(18,8),
-			market_cap DECIMAL(18,8),
-			supply DECIMAL(18,8),
-			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+			image_url TEXT,
+			price DECIMAL(24,12),
+			current_price DECIMAL(24,12),
+			change_24h DECIMAL(24,12),
+			volume_24h DECIMAL(24,2),
+			market_cap DECIMAL(24,2),
+			supply DECIMAL(24,12),
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		);
 
+		-- Price history table
 		CREATE TABLE IF NOT EXISTS price_history (
-			id SERIAL PRIMARY KEY,
-			coin_id VARCHAR(255) REFERENCES meme_coins(id),
-			price DECIMAL(18,8) NOT NULL,
-			market_cap DECIMAL(18,8),
-			volume_24h DECIMAL(18,8),
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			coin_id VARCHAR(50) NOT NULL,
+			price DECIMAL(24,12) NOT NULL,
+			market_cap DECIMAL(24,2),
+			volume_24h DECIMAL(24,2),
 			timestamp BIGINT NOT NULL,
-			created_at TIMESTAMP NOT NULL DEFAULT NOW()
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (coin_id) REFERENCES meme_coins(id)
 		);
 
-		CREATE INDEX IF NOT EXISTS idx_price_history_coin_id ON price_history(coin_id);
-		CREATE INDEX IF NOT EXISTS idx_price_history_timestamp ON price_history(timestamp);
+		-- User portfolios table
+		CREATE TABLE IF NOT EXISTS portfolios (
+			id VARCHAR(50) PRIMARY KEY,
+			user_id VARCHAR(50) NOT NULL,
+			coin_id VARCHAR(50) NOT NULL,
+			amount DECIMAL(24,12) NOT NULL,
+			average_buy_price DECIMAL(24,12) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (coin_id) REFERENCES meme_coins(id),
+			CONSTRAINT portfolios_user_coin_unique UNIQUE(user_id, coin_id)
+		);
+
+		-- Trades table
+		CREATE TABLE IF NOT EXISTS trades (
+			id VARCHAR(50) PRIMARY KEY,
+			user_id VARCHAR(50) NOT NULL,
+			coin_id VARCHAR(50) NOT NULL,
+			coin_symbol VARCHAR(20),
+			type VARCHAR(4) NOT NULL CHECK (type IN ('buy', 'sell')),
+			amount DECIMAL(24,12) NOT NULL,
+			price DECIMAL(24,12) NOT NULL,
+			fee DECIMAL(24,12) NOT NULL,
+			transaction_hash VARCHAR(255),
+			status VARCHAR(20) NOT NULL DEFAULT 'pending' 
+				CHECK (status IN ('pending', 'completed', 'failed')),
+			completed_at TIMESTAMP WITH TIME ZONE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (coin_id) REFERENCES meme_coins(id)
+		);
+
+		-- Create indexes
+		CREATE INDEX IF NOT EXISTS idx_price_history_coin_id_timestamp ON price_history(coin_id, timestamp);
+		CREATE INDEX IF NOT EXISTS idx_trades_user_id ON trades(user_id);
+		CREATE INDEX IF NOT EXISTS idx_trades_coin_id ON trades(coin_id);
+		CREATE INDEX IF NOT EXISTS idx_portfolios_user_id ON portfolios(user_id);
 	`)
 
 	return err
@@ -241,9 +303,14 @@ func SetupTestSchema(ctx context.Context, db db.DB) error {
 
 // CleanupTestSchema drops all test tables
 func CleanupTestSchema(ctx context.Context, db db.DB) error {
+	// Drop tables in correct order (child tables first)
 	_, err := db.Exec(ctx, `
-		DROP TABLE IF EXISTS price_history;
-		DROP TABLE IF EXISTS meme_coins;
+		DROP TABLE IF EXISTS price_history CASCADE;
+		DROP TABLE IF EXISTS portfolios CASCADE;
+		DROP TABLE IF EXISTS trades CASCADE;
+		DROP TABLE IF EXISTS meme_coins CASCADE;
+		DROP TABLE IF EXISTS wallets CASCADE;
+		DROP TABLE IF EXISTS users CASCADE;
 	`)
 	return err
 }

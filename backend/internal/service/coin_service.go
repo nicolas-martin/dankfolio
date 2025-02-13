@@ -310,38 +310,35 @@ func isValidQuoteCurrency(symbol string) bool {
 func (s *CoinService) GetTopMemeCoins(ctx context.Context, limit int) ([]model.MemeCoin, error) {
 	pairs, err := s.fetchDexScreenerData(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching meme coin data: %w", err)
+		return nil, fmt.Errorf("error fetching DexScreener data: %w", err)
 	}
 
-	// Sort pairs by volume
-	sort.Slice(pairs, func(i, j int) bool {
-		return pairs[i].Volume.H24 > pairs[j].Volume.H24
-	})
-
-	// Take top N pairs
-	if len(pairs) > limit {
-		pairs = pairs[:limit]
-	}
-
-	// Convert to MemeCoin objects
 	var coins []model.MemeCoin
 	for _, pair := range pairs {
+		price, _ := util.ParseFloat64(pair.PriceUsd)
 		coin := model.MemeCoin{
 			ID:              pair.BaseToken.Address,
 			Symbol:          pair.BaseToken.Symbol,
 			Name:            pair.BaseToken.Name,
-			Description:     fmt.Sprintf("Meme coin trading on %s", pair.DexId),
 			ContractAddress: pair.BaseToken.Address,
-			Price:           pair.Volume.H24,
-			CurrentPrice:    pair.Volume.H24,
+			Price:           price,
+			CurrentPrice:    price,
 			Change24h:       pair.PriceChange.H24,
 			Volume24h:       pair.Volume.H24,
 			MarketCap:       pair.MarketCap,
-			Supply:          pair.MarketCap / pair.Volume.H24,
-			CreatedAt:       time.Now(),
+			CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
 			UpdatedAt:       time.Now(),
 		}
 		coins = append(coins, coin)
+	}
+
+	// Sort by market cap
+	sort.Slice(coins, func(i, j int) bool {
+		return coins[i].MarketCap > coins[j].MarketCap
+	})
+
+	if limit > 0 && len(coins) > limit {
+		coins = coins[:limit]
 	}
 
 	return coins, nil
@@ -360,10 +357,21 @@ func (s *CoinService) GetCoinByID(ctx context.Context, coinID string) (*model.Me
 }
 
 func (s *CoinService) GetCoinPriceHistory(ctx context.Context, coinID string, timeframe string) ([]model.PricePoint, error) {
-	startTime := util.GetStartTimeForTimeframe(timeframe)
-	endTime := time.Now()
+	var startTime time.Time
+	now := time.Now()
 
-	return s.repo.GetCoinPriceHistory(ctx, coinID, startTime, endTime)
+	switch timeframe {
+	case "day":
+		startTime = now.AddDate(0, 0, -1)
+	case "week":
+		startTime = now.AddDate(0, 0, -7)
+	case "month":
+		startTime = now.AddDate(0, -1, 0)
+	default:
+		return nil, fmt.Errorf("invalid timeframe: %s", timeframe)
+	}
+
+	return s.GetPriceHistory(ctx, coinID, startTime)
 }
 
 // fetchSpecificPair fetches data for a specific trading pair from DexScreener API
@@ -454,26 +462,29 @@ func (s *CoinService) GetCoinByContractAddress(ctx context.Context, contractAddr
 		return nil, fmt.Errorf("error fetching pair data: %w", err)
 	}
 
-	// Fetch additional token profile information
-	profile, err := s.fetchTokenProfile(ctx, pair.ChainId, pair.BaseToken.Address)
+	if pair == nil {
+		return nil, fmt.Errorf("no pair found for contract address: %s", contractAddress)
+	}
+
+	// Fetch token profile for additional information
+	profile, err := s.fetchTokenProfile(ctx, pair.ChainId, contractAddress)
 	if err != nil {
-		// Log the error but continue without profile data
-		fmt.Printf("Warning: Could not fetch token profile: %v\n", err)
+		// Log the error but continue, as profile is optional
+		fmt.Printf("Warning: could not fetch token profile: %v\n", err)
 	}
 
 	price, _ := util.ParseFloat64(pair.PriceUsd)
 	coin := &model.MemeCoin{
-		ID:              pair.BaseToken.Address,
+		ID:              contractAddress,
 		Symbol:          pair.BaseToken.Symbol,
 		Name:            pair.BaseToken.Name,
-		ContractAddress: pair.BaseToken.Address,
+		ContractAddress: contractAddress,
 		Price:           price,
 		CurrentPrice:    price,
 		Change24h:       pair.PriceChange.H24,
 		Volume24h:       pair.Volume.H24,
 		MarketCap:       pair.MarketCap,
-		Supply:          pair.MarketCap / price,
-		CreatedAt:       time.Now(),
+		CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
 		UpdatedAt:       time.Now(),
 	}
 
@@ -481,30 +492,19 @@ func (s *CoinService) GetCoinByContractAddress(ctx context.Context, contractAddr
 	if profile != nil {
 		coin.Description = profile.Description
 		coin.LogoURL = profile.Icon
+		if len(profile.Links) > 0 {
+			for _, link := range profile.Links {
+				if link.Type == "website" {
+					coin.WebsiteURL = link.URL
+					break
+				}
+			}
+		}
 	}
 
-	// Use pair info as fallback for logo URL
-	if coin.LogoURL == "" && pair.Info.ImageURL != "" {
-		coin.LogoURL = pair.Info.ImageURL
-	}
-
-	// Add website URL if available from pair info
-	if len(pair.Info.Websites) > 0 {
-		coin.WebsiteURL = pair.Info.Websites[0].URL
-	}
-
-	// If no description from profile, create one from available info
+	// If no description from profile, create a fallback description
 	if coin.Description == "" {
-		var socials []string
-		for _, social := range pair.Info.Socials {
-			socials = append(socials, fmt.Sprintf("%s: %s", social.Platform, social.Handle))
-		}
-
-		description := fmt.Sprintf("Trading on %s", pair.DexId)
-		if len(socials) > 0 {
-			description += fmt.Sprintf(". Social links: %s", strings.Join(socials, ", "))
-		}
-		coin.Description = description
+		coin.Description = fmt.Sprintf("%s is trading on %s", coin.Name, pair.DexId)
 	}
 
 	return coin, nil
