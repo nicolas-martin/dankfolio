@@ -31,7 +31,9 @@ run:
 			break; \
 		fi; \
 		if [ $$i -eq 5 ]; then \
-			echo "❌ API failed to start. Check server.log for details"; \
+			echo "❌ API failed to start after 5 attempts"; \
+			echo "📜 Server logs:"; \
+			cat server.log; \
 			exit 1; \
 		fi; \
 		echo "⏳ Waiting for API to be ready... ($$i/5)"; \

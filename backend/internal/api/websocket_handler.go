@@ -3,29 +3,34 @@ package api
 import (
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
-type WebsocketHandler struct {
-	wsService service.WebsocketService
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins for now
+	},
 }
 
-func NewWebsocketHandler(wsService service.WebsocketService) *WebsocketHandler {
-	return &WebsocketHandler{
+type WebSocketHandler struct {
+	wsService *service.WebSocketService
+}
+
+func NewWebSocketHandler(wsService *service.WebSocketService) *WebSocketHandler {
+	return &WebSocketHandler{
 		wsService: wsService,
 	}
 }
 
-func (h *WebsocketHandler) HandleWebsocket(w http.ResponseWriter, r *http.Request) {
-	user, ok := GetUserID(r.Context())
-	if !ok {
-		http.Error(w, "User not found in context", http.StatusUnauthorized)
+func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, "Could not upgrade connection", http.StatusInternalServerError)
 		return
 	}
 
-	err := h.wsService.HandleConnection(w, r, user.ID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	h.wsService.HandleConnection(conn)
 }

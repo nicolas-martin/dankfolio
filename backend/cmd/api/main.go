@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/joho/godotenv"
+
 	"github.com/nicolas-martin/dankfolio/internal/api"
 	"github.com/nicolas-martin/dankfolio/internal/db"
 	"github.com/nicolas-martin/dankfolio/internal/repository"
@@ -15,10 +20,15 @@ import (
 )
 
 func main() {
-	// Initialize database
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not found")
+	}
+
+	// Initialize database connection
 	dbpool, err := pgxpool.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer dbpool.Close()
 
@@ -27,73 +37,57 @@ func main() {
 	// Initialize repositories
 	coinRepo := repository.NewCoinRepository(database)
 	tradeRepo := repository.NewTradeRepository(database)
-	walletRepo := repository.NewWalletRepository(database)
 
 	// Initialize services
-	authService := service.NewAuthService(database, os.Getenv("JWT_SECRET"))
-	portfolioService := service.NewPortfolioService()
-	solanaService := service.NewSolanaService()
-	userService := service.NewUserService()
-	leaderboardService := service.NewLeaderboardService()
-	wsService := service.NewWebsocketService()
 	coinService := service.NewCoinService(coinRepo)
-
-	// Initialize test data in development
-	if os.Getenv("APP_ENV") == "development" {
-		if err := coinService.InitializeTestData(context.Background()); err != nil {
-			log.Printf("Warning: Failed to initialize test data: %v", err)
-		}
-	}
-
-	walletService := service.NewWalletService(os.Getenv("SOLANA_RPC_ENDPOINT"), walletRepo)
-
-	// Initialize Solana-specific services
-	solanaTradeService, err := service.NewSolanaTradeService(
+	solanaService, err := service.NewSolanaTradeService(
 		os.Getenv("SOLANA_RPC_ENDPOINT"),
 		os.Getenv("SOLANA_WS_ENDPOINT"),
 		os.Getenv("SOLANA_PROGRAM_ID"),
 		os.Getenv("SOLANA_POOL_WALLET"),
-		database,
+		os.Getenv("SOLANA_PRIVATE_KEY"),
 	)
 	if err != nil {
-		log.Fatalf("Failed to initialize Solana trade service: %v", err)
+		log.Fatalf("Failed to initialize Solana service: %v", err)
 	}
 
-	// Set compute budget and fees if configured
-	if limit := os.Getenv("SOLANA_COMPUTE_UNIT_LIMIT"); limit != "" {
-		if limitVal, err := strconv.ParseUint(limit, 10, 32); err == nil {
-			solanaTradeService.SetComputeUnitLimit(uint32(limitVal))
-		}
-	}
-	if fee := os.Getenv("SOLANA_FEE_MICRO_LAMPORTS"); fee != "" {
-		if feeVal, err := strconv.ParseUint(fee, 10, 64); err == nil {
-			solanaTradeService.SetFeeMicroLamports(feeVal)
-		}
-	}
-
-	// Initialize trade service with all dependencies
-	tradeService := service.NewTradeService(
-		coinService,
-		walletService,
-		solanaTradeService,
-		tradeRepo,
-	)
+	tradeService := service.NewTradeService(coinService, solanaService, tradeRepo)
+	wsService := service.NewWebSocketService()
 
 	// Initialize router
-	router := api.NewRouter(
-		authService,
-		portfolioService,
-		solanaService,
-		userService,
-		leaderboardService,
-		wsService,
-		coinService,
-		tradeService,
-	)
+	router := api.NewRouter(solanaService, coinService, tradeService)
 
-	// Start server
-	log.Printf("Starting server on :8080")
-	if err := http.ListenAndServe(":8080", router); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+	// Start WebSocket service
+	go wsService.Run(context.Background())
+
+	// Configure server
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", os.Getenv("PORT")),
+		Handler: router,
 	}
+
+	// Start server in a goroutine
+	go func() {
+		log.Printf("Starting server on port %s", os.Getenv("PORT"))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	// Create shutdown context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	log.Println("Server exited properly")
 }

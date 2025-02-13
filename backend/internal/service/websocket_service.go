@@ -1,132 +1,101 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 type WebSocketService struct {
-	clients    map[*websocket.Conn]string // map client connection to userID
-	clientsMux sync.RWMutex
-	broadcast  chan interface{}
+	clients    map[*websocket.Conn]bool
+	broadcast  chan []byte
+	register   chan *websocket.Conn
+	unregister chan *websocket.Conn
+	mu         sync.Mutex
 }
 
 func NewWebSocketService() *WebSocketService {
-	ws := &WebSocketService{
-		clients:   make(map[*websocket.Conn]string),
-		broadcast: make(chan interface{}, 1000),
-	}
-	go ws.broadcastLoop()
-	return ws
-}
-
-func (s *WebSocketService) AddClient(conn *websocket.Conn, userID string) {
-	s.clientsMux.Lock()
-	s.clients[conn] = userID
-	s.clientsMux.Unlock()
-
-	// Start reading messages in a goroutine
-	go s.readPump(conn)
-}
-
-func (s *WebSocketService) RemoveClient(conn *websocket.Conn) {
-	s.clientsMux.Lock()
-	delete(s.clients, conn)
-	s.clientsMux.Unlock()
-}
-
-func (s *WebSocketService) BroadcastPriceUpdate(update model.PriceUpdate) {
-	s.broadcast <- struct {
-		Type    string            `json:"type"`
-		Payload model.PriceUpdate `json:"payload"`
-	}{
-		Type:    "price_update",
-		Payload: update,
+	return &WebSocketService{
+		clients:    make(map[*websocket.Conn]bool),
+		broadcast:  make(chan []byte),
+		register:   make(chan *websocket.Conn),
+		unregister: make(chan *websocket.Conn),
 	}
 }
 
-func (s *WebSocketService) BroadcastTradeUpdate(trade *model.Trade) {
-	s.broadcast <- struct {
-		Type    string       `json:"type"`
-		Payload *model.Trade `json:"payload"`
-	}{
-		Type:    "trade_update",
-		Payload: trade,
-	}
-}
+func (s *WebSocketService) Run(ctx context.Context) {
+	for {
+		select {
+		case client := <-s.register:
+			s.mu.Lock()
+			s.clients[client] = true
+			s.mu.Unlock()
 
-func (s *WebSocketService) SendPortfolioUpdate(userID string, portfolio *model.Portfolio) {
-	msg := struct {
-		Type    string           `json:"type"`
-		Payload *model.Portfolio `json:"payload"`
-	}{
-		Type:    "portfolio_update",
-		Payload: portfolio,
-	}
-
-	s.clientsMux.RLock()
-	defer s.clientsMux.RUnlock()
-
-	for conn, id := range s.clients {
-		if id == userID {
-			conn.WriteJSON(msg)
-		}
-	}
-}
-
-func (s *WebSocketService) broadcastLoop() {
-	for msg := range s.broadcast {
-		s.clientsMux.RLock()
-		for conn := range s.clients {
-			err := conn.WriteJSON(msg)
-			if err != nil {
-				conn.Close()
-				s.RemoveClient(conn)
+		case client := <-s.unregister:
+			s.mu.Lock()
+			if _, ok := s.clients[client]; ok {
+				delete(s.clients, client)
+				client.Close()
 			}
+			s.mu.Unlock()
+
+		case message := <-s.broadcast:
+			s.mu.Lock()
+			for client := range s.clients {
+				err := client.WriteMessage(websocket.TextMessage, message)
+				if err != nil {
+					log.Printf("error: %v", err)
+					client.Close()
+					delete(s.clients, client)
+				}
+			}
+			s.mu.Unlock()
+
+		case <-ctx.Done():
+			return
 		}
-		s.clientsMux.RUnlock()
 	}
 }
 
-func (s *WebSocketService) readPump(conn *websocket.Conn) {
+func (s *WebSocketService) BroadcastPriceUpdate(update model.PriceUpdate) error {
+	message, err := json.Marshal(update)
+	if err != nil {
+		return fmt.Errorf("failed to marshal price update: %w", err)
+	}
+
+	s.broadcast <- message
+	return nil
+}
+
+func (s *WebSocketService) RegisterClient(conn *websocket.Conn) {
+	s.register <- conn
+}
+
+func (s *WebSocketService) UnregisterClient(conn *websocket.Conn) {
+	s.unregister <- conn
+}
+
+func (s *WebSocketService) HandleConnection(conn *websocket.Conn) {
 	defer func() {
+		s.UnregisterClient(conn)
 		conn.Close()
-		s.RemoveClient(conn)
 	}()
 
-	conn.SetReadLimit(512) // Set message size limit
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
+	s.RegisterClient(conn)
 
+	// Keep connection alive
 	for {
 		_, _, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				// Log error
+				log.Printf("error: %v", err)
 			}
 			break
 		}
 	}
-}
-
-// Start initializes the WebSocket service
-func (s *WebSocketService) Start() {
-	go s.broadcastLoop()
-}
-
-// Stop gracefully shuts down the WebSocket service
-func (s *WebSocketService) Stop() {
-	close(s.broadcast)
-	s.clientsMux.Lock()
-	for conn := range s.clients {
-		conn.Close()
-	}
-	s.clients = make(map[*websocket.Conn]string)
-	s.clientsMux.Unlock()
 }

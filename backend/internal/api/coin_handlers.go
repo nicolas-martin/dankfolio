@@ -1,9 +1,7 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nicolas-martin/dankfolio/internal/service"
@@ -20,74 +18,66 @@ func NewCoinHandlers(coinService *service.CoinService) *CoinHandlers {
 }
 
 // RegisterRoutes registers all coin-related routes
-func (h *CoinHandlers) RegisterRoutes(r chi.Router) {
-	r.Post("/coins/fetch", h.FetchCoins)
-	r.Get("/coins/top", h.GetTopCoins)
-	r.Get("/coins/contract/{address}", h.GetCoinByContractAddress)
-	r.Get("/coins/{id}/history", h.GetCoinPriceHistory)
-	r.Get("/coins/{id}", h.GetCoinByID)
+func (h *CoinHandlers) RegisterRoutes(router chi.Router) {
+	router.Get("/coins", h.GetTopMemeCoins)
+	router.Get("/coins/{id}", h.GetCoinByID)
+	router.Get("/coins/{id}/history", h.GetCoinPriceHistory)
+	router.Get("/coins/contract/{address}", h.GetCoinByContractAddress)
+	router.Post("/coins/fetch", h.FetchAndStoreRealMemeCoins)
 }
 
-// FetchCoins handles fetching and storing meme coins
-func (h *CoinHandlers) FetchCoins(w http.ResponseWriter, r *http.Request) {
-	err := h.coinService.FetchAndStoreRealMemeCoins(r.Context())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
-}
-
-// GetTopCoins returns the top meme coins
-func (h *CoinHandlers) GetTopCoins(w http.ResponseWriter, r *http.Request) {
-	limit := 50 // default limit
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if parsedLimit, err := strconv.Atoi(limitStr); err == nil {
-			limit = parsedLimit
-		}
-	}
-
-	coins, err := h.coinService.GetTopMemeCoins(r.Context(), limit)
+// GetTopMemeCoins returns the top meme coins
+func (h *CoinHandlers) GetTopMemeCoins(w http.ResponseWriter, r *http.Request) {
+	coins, err := h.coinService.GetTopMemeCoins(r.Context(), 50) // Default limit of 50
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coins)
+	respondJSON(w, http.StatusOK, coins)
 }
 
 // GetCoinByID returns a specific coin by ID
 func (h *CoinHandlers) GetCoinByID(w http.ResponseWriter, r *http.Request) {
 	coinID := chi.URLParam(r, "id")
-	coin, err := h.coinService.GetCoinByID(r.Context(), coinID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+	if coinID == "" {
+		http.Error(w, "coin ID is required", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coin)
+	coin, err := h.coinService.GetCoinByID(r.Context(), coinID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, coin)
 }
 
 // GetCoinByContractAddress returns a specific coin by contract address
 func (h *CoinHandlers) GetCoinByContractAddress(w http.ResponseWriter, r *http.Request) {
 	address := chi.URLParam(r, "address")
-	coin, err := h.coinService.GetCoinByContractAddress(r.Context(), address)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+	if address == "" {
+		http.Error(w, "contract address is required", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coin)
+	coin, err := h.coinService.GetCoinByContractAddress(r.Context(), address)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, coin)
 }
 
 // GetCoinPriceHistory returns the price history for a specific coin
 func (h *CoinHandlers) GetCoinPriceHistory(w http.ResponseWriter, r *http.Request) {
 	coinID := chi.URLParam(r, "id")
 	timeframe := r.URL.Query().Get("timeframe")
+	if timeframe == "" {
+		timeframe = "day" // Default timeframe
+	}
 
 	history, err := h.coinService.GetCoinPriceHistory(r.Context(), coinID, timeframe)
 	if err != nil {
@@ -95,6 +85,16 @@ func (h *CoinHandlers) GetCoinPriceHistory(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(history)
+	respondJSON(w, http.StatusOK, history)
+}
+
+// FetchAndStoreRealMemeCoins handles fetching and storing meme coins
+func (h *CoinHandlers) FetchAndStoreRealMemeCoins(w http.ResponseWriter, r *http.Request) {
+	err := h.coinService.FetchAndStoreRealMemeCoins(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }

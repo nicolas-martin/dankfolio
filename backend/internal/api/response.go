@@ -1,31 +1,30 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
-
-	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
+// ErrorResponse represents an error response
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
+// respondJSON sends a JSON response
+func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
+	response, err := json.Marshal(payload)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: err.Error()})
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	w.Write(response)
 }
 
+// respondError sends an error response
 func respondError(w http.ResponseWriter, code int, message string) {
 	respondJSON(w, code, ErrorResponse{Error: message})
-}
-
-func getUserFromContext(ctx context.Context) *model.User {
-	user, ok := ctx.Value("user").(*model.User)
-	if !ok {
-		return nil
-	}
-	return user
 }

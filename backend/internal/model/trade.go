@@ -18,29 +18,25 @@ type Trade struct {
 	TransactionHash string    `json:"transaction_hash,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	CompletedAt     time.Time `json:"completed_at,omitempty"`
-	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 // TradeRequest represents a request to trade meme coins
 type TradeRequest struct {
-	UserID    string  `json:"user_id"`
-	CoinID    string  `json:"coin_id" validate:"required"`
-	Type      string  `json:"type" validate:"required,oneof=buy sell"`
-	Amount    float64 `json:"amount" validate:"required,gt=0"`
-	OrderType string  `json:"order_type" validate:"required,oneof=market limit"`
+	CoinID string  `json:"coin_id" validate:"required"`
+	Type   string  `json:"type" validate:"required,oneof=buy sell"`
+	Amount float64 `json:"amount" validate:"required,gt=0"`
 }
 
 // TradePreview represents a preview of a trade before execution
 type TradePreview struct {
-	Type        string    `json:"type"`
-	CoinSymbol  string    `json:"coin_symbol"`
-	Amount      float64   `json:"amount"`
-	Price       float64   `json:"price"`
-	TotalCost   float64   `json:"total_cost"`
-	Fee         float64   `json:"fee"`
-	Slippage    float64   `json:"slippage"`
-	FinalAmount float64   `json:"final_amount"`
-	CreatedAt   time.Time `json:"created_at"`
+	Type        string  `json:"type"`
+	CoinSymbol  string  `json:"coin_symbol"`
+	Amount      float64 `json:"amount"`
+	Price       float64 `json:"price"`
+	TotalCost   float64 `json:"total_cost"`
+	Fee         float64 `json:"fee"`
+	Slippage    float64 `json:"slippage"`
+	FinalAmount float64 `json:"final_amount"`
 }
 
 // PriceUpdate represents a real-time price update for a meme

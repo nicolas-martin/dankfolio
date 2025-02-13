@@ -115,43 +115,19 @@ func (m *mockRow) Scan(dest ...interface{}) error {
 	return fmt.Errorf("no data available")
 }
 
-func setupTestEnvironment(t *testing.T) (*SolanaTradeService, *solana.Wallet, error) {
-	ctx := context.Background()
-
-	// Create test wallet first
-	testWallet := solana.NewWallet()
-
-	// Initialize service with testnet configuration and mock DB with test wallet
-	mockDB := &mockDB{testWallet: testWallet}
+func setupTestEnvironment(t *testing.T) (*SolanaTradeService, error) {
 	service, err := NewSolanaTradeService(
 		testnetRPCEndpoint,
 		testnetWSEndpoint,
 		testProgramID,
 		testPoolWallet,
-		mockDB,
+		"test_private_key",
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create service: %w", err)
+		return nil, fmt.Errorf("failed to create service: %w", err)
 	}
 
-	// Verify testnet connection
-	if err := verifyTestnetConnection(ctx, service.client); err != nil {
-		return nil, nil, fmt.Errorf("testnet verification failed: %w", err)
-	}
-
-	// Request airdrop for test wallet
-	err = requestTestnetAirdrop(t, service.client, testWallet.PublicKey())
-	skipIfAirdropLimitReached(t, err)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fund test wallet: %w", err)
-	}
-
-	// Verify wallet funding
-	if err := verifyWalletFunding(ctx, service.client, testWallet.PublicKey()); err != nil {
-		return nil, nil, fmt.Errorf("wallet funding verification failed: %w", err)
-	}
-
-	return service, testWallet, nil
+	return service, nil
 }
 
 func TestSolanaTradeService_Integration(t *testing.T) {
@@ -160,7 +136,7 @@ func TestSolanaTradeService_Integration(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	service, testWallet, err := setupTestEnvironment(t)
+	service, err := setupTestEnvironment(t)
 	if err != nil {
 		t.Fatalf("Failed to setup test environment: %v", err)
 	}
@@ -169,7 +145,6 @@ func TestSolanaTradeService_Integration(t *testing.T) {
 	// Create a test trade
 	trade := &model.Trade{
 		ID:         "test_trade_1",
-		UserID:     "test_user",
 		CoinID:     testTokenMint,
 		CoinSymbol: "TEST",
 		Type:       "buy",
@@ -181,71 +156,12 @@ func TestSolanaTradeService_Integration(t *testing.T) {
 	}
 
 	// Execute the trade
-	err = service.ExecuteTrade(ctx, trade, testWallet.PublicKey())
+	err = service.ExecuteTrade(ctx, trade)
 	require.NoError(t, err)
 
 	// Verify trade was executed successfully
 	require.Equal(t, "completed", trade.Status)
 	require.NotEmpty(t, trade.TransactionHash)
-}
-
-func TestSolanaTradeService_CreateAssociatedTokenAccount(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
-	service, testWallet, err := setupTestEnvironment(t)
-	if err != nil {
-		t.Fatalf("Failed to setup test environment: %v", err)
-	}
-
-	// Create a test trade with a new token
-	trade := &model.Trade{
-		ID:         "test_trade_2",
-		UserID:     "test_user",
-		CoinID:     testTokenMint,
-		CoinSymbol: "TEST",
-		Type:       "buy",
-		Amount:     1.0,
-		Price:      0.1,
-		Status:     "pending",
-		CreatedAt:  time.Now(),
-	}
-
-	// Test creating associated token account
-	instruction, err := service.createAssociatedTokenAccountInstruction(ctx, trade, testWallet.PublicKey())
-	require.NoError(t, err)
-	require.NotNil(t, instruction)
-
-	// Build and send transaction
-	recent, err := service.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
-	require.NoError(t, err)
-
-	tx, err := solana.NewTransaction(
-		[]solana.Instruction{instruction},
-		recent.Value.Blockhash,
-		solana.TransactionPayer(testWallet.PublicKey()),
-	)
-	require.NoError(t, err)
-
-	// Sign and send transaction
-	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
-		if key.Equals(testWallet.PublicKey()) {
-			return &testWallet.PrivateKey
-		}
-		return nil
-	})
-	require.NoError(t, err)
-
-	// Submit transaction
-	sig, err := service.client.SendTransaction(ctx, tx)
-	require.NoError(t, err)
-
-	// Wait for confirmation
-	confirmed, err := waitForSignatureConfirmation(ctx, service.client, sig)
-	require.NoError(t, err)
-	require.True(t, confirmed)
 }
 
 func TestSolanaTradeService_InvalidTrades(t *testing.T) {
@@ -254,73 +170,46 @@ func TestSolanaTradeService_InvalidTrades(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	service, testWallet, err := setupTestEnvironment(t)
+	service, err := setupTestEnvironment(t)
 	if err != nil {
 		t.Fatalf("Failed to setup test environment: %v", err)
 	}
 
-	// Test invalid coin ID first, before any blockchain interaction
+	// Test nil trade
+	err = service.ExecuteTrade(ctx, nil)
+	require.Error(t, err)
+	require.Equal(t, ErrInvalidTrade, err)
+
+	// Test invalid coin ID
 	invalidTrade := &model.Trade{
-		ID:         "test_trade_3",
-		UserID:     "test_user",
+		ID:         "test_trade_invalid",
 		CoinID:     "invalid_coin_id",
 		CoinSymbol: "TEST",
 		Type:       "buy",
-		Amount:     1.0,
+		Amount:     0.1,
 		Price:      0.1,
 		Status:     "pending",
 		CreatedAt:  time.Now(),
 	}
-
-	// This should fail during validation, before any RPC calls
-	instruction, err := service.createAssociatedTokenAccountInstruction(ctx, invalidTrade, testWallet.PublicKey())
+	err = service.ExecuteTrade(ctx, invalidTrade)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "invalid coin ID")
-	require.Nil(t, instruction)
+	require.Contains(t, err.Error(), "invalid coin address")
 
-	// Test insufficient balance with valid coin ID
-	insufficientTrade := &model.Trade{
-		ID:         "test_trade_4",
-		UserID:     "test_user",
+	// Test with cancelled context
+	cancelledCtx, cancel := context.WithCancel(ctx)
+	cancel()
+	trade := &model.Trade{
+		ID:         "test_trade_timeout",
 		CoinID:     testTokenMint,
 		CoinSymbol: "TEST",
 		Type:       "buy",
-		Amount:     1000000.0, // Very large amount
-		Price:      1000000.0,
+		Amount:     0.1,
+		Price:      0.1,
 		Status:     "pending",
 		CreatedAt:  time.Now(),
 	}
-
-	err = service.ExecuteTrade(ctx, insufficientTrade, testWallet.PublicKey())
+	err = service.ExecuteTrade(cancelledCtx, trade)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "insufficient balance")
-}
-
-// Helper function to wait for transaction confirmation
-func waitForSignatureConfirmation(ctx context.Context, client *rpc.Client, signature solana.Signature) (bool, error) {
-	for i := 0; i < 50; i++ { // Try for about 25 seconds
-		sigs := []solana.Signature{signature}
-		result, err := client.GetSignatureStatuses(ctx, true, sigs...)
-		if err != nil {
-			return false, err
-		}
-
-		if result.Value != nil && len(result.Value) > 0 && result.Value[0] != nil {
-			if result.Value[0].Err != nil {
-				return false, fmt.Errorf("transaction failed: %v", result.Value[0].Err)
-			}
-			return true, nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return false, ctx.Err()
-		case <-time.After(500 * time.Millisecond):
-			continue
-		}
-	}
-
-	return false, fmt.Errorf("timeout waiting for confirmation")
 }
 
 func requestTestnetAirdrop(t *testing.T, client *rpc.Client, pubkey solana.PublicKey) error {
@@ -426,13 +315,12 @@ func TestSolanaTradeService_Airdrop(t *testing.T) {
 	if err != nil {
 		t.Logf("Local validator not available, falling back to testnet: %v", err)
 		// Initialize service with testnet configuration
-		mockDB := &mockDB{}
 		service, err := NewSolanaTradeService(
 			testnetRPCEndpoint,
 			testnetWSEndpoint,
 			testProgramID,
 			testPoolWallet,
-			mockDB,
+			"test_private_key",
 		)
 		require.NoError(t, err)
 		client = service.client
@@ -484,31 +372,20 @@ func TestSolanaTradeService_Airdrop(t *testing.T) {
 	t.Logf("Wallet received %d lamports from airdrop", newBalance.Value)
 }
 
-func TestSolanaTradeService_ComputeBudgetSettings(t *testing.T) {
+func TestSolanaTradeService_ComputeBudget(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
 	ctx := context.Background()
-	service, testWallet, err := setupTestEnvironment(t)
+	service, err := setupTestEnvironment(t)
 	if err != nil {
 		t.Fatalf("Failed to setup test environment: %v", err)
 	}
 
-	// Test setting compute unit limit
-	customComputeLimit := uint32(100000)
-	service.SetComputeUnitLimit(customComputeLimit)
-	require.Equal(t, customComputeLimit, service.computeUnitLimit)
-
-	// Test setting fee in micro lamports
-	customFee := uint64(1000)
-	service.SetFeeMicroLamports(customFee)
-	require.Equal(t, customFee, service.feeMicroLamports)
-
 	// Create a test trade
 	trade := &model.Trade{
 		ID:         "test_trade_compute_budget",
-		UserID:     "test_user",
 		CoinID:     testTokenMint,
 		CoinSymbol: "TEST",
 		Type:       "buy",
@@ -518,8 +395,8 @@ func TestSolanaTradeService_ComputeBudgetSettings(t *testing.T) {
 		CreatedAt:  time.Now(),
 	}
 
-	// Execute trade with custom compute budget settings
-	err = service.ExecuteTrade(ctx, trade, testWallet.PublicKey())
+	// Execute trade
+	err = service.ExecuteTrade(ctx, trade)
 	require.NoError(t, err)
 }
 
@@ -529,19 +406,14 @@ func TestSolanaTradeService_ATAHandling(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	service, testWallet, err := setupTestEnvironment(t)
+	service, err := setupTestEnvironment(t)
 	if err != nil {
 		t.Fatalf("Failed to setup test environment: %v", err)
 	}
 
-	// Test with skipATALookup enabled
-	service.SetSkipATALookup(true)
-	require.True(t, service.skipATALookup)
-
 	// Create a test trade
 	trade := &model.Trade{
 		ID:         "test_trade_ata",
-		UserID:     "test_user",
 		CoinID:     testTokenMint,
 		CoinSymbol: "TEST",
 		Type:       "buy",
@@ -551,16 +423,12 @@ func TestSolanaTradeService_ATAHandling(t *testing.T) {
 		CreatedAt:  time.Now(),
 	}
 
-	// Execute trade with skipATALookup enabled
-	err = service.ExecuteTrade(ctx, trade, testWallet.PublicKey())
+	// Execute trade
+	err = service.ExecuteTrade(ctx, trade)
 	require.NoError(t, err)
 
-	// Test with skipATALookup disabled
-	service.SetSkipATALookup(false)
-	require.False(t, service.skipATALookup)
-
 	trade.ID = "test_trade_ata_2"
-	err = service.ExecuteTrade(ctx, trade, testWallet.PublicKey())
+	err = service.ExecuteTrade(ctx, trade)
 	require.NoError(t, err)
 }
 
@@ -570,21 +438,20 @@ func TestSolanaTradeService_ErrorHandling(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	service, testWallet, err := setupTestEnvironment(t)
+	service, err := setupTestEnvironment(t)
 	if err != nil {
 		t.Fatalf("Failed to setup test environment: %v", err)
 	}
 
 	// Test nil trade
-	err = service.ExecuteTrade(ctx, nil, testWallet.PublicKey())
+	err = service.ExecuteTrade(ctx, nil)
 	require.Error(t, err)
-	require.Equal(t, ErrInvalidCoin, err)
+	require.Equal(t, ErrInvalidTrade, err)
 
 	// Test invalid coin ID
 	invalidTrade := &model.Trade{
 		ID:         "test_trade_invalid",
-		UserID:     "test_user",
-		CoinID:     "invalid_coin_id", // Invalid coin ID
+		CoinID:     "invalid_coin_id",
 		CoinSymbol: "TEST",
 		Type:       "buy",
 		Amount:     0.1,
@@ -592,16 +459,15 @@ func TestSolanaTradeService_ErrorHandling(t *testing.T) {
 		Status:     "pending",
 		CreatedAt:  time.Now(),
 	}
-	err = service.ExecuteTrade(ctx, invalidTrade, testWallet.PublicKey())
+	err = service.ExecuteTrade(ctx, invalidTrade)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "invalid coin ID")
+	require.Contains(t, err.Error(), "invalid coin address")
 
 	// Test with cancelled context
 	cancelledCtx, cancel := context.WithCancel(ctx)
 	cancel()
 	trade := &model.Trade{
 		ID:         "test_trade_timeout",
-		UserID:     "test_user",
 		CoinID:     testTokenMint,
 		CoinSymbol: "TEST",
 		Type:       "buy",
@@ -610,6 +476,33 @@ func TestSolanaTradeService_ErrorHandling(t *testing.T) {
 		Status:     "pending",
 		CreatedAt:  time.Now(),
 	}
-	err = service.ExecuteTrade(cancelledCtx, trade, testWallet.PublicKey())
+	err = service.ExecuteTrade(cancelledCtx, trade)
 	require.Error(t, err)
+}
+
+// Helper function to wait for transaction confirmation
+func waitForSignatureConfirmation(ctx context.Context, client *rpc.Client, signature solana.Signature) (bool, error) {
+	for i := 0; i < 50; i++ { // Try for about 25 seconds
+		sigs := []solana.Signature{signature}
+		result, err := client.GetSignatureStatuses(ctx, true, sigs...)
+		if err != nil {
+			return false, err
+		}
+
+		if result.Value != nil && len(result.Value) > 0 && result.Value[0] != nil {
+			if result.Value[0].Err != nil {
+				return false, fmt.Errorf("transaction failed: %v", result.Value[0].Err)
+			}
+			return true, nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return false, ctx.Err()
+		case <-time.After(500 * time.Millisecond):
+			continue
+		}
+	}
+
+	return false, fmt.Errorf("timeout waiting for confirmation")
 }

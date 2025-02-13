@@ -37,19 +37,7 @@ Develop a mobile app that enables users to trade meme coins on the Solana blockc
   - Include **Buy** and **Sell** buttons to facilitate trading.
   - Use the same (cached) API endpoint as the main list.
 
-### 2. Trading & Wallet Functionality
-
-- **Trading Page:**
-  - Allow users to buy and sell coins.
-
-- **Portfolio Page:**
-  - Display the user’s current holdings and the overall portfolio value.
-  - Show a graph depicting the portfolio’s value over time.
-
-- **Transaction History:**
-  - Include a page that displays the user’s transaction history.
-
-### 5. Backend Services & Architecture
+### 2. Backend Services & Architecture
 
 - **Backend:**
   - Write all backend services in Go.
@@ -58,7 +46,7 @@ Develop a mobile app that enables users to trade meme coins on the Solana blockc
   - Integrate with the Solana blockchain using standard SDKs/libraries.
   - Implement caching for API responses where possible.
 
-### 6. Solana Node API Integration for Trading
+### 3. Solana Node API Integration for Trading
 
 - **Transaction Construction:**
   - **Buy/Sell Operations:**  
@@ -81,7 +69,7 @@ Develop a mobile app that enables users to trade meme coins on the Solana blockc
   - Implement robust error handling to manage transaction failures or network issues.
   - Cache relevant API responses to reduce the load on the Solana node and provide a smoother user experience.
 
-### 7. Design & UX
+### 6. Design & UX
 
 - **User Interface:**
   - Aim for a sleek, minimalist, and modern design across all pages.
