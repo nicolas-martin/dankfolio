@@ -25,13 +25,14 @@ CREATE TABLE wallets (
 
 -- Meme coins table
 CREATE TABLE meme_coins (
-    id VARCHAR(50) PRIMARY KEY,
-    symbol VARCHAR(20) NOT NULL,
+    id VARCHAR(255) PRIMARY KEY,
+    symbol VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
     contract_address VARCHAR(255) NOT NULL,
     description TEXT,
     logo_url TEXT,
     image_url TEXT,
+    website_url VARCHAR(255),
     price DECIMAL(24,12),
     current_price DECIMAL(24,12),
     change_24h DECIMAL(24,12),
@@ -47,34 +48,32 @@ CREATE TABLE meme_coins (
 -- Price history table
 CREATE TABLE price_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    coin_id VARCHAR(50) NOT NULL,
+    coin_id VARCHAR(255) NOT NULL REFERENCES meme_coins(id),
     price DECIMAL(24,12) NOT NULL,
     market_cap DECIMAL(24,2),
     volume_24h DECIMAL(24,2),
     timestamp BIGINT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (coin_id) REFERENCES meme_coins(id)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- User portfolios table
 CREATE TABLE portfolios (
-    id VARCHAR(50) PRIMARY KEY,
-    user_id VARCHAR(50) NOT NULL,
-    coin_id VARCHAR(50) NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    coin_id VARCHAR(255) NOT NULL REFERENCES meme_coins(id),
     amount DECIMAL(24,12) NOT NULL,
     average_buy_price DECIMAL(24,12) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (coin_id) REFERENCES meme_coins(id),
     CONSTRAINT portfolios_user_coin_unique UNIQUE(user_id, coin_id)
 );
 
 -- Trades table
 CREATE TABLE trades (
-    id VARCHAR(50) PRIMARY KEY,
-    user_id VARCHAR(50) NOT NULL,
-    coin_id VARCHAR(50) NOT NULL,
-    coin_symbol VARCHAR(20),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    coin_id VARCHAR(255) NOT NULL REFERENCES meme_coins(id),
+    coin_symbol VARCHAR(255),
     type VARCHAR(4) NOT NULL CHECK (type IN ('buy', 'sell')),
     amount DECIMAL(24,12) NOT NULL,
     price DECIMAL(24,12) NOT NULL,
@@ -84,8 +83,7 @@ CREATE TABLE trades (
         CHECK (status IN ('pending', 'completed', 'failed')),
     completed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (coin_id) REFERENCES meme_coins(id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes
@@ -102,6 +100,7 @@ INSERT INTO meme_coins (
     contract_address,
     description,
     image_url,
+    website_url,
     price,
     current_price,
     change_24h,
@@ -115,18 +114,11 @@ INSERT INTO meme_coins (
     'So11111111111111111111111111111111111111112',
     'Wrapped SOL (wSOL) is a token that represents SOL in Solana DeFi applications',
     'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+    NULL,
     1.0,
     1.0,
     0.0,
     0.0,
     0.0,
     0.0
-);
-
--- Down
-DROP TABLE trades;
-DROP TABLE portfolios;
-DROP TABLE price_history;
-DROP TABLE meme_coins;
-DROP TABLE wallets;
-DROP TABLE users; 
+); 

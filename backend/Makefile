@@ -145,47 +145,8 @@ test-solana-trades: run
 # Coin Service Testing
 test-coins: run
 	@echo "🧪 Testing Coin Service..."
-	@echo "1️⃣ Registering test user..."
-	@curl -s -X POST http://localhost:8080/api/v1/auth/register \
-		-H "Content-Type: application/json" \
-		-d '{"username":"coin_tester","email":"coins@example.com","password":"testing123"}'
-	
-	@echo "\n2️⃣ Getting auth token..."
-	@TOKEN=$$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-		-H "Content-Type: application/json" \
-		-d '{"email":"coins@example.com","password":"testing123"}' | \
-		grep -o '"token":"[^"]*' | cut -d'"' -f4); \
-	\
-	echo "3️⃣ Fetching initial meme coins..."; \
-	curl -s -X POST http://localhost:8080/api/v1/coins/fetch \
-		-H "Authorization: Bearer $$TOKEN" \
-		-H "Content-Type: application/json"; \
-	echo "\n"; \
-	\
-	echo "4️⃣ Fetching top meme coins..."; \
-	curl -s -X GET http://localhost:8080/api/v1/coins/top \
-		-H "Authorization: Bearer $$TOKEN" \
-		-H "Content-Type: application/json"; \
-	echo "\n"; \
-	\
-	echo "5️⃣ Getting price history for a specific coin..."; \
-	COIN_ID=$$(curl -s -X GET http://localhost:8080/api/v1/coins/top | jq -r '.[0].id'); \
-	curl -s -X GET "http://localhost:8080/api/v1/coins/$$COIN_ID/history?timeframe=day" \
-		-H "Authorization: Bearer $$TOKEN" \
-		-H "Content-Type: application/json"; \
-	echo "\n"; \
-	\
-	echo "6️⃣ Getting coin details by contract address..."; \
-	curl -s -X GET "http://localhost:8080/api/v1/coins/contract/So11111111111111111111111111111111111111112" \
-		-H "Authorization: Bearer $$TOKEN" \
-		-H "Content-Type: application/json"; \
-	echo "\n"; \
-	\
-	echo "7️⃣ Getting coin details by ID..."; \
-	curl -s -X GET "http://localhost:8080/api/v1/coins/$$COIN_ID" \
-		-H "Authorization: Bearer $$TOKEN" \
-		-H "Content-Type: application/json"; \
-	echo "\n✅ Completed coin service tests"
+	@chmod +x scripts/test-coins.sh
+	@./scripts/test-coins.sh
 
 # Server Management
 backend-kill:

@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nicolas-martin/dankfolio/internal/api"
 	"github.com/nicolas-martin/dankfolio/internal/db"
+	"github.com/nicolas-martin/dankfolio/internal/repository"
 	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
@@ -22,6 +23,9 @@ func main() {
 
 	database := db.NewDB(dbpool)
 
+	// Initialize repositories
+	coinRepo := repository.NewCoinRepository(database)
+
 	// Initialize services
 	authService := service.NewAuthService(database, os.Getenv("JWT_SECRET"))
 	portfolioService := service.NewPortfolioService()
@@ -29,6 +33,7 @@ func main() {
 	userService := service.NewUserService()
 	leaderboardService := service.NewLeaderboardService()
 	wsService := service.NewWebsocketService()
+	coinService := service.NewCoinService(coinRepo)
 
 	// Initialize router
 	router := api.NewRouter(
@@ -38,6 +43,7 @@ func main() {
 		userService,
 		leaderboardService,
 		wsService,
+		coinService,
 	)
 
 	// Start server

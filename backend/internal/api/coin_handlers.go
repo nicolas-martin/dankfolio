@@ -21,11 +21,11 @@ func NewCoinHandlers(coinService *service.CoinService) *CoinHandlers {
 
 // RegisterRoutes registers all coin-related routes
 func (h *CoinHandlers) RegisterRoutes(r chi.Router) {
-	r.Post("/api/coins/fetch", h.FetchCoins)
-	r.Get("/api/coins/top", h.GetTopCoins)
-	r.Get("/api/coins/{id}", h.GetCoinByID)
-	r.Get("/api/coins/contract/{address}", h.GetCoinByContractAddress)
-	r.Get("/api/coins/{id}/history", h.GetCoinPriceHistory)
+	r.Post("/coins/fetch", h.FetchCoins)
+	r.Get("/coins/top", h.GetTopCoins)
+	r.Get("/coins/contract/{address}", h.GetCoinByContractAddress)
+	r.Get("/coins/{id}/history", h.GetCoinPriceHistory)
+	r.Get("/coins/{id}", h.GetCoinByID)
 }
 
 // FetchCoins handles fetching and storing meme coins

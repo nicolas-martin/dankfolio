@@ -16,6 +16,7 @@ type Router struct {
 	userService        *service.UserService
 	leaderboardService *service.LeaderboardService
 	wsService          service.WebsocketService
+	coinService        *service.CoinService
 }
 
 func NewRouter(
@@ -25,6 +26,7 @@ func NewRouter(
 	userService *service.UserService,
 	leaderboardService *service.LeaderboardService,
 	wsService service.WebsocketService,
+	coinService *service.CoinService,
 ) *Router {
 	r := &Router{
 		router:             chi.NewRouter(),
@@ -34,6 +36,7 @@ func NewRouter(
 		userService:        userService,
 		leaderboardService: leaderboardService,
 		wsService:          wsService,
+		coinService:        coinService,
 	}
 
 	r.setupRoutes()
@@ -56,36 +59,51 @@ func (r *Router) setupRoutes() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	r.router.Route("/api/v1", func(router chi.Router) {
+	r.router.Route("/api", func(router chi.Router) {
 		// Auth routes
 		authHandlers := NewAuthHandlers(r.authService)
 		router.Post("/auth/register", authHandlers.Register)
 		router.Post("/auth/login", authHandlers.Login)
 		router.Post("/auth/social", authHandlers.SocialLogin)
 
-		// Portfolio routes
-		portfolioHandlers := NewPortfolioHandlers(r.portfolioService)
-		router.Get("/portfolio/stats", portfolioHandlers.GetPortfolioStats)
-		router.Get("/portfolio/history", portfolioHandlers.GetPortfolioHistory)
+		// Protected routes
+		router.Group(func(router chi.Router) {
+			router.Use(AuthMiddleware(r.authService))
 
-		// Solana routes
-		solanaHandlers := NewSolanaHandlers(r.solanaService)
-		router.Get("/solana/trading-pairs", solanaHandlers.GetTradingPairs)
-		router.Post("/solana/testnet/fund", solanaHandlers.FundTestnetWallet)
+			// Portfolio routes
+			portfolioHandlers := NewPortfolioHandlers(r.portfolioService)
+			router.Get("/portfolio/stats", portfolioHandlers.GetPortfolioStats)
+			router.Get("/portfolio/history", portfolioHandlers.GetPortfolioHistory)
 
-		// User routes
-		userHandlers := NewUserHandlers(r.userService)
-		router.Get("/user/profile", userHandlers.GetProfile)
-		router.Put("/user/profile", userHandlers.UpdateProfile)
-		router.Post("/user/password", userHandlers.ChangePassword)
+			// Solana routes
+			solanaHandlers := NewSolanaHandlers(r.solanaService)
+			router.Get("/solana/trading-pairs", solanaHandlers.GetTradingPairs)
+			router.Post("/solana/testnet/fund", solanaHandlers.FundTestnetWallet)
 
-		// Leaderboard routes
-		leaderboardHandlers := NewLeaderboardHandlers(r.leaderboardService)
-		router.Get("/leaderboard/{timeframe}", leaderboardHandlers.GetLeaderboard)
-		router.Get("/leaderboard/{timeframe}/rank", leaderboardHandlers.GetUserRank)
+			// User routes
+			userHandlers := NewUserHandlers(r.userService)
+			router.Get("/user/profile", userHandlers.GetProfile)
+			router.Put("/user/profile", userHandlers.UpdateProfile)
+			router.Post("/user/password", userHandlers.ChangePassword)
 
-		// Websocket route
-		wsHandler := NewWebsocketHandler(r.wsService)
-		router.Get("/ws", wsHandler.HandleWebsocket)
+			// Leaderboard routes
+			leaderboardHandlers := NewLeaderboardHandlers(r.leaderboardService)
+			router.Get("/leaderboard/{timeframe}", leaderboardHandlers.GetLeaderboard)
+			router.Get("/leaderboard/{timeframe}/rank", leaderboardHandlers.GetUserRank)
+
+			// Websocket route
+			wsHandler := NewWebsocketHandler(r.wsService)
+			router.Get("/ws", wsHandler.HandleWebsocket)
+
+			// Coin routes
+			coinHandlers := NewCoinHandlers(r.coinService)
+			router.Route("/coins", func(r chi.Router) {
+				r.Post("/fetch", coinHandlers.FetchCoins)
+				r.Get("/top", coinHandlers.GetTopCoins)
+				r.Get("/contract/{address}", coinHandlers.GetCoinByContractAddress)
+				r.Get("/{id}/history", coinHandlers.GetCoinPriceHistory)
+				r.Get("/{id}", coinHandlers.GetCoinByID)
+			})
+		})
 	})
 }
