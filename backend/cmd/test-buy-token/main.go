@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -67,7 +68,7 @@ func main() {
 	client := rpc.New("https://api.mainnet-beta.solana.com")
 
 	// Load wallet from file
-	walletBytes, err := os.ReadFile("keys/mainnet-wallet.json")
+	walletBytes, err := os.ReadFile("../../../keys/mainnet-wallet-1.json")
 	if err != nil {
 		log.Fatal("Error reading wallet file:", err)
 	}
@@ -90,48 +91,60 @@ func main() {
 
 	var instructions []solana.Instruction
 
-	// Create Associated Token Account if needed.
+	// Create Associated Token Account for WIF if needed
 	tokenATA, _, err := solana.FindAssociatedTokenAddress(privateKey.PublicKey(), tokenMint)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Check if the token account exists
 	if _, err := client.GetAccountInfo(context.Background(), tokenATA); err != nil {
 		createATAIx := ata.NewCreateInstruction(
 			privateKey.PublicKey(), // Payer
 			privateKey.PublicKey(), // Wallet address
-			tokenMint,              // Mint
+			tokenMint,              // WIF token mint
 		).Build()
 		instructions = append(instructions, createATAIx)
-		fmt.Printf("🏦 Creating new Associated Token Account: %s\n", tokenATA.String())
+		fmt.Printf("🏦 Creating new Associated Token Account for WIF: %s\n", tokenATA.String())
 	}
 
-	// Use mainnet liquidity pool data.
+	// Use mainnet Raydium liquidity pool data
 	apiURL := "https://api.raydium.io/v2/sdk/liquidity/mainnet.json"
 	poolInfo, err := fetchPoolInfo(apiURL, tokenMint.String())
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Convert the AmmID and Authority to public keys.
+
+	// Convert pool addresses to PublicKeys
 	poolID := solana.MustPublicKeyFromBase58(poolInfo.AmmID)
 	poolAuthority := solana.MustPublicKeyFromBase58(poolInfo.Authority)
 	fmt.Printf("🏊 Using Raydium pool:\n  ID: %s\n  Authority: %s\n", poolID, poolAuthority)
 
-	// Build Raydium swap instruction.
+	// Small amount of SOL to swap (0.01 SOL)
+	amountIn := uint64(0.01 * float64(solana.LAMPORTS_PER_SOL))
+
+	// Build Raydium swap instruction with minimal amount
+	instructionData := make([]byte, 17)
+	instructionData[0] = 2 // Instruction type (swap)
+	binary.LittleEndian.PutUint64(instructionData[1:9], amountIn)
+	// Minimum amount out is left as 0
+
 	swapInstruction := solana.NewInstruction(
 		solana.MustPublicKeyFromBase58("675kPX9MHJBtzV3MThEBqyX4Z8FQw3MqmHsugjvLT5y"), // Raydium Swap v2 Program ID
 		[]*solana.AccountMeta{
-			{PublicKey: poolID, IsSigner: false, IsWritable: true},                // POOL_ID
-			{PublicKey: poolAuthority, IsSigner: false, IsWritable: false},        // POOL_AUTHORITY
-			{PublicKey: privateKey.PublicKey(), IsSigner: true, IsWritable: true}, // Payer
-			{PublicKey: tokenATA, IsSigner: false, IsWritable: true},              // Destination token account
+			{PublicKey: poolID, IsSigner: false, IsWritable: true},                // Pool ID
+			{PublicKey: poolAuthority, IsSigner: false, IsWritable: false},        // Pool Authority
+			{PublicKey: privateKey.PublicKey(), IsSigner: true, IsWritable: true}, // User wallet (paying with SOL)
+			{PublicKey: tokenATA, IsSigner: false, IsWritable: true},              // User's WIF token account
 			{PublicKey: token.ProgramID, IsSigner: false, IsWritable: false},      // Token program
 			{PublicKey: system.ProgramID, IsSigner: false, IsWritable: false},     // System program
 		},
-		[]byte{}, // Replace with actual swap parameters.
+		instructionData,
 	)
+
 	instructions = append(instructions, swapInstruction)
 
-	// Create transaction.
+	// Create transaction
 	tx, err := solana.NewTransaction(
 		instructions,
 		recentBlockhash.Value.Blockhash,
@@ -141,7 +154,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Sign transaction.
+	// Sign transaction
 	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
 		if key.Equals(privateKey.PublicKey()) {
 			return &privateKey
@@ -152,7 +165,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Send transaction.
+	// Send transaction
 	sig, err := client.SendTransaction(context.Background(), tx)
 	if err != nil {
 		log.Fatal(err)

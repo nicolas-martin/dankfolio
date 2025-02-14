@@ -75,3 +75,11 @@
 - Do not worry about database, migration or repository for now. Just get everything working in memory we will address storage solution at a later date
 - When testing the api make sure to test all endpoints and make sure they are working as expected
 - When testing an api, run the related test file in `./backend/scripts/`
+
+// mcp rules
+- When you are unsure about the implementation of a go lang package use the go doc mcp 
+- When you need to verify the implementation of a go lang package use the go doc mcp 
+- When you need to fetch api documentation use the websearch mcp 
+- Whenever you use a mcp I want you to tell me and write it in bold in the response. 
+- Use the puppeteer mcp to fetch information from the web or that you do not have access to. 
+- Use the puppetee mcp to parse github code or other code repositories. 
