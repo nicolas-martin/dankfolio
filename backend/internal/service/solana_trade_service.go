@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/ed25519"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,6 +27,8 @@ var (
 	// Default RPC endpoints
 	defaultDevnetRPC = "https://api.devnet.solana.com"
 	defaultDevnetWS  = "wss://api.devnet.solana.com"
+	// Default pool wallet for testing
+	defaultPoolWallet = "HsSnLYqCmuNwzP35AMf8CURFDATUyWt5nsCY2ZwBq76G"
 )
 
 // SolanaTradeService handles the execution of trades on the Solana blockchain
@@ -76,22 +77,17 @@ func NewSolanaTradeService(rpcEndpoint, wsEndpoint string, programID, poolWallet
 		}
 	}
 
-	// Create pool wallet if not provided
-	var poolPubKey solana.PublicKey
+	// Use default pool wallet if not provided
 	if poolWallet == "" {
-		// Generate a new Ed25519 keypair for the pool
-		pub, _, err := ed25519.GenerateKey(nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate pool keypair: %w", err)
-		}
-		poolPubKey = solana.PublicKey(pub)
-		log.Printf("🏦 Generated new pool wallet: %s", poolPubKey.String())
-	} else {
-		poolPubKey, err = solana.PublicKeyFromBase58(poolWallet)
-		if err != nil {
-			return nil, fmt.Errorf("invalid pool wallet: %w", err)
-		}
+		poolWallet = defaultPoolWallet
 	}
+
+	// Parse pool wallet
+	poolPubKey, err := solana.PublicKeyFromBase58(poolWallet)
+	if err != nil {
+		return nil, fmt.Errorf("invalid pool wallet: %w", err)
+	}
+	log.Printf("🏦 Using pool wallet: %s", poolPubKey.String())
 
 	// Parse program ID
 	programPubKey, err := solana.PublicKeyFromBase58(programID)
@@ -208,13 +204,39 @@ func (s *SolanaTradeService) getPrivateKey(ctx context.Context) (solana.PrivateK
 func (s *SolanaTradeService) executeTransaction(ctx context.Context, trade *model.Trade, privateKey solana.PrivateKey) (string, error) {
 	log.Printf("🔄 Starting transaction execution for %s %f %s", trade.Type, trade.Amount, trade.CoinID)
 
-	// Get recent blockhash using getLatestBlockhash
-	recent, err := s.client.GetRecentBlockhash(ctx, rpc.CommitmentConfirmed)
+	// Check account balance first
+	balance, err := s.client.GetBalance(ctx, privateKey.PublicKey(), rpc.CommitmentConfirmed)
+	if err != nil {
+		log.Printf("❌ Failed to get account balance: %v", err)
+		return "", fmt.Errorf("failed to get account balance: %w", err)
+	}
+	log.Printf("💰 Account balance: %d lamports", balance.Value)
+
+	// Check pool wallet balance
+	poolBalance, err := s.client.GetBalance(ctx, s.poolWallet, rpc.CommitmentConfirmed)
+	if err != nil {
+		log.Printf("❌ Failed to get pool balance: %v", err)
+		return "", fmt.Errorf("failed to get pool balance: %w", err)
+	}
+	log.Printf("💰 Pool balance: %d lamports", poolBalance.Value)
+
+	if balance.Value < solana.LAMPORTS_PER_SOL/10 {
+		log.Printf("❌ Insufficient SOL balance. Please visit https://faucet.solana.com to get more SOL")
+		return "", fmt.Errorf("insufficient SOL balance")
+	}
+
+	if poolBalance.Value < solana.LAMPORTS_PER_SOL/10 {
+		log.Printf("❌ Insufficient pool balance. Please fund the pool wallet")
+		return "", fmt.Errorf("insufficient pool balance")
+	}
+
+	// Get recent blockhash
+	recentBlockhash, err := s.client.GetRecentBlockhash(ctx, rpc.CommitmentConfirmed)
 	if err != nil {
 		log.Printf("❌ Failed to get recent blockhash: %v", err)
 		return "", fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
-	log.Printf("✅ Got recent blockhash: %s", recent.Value.Blockhash)
+	log.Printf("✅ Got recent blockhash: %s", recentBlockhash.Value.Blockhash)
 
 	// Parse token mint address
 	tokenMint, err := solana.PublicKeyFromBase58(trade.CoinID)
@@ -275,14 +297,13 @@ func (s *SolanaTradeService) executeTransaction(ctx context.Context, trade *mode
 	// Create a new transaction with the transfer instruction
 	tx, err := solana.NewTransaction(
 		[]solana.Instruction{transferInstruction},
-		recent.Value.Blockhash,
+		recentBlockhash.Value.Blockhash,
 		solana.TransactionPayer(privateKey.PublicKey()),
 	)
 	if err != nil {
 		log.Printf("❌ Failed to create transaction: %v", err)
 		return "", fmt.Errorf("failed to create transaction: %w", err)
 	}
-	log.Printf("✅ Created transaction with blockhash: %s", recent.Value.Blockhash)
 
 	// Sign the transaction
 	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
@@ -298,47 +319,27 @@ func (s *SolanaTradeService) executeTransaction(ctx context.Context, trade *mode
 	log.Printf("✅ Signed transaction with public key: %s", privateKey.PublicKey())
 
 	// Send the transaction
-	sig, err := s.client.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
-		SkipPreflight:       false,
-		PreflightCommitment: rpc.CommitmentConfirmed,
-	})
+	sig, err := s.client.SendTransaction(ctx, tx)
 	if err != nil {
 		log.Printf("❌ Failed to send transaction: %v", err)
 		return "", fmt.Errorf("failed to send transaction: %w", err)
 	}
 	log.Printf("🚀 Transaction sent with signature: %s", sig)
 
-	// Wait for confirmation with timeout
-	startTime := time.Now()
-	timeout := 30 * time.Second
-	for {
-		if time.Since(startTime) > timeout {
-			log.Printf("❌ Transaction confirmation timeout after %s", timeout)
-			return "", fmt.Errorf("transaction confirmation timeout")
-		}
-
-		status, err := s.client.GetSignatureStatuses(ctx, true, sig)
-		if err != nil {
-			log.Printf("❌ Failed to get transaction status: %v", err)
-			return "", fmt.Errorf("failed to get transaction status: %w", err)
-		}
-
-		if status.Value[0] != nil {
-			if status.Value[0].Err != nil {
-				log.Printf("❌ Transaction failed: %v", status.Value[0].Err)
-				return "", fmt.Errorf("transaction failed: %v", status.Value[0].Err)
-			}
-			if status.Value[0].Confirmations != nil && *status.Value[0].Confirmations > 0 {
-				log.Printf("✅ Transaction confirmed with %d confirmations", *status.Value[0].Confirmations)
-				break
-			}
-		}
-
-		log.Printf("⏳ Waiting for transaction confirmation...")
-		time.Sleep(time.Second)
+	// Wait for confirmation
+	status, err := s.client.GetSignatureStatuses(ctx, true, sig)
+	if err != nil {
+		log.Printf("❌ Failed to get transaction status: %v", err)
+		return "", fmt.Errorf("failed to get transaction status: %w", err)
 	}
 
-	log.Printf("🎉 Transaction completed successfully! Signature: %s", sig)
+	if status.Value[0] != nil && status.Value[0].Err == nil {
+		log.Printf("✅ Transaction confirmed!")
+	} else {
+		log.Printf("⏳ Transaction not confirmed yet, current status: %v", status.Value[0])
+	}
+
+	log.Printf("🎉 Transaction completed! Signature: %s", sig)
 	log.Printf("🔍 View on Solana Explorer: https://explorer.solana.com/tx/%s?cluster=devnet", sig)
 
 	return sig.String(), nil
