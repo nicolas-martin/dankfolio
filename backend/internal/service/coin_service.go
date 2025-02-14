@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	dexscreenerBaseURL    = "https://api.dexscreener.com/latest/dex/pairs"
+	dexscreenerBaseURL    = "https://api.dexscreener.com/latest/dex"
 	dexscreenerProfileURL = "https://api.dexscreener.com/token-profiles/latest/v1"
 	defaultLimit          = 50
 )
@@ -165,11 +165,93 @@ func (s *CoinService) updatePricesFromDexScreener() {
 		s.mu.Lock()
 		oldPrice := coin.Price
 		coin.Price = stringToFloat64(dexPair.PriceUsd)
+		coin.PriceNative = dexPair.PriceNative
 		coin.CurrentPrice = stringToFloat64(dexPair.PriceUsd)
 		coin.Change24h = dexPair.PriceChange.H24
 		coin.Volume24h = dexPair.Volume.H24
 		coin.MarketCap = dexPair.MarketCap
 		coin.Supply = dexPair.FDV / stringToFloat64(dexPair.PriceUsd)
+		coin.DexID = dexPair.DexId
+		coin.PairAddress = dexPair.PairAddress
+		coin.PairCreatedAt = dexPair.PairCreatedAt
+
+		// Map volume stats
+		coin.Volume = model.VolumeStats{
+			H24: dexPair.Volume.H24,
+			H6:  dexPair.Volume.H6,
+			H1:  dexPair.Volume.H1,
+			M5:  dexPair.Volume.M5,
+		}
+
+		// Map price change stats
+		coin.PriceChange = model.PriceChangeStats{
+			H24: dexPair.PriceChange.H24,
+			H6:  dexPair.PriceChange.H6,
+			H1:  dexPair.PriceChange.H1,
+			M5:  dexPair.PriceChange.M5,
+		}
+
+		// Map liquidity stats
+		coin.Liquidity = model.LiquidityStats{
+			USD:   dexPair.Liquidity.Usd,
+			Base:  dexPair.Liquidity.Base,
+			Quote: dexPair.Liquidity.Quote,
+		}
+
+		// Map transaction stats
+		coin.Transactions.H24 = nil
+		coin.Transactions.H6 = nil
+		coin.Transactions.H1 = nil
+		coin.Transactions.M5 = nil
+
+		if dexPair.Txns.H24 != nil {
+			coin.Transactions.H24 = &model.TransactionStats{
+				Buys:  dexPair.Txns.H24.Buys,
+				Sells: dexPair.Txns.H24.Sells,
+			}
+		}
+		if dexPair.Txns.H6 != nil {
+			coin.Transactions.H6 = &model.TransactionStats{
+				Buys:  dexPair.Txns.H6.Buys,
+				Sells: dexPair.Txns.H6.Sells,
+			}
+		}
+		if dexPair.Txns.H1 != nil {
+			coin.Transactions.H1 = &model.TransactionStats{
+				Buys:  dexPair.Txns.H1.Buys,
+				Sells: dexPair.Txns.H1.Sells,
+			}
+		}
+		if dexPair.Txns.M5 != nil {
+			coin.Transactions.M5 = &model.TransactionStats{
+				Buys:  dexPair.Txns.M5.Buys,
+				Sells: dexPair.Txns.M5.Sells,
+			}
+		}
+
+		// Map boost active
+		coin.BoostActive = dexPair.Boosts.Active
+
+		// Map additional info
+		if len(dexPair.Info.ImageURL) > 0 {
+			coin.ImageURL = dexPair.Info.ImageURL
+		}
+
+		// Map websites
+		coin.Websites = make([]model.Website, len(dexPair.Info.Websites))
+		for i, website := range dexPair.Info.Websites {
+			coin.Websites[i] = model.Website{URL: website.URL}
+		}
+
+		// Map socials
+		coin.Socials = make([]model.SocialLink, len(dexPair.Info.Socials))
+		for i, social := range dexPair.Info.Socials {
+			coin.Socials[i] = model.SocialLink{
+				Platform: social.Platform,
+				Handle:   social.Handle,
+			}
+		}
+
 		coin.UpdatedAt = time.Now()
 		s.coins[addr] = coin
 		s.mu.Unlock()
@@ -294,41 +376,32 @@ func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpd
 
 // fetchPairData fetches data for a specific trading pair from DexScreener API
 func (s *CoinService) fetchPairData(ctx context.Context, chainId, tokenAddr string) (*model.DexScreenerPair, error) {
-	url := fmt.Sprintf("%s/solana/%s", dexscreenerBaseURL, tokenAddr)
-	logf("🌐 DexScreener API Request: GET %s\n", url)
+	// Use the tokens endpoint for direct token lookup
+	url := fmt.Sprintf("%s/tokens/%s", dexscreenerBaseURL, tokenAddr)
+	logf("DexScreener Request: GET %s\n", url)
 
-	startTime := time.Now()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		logf("❌ DexScreener API Error: Failed to create request: %v\n", err)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Add required headers
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "MemeTrading/1.0")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		logf("❌ DexScreener API Error: Request failed: %v\n", err)
 		return nil, fmt.Errorf("failed to fetch data from DexScreener: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logf("❌ DexScreener API Error: Failed to read response body: %v\n", err)
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	duration := time.Since(startTime)
-	logf("📥 DexScreener API Response: Status=%d, Duration=%.2fms, Size=%d bytes\n",
-		resp.StatusCode,
-		float64(duration.Milliseconds()),
-		len(body))
+	logf("DexScreener Response: %s\n", string(body))
 
 	if resp.StatusCode != http.StatusOK {
-		logf("❌ DexScreener API Error: Non-200 status code: %d, body: %s\n", resp.StatusCode, string(body))
 		return nil, fmt.Errorf("received non-200 status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
@@ -336,29 +409,32 @@ func (s *CoinService) fetchPairData(ctx context.Context, chainId, tokenAddr stri
 		Pairs []model.DexScreenerPair `json:"pairs"`
 	}
 	if err := json.Unmarshal(body, &response); err != nil {
-		logf("❌ DexScreener API Error: Failed to parse JSON response: %v\n", err)
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
 	if len(response.Pairs) == 0 {
-		logf("⚠️ DexScreener API Warning: No pairs found for token %s\n", tokenAddr)
 		return nil, fmt.Errorf("no pair data found")
 	}
 
-	logf("✅ DexScreener API Success: Found %d pairs for token %s\n", len(response.Pairs), tokenAddr)
-
-	// Find the pair with the highest liquidity
+	// Find the Solana pair with the highest liquidity
 	var bestPair *model.DexScreenerPair
 	var maxLiquidity float64
 	for i, pair := range response.Pairs {
+		// Only consider Solana pairs
+		if pair.ChainId != "solana" {
+			continue
+		}
 		liquidity := pair.Liquidity.Usd
-		if i == 0 || liquidity > maxLiquidity {
+		if bestPair == nil || liquidity > maxLiquidity {
 			maxLiquidity = liquidity
 			bestPair = &response.Pairs[i]
 		}
 	}
 
-	logf("📊 DexScreener API: Selected pair with highest liquidity (%.2f USD) for token %s\n", maxLiquidity, tokenAddr)
+	if bestPair == nil {
+		return nil, fmt.Errorf("no matching Solana pair found")
+	}
+
 	return bestPair, nil
 }
 
