@@ -38,11 +38,6 @@ func main() {
 	tradeService := service.NewTradeService(coinService, solanaService)
 	walletService := service.NewWalletService(os.Getenv("SOLANA_RPC_ENDPOINT"))
 
-	// Initialize test data for development
-	if err := coinService.InitializeTestData(context.Background()); err != nil {
-		log.Printf("Warning: Failed to initialize test data: %v", err)
-	}
-
 	// Initialize router
 	router := api.NewRouter(solanaService, coinService, tradeService, walletService)
 

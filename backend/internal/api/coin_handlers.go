@@ -86,14 +86,3 @@ func (h *CoinHandlers) GetCoinPriceHistory(w http.ResponseWriter, r *http.Reques
 
 	respondJSON(w, history, http.StatusOK)
 }
-
-// FetchAndStoreRealMemeCoins handles fetching and storing meme coins
-func (h *CoinHandlers) FetchAndStoreRealMemeCoins(w http.ResponseWriter, r *http.Request) {
-	err := h.coinService.FetchAndStoreRealMemeCoins(r.Context())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	respondJSON(w, map[string]string{"status": "success"}, http.StatusOK)
-}

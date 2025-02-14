@@ -5,337 +5,182 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
-	"unicode"
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
 const (
-	dexscreenerBaseURL    = "https://api.dexscreener.com"
+	dexscreenerBaseURL    = "https://api.dexscreener.com/latest/dex/pairs"
 	dexscreenerProfileURL = "https://api.dexscreener.com/token-profiles/latest/v1"
 	defaultLimit          = 50
 )
 
-// DexScreenerPair represents a trading pair from the DexScreener API
-type DexScreenerPair struct {
-	ChainId     string `json:"chainId"`
-	DexId       string `json:"dexId"`
-	PairAddress string `json:"pairAddress"`
-	BaseToken   struct {
-		Address string `json:"address"`
-		Name    string `json:"name"`
-		Symbol  string `json:"symbol"`
-	} `json:"baseToken"`
-	QuoteToken struct {
-		Address string `json:"address"`
-		Name    string `json:"name"`
-		Symbol  string `json:"symbol"`
-	} `json:"quoteToken"`
-	PriceUsd string `json:"priceUsd"`
-	Volume   struct {
-		H24 float64 `json:"h24"`
-	} `json:"volume"`
-	PriceChange struct {
-		H24 float64 `json:"h24"`
-	} `json:"priceChange"`
-	Liquidity struct {
-		Usd float64 `json:"usd"`
-	} `json:"liquidity"`
-	PairCreatedAt int64   `json:"pairCreatedAt"`
-	MarketCap     float64 `json:"marketCap"`
-	Info          struct {
-		ImageURL string `json:"imageUrl"`
-		Websites []struct {
-			URL string `json:"url"`
-		} `json:"websites"`
-		Socials []struct {
-			Platform string `json:"platform"`
-			Handle   string `json:"handle"`
-		} `json:"socials"`
-	} `json:"info"`
-}
-
-// DexScreenerResponse represents the response from the DexScreener API
-type DexScreenerResponse struct {
-	SchemaVersion string            `json:"schemaVersion"`
-	Pairs         []DexScreenerPair `json:"pairs"`
-}
-
-// TokenProfile represents the response from DexScreener token profiles API
-type TokenProfile struct {
-	ChainId      string `json:"chainId"`
-	TokenAddress string `json:"tokenAddress"`
-	Icon         string `json:"icon"`
-	Description  string `json:"description"`
-	Links        []struct {
-		Type  string `json:"type"`
-		Label string `json:"label"`
-		URL   string `json:"url"`
-	} `json:"links"`
-}
-
+// CoinService manages meme coin data in memory
 type CoinService struct {
 	client *http.Client
 	mu     sync.RWMutex
 	coins  map[string]model.MemeCoin // In-memory storage using contract address as key
 }
 
+// logf ensures logs are written to both stdout and the log file
+func logf(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	log.Printf("%s\n", msg) // This will be captured in server.log
+	fmt.Print(msg)          // This will show in the terminal
+}
+
+// NewCoinService creates a new instance of CoinService and initializes hardcoded pairs
 func NewCoinService() *CoinService {
-	return &CoinService{
+	logf("🚀 Initializing CoinService...\n")
+	service := &CoinService{
 		client: &http.Client{Timeout: 10 * time.Second},
 		coins:  make(map[string]model.MemeCoin),
 	}
-}
 
-// InitializeTestData initializes test data for development and testing
-func (s *CoinService) InitializeTestData(ctx context.Context) error {
-	// Initialize Wrapped SOL data
-	wrappedSOL := model.MemeCoin{
+	// Initialize coins immediately
+	now := time.Now()
+
+	// Add base SOL token
+	service.coins["So11111111111111111111111111111111111111112"] = model.MemeCoin{
 		ID:              "So11111111111111111111111111111111111111112",
 		Symbol:          "wSOL",
 		Name:            "Wrapped SOL",
 		Description:     "Wrapped SOL token for Solana DeFi",
 		ContractAddress: "So11111111111111111111111111111111111111112",
-		Price:           100.0, // Example price in USD
+		Price:           100.0,
 		CurrentPrice:    100.0,
 		Change24h:       1.0,
 		Volume24h:       1000000.0,
 		MarketCap:       10000000000.0,
 		Supply:          10000000.0,
 		Labels:          []string{"defi", "wrapped"},
-		Socials:         []model.SocialLink{},
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	logf("🪙 Added base SOL token\n")
+
+	// Add meme coins with fallback values
+	memeCoins := []model.MemeCoin{
+		{
+			ID:              "BONK9vQy1JJ99sCGvwMqftdexYZ28UVJVgHe7F5bfmg",
+			Symbol:          "BONK",
+			Name:            "Bonk",
+			Description:     "The first Solana dog coin for the people, by the people",
+			ContractAddress: "BONK9vQy1JJ99sCGvwMqftdexYZ28UVJVgHe7F5bfmg",
+			Price:           0.00001234,
+			CurrentPrice:    0.00001234,
+			Change24h:       0.0,
+			Volume24h:       1000000,
+			MarketCap:       500000000,
+			Supply:          500000000 / 0.00001234,
+			Labels:          []string{"meme", "solana"},
+			CreatedAt:       now,
+			UpdatedAt:       now,
+		},
+		{
+			ID:              "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+			Symbol:          "WIF",
+			Name:            "Dogwifhat",
+			Description:     "The Solana meme coin that started the dog with hat trend",
+			ContractAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+			Price:           0.1234,
+			CurrentPrice:    0.1234,
+			Change24h:       0.0,
+			Volume24h:       500000,
+			MarketCap:       300000000,
+			Supply:          300000000 / 0.1234,
+			Labels:          []string{"meme", "solana"},
+			CreatedAt:       now,
+			UpdatedAt:       now,
+		},
+		{
+			ID:              "METAmTMXwdb8gYzyCPfXXFmZZw4rUsXX58PNsDg7zjL",
+			Symbol:          "MYRO",
+			Name:            "Myro",
+			Description:     "The goodest boy on Solana",
+			ContractAddress: "METAmTMXwdb8gYzyCPfXXFmZZw4rUsXX58PNsDg7zjL",
+			Price:           0.02345,
+			CurrentPrice:    0.02345,
+			Change24h:       0.0,
+			Volume24h:       300000,
+			MarketCap:       200000000,
+			Supply:          200000000 / 0.02345,
+			Labels:          []string{"meme", "solana"},
+			CreatedAt:       now,
+			UpdatedAt:       now,
+		},
 	}
 
-	s.mu.Lock()
-	s.coins[wrappedSOL.ContractAddress] = wrappedSOL
-	s.mu.Unlock()
-	return nil
+	// Add meme coins
+	logf("🪙 Adding meme coins...\n")
+	for _, coin := range memeCoins {
+		service.coins[coin.ContractAddress] = coin
+		logf("✅ Added %s (%s) with price %.8f and market cap %.2f\n", coin.Name, coin.Symbol, coin.Price, coin.MarketCap)
+	}
+
+	logf("✨ Initialized %d coins in total\n", len(service.coins))
+
+	// Try to update prices from DexScreener immediately
+	logf("🔄 Updating prices from DexScreener...\n")
+	service.updatePricesFromDexScreener()
+
+	// Start a goroutine to periodically update prices from DexScreener
+	logf("⏰ Starting price updater goroutine...\n")
+	go service.startPriceUpdater()
+
+	return service
 }
 
-// fetchDexScreenerData fetches meme coin data from DexScreener API
-func (s *CoinService) fetchDexScreenerData(ctx context.Context, search string) ([]model.MemePair, error) {
-	url := fmt.Sprintf("%s/latest/dex/search?q=%s/SOL", dexscreenerBaseURL, search)
-	fmt.Printf("Fetching data from %s\n", url)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		fmt.Printf("Error creating request: %v\n", err)
-		return nil, fmt.Errorf("error creating request: %w", err)
+// startPriceUpdater starts a goroutine that periodically updates prices from DexScreener
+func (s *CoinService) startPriceUpdater() {
+	ticker := time.NewTicker(5 * time.Minute)
+	for range ticker.C {
+		s.updatePricesFromDexScreener()
 	}
+}
 
-	resp, err := s.client.Do(req)
-	if err != nil {
-		fmt.Printf("Error making request: %v\n", err)
-		return nil, fmt.Errorf("error making request: %w", err)
-	}
-	defer resp.Body.Close()
+// updatePricesFromDexScreener updates prices from DexScreener API
+func (s *CoinService) updatePricesFromDexScreener() {
+	logf("🔄 Updating prices from DexScreener...\n")
+	logf("📊 DexScreener API: Starting batch price update for %d coins\n", len(s.coins))
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		fmt.Printf("Error response from DexScreener (status %d): %s\n", resp.StatusCode, string(body))
-		return nil, fmt.Errorf("error response from DexScreener (status %d)", resp.StatusCode)
-	}
+	for addr, coin := range s.coins {
+		if coin.Symbol == "wSOL" {
+			continue // Skip wSOL as it's our base token
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("Error reading response body: %v\n", err)
-		return nil, fmt.Errorf("error reading response body: %w", err)
-	}
-
-	fmt.Printf("Raw response: %s\n", string(body))
-
-	var dexResp DexScreenerResponse
-	if err := json.Unmarshal(body, &dexResp); err != nil {
-		fmt.Printf("Error decoding response: %v\n", err)
-		return nil, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	fmt.Printf("Received %d pairs from DexScreener\n", len(dexResp.Pairs))
-
-	var pairs []model.MemePair
-	for _, dexPair := range dexResp.Pairs {
-		if dexPair.QuoteToken.Symbol == "" {
-			fmt.Printf("Skipping pair: Missing quote token information\n")
+		logf("🌐 DexScreener API: Fetching price for %s (%s) at address %s\n", coin.Name, coin.Symbol, addr)
+		dexPair, err := s.fetchPairData(context.Background(), "solana", addr)
+		if err != nil {
+			logf("⚠️  DexScreener API Error: Failed to fetch price for %s: %v\n", coin.Symbol, err)
 			continue
 		}
 
-		// Check for valid quote currency
-		if !isValidQuoteCurrency(dexPair.QuoteToken.Symbol) {
-			fmt.Printf("Skipping pair %s/%s: Invalid quote currency\n",
-				dexPair.BaseToken.Symbol, dexPair.QuoteToken.Symbol)
-			continue
-		}
+		s.mu.Lock()
+		oldPrice := coin.Price
+		coin.Price = stringToFloat64(dexPair.PriceUsd)
+		coin.CurrentPrice = stringToFloat64(dexPair.PriceUsd)
+		coin.Change24h = dexPair.PriceChange.H24
+		coin.Volume24h = dexPair.Volume.H24
+		coin.MarketCap = dexPair.MarketCap
+		coin.Supply = dexPair.FDV / stringToFloat64(dexPair.PriceUsd)
+		coin.UpdatedAt = time.Now()
+		s.coins[addr] = coin
+		s.mu.Unlock()
 
-		// Check for minimum liquidity
-		if dexPair.Liquidity.Usd < 10 { // Lower minimum liquidity for testing
-			fmt.Printf("Skipping pair %s/%s: Low liquidity ($%.2f)\n",
-				dexPair.BaseToken.Symbol, dexPair.QuoteToken.Symbol, dexPair.Liquidity.Usd)
-			continue
-		}
-
-		// Check for minimum volume
-		if dexPair.Volume.H24 < 10 { // Lower minimum volume for testing
-			fmt.Printf("Skipping pair %s/%s: Low volume ($%.2f)\n",
-				dexPair.BaseToken.Symbol, dexPair.QuoteToken.Symbol, dexPair.Volume.H24)
-			continue
-		}
-
-		// Check if it's a meme coin based on name or symbol
-		if isMemeCoin(dexPair.BaseToken.Name) || isMemeCoin(dexPair.BaseToken.Symbol) {
-			fmt.Printf("Found meme coin %s/%s (name: %s)\n",
-				dexPair.BaseToken.Symbol, dexPair.QuoteToken.Symbol, dexPair.BaseToken.Name)
-			memePair := model.MemePair{
-				BaseToken: struct {
-					Address string `json:"address"`
-					Name    string `json:"name"`
-					Symbol  string `json:"symbol"`
-				}{
-					Address: dexPair.BaseToken.Address,
-					Name:    dexPair.BaseToken.Name,
-					Symbol:  dexPair.BaseToken.Symbol,
-				},
-				QuoteToken: struct {
-					Address string `json:"address"`
-					Name    string `json:"name"`
-					Symbol  string `json:"symbol"`
-				}{
-					Address: dexPair.QuoteToken.Address,
-					Name:    dexPair.QuoteToken.Name,
-					Symbol:  dexPair.QuoteToken.Symbol,
-				},
-				PriceUsd:      dexPair.PriceUsd,
-				Volume:        dexPair.Volume,
-				PriceChange:   dexPair.PriceChange,
-				Liquidity:     dexPair.Liquidity,
-				PairCreatedAt: dexPair.PairCreatedAt,
-				MarketCap:     dexPair.MarketCap,
-				ChainId:       dexPair.ChainId,
-				DexId:         dexPair.DexId,
-				PairAddress:   dexPair.PairAddress,
-			}
-			pairs = append(pairs, memePair)
-		} else {
-			fmt.Printf("Skipping pair %s/%s: Not a meme coin\n",
-				dexPair.BaseToken.Symbol, dexPair.QuoteToken.Symbol)
-		}
+		logf("✅ DexScreener API: Updated %s price from %.8f to %.8f (Δ %.2f%%)\n",
+			coin.Symbol,
+			oldPrice,
+			coin.Price,
+			((coin.Price-oldPrice)/oldPrice)*100)
 	}
-
-	fmt.Printf("Filtered to %d meme pairs\n", len(pairs))
-	return pairs, nil
-}
-
-// filterMemePairs filters out non-meme coins based on certain criteria
-func filterMemePairs(pairs []DexScreenerPair) []DexScreenerPair {
-	var memePairs []DexScreenerPair
-	for _, pair := range pairs {
-		// Filter conditions for meme coins:
-		// 1. Must be paired with a stablecoin (USDC, USDT) or SOL
-		// 2. Must have some liquidity
-		// 3. Must have some trading volume
-		// 4. Must be a meme coin based on name/symbol or be a new token
-		if isMemeCoinPair(pair) {
-			memePairs = append(memePairs, pair)
-		}
-	}
-	return memePairs
-}
-
-// isMemeCoinPair checks if a pair represents a meme coin
-func isMemeCoinPair(pair DexScreenerPair) bool {
-	// Check if paired with USDC, USDT, or SOL
-	quoteCurrency := pair.QuoteToken.Symbol
-	if !isValidQuoteCurrency(quoteCurrency) {
-		fmt.Printf("Skipping pair %s/%s: Invalid quote currency\n", pair.BaseToken.Symbol, quoteCurrency)
-		return false
-	}
-
-	// Check for minimum liquidity
-	if pair.Liquidity.Usd < 10 { // Lower minimum liquidity for testing
-		fmt.Printf("Skipping pair %s/%s: Low liquidity ($%.2f)\n",
-			pair.BaseToken.Symbol, quoteCurrency, pair.Liquidity.Usd)
-		return false
-	}
-
-	// Check for minimum volume
-	if pair.Volume.H24 < 10 { // Lower minimum volume for testing
-		fmt.Printf("Skipping pair %s/%s: Low volume ($%.2f)\n",
-			pair.BaseToken.Symbol, quoteCurrency, pair.Volume.H24)
-		return false
-	}
-
-	// Check if it's a meme coin based on name or symbol
-	if isMemeCoin(pair.BaseToken.Name) || isMemeCoin(pair.BaseToken.Symbol) {
-		fmt.Printf("Found meme coin %s/%s (name: %s)\n",
-			pair.BaseToken.Symbol, quoteCurrency, pair.BaseToken.Name)
-		return true
-	}
-
-	// Check if it's a new token (created in the last 30 days)
-	if pair.PairCreatedAt > 0 {
-		createdAt := time.UnixMilli(pair.PairCreatedAt)
-		if time.Since(createdAt) < 30*24*time.Hour {
-			fmt.Printf("Found new token %s/%s (created %s)\n",
-				pair.BaseToken.Symbol, quoteCurrency, createdAt.Format("2006-01-02"))
-			return true
-		}
-	}
-
-	// Check for high price volatility
-	if math.Abs(pair.PriceChange.H24) > 10 {
-		fmt.Printf("Found volatile token %s/%s (24h change: %.2f%%)\n",
-			pair.BaseToken.Symbol, quoteCurrency, pair.PriceChange.H24)
-		return true
-	}
-
-	fmt.Printf("Skipping pair %s/%s: Not a meme coin\n",
-		pair.BaseToken.Symbol, quoteCurrency)
-	return false
-}
-
-// isValidQuoteCurrency checks if the quote currency is valid for meme coins
-func isValidQuoteCurrency(symbol string) bool {
-	// Clean up the symbol by removing any special characters and converting to uppercase
-	cleanSymbol := strings.Map(func(r rune) rune {
-		if unicode.IsLetter(r) || unicode.IsNumber(r) {
-			return r
-		}
-		return -1
-	}, symbol)
-	cleanSymbol = strings.ToUpper(cleanSymbol)
-
-	fmt.Printf("Checking quote currency: %s (cleaned: %s)\n", symbol, cleanSymbol)
-
-	// List of valid quote currencies
-	validQuotes := map[string]bool{
-		"USDC":  true,
-		"USDT":  true,
-		"SOL":   true,
-		"WSOL":  true,
-		"WBNB":  true,
-		"WPLS":  true,
-		"ETH":   true,
-		"WETH":  true,
-		"BTC":   true,
-		"WBTC":  true,
-		"WNEAR": true,
-		"BTCB":  true,
-		"MOST":  true,
-		"PUMP":  true,
-		"TIRES": true,
-		"PFF":   true,
-		"BIAO":  true,
-	}
-
-	return validQuotes[cleanSymbol]
+	logf("✨ DexScreener API: Price update batch completed\n")
 }
 
 // GetTopMemeCoins returns the top meme coins by market cap
@@ -343,23 +188,26 @@ func (s *CoinService) GetTopMemeCoins(ctx context.Context, limit int) ([]model.M
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	logf("📊 Getting top meme coins (total coins in map: %d)\n", len(s.coins))
 	var coins []model.MemeCoin
-	for _, coin := range s.coins {
+	for addr, coin := range s.coins {
+		logf("🔍 Found coin %s (%s) at address %s with market cap %.2f\n", coin.Name, coin.Symbol, addr, coin.MarketCap)
 		coins = append(coins, coin)
 	}
 
-	// Sort by market cap
+	// Sort by market cap in descending order
 	sort.Slice(coins, func(i, j int) bool {
 		return coins[i].MarketCap > coins[j].MarketCap
 	})
 
-	if limit <= 0 {
-		limit = defaultLimit
-	}
-	if limit > len(coins) {
-		limit = len(coins)
+	// Return all coins if no limit is specified or if limit is greater than available coins
+	if limit <= 0 || limit > len(coins) {
+		logf("📈 Returning all %d coins\n", len(coins))
+		return coins, nil
 	}
 
+	// Return the top N coins by market cap
+	logf("📈 Returning top %d coins\n", limit)
 	return coins[:limit], nil
 }
 
@@ -384,33 +232,45 @@ func (s *CoinService) GetCoinByContractAddress(ctx context.Context, contractAddr
 	if coin, exists := s.coins[contractAddress]; exists {
 		return &coin, nil
 	}
+	return nil, fmt.Errorf("coin not found")
+}
 
-	// If not found in memory, try to fetch from DexScreener
-	pair, err := s.fetchSpecificPair(ctx, contractAddress)
+// GetCoinPriceHistory returns mock price history for a coin based on timeframe
+func (s *CoinService) GetCoinPriceHistory(ctx context.Context, coinID string, timeframe string) ([]model.PricePoint, error) {
+	coin, err := s.GetCoinByID(ctx, coinID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch coin data: %w", err)
+		return nil, err
 	}
 
-	// Convert to MemeCoin and store
-	coin := model.MemeCoin{
-		ID:              pair.BaseToken.Address,
-		Symbol:          pair.BaseToken.Symbol,
-		Name:            pair.BaseToken.Name,
-		ContractAddress: pair.BaseToken.Address,
-		Price:           stringToFloat64(pair.PriceUsd),
-		CurrentPrice:    stringToFloat64(pair.PriceUsd),
-		Change24h:       pair.PriceChange.H24,
-		Volume24h:       pair.Volume.H24,
-		MarketCap:       pair.MarketCap,
-		CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
-		UpdatedAt:       time.Now(),
+	// Generate mock price history
+	var points []model.PricePoint
+	now := time.Now()
+	basePrice := coin.Price
+	numPoints := 24 // Default to 24 points
+
+	switch timeframe {
+	case "day":
+		numPoints = 24
+	case "week":
+		numPoints = 7 * 24
+	case "month":
+		numPoints = 30 * 24
+	default:
+		return nil, fmt.Errorf("invalid timeframe: %s", timeframe)
 	}
 
-	s.mu.Lock()
-	s.coins[contractAddress] = coin
-	s.mu.Unlock()
+	for i := numPoints - 1; i >= 0; i-- {
+		// Add some random variation to the price
+		variation := basePrice * 0.1 * (float64(i) / float64(numPoints))
+		price := basePrice + variation
 
-	return &coin, nil
+		points = append(points, model.PricePoint{
+			Timestamp: now.Add(-time.Duration(i) * time.Hour).Unix(),
+			Price:     price,
+		})
+	}
+
+	return points, nil
 }
 
 // UpdatePrices updates the prices of coins in memory
@@ -432,174 +292,119 @@ func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpd
 	return nil
 }
 
-// fetchSpecificPair fetches data for a specific trading pair from DexScreener API
-func (s *CoinService) fetchSpecificPair(ctx context.Context, contractAddress string) (*DexScreenerPair, error) {
-	// DexScreener API endpoint for specific pair by token address
-	url := fmt.Sprintf("%s/latest/dex/tokens/%s", dexscreenerBaseURL, contractAddress)
+// fetchPairData fetches data for a specific trading pair from DexScreener API
+func (s *CoinService) fetchPairData(ctx context.Context, chainId, tokenAddr string) (*model.DexScreenerPair, error) {
+	url := fmt.Sprintf("%s/solana/%s", dexscreenerBaseURL, tokenAddr)
+	logf("🌐 DexScreener API Request: GET %s\n", url)
 
+	startTime := time.Now()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
+		logf("❌ DexScreener API Error: Failed to create request: %v\n", err)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
+	// Add required headers
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "MemeTrading/1.0")
+
 	resp, err := s.client.Do(req)
 	if err != nil {
+		logf("❌ DexScreener API Error: Request failed: %v\n", err)
 		return nil, fmt.Errorf("failed to fetch data from DexScreener: %w", err)
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logf("❌ DexScreener API Error: Failed to read response body: %v\n", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	duration := time.Since(startTime)
+	logf("📥 DexScreener API Response: Status=%d, Duration=%.2fms, Size=%d bytes\n",
+		resp.StatusCode,
+		float64(duration.Milliseconds()),
+		len(body))
+
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code from DexScreener: %d, body: %s", resp.StatusCode, string(body))
+		logf("❌ DexScreener API Error: Non-200 status code: %d, body: %s\n", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("received non-200 status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	var dexResp DexScreenerResponse
-	if err := json.NewDecoder(resp.Body).Decode(&dexResp); err != nil {
-		return nil, fmt.Errorf("failed to decode DexScreener response: %w", err)
+	var response struct {
+		Pairs []model.DexScreenerPair `json:"pairs"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		logf("❌ DexScreener API Error: Failed to parse JSON response: %v\n", err)
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	// Find the best pair for the token (highest liquidity on Solana)
-	var bestPair *DexScreenerPair
+	if len(response.Pairs) == 0 {
+		logf("⚠️ DexScreener API Warning: No pairs found for token %s\n", tokenAddr)
+		return nil, fmt.Errorf("no pair data found")
+	}
+
+	logf("✅ DexScreener API Success: Found %d pairs for token %s\n", len(response.Pairs), tokenAddr)
+
+	// Find the pair with the highest liquidity
+	var bestPair *model.DexScreenerPair
 	var maxLiquidity float64
-
-	for i, pair := range dexResp.Pairs {
-		// Only consider Solana pairs
-		if pair.ChainId != "solana" {
-			continue
-		}
-
-		// Only consider pairs with valid quote currencies
-		if !isValidQuoteCurrency(pair.QuoteToken.Symbol) {
-			continue
-		}
-
-		if pair.Liquidity.Usd > maxLiquidity {
-			maxLiquidity = pair.Liquidity.Usd
-			bestPair = &dexResp.Pairs[i]
+	for i, pair := range response.Pairs {
+		liquidity := pair.Liquidity.Usd
+		if i == 0 || liquidity > maxLiquidity {
+			maxLiquidity = liquidity
+			bestPair = &response.Pairs[i]
 		}
 	}
 
-	if bestPair == nil {
-		return nil, fmt.Errorf("no valid trading pair found for token: %s", contractAddress)
-	}
-
+	logf("📊 DexScreener API: Selected pair with highest liquidity (%.2f USD) for token %s\n", maxLiquidity, tokenAddr)
 	return bestPair, nil
 }
 
 // fetchTokenProfile fetches additional token information from DexScreener
-func (s *CoinService) fetchTokenProfile(ctx context.Context, chainId, tokenAddress string) (*TokenProfile, error) {
+func (s *CoinService) fetchTokenProfile(ctx context.Context, chainId, tokenAddress string) (*model.TokenProfile, error) {
 	url := fmt.Sprintf("%s/%s/%s", dexscreenerProfileURL, chainId, tokenAddress)
+	logf("🌐 DexScreener API Request: GET %s\n", url)
 
+	startTime := time.Now()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
+		logf("❌ DexScreener API Error: Failed to create request: %v\n", err)
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
 	resp, err := s.client.Do(req)
 	if err != nil {
+		logf("❌ DexScreener API Error: Request failed: %v\n", err)
 		return nil, fmt.Errorf("error making request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	duration := time.Since(startTime)
+	logf("📥 DexScreener API Response: Status=%d, Duration=%.2fms\n",
+		resp.StatusCode,
+		float64(duration.Milliseconds()))
+
 	if resp.StatusCode != http.StatusOK {
+		logf("❌ DexScreener API Error: Non-200 status code: %d\n", resp.StatusCode)
 		return nil, fmt.Errorf("error response from DexScreener (status %d)", resp.StatusCode)
 	}
 
-	var profile TokenProfile
+	var profile model.TokenProfile
 	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+		logf("❌ DexScreener API Error: Failed to parse JSON response: %v\n", err)
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 
+	logf("✅ DexScreener API Success: Retrieved profile for token %s\n", tokenAddress)
 	return &profile, nil
-}
-
-func isMemeCoin(text string) bool {
-	// Convert to lowercase for case-insensitive matching
-	text = strings.ToLower(text)
-
-	// List of common meme coin indicators
-	memeIndicators := []string{
-		"doge", "shib", "inu", "elon", "moon", "safe", "cum", "chad",
-		"pepe", "wojak", "fren", "kek", "pamp", "dump", "gm", "gn",
-		"lfg", "ngmi", "wagmi", "fud", "cope", "ponzi", "moon", "mars",
-		"pluto", "jupiter", "saturn", "galaxy", "star", "rocket",
-		"diamond", "hands", "paper", "hodl", "hold", "buy", "sell",
-		"bear", "bull", "pump", "dump", "green", "red", "chart", "dex",
-		"swap", "yield", "farm", "pool", "stake", "mine", "burn", "lock",
-		"vault", "safe", "gem", "coin", "token", "nft", "meta", "dao",
-		"defi", "web3", "ai", "bot", "oracle", "chain", "block",
-		"cat", "dog", "frog", "shark", "fish", "bird", "monkey", "ape",
-		"baby", "daddy", "king", "queen", "prince", "lord", "god",
-		"meme", "joke", "fun", "play", "game", "win", "rich", "poor",
-		"lambo", "yacht", "based", "cringe", "sigma", "alpha", "beta",
-		"gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota",
-		"kappa", "lambda", "mu", "nu", "xi", "omicron", "pi", "rho",
-		"sigma", "tau", "upsilon", "phi", "chi", "psi", "omega",
-	}
-
-	// Check if the text contains any meme indicators
-	for _, indicator := range memeIndicators {
-		if strings.Contains(text, indicator) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// FetchAndStoreRealMemeCoins fetches real meme coins from DexScreener and stores them in memory
-func (s *CoinService) FetchAndStoreRealMemeCoins(ctx context.Context) error {
-	pairs, err := s.fetchDexScreenerData(ctx, "meme")
-	if err != nil {
-		return fmt.Errorf("failed to fetch meme coins: %w", err)
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, pair := range pairs {
-		coin := model.MemeCoin{
-			ID:              pair.BaseToken.Address,
-			Symbol:          pair.BaseToken.Symbol,
-			Name:            pair.BaseToken.Name,
-			ContractAddress: pair.BaseToken.Address,
-			Price:           stringToFloat64(pair.PriceUsd),
-			CurrentPrice:    stringToFloat64(pair.PriceUsd),
-			Change24h:       pair.PriceChange.H24,
-			Volume24h:       pair.Volume.H24,
-			MarketCap:       pair.MarketCap,
-			CreatedAt:       time.Unix(pair.PairCreatedAt, 0),
-			UpdatedAt:       time.Now(),
-		}
-		s.coins[coin.ContractAddress] = coin
-	}
-
-	return nil
 }
 
 // GetPriceHistory returns price history for a coin (in-memory implementation)
 func (s *CoinService) GetPriceHistory(ctx context.Context, coinID string, startTime time.Time) ([]model.PricePoint, error) {
 	// For now, return empty slice since we're not storing historical data in memory
 	return []model.PricePoint{}, nil
-}
-
-// GetCoinPriceHistory returns price history for a coin based on timeframe
-func (s *CoinService) GetCoinPriceHistory(ctx context.Context, coinID string, timeframe string) ([]model.PricePoint, error) {
-	var startTime time.Time
-	now := time.Now()
-
-	switch timeframe {
-	case "day":
-		startTime = now.AddDate(0, 0, -1)
-	case "week":
-		startTime = now.AddDate(0, 0, -7)
-	case "month":
-		startTime = now.AddDate(0, -1, 0)
-	default:
-		return nil, fmt.Errorf("invalid timeframe: %s", timeframe)
-	}
-
-	return s.GetPriceHistory(ctx, coinID, startTime)
 }
 
 // Helper function to convert string to float64

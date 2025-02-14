@@ -11,9 +11,14 @@ clean:
 	@echo "🧹 Cleaning up..."
 	@rm -f .env
 
+# Variables
+ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+LOG_FILE := $(ROOT_DIR)/server.log
+
 run:
 	@lsof -ti :8080 | xargs kill -9 2>/dev/null || true
-	@set -a && source .env && set +a && go run cmd/api/main.go > server.log 2>&1 &
+	@rm ./server.log
+	@set -a && source .env && set +a && go run cmd/api/main.go 2>&1 | tee server.log &
 	@echo "🚀 Starting server on port 8080..."
 	@for i in {1..5}; do \
 		if curl -s http://localhost:8080/health > /dev/null; then \

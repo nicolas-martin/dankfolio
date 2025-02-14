@@ -14,8 +14,7 @@ dev-backend:
 	@echo "🚀 Starting development environment..."
 	@cd $(BACKEND_DIR) && make dev
 
-# Running Services
-run-backend:
+run:
 	@echo "🚀 Starting backend server..."
 	@cd $(BACKEND_DIR) && make run
 
