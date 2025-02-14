@@ -37,7 +37,6 @@ func main() {
 
 	tradeService := service.NewTradeService(coinService, solanaService)
 	walletService := service.NewWalletService(os.Getenv("SOLANA_RPC_ENDPOINT"))
-	wsService := service.NewWebSocketService()
 
 	// Initialize test data for development
 	if err := coinService.InitializeTestData(context.Background()); err != nil {
@@ -46,9 +45,6 @@ func main() {
 
 	// Initialize router
 	router := api.NewRouter(solanaService, coinService, tradeService, walletService)
-
-	// Start WebSocket service
-	go wsService.Run(context.Background())
 
 	// Configure server
 	srv := &http.Server{
