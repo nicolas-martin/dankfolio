@@ -6,24 +6,19 @@ DankFolio is a modern, secure platform for trading and managing meme coin portfo
 
 - **Backend**: Go 1.22+
 
-## Project Structure 
+## Project Structure
 
 ```
 .
 ├── backend/                 # Backend Go application
-│   ├── api/                # API documentation and OpenAPI specs
-│   │   ├── cmd/                # Application entrypoints
-│   │   ├── internal/           # Internal packages
-│   │   │   ├── api/           # API handlers and routing
-│   │   │   ├── config/        # Configuration management
-│   │   │   ├── errors/        # Custom error types
-│   │   │   ├── logger/        # Logging utilities
-│   │   │   ├── middleware/    # HTTP middleware
-│   │   │   ├── model/         # Data models
-│   │   │   └── service/       # Business logic
-│   │   ├── Makefile           # Build and development commands
-│   │   └── README.md          # Backend-specific documentation
-│   └── README.md              # Project documentation
+│   ├── api/                 # API documentation and OpenAPI specs
+│   │   ├── cmd/             # Main application entrypoints
+│   │   ├── internal/        # Internal packages (api, config, errors, logger, middleware, model, service)
+│   │   └── README.md        # Backend-specific documentation
+│   ├── cmd/                 # Command-line tools (e.g., test-buy-token for token swap)
+│   └── README.md            # Backend project documentation and run instructions (use './Makefile run-backend' or 'backend/Makefile run')
+├── keys/                    # Contains wallet keypairs for mainnet and testnet
+├── README.md                # Root project documentation
 ```
 
 ## Architecture
