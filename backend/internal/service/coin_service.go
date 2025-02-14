@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -156,7 +156,7 @@ func (s *CoinService) updatePricesFromDexScreener() {
 		}
 
 		logf("🌐 DexScreener API: Fetching price for %s (%s) at address %s\n", coin.Name, coin.Symbol, addr)
-		dexPair, err := s.fetchPairData(context.Background(), "solana", addr)
+		dexPair, err := s.fetchPairData(context.Background(), addr)
 		if err != nil {
 			logf("⚠️  DexScreener API Error: Failed to fetch price for %s: %v\n", coin.Symbol, err)
 			continue
@@ -375,67 +375,91 @@ func (s *CoinService) UpdatePrices(ctx context.Context, updates []model.PriceUpd
 }
 
 // fetchPairData fetches data for a specific trading pair from DexScreener API
-func (s *CoinService) fetchPairData(ctx context.Context, chainId, tokenAddr string) (*model.DexScreenerPair, error) {
-	// Use the tokens endpoint for direct token lookup
-	url := fmt.Sprintf("%s/tokens/%s", dexscreenerBaseURL, tokenAddr)
-	logf("DexScreener Request: GET %s\n", url)
+func (s *CoinService) fetchPairData(ctx context.Context, tokenAddress string) (*model.DexScreenerPair, error) {
+	// Get the token symbol from our coins map
+	s.mu.RLock()
+	coin, exists := s.coins[tokenAddress]
+	s.mu.RUnlock()
+	if !exists {
+		return nil, fmt.Errorf("token not found in local storage")
+	}
+
+	// Use the token symbol for searching
+	url := fmt.Sprintf("https://api.dexscreener.com/latest/dex/search?q=%s", coin.Symbol)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "MemeTrading/1.0")
-
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch data from DexScreener: %w", err)
+		return nil, fmt.Errorf("failed to fetch pair data: %w", err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+	var response model.DexScreenerResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	logf("DexScreener Response: %s\n", string(body))
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("received non-200 status code: %d, body: %s", resp.StatusCode, string(body))
+	if response.Pairs == nil || len(response.Pairs) == 0 {
+		return nil, fmt.Errorf("no pairs found for token %s", coin.Symbol)
 	}
 
-	var response struct {
-		Pairs []model.DexScreenerPair `json:"pairs"`
-	}
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
+	// Track best USDC and SOL pairs separately
+	var bestUSDCPair *model.DexScreenerPair
+	var maxUSDCLiquidity float64
+	var bestSOLPair *model.DexScreenerPair
+	var maxSOLLiquidity float64
 
-	if len(response.Pairs) == 0 {
-		return nil, fmt.Errorf("no pair data found")
-	}
+	// USDC and SOL addresses on Solana
+	usdcAddress := "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+	solAddress := "So11111111111111111111111111111111111111112"
 
-	// Find the Solana pair with the highest liquidity
-	var bestPair *model.DexScreenerPair
-	var maxLiquidity float64
-	for i, pair := range response.Pairs {
-		// Only consider Solana pairs
-		if pair.ChainId != "solana" {
-			continue
-		}
-		liquidity := pair.Liquidity.Usd
-		if bestPair == nil || liquidity > maxLiquidity {
-			maxLiquidity = liquidity
-			bestPair = &response.Pairs[i]
+	// Filter pairs to only include those matching our token symbol
+	var validPairs []model.DexScreenerPair
+	for i := range response.Pairs {
+		pair := &response.Pairs[i]
+		if strings.EqualFold(pair.BaseToken.Symbol, coin.Symbol) {
+			validPairs = append(validPairs, *pair)
 		}
 	}
 
-	if bestPair == nil {
-		return nil, fmt.Errorf("no matching Solana pair found")
+	if len(validPairs) == 0 {
+		return nil, fmt.Errorf("no pairs found matching token symbol %s", coin.Symbol)
 	}
 
-	return bestPair, nil
+	// Find best USDC and SOL pairs among valid pairs
+	for i := range validPairs {
+		pair := &validPairs[i]
+		if pair.QuoteToken.Address == usdcAddress {
+			if bestUSDCPair == nil || pair.Liquidity.Usd > maxUSDCLiquidity {
+				bestUSDCPair = pair
+				maxUSDCLiquidity = pair.Liquidity.Usd
+			}
+		} else if pair.QuoteToken.Address == solAddress {
+			if bestSOLPair == nil || pair.Liquidity.Usd > maxSOLLiquidity {
+				bestSOLPair = pair
+				maxSOLLiquidity = pair.Liquidity.Usd
+			}
+		}
+	}
+
+	// Return the best pair based on our criteria:
+	// 1. If we have a USDC pair, use it unless the SOL pair has significantly more liquidity (2x or more)
+	// 2. Otherwise, fall back to the SOL pair if available
+	if bestUSDCPair != nil {
+		if bestSOLPair != nil && maxSOLLiquidity > maxUSDCLiquidity*2 {
+			return bestSOLPair, nil
+		}
+		return bestUSDCPair, nil
+	}
+	if bestSOLPair != nil {
+		return bestSOLPair, nil
+	}
+
+	return nil, fmt.Errorf("no matching pair found with USDC or SOL as quote token for %s", coin.Symbol)
 }
 
 // fetchTokenProfile fetches additional token information from DexScreener
