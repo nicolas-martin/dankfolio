@@ -75,4 +75,3 @@
 - Do not worry about database, migration or repository for now. Just get everything working in memory we will address storage solution at a later date
 - When testing the api make sure to test all endpoints and make sure they are working as expected
 - When testing an api, run the related test file in `./backend/scripts/`
-

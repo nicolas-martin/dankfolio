@@ -1,6 +1,68 @@
-# DankFolio
+# Meme Trading Project
 
-DankFolio is a modern, secure platform for trading and managing meme coin portfolios. Built with Go, it provides real-time trading capabilities, portfolio tracking, and social features.
+Welcome to the Meme Trading Project 🎉 — a gamified marketplace for trading digital memes. This project combines blockchain technology with a playful, engaging user interface to facilitate secure and efficient meme transactions.
+
+## Architecture Overview
+
+The backend of the Meme Trading Project is designed to support seamless meme trading by integrating blockchain operations, liquidity pool interactions, and a modular API structure. Key components include:
+
+- **Blockchain Interaction:**  
+  Utilizes the Solana blockchain for executing secure token swaps and meme trading transactions. The backend handles wallet management and transaction signing using industry-standard practices.
+
+- **Liquidity Pool Integration:**  
+  Fetches and processes pool data from the Raydium API, ensuring that trade operations use current market liquidity data for optimal execution.
+
+- **In-Memory Data Handling:**  
+  All operations are currently performed in-memory, allowing rapid prototyping and easy testing. Future releases will integrate persistent storage using dockerized Postgres instances:
+  - Production DB on port 5432
+  - Test DB on port 5434
+
+- **Modular Design:**  
+  The backend code is separated into distinct modules — blockchain interactions, transaction management, and API handling — which promotes code reuse and easier maintenance.
+
+- **Testing & Continuous Integration:**  
+  All API endpoints and business logic are thoroughly tested. Refer to the scripts in `./backend/scripts/` for running the test suites.
+
+## Backend Goals
+
+The primary objectives of the backend are to:
+
+- **Ensure Secure and Reliable Trades:**  
+  Validate meme authenticity, confirm ownership, and authenticate users before processing any transactions.
+
+- **Provide Real-Time Trading Operations:**  
+  Leverage blockchain transactions and real-time liquidity pool data to support immediate and secure meme token swaps.
+
+- **Facilitate Future Scaling and Integration:**  
+  Adopt a modular architecture that enables easy future integrations with external meme APIs, social platforms, and enhanced data storage solutions.
+
+- **Enhance the Overall User Experience:**  
+  Deliver quick, responsive interactions paired with playful feedback mechanisms (animations, transitions, etc.) that keep the trading experience exciting and engaging.
+
+## Running the Backend
+
+To start the backend, use one of the provided make commands:
+- Run the backend directly with:
+  ```
+  ./backend/Makefile run
+  ```
+- Or use the root make command:
+  ```
+  ./Makefile run-backend
+  ```
+
+## Future Enhancements
+
+- **Persistent Storage Integration:**  
+  Introduce dockerized Postgres instances for production and testing, replacing in-memory storage.
+
+- **Extended API Capabilities:**  
+  Add endpoints for handling trade history, advanced asset management, and improved market analytics.
+
+- **Rate Limiting & Spam Prevention:**  
+  Implement mechanisms to prevent abuse in meme uploads and trade requests.
+
+Happy meme trading! 🚀🎨
 
 ## Tech Stack
 
