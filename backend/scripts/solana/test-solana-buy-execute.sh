@@ -1,9 +1,32 @@
 #!/bin/bash
 
-echo "💸 Testing Solana buy trade execution..."
+echo "🐕 Testing WIF (Dogwifhat) buy trade execution..."
+
+# Execute the trade
 BUY_RESPONSE=$(curl -s -X POST http://localhost:8080/api/trades/execute \
     -H "Content-Type: application/json" \
-    -d '{"coin_id":"So11111111111111111111111111111111111111112","type":"buy","amount":0.1}')
-echo "$BUY_RESPONSE"
+    -d '{"coin_id":"DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263","type":"buy","amount":0.1}')
 
-echo -e "\n✅ Solana buy execution test completed" 
+# Extract transaction details
+TX_HASH=$(echo "$BUY_RESPONSE" | jq -r '.data.transaction_hash // empty')
+EXPLORER_URL=$(echo "$BUY_RESPONSE" | jq -r '.data.explorer_url // empty')
+ERROR=$(echo "$BUY_RESPONSE" | jq -r '.error // empty')
+
+# Display results
+if [ ! -z "$ERROR" ]; then
+    echo "❌ Trade failed: $ERROR"
+    echo "Full response: $BUY_RESPONSE"
+    exit 1
+fi
+
+if [ ! -z "$TX_HASH" ]; then
+    echo "✅ Trade executed successfully!"
+    echo "🔗 Transaction Hash: $TX_HASH"
+    echo "🌐 Explorer URL: $EXPLORER_URL"
+else
+    echo "❌ Failed to get transaction details from response"
+    echo "Response: $BUY_RESPONSE"
+    exit 1
+fi
+
+echo -e "\n✅ WIF buy execution test completed" 

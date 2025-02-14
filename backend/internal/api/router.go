@@ -40,10 +40,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (r *Router) setupRoutes() {
 	// Middleware
-	r.router.Use(middleware.Logger)
-	r.router.Use(middleware.Recoverer)
 	r.router.Use(middleware.RequestID)
 	r.router.Use(middleware.RealIP)
+	r.router.Use(middleware.Recoverer)
+	r.router.Use(DetailedLogger)
 
 	// Health check
 	r.router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
