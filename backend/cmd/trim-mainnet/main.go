@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -17,6 +18,7 @@ const (
 	defaultQuoteMint = "So11111111111111111111111111111111111111112" // SOL
 	outputFile       = "trimmed_mainnet.json"
 	raydiumURL       = "https://api.raydium.io/v2/sdk/liquidity/mainnet.json"
+	raydiumTokensURL = "https://api.raydium.io/v2/sdk/token/raydium.mainnet.json"
 )
 
 // RaydiumPool represents a Raydium liquidity pool
@@ -50,21 +52,33 @@ type RaydiumResponse struct {
 // Config holds the program configuration
 type Config struct {
 	inputFile string
+	tokenFile string
 	baseMint  string // Changed from tokenB to baseMint for clarity
+}
+
+// TokenInfo represents a token in Raydium's token list
+type TokenInfo struct {
+	Symbol   string `json:"symbol"`
+	Name     string `json:"name"`
+	Mint     string `json:"mint"`
+	Decimals int    `json:"decimals"`
+}
+
+// TokenListResponse represents the token list API response
+type TokenListResponse struct {
+	Official   []TokenInfo `json:"official"`
+	Unofficial []TokenInfo `json:"unOfficial"`
 }
 
 // parseFlags parses command line flags and returns config
 func parseFlags() Config {
 	var config Config
 
-	flag.StringVar(&config.inputFile, "file", "", "Path to existing JSON file (optional)")
-	flag.StringVar(&config.baseMint, "token", "", "Base token mint address to search for")
+	flag.StringVar(&config.inputFile, "file", "", "Path to existing pool JSON file (optional)")
+	flag.StringVar(&config.tokenFile, "token-file", "", "Path to existing token list JSON file (optional)")
+	flag.StringVar(&config.baseMint, "token", "", "Base token mint address (optional, will be fetched from API if not provided)")
 
 	flag.Parse()
-
-	if config.baseMint == "" {
-		log.Fatal("❌ --token parameter is required")
-	}
 
 	return config
 }
@@ -279,11 +293,135 @@ func writeFilteredPools(pools []RaydiumPool) error {
 	return nil
 }
 
+// getTokenAddress fetches the token address from Raydium's API
+func getTokenAddress(symbol string, tokenFile string) (string, error) {
+	var jsonFilePath string
+
+	if tokenFile != "" {
+		if !fileExists(tokenFile) {
+			return "", fmt.Errorf("token file does not exist: %s", tokenFile)
+		}
+		jsonFilePath = tokenFile
+		fmt.Printf("Using provided token file: %s\n", jsonFilePath)
+	} else {
+		// Create a temporary file for the token list
+		jsonFilePath = filepath.Join("tmp", fmt.Sprintf("raydium-tokens-%d.json", time.Now().UnixNano()))
+
+		// Download the token list with progress bar
+		if err := downloadFile(raydiumTokensURL, jsonFilePath); err != nil {
+			return "", fmt.Errorf("failed to download token list: %w", err)
+		}
+	}
+
+	// Open and parse the downloaded file
+	file, err := os.Open(jsonFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open token file: %w", err)
+	}
+	defer file.Close()
+
+	// Create a decoder for streaming JSON parsing
+	decoder := json.NewDecoder(file)
+
+	// Expect an object
+	t, err := decoder.Token()
+	if err != nil {
+		return "", fmt.Errorf("failed to read opening token: %w", err)
+	}
+	if delim, ok := t.(json.Delim); !ok || delim != '{' {
+		return "", fmt.Errorf("expected object start, got %v", t)
+	}
+
+	// Remove $ prefix if present and convert to uppercase for comparison
+	symbol = strings.ToUpper(strings.TrimPrefix(symbol, "$"))
+	tokenCount := 0
+
+	// Process the JSON structure
+	for decoder.More() {
+		key, err := decoder.Token()
+		if err != nil {
+			return "", fmt.Errorf("failed to read field name: %w", err)
+		}
+
+		if keyStr, ok := key.(string); ok {
+			switch keyStr {
+			case "official", "unOfficial":
+				// Expect array start
+				t, err := decoder.Token()
+				if err != nil {
+					return "", fmt.Errorf("failed to read array start: %w", err)
+				}
+				if delim, ok := t.(json.Delim); !ok || delim != '[' {
+					return "", fmt.Errorf("expected array start for %s, got %v", keyStr, t)
+				}
+
+				// Process tokens in this section
+				for decoder.More() {
+					tokenCount++
+					if tokenCount%100 == 0 {
+						fmt.Printf("\rProcessed %d tokens...", tokenCount)
+					}
+
+					var token TokenInfo
+					if err := decoder.Decode(&token); err != nil {
+						return "", fmt.Errorf("failed to decode token: %w", err)
+					}
+
+					if token.Symbol == symbol {
+						fmt.Printf("\n✅ Found %s token (%s):\n", symbol, keyStr)
+						fmt.Printf("  Name: %s\n", token.Name)
+						fmt.Printf("  Mint: %s\n", token.Mint)
+						fmt.Printf("  Decimals: %d\n", token.Decimals)
+						return token.Mint, nil
+					}
+				}
+
+				// Expect array end
+				t, err = decoder.Token()
+				if err != nil {
+					return "", fmt.Errorf("failed to read array end: %w", err)
+				}
+				if delim, ok := t.(json.Delim); !ok || delim != ']' {
+					return "", fmt.Errorf("expected array end for %s, got %v", keyStr, t)
+				}
+			default:
+				// Skip other fields
+				_, err := decoder.Token()
+				if err != nil {
+					return "", fmt.Errorf("failed to skip value: %w", err)
+				}
+			}
+		}
+	}
+
+	// Expect object end
+	t, err = decoder.Token()
+	if err != nil {
+		return "", fmt.Errorf("failed to read closing token: %w", err)
+	}
+	if delim, ok := t.(json.Delim); !ok || delim != '}' {
+		return "", fmt.Errorf("expected object end, got %v", t)
+	}
+
+	fmt.Printf("\nProcessed %d tokens total\n", tokenCount)
+	return "", fmt.Errorf("token %s not found", symbol)
+}
+
 func main() {
 	fmt.Println("🌊 Raydium Pool Fetcher")
 	fmt.Println("------------------------")
 
 	config := parseFlags()
+
+	// Get GIGA token address from Raydium API
+	gigaAddress, err := getTokenAddress("GIGA", config.tokenFile)
+	if err != nil {
+		log.Fatalf("❌ Failed to get GIGA token address: %v", err)
+	}
+
+	// Update config with GIGA address
+	config.baseMint = gigaAddress
+
 	fmt.Printf("Base Token: %s\n", config.baseMint)
 	fmt.Printf("Quote Token (SOL): %s\n\n", defaultQuoteMint)
 
@@ -328,5 +466,8 @@ func main() {
 
 	if config.inputFile == "" {
 		fmt.Printf("\n💡 Tip: Use --file=%s next time to skip downloading\n", jsonFilePath)
+	}
+	if config.tokenFile == "" && fileExists(filepath.Join("tmp", fmt.Sprintf("raydium-tokens-%d.json", time.Now().UnixNano()))) {
+		fmt.Printf("💡 Tip: Use --token-file=%s next time to skip downloading token list\n", filepath.Join("tmp", fmt.Sprintf("raydium-tokens-%d.json", time.Now().UnixNano())))
 	}
 }

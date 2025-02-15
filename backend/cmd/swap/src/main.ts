@@ -98,21 +98,21 @@ try {
   const poolData = JSON.parse(fs.readFileSync(SWAP_CONFIG.liquidityFile, 'utf-8'));
   if (!Array.isArray(poolData)) throw new Error('Invalid pool data');
   
-  // Filter for WIF/SOL pool
+  // Filter for the requested pool
   poolKeys = poolData.filter(pool => 
-    pool.baseMint === SWAP_CONFIG.tokenAAddress && // WIF is base token
-    pool.quoteMint === SWAP_CONFIG.tokenBAddress    // SOL is quote token
+    pool.baseMint === SWAP_CONFIG.tokenAAddress && 
+    pool.quoteMint === SWAP_CONFIG.tokenBAddress
   );
   
   if (poolKeys.length === 0) {
-    throw new Error('WIF/SOL pool not found in liquidity file');
+    throw new Error(`No valid pool found for ${SWAP_CONFIG.tokenAAddress} -> ${SWAP_CONFIG.tokenBAddress}`);
   }
 
   // Get decimals from pool data
-  const baseDecimals = poolKeys[0].baseDecimals;  // WIF decimals
-  const quoteDecimals = poolKeys[0].quoteDecimals; // SOL decimals
+  const baseDecimals = poolKeys[0].baseDecimals;
+  const quoteDecimals = poolKeys[0].quoteDecimals;
 
-  console.log(`ℹ️  Using decimals from pool: WIF=${baseDecimals}, SOL=${quoteDecimals}`);
+  console.log(`ℹ️  Using decimals from pool: base=${baseDecimals}, quote=${quoteDecimals}`);
 } catch (error) {
   console.error('Failed to load liquidity file:');
   console.error(error);
@@ -420,9 +420,9 @@ async function preflightChecks(): Promise<void> {
     }
     console.log('✅ Has SOL balance');
 
-    // Check WIF balance
-    console.log('🔍 Checking WIF balance...');
-    const wifTokenAccount = await getAssociatedTokenAddress(
+    // Check token A balance
+    console.log('🔍 Checking input token balance...');
+    const tokenAAccount = await getAssociatedTokenAddress(
       new PublicKey(SWAP_CONFIG.tokenAAddress),
       walletKeypair.publicKey,
       false,
@@ -430,16 +430,16 @@ async function preflightChecks(): Promise<void> {
     );
     
     try {
-      const tokenAccount = await getAccount(connection, wifTokenAccount);
-      const wifBalance = Number(tokenAccount.amount) / (10 ** poolKeys[0].baseDecimals); // Use pool decimals
-      console.log(`💰 WIF balance: ${wifBalance} WIF`);
+      const tokenAccount = await getAccount(connection, tokenAAccount);
+      const tokenABalance = Number(tokenAccount.amount) / (10 ** poolKeys[0].baseDecimals);
+      console.log(`💰 Input token balance: ${tokenABalance}`);
 
       // Get swap quote to check required input amount
       console.log('🧮 Computing swap quote...');
       const quoteParams = new URLSearchParams({
         inputMint: SWAP_CONFIG.tokenAAddress,
         outputMint: SWAP_CONFIG.tokenBAddress,
-        amount: (SWAP_CONFIG.tokenAAmount * (10 ** poolKeys[0].baseDecimals)).toString(), // Convert using pool decimals
+        amount: (SWAP_CONFIG.tokenAAmount * (10 ** poolKeys[0].baseDecimals)).toString(),
         slippageBps: (SWAP_CONFIG.slippage * 100).toString(),
         txVersion: 'LEGACY'
       });
@@ -455,17 +455,17 @@ async function preflightChecks(): Promise<void> {
         process.exit(1);
       }
 
-      const requiredWIF = swapResponse.data.inputAmount / (10 ** poolKeys[0].baseDecimals); // Convert using pool decimals
-      console.log(`📊 Required WIF: ${requiredWIF} WIF`);
+      const requiredAmount = swapResponse.data.inputAmount / (10 ** poolKeys[0].baseDecimals);
+      console.log(`📊 Required input amount: ${requiredAmount}`);
       
-      if (wifBalance < requiredWIF) {
-        throw new Error(`Insufficient WIF balance. Have ${wifBalance} WIF, need ${requiredWIF} WIF`);
+      if (tokenABalance < requiredAmount) {
+        throw new Error(`Insufficient balance. Have ${tokenABalance}, need ${requiredAmount}`);
       }
-      console.log('✅ Has sufficient WIF balance');
+      console.log('✅ Has sufficient balance');
     } catch (error: any) {
       if (error.name === 'TokenAccountNotFoundError') {
-        console.error('❌ No WIF token account found');
-        throw new Error('No WIF token account found');
+        console.error('❌ No token account found');
+        throw new Error(`No token account found for ${SWAP_CONFIG.tokenAAddress}`);
       }
       throw error;
     }
