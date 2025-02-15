@@ -14,17 +14,8 @@
     "baseDecimals": 9,
     "quoteDecimals": 6,
     "lpDecimals": 9,
-    "withdrawQueue": "11111111111111111111111111111111",
-    "lpVault": "11111111111111111111111111111111",
     "marketVersion": 3,
     "marketProgramId": "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX",
-    "marketId": "8BnEgHoWFysVcuFFX7QztDmzuH8r5ZFvyP3sYwn1XTh6",
-    "marketAuthority": "CTz5UMLQm2SRWHzQnU62Pi4yJqbNGjgRBHqqp6oDHfF7",
-    "marketBaseVault": "CKxTHwM9fPMRRvZmFnFoqKNd9pQR21c5Aq9bh5h9oghX",
-    "marketQuoteVault": "6A5NHCj1yF6urc9wZNe6Bcjj4LVszQNj5DwAWG97yzMu",
-    "marketBids": "5jWUncPNBMZJ3sTHKmMLszypVkoRK6bfEQMQUHweeQnh",
-    "marketAsks": "EaXdHx7x3mdGA38j5RSmKYSXMzAFzzUXCLNBEDXDn1d5",
-    "marketEventQueue": "8CvwxZ9Db6XbLD46NZwwmVDZZRDy7eydFcAGkXKh9axa",
-    "lookupTableAccount": "8rG5WFRriQYz3SiYSjB2V7TVCqJiTfur23foeRkWLD67"
+    "marketId": "8BnEgHoWFysVcuFFX7QztDmzuH8r5ZFvyP3sYwn1XTh6"
   }
 ]
