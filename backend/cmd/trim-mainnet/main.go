@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -43,8 +42,9 @@ type RaydiumPool struct {
 
 // RaydiumResponse represents the API response structure
 type RaydiumResponse struct {
-	Name     string        `json:"name"`
-	Official []RaydiumPool `json:"official"`
+	Name       string        `json:"name"`
+	Official   []RaydiumPool `json:"official"`
+	Unofficial []RaydiumPool `json:"unOfficial"`
 }
 
 // Config holds the program configuration
@@ -162,88 +162,120 @@ func validateJSON(filePath string) error {
 
 // processPoolsFile processes the downloaded JSON file and filters pools
 func processPoolsFile(tempFilePath string, baseMint string) ([]RaydiumPool, error) {
-	// Read the file
 	file, err := os.Open(tempFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open temp file: %w", err)
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
 
 	fmt.Println("Processing pools...")
 
-	// Create a decoder for the file
 	decoder := json.NewDecoder(file)
 
-	// Read the response
-	var response RaydiumResponse
-	if err := decoder.Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode JSON: %w", err)
+	if _, err := decoder.Token(); err != nil {
+		return nil, fmt.Errorf("failed to read opening token: %w", err)
 	}
 
-	// Debug: Print search parameters
-	fmt.Println("\nSearching for pools...")
-	fmt.Printf("Base Token (WIF): %s\n", baseMint)
-	fmt.Printf("Quote Token (SOL): %s\n\n", defaultQuoteMint)
-
-	// Filter pools
 	var matchingPools []RaydiumPool
-	searchBaseMint := strings.ToLower(baseMint)
-	searchQuoteMint := strings.ToLower(defaultQuoteMint)
+	officialCount := 0
+	unofficialCount := 0
+	currentSection := ""
 
-	fmt.Printf("Looking for pools containing Base Token (lowercase):\n")
-	fmt.Printf("  %s\n\n", searchBaseMint)
-
-	for _, pool := range response.Official {
-		poolBaseMint := strings.ToLower(pool.BaseMint)
-		poolQuoteMint := strings.ToLower(pool.QuoteMint)
-
-		// Only show pools that contain our base token
-		if poolBaseMint == searchBaseMint {
-			fmt.Printf("Found pool with WIF as base token:\n")
-			fmt.Printf("  Pool ID: %s\n", pool.ID)
-			fmt.Printf("  Base:  %s\n", pool.BaseMint)
-			fmt.Printf("  Quote: %s\n", pool.QuoteMint)
-			if poolQuoteMint == searchQuoteMint {
-				fmt.Printf("  ✅ This pool matches our criteria!\n")
+	// Helper function to process a pool
+	processPool := func(pool RaydiumPool, isOfficial bool) {
+		if pool.BaseMint == baseMint || pool.QuoteMint == baseMint {
+			// Check if this is a WIF/SOL pair
+			if (pool.BaseMint == baseMint && pool.QuoteMint == defaultQuoteMint) ||
+				(pool.QuoteMint == baseMint && pool.BaseMint == defaultQuoteMint) {
+				fmt.Printf("\n📊 Pool Details (%s):\n", map[bool]string{true: "Official", false: "Unofficial"}[isOfficial])
+				fmt.Printf("  ID: %s\n", pool.ID)
+				fmt.Printf("  Base Token:  %s\n", pool.BaseMint)
+				fmt.Printf("  Quote Token: %s\n", pool.QuoteMint)
+				fmt.Printf("  LP Token:    %s\n", pool.LPMint)
+				fmt.Printf("  ✨ WIF/SOL pair found!\n")
 				matchingPools = append(matchingPools, pool)
 			}
-			fmt.Println()
 		}
 	}
 
-	if len(matchingPools) == 0 {
-		fmt.Println("❌ No pools found matching both Base (WIF) and Quote (SOL) tokens")
-	} else {
-		fmt.Printf("✅ Found %d matching pool(s)\n", len(matchingPools))
+	// Process the JSON structure
+	for decoder.More() {
+		token, err := decoder.Token()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read field name: %w", err)
+		}
+
+		if key, ok := token.(string); ok {
+			switch key {
+			case "name":
+				if _, err := decoder.Token(); err != nil {
+					return nil, fmt.Errorf("failed to skip name value: %w", err)
+				}
+			case "official", "unOfficial":
+				currentSection = key
+
+				t, err := decoder.Token()
+				if err != nil {
+					return nil, fmt.Errorf("failed to read array start: %w", err)
+				}
+				if delim, ok := t.(json.Delim); !ok || delim != '[' {
+					return nil, fmt.Errorf("expected array start, got %v", t)
+				}
+
+				for decoder.More() {
+					var pool RaydiumPool
+					if err := decoder.Decode(&pool); err != nil {
+						return nil, fmt.Errorf("failed to decode pool: %w", err)
+					}
+
+					if currentSection == "official" {
+						officialCount++
+						processPool(pool, true)
+					} else {
+						unofficialCount++
+						if unofficialCount%100000 == 0 {
+							fmt.Printf("\rProcessed %dk unofficial pools...", unofficialCount/1000)
+						}
+						processPool(pool, false)
+					}
+				}
+
+				t, err = decoder.Token()
+				if err != nil {
+					return nil, fmt.Errorf("failed to read array end: %w", err)
+				}
+				if delim, ok := t.(json.Delim); !ok || delim != ']' {
+					return nil, fmt.Errorf("expected array end, got %v", t)
+				}
+
+				if currentSection == "unOfficial" {
+					fmt.Printf("\rProcessed %dk unofficial pools\n", unofficialCount/1000)
+				}
+			}
+		}
 	}
 
+	fmt.Printf("\n🎯 Found %d WIF/SOL pairs\n", len(matchingPools))
 	return matchingPools, nil
 }
 
 // writeFilteredPools writes the filtered pools to the output file
 func writeFilteredPools(pools []RaydiumPool) error {
-	fmt.Printf("Found %d matching pools\n", len(pools))
-
-	// Create the full response structure
-	response := RaydiumResponse{
-		Name:     "Raydium Mainnet Liquidity Pools",
-		Official: pools,
-	}
-
-	// Marshal with proper indentation (2 spaces)
-	data, err := json.MarshalIndent(response, "", "  ")
+	file, err := os.Create(outputFile)
 	if err != nil {
-		return fmt.Errorf("failed to marshal pools: %w", err)
+		return fmt.Errorf("failed to create output file: %w", err)
 	}
+	defer file.Close()
 
-	// Add newline at the end of the file
-	data = append(data, '\n')
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
 
-	// Write with proper permissions
-	if err := os.WriteFile(outputFile, data, 0o644); err != nil {
+	// Write directly the array of pools instead of wrapping in RaydiumResponse
+	if err := encoder.Encode(pools); err != nil {
 		return fmt.Errorf("failed to write output file: %w", err)
 	}
 
+	fmt.Printf("✅ Successfully wrote %d filtered pools to %s\n", len(pools), outputFile)
 	return nil
 }
 
@@ -251,62 +283,49 @@ func main() {
 	fmt.Println("🌊 Raydium Pool Fetcher")
 	fmt.Println("------------------------")
 
-	// Parse command line flags
 	config := parseFlags()
 	fmt.Printf("Base Token: %s\n", config.baseMint)
-	fmt.Printf("Quote Token (SOL): %s\n", defaultQuoteMint)
+	fmt.Printf("Quote Token (SOL): %s\n\n", defaultQuoteMint)
 
 	var jsonFilePath string
 
 	if config.inputFile != "" {
-		// Use provided file
 		if !fileExists(config.inputFile) {
 			log.Fatalf("❌ Provided file does not exist: %s", config.inputFile)
 		}
 		jsonFilePath = config.inputFile
-		fmt.Printf("Using provided file: %s\n\n", jsonFilePath)
+		fmt.Printf("Using provided file: %s\n", jsonFilePath)
 	} else {
-		// Create tmp directory if it doesn't exist
 		if err := os.MkdirAll("tmp", 0o755); err != nil {
 			log.Fatalf("❌ Failed to create tmp directory: %v", err)
 		}
 
-		// Download to a new file
 		jsonFilePath = filepath.Join("tmp", fmt.Sprintf("raydium-pools-%d.json", time.Now().UnixNano()))
-		fmt.Printf("Downloading to: %s\n", jsonFilePath)
 
 		if err := downloadFile(raydiumURL, jsonFilePath); err != nil {
 			log.Fatalf("❌ Download failed: %v", err)
 		}
 	}
 
-	// Validate the JSON file
 	if err := validateJSON(jsonFilePath); err != nil {
 		if config.inputFile == "" {
-			// Clean up the downloaded file if it's invalid
 			os.Remove(jsonFilePath)
 		}
 		log.Fatalf("❌ Invalid JSON file: %v", err)
 	}
 
-	// Process the pools
 	pools, err := processPoolsFile(jsonFilePath, config.baseMint)
 	if err != nil {
 		if config.inputFile == "" {
-			// Clean up the downloaded file if processing fails
 			os.Remove(jsonFilePath)
 		}
 		log.Fatalf("❌ Failed to process pools: %v", err)
 	}
 
-	// Write filtered pools to output file
 	if err := writeFilteredPools(pools); err != nil {
 		log.Fatalf("❌ Failed to write filtered pools: %v", err)
 	}
 
-	fmt.Printf("✅ Successfully wrote %d filtered pools to %s\n", len(pools), outputFile)
-
-	// If we downloaded the file, suggest using it next time
 	if config.inputFile == "" {
 		fmt.Printf("\n💡 Tip: Use --file=%s next time to skip downloading\n", jsonFilePath)
 	}

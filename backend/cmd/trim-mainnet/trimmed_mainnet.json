@@ -1,4 +1,40 @@
-{
-  "name": "Raydium Mainnet Liquidity Pools",
-  "official": null
-}
+[
+  {
+    "id": "EP2ib6dYdEeqD8MfE2ezHCxX3kP3K2eLKkirfPm5eyMx",
+    "baseMint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+    "quoteMint": "So11111111111111111111111111111111111111112",
+    "lpMint": "CQurpF3WS3yEqFEt1Bu8s5zmZqznQG3EJkcYvsyg3sLc",
+    "programId": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
+    "authority": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+    "openOrders": "6jeayPbLeJq9o6zXbCtLsEJuPyPFyojWoH55xrksfsoL",
+    "targetOrders": "2yBDs44FDGZeXbnx1MdmAMYx9ndFFVWTbcrjJB1JMLSR",
+    "baseVault": "7UYZ4vX13mmGiopayLZAduo8aie77yZ3o8FMzTeAX8uJ",
+    "quoteVault": "7e9ExBAvDvuJP3GE6eKL5aSMi4RfXv3LkQaiNZBPmffR",
+    "version": 5,
+    "baseDecimals": 6,
+    "quoteDecimals": 9,
+    "lpDecimals": 6,
+    "marketVersion": 3,
+    "marketProgramId": "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX",
+    "marketId": "EzMCG3oJpXu2enNAh2A18iSg6Giq3Bt1wPDFDDiYgxeY"
+  },
+  {
+    "id": "D5MzuR2BVKhhLe5S2LiWHeLUv4QVr1mc2MC2PWdHZWtU",
+    "baseMint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+    "quoteMint": "So11111111111111111111111111111111111111112",
+    "lpMint": "6DTuhmc1kDF1B6YeS9JP9vd1gTnawheVF9ozQ4641uQ1",
+    "programId": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
+    "authority": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+    "openOrders": "CF3TGZTcBBv1ysxqTfRD2sP4Pu4TH6at62HU7Uc8mS3f",
+    "targetOrders": "CCzsbLUiM1jdTF7BhCF91hX9xmEUu62ocupy1B76oqgz",
+    "baseVault": "Dn9DSWU5EV6TBW9Qc1a1WHGkWiP1mtTyXQiUg5KP6j9T",
+    "quoteVault": "vTPBVtqUubnbebWegTDMCKH7cVTbCXnVMM6V11ZqH1a",
+    "version": 5,
+    "baseDecimals": 6,
+    "quoteDecimals": 9,
+    "lpDecimals": 6,
+    "marketVersion": 3,
+    "marketProgramId": "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX",
+    "marketId": "9LrpuhN2xjmVbQDt1BQbWt9Jmn2wLjkZtEhM4MTH5FfP"
+  }
+]
