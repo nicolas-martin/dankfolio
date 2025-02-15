@@ -54,6 +54,7 @@ type Config struct {
 	inputFile string
 	tokenFile string
 	baseMint  string // Changed from tokenB to baseMint for clarity
+	ticker    string // Added ticker field
 }
 
 // TokenInfo represents a token in Raydium's token list
@@ -70,6 +71,17 @@ type TokenListResponse struct {
 	Unofficial []TokenInfo `json:"unOfficial"`
 }
 
+// TokenPoolInfo combines token information with its pools
+type TokenPoolInfo struct {
+	Token TokenInfo     `json:"token"`
+	Pools []RaydiumPool `json:"pools"`
+}
+
+// TokenPoolInfoList represents a list of token and pool information
+type TokenPoolInfoList struct {
+	Tokens []TokenPoolInfo `json:"tokens"`
+}
+
 // parseFlags parses command line flags and returns config
 func parseFlags() Config {
 	var config Config
@@ -77,6 +89,7 @@ func parseFlags() Config {
 	flag.StringVar(&config.inputFile, "file", "", "Path to existing pool JSON file (optional)")
 	flag.StringVar(&config.tokenFile, "token-file", "", "Path to existing token list JSON file (optional)")
 	flag.StringVar(&config.baseMint, "token", "", "Base token mint address (optional, will be fetched from API if not provided)")
+	flag.StringVar(&config.ticker, "ticker", "GIGA", "Token ticker symbol to search for (default: GIGA)")
 
 	flag.Parse()
 
@@ -175,8 +188,8 @@ func validateJSON(filePath string) error {
 }
 
 // processPoolsFile processes the downloaded JSON file and filters pools
-func processPoolsFile(tempFilePath string, baseMint string) ([]RaydiumPool, error) {
-	file, err := os.Open(tempFilePath)
+func processPoolsFile(filePath string, baseMint string, ticker string) ([]RaydiumPool, error) {
+	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
@@ -191,14 +204,13 @@ func processPoolsFile(tempFilePath string, baseMint string) ([]RaydiumPool, erro
 	}
 
 	var matchingPools []RaydiumPool
-	officialCount := 0
-	unofficialCount := 0
-	currentSection := ""
+	var currentSection string
+	var officialCount, unofficialCount int
 
 	// Helper function to process a pool
 	processPool := func(pool RaydiumPool, isOfficial bool) {
 		if pool.BaseMint == baseMint || pool.QuoteMint == baseMint {
-			// Check if this is a WIF/SOL pair
+			// Check if this is a token/SOL pair
 			if (pool.BaseMint == baseMint && pool.QuoteMint == defaultQuoteMint) ||
 				(pool.QuoteMint == baseMint && pool.BaseMint == defaultQuoteMint) {
 				fmt.Printf("\n📊 Pool Details (%s):\n", map[bool]string{true: "Official", false: "Unofficial"}[isOfficial])
@@ -206,7 +218,7 @@ func processPoolsFile(tempFilePath string, baseMint string) ([]RaydiumPool, erro
 				fmt.Printf("  Base Token:  %s\n", pool.BaseMint)
 				fmt.Printf("  Quote Token: %s\n", pool.QuoteMint)
 				fmt.Printf("  LP Token:    %s\n", pool.LPMint)
-				fmt.Printf("  ✨ WIF/SOL pair found!\n")
+				fmt.Printf("  ✨ %s/SOL pair found!\n", strings.ToUpper(ticker))
 				matchingPools = append(matchingPools, pool)
 			}
 		}
@@ -269,12 +281,148 @@ func processPoolsFile(tempFilePath string, baseMint string) ([]RaydiumPool, erro
 		}
 	}
 
-	fmt.Printf("\n🎯 Found %d WIF/SOL pairs\n", len(matchingPools))
+	fmt.Printf("\n🎯 Found %d %s/SOL pairs\n", len(matchingPools), strings.ToUpper(ticker))
 	return matchingPools, nil
 }
 
-// writeFilteredPools writes the filtered pools to the output file
-func writeFilteredPools(pools []RaydiumPool) error {
+// getTokenAddress fetches the token address from Raydium's API
+func getTokenAddress(symbol string, tokenFile string) (*TokenInfo, error) {
+	var jsonFilePath string
+
+	if tokenFile != "" {
+		if !fileExists(tokenFile) {
+			return nil, fmt.Errorf("token file does not exist: %s", tokenFile)
+		}
+		jsonFilePath = tokenFile
+		fmt.Printf("Using provided token file: %s\n", jsonFilePath)
+	} else {
+		jsonFilePath = filepath.Join("tmp", fmt.Sprintf("raydium-tokens-%d.json", time.Now().UnixNano()))
+		if err := downloadFile(raydiumTokensURL, jsonFilePath); err != nil {
+			return nil, fmt.Errorf("failed to download token list: %w", err)
+		}
+	}
+
+	file, err := os.Open(jsonFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open token file: %w", err)
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	t, err := decoder.Token()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read opening token: %w", err)
+	}
+	if delim, ok := t.(json.Delim); !ok || delim != '{' {
+		return nil, fmt.Errorf("expected object start, got %v", t)
+	}
+
+	symbol = strings.ToUpper(strings.TrimPrefix(symbol, "$"))
+	tokenCount := 0
+
+	for decoder.More() {
+		key, err := decoder.Token()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read field name: %w", err)
+		}
+
+		if keyStr, ok := key.(string); ok {
+			switch keyStr {
+			case "official", "unOfficial":
+				t, err := decoder.Token()
+				if err != nil {
+					return nil, fmt.Errorf("failed to read array start: %w", err)
+				}
+				if delim, ok := t.(json.Delim); !ok || delim != '[' {
+					return nil, fmt.Errorf("expected array start for %s, got %v", keyStr, t)
+				}
+
+				for decoder.More() {
+					tokenCount++
+					if tokenCount%100 == 0 {
+						fmt.Printf("\rProcessed %d tokens...", tokenCount)
+					}
+
+					var token TokenInfo
+					if err := decoder.Decode(&token); err != nil {
+						return nil, fmt.Errorf("failed to decode token: %w", err)
+					}
+
+					if token.Symbol == symbol {
+						fmt.Printf("\n✅ Found %s token (%s):\n", symbol, keyStr)
+						fmt.Printf("  Name: %s\n", token.Name)
+						fmt.Printf("  Mint: %s\n", token.Mint)
+						fmt.Printf("  Decimals: %d\n", token.Decimals)
+						return &token, nil
+					}
+				}
+
+				t, err = decoder.Token()
+				if err != nil {
+					return nil, fmt.Errorf("failed to read array end: %w", err)
+				}
+				if delim, ok := t.(json.Delim); !ok || delim != ']' {
+					return nil, fmt.Errorf("expected array end for %s, got %v", keyStr, t)
+				}
+			default:
+				_, err := decoder.Token()
+				if err != nil {
+					return nil, fmt.Errorf("failed to skip value: %w", err)
+				}
+			}
+		}
+	}
+
+	t, err = decoder.Token()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read closing token: %w", err)
+	}
+	if delim, ok := t.(json.Delim); !ok || delim != '}' {
+		return nil, fmt.Errorf("expected object end, got %v", t)
+	}
+
+	fmt.Printf("\nProcessed %d tokens total\n", tokenCount)
+	return nil, fmt.Errorf("token %s not found", symbol)
+}
+
+// writeFilteredPools writes or appends the filtered pools to the output file
+func writeFilteredPools(tokenInfo *TokenInfo, pools []RaydiumPool) error {
+	var tokenList TokenPoolInfoList
+
+	// Try to read existing file
+	if fileExists(outputFile) {
+		existingFile, err := os.ReadFile(outputFile)
+		if err != nil {
+			return fmt.Errorf("failed to read existing output file: %w", err)
+		}
+
+		if err := json.Unmarshal(existingFile, &tokenList); err != nil {
+			// If the file exists but isn't in the new format, try to read it as a single TokenPoolInfo
+			var oldFormat TokenPoolInfo
+			if err := json.Unmarshal(existingFile, &oldFormat); err != nil {
+				return fmt.Errorf("failed to parse existing output file: %w", err)
+			}
+			// Convert old format to new format
+			tokenList.Tokens = []TokenPoolInfo{oldFormat}
+		}
+
+		// Check if token already exists
+		for _, existing := range tokenList.Tokens {
+			if existing.Token.Symbol == tokenInfo.Symbol {
+				fmt.Printf("⚠️  Token %s already exists in the output file, skipping...\n", tokenInfo.Symbol)
+				return nil
+			}
+		}
+	}
+
+	// Add new token info
+	newToken := TokenPoolInfo{
+		Token: *tokenInfo,
+		Pools: pools,
+	}
+	tokenList.Tokens = append(tokenList.Tokens, newToken)
+
+	// Write back to file
 	file, err := os.Create(outputFile)
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
@@ -284,127 +432,13 @@ func writeFilteredPools(pools []RaydiumPool) error {
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 
-	// Write directly the array of pools instead of wrapping in RaydiumResponse
-	if err := encoder.Encode(pools); err != nil {
+	if err := encoder.Encode(tokenList); err != nil {
 		return fmt.Errorf("failed to write output file: %w", err)
 	}
 
-	fmt.Printf("✅ Successfully wrote %d filtered pools to %s\n", len(pools), outputFile)
+	fmt.Printf("✅ Successfully wrote/updated token info and %d pools to %s\n", len(pools), outputFile)
+	fmt.Printf("📊 File now contains information for %d tokens\n", len(tokenList.Tokens))
 	return nil
-}
-
-// getTokenAddress fetches the token address from Raydium's API
-func getTokenAddress(symbol string, tokenFile string) (string, error) {
-	var jsonFilePath string
-
-	if tokenFile != "" {
-		if !fileExists(tokenFile) {
-			return "", fmt.Errorf("token file does not exist: %s", tokenFile)
-		}
-		jsonFilePath = tokenFile
-		fmt.Printf("Using provided token file: %s\n", jsonFilePath)
-	} else {
-		// Create a temporary file for the token list
-		jsonFilePath = filepath.Join("tmp", fmt.Sprintf("raydium-tokens-%d.json", time.Now().UnixNano()))
-
-		// Download the token list with progress bar
-		if err := downloadFile(raydiumTokensURL, jsonFilePath); err != nil {
-			return "", fmt.Errorf("failed to download token list: %w", err)
-		}
-	}
-
-	// Open and parse the downloaded file
-	file, err := os.Open(jsonFilePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to open token file: %w", err)
-	}
-	defer file.Close()
-
-	// Create a decoder for streaming JSON parsing
-	decoder := json.NewDecoder(file)
-
-	// Expect an object
-	t, err := decoder.Token()
-	if err != nil {
-		return "", fmt.Errorf("failed to read opening token: %w", err)
-	}
-	if delim, ok := t.(json.Delim); !ok || delim != '{' {
-		return "", fmt.Errorf("expected object start, got %v", t)
-	}
-
-	// Remove $ prefix if present and convert to uppercase for comparison
-	symbol = strings.ToUpper(strings.TrimPrefix(symbol, "$"))
-	tokenCount := 0
-
-	// Process the JSON structure
-	for decoder.More() {
-		key, err := decoder.Token()
-		if err != nil {
-			return "", fmt.Errorf("failed to read field name: %w", err)
-		}
-
-		if keyStr, ok := key.(string); ok {
-			switch keyStr {
-			case "official", "unOfficial":
-				// Expect array start
-				t, err := decoder.Token()
-				if err != nil {
-					return "", fmt.Errorf("failed to read array start: %w", err)
-				}
-				if delim, ok := t.(json.Delim); !ok || delim != '[' {
-					return "", fmt.Errorf("expected array start for %s, got %v", keyStr, t)
-				}
-
-				// Process tokens in this section
-				for decoder.More() {
-					tokenCount++
-					if tokenCount%100 == 0 {
-						fmt.Printf("\rProcessed %d tokens...", tokenCount)
-					}
-
-					var token TokenInfo
-					if err := decoder.Decode(&token); err != nil {
-						return "", fmt.Errorf("failed to decode token: %w", err)
-					}
-
-					if token.Symbol == symbol {
-						fmt.Printf("\n✅ Found %s token (%s):\n", symbol, keyStr)
-						fmt.Printf("  Name: %s\n", token.Name)
-						fmt.Printf("  Mint: %s\n", token.Mint)
-						fmt.Printf("  Decimals: %d\n", token.Decimals)
-						return token.Mint, nil
-					}
-				}
-
-				// Expect array end
-				t, err = decoder.Token()
-				if err != nil {
-					return "", fmt.Errorf("failed to read array end: %w", err)
-				}
-				if delim, ok := t.(json.Delim); !ok || delim != ']' {
-					return "", fmt.Errorf("expected array end for %s, got %v", keyStr, t)
-				}
-			default:
-				// Skip other fields
-				_, err := decoder.Token()
-				if err != nil {
-					return "", fmt.Errorf("failed to skip value: %w", err)
-				}
-			}
-		}
-	}
-
-	// Expect object end
-	t, err = decoder.Token()
-	if err != nil {
-		return "", fmt.Errorf("failed to read closing token: %w", err)
-	}
-	if delim, ok := t.(json.Delim); !ok || delim != '}' {
-		return "", fmt.Errorf("expected object end, got %v", t)
-	}
-
-	fmt.Printf("\nProcessed %d tokens total\n", tokenCount)
-	return "", fmt.Errorf("token %s not found", symbol)
 }
 
 func main() {
@@ -413,16 +447,16 @@ func main() {
 
 	config := parseFlags()
 
-	// Get GIGA token address from Raydium API
-	gigaAddress, err := getTokenAddress("GIGA", config.tokenFile)
+	// Get token address from Raydium API using provided ticker
+	tokenInfo, err := getTokenAddress(config.ticker, config.tokenFile)
 	if err != nil {
-		log.Fatalf("❌ Failed to get GIGA token address: %v", err)
+		log.Fatalf("❌ Failed to get %s token address: %v", config.ticker, err)
 	}
 
-	// Update config with GIGA address
-	config.baseMint = gigaAddress
+	// Update config with token address
+	config.baseMint = tokenInfo.Mint
 
-	fmt.Printf("Base Token: %s\n", config.baseMint)
+	fmt.Printf("Base Token (%s): %s\n", config.ticker, config.baseMint)
 	fmt.Printf("Quote Token (SOL): %s\n\n", defaultQuoteMint)
 
 	var jsonFilePath string
@@ -452,7 +486,7 @@ func main() {
 		log.Fatalf("❌ Invalid JSON file: %v", err)
 	}
 
-	pools, err := processPoolsFile(jsonFilePath, config.baseMint)
+	pools, err := processPoolsFile(jsonFilePath, config.baseMint, config.ticker)
 	if err != nil {
 		if config.inputFile == "" {
 			os.Remove(jsonFilePath)
@@ -460,7 +494,7 @@ func main() {
 		log.Fatalf("❌ Failed to process pools: %v", err)
 	}
 
-	if err := writeFilteredPools(pools); err != nil {
+	if err := writeFilteredPools(tokenInfo, pools); err != nil {
 		log.Fatalf("❌ Failed to write filtered pools: %v", err)
 	}
 
