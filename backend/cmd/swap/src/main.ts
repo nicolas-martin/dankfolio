@@ -83,11 +83,11 @@ const walletKeypair = Keypair.fromSecretKey(new Uint8Array(walletKeyBuffer));
 
 // 3. Swap Configuration
 const SWAP_CONFIG: SwapConfig = {
-  tokenAAmount: 0.5,    // Amount in WIF we want to swap
-  tokenAAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', // WIF (now tokenA since we're swapping from WIF)
-  tokenBAddress: 'So11111111111111111111111111111111111111112',  // SOL (now tokenB since we're swapping to SOL)
-  direction: 'out',     // WIF → SOL (we specify the output amount in SOL)
-  slippage: 1.0,        // 1% slippage
+  tokenAAmount: 0.1,     // Minimal amount of WIF to swap
+  tokenAAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', // WIF (base token)
+  tokenBAddress: 'So11111111111111111111111111111111111111112',  // SOL (quote token)
+  direction: 'in',      // Testing with 'in' direction
+  slippage: 2.0,       // 2% slippage
   maxRetries: 3,
   liquidityFile: join(__dirname, '../../trim-mainnet/trimmed_mainnet.json')
 };
@@ -98,15 +98,21 @@ try {
   const poolData = JSON.parse(fs.readFileSync(SWAP_CONFIG.liquidityFile, 'utf-8'));
   if (!Array.isArray(poolData)) throw new Error('Invalid pool data');
   
-  // Filter for WIF/SOL pool - Note the reversed order since we're swapping WIF to SOL
+  // Filter for WIF/SOL pool
   poolKeys = poolData.filter(pool => 
-    pool.quoteMint === SWAP_CONFIG.tokenBAddress && // SOL is quote token
-    pool.baseMint === SWAP_CONFIG.tokenAAddress     // WIF is base token
+    pool.baseMint === SWAP_CONFIG.tokenAAddress && // WIF is base token
+    pool.quoteMint === SWAP_CONFIG.tokenBAddress    // SOL is quote token
   );
   
   if (poolKeys.length === 0) {
     throw new Error('WIF/SOL pool not found in liquidity file');
   }
+
+  // Get decimals from pool data
+  const baseDecimals = poolKeys[0].baseDecimals;  // WIF decimals
+  const quoteDecimals = poolKeys[0].quoteDecimals; // SOL decimals
+
+  console.log(`ℹ️  Using decimals from pool: WIF=${baseDecimals}, SOL=${quoteDecimals}`);
 } catch (error) {
   console.error('Failed to load liquidity file:');
   console.error(error);
@@ -139,11 +145,23 @@ async function getOrCreateTokenAccount(mint: PublicKey): Promise<string> {
   }
 }
 
+async function getPriorityFee(): Promise<number> {
+  try {
+    const response = await axios.get('https://api.helius.xyz/v0/priority-fee-estimate');
+    const { data } = response;
+    
+    // Use a more reasonable priority fee - 1M microLamports
+    const priorityFee = 1_000_000;
+    console.log(`💸 Priority fee (high): ${priorityFee} microLamports`);
+    return priorityFee;
+  } catch (error) {
+    console.warn('⚠️  Failed to fetch priority fee, using default');
+    return 500_000; // Default to 500k microLamports if API fails
+  }
+}
+
 async function createSwapTransaction(): Promise<Transaction> {
   console.log('\n🔍 Creating swap transaction...');
-  
-  // Get the pool info for the token pair
-  const pool = poolKeys[0];
   
   // Get WIF token account
   console.log('🔑 Getting WIF token account...');
@@ -152,21 +170,21 @@ async function createSwapTransaction(): Promise<Transaction> {
   // Define tokens based on pool data
   const tokenA = new Token({
     mint: new PublicKey(SWAP_CONFIG.tokenAAddress),
-    decimals: pool.baseDecimals,
+    decimals: poolKeys[0].baseDecimals,
     symbol: 'WIF'
   });
   
   const tokenB = new Token({
     mint: new PublicKey(SWAP_CONFIG.tokenBAddress),
-    decimals: pool.quoteDecimals,
+    decimals: poolKeys[0].quoteDecimals,
     symbol: 'SOL'
   });
 
   // Convert amount using the correct decimals from pool data
   const amount = SWAP_CONFIG.tokenAAmount * (
     SWAP_CONFIG.direction === 'in' 
-      ? 10 ** pool.baseDecimals  // WIF -> SOL: use base decimals
-      : 10 ** pool.quoteDecimals // SOL -> WIF: use quote decimals
+      ? 10 ** poolKeys[0].baseDecimals  // WIF -> SOL: use base decimals
+      : 10 ** poolKeys[0].quoteDecimals // SOL -> WIF: use quote decimals
   );
   const slippage = SWAP_CONFIG.slippage;
 
@@ -176,13 +194,9 @@ async function createSwapTransaction(): Promise<Transaction> {
   console.log(`🔄 Direction: SOL ${directionSymbol} WIF`);
   console.log(`📊 Slippage: ${SWAP_CONFIG.slippage}%`);
   
-  // Step 1: Get priority fee (can be 'vh' for very high, 'h' for high, 'm' for medium)
+  // Step 1: Get priority fee (using 'vh' for very high priority)
   console.log('📡 Fetching priority fee...');
-  const { data: feeData } = await axios.get(
-    `${API_URLS.BASE_HOST}${API_URLS.PRIORITY_FEE}`
-  );
-  const priorityFee = String(feeData.data.default.h); // Using high priority
-  console.log(`💸 Priority fee (high): ${priorityFee} microLamports`);
+  const priorityFee = await getPriorityFee();
 
   // Step 2: Get swap quote
   console.log('🧮 Computing swap quote...');
@@ -210,8 +224,8 @@ async function createSwapTransaction(): Promise<Transaction> {
   if (swapResponse.data) {
     // Convert output amount based on direction
     const outputAmount = SWAP_CONFIG.direction === 'in'
-      ? swapResponse.data.outputAmount / (10 ** pool.quoteDecimals)  // WIF -> SOL
-      : swapResponse.data.outputAmount / (10 ** pool.baseDecimals); // SOL -> WIF
+      ? swapResponse.data.outputAmount / (10 ** poolKeys[0].quoteDecimals)  // WIF -> SOL
+      : swapResponse.data.outputAmount / (10 ** poolKeys[0].baseDecimals); // SOL -> WIF
       
     console.log(`📊 Expected ${SWAP_CONFIG.direction === 'in' ? 'output' : 'input'}: ${outputAmount} ${SWAP_CONFIG.direction === 'in' ? 'SOL' : 'WIF'}`);
     console.log(`📈 Price impact: ${swapResponse.data.priceImpactPct}%`);
@@ -267,6 +281,15 @@ async function executeSwap(): Promise<void> {
       console.log('📝 Creating transaction...');
       const transaction = await createSwapTransaction();
       
+      // Get latest blockhash BEFORE sending
+      console.log('⏳ Getting latest blockhash...');
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash({
+        commitment: 'finalized'
+      });
+      
+      // Set the transaction's blockhash
+      transaction.recentBlockhash = blockhash;
+      
       console.log('✍️  Signing transaction...');
       transaction.sign(walletKeypair);
       
@@ -274,46 +297,51 @@ async function executeSwap(): Promise<void> {
       console.log('📡 Sending transaction...');
       const txid = await connection.sendRawTransaction(
         transaction.serialize(),
-        { skipPreflight: false }
+        { 
+          skipPreflight: false,
+          maxRetries: 3,
+          preflightCommitment: 'finalized'
+        }
       );
       
       console.log(`🔗 Transaction sent: https://solscan.io/tx/${txid}`);
       
-      console.log('⏳ Getting latest blockhash...');
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash({
-        commitment: 'finalized'
-      });
-      
-      console.log('🔍 Confirming transaction...');
+      console.log('🔍 Confirming transaction with finalized commitment...');
       const confirmation = await connection.confirmTransaction(
         {
           signature: txid,
           blockhash,
           lastValidBlockHeight
         },
-        'confirmed'
+        'finalized'  // Use finalized commitment
       );
 
       if (confirmation.value.err) {
-        console.error('❌ Transaction failed:');
-        console.error('Error:', confirmation.value.err);
-        process.exit(1);
+        throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
       }
       
       console.log('✅ Swap confirmed successfully!');
       return;
       
     } catch (error: any) {
-      // Only retry on rate limiting
-      const isThrottled = 
-        error.message?.includes('429') || // HTTP 429 Too Many Requests
-        error.message?.includes('rate limit') ||
-        error.message?.includes('throttle') ||
-        error.message?.toLowerCase().includes('too many requests');
+      const errorMessage = error.message || 'Unknown error occurred';
+      
+      // Check if transaction expired
+      const isExpired = 
+        errorMessage.includes('expired') || 
+        errorMessage.includes('block height exceeded') ||
+        errorMessage.includes('blockhash not found');
 
-      if (!isThrottled) {
-        console.error('❌ Swap failed:');
-        console.error('Error:', error.message || 'Unknown error occurred');
+      // Check for other retriable errors
+      const isThrottled = 
+        errorMessage.includes('429') || 
+        errorMessage.includes('rate limit') ||
+        errorMessage.includes('throttle') ||
+        errorMessage.toLowerCase().includes('too many requests');
+
+      if (!isExpired && !isThrottled) {
+        console.error('❌ Swap failed with non-retriable error:');
+        console.error('Error:', errorMessage);
         if (error.response?.data) {
           console.error('API Response:', JSON.stringify(error.response.data, null, 2));
         }
@@ -321,16 +349,18 @@ async function executeSwap(): Promise<void> {
       }
 
       if (attempt === SWAP_CONFIG.maxRetries) {
-        console.error('💔 Max retries reached due to rate limiting');
-        console.error('Last error:', error.message);
+        console.error('💔 Max retries reached');
+        console.error('Last error:', errorMessage);
         if (error.response?.data) {
           console.error('API Response:', JSON.stringify(error.response.data, null, 2));
         }
         process.exit(1);
       }
       
+      // Use exponential backoff for retries
       const backoffMs = Math.min(1000 * Math.pow(2, attempt), 10000);
-      console.log(`⏰ Rate limited. Waiting ${backoffMs}ms before retry...`);
+      const reason = isExpired ? 'transaction expired' : 'rate limited';
+      console.log(`⏰ Retry after ${backoffMs}ms (${reason})...`);
       await new Promise(resolve => setTimeout(resolve, backoffMs));
     }
   }
@@ -355,6 +385,56 @@ async function preflightChecks(): Promise<void> {
     }
     console.log('✅ Has SOL balance');
 
+    // Check WIF balance
+    console.log('🔍 Checking WIF balance...');
+    const wifTokenAccount = await getAssociatedTokenAddress(
+      new PublicKey(SWAP_CONFIG.tokenAAddress),
+      walletKeypair.publicKey,
+      false,
+      TOKEN_PROGRAM_ID
+    );
+    
+    try {
+      const tokenAccount = await getAccount(connection, wifTokenAccount);
+      const wifBalance = Number(tokenAccount.amount) / (10 ** poolKeys[0].baseDecimals); // Use pool decimals
+      console.log(`💰 WIF balance: ${wifBalance} WIF`);
+
+      // Get swap quote to check required input amount
+      console.log('🧮 Computing swap quote...');
+      const quoteParams = new URLSearchParams({
+        inputMint: SWAP_CONFIG.tokenAAddress,
+        outputMint: SWAP_CONFIG.tokenBAddress,
+        amount: (SWAP_CONFIG.tokenAAmount * (10 ** poolKeys[0].baseDecimals)).toString(), // Convert using pool decimals
+        slippageBps: (SWAP_CONFIG.slippage * 100).toString(),
+        txVersion: 'LEGACY'
+      });
+      
+      const swapMode = SWAP_CONFIG.direction === 'in' ? 'swap-base-in' : 'swap-base-out';
+      const { data: swapResponse } = await axios.get(
+        `${API_URLS.SWAP_HOST}/compute/${swapMode}?${quoteParams}`
+      );
+
+      if (!swapResponse.success) {
+        console.error('❌ Failed to compute swap quote');
+        console.error('Response:', JSON.stringify(swapResponse, null, 2));
+        process.exit(1);
+      }
+
+      const requiredWIF = swapResponse.data.inputAmount / (10 ** poolKeys[0].baseDecimals); // Convert using pool decimals
+      console.log(`📊 Required WIF: ${requiredWIF} WIF`);
+      
+      if (wifBalance < requiredWIF) {
+        throw new Error(`Insufficient WIF balance. Have ${wifBalance} WIF, need ${requiredWIF} WIF`);
+      }
+      console.log('✅ Has sufficient WIF balance');
+    } catch (error: any) {
+      if (error.name === 'TokenAccountNotFoundError') {
+        console.error('❌ No WIF token account found');
+        throw new Error('No WIF token account found');
+      }
+      throw error;
+    }
+
     console.log('🏊 Checking liquidity pool...');
     if (!poolKeys || poolKeys.length === 0) {
       console.error('❌ No valid pool found');
@@ -378,4 +458,4 @@ main().catch(error => {
   console.error('Fatal error:');
   console.error(error);
   process.exit(1);
-}); 
+});

@@ -78,6 +78,5 @@
 // mcp rules
 - When you need to fetch api documentation use the websearch mcp 
 - Whenever you use a mcp I want you to tell me and write it in bold in the response. 
-- Use the puppeteer mcp to parse github code or other code repositories. 
 - When creating a new frontend page, get a design idea by using the puppeteer mcp and stake screenshot of dribble design
 - Execute the mcp calls automatically. Don't ask me to run the tool
