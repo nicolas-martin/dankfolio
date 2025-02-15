@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -13,10 +14,11 @@ import (
 )
 
 const (
-	rpcEndpoint = "https://solana-mainnet.rpcpool.com"
-	tokenAMint  = "So11111111111111111111111111111111111111112"  // SOL
-	tokenBMint  = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" // USDC
-	outputFile  = "trimmed_mainnet.json"
+	rpcEndpoint       = "https://solana-mainnet.rpcpool.com"
+	tokenAMint        = "So11111111111111111111111111111111111111112"  // SOL
+	defaultTokenBMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" // Default: USDC
+	outputFile        = "trimmed_mainnet.json"
+	raydiumURL        = "https://api.raydium.io/v2/sdk/liquidity/mainnet.json"
 )
 
 // RaydiumPool represents a Raydium liquidity pool
@@ -44,6 +46,34 @@ type RaydiumPool struct {
 type RaydiumResponse struct {
 	Name     string        `json:"name"`
 	Official []RaydiumPool `json:"official"`
+}
+
+// Config holds the program configuration
+type Config struct {
+	tmpFile        string
+	tokenB         string
+	shouldDownload bool
+}
+
+// parseFlags parses command line flags and returns config
+func parseFlags() Config {
+	var config Config
+
+	flag.StringVar(&config.tmpFile, "file", "", "Path to existing JSON file (optional)")
+	flag.StringVar(&config.tokenB, "token", defaultTokenBMint, "Token B mint address (default: USDC)")
+
+	flag.Parse()
+
+	// Determine if we need to download
+	config.shouldDownload = config.tmpFile == "" || !fileExists(config.tmpFile)
+
+	return config
+}
+
+// fileExists checks if a file exists
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }
 
 // createTempDir creates a temporary directory if it doesn't exist
@@ -124,7 +154,7 @@ func downloadFile(url, tempFilePath string) error {
 }
 
 // processPoolsFile processes the downloaded JSON file and filters pools
-func processPoolsFile(tempFilePath string) ([]RaydiumPool, error) {
+func processPoolsFile(tempFilePath string, tokenB string) ([]RaydiumPool, error) {
 	// Read the file
 	file, err := os.Open(tempFilePath)
 	if err != nil {
@@ -146,7 +176,7 @@ func processPoolsFile(tempFilePath string) ([]RaydiumPool, error) {
 	// Filter pools
 	var matchingPools []RaydiumPool
 	tokenA := strings.ToLower(tokenAMint)
-	tokenB := strings.ToLower(tokenBMint)
+	tokenB = strings.ToLower(tokenB)
 
 	for _, pool := range response.Official {
 		baseMint := strings.ToLower(pool.BaseMint)
@@ -179,40 +209,57 @@ func writeFilteredPools(pools []RaydiumPool) error {
 }
 
 func main() {
-	// Create temp directory
-	tmpDir, err := createTempDir()
-	if err != nil {
-		log.Fatalf("Failed to create temp directory: %v", err)
-	}
+	config := parseFlags()
 
-	// Clean up any leftover temp files
-	cleanupTempFiles(tmpDir)
-
-	// Create temporary file
-	tempFilePath := filepath.Join(tmpDir, fmt.Sprintf("raydium-pools-%d.json", time.Now().UnixNano()))
+	var inputFile string
+	var tmpDir string
+	var err error
 
 	// Print header
 	fmt.Println("🌊 Raydium Pool Fetcher")
 	fmt.Println("------------------------")
 	fmt.Printf("SOL-USDC Pool Filter\n")
 	fmt.Printf("Input: %s\n", tokenAMint)
-	fmt.Printf("Output: %s\n\n", tokenBMint)
+	fmt.Printf("Output: %s\n", config.tokenB)
+	if config.tmpFile != "" {
+		fmt.Printf("Using file: %s\n", config.tmpFile)
+	}
+	fmt.Println()
 
-	// Download file
-	if err := downloadFile("https://api.raydium.io/v2/sdk/liquidity/mainnet.json", tempFilePath); err != nil {
-		log.Fatalf("Failed to download file: %v", err)
+	if config.shouldDownload {
+		// Create temp directory
+		tmpDir, err = createTempDir()
+		if err != nil {
+			log.Fatalf("Failed to create temp directory: %v", err)
+		}
+
+		// Clean up any leftover temp files
+		cleanupTempFiles(tmpDir)
+
+		// Create temporary file
+		inputFile = filepath.Join(tmpDir, fmt.Sprintf("raydium-pools-%d.json", time.Now().UnixNano()))
+
+		// Download file
+		if err := downloadFile(raydiumURL, inputFile); err != nil {
+			log.Fatalf("Failed to download file: %v", err)
+		}
+	} else {
+		inputFile = config.tmpFile
 	}
 
 	// Process pools
-	filteredPools, err := processPoolsFile(tempFilePath)
+	filteredPools, err := processPoolsFile(inputFile, config.tokenB)
 	if err != nil {
-		// Clean up temp file
-		os.Remove(tempFilePath)
+		if config.shouldDownload {
+			os.Remove(inputFile)
+		}
 		log.Fatalf("Failed to process pools: %v", err)
 	}
 
-	// Clean up temp file
-	os.Remove(tempFilePath)
+	// Clean up temp file if we downloaded it
+	if config.shouldDownload && tmpDir != "" {
+		os.Remove(inputFile)
+	}
 
 	// Check if we found any pools
 	if len(filteredPools) == 0 {
