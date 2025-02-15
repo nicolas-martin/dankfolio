@@ -4,22 +4,42 @@ import {
   PublicKey,
   Transaction
 } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { 
+  TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddress,
+  getAccount,
+} from '@solana/spl-token';
 import * as fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import axios from 'axios';
 
-// Import Raydium SDK types and functions
-import { 
+// Import Raydium SDK as a CommonJS module
+import pkg from '@raydium-io/raydium-sdk-v2';
+const { 
   Token,
   TokenAmount,
   Percent,
   Currency,
-  LiquidityPoolKeys,
-  SwapSide,
   API_URLS
-} from '@raydium-io/raydium-sdk-v2';
-import axios from 'axios';
+} = pkg;
+
+// Types from Raydium SDK
+interface LiquidityPoolKeys {
+  id: string;
+  baseMint: string;
+  quoteMint: string;
+  lpMint: string;
+  programId: string;
+  authority: string;
+  openOrders: string;
+  targetOrders: string;
+  baseVault: string;
+  quoteVault: string;
+  marketVersion: number;
+  marketProgramId: string;
+  marketId: string;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,7 +61,7 @@ interface SwapConfig {
   tokenAAmount: number;
   tokenAAddress: string;
   tokenBAddress: string;
-  direction: SwapSide;
+  direction: 'in' | 'out';  // 'in' for base-in (exact input), 'out' for base-out (exact output)
   slippage: number;
   maxRetries: number;
   liquidityFile: string;
@@ -63,11 +83,11 @@ const walletKeypair = Keypair.fromSecretKey(new Uint8Array(walletKeyBuffer));
 
 // 3. Swap Configuration
 const SWAP_CONFIG: SwapConfig = {
-  tokenAAmount: 0.0001, // Minimal amount for testing
-  tokenAAddress: 'So11111111111111111111111111111111111111112', // SOL
-  tokenBAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', // WIF
-  direction: 'in',
-  slippage: 0.5, // 0.5%
+  tokenAAmount: 0.5,    // Amount in WIF we want to swap
+  tokenAAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', // WIF (now tokenA since we're swapping from WIF)
+  tokenBAddress: 'So11111111111111111111111111111111111111112',  // SOL (now tokenB since we're swapping to SOL)
+  direction: 'out',     // WIF → SOL (we specify the output amount in SOL)
+  slippage: 1.0,        // 1% slippage
   maxRetries: 3,
   liquidityFile: join(__dirname, '../../trim-mainnet/trimmed_mainnet.json')
 };
@@ -78,10 +98,10 @@ try {
   const poolData = JSON.parse(fs.readFileSync(SWAP_CONFIG.liquidityFile, 'utf-8'));
   if (!Array.isArray(poolData)) throw new Error('Invalid pool data');
   
-  // Filter for WIF/SOL pool
+  // Filter for WIF/SOL pool - Note the reversed order since we're swapping WIF to SOL
   poolKeys = poolData.filter(pool => 
-    pool.baseMint === SWAP_CONFIG.tokenBAddress && 
-    pool.quoteMint === SWAP_CONFIG.tokenAAddress
+    pool.quoteMint === SWAP_CONFIG.tokenBAddress && // SOL is quote token
+    pool.baseMint === SWAP_CONFIG.tokenAAddress     // WIF is base token
   );
   
   if (poolKeys.length === 0) {
@@ -93,76 +113,133 @@ try {
   process.exit(1);
 }
 
+async function getOrCreateTokenAccount(mint: PublicKey): Promise<string> {
+  try {
+    const ata = await getAssociatedTokenAddress(
+      mint,
+      walletKeypair.publicKey,
+      false,
+      TOKEN_PROGRAM_ID
+    );
+
+    try {
+      await getAccount(connection, ata);
+      console.log(`✅ Found existing token account: ${ata.toBase58()}`);
+    } catch (error: any) {
+      if (error.name === 'TokenAccountNotFoundError') {
+        console.log(`ℹ️  Token account not found, it will be created during swap`);
+      }
+    }
+
+    return ata.toBase58();
+  } catch (error) {
+    console.error('❌ Failed to get token account:');
+    console.error(error);
+    process.exit(1);
+  }
+}
+
 async function createSwapTransaction(): Promise<Transaction> {
   console.log('\n🔍 Creating swap transaction...');
-  console.log(`💰 Input: ${SWAP_CONFIG.tokenAAmount} SOL`);
-  console.log(`📊 Slippage: ${SWAP_CONFIG.slippage}%`);
   
+  // Get the pool info for the token pair
+  const pool = poolKeys[0];
+  
+  // Get WIF token account
+  console.log('🔑 Getting WIF token account...');
+  const wifTokenAccount = await getOrCreateTokenAccount(new PublicKey(SWAP_CONFIG.tokenAAddress));
+  
+  // Define tokens based on pool data
   const tokenA = new Token({
     mint: new PublicKey(SWAP_CONFIG.tokenAAddress),
-    decimals: 9,
-    symbol: 'SOL'
+    decimals: pool.baseDecimals,
+    symbol: 'WIF'
   });
   
   const tokenB = new Token({
     mint: new PublicKey(SWAP_CONFIG.tokenBAddress),
-    decimals: 6,
-    symbol: 'WIF'
+    decimals: pool.quoteDecimals,
+    symbol: 'SOL'
   });
 
-  const amountIn = SWAP_CONFIG.tokenAAmount * 10 ** 9; // Convert to lamports
-  const slippage = SWAP_CONFIG.slippage; // 0.5%
+  // Convert amount using the correct decimals from pool data
+  const amount = SWAP_CONFIG.tokenAAmount * (
+    SWAP_CONFIG.direction === 'in' 
+      ? 10 ** pool.baseDecimals  // WIF -> SOL: use base decimals
+      : 10 ** pool.quoteDecimals // SOL -> WIF: use quote decimals
+  );
+  const slippage = SWAP_CONFIG.slippage;
 
+  // Log appropriate direction and amount
+  const directionSymbol = SWAP_CONFIG.direction === 'in' ? '→' : '←';
+  console.log(`💰 ${SWAP_CONFIG.direction === 'in' ? 'Input' : 'Output'}: ${SWAP_CONFIG.tokenAAmount} ${SWAP_CONFIG.direction === 'in' ? 'WIF' : 'SOL'}`);
+  console.log(`🔄 Direction: SOL ${directionSymbol} WIF`);
+  console.log(`📊 Slippage: ${SWAP_CONFIG.slippage}%`);
+  
+  // Step 1: Get priority fee (can be 'vh' for very high, 'h' for high, 'm' for medium)
   console.log('📡 Fetching priority fee...');
-  // Get priority fee
   const { data: feeData } = await axios.get(
     `${API_URLS.BASE_HOST}${API_URLS.PRIORITY_FEE}`
   );
-  console.log(`💸 Priority fee (high): ${feeData.data.default.h} microLamports`);
+  const priorityFee = String(feeData.data.default.h); // Using high priority
+  console.log(`💸 Priority fee (high): ${priorityFee} microLamports`);
 
+  // Step 2: Get swap quote
   console.log('🧮 Computing swap quote...');
-  // Get swap quote computation
+  const quoteParams = new URLSearchParams({
+    inputMint: SWAP_CONFIG.tokenAAddress,
+    outputMint: SWAP_CONFIG.tokenBAddress,
+    amount: amount.toString(),
+    slippageBps: (slippage * 100).toString(),
+    txVersion: 'LEGACY'
+  });
+  
+  // Use appropriate endpoint based on direction
+  const swapMode = SWAP_CONFIG.direction === 'in' ? 'swap-base-in' : 'swap-base-out';
   const { data: swapResponse } = await axios.get(
-    `${API_URLS.SWAP_HOST}/compute/swap-base-in?` +
-    `inputMint=${SWAP_CONFIG.tokenAAddress}&` +
-    `outputMint=${SWAP_CONFIG.tokenBAddress}&` +
-    `amount=${amountIn}&` +
-    `slippageBps=${slippage * 100}&` +
-    `txVersion=LEGACY`
+    `${API_URLS.SWAP_HOST}/compute/${swapMode}?${quoteParams}`
   );
 
   if (!swapResponse.success) {
     console.error('❌ Failed to compute swap quote');
-    throw new Error(`Failed to compute swap: ${swapResponse.msg}`);
+    console.error('Response:', JSON.stringify(swapResponse, null, 2));
+    process.exit(1);
   }
   console.log('✅ Swap quote computed successfully');
   
   if (swapResponse.data) {
-    console.log(`📊 Expected output: ${swapResponse.data.outputAmount} WIF`);
+    // Convert output amount based on direction
+    const outputAmount = SWAP_CONFIG.direction === 'in'
+      ? swapResponse.data.outputAmount / (10 ** pool.quoteDecimals)  // WIF -> SOL
+      : swapResponse.data.outputAmount / (10 ** pool.baseDecimals); // SOL -> WIF
+      
+    console.log(`📊 Expected ${SWAP_CONFIG.direction === 'in' ? 'output' : 'input'}: ${outputAmount} ${SWAP_CONFIG.direction === 'in' ? 'SOL' : 'WIF'}`);
     console.log(`📈 Price impact: ${swapResponse.data.priceImpactPct}%`);
   }
 
+  // Step 3: Create swap transaction
   console.log('🏗️ Creating swap transaction...');
-  // Create swap transaction
   const { data: swapTransactions } = await axios.post(
-    `${API_URLS.SWAP_HOST}/transaction/swap-base-in`,
+    `${API_URLS.SWAP_HOST}/transaction/${swapMode}`,
     {
-      computeUnitPriceMicroLamports: String(feeData.data.default.h),
+      computeUnitPriceMicroLamports: priorityFee,
       swapResponse,
       txVersion: 'LEGACY',
       wallet: walletKeypair.publicKey.toBase58(),
-      wrapSol: true,
-      unwrapSol: false,
+      wrapSol: SWAP_CONFIG.direction === 'in',      // Wrap SOL when it's input
+      unwrapSol: SWAP_CONFIG.direction === 'out',   // Unwrap SOL when it's output
+      inputAccount: wifTokenAccount,  // WIF token account
     }
   );
 
   if (!swapTransactions.success) {
     console.error('❌ Failed to create swap transaction');
-    throw new Error('Failed to create swap transaction');
+    console.error('Response:', JSON.stringify(swapTransactions, null, 2));
+    process.exit(1);
   }
   console.log('✅ Swap transaction created successfully');
 
-  // Process all transactions in the response
+  // Step 4: Process transaction(s)
   const allTxBuf = swapTransactions.data.map(
     (tx: { transaction: string }) => Buffer.from(tx.transaction, 'base64')
   );
@@ -173,7 +250,8 @@ async function createSwapTransaction(): Promise<Transaction> {
 
   if (allTransactions.length === 0) {
     console.error('❌ No transactions returned from API');
-    throw new Error('No transactions returned from API');
+    console.error('Response:', JSON.stringify(swapTransactions, null, 2));
+    process.exit(1);
   }
   console.log(`📦 Received ${allTransactions.length} transaction(s)`);
 
@@ -185,12 +263,14 @@ async function executeSwap(): Promise<void> {
     try {
       console.log(`\n🔄 Attempt ${attempt}/${SWAP_CONFIG.maxRetries}`);
       
+      // Step 5: Create and sign transaction
       console.log('📝 Creating transaction...');
       const transaction = await createSwapTransaction();
       
       console.log('✍️  Signing transaction...');
       transaction.sign(walletKeypair);
       
+      // Step 6: Send and confirm transaction
       console.log('📡 Sending transaction...');
       const txid = await connection.sendRawTransaction(
         transaction.serialize(),
@@ -200,47 +280,57 @@ async function executeSwap(): Promise<void> {
       console.log(`🔗 Transaction sent: https://solscan.io/tx/${txid}`);
       
       console.log('⏳ Getting latest blockhash...');
-      const latestBlockhash = await connection.getLatestBlockhash();
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash({
+        commitment: 'finalized'
+      });
       
       console.log('🔍 Confirming transaction...');
       const confirmation = await connection.confirmTransaction(
         {
           signature: txid,
-          blockhash: latestBlockhash.blockhash,
-          lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+          blockhash,
+          lastValidBlockHeight
         },
         'confirmed'
       );
 
       if (confirmation.value.err) {
-        console.error('❌ Transaction failed on-chain');
-        throw new Error(`Transaction failed: ${confirmation.value.err}`);
+        console.error('❌ Transaction failed:');
+        console.error('Error:', confirmation.value.err);
+        process.exit(1);
       }
       
       console.log('✅ Swap confirmed successfully!');
       return;
       
     } catch (error: any) {
-      console.error(`❌ Attempt ${attempt} failed:`);
-      
-      // Check for insufficient funds error
-      if (error.logs?.some((log: string) => log.includes('insufficient lamports'))) {
-        const match = error.logs.find((log: string) => log.includes('insufficient lamports'));
-        console.error('💰 Insufficient funds error:');
-        console.error(match);
-        // Don't retry on insufficient funds
-        throw new Error('Insufficient funds for swap');
+      // Only retry on rate limiting
+      const isThrottled = 
+        error.message?.includes('429') || // HTTP 429 Too Many Requests
+        error.message?.includes('rate limit') ||
+        error.message?.includes('throttle') ||
+        error.message?.toLowerCase().includes('too many requests');
+
+      if (!isThrottled) {
+        console.error('❌ Swap failed:');
+        console.error('Error:', error.message || 'Unknown error occurred');
+        if (error.response?.data) {
+          console.error('API Response:', JSON.stringify(error.response.data, null, 2));
+        }
+        process.exit(1);
       }
-      
-      console.error(error);
-      
+
       if (attempt === SWAP_CONFIG.maxRetries) {
-        console.error('💔 All swap attempts exhausted');
-        throw new Error('All swap attempts failed');
+        console.error('💔 Max retries reached due to rate limiting');
+        console.error('Last error:', error.message);
+        if (error.response?.data) {
+          console.error('API Response:', JSON.stringify(error.response.data, null, 2));
+        }
+        process.exit(1);
       }
       
       const backoffMs = Math.min(1000 * Math.pow(2, attempt), 10000);
-      console.log(`⏰ Waiting ${backoffMs}ms before next attempt...`);
+      console.log(`⏰ Rate limited. Waiting ${backoffMs}ms before retry...`);
       await new Promise(resolve => setTimeout(resolve, backoffMs));
     }
   }
