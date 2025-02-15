@@ -105,6 +105,38 @@ func cleanupTempFiles(tmpDir string) {
 	}
 }
 
+// validateJSON checks if the downloaded file is a valid and complete JSON
+func validateJSON(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open file for validation: %w", err)
+	}
+	defer file.Close()
+
+	// Create a decoder for validation
+	decoder := json.NewDecoder(file)
+
+	// Try to decode and validate structure
+	var response RaydiumResponse
+	if err := decoder.Decode(&response); err != nil {
+		return fmt.Errorf("invalid JSON structure: %w", err)
+	}
+
+	// Basic validation of the response
+	if response.Name == "" {
+		return fmt.Errorf("invalid JSON: missing name field")
+	}
+	if response.Official == nil {
+		return fmt.Errorf("invalid JSON: missing official pools array")
+	}
+	if len(response.Official) == 0 {
+		return fmt.Errorf("invalid JSON: empty pools array")
+	}
+
+	fmt.Printf("✅ JSON validation successful: found %d pools\n", len(response.Official))
+	return nil
+}
+
 // downloadFile downloads a file and shows progress
 func downloadFile(url, tempFilePath string) error {
 	// Create the file
@@ -120,6 +152,11 @@ func downloadFile(url, tempFilePath string) error {
 		return fmt.Errorf("failed to download file: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// Check if we got a successful response
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned status code %d", resp.StatusCode)
+	}
 
 	// Create a buffer for reading chunks
 	buf := make([]byte, 32*1024) // 32KB chunks
@@ -149,6 +186,11 @@ func downloadFile(url, tempFilePath string) error {
 		}
 	}
 	fmt.Printf("\rDownloaded %.1f MB         \n", float64(totalBytes)/(1024*1024))
+
+	// Validate the downloaded JSON
+	if err := validateJSON(tempFilePath); err != nil {
+		return fmt.Errorf("JSON validation failed: %w", err)
+	}
 
 	return nil
 }
@@ -195,16 +237,29 @@ func processPoolsFile(tempFilePath string, tokenB string) ([]RaydiumPool, error)
 
 // writeFilteredPools writes the filtered pools to the output file
 func writeFilteredPools(pools []RaydiumPool) error {
-	data, err := json.MarshalIndent(pools, "", "  ")
+	fmt.Printf("Found %d matching pools\n", len(pools))
+
+	// Create the full response structure
+	response := RaydiumResponse{
+		Name:     "Raydium Mainnet Liquidity Pools",
+		Official: pools,
+	}
+
+	fmt.Printf("Created response structure with name: %s\n", response.Name)
+
+	data, err := json.MarshalIndent(response, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal pools: %w", err)
 	}
+
+	fmt.Printf("Marshalled JSON length: %d bytes\n", len(data))
 
 	err = os.WriteFile(outputFile, data, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write output file: %w", err)
 	}
 
+	fmt.Printf("Successfully wrote to %s\n", outputFile)
 	return nil
 }
 
@@ -241,7 +296,10 @@ func main() {
 
 		// Download file
 		if err := downloadFile(raydiumURL, inputFile); err != nil {
-			log.Fatalf("Failed to download file: %v", err)
+			if config.shouldDownload {
+				os.Remove(inputFile)
+			}
+			log.Fatalf("Failed to download/validate file: %v", err)
 		}
 	} else {
 		inputFile = config.tmpFile
@@ -256,11 +314,6 @@ func main() {
 		log.Fatalf("Failed to process pools: %v", err)
 	}
 
-	// Clean up temp file if we downloaded it
-	if config.shouldDownload && tmpDir != "" {
-		os.Remove(inputFile)
-	}
-
 	// Check if we found any pools
 	if len(filteredPools) == 0 {
 		fmt.Println("❌ No matching pools found for token pair")
@@ -273,4 +326,10 @@ func main() {
 	}
 
 	fmt.Printf("✨ Successfully found and wrote %d pools to %s\n", len(filteredPools), outputFile)
+
+	// Print the location of the cached file for future use
+	if config.shouldDownload {
+		fmt.Printf("💾 Cached Raydium pools file: %s\n", inputFile)
+		fmt.Printf("💡 Tip: Use --file=%s next time to skip downloading\n", inputFile)
+	}
 }
