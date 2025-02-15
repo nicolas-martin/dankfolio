@@ -115,10 +115,10 @@ async function createSwapTransaction() {
     const slippage = SWAP_CONFIG.slippage;
     // Log appropriate direction and amount
     const directionSymbol = SWAP_CONFIG.direction === 'in' ? '→' : '←';
-    console.log(`💰 ${SWAP_CONFIG.direction === 'in' ? 'Input' : 'Output'}: ${SWAP_CONFIG.tokenAAmount} ${SWAP_CONFIG.direction === 'in' ? 'WIF' : 'SOL'}`);
-    console.log(`🔄 Direction: SOL ${directionSymbol} WIF`);
+    console.log(`💰 ${SWAP_CONFIG.direction === 'in' ? 'Input' : 'Output'}: ${SWAP_CONFIG.tokenAAmount} WIF`);
+    console.log(`🔄 Direction: WIF ${directionSymbol} SOL`);
     console.log(`📊 Slippage: ${SWAP_CONFIG.slippage}%`);
-    // Step 1: Get priority fee (using 'vh' for very high priority)
+    // Step 1: Get priority fee
     console.log('📡 Fetching priority fee...');
     const priorityFee = await getPriorityFee();
     // Step 2: Get swap quote
@@ -128,7 +128,8 @@ async function createSwapTransaction() {
         outputMint: SWAP_CONFIG.tokenBAddress,
         amount: amount.toString(),
         slippageBps: (slippage * 100).toString(),
-        txVersion: 'LEGACY'
+        txVersion: 'LEGACY',
+        computeUnitPriceMicroLamports: priorityFee.toString() // Add priority fee to quote
     });
     // Use appropriate endpoint based on direction
     const swapMode = SWAP_CONFIG.direction === 'in' ? 'swap-base-in' : 'swap-base-out';
@@ -150,12 +151,12 @@ async function createSwapTransaction() {
     // Step 3: Create swap transaction
     console.log('🏗️ Creating swap transaction...');
     const { data: swapTransactions } = await axios.post(`${API_URLS.SWAP_HOST}/transaction/${swapMode}`, {
-        computeUnitPriceMicroLamports: priorityFee,
+        computeUnitPriceMicroLamports: priorityFee.toString(), // Convert to string
         swapResponse,
         txVersion: 'LEGACY',
         wallet: walletKeypair.publicKey.toBase58(),
-        wrapSol: SWAP_CONFIG.direction === 'in', // Wrap SOL when it's input
-        unwrapSol: SWAP_CONFIG.direction === 'out', // Unwrap SOL when it's output
+        wrapSol: false, // Don't wrap SOL since we're sending WIF
+        unwrapSol: true, // Unwrap SOL since we're receiving SOL
         inputAccount: wifTokenAccount, // WIF token account
     });
     if (!swapTransactions.success) {
@@ -196,29 +197,45 @@ async function executeSwap() {
             const txid = await connection.sendRawTransaction(transaction.serialize(), {
                 skipPreflight: false,
                 maxRetries: 3,
-                preflightCommitment: 'finalized'
+                preflightCommitment: 'processed'
             });
             console.log(`🔗 Transaction sent: https://solscan.io/tx/${txid}`);
-            console.log('🔍 Confirming transaction with finalized commitment...');
-            const confirmation = await connection.confirmTransaction({
-                signature: txid,
-                blockhash,
-                lastValidBlockHeight
-            }, 'finalized' // Use finalized commitment
-            );
-            if (confirmation.value.err) {
-                throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+            // Once we're here, the transaction is sent - no more retries
+            console.log('🔍 Confirming transaction...');
+            // Poll for transaction status
+            let status = null;
+            const startTime = Date.now();
+            const timeout = 30000; // 30 seconds timeout
+            while (Date.now() - startTime < timeout) {
+                status = await connection.getSignatureStatus(txid);
+                if (status?.value?.err) {
+                    throw new Error(`Transaction failed: ${JSON.stringify(status.value.err)}`);
+                }
+                if (status?.value?.confirmationStatus === 'confirmed' || status?.value?.confirmationStatus === 'finalized') {
+                    // Quick balance check to verify the swap
+                    const newBalance = await connection.getBalance(walletKeypair.publicKey);
+                    console.log(`💰 New SOL balance: ${newBalance / 1e9} SOL`);
+                    console.log('✅ Swap confirmed successfully!');
+                    return;
+                }
+                // Wait a bit before polling again
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
-            console.log('✅ Swap confirmed successfully!');
-            return;
+            throw new Error('Transaction confirmation timeout');
         }
         catch (error) {
             const errorMessage = error.message || 'Unknown error occurred';
-            // Check if transaction expired
+            // Only retry if we haven't sent the transaction yet
+            if (errorMessage.includes('Transaction confirmation timeout') ||
+                errorMessage.includes('Transaction failed')) {
+                console.error('❌ Swap failed:');
+                console.error('Error:', errorMessage);
+                process.exit(1);
+            }
+            // Check for retriable errors (only before sending transaction)
             const isExpired = errorMessage.includes('expired') ||
                 errorMessage.includes('block height exceeded') ||
                 errorMessage.includes('blockhash not found');
-            // Check for other retriable errors
             const isThrottled = errorMessage.includes('429') ||
                 errorMessage.includes('rate limit') ||
                 errorMessage.includes('throttle') ||

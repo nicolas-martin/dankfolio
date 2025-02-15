@@ -163,38 +163,38 @@ async function getPriorityFee(): Promise<number> {
 async function createSwapTransaction(): Promise<Transaction> {
   console.log('\n🔍 Creating swap transaction...');
   
-  // Get WIF token account
-  console.log('🔑 Getting WIF token account...');
-  const wifTokenAccount = await getOrCreateTokenAccount(new PublicKey(SWAP_CONFIG.tokenAAddress));
+  // Get token A account
+  console.log('🔑 Getting input token account...');
+  const tokenAAccount = await getOrCreateTokenAccount(new PublicKey(SWAP_CONFIG.tokenAAddress));
   
   // Define tokens based on pool data
   const tokenA = new Token({
     mint: new PublicKey(SWAP_CONFIG.tokenAAddress),
     decimals: poolKeys[0].baseDecimals,
-    symbol: 'WIF'
+    symbol: 'TOKEN_A'  // Generic symbol since we don't have token metadata
   });
   
   const tokenB = new Token({
     mint: new PublicKey(SWAP_CONFIG.tokenBAddress),
     decimals: poolKeys[0].quoteDecimals,
-    symbol: 'SOL'
+    symbol: 'TOKEN_B'  // Generic symbol since we don't have token metadata
   });
 
   // Convert amount using the correct decimals from pool data
   const amount = SWAP_CONFIG.tokenAAmount * (
     SWAP_CONFIG.direction === 'in' 
-      ? 10 ** poolKeys[0].baseDecimals  // WIF -> SOL: use base decimals
-      : 10 ** poolKeys[0].quoteDecimals // SOL -> WIF: use quote decimals
+      ? 10 ** poolKeys[0].baseDecimals  // TOKEN_A -> TOKEN_B: use base decimals
+      : 10 ** poolKeys[0].quoteDecimals // TOKEN_B -> TOKEN_A: use quote decimals
   );
   const slippage = SWAP_CONFIG.slippage;
 
   // Log appropriate direction and amount
   const directionSymbol = SWAP_CONFIG.direction === 'in' ? '→' : '←';
-  console.log(`💰 ${SWAP_CONFIG.direction === 'in' ? 'Input' : 'Output'}: ${SWAP_CONFIG.tokenAAmount} ${SWAP_CONFIG.direction === 'in' ? 'WIF' : 'SOL'}`);
-  console.log(`🔄 Direction: SOL ${directionSymbol} WIF`);
+  console.log(`💰 ${SWAP_CONFIG.direction === 'in' ? 'Input' : 'Output'}: ${SWAP_CONFIG.tokenAAmount} TOKEN_A`);
+  console.log(`🔄 Direction: TOKEN_A ${directionSymbol} TOKEN_B`);
   console.log(`📊 Slippage: ${SWAP_CONFIG.slippage}%`);
   
-  // Step 1: Get priority fee (using 'vh' for very high priority)
+  // Step 1: Get priority fee
   console.log('📡 Fetching priority fee...');
   const priorityFee = await getPriorityFee();
 
@@ -205,7 +205,8 @@ async function createSwapTransaction(): Promise<Transaction> {
     outputMint: SWAP_CONFIG.tokenBAddress,
     amount: amount.toString(),
     slippageBps: (slippage * 100).toString(),
-    txVersion: 'LEGACY'
+    txVersion: 'LEGACY',
+    computeUnitPriceMicroLamports: priorityFee.toString()  // Add priority fee to quote
   });
   
   // Use appropriate endpoint based on direction
@@ -224,10 +225,10 @@ async function createSwapTransaction(): Promise<Transaction> {
   if (swapResponse.data) {
     // Convert output amount based on direction
     const outputAmount = SWAP_CONFIG.direction === 'in'
-      ? swapResponse.data.outputAmount / (10 ** poolKeys[0].quoteDecimals)  // WIF -> SOL
-      : swapResponse.data.outputAmount / (10 ** poolKeys[0].baseDecimals); // SOL -> WIF
+      ? swapResponse.data.outputAmount / (10 ** poolKeys[0].quoteDecimals)  // TOKEN_A -> TOKEN_B
+      : swapResponse.data.outputAmount / (10 ** poolKeys[0].baseDecimals);  // TOKEN_B -> TOKEN_A
       
-    console.log(`📊 Expected ${SWAP_CONFIG.direction === 'in' ? 'output' : 'input'}: ${outputAmount} ${SWAP_CONFIG.direction === 'in' ? 'SOL' : 'WIF'}`);
+    console.log(`📊 Expected ${SWAP_CONFIG.direction === 'in' ? 'output' : 'input'}: ${outputAmount} ${SWAP_CONFIG.direction === 'in' ? 'TOKEN_B' : 'TOKEN_A'}`);
     console.log(`📈 Price impact: ${swapResponse.data.priceImpactPct}%`);
   }
 
@@ -236,13 +237,13 @@ async function createSwapTransaction(): Promise<Transaction> {
   const { data: swapTransactions } = await axios.post(
     `${API_URLS.SWAP_HOST}/transaction/${swapMode}`,
     {
-      computeUnitPriceMicroLamports: priorityFee,
+      computeUnitPriceMicroLamports: priorityFee.toString(),
       swapResponse,
       txVersion: 'LEGACY',
       wallet: walletKeypair.publicKey.toBase58(),
-      wrapSol: SWAP_CONFIG.direction === 'in',      // Wrap SOL when it's input
-      unwrapSol: SWAP_CONFIG.direction === 'out',   // Unwrap SOL when it's output
-      inputAccount: wifTokenAccount,  // WIF token account
+      wrapSol: SWAP_CONFIG.tokenBAddress === 'So11111111111111111111111111111111111111112' && SWAP_CONFIG.direction === 'out',
+      unwrapSol: SWAP_CONFIG.tokenBAddress === 'So11111111111111111111111111111111111111112' && SWAP_CONFIG.direction === 'in',
+      inputAccount: tokenAAccount,
     }
   );
 
@@ -300,39 +301,73 @@ async function executeSwap(): Promise<void> {
         { 
           skipPreflight: false,
           maxRetries: 3,
-          preflightCommitment: 'finalized'
+          preflightCommitment: 'processed'
         }
       );
       
       console.log(`🔗 Transaction sent: https://solscan.io/tx/${txid}`);
       
-      console.log('🔍 Confirming transaction with finalized commitment...');
-      const confirmation = await connection.confirmTransaction(
-        {
-          signature: txid,
-          blockhash,
-          lastValidBlockHeight
-        },
-        'finalized'  // Use finalized commitment
-      );
-
-      if (confirmation.value.err) {
-        throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+      // Once we're here, the transaction is sent - no more retries
+      console.log('🔍 Confirming transaction...');
+      
+      // Poll for transaction status
+      let status = null;
+      const startTime = Date.now();
+      const timeout = 30000; // 30 seconds timeout
+      
+      while (Date.now() - startTime < timeout) {
+        status = await connection.getSignatureStatus(txid);
+        
+        if (status?.value?.err) {
+          throw new Error(`Transaction failed: ${JSON.stringify(status.value.err)}`);
+        }
+        
+        if (status?.value?.confirmationStatus === 'confirmed' || status?.value?.confirmationStatus === 'finalized') {
+          // Quick balance check to verify the swap
+          if (SWAP_CONFIG.tokenBAddress === 'So11111111111111111111111111111111111111112') {
+            const newBalance = await connection.getBalance(walletKeypair.publicKey);
+            console.log(`💰 New TOKEN_B balance: ${newBalance / 1e9} SOL`);
+          } else {
+            const tokenBAccount = await getAssociatedTokenAddress(
+              new PublicKey(SWAP_CONFIG.tokenBAddress),
+              walletKeypair.publicKey,
+              false,
+              TOKEN_PROGRAM_ID
+            );
+            try {
+              const account = await getAccount(connection, tokenBAccount);
+              console.log(`💰 New TOKEN_B balance: ${Number(account.amount) / (10 ** poolKeys[0].quoteDecimals)} TOKEN_B`);
+            } catch (error) {
+              console.log('⚠️ Could not fetch new token balance');
+            }
+          }
+          console.log('✅ Swap confirmed successfully!');
+          return;
+        }
+        
+        // Wait a bit before polling again
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
-      console.log('✅ Swap confirmed successfully!');
-      return;
+      throw new Error('Transaction confirmation timeout');
       
     } catch (error: any) {
       const errorMessage = error.message || 'Unknown error occurred';
       
-      // Check if transaction expired
+      // Only retry if we haven't sent the transaction yet
+      if (errorMessage.includes('Transaction confirmation timeout') || 
+          errorMessage.includes('Transaction failed')) {
+        console.error('❌ Swap failed:');
+        console.error('Error:', errorMessage);
+        process.exit(1);
+      }
+
+      // Check for retriable errors (only before sending transaction)
       const isExpired = 
         errorMessage.includes('expired') || 
         errorMessage.includes('block height exceeded') ||
         errorMessage.includes('blockhash not found');
 
-      // Check for other retriable errors
       const isThrottled = 
         errorMessage.includes('429') || 
         errorMessage.includes('rate limit') ||
