@@ -13,6 +13,8 @@ import * as fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import axios from 'axios';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 // Import Raydium SDK as a CommonJS module
 import pkg from '@raydium-io/raydium-sdk-v2';
@@ -23,6 +25,23 @@ const {
   Currency,
   API_URLS
 } = pkg;
+
+// New interfaces for the updated JSON structure
+interface TokenInfo {
+  symbol: string;
+  name: string;
+  mint: string;
+  decimals: number;
+}
+
+interface TokenData {
+  token: TokenInfo;
+  pools: PoolInfo[];
+}
+
+interface TokenList {
+  tokens: TokenData[];
+}
 
 // Types from Raydium SDK
 interface LiquidityPoolKeys {
@@ -81,31 +100,87 @@ const walletKeyString = JSON.parse(fs.readFileSync(WALLET_PATH, 'utf-8'));
 const walletKeyBuffer = Buffer.from(walletKeyString, 'base64');
 const walletKeypair = Keypair.fromSecretKey(new Uint8Array(walletKeyBuffer));
 
+// 3. Parse Command Line Arguments
+const argv = yargs(hideBin(process.argv))
+  .option('symbol', {
+    alias: 's',
+    description: 'Token symbol to swap (e.g., GIGA, WIF)',
+    type: 'string',
+    demandOption: true
+  })
+  .option('amount', {
+    alias: 'a',
+    description: 'Amount of tokens to swap',
+    type: 'number',
+    default: 0.1
+  })
+  .option('direction', {
+    alias: 'd',
+    description: 'Swap direction (in/out)',
+    choices: ['in', 'out'] as const,
+    default: 'in'
+  })
+  .option('slippage', {
+    description: 'Slippage percentage',
+    type: 'number',
+    default: 2.0
+  })
+  .option('simulate', {
+    description: 'Run in simulation mode',
+    type: 'boolean',
+    default: false
+  })
+  .help()
+  .parseSync(); // Use parseSync() instead of argv to get proper typing
+
 // 3. Swap Configuration
 const SWAP_CONFIG: SwapConfig = {
-  tokenAAmount: 0.1,     // Minimal amount of WIF to swap
-  tokenAAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', // WIF (base token)
-  tokenBAddress: 'So11111111111111111111111111111111111111112',  // SOL (quote token)
-  direction: 'in',      // Testing with 'in' direction
-  slippage: 2.0,       // 2% slippage
+  tokenAAmount: argv.amount,
+  tokenAAddress: '', // Will be set after loading pool data
+  tokenBAddress: 'So11111111111111111111111111111111111111112', // SOL (quote token)
+  direction: argv.direction as 'in' | 'out',
+  slippage: argv.slippage,
   maxRetries: 3,
   liquidityFile: join(__dirname, '../../trim-mainnet/trimmed_mainnet.json')
 };
 
 // 4. Load Pool Data
 let poolKeys: PoolInfo[];
+let selectedToken: TokenInfo;
 try {
-  const poolData = JSON.parse(fs.readFileSync(SWAP_CONFIG.liquidityFile, 'utf-8'));
-  if (!Array.isArray(poolData)) throw new Error('Invalid pool data');
+  const poolData = JSON.parse(fs.readFileSync(SWAP_CONFIG.liquidityFile, 'utf-8')) as TokenList;
   
-  // Filter for the requested pool
-  poolKeys = poolData.filter(pool => 
-    pool.baseMint === SWAP_CONFIG.tokenAAddress && 
-    pool.quoteMint === SWAP_CONFIG.tokenBAddress
+  // Find the requested token
+  const tokenData = poolData.tokens.find(t => 
+    t.token.symbol.toUpperCase() === argv.symbol.toUpperCase()
   );
   
+  if (!tokenData) {
+    throw new Error(`Token ${argv.symbol} not found in liquidity file`);
+  }
+
+  selectedToken = tokenData.token;
+  console.log(`🪙 Found token: ${selectedToken.name} (${selectedToken.symbol})`);
+  
+  // Set the token addresses based on direction
+  if (SWAP_CONFIG.direction === 'in') {
+    // Token -> SOL: Token is input
+    SWAP_CONFIG.tokenAAddress = selectedToken.mint;
+  } else {
+    // SOL -> Token: SOL is input
+    SWAP_CONFIG.tokenAAddress = SWAP_CONFIG.tokenBAddress; // SOL
+    SWAP_CONFIG.tokenBAddress = selectedToken.mint; // Token
+  }
+  
+  // Get the pool for SOL pair
+  poolKeys = tokenData.pools.filter(pool => {
+    const isBaseSol = pool.baseMint === 'So11111111111111111111111111111111111111112';
+    const isQuoteSol = pool.quoteMint === 'So11111111111111111111111111111111111111112';
+    return isBaseSol || isQuoteSol;
+  });
+
   if (poolKeys.length === 0) {
-    throw new Error(`No valid pool found for ${SWAP_CONFIG.tokenAAddress} -> ${SWAP_CONFIG.tokenBAddress}`);
+    throw new Error(`No valid pool found for ${selectedToken.symbol}/SOL pair`);
   }
 
   // Get decimals from pool data
@@ -113,6 +188,7 @@ try {
   const quoteDecimals = poolKeys[0].quoteDecimals;
 
   console.log(`ℹ️  Using decimals from pool: base=${baseDecimals}, quote=${quoteDecimals}`);
+  console.log(`🏊 Using ${selectedToken.symbol}/SOL pool: ${poolKeys[0].id}`);
 } catch (error) {
   console.error('Failed to load liquidity file:');
   console.error(error);
@@ -163,35 +239,75 @@ async function getPriorityFee(): Promise<number> {
 async function createSwapTransaction(): Promise<Transaction> {
   console.log('\n🔍 Creating swap transaction...');
   
-  // Get token A account
-  console.log('🔑 Getting input token account...');
-  const tokenAAccount = await getOrCreateTokenAccount(new PublicKey(SWAP_CONFIG.tokenAAddress));
+  // Get token accounts for both tokens
+  console.log('🔑 Getting token accounts...');
+  const tokenAMint = new PublicKey(SWAP_CONFIG.tokenAAddress);
+  const tokenBMint = new PublicKey(SWAP_CONFIG.tokenBAddress);
   
-  // Define tokens based on pool data
+  const tokenAAccount = await getAssociatedTokenAddress(
+    tokenAMint,
+    walletKeypair.publicKey,
+    false,
+    TOKEN_PROGRAM_ID
+  );
+
+  const tokenBAccount = await getAssociatedTokenAddress(
+    tokenBMint,
+    walletKeypair.publicKey,
+    false,
+    TOKEN_PROGRAM_ID
+  );
+
+  // Create token accounts if they don't exist
+  let shouldCreateTokenA = false;
+  let shouldCreateTokenB = false;
+
+  try {
+    await getAccount(connection, tokenAAccount);
+    console.log('✅ Token A account exists');
+  } catch (error: any) {
+    if (error.name === 'TokenAccountNotFoundError') {
+      console.log('ℹ️  Token A account needs to be created');
+      shouldCreateTokenA = true;
+    }
+  }
+
+  try {
+    await getAccount(connection, tokenBAccount);
+    console.log('✅ Token B account exists');
+  } catch (error: any) {
+    if (error.name === 'TokenAccountNotFoundError') {
+      console.log('ℹ️  Token B account needs to be created');
+      shouldCreateTokenB = true;
+    }
+  }
+
+  // Define tokens based on pool data and direction
   const tokenA = new Token({
-    mint: new PublicKey(SWAP_CONFIG.tokenAAddress),
-    decimals: poolKeys[0].baseDecimals,
-    symbol: 'TOKEN_A'  // Generic symbol since we don't have token metadata
+    mint: tokenAMint,
+    decimals: SWAP_CONFIG.direction === 'in' ? poolKeys[0].baseDecimals : poolKeys[0].quoteDecimals,
+    symbol: SWAP_CONFIG.direction === 'in' ? selectedToken.symbol : 'SOL'
   });
   
   const tokenB = new Token({
-    mint: new PublicKey(SWAP_CONFIG.tokenBAddress),
-    decimals: poolKeys[0].quoteDecimals,
-    symbol: 'TOKEN_B'  // Generic symbol since we don't have token metadata
+    mint: tokenBMint,
+    decimals: SWAP_CONFIG.direction === 'in' ? poolKeys[0].quoteDecimals : poolKeys[0].baseDecimals,
+    symbol: SWAP_CONFIG.direction === 'in' ? 'SOL' : selectedToken.symbol
   });
 
-  // Convert amount using the correct decimals from pool data
+  // Convert amount using the correct decimals
   const amount = SWAP_CONFIG.tokenAAmount * (
     SWAP_CONFIG.direction === 'in' 
-      ? 10 ** poolKeys[0].baseDecimals  // TOKEN_A -> TOKEN_B: use base decimals
-      : 10 ** poolKeys[0].quoteDecimals // TOKEN_B -> TOKEN_A: use quote decimals
+      ? 10 ** poolKeys[0].baseDecimals
+      : 10 ** poolKeys[0].quoteDecimals
   );
+
   const slippage = SWAP_CONFIG.slippage;
 
   // Log appropriate direction and amount
   const directionSymbol = SWAP_CONFIG.direction === 'in' ? '→' : '←';
-  console.log(`💰 ${SWAP_CONFIG.direction === 'in' ? 'Input' : 'Output'}: ${SWAP_CONFIG.tokenAAmount} TOKEN_A`);
-  console.log(`🔄 Direction: TOKEN_A ${directionSymbol} TOKEN_B`);
+  console.log(`💰 ${SWAP_CONFIG.direction === 'in' ? 'Input' : 'Output'}: ${SWAP_CONFIG.tokenAAmount} ${tokenA.symbol}`);
+  console.log(`🔄 Direction: ${tokenA.symbol} ${directionSymbol} ${tokenB.symbol}`);
   console.log(`📊 Slippage: ${SWAP_CONFIG.slippage}%`);
   
   // Step 1: Get priority fee
@@ -206,7 +322,7 @@ async function createSwapTransaction(): Promise<Transaction> {
     amount: amount.toString(),
     slippageBps: (slippage * 100).toString(),
     txVersion: 'LEGACY',
-    computeUnitPriceMicroLamports: priorityFee.toString()  // Add priority fee to quote
+    computeUnitPriceMicroLamports: priorityFee.toString()
   });
   
   // Use appropriate endpoint based on direction
@@ -225,11 +341,20 @@ async function createSwapTransaction(): Promise<Transaction> {
   if (swapResponse.data) {
     // Convert output amount based on direction
     const outputAmount = SWAP_CONFIG.direction === 'in'
-      ? swapResponse.data.outputAmount / (10 ** poolKeys[0].quoteDecimals)  // TOKEN_A -> TOKEN_B
-      : swapResponse.data.outputAmount / (10 ** poolKeys[0].baseDecimals);  // TOKEN_B -> TOKEN_A
+      ? swapResponse.data.outputAmount / (10 ** poolKeys[0].quoteDecimals)
+      : swapResponse.data.outputAmount / (10 ** poolKeys[0].baseDecimals);
       
-    console.log(`📊 Expected ${SWAP_CONFIG.direction === 'in' ? 'output' : 'input'}: ${outputAmount} ${SWAP_CONFIG.direction === 'in' ? 'TOKEN_B' : 'TOKEN_A'}`);
+    console.log(`📊 Expected ${SWAP_CONFIG.direction === 'in' ? 'output' : 'input'}: ${outputAmount} ${SWAP_CONFIG.direction === 'in' ? tokenB.symbol : tokenA.symbol}`);
     console.log(`📈 Price impact: ${swapResponse.data.priceImpactPct}%`);
+
+    // Safety check: Prevent swaps with high price impact
+    const MAX_PRICE_IMPACT = 5.0; // 5%
+    if (swapResponse.data.priceImpactPct > MAX_PRICE_IMPACT) {
+      console.error('❌ Price impact too high!');
+      console.error(`Expected price impact (${swapResponse.data.priceImpactPct}%) exceeds maximum allowed (${MAX_PRICE_IMPACT}%)`);
+      console.error('This could result in significant losses. Aborting for safety.');
+      process.exit(1);
+    }
   }
 
   // Step 3: Create swap transaction
@@ -241,9 +366,11 @@ async function createSwapTransaction(): Promise<Transaction> {
       swapResponse,
       txVersion: 'LEGACY',
       wallet: walletKeypair.publicKey.toBase58(),
-      wrapSol: SWAP_CONFIG.tokenBAddress === 'So11111111111111111111111111111111111111112' && SWAP_CONFIG.direction === 'out',
-      unwrapSol: SWAP_CONFIG.tokenBAddress === 'So11111111111111111111111111111111111111112' && SWAP_CONFIG.direction === 'in',
-      inputAccount: tokenAAccount,
+      wrapSol: SWAP_CONFIG.direction === 'out',
+      unwrapSol: SWAP_CONFIG.direction === 'in',
+      inputAccount: tokenAAccount.toBase58(),
+      outputAccount: tokenBAccount.toBase58(),
+      createTokenAccounts: shouldCreateTokenA || shouldCreateTokenB
     }
   );
 
@@ -405,82 +532,107 @@ async function preflightChecks(): Promise<void> {
   try {
     console.log('\n🚀 Starting preflight checks...');
     
-    console.log('🌐 Checking Solana connection...');
-    const version = await connection.getVersion();
-    console.log(`✅ Connected to Solana ${version['solana-core']}`);
-    
-    console.log('💰 Checking wallet balance...');
-    const balance = await connection.getBalance(walletKeypair.publicKey);
-    console.log(`💳 Wallet balance: ${balance / 1e9} SOL`);
-    
-    // Just check if we have any balance at all
-    if (balance === 0) {
-      console.error('❌ No SOL balance');
-      throw new Error('Wallet has no SOL balance');
-    }
-    console.log('✅ Has SOL balance');
-
-    // Check token A balance
-    console.log('🔍 Checking input token balance...');
-    const tokenAAccount = await getAssociatedTokenAddress(
-      new PublicKey(SWAP_CONFIG.tokenAAddress),
-      walletKeypair.publicKey,
-      false,
-      TOKEN_PROGRAM_ID
-    );
-    
-    try {
-      const tokenAccount = await getAccount(connection, tokenAAccount);
-      const tokenABalance = Number(tokenAccount.amount) / (10 ** poolKeys[0].baseDecimals);
-      console.log(`💰 Input token balance: ${tokenABalance}`);
-
-      // Get swap quote to check required input amount
-      console.log('🧮 Computing swap quote...');
-      const quoteParams = new URLSearchParams({
-        inputMint: SWAP_CONFIG.tokenAAddress,
-        outputMint: SWAP_CONFIG.tokenBAddress,
-        amount: (SWAP_CONFIG.tokenAAmount * (10 ** poolKeys[0].baseDecimals)).toString(),
-        slippageBps: (SWAP_CONFIG.slippage * 100).toString(),
-        txVersion: 'LEGACY'
-      });
+    if (!argv.simulate) {
+      console.log('🌐 Checking Solana connection...');
+      const version = await connection.getVersion();
+      console.log(`✅ Connected to Solana ${version['solana-core']}`);
       
-      const swapMode = SWAP_CONFIG.direction === 'in' ? 'swap-base-in' : 'swap-base-out';
-      const { data: swapResponse } = await axios.get(
-        `${API_URLS.SWAP_HOST}/compute/${swapMode}?${quoteParams}`
-      );
-
-      if (!swapResponse.success) {
-        console.error('❌ Failed to compute swap quote');
-        console.error('Response:', JSON.stringify(swapResponse, null, 2));
-        process.exit(1);
-      }
-
-      const requiredAmount = swapResponse.data.inputAmount / (10 ** poolKeys[0].baseDecimals);
-      console.log(`📊 Required input amount: ${requiredAmount}`);
+      console.log('💰 Checking wallet balance...');
+      const balance = await connection.getBalance(walletKeypair.publicKey);
+      console.log(`💳 Wallet balance: ${balance / 1e9} SOL`);
       
-      if (tokenABalance < requiredAmount) {
-        throw new Error(`Insufficient balance. Have ${tokenABalance}, need ${requiredAmount}`);
+      // Just check if we have any balance at all
+      if (balance === 0) {
+        console.error('❌ No SOL balance');
+        throw new Error('Wallet has no SOL balance');
       }
-      console.log('✅ Has sufficient balance');
-    } catch (error: any) {
-      if (error.name === 'TokenAccountNotFoundError') {
-        console.error('❌ No token account found');
-        throw new Error(`No token account found for ${SWAP_CONFIG.tokenAAddress}`);
+      console.log('✅ Has SOL balance');
+
+      // Check token balance based on direction
+      if (SWAP_CONFIG.direction === 'in') {
+        // For token -> SOL swaps, check token balance
+        console.log('🔍 Checking input token balance...');
+        const tokenAAccount = await getAssociatedTokenAddress(
+          new PublicKey(SWAP_CONFIG.tokenAAddress),
+          walletKeypair.publicKey,
+          false,
+          TOKEN_PROGRAM_ID
+        );
+        
+        try {
+          const tokenAccount = await getAccount(connection, tokenAAccount);
+          const tokenABalance = Number(tokenAccount.amount) / (10 ** poolKeys[0].baseDecimals);
+          console.log(`💰 Input token balance: ${tokenABalance}`);
+
+          // Get swap quote to check required input amount
+          console.log('🧮 Computing swap quote...');
+          const quoteParams = new URLSearchParams({
+            inputMint: SWAP_CONFIG.tokenAAddress,
+            outputMint: SWAP_CONFIG.tokenBAddress,
+            amount: (SWAP_CONFIG.tokenAAmount * (10 ** poolKeys[0].baseDecimals)).toString(),
+            slippageBps: (SWAP_CONFIG.slippage * 100).toString(),
+            txVersion: 'LEGACY'
+          });
+          
+          const swapMode = SWAP_CONFIG.direction === 'in' ? 'swap-base-in' : 'swap-base-out';
+          const { data: swapResponse } = await axios.get(
+            `${API_URLS.SWAP_HOST}/compute/${swapMode}?${quoteParams}`
+          );
+
+          if (!swapResponse.success) {
+            console.error('❌ Failed to compute swap quote');
+            console.error('Response:', JSON.stringify(swapResponse, null, 2));
+            process.exit(1);
+          }
+
+          const requiredAmount = swapResponse.data.inputAmount / (10 ** poolKeys[0].baseDecimals);
+          console.log(`📊 Required input amount: ${requiredAmount}`);
+          
+          if (tokenABalance < requiredAmount) {
+            throw new Error(`Insufficient balance. Have ${tokenABalance}, need ${requiredAmount}`);
+          }
+          console.log('✅ Has sufficient balance');
+        } catch (error: any) {
+          if (error.name === 'TokenAccountNotFoundError') {
+            console.error('❌ No token account found');
+            throw new Error(`No token account found for ${SWAP_CONFIG.tokenAAddress}`);
+          }
+          throw error;
+        }
+      } else {
+        // For SOL -> token swaps, check SOL balance
+        const requiredSol = SWAP_CONFIG.tokenAAmount; // Amount in SOL
+        if (balance / 1e9 < requiredSol) {
+          throw new Error(`Insufficient SOL balance. Have ${balance / 1e9}, need ${requiredSol}`);
+        }
+        console.log('✅ Has sufficient SOL balance');
       }
-      throw error;
+    } else {
+      console.log('💡 Running in simulation mode - skipping balance checks');
     }
 
     console.log('🏊 Checking liquidity pool...');
     if (!poolKeys || poolKeys.length === 0) {
       console.error('❌ No valid pool found');
-      throw new Error('No valid WIF/SOL pool found');
+      throw new Error('No valid pool found');
     }
-    console.log(`✅ Using WIF/SOL pool: ${poolKeys[0].id}`);
+    console.log(`✅ Using ${selectedToken.symbol}/SOL pool: ${poolKeys[0].id}`);
     console.log('✅ All preflight checks passed!\n');
   } catch (error) {
-    console.error('❌ Preflight check failed:');
-    console.error(error);
-    process.exit(1);
+    if (argv.simulate) {
+      // In simulation mode, only fail on pool-related errors
+      if (error instanceof Error && error.message.includes('No valid pool found')) {
+        console.error('❌ Preflight check failed:');
+        console.error(error);
+        process.exit(1);
+      }
+      // Otherwise continue with simulation
+      console.log('✅ All preflight checks passed!\n');
+    } else {
+      console.error('❌ Preflight check failed:');
+      console.error(error);
+      process.exit(1);
+    }
   }
 }
 

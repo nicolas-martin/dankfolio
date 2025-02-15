@@ -13,7 +13,9 @@
     "@raydium-io/raydium-sdk-v2": "^0.1.111-alpha",
     "@solana/spl-token": "^0.4.1",
     "@solana/web3.js": "^1.91.0",
-    "axios": "^1.7.9"
+    "@types/yargs": "^17.0.33",
+    "axios": "^1.7.9",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

@@ -57,6 +57,35 @@
           "marketId": "DMMk22SvdJAFhvJ3Hp9ZV1FNJETCAxRPM6M6QthZ5m6B"
         }
       ]
+    },
+    {
+      "token": {
+        "symbol": "BOME",
+        "name": "BOME (Direct Mint)",
+        "mint": "2JwRgifS5idKfL5ve5pLAi8mnB4nETxDeY4neC3yzo3j",
+        "decimals": 9
+      },
+      "pools": [
+        {
+          "id": "9gTML8PQ9dMFVFWzji2gNc6FGscEK7QikUHqZTUvaRkw",
+          "baseMint": "2JwRgifS5idKfL5ve5pLAi8mnB4nETxDeY4neC3yzo3j",
+          "quoteMint": "So11111111111111111111111111111111111111112",
+          "lpMint": "Fk83RmBth4K5JFBae4naXiXR9fZ8JDA7atGfEbduKV6f",
+          "programId": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
+          "authority": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+          "openOrders": "DjWRZDDCCUnURbqmsuwx2M87sHPkj2JDuXbHuKRZk8KZ",
+          "targetOrders": "EjcgAxeFbZcSi97PUeC2LC4EbU1LHo4k7kNf7ejWhEbD",
+          "baseVault": "BnfPVACivsEM6kyy5W87qr54J1uZXRm9cYLUJ4SSHE2b",
+          "quoteVault": "EwH2pyxbyAbmTihzvgkdZH5noqmc7gbHjYhKtQ9WH8wy",
+          "version": 5,
+          "baseDecimals": 9,
+          "quoteDecimals": 9,
+          "lpDecimals": 9,
+          "marketVersion": 3,
+          "marketProgramId": "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX",
+          "marketId": "oneWsgyqCZkV8qh1GCwU65k6Pj71wRL6BU82jpJYjpR"
+        }
+      ]
     }
   ]
 }

@@ -53,7 +53,7 @@ type RaydiumResponse struct {
 type Config struct {
 	inputFile string
 	tokenFile string
-	baseMint  string // Changed from tokenB to baseMint for clarity
+	mint      string // Single mint flag for specifying token address
 	ticker    string // Added ticker field
 }
 
@@ -88,8 +88,8 @@ func parseFlags() Config {
 
 	flag.StringVar(&config.inputFile, "file", "", "Path to existing pool JSON file (optional)")
 	flag.StringVar(&config.tokenFile, "token-file", "", "Path to existing token list JSON file (optional)")
-	flag.StringVar(&config.baseMint, "token", "", "Base token mint address (optional, will be fetched from API if not provided)")
-	flag.StringVar(&config.ticker, "ticker", "GIGA", "Token ticker symbol to search for (default: GIGA)")
+	flag.StringVar(&config.mint, "mint", "", "Token mint address (optional, requires --ticker)")
+	flag.StringVar(&config.ticker, "ticker", "", "Token ticker symbol (required when using --mint)")
 
 	flag.Parse()
 
@@ -195,7 +195,10 @@ func processPoolsFile(filePath string, baseMint string, ticker string) ([]Raydiu
 	}
 	defer file.Close()
 
-	fmt.Println("Processing pools...")
+	fmt.Println("\n🔍 Processing pools...")
+	fmt.Printf("Looking for %s/SOL pairs with:\n", strings.ToUpper(ticker))
+	fmt.Printf("  Base Token:  %s\n", baseMint)
+	fmt.Printf("  Quote Token: %s\n\n", defaultQuoteMint)
 
 	decoder := json.NewDecoder(file)
 
@@ -214,10 +217,17 @@ func processPoolsFile(filePath string, baseMint string, ticker string) ([]Raydiu
 			if (pool.BaseMint == baseMint && pool.QuoteMint == defaultQuoteMint) ||
 				(pool.QuoteMint == baseMint && pool.BaseMint == defaultQuoteMint) {
 				fmt.Printf("\n📊 Pool Details (%s):\n", map[bool]string{true: "Official", false: "Unofficial"}[isOfficial])
-				fmt.Printf("  ID: %s\n", pool.ID)
-				fmt.Printf("  Base Token:  %s\n", pool.BaseMint)
-				fmt.Printf("  Quote Token: %s\n", pool.QuoteMint)
-				fmt.Printf("  LP Token:    %s\n", pool.LPMint)
+				fmt.Printf("  ID:              %s\n", pool.ID)
+				fmt.Printf("  Base Token:      %s\n", pool.BaseMint)
+				fmt.Printf("  Quote Token:     %s\n", pool.QuoteMint)
+				fmt.Printf("  LP Token:        %s\n", pool.LPMint)
+				fmt.Printf("  Program ID:      %s\n", pool.ProgramID)
+				fmt.Printf("  Market ID:       %s\n", pool.MarketID)
+				fmt.Printf("  Version:         %d\n", pool.Version)
+				fmt.Printf("  Market Version:  %d\n", pool.MarketVersion)
+				fmt.Printf("  Base Decimals:   %d\n", pool.BaseDecimals)
+				fmt.Printf("  Quote Decimals:  %d\n", pool.QuoteDecimals)
+				fmt.Printf("  LP Decimals:     %d\n", pool.LPDecimals)
 				fmt.Printf("  ✨ %s/SOL pair found!\n", strings.ToUpper(ticker))
 				matchingPools = append(matchingPools, pool)
 			}
@@ -281,13 +291,17 @@ func processPoolsFile(filePath string, baseMint string, ticker string) ([]Raydiu
 		}
 	}
 
-	fmt.Printf("\n🎯 Found %d %s/SOL pairs\n", len(matchingPools), strings.ToUpper(ticker))
+	fmt.Printf("\n📈 Pool Summary:\n")
+	fmt.Printf("  Total Official Pools:   %d\n", officialCount)
+	fmt.Printf("  Total Unofficial Pools: %d\n", unofficialCount)
+	fmt.Printf("  Found %d %s/SOL pairs\n", len(matchingPools), strings.ToUpper(ticker))
 	return matchingPools, nil
 }
 
 // getTokenAddress fetches the token address from Raydium's API
-func getTokenAddress(symbol string, tokenFile string) (*TokenInfo, error) {
+func getTokenAddress(symbol string, tokenFile string) ([]*TokenInfo, error) {
 	var jsonFilePath string
+	var matchingTokens []*TokenInfo
 
 	if tokenFile != "" {
 		if !fileExists(tokenFile) {
@@ -353,7 +367,7 @@ func getTokenAddress(symbol string, tokenFile string) (*TokenInfo, error) {
 						fmt.Printf("  Name: %s\n", token.Name)
 						fmt.Printf("  Mint: %s\n", token.Mint)
 						fmt.Printf("  Decimals: %d\n", token.Decimals)
-						return &token, nil
+						matchingTokens = append(matchingTokens, &token)
 					}
 				}
 
@@ -382,7 +396,10 @@ func getTokenAddress(symbol string, tokenFile string) (*TokenInfo, error) {
 	}
 
 	fmt.Printf("\nProcessed %d tokens total\n", tokenCount)
-	return nil, fmt.Errorf("token %s not found", symbol)
+	if len(matchingTokens) == 0 {
+		return nil, fmt.Errorf("token %s not found", symbol)
+	}
+	return matchingTokens, nil
 }
 
 // writeFilteredPools writes or appends the filtered pools to the output file
@@ -406,21 +423,34 @@ func writeFilteredPools(tokenInfo *TokenInfo, pools []RaydiumPool) error {
 			tokenList.Tokens = []TokenPoolInfo{oldFormat}
 		}
 
-		// Check if token already exists
-		for _, existing := range tokenList.Tokens {
+		// Check if token already exists and update it
+		updated := false
+		for i, existing := range tokenList.Tokens {
 			if existing.Token.Symbol == tokenInfo.Symbol {
-				fmt.Printf("⚠️  Token %s already exists in the output file, skipping...\n", tokenInfo.Symbol)
-				return nil
+				fmt.Printf("🔄 Updating existing entry for %s in the output file...\n", tokenInfo.Symbol)
+				tokenList.Tokens[i] = TokenPoolInfo{
+					Token: *tokenInfo,
+					Pools: pools,
+				}
+				updated = true
+				break
 			}
 		}
-	}
 
-	// Add new token info
-	newToken := TokenPoolInfo{
-		Token: *tokenInfo,
-		Pools: pools,
+		// If token wasn't found, append it
+		if !updated {
+			tokenList.Tokens = append(tokenList.Tokens, TokenPoolInfo{
+				Token: *tokenInfo,
+				Pools: pools,
+			})
+		}
+	} else {
+		// Create new file with the token info
+		tokenList.Tokens = []TokenPoolInfo{{
+			Token: *tokenInfo,
+			Pools: pools,
+		}}
 	}
-	tokenList.Tokens = append(tokenList.Tokens, newToken)
 
 	// Write back to file
 	file, err := os.Create(outputFile)
@@ -447,16 +477,45 @@ func main() {
 
 	config := parseFlags()
 
-	// Get token address from Raydium API using provided ticker
-	tokenInfo, err := getTokenAddress(config.ticker, config.tokenFile)
-	if err != nil {
-		log.Fatalf("❌ Failed to get %s token address: %v", config.ticker, err)
+	// Validate flags
+	if config.mint != "" && config.ticker == "" {
+		log.Fatalf("❌ Error: --ticker is required when using --mint\nUsage: --mint=<mint_address> --ticker=<token_symbol>")
+	}
+
+	var selectedToken *TokenInfo
+
+	// If mint is provided, create a token info
+	if config.mint != "" {
+		selectedToken = &TokenInfo{
+			Symbol:   config.ticker,
+			Name:     fmt.Sprintf("%s (Direct Mint)", config.ticker),
+			Mint:     config.mint,
+			Decimals: 9, // Default to 9 decimals
+		}
+		fmt.Printf("Using provided mint address directly: %s\n", config.mint)
+	} else {
+		// Get token address from Raydium API using provided ticker
+		tokens, err := getTokenAddress(config.ticker, config.tokenFile)
+		if err != nil {
+			log.Fatalf("❌ Failed to get %s token address: %v", config.ticker, err)
+		}
+
+		if len(tokens) > 1 {
+			fmt.Printf("\n🔍 Found multiple tokens with symbol %s. Please choose one:\n", config.ticker)
+			for i, token := range tokens {
+				fmt.Printf("%d) %s (Mint: %s)\n", i+1, token.Name, token.Mint)
+			}
+			fmt.Printf("\nRe-run the command with --mint=<mint_address> --ticker=%s to use a specific token\n", config.ticker)
+			os.Exit(0)
+		}
+
+		selectedToken = tokens[0]
 	}
 
 	// Update config with token address
-	config.baseMint = tokenInfo.Mint
+	config.mint = selectedToken.Mint
 
-	fmt.Printf("Base Token (%s): %s\n", config.ticker, config.baseMint)
+	fmt.Printf("Base Token (%s): %s\n", config.ticker, config.mint)
 	fmt.Printf("Quote Token (SOL): %s\n\n", defaultQuoteMint)
 
 	var jsonFilePath string
@@ -486,7 +545,7 @@ func main() {
 		log.Fatalf("❌ Invalid JSON file: %v", err)
 	}
 
-	pools, err := processPoolsFile(jsonFilePath, config.baseMint, config.ticker)
+	pools, err := processPoolsFile(jsonFilePath, config.mint, config.ticker)
 	if err != nil {
 		if config.inputFile == "" {
 			os.Remove(jsonFilePath)
@@ -494,7 +553,7 @@ func main() {
 		log.Fatalf("❌ Failed to process pools: %v", err)
 	}
 
-	if err := writeFilteredPools(tokenInfo, pools); err != nil {
+	if err := writeFilteredPools(selectedToken, pools); err != nil {
 		log.Fatalf("❌ Failed to write filtered pools: %v", err)
 	}
 
