@@ -2,191 +2,131 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/gagliardetto/solana-go/rpc/ws"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
+const (
+	// Raydium API endpoints
+	raydiumBaseHost = "https://api.raydium.io"
+	raydiumSwapHost = "https://transaction-v1.raydium.io"
+	// Common token mints
+	SolMint  = "So11111111111111111111111111111111111111112"
+	USDCMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+	// Default RPC endpoint
+	defaultDevnetRPC = "https://api.mainnet-beta.solana.com"
+)
+
 var (
-	// Default compute unit limits for transactions
-	defaultComputeUnitLimit uint32 = 70000
 	// Error definitions
 	ErrInvalidCoin  = errors.New("invalid coin")
 	ErrInvalidTrade = errors.New("invalid trade parameters")
-	// Default RPC endpoints
-	defaultDevnetRPC = "https://api.devnet.solana.com"
-	defaultDevnetWS  = "wss://api.devnet.solana.com"
-	// Default pool wallet for testing
-	defaultPoolWallet = "HsSnLYqCmuNwzP35AMf8CURFDATUyWt5nsCY2ZwBq76G"
+	ErrSwapFailed   = errors.New("swap transaction failed")
 )
+
+// PriorityFeeResponse represents the response from Raydium's priority fee endpoint
+type PriorityFeeResponse struct {
+	ID      string `json:"id"`
+	Success bool   `json:"success"`
+	Data    struct {
+		Default struct {
+			VH int64 `json:"vh"`
+			H  int64 `json:"h"`
+			M  int64 `json:"m"`
+		} `json:"default"`
+	} `json:"data"`
+}
+
+// SwapQuoteResponse represents the response from Raydium's swap quote endpoint
+type SwapQuoteResponse struct {
+	ID      string                 `json:"id"`
+	Success bool                   `json:"success"`
+	Data    map[string]interface{} `json:"data"`
+}
+
+// SwapTransactionResponse represents the response from Raydium's swap transaction endpoint
+type SwapTransactionResponse struct {
+	ID      string `json:"id"`
+	Version string `json:"version"`
+	Success bool   `json:"success"`
+	Data    []struct {
+		Transaction string `json:"transaction"`
+	} `json:"data"`
+}
+
+// SwapParams represents the parameters needed for a Raydium swap
+type SwapParams struct {
+	InputMint   string
+	OutputMint  string
+	Amount      uint64
+	Slippage    float64
+	IsInputSol  bool
+	IsOutputSol bool
+}
 
 // SolanaTradeService handles the execution of trades on the Solana blockchain
 type SolanaTradeService struct {
-	client           *rpc.Client
-	wsClient         *ws.Client
-	programID        solana.PublicKey
-	poolWallet       solana.PublicKey
-	computeUnitLimit uint32
-	privateKey       solana.PrivateKey // Private key for signing transactions
+	client     *rpc.Client
+	httpClient *http.Client // HTTP client for Raydium API calls
 }
 
-func NewSolanaTradeService(rpcEndpoint, wsEndpoint string, programID, poolWallet, privateKey string) (*SolanaTradeService, error) {
-	// Use default endpoints if not provided
+func NewSolanaTradeService(rpcEndpoint string) (*SolanaTradeService, error) {
+	// Use default endpoint if not provided
 	if rpcEndpoint == "" {
 		rpcEndpoint = defaultDevnetRPC
 	}
-	if wsEndpoint == "" {
-		wsEndpoint = defaultDevnetWS
-	}
-
-	// Create a new keypair if private key is not provided
-	var privKey solana.PrivateKey
-	var err error
-	if privateKey == "" {
-		// Try to load the default Solana CLI wallet
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get home directory: %w", err)
-		}
-		keyPath := filepath.Join(homeDir, ".config", "solana", "id.json")
-		keyData, err := os.ReadFile(keyPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read Solana CLI wallet: %w", err)
-		}
-		var keyBytes []byte
-		if err := json.Unmarshal(keyData, &keyBytes); err != nil {
-			return nil, fmt.Errorf("failed to parse Solana CLI wallet JSON: %w", err)
-		}
-		privKey = solana.PrivateKey(keyBytes)
-		log.Printf("🔑 Loaded Solana CLI wallet: %s", privKey.PublicKey().String())
-	} else {
-		privKey, err = solana.PrivateKeyFromBase58(privateKey)
-		if err != nil {
-			return nil, fmt.Errorf("invalid private key: %w", err)
-		}
-	}
-
-	// Use default pool wallet if not provided
-	if poolWallet == "" {
-		poolWallet = defaultPoolWallet
-	}
-
-	// Parse pool wallet
-	poolPubKey, err := solana.PublicKeyFromBase58(poolWallet)
-	if err != nil {
-		return nil, fmt.Errorf("invalid pool wallet: %w", err)
-	}
-	log.Printf("🏦 Using pool wallet: %s", poolPubKey.String())
-
-	// Parse program ID
-	programPubKey, err := solana.PublicKeyFromBase58(programID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid program ID: %w", err)
-	}
-
-	// Connect to WebSocket
-	wsClient, err := ws.Connect(context.Background(), wsEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to websocket: %w", err)
-	}
 
 	service := &SolanaTradeService{
-		client:           rpc.New(rpcEndpoint),
-		wsClient:         wsClient,
-		programID:        programPubKey,
-		poolWallet:       poolPubKey,
-		computeUnitLimit: defaultComputeUnitLimit,
-		privateKey:       privKey,
-	}
-
-	// Request airdrop for testing
-	if err := service.requestAirdrop(context.Background()); err != nil {
-		log.Printf("⚠️ Failed to request airdrop: %v", err)
+		client:     rpc.New(rpcEndpoint),
+		httpClient: &http.Client{},
 	}
 
 	return service, nil
 }
 
-func (s *SolanaTradeService) requestAirdrop(ctx context.Context) error {
-	amount := uint64(1 * solana.LAMPORTS_PER_SOL) // 1 SOL
-	sig, err := s.client.RequestAirdrop(ctx, s.privateKey.PublicKey(), amount, rpc.CommitmentConfirmed)
-	if err != nil {
-		return fmt.Errorf("failed to request airdrop: %w", err)
-	}
-	log.Printf("🪂 Requested airdrop of 1 SOL to %s. Transaction: %s", s.privateKey.PublicKey().String(), sig.String())
-
-	// Wait for confirmation
-	startTime := time.Now()
-	timeout := 30 * time.Second
-	for {
-		if time.Since(startTime) > timeout {
-			return fmt.Errorf("airdrop confirmation timeout")
-		}
-
-		status, err := s.client.GetSignatureStatuses(ctx, true, sig)
-		if err != nil {
-			return fmt.Errorf("failed to get airdrop status: %w", err)
-		}
-
-		if status.Value[0] != nil {
-			if status.Value[0].Err != nil {
-				return fmt.Errorf("airdrop failed: %v", status.Value[0].Err)
-			}
-			if status.Value[0].Confirmations != nil && *status.Value[0].Confirmations > 0 {
-				log.Printf("✅ Airdrop confirmed with %d confirmations", *status.Value[0].Confirmations)
-				break
-			}
-		}
-
-		log.Printf("⏳ Waiting for airdrop confirmation...")
-		time.Sleep(time.Second)
-	}
-
-	return nil
-}
-
 func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trade) error {
-	// Validate trade parameters
-	if trade == nil {
-		return fmt.Errorf("trade cannot be nil")
+	// Validate and parse private key from trade request
+	if trade.PrivateKey == "" {
+		return fmt.Errorf("private key is required for trade execution")
 	}
 
-	if trade.CoinID == "" {
-		return fmt.Errorf("invalid coin ID: empty")
-	}
+	// Remove any quotes and whitespace from the private key
+	privateKeyStr := strings.TrimSpace(strings.Trim(trade.PrivateKey, "\""))
 
-	if trade.Type != "buy" && trade.Type != "sell" {
-		return fmt.Errorf("invalid trade type: %s", trade.Type)
-	}
-
-	if trade.Amount <= 0 {
-		return fmt.Errorf("invalid amount: amount must be greater than 0")
-	}
-
-	// Get the private key for signing transactions
-	privateKey, err := s.getPrivateKey(ctx)
+	// Decode base64 private key
+	privateKeyBytes, err := base64.StdEncoding.DecodeString(privateKeyStr)
 	if err != nil {
-		return fmt.Errorf("failed to get private key: %w", err)
+		return fmt.Errorf("invalid base64 private key: %w", err)
 	}
 
-	// Create and send the transaction
-	txHash, err := s.executeTransaction(ctx, trade, privateKey)
+	// Convert to Solana private key
+	privKey := solana.PrivateKey(privateKeyBytes)
+	log.Printf("🔑 Using wallet: %s", privKey.PublicKey().String())
+
+	// Convert trade to swap params
+	swapParams := &SwapParams{
+		InputMint:   trade.FromCoinID,
+		OutputMint:  trade.ToCoinID,
+		Amount:      uint64(trade.Amount * 1e9), // Convert to lamports
+		Slippage:    1.0,                        // Default 1% slippage
+		IsInputSol:  trade.FromCoinID == SolMint,
+		IsOutputSol: trade.ToCoinID == SolMint,
+	}
+
+	// Execute the Raydium swap
+	txHash, err := s.ExecuteRaydiumSwap(ctx, swapParams, privKey)
 	if err != nil {
-		if strings.Contains(err.Error(), "0x1") {
-			return fmt.Errorf("insufficient funds: %w", err)
-		}
-		return fmt.Errorf("failed to execute transaction: %w", err)
+		return fmt.Errorf("failed to execute Raydium swap: %w", err)
 	}
 
 	// Update trade status
@@ -197,150 +137,189 @@ func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trad
 	return nil
 }
 
-func (s *SolanaTradeService) getPrivateKey(ctx context.Context) (solana.PrivateKey, error) {
-	return s.privateKey, nil
+// ExecuteRaydiumSwap executes a swap on Raydium DEX
+func (s *SolanaTradeService) ExecuteRaydiumSwap(ctx context.Context, params *SwapParams, privKey solana.PrivateKey) (string, error) {
+	log.Printf("🔄 Starting Raydium swap: %d %s -> %s", params.Amount, params.InputMint, params.OutputMint)
+
+	// Get priority fee
+	priorityFee, err := s.getRaydiumPriorityFee(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get priority fee: %w", err)
+	}
+	log.Printf("💰 Got priority fee: %d", priorityFee.Data.Default.H)
+
+	// Get swap quote
+	quote, err := s.getRaydiumSwapQuote(ctx, params)
+	if err != nil {
+		return "", fmt.Errorf("failed to get swap quote: %w", err)
+	}
+	log.Printf("📊 Got swap quote")
+
+	// Get swap transaction
+	txData, err := s.getRaydiumSwapTransaction(ctx, quote, priorityFee, params, privKey.PublicKey().String())
+	if err != nil {
+		return "", fmt.Errorf("failed to get swap transaction: %w", err)
+	}
+
+	// Process and send transactions
+	var lastSignature string
+	for idx, tx := range txData.Data {
+		log.Printf("📝 Processing transaction %d/%d", idx+1, len(txData.Data))
+
+		sig, err := s.processAndSendTransaction(ctx, tx.Transaction, privKey)
+		if err != nil {
+			return "", fmt.Errorf("failed to process transaction %d: %w", idx+1, err)
+		}
+		lastSignature = sig
+		log.Printf("✅ Transaction %d sent: %s", idx+1, sig)
+	}
+
+	return lastSignature, nil
 }
 
-func (s *SolanaTradeService) executeTransaction(ctx context.Context, trade *model.Trade, privateKey solana.PrivateKey) (string, error) {
-	log.Printf("🔄 Starting transaction execution for %s %f %s", trade.Type, trade.Amount, trade.CoinID)
+// getRaydiumPriorityFee fetches the current priority fee from Raydium
+func (s *SolanaTradeService) getRaydiumPriorityFee(ctx context.Context) (*PriorityFeeResponse, error) {
+	url := fmt.Sprintf("%s/v2/main/priority-fee", raydiumBaseHost)
 
-	// Check account balance first
-	balance, err := s.client.GetBalance(ctx, privateKey.PublicKey(), rpc.CommitmentConfirmed)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		log.Printf("❌ Failed to get account balance: %v", err)
-		return "", fmt.Errorf("failed to get account balance: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	log.Printf("💰 Account balance: %d lamports", balance.Value)
 
-	// Check pool wallet balance
-	poolBalance, err := s.client.GetBalance(ctx, s.poolWallet, rpc.CommitmentConfirmed)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		log.Printf("❌ Failed to get pool balance: %v", err)
-		return "", fmt.Errorf("failed to get pool balance: %w", err)
+		return nil, fmt.Errorf("failed to get priority fee: %w", err)
 	}
-	log.Printf("💰 Pool balance: %d lamports", poolBalance.Value)
+	defer resp.Body.Close()
 
-	if balance.Value < solana.LAMPORTS_PER_SOL/10 {
-		log.Printf("❌ Insufficient SOL balance. Please visit https://faucet.solana.com to get more SOL")
-		return "", fmt.Errorf("insufficient SOL balance")
-	}
-
-	if poolBalance.Value < solana.LAMPORTS_PER_SOL/10 {
-		log.Printf("❌ Insufficient pool balance. Please fund the pool wallet")
-		return "", fmt.Errorf("insufficient pool balance")
+	var feeData PriorityFeeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&feeData); err != nil {
+		return nil, fmt.Errorf("failed to decode priority fee response: %w", err)
 	}
 
-	// Get recent blockhash
-	recentBlockhash, err := s.client.GetRecentBlockhash(ctx, rpc.CommitmentConfirmed)
-	if err != nil {
-		log.Printf("❌ Failed to get recent blockhash: %v", err)
-		return "", fmt.Errorf("failed to get recent blockhash: %w", err)
+	if !feeData.Success {
+		return nil, fmt.Errorf("priority fee request failed")
 	}
-	log.Printf("✅ Got recent blockhash: %s", recentBlockhash.Value.Blockhash)
 
-	// Parse token mint address
-	tokenMint, err := solana.PublicKeyFromBase58(trade.CoinID)
-	if err != nil {
-		log.Printf("❌ Invalid token mint address: %v", err)
-		return "", fmt.Errorf("invalid token mint address: %w", err)
-	}
-	log.Printf("✅ Parsed token mint: %s", tokenMint)
+	return &feeData, nil
+}
 
-	// Get associated token account for the user's wallet
-	userATA, _, err := solana.FindAssociatedTokenAddress(
-		privateKey.PublicKey(),
-		tokenMint,
+// getRaydiumSwapQuote fetches a swap quote from Raydium
+func (s *SolanaTradeService) getRaydiumSwapQuote(ctx context.Context, params *SwapParams) (*SwapQuoteResponse, error) {
+	url := fmt.Sprintf("%s/compute/swap-base-in?inputMint=%s&outputMint=%s&amount=%d&slippageBps=%d&txVersion=V0",
+		raydiumSwapHost,
+		params.InputMint,
+		params.OutputMint,
+		params.Amount,
+		int(params.Slippage*100),
 	)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		log.Printf("❌ Failed to find user's associated token account: %v", err)
-		return "", fmt.Errorf("failed to find associated token account: %w", err)
-	}
-	log.Printf("✅ Found user's ATA: %s", userATA)
-
-	// Get associated token account for the pool wallet
-	poolATA, _, err := solana.FindAssociatedTokenAddress(
-		s.poolWallet,
-		tokenMint,
-	)
-	if err != nil {
-		log.Printf("❌ Failed to find pool's associated token account: %v", err)
-		return "", fmt.Errorf("failed to find pool associated token account: %w", err)
-	}
-	log.Printf("✅ Found pool's ATA: %s", poolATA)
-
-	// Convert amount to lamports (smallest unit)
-	amount := uint64(trade.Amount * 1e9) // Assuming 9 decimals for SPL tokens
-	log.Printf("💰 Converting amount to lamports: %d", amount)
-
-	// Create the token transfer instruction
-	var transferInstruction solana.Instruction
-	if trade.Type == "buy" {
-		transferInstruction = token.NewTransferInstruction(
-			amount,
-			poolATA,      // from
-			userATA,      // to
-			s.poolWallet, // authority
-			[]solana.PublicKey{},
-		).Build()
-		log.Printf("📝 Created buy transfer instruction: %s -> %s", poolATA, userATA)
-	} else {
-		transferInstruction = token.NewTransferInstruction(
-			amount,
-			userATA,                // from
-			poolATA,                // to
-			privateKey.PublicKey(), // authority
-			[]solana.PublicKey{},
-		).Build()
-		log.Printf("📝 Created sell transfer instruction: %s -> %s", userATA, poolATA)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Create a new transaction with the transfer instruction
-	tx, err := solana.NewTransaction(
-		[]solana.Instruction{transferInstruction},
-		recentBlockhash.Value.Blockhash,
-		solana.TransactionPayer(privateKey.PublicKey()),
-	)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		log.Printf("❌ Failed to create transaction: %v", err)
-		return "", fmt.Errorf("failed to create transaction: %w", err)
+		return nil, fmt.Errorf("failed to get swap quote: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var quote SwapQuoteResponse
+	if err := json.NewDecoder(resp.Body).Decode(&quote); err != nil {
+		return nil, fmt.Errorf("failed to decode swap quote response: %w", err)
+	}
+
+	if !quote.Success {
+		return nil, fmt.Errorf("swap quote request failed")
+	}
+
+	return &quote, nil
+}
+
+// getRaydiumSwapTransaction fetches the swap transaction from Raydium
+func (s *SolanaTradeService) getRaydiumSwapTransaction(ctx context.Context, quote *SwapQuoteResponse, fee *PriorityFeeResponse, params *SwapParams, walletAddress string) (*SwapTransactionResponse, error) {
+	swapTxBody := map[string]interface{}{
+		"computeUnitPriceMicroLamports": fmt.Sprintf("%d", fee.Data.Default.H),
+		"swapResponse":                  quote,
+		"txVersion":                     "V0",
+		"wallet":                        walletAddress,
+		"wrapSol":                       params.IsInputSol,
+		"unwrapSol":                     params.IsOutputSol,
+	}
+
+	jsonBody, err := json.Marshal(swapTxBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal swap tx body: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/transaction/swap-base-in", raydiumSwapHost)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(string(jsonBody)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get swap transaction: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var txData SwapTransactionResponse
+	if err := json.NewDecoder(resp.Body).Decode(&txData); err != nil {
+		return nil, fmt.Errorf("failed to decode swap transaction response: %w", err)
+	}
+
+	if !txData.Success {
+		return nil, fmt.Errorf("swap transaction request failed")
+	}
+
+	return &txData, nil
+}
+
+// processAndSendTransaction processes and sends a single transaction
+func (s *SolanaTradeService) processAndSendTransaction(ctx context.Context, encodedTx string, privKey solana.PrivateKey) (string, error) {
+	// Decode transaction
+	txBytes, err := base64.StdEncoding.DecodeString(encodedTx)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode transaction: %w", err)
+	}
+
+	// Deserialize the transaction
+	tx, err := solana.TransactionFromBytes(txBytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to deserialize transaction: %w", err)
 	}
 
 	// Sign the transaction
 	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
-		if key.Equals(privateKey.PublicKey()) {
-			return &privateKey
+		if key.Equals(privKey.PublicKey()) {
+			return &privKey
 		}
 		return nil
 	})
 	if err != nil {
-		log.Printf("❌ Failed to sign transaction: %v", err)
 		return "", fmt.Errorf("failed to sign transaction: %w", err)
 	}
-	log.Printf("✅ Signed transaction with public key: %s", privateKey.PublicKey())
 
 	// Send the transaction
-	sig, err := s.client.SendTransaction(ctx, tx)
+	sig, err := s.client.SendTransactionWithOpts(ctx, tx,
+		rpc.TransactionOpts{
+			SkipPreflight: true,
+		},
+	)
 	if err != nil {
-		log.Printf("❌ Failed to send transaction: %v", err)
 		return "", fmt.Errorf("failed to send transaction: %w", err)
 	}
-	log.Printf("🚀 Transaction sent with signature: %s", sig)
 
 	// Wait for confirmation
 	status, err := s.client.GetSignatureStatuses(ctx, true, sig)
 	if err != nil {
-		log.Printf("❌ Failed to get transaction status: %v", err)
-		return "", fmt.Errorf("failed to get transaction status: %w", err)
+		log.Printf("⚠️ Failed to get transaction status: %v", err)
+	} else if status.Value[0] != nil && status.Value[0].Err != nil {
+		return "", fmt.Errorf("transaction failed: %v", status.Value[0].Err)
 	}
-
-	if status.Value[0] != nil && status.Value[0].Err == nil {
-		log.Printf("✅ Transaction confirmed!")
-	} else {
-		log.Printf("⏳ Transaction not confirmed yet, current status: %v", status.Value[0])
-	}
-
-	log.Printf("🎉 Transaction completed! Signature: %s", sig)
-	log.Printf("🔍 View on Solana Explorer: https://explorer.solana.com/tx/%s?cluster=devnet", sig)
 
 	return sig.String(), nil
 }

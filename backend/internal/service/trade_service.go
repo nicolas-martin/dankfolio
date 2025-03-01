@@ -25,52 +25,64 @@ func NewTradeService(cs *CoinService, ss *SolanaTradeService) *TradeService {
 }
 
 func (s *TradeService) PreviewTrade(ctx context.Context, req model.TradeRequest) (*model.TradePreview, error) {
-	// Get current coin price
-	coin, err := s.coinService.GetCoinByID(ctx, req.CoinID)
+	// Get current coin prices
+	fromCoin, err := s.coinService.GetCoinByID(ctx, req.FromCoinID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get coin: %w", err)
+		return nil, fmt.Errorf("failed to get from coin: %w", err)
+	}
+
+	toCoin, err := s.coinService.GetCoinByID(ctx, req.ToCoinID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get to coin: %w", err)
 	}
 
 	// Calculate trade details
 	amount := req.Amount
-	price := coin.CurrentPrice
+	price := fromCoin.CurrentPrice / toCoin.CurrentPrice
 	fee := calculateTradeFee(amount, price)
-	slippage := calculateSlippage(amount, coin.Volume24h)
+	slippage := calculateSlippage(amount, fromCoin.Volume24h)
 
 	// Calculate final amount
 	totalCost := amount * price
-	amount = amount - fee
+	finalAmount := amount - fee
 
 	return &model.TradePreview{
-		CoinSymbol:  coin.Symbol,
-		Type:        req.Type,
-		Amount:      amount,
-		Price:       price,
-		Fee:         fee,
-		Slippage:    slippage,
-		FinalAmount: amount,
-		TotalCost:   totalCost,
+		FromCoinSymbol: fromCoin.Symbol,
+		ToCoinSymbol:   toCoin.Symbol,
+		Amount:         amount,
+		Price:          price,
+		Fee:            fee,
+		Slippage:       slippage,
+		FinalAmount:    finalAmount,
+		TotalCost:      totalCost,
 	}, nil
 }
 
 func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*model.Trade, error) {
 	// Get coin details
-	coin, err := s.coinService.GetCoinByID(ctx, req.CoinID)
+	fromCoin, err := s.coinService.GetCoinByID(ctx, req.FromCoinID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get coin: %w", err)
+		return nil, fmt.Errorf("failed to get from coin: %w", err)
+	}
+
+	toCoin, err := s.coinService.GetCoinByID(ctx, req.ToCoinID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get to coin: %w", err)
 	}
 
 	// Create trade record
 	trade := &model.Trade{
 		ID:         fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		CoinID:     req.CoinID,
-		CoinSymbol: coin.Symbol,
-		Type:       req.Type,
+		FromCoinID: req.FromCoinID,
+		ToCoinID:   req.ToCoinID,
+		CoinSymbol: fmt.Sprintf("%s/%s", fromCoin.Symbol, toCoin.Symbol),
+		Type:       "swap",
 		Amount:     req.Amount,
-		Price:      coin.CurrentPrice,
-		Fee:        calculateTradeFee(req.Amount, coin.CurrentPrice),
+		Price:      fromCoin.CurrentPrice / toCoin.CurrentPrice,
+		Fee:        calculateTradeFee(req.Amount, fromCoin.CurrentPrice),
 		Status:     "pending",
 		CreatedAt:  time.Now(),
+		PrivateKey: req.PrivateKey,
 	}
 
 	// Execute trade on blockchain

@@ -32,7 +32,7 @@ type CoinService struct {
 func logf(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
 	log.Printf("%s\n", msg) // This will be captured in server.log
-	fmt.Print(msg)          // This will show in the terminal
+	// fmt.Print(msg)          // This will show in the terminal
 }
 
 // NewCoinService creates a new instance of CoinService and initializes hardcoded pairs
@@ -65,74 +65,32 @@ func NewCoinService() *CoinService {
 	}
 	logf("🪙 Added base SOL token\n")
 
-	// Add meme coins with fallback values
-	memeCoins := []model.MemeCoin{
-		{
-			ID:              "BONK9vQy1JJ99sCGvwMqftdexYZ28UVJVgHe7F5bfmg",
-			Symbol:          "BONK",
-			Name:            "Bonk",
-			Description:     "The first Solana dog coin for the people, by the people",
-			ContractAddress: "BONK9vQy1JJ99sCGvwMqftdexYZ28UVJVgHe7F5bfmg",
-			Price:           0.00001234,
-			CurrentPrice:    0.00001234,
-			Change24h:       0.0,
-			Volume24h:       1000000,
-			MarketCap:       500000000,
-			Supply:          500000000 / 0.00001234,
-			Labels:          []string{"meme", "solana"},
-			CreatedAt:       now,
-			UpdatedAt:       now,
-		},
-		{
-			ID:              "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-			Symbol:          "WIF",
-			Name:            "Dogwifhat",
-			Description:     "The Solana meme coin that started the dog with hat trend",
-			ContractAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-			Price:           0.1234,
-			CurrentPrice:    0.1234,
-			Change24h:       0.0,
-			Volume24h:       500000,
-			MarketCap:       300000000,
-			Supply:          300000000 / 0.1234,
-			Labels:          []string{"meme", "solana"},
-			CreatedAt:       now,
-			UpdatedAt:       now,
-		},
-		{
-			ID:              "METAmTMXwdb8gYzyCPfXXFmZZw4rUsXX58PNsDg7zjL",
-			Symbol:          "MYRO",
-			Name:            "Myro",
-			Description:     "The goodest boy on Solana",
-			ContractAddress: "METAmTMXwdb8gYzyCPfXXFmZZw4rUsXX58PNsDg7zjL",
-			Price:           0.02345,
-			CurrentPrice:    0.02345,
-			Change24h:       0.0,
-			Volume24h:       300000,
-			MarketCap:       200000000,
-			Supply:          200000000 / 0.02345,
-			Labels:          []string{"meme", "solana"},
-			CreatedAt:       now,
-			UpdatedAt:       now,
-		},
+	// Add USDC token
+	service.coins["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] = model.MemeCoin{
+		ID:              "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+		Symbol:          "USDC",
+		Name:            "USD Coin",
+		Description:     "USD Coin on Solana",
+		ContractAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+		Price:           1.0,
+		CurrentPrice:    1.0,
+		Change24h:       0.0,
+		Volume24h:       5000000.0,
+		MarketCap:       50000000000.0,
+		Supply:          50000000000.0,
+		Labels:          []string{"stablecoin", "usd"},
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
+	logf("💵 Added USDC token\n")
 
-	// Add meme coins
-	logf("🪙 Adding meme coins...\n")
-	for _, coin := range memeCoins {
-		service.coins[coin.ContractAddress] = coin
-		logf("✅ Added %s (%s) with price %.8f and market cap %.2f\n", coin.Name, coin.Symbol, coin.Price, coin.MarketCap)
-	}
+	// // Try to update prices from DexScreener immediately
+	// logf("🔄 Updating prices from DexScreener...\n")
+	// service.updatePricesFromDexScreener()
 
-	logf("✨ Initialized %d coins in total\n", len(service.coins))
-
-	// Try to update prices from DexScreener immediately
-	logf("🔄 Updating prices from DexScreener...\n")
-	service.updatePricesFromDexScreener()
-
-	// Start a goroutine to periodically update prices from DexScreener
-	logf("⏰ Starting price updater goroutine...\n")
-	go service.startPriceUpdater()
+	// // Start a goroutine to periodically update prices from DexScreener
+	// logf("⏰ Starting price updater goroutine...\n")
+	// go service.startPriceUpdater()
 
 	return service
 }

@@ -26,10 +26,6 @@ func main() {
 	coinService := service.NewCoinService()
 	solanaService, err := service.NewSolanaTradeService(
 		os.Getenv("SOLANA_RPC_ENDPOINT"),
-		os.Getenv("SOLANA_WS_ENDPOINT"),
-		os.Getenv("SOLANA_PROGRAM_ID"),
-		os.Getenv("SOLANA_POOL_WALLET"),
-		os.Getenv("SOLANA_PRIVATE_KEY"),
 	)
 	if err != nil {
 		log.Fatalf("Failed to initialize Solana service: %v", err)
