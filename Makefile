@@ -1,15 +1,21 @@
-.PHONY: dev test clean install build run-backend test-solana backend-kill
+.PHONY: dev test clean install build run test-api test-solana test-coins backend-kill help
 
 # Variables
 BACKEND_DIR := backend
-DATABASE_URL := postgres://postgres:postgres@localhost:5432/dankfolio?sslmode=disable
+ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
 
-# Default target
-all: install 
+# Development
+dev: clean setup run
 
-run:
-	@echo "🚀 Starting backend server..."
-	@cd $(BACKEND_DIR) && make run
+setup:
+	@echo "📝 Creating .env file..."
+	@cd $(BACKEND_DIR) && cp .env.example .env
+
+clean:
+	@echo "🧹 Cleaning up..."
+	@cd $(BACKEND_DIR) && rm -f .env
+	@echo "✅ Cleanup complete"
 
 # Installation
 install: 
@@ -17,36 +23,33 @@ install:
 	@cd $(BACKEND_DIR) && go mod download
 	@echo "✅ Dependencies installed"
 
-# Testing
-test: test-backend test-solana
+# Server Management
+run:
+	@echo "🚀 Starting backend server..."
+	@cd $(BACKEND_DIR) && lsof -ti :8080 | xargs kill -9 2>/dev/null || true
+	@cd $(BACKEND_DIR) && set -a && source .env && set +a && go run cmd/api/main.go
 
-test-backend:
-	@echo "🧪 Running backend tests..."
-	@cd $(BACKEND_DIR) && make test
+backend-kill:
+	@echo "🛑 Stopping backend server..."
+	@lsof -ti :8080 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
+
+# Testing
+test: test-api test-solana test-coins
+
+test-api:
+	@echo "🧪 Testing API endpoints..."
+	@cd $(BACKEND_DIR) && chmod +x scripts/test-api.sh
+	@cd $(BACKEND_DIR) && ./scripts/test-api.sh
 
 test-solana:
 	@echo "⚡ Running Solana integration tests..."
-	@cd $(BACKEND_DIR) && make test-solana-trades
+	@cd $(BACKEND_DIR) && chmod +x scripts/test-solana-trades.sh
+	@cd $(BACKEND_DIR) && ./scripts/test-solana-trades.sh
 
-# Cleaning
-clean:
-	@echo "🧹 Cleaning up..."
-	@cd $(BACKEND_DIR) && make clean
-	@echo "✅ Cleanup complete"
-
-# API Testing
-test-api:
-	@echo "🧪 Running API tests..."
-	@cd $(BACKEND_DIR) && make test-api
-
-# Coin Service Testing
 test-coins:
 	@echo "💰 Testing Coin Service..."
-	@cd $(BACKEND_DIR) && make test-coins
-
-# Server Management
-backend-kill:
-	@cd $(BACKEND_DIR) && make backend-kill
+	@cd $(BACKEND_DIR) && chmod +x scripts/test-coins.sh
+	@cd $(BACKEND_DIR) && ./scripts/test-coins.sh
 
 # Helpers
 help:
@@ -55,11 +58,9 @@ help:
 	@echo "  make test         - Run all tests"
 	@echo "  make clean        - Clean up all artifacts"
 	@echo "  make install      - Install dependencies"
-	@echo "  make build        - Build all components"
-	@echo "  make db-up        - Run database migrations"
-	@echo "  make db-down      - Rollback database migrations"
-	@echo "  make test-api     - Test API endpoints"
-	@echo "  make run-backend  - Run the backend server"
+	@echo "  make run          - Run the backend server"
 	@echo "  make backend-kill - Stop the backend server"
+	@echo "  make test-api     - Test API endpoints"
 	@echo "  make test-solana  - Run Solana integration tests"
-	@echo "  make test-coins   - Run coin service tests" 
+	@echo "  make test-coins   - Run coin service tests"
+	@echo "  make setup        - Set up environment files" 
