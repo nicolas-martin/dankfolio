@@ -5,14 +5,7 @@ BACKEND_DIR := backend
 DATABASE_URL := postgres://postgres:postgres@localhost:5432/dankfolio?sslmode=disable
 
 # Default target
-all: install build
-
-# Development
-dev: dev-backend
-
-dev-backend:
-	@echo "🚀 Starting development environment..."
-	@cd $(BACKEND_DIR) && make dev
+all: install 
 
 run:
 	@echo "🚀 Starting backend server..."
@@ -40,21 +33,6 @@ clean:
 	@echo "🧹 Cleaning up..."
 	@cd $(BACKEND_DIR) && make clean
 	@echo "✅ Cleanup complete"
-
-# Building
-build:
-	@echo "🏗️  Building project..."
-	@cd $(BACKEND_DIR) && make check-docker && make docker-build
-	@echo "✅ Build complete"
-
-# Database
-db-up:
-	@echo "⬆️  Running database migrations..."
-	@cd $(BACKEND_DIR) && make migrate-up
-
-db-down:
-	@echo "⬇️  Rolling back database migrations..."
-	@cd $(BACKEND_DIR) && make migrate-down
 
 # API Testing
 test-api:

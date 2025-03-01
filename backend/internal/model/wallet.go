@@ -4,14 +4,10 @@ import (
 	"time"
 )
 
-// Wallet represents a user's wallet
+// Wallet represents a Solana wallet
 type Wallet struct {
-	ID          string    `json:"id"`
-	UserID      string    `json:"user_id"`
-	PublicKey   string    `json:"public_key"`
-	Balance     float64   `json:"balance"`
-	CreatedAt   time.Time `json:"created_at"`
-	LastUpdated time.Time `json:"last_updated"`
+	PublicKey string `json:"public_key"`
+	SecretKey string `json:"secret_key"`
 }
 
 // DepositRequest represents a request to deposit funds

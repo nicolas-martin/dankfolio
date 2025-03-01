@@ -20,37 +20,9 @@ func NewTradeHandlers(tradeService *service.TradeService) *TradeHandlers {
 }
 
 func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
-	r.Post("/trades/preview", h.PreviewTrade)
 	r.Post("/trades/execute", h.ExecuteTrade)
 	r.Get("/trades/{id}", h.GetTradeByID)
 	r.Get("/trades", h.ListTrades)
-}
-
-func (h *TradeHandlers) PreviewTrade(w http.ResponseWriter, r *http.Request) {
-	var req model.TradeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Validate request
-	if req.FromCoinID == "" || req.ToCoinID == "" {
-		respondError(w, "Both from_coin_id and to_coin_id are required", http.StatusBadRequest)
-		return
-	}
-
-	if req.Amount <= 0 {
-		respondError(w, "Amount must be greater than 0", http.StatusBadRequest)
-		return
-	}
-
-	preview, err := h.tradeService.PreviewTrade(r.Context(), req)
-	if err != nil {
-		respondError(w, "Failed to preview trade: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	respondJSON(w, preview, http.StatusOK)
 }
 
 func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {

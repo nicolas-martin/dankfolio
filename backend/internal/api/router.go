@@ -8,59 +8,66 @@ import (
 	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
+// Router handles all HTTP routing
 type Router struct {
-	router        chi.Router
 	solanaService *service.SolanaTradeService
-	coinService   *service.CoinService
 	tradeService  *service.TradeService
-	walletService *service.WalletService
 }
 
+// NewRouter creates a new Router instance
 func NewRouter(
 	solanaService *service.SolanaTradeService,
-	coinService *service.CoinService,
 	tradeService *service.TradeService,
-	walletService *service.WalletService,
 ) *Router {
-	r := &Router{
-		router:        chi.NewRouter(),
+	return &Router{
 		solanaService: solanaService,
-		coinService:   coinService,
 		tradeService:  tradeService,
-		walletService: walletService,
 	}
-
-	r.setupRoutes()
-	return r
 }
 
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	r.router.ServeHTTP(w, req)
-}
+// Setup initializes all routes
+func (r *Router) Setup() chi.Router {
+	router := chi.NewRouter()
 
-func (r *Router) setupRoutes() {
-	// Middleware
-	r.router.Use(middleware.RequestID)
-	r.router.Use(middleware.RealIP)
-	r.router.Use(middleware.Recoverer)
-	r.router.Use(DetailedLogger)
+	// Set up middleware
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(corsMiddleware)
 
 	// Health check
-	r.router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	r.router.Route("/api", func(router chi.Router) {
-		// Coin routes
-		coinHandlers := NewCoinHandlers(r.coinService)
-		coinHandlers.RegisterRoutes(router)
+	// Set up handlers
+	tradeHandlers := NewTradeHandlers(r.tradeService)
+	walletHandlers := NewWalletHandlers()
 
-		// Trade routes
-		tradeHandlers := NewTradeHandlers(r.tradeService)
-		tradeHandlers.RegisterRoutes(router)
+	// Trade routes
+	router.Post("/api/v1/trades", tradeHandlers.ExecuteTrade)
+	router.Get("/api/v1/trades/{id}", tradeHandlers.GetTradeByID)
+	router.Get("/api/v1/trades", tradeHandlers.ListTrades)
 
-		// Wallet routes
-		walletHandlers := NewWalletHandlers(r.walletService)
-		walletHandlers.RegisterRoutes(router)
+	// Wallet routes
+	router.Post("/api/v1/wallets", walletHandlers.CreateWallet)
+
+	return router
+}
+
+// corsMiddleware handles CORS headers
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }

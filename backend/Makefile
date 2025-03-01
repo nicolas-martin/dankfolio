@@ -19,32 +19,6 @@ run:
 	@lsof -ti :8080 | xargs kill -9 2>/dev/null || true
 	@set -a && source .env && set +a && go run cmd/api/main.go
 
-test:
-	@echo "🧪 Running tests..."
-	@go test -v -race ./...
-	@echo "✅ Tests completed"
-
-lint:
-	@echo "🔍 Running linter..."
-	@golangci-lint run
-	@echo "✅ Linting completed"
-
-# Code generation
-generate-mocks:
-	@echo "🔄 Generating mocks..."
-	@mockgen -source=internal/service/interfaces.go -destination=internal/mocks/service_mocks.go
-	@echo "✅ Mocks generated"
-
-# Docker
-docker-build:
-	@echo "🏗️  Building Docker image..."
-	@docker build -t meme-trader-api .
-	@echo "✅ Docker image built"
-
-docker-run:
-	@echo "🐳 Starting Docker container..."
-	@docker run -p 8080:8080 --env-file .env meme-trader-api
-
 # Testing
 test-api: run test-solana-trades test-coins
 	@echo "🧪 Testing API endpoints..."
