@@ -19,13 +19,12 @@ type Trade struct {
 	TransactionHash string    `json:"transaction_hash,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	CompletedAt     time.Time `json:"completed_at,omitempty"`
-	PrivateKey      string    `json:"-"` // Private key for signing transactions, not serialized to JSON
 }
 
 // TradeRequest represents a request to trade meme coins
 type TradeRequest struct {
-	FromCoinID string  `json:"from_coin_id" validate:"required"`
-	ToCoinID   string  `json:"to_coin_id" validate:"required"`
-	Amount     float64 `json:"amount" validate:"required,gt=0"`
-	PrivateKey string  `json:"private_key" validate:"required"` // Private key for signing transactions
+	FromCoinID        string  `json:"from_coin_id" validate:"required"`
+	ToCoinID          string  `json:"to_coin_id" validate:"required"`
+	Amount            float64 `json:"amount" validate:"required,gt=0"`
+	SignedTransaction string  `json:"signed_transaction" validate:"required"` // Base64 encoded signed transaction
 }

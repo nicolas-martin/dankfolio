@@ -4,7 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/nicolas-martin/dankfolio/internal/middleware"
 	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
@@ -30,10 +31,10 @@ func (r *Router) Setup() chi.Router {
 	router := chi.NewRouter()
 
 	// Set up middleware
-	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
+	router.Use(middleware.RequestLogger)
+	router.Use(chimiddleware.RequestID)
+	router.Use(chimiddleware.RealIP)
+	router.Use(chimiddleware.Recoverer)
 	router.Use(corsMiddleware)
 
 	// Health check

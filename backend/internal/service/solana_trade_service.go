@@ -94,50 +94,26 @@ func NewSolanaTradeService(rpcEndpoint string) (*SolanaTradeService, error) {
 	return service, nil
 }
 
-func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trade) error {
-	// Validate and parse private key from trade request
-	if trade.PrivateKey == "" {
-		return fmt.Errorf("private key is required for trade execution")
+func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) error {
+	// Execute the signed transaction
+	if signedTx == "" {
+		return fmt.Errorf("signed transaction is required for trade execution")
 	}
 
-	// Remove any quotes and whitespace from the private key
-	privateKeyStr := strings.TrimSpace(strings.Trim(trade.PrivateKey, "\""))
-
-	// Decode base64 private key
-	privateKeyBytes, err := base64.StdEncoding.DecodeString(privateKeyStr)
-	if err != nil {
-		return fmt.Errorf("invalid base64 private key: %w", err)
-	}
-
-	// Convert to Solana private key
-	privKey := solana.PrivateKey(privateKeyBytes)
-	log.Printf("🔑 Using wallet: %s", privKey.PublicKey().String())
-
-	// Convert trade to swap params
-	swapParams := &SwapParams{
-		InputMint:   trade.FromCoinID,
-		OutputMint:  trade.ToCoinID,
-		Amount:      uint64(trade.Amount * 1e9), // Convert to lamports
-		Slippage:    1.0,                        // Default 1% slippage
-		IsInputSol:  trade.FromCoinID == SolMint,
-		IsOutputSol: trade.ToCoinID == SolMint,
-	}
-
-	// Execute the Raydium swap
-	txHash, err := s.ExecuteRaydiumSwap(ctx, swapParams, privKey)
-	if err != nil {
-		return fmt.Errorf("failed to execute Raydium swap: %w", err)
+	// Execute the signed transaction
+	if err := s.ExecuteSignedTransaction(ctx, signedTx); err != nil {
+		return fmt.Errorf("failed to execute signed transaction: %w", err)
 	}
 
 	// Update trade status
 	trade.Status = "completed"
-	trade.TransactionHash = txHash
 	trade.CompletedAt = time.Now()
 
 	return nil
 }
 
 // ExecuteRaydiumSwap executes a swap on Raydium DEX
+// Never call this directly, always use ExecuteTrade
 func (s *SolanaTradeService) ExecuteRaydiumSwap(ctx context.Context, params *SwapParams, privKey solana.PrivateKey) (string, error) {
 	log.Printf("🔄 Starting Raydium swap: %d %s -> %s", params.Amount, params.InputMint, params.OutputMint)
 
@@ -322,4 +298,40 @@ func (s *SolanaTradeService) processAndSendTransaction(ctx context.Context, enco
 	}
 
 	return sig.String(), nil
+}
+
+// ExecuteSignedTransaction submits a signed transaction to the Solana blockchain
+func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signedTx string) error {
+	// Decode base64 signed transaction
+	txBytes, err := base64.StdEncoding.DecodeString(signedTx)
+	if err != nil {
+		return fmt.Errorf("invalid base64 transaction: %w", err)
+	}
+
+	// Deserialize the transaction
+	tx, err := solana.TransactionFromBytes(txBytes)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize transaction: %w", err)
+	}
+
+	// Submit the transaction
+	sig, err := s.client.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+		SkipPreflight:       false,
+		PreflightCommitment: rpc.CommitmentFinalized,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	// Wait for confirmation
+	status, err := s.client.GetSignatureStatuses(ctx, true, sig)
+	if err != nil {
+		return fmt.Errorf("failed to confirm transaction: %w", err)
+	}
+
+	if status.Value[0] != nil && status.Value[0].Err != nil {
+		return fmt.Errorf("transaction failed: %v", status.Value[0].Err)
+	}
+
+	return nil
 }

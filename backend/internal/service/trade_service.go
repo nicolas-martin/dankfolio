@@ -33,11 +33,10 @@ func (s *TradeService) ExecuteTrade(ctx context.Context, req model.TradeRequest)
 		Fee:        calculateTradeFee(req.Amount, 1.0), // Using 1.0 as default price
 		Status:     "pending",
 		CreatedAt:  time.Now(),
-		PrivateKey: req.PrivateKey,
 	}
 
-	// Execute trade on blockchain
-	err := s.solanaService.ExecuteTrade(ctx, trade)
+	// Execute signed transaction on blockchain
+	err := s.solanaService.ExecuteTrade(ctx, trade, req.SignedTransaction)
 	if err != nil {
 		trade.Status = "failed"
 		s.mu.Lock()

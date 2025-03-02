@@ -1,7 +1,8 @@
-.PHONY: dev test clean install build run test-api test-solana test-coins backend-kill help
+.PHONY: dev test clean install build run test-api test-solana test-coins backend-kill help run-mobile mobile-kill
 
 # Variables
 BACKEND_DIR := backend
+MOBILE_DIR := frontend/mobile/dankfolio-mobile
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
 
@@ -33,11 +34,22 @@ test-swap:
 	@cd $(BACKEND_DIR) && ./scripts/test-solana-buy-execute.sh
 	@cd $(BACKEND_DIR) && ./scripts/test-solana-sell-execute.sh
 
+# Mobile App
+run-mobile:
+	@echo "📱 Starting mobile frontend..."
+	@cd $(MOBILE_DIR) && npm start -- --clear
+
+mobile-kill:
+	@echo "📴 Stopping mobile frontend..."
+	@pkill -f "expo start" || echo "✅ No mobile server running"
+
 # Helpers
 help:
 	@echo "🛠️  Available commands:"
 	@echo "  make test         - Run all tests"
 	@echo "  make run          - Run the backend server"
+	@echo "  make run-mobile   - Run the mobile frontend"
 	@echo "  make backend-kill - Stop the backend server"
+	@echo "  make mobile-kill  - Stop the mobile frontend"
 	@echo "  make test-swap    - Run swap service curl tests"
 	@echo "  make setup        - Set up environment files and fetches dependencies" 

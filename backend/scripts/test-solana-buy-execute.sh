@@ -3,9 +3,14 @@
 echo "🐕 Testing WIF (Dogwifhat) buy trade execution..."
 
 # Execute the trade
-BUY_RESPONSE=$(curl -s -X POST http://localhost:8080/api/trades/execute \
+BUY_RESPONSE=$(curl -s -X POST http://localhost:8080/api/trades \
     -H "Content-Type: application/json" \
-    -d '{"coin_id":"DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263","type":"buy","amount":0.001}')
+    -d '{
+    "from_coin_id": "SOL",
+    "to_coin_id": "USDC",
+    "amount": 1.5,
+    "private_key": "<base64_encoded_private_key>"
+  }')
 
 # Extract transaction details
 TX_HASH=$(echo "$BUY_RESPONSE" | jq -r '.data.transaction_hash // empty')

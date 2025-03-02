@@ -45,6 +45,7 @@
 - Prioritize performance and responsiveness in generated code, especially for asynchronous operations.
 - Tailor code examples to reflect the unique aspects of meme trading (e.g., validating meme authenticity, dynamic image rendering).
 - Avoid generic boilerplate; always add context or comments that explain how the code relates to meme trading.
+- Keep summaries brief and concise for minor changes, only provide detailed explanations for major or complex modifications.
 
 // Maintenance & Future Enhancements
 - Regularly review and update these rules to reflect changes in project scope or best practices.
