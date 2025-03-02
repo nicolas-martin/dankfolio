@@ -13,6 +13,7 @@ import (
 type Router struct {
 	solanaService *service.SolanaTradeService
 	tradeService  *service.TradeService
+	coinService   *service.CoinService
 }
 
 // NewRouter creates a new Router instance
@@ -20,9 +21,13 @@ func NewRouter(
 	solanaService *service.SolanaTradeService,
 	tradeService *service.TradeService,
 ) *Router {
+	// Initialize the coin service
+	coinService := service.NewCoinService()
+
 	return &Router{
 		solanaService: solanaService,
 		tradeService:  tradeService,
+		coinService:   coinService,
 	}
 }
 
@@ -45,11 +50,17 @@ func (r *Router) Setup() chi.Router {
 	// Set up handlers
 	tradeHandlers := NewTradeHandlers(r.tradeService)
 	walletHandlers := NewWalletHandlers()
+	coinHandlers := NewCoinHandlers(r.coinService)
+
+	// Coin routes
+	router.Get("/api/v1/coins", coinHandlers.GetCoins)
+	router.Get("/api/v1/coins/{id}", coinHandlers.GetCoinByID)
 
 	// Trade routes
-	router.Post("/api/v1/trades", tradeHandlers.ExecuteTrade)
+	router.Post("/api/v1/trades/execute", tradeHandlers.ExecuteTrade)
 	router.Get("/api/v1/trades/{id}", tradeHandlers.GetTradeByID)
 	router.Get("/api/v1/trades", tradeHandlers.ListTrades)
+	router.Get("/api/v1/trades/quote", tradeHandlers.GetTradeQuote)
 
 	// Wallet routes
 	router.Post("/api/v1/wallets", walletHandlers.CreateWallet)

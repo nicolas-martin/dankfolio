@@ -2,89 +2,117 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 	"github.com/nicolas-martin/dankfolio/internal/service"
 )
 
+// TradeHandlers handles HTTP requests related to trades
 type TradeHandlers struct {
 	tradeService *service.TradeService
 }
 
+// NewTradeHandlers creates a new TradeHandlers instance
 func NewTradeHandlers(tradeService *service.TradeService) *TradeHandlers {
-	return &TradeHandlers{
-		tradeService: tradeService,
-	}
+	return &TradeHandlers{tradeService: tradeService}
 }
 
+// RegisterRoutes registers all trade-related routes
 func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
-	r.Post("/trades/execute", h.ExecuteTrade)
-	r.Get("/trades/{id}", h.GetTradeByID)
-	r.Get("/trades", h.ListTrades)
+	r.Post("/api/v1/trades/execute", h.ExecuteTrade)
+	r.Get("/api/v1/trades/{id}", h.GetTradeByID)
+	r.Get("/api/v1/trades", h.ListTrades)
+	r.Get("/api/v1/trades/quote", h.GetTradeQuote)
 }
 
+// ExecuteTrade handles a trade execution request
 func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 	var req model.TradeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// Validate request
 	if req.FromCoinID == "" || req.ToCoinID == "" {
-		respondError(w, "Both from_coin_id and to_coin_id are required", http.StatusBadRequest)
+		http.Error(w, "Both from_coin_id and to_coin_id are required", http.StatusBadRequest)
 		return
 	}
 
 	if req.Amount <= 0 {
-		respondError(w, "Amount must be greater than 0", http.StatusBadRequest)
+		http.Error(w, "Amount must be greater than 0", http.StatusBadRequest)
 		return
 	}
 
 	trade, err := h.tradeService.ExecuteTrade(r.Context(), req)
 	if err != nil {
-		respondError(w, "Failed to execute trade: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error executing trade: %v", err)
+		http.Error(w, "Failed to execute trade: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	response := map[string]interface{}{
-		"status": "success",
-		"data": map[string]interface{}{
-			"trade_id":         trade.ID,
-			"transaction_hash": trade.TransactionHash,
-			"status":           trade.Status,
-			"type":             trade.Type,
-			"amount":           trade.Amount,
-			"from_coin_id":     trade.FromCoinID,
-			"to_coin_id":       trade.ToCoinID,
-			"coin_pair":        trade.CoinSymbol,
-			"explorer_url":     "https://explorer.solana.com/tx/" + trade.TransactionHash + "?cluster=devnet",
-		},
+		"trade_id":         trade.ID,
+		"status":           trade.Status,
+		"transaction_hash": trade.TransactionHash,
 	}
 
-	respondJSON(w, response, http.StatusOK)
+	// Use respondJSON helper
+	respondJSON(w, response, http.StatusCreated)
 }
 
+// GetTradeByID returns a trade by its ID
 func (h *TradeHandlers) GetTradeByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-
 	trade, err := h.tradeService.GetTradeByID(r.Context(), id)
 	if err != nil {
-		respondError(w, "Trade not found: "+err.Error(), http.StatusNotFound)
+		http.Error(w, "Trade not found", http.StatusNotFound)
 		return
 	}
 
 	respondJSON(w, trade, http.StatusOK)
 }
 
+// ListTrades returns all trades
 func (h *TradeHandlers) ListTrades(w http.ResponseWriter, r *http.Request) {
 	trades, err := h.tradeService.ListTrades(r.Context())
 	if err != nil {
-		respondError(w, "Failed to list trades: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to list trades", http.StatusInternalServerError)
 		return
 	}
 
 	respondJSON(w, trades, http.StatusOK)
 }
+
+// GetTradeQuote returns a quote for a trade with estimated amount and fees
+func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
+	fromCoinID := r.URL.Query().Get("from_coin_id")
+	toCoinID := r.URL.Query().Get("to_coin_id")
+	amountStr := r.URL.Query().Get("amount")
+
+	if fromCoinID == "" || toCoinID == "" || amountStr == "" {
+		http.Error(w, "Missing required parameters", http.StatusBadRequest)
+		return
+	}
+
+	amount, err := strconv.ParseFloat(amountStr, 64)
+	if err != nil {
+		http.Error(w, "Invalid amount parameter", http.StatusBadRequest)
+		return
+	}
+
+	// Get quote from service
+	quote, err := h.tradeService.GetTradeQuote(r.Context(), fromCoinID, toCoinID, amount)
+	if err != nil {
+		log.Printf("Error getting trade quote: %v", err)
+		http.Error(w, "Failed to get trade quote: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, quote, http.StatusOK)
+}
+

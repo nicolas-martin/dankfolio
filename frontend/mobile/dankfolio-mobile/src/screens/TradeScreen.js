@@ -47,7 +47,7 @@ const TradeScreen = ({ route, navigation }) => {
   const initialToCoin = route.params?.initialToCoin;
   const { wallet } = route.params || {};
   
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [fromCoin, setFromCoin] = useState('');
   const [toCoin, setToCoin] = useState('');
   const [fromAmount, setFromAmount] = useState(DEFAULT_AMOUNT);
@@ -55,9 +55,11 @@ const TradeScreen = ({ route, navigation }) => {
   const [availableCoins, setAvailableCoins] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [exchangeRate, setExchangeRate] = useState('');
-  const [estimatedFee, setEstimatedFee] = useState('4.28');
-  const [spread, setSpread] = useState('0.2');
-  const [gasFee, setGasFee] = useState('0.0045');
+  const [tradeDetails, setTradeDetails] = useState({
+    estimatedFee: '0.00',
+    spread: '0.00',
+    gasFee: '0.00',
+  });
   
   // Notification state
   const [notification, setNotification] = useState({
@@ -80,42 +82,122 @@ const TradeScreen = ({ route, navigation }) => {
     }, 5000);
   };
   
-  // Predefined coin list for demo
-  const COIN_LIST = [
-    { id: 'So11111111111111111111111111111111111111112', name: 'Solana', symbol: 'SOL', balance: 1.234, price: 148.75 },
-    { id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', name: 'USD Coin', symbol: 'USDC', balance: 156.78, price: 1.00 },
-    { id: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', name: 'Tether', symbol: 'USDT', balance: 50.25, price: 1.00 },
-    { id: 'BTChTuTGsZSjpKL9P3KjzZ3mJ68jkACkEFEjvGGNn8L', name: 'Bitcoin', symbol: 'BTC', balance: 0.005, price: 58432.87 },
-    { id: 'ETHW5opqnkWEs1tmJ3e3vSzh2QeDNANbQVXwQKNrFJM', name: 'Ethereum', symbol: 'ETH', balance: 0.12, price: 3211.56 },
-    { id: 'pepeSTrAE2gSn9fB36A8EqaJxYqWJhVqtMBwDR3f43B', name: 'Pepe Coin', symbol: 'PEPE', balance: 1500000, price: 0.000012 },
-    { id: 'dogeKOINusdc78aJSn9MefEqWjLntJD32YjFdpkfxGY', name: 'Dogecoin', symbol: 'DOGE', balance: 1250, price: 0.123 },
-  ];
-
   useEffect(() => {
-    setAvailableCoins(COIN_LIST);
+    fetchAvailableCoins();
+  }, []);
+  
+  useEffect(() => {
+    if (availableCoins.length > 0) {
+      initializeCoins();
+    }
+  }, [availableCoins, initialFromCoin, initialToCoin]);
+  
+  const fetchAvailableCoins = async () => {
+    try {
+      setIsLoading(true);
+      const coinsData = await api.getAvailableCoins();
+      
+      if (Array.isArray(coinsData) && coinsData.length > 0) {
+        setAvailableCoins(coinsData);
+      } else {
+        showNotification('error', 'Failed to load coins');
+      }
+    } catch (error) {
+      console.error('Error fetching coins:', error);
+      showNotification('error', 'Failed to load available coins');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const initializeCoins = () => {
+    if (availableCoins.length < 2) return;
     
-    // Set initial coins based on params or defaults
+    // Try to match initial coins if provided
     if (initialFromCoin && initialToCoin) {
-      const fromCoinObj = COIN_LIST.find(c => c.symbol === initialFromCoin);
-      const toCoinObj = COIN_LIST.find(c => c.symbol === initialToCoin);
+      const fromCoinObj = availableCoins.find(c => c.symbol === initialFromCoin);
+      const toCoinObj = availableCoins.find(c => c.symbol === initialToCoin);
       
       if (fromCoinObj && toCoinObj) {
         setFromCoin(fromCoinObj.id);
         setToCoin(toCoinObj.id);
-        calculateConversion(DEFAULT_AMOUNT, fromCoinObj.id, toCoinObj.id);
-      } else {
-        setDefaultCoins();
+        fetchTradeQuote(DEFAULT_AMOUNT, fromCoinObj.id, toCoinObj.id);
+        return;
       }
-    } else {
-      setDefaultCoins();
     }
-  }, [initialFromCoin, initialToCoin]);
-
-  const setDefaultCoins = () => {
-    if (COIN_LIST.length >= 2) {
-      setFromCoin(COIN_LIST[0].id);
-      setToCoin(COIN_LIST[1].id);
-      calculateConversion(DEFAULT_AMOUNT, COIN_LIST[0].id, COIN_LIST[1].id);
+    
+    // Find Solana coin to set as default
+    const solCoin = availableCoins.find(c => c.symbol === 'SOL');
+    const usdcCoin = availableCoins.find(c => c.symbol === 'USDC');
+    
+    if (solCoin) {
+      // If initialFromCoin was provided but not found, use that with SOL
+      if (initialToCoin) {
+        const toCoinObj = availableCoins.find(c => c.symbol === initialToCoin);
+        if (toCoinObj) {
+          setFromCoin(solCoin.id);
+          setToCoin(toCoinObj.id);
+          fetchTradeQuote(DEFAULT_AMOUNT, solCoin.id, toCoinObj.id);
+          return;
+        }
+      }
+      
+      // Default to SOL -> USDC if available
+      if (usdcCoin) {
+        setFromCoin(solCoin.id);
+        setToCoin(usdcCoin.id);
+        fetchTradeQuote(DEFAULT_AMOUNT, solCoin.id, usdcCoin.id);
+        return;
+      }
+      
+      // SOL -> first different coin
+      const otherCoin = availableCoins.find(c => c.id !== solCoin.id);
+      if (otherCoin) {
+        setFromCoin(solCoin.id);
+        setToCoin(otherCoin.id);
+        fetchTradeQuote(DEFAULT_AMOUNT, solCoin.id, otherCoin.id);
+        return;
+      }
+    }
+    
+    // Fallback to the first two coins if SOL isn't available
+    setFromCoin(availableCoins[0].id);
+    setToCoin(availableCoins[1].id);
+    fetchTradeQuote(DEFAULT_AMOUNT, availableCoins[0].id, availableCoins[1].id);
+  };
+  
+  const fetchTradeQuote = async (amount, fromId, toId) => {
+    if (!fromId || !toId || fromId === toId || !amount) {
+      setToAmount('0');
+      setExchangeRate('');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // API call to get trade quote
+      const response = await api.getTradeQuote(fromId, toId, parseFloat(amount));
+      
+      if (response && response.estimatedAmount) {
+        setToAmount(response.estimatedAmount.toString());
+        setExchangeRate(response.exchangeRate || '');
+        setTradeDetails({
+          estimatedFee: response.fee?.total || '0.00',
+          spread: response.fee?.spread || '0.00',
+          gasFee: response.fee?.gas || '0.00',
+        });
+      } else {
+        setToAmount('0');
+        setExchangeRate('');
+        console.error('Invalid quote response:', response);
+      }
+    } catch (error) {
+      console.error('Error fetching quote:', error);
+      setToAmount('0');
+      setExchangeRate('');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -126,18 +208,10 @@ const TradeScreen = ({ route, navigation }) => {
   const getIconUrl = (symbol) => {
     if (!symbol) return '';
     
+    // For production, this should be fetched from the backend or a CDN
     const lowercaseSymbol = symbol.toLowerCase();
-    const iconMapping = {
-      sol: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-      usdc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
-      usdt: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
-      btc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-      eth: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-      pepe: 'https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpg?1682922725',
-      doge: 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png?1547792256',
-    };
-    
-    return iconMapping[lowercaseSymbol] || '';
+    // Default trustwallet repo for standard coins
+    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/${lowercaseSymbol}/logo.png`;
   };
 
   const formatBalance = (balance) => {
@@ -148,28 +222,9 @@ const TradeScreen = ({ route, navigation }) => {
     return balance.toFixed(2);
   };
 
-  const calculateConversion = (amount, fromId, toId) => {
-    const from = getCoinById(fromId);
-    const to = getCoinById(toId);
-    
-    if (from && to && !isNaN(parseFloat(amount))) {
-      const fromValue = parseFloat(amount) * from.price;
-      const converted = fromValue / to.price;
-      
-      setToAmount(converted.toFixed(converted < 0.01 ? 6 : converted < 1 ? 4 : 2));
-      
-      // Set exchange rate
-      const rate = from.price / to.price;
-      setExchangeRate(`1 ${from.symbol} = ${rate.toFixed(rate < 0.01 ? 6 : rate < 1 ? 4 : 2)} ${to.symbol}`);
-    } else {
-      setToAmount('0');
-      setExchangeRate('');
-    }
-  };
-
   const handleAmountChange = (text) => {
     setFromAmount(text);
-    calculateConversion(text, fromCoin, toCoin);
+    fetchTradeQuote(text, fromCoin, toCoin);
   };
 
   const handleSwapCoins = () => {
@@ -178,7 +233,7 @@ const TradeScreen = ({ route, navigation }) => {
     setToCoin(temp);
     
     // Recalculate the conversion with swapped coins
-    calculateConversion(fromAmount, toCoin, temp);
+    fetchTradeQuote(fromAmount, toCoin, temp);
   };
   
   const handleTradeSubmit = async () => {
@@ -324,7 +379,7 @@ const TradeScreen = ({ route, navigation }) => {
       <View style={styles.coinItemContainer}>
         <View style={styles.coinDetails}>
           <Image 
-            source={{ uri: getIconUrl(coin.symbol.toLowerCase()) }} 
+            source={{ uri: coin.iconUrl || getIconUrl(coin.symbol.toLowerCase()) }} 
             style={styles.coinIcon} 
           />
           <View>
@@ -333,7 +388,7 @@ const TradeScreen = ({ route, navigation }) => {
               <Ionicons name="chevron-down" size={16} color="#9F9FD5" />
             </View>
             <Text style={styles.balanceText}>
-              Balance: {formatBalance(coin.balance)} {coin.symbol}
+              Balance: {formatBalance(coin.balance || 0)} {coin.symbol}
             </Text>
           </View>
         </View>
@@ -368,6 +423,15 @@ const TradeScreen = ({ route, navigation }) => {
     
     return `Swap ${fromCoinSymbol} to ${toCoinSymbol}`;
   };
+
+  if (isLoading && availableCoins.length === 0) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#6A5ACD" />
+        <Text style={styles.loadingText}>Loading available coins...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -415,7 +479,7 @@ const TradeScreen = ({ route, navigation }) => {
           <View style={styles.feeInfoContainer}>
             <View style={styles.feeItem}>
               <Text style={styles.feeLabel}>Estimate fee</Text>
-              <Text style={styles.feeValue}>{estimatedFee} usd</Text>
+              <Text style={styles.feeValue}>{tradeDetails.estimatedFee} usd</Text>
             </View>
             <View style={styles.feeItem}>
               <Text style={styles.feeLabel}>You will receive</Text>
@@ -423,11 +487,11 @@ const TradeScreen = ({ route, navigation }) => {
             </View>
             <View style={styles.feeItem}>
               <Text style={styles.feeLabel}>Spread</Text>
-              <Text style={styles.feeValue}>{spread}%</Text>
+              <Text style={styles.feeValue}>{tradeDetails.spread}%</Text>
             </View>
             <View style={styles.feeItem}>
               <Text style={styles.feeLabel}>Gas fee</Text>
-              <Text style={styles.feeValue}>{gasFee} {getCoinById(fromCoin)?.symbol}</Text>
+              <Text style={styles.feeValue}>{tradeDetails.gasFee} {getCoinById(fromCoin)?.symbol}</Text>
             </View>
           </View>
           
@@ -644,6 +708,15 @@ const styles = StyleSheet.create({
   notificationText: {
     color: '#fff',
     flex: 1,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    marginTop: 16,
+    fontSize: 16,
   },
 });
 

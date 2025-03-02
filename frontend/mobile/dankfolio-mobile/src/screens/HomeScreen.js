@@ -81,6 +81,8 @@ const HomeScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showImport, setShowImport] = useState(false);
   const [coins, setCoins] = useState([]);
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [totalBalanceUsd, setTotalBalanceUsd] = useState('0.00');
 
   useEffect(() => {
     // Check if a wallet already exists
@@ -89,6 +91,8 @@ const HomeScreen = ({ navigation }) => {
         const savedWallet = await secureStorage.getWallet();
         if (savedWallet) {
           setWallet(savedWallet);
+          // Fetch wallet balance
+          fetchWalletBalance(savedWallet.publicKey);
         }
       } catch (error) {
         console.error('Error loading wallet:', error);
@@ -98,21 +102,76 @@ const HomeScreen = ({ navigation }) => {
     };
 
     checkWallet();
-    
-    // Load mock coins data
-    setCoins(MOCK_COINS);
+    fetchAvailableCoins();
   }, []);
+  
+  const fetchAvailableCoins = async () => {
+    try {
+      const coinsData = await api.getAvailableCoins();
+      if (Array.isArray(coinsData) && coinsData.length > 0) {
+        setCoins(coinsData);
+      } else {
+        // Fallback to mock data if API fails
+        setCoins(MOCK_COINS);
+        console.warn('Using mock coin data as fallback');
+      }
+    } catch (error) {
+      console.error('Error fetching coins:', error);
+      // Fallback to mock data
+      setCoins(MOCK_COINS);
+      console.warn('Using mock coin data as fallback');
+    }
+  };
+  
+  const fetchWalletBalance = async (address) => {
+    if (!address) return;
+    
+    try {
+      setIsLoading(true);
+      const balanceData = await api.getWalletBalance(address);
+      
+      if (balanceData && balanceData.coins) {
+        setWalletBalance(balanceData);
+        
+        // Calculate total balance in USD
+        let total = 0;
+        balanceData.coins.forEach(coin => {
+          total += coin.usd_value || 0;
+        });
+        
+        setTotalBalanceUsd(total.toFixed(2));
+      }
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+      showNotification('error', 'Failed to load wallet balance');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateWallet = async () => {
     try {
       setIsLoading(true);
-      // Generate a new wallet locally
-      const newWallet = generateWallet();
+      
+      // Create wallet using backend API
+      const newWallet = await api.createWallet();
+      
+      if (!newWallet || !newWallet.public_key || !newWallet.private_key) {
+        throw new Error('Invalid wallet data received from server');
+      }
+      
+      // Format wallet for storage
+      const walletData = {
+        publicKey: newWallet.public_key,
+        privateKey: newWallet.private_key,
+      };
       
       // Save to secure storage
-      await secureStorage.saveWallet(newWallet);
+      await secureStorage.saveWallet(walletData);
       
-      setWallet(newWallet);
+      setWallet(walletData);
+      fetchWalletBalance(walletData.publicKey);
+      
       showNotification('success', 'Your new wallet has been created. Please make sure to securely save your private key.');
     } catch (error) {
       console.error('Error creating wallet:', error);
@@ -247,14 +306,33 @@ const HomeScreen = ({ navigation }) => {
             
             <View style={styles.balanceContainer}>
               <Text style={styles.balanceLabel}>Total Balance</Text>
-              <Text style={styles.balanceValue}>$4,752.87</Text>
+              <Text style={styles.balanceValue}>${totalBalanceUsd}</Text>
             </View>
             
-            <TouchableOpacity
-              style={styles.logoutButton}
+            {walletBalance && walletBalance.coins && (
+              <View style={styles.coinBalances}>
+                {walletBalance.coins.map((coin, index) => (
+                  <View key={index} style={styles.coinBalanceItem}>
+                    <Text style={styles.coinSymbol}>{coin.symbol}</Text>
+                    <Text style={styles.coinAmount}>{coin.amount.toFixed(4)}</Text>
+                    <Text style={styles.coinValue}>${coin.usd_value.toFixed(2)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={() => fetchWalletBalance(wallet.publicKey)}
+            >
+              <Text style={styles.refreshButtonText}>🔄 Refresh Balance</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.logoutButton} 
               onPress={handleLogout}
             >
-              <Text style={styles.buttonText}>Logout</Text>
+              <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>
           
@@ -263,7 +341,7 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Your Coins</Text>
               <TouchableOpacity
-                onPress={() => navigation.navigate('Trade')}
+                onPress={() => navigation.navigate('Trade', { wallet })}
               >
                 <Text style={styles.sectionAction}>Trade</Text>
               </TouchableOpacity>
@@ -414,11 +492,49 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
+  coinBalances: {
+    marginBottom: 16,
+  },
+  coinBalanceItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  coinSymbol: {
+    color: '#9F9FD5',
+    fontSize: 14,
+  },
+  coinAmount: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  coinValue: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  refreshButton: {
+    backgroundColor: '#6A5ACD',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  refreshButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
   logoutButton: {
     backgroundColor: '#6A5ACD',
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
   coinsSection: {
     flex: 1,

@@ -34,6 +34,10 @@ test-swap:
 	@cd $(BACKEND_DIR) && ./scripts/test-solana-buy-execute.sh
 	@cd $(BACKEND_DIR) && ./scripts/test-solana-sell-execute.sh
 
+test-coins:
+	@echo "🪙 Running Coins API tests..."
+	@cd $(BACKEND_DIR) && ./scripts/test-coins-api.sh
+
 # Mobile App
 run-mobile:
 	@echo "📱 Starting mobile frontend..."
@@ -52,4 +56,5 @@ help:
 	@echo "  make backend-kill - Stop the backend server"
 	@echo "  make mobile-kill  - Stop the mobile frontend"
 	@echo "  make test-swap    - Run swap service curl tests"
+	@echo "  make test-coins   - Run coins API tests"
 	@echo "  make setup        - Set up environment files and fetches dependencies" 

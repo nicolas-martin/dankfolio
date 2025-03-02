@@ -47,6 +47,24 @@ The following new components have been created:
   - Gradient button for trade actions
   - Improved error handling and notifications
 
+- **API Integration**: Enhanced backend connectivity:
+  - Added wallet balance retrieval from backend API
+  - Implemented real coin data fetching from backend
+  - Added proper wallet creation via backend API
+  - Improved error handling for API requests
+  - Added wallet passing between screens for consistent trading experience
+
+## Backend API Endpoints
+
+The mobile app now connects to the following backend endpoints:
+
+- `GET /api/v1/coins`: Retrieves available coins for trading
+- `GET /api/v1/wallets/{address}`: Gets wallet information by address
+- `GET /api/v1/wallets/{address}/balance`: Gets wallet balance with coin details
+- `POST /api/v1/wallets`: Creates a new wallet
+- `GET /api/v1/trades/quote`: Gets a quote for a trade with estimated amounts and fees
+- `POST /api/trades/execute`: Executes a trade with a signed transaction
+
 ## Starting the App
 
 ```bash
@@ -64,3 +82,4 @@ Then, scan the QR code with the Expo Go app on your mobile device, or press 'a' 
 - The CoinDetailScreen is now accessible by tapping on any coin in the HomeScreen.
 - Chart data is generated randomly but could be easily connected to a real API.
 - The TradeScreen now accepts `initialFromCoin` and `initialToCoin` parameters to pre-select coins when navigating from another screen. 
+- The default trading pair is SOL to USDC when no specific coins are selected.

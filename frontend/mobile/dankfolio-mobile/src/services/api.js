@@ -58,16 +58,34 @@ const api = {
 
   getAvailableCoins: async () => {
     try {
+      console.log('Fetching available coins...');
       const response = await apiClient.get('/api/v1/coins');
+      console.log(`Fetched ${response.data?.length || 0} coins successfully`);
       return response.data;
     } catch (error) {
       console.error('Error getting coins:', error);
-      // Fallback to hardcoded coins
-      return [
-        { id: 'So11111111111111111111111111111111111111112', name: 'SOL', symbol: 'SOL' },
-        { id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', name: 'USD Coin', symbol: 'USDC' },
-        { id: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', name: 'USDT', symbol: 'USDT' },
-      ];
+      throw handleApiError(error);
+    }
+  },
+
+  // Get trade quote for given coin pair and amount
+  getTradeQuote: async (fromCoinId, toCoinId, amount) => {
+    try {
+      console.log('Fetching trade quote:', { fromCoinId, toCoinId, amount });
+      
+      const response = await apiClient.get('/api/v1/trades/quote', {
+        params: {
+          from_coin_id: fromCoinId,
+          to_coin_id: toCoinId,
+          amount: amount,
+        }
+      });
+      
+      console.log('Trade quote received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting trade quote:', error);
+      throw handleApiError(error);
     }
   },
 
@@ -89,6 +107,32 @@ const api = {
     } catch (error) {
       console.error('❌ Error creating wallet:', error.message);
       throw error;
+    }
+  },
+  
+  // Get wallet information by address
+  getWalletByAddress: async (address) => {
+    try {
+      console.log('🔍 Fetching wallet info for address:', address);
+      const response = await apiClient.get(`/api/v1/wallets/${address}`);
+      console.log('✅ Wallet info retrieved successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching wallet:', error.message);
+      throw handleApiError(error);
+    }
+  },
+  
+  // Get wallet balance by address
+  getWalletBalance: async (address) => {
+    try {
+      console.log('💰 Fetching balance for wallet:', address);
+      const response = await apiClient.get(`/api/v1/wallets/${address}/balance`);
+      console.log('✅ Wallet balance retrieved successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching wallet balance:', error.message);
+      throw handleApiError(error);
     }
   },
   

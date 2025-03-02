@@ -15,143 +15,134 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
  * @param {Function} props.onPress - Function to call when card is pressed
  */
 const CoinCard = ({ coin, onPress }) => {
-  // Default icon for coins that don't have specific icons
-  const defaultIcon = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
+  // Handle both API and mock data formats
+  const symbol = coin.symbol || '';
+  const name = coin.name || '';
+  const price = typeof coin.price === 'number' ? coin.price : 0;
+  const priceChange = typeof coin.priceChange === 'number' ? coin.priceChange : 0;
+  const balance = typeof coin.balance === 'number' ? coin.balance : 0;
   
-  // Get icon based on coin symbol or use default
-  const getIconUrl = (symbol) => {
+  // Get icon URL - try both formats
+  const getIconUrl = () => {
+    if (coin.iconUrl) return coin.iconUrl;
+    
+    // Default to trustwallet repo for standard coins
     const lowercaseSymbol = symbol.toLowerCase();
-    const iconMapping = {
-      sol: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-      usdc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
-      usdt: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
-      btc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-      eth: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-    };
-    
-    return iconMapping[lowercaseSymbol] || defaultIcon;
+    return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/${lowercaseSymbol}/logo.png`;
   };
   
-  // Format price with appropriate decimal places
-  const formatPrice = (price) => {
-    if (!price && price !== 0) return 'N/A';
+  // Format price based on value
+  const formatPrice = (value) => {
+    if (value === undefined || value === null) return '$0.00';
     
-    if (price < 0.01) return price.toFixed(6);
-    if (price < 1) return price.toFixed(4);
-    if (price < 10000) return price.toFixed(2);
-    return price.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    if (value < 0.01) return `$${value.toFixed(6)}`;
+    if (value < 1) return `$${value.toFixed(4)}`;
+    if (value < 1000) return `$${value.toFixed(2)}`;
+    return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
-  // Format balance
-  const formatBalance = (balance) => {
-    if (!balance && balance !== 0) return '0.00';
+  // Format balance based on value
+  const formatBalance = (value) => {
+    if (value === undefined || value === null) return '0';
     
-    if (balance < 0.01) return balance.toFixed(6);
-    if (balance < 1) return balance.toFixed(4);
-    return balance.toFixed(2);
-  };
-  
-  // Determine color for price change
-  const getPriceChangeColor = (change) => {
-    if (!change && change !== 0) return '#ffffff';
-    return change >= 0 ? '#4CAF50' : '#F44336';
+    if (value < 0.001) return value.toFixed(6);
+    if (value < 1) return value.toFixed(4);
+    if (value < 1000) return value.toFixed(2);
+    return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
   };
 
   return (
-    <TouchableOpacity 
-      style={styles.container}
-      onPress={() => onPress(coin)}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.card} onPress={() => onPress(coin)}>
       <View style={styles.leftSection}>
-        <Image
-          source={{ uri: getIconUrl(coin.symbol) }}
-          style={styles.coinIcon}
+        <Image 
+          source={{ uri: getIconUrl() }} 
+          style={styles.icon}
+          defaultSource={{ uri: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png' }}
+          onError={(e) => console.log('Image failed to load:', e.nativeEvent.error)}
         />
-        <View style={styles.coinInfo}>
-          <Text style={styles.coinSymbol}>{coin.symbol}</Text>
-          <Text style={styles.coinName}>{coin.name}</Text>
+        <View style={styles.nameSection}>
+          <Text style={styles.symbol}>{symbol}</Text>
+          <Text style={styles.name}>{name}</Text>
         </View>
       </View>
       
       <View style={styles.rightSection}>
-        <Text style={styles.coinPrice}>${formatPrice(coin.price)}</Text>
-        
-        {coin.priceChange !== undefined && (
+        <Text style={styles.price}>{formatPrice(price)}</Text>
+        <View style={styles.detailsRow}>
           <Text 
             style={[
               styles.priceChange, 
-              { color: getPriceChangeColor(coin.priceChange) }
+              priceChange >= 0 ? styles.positive : styles.negative
             ]}
           >
-            {coin.priceChange >= 0 ? '+' : ''}{coin.priceChange}%
+            {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
           </Text>
-        )}
-        
-        {coin.balance !== undefined && (
-          <Text style={styles.balance}>
-            {formatBalance(coin.balance)} {coin.symbol}
-          </Text>
-        )}
+          <Text style={styles.balance}>{formatBalance(balance)} {symbol}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#262640',
+    backgroundColor: '#1E1E2D',
     borderRadius: 12,
-    marginVertical: 6,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 12,
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  coinIcon: {
+  icon: {
     width: 40,
     height: 40,
     borderRadius: 20,
     marginRight: 12,
+    backgroundColor: '#2A2A3A',
   },
-  coinInfo: {
+  nameSection: {
     justifyContent: 'center',
   },
-  coinSymbol: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
+  symbol: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  coinName: {
-    fontSize: 14,
+  name: {
     color: '#9F9FD5',
+    fontSize: 14,
   },
   rightSection: {
     alignItems: 'flex-end',
   },
-  coinPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
+  price: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
     marginBottom: 4,
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   priceChange: {
     fontSize: 14,
-    fontWeight: '500',
+    marginRight: 8,
+  },
+  positive: {
+    color: '#4CAF50',
+  },
+  negative: {
+    color: '#F44336',
   },
   balance: {
-    fontSize: 12,
     color: '#9F9FD5',
-    marginTop: 2,
+    fontSize: 14,
   },
 });
 

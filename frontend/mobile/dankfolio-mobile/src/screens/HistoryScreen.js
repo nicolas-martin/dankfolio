@@ -10,14 +10,17 @@ import {
   Alert,
 } from 'react-native';
 import api from '../services/api';
+import { secureStorage } from '../utils/solanaWallet';
 
 const HistoryScreen = ({ navigation }) => {
   const [trades, setTrades] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [wallet, setWallet] = useState(null);
 
   useEffect(() => {
     fetchTrades();
+    loadWallet();
   }, []);
 
   const fetchTrades = async () => {
@@ -60,6 +63,17 @@ const HistoryScreen = ({ navigation }) => {
     } finally {
       setIsLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const loadWallet = async () => {
+    try {
+      const savedWallet = await secureStorage.getWallet();
+      if (savedWallet) {
+        setWallet(savedWallet);
+      }
+    } catch (error) {
+      console.error('Error loading wallet:', error);
     }
   };
 
@@ -159,7 +173,7 @@ const HistoryScreen = ({ navigation }) => {
             <Text style={styles.emptyText}>No trades found</Text>
             <TouchableOpacity
               style={styles.newTradeButton}
-              onPress={() => navigation.navigate('Trade')}
+              onPress={() => navigation.navigate('Trade', { wallet })}
             >
               <Text style={styles.buttonText}>Make a Trade</Text>
             </TouchableOpacity>

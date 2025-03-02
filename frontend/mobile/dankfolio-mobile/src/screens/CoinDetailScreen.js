@@ -11,12 +11,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PriceChart from '../components/PriceChart';
+import { secureStorage } from '../utils/solanaWallet';
 
 const CoinDetailScreen = ({ route, navigation }) => {
   const { coin } = route.params;
   const [isLoading, setIsLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
   const [timeframe, setTimeframe] = useState('1D');
+  const [wallet, setWallet] = useState(null);
   
   // Default icon for coins that don't have specific icons
   const defaultIcon = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
@@ -67,6 +69,22 @@ const CoinDetailScreen = ({ route, navigation }) => {
     
     return mockData;
   };
+  
+  useEffect(() => {
+    // Load wallet from secure storage
+    const loadWallet = async () => {
+      try {
+        const savedWallet = await secureStorage.getWallet();
+        if (savedWallet) {
+          setWallet(savedWallet);
+        }
+      } catch (error) {
+        console.error('Error loading wallet:', error);
+      }
+    };
+    
+    loadWallet();
+  }, []);
   
   useEffect(() => {
     // Simulate API call to fetch chart data
@@ -172,14 +190,22 @@ const CoinDetailScreen = ({ route, navigation }) => {
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity 
             style={[styles.actionButton, styles.buyButton]}
-            onPress={() => navigation.navigate('Trade', { initialFromCoin: 'USDC', initialToCoin: coin.symbol })}
+            onPress={() => navigation.navigate('Trade', { 
+              initialFromCoin: 'SOL', 
+              initialToCoin: coin.symbol,
+              wallet
+            })}
           >
             <Text style={styles.actionButtonText}>Buy</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.actionButton, styles.sellButton]}
-            onPress={() => navigation.navigate('Trade', { initialFromCoin: coin.symbol, initialToCoin: 'USDC' })}
+            onPress={() => navigation.navigate('Trade', { 
+              initialFromCoin: coin.symbol, 
+              initialToCoin: 'USDC',
+              wallet
+            })}
           >
             <Text style={styles.actionButtonText}>Sell</Text>
           </TouchableOpacity>
