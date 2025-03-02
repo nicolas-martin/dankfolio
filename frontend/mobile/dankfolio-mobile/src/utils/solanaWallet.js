@@ -8,7 +8,22 @@ const connection = new Connection('https://api.mainnet-beta.solana.com', 'confir
 
 // Constants for Raydium API
 const API_SWAP_HOST = 'https://transaction-v1.raydium.io';
-const API_BASE_HOST = 'https://api.raydium.io/v2';
+const API_BASE_HOST = 'https://api.raydium.io';
+
+// Raydium API URLs
+const API_URLS = {
+  SWAP_HOST: API_SWAP_HOST,
+  BASE_HOST: API_BASE_HOST,
+  SWAP_QUOTE: '/compute/swap-base-in',
+  SWAP_TRANSACTION: '/transaction/swap-base-in',
+};
+
+// Hardcoded compute unit prices (in microLamports)
+const COMPUTE_UNIT_PRICES = {
+  VERY_HIGH: '1000',  // vh
+  HIGH: '500',        // h
+  MEDIUM: '250'       // m
+};
 
 /**
  * Generate a new random Solana keypair
@@ -102,74 +117,80 @@ export const signTransaction = (transaction, privateKey) => {
  * @param {string} privateKey - Private key (Base58 or Base64)
  * @returns {Promise<string>} Base64 encoded signed transaction
  */
-export const createAndSignSwapTransaction = async (fromCoinId, toCoinId, amount, privateKey) => {
+export async function createAndSignSwapTransaction(
+  connection,
+  wallet,
+  inputMint,
+  outputMint,
+  amount,
+  slippage,
+  isInputSol,
+  isOutputSol,
+  inputTokenAcc,
+  outputTokenAcc,
+  txVersion = 'V0'
+) {
   try {
-    // Get keypair from private key (now supports both Base58 and Base64)
-    const keypair = getKeypairFromPrivateKey(privateKey);
-    
-    // Convert amount to lamports/smallest units (assuming SOL by default)
-    const amountInSmallestUnits = Math.floor(amount * LAMPORTS_PER_SOL);
-    
-    // Determine if input or output is SOL
-    const isInputSol = fromCoinId === 'So11111111111111111111111111111111111111112';
-    const isOutputSol = toCoinId === 'So11111111111111111111111111111111111111112';
-    
-    // Set slippage (1% by default)
-    const slippage = 1;
-    
-    // Fetch priority fee information
-    const { data: feeData } = await axios.get(
-      `${API_BASE_HOST}/info/priority-fee`
-    );
-    
-    const priorityFee = feeData.data.default.h; // Use high priority fee
-    
-    // Fetch swap quote
+    console.log('Getting swap quote...');
     const { data: swapResponse } = await axios.get(
-      `${API_SWAP_HOST}/compute/swap-base-in?` +
-      `inputMint=${fromCoinId}&` +
-      `outputMint=${toCoinId}&` +
-      `amount=${amountInSmallestUnits}&` +
-      `slippageBps=${slippage * 100}&` +
-      `txVersion=V0`
+      `${API_URLS.SWAP_HOST}${API_URLS.SWAP_QUOTE}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippage * 100}&txVersion=${txVersion}`
     );
-    
-    // Get transaction details
+
+    if (!swapResponse) {
+      throw new Error('Failed to get swap quote');
+    }
+
+    console.log('Creating swap transaction...');
     const { data: swapTransactions } = await axios.post(
-      `${API_SWAP_HOST}/transaction/swap-base-in`,
+      `${API_URLS.SWAP_HOST}${API_URLS.SWAP_TRANSACTION}`,
       {
-        computeUnitPriceMicroLamports: String(priorityFee),
+        computeUnitPriceMicroLamports: '1000', // Using a hardcoded high priority value
         swapResponse,
-        txVersion: 'V0',
-        wallet: keypair.publicKey.toString(),
+        txVersion,
+        wallet: wallet.publicKey.toBase58(),
         wrapSol: isInputSol,
         unwrapSol: isOutputSol,
+        inputAccount: isInputSol ? undefined : inputTokenAcc?.toBase58(),
+        outputAccount: isOutputSol ? undefined : outputTokenAcc?.toBase58(),
       }
     );
-    
-    // Handle the received transaction
-    if (!swapTransactions.success || !swapTransactions.data || swapTransactions.data.length === 0) {
-      throw new Error('Failed to generate swap transaction');
+
+    if (!swapTransactions?.data?.length) {
+      throw new Error('Failed to create swap transaction');
     }
+
+    console.log('Processing transactions...');
+    const allTxBuf = swapTransactions.data.map((tx) => Buffer.from(tx.transaction, 'base64'));
+    const allTransactions = allTxBuf.map((txBuf) =>
+      txVersion === 'V0' ? VersionedTransaction.deserialize(txBuf) : Transaction.from(txBuf)
+    );
+
+    console.log(`Total ${allTransactions.length} transactions to process`);
     
-    // Get the transaction buffer
-    const txBuffer = Buffer.from(swapTransactions.data[0].transaction, 'base64');
-    
-    // Deserialize as a versioned transaction
-    const transaction = VersionedTransaction.deserialize(txBuffer);
-    
-    // Sign the transaction (note: this doesn't use the signTransaction method
-    // because VersionedTransaction has a different signing method)
-    transaction.sign([keypair]);
-    
-    // Return the serialized and encoded transaction
-    return Buffer.from(transaction.serialize()).toString('base64');
-    
+    for (let i = 0; i < allTransactions.length; i++) {
+      const transaction = allTransactions[i];
+      if (txVersion === 'V0') {
+        transaction.sign([wallet]);
+      } else {
+        transaction.partialSign(wallet);
+      }
+
+      const rawTransaction = transaction.serialize();
+      const signature = await connection.sendRawTransaction(rawTransaction, {
+        skipPreflight: true,
+        maxRetries: 2,
+      });
+
+      await connection.confirmTransaction(signature);
+      console.log(`Transaction ${i + 1} confirmed:`, signature);
+    }
+
+    return true;
   } catch (error) {
-    console.error('Error creating swap transaction:', error);
+    console.error('Error in createAndSignSwapTransaction:', error);
     throw error;
   }
-};
+}
 
 /**
  * Secure storage functions for the wallet

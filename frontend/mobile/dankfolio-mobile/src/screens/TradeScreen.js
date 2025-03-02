@@ -14,11 +14,11 @@ import {
 } from 'react-native';
 import { createAndSignSwapTransaction } from '../utils/solanaWallet';
 import api from '../services/api';
-import { trackTransaction } from '../utils/transactionTracker';
-import notificationManager from '../utils/notificationManager';
+import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { getKeypairFromPrivateKey } from '../utils/solanaWallet';
 
 // Small default amount for safety
-const DEFAULT_AMOUNT = "0.001"; // Tiny default amount
+const DEFAULT_AMOUNT = "0.001";
 
 const TradeScreen = ({ route, navigation }) => {
   const { wallet } = route.params;
@@ -28,75 +28,21 @@ const TradeScreen = ({ route, navigation }) => {
   const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [availableCoins, setAvailableCoins] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [networkStatus, setNetworkStatus] = useState({
-    status: 'unknown',
-    solPrice: 0,
-    averageFee: 0.000005,
-  });
-  const [tradeEstimate, setTradeEstimate] = useState(null);
   
   // Predefined coin list for demo
   const COIN_LIST = [
     { id: 'So11111111111111111111111111111111111111112', name: 'SOL', symbol: 'SOL' },
     { id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', name: 'USD Coin', symbol: 'USDC' },
     { id: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', name: 'USDT', symbol: 'USDT' },
-    // Add more meme coins as needed
-    { id: 'MEME123456789', name: 'Doge Coin', symbol: 'DOGE' },
-    { id: 'MEME987654321', name: 'Pepe Coin', symbol: 'PEPE' },
   ];
 
   useEffect(() => {
-    fetchAvailableCoins();
-    fetchNetworkStatus();
-    
-    // Refresh network status every 30 seconds
-    const networkStatusInterval = setInterval(fetchNetworkStatus, 30000);
-    
-    return () => {
-      clearInterval(networkStatusInterval);
-    };
+    setAvailableCoins(COIN_LIST);
+    if (COIN_LIST.length >= 2) {
+      setFromCoin(COIN_LIST[0].id);
+      setToCoin(COIN_LIST[1].id);
+    }
   }, []);
-
-  const fetchAvailableCoins = async () => {
-    try {
-      setIsLoading(true);
-      // Try to fetch coins from API
-      const coins = await api.getAvailableCoins().catch(() => COIN_LIST);
-      setAvailableCoins(coins);
-      
-      // Set default values
-      if (coins.length >= 2) {
-        setFromCoin(coins[0].id);
-        setToCoin(coins[1].id);
-      }
-    } catch (error) {
-      console.error('Error fetching coins:', error);
-      // Use predefined list as fallback
-      setAvailableCoins(COIN_LIST);
-      if (COIN_LIST.length >= 2) {
-        setFromCoin(COIN_LIST[0].id);
-        setToCoin(COIN_LIST[1].id);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchNetworkStatus = async () => {
-    try {
-      const stats = await api.getNetworkStatus();
-      
-      // Check if network status changed
-      if (networkStatus.status !== stats.status) {
-        // Notify user of status change via notification manager
-        notificationManager.networkAlert(stats.status);
-      }
-      
-      setNetworkStatus(stats);
-    } catch (error) {
-      console.error('Failed to fetch network status:', error);
-    }
-  };
 
   const getCoinNameById = (id) => {
     const coin = availableCoins.find(c => c.id === id);
@@ -104,300 +50,85 @@ const TradeScreen = ({ route, navigation }) => {
   };
 
   const handleTradeSubmit = async () => {
+    console.log('Trade submit clicked:', { fromCoin, toCoin, amount });
+    
     try {
-      // Validate inputs
-      if (!fromCoin) {
-        Alert.alert('Error', 'Please select a source coin');
-        return;
-      }
-      if (!toCoin) {
-        Alert.alert('Error', 'Please select a destination coin');
-        return;
-      }
-      if (fromCoin === toCoin) {
-        Alert.alert('Error', 'Source and destination coins must be different');
+      // Basic validation
+      if (!fromCoin || !toCoin || fromCoin === toCoin) {
+        console.error('Invalid coins selected');
         return;
       }
       
       const parsedAmount = parseFloat(amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        Alert.alert('Error', 'Please enter a valid amount');
+        console.error('Invalid amount');
         return;
       }
-      
-      // Check if network status is available before proceeding
-      if (networkStatus.status === 'degraded') {
-        Alert.alert(
-          '⚠️ Network Status Warning',
-          'The Solana network is currently experiencing issues. Trades may be delayed or fail. Do you want to proceed anyway?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Proceed Anyway', 
-              style: 'destructive',
-              onPress: () => showTradeConfirmation(parsedAmount)
-            }
-          ]
-        );
-        return;
-      }
-      
-      // If network is ok, proceed directly to confirmation
-      showTradeConfirmation(parsedAmount);
-    } catch (error) {
-      console.error('Trade validation error:', error);
-      Alert.alert('❌ Error', 'Failed to validate trade parameters');
-    }
-  };
-  
-  // New function to show trade confirmation
-  const showTradeConfirmation = (parsedAmount) => {
-    // Calculate approximate fee based on network status
-    const estimatedFee = networkStatus.averageFee || 0.000005;
-    const totalCost = parsedAmount + estimatedFee;
-    
-    // Get coin names for display
-    const fromCoinName = getCoinNameById(fromCoin);
-    const toCoinName = getCoinNameById(toCoin);
-    
-    Alert.alert(
-      '⚠️ Real Money Warning',
-      `You are about to trade ${parsedAmount} ${fromCoinName} for ${toCoinName} on the Solana mainnet using REAL MONEY.
-      \nEstimated network fee: ${estimatedFee} SOL
-      \nTotal cost: ${totalCost} SOL
-      \nAre you sure you want to proceed?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Proceed',
-          onPress: async () => {
-            await executeTradeAfterConfirmation(parsedAmount);
-          }
-        }
-      ]
-    );
-  };
 
-  const executeTradeAfterConfirmation = async (parsedAmount) => {
-    let transactionSignature = null;
-    let transactionTracker = null;
-    
-    try {
-      setIsSubmitting(true);
-      
-      // Show processing indicator
-      Alert.alert(
-        '⏳ Processing Transaction',
-        'Your transaction is being prepared and signed. Please wait...',
-        [{ text: 'OK' }],
-        { cancelable: false }
-      );
-      
-      // Create and sign the transaction locally (now async)
-      const signedTransaction = await createAndSignSwapTransaction(
-        fromCoin,
-        toCoin,
-        parsedAmount,
-        wallet.privateKey
-      );
-      
-      // Update alert to show submission status
-      Alert.alert(
-        '📡 Submitting Transaction',
-        'Your transaction is being submitted to the network...',
-        [{ text: 'OK' }],
-        { cancelable: false }
-      );
-      
-      // Send only the signed transaction to the backend
-      const result = await api.executeTrade(
-        fromCoin,
-        toCoin,
-        parsedAmount,
-        signedTransaction
-      );
-      
-      // Get coin symbols for notification
-      const fromSymbol = availableCoins.find(c => c.id === fromCoin)?.symbol || 'Unknown';
-      const toSymbol = availableCoins.find(c => c.id === toCoin)?.symbol || 'Unknown';
-      
-      // Create trade details for notifications
-      const tradeDetails = {
-        amount: parsedAmount,
-        fromCoinId: fromCoin,
-        toCoinId: toCoin,
-        fromSymbol,
-        toSymbol,
-        timestamp: new Date().toISOString(),
-        transactionId: result.transaction_id || result.signature,
-        showAlert: false // Don't show alert from notification manager since we'll handle it manually
-      };
-      
-      // Send trade submitted notification
-      await notificationManager.tradeSubmitted(tradeDetails);
-      
-      // Check if we have a transaction signature
-      transactionSignature = result.transaction_id || result.signature;
-      
-      if (transactionSignature) {
-        console.log(`🔄 Tracking transaction confirmation: ${transactionSignature}`);
+      // Execute trade directly without confirmation
+      try {
+        setIsSubmitting(true);
         
-        // Show tracking alert with pending status
-        Alert.alert(
-          '⏳ Transaction Submitted',
-          `Your trade has been submitted to the Solana network and is awaiting confirmation.
-          \nThis usually takes 15-30 seconds. You'll receive a notification when complete.`,
-          [{ text: 'OK' }]
-        );
+        // Create and sign transaction
+        console.log('Creating and signing transaction...', {
+          fromCoin,
+          toCoin,
+          parsedAmount,
+          hasPrivateKey: !!wallet.privateKey
+        });
+
+        // Get connection from solanaWallet
+        const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
         
-        // Start tracking the transaction
-        transactionTracker = trackTransaction(
-          transactionSignature,
-          // Success callback
-          async (confirmedTx) => {
-            setIsSubmitting(false);
-            
-            // Update trade details with confirmation info
-            const confirmedTradeDetails = {
-              ...tradeDetails,
-              confirmationTime: new Date().toISOString(),
-              confirmations: confirmedTx.confirmations,
-              blockTime: confirmedTx.blockTime,
-              showAlert: true // Show alert from notification manager
-            };
-            
-            // Send trade confirmed notification
-            await notificationManager.tradeConfirmed(confirmedTradeDetails);
-            
-            // Show success message with detailed information
-            Alert.alert(
-              '✅ Trade Confirmed',
-              `Your trade of ${parsedAmount} ${fromSymbol} to ${toSymbol} has been confirmed!
-              \nTransaction ID: ${transactionSignature}
-              \nConfirmations: ${confirmedTx.confirmations}
-              \nBlock Time: ${new Date(confirmedTx.blockTime * 1000).toLocaleString()}`,
-              [
-                { text: 'OK' },
-                { text: 'View History', onPress: () => navigation.navigate('History') }
-              ]
-            );
-            
-            // Reset form after success
-            setAmount(DEFAULT_AMOUNT);
-          },
-          // Error callback
-          async (error) => {
-            setIsSubmitting(false);
-            
-            console.error('Transaction confirmation failed:', error);
-            
-            // Update trade details with error info
-            const failedTradeDetails = {
-              ...tradeDetails,
-              errorTime: new Date().toISOString(),
-              errorMessage: error.message,
-              showAlert: true // Show alert from notification manager
-            };
-            
-            // Send trade failed notification
-            await notificationManager.tradeFailed(failedTradeDetails);
-            
-            Alert.alert(
-              '⚠️ Transaction Status Unknown',
-              `Your trade was submitted but we couldn't confirm its success. 
-              \nTransaction ID: ${transactionSignature}
-              \nError: ${error.message}
-              \nYou can check the status in your transaction history.`,
-              [
-                { text: 'OK' },
-                { text: 'View History', onPress: () => navigation.navigate('History') }
-              ]
-            );
-          },
-          // Options
-          {
-            maxAttempts: 15, // Check for 30 seconds
-            interval: 2000, // Every 2 seconds
-            confirmationLevel: 1 // Wait for at least 1 confirmation
-          }
+        // Convert amount to lamports
+        const amountInLamports = Math.floor(parsedAmount * LAMPORTS_PER_SOL);
+        
+        // Check if input/output is SOL
+        const isInputSol = fromCoin === 'So11111111111111111111111111111111111111112';
+        const isOutputSol = toCoin === 'So11111111111111111111111111111111111111112';
+        
+        // Create keypair from private key
+        const keypair = getKeypairFromPrivateKey(wallet.privateKey);
+        
+        const success = await createAndSignSwapTransaction(
+          connection,
+          keypair,
+          fromCoin,
+          toCoin,
+          amountInLamports,
+          1, // 1% slippage
+          isInputSol,
+          isOutputSol,
+          null, // Let the function handle ATA
+          null, // Let the function handle ATA
+          'V0'  // Use versioned transactions
         );
-      } else {
-        // No transaction signature, but trade was submitted successfully
+
+        if (!success) {
+          throw new Error('Failed to create and sign transaction');
+        }
+
+        console.log('Transaction completed successfully');
+        
+        // Reset form
+        setAmount(DEFAULT_AMOUNT);
         setIsSubmitting(false);
         
+        // Show success message
         Alert.alert(
-          '🎉 Trade Submitted',
-          `Your trade of ${parsedAmount} ${fromSymbol} to ${toSymbol} has been submitted successfully!`,
-          [
-            { text: 'OK' },
-            { text: 'View History', onPress: () => navigation.navigate('History') }
-          ]
+          'Success',
+          'Trade completed successfully!',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
         );
         
-        // Reset form after success
-        setAmount(DEFAULT_AMOUNT);
+      } catch (error) {
+        console.error('Trade failed:', error);
+        setIsSubmitting(false);
+        Alert.alert('Error', error.message || 'Failed to complete trade');
       }
     } catch (error) {
-      console.error('Trade execution error:', error);
-      setIsSubmitting(false);
-      
-      // More user-friendly error message with categorization
-      let errorTitle = '❌ Trade Failed';
-      let errorMessage = 'Failed to execute trade';
-      
-      if (error.message.includes('validation failed')) {
-        errorTitle = '❌ Invalid Trade Parameters';
-        errorMessage = error.message;
-      } else if (error.message.includes('Authentication error')) {
-        errorTitle = '🔒 Authentication Required';
-        errorMessage = error.message;
-      } else if (error.message.includes('Network error')) {
-        errorTitle = '📡 Network Error';
-        errorMessage = 'Cannot connect to the trading server. Please check your internet connection and try again.';
-      } else if (error.message.includes('insufficient funds')) {
-        errorTitle = '💰 Insufficient Funds';
-        errorMessage = 'You do not have enough funds to complete this trade. Please reduce the amount or add funds to your wallet.';
-      } else if (error.response?.data?.error) {
-        // Backend API error
-        errorMessage = `Server error: ${error.response.data.error}`;
-      } else if (error.message) {
-        // Client-side error with message
-        errorMessage = error.message;
-      }
-      
-      // Get coin symbols for notification 
-      let fromSymbol = 'Unknown';
-      let toSymbol = 'Unknown';
-      
-      try {
-        fromSymbol = availableCoins.find(c => c.id === fromCoin)?.symbol || 'Unknown';
-        toSymbol = availableCoins.find(c => c.id === toCoin)?.symbol || 'Unknown';
-      } catch (e) {
-        console.error('Error getting coin symbols:', e);
-      }
-      
-      // Send trade failed notification
-      notificationManager.tradeFailed({
-        amount: parsedAmount,
-        fromCoinId: fromCoin,
-        toCoinId: toCoin,
-        fromSymbol,
-        toSymbol,
-        timestamp: new Date().toISOString(),
-        errorMessage: errorMessage,
-        errorTime: new Date().toISOString(),
-        showAlert: false // Don't show alert, we'll handle it manually
-      });
-      
-      Alert.alert(errorTitle, errorMessage);
-    } finally {
-      // Make sure we stop tracking if there was an error but tracking had started
-      if (transactionTracker && setIsSubmitting) {
-        transactionTracker.stop();
-      }
+      console.error('Trade submission error:', error);
+      Alert.alert('Error', 'Failed to submit trade');
     }
   };
 
@@ -420,27 +151,6 @@ const TradeScreen = ({ route, navigation }) => {
           <View style={styles.header}>
             <Text style={styles.title}>🔄 Trade Memes</Text>
             <Text style={styles.subtitle}>Swap tokens securely</Text>
-            
-            {/* Network Status Indicator */}
-            <View style={[
-              styles.networkStatus,
-              networkStatus.status === 'healthy' 
-                ? styles.networkHealthy 
-                : networkStatus.status === 'degraded' 
-                  ? styles.networkDegraded 
-                  : styles.networkUnknown
-            ]}>
-              <Text style={styles.networkStatusText}>
-                {networkStatus.status === 'healthy' 
-                  ? '✅ Network: Healthy' 
-                  : networkStatus.status === 'degraded' 
-                    ? '⚠️ Network: Degraded' 
-                    : '❓ Network: Unknown'}
-              </Text>
-              {networkStatus.solPrice > 0 && (
-                <Text style={styles.networkStatusText}>SOL: ${networkStatus.solPrice.toFixed(2)}</Text>
-              )}
-            </View>
           </View>
           
           <View style={styles.formContainer}>
@@ -509,29 +219,6 @@ const TradeScreen = ({ route, navigation }) => {
               onChangeText={setAmount}
               keyboardType="numeric"
             />
-            
-            {/* Trade Summary Section */}
-            {fromCoin && toCoin && amount && parseFloat(amount) > 0 && (
-              <View style={styles.summaryContainer}>
-                <Text style={styles.summaryTitle}>Trade Summary</Text>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>From:</Text>
-                  <Text style={styles.summaryValue}>{getCoinNameById(fromCoin)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>To:</Text>
-                  <Text style={styles.summaryValue}>{getCoinNameById(toCoin)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Amount:</Text>
-                  <Text style={styles.summaryValue}>{amount} {availableCoins.find(c => c.id === fromCoin)?.symbol}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Est. Network Fee:</Text>
-                  <Text style={styles.summaryValue}>{networkStatus.averageFee || '0.000005'} SOL</Text>
-                </View>
-              </View>
-            )}
             
             <TouchableOpacity
               style={[
@@ -742,33 +429,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  networkStatus: {
-    marginTop: 10,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  networkHealthy: {
-    backgroundColor: 'rgba(46, 204, 113, 0.2)',
-    borderWidth: 1,
-    borderColor: '#2ecc71',
-  },
-  networkDegraded: {
-    backgroundColor: 'rgba(241, 196, 15, 0.2)',
-    borderWidth: 1,
-    borderColor: '#f1c40f',
-  },
-  networkUnknown: {
-    backgroundColor: 'rgba(149, 165, 166, 0.2)',
-    borderWidth: 1,
-    borderColor: '#95a5a6',
-  },
-  networkStatusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
   },
 });
 
