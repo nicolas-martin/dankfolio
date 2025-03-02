@@ -9,6 +9,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import HomeScreen from './src/screens/HomeScreen';
 import TradeScreen from './src/screens/TradeScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
+import CoinDetailScreen from './src/screens/CoinDetailScreen';
 
 // Create stack navigator
 const Stack = createNativeStackNavigator();
@@ -28,6 +29,7 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Trade" component={TradeScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />
+        <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

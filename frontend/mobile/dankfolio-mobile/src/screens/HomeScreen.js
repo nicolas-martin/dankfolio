@@ -1,14 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  TextInput, 
+  ActivityIndicator, 
+  SafeAreaView,
+  ScrollView,
+  FlatList 
+} from 'react-native';
 import { generateWallet, getKeypairFromPrivateKey, secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { TEST_PRIVATE_KEY } from '@env';
+import CoinCard from '../components/CoinCard';
+
+// Mock coin data with prices and changes
+const MOCK_COINS = [
+  { 
+    id: 'So11111111111111111111111111111111111111112', 
+    name: 'Solana', 
+    symbol: 'SOL', 
+    price: 123.45, 
+    priceChange: 5.67,
+    balance: 1.234
+  },
+  { 
+    id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 
+    name: 'USD Coin', 
+    symbol: 'USDC', 
+    price: 1.00, 
+    priceChange: 0.01,
+    balance: 156.78
+  },
+  { 
+    id: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', 
+    name: 'Tether', 
+    symbol: 'USDT', 
+    price: 1.00, 
+    priceChange: -0.02,
+    balance: 50.25
+  },
+  {
+    id: 'BTChTuTGsZSjpKL9P3KjzZ3mJ68jkACkEFEjvGGNn8L', 
+    name: 'Bitcoin', 
+    symbol: 'BTC', 
+    price: 58432.87, 
+    priceChange: 2.34,
+    balance: 0.005
+  },
+  {
+    id: 'ETHW5opqnkWEs1tmJ3e3vSzh2QeDNANbQVXwQKNrFJM', 
+    name: 'Ethereum', 
+    symbol: 'ETH', 
+    price: 3211.56, 
+    priceChange: -1.23,
+    balance: 0.12
+  },
+  {
+    id: 'pepeSTrAE2gSn9fB36A8EqaJxYqWJhVqtMBwDR3f43B', 
+    name: 'Pepe Coin', 
+    symbol: 'PEPE', 
+    price: 0.000012, 
+    priceChange: 12.45,
+    balance: 1500000
+  },
+  {
+    id: 'dogeKOINusdc78aJSn9MefEqWjLntJD32YjFdpkfxGY', 
+    name: 'Dogecoin', 
+    symbol: 'DOGE', 
+    price: 0.123, 
+    priceChange: 7.89,
+    balance: 1250
+  }
+];
 
 const HomeScreen = ({ navigation }) => {
   const [wallet, setWallet] = useState(null);
   const [privateKey, setPrivateKey] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [showImport, setShowImport] = useState(false);
+  const [coins, setCoins] = useState([]);
 
   useEffect(() => {
     // Check if a wallet already exists
@@ -26,6 +98,9 @@ const HomeScreen = ({ navigation }) => {
     };
 
     checkWallet();
+    
+    // Load mock coins data
+    setCoins(MOCK_COINS);
   }, []);
 
   const handleCreateWallet = async () => {
@@ -38,13 +113,10 @@ const HomeScreen = ({ navigation }) => {
       await secureStorage.saveWallet(newWallet);
       
       setWallet(newWallet);
-      Alert.alert(
-        'Wallet Created', 
-        'Your new wallet has been created. Please make sure to securely save your private key.\n\nPrivate Key: ' + newWallet.privateKey
-      );
+      showNotification('success', 'Your new wallet has been created. Please make sure to securely save your private key.');
     } catch (error) {
       console.error('Error creating wallet:', error);
-      Alert.alert('Error', 'Failed to create wallet');
+      showNotification('error', 'Failed to create wallet');
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +125,7 @@ const HomeScreen = ({ navigation }) => {
   const handleImportWallet = async () => {
     try {
       if (!privateKey.trim()) {
-        Alert.alert('Error', 'Please enter a private key');
+        showNotification('error', 'Please enter a private key');
         return;
       }
 
@@ -74,13 +146,13 @@ const HomeScreen = ({ navigation }) => {
         setShowImport(false);
         setPrivateKey('');
         
-        Alert.alert('Success', 'Wallet imported successfully');
+        showNotification('success', 'Wallet imported successfully');
       } catch (error) {
-        Alert.alert('Error', 'Invalid private key format');
+        showNotification('error', 'Invalid private key format');
       }
     } catch (error) {
       console.error('Error importing wallet:', error);
-      Alert.alert('Error', 'Failed to import wallet');
+      showNotification('error', 'Failed to import wallet');
     } finally {
       setIsLoading(false);
     }
@@ -92,8 +164,58 @@ const HomeScreen = ({ navigation }) => {
       setWallet(null);
     } catch (error) {
       console.error('Error logging out:', error);
-      Alert.alert('Error', 'Failed to log out');
+      showNotification('error', 'Failed to log out');
     }
+  };
+  
+  const handleCoinPress = (coin) => {
+    navigation.navigate('CoinDetail', { coin });
+  };
+  
+  // Simple notification system to replace Alert.alert
+  const [notification, setNotification] = useState({
+    visible: false,
+    type: 'info', // success, error, info, warning
+    message: '',
+  });
+
+  const showNotification = (type, message) => {
+    setNotification({
+      visible: true,
+      type,
+      message,
+    });
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      setNotification({
+        visible: false,
+        type: 'info',
+        message: '',
+      });
+    }, 3000);
+  };
+
+  // Simple notification component
+  const Notification = () => {
+    if (!notification.visible) return null;
+    
+    const bgColor = notification.type === 'success' 
+      ? '#4CAF50' 
+      : notification.type === 'error' 
+        ? '#F44336' 
+        : notification.type === 'warning' 
+          ? '#FF9800' 
+          : '#2196F3';
+          
+    return (
+      <TouchableOpacity 
+        style={[styles.notification, { backgroundColor: bgColor }]}
+        onPress={() => setNotification({ ...notification, visible: false })}
+      >
+        <Text style={styles.notificationText}>{notification.message}</Text>
+      </TouchableOpacity>
+    );
   };
 
   if (isLoading) {
@@ -107,31 +229,26 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Notification />
+      
       <View style={styles.header}>
         <Text style={styles.title}>🚀 DankFolio</Text>
         <Text style={styles.subtitle}>Trade memes securely</Text>
       </View>
 
       {wallet ? (
-        <View style={styles.walletContainer}>
-          <Text style={styles.walletTitle}>Your Wallet</Text>
-          <Text style={styles.label}>Public Key:</Text>
-          <Text style={styles.value} selectable>{wallet.publicKey}</Text>
-          
-          <View style={styles.buttonsContainer}>
-            <TouchableOpacity
-              style={styles.tradeButton}
-              onPress={() => navigation.navigate('Trade', { wallet })}
-            >
-              <Text style={styles.buttonText}>Trade Memes</Text>
-            </TouchableOpacity>
+        <View style={styles.content}>
+          {/* Wallet info card */}
+          <View style={styles.walletCard}>
+            <Text style={styles.walletTitle}>Your Wallet</Text>
+            <Text style={styles.walletAddress} numberOfLines={1} ellipsizeMode="middle">
+              {wallet.publicKey}
+            </Text>
             
-            <TouchableOpacity
-              style={styles.historyButton}
-              onPress={() => navigation.navigate('History')}
-            >
-              <Text style={styles.buttonText}>Trade History</Text>
-            </TouchableOpacity>
+            <View style={styles.balanceContainer}>
+              <Text style={styles.balanceLabel}>Total Balance</Text>
+              <Text style={styles.balanceValue}>$4,752.87</Text>
+            </View>
             
             <TouchableOpacity
               style={styles.logoutButton}
@@ -139,6 +256,28 @@ const HomeScreen = ({ navigation }) => {
             >
               <Text style={styles.buttonText}>Logout</Text>
             </TouchableOpacity>
+          </View>
+          
+          {/* Coins section */}
+          <View style={styles.coinsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Your Coins</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Trade')}
+              >
+                <Text style={styles.sectionAction}>Trade</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <FlatList
+              data={coins}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <CoinCard coin={item} onPress={handleCoinPress} />
+              )}
+              contentContainerStyle={styles.coinsList}
+              showsVerticalScrollIndicator={false}
+            />
           </View>
         </View>
       ) : (
@@ -241,100 +380,134 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#9F9FD5',
   },
-  walletContainer: {
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  walletCard: {
+    backgroundColor: '#262640',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+  },
+  walletTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  walletAddress: {
+    color: '#9F9FD5',
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  balanceContainer: {
+    marginBottom: 16,
+  },
+  balanceLabel: {
+    color: '#9F9FD5',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  balanceValue: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    backgroundColor: '#6A5ACD',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  coinsSection: {
+    flex: 1,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  sectionAction: {
+    color: '#6A5ACD',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  coinsList: {
+    paddingBottom: 20,
+  },
+  notification: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    padding: 15,
+    borderRadius: 8,
+    zIndex: 100,
+  },
+  notificationText: {
+    color: '#fff',
+    textAlign: 'center',
+  },
+  authContainer: {
     padding: 20,
     marginHorizontal: 16,
     backgroundColor: '#262640',
     borderRadius: 12,
     marginTop: 20,
   },
-  walletTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    color: '#9F9FD5',
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 14,
-    color: '#fff',
-    backgroundColor: '#3A3A5A',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
-    overflow: 'hidden',
-  },
-  buttonsContainer: {
-    marginTop: 10,
-  },
-  tradeButton: {
-    backgroundColor: '#6A5ACD',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  historyButton: {
-    backgroundColor: '#4A4A8A',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  logoutButton: {
-    backgroundColor: '#E74C3C',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  authContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
   authButtonsContainer: {
     marginTop: 20,
   },
   button: {
-    padding: 16,
     borderRadius: 8,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    marginVertical: 8,
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
   createButton: {
     backgroundColor: '#6A5ACD',
   },
   importOptionButton: {
-    backgroundColor: '#4A4A8A',
+    backgroundColor: '#3B3B5E',
   },
   importContainer: {
-    backgroundColor: '#262640',
-    borderRadius: 12,
-    padding: 20,
+    marginVertical: 16,
   },
   importTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 16,
+    textAlign: 'center',
   },
   input: {
-    backgroundColor: '#3A3A5A',
-    color: '#fff',
-    padding: 16,
+    backgroundColor: '#3B3B5E',
     borderRadius: 8,
-    marginBottom: 16,
+    color: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginVertical: 8,
   },
   importButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 16,
   },
   cancelButton: {
-    backgroundColor: '#5A5A7A',
+    backgroundColor: '#F44336',
     flex: 1,
     marginRight: 8,
   },
@@ -343,41 +516,32 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   testWalletBanner: {
-    backgroundColor: '#48426D',
+    backgroundColor: '#3B3B5E',
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#6A5ACD',
   },
   testWalletTitle: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   testWalletText: {
-    fontSize: 14,
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 10,
+    color: '#9F9FD5',
+    marginBottom: 12,
   },
   testWalletButton: {
     backgroundColor: '#6A5ACD',
-    padding: 8,
     borderRadius: 6,
-    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignSelf: 'flex-start',
   },
   testWalletButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '500',
   },
 });
 

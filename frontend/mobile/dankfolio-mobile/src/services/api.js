@@ -12,20 +12,48 @@ const apiClient = axios.create({
   timeout: 30000, // 30 seconds
 });
 
+// Enhanced error handler
+const handleApiError = (error) => {
+  // Construct a detailed error object
+  const errorDetails = {
+    message: error.message || 'Unknown error',
+    status: error.response?.status,
+    data: error.response?.data,
+  };
+  
+  // Log detailed information for debugging
+  console.error('API Error:', JSON.stringify(errorDetails, null, 2));
+  
+  // If it's a transaction error, provide more context
+  if (errorDetails?.data?.error?.includes('Transaction')) {
+    console.error('Transaction Error Details:', errorDetails.data.error);
+  }
+  
+  throw errorDetails;
+};
+
 // API methods
 const api = {
   executeTrade: async (fromCoinId, toCoinId, amount, signedTransaction) => {
     console.log('Executing trade:', { fromCoinId, toCoinId, amount });
     
-    const payload = {
-      from_coin_id: fromCoinId,
-      to_coin_id: toCoinId,
-      amount: amount,
-      signed_transaction: signedTransaction,
-    };
+    try {
+      const payload = {
+        from_coin_id: fromCoinId,
+        to_coin_id: toCoinId,
+        amount: amount,
+        signed_transaction: signedTransaction,
+      };
+      
+      // Log the request for debugging
+      console.log('Trade request payload:', JSON.stringify(payload, null, 2));
 
-    const response = await apiClient.post('/api/v1/trades', payload);
-    return response.data;
+      // Updated endpoint to match backend's expected route
+      const response = await apiClient.post('/api/trades/execute', payload);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error);
+    }
   },
 
   getAvailableCoins: async () => {
@@ -44,8 +72,12 @@ const api = {
   },
 
   getTrades: async () => {
-    const response = await apiClient.get('/api/v1/trades');
-    return response.data;
+    try {
+      const response = await apiClient.get('/api/trades');
+      return response.data;
+    } catch (error) {
+      return handleApiError(error);
+    }
   },
 
   createWallet: async () => {

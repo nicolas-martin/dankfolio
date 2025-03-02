@@ -111,10 +111,17 @@ export const signTransaction = (transaction, privateKey) => {
 
 /**
  * Create and sign a swap transaction using Raydium
- * @param {string} fromCoinId - Source token mint address
- * @param {string} toCoinId - Destination token mint address
- * @param {number} amount - Amount to swap
- * @param {string} privateKey - Private key (Base58 or Base64)
+ * @param {Connection} connection - Solana connection
+ * @param {Keypair} wallet - Solana keypair
+ * @param {string} inputMint - Source token mint address
+ * @param {string} outputMint - Destination token mint address
+ * @param {number} amount - Amount to swap in lamports
+ * @param {number} slippage - Slippage percentage
+ * @param {boolean} isInputSol - Whether input is SOL
+ * @param {boolean} isOutputSol - Whether output is SOL
+ * @param {PublicKey} inputTokenAcc - Input token account
+ * @param {PublicKey} outputTokenAcc - Output token account
+ * @param {string} txVersion - Transaction version
  * @returns {Promise<string>} Base64 encoded signed transaction
  */
 export async function createAndSignSwapTransaction(
@@ -132,8 +139,14 @@ export async function createAndSignSwapTransaction(
 ) {
   try {
     console.log('Getting swap quote...');
+    
+    // Always use mainnet for Raydium API calls
+    const network = 'mainnet';
+    console.log(`Using network: ${network} for Raydium API`);
+    
+    // Add network parameter to the API call
     const { data: swapResponse } = await axios.get(
-      `${API_URLS.SWAP_HOST}${API_URLS.SWAP_QUOTE}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippage * 100}&txVersion=${txVersion}`
+      `${API_URLS.SWAP_HOST}${API_URLS.SWAP_QUOTE}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippage * 100}&txVersion=${txVersion}&network=${network}`
     );
 
     if (!swapResponse) {
@@ -144,7 +157,7 @@ export async function createAndSignSwapTransaction(
     const { data: swapTransactions } = await axios.post(
       `${API_URLS.SWAP_HOST}${API_URLS.SWAP_TRANSACTION}`,
       {
-        computeUnitPriceMicroLamports: '1000', // Using a hardcoded high priority value
+        computeUnitPriceMicroLamports: COMPUTE_UNIT_PRICES.HIGH, // Using high priority value
         swapResponse,
         txVersion,
         wallet: wallet.publicKey.toBase58(),
@@ -152,6 +165,7 @@ export async function createAndSignSwapTransaction(
         unwrapSol: isOutputSol,
         inputAccount: isInputSol ? undefined : inputTokenAcc?.toBase58(),
         outputAccount: isOutputSol ? undefined : outputTokenAcc?.toBase58(),
+        network: network, // Always use mainnet
       }
     );
 
@@ -160,32 +174,26 @@ export async function createAndSignSwapTransaction(
     }
 
     console.log('Processing transactions...');
-    const allTxBuf = swapTransactions.data.map((tx) => Buffer.from(tx.transaction, 'base64'));
-    const allTransactions = allTxBuf.map((txBuf) =>
-      txVersion === 'V0' ? VersionedTransaction.deserialize(txBuf) : Transaction.from(txBuf)
-    );
+    // We currently only support signing the first transaction
+    const txBuf = Buffer.from(swapTransactions.data[0].transaction, 'base64');
+    const transaction = txVersion === 'V0' 
+      ? VersionedTransaction.deserialize(txBuf) 
+      : Transaction.from(txBuf);
 
-    console.log(`Total ${allTransactions.length} transactions to process`);
+    console.log(`Total ${swapTransactions.data.length} transactions to process`);
     
-    for (let i = 0; i < allTransactions.length; i++) {
-      const transaction = allTransactions[i];
-      if (txVersion === 'V0') {
-        transaction.sign([wallet]);
-      } else {
-        transaction.partialSign(wallet);
-      }
-
-      const rawTransaction = transaction.serialize();
-      const signature = await connection.sendRawTransaction(rawTransaction, {
-        skipPreflight: true,
-        maxRetries: 2,
-      });
-
-      await connection.confirmTransaction(signature);
-      console.log(`Transaction ${i + 1} confirmed:`, signature);
+    // Sign the transaction
+    if (txVersion === 'V0') {
+      transaction.sign([wallet]);
+    } else {
+      transaction.partialSign(wallet);
     }
 
-    return true;
+    // Serialize the signed transaction to base64
+    const serializedTx = Buffer.from(transaction.serialize()).toString('base64');
+    console.log('Transaction signed successfully, length:', serializedTx.length);
+    
+    return serializedTx;
   } catch (error) {
     console.error('Error in createAndSignSwapTransaction:', error);
     throw error;
@@ -216,8 +224,7 @@ export const secureStorage = {
       const walletData = localStorage.getItem('wallet');
       if (!walletData) return null;
       return JSON.parse(walletData);
-    } catch (error) {
-      console.error('Error getting wallet:', error);
+    } catch (error) {      console.error('Error getting wallet:', error);
       return null;
     }
   },
