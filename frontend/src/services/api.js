@@ -82,6 +82,7 @@ const api = {
 
         getTradeQuote: async (fromCoinId, toCoinId, amount) => {
                 try {
+                        // Use raw amount without formatting
                         console.log('Fetching trade quote:', { fromCoinId, toCoinId, amount });
 
                         const response = await apiClient.get('/api/trades/quote', {

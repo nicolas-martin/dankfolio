@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import {
         View,
         Text,
@@ -21,7 +21,7 @@ import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getKeypairFromPrivateKey } from '../utils/solanaWallet';
 
 // Small default amount for safety
-const DEFAULT_AMOUNT = "0.001";
+const DEFAULT_AMOUNT = "0.000000001";
 
 // Custom Notification Component
 const Notification = ({ type, message, onDismiss }) => {
@@ -42,10 +42,37 @@ const Notification = ({ type, message, onDismiss }) => {
         );
 };
 
+// Create a memoized input component to prevent unnecessary re-renders
+const AmountInput = memo(({ value, onChangeText, onFocus, inputRef }) => {
+        return (
+                <TextInput
+                        style={styles.amountInput}
+                        value={value}
+                        onChangeText={onChangeText}
+                        placeholder="0.00"
+                        placeholderTextColor="#9F9FD5"
+                        selectionColor="#6A5ACD"
+                        ref={inputRef}
+                        onFocus={onFocus}
+                        // These props help with input behavior, especially on web
+                        autoCorrect={false}
+                        spellCheck={false}
+                        autoCapitalize="none"
+                        // Critical for web - prevent default behavior that might cause focus loss
+                        onBlur={(e) => e.preventDefault()}
+                        // Use the appropriate keyboard type based on platform
+                        keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
+                />
+        );
+});
+
 const TradeScreen = ({ route, navigation }) => {
         const initialFromCoin = route.params?.initialFromCoin;
         const initialToCoin = route.params?.initialToCoin;
         const { wallet } = route.params || {};
+
+        // Add ref for input focus management
+        const amountInputRef = useRef(null);
 
         // Hardcoded default coins
         const DEFAULT_COINS = [
@@ -68,6 +95,7 @@ const TradeScreen = ({ route, navigation }) => {
         ];
 
         const [isLoading, setIsLoading] = useState(true);
+        const [quoteLoading, setQuoteLoading] = useState(false);
         const [fromCoin, setFromCoin] = useState('');
         const [toCoin, setToCoin] = useState('');
         const [fromAmount, setFromAmount] = useState(DEFAULT_AMOUNT);
@@ -208,6 +236,54 @@ const TradeScreen = ({ route, navigation }) => {
                 }
         };
 
+        const calculateLocalQuote = (amount, fromId, toId) => {
+                if (!fromId || !toId || fromId === toId || !amount) {
+                        setToAmount('0');
+                        setExchangeRate('');
+                        return;
+                }
+
+                try {
+                        const fromCoin = getCoinById(fromId);
+                        const toCoin = getCoinById(toId);
+                        
+                        if (fromCoin && toCoin && fromCoin.price && toCoin.price) {
+                                // Calculate estimated amount based on price ratio
+                                const fromPrice = parseFloat(fromCoin.price);
+                                const toPrice = parseFloat(toCoin.price);
+                                
+                                if (fromPrice > 0 && toPrice > 0) {
+                                        // Convert amount to number
+                                        const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+                                        const estimatedAmount = (parsedAmount * fromPrice) / toPrice;
+                                        const exchangeRate = fromPrice / toPrice;
+                                        
+                                        // Use raw values without formatting
+                                        setToAmount(estimatedAmount.toString());
+                                        setExchangeRate(exchangeRate.toString());
+                                        
+                                        // Set fees with raw values
+                                        const fee = parsedAmount * 0.005; // 0.5% fee
+                                        setTradeDetails({
+                                                estimatedFee: fee.toString(),
+                                                spread: (fee * 0.8).toString(),
+                                                gasFee: (fee * 0.2).toString(),
+                                        });
+                                        
+                                        return;
+                                }
+                        }
+                        
+                        setToAmount('0');
+                        setExchangeRate('');
+                } catch (error) {
+                        console.error('Error in local quote calculation:', error);
+                        setToAmount('0');
+                        setExchangeRate('');
+                }
+        };
+
+        // Add back fetchTradeQuote for the initial quote API call
         const fetchTradeQuote = async (amount, fromId, toId) => {
                 if (!fromId || !toId || fromId === toId || !amount) {
                         setToAmount('0');
@@ -216,109 +292,39 @@ const TradeScreen = ({ route, navigation }) => {
                 }
 
                 try {
-                        setIsLoading(true);
+                        // Use quoteLoading instead of isLoading to avoid full screen spinner
+                        // setIsLoading(true); - Comment this out
 
+                        // Use raw amount without formatting
                         // API call to get trade quote
-                        const response = await api.getTradeQuote(fromId, toId, parseFloat(amount));
+                        const response = await api.getTradeQuote(fromId, toId, amount);
 
                         console.log('Trade quote response:', response);
 
                         if (response && response.estimatedAmount) {
-                                // Handle string or numeric values
-                                const estimatedAmount = typeof response.estimatedAmount === 'string' 
-                                        ? response.estimatedAmount 
-                                        : response.estimatedAmount.toString();
-                                
-                                const exchangeRate = typeof response.exchangeRate === 'string'
-                                        ? response.exchangeRate
-                                        : response.exchangeRate?.toString() || '';
+                                // Handle string or numeric values but without formatting
+                                const estimatedAmount = response.estimatedAmount.toString();
+                                const exchangeRate = response.exchangeRate?.toString() || '';
                                 
                                 setToAmount(estimatedAmount);
                                 setExchangeRate(exchangeRate);
                                 
-                                // Handle fee data
+                                // Handle fee data as raw values
                                 setTradeDetails({
-                                        estimatedFee: response.fee?.total || '0.00',
-                                        spread: response.fee?.spread || '0.00',
-                                        gasFee: response.fee?.gas || '0.00',
+                                        estimatedFee: response.fee?.total || '0',
+                                        spread: response.fee?.spread || '0',
+                                        gasFee: response.fee?.gas || '0',
                                 });
                         } else {
-                                // Fallback to a simple estimate for demo purposes
-                                console.log('Using fallback quote calculation');
-                                
-                                // Get coin prices from available coins
-                                const fromCoin = getCoinById(fromId);
-                                const toCoin = getCoinById(toId);
-                                
-                                if (fromCoin && toCoin && fromCoin.price && toCoin.price) {
-                                        // Calculate estimated amount based on price ratio
-                                        const fromPrice = parseFloat(fromCoin.price);
-                                        const toPrice = parseFloat(toCoin.price);
-                                        
-                                        if (fromPrice > 0 && toPrice > 0) {
-                                                const parsedAmount = parseFloat(amount);
-                                                const estimatedAmount = (parsedAmount * fromPrice) / toPrice;
-                                                const exchangeRate = fromPrice / toPrice;
-                                                
-                                                setToAmount(estimatedAmount.toFixed(6));
-                                                setExchangeRate(exchangeRate.toFixed(6));
-                                                
-                                                // Set fallback fees
-                                                const fee = parsedAmount * 0.005; // 0.5% fee
-                                                setTradeDetails({
-                                                        estimatedFee: fee.toFixed(6),
-                                                        spread: (fee * 0.8).toFixed(6),
-                                                        gasFee: (fee * 0.2).toFixed(6),
-                                                });
-                                                
-                                                return;
-                                        }
-                                }
-                                
-                                setToAmount('0');
-                                setExchangeRate('');
-                                console.error('Invalid quote response and fallback failed:', response);
+                                // Fallback to local calculation
+                                calculateLocalQuote(amount, fromId, toId);
                         }
                 } catch (error) {
                         console.error('Error fetching quote:', error);
-                        
-                        // Try fallback calculation
-                        try {
-                                const fromCoin = getCoinById(fromId);
-                                const toCoin = getCoinById(toId);
-                                
-                                if (fromCoin && toCoin && fromCoin.price && toCoin.price) {
-                                        const fromPrice = parseFloat(fromCoin.price);
-                                        const toPrice = parseFloat(toCoin.price);
-                                        
-                                        if (fromPrice > 0 && toPrice > 0) {
-                                                const parsedAmount = parseFloat(amount);
-                                                const estimatedAmount = (parsedAmount * fromPrice) / toPrice;
-                                                const exchangeRate = fromPrice / toPrice;
-                                                
-                                                setToAmount(estimatedAmount.toFixed(6));
-                                                setExchangeRate(exchangeRate.toFixed(6));
-                                                
-                                                // Set fallback fees
-                                                const fee = parsedAmount * 0.005; // 0.5% fee
-                                                setTradeDetails({
-                                                        estimatedFee: fee.toFixed(6),
-                                                        spread: (fee * 0.8).toFixed(6),
-                                                        gasFee: (fee * 0.2).toFixed(6),
-                                                });
-                                                
-                                                showNotification('warning', 'Using estimated prices for quote');
-                                                return;
-                                        }
-                                }
-                        } catch (fallbackError) {
-                                console.error('Fallback calculation failed:', fallbackError);
-                        }
-                        
-                        setToAmount('0');
-                        setExchangeRate('');
+                        // Fallback to local calculation
+                        calculateLocalQuote(amount, fromId, toId);
                 } finally {
-                        setIsLoading(false);
+                        // setIsLoading(false); - Comment this out
                 }
         };
 
@@ -341,62 +347,6 @@ const TradeScreen = ({ route, navigation }) => {
                 return 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
         };
 
-        const formatBalance = (balance) => {
-                // Handle undefined, null, or non-numeric values
-                if (balance === undefined || balance === null || balance === '') {
-                        return '0.00';
-                }
-
-                // Convert string to number if needed
-                const numericBalance = typeof balance === 'string' ? parseFloat(balance) : balance;
-
-                // Check if it's a valid number
-                if (isNaN(numericBalance)) {
-                        return '0.00';
-                }
-
-                // Handle zero case
-                if (numericBalance === 0) {
-                        return '0.00';
-                }
-
-                // Handle very small numbers
-                if (Math.abs(numericBalance) < 0.0001) {
-                        return numericBalance.toExponential(4);
-                }
-
-                // Handle small numbers
-                if (Math.abs(numericBalance) < 1) {
-                        return numericBalance.toFixed(Math.min(6, Math.max(2, 6 - Math.floor(Math.log10(Math.abs(numericBalance))))));
-                }
-
-                // Format larger numbers with up to 4 decimal places, but trim trailing zeros
-                return parseFloat(numericBalance.toFixed(4)).toString();
-        };
-
-        const formatPrice = (price) => {
-                if (!price || isNaN(parseFloat(price))) return '$0.00';
-                
-                const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
-                
-                if (numericPrice < 0.01) {
-                        // For very low prices, show scientific notation
-                        return '$' + numericPrice.toExponential(4);
-                } else if (numericPrice < 1) {
-                        // For prices less than $1, show more decimal places
-                        return '$' + numericPrice.toFixed(4);
-                } else if (numericPrice < 10000) {
-                        // For normal prices, show 2 decimal places
-                        return '$' + numericPrice.toFixed(2);
-                } else {
-                        // For large prices, show comma-separated
-                        return '$' + numericPrice.toLocaleString('en-US', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                        });
-                }
-        };
-
         const handleAmountChange = (text) => {
                 // Remove any non-numeric characters except decimal point
                 const sanitized = text.replace(/[^\d.]/g, '');
@@ -405,12 +355,28 @@ const TradeScreen = ({ route, navigation }) => {
                 const parts = sanitized.split('.');
                 const formattedValue = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
                 
+                // Update the input value
                 setFromAmount(formattedValue);
-                if (formattedValue && parseFloat(formattedValue) > 0) {
-                        fetchTradeQuote(formattedValue, fromCoin, toCoin);
-                } else {
+                
+                // Simple approach - do validation and fetch directly
+                if (formattedValue === '' || parseFloat(formattedValue) <= 0) {
                         setToAmount('0');
                         setExchangeRate('');
+                } else {
+                        // First do a quick local calculation for immediate feedback
+                        calculateLocalQuote(formattedValue, fromCoin, toCoin);
+                        
+                        // Then fetch an accurate quote from the API if we have valid coins
+                        if (fromCoin && toCoin && fromCoin !== toCoin) {
+                                // Show loading state while fetching the quote
+                                setQuoteLoading(true);
+                                
+                                // Fetch the quote directly without debounce
+                                fetchTradeQuote(formattedValue, fromCoin, toCoin)
+                                        .finally(() => {
+                                                setQuoteLoading(false);
+                                        });
+                        }
                 }
         };
 
@@ -419,8 +385,8 @@ const TradeScreen = ({ route, navigation }) => {
                 setFromCoin(toCoin);
                 setToCoin(temp);
 
-                // Recalculate the conversion with swapped coins
-                fetchTradeQuote(fromAmount, toCoin, temp);
+                // Use raw value for calculation
+                calculateLocalQuote(fromAmount, toCoin, temp);
         };
 
         const handleTradeSubmit = async () => {
@@ -586,20 +552,17 @@ const TradeScreen = ({ route, navigation }) => {
                                                         <Ionicons name="chevron-down" size={16} color="#9F9FD5" />
                                                 </View>
                                                 <Text style={styles.balanceText}>
-                                                        Balance: {formatBalance(coin.balance || 0)} {coin.symbol}
+                                                        Balance: {coin.balance || '0'} {coin.symbol}
                                                 </Text>
                                         </View>
                                 </View>
                                 <View style={styles.amountContainer}>
                                         {isFrom ? (
-                                                <TextInput
-                                                        style={styles.amountInput}
+                                                <AmountInput
                                                         value={fromAmount}
                                                         onChangeText={handleAmountChange}
-                                                        keyboardType="numeric"
-                                                        placeholder="0.00"
-                                                        placeholderTextColor="#9F9FD5"
-                                                        selectionColor="#6A5ACD"
+                                                        onFocus={handleInputFocus}
+                                                        inputRef={amountInputRef}
                                                 />
                                         ) : (
                                                 <Text style={styles.amountText}>{toAmount}</Text>
@@ -636,9 +599,12 @@ const TradeScreen = ({ route, navigation }) => {
                                 
                                 showNotification('info', 'Testing API with small SOL -> USDC swap...');
                                 
+                                // Use raw amount value without formatting
+                                const testAmount = 0.001;
+                                
                                 // Make API call directly
                                 console.log('Testing quote API...');
-                                const response = await api.getTradeQuote(solCoin.id, usdcCoin.id, 0.001);
+                                const response = await api.getTradeQuote(solCoin.id, usdcCoin.id, testAmount);
                                 console.log('Quote test result:', JSON.stringify(response, null, 2));
                                 
                                 if (response) {
@@ -651,6 +617,36 @@ const TradeScreen = ({ route, navigation }) => {
                 } else {
                         showNotification('error', 'Could not find SOL or USDC for testing');
                 }
+        };
+
+        // Add a function to handle input focus
+        const handleInputFocus = () => {
+                // For web, we may need to select the full text
+                if (Platform.OS === 'web' && amountInputRef.current) {
+                        // Reset selection to maintain focus
+                        setTimeout(() => {
+                                if (amountInputRef.current) {
+                                        const input = amountInputRef.current;
+                                        const length = fromAmount.length;
+                                        input.setSelectionRange(length, length);
+                                }
+                        }, 0);
+                }
+        };
+
+        // Add quote loading indicator in the UI
+        const renderToAmount = () => {
+                if (quoteLoading) {
+                        return (
+                                <View style={styles.loadingContainer}>
+                                        <ActivityIndicator size="small" color="#6A5ACD" />
+                                        <Text style={styles.loadingText}>Updating quote...</Text>
+                                </View>
+                        );
+                }
+                // Display the amount with the coin symbol
+                const toCoinSymbol = getCoinById(toCoin)?.symbol || '';
+                return <Text style={styles.amountText}>{`${toAmount} ${toCoinSymbol}`}</Text>;
         };
 
         if (isLoading && availableCoins.length === 0) {
@@ -712,7 +708,12 @@ const TradeScreen = ({ route, navigation }) => {
                                                 </View>
                                                 <View style={styles.feeItem}>
                                                         <Text style={styles.feeLabel}>You will receive</Text>
-                                                        <Text style={styles.feeValue}>{toAmount} {getCoinById(toCoin)?.symbol}</Text>
+                                                        <Text style={styles.feeValue}>
+                                                                {quoteLoading ? 
+                                                                        'Calculating...' : 
+                                                                        `${toAmount} ${getCoinById(toCoin)?.symbol || ''}`
+                                                                }
+                                                        </Text>
                                                 </View>
                                                 <View style={styles.feeItem}>
                                                         <Text style={styles.feeLabel}>Spread</Text>
@@ -729,7 +730,7 @@ const TradeScreen = ({ route, navigation }) => {
                                                 <Text style={styles.exchangeRateLabel}>Exchange Rate:</Text>
                                                 <Text style={styles.exchangeRateValue}>
                                                         {exchangeRate 
-                                                                ? `1 ${getCoinById(fromCoin)?.symbol} ≈ ${parseFloat(exchangeRate).toFixed(5)} ${getCoinById(toCoin)?.symbol}`
+                                                                ? `1 ${getCoinById(fromCoin)?.symbol} ≈ ${exchangeRate} ${getCoinById(toCoin)?.symbol}`
                                                                 : `Calculating...`
                                                         }
                                                 </Text>
@@ -738,19 +739,19 @@ const TradeScreen = ({ route, navigation }) => {
                                                         <View style={styles.feeRow}>
                                                                 <Text style={styles.feeLabel}>Estimated Fee:</Text>
                                                                 <Text style={styles.feeValue}>
-                                                                        {formatPrice(parseFloat(tradeDetails.estimatedFee))}
+                                                                        ${tradeDetails.estimatedFee}
                                                                 </Text>
                                                         </View>
                                                         <View style={styles.feeRow}>
                                                                 <Text style={styles.feeLabel}>Price Impact:</Text>
                                                                 <Text style={styles.feeValue}>
-                                                                        {formatPrice(parseFloat(tradeDetails.spread))}
+                                                                        ${tradeDetails.spread}
                                                                 </Text>
                                                         </View>
                                                         <View style={styles.feeRow}>
                                                                 <Text style={styles.feeLabel}>Network Fee:</Text>
                                                                 <Text style={styles.feeValue}>
-                                                                        {formatPrice(parseFloat(tradeDetails.gasFee))}
+                                                                        ${tradeDetails.gasFee}
                                                                 </Text>
                                                         </View>
                                                 </View>
@@ -1026,6 +1027,16 @@ const styles = StyleSheet.create({
         debugButtonText: {
                 color: '#FFFFFF',
                 fontSize: 12,
+        },
+        loadingContainer: {
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+        },
+        loadingText: {
+                marginLeft: 8,
+                color: '#9F9FD5',
+                fontSize: 16,
         },
 });
 

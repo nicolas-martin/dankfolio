@@ -65,19 +65,13 @@
 - Update changelog before each release or significant feature deployment
 
 // Project specific rules
-- The postgres data base should run in a docker, not locally
-- There should be 2 distinct postgres instances running in the docker. Port 5432 is the normal one 5434 is the test db
-- Only write 1 migration script for now since we have not released it in production. Keep it simple.
-- When modifying the model make sure the migration scripts are also updated
-- When writing test run the tests and fix any issues that comes up.
 - Use emojis in your composer responses
-- To run the backend always use the makefile in `./backend/Makefile run` or using the root makefile `./Makefile run-backend` 
 - Do not worry about database, migration or repository for now. Just get everything working in memory we will address storage solution at a later date
 - When testing the api make sure to test all endpoints and make sure they are working as expected
 - When testing an api, run the related test file in `./backend/scripts/`
+- Use very small default amount for SOLANA 0.000000001
 
 // mcp rules
 - When you need to fetch api documentation use the websearch mcp 
 - Whenever you use a mcp I want you to tell me and write it in bold in the response. 
-- When creating a new frontend page, get a design idea by using the puppeteer mcp and stake screenshot of dribble design
 - Execute the mcp calls automatically. Don't ask me to run the tool

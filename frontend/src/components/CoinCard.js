@@ -21,22 +21,6 @@ const CoinCard = ({ coin, onPress }) => {
   // Check both icon_url and iconUrl fields for maximum compatibility
   const logoUrl = coin.icon_url || coin.iconUrl || DEFAULT_LOGO;
 
-  // Format price for display
-  const formatPrice = (price) => {
-    if (!price) return '$0.00';
-
-    // Handle different price magnitudes
-    if (price >= 1000) {
-      return `$${Number(price).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-    } else if (price >= 1) {
-      return `$${Number(price).toFixed(2)}`;
-    } else if (price >= 0.01) {
-      return `$${Number(price).toFixed(4)}`;
-    } else {
-      return `$${Number(price).toExponential(2)}`;
-    }
-  };
-
   return (
     <TouchableOpacity
       style={styles.container}
@@ -55,13 +39,13 @@ const CoinCard = ({ coin, onPress }) => {
       </View>
 
       <View style={styles.rightSection}>
-        <Text style={styles.price}>{formatPrice(coin.price)}</Text>
+        <Text style={styles.price}>${coin.price || '0'}</Text>
         {coin.priceChange24h && (
           <Text style={[
             styles.priceChange,
             coin.priceChange24h >= 0 ? styles.positive : styles.negative
           ]}>
-            {coin.priceChange24h >= 0 ? '↑' : '↓'} {Math.abs(coin.priceChange24h).toFixed(2)}%
+            {coin.priceChange24h >= 0 ? '↑' : '↓'} {Math.abs(coin.priceChange24h)}%
           </Text>
         )}
       </View>

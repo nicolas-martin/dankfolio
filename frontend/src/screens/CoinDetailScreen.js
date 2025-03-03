@@ -96,16 +96,6 @@ const CoinDetailScreen = ({ route, navigation }) => {
     return () => clearTimeout(timer);
   }, [timeframe]);
 
-  // Format price with appropriate decimal places
-  const formatPrice = (price) => {
-    if (!price && price !== 0) return 'N/A';
-
-    if (price < 0.01) return price.toFixed(6);
-    if (price < 1) return price.toFixed(4);
-    if (price < 10000) return price.toFixed(2);
-    return price.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  };
-
   // Get coin description or provide default
   const getCoinDescription = () => {
     // Return the description from the API if available
@@ -144,7 +134,7 @@ const CoinDetailScreen = ({ route, navigation }) => {
         {/* Price information */}
         <View style={styles.priceContainer}>
           <Text style={styles.priceLabel}>Current Price</Text>
-          <Text style={styles.price}>${formatPrice(coin.price)}</Text>
+          <Text style={styles.price}>${coin.price || 'N/A'}</Text>
 
           {coin.priceChange !== undefined && (
             <View style={styles.priceChangeContainer}>
