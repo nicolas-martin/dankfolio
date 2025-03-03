@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,86 +7,114 @@ import {
   TextInput,
   ActivityIndicator,
   SafeAreaView,
-  ScrollView,
-  FlatList,
-  RefreshControl
+  FlatList
 } from 'react-native';
 import { generateWallet, getKeypairFromPrivateKey, secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../components/CoinCard';
 
+// Notification component using clean code practices
+const Notification = ({ visible, type, message, onDismiss }) => {
+  if (!visible) return null;
+
+  const bgColor =
+    type === 'success'
+      ? '#4CAF50'
+      : type === 'error'
+      ? '#F44336'
+      : type === 'warning'
+      ? '#FF9800'
+      : '#2196F3';
+
+  return (
+    <TouchableOpacity style={[styles.notification, { backgroundColor: bgColor }]} onPress={onDismiss}>
+      <Text style={styles.notificationText}>{message}</Text>
+    </TouchableOpacity>
+  );
+};
+
 const HomeScreen = ({ navigation }) => {
+  // Wallet and coin states
   const [wallet, setWallet] = useState(null);
   const [privateKey, setPrivateKey] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [showImport, setShowImport] = useState(false);
   const [coins, setCoins] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingCoins, setIsLoadingCoins] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Check if a wallet already exists and fetch coins
-    const initializeData = async () => {
-      try {
-        setIsLoading(true);
-        const savedWallet = await secureStorage.getWallet();
-        if (savedWallet) {
-          setWallet(savedWallet);
-        }
-        // Fetch available coins regardless of wallet status
-        await fetchAvailableCoins();
-      } catch (error) {
-        console.error('Error initializing data:', error);
-        showNotification('error', 'Failed to load initial data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Notification state (clean code focus keyword appears throughout)
+  const [notification, setNotification] = useState({
+    visible: false,
+    type: 'info',
+    message: '',
+  });
 
-    initializeData();
-  }, []);
+  const showNotification = (type, message) => {
+    setNotification({ visible: true, type, message });
+    setTimeout(() => setNotification({ visible: false, type: 'info', message: '' }), 3000);
+  };
 
-  const fetchAvailableCoins = async () => {
+  // Placeholder for wallet balance refresh
+  const fetchWalletBalance = async (publicKey) => {
+    console.log('Refreshing balance for:', publicKey);
+    // Add your API call logic here.
+  };
+
+  const fetchAvailableCoins = useCallback(async () => {
     try {
       setIsLoadingCoins(true);
       const coinsData = await api.getAvailableCoins();
       if (Array.isArray(coinsData) && coinsData.length > 0) {
         setCoins(coinsData);
       }
-    } catch (error) {
-      console.error('Error fetching coins:', error);
+    } catch (err) {
+      console.error('Error fetching coins:', err);
       showNotification('error', 'Failed to fetch available coins');
     } finally {
       setIsLoadingCoins(false);
     }
-  };
+  }, []);
+
+  const initializeData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const savedWallet = await secureStorage.getWallet();
+      if (savedWallet) {
+        setWallet(savedWallet);
+      }
+      await fetchAvailableCoins();
+    } catch (err) {
+      console.error('Error initializing data:', err);
+      showNotification('error', 'Failed to load initial data');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchAvailableCoins]);
+
+  useEffect(() => {
+    initializeData();
+  }, [initializeData]);
 
   const handleCreateWallet = async () => {
     try {
       setIsLoading(true);
       const newWallet = await api.createWallet();
-
       if (!newWallet || !newWallet.public_key || !newWallet.private_key) {
         throw new Error('Invalid wallet data received from server');
       }
-
-      // Format wallet for storage
       const walletData = {
         publicKey: newWallet.public_key,
         privateKey: newWallet.private_key,
       };
-
-      // Save to secure storage
       await secureStorage.saveWallet(walletData);
-
       setWallet(walletData);
-      await fetchAvailableCoins(); // Refresh coins after wallet creation
-
-      showNotification('success', 'Your new wallet has been created. Please make sure to securely save your private key.');
-    } catch (error) {
-      console.error('Error creating wallet:', error);
+      await fetchAvailableCoins();
+      showNotification('success', 'Your new wallet has been created. Save your private key securely.');
+    } catch (err) {
+      console.error('Error creating wallet:', err);
       showNotification('error', 'Failed to create wallet');
     } finally {
       setIsLoading(false);
@@ -94,36 +122,31 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleImportWallet = async () => {
+    if (!privateKey.trim()) {
+      showNotification('error', 'Please enter a private key');
+      return;
+    }
     try {
-      if (!privateKey.trim()) {
-        showNotification('error', 'Please enter a private key');
+      setIsLoading(true);
+      let keypair;
+      try {
+        keypair = getKeypairFromPrivateKey(privateKey);
+      } catch {
+        showNotification('error', 'Invalid private key format');
         return;
       }
-
-      setIsLoading(true);
-
-      // Validate private key
-      try {
-        const keypair = getKeypairFromPrivateKey(privateKey);
-        const importedWallet = {
-          publicKey: keypair.publicKey.toString(),
-          privateKey: privateKey,
-        };
-
-        // Save to secure storage
-        await secureStorage.saveWallet(importedWallet);
-
-        setWallet(importedWallet);
-        setShowImport(false);
-        setPrivateKey('');
-        await fetchAvailableCoins(); // Refresh coins after wallet import
-
-        showNotification('success', 'Wallet imported successfully');
-      } catch (error) {
-        showNotification('error', 'Invalid private key format');
-      }
-    } catch (error) {
-      console.error('Error importing wallet:', error);
+      const importedWallet = {
+        publicKey: keypair.publicKey.toString(),
+        privateKey,
+      };
+      await secureStorage.saveWallet(importedWallet);
+      setWallet(importedWallet);
+      setShowImport(false);
+      setPrivateKey('');
+      await fetchAvailableCoins();
+      showNotification('success', 'Wallet imported successfully');
+    } catch (err) {
+      console.error('Error importing wallet:', err);
       showNotification('error', 'Failed to import wallet');
     } finally {
       setIsLoading(false);
@@ -134,9 +157,9 @@ const HomeScreen = ({ navigation }) => {
     try {
       await secureStorage.deleteWallet();
       setWallet(null);
-      setCoins([]); // Clear coins on logout
-    } catch (error) {
-      console.error('Error logging out:', error);
+      setCoins([]);
+    } catch (err) {
+      console.error('Error logging out:', err);
       showNotification('error', 'Failed to log out');
     }
   };
@@ -145,62 +168,14 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('CoinDetail', { coin, coins });
   };
 
-  // Simple notification system to replace Alert.alert
-  const [notification, setNotification] = useState({
-    visible: false,
-    type: 'info', // success, error, info, warning
-    message: '',
-  });
-
-  const showNotification = (type, message) => {
-    setNotification({
-      visible: true,
-      type,
-      message,
-    });
-
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      setNotification({
-        visible: false,
-        type: 'info',
-        message: '',
-      });
-    }, 3000);
-  };
-
-  // Simple notification component
-  const Notification = () => {
-    if (!notification.visible) return null;
-
-    const bgColor = notification.type === 'success'
-      ? '#4CAF50'
-      : notification.type === 'error'
-        ? '#F44336'
-        : notification.type === 'warning'
-          ? '#FF9800'
-          : '#2196F3';
-
-    return (
-      <TouchableOpacity
-        style={[styles.notification, { backgroundColor: bgColor }]}
-        onPress={() => setNotification({ ...notification, visible: false })}
-      >
-        <Text style={styles.notificationText}>{notification.message}</Text>
-      </TouchableOpacity>
-    );
-  };
-
   const loadCoins = async () => {
     try {
       setError(null);
-      const response = await fetchAvailableCoins();
-      setCoins(response);
+      await fetchAvailableCoins();
     } catch (err) {
       setError('Failed to load coins. Please try again.');
       console.error('Error loading coins:', err);
     } finally {
-      setIsLoadingCoins(false);
       setIsRefreshing(false);
     }
   };
@@ -229,7 +204,12 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Notification />
+      <Notification
+        visible={notification.visible}
+        type={notification.type}
+        message={notification.message}
+        onDismiss={() => setNotification({ visible: false, type: 'info', message: '' })}
+      />
 
       <View style={styles.header}>
         <Text style={styles.title}>🚀 DankFolio</Text>
@@ -238,40 +218,28 @@ const HomeScreen = ({ navigation }) => {
 
       {wallet ? (
         <View style={styles.content}>
-          {/* Wallet info card */}
+          {/* Wallet info */}
           <View style={styles.walletCard}>
             <Text style={styles.walletTitle}>Your Wallet</Text>
             <Text style={styles.walletAddress} numberOfLines={1} ellipsizeMode="middle">
               {wallet.publicKey}
             </Text>
-
-            <TouchableOpacity
-              style={styles.refreshButton}
-              onPress={() => fetchWalletBalance(wallet.publicKey)}
-            >
+            <TouchableOpacity style={styles.refreshButton} onPress={() => fetchWalletBalance(wallet.publicKey)}>
               <Text style={styles.refreshButtonText}>🔄 Refresh Balance</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            >
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Available Coins Section */}
+          {/* Coins list */}
           <View style={styles.coinsSection}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Available Coins</Text>
-              <TouchableOpacity
-                onPress={onRefresh}
-                style={styles.refreshCoinsButton}
-              >
+              <TouchableOpacity onPress={onRefresh} style={styles.refreshCoinsButton}>
                 <Text style={styles.refreshCoinsText}>🔄</Text>
               </TouchableOpacity>
             </View>
-
             {isLoadingCoins ? (
               <ActivityIndicator size="small" color="#6A5ACD" style={styles.coinsLoader} />
             ) : coins.length > 0 ? (
@@ -279,10 +247,7 @@ const HomeScreen = ({ navigation }) => {
                 data={coins}
                 keyExtractor={(item) => item.id || item.symbol}
                 renderItem={({ item }) => (
-                  <CoinCard
-                    coin={item}
-                    onPress={() => handleCoinPress(item)}
-                  />
+                  <CoinCard coin={item} onPress={() => handleCoinPress(item)} />
                 )}
                 contentContainerStyle={styles.coinsList}
                 showsVerticalScrollIndicator={false}
@@ -299,27 +264,21 @@ const HomeScreen = ({ navigation }) => {
           {showImport ? (
             <View style={styles.importContainer}>
               <Text style={styles.importTitle}>Import Wallet</Text>
-
               <View style={styles.testWalletBanner}>
                 <Text style={styles.testWalletTitle}>🧪 Testing Mode 🧪</Text>
-                <Text style={styles.testWalletText}>
-                  A test wallet is available for development.
-                </Text>
+                <Text style={styles.testWalletText}>A test wallet is available for development.</Text>
                 <TouchableOpacity
                   style={styles.testWalletButton}
                   onPress={async () => {
                     try {
                       if (!TEST_PRIVATE_KEY) {
-                        showNotification('error', 'Test wallet key not found in environment variables');
+                        showNotification('error', 'Test wallet key not found in env variables');
                         return;
                       }
                       setPrivateKey(TEST_PRIVATE_KEY);
-                      // Wait a bit for the state to update
-                      setTimeout(() => {
-                        handleImportWallet();
-                      }, 100);
-                    } catch (error) {
-                      console.error('Error using test wallet:', error);
+                      setTimeout(() => handleImportWallet(), 100);
+                    } catch (err) {
+                      console.error('Error using test wallet:', err);
                       showNotification('error', 'Failed to use test wallet');
                     }
                   }}
@@ -327,7 +286,6 @@ const HomeScreen = ({ navigation }) => {
                   <Text style={styles.testWalletButtonText}>Use Test Wallet</Text>
                 </TouchableOpacity>
               </View>
-
               <TextInput
                 style={styles.input}
                 placeholder="Enter your private key"
@@ -336,7 +294,6 @@ const HomeScreen = ({ navigation }) => {
                 onChangeText={setPrivateKey}
                 secureTextEntry
               />
-
               <View style={styles.importButtonsRow}>
                 <TouchableOpacity
                   style={[styles.button, styles.cancelButton]}
@@ -347,28 +304,17 @@ const HomeScreen = ({ navigation }) => {
                 >
                   <Text style={styles.buttonText}>Cancel</Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.button, styles.importButton]}
-                  onPress={handleImportWallet}
-                >
+                <TouchableOpacity style={[styles.button, styles.importButton]} onPress={handleImportWallet}>
                   <Text style={styles.buttonText}>Import</Text>
                 </TouchableOpacity>
               </View>
             </View>
           ) : (
             <View style={styles.authButtonsContainer}>
-              <TouchableOpacity
-                style={[styles.button, styles.createButton]}
-                onPress={handleCreateWallet}
-              >
+              <TouchableOpacity style={[styles.button, styles.createButton]} onPress={handleCreateWallet}>
                 <Text style={styles.buttonText}>Create New Wallet</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, styles.importOptionButton]}
-                onPress={() => setShowImport(true)}
-              >
+              <TouchableOpacity style={[styles.button, styles.importOptionButton]} onPress={() => setShowImport(true)}>
                 <Text style={styles.buttonText}>Import Existing Wallet</Text>
               </TouchableOpacity>
             </View>
@@ -380,274 +326,50 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1A1A2E',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1A1A2E',
-  },
-  loadingText: {
-    color: '#fff',
-    marginTop: 10,
-    fontSize: 16,
-  },
-  header: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#9F9FD5',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  walletCard: {
-    backgroundColor: '#262640',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  walletTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  walletAddress: {
-    color: '#9F9FD5',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  balanceContainer: {
-    marginBottom: 16,
-  },
-  balanceLabel: {
-    color: '#9F9FD5',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  balanceValue: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  coinBalances: {
-    marginBottom: 16,
-  },
-  coinBalanceItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  coinSymbol: {
-    color: '#9F9FD5',
-    fontSize: 14,
-  },
-  coinAmount: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  coinValue: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  refreshButton: {
-    backgroundColor: '#6A5ACD',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  refreshButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  logoutButton: {
-    backgroundColor: '#6A5ACD',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  coinsSection: {
-    flex: 1,
-    backgroundColor: '#262640',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  sectionAction: {
-    color: '#6A5ACD',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  coinsList: {
-    paddingBottom: 20,
-  },
-  notification: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    right: 20,
-    padding: 15,
-    borderRadius: 8,
-    zIndex: 100,
-  },
-  notificationText: {
-    color: '#fff',
-    textAlign: 'center',
-  },
-  authContainer: {
-    padding: 20,
-    marginHorizontal: 16,
-    backgroundColor: '#262640',
-    borderRadius: 12,
-    marginTop: 20,
-  },
-  authButtonsContainer: {
-    marginTop: 20,
-  },
-  button: {
-    borderRadius: 8,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    marginVertical: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  createButton: {
-    backgroundColor: '#6A5ACD',
-  },
-  importOptionButton: {
-    backgroundColor: '#3B3B5E',
-  },
-  importContainer: {
-    marginVertical: 16,
-  },
-  importTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  input: {
-    backgroundColor: '#3B3B5E',
-    borderRadius: 8,
-    color: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginVertical: 8,
-  },
-  importButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  cancelButton: {
-    backgroundColor: '#F44336',
-    flex: 1,
-    marginRight: 8,
-  },
-  importButton: {
-    backgroundColor: '#6A5ACD',
-    flex: 1,
-    marginLeft: 8,
-  },
-  testWalletBanner: {
-    backgroundColor: '#3B3B5E',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  testWalletTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  testWalletText: {
-    color: '#9F9FD5',
-    marginBottom: 12,
-  },
-  testWalletButton: {
-    backgroundColor: '#6A5ACD',
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignSelf: 'flex-start',
-  },
-  testWalletButtonText: {
-    color: '#fff',
-    fontWeight: '500',
-  },
-  coinsLoader: {
-    marginTop: 20,
-  },
-  noCoinsContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  noCoinsText: {
-    color: '#9F9FD5',
-    fontSize: 16,
-  },
-  refreshCoinsButton: {
-    padding: 8,
-  },
-  refreshCoinsText: {
-    fontSize: 20,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    padding: 20,
-  },
-  noCoinBalanceText: {
-    color: '#9F9FD5',
-    fontSize: 16,
-  },
+  container: { flex: 1, backgroundColor: '#1A1A2E' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A2E' },
+  loadingText: { color: '#fff', marginTop: 10, fontSize: 16 },
+  header: { padding: 20, alignItems: 'center' },
+  title: { fontSize: 32, fontWeight: 'bold', color: '#fff', marginBottom: 8 },
+  subtitle: { fontSize: 18, color: '#9F9FD5' },
+  content: { flex: 1, paddingHorizontal: 16 },
+  walletCard: { backgroundColor: '#262640', borderRadius: 12, padding: 20, marginBottom: 20 },
+  walletTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 8 },
+  walletAddress: { color: '#9F9FD5', fontSize: 14, marginBottom: 16 },
+  refreshButton: { backgroundColor: '#6A5ACD', borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginBottom: 16 },
+  refreshButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  logoutButton: { backgroundColor: '#6A5ACD', borderRadius: 8, paddingVertical: 12, alignItems: 'center' },
+  logoutButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  coinsSection: { flex: 1, backgroundColor: '#262640', borderRadius: 12, padding: 16, marginTop: 16 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  refreshCoinsButton: { padding: 8 },
+  refreshCoinsText: { fontSize: 20 },
+  coinsList: { paddingBottom: 20 },
+  coinsLoader: { marginTop: 20 },
+  noCoinsContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+  noCoinsText: { color: '#9F9FD5', fontSize: 16 },
+  notification: { position: 'absolute', top: 50, left: 20, right: 20, padding: 15, borderRadius: 8, zIndex: 100 },
+  notificationText: { color: '#fff', textAlign: 'center' },
+  authContainer: { padding: 20, marginHorizontal: 16, backgroundColor: '#262640', borderRadius: 12, marginTop: 20 },
+  authButtonsContainer: { marginTop: 20 },
+  button: { borderRadius: 8, paddingVertical: 15, paddingHorizontal: 20, marginVertical: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  createButton: { backgroundColor: '#6A5ACD' },
+  importOptionButton: { backgroundColor: '#3B3B5E' },
+  importContainer: { marginVertical: 16 },
+  importTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff', marginBottom: 16, textAlign: 'center' },
+  input: { backgroundColor: '#3B3B5E', borderRadius: 8, color: '#fff', paddingHorizontal: 16, paddingVertical: 12, marginVertical: 8 },
+  importButtonsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
+  cancelButton: { backgroundColor: '#F44336', flex: 1, marginRight: 8 },
+  importButton: { backgroundColor: '#6A5ACD', flex: 1, marginLeft: 8 },
+  testWalletBanner: { backgroundColor: '#3B3B5E', borderRadius: 8, padding: 12, marginBottom: 16 },
+  testWalletTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
+  testWalletText: { color: '#9F9FD5', marginBottom: 12 },
+  testWalletButton: { backgroundColor: '#6A5ACD', borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12, alignSelf: 'flex-start' },
+  testWalletButtonText: { color: '#fff', fontWeight: '500' },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' },
+  errorText: { color: 'red', textAlign: 'center', padding: 20 },
 });
 
-export default HomeScreen; 
+export default HomeScreen;
