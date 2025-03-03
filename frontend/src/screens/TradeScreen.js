@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,9 @@ import { getKeypairFromPrivateKey } from '../utils/solanaWallet';
 const MIN_AMOUNT = "0.0001";
 // Default amount for new trades
 const DEFAULT_AMOUNT = "0.0001";
+
+// Add debounce time constant
+const QUOTE_DEBOUNCE_MS = 500;
 
 // Custom Notification Component
 const Notification = ({ type, message, onDismiss }) => {
@@ -96,19 +99,26 @@ const TradeScreen = ({ route, navigation }) => {
     message: '',
   });
 
-  // Show notification helper
-  const showNotification = (type, message) => {
-    setNotification({
-      show: true,
-      type,
-      message,
+  const debounceTimerRef = useRef(null);
+  const lastQuoteRef = useRef(null);
+
+  // Debounced quote fetcher
+  const debouncedFetchQuote = useCallback((amount, fromId, toId) => {
+    console.log('⏳ [TradeScreen] Debouncing quote request:', {
+      source: 'TradeScreen.debouncedFetchQuote',
+      amount,
+      fromId,
+      toId
     });
 
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-      setNotification(prev => ({ ...prev, show: false }));
-    }, 5000);
-  };
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      fetchTradeQuote(amount, fromId, toId);
+    }, QUOTE_DEBOUNCE_MS);
+  }, []);
 
   useEffect(() => {
     if (coins?.length > 0) {
@@ -125,7 +135,11 @@ const TradeScreen = ({ route, navigation }) => {
   const initializeCoins = () => {
     if (availableCoins.length < 2) return;
 
-    console.log('Initializing coins with:', { initialFromCoin, initialToCoin });
+    console.log('🔄 [TradeScreen] Initializing coins:', { 
+      source: 'TradeScreen.initializeCoins',
+      initialFromCoin, 
+      initialToCoin 
+    });
 
     let newFromCoin = '';
     let newToCoin = '';
@@ -133,53 +147,99 @@ const TradeScreen = ({ route, navigation }) => {
     // Set the from coin based on initialFromCoin
     if (initialFromCoin) {
       const fromCoinObj = availableCoins.find(c => c.symbol === initialFromCoin);
-      console.log('Found fromCoin:', fromCoinObj);
       if (fromCoinObj) {
         newFromCoin = fromCoinObj.id;
         setFromCoin(fromCoinObj.id);
+        console.log('✅ [TradeScreen] Set fromCoin:', { 
+          symbol: fromCoinObj.symbol, 
+          id: fromCoinObj.id 
+        });
       }
     }
 
     // Set the to coin based on initialToCoin
     if (initialToCoin) {
       const toCoinObj = availableCoins.find(c => c.symbol === initialToCoin);
-      console.log('Found toCoin:', toCoinObj);
       if (toCoinObj) {
         newToCoin = toCoinObj.id;
         setToCoin(toCoinObj.id);
+        console.log('✅ [TradeScreen] Set toCoin:', { 
+          symbol: toCoinObj.symbol, 
+          id: toCoinObj.id 
+        });
       }
     }
 
-    // Fetch quote if both coins are set
-    if (newFromCoin && newToCoin) {
-      console.log('Fetching quote for:', { newFromCoin, newToCoin });
-      fetchTradeQuote(DEFAULT_AMOUNT, newFromCoin, newToCoin);
+    // Only fetch quote if we have both coins and a valid amount
+    if (newFromCoin && newToCoin && fromAmount) {
+      // Use the actual fromAmount instead of DEFAULT_AMOUNT
+      console.log('🔄 [TradeScreen] Initial quote fetch:', {
+        source: 'TradeScreen.initializeCoins',
+        fromAmount,
+        fromCoin: newFromCoin,
+        toCoin: newToCoin
+      });
+      
+      // Don't use debounce for initial fetch
+      fetchTradeQuote(fromAmount, newFromCoin, newToCoin);
     }
   };
 
-  // Add back fetchTradeQuote for the initial quote API call
+  // Modify fetchTradeQuote to prevent duplicate calls
   const fetchTradeQuote = async (amount, fromId, toId) => {
+    // Skip if we already have this exact quote
+    if (lastQuoteRef.current && 
+        lastQuoteRef.current.fromAmount === amount &&
+        lastQuoteRef.current.fromId === fromId &&
+        lastQuoteRef.current.toId === toId) {
+      console.log('⏭️ [TradeScreen] Skipping duplicate quote:', {
+        source: 'TradeScreen.fetchTradeQuote',
+        reason: 'Same parameters as last quote'
+      });
+      return;
+    }
+
+    console.log('🔄 [TradeScreen] Fetching quote:', {
+      source: 'TradeScreen.fetchTradeQuote',
+      trigger: 'Manual input or initial load',
+      fromId,
+      toId,
+      amount
+    });
 
     try {
-      // TODO: Should use big numbers, it might not fit in a float
-      // Convert amount to number for comparison
       const numAmount = parseFloat(amount);
       if (numAmount < parseFloat(MIN_AMOUNT)) {
         showNotification('warning', `Minimum trade amount is ${MIN_AMOUNT} SOL`);
+        setQuoteLoading(false);
         return;
       }
 
-      // API call to get trade quote
       const response = await api.getTradeQuote(fromId, toId, amount);
 
-      console.log('Trade quote response:', response);
+      console.log('✅ [TradeScreen] Trade quote received:', {
+        source: 'TradeScreen.fetchTradeQuote',
+        estimatedAmount: response.estimatedAmount,
+        exchangeRate: response.exchangeRate
+      });
 
       if (response && response.estimatedAmount) {
         const estimatedAmount = response.estimatedAmount.toString();
         const exchangeRate = response.exchangeRate?.toString() || '';
 
+        // Store the quote for potential reverse calculations
+        lastQuoteRef.current = {
+          fromAmount: amount,
+          estimatedAmount,
+          exchangeRate,
+          fromId,
+          toId,
+          timestamp: Date.now() // Add timestamp for potential expiry checks
+        };
+
         setToAmount(estimatedAmount);
         setExchangeRate(exchangeRate);
+        setQuoteLoading(false);
 
         setTradeDetails({
           estimatedFee: response.fee?.total || '0',
@@ -188,9 +248,13 @@ const TradeScreen = ({ route, navigation }) => {
         });
       }
     } catch (error) {
-      console.error('Error fetching quote:', error);
+      console.error('❌ [TradeScreen] Quote fetch error:', {
+        source: 'TradeScreen.fetchTradeQuote',
+        error: error.message,
+        data: error.data
+      });
+      setQuoteLoading(false);
 
-      // Check for specific error types
       if (error.data?.error?.includes('INSUFFICIENT_LIQUIDITY')) {
         showNotification('error', 'Insufficient liquidity for this trade amount');
       } else if (error.data?.error?.includes('REQ_AMOUNT_ERROR')) {
@@ -215,20 +279,44 @@ const TradeScreen = ({ route, navigation }) => {
     setFromAmount(formattedValue);
 
     setQuoteLoading(true);
-    // Fetch the quote directly without debounce
-    fetchTradeQuote(formattedValue, fromCoin, toCoin)
-      .finally(() => {
-        setQuoteLoading(false);
-      });
+    // Use debounced quote fetcher
+    debouncedFetchQuote(formattedValue, fromCoin, toCoin);
   };
 
   const handleSwapCoins = () => {
+    console.log('🔄 [TradeScreen] Swapping coins:', {
+      source: 'TradeScreen.handleSwapCoins',
+      fromCoin,
+      toCoin,
+      lastQuote: lastQuoteRef.current
+    });
+
+    // Swap the coins
     const temp = fromCoin;
     setFromCoin(toCoin);
     setToCoin(temp);
 
-    // TODO: Use the fetched quote to calculate the fields
-    // if no values, fetch the API
+    // If we have a last quote, we can calculate the reverse rate
+    if (lastQuoteRef.current) {
+      const { estimatedAmount, fromAmount } = lastQuoteRef.current;
+
+      // Calculate reverse rate
+      if (estimatedAmount && fromAmount) {
+        const reverseAmount = (parseFloat(fromAmount) / parseFloat(estimatedAmount)).toString();
+        setFromAmount(estimatedAmount);
+        setToAmount(fromAmount);
+
+        console.log('📊 [TradeScreen] Calculated reverse rate without API call:', {
+          source: 'TradeScreen.handleSwapCoins',
+          newFromAmount: estimatedAmount,
+          newToAmount: fromAmount
+        });
+        return;
+      }
+    }
+
+    // If no last quote, fetch a new one
+    fetchTradeQuote(fromAmount, toCoin, fromCoin);
   };
 
   const handleTradeSubmit = async () => {

@@ -163,24 +163,40 @@ const CoinDetailScreen = ({ route, navigation }) => {
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity
             style={[styles.actionButton, styles.buyButton]}
-            onPress={() => navigation.navigate('Trade', {
-              initialFromCoin: 'SOL',
-              initialToCoin: coin.symbol,
-              wallet,
-              coins
-            })}
+            onPress={() => {
+              console.log('🔄 [CoinDetailScreen] Navigating to Trade (Buy):', {
+                source: 'CoinDetailScreen.buyButton',
+                fromCoin: 'SOL',
+                toCoin: coin.symbol,
+                hasWallet: !!wallet
+              });
+              navigation.navigate('Trade', {
+                initialFromCoin: 'SOL',
+                initialToCoin: coin.symbol,
+                wallet,
+                coins
+              });
+            }}
           >
             <Text style={styles.actionButtonText}>Buy</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionButton, styles.sellButton]}
-            onPress={() => navigation.navigate('Trade', {
-              initialFromCoin: coin.symbol,
-              initialToCoin: 'USDC',
-              wallet,
-              coins
-            })}
+            onPress={() => {
+              console.log('🔄 [CoinDetailScreen] Navigating to Trade (Sell):', {
+                source: 'CoinDetailScreen.sellButton',
+                fromCoin: coin.symbol,
+                toCoin: 'USDC',
+                hasWallet: !!wallet
+              });
+              navigation.navigate('Trade', {
+                initialFromCoin: coin.symbol,
+                initialToCoin: 'USDC',
+                wallet,
+                coins
+              });
+            }}
           >
             <Text style={styles.actionButtonText}>Sell</Text>
           </TouchableOpacity>

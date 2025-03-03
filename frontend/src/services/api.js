@@ -70,9 +70,7 @@ const api = {
 
         getCoinById: async (coinId) => {
                 try {
-                        console.log(`Fetching details for coin ID: ${coinId}`);
                         const response = await apiClient.get(`/api/coins/${coinId}`);
-                        console.log('Coin details fetched successfully:', response.data.symbol);
                         return response.data;
                 } catch (error) {
                         console.error(`Error fetching coin ${coinId}:`, error);
@@ -82,9 +80,6 @@ const api = {
 
         getTradeQuote: async (fromCoinId, toCoinId, amount) => {
                 try {
-                        // Use raw amount without formatting
-                        console.log('Fetching trade quote:', { fromCoinId, toCoinId, amount });
-
                         const response = await apiClient.get('/api/trades/quote', {
                                 params: {
                                         from_coin_id: fromCoinId,
@@ -93,7 +88,6 @@ const api = {
                                 }
                         });
 
-                        console.log('Trade quote received:', response.data);
                         return response.data;
                 } catch (error) {
                         console.error('Error getting trade quote:', error);
@@ -139,7 +133,7 @@ const api = {
                         console.log('💰 Fetching balance for wallet:', address);
                         const response = await apiClient.get(`/api/wallets/${address}/balance`);
                         console.log('✅ Wallet balance retrieved successfully');
-                        
+
                         // Transform the backend response to match what the frontend expects
                         const data = response.data;
                         return {
