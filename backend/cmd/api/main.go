@@ -11,7 +11,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/nicolas-martin/dankfolio/internal/api"
-	"github.com/nicolas-martin/dankfolio/internal/service"
+	"github.com/nicolas-martin/dankfolio/internal/service/solana"
+	"github.com/nicolas-martin/dankfolio/internal/service/trade"
 )
 
 func main() {
@@ -21,12 +22,12 @@ func main() {
 	}
 
 	// Initialize services
-	solanaService, err := service.NewSolanaTradeService(os.Getenv("SOLANA_RPC_ENDPOINT"))
+	solanaService, err := solana.NewSolanaTradeService(os.Getenv("SOLANA_RPC_ENDPOINT"))
 	if err != nil {
 		log.Fatalf("Failed to initialize Solana service: %v", err)
 	}
 
-	tradeService := service.NewTradeService(solanaService)
+	tradeService := trade.NewService(solanaService)
 
 	// Initialize router
 	router := api.NewRouter(solanaService, tradeService)

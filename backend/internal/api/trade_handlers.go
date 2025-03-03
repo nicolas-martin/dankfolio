@@ -8,16 +8,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/service"
+	"github.com/nicolas-martin/dankfolio/internal/service/trade"
 )
 
 // TradeHandlers handles HTTP requests related to trades
 type TradeHandlers struct {
-	tradeService *service.TradeService
+	tradeService *trade.Service
 }
 
 // NewTradeHandlers creates a new TradeHandlers instance
-func NewTradeHandlers(tradeService *service.TradeService) *TradeHandlers {
+func NewTradeHandlers(tradeService *trade.Service) *TradeHandlers {
 	return &TradeHandlers{tradeService: tradeService}
 }
 
@@ -115,4 +115,3 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 
 	respondJSON(w, quote, http.StatusOK)
 }
-

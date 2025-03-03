@@ -6,23 +6,25 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/nicolas-martin/dankfolio/internal/middleware"
-	"github.com/nicolas-martin/dankfolio/internal/service"
+	"github.com/nicolas-martin/dankfolio/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/internal/service/solana"
+	"github.com/nicolas-martin/dankfolio/internal/service/trade"
 )
 
 // Router handles all HTTP routing
 type Router struct {
-	solanaService *service.SolanaTradeService
-	tradeService  *service.TradeService
-	coinService   *service.CoinService
+	solanaService *solana.SolanaTradeService
+	tradeService  *trade.Service
+	coinService   *coin.Service
 }
 
 // NewRouter creates a new Router instance
 func NewRouter(
-	solanaService *service.SolanaTradeService,
-	tradeService *service.TradeService,
+	solanaService *solana.SolanaTradeService,
+	tradeService *trade.Service,
 ) *Router {
 	// Initialize the coin service
-	coinService := service.NewCoinService()
+	coinService := coin.NewService()
 
 	return &Router{
 		solanaService: solanaService,
@@ -55,6 +57,7 @@ func (r *Router) Setup() chi.Router {
 	// Coin routes
 	router.Get("/api/v1/coins", coinHandlers.GetCoins)
 	router.Get("/api/v1/coins/{id}", coinHandlers.GetCoinByID)
+	router.Get("/api/v1/tokens/{id}/details", coinHandlers.GetTokenDetails)
 
 	// Trade routes
 	router.Post("/api/v1/trades/execute", tradeHandlers.ExecuteTrade)

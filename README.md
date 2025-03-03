@@ -6,11 +6,19 @@ A gamified marketplace for trading digital memes on Solana.
 
 ### Wallet
 - `POST /api/v1/wallets` - Create a new Solana wallet
+- `GET /api/v1/wallets/{address}` - Get wallet information by address
+- `GET /api/v1/wallets/{address}/balance` - Get wallet balance
 
 ### Trading
 - `POST /api/v1/trades/execute` - Execute a trade
 - `GET /api/v1/trades/{id}` - Get trade details
 - `GET /api/v1/trades` - List all trades
+- `GET /api/v1/trades/quote` - Get a quote for a trade with estimated amount and fees
+
+### Coins
+- `GET /api/v1/coins` - Get list of all available coins
+- `GET /api/v1/coins/{id}` - Get coin details by ID
+- `GET /api/v1/tokens/{id}/details` - Get detailed token information
 
 ## 🧪 Testing
 
