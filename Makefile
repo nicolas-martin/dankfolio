@@ -2,7 +2,7 @@
 
 # Variables
 BACKEND_DIR := backend
-MOBILE_DIR := frontend/mobile/dankfolio-mobile
+MOBILE_DIR := frontend
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
 
