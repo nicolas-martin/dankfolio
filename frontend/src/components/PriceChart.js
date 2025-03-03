@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity, Pressable } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
 /**
@@ -109,32 +109,39 @@ const PriceChart = ({ data = [], color = '#6A5ACD', loading = false, onTimeframe
                                         <Text style={styles.loadingText}>Loading chart data...</Text>
                                 </View>
                         ) : (
-                                <LineChart
-                                        data={chartData}
-                                        width={screenWidth}
-                                        height={220}
-                                        chartConfig={{
-                                                backgroundColor: 'transparent',
-                                                backgroundGradientFrom: '#262640',
-                                                backgroundGradientTo: '#262640',
-                                                decimalPlaces: 2,
-                                                color: (opacity = 1) => `rgba(${color.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, ${opacity})`,
-                                                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                                                style: {
-                                                        borderRadius: 16
-                                                },
-                                                propsForDots: {
-                                                        r: "4",
-                                                        strokeWidth: "2",
-                                                        stroke: color
-                                                }
-                                        }}
-                                        bezier
-                                        style={styles.chart}
-                                        withHorizontalLines={true}
-                                        withVerticalLines={false}
-                                        withInnerLines={false}
-                                />
+                                <Pressable onPress={() => {}} style={styles.chartWrapper}>
+                                        <LineChart
+                                                data={chartData}
+                                                width={screenWidth}
+                                                height={220}
+                                                chartConfig={{
+                                                        backgroundColor: 'transparent',
+                                                        backgroundGradientFrom: '#262640',
+                                                        backgroundGradientTo: '#262640',
+                                                        decimalPlaces: 2,
+                                                        color: (opacity = 1) => `rgba(${color.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, ${opacity})`,
+                                                        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                                                        style: {
+                                                                borderRadius: 16
+                                                        },
+                                                        propsForDots: {
+                                                                r: "4",
+                                                                strokeWidth: "2",
+                                                                stroke: color
+                                                        }
+                                                }}
+                                                bezier
+                                                style={styles.chart}
+                                                withHorizontalLines={true}
+                                                withVerticalLines={false}
+                                                withInnerLines={false}
+                                                onDataPointClick={() => {}}
+                                                getDotColor={() => color}
+                                                onTouchStart={() => {}}
+                                                onTouchMove={() => {}}
+                                                onTouchEnd={() => {}}
+                                        />
+                                </Pressable>
                         )}
                 </View>
         );
@@ -235,6 +242,10 @@ const styles = StyleSheet.create({
         noDataText: {
                 color: '#FFFFFF',
                 fontSize: 16,
+        },
+        chartWrapper: {
+                borderRadius: 12,
+                overflow: 'hidden',
         },
 });
 

@@ -47,12 +47,32 @@ const TradeScreen = ({ route, navigation }) => {
         const initialToCoin = route.params?.initialToCoin;
         const { wallet } = route.params || {};
 
+        // Hardcoded default coins
+        const DEFAULT_COINS = [
+                {
+                        id: 'So11111111111111111111111111111111111111112',
+                        symbol: 'SOL',
+                        name: 'Solana',
+                        price: '0',
+                        balance: '0',
+                        icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'
+                },
+                {
+                        id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+                        symbol: 'USDC',
+                        name: 'USD Coin',
+                        price: '1',
+                        balance: '0',
+                        icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png'
+                }
+        ];
+
         const [isLoading, setIsLoading] = useState(true);
         const [fromCoin, setFromCoin] = useState('');
         const [toCoin, setToCoin] = useState('');
         const [fromAmount, setFromAmount] = useState(DEFAULT_AMOUNT);
         const [toAmount, setToAmount] = useState('');
-        const [availableCoins, setAvailableCoins] = useState([]);
+        const [availableCoins, setAvailableCoins] = useState(DEFAULT_COINS);
         const [isSubmitting, setIsSubmitting] = useState(false);
         const [exchangeRate, setExchangeRate] = useState('');
         const [tradeDetails, setTradeDetails] = useState({
@@ -98,13 +118,49 @@ const TradeScreen = ({ route, navigation }) => {
                         const coinsData = await api.getAvailableCoins();
 
                         if (Array.isArray(coinsData) && coinsData.length > 0) {
-                                setAvailableCoins(coinsData);
+                                // Merge default coins with API coins, ensuring no duplicates
+                                const mergedCoins = [...DEFAULT_COINS];
+                                
+                                coinsData.forEach(coin => {
+                                        // Only add coins that aren't SOL or USDC
+                                        if (coin.symbol !== 'SOL' && coin.symbol !== 'USDC') {
+                                                mergedCoins.push(coin);
+                                        } else {
+                                                // Update price and balance for SOL and USDC
+                                                const index = mergedCoins.findIndex(c => c.symbol === coin.symbol);
+                                                if (index !== -1) {
+                                                        mergedCoins[index] = {
+                                                                ...mergedCoins[index],
+                                                                price: coin.price || mergedCoins[index].price,
+                                                                balance: coin.balance || mergedCoins[index].balance
+                                                        };
+                                                }
+                                        }
+                                });
+
+                                setAvailableCoins(mergedCoins);
+                                
+                                // Set initial coins
+                                const solCoin = mergedCoins[0]; // SOL is always first
+                                const usdcCoin = mergedCoins[1]; // USDC is always second
+                                
+                                setFromCoin(solCoin.id);
+                                setToCoin(usdcCoin.id);
+                                fetchTradeQuote(DEFAULT_AMOUNT, solCoin.id, usdcCoin.id);
                         } else {
-                                showNotification('error', 'Failed to load coins');
+                                // If API fails, still use default coins
+                                setAvailableCoins(DEFAULT_COINS);
+                                setFromCoin(DEFAULT_COINS[0].id);
+                                setToCoin(DEFAULT_COINS[1].id);
+                                fetchTradeQuote(DEFAULT_AMOUNT, DEFAULT_COINS[0].id, DEFAULT_COINS[1].id);
                         }
                 } catch (error) {
                         console.error('Error fetching coins:', error);
-                        showNotification('error', 'Failed to load available coins');
+                        // Use default coins on error
+                        setAvailableCoins(DEFAULT_COINS);
+                        setFromCoin(DEFAULT_COINS[0].id);
+                        setToCoin(DEFAULT_COINS[1].id);
+                        fetchTradeQuote(DEFAULT_AMOUNT, DEFAULT_COINS[0].id, DEFAULT_COINS[1].id);
                 } finally {
                         setIsLoading(false);
                 }
@@ -113,57 +169,43 @@ const TradeScreen = ({ route, navigation }) => {
         const initializeCoins = () => {
                 if (availableCoins.length < 2) return;
 
-                // Try to match initial coins if provided
-                if (initialFromCoin && initialToCoin) {
-                        const fromCoinObj = availableCoins.find(c => c.symbol === initialFromCoin);
-                        const toCoinObj = availableCoins.find(c => c.symbol === initialToCoin);
-
-                        if (fromCoinObj && toCoinObj) {
-                                setFromCoin(fromCoinObj.id);
-                                setToCoin(toCoinObj.id);
-                                fetchTradeQuote(DEFAULT_AMOUNT, fromCoinObj.id, toCoinObj.id);
-                                return;
-                        }
-                }
-
                 // Find Solana coin to set as default
                 const solCoin = availableCoins.find(c => c.symbol === 'SOL');
                 const usdcCoin = availableCoins.find(c => c.symbol === 'USDC');
 
-                if (solCoin) {
-                        // If initialFromCoin was provided but not found, use that with SOL
-                        if (initialToCoin) {
-                                const toCoinObj = availableCoins.find(c => c.symbol === initialToCoin);
-                                if (toCoinObj) {
-                                        setFromCoin(solCoin.id);
-                                        setToCoin(toCoinObj.id);
-                                        fetchTradeQuote(DEFAULT_AMOUNT, solCoin.id, toCoinObj.id);
-                                        return;
-                                }
+                // Handle fromCoin setting
+                if (initialFromCoin) {
+                        const fromCoinObj = availableCoins.find(c => c.symbol === initialFromCoin);
+                        if (fromCoinObj) {
+                                setFromCoin(fromCoinObj.id);
+                        } else if (solCoin) {
+                                setFromCoin(solCoin.id); // Fallback to SOL if initialFromCoin not found
                         }
+                } else if (solCoin) {
+                        setFromCoin(solCoin.id); // Set SOL as default if no initialFromCoin
+                }
 
-                        // Default to SOL -> USDC if available
-                        if (usdcCoin) {
-                                setFromCoin(solCoin.id);
-                                setToCoin(usdcCoin.id);
-                                fetchTradeQuote(DEFAULT_AMOUNT, solCoin.id, usdcCoin.id);
-                                return;
-                        }
-
-                        // SOL -> first different coin
-                        const otherCoin = availableCoins.find(c => c.id !== solCoin.id);
-                        if (otherCoin) {
-                                setFromCoin(solCoin.id);
-                                setToCoin(otherCoin.id);
-                                fetchTradeQuote(DEFAULT_AMOUNT, solCoin.id, otherCoin.id);
+                // Handle toCoin setting
+                if (initialToCoin) {
+                        const toCoinObj = availableCoins.find(c => c.symbol === initialToCoin);
+                        if (toCoinObj) {
+                                setToCoin(toCoinObj.id);
+                                fetchTradeQuote(DEFAULT_AMOUNT, fromCoin, toCoinObj.id);
                                 return;
                         }
                 }
 
-                // Fallback to the first two coins if SOL isn't available
-                setFromCoin(availableCoins[0].id);
-                setToCoin(availableCoins[1].id);
-                fetchTradeQuote(DEFAULT_AMOUNT, availableCoins[0].id, availableCoins[1].id);
+                // Default to USDC or first different coin if no initialToCoin
+                if (usdcCoin && usdcCoin.id !== fromCoin) {
+                        setToCoin(usdcCoin.id);
+                        fetchTradeQuote(DEFAULT_AMOUNT, fromCoin, usdcCoin.id);
+                } else {
+                        const otherCoin = availableCoins.find(c => c.id !== fromCoin);
+                        if (otherCoin) {
+                                setToCoin(otherCoin.id);
+                                fetchTradeQuote(DEFAULT_AMOUNT, fromCoin, otherCoin.id);
+                        }
+                }
         };
 
         const fetchTradeQuote = async (amount, fromId, toId) => {
@@ -300,26 +342,42 @@ const TradeScreen = ({ route, navigation }) => {
         };
 
         const formatBalance = (balance) => {
-                // Handle potentially very large or very small numbers
-                if (balance === 0) return '0.00';
-                
-                if (balance < 0.0001) {
-                        return balance.toExponential(4);
+                // Handle undefined, null, or non-numeric values
+                if (balance === undefined || balance === null || balance === '') {
+                        return '0.00';
                 }
-                
-                if (balance < 1) {
-                        // Show more decimal places for small numbers
-                        return balance.toFixed(Math.min(6, Math.max(2, 6 - Math.floor(Math.log10(balance)))));
+
+                // Convert string to number if needed
+                const numericBalance = typeof balance === 'string' ? parseFloat(balance) : balance;
+
+                // Check if it's a valid number
+                if (isNaN(numericBalance)) {
+                        return '0.00';
                 }
-                
-                // Format larger numbers with up to 8 decimal places, but trim trailing zeros
-                return parseFloat(balance.toFixed(4)).toString();
+
+                // Handle zero case
+                if (numericBalance === 0) {
+                        return '0.00';
+                }
+
+                // Handle very small numbers
+                if (Math.abs(numericBalance) < 0.0001) {
+                        return numericBalance.toExponential(4);
+                }
+
+                // Handle small numbers
+                if (Math.abs(numericBalance) < 1) {
+                        return numericBalance.toFixed(Math.min(6, Math.max(2, 6 - Math.floor(Math.log10(Math.abs(numericBalance))))));
+                }
+
+                // Format larger numbers with up to 4 decimal places, but trim trailing zeros
+                return parseFloat(numericBalance.toFixed(4)).toString();
         };
 
         const formatPrice = (price) => {
                 if (!price || isNaN(parseFloat(price))) return '$0.00';
                 
-                const numericPrice = parseFloat(price);
+                const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
                 
                 if (numericPrice < 0.01) {
                         // For very low prices, show scientific notation

@@ -69,14 +69,14 @@ func RequestLogger(next http.Handler) http.Handler {
 		printBoxLine(boxTop, "Request", 80)
 
 		// Print request info
-		fmt.Printf("%s%s │ %s │ %s %s %s │ %d bytes │ %s\n",
+		fmt.Printf("%s%s │ %s │ %s %s %s │ %s\n",
 			boxLine,
 			time.Now().Format("2006/01/02 15:04:05"),
 			methodColor.Sprint(fmt.Sprintf("%-7s", r.Method)),
 			r.Host,
-			r.URL.Path,
+			// r.URL.Path,
+			r.URL.String(),
 			statusColor.Sprintf("%d", ww.Status()),
-			ww.BytesWritten(),
 			durationStr,
 		)
 
