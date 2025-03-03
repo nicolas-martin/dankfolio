@@ -5,21 +5,13 @@
 // style, and domain-specific requirements.
 // -------------------------------------------------
 
-// Project Context & Goals
-- The Meme Trading project is a gamified marketplace for trading digital memes.
-- It focuses on a playful, engaging user experience while ensuring secure and
-  reliable meme transactions.
-- The project handles media-rich content (images, animations) and requires dynamic UI updates.
-
 // Code Style & Conventions
 - Use clear, descriptive variable and function names related to meme trading (e.g., memeAsset, tradeValidator).
 - Write concise, meaningful comments, especially around trade logic, image handling, and user feedback.
 - Follow ES6+ syntax and prefer modular code organization (e.g., separate trading logic, API interactions, and UI components).
 - For backend code, adhere to RESTful API principles and robust error handling.
-- Ensure that code is accessible (include ARIA roles and alternative text for images).
 
 // User Interface Guidelines
-- Provide immediate visual feedback on user actions (e.g., drag-and-drop for meme trading).
 - Use animations and transitions to enhance the trading experience, but keep performance in mind.
 - Maintain a consistent, meme-inspired visual language (e.g., playful icons, vibrant colors).
 - Ensure the interface is responsive and accessible across devices.
@@ -28,9 +20,6 @@
 - Memes should be treated as unique digital assets; include checks for authenticity and ownership.
 - Trading operations must validate user credentials and confirm meme availability before processing.
 - Optimize media handling for quick load times and smooth rendering.
-- Use a modular design to allow future integration with external meme APIs or social platforms.
-- Implement rate limiting and spam prevention for meme uploads and trades
-- Include versioning system for meme modifications and trade history
 
 // Dependencies & Technology Stack Guidelines
 - Frontend: Consider frameworks such as React or Next.js for dynamic UI components.
@@ -43,26 +32,12 @@
 - When generating code, ensure that suggestions include project-specific naming and comments.
 - Focus on creating modular, reusable components for trading logic, UI feedback, and data validation.
 - Prioritize performance and responsiveness in generated code, especially for asynchronous operations.
-- Tailor code examples to reflect the unique aspects of meme trading (e.g., validating meme authenticity, dynamic image rendering).
 - Avoid generic boilerplate; always add context or comments that explain how the code relates to meme trading.
 - Keep summaries brief and concise for minor changes, only provide detailed explanations for major or complex modifications.
 
 // Maintenance & Future Enhancements
 - Regularly review and update these rules to reflect changes in project scope or best practices.
-- Incorporate user and team feedback to continuously improve the trading experience.
 - Align generated code closely with the evolving design guidelines and technical architecture of the project.
-- Document all API endpoints and data models in OpenAPI/Swagger format
-- Maintain comprehensive test coverage for critical trading functions
-- Plan for internationalization support in UI components and content
-
-// Change Log Requirements
-- Maintain a CHANGELOG.md file following Keep a Changelog conventions
-- Document all significant changes including additions, removals, and breaking changes
-- Include version numbers, dates, and descriptions for each release
-- Tag changes by category (Added, Changed, Deprecated, Removed, Fixed, Security)
-- Link to relevant issue/PR numbers where applicable
-- Keep changelog entries user-focused, explaining impact and required actions
-- Update changelog before each release or significant feature deployment
 
 // Project specific rules
 - Use emojis in your composer responses
@@ -70,6 +45,9 @@
 - When testing the api make sure to test all endpoints and make sure they are working as expected
 - When testing an api, run the related test file in `./backend/scripts/`
 - Use very small default amount for SOLANA 0.000000001
+- Retrict the amount of changes to exactly what the user inputed. 
+- Do not over optimize, do not over engineer, keep it simple and straigh to the point.
+- If you have ideas on how to make things future proof, prompt me before making the changes.
 
 // mcp rules
 - When you need to fetch api documentation use the websearch mcp 
