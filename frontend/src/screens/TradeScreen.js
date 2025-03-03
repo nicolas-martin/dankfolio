@@ -20,8 +20,10 @@ import api from '../services/api';
 import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getKeypairFromPrivateKey } from '../utils/solanaWallet';
 
-// Small default amount for safety
-const DEFAULT_AMOUNT = "0.000000001";
+// Minimum amount that works with the Raydium API (in SOL)
+const MIN_AMOUNT = "0.0001";
+// Default amount for new trades
+const DEFAULT_AMOUNT = "0.0001";
 
 // Custom Notification Component
 const Notification = ({ type, message, onDismiss }) => {
@@ -292,24 +294,25 @@ const TradeScreen = ({ route, navigation }) => {
                 }
 
                 try {
-                        // Use quoteLoading instead of isLoading to avoid full screen spinner
-                        // setIsLoading(true); - Comment this out
+                        // Convert amount to number for comparison
+                        const numAmount = parseFloat(amount);
+                        if (numAmount < parseFloat(MIN_AMOUNT)) {
+                                showNotification('warning', `Minimum trade amount is ${MIN_AMOUNT} SOL`);
+                                return;
+                        }
 
-                        // Use raw amount without formatting
                         // API call to get trade quote
                         const response = await api.getTradeQuote(fromId, toId, amount);
 
                         console.log('Trade quote response:', response);
 
                         if (response && response.estimatedAmount) {
-                                // Handle string or numeric values but without formatting
                                 const estimatedAmount = response.estimatedAmount.toString();
                                 const exchangeRate = response.exchangeRate?.toString() || '';
                                 
                                 setToAmount(estimatedAmount);
                                 setExchangeRate(exchangeRate);
                                 
-                                // Handle fee data as raw values
                                 setTradeDetails({
                                         estimatedFee: response.fee?.total || '0',
                                         spread: response.fee?.spread || '0',
@@ -321,10 +324,16 @@ const TradeScreen = ({ route, navigation }) => {
                         }
                 } catch (error) {
                         console.error('Error fetching quote:', error);
-                        // Fallback to local calculation
-                        calculateLocalQuote(amount, fromId, toId);
-                } finally {
-                        // setIsLoading(false); - Comment this out
+                        
+                        // Check for specific error types
+                        if (error.data?.error?.includes('INSUFFICIENT_LIQUIDITY')) {
+                                showNotification('error', 'Insufficient liquidity for this trade amount');
+                        } else if (error.data?.error?.includes('REQ_AMOUNT_ERROR')) {
+                                showNotification('error', `Minimum trade amount is ${MIN_AMOUNT} SOL`);
+                        } else {
+                                // Fallback to local calculation
+                                calculateLocalQuote(amount, fromId, toId);
+                        }
                 }
         };
 
