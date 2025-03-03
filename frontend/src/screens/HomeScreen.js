@@ -22,8 +22,6 @@ const HomeScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showImport, setShowImport] = useState(false);
   const [coins, setCoins] = useState([]);
-  const [walletBalance, setWalletBalance] = useState(null);
-  const [totalBalanceUsd, setTotalBalanceUsd] = useState('0.00');
   const [isLoadingCoins, setIsLoadingCoins] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -36,8 +34,6 @@ const HomeScreen = ({ navigation }) => {
         const savedWallet = await secureStorage.getWallet();
         if (savedWallet) {
           setWallet(savedWallet);
-          // Fetch wallet balance
-          await fetchWalletBalance(savedWallet.publicKey);
         }
         // Fetch available coins regardless of wallet status
         await fetchAvailableCoins();
@@ -86,7 +82,6 @@ const HomeScreen = ({ navigation }) => {
       await secureStorage.saveWallet(walletData);
 
       setWallet(walletData);
-      fetchWalletBalance(walletData.publicKey);
       await fetchAvailableCoins(); // Refresh coins after wallet creation
 
       showNotification('success', 'Your new wallet has been created. Please make sure to securely save your private key.');
@@ -249,23 +244,6 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.walletAddress} numberOfLines={1} ellipsizeMode="middle">
               {wallet.publicKey}
             </Text>
-
-            <View style={styles.balanceContainer}>
-              <Text style={styles.balanceLabel}>Total Balance</Text>
-              <Text style={styles.balanceValue}>${totalBalanceUsd}</Text>
-            </View>
-
-            {walletBalance && walletBalance.coins && (
-              <View style={styles.coinBalances}>
-                {walletBalance.coins.map((coin, index) => (
-                  <View key={index} style={styles.coinBalanceItem}>
-                    <Text style={styles.coinSymbol}>{coin.symbol}</Text>
-                    <Text style={styles.coinAmount}>{coin.balance.toFixed(4)}</Text>
-                    <Text style={styles.coinValue}>${coin.usd_value.toFixed(2)}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
 
             <TouchableOpacity
               style={styles.refreshButton}
@@ -650,6 +628,10 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     padding: 20,
+  },
+  noCoinBalanceText: {
+    color: '#9F9FD5',
+    fontSize: 16,
   },
 });
 

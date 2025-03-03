@@ -51,6 +51,10 @@ func (h *CoinHandlers) GetCoinByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Debug log to verify icon_url and description
+	log.Printf("Returning coin %s (%s) with icon_url: %s and description length: %d",
+		coin.Symbol, coin.ID, coin.IconUrl, len(coin.Description))
+
 	respondJSON(w, coin, http.StatusOK)
 }
 

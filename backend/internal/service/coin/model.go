@@ -99,9 +99,13 @@ type JupiterTokenInfoResponse struct {
 // ToCoin converts a JupiterTokenInfoResponse to a model.Coin
 func (j *JupiterTokenInfoResponse) ToCoin() model.Coin {
 	return model.Coin{
-		ID:      j.Address,
-		Symbol:  j.Symbol,
-		Name:    j.Name,
-		IconUrl: j.LogoURI,
+		ID:          j.Address,
+		Symbol:      j.Symbol,
+		Name:        j.Name,
+		IconUrl:     j.LogoURI,
+		Description: "", // Empty description for now
+		Decimals:    j.Decimals,
+		Tags:        j.Tags,
+		DailyVolume: j.DailyVolume,
 	}
 }

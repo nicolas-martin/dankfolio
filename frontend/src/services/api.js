@@ -9,7 +9,6 @@ const apiClient = axios.create({
         headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'User-Agent': `DankfolioApp/${Platform.OS}`,
         },
         timeout: 30000, // 30 seconds
 });
@@ -139,7 +138,19 @@ const api = {
                         console.log('💰 Fetching balance for wallet:', address);
                         const response = await apiClient.get(`/api/wallets/${address}/balance`);
                         console.log('✅ Wallet balance retrieved successfully');
-                        return response.data;
+                        
+                        // Transform the backend response to match what the frontend expects
+                        const data = response.data;
+                        return {
+                                address: data.address,
+                                coins: data.balances ? data.balances.map(bal => ({
+                                        id: bal.coin_id,
+                                        symbol: bal.symbol,
+                                        balance: bal.amount || 0,
+                                        usd_value: bal.usd_value || 0
+                                })) : [],
+                                total_usd_value: data.total_usd_value || 0
+                        };
                 } catch (error) {
                         console.error('❌ Error fetching wallet balance:', error.message);
                         throw handleApiError(error);

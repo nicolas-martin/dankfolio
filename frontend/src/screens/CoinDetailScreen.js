@@ -25,9 +25,11 @@ const CoinDetailScreen = ({ route, navigation }) => {
 
   // Get icon based on coin data
   const getIconUrl = () => {
-    // If the coin has an icon_url from the API, use that
+    // Check both icon_url and iconUrl fields for maximum compatibility
     if (coin.icon_url) {
       return coin.icon_url;
+    } else if (coin.iconUrl) {
+      return coin.iconUrl;
     }
 
     // Fallback to default Solana logo
@@ -102,6 +104,17 @@ const CoinDetailScreen = ({ route, navigation }) => {
     if (price < 1) return price.toFixed(4);
     if (price < 10000) return price.toFixed(2);
     return price.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  };
+
+  // Get coin description or provide default
+  const getCoinDescription = () => {
+    // Return the description from the API if available
+    if (coin.description && coin.description.trim() !== '') {
+      return coin.description;
+    }
+    
+    // Default description for coins without description
+    return `${coin.name} (${coin.symbol}) is a cryptocurrency token on the Solana blockchain. Trade this meme token with DankFolio's secure and efficient trading platform.`;
   };
 
   return (

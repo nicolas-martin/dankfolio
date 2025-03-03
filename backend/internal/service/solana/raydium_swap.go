@@ -1,10 +1,12 @@
 package solana
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"net/http"
@@ -52,10 +54,9 @@ func (s *SolanaTradeService) ExecuteRaydiumSwap(ctx context.Context, params *Swa
 	return sig, nil
 }
 
-// getRaydiumPriorityFee fetches the current priority fee from Raydium
+// getRaydiumPriorityFee gets the current priority fee for Raydium transactions
 func (s *SolanaTradeService) getRaydiumPriorityFee(ctx context.Context) (*PriorityFeeResponse, error) {
 	url := fmt.Sprintf("%s/v2/main/priority-fee", raydiumBaseHost)
-
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -67,27 +68,47 @@ func (s *SolanaTradeService) getRaydiumPriorityFee(ctx context.Context) (*Priori
 	}
 	defer resp.Body.Close()
 
-	var feeData PriorityFeeResponse
-	if err := json.NewDecoder(resp.Body).Decode(&feeData); err != nil {
-		return nil, fmt.Errorf("failed to decode priority fee response: %w", err)
+	var priorityFee PriorityFeeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&priorityFee); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	if !feeData.Success {
-		return nil, fmt.Errorf("priority fee request failed")
+	if !priorityFee.Success {
+		return nil, fmt.Errorf("priority fee request unsuccessful")
 	}
 
-	return &feeData, nil
+	return &priorityFee, nil
 }
 
-// getRaydiumSwapQuote fetches a swap quote from Raydium
+// getRaydiumSwapQuote gets a quote for a swap from Raydium
 func (s *SolanaTradeService) getRaydiumSwapQuote(ctx context.Context, params *SwapParams) (*SwapQuoteResponse, error) {
-	url := fmt.Sprintf("%s/compute/swap-base-in?inputMint=%s&outputMint=%s&amount=%d&slippageBps=%d&txVersion=V0",
+	// Get input token decimals
+	inputDecimals := params.InputDecimals
+	if inputDecimals == 0 {
+		inputDecimals = 6 // Default to 6 decimals if not specified
+	}
+
+	// Convert amount to raw units based on decimals
+	rawAmount := int64(params.Amount * math.Pow(10, float64(inputDecimals)))
+
+	// Log request parameters
+	log.Printf("🔍 Swap Quote Request Parameters:")
+	log.Printf("  From Token: %s", params.FromCoinID)
+	log.Printf("  To Token: %s", params.ToCoinID)
+	log.Printf("  Amount: %f (Raw: %d)", params.Amount, rawAmount)
+	log.Printf("  Input Decimals: %d", inputDecimals)
+	log.Printf("  Slippage: %f%%", params.Slippage)
+
+	// Construct URL with required parameters
+	url := fmt.Sprintf("%s/compute/swap-base-in?inputMint=%s&outputMint=%s&amount=%d&slippageBps=%d&txVersion=V0&network=mainnet&wrapUnwrapSOL=true",
 		raydiumSwapHost,
 		params.FromCoinID,
 		params.ToCoinID,
-		uint64(params.Amount),
-		int(params.Slippage*100),
+		rawAmount,
+		int64(params.Slippage*100), // Convert to basis points
 	)
+
+	log.Printf("🌐 Requesting quote from URL: %s", url)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -100,71 +121,101 @@ func (s *SolanaTradeService) getRaydiumSwapQuote(ctx context.Context, params *Sw
 	}
 	defer resp.Body.Close()
 
+	// Read and log response body for debugging
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	log.Printf("Raydium quote response: %s", string(body))
+
 	var quote SwapQuoteResponse
-	if err := json.NewDecoder(resp.Body).Decode(&quote); err != nil {
-		return nil, fmt.Errorf("failed to decode swap quote response: %w", err)
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&quote); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	if !quote.Success {
-		return nil, fmt.Errorf("swap quote request failed")
+		return nil, fmt.Errorf("quote request unsuccessful: %s", string(body))
 	}
 
 	return &quote, nil
 }
 
-// getRaydiumSwapTransaction fetches the swap transaction from Raydium
+// getRaydiumSwapTransaction gets a swap transaction from Raydium
 func (s *SolanaTradeService) getRaydiumSwapTransaction(ctx context.Context, quote *SwapQuoteResponse, fee *PriorityFeeResponse, params *SwapParams, walletAddress string) (*SwapTransactionResponse, error) {
-	swapTxBody := map[string]interface{}{
-		"computeUnitPriceMicroLamports": fmt.Sprintf("%d", fee.Data.Default.H),
-		"swapResponse":                  quote,
-		"txVersion":                     "V0",
-		"wallet":                        walletAddress,
-		"wrapSol":                       params.FromCoinID == SolMint,
-		"unwrapSol":                     params.ToCoinID == SolMint,
+	// Check if we have any routes
+	if len(quote.Data.RoutePlan) == 0 {
+		return nil, fmt.Errorf("no routes found for swap")
 	}
 
-	jsonBody, err := json.Marshal(swapTxBody)
+	// Prepare request URL
+	url := fmt.Sprintf("%s/v2/raydium/swap", raydiumSwapHost)
+
+	// Prepare request body
+	requestBody := map[string]interface{}{
+		"inputMint":     params.FromCoinID,
+		"outputMint":    params.ToCoinID,
+		"amount":        quote.Data.InputAmount,
+		"slippage":      int64(params.Slippage * 100), // Convert to basis points
+		"walletAddress": walletAddress,
+		"outputAmount":  quote.Data.OutputAmount,
+		"priorityFee":   fee.Data.Default.H,
+		"computeLimit":  400000, // Default compute limit
+	}
+
+	// Log transaction request
+	log.Printf("📝 Swap Transaction Request:")
+	log.Printf("  Input Mint: %s", params.FromCoinID)
+	log.Printf("  Output Mint: %s", params.ToCoinID)
+	log.Printf("  Amount In: %s", quote.Data.InputAmount)
+	log.Printf("  Amount Out: %s", quote.Data.OutputAmount)
+	log.Printf("  Slippage: %f%%", params.Slippage)
+	log.Printf("  Priority Fee: %d", fee.Data.Default.H)
+
+	// Convert request body to JSON
+	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal swap tx body: %w", err)
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/transaction/swap-base-in", raydiumSwapHost)
+	// Create request
 	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(string(jsonBody)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
+	// Send request
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get swap transaction: %w", err)
 	}
 	defer resp.Body.Close()
 
-	var txData SwapTransactionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&txData); err != nil {
-		return nil, fmt.Errorf("failed to decode swap transaction response: %w", err)
+	// Decode response
+	var txResp SwapTransactionResponse
+	if err := json.NewDecoder(resp.Body).Decode(&txResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	if !txData.Success {
-		return nil, fmt.Errorf("swap transaction request failed")
+	if !txResp.Success {
+		return nil, fmt.Errorf("transaction request unsuccessful")
 	}
 
-	return &txData, nil
+	return &txResp, nil
 }
 
-// processAndSendTransaction processes and sends a single transaction
+// processAndSendTransaction processes and sends a transaction to the Solana blockchain
 func (s *SolanaTradeService) processAndSendTransaction(ctx context.Context, encodedTx string, privKey solana.PrivateKey) (string, error) {
-	// Decode transaction
+	// Decode the transaction
 	txBytes, err := base64.StdEncoding.DecodeString(encodedTx)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode transaction: %w", err)
 	}
 
-	// Deserialize the transaction
+	// Parse the transaction
 	tx, err := solana.TransactionFromBytes(txBytes)
 	if err != nil {
-		return "", fmt.Errorf("failed to deserialize transaction: %w", err)
+		return "", fmt.Errorf("failed to parse transaction: %w", err)
 	}
 
 	// Sign the transaction
@@ -179,7 +230,9 @@ func (s *SolanaTradeService) processAndSendTransaction(ctx context.Context, enco
 	}
 
 	// Send the transaction
-	sig, err := s.client.SendTransactionWithOpts(ctx, tx,
+	sig, err := s.client.SendTransactionWithOpts(
+		ctx,
+		tx,
 		rpc.TransactionOpts{
 			SkipPreflight: true,
 		},
@@ -188,8 +241,12 @@ func (s *SolanaTradeService) processAndSendTransaction(ctx context.Context, enco
 		return "", fmt.Errorf("failed to send transaction: %w", err)
 	}
 
-	// Wait for confirmation
-	status, err := s.client.GetSignatureStatuses(ctx, true, sig)
+	// Check transaction status
+	status, err := s.client.GetSignatureStatuses(
+		ctx,
+		true,
+		sig,
+	)
 	if err != nil {
 		log.Printf("⚠️ Failed to get transaction status: %v", err)
 	} else if status.Value[0] != nil && status.Value[0].Err != nil {
@@ -200,13 +257,17 @@ func (s *SolanaTradeService) processAndSendTransaction(ctx context.Context, enco
 }
 
 // GetSwapQuote gets a quote for a potential swap between tokens
-func (s *SolanaTradeService) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string, amount float64) (float64, float64, error) {
+func (s *SolanaTradeService) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string, amount float64, getTokenDecimals func(tokenID string) int) (float64, float64, error) {
+	// Get input token decimals
+	inputDecimals := getTokenDecimals(fromCoinID)
+
 	// Create swap params
 	params := &SwapParams{
-		FromCoinID: fromCoinID,
-		ToCoinID:   toCoinID,
-		Amount:     amount,
-		Slippage:   0.5, // 0.5% slippage
+		FromCoinID:    fromCoinID,
+		ToCoinID:      toCoinID,
+		Amount:        amount,
+		Slippage:      0.5, // 0.5% slippage
+		InputDecimals: inputDecimals,
 	}
 
 	// Get quote from Raydium
@@ -215,20 +276,17 @@ func (s *SolanaTradeService) GetSwapQuote(ctx context.Context, fromCoinID, toCoi
 		return 0, 0, fmt.Errorf("failed to get swap quote: %w", err)
 	}
 
-	// Calculate output amount and exchange rate
-	outputDecimals := 6
-	if toCoinID == SolMint {
-		outputDecimals = 9 // SOL has 9 decimals
-	}
+	// Get output token decimals using the provided function
+	outputDecimals := getTokenDecimals(toCoinID)
 
-	// Parse the output amount from the quote response
-	amountOut, err := strconv.ParseFloat(quote.Data.AmountOut, 64)
+	// Parse output amount
+	outputAmountRaw, err := strconv.ParseFloat(quote.Data.OutputAmount, 64)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to parse output amount: %w", err)
 	}
 
-	// Calculate the actual output amount with proper decimals
-	outputAmount := amountOut / (math.Pow(10, float64(outputDecimals)))
+	// Convert output amount to decimal form
+	outputAmount := outputAmountRaw / math.Pow10(outputDecimals)
 
 	// Calculate exchange rate
 	exchangeRate := outputAmount / amount

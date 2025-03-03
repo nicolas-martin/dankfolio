@@ -11,6 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/nicolas-martin/dankfolio/internal/api"
+	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/internal/service/solana"
 	"github.com/nicolas-martin/dankfolio/internal/service/trade"
 )
@@ -27,10 +28,14 @@ func main() {
 		log.Fatalf("Failed to initialize Solana service: %v", err)
 	}
 
-	tradeService := trade.NewService(solanaService)
+	// Initialize the coin service
+	coinService := coin.NewService()
+
+	// Initialize the trade service with both dependencies
+	tradeService := trade.NewService(solanaService, coinService)
 
 	// Initialize router
-	router := api.NewRouter(solanaService, tradeService)
+	router := api.NewRouter(solanaService, tradeService, coinService)
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router.Setup(),

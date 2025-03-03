@@ -1,4 +1,4 @@
-.PHONY: dev test clean install build run test-api test-solana test-coins backend-kill help run-mobile mobile-kill
+.PHONY: dev test clean install build run test-api test-solana test-coins backend-kill help run-mobile mobile-kill test-trade-quote
 
 # Variables
 BACKEND_DIR := backend
@@ -27,7 +27,7 @@ backend-kill:
 	@lsof -ti :8080 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
 
 # Testing
-test: test-swap
+test: test-swap test-coins test-trade-quote
 
 test-swap:
 	@echo "⚡ Running Solana integration tests..."
@@ -37,6 +37,10 @@ test-swap:
 test-coins:
 	@echo "🪙 Running Coins API tests..."
 	@cd $(BACKEND_DIR) && ./scripts/test-coins-api.sh
+
+test-trade-quote:
+	@echo "📈 Testing trade quote API..."
+	@cd $(BACKEND_DIR) && ./scripts/test-trade-quote.sh
 
 # Mobile App
 run-mobile:
@@ -57,4 +61,5 @@ help:
 	@echo "  make mobile-kill  - Stop the mobile frontend"
 	@echo "  make test-swap    - Run swap service curl tests"
 	@echo "  make test-coins   - Run coins API tests"
+	@echo "  make test-trade-quote - Run trade quote API tests"
 	@echo "  make setup        - Set up environment files and fetches dependencies" 

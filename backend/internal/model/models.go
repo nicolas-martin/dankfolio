@@ -10,9 +10,9 @@ type Coin struct {
 	Change24h   float64  `json:"change_24h,omitempty"`
 	MarketCap   float64  `json:"market_cap,omitempty"`
 	Volume24h   float64  `json:"volume_24h,omitempty"`
-	Description string   `json:"description,omitempty"`
-	IconUrl     string   `json:"icon_url,omitempty"`
-	Decimals    int      `json:"decimals,omitempty"`
+	Description string   `json:"description"`
+	IconUrl     string   `json:"icon_url"`
+	Decimals    int      `json:"decimals"`
 	DailyVolume float64  `json:"daily_volume,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
 }

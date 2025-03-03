@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -22,10 +23,8 @@ type Router struct {
 func NewRouter(
 	solanaService *solana.SolanaTradeService,
 	tradeService *trade.Service,
+	coinService *coin.Service,
 ) *Router {
-	// Initialize the coin service
-	coinService := coin.NewService()
-
 	return &Router{
 		solanaService: solanaService,
 		tradeService:  tradeService,
@@ -46,6 +45,7 @@ func (r *Router) Setup() chi.Router {
 
 	// Health check
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Health check endpoint hit")
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -60,13 +60,27 @@ func (r *Router) Setup() chi.Router {
 	router.Get("/api/tokens/{id}/details", coinHandlers.GetTokenDetails)
 
 	// Trade routes
-	router.Post("/api/trades/execute", tradeHandlers.ExecuteTrade)
-	router.Get("/api/trades/{id}", tradeHandlers.GetTradeByID)
-	router.Get("/api/trades", tradeHandlers.ListTrades)
-	router.Get("/api/trades/quote", tradeHandlers.GetTradeQuote)
+	log.Printf("Registering trade routes...")
+	router.Route("/api/trades", func(r chi.Router) {
+		r.Get("/quote", tradeHandlers.GetTradeQuote)
+		r.Post("/execute", tradeHandlers.ExecuteTrade)
+		r.Get("/{id}", tradeHandlers.GetTradeByID)
+		r.Get("/", tradeHandlers.ListTrades)
+	})
+	log.Printf("Trade routes registered")
 
 	// Wallet routes
 	router.Post("/api/wallets", walletHandlers.CreateWallet)
+
+	// Log all registered routes
+	log.Printf("All routes registered. Walking routes...")
+	walkFunc := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+		log.Printf("Route: %s %s", method, route)
+		return nil
+	}
+	if err := chi.Walk(router, walkFunc); err != nil {
+		log.Printf("Error walking routes: %v", err)
+	}
 
 	return router
 }

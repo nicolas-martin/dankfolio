@@ -17,7 +17,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 const CoinCard = ({ coin, onPress }) => {
   // Default to SOL logo if no icon URL is provided
   const DEFAULT_LOGO = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
-  const logoUrl = coin.iconUrl || DEFAULT_LOGO;
+  
+  // Check both icon_url and iconUrl fields for maximum compatibility
+  const logoUrl = coin.icon_url || coin.iconUrl || DEFAULT_LOGO;
 
   // Format price for display
   const formatPrice = (price) => {

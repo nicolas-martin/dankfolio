@@ -39,10 +39,27 @@ type PriorityFeeResponse struct {
 type SwapQuoteResponse struct {
 	ID      string `json:"id"`
 	Success bool   `json:"success"`
+	Version string `json:"version"`
 	Data    struct {
-		AmountIn  string `json:"amountIn"`
-		AmountOut string `json:"amountOut"`
-		Fee       string `json:"fee"`
+		SwapType             string  `json:"swapType"`
+		InputMint            string  `json:"inputMint"`
+		InputAmount          string  `json:"inputAmount"`
+		OutputMint           string  `json:"outputMint"`
+		OutputAmount         string  `json:"outputAmount"`
+		OtherAmountThreshold string  `json:"otherAmountThreshold"`
+		SlippageBps          int     `json:"slippageBps"`
+		PriceImpactPct       float64 `json:"priceImpactPct"`
+		ReferrerAmount       string  `json:"referrerAmount"`
+		RoutePlan            []struct {
+			PoolID            string   `json:"poolId"`
+			InputMint         string   `json:"inputMint"`
+			OutputMint        string   `json:"outputMint"`
+			FeeMint           string   `json:"feeMint"`
+			FeeRate           float64  `json:"feeRate"`
+			FeeAmount         string   `json:"feeAmount"`
+			RemainingAccounts []string `json:"remainingAccounts"`
+			LastPoolPriceX64  string   `json:"lastPoolPriceX64"`
+		} `json:"routePlan"`
 	} `json:"data"`
 }
 
@@ -58,9 +75,10 @@ type SwapTransactionResponse struct {
 
 // SwapParams represents the parameters for a swap operation
 type SwapParams struct {
-	FromCoinID string  `json:"fromCoinId"`
-	ToCoinID   string  `json:"toCoinId"`
-	Amount     float64 `json:"amount"`
-	Slippage   float64 `json:"slippage"`
-	WalletAddr string  `json:"walletAddr"`
+	FromCoinID    string  `json:"fromCoinId"`
+	ToCoinID      string  `json:"toCoinId"`
+	Amount        float64 `json:"amount"`
+	Slippage      float64 `json:"slippage"`
+	WalletAddr    string  `json:"walletAddr"`
+	InputDecimals int     `json:"inputDecimals"`
 }

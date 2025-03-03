@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,10 +24,10 @@ func NewTradeHandlers(tradeService *trade.Service) *TradeHandlers {
 
 // RegisterRoutes registers all trade-related routes
 func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
-	r.Post("/api/v1/trades/execute", h.ExecuteTrade)
-	r.Get("/api/v1/trades/{id}", h.GetTradeByID)
-	r.Get("/api/v1/trades", h.ListTrades)
-	r.Get("/api/v1/trades/quote", h.GetTradeQuote)
+	r.Get("/api/trades/quote", h.GetTradeQuote)
+	r.Post("/api/trades/execute", h.ExecuteTrade)
+	r.Get("/api/trades/{id}", h.GetTradeByID)
+	r.Get("/api/trades", h.ListTrades)
 }
 
 // ExecuteTrade handles a trade execution request
@@ -90,17 +91,28 @@ func (h *TradeHandlers) ListTrades(w http.ResponseWriter, r *http.Request) {
 
 // GetTradeQuote returns a quote for a trade with estimated amount and fees
 func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetTradeQuote handler called with URL: %s", r.URL.String())
 	fromCoinID := r.URL.Query().Get("from_coin_id")
 	toCoinID := r.URL.Query().Get("to_coin_id")
 	amountStr := r.URL.Query().Get("amount")
 
-	if fromCoinID == "" || toCoinID == "" || amountStr == "" {
-		http.Error(w, "Missing required parameters", http.StatusBadRequest)
+	log.Printf("Quote request params: fromCoinID=%s, toCoinID=%s, amount=%s", fromCoinID, toCoinID, amountStr)
+
+	// SOL is the default currency if not specified
+	if fromCoinID == "" {
+		fromCoinID = "So11111111111111111111111111111111111111112" // SOL mint address
+		log.Printf("Using default currency SOL for from_coin_id")
+	}
+
+	if toCoinID == "" || amountStr == "" {
+		log.Printf("Missing required parameters: toCoinID=%s, amount=%s", toCoinID, amountStr)
+		http.Error(w, "Missing required parameters. from_coin_id=SOL by default, but to_coin_id and amount are required", http.StatusBadRequest)
 		return
 	}
 
 	amount, err := strconv.ParseFloat(amountStr, 64)
 	if err != nil {
+		log.Printf("Invalid amount parameter: %s, error: %v", amountStr, err)
 		http.Error(w, "Invalid amount parameter", http.StatusBadRequest)
 		return
 	}
@@ -109,9 +121,10 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 	quote, err := h.tradeService.GetTradeQuote(r.Context(), fromCoinID, toCoinID, amount)
 	if err != nil {
 		log.Printf("Error getting trade quote: %v", err)
-		http.Error(w, "Failed to get trade quote: "+err.Error(), http.StatusInternalServerError)
+		respondError(w, fmt.Sprintf("Failed to get trade quote: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("Successfully retrieved quote: %+v", quote)
 	respondJSON(w, quote, http.StatusOK)
 }

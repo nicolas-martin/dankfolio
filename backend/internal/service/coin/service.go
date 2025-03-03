@@ -74,7 +74,11 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 	}
 
 	// Enrich with Jupiter data
-	s.enrichCoinWithJupiterData(&fetchedCoin)
+	err := s.enrichCoinWithJupiterData(&fetchedCoin)
+	if err != nil {
+		log.Printf("Warning: Error enriching coin data for %s: %v", id, err)
+		// Continue anyway, as we might have partial data
+	}
 
 	// Ensure all required fields are populated
 	if fetchedCoin.ID == "" || fetchedCoin.Symbol == "" || fetchedCoin.Name == "" {
@@ -96,7 +100,7 @@ func (s *Service) enrichCoinWithJupiterData(coin *model.Coin) error {
 	// Try to get token info from Jupiter API
 	jupiterInfo, err := s.jupiterClient.GetTokenInfo(coin.ID)
 	if err != nil {
-		log.Printf("⚠️ Failed to get Jupiter token info for %s: %v", coin.Symbol, err)
+		log.Printf("❌ Failed to get Jupiter token info for %s: %v", coin.Symbol, err)
 		return err
 	}
 
@@ -108,9 +112,20 @@ func (s *Service) enrichCoinWithJupiterData(coin *model.Coin) error {
 	coin.Decimals = jupiterInfo.Decimals
 	coin.DailyVolume = jupiterInfo.DailyVolume
 	coin.Tags = jupiterInfo.Tags
-	coin.IconUrl = jupiterInfo.LogoURI
 
-	// Try to get logo URL from Jupiter first
+	// Ensure IconUrl is properly set (this is used by the frontend)
+	if jupiterInfo.LogoURI != "" {
+		coin.IconUrl = jupiterInfo.LogoURI
+		log.Printf("🖼️ Set icon URL for %s: %s", coin.Symbol, coin.IconUrl)
+	}
+
+	// Set empty description if not already set
+	if coin.Description == "" {
+		coin.Description = fmt.Sprintf("%s (%s) is a Solana token.", jupiterInfo.Name, jupiterInfo.Symbol)
+		log.Printf("📝 Set default description for %s", coin.Symbol)
+	}
+
+	// Log metadata update
 	log.Printf("📊 Updated metadata for %s: DailyVolume=%.2f, Tags=%v, IconUrl=%s, Decimals=%d",
 		coin.Symbol, jupiterInfo.DailyVolume, jupiterInfo.Tags, coin.IconUrl, jupiterInfo.Decimals)
 
@@ -120,12 +135,14 @@ func (s *Service) enrichCoinWithJupiterData(coin *model.Coin) error {
 		priceFloat, parseErr := strconv.ParseFloat(price, 64)
 		if parseErr != nil {
 			log.Printf("⚠️ Failed to parse price for %s: %v", coin.Symbol, parseErr)
-			return parseErr
+		} else {
+			coin.Price = priceFloat
+			log.Printf("💰 Updated price for %s: %v", coin.Symbol, coin.Price)
 		}
-		coin.Price = priceFloat
-		log.Printf("💰 Updated price for %s: %v", coin.Symbol, coin.Price)
 	} else {
-		log.Printf("⚠️ Failed to get Jupiter price for %s: %v", coin.Symbol, err)
+		log.Printf("⚠️ No price data available for %s, setting default price", coin.Symbol)
+		// Set a default price of 0 to avoid frontend issues
+		coin.Price = 0
 	}
 
 	return nil
