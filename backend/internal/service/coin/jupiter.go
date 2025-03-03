@@ -10,10 +10,10 @@ import (
 
 // Jupiter API endpoints
 const (
-	jupiterAPIBaseURL    = "https://price.jup.ag/v2/price"
-	jupiterTokenInfoURL  = "https://token.jup.ag/token"
+	jupiterAPIBaseURL    = "https://api.jup.ag"
+	jupiterTokenInfoURL  = "https://api.jup.ag/tokens/v1/token"
 	majorTokensQueryURL  = "https://token.jup.ag/strict"
-	jupiterV6APIPriceURL = "https://quote-api.jup.ag/v6/price?ids=%s"
+	jupiterV6APIPriceURL = "https://api.jup.ag/price/v2?ids=%s"
 )
 
 // JupiterClient handles interactions with the Jupiter API
@@ -78,59 +78,31 @@ func (c *JupiterClient) GetTokenPrice(tokenAddress string) (string, error) {
 		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var priceResp JupiterPriceResponse
+	var priceResp struct {
+		Data map[string]interface{} `json:"data"`
+	}
 	if err := json.Unmarshal(body, &priceResp); err != nil {
 		return "", fmt.Errorf("failed to unmarshal price response: %w", err)
 	}
 
-	// Check if we have price data for this token
-	tokenData, found := priceResp.Data[tokenAddress]
-	if !found {
-		return "", fmt.Errorf("price data not found for token: %s", tokenAddress)
+	if len(priceResp.Data) == 0 {
+		return "", fmt.Errorf("no price data found for token: %s", tokenAddress)
 	}
 
-	return tokenData.Price, nil
-}
+	// Get the price for the requested token
+	if tokenData, ok := priceResp.Data[tokenAddress]; ok {
+		// Handle null case
+		if tokenData == nil {
+			return "", fmt.Errorf("price data is null for token: %s", tokenAddress)
+		}
 
-// IsIconAccessible checks if an icon URL is accessible
-func (c *JupiterClient) IsIconAccessible(url string) bool {
-	if url == "" {
-		return false
-	}
-
-	// Try a HEAD request first, which is more efficient
-	resp, err := c.httpClient.Head(url)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-
-	// Consider 2xx and 3xx response codes as "accessible"
-	return resp.StatusCode >= 200 && resp.StatusCode < 400
-}
-
-// FixIconURL attempts to correct or update a broken icon URL
-func (c *JupiterClient) FixIconURL(coin map[string]interface{}) string {
-	id, _ := coin["id"].(string)
-
-	// Try Jupiter token info API first
-	tokenInfo, err := c.GetTokenInfo(id)
-	if err == nil && tokenInfo.LogoURI != "" && c.IsIconAccessible(tokenInfo.LogoURI) {
-		return tokenInfo.LogoURI
-	}
-
-	// Try alternatives
-	alternatives := []string{
-		fmt.Sprintf("https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/%s/logo.png", id),
-		fmt.Sprintf("https://cdn.jsdelivr.net/gh/trustwallet/assets@master/blockchains/solana/assets/%s/logo.png", id),
-		fmt.Sprintf("https://tokens.1sol.io/icons/%s.png", id),
-	}
-
-	for _, alt := range alternatives {
-		if c.IsIconAccessible(alt) {
-			return alt
+		// Handle non-null case by type assertion to map
+		if priceData, ok := tokenData.(map[string]interface{}); ok {
+			if price, ok := priceData["price"].(string); ok {
+				return price, nil
+			}
 		}
 	}
 
-	return ""
+	return "", fmt.Errorf("no price data found for token: %s", tokenAddress)
 }
