@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   SafeAreaView,
   ScrollView,
-  FlatList
+  FlatList,
+  RefreshControl
 } from 'react-native';
 import { generateWallet, getKeypairFromPrivateKey, secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
@@ -24,6 +25,8 @@ const HomeScreen = ({ navigation }) => {
   const [walletBalance, setWalletBalance] = useState(null);
   const [totalBalanceUsd, setTotalBalanceUsd] = useState('0.00');
   const [isLoadingCoins, setIsLoadingCoins] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // Check if a wallet already exists and fetch coins
@@ -193,11 +196,38 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
+  const loadCoins = async () => {
+    try {
+      setError(null);
+      const response = await fetchAvailableCoins();
+      setCoins(response);
+    } catch (err) {
+      setError('Failed to load coins. Please try again.');
+      console.error('Error loading coins:', err);
+    } finally {
+      setIsLoadingCoins(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    loadCoins();
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6A5ACD" />
         <Text style={styles.loadingText}>Loading wallet...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
       </SafeAreaView>
     );
   }
@@ -257,7 +287,7 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Available Coins</Text>
               <TouchableOpacity
-                onPress={fetchAvailableCoins}
+                onPress={onRefresh}
                 style={styles.refreshCoinsButton}
               >
                 <Text style={styles.refreshCoinsText}>🔄</Text>
@@ -609,6 +639,17 @@ const styles = StyleSheet.create({
   },
   refreshCoinsText: {
     fontSize: 20,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    padding: 20,
   },
 });
 

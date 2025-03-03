@@ -55,18 +55,18 @@ func (r *Router) Setup() chi.Router {
 	coinHandlers := NewCoinHandlers(r.coinService)
 
 	// Coin routes
-	router.Get("/api/v1/coins", coinHandlers.GetCoins)
-	router.Get("/api/v1/coins/{id}", coinHandlers.GetCoinByID)
-	router.Get("/api/v1/tokens/{id}/details", coinHandlers.GetTokenDetails)
+	router.Get("/api/coins", coinHandlers.GetCoins)
+	router.Get("/api/coins/{id}", coinHandlers.GetCoinByID)
+	router.Get("/api/tokens/{id}/details", coinHandlers.GetTokenDetails)
 
 	// Trade routes
-	router.Post("/api/v1/trades/execute", tradeHandlers.ExecuteTrade)
-	router.Get("/api/v1/trades/{id}", tradeHandlers.GetTradeByID)
-	router.Get("/api/v1/trades", tradeHandlers.ListTrades)
-	router.Get("/api/v1/trades/quote", tradeHandlers.GetTradeQuote)
+	router.Post("/api/trades/execute", tradeHandlers.ExecuteTrade)
+	router.Get("/api/trades/{id}", tradeHandlers.GetTradeByID)
+	router.Get("/api/trades", tradeHandlers.ListTrades)
+	router.Get("/api/trades/quote", tradeHandlers.GetTradeQuote)
 
 	// Wallet routes
-	router.Post("/api/v1/wallets", walletHandlers.CreateWallet)
+	router.Post("/api/wallets", walletHandlers.CreateWallet)
 
 	return router
 }

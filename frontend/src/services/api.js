@@ -2,8 +2,10 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 
 // Create API client with default configuration
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const apiClient = axios.create({
-        baseURL: 'http://localhost:8080',
+        baseURL: API_BASE_URL,
         headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -48,7 +50,6 @@ const api = {
                         // Log the request for debugging
                         console.log('Trade request payload:', JSON.stringify(payload, null, 2));
 
-                        // Updated endpoint to match backend's expected route
                         const response = await apiClient.post('/api/trades/execute', payload);
                         return response.data;
                 } catch (error) {
@@ -59,7 +60,7 @@ const api = {
         getAvailableCoins: async () => {
                 try {
                         console.log('Fetching available coins...');
-                        const response = await apiClient.get('/api/v1/coins');
+                        const response = await apiClient.get('/api/coins');
                         console.log(`Fetched ${response.data?.length || 0} coins successfully`);
                         return response.data;
                 } catch (error) {
@@ -68,11 +69,10 @@ const api = {
                 }
         },
 
-        // Get coin details by ID
         getCoinById: async (coinId) => {
                 try {
                         console.log(`Fetching details for coin ID: ${coinId}`);
-                        const response = await apiClient.get(`/api/v1/coins/${coinId}`);
+                        const response = await apiClient.get(`/api/coins/${coinId}`);
                         console.log('Coin details fetched successfully:', response.data.symbol);
                         return response.data;
                 } catch (error) {
@@ -81,12 +81,11 @@ const api = {
                 }
         },
 
-        // Get trade quote for given coin pair and amount
         getTradeQuote: async (fromCoinId, toCoinId, amount) => {
                 try {
                         console.log('Fetching trade quote:', { fromCoinId, toCoinId, amount });
 
-                        const response = await apiClient.get('/api/v1/trades/quote', {
+                        const response = await apiClient.get('/api/trades/quote', {
                                 params: {
                                         from_coin_id: fromCoinId,
                                         to_coin_id: toCoinId,
@@ -114,7 +113,7 @@ const api = {
         createWallet: async () => {
                 try {
                         console.log('🔐 Creating new wallet...');
-                        const response = await apiClient.post('/api/v1/wallets');
+                        const response = await apiClient.post('/api/wallets');
                         console.log('✅ Wallet created successfully');
                         return response.data;
                 } catch (error) {
@@ -123,11 +122,10 @@ const api = {
                 }
         },
 
-        // Get wallet information by address
         getWalletByAddress: async (address) => {
                 try {
                         console.log('🔍 Fetching wallet info for address:', address);
-                        const response = await apiClient.get(`/api/v1/wallets/${address}`);
+                        const response = await apiClient.get(`/api/wallets/${address}`);
                         console.log('✅ Wallet info retrieved successfully');
                         return response.data;
                 } catch (error) {
@@ -136,11 +134,10 @@ const api = {
                 }
         },
 
-        // Get wallet balance by address
         getWalletBalance: async (address) => {
                 try {
                         console.log('💰 Fetching balance for wallet:', address);
-                        const response = await apiClient.get(`/api/v1/wallets/${address}/balance`);
+                        const response = await apiClient.get(`/api/wallets/${address}/balance`);
                         console.log('✅ Wallet balance retrieved successfully');
                         return response.data;
                 } catch (error) {
@@ -154,6 +151,38 @@ const api = {
                 error: 'Mock error response',
                 code: 500,
                 message: 'Internal server error',
+        },
+
+        fetchAvailableCoins: async () => {
+                try {
+                        const response = await apiClient.get('/api/coins');
+                        return response.data;
+                } catch (error) {
+                        console.error('Error fetching coins:', error);
+                        throw new Error('Failed to fetch available coins');
+                }
+        },
+
+        fetchCoinById: async (coinId) => {
+                try {
+                        const response = await apiClient.get(`/api/coins/${coinId}`);
+                        return response.data;
+                } catch (error) {
+                        console.error(`Error fetching coin ${coinId}:`, error);
+                        throw new Error('Failed to fetch coin details');
+                }
+        },
+
+        searchCoins: async (query) => {
+                try {
+                        const response = await apiClient.get('/api/coins/search', {
+                                params: { q: query }
+                        });
+                        return response.data;
+                } catch (error) {
+                        console.error('Error searching coins:', error);
+                        throw new Error('Failed to search coins');
+                }
         }
 };
 

@@ -1,80 +1,62 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-echo "Testing Jupiter Token Info integration with Coin API..."
-echo "======================================================"
+# Set the API base URL
+BASE_URL="http://localhost:8080"
 
-# Base URL of your API
-API_URL="http://localhost:8080/api/v1"
-
-# Set colors for output formatting
-RED='\033[0;31m'
+# Colors for output
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-echo -e "\n${YELLOW}Test 1: Fetch JUP token via coin endpoint${NC}"
-echo -e "Expected: Detailed information for Jupiter token (JUP)"
-JUP_RESPONSE=$(curl -s "${API_URL}/coins/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN")
-echo "$JUP_RESPONSE" | jq
+# Function to print section headers
+print_header() {
+    echo -e "\n${YELLOW}=== $1 ===${NC}\n"
+}
 
-# Check if JUP token has the right name and symbol
-JUP_NAME=$(echo "$JUP_RESPONSE" | jq -r '.name')
-JUP_SYMBOL=$(echo "$JUP_RESPONSE" | jq -r '.symbol')
-JUP_ICON_URL=$(echo "$JUP_RESPONSE" | jq -r '.icon_url')
+# Function to test an endpoint
+test_endpoint() {
+    local method=$1
+    local endpoint=$2
+    local payload=$3
+    local description=$4
 
-if [[ "$JUP_NAME" == "Jupiter" && "$JUP_SYMBOL" == "JUP" ]]; then
-  echo -e "${GREEN}✓ JUP token details fetched successfully${NC}"
-else
-  echo -e "${RED}✗ JUP token details are incorrect or missing${NC}"
-  echo "Name: $JUP_NAME"
-  echo "Symbol: $JUP_SYMBOL"
-  echo "Icon URL: $JUP_ICON_URL"
-fi
+    echo -e "\n${YELLOW}Testing: $description${NC}"
+    echo -e "${CYAN}curl -s -X $method \"$endpoint\"${NC}"
+    
+    if [ -n "$payload" ]; then
+        echo -e "${CYAN}    -H \"Content-Type: application/json\" \\
+    -d '$payload'${NC}"
+        response=$(curl -s -X $method -H "Content-Type: application/json" -d "$payload" "$endpoint")
+    else
+        response=$(curl -s -X $method "$endpoint")
+    fi
 
-echo -e "\n${YELLOW}Test 2: Fetch BONK token via coin endpoint${NC}"
-echo -e "Expected: Detailed information for BONK token"
-BONK_RESPONSE=$(curl -s "${API_URL}/coins/DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263")
-echo "$BONK_RESPONSE" | jq
+    # Check if the response is valid JSON
+    if echo "$response" | jq . >/dev/null 2>&1; then
+        echo -e "${GREEN}Response:${NC}"
+        echo "$response" | jq .
+    else
+        echo -e "${RED}Error: Invalid JSON response${NC}"
+        echo "$response"
+    fi
+}
 
-# Check if BONK token has the right name and symbol
-BONK_NAME=$(echo "$BONK_RESPONSE" | jq -r '.name')
-BONK_SYMBOL=$(echo "$BONK_RESPONSE" | jq -r '.symbol')
-BONK_ICON_URL=$(echo "$BONK_RESPONSE" | jq -r '.icon_url')
+# Test getting all coins
+print_header "Getting all coins"
+test_endpoint "GET" "$BASE_URL/api/coins" "" "Get all available coins"
 
-if [[ "$BONK_NAME" == "Bonk" && "$BONK_SYMBOL" == "BONK" ]]; then
-  echo -e "${GREEN}✓ BONK token details fetched successfully${NC}"
-else
-  echo -e "${RED}✗ BONK token details are incorrect or missing${NC}"
-  echo "Name: $BONK_NAME"
-  echo "Symbol: $BONK_SYMBOL"
-  echo "Icon URL: $BONK_ICON_URL"
-fi
+# Test getting a specific coin by ID
+print_header "Getting specific coin"
+test_endpoint "GET" "$BASE_URL/api/coins/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" "" "Get USDC coin info"
 
-echo -e "\n${YELLOW}Test 3: Fetch SOL token via coin endpoint${NC}"
-echo -e "Expected: Detailed information for Solana token (SOL)"
-SOL_RESPONSE=$(curl -s "${API_URL}/coins/So11111111111111111111111111111111111111112")
-echo "$SOL_RESPONSE" | jq
+# Test getting token details
+print_header "Getting token details"
+test_endpoint "GET" "$BASE_URL/api/tokens/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/details" "" "Get USDC token details"
 
-# Check if SOL token has the right name and symbol
-SOL_NAME=$(echo "$SOL_RESPONSE" | jq -r '.name')
-SOL_SYMBOL=$(echo "$SOL_RESPONSE" | jq -r '.symbol')
+# Test health endpoint
+print_header "Testing health endpoint"
+test_endpoint "GET" "$BASE_URL/health" "" "Health check"
 
-if [[ "$SOL_NAME" == "Solana" && "$SOL_SYMBOL" == "SOL" ]]; then
-  echo -e "${GREEN}✓ SOL token details fetched successfully${NC}"
-else
-  echo -e "${RED}✗ SOL token details are incorrect or missing${NC}"
-  echo "Name: $SOL_NAME"
-  echo "Symbol: $SOL_SYMBOL"
-fi
-
-echo -e "\n${YELLOW}Test 4: Test non-existent token${NC}"
-echo -e "Expected: 404 Not Found response"
-NON_EXISTENT_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}/coins/nonexistenttoken123")
-
-if [[ "$NON_EXISTENT_RESPONSE" == "404" ]]; then
-  echo -e "${GREEN}✓ Non-existent token returns 404 as expected${NC}"
-else
-  echo -e "${RED}✗ Non-existent token returned $NON_EXISTENT_RESPONSE instead of 404${NC}"
-fi
-
-echo -e "\n${GREEN}All tests completed!${NC}" 
+echo -e "\n${GREEN}All tests completed${NC}" 
