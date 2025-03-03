@@ -14,10 +14,10 @@ import PriceChart from '../components/PriceChart';
 import { secureStorage } from '../utils/solanaWallet';
 
 const CoinDetailScreen = ({ route, navigation }) => {
-  const { coin } = route.params;
+  const { coin, coins } = route.params;
   const [isLoading, setIsLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
-  const [timeframe, setTimeframe] = useState('1D');
+  const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   const [wallet, setWallet] = useState(null);
 
   // Default icon for coins that don't have specific icons
@@ -81,20 +81,8 @@ const CoinDetailScreen = ({ route, navigation }) => {
     };
 
     loadWallet();
-  }, []);
-
-  useEffect(() => {
-    // Simulate API call to fetch chart data
-    setIsLoading(true);
-
-    // Simulate network delay
-    const timer = setTimeout(() => {
-      setChartData(generateMockChartData(timeframe));
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [timeframe]);
+    setChartData(generateMockChartData(selectedTimeframe));
+  }, [selectedTimeframe]);
 
   // Get coin description or provide default
   const getCoinDescription = () => {
@@ -160,7 +148,7 @@ const CoinDetailScreen = ({ route, navigation }) => {
           data={chartData}
           loading={isLoading}
           color="#6A5ACD"
-          onTimeframeChange={setTimeframe}
+          onTimeframeChange={setSelectedTimeframe}
         />
 
         {/* Coin description */}
@@ -178,7 +166,8 @@ const CoinDetailScreen = ({ route, navigation }) => {
             onPress={() => navigation.navigate('Trade', {
               initialFromCoin: 'SOL',
               initialToCoin: coin.symbol,
-              wallet
+              wallet,
+              coins
             })}
           >
             <Text style={styles.actionButtonText}>Buy</Text>
@@ -189,7 +178,8 @@ const CoinDetailScreen = ({ route, navigation }) => {
             onPress={() => navigation.navigate('Trade', {
               initialFromCoin: coin.symbol,
               initialToCoin: 'USDC',
-              wallet
+              wallet,
+              coins
             })}
           >
             <Text style={styles.actionButtonText}>Sell</Text>

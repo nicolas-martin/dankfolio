@@ -11,6 +11,11 @@ import (
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
+const (
+	// SolTokenAddress is the native SOL token address
+	SolTokenAddress = "So11111111111111111111111111111111111111112"
+)
+
 // TokenList represents the structure of trimmed_mainnet.json
 type TokenList struct {
 	Tokens []struct {
@@ -148,9 +153,44 @@ func (s *Service) enrichCoinWithJupiterData(coin *model.Coin) error {
 	return nil
 }
 
+// initializeSolData creates and enriches SOL coin data
+func (s *Service) initializeSolData() error {
+	// Create basic SOL coin
+	solCoin := model.Coin{
+		ID:       SolTokenAddress,
+		Symbol:   "SOL",
+		Name:     "Solana",
+		Decimals: 9, // SOL has 9 decimals
+	}
+
+	// Enrich with Jupiter data
+	err := s.enrichCoinWithJupiterData(&solCoin)
+	if err != nil {
+		log.Printf("⚠️ Warning: Error enriching SOL data: %v", err)
+		// Continue anyway as we have basic data
+	}
+
+	// Set a default description if not set by Jupiter
+	if solCoin.Description == "" {
+		solCoin.Description = "SOL is the native token of the Solana blockchain."
+	}
+
+	// Add to storage
+	s.coins[SolTokenAddress] = solCoin
+	log.Printf("✨ Added SOL to coin list with price: %v", solCoin.Price)
+
+	return nil
+}
+
 // refreshCoins loads initial coin data from trimmed_mainnet.json and enriches it with Jupiter data
 func (s *Service) refreshCoins() error {
 	log.Printf("🔄 Starting coin refresh operation")
+
+	// First initialize SOL data
+	if err := s.initializeSolData(); err != nil {
+		log.Printf("❌ Error initializing SOL data: %v", err)
+		// Continue with other tokens even if SOL fails
+	}
 
 	// Load tokens from trimmed_mainnet.json
 	jsonFile, err := os.Open("cmd/trim-mainnet/trimmed_mainnet.json")
@@ -165,9 +205,6 @@ func (s *Service) refreshCoins() error {
 	}
 
 	log.Printf(" Found %d tokens in trimmed_mainnet.json", len(tokenList.Tokens))
-
-	// Clear existing coins
-	s.coins = make(map[string]model.Coin)
 
 	// Process each token
 	for _, token := range tokenList.Tokens {

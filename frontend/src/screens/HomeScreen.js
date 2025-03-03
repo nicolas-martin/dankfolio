@@ -142,7 +142,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleCoinPress = (coin) => {
-    navigation.navigate('CoinDetail', { coin });
+    navigation.navigate('CoinDetail', { coin, coins });
   };
 
   // Simple notification system to replace Alert.alert
