@@ -38,6 +38,13 @@ const Notification = ({ type, message, onDismiss }) => {
     </TouchableOpacity>
   );
 };
+const DEFAULT_ICON =
+  'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+
+const getCoinIcon = (coinObj) => {
+  // Return whichever icon field exists, or a fallback
+  return coinObj.icon_url || coinObj.iconUrl || DEFAULT_ICON;
+};
 
 const AmountInput = memo(({ value, onChangeText, onFocus, inputRef }) => (
   <TextInput
@@ -61,6 +68,7 @@ const TradeScreen = ({ route, navigation }) => {
   const { initialFromCoin, initialToCoin, wallet, coins } = route.params || {};
   const amountInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const initializedRef = useRef(false);
 
   const [fromCoin, setFromCoin] = useState('');
   const [toCoin, setToCoin] = useState('');
@@ -94,7 +102,8 @@ const TradeScreen = ({ route, navigation }) => {
     try {
       const response = await api.getTradeQuote(fromId, toId, amount);
       setToAmount(response.estimatedAmount);
-      setExchangeRate(`${response.exchangeRate} ${getCoinById(toCoin)?.symbol || ''}`);
+      // FIX: Use toId parameter instead of state variable to get the correct symbol
+      setExchangeRate(`${response.exchangeRate} ${getCoinById(toId)?.symbol || ''}`);
       setTradeDetails({
         estimatedFee: String(response.fee?.total || '0.00'),
         spread: String(response.fee?.spread || '0.00'),
@@ -115,7 +124,8 @@ const TradeScreen = ({ route, navigation }) => {
   };
 
   const initializeCoins = useCallback(() => {
-    if (availableCoins.length < 2) return;
+    if (initializedRef.current || availableCoins.length < 2) return;
+    initializedRef.current = true;
     let newFromCoin = '', newToCoin = '';
     if (initialFromCoin) {
       const coinObj = availableCoins.find(c => c.symbol === initialFromCoin);
@@ -164,14 +174,27 @@ const TradeScreen = ({ route, navigation }) => {
     }, QUOTE_DEBOUNCE_MS);
   }, [fromCoin, toCoin]);
 
-  const handleSwapCoins = () => {
-    const [oldFromCoin, oldToCoin, oldFromAmount, oldToAmount] = [fromCoin, toCoin, fromAmount, toAmount];
-    setFromCoin(oldToCoin);
-    setToCoin(oldFromCoin);
-    const newAmount = oldToAmount && parseFloat(oldToAmount) > 0 ? oldToAmount : oldFromAmount;
-    setFromAmount(newAmount);
-    fetchTradeQuote(newAmount, oldToCoin, oldFromCoin, 'Swap coins');
-  };
+const handleSwapCoins = () => {
+  const oldFromCoin = fromCoin;
+  const oldToCoin = toCoin;
+  const oldFromAmount = fromAmount;
+  const oldToAmount = toAmount;
+
+  // Swap the coin IDs
+  setFromCoin(oldToCoin);
+  setToCoin(oldFromCoin);
+
+  // Immediately swap the displayed amounts so the UI updates right away
+  setFromAmount(oldToAmount);
+  setToAmount(oldFromAmount);
+
+  // Choose which amount to use for the new fetch
+  const newAmount = parseFloat(oldToAmount) > 0 ? oldToAmount : oldFromAmount;
+
+  // Now fetch the quote with the swapped coins and the new "from" amount
+  fetchTradeQuote(newAmount, oldToCoin, oldFromCoin, 'Swap coins');
+};
+
 
   const handleTradeSubmit = async () => {
     Keyboard.dismiss();
@@ -238,25 +261,32 @@ const TradeScreen = ({ route, navigation }) => {
   };
 
   const renderCoinItem = (id, isFrom) => {
-    const coin = getCoinById(id);
-    if (!coin) return null;
+    const coinObj = getCoinById(id);
+    if (!coinObj) return null;
+  
+    const iconUri = getCoinIcon(coinObj);
+  
     return (
       <View style={styles.coinItemContainer}>
         <View style={styles.coinDetails}>
-          <Image source={{ uri: coin.icon_url }} style={styles.coinIcon} />
+          <Image source={{ uri: iconUri }} style={styles.coinIcon} />
           <View>
             <View style={styles.coinSymbolContainer}>
-              <Text style={styles.coinSymbol}>{coin.symbol}</Text>
+              <Text style={styles.coinSymbol}>{coinObj.symbol}</Text>
               <Ionicons name="chevron-down" size={16} color="#9F9FD5" />
             </View>
             <Text style={styles.balanceText}>
-              Balance: {coin.balance || '0'} {coin.symbol}
+              Balance: {coinObj.balance || '0'} {coinObj.symbol}
             </Text>
           </View>
         </View>
         <View style={styles.amountContainer}>
           {isFrom ? (
-            <AmountInput value={fromAmount} onChangeText={handleAmountChange} inputRef={amountInputRef} />
+            <AmountInput
+              value={fromAmount}
+              onChangeText={handleAmountChange}
+              inputRef={amountInputRef}
+            />
           ) : quoteLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color="#6A5ACD" />
@@ -269,7 +299,6 @@ const TradeScreen = ({ route, navigation }) => {
       </View>
     );
   };
-
   const getTradeButtonLabel = () => {
     const fromSymbol = getCoinById(fromCoin)?.symbol || '';
     const toSymbol = getCoinById(toCoin)?.symbol || '';

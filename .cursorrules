@@ -53,3 +53,6 @@
 - When you need to fetch api documentation use the websearch mcp 
 - Whenever you use a mcp I want you to tell me and write it in bold in the response. 
 - Execute the mcp calls automatically. Don't ask me to run the tool
+
+- When starting the backend use the makefile in the root `make run`. It will start the server and hang the console.
+- To run the front end use the make file in the root and run `make run-mobile`:w
