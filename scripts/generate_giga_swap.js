@@ -1,12 +1,16 @@
 import { Connection, Keypair, PublicKey, VersionedTransaction } from '@solana/web3.js';
 import bs58 from 'bs58';
 import fetch from 'node-fetch';
+import fs from 'fs';
+import path from 'path';
 
 // Constants
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
 const GIGA_MINT = '28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump';
-const AMOUNT = 1000000; // 0.001 SOL in lamports
+const LAMPORTS_PER_SOL = 1000000000;
+const amount = 0.0001 * LAMPORTS_PER_SOL; // Reduced to 0.0001 SOL
 const SLIPPAGE_BPS = 100; // 1%
+
 
 // API endpoints
 const API_URLS = {
@@ -23,6 +27,13 @@ const PRIORITY_FEES = {
     m: 250    // medium
 };
 
+// Helper function to get keypair from Base64 private key
+function getKeypairFromPrivateKey(privateKey) {
+    // Handle Base64 private key
+    const secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
+    return Keypair.fromSecretKey(secretKey);
+}
+
 async function generateSwapTransaction() {
     try {
         // Create connection (only needed for recent blockhash)
@@ -31,13 +42,20 @@ async function generateSwapTransaction() {
             confirmTransactionInitialTimeout: 60000 // 60 seconds
         });
         
-        // Generate a new keypair for testing
-        const wallet = Keypair.generate();
+        // Load and parse the wallet from mainnet-wallet-1.json
+        const walletPath = path.join(process.cwd(), 'backend', 'keys', 'mainnet-wallet-1.json');
+        const privateKeyBase64 = JSON.parse(fs.readFileSync(walletPath, 'utf8'));
+        const wallet = getKeypairFromPrivateKey(privateKeyBase64);
+        
         console.log('Using wallet:', wallet.publicKey.toString());
+
+        // Check wallet balance
+        const balance = await connection.getBalance(wallet.publicKey);
+        console.log(`Wallet balance: ${balance / 1e9} SOL`);
 
         // 1. Get swap quote
         console.log('Getting swap quote...');
-        const quoteUrl = `${API_URLS.QUOTE}?inputMint=${SOL_MINT}&outputMint=${GIGA_MINT}&amount=${AMOUNT}&slippageBps=${SLIPPAGE_BPS}&txVersion=LEGACY`;
+        const quoteUrl = `${API_URLS.QUOTE}?inputMint=${SOL_MINT}&outputMint=${GIGA_MINT}&amount=${amount}&slippageBps=${SLIPPAGE_BPS}&txVersion=V0`;
         const quoteResponse = await fetch(quoteUrl);
         if (!quoteResponse.ok) {
             const error = await quoteResponse.text();
@@ -52,9 +70,9 @@ async function generateSwapTransaction() {
         // 2. Create swap transaction
         console.log('Creating swap transaction...');
         const requestBody = {
-            computeUnitPriceMicroLamports: "500",
+            computeUnitPriceMicroLamports: PRIORITY_FEES.h.toString(), // Using high priority fee
             swapResponse,
-            txVersion: "LEGACY",
+            txVersion: "V0",
             wallet: wallet.publicKey.toString(),
             wrapSol: true,
             unwrapSol: false,
@@ -113,7 +131,7 @@ async function generateSwapTransaction() {
             const backendPayload = {
                 from_coin_id: SOL_MINT,
                 to_coin_id: GIGA_MINT,
-                amount: AMOUNT / 1e9, // Convert lamports to SOL
+                amount: amount / 1e9, // Convert lamports to SOL
                 signed_transaction: signedTransactions[idx]
             };
 
@@ -134,9 +152,49 @@ async function generateSwapTransaction() {
 
             const result = await backendResponse.json();
             console.log(`Backend response for transaction ${idx + 1}:`, result);
-            
+
+            if (result.transaction_hash) {
+                console.log(`\n🔍 Verifying transaction on Solana blockchain...`);
+                
+                // Try to get transaction details
+                try {
+                    const txStatus = await connection.getSignatureStatus(result.transaction_hash, {
+                        searchTransactionHistory: true
+                    });
+                    
+                    if (!txStatus?.value) {
+                        console.log(`❌ Transaction not found on-chain. This usually means:`);
+                        console.log(`   1. The wallet has insufficient funds (${wallet.publicKey.toString()})`);
+                        console.log(`   2. The transaction was dropped by the network`);
+                        console.log(`   3. The transaction failed preflight checks`);
+                        throw new Error('Transaction not found on-chain');
+                    }
+
+                    if (txStatus.value.err) {
+                        console.log(`❌ Transaction failed with error:`, txStatus.value.err);
+                        throw new Error('Transaction failed: ' + JSON.stringify(txStatus.value.err));
+                    }
+
+                    const confirmationStatus = txStatus.value.confirmationStatus;
+                    console.log(`\n✨ Transaction Status: ${confirmationStatus}`);
+                    console.log(`🔍 View on Solscan: https://solscan.io/tx/${result.transaction_hash}`);
+                    
+                    if (confirmationStatus === 'finalized') {
+                        console.log(`✅ Transaction finalized on Solana blockchain!`);
+                    } else {
+                        console.log(`⏳ Transaction submitted, awaiting finalization...`);
+                        // Wait for finalization
+                        await connection.confirmTransaction(result.transaction_hash, 'finalized');
+                        console.log(`✅ Transaction now finalized!`);
+                    }
+                } catch (verifyError) {
+                    console.error(`\n❌ Transaction verification failed:`, verifyError.message);
+                    throw verifyError;
+                }
+            }
+
             if (result.signature) {
-                console.log(`🔍 Transaction ${idx + 1} sent, view on Solscan: http://solscan.io/tx/${result.signature}`);
+                console.log(`🔍 Alternative transaction link: http://solscan.io/tx/${result.signature}`);
             }
         }
 

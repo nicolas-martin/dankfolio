@@ -57,8 +57,9 @@ func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log the trade details for debugging
-	log.Printf("Trade executed successfully: ID=%s, Status=%s, Hash=%s",
-		trade.ID, trade.Status, trade.TransactionHash)
+	log.Printf("Trade executed successfully: ID=%s, Status=%s", trade.ID, trade.Status)
+	log.Printf("🔍 View transaction on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)
+	log.Printf("✅ Transaction verified and stored in trade record")
 
 	response := map[string]interface{}{
 		"status":           trade.Status,
