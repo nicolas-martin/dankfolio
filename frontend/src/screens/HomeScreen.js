@@ -307,7 +307,22 @@ const HomeScreen = ({ navigation }) => {
                 </Text>
                 <TouchableOpacity
                   style={styles.testWalletButton}
-                  onPress={() => setPrivateKey(TEST_PRIVATE_KEY)}
+                  onPress={async () => {
+                    try {
+                      if (!TEST_PRIVATE_KEY) {
+                        showNotification('error', 'Test wallet key not found in environment variables');
+                        return;
+                      }
+                      setPrivateKey(TEST_PRIVATE_KEY);
+                      // Wait a bit for the state to update
+                      setTimeout(() => {
+                        handleImportWallet();
+                      }, 100);
+                    } catch (error) {
+                      console.error('Error using test wallet:', error);
+                      showNotification('error', 'Failed to use test wallet');
+                    }
+                  }}
                 >
                   <Text style={styles.testWalletButtonText}>Use Test Wallet</Text>
                 </TouchableOpacity>
