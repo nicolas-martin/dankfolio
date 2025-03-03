@@ -93,13 +93,19 @@ export const signTransaction = (transaction, privateKey) => {
         try {
                 const keypair = getKeypairFromPrivateKey(privateKey);
 
-                // Add the signer to the transaction
-                transaction.feePayer = keypair.publicKey;
-
-                // Sign the transaction
-                const signData = transaction.serializeMessage();
-                const signature = nacl.sign.detached(signData, keypair.secretKey);
-                transaction.addSignature(keypair.publicKey, Buffer.from(signature));
+                // Check if it's a versioned transaction
+                if (transaction instanceof VersionedTransaction) {
+                        // Sign versioned transaction
+                        transaction.sign([keypair]);
+                } else {
+                        // Add the signer to legacy transaction
+                        transaction.feePayer = keypair.publicKey;
+                        
+                        // Sign the transaction
+                        const signData = transaction.serializeMessage();
+                        const signature = nacl.sign.detached(signData, keypair.secretKey);
+                        transaction.addSignature(keypair.publicKey, Buffer.from(signature));
+                }
 
                 // Return base64 encoded transaction
                 return transaction.serialize().toString('base64');

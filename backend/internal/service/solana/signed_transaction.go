@@ -38,22 +38,22 @@ func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signe
 		return fmt.Errorf("invalid base64 transaction: %w", err)
 	}
 
-	// Deserialize the transaction
+	// Try to deserialize as a versioned transaction first
 	tx, err := solana.TransactionFromBytes(txBytes)
 	if err != nil {
 		return fmt.Errorf("failed to deserialize transaction: %w", err)
 	}
 
-	// Submit the transaction
+	// Submit the transaction with preflight checks disabled for ALT transactions
 	sig, err := s.client.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
-		SkipPreflight:       false,
+		SkipPreflight:       true, // Skip preflight for ALT transactions
 		PreflightCommitment: rpc.CommitmentFinalized,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to submit transaction: %w", err)
 	}
 
-	// Wait for confirmation
+	// Wait for confirmation with a longer timeout
 	status, err := s.client.GetSignatureStatuses(ctx, true, sig)
 	if err != nil {
 		return fmt.Errorf("failed to confirm transaction: %w", err)

@@ -1,0 +1,10 @@
+{
+  "name": "dankfolio",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@solana/web3.js": "^1.91.1",
+    "bs58": "^5.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}
