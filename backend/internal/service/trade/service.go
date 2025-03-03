@@ -54,10 +54,10 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", err)
 	}
 
-	// Update trade status
+	// Update trade status and store in memory
 	trade.Status = "completed"
+	trade.CompletedAt = time.Now()
 
-	// Store trade in memory
 	s.mu.Lock()
 	s.trades[trade.ID] = trade
 	s.mu.Unlock()

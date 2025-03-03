@@ -56,9 +56,13 @@ func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log the trade details for debugging
+	log.Printf("Trade executed successfully: ID=%s, Status=%s, Hash=%s",
+		trade.ID, trade.Status, trade.TransactionHash)
+
 	response := map[string]interface{}{
-		"trade_id":         trade.ID,
 		"status":           trade.Status,
+		"trade_id":         trade.ID,
 		"transaction_hash": trade.TransactionHash,
 	}
 

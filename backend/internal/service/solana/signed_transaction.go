@@ -19,29 +19,31 @@ func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trad
 	}
 
 	// Execute the signed transaction
-	if err := s.ExecuteSignedTransaction(ctx, signedTx); err != nil {
+	sig, err := s.ExecuteSignedTransaction(ctx, signedTx)
+	if err != nil {
 		return fmt.Errorf("failed to execute signed transaction: %w", err)
 	}
 
-	// Update trade status
+	// Update trade status and transaction hash
 	trade.Status = "completed"
 	trade.CompletedAt = time.Now()
+	trade.TransactionHash = sig.String()
 
 	return nil
 }
 
 // ExecuteSignedTransaction submits a signed transaction to the Solana blockchain
-func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signedTx string) error {
+func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signedTx string) (solana.Signature, error) {
 	// Decode base64 signed transaction
 	txBytes, err := base64.StdEncoding.DecodeString(signedTx)
 	if err != nil {
-		return fmt.Errorf("invalid base64 transaction: %w", err)
+		return solana.Signature{}, fmt.Errorf("invalid base64 transaction: %w", err)
 	}
 
 	// Try to deserialize as a versioned transaction first
 	tx, err := solana.TransactionFromBytes(txBytes)
 	if err != nil {
-		return fmt.Errorf("failed to deserialize transaction: %w", err)
+		return solana.Signature{}, fmt.Errorf("failed to deserialize transaction: %w", err)
 	}
 
 	// Submit the transaction with preflight checks disabled for ALT transactions
@@ -50,18 +52,18 @@ func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signe
 		PreflightCommitment: rpc.CommitmentFinalized,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to submit transaction: %w", err)
+		return solana.Signature{}, fmt.Errorf("failed to submit transaction: %w", err)
 	}
 
 	// Wait for confirmation with a longer timeout
 	status, err := s.client.GetSignatureStatuses(ctx, true, sig)
 	if err != nil {
-		return fmt.Errorf("failed to confirm transaction: %w", err)
+		return solana.Signature{}, fmt.Errorf("failed to confirm transaction: %w", err)
 	}
 
 	if status.Value[0] != nil && status.Value[0].Err != nil {
-		return fmt.Errorf("transaction failed: %v", status.Value[0].Err)
+		return solana.Signature{}, fmt.Errorf("transaction failed: %v", status.Value[0].Err)
 	}
 
-	return nil
+	return sig, nil
 }
