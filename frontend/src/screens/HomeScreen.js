@@ -7,7 +7,8 @@ import {
   TextInput,
   ActivityIndicator,
   SafeAreaView,
-  FlatList
+  FlatList,
+  Button
 } from 'react-native';
 import { generateWallet, getKeypairFromPrivateKey, secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
@@ -258,6 +259,12 @@ const HomeScreen = ({ navigation }) => {
               </View>
             )}
           </View>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Profile', { walletAddress: wallet.publicKey.toString() })}
+          >
+            <Text style={styles.profileButtonText}>View Profile</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.authContainer}>
@@ -370,6 +377,24 @@ const styles = StyleSheet.create({
   testWalletButtonText: { color: '#fff', fontWeight: '500' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' },
   errorText: { color: 'red', textAlign: 'center', padding: 20 },
+  profileButton: {
+    backgroundColor: '#6A5ACD',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  profileButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 
 export default HomeScreen;
