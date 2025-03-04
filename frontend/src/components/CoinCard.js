@@ -10,6 +10,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
  * @param {string} props.coin.name - Coin name
  * @param {string} props.coin.id - Coin ID
  * @param {number} props.coin.price - Current price
+ * @param {number} props.coin.daily_volume - 24h trading volume
  * @param {number} props.coin.price_change_24h - 24h price change percentage
  * @param {number} props.coin.balance - User's balance of this coin (optional)
  * @param {Function} props.onPress - Function to call when card is pressed
@@ -21,6 +22,15 @@ const CoinCard = ({ coin, onPress }) => {
   // Check both icon_url and iconUrl fields for maximum compatibility
   const logoUrl = coin.icon_url || coin.iconUrl || DEFAULT_LOGO;
 
+  // Format volume to be more readable
+  const formatVolume = (volume) => {
+    if (!volume) return '0';
+    if (volume >= 1e9) return `${(volume / 1e9).toFixed(2)}B`;
+    if (volume >= 1e6) return `${(volume / 1e6).toFixed(2)}M`;
+    if (volume >= 1e3) return `${(volume / 1e3).toFixed(2)}K`;
+    return volume.toFixed(2);
+  };
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -30,7 +40,6 @@ const CoinCard = ({ coin, onPress }) => {
         <Image
           source={{ uri: logoUrl }}
           style={styles.logo}
-        // Remove the defaultSource prop since we're using a default URL
         />
         <View style={styles.nameSection}>
           <Text style={styles.symbol}>{coin.symbol}</Text>
@@ -39,7 +48,8 @@ const CoinCard = ({ coin, onPress }) => {
       </View>
 
       <View style={styles.rightSection}>
-        <Text style={styles.price}>${coin.price || '0'}</Text>
+        <Text style={styles.price}>${Number(coin.price).toFixed(6)}</Text>
+        <Text style={styles.volume}>Vol: ${formatVolume(coin.daily_volume)}</Text>
         {coin.priceChange24h && (
           <Text style={[
             styles.priceChange,
@@ -101,6 +111,11 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  volume: {
+    color: '#9F9FD5',
+    fontSize: 12,
     marginBottom: 4,
   },
   priceChange: {
