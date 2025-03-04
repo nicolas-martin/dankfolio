@@ -8,6 +8,7 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/nicolas-martin/dankfolio/internal/middleware"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/internal/service/solana"
 	"github.com/nicolas-martin/dankfolio/internal/service/trade"
 )
@@ -17,6 +18,7 @@ type Router struct {
 	solanaService *solana.SolanaTradeService
 	tradeService  *trade.Service
 	coinService   *coin.Service
+	priceService  *price.Service
 }
 
 // NewRouter creates a new Router instance
@@ -29,6 +31,7 @@ func NewRouter(
 		solanaService: solanaService,
 		tradeService:  tradeService,
 		coinService:   coinService,
+		priceService:  price.NewService(),
 	}
 }
 
@@ -53,6 +56,7 @@ func (r *Router) Setup() chi.Router {
 	tradeHandlers := NewTradeHandlers(r.tradeService)
 	walletHandlers := NewWalletHandlers()
 	coinHandlers := NewCoinHandlers(r.coinService)
+	priceHandler := NewPriceHandler(r.priceService)
 
 	// Coin routes
 	router.Get("/api/coins", coinHandlers.GetCoins)
@@ -71,6 +75,9 @@ func (r *Router) Setup() chi.Router {
 
 	// Wallet routes
 	router.Post("/api/wallets", walletHandlers.CreateWallet)
+
+	// Price routes
+	router.Get("/api/price/ohlcv", priceHandler.GetOHLCV)
 
 	// Log all registered routes
 	log.Printf("All routes registered. Walking routes...")
