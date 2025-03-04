@@ -9,69 +9,68 @@ import {
   ScrollView,
   SafeAreaView,
   ActivityIndicator,
-  Dimensions
+  Dimensions,
+  Alert
 } from 'react-native';
-import { getSPLTokenBalances } from '../services/walletService';
+import Clipboard from '@react-native-clipboard/clipboard';
+import SolscanWalletService from '../services/WalletService.js';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = ({ route, navigation }) => {
-  const { walletAddress } = route.params || { walletAddress: '' };
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalBalance, setTotalBalance] = useState('0');
+  const [error, setError] = useState(null);
+  const [totalBalance, setTotalBalance] = useState(0);
+
+  const walletService = new SolscanWalletService();
+  const testWalletAddress = 'GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R'; // TODO: Replace with actual wallet address
 
   useEffect(() => {
-    const fetchTokens = async () => {
-      try {
-        setLoading(true);
-        const tokenBalances = await getSPLTokenBalances(walletAddress);
-        setTokens(tokenBalances);
-        
-        // Calculate total balance (this is simplified)
-        const total = tokenBalances.reduce((sum, token) => {
-          // This is a very simple calculation, in reality you'd need to get market prices
-          return sum + (parseInt(token.amount) / Math.pow(10, token.decimals));
-        }, 0);
-        
-        setTotalBalance(total.toFixed(2));
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching tokens:', error);
-        setLoading(false);
-      }
-    };
+    fetchWalletData();
+  }, []);
 
-    fetchTokens();
-  }, [walletAddress]);
+  const fetchWalletData = async () => {
+    try {
+      setLoading(true);
+      const tokenData = await walletService.getTokens(testWalletAddress);
+      setTokens(tokenData);
 
-  // Format wallet address for display
-  const formatAddress = (address) => {
-    if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+      // Calculate total balance
+      const total = tokenData.reduce((sum, token) => sum + token.value, 0);
+      setTotalBalance(total);
+
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching wallet data:', err);
+      setError('Failed to load wallet data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Format token amount based on decimals
-  const formatAmount = (amount, decimals) => {
-    const value = parseFloat(amount) / Math.pow(10, decimals);
-    return value.toLocaleString(undefined, { 
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6 
-    });
+  const copyToClipboard = async () => {
+    try {
+      Clipboard.setString(testWalletAddress);
+      Alert.alert('Success', 'Wallet address copied to clipboard');
+    } catch (err) {
+      Alert.alert('Error', 'Failed to copy wallet address');
+    }
   };
 
   const renderTokenItem = ({ item }) => (
     <View style={styles.tokenItem}>
       <View style={styles.tokenLeft}>
-        {item.logo ? (
+        {item.logoURI ? (
           <Image 
-            source={{ uri: item.logo }} 
+            source={{ uri: item.logoURI }} 
             style={styles.tokenLogo}
+            defaultSource={require('../../assets/icon.png')}
           />
         ) : (
           <View style={[styles.tokenLogo, styles.tokenLogoPlaceholder]}>
-            <Text style={styles.tokenLogoText}>{item.symbol ? item.symbol.slice(0, 2) : '?'}</Text>
+            <Text style={styles.tokenLogoText}>{item.symbol.charAt(0)}</Text>
           </View>
         )}
         <View style={styles.tokenDetails}>
@@ -80,64 +79,92 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
       </View>
       <View style={styles.tokenRight}>
-        <Text style={styles.tokenAmount}>
-          {formatAmount(item.amount, item.decimals)}
-        </Text>
-        <Text style={styles.tokenValue}>
-          ${(formatAmount(item.amount, item.decimals) * 1).toFixed(2)}
+        <Text style={styles.tokenAmount}>${item.value.toFixed(2)}</Text>
+        <Text style={styles.tokenBalance}>{item.balance.toFixed(4)} {item.symbol}</Text>
+        <Text style={[
+          styles.tokenPercentage,
+          { color: item.percentage > 0 ? '#4CAF50' : '#FF4444' }
+        ]}>
+          {item.percentage.toFixed(2)}%
         </Text>
       </View>
     </View>
   );
 
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#6A5ACD" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.retryButton]} 
+          onPress={fetchWalletData}
+        >
+          <Text style={styles.actionButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#181829', '#1f1f35']}
-        style={styles.header}
-      >
-        <View style={styles.profileSection}>
-          <Image 
-            source={{ uri: 'https://static.vecteezy.com/system/resources/previews/008/214/517/non_2x/abstract-geometric-logo-or-infinity-line-logo-for-your-company-free-vector.jpg' }} 
-            style={styles.profileImage}
-          />
-          <Text style={styles.walletAddress}>{formatAddress(walletAddress)}</Text>
-          <TouchableOpacity style={styles.copyButton}>
-            <Text style={styles.copyButtonText}>Copy Address</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Total Balance</Text>
-          <Text style={styles.balanceAmount}>${totalBalance}</Text>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Send</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Receive</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Swap</Text>
+      <ScrollView>
+        <LinearGradient
+          colors={['#6A5ACD', '#0E0E1B']}
+          style={styles.header}
+        >
+          <View style={styles.profileSection}>
+            <Image
+              style={styles.profileImage}
+            />
+            <Text style={styles.walletAddress}>
+              {`${testWalletAddress.slice(0, 6)}...${testWalletAddress.slice(-4)}`}
+            </Text>
+            <TouchableOpacity 
+              style={styles.copyButton}
+              onPress={copyToClipboard}
+            >
+              <Text style={styles.copyButtonText}>Copy Address</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </LinearGradient>
 
-      <View style={styles.content}>
-        <Text style={styles.sectionTitle}>My Tokens</Text>
-        {loading ? (
-          <ActivityIndicator size="large" color="#6A5ACD" style={styles.loader} />
-        ) : (
+          <View style={styles.balanceCard}>
+            <Text style={styles.balanceLabel}>Total Balance</Text>
+            <Text style={styles.balanceAmount}>${totalBalance.toFixed(2)}</Text>
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={styles.actionButton}>
+                <Text style={styles.actionButtonText}>Send</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton}>
+                <Text style={styles.actionButtonText}>Receive</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.content}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Token Holdings</Text>
+            <TouchableOpacity onPress={fetchWalletData}>
+              <Text style={styles.refreshText}>Refresh</Text>
+            </TouchableOpacity>
+          </View>
           <FlatList
             data={tokens}
-            keyExtractor={item => item.mint}
             renderItem={renderTokenItem}
+            keyExtractor={(item) => item.address}
+            style={styles.tokenList}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.tokenList}
           />
-        )}
-      </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -146,6 +173,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0E0E1B',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     paddingTop: 20,
@@ -211,6 +242,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 5,
   },
+  retryButton: {
+    marginTop: 20,
+    width: 120,
+  },
   actionButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
@@ -220,11 +255,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 16,
+  },
+  refreshText: {
+    color: '#6A5ACD',
+    fontSize: 14,
+    fontWeight: '600',
   },
   tokenList: {
     paddingBottom: 20,
@@ -241,6 +286,7 @@ const styles = StyleSheet.create({
   tokenLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   tokenLogo: {
     width: 40,
@@ -248,8 +294,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 12,
   },
-  tokenDetails: {
+  tokenLogoPlaceholder: {
+    backgroundColor: '#6A5ACD',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tokenLogoText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  tokenDetails: {
+    flex: 1,
   },
   tokenSymbol: {
     fontSize: 16,
@@ -267,23 +323,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
+    marginBottom: 4,
   },
-  tokenValue: {
+  tokenBalance: {
     fontSize: 14,
     color: '#8C8CA1',
+    marginBottom: 4,
   },
-  loader: {
-    marginTop: 50,
+  tokenPercentage: {
+    fontSize: 12,
+    fontWeight: '600',
   },
-  tokenLogoPlaceholder: {
-    backgroundColor: '#6A5ACD',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tokenLogoText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+  errorText: {
+    color: '#FF4444',
     fontSize: 16,
+    textAlign: 'center',
   },
 });
 

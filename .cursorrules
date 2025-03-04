@@ -26,7 +26,7 @@
 - Backend: Use Node.js/Express (or your preferred stack) for API endpoints.
 - Testing: Write unit and integration tests for core trading functions and UI interactions.
 - Asset Storage: Use CDN or specialized storage solutions (e.g., AWS S3) for meme assets
-- Caching: Implement Redis or similar for high-performance meme metadata caching
+aching
 
 // Cursor AI Specific Instructions
 - When generating code, ensure that suggestions include project-specific naming and comments.

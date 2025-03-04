@@ -58,12 +58,6 @@ const HomeScreen = ({ navigation }) => {
     setTimeout(() => setNotification({ visible: false, type: 'info', message: '' }), 3000);
   };
 
-  // Placeholder for wallet balance refresh
-  const fetchWalletBalance = async (publicKey) => {
-    console.log('Refreshing balance for:', publicKey);
-    // Add your API call logic here.
-  };
-
   const fetchAvailableCoins = useCallback(async () => {
     try {
       setIsLoadingCoins(true);
@@ -225,9 +219,6 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.walletAddress} numberOfLines={1} ellipsizeMode="middle">
               {wallet.publicKey}
             </Text>
-            <TouchableOpacity style={styles.refreshButton} onPress={() => fetchWalletBalance(wallet.publicKey)}>
-              <Text style={styles.refreshButtonText}>🔄 Refresh Balance</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
