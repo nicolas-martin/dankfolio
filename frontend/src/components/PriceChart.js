@@ -1,252 +1,193 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity, Pressable } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, Platform } from 'react-native';
+import { WebView } from 'react-native-webview';
 
-/**
- * PriceChart component for displaying crypto price history
- * 
- * @param {Object} props
- * @param {Array} props.data - Price history data points
- * @param {string} props.color - Primary color for the chart
- * @param {boolean} props.loading - Loading state
- * @param {Function} props.onTimeframeChange - Function to call when timeframe is changed
- */
-const PriceChart = ({ data = [], color = '#6A5ACD', loading = false, onTimeframeChange }) => {
-        const [timeframe, setTimeframe] = useState('1D'); // 1D, 1W, 1M, 1Y
+const PriceChart = ({ data, timeframe, onTimeframeChange }) => {
+  const chartHtml = useMemo(() => `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+        <style>
+          body { margin: 0; background-color: #262640; }
+          #chart { width: 100%; height: 100%; }
+        </style>
+      </head>
+      <body>
+        <div id="chart"></div>
+        <script>
+          const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+            layout: {
+              background: { color: '#262640' },
+              textColor: '#9F9FD5',
+            },
+            grid: {
+              vertLines: { color: '#334158' },
+              horzLines: { color: '#334158' },
+            },
+            timeScale: {
+              borderColor: '#485c7b',
+              timeVisible: true,
+              secondsVisible: false,
+            },
+            rightPriceScale: {
+              borderColor: '#485c7b',
+            },
+            crosshair: {
+              vertLine: {
+                color: '#6A5ACD',
+                width: 1,
+                style: 2,
+                labelBackgroundColor: '#6A5ACD',
+              },
+              horzLine: {
+                color: '#6A5ACD',
+                width: 1,
+                style: 2,
+                labelBackgroundColor: '#6A5ACD',
+              },
+            },
+          });
 
-        // Screen width for responsive chart
-        const screenWidth = Dimensions.get('window').width - 32; // Account for margins
+          const lineSeries = chart.addLineSeries({
+            color: '#6A5ACD',
+            lineWidth: 2,
+            crosshairMarkerVisible: true,
+            crosshairMarkerRadius: 4,
+            crosshairMarkerBorderColor: '#FFFFFF',
+            crosshairMarkerBackgroundColor: '#6A5ACD',
+            priceLineVisible: false,
+          });
 
-        // If no data or empty array, show placeholder
-        if (!data || data.length === 0) {
-                const mockData = {
-                        labels: ["", "", "", "", "", ""],
-                        datasets: [
-                                {
-                                        data: [50, 45, 53, 51, 54, 48],
-                                        color: () => color,
-                                        strokeWidth: 2
-                                }
-                        ]
-                };
+          // Handle window resize
+          window.addEventListener('resize', () => {
+            chart.applyOptions({
+              width: window.innerWidth,
+              height: window.innerHeight,
+            });
+          });
 
-                return (
-                        <View style={styles.container}>
-                                <View style={styles.chartHeader}>
-                                        <Text style={styles.chartTitle}>Price Chart</Text>
-                                        <TimeframeSelector
-                                                selected={timeframe}
-                                                onSelect={(tf) => {
-                                                        setTimeframe(tf);
-                                                        onTimeframeChange && onTimeframeChange(tf);
-                                                }}
-                                        />
-                                </View>
+          // Function to update chart data
+          window.updateChartData = (data) => {
+            const chartData = data.map(item => ({
+              time: item.timestamp,
+              value: item.value
+            }));
+            lineSeries.setData(chartData);
+            chart.timeScale().fitContent();
+          };
 
-                                <View style={styles.placeholderContainer}>
-                                        <LineChart
-                                                data={mockData}
-                                                width={screenWidth}
-                                                height={220}
-                                                chartConfig={{
-                                                        backgroundColor: 'transparent',
-                                                        backgroundGradientFrom: '#262640',
-                                                        backgroundGradientTo: '#262640',
-                                                        decimalPlaces: 2,
-                                                        color: (opacity = 1) => `rgba(106, 90, 205, ${opacity})`,
-                                                        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                                                        style: {
-                                                                borderRadius: 16
-                                                        },
-                                                        propsForDots: {
-                                                                r: "0",
-                                                        }
-                                                }}
-                                                bezier
-                                                style={styles.chart}
-                                                withHorizontalLines={false}
-                                                withVerticalLines={false}
-                                                withDots={false}
-                                                withShadow={false}
-                                                withInnerLines={false}
-                                        />
-                                        <View style={styles.noDataOverlay}>
-                                                <Text style={styles.noDataText}>No data available</Text>
-                                        </View>
-                                </View>
-                        </View>
-                );
-        }
+          // Initial chart size
+          chart.applyOptions({
+            width: window.innerWidth,
+            height: window.innerHeight,
+          });
+        </script>
+      </body>
+    </html>
+  `, []);
 
-        // Format data for the chart
-        const chartData = {
-                labels: data.map(point => point.label || ""),
-                datasets: [
-                        {
-                                data: data.map(point => point.value),
-                                color: (opacity = 1) => `rgba(${color.replace('rgb(', '').replace(')', '')}, ${opacity})`,
-                                strokeWidth: 2
-                        }
-                ]
-        };
+  const webViewRef = useRef(null);
 
-        return (
-                <View style={styles.container}>
-                        <View style={styles.chartHeader}>
-                                <Text style={styles.chartTitle}>Price Chart</Text>
-                                <TimeframeSelector
-                                        selected={timeframe}
-                                        onSelect={(tf) => {
-                                                setTimeframe(tf);
-                                                onTimeframeChange && onTimeframeChange(tf);
-                                        }}
-                                />
-                        </View>
+  // Update chart data when it changes
+  useEffect(() => {
+    if (webViewRef.current && data.length > 0) {
+      webViewRef.current.injectJavaScript(`
+        window.updateChartData(${JSON.stringify(data)});
+        true;
+      `);
+    }
+  }, [data]);
 
-                        {loading ? (
-                                <View style={styles.loadingContainer}>
-                                        <ActivityIndicator size="large" color={color} />
-                                        <Text style={styles.loadingText}>Loading chart data...</Text>
-                                </View>
-                        ) : (
-                                <Pressable onPress={() => {}} style={styles.chartWrapper}>
-                                        <LineChart
-                                                data={chartData}
-                                                width={screenWidth}
-                                                height={220}
-                                                chartConfig={{
-                                                        backgroundColor: 'transparent',
-                                                        backgroundGradientFrom: '#262640',
-                                                        backgroundGradientTo: '#262640',
-                                                        decimalPlaces: 2,
-                                                        color: (opacity = 1) => `rgba(${color.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ')}, ${opacity})`,
-                                                        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                                                        style: {
-                                                                borderRadius: 16
-                                                        },
-                                                        propsForDots: {
-                                                                r: "4",
-                                                                strokeWidth: "2",
-                                                                stroke: color
-                                                        }
-                                                }}
-                                                bezier
-                                                style={styles.chart}
-                                                withHorizontalLines={true}
-                                                withVerticalLines={false}
-                                                withInnerLines={false}
-                                                onDataPointClick={() => {}}
-                                                getDotColor={() => color}
-                                                onTouchStart={() => {}}
-                                                onTouchMove={() => {}}
-                                                onTouchEnd={() => {}}
-                                        />
-                                </Pressable>
-                        )}
-                </View>
-        );
-};
+  const timeframes = [
+    { label: '15m', value: '15M' },
+    { label: '1H', value: '1H' },
+    { label: '4H', value: '4H' },
+    { label: '1D', value: '1D' },
+    { label: '1W', value: '1W' },
+  ];
 
-// Timeframe selector component
-const TimeframeSelector = ({ selected, onSelect }) => {
-        const timeframes = ['1D', '1W', '1M', '1Y'];
-
-        return (
-                <View style={styles.timeframeSelector}>
-                        {timeframes.map((tf) => (
-                                <TouchableOpacity
-                                        key={tf}
-                                        style={[
-                                                styles.timeframeButton,
-                                                selected === tf && styles.selectedTimeframe
-                                        ]}
-                                        onPress={() => onSelect(tf)}
-                                >
-                                        <Text
-                                                style={[
-                                                        styles.timeframeText,
-                                                        selected === tf && styles.selectedTimeframeText
-                                                ]}
-                                        >
-                                                {tf}
-                                        </Text>
-                                </TouchableOpacity>
-                        ))}
-                </View>
-        );
+  return (
+    <View style={styles.container}>
+      <View style={styles.timeframeContainer}>
+        {timeframes.map((tf) => (
+          <TouchableOpacity
+            key={tf.value}
+            style={[
+              styles.timeframeButton,
+              timeframe === tf.value && styles.timeframeButtonActive,
+            ]}
+            onPress={() => onTimeframeChange(tf.value)}
+          >
+            <Text style={[
+              styles.timeframeText,
+              timeframe === tf.value && styles.timeframeTextActive,
+            ]}>
+              {tf.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.chartContainer}>
+        <WebView
+          ref={webViewRef}
+          source={{ html: chartHtml }}
+          style={styles.webview}
+          scrollEnabled={false}
+          bounces={false}
+          onMessage={(event) => {
+            console.log('Chart message:', event.nativeEvent.data);
+          }}
+          originWhitelist={['*']}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+        />
+      </View>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-        container: {
-                backgroundColor: '#262640',
-                borderRadius: 12,
-                padding: 16,
-                marginVertical: 8,
-        },
-        chartHeader: {
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 16,
-        },
-        chartTitle: {
-                fontSize: 18,
-                fontWeight: 'bold',
-                color: '#ffffff',
-        },
-        chart: {
-                borderRadius: 12,
-                paddingRight: 0,
-        },
-        loadingContainer: {
-                height: 220,
-                justifyContent: 'center',
-                alignItems: 'center',
-        },
-        loadingText: {
-                color: '#9F9FD5',
-                marginTop: 8,
-        },
-        timeframeSelector: {
-                flexDirection: 'row',
-                backgroundColor: '#1A1A2E',
-                borderRadius: 8,
-                padding: 2,
-        },
-        timeframeButton: {
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 6,
-        },
-        selectedTimeframe: {
-                backgroundColor: '#6A5ACD',
-        },
-        timeframeText: {
-                color: '#9F9FD5',
-                fontSize: 12,
-                fontWeight: '500',
-        },
-        selectedTimeframeText: {
-                color: '#FFFFFF',
-        },
-        placeholderContainer: {
-                position: 'relative',
-        },
-        noDataOverlay: {
-                ...StyleSheet.absoluteFillObject,
-                backgroundColor: 'rgba(38, 38, 64, 0.7)',
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: 12,
-        },
-        noDataText: {
-                color: '#FFFFFF',
-                fontSize: 16,
-        },
-        chartWrapper: {
-                borderRadius: 12,
-                overflow: 'hidden',
-        },
+  container: {
+    flex: 1,
+    backgroundColor: '#262640',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  timeframeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 8,
+    backgroundColor: '#1E1E30',
+    borderBottomWidth: 1,
+    borderBottomColor: '#334158',
+  },
+  timeframeButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  timeframeButtonActive: {
+    backgroundColor: '#6A5ACD',
+  },
+  timeframeText: {
+    color: '#9F9FD5',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  timeframeTextActive: {
+    color: '#FFFFFF',
+  },
+  chartContainer: {
+    flex: 1,
+    minHeight: 300,
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
 });
 
 export default PriceChart; 

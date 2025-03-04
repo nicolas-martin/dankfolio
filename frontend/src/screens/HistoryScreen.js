@@ -11,17 +11,50 @@ import {
 } from 'react-native';
 import api from '../services/api';
 import { secureStorage } from '../utils/solanaWallet';
+import PriceChart from '../components/PriceChart';
 
 const HistoryScreen = ({ navigation }) => {
         const [trades, setTrades] = useState([]);
         const [isLoading, setIsLoading] = useState(true);
         const [refreshing, setRefreshing] = useState(false);
         const [wallet, setWallet] = useState(null);
+        const [priceHistory, setPriceHistory] = useState([]);
+        const [chartLoading, setChartLoading] = useState(false);
+        const [selectedToken, setSelectedToken] = useState('DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'); // Default to BONK
 
         useEffect(() => {
                 fetchTrades();
                 loadWallet();
+                fetchPriceHistory('15m'); // Default to 15m timeframe
         }, []);
+
+        const fetchPriceHistory = async (type) => {
+                try {
+                        setChartLoading(true);
+                        const response = await api.getPriceHistory(selectedToken, type);
+                        if (response?.items) {
+                                // Transform data for the chart
+                                const chartData = response.items
+                                        .filter(item => item.value !== null && item.unixTime !== null)
+                                        .map(item => ({
+                                                value: parseFloat(item.value),
+                                                label: new Date(item.unixTime * 1000).toLocaleTimeString([], { 
+                                                        hour: '2-digit', 
+                                                        minute: '2-digit' 
+                                                }),
+                                        }));
+                                setPriceHistory(chartData);
+                        } else {
+                                setPriceHistory([]);
+                        }
+                } catch (error) {
+                        console.error('Error fetching price history:', error);
+                        Alert.alert('Error', 'Failed to fetch price history');
+                        setPriceHistory([]);
+                } finally {
+                        setChartLoading(false);
+                }
+        };
 
         const fetchTrades = async () => {
                 try {
@@ -160,6 +193,12 @@ const HistoryScreen = ({ navigation }) => {
                                 <Text style={styles.title}>📜 Trade History</Text>
                                 <Text style={styles.subtitle}>Your meme trading activity</Text>
                         </View>
+
+                        <PriceChart
+                                data={priceHistory}
+                                loading={chartLoading}
+                                onTimeframeChange={fetchPriceHistory}
+                        />
 
                         <FlatList
                                 data={trades}

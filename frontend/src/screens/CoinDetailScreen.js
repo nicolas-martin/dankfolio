@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import PriceChart from '../components/PriceChart';
 import { secureStorage } from '../utils/solanaWallet';
-import { fetchOHLCVData } from '../services/priceService';
+import api from '../services/api';
 
 const defaultIcon = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
@@ -45,24 +45,93 @@ const CoinDetailScreen = ({ route, navigation }) => {
   const fetchPriceData = useCallback(async (timeframe) => {
     setIsLoading(true);
     try {
-      const data = await fetchOHLCVData(coin.id, 'So11111111111111111111111111111111111111112', timeframe);
-      if (data.length > 0) {
-        setChartData(data);
-        // Calculate 24h stats
-        const last24h = data.slice(-24);
-        if (last24h.length > 0) {
-          const high24h = Math.max(...last24h.map(d => d.high));
-          const low24h = Math.min(...last24h.map(d => d.low));
-          const volume24h = last24h.reduce((sum, d) => sum + d.volume, 0);
-          setPriceStats({ high24h, low24h, volume24h });
-        }
+      console.log('🕒 Fetching price data for timeframe:', timeframe);
+      console.log('🪙 Coin details:', {
+        address: coin.address || coin.id,
+        symbol: coin.symbol,
+        name: coin.name
+      });
+
+      const now = Math.floor(Date.now() / 1000);
+      const timeRanges = {
+        '15M': 900,    // 15 minutes in seconds
+        '1H': 3600,    // 1 hour in seconds
+        '4H': 14400,   // 4 hours in seconds
+        '1D': 86400,   // 1 day in seconds
+        '1W': 604800,  // 1 week in seconds
+      };
+      
+      const timeFrom = now - timeRanges[timeframe];
+      console.log('⏰ Time range:', {
+        timeFrom: new Date(timeFrom * 1000).toISOString(),
+        timeTo: new Date(now * 1000).toISOString(),
+        timeframe
+      });
+
+      const response = await api.getPriceHistory(
+        coin.address || coin.id,
+        timeframe,
+        timeFrom,
+        now
+      );
+
+      console.log('📈 Received price history response:', {
+        itemsCount: response?.items?.length || 0,
+        firstItem: response?.items?.[0],
+        lastItem: response?.items?.[response?.items?.length - 1]
+      });
+
+      if (response?.items?.length > 0) {
+        const chartData = response.items
+          .filter(item => item.value !== null && item.unixTime !== null)
+          .map(item => ({
+            timestamp: item.unixTime,  // TradingView expects Unix timestamp
+            value: parseFloat(item.value)
+          }));
+
+        console.log('📊 Processed chart data:', {
+          originalLength: response.items.length,
+          filteredLength: chartData.length,
+          firstPoint: chartData[0],
+          lastPoint: chartData[chartData.length - 1]
+        });
+
+        setChartData(chartData);
+        
+        // Calculate 24h stats from the data
+        const values = chartData.map(d => d.value);
+        const stats = {
+          high24h: Math.max(...values),
+          low24h: Math.min(...values),
+          volume24h: response.totalVolume || 0
+        };
+        console.log('📈 Calculated stats:', stats);
+        setPriceStats(stats);
+      } else {
+        console.warn('⚠️ No price data items received');
+        setChartData([]);
+        setPriceStats({
+          high24h: 0,
+          low24h: 0,
+          volume24h: 0
+        });
       }
     } catch (error) {
-      console.error('Error fetching price data:', error);
+      console.error('❌ Error in fetchPriceData:', {
+        error: error.message,
+        coin: coin.address,
+        timeframe
+      });
+      setChartData([]);
+      setPriceStats({
+        high24h: 0,
+        low24h: 0,
+        volume24h: 0
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [coin.id]);
+  }, [coin.address]);
 
   // Get coin description or return a default message
   const getCoinDescription = useCallback(() => {
@@ -150,27 +219,6 @@ const CoinDetailScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Timeframe Selector */}
-        <View style={styles.timeframeContainer}>
-          {timeframes.map((tf) => (
-            <TouchableOpacity
-              key={tf.value}
-              style={[
-                styles.timeframeButton,
-                selectedTimeframe === tf.value && styles.timeframeButtonActive
-              ]}
-              onPress={() => setSelectedTimeframe(tf.value)}
-            >
-              <Text style={[
-                styles.timeframeText,
-                selectedTimeframe === tf.value && styles.timeframeTextActive
-              ]}>
-                {tf.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
         {/* Price Chart */}
         <View style={styles.chartContainer}>
           {isLoading ? (
@@ -178,8 +226,7 @@ const CoinDetailScreen = ({ route, navigation }) => {
           ) : (
             <PriceChart
               data={chartData}
-              loading={isLoading}
-              color="#6A5ACD"
+              timeframe={selectedTimeframe}
               onTimeframeChange={setSelectedTimeframe}
             />
           )}
@@ -315,37 +362,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF'
   },
-  timeframeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    backgroundColor: '#262640',
-    borderRadius: 12,
-    padding: 8
-  },
-  timeframeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8
-  },
-  timeframeButtonActive: {
-    backgroundColor: '#6A5ACD'
-  },
-  timeframeText: {
-    color: '#9F9FD5',
-    fontSize: 14,
-    fontWeight: '500'
-  },
-  timeframeTextActive: {
-    color: '#FFFFFF'
-  },
   chartContainer: {
+    height: 400,  // Increased height for better visualization
     backgroundColor: '#262640',
     borderRadius: 12,
-    padding: 16,
-    height: 300,
+    overflow: 'hidden',
     marginBottom: 16,
-    justifyContent: 'center'
   },
   descriptionContainer: { 
     backgroundColor: '#262640', 

@@ -1,11 +1,8 @@
 import axios from 'axios';
-import { Platform } from 'react-native';
-
-// Create API client with default configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+import { REACT_APP_API_URL } from '@env'
 
 const apiClient = axios.create({
-        baseURL: API_BASE_URL,
+        baseURL: REACT_APP_API_URL,
         headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -188,6 +185,50 @@ const api = {
                 } catch (error) {
                         console.error('Error searching coins:', error);
                         throw new Error('Failed to search coins');
+                }
+        },
+
+        getPriceHistory: async (address, type = '15m', timeFrom = null, timeTo = null) => {
+                try {
+                        const params = {
+                                address,
+                                type,
+                                ...(timeFrom && { time_from: timeFrom }),
+                                ...(timeTo && { time_to: timeTo })
+                        };
+
+                        console.log('🔍 Fetching price history with params:', JSON.stringify(params, null, 2));
+                        console.log('📍 API URL:', `${REACT_APP_API_URL}/api/price/history`);
+
+                        const response = await apiClient.get('/api/price/history', { params });
+                        
+                        console.log('📊 Raw API Response:', JSON.stringify(response.data, null, 2));
+
+                        if (!response.data) {
+                                console.error('❌ Empty response data received');
+                                throw new Error('Failed to fetch price history - Empty response');
+                        }
+
+                        if (!response.data.data) {
+                                console.error('❌ Missing data property in response:', response.data);
+                                throw new Error('Failed to fetch price history - Invalid response format');
+                        }
+
+                        console.log('✅ Successfully processed price history data');
+                        return response.data.data;
+                } catch (error) {
+                        console.error('❌ Error fetching price history:', {
+                                message: error.message,
+                                status: error.response?.status,
+                                statusText: error.response?.statusText,
+                                data: error.response?.data,
+                                config: {
+                                        url: error.config?.url,
+                                        method: error.config?.method,
+                                        params: error.config?.params
+                                }
+                        });
+                        throw handleApiError(error);
                 }
         }
 };
