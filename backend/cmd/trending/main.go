@@ -86,14 +86,14 @@ func GetTrendingTokens() ([]TrendingToken, error) {
 			symbol := pool.TokenSymbol
 			if parts := strings.Split(symbol, "/"); len(parts) == 2 {
 				if strings.ToUpper(parts[0]) == "WSOL" {
-					symbol = parts[1]
+					symbol = strings.TrimSpace(parts[1])
 				} else {
-					symbol = parts[0]
+					symbol = strings.TrimSpace(parts[0])
 				}
 			}
 
 			trendingTokens = append(trendingTokens, TrendingToken{
-				Symbol: strings.TrimSpace(symbol),
+				Symbol: symbol,
 				Mint:   pool.BaseMint,
 				Volume: pool.Volume24h,
 			})
@@ -103,14 +103,14 @@ func GetTrendingTokens() ([]TrendingToken, error) {
 			symbol := pool.TokenSymbol
 			if parts := strings.Split(symbol, "/"); len(parts) == 2 {
 				if strings.ToUpper(parts[0]) == "WSOL" {
-					symbol = parts[1]
+					symbol = strings.TrimSpace(parts[1])
 				} else {
-					symbol = parts[0]
+					symbol = strings.TrimSpace(parts[0])
 				}
 			}
 
 			trendingTokens = append(trendingTokens, TrendingToken{
-				Symbol: strings.TrimSpace(symbol),
+				Symbol: symbol,
 				Mint:   pool.QuoteMint,
 				Volume: pool.Volume24h,
 			})
@@ -134,7 +134,7 @@ func main() {
 	}
 
 	// Write to file for trim-mainnet to use
-	outputFile := "./trim-mainnet/trending_tokens.json"
+	outputFile := "./trending_tokens.json"
 
 	// Create parent directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(outputFile), 0755); err != nil {

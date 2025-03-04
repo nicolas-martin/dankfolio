@@ -1,52 +1,52 @@
 [
   {
-    "symbol": "WSOL/PWEASE",
+    "symbol": "PWEASE",
     "mint": "6KeiYYNGhLUNnnmN7Hg5YebSJVy1UEKaytpx2PAwpump",
-    "volume": 22405003.67185612
+    "volume": 22115891.81879435
   },
   {
-    "symbol": "WSOL/Fartcoin ",
+    "symbol": "Fartcoin",
     "mint": "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-    "volume": 19998489.55974492
+    "volume": 19806502.588644546
   },
   {
-    "symbol": "WSOL/pwease",
+    "symbol": "pwease",
     "mint": "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-    "volume": 13271486.995222304
+    "volume": 13737754.749521265
   },
   {
-    "symbol": "WSOL/STAR10",
+    "symbol": "STAR10",
     "mint": "9oqb8z7hyjjKG8raKtgexXskYRSN9Kcr5BoNkyekpump",
-    "volume": 12868915.4708587
+    "volume": 12702457.065743342
   },
   {
-    "symbol": "WSOL/Baby",
+    "symbol": "Baby",
     "mint": "6pKHwNCpzgZuC9o5FzvCZkYSUGfQddhUYtMyDbEVpump",
-    "volume": 11657489.292745832
+    "volume": 11637190.9549541
   },
   {
-    "symbol": "WSOL/DEER",
+    "symbol": "DEER",
     "mint": "E3DJkV7TG4ADDg6o7cA5ZNkmCMLhP9rxgfzxPoCpump",
-    "volume": 11141333.673090274
+    "volume": 10997241.978130488
   },
   {
-    "symbol": "USDT/USDC",
+    "symbol": "USDT",
     "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-    "volume": 8694916.153157098
+    "volume": 8802706.202448435
   },
   {
-    "symbol": "WSOL/ALCH",
+    "symbol": "ALCH",
     "mint": "HNg5PYJmtqcmzXrv6S9zP1CDKk5BgDuyFBxbvNApump",
-    "volume": 8680424.479701383
+    "volume": 8691515.814458514
   },
   {
-    "symbol": "WSOL/100",
+    "symbol": "100",
     "mint": "EKBZDhaSiAmUQNeJbkAkhJTEZPAN8WC5fShnUTyxpump",
-    "volume": 8532172.248970557
+    "volume": 8421889.691399463
   },
   {
-    "symbol": "WSOL/Telepathy",
+    "symbol": "Telepathy",
     "mint": "AibtWaMW9a5n6ZAKNhBM8Adm9FdiHRvou7QATkChye8U",
-    "volume": 8292863.599204333
+    "volume": 8185596.49799777
   }
 ]

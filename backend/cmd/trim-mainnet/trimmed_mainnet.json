@@ -5,7 +5,8 @@
         "symbol": "GIGA",
         "name": "GIGANIGGA",
         "mint": "28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump",
-        "decimals": 6
+        "decimals": 6,
+        "volume": 0
       },
       "pools": [
         {
@@ -34,7 +35,8 @@
         "symbol": "WIF",
         "name": "Wif's Hat ",
         "mint": "142WLnkLYa9UeM77Q1ykjGPt4sniFzivoWtNwTz74xiH",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 0
       },
       "pools": [
         {
@@ -63,7 +65,8 @@
         "symbol": "BOME",
         "name": "BOME (Direct Mint)",
         "mint": "ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 0
       },
       "pools": [
         {
@@ -108,10 +111,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/PWEASE",
-        "name": "WSOL/PWEASE (Trending)",
+        "symbol": "PWEASE",
+        "name": "PWEASE",
         "mint": "6KeiYYNGhLUNnnmN7Hg5YebSJVy1UEKaytpx2PAwpump",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 22405003.67185612
       },
       "pools": [
         {
@@ -137,10 +141,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/Fartcoin ",
-        "name": "WSOL/Fartcoin  (Trending)",
+        "symbol": "Fartcoin",
+        "name": "Fartcoin",
         "mint": "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 19998489.55974492
       },
       "pools": [
         {
@@ -166,10 +171,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/pwease",
-        "name": "WSOL/pwease (Trending)",
+        "symbol": "pwease",
+        "name": "pwease",
         "mint": "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 13271486.995222304
       },
       "pools": [
         {
@@ -195,10 +201,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/STAR10",
-        "name": "WSOL/STAR10 (Trending)",
+        "symbol": "STAR10",
+        "name": "STAR10",
         "mint": "9oqb8z7hyjjKG8raKtgexXskYRSN9Kcr5BoNkyekpump",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 12868915.4708587
       },
       "pools": [
         {
@@ -224,10 +231,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/Baby",
-        "name": "WSOL/Baby (Trending)",
+        "symbol": "Baby",
+        "name": "Baby",
         "mint": "6pKHwNCpzgZuC9o5FzvCZkYSUGfQddhUYtMyDbEVpump",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 11657489.292745832
       },
       "pools": [
         {
@@ -253,10 +261,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/DEER",
-        "name": "WSOL/DEER (Trending)",
+        "symbol": "DEER",
+        "name": "DEER",
         "mint": "E3DJkV7TG4ADDg6o7cA5ZNkmCMLhP9rxgfzxPoCpump",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 11141333.673090274
       },
       "pools": [
         {
@@ -283,9 +292,10 @@
     {
       "token": {
         "symbol": "USDT/USDC",
-        "name": "USDT/USDC (Trending)",
+        "name": "USDT/USDC",
         "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 8694916.153157098
       },
       "pools": [
         {
@@ -349,10 +359,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/ALCH",
-        "name": "WSOL/ALCH (Trending)",
+        "symbol": "ALCH",
+        "name": "ALCH",
         "mint": "HNg5PYJmtqcmzXrv6S9zP1CDKk5BgDuyFBxbvNApump",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 8680424.479701383
       },
       "pools": [
         {
@@ -378,10 +389,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/100",
-        "name": "WSOL/100 (Trending)",
+        "symbol": "100",
+        "name": "100",
         "mint": "EKBZDhaSiAmUQNeJbkAkhJTEZPAN8WC5fShnUTyxpump",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 8532172.248970557
       },
       "pools": [
         {
@@ -407,10 +419,11 @@
     },
     {
       "token": {
-        "symbol": "WSOL/Telepathy",
-        "name": "WSOL/Telepathy (Trending)",
+        "symbol": "Telepathy",
+        "name": "Telepathy",
         "mint": "AibtWaMW9a5n6ZAKNhBM8Adm9FdiHRvou7QATkChye8U",
-        "decimals": 9
+        "decimals": 9,
+        "volume": 8292863.599204333
       },
       "pools": [
         {

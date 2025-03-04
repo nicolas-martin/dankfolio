@@ -59,10 +59,11 @@ type Config struct {
 
 // TokenInfo represents a token in Raydium's token list
 type TokenInfo struct {
-	Symbol   string `json:"symbol"`
-	Name     string `json:"name"`
-	Mint     string `json:"mint"`
-	Decimals int    `json:"decimals"`
+	Symbol   string  `json:"symbol"`
+	Name     string  `json:"name"`
+	Mint     string  `json:"mint"`
+	Decimals int     `json:"decimals"`
+	Volume   float64 `json:"volume"`
 }
 
 // TokenListResponse represents the token list API response
@@ -534,10 +535,11 @@ func main() {
 			config.ticker = token.Symbol
 
 			selectedToken := &TokenInfo{
-				Symbol:   token.Symbol,
-				Name:     fmt.Sprintf("%s (Trending)", token.Symbol),
+				Symbol:   strings.TrimSpace(strings.TrimPrefix(token.Symbol, "WSOL/")),
+				Name:     strings.TrimSpace(strings.TrimPrefix(token.Symbol, "WSOL/")),
 				Mint:     token.Mint,
 				Decimals: 9, // Default to 9 decimals
+				Volume:   token.Volume,
 			}
 
 			pools, err := processPoolsFile(jsonFilePath, config.mint, config.ticker)

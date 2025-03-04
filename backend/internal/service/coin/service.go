@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
@@ -62,6 +63,12 @@ func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
 	for _, coin := range s.coins {
 		coins = append(coins, coin)
 	}
+
+	// Sort coins by daily volume in descending order
+	sort.Slice(coins, func(i, j int) bool {
+		return coins[i].DailyVolume > coins[j].DailyVolume
+	})
+
 	return coins, nil
 }
 
@@ -82,12 +89,12 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 	err := s.enrichCoinWithJupiterData(&fetchedCoin)
 	if err != nil {
 		log.Printf("Warning: Error enriching coin data for %s: %v", id, err)
-		// Continue anyway, as we might have partial data
+		return nil, fmt.Errorf("coin not found: %s", id)
 	}
 
 	// Ensure all required fields are populated
 	if fetchedCoin.ID == "" || fetchedCoin.Symbol == "" || fetchedCoin.Name == "" {
-		return nil, fmt.Errorf("incomplete coin data retrieved for %s", id)
+		return nil, fmt.Errorf("coin not found: %s", id)
 	}
 
 	// Add to memory storage
@@ -192,10 +199,37 @@ func (s *Service) refreshCoins() error {
 		// Continue with other tokens even if SOL fails
 	}
 
+	// Load trending tokens first to get volume data
+	trendingTokens := make(map[string]float64)
+	trendingFile := "backend/cmd/trending/trending_tokens.json"
+	if jsonFile, err := os.Open(trendingFile); err == nil {
+		var trending []struct {
+			Symbol string  `json:"symbol"`
+			Mint   string  `json:"mint"`
+			Volume float64 `json:"volume"`
+		}
+		if err := json.NewDecoder(jsonFile).Decode(&trending); err == nil {
+			for _, t := range trending {
+				trendingTokens[t.Mint] = t.Volume
+				log.Printf("📊 Loaded trending token %s with volume %.2f", t.Symbol, t.Volume)
+			}
+		}
+		jsonFile.Close()
+	}
+
 	// Load tokens from trimmed_mainnet.json
 	jsonFile, err := os.Open("cmd/trim-mainnet/trimmed_mainnet.json")
 	if err != nil {
-		return fmt.Errorf("failed to open token list file: %w", err)
+		// Try with backend prefix
+		jsonFile, err = os.Open("backend/cmd/trim-mainnet/trimmed_mainnet.json")
+		if err != nil {
+			// Try with absolute path from working directory
+			wd, _ := os.Getwd()
+			jsonFile, err = os.Open(wd + "/cmd/trim-mainnet/trimmed_mainnet.json")
+			if err != nil {
+				return fmt.Errorf("failed to open token list file: %w", err)
+			}
+		}
 	}
 	defer jsonFile.Close()
 
@@ -204,7 +238,7 @@ func (s *Service) refreshCoins() error {
 		return fmt.Errorf("failed to parse token list: %w", err)
 	}
 
-	log.Printf(" Found %d tokens in trimmed_mainnet.json", len(tokenList.Tokens))
+	log.Printf("📝 Found %d tokens in trimmed_mainnet.json", len(tokenList.Tokens))
 
 	// Process each token
 	for _, token := range tokenList.Tokens {
@@ -216,10 +250,19 @@ func (s *Service) refreshCoins() error {
 			Decimals: token.Token.Decimals,
 		}
 
-		log.Printf(" Processing coin %s (%s)", coin.Symbol, coin.ID)
+		// Set volume from trending tokens if available
+		if volume, exists := trendingTokens[coin.ID]; exists {
+			coin.DailyVolume = volume
+			log.Printf("📈 Set volume for %s: %.2f", coin.Symbol, volume)
+		}
+
+		log.Printf("🔄 Processing coin %s (%s)", coin.Symbol, coin.ID)
 
 		// Enrich with Jupiter data
-		s.enrichCoinWithJupiterData(&coin)
+		if err := s.enrichCoinWithJupiterData(&coin); err != nil {
+			log.Printf("⚠️ Warning: Error enriching %s data: %v", coin.Symbol, err)
+			continue
+		}
 
 		// Add to storage
 		s.coins[coin.ID] = coin
