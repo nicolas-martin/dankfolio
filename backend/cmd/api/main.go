@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nicolas-martin/dankfolio/internal/api"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/internal/service/solana"
 	"github.com/nicolas-martin/dankfolio/internal/service/trade"
 )
@@ -34,8 +35,11 @@ func main() {
 	// Initialize the trade service with both dependencies
 	tradeService := trade.NewService(solanaService, coinService)
 
+	// Initialize the price service
+	priceService := price.NewService(os.Getenv("BIRDEYE_API_KEY"))
+
 	// Initialize router
-	router := api.NewRouter(solanaService, tradeService, coinService)
+	router := api.NewRouter(solanaService, tradeService, coinService, priceService)
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router.Setup(),

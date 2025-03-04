@@ -12,14 +12,13 @@ NC='\033[0m' # No Color
 
 # Token addresses
 BONK_ADDRESS="DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
-SOL_ADDRESS="So11111111111111111111111111111111111111112"
 
 # Function to print section headers
 print_header() {
     echo -e "\n${YELLOW}=== $1 ===${NC}\n"
 }
 
-# Function to test an endpoint
+# Function to test an endpoint with delay
 test_endpoint() {
     local method=$1
     local endpoint=$2
@@ -38,30 +37,45 @@ test_endpoint() {
         echo -e "${RED}Error: Invalid JSON response${NC}"
         echo "$response"
     fi
+
+    # Add delay between requests to avoid rate limiting
+    sleep 2
 }
 
 # Get current time and 24 hours ago in Unix timestamp
 NOW=$(date +%s)
 DAY_AGO=$((NOW - 86400))
 
-# Test OHLCV endpoint with default parameters (1H timeframe, last 24 hours)
-print_header "Testing OHLCV endpoint with default parameters"
-test_endpoint "GET" "$BASE_URL/api/price/ohlcv?base_address=$BONK_ADDRESS&quote_address=$SOL_ADDRESS" "Get BONK/SOL OHLCV data (1H timeframe)"
+# Test price history endpoint with default parameters
+print_header "Testing price history endpoint with default parameters"
+test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS" "Get BONK price history (default 15m timeframe)"
 
 # Test with custom timeframe
-print_header "Testing OHLCV endpoint with custom timeframe"
-test_endpoint "GET" "$BASE_URL/api/price/ohlcv?base_address=$BONK_ADDRESS&quote_address=$SOL_ADDRESS&type=15m" "Get BONK/SOL OHLCV data (15m timeframe)"
+print_header "Testing price history endpoint with custom timeframe"
+test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&type=1H" "Get BONK price history (1H timeframe)"
 
 # Test with custom time range
-print_header "Testing OHLCV endpoint with custom time range"
-test_endpoint "GET" "$BASE_URL/api/price/ohlcv?base_address=$BONK_ADDRESS&quote_address=$SOL_ADDRESS&time_from=$DAY_AGO&time_to=$NOW" "Get BONK/SOL OHLCV data with custom time range"
+print_header "Testing price history endpoint with custom time range"
+test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&time_from=$DAY_AGO&time_to=$NOW" "Get BONK price history with custom time range"
 
-# Test error case - missing base address
-print_header "Testing error case - missing base address"
-test_endpoint "GET" "$BASE_URL/api/price/ohlcv?quote_address=$SOL_ADDRESS" "Error case: missing base address"
+# Test with address type
+print_header "Testing price history endpoint with address type"
+test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&address_type=token" "Get BONK price history with explicit token type"
 
-# Test error case - missing quote address
-print_header "Testing error case - missing quote address"
-test_endpoint "GET" "$BASE_URL/api/price/ohlcv?base_address=$BONK_ADDRESS" "Error case: missing quote address"
+# Test with all parameters
+print_header "Testing price history endpoint with all parameters"
+test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&address_type=token&type=5m&time_from=$DAY_AGO&time_to=$NOW" "Get BONK price history with all parameters"
+
+# Test error cases
+print_header "Testing error cases"
+
+# Missing address
+test_endpoint "GET" "$BASE_URL/api/price/history" "Error case: missing address"
+
+# Invalid type
+test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&type=invalid" "Error case: invalid type"
+
+# Invalid time range (from > to)
+test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&time_from=$NOW&time_to=$DAY_AGO" "Error case: invalid time range"
 
 echo -e "\n${GREEN}All tests completed${NC}" 
