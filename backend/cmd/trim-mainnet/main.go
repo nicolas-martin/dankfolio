@@ -477,7 +477,91 @@ func main() {
 
 	config := parseFlags()
 
-	// Validate flags
+	// Try to read trending tokens first
+	var trendingTokens []struct {
+		Symbol string  `json:"symbol"`
+		Mint   string  `json:"mint"`
+		Volume float64 `json:"volume"`
+	}
+
+	trendingFile := "../trending/trending_tokens.json"
+	if fileExists(trendingFile) {
+		data, err := os.ReadFile(trendingFile)
+		if err != nil {
+			log.Printf("⚠️ Warning: Could not read trending tokens file: %v", err)
+		} else {
+			if err := json.Unmarshal(data, &trendingTokens); err != nil {
+				log.Printf("⚠️ Warning: Could not parse trending tokens file: %v", err)
+			} else {
+				fmt.Printf("📊 Found %d trending tokens to process\n", len(trendingTokens))
+			}
+		}
+	}
+
+	// If we have trending tokens, process them
+	if len(trendingTokens) > 0 {
+		// Download Raydium pools file once
+		var jsonFilePath string
+		if config.inputFile != "" {
+			if !fileExists(config.inputFile) {
+				log.Fatalf("❌ Provided file does not exist: %s", config.inputFile)
+			}
+			jsonFilePath = config.inputFile
+			fmt.Printf("Using provided file: %s\n", jsonFilePath)
+		} else {
+			if err := os.MkdirAll("tmp", 0o755); err != nil {
+				log.Fatalf("❌ Failed to create tmp directory: %v", err)
+			}
+
+			jsonFilePath = filepath.Join("tmp", fmt.Sprintf("raydium-pools-%d.json", time.Now().UnixNano()))
+
+			if err := downloadFile(raydiumURL, jsonFilePath); err != nil {
+				log.Fatalf("❌ Download failed: %v", err)
+			}
+		}
+
+		if err := validateJSON(jsonFilePath); err != nil {
+			if config.inputFile == "" {
+				os.Remove(jsonFilePath)
+			}
+			log.Fatalf("❌ Invalid JSON file: %v", err)
+		}
+
+		// Process each token using the same pools file
+		for _, token := range trendingTokens {
+			fmt.Printf("\n🔍 Processing token %s (Mint: %s)\n", token.Symbol, token.Mint)
+			config.mint = token.Mint
+			config.ticker = token.Symbol
+
+			selectedToken := &TokenInfo{
+				Symbol:   token.Symbol,
+				Name:     fmt.Sprintf("%s (Trending)", token.Symbol),
+				Mint:     token.Mint,
+				Decimals: 9, // Default to 9 decimals
+			}
+
+			pools, err := processPoolsFile(jsonFilePath, config.mint, config.ticker)
+			if err != nil {
+				log.Printf("❌ Failed to process pools for %s: %v", token.Symbol, err)
+				continue
+			}
+
+			if err := writeFilteredPools(selectedToken, pools); err != nil {
+				log.Printf("❌ Failed to write filtered pools for %s: %v", token.Symbol, err)
+				continue
+			}
+		}
+
+		// Clean up downloaded file if it wasn't provided
+		if config.inputFile == "" {
+			os.Remove(jsonFilePath)
+		}
+
+		fmt.Printf("\n✅ Finished processing all trending tokens\n")
+		return
+	}
+
+	// If no trending tokens or manual mode requested, proceed with original flow
 	if config.mint != "" && config.ticker == "" {
 		log.Fatalf("❌ Error: --ticker is required when using --mint\nUsage: --mint=<mint_address> --ticker=<token_symbol>")
 	}
