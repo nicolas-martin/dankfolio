@@ -61,6 +61,12 @@ const CoinDetailScreen = ({ route, navigation }) => {
             value: parseFloat(item.value)
           }));
 
+        console.log('📊 Chart Data Mapping:', {
+          firstItem: response.items[0],
+          mappedFirstItem: chartData[0],
+          itemsCount: chartData.length
+        });
+
         setChartData(chartData);
 
         // Calculate 24h stats from the data
