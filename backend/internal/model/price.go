@@ -1,7 +1,6 @@
 package model
 
 type PriceHistoryItem struct {
-	Address  string  `json:"address"`
 	UnixTime int64   `json:"unixTime"`
 	Value    float64 `json:"value"`
 }

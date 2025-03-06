@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
     "web": "expo start --web"
   },
   "dependencies": {
@@ -28,23 +28,18 @@
     "react-native": "0.76.7",
     "react-native-chart-kit": "^6.12.0",
     "react-native-dotenv": "^3.4.11",
-    "react-native-gesture-handler": "^2.24.0",
     "react-native-get-random-values": "^1.11.0",
-    "react-native-reanimated": "^3.17.1",
     "react-native-safe-area-context": "^5.2.0",
     "react-native-screens": "^4.9.1",
-    "react-native-svg": "^15.11.2",
+    "react-native-svg": "^14.1.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "^13.13.2",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~18.3.12",
-    "dotenv": "^16.4.7",
-    "node-fetch": "^3.3.2",
-    "react-is": "^16.13.1"
+    "node-fetch": "^3.3.2"
   },
   "private": true
 }

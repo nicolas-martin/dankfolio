@@ -1,29 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  Dimensions
-} from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PriceChart from '../components/PriceChart';
 import { secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 
 const defaultIcon = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
-
-const timeframes = [
-  { label: '15m', value: '15M' },
-  { label: '1H', value: '1H' },
-  { label: '4H', value: '4H' },
-  { label: '1D', value: '1D' },
-  { label: '1W', value: '1W' },
-];
 
 const CoinDetailScreen = ({ route, navigation }) => {
   const { coin, coins } = route.params;
@@ -37,6 +19,15 @@ const CoinDetailScreen = ({ route, navigation }) => {
     volume24h: 0,
   });
 
+  // Map UI timeframes to API timeframes
+  const timeframeMapping = {
+    '15M': '15m',
+    '1H': '1H',
+    '4H': '4H',
+    '1D': '1D',
+    '1W': '1W'
+  };
+
   // Return coin icon URL or fallback to default
   const getIconUrl = useCallback(() => {
     return coin.icon_url || coin.iconUrl || defaultIcon;
@@ -45,59 +36,44 @@ const CoinDetailScreen = ({ route, navigation }) => {
   const fetchPriceData = useCallback(async (timeframe) => {
     setIsLoading(true);
     try {
-      console.log('🕒 Fetching price data for timeframe:', timeframe);
-      console.log('🪙 Coin details:', {
-        address: coin.address || coin.id,
-        symbol: coin.symbol,
-        name: coin.name
-      });
-
+      // Always fetch 24 hours of data
       const now = Math.floor(Date.now() / 1000);
-      const timeRanges = {
-        '15M': 900,    // 15 minutes in seconds
-        '1H': 3600,    // 1 hour in seconds
-        '4H': 14400,   // 4 hours in seconds
-        '1D': 86400,   // 1 day in seconds
-        '1W': 604800,  // 1 week in seconds
-      };
-      
-      const timeFrom = now - timeRanges[timeframe];
+      const oneDayInSeconds = 86400; // 24 hours in seconds
+      const timeFrom = now - oneDayInSeconds;
+
+      // Convert UI timeframe to API timeframe
+      const apiTimeframe = timeframeMapping[timeframe] || '1H';
+
       console.log('⏰ Time range:', {
         timeFrom: new Date(timeFrom * 1000).toISOString(),
         timeTo: new Date(now * 1000).toISOString(),
-        timeframe
+        uiTimeframe: timeframe,
+        apiTimeframe,
+        rangeDuration: '24 hours'
       });
 
       const response = await api.getPriceHistory(
         coin.address || coin.id,
-        timeframe,
+        apiTimeframe,
         timeFrom,
-        now
+        now,
+        "token"
       );
 
       console.log('📈 Received price history response:', {
-        itemsCount: response?.items?.length || 0,
-        firstItem: response?.items?.[0],
-        lastItem: response?.items?.[response?.items?.length - 1]
+        itemsCount: response?.items?.length,
       });
 
       if (response?.items?.length > 0) {
         const chartData = response.items
           .filter(item => item.value !== null && item.unixTime !== null)
           .map(item => ({
-            timestamp: item.unixTime,  // TradingView expects Unix timestamp
+            timestamp: item.unixTime,
             value: parseFloat(item.value)
           }));
 
-        console.log('📊 Processed chart data:', {
-          originalLength: response.items.length,
-          filteredLength: chartData.length,
-          firstPoint: chartData[0],
-          lastPoint: chartData[chartData.length - 1]
-        });
-
         setChartData(chartData);
-        
+
         // Calculate 24h stats from the data
         const values = chartData.map(d => d.value);
         const stats = {
@@ -157,7 +133,7 @@ const CoinDetailScreen = ({ route, navigation }) => {
 
   const formatPrice = (price) => {
     if (!price) return 'N/A';
-    return price < 0.01 ? price.toFixed(6) : price.toFixed(2);
+    return `$${price.toFixed(2)}`;
   };
 
   const formatVolume = (volume) => {
@@ -273,73 +249,73 @@ const CoinDetailScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#0F0F1E' 
+  container: {
+    flex: 1,
+    backgroundColor: '#0F0F1E'
   },
-  scrollContent: { 
-    paddingHorizontal: 16, 
-    paddingBottom: 24 
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24
   },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginTop: 16, 
-    marginBottom: 24 
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 24
   },
-  backButton: { 
-    padding: 8, 
-    borderRadius: 8, 
-    backgroundColor: '#262640', 
-    marginRight: 16 
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#262640',
+    marginRight: 16
   },
-  coinHeader: { 
-    flexDirection: 'row', 
-    alignItems: 'center' 
+  coinHeader: {
+    flexDirection: 'row',
+    alignItems: 'center'
   },
-  coinIcon: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
-    marginRight: 12 
+  coinIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12
   },
-  coinInfo: { 
-    justifyContent: 'center' 
+  coinInfo: {
+    justifyContent: 'center'
   },
-  coinName: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    color: '#FFFFFF' 
+  coinName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF'
   },
-  coinSymbol: { 
-    fontSize: 14, 
-    color: '#9F9FD5' 
+  coinSymbol: {
+    fontSize: 14,
+    color: '#9F9FD5'
   },
-  priceContainer: { 
-    backgroundColor: '#262640', 
-    borderRadius: 12, 
-    padding: 16, 
-    marginBottom: 16 
+  priceContainer: {
+    backgroundColor: '#262640',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16
   },
-  priceLabel: { 
-    fontSize: 14, 
-    color: '#9F9FD5', 
-    marginBottom: 4 
+  priceLabel: {
+    fontSize: 14,
+    color: '#9F9FD5',
+    marginBottom: 4
   },
-  price: { 
-    fontSize: 28, 
-    fontWeight: 'bold', 
-    color: '#FFFFFF', 
-    marginBottom: 8 
+  price: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8
   },
-  priceChangeContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center' 
+  priceChangeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center'
   },
-  priceChangeText: { 
-    fontSize: 16, 
-    fontWeight: '500', 
-    marginLeft: 4 
+  priceChangeText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 4
   },
   statsContainer: {
     flexDirection: 'row',
@@ -369,45 +345,45 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 16,
   },
-  descriptionContainer: { 
-    backgroundColor: '#262640', 
-    borderRadius: 12, 
-    padding: 16, 
-    marginVertical: 16 
+  descriptionContainer: {
+    backgroundColor: '#262640',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 16
   },
-  descriptionTitle: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    color: '#FFFFFF', 
-    marginBottom: 8 
+  descriptionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8
   },
-  descriptionText: { 
-    fontSize: 14, 
-    lineHeight: 22, 
-    color: '#E0E0E0' 
+  descriptionText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#E0E0E0'
   },
-  actionButtonsContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    marginTop: 16 
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16
   },
-  actionButton: { 
-    flex: 1, 
-    borderRadius: 12, 
-    padding: 16, 
-    alignItems: 'center', 
-    marginHorizontal: 8 
+  actionButton: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginHorizontal: 8
   },
-  buyButton: { 
-    backgroundColor: '#4CAF50' 
+  buyButton: {
+    backgroundColor: '#4CAF50'
   },
-  sellButton: { 
-    backgroundColor: '#F44336' 
+  sellButton: {
+    backgroundColor: '#F44336'
   },
-  actionButtonText: { 
-    color: '#FFFFFF', 
-    fontWeight: 'bold', 
-    fontSize: 16 
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16
   },
 });
 

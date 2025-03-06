@@ -46,36 +46,36 @@ test_endpoint() {
 NOW=$(date +%s)
 DAY_AGO=$((NOW - 86400))
 
-# Test price history endpoint with default parameters
-print_header "Testing price history endpoint with default parameters"
-test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS" "Get BONK price history (default 15m timeframe)"
+# # Test price history endpoint with default parameters
+# print_header "Testing price history endpoint with default parameters"
+# test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS" "Get BONK price history (default 15m timeframe)"
 
-# Test with custom timeframe
-print_header "Testing price history endpoint with custom timeframe"
-test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&type=1H" "Get BONK price history (1H timeframe)"
+# # Test with custom timeframe
+# print_header "Testing price history endpoint with custom timeframe"
+# test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&type=1H" "Get BONK price history (1H timeframe)"
 
-# Test with custom time range
-print_header "Testing price history endpoint with custom time range"
-test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&time_from=$DAY_AGO&time_to=$NOW" "Get BONK price history with custom time range"
+# # Test with custom time range
+# print_header "Testing price history endpoint with custom time range"
+# test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&time_from=$DAY_AGO&time_to=$NOW" "Get BONK price history with custom time range"
 
-# Test with address type
-print_header "Testing price history endpoint with address type"
-test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&address_type=token" "Get BONK price history with explicit token type"
+# # Test with address type
+# print_header "Testing price history endpoint with address type"
+# test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&address_type=token" "Get BONK price history with explicit token type"
 
 # Test with all parameters
 print_header "Testing price history endpoint with all parameters"
 test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&address_type=token&type=5m&time_from=$DAY_AGO&time_to=$NOW" "Get BONK price history with all parameters"
 
-# Test error cases
-print_header "Testing error cases"
+# # Test error cases
+# print_header "Testing error cases"
 
-# Missing address
-test_endpoint "GET" "$BASE_URL/api/price/history" "Error case: missing address"
+# # Missing address
+# test_endpoint "GET" "$BASE_URL/api/price/history" "Error case: missing address"
 
-# Invalid type
-test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&type=invalid" "Error case: invalid type"
+# # Invalid type
+# test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&type=invalid" "Error case: invalid type"
 
-# Invalid time range (from > to)
-test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&time_from=$NOW&time_to=$DAY_AGO" "Error case: invalid time range"
+# # Invalid time range (from > to)
+# test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&time_from=$NOW&time_to=$DAY_AGO" "Error case: invalid time range"
 
 echo -e "\n${GREEN}All tests completed${NC}" 

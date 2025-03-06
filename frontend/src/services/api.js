@@ -10,6 +10,16 @@ const apiClient = axios.create({
   timeout: 30000, // 30 seconds
 });
 
+apiClient.interceptors.request.use(
+  (config) => {
+    console.log('🔍 Request:', config.method, config.url, config.data);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Enhanced error handler
 const handleApiError = (error) => {
   // Construct a detailed error object
@@ -188,34 +198,32 @@ const api = {
     }
   },
 
-  getPriceHistory: async (address, type = '15m', timeFrom = null, timeTo = null) => {
+  getPriceHistory: async (address, type = '1h', timeFrom = null, timeTo = null, addressType = 'token') => {
     try {
       const params = {
         address,
+        address_type: addressType,
         type,
-        ...(timeFrom && { time_from: timeFrom }),
-        ...(timeTo && { time_to: timeTo })
+        time_from: timeFrom,
+        time_to: timeTo
       };
 
+      // Validate required parameters
+      if (!address || !timeFrom || !timeTo) {
+        throw new Error('Missing required parameters: address, type, time_from, and time_to are required');
+      }
+
       console.log('🔍 Fetching price history with params:', JSON.stringify(params, null, 2));
-      console.log('📍 API URL:', `${REACT_APP_API_URL}/api/price/history`);
 
       const response = await apiClient.get('/api/price/history', { params });
 
-      console.log('📊 Raw API Response:', JSON.stringify(response.data, null, 2));
-
-      if (!response.data) {
-        console.error('❌ Empty response data received');
-        throw new Error('Failed to fetch price history - Empty response');
-      }
-
-      if (!response.data.data) {
-        console.error('❌ Missing data property in response:', response.data);
-        throw new Error('Failed to fetch price history - Invalid response format');
-      }
-
+      if (response.status === 200) {
       console.log('✅ Successfully processed price history data');
-      return response.data.data;
+        return response.data.data;
+      } else {
+        throw new Error('Failed to fetch price history');
+      }
+
     } catch (error) {
       console.error('❌ Error fetching price history:', {
         message: error.message,
