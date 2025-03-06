@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Image, ActivityIndicator, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PriceChart from '../components/PriceChart';
 import { secureStorage } from '../utils/solanaWallet';
@@ -13,6 +13,7 @@ const CoinDetailScreen = ({ route, navigation }) => {
   const [chartData, setChartData] = useState([]);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1H');
   const [wallet, setWallet] = useState(null);
+  const [metadata, setMetadata] = useState(null);
   const [priceStats, setPriceStats] = useState({
     high24h: 0,
     low24h: 0,
@@ -127,27 +128,29 @@ const CoinDetailScreen = ({ route, navigation }) => {
     }
   }, [coin.address]);
 
-  // Get coin description or return a default message
-  const getCoinDescription = useCallback(() => {
-    if (coin.description && coin.description.trim() !== '') {
-      return coin.description;
+  const fetchMetadata = useCallback(async () => {
+    try {
+      const data = await api.getCoinMetadata(coin.address || coin.id);
+      setMetadata(data);
+    } catch (error) {
+      console.error('Error fetching metadata:', error);
     }
-    return `${coin.name} (${coin.symbol}) is a token on the Solana blockchain. Trade this meme token with DankFolio's secure trading platform.`;
-  }, [coin]);
+  }, [coin.address, coin.id]);
 
   useEffect(() => {
-    const loadWallet = async () => {
+    const loadData = async () => {
       try {
         const savedWallet = await secureStorage.getWallet();
         if (savedWallet) setWallet(savedWallet);
+        await fetchMetadata();
       } catch (error) {
-        console.error('Error loading wallet:', error);
+        console.error('Error loading data:', error);
       }
     };
 
-    loadWallet();
+    loadData();
     fetchPriceData(selectedTimeframe);
-  }, [selectedTimeframe, fetchPriceData]);
+  }, [selectedTimeframe, fetchPriceData, fetchMetadata]);
 
   const formatVolume = (volume) => {
     if (!volume) return 'N/A';
@@ -160,13 +163,12 @@ const CoinDetailScreen = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF"/>
           </TouchableOpacity>
           <View style={styles.coinHeader}>
-            <Image source={{ uri: getIconUrl() }} style={styles.coinIcon} />
+            <Image source={{ uri: getIconUrl() }} style={styles.coinIcon}/>
             <View style={styles.coinInfo}>
               <Text style={styles.coinName}>{coin.name}</Text>
               <Text style={styles.coinSymbol}>{coin.symbol}</Text>
@@ -216,11 +218,64 @@ const CoinDetailScreen = ({ route, navigation }) => {
           )}
         </View>
 
-        {/* Description */}
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.descriptionTitle}>About {coin.name}</Text>
-          <Text style={styles.descriptionText}>{getCoinDescription()}</Text>
-        </View>
+        {/* Metadata Section */}
+        {metadata && (
+          <View style={styles.metadataContainer}>
+            <Text style={styles.metadataTitle}>Token Information</Text>
+            <View style={styles.metadataSection}>
+              <Text style={styles.metadataSectionTitle}>Links</Text>
+              <View style={styles.metadataLinks}>
+                {metadata.website && (
+                  <TouchableOpacity style={styles.linkButton} onPress={() => Linking.openURL(metadata.website)}>
+                    <Ionicons name="globe-outline" size={20} color="#9F9FD5"/>
+                    <Text style={styles.linkText}>Website</Text>
+                  </TouchableOpacity>
+                )}
+                {metadata.twitter && (
+                  <TouchableOpacity style={styles.linkButton} onPress={() => Linking.openURL(`https://twitter.com/${metadata.twitter}`)}>
+                    <Ionicons name="logo-twitter" size={20} color="#9F9FD5"/>
+                    <Text style={styles.linkText}>Twitter</Text>
+                  </TouchableOpacity>
+                )}
+                {metadata.discord && (
+                  <TouchableOpacity style={styles.linkButton} onPress={() => Linking.openURL(metadata.discord)}>
+                    <Ionicons name="logo-discord" size={20} color="#9F9FD5"/>
+                    <Text style={styles.linkText}>Discord</Text>
+                  </TouchableOpacity>
+                )}
+                {metadata.telegram && (
+                  <TouchableOpacity style={styles.linkButton} onPress={() => Linking.openURL(`https://t.me/${metadata.telegram}`)}>
+                    <Ionicons name="paper-plane-outline" size={20} color="#9F9FD5"/>
+                    <Text style={styles.linkText}>Telegram</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+            <View style={styles.metadataSection}>
+              <Text style={styles.metadataSectionTitle}>Details</Text>
+              <View style={styles.metadataGrid}>
+                <View style={styles.metadataItem}>
+                  <Text style={styles.metadataLabel}>Symbol</Text>
+                  <Text style={styles.metadataValue}>{metadata.symbol?.toUpperCase()}</Text>
+                </View>
+                <View style={styles.metadataItem}>
+                  <Text style={styles.metadataLabel}>Name</Text>
+                  <Text style={styles.metadataValue}>{metadata.name}</Text>
+                </View>
+                <View style={styles.metadataItem}>
+                  <Text style={styles.metadataLabel}>Address</Text>
+                  <Text style={styles.metadataValue} numberOfLines={1} ellipsizeMode="middle">{metadata.address}</Text>
+                </View>
+                {metadata.coingecko_id && (
+                  <View style={styles.metadataItem}>
+                    <Text style={styles.metadataLabel}>CoinGecko ID</Text>
+                    <Text style={styles.metadataValue}>{metadata.coingecko_id}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
@@ -321,28 +376,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF'
   },
   chartContainer: {
-    height: 400,  // Increased height for better visualization
+    height: 400,
     backgroundColor: '#262640',
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
-  },
-  descriptionContainer: {
-    backgroundColor: '#262640',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 16
-  },
-  descriptionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8
-  },
-  descriptionText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#E0E0E0'
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -384,6 +422,65 @@ const styles = StyleSheet.create({
     color: '#9F9FD5',
     fontSize: 12,
     fontWeight: '500',
+  },
+  metadataContainer: {
+    backgroundColor: '#262640',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  metadataTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 16,
+  },
+  metadataSection: {
+    marginBottom: 16,
+  },
+  metadataSectionTitle: {
+    fontSize: 14,
+    color: '#9F9FD5',
+    marginBottom: 8,
+  },
+  metadataLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  linkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1A2E',
+    borderRadius: 8,
+    padding: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  linkText: {
+    color: '#9F9FD5',
+    marginLeft: 6,
+    fontSize: 14,
+  },
+  metadataGrid: {
+    flexDirection: 'column',
+  },
+  metadataItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A2E',
+  },
+  metadataLabel: {
+    color: '#9F9FD5',
+    fontSize: 14,
+  },
+  metadataValue: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    maxWidth: '60%',
   },
 });
 

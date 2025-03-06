@@ -238,6 +238,18 @@ const api = {
       });
       throw handleApiError(error);
     }
+  },
+
+  getCoinMetadata: async (address) => {
+    try {
+      console.log('🔍 Fetching metadata for coin:', address);
+      const response = await apiClient.get(`/api/coins/${address}/metadata`);
+      console.log('✅ Successfully fetched coin metadata');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching coin metadata:', error);
+      throw handleApiError(error);
+    }
   }
 };
 
