@@ -19,15 +19,6 @@ const CoinDetailScreen = ({ route, navigation }) => {
     volume24h: 0,
   });
 
-  // Map UI timeframes to API timeframes
-  const timeframeMapping = {
-    '15M': '15m',
-    '1H': '1H',
-    '4H': '4H',
-    '1D': '1D',
-    '1W': '1W'
-  };
-
   // Return coin icon URL or fallback to default
   const getIconUrl = useCallback(() => {
     return coin.icon_url || coin.iconUrl || defaultIcon;
@@ -42,19 +33,17 @@ const CoinDetailScreen = ({ route, navigation }) => {
       const timeFrom = now - oneDayInSeconds;
 
       // Convert UI timeframe to API timeframe
-      const apiTimeframe = timeframeMapping[timeframe] || '1H';
-
       console.log('⏰ Time range:', {
         timeFrom: new Date(timeFrom * 1000).toISOString(),
         timeTo: new Date(now * 1000).toISOString(),
         uiTimeframe: timeframe,
-        apiTimeframe,
+        timeframe,
         rangeDuration: '24 hours'
       });
 
       const response = await api.getPriceHistory(
         coin.address || coin.id,
-        apiTimeframe,
+        timeframe,
         timeFrom,
         now,
         "token"
