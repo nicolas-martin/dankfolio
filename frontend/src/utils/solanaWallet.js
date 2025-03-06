@@ -1,6 +1,5 @@
-import { Keypair, Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, VersionedTransaction } from '@solana/web3.js';
+import { Keypair, Connection, PublicKey, Transaction, LAMPORTS_PER_SOL, VersionedTransaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import nacl from 'tweetnacl';
 import axios from 'axios';
 
 // Default connection to Solana mainnet
@@ -23,6 +22,36 @@ const COMPUTE_UNIT_PRICES = {
         VERY_HIGH: '1000',  // vh
         HIGH: '500',        // h
         MEDIUM: '250'       // m
+};
+
+const jupiterApi = axios.create({
+        baseURL: process.env.REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
+        headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        },
+});
+
+// Add response interceptor for better error handling
+jupiterApi.interceptors.response.use(
+        response => response,
+        error => {
+                console.error('Jupiter API Error:', {
+                        message: error.message,
+                        config: error.config,
+                        status: error.response?.status,
+                        data: error.response?.data
+                });
+                throw error;
+        }
+);
+
+const handleError = (error) => {
+        console.error('Error:', error);
+        throw error;
 };
 
 /**
@@ -78,46 +107,12 @@ export const getBalance = async (publicKeyString) => {
                 const balance = await connection.getBalance(publicKey);
                 return balance / LAMPORTS_PER_SOL; // Convert lamports to SOL
         } catch (error) {
-                console.error('Error getting balance:', error);
-                throw error;
-        }
-};
-
-/**
- * Sign a transaction with a private key
- * @param {Transaction} transaction - Unsigned transaction
- * @param {string} privateKey - Private key (Base58 or Base64)
- * @returns {string} Base64 encoded signed transaction
- */
-export const signTransaction = (transaction, privateKey) => {
-        try {
-                const keypair = getKeypairFromPrivateKey(privateKey);
-
-                // Check if it's a versioned transaction
-                if (transaction instanceof VersionedTransaction) {
-                        // Sign versioned transaction
-                        transaction.sign([keypair]);
-                } else {
-                        // Add the signer to legacy transaction
-                        transaction.feePayer = keypair.publicKey;
-                        
-                        // Sign the transaction
-                        const signData = transaction.serializeMessage();
-                        const signature = nacl.sign.detached(signData, keypair.secretKey);
-                        transaction.addSignature(keypair.publicKey, Buffer.from(signature));
-                }
-
-                // Return base64 encoded transaction
-                return transaction.serialize().toString('base64');
-        } catch (error) {
-                console.error('Error signing transaction:', error);
-                throw error;
+                handleError(error);
         }
 };
 
 /**
  * Create and sign a swap transaction using Raydium
- * @param {Connection} connection - Solana connection
  * @param {Keypair} wallet - Solana keypair
  * @param {string} inputMint - Source token mint address
  * @param {string} outputMint - Destination token mint address
@@ -131,7 +126,6 @@ export const signTransaction = (transaction, privateKey) => {
  * @returns {Promise<string>} Base64 encoded signed transaction
  */
 export async function createAndSignSwapTransaction(
-        connection,
         wallet,
         inputMint,
         outputMint,
@@ -145,25 +139,18 @@ export async function createAndSignSwapTransaction(
 ) {
         try {
                 console.log('Getting swap quote...');
-
-                // Always use mainnet for Raydium API calls
                 const network = 'mainnet';
-                console.log(`Using network: ${network} for Raydium API`);
-
-                // Add network parameter to the API call
                 const { data: swapResponse } = await axios.get(
                         `${API_URLS.SWAP_HOST}${API_URLS.SWAP_QUOTE}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippage * 100}&txVersion=${txVersion}&network=${network}`
                 );
 
-                if (!swapResponse) {
-                        throw new Error('Failed to get swap quote');
-                }
+                if (!swapResponse) throw new Error('Failed to get swap quote');
 
                 console.log('Creating swap transaction...');
                 const { data: swapTransactions } = await axios.post(
                         `${API_URLS.SWAP_HOST}${API_URLS.SWAP_TRANSACTION}`,
                         {
-                                computeUnitPriceMicroLamports: COMPUTE_UNIT_PRICES.HIGH, // Using high priority value
+                                computeUnitPriceMicroLamports: COMPUTE_UNIT_PRICES.HIGH,
                                 swapResponse,
                                 txVersion,
                                 wallet: wallet.publicKey.toBase58(),
@@ -171,37 +158,113 @@ export async function createAndSignSwapTransaction(
                                 unwrapSol: isOutputSol,
                                 inputAccount: isInputSol ? undefined : inputTokenAcc?.toBase58(),
                                 outputAccount: isOutputSol ? undefined : outputTokenAcc?.toBase58(),
-                                network: network, // Always use mainnet
+                                network,
                         }
                 );
 
-                if (!swapTransactions?.data?.length) {
-                        throw new Error('Failed to create swap transaction');
-                }
+                if (!swapTransactions?.data?.length) throw new Error('Failed to create swap transaction');
 
-                console.log('Processing transactions...');
-                // We currently only support signing the first transaction
                 const txBuf = Buffer.from(swapTransactions.data[0].transaction, 'base64');
                 const transaction = txVersion === 'V0'
                         ? VersionedTransaction.deserialize(txBuf)
                         : Transaction.from(txBuf);
 
                 console.log(`Total ${swapTransactions.data.length} transactions to process`);
-
-                // Sign the transaction
                 if (txVersion === 'V0') {
                         transaction.sign([wallet]);
                 } else {
                         transaction.partialSign(wallet);
                 }
 
-                // Serialize the signed transaction to base64
-                const serializedTx = Buffer.from(transaction.serialize()).toString('base64');
-                console.log('Transaction signed successfully, length:', serializedTx.length);
-
-                return serializedTx;
+                return Buffer.from(transaction.serialize()).toString('base64');
         } catch (error) {
-                console.error('Error in createAndSignSwapTransaction:', error);
+                handleError(error);
+        }
+}
+
+/**
+ * Create and sign a swap transaction using Jupiter
+ * @param {Keypair} wallet - Solana keypair
+ * @param {string} inputMint - Source token mint address
+ * @param {string} outputMint - Destination token mint address
+ * @param {number} amount - Amount to swap in lamports
+ * @param {number} slippage - Slippage percentage
+ * @returns {Promise<string>} Base64 encoded signed transaction
+ */
+export const buildAndSignSwapTransaction = async (
+        inputMint,
+        outputMint,
+        amount,
+        slippage,
+        wallet
+) => {
+        try {
+                // Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
+                const walletBalance = await connection.getBalance(wallet.publicKey);
+                const minBalanceForRent = 3000000; // 0.003 SOL in lamports
+
+                if (walletBalance < minBalanceForRent) {
+                        throw new Error(`Insufficient SOL for rent. Need at least 0.003 SOL for account creation. Current balance: ${walletBalance / LAMPORTS_PER_SOL} SOL`);
+                }
+
+                // Get quote
+                const quoteResponse = await jupiterApi.get('/quote', {
+                        params: {
+                                inputMint,
+                                outputMint,
+                                amount,
+                                slippageBps: slippage * 100, // Convert percentage to basis points
+                        },
+                });
+
+                if (!quoteResponse.data) {
+                        throw new Error('No quote data received');
+                }
+
+                console.log('Quote response:', quoteResponse.data);
+
+                // Request swap transaction with the correct body structure
+                const swapRequestBody = {
+                        quoteResponse: quoteResponse.data,
+                        userPublicKey: wallet.publicKey.toString(),
+                        wrapUnwrapSOL: true,
+                        // Add compute unit price and dynamic settings for better success rate
+                        dynamicComputeUnitLimit: true,
+                        dynamicSlippage: true,
+                        prioritizationFeeLamports: {
+                                priorityLevelWithMaxLamports: {
+                                        maxLamports: 1000000,
+                                        priorityLevel: "veryHigh"
+                                }
+                        }
+                };
+
+                const swapResponse = await jupiterApi.post('/swap', swapRequestBody);
+
+                if (!swapResponse.data || !swapResponse.data.swapTransaction) {
+                        throw new Error('No swap transaction received');
+                }
+
+                // 1. Convert base64 string to Uint8Array
+                const swapTransactionBuf = Buffer.from(swapResponse.data.swapTransaction, 'base64');
+
+                // 2. Deserialize into a VersionedTransaction object
+                const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+
+                // 3. Sign the transaction
+                transaction.sign([wallet]);
+
+                // 4. Serialize and convert to base64 for our backend
+                const serializedTransaction = transaction.serialize();
+                const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
+
+                // Return the signed transaction for our backend to handle
+                return transactionBase64;
+        } catch (error) {
+                console.error('Error in buildAndSignSwapTransaction:', error);
+                if (error.response) {
+                        console.error('API Error Response:', error.response.data);
+                }
                 throw error;
         }
 }

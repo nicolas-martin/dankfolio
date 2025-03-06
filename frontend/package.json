@@ -42,7 +42,9 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~18.3.12",
-    "node-fetch": "^3.3.2"
+    "dotenv": "^16.4.7",
+    "node-fetch": "^3.3.2",
+    "react-is": "^16.13.1"
   },
   "private": true
 }
