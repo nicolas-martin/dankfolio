@@ -156,37 +156,19 @@ const CoinDetailScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Price Info */}
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Current Price</Text>
-          <Text style={styles.price}>${formatPrice(coin.price)}</Text>
-          {coin.priceChange !== undefined && (
-            <View style={styles.priceChangeContainer}>
-              <Ionicons
-                name={coin.priceChange >= 0 ? "caret-up" : "caret-down"}
-                size={16}
-                color={coin.priceChange >= 0 ? "#4CAF50" : "#F44336"}
-              />
-              <Text style={[styles.priceChangeText, { color: coin.priceChange >= 0 ? "#4CAF50" : "#F44336" }]}>
-                {Math.abs(coin.priceChange)}% (24h)
-              </Text>
-            </View>
-          )}
-        </View>
-
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>24h High</Text>
-            <Text style={styles.statValue}>${formatPrice(priceStats.high24h)}</Text>
+            <Text style={styles.statValue}>${priceStats.high24h}</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>24h Low</Text>
-            <Text style={styles.statValue}>${formatPrice(priceStats.low24h)}</Text>
+            <Text style={styles.statValue}>${priceStats.low24h}</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>24h Volume</Text>
-            <Text style={styles.statValue}>{formatVolume(priceStats.volume24h)}</Text>
+            <Text style={styles.statValue}>${priceStats.volume24h}</Text>
           </View>
         </View>
 
@@ -199,6 +181,8 @@ const CoinDetailScreen = ({ route, navigation }) => {
               data={chartData}
               timeframe={selectedTimeframe}
               onTimeframeChange={setSelectedTimeframe}
+              tokenLogo={getIconUrl()}
+              mintAddress={coin.address || coin.id}
             />
           )}
         </View>
@@ -285,32 +269,6 @@ const styles = StyleSheet.create({
   coinSymbol: {
     fontSize: 14,
     color: '#9F9FD5'
-  },
-  priceContainer: {
-    backgroundColor: '#262640',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16
-  },
-  priceLabel: {
-    fontSize: 14,
-    color: '#9F9FD5',
-    marginBottom: 4
-  },
-  price: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8
-  },
-  priceChangeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  priceChangeText: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 4
   },
   statsContainer: {
     flexDirection: 'row',

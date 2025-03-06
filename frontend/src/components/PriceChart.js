@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Dimensions, Image } from 'react-native';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 
 const ChartAdapter = {
@@ -157,7 +157,13 @@ const ChartAdapter = {
   }
 };
 
-const PriceChart = ({ data = [], timeframe = '15m', onTimeframeChange }) => {
+const PriceChart = ({ 
+  data = [], 
+  timeframe = '15m', 
+  onTimeframeChange,
+  tokenLogo,
+  mintAddress,
+}) => {
   const timeframes = [
     { label: '15m', value: '15m' },
     { label: '1H', value: '1H' },
@@ -171,32 +177,79 @@ const PriceChart = ({ data = [], timeframe = '15m', onTimeframeChange }) => {
     datasets: [{ data: data.map(item => Number(item.value)) }]
   };
 
+  // Calculate current price and price change
+  const currentPrice = data.length > 0 ? data[data.length - 1].value : 0;
+  const startPrice = data.length > 0 ? data[0].value : 0;
+  const priceChangePercent = startPrice !== 0 
+    ? ((currentPrice - startPrice) / startPrice) * 100 
+    : 0;
+  const isPositiveChange = priceChangePercent >= 0;
+
   return (
     <View style={styles.container}>
-      <View style={styles.timeframeContainer}>
-        {timeframes.map(tf => (
-          <TouchableOpacity
-            key={tf.value}
-            style={[
-              styles.timeframeButton,
-              timeframe === tf.value && {
-                backgroundColor:
-                  chartData.datasets[0].data.length > 1 &&
-                    chartData.datasets[0].data[0] > chartData.datasets[0].data[chartData.datasets[0].data.length - 1]
-                    ? '#FF5252'
-                    : '#00C853'
-              },
-            ]}
-            onPress={() => onTimeframeChange(tf.value)}
-          >
-            <Text style={[styles.timeframeText, timeframe === tf.value && styles.timeframeTextActive]}>
-              {tf.label}
+      {/* Header section with token info */}
+      <View style={styles.headerSection}>
+        <View style={styles.headerContainer}>
+          <View style={styles.leftHeader}>
+            {tokenLogo && (
+              <Image 
+                source={{ uri: tokenLogo }} 
+                style={styles.tokenLogo} 
+                resizeMode="contain"
+              />
+            )}
+            {mintAddress && (
+              <View style={styles.tokenInfo}>
+                <Text style={styles.mintAddress} numberOfLines={1} ellipsizeMode="middle">
+                  {mintAddress}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.rightHeader}>
+            <Text style={styles.currentPrice}>
+              ${currentPrice}
             </Text>
-          </TouchableOpacity>
-        ))}
+            <Text style={[
+              styles.priceChange,
+              { color: isPositiveChange ? '#00C853' : '#FF5252' }
+            ]}>
+              {isPositiveChange ? '+' : ''}{priceChangePercent.toFixed(2)}%
+            </Text>
+          </View>
+        </View>
       </View>
-      <View style={[styles.chartContainer, { height: 220 }]}>
-        <ChartAdapter.LineChart data={chartData} height={220} />
+
+      {/* Chart section with timeframe selector */}
+      <View style={styles.chartSection}>
+        {/* Timeframe selector */}
+        <View style={styles.timeframeContainer}>
+          {timeframes.map(tf => (
+            <TouchableOpacity
+              key={tf.value}
+              style={[
+                styles.timeframeButton,
+                timeframe === tf.value && {
+                  backgroundColor:
+                    chartData.datasets[0].data.length > 1 &&
+                      chartData.datasets[0].data[0] > chartData.datasets[0].data[chartData.datasets[0].data.length - 1]
+                      ? '#FF5252'
+                      : '#00C853'
+                },
+              ]}
+              onPress={() => onTimeframeChange(tf.value)}
+            >
+              <Text style={[styles.timeframeText, timeframe === tf.value && styles.timeframeTextActive]}>
+                {tf.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        {/* Chart */}
+        <View style={[styles.chartContainer, { height: 250 }]}>
+          <ChartAdapter.LineChart data={chartData} height={250} />
+        </View>
       </View>
     </View>
   );
@@ -209,12 +262,58 @@ const styles = StyleSheet.create({
     padding: 16,
     marginVertical: 8,
   },
+  headerSection: {
+    marginBottom: 12,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  leftHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tokenLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 12,
+    backgroundColor: '#262640',
+  },
+  tokenInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  mintAddress: {
+    color: '#9F9FD5',
+    fontSize: 12,
+    maxWidth: 200,
+    fontFamily: 'monospace',
+  },
+  rightHeader: {
+    alignItems: 'flex-end',
+  },
+  currentPrice: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  priceChange: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  chartSection: {
+    backgroundColor: '#262640',
+    borderRadius: 8,
+    padding: 12,
+    paddingBottom: 16,
+  },
   timeframeContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    padding: 8,
-    backgroundColor: '#262640',
-    borderRadius: 8,
     marginBottom: 16,
   },
   timeframeButton: {
