@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Dimensions, Image } from 'react-native';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { formatPrice, formatPercentage } from '../utils/numberFormat';
 
 const ChartAdapter = {
   LineChart: ({ data, height, ...props }) => {
@@ -89,7 +90,7 @@ const ChartAdapter = {
         return (
           <View style={tooltipStyle}>
             <Text style={[styles.tooltipText, { color: '#FFFFFF', marginBottom: 4 }]}>
-              ${payload[0].value}
+              {formatPrice(payload[0].value)}
             </Text>
             <Text style={[styles.tooltipText, { color: '#9F9FD5', fontSize: 10 }]}>{time}</Text>
           </View>
@@ -208,13 +209,13 @@ const PriceChart = ({
           </View>
           <View style={styles.rightHeader}>
             <Text style={styles.currentPrice}>
-              ${currentPrice}
+              {formatPrice(currentPrice)}
             </Text>
             <Text style={[
               styles.priceChange,
               { color: isPositiveChange ? '#00C853' : '#FF5252' }
             ]}>
-              {isPositiveChange ? '+' : ''}{priceChangePercent.toFixed(2)}%
+              {formatPercentage(priceChangePercent)}
             </Text>
           </View>
         </View>
@@ -318,9 +319,11 @@ const styles = StyleSheet.create({
   },
   timeframeButton: {
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     borderRadius: 4,
     marginHorizontal: 4,
+    minWidth: 40,
+    alignItems: 'center',
   },
   timeframeText: {
     color: '#9F9FD5',
@@ -329,6 +332,7 @@ const styles = StyleSheet.create({
   },
   timeframeTextActive: {
     color: '#FFFFFF',
+    fontWeight: 'bold',
   },
   chartContainer: {
     backgroundColor: 'transparent',

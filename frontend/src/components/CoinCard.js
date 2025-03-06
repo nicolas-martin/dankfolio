@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { formatNumber, formatPrice, formatPercentage } from '../utils/numberFormat';
 
 /**
  * CoinCard component for displaying individual coins
@@ -22,15 +23,6 @@ const CoinCard = ({ coin, onPress }) => {
   // Check both icon_url and iconUrl fields for maximum compatibility
   const logoUrl = coin.icon_url || coin.iconUrl || DEFAULT_LOGO;
 
-  // Format volume to be more readable
-  const formatVolume = (volume) => {
-    if (!volume) return '0';
-    if (volume >= 1e9) return `${(volume / 1e9).toFixed(2)}B`;
-    if (volume >= 1e6) return `${(volume / 1e6).toFixed(2)}M`;
-    if (volume >= 1e3) return `${(volume / 1e3).toFixed(2)}K`;
-    return volume.toFixed(2);
-  };
-
   return (
     <TouchableOpacity
       style={styles.container}
@@ -48,14 +40,14 @@ const CoinCard = ({ coin, onPress }) => {
       </View>
 
       <View style={styles.rightSection}>
-        <Text style={styles.price}>${Number(coin.price).toFixed(6)}</Text>
-        <Text style={styles.volume}>Vol: ${formatVolume(coin.daily_volume)}</Text>
+        <Text style={styles.price}>{formatPrice(Number(coin.price))}</Text>
+        <Text style={styles.volume}>Vol: {formatNumber(coin.daily_volume, true)}</Text>
         {coin.priceChange24h && (
           <Text style={[
             styles.priceChange,
             coin.priceChange24h >= 0 ? styles.positive : styles.negative
           ]}>
-            {coin.priceChange24h >= 0 ? '↑' : '↓'} {Math.abs(coin.priceChange24h)}%
+            {formatPercentage(coin.priceChange24h)}
           </Text>
         )}
       </View>

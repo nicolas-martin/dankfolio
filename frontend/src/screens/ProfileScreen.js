@@ -17,6 +17,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import SolscanWalletService from '../services/WalletService.js';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { formatNumber, formatPrice, formatPercentage } from '../utils/numberFormat';
 
 const { width } = Dimensions.get('window');
 
@@ -134,11 +135,11 @@ const ProfileScreen = ({ route, navigation }) => {
         <Text style={[
           styles.tokenAmount,
           isPlaceholder && styles.placeholderText
-        ]}>${item.value.toFixed(2)}</Text>
+        ]}>{formatPrice(item.value)}</Text>
         <Text style={[
           styles.tokenBalance,
           isPlaceholder && styles.placeholderText
-        ]}>{item.balance.toFixed(4)} {item.symbol}</Text>
+        ]}>{formatNumber(item.balance, false, 4)} {item.symbol}</Text>
         <View style={[
           styles.percentageContainer,
           { backgroundColor: item.percentage > 0 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 68, 68, 0.1)' },
@@ -149,7 +150,7 @@ const ProfileScreen = ({ route, navigation }) => {
             { color: item.percentage > 0 ? '#4CAF50' : '#FF4444' },
             isPlaceholder && styles.placeholderText
           ]}>
-            {item.percentage > 0 ? '+' : ''}{item.percentage.toFixed(2)}%
+            {formatPercentage(item.percentage)}
           </Text>
         </View>
       </View>

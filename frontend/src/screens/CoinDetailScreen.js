@@ -126,17 +126,12 @@ const CoinDetailScreen = ({ route, navigation }) => {
     fetchPriceData(selectedTimeframe);
   }, [selectedTimeframe, fetchPriceData]);
 
-  const formatPrice = (price) => {
-    if (!price) return 'N/A';
-    return `$${price.toFixed(2)}`;
-  };
-
   const formatVolume = (volume) => {
     if (!volume) return 'N/A';
-    if (volume >= 1e9) return `$${(volume / 1e9).toFixed(2)}B`;
-    if (volume >= 1e6) return `$${(volume / 1e6).toFixed(2)}M`;
-    if (volume >= 1e3) return `$${(volume / 1e3).toFixed(2)}K`;
-    return `$${volume.toFixed(2)}`;
+    if (volume >= 1e9) return `${(volume / 1e9).toFixed(2)}B`;
+    if (volume >= 1e6) return `${(volume / 1e6).toFixed(2)}M`;
+    if (volume >= 1e3) return `${(volume / 1e3).toFixed(2)}K`;
+    return `${volume.toFixed(2)}`;
   };
 
   return (
@@ -168,9 +163,20 @@ const CoinDetailScreen = ({ route, navigation }) => {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>24h Volume</Text>
-            <Text style={styles.statValue}>${priceStats.volume24h}</Text>
+            <Text style={styles.statValue}>${formatVolume(coin.daily_volume || priceStats.volume24h)}</Text>
           </View>
         </View>
+
+        {/* Tags */}
+        {coin.tags && coin.tags.length > 0 && (
+          <View style={styles.tagsContainer}>
+            {coin.tags.map((tag, index) => (
+              <View key={index} style={styles.tagBadge}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Price Chart */}
         <View style={styles.chartContainer}>
@@ -338,6 +344,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16
   },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  tagBadge: {
+    backgroundColor: '#262640',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagText: {
+    color: '#9F9FD5',
+    fontSize: 12,
+    fontWeight: '500',
+  },
 });
 
 export default CoinDetailScreen;
+
