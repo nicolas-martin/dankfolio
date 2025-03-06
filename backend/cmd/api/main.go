@@ -30,7 +30,17 @@ func main() {
 	}
 
 	// Initialize the coin service
-	coinService := coin.NewService()
+	httpClient := &http.Client{
+		Timeout: time.Second * 10,
+	}
+
+	coinServiceConfig := &coin.Config{
+		BirdEyeBaseURL:  "https://public-api.birdeye.so",
+		BirdEyeAPIKey:   os.Getenv("BIRDEYE_API_KEY"),
+		CoinGeckoAPIKey: os.Getenv("COINGECKO_API_KEY"),
+	}
+
+	coinService := coin.NewService(coinServiceConfig, httpClient)
 
 	// Initialize the trade service with both dependencies
 	tradeService := trade.NewService(solanaService, coinService)

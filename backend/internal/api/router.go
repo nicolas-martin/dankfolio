@@ -63,6 +63,7 @@ func (r *Router) Setup() chi.Router {
 	router.Get("/api/coins", coinHandlers.GetCoins)
 	router.Get("/api/coins/{id}", coinHandlers.GetCoinByID)
 	router.Get("/api/tokens/{id}/details", coinHandlers.GetTokenDetails)
+	router.Get("/api/coins/{address}/metadata", coinHandlers.GetCoinMetadata)
 
 	// Trade routes
 	log.Printf("Registering trade routes...")

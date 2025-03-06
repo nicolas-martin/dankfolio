@@ -43,11 +43,11 @@ func (h *CoinHandlers) GetCoinByID(w http.ResponseWriter, r *http.Request) {
 		// Check for specific error messages that indicate the coin was not found
 		if strings.Contains(err.Error(), "not found") ||
 			strings.Contains(err.Error(), "invalid") {
-			http.Error(w, fmt.Sprintf("Coin not found: %s", err.Error()), http.StatusNotFound)
+			respondError(w, fmt.Sprintf("Coin not found: %s", err.Error()), http.StatusNotFound)
 			return
 		}
 		// For other errors, return a 500 status
-		http.Error(w, fmt.Sprintf("Error retrieving coin: %s", err.Error()), http.StatusInternalServerError)
+		respondError(w, fmt.Sprintf("Error retrieving coin: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 
@@ -72,16 +72,31 @@ func (h *CoinHandlers) GetTokenDetails(w http.ResponseWriter, r *http.Request) {
 			strings.Contains(err.Error(), "invalid") {
 			errMsg := fmt.Sprintf("Token not found: %s", err.Error())
 			log.Println(errMsg)
-			http.Error(w, errMsg, http.StatusNotFound)
+			respondError(w, errMsg, http.StatusNotFound)
 			return
 		}
 		// For other errors, return a 500 status
 		errMsg := fmt.Sprintf("Error retrieving token details: %s", err.Error())
 		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusInternalServerError)
+		respondError(w, errMsg, http.StatusInternalServerError)
 		return
 	}
 
 	log.Printf("Successfully retrieved token details for %s: %+v", id, tokenInfo)
 	respondJSON(w, tokenInfo, http.StatusOK)
+}
+
+func (h *CoinHandlers) GetCoinMetadata(w http.ResponseWriter, r *http.Request) {
+	address := chi.URLParam(r, "address")
+	if address == "" {
+		respondError(w, "address is required", http.StatusBadRequest)
+		return
+	}
+
+	metadata, err := h.coinService.GetCoinMetadata(address)
+	if err != nil {
+		respondError(w, fmt.Sprintf("failed to fetch metadata: %v", err), http.StatusInternalServerError)
+		return
+	}
+	respondJSON(w, metadata, http.StatusOK)
 }

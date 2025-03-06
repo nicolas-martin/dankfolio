@@ -109,3 +109,111 @@ func (j *JupiterTokenInfoResponse) ToCoin() model.Coin {
 		DailyVolume: j.DailyVolume,
 	}
 }
+
+// TokenList represents the structure of trimmed_mainnet.json
+type TokenList struct {
+	Tokens []struct {
+		Token struct {
+			Symbol   string `json:"symbol"`
+			Name     string `json:"name"`
+			Mint     string `json:"mint"`
+			Decimals int    `json:"decimals"`
+		} `json:"token"`
+		Pools []struct {
+			ID string `json:"id"`
+		} `json:"pools"`
+	} `json:"tokens"`
+}
+
+type CoinBirdeyeMetadata struct {
+	Address    string `json:"address"`
+	Symbol     string `json:"symbol"`
+	Name       string `json:"name"`
+	Decimals   int    `json:"decimals"`
+	Extensions struct {
+		CoingeckoID string `json:"coingecko_id"`
+		Website     string `json:"website"`
+		Twitter     string `json:"twitter"`
+		Discord     string `json:"discord"`
+		Medium      string `json:"medium"`
+	} `json:"extensions"`
+	LogoURI string `json:"logo_uri"`
+}
+
+type BirdEyeMetadataResponse struct {
+	Data    CoinBirdeyeMetadata `json:"data"`
+	Success bool                `json:"success"`
+}
+
+type CoinGeckoMetadata struct {
+	ID         string   `json:"id"`
+	Symbol     string   `json:"symbol"`
+	Name       string   `json:"name"`
+	Categories []string `json:"categories"`
+	Links      struct {
+		Homepage                  []string `json:"homepage"`
+		Whitepaper                string   `json:"whitepaper"`
+		BlockchainSite            []string `json:"blockchain_site"`
+		TwitterScreenName         string   `json:"twitter_screen_name"`
+		TelegramChannelIdentifier string   `json:"telegram_channel_identifier"`
+		SubredditURL              string   `json:"subreddit_url"`
+		ReposURL                  struct {
+			Github    []string `json:"github"`
+			Bitbucket []string `json:"bitbucket"`
+		} `json:"repos_url"`
+	} `json:"links"`
+	Image struct {
+		Thumb string `json:"thumb"`
+		Small string `json:"small"`
+		Large string `json:"large"`
+	} `json:"image"`
+	ContractAddress              string  `json:"contract_address"`
+	SentimentVotesUpPercentage   float64 `json:"sentiment_votes_up_percentage"`
+	SentimentVotesDownPercentage float64 `json:"sentiment_votes_down_percentage"`
+	WatchlistPortfolioUsers      int     `json:"watchlist_portfolio_users"`
+	MarketCapRank                int     `json:"market_cap_rank"`
+	LastUpdated                  string  `json:"last_updated"`
+}
+
+// TokenMetadata represents the common metadata fields between different providers
+type TokenMetadata struct {
+	// Basic Info
+	Address string `json:"address"`
+	Symbol  string `json:"symbol"`
+	Name    string `json:"name"`
+	LogoURL string `json:"logo_url"`
+
+	// Social Links
+	Website  string `json:"website"`
+	Twitter  string `json:"twitter"`
+	Telegram string `json:"telegram"`
+	Discord  string `json:"discord"`
+
+	// External IDs
+	CoingeckoID string `json:"coingecko_id"`
+}
+
+// FromBirdEye converts BirdEye metadata to the common format
+func (t *TokenMetadata) FromBirdEye(data *CoinBirdeyeMetadata) {
+	t.Address = data.Address
+	t.Symbol = data.Symbol
+	t.Name = data.Name
+	t.LogoURL = data.LogoURI
+	t.Website = data.Extensions.Website
+	t.Twitter = data.Extensions.Twitter
+	t.CoingeckoID = data.Extensions.CoingeckoID
+	t.Discord = data.Extensions.Discord
+}
+
+// FromCoinGecko converts CoinGecko metadata to the common format
+func (t *TokenMetadata) FromCoinGecko(data *CoinGeckoMetadata) {
+	t.Address = data.ContractAddress
+	t.Symbol = data.Symbol
+	t.Name = data.Name
+	t.LogoURL = data.Image.Large
+	if len(data.Links.Homepage) > 0 {
+		t.Website = data.Links.Homepage[0]
+	}
+	t.Twitter = data.Links.TwitterScreenName
+	t.Telegram = data.Links.TelegramChannelIdentifier
+}

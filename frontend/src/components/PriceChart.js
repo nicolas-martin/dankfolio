@@ -54,45 +54,50 @@ const ChartAdapter = {
       borderWidth: 0,
     };
 
+    const formatDateTime = (timestamp) => {
+      const date = new Date(Number(timestamp) * 1000);
+      return {
+        date: date.toLocaleDateString([], {
+          month: 'short',
+          day: 'numeric'
+        }),
+        time: date.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        })
+      };
+    };
+
     const CustomTooltip = ({ active, payload }) => {
       if (active && payload && payload.length) {
         if (dragArea.start && dragArea.end) {
           const dragData = getDragData(dragArea.start, dragArea.end);
           if (!dragData) return null;
           const { startValue, endValue, change } = dragData;
-          const startTime = new Date(Number(dragArea.start) * 1000).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          });
-          const endTime = new Date(Number(dragArea.end) * 1000).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          });
+          const startDateTime = formatDateTime(dragArea.start);
+          const endDateTime = formatDateTime(dragArea.end);
           return (
             <View style={tooltipStyle}>
               <Text style={[styles.tooltipText, { color: '#9F9FD5', fontSize: 12, marginBottom: 4 }]}>
-                {startTime} → {endTime}
+                {startDateTime.date} {startDateTime.time} → {endDateTime.date} {endDateTime.time}
               </Text>
               <Text style={[styles.tooltipText, { color: endValue > startValue ? '#00C853' : '#FF5252', fontSize: 12, fontWeight: 'bold' }]}>
-                ${startValue} → ${endValue} ({change}%)
+                {formatPrice(startValue)} → {formatPrice(endValue)} ({change}%)
               </Text>
             </View>
           );
         }
-        const timestamp = new Date(payload[0].payload.timestamp * 1000);
-        const time = timestamp.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        });
+        const timestamp = payload[0].payload.timestamp;
+        const { date, time } = formatDateTime(timestamp);
         return (
           <View style={tooltipStyle}>
             <Text style={[styles.tooltipText, { color: '#FFFFFF', marginBottom: 4 }]}>
               {formatPrice(payload[0].value)}
             </Text>
-            <Text style={[styles.tooltipText, { color: '#9F9FD5', fontSize: 10 }]}>{time}</Text>
+            <Text style={[styles.tooltipText, { color: '#9F9FD5', fontSize: 10 }]}>
+              {date} {time}
+            </Text>
           </View>
         );
       }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -17,19 +18,11 @@ const (
 	SolTokenAddress = "So11111111111111111111111111111111111111112"
 )
 
-// TokenList represents the structure of trimmed_mainnet.json
-type TokenList struct {
-	Tokens []struct {
-		Token struct {
-			Symbol   string `json:"symbol"`
-			Name     string `json:"name"`
-			Mint     string `json:"mint"`
-			Decimals int    `json:"decimals"`
-		} `json:"token"`
-		Pools []struct {
-			ID string `json:"id"`
-		} `json:"pools"`
-	} `json:"tokens"`
+// Config holds the configuration for the coin service
+type Config struct {
+	BirdEyeBaseURL  string
+	BirdEyeAPIKey   string
+	CoinGeckoAPIKey string
 }
 
 // Service provides methods for working with coins
@@ -37,14 +30,18 @@ type Service struct {
 	raydiumClient *RaydiumClient
 	jupiterClient *JupiterClient
 	coins         map[string]model.Coin // Simple in-memory storage
+	config        *Config
+	httpClient    *http.Client
 }
 
 // NewService creates a new coin service
-func NewService() *Service {
+func NewService(config *Config, httpClient *http.Client) *Service {
 	service := &Service{
 		raydiumClient: NewRaydiumClient(),
 		jupiterClient: NewJupiterClient(),
 		coins:         make(map[string]model.Coin),
+		config:        config,
+		httpClient:    httpClient,
 	}
 
 	// Load initial data but don't block or fail if it doesn't work
@@ -270,4 +267,88 @@ func (s *Service) refreshCoins() error {
 
 	log.Printf("✨ Successfully refreshed %d coins with Jupiter data", len(s.coins))
 	return nil
+}
+
+func (s *Service) getCoinBirdeyeMetadata(address string) (*TokenMetadata, error) {
+	if address == "" {
+		return nil, fmt.Errorf("address is required")
+	}
+
+	url := fmt.Sprintf("%s/defi/v3/token/meta-data/single?address=%s", s.config.BirdEyeBaseURL, address)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("x-chain", "solana")
+	req.Header.Set("x-api-key", s.config.BirdEyeAPIKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var response BirdEyeMetadataResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if !response.Success {
+		return nil, fmt.Errorf("API returned unsuccessful response")
+	}
+
+	metadata := &TokenMetadata{}
+	metadata.FromBirdEye(&response.Data)
+	return metadata, nil
+}
+
+func (s *Service) getCoinGeckoMetadata(address string) (*TokenMetadata, error) {
+	if address == "" {
+		return nil, fmt.Errorf("address is required")
+	}
+
+	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/solana/contract/%s", address)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("x-cg-demo-api-key", s.config.CoinGeckoAPIKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("token not found on CoinGecko")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var geckoMetadata CoinGeckoMetadata
+	if err := json.NewDecoder(resp.Body).Decode(&geckoMetadata); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	metadata := &TokenMetadata{}
+	metadata.FromCoinGecko(&geckoMetadata)
+	return metadata, nil
+}
+
+// GetCoinMetadata fetches metadata from the default provider (CoinGecko)
+func (s *Service) GetCoinMetadata(address string) (*TokenMetadata, error) {
+	return s.getCoinGeckoMetadata(address)
 }

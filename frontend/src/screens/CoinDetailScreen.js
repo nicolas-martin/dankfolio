@@ -32,8 +32,14 @@ const CoinDetailScreen = ({ route, navigation }) => {
       let durationPerPoint;
 
       switch (timeframe) {
+        case '15m':
+          durationPerPoint = 900; // 15 minutes in seconds
+          break;
         case '1H':
           durationPerPoint = 3600; // 1 hour in seconds
+          break;
+        case '4H':
+          durationPerPoint = 14400; // 4 hours in seconds
           break;
         case '1D':
           durationPerPoint = 86400; // 1 day in seconds
@@ -45,7 +51,7 @@ const CoinDetailScreen = ({ route, navigation }) => {
           durationPerPoint = 2592000; // 1 month in seconds
           break;
         default:
-          durationPerPoint = 3600; // Default to 1 hour
+          durationPerPoint = 86400; // 1 day in seconds
       }
 
       const timeFrom = now - (points * durationPerPoint);
