@@ -27,18 +27,35 @@ const CoinDetailScreen = ({ route, navigation }) => {
   const fetchPriceData = useCallback(async (timeframe) => {
     setIsLoading(true);
     try {
-      // Always fetch 24 hours of data
       const now = Math.floor(Date.now() / 1000);
-      const oneDayInSeconds = 86400; // 24 hours in seconds
-      const timeFrom = now - oneDayInSeconds;
+      const points = 100;
+      let durationPerPoint;
 
-      // Convert UI timeframe to API timeframe
+      switch (timeframe) {
+        case '1H':
+          durationPerPoint = 3600; // 1 hour in seconds
+          break;
+        case '1D':
+          durationPerPoint = 86400; // 1 day in seconds
+          break;
+        case '1W':
+          durationPerPoint = 604800; // 1 week in seconds
+          break;
+        case '1M':
+          durationPerPoint = 2592000; // 1 month in seconds
+          break;
+        default:
+          durationPerPoint = 3600; // Default to 1 hour
+      }
+
+      const timeFrom = now - (points * durationPerPoint);
+
       console.log('⏰ Time range:', {
         timeFrom: new Date(timeFrom * 1000).toISOString(),
         timeTo: new Date(now * 1000).toISOString(),
         uiTimeframe: timeframe,
         timeframe,
-        rangeDuration: '24 hours'
+        rangeDuration: `${points} data points`
       });
 
       const response = await api.getPriceHistory(
