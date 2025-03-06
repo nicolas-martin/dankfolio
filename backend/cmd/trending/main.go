@@ -7,17 +7,40 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
-// Pool represents a liquidity pool on Raydium
-type Pool struct {
-	Market      string  `json:"market"`
-	BaseMint    string  `json:"baseMint"`
-	QuoteMint   string  `json:"quoteMint"`
-	Volume24h   float64 `json:"volume24h"`
-	TokenSymbol string  `json:"name"`
+// BirdeyeResponse represents the response from Birdeye API
+type BirdeyeResponse struct {
+	Success bool        `json:"success"`
+	Data    BirdeyeData `json:"data"`
+}
+
+// BirdeyeData represents the data field in the response
+type BirdeyeData struct {
+	UpdateUnixTime int64          `json:"updateUnixTime"`
+	UpdateTime     string         `json:"updateTime"`
+	Tokens         []BirdeyeToken `json:"tokens"`
+	Total          int            `json:"total"`
+}
+
+// BirdeyeToken represents a token from Birdeye API
+type BirdeyeToken struct {
+	Address                string  `json:"address"`
+	Decimals               int     `json:"decimals"`
+	Liquidity              float64 `json:"liquidity"`
+	LogoURI                string  `json:"logoURI"`
+	Name                   string  `json:"name"`
+	Symbol                 string  `json:"symbol"`
+	Volume24hUSD           float64 `json:"volume24hUSD"`
+	Volume24hChangePercent float64 `json:"volume24hChangePercent"`
+	Rank                   int     `json:"rank"`
+	Price                  float64 `json:"price"`
+	Price24hChangePercent  float64 `json:"price24hChangePercent"`
+	FDV                    float64 `json:"fdv"`
+	Marketcap              float64 `json:"marketcap"`
 }
 
 // TrendingToken represents a trending token with its details
@@ -27,95 +50,119 @@ type TrendingToken struct {
 	Volume float64 `json:"volume"`
 }
 
-// FetchRaydiumPools gets liquidity pools from Raydium's API
-func FetchRaydiumPools() ([]Pool, error) {
-	url := "https://api.raydium.io/v2/main/pairs"
+// FetchBirdeyeTrendingTokensParams represents the parameters for fetching trending tokens
+type FetchBirdeyeTrendingTokensParams struct {
+	SortBy   string `json:"sort_by"`   // Defaults to "rank", can be "volume24hUSD" or "liquidity"
+	SortType string `json:"sort_type"` // Defaults to "asc"
+	Offset   int    `json:"offset"`    // Defaults to 0
+	Limit    int    `json:"limit"`     // Defaults to 20 (1 to 20)
+}
 
-	resp, err := http.Get(url)
+func init() {
+	// Load .env file from the project root
+	if err := godotenv.Load("../../.env"); err != nil {
+		fmt.Printf("Warning: Error loading .env file: %v\n", err)
+	}
+}
+
+// FetchBirdeyeTrendingTokens gets trending tokens from Birdeye API
+func FetchBirdeyeTrendingTokens(params *FetchBirdeyeTrendingTokensParams) ([]BirdeyeToken, error) {
+	baseURL := "https://public-api.birdeye.so/defi/token_trending"
+	apiKey := os.Getenv("BIRDEYE_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("BIRDEYE_API_KEY not found in environment")
+	}
+
+	// Set default values if params is nil
+	if params == nil {
+		params = &FetchBirdeyeTrendingTokensParams{
+			SortBy:   "rank",
+			SortType: "asc",
+			Offset:   0,
+			Limit:    20,
+		}
+	}
+
+	// Build query parameters
+	query := fmt.Sprintf("?sort_by=%s&sort_type=%s&offset=%d&limit=%d",
+		params.SortBy,
+		params.SortType,
+		params.Offset,
+		params.Limit,
+	)
+
+	req, err := http.NewRequest("GET", baseURL+query, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	req.Header.Set("X-API-KEY", apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching data: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API request failed with status code %d: %s", resp.StatusCode, string(body))
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response: %v", err)
 	}
+	fmt.Println("--------------------------------")
+	fmt.Println(string(body))
+	fmt.Println("--------------------------------")
 
-	var pools []Pool
-	if err := json.Unmarshal(body, &pools); err != nil {
+	var response BirdeyeResponse
+	if err := json.Unmarshal(body, &response); err != nil {
 		return nil, fmt.Errorf("error unmarshalling JSON: %v", err)
 	}
 
-	return pools, nil
+	if !response.Success {
+		return nil, fmt.Errorf("API returned unsuccessful response")
+	}
+
+	return response.Data.Tokens, nil
 }
 
-// GetTrendingTokens fetches and sorts tokens by 24h volume
+// GetTrendingTokens fetches and formats tokens by 24h volume
 func GetTrendingTokens() ([]TrendingToken, error) {
-	pools, err := FetchRaydiumPools()
+	// Using default parameters (rank, asc, limit 10)
+	params := &FetchBirdeyeTrendingTokensParams{
+		SortBy:   "rank",
+		SortType: "asc",
+		Offset:   0,
+		Limit:    10,
+	}
+
+	tokens, err := FetchBirdeyeTrendingTokens(params)
 	if err != nil {
 		return nil, err
 	}
 
-	// Sort pools by trading volume (descending)
-	sort.Slice(pools, func(i, j int) bool {
-		return pools[i].Volume24h > pools[j].Volume24h
-	})
-
-	// Get top 10 tokens and format them
 	var trendingTokens []TrendingToken
-	seenMints := make(map[string]bool)
+	solMint := "So11111111111111111111111111111111111111112"
 
-	for _, pool := range pools {
-		if len(trendingTokens) >= 10 {
-			break
-		}
-
-		// Skip if we've already seen this token
-		if seenMints[pool.BaseMint] || seenMints[pool.QuoteMint] {
+	for _, token := range tokens {
+		// Skip if it's SOL
+		if token.Address == solMint {
 			continue
 		}
 
-		// Add the token that isn't SOL
-		if pool.BaseMint != "So11111111111111111111111111111111111111112" {
-			// Extract token symbol from pool name (usually in format "WSOL/TOKEN")
-			symbol := pool.TokenSymbol
-			if parts := strings.Split(symbol, "/"); len(parts) == 2 {
-				if strings.ToUpper(parts[0]) == "WSOL" {
-					symbol = strings.TrimSpace(parts[1])
-				} else {
-					symbol = strings.TrimSpace(parts[0])
-				}
-			}
+		// Clean up symbol (remove any /USDC or similar suffixes)
+		symbol := strings.Split(token.Symbol, "/")[0]
+		symbol = strings.TrimSpace(symbol)
 
-			trendingTokens = append(trendingTokens, TrendingToken{
-				Symbol: symbol,
-				Mint:   pool.BaseMint,
-				Volume: pool.Volume24h,
-			})
-			seenMints[pool.BaseMint] = true
-		} else if pool.QuoteMint != "So11111111111111111111111111111111111111112" {
-			// Extract token symbol from pool name (usually in format "WSOL/TOKEN")
-			symbol := pool.TokenSymbol
-			if parts := strings.Split(symbol, "/"); len(parts) == 2 {
-				if strings.ToUpper(parts[0]) == "WSOL" {
-					symbol = strings.TrimSpace(parts[1])
-				} else {
-					symbol = strings.TrimSpace(parts[0])
-				}
-			}
-
-			trendingTokens = append(trendingTokens, TrendingToken{
-				Symbol: symbol,
-				Mint:   pool.QuoteMint,
-				Volume: pool.Volume24h,
-			})
-			seenMints[pool.QuoteMint] = true
-		}
+		trendingTokens = append(trendingTokens, TrendingToken{
+			Symbol: symbol,
+			Mint:   token.Address,
+			Volume: token.Volume24hUSD,
+		})
 	}
 
 	return trendingTokens, nil
@@ -137,7 +184,7 @@ func main() {
 	outputFile := "./trending_tokens.json"
 
 	// Create parent directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(outputFile), 0755); err != nil {
+	if err = os.MkdirAll(filepath.Dir(outputFile), 0o755); err != nil {
 		fmt.Println("Error creating directory:", err)
 		return
 	}
@@ -148,7 +195,7 @@ func main() {
 		return
 	}
 
-	if err := os.WriteFile(outputFile, file, 0644); err != nil {
+	if err := os.WriteFile(outputFile, file, 0o644); err != nil {
 		fmt.Println("Error writing file:", err)
 		return
 	}
