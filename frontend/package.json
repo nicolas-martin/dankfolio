@@ -34,6 +34,7 @@
     "react-native-svg": "^14.1.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.13",
+    "recharts": "^2.15.1",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {

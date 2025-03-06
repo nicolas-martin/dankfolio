@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/internal/service/price"
@@ -40,13 +41,13 @@ func (h *PriceHandlers) GetPriceHistory(w http.ResponseWriter, r *http.Request) 
 		historyType = "15m" // Default to 15-minute intervals
 	}
 
-	// Validate history type
-	validTypes := map[string]bool{
-		"1m": true, "3m": true, "5m": true, "15m": true, "30m": true,
-		"1H": true, "2H": true, "4H": true, "6H": true, "8H": true, "12H": true,
-		"1D": true, "3D": true, "1W": true, "1M": true,
+	validTypes := map[string]string{
+		"1m": "1m", "3m": "3m", "5m": "5m", "15m": "15m", "30m": "30m",
+		"1h": "1H", "2h": "2H", "4h": "4H", "6h": "6H", "8h": "8H", "12h": "12H",
+		"1d": "1D", "3d": "3D", "1w": "1W",
 	}
-	if _, ok := validTypes[historyType]; !ok {
+	fixedType, ok := validTypes[strings.ToLower(historyType)]
+	if !ok {
 		respondError(w, "invalid type parameter. Must be one of: 1m, 3m, 5m, 15m, 30m, 1H, 2H, 4H, 6H, 8H, 12H, 1D, 3D, 1W, 1M", http.StatusBadRequest)
 		return
 	}
@@ -80,7 +81,7 @@ func (h *PriceHandlers) GetPriceHistory(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Get price history from service
-	priceHistory, err := h.priceService.GetPriceHistory(r.Context(), address, historyType, timeFrom, timeTo, addressType)
+	priceHistory, err := h.priceService.GetPriceHistory(r.Context(), address, fixedType, timeFrom, timeTo, addressType)
 	if err != nil {
 		respondError(w, "Failed to get price history: "+err.Error(), http.StatusInternalServerError)
 		return

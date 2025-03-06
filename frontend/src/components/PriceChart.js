@@ -1,6 +1,122 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Dimensions } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
+// Chart adapter to abstract the specific chart library implementation
+const ChartAdapter = {
+    LineChart: ({ 
+        data, 
+        width, 
+        height, 
+        onPointClick, 
+        showTooltip, 
+        tooltipContent,
+        tooltipPosition,
+        style = {},
+        config = {}
+    }) => {
+        // Determine if price trend is negative
+        const prices = data.datasets[0].data;
+        const isNegativeTrend = prices.length > 1 && prices[0] > prices[prices.length - 1];
+        const lineColor = isNegativeTrend ? '#FF5252' : '#00C853';
+
+        // Custom tooltip component
+        const CustomTooltip = ({ active, payload, coordinate }) => {
+            if (active && payload && payload.length) {
+                const { x, y } = coordinate || {};
+                return (
+                    <View style={[
+                        styles.tooltip,
+                        {
+                            position: 'absolute',
+                            left: x,
+                            top: y - 40,
+                            transform: [{
+                                translateX: x > (width / 2) ? -100 : 10
+                            }]
+                        }
+                    ]}>
+                        <Text style={[styles.tooltipText, { color: lineColor }]}>
+                            ${payload[0].value}
+                        </Text>
+                    </View>
+                );
+            }
+            return null;
+        };
+
+        // Custom dot component
+        const CustomDot = (props) => {
+            const { cx, cy, payload } = props;
+            return (
+                <circle 
+                    cx={cx} 
+                    cy={cy} 
+                    r={3} 
+                    stroke={lineColor}
+                    strokeWidth={2} 
+                    fill="#1E1E30" 
+                />
+            );
+        };
+
+        return (
+            <ResponsiveContainer width="100%" height={height}>
+                <LineChart
+                    data={data.datasets[0].data.map((value, index) => ({
+                        value,
+                        timestamp: index
+                    }))}
+                    margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                    onMouseMove={(e) => {
+                        if (e && e.activePayload) {
+                            onPointClick(e.activePayload[0].payload);
+                        }
+                    }}
+                >
+                    <defs>
+                        <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={lineColor} stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor={lineColor} stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
+                    <XAxis 
+                        dataKey="timestamp" 
+                        hide={true}
+                    />
+                    <YAxis 
+                        hide={true}
+                        domain={['auto', 'auto']}
+                    />
+                    <Tooltip 
+                        content={<CustomTooltip />}
+                        cursor={{ 
+                            stroke: lineColor, 
+                            strokeWidth: 1, 
+                            strokeDasharray: '5 5',
+                            strokeOpacity: 0.5
+                        }}
+                        isAnimationActive={false}
+                        animationDuration={0}
+                        position={{ x: 'auto', y: 'auto' }}
+                        wrapperStyle={{ outline: 'none' }}
+                        allowEscapeViewBox={{ x: true, y: true }}
+                    />
+                    <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke={lineColor}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={<CustomDot />}
+                        isAnimationActive={false}
+                        fill="url(#colorGradient)"
+                    />
+                </LineChart>
+            </ResponsiveContainer>
+        );
+    }
+};
 
 /**
  * PriceChart component for displaying crypto price history
@@ -11,7 +127,7 @@ import { LineChart } from 'react-native-chart-kit';
  * @param {Function} props.onTimeframeChange - Function to call when timeframe is changed
  */
 const PriceChart = ({ data = [], timeframe = '1D', onTimeframeChange }) => {
-    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, visible: true, value: 0 });
+    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, visible: false, value: 0 });
     
     const timeframes = [
         { label: '15m', value: '15m' },
@@ -23,18 +139,10 @@ const PriceChart = ({ data = [], timeframe = '1D', onTimeframeChange }) => {
 
     // Format data for the chart - use raw values
     const chartData = {
-        labels: data.map(() => ''), // Empty labels for cleaner look
+        labels: data.map(() => ''),
         datasets: [{
-            data: data.map(item => Number(item.value)), // Ensure we're using the raw number
-            color: (opacity = 1) => `rgba(255, 82, 82, ${opacity})`,
-            strokeWidth: 2
+            data: data.map(item => Number(item.value))
         }]
-    };
-
-    // Display raw value without any formatting/truncation
-    const formatValue = (value) => {
-        if (value === null || value === undefined) return 'N/A';
-        return `$${value}`;
     };
 
     return (
@@ -45,7 +153,12 @@ const PriceChart = ({ data = [], timeframe = '1D', onTimeframeChange }) => {
                         key={tf.value}
                         style={[
                             styles.timeframeButton,
-                            timeframe === tf.value && styles.timeframeButtonActive,
+                            timeframe === tf.value && {
+                                backgroundColor: chartData.datasets[0].data.length > 1 && 
+                                    chartData.datasets[0].data[0] > chartData.datasets[0].data[chartData.datasets[0].data.length - 1] 
+                                    ? '#FF5252' 
+                                    : '#00C853'
+                            },
                         ]}
                         onPress={() => onTimeframeChange(tf.value)}
                     >
@@ -58,76 +171,13 @@ const PriceChart = ({ data = [], timeframe = '1D', onTimeframeChange }) => {
                     </TouchableOpacity>
                 ))}
             </View>
-            <View style={styles.chartContainer}>
-                <LineChart
+            <View style={[styles.chartContainer, { height: 220 }]}>
+                <ChartAdapter.LineChart
                     data={chartData}
                     width={Dimensions.get('window').width - 32}
                     height={220}
-                    chartConfig={{
-                        backgroundColor: 'transparent',
-                        backgroundGradientFrom: '#1E1E30',
-                        backgroundGradientTo: '#1E1E30',
-                        decimalPlaces: 20, // Increased to show more decimals
-                        color: (opacity = 1) => `rgba(255, 82, 82, ${opacity})`,
-                        labelColor: (opacity = 1) => `rgba(159, 159, 213, ${opacity})`,
-                        propsForLabels: {
-                            fontSize: 10 // Smaller font size to fit more decimals
-                        },
-                        style: {
-                            borderRadius: 16
-                        },
-                        propsForDots: {
-                            r: '2',
-                            strokeWidth: '1',
-                            stroke: '#FF5252'
-                        },
-                        propsForBackgroundLines: {
-                            strokeDasharray: '',
-                            strokeWidth: 0.5,
-                            stroke: 'rgba(159, 159, 213, 0.1)'
-                        },
-                        formatYLabel: (value) => value // Use raw value for Y-axis labels
-                    }}
-                    bezier
-                    style={{
-                        marginVertical: 8,
-                        borderRadius: 12
-                    }}
-                    withDots={true}
-                    withShadow={false}
-                    withInnerLines={true}
-                    withOuterLines={false}
-                    withVerticalLines={false}
-                    withHorizontalLines={true}
-                    withVerticalLabels={false}
-                    withHorizontalLabels={true}
-                    decorator={() => {
-                        if (tooltipPos.visible) {
-                            return (
-                                <View style={[
-                                    styles.tooltip,
-                                    {
-                                        left: tooltipPos.x - 40,
-                                        top: tooltipPos.y - 40
-                                    }
-                                ]}>
-                                    <Text style={styles.tooltipText}>
-                                        {formatValue(tooltipPos.value)}
-                                    </Text>
-                                </View>
-                            );
-                        }
-                        return null;
-                    }}
-                    onDataPointClick={({value, x, y}) => {
-                        setTooltipPos({
-                            x,
-                            y,
-                            value,
-                            visible: true
-                        });
-                        setTimeout(() => setTooltipPos(prev => ({...prev, visible: false})), 2000);
-                    }}
+                    onPointClick={() => {}}
+                    showTooltip={true}
                 />
             </View>
         </View>
@@ -172,17 +222,19 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     tooltip: {
-        position: 'absolute',
         backgroundColor: 'rgba(30, 30, 48, 0.9)',
         padding: 8,
         borderRadius: 6,
         borderWidth: 1,
         borderColor: '#FF5252',
+        zIndex: 10,
+        pointerEvents: 'none'
     },
     tooltipText: {
         color: '#FFFFFF',
         fontSize: 12,
         fontWeight: '600',
+        whiteSpace: 'nowrap'
     }
 });
 
