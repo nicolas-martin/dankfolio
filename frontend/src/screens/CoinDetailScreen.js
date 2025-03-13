@@ -149,8 +149,11 @@ const CoinDetailScreen = ({ route, navigation }) => {
     };
 
     loadData();
+  }, []); // Only run once on mount
+
+  useEffect(() => {
     fetchPriceData(selectedTimeframe);
-  }, [selectedTimeframe, fetchPriceData, fetchMetadata]);
+  }, [selectedTimeframe, fetchPriceData]); // Only run when timeframe changes
 
   const formatVolume = (volume) => {
     if (!volume) return 'N/A';
@@ -175,8 +178,6 @@ const CoinDetailScreen = ({ route, navigation }) => {
             </View>
           </View>
         </View>
-
-        {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>24h High</Text>
@@ -191,8 +192,6 @@ const CoinDetailScreen = ({ route, navigation }) => {
             <Text style={styles.statValue}>${formatVolume(coin.daily_volume || priceStats.volume24h)}</Text>
           </View>
         </View>
-
-        {/* Tags */}
         {coin.tags && coin.tags.length > 0 && (
           <View style={styles.tagsContainer}>
             {coin.tags.map((tag, index) => (
@@ -202,11 +201,9 @@ const CoinDetailScreen = ({ route, navigation }) => {
             ))}
           </View>
         )}
-
-        {/* Price Chart */}
         <View style={styles.chartContainer}>
           {isLoading ? (
-            <ActivityIndicator size="large" color="#6A5ACD" />
+            <ActivityIndicator size="large" color="#6A5ACD"/>
           ) : (
             <PriceChart
               data={chartData}
@@ -217,8 +214,6 @@ const CoinDetailScreen = ({ route, navigation }) => {
             />
           )}
         </View>
-
-        {/* Metadata Section */}
         {metadata && (
           <View style={styles.metadataContainer}>
             <Text style={styles.metadataTitle}>Token Information</Text>
@@ -276,32 +271,26 @@ const CoinDetailScreen = ({ route, navigation }) => {
             </View>
           </View>
         )}
-
-        {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity
             style={[styles.actionButton, styles.buyButton]}
-            onPress={() =>
-              navigation.navigate('Trade', {
-                initialFromCoin: 'SOL',
-                initialToCoin: coin.symbol,
-                wallet,
-                coins
-              })
-            }
+            onPress={() => navigation.navigate('Trade', {
+              initialFromCoin: 'SOL',
+              initialToCoin: coin.symbol,
+              wallet,
+              coins
+            })}
           >
             <Text style={styles.actionButtonText}>Buy</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.sellButton]}
-            onPress={() =>
-              navigation.navigate('Trade', {
-                initialFromCoin: coin.symbol,
-                initialToCoin: 'USDC',
-                wallet,
-                coins
-              })
-            }
+            onPress={() => navigation.navigate('Trade', {
+              initialFromCoin: coin.symbol,
+              initialToCoin: 'USDC',
+              wallet,
+              coins
+            })}
           >
             <Text style={styles.actionButtonText}>Sell</Text>
           </TouchableOpacity>
