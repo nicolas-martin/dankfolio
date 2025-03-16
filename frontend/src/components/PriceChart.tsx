@@ -7,6 +7,8 @@ import {
   VictoryArea,
   VictoryVoronoiContainer,
   VictoryTooltip,
+  VictoryVoronoiContainerProps,
+  DomainTuple
 } from 'victory-native';
 
 interface PriceChartProps {
@@ -24,11 +26,10 @@ interface TimeframeOption {
 }
 
 const timeframes: TimeframeOption[] = [
-  { label: '15m', value: '15m' },
   { label: '1H', value: '1H' },
-  { label: '4H', value: '4H' },
-  { label: '1D', value: '1D' },
-  { label: '1W', value: '1W' }
+  { label: '24H', value: '24H' },
+  { label: '7D', value: '7D' },
+  { label: '30D', value: '30D' }
 ];
 
 const PriceChart: React.FC<PriceChartProps> = ({
@@ -62,13 +63,13 @@ const PriceChart: React.FC<PriceChartProps> = ({
   // Format time based on timeframe
   const formatTime = (timestamp: Date) => {
     switch (timeframe) {
-      case '15m':
       case '1H':
-      case '4H':
         return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-      case '1D':
-        return timestamp.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
-      case '1W':
+      case '24H':
+        return timestamp.toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      case '7D':
+        return timestamp.toLocaleString([], { month: 'short', day: 'numeric' });
+      case '30D':
         return timestamp.toLocaleString([], { month: 'short', day: 'numeric' });
       default:
         return timestamp.toLocaleString();
@@ -107,7 +108,9 @@ const PriceChart: React.FC<PriceChartProps> = ({
           scale={{ x: "time" }}
           containerComponent={
             <VictoryVoronoiContainer
-              onActivated={(points) => {
+              mouseFollowTooltips
+              voronoiDimension="x"
+              onTouchStart={(points: { x: number; y: number; datum: any }[]) => {
                 const point = points[0];
                 if (point && onHover) {
                   onHover({
@@ -117,6 +120,17 @@ const PriceChart: React.FC<PriceChartProps> = ({
                   });
                 }
               }}
+              onActivated={(points: { x: number; y: number; datum: any }[]) => {
+                const point = points[0];
+                if (point && onHover) {
+                  onHover({
+                    price: point.y,
+                    timestamp: point.datum.timestamp,
+                    percentChange: calculatePercentChange(point.y)
+                  });
+                }
+              }}
+              onTouchEnd={() => onHover?.(null)}
               onDeactivated={() => onHover?.(null)}
               labels={({ datum }) => `$${datum.y.toFixed(4)}`}
               labelComponent={
@@ -126,6 +140,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
                     fill: '#000000CC',
                     stroke: 'none',
                   }}
+                  constrainToVisibleArea
                 />
               }
             />

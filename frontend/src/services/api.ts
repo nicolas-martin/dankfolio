@@ -132,7 +132,7 @@ interface API {
   fetchAvailableCoins: () => Promise<Coin[]>;
   fetchCoinById: (coinId: string) => Promise<Coin>;
   searchCoins: (query: string) => Promise<Coin[]>;
-  getPriceHistory: (address: string, type?: string, timeFrom?: number, timeTo?: number, addressType?: string) => Promise<any>;
+  getPriceHistory: (address: string, timeframe: string) => Promise<any>;
   getCoinMetadata: (address: string) => Promise<any>;
 }
 
@@ -295,49 +295,48 @@ const api: API = {
     }
   },
 
-  getPriceHistory: async (
-    address: string,
-    type: string = '1h',
-    timeFrom: number | null = null,
-    timeTo: number | null = null,
-    addressType: string = 'token'
-  ) => {
+  getPriceHistory: async (address: string, timeframe: string = '1H') => {
     try {
-      const params = {
-        address,
-        address_type: addressType,
-        type,
-        time_from: timeFrom,
-        time_to: timeTo
-      };
-
-      if (!address || !timeFrom || !timeTo) {
-        throw new Error('Missing required parameters: address, type, time_from, and time_to are required');
+      // Calculate time_from and time_to based on timeframe
+      const now = Math.floor(Date.now() / 1000);
+      let time_from = now;
+      let type = '5m'; // Default interval type
+      
+      switch (timeframe) {
+        case '1H':
+          time_from = now - 3600; // 1 hour ago
+          type = '5m';
+          break;
+        case '24H':
+          time_from = now - 86400; // 24 hours ago
+          type = '15m';
+          break;
+        case '7D':
+          time_from = now - 604800; // 7 days ago
+          type = '1h';
+          break;
+        case '30D':
+          time_from = now - 2592000; // 30 days ago
+          type = '4h';
+          break;
+        default:
+          time_from = now - 3600; // Default to 1 hour
+          type = '5m';
       }
 
-      console.log('🔍 Fetching price history with params:', JSON.stringify(params, null, 2));
-
-      const response = await apiClient.get('/api/price/history', { params });
-
-      if (response.status === 200) {
-        console.log('✅ Successfully processed price history data');
-        return response.data.data;
-      } else {
-        throw new Error('Failed to fetch price history');
-      }
-    } catch (error) {
-      console.error('❌ Error fetching price history:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        status: (error as any).response?.status,
-        statusText: (error as any).response?.statusText,
-        data: (error as any).response?.data,
-        config: {
-          url: (error as any).config?.url,
-          method: (error as any).config?.method,
-          params: (error as any).config?.params
+      const response = await apiClient.get('/api/price/history', {
+        params: {
+          address,
+          address_type: 'token',
+          type,
+          time_from,
+          time_to: now
         }
       });
-      throw handleApiError(error);
+      
+      return response.data;
+    } catch (error) {
+      return handleApiError(error);
     }
   },
 

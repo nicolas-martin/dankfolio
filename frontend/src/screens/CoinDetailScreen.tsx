@@ -8,7 +8,14 @@ import PriceChart from '../components/PriceChart';
 import { secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { Coin, Wallet } from '../types';
-import FastImage from 'react-native-fast-image';
+
+// Conditionally import FastImage
+let FastImage: any = Image;
+try {
+  FastImage = require('react-native-fast-image').default;
+} catch (error) {
+  console.warn('FastImage not available, falling back to regular Image');
+}
 
 interface PriceStats {
   high24h: number;
@@ -22,13 +29,15 @@ interface ChartDataItem {
 }
 
 interface PriceHistoryItem {
-  value: string | null;
-  unixTime: number | null;
+  value: number;
+  unixTime: number;
 }
 
 interface PriceHistoryResponse {
-  items: PriceHistoryItem[];
-  totalVolume?: number;
+  data: {
+    items: PriceHistoryItem[];
+  };
+  success: boolean;
 }
 
 interface CoinMetadata {
@@ -85,9 +94,11 @@ const CoinDetailScreen: React.FC = () => {
           api.getCoinById(coinId),
           api.getPriceHistory(coinId, timeframe)
         ]);
-        setCoin(coinData);
-        const transformedData = transformPriceHistory(priceHistory);
-        setChartData(transformedData);
+        if (coinData && priceHistory) {
+          setCoin(coinData);
+          const transformedData = transformPriceHistory(priceHistory);
+          setChartData(transformedData);
+        }
       } catch (error) {
         console.error('Error fetching coin data:', error);
       } finally {
@@ -100,10 +111,13 @@ const CoinDetailScreen: React.FC = () => {
 
   // Transform price history data with proper typing
   const transformPriceHistory = (data: PriceHistoryResponse) => {
-    return data.items?.map((item: PriceHistoryItem) => ({
-      price: item.value ? parseFloat(item.value) : 0,
-      timestamp: item.unixTime || 0
-    })) || [];
+    if (!data?.data?.items) return [];
+    return data.data.items
+      .filter((item: PriceHistoryItem) => item.value !== null && item.unixTime !== null)
+      .map((item: PriceHistoryItem) => ({
+        price: item.value,
+        timestamp: item.unixTime
+      }));
   };
 
   // Navigate to trade screen
