@@ -24,14 +24,19 @@ export interface Wallet {
   balance: number;
 }
 
-export interface RootStackParamList {
+export type RootStackParamList = {
   Home: undefined;
-  CoinDetail: { coinId: string };
   Trade: {
-    initialFromCoin: Coin | null;
-    initialToCoin: Coin | null;
+    initialFromCoin?: Coin;
+    initialToCoin?: Coin;
     wallet?: string;
+    coins?: Coin[];
   };
-}
+  Profile: {};
+  CoinDetail: {
+    coin: Coin;
+  };
+  TestPriceChart: undefined;
+};
 
 // ... rest of the types ... 

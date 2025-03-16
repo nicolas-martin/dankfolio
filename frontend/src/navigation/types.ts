@@ -16,4 +16,5 @@ export type RootStackParamList = {
     excludeCoinId?: string;
     currentCoinId?: string;
   };
+  TestPriceChart: undefined;
 }; 

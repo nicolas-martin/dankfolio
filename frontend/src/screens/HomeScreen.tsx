@@ -230,12 +230,22 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               </View>
             )}
           </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('Profile', {})}
-          >
-            <Text style={styles.profileButtonText}>View Profile</Text>
-          </TouchableOpacity>
+          <View style={styles.profileContainer}>
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => navigation.navigate('Profile', {})}
+            >
+              <Text style={styles.profileButtonText}>View Profile</Text>
+            </TouchableOpacity>
+
+            {/* Test Chart Button */}
+            <TouchableOpacity
+              style={[styles.profileButton, { marginTop: 10, backgroundColor: '#FF5252' }]}
+              onPress={() => navigation.navigate('TestPriceChart')}
+            >
+              <Text style={styles.profileButtonText}>Test Chart</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
         <View style={styles.content}>
@@ -391,12 +401,17 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 16,
   },
+  profileContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+  },
   profileButton: {
     backgroundColor: '#6A5ACD',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20,
   },
   profileButtonText: {
     color: '#fff',

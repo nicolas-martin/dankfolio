@@ -6,9 +6,7 @@ import {
   VictoryAxis,
   VictoryArea,
   VictoryVoronoiContainer,
-  VictoryTooltip,
-  VictoryVoronoiContainerProps,
-  DomainTuple
+  VictoryTooltip
 } from 'victory-native';
 
 interface PriceChartProps {
@@ -40,6 +38,11 @@ const PriceChart: React.FC<PriceChartProps> = ({
   timeframe = '1H',
   onTimeframeChange
 }) => {
+  // Ensure data is not empty
+  if (!data || data.length === 0) {
+    return <Text style={{ color: '#FF5252' }}>No data available</Text>;
+  }
+
   // Calculate price trend
   const prices = data.map(d => d.price);
   const isNegativeTrend = prices.length > 1 && prices[0] > prices[prices.length - 1];
@@ -106,9 +109,9 @@ const PriceChart: React.FC<PriceChartProps> = ({
           width={width}
           padding={{ top: 20, bottom: 30, left: 50, right: 20 }}
           scale={{ x: "time" }}
+          domainPadding={{ x: [10, 10], y: [10, 10] }}
           containerComponent={
             <VictoryVoronoiContainer
-              mouseFollowTooltips
               voronoiDimension="x"
               onTouchStart={(points: { x: number; y: number; datum: any }[]) => {
                 const point = points[0];
@@ -135,12 +138,13 @@ const PriceChart: React.FC<PriceChartProps> = ({
               labels={({ datum }) => `$${datum.y.toFixed(4)}`}
               labelComponent={
                 <VictoryTooltip
+                  active
+                  renderInPortal={false}
                   style={{ fill: '#FFFFFF' }}
                   flyoutStyle={{
                     fill: '#000000CC',
                     stroke: 'none',
                   }}
-                  constrainToVisibleArea
                 />
               }
             />
@@ -171,6 +175,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
                 stroke: "none"
               }
             }}
+            animate={false}
           />
           <VictoryLine
             data={formattedData}
@@ -181,6 +186,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
                 strokeWidth: 2
               }
             }}
+            animate={false}
           />
         </VictoryChart>
       </View>
