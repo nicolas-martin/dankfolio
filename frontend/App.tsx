@@ -3,19 +3,43 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Coin } from './src/types';
+import { Dispatch, SetStateAction } from 'react';
 
 // Import screens
 import HomeScreen from './src/screens/HomeScreen';
 import TradeScreen from './src/screens/TradeScreen';
-import HistoryScreen from './src/screens/HistoryScreen';
-import CoinDetailScreen from './src/screens/CoinDetailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import CoinDetailScreen from './src/screens/CoinDetailScreen';
+import CoinSelect from './src/screens/CoinSelect';
 
-// Create stack navigator
-const Stack = createNativeStackNavigator();
+// Define the root stack parameter list
+export type RootStackParamList = {
+  Home: undefined;
+  Trade: {
+    initialFromCoin?: Coin;
+    initialToCoin?: Coin;
+    wallet?: string;
+    coins?: Coin[];
+  };
+  CoinDetail: {
+    coinId: string;
+  };
+  Profile: {
+    walletAddress?: string;
+  };
+  CoinSelect: {
+    onSelect: Dispatch<SetStateAction<string>>;
+    excludeCoinId: string;
+    currentCoinId: string;
+  };
+};
 
-export default function App() {
+// Create stack navigator with types
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const App: React.FC = () => {
   return (
     <NavigationContainer>
       <StatusBar style="light" />
@@ -29,13 +53,13 @@ export default function App() {
       >
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Trade" component={TradeScreen} />
-        <Stack.Screen name="History" component={HistoryScreen} />
-        <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
+        <Stack.Screen name="CoinSelect" component={CoinSelect} />
       </Stack.Navigator>
     </NavigationContainer>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -45,3 +69,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+export default App; 

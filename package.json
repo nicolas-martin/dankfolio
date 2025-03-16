@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@react-navigation/stack": "^7.1.2",
+    "react-native-fast-image": "^8.6.3"
+  }
+}

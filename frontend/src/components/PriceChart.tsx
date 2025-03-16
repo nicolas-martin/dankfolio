@@ -1,55 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Dimensions } from 'react-native';
 import {
   VictoryChart,
   VictoryLine,
   VictoryAxis,
   VictoryArea,
-  VictoryVoronoiContainer
+  VictoryVoronoiContainer,
+  VictoryTooltip,
 } from 'victory-native';
 
-const PriceChart = ({ data = [], timeframe = '15m', onTimeframeChange }) => {
-  // Define timeframe options
-  const timeframes = [
-    { label: '15m', value: '15m' },
-    { label: '1H', value: '1H' },
-    { label: '4H', value: '4H' },
-    { label: '1D', value: '1D' },
-    { label: '1W', value: '1W' },
-  ];
+interface PriceChartProps {
+  data: Array<{ price: number; timestamp: number }>;
+  onHover?: (dataPoint: { price: number; timestamp: number; percentChange: number } | null) => void;
+  width?: number;
+  height?: number;
+  timeframe?: string;
+  onTimeframeChange?: (timeframe: string) => void;
+}
 
-  // Prepare chart data
-  const chartData = {
-    labels: data.map(item => item.timestamp),
-    datasets: [{ data: data.map(item => Number(item.value)) }]
-  };
+interface TimeframeOption {
+  label: string;
+  value: string;
+}
 
-  const prices = chartData.datasets[0].data;
-  const isNegativeTrend =
-    prices.length > 1 && prices[0] > prices[prices.length - 1];
+const timeframes: TimeframeOption[] = [
+  { label: '15m', value: '15m' },
+  { label: '1H', value: '1H' },
+  { label: '4H', value: '4H' },
+  { label: '1D', value: '1D' },
+  { label: '1W', value: '1W' }
+];
+
+const PriceChart: React.FC<PriceChartProps> = ({
+  data,
+  onHover,
+  width = Dimensions.get('window').width - 40,
+  height = 220,
+  timeframe = '1H',
+  onTimeframeChange
+}) => {
+  // Calculate price trend
+  const prices = data.map(d => d.price);
+  const isNegativeTrend = prices.length > 1 && prices[0] > prices[prices.length - 1];
   const lineColor = isNegativeTrend ? '#FF5252' : '#00C853';
   const fillColor = isNegativeTrend ? '#FF525233' : '#00C85333';
 
   // Format data for Victory
-  const formattedData = chartData.labels.map((timestamp, index) => ({
-    x: new Date(Number(timestamp) * 1000),
-    y: chartData.datasets[0].data[index]
+  const formattedData = data.map(d => ({
+    x: new Date(d.timestamp * 1000),
+    y: d.price,
+    timestamp: d.timestamp
   }));
 
+  // Calculate percent change
+  const calculatePercentChange = useCallback((currentPrice: number) => {
+    const initialPrice = data[0]?.price;
+    if (!initialPrice) return 0;
+    return ((currentPrice - initialPrice) / initialPrice) * 100;
+  }, [data]);
+
   // Format time based on timeframe
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
+  const formatTime = (timestamp: Date) => {
     switch (timeframe) {
       case '15m':
       case '1H':
       case '4H':
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
       case '1D':
-        return date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+        return timestamp.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
       case '1W':
-        return date.toLocaleString([], { month: 'short', day: 'numeric' });
+        return timestamp.toLocaleString([], { month: 'short', day: 'numeric' });
       default:
-        return date.toLocaleString();
+        return timestamp.toLocaleString();
     }
   };
 
@@ -65,7 +87,7 @@ const PriceChart = ({ data = [], timeframe = '15m', onTimeframeChange }) => {
                 backgroundColor: isNegativeTrend ? '#FF5252' : '#00C853'
               },
             ]}
-            onPress={() => onTimeframeChange(tf.value)}
+            onPress={() => onTimeframeChange?.(tf.value)}
           >
             <Text style={[
               styles.timeframeText,
@@ -77,18 +99,34 @@ const PriceChart = ({ data = [], timeframe = '15m', onTimeframeChange }) => {
         ))}
       </View>
 
-      <View style={[styles.chartContainer, { height: 220 }]}>
+      <View style={[styles.chartContainer, { height }]}>
         <VictoryChart
-          height={220}
+          height={height}
+          width={width}
           padding={{ top: 20, bottom: 30, left: 50, right: 20 }}
           scale={{ x: "time" }}
           containerComponent={
             <VictoryVoronoiContainer
+              onActivated={(points) => {
+                const point = points[0];
+                if (point && onHover) {
+                  onHover({
+                    price: point.y,
+                    timestamp: point.datum.timestamp,
+                    percentChange: calculatePercentChange(point.y)
+                  });
+                }
+              }}
+              onDeactivated={() => onHover?.(null)}
               labels={({ datum }) => `$${datum.y.toFixed(4)}`}
               labelComponent={
-                <View style={styles.tooltip}>
-                  <Text style={styles.tooltipText}>${datum => datum.y.toFixed(4)}</Text>
-                </View>
+                <VictoryTooltip
+                  style={{ fill: '#FFFFFF' }}
+                  flyoutStyle={{
+                    fill: '#000000CC',
+                    stroke: 'none',
+                  }}
+                />
               }
             />
           }
@@ -168,16 +206,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderRadius: 12,
     overflow: 'hidden'
-  },
-  tooltip: {
-    backgroundColor: '#000000CC',
-    padding: 8,
-    borderRadius: 6
-  },
-  tooltipText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600'
   }
 });
 
