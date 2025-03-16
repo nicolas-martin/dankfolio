@@ -24,8 +24,8 @@ func NewService(apiKey string) *Service {
 	}
 }
 
-func (s *Service) GetPriceHistory(ctx context.Context, address string, historyType string, timeFrom, timeTo int64, addressType string) (*model.PriceHistoryResponse, error) {
-	url := fmt.Sprintf("%s/defi/history_price?address=%s&address_type=%s&type=%s&time_from=%d&time_to=%d",
+func (s *Service) GetPriceHistory(ctx context.Context, address string, historyType string, timeFrom, timeTo string, addressType string) (*model.PriceHistoryResponse, error) {
+	url := fmt.Sprintf("%s/defi/history_price?address=%s&address_type=%s&type=%s&time_from=%s&time_to=%s",
 		s.baseURL,
 		address,
 		addressType,

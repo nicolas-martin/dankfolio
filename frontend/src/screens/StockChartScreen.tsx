@@ -49,14 +49,20 @@ const StockChartScreen: React.FC<Props> = ({ navigation, route }) => {
         const fetchPriceHistory = async (timeframe: string) => {
                 try {
                         setLoading(true);
-                        const now = Math.floor(Date.now() / 1000);
+                        const time_from = Math.floor(Date.now() / 1000);
 
                         const points = 100;
                         let durationPerPoint;
 
                         switch (timeframe) {
+                                case '15m':
+                                        durationPerPoint = 900; // 15 minutes in seconds
+                                        break;
                                 case '1H':
                                         durationPerPoint = 3600; // 1 hour in seconds
+                                        break;
+                                case '4H':
+                                        durationPerPoint = 14400; // 4 hours in seconds
                                         break;
                                 case '1D':
                                         durationPerPoint = 86400; // 1 day in seconds
@@ -68,23 +74,18 @@ const StockChartScreen: React.FC<Props> = ({ navigation, route }) => {
                                         durationPerPoint = 2592000; // 1 month in seconds
                                         break;
                                 default:
-                                        durationPerPoint = 3600; // Default to 1 hour
+                                        throw new Error(`Invalid timeframe: ${timeframe}`);
                         }
 
-                        const timeFrom = now - (points * durationPerPoint);
+                        const time_to = time_from - (points * durationPerPoint);
+
                         const response = await api.getPriceHistory(
                                 "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
                                 timeframe,
-                                timeFrom.toString(),
-                                now.toString(),
+                                time_to.toString(),
+                                time_from.toString(),
                                 "token"
                         );
-
-                        console.log('API Response:', {
-                                hasItems: Boolean(response?.items),
-                                itemsLength: response?.items?.length,
-                                sampleItem: response?.items?.[0]
-                        });
 
                         // Check structure based on your actual response shape
                         if (response?.items) {

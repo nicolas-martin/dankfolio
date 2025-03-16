@@ -2,9 +2,7 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/nicolas-martin/dankfolio/internal/service/price"
 )
@@ -52,36 +50,20 @@ func (h *PriceHandlers) GetPriceHistory(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Get time parameters with defaults
-	timeFrom := time.Now().Add(-24 * time.Hour).Unix() // Default to last 24 hours
-	timeTo := time.Now().Unix()                        // Default to current time
-
-	if fromStr := r.URL.Query().Get("time_from"); fromStr != "" {
-		if tf, err := strconv.ParseInt(fromStr, 10, 64); err == nil {
-			timeFrom = tf
-		} else {
-			respondError(w, "invalid time_from parameter", http.StatusBadRequest)
-			return
-		}
+	fromStr := r.URL.Query().Get("time_from")
+	if fromStr == "" {
+		respondError(w, "invalid time_from parameter", http.StatusBadRequest)
+		return
 	}
 
-	if toStr := r.URL.Query().Get("time_to"); toStr != "" {
-		if tt, err := strconv.ParseInt(toStr, 10, 64); err == nil {
-			timeTo = tt
-		} else {
-			respondError(w, "invalid time_to parameter", http.StatusBadRequest)
-			return
-		}
-	}
-
-	// Validate time range
-	if timeFrom >= timeTo {
-		respondError(w, "time_from must be less than time_to", http.StatusBadRequest)
+	toStr := r.URL.Query().Get("time_to")
+	if toStr == "" {
+		respondError(w, "invalid time_to parameter", http.StatusBadRequest)
 		return
 	}
 
 	// Get price history from service
-	priceHistory, err := h.priceService.GetPriceHistory(r.Context(), address, fixedType, timeFrom, timeTo, addressType)
+	priceHistory, err := h.priceService.GetPriceHistory(r.Context(), address, fixedType, fromStr, toStr, addressType)
 	if err != nil {
 		respondError(w, "Failed to get price history: "+err.Error(), http.StatusInternalServerError)
 		return
