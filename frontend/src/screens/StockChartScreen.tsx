@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -73,16 +72,33 @@ const StockChartScreen: React.FC<Props> = ({ navigation, route }) => {
                         }
 
                         const timeFrom = now - (points * durationPerPoint);
-                        const response = await api.getPriceHistory("CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump", timeFrom);
+                        const response = await api.getPriceHistory(
+                                "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
+                                timeframe,
+                                timeFrom.toString(),
+                                now.toString(),
+                                "token"
+                        );
+
+                        console.log('API Response:', {
+                                hasItems: Boolean(response?.items),
+                                itemsLength: response?.items?.length,
+                                sampleItem: response?.items?.[0]
+                        });
 
                         // Check structure based on your actual response shape
-                        if (response?.success && response.data?.items) {
-                                const mapped = response.data.items
+                        if (response?.items) {
+                                const mapped = response.items
                                         .filter((item: any) => item.value !== null && item.unixTime !== null)
                                         .map((item: any) => ({
                                                 x: new Date(item.unixTime * 1000),
                                                 y: parseFloat(item.value) // keep full precision
                                         }));
+                                console.log('Transformed data:', {
+                                        originalLength: response.items.length,
+                                        filteredLength: mapped.length,
+                                        sampleTransformed: mapped[0]
+                                });
                                 setPriceHistory(mapped);
                         } else {
                                 setPriceHistory([]);
@@ -143,7 +159,14 @@ const StockChartScreen: React.FC<Props> = ({ navigation, route }) => {
                         {loading ? (
                                 <ActivityIndicator size="large" style={{ marginTop: 20 }} />
                         ) : (
-                                <GoogleFinanceChart data={priceHistory} />
+                                <>
+                                        {console.log('Rendering chart with price history:', {
+                                                length: priceHistory.length,
+                                                first: priceHistory[0],
+                                                last: priceHistory[priceHistory.length - 1]
+                                        })}
+                                        <GoogleFinanceChart data={priceHistory} />
+                                </>
                         )}
                 </View>
         );

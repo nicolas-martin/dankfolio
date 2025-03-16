@@ -1,7 +1,6 @@
-
 // GoogleFinanceChart.tsx
 import React from "react";
-import { View, Platform } from "react-native";
+import { View } from "react-native";
 import {
         VictoryChart,
         VictoryAxis,
@@ -9,44 +8,76 @@ import {
         VictoryGroup,
         createContainer
 } from "victory-native";
+import { Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 
-interface ChartPoint {
+interface ChartData {
         x: Date;
         y: number;
 }
 
 interface Props {
-        data: ChartPoint[];
+        data: ChartData[];
 }
 
+// Combine cursor + voronoi for a crosshair & tooltips
 const CursorVoronoiContainer = createContainer("cursor", "voronoi");
 
 const GoogleFinanceChart: React.FC<Props> = ({ data }) => {
-        const domain = data.length > 1 ? [data[0].x, data[data.length - 1].x] : undefined;
+        console.log('Chart received data:', {
+                dataLength: data?.length || 0,
+                firstItem: data?.[0],
+                lastItem: data?.[data?.length - 1],
+                isDateInstance: data?.[0]?.x instanceof Date,
+                sampleDates: data?.slice(0, 3)?.map(d => ({
+                        date: d.x?.toString(),
+                        value: d.y
+                }))
+        });
+
+        // Calculate y-axis domain with some padding
+        const yValues = data.map(d => d.y);
+        const minY = Math.min(...yValues);
+        const maxY = Math.max(...yValues);
+        const yPadding = (maxY - minY) * 0.1; // 10% padding
+
+        // Domain (x-axis range and y-axis range)
+        const domain = data.length > 0 
+                ? {
+                        x: [data[0].x, data[data.length - 1].x],
+                        y: [minY - yPadding, maxY + yPadding]
+                }
+                : undefined;
+
+        console.log('Chart domain:', domain);
 
         return (
                 <View>
                         <VictoryChart
-                                disableAccessibility
+                                padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
                                 scale={{ x: "time", y: "linear" }}
-                                domain={domain ? { x: domain } : undefined}
+                                domain={domain}
+                                width={350}
+                                height={300}
                                 containerComponent={
                                         <CursorVoronoiContainer
                                                 cursorDimension="x"
-                                                cursorLineStyle={{
-                                                        stroke: "#999",
-                                                        strokeDasharray: "3,3",
-                                                        strokeWidth: 1
-                                                }}
                                                 voronoiDimension="x"
+                                                cursorComponent={
+                                                        <line
+                                                                style={{
+                                                                        stroke: "#999",
+                                                                        strokeDasharray: "3,3",
+                                                                        strokeWidth: 1
+                                                                }}
+                                                        />
+                                                }
                                                 // Show full precision in tooltip
                                                 labels={({ datum }) => {
                                                         const dateStr = datum.x.toLocaleDateString();
-                                                        // Use full numeric representation
-                                                        return `USD $${datum.y}\n${dateStr}`;
+                                                        return `USD $${datum.y.toFixed(8)}\n${dateStr}`;
                                                 }}
-                                                // Haptic feedback on iOS/Android only
+                                                // Haptics only on native
                                                 onActivated={(points) => {
                                                         if (points?.length && (Platform.OS === "ios" || Platform.OS === "android")) {
                                                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -55,22 +86,25 @@ const GoogleFinanceChart: React.FC<Props> = ({ data }) => {
                                         />
                                 }
                         >
+                                {/* X-axis */}
                                 <VictoryAxis
-                                        tickFormat={(d: Date) => `${d.getMonth() + 1}/${d.getDate()}`}
+                                        tickFormat={(t: Date) => `${t.getMonth() + 1}/${t.getDate()}`}
                                         style={{
                                                 axis: { stroke: "#ccc" },
                                                 tickLabels: { fill: "#444", fontSize: 12 }
                                         }}
                                 />
+                                {/* Y-axis */}
                                 <VictoryAxis
                                         dependentAxis
-                                        tickFormat={(val: number) => `$${val}`}
+                                        tickFormat={(val: number) => `$${val.toFixed(4)}`}
                                         style={{
                                                 axis: { stroke: "#ccc" },
                                                 tickLabels: { fill: "#444", fontSize: 12 }
                                         }}
                                 />
 
+                                {/* The green area + line */}
                                 <VictoryGroup data={data}>
                                         <VictoryArea
                                                 style={{

@@ -159,10 +159,7 @@ const api: API = {
 
   getAvailableCoins: async () => {
     try {
-      console.log('🔍 Fetching available coins from:', `${baseURL}/api/coins`);
       const response = await apiClient.get<Coin[]>('/api/coins');
-      console.log('📦 Response data:', JSON.stringify(response.data, null, 2));
-      console.log(`✅ Fetched ${response.data?.length || 0} coins successfully`);
       return response.data;
     } catch (error) {
       console.error('❌ Error getting coins:', error);
