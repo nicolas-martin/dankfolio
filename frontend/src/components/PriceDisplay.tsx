@@ -52,7 +52,6 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
                     }}
                     style={styles.icon}
                     resizeMode="contain"
-                    priority="normal"
                 />
                 {name && <Text style={styles.name}>{name}</Text>}
             </View>

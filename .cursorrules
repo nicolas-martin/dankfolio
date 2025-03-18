@@ -1,59 +1,108 @@
-// Meme Trading Project .cursorrules
-// -------------------------------------------------
-// This file defines custom rules for Cursor AI to generate code
-// and documentation that align with the Meme Trading project's goals,
-// style, and domain-specific requirements.
-// -------------------------------------------------
+# Custom Cursor AI Rules for Meme Trading
 
-// Code Style & Conventions
-- Use clear, descriptive variable and function names related to meme trading (e.g., memeAsset, tradeValidator).
-- Write concise, meaningful comments, especially around trade logic, image handling, and user feedback.
-- Follow ES6+ syntax and prefer modular code organization (e.g., separate trading logic, API interactions, and UI components).
-- For backend code, adhere to RESTful API principles and robust error handling.
+This file defines custom rules for generating code and documentation that align with meme trading. The format below uses markdown for clear organization.
 
-// User Interface Guidelines
-- Use animations and transitions to enhance the trading experience, but keep performance in mind.
+---
+
+## 1. Code Style & Conventions
+
+- Use clear, descriptive names for variables and functions (e.g., `memeAsset`, `tradeValidator`).
+- Write concise comments around trade logic, image handling, and user feedback.
+- Use ES6+ syntax with modular code organization for trading logic, API interactions, and UI components.
+- For backend code, follow RESTful API principles and robust error handling.
+
+---
+
+## 2. User Interface Guidelines
+
+- Use animations and transitions to improve the trading experience while keeping performance in mind.
 - Maintain a consistent, meme-inspired visual language (e.g., playful icons, vibrant colors).
-- Ensure the interface is responsive and accessible across devices.
+- Build a responsive interface across devices.
 
-// Project-Specific Requirements
-- Memes should be treated as unique digital assets; include checks for authenticity and ownership.
-- Trading operations must validate user credentials and confirm meme availability before processing.
-- Optimize media handling for quick load times and smooth rendering.
+---
 
-// Dependencies & Technology Stack Guidelines
-- Frontend: Consider frameworks such as React or Next.js for dynamic UI components.
-- Backend: Use Node.js/Express (or your preferred stack) for API endpoints.
-- Testing: Write unit and integration tests for core trading functions and UI interactions.
-- Asset Storage: Use CDN or specialized storage solutions (e.g., AWS S3) for meme assets
-aching
+## 3. Project-Specific Requirements
 
-// Cursor AI Specific Instructions
-- When generating code, ensure that suggestions include project-specific naming and comments.
-- Focus on creating modular, reusable components for trading logic, UI feedback, and data validation.
-- Prioritize performance and responsiveness in generated code, especially for asynchronous operations.
-- Avoid generic boilerplate; always add context or comments that explain how the code relates to meme trading.
-- Keep summaries brief and concise for minor changes, only provide detailed explanations for major or complex modifications.
+- Treat memes as unique digital assets; include checks for authenticity and ownership.
+- Validate user credentials and confirm meme availability before processing trades.
+- Optimize media handling for fast load times and smooth rendering.
 
-// Maintenance & Future Enhancements
-- Regularly review and update these rules to reflect changes in project scope or best practices.
-- Align generated code closely with the evolving design guidelines and technical architecture of the project.
+---
 
-// Project specific rules
-- Use emojis in your composer responses
-- Do not worry about database, migration or repository for now. Just get everything working in memory we will address storage solution at a later date
-- When testing the api make sure to test all endpoints and make sure they are working as expected
-- When testing an api, run the related test file in `./backend/scripts/`
-- Use very small default amount for SOLANA 0.000000001
-- Retrict the amount of changes to exactly what the user inputed. 
-- Do not over optimize, do not over engineer, keep it simple and straigh to the point.
-- If you have ideas on how to make things future proof, prompt me before making the changes.
+## 4. Dependencies & Technology Stack Guidelines
 
-// mcp rules
-- When you need to fetch api documentation use the websearch mcp 
-- Whenever you use a mcp I want you to tell me and write it in bold in the response. 
-- Execute the mcp calls automatically. Don't ask me to run the tool
+- **Frontend:** Use frameworks like React or Next.js for dynamic UI components.
+- **Backend:** Use Node.js/Express (or your preferred stack) for API endpoints.
+- **Testing:** Write unit and integration tests for core trading functions and UI interactions.
+- **Asset Storage:** Use a CDN or specialized storage (e.g., AWS S3) for caching meme assets.
 
-- When starting the backend use the makefile in the root `make run`. It will start the server and hang the console.
-- To run the front end use the make file in the root and run `make run-mobile`
-- No component or screens should have direct javascript code. Instead they should be create in ./utils and imported.
+---
+
+## 5. Cursor AI Specific Instructions
+
+- Include project-specific naming and comments in generated code.
+- Create modular, reusable components for trading logic, UI feedback, and data validation.
+- Focus on performance and responsiveness, especially for asynchronous operations.
+- Avoid generic boilerplate; add context or comments relating the code to meme trading.
+- Keep summaries brief for minor changes and detailed only for major modifications.
+
+---
+
+## 6. Maintenance & Future Enhancements
+
+- Review and update these rules as project scope or best practices change.
+- Align generated code with evolving design guidelines and technical architecture.
+
+---
+
+## 7. Project Specific Rules
+
+- Use emojis in your composer responses.
+- Skip database, migration, or repository concerns; work in memory until storage solutions are addressed.
+- Test all API endpoints and confirm they function as expected.
+- Run related test files in `./backend/scripts/` when testing an API.
+- Use a very small default amount for SOLANA: 0.000000001.
+- Limit changes strictly to the user's input.
+- Avoid over optimizing or over engineering; keep it simple and straight to the point.
+- Ask before applying ideas for future proofing.
+
+---
+
+## 8. MCP Rules
+
+- Use the websearch mcp to fetch API documentation. **MCP call executed.**
+- Bold any mention of MCP usage in your responses.
+- Execute MCP calls automatically without asking the user.
+
+---
+
+## 9. Execution Instructions
+
+- Start the backend with `make run` from the root makefile. This starts the server and holds the console.
+- Run the frontend with `make run-mobile` from the root makefile.
+- Do not embed direct JavaScript in components or screens. Create code in `./utils` and import it.
+
+---
+
+## 10. Interaction Steps
+
+### 10.1 User Identification
+
+1. Assume you interact with default_user.
+2. Identify default_user if not already done.
+
+### 10.2 Memory Retrieval
+
+- Begin with "Remembering..." and fetch all relevant info from your memory (knowledge graph).
+
+### 10.3 Memory
+
+- Track new information on identity, behaviors, preferences, goals, and relationships.
+
+### 10.4 Memory Update
+
+- If you receive new information, update your memory by:
+  - Creating entities for recurring organizations, people, and key events.
+  - Connecting these entities to current ones using relations.
+  - Storing facts as observations.
+
