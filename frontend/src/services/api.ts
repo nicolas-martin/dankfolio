@@ -214,9 +214,7 @@ const api: API = {
 
         createWallet: async () => {
                 try {
-                        console.log('🔐 Creating new wallet...');
                         const response = await apiClient.post<WalletResponse>('/api/wallets');
-                        console.log('✅ Wallet created successfully');
                         return response.data;
                 } catch (error) {
                         console.error('❌ Error creating wallet:', error);
@@ -226,9 +224,7 @@ const api: API = {
 
         getWalletByAddress: async (address: string) => {
                 try {
-                        console.log('🔍 Fetching wallet info for address:', address);
                         const response = await apiClient.get<Wallet>(`/api/wallets/${address}`);
-                        console.log('✅ Wallet info retrieved successfully');
                         return response.data;
                 } catch (error) {
                         console.error('❌ Error fetching wallet:', error);
@@ -238,9 +234,7 @@ const api: API = {
 
         getWalletBalance: async (address: string) => {
                 try {
-                        console.log('💰 Fetching balance for wallet:', address);
                         const response = await apiClient.get<WalletBalance>(`/api/wallets/${address}/balance`);
-                        console.log('✅ Wallet balance retrieved successfully');
 
                         // Transform the backend response to match what the frontend expects
                         const data = response.data;
@@ -312,7 +306,6 @@ const api: API = {
                         const response = await apiClient.get('/api/price/history', { params });
 
                         if (response.status === 200) {
-                                console.log('✅ Successfully processed price history data');
                                 return response.data.data;
                         } else {
                                 throw new Error('Failed to fetch price history');
@@ -326,9 +319,7 @@ const api: API = {
 
         getCoinMetadata: async (address: string) => {
                 try {
-                        console.log('🔍 Fetching metadata for coin:', address);
                         const response = await apiClient.get(`/api/coins/${address}/metadata`);
-                        console.log('✅ Successfully fetched coin metadata');
                         return response.data;
                 } catch (error) {
                         console.error('❌ Error fetching coin metadata:', error);

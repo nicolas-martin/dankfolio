@@ -8,6 +8,7 @@ import PlatformImage from '../components/PlatformImage';
 import CoinChart from '../components/CoinChart';
 import BackButton from '../components/BackButton';
 import CoinMetadata from '../components/CoinMetadata';
+import PriceDisplay from '../components/PriceDisplay';
 import { secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { Coin, Wallet, RootStackParamList } from '../types/index';
@@ -180,6 +181,20 @@ const CoinDetailScreen: React.FC = () => {
                                         </View>
                                 </View>
 
+                                {/* Price Display */}
+                                {coin && priceHistory.length >= 2 && (
+                                    <PriceDisplay 
+                                        price={priceHistory[priceHistory.length - 1]?.y || 0}
+                                        periodChange={
+                                            ((priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y) / 
+                                            priceHistory[0]?.y) * 100
+                                        }
+                                        valueChange={
+                                            priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
+                                        }
+                                        period={selectedTimeframe}
+                                    />
+                                )}
 
                                 {/* Chart */}
                                 <View style={styles.chartContainer}>
@@ -229,20 +244,20 @@ const CoinDetailScreen: React.FC = () => {
                                         </TouchableOpacity>
                                 </View>
 
-                                {/* Metadata Component */}
+                                {/* Metadata */}
                                 {!metadataLoading && metadata ? (
-                                        <CoinMetadata
-                                                metadata={{
-                                                        name: metadata.name || coin?.name || '',
-                                                        website: metadata.website,
-                                                        twitter: metadata.twitter,
-                                                        telegram: metadata.telegram,
-                                                        discord: metadata.discord,
-                                                        daily_volume: metadata.daily_volume || 0,
-                                                }}
-                                        />
+                                    <CoinMetadata
+                                        metadata={{
+                                            name: metadata.name || coin?.name || '',
+                                            website: metadata.website,
+                                            twitter: metadata.twitter,
+                                            telegram: metadata.telegram,
+                                            discord: metadata.discord,
+                                            daily_volume: route.params.daily_volume || coin?.daily_volume || 0,
+                                        }}
+                                    />
                                 ) : (
-                                        <ActivityIndicator style={styles.metadataLoader} />
+                                    <ActivityIndicator style={styles.metadataLoader} />
                                 )}
 
                         </ScrollView>

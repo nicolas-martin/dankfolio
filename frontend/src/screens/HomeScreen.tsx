@@ -136,8 +136,9 @@ const HomeScreen: React.FC = () => {
   const handleCoinPress = (coin: Coin) => {
     navigation.navigate('CoinDetail', {
       coinId: coin.id,
-      coinName: coin.name
-    } satisfies RootStackParamList['CoinDetail']);
+      coinName: coin.name,
+      daily_volume: coin.daily_volume
+    });
   };
 
   const loadCoins = async (): Promise<void> => {

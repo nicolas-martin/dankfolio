@@ -9,20 +9,8 @@ export interface Coin {
   icon_url: string;
   decimals: number;
   daily_volume: number;
-  tags: string[];
-  priceChange24h?: number;
-  priceChangePercentage24h?: number;
-  balance?: number;
-  metadata?: {
-    website?: string;
-    twitter?: string;
-    discord?: string;
-    telegram?: string;
-  };
-  jupiterInfo?: {
-    tags?: string[];
-    decimals?: number;
-  };
+  price_change_24h?: number;
+  tags?: string[];
 }
 
 export interface Wallet {
@@ -33,17 +21,16 @@ export interface Wallet {
 
 export type RootStackParamList = {
   Home: undefined;
-  Trade: {
-    initialFromCoin?: Coin;
-    initialToCoin?: Coin;
-    wallet?: string;
-    coins?: Coin[];
-  };
-  Profile: undefined;
   CoinDetail: {
     coinId: string;
     coinName: string;
+    daily_volume?: number;
   };
+  Trade: {
+    coinId: string;
+    coinName: string;
+  };
+  Profile: Record<string, never>;
   CoinSelect: {
     onSelect: (coinId: string) => void;
     excludeCoinId?: string;
