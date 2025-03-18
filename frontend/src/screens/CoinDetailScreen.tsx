@@ -182,7 +182,7 @@ const CoinDetailScreen: React.FC = () => {
                                                         priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
                                                 }
                                                 period={selectedTimeframe}
-                                                logo_url={coin.logo_url}
+                                                icon_url={coin.logo_url}
                                                 name={coin.name}
                                         />
                                 )}
@@ -276,8 +276,9 @@ const styles = StyleSheet.create({
                 backgroundColor: '#191B1F',
         },
         chartContainer: {
+                height: Platform.OS === 'web' ? 400 : undefined,
                 marginVertical: 20,
-                height: 400,
+                overflow: 'hidden',
         },
         timeframeRow: {
                 flexDirection: "row",

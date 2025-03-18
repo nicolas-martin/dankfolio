@@ -19,7 +19,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
         <TouchableOpacity
             style={styles.container}
             onPress={() => onPress(coin)}
-
+            testID="coin-card"
         >
             <View style={styles.leftSection}>
                 <Image

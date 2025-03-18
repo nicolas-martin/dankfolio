@@ -38,15 +38,9 @@ interface NotificationState {
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
-  // Wallet and coin states
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [privateKey, setPrivateKey] = useState<string>('');
   const [coins, setCoins] = useState<Coin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredCoins, setFilteredCoins] = useState<Coin[]>([]);
-
-  // Notification state
   const [notification, setNotification] = useState<NotificationState>({
     visible: false,
     type: 'info',
@@ -75,12 +69,33 @@ const HomeScreen: React.FC = () => {
     }
   }, []);
 
+  const handleImportWallet = async (privateKey: string) => {
+    try {
+      const keypair = getKeypairFromPrivateKey(privateKey);
+      const walletData: Wallet = {
+        address: keypair.publicKey.toString(),
+        privateKey: privateKey,
+        balance: 0
+      };
+      setWallet(walletData);
+      await secureStorage.saveWallet(walletData);
+    } catch (error) {
+      console.error('Error importing wallet:', error);
+      showNotification('error', 'Failed to import wallet');
+    }
+  };
+
   const initializeData = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       const savedWallet = await secureStorage.getWallet();
       if (savedWallet) {
         setWallet(savedWallet);
+      } else if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
+        console.log('🧪 Development mode detected, auto-importing test wallet');
+        await handleImportWallet(TEST_PRIVATE_KEY);
+      } else {
+        showNotification('error', 'No wallet available');
       }
       await fetchAvailableCoins();
     } catch (err) {
@@ -94,33 +109,6 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     initializeData();
   }, [initializeData]);
-
-  const handleCreateWallet = async (): Promise<void> => {
-    try {
-      const newWallet = await api.createWallet();
-      setWallet({
-        address: newWallet.address,
-        privateKey: newWallet.private_key,
-        balance: 0
-      });
-    } catch (error) {
-      console.error('Error creating wallet:', error);
-    }
-  };
-
-  const handleImportWallet = async (privateKey: string) => {
-    try {
-      const keypair = getKeypairFromPrivateKey(privateKey);
-      const walletData: Wallet = {
-        address: keypair.publicKey.toString(),
-        privateKey: privateKey,
-        balance: 0
-      };
-      setWallet(walletData);
-    } catch (error) {
-      console.error('Error importing wallet:', error);
-    }
-  };
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -141,16 +129,8 @@ const HomeScreen: React.FC = () => {
     });
   };
 
-  const loadCoins = async (): Promise<void> => {
-    try {
-      await fetchAvailableCoins();
-    } catch (err) {
-      console.error('Error loading coins:', err);
-    }
-  };
-
   const onRefresh = (): void => {
-    loadCoins();
+    fetchAvailableCoins();
   };
 
   if (loading) {
@@ -178,18 +158,6 @@ const HomeScreen: React.FC = () => {
 
       {wallet ? (
         <View style={styles.content}>
-          {/* Wallet info */}
-          <View style={styles.walletCard}>
-            <Text style={styles.walletTitle}>Your Wallet</Text>
-            <Text style={styles.walletAddress} numberOfLines={1} ellipsizeMode="middle">
-              {wallet.address}
-            </Text>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Coins list */}
           <View style={styles.coinsSection}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Available Coins</Text>
@@ -224,43 +192,10 @@ const HomeScreen: React.FC = () => {
         </View>
       ) : (
         <View style={styles.content}>
-          <View style={styles.walletActions}>
-            <TouchableOpacity style={styles.createButton} onPress={handleCreateWallet}>
-              <Text style={styles.buttonText}>Create New Wallet</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.importButton}
-              onPress={() => setPrivateKey(TEST_PRIVATE_KEY)}
-            >
-              <Text style={styles.buttonText}>Import Wallet</Text>
-            </TouchableOpacity>
+          <View style={styles.centerContainer}>
+            <Text style={styles.loadingText}>Loading wallet...</Text>
+            <ActivityIndicator size="large" color="#6A5ACD" />
           </View>
-
-          {privateKey && (
-            <View style={styles.importForm}>
-              <View style={styles.testWalletBanner}>
-                <Text style={styles.testWalletTitle}>🧪 Testing Mode 🧪</Text>
-                <Text style={styles.testWalletText}>
-                  A test wallet is available for development.
-                </Text>
-                <TouchableOpacity
-                  style={styles.testWalletButton}
-                  onPress={() => handleImportWallet(privateKey)}
-                >
-                  <Text style={styles.testWalletButtonText}>Use Test Wallet</Text>
-                </TouchableOpacity>
-              </View>
-
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your private key"
-                placeholderTextColor="#666"
-                value={privateKey}
-                onChangeText={setPrivateKey}
-                secureTextEntry
-              />
-            </View>
-          )}
         </View>
       )}
     </SafeAreaView>
@@ -311,33 +246,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  walletCard: {
-    backgroundColor: '#2A2A3E',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-  },
-  walletTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-  },
-  walletAddress: {
-    color: '#888',
-    fontSize: 14,
-    marginBottom: 15,
-  },
-  logoutButton: {
-    backgroundColor: '#6A5ACD',
-    padding: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   coinsSection: {
     flex: 1,
   },
@@ -381,45 +289,12 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
+    flex: 1,
   },
   profileButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  walletActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  createButton: {
-    flex: 1,
-    backgroundColor: '#6A5ACD',
-    padding: 15,
-    borderRadius: 10,
-    marginRight: 10,
-  },
-  importButton: {
-    flex: 1,
-    backgroundColor: '#6A5ACD',
-    padding: 15,
-    borderRadius: 10,
-    marginLeft: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  importForm: {
-    marginTop: 20,
-  },
-  input: {
-    backgroundColor: '#2A2A3E',
-    color: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
   },
   notification: {
     position: 'absolute',
@@ -434,34 +309,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     fontWeight: 'bold',
-  },
-  testWalletBanner: {
-    backgroundColor: '#2A2A3E',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  testWalletTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  testWalletText: {
-    color: '#9F9FD5',
-    marginBottom: 12,
-  },
-  testWalletButton: {
-    backgroundColor: '#6A5ACD',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignSelf: 'flex-start',
-  },
-  testWalletButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '500',
-  },
+  }
 });
 
 export default HomeScreen; 

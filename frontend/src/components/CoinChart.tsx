@@ -46,13 +46,14 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
         const yValues = data.map(d => d.y);
         const minY = Math.min(...yValues);
         const maxY = Math.max(...yValues);
-        const yPadding = (maxY - minY) * 0.1; // 10% padding
+        const yPadding = (maxY - minY) * 0.1;
 
         return (
                 <View style={{
-                        paddingHorizontal: 8,
-                        backgroundColor: '#191B1F',
-                        height: 350,
+                        flex: 1,
+                        width: '100%',
+                        height: Platform.OS === 'web' ? 350 : undefined,
+                        position: 'relative',
                 }}>
                         {loading && (
                                 <View style={{
@@ -73,8 +74,13 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                 padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
                                 scale={{ x: "time", y: "linear" }}
                                 domain={domain}
-                                width={350}
+                                width={Platform.OS === 'web' ? 430 : 350}
                                 height={350}
+                                style={{
+                                        parent: {
+                                                touchAction: 'none',
+                                        }
+                                }}
                                 containerComponent={
                                         <VictoryCursorContainer
                                                 cursorDimension="x"

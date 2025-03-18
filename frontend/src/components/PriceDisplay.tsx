@@ -35,7 +35,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
     periodChange, 
     valueChange,
     period,
-    logo_url,
+    icon_url,
     name
 }) => {
     if (isNaN(periodChange)) return null;
@@ -49,7 +49,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
         <View style={styles.container}>
             <View style={styles.topRow}>
                 <PlatformImage
-                    source={{ uri: logo_url || DEFAULT_TOKEN_ICON }}
+                    source={{ uri: icon_url || DEFAULT_TOKEN_ICON }}
                     style={styles.icon}
                     resizeMode="contain"
                 />
