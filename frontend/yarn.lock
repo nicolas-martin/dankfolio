@@ -1389,6 +1389,15 @@
   resolved "https://registry.npmjs.org/@react-native-clipboard/clipboard/-/clipboard-1.16.2.tgz"
   integrity sha512-VqUYwVxo7DyHMz7v2LxLMaAOSu3pKFvzpqR4jQezdH0VyaudILTTcUf7dR4TroARU/lLkTU8nZA11UniTvGVXg==
 
+"@react-native-community/art@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@react-native-community/art/-/art-1.2.0.tgz#386d95393f6042d9006f9d4bc6063fb898794460"
+  integrity sha512-a+ZcRGl/BzLa89yi33Mbn5SHavsEXqKUMdbfLf3U8MDLElndPqUetoJyGkv63+BcPO49UMWiQRP1YUz6/zfJ+A==
+  dependencies:
+    art "^0.10.3"
+    invariant "^2.2.4"
+    prop-types "^15.7.2"
+
 "@react-native-community/cli-clean@18.0.0":
   version "18.0.0"
   resolved "https://registry.npmjs.org/@react-native-community/cli-clean/-/cli-clean-18.0.0.tgz"
@@ -1750,9 +1759,9 @@
     component-type "^1.2.1"
     join-component "^1.1.0"
 
-"@shopify/react-native-skia@^1.11.11":
+"@shopify/react-native-skia@^1.11.18":
   version "1.11.18"
-  resolved "https://registry.npmjs.org/@shopify/react-native-skia/-/react-native-skia-1.11.18.tgz"
+  resolved "https://registry.yarnpkg.com/@shopify/react-native-skia/-/react-native-skia-1.11.18.tgz#f14e6c86d972cd6ac683e6828a835bce6bb8d74c"
   integrity sha512-l5pbgn86+GcR6qg7Cj4J5fO4Qk7ofv+2vaPajOkRmnaJA0BxbqNtw301mzTqmwtZoIzZmXJW5KSy3B00+QYc9g==
   dependencies:
     canvaskit-wasm "0.39.1"
@@ -2338,6 +2347,11 @@ array-union@^2.1.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/array-union/-/array-union-2.1.0.tgz"
   integrity sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==
+
+art@^0.10.3:
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/art/-/art-0.10.3.tgz#b01d84a968ccce6208df55a733838c96caeeaea2"
+  integrity sha512-HXwbdofRTiJT6qZX/FnchtldzJjS3vkLJxQilc3Xj+ma2MXjY4UAyQ0ls1XZYVnDvVIBiFZbC6QsvtW86TD6tQ==
 
 asap@~2.0.3, asap@~2.0.6:
   version "2.0.6"
@@ -6063,7 +6077,7 @@ prompts@^2.3.2, prompts@^2.4.2:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-prop-types@^15.6.2, prop-types@^15.8.1:
+prop-types@^15.6.2, prop-types@^15.7.2, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz"
   integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
@@ -6213,7 +6227,7 @@ react-native-fast-image@^8.6.3:
 
 react-native-gesture-handler@^2.24.0:
   version "2.24.0"
-  resolved "https://registry.npmjs.org/react-native-gesture-handler/-/react-native-gesture-handler-2.24.0.tgz"
+  resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-2.24.0.tgz#b6e1f13ec9bf8dfa5f4911854b6e0d73d882a81a"
   integrity sha512-ZdWyOd1C8axKJHIfYxjJKCcxjWEpUtUWgTOVY2wynbiveSQDm8X/PDyAKXSer/GOtIpjudUbACOndZXCN3vHsw==
   dependencies:
     "@egjs/hammerjs" "^2.0.17"
@@ -6234,7 +6248,7 @@ react-native-is-edge-to-edge@1.1.6:
 
 react-native-reanimated@^3.17.1:
   version "3.17.1"
-  resolved "https://registry.npmjs.org/react-native-reanimated/-/react-native-reanimated-3.17.1.tgz"
+  resolved "https://registry.yarnpkg.com/react-native-reanimated/-/react-native-reanimated-3.17.1.tgz#42bed044ad046f09efcc00a80fabcc6eb18c7073"
   integrity sha512-ECzLhLxMKLifv34a8799/MHqIazQZV9fLMNSMdixXQlzX71RyL3/ah3cz/h3ERoyhJAYRC2ySLLZho6pXSqMFQ==
   dependencies:
     "@babel/plugin-transform-arrow-functions" "^7.0.0-0"
@@ -6270,7 +6284,7 @@ react-native-skia@^0.0.1:
 
 react-native-svg@^15.11.2:
   version "15.11.2"
-  resolved "https://registry.npmjs.org/react-native-svg/-/react-native-svg-15.11.2.tgz"
+  resolved "https://registry.yarnpkg.com/react-native-svg/-/react-native-svg-15.11.2.tgz#7540e8e1eabc4dcd3b1e35ada5a1d9f1b96d37c4"
   integrity sha512-+YfF72IbWQUKzCIydlijV1fLuBsQNGMT6Da2kFlo1sh+LE3BIm/2Q7AR1zAAR6L0BFLi1WaQPLfFUC9bNZpOmw==
   dependencies:
     css-select "^5.1.0"
@@ -7498,7 +7512,7 @@ victory-chart@37.3.6, victory-chart@^37.3.6:
 
 victory-core@37.3.6, victory-core@^37.3.6:
   version "37.3.6"
-  resolved "https://registry.npmjs.org/victory-core/-/victory-core-37.3.6.tgz"
+  resolved "https://registry.yarnpkg.com/victory-core/-/victory-core-37.3.6.tgz#716c9cc2e6ff227692532db31aa14590be78ff7e"
   integrity sha512-aFgO6KokxPbUCPznZP5UPhOdI22pMuwDXKDt6eoQOnkVim66Ia+K95TQar2nwVKGYV5j26aKVf/n9blwphGJRw==
   dependencies:
     lodash "^4.17.21"
@@ -7574,7 +7588,7 @@ victory-line@37.3.6, victory-line@^37.3.6:
 
 victory-native@^37.3.6:
   version "37.3.6"
-  resolved "https://registry.npmjs.org/victory-native/-/victory-native-37.3.6.tgz"
+  resolved "https://registry.yarnpkg.com/victory-native/-/victory-native-37.3.6.tgz#c42e4a46c03dacfc6b35d6d06044f233d3b20211"
   integrity sha512-3m7kg4MtI4ZCzYuz4NT2N6AXiBMRwC3HiDoF5RhE8kaTeLd7iCi2YNi8y6F3FIU9gRrLiXWkyky054O3iZXVjw==
   dependencies:
     hoist-non-react-statics "^3.3.2"
@@ -7739,7 +7753,7 @@ victory-zoom-container@37.3.6, victory-zoom-container@^37.3.6:
 
 victory@*, victory@^37.3.6:
   version "37.3.6"
-  resolved "https://registry.npmjs.org/victory/-/victory-37.3.6.tgz"
+  resolved "https://registry.yarnpkg.com/victory/-/victory-37.3.6.tgz#9506632c1306f8d221e50e60259781e98a2a5c2f"
   integrity sha512-CZ1vjvra0R1U3T2dMI4EsjI8Ng+JmQ2ox/EweSzjkTnHfW/Vn5ylryadawDiYjDMcBvABjO3uODsIlSEm4d/Sw==
   dependencies:
     victory-area "37.3.6"

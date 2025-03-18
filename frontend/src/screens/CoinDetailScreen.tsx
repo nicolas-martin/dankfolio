@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Image } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { VictoryVoronoiContainer } from 'victory-native';
 
 import PlatformImage from '../components/PlatformImage';
 import TopBar from '../components/TopBar';
@@ -12,6 +13,7 @@ import PriceDisplay from '../components/PriceDisplay';
 import { secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { Coin, Wallet, RootStackParamList } from '../types/index';
+import CustomTooltip from '../components/CustomTooltip';
 
 const formatNumber = (num: number): string => {
         if (num >= 1000000000) {
@@ -54,6 +56,7 @@ const CoinDetailScreen: React.FC = () => {
         const [metadata, setMetadata] = useState<any>(null);
         const [metadataLoading, setMetadataLoading] = useState(true);
         const [walletBalance, setWalletBalance] = useState<number>(0);
+        const [hoverPoint, setHoverPoint] = useState<{ x: Date; y: number } | null>(null);
 
         useEffect(() => {
                 loadWallet();
@@ -158,6 +161,27 @@ const CoinDetailScreen: React.FC = () => {
                 }
         };
 
+        const handleChartHover = (points: any[]) => {
+                console.log('handleChartHover called with points:', points);
+                if (points && points.length > 0) {
+                        const point = points[0];
+                        const newHoverPoint = {
+                                x: point.x,
+                                y: point.y
+                        };
+                        console.log('Setting hover point:', newHoverPoint);
+                        setHoverPoint(newHoverPoint);
+                } else {
+                        console.log('Clearing hover point');
+                        setHoverPoint(null);
+                }
+        };
+
+        // Add useEffect for tooltip debugging
+        useEffect(() => {
+                console.log('Tooltip state changed:', { active: !!hoverPoint, hoverPoint });
+        }, [hoverPoint]);
+
         // Show loading state while initial data is being fetched
         if (loading && !coin) {
                 return (
@@ -174,7 +198,7 @@ const CoinDetailScreen: React.FC = () => {
                                 {/* Price Display */}
                                 {coin && priceHistory.length >= 2 && (
                                         <PriceDisplay 
-                                                price={priceHistory[priceHistory.length - 1]?.y || 0}
+                                                price={hoverPoint?.y || priceHistory[priceHistory.length - 1]?.y || 0}
                                                 periodChange={
                                                         ((priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y) / 
                                                         priceHistory[0]?.y) * 100
@@ -190,7 +214,20 @@ const CoinDetailScreen: React.FC = () => {
 
                                 {/* Chart */}
                                 <View style={styles.chartContainer}>
-                                        <CoinChart data={priceHistory} loading={loading} />
+                                        <CoinChart 
+                                                data={priceHistory} 
+                                                loading={loading}
+                                                activePoint={hoverPoint}
+                                                onHover={handleChartHover}
+                                        />
+
+                                        {/* Tooltip */}
+                                        <CustomTooltip
+                                                active={!!hoverPoint}
+                                                datum={hoverPoint || undefined}
+                                                x={hoverPoint?.x instanceof Date ? hoverPoint.x.getTime() : undefined}
+                                                y={hoverPoint?.y}
+                                        />
 
                                         {/* Timeframe buttons */}
                                         <View style={styles.timeframeRow}>
@@ -294,33 +331,40 @@ const styles = StyleSheet.create({
         },
         chartContainer: {
                 height: Platform.OS === 'web' ? 400 : 250,
-                marginVertical: 0,
-                marginHorizontal: -16,
-                overflow: 'hidden',
+                marginVertical: 16,
+                paddingHorizontal: 0,
                 backgroundColor: 'transparent',
+                overflow: 'visible',
+                position: 'relative',
         },
         timeframeRow: {
                 flexDirection: "row",
-                justifyContent: "space-around",
+                justifyContent: "center",
                 paddingHorizontal: 16,
-                marginTop: 16,
-                marginBottom: 8,
+                marginTop: 32,
+                marginBottom: 16,
+                gap: 12,
+                backgroundColor: '#191B1F',
+                borderRadius: 12,
+                padding: 8,
         },
         timeframeButton: {
-                paddingHorizontal: 12,
-                paddingVertical: 6,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 8,
+                minWidth: 48,
+                alignItems: 'center',
         },
         timeframeButtonActive: {
                 backgroundColor: "#FF69B4",
-                borderRadius: 4,
         },
         timeframeLabel: {
                 color: "#9F9FD5",
                 fontSize: 14,
-                fontWeight: "600"
+                fontWeight: "600",
         },
         timeframeLabelActive: {
-                color: "#fff"
+                color: "#fff",
         },
         balanceSection: {
                 padding: 16,

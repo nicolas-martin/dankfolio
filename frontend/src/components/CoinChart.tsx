@@ -1,74 +1,96 @@
-import React, { useEffect } from "react";
-import { View, Dimensions, Text } from "react-native";
-import { VictoryArea, VictoryChart } from "victory-native";
+import React, { useState, useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
+import { VictoryChart, VictoryAxis, VictoryArea, VictoryTheme } from "victory-native";
+import { Platform } from "react-native";
+import * as Haptics from "expo-haptics";
+
+interface ChartData {
+        x: Date;
+        y: number;
+}
 
 interface Props {
-        data: { x: string | Date; y: number }[];
+        data: { x: Date; y: number }[];
         loading?: boolean;
 }
 
-const CoinChart: React.FC<Props> = ({ data }) => {
-        const windowWidth = Dimensions.get('window').width;
+const CoinChart: React.FC<Props> = ({ data, loading }) => {
+        const [domain, setDomain] = useState<{ x: [Date, Date]; y: [number, number] } | undefined>();
+        const [previousData, setPreviousData] = useState<{ x: Date; y: number }[]>([]);
 
-        // Convert string dates to Date objects
-        const formattedData = data.map(point => ({
-                x: point.x instanceof Date ? point.x : new Date(point.x),
-                y: point.y
-        }));
-
-        // Debug logs for incoming data
         useEffect(() => {
-                console.log('CoinChart DATA LENGTH:', formattedData?.length || 0);
-                console.log('CoinChart WINDOW WIDTH:', windowWidth);
-                console.log('CoinChart FIRST POINT:', formattedData[0]);
-        }, [formattedData, windowWidth]);
-
-        // Use a simple domain calculation or just let Victory handle it automatically
-        const getMinMaxY = () => {
-                if (!formattedData || formattedData.length === 0) {
-                        console.log('CoinChart: No data available for domain calculation');
-                        return { min: 0, max: 1 };
+                if (data.length > 0) {
+                        setPreviousData(data);
+                        const xValues = data.map(d => d.x);
+                        const yValues = data.map(d => d.y);
+                        setDomain({
+                                x: [xValues[0], xValues[xValues.length - 1]],
+                                y: [Math.min(...yValues), Math.max(...yValues)]
+                        });
                 }
-                const yValues = formattedData.map(d => d.y);
-                const min = Math.min(...yValues) * 0.95;
-                const max = Math.max(...yValues) * 1.05;
-                console.log('CoinChart DOMAIN:', { min, max });
-                return { min, max };
-        };
+        }, [data]);
 
-        const { min, max } = getMinMaxY();
+        const chartData = loading && data.length === 0 ? previousData : data;
 
-        // Debug fallback if no data
-        if (!formattedData || formattedData.length === 0) {
-                console.log('CoinChart RENDERING: Fallback due to no data');
-                return (
-                        <View style={{
-                                width: '100%',
-                                height: 250,
-                                backgroundColor: '#191B1F',
-                                justifyContent: 'center',
-                                alignItems: 'center'
-                        }}>
-                                <Text style={{ color: '#FF69B4' }}>No chart data available</Text>
-                        </View>
-                );
-        }
+        // Calculate y-axis domain with some padding
+        const yValues = data.map(d => d.y);
+        const minY = Math.min(...yValues);
+        const maxY = Math.max(...yValues);
+        const yPadding = (maxY - minY) * 0.1; // 10% padding
 
-        console.log('CoinChart RENDERING: With data, length=' + formattedData.length);
         return (
                 <View style={{
-                        width: '100%',
-                        height: 250,
-                        backgroundColor: 'transparent'
+                        paddingHorizontal: 8,
+                        backgroundColor: '#191B1F',
+                        height: 350,
                 }}>
+                        {loading && (
+                                <View style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        backgroundColor: 'rgba(25, 27, 31, 0.7)',
+                                        zIndex: 1,
+                                }}>
+                                        <ActivityIndicator size="large" color="#FF69B4" />
+                                </View>
+                        )}
                         <VictoryChart
-                                width={windowWidth}
-                                height={250}
-                                padding={{ top: 10, left: 10, right: 10, bottom: 10 }}
-                                domain={{ y: [min, max] }}
+                                padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
+                                scale={{ x: "time", y: "linear" }}
+                                domain={domain}
+                                width={350}
+                                height={350}
+                                theme={VictoryTheme.material}
                         >
+                                {/* X-axis */}
+                                <VictoryAxis
+                                        tickFormat={(t: Date) => `${t.getMonth() + 1}/${t.getDate()}`}
+                                        style={{
+                                                axis: { stroke: "transparent" },
+                                                tickLabels: { fill: "#666", fontSize: 12 },
+                                                grid: { stroke: "transparent" }
+                                        }}
+                                />
+                                {/* Y-axis */}
+                                <VictoryAxis
+                                        dependentAxis
+                                        tickFormat={(val: number) => `$${val.toFixed(2)}`}
+                                        style={{
+                                                axis: { stroke: "transparent" },
+                                                tickLabels: { fill: "#666", fontSize: 12 },
+                                                grid: { stroke: "transparent" }
+                                        }}
+                                />
+
+                                {/* The area */}
                                 <VictoryArea
-                                        data={formattedData}
+                                        data={chartData}
+                                        interpolation="basis"
                                         style={{
                                                 data: {
                                                         fill: "#FF69B4",
@@ -84,4 +106,3 @@ const CoinChart: React.FC<Props> = ({ data }) => {
 };
 
 export default CoinChart;
-
