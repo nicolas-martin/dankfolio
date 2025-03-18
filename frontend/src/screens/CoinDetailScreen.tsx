@@ -4,7 +4,7 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import PlatformImage from '../components/PlatformImage';
-
+import TopBar from '../components/TopBar';
 import CoinChart from '../components/CoinChart';
 import BackButton from '../components/BackButton';
 import CoinMetadata from '../components/CoinMetadata';
@@ -53,6 +53,7 @@ const CoinDetailScreen: React.FC = () => {
         const [coin, setCoin] = useState<Coin | null>(null);
         const [metadata, setMetadata] = useState<any>(null);
         const [metadataLoading, setMetadataLoading] = useState(true);
+        const [walletBalance, setWalletBalance] = useState<number>(0);
 
         useEffect(() => {
                 loadWallet();
@@ -81,6 +82,9 @@ const CoinDetailScreen: React.FC = () => {
                         const savedWallet = await secureStorage.getWallet();
                         if (savedWallet) {
                                 setWallet(savedWallet);
+                                // Check if the wallet has any balance of this coin
+                                const balance = savedWallet.tokens.find(token => token.mint === coinId)?.amount || 0;
+                                setWalletBalance(balance);
                         }
                 } catch (error) {
                         console.error('Error loading wallet:', error);
@@ -164,36 +168,23 @@ const CoinDetailScreen: React.FC = () => {
 
         return (
                 <SafeAreaView style={styles.safeArea}>
+                        <TopBar />
                         <ScrollView style={styles.container} bounces={false}>
-                                <View style={styles.header}>
-                                        <BackButton style={styles.backButton} />
-                                        <PlatformImage
-                                            source={{ 
-                                                uri: coin?.icon_url || 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'
-                                            }}
-                                            style={styles.icon}
-                                            resizeMode="contain"
-                                            priority="normal"
-                                        />
-                                        <View style={styles.headerInfo}>
-                                                <Text style={styles.name}>{coin?.name || ''}</Text>
-                                                <Text style={styles.symbol}>{coin?.symbol || ''}</Text>
-                                        </View>
-                                </View>
-
                                 {/* Price Display */}
                                 {coin && priceHistory.length >= 2 && (
-                                    <PriceDisplay 
-                                        price={priceHistory[priceHistory.length - 1]?.y || 0}
-                                        periodChange={
-                                            ((priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y) / 
-                                            priceHistory[0]?.y) * 100
-                                        }
-                                        valueChange={
-                                            priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
-                                        }
-                                        period={selectedTimeframe}
-                                    />
+                                        <PriceDisplay 
+                                                price={priceHistory[priceHistory.length - 1]?.y || 0}
+                                                periodChange={
+                                                        ((priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y) / 
+                                                        priceHistory[0]?.y) * 100
+                                                }
+                                                valueChange={
+                                                        priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
+                                                }
+                                                period={selectedTimeframe}
+                                                icon_url={coin.icon_url}
+                                                name={coin.name}
+                                        />
                                 )}
 
                                 {/* Chart */}
@@ -224,42 +215,46 @@ const CoinDetailScreen: React.FC = () => {
                                         </View>
                                 </View>
 
-                                <View style={styles.balanceSection}>
-                                        <Text style={styles.balanceTitle}>Your balance</Text>
-                                        <View style={styles.balanceDetails}>
-                                                <View style={styles.balanceRow}>
-                                                        <Text style={styles.balanceLabel}>Value</Text>
-                                                        <Text style={styles.balanceValue}>$0.00</Text>
+                                {/* Balance Section - Only show if wallet has balance */}
+                                {wallet && walletBalance > 0 && (
+                                        <View style={styles.balanceSection}>
+                                                <Text style={styles.balanceTitle}>Your balance</Text>
+                                                <View style={styles.balanceDetails}>
+                                                        <View style={styles.balanceRow}>
+                                                                <Text style={styles.balanceLabel}>Value</Text>
+                                                                <Text style={styles.balanceValue}>
+                                                                        ${(walletBalance * (priceHistory[priceHistory.length - 1]?.y || 0)).toFixed(2)}
+                                                                </Text>
+                                                        </View>
+                                                        <View style={styles.balanceRow}>
+                                                                <Text style={styles.balanceLabel}>Quantity</Text>
+                                                                <Text style={styles.balanceValue}>{walletBalance}</Text>
+                                                        </View>
                                                 </View>
-                                                <View style={styles.balanceRow}>
-                                                        <Text style={styles.balanceLabel}>Quantity</Text>
-                                                        <Text style={styles.balanceValue}>0</Text>
-                                                </View>
+                                                <TouchableOpacity
+                                                        style={styles.buyButton}
+                                                        onPress={handleBuyPress}
+                                                >
+                                                        <Text style={styles.buyButtonText}>Buy</Text>
+                                                </TouchableOpacity>
                                         </View>
-                                        <TouchableOpacity
-                                                style={styles.buyButton}
-                                                onPress={handleBuyPress}
-                                        >
-                                                <Text style={styles.buyButtonText}>Buy</Text>
-                                        </TouchableOpacity>
-                                </View>
+                                )}
 
                                 {/* Metadata */}
                                 {!metadataLoading && metadata ? (
-                                    <CoinMetadata
-                                        metadata={{
-                                            name: metadata.name || coin?.name || '',
-                                            website: metadata.website,
-                                            twitter: metadata.twitter,
-                                            telegram: metadata.telegram,
-                                            discord: metadata.discord,
-                                            daily_volume: route.params.daily_volume || coin?.daily_volume || 0,
-                                        }}
-                                    />
+                                        <CoinMetadata
+                                                metadata={{
+                                                        name: metadata.name || coin?.name || '',
+                                                        website: metadata.website,
+                                                        twitter: metadata.twitter,
+                                                        telegram: metadata.telegram,
+                                                        discord: metadata.discord,
+                                                        daily_volume: route.params.daily_volume || coin?.daily_volume || 0,
+                                                }}
+                                        />
                                 ) : (
-                                    <ActivityIndicator style={styles.metadataLoader} />
+                                        <ActivityIndicator style={styles.metadataLoader} />
                                 )}
-
                         </ScrollView>
                 </SafeAreaView>
         );
@@ -279,48 +274,6 @@ const styles = StyleSheet.create({
                 justifyContent: 'center',
                 alignItems: 'center',
                 backgroundColor: '#191B1F',
-        },
-        header: {
-                flexDirection: 'row',
-                alignItems: 'center',
-                padding: 16,
-                paddingTop: 8,
-        },
-        backButton: {
-                marginRight: 12,
-        },
-        icon: {
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: '#2A2A3E',
-        },
-        headerInfo: {
-                flex: 1,
-                marginLeft: 12,
-        },
-        name: {
-                fontSize: 24,
-                fontWeight: 'bold',
-                color: '#FFFFFF',
-        },
-        symbol: {
-                fontSize: 16,
-                color: '#9F9FD5',
-        },
-        priceSection: {
-                paddingHorizontal: 16,
-                marginBottom: 20,
-        },
-        currentPrice: {
-                fontSize: 32,
-                fontWeight: 'bold',
-                color: '#FFFFFF',
-        },
-        priceChange: {
-                fontSize: 16,
-                color: '#FF69B4',
-                marginTop: 4,
         },
         chartContainer: {
                 marginVertical: 20,

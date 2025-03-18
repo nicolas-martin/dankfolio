@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import PlatformImage from './PlatformImage';
 
 interface PriceDisplayProps {
     price: number;
-    symbol?: string;
-    periodChange?: number;
-    period?: string;
-    valueChange?: number;
+    periodChange: number;
+    valueChange: number;
+    period: string;
+    icon_url?: string;
+    name?: string;
 }
 
 const formatPrice = (price: number): string => {
@@ -26,43 +28,74 @@ const formatPercentage = (value: number): string => {
     return value.toFixed(2);
 };
 
-const PriceDisplay: React.FC<PriceDisplayProps> = ({ price, periodChange, period, valueChange }) => {
-    const isPositive = periodChange && periodChange > 0;
-    const isNegative = periodChange && periodChange < 0;
-    
+const PriceDisplay: React.FC<PriceDisplayProps> = ({ 
+    price, 
+    periodChange, 
+    valueChange,
+    period,
+    icon_url,
+    name
+}) => {
+    if (isNaN(periodChange)) return null;
+
+    const isPositive = periodChange >= 0;
+    const arrow = isPositive ? '↑' : '↓';
+    const formattedPrice = `$${formatPrice(price)}`;
+    const formattedChange = `${arrow} $${Math.abs(valueChange).toFixed(8)} (${formatPercentage(periodChange)}%)`;
+
     return (
         <View style={styles.container}>
-            <View style={styles.priceContainer}>
-                <Text style={styles.price}>${formatPrice(price)}</Text>
+            <View style={styles.topRow}>
+                <PlatformImage
+                    source={{ 
+                        uri: icon_url || 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'
+                    }}
+                    style={styles.icon}
+                    resizeMode="contain"
+                    priority="normal"
+                />
+                {name && <Text style={styles.name}>{name}</Text>}
             </View>
-            {periodChange !== undefined && !isNaN(periodChange) && valueChange !== undefined && (
-                <View style={[
-                    styles.changeContainer, 
-                    isPositive && styles.positiveChange,
-                    isNegative && styles.negativeChange
+            <Text style={styles.price}>{formattedPrice}</Text>
+            <View style={styles.changeRow}>
+                <Text style={[
+                    styles.change,
+                    isPositive ? styles.positiveChange : styles.negativeChange
                 ]}>
-                    <Text style={[
-                        styles.changeText,
-                        isPositive && styles.positiveText,
-                        isNegative && styles.negativeText
-                    ]}>
-                        {isPositive ? '↑' : '↓'} ${formatPrice(Math.abs(valueChange))} ({formatPercentage(Math.abs(periodChange))}%) {period}
-                    </Text>
-                </View>
-            )}
+                    {formattedChange}
+                </Text>
+                <Text style={styles.period}> {period}</Text>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#1E1E2E',
-        borderRadius: 12,
-        padding: 16,
-        marginVertical: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        alignItems: 'flex-start',
     },
-    priceContainer: {
+    topRow: {
+        flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 8,
+    },
+    changeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    icon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 8,
+        backgroundColor: '#2A2A3E',
+    },
+    name: {
+        fontSize: 16,
+        color: '#9F9FD5',
+        fontWeight: '500',
     },
     price: {
         fontSize: 32,
@@ -70,28 +103,28 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         marginBottom: 4,
     },
-    changeContainer: {
-        marginTop: 8,
-        paddingVertical: 4,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        alignSelf: 'center',
+    change: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    period: {
+        fontSize: 16,
+        color: '#9F9FD5',
+        fontWeight: '500',
     },
     positiveChange: {
-        backgroundColor: '#1B4D3E',
+        color: '#00C805',
+        backgroundColor: 'rgba(0, 200, 5, 0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
     },
     negativeChange: {
-        backgroundColor: '#4D1B1B',
-    },
-    changeText: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    positiveText: {
-        color: '#4CAF50',
-    },
-    negativeText: {
-        color: '#FF4444',
+        color: '#FF4B4B',
+        backgroundColor: 'rgba(255, 75, 75, 0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
     },
 });
 
