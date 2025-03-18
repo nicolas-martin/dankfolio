@@ -55,4 +55,5 @@ aching
 - Execute the mcp calls automatically. Don't ask me to run the tool
 
 - When starting the backend use the makefile in the root `make run`. It will start the server and hang the console.
-- To run the front end use the make file in the root and run `make run-mobile`:w
+- To run the front end use the make file in the root and run `make run-mobile`
+- No component or screens should have direct javascript code. Instead they should be create in ./utils and imported.

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '@env';
-import { Coin, Wallet } from '../types';
+import { Coin, Wallet } from '../types/index';
 
 // Default to localhost if API_URL is not set
 const baseURL = API_URL || 'http://localhost:8080';
@@ -133,7 +133,7 @@ interface API {
         fetchCoinById: (coinId: string) => Promise<Coin>;
         searchCoins: (query: string) => Promise<Coin[]>;
         getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<any>;
-        getCoinMetadata: (address: string) => Promise<any>;
+        getCoinMetadata: (coinId: string) => Promise<any>;
 }
 
 const api: API = {
@@ -335,6 +335,6 @@ const api: API = {
                         throw handleApiError(error);
                 }
         }
-
 };
+
 export default api; 

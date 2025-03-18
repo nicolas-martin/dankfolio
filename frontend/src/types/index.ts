@@ -1,5 +1,29 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+
+export interface Coin {
+  id: string;
+  name: string;
+  symbol: string;
+  price: number;
+  description?: string;
+  icon_url: string;
+  decimals: number;
+  daily_volume: number;
+  tags: string[];
+  priceChange24h?: number;
+  priceChangePercentage24h?: number;
+  balance?: number;
+  metadata?: {
+    website?: string;
+    twitter?: string;
+    discord?: string;
+    telegram?: string;
+  };
+  jupiterInfo?: {
+    tags?: string[];
+    decimals?: number;
+  };
+}
 
 export interface Wallet {
   address: string;
@@ -7,9 +31,26 @@ export interface Wallet {
   balance: number;
 }
 
-import { Coin } from '../types';
-
-export type { Coin };
+export type RootStackParamList = {
+  Home: undefined;
+  Trade: {
+    initialFromCoin?: Coin;
+    initialToCoin?: Coin;
+    wallet?: string;
+    coins?: Coin[];
+  };
+  Profile: undefined;
+  CoinDetail: {
+    coinId: string;
+    coinName: string;
+  };
+  CoinSelect: {
+    onSelect: (coinId: string) => void;
+    excludeCoinId?: string;
+    currentCoinId?: string;
+  };
+  [key: string]: undefined | object;
+}
 
 export interface NotificationProps {
   visible: boolean;
@@ -48,4 +89,7 @@ export interface Token {
   percentage: number;
   address: string;
   logoURI?: string;
-} 
+}
+
+// Re-export all types from other files
+export * from './trade'; 

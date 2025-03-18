@@ -134,4 +134,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default CoinCard; 
+export default CoinCard;

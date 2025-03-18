@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
-import { Coin } from './src/types';
+import { Coin } from './src/types/index';
 import { Dispatch, SetStateAction } from 'react';
 
 // Import screens
@@ -12,30 +12,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import TradeScreen from './src/screens/TradeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import CoinDetailScreen from './src/screens/CoinDetailScreen';
-import CoinSelect from './src/screens/CoinSelect';
-import TestPriceChartScreen from './src/screens/StockChartScreen';
-
-// Define the root stack parameter list
-export type RootStackParamList = {
-        Home: undefined;
-        Trade: {
-                initialFromCoin?: Coin;
-                initialToCoin?: Coin;
-                wallet?: string;
-                coins?: Coin[];
-        };
-        CoinDetail: {
-                coinId: string;
-        };
-        Profile: {
-                walletAddress?: string;
-        };
-        CoinSelect: {
-                onSelect: Dispatch<SetStateAction<string>>;
-                excludeCoinId: string;
-                currentCoinId: string;
-        };
-};
+import { RootStackParamList } from './src/types/index';
 
 // Create stack navigator with types
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -45,6 +22,7 @@ const App: React.FC = () => {
                 <NavigationContainer>
                         <StatusBar style="light" />
                         <Stack.Navigator
+                                id={undefined}
                                 initialRouteName="Home"
                                 screenOptions={{
                                         headerShown: false,
@@ -56,8 +34,6 @@ const App: React.FC = () => {
                                 <Stack.Screen name="Trade" component={TradeScreen} />
                                 <Stack.Screen name="Profile" component={ProfileScreen} />
                                 <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
-                                <Stack.Screen name="CoinSelect" component={CoinSelect} />
-                                <Stack.Screen name="TestPriceChart" component={TestPriceChartScreen} />
                         </Stack.Navigator>
                 </NavigationContainer>
         );

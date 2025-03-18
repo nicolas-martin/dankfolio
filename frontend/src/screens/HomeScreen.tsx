@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, FlatList, Image } from 'react-native';
 import { getKeypairFromPrivateKey, secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../components/CoinCard';
-import { Wallet, Coin, NotificationProps, ScreenProps } from '../types';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { Wallet, Coin, NotificationProps, ScreenProps } from '../types/index';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/index';
 
-type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const Notification: React.FC<NotificationProps> = ({ visible, type, message, onDismiss }) => {
   if (!visible) return null;
@@ -35,16 +36,15 @@ interface NotificationState {
   message: string;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   // Wallet and coin states
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [privateKey, setPrivateKey] = useState<string>('');
   const [coins, setCoins] = useState<Coin[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isLoadingCoins, setIsLoadingCoins] = useState<boolean>(false);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [showImport, setShowImport] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredCoins, setFilteredCoins] = useState<Coin[]>([]);
 
   // Notification state
   const [notification, setNotification] = useState<NotificationState>({
@@ -60,12 +60,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const fetchAvailableCoins = useCallback(async (): Promise<void> => {
     try {
-      console.log('🔄 Starting to fetch available coins...');
-      setIsLoadingCoins(true);
+      setLoading(true);
       const coinsData = await api.getAvailableCoins();
-      console.log('📥 Received coins data:', coinsData?.length || 0, 'coins');
       if (Array.isArray(coinsData) && coinsData.length > 0) {
-        console.log('✅ Setting coins in state');
         setCoins(coinsData);
       } else {
         console.log('⚠️ No coins received or empty array');
@@ -74,14 +71,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       console.error('❌ Error fetching coins:', err);
       showNotification('error', 'Failed to fetch available coins');
     } finally {
-      console.log('🏁 Finished fetching coins');
-      setIsLoadingCoins(false);
+      setLoading(false);
     }
   }, []);
 
   const initializeData = useCallback(async (): Promise<void> => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const savedWallet = await secureStorage.getWallet();
       if (savedWallet) {
         setWallet(savedWallet);
@@ -91,7 +87,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       console.error('Error initializing data:', err);
       showNotification('error', 'Failed to load initial data');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, [fetchAvailableCoins]);
 
@@ -139,40 +135,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleCoinPress = (coin: Coin) => {
     navigation.navigate('CoinDetail', {
-      coinId: coin.id
-    });
+      coinId: coin.id,
+      coinName: coin.name
+    } satisfies RootStackParamList['CoinDetail']);
   };
 
   const loadCoins = async (): Promise<void> => {
     try {
-      setError(null);
       await fetchAvailableCoins();
     } catch (err) {
-      setError('Failed to load coins. Please try again.');
       console.error('Error loading coins:', err);
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
   const onRefresh = (): void => {
-    setIsRefreshing(true);
     loadCoins();
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6A5ACD" />
         <Text style={styles.loadingText}>Loading wallet...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
       </SafeAreaView>
     );
   }
@@ -212,9 +196,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text style={styles.refreshCoinsText}>🔄</Text>
               </TouchableOpacity>
             </View>
-            {isLoadingCoins ? (
-              <ActivityIndicator size="small" color="#6A5ACD" style={styles.coinsLoader} />
-            ) : coins.length > 0 ? (
+            {coins.length > 0 ? (
               <FlatList
                 data={coins}
                 keyExtractor={(item) => item.id || item.symbol}
@@ -237,14 +219,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             >
               <Text style={styles.profileButtonText}>View Profile</Text>
             </TouchableOpacity>
-
-            {/* Test Chart Button */}
-            <TouchableOpacity
-              style={[styles.profileButton, { marginTop: 10, backgroundColor: '#FF5252' }]}
-              onPress={() => navigation.navigate('TestPriceChart')}
-            >
-              <Text style={styles.profileButtonText}>Test Chart</Text>
-            </TouchableOpacity>
           </View>
         </View>
       ) : (
@@ -255,13 +229,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.importButton}
-              onPress={() => setShowImport(!showImport)}
+              onPress={() => setPrivateKey(TEST_PRIVATE_KEY)}
             >
               <Text style={styles.buttonText}>Import Wallet</Text>
             </TouchableOpacity>
           </View>
 
-          {showImport && (
+          {privateKey && (
             <View style={styles.importForm}>
               <View style={styles.testWalletBanner}>
                 <Text style={styles.testWalletTitle}>🧪 Testing Mode 🧪</Text>
@@ -270,7 +244,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 </Text>
                 <TouchableOpacity
                   style={styles.testWalletButton}
-                  onPress={() => setPrivateKey(TEST_PRIVATE_KEY)}
+                  onPress={() => handleImportWallet(privateKey)}
                 >
                   <Text style={styles.testWalletButtonText}>Use Test Wallet</Text>
                 </TouchableOpacity>
@@ -284,9 +258,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 onChangeText={setPrivateKey}
                 secureTextEntry
               />
-              <TouchableOpacity style={styles.submitButton} onPress={() => handleImportWallet(privateKey)}>
-                <Text style={styles.buttonText}>Import</Text>
-              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -386,9 +357,6 @@ const styles = StyleSheet.create({
   refreshCoinsText: {
     fontSize: 20,
   },
-  coinsLoader: {
-    marginTop: 20,
-  },
   coinsList: {
     paddingBottom: 20,
   },
@@ -451,11 +419,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
-  },
-  submitButton: {
-    backgroundColor: '#6A5ACD',
-    padding: 15,
-    borderRadius: 10,
   },
   notification: {
     position: 'absolute',

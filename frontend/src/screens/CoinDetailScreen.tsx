@@ -1,137 +1,159 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Image, ActivityIndicator, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/types';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Image } from 'react-native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import PlatformImage from '../components/PlatformImage';
+
 import CoinChart from '../components/CoinChart';
+import BackButton from '../components/BackButton';
+import CoinMetadata from '../components/CoinMetadata';
 import { secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
-import { Coin, Wallet } from '../types';
+import { Coin, Wallet, RootStackParamList } from '../types/index';
 
-// Conditionally import FastImage
-let FastImage: any = Image;
-try {
-        FastImage = require('react-native-fast-image').default;
-} catch (error) {
-        console.warn('FastImage not available, falling back to regular Image');
+const formatNumber = (num: number): string => {
+        if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(2) + 'B';
+        }
+        if (num >= 1000000) {
+                return (num / 1000000).toFixed(2) + 'M';
+        }
+        if (num >= 1000) {
+                return (num / 1000).toFixed(2) + 'K';
+        }
+        return num.toFixed(2);
+};
+
+type CoinDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail'>;
+type CoinDetailScreenRouteProp = RouteProp<RootStackParamList, 'CoinDetail'>;
+
+interface TimeframeOption {
+        label: string;
+        value: string;
 }
 
-interface PriceStats {
-        high24h: number;
-        low24h: number;
-        volume24h: number;
-}
-
-interface ChartDataItem {
-        timestamp: number;
-        value: number;
-}
-
-interface PriceHistoryItem {
-        value: number;
-        unixTime: number;
-}
-
-interface PriceHistoryResponse {
-        data: {
-                items: PriceHistoryItem[];
-        };
-        success: boolean;
-}
-
-interface CoinMetadata {
-        website: string;
-        twitter?: string;
-        discord?: string;
-        telegram?: string;
-        tags?: string[];
-}
-
-type CoinDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'CoinDetail'>;
-
-interface RouteParams {
-        coinId: string;
-}
-
-interface HoveredPrice {
-        price: number;
-        timestamp: number;
-        percentChange: number;
-}
+const TIMEFRAMES: TimeframeOption[] = [
+        { label: "15m", value: "15m" },
+        { label: "1H", value: "1H" },
+        { label: "4H", value: "4H" },
+        { label: "1D", value: "1D" },
+        { label: "1W", value: "1W" },
+];
 
 const CoinDetailScreen: React.FC = () => {
         const navigation = useNavigation<CoinDetailScreenNavigationProp>();
-        const route = useRoute();
-        const { coinId } = route.params as RouteParams;
-        // State for storing wallet data
-        const [walletAddress, setWalletAddress] = useState<string | null>(null);
-
-        useEffect(() => {
-                const loadWallet = async () => {
-                        try {
-                                const savedWallet = await secureStorage.getWallet();
-                                if (savedWallet && savedWallet.address) {
-                                        setWalletAddress(savedWallet.address);
-                                }
-                        } catch (error) {
-                                console.error('Error loading wallet:', error);
-                        }
-                };
-                loadWallet();
-        }, []);
-
-        const [coin, setCoin] = useState<Coin | null>(null);
+        const route = useRoute<CoinDetailScreenRouteProp>();
+        const { coinId, coinName } = route.params;
+        const [selectedTimeframe, setSelectedTimeframe] = useState("15m");
+        const [priceHistory, setPriceHistory] = useState<{ x: Date; y: number }[]>([]);
         const [loading, setLoading] = useState(true);
-        const [chartData, setChartData] = useState<Array<{ price: number; timestamp: number }>>([]);
-        const [timeframe, setTimeframe] = useState('1H');
-        const [hoveredPrice, setHoveredPrice] = useState<HoveredPrice | null>(null);
+        const [wallet, setWallet] = useState<Wallet | null>(null);
+        const [coin, setCoin] = useState<Coin | null>(null);
+        const [metadata, setMetadata] = useState<any>(null);
+        const [metadataLoading, setMetadataLoading] = useState(true);
 
         useEffect(() => {
-                const fetchData = async () => {
+                loadWallet();
+                fetchPriceHistory(selectedTimeframe);
+        }, [selectedTimeframe]);
+
+        useEffect(() => {
+                const fetchMetadata = async () => {
                         try {
-                                const [coinData, priceHistory]: [Coin, PriceHistoryResponse] = await Promise.all([
-                                        api.getCoinById(coinId),
-                                        api.getPriceHistory(coinId, timeframe)
-                                ]);
-                                if (coinData && priceHistory) {
-                                        setCoin(coinData);
-                                        const transformedData = transformPriceHistory(priceHistory);
-                                        setChartData(transformedData);
-                                }
+                                setMetadataLoading(true);
+                                const data = await api.getCoinMetadata(coinId);
+                                setMetadata(data);
+                                setCoin(data);
                         } catch (error) {
-                                console.error('Error fetching coin data:', error);
+                                console.error('Error fetching metadata:', error);
                         } finally {
-                                setLoading(false);
+                                setMetadataLoading(false);
                         }
                 };
 
-                fetchData();
-        }, [coinId, timeframe]);
+                fetchMetadata();
+        }, [coinId]);
 
-        // Transform price history data with proper typing
-        const transformPriceHistory = (data: PriceHistoryResponse) => {
-                if (!data?.data?.items) return [];
-                return data.data.items
-                        .filter((item: PriceHistoryItem) => item.value !== null && item.unixTime !== null)
-                        .map((item: PriceHistoryItem) => ({
-                                price: item.value,
-                                timestamp: item.unixTime
-                        }));
+        const loadWallet = async () => {
+                try {
+                        const savedWallet = await secureStorage.getWallet();
+                        if (savedWallet) {
+                                setWallet(savedWallet);
+                        }
+                } catch (error) {
+                        console.error('Error loading wallet:', error);
+                }
         };
 
-        // Navigate to trade screen
+        const fetchPriceHistory = async (timeframe: string) => {
+                try {
+                        setLoading(true);
+                        const time_from = Math.floor(Date.now() / 1000);
+                        const points = 100;
+                        let durationPerPoint;
+
+                        switch (timeframe) {
+                                case '15m':
+                                        durationPerPoint = 900;
+                                        break;
+                                case '1H':
+                                        durationPerPoint = 3600;
+                                        break;
+                                case '4H':
+                                        durationPerPoint = 14400;
+                                        break;
+                                case '1D':
+                                        durationPerPoint = 86400;
+                                        break;
+                                case '1W':
+                                        durationPerPoint = 604800;
+                                        break;
+                                default:
+                                        throw new Error(`Invalid timeframe: ${timeframe}`);
+                        }
+
+                        const time_to = time_from - (points * durationPerPoint);
+
+                        const response = await api.getPriceHistory(
+                                coinId,
+                                timeframe,
+                                time_to.toString(),
+                                time_from.toString(),
+                                "token"
+                        );
+
+                        if (response?.items) {
+                                const mapped = response.items
+                                        .filter((item: any) => item.value !== null && item.unixTime !== null)
+                                        .map((item: any) => ({
+                                                x: new Date(item.unixTime * 1000),
+                                                y: parseFloat(item.value)
+                                        }));
+                                setPriceHistory(mapped);
+                        } else {
+                                setPriceHistory([]);
+                        }
+                } catch (error) {
+                        console.error("Error fetching price history:", error);
+                        setPriceHistory([]);
+                } finally {
+                        setLoading(false);
+                }
+        };
+
         const handleBuyPress = () => {
-                if (coin && walletAddress) {
+                if (coin && wallet) {
                         navigation.navigate('Trade', {
+                                wallet: undefined,
                                 initialFromCoin: null,
-                                initialToCoin: coin,
-                                wallet: walletAddress
+                                initialToCoin: coin
                         });
                 }
         };
 
-        if (loading || !coin) {
+        // Show loading state while initial data is being fetched
+        if (loading && !coin) {
                 return (
                         <View style={styles.loadingContainer}>
                                 <ActivityIndicator size="large" color="#6A5ACD" />
@@ -139,97 +161,124 @@ const CoinDetailScreen: React.FC = () => {
                 );
         }
 
-        const handleDiscordPress = async () => {
-                if (coin.metadata?.discord) {
-                        try {
-                                await Linking.openURL(coin.metadata.discord);
-                        } catch (error) {
-                                console.error('Error opening Discord link:', error);
-                        }
-                }
-        };
-
         return (
-                <View style={styles.container}>
-                        <View style={styles.header}>
-                                <FastImage
-                                        source={{ uri: coin.iconUrl || 'https://example.com/placeholder.png' }}
-                                        style={styles.icon}
-                                />
-                                <View style={styles.headerInfo}>
-                                        <Text style={styles.name}>{coin.name}</Text>
-                                        <Text style={styles.symbol}>{coin.symbol}</Text>
+                <SafeAreaView style={styles.safeArea}>
+                        <ScrollView style={styles.container} bounces={false}>
+                                <View style={styles.header}>
+                                        <BackButton style={styles.backButton} />
+                                        <PlatformImage
+                                            source={{ 
+                                                uri: coin?.icon_url || 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'
+                                            }}
+                                            style={styles.icon}
+                                            resizeMode="contain"
+                                            priority="normal"
+                                        />
+                                        <View style={styles.headerInfo}>
+                                                <Text style={styles.name}>{coin?.name || ''}</Text>
+                                                <Text style={styles.symbol}>{coin?.symbol || ''}</Text>
+                                        </View>
                                 </View>
-                                <TouchableOpacity
-                                        style={styles.buyButton}
-                                        onPress={handleBuyPress}
-                                >
-                                        <Text style={styles.buyButtonText}>Buy</Text>
-                                </TouchableOpacity>
-                        </View>
 
-                        <View style={styles.priceContainer}>
-                                <Text style={styles.currentPrice}>
-                                        ${hoveredPrice ? hoveredPrice.price.toFixed(4) : coin.price.toFixed(4)}
-                                </Text>
-                                {hoveredPrice && (
-                                        <Text style={styles.timestamp}>
-                                                {new Date(hoveredPrice.timestamp).toLocaleString()}
-                                        </Text>
-                                )}
-                        </View>
 
-                        <View style={styles.chartContainer}>
-                                <CoinChart
-                                        data={chartData}
-                                        onHover={setHoveredPrice}
-                                        timeframe={timeframe}
-                                        onTimeframeChange={setTimeframe}
-                                />
-                        </View>
+                                {/* Chart */}
+                                <View style={styles.chartContainer}>
+                                        <CoinChart data={priceHistory} loading={loading} />
 
-                        <View style={styles.metadataContainer}>
-                                {coin.metadata?.discord && (
-                                        <TouchableOpacity onPress={handleDiscordPress} style={styles.metadataLink}>
-                                                <Text style={styles.metadataText}>Join Discord</Text>
-                                        </TouchableOpacity>
-                                )}
-                        </View>
+                                        {/* Timeframe buttons */}
+                                        <View style={styles.timeframeRow}>
+                                                {TIMEFRAMES.map((tf) => (
+                                                        <TouchableOpacity
+                                                                key={tf.value}
+                                                                style={[
+                                                                        styles.timeframeButton,
+                                                                        selectedTimeframe === tf.value && styles.timeframeButtonActive
+                                                                ]}
+                                                                onPress={() => setSelectedTimeframe(tf.value)}
+                                                        >
+                                                                <Text
+                                                                        style={[
+                                                                                styles.timeframeLabel,
+                                                                                selectedTimeframe === tf.value && styles.timeframeLabelActive
+                                                                        ]}
+                                                                >
+                                                                        {tf.label}
+                                                                </Text>
+                                                        </TouchableOpacity>
+                                                ))}
+                                        </View>
+                                </View>
 
-                        {coin.tags && coin.tags.length > 0 && (
-                                <View style={styles.tagsContainer}>
-                                        {coin.tags.map((tag, index) => (
-                                                <View key={index} style={styles.tag}>
-                                                        <Text style={styles.tagText}>{tag}</Text>
+                                <View style={styles.balanceSection}>
+                                        <Text style={styles.balanceTitle}>Your balance</Text>
+                                        <View style={styles.balanceDetails}>
+                                                <View style={styles.balanceRow}>
+                                                        <Text style={styles.balanceLabel}>Value</Text>
+                                                        <Text style={styles.balanceValue}>$0.00</Text>
                                                 </View>
-                                        ))}
+                                                <View style={styles.balanceRow}>
+                                                        <Text style={styles.balanceLabel}>Quantity</Text>
+                                                        <Text style={styles.balanceValue}>0</Text>
+                                                </View>
+                                        </View>
+                                        <TouchableOpacity
+                                                style={styles.buyButton}
+                                                onPress={handleBuyPress}
+                                        >
+                                                <Text style={styles.buyButtonText}>Buy</Text>
+                                        </TouchableOpacity>
                                 </View>
-                        )}
-                </View>
+
+                                {/* Metadata Component */}
+                                {!metadataLoading && metadata ? (
+                                        <CoinMetadata
+                                                metadata={{
+                                                        name: metadata.name || coin?.name || '',
+                                                        website: metadata.website,
+                                                        twitter: metadata.twitter,
+                                                        telegram: metadata.telegram,
+                                                        discord: metadata.discord,
+                                                        daily_volume: metadata.daily_volume || 0,
+                                                }}
+                                        />
+                                ) : (
+                                        <ActivityIndicator style={styles.metadataLoader} />
+                                )}
+
+                        </ScrollView>
+                </SafeAreaView>
         );
 };
 
 const styles = StyleSheet.create({
+        safeArea: {
+                flex: 1,
+                backgroundColor: '#191B1F',
+        },
         container: {
                 flex: 1,
-                backgroundColor: '#1E1E2E',
-                padding: 16,
+                backgroundColor: '#191B1F',
         },
         loadingContainer: {
                 flex: 1,
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundColor: '#1E1E2E',
+                backgroundColor: '#191B1F',
         },
         header: {
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginBottom: 24,
+                padding: 16,
+                paddingTop: 8,
+        },
+        backButton: {
+                marginRight: 12,
         },
         icon: {
                 width: 40,
                 height: 40,
                 borderRadius: 20,
+                backgroundColor: '#2A2A3E',
         },
         headerInfo: {
                 flex: 1,
@@ -244,67 +293,104 @@ const styles = StyleSheet.create({
                 fontSize: 16,
                 color: '#9F9FD5',
         },
-        buyButton: {
-                backgroundColor: '#6A5ACD',
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 8,
-        },
-        buyButtonText: {
-                color: '#FFFFFF',
-                fontWeight: 'bold',
-                fontSize: 16,
-        },
-        priceContainer: {
-                alignItems: 'center',
-                marginVertical: 16,
+        priceSection: {
+                paddingHorizontal: 16,
+                marginBottom: 20,
         },
         currentPrice: {
                 fontSize: 32,
                 fontWeight: 'bold',
                 color: '#FFFFFF',
         },
-        timestamp: {
-                fontSize: 14,
-                color: '#9F9FD5',
+        priceChange: {
+                fontSize: 16,
+                color: '#FF69B4',
                 marginTop: 4,
         },
         chartContainer: {
-                marginVertical: 16,
+                marginVertical: 20,
+                height: 400,
         },
-        metadataContainer: {
-                flexDirection: 'row',
-                justifyContent: 'center',
-                marginTop: 16,
-        },
-        metadataLink: {
-                backgroundColor: '#2A2A3E',
+        timeframeRow: {
+                flexDirection: "row",
+                justifyContent: "space-around",
                 paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 8,
-                marginHorizontal: 8,
+                marginTop: 32,
+                marginBottom: 16,
         },
-        metadataText: {
-                color: '#9F9FD5',
-                fontSize: 14,
-        },
-        tagsContainer: {
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                marginTop: 16,
-        },
-        tag: {
-                backgroundColor: '#2A2A3E',
+        timeframeButton: {
                 paddingHorizontal: 12,
                 paddingVertical: 6,
-                borderRadius: 16,
-                marginRight: 8,
+        },
+        timeframeButtonActive: {
+                backgroundColor: "#FF69B4",
+                borderRadius: 4,
+        },
+        timeframeLabel: {
+                color: "#9F9FD5",
+                fontSize: 14,
+                fontWeight: "600"
+        },
+        timeframeLabelActive: {
+                color: "#fff"
+        },
+        balanceSection: {
+                padding: 16,
+                marginTop: 20,
+        },
+        balanceTitle: {
+                fontSize: 24,
+                fontWeight: 'bold',
+                color: '#FFFFFF',
+                marginBottom: 16,
+        },
+        balanceDetails: {
+                marginBottom: 20,
+        },
+        balanceRow: {
+                flexDirection: 'row',
+                justifyContent: 'space-between',
                 marginBottom: 8,
         },
-        tagText: {
+        balanceLabel: {
+                fontSize: 16,
                 color: '#9F9FD5',
-                fontSize: 12,
+        },
+        balanceValue: {
+                fontSize: 16,
+                color: '#FFFFFF',
+        },
+        buyButton: {
+                backgroundColor: '#00C805',
+                paddingVertical: 16,
+                borderRadius: 8,
+                alignItems: 'center',
+        },
+        buyButtonText: {
+                color: '#FFFFFF',
+                fontWeight: 'bold',
+                fontSize: 16,
+        },
+        metadataLoader: {
+                marginTop: 20,
+                marginBottom: 20,
+        },
+        statsContainer: {
+                padding: 16,
+                marginTop: 20,
+        },
+        statItem: {
+                marginBottom: 16,
+        },
+        statLabel: {
+                fontSize: 16,
+                color: '#9F9FD5',
+                marginBottom: 4,
+        },
+        statValue: {
+                fontSize: 16,
+                color: '#FFFFFF',
         },
 });
 
-export default CoinDetailScreen; 
+export default CoinDetailScreen;
