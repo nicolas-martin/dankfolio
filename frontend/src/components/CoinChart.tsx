@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform, Dimensions } from "react-native";
 import {
         VictoryChart,
         VictoryAxis,
         VictoryArea,
         VictoryGroup,
-        VictoryLine,
-        VictoryTooltip,
-        LineSegment,
-        VictoryCursorContainer,
         VictoryTheme
 } from "victory-native";
-import { Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 
 interface ChartData {
@@ -27,6 +22,7 @@ interface Props {
 const CoinChart: React.FC<Props> = ({ data, loading }) => {
         const [domain, setDomain] = useState<{ x: [Date, Date]; y: [number, number] } | undefined>();
         const [previousData, setPreviousData] = useState<{ x: Date; y: number }[]>([]);
+        const windowWidth = Dimensions.get('window').width;
 
         useEffect(() => {
                 if (data.length > 0) {
@@ -52,8 +48,11 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                 <View style={{
                         flex: 1,
                         width: '100%',
-                        height: Platform.OS === 'web' ? 350 : undefined,
-                        position: 'relative',
+                        height: Platform.OS === 'ios' ? 300 : Platform.OS === 'web' ? 400 : undefined,
+                        backgroundColor: '#1A1A2E',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: Platform.OS === 'web' ? 20 : 0,
                 }}>
                         {loading && (
                                 <View style={{
@@ -71,58 +70,18 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                 </View>
                         )}
                         <VictoryChart
-                                padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
+                                padding={{ top: 30, bottom: 50, left: 60, right: 30 }}
                                 scale={{ x: "time", y: "linear" }}
                                 domain={domain}
-                                width={Platform.OS === 'web' ? 430 : 350}
-                                height={350}
-                                style={{
-                                        parent: {
-                                                touchAction: 'none',
-                                        }
-                                }}
-                                containerComponent={
-                                        <VictoryCursorContainer
-                                                cursorDimension="x"
-                                                cursorComponent={
-                                                        <LineSegment
-                                                                style={{
-                                                                        stroke: "#FF69B4",
-                                                                        strokeDasharray: "3,3",
-                                                                        strokeWidth: 1
-                                                                }}
-                                                        />
-                                                }
-                                                cursorLabel={({ datum }) => {
-                                                        const dateStr = datum.x.toLocaleDateString();
-                                                        return `$${datum.y.toFixed(2)}\n${dateStr}`;
-                                                }}
-                                                cursorLabelComponent={
-                                                        <VictoryTooltip
-                                                                flyoutStyle={{
-                                                                        fill: "#191B1F",
-                                                                        stroke: "#FF69B4",
-                                                                        strokeWidth: 1,
-                                                                }}
-                                                                style={{
-                                                                        fill: "#FF69B4",
-                                                                        fontSize: 12,
-                                                                }}
-                                                        />
-                                                }
-                                                onCursorChange={(value) => {
-                                                        if (Platform.OS === "ios" || Platform.OS === "android") {
-                                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                        }
-                                                }}
-                                        />
-                                }
+                                width={Platform.OS === 'ios' ? windowWidth - 40 : Platform.OS === 'web' ? 600 : 350}
+                                height={Platform.OS === 'ios' ? 280 : Platform.OS === 'web' ? 350 : 350}
                                 theme={{
                                         ...VictoryTheme.material,
                                         axis: {
                                                 style: {
                                                         grid: { stroke: "transparent" },
-                                                        axis: { stroke: "transparent" },
+                                                        axis: { stroke: "#666", strokeWidth: 1 },
+                                                        tickLabels: { fill: "#666", fontSize: 12 },
                                                 }
                                         }
                                 }}
@@ -131,7 +90,7 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                 <VictoryAxis
                                         tickFormat={(t: Date) => `${t.getMonth() + 1}/${t.getDate()}`}
                                         style={{
-                                                axis: { stroke: "transparent" },
+                                                axis: { stroke: "#666", strokeWidth: 1 },
                                                 tickLabels: { fill: "#666", fontSize: 12 },
                                                 grid: { stroke: "transparent" }
                                         }}
@@ -141,13 +100,13 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                         dependentAxis
                                         tickFormat={(val: number) => `$${val.toFixed(2)}`}
                                         style={{
-                                                axis: { stroke: "transparent" },
+                                                axis: { stroke: "#666", strokeWidth: 1 },
                                                 tickLabels: { fill: "#666", fontSize: 12 },
                                                 grid: { stroke: "transparent" }
                                         }}
                                 />
 
-                                {/* The area + line */}
+                                {/* The area chart */}
                                 <VictoryGroup
                                         data={chartData}
                                 >

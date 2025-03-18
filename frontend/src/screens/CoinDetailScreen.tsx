@@ -83,11 +83,12 @@ const CoinDetailScreen: React.FC = () => {
                         if (savedWallet) {
                                 setWallet(savedWallet);
                                 // Check if the wallet has any balance of this coin
-                                const balance = savedWallet.tokens.find(token => token.mint === coinId)?.amount || 0;
+                                const balance = savedWallet.tokens?.find(token => token.mint === coinId)?.amount || 0;
                                 setWalletBalance(balance);
                         }
                 } catch (error) {
                         console.error('Error loading wallet:', error);
+                        setWalletBalance(0);
                 }
         };
 
