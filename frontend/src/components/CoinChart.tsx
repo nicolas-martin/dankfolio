@@ -1,4 +1,3 @@
-// GoogleFinanceChart.tsx
 import React from "react";
 import { View } from "react-native";
 import {
@@ -23,7 +22,7 @@ interface Props {
 // Combine cursor + voronoi for a crosshair & tooltips
 const CursorVoronoiContainer = createContainer("cursor", "voronoi");
 
-const GoogleFinanceChart: React.FC<Props> = ({ data }) => {
+const CoinChart: React.FC<Props> = ({ data }) => {
         console.log('Chart received data:', {
                 dataLength: data?.length || 0,
                 firstItem: data?.[0],
@@ -42,7 +41,7 @@ const GoogleFinanceChart: React.FC<Props> = ({ data }) => {
         const yPadding = (maxY - minY) * 0.1; // 10% padding
 
         // Domain (x-axis range and y-axis range)
-        const domain = data.length > 0 
+        const domain = data.length > 0
                 ? {
                         x: [data[0].x, data[data.length - 1].x],
                         y: [minY - yPadding, maxY + yPadding]
@@ -122,5 +121,5 @@ const GoogleFinanceChart: React.FC<Props> = ({ data }) => {
         );
 };
 
-export default GoogleFinanceChart;
+export default CoinChart;
 

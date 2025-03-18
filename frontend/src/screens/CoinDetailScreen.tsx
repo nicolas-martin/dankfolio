@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
-import PriceChart from '../components/PriceChart';
+import CoinChart from '../components/CoinChart';
 import { secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { Coin, Wallet } from '../types';
@@ -180,7 +180,7 @@ const CoinDetailScreen: React.FC = () => {
                         </View>
 
                         <View style={styles.chartContainer}>
-                                <PriceChart
+                                <CoinChart
                                         data={chartData}
                                         onHover={setHoveredPrice}
                                         timeframe={timeframe}
