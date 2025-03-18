@@ -29,6 +29,7 @@ func NewService(apiKey string) *Service {
 func (s *Service) GetPriceHistory(ctx context.Context, address string, historyType string, timeFrom, timeTo string, addressType string) (*model.PriceHistoryResponse, error) {
 	// Check if we're in development mode
 	if os.Getenv("APP_ENV") == "development" {
+		fmt.Println("🔍 Loading mock price history data")
 		// Try to load mock data
 		mockData, err := s.loadMockPriceHistory(address, historyType)
 		if err == nil {

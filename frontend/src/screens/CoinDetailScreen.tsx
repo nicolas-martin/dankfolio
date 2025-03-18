@@ -182,7 +182,7 @@ const CoinDetailScreen: React.FC = () => {
                                                         priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
                                                 }
                                                 period={selectedTimeframe}
-                                                icon_url={coin.icon_url}
+                                                logo_url={coin.logo_url}
                                                 name={coin.name}
                                         />
                                 )}

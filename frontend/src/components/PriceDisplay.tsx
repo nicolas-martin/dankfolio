@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import PlatformImage from './PlatformImage';
 
+const DEFAULT_TOKEN_ICON = 'https://dynamic-assets.coinbase.com/41f6a93a3d0a691b7bff0bc4e844d50a7e6b6b444f8ddb48b068722a50c4ffa88e5caf2c4e3cef7386d0daa1ef19230910ddd8753e0cd5f8c5eb51cee40d62e7/asset_icons/4113b082d21cc5fab17fc8f2d19fb996165bcce635e6900f7fc2d57c4ef33ae9.png';
+
 interface PriceDisplayProps {
     price: number;
     periodChange: number;
@@ -33,7 +35,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
     periodChange, 
     valueChange,
     period,
-    icon_url,
+    logo_url,
     name
 }) => {
     if (isNaN(periodChange)) return null;
@@ -47,9 +49,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
         <View style={styles.container}>
             <View style={styles.topRow}>
                 <PlatformImage
-                    source={{ 
-                        uri: icon_url || 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png'
-                    }}
+                    source={{ uri: logo_url || DEFAULT_TOKEN_ICON }}
                     style={styles.icon}
                     resizeMode="contain"
                 />
