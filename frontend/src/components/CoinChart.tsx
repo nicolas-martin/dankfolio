@@ -5,7 +5,10 @@ import {
         VictoryAxis,
         VictoryArea,
         VictoryGroup,
-        createContainer,
+        VictoryLine,
+        VictoryTooltip,
+        LineSegment,
+        VictoryCursorContainer,
         VictoryTheme
 } from "victory-native";
 import { Platform } from "react-native";
@@ -20,9 +23,6 @@ interface Props {
         data: { x: Date; y: number }[];
         loading?: boolean;
 }
-
-// Combine cursor + voronoi for a crosshair & tooltips
-const CursorVoronoiContainer = createContainer("cursor", "voronoi");
 
 const CoinChart: React.FC<Props> = ({ data, loading }) => {
         const [domain, setDomain] = useState<{ x: [Date, Date]; y: [number, number] } | undefined>();
@@ -76,11 +76,10 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                 width={350}
                                 height={350}
                                 containerComponent={
-                                        <CursorVoronoiContainer
+                                        <VictoryCursorContainer
                                                 cursorDimension="x"
-                                                voronoiDimension="x"
                                                 cursorComponent={
-                                                        <line
+                                                        <LineSegment
                                                                 style={{
                                                                         stroke: "#FF69B4",
                                                                         strokeDasharray: "3,3",
@@ -88,12 +87,25 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                                                 }}
                                                         />
                                                 }
-                                                labels={({ datum }) => {
+                                                cursorLabel={({ datum }) => {
                                                         const dateStr = datum.x.toLocaleDateString();
                                                         return `$${datum.y.toFixed(2)}\n${dateStr}`;
                                                 }}
-                                                onActivated={(points) => {
-                                                        if (points?.length && (Platform.OS === "ios" || Platform.OS === "android")) {
+                                                cursorLabelComponent={
+                                                        <VictoryTooltip
+                                                                flyoutStyle={{
+                                                                        fill: "#191B1F",
+                                                                        stroke: "#FF69B4",
+                                                                        strokeWidth: 1,
+                                                                }}
+                                                                style={{
+                                                                        fill: "#FF69B4",
+                                                                        fontSize: 12,
+                                                                }}
+                                                        />
+                                                }
+                                                onCursorChange={(value) => {
+                                                        if (Platform.OS === "ios" || Platform.OS === "android") {
                                                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                                         }
                                                 }}
@@ -130,7 +142,9 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                 />
 
                                 {/* The area + line */}
-                                <VictoryGroup data={chartData}>
+                                <VictoryGroup
+                                        data={chartData}
+                                >
                                         <VictoryArea
                                                 style={{
                                                         data: {
