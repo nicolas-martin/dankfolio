@@ -257,6 +257,21 @@ const CoinDetailScreen: React.FC = () => {
                                         <ActivityIndicator style={styles.metadataLoader} />
                                 )}
                         </ScrollView>
+                        
+                        {/* Fixed Buy Button at Bottom */}
+                        {coin && (
+                                <View style={styles.bottomButtonContainer}>
+                                        <TouchableOpacity
+                                                style={styles.bottomBuyButton}
+                                                onPress={() => navigation.navigate('Trade', {
+                                                        initialFromCoin: null,
+                                                        initialToCoin: coin
+                                                })}
+                                        >
+                                                <Text style={styles.bottomBuyButtonText}>Buy {coin.name}</Text>
+                                        </TouchableOpacity>
+                                </View>
+                        )}
                 </SafeAreaView>
         );
 };
@@ -269,6 +284,7 @@ const styles = StyleSheet.create({
         container: {
                 flex: 1,
                 backgroundColor: '#191B1F',
+                marginBottom: 80, // Add space for the fixed button
         },
         loadingContainer: {
                 flex: 1,
@@ -277,16 +293,18 @@ const styles = StyleSheet.create({
                 backgroundColor: '#191B1F',
         },
         chartContainer: {
-                height: Platform.OS === 'web' ? 400 : undefined,
-                marginVertical: 20,
+                height: Platform.OS === 'web' ? 400 : 250,
+                marginVertical: 0,
+                marginHorizontal: -16,
                 overflow: 'hidden',
+                backgroundColor: 'transparent',
         },
         timeframeRow: {
                 flexDirection: "row",
                 justifyContent: "space-around",
                 paddingHorizontal: 16,
-                marginTop: 32,
-                marginBottom: 16,
+                marginTop: 16,
+                marginBottom: 8,
         },
         timeframeButton: {
                 paddingHorizontal: 12,
@@ -360,6 +378,35 @@ const styles = StyleSheet.create({
         statValue: {
                 fontSize: 16,
                 color: '#FFFFFF',
+        },
+        bottomButtonContainer: {
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                padding: 16,
+                backgroundColor: '#191B1F',
+                borderTopWidth: 1,
+                borderTopColor: '#2C2F36',
+        },
+        bottomBuyButton: {
+                backgroundColor: '#FF69B4',
+                paddingVertical: 16,
+                borderRadius: 12,
+                alignItems: 'center',
+                shadowColor: '#FF69B4',
+                shadowOffset: {
+                        width: 0,
+                        height: 4,
+                },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 8,
+        },
+        bottomBuyButtonText: {
+                color: '#FFFFFF',
+                fontWeight: 'bold',
+                fontSize: 18,
         },
 });
 

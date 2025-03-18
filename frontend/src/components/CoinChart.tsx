@@ -5,7 +5,10 @@ import {
         VictoryAxis,
         VictoryArea,
         VictoryGroup,
-        VictoryTheme
+        VictoryTheme,
+        VictoryCursorContainer,
+        VictoryLabel,
+        LineSegment
 } from "victory-native";
 import * as Haptics from "expo-haptics";
 
@@ -70,6 +73,14 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                 </View>
                         )}
                         <VictoryChart
+                          containerComponent={
+                                <VictoryCursorContainer
+                                  cursorLabel={({ datum }) => {
+                                          const price = `$${datum.y.toFixed(2)}`;
+                                          return `${price}`;
+                                  }}
+                                />
+                              }
                                 padding={{ top: 30, bottom: 50, left: 60, right: 30 }}
                                 scale={{ x: "time", y: "linear" }}
                                 domain={domain}
