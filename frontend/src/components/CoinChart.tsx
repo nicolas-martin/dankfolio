@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, ActivityIndicator } from "react-native";
-import { VictoryChart, VictoryAxis, VictoryArea, VictoryTheme } from "victory-native";
+import { View, ActivityIndicator, Dimensions, Text } from "react-native";
+import { CartesianChart, Line } from "victory-native";
 import { Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 
@@ -12,11 +12,15 @@ interface ChartData {
 interface Props {
         data: { x: Date; y: number }[];
         loading?: boolean;
+        activePoint?: { x: Date; y: number } | null;
+        onHover?: (point: { x: Date; y: number } | null) => void;
 }
 
-const CoinChart: React.FC<Props> = ({ data, loading }) => {
+const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => {
         const [domain, setDomain] = useState<{ x: [Date, Date]; y: [number, number] } | undefined>();
         const [previousData, setPreviousData] = useState<{ x: Date; y: number }[]>([]);
+        const screenWidth = Dimensions.get('window').width;
+        const [localActivePoint, setLocalActivePoint] = useState<{x: Date; y: number} | null>(null);
 
         useEffect(() => {
                 if (data.length > 0) {
@@ -38,11 +42,57 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
         const maxY = Math.max(...yValues);
         const yPadding = (maxY - minY) * 0.1; // 10% padding
 
+        const handleChartTouch = (screenX: number, screenY: number) => {
+                if (!chartData.length) return;
+                
+                // Calculate the relative position in the chart
+                const chartWidth = screenWidth - 32; // Account for padding
+                const touchPercent = (screenX - 16) / chartWidth;
+                const index = Math.min(
+                        Math.max(
+                                Math.round(touchPercent * (chartData.length - 1)),
+                                0
+                        ),
+                        chartData.length - 1
+                );
+                
+                const point = chartData[index];
+                
+                console.log('Touch detected:', point);
+                setLocalActivePoint(point);
+                
+                // Haptic feedback on iOS
+                if (Platform.OS === 'ios') {
+                        Haptics.selectionAsync();
+                }
+                
+                // Call the parent's onHover function if provided
+                if (onHover) {
+                        onHover(point);
+                }
+        };
+
+        if (chartData.length === 0) {
+                return (
+                        <View style={{
+                                height: 250,
+                                backgroundColor: '#191B1F',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                        }}>
+                                <ActivityIndicator size="large" color="#FF69B4" />
+                        </View>
+                );
+        }
+
+        // Use the prop value if provided, otherwise use local state
+        const displayPoint = activePoint || localActivePoint;
+
         return (
                 <View style={{
                         paddingHorizontal: 8,
                         backgroundColor: '#191B1F',
-                        height: 350,
+                        height: 250,
                 }}>
                         {loading && (
                                 <View style={{
@@ -59,48 +109,77 @@ const CoinChart: React.FC<Props> = ({ data, loading }) => {
                                         <ActivityIndicator size="large" color="#FF69B4" />
                                 </View>
                         )}
-                        <VictoryChart
-                                padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
-                                scale={{ x: "time", y: "linear" }}
-                                domain={domain}
-                                width={350}
-                                height={350}
-                                theme={VictoryTheme.material}
+                        
+                        {/* Simple tooltip label showing the selected price */}
+                        {displayPoint && (
+                                <View style={{
+                                        position: 'absolute',
+                                        top: 10,
+                                        left: 10,
+                                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                        padding: 8,
+                                        borderRadius: 4,
+                                        zIndex: 2,
+                                }}>
+                                        <Text style={{ color: '#fff' }}>
+                                                Price: ${displayPoint.y.toFixed(4)}
+                                        </Text>
+                                        <Text style={{ color: '#fff' }}>
+                                                {displayPoint.x.toLocaleString('en-US', {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                })}
+                                        </Text>
+                                </View>
+                        )}
+                        
+                        <View 
+                                style={{ 
+                                        flex: 1,
+                                        position: 'relative',
+                                }} 
+                                onTouchStart={(e) => {
+                                        const { locationX, locationY } = e.nativeEvent;
+                                        handleChartTouch(locationX, locationY);
+                                }}
+                                onTouchMove={(e) => {
+                                        const { locationX, locationY } = e.nativeEvent;
+                                        handleChartTouch(locationX, locationY);
+                                }}
+                                onTouchEnd={() => {
+                                        setLocalActivePoint(null);
+                                        if (onHover) onHover(null);
+                                }}
                         >
-                                {/* X-axis */}
-                                <VictoryAxis
-                                        tickFormat={(t: Date) => `${t.getMonth() + 1}/${t.getDate()}`}
-                                        style={{
-                                                axis: { stroke: "transparent" },
-                                                tickLabels: { fill: "#666", fontSize: 12 },
-                                                grid: { stroke: "transparent" }
-                                        }}
-                                />
-                                {/* Y-axis */}
-                                <VictoryAxis
-                                        dependentAxis
-                                        tickFormat={(val: number) => `$${val.toFixed(2)}`}
-                                        style={{
-                                                axis: { stroke: "transparent" },
-                                                tickLabels: { fill: "#666", fontSize: 12 },
-                                                grid: { stroke: "transparent" }
-                                        }}
-                                />
-
-                                {/* The area */}
-                                <VictoryArea
+                                <CartesianChart
                                         data={chartData}
-                                        interpolation="basis"
-                                        style={{
-                                                data: {
-                                                        fill: "#FF69B4",
-                                                        fillOpacity: 0.1,
-                                                        stroke: "#FF69B4",
-                                                        strokeWidth: 2
-                                                }
+                                        xKey={"x" as any}
+                                        yKeys={["y"]}
+                                        domainPadding={{ left: 10, right: 10, top: 20, bottom: 40 }}
+                                        axisOptions={{
+                                                lineColor: "transparent",
+                                                labelColor: "#666",
+                                                tickCount: { x: 5, y: 5 },
+                                                formatXLabel: (value) => {
+                                                        const date = new Date(value as any);
+                                                        return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                                                },
+                                                formatYLabel: (value) => `$${(value as number).toFixed(4)}`
                                         }}
-                                />
-                        </VictoryChart>
+                                >
+                                        {({ points, chartBounds }) => (
+                                                <Line
+                                                        points={points.y}
+                                                        color="#FF69B4"
+                                                        strokeWidth={2}
+                                                        curveType="monotoneX"
+                                                        animate={{ type: "timing", duration: 500 }}
+                                                />
+                                        )}
+                                </CartesianChart>
+                        </View>
                 </View>
         );
 };

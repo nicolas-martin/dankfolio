@@ -188,6 +188,12 @@ const HomeScreen: React.FC = () => {
             >
               <Text style={styles.profileButtonText}>View Profile</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.profileButton, { marginLeft: 10, backgroundColor: '#FF69B4' }]}
+              onPress={() => navigation.navigate('ChartTest')}
+            >
+              <Text style={styles.profileButtonText}>📊 Test Chart</Text>
+            </TouchableOpacity>
           </View>
         </View>
       ) : (

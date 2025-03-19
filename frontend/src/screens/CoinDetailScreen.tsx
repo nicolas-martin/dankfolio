@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Image } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { VictoryVoronoiContainer } from 'victory-native';
 
 import PlatformImage from '../components/PlatformImage';
 import TopBar from '../components/TopBar';
@@ -13,7 +12,6 @@ import PriceDisplay from '../components/PriceDisplay';
 import { secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { Coin, Wallet, RootStackParamList } from '../types/index';
-import CustomTooltip from '../components/CustomTooltip';
 
 const formatNumber = (num: number): string => {
         if (num >= 1000000000) {
@@ -161,26 +159,11 @@ const CoinDetailScreen: React.FC = () => {
                 }
         };
 
-        const handleChartHover = (points: any[]) => {
-                console.log('handleChartHover called with points:', points);
-                if (points && points.length > 0) {
-                        const point = points[0];
-                        const newHoverPoint = {
-                                x: point.x,
-                                y: point.y
-                        };
-                        console.log('Setting hover point:', newHoverPoint);
-                        setHoverPoint(newHoverPoint);
-                } else {
-                        console.log('Clearing hover point');
-                        setHoverPoint(null);
-                }
+        const handleChartHover = (point: { x: Date; y: number } | null) => {
+                console.log('Chart hover:', point ? 
+                        `${point.x.toLocaleDateString()} - $${point.y.toFixed(2)}` : 'none');
+                setHoverPoint(point);
         };
-
-        // Add useEffect for tooltip debugging
-        useEffect(() => {
-                console.log('Tooltip state changed:', { active: !!hoverPoint, hoverPoint });
-        }, [hoverPoint]);
 
         // Show loading state while initial data is being fetched
         if (loading && !coin) {
@@ -207,7 +190,7 @@ const CoinDetailScreen: React.FC = () => {
                                                         priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
                                                 }
                                                 period={selectedTimeframe}
-                                                icon_url={coin.logo_url}
+                                                icon_url={metadata?.logo_url}
                                                 name={coin.name}
                                         />
                                 )}
@@ -219,14 +202,6 @@ const CoinDetailScreen: React.FC = () => {
                                                 loading={loading}
                                                 activePoint={hoverPoint}
                                                 onHover={handleChartHover}
-                                        />
-
-                                        {/* Tooltip */}
-                                        <CustomTooltip
-                                                active={!!hoverPoint}
-                                                datum={hoverPoint || undefined}
-                                                x={hoverPoint?.x instanceof Date ? hoverPoint.x.getTime() : undefined}
-                                                y={hoverPoint?.y}
                                         />
 
                                         {/* Timeframe buttons */}
