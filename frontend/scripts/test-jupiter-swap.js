@@ -1,5 +1,5 @@
 import './load-env.js';
-import { generateWallet, buildAndSignSwapTransaction } from '../src/utils/solanaWallet.js';
+import { generateWallet, buildAndSignSwapTransaction } from '../src/services/solana.ts';
 import { PublicKey } from '@solana/web3.js';
 
 // Test constants

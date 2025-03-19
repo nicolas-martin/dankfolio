@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, FlatList, Image } from 'react-native';
-import { getKeypairFromPrivateKey, secureStorage } from '../utils/solanaWallet';
+import { getKeypairFromPrivateKey, secureStorage } from '../services/solana';
 import api from '../services/api';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../components/CoinCard';

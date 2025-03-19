@@ -11,6 +11,7 @@ import TradeDetails from '../components/TradeDetails';
 import TradeButton from '../components/TradeButton';
 import PriceDisplay from '../components/PriceDisplay';
 import api from '../services/api';
+import { buildAndSignSwapTransaction, getKeypairFromPrivateKey, secureStorage } from '../services/solana';
 
 const MIN_AMOUNT = "0.0001";
 const DEFAULT_AMOUNT = "0.0001";
@@ -208,19 +209,47 @@ const TradeScreen: React.FC = () => {
   };
 
   const handleSubmitTrade = async () => {
-    if (!fromCoin || !toCoin) return;
+    if (!fromCoin || !toCoin || !fromAmount) {
+      console.error('❌ Missing required trade parameters');
+      return;
+    }
     
     try {
       setIsSubmitting(true);
-      const response = await api.executeTrade(fromCoin.id, toCoin.id, fromAmount, 'dummy-signed-tx');
-      if (response.success) {
-        console.log('Trade executed successfully!');
-        if (response.txHash) {
-          console.log('Transaction hash:', response.txHash);
-        }
+      
+      // Get the wallet from secure storage
+      const savedWallet = await secureStorage.getWallet();
+      if (!savedWallet) {
+        throw new Error('No wallet found');
+      }
+
+      // Create a keypair from the private key
+      const wallet = getKeypairFromPrivateKey(savedWallet.privateKey);
+
+      const signedTransaction = await buildAndSignSwapTransaction(
+        fromCoin.address || fromCoin.id,
+        toCoin.address || toCoin.id,
+        fromAmount,
+        1, // 1% slippage
+        wallet
+      );
+
+      const response = await api.executeTrade({
+        from_coin_id: fromCoin.id,
+        to_coin_id: toCoin.id,
+        amount: parseFloat(fromAmount),
+        private_key: signedTransaction
+      });
+      
+      if (response.data) {
+        console.log('✅ Trade executed successfully!');
+        console.log('🔗 Transaction Hash:', response.data.transaction_hash);
+        console.log('🌐 Explorer URL:', response.data.explorer_url);
+      } else if (response.error) {
+        throw new Error(response.error);
       }
     } catch (error) {
-      console.error('Error submitting trade:', error);
+      console.error('❌ Error submitting trade:', error);
     } finally {
       setIsSubmitting(false);
     }

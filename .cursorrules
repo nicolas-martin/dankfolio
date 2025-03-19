@@ -18,6 +18,7 @@ This file defines custom rules for generating code and documentation that align 
 - Use animations and transitions to improve the trading experience while keeping performance in mind.
 - Maintain a consistent, meme-inspired visual language (e.g., playful icons, vibrant colors).
 - Build a responsive interface across devices.
+- Do not make styling changes on your own. You always need explicit permission.
 
 ---
 

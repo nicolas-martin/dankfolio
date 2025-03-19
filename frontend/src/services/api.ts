@@ -60,10 +60,19 @@ interface ErrorDetails {
         data?: any;
 }
 
-interface TradeResponse {
-        success: boolean;
+export interface TradeResponse {
+        data?: {
+                transaction_hash: string;
+                explorer_url: string;
+        };
         error?: string;
-        txHash?: string;
+}
+
+export interface TradePayload {
+        from_coin_id: string;
+        to_coin_id: string;
+        amount: number;
+        private_key: string;
 }
 
 interface WalletResponse {
@@ -121,7 +130,7 @@ const handleApiError = (error: any): never => {
 };
 
 interface API {
-        executeTrade: (fromCoinId: string, toCoinId: string, amount: string, signedTransaction: string) => Promise<TradeResponse>;
+        executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
         getAvailableCoins: () => Promise<Coin[]>;
         getCoinById: (coinId: string) => Promise<Coin>;
         getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
@@ -137,23 +146,14 @@ interface API {
 }
 
 const api: API = {
-        executeTrade: async (fromCoinId: string, toCoinId: string, amount: string, signedTransaction: string) => {
-                console.log('Executing trade:', { fromCoinId, toCoinId, amount });
-
+        executeTrade: async (payload: TradePayload): Promise<TradeResponse> => {
                 try {
-                        const payload = {
-                                from_coin_id: fromCoinId,
-                                to_coin_id: toCoinId,
-                                amount: amount,
-                                signed_transaction: signedTransaction,
-                        };
-
-                        console.log('Trade request payload:', JSON.stringify(payload, null, 2));
-
-                        const response = await apiClient.post<TradeResponse>('/api/trades/execute', payload);
+                        console.log('🔄 Executing trade with payload:', payload);
+                        const response = await apiClient.post('/trade', payload);
                         return response.data;
                 } catch (error) {
-                        return handleApiError(error);
+                        console.error('❌ Error executing trade:', error);
+                        throw error;
                 }
         },
 

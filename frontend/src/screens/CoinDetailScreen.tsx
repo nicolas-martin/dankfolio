@@ -9,7 +9,7 @@ import CoinChart from '../components/CoinChart';
 import BackButton from '../components/BackButton';
 import CoinMetadata from '../components/CoinMetadata';
 import PriceDisplay from '../components/PriceDisplay';
-import { secureStorage } from '../utils/solanaWallet';
+import { secureStorage } from '../services/solana';
 import api from '../services/api';
 import { Coin, Wallet, RootStackParamList } from '../types/index';
 
