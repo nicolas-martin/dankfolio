@@ -13,6 +13,17 @@ import { secureStorage } from '../utils/solanaWallet';
 import api from '../services/api';
 import { Coin, Wallet, RootStackParamList } from '../types/index';
 
+// Default SOL coin data
+const DEFAULT_SOL_COIN: Coin = {
+  id: 'So11111111111111111111111111111111111111112',
+  name: 'Solana',
+  symbol: 'SOL',
+  decimals: 9,
+  icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+  price: 0,
+  daily_volume: 0
+};
+
 const formatNumber = (num: number): string => {
         if (num >= 1000000000) {
                 return (num / 1000000000).toFixed(2) + 'B';
@@ -177,10 +188,10 @@ const CoinDetailScreen: React.FC = () => {
         };
 
         const handleBuyPress = () => {
-                if (coin && wallet) {
+                if (coin) {
+                        console.log('💰 Navigating to Trade with coin:', coin);
                         navigation.navigate('Trade', {
-                                wallet: undefined,
-                                initialFromCoin: null,
+                                initialFromCoin: DEFAULT_SOL_COIN,
                                 initialToCoin: coin
                         });
                 }
@@ -272,12 +283,6 @@ const CoinDetailScreen: React.FC = () => {
                                                                 <Text style={styles.balanceValue}>{walletBalance}</Text>
                                                         </View>
                                                 </View>
-                                                <TouchableOpacity
-                                                        style={styles.buyButton}
-                                                        onPress={handleBuyPress}
-                                                >
-                                                        <Text style={styles.buyButtonText}>Buy</Text>
-                                                </TouchableOpacity>
                                         </View>
                                 )}
 
@@ -303,10 +308,7 @@ const CoinDetailScreen: React.FC = () => {
                                 <View style={styles.bottomButtonContainer}>
                                         <TouchableOpacity
                                                 style={styles.bottomBuyButton}
-                                                onPress={() => navigation.navigate('Trade', {
-                                                        initialFromCoin: null,
-                                                        initialToCoin: coin
-                                                })}
+                                                onPress={handleBuyPress}
                                         >
                                                 <Text style={styles.bottomBuyButtonText}>Buy {coin.name}</Text>
                                         </TouchableOpacity>
@@ -431,17 +433,6 @@ const styles = StyleSheet.create({
         balanceValue: {
                 fontSize: 16,
                 color: '#FFFFFF',
-        },
-        buyButton: {
-                backgroundColor: '#00C805',
-                paddingVertical: 16,
-                borderRadius: 8,
-                alignItems: 'center',
-        },
-        buyButtonText: {
-                color: '#FFFFFF',
-                fontWeight: 'bold',
-                fontSize: 16,
         },
         metadataLoader: {
                 marginTop: 20,
