@@ -35,8 +35,15 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, historyTy
 		if err == nil {
 			return mockData, nil
 		}
-		// If we can't load mock data, log the error and continue with real API
+		// If we can't load mock data, return empty response in development
 		fmt.Printf("⚠️ Failed to load mock price history data: %v\n", err)
+		// Return empty response with proper structure
+		emptyResponse := &model.PriceHistoryResponse{
+			Success: true,
+		}
+		// Initialize the nested data structure
+		emptyResponse.Data.Items = make([]model.PriceHistoryItem, 0)
+		return emptyResponse, nil
 	}
 
 	url := fmt.Sprintf("%s/defi/history_price?address=%s&address_type=%s&type=%s&time_from=%s&time_to=%s",
@@ -83,27 +90,40 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*mod
 		"So11111111111111111111111111111111111111112":  "SOL",
 		"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "USDC",
 		"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB": "USDT",
-		"7i5KKsX2weiTkry7jA4ZwSuXGhs5eJBEjY8vVxR4pfRx": "STAR10",
-		"9nusLQeFKiocswDt6NQsiErm1DnGdnxW8CKNtJoZFA1F": "Telepathy",
-		"7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU": "PWEASE",
-		"FoRGERiW7odcCBGU1bztZi16osPBHjxharvDathL5eds": "DEER",
-		"ALCH3njvs3MGXmBv8YyL3rmyQ8KTZvjPgGvGNhvvuEK":  "ALCH",
-		"BABYb6HHrGpF7mWiKNzh5zcGt7ZhWgkxp7Y9KZTwM8i":  "Baby",
-		"7VGqBvGvZWSHmyNsqYZVpNyqh1E4UnKDLtEjQZrVrHhk": "100",
-		"9WMwGcY6TcbSfy9XPpQymY3qNEsvEaYL3wivdwPG2fpp": "Fartcoin",
+		"9oqb8z7hyjjKG8raKtgexXskYRSN9Kcr5BoNkyekpump": "STAR10",
+		"AibtWaMW9a5n6ZAKNhBM8Adm9FdiHRvou7QATkChye8U": "Telepathy",
+		"CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump": "PWEASE",
+		"E3DJkV7TG4ADDg6o7cA5ZNkmCMLhP9rxgfzxPoCpump":  "DEER",
+		"HNg5PYJmtqcmzXrv6S9zP1CDKk5BgDuyFBxbvNApump":  "ALCH",
+		"6pKHwNCpzgZuC9o5FzvCZkYSUGfQddhUYtMyDbEVpump": "Baby",
+		"EKBZDhaSiAmUQNeJbkAkhJTEZPAN8WC5fShnUTyxpump": "100",
+		"9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump": "Fartcoin",
+		"ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82":  "BOME",
 	}
 
 	// Get the symbol for the address
+	fmt.Printf("🔍 Looking up symbol for address: %s\n", address)
 	symbol, ok := addressToSymbol[address]
 	if !ok {
+		fmt.Printf("❌ Address not found in mapping. Available addresses:\n")
+		for addr, sym := range addressToSymbol {
+			fmt.Printf("  %s -> %s\n", addr, sym)
+		}
 		return nil, fmt.Errorf("no mock data available for address: %s", address)
 	}
+	fmt.Printf("✅ Found symbol: %s\n", symbol)
 
 	// Construct the path to the mock data file
 	filename := filepath.Join("cmd", "fetch-mock-data", "price_history", symbol, fmt.Sprintf("%s.json", historyType))
+	fmt.Printf("📂 Looking for mock data file: %s\n", filename)
+
+	// Get current working directory for debugging
+	cwd, _ := os.Getwd()
+	fmt.Printf("📍 Current working directory: %s\n", cwd)
+
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open mock data file: %w", err)
+		return nil, fmt.Errorf("failed to open mock data file %s: %w", filename, err)
 	}
 	defer file.Close()
 

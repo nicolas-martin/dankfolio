@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { View, ActivityIndicator, Dimensions, Text } from "react-native";
-import { CartesianChart, Line } from "victory-native";
-import { Platform } from "react-native";
+import { View, ActivityIndicator, Dimensions, Text, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
+import { VictoryChart, VictoryLine, VictoryAxis } from "victory";
+import { CartesianChart, Line } from "victory-native";
 
 interface ChartData {
         x: Date;
@@ -153,32 +153,82 @@ const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => 
                                         if (onHover) onHover(null);
                                 }}
                         >
-                                <CartesianChart
+                                {Platform.OS === 'web' ? (
+                                    <VictoryChart
+                                        padding={{ left: 50, right: 50, top: 20, bottom: 40 }}
+                                        domainPadding={{ x: [10, 10], y: [20, 20] }}
+                                        width={screenWidth - 32}
+                                        height={200}
+                                        style={{
+                                            parent: {
+                                                backgroundColor: 'transparent'
+                                            }
+                                        }}
+                                    >
+                                        <VictoryAxis
+                                            style={{
+                                                axis: { stroke: 'transparent' },
+                                                tickLabels: { fill: '#666', fontSize: 10 },
+                                                grid: { stroke: 'transparent' }
+                                            }}
+                                            tickFormat={(x) => {
+                                                const date = new Date(x);
+                                                return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                                            }}
+                                        />
+                                        <VictoryAxis
+                                            dependentAxis
+                                            style={{
+                                                axis: { stroke: 'transparent' },
+                                                tickLabels: { fill: '#666', fontSize: 10 },
+                                                grid: { stroke: 'transparent' }
+                                            }}
+                                            tickFormat={(y) => `$${y.toFixed(4)}`}
+                                        />
+                                        <VictoryLine
+                                            data={chartData}
+                                            x="x"
+                                            y="y"
+                                            style={{
+                                                data: {
+                                                    stroke: "#FF69B4",
+                                                    strokeWidth: 2
+                                                }
+                                            }}
+                                            animate={{
+                                                duration: 500,
+                                                onLoad: { duration: 500 }
+                                            }}
+                                        />
+                                    </VictoryChart>
+                                ) : (
+                                    <CartesianChart
                                         data={chartData}
                                         xKey={"x" as any}
                                         yKeys={["y"]}
                                         domainPadding={{ left: 10, right: 10, top: 20, bottom: 40 }}
                                         axisOptions={{
-                                                lineColor: "transparent",
-                                                labelColor: "#666",
-                                                tickCount: { x: 5, y: 5 },
-                                                formatXLabel: (value) => {
-                                                        const date = new Date(value as any);
-                                                        return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-                                                },
-                                                formatYLabel: (value) => `$${(value as number).toFixed(4)}`
+                                            lineColor: "transparent",
+                                            labelColor: "#666",
+                                            tickCount: { x: 5, y: 5 },
+                                            formatXLabel: (value) => {
+                                                const date = new Date(value as any);
+                                                return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                                            },
+                                            formatYLabel: (value) => `$${(value as number).toFixed(4)}`
                                         }}
-                                >
+                                    >
                                         {({ points, chartBounds }) => (
-                                                <Line
-                                                        points={points.y}
-                                                        color="#FF69B4"
-                                                        strokeWidth={2}
-                                                        curveType="monotoneX"
-                                                        animate={{ type: "timing", duration: 500 }}
-                                                />
+                                            <Line
+                                                points={points.y}
+                                                color="#FF69B4"
+                                                strokeWidth={2}
+                                                curveType="monotoneX"
+                                                animate={{ type: "timing", duration: 500 }}
+                                            />
                                         )}
-                                </CartesianChart>
+                                    </CartesianChart>
+                                )}
                         </View>
                 </View>
         );

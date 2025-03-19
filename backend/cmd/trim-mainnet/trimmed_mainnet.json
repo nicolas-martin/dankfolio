@@ -171,36 +171,6 @@
     },
     {
       "token": {
-        "symbol": "pwease",
-        "name": "pwease",
-        "mint": "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-        "decimals": 9,
-        "volume": 13271486.995222304
-      },
-      "pools": [
-        {
-          "id": "9fmdkQipJK2teeUv53BMDXi52uRLbrEvV38K8GBNkiM7",
-          "baseMint": "So11111111111111111111111111111111111111112",
-          "quoteMint": "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-          "lpMint": "Fu32hFPDbYo8KfZk1wDxrFRrvy3o9meDkSjxFqJFFLKT",
-          "programId": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
-          "authority": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
-          "openOrders": "3VUodnL13yh3D4TgqntXeh9tDht3rbm5DvoUQFxQisPv",
-          "targetOrders": "A4GL8ngCr1u6oTsW3eKTHAt2YzLSPJwxfFZck3AxJeCC",
-          "baseVault": "5yY5BGRgwa5rxvYPpMV9EkDpwp6w1vNNXUNzUCtMoFfR",
-          "quoteVault": "5gLhGUm8E5Vt1W7TpHqS6PacgZjmycHgjEqsDe99meBH",
-          "version": 5,
-          "baseDecimals": 9,
-          "quoteDecimals": 6,
-          "lpDecimals": 9,
-          "marketVersion": 3,
-          "marketProgramId": "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX",
-          "marketId": "A3kVzzqzpa3Xm3W2cMbjyZRpdRhLcp7qUwDqSC5yRisN"
-        }
-      ]
-    },
-    {
-      "token": {
         "symbol": "STAR10",
         "name": "STAR10",
         "mint": "9oqb8z7hyjjKG8raKtgexXskYRSN9Kcr5BoNkyekpump",

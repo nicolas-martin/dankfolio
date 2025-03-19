@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 
@@ -17,6 +18,13 @@ const (
 	// SolTokenAddress is the native SOL token address
 	SolTokenAddress = "So11111111111111111111111111111111111111112"
 )
+
+// TrendingToken represents a token from the trending list
+type TrendingToken struct {
+	Symbol string  `json:"symbol"`
+	Mint   string  `json:"mint"`
+	Volume float64 `json:"volume"`
+}
 
 // Config holds the configuration for the coin service
 type Config struct {
@@ -186,7 +194,7 @@ func (s *Service) initializeSolData() error {
 	return nil
 }
 
-// refreshCoins loads initial coin data from trimmed_mainnet.json and enriches it with Jupiter data
+// refreshCoins loads initial coin data from trending tokens list and enriches it with Jupiter data
 func (s *Service) refreshCoins() error {
 	log.Printf("🔄 Starting coin refresh operation")
 
@@ -196,73 +204,56 @@ func (s *Service) refreshCoins() error {
 		// Continue with other tokens even if SOL fails
 	}
 
-	// Load trending tokens first to get volume data
-	trendingTokens := make(map[string]float64)
-	trendingFile := "backend/cmd/trending/trending_tokens.json"
-	if jsonFile, err := os.Open(trendingFile); err == nil {
-		var trending []struct {
-			Symbol string  `json:"symbol"`
-			Mint   string  `json:"mint"`
-			Volume float64 `json:"volume"`
-		}
-		if err := json.NewDecoder(jsonFile).Decode(&trending); err == nil {
-			for _, t := range trending {
-				trendingTokens[t.Mint] = t.Volume
-				log.Printf("📊 Loaded trending token %s with volume %.2f", t.Symbol, t.Volume)
-			}
-		}
-		jsonFile.Close()
-	}
-
-	// Load tokens from trimmed_mainnet.json
-	jsonFile, err := os.Open("cmd/trim-mainnet/trimmed_mainnet.json")
-	if err != nil {
-		// Try with backend prefix
-		jsonFile, err = os.Open("backend/cmd/trim-mainnet/trimmed_mainnet.json")
+	// Load and process trending tokens
+	workspaceRoot := os.Getenv("WORKSPACE_ROOT")
+	if workspaceRoot == "" {
+		// If WORKSPACE_ROOT is not set, try to use the current working directory
+		var err error
+		workspaceRoot, err = os.Getwd()
 		if err != nil {
-			// Try with absolute path from working directory
-			wd, _ := os.Getwd()
-			jsonFile, err = os.Open(wd + "/cmd/trim-mainnet/trimmed_mainnet.json")
-			if err != nil {
-				return fmt.Errorf("failed to open token list file: %w", err)
-			}
+			return fmt.Errorf("failed to get current working directory: %w", err)
 		}
+	}
+	trendingFile := filepath.Join(workspaceRoot, "cmd", "trending", "trending_tokens.json")
+	jsonFile, err := os.Open(trendingFile)
+	if err != nil {
+		return fmt.Errorf("failed to open trending tokens file: %w", err)
 	}
 	defer jsonFile.Close()
 
-	var tokenList TokenList
-	if err := json.NewDecoder(jsonFile).Decode(&tokenList); err != nil {
-		return fmt.Errorf("failed to parse token list: %w", err)
+	var trending []TrendingToken
+
+	if err := json.NewDecoder(jsonFile).Decode(&trending); err != nil {
+		return fmt.Errorf("failed to parse trending tokens: %w", err)
 	}
 
-	log.Printf("📝 Found %d tokens in trimmed_mainnet.json", len(tokenList.Tokens))
+	log.Printf("📝 Processing %d trending tokens", len(trending))
 
-	// Process each token
-	for _, token := range tokenList.Tokens {
-		// Create a basic coin from the token info
+	// Process trending tokens
+	successCount := 0
+	for _, t := range trending {
 		coin := model.Coin{
-			ID:       token.Token.Mint,
-			Symbol:   token.Token.Symbol,
-			Name:     token.Token.Name,
-			Decimals: token.Token.Decimals,
+			ID:          t.Mint,
+			Symbol:      t.Symbol,
+			DailyVolume: t.Volume,
 		}
 
-		// Set volume from trending tokens if available
-		if volume, exists := trendingTokens[coin.ID]; exists {
-			coin.DailyVolume = volume
-			log.Printf("📈 Set volume for %s: %.2f", coin.Symbol, volume)
-		}
-
-		log.Printf("🔄 Processing coin %s (%s)", coin.Symbol, coin.ID)
+		log.Printf("📈 Processing trending token %s (%s) with volume %.2f", t.Symbol, t.Mint, t.Volume)
 
 		// Enrich with Jupiter data
 		if err := s.enrichCoinWithJupiterData(&coin); err != nil {
-			log.Printf("⚠️ Warning: Error enriching %s data: %v", coin.Symbol, err)
+			log.Printf("⚠️ Warning: Error enriching trending token %s (%s): %v", t.Symbol, t.Mint, err)
 			continue
 		}
 
 		// Add to storage
-		s.coins[coin.ID] = coin
+		s.coins[t.Mint] = coin
+		successCount++
+		log.Printf("✅ Added %s to available coins (success %d/%d)", t.Symbol, successCount, len(trending))
+	}
+
+	if successCount == 0 {
+		return fmt.Errorf("failed to load any trending tokens")
 	}
 
 	log.Printf("✨ Successfully refreshed %d coins with Jupiter data", len(s.coins))

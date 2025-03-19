@@ -47,6 +47,12 @@ const CoinDetailScreen: React.FC = () => {
         const route = useRoute<CoinDetailScreenRouteProp>();
         const { coinId, coinName } = route.params;
         const [selectedTimeframe, setSelectedTimeframe] = useState("15m");
+        
+        // Debug timeframe rendering
+        useEffect(() => {
+            console.log('Timeframes available:', TIMEFRAMES);
+            console.log('Selected timeframe:', selectedTimeframe);
+        }, [selectedTimeframe]);
         const [priceHistory, setPriceHistory] = useState<{ x: Date; y: number }[]>([]);
         const [loading, setLoading] = useState(true);
         const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -56,10 +62,16 @@ const CoinDetailScreen: React.FC = () => {
         const [walletBalance, setWalletBalance] = useState<number>(0);
         const [hoverPoint, setHoverPoint] = useState<{ x: Date; y: number } | null>(null);
 
+        // Debug dependency changes
         useEffect(() => {
+                console.log('🎯 Effect triggered with:', {
+                    coinId,
+                    selectedTimeframe,
+                    hasWallet: !!wallet
+                });
                 loadWallet();
                 fetchPriceHistory(selectedTimeframe);
-        }, [selectedTimeframe]);
+        }, [selectedTimeframe, coinId]);
 
         useEffect(() => {
                 const fetchMetadata = async () => {
@@ -83,9 +95,19 @@ const CoinDetailScreen: React.FC = () => {
                         const savedWallet = await secureStorage.getWallet();
                         if (savedWallet) {
                                 setWallet(savedWallet);
+                                // Debug wallet tokens
+                                console.log('🔍 Wallet tokens:', savedWallet.tokens);
+                                console.log('🎯 Looking for token:', coinId);
+                                
                                 // Check if the wallet has any balance of this coin
-                                const balance = savedWallet.tokens?.find(token => token.mint === coinId)?.amount || 0;
-                                setWalletBalance(balance);
+                                if (savedWallet.tokens) {
+                                    const token = savedWallet.tokens.find(t => t.mint === coinId);
+                                    console.log('💰 Found token:', token);
+                                    setWalletBalance(token?.amount || 0);
+                                } else {
+                                    console.log('⚠️ No tokens in wallet');
+                                    setWalletBalance(0);
+                                }
                         }
                 } catch (error) {
                         console.error('Error loading wallet:', error);
@@ -96,6 +118,11 @@ const CoinDetailScreen: React.FC = () => {
         const fetchPriceHistory = async (timeframe: string) => {
                 try {
                         setLoading(true);
+                        console.log('🔄 Fetching price history:', {
+                            timeframe,
+                            coinId
+                        });
+                        
                         const time_from = Math.floor(Date.now() / 1000);
                         const points = 100;
                         let durationPerPoint;
@@ -211,7 +238,8 @@ const CoinDetailScreen: React.FC = () => {
                                                                 key={tf.value}
                                                                 style={[
                                                                         styles.timeframeButton,
-                                                                        selectedTimeframe === tf.value && styles.timeframeButtonActive
+                                                                        selectedTimeframe === tf.value && styles.timeframeButtonActive,
+                                                                        { elevation: 5 }
                                                                 ]}
                                                                 onPress={() => setSelectedTimeframe(tf.value)}
                                                         >
@@ -305,23 +333,60 @@ const styles = StyleSheet.create({
                 backgroundColor: '#191B1F',
         },
         chartContainer: {
-                height: Platform.OS === 'web' ? 400 : 250,
+                height: Platform.select({
+                    web: 400,
+                    ios: 300,
+                    android: 300,
+                    default: 250
+                }),
                 marginVertical: 16,
                 paddingHorizontal: 0,
                 backgroundColor: 'transparent',
                 overflow: 'visible',
                 position: 'relative',
+                marginBottom: Platform.OS !== 'web' ? 60 : 16, // Add extra space for timeframe buttons on mobile
         },
         timeframeRow: {
                 flexDirection: "row",
                 justifyContent: "center",
+                alignItems: "center",
                 paddingHorizontal: 16,
-                marginTop: 32,
-                marginBottom: 16,
                 gap: 12,
-                backgroundColor: '#191B1F',
+                backgroundColor: 'rgba(25, 27, 31, 0.9)',
                 borderRadius: 12,
                 padding: 8,
+                marginBottom: Platform.select({
+                    ios: 0,
+                    android: 0,
+                    default: 16
+                }),
+                ...Platform.select({
+                    ios: {
+                        position: 'absolute',
+                        bottom: 10,
+                        left: 16,
+                        right: 16,
+                        shadowColor: '#000',
+                        shadowOffset: {
+                            width: 0,
+                            height: 2,
+                        },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 3.84,
+                        zIndex: 1000,
+                    },
+                    android: {
+                        position: 'absolute',
+                        bottom: 10,
+                        left: 16,
+                        right: 16,
+                        elevation: 5,
+                        zIndex: 1000,
+                    },
+                    default: {
+                        marginTop: 32,
+                    }
+                })
         },
         timeframeButton: {
                 paddingHorizontal: 16,
