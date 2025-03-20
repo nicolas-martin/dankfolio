@@ -16,6 +16,10 @@ export interface Coin {
   tags?: string[];
   balance?: number;
   address?: string; // Token address on Solana
+  website?: string;
+  twitter?: string;
+  telegram?: string;
+  discord?: string;
 }
 
 export interface Wallet {

@@ -7,7 +7,7 @@ import PlatformImage from '../components/PlatformImage';
 import TopBar from '../components/TopBar';
 import CoinChart from '../components/CoinChart';
 import BackButton from '../components/BackButton';
-import CoinMetadata from '../components/CoinMetadata';
+import CoinInfo from '../components/CoinInfo';
 import PriceDisplay from '../components/PriceDisplay';
 import { secureStorage } from '../services/solana';
 import api from '../services/api';
@@ -80,18 +80,18 @@ const CoinDetailScreen: React.FC = () => {
                 const fetchMetadata = async () => {
                         if (!initialCoin) return;
 
-                        setMetadataLoading(true); // Set loading at start
+                        setMetadataLoading(true);
                         
                         // If daily_volume is 0, it means we're coming from profile page
                         if (initialCoin.daily_volume === 0) {
-                                console.log('🔄 Fetching fresh metadata for wallet token:', initialCoin.symbol);
+                                console.log('🔄 Fetching coin details for wallet token:', initialCoin.symbol);
                                 try {
-                                        const metadata = await api.getCoinMetadata(coinId);
-                                        console.log('✅ Got fresh metadata:', metadata);
-                                        setMetadata(metadata);
-                                        setCoin({ ...initialCoin, ...metadata });
+                                        const coinData = await api.getCoinByID(coinId);
+                                        console.log('✅ Got coin details:', coinData);
+                                        setMetadata(coinData);
+                                        setCoin({ ...initialCoin, ...coinData });
                                 } catch (error) {
-                                        console.error('❌ Failed to fetch metadata:', error);
+                                        console.error('❌ Failed to fetch coin details:', error);
                                         setMetadata(null);
                                         setCoin(initialCoin);
                                 }
@@ -101,7 +101,7 @@ const CoinDetailScreen: React.FC = () => {
                                 setCoin(initialCoin);
                         }
                         
-                        setMetadataLoading(false); // Set loading to false after everything
+                        setMetadataLoading(false);
                 };
 
                 fetchMetadata();
@@ -253,7 +253,7 @@ const CoinDetailScreen: React.FC = () => {
                                                         priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
                                                 }
                                                 period={selectedTimeframe}
-                                                icon_url={metadata?.logo_url}
+                                                icon_url={metadata?.icon_url || metadata?.logo_url}
                                                 name={coin.name}
                                         />
                                 )}
@@ -313,14 +313,18 @@ const CoinDetailScreen: React.FC = () => {
 
                                 {/* Metadata */}
                                 {!metadataLoading && metadata ? (
-                                        <CoinMetadata
+                                        <CoinInfo
                                                 metadata={{
                                                         name: metadata.name || coin?.name || '',
+                                                        description: metadata.description,
                                                         website: metadata.website,
                                                         twitter: metadata.twitter,
                                                         telegram: metadata.telegram,
                                                         discord: metadata.discord,
-                                                        daily_volume: route.params.daily_volume || coin?.daily_volume || 0,
+                                                        daily_volume: metadata.daily_volume || coin?.daily_volume || 0,
+                                                        decimals: metadata.decimals || coin?.decimals || 9,
+                                                        tags: metadata.tags || [],
+                                                        symbol: metadata.symbol
                                                 }}
                                         />
                                 ) : (

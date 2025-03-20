@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
+	"math"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
@@ -101,25 +105,16 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*mod
 		"ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82":  "BOME",
 	}
 
-	// Get the symbol for the address
-	fmt.Printf("🔍 Looking up symbol for address: %s\n", address)
-	symbol, ok := addressToSymbol[address]
-	if !ok {
-		fmt.Printf("❌ Address not found in mapping. Available addresses:\n")
-		for addr, sym := range addressToSymbol {
-			fmt.Printf("  %s -> %s\n", addr, sym)
-		}
-		return nil, fmt.Errorf("no mock data available for address: %s", address)
+	symbol, exists := addressToSymbol[address]
+	if !exists {
+		// If the coin is not in our map, generate random but believable data
+		log.Printf("🎲 Generating random price history for unknown token: %s", address)
+		return s.generateRandomPriceHistory(address)
 	}
-	fmt.Printf("✅ Found symbol: %s\n", symbol)
 
 	// Construct the path to the mock data file
 	filename := filepath.Join("cmd", "fetch-mock-data", "price_history", symbol, fmt.Sprintf("%s.json", historyType))
 	fmt.Printf("📂 Looking for mock data file: %s\n", filename)
-
-	// Get current working directory for debugging
-	cwd, _ := os.Getwd()
-	fmt.Printf("📍 Current working directory: %s\n", cwd)
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -133,4 +128,64 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*mod
 	}
 
 	return &priceHistory, nil
+}
+
+func (s *Service) generateRandomPriceHistory(address string) (*model.PriceHistoryResponse, error) {
+	// Default to 100 points for smoother chart
+	numPoints := 100
+	volatility := 0.03                // Base volatility for normal movements
+	trendBias := rand.Float64()*2 - 1 // Random trend between -1 and 1
+
+	// Generate a more diverse base price between $0.01 and $1.00
+	magnitude := rand.Float64() * 2             // Random number between 0 and 2
+	basePrice := 0.01 * math.Pow(10, magnitude) // This gives us a range from 0.01 to 1.00
+
+	// Generate price points
+	var items []model.PriceHistoryItem
+	currentPrice := basePrice
+	now := time.Now()
+
+	// Add some initial random jumps to create more diverse starting points
+	for i := 0; i < 3; i++ {
+		jump := 1 + (rand.Float64()*0.4 - 0.2) // Random jump between 0.8x and 1.2x
+		currentPrice *= jump
+	}
+
+	for i := numPoints - 1; i >= 0; i-- {
+		pointTime := now.Add(time.Duration(-i) * time.Hour)
+
+		// Generate next price with random walk + trend
+		change := (rand.Float64()*2-1)*volatility + (trendBias * volatility)
+
+		// Occasionally add bigger price movements
+		if rand.Float64() < 0.05 { // 5% chance of a bigger move
+			change *= 1.5 // 1.5x normal volatility for spikes
+		}
+
+		currentPrice = currentPrice * (1 + change)
+
+		// Ensure price doesn't go below 0.01
+		if currentPrice < 0.01 {
+			currentPrice = 0.01
+		}
+
+		items = append(items, model.PriceHistoryItem{
+			UnixTime: pointTime.Unix(),
+			Value:    currentPrice,
+		})
+	}
+
+	log.Printf("🎲 Generated %d random price points for %s with base price %.6f",
+		len(items), address, basePrice)
+
+	response := &model.PriceHistoryResponse{
+		Data: struct {
+			Items []model.PriceHistoryItem `json:"items"`
+		}{
+			Items: items,
+		},
+		Success: true,
+	}
+
+	return response, nil
 }

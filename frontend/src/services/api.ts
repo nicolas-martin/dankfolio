@@ -20,6 +20,7 @@ interface API {
 	getCoinMetadata: (address: string) => Promise<CoinMetadata>;
 	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
 	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
+	getCoinByID: (id: string) => Promise<Coin>;
 }
 
 const api: API = {
@@ -109,6 +110,12 @@ const api: API = {
 			console.error('❌ Error fetching wallet balance:', error);
 			throw handleApiError(error as AxiosError);
 		}
+	},
+
+	getCoinByID: async (id: string): Promise<Coin> => {
+		console.log('🔄 Fetching coin by ID:', id);
+		const response = await apiClient.get<Coin>(`/api/tokens/${id}`);
+		return response.data;
 	}
 };
 
