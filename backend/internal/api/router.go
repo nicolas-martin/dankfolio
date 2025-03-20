@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/internal/service/solana"
@@ -46,10 +47,15 @@ func (r *Router) Setup() http.Handler {
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Recoverer)
 
-	// Enable CORS
-	router.Use(middleware.SetHeader("Access-Control-Allow-Origin", "*"))
-	router.Use(middleware.SetHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"))
-	router.Use(middleware.SetHeader("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token"))
+	// Enable CORS with proper configuration
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8081", "http://localhost:3000"}, // Add your frontend origins
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Debug-Mode"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
 
 	// Health check
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
