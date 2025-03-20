@@ -25,14 +25,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
   const totalValue = walletBalance.tokens.reduce((sum, token) => sum + token.value, 0);
 
   const handleTokenPress = (token: WalletBalanceResponse['tokens'][0]) => {
-    if (!token.mint) {
-      console.error('❌ No mint address available for:', token.symbol);
+    if (!token.id) {
+      console.error('❌ No token ID available for:', token.symbol);
       return;
     }
 
     console.log('🎯 Navigating to token details:', {
       symbol: token.symbol,
-      address: token.mint,
+      address: token.id,
       name: token.name,
       solCoin: solCoin ? {
         id: solCoin.id,
@@ -43,19 +43,34 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
       } : null
     });
 
+    // Convert TokenInfo to Coin format for navigation
+    const coinForDetail = {
+      id: token.id,
+      name: token.name,
+      symbol: token.symbol,
+      decimals: token.decimals || 9,
+      description: token.description || `${token.name} (${token.symbol}) is a Solana token.`,
+      iconUrl: token.iconUrl,
+      price: token.price,
+      balance: token.balance,
+      change24h: token.change24h,
+      marketCap: token.marketCap,
+      volume24h: token.volume24h,
+      dailyVolume: token.dailyVolume,
+      website: token.website,
+      twitter: token.twitter,
+      telegram: token.telegram,
+      discord: token.discord,
+      coingeckoId: token.coingeckoId,
+      createdAt: token.createdAt,
+      lastUpdated: token.lastUpdated,
+      tags: token.tags
+    };
+
     navigation.navigate('CoinDetail', {
-      coinId: token.mint,
+      coinId: token.id,
       coinName: token.name,
-      coin: {
-        id: token.mint,
-        name: token.name,
-        symbol: token.symbol,
-        price: token.price,
-        decimals: 9,
-        logo_url: token.logoURL,
-        daily_volume: 0,
-        address: token.mint
-      },
+      coin: coinForDetail,
       solCoin: solCoin
     });
   };
@@ -90,9 +105,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
                 activeOpacity={0.7}
               >
                 <View style={styles.tokenHeader}>
-                  {token.logoURL && (
+                  {token.iconUrl && (
                     <Image 
-                      source={{ uri: token.logoURL }} 
+                      source={{ uri: token.iconUrl }} 
                       style={styles.tokenLogo} 
                     />
                   )}

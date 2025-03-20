@@ -6,13 +6,11 @@ export interface Coin {
   name: string;
   symbol: string;
   price: number;
-  description?: string;
-  icon_url?: string;
-  logo_url?: string;
-  iconUrl?: string;
+  description: string;
+  iconUrl: string;
   decimals: number;
-  daily_volume: number;
-  price_change_24h?: number;
+  dailyVolume: number;
+  change24h: number;
   tags?: string[];
   balance?: number;
   address?: string; // Token address on Solana

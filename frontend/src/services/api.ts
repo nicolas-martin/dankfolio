@@ -26,10 +26,10 @@ export interface Coin {
 	// Price and Market Data
 	price: number;
 	balance?: number;
-	change24h?: number;
+	change24h: number;
 	marketCap?: number;
 	volume24h?: number;
-	dailyVolume?: number;
+	dailyVolume: number;
 
 	// Social and External Links
 	website?: string;

@@ -18,388 +18,377 @@ const MIN_AMOUNT = "0.0001";
 const DEFAULT_AMOUNT = "0.0001";
 const QUOTE_DEBOUNCE_MS = 500;
 
-// Default SOL coin data
-const DEFAULT_SOL_COIN: Coin = {
-  id: 'So11111111111111111111111111111111111111112',
-  address: 'So11111111111111111111111111111111111111112', // SOL mint address
-  name: 'Solana',
-  symbol: 'SOL',
-  decimals: 9,
-  logo_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-  price: 0,
-  daily_volume: 0
-};
 
 type TradeScreenParams = {
-  initialFromCoin: Coin | null;
-  initialToCoin: Coin | null;
+	initialFromCoin: Coin | null;
+	initialToCoin: Coin | null;
 };
 
 const TradeScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
-  const { initialFromCoin, initialToCoin } = route.params || {};
-  
-  const amountInputRef = useRef(null);
-  const debounceTimerRef = useRef(null);
-  const errorLogged = useRef<string[]>([]);
+	const navigation = useNavigation();
+	const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
+	const { initialFromCoin, initialToCoin } = route.params || {};
 
-  const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin || DEFAULT_SOL_COIN);
-  const [toCoin, setToCoin] = useState<Coin | null>(initialToCoin || null);
-  const [fromAmount, setFromAmount] = useState(DEFAULT_AMOUNT);
-  const [toAmount, setToAmount] = useState('0');
-  const [exchangeRate, setExchangeRate] = useState('');
-  const [tradeDetails, setTradeDetails] = useState({
-    estimatedFee: '0.00',
-    spread: '0.00',
-    gasFee: '0.00',
-  });
-  const { showToast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [quoteLoading, setQuoteLoading] = useState(false);
+	const amountInputRef = useRef(null);
+	const debounceTimerRef = useRef(null);
+	const errorLogged = useRef<string[]>([]);
 
-  const fetchTradeQuote = useCallback(async (amount: string) => {
-    if (!amount || !fromCoin || !toCoin) {
-      return;
-    }
+	const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin);
+	const [toCoin, setToCoin] = useState<Coin | null>(initialToCoin);
+	const [fromAmount, setFromAmount] = useState(DEFAULT_AMOUNT);
+	const [toAmount, setToAmount] = useState('0');
+	const [exchangeRate, setExchangeRate] = useState('');
+	const [tradeDetails, setTradeDetails] = useState({
+		estimatedFee: '0.00',
+		spread: '0.00',
+		gasFee: '0.00',
+	});
+	const { showToast } = useToast();
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [quoteLoading, setQuoteLoading] = useState(false);
 
-    // Validate coin addresses
-    const fromAddress = fromCoin?.address || fromCoin?.id;
-    const toAddress = toCoin?.address;
+	const fetchTradeQuote = useCallback(async (amount: string) => {
+		if (!amount || !fromCoin || !toCoin) {
+			return;
+		}
 
-    if (!fromAddress || !toAddress) {
-      return;
-    }
-    
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+		// Validate coin addresses
+		const fromAddress = fromCoin?.address || fromCoin?.id;
+		const toAddress = toCoin?.address;
 
-    // Create a new debounce timer
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        setQuoteLoading(true);
+		if (!fromAddress || !toAddress) {
+			return;
+		}
 
-        // Convert amount to raw units based on decimals to avoid scientific notation
-        const multiplier = Math.pow(10, fromCoin.decimals);
-        const rawAmount = (parseFloat(amount) * multiplier).toFixed(0);
-        
-        const response = await api.getTradeQuote(
-          fromAddress.trim(),
-          toAddress.trim(),
-          rawAmount
-        );
-        
-        if (!response) {
-          throw new Error('No response from trade quote');
-        }
+		if (debounceTimerRef.current) {
+			clearTimeout(debounceTimerRef.current);
+		}
 
-        // Use the raw estimatedAmount string from the API
-        setToAmount(String(response.estimatedAmount));
-        setExchangeRate(`${response.exchangeRate} ${toCoin.symbol || ''}`);
-        setTradeDetails({
-          estimatedFee: String(response.fee?.total || '0.00'),
-          spread: String(response.fee?.spread || '0.00'),
-          gasFee: String(response.fee?.gas || '0.00'),
-        });
-      } catch (error) {
-        // Only log the error once per session for the same error type
-        const errorMessage = error.message || 'Unknown error';
-        if (!errorLogged.current.includes(errorMessage)) {
-          console.error('❌ Error fetching trade quote:', error);
-          errorLogged.current.push(errorMessage);
-        }
-        
-        setToAmount('0');
-        setExchangeRate('');
-        setTradeDetails({
-          estimatedFee: '0.00',
-          spread: '0.00',
-          gasFee: '0.00',
-        });
-      } finally {
-        setQuoteLoading(false);
-      }
-    }, QUOTE_DEBOUNCE_MS);
-  }, [fromCoin, toCoin]);
+		// Create a new debounce timer
+		debounceTimerRef.current = setTimeout(async () => {
+			try {
+				setQuoteLoading(true);
 
-  const handleAmountChange = useCallback((text: string) => {
-    const sanitized = text.replace(/[^\d.]/g, '');
-    const parts = sanitized.split('.');
-    const formatted = parts[0] + (parts[1] ? '.' + parts[1].slice(0, 9) : '');
-    
-    // Set amount immediately
-    setFromAmount(formatted);
+				// Convert amount to raw units based on decimals to avoid scientific notation
+				const multiplier = Math.pow(10, fromCoin.decimals);
+				const rawAmount = (parseFloat(amount) * multiplier).toFixed(0);
 
-    // Only trigger quote if amount is valid
-    if (parseFloat(formatted) > 0) {
-      setQuoteLoading(true);
-      fetchTradeQuote(formatted);
-    } else {
-      setQuoteLoading(false);
-      setToAmount('0');
-      setExchangeRate('');
-      setTradeDetails({
-        estimatedFee: '0.00',
-        spread: '0.00',
-        gasFee: '0.00',
-      });
-    }
-  }, [fetchTradeQuote]);
+				const response = await api.getTradeQuote(
+					fromAddress.trim(),
+					toAddress.trim(),
+					rawAmount
+				);
 
-  const handleSwapCoins = () => {
-    if (!fromCoin || !toCoin) return;
-    
-    const oldFromCoin = fromCoin;
-    const oldToCoin = toCoin;
-    const oldFromAmount = fromAmount;
-    const oldToAmount = toAmount;
+				if (!response) {
+					throw new Error('No response from trade quote');
+				}
 
-    setFromCoin(oldToCoin);
-    setToCoin(oldFromCoin);
-    setFromAmount(oldToAmount);
-    setToAmount(oldFromAmount);
+				// Use the raw estimatedAmount string from the API
+				setToAmount(String(response.estimatedAmount));
+				setExchangeRate(`${response.exchangeRate} ${toCoin.symbol || ''}`);
+				setTradeDetails({
+					estimatedFee: String(response.fee?.total || '0.00'),
+					spread: String(response.fee?.spread || '0.00'),
+					gasFee: String(response.fee?.gas || '0.00'),
+				});
+			} catch (error) {
+				// Only log the error once per session for the same error type
+				const errorMessage = error.message || 'Unknown error';
+				if (!errorLogged.current.includes(errorMessage)) {
+					console.error('❌ Error fetching trade quote:', error);
+					errorLogged.current.push(errorMessage);
+				}
 
-    const newAmount = parseFloat(oldToAmount) > 0 ? oldToAmount : oldFromAmount;
-    fetchTradeQuote(newAmount);
-  };
+				setToAmount('0');
+				setExchangeRate('');
+				setTradeDetails({
+					estimatedFee: '0.00',
+					spread: '0.00',
+					gasFee: '0.00',
+				});
+			} finally {
+				setQuoteLoading(false);
+			}
+		}, QUOTE_DEBOUNCE_MS);
+	}, [fromCoin, toCoin]);
 
-  const handleSubmitTrade = async () => {
-    if (!fromCoin || !toCoin || !fromAmount) {
-      console.error('❌ Missing required trade parameters');
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      
-      // Get the wallet from secure storage
-      const savedWallet = await secureStorage.getWallet();
-      if (!savedWallet) {
-        throw new Error('No wallet found');
-      }
+	const handleAmountChange = useCallback((text: string) => {
+		const sanitized = text.replace(/[^\d.]/g, '');
+		const parts = sanitized.split('.');
+		const formatted = parts[0] + (parts[1] ? '.' + parts[1].slice(0, 9) : '');
 
-      // Create a keypair from the private key
-      const wallet = getKeypairFromPrivateKey(savedWallet.privateKey);
+		// Set amount immediately
+		setFromAmount(formatted);
 
-      // Convert amount to raw units based on input token decimals
-      const multiplier = Math.pow(10, fromCoin.decimals);
-      const rawAmount = Math.floor(parseFloat(fromAmount) * multiplier);
+		// Only trigger quote if amount is valid
+		if (parseFloat(formatted) > 0) {
+			setQuoteLoading(true);
+			fetchTradeQuote(formatted);
+		} else {
+			setQuoteLoading(false);
+			setToAmount('0');
+			setExchangeRate('');
+			setTradeDetails({
+				estimatedFee: '0.00',
+				spread: '0.00',
+				gasFee: '0.00',
+			});
+		}
+	}, [fetchTradeQuote]);
 
-      console.log('💱 Swap details:', {
-        fromCoin: fromCoin.symbol,
-        toCoin: toCoin.symbol,
-        amount: fromAmount,
-        rawAmount,
-        decimals: fromCoin.decimals
-      });
+	const handleSwapCoins = () => {
+		if (!fromCoin || !toCoin) return;
 
-      const signedTransaction = await buildAndSignSwapTransaction(
-        fromCoin.address || fromCoin.id,
-        toCoin.address || toCoin.id,
-        rawAmount.toString(),
-        1, // 1% slippage
-        wallet
-      );
+		const oldFromCoin = fromCoin;
+		const oldToCoin = toCoin;
+		const oldFromAmount = fromAmount;
+		const oldToAmount = toAmount;
 
-      const response = await api.executeTrade({
-        from_coin_id: fromCoin.id,
-        to_coin_id: toCoin.id,
-        amount: parseFloat(fromAmount),
-        signed_transaction: signedTransaction
-      });
-      
-      showToast({
-        message: 'Trade executed successfully! 🎉',
-        txHash: response.transaction_hash,
-        type: 'success'
-      });
-      
-      console.log('✅ Trade executed successfully!');
-      console.log('🔗 Transaction Hash:', response.transaction_hash);
+		setFromCoin(oldToCoin);
+		setToCoin(oldFromCoin);
+		setFromAmount(oldToAmount);
+		setToAmount(oldFromAmount);
 
-      // Remove form reset to keep trade details visible
-    } catch (error) {
-      showToast({
-        message: error.message || 'Failed to execute trade',
-        type: 'error'
-      });
-      console.error('❌ Error submitting trade:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+		const newAmount = parseFloat(oldToAmount) > 0 ? oldToAmount : oldFromAmount;
+		fetchTradeQuote(newAmount);
+	};
 
-  const getTradeButtonLabel = (): string => {
-    if (isSubmitting) return 'Processing...';
-    if (!fromCoin || !toCoin) return 'Select coins';
-    if (!fromAmount || parseFloat(fromAmount) <= 0) return 'Enter amount';
-    if (fromCoin.id === toCoin.id) return 'Select different coins';
-    return 'Swap';
-  };
+	const handleSubmitTrade = async () => {
+		if (!fromCoin || !toCoin || !fromAmount) {
+			console.error('❌ Missing required trade parameters');
+			return;
+		}
 
-  // Initialize coins from props
-  useEffect(() => {
-    console.log('🔄 Trade Screen initialized with coins:', {
-      fromCoin: fromCoin ? {
-        id: fromCoin.id,
-        symbol: fromCoin.symbol,
-        name: fromCoin.name,
-        decimals: fromCoin.decimals,
-        price: fromCoin.price,
-        logo_url: fromCoin.logo_url || fromCoin.icon_url,
-        address: fromCoin.address || fromCoin.id
-      } : null,
-      toCoin: toCoin ? {
-        id: toCoin.id,
-        symbol: toCoin.symbol,
-        name: toCoin.name,
-        decimals: toCoin.decimals,
-        price: toCoin.price,
-        logo_url: toCoin.logo_url || toCoin.icon_url,
-        address: toCoin.address || toCoin.id
-      } : null,
-      routeParams: {
-        initialFromCoin: initialFromCoin ? {
-          id: initialFromCoin.id,
-          symbol: initialFromCoin.symbol,
-          price: initialFromCoin.price
-        } : null,
-        initialToCoin: initialToCoin ? {
-          id: initialToCoin.id,
-          symbol: initialToCoin.symbol,
-          price: initialToCoin.price
-        } : null
-      }
-    });
-  }, [fromCoin, toCoin, initialFromCoin, initialToCoin]);
+		try {
+			setIsSubmitting(true);
 
-  // Update coins when props change
-  useEffect(() => {
-    if (initialFromCoin) {
-      setFromCoin(initialFromCoin);
-    }
-    if (initialToCoin) {
-      setToCoin(initialToCoin);
-    }
-  }, [initialFromCoin, initialToCoin]);
+			// Get the wallet from secure storage
+			const savedWallet = await secureStorage.getWallet();
+			if (!savedWallet) {
+				throw new Error('No wallet found');
+			}
 
-  // Fetch quote when screen loads and coins are available
-  useEffect(() => {
-    if (fromCoin && toCoin) {
-      console.log('🔄 Fetching initial trade quote with amount:', DEFAULT_AMOUNT);
-      fetchTradeQuote(DEFAULT_AMOUNT);
-    }
-  }, [fromCoin, toCoin, fetchTradeQuote]);
+			// Create a keypair from the private key
+			const wallet = getKeypairFromPrivateKey(savedWallet.privateKey);
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}
-      >
-        <ScrollView style={styles.scrollView}>
-          <TopBar />
-          <View style={styles.tradeContainer}>
-            <CoinSelector
-              label="From"
-              selectedCoin={fromCoin}
-              excludeCoinId={toCoin?.id}
-              amount={fromAmount}
-              onAmountChange={handleAmountChange}
-              onCoinSelect={() => {}}
-              isInput
-            />
+			// Convert amount to raw units based on input token decimals
+			const multiplier = Math.pow(10, fromCoin.decimals);
+			const rawAmount = Math.floor(parseFloat(fromAmount) * multiplier);
 
-            {fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
-              <View style={styles.valueInfo}>
-                <Text style={styles.valueText}>
-                  ≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
-                </Text>
-                <Text style={styles.priceText}>
-                  1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  }) : '0.00'}
-                </Text>
-              </View>
-            )}
+			console.log('💱 Swap details:', {
+				fromCoin: fromCoin.symbol,
+				toCoin: toCoin.symbol,
+				amount: fromAmount,
+				rawAmount,
+				decimals: fromCoin.decimals
+			});
 
-            <SwapButton
-              onPress={handleSwapCoins}
-              disabled={!fromCoin || !toCoin}
-            />
+			const signedTransaction = await buildAndSignSwapTransaction(
+				fromCoin.address || fromCoin.id,
+				toCoin.address || toCoin.id,
+				rawAmount.toString(),
+				1, // 1% slippage
+				wallet
+			);
 
-            <CoinSelector
-              label="To"
-              selectedCoin={toCoin}
-              excludeCoinId={fromCoin.id}
-              amount={toAmount}
-              isAmountLoading={quoteLoading}
-              onCoinSelect={() => {}}
-            />
+			const response = await api.executeTrade({
+				from_coin_id: fromCoin.id,
+				to_coin_id: toCoin.id,
+				amount: parseFloat(fromAmount),
+				signed_transaction: signedTransaction
+			});
 
-            {fromCoin && toCoin && fromAmount && toAmount && (
-              <TradeDetails
-                exchangeRate={exchangeRate}
-                gasFee={tradeDetails.gasFee}
-                spread={tradeDetails.spread}
-              />
-            )}
+			showToast({
+				message: 'Trade executed successfully! 🎉',
+				txHash: response.transaction_hash,
+				type: 'success'
+			});
 
-            <TradeButton
-              onPress={handleSubmitTrade}
-              isSubmitting={isSubmitting}
-              disabled={
-                isSubmitting ||
-                !fromCoin ||
-                !toCoin ||
-                fromCoin.id === toCoin.id ||
-                !fromAmount ||
-                parseFloat(fromAmount) <= 0
-              }
-              label={getTradeButtonLabel()}
-            />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
+			console.log('✅ Trade executed successfully!');
+			console.log('🔗 Transaction Hash:', response.transaction_hash);
+
+			// Remove form reset to keep trade details visible
+		} catch (error) {
+			showToast({
+				message: error.message || 'Failed to execute trade',
+				type: 'error'
+			});
+			console.error('❌ Error submitting trade:', error);
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const getTradeButtonLabel = (): string => {
+		if (isSubmitting) return 'Processing...';
+		if (!fromCoin || !toCoin) return 'Select coins';
+		if (!fromAmount || parseFloat(fromAmount) <= 0) return 'Enter amount';
+		if (fromCoin.id === toCoin.id) return 'Select different coins';
+		return 'Swap';
+	};
+
+	// Initialize coins from props
+	useEffect(() => {
+		console.log('🔄 Trade Screen initialized with coins:', {
+			fromCoin: fromCoin ? {
+				id: fromCoin.id,
+				symbol: fromCoin.symbol,
+				name: fromCoin.name,
+				decimals: fromCoin.decimals,
+				price: fromCoin.price,
+				iconUrl: fromCoin.iconUrl,
+				address: fromCoin.address || fromCoin.id
+			} : null,
+			toCoin: toCoin ? {
+				id: toCoin.id,
+				symbol: toCoin.symbol,
+				name: toCoin.name,
+				decimals: toCoin.decimals,
+				price: toCoin.price,
+				iconUrl: toCoin.iconUrl,
+				address: toCoin.address
+			} : null,
+			routeParams: {
+				initialFromCoin: initialFromCoin ? {
+					id: initialFromCoin.id,
+					symbol: initialFromCoin.symbol,
+					price: initialFromCoin.price
+				} : null,
+				initialToCoin: initialToCoin ? {
+					id: initialToCoin.id,
+					symbol: initialToCoin.symbol,
+					price: initialToCoin.price
+				} : null
+			}
+		});
+	}, [fromCoin, toCoin, initialFromCoin, initialToCoin]);
+
+	// Update coins when props change
+	useEffect(() => {
+		if (initialFromCoin) {
+			setFromCoin(initialFromCoin);
+		}
+		if (initialToCoin) {
+			setToCoin(initialToCoin);
+		}
+	}, [initialFromCoin, initialToCoin]);
+
+	// Fetch quote when screen loads and coins are available
+	useEffect(() => {
+		if (fromCoin && toCoin) {
+			console.log('🔄 Fetching initial trade quote with amount:', DEFAULT_AMOUNT);
+			fetchTradeQuote(DEFAULT_AMOUNT);
+		}
+	}, [fromCoin, toCoin, fetchTradeQuote]);
+
+	return (
+		<SafeAreaView style={styles.container}>
+			<KeyboardAvoidingView
+				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+				style={styles.keyboardAvoidingView}
+			>
+				<ScrollView style={styles.scrollView}>
+					<TopBar />
+					<View style={styles.tradeContainer}>
+						<CoinSelector
+							label="From"
+							selectedCoin={fromCoin}
+							excludeCoinId={toCoin?.id}
+							amount={fromAmount}
+							onAmountChange={handleAmountChange}
+							onCoinSelect={() => { }}
+							isInput
+						/>
+
+						{fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
+							<View style={styles.valueInfo}>
+								<Text style={styles.valueText}>
+									≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
+								</Text>
+								<Text style={styles.priceText}>
+									1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toLocaleString(undefined, {
+										minimumFractionDigits: 2,
+										maximumFractionDigits: 2
+									}) : '0.00'}
+								</Text>
+							</View>
+						)}
+
+						<SwapButton
+							onPress={handleSwapCoins}
+							disabled={!fromCoin || !toCoin}
+						/>
+
+						<CoinSelector
+							label="To"
+							selectedCoin={toCoin}
+							excludeCoinId={fromCoin.id}
+							amount={toAmount}
+							isAmountLoading={quoteLoading}
+							onCoinSelect={() => { }}
+						/>
+
+						{fromCoin && toCoin && fromAmount && toAmount && (
+							<TradeDetails
+								exchangeRate={exchangeRate}
+								gasFee={tradeDetails.gasFee}
+								spread={tradeDetails.spread}
+							/>
+						)}
+
+						<TradeButton
+							onPress={handleSubmitTrade}
+							isSubmitting={isSubmitting}
+							disabled={
+								isSubmitting ||
+								!fromCoin ||
+								!toCoin ||
+								fromCoin.id === toCoin.id ||
+								!fromAmount ||
+								parseFloat(fromAmount) <= 0
+							}
+							label={getTradeButtonLabel()}
+						/>
+					</View>
+				</ScrollView>
+			</KeyboardAvoidingView>
+		</SafeAreaView>
+	);
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#191B1F',
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  tradeContainer: {
-    backgroundColor: '#2A2A3E',
-    borderRadius: 20,
-    padding: 20,
-    margin: 20,
-  },
-  valueInfo: {
-    marginTop: -8,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-  },
-  valueText: {
-    fontSize: 14,
-    color: '#9F9FD5',
-    textAlign: 'right',
-  },
-  priceText: {
-    fontSize: 12,
-    color: '#9F9FD5',
-    textAlign: 'right',
-    marginTop: 2,
-  },
+	container: {
+		flex: 1,
+		backgroundColor: '#191B1F',
+	},
+	keyboardAvoidingView: {
+		flex: 1,
+	},
+	scrollView: {
+		flex: 1,
+	},
+	tradeContainer: {
+		backgroundColor: '#2A2A3E',
+		borderRadius: 20,
+		padding: 20,
+		margin: 20,
+	},
+	valueInfo: {
+		marginTop: -8,
+		marginBottom: 12,
+		paddingHorizontal: 12,
+	},
+	valueText: {
+		fontSize: 14,
+		color: '#9F9FD5',
+		textAlign: 'right',
+	},
+	priceText: {
+		fontSize: 12,
+		color: '#9F9FD5',
+		textAlign: 'right',
+		marginTop: 2,
+	},
 });
 
-export default TradeScreen; 
+export default TradeScreen;
