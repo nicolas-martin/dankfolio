@@ -178,10 +178,11 @@ type CoinGeckoMetadata struct {
 // TokenMetadata represents the common metadata fields between different providers
 type TokenMetadata struct {
 	// Basic Info
-	Address string `json:"address"`
-	Symbol  string `json:"symbol"`
-	Name    string `json:"name"`
-	LogoURL string `json:"logo_url"`
+	Address  string `json:"address"`
+	Symbol   string `json:"symbol"`
+	Name     string `json:"name"`
+	LogoURL  string `json:"logo_url"`
+	Decimals int    `json:"decimals"`
 
 	// Social Links
 	Website  string `json:"website"`
@@ -221,7 +222,7 @@ func (t *TokenMetadata) FromCoinGecko(data *CoinGeckoMetadata) {
 // Jupiter API endpoints
 const (
 	jupiterBaseURL       = "https://quote-api.jup.ag/v6"
-	jupiterTokenInfoURL  = "https://token.jup.ag/strict"
+	jupiterTokenInfoURL  = "https://api.jup.ag/tokens/v1/token"
 	jupiterV6APIPriceURL = "https://price.jup.ag/v4/price?ids=%s"
 	jupiterQuoteURL      = jupiterBaseURL + "/quote"
 )

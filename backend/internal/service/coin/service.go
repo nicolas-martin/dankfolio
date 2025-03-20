@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
@@ -146,14 +145,9 @@ func (s *Service) enrichCoinWithJupiterData(coin *model.Coin) error {
 
 	// Try to get price from Jupiter API
 	price, err := s.jupiterClient.GetTokenPrice(coin.ID)
-	if err == nil && price != "" {
-		priceFloat, parseErr := strconv.ParseFloat(price, 64)
-		if parseErr != nil {
-			log.Printf("⚠️ Failed to parse price for %s: %v", coin.Symbol, parseErr)
-		} else {
-			coin.Price = priceFloat
-			log.Printf("💰 Updated price for %s: %v", coin.Symbol, coin.Price)
-		}
+	if err == nil && price != 0 {
+		coin.Price = price
+		log.Printf("💰 Updated price for %s: %v", coin.Symbol, coin.Price)
 	} else {
 		log.Printf("⚠️ No price data available for %s, setting default price", coin.Symbol)
 		// Set a default price of 0 to avoid frontend issues

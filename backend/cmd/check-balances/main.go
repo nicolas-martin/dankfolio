@@ -9,15 +9,17 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
 )
 
 type WalletInfo struct {
 	Path      string
 	PublicKey string
 	Balance   uint64
+	Tokens    []wallet.TokenInfo
 }
 
-func checkBalance(ctx context.Context, client *rpc.Client, keyPath string) (*WalletInfo, error) {
+func checkBalance(ctx context.Context, client *rpc.Client, walletService *wallet.Service, keyPath string) (*WalletInfo, error) {
 	fmt.Printf("\nChecking balance for: %s\n", keyPath)
 
 	keypair, err := solana.PrivateKeyFromSolanaKeygenFile(keyPath)
@@ -25,7 +27,7 @@ func checkBalance(ctx context.Context, client *rpc.Client, keyPath string) (*Wal
 		return nil, fmt.Errorf("failed to parse keypair: %v", err)
 	}
 
-	// Get the balance
+	// Get SOL balance
 	balance, err := client.GetBalance(
 		ctx,
 		keypair.PublicKey(),
@@ -35,19 +37,39 @@ func checkBalance(ctx context.Context, client *rpc.Client, keyPath string) (*Wal
 		return nil, fmt.Errorf("failed to get balance: %v", err)
 	}
 
+	// Get token balances
+	tokens, err := walletService.GetTokens(ctx, keypair.PublicKey().String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token balances: %v", err)
+	}
+
 	fmt.Printf("Public Key: %s\n", keypair.PublicKey())
-	fmt.Printf("Balance: %.9f SOL\n", float64(balance.Value)/1e9)
+	fmt.Printf("SOL Balance: %.9f SOL\n", float64(balance.Value)/1e9)
+	fmt.Printf("\nToken Balances:\n")
+	fmt.Printf("%-20s %-12s %-15s %-15s\n", "Token", "Balance", "Price ($)", "Value ($)")
+	fmt.Printf("%-20s %-12s %-15s %-15s\n", "-----", "-------", "---------", "---------")
+
+	for _, token := range tokens {
+		fmt.Printf("%-20s %-12.4f $%-14.4f $%-14.2f\n",
+			token.Symbol,
+			token.Balance,
+			token.Price,
+			token.Value,
+		)
+	}
 
 	return &WalletInfo{
 		Path:      keyPath,
 		PublicKey: keypair.PublicKey().String(),
 		Balance:   balance.Value,
+		Tokens:    tokens,
 	}, nil
 }
 
 func main() {
 	ctx := context.Background()
 	client := rpc.New("https://api.mainnet-beta.solana.com")
+	walletService := wallet.New()
 
 	// Get the current working directory
 	wd, err := os.Getwd()
@@ -58,55 +80,35 @@ func main() {
 	// Get the project root directory (3 levels up from current directory)
 	projectRoot := filepath.Join(wd, "../../..")
 
-	// Define wallet paths to check
-	paths := []string{
-		filepath.Join(projectRoot, "keys/mainnet-wallet-1.json"),
-		filepath.Join(projectRoot, "keys/mainnet-wallet.json"),
-		filepath.Join(projectRoot, "backend/keys/mainnet-wallet-1.json"),
+	// Define wallet path
+	walletPath := filepath.Join(projectRoot, "backend/keys/mainnet-wallet-1.json")
+
+	// Get absolute path
+	absPath, err := filepath.Abs(walletPath)
+	if err != nil {
+		log.Fatalf("Error resolving path %s: %v", walletPath, err)
 	}
 
-	var validWallets []*WalletInfo
-
-	// Check each wallet
-	for _, path := range paths {
-		absPath, err := filepath.Abs(path)
-		if err != nil {
-			log.Printf("Error resolving path %s: %v", path, err)
-			continue
-		}
-
-		info, err := checkBalance(ctx, client, absPath)
-		if err != nil {
-			log.Printf("Error checking %s: %v", absPath, err)
-			continue
-		}
-
-		if info != nil {
-			validWallets = append(validWallets, info)
-		}
+	// Check wallet balance
+	info, err := checkBalance(ctx, client, walletService, absPath)
+	if err != nil {
+		log.Fatalf("Error checking wallet balance: %v", err)
 	}
 
-	if len(validWallets) > 0 {
-		// Find wallet with highest balance
-		activeWallet := validWallets[0]
-		for _, wallet := range validWallets[1:] {
-			if wallet.Balance > activeWallet.Balance {
-				activeWallet = wallet
-			}
+	if info != nil {
+		// Calculate total portfolio value in USD
+		var totalValue float64
+		for _, token := range info.Tokens {
+			totalValue += token.Value
 		}
 
-		fmt.Printf("\nActive wallet found:\n")
-		fmt.Printf("Path: %s\n", activeWallet.Path)
-		fmt.Printf("Public Key: %s\n", activeWallet.PublicKey)
-		fmt.Printf("Balance: %.9f SOL\n", float64(activeWallet.Balance)/1e9)
-
-		// Print which files to delete
-		for _, wallet := range validWallets {
-			if wallet.Path != activeWallet.Path {
-				fmt.Printf("\nDelete this wallet (inactive):\n%s\n", wallet.Path)
-			}
+		fmt.Printf("\nPortfolio Summary:\n")
+		fmt.Printf("Total Value: $%.2f\n", totalValue)
+		fmt.Printf("\nToken Distribution:\n")
+		for _, token := range info.Tokens {
+			fmt.Printf("%-20s %.2f%%\n", token.Symbol, token.Percentage)
 		}
 	} else {
-		fmt.Println("No valid wallets found")
+		fmt.Println("No valid wallet found")
 	}
 }
