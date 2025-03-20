@@ -248,7 +248,8 @@ const HomeScreen: React.FC = () => {
 
                 navigation.navigate('Profile', {
                   walletAddress: wallet.address,
-                  walletBalance: walletBalance
+                  walletBalance: walletBalance,
+                  solCoin: solCoin // Pass SOL coin to Profile
                 });
               }}
             >

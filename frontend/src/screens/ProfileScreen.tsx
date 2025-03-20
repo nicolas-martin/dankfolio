@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/index';
 import TopBar from '../components/TopBar';
+import { Coin } from '../types/index';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -13,13 +14,14 @@ interface ProfileScreenProps {
     params: {
       walletBalance: WalletBalanceResponse;
       walletAddress: string;
+      solCoin: Coin | null;
     };
   };
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { walletBalance, walletAddress } = route.params;
+  const { walletBalance, walletAddress, solCoin } = route.params;
   const totalValue = walletBalance.tokens.reduce((sum, token) => sum + token.value, 0);
 
   const handleTokenPress = (token: WalletBalanceResponse['tokens'][0]) => {
@@ -31,22 +33,30 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
     console.log('🎯 Navigating to token details:', {
       symbol: token.symbol,
       address: token.mint,
-      name: token.name
+      name: token.name,
+      solCoin: solCoin ? {
+        id: solCoin.id,
+        symbol: solCoin.symbol,
+        name: solCoin.name,
+        decimals: solCoin.decimals,
+        price: solCoin.price
+      } : null
     });
 
     navigation.navigate('CoinDetail', {
-      coinId: token.mint, // Use the mint address for API calls
+      coinId: token.mint,
       coinName: token.name,
       coin: {
         id: token.mint,
         name: token.name,
         symbol: token.symbol,
         price: token.price,
-        decimals: 9, // Default to 9 decimals for now
+        decimals: 9,
         logo_url: token.logoURL,
-        daily_volume: 0, // We don't have this info in the balance response
-        address: token.mint // Set the address field to mint address
-      }
+        daily_volume: 0,
+        address: token.mint
+      },
+      solCoin: solCoin
     });
   };
 
