@@ -12,6 +12,7 @@ import TradeButton from '../components/TradeButton';
 import PriceDisplay from '../components/PriceDisplay';
 import api from '../services/api';
 import { buildAndSignSwapTransaction, getKeypairFromPrivateKey, secureStorage } from '../services/solana';
+import Toast from '../components/Toast';
 
 const MIN_AMOUNT = "0.0001";
 const DEFAULT_AMOUNT = "0.0001";
@@ -55,6 +56,11 @@ const TradeScreen: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastData, setToastData] = useState<{ message: string; txHash?: string; type: 'success' | 'error' }>({
+    message: '',
+    type: 'success'
+  });
 
   const fetchTradeQuote = useCallback(async (amount: string) => {
     if (!amount || !fromCoin || !toCoin) {
@@ -208,13 +214,28 @@ const TradeScreen: React.FC = () => {
       });
       
       if (response.data) {
+        setToastData({
+          message: 'Trade executed successfully! 🎉',
+          txHash: response.data.transaction_hash,
+          type: 'success'
+        });
+        setShowToast(true);
         console.log('✅ Trade executed successfully!');
         console.log('🔗 Transaction Hash:', response.data.transaction_hash);
-        console.log('🌐 Explorer URL:', response.data.explorer_url);
       } else if (response.error) {
+        setToastData({
+          message: response.error,
+          type: 'error'
+        });
+        setShowToast(true);
         throw new Error(response.error);
       }
     } catch (error) {
+      setToastData({
+        message: error.message || 'Failed to execute trade',
+        type: 'error'
+      });
+      setShowToast(true);
       console.error('❌ Error submitting trade:', error);
     } finally {
       setIsSubmitting(false);
@@ -353,6 +374,14 @@ const TradeScreen: React.FC = () => {
           />
         </View>
       </ScrollView>
+      {showToast && (
+        <Toast
+          message={toastData.message}
+          type={toastData.type}
+          txHash={toastData.txHash}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </SafeAreaView>
   );
 };

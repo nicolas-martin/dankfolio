@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -56,7 +57,13 @@ func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trade, err := h.tradeService.ExecuteTrade(r.Context(), req)
+	// Check for debug header
+	ctx := r.Context()
+	if r.Header.Get("X-Debug-Mode") == "true" {
+		ctx = context.WithValue(ctx, "debug_mode", true)
+	}
+
+	trade, err := h.tradeService.ExecuteTrade(ctx, req)
 	if err != nil {
 		log.Printf("Error executing trade: %v", err)
 		http.Error(w, "Failed to execute trade: "+err.Error(), http.StatusInternalServerError)

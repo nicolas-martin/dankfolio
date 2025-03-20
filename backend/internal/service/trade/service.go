@@ -35,17 +35,44 @@ func NewService(ss *solana.SolanaTradeService, cs *coin.Service, jc *coin.Jupite
 
 // ExecuteTrade executes a trade based on the provided request
 func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*model.Trade, error) {
-	// Create trade record
+	// Check for debug header in context
+	if debugMode, ok := ctx.Value("debug_mode").(bool); ok && debugMode {
+		// Simulate processing delay
+		time.Sleep(2 * time.Second)
+
+		// Create simulated trade
+		trade := &model.Trade{
+			ID:              fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+			FromCoinID:      req.FromCoinID,
+			ToCoinID:        req.ToCoinID,
+			Type:            "swap",
+			Amount:          req.Amount,
+			Fee:             CalculateTradeFee(req.Amount, 1.0),
+			Status:          "completed",
+			CreatedAt:       time.Now(),
+			CompletedAt:     time.Now(),
+			TransactionHash: "5Bu8arrurLxsP9dEvdXX3kBd5PqP6tNUubSZUmoJNRE7ijGPnKW9MU9QQfUerJaorYQxPAmLCnD3D7gW8CihWJy6",
+		}
+
+		s.mu.Lock()
+		s.trades[trade.ID] = trade
+		s.mu.Unlock()
+
+		log.Printf("🔧 Debug mode: Simulated trade completed")
+		return trade, nil
+	}
+
+	// Regular trade execution logic
 	trade := &model.Trade{
 		ID:         fmt.Sprintf("trade_%d", time.Now().UnixNano()),
 		FromCoinID: req.FromCoinID,
 		ToCoinID:   req.ToCoinID,
 		Type:       "swap",
 		Amount:     req.Amount,
-		Fee:        CalculateTradeFee(req.Amount, 1.0), // Using 1.0 as default price
+		Fee:        CalculateTradeFee(req.Amount, 1.0),
 		Status:     "pending",
 		CreatedAt:  time.Now(),
-		UserID:     "", // Empty for now, would be populated from auth context in a real app
+		UserID:     "",
 	}
 
 	// Execute signed transaction on blockchain

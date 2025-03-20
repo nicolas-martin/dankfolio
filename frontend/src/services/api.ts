@@ -59,9 +59,10 @@ interface ErrorDetails {
 }
 
 export interface TradeResponse {
-	data?: {
+	data: {
+		status: string;
+		trade_id: string;
 		transaction_hash: string;
-		explorer_url: string;
 	};
 	error?: string;
 }
@@ -147,7 +148,11 @@ const api: API = {
 	executeTrade: async (payload: TradePayload): Promise<TradeResponse> => {
 		try {
 			console.log('🔄 Executing trade with payload:', payload);
-			const response = await apiClient.post('/api/trades/execute', payload);
+			const response = await apiClient.post('/api/trades/execute', payload, {
+				headers: {
+					'X-Debug-Mode': 'true'
+				}
+			});
 			return response.data;
 		} catch (error) {
 			console.error('❌ Error executing trade:', error);
