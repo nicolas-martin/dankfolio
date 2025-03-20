@@ -78,35 +78,30 @@ const CoinDetailScreen: React.FC = () => {
 
         useEffect(() => {
                 const fetchMetadata = async () => {
-                        try {
-                                setMetadataLoading(true);
-                                const data = await api.getCoinMetadata(coinId);
-                                console.log('📝 CoinDetail metadata fetched:', {
-                                    name: data.name,
-                                    symbol: data.symbol,
-                                    decimals: data.decimals,
-                                    logo_url: data.logo_url,
-                                    address: data.address
-                                });
-                                
-                                // Merge initialCoin data with metadata
-                                const mergedCoin = {
-                                    ...initialCoin,
-                                    ...data,
-                                    // Ensure critical fields are not undefined
-                                    id: coinId,
-                                    address: data.address || coinId,
-                                    decimals: data.decimals || 9,
-                                    price: initialCoin?.price || 0,
-                                    logo_url: data.logo_url
-                                };
-                                setMetadata(data);
-                                setCoin(mergedCoin);
-                        } catch (error) {
-                                console.error('Error fetching metadata:', error);
-                        } finally {
-                                setMetadataLoading(false);
+                        if (!initialCoin) return;
+
+                        setMetadataLoading(true); // Set loading at start
+                        
+                        // If daily_volume is 0, it means we're coming from profile page
+                        if (initialCoin.daily_volume === 0) {
+                                console.log('🔄 Fetching fresh metadata for wallet token:', initialCoin.symbol);
+                                try {
+                                        const metadata = await api.getCoinMetadata(coinId);
+                                        console.log('✅ Got fresh metadata:', metadata);
+                                        setMetadata(metadata);
+                                        setCoin({ ...initialCoin, ...metadata });
+                                } catch (error) {
+                                        console.error('❌ Failed to fetch metadata:', error);
+                                        setMetadata(null);
+                                        setCoin(initialCoin);
+                                }
+                        } else {
+                                console.log('📦 Using cached metadata for:', initialCoin.symbol);
+                                setMetadata(initialCoin);
+                                setCoin(initialCoin);
                         }
+                        
+                        setMetadataLoading(false); // Set loading to false after everything
                 };
 
                 fetchMetadata();
