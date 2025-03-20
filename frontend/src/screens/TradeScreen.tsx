@@ -12,7 +12,7 @@ import TradeButton from '../components/TradeButton';
 import PriceDisplay from '../components/PriceDisplay';
 import api from '../services/api';
 import { buildAndSignSwapTransaction, getKeypairFromPrivateKey, secureStorage } from '../services/solana';
-import Toast from '../components/Toast';
+import { useToast } from '../components/Toast';
 
 const MIN_AMOUNT = "0.0001";
 const DEFAULT_AMOUNT = "0.0001";
@@ -54,13 +54,9 @@ const TradeScreen: React.FC = () => {
     spread: '0.00',
     gasFee: '0.00',
   });
+  const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastData, setToastData] = useState<{ message: string; txHash?: string; type: 'success' | 'error' }>({
-    message: '',
-    type: 'success'
-  });
 
   const fetchTradeQuote = useCallback(async (amount: string) => {
     if (!amount || !fromCoin || !toCoin) {
@@ -213,29 +209,21 @@ const TradeScreen: React.FC = () => {
         signed_transaction: signedTransaction
       });
       
-      if (response.data) {
-        setToastData({
-          message: 'Trade executed successfully! 🎉',
-          txHash: response.data.transaction_hash,
-          type: 'success'
-        });
-        setShowToast(true);
-        console.log('✅ Trade executed successfully!');
-        console.log('🔗 Transaction Hash:', response.data.transaction_hash);
-      } else if (response.error) {
-        setToastData({
-          message: response.error,
-          type: 'error'
-        });
-        setShowToast(true);
-        throw new Error(response.error);
-      }
+      showToast({
+        message: 'Trade executed successfully! 🎉',
+        txHash: response.transaction_hash,
+        type: 'success'
+      });
+      
+      console.log('✅ Trade executed successfully!');
+      console.log('🔗 Transaction Hash:', response.transaction_hash);
+
+      // Remove form reset to keep trade details visible
     } catch (error) {
-      setToastData({
+      showToast({
         message: error.message || 'Failed to execute trade',
         type: 'error'
       });
-      setShowToast(true);
       console.error('❌ Error submitting trade:', error);
     } finally {
       setIsSubmitting(false);
@@ -305,95 +293,90 @@ const TradeScreen: React.FC = () => {
   }, [fromCoin, toCoin, fetchTradeQuote]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <TopBar />
-      <ScrollView
-        style={styles.container}
-        bounces={false}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
       >
-        <View style={styles.tradeContainer}>
-          <CoinSelector
-            label="From"
-            selectedCoin={fromCoin}
-            excludeCoinId={toCoin?.id}
-            amount={fromAmount}
-            onAmountChange={handleAmountChange}
-            onCoinSelect={() => {}}
-            isInput
-          />
-
-          {fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
-            <View style={styles.valueInfo}>
-              <Text style={styles.valueText}>
-                ≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
-              </Text>
-              <Text style={styles.priceText}>
-                1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                }) : '0.00'}
-              </Text>
-            </View>
-          )}
-
-          <SwapButton
-            onPress={handleSwapCoins}
-            disabled={!fromCoin || !toCoin}
-          />
-
-          <CoinSelector
-            label="To"
-            selectedCoin={toCoin}
-            excludeCoinId={fromCoin.id}
-            amount={toAmount}
-            isAmountLoading={quoteLoading}
-            onCoinSelect={() => {}}
-          />
-
-          {fromCoin && toCoin && fromAmount && toAmount && (
-            <TradeDetails
-              exchangeRate={exchangeRate}
-              gasFee={tradeDetails.gasFee}
-              spread={tradeDetails.spread}
+        <ScrollView style={styles.scrollView}>
+          <TopBar />
+          <View style={styles.tradeContainer}>
+            <CoinSelector
+              label="From"
+              selectedCoin={fromCoin}
+              excludeCoinId={toCoin?.id}
+              amount={fromAmount}
+              onAmountChange={handleAmountChange}
+              onCoinSelect={() => {}}
+              isInput
             />
-          )}
 
-          <TradeButton
-            onPress={handleSubmitTrade}
-            isSubmitting={isSubmitting}
-            disabled={
-              isSubmitting ||
-              !fromCoin ||
-              !toCoin ||
-              fromCoin.id === toCoin.id ||
-              !fromAmount ||
-              parseFloat(fromAmount) <= 0
-            }
-            label={getTradeButtonLabel()}
-          />
-        </View>
-      </ScrollView>
-      {showToast && (
-        <Toast
-          message={toastData.message}
-          type={toastData.type}
-          txHash={toastData.txHash}
-          onClose={() => setShowToast(false)}
-        />
-      )}
+            {fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
+              <View style={styles.valueInfo}>
+                <Text style={styles.valueText}>
+                  ≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
+                </Text>
+                <Text style={styles.priceText}>
+                  1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  }) : '0.00'}
+                </Text>
+              </View>
+            )}
+
+            <SwapButton
+              onPress={handleSwapCoins}
+              disabled={!fromCoin || !toCoin}
+            />
+
+            <CoinSelector
+              label="To"
+              selectedCoin={toCoin}
+              excludeCoinId={fromCoin.id}
+              amount={toAmount}
+              isAmountLoading={quoteLoading}
+              onCoinSelect={() => {}}
+            />
+
+            {fromCoin && toCoin && fromAmount && toAmount && (
+              <TradeDetails
+                exchangeRate={exchangeRate}
+                gasFee={tradeDetails.gasFee}
+                spread={tradeDetails.spread}
+              />
+            )}
+
+            <TradeButton
+              onPress={handleSubmitTrade}
+              isSubmitting={isSubmitting}
+              disabled={
+                isSubmitting ||
+                !fromCoin ||
+                !toCoin ||
+                fromCoin.id === toCoin.id ||
+                !fromAmount ||
+                parseFloat(fromAmount) <= 0
+              }
+              label={getTradeButtonLabel()}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#191B1F',
-  },
   container: {
     flex: 1,
     backgroundColor: '#191B1F',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
   },
   tradeContainer: {
     backgroundColor: '#2A2A3E',

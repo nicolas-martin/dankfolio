@@ -59,12 +59,9 @@ interface ErrorDetails {
 }
 
 export interface TradeResponse {
-	data: {
-		status: string;
-		trade_id: string;
-		transaction_hash: string;
-	};
-	error?: string;
+	status: string;
+	trade_id: string;
+	transaction_hash: string;
 }
 
 export interface TradePayload {

@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { Coin } from './src/types/index';
 import { Dispatch, SetStateAction } from 'react';
+import { ToastProvider } from './src/components/Toast';
 
 // Import screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -20,24 +21,26 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App: React.FC = () => {
         return (
-                <NavigationContainer>
-                        <StatusBar style="light" />
-                        <Stack.Navigator
-                                id={undefined}
-                                initialRouteName="Home"
-                                screenOptions={{
-                                        headerShown: false,
-                                        contentStyle: { backgroundColor: '#1A1A2E' },
-                                        animation: 'slide_from_right',
-                                }}
-                        >
-                                <Stack.Screen name="Home" component={HomeScreen} />
-                                <Stack.Screen name="Trade" component={TradeScreen} />
-                                <Stack.Screen name="Profile" component={ProfileScreen} />
-                                <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
-                                <Stack.Screen name="ChartTest" component={ChartTestScreen} />
-                        </Stack.Navigator>
-                </NavigationContainer>
+                <ToastProvider>
+                        <NavigationContainer>
+                                <StatusBar style="light" />
+                                <Stack.Navigator
+                                        id={undefined}
+                                        initialRouteName="Home"
+                                        screenOptions={{
+                                                headerShown: false,
+                                                contentStyle: { backgroundColor: '#1A1A2E' },
+                                                animation: 'slide_from_right',
+                                        }}
+                                >
+                                        <Stack.Screen name="Home" component={HomeScreen} />
+                                        <Stack.Screen name="Trade" component={TradeScreen} />
+                                        <Stack.Screen name="Profile" component={ProfileScreen} />
+                                        <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
+                                        <Stack.Screen name="ChartTest" component={ChartTestScreen} />
+                                </Stack.Navigator>
+                        </NavigationContainer>
+                </ToastProvider>
         );
 };
 
