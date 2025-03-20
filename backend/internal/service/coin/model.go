@@ -217,3 +217,59 @@ func (t *TokenMetadata) FromCoinGecko(data *CoinGeckoMetadata) {
 	t.Twitter = data.Links.TwitterScreenName
 	t.Telegram = data.Links.TelegramChannelIdentifier
 }
+
+// Jupiter API endpoints
+const (
+	jupiterBaseURL       = "https://quote-api.jup.ag/v6"
+	jupiterTokenInfoURL  = "https://token.jup.ag/strict"
+	jupiterV6APIPriceURL = "https://price.jup.ag/v4/price?ids=%s"
+	jupiterQuoteURL      = jupiterBaseURL + "/quote"
+)
+
+// JupiterQuoteResponse represents the response from Jupiter's quote endpoint
+type JupiterQuoteResponse struct {
+	InputMint            string `json:"inputMint"`
+	OutputMint           string `json:"outputMint"`
+	Amount               string `json:"amount"`
+	InAmount             string `json:"inAmount"`
+	OutAmount            string `json:"outAmount"`
+	OtherAmountThreshold string `json:"otherAmountThreshold"`
+	SwapMode             string `json:"swapMode"`
+	SlippageBps          int32  `json:"slippageBps"`
+	PlatformFee          *struct {
+		Amount string `json:"amount"`
+		FeeBps int32  `json:"feeBps"`
+	} `json:"platformFee,omitempty"`
+	PriceImpactPct string `json:"priceImpactPct"`
+	RoutePlan      []struct {
+		SwapInfo struct {
+			AmmKey     string `json:"ammKey"`
+			Label      string `json:"label,omitempty"`
+			InputMint  string `json:"inputMint"`
+			OutputMint string `json:"outputMint"`
+			InAmount   string `json:"inAmount"`
+			OutAmount  string `json:"outAmount"`
+			FeeAmount  string `json:"feeAmount"`
+			FeeMint    string `json:"feeMint"`
+			Percent    int32  `json:"percent"`
+		} `json:"swapInfo"`
+	} `json:"routePlan"`
+	ContextSlot *int64   `json:"contextSlot,omitempty"`
+	TimeTaken   *float64 `json:"timeTaken,omitempty"`
+}
+
+// QuoteParams represents all possible parameters for the Jupiter quote endpoint
+type QuoteParams struct {
+	InputMint                  string
+	OutputMint                 string
+	Amount                     string
+	SlippageBps                int
+	SwapMode                   string // "ExactIn" or "ExactOut"
+	Dexes                      []string
+	ExcludeDexes               []string
+	RestrictIntermediateTokens bool
+	OnlyDirectRoutes           bool
+	AsLegacyTransaction        bool
+	PlatformFeeBps             int
+	MaxAccounts                int
+}

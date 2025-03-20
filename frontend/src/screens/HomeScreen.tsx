@@ -36,10 +36,13 @@ interface NotificationState {
   message: string;
 }
 
+const SOL_MINT = 'So11111111111111111111111111111111111111112';
+
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [coins, setCoins] = useState<Coin[]>([]);
+  const [solCoin, setSolCoin] = useState<Coin | null>(null);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<NotificationState>({
     visible: false,
@@ -57,6 +60,17 @@ const HomeScreen: React.FC = () => {
       setLoading(true);
       const coinsData = await api.getAvailableCoins();
       if (Array.isArray(coinsData) && coinsData.length > 0) {
+        // Find and store SOL coin
+        const sol = coinsData.find(c => c.id === SOL_MINT);
+        if (sol) {
+          console.log('💫 Found SOL coin in available coins:', {
+            id: sol.id,
+            symbol: sol.symbol,
+            price: sol.price,
+            decimals: sol.decimals
+          });
+          setSolCoin(sol);
+        }
         setCoins(coinsData);
       } else {
         console.log('⚠️ No coins received or empty array');
@@ -122,10 +136,33 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleCoinPress = (coin: Coin) => {
+    console.log('🏠 HomeScreen -> CoinDetail with coins:', {
+      selectedCoin: {
+        id: coin.id,
+        name: coin.name,
+        symbol: coin.symbol,
+        decimals: coin.decimals,
+        price: coin.price,
+        daily_volume: coin.daily_volume,
+        logo_url: coin.logo_url || coin.icon_url,
+        address: coin.address || coin.id
+      },
+      solCoin: solCoin ? {
+        id: solCoin.id,
+        symbol: solCoin.symbol,
+        name: solCoin.name,
+        decimals: solCoin.decimals,
+        price: solCoin.price,
+        logo_url: solCoin.logo_url || solCoin.icon_url,
+        address: solCoin.address || solCoin.id
+      } : null
+    });
     navigation.navigate('CoinDetail', {
       coinId: coin.id,
       coinName: coin.name,
-      daily_volume: coin.daily_volume
+      daily_volume: coin.daily_volume,
+      coin: coin,
+      solCoin: solCoin // Pass SOL coin to CoinDetail
     });
   };
 

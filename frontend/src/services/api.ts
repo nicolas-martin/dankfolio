@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { API_URL } from '@env';
 import { Coin, Wallet } from '../types/index';
 
@@ -8,324 +8,323 @@ const baseURL = API_URL || 'http://localhost:8080';
 console.log('🔧 API URL:', baseURL); // Debug log
 
 const apiClient = axios.create({
-        baseURL,
-        headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-        },
-        timeout: 30000, // 30 seconds
+	baseURL,
+	headers: {
+		'Content-Type': 'application/json',
+		'Accept': 'application/json',
+	},
+	timeout: 30000, // 30 seconds
 });
 
 // Add request interceptor for debugging
 apiClient.interceptors.request.use(
-        (config) => {
-                console.log('🔍 Request:', {
-                        method: config.method,
-                        url: config.url,
-                        baseURL: config.baseURL,
-                        data: config.data,
-                        headers: config.headers
-                });
-                return config;
-        },
-        (error) => {
-                return Promise.reject(error);
-        }
+	(config) => {
+		console.log('🔍 Request:', {
+			method: config.method,
+			url: config.url,
+			baseURL: config.baseURL,
+			data: config.data,
+			headers: config.headers
+		});
+		return config;
+	},
+	(error) => Promise.reject(error)
 );
 
 // Add response interceptor for debugging
 apiClient.interceptors.response.use(
-        (response) => {
-                console.log('✅ Response:', {
-                        status: response.status,
-                        data: response.data,
-                        headers: response.headers
-                });
-                return response;
-        },
-        (error) => {
-                console.error('❌ Response Error:', {
-                        message: error.message,
-                        status: error.response?.status,
-                        data: error.response?.data,
-                        config: error.config
-                });
-                return Promise.reject(error);
-        }
+	(response) => {
+		console.log('✅ Response:', {
+			status: response.status,
+			data: response.data,
+			headers: response.headers
+		});
+		return response;
+	},
+	(error) => {
+		console.error('❌ Response Error:', {
+			message: error.message,
+			status: error.response?.status,
+			data: error.response?.data,
+			config: error.config
+		});
+		return Promise.reject(error);
+	}
 );
 
 interface ErrorDetails {
-        message: string;
-        status?: number;
-        data?: any;
+	message: string;
+	status?: number;
+	data?: any;
 }
 
 export interface TradeResponse {
-        data?: {
-                transaction_hash: string;
-                explorer_url: string;
-        };
-        error?: string;
+	data?: {
+		transaction_hash: string;
+		explorer_url: string;
+	};
+	error?: string;
 }
 
 export interface TradePayload {
-        from_coin_id: string;
-        to_coin_id: string;
-        amount: number;
-        private_key: string;
+	from_coin_id: string;
+	to_coin_id: string;
+	amount: number;
+	signed_transaction: string;
 }
 
 interface WalletResponse {
-        address: string;
-        private_key: string;
+	address: string;
+	private_key: string;
 }
 
 interface WalletBalance {
-        address: string;
-        balances?: {
-                coin_id: string;
-                symbol: string;
-                amount: number;
-                usd_value: number;
-        }[];
-        total_usd_value: number;
+	address: string;
+	balances?: {
+		coin_id: string;
+		symbol: string;
+		amount: number;
+		usd_value: number;
+	}[];
+	total_usd_value: number;
 }
 
 interface WalletBalanceResponse {
-        address: string;
-        coins: {
-                id: string;
-                symbol: string;
-                balance: number;
-                usd_value: number;
-        }[];
-        total_usd_value: number;
+	address: string;
+	coins: {
+		id: string;
+		symbol: string;
+		balance: number;
+		usd_value: number;
+	}[];
+	total_usd_value: number;
 }
 
 interface TradeQuoteResponse {
-        estimatedAmount: number;
-        exchangeRate: string;
-        fee?: {
-                total: string;
-                spread: string;
-                gas: string;
-        };
+	estimatedAmount: number;
+	exchangeRate: string;
+	fee?: {
+		total: string;
+		spread: string;
+		gas: string;
+	};
 }
 
 // Enhanced error handler
-const handleApiError = (error: any): never => {
-        const errorDetails: ErrorDetails = {
-                message: error.message || 'Unknown error',
-                status: error.response?.status,
-                data: error.response?.data,
-        };
+const handleApiError = (error: AxiosError): never => {
+	const errorDetails: ErrorDetails = {
+		message: error.message || 'Unknown error',
+		status: error.response?.status,
+		data: error.response?.data,
+	};
 
-        console.error('API Error:', JSON.stringify(errorDetails, null, 2));
+	console.error('API Error:', JSON.stringify(errorDetails, null, 2));
 
-        if (errorDetails?.data?.error?.includes('Transaction')) {
-                console.error('Transaction Error Details:', errorDetails.data.error);
-        }
+	if (errorDetails?.data?.error?.includes('Transaction')) {
+		console.error('Transaction Error Details:', errorDetails.data.error);
+	}
 
-        throw errorDetails;
+	throw errorDetails;
 };
 
 interface API {
-        executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
-        getAvailableCoins: () => Promise<Coin[]>;
-        getCoinById: (coinId: string) => Promise<Coin>;
-        getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
-        getTrades: () => Promise<any[]>;
-        createWallet: () => Promise<WalletResponse>;
-        getWalletByAddress: (address: string) => Promise<Wallet>;
-        getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
-        fetchAvailableCoins: () => Promise<Coin[]>;
-        fetchCoinById: (coinId: string) => Promise<Coin>;
-        searchCoins: (query: string) => Promise<Coin[]>;
-        getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<any>;
-        getCoinMetadata: (coinId: string) => Promise<any>;
+	executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
+	getAvailableCoins: () => Promise<Coin[]>;
+	getCoinById: (coinId: string) => Promise<Coin>;
+	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
+	getTrades: () => Promise<any[]>;
+	createWallet: () => Promise<WalletResponse>;
+	getWalletByAddress: (address: string) => Promise<Wallet>;
+	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
+	fetchAvailableCoins: () => Promise<Coin[]>;
+	fetchCoinById: (coinId: string) => Promise<Coin>;
+	searchCoins: (query: string) => Promise<Coin[]>;
+	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<any>;
+	getCoinMetadata: (coinId: string) => Promise<any>;
 }
 
 const api: API = {
-        executeTrade: async (payload: TradePayload): Promise<TradeResponse> => {
-                try {
-                        console.log('🔄 Executing trade with payload:', payload);
-                        const response = await apiClient.post('/trade', payload);
-                        return response.data;
-                } catch (error) {
-                        console.error('❌ Error executing trade:', error);
-                        throw error;
-                }
-        },
+	executeTrade: async (payload: TradePayload): Promise<TradeResponse> => {
+		try {
+			console.log('🔄 Executing trade with payload:', payload);
+			const response = await apiClient.post('/api/trades/execute', payload);
+			return response.data;
+		} catch (error) {
+			console.error('❌ Error executing trade:', error);
+			throw handleApiError(error as AxiosError);
+		}
+	},
 
-        getAvailableCoins: async () => {
-                try {
-                        const response = await apiClient.get<Coin[]>('/api/coins');
-                        return response.data;
-                } catch (error) {
-                        console.error('❌ Error getting coins:', error);
-                        if (axios.isAxiosError(error)) {
-                                console.error('🔍 Request details:', {
-                                        url: error.config?.url,
-                                        method: error.config?.method,
-                                        baseURL: error.config?.baseURL,
-                                        status: error.response?.status,
-                                        data: error.response?.data
-                                });
-                        }
-                        throw handleApiError(error);
-                }
-        },
+	getAvailableCoins: async () => {
+		try {
+			const response = await apiClient.get<Coin[]>('/api/coins');
+			return response.data;
+		} catch (error) {
+			console.error('❌ Error getting coins:', error);
+			if (axios.isAxiosError(error)) {
+				console.error('🔍 Request details:', {
+					url: error.config?.url,
+					method: error.config?.method,
+					baseURL: error.config?.baseURL,
+					status: error.response?.status,
+					data: error.response?.data
+				});
+			}
+			throw handleApiError(error);
+		}
+	},
 
-        getCoinById: async (coinId: string) => {
-                try {
-                        const response = await apiClient.get<Coin>(`/api/coins/${coinId}`);
-                        return response.data;
-                } catch (error) {
-                        console.error(`Error fetching coin ${coinId}:`, error);
-                        throw handleApiError(error);
-                }
-        },
+	getCoinById: async (coinId: string) => {
+		try {
+			const response = await apiClient.get<Coin>(`/api/coins/${coinId}`);
+			return response.data;
+		} catch (error) {
+			console.error(`Error fetching coin ${coinId}:`, error);
+			throw handleApiError(error as AxiosError);
+		}
+	},
 
-        getTradeQuote: async (fromCoin: string, toCoin: string, amount: string) => {
-                try {
-                        const response = await apiClient.get<TradeQuoteResponse>('/api/trades/quote', {
-                                params: {
-                                        from_coin_id: fromCoin,
-                                        to_coin_id: toCoin,
-                                        amount: amount,
-                                }
-                        });
+	getTradeQuote: async (fromCoin: string, toCoin: string, amount: string) => {
+		try {
+			const response = await apiClient.get<TradeQuoteResponse>('/api/trades/quote', {
+				params: {
+					from_coin_id: fromCoin,
+					to_coin_id: toCoin,
+					amount: amount,
+				}
+			});
 
-                        return response.data;
-                } catch (error) {
-                        console.error('Error getting trade quote:', error);
-                        throw handleApiError(error);
-                }
-        },
+			return response.data;
+		} catch (error) {
+			console.error('Error getting trade quote:', error);
+			throw handleApiError(error as AxiosError);
+		}
+	},
 
-        getTrades: async () => {
-                try {
-                        const response = await apiClient.get<any[]>('/api/trades');
-                        return response.data;
-                } catch (error) {
-                        return handleApiError(error);
-                }
-        },
+	getTrades: async () => {
+		try {
+			const response = await apiClient.get<any[]>('/api/trades');
+			return response.data;
+		} catch (error) {
+			return handleApiError(error as AxiosError);
+		}
+	},
 
-        createWallet: async () => {
-                try {
-                        const response = await apiClient.post<WalletResponse>('/api/wallets');
-                        return response.data;
-                } catch (error) {
-                        console.error('❌ Error creating wallet:', error);
-                        throw handleApiError(error);
-                }
-        },
+	createWallet: async () => {
+		try {
+			const response = await apiClient.post<WalletResponse>('/api/wallets');
+			return response.data;
+		} catch (error) {
+			console.error('❌ Error creating wallet:', error);
+			throw handleApiError(error as AxiosError);
+		}
+	},
 
-        getWalletByAddress: async (address: string) => {
-                try {
-                        const response = await apiClient.get<Wallet>(`/api/wallets/${address}`);
-                        return response.data;
-                } catch (error) {
-                        console.error('❌ Error fetching wallet:', error);
-                        throw handleApiError(error);
-                }
-        },
+	getWalletByAddress: async (address: string) => {
+		try {
+			const response = await apiClient.get<Wallet>(`/api/wallets/${address}`);
+			return response.data;
+		} catch (error) {
+			console.error('❌ Error fetching wallet:', error);
+			throw handleApiError(error as AxiosError);
+		}
+	},
 
-        getWalletBalance: async (address: string) => {
-                try {
-                        const response = await apiClient.get<WalletBalance>(`/api/wallets/${address}/balance`);
+	getWalletBalance: async (address: string) => {
+		try {
+			const response = await apiClient.get<WalletBalance>(`/api/wallets/${address}/balance`);
 
-                        // Transform the backend response to match what the frontend expects
-                        const data = response.data;
-                        return {
-                                address: data.address,
-                                coins: data.balances ? data.balances.map(bal => ({
-                                        id: bal.coin_id,
-                                        symbol: bal.symbol,
-                                        balance: bal.amount || 0,
-                                        usd_value: bal.usd_value || 0
-                                })) : [],
-                                total_usd_value: data.total_usd_value || 0
-                        };
-                } catch (error) {
-                        console.error('❌ Error fetching wallet balance:', error);
-                        throw handleApiError(error);
-                }
-        },
+			// Transform the backend response to match what the frontend expects
+			const data = response.data;
+			return {
+				address: data.address,
+				coins: data.balances ? data.balances.map(bal => ({
+					id: bal.coin_id,
+					symbol: bal.symbol,
+					balance: bal.amount || 0,
+					usd_value: bal.usd_value || 0
+				})) : [],
+				total_usd_value: data.total_usd_value || 0
+			};
+		} catch (error) {
+			console.error('❌ Error fetching wallet balance:', error);
+			throw handleApiError(error as AxiosError);
+		}
+	},
 
-        fetchAvailableCoins: async () => {
-                try {
-                        const response = await apiClient.get<Coin[]>('/api/coins');
-                        return response.data;
-                } catch (error) {
-                        console.error('Error fetching coins:', error);
-                        throw new Error('Failed to fetch available coins');
-                }
-        },
+	fetchAvailableCoins: async () => {
+		try {
+			const response = await apiClient.get<Coin[]>('/api/coins');
+			return response.data;
+		} catch (error) {
+			console.error('Error fetching coins:', error);
+			throw new Error('Failed to fetch available coins');
+		}
+	},
 
-        fetchCoinById: async (coinId: string) => {
-                try {
-                        const response = await apiClient.get<Coin>(`/api/coins/${coinId}`);
-                        return response.data;
-                } catch (error) {
-                        console.error(`Error fetching coin ${coinId}:`, error);
-                        throw new Error('Failed to fetch coin details');
-                }
-        },
+	fetchCoinById: async (coinId: string) => {
+		try {
+			const response = await apiClient.get<Coin>(`/api/coins/${coinId}`);
+			return response.data;
+		} catch (error) {
+			console.error(`Error fetching coin ${coinId}:`, error);
+			throw new Error('Failed to fetch coin details');
+		}
+	},
 
-        searchCoins: async (query: string) => {
-                try {
-                        const response = await apiClient.get<Coin[]>('/api/coins/search', {
-                                params: { q: query }
-                        });
-                        return response.data;
-                } catch (error) {
-                        console.error('Error searching coins:', error);
-                        throw new Error('Failed to search coins');
-                }
-        },
+	searchCoins: async (query: string) => {
+		try {
+			const response = await apiClient.get<Coin[]>('/api/coins/search', {
+				params: { q: query }
+			});
+			return response.data;
+		} catch (error) {
+			console.error('Error searching coins:', error);
+			throw new Error('Failed to search coins');
+		}
+	},
 
-        getPriceHistory: async (address, type = '1h', timeFrom = "", timeTo = "", addressType = 'token') => {
-                try {
-                        const params = {
-                                address,
-                                address_type: addressType,
-                                type,
-                                time_from: timeFrom,
-                                time_to: timeTo
-                        };
+	getPriceHistory: async (address, type = '1h', timeFrom = "", timeTo = "", addressType = 'token') => {
+		try {
+			const params = {
+				address,
+				address_type: addressType,
+				type,
+				time_from: timeFrom,
+				time_to: timeTo
+			};
 
-                        // Validate required parameters
-                        if (!address || !timeFrom || !timeTo) {
-                                throw new Error('Missing required parameters: address, type, time_from, and time_to are required');
-                        }
+			// Validate required parameters
+			if (!address || !timeFrom || !timeTo) {
+				throw new Error('Missing required parameters: address, type, time_from, and time_to are required');
+			}
 
-                        console.log('🔍 Fetching price history with params:', JSON.stringify(params, null, 2));
+			console.log('🔍 Fetching price history with params:', JSON.stringify(params, null, 2));
 
-                        const response = await apiClient.get('/api/price/history', { params });
+			const response = await apiClient.get('/api/price/history', { params });
 
-                        if (response.status === 200) {
-                                return response.data.data;
-                        } else {
-                                throw new Error('Failed to fetch price history');
-                        }
+			if (response.status === 200) {
+				return response.data.data;
+			} else {
+				throw new Error('Failed to fetch price history');
+			}
 
-                } catch (error) {
-                        console.error('❌ Error fetching price history:', error);
-                        throw handleApiError(error);
-                }
-        },
+		} catch (error) {
+			console.error('❌ Error fetching price history:', error);
+			throw handleApiError(error as AxiosError);
+		}
+	},
 
-        getCoinMetadata: async (address: string) => {
-                try {
-                        const response = await apiClient.get(`/api/coins/${address}/metadata`);
-                        return response.data;
-                } catch (error) {
-                        console.error('❌ Error fetching coin metadata:', error);
-                        throw handleApiError(error);
-                }
-        }
+	getCoinMetadata: async (address: string) => {
+		try {
+			const response = await apiClient.get(`/api/coins/${address}/metadata`);
+			return response.data;
+		} catch (error) {
+			console.error('❌ Error fetching coin metadata:', error);
+			throw handleApiError(error as AxiosError);
+		}
+	}
 };
 
-export default api; 
+export default api;
+

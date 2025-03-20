@@ -146,13 +146,8 @@ func GetTrendingTokens() ([]TrendingToken, error) {
 	}
 
 	var trendingTokens []TrendingToken
-	solMint := "So11111111111111111111111111111111111111112"
 
 	for _, token := range tokens {
-		// Skip if it's SOL
-		if token.Address == solMint {
-			continue
-		}
 
 		// Clean up symbol (remove any /USDC or similar suffixes)
 		symbol := strings.Split(token.Symbol, "/")[0]

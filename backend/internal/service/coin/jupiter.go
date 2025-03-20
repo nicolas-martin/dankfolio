@@ -5,15 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
-)
-
-// Jupiter API endpoints
-const (
-	jupiterAPIBaseURL    = "https://api.jup.ag"
-	jupiterTokenInfoURL  = "https://api.jup.ag/tokens/v1/token"
-	majorTokensQueryURL  = "https://token.jup.ag/strict"
-	jupiterV6APIPriceURL = "https://api.jup.ag/price/v2?ids=%s"
 )
 
 // JupiterClient handles interactions with the Jupiter API
@@ -105,4 +98,97 @@ func (c *JupiterClient) GetTokenPrice(tokenAddress string) (string, error) {
 	}
 
 	return "", fmt.Errorf("no price data found for token: %s", tokenAddress)
+}
+
+// GetQuote fetches a swap quote from Jupiter API
+func (c *JupiterClient) GetQuote(params QuoteParams) (*JupiterQuoteResponse, error) {
+	// Build query parameters
+	queryParams := url.Values{}
+
+	// Required parameters
+	queryParams.Add("inputMint", params.InputMint)
+	queryParams.Add("outputMint", params.OutputMint)
+	queryParams.Add("amount", params.Amount)
+
+	// Optional parameters with defaults
+	if params.SlippageBps == 0 {
+		params.SlippageBps = 50 // Default slippage of 0.5%
+	}
+	queryParams.Add("slippageBps", fmt.Sprintf("%d", params.SlippageBps))
+
+	if params.SwapMode == "" {
+		params.SwapMode = "ExactIn" // Default swap mode
+	}
+	queryParams.Add("swapMode", params.SwapMode)
+
+	// Optional parameters
+	if len(params.Dexes) > 0 {
+		queryParams.Add("dexes", joinStrings(params.Dexes))
+	}
+
+	if len(params.ExcludeDexes) > 0 {
+		queryParams.Add("excludeDexes", joinStrings(params.ExcludeDexes))
+	}
+
+	if params.RestrictIntermediateTokens {
+		queryParams.Add("restrictIntermediateTokens", "true")
+	}
+
+	if params.OnlyDirectRoutes {
+		queryParams.Add("onlyDirectRoutes", "true")
+	}
+
+	if params.AsLegacyTransaction {
+		queryParams.Add("asLegacyTransaction", "true")
+	}
+
+	if params.PlatformFeeBps > 0 {
+		queryParams.Add("platformFeeBps", fmt.Sprintf("%d", params.PlatformFeeBps))
+	}
+
+	if params.MaxAccounts > 0 {
+		queryParams.Add("maxAccounts", fmt.Sprintf("%d", params.MaxAccounts))
+	} else {
+		queryParams.Add("maxAccounts", "64") // Jupiter Frontend default
+	}
+
+	// Construct the full URL with query parameters
+	fullURL := fmt.Sprintf("%s?%s", jupiterQuoteURL, queryParams.Encode())
+
+	// Make the request
+	resp, err := c.httpClient.Get(fullURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch quote: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to fetch quote, status: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var quoteResp JupiterQuoteResponse
+	if err := json.Unmarshal(body, &quoteResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal quote response: %w", err)
+	}
+
+	return &quoteResp, nil
+}
+
+// Helper function to join string slices with commas
+func joinStrings(strs []string) string {
+	if len(strs) == 0 {
+		return ""
+	}
+
+	result := strs[0]
+	for i := 1; i < len(strs); i++ {
+		result += "," + strs[i]
+	}
+	return result
 }

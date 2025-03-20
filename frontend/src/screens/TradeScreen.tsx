@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { View, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, SafeAreaView, Text } from 'react-native';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Coin } from '../types/index';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
@@ -40,14 +40,13 @@ const TradeScreen: React.FC = () => {
   const { initialFromCoin, initialToCoin } = route.params || {};
   
   const amountInputRef = useRef(null);
-  const initializedRef = useRef(false);
   const debounceTimerRef = useRef(null);
+  const errorLogged = useRef<string[]>([]);
 
-  const [fromCoin, setFromCoin] = useState<Coin | null>(DEFAULT_SOL_COIN);
-  const [toCoin, setToCoin] = useState<Coin | null>(null);
+  const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin || DEFAULT_SOL_COIN);
+  const [toCoin, setToCoin] = useState<Coin | null>(initialToCoin || null);
   const [fromAmount, setFromAmount] = useState(DEFAULT_AMOUNT);
   const [toAmount, setToAmount] = useState('0');
-  const [availableCoins, setAvailableCoins] = useState<Coin[]>([DEFAULT_SOL_COIN]);
   const [exchangeRate, setExchangeRate] = useState('');
   const [tradeDetails, setTradeDetails] = useState({
     estimatedFee: '0.00',
@@ -57,16 +56,8 @@ const TradeScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
 
-  const getCoinById = (id: string): Coin | null => {
-    if (id === DEFAULT_SOL_COIN.id) return DEFAULT_SOL_COIN;
-    const coin = availableCoins.find(c => c.id === id);
-    console.log('🔍 Getting coin by ID:', id, 'Result:', coin?.symbol);
-    return coin || null;
-  };
-
   const fetchTradeQuote = useCallback(async (amount: string) => {
     if (!amount || !fromCoin || !toCoin) {
-      console.log('❌ Missing required data for quote:', { amount, fromCoin, toCoin });
       return;
     }
 
@@ -75,7 +66,6 @@ const TradeScreen: React.FC = () => {
     const toAddress = toCoin?.address;
 
     if (!fromAddress || !toAddress) {
-      console.log('❌ Invalid coin addresses:', { fromAddress, toAddress });
       return;
     }
     
@@ -83,36 +73,68 @@ const TradeScreen: React.FC = () => {
       clearTimeout(debounceTimerRef.current);
     }
 
-    try {
-      setQuoteLoading(true);
-      console.log('🔄 Fetching trade quote:', {
-        fromAddress,
-        toAddress,
-        amount
-      });
-      
-      const response = await api.getTradeQuote(
-        fromAddress.trim(),
-        toAddress.trim(),
-        amount
-      );
-      
-      console.log('📊 Trade quote response:', response);
-      
-      if (!response) {
-        throw new Error('No response from trade quote');
-      }
+    // Create a new debounce timer
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        setQuoteLoading(true);
 
-      // Use the raw estimatedAmount string from the API
-      setToAmount(String(response.estimatedAmount));
-      setExchangeRate(`${response.exchangeRate} ${toCoin.symbol || ''}`);
-      setTradeDetails({
-        estimatedFee: String(response.fee?.total || '0.00'),
-        spread: String(response.fee?.spread || '0.00'),
-        gasFee: String(response.fee?.gas || '0.00'),
-      });
-    } catch (error) {
-      console.error('❌ Error fetching trade quote:', error);
+        // Convert amount to raw units based on decimals to avoid scientific notation
+        const multiplier = Math.pow(10, fromCoin.decimals);
+        const rawAmount = (parseFloat(amount) * multiplier).toFixed(0);
+        
+        const response = await api.getTradeQuote(
+          fromAddress.trim(),
+          toAddress.trim(),
+          rawAmount
+        );
+        
+        if (!response) {
+          throw new Error('No response from trade quote');
+        }
+
+        // Use the raw estimatedAmount string from the API
+        setToAmount(String(response.estimatedAmount));
+        setExchangeRate(`${response.exchangeRate} ${toCoin.symbol || ''}`);
+        setTradeDetails({
+          estimatedFee: String(response.fee?.total || '0.00'),
+          spread: String(response.fee?.spread || '0.00'),
+          gasFee: String(response.fee?.gas || '0.00'),
+        });
+      } catch (error) {
+        // Only log the error once per session for the same error type
+        const errorMessage = error.message || 'Unknown error';
+        if (!errorLogged.current.includes(errorMessage)) {
+          console.error('❌ Error fetching trade quote:', error);
+          errorLogged.current.push(errorMessage);
+        }
+        
+        setToAmount('0');
+        setExchangeRate('');
+        setTradeDetails({
+          estimatedFee: '0.00',
+          spread: '0.00',
+          gasFee: '0.00',
+        });
+      } finally {
+        setQuoteLoading(false);
+      }
+    }, QUOTE_DEBOUNCE_MS);
+  }, [fromCoin, toCoin]);
+
+  const handleAmountChange = useCallback((text: string) => {
+    const sanitized = text.replace(/[^\d.]/g, '');
+    const parts = sanitized.split('.');
+    const formatted = parts[0] + (parts[1] ? '.' + parts[1].slice(0, 9) : '');
+    
+    // Set amount immediately
+    setFromAmount(formatted);
+
+    // Only trigger quote if amount is valid
+    if (parseFloat(formatted) > 0) {
+      setQuoteLoading(true);
+      fetchTradeQuote(formatted);
+    } else {
+      setQuoteLoading(false);
       setToAmount('0');
       setExchangeRate('');
       setTradeDetails({
@@ -120,76 +142,8 @@ const TradeScreen: React.FC = () => {
         spread: '0.00',
         gasFee: '0.00',
       });
-    } finally {
-      setQuoteLoading(false);
     }
-  }, [fromCoin, toCoin]);
-
-  // Initialize coins and fetch available coins on mount
-  useEffect(() => {
-    const initializeScreen = async () => {
-      console.log('🔄 Initializing Trade Screen');
-      
-      // Initialize available coins first
-      if (!initializedRef.current) {
-        try {
-          console.log('📥 Fetching available coins');
-          const coins = await api.getAvailableCoins();
-          setAvailableCoins([DEFAULT_SOL_COIN, ...coins]);
-          initializedRef.current = true;
-
-          // Set initial coins from navigation params after coins are loaded
-          if (initialToCoin) {
-            console.log('📥 Setting initial TO coin:', initialToCoin);
-            const matchedToCoin = coins.find(c => c.id === initialToCoin.id) || initialToCoin;
-            setToCoin(matchedToCoin);
-            setFromCoin(DEFAULT_SOL_COIN);
-          }
-        } catch (error) {
-          console.error('❌ Error fetching available coins:', error);
-        }
-      }
-    };
-
-    initializeScreen();
-  }, []);
-
-  // Fetch quote when coins or amount changes
-  useEffect(() => {
-    if (fromCoin && toCoin && fromAmount && parseFloat(fromAmount) > 0) {
-      console.log('🔄 Coins or amount changed, fetching quote:', {
-        from: fromCoin.symbol,
-        to: toCoin.symbol,
-        amount: fromAmount
-      });
-      fetchTradeQuote(fromAmount);
-    }
-  }, [fromCoin, toCoin, fromAmount, fetchTradeQuote]);
-
-  const handleAmountChange = useCallback((text: string) => {
-    const sanitized = text.replace(/[^\d.]/g, '');
-    const parts = sanitized.split('.');
-    const formatted = parts[0] + (parts[1] ? '.' + parts[1].slice(0, 9) : '');
-    
-    // Clear any existing debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set loading state immediately
-    setQuoteLoading(true);
-    setFromAmount(formatted);
-
-    // Debounce the API call
-    debounceTimerRef.current = setTimeout(() => {
-      if (parseFloat(formatted) <= 0) {
-        console.log('⚠️ Invalid amount for quote:', formatted);
-        setQuoteLoading(false);
-        setToAmount('0');
-      }
-    }, QUOTE_DEBOUNCE_MS) as any;
-
-  }, []);
+  }, [fetchTradeQuote]);
 
   const handleSwapCoins = () => {
     if (!fromCoin || !toCoin) return;
@@ -226,10 +180,22 @@ const TradeScreen: React.FC = () => {
       // Create a keypair from the private key
       const wallet = getKeypairFromPrivateKey(savedWallet.privateKey);
 
+      // Convert amount to raw units based on input token decimals
+      const multiplier = Math.pow(10, fromCoin.decimals);
+      const rawAmount = Math.floor(parseFloat(fromAmount) * multiplier);
+
+      console.log('💱 Swap details:', {
+        fromCoin: fromCoin.symbol,
+        toCoin: toCoin.symbol,
+        amount: fromAmount,
+        rawAmount,
+        decimals: fromCoin.decimals
+      });
+
       const signedTransaction = await buildAndSignSwapTransaction(
         fromCoin.address || fromCoin.id,
         toCoin.address || toCoin.id,
-        fromAmount,
+        rawAmount.toString(),
         1, // 1% slippage
         wallet
       );
@@ -238,7 +204,7 @@ const TradeScreen: React.FC = () => {
         from_coin_id: fromCoin.id,
         to_coin_id: toCoin.id,
         amount: parseFloat(fromAmount),
-        private_key: signedTransaction
+        signed_transaction: signedTransaction
       });
       
       if (response.data) {
@@ -263,6 +229,60 @@ const TradeScreen: React.FC = () => {
     return 'Swap';
   };
 
+  // Initialize coins from props
+  useEffect(() => {
+    console.log('🔄 Trade Screen initialized with coins:', {
+      fromCoin: fromCoin ? {
+        id: fromCoin.id,
+        symbol: fromCoin.symbol,
+        name: fromCoin.name,
+        decimals: fromCoin.decimals,
+        price: fromCoin.price,
+        logo_url: fromCoin.logo_url || fromCoin.icon_url,
+        address: fromCoin.address || fromCoin.id
+      } : null,
+      toCoin: toCoin ? {
+        id: toCoin.id,
+        symbol: toCoin.symbol,
+        name: toCoin.name,
+        decimals: toCoin.decimals,
+        price: toCoin.price,
+        logo_url: toCoin.logo_url || toCoin.icon_url,
+        address: toCoin.address || toCoin.id
+      } : null,
+      routeParams: {
+        initialFromCoin: initialFromCoin ? {
+          id: initialFromCoin.id,
+          symbol: initialFromCoin.symbol,
+          price: initialFromCoin.price
+        } : null,
+        initialToCoin: initialToCoin ? {
+          id: initialToCoin.id,
+          symbol: initialToCoin.symbol,
+          price: initialToCoin.price
+        } : null
+      }
+    });
+  }, [fromCoin, toCoin, initialFromCoin, initialToCoin]);
+
+  // Update coins when props change
+  useEffect(() => {
+    if (initialFromCoin) {
+      setFromCoin(initialFromCoin);
+    }
+    if (initialToCoin) {
+      setToCoin(initialToCoin);
+    }
+  }, [initialFromCoin, initialToCoin]);
+
+  // Fetch quote when screen loads and coins are available
+  useEffect(() => {
+    if (fromCoin && toCoin) {
+      console.log('🔄 Fetching initial trade quote with amount:', DEFAULT_AMOUNT);
+      fetchTradeQuote(DEFAULT_AMOUNT);
+    }
+  }, [fromCoin, toCoin, fetchTradeQuote]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <TopBar />
@@ -271,17 +291,6 @@ const TradeScreen: React.FC = () => {
         bounces={false}
         keyboardShouldPersistTaps="handled"
       >
-        {toCoin && (
-          <PriceDisplay 
-            price={toCoin.price || 0}
-            periodChange={0}
-            valueChange={0}
-            period="24h"
-            icon_url={toCoin.logo_url}
-            name={toCoin.name}
-          />
-        )}
-        
         <View style={styles.tradeContainer}>
           <CoinSelector
             label="From"
@@ -289,13 +298,23 @@ const TradeScreen: React.FC = () => {
             excludeCoinId={toCoin?.id}
             amount={fromAmount}
             onAmountChange={handleAmountChange}
-            onCoinSelect={(id) => {
-              const coin = getCoinById(id);
-              if (coin) setFromCoin(coin);
-            }}
-            isInput={true}
-            inputRef={amountInputRef}
+            onCoinSelect={() => {}}
+            isInput
           />
+
+          {fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
+            <View style={styles.valueInfo}>
+              <Text style={styles.valueText}>
+                ≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
+              </Text>
+              <Text style={styles.priceText}>
+                1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                }) : '0.00'}
+              </Text>
+            </View>
+          )}
 
           <SwapButton
             onPress={handleSwapCoins}
@@ -305,13 +324,10 @@ const TradeScreen: React.FC = () => {
           <CoinSelector
             label="To"
             selectedCoin={toCoin}
-            excludeCoinId={fromCoin?.id}
+            excludeCoinId={fromCoin.id}
             amount={toAmount}
             isAmountLoading={quoteLoading}
-            onCoinSelect={(id) => {
-              const coin = getCoinById(id);
-              if (coin) setToCoin(coin);
-            }}
+            onCoinSelect={() => {}}
           />
 
           {fromCoin && toCoin && fromAmount && toAmount && (
@@ -355,6 +371,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     margin: 20,
+  },
+  valueInfo: {
+    marginTop: -8,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+  },
+  valueText: {
+    fontSize: 14,
+    color: '#9F9FD5',
+    textAlign: 'right',
+  },
+  priceText: {
+    fontSize: 12,
+    color: '#9F9FD5',
+    textAlign: 'right',
+    marginTop: 2,
   },
 });
 

@@ -23,6 +23,11 @@ func main() {
 		log.Printf("Warning: .env file not found")
 	}
 
+	// Set development mode if not specified
+	if os.Getenv("APP_ENV") == "" {
+		os.Setenv("APP_ENV", "development")
+	}
+
 	// Initialize services
 	solanaService, err := solana.NewSolanaTradeService(os.Getenv("SOLANA_RPC_ENDPOINT"))
 	if err != nil {
@@ -40,10 +45,14 @@ func main() {
 		CoinGeckoAPIKey: os.Getenv("COINGECKO_API_KEY"),
 	}
 
-	coinService := coin.NewService(coinServiceConfig, httpClient)
+	// Initialize Jupiter client
+	jupiterClient := coin.NewJupiterClient()
+
+	// Initialize the coin service with Jupiter client
+	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient)
 
 	// Initialize the trade service with both dependencies
-	tradeService := trade.NewService(solanaService, coinService)
+	tradeService := trade.NewService(solanaService, coinService, jupiterClient)
 
 	// Initialize the price service
 	priceService := price.NewService(os.Getenv("BIRDEYE_API_KEY"))

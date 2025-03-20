@@ -32,7 +32,7 @@ func main() {
 	histType := "30m"
 
 	// func (s *Service) GetPriceHistory(ctx context.Context, address string, historyType string, timeFrom, timeTo int64, addressType string) (*model.PriceHistoryResponse, error) {
-	resp, err := s.GetPriceHistory(context.Background(), mintAdd, histType, from, to, addType)
+	resp, err := s.GetPriceHistory(context.Background(), mintAdd, histType, fmt.Sprintf("%d", from), fmt.Sprintf("%d", to), addType)
 	if err != nil {
 		fmt.Println(err)
 		return

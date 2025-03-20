@@ -23,8 +23,8 @@ type Trade struct {
 
 // TradeRequest represents a request to trade meme coins
 type TradeRequest struct {
-	FromCoinID        string  `json:"from_coin_id" validate:"required"`
-	ToCoinID          string  `json:"to_coin_id" validate:"required"`
-	Amount            float64 `json:"amount" validate:"required,gt=0"`
-	SignedTransaction string  `json:"signed_transaction" validate:"required"` // Base64 encoded signed transaction
+	FromCoinID        string  `json:"from_coin_id"`
+	ToCoinID          string  `json:"to_coin_id"`
+	Amount            float64 `json:"amount"`
+	SignedTransaction string  `json:"signed_transaction"` // Base64 encoded signed transaction
 }

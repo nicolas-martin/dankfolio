@@ -39,13 +39,20 @@ func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate request
-	if req.FromCoinID == "" || req.ToCoinID == "" {
-		http.Error(w, "Both from_coin_id and to_coin_id are required", http.StatusBadRequest)
+	if req.FromCoinID == "" {
+		http.Error(w, "from_coin_id is required", http.StatusBadRequest)
 		return
 	}
-
+	if req.ToCoinID == "" {
+		http.Error(w, "to_coin_id is required", http.StatusBadRequest)
+		return
+	}
 	if req.Amount <= 0 {
-		http.Error(w, "Amount must be greater than 0", http.StatusBadRequest)
+		http.Error(w, "amount must be greater than 0", http.StatusBadRequest)
+		return
+	}
+	if req.SignedTransaction == "" {
+		http.Error(w, "signed_transaction is required", http.StatusBadRequest)
 		return
 	}
 

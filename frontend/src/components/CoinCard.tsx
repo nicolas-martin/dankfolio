@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { formatNumber, formatPrice, formatPercentage } from '../utils/numberFormat';
-import { Coin } from '../types';
+import { Coin } from '../types/index';
 
 interface CoinCardProps {
     coin: Coin;

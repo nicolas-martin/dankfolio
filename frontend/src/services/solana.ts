@@ -1,10 +1,10 @@
 import {
-  Keypair,
-  Connection,
-  PublicKey,
-  Transaction,
-  LAMPORTS_PER_SOL,
-  VersionedTransaction
+	Keypair,
+	Connection,
+	PublicKey,
+	Transaction,
+	LAMPORTS_PER_SOL,
+	VersionedTransaction
 } from '@solana/web3.js';
 import bs58 from 'bs58';
 import axios from 'axios';
@@ -18,47 +18,47 @@ const API_BASE_HOST = 'https://api.raydium.io';
 
 // Raydium API URLs
 const API_URLS = {
-  SWAP_HOST: API_SWAP_HOST,
-  BASE_HOST: API_BASE_HOST,
-  SWAP_QUOTE: '/compute/swap-base-in',
-  SWAP_TRANSACTION: '/transaction/swap-base-in'
+	SWAP_HOST: API_SWAP_HOST,
+	BASE_HOST: API_BASE_HOST,
+	SWAP_QUOTE: '/compute/swap-base-in',
+	SWAP_TRANSACTION: '/transaction/swap-base-in'
 };
 
 // Hardcoded compute unit prices (in microLamports)
 const COMPUTE_UNIT_PRICES = {
-  VERY_HIGH: '1000', // vh
-  HIGH: '500',       // h
-  MEDIUM: '250'      // m
+	VERY_HIGH: '1000', // vh
+	HIGH: '500',       // h
+	MEDIUM: '250'      // m
 };
 
 const jupiterApi = axios.create({
-  baseURL: process.env.REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
-  headers: {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-  }
+	baseURL: process.env.REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
+	headers: {
+		Accept: 'application/json',
+		'Content-Type': 'application/json',
+		'Access-Control-Allow-Origin': '*',
+		'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+		'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+	}
 });
 
 // Add response interceptor for better error handling
 jupiterApi.interceptors.response.use(
-  response => response,
-  error => {
-    console.error('Jupiter API Error:', {
-      message: error.message,
-      config: error.config,
-      status: error.response?.status,
-      data: error.response?.data
-    });
-    throw error;
-  }
+	response => response,
+	error => {
+		console.error('Jupiter API Error:', {
+			message: error.message,
+			config: error.config,
+			status: error.response?.status,
+			data: error.response?.data
+		});
+		throw error;
+	}
 );
 
 const handleError = (error) => {
-  console.error('Error:', error);
-  throw error;
+	console.error('Error:', error);
+	throw error;
 };
 
 /**
@@ -66,34 +66,34 @@ const handleError = (error) => {
  * Returns an object with the keypair, public key (as string), and private key (base58 encoded).
  */
 export const generateWallet = () => {
-  const keypair = Keypair.generate();
-  return {
-    keypair,
-    publicKey: keypair.publicKey.toString(),
-    privateKey: bs58.encode(keypair.secretKey)
-  };
+	const keypair = Keypair.generate();
+	return {
+		keypair,
+		publicKey: keypair.publicKey.toString(),
+		privateKey: bs58.encode(keypair.secretKey)
+	};
 };
 
 const isBase64 = (privateKey) => {
-  // Basic check for Base64 format (may not be 100% accurate)
-  return privateKey.match(/^[A-Za-z0-9+/]*={0,2}$/) !== null && privateKey.length % 4 === 0;
+	// Basic check for Base64 format (may not be 100% accurate)
+	return privateKey.match(/^[A-Za-z0-9+/]*={0,2}$/) !== null && privateKey.length % 4 === 0;
 };
 
 /**
  * Get a Solana keypair from a private key (supports Base58 and Base64 formats).
  */
 export const getKeypairFromPrivateKey = (privateKey) => {
-  let secretKey;
+	let secretKey;
 
-  if (isBase64(privateKey)) {
-    // Handle Base64 private key
-    secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
-  } else {
-    // Handle Base58 private key
-    secretKey = bs58.decode(privateKey);
-  }
+	if (isBase64(privateKey)) {
+		// Handle Base64 private key
+		secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
+	} else {
+		// Handle Base58 private key
+		secretKey = bs58.decode(privateKey);
+	}
 
-  return Keypair.fromSecretKey(secretKey);
+	return Keypair.fromSecretKey(secretKey);
 };
 
 /**
@@ -101,13 +101,13 @@ export const getKeypairFromPrivateKey = (privateKey) => {
  * Returns the balance in SOL.
  */
 export const getBalance = async (publicKeyString) => {
-  try {
-    const publicKey = new PublicKey(publicKeyString);
-    const balance = await connection.getBalance(publicKey);
-    return balance / LAMPORTS_PER_SOL;
-  } catch (error) {
-    return handleError(error);
-  }
+	try {
+		const publicKey = new PublicKey(publicKeyString);
+		const balance = await connection.getBalance(publicKey);
+		return balance / LAMPORTS_PER_SOL;
+	} catch (error) {
+		return handleError(error);
+	}
 };
 
 
@@ -116,79 +116,79 @@ export const getBalance = async (publicKeyString) => {
  * Returns a Base64 encoded signed transaction.
  */
 export const buildAndSignSwapTransaction = async (
-  inputMint,
-  outputMint,
-  amount,
-  slippage,
-  wallet
+	inputMint,
+	outputMint,
+	amount,
+	slippage,
+	wallet
 ) => {
-  try {
-    // Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
-    const walletBalance = await connection.getBalance(wallet.publicKey);
-    const minBalanceForRent = 3000000; // 0.003 SOL in lamports
+	try {
+		// Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
+		const walletBalance = await connection.getBalance(wallet.publicKey);
+		const minBalanceForRent = 3000000; // 0.003 SOL in lamports
 
-    if (walletBalance < minBalanceForRent) {
-      throw new Error(
-        `Insufficient SOL for rent. Need at least 0.003 SOL for account creation. Current balance: ${
-          walletBalance / LAMPORTS_PER_SOL
-        } SOL`
-      );
-    }
+		if (walletBalance < minBalanceForRent) {
+			throw new Error(
+				`Insufficient SOL for rent. Need at least 0.003 SOL for account creation. Current balance: ${walletBalance / LAMPORTS_PER_SOL
+				} SOL`
+			);
+		}
 
-    // Get quote
-    const quoteResponse = await jupiterApi.get('/quote', {
-      params: {
-        inputMint,
-        outputMint,
-        amount,
-        slippageBps: slippage * 100, // Convert percentage to basis points
-      },
-    });
+		// TODO: Use the backend quote service
+		// Get quote
+		const quoteResponse = await jupiterApi.get('/quote', {
+			params: {
+				inputMint,
+				outputMint,
+				amount,
+				slippageBps: slippage * 100, // Convert percentage to basis points
+			},
+		});
 
-    if (!quoteResponse.data) {
-      throw new Error('No quote data received');
-    }
+		if (!quoteResponse.data) {
+			throw new Error('No quote data received');
+		}
 
-    console.log('Quote response:', quoteResponse.data);
+		console.log('Quote response:', quoteResponse.data);
 
-    // Request swap transaction with the correct body structure
-    const swapRequestBody = {
-      quoteResponse: quoteResponse.data,
-      userPublicKey: wallet.publicKey.toString(),
-      wrapUnwrapSOL: true,
-      dynamicComputeUnitLimit: true,
-      dynamicSlippage: true,
-      prioritizationFeeLamports: {
-        priorityLevelWithMaxLamports: {
-          maxLamports: 1000000,
-          priorityLevel: "veryHigh"
-        }
-      }
-    };
+		// Request swap transaction with the correct body structure
+		const swapRequestBody = {
+			quoteResponse: quoteResponse.data,
+			userPublicKey: wallet.publicKey.toString(),
+			wrapUnwrapSOL: true,
+			dynamicComputeUnitLimit: true,
+			dynamicSlippage: true,
+			prioritizationFeeLamports: {
+				priorityLevelWithMaxLamports: {
+					maxLamports: 1000000,
+					priorityLevel: "veryHigh"
+				}
+			}
+		};
 
-    const swapResponse = await jupiterApi.post('/swap', swapRequestBody);
+		const swapResponse = await jupiterApi.post('/swap', swapRequestBody);
 
-    if (!swapResponse.data || !swapResponse.data.swapTransaction) {
-      throw new Error('No swap transaction received');
-    }
+		if (!swapResponse.data || !swapResponse.data.swapTransaction) {
+			throw new Error('No swap transaction received');
+		}
 
-    const swapTransactionBuf = Buffer.from(swapResponse.data.swapTransaction, 'base64');
+		const swapTransactionBuf = Buffer.from(swapResponse.data.swapTransaction, 'base64');
 
-    const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+		const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
-    transaction.sign([wallet]);
+		transaction.sign([wallet]);
 
-    const serializedTransaction = transaction.serialize();
-    const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
+		const serializedTransaction = transaction.serialize();
+		const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
 
-    return transactionBase64;
-  } catch (error) {
-    console.error('Error in buildAndSignSwapTransaction:', error);
-    if (error.response) {
-      console.error('API Error Response:', error.response.data);
-    }
-    throw error;
-  }
+		return transactionBase64;
+	} catch (error) {
+		console.error('Error in buildAndSignSwapTransaction:', error);
+		if (error.response) {
+			console.error('API Error Response:', error.response.data);
+		}
+		throw error;
+	}
 };
 
 /**
@@ -196,38 +196,38 @@ export const buildAndSignSwapTransaction = async (
  * In a real app, use a secure storage solution like react-native-keychain.
  */
 export const secureStorage = {
-  saveWallet: async (wallet) => {
-    try {
-      localStorage.setItem('wallet', JSON.stringify({
-        publicKey: wallet.publicKey,
-        privateKey: wallet.privateKey,
-      }));
-      return true;
-    } catch (error) {
-      console.error('Error saving wallet:', error);
-      return false;
-    }
-  },
+	saveWallet: async (wallet) => {
+		try {
+			localStorage.setItem('wallet', JSON.stringify({
+				publicKey: wallet.publicKey,
+				privateKey: wallet.privateKey,
+			}));
+			return true;
+		} catch (error) {
+			console.error('Error saving wallet:', error);
+			return false;
+		}
+	},
 
-  getWallet: async () => {
-    try {
-      const walletData = localStorage.getItem('wallet');
-      if (!walletData) return null;
-      return JSON.parse(walletData);
-    } catch (error) {
-      console.error('Error getting wallet:', error);
-      return null;
-    }
-  },
+	getWallet: async () => {
+		try {
+			const walletData = localStorage.getItem('wallet');
+			if (!walletData) return null;
+			return JSON.parse(walletData);
+		} catch (error) {
+			console.error('Error getting wallet:', error);
+			return null;
+		}
+	},
 
-  deleteWallet: async () => {
-    try {
-      localStorage.removeItem('wallet');
-      return true;
-    } catch (error) {
-      console.error('Error deleting wallet:', error);
-      return false;
-    }
-  }
+	deleteWallet: async () => {
+		try {
+			localStorage.removeItem('wallet');
+			return true;
+		} catch (error) {
+			console.error('Error deleting wallet:', error);
+			return false;
+		}
+	}
 };
 

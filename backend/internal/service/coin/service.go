@@ -33,23 +33,21 @@ type Config struct {
 	CoinGeckoAPIKey string
 }
 
-// Service provides methods for working with coins
+// Service handles coin-related operations
 type Service struct {
-	raydiumClient *RaydiumClient
-	jupiterClient *JupiterClient
-	coins         map[string]model.Coin // Simple in-memory storage
 	config        *Config
 	httpClient    *http.Client
+	jupiterClient *JupiterClient
+	coins         map[string]model.Coin // Simple in-memory storage
 }
 
-// NewService creates a new coin service
-func NewService(config *Config, httpClient *http.Client) *Service {
+// NewService creates a new CoinService instance
+func NewService(config *Config, httpClient *http.Client, jupiterClient *JupiterClient) *Service {
 	service := &Service{
-		raydiumClient: NewRaydiumClient(),
-		jupiterClient: NewJupiterClient(),
-		coins:         make(map[string]model.Coin),
 		config:        config,
 		httpClient:    httpClient,
+		jupiterClient: jupiterClient,
+		coins:         make(map[string]model.Coin),
 	}
 
 	// Load initial data but don't block or fail if it doesn't work
@@ -194,8 +192,16 @@ func (s *Service) initializeSolData() error {
 	return nil
 }
 
-// refreshCoins loads initial coin data from trending tokens list and enriches it with Jupiter data
+// refreshCoins updates the coin list from external APIs
 func (s *Service) refreshCoins() error {
+	if os.Getenv("APP_ENV") == "development" {
+		log.Println("🔄 Using mock coin data in development mode")
+		for _, coin := range MockCoins {
+			s.coins[coin.ID] = coin
+		}
+		return nil
+	}
+
 	log.Printf("🔄 Starting coin refresh operation")
 
 	// First initialize SOL data

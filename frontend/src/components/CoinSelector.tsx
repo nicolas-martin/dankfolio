@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Pressable, TextInput, ActivityIndicator, Platform } from 'react-native';
 import { Coin, RootStackParamList } from '../types/index';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const DEFAULT_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
@@ -17,8 +15,6 @@ interface CoinSelectorProps {
   isInput?: boolean;
   inputRef?: React.RefObject<TextInput>;
 }
-
-type CoinSelectorNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const getCoinIcon = (coinObj?: Coin): string => {
   if (!coinObj) return DEFAULT_ICON;
@@ -37,8 +33,6 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
   isInput = false,
   inputRef,
 }) => {
-  const navigation = useNavigation<CoinSelectorNavigationProp>();
-
   const renderCoinItem = () => {
     if (!selectedCoin) return <Text style={styles.placeholderText}>Select coin</Text>;
 
@@ -94,18 +88,9 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      <Pressable
-        style={styles.coinSelector}
-        onPress={() =>
-          navigation.navigate('CoinSelect', {
-            onSelect: onCoinSelect,
-            excludeCoinId,
-            currentCoinId: selectedCoin?.id,
-          })
-        }
-      >
+      <View style={styles.coinSelector}>
         {renderCoinItem()}
-      </Pressable>
+      </View>
       {renderAmount()}
     </View>
   );

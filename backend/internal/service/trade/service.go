@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -16,15 +18,17 @@ import (
 type Service struct {
 	solanaService *solana.SolanaTradeService
 	coinService   *coin.Service
+	jupiterClient *coin.JupiterClient
 	mu            sync.RWMutex
 	trades        map[string]*model.Trade // In-memory storage using trade ID as key
 }
 
 // NewService creates a new TradeService instance
-func NewService(ss *solana.SolanaTradeService, cs *coin.Service) *Service {
+func NewService(ss *solana.SolanaTradeService, cs *coin.Service, jc *coin.JupiterClient) *Service {
 	return &Service{
 		solanaService: ss,
 		coinService:   cs,
+		jupiterClient: jc,
 		trades:        make(map[string]*model.Trade),
 	}
 }
@@ -62,6 +66,9 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	s.trades[trade.ID] = trade
 	s.mu.Unlock()
 
+	// Log blockchain explorer URL
+	log.Printf("✅ Trade completed! View on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)
+
 	return trade, nil
 }
 
@@ -93,104 +100,93 @@ func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 
 // GetTradeQuote gets a quote for a potential trade
 func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, amount float64) (*TradeQuote, error) {
-	// Validate input
-	if fromCoinID == "" {
-		return nil, fmt.Errorf("fromCoinID is required")
-	}
-
-	if toCoinID == "" {
-		return nil, fmt.Errorf("toCoinID is required")
-	}
-
-	if amount <= 0 {
-		return nil, fmt.Errorf("amount must be greater than 0")
-	}
-
-	// Create a function to get token decimals
-	getTokenDecimals := func(tokenID string) int {
-		// Default to 6 decimals if we can't find the coin
-		defaultDecimals := 6
-
-		// SOL is a special case with 9 decimals
-		if tokenID == solana.SolMint {
-			return 9
-		}
-
-		// Try to get the coin info
-		coin, err := s.coinService.GetCoinByID(ctx, tokenID)
-		if err != nil {
-			log.Printf("Warning: Could not get decimals for coin %s: %v. Using default %d",
-				tokenID, err, defaultDecimals)
-			return defaultDecimals
-		}
-
-		// If we found the coin but decimals is 0, use the default
-		if coin.Decimals == 0 {
-			log.Printf("Warning: Coin %s has 0 decimals. Using default %d",
-				tokenID, defaultDecimals)
-			return defaultDecimals
-		}
-
-		return coin.Decimals
-	}
-
-	// Get quote from Solana service
-	estimatedAmount, exchangeRate, err := s.solanaService.GetSwapQuote(ctx, fromCoinID, toCoinID, amount, getTokenDecimals)
+	// Convert amount to raw units based on decimals
+	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinID)
 	if err != nil {
-		log.Printf("Error getting swap quote: %v", err)
-		return nil, fmt.Errorf("failed to get swap quote: %w", err)
+		return nil, fmt.Errorf("failed to get from coin: %w", err)
 	}
 
-	// Calculate fees
-	fee := CalculateTradeFee(amount, 1.0)
-
-	// Create quote response
-	quote := &TradeQuote{
-		EstimatedAmount: fmt.Sprintf("%.8f", estimatedAmount),
-		ExchangeRate:    fmt.Sprintf("%.8f", exchangeRate),
-		Fee: TradeFee{
-			Total:  fmt.Sprintf("%.8f", fee),
-			Spread: fmt.Sprintf("%.8f", fee*0.8), // 80% of fee is spread
-			Gas:    fmt.Sprintf("%.8f", fee*0.2), // 20% of fee is gas
-		},
+	toCoin, err := s.coinService.GetCoinByID(ctx, toCoinID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get to coin: %w", err)
 	}
 
-	return quote, nil
-}
+	// Convert amount to raw units based on decimals
+	rawAmount := amount * math.Pow10(fromCoin.Decimals)
+	amountStr := fmt.Sprintf("%.0f", rawAmount)
 
-// getFallbackQuote provides a fallback quote when the real quote service fails
-// This is only used in development
-func (s *Service) getFallbackQuote(fromCoinID, toCoinID string, amount float64) *TradeQuote {
-	var estimatedAmount, exchangeRate float64
-
-	// Use SOL mint address as reference
-	solMint := "So11111111111111111111111111111111111111112"
-
-	// Simulate reasonable exchange rates
-	if fromCoinID == solMint {
-		// SOL -> Token
-		estimatedAmount = amount * 15.0
-		exchangeRate = 15.0
-	} else if toCoinID == solMint {
-		// Token -> SOL
-		estimatedAmount = amount * 0.066
-		exchangeRate = 0.066
-	} else {
-		// Token -> Token
-		estimatedAmount = amount * 1.2
-		exchangeRate = 1.2
+	// Get quote from Jupiter with enhanced parameters
+	quote, err := s.jupiterClient.GetQuote(coin.QuoteParams{
+		InputMint:        fromCoinID,
+		OutputMint:       toCoinID,
+		Amount:           amountStr,
+		SlippageBps:      100, // 1% slippage
+		SwapMode:         "ExactIn",
+		OnlyDirectRoutes: false, // Allow indirect routes for better prices
+		MaxAccounts:      64,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
 	}
 
-	// Calculate fees
-	fee := CalculateTradeFee(amount, 1.0)
+	// Convert outAmount to float64
+	outAmount, err := strconv.ParseFloat(quote.OutAmount, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse out amount: %w", err)
+	}
+
+	// Calculate price impact
+	priceImpact, err := strconv.ParseFloat(quote.PriceImpactPct, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse price impact: %w", err)
+	}
+
+	// Calculate network fee from route plan
+	var totalFeeAmount float64
+	for _, route := range quote.RoutePlan {
+		feeAmount, err := strconv.ParseFloat(route.SwapInfo.FeeAmount, 64)
+		if err != nil {
+			continue // Skip if we can't parse the fee
+		}
+		totalFeeAmount += feeAmount
+	}
+
+	// Calculate estimated amount in token decimals
+	estimatedAmount := outAmount / math.Pow10(toCoin.Decimals)
+	networkFeeInTokens := totalFeeAmount / math.Pow10(fromCoin.Decimals)
+
+	// Calculate exchange rate
+	exchangeRate := estimatedAmount / amount
+
+	// Build route summary for logging
+	var routeSummary []string
+	for _, route := range quote.RoutePlan {
+		routeSummary = append(routeSummary, route.SwapInfo.Label)
+	}
+
+	// Log detailed quote information
+	log.Printf("🔄 Jupiter Quote Details: \n"+
+		"- Input: %.8f %s\n"+
+		"- Output: %.8f %s\n"+
+		"- Price Impact: %.4f%%\n"+
+		"- Route: %v\n"+
+		"- Slippage: %d bps\n"+
+		"- Time Taken: %.2fms",
+		amount, fromCoin.Symbol,
+		estimatedAmount, toCoin.Symbol,
+		priceImpact,
+		routeSummary,
+		quote.SlippageBps,
+		*quote.TimeTaken,
+	)
 
 	return &TradeQuote{
 		EstimatedAmount: fmt.Sprintf("%.8f", estimatedAmount),
 		ExchangeRate:    fmt.Sprintf("%.8f", exchangeRate),
 		Fee: TradeFee{
-			Total:  fmt.Sprintf("%.8f", fee),
-			Spread: fmt.Sprintf("%.8f", fee*0.8),
-			Gas:    fmt.Sprintf("%.8f", fee*0.2),
+			Total:  fmt.Sprintf("%.8f", networkFeeInTokens),
+			Gas:    fmt.Sprintf("%.8f", networkFeeInTokens),
+			Spread: fmt.Sprintf("%.8f", priceImpact),
 		},
-	}
+	}, nil
 }

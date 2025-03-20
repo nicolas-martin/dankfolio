@@ -13,17 +13,6 @@ import { secureStorage } from '../services/solana';
 import api from '../services/api';
 import { Coin, Wallet, RootStackParamList } from '../types/index';
 
-// Default SOL coin data
-const DEFAULT_SOL_COIN: Coin = {
-  id: 'So11111111111111111111111111111111111111112',
-  name: 'Solana',
-  symbol: 'SOL',
-  decimals: 9,
-  icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-  price: 0,
-  daily_volume: 0
-};
-
 const formatNumber = (num: number): string => {
         if (num >= 1000000000) {
                 return (num / 1000000000).toFixed(2) + 'B';
@@ -38,7 +27,15 @@ const formatNumber = (num: number): string => {
 };
 
 type CoinDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail'>;
-type CoinDetailScreenRouteProp = RouteProp<RootStackParamList, 'CoinDetail'>;
+type CoinDetailScreenRouteProp = RouteProp<{
+  CoinDetail: {
+    coinId: string;
+    coinName: string;
+    daily_volume?: number;
+    coin?: Coin;
+    solCoin?: Coin;
+  };
+}, 'CoinDetail'>;
 
 interface TimeframeOption {
         label: string;
@@ -56,16 +53,11 @@ const TIMEFRAMES: TimeframeOption[] = [
 const CoinDetailScreen: React.FC = () => {
         const navigation = useNavigation<CoinDetailScreenNavigationProp>();
         const route = useRoute<CoinDetailScreenRouteProp>();
-        const { coinId, coinName } = route.params;
+        const { coinId, coinName, coin: initialCoin, solCoin: initialSolCoin } = route.params;
         const [selectedTimeframe, setSelectedTimeframe] = useState("15m");
-        
-        // Debug timeframe rendering
-        useEffect(() => {
-            console.log('Timeframes available:', TIMEFRAMES);
-            console.log('Selected timeframe:', selectedTimeframe);
-        }, [selectedTimeframe]);
-        const [priceHistory, setPriceHistory] = useState<{ x: Date; y: number }[]>([]);
+        const [solCoin] = useState<Coin | null>(initialSolCoin || null);
         const [loading, setLoading] = useState(true);
+        const [priceHistory, setPriceHistory] = useState<{ x: Date; y: number }[]>([]);
         const [wallet, setWallet] = useState<Wallet | null>(null);
         const [coin, setCoin] = useState<Coin | null>(null);
         const [metadata, setMetadata] = useState<any>(null);
@@ -89,8 +81,27 @@ const CoinDetailScreen: React.FC = () => {
                         try {
                                 setMetadataLoading(true);
                                 const data = await api.getCoinMetadata(coinId);
+                                console.log('📝 CoinDetail metadata fetched:', {
+                                    id: data.id,
+                                    name: data.name,
+                                    symbol: data.symbol,
+                                    decimals: data.decimals,
+                                    price: data.price,
+                                    logo_url: data.logo_url || data.icon_url,
+                                    address: data.address || data.id
+                                });
+                                // Merge initialCoin data with metadata
+                                const mergedCoin = {
+                                    ...initialCoin,
+                                    ...data,
+                                    // Ensure critical fields are not undefined
+                                    id: data.id || initialCoin?.id || coinId,
+                                    address: data.address || initialCoin?.address || coinId,
+                                    decimals: data.decimals || initialCoin?.decimals || 9,
+                                    price: data.price || initialCoin?.price || 0
+                                };
                                 setMetadata(data);
-                                setCoin(data);
+                                setCoin(mergedCoin);
                         } catch (error) {
                                 console.error('Error fetching metadata:', error);
                         } finally {
@@ -99,7 +110,7 @@ const CoinDetailScreen: React.FC = () => {
                 };
 
                 fetchMetadata();
-        }, [coinId]);
+        }, [coinId, initialCoin]);
 
         const loadWallet = async () => {
                 try {
@@ -188,10 +199,29 @@ const CoinDetailScreen: React.FC = () => {
         };
 
         const handleBuyPress = () => {
-                if (coin) {
-                        console.log('💰 Navigating to Trade with coin:', coin);
+                if (coin && solCoin) {
+                        console.log('💰 CoinDetail -> Trade with coins:', {
+                            fromCoin: {
+                                id: solCoin.id,
+                                symbol: solCoin.symbol,
+                                name: solCoin.name,
+                                decimals: solCoin.decimals,
+                                price: solCoin.price,
+                                logo_url: solCoin.logo_url || solCoin.icon_url,
+                                address: solCoin.address || solCoin.id
+                            },
+                            toCoin: {
+                                id: coin.id,
+                                symbol: coin.symbol,
+                                name: coin.name,
+                                decimals: coin.decimals,
+                                price: coin.price,
+                                logo_url: coin.logo_url || coin.icon_url,
+                                address: coin.address || coin.id
+                            }
+                        });
                         navigation.navigate('Trade', {
-                                initialFromCoin: DEFAULT_SOL_COIN,
+                                initialFromCoin: solCoin,
                                 initialToCoin: coin
                         });
                 }
