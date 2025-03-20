@@ -82,23 +82,23 @@ const CoinDetailScreen: React.FC = () => {
                                 setMetadataLoading(true);
                                 const data = await api.getCoinMetadata(coinId);
                                 console.log('📝 CoinDetail metadata fetched:', {
-                                    id: data.id,
                                     name: data.name,
                                     symbol: data.symbol,
                                     decimals: data.decimals,
-                                    price: data.price,
-                                    logo_url: data.logo_url || data.icon_url,
-                                    address: data.address || data.id
+                                    logo_url: data.logo_url,
+                                    address: data.address
                                 });
+                                
                                 // Merge initialCoin data with metadata
                                 const mergedCoin = {
                                     ...initialCoin,
                                     ...data,
                                     // Ensure critical fields are not undefined
-                                    id: data.id || initialCoin?.id || coinId,
-                                    address: data.address || initialCoin?.address || coinId,
-                                    decimals: data.decimals || initialCoin?.decimals || 9,
-                                    price: data.price || initialCoin?.price || 0
+                                    id: coinId,
+                                    address: data.address || coinId,
+                                    decimals: data.decimals || 9,
+                                    price: initialCoin?.price || 0,
+                                    logo_url: data.logo_url
                                 };
                                 setMetadata(data);
                                 setCoin(mergedCoin);
@@ -179,12 +179,12 @@ const CoinDetailScreen: React.FC = () => {
                                 "token"
                         );
 
-                        if (response?.items) {
-                                const mapped = response.items
-                                        .filter((item: any) => item.value !== null && item.unixTime !== null)
-                                        .map((item: any) => ({
+                        if (response?.data?.items) {
+                                const mapped = response.data.items
+                                        .filter(item => item.value !== null && item.unixTime !== null)
+                                        .map(item => ({
                                                 x: new Date(item.unixTime * 1000),
-                                                y: parseFloat(item.value)
+                                                y: item.value
                                         }));
                                 setPriceHistory(mapped);
                         } else {

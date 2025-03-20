@@ -25,10 +25,10 @@ func NewTradeHandlers(tradeService *trade.Service) *TradeHandlers {
 
 // RegisterRoutes registers all trade-related routes
 func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
-	r.Get("/api/trades/quote", h.GetTradeQuote)
-	r.Post("/api/trades/execute", h.ExecuteTrade)
-	r.Get("/api/trades/{id}", h.GetTradeByID)
-	r.Get("/api/trades", h.ListTrades)
+	r.Get("/trades/quote", h.GetTradeQuote)
+	r.Post("/trades/execute", h.ExecuteTrade)
+	r.Get("/trades/{id}", h.GetTradeByID)
+	r.Get("/trades", h.ListTrades)
 }
 
 // ExecuteTrade handles a trade execution request

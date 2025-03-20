@@ -8,9 +8,18 @@ import {
 } from '@solana/web3.js';
 import bs58 from 'bs58';
 import axios from 'axios';
+import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
 
-// Default connection to Solana mainnet
-const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+// Use environment variable for Solana RPC endpoint with fallback
+const rpcEndpoint = REACT_APP_SOLANA_RPC_ENDPOINT 
+if (!rpcEndpoint) {
+	console.error('🚨 No Solana RPC endpoint provided');
+	throw new Error('No Solana RPC endpoint provided');
+}
+console.log('🔧 Using Solana RPC endpoint:', rpcEndpoint);
+
+// Initialize Solana connection
+const connection = new Connection(rpcEndpoint, 'confirmed');
 
 // Constants for Raydium API
 const API_SWAP_HOST = 'https://transaction-v1.raydium.io';
@@ -123,15 +132,15 @@ export const buildAndSignSwapTransaction = async (
 ) => {
 	try {
 		// Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
-		const walletBalance = await connection.getBalance(wallet.publicKey);
-		const minBalanceForRent = 3000000; // 0.003 SOL in lamports
+		// const walletBalance = await connection.getBalance(wallet.publicKey);
+		// const minBalanceForRent = 3000000; // 0.003 SOL in lamports
 
-		if (walletBalance < minBalanceForRent) {
-			throw new Error(
-				`Insufficient SOL for rent. Need at least 0.003 SOL for account creation. Current balance: ${walletBalance / LAMPORTS_PER_SOL
-				} SOL`
-			);
-		}
+		// if (walletBalance < minBalanceForRent) {
+		// 	throw new Error(
+		// 		`Insufficient SOL for rent. Need at least 0.003 SOL for account creation. Current balance: ${walletBalance / LAMPORTS_PER_SOL
+		// 		} SOL`
+		// 	);
+		// }
 
 		// Get quote
 		const quoteResponse = await jupiterApi.get('/quote', {

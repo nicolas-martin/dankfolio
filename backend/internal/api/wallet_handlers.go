@@ -21,8 +21,8 @@ func NewWalletHandlers(walletService *wallet.Service) *WalletHandlers {
 
 // RegisterRoutes registers the wallet routes
 func (h *WalletHandlers) RegisterRoutes(r chi.Router) {
-	r.Post("/api/v1/wallets", h.CreateWallet)
-	r.Get("/api/v1/wallets/{address}/balance", h.GetWalletBalance)
+	r.Post("/wallets", h.CreateWallet)
+	r.Get("/wallets/{address}/balance", h.GetWalletBalance)
 }
 
 // CreateWallet handles wallet creation requests

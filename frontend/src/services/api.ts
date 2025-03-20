@@ -13,7 +13,7 @@ interface API {
         executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
         getAvailableCoins: () => Promise<Coin[]>;
         getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
-        getCoinMetadata: (coinId: string) => Promise<CoinMetadata>;
+        getCoinMetadata: (address: string) => Promise<CoinMetadata>;
         getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
         getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
 }
@@ -36,7 +36,7 @@ const api: API = {
 
         getAvailableCoins: async () => {
                 try {
-                        const response = await apiClient.get<Coin[]>('/api/coins');
+                        const response = await apiClient.get<Coin[]>('/api/tokens');
                         return response.data;
                 } catch (error) {
                         console.error('❌ Error getting coins:', error);
@@ -44,11 +44,23 @@ const api: API = {
                 }
         },
 
-        getTradeQuote: async (fromCoin: string, toCoin: string, amount: string) => {
+        getTradeQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<TradeQuoteResponse> => {
                 try {
-                        const response = await apiClient.get<TradeQuoteResponse>('/api/trades/quote', {
-                                params: { from_coin_id: fromCoin, to_coin_id: toCoin, amount }
+                        console.log('🔄 Getting trade quote:', {
+                                from_coin_id: fromCoin,
+                                to_coin_id: toCoin,
+                                amount
                         });
+                        
+                        const response = await apiClient.get<TradeQuoteResponse>('/api/trades/quote', {
+                                params: {
+                                        from_coin_id: fromCoin,
+                                        to_coin_id: toCoin,
+                                        amount
+                                }
+                        });
+                        
+                        console.log('✅ Trade quote received:', response.data);
                         return response.data;
                 } catch (error) {
                         console.error('❌ Error getting trade quote:', error);
@@ -56,9 +68,9 @@ const api: API = {
                 }
         },
 
-        getCoinMetadata: async (coinId: string) => {
+        getCoinMetadata: async (address: string) => {
                 try {
-                        const response = await apiClient.get<CoinMetadata>(`/api/coins/${coinId}/metadata`);
+                        const response = await apiClient.get<CoinMetadata>(`/api/tokens/${address}/metadata`);
                         return response.data;
                 } catch (error) {
                         console.error('❌ Error getting coin metadata:', error);
@@ -66,10 +78,16 @@ const api: API = {
                 }
         },
 
-        getPriceHistory: async (address, type, timeFrom, timeTo, addressType) => {
+        getPriceHistory: async (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => {
                 try {
                         const response = await apiClient.get<PriceHistoryResponse>('/api/price/history', {
-                                params: { address, type, time_from: timeFrom, time_to: timeTo, address_type: addressType }
+                                params: { 
+                                        address, 
+                                        type, 
+                                        time_from: timeFrom, 
+                                        time_to: timeTo, 
+                                        address_type: addressType 
+                                }
                         });
                         return response.data;
                 } catch (error) {
@@ -81,7 +99,7 @@ const api: API = {
         getWalletBalance: async (address: string): Promise<WalletBalanceResponse> => {
                 try {
                         console.log('🔍 Fetching wallet balance for address:', address);
-                        const response = await apiClient.get<WalletBalanceResponse>(`/api/v1/wallets/${address}/balance`);
+                        const response = await apiClient.get<WalletBalanceResponse>(`/api/wallets/${address}/balance`);
                         return response.data;
                 } catch (error) {
                         console.error('❌ Error fetching wallet balance:', error);
@@ -168,20 +186,23 @@ export interface CoinMetadata {
         symbol: string;
         name: string;
         decimals: number;
-        logoURI: string;
+        logo_url: string;
         address: string;
-        coingeckoId?: string;
+        website?: string;
+        twitter?: string;
+        telegram?: string;
+        discord?: string;
+        coingecko_id?: string;
 }
 
 export interface PriceHistoryResponse {
         data: {
-                prices: Array<{
-                        time: string;
-                        price: number;
+                items: Array<{
+                        unixTime: number;
+                        value: number;
                 }>;
-                address: string;
-                type: string;
         };
+        success: boolean;
 }
 
 export interface WalletBalanceResponse {
