@@ -5,8 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/nicolas-martin/dankfolio/internal/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/internal/service/solana"
@@ -15,10 +14,10 @@ import (
 
 // Router handles all HTTP routing
 type Router struct {
-	solanaService *solana.SolanaTradeService
-	tradeService  *trade.Service
-	coinService   *coin.Service
-	priceService  *price.Service
+	tradeHandlers  *TradeHandlers
+	coinHandlers   *CoinHandlers
+	priceHandlers  *PriceHandlers
+	walletHandlers *WalletHandlers
 }
 
 // NewRouter creates a new Router instance
@@ -27,25 +26,30 @@ func NewRouter(
 	tradeService *trade.Service,
 	coinService *coin.Service,
 	priceService *price.Service,
+	walletHandlers *WalletHandlers,
 ) *Router {
 	return &Router{
-		solanaService: solanaService,
-		tradeService:  tradeService,
-		coinService:   coinService,
-		priceService:  priceService,
+		tradeHandlers:  NewTradeHandlers(tradeService),
+		coinHandlers:   NewCoinHandlers(coinService),
+		priceHandlers:  NewPriceHandlers(priceService),
+		walletHandlers: walletHandlers,
 	}
 }
 
 // Setup initializes all routes
-func (r *Router) Setup() chi.Router {
+func (r *Router) Setup() http.Handler {
 	router := chi.NewRouter()
 
 	// Set up middleware
-	router.Use(middleware.RequestLogger)
-	router.Use(chimiddleware.RequestID)
-	router.Use(chimiddleware.RealIP)
-	router.Use(chimiddleware.Recoverer)
-	router.Use(corsMiddleware)
+	router.Use(middleware.Logger)
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
+	router.Use(middleware.Recoverer)
+
+	// Enable CORS
+	router.Use(middleware.SetHeader("Access-Control-Allow-Origin", "*"))
+	router.Use(middleware.SetHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"))
+	router.Use(middleware.SetHeader("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token"))
 
 	// Health check
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -53,33 +57,14 @@ func (r *Router) Setup() chi.Router {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// Set up handlers
-	tradeHandlers := NewTradeHandlers(r.tradeService)
-	walletHandlers := NewWalletHandlers()
-	coinHandlers := NewCoinHandlers(r.coinService)
-	priceHandlers := NewPriceHandlers(r.priceService)
-
-	// Coin routes
-	router.Get("/api/coins", coinHandlers.GetCoins)
-	router.Get("/api/coins/{id}", coinHandlers.GetCoinByID)
-	router.Get("/api/tokens/{id}/details", coinHandlers.GetTokenDetails)
-	router.Get("/api/coins/{address}/metadata", coinHandlers.GetCoinMetadata)
-
-	// Trade routes
-	log.Printf("Registering trade routes...")
-	router.Route("/api/trades", func(r chi.Router) {
-		r.Get("/quote", tradeHandlers.GetTradeQuote)
-		r.Post("/execute", tradeHandlers.ExecuteTrade)
-		r.Get("/{id}", tradeHandlers.GetTradeByID)
-		r.Get("/", tradeHandlers.ListTrades)
+	// API routes
+	router.Route("/api", func(apiRouter chi.Router) {
+		// Register all routes through their respective handlers
+		r.walletHandlers.RegisterRoutes(apiRouter)
+		r.coinHandlers.RegisterRoutes(apiRouter)
+		r.tradeHandlers.RegisterRoutes(apiRouter)
+		r.priceHandlers.RegisterRoutes(apiRouter)
 	})
-	log.Printf("Trade routes registered")
-
-	// Wallet routes
-	router.Post("/api/wallets", walletHandlers.CreateWallet)
-
-	// Price routes
-	router.Get("/api/price/history", priceHandlers.GetPriceHistory)
 
 	// Log all registered routes
 	log.Printf("All routes registered. Walking routes...")
@@ -92,20 +77,4 @@ func (r *Router) Setup() chi.Router {
 	}
 
 	return router
-}
-
-// corsMiddleware handles CORS headers
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }

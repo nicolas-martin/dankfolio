@@ -9,12 +9,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
 	"github.com/nicolas-martin/dankfolio/internal/api"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/internal/service/solana"
 	"github.com/nicolas-martin/dankfolio/internal/service/trade"
+	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
 )
 
 func main() {
@@ -57,8 +59,17 @@ func main() {
 	// Initialize the price service
 	priceService := price.NewService(os.Getenv("BIRDEYE_API_KEY"))
 
+	// Initialize Solana RPC client
+	solanaClient := rpc.New(os.Getenv("SOLANA_RPC_ENDPOINT"))
+
+	// Initialize the wallet service
+	walletService := wallet.New(solanaClient, jupiterClient)
+
+	// Initialize handlers
+	walletHandlers := api.NewWalletHandlers(walletService)
+
 	// Initialize router
-	router := api.NewRouter(solanaService, tradeService, coinService, priceService)
+	router := api.NewRouter(solanaService, tradeService, coinService, priceService, walletHandlers)
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router.Setup(),

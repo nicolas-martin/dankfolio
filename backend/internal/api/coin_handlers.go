@@ -100,3 +100,16 @@ func (h *CoinHandlers) GetCoinMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	respondJSON(w, metadata, http.StatusOK)
 }
+
+// RegisterRoutes registers all coin-related routes
+func (h *CoinHandlers) RegisterRoutes(r chi.Router) {
+	r.Route("/coins", func(r chi.Router) {
+		r.Get("/", h.GetCoins)
+		r.Get("/{id}", h.GetCoinByID)
+		r.Get("/{address}/metadata", h.GetCoinMetadata)
+	})
+
+	r.Route("/tokens", func(r chi.Router) {
+		r.Get("/{id}/details", h.GetTokenDetails)
+	})
+}
