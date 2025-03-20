@@ -35,38 +35,38 @@ func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
 func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 	var req model.TradeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		respondError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// Validate request
 	if req.FromCoinID == "" {
-		http.Error(w, "from_coin_id is required", http.StatusBadRequest)
+		respondError(w, "from_coin_id is required", http.StatusBadRequest)
 		return
 	}
 	if req.ToCoinID == "" {
-		http.Error(w, "to_coin_id is required", http.StatusBadRequest)
+		respondError(w, "to_coin_id is required", http.StatusBadRequest)
 		return
 	}
 	if req.Amount <= 0 {
-		http.Error(w, "amount must be greater than 0", http.StatusBadRequest)
+		respondError(w, "amount must be greater than 0", http.StatusBadRequest)
 		return
 	}
 	if req.SignedTransaction == "" {
-		http.Error(w, "signed_transaction is required", http.StatusBadRequest)
+		respondError(w, "signed_transaction is required", http.StatusBadRequest)
 		return
 	}
 
 	// Check for debug header
 	ctx := r.Context()
 	if r.Header.Get("X-Debug-Mode") == "true" {
-		ctx = context.WithValue(ctx, "debug_mode", true)
+		ctx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
 
 	trade, err := h.tradeService.ExecuteTrade(ctx, req)
 	if err != nil {
 		log.Printf("Error executing trade: %v", err)
-		http.Error(w, "Failed to execute trade: "+err.Error(), http.StatusInternalServerError)
+		respondError(w, "Failed to execute trade: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -90,7 +90,7 @@ func (h *TradeHandlers) GetTradeByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	trade, err := h.tradeService.GetTradeByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Trade not found", http.StatusNotFound)
+		respondError(w, "Trade not found", http.StatusNotFound)
 		return
 	}
 
@@ -101,7 +101,7 @@ func (h *TradeHandlers) GetTradeByID(w http.ResponseWriter, r *http.Request) {
 func (h *TradeHandlers) ListTrades(w http.ResponseWriter, r *http.Request) {
 	trades, err := h.tradeService.ListTrades(r.Context())
 	if err != nil {
-		http.Error(w, "Failed to list trades", http.StatusInternalServerError)
+		respondError(w, "Failed to list trades", http.StatusInternalServerError)
 		return
 	}
 
@@ -125,14 +125,14 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 
 	if toCoinID == "" || amountStr == "" {
 		log.Printf("Missing required parameters: toCoinID=%s, amount=%s", toCoinID, amountStr)
-		http.Error(w, "Missing required parameters. from_coin_id=SOL by default, but to_coin_id and amount are required", http.StatusBadRequest)
+		respondError(w, "Missing required parameters. from_coin_id=SOL by default, but to_coin_id and amount are required", http.StatusBadRequest)
 		return
 	}
 
 	amount, err := strconv.ParseFloat(amountStr, 64)
 	if err != nil {
 		log.Printf("Invalid amount parameter: %s, error: %v", amountStr, err)
-		http.Error(w, "Invalid amount parameter", http.StatusBadRequest)
+		respondError(w, "Invalid amount parameter", http.StatusBadRequest)
 		return
 	}
 

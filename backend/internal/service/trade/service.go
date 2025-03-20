@@ -36,7 +36,7 @@ func NewService(ss *solana.SolanaTradeService, cs *coin.Service, jc *coin.Jupite
 // ExecuteTrade executes a trade based on the provided request
 func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*model.Trade, error) {
 	// Check for debug header in context
-	if debugMode, ok := ctx.Value("debug_mode").(bool); ok && debugMode {
+	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
 		// Simulate processing delay
 		time.Sleep(2 * time.Second)
 

@@ -28,20 +28,20 @@ func (h *WalletHandlers) RegisterRoutes(r chi.Router) {
 // CreateWallet handles wallet creation requests
 func (h *WalletHandlers) CreateWallet(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement wallet creation
-	http.Error(w, "Not implemented", http.StatusNotImplemented)
+	respondError(w, "Not implemented", http.StatusNotImplemented)
 }
 
 // GetWalletBalance returns the balance of a wallet
 func (h *WalletHandlers) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
 	address := chi.URLParam(r, "address")
 	if address == "" {
-		http.Error(w, "Address parameter is required", http.StatusBadRequest)
+		respondError(w, "Address parameter is required", http.StatusBadRequest)
 		return
 	}
 
 	tokens, err := h.walletService.GetTokens(r.Context(), address)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
