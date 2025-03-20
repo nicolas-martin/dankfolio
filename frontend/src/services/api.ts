@@ -14,33 +14,31 @@ if (!baseURL) {
 console.log('🔧 API URL:', baseURL); // Debug log
 
 export interface Coin {
-	// Basic Info
-	id: string;           // Same as Address/Mint
+	id: string;
 	name: string;
 	symbol: string;
 	decimals: number;
 	description: string;
-	iconUrl: string;      // Same as LogoURI/LogoURL
-	tags?: string[];
-
-	// Price and Market Data
+	icon_url: string;
+	tags: string[];
 	price: number;
 	balance?: number;
-	change24h: number;
-	marketCap?: number;
-	volume24h?: number;
-	dailyVolume: number;
-
-	// Social and External Links
+	daily_volume: number;
 	website?: string;
 	twitter?: string;
 	telegram?: string;
-	discord?: string;
-	coingeckoId?: string;
+	coingecko_id?: string;
+	created_at: string;
+	last_updated?: string;
+	value?: number;
+	percentage?: number;
+}
 
-	// Metadata
-	createdAt?: string;
-	lastUpdated?: string;
+// TokenInfo extends Coin but makes certain fields required for wallet tokens
+export interface TokenInfo extends Coin {
+	balance: number;   // Required for wallet tokens
+	value: number;     // Required for wallet tokens
+	percentage: number; // Required for wallet tokens
 }
 
 interface API {
@@ -224,11 +222,6 @@ export interface PriceHistoryResponse {
 
 export interface WalletBalanceResponse {
 	tokens: TokenInfo[];
-}
-
-export interface TokenInfo extends Coin {
-	value: number;      // Additional field specific to wallet tokens
-	percentage: number; // Additional field specific to wallet tokens
 }
 
 // Enhanced error handler

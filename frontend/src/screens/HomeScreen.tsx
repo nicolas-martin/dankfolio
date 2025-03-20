@@ -69,7 +69,7 @@ const HomeScreen: React.FC = () => {
 						symbol: sol.symbol,
 						price: sol.price,
 						decimals: sol.decimals,
-						dailyVolume: sol.dailyVolume
+						daily_volume: sol.daily_volume
 					});
 
 					setSolCoin(sol);
@@ -159,8 +159,8 @@ const HomeScreen: React.FC = () => {
 				symbol: coin.symbol,
 				decimals: coin.decimals,
 				price: coin.price,
-				dailyVolume: coin.dailyVolume,
-				iconUrl: coin.iconUrl,
+				daily_volume: coin.daily_volume,
+				icon_url: coin.icon_url,
 				address: coin.id
 			},
 			solCoin: solCoin ? {
@@ -169,14 +169,14 @@ const HomeScreen: React.FC = () => {
 				name: solCoin.name,
 				decimals: solCoin.decimals,
 				price: solCoin.price,
-				iconUrl: solCoin.iconUrl,
+				icon_url: solCoin.icon_url,
 				address: solCoin.id
 			} : null
 		});
 		navigation.navigate('CoinDetail', {
 			coinId: coin.id,
 			coinName: coin.name,
-			daily_volume: coin.dailyVolume,
+			daily_volume: coin.daily_volume,
 			coin: coin,
 			solCoin: solCoin // Pass SOL coin to CoinDetail
 		});

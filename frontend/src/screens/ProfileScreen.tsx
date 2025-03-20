@@ -43,34 +43,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
       } : null
     });
 
-    // Convert TokenInfo to Coin format for navigation
-    const coinForDetail = {
-      id: token.id,
-      name: token.name,
-      symbol: token.symbol,
-      decimals: token.decimals || 9,
-      description: token.description || `${token.name} (${token.symbol}) is a Solana token.`,
-      iconUrl: token.iconUrl,
-      price: token.price,
-      balance: token.balance,
-      change24h: token.change24h,
-      marketCap: token.marketCap,
-      volume24h: token.volume24h,
-      dailyVolume: token.dailyVolume,
-      website: token.website,
-      twitter: token.twitter,
-      telegram: token.telegram,
-      discord: token.discord,
-      coingeckoId: token.coingeckoId,
-      createdAt: token.createdAt,
-      lastUpdated: token.lastUpdated,
-      tags: token.tags
-    };
 
     navigation.navigate('CoinDetail', {
       coinId: token.id,
       coinName: token.name,
-      coin: coinForDetail,
+      coin: token,
       solCoin: solCoin
     });
   };
@@ -105,9 +82,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
                 activeOpacity={0.7}
               >
                 <View style={styles.tokenHeader}>
-                  {token.iconUrl && (
+                  {token.icon_url && (
                     <Image 
-                      source={{ uri: token.iconUrl }} 
+                      source={{ uri: token.icon_url }} 
                       style={styles.tokenLogo} 
                     />
                   )}

@@ -5,19 +5,21 @@ export interface Coin {
   id: string;
   name: string;
   symbol: string;
-  price: number;
-  description: string;
-  iconUrl: string;
   decimals: number;
-  dailyVolume: number;
-  change24h: number;
-  tags?: string[];
+  description: string;
+  icon_url: string;
+  tags: string[];
+  price: number;
   balance?: number;
-  address?: string; // Token address on Solana
+  daily_volume: number;
   website?: string;
   twitter?: string;
   telegram?: string;
-  discord?: string;
+  coingecko_id?: string;
+  created_at: string;
+  last_updated?: string;
+  value?: number;
+  percentage?: number;
 }
 
 export interface Wallet {

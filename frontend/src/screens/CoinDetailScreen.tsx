@@ -60,7 +60,6 @@ const CoinDetailScreen: React.FC = () => {
 	const [priceHistory, setPriceHistory] = useState<{ x: Date; y: number }[]>([]);
 	const [wallet, setWallet] = useState<Wallet | null>(null);
 	const [coin, setCoin] = useState<Coin | null>(null);
-	const [metadata, setMetadata] = useState<any>(null);
 	const [metadataLoading, setMetadataLoading] = useState(true);
 	const [walletBalance, setWalletBalance] = useState<number>(0);
 	const [hoverPoint, setHoverPoint] = useState<{ x: Date; y: number } | null>(null);
@@ -77,34 +76,30 @@ const CoinDetailScreen: React.FC = () => {
 	}, [selectedTimeframe, coinId]);
 
 	useEffect(() => {
-		const fetchMetadata = async () => {
+		const fetchCoinData = async () => {
 			if (!initialCoin) return;
-
 			setMetadataLoading(true);
 
-			// If daily_volume is 0, it means we're coming from profile page
-			if (initialCoin.dailyVolume === 0) {
-				console.log('🔄 Fetching coin details for wallet token:', initialCoin.symbol);
-				try {
-					const coinData = await api.getCoinByID(coinId);
-					console.log('✅ Got coin details:', coinData);
-					setMetadata(coinData);
-					setCoin({ ...initialCoin, ...coinData });
-				} catch (error) {
-					console.error('❌ Failed to fetch coin details:', error);
-					setMetadata(null);
+			try {
+				// If daily_volume is 0, it means we're coming from profile page
+				// and need fresh data
+				if (initialCoin.daily_volume === 0) {
+					console.log('🔄 Fetching fresh coin details for:', initialCoin.symbol);
+					const freshCoinData = await api.getCoinByID(coinId);
+					setCoin({ ...initialCoin, ...freshCoinData });
+				} else {
+					console.log('📦 Using existing coin data for:', initialCoin.symbol);
 					setCoin(initialCoin);
 				}
-			} else {
-				console.log('📦 Using cached metadata for:', initialCoin.symbol);
-				setMetadata(initialCoin);
+			} catch (error) {
+				console.error('❌ Failed to fetch coin details:', error);
 				setCoin(initialCoin);
 			}
 
 			setMetadataLoading(false);
 		};
 
-		fetchMetadata();
+		fetchCoinData();
 	}, [coinId, initialCoin]);
 
 	const loadWallet = async () => {
@@ -202,8 +197,7 @@ const CoinDetailScreen: React.FC = () => {
 					name: solCoin.name,
 					decimals: solCoin.decimals,
 					price: solCoin.price,
-					iconUrl: solCoin.iconUrl,
-					address: solCoin.address || solCoin.id
+					iconUrl: solCoin.icon_url,
 				},
 				toCoin: {
 					id: coin.id,
@@ -211,8 +205,8 @@ const CoinDetailScreen: React.FC = () => {
 					name: coin.name,
 					decimals: coin.decimals,
 					price: coin.price,
-					iconUrl: coin.iconUrl,
-					address: coin.address || coin.id
+					iconUrl: coin.icon_url,
+					address: coin.id
 				}
 			});
 			navigation.navigate('Trade', {
@@ -253,7 +247,7 @@ const CoinDetailScreen: React.FC = () => {
 							priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
 						}
 						period={selectedTimeframe}
-						icon_url={metadata?.icon_url || metadata?.logo_url}
+						icon_url={coin.icon_url}
 						name={coin.name}
 					/>
 				)}
@@ -311,20 +305,19 @@ const CoinDetailScreen: React.FC = () => {
 					</View>
 				)}
 
-				{/* Metadata */}
-				{!metadataLoading && metadata ? (
+				{/* Coin Info */}
+				{!metadataLoading && coin ? (
 					<CoinInfo
 						metadata={{
-							name: metadata.name || coin?.name || '',
-							description: metadata.description,
-							website: metadata.website,
-							twitter: metadata.twitter,
-							telegram: metadata.telegram,
-							discord: metadata.discord,
-							daily_volume: metadata.dailyVolume || coin?.dailyVolume || 0,
-							decimals: metadata.decimals || coin?.decimals || 9,
-							tags: metadata.tags || [],
-							symbol: metadata.symbol
+							name: coin.name,
+							description: coin.description,
+							website: coin.website,
+							twitter: coin.twitter,
+							telegram: coin.telegram,
+							daily_volume: coin.daily_volume,
+							decimals: coin.decimals,
+							tags: coin.tags || [],
+							symbol: coin.symbol
 						}}
 					/>
 				) : (
