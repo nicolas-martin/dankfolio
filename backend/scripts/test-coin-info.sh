@@ -40,23 +40,39 @@ test_endpoint() {
     else
         echo -e "${RED}Error: Invalid JSON response${NC}"
         echo "$response"
+        return 1
     fi
 }
 
-# Test getting all coins
-print_header "Getting all coins"
-test_endpoint "GET" "$BASE_URL/api/coins" "" "Get all available coins"
+# Test getting all available tokens
+print_header "Getting all available tokens"
+test_endpoint "GET" "$BASE_URL/api/tokens" "" "Get all available tokens"
 
-# Test getting a specific coin by ID
-print_header "Getting specific coin"
-test_endpoint "GET" "$BASE_URL/api/coins/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" "" "Get USDC coin info"
+# Test getting a specific token by ID (USDC)
+print_header "Getting specific token"
+test_endpoint "GET" "$BASE_URL/api/tokens/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" "" "Get USDC token info"
 
-# Test getting token details
-print_header "Getting token details"
-test_endpoint "GET" "$BASE_URL/api/tokens/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/details" "" "Get USDC token details"
+# Test getting trade quote
+print_header "Getting trade quote"
+test_endpoint "GET" "$BASE_URL/api/trades/quote?from_coin_id=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&to_coin_id=So11111111111111111111111111111111111111112&amount=1" "" "Get trade quote USDC -> SOL"
+
+# Test getting wallet balance
+print_header "Getting wallet balance"
+test_endpoint "GET" "$BASE_URL/api/wallets/DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG5CNSKK/balance" "" "Get wallet balance"
+
+# Test getting price history
+print_header "Getting price history"
+test_endpoint "GET" "$BASE_URL/api/price/history?address=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&type=1D&time_from=1706745600&time_to=1707004800&address_type=token" "" "Get USDC price history"
 
 # Test health endpoint
 print_header "Testing health endpoint"
 test_endpoint "GET" "$BASE_URL/health" "" "Health check"
 
-echo -e "\n${GREEN}All tests completed${NC}" 
+# Print summary
+echo -e "\n${GREEN}All tests completed${NC}"
+
+# Check if any test failed
+if [ $? -ne 0 ]; then
+    echo -e "\n${RED}Some tests failed!${NC}"
+    exit 1
+fi 

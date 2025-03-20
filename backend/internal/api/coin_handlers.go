@@ -82,25 +82,9 @@ func (h *CoinHandlers) GetTokenDetails(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, tokenInfo, http.StatusOK)
 }
 
-func (h *CoinHandlers) GetCoinMetadata(w http.ResponseWriter, r *http.Request) {
-	address := chi.URLParam(r, "address")
-	if address == "" {
-		respondError(w, "address is required", http.StatusBadRequest)
-		return
-	}
-
-	metadata, err := h.coinService.GetCoinMetadata(address)
-	if err != nil {
-		respondError(w, fmt.Sprintf("failed to fetch metadata: %v", err), http.StatusInternalServerError)
-		return
-	}
-	respondJSON(w, metadata, http.StatusOK)
-}
-
 // RegisterRoutes registers all coin-related routes
 func (h *CoinHandlers) RegisterRoutes(r chi.Router) {
 	r.Get("/tokens", h.GetCoins)
 	r.Get("/tokens/{id}", h.GetCoinByID)
-	r.Get("/tokens/{address}/metadata", h.GetCoinMetadata)
 	r.Get("/tokens/{id}/details", h.GetTokenDetails)
 }

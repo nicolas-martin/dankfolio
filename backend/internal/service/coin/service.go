@@ -16,6 +16,8 @@ import (
 const (
 	// SolTokenAddress is the native SOL token address
 	SolTokenAddress = "So11111111111111111111111111111111111111112"
+	// TrendingTokensFile is the default path to the trending tokens file
+	TrendingTokensFile = "cmd/trending/trending_tokens.json"
 )
 
 // TrendingToken represents a token from the trending list
@@ -27,9 +29,10 @@ type TrendingToken struct {
 
 // Config holds the configuration for the coin service
 type Config struct {
-	BirdEyeBaseURL  string
-	BirdEyeAPIKey   string
-	CoinGeckoAPIKey string
+	BirdEyeBaseURL    string
+	BirdEyeAPIKey     string
+	CoinGeckoAPIKey   string
+	TrendingTokenPath string // Optional: override default trending tokens path
 }
 
 // Service handles coin-related operations
@@ -37,7 +40,7 @@ type Service struct {
 	config        *Config
 	httpClient    *http.Client
 	jupiterClient *JupiterClient
-	coins         map[string]model.Coin // Simple in-memory storage
+	coins         map[string]model.Coin
 }
 
 // NewService creates a new CoinService instance
@@ -49,10 +52,8 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient *JupiterC
 		coins:         make(map[string]model.Coin),
 	}
 
-	// Load initial data but don't block or fail if it doesn't work
-	err := service.refreshCoins()
-	if err != nil {
-		log.Printf("Error initializing coin service: %v", err)
+	if err := service.refreshCoins(); err != nil {
+		log.Printf("Warning: Error initializing coin service: %v", err)
 	}
 
 	return service
@@ -60,13 +61,11 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient *JupiterC
 
 // GetCoins returns a list of all available coins
 func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
-	// Convert map to slice
 	coins := make([]model.Coin, 0, len(s.coins))
 	for _, coin := range s.coins {
 		coins = append(coins, coin)
 	}
 
-	// Sort coins by daily volume in descending order
 	sort.Slice(coins, func(i, j int) bool {
 		return coins[i].DailyVolume > coins[j].DailyVolume
 	})
@@ -76,240 +75,67 @@ func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
 
 // GetCoinByID returns a coin by its ID
 func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, error) {
-	// Check if coin exists in memory
 	if coin, exists := s.coins[id]; exists {
 		return &coin, nil
 	}
 
-	// Try to fetch from Jupiter API if not in memory
-	// Initialize a basic coin with the ID
-	fetchedCoin := model.Coin{
-		ID: id,
+	coin := model.Coin{ID: id}
+	if err := s.enrichCoinData(&coin); err != nil {
+		return nil, fmt.Errorf("failed to fetch coin %s: %w", id, err)
 	}
 
-	// Enrich with Jupiter data
-	err := s.enrichCoinWithJupiterData(&fetchedCoin)
-	if err != nil {
-		log.Printf("Warning: Error enriching coin data for %s: %v", id, err)
-		return nil, fmt.Errorf("coin not found: %s", id)
-	}
-
-	// Ensure all required fields are populated
-	if fetchedCoin.ID == "" || fetchedCoin.Symbol == "" || fetchedCoin.Name == "" {
-		return nil, fmt.Errorf("coin not found: %s", id)
-	}
-
-	// Add to memory storage
-	s.coins[id] = fetchedCoin
-	return &fetchedCoin, nil
+	s.coins[id] = coin
+	return &coin, nil
 }
 
 // GetTokenDetails fetches detailed information about a token from Jupiter API
-func (s *Service) GetTokenDetails(ctx context.Context, tokenAddress string) (*JupiterTokenInfoResponse, error) {
-	return s.jupiterClient.GetTokenInfo(tokenAddress)
+func (s *Service) GetTokenDetails(ctx context.Context, tokenAddress string) (*model.Coin, error) {
+	return s.GetCoinByID(ctx, tokenAddress)
 }
 
-// enrichCoinWithJupiterData enriches a coin with data from Jupiter API
-func (s *Service) enrichCoinWithJupiterData(coin *model.Coin) error {
-	// Try to get token info from Jupiter API
+// enrichCoinData enriches a coin with data
+// External Services:
+// - Jupiter API: Used to fetch token info and current price
+// - CoinGecko API: Used to enrich with additional metadata (optional)
+func (s *Service) enrichCoinData(coin *model.Coin) error {
+	// Get Jupiter data
 	jupiterInfo, err := s.jupiterClient.GetTokenInfo(coin.ID)
 	if err != nil {
-		log.Printf("❌ Failed to get Jupiter token info for %s: %v", coin.Symbol, err)
-		return err
+		return fmt.Errorf("failed to get Jupiter info: %w", err)
 	}
 
-	log.Printf("✅ Jupiter token info success for %s", coin.Symbol)
-
-	// Update with any additional info from Jupiter
+	// Basic info from Jupiter
 	coin.Name = jupiterInfo.Name
 	coin.Symbol = jupiterInfo.Symbol
 	coin.Decimals = jupiterInfo.Decimals
 	coin.DailyVolume = jupiterInfo.DailyVolume
 	coin.Tags = jupiterInfo.Tags
+	coin.IconUrl = jupiterInfo.LogoURI
+	coin.CreatedAt = jupiterInfo.CreatedAt
+	coin.Description = fmt.Sprintf("%s (%s) is a Solana token.", jupiterInfo.Name, jupiterInfo.Symbol)
 
-	// Ensure IconUrl is properly set (this is used by the frontend)
-	if jupiterInfo.LogoURI != "" {
-		coin.IconUrl = jupiterInfo.LogoURI
-		log.Printf("🖼️ Set icon URL for %s: %s", coin.Symbol, coin.IconUrl)
-	}
-
-	// Set empty description if not already set
-	if coin.Description == "" {
-		coin.Description = fmt.Sprintf("%s (%s) is a Solana token.", jupiterInfo.Name, jupiterInfo.Symbol)
-		log.Printf("📝 Set default description for %s", coin.Symbol)
-	}
-
-	// Log metadata update
-	log.Printf("📊 Updated metadata for %s: DailyVolume=%.2f, Tags=%v, IconUrl=%s, Decimals=%d",
-		coin.Symbol, jupiterInfo.DailyVolume, jupiterInfo.Tags, coin.IconUrl, jupiterInfo.Decimals)
-
-	// Try to get price from Jupiter API
+	// Get price from Jupiter
 	price, err := s.jupiterClient.GetTokenPrice(coin.ID)
-	if err == nil && price != 0 {
+	if err == nil {
 		coin.Price = price
-		log.Printf("💰 Updated price for %s: %v", coin.Symbol, coin.Price)
-	} else {
-		log.Printf("⚠️ No price data available for %s, setting default price", coin.Symbol)
-		// Set a default price of 0 to avoid frontend issues
-		coin.Price = 0
+	}
+
+	// Try to enrich with CoinGecko data
+	if err := s.enrichWithCoinGecko(coin); err != nil {
+		log.Printf("Warning: Could not enrich %s with CoinGecko data: %v", coin.Symbol, err)
 	}
 
 	return nil
 }
 
-// initializeSolData creates and enriches SOL coin data
-func (s *Service) initializeSolData() error {
-	// Create basic SOL coin
-	solCoin := model.Coin{
-		ID:       SolTokenAddress,
-		Symbol:   "SOL",
-		Name:     "Solana",
-		Decimals: 9, // SOL has 9 decimals
-	}
-
-	// Enrich with Jupiter data
-	err := s.enrichCoinWithJupiterData(&solCoin)
+// enrichWithCoinGecko enriches a coin with data from CoinGecko API
+// External Services:
+// - CoinGecko API: Fetches social links, website, and other metadata
+// Endpoint: https://api.coingecko.com/api/v3/coins/solana/contract/{address}
+func (s *Service) enrichWithCoinGecko(coin *model.Coin) error {
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.coingecko.com/api/v3/coins/solana/contract/%s", coin.ID), nil)
 	if err != nil {
-		log.Printf("⚠️ Warning: Error enriching SOL data: %v", err)
-		// Continue anyway as we have basic data
-	}
-
-	// Set a default description if not set by Jupiter
-	if solCoin.Description == "" {
-		solCoin.Description = "SOL is the native token of the Solana blockchain."
-	}
-
-	// Add to storage
-	s.coins[SolTokenAddress] = solCoin
-	log.Printf("✨ Added SOL to coin list with price: %v", solCoin.Price)
-
-	return nil
-}
-
-// refreshCoins updates the coin list from external APIs
-func (s *Service) refreshCoins() error {
-	if os.Getenv("APP_ENV") == "development" {
-		log.Println("🔄 Using mock coin data in development mode")
-		for _, coin := range MockCoins {
-			s.coins[coin.ID] = coin
-		}
-		return nil
-	}
-
-	log.Printf("🔄 Starting coin refresh operation")
-
-	// First initialize SOL data
-	if err := s.initializeSolData(); err != nil {
-		log.Printf("❌ Error initializing SOL data: %v", err)
-		// Continue with other tokens even if SOL fails
-	}
-
-	// Load and process trending tokens
-	workspaceRoot := os.Getenv("WORKSPACE_ROOT")
-	if workspaceRoot == "" {
-		// If WORKSPACE_ROOT is not set, try to use the current working directory
-		var err error
-		workspaceRoot, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get current working directory: %w", err)
-		}
-	}
-	trendingFile := filepath.Join(workspaceRoot, "cmd", "trending", "trending_tokens.json")
-	jsonFile, err := os.Open(trendingFile)
-	if err != nil {
-		return fmt.Errorf("failed to open trending tokens file: %w", err)
-	}
-	defer jsonFile.Close()
-
-	var trending []TrendingToken
-
-	if err := json.NewDecoder(jsonFile).Decode(&trending); err != nil {
-		return fmt.Errorf("failed to parse trending tokens: %w", err)
-	}
-
-	log.Printf("📝 Processing %d trending tokens", len(trending))
-
-	// Process trending tokens
-	successCount := 0
-	for _, t := range trending {
-		coin := model.Coin{
-			ID:          t.Mint,
-			Symbol:      t.Symbol,
-			DailyVolume: t.Volume,
-		}
-
-		log.Printf("📈 Processing trending token %s (%s) with volume %.2f", t.Symbol, t.Mint, t.Volume)
-
-		// Enrich with Jupiter data
-		if err := s.enrichCoinWithJupiterData(&coin); err != nil {
-			log.Printf("⚠️ Warning: Error enriching trending token %s (%s): %v", t.Symbol, t.Mint, err)
-			continue
-		}
-
-		// Add to storage
-		s.coins[t.Mint] = coin
-		successCount++
-		log.Printf("✅ Added %s to available coins (success %d/%d)", t.Symbol, successCount, len(trending))
-	}
-
-	if successCount == 0 {
-		return fmt.Errorf("failed to load any trending tokens")
-	}
-
-	log.Printf("✨ Successfully refreshed %d coins with Jupiter data", len(s.coins))
-	return nil
-}
-
-func (s *Service) getCoinBirdeyeMetadata(address string) (*TokenMetadata, error) {
-	if address == "" {
-		return nil, fmt.Errorf("address is required")
-	}
-
-	url := fmt.Sprintf("%s/defi/v3/token/meta-data/single?address=%s", s.config.BirdEyeBaseURL, address)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("accept", "application/json")
-	req.Header.Set("x-chain", "solana")
-	req.Header.Set("x-api-key", s.config.BirdEyeAPIKey)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
-	var response BirdEyeMetadataResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	if !response.Success {
-		return nil, fmt.Errorf("API returned unsuccessful response")
-	}
-
-	metadata := &TokenMetadata{}
-	metadata.FromBirdEye(&response.Data)
-	return metadata, nil
-}
-
-func (s *Service) getCoinGeckoMetadata(address string) (*TokenMetadata, error) {
-	if address == "" {
-		return nil, fmt.Errorf("address is required")
-	}
-
-	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/solana/contract/%s", address)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return err
 	}
 
 	req.Header.Set("accept", "application/json")
@@ -317,29 +143,153 @@ func (s *Service) getCoinGeckoMetadata(address string) (*TokenMetadata, error) {
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("token not found on CoinGecko")
-	}
-
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var geckoMetadata CoinGeckoMetadata
-	if err := json.NewDecoder(resp.Body).Decode(&geckoMetadata); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	var geckoData CoinGeckoMetadata
+	if err := json.NewDecoder(resp.Body).Decode(&geckoData); err != nil {
+		return err
 	}
 
-	metadata := &TokenMetadata{}
-	metadata.FromCoinGecko(&geckoMetadata)
-	return metadata, nil
+	if len(geckoData.Links.Homepage) > 0 {
+		coin.Website = geckoData.Links.Homepage[0]
+	}
+	coin.Twitter = geckoData.Links.TwitterScreenName
+	coin.Telegram = geckoData.Links.TelegramChannelIdentifier
+	coin.LastUpdated = geckoData.LastUpdated
+	coin.CoingeckoID = geckoData.ID
+
+	return nil
 }
 
-// GetCoinMetadata fetches metadata from the default provider (CoinGecko)
-func (s *Service) GetCoinMetadata(address string) (*TokenMetadata, error) {
-	return s.getCoinGeckoMetadata(address)
+// refreshCoins updates the coin list from external APIs
+// External Services:
+// - Jupiter API: Primary source for token info and prices
+// - CoinGecko API: Secondary source for additional metadata
+// - Local file: Trending tokens list from cmd/trending/trending_tokens.json
+func (s *Service) refreshCoins() error {
+	if os.Getenv("APP_ENV") == "development" {
+		for _, coin := range MockCoins {
+			s.coins[coin.ID] = coin
+		}
+		return nil
+	}
+
+	// Load trending tokens from local file (includes SOL)
+	trending, err := s.loadTrendingTokens()
+	if err != nil {
+		return fmt.Errorf("failed to load trending tokens: %w", err)
+	}
+
+	// Enrich each trending token with Jupiter and CoinGecko data
+	for _, t := range trending {
+		coin := model.Coin{
+			ID:          t.Mint,
+			Symbol:      t.Symbol,
+			DailyVolume: t.Volume,
+		}
+
+		if err := s.enrichCoinData(&coin); err != nil {
+			log.Printf("Warning: Error enriching token %s: %v", t.Symbol, err)
+			continue
+		}
+
+		s.coins[t.Mint] = coin
+	}
+
+	return nil
+}
+
+// findWorkspaceRoot attempts to find the workspace root by looking for trending_tokens.json
+// in parent directories up to maxDepth levels
+func findWorkspaceRoot(startDir string, maxDepth int) (string, error) {
+	currentDir := startDir
+	for i := 0; i < maxDepth; i++ {
+		// Try the current directory
+		possiblePath := filepath.Join(currentDir, TrendingTokensFile)
+		if _, err := os.Stat(possiblePath); err == nil {
+			return currentDir, nil
+		}
+
+		// Try backend directory (common when running from a subdirectory)
+		backendPath := filepath.Join(currentDir, "backend", TrendingTokensFile)
+		if _, err := os.Stat(backendPath); err == nil {
+			return filepath.Dir(filepath.Dir(backendPath)), nil
+		}
+
+		// Move up one directory
+		parent := filepath.Dir(currentDir)
+		if parent == currentDir {
+			break // Reached root directory
+		}
+		currentDir = parent
+	}
+	return "", fmt.Errorf("workspace root not found within %d levels", maxDepth)
+}
+
+// loadTrendingTokens loads the list of trending tokens from a local JSON file
+func (s *Service) loadTrendingTokens() ([]TrendingToken, error) {
+	var filePath string
+
+	// Try config path first
+	if s.config.TrendingTokenPath != "" {
+		if _, err := os.Stat(s.config.TrendingTokenPath); err == nil {
+			filePath = s.config.TrendingTokenPath
+		}
+	}
+
+	// Try WORKSPACE_ROOT environment variable
+	if filePath == "" && os.Getenv("WORKSPACE_ROOT") != "" {
+		path := filepath.Join(os.Getenv("WORKSPACE_ROOT"), TrendingTokensFile)
+		if _, err := os.Stat(path); err == nil {
+			filePath = path
+		}
+	}
+
+	// Try to find workspace root from current directory
+	if filePath == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get working directory: %w", err)
+		}
+
+		root, err := findWorkspaceRoot(wd, 5) // Look up to 5 levels up
+		if err == nil {
+			filePath = filepath.Join(root, TrendingTokensFile)
+		}
+	}
+
+	// If still not found, try relative to executable path
+	if filePath == "" {
+		execPath, err := os.Executable()
+		if err == nil {
+			execDir := filepath.Dir(execPath)
+			root, err := findWorkspaceRoot(execDir, 5)
+			if err == nil {
+				filePath = filepath.Join(root, TrendingTokensFile)
+			}
+		}
+	}
+
+	if filePath == "" {
+		return nil, fmt.Errorf("trending tokens file not found in any location")
+	}
+
+	// Read and parse the file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read trending tokens file: %w", err)
+	}
+
+	var trending []TrendingToken
+	if err := json.Unmarshal(data, &trending); err != nil {
+		return nil, fmt.Errorf("failed to parse trending tokens: %w", err)
+	}
+
+	return trending, nil
 }

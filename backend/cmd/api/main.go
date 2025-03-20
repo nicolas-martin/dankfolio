@@ -21,8 +21,8 @@ import (
 
 func main() {
 	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: .env file not found")
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	// Set development mode if not specified
@@ -62,8 +62,8 @@ func main() {
 	// Initialize Solana RPC client
 	solanaClient := rpc.New(os.Getenv("SOLANA_RPC_ENDPOINT"))
 
-	// Initialize the wallet service
-	walletService := wallet.New(solanaClient, jupiterClient)
+	// Initialize the wallet service with coin service
+	walletService := wallet.New(solanaClient, coinService)
 
 	// Initialize handlers
 	walletHandlers := api.NewWalletHandlers(walletService)

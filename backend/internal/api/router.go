@@ -60,7 +60,10 @@ func (r *Router) Setup() http.Handler {
 	// Health check
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Health check endpoint hit")
-		w.WriteHeader(http.StatusOK)
+		respondJSON(w, map[string]string{
+			"status":  "ok",
+			"message": "Server is healthy",
+		}, http.StatusOK)
 	})
 
 	// API routes

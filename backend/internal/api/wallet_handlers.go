@@ -45,9 +45,16 @@ func (h *WalletHandlers) GetWalletBalance(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	balanceInfo := struct {
+	// Initialize tokens as empty array if nil
+	if tokens == nil {
+		tokens = []wallet.TokenInfo{}
+	}
+
+	type WalletBalance struct {
 		Tokens []wallet.TokenInfo `json:"tokens"`
-	}{
+	}
+
+	balanceInfo := WalletBalance{
 		Tokens: tokens,
 	}
 

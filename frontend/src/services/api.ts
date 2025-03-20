@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 
 import { REACT_APP_API_URL } from '@env';
 
-import { Coin, Wallet } from '../types/index'
+import { Wallet } from '../types/index'
 
 // Default to localost if API_URL is not set
 const baseURL = REACT_APP_API_URL
@@ -13,11 +13,40 @@ if (!baseURL) {
 
 console.log('🔧 API URL:', baseURL); // Debug log
 
+export interface Coin {
+	// Basic Info
+	id: string;           // Same as Address/Mint
+	name: string;
+	symbol: string;
+	decimals: number;
+	description: string;
+	iconUrl: string;      // Same as LogoURI/LogoURL
+	tags?: string[];
+
+	// Price and Market Data
+	price: number;
+	balance?: number;
+	change24h?: number;
+	marketCap?: number;
+	volume24h?: number;
+	dailyVolume?: number;
+
+	// Social and External Links
+	website?: string;
+	twitter?: string;
+	telegram?: string;
+	discord?: string;
+	coingeckoId?: string;
+
+	// Metadata
+	createdAt?: string;
+	lastUpdated?: string;
+}
+
 interface API {
 	executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
 	getAvailableCoins: () => Promise<Coin[]>;
 	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
-	getCoinMetadata: (address: string) => Promise<CoinMetadata>;
 	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
 	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
 	getCoinByID: (id: string) => Promise<Coin>;
@@ -69,16 +98,6 @@ const api: API = {
 			return response.data;
 		} catch (error) {
 			console.error('❌ Error getting trade quote:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getCoinMetadata: async (address: string) => {
-		try {
-			const response = await apiClient.get<CoinMetadata>(`/api/tokens/${address}/metadata`);
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error getting coin metadata:', error);
 			throw handleApiError(error as AxiosError);
 		}
 	},
@@ -193,19 +212,6 @@ interface TradeQuoteResponse {
 	};
 }
 
-export interface CoinMetadata {
-	symbol: string;
-	name: string;
-	decimals: number;
-	logo_url: string;
-	address: string;
-	website?: string;
-	twitter?: string;
-	telegram?: string;
-	discord?: string;
-	coingecko_id?: string;
-}
-
 export interface PriceHistoryResponse {
 	data: {
 		items: Array<{
@@ -220,15 +226,9 @@ export interface WalletBalanceResponse {
 	tokens: TokenInfo[];
 }
 
-export interface TokenInfo {
-	symbol: string;
-	name: string;
-	balance: number;
-	price: number;
-	value: number;
-	percentage: number;
-	logoURL: string;
-	mint: string;
+export interface TokenInfo extends Coin {
+	value: number;      // Additional field specific to wallet tokens
+	percentage: number; // Additional field specific to wallet tokens
 }
 
 // Enhanced error handler

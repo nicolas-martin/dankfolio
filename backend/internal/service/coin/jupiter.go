@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -16,6 +17,15 @@ const (
 	jupiterTokenMetadataURL = "https://token.jup.ag/strict"
 )
 
+// TokenMetadataCache represents a cache for token metadata
+type TokenMetadataCache struct {
+	sync.RWMutex
+	data        map[string]*JupiterTokenInfoResponse
+	lastUpdated time.Time
+}
+
+var tokenInfoCache *TokenMetadataCache
+
 // JupiterClient handles interactions with the Jupiter API
 type JupiterClient struct {
 	httpClient *http.Client
@@ -23,6 +33,13 @@ type JupiterClient struct {
 
 // NewJupiterClient creates a new instance of JupiterClient
 func NewJupiterClient() *JupiterClient {
+	// Initialize the cache if it doesn't exist
+	if tokenInfoCache == nil {
+		tokenInfoCache = &TokenMetadataCache{
+			data: make(map[string]*JupiterTokenInfoResponse),
+		}
+	}
+
 	return &JupiterClient{
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -30,105 +47,17 @@ func NewJupiterClient() *JupiterClient {
 	}
 }
 
-// tokenMetadataCache holds the cached token metadata
-var tokenMetadataCache struct {
-	data        map[string]TokenMetadata
-	lastUpdated time.Time
-}
-
-// GetTokenMetadata fetches token metadata from Jupiter API
-func (c *JupiterClient) GetTokenMetadata(mintAddresses ...string) (map[string]TokenMetadata, error) {
-	// Return cached data if it's less than 5 minutes old and we're not requesting specific tokens
-	if len(mintAddresses) == 0 && time.Since(tokenMetadataCache.lastUpdated) < 5*time.Minute && len(tokenMetadataCache.data) > 0 {
-		return tokenMetadataCache.data, nil
-	}
-
-	resp, err := c.httpClient.Get(jupiterTokenMetadataURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch token metadata: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch token metadata, status: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	// First unmarshal into a temporary struct that matches Jupiter's response format
-	var tokens []struct {
-		Symbol      string `json:"symbol"`
-		Name        string `json:"name"`
-		Decimals    uint8  `json:"decimals"`
-		LogoURI     string `json:"logoURI"`
-		Address     string `json:"address"`
-		CoingeckoID string `json:"coingeckoId"`
-	}
-	if err := json.Unmarshal(body, &tokens); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal token metadata: %w", err)
-	}
-	fmt.Println(tokens)
-
-	// Convert to our TokenMetadata format
-	tokenMap := make(map[string]TokenMetadata)
-
-	// If specific mint addresses are provided, only include those
-	if len(mintAddresses) > 0 {
-		mintSet := make(map[string]bool)
-		for _, addr := range mintAddresses {
-			mintSet[addr] = true
-		}
-
-		for _, token := range tokens {
-			if mintSet[token.Address] {
-				tokenMap[token.Address] = TokenMetadata{
-					Address:     token.Address,
-					Symbol:      token.Symbol,
-					Name:        token.Name,
-					LogoURL:     token.LogoURI,
-					Decimals:    int(token.Decimals),
-					CoingeckoID: token.CoingeckoID,
-				}
-			}
-		}
-	} else {
-		// If no specific addresses provided, include all tokens
-		for _, token := range tokens {
-			tokenMap[token.Address] = TokenMetadata{
-				Address:     token.Address,
-				Symbol:      token.Symbol,
-				Name:        token.Name,
-				LogoURL:     token.LogoURI,
-				Decimals:    int(token.Decimals),
-				CoingeckoID: token.CoingeckoID,
-			}
-		}
-
-		// Update cache only when fetching all tokens
-		tokenMetadataCache.data = tokenMap
-		tokenMetadataCache.lastUpdated = time.Now()
-	}
-
-	return tokenMap, nil
-}
-
 // GetTokenInfo fetches detailed information about a token from Jupiter API
 func (c *JupiterClient) GetTokenInfo(tokenAddress string) (*JupiterTokenInfoResponse, error) {
 	// Try to get from cached metadata first
-	if time.Since(tokenMetadataCache.lastUpdated) < 5*time.Minute {
-		if metadata, ok := tokenMetadataCache.data[tokenAddress]; ok {
-			return &JupiterTokenInfoResponse{
-				Address:  metadata.Address,
-				Symbol:   metadata.Symbol,
-				Name:     metadata.Name,
-				LogoURI:  metadata.LogoURL,
-				Decimals: 0, // We don't have decimals in TokenMetadata
-			}, nil
+	tokenInfoCache.RLock()
+	if time.Since(tokenInfoCache.lastUpdated) < 5*time.Minute {
+		if metadata, ok := tokenInfoCache.data[tokenAddress]; ok {
+			tokenInfoCache.RUnlock()
+			return metadata, nil
 		}
 	}
+	tokenInfoCache.RUnlock()
 
 	// If not in cache or cache expired, fetch directly
 	url := fmt.Sprintf("%s/%s", jupiterTokenInfoURL, tokenAddress)
@@ -155,6 +84,12 @@ func (c *JupiterClient) GetTokenInfo(tokenAddress string) (*JupiterTokenInfoResp
 	if err := json.Unmarshal(body, &tokenInfo); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal token info: %w", err)
 	}
+
+	// Update cache
+	tokenInfoCache.Lock()
+	tokenInfoCache.data[tokenAddress] = &tokenInfo
+	tokenInfoCache.lastUpdated = time.Now()
+	tokenInfoCache.Unlock()
 
 	return &tokenInfo, nil
 }

@@ -8,38 +8,28 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/nicolas-martin/dankfolio/internal/model"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 )
 
 // TokenInfo represents information about a token balance
 type TokenInfo struct {
-	Symbol     string  `json:"symbol"`
-	Name       string  `json:"name"`
-	Balance    float64 `json:"balance"`
-	Price      float64 `json:"price"`
-	Value      float64 `json:"value"`
-	Percentage float64 `json:"percentage"`
-	LogoURL    string  `json:"logoURL"`
-	Mint       string  `json:"mint"`
+	model.Coin         // Embed the Coin model
+	Value      float64 `json:"value"`      // Additional field specific to wallet tokens
+	Percentage float64 `json:"percentage"` // Additional field specific to wallet tokens
 }
 
 // Service handles wallet-related operations
 type Service struct {
-	client  *rpc.Client
-	jupiter *coin.JupiterClient
+	client      *rpc.Client
+	coinService *coin.Service
 }
 
 // New creates a new wallet service
-func New(client *rpc.Client, jupiter *coin.JupiterClient) *Service {
-	if client == nil {
-		client = rpc.New("https://api.mainnet-beta.solana.com")
-	}
-	if jupiter == nil {
-		jupiter = coin.NewJupiterClient()
-	}
+func New(client *rpc.Client, coinService *coin.Service) *Service {
 	return &Service{
-		client:  client,
-		jupiter: jupiter,
+		client:      client,
+		coinService: coinService,
 	}
 }
 
@@ -64,12 +54,11 @@ func (s *Service) GetTokens(ctx context.Context, address string) ([]TokenInfo, e
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get token accounts: %v", err)
+		return []TokenInfo{}, fmt.Errorf("failed to get token accounts: %v", err)
 	}
 
 	// First collect mint addresses and balances for tokens with positive balance
-	var tokens []TokenInfo
-	var mintAddresses []string
+	tokens := make([]TokenInfo, 0)
 	for _, account := range accounts.Value {
 		// Get the parsed token account data
 		parsedData := account.Account.Data.GetRawJSON()
@@ -100,46 +89,27 @@ func (s *Service) GetTokens(ctx context.Context, address string) ([]TokenInfo, e
 		mintAddress := parsedAccount.Parsed.Info.Mint
 		balance := parsedAccount.Parsed.Info.TokenAmount.UiAmount
 
-		// Try to get token info, but don't skip if we can't
+		// Get enriched coin data from coin service
+		coinData, err := s.coinService.GetCoinByID(ctx, mintAddress)
+		if err != nil {
+			fmt.Printf("Warning: failed to get coin data for %s: %v\n", mintAddress, err)
+			continue
+		}
+
+		// Create token info with enriched data
 		token := TokenInfo{
-			Symbol:  mintAddress[:8] + "...", // Default to shortened address
-			Name:    "Unknown Token",
-			Balance: balance,
-			Mint:    mintAddress,
+			Coin:  *coinData,
+			Value: balance * coinData.Price,
 		}
+		token.Balance = balance // Override the balance with actual wallet balance
 
-		tokenInfo, err := s.jupiter.GetTokenInfo(mintAddress)
-		if err == nil {
-			token.Symbol = tokenInfo.Symbol
-			token.Name = tokenInfo.Name
-			token.LogoURL = tokenInfo.LogoURI
-		} else {
-			fmt.Printf("Warning: failed to get token info for %s: %v\n", mintAddress, err)
-		}
-
-		mintAddresses = append(mintAddresses, mintAddress)
 		tokens = append(tokens, token)
 	}
 
-	// Skip price fetching if we have no tokens
-	if len(mintAddresses) == 0 {
-		return nil, nil
-	}
-
-	// Get token prices
-	prices, err := s.jupiter.GetTokenPrices(mintAddresses)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get token prices: %v", err)
-	}
-
-	// Calculate total value and update token info
+	// Calculate total value and percentages
 	var totalValue float64
-	for i, addr := range mintAddresses {
-		price := prices[addr]
-		value := tokens[i].Balance * price
-		tokens[i].Price = price
-		tokens[i].Value = value
-		totalValue += value
+	for _, token := range tokens {
+		totalValue += token.Value
 	}
 
 	// Calculate percentages
