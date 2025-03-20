@@ -11,7 +11,6 @@ import { ToastProvider } from './src/components/Toast';
 // Import screens
 import HomeScreen from './src/screens/HomeScreen';
 import TradeScreen from './src/screens/TradeScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
 import CoinDetailScreen from './src/screens/CoinDetailScreen';
 import { RootStackParamList } from './src/types/index';
 import ChartTestScreen from './src/screens/ChartTestScreen';
@@ -35,7 +34,6 @@ const App: React.FC = () => {
                                 >
                                         <Stack.Screen name="Home" component={HomeScreen} />
                                         <Stack.Screen name="Trade" component={TradeScreen} />
-                                        <Stack.Screen name="Profile" component={ProfileScreen} />
                                         <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
                                         <Stack.Screen name="ChartTest" component={ChartTestScreen} />
                                 </Stack.Navigator>
