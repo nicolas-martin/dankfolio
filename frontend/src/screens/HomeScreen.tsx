@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, FlatList, Image } from 'react-native';
 import { getKeypairFromPrivateKey, secureStorage } from '../services/solana';
-import api from '../services/api';
+import api, { WalletBalanceResponse } from '../services/api';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../components/CoinCard';
 import { Wallet, Coin, NotificationProps, ScreenProps } from '../types/index';
@@ -44,6 +44,7 @@ const HomeScreen: React.FC = () => {
   const [coins, setCoins] = useState<Coin[]>([]);
   const [solCoin, setSolCoin] = useState<Coin | null>(null);
   const [loading, setLoading] = useState(true);
+  const [walletBalance, setWalletBalance] = useState<WalletBalanceResponse | null>(null);
   const [notification, setNotification] = useState<NotificationState>({
     visible: false,
     type: 'info',
@@ -83,6 +84,16 @@ const HomeScreen: React.FC = () => {
     }
   }, []);
 
+  const fetchWalletBalance = useCallback(async (address: string) => {
+    try {
+      const balance = await api.getWalletBalance(address);
+      setWalletBalance(balance);
+    } catch (err) {
+      console.error('❌ Error fetching wallet balance:', err);
+      showNotification('error', 'Failed to fetch wallet balance');
+    }
+  }, []);
+
   const handleImportWallet = async (privateKey: string) => {
     try {
       const keypair = getKeypairFromPrivateKey(privateKey);
@@ -93,6 +104,8 @@ const HomeScreen: React.FC = () => {
       };
       setWallet(walletData);
       await secureStorage.saveWallet(walletData);
+      // Fetch balance immediately after setting wallet
+      await fetchWalletBalance(walletData.address);
     } catch (error) {
       console.error('Error importing wallet:', error);
       showNotification('error', 'Failed to import wallet');
@@ -103,8 +116,9 @@ const HomeScreen: React.FC = () => {
     try {
       setLoading(true);
       const savedWallet = await secureStorage.getWallet();
-      if (savedWallet) {
+      if (savedWallet && savedWallet.address) {
         setWallet(savedWallet);
+        await fetchWalletBalance(savedWallet.address);
       } else if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
         console.log('🧪 Development mode detected, auto-importing test wallet');
         await handleImportWallet(TEST_PRIVATE_KEY);
@@ -118,7 +132,7 @@ const HomeScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchAvailableCoins]);
+  }, [fetchAvailableCoins, fetchWalletBalance]);
 
   useEffect(() => {
     initializeData();
@@ -221,7 +235,22 @@ const HomeScreen: React.FC = () => {
           <View style={styles.profileContainer}>
             <TouchableOpacity
               style={styles.profileButton}
-              onPress={() => navigation.navigate('Profile', {})}
+              onPress={() => {
+                if (!wallet?.address) {
+                  showNotification('error', 'No wallet connected');
+                  return;
+                }
+                
+                if (!walletBalance) {
+                  showNotification('error', 'Wallet balance not loaded');
+                  return;
+                }
+
+                navigation.navigate('Profile', {
+                  walletAddress: wallet.address,
+                  walletBalance: walletBalance
+                });
+              }}
             >
               <Text style={styles.profileButtonText}>View Profile</Text>
             </TouchableOpacity>

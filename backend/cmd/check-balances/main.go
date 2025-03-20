@@ -9,6 +9,7 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
 )
 
@@ -46,12 +47,13 @@ func checkBalance(ctx context.Context, client *rpc.Client, walletService *wallet
 	fmt.Printf("Public Key: %s\n", keypair.PublicKey())
 	fmt.Printf("SOL Balance: %.9f SOL\n", float64(balance.Value)/1e9)
 	fmt.Printf("\nToken Balances:\n")
-	fmt.Printf("%-20s %-12s %-15s %-15s\n", "Token", "Balance", "Price ($)", "Value ($)")
-	fmt.Printf("%-20s %-12s %-15s %-15s\n", "-----", "-------", "---------", "---------")
+	fmt.Printf("%-20s %-40s %-12s %-15s %-15s\n", "Token", "Mint Address", "Balance", "Price ($)", "Value ($)")
+	fmt.Printf("%-20s %-40s %-12s %-15s %-15s\n", "-----", "------------", "-------", "---------", "---------")
 
 	for _, token := range tokens {
-		fmt.Printf("%-20s %-12.4f $%-14.4f $%-14.2f\n",
+		fmt.Printf("%-20s %-40s %-12.4f $%-14.4f $%-14.2f\n",
 			token.Symbol,
+			token.Mint,
 			token.Balance,
 			token.Price,
 			token.Value,
@@ -69,7 +71,8 @@ func checkBalance(ctx context.Context, client *rpc.Client, walletService *wallet
 func main() {
 	ctx := context.Background()
 	client := rpc.New("https://api.mainnet-beta.solana.com")
-	walletService := wallet.New()
+	jupiter := coin.NewJupiterClient()
+	walletService := wallet.New(client, jupiter)
 
 	// Get the current working directory
 	wd, err := os.Getwd()

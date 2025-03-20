@@ -2,7 +2,6 @@ import {
 	Keypair,
 	Connection,
 	PublicKey,
-	Transaction,
 	LAMPORTS_PER_SOL,
 	VersionedTransaction
 } from '@solana/web3.js';
@@ -11,7 +10,7 @@ import axios from 'axios';
 import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
 
 // Use environment variable for Solana RPC endpoint with fallback
-const rpcEndpoint = REACT_APP_SOLANA_RPC_ENDPOINT 
+const rpcEndpoint = REACT_APP_SOLANA_RPC_ENDPOINT
 if (!rpcEndpoint) {
 	console.error('🚨 No Solana RPC endpoint provided');
 	throw new Error('No Solana RPC endpoint provided');

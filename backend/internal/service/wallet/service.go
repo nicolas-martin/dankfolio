@@ -20,6 +20,7 @@ type TokenInfo struct {
 	Value      float64 `json:"value"`
 	Percentage float64 `json:"percentage"`
 	LogoURL    string  `json:"logoURL"`
+	Mint       string  `json:"mint"`
 }
 
 // Service handles wallet-related operations
@@ -104,6 +105,7 @@ func (s *Service) GetTokens(ctx context.Context, address string) ([]TokenInfo, e
 			Symbol:  mintAddress[:8] + "...", // Default to shortened address
 			Name:    "Unknown Token",
 			Balance: balance,
+			Mint:    mintAddress,
 		}
 
 		tokenInfo, err := s.jupiter.GetTokenInfo(mintAddress)

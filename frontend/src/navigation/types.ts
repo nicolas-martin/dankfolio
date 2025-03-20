@@ -1,4 +1,5 @@
-import { Wallet, Coin } from '../types';
+import { Wallet, Coin } from '../types/index';
+import { WalletBalanceResponse } from '../services/api';
 import { Dispatch, SetStateAction } from 'react';
 
 export type RootStackParamList = {
@@ -11,6 +12,7 @@ export type RootStackParamList = {
         History: undefined;
         Profile: {
                 walletAddress?: string;
+                walletBalance?: WalletBalanceResponse;
         };
         CoinDetail: {
                 coinId: string;

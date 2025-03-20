@@ -12,6 +12,7 @@ import { ToastProvider } from './src/components/Toast';
 import HomeScreen from './src/screens/HomeScreen';
 import TradeScreen from './src/screens/TradeScreen';
 import CoinDetailScreen from './src/screens/CoinDetailScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 import { RootStackParamList } from './src/types/index';
 import ChartTestScreen from './src/screens/ChartTestScreen';
 
@@ -35,6 +36,7 @@ const App: React.FC = () => {
                                         <Stack.Screen name="Home" component={HomeScreen} />
                                         <Stack.Screen name="Trade" component={TradeScreen} />
                                         <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
+                                        <Stack.Screen name="Profile" component={ProfileScreen} />
                                         <Stack.Screen name="ChartTest" component={ChartTestScreen} />
                                 </Stack.Navigator>
                         </NavigationContainer>
