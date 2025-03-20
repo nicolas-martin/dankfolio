@@ -71,33 +71,6 @@ export interface TradePayload {
 	signed_transaction: string;
 }
 
-interface WalletResponse {
-	address: string;
-	private_key: string;
-}
-
-interface WalletBalance {
-	address: string;
-	balances?: {
-		coin_id: string;
-		symbol: string;
-		amount: number;
-		usd_value: number;
-	}[];
-	total_usd_value: number;
-}
-
-interface WalletBalanceResponse {
-	address: string;
-	coins: {
-		id: string;
-		symbol: string;
-		balance: number;
-		usd_value: number;
-	}[];
-	total_usd_value: number;
-}
-
 interface TradeQuoteResponse {
 	estimatedAmount: number;
 	exchangeRate: string;
@@ -128,17 +101,9 @@ const handleApiError = (error: AxiosError): never => {
 interface API {
 	executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
 	getAvailableCoins: () => Promise<Coin[]>;
-	getCoinById: (coinId: string) => Promise<Coin>;
 	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
-	getTrades: () => Promise<any[]>;
-	createWallet: () => Promise<WalletResponse>;
-	getWalletByAddress: (address: string) => Promise<Wallet>;
-	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
-	fetchAvailableCoins: () => Promise<Coin[]>;
-	fetchCoinById: (coinId: string) => Promise<Coin>;
-	searchCoins: (query: string) => Promise<Coin[]>;
-	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<any>;
 	getCoinMetadata: (coinId: string) => Promise<any>;
+	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<any>;
 }
 
 const api: API = {
@@ -176,16 +141,6 @@ const api: API = {
 		}
 	},
 
-	getCoinById: async (coinId: string) => {
-		try {
-			const response = await apiClient.get<Coin>(`/api/coins/${coinId}`);
-			return response.data;
-		} catch (error) {
-			console.error(`Error fetching coin ${coinId}:`, error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
 	getTradeQuote: async (fromCoin: string, toCoin: string, amount: string) => {
 		try {
 			const response = await apiClient.get<TradeQuoteResponse>('/api/trades/quote', {
@@ -203,86 +158,13 @@ const api: API = {
 		}
 	},
 
-	getTrades: async () => {
+	getCoinMetadata: async (address: string) => {
 		try {
-			const response = await apiClient.get<any[]>('/api/trades');
+			const response = await apiClient.get(`/api/coins/${address}/metadata`);
 			return response.data;
 		} catch (error) {
-			return handleApiError(error as AxiosError);
-		}
-	},
-
-	createWallet: async () => {
-		try {
-			const response = await apiClient.post<WalletResponse>('/api/wallets');
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error creating wallet:', error);
+			console.error('❌ Error fetching coin metadata:', error);
 			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getWalletByAddress: async (address: string) => {
-		try {
-			const response = await apiClient.get<Wallet>(`/api/wallets/${address}`);
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error fetching wallet:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getWalletBalance: async (address: string) => {
-		try {
-			const response = await apiClient.get<WalletBalance>(`/api/wallets/${address}/balance`);
-
-			// Transform the backend response to match what the frontend expects
-			const data = response.data;
-			return {
-				address: data.address,
-				coins: data.balances ? data.balances.map(bal => ({
-					id: bal.coin_id,
-					symbol: bal.symbol,
-					balance: bal.amount || 0,
-					usd_value: bal.usd_value || 0
-				})) : [],
-				total_usd_value: data.total_usd_value || 0
-			};
-		} catch (error) {
-			console.error('❌ Error fetching wallet balance:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	fetchAvailableCoins: async () => {
-		try {
-			const response = await apiClient.get<Coin[]>('/api/coins');
-			return response.data;
-		} catch (error) {
-			console.error('Error fetching coins:', error);
-			throw new Error('Failed to fetch available coins');
-		}
-	},
-
-	fetchCoinById: async (coinId: string) => {
-		try {
-			const response = await apiClient.get<Coin>(`/api/coins/${coinId}`);
-			return response.data;
-		} catch (error) {
-			console.error(`Error fetching coin ${coinId}:`, error);
-			throw new Error('Failed to fetch coin details');
-		}
-	},
-
-	searchCoins: async (query: string) => {
-		try {
-			const response = await apiClient.get<Coin[]>('/api/coins/search', {
-				params: { q: query }
-			});
-			return response.data;
-		} catch (error) {
-			console.error('Error searching coins:', error);
-			throw new Error('Failed to search coins');
 		}
 	},
 
@@ -313,16 +195,6 @@ const api: API = {
 
 		} catch (error) {
 			console.error('❌ Error fetching price history:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getCoinMetadata: async (address: string) => {
-		try {
-			const response = await apiClient.get(`/api/coins/${address}/metadata`);
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error fetching coin metadata:', error);
 			throw handleApiError(error as AxiosError);
 		}
 	}

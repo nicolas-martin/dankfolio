@@ -110,7 +110,6 @@ export const getBalance = async (publicKeyString) => {
 	}
 };
 
-
 /**
  * Create and sign a swap transaction using Jupiter.
  * Returns a Base64 encoded signed transaction.
@@ -134,7 +133,6 @@ export const buildAndSignSwapTransaction = async (
 			);
 		}
 
-		// TODO: Use the backend quote service
 		// Get quote
 		const quoteResponse = await jupiterApi.get('/quote', {
 			params: {
