@@ -178,7 +178,8 @@ const HomeScreen: React.FC = () => {
 			coinName: coin.name,
 			daily_volume: coin.daily_volume,
 			coin: coin,
-			solCoin: solCoin // Pass SOL coin to CoinDetail
+			solCoin: solCoin, // Pass SOL coin to CoinDetail
+			walletBalance: walletBalance // Pass wallet balance to CoinDetail
 		});
 	};
 

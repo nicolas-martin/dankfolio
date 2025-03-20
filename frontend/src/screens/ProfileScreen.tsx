@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { WalletBalanceResponse } from '../services/api';
+import { WalletBalanceResponse, TokenInfo } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/index';
@@ -22,9 +22,13 @@ interface ProfileScreenProps {
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { walletBalance, walletAddress, solCoin } = route.params;
-  const totalValue = walletBalance.tokens.reduce((sum, token) => sum + token.value, 0);
+  
+  // Calculate total value including SOL
+  const tokenValue = walletBalance.tokens.reduce((sum, token) => sum + token.value, 0);
+  const solValue = walletBalance.sol_balance * (solCoin?.price || 0);
+  const totalValue = tokenValue + solValue;
 
-  const handleTokenPress = (token: WalletBalanceResponse['tokens'][0]) => {
+  const handleTokenPress = (token: Coin | TokenInfo) => {
     if (!token.id) {
       console.error('❌ No token ID available for:', token.symbol);
       return;
@@ -42,7 +46,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
         price: solCoin.price
       } : null
     });
-
 
     navigation.navigate('CoinDetail', {
       coinId: token.id,
@@ -65,13 +68,66 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
         <View style={styles.portfolioCard}>
           <Text style={styles.portfolioTitle}>Total Value</Text>
           <Text style={styles.portfolioValue}>${totalValue.toFixed(2)}</Text>
+          
+          {/* Portfolio Breakdown */}
+          <View style={styles.portfolioBreakdown}>
+            <View style={styles.breakdownItem}>
+              <Text style={styles.breakdownLabel}>SOL Balance</Text>
+              <Text style={styles.breakdownValue}>{walletBalance.sol_balance.toFixed(4)} SOL</Text>
+              <Text style={styles.breakdownUsd}>${solValue.toFixed(2)}</Text>
+            </View>
+            <View style={styles.breakdownDivider} />
+            <View style={styles.breakdownItem}>
+              <Text style={styles.breakdownLabel}>Token Value</Text>
+              <Text style={styles.breakdownValue}>{walletBalance.tokens.length} Tokens</Text>
+              <Text style={styles.breakdownUsd}>${tokenValue.toFixed(2)}</Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.tokensContainer}>
           <Text style={styles.sectionTitle}>Your Assets</Text>
+          
+          {/* SOL Balance Card */}
+          {solCoin && (
+            <TouchableOpacity
+              style={styles.tokenCard}
+              onPress={() => handleTokenPress(solCoin)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.tokenHeader}>
+                {solCoin.icon_url && (
+                  <Image 
+                    source={{ uri: solCoin.icon_url }} 
+                    style={styles.tokenLogo} 
+                  />
+                )}
+                <View style={styles.tokenInfo}>
+                  <Text style={styles.tokenSymbol}>{solCoin.symbol}</Text>
+                  <Text style={styles.tokenName}>{solCoin.name}</Text>
+                </View>
+              </View>
+              <View style={styles.tokenDetails}>
+                <View style={styles.tokenDetail}>
+                  <Text style={styles.detailLabel}>Balance</Text>
+                  <Text style={styles.detailValue}>{walletBalance.sol_balance.toFixed(4)}</Text>
+                </View>
+                <View style={styles.tokenDetail}>
+                  <Text style={styles.detailLabel}>Value</Text>
+                  <Text style={styles.detailValue}>${solValue.toFixed(2)}</Text>
+                </View>
+                <View style={styles.tokenDetail}>
+                  <Text style={styles.detailLabel}>Price</Text>
+                  <Text style={styles.detailValue}>${solCoin.price.toFixed(4)}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* Token List */}
           {walletBalance.tokens.length === 0 ? (
             <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateText}>No assets found in wallet 🔍</Text>
+              <Text style={styles.emptyStateText}>No token assets found in wallet 🔍</Text>
             </View>
           ) : (
             walletBalance.tokens.map((token) => (
@@ -172,6 +228,41 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  portfolioBreakdown: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  breakdownItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  breakdownDivider: {
+    width: 1,
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginHorizontal: 15,
+  },
+  breakdownLabel: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 5,
+  },
+  breakdownValue: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  breakdownUsd: {
+    fontSize: 14,
+    color: '#6A5ACD',
+    fontWeight: '500',
   },
   tokensContainer: {
     padding: 20,

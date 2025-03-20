@@ -53,8 +53,8 @@ const TradeScreen: React.FC = () => {
 		}
 
 		// Validate coin addresses
-		const fromAddress = fromCoin?.address || fromCoin?.id;
-		const toAddress = toCoin?.address;
+		const fromAddress = fromCoin.id;
+		const toAddress = toCoin.id;
 
 		if (!fromAddress || !toAddress) {
 			return;
@@ -112,35 +112,49 @@ const TradeScreen: React.FC = () => {
 		}, QUOTE_DEBOUNCE_MS);
 	}, [fromCoin, toCoin]);
 
-	const handleAmountChange = useCallback((text: string) => {
-		const sanitized = text.replace(/[^\d.]/g, '');
-		const parts = sanitized.split('.');
-		const formatted = parts[0] + (parts[1] ? '.' + parts[1].slice(0, 9) : '');
+	const handleAmountChange = (amount: string) => {
+		// Clear any non-numeric characters except decimal point
+		amount = amount.replace(/[^0-9.]/g, '');
+		
+		// Prevent multiple decimal points
+		const decimalPoints = amount.match(/\./g)?.length || 0;
+		if (decimalPoints > 1) return;
 
-		// Set amount immediately
-		setFromAmount(formatted);
-
-		// Only trigger quote if amount is valid
-		if (parseFloat(formatted) > 0) {
-			setQuoteLoading(true);
-			fetchTradeQuote(formatted);
-		} else {
-			setQuoteLoading(false);
-			setToAmount('0');
-			setExchangeRate('');
-			setTradeDetails({
-				estimatedFee: '0.00',
-				spread: '0.00',
-				gasFee: '0.00',
-			});
+		// Validate against available balance
+		if (fromCoin?.balance !== undefined) {
+			const numAmount = parseFloat(amount) || 0;
+			if (numAmount > fromCoin.balance) {
+				showToast({
+					type: 'error',
+					message: `Insufficient balance. Available: ${fromCoin.balance.toFixed(4)} ${fromCoin.symbol}`
+				});
+				return;
+			}
 		}
-	}, [fetchTradeQuote]);
+
+		setFromAmount(amount);
+
+		// Clear any existing timeout
+		if (debounceTimerRef.current) {
+			clearTimeout(debounceTimerRef.current);
+		}
+
+		// Set new timeout for trade quote
+		debounceTimerRef.current = setTimeout(() => {
+			if (parseFloat(amount) > 0) {
+				fetchTradeQuote(amount);
+			} else {
+				setToAmount('0');
+				setExchangeRate('');
+			}
+		}, QUOTE_DEBOUNCE_MS);
+	};
 
 	const handleSwapCoins = () => {
 		if (!fromCoin || !toCoin) return;
 
-		const oldFromCoin = fromCoin;
-		const oldToCoin = toCoin;
+		const oldFromCoin = { ...fromCoin };
+		const oldToCoin = { ...toCoin };
 		const oldFromAmount = fromAmount;
 		const oldToAmount = toAmount;
 
@@ -184,8 +198,8 @@ const TradeScreen: React.FC = () => {
 			});
 
 			const signedTransaction = await buildAndSignSwapTransaction(
-				fromCoin.address || fromCoin.id,
-				toCoin.address || toCoin.id,
+				fromCoin.id,
+				toCoin.id,
 				rawAmount.toString(),
 				1, // 1% slippage
 				wallet
@@ -236,8 +250,8 @@ const TradeScreen: React.FC = () => {
 				name: fromCoin.name,
 				decimals: fromCoin.decimals,
 				price: fromCoin.price,
-				iconUrl: fromCoin.iconUrl,
-				address: fromCoin.address || fromCoin.id
+				icon_url: fromCoin.icon_url,
+				address: fromCoin.id
 			} : null,
 			toCoin: toCoin ? {
 				id: toCoin.id,
@@ -245,8 +259,8 @@ const TradeScreen: React.FC = () => {
 				name: toCoin.name,
 				decimals: toCoin.decimals,
 				price: toCoin.price,
-				iconUrl: toCoin.iconUrl,
-				address: toCoin.address
+				icon_url: toCoin.icon_url,
+				address: toCoin.id
 			} : null,
 			routeParams: {
 				initialFromCoin: initialFromCoin ? {
@@ -293,7 +307,6 @@ const TradeScreen: React.FC = () => {
 						<CoinSelector
 							label="From"
 							selectedCoin={fromCoin}
-							excludeCoinId={toCoin?.id}
 							amount={fromAmount}
 							onAmountChange={handleAmountChange}
 							onCoinSelect={() => { }}
@@ -322,7 +335,6 @@ const TradeScreen: React.FC = () => {
 						<CoinSelector
 							label="To"
 							selectedCoin={toCoin}
-							excludeCoinId={fromCoin.id}
 							amount={toAmount}
 							isAmountLoading={quoteLoading}
 							onCoinSelect={() => { }}

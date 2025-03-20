@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Pressable, TextInput, ActivityIndicator, Platform } from 'react-native';
-import { Coin, RootStackParamList } from '../types/index';
+import { Coin } from '../types/index';
 
 const DEFAULT_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
 interface CoinSelectorProps {
   label: string;
   selectedCoin?: Coin;
-  excludeCoinId?: string;
   amount: string;
   isAmountLoading?: boolean;
   onAmountChange?: (amount: string) => void;
@@ -18,14 +17,12 @@ interface CoinSelectorProps {
 
 const getCoinIcon = (coinObj?: Coin): string => {
   if (!coinObj) return DEFAULT_ICON;
-  
-  return coinObj.logo_url || coinObj.icon_url || coinObj.iconUrl || DEFAULT_ICON;
+  return coinObj.icon_url || DEFAULT_ICON;
 };
 
 const CoinSelector: React.FC<CoinSelectorProps> = ({
   label,
   selectedCoin,
-  excludeCoinId,
   amount,
   isAmountLoading,
   onAmountChange,
@@ -38,18 +35,25 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 
     return (
       <View style={styles.coinContainer}>
-        <Image
-          source={{ uri: getCoinIcon(selectedCoin) }}
-          style={styles.coinIcon}
-          defaultSource={{ uri: DEFAULT_ICON }}
-        />
-        <View style={styles.coinInfo}>
-          <Text style={styles.coinSymbol}>{selectedCoin.symbol}</Text>
-          <Text style={styles.coinName}>{selectedCoin.name}</Text>
+        <View style={styles.leftSection}>
+          <Image
+            source={{ uri: getCoinIcon(selectedCoin) }}
+            style={styles.coinIcon}
+            defaultSource={{ uri: DEFAULT_ICON }}
+          />
+          <View style={styles.coinInfo}>
+            <Text style={styles.coinSymbol}>{selectedCoin.symbol}</Text>
+            <Text style={styles.coinName}>{selectedCoin.name}</Text>
+          </View>
         </View>
-        <Text style={styles.coinBalance}>
-          Balance: {selectedCoin.balance?.toFixed(4) || '0.0000'}
-        </Text>
+        <View style={styles.balanceSection}>
+          <Text style={styles.balanceText}>
+            {selectedCoin.balance?.toFixed(4) || '0.0000'}
+          </Text>
+          <Text style={styles.valueText}>
+            ${(selectedCoin.price * (selectedCoin.balance || 0)).toFixed(2)}
+          </Text>
+        </View>
       </View>
     );
   };
@@ -113,6 +117,12 @@ const styles = StyleSheet.create({
   coinContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   coinIcon: {
     width: 30,
@@ -132,9 +142,18 @@ const styles = StyleSheet.create({
     color: '#9F9FD5',
     fontSize: 12,
   },
-  coinBalance: {
+  balanceSection: {
+    alignItems: 'flex-end',
+  },
+  balanceText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  valueText: {
     color: '#9F9FD5',
     fontSize: 12,
+    marginTop: 2,
   },
   placeholderText: {
     color: '#9F9FD5',

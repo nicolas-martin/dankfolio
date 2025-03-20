@@ -19,6 +19,12 @@ type TokenInfo struct {
 	Percentage float64 `json:"percentage"` // Additional field specific to wallet tokens
 }
 
+// WalletBalance represents a wallet's complete balance including SOL and tokens
+type WalletBalance struct {
+	SolBalance float64     `json:"sol_balance"`
+	Tokens     []TokenInfo `json:"tokens"`
+}
+
 // Service handles wallet-related operations
 type Service struct {
 	client      *rpc.Client
@@ -33,8 +39,41 @@ func New(client *rpc.Client, coinService *coin.Service) *Service {
 	}
 }
 
-// GetTokens retrieves token balances for a wallet
-func (s *Service) GetTokens(ctx context.Context, address string) ([]TokenInfo, error) {
+// GetTokens returns all tokens in a wallet
+func (s *Service) GetTokens(ctx context.Context, address string) (*WalletBalance, error) {
+	// Parse the public key
+	pubKey, err := solana.PublicKeyFromBase58(address)
+	if err != nil {
+		return nil, fmt.Errorf("invalid address: %v", err)
+	}
+
+	// Get SOL balance first
+	balance, err := s.client.GetBalance(
+		ctx,
+		pubKey,
+		rpc.CommitmentConfirmed,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get SOL balance: %v", err)
+	}
+
+	// Convert lamports to SOL (balance.Value is in lamports)
+	solBalance := float64(balance.Value) / 1e9
+
+	// Get token balances
+	tokens, err := s.getTokenBalances(ctx, address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token balances: %v", err)
+	}
+
+	return &WalletBalance{
+		SolBalance: solBalance,
+		Tokens:     tokens,
+	}, nil
+}
+
+// getTokenBalances is a helper function that gets just the token balances
+func (s *Service) getTokenBalances(ctx context.Context, address string) ([]TokenInfo, error) {
 	// Validate wallet address
 	pubKey, err := solana.PublicKeyFromBase58(address)
 	if err != nil {

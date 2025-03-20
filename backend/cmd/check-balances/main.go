@@ -19,11 +19,11 @@ import (
 type WalletInfo struct {
 	Path      string
 	PublicKey string
-	Balance   uint64
+	Balance   float64
 	Tokens    []wallet.TokenInfo
 }
 
-func checkBalance(ctx context.Context, client *rpc.Client, walletService *wallet.Service, keyPath string) (*WalletInfo, error) {
+func checkBalance(ctx context.Context, walletService *wallet.Service, keyPath string) (*WalletInfo, error) {
 	fmt.Printf("\nChecking balance for: %s\n", keyPath)
 
 	keypair, err := solana.PrivateKeyFromSolanaKeygenFile(keyPath)
@@ -31,29 +31,19 @@ func checkBalance(ctx context.Context, client *rpc.Client, walletService *wallet
 		return nil, fmt.Errorf("failed to parse keypair: %v", err)
 	}
 
-	// Get SOL balance
-	balance, err := client.GetBalance(
-		ctx,
-		keypair.PublicKey(),
-		rpc.CommitmentConfirmed,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get balance: %v", err)
-	}
-
 	// Get token balances
-	tokens, err := walletService.GetTokens(ctx, keypair.PublicKey().String())
+	walletBalance, err := walletService.GetTokens(ctx, keypair.PublicKey().String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token balances: %v", err)
 	}
 
 	fmt.Printf("Public Key: %s\n", keypair.PublicKey())
-	fmt.Printf("SOL Balance: %.9f SOL\n", float64(balance.Value)/1e9)
+	fmt.Printf("SOL Balance: %.9f SOL\n", walletBalance.SolBalance)
 	fmt.Printf("\nToken Balances:\n")
 	fmt.Printf("%-20s %-40s %-12s %-15s %-15s\n", "Token", "Address", "Balance", "Price ($)", "Value ($)")
 	fmt.Printf("%-20s %-40s %-12s %-15s %-15s\n", "-----", "-------", "-------", "---------", "---------")
 
-	for _, token := range tokens {
+	for _, token := range walletBalance.Tokens {
 		fmt.Printf("%-20s %-40s %-12.4f $%-14.4f $%-14.2f\n",
 			token.Symbol,
 			token.ID,
@@ -66,8 +56,8 @@ func checkBalance(ctx context.Context, client *rpc.Client, walletService *wallet
 	return &WalletInfo{
 		Path:      keyPath,
 		PublicKey: keypair.PublicKey().String(),
-		Balance:   balance.Value,
-		Tokens:    tokens,
+		Balance:   walletBalance.SolBalance,
+		Tokens:    walletBalance.Tokens,
 	}, nil
 }
 
@@ -114,7 +104,7 @@ func main() {
 	}
 
 	// Check wallet balance
-	info, err := checkBalance(ctx, client, walletService, absPath)
+	info, err := checkBalance(ctx, walletService, absPath)
 	if err != nil {
 		log.Fatalf("Error checking wallet balance: %v", err)
 	}

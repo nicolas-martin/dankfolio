@@ -41,6 +41,12 @@ export interface TokenInfo extends Coin {
 	percentage: number; // Required for wallet tokens
 }
 
+// WalletBalanceResponse matches the backend's WalletBalance struct
+export interface WalletBalanceResponse {
+	sol_balance: number;
+	tokens: TokenInfo[];
+}
+
 interface API {
 	executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
 	getAvailableCoins: () => Promise<Coin[]>;
@@ -122,6 +128,10 @@ const api: API = {
 		try {
 			console.log('🔍 Fetching wallet balance for address:', address);
 			const response = await apiClient.get<WalletBalanceResponse>(`/api/wallets/${address}/balance`);
+			console.log('✅ Wallet balance received:', {
+				sol_balance: response.data.sol_balance,
+				token_count: response.data.tokens.length
+			});
 			return response.data;
 		} catch (error) {
 			console.error('❌ Error fetching wallet balance:', error);
@@ -218,10 +228,6 @@ export interface PriceHistoryResponse {
 		}>;
 	};
 	success: boolean;
-}
-
-export interface WalletBalanceResponse {
-	tokens: TokenInfo[];
 }
 
 // Enhanced error handler

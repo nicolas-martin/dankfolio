@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Image } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Image, Dimensions } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { LineChart } from 'react-native-chart-kit';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 import PlatformImage from '../components/PlatformImage';
 import TopBar from '../components/TopBar';
@@ -10,7 +12,7 @@ import BackButton from '../components/BackButton';
 import CoinInfo from '../components/CoinInfo';
 import PriceDisplay from '../components/PriceDisplay';
 import { secureStorage } from '../services/solana';
-import api from '../services/api';
+import api, { WalletBalanceResponse } from '../services/api';
 import { Coin, Wallet, RootStackParamList } from '../types/index';
 
 const formatNumber = (num: number): string => {
@@ -34,6 +36,7 @@ type CoinDetailScreenRouteProp = RouteProp<{
 		daily_volume?: number;
 		coin?: Coin;
 		solCoin?: Coin;
+		walletBalance?: WalletBalanceResponse;
 	};
 }, 'CoinDetail'>;
 
@@ -64,13 +67,7 @@ const CoinDetailScreen: React.FC = () => {
 	const [walletBalance, setWalletBalance] = useState<number>(0);
 	const [hoverPoint, setHoverPoint] = useState<{ x: Date; y: number } | null>(null);
 
-	// Debug dependency changes
 	useEffect(() => {
-		console.log('🎯 Effect triggered with:', {
-			coinId,
-			selectedTimeframe,
-			hasWallet: !!wallet
-		});
 		loadWallet();
 		fetchPriceHistory(selectedTimeframe);
 	}, [selectedTimeframe, coinId]);
@@ -188,30 +185,28 @@ const CoinDetailScreen: React.FC = () => {
 		}
 	};
 
-	const handleBuyPress = () => {
+	const handleTradePress = () => {
 		if (coin && solCoin) {
-			console.log('💰 CoinDetail -> Trade with coins:', {
-				fromCoin: {
-					id: solCoin.id,
-					symbol: solCoin.symbol,
-					name: solCoin.name,
-					decimals: solCoin.decimals,
-					price: solCoin.price,
-					iconUrl: solCoin.icon_url,
-				},
-				toCoin: {
-					id: coin.id,
-					symbol: coin.symbol,
-					name: coin.name,
-					decimals: coin.decimals,
-					price: coin.price,
-					iconUrl: coin.icon_url,
-					address: coin.id
-				}
-			});
+			const { walletBalance } = route.params;
+			
+			// Special handling for SOL balance - already in SOL format
+			const fromBalance = solCoin.id === 'So11111111111111111111111111111111111111112' 
+				? (walletBalance?.sol_balance || 0)
+				: walletBalance?.tokens.find(token => token.id === solCoin.id)?.balance || 0;
+
+			const toBalance = coin.id === 'So11111111111111111111111111111111111111112'
+				? (walletBalance?.sol_balance || 0)
+				: walletBalance?.tokens.find(token => token.id === coin.id)?.balance || 0;
+
 			navigation.navigate('Trade', {
-				initialFromCoin: solCoin,
-				initialToCoin: coin
+				initialFromCoin: {
+					...solCoin,
+					balance: fromBalance
+				},
+				initialToCoin: {
+					...coin,
+					balance: toBalance
+				}
 			});
 		}
 	};
@@ -330,7 +325,7 @@ const CoinDetailScreen: React.FC = () => {
 				<View style={styles.bottomButtonContainer}>
 					<TouchableOpacity
 						style={styles.bottomBuyButton}
-						onPress={handleBuyPress}
+						onPress={handleTradePress}
 					>
 						<Text style={styles.bottomBuyButtonText}>Buy {coin.name}</Text>
 					</TouchableOpacity>
