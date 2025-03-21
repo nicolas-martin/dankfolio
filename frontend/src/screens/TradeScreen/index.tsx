@@ -141,15 +141,6 @@ const TradeScreen: React.FC = () => {
 							}}
 						/>
 
-						{/* Price Display */}
-						<PriceDisplay
-							price={parseFloat(exchangeRate) || 0}
-							periodChange={0}
-							valueChange={0}
-							period="24h"
-							name={`${fromCoin?.symbol || ''} to ${toCoin?.symbol || ''}`}
-						/>
-
 						{/* Trade Details */}
 						<TradeDetails
 							exchangeRate={exchangeRate}
