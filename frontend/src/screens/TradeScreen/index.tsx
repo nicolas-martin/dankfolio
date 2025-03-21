@@ -1,28 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, SafeAreaView, Text } from 'react-native';
+import { View, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Text } from 'react-native';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Coin } from '../types/index';
+import { Coin } from '../../types/index';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import TopBar from '../components/common/ui/TopBar';
-import CoinSelector from '../components/trade/CoinSelector';
-import SwapButton from '../components/common/ui/SwapButton';
-import TradeDetails from '../components/trade/TradeDetails';
-import TradeButton from '../components/common/ui/TradeButton';
-import PriceDisplay from '../components/trade/PriceDisplay';
-import api from '../services/api';
-import { buildAndSignSwapTransaction, getKeypairFromPrivateKey, secureStorage } from '../services/solana';
-import { useToast } from '../components/common/Toast';
+import TopBar from '../../components/common/ui/TopBar';
+import CoinSelector from '../../components/trade/CoinSelector';
+import SwapButton from '../../components/common/ui/SwapButton';
+import TradeDetails from '../../components/trade/TradeDetails';
+import TradeButton from '../../components/common/ui/TradeButton';
+import PriceDisplay from '../../components/trade/PriceDisplay';
+import api from '../../services/api';
+import { buildAndSignSwapTransaction, getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
+import { useToast } from '../../components/common/Toast';
+import { styles } from './styles';
+import { TradeScreenParams } from './types';
 
 const MIN_AMOUNT = "0.0001";
 const DEFAULT_AMOUNT = "0.0001";
 const QUOTE_DEBOUNCE_MS = 500;
-
-
-type TradeScreenParams = {
-	initialFromCoin: Coin | null;
-	initialToCoin: Coin | null;
-};
 
 const TradeScreen: React.FC = () => {
 	const navigation = useNavigation();
@@ -367,40 +363,5 @@ const TradeScreen: React.FC = () => {
 		</SafeAreaView>
 	);
 };
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#191B1F',
-	},
-	keyboardAvoidingView: {
-		flex: 1,
-	},
-	scrollView: {
-		flex: 1,
-	},
-	tradeContainer: {
-		backgroundColor: '#2A2A3E',
-		borderRadius: 20,
-		padding: 20,
-		margin: 20,
-	},
-	valueInfo: {
-		marginTop: -8,
-		marginBottom: 12,
-		paddingHorizontal: 12,
-	},
-	valueText: {
-		fontSize: 14,
-		color: '#9F9FD5',
-		textAlign: 'right',
-	},
-	priceText: {
-		fontSize: 12,
-		color: '#9F9FD5',
-		textAlign: 'right',
-		marginTop: 2,
-	},
-});
 
 export default TradeScreen;

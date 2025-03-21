@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, FlatList, Image } from 'react-native';
-import { getKeypairFromPrivateKey, secureStorage } from '../services/solana';
-import api, { WalletBalanceResponse } from '../services/api';
+import { getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
+import api, { WalletBalanceResponse } from '../../services/api';
 import { TEST_PRIVATE_KEY } from '@env';
-import CoinCard from '../components/trade/CoinCard';
-import TopBar from '../components/common/ui/TopBar';
-import { Wallet, Coin, NotificationProps, ScreenProps } from '../types/index';
+import CoinCard from '../../components/trade/CoinCard';
+import { Wallet, Coin, NotificationProps } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/index';
+import { RootStackParamList } from '../../types/index';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

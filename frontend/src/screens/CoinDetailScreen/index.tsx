@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useToast } from '../components/common/Toast';
+import { useToast } from '../../components/common/Toast';
 
-import TopBar from '../components/common/ui/TopBar';
-import CoinChart from '../components/common/chart/CoinChart';
-import CoinInfo from '../components/common/chart/CoinInfo';
-import PriceDisplay from '../components/trade/PriceDisplay';
-import { secureStorage } from '../services/solana';
-import api, { WalletBalanceResponse } from '../services/api';
-import { Coin, Wallet, RootStackParamList } from '../types/index';
-import { theme } from '../utils/theme';
+import TopBar from '../../components/common/ui/TopBar';
+import CoinChart from '../../components/common/chart/CoinChart';
+import CoinInfo from '../../components/common/chart/CoinInfo';
+import PriceDisplay from '../../components/trade/PriceDisplay';
+import { secureStorage } from '../../services/solana';
+import api, { WalletBalanceResponse } from '../../services/api';
+import { Coin, Wallet, RootStackParamList } from '../../types/index';
+import { theme } from '../../utils/theme';
+import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp, TimeframeOption } from './types';
 
 const formatNumber = (num: number): string => {
 	if (num >= 1000000000) {
@@ -26,29 +27,11 @@ const formatNumber = (num: number): string => {
 	return num.toFixed(2);
 };
 
-type CoinDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail'>;
-type CoinDetailScreenRouteProp = RouteProp<{
-	CoinDetail: {
-		coinId: string;
-		coinName: string;
-		daily_volume?: number;
-		coin?: Coin;
-		solCoin?: Coin;
-		walletBalance?: WalletBalanceResponse;
-	};
-}, 'CoinDetail'>;
-
-interface TimeframeOption {
-	label: string;
-	value: string;
-}
-
 const TIMEFRAMES: TimeframeOption[] = [
 	{ label: "15m", value: "15m" },
 	{ label: "1H", value: "1H" },
 	{ label: "4H", value: "4H" },
 	{ label: "1D", value: "1D" },
-	{ label: "1W", value: "1W" },
 ];
 
 const CoinDetailScreen: React.FC = () => {
