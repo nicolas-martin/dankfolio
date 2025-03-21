@@ -67,24 +67,26 @@ const CoinDetailScreen: React.FC = () => {
 		<SafeAreaView style={styles.safeArea}>
 			<TopBar />
 			<ScrollView style={styles.scrollView} bounces={false}>
-				{/* Price Display */}
+				{/* Header with Price Display */}
 				{coin && priceHistory.length >= 2 && (
-					<PriceDisplay
-						price={hoverPoint?.y || priceHistory[priceHistory.length - 1]?.y || 0}
-						periodChange={
-							((priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y) /
-								priceHistory[0]?.y) * 100
-						}
-						valueChange={
-							priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
-						}
-						period={selectedTimeframe}
-						icon_url={coin.icon_url}
-						name={coin.name}
-					/>
+					<View style={styles.header}>
+						<PriceDisplay
+							price={hoverPoint?.y || priceHistory[priceHistory.length - 1]?.y || 0}
+							periodChange={
+								((priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y) /
+									priceHistory[0]?.y) * 100
+							}
+							valueChange={
+								priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
+							}
+							period={selectedTimeframe}
+							icon_url={coin.icon_url}
+							name={coin.name}
+						/>
+					</View>
 				)}
 
-				{/* Chart */}
+				{/* Chart Section */}
 				<View style={styles.chartContainer}>
 					<CoinChart
 						data={priceHistory}
@@ -117,10 +119,10 @@ const CoinDetailScreen: React.FC = () => {
 					</View>
 				</View>
 
-				{/* Balance Section */}
+				{/* Your Holdings Section */}
 				{wallet && walletBalance > 0 && (
 					<View style={styles.balanceSection}>
-						<Text style={styles.balanceTitle}>Your balance</Text>
+						<Text style={styles.balanceTitle}>Your Holdings</Text>
 						<View style={styles.balanceDetails}>
 							<View style={styles.balanceRow}>
 								<Text style={styles.balanceLabel}>Value</Text>
@@ -130,15 +132,16 @@ const CoinDetailScreen: React.FC = () => {
 							</View>
 							<View style={styles.balanceRow}>
 								<Text style={styles.balanceLabel}>Quantity</Text>
-								<Text style={styles.balanceValue}>{walletBalance}</Text>
+								<Text style={styles.balanceValue}>{walletBalance.toFixed(4)} {coin?.symbol}</Text>
 							</View>
 						</View>
 					</View>
 				)}
 
-				{/* Coin Info */}
+				{/* Coin Information */}
 				{!metadataLoading && coin ? (
 					<View style={styles.statsContainer}>
+						<Text style={styles.sectionTitle}>About {coin.name}</Text>
 						<CoinInfo
 							metadata={{
 								name: coin.name,
@@ -158,7 +161,7 @@ const CoinDetailScreen: React.FC = () => {
 				)}
 			</ScrollView>
 
-			{/* Fixed Buy Button */}
+			{/* Trade Button */}
 			{coin && (
 				<View style={styles.bottomButtonContainer}>
 					<TouchableOpacity
@@ -171,7 +174,7 @@ const CoinDetailScreen: React.FC = () => {
 							navigation.navigate
 						)}
 					>
-						<Text style={styles.bottomBuyButtonText}>Buy {coin.name}</Text>
+						<Text style={styles.bottomBuyButtonText}>Trade {coin.name}</Text>
 					</TouchableOpacity>
 				</View>
 			)}

@@ -14,6 +14,12 @@ export const styles = StyleSheet.create({
         flex: 1,
         marginBottom: 80, // Space for fixed button
     },
+    header: {
+        padding: theme.spacing.lg,
+        backgroundColor: '#191B1F',
+        borderRadius: theme.borderRadius.lg,
+        margin: theme.spacing.lg,
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -28,7 +34,7 @@ export const styles = StyleSheet.create({
             default: 250
         }),
         marginVertical: theme.spacing.lg,
-        backgroundColor: theme.colors.cardBackground,
+        backgroundColor: theme.colors.background,
         overflow: 'visible',
         position: 'relative',
         marginBottom: Platform.OS !== 'web' ? 60 : theme.spacing.lg,
@@ -39,7 +45,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: theme.spacing.lg,
         gap: theme.spacing.md,
-        backgroundColor: 'rgba(25, 27, 31, 0.9)',
+        backgroundColor: theme.colors.background,
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.sm,
         marginBottom: Platform.select({
@@ -75,6 +81,7 @@ export const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.sm,
         minWidth: 48,
         alignItems: 'center',
+        backgroundColor: theme.colors.background,
     },
     timeframeButtonActive: {
         backgroundColor: theme.colors.primary,
@@ -124,6 +131,12 @@ export const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.lg,
         padding: theme.spacing.lg,
         margin: theme.spacing.xl,
+    },
+    sectionTitle: {
+        fontSize: theme.typography.fontSize.xl,
+        fontWeight: 'bold',
+        color: theme.colors.text,
+        marginBottom: theme.spacing.lg,
     },
     statItem: {
         marginBottom: theme.spacing.lg,
