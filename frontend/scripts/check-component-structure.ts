@@ -181,8 +181,7 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
       const fullPath = path.join(result.path, 'index.tsx');
       
       // Component name and path
-      console.log(chalk.yellow.bold(`${result.name} `));
-      console.log(chalk.gray(`   ${fullPath}`));
+      console.log(chalk.yellow.bold(`${result.name}`));
 
       // Group issues by type
       const issuesByType = result.issues.reduce((acc, issue) => {
@@ -192,9 +191,14 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
 
       // Print each type of issue
       Object.entries(issuesByType).forEach(([type, issues]) => {
-        console.log(chalk.yellow(`\n   ${getIssueHeader(type as IssueType)}:`));
+        // Print the first issue's location as the VSCode link
+        if (issues.length > 0) {
+          console.log(chalk.gray(`    vscode://file/${fullPath}:${issues[0].line}:1`));
+        }
+        console.log(chalk.yellow(`    ${getIssueHeader(type as IssueType)}`));
         issues.forEach(issue => {
-          console.log(chalk.yellow(`     • Line ${chalk.bold(issue.line)}: ${issue.content}`));
+          const code = issue.content.replace(/^(Logic|Style|Type) in component: /, '');
+          console.log(chalk.yellow(`     • ${code.trim().startsWith('`') ? code : '`' + code + '`'}`));
         });
       });
       
