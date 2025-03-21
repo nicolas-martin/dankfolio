@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { useToast } from '../../components/common/Toast';
+import { useToast } from '../../components/Common/Toast';
 import { theme } from '../../utils/theme';
 
-import TopBar from '../../components/common/ui/TopBar';
-import CoinChart from '../../components/common/chart/CoinChart';
-import CoinInfo from '../../components/common/chart/CoinInfo';
-import PriceDisplay from '../../components/trade/PriceDisplay';
+import TopBar from '../../components/Common/TopBar';
+import CoinChart from '../../components/Chart/CoinChart';
+import CoinInfo from '../../components/Chart/CoinInfo';
+import PriceDisplay from '../../components/CoinDetails/PriceDisplay';
 import { Coin, Wallet } from '../../types/index';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './types';
 import {
@@ -19,7 +19,7 @@ import {
 } from './scripts';
 import { styles } from './styles';
 
-const CoinDetailScreen: React.FC = () => {
+const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
 	const { coin: initialCoin, solCoin: initialSolCoin } = route.params;
@@ -182,4 +182,4 @@ const CoinDetailScreen: React.FC = () => {
 	);
 };
 
-export default CoinDetailScreen;
+export default CoinDetail;

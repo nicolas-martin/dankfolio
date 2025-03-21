@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Linking } from 'react-native';
-import PlatformImage from '../../ui/PlatformImage';
+import PlatformImage from '../../Common/PlatformImage';
 import { CoinInfoProps } from './types';
 import { styles } from './styles';
 

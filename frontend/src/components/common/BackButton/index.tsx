@@ -3,7 +3,7 @@ import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BackButtonProps } from './types';
-import { styles } from './styles';
+import { styles } from './styles'
 
 const BackButton: React.FC<BackButtonProps> = ({ style }) => {
   const navigation = useNavigation();

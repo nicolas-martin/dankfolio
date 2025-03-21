@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Text } from 'react-native';
 import { Coin } from '../../types/index';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
-import TopBar from '../../components/common/ui/TopBar';
-import CoinSelector from '../../components/trade/CoinSelector';
-import SwapButton from '../../components/common/ui/SwapButton';
-import TradeDetails from '../../components/trade/TradeDetails';
-import TradeButton from '../../components/common/ui/TradeButton';
-import { useToast } from '../../components/common/Toast';
+import TopBar from '../../components/Common/TopBar';
+import CoinSelector from '../../components/Trade/CoinSelector';
+import SwapButton from '../../components/Trade/SwapButton';
+import TradeDetails from '../../components/Trade/TradeDetails';
+import TradeButton from '../../components/Trade/TradeButton';
+import { useToast } from '../../components/Common/Toast';
 import { styles } from './styles';
 import { TradeScreenParams } from './types';
 import {

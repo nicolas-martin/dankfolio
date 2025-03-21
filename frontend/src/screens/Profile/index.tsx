@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { TokenInfo } from '../../services/api';
 import { useNavigation } from '@react-navigation/native';
-import TopBar from '../../components/common/ui/TopBar';
+import TopBar from '../../components/Common/TopBar';
 import { Coin } from '../../types/index';
-import { useToast } from '../../components/common/Toast';
+import { useToast } from '../../components/Common/Toast';
 import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './scripts';
 import { styles } from './styles'
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/types';

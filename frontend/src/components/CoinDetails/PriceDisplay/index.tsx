@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import PlatformImage from '../../common/ui/PlatformImage';
+import PlatformImage from '../../Common/PlatformImage';
 import { PriceDisplayProps } from './types';
 import { styles } from './styles';
 

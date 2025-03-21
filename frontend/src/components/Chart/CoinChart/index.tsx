@@ -3,7 +3,7 @@ import { View, ActivityIndicator, Dimensions, Text, Platform } from "react-nativ
 import * as Haptics from "expo-haptics";
 import { VictoryChart, VictoryLine, VictoryAxis } from "victory";
 import { CartesianChart, Line } from "victory-native";
-import { theme } from "../../../../utils/theme";
+import { theme } from "../../../utils/theme";
 
 interface ChartData {
     x: Date;

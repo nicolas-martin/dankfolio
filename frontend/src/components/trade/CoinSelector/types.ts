@@ -1,4 +1,4 @@
-import { Coin } from '../../../types';
+import { Coin } from '../../../types/index';
 import { TextInput } from 'react-native';
 
 export interface CoinSelectorProps {

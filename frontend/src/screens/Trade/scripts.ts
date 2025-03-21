@@ -2,7 +2,7 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Coin } from '../../types/index';
 import api from '../../services/api';
 import { buildAndSignSwapTransaction, getKeypairFromPrivateKey } from '../../services/solana';
-import { ToastProps } from '../../components/common/Toast/types';
+import { ToastProps } from '../../components/Common/Toast/types';
 import { RefObject } from 'react';
 
 export const MIN_AMOUNT = "0.0001";

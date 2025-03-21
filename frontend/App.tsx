@@ -3,12 +3,12 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { ToastProvider } from './src/components/common/Toast';
+import { ToastProvider } from './src/components/Common/Toast';
 
 // Import screens
 import Home from './src/screens/Home';
 import Trade from './src/screens/Trade';
-import CoinDetailScreen from './src/screens/CoinDetail';
+import CoinDetail from './src/screens/CoinDetail';
 import Profile from './src/screens/Profile';
 import { RootStackParamList } from './src/types/index';
 
@@ -31,7 +31,7 @@ const App: React.FC = () => {
 				>
 					<Stack.Screen name="Home" component={Home} />
 					<Stack.Screen name="Trade" component={Trade} />
-					<Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
+					<Stack.Screen name="CoinDetail" component={CoinDetail} />
 					<Stack.Screen name="Profile" component={Profile} />
 				</Stack.Navigator>
 			</NavigationContainer>

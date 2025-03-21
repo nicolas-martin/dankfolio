@@ -3,7 +3,7 @@ import { View, Text, Image, TextInput, ActivityIndicator, Platform } from 'react
 import { Coin } from '../../../types/index';
 import { theme } from '../../../utils/theme';
 import { CoinSelectorProps } from './types';
-import { styles } from './styles';
+import { styles } from './styles'
 
 const DEFAULT_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
