@@ -4,151 +4,129 @@ import chalk from 'chalk';
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
-// Patterns that indicate business logic that should be in scripts.ts
-const LOGIC_PATTERNS = [
-  // Functions with implementation
-  /function\s+\w+\s*\([^)]*\)\s*{[^}]+}/,
-  // Arrow functions with implementation
-  /const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*{[^}]+}/,
-  // Constants (except style-related)
-  /const\s+[A-Z_]+\s*=/,
-  // Data transformation
-  /\.map\s*\(\s*\([^)]*\)\s*=>\s*{[^}]+}\)/,
-  /\.filter\s*\(\s*\([^)]*\)\s*=>\s*{[^}]+}\)/,
-  /\.reduce\s*\(\s*\([^)]*\)\s*=>\s*{[^}]+}\)/,
-  // Complex state updates
-  /setState\s*\(\s*\([^)]*\)\s*=>\s*{[^}]+}\)/,
-  // API calls or data fetching
-  /\.(get|post|put|delete|fetch)\s*\(/,
-  // Complex calculations
-  /Math\.((?!min|max|round|floor|ceil)\w+)/,
-  // Event handlers with complex logic
-  /handle\w+\s*=\s*\([^)]*\)\s*=>\s*{[^}]+}/,
-  // Utility functions
-  /const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*[^;]+;/
-];
+// Issue type definitions
+type IssueType = 'logic' | 'style' | 'type';
 
-// Pattern to find style-related imports
-const STYLE_IMPORT_PATTERN = /import\s+{[^}]*}\s+from\s+['"]([^'"]+)['"]/g;
-
-// Patterns to find style issues
-const STYLE_PATTERNS = [
-  // Styled-components or emotion definitions
-  /styled\.[a-zA-Z]+`[^`]*`/,
-  /styled\([^)]+\)`[^`]*`/,
-  // StyleSheet.create in component
-  /StyleSheet\.create\({[^}]+}\)/,
-  // Inline style objects
-  /style=\{\s*{[^}]+}\s*\}/,
-  // Emotion styled usage
-  /emotion\/styled/,
-  // Style objects defined in component
-  /const\s+styles\s*=\s*{[^}]+}/,
-  // Inline className with template literal
-  /className={\`[^}]+\`}/,
-  // Style-related constants defined in component
-  /const\s+[A-Z_]+(?:_STYLE|_COLOR|_SIZE|_MARGIN|_PADDING|_WIDTH|_HEIGHT)\s*=\s*{[^}]+}/
-];
-
-// Patterns to find type definitions that should be in types.ts
-const TYPE_PATTERNS = [
-  // Interface definitions
-  /interface\s+[A-Z]\w*\s*{[^}]+}/,
-  // Type aliases
-  /type\s+[A-Z]\w*\s*=\s*/,
-  // Enum definitions
-  /enum\s+[A-Z]\w*\s*{[^}]+}/,
-  // Generic type definitions
-  /type\s+[A-Z]\w*<[^>]+>\s*=/,
-  // Inline parameter interface definitions
-  /\(\s*{\s*[a-zA-Z]+\s*:\s*[a-zA-Z<>[\]]+[^}]*}\s*\)\s*=>/,
-  // Inline return type definitions
-  /\)\s*:\s*{\s*[a-zA-Z]+\s*:\s*[a-zA-Z<>[\]]+[^}]*}\s*=>/
-];
+interface Issue {
+  content: string;
+  line: number;
+  type: IssueType;
+}
 
 interface ComponentCheck {
   name: string;
   path: string;
-  hasLogicInComponent: boolean;
-  hasStyleIssues: boolean;
-  hasTypeIssues: boolean;
-  logicFound: string[];
-  styleIssues: string[];
-  typeIssues: string[];
+  issues: Issue[];
+}
+
+interface PatternConfig {
+  type: IssueType;
+  patterns: RegExp[];
+  contentPrefix?: string;
+}
+
+// Pattern configurations
+const PATTERN_CONFIGS: PatternConfig[] = [
+  {
+    type: 'logic',
+    patterns: [
+      // Functions with implementation
+      /function\s+\w+\s*\([^)]*\)\s*{[^}]+}/,
+      // Arrow functions with implementation
+      /const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*{[^}]+}/,
+      // Constants (except style-related)
+      /const\s+[A-Z_]+\s*=/,
+      // Data transformation
+      /\.map\s*\(\s*\([^)]*\)\s*=>\s*{[^}]+}\)/,
+      /\.filter\s*\(\s*\([^)]*\)\s*=>\s*{[^}]+}\)/,
+      /\.reduce\s*\(\s*\([^)]*\)\s*=>\s*{[^}]+}\)/,
+      // Complex state updates
+      /setState\s*\(\s*\([^)]*\)\s*=>\s*{[^}]+}\)/,
+      // API calls or data fetching
+      /\.(get|post|put|delete|fetch)\s*\(/,
+      // Complex calculations
+      /Math\.((?!min|max|round|floor|ceil)\w+)/,
+      // Event handlers with complex logic
+      /handle\w+\s*=\s*\([^)]*\)\s*=>\s*{[^}]+}/,
+      // Utility functions
+      /const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*[^;]+;/
+    ]
+  },
+  {
+    type: 'style',
+    patterns: [
+      // Styled-components or emotion definitions
+      /styled\.[a-zA-Z]+`[^`]*`/,
+      /styled\([^)]+\)`[^`]*`/,
+      // StyleSheet.create in component
+      /StyleSheet\.create\({[^}]+}\)/,
+      // Inline style objects
+      /style=\{\s*{[^}]+}\s*\}/,
+      // Emotion styled usage
+      /emotion\/styled/,
+      // Style objects defined in component
+      /const\s+styles\s*=\s*{[^}]+}/,
+      // Inline className with template literal
+      /className={\`[^}]+\`}/,
+      // Style-related constants
+      /const\s+[A-Z_]+(?:_STYLE|_COLOR|_SIZE|_MARGIN|_PADDING|_WIDTH|_HEIGHT)\s*=\s*{[^}]+}/,
+      // Style imports from wrong locations
+      /import\s+{[^}]*}\s+from\s+['"]styled-components['"]/,
+      /import\s+{[^}]*}\s+from\s+['"]@emotion[^'"]*['"]/,
+      /import\s+{[^}]*}\s+from\s+['"](?!\.\/styles)[^'"]*style[^'"]*['"]/
+    ],
+    contentPrefix: 'Style in component: '
+  },
+  {
+    type: 'type',
+    patterns: [
+      // Interface definitions
+      /interface\s+[A-Z]\w*\s*{[^}]+}/,
+      // Type aliases
+      /type\s+[A-Z]\w*\s*=\s*/,
+      // Enum definitions
+      /enum\s+[A-Z]\w*\s*{[^}]+}/,
+      // Generic type definitions
+      /type\s+[A-Z]\w*<[^>]+>\s*=/,
+      // Inline parameter interface definitions
+      /\(\s*{\s*[a-zA-Z]+\s*:\s*[a-zA-Z<>[\]]+[^}]*}\s*\)\s*=>/,
+      // Inline return type definitions
+      /\)\s*:\s*{\s*[a-zA-Z]+\s*:\s*[a-zA-Z<>[\]]+[^}]*}\s*=>/
+    ],
+    contentPrefix: 'Type in component: '
+  }
+];
+
+function findIssuesInLine(line: string, lineNumber: number, config: PatternConfig): Issue[] {
+  return config.patterns
+    .filter(pattern => pattern.test(line))
+    .map(pattern => ({
+      content: config.contentPrefix ? `${config.contentPrefix}${line.trim()}` : line.trim(),
+      line: lineNumber,
+      type: config.type
+    }));
 }
 
 function checkComponentStructure(componentPath: string): ComponentCheck {
   const name = path.basename(componentPath);
   const indexPath = path.join(componentPath, 'index.tsx');
-  let hasLogicInComponent = false;
-  let hasStyleIssues = false;
-  let hasTypeIssues = false;
-  let logicFound = new Set<string>();
-  let styleIssues = new Set<string>();
-  let typeIssues = new Set<string>();
+  const issues: Issue[] = [];
   
   if (fs.existsSync(indexPath)) {
     const content = fs.readFileSync(indexPath, 'utf-8');
+    const lines = content.split('\n');
     
-    // Check each logic pattern
-    LOGIC_PATTERNS.forEach(pattern => {
-      const matches = content.match(pattern);
-      if (matches) {
-        hasLogicInComponent = true;
-        logicFound.add(matches[0].trim().split('\n')[0]); // Get first line of match
-      }
-    });
-
-    // Check style imports
-    let match;
-    while ((match = STYLE_IMPORT_PATTERN.exec(content)) !== null) {
-      const importPath = match[1];
-      if (importPath.includes('styled-components') || 
-          importPath.includes('@emotion') ||
-          (importPath.includes('style') && !importPath.includes('./styles'))) {
-        hasStyleIssues = true;
-        styleIssues.add(`Import: ${match[0].trim()}`);
-      }
-    }
-
-    // Check for style patterns
-    STYLE_PATTERNS.forEach(pattern => {
-      const matches = content.match(pattern);
-      if (matches) {
-        hasStyleIssues = true;
-        matches.forEach(match => {
-          styleIssues.add(`Style in component: ${match.trim()}`);
-        });
-      }
-    });
-
-    // Check for type patterns
-    TYPE_PATTERNS.forEach(pattern => {
-      const matches = content.match(pattern);
-      if (matches) {
-        hasTypeIssues = true;
-        matches.forEach(match => {
-          // Clean up the match to show just the essential part
-          const cleanMatch = match.trim()
-            .split('\n')[0]  // Get first line
-            .replace(/{\s*$/, '{...}')  // Replace complex type bodies with {...}
-            .substring(0, 100);  // Limit length
-          typeIssues.add(`Type in component: ${cleanMatch}`);
-        });
-      }
+    lines.forEach((line, index) => {
+      const lineNumber = index + 1;
+      
+      // Check all pattern configurations
+      PATTERN_CONFIGS.forEach(config => {
+        issues.push(...findIssuesInLine(line, lineNumber, config));
+      });
     });
   }
 
-  return {
-    name,
-    path: componentPath,
-    hasLogicInComponent,
-    hasStyleIssues,
-    hasTypeIssues,
-    logicFound: Array.from(logicFound),
-    styleIssues: Array.from(styleIssues),
-    typeIssues: Array.from(typeIssues)
-  };
+  return { name, path: componentPath, issues };
 }
 
 function scanDirectory(dir: string): ComponentCheck[] {
@@ -160,11 +138,9 @@ function scanDirectory(dir: string): ComponentCheck[] {
     const stats = fs.statSync(itemPath);
 
     if (stats.isDirectory()) {
-      // Check if it's a component directory (has index.tsx)
       if (fs.existsSync(path.join(itemPath, 'index.tsx'))) {
         results.push(checkComponentStructure(itemPath));
       } else {
-        // Recurse into subdirectories
         results.push(...scanDirectory(itemPath));
       }
     }
@@ -173,63 +149,56 @@ function scanDirectory(dir: string): ComponentCheck[] {
   return results;
 }
 
+function getIssueHeader(type: IssueType): string {
+  switch (type) {
+    case 'logic': return 'Business Logic (move to scripts.ts)';
+    case 'style': return 'Styles (move to styles.ts)';
+    case 'type': return 'Types (move to types.ts)';
+  }
+}
+
 function printResults(results: ComponentCheck[], showSummary: boolean = false): boolean {
   console.log(chalk.bold('\n🔍 Component Structure Check Results\n'));
 
   // First show all valid components
-  const validComponents = results.filter(result => 
-    !result.hasLogicInComponent && !result.hasStyleIssues && !result.hasTypeIssues
-  );
+  const validComponents = results.filter(result => result.issues.length === 0);
   
   if (validComponents.length > 0) {
     console.log(chalk.green.bold('✅ Properly Structured Components:'));
     validComponents.forEach(result => {
       console.log(chalk.green(`   ${result.name}`));
     });
-    console.log(''); // Empty line after valid components
+    console.log('');
   }
 
   // Then show components with issues
-  const componentsWithIssues = results.filter(result => 
-    result.hasLogicInComponent || result.hasStyleIssues || result.hasTypeIssues
-  );
+  const componentsWithIssues = results.filter(result => result.issues.length > 0);
   
   if (componentsWithIssues.length > 0) {
     console.log(chalk.yellow.bold('⚠️  Components Needing Attention:\n'));
     
     componentsWithIssues.forEach(result => {
       const fullPath = path.join(result.path, 'index.tsx');
-      const relativePath = fullPath.split('src/')[1];
       
       // Component name and path
       console.log(chalk.yellow.bold(`${result.name} `));
       console.log(chalk.gray(`   ${fullPath}`));
-      
-      // Logic issues
-      if (result.hasLogicInComponent) {
-        console.log(chalk.yellow('\n   Business Logic (move to scripts.ts):'));
-        result.logicFound.forEach(logic => {
-          console.log(chalk.yellow(`     • ${logic}`));
-        });
-      }
-      
-      // Style issues
-      if (result.hasStyleIssues) {
-        console.log(chalk.yellow('\n   Styles (move to styles.ts):'));
-        result.styleIssues.forEach(style => {
-          console.log(chalk.yellow(`     • ${style}`));
-        });
-      }
 
-      // Type issues
-      if (result.hasTypeIssues) {
-        console.log(chalk.yellow('\n   Types (move to types.ts):'));
-        result.typeIssues.forEach(type => {
-          console.log(chalk.yellow(`     • ${type}`));
+      // Group issues by type
+      const issuesByType = result.issues.reduce((acc, issue) => {
+        (acc[issue.type] = acc[issue.type] || []).push(issue);
+        return acc;
+      }, {} as Record<IssueType, Issue[]>);
+
+      // Print each type of issue
+      Object.entries(issuesByType).forEach(([type, issues]) => {
+        console.log(chalk.yellow(`\n   ${getIssueHeader(type as IssueType)}:`));
+        issues.forEach(issue => {
+          console.log(chalk.yellow(`     • Line ${chalk.bold(issue.line)}: ${issue.content}`));
         });
-      }
+      });
       
-      console.log('\n' + '─'.repeat(80) + '\n'); // Separator between components
+      console.log('\n' + '─'.repeat(80) + '\n');
     });
   }
 
@@ -253,7 +222,7 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
 // Run the check
 console.log(chalk.bold('🚀 Starting component structure check...\n'));
 
-// Collect all results first
+// Collect all results
 const allResults: ComponentCheck[] = [];
 COMPONENT_DIRS.forEach(dir => {
   const fullPath = path.join(process.cwd(), dir);
@@ -264,8 +233,6 @@ COMPONENT_DIRS.forEach(dir => {
   }
 });
 
-// Print all results together
+// Print results and exit
 const hasIssues = printResults(allResults, true);
-
-// Process exit code based on whether there were issues
 process.exit(hasIssues ? 1 : 0); 
