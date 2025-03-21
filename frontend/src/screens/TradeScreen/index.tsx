@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Text } from 'react-native';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Coin } from '../../types/index';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import TopBar from '../../components/common/ui/TopBar';
 import CoinSelector from '../../components/trade/CoinSelector';
 import SwapButton from '../../components/common/ui/SwapButton';
 import TradeDetails from '../../components/trade/TradeDetails';
 import TradeButton from '../../components/common/ui/TradeButton';
 import PriceDisplay from '../../components/trade/PriceDisplay';
-import api from '../../services/api';
-import { buildAndSignSwapTransaction, getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
 import { useToast } from '../../components/common/Toast';
 import { styles } from './styles';
 import { TradeScreenParams } from './types';
-
-const MIN_AMOUNT = "0.0001";
-const DEFAULT_AMOUNT = "0.0001";
-const QUOTE_DEBOUNCE_MS = 500;
+import {
+	MIN_AMOUNT,
+	DEFAULT_AMOUNT,
+	QUOTE_DEBOUNCE_MS,
+	fetchTradeQuote,
+	handleSwapCoins,
+	handleTrade
+} from './scripts';
 
 const TradeScreen: React.FC = () => {
 	const navigation = useNavigation();
@@ -43,191 +43,53 @@ const TradeScreen: React.FC = () => {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [quoteLoading, setQuoteLoading] = useState(false);
 
-	const fetchTradeQuote = useCallback(async (amount: string) => {
-		if (!amount || !fromCoin || !toCoin) {
-			return;
-		}
-
-		// Validate coin addresses
-		const fromAddress = fromCoin.id;
-		const toAddress = toCoin.id;
-
-		if (!fromAddress || !toAddress) {
-			return;
-		}
-
+	const getQuote = useCallback((amount: string) => {
 		if (debounceTimerRef.current) {
 			clearTimeout(debounceTimerRef.current);
 		}
 
-		// Create a new debounce timer
-		debounceTimerRef.current = setTimeout(async () => {
-			try {
-				setQuoteLoading(true);
-
-				// Convert amount to raw units based on decimals to avoid scientific notation
-				const multiplier = Math.pow(10, fromCoin.decimals);
-				const rawAmount = (parseFloat(amount) * multiplier).toFixed(0);
-
-				const response = await api.getTradeQuote(
-					fromAddress.trim(),
-					toAddress.trim(),
-					rawAmount
-				);
-
-				if (!response) {
-					throw new Error('No response from trade quote');
-				}
-
-				// Use the raw estimatedAmount string from the API
-				setToAmount(String(response.estimatedAmount));
-				setExchangeRate(`${response.exchangeRate} ${toCoin.symbol || ''}`);
-				setTradeDetails({
-					estimatedFee: String(response.fee?.total || '0.00'),
-					spread: String(response.fee?.spread || '0.00'),
-					gasFee: String(response.fee?.gas || '0.00'),
-				});
-			} catch (error) {
-				// Only log the error once per session for the same error type
-				const errorMessage = error.message || 'Unknown error';
-				if (!errorLogged.current.includes(errorMessage)) {
-					console.error('❌ Error fetching trade quote:', error);
-					errorLogged.current.push(errorMessage);
-				}
-
-				setToAmount('0');
-				setExchangeRate('');
-				setTradeDetails({
-					estimatedFee: '0.00',
-					spread: '0.00',
-					gasFee: '0.00',
-				});
-			} finally {
-				setQuoteLoading(false);
-			}
+		debounceTimerRef.current = setTimeout(() => {
+			fetchTradeQuote(
+				amount,
+				fromCoin,
+				toCoin,
+				setQuoteLoading,
+				setToAmount,
+				setExchangeRate,
+				setTradeDetails,
+				errorLogged
+			);
 		}, QUOTE_DEBOUNCE_MS);
 	}, [fromCoin, toCoin]);
 
-	const handleAmountChange = (amount: string) => {
-		// Clear any non-numeric characters except decimal point
-		amount = amount.replace(/[^0-9.]/g, '');
-		
-		// Prevent multiple decimal points
-		const decimalPoints = amount.match(/\./g)?.length || 0;
-		if (decimalPoints > 1) return;
+	useEffect(() => {
+		getQuote(fromAmount);
+	}, [fromAmount, fromCoin, toCoin, getQuote]);
 
-		// Validate against available balance
-		if (fromCoin?.balance !== undefined) {
-			const numAmount = parseFloat(amount) || 0;
-			if (numAmount > fromCoin.balance) {
-				showToast({
-					type: 'error',
-					message: `Insufficient balance. Available: ${fromCoin.balance.toFixed(4)} ${fromCoin.symbol}`
-				});
-				return;
-			}
-		}
+	const onSwapPress = useCallback(() => {
+		handleSwapCoins(
+			fromCoin,
+			toCoin,
+			setFromCoin,
+			setToCoin,
+			fromAmount,
+			setFromAmount,
+			toAmount,
+			setToAmount
+		);
+	}, [fromCoin, toCoin, fromAmount, toAmount]);
 
-		setFromAmount(amount);
-
-		// Clear any existing timeout
-		if (debounceTimerRef.current) {
-			clearTimeout(debounceTimerRef.current);
-		}
-
-		// Set new timeout for trade quote
-		debounceTimerRef.current = setTimeout(() => {
-			if (parseFloat(amount) > 0) {
-				fetchTradeQuote(amount);
-			} else {
-				setToAmount('0');
-				setExchangeRate('');
-			}
-		}, QUOTE_DEBOUNCE_MS);
-	};
-
-	const handleSwapCoins = () => {
-		if (!fromCoin || !toCoin) return;
-
-		const oldFromCoin = { ...fromCoin };
-		const oldToCoin = { ...toCoin };
-		const oldFromAmount = fromAmount;
-		const oldToAmount = toAmount;
-
-		setFromCoin(oldToCoin);
-		setToCoin(oldFromCoin);
-		setFromAmount(oldToAmount);
-		setToAmount(oldFromAmount);
-
-		const newAmount = parseFloat(oldToAmount) > 0 ? oldToAmount : oldFromAmount;
-		fetchTradeQuote(newAmount);
-	};
-
-	const handleSubmitTrade = async () => {
-		if (!fromCoin || !toCoin || !fromAmount) {
-			console.error('❌ Missing required trade parameters');
-			return;
-		}
-
-		try {
-			setIsSubmitting(true);
-
-			// Get the wallet from secure storage
-			const savedWallet = await secureStorage.getWallet();
-			if (!savedWallet) {
-				throw new Error('No wallet found');
-			}
-
-			// Create a keypair from the private key
-			const wallet = getKeypairFromPrivateKey(savedWallet.privateKey);
-
-			// Convert amount to raw units based on input token decimals
-			const multiplier = Math.pow(10, fromCoin.decimals);
-			const rawAmount = Math.floor(parseFloat(fromAmount) * multiplier);
-
-			console.log('💱 Swap details:', {
-				fromCoin: fromCoin.symbol,
-				toCoin: toCoin.symbol,
-				amount: fromAmount,
-				rawAmount,
-				decimals: fromCoin.decimals
-			});
-
-			const signedTransaction = await buildAndSignSwapTransaction(
-				fromCoin.id,
-				toCoin.id,
-				rawAmount.toString(),
-				1, // 1% slippage
-				wallet
-			);
-
-			const response = await api.executeTrade({
-				from_coin_id: fromCoin.id,
-				to_coin_id: toCoin.id,
-				amount: parseFloat(fromAmount),
-				signed_transaction: signedTransaction
-			});
-
-			showToast({
-				message: 'Trade executed successfully! 🎉',
-				txHash: response.transaction_hash,
-				type: 'success'
-			});
-
-			console.log('✅ Trade executed successfully!');
-			console.log('🔗 Transaction Hash:', response.transaction_hash);
-
-			// Remove form reset to keep trade details visible
-		} catch (error) {
-			showToast({
-				message: error.message || 'Failed to execute trade',
-				type: 'error'
-			});
-			console.error('❌ Error submitting trade:', error);
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
+	const onTradePress = useCallback(() => {
+		handleTrade(
+			fromCoin,
+			toCoin,
+			fromAmount,
+			toAmount,
+			setIsSubmitting,
+			showToast,
+			navigation.navigate
+		);
+	}, [fromCoin, toCoin, fromAmount, toAmount, showToast, navigation]);
 
 	const getTradeButtonLabel = (): string => {
 		if (isSubmitting) return 'Processing...';
@@ -237,124 +99,82 @@ const TradeScreen: React.FC = () => {
 		return 'Swap';
 	};
 
-	// Initialize coins from props
-	useEffect(() => {
-		console.log('🔄 Trade Screen initialized with coins:', {
-			fromCoin: fromCoin ? {
-				id: fromCoin.id,
-				symbol: fromCoin.symbol,
-				name: fromCoin.name,
-				decimals: fromCoin.decimals,
-				price: fromCoin.price,
-				icon_url: fromCoin.icon_url,
-				address: fromCoin.id
-			} : null,
-			toCoin: toCoin ? {
-				id: toCoin.id,
-				symbol: toCoin.symbol,
-				name: toCoin.name,
-				decimals: toCoin.decimals,
-				price: toCoin.price,
-				icon_url: toCoin.icon_url,
-				address: toCoin.id
-			} : null,
-			routeParams: {
-				initialFromCoin: initialFromCoin ? {
-					id: initialFromCoin.id,
-					symbol: initialFromCoin.symbol,
-					price: initialFromCoin.price
-				} : null,
-				initialToCoin: initialToCoin ? {
-					id: initialToCoin.id,
-					symbol: initialToCoin.symbol,
-					price: initialToCoin.price
-				} : null
-			}
-		});
-	}, [fromCoin, toCoin, initialFromCoin, initialToCoin]);
-
-	// Update coins when props change
-	useEffect(() => {
-		if (initialFromCoin) {
-			setFromCoin(initialFromCoin);
-		}
-		if (initialToCoin) {
-			setToCoin(initialToCoin);
-		}
-	}, [initialFromCoin, initialToCoin]);
-
-	// Fetch quote when screen loads and coins are available
-	useEffect(() => {
-		if (fromCoin && toCoin) {
-			console.log('🔄 Fetching initial trade quote with amount:', DEFAULT_AMOUNT);
-			fetchTradeQuote(DEFAULT_AMOUNT);
-		}
-	}, [fromCoin, toCoin, fetchTradeQuote]);
-
 	return (
 		<SafeAreaView style={styles.container}>
 			<KeyboardAvoidingView
 				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 				style={styles.keyboardAvoidingView}
 			>
+				<TopBar />
 				<ScrollView style={styles.scrollView}>
-					<TopBar />
 					<View style={styles.tradeContainer}>
+						{/* From Coin Selector */}
 						<CoinSelector
 							label="From"
 							selectedCoin={fromCoin}
 							amount={fromAmount}
-							onAmountChange={handleAmountChange}
-							onCoinSelect={() => { }}
+							onAmountChange={setFromAmount}
+							onCoinSelect={(coinId: string) => {
+								const coin = fromCoin;
+								if (coin) {
+									setFromCoin(coin);
+								}
+							}}
 							isInput
+							inputRef={amountInputRef}
 						/>
 
-						{fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
-							<View style={styles.valueInfo}>
-								<Text style={styles.valueText}>
-									≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
-								</Text>
-								<Text style={styles.priceText}>
-									1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toLocaleString(undefined, {
-										minimumFractionDigits: 2,
-										maximumFractionDigits: 2
-									}) : '0.00'}
-								</Text>
-							</View>
-						)}
+						{/* Swap Button */}
+						<SwapButton onPress={onSwapPress} />
 
-						<SwapButton
-							onPress={handleSwapCoins}
-							disabled={!fromCoin || !toCoin}
-						/>
-
+						{/* To Coin Selector */}
 						<CoinSelector
 							label="To"
 							selectedCoin={toCoin}
 							amount={toAmount}
 							isAmountLoading={quoteLoading}
-							onCoinSelect={() => { }}
+							onCoinSelect={(coinId: string) => {
+								const coin = toCoin;
+								if (coin) {
+									setToCoin(coin);
+								}
+							}}
 						/>
 
-						{fromCoin && toCoin && fromAmount && toAmount && (
-							<TradeDetails
-								exchangeRate={exchangeRate}
-								gasFee={tradeDetails.gasFee}
-								spread={tradeDetails.spread}
-							/>
+						{/* Price Display */}
+						<PriceDisplay
+							price={parseFloat(exchangeRate) || 0}
+							periodChange={0}
+							valueChange={0}
+							period="24h"
+							name={`${fromCoin?.symbol || ''} to ${toCoin?.symbol || ''}`}
+						/>
+
+						{/* Trade Details */}
+						<TradeDetails
+							exchangeRate={exchangeRate}
+							gasFee={tradeDetails.gasFee}
+							spread={tradeDetails.spread}
+						/>
+
+						{/* Value Info */}
+						{fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
+							<View style={styles.valueInfo}>
+								<Text style={styles.valueText}>
+								≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
+
+								</Text>
+								<Text style={styles.priceText}>
+									1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toFixed(2) : '0.00'}
+								</Text>
+							</View>
 						)}
 
+						{/* Trade Button */}
 						<TradeButton
-							onPress={handleSubmitTrade}
+							onPress={onTradePress}
 							isSubmitting={isSubmitting}
-							disabled={
-								isSubmitting ||
-								!fromCoin ||
-								!toCoin ||
-								fromCoin.id === toCoin.id ||
-								!fromAmount ||
-								parseFloat(fromAmount) <= 0
-							}
+							disabled={!fromCoin || !toCoin || !fromAmount || !toAmount || isSubmitting}
 							label={getTradeButtonLabel()}
 						/>
 					</View>

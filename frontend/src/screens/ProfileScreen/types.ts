@@ -1,7 +1,7 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/index';
 
-export type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
+export type ProfileScreenNavigationProp = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 export interface ProfileData {
     username: string;

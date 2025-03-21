@@ -1,38 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/common/Toast';
 
 import TopBar from '../../components/common/ui/TopBar';
 import CoinChart from '../../components/common/chart/CoinChart';
 import CoinInfo from '../../components/common/chart/CoinInfo';
 import PriceDisplay from '../../components/trade/PriceDisplay';
-import { secureStorage } from '../../services/solana';
-import api, { WalletBalanceResponse } from '../../services/api';
-import { Coin, Wallet, RootStackParamList } from '../../types/index';
+import { Coin, Wallet } from '../../types/index';
 import { theme } from '../../utils/theme';
-import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp, TimeframeOption } from './types';
-
-const formatNumber = (num: number): string => {
-	if (num >= 1000000000) {
-		return (num / 1000000000).toFixed(2) + 'B';
-	}
-	if (num >= 1000000) {
-		return (num / 1000000).toFixed(2) + 'M';
-	}
-	if (num >= 1000) {
-		return (num / 1000).toFixed(2) + 'K';
-	}
-	return num.toFixed(2);
-};
-
-const TIMEFRAMES: TimeframeOption[] = [
-	{ label: "15m", value: "15m" },
-	{ label: "1H", value: "1H" },
-	{ label: "4H", value: "4H" },
-	{ label: "1D", value: "1D" },
-];
+import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './types';
+import { 
+	TIMEFRAMES, 
+	fetchCoinData, 
+	fetchPriceHistory, 
+	handleTradeNavigation, 
+	loadWallet 
+} from './scripts';
 
 const CoinDetailScreen: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -50,144 +34,19 @@ const CoinDetailScreen: React.FC = () => {
 	const { showToast } = useToast();
 
 	useEffect(() => {
-		loadWallet();
-		fetchPriceHistory(selectedTimeframe);
-	}, [selectedTimeframe, coinId]);
-
-	useEffect(() => {
-		const fetchCoinData = async () => {
-			if (!initialCoin) return;
-			setMetadataLoading(true);
-
-			try {
-				// If daily_volume is 0, it means we're coming from profile page
-				// and need fresh data
-				if (initialCoin.daily_volume === 0) {
-					const freshCoinData = await api.getCoinByID(coinId);
-					setCoin({ ...initialCoin, ...freshCoinData });
-				} else {
-					setCoin(initialCoin);
-				}
-			} catch (error) {
-				console.error('❌ Failed to fetch coin details:', error);
-				setCoin(initialCoin);
-			}
-
-			setMetadataLoading(false);
+		const initWallet = async () => {
+			const { wallet: loadedWallet, balance } = await loadWallet(coinId);
+			setWallet(loadedWallet);
+			setWalletBalance(balance);
 		};
 
-		fetchCoinData();
+		initWallet();
+		fetchPriceHistory(coinId, selectedTimeframe, setLoading, setPriceHistory, coin);
+	}, [selectedTimeframe, coinId, coin]);
+
+	useEffect(() => {
+		fetchCoinData(coinId, initialCoin, setMetadataLoading, setCoin);
 	}, [coinId, initialCoin]);
-
-	const loadWallet = async () => {
-		try {
-			const savedWallet = await secureStorage.getWallet();
-			if (savedWallet) {
-				setWallet(savedWallet);
-				if (savedWallet.tokens) {
-					const token = savedWallet.tokens.find(t => t.mint === coinId);
-					setWalletBalance(token?.amount || 0);
-				} else {
-					console.log('⚠️ No tokens in wallet');
-					setWalletBalance(0);
-				}
-			}
-		} catch (error) {
-			console.error('Error loading wallet:', error);
-			setWalletBalance(0);
-		}
-	};
-
-	const fetchPriceHistory = async (timeframe: string) => {
-		try {
-			setLoading(true);
-
-			const time_from = Math.floor(Date.now() / 1000);
-			const points = 100;
-			var durationPerPoint = 900;
-			switch (timeframe) {
-				case '15m':
-					durationPerPoint = 900;
-					break;
-				case '1H':
-					durationPerPoint = 3600;
-					break;
-				case '4H':
-					durationPerPoint = 14400;
-					break;
-				case '1D':
-					durationPerPoint = 86400;
-					break;
-				case '1W':
-					durationPerPoint = 604800;
-					break;
-				default:
-					throw new Error(`Invalid timeframe: ${timeframe}`);
-			}
-
-			const time_to = time_from - (points * durationPerPoint);
-
-			const response = await api.getPriceHistory(
-				coinId,
-				timeframe,
-				time_to.toString(),
-				time_from.toString(),
-				"token"
-			);
-
-			if (response?.data?.items) {
-				const mapped = response.data.items
-					.filter(item => item.value !== null && item.unixTime !== null)
-					.map(item => ({
-						x: new Date(item.unixTime * 1000),
-						y: item.value
-					}));
-				setPriceHistory(mapped);
-			} else {
-				setPriceHistory([]);
-			}
-		} catch (error) {
-			console.error("Error fetching price history:", error);
-			setPriceHistory([]);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleTradePress = () => {
-		if (coin && solCoin) {
-			const { walletBalance } = route.params;
-
-			// Prevent trading the same coin
-			if (coin.id === solCoin.id) {
-				showToast({
-					type: 'error',
-					message: 'Cannot trade a coin for itself'
-				});
-				return;
-			}
-
-			// Special handling for SOL balance - already in SOL format
-			const fromBalance = solCoin.id === 'So11111111111111111111111111111111111111112'
-				? (walletBalance?.sol_balance || 0)
-				: walletBalance?.tokens.find(token => token.id === solCoin.id)?.balance || 0;
-
-			const toBalance = coin.id === 'So11111111111111111111111111111111111111112'
-				? (walletBalance?.sol_balance || 0)
-				: walletBalance?.tokens.find(token => token.id === coin.id)?.balance || 0;
-
-			navigation.navigate('Trade', {
-				initialFromCoin: {
-					...solCoin,
-					balance: fromBalance
-				},
-				initialToCoin: {
-					...coin,
-					balance: toBalance
-				}
-			});
-		}
-	};
 
 	const handleChartHover = (point: { x: Date; y: number } | null) => {
 		setHoverPoint(point);
@@ -301,7 +160,13 @@ const CoinDetailScreen: React.FC = () => {
 				<View style={styles.bottomButtonContainer}>
 					<TouchableOpacity
 						style={styles.bottomBuyButton}
-						onPress={handleTradePress}
+						onPress={() => handleTradeNavigation(
+							coin,
+							solCoin,
+							route.params.walletBalance,
+							showToast,
+							navigation.navigate
+						)}
 					>
 						<Text style={styles.bottomBuyButtonText}>Buy {coin.name}</Text>
 					</TouchableOpacity>

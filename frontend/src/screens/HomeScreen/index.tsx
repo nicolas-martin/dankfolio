@@ -1,13 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, FlatList, Image } from 'react-native';
-import { getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
-import api, { WalletBalanceResponse } from '../../services/api';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../../components/trade/CoinCard';
 import { Wallet, Coin, NotificationProps } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/index';
+import { WalletBalanceResponse } from '../../services/api';
+import { 
+	SOL_MINT,
+	NotificationState,
+	fetchAvailableCoins,
+	fetchWalletBalance,
+	handleImportWallet,
+	handleLogout,
+	handleCoinPress
+} from './scripts';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,14 +38,6 @@ const Notification: React.FC<NotificationProps> = ({ visible, type, message, onD
 	);
 };
 
-interface NotificationState {
-	visible: boolean;
-	type: NotificationProps['type'];
-	message: string;
-}
-
-const SOL_MINT = 'So11111111111111111111111111111111111111112';
-
 const HomeScreen: React.FC = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -51,141 +51,56 @@ const HomeScreen: React.FC = () => {
 		message: '',
 	});
 
-	const showNotification = (type: NotificationProps['type'], message: string): void => {
+	const showNotification = useCallback((type: NotificationProps['type'], message: string): void => {
 		setNotification({ visible: true, type, message });
 		setTimeout(() => setNotification({ visible: false, type: 'info', message: '' }), 3000);
-	};
-
-	const fetchAvailableCoins = useCallback(async (): Promise<void> => {
-		try {
-			setLoading(true);
-			const coinsData = await api.getAvailableCoins();
-			if (Array.isArray(coinsData) && coinsData.length > 0) {
-				// Find and store SOL coin
-				const sol = coinsData.find(c => c.id === SOL_MINT);
-				if (sol) {
-					console.log('💫 Found SOL coin in available coins:', {
-						id: sol.id,
-						symbol: sol.symbol,
-						price: sol.price,
-						decimals: sol.decimals,
-						daily_volume: sol.daily_volume
-					});
-
-					setSolCoin(sol);
-				}
-				setCoins(coinsData);
-			} else {
-				console.log('⚠️ No coins received or empty array');
-			}
-		} catch (err) {
-			console.error('❌ Error fetching coins:', err);
-			showNotification('error', 'Failed to fetch available coins');
-		} finally {
-			setLoading(false);
-		}
 	}, []);
 
-	const fetchWalletBalance = useCallback(async (address: string) => {
-		try {
-			const balance = await api.getWalletBalance(address);
-			setWalletBalance(balance);
-		} catch (err) {
-			console.error('❌ Error fetching wallet balance:', err);
-			showNotification('error', 'Failed to fetch wallet balance');
-		}
-	}, []);
+	const fetchWalletBalanceCallback = useCallback(async (address: string) => {
+		await fetchWalletBalance(address, setWalletBalance, showNotification);
+	}, [showNotification]);
 
-	const handleImportWallet = async (privateKey: string) => {
+	const handleImportWalletCallback = useCallback(async (privateKey: string) => {
 		try {
-			const keypair = getKeypairFromPrivateKey(privateKey);
-			const walletData: Wallet = {
-				address: keypair.publicKey.toString(),
-				privateKey: privateKey,
-				balance: 0
-			};
-			setWallet(walletData);
-			await secureStorage.saveWallet(walletData);
-			// Fetch balance immediately after setting wallet
-			await fetchWalletBalance(walletData.address);
+			await handleImportWallet(privateKey, setWallet, fetchWalletBalanceCallback);
+			showNotification('success', 'Wallet imported successfully');
 		} catch (error) {
-			console.error('Error importing wallet:', error);
 			showNotification('error', 'Failed to import wallet');
 		}
-	};
+	}, [fetchWalletBalanceCallback, showNotification]);
 
 	const initializeData = useCallback(async (): Promise<void> => {
 		try {
 			setLoading(true);
-			const savedWallet = await secureStorage.getWallet();
-			if (savedWallet && savedWallet.address) {
-				setWallet(savedWallet);
-				await fetchWalletBalance(savedWallet.address);
-			} else if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
+			await fetchAvailableCoins(setLoading, setSolCoin, setCoins, showNotification);
+			
+			if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
 				console.log('🧪 Development mode detected, auto-importing test wallet');
-				await handleImportWallet(TEST_PRIVATE_KEY);
-			} else {
-				showNotification('error', 'No wallet available');
+				await handleImportWalletCallback(TEST_PRIVATE_KEY);
 			}
-			await fetchAvailableCoins();
 		} catch (err) {
 			console.error('Error initializing data:', err);
 			showNotification('error', 'Failed to load initial data');
 		} finally {
 			setLoading(false);
 		}
-	}, [fetchAvailableCoins, fetchWalletBalance]);
+	}, [handleImportWalletCallback, showNotification]);
 
 	useEffect(() => {
 		initializeData();
 	}, [initializeData]);
 
-	const handleLogout = async (): Promise<void> => {
-		try {
-			await secureStorage.deleteWallet();
-			setWallet(null);
-			setCoins([]);
-		} catch (err) {
-			console.error('Error logging out:', err);
-			showNotification('error', 'Failed to log out');
-		}
-	};
+	const handleLogoutCallback = useCallback(async (): Promise<void> => {
+		await handleLogout(setWallet, setCoins, showNotification);
+	}, [showNotification]);
 
-	const handleCoinPress = (coin: Coin) => {
-		console.log('🏠 HomeScreen -> CoinDetail with coins:', {
-			selectedCoin: {
-				id: coin.id,
-				name: coin.name,
-				symbol: coin.symbol,
-				decimals: coin.decimals,
-				price: coin.price,
-				daily_volume: coin.daily_volume,
-				icon_url: coin.icon_url,
-				address: coin.id
-			},
-			solCoin: solCoin ? {
-				id: solCoin.id,
-				symbol: solCoin.symbol,
-				name: solCoin.name,
-				decimals: solCoin.decimals,
-				price: solCoin.price,
-				icon_url: solCoin.icon_url,
-				address: solCoin.id
-			} : null
-		});
-		navigation.navigate('CoinDetail', {
-			coinId: coin.id,
-			coinName: coin.name,
-			daily_volume: coin.daily_volume,
-			coin: coin,
-			solCoin: solCoin, // Pass SOL coin to CoinDetail
-			walletBalance: walletBalance // Pass wallet balance to CoinDetail
-		});
-	};
+	const handleCoinPressCallback = useCallback((coin: Coin) => {
+		handleCoinPress(coin, solCoin, walletBalance, navigation.navigate);
+	}, [solCoin, walletBalance, navigation]);
 
-	const onRefresh = (): void => {
-		fetchAvailableCoins();
-	};
+	const onRefresh = useCallback((): void => {
+		fetchAvailableCoins(setLoading, setSolCoin, setCoins, showNotification);
+	}, [showNotification]);
 
 	if (loading) {
 		return (
@@ -224,7 +139,7 @@ const HomeScreen: React.FC = () => {
 								data={coins}
 								keyExtractor={(item) => item.id || item.symbol}
 								renderItem={({ item }) => (
-									<CoinCard coin={item} onPress={() => handleCoinPress(item)} />
+									<CoinCard coin={item} onPress={() => handleCoinPressCallback(item)} />
 								)}
 								contentContainerStyle={styles.coinsList}
 								showsVerticalScrollIndicator={false}
@@ -252,7 +167,7 @@ const HomeScreen: React.FC = () => {
 								navigation.navigate('Profile', {
 									walletAddress: wallet.address,
 									walletBalance: walletBalance,
-									solCoin: solCoin // Pass SOL coin to Profile
+									solCoin: solCoin
 								});
 							}}
 						>
