@@ -1,10 +1,15 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { openSolscanUrl } from '../../../utils/solana';
 import { theme } from '../../../utils/theme';
 import { ToastProps, ToastContextProps } from './types';
 import * as S from './styles';
+import { 
+  TOAST_ICONS, 
+  getGradientColors, 
+  getToastActions, 
+  animateToast 
+} from './scripts';
 
 const ToastContext = createContext<ToastContextProps | undefined>(undefined);
 
@@ -47,71 +52,16 @@ const Toast: React.FC<ToastProps> = ({
   const translateY = React.useRef(new Animated.Value(-100)).current;
 
   React.useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      })
-    ]).start();
-
-    const timer = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateY, {
-          toValue: -100,
-          duration: 300,
-          useNativeDriver: true,
-        })
-      ]).start(() => hideToast());
-    }, 5000);
-
+    const timer = animateToast(opacity, translateY, hideToast);
     return () => clearTimeout(timer);
   }, []);
 
-  const toastIcons = {
-    success: '✓',
-    error: '!',
-    info: 'ℹ',
-    warning: '!',
-  };
-
-  // Add Solscan action if txHash is present
-  const allActions = [...actions];
-  if (txHash) {
-    allActions.push({
-      label: 'View on Solscan',
-      onPress: () => openSolscanUrl(txHash),
-      style: 'secondary',
-    });
-  }
-
-  const getGradientColors = () => {
-    switch (type) {
-      case 'success':
-        return [theme.colors.success + '15', theme.colors.success + '05'] as const;
-      case 'error':
-        return [theme.colors.error + '15', theme.colors.error + '05'] as const;
-      case 'warning':
-        return [theme.colors.warning + '15', theme.colors.warning + '05'] as const;
-      default:
-        return [theme.colors.primary + '15', theme.colors.primary + '05'] as const;
-    }
-  };
+  const allActions = getToastActions(actions, txHash);
 
   return (
     <S.ToastContainer style={{ opacity, transform: [{ translateY }] }}>
       <LinearGradient
-        colors={getGradientColors()}
+        colors={getGradientColors(type)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
@@ -123,9 +73,9 @@ const Toast: React.FC<ToastProps> = ({
         <S.ToastContent>
           <S.MessageContainer>
             <S.LeftContent>
-              {(icon || toastIcons[type]) && (
+              {(icon || TOAST_ICONS[type]) && (
                 <S.IconContainer type={type}>
-                  <S.Icon type={type}>{icon || toastIcons[type]}</S.Icon>
+                  <S.Icon type={type}>{icon || TOAST_ICONS[type]}</S.Icon>
                 </S.IconContainer>
               )}
               <S.TextContainer>

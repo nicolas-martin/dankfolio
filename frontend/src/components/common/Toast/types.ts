@@ -1,12 +1,14 @@
-export interface ToastAction {
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+export type ToastAction = {
   label: string;
   onPress: () => void;
   style?: 'primary' | 'secondary';
-}
+};
 
 export interface ToastProps {
   message: string;
-  type?: 'success' | 'error' | 'info' | 'warning';
+  type?: ToastType;
   actions?: ToastAction[];
   icon?: string;
   txHash?: string;

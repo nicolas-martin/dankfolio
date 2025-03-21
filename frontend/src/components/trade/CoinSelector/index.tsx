@@ -3,14 +3,8 @@ import { View, Text, Image, TextInput, ActivityIndicator, Platform } from 'react
 import { Coin } from '../../../types/index';
 import { theme } from '../../../utils/theme';
 import { CoinSelectorProps } from './types';
-import { styles } from './styles'
-
-const DEFAULT_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
-
-const getCoinIcon = (coinObj?: Coin): string => {
-  if (!coinObj) return DEFAULT_ICON;
-  return coinObj.icon_url || DEFAULT_ICON;
-};
+import { styles } from './styles';
+import { DEFAULT_ICON, getCoinIcon, renderCoinBalance } from './scripts';
 
 const CoinSelector: React.FC<CoinSelectorProps> = ({
   label,
@@ -24,6 +18,8 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 }) => {
   const renderCoinItem = () => {
     if (!selectedCoin) return <Text style={styles.placeholderText}>Select coin</Text>;
+    
+    const { balance, value } = renderCoinBalance(selectedCoin);
 
     return (
       <View style={styles.coinContainer}>
@@ -39,12 +35,8 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
           </View>
         </View>
         <View style={styles.balanceSection}>
-          <Text style={styles.balanceText}>
-            {selectedCoin.balance?.toFixed(9) || '0.000000000'}
-          </Text>
-          <Text style={styles.valueText}>
-            ${(selectedCoin.price * (selectedCoin.balance || 0)).toFixed(4)}
-          </Text>
+          <Text style={styles.balanceText}>{balance}</Text>
+          <Text style={styles.valueText}>${value}</Text>
         </View>
       </View>
     );
@@ -88,7 +80,6 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
         {renderCoinItem()}
       </View>
       {renderAmount()}
-      
     </View>
   );
 };

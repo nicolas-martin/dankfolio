@@ -7,11 +7,16 @@
       "*": ["src/*"],
       "@/*": ["src/*"],
       "@types/*": ["src/types/*"]
-    }
+    },
+    "types": ["node"],
+    "lib": ["es2020", "dom"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "src/types/**/*"
+    "src/types/**/*",
+    "scripts/**/*"
   ]
 } 
