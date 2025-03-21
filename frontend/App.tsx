@@ -7,10 +7,10 @@ import { StyleSheet } from 'react-native';
 import { ToastProvider } from './src/components/common/Toast';
 
 // Import screens
-import HomeScreen from './src/screens/HomeScreen';
-import TradeScreen from './src/screens/TradeScreen';
-import CoinDetailScreen from './src/screens/CoinDetailScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
+import HomeScreen from './src/screens/Home';
+import TradeScreen from './src/screens/Trade';
+import CoinDetailScreen from './src/screens/CoinDetail';
+import ProfileScreen from './src/screens/Profile';
 import { RootStackParamList } from './src/types/index';
 
 // Create stack navigator with types
