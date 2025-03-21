@@ -11,7 +11,8 @@
     "tsc:watch": "tsc --watch",
     "lint": "tsc --noEmit",
     "check-structure": "ts-node scripts/check-component-structure.ts",
-    "prestart": "ts-node scripts/check-component-structure.ts"
+    "prestart": "ts-node scripts/check-component-structure.ts",
+    "check-diagnostics": "ts-node scripts/check-diagnostics.ts"
   },
   "dependencies": {
     "@emotion/native": "^11.11.0",

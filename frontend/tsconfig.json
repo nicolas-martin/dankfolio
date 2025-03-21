@@ -11,7 +11,13 @@
     "types": ["node"],
     "lib": ["es2020", "dom"],
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "diagnostics": true,
+    "declaration": true
   },
   "include": [
     "**/*.ts",
