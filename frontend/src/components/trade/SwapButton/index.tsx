@@ -3,6 +3,7 @@ import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SwapButtonProps } from './types';
 import { styles } from './styles';
+import { ICON_SIZE, ICON_COLOR, ICON_NAME } from './scripts';
 
 const SwapButton: React.FC<SwapButtonProps> = ({ onPress, disabled }) => {
   return (
@@ -11,7 +12,7 @@ const SwapButton: React.FC<SwapButtonProps> = ({ onPress, disabled }) => {
       onPress={onPress}
       disabled={disabled}
     >
-      <Ionicons name="swap-vertical" size={24} color="#fff" />
+      <Ionicons name={ICON_NAME} size={ICON_SIZE} color={ICON_COLOR} />
     </TouchableOpacity>
   );
 };

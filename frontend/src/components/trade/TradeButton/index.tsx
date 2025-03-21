@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { TradeButtonProps } from './types';
 import { styles } from './styles';
+import { SPINNER_SIZE, SPINNER_COLOR, getButtonState } from './scripts';
 
 const TradeButton: React.FC<TradeButtonProps> = ({
   onPress,
@@ -9,14 +10,16 @@ const TradeButton: React.FC<TradeButtonProps> = ({
   disabled,
   label,
 }) => {
+  const { isDisabled, showSpinner } = getButtonState(isSubmitting, disabled);
+
   return (
     <TouchableOpacity
-      style={[styles.button, disabled && styles.disabled]}
+      style={[styles.button, isDisabled && styles.disabled]}
       onPress={onPress}
-      disabled={disabled || isSubmitting}
+      disabled={isDisabled}
     >
-      {isSubmitting ? (
-        <ActivityIndicator size="small" color="#fff" />
+      {showSpinner ? (
+        <ActivityIndicator size={SPINNER_SIZE} color={SPINNER_COLOR} />
       ) : (
         <Text style={styles.text}>{label}</Text>
       )}

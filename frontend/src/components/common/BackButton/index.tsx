@@ -3,7 +3,8 @@ import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BackButtonProps } from './types';
-import { styles } from './styles'
+import { styles } from './styles';
+import { ICON_NAME, ICON_SIZE, ICON_COLOR, handleNavigation } from './scripts';
 
 const BackButton: React.FC<BackButtonProps> = ({ style }) => {
   const navigation = useNavigation();
@@ -11,9 +12,9 @@ const BackButton: React.FC<BackButtonProps> = ({ style }) => {
   return (
     <TouchableOpacity
       style={[styles.backButton, style]}
-      onPress={() => navigation.goBack()}
+      onPress={handleNavigation(navigation.goBack)}
     >
-      <Ionicons name="arrow-back" size={24} color="#fff" />
+      <Ionicons name={ICON_NAME} size={ICON_SIZE} color={ICON_COLOR} />
     </TouchableOpacity>
   );
 };
