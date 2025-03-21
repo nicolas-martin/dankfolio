@@ -1,48 +1,73 @@
-import React from 'react';
-import { Platform, Image } from 'react-native';
+import React, { useState } from 'react';
+import { Image, View, StyleSheet, Animated } from 'react-native';
+
+// Fallback to Solana's default token icon
+const DEFAULT_TOKEN_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
 type CommonProps = {
-    source: { uri: string };
+    source: { uri: string } | number;
     style?: any;
     resizeMode?: 'contain' | 'cover' | 'stretch' | 'center';
+    alt?: string;
 };
 
 const PlatformImage: React.FC<CommonProps> = (props) => {
-    if (Platform.OS === 'web') {
-        return <Image {...props} />;
+    const [hasError, setHasError] = useState(false);
+    const [opacity] = useState(new Animated.Value(0));
+
+    const onLoad = () => {
+        Animated.timing(opacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    // If it's a local image (number type), use it directly
+    if (typeof props.source === 'number') {
+        return (
+            <View style={[styles.container, props.style]}>
+                <Animated.View style={{ opacity }}>
+                    <Image 
+                        {...props}
+                        accessible={true}
+                        accessibilityLabel={props.alt}
+                        onLoad={onLoad}
+                        style={[styles.image, props.style]}
+                    />
+                </Animated.View>
+            </View>
+        );
     }
 
-    // For native platforms, try to load FastImage
-    let FastImage: any;
-    try {
-        FastImage = require('react-native-fast-image').default;
-    } catch (error) {
-        console.warn('Failed to load react-native-fast-image:', error);
-        return <Image {...props} />;
-    }
-
-    // Make sure FastImage is properly loaded
-    if (!FastImage || typeof FastImage !== 'object') {
-        console.warn('react-native-fast-image is not properly initialized');
-        return <Image {...props} />;
-    }
-
-    // Convert resizeMode to FastImage format
-    const fastImageResizeMode = {
-        'contain': FastImage.resizeMode.contain,
-        'cover': FastImage.resizeMode.cover,
-        'stretch': FastImage.resizeMode.stretch,
-        'center': FastImage.resizeMode.center,
-    }[props.resizeMode || 'contain'];
-
+    // For remote images, handle errors and show fallback
     return (
-        <FastImage
-            source={props.source}
-            style={props.style}
-            resizeMode={fastImageResizeMode}
-        />
+        <View style={[styles.container, props.style]}>
+            <Animated.View style={{ opacity }}>
+                <Image 
+                    {...props}
+                    source={hasError ? { uri: DEFAULT_TOKEN_ICON } : props.source}
+                    accessible={true}
+                    accessibilityLabel={props.alt}
+                    onLoadStart={() => opacity.setValue(0)}
+                    onLoad={onLoad}
+                    onError={() => setHasError(true)}
+                    style={[styles.image, props.style]}
+                />
+            </Animated.View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        position: 'relative',
+    },
+    image: {
+        width: '100%',
+        height: '100%',
+    },
+});
 
 export default PlatformImage;
 

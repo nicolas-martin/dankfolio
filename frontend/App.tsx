@@ -14,7 +14,6 @@ import TradeScreen from './src/screens/TradeScreen';
 import CoinDetailScreen from './src/screens/CoinDetailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import { RootStackParamList } from './src/types/index';
-import ChartTestScreen from './src/screens/ChartTestScreen';
 
 // Create stack navigator with types
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -37,7 +36,6 @@ const App: React.FC = () => {
                                         <Stack.Screen name="Trade" component={TradeScreen} />
                                         <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
                                         <Stack.Screen name="Profile" component={ProfileScreen} />
-                                        <Stack.Screen name="ChartTest" component={ChartTestScreen} />
                                 </Stack.Navigator>
                         </NavigationContainer>
                 </ToastProvider>

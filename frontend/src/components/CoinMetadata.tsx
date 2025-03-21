@@ -89,6 +89,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
                                 source={require('../../assets/icons/website.png')}
                                 style={styles.icon}
                                 resizeMode="contain"
+                                alt="Website icon"
                             />
                             <Text style={styles.linkText}>Website</Text>
                         </View>
@@ -103,6 +104,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
                                 source={require('../../assets/icons/twitter.png')}
                                 style={styles.icon}
                                 resizeMode="contain"
+                                alt="Twitter icon"
                             />
                             <Text style={styles.linkText}>Twitter</Text>
                         </View>
@@ -117,6 +119,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
                                 source={require('../../assets/icons/telegram.png')}
                                 style={styles.icon}
                                 resizeMode="contain"
+                                alt="Telegram icon"
                             />
                             <Text style={styles.linkText}>Telegram</Text>
                         </View>
@@ -131,6 +134,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
                                 source={require('../../assets/icons/discord.png')}
                                 style={styles.icon}
                                 resizeMode="contain"
+                                alt="Discord icon"
                             />
                             <Text style={styles.linkText}>Discord</Text>
                         </View>

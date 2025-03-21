@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import PlatformImage from './PlatformImage';
 
-const DEFAULT_TOKEN_ICON = 'https://dynamic-assets.coinbase.com/41f6a93a3d0a691b7bff0bc4e844d50a7e6b6b444f8ddb48b068722a50c4ffa88e5caf2c4e3cef7386d0daa1ef19230910ddd8753e0cd5f8c5eb51cee40d62e7/asset_icons/4113b082d21cc5fab17fc8f2d19fb996165bcce635e6900f7fc2d57c4ef33ae9.png';
+const DEFAULT_TOKEN_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
 interface PriceDisplayProps {
     price: number;
@@ -52,6 +52,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
                     source={{ uri: icon_url || DEFAULT_TOKEN_ICON }}
                     style={styles.icon}
                     resizeMode="contain"
+                    alt={`${name || 'Token'} icon`}
                 />
                 {name && <Text style={styles.name}>{name}</Text>}
             </View>

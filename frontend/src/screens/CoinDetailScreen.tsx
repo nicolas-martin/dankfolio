@@ -1,15 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Image, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LineChart } from 'react-native-chart-kit';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useToast } from '../components/Toast';
 
-import PlatformImage from '../components/PlatformImage';
 import TopBar from '../components/TopBar';
 import CoinChart from '../components/CoinChart';
-import BackButton from '../components/BackButton';
 import CoinInfo from '../components/CoinInfo';
 import PriceDisplay from '../components/PriceDisplay';
 import { secureStorage } from '../services/solana';
@@ -57,7 +53,7 @@ const TIMEFRAMES: TimeframeOption[] = [
 const CoinDetailScreen: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
-	const { coinId, coinName, coin: initialCoin, solCoin: initialSolCoin } = route.params;
+	const { coinId, coin: initialCoin, solCoin: initialSolCoin } = route.params;
 	const [selectedTimeframe, setSelectedTimeframe] = useState("15m");
 	const [solCoin] = useState<Coin | null>(initialSolCoin || null);
 	const [loading, setLoading] = useState(true);
@@ -83,11 +79,9 @@ const CoinDetailScreen: React.FC = () => {
 				// If daily_volume is 0, it means we're coming from profile page
 				// and need fresh data
 				if (initialCoin.daily_volume === 0) {
-					console.log('🔄 Fetching fresh coin details for:', initialCoin.symbol);
 					const freshCoinData = await api.getCoinByID(coinId);
 					setCoin({ ...initialCoin, ...freshCoinData });
 				} else {
-					console.log('📦 Using existing coin data for:', initialCoin.symbol);
 					setCoin(initialCoin);
 				}
 			} catch (error) {
@@ -106,14 +100,8 @@ const CoinDetailScreen: React.FC = () => {
 			const savedWallet = await secureStorage.getWallet();
 			if (savedWallet) {
 				setWallet(savedWallet);
-				// Debug wallet tokens
-				console.log('🔍 Wallet tokens:', savedWallet.tokens);
-				console.log('🎯 Looking for token:', coinId);
-
-				// Check if the wallet has any balance of this coin
 				if (savedWallet.tokens) {
 					const token = savedWallet.tokens.find(t => t.mint === coinId);
-					console.log('💰 Found token:', token);
 					setWalletBalance(token?.amount || 0);
 				} else {
 					console.log('⚠️ No tokens in wallet');
@@ -129,15 +117,10 @@ const CoinDetailScreen: React.FC = () => {
 	const fetchPriceHistory = async (timeframe: string) => {
 		try {
 			setLoading(true);
-			console.log('🔄 Fetching price history:', {
-				timeframe,
-				coinId
-			});
 
 			const time_from = Math.floor(Date.now() / 1000);
 			const points = 100;
-			let durationPerPoint;
-
+			var durationPerPoint = 900;
 			switch (timeframe) {
 				case '15m':
 					durationPerPoint = 900;
@@ -190,7 +173,7 @@ const CoinDetailScreen: React.FC = () => {
 	const handleTradePress = () => {
 		if (coin && solCoin) {
 			const { walletBalance } = route.params;
-			
+
 			// Prevent trading the same coin
 			if (coin.id === solCoin.id) {
 				showToast({
@@ -201,7 +184,7 @@ const CoinDetailScreen: React.FC = () => {
 			}
 
 			// Special handling for SOL balance - already in SOL format
-			const fromBalance = solCoin.id === 'So11111111111111111111111111111111111111112' 
+			const fromBalance = solCoin.id === 'So11111111111111111111111111111111111111112'
 				? (walletBalance?.sol_balance || 0)
 				: walletBalance?.tokens.find(token => token.id === solCoin.id)?.balance || 0;
 
@@ -223,8 +206,6 @@ const CoinDetailScreen: React.FC = () => {
 	};
 
 	const handleChartHover = (point: { x: Date; y: number } | null) => {
-		console.log('Chart hover:', point ?
-			`${point.x.toLocaleDateString()} - $${point.y.toFixed(2)}` : 'none');
 		setHoverPoint(point);
 	};
 
