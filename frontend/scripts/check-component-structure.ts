@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { FileIssue, formatIssueGroup, formatSummary } from './utils/formatting';
+import { FileIssue, formatIssueGroup, formatSummary, formatFinalSummary } from './utils/formatting';
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
@@ -164,7 +164,7 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
   // First show all valid components
   const validComponents = results.filter(result => result.issues.length === 0);
   if (validComponents.length > 0) {
-    console.log(chalk.green.bold('✅ Properly Structured Components:'));
+    console.log(chalk.green.bold(`✅ Properly Structured Components (${validComponents.length}):`));
     validComponents.forEach(result => {
       console.log(chalk.green(`   ${result.name}`));
     });
@@ -178,7 +178,7 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
       result.issues.map(issue => issueToFileIssue(issue, result.path))
     );
 
-    console.log(formatSummary(allIssues.length));
+    console.log(formatSummary(allIssues.length, validComponents.length));
     console.log(formatIssueGroup(allIssues));
   }
 
@@ -191,6 +191,9 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
     console.log(chalk.cyan('  • Import styles from ./styles'));
     console.log(chalk.cyan('  • Consider creating types.ts for complex prop types\n'));
   }
+
+  // Add final summary
+  console.log(formatFinalSummary(validComponents.length, componentsWithIssues.length));
 
   return componentsWithIssues.length > 0;
 }

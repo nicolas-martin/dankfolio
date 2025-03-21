@@ -17,28 +17,54 @@ export function formatIssue(issue: FileIssue): string {
          `    ${chalk.gray(`vscode://file/${issue.filePath}:${issue.line}:${issue.column}`)}\n`;
 }
 
-export function formatIssueGroup(issues: FileIssue[]): string {
-  const groupedByFile = issues.reduce((acc, issue) => {
+export function groupIssuesByTypeAndFile(issues: FileIssue[]): { [key: string]: { [key: string]: FileIssue[] } } {
+  return issues.reduce((acc, issue) => {
+    const type = issue.code.toString().split(':')[0];
     const fileName = issue.filePath;
-    if (!acc[fileName]) acc[fileName] = [];
-    acc[fileName].push(issue);
+    if (!acc[type]) acc[type] = {};
+    if (!acc[type][fileName]) acc[type][fileName] = [];
+    acc[type][fileName].push(issue);
     return acc;
-  }, {} as { [key: string]: FileIssue[] });
+  }, {} as { [key: string]: { [key: string]: FileIssue[] } });
+}
 
-  let output = '';
-  Object.entries(groupedByFile).forEach(([_, fileIssues]) => {
-    fileIssues.forEach(issue => {
-      output += formatIssue(issue);
+export function formatIssueGroup(issues: FileIssue[]): string {
+  const grouped = groupIssuesByTypeAndFile(issues);
+  let output = '\n';
+
+  Object.entries(grouped).forEach(([type, fileIssues]) => {
+    const issueCount = Object.values(fileIssues).flat().length;
+    // Color-code different issue types
+    const typeColor = 'yellow'
+    
+    output += chalk[typeColor].bold(`\n${type} Issues (${issueCount}):\n`);
+    
+    Object.entries(fileIssues).forEach(([filePath, issues]) => {
+      const relativePath = path.relative(process.cwd(), filePath);
+      output += chalk.white.bold(`\n  📄 ${relativePath}\n`);
+      issues.forEach(issue => {
+        const vscodePath = `vscode://file/${filePath}:${issue.line}:${issue.column}`;
+        output += chalk.gray(`      ${vscodePath}\n`);
+        output += `      ${issue.message}\n`;
+      });
     });
-    output += '─'.repeat(80) + '\n\n';
+    output += '\n' + chalk.gray('─'.repeat(80)) + '\n';
   });
 
   return output;
 }
 
-export function formatSummary(issueCount: number): string {
+export function formatSummary(issueCount: number, cleanCount?: number): string {
   if (issueCount === 0) {
-    return chalk.green.bold('✨ No issues found!\n');
+    return chalk.green.bold(`✨ All ${cleanCount} files are clean!\n`);
   }
-  return chalk.yellow.bold(`⚠️  Found ${issueCount} issues:\n\n`);
+  return chalk.yellow.bold(`⚠️  Found ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'} across ${cleanCount} clean files:\n\n`);
+}
+
+export function formatFinalSummary(cleanFiles: number, filesWithIssues: number): string {
+  const totalFiles = cleanFiles + filesWithIssues;
+  return '\n' + chalk.bold('📊 Final Stats:\n') +
+    chalk.green(`  ✅ ${cleanFiles} files passing`) + chalk.gray(` (${Math.round(cleanFiles/totalFiles*100)}%)\n`) +
+    chalk.yellow(`  ⚠️  ${filesWithIssues} files with issues`) + chalk.gray(` (${Math.round(filesWithIssues/totalFiles*100)}%)\n`) +
+    chalk.gray(`  📁 ${totalFiles} total files\n`);
 } 

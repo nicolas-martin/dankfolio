@@ -2,7 +2,7 @@ import ts from 'typescript';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { FileIssue, formatIssueGroup, formatSummary } from './utils/formatting';
+import { FileIssue, formatIssueGroup, formatSummary, formatFinalSummary } from './utils/formatting';
 
 function getFilesRecursively(dir: string, fileList: string[] = []): string[] {
   const files = fs.readdirSync(dir);
@@ -83,15 +83,19 @@ function checkDiagnostics() {
 
   // Show clean files first if any exist
   if (cleanFiles.length > 0) {
-    console.log(chalk.green.bold('✅ Files with no issues:'));
+    console.log(chalk.green.bold(`✅ TypeScript Clean Files (${cleanFiles.length}):`));
     cleanFiles.forEach(file => {
       console.log(chalk.green(`   ${path.relative(process.cwd(), file)}`));
     });
     console.log('');
   }
 
-  console.log(formatSummary(fileIssues.length));
+  console.log(formatSummary(fileIssues.length, cleanFiles.length));
   console.log(formatIssueGroup(fileIssues));
+  
+  // Add final summary
+  console.log(formatFinalSummary(cleanFiles.length, filesWithIssues.size));
+  
   return true;
 }
 
