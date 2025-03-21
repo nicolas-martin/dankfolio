@@ -122,6 +122,19 @@ const Trade: React.FC = () => {
 							inputRef={amountInputRef}
 						/>
 
+						{/* Value Info */}
+						{fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
+							<View style={styles.valueInfo}>
+								<Text style={styles.valueText}>
+								≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
+
+								</Text>
+								<Text style={styles.priceText}>
+									1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toFixed(2) : '0.00'}
+								</Text>
+							</View>
+						)}
+
 						{/* Swap Button */}
 						<SwapButton onPress={onSwapPress} />
 
@@ -145,19 +158,6 @@ const Trade: React.FC = () => {
 							gasFee={tradeDetails.gasFee}
 							spread={tradeDetails.spread}
 						/>
-
-						{/* Value Info */}
-						{fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
-							<View style={styles.valueInfo}>
-								<Text style={styles.valueText}>
-								≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
-
-								</Text>
-								<Text style={styles.priceText}>
-									1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toFixed(2) : '0.00'}
-								</Text>
-							</View>
-						)}
 
 						{/* Trade Button */}
 						<TradeButton

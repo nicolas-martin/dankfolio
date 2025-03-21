@@ -5,11 +5,6 @@ import { VictoryChart, VictoryLine, VictoryAxis } from "victory";
 import { CartesianChart, Line } from "victory-native";
 import { theme } from "../../../utils/theme";
 
-interface ChartData {
-    x: Date;
-    y: number;
-}
-
 interface Props {
     data: { x: Date; y: number }[];
     loading?: boolean;
