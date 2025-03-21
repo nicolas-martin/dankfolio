@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { WalletBalanceResponse, TokenInfo } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/index';
 import TopBar from '../components/TopBar';
 import { Coin } from '../types/index';
+import Clipboard from '@react-native-clipboard/clipboard';
+import { useToast } from '../components/Toast';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -21,6 +23,7 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const { showToast } = useToast();
   const { walletBalance, walletAddress, solCoin } = route.params;
   
   // Calculate total value including SOL
@@ -56,6 +59,73 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
     });
   };
 
+  const copyToClipboard = (text: string, symbol: string) => {
+    Clipboard.setString(text);
+    showToast({
+      type: 'success',
+      message: `${symbol} contract address copied to clipboard`,
+      icon: '📋'
+    });
+  };
+
+  const formatAddress = (address: string) => {
+    if (!address || address === '') return '';
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  };
+
+  const TokenCard = ({ token, balance, onPress }: { 
+    token: Coin | TokenInfo, 
+    balance: number,
+    onPress: () => void 
+  }) => (
+    <TouchableOpacity
+      style={styles.tokenCard}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.tokenHeader}>
+        <View style={styles.tokenHeaderLeft}>
+          {token.icon_url && (
+            <Image 
+              source={{ uri: token.icon_url }} 
+              style={styles.tokenLogo} 
+            />
+          )}
+          <View style={styles.tokenInfo}>
+            <Text style={styles.tokenSymbol}>{token.symbol}</Text>
+            <TouchableOpacity 
+              style={styles.addressContainer}
+              onPress={() => copyToClipboard(token.id || '', token.symbol)}
+            >
+              <Text style={styles.addressText}>{formatAddress(token.id)}</Text>
+              <Text style={styles.copyIcon}>📋</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+      <View style={styles.tokenDetails}>
+        <View style={styles.tokenDetail}>
+          <Text style={styles.detailLabel}>Balance</Text>
+          <Text style={styles.detailValue} numberOfLines={1} adjustsFontSizeToFit>
+            {balance.toFixed(4)}
+          </Text>
+        </View>
+        <View style={styles.tokenDetail}>
+          <Text style={styles.detailLabel}>Value</Text>
+          <Text style={styles.detailValue}>
+            ${(balance * (token.price || 0)).toFixed(2)}
+          </Text>
+        </View>
+        <View style={styles.tokenDetail}>
+          <Text style={styles.detailLabel}>Price</Text>
+          <Text style={styles.detailValue}>
+            ${token.price?.toFixed(4) || '0.0000'}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <TopBar />
@@ -63,7 +133,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
         <View style={styles.header}>
           <Text style={styles.title}>🎭 Profile</Text>
           <Text style={styles.subtitle}>Your Portfolio</Text>
-          <Text style={styles.addressText}>Address: {walletAddress}</Text>
+          <TouchableOpacity 
+            onPress={() => copyToClipboard(walletAddress, 'Wallet')}
+            style={styles.addressContainer}
+          >
+            <Text style={styles.walletAddressText}>Address: {formatAddress(walletAddress)}</Text>
+            <Text style={styles.copyIcon}>📋</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.portfolioCard}>
@@ -91,38 +167,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
           
           {/* SOL Balance Card */}
           {solCoin && (
-            <TouchableOpacity
-              style={styles.tokenCard}
+            <TokenCard 
+              token={solCoin}
+              balance={walletBalance.sol_balance}
               onPress={() => handleTokenPress(solCoin)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.tokenHeader}>
-                {solCoin.icon_url && (
-                  <Image 
-                    source={{ uri: solCoin.icon_url }} 
-                    style={styles.tokenLogo} 
-                  />
-                )}
-                <View style={styles.tokenInfo}>
-                  <Text style={styles.tokenSymbol}>{solCoin.symbol}</Text>
-                  <Text style={styles.tokenName}>{solCoin.name}</Text>
-                </View>
-              </View>
-              <View style={styles.tokenDetails}>
-                <View style={styles.tokenDetail}>
-                  <Text style={styles.detailLabel}>Balance</Text>
-                  <Text style={styles.detailValue}>{walletBalance.sol_balance.toFixed(4)}</Text>
-                </View>
-                <View style={styles.tokenDetail}>
-                  <Text style={styles.detailLabel}>Value</Text>
-                  <Text style={styles.detailValue}>${solValue.toFixed(2)}</Text>
-                </View>
-                <View style={styles.tokenDetail}>
-                  <Text style={styles.detailLabel}>Price</Text>
-                  <Text style={styles.detailValue}>${solCoin.price.toFixed(4)}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+            />
           )}
 
           {/* Token List */}
@@ -132,39 +181,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
             </View>
           ) : (
             walletBalance.tokens.map((token) => (
-              <TouchableOpacity
+              <TokenCard
                 key={token.symbol}
-                style={styles.tokenCard}
+                token={token}
+                balance={token.balance}
                 onPress={() => handleTokenPress(token)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.tokenHeader}>
-                  {token.icon_url && (
-                    <Image 
-                      source={{ uri: token.icon_url }} 
-                      style={styles.tokenLogo} 
-                    />
-                  )}
-                  <View style={styles.tokenInfo}>
-                    <Text style={styles.tokenSymbol}>{token.symbol}</Text>
-                    <Text style={styles.tokenName}>{token.name}</Text>
-                  </View>
-                </View>
-                <View style={styles.tokenDetails}>
-                  <View style={styles.tokenDetail}>
-                    <Text style={styles.detailLabel}>Balance</Text>
-                    <Text style={styles.detailValue}>{token.balance.toFixed(4)}</Text>
-                  </View>
-                  <View style={styles.tokenDetail}>
-                    <Text style={styles.detailLabel}>Value</Text>
-                    <Text style={styles.detailValue}>${token.value.toFixed(2)}</Text>
-                  </View>
-                  <View style={styles.tokenDetail}>
-                    <Text style={styles.detailLabel}>Price</Text>
-                    <Text style={styles.detailValue}>${token.price.toFixed(4)}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
+              />
             ))
           )}
         </View>
@@ -190,7 +212,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 10,
   },
-  addressText: {
+  walletAddressText: {
     color: '#888',
     fontSize: 14,
     textAlign: 'center',
@@ -293,7 +315,13 @@ const styles = StyleSheet.create({
   tokenHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 15,
+  },
+  tokenHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   tokenLogo: {
     width: 40,
@@ -303,21 +331,33 @@ const styles = StyleSheet.create({
   },
   tokenInfo: {
     flex: 1,
+    gap: 4,
   },
   tokenSymbol: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
   },
-  tokenName: {
-    fontSize: 14,
+  addressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    opacity: 0.7,
+  },
+  addressText: {
+    fontSize: 12,
     color: '#888',
+    fontFamily: 'monospace',
+  },
+  copyIcon: {
+    fontSize: 12,
   },
   tokenDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   tokenDetail: {
+    flex: 1,
     alignItems: 'center',
   },
   detailLabel: {
@@ -329,6 +369,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 
