@@ -2,6 +2,7 @@ import ts from 'typescript';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import { FileIssue, formatIssueGroup, formatSummary } from './utils/formatting';
 
 function getFilesRecursively(dir: string, fileList: string[] = []): string[] {
   const files = fs.readdirSync(dir);
@@ -18,21 +19,27 @@ function getFilesRecursively(dir: string, fileList: string[] = []): string[] {
   return fileList;
 }
 
-function formatDiagnostic(diagnostic: ts.Diagnostic): string {
+function diagnosticToFileIssue(diagnostic: ts.Diagnostic): FileIssue {
   const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-  const code = diagnostic.code;
   
-  if (diagnostic.file) {
-    const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
-    const filePath = diagnostic.file.fileName;
-    const relativePath = path.relative(process.cwd(), filePath);
-    
-    return `${chalk.yellow.bold(relativePath)}\n` +
-           `    ${chalk.gray(`vscode://file/${filePath}:${line + 1}:${character + 1}`)}\n` +
-           `    ${chalk.yellow(`TS${code}: ${message}`)}\n`;
+  if (diagnostic.file && diagnostic.start !== undefined) {
+    const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+    return {
+      filePath: diagnostic.file.fileName,
+      line: line + 1,
+      column: character + 1,
+      code: `TS${diagnostic.code}`,
+      message
+    };
   }
   
-  return `${chalk.yellow(`TS${code}: ${message}`)}\n`;
+  return {
+    filePath: 'Global',
+    line: 1,
+    column: 1,
+    code: `TS${diagnostic.code}`,
+    message
+  };
 }
 
 function checkDiagnostics() {
@@ -44,48 +51,47 @@ function checkDiagnostics() {
 
   const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
   const parsedConfig = ts.parseJsonConfigFileContent(configFile.config, ts.sys, path.dirname(configPath));
-  // check if the parsedconfig exists
   if (!parsedConfig) {
     throw new Error('Could not parse tsconfig.json');
   }
 
-  // Add additional compiler options
-  const compilerOptions: ts.CompilerOptions = {
-    ...parsedConfig.options,
-  };
+  // Get all files
+  const allFiles = getFilesRecursively(path.join(process.cwd(), 'src'));
 
   // Create program
   const program = ts.createProgram({
-    rootNames: getFilesRecursively(path.join(process.cwd(), 'src')),
-    options: compilerOptions
+    rootNames: allFiles,
+    options: parsedConfig.options
   });
 
-  // Get diagnostics with all checks enabled
+  // Get diagnostics
   const allDiagnostics = ts.getPreEmitDiagnostics(program);
+  const fileIssues = allDiagnostics.map(diagnosticToFileIssue);
 
-  if (allDiagnostics.length === 0) {
-    console.log(chalk.green.bold('✨ No TypeScript warnings or errors found!\n'));
+  // Get files with no issues
+  const filesWithIssues = new Set(fileIssues.map(issue => issue.filePath));
+  const cleanFiles = allFiles.filter(file => !filesWithIssues.has(file));
+
+  if (fileIssues.length === 0) {
+    console.log(chalk.green.bold('✅ All TypeScript files are clean!\n'));
+    allFiles.forEach(file => {
+      console.log(chalk.green(`   ${path.relative(process.cwd(), file)}`));
+    });
+    console.log('');
     return false;
   }
 
-  console.log(chalk.yellow.bold(`⚠️  Found ${allDiagnostics.length} TypeScript warnings/errors:\n`));
-
-  // Group diagnostics by file
-  const groupedDiagnostics = allDiagnostics.reduce((acc, diagnostic) => {
-    const fileName = diagnostic.file?.fileName || 'Global';
-    if (!acc[fileName]) acc[fileName] = [];
-    acc[fileName].push(diagnostic);
-    return acc;
-  }, {} as { [key: string]: ts.Diagnostic[] });
-
-  // Print diagnostics
-  Object.entries(groupedDiagnostics).forEach(([_, fileDiagnostics]) => {
-    fileDiagnostics.forEach(diagnostic => {
-      console.log(formatDiagnostic(diagnostic));
+  // Show clean files first if any exist
+  if (cleanFiles.length > 0) {
+    console.log(chalk.green.bold('✅ Files with no issues:'));
+    cleanFiles.forEach(file => {
+      console.log(chalk.green(`   ${path.relative(process.cwd(), file)}`));
     });
-    console.log('─'.repeat(80) + '\n');
-  });
+    console.log('');
+  }
 
+  console.log(formatSummary(fileIssues.length));
+  console.log(formatIssueGroup(fileIssues));
   return true;
 }
 

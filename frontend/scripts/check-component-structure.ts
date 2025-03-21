@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import { FileIssue, formatIssueGroup, formatSummary } from './utils/formatting';
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
@@ -100,11 +101,21 @@ const PATTERN_CONFIGS: PatternConfig[] = [
 function findIssuesInLine(line: string, lineNumber: number, config: PatternConfig): Issue[] {
   return config.patterns
     .filter(pattern => pattern.test(line))
-    .map(pattern => ({
+    .map(() => ({
       content: config.contentPrefix ? `${config.contentPrefix}${line.trim()}` : line.trim(),
       line: lineNumber,
       type: config.type
     }));
+}
+
+function issueToFileIssue(issue: Issue, componentPath: string): FileIssue {
+  return {
+    filePath: path.join(componentPath, 'index.tsx'),
+    line: issue.line,
+    column: 1,
+    code: issue.type.toUpperCase(),
+    message: issue.content.replace(/^(Logic|Style|Type) in component: /, '')
+  };
 }
 
 function checkComponentStructure(componentPath: string): ComponentCheck {
@@ -118,8 +129,6 @@ function checkComponentStructure(componentPath: string): ComponentCheck {
     
     lines.forEach((line, index) => {
       const lineNumber = index + 1;
-      
-      // Check all pattern configurations
       PATTERN_CONFIGS.forEach(config => {
         issues.push(...findIssuesInLine(line, lineNumber, config));
       });
@@ -149,20 +158,11 @@ function scanDirectory(dir: string): ComponentCheck[] {
   return results;
 }
 
-function getIssueHeader(type: IssueType): string {
-  switch (type) {
-    case 'logic': return 'Business Logic (move to scripts.ts)';
-    case 'style': return 'Styles (move to styles.ts)';
-    case 'type': return 'Types (move to types.ts)';
-  }
-}
-
 function printResults(results: ComponentCheck[], showSummary: boolean = false): boolean {
   console.log(chalk.bold('\n🔍 Component Structure Check Results\n'));
 
   // First show all valid components
   const validComponents = results.filter(result => result.issues.length === 0);
-  
   if (validComponents.length > 0) {
     console.log(chalk.green.bold('✅ Properly Structured Components:'));
     validComponents.forEach(result => {
@@ -173,51 +173,23 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
 
   // Then show components with issues
   const componentsWithIssues = results.filter(result => result.issues.length > 0);
-  
   if (componentsWithIssues.length > 0) {
-    console.log(chalk.yellow.bold('⚠️  Components Needing Attention:\n'));
-    
-    componentsWithIssues.forEach(result => {
-      const fullPath = path.join(result.path, 'index.tsx');
-      
-      // Component name and path
-      console.log(chalk.yellow.bold(`${result.name}`));
+    const allIssues = componentsWithIssues.flatMap(result => 
+      result.issues.map(issue => issueToFileIssue(issue, result.path))
+    );
 
-      // Group issues by type
-      const issuesByType = result.issues.reduce((acc, issue) => {
-        (acc[issue.type] = acc[issue.type] || []).push(issue);
-        return acc;
-      }, {} as Record<IssueType, Issue[]>);
-
-      // Print each type of issue
-      Object.entries(issuesByType).forEach(([type, issues]) => {
-        // Print the first issue's location as the VSCode link
-        if (issues.length > 0) {
-          console.log(chalk.gray(`    vscode://file/${fullPath}:${issues[0].line}:1`));
-        }
-        console.log(chalk.yellow(`    ${getIssueHeader(type as IssueType)}`));
-        issues.forEach(issue => {
-          const code = issue.content.replace(/^(Logic|Style|Type) in component: /, '');
-          console.log(chalk.yellow(`     • ${code.trim().startsWith('`') ? code : '`' + code + '`'}`));
-        });
-      });
-      
-      console.log('\n' + '─'.repeat(80) + '\n');
-    });
+    console.log(formatSummary(allIssues.length));
+    console.log(formatIssueGroup(allIssues));
   }
 
-  if (showSummary) {
-    if (componentsWithIssues.length === 0) {
-      console.log(chalk.green.bold('\n✨ All components are properly structured!\n'));
-    } else {
-      console.log(chalk.cyan.bold('\n💡 Tips:'));
-      console.log(chalk.cyan('  • Move complex functions to scripts.ts'));
-      console.log(chalk.cyan('  • Keep only JSX, props handling, and basic hooks in index.tsx'));
-      console.log(chalk.cyan('  • Extract data transformations and utilities to scripts.ts'));
-      console.log(chalk.cyan('  • Move all styles to ./styles.ts'));
-      console.log(chalk.cyan('  • Import styles from ./styles'));
-      console.log(chalk.cyan('  • Consider creating types.ts for complex prop types\n'));
-    }
+  if (showSummary && componentsWithIssues.length > 0) {
+    console.log(chalk.cyan.bold('\n💡 Tips:'));
+    console.log(chalk.cyan('  • Move complex functions to scripts.ts'));
+    console.log(chalk.cyan('  • Keep only JSX, props handling, and basic hooks in index.tsx'));
+    console.log(chalk.cyan('  • Extract data transformations and utilities to scripts.ts'));
+    console.log(chalk.cyan('  • Move all styles to ./styles.ts'));
+    console.log(chalk.cyan('  • Import styles from ./styles'));
+    console.log(chalk.cyan('  • Consider creating types.ts for complex prop types\n'));
   }
 
   return componentsWithIssues.length > 0;
