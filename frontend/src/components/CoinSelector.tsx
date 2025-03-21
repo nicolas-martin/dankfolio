@@ -48,10 +48,10 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
         </View>
         <View style={styles.balanceSection}>
           <Text style={styles.balanceText}>
-            {selectedCoin.balance?.toFixed(4) || '0.0000'}
+            {selectedCoin.balance?.toFixed(9) || '0.000000000'}
           </Text>
           <Text style={styles.valueText}>
-            ${(selectedCoin.price * (selectedCoin.balance || 0)).toFixed(2)}
+            ${(selectedCoin.price * (selectedCoin.balance || 0)).toFixed(4)}
           </Text>
         </View>
       </View>

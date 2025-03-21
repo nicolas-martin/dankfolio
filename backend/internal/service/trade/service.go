@@ -138,16 +138,12 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		return nil, fmt.Errorf("failed to get to coin: %w", err)
 	}
 
-	// Convert amount to raw units based on decimals
-	rawAmount := amount * math.Pow10(fromCoin.Decimals)
-	amountStr := fmt.Sprintf("%.0f", rawAmount)
-
 	// Get quote from Jupiter with enhanced parameters
 	quote, err := s.jupiterClient.GetQuote(coin.QuoteParams{
 		InputMint:        fromCoinID,
 		OutputMint:       toCoinID,
-		Amount:           amountStr,
-		SlippageBps:      100, // 1% slippage
+		Amount:           fmt.Sprintf("%.0f", amount), // Amount is already in raw units (lamports for SOL)
+		SlippageBps:      100,                         // 1% slippage
 		SwapMode:         "ExactIn",
 		OnlyDirectRoutes: false, // Allow indirect routes for better prices
 		MaxAccounts:      64,
@@ -198,14 +194,15 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		"- Price Impact: %.4f%%\n"+
 		"- Route: %v\n"+
 		"- Slippage: %d bps\n"+
-		"- Time Taken: %.2fms",
+		"- Time Taken: %.2fms\n"+
+		"- Fee: %.8f %s\n",
 		amount, fromCoin.Symbol,
 		estimatedAmount, toCoin.Symbol,
 		priceImpact,
 		routeSummary,
 		quote.SlippageBps,
 		*quote.TimeTaken,
-	)
+		networkFeeInTokens, fromCoin.Symbol)
 
 	return &TradeQuote{
 		EstimatedAmount: fmt.Sprintf("%.8f", estimatedAmount),

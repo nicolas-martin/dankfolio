@@ -97,10 +97,10 @@ type TokenList struct {
 
 // Jupiter API endpoints
 const (
-	jupiterBaseURL       = "https://quote-api.jup.ag/v6"
+	jupiterSwapBaseURL   = "https://api.jup.ag/swap/v1"
 	jupiterTokenInfoURL  = "https://api.jup.ag/tokens/v1/token"
 	jupiterV6APIPriceURL = "https://price.jup.ag/v4/price?ids=%s"
-	jupiterQuoteURL      = jupiterBaseURL + "/quote"
+	jupiterQuoteURL      = jupiterSwapBaseURL + "/quote"
 )
 
 // JupiterTokenInfoResponse represents the detailed token information from Jupiter API
