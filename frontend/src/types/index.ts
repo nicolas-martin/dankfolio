@@ -44,7 +44,8 @@ export type RootStackParamList = {
     coinName: string;
     daily_volume?: number;
     coin?: Coin;
-    solCoin?: Coin | null;
+    solCoin?: Coin;
+    walletBalance?: WalletBalanceResponse;
   };
   CoinSelect: {
     onSelect: (coin: Coin) => void;

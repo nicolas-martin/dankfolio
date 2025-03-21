@@ -51,7 +51,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
       coinId: token.id,
       coinName: token.name,
       coin: token,
-      solCoin: solCoin
+      solCoin: solCoin,
+      walletBalance: walletBalance
     });
   };
 
