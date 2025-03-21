@@ -1,11 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-
-interface TradeDetailsProps {
-  exchangeRate: string;
-  gasFee: string;
-  spread: string;
-}
+import { View, Text } from 'react-native';
+import { TradeDetailsProps } from './types';
+import { styles } from './styles';
 
 const TradeDetails: React.FC<TradeDetailsProps> = ({
   exchangeRate,
@@ -20,22 +16,5 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#1A1A2E',
-    borderRadius: 10,
-  },
-  exchangeRate: {
-    color: '#fff',
-    marginBottom: 10,
-  },
-  feeDetail: {
-    color: '#9F9FD5',
-    marginBottom: 5,
-  },
-});
 
 export default TradeDetails; 

@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/common/Toast';
 
-import TopBar from '../components/TopBar';
-import CoinChart from '../components/CoinChart';
-import CoinInfo from '../components/CoinInfo';
-import PriceDisplay from '../components/PriceDisplay';
+import TopBar from '../components/common/ui/TopBar';
+import CoinChart from '../components/common/chart/CoinChart';
+import CoinInfo from '../components/common/chart/CoinInfo';
+import PriceDisplay from '../components/trade/PriceDisplay';
 import { secureStorage } from '../services/solana';
 import api, { WalletBalanceResponse } from '../services/api';
 import { Coin, Wallet, RootStackParamList } from '../types/index';
+import { theme } from '../utils/theme';
 
 const formatNumber = (num: number): string => {
 	if (num >= 1000000000) {
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
 		}),
 		marginVertical: 16,
 		paddingHorizontal: 0,
-		backgroundColor: 'transparent',
+		backgroundColor: theme.colors.topBar,
 		overflow: 'visible',
 		position: 'relative',
 		marginBottom: Platform.OS !== 'web' ? 60 : 16, // Add extra space for timeframe buttons on mobile

@@ -1,17 +1,8 @@
 import React from 'react';
 import { G, Rect, Text as SvgText } from 'react-native-svg';
+import { CustomTooltipProps } from './types';
 
-interface CustomTooltipProps {
-  x?: number;
-  y?: number;
-  text?: string; // Tooltip text
-  style?: object;
-}
-
-// A custom tooltip component designed for Victory charts in React Native using react-native-svg.
-// It displays the tooltip text within an SVG group along with a background rectangle.
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ x, y, text = 'Tooltip', style }) => {
-  // Determine position; defaults to 0 if not provided
   const tooltipX = x || 0;
   const tooltipY = y || 0;
   const padding = 4;

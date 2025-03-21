@@ -14,7 +14,8 @@ module.exports = function(api) {
         whitelist: null,
         safe: false,
         allowUndefined: true
-      }]
+      }],
+      ['@emotion']
     ]
   };
 }; 

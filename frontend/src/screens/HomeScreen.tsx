@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
 import { getKeypairFromPrivateKey, secureStorage } from '../services/solana';
 import api, { WalletBalanceResponse } from '../services/api';
 import { TEST_PRIVATE_KEY } from '@env';
-import CoinCard from '../components/CoinCard';
+import CoinCard from '../components/trade/CoinCard';
+import TopBar from '../components/common/ui/TopBar';
 import { Wallet, Coin, NotificationProps, ScreenProps } from '../types/index';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';

@@ -4,10 +4,10 @@ import { WalletBalanceResponse, TokenInfo } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/index';
-import TopBar from '../components/TopBar';
+import TopBar from '../components/common/ui/TopBar';
 import { Coin } from '../types/index';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/common/Toast';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

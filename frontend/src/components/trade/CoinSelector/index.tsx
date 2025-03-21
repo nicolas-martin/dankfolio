@@ -1,19 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Pressable, TextInput, ActivityIndicator, Platform } from 'react-native';
-import { Coin } from '../types/index';
+import { View, Text, Image, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { Coin } from '../../../types/index';
+import { theme } from '../../../utils/theme';
+import { CoinSelectorProps } from './types';
+import { styles } from './styles';
 
 const DEFAULT_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
-
-interface CoinSelectorProps {
-  label: string;
-  selectedCoin?: Coin;
-  amount: string;
-  isAmountLoading?: boolean;
-  onAmountChange?: (amount: string) => void;
-  onCoinSelect: (coinId: string) => void;
-  isInput?: boolean;
-  inputRef?: React.RefObject<TextInput>;
-}
 
 const getCoinIcon = (coinObj?: Coin): string => {
   if (!coinObj) return DEFAULT_ICON;
@@ -66,8 +58,8 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
           value={amount}
           onChangeText={onAmountChange}
           placeholder="0.00"
-          placeholderTextColor="#9F9FD5"
-          selectionColor="#6A5ACD"
+          placeholderTextColor={theme.colors.textSecondary}
+          selectionColor={theme.colors.primary}
           ref={inputRef}
           autoCorrect={false}
           spellCheck={false}
@@ -81,7 +73,7 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
     return (
       <View style={styles.toAmountContainer}>
         {isAmountLoading ? (
-          <ActivityIndicator size="small" color="#6A5ACD" />
+          <ActivityIndicator size="small" color={theme.colors.primary} />
         ) : (
           <Text style={styles.toAmount}>{amount || '0.00'}</Text>
         )}
@@ -99,84 +91,5 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 20,
-  },
-  label: {
-    color: '#9F9FD5',
-    marginBottom: 10,
-  },
-  coinSelector: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-  },
-  coinContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  coinIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 10,
-  },
-  coinInfo: {
-    flex: 1,
-  },
-  coinSymbol: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  coinName: {
-    color: '#9F9FD5',
-    fontSize: 12,
-  },
-  balanceSection: {
-    alignItems: 'flex-end',
-  },
-  balanceText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  valueText: {
-    color: '#9F9FD5',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  placeholderText: {
-    color: '#9F9FD5',
-  },
-  amountInput: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 10,
-    padding: 15,
-    color: '#fff',
-    fontSize: 24,
-    textAlign: 'right',
-  },
-  toAmountContainer: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 10,
-    padding: 15,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  toAmount: {
-    color: '#fff',
-    fontSize: 24,
-  },
-});
 
 export default CoinSelector; 

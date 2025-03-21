@@ -1,12 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
-
-interface TradeButtonProps {
-  onPress: () => void;
-  isSubmitting: boolean;
-  disabled: boolean;
-  label: string;
-}
+import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { TradeButtonProps } from './types';
+import { styles } from './styles';
 
 const TradeButton: React.FC<TradeButtonProps> = ({
   onPress,
@@ -28,23 +23,5 @@ const TradeButton: React.FC<TradeButtonProps> = ({
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: '#6A5ACD',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  text: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-});
 
 export default TradeButton; 
