@@ -12,9 +12,9 @@ export interface FileIssue {
 export function formatIssue(issue: FileIssue): string {
   const relativePath = path.relative(process.cwd(), issue.filePath);
   
-  return `${chalk.yellow.bold(relativePath)}\n` +
-         `    ${chalk.gray(`vscode://file/${issue.filePath}:${issue.line}:${issue.column}`)}\n` +
-         `    ${chalk.yellow(`${issue.code}: ${issue.message}`)}\n`;
+  return `${chalk.white.bold(relativePath)}\n` +
+         `    ${chalk.yellow(`${issue.code}: ${issue.message}`)}\n`+
+         `    ${chalk.gray(`vscode://file/${issue.filePath}:${issue.line}:${issue.column}`)}\n`;
 }
 
 export function formatIssueGroup(issues: FileIssue[]): string {

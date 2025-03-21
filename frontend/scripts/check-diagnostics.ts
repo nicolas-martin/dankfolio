@@ -100,8 +100,14 @@ console.log(chalk.bold('🔍 Starting TypeScript diagnostic check...\n'));
 
 try {
   const hasIssues = checkDiagnostics();
+  if (hasIssues) {
+    console.log(chalk.yellow('\n⚠️  TypeScript diagnostics issues found. Please fix them before proceeding.\n'));
+  }else{
+    console.log(chalk.green('\n✅ No TypeScript diagnostics issues found. All good!\n'));
+  }
+
   process.exit(hasIssues ? 1 : 0);
 } catch (error) {
-  console.error(chalk.red('Error running diagnostic check:'), error);
+  console.error(chalk.red('\n❌ Error running diagnostic check:'), error);
   process.exit(1);
 } 

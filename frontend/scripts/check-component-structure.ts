@@ -122,11 +122,11 @@ function checkComponentStructure(componentPath: string): ComponentCheck {
   const name = path.basename(componentPath);
   const indexPath = path.join(componentPath, 'index.tsx');
   const issues: Issue[] = [];
-  
+
   if (fs.existsSync(indexPath)) {
     const content = fs.readFileSync(indexPath, 'utf-8');
     const lines = content.split('\n');
-    
+
     lines.forEach((line, index) => {
       const lineNumber = index + 1;
       PATTERN_CONFIGS.forEach(config => {
@@ -174,7 +174,7 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
   // Then show components with issues
   const componentsWithIssues = results.filter(result => result.issues.length > 0);
   if (componentsWithIssues.length > 0) {
-    const allIssues = componentsWithIssues.flatMap(result => 
+    const allIssues = componentsWithIssues.flatMap(result =>
       result.issues.map(issue => issueToFileIssue(issue, result.path))
     );
 
@@ -199,16 +199,30 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
 console.log(chalk.bold('🚀 Starting component structure check...\n'));
 
 // Collect all results
-const allResults: ComponentCheck[] = [];
-COMPONENT_DIRS.forEach(dir => {
-  const fullPath = path.join(process.cwd(), dir);
-  if (fs.existsSync(fullPath)) {
-    allResults.push(...scanDirectory(fullPath));
-  } else {
-    console.log(chalk.red(`Directory not found: ${dir}`));
-  }
-});
+function checkStructure(): boolean {
+  const allResults: ComponentCheck[] = [];
+  COMPONENT_DIRS.forEach(dir => {
+    const fullPath = path.join(process.cwd(), dir);
+    if (fs.existsSync(fullPath)) {
+      allResults.push(...scanDirectory(fullPath));
+    } else {
+      console.log(chalk.red(`Directory not found: ${dir}`));
+    }
+  });
 
-// Print results and exit
-const hasIssues = printResults(allResults, true);
-process.exit(hasIssues ? 1 : 0); 
+  return printResults(allResults, true);
+}
+
+try {
+  const hasIssues = checkStructure();
+  if (hasIssues) {
+    console.log(chalk.yellow('\n⚠️  Component structure issues found. Please fix them before proceeding.\n'));
+  } else {
+    console.log(chalk.green('\n✅ No Component structure issues found. All good!\n'));
+  }
+
+  process.exit(hasIssues ? 1 : 0);
+} catch (error) {
+  console.error(chalk.red('\n❌ Error running component structure check:'), error);
+  process.exit(1);
+} 
