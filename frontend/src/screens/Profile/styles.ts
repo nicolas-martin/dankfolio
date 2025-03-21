@@ -43,7 +43,7 @@ export const styles = StyleSheet.create({
 		color: '#888',
 	},
 	portfolioCard: {
-		backgroundColor: '#2A2A3E',
+		backgroundColor: theme.colors.cardBackGround,
 		borderRadius: 20,
 		padding: 20,
 		margin: 20,

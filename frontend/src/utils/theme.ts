@@ -17,7 +17,8 @@ export const theme = {
     warning: '#F59E0B',
     overlay: 'rgba(26, 26, 46, 0.8)',
     topBar: '#191B1F',
-    cardBackground: '#1E1E2E',
+    containerBackground: '#1E1E2E',
+    cardBackGround: '#2A2A3E',
   },
   
   typography: {

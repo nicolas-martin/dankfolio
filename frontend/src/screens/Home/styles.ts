@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: theme.colors.cardBackground,
+        backgroundColor: theme.colors.containerBackground,
         borderRadius: theme.borderRadius.sm,
         padding: theme.spacing.md,
         marginBottom: theme.spacing.xl,

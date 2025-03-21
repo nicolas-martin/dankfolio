@@ -88,6 +88,7 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
         {renderCoinItem()}
       </View>
       {renderAmount()}
+      
     </View>
   );
 };

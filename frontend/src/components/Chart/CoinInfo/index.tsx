@@ -73,7 +73,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
           <TouchableOpacity style={styles.linkRow} onPress={() => handleLinkPress(metadata.website)}>
             <View style={styles.linkLeft}>
               <PlatformImage
-                source={require('../../../../../assets/icons/website.png')}
+                source={require('../../../../assets/icons/website.png')}
                 style={styles.icon}
                 resizeMode="contain"
                 alt="Website icon"
@@ -88,7 +88,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
           <TouchableOpacity style={styles.linkRow} onPress={() => handleLinkPress(`https://twitter.com/${metadata.twitter}`)}>
             <View style={styles.linkLeft}>
               <PlatformImage
-                source={require('../../../../../assets/icons/twitter.png')}
+                source={require('../../../../assets/icons/twitter.png')}
                 style={styles.icon}
                 resizeMode="contain"
                 alt="Twitter icon"
@@ -103,7 +103,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
           <TouchableOpacity style={styles.linkRow} onPress={() => handleLinkPress(`https://t.me/${metadata.telegram}`)}>
             <View style={styles.linkLeft}>
               <PlatformImage
-                source={require('../../../../../assets/icons/telegram.png')}
+                source={require('../../../../assets/icons/telegram.png')}
                 style={styles.icon}
                 resizeMode="contain"
                 alt="Telegram icon"
@@ -118,7 +118,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
           <TouchableOpacity style={styles.linkRow} onPress={() => handleLinkPress(metadata.discord)}>
             <View style={styles.linkLeft}>
               <PlatformImage
-                source={require('../../../../../assets/icons/discord.png')}
+                source={require('../../../../assets/icons/discord.png')}
                 style={styles.icon}
                 resizeMode="contain"
                 alt="Discord icon"

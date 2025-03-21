@@ -95,7 +95,7 @@ export const styles = StyleSheet.create({
         color: theme.colors.text,
     },
     balanceSection: {
-        backgroundColor: theme.colors.cardBackground,
+        backgroundColor: theme.colors.containerBackground,
         borderRadius: theme.borderRadius.lg,
         padding: theme.spacing.lg,
         margin: theme.spacing.xl,
@@ -127,7 +127,7 @@ export const styles = StyleSheet.create({
         marginVertical: theme.spacing.xl,
     },
     statsContainer: {
-        backgroundColor: theme.colors.cardBackground,
+        backgroundColor: theme.colors.containerBackground,
         borderRadius: theme.borderRadius.lg,
         padding: theme.spacing.lg,
         margin: theme.spacing.xl,

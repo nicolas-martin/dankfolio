@@ -3,7 +3,6 @@ import { View, Text, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicat
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
 import { theme } from '../../utils/theme';
-
 import TopBar from '../../components/Common/TopBar';
 import CoinChart from '../../components/Chart/CoinChart';
 import CoinInfo from '../../components/Chart/CoinInfo';

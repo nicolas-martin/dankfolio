@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: theme.colors.cardBackGround,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     paddingVertical: theme.spacing.lg,

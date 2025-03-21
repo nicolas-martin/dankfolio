@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { theme } from 'utils/theme';
 
 export const styles = StyleSheet.create({
     container: {
@@ -12,7 +13,7 @@ export const styles = StyleSheet.create({
         flex: 1,
     },
     tradeContainer: {
-        backgroundColor: '#2A2A3E',
+        backgroundColor: theme.colors.cardBackGround,
         borderRadius: 20,
         padding: 20,
         margin: 20,

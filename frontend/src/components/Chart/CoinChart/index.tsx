@@ -117,7 +117,7 @@ const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => 
                         position: 'absolute',
                         top: 10,
                         left: 10,
-                        backgroundColor: theme.colors.cardBackground,
+                        backgroundColor: theme.colors.containerBackground,
                         padding: 8,
                         borderRadius: 4,
                         zIndex: 2,
