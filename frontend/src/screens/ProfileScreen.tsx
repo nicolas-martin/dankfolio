@@ -176,7 +176,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: '#191B1F',
   },
   centerContainer: {
     flex: 1,

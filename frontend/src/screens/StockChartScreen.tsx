@@ -47,8 +47,8 @@ const StockChartScreen: React.FC<Props> = ({ coinId }) => {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 8,
-        backgroundColor: '#1E1E2E',
+        flex: 1,
+        backgroundColor: '#191B1F',
     },
     chart: {
         marginVertical: 8,

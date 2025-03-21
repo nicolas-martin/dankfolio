@@ -4,6 +4,7 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LineChart } from 'react-native-chart-kit';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { useToast } from '../components/Toast';
 
 import PlatformImage from '../components/PlatformImage';
 import TopBar from '../components/TopBar';
@@ -66,6 +67,7 @@ const CoinDetailScreen: React.FC = () => {
 	const [metadataLoading, setMetadataLoading] = useState(true);
 	const [walletBalance, setWalletBalance] = useState<number>(0);
 	const [hoverPoint, setHoverPoint] = useState<{ x: Date; y: number } | null>(null);
+	const { showToast } = useToast();
 
 	useEffect(() => {
 		loadWallet();
@@ -189,6 +191,15 @@ const CoinDetailScreen: React.FC = () => {
 		if (coin && solCoin) {
 			const { walletBalance } = route.params;
 			
+			// Prevent trading the same coin
+			if (coin.id === solCoin.id) {
+				showToast({
+					type: 'error',
+					message: 'Cannot trade a coin for itself'
+				});
+				return;
+			}
+
 			// Special handling for SOL balance - already in SOL format
 			const fromBalance = solCoin.id === 'So11111111111111111111111111111111111111112' 
 				? (walletBalance?.sol_balance || 0)

@@ -1,5 +1,13 @@
 import React from "react";
 import { VictoryChart, VictoryBar, VictoryTheme } from 'victory-native';
+import { StyleSheet } from 'react-native';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#191B1F',
+  },
+});
 
 const ChartTestScreen = () => {
   const data = [
@@ -10,11 +18,10 @@ const ChartTestScreen = () => {
   ];
 
   return (
-      <VictoryChart width={350} >
-        <VictoryBar data={data} x="quarter" y="earnings" />
-      </VictoryChart>
+    <VictoryChart width={350} style={styles.container}>
+      <VictoryBar data={data} x="quarter" y="earnings" />
+    </VictoryChart>
   );
 };
 
-
-export default ChartTestScreen; 
+export default ChartTestScreen;

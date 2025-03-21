@@ -281,7 +281,7 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#1A1A2E',
+		backgroundColor: '#191B1F',
 	},
 	loadingContainer: {
 		flex: 1,

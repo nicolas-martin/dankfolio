@@ -237,7 +237,7 @@ const TradeScreen: React.FC = () => {
 		if (isSubmitting) return 'Processing...';
 		if (!fromCoin || !toCoin) return 'Select coins';
 		if (!fromAmount || parseFloat(fromAmount) <= 0) return 'Enter amount';
-		if (fromCoin.id === toCoin.id) return 'Select different coins';
+		if (fromCoin.id === toCoin.id) return 'Cannot trade same coin';
 		return 'Swap';
 	};
 
