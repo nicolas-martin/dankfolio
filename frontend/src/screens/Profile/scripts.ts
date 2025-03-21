@@ -2,7 +2,7 @@ import { Coin, RootStackParamList,  } from '../../types/index';
 import { TokenInfo, WalletBalanceResponse } from '../../services/api';
 import { ToastProps } from '../../components/common/Toast/types';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { CoinDetailScreenNavigationProp } from '../../screens/CoinDetailScreen/types';
+import { CoinDetailScreenNavigationProp } from '../CoinDetail/types';
 
 export const calculateTotalValue = (
     walletBalance: WalletBalanceResponse,

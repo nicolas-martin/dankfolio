@@ -7,8 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/index';
 import { WalletBalanceResponse } from '../../services/api';
+import { styles } from './styles';
 import { 
-	SOL_MINT,
 	NotificationState,
 	fetchAvailableCoins,
 	fetchWalletBalance,
@@ -38,7 +38,7 @@ const Notification: React.FC<NotificationProps> = ({ visible, type, message, onD
 	);
 };
 
-const HomeScreen: React.FC = () => {
+const Home: React.FC = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const [wallet, setWallet] = useState<Wallet | null>(null);
 	const [coins, setCoins] = useState<Coin[]>([]);
@@ -193,114 +193,4 @@ const HomeScreen: React.FC = () => {
 	);
 };
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#191B1F',
-	},
-	loadingContainer: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-		backgroundColor: '#1A1A2E',
-	},
-	loadingText: {
-		color: '#fff',
-		marginTop: 10,
-	},
-	centerContainer: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-		backgroundColor: '#1A1A2E',
-	},
-	errorText: {
-		color: '#F44336',
-		textAlign: 'center',
-		marginHorizontal: 20,
-	},
-	header: {
-		padding: 20,
-		alignItems: 'center',
-	},
-	title: {
-		fontSize: 28,
-		fontWeight: 'bold',
-		color: '#fff',
-		marginBottom: 5,
-	},
-	subtitle: {
-		fontSize: 16,
-		color: '#888',
-	},
-	content: {
-		flex: 1,
-		padding: 20,
-	},
-	coinsSection: {
-		flex: 1,
-	},
-	sectionHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 15,
-	},
-	sectionTitle: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		color: '#fff',
-	},
-	refreshCoinsButton: {
-		padding: 5,
-	},
-	refreshCoinsText: {
-		fontSize: 20,
-	},
-	coinsList: {
-		paddingBottom: 20,
-	},
-	noCoinsContainer: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	noCoinsText: {
-		color: '#888',
-		fontSize: 16,
-	},
-	profileContainer: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginTop: 20,
-	},
-	profileButton: {
-		backgroundColor: '#6A5ACD',
-		padding: 15,
-		borderRadius: 10,
-		alignItems: 'center',
-		flex: 1,
-	},
-	profileButtonText: {
-		color: '#fff',
-		fontWeight: 'bold',
-		fontSize: 16,
-	},
-	notification: {
-		position: 'absolute',
-		top: 20,
-		left: 20,
-		right: 20,
-		padding: 15,
-		borderRadius: 10,
-		zIndex: 1000,
-	},
-	notificationText: {
-		color: '#fff',
-		textAlign: 'center',
-		fontWeight: 'bold',
-	}
-});
-
-export default HomeScreen;
+export default Home;

@@ -6,11 +6,11 @@ import { styles } from './styles';
 import { theme } from '../../../../utils/theme';
 
 const TopBar: React.FC<TopBarProps> = () => {
-  return (
-    <View style={[styles.container, { backgroundColor: theme.colors.topBar }]}>
-      <BackButton style={styles.backButton} />
-    </View>
-  );
+	return (
+		<View style={[styles.container, { backgroundColor: theme.colors.topBar }]}>
+			<BackButton style={styles.backButton} />
+		</View>
+	);
 };
 
-export default TopBar; 
+export default TopBar;

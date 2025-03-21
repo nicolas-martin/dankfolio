@@ -7,12 +7,10 @@ import CoinSelector from '../../components/trade/CoinSelector';
 import SwapButton from '../../components/common/ui/SwapButton';
 import TradeDetails from '../../components/trade/TradeDetails';
 import TradeButton from '../../components/common/ui/TradeButton';
-import PriceDisplay from '../../components/trade/PriceDisplay';
 import { useToast } from '../../components/common/Toast';
 import { styles } from './styles';
 import { TradeScreenParams } from './types';
 import {
-	MIN_AMOUNT,
 	DEFAULT_AMOUNT,
 	QUOTE_DEBOUNCE_MS,
 	fetchTradeQuote,
@@ -20,7 +18,7 @@ import {
 	handleTrade
 } from './scripts';
 
-const TradeScreen: React.FC = () => {
+const Trade: React.FC = () => {
 	const navigation = useNavigation();
 	const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
 	const { initialFromCoin, initialToCoin } = route.params || {};
@@ -175,4 +173,4 @@ const TradeScreen: React.FC = () => {
 	);
 };
 
-export default TradeScreen;
+export default Trade;

@@ -1,19 +1,17 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { WalletBalanceResponse, TokenInfo } from '../../services/api';
+import { TokenInfo } from '../../services/api';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/index';
 import TopBar from '../../components/common/ui/TopBar';
 import { Coin } from '../../types/index';
 import { useToast } from '../../components/common/Toast';
 import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './scripts';
 import { styles } from './styles'
-import { CoinDetailScreenNavigationProp } from '../../screens/CoinDetailScreen/types';
+import { CoinDetailScreenNavigationProp } from '../CoinDetail/types';
 import { ProfileScreenNavigationProp } from './types';
 
 
-const ProfileScreen: React.FC<ProfileScreenNavigationProp> = ({ route }) => {
+const Profile: React.FC<ProfileScreenNavigationProp> = ({ route }) => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const { showToast } = useToast();
 	const { walletBalance, walletAddress, solCoin } = route.params;
@@ -140,4 +138,4 @@ const ProfileScreen: React.FC<ProfileScreenNavigationProp> = ({ route }) => {
 	);
 };
 
-export default ProfileScreen;
+export default Profile;

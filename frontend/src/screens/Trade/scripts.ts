@@ -3,6 +3,7 @@ import { Coin } from '../../types/index';
 import api from '../../services/api';
 import { buildAndSignSwapTransaction, getKeypairFromPrivateKey } from '../../services/solana';
 import { ToastProps } from '../../components/common/Toast/types';
+import { RefObject } from 'react';
 
 export const MIN_AMOUNT = "0.0001";
 export const DEFAULT_AMOUNT = "0.0001";
@@ -16,7 +17,7 @@ export const fetchTradeQuote = async (
     setToAmount: (amount: string) => void,
     setExchangeRate: (rate: string) => void,
     setTradeDetails: (details: { estimatedFee: string; spread: string; gasFee: string; }) => void,
-    errorLogged: React.MutableRefObject<string[]>
+    errorLogged: RefObject<string[]>
 ): Promise<void> => {
     if (!amount || !fromCoin || !toCoin) {
         return;
