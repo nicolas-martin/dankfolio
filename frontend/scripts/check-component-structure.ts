@@ -176,87 +176,96 @@ function scanDirectory(dir: string): ComponentCheck[] {
 function printResults(results: ComponentCheck[], showSummary: boolean = false): boolean {
   console.log(chalk.bold('\n🔍 Component Structure Check Results\n'));
 
-  let hasIssues = false;
+  // First show all valid components
+  const validComponents = results.filter(result => 
+    !result.hasLogicInComponent && !result.hasStyleIssues && !result.hasTypeIssues
+  );
+  
+  if (validComponents.length > 0) {
+    console.log(chalk.green.bold('✅ Properly Structured Components:'));
+    validComponents.forEach(result => {
+      console.log(chalk.green(`   ${result.name}`));
+    });
+    console.log(''); // Empty line after valid components
+  }
 
-  results.forEach(result => {
-    const hasAnyIssues = result.hasLogicInComponent || result.hasStyleIssues || result.hasTypeIssues;
+  // Then show components with issues
+  const componentsWithIssues = results.filter(result => 
+    result.hasLogicInComponent || result.hasStyleIssues || result.hasTypeIssues
+  );
+  
+  if (componentsWithIssues.length > 0) {
+    console.log(chalk.yellow.bold('⚠️  Components Needing Attention:\n'));
     
-    if (hasAnyIssues) {
-      hasIssues = true;
+    componentsWithIssues.forEach(result => {
       const fullPath = path.join(result.path, 'index.tsx');
       const relativePath = fullPath.split('src/')[1];
-      console.log(chalk.yellow(`⚠️ Found issue in ${result.name} in ${relativePath}`));
-      console.log(chalk.gray(`    ${fullPath}`));
       
+      // Component name and path
+      console.log(chalk.yellow.bold(`${result.name} `));
+      console.log(chalk.gray(`   ${fullPath}`));
+      
+      // Logic issues
       if (result.hasLogicInComponent) {
-        console.log(chalk.yellow('    Logic that should be in scripts.ts:'));
+        console.log(chalk.yellow('\n   Business Logic (move to scripts.ts):'));
         result.logicFound.forEach(logic => {
-          console.log(chalk.yellow(`      - ${logic}`));
+          console.log(chalk.yellow(`     • ${logic}`));
         });
       }
       
+      // Style issues
       if (result.hasStyleIssues) {
-        console.log(chalk.yellow('    Style imports that should be in ./styles:'));
+        console.log(chalk.yellow('\n   Styles (move to styles.ts):'));
         result.styleIssues.forEach(style => {
-          console.log(chalk.yellow(`      - ${style}`));
+          console.log(chalk.yellow(`     • ${style}`));
         });
       }
 
+      // Type issues
       if (result.hasTypeIssues) {
-        console.log(chalk.yellow('    Types that should be in types.ts:'));
+        console.log(chalk.yellow('\n   Types (move to types.ts):'));
         result.typeIssues.forEach(type => {
-          console.log(chalk.yellow(`      - ${type}`));
+          console.log(chalk.yellow(`     • ${type}`));
         });
       }
-    } else {
-      console.log(chalk.green(`✅ ${result.name} is properly structured`));
-    }
-    
-    console.log(''); // Empty line between components
-  });
+      
+      console.log('\n' + '─'.repeat(80) + '\n'); // Separator between components
+    });
+  }
 
   if (showSummary) {
-    if (!hasIssues) {
-      console.log(chalk.green.bold('✨ All components are properly structured!\n'));
+    if (componentsWithIssues.length === 0) {
+      console.log(chalk.green.bold('\n✨ All components are properly structured!\n'));
     } else {
-      console.log(chalk.yellow.bold('⚠️  Some components need attention\n'));
-      console.log(chalk.cyan('💡 Tips:'));
-      console.log(chalk.cyan('  - Move complex functions to scripts.ts'));
-      console.log(chalk.cyan('  - Keep only JSX, props handling, and basic hooks in index.tsx'));
-      console.log(chalk.cyan('  - Extract data transformations and utilities to scripts.ts'));
-      console.log(chalk.cyan('  - Move all styles to ./styles.ts'));
-      console.log(chalk.cyan('  - Import styles from ./styles'));
-      console.log(chalk.cyan('  - Consider creating types.ts for complex prop types\n'));
+      console.log(chalk.cyan.bold('\n💡 Tips:'));
+      console.log(chalk.cyan('  • Move complex functions to scripts.ts'));
+      console.log(chalk.cyan('  • Keep only JSX, props handling, and basic hooks in index.tsx'));
+      console.log(chalk.cyan('  • Extract data transformations and utilities to scripts.ts'));
+      console.log(chalk.cyan('  • Move all styles to ./styles.ts'));
+      console.log(chalk.cyan('  • Import styles from ./styles'));
+      console.log(chalk.cyan('  • Consider creating types.ts for complex prop types\n'));
     }
   }
 
-  return hasIssues;
+  return componentsWithIssues.length > 0;
 }
 
 // Run the check
 console.log(chalk.bold('🚀 Starting component structure check...\n'));
 
-let anyIssues = false;
+// Collect all results first
+const allResults: ComponentCheck[] = [];
 COMPONENT_DIRS.forEach(dir => {
   const fullPath = path.join(process.cwd(), dir);
   if (fs.existsSync(fullPath)) {
-    const results = scanDirectory(fullPath);
-    anyIssues = printResults(results) || anyIssues;
+    allResults.push(...scanDirectory(fullPath));
   } else {
     console.log(chalk.red(`Directory not found: ${dir}`));
   }
 });
 
-// Show summary at the end if there were any issues
-if (anyIssues) {
-  console.log(chalk.yellow.bold('⚠️  Some components need attention\n'));
-  console.log(chalk.cyan('💡 Tips:'));
-  console.log(chalk.cyan('  - Move complex functions to scripts.ts'));
-  console.log(chalk.cyan('  - Keep only JSX, props handling, and basic hooks in index.tsx'));
-  console.log(chalk.cyan('  - Extract data transformations and utilities to scripts.ts'));
-  console.log(chalk.cyan('  - Move all styles to ./styles.ts'));
-  console.log(chalk.cyan('  - Import styles from ./styles'));
-  console.log(chalk.cyan('  - Consider creating types.ts for complex prop types\n'));
-} else {
-  console.log(chalk.green.bold('✨ All components are properly structured!\n'));
-} 
+// Print all results together
+const hasIssues = printResults(allResults, true);
+
+// Process exit code based on whether there were issues
+process.exit(hasIssues ? 1 : 0); 
