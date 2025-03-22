@@ -9,13 +9,13 @@ import { FileIssue, formatIssueGroup, formatSummary, formatFinalSummary } from '
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
-const BACKEND_EXCLUDE_FLAGS = [
+const FRONTEND_EXCLUDE_FLAGS = [
   './frontend/node_modules/*', 
   './frontend/ios/*', 
   './frontend/.*'
 ];
 
-const FRONTEND_EXCLUDE_FLAGS = [
+const BACKEND_EXCLUDE_FLAGS = [
   './backend/keys/*',
   './backend/scripts/*',
   './backend/internal/model/*',
@@ -91,7 +91,7 @@ const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
     baseDir: './frontend',
     buildFindCommand: () => {
       const excludeFlags = FRONTEND_EXCLUDE_FLAGS
-        .map(path => `! -path "./frontend/${path}"`)
+        .map(path => `! -path "${path}"`)
         .join(' ');
       return `find ./frontend -type d -mindepth 1 -maxdepth 4 ${excludeFlags}`;
     }
@@ -101,7 +101,7 @@ const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
     baseDir: './backend',
     buildFindCommand: () => {
       const excludeFlags = BACKEND_EXCLUDE_FLAGS
-        .map(path => `! -path "./backend/${path}"`)
+        .map(path => `! -path "${path}"`)
         .join(' ');
       return `find ./backend -type d -mindepth 1 -maxdepth 4 ${excludeFlags}`;
     }
@@ -367,18 +367,31 @@ function checkAllComponentStructure(): ComponentCheck[] {
 function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
   const allFolderIssues: FolderIssue[] = [];
   const config = STRUCTURE_CONFIGS[projectType];
-
+  
+  // Get the project root by going up from frontend/scripts to dankfolio root
+  const scriptDir = process.cwd();
+  const projectRoot = path.resolve(scriptDir, '..');
+  
   console.log(chalk.blue(`\n📁 Checking ${projectType} directory structure...`));
+  console.log(chalk.gray('Protected directories:'));
+  config.protectedDirs.forEach(dir => console.log(chalk.gray(`  ${dir}`)));
 
-  if (fs.existsSync(config.baseDir)) {
+  const fullBaseDir = path.join(projectRoot, projectType);
+  console.log(chalk.gray(`\nScript directory: ${scriptDir}`));
+  console.log(chalk.gray(`Project root: ${projectRoot}`));
+  console.log(chalk.gray(`Full base directory: ${fullBaseDir}`));
+
+  if (fs.existsSync(fullBaseDir)) {
     // Use the buildFindCommand function to get the command
     const cmd = config.buildFindCommand();
-    console.log(chalk.gray('\nExecuting command:'), cmd);
+    console.log(chalk.yellow('\nBuilt find command:'), cmd);
 
     try {
+      console.log(chalk.gray('\nExecuting command...'));
       const output = require('child_process').execSync(cmd, {
         encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
+        cwd: projectRoot  // Execute from dankfolio root
       });
 
       if (!output) {
@@ -387,21 +400,25 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
       }
 
       const currentDirs = output.trim().split('\n').filter(Boolean);
-
+      
+      console.log(chalk.gray('\nFound directories:'));
       currentDirs.forEach(dir => console.log(chalk.gray(`  ${dir}`)));
 
       // Compare current structure
+      console.log(chalk.gray('\nChecking for duplicates...'));
       currentDirs.forEach(dir => {
         const dirName = path.basename(dir);
+        console.log(chalk.gray(`\nChecking directory: ${dir} (basename: ${dirName})`));
 
         // Check if this directory name matches a protected directory
         config.protectedDirs.forEach(protectedDir => {
           const protectedName = path.basename(protectedDir);
-          console.log(chalk.gray(`  Comparing with protected dir: ${protectedDir} (${protectedName})`));
+          console.log(chalk.gray(`  Comparing with protected dir: ${protectedDir} (basename: ${protectedName})`));
 
-          if (dirName === protectedName && dir !== protectedDir) {
-            console.log(chalk.yellow(`  ⚠️  Found duplicate: ${dir}`));
-            console.log(chalk.yellow(`      Should be in: ${protectedDir}`));
+          if (dirName === protectedName && !dir.endsWith(protectedDir)) {
+            console.log(chalk.red(`    ⚠️  Found duplicate in wrong location:`));
+            console.log(chalk.red(`      Found: ${dir}`));
+            console.log(chalk.red(`      Should be in: ${protectedDir}`));
             allFolderIssues.push({
               path: dir,
               originalPath: protectedDir,
@@ -410,9 +427,22 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
           }
         });
       });
+
+      console.log(chalk.gray('\nFound issues:'), allFolderIssues.length);
+      allFolderIssues.forEach(issue => {
+        console.log(chalk.yellow(`  - ${issue.path} (should be in ${issue.originalPath})`));
+      });
+
     } catch (error) {
       console.error(chalk.red(`Error checking ${projectType} structure:`), error);
+      if (error instanceof Error) {
+        console.error(chalk.red('Error details:'), error.message);
+        if ('stdout' in error) console.error(chalk.red('stdout:'), (error as any).stdout);
+        if ('stderr' in error) console.error(chalk.red('stderr:'), (error as any).stderr);
+      }
     }
+  } else {
+    console.log(chalk.red(`Base directory not found: ${fullBaseDir}`));
   }
 
   return allFolderIssues;
