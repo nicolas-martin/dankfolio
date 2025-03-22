@@ -72,30 +72,28 @@ type ProjectType = 'frontend' | 'backend';
 interface StructureConfig {
   protectedDirs: string[];
   baseDir: string;
-  buildFindCommand: (maxdepth?: number) => string;
+  buildFindCommand(): string;
 }
 
 const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
   frontend: {
     protectedDirs: FRONTEND_PROTECTED_DIRS,
     baseDir: './frontend',
-    buildFindCommand: (maxdepth = 4) => {
-      const excludePaths = ['node_modules/*', 'ios/*', '.*'];
-      const excludeFlags = excludePaths
+    buildFindCommand: () => {
+      const excludeFlags = FRONTEND_PROTECTED_DIRS
         .map(path => `! -path "./frontend/${path}"`)
         .join(' ');
-      return `find ./frontend -type d -mindepth 1 -maxdepth ${maxdepth} ${excludeFlags}`;
+      return `find ./frontend -type d -mindepth 1 -maxdepth 4 ${excludeFlags}`;
     }
   },
   backend: {
     protectedDirs: BACKEND_PROTECTED_DIRS,
     baseDir: './backend',
-    buildFindCommand: (maxdepth = 4) => {
-      const excludePaths = ['keys/*', 'scripts/*', 'internal/model/*', 'cmd/*'];
-      const excludeFlags = excludePaths
+    buildFindCommand: () => {
+      const excludeFlags = BACKEND_PROTECTED_DIRS
         .map(path => `! -path "./backend/${path}"`)
         .join(' ');
-      return `find ./backend -type d -mindepth 1 -maxdepth ${maxdepth} ${excludeFlags}`;
+      return `find ./backend -type d -mindepth 1 -maxdepth 4 ${excludeFlags}`;
     }
   }
 };
@@ -356,7 +354,7 @@ function checkAllComponentStructure(): ComponentCheck[] {
   return allResults;
 }
 
-function checkFolderStructure(projectType: ProjectType = 'frontend'): FolderIssue[] {
+function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
   const allFolderIssues: FolderIssue[] = [];
   const config = STRUCTURE_CONFIGS[projectType];
   
