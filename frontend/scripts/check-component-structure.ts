@@ -4,13 +4,23 @@ import chalk from 'chalk';
 import { FileIssue, formatIssueGroup, formatSummary, formatFinalSummary } from './utils/formatting';
 // command for folder structure
 // frontend structure check
-// find ./frontend -type d -mindepth 1 -maxdepth 4 ! -path "./frontend/node_modules/*" ! -path "./frontend/ios/*" ! -path "./frontend/.*"
 // backend structure check
-// find ./backend -type d -mindepth 1 -maxdepth 4 ! -path "./backend/keys/*" ! -path "./backend/scripts/*" ! -path "./backend/internal/model/*" ! -path "./backend/cmd/*"
 
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
+const BACKEND_EXCLUDE_FLAGS = [
+  './frontend/node_modules/*', 
+  './frontend/ios/*', 
+  './frontend/.*'
+];
+
+const FRONTEND_EXCLUDE_FLAGS = [
+  './backend/keys/*',
+  './backend/scripts/*',
+  './backend/internal/model/*',
+  './backend/cmd/*'
+];
 // Protected directories that should only exist in specific locations
 const FRONTEND_PROTECTED_DIRS = [
   './frontend/scripts',
@@ -80,7 +90,7 @@ const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
     protectedDirs: FRONTEND_PROTECTED_DIRS,
     baseDir: './frontend',
     buildFindCommand: () => {
-      const excludeFlags = FRONTEND_PROTECTED_DIRS
+      const excludeFlags = FRONTEND_EXCLUDE_FLAGS
         .map(path => `! -path "./frontend/${path}"`)
         .join(' ');
       return `find ./frontend -type d -mindepth 1 -maxdepth 4 ${excludeFlags}`;
@@ -90,7 +100,7 @@ const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
     protectedDirs: BACKEND_PROTECTED_DIRS,
     baseDir: './backend',
     buildFindCommand: () => {
-      const excludeFlags = BACKEND_PROTECTED_DIRS
+      const excludeFlags = BACKEND_EXCLUDE_FLAGS
         .map(path => `! -path "./backend/${path}"`)
         .join(' ');
       return `find ./backend -type d -mindepth 1 -maxdepth 4 ${excludeFlags}`;
@@ -293,7 +303,7 @@ function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], sh
 
   if (showSummary && (componentsWithIssues.length > 0 || folderIssues.length > 0)) {
     console.log(chalk.cyan.bold('\n💡 Tips:'));
-    
+
     if (componentsWithIssues.length > 0) {
       console.log(chalk.cyan('Component Structure:'));
       console.log(chalk.cyan('  • Move complex functions to scripts.ts'));
@@ -303,7 +313,7 @@ function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], sh
       console.log(chalk.cyan('  • Import styles from ./styles'));
       console.log(chalk.cyan('  • Consider creating types.ts for complex prop types'));
     }
-    
+
     if (folderIssues.length > 0) {
       if (componentsWithIssues.length > 0) console.log('');
       console.log(chalk.cyan('Folder Structure:'));
@@ -341,7 +351,7 @@ console.log(chalk.bold('🚀 Starting structure checks...\n'));
 
 function checkAllComponentStructure(): ComponentCheck[] {
   const allResults: ComponentCheck[] = [];
-  
+
   COMPONENT_DIRS.forEach(dir => {
     const fullPath = path.join(process.cwd(), dir);
     if (fs.existsSync(fullPath)) {
@@ -357,38 +367,38 @@ function checkAllComponentStructure(): ComponentCheck[] {
 function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
   const allFolderIssues: FolderIssue[] = [];
   const config = STRUCTURE_CONFIGS[projectType];
-  
+
   console.log(chalk.blue(`\n📁 Checking ${projectType} directory structure...`));
 
   if (fs.existsSync(config.baseDir)) {
     // Use the buildFindCommand function to get the command
     const cmd = config.buildFindCommand();
     console.log(chalk.gray('\nExecuting command:'), cmd);
-    
+
     try {
-      const output = require('child_process').execSync(cmd, { 
+      const output = require('child_process').execSync(cmd, {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe']
       });
-      
+
       if (!output) {
         console.log(chalk.yellow('No directories found.'));
         return allFolderIssues;
       }
 
       const currentDirs = output.trim().split('\n').filter(Boolean);
-      
+
       currentDirs.forEach(dir => console.log(chalk.gray(`  ${dir}`)));
 
       // Compare current structure
       currentDirs.forEach(dir => {
         const dirName = path.basename(dir);
-        
+
         // Check if this directory name matches a protected directory
         config.protectedDirs.forEach(protectedDir => {
           const protectedName = path.basename(protectedDir);
           console.log(chalk.gray(`  Comparing with protected dir: ${protectedDir} (${protectedName})`));
-          
+
           if (dirName === protectedName && dir !== protectedDir) {
             console.log(chalk.yellow(`  ⚠️  Found duplicate: ${dir}`));
             console.log(chalk.yellow(`      Should be in: ${protectedDir}`));
@@ -411,11 +421,11 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
 try {
   // Run component checks (frontend only)
   const componentResults = checkAllComponentStructure();
-  
+
   // Run structure checks for both frontend and backend
   const frontendFolderIssues = checkFolderStructure('frontend');
   const backendFolderIssues = checkFolderStructure('backend');
-  
+
   // Combine folder issues
   const allFolderIssues = [...frontendFolderIssues, ...backendFolderIssues];
 
