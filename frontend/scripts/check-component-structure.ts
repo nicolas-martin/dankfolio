@@ -374,52 +374,35 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
         return allFolderIssues;
       }
 
+      console.log(chalk.green('Found directories:'));
+      console.log(output);
+
       const currentDirs = output.trim().split('\n').filter(Boolean);
+      console.log(chalk.green('Current directories:'));
+      console.log(currentDirs);
 
-      // Compare current structure
-      currentDirs.forEach(dir => {
-        // Check if this directory path matches a protected directory name
-        // but is in a different location
-        config.protectedDirs.forEach(protectedDir => {
-          // Get the relative paths from project root
-          const relativeDir = dir.replace(/^\.\//, '');
-          const relativeProtectedDir = protectedDir.replace(/^\.\//, '');
-          
-          // If this is a protected directory path, it should exist exactly where specified
-          if (relativeProtectedDir === relativeDir) {
-            return; // This directory is exactly where it should be
+      const duplicateDirs = currentDirs.filter(d => config.protectedDirs.includes(d));
+      console.log(chalk.red('Duplicate directories:'), duplicateDirs);
+
+      for (const dir of currentDirs) {
+        for (const protectedDir of config.protectedDirs) {
+          if (dir === protectedDir) {
+            console.log(chalk.green('Skipping duplicate directory:'), dir);
+            continue;
           }
 
-          // Only compare if they share the same final folder name
-          const dirName = path.basename(dir);
-          const protectedName = path.basename(protectedDir);
-          
-          if (dirName === protectedName) {
-            // Get parent paths to compare context
-            const dirParent = path.dirname(relativeDir);
-            const protectedParent = path.dirname(relativeProtectedDir);
-            
-            // If both paths are protected and valid, skip
-            if (config.protectedDirs.includes('./' + dirParent) && 
-                config.protectedDirs.includes('./' + protectedParent)) {
-              return;
-            }
-
-            // Create a unique key for this pair of directories
-            const pairKey = [dir, protectedDir].sort().join('->');
-            
-            // Only add if we haven't seen this pair before
-            if (!seenPairs.has(pairKey)) {
-              seenPairs.add(pairKey);
-              allFolderIssues.push({
-                path: dir,
-                originalPath: protectedDir,
-                type: 'duplicate'
-              });
-            }
+          const pairKey = [dir, protectedDir].join('->');
+          if (!seenPairs.has(pairKey)) {
+            seenPairs.add(pairKey);
+            allFolderIssues.push({
+              path: dir,
+              originalPath: protectedDir,
+              type: 'duplicate'
+            });
+            console.log(chalk.red('Duplicate directory found:'), pairKey);
           }
-        });
-      });
+        }
+      }
 
     } catch (error) {
       console.error(chalk.red(`Error checking ${projectType} structure:`), error);
