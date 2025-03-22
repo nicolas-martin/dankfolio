@@ -13,41 +13,90 @@ const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
 // Protected directories that should only exist in specific locations
 const FRONTEND_PROTECTED_DIRS = [
-  'src/components',
-  'src/screens',
-  'src/services',
-  'src/utils',
-  'src/types',
-  'src/navigation'
+  './frontend/scripts',
+  './frontend/scripts/utils',
+  './frontend/assets',
+  './frontend/assets/icons',
+  './frontend/src',
+  './frontend/src/types',
+  './frontend/src/navigation',
+  './frontend/src/navigation/screens',
+  './frontend/src/utils',
+  './frontend/src/screens',
+  './frontend/src/screens/Home',
+  './frontend/src/screens/Trade',
+  './frontend/src/screens/CoinDetail',
+  './frontend/src/screens/components',
+  './frontend/src/screens/Profile',
+  './frontend/src/components',
+  './frontend/src/components/Home',
+  './frontend/src/components/Home/CoinCard',
+  './frontend/src/components/Trade',
+  './frontend/src/components/Trade/TradeDetails',
+  './frontend/src/components/Trade/SwapButton',
+  './frontend/src/components/Trade/CoinSelector',
+  './frontend/src/components/Trade/TradeButton',
+  './frontend/src/components/Chart',
+  './frontend/src/components/Chart/CustomTooltip',
+  './frontend/src/components/Chart/CoinInfo',
+  './frontend/src/components/Chart/CoinChart',
+  './frontend/src/components/Common',
+  './frontend/src/components/Common/Toast',
+  './frontend/src/components/Common/TopBar',
+  './frontend/src/components/Common/BackButton',
+  './frontend/src/components/Common/PlatformImage',
+  './frontend/src/components/CoinDetails',
+  './frontend/src/components/CoinDetails/PriceDisplay',
+  './frontend/src/services'
 ];
 
 const BACKEND_PROTECTED_DIRS = [
-  'internal/api',
-  'internal/service',
-  'internal/repository',
-  'internal/middleware',
-  'internal/config',
-  'internal/utils'
+  './backend/cmd',
+  './backend/internal',
+  './backend/internal/middleware',
+  './backend/internal/model',
+  './backend/internal/wallet',
+  './backend/internal/api',
+  './backend/internal/service',
+  './backend/internal/service/trade',
+  './backend/internal/service/solana',
+  './backend/internal/service/price',
+  './backend/internal/service/coin',
+  './backend/internal/service/wallet',
+  './backend/scripts',
+  './backend/keys'
 ];
 
 type ProjectType = 'frontend' | 'backend';
 
 interface StructureConfig {
   protectedDirs: string[];
-  excludePaths: string[];
   baseDir: string;
+  buildFindCommand: (maxdepth?: number) => string;
 }
 
 const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
   frontend: {
     protectedDirs: FRONTEND_PROTECTED_DIRS,
-    excludePaths: ['node_modules/*', 'ios/*', '.*'],
-    baseDir: './frontend'
+    baseDir: './frontend',
+    buildFindCommand: (maxdepth = 4) => {
+      const excludePaths = ['node_modules/*', 'ios/*', '.*'];
+      const excludeFlags = excludePaths
+        .map(path => `! -path "./frontend/${path}"`)
+        .join(' ');
+      return `find ./frontend -type d -mindepth 1 -maxdepth ${maxdepth} ${excludeFlags}`;
+    }
   },
   backend: {
     protectedDirs: BACKEND_PROTECTED_DIRS,
-    excludePaths: ['keys/*', 'scripts/*', 'internal/model/*', 'cmd/*'],
-    baseDir: './backend'
+    baseDir: './backend',
+    buildFindCommand: (maxdepth = 4) => {
+      const excludePaths = ['keys/*', 'scripts/*', 'internal/model/*', 'cmd/*'];
+      const excludeFlags = excludePaths
+        .map(path => `! -path "./backend/${path}"`)
+        .join(' ');
+      return `find ./backend -type d -mindepth 1 -maxdepth ${maxdepth} ${excludeFlags}`;
+    }
   }
 };
 
@@ -314,13 +363,8 @@ function checkFolderStructure(projectType: ProjectType = 'frontend'): FolderIssu
   console.log(chalk.blue(`\n📁 Checking ${projectType} directory structure...`));
 
   if (fs.existsSync(config.baseDir)) {
-    // Build exclude paths
-    const excludePaths = config.excludePaths
-      .map(path => `! -path "${config.baseDir}/${path}"`)
-      .join(' ');
-
-    // Execute find command
-    const cmd = `find ${config.baseDir} -type d -mindepth 1 -maxdepth 4 ${excludePaths}`;
+    // Use the buildFindCommand function to get the command
+    const cmd = config.buildFindCommand();
     console.log(chalk.gray('\nExecuting command:'), cmd);
     
     try {
@@ -340,7 +384,6 @@ function checkFolderStructure(projectType: ProjectType = 'frontend'): FolderIssu
 
       // Compare current structure
       currentDirs.forEach(dir => {
-        const relativePath = dir.replace(`${config.baseDir}/`, ''); // Remove base dir
         const dirName = path.basename(dir);
         
         // Check if this directory name matches a protected directory
@@ -348,7 +391,7 @@ function checkFolderStructure(projectType: ProjectType = 'frontend'): FolderIssu
           const protectedName = path.basename(protectedDir);
           console.log(chalk.gray(`  Comparing with protected dir: ${protectedDir} (${protectedName})`));
           
-          if (dirName === protectedName && !relativePath.startsWith(protectedDir)) {
+          if (dirName === protectedName && dir !== protectedDir) {
             console.log(chalk.yellow(`  ⚠️  Found duplicate: ${dir}`));
             console.log(chalk.yellow(`      Should be in: ${protectedDir}`));
             allFolderIssues.push({
