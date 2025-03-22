@@ -311,9 +311,9 @@ function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], sh
 	if (showSummary) {
 		// Generate summary items
 		const summaryItems = [
-			{ label: 'clean components', count: cleanComponents.length },
+			{ label: `clean components`, count: cleanComponents.length },
 			{ label: 'components with issues', count: componentsWithIssues.length },
-			{ label: 'structure issues', count: folderIssues.length }
+			{ label: 'structure with issues', count: folderIssues.length }
 		];
 
 		console.log(formatFinalSummary(summaryItems, cleanComponents.length));
