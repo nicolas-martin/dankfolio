@@ -2,18 +2,17 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import { FileIssue, formatIssueGroup, formatSummary, formatFinalSummary } from './utils/formatting';
-// command for folder structure
-// frontend structure check
-// backend structure check
-
+// find ./backend -type d -mindepth 1 -maxdepth 4 ! -path "./backend/keys/*" ! -path "./backend/scripts/*" ! -path "./backend/internal/model/*" ! -path "./backend/cmd/*" ! -path "./backend/internal/service/wallet/*" ! -path "./backend/internal/wallet/*" | sort   | sed "s|.*|'&',|"
+// find ./frontend -type d -mindepth 1 -maxdepth 4 ! -path "./frontend/node_modules/*" ! -path "./frontend/ios/*" ! -path "./frontend/.*" ! -path "./frontend/scripts/utils" | sort | sed "s|.*|'&',|"
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
 const FRONTEND_EXCLUDE_FLAGS = [
-  './frontend/node_modules/*', 
-  './frontend/ios/*', 
+  './frontend/node_modules/*',
+  './frontend/ios/*',
   './frontend/.*',
-  './frontend/scripts/utils/*'
+  './frontend/scripts/utils/*',
+  './frontend/src/utils/*'
 ];
 
 const BACKEND_EXCLUDE_FLAGS = [
@@ -28,6 +27,9 @@ const BACKEND_EXCLUDE_FLAGS = [
 const FRONTEND_PROTECTED_DIRS = [
   './frontend/assets',
   './frontend/assets/icons',
+  './frontend/ios',
+  './frontend/node_modules',
+  './frontend/scripts',
   './frontend/src',
   './frontend/src/components',
   './frontend/src/components/Chart',
@@ -283,7 +285,7 @@ function folderIssueToFileIssue(issue: FolderIssue): FileIssue {
 function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], showSummary: boolean = false): boolean {
   const cleanComponents = results.filter(r => r.issues.length === 0);
   const componentsWithIssues = results.filter(r => r.issues.length > 0);
-  
+
   // Convert all issues to FileIssue format
   const allIssues: FileIssue[] = [
     ...results.flatMap(r => r.issues.map(i => issueToFileIssue(i, r.path))),
@@ -292,7 +294,7 @@ function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], sh
 
   if (showSummary) {
     console.log(chalk.bold('\n🔍 Structure Check Results\n'));
-    
+
     // Print clean components
     if (cleanComponents.length > 0) {
       console.log(chalk.green.bold(`✅ Properly Structured Components (${cleanComponents.length}):`));
@@ -346,11 +348,12 @@ function checkAllComponentStructure(): ComponentCheck[] {
 function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
   const allFolderIssues: FolderIssue[] = [];
   const config = STRUCTURE_CONFIGS[projectType];
-  
+  const seenPairs = new Set<string>();
+
   // Get the project root by going up from frontend/scripts to dankfolio root
   const scriptDir = process.cwd();
   const projectRoot = path.resolve(scriptDir, '..');
-  
+
   const fullBaseDir = path.join(projectRoot, projectType);
   console.log(chalk.gray(`\nScript directory: ${scriptDir}`));
   console.log(chalk.gray(`Project root: ${projectRoot}`));
@@ -374,7 +377,7 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
       }
 
       const currentDirs = output.trim().split('\n').filter(Boolean);
-      
+
       // Compare current structure
       currentDirs.forEach(dir => {
         const dirName = path.basename(dir);
@@ -384,15 +387,21 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
           const protectedName = path.basename(protectedDir);
 
           if (dirName === protectedName && !dir.endsWith(protectedDir)) {
-            allFolderIssues.push({
-              path: dir,
-              originalPath: protectedDir,
-              type: 'duplicate'
-            });
+            // Create a unique key for this pair of directories
+            const pairKey = [dir, protectedDir].sort().join('->');
+            
+            // Only add if we haven't seen this pair before
+            if (!seenPairs.has(pairKey)) {
+              seenPairs.add(pairKey);
+              allFolderIssues.push({
+                path: dir,
+                originalPath: protectedDir,
+                type: 'duplicate'
+              });
+            }
           }
         });
       });
-
 
     } catch (error) {
       console.error(chalk.red(`Error checking ${projectType} structure:`), error);
