@@ -267,83 +267,61 @@ function scanDirectory(dir: string): ComponentCheck[] {
   return results;
 }
 
-function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], showSummary: boolean = false): boolean {
-  console.log(chalk.bold('\n🔍 Structure Check Results\n'));
-
-  // First show all valid components
-  const validComponents = results.filter(result => result.issues.length === 0);
-  if (validComponents.length > 0) {
-    console.log(chalk.green.bold(`✅ Properly Structured Components (${validComponents.length}):`));
-    validComponents.forEach(result => {
-      console.log(chalk.green(`   ${result.name}`));
-    });
-    console.log('');
-  }
-
-  // Then show components with issues
-  const componentsWithIssues = results.filter(result => result.issues.length > 0);
-  let hasIssues = false;
-
-  if (componentsWithIssues.length > 0) {
-    hasIssues = true;
-    const allIssues = componentsWithIssues.flatMap(result =>
-      result.issues.map(issue => issueToFileIssue(issue, result.path))
-    );
-
-    console.log(formatSummary(allIssues.length, validComponents.length));
-    console.log(formatIssueGroup(allIssues));
-  }
-
-  // Show folder structure issues
-  if (folderIssues.length > 0) {
-    hasIssues = true;
-    console.log(chalk.yellow.bold('\n⚠️  Folder Structure Issues:'));
-    console.log(formatIssueGroup(folderIssues.map(folderIssueToFileIssue)));
-  }
-
-  if (showSummary && (componentsWithIssues.length > 0 || folderIssues.length > 0)) {
-    console.log(chalk.cyan.bold('\n💡 Tips:'));
-
-    if (componentsWithIssues.length > 0) {
-      console.log(chalk.cyan('Component Structure:'));
-      console.log(chalk.cyan('  • Move complex functions to scripts.ts'));
-      console.log(chalk.cyan('  • Keep only JSX, props handling, and basic hooks in index.tsx'));
-      console.log(chalk.cyan('  • Extract data transformations and utilities to scripts.ts'));
-      console.log(chalk.cyan('  • Move all styles to ./styles.ts'));
-      console.log(chalk.cyan('  • Import styles from ./styles'));
-      console.log(chalk.cyan('  • Consider creating types.ts for complex prop types'));
-    }
-
-    if (folderIssues.length > 0) {
-      if (componentsWithIssues.length > 0) console.log('');
-      console.log(chalk.cyan('Folder Structure:'));
-      console.log(chalk.cyan('  • Keep folders in their designated locations'));
-      console.log(chalk.cyan('  • Frontend folders should be under src/'));
-      console.log(chalk.cyan('  • Backend folders should follow internal/ structure'));
-      console.log(chalk.cyan('  • Avoid creating duplicate folders in different locations'));
-    }
-    console.log('');
-  }
-
-  // Add final summary with structure issues included
-  const summaryItems = [
-    { label: 'clean components', count: validComponents.length },
-    { label: 'components with issues', count: componentsWithIssues.length },
-    { label: 'structure issues', count: folderIssues.length }
-  ];
-  console.log(formatFinalSummary(summaryItems, validComponents.length));
-
-  return hasIssues;
-}
-
 function folderIssueToFileIssue(issue: FolderIssue): FileIssue {
+  const cleanPath = issue.path.replace(/^\.\//, '');
+  const cleanOriginalPath = issue.originalPath.replace(/^\.\//, '');
   return {
     filePath: issue.path,
     line: 1,
     column: 1,
-    code: 'STRUCTURE',
-    message: `Duplicate folder found. Should be in: ${issue.originalPath}`
+    code: 'DUPLICATE FOLDER',
+    message: `Folder ${cleanPath} should be in ${cleanOriginalPath}`
   };
+}
+
+function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], showSummary: boolean = false): boolean {
+  const cleanComponents = results.filter(r => r.issues.length === 0);
+  const componentsWithIssues = results.filter(r => r.issues.length > 0);
+  
+  // Convert all issues to FileIssue format
+  const allIssues: FileIssue[] = [
+    ...results.flatMap(r => r.issues.map(i => issueToFileIssue(i, r.path))),
+    ...folderIssues.map(folderIssueToFileIssue)
+  ];
+
+  if (showSummary) {
+    console.log(chalk.bold('\n🔍 Structure Check Results\n'));
+    
+    // Print clean components
+    if (cleanComponents.length > 0) {
+      console.log(chalk.green.bold(`✅ Properly Structured Components (${cleanComponents.length}):`));
+      cleanComponents.forEach(c => console.log(`   ${c.name}`));
+      console.log();
+    }
+  }
+
+  // Print issues using common formatting
+  if (allIssues.length > 0) {
+    console.log(formatSummary(allIssues.length, cleanComponents.length));
+    console.log(formatIssueGroup(allIssues));
+  }
+
+  if (showSummary) {
+    // Generate summary items
+    const summaryItems = [
+      { label: 'clean components', count: cleanComponents.length },
+      { label: 'components with issues', count: componentsWithIssues.length },
+      { label: 'structure issues', count: folderIssues.length }
+    ];
+
+    console.log(formatFinalSummary(summaryItems, cleanComponents.length));
+
+    if (allIssues.length > 0) {
+      console.log(chalk.yellow.bold('\n⚠️  Structure issues found. Please fix them before proceeding.\n'));
+    }
+  }
+
+  return allIssues.length === 0;
 }
 
 // Run the check
@@ -372,10 +350,6 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
   const scriptDir = process.cwd();
   const projectRoot = path.resolve(scriptDir, '..');
   
-  console.log(chalk.blue(`\n📁 Checking ${projectType} directory structure...`));
-  console.log(chalk.gray('Protected directories:'));
-  config.protectedDirs.forEach(dir => console.log(chalk.gray(`  ${dir}`)));
-
   const fullBaseDir = path.join(projectRoot, projectType);
   console.log(chalk.gray(`\nScript directory: ${scriptDir}`));
   console.log(chalk.gray(`Project root: ${projectRoot}`));
@@ -387,7 +361,6 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
     console.log(chalk.yellow('\nBuilt find command:'), cmd);
 
     try {
-      console.log(chalk.gray('\nExecuting command...'));
       const output = require('child_process').execSync(cmd, {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -401,24 +374,15 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
 
       const currentDirs = output.trim().split('\n').filter(Boolean);
       
-      console.log(chalk.gray('\nFound directories:'));
-      currentDirs.forEach(dir => console.log(chalk.gray(`  ${dir}`)));
-
       // Compare current structure
-      console.log(chalk.gray('\nChecking for duplicates...'));
       currentDirs.forEach(dir => {
         const dirName = path.basename(dir);
-        console.log(chalk.gray(`\nChecking directory: ${dir} (basename: ${dirName})`));
 
         // Check if this directory name matches a protected directory
         config.protectedDirs.forEach(protectedDir => {
           const protectedName = path.basename(protectedDir);
-          console.log(chalk.gray(`  Comparing with protected dir: ${protectedDir} (basename: ${protectedName})`));
 
           if (dirName === protectedName && !dir.endsWith(protectedDir)) {
-            console.log(chalk.red(`    ⚠️  Found duplicate in wrong location:`));
-            console.log(chalk.red(`      Found: ${dir}`));
-            console.log(chalk.red(`      Should be in: ${protectedDir}`));
             allFolderIssues.push({
               path: dir,
               originalPath: protectedDir,
@@ -428,10 +392,6 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
         });
       });
 
-      console.log(chalk.gray('\nFound issues:'), allFolderIssues.length);
-      allFolderIssues.forEach(issue => {
-        console.log(chalk.yellow(`  - ${issue.path} (should be in ${issue.originalPath})`));
-      });
 
     } catch (error) {
       console.error(chalk.red(`Error checking ${projectType} structure:`), error);

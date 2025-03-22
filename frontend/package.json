@@ -11,7 +11,7 @@
     "tsc:watch": "tsc --watch",
     "lint": "tsc --noEmit",
     "check-structure": "ts-node scripts/check-component-structure.ts",
-    "prestart": "ts-node scripts/check-component-structure.ts",
+    "prestart": "yarn check-structure && yarn check-diagnostics",
     "check-diagnostics": "ts-node scripts/check-diagnostics.ts"
   },
   "dependencies": {
