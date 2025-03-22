@@ -12,69 +12,70 @@ const COMPONENT_DIRS = ['src/components', 'src/screens'];
 const FRONTEND_EXCLUDE_FLAGS = [
   './frontend/node_modules/*', 
   './frontend/ios/*', 
-  './frontend/.*'
+  './frontend/.*',
+  './frontend/scripts/utils/*'
 ];
 
 const BACKEND_EXCLUDE_FLAGS = [
   './backend/keys/*',
   './backend/scripts/*',
   './backend/internal/model/*',
-  './backend/cmd/*'
+  './backend/cmd/*',
+  './backend/internal/service/wallet/*',
+  './backend/internal/wallet/*'
 ];
 // Protected directories that should only exist in specific locations
 const FRONTEND_PROTECTED_DIRS = [
-  './frontend/scripts',
-  './frontend/scripts/utils',
   './frontend/assets',
   './frontend/assets/icons',
   './frontend/src',
-  './frontend/src/types',
-  './frontend/src/navigation',
-  './frontend/src/navigation/screens',
-  './frontend/src/utils',
-  './frontend/src/screens',
-  './frontend/src/screens/Home',
-  './frontend/src/screens/Trade',
-  './frontend/src/screens/CoinDetail',
-  './frontend/src/screens/components',
-  './frontend/src/screens/Profile',
   './frontend/src/components',
+  './frontend/src/components/Chart',
+  './frontend/src/components/Chart/CoinChart',
+  './frontend/src/components/Chart/CoinInfo',
+  './frontend/src/components/Chart/CustomTooltip',
+  './frontend/src/components/CoinDetails',
+  './frontend/src/components/CoinDetails/PriceDisplay',
+  './frontend/src/components/Common',
+  './frontend/src/components/Common/BackButton',
+  './frontend/src/components/Common/PlatformImage',
+  './frontend/src/components/Common/Toast',
+  './frontend/src/components/Common/TopBar',
   './frontend/src/components/Home',
   './frontend/src/components/Home/CoinCard',
   './frontend/src/components/Trade',
-  './frontend/src/components/Trade/TradeDetails',
-  './frontend/src/components/Trade/SwapButton',
   './frontend/src/components/Trade/CoinSelector',
+  './frontend/src/components/Trade/SwapButton',
   './frontend/src/components/Trade/TradeButton',
-  './frontend/src/components/Chart',
-  './frontend/src/components/Chart/CustomTooltip',
-  './frontend/src/components/Chart/CoinInfo',
-  './frontend/src/components/Chart/CoinChart',
-  './frontend/src/components/Common',
-  './frontend/src/components/Common/Toast',
-  './frontend/src/components/Common/TopBar',
-  './frontend/src/components/Common/BackButton',
-  './frontend/src/components/Common/PlatformImage',
-  './frontend/src/components/CoinDetails',
-  './frontend/src/components/CoinDetails/PriceDisplay',
-  './frontend/src/services'
+  './frontend/src/components/Trade/TradeDetails',
+  './frontend/src/navigation',
+  './frontend/src/navigation/screens',
+  './frontend/src/screens',
+  './frontend/src/screens/CoinDetail',
+  './frontend/src/screens/Home',
+  './frontend/src/screens/Profile',
+  './frontend/src/screens/Trade',
+  './frontend/src/screens/components',
+  './frontend/src/services',
+  './frontend/src/types',
+  './frontend/src/utils'
 ];
 
 const BACKEND_PROTECTED_DIRS = [
   './backend/cmd',
   './backend/internal',
+  './backend/internal/api',
   './backend/internal/middleware',
   './backend/internal/model',
-  './backend/internal/wallet',
-  './backend/internal/api',
   './backend/internal/service',
-  './backend/internal/service/trade',
-  './backend/internal/service/solana',
-  './backend/internal/service/price',
   './backend/internal/service/coin',
+  './backend/internal/service/price',
+  './backend/internal/service/solana',
+  './backend/internal/service/trade',
   './backend/internal/service/wallet',
-  './backend/scripts',
-  './backend/keys'
+  './backend/internal/wallet',
+  './backend/keys',
+  './backend/scripts'
 ];
 
 type ProjectType = 'frontend' | 'backend';
