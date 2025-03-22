@@ -359,7 +359,6 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
   console.log(chalk.gray(`Full base directory: ${fullBaseDir}`));
 
   if (fs.existsSync(fullBaseDir)) {
-    // Use the buildFindCommand function to get the command
     const cmd = config.buildFindCommand();
     console.log(chalk.yellow('\nBuilt find command:'), cmd);
 
@@ -367,7 +366,7 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
       const output = require('child_process').execSync(cmd, {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: projectRoot  // Execute from dankfolio root
+        cwd: projectRoot
       });
 
       if (!output) {
@@ -379,16 +378,36 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
 
       // Compare current structure
       currentDirs.forEach(dir => {
-        const dirName = path.basename(dir);
-
-        // Check if this directory name matches a protected directory
+        // Check if this directory path matches a protected directory name
+        // but is in a different location
         config.protectedDirs.forEach(protectedDir => {
-          const protectedName = path.basename(protectedDir);
+          // Get the relative paths from project root
+          const relativeDir = dir.replace(/^\.\//, '');
+          const relativeProtectedDir = protectedDir.replace(/^\.\//, '');
+          
+          // If this is a protected directory path, it should exist exactly where specified
+          if (relativeProtectedDir === relativeDir) {
+            return; // This directory is exactly where it should be
+          }
 
-          if (dirName === protectedName && !dir.endsWith(protectedDir)) {
+          // Only compare if they share the same final folder name
+          const dirName = path.basename(dir);
+          const protectedName = path.basename(protectedDir);
+          
+          if (dirName === protectedName) {
+            // Get parent paths to compare context
+            const dirParent = path.dirname(relativeDir);
+            const protectedParent = path.dirname(relativeProtectedDir);
+            
+            // If both paths are protected and valid, skip
+            if (config.protectedDirs.includes('./' + dirParent) && 
+                config.protectedDirs.includes('./' + protectedParent)) {
+              return;
+            }
+
             // Create a unique key for this pair of directories
             const pairKey = [dir, protectedDir].sort().join('->');
-
+            
             // Only add if we haven't seen this pair before
             if (!seenPairs.has(pairKey)) {
               seenPairs.add(pairKey);
