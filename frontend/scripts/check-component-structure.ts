@@ -2,8 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import { FileIssue, formatIssueGroup, formatSummary, formatFinalSummary } from './utils/formatting';
-// find ./backend -type d -mindepth 1 -maxdepth 4 ! -path "./backend/keys/*" ! -path "./backend/scripts/*" ! -path "./backend/internal/model/*" ! -path "./backend/cmd/*" ! -path "./backend/internal/service/wallet/*" ! -path "./backend/internal/wallet/*" | sort   | sed "s|.*|'&',|"
-// find ./frontend -type d -mindepth 1 -maxdepth 4 ! -path "./frontend/node_modules/*" ! -path "./frontend/ios/*" ! -path "./frontend/.*" ! -path "./frontend/scripts/utils" | sort | sed "s|.*|'&',|"
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
@@ -30,6 +28,7 @@ const FRONTEND_PROTECTED_DIRS = [
   './frontend/ios',
   './frontend/node_modules',
   './frontend/scripts',
+  './frontend/scripts/utils',
   './frontend/src',
   './frontend/src/components',
   './frontend/src/components/Chart',
@@ -389,7 +388,7 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
           if (dirName === protectedName && !dir.endsWith(protectedDir)) {
             // Create a unique key for this pair of directories
             const pairKey = [dir, protectedDir].sort().join('->');
-            
+
             // Only add if we haven't seen this pair before
             if (!seenPairs.has(pairKey)) {
               seenPairs.add(pairKey);
