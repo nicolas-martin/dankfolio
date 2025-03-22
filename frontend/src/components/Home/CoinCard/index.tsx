@@ -3,8 +3,7 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { formatNumber, formatPrice } from '../../../utils/numberFormat';
 import { CoinCardProps } from './types';
 import { styles } from './styles';
-
-const DEFAULT_LOGO = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+import { DEFAULT_LOGO } from './scripts';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
   const logoUrl = coin.icon_url || DEFAULT_LOGO;

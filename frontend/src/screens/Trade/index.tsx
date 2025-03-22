@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Text } from 'react-native';
+import { View, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Text, TextInput } from 'react-native';
 import { Coin } from '../../types/index';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import TopBar from '../../components/Common/TopBar';
@@ -23,8 +23,8 @@ const Trade: React.FC = () => {
 	const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
 	const { initialFromCoin, initialToCoin } = route.params || {};
 
-	const amountInputRef = useRef(null);
-	const debounceTimerRef = useRef(null);
+	const amountInputRef = useRef<TextInput>(null);
+	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 	const errorLogged = useRef<string[]>([]);
 
 	const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin);
@@ -109,17 +109,17 @@ const Trade: React.FC = () => {
 						{/* From Coin Selector */}
 						<CoinSelector
 							label="From"
-							selectedCoin={fromCoin}
+							selectedCoin={fromCoin || undefined}
 							amount={fromAmount}
 							onAmountChange={setFromAmount}
-							onCoinSelect={(coinId: string) => {
+							onCoinSelect={() => {
 								const coin = fromCoin;
 								if (coin) {
 									setFromCoin(coin);
 								}
 							}}
 							isInput
-							inputRef={amountInputRef}
+							inputRef={amountInputRef as React.RefObject<TextInput>}
 						/>
 
 						{/* Value Info */}
@@ -141,10 +141,10 @@ const Trade: React.FC = () => {
 						{/* To Coin Selector */}
 						<CoinSelector
 							label="To"
-							selectedCoin={toCoin}
+							selectedCoin={toCoin || undefined}
 							amount={toAmount}
 							isAmountLoading={quoteLoading}
-							onCoinSelect={(coinId: string) => {
+							onCoinSelect={() => {
 								const coin = toCoin;
 								if (coin) {
 									setToCoin(coin);

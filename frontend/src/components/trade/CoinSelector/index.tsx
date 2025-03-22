@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Image, TextInput, ActivityIndicator, Platform } from 'react-native';
-import { Coin } from '../../../types/index';
 import { theme } from '../../../utils/theme';
 import { CoinSelectorProps } from './types';
 import { styles } from './styles';
@@ -12,7 +11,6 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
   amount,
   isAmountLoading,
   onAmountChange,
-  onCoinSelect,
   isInput = false,
   inputRef,
 }) => {

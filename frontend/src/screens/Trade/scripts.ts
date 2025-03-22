@@ -1,4 +1,4 @@
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+// import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Coin } from '../../types/index';
 import api from '../../services/api';
 import { buildAndSignSwapTransaction, getKeypairFromPrivateKey } from '../../services/solana';
@@ -95,11 +95,11 @@ export const handleTrade = async (
 
         // Build and sign the swap transaction
         const txHash = await buildAndSignSwapTransaction(
-            keypair,
-            fromCoin,
-            toCoin,
-            parseFloat(fromAmount) * LAMPORTS_PER_SOL,
-            parseFloat(toAmount) * LAMPORTS_PER_SOL
+            fromCoin.id,
+            toCoin.id,
+            parseFloat(fromAmount),
+            0.5, // Default slippage
+            { address: keypair.publicKey.toString(), privateKey: keypair.secretKey.toString(), balance: 0, publicKey: keypair.publicKey.toString() }
         );
 
         showToast({

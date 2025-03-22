@@ -1,5 +1,5 @@
 import { Coin, RootStackParamList,  } from '../../types/index';
-import { TokenInfo, WalletBalanceResponse } from '../../services/api';
+import { WalletBalanceResponse } from '../../services/api';
 import { ToastProps } from '../../components/Common/Toast/types';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/types';
@@ -20,8 +20,8 @@ export const handleTokenPress = (
     walletBalance: WalletBalanceResponse,
     navigate: CoinDetailScreenNavigationProp['navigate']
 ): void => {
-    if (!token.id) {
-        console.error('❌ No token ID available for:', token.symbol);
+    if (!token?.id) {
+        console.error('❌ No token ID available for:', token?.symbol);
         return;
     }
 
@@ -47,12 +47,12 @@ export const handleTokenPress = (
         } : null
     });
 
-        const navigationParams: RootStackParamList['CoinDetail'] = {
+    const navigationParams: RootStackParamList['CoinDetail'] = {
         coinId: token.id,
         coinName: token.name,
         daily_volume: token.daily_volume,
-        coin: token,
-        solCoin: solCoin,
+        coin: token || undefined,
+        solCoin: solCoin || undefined,
         walletBalance
     };
 

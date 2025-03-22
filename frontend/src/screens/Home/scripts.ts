@@ -2,6 +2,7 @@ import { Coin, Wallet, NotificationProps } from '../../types/index';
 import { WalletBalanceResponse } from '../../services/api';
 import api from '../../services/api';
 import { getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
+import bs58 from 'bs58';
 
 export const SOL_MINT = 'So11111111111111111111111111111111111111112';
 
@@ -69,8 +70,9 @@ export const handleImportWallet = async (
         const keypair = getKeypairFromPrivateKey(privateKey);
         const walletData: Wallet = {
             address: keypair.publicKey.toString(),
-            privateKey: privateKey,
-            balance: 0
+            privateKey: bs58.encode(keypair.secretKey),
+            balance: 0,
+            publicKey: keypair.publicKey.toString()
         };
         setWallet(walletData);
         await secureStorage.saveWallet(walletData);

@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { Image, View } from 'react-native';
 import { CommonProps } from './types';
-import { styles } from './styles';
 import { getImageSource, getContainerStyles, getImageStyles } from './scripts';
-
-const DEFAULT_TOKEN_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
 const PlatformImage: React.FC<CommonProps> = (props) => {
   const [hasError, setHasError] = useState(false);

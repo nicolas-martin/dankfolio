@@ -26,6 +26,7 @@ export interface Wallet {
   address: string;
   privateKey: string;
   balance: number;
+  publicKey: string;
 }
 
 export type RootStackParamList = {

@@ -2,8 +2,6 @@ import axios, { AxiosError } from 'axios';
 
 import { REACT_APP_API_URL } from '@env';
 
-import { Wallet } from '../types/index'
-
 // Default to localost if API_URL is not set
 const baseURL = REACT_APP_API_URL
 if (!baseURL) {

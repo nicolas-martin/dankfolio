@@ -1,6 +1,5 @@
 require('./load-env.js');
 import { getKeypairFromPrivateKey, buildAndSignSwapTransaction } from '../src/services/solana';
-import { PublicKey } from '@solana/web3.js';
 
 // Test constants
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
@@ -21,10 +20,18 @@ async function testJupiterSwap() {
 
 		// Create keypair from private key
 		console.log('🔑 Creating wallet from private key...');
-		const wallet = getKeypairFromPrivateKey(privateKey);
+		const keypair = getKeypairFromPrivateKey(privateKey);
 		console.log('📝 Wallet details:');
-		console.log('   - Public key:', wallet.publicKey.toString());
+		console.log('   - Public key:', keypair.publicKey.toString());
 		console.log('   - Private key (first 10 chars):', privateKey.substring(0, 10) + '...');
+
+		// Convert Keypair to Wallet type
+		const wallet = {
+			address: keypair.publicKey.toString(),
+			privateKey: keypair.secretKey.toString(),
+			balance: 0,
+			publicKey: keypair.publicKey.toString()
+		};
 
 		// Test swap from SOL to USDC
 		console.log('\n💱 Testing SOL -> USDC swap...');

@@ -8,6 +8,7 @@ import {
 import bs58 from 'bs58';
 import axios from 'axios';
 import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
+import { Wallet } from '../types';
 
 // Use environment variable for Solana RPC endpoint with fallback
 const rpcEndpoint = REACT_APP_SOLANA_RPC_ENDPOINT
@@ -21,23 +22,23 @@ console.log('🔧 Using Solana RPC endpoint:', rpcEndpoint);
 const connection = new Connection(rpcEndpoint, 'confirmed');
 
 // Constants for Raydium API
-const API_SWAP_HOST = 'https://transaction-v1.raydium.io';
-const API_BASE_HOST = 'https://api.raydium.io';
+// const API_SWAP_HOST = 'https://transaction-v1.raydium.io';
+// const API_BASE_HOST = 'https://api.raydium.io';
 
 // Raydium API URLs
-const API_URLS = {
-	SWAP_HOST: API_SWAP_HOST,
-	BASE_HOST: API_BASE_HOST,
-	SWAP_QUOTE: '/compute/swap-base-in',
-	SWAP_TRANSACTION: '/transaction/swap-base-in'
-};
+// const API_URLS = {
+//     SWAP_HOST: API_SWAP_HOST,
+//     BASE_HOST: API_BASE_HOST,
+//     SWAP_QUOTE: '/compute/swap-base-in',
+//     SWAP_TRANSACTION: '/transaction/swap-base-in'
+// };
 
 // Hardcoded compute unit prices (in microLamports)
-const COMPUTE_UNIT_PRICES = {
-	VERY_HIGH: '1000', // vh
-	HIGH: '500',       // h
-	MEDIUM: '250'      // m
-};
+// const COMPUTE_UNIT_PRICES = {
+//     VERY_HIGH: '1000', // vh
+//     HIGH: '500',       // h
+//     MEDIUM: '250'      // m
+// };
 
 const jupiterApi = axios.create({
 	baseURL: process.env.REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
@@ -64,7 +65,7 @@ jupiterApi.interceptors.response.use(
 	}
 );
 
-const handleError = (error) => {
+const handleError = (error: unknown) => {
 	console.error('Error:', error);
 	throw error;
 };
@@ -82,7 +83,7 @@ export const generateWallet = () => {
 	};
 };
 
-const isBase64 = (privateKey) => {
+const isBase64 = (privateKey: string) => {
 	// Basic check for Base64 format (may not be 100% accurate)
 	return privateKey.match(/^[A-Za-z0-9+/]*={0,2}$/) !== null && privateKey.length % 4 === 0;
 };
@@ -90,7 +91,7 @@ const isBase64 = (privateKey) => {
 /**
  * Get a Solana keypair from a private key (supports Base58 and Base64 formats).
  */
-export const getKeypairFromPrivateKey = (privateKey) => {
+export const getKeypairFromPrivateKey = (privateKey: string) => {
 	let secretKey;
 
 	if (isBase64(privateKey)) {
@@ -108,7 +109,7 @@ export const getKeypairFromPrivateKey = (privateKey) => {
  * Check the balance of a Solana account.
  * Returns the balance in SOL.
  */
-export const getBalance = async (publicKeyString) => {
+export const getBalance = async (publicKeyString: string) => {
 	try {
 		const publicKey = new PublicKey(publicKeyString);
 		const balance = await connection.getBalance(publicKey);
@@ -123,11 +124,11 @@ export const getBalance = async (publicKeyString) => {
  * Returns a Base64 encoded signed transaction.
  */
 export const buildAndSignSwapTransaction = async (
-	inputMint,
-	outputMint,
-	amount,
-	slippage,
-	wallet
+	inputMint: string,
+	outputMint: string,
+	amount: number,
+	slippage: number,
+	wallet: Wallet
 ) => {
 	try {
 		// Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
@@ -182,7 +183,8 @@ export const buildAndSignSwapTransaction = async (
 
 		const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
-		transaction.sign([wallet]);
+		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
+		transaction.sign([keypair]);
 
 		const serializedTransaction = transaction.serialize();
 		const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
@@ -202,10 +204,10 @@ export const buildAndSignSwapTransaction = async (
  * In a real app, use a secure storage solution like react-native-keychain.
  */
 export const secureStorage = {
-	saveWallet: async (wallet) => {
+	saveWallet: async (wallet: Wallet) => {
 		try {
 			localStorage.setItem('wallet', JSON.stringify({
-				publicKey: wallet.publicKey,
+				address: wallet.address,
 				privateKey: wallet.privateKey,
 			}));
 			return true;
@@ -236,4 +238,3 @@ export const secureStorage = {
 		}
 	}
 };
-

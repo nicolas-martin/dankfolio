@@ -20,6 +20,13 @@
     "allowUnreachableCode": false,
     "declaration": true
   },
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.tsx",
+    "scripts/**/*"
+  ],
   "include": [
     "**/*.ts",
     "**/*.tsx",

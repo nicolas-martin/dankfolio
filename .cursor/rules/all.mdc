@@ -4,8 +4,18 @@ globs:
 alwaysApply: true
 ---
 ### Structure
-Each component or screen MUST follow this directory structure:
+## Project
+- The only make file is located at the root of the project `./dankfolio`. Make sure your `pwd` is `./dankfolio`
+- The common make operation in the make file is `make run` which terminates any existing backend and runs a new one`
+- The other common make operation in the make file is `make run-mobile` which terminates any existing instance and starts a new one. It also runs 2 linters.
 
+## Backend
+- Whe performing a backend operation or command, make sure your `pwd` is `./dankfolio/backend`
+
+## Frontend
+- Whe performing a frontend operation or command, make sure your `pwd` is `./dankfolio/frontend`
+
+Each `component` or `screen` MUST follow this directory structure:
 ```
 ComponentName/
 ├── index.tsx        # Main component file (JSX & minimal logic)
@@ -64,11 +74,14 @@ ComponentName/
 - Use emojis in your composer responses.
 - Skip database, migration, or repository concerns; work in memory until storage solutions are addressed.
 - Test all API endpoints and confirm they function as expected.
-- Run related test files in `./backend/scripts/` when testing an API.
 - Use a very small default amount for SOLANA: 0.000000001.
 - Limit changes strictly to the user's input.
 - Avoid over optimizing or over engineering; keep it simple and straight to the point.
 - Ask before applying ideas for future proofing.
 - Avoid making unecessary style change or comment changes.
-
 - NEVER make styling changes on your own. You always need explicit permission.
+
+## Linting `yarn lint`, `make run-mobile` or `yarn check-structure`
+- We need to include the frontend/ prefix in our file paths.
+- Whenever you make an edit, include the rule that you're fixing.
+- If you get stuck in a loop, try running the command again

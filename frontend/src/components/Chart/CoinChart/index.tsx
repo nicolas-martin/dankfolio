@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, ActivityIndicator, Dimensions, Text, Platform } from "react-native";
+import { View, ActivityIndicator, Text, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { VictoryChart, VictoryLine, VictoryAxis } from "victory";
 import { CartesianChart, Line } from "victory-native";
 import { theme } from "../../../utils/theme";
+import { getScreenWidth } from './scripts';
+import { styles } from './styles';
 
 interface Props {
     data: { x: Date; y: number }[];
@@ -13,9 +15,9 @@ interface Props {
 }
 
 const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => {
-    const [domain, setDomain] = useState<{ x: [Date, Date]; y: [number, number] } | undefined>();
+    const [, setDomain] = useState<{ x: [Date, Date]; y: [number, number] } | undefined>();
     const [previousData, setPreviousData] = useState<{ x: Date; y: number }[]>([]);
-    const screenWidth = Dimensions.get('window').width;
+    const screenWidth = getScreenWidth();
     const [localActivePoint, setLocalActivePoint] = useState<{ x: Date; y: number } | null>(null);
 
     useEffect(() => {
@@ -32,13 +34,7 @@ const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => 
 
     const chartData = loading && data.length === 0 ? previousData : data;
 
-    // Calculate y-axis domain with some padding
-    const yValues = data.map(d => d.y);
-    const minY = Math.min(...yValues);
-    const maxY = Math.max(...yValues);
-    const yPadding = (maxY - minY) * 0.1; // 10% padding
-
-    const handleChartTouch = (screenX: number, screenY: number) => {
+    const handleChartTouch = (screenX: number) => {
         if (!chartData.length) return;
 
         // Calculate the relative position in the chart
@@ -117,10 +113,10 @@ const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => 
                         borderRadius: 4,
                         zIndex: 2,
                     }}>
-                        <Text style={{ color: theme.colors.text }}>
+                        <Text style={styles.text}>
                             Price: ${displayPoint.y.toFixed(4)}
                         </Text>
-                        <Text style={{ color: theme.colors.text }}>
+                        <Text style={styles.text}>
                             {displayPoint.x.toLocaleString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
@@ -138,12 +134,12 @@ const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => 
                     position: 'relative',
                 }}
                 onTouchStart={(e) => {
-                    const { locationX, locationY } = e.nativeEvent;
-                    handleChartTouch(locationX, locationY);
+                    const { locationX } = e.nativeEvent;
+                    handleChartTouch(locationX);
                 }}
                 onTouchMove={(e) => {
-                    const { locationX, locationY } = e.nativeEvent;
-                    handleChartTouch(locationX, locationY);
+                    const { locationX } = e.nativeEvent;
+                    handleChartTouch(locationX);
                 }}
                 onTouchEnd={() => {
                     setLocalActivePoint(null);
@@ -215,7 +211,7 @@ const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => 
                             formatYLabel: (value) => `$${(value as number).toFixed(4)}`
                         }}
                     >
-                        {({ points, chartBounds }) => (
+                        {({ points }) => (
                             <Line
                                 points={points.y}
                                 color={theme.colors.primary}

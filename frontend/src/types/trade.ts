@@ -1,6 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from './index';
-import { Coin, Wallet } from './index';
 
 export type TradeScreenProps = NativeStackScreenProps<RootStackParamList, 'Trade'>;
 

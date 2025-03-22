@@ -1,7 +1,7 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/index';
 
-export type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+export type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export interface MarketData {
     id: string;

@@ -2,7 +2,7 @@ import React from 'react';
 import { G, Rect, Text as SvgText } from 'react-native-svg';
 import { CustomTooltipProps } from './types';
 
-const CustomTooltip: React.FC<CustomTooltipProps> = ({ x, y, text = 'Tooltip', style }) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ x, y, text = 'Tooltip' }) => {
   const tooltipX = x || 0;
   const tooltipY = y || 0;
   const padding = 4;

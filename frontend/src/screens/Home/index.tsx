@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, SafeAreaView, FlatList, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, SafeAreaView, FlatList } from 'react-native';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../../components/Home/CoinCard';
 import { Wallet, Coin, NotificationProps } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/index';
 import { WalletBalanceResponse } from '../../services/api';
 import { styles } from './styles';
 import { 
@@ -13,11 +11,9 @@ import {
 	fetchAvailableCoins,
 	fetchWalletBalance,
 	handleImportWallet,
-	handleLogout,
 	handleCoinPress
 } from './scripts';
-
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { HomeScreenNavigationProp } from './types';
 
 const Notification: React.FC<NotificationProps> = ({ visible, type, message, onDismiss }) => {
 	if (!visible) return null;
@@ -38,12 +34,12 @@ const Notification: React.FC<NotificationProps> = ({ visible, type, message, onD
 	);
 };
 
-const Home: React.FC = () => {
+const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
-	const [wallet, setWallet] = useState<Wallet | null>(null);
 	const [coins, setCoins] = useState<Coin[]>([]);
-	const [solCoin, setSolCoin] = useState<Coin | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [wallet, setWallet] = useState<Wallet | null>(null);
+	const [solCoin, setSolCoin] = useState<Coin | null>(null);
 	const [walletBalance, setWalletBalance] = useState<WalletBalanceResponse | null>(null);
 	const [notification, setNotification] = useState<NotificationState>({
 		visible: false,
@@ -89,10 +85,6 @@ const Home: React.FC = () => {
 	useEffect(() => {
 		initializeData();
 	}, [initializeData]);
-
-	const handleLogoutCallback = useCallback(async (): Promise<void> => {
-		await handleLogout(setWallet, setCoins, showNotification);
-	}, [showNotification]);
 
 	const handleCoinPressCallback = useCallback((coin: Coin) => {
 		handleCoinPress(coin, solCoin, walletBalance, navigation.navigate);
@@ -193,4 +185,4 @@ const Home: React.FC = () => {
 	);
 };
 
-export default Home;
+export default HomeScreen;

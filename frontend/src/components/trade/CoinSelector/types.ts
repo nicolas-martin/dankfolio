@@ -7,7 +7,7 @@ export interface CoinSelectorProps {
   amount: string;
   isAmountLoading?: boolean;
   onAmountChange?: (amount: string) => void;
-  onCoinSelect: (coinId: string) => void;
+  onCoinSelect?: (coinId: string) => void;
   isInput?: boolean;
   inputRef?: React.RefObject<TextInput>;
-} 
+}  

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { FileIssue, formatIssueGroup, formatSummary, formatFinalSummary } from './utils/formatting';
+import { FileIssue, formatIssueGroup, formatSummary } from './utils/formatting';
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
@@ -27,8 +27,6 @@ const FRONTEND_PROTECTED_DIRS = [
 	'./frontend/assets/icons',
 	'./frontend/ios',
 	'./frontend/node_modules',
-	'./frontend/scripts',
-	'./frontend/scripts/utils',
 	'./frontend/src',
 	'./frontend/src/components',
 	'./frontend/src/components/chart',
@@ -56,7 +54,6 @@ const FRONTEND_PROTECTED_DIRS = [
 	'./frontend/src/screens/trade',
 	'./frontend/src/services',
 	'./frontend/src/types',
-	'./frontend/src/utils'
 ];
 
 const BACKEND_PROTECTED_DIRS = [
@@ -283,7 +280,6 @@ function folderIssueToFileIssue(issue: FolderIssue): FileIssue {
 
 function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], showSummary: boolean = false): boolean {
 	const cleanComponents = results.filter(r => r.issues.length === 0);
-	const componentsWithIssues = results.filter(r => r.issues.length > 0);
 
 	// Convert all issues to FileIssue format
 	const allIssues: FileIssue[] = [
@@ -300,30 +296,20 @@ function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], sh
 			cleanComponents.forEach(c => console.log(`   ${c.name}`));
 			console.log();
 		}
-	}
 
-	// Print issues using common formatting
-	if (allIssues.length > 0) {
-		console.log(formatSummary(allIssues.length, cleanComponents.length));
-		console.log(formatIssueGroup(allIssues));
-	}
-
-	if (showSummary) {
-		// Generate summary items
-		const summaryItems = [
-			{ label: `clean components`, count: cleanComponents.length },
-			{ label: 'components with issues', count: componentsWithIssues.length },
-			{ label: 'structure with issues', count: folderIssues.length }
-		];
-
-		console.log(formatFinalSummary(summaryItems, cleanComponents.length));
-
-		if (allIssues.length > 0) {
-			console.log(chalk.yellow.bold('\n⚠️  Structure issues found. Please fix them before proceeding.\n'));
+		if (cleanComponents.length > 0) {
+			console.log(chalk.green(`\n✨ All ${cleanComponents.length} items are clean!\n`));
 		}
 	}
 
-	return allIssues.length === 0;
+	// Only print issues if they exist
+	if (allIssues.length > 0) {
+		console.log(formatSummary(allIssues.length, cleanComponents.length));
+		console.log(formatIssueGroup(allIssues));
+		console.log(chalk.yellow('\n⚠️  Structure issues found. Please fix them before proceeding.\n'));
+	}
+
+	return allIssues.length > 0; // Return true if there are issues
 }
 
 // Run the check
@@ -437,13 +423,10 @@ try {
 	// Combine folder issues
 	const allFolderIssues = [...frontendFolderIssues, ...backendFolderIssues];
 
-	// Print combined results
+	// Print combined results and get issues status
 	const hasIssues = printResults(componentResults, allFolderIssues, true);
 
-	if (hasIssues) {
-		console.log(chalk.yellow('\n⚠️  Structure issues found. Please fix them before proceeding.\n'));
-	}
-
+	// Exit with appropriate code
 	process.exit(hasIssues ? 1 : 0);
 } catch (error) {
 	console.error(chalk.red('\n❌ Error running structure check:'), error);
