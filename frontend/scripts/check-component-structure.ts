@@ -2,11 +2,27 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import { FileIssue, formatIssueGroup, formatSummary, formatFinalSummary } from './utils/formatting';
+// command for folder structure
+// frontend structure check
+// find ./frontend -type d -mindepth 1 -maxdepth 4 ! -path "./frontend/node_modules/*" ! -path "./frontend/ios/*" ! -path "./frontend/.*"
+// backend structure check
+// find ./backend -type d -mindepth 1 -maxdepth 4 ! -path "./backend/keys/*" ! -path "./backend/scripts/*" ! -path "./backend/internal/model/*" ! -path "./backend/cmd/*"
+
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
 
+// Protected directories that should only exist in specific locations
+const FRONTEND_PROTECTED_DIRS = [
+  'src/components',
+  'src/screens',
+  'src/services',
+  'src/utils',
+  'src/types',
+  'src/navigation'
+];
+
 // Issue type definitions
-type IssueType = 'logic' | 'style' | 'type';
+type IssueType = 'logic' | 'style' | 'type' | 'structure';
 
 interface Issue {
   content: string;
@@ -18,6 +34,12 @@ interface ComponentCheck {
   name: string;
   path: string;
   issues: Issue[];
+}
+
+interface FolderIssue {
+  path: string;
+  originalPath: string;
+  type: 'duplicate';
 }
 
 interface PatternConfig {
@@ -158,8 +180,8 @@ function scanDirectory(dir: string): ComponentCheck[] {
   return results;
 }
 
-function printResults(results: ComponentCheck[], showSummary: boolean = false): boolean {
-  console.log(chalk.bold('\n🔍 Component Structure Check Results\n'));
+function printResults(results: ComponentCheck[], folderIssues: FolderIssue[], showSummary: boolean = false): boolean {
+  console.log(chalk.bold('\n🔍 Structure Check Results\n'));
 
   // First show all valid components
   const validComponents = results.filter(result => result.issues.length === 0);
@@ -173,7 +195,10 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
 
   // Then show components with issues
   const componentsWithIssues = results.filter(result => result.issues.length > 0);
+  let hasIssues = false;
+
   if (componentsWithIssues.length > 0) {
+    hasIssues = true;
     const allIssues = componentsWithIssues.flatMap(result =>
       result.issues.map(issue => issueToFileIssue(issue, result.path))
     );
@@ -182,28 +207,64 @@ function printResults(results: ComponentCheck[], showSummary: boolean = false): 
     console.log(formatIssueGroup(allIssues));
   }
 
-  if (showSummary && componentsWithIssues.length > 0) {
-    console.log(chalk.cyan.bold('\n💡 Tips:'));
-    console.log(chalk.cyan('  • Move complex functions to scripts.ts'));
-    console.log(chalk.cyan('  • Keep only JSX, props handling, and basic hooks in index.tsx'));
-    console.log(chalk.cyan('  • Extract data transformations and utilities to scripts.ts'));
-    console.log(chalk.cyan('  • Move all styles to ./styles.ts'));
-    console.log(chalk.cyan('  • Import styles from ./styles'));
-    console.log(chalk.cyan('  • Consider creating types.ts for complex prop types\n'));
+  // Show folder structure issues
+  if (folderIssues.length > 0) {
+    hasIssues = true;
+    console.log(chalk.yellow.bold('\n⚠️  Folder Structure Issues:'));
+    console.log(formatIssueGroup(folderIssues.map(folderIssueToFileIssue)));
   }
 
-  // Add final summary
-  console.log(formatFinalSummary(validComponents.length, componentsWithIssues.length));
+  if (showSummary && (componentsWithIssues.length > 0 || folderIssues.length > 0)) {
+    console.log(chalk.cyan.bold('\n💡 Tips:'));
+    
+    if (componentsWithIssues.length > 0) {
+      console.log(chalk.cyan('Component Structure:'));
+      console.log(chalk.cyan('  • Move complex functions to scripts.ts'));
+      console.log(chalk.cyan('  • Keep only JSX, props handling, and basic hooks in index.tsx'));
+      console.log(chalk.cyan('  • Extract data transformations and utilities to scripts.ts'));
+      console.log(chalk.cyan('  • Move all styles to ./styles.ts'));
+      console.log(chalk.cyan('  • Import styles from ./styles'));
+      console.log(chalk.cyan('  • Consider creating types.ts for complex prop types'));
+    }
+    
+    if (folderIssues.length > 0) {
+      if (componentsWithIssues.length > 0) console.log('');
+      console.log(chalk.cyan('Folder Structure:'));
+      console.log(chalk.cyan('  • Keep folders in their designated locations'));
+      console.log(chalk.cyan('  • Frontend folders should be under src/'));
+      console.log(chalk.cyan('  • Backend folders should follow internal/ structure'));
+      console.log(chalk.cyan('  • Avoid creating duplicate folders in different locations'));
+    }
+    console.log('');
+  }
 
-  return componentsWithIssues.length > 0;
+  // Add final summary with structure issues included
+  const summaryItems = [
+    { label: 'clean components', count: validComponents.length },
+    { label: 'components with issues', count: componentsWithIssues.length },
+    { label: 'structure issues', count: folderIssues.length }
+  ];
+  console.log(formatFinalSummary(summaryItems, validComponents.length));
+
+  return hasIssues;
+}
+
+function folderIssueToFileIssue(issue: FolderIssue): FileIssue {
+  return {
+    filePath: issue.path,
+    line: 1,
+    column: 1,
+    code: 'STRUCTURE',
+    message: `Duplicate folder found. Should be in: ${issue.originalPath}`
+  };
 }
 
 // Run the check
-console.log(chalk.bold('🚀 Starting component structure check...\n'));
+console.log(chalk.bold('🚀 Starting structure checks...\n'));
 
-// Collect all results
-function checkStructure(): boolean {
+function checkAllComponentStructure(): ComponentCheck[] {
   const allResults: ComponentCheck[] = [];
+  
   COMPONENT_DIRS.forEach(dir => {
     const fullPath = path.join(process.cwd(), dir);
     if (fs.existsSync(fullPath)) {
@@ -213,19 +274,87 @@ function checkStructure(): boolean {
     }
   });
 
-  return printResults(allResults, true);
+  return allResults;
+}
+
+function checkFolderStructure(): FolderIssue[] {
+  const allFolderIssues: FolderIssue[] = [];
+  
+  // Check frontend structure
+  const frontendPath = process.cwd();
+  console.log(chalk.blue('\n📁 Checking frontend directory structure...'));
+
+  if (fs.existsSync(frontendPath)) {
+    // Execute find command for frontend
+    const cmd = `find . -type d -mindepth 1 -maxdepth 4 ! -path "./node_modules/*" ! -path "./ios/*" ! -path "./.*"`;
+    console.log(chalk.gray('\nExecuting command:'), cmd);
+    
+    try {
+      const output = require('child_process').execSync(cmd, { 
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      if (!output) {
+        console.log(chalk.yellow('No directories found.'));
+        return allFolderIssues;
+      }
+
+      const currentDirs = output.trim().split('\n').filter(Boolean);
+      
+      console.log(chalk.gray('\nFound directories:'));
+      currentDirs.forEach(dir => console.log(chalk.gray(`  ${dir}`)));
+
+      // Compare current structure
+      currentDirs.forEach(dir => {
+        const relativePath = dir.substring(2); // Remove './'
+        const dirName = path.basename(dir);
+        
+        console.log(chalk.gray(`\nChecking directory: ${dir}`));
+        console.log(chalk.gray(`  Base name: ${dirName}`));
+        console.log(chalk.gray(`  Relative path: ${relativePath}`));
+        
+        // Check if this directory name matches a protected directory
+        FRONTEND_PROTECTED_DIRS.forEach(protectedDir => {
+          const protectedName = path.basename(protectedDir);
+          console.log(chalk.gray(`  Comparing with protected dir: ${protectedDir} (${protectedName})`));
+          
+          // Flag if:
+          // 1. The directory name matches a protected directory name
+          // 2. The path doesn't match the expected protected path
+          if (dirName === protectedName && !relativePath.startsWith(protectedDir)) {
+            console.log(chalk.yellow(`  ⚠️  Found duplicate: ${dir}`));
+            console.log(chalk.yellow(`      Should be in: ${protectedDir}`));
+            allFolderIssues.push({
+              path: dir,
+              originalPath: protectedDir,
+              type: 'duplicate'
+            });
+          }
+        });
+      });
+    } catch (error) {
+      console.error(chalk.red('Error checking frontend structure:'), error);
+    }
+  }
+
+  return allFolderIssues;
 }
 
 try {
-  const hasIssues = checkStructure();
+  // Run both checks
+  const componentResults = checkAllComponentStructure();
+  const folderIssues = checkFolderStructure();
+
+  // Print combined results
+  const hasIssues = printResults(componentResults, folderIssues, true);
+
   if (hasIssues) {
-    console.log(chalk.yellow('\n⚠️  Component structure issues found. Please fix them before proceeding.\n'));
-  } else {
-    console.log(chalk.green('\n✅ No Component structure issues found. All good!\n'));
+    console.log(chalk.yellow('\n⚠️  Structure issues found. Please fix them before proceeding.\n'));
   }
 
   process.exit(hasIssues ? 1 : 0);
 } catch (error) {
-  console.error(chalk.red('\n❌ Error running component structure check:'), error);
+  console.error(chalk.red('\n❌ Error running structure check:'), error);
   process.exit(1);
-} 
+}

@@ -17,9 +17,8 @@ setup:
 	@echo "✅ Dependencies installed"
 
 # Server Management
-run:
+run: backend-kill
 	@echo "🚀 Starting backend server..."
-	@cd $(BACKEND_DIR) && lsof -ti :8080 | xargs kill -9 2>/dev/null || true
 	@cd $(BACKEND_DIR) && set -a && source .env && set +a && go run cmd/api/main.go
 
 backend-kill:
@@ -34,7 +33,7 @@ test-swap:
 	@cd $(BACKEND_DIR) && ./scripts/test-solana-buy-execute.sh
 	@cd $(BACKEND_DIR) && ./scripts/test-solana-sell-execute.sh
 
-test-coins:
+test-coins: mobile-kill
 	@echo "🪙 Running Coins API tests..."
 	@cd $(BACKEND_DIR) && ./scripts/test-coins-api.sh
 

@@ -93,10 +93,21 @@ function checkDiagnostics() {
   console.log(formatSummary(fileIssues.length, cleanFiles.length));
   console.log(formatIssueGroup(fileIssues));
   
-  // Add final summary
-  console.log(formatFinalSummary(cleanFiles.length, filesWithIssues.size));
-  
-  return true;
+  // Update the final summary
+  const summaryItems = [
+    { label: 'clean files', count: cleanFiles.length },
+    { label: 'files with issues', count: filesWithIssues.size },
+    { label: 'total diagnostic issues', count: fileIssues.length }
+  ];
+  console.log(formatFinalSummary(summaryItems, cleanFiles.length));
+
+  if (fileIssues.length > 0) {
+    console.log(chalk.yellow('\n⚠️  TypeScript diagnostics issues found. Please fix them before proceeding.\n'));
+    return true;
+  }
+
+  console.log(chalk.green('\n✅ No TypeScript diagnostics issues found. All good!\n'));
+  return false;
 }
 
 // Run the check
@@ -104,12 +115,6 @@ console.log(chalk.bold('🔍 Starting TypeScript diagnostic check...\n'));
 
 try {
   const hasIssues = checkDiagnostics();
-  if (hasIssues) {
-    console.log(chalk.yellow('\n⚠️  TypeScript diagnostics issues found. Please fix them before proceeding.\n'));
-  }else{
-    console.log(chalk.green('\n✅ No TypeScript diagnostics issues found. All good!\n'));
-  }
-
   process.exit(hasIssues ? 1 : 0);
 } catch (error) {
   console.error(chalk.red('\n❌ Error running diagnostic check:'), error);

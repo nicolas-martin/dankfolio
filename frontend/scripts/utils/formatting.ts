@@ -61,10 +61,26 @@ export function formatSummary(issueCount: number, cleanCount?: number): string {
   return chalk.yellow.bold(`⚠️  Found ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'} across ${cleanCount} clean files:\n\n`);
 }
 
-export function formatFinalSummary(cleanFiles: number, filesWithIssues: number): string {
-  const totalFiles = cleanFiles + filesWithIssues;
-  return '\n' + chalk.bold('📊 Final Stats:\n') +
-    chalk.green(`  ✅ ${cleanFiles} files passing`) + chalk.gray(` (${Math.round(cleanFiles/totalFiles*100)}%)\n`) +
-    chalk.yellow(`  ⚠️  ${filesWithIssues} files with issues`) + chalk.gray(` (${Math.round(filesWithIssues/totalFiles*100)}%)\n`) +
-    chalk.gray(`  📁 ${totalFiles} total files\n`);
+interface SummaryItem {
+  label: string;
+  count: number;
+}
+
+export function formatFinalSummary(items: SummaryItem[], totalClean: number): string {
+  // Calculate total issues by summing all non-clean counts
+  const totalIssues = items.reduce((sum, item) => 
+    sum + (item.label.includes('clean') ? 0 : item.count), 0);
+  
+  // Calculate total items (clean + items with issues)
+  const total = totalClean + (items.find(i => i.label.includes('with issues'))?.count || 0);
+  
+  if (totalIssues === 0) {
+    return chalk.green.bold(`\n✨ All ${total} items are clean!\n`);
+  }
+
+  return chalk.yellow.bold(
+    `\n📊 Summary:\n` +
+    items.map(item => `   • ${item.count} ${item.label}\n`).join('') +
+    `   • ${totalIssues} total issues to fix\n`
+  );
 } 
