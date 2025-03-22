@@ -10,7 +10,7 @@ const FRONTEND_EXCLUDE_FLAGS = [
 	'./frontend/ios/*',
 	'./frontend/.*',
 	'./frontend/scripts/utils/*',
-	'./frontend/src/utils/*'
+	'./frontend/src/utils/*',
 ];
 
 const BACKEND_EXCLUDE_FLAGS = [
@@ -31,32 +31,29 @@ const FRONTEND_PROTECTED_DIRS = [
 	'./frontend/scripts/utils',
 	'./frontend/src',
 	'./frontend/src/components',
-	'./frontend/src/components/Chart',
-	'./frontend/src/components/Chart/CoinChart',
-	'./frontend/src/components/Chart/CoinInfo',
-	'./frontend/src/components/Chart/CustomTooltip',
-	'./frontend/src/components/CoinDetails',
-	'./frontend/src/components/CoinDetails/PriceDisplay',
-	'./frontend/src/components/Common',
-	'./frontend/src/components/Common/BackButton',
-	'./frontend/src/components/Common/PlatformImage',
-	'./frontend/src/components/Common/Toast',
-	'./frontend/src/components/Common/TopBar',
-	'./frontend/src/components/Home',
-	'./frontend/src/components/Home/CoinCard',
-	'./frontend/src/components/Trade',
-	'./frontend/src/components/Trade/CoinSelector',
-	'./frontend/src/components/Trade/SwapButton',
-	'./frontend/src/components/Trade/TradeButton',
-	'./frontend/src/components/Trade/TradeDetails',
-	'./frontend/src/navigation',
-	'./frontend/src/navigation/screens',
+	'./frontend/src/components/chart',
+	'./frontend/src/components/chart/coinchart',
+	'./frontend/src/components/chart/coininfo',
+	'./frontend/src/components/chart/customtooltip',
+	'./frontend/src/components/coindetails',
+	'./frontend/src/components/coindetails/pricedisplay',
+	'./frontend/src/components/common',
+	'./frontend/src/components/common/backbutton',
+	'./frontend/src/components/common/platformimage',
+	'./frontend/src/components/common/toast',
+	'./frontend/src/components/common/topbar',
+	'./frontend/src/components/home',
+	'./frontend/src/components/home/coincard',
+	'./frontend/src/components/trade',
+	'./frontend/src/components/trade/coinselector',
+	'./frontend/src/components/trade/swapbutton',
+	'./frontend/src/components/trade/tradebutton',
+	'./frontend/src/components/trade/tradedetails',
 	'./frontend/src/screens',
-	'./frontend/src/screens/CoinDetail',
-	'./frontend/src/screens/Home',
-	'./frontend/src/screens/Profile',
-	'./frontend/src/screens/Trade',
-	'./frontend/src/screens/components',
+	'./frontend/src/screens/coindetail',
+	'./frontend/src/screens/home',
+	'./frontend/src/screens/profile',
+	'./frontend/src/screens/trade',
 	'./frontend/src/services',
 	'./frontend/src/types',
 	'./frontend/src/utils'
@@ -84,6 +81,7 @@ type ProjectType = 'frontend' | 'backend';
 interface StructureConfig {
 	protectedDirs: string[];
 	baseDir: string;
+	excludeFlags: string[];
 	buildFindCommand(): string;
 }
 
@@ -91,6 +89,7 @@ const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
 	frontend: {
 		protectedDirs: FRONTEND_PROTECTED_DIRS,
 		baseDir: './frontend',
+		excludeFlags: FRONTEND_EXCLUDE_FLAGS,
 		buildFindCommand: () => {
 			const excludeFlags = FRONTEND_EXCLUDE_FLAGS
 				.map(path => `! -path "${path}"`)
@@ -101,6 +100,7 @@ const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
 	backend: {
 		protectedDirs: BACKEND_PROTECTED_DIRS,
 		baseDir: './backend',
+		excludeFlags: BACKEND_EXCLUDE_FLAGS,
 		buildFindCommand: () => {
 			const excludeFlags = BACKEND_EXCLUDE_FLAGS
 				.map(path => `! -path "${path}"`)
@@ -354,13 +354,11 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
 	const projectRoot = path.resolve(scriptDir, '..');
 
 	const fullBaseDir = path.join(projectRoot, projectType);
-	console.log(chalk.gray(`\nScript directory: ${scriptDir}`));
-	console.log(chalk.gray(`Project root: ${projectRoot}`));
-	console.log(chalk.gray(`Full base directory: ${fullBaseDir}`));
 
 	if (fs.existsSync(fullBaseDir)) {
 		const cmd = config.buildFindCommand();
-		console.log(chalk.yellow('\nBuilt find command:'), cmd);
+		console.log(chalk.yellow('\nProject Type:'), projectType);
+		console.log(chalk.yellow('Built find command:'), cmd);
 
 		try {
 			const output = require('child_process').execSync(cmd, {
@@ -370,44 +368,36 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
 			});
 
 			if (!output) {
-				console.log(chalk.yellow('No directories found.'));
 				return allFolderIssues;
 			}
 
-			console.log(chalk.green('Found directories:'));
-			console.log(output);
-
 			const currentDirs: string[] = output.trim().split('\n').filter(Boolean);
-			console.log(chalk.green('Current directories:'));
-			console.log(currentDirs);
 
-			for (const dir of currentDirs) {
-				for (const protectedDir of config.protectedDirs) {
+			for (const lDir of currentDirs) {
+				for (const lProtectedDir of config.protectedDirs) {
+					const dir = lDir.toLowerCase()
+					const protectedDir = lProtectedDir.toLowerCase();
+
 					const fullKeyPair = [dir, protectedDir].join('->');
+					const reverseKeyPair = [protectedDir, dir].join('->');
 					if (dir === protectedDir) {
-						console.log(chalk.green('Skipping directory:'), fullKeyPair);
 						continue;
-					}
-
-					// print the content of seenPairs as string
-					// console.log("Seen pairs: " + [...seenPairs].join(', '));
-					if (seenPairs.has(fullKeyPair)) {
-						console.log("Seen pairs have: " + fullKeyPair);
-						continue
 					}
 
 					const lastPartDir = dir.split('/').pop();
 					const lastPartProtectedDir = protectedDir.split('/').pop();
 					if (lastPartDir !== lastPartProtectedDir) {
-						continue
+						continue;
 					}
 
-					// console.log(chalk.whiteBright("splitEnd of splitDir: " + lastPartDir + "/" + lastPartProtectedDir));
-					// console.log(chalk.red('fullDir, fullProtectedDir:' + dir + "/" + protectedDir));
+					// If the current directory is in protected dirs, skip
+					if (config.protectedDirs.includes(dir)) {
+						continue;
+					}
 
 					if (dir !== protectedDir) {
 						seenPairs.add(fullKeyPair);
-						console.log("Seen pairs add: " + fullKeyPair);
+						seenPairs.add(reverseKeyPair); // Add both directions
 						allFolderIssues.push({
 							path: dir,
 							originalPath: protectedDir,
@@ -437,8 +427,11 @@ try {
 	// Run component checks (frontend only)
 	const componentResults = checkAllComponentStructure();
 
-	// Run structure checks for both frontend and backend
+	// Run structure checks for frontend first, then backend
+	console.log(chalk.yellow('\n=== Checking Frontend Structure ==='));
 	const frontendFolderIssues = checkFolderStructure('frontend');
+
+	console.log(chalk.yellow('\n=== Checking Backend Structure ==='));
 	const backendFolderIssues = checkFolderStructure('backend');
 
 	// Combine folder issues
