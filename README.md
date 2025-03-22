@@ -1,22 +1,24 @@
 # 🎮 Dankfolio
-## TODO
 
-- [ ] Implement another AMM when jupiter can't get a quote / route (ie. raydium)
+## 🎯 Project Roadmap
 
-- [ ] Find a reliable api to get more info 
-    - [ ] twitter 
-    - [ ] website 
-    - [ ] telegram
-    - [ ] market cap
-- [ ] Debug jupiter quote issue
-- [ ] Improve the look 
-    - [ ] Button Bar
-      ![Button Bar Design](./ss/button_bar.jpg)
-    - [ ] Coins Detail Header
-      ![Coins Detail header](./ss/coin_detals_header.png)
-    - [ ] Chart style
-      ![Chart Style](./ss/chart_style.png)
-    - [ ] Price Chart Highligh
-      ![Price Chart Highligh](./ss/price_chart_highlight.jpg)
-    - [ ] Profile wallet breakdown
-      ![Profile Wallet Breakdown](./ss/profile_wallet_breakdown.png)
+### 🔄 Trading Features
+- [ ] Implement another AMM when Jupiter can't get a quote/route (i.e., Raydium)
+- [ ] Debug Jupiter quote issue
+
+### 📊 Token Information
+- [ ] Find reliable APIs for additional token data:
+  - [ ] Twitter integration
+  - [ ] Website information
+  - [ ] Telegram links
+  - [ ] Market cap data
+
+### 💅 UI Improvements
+
+| Task | Reference |
+|------|-----------|
+| - [ ] Improve Button Bar Design | <details><summary>View Design</summary><img src="./ss/button_bar.jpg" width="400" alt="Button Bar Design"></details> |
+| - [ ] Enhance Coins Detail Header | <details><summary>View Design</summary><img src="./ss/coin_detals_header.png" width="400" alt="Coins Detail Header"></details> |
+| - [ ] Update Chart Style | <details><summary>View Design</summary><img src="./ss/chart_style.png" width="400" alt="Chart Style"></details> |
+| - [ ] Implement Price Chart Highlight | <details><summary>View Design</summary><img src="./ss/price_chart_highlight.jpg" width="400" alt="Price Chart Highlight"></details> |
+| - [ ] Create Profile Wallet Breakdown | <details><summary>View Design</summary><img src="./ss/profile_wallet_breakdown.png" width="400" alt="Profile Wallet Breakdown"></details> |
