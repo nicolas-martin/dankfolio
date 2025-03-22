@@ -21,6 +21,36 @@ const FRONTEND_PROTECTED_DIRS = [
   'src/navigation'
 ];
 
+const BACKEND_PROTECTED_DIRS = [
+  'internal/api',
+  'internal/service',
+  'internal/repository',
+  'internal/middleware',
+  'internal/config',
+  'internal/utils'
+];
+
+type ProjectType = 'frontend' | 'backend';
+
+interface StructureConfig {
+  protectedDirs: string[];
+  excludePaths: string[];
+  baseDir: string;
+}
+
+const STRUCTURE_CONFIGS: Record<ProjectType, StructureConfig> = {
+  frontend: {
+    protectedDirs: FRONTEND_PROTECTED_DIRS,
+    excludePaths: ['node_modules/*', 'ios/*', '.*'],
+    baseDir: './frontend'
+  },
+  backend: {
+    protectedDirs: BACKEND_PROTECTED_DIRS,
+    excludePaths: ['keys/*', 'scripts/*', 'internal/model/*', 'cmd/*'],
+    baseDir: './backend'
+  }
+};
+
 // Issue type definitions
 type IssueType = 'logic' | 'style' | 'type' | 'structure';
 
@@ -277,16 +307,20 @@ function checkAllComponentStructure(): ComponentCheck[] {
   return allResults;
 }
 
-function checkFolderStructure(): FolderIssue[] {
+function checkFolderStructure(projectType: ProjectType = 'frontend'): FolderIssue[] {
   const allFolderIssues: FolderIssue[] = [];
+  const config = STRUCTURE_CONFIGS[projectType];
   
-  // Check frontend structure
-  const frontendPath = process.cwd();
-  console.log(chalk.blue('\n📁 Checking frontend directory structure...'));
+  console.log(chalk.blue(`\n📁 Checking ${projectType} directory structure...`));
 
-  if (fs.existsSync(frontendPath)) {
-    // Execute find command for frontend
-    const cmd = `find . -type d -mindepth 1 -maxdepth 4 ! -path "./node_modules/*" ! -path "./ios/*" ! -path "./.*"`;
+  if (fs.existsSync(config.baseDir)) {
+    // Build exclude paths
+    const excludePaths = config.excludePaths
+      .map(path => `! -path "${config.baseDir}/${path}"`)
+      .join(' ');
+
+    // Execute find command
+    const cmd = `find ${config.baseDir} -type d -mindepth 1 -maxdepth 4 ${excludePaths}`;
     console.log(chalk.gray('\nExecuting command:'), cmd);
     
     try {
@@ -302,26 +336,18 @@ function checkFolderStructure(): FolderIssue[] {
 
       const currentDirs = output.trim().split('\n').filter(Boolean);
       
-      console.log(chalk.gray('\nFound directories:'));
       currentDirs.forEach(dir => console.log(chalk.gray(`  ${dir}`)));
 
       // Compare current structure
       currentDirs.forEach(dir => {
-        const relativePath = dir.substring(2); // Remove './'
+        const relativePath = dir.replace(`${config.baseDir}/`, ''); // Remove base dir
         const dirName = path.basename(dir);
         
-        console.log(chalk.gray(`\nChecking directory: ${dir}`));
-        console.log(chalk.gray(`  Base name: ${dirName}`));
-        console.log(chalk.gray(`  Relative path: ${relativePath}`));
-        
         // Check if this directory name matches a protected directory
-        FRONTEND_PROTECTED_DIRS.forEach(protectedDir => {
+        config.protectedDirs.forEach(protectedDir => {
           const protectedName = path.basename(protectedDir);
           console.log(chalk.gray(`  Comparing with protected dir: ${protectedDir} (${protectedName})`));
           
-          // Flag if:
-          // 1. The directory name matches a protected directory name
-          // 2. The path doesn't match the expected protected path
           if (dirName === protectedName && !relativePath.startsWith(protectedDir)) {
             console.log(chalk.yellow(`  ⚠️  Found duplicate: ${dir}`));
             console.log(chalk.yellow(`      Should be in: ${protectedDir}`));
@@ -334,7 +360,7 @@ function checkFolderStructure(): FolderIssue[] {
         });
       });
     } catch (error) {
-      console.error(chalk.red('Error checking frontend structure:'), error);
+      console.error(chalk.red(`Error checking ${projectType} structure:`), error);
     }
   }
 
@@ -342,12 +368,18 @@ function checkFolderStructure(): FolderIssue[] {
 }
 
 try {
-  // Run both checks
+  // Run component checks (frontend only)
   const componentResults = checkAllComponentStructure();
-  const folderIssues = checkFolderStructure();
+  
+  // Run structure checks for both frontend and backend
+  const frontendFolderIssues = checkFolderStructure('frontend');
+  const backendFolderIssues = checkFolderStructure('backend');
+  
+  // Combine folder issues
+  const allFolderIssues = [...frontendFolderIssues, ...backendFolderIssues];
 
   // Print combined results
-  const hasIssues = printResults(componentResults, folderIssues, true);
+  const hasIssues = printResults(componentResults, allFolderIssues, true);
 
   if (hasIssues) {
     console.log(chalk.yellow('\n⚠️  Structure issues found. Please fix them before proceeding.\n'));
