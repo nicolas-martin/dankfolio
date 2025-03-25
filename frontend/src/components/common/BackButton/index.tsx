@@ -7,16 +7,16 @@ import { styles } from './styles';
 import { ICON_NAME, ICON_SIZE, ICON_COLOR, handleNavigation } from './scripts';
 
 const BackButton: React.FC<BackButtonProps> = ({ style }) => {
-  const navigation = useNavigation();
+    const navigation = useNavigation();
 
-  return (
-    <TouchableOpacity
-      style={[styles.backButton, style]}
-      onPress={handleNavigation(navigation.goBack)}
-    >
-      <Ionicons name={ICON_NAME} size={ICON_SIZE} color={ICON_COLOR} />
-    </TouchableOpacity>
-  );
+    return (
+        <TouchableOpacity
+            style={[styles.backButton, style]}
+            onPress={handleNavigation(navigation.goBack)}
+        >
+            <Ionicons name={ICON_NAME} size={ICON_SIZE} color={ICON_COLOR} />
+        </TouchableOpacity>
+    );
 };
 
-export default BackButton; 
+export default BackButton;
