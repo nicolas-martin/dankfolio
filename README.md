@@ -4,7 +4,7 @@
 
 ### 🔄 Trading Features
 - [ ] Implement another AMM when Jupiter can't get a quote/route (i.e., Raydium)
-- [ ] Debug Jupiter quote issue
+- [ ] Debug Jupiter quote issue (api permission related?)
 
 ### 📊 Token Information
 - [ ] Find reliable APIs for additional token data:
