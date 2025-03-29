@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -17,38 +19,25 @@ import (
 )
 
 // printOnChainMetadata formats and prints on-chain metadata in a table.
-func printOnChainMetadata(metadata *token_metadata.Metadata) {
-	data := [][]string{
-		{"Name", metadata.Data.Name},
-		{"Symbol", metadata.Data.Symbol},
-		{"URI", metadata.Data.Uri},
-		{"Update Authority", metadata.UpdateAuthority.ToBase58()},
-		{"Mint", metadata.Mint.ToBase58()},
-		{"Seller Fee Basis Points", formatUint16(metadata.Data.SellerFeeBasisPoints)},
-		{"Primary Sale Happened", formatBool(metadata.PrimarySaleHappened)},
-		{"Is Mutable", formatBool(metadata.IsMutable)},
-	}
-
+func printOnChainMetadata(data map[string]any, caption string) {
+	max := 80
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Field", "Value"})
-	for _, v := range data {
-		table.Append(v)
-	}
-	table.Render()
 
-	if metadata.Data.Creators != nil {
-		log.Println("Creators:")
-		for _, c := range *metadata.Data.Creators {
-			log.Printf("  - Address: %s, Verified: %t, Share: %d%%\n", c.Address, c.Verified, c.Share)
+	for k, v := range data {
+		strVal := fmt.Sprintf("%s", v)
+		if strings.ToLower(k) == "description" {
+			strVal = strings.ReplaceAll(strVal, "\r\n", "")
 		}
-	}
-}
+		if len(strVal) >= max {
+			strVal = strVal[:max] + "..."
+		}
 
-func formatBool(b bool) string {
-	if b {
-		return "true"
+		row := []string{k, strVal}
+		table.Append(row)
 	}
-	return "false"
+	table.SetCaption(true, caption)
+	table.Render()
 }
 
 func formatUint16(n uint16) string {
@@ -119,7 +108,7 @@ func fetchOffChainMetadataHTTP(url string) (map[string]interface{}, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, err
 	}
-	body, err := os.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -152,8 +141,23 @@ func main() {
 		log.Fatalf("failed to parse metaAccount, err: %v", err)
 	}
 
-	log.Println("=== On-Chain Metadata ===")
-	printOnChainMetadata(&metadata)
+	data := map[string]any{
+		"Name":                    metadata.Data.Name,
+		"Symbol":                  metadata.Data.Symbol,
+		"URI":                     metadata.Data.Uri,
+		"Update Authority":        metadata.UpdateAuthority.ToBase58(),
+		"Mint":                    metadata.Mint.ToBase58(),
+		"Seller Fee Basis Points": fmt.Sprintf("%d", metadata.Data.SellerFeeBasisPoints),
+		"Primary Sale Happened":   fmt.Sprintf("%t", metadata.PrimarySaleHappened),
+		"Is Mutable":              fmt.Sprintf("%t", metadata.IsMutable),
+	}
+	printOnChainMetadata(data, "On-Chain Metadata")
+	if metadata.Data.Creators != nil {
+		log.Println("Creators:")
+		for _, c := range *metadata.Data.Creators {
+			log.Printf("  - Address: %s, Verified: %t, Share: %d%%\n", c.Address, c.Verified, c.Share)
+		}
+	}
 
 	// Prepare and resolve the URI.
 	uri := resolveIPFSGateway(metadata.Data.Uri)
@@ -163,10 +167,5 @@ func main() {
 		log.Fatalf("failed to fetch off-chain metadata, err: %v", err)
 	}
 
-	log.Println("=== Off-Chain Metadata ===")
-	pretty, err := json.MarshalIndent(offchainMeta, "", "  ")
-	if err != nil {
-		log.Fatalf("failed to marshal off-chain metadata: %v", err)
-	}
-	log.Println(string(pretty))
+	printOnChainMetadata(offchainMeta, "Off-Chain Metadata")
 }
