@@ -5,17 +5,17 @@ import { styles } from './styles';
 import { formatExchangeRate, formatGasFee, formatSpread } from './scripts';
 
 const TradeDetails: React.FC<TradeDetailsProps> = ({
-  exchangeRate,
-  gasFee,
-  spread,
+	exchangeRate,
+	gasFee,
+	spread,
 }) => {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.exchangeRate}>{formatExchangeRate(exchangeRate)}</Text>
-      <Text style={styles.feeDetail}>{formatGasFee(gasFee)}</Text>
-      <Text style={styles.feeDetail}>{formatSpread(spread)}</Text>
-    </View>
-  );
+	return (
+		<View style={styles.container}>
+			<Text style={styles.exchangeRate}>{formatExchangeRate(exchangeRate)}</Text>
+			<Text style={styles.feeDetail}>{formatGasFee(gasFee)}</Text>
+			<Text style={styles.feeDetail}>{formatSpread(spread)}</Text>
+		</View>
+	);
 };
 
-export default TradeDetails; 
+export default TradeDetails;

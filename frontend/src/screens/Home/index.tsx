@@ -6,7 +6,7 @@ import { Wallet, Coin, NotificationProps } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
 import { WalletBalanceResponse } from '../../services/api';
 import { styles } from './styles';
-import { 
+import {
 	NotificationState,
 	fetchAvailableCoins,
 	fetchWalletBalance,
@@ -69,7 +69,7 @@ const HomeScreen = () => {
 		try {
 			setLoading(true);
 			await fetchAvailableCoins(setLoading, setSolCoin, setCoins, showNotification);
-			
+
 			if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
 				console.log('🧪 Development mode detected, auto-importing test wallet');
 				await handleImportWalletCallback(TEST_PRIVATE_KEY);

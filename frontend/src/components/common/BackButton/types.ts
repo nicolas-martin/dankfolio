@@ -1,3 +1,3 @@
 export interface BackButtonProps {
-  style?: object;
-} 
+	style?: object;
+}

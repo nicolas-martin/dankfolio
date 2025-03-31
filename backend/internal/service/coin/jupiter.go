@@ -166,6 +166,13 @@ func (c *JupiterClient) GetTokenPrice(tokenAddress string) (float64, error) {
 func (c *JupiterClient) GetQuote(params QuoteParams) (*JupiterQuoteResponse, error) {
 	// Build query parameters
 	queryParams := url.Values{}
+	if strings.Contains(params.Amount, ".") {
+		return nil, fmt.Errorf("amount cannot contain any decimal points")
+	}
+
+	if params.Amount == "0" {
+		return nil, fmt.Errorf("amount cannot be 0")
+	}
 
 	// Required parameters
 	queryParams.Add("inputMint", params.InputMint)
@@ -226,7 +233,7 @@ func (c *JupiterClient) GetQuote(params QuoteParams) (*JupiterQuoteResponse, err
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to fetch quote, status: %d, body: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("failed to fetch quote, status: %d, body: %s, url: %s", resp.StatusCode, string(body), fullURL)
 	}
 
 	body, err := io.ReadAll(resp.Body)

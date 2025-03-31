@@ -96,7 +96,7 @@ func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signe
 				return solana.Signature{}, fmt.Errorf("failed to get transaction status: %w", err)
 			}
 
-			if status.Value == nil || len(status.Value) == 0 || status.Value[0] == nil {
+			if len(status.Value) == 0 || status.Value[0] == nil {
 				log.Printf("⏳ Transaction not yet processed, waiting...")
 				time.Sleep(time.Second)
 				continue

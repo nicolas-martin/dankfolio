@@ -9,7 +9,7 @@ import (
 // SolanaTradeService handles the execution of trades on the Solana blockchain
 type SolanaTradeService struct {
 	client     *rpc.Client
-	httpClient *http.Client // HTTP client for Raydium API calls
+	httpClient *http.Client
 }
 
 func NewSolanaTradeService(rpcEndpoint string) (*SolanaTradeService, error) {

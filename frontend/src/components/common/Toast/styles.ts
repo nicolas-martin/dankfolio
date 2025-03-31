@@ -34,34 +34,34 @@ export const IconContainer = styled.View<{ type: ToastProps['type'] }>`
   justify-content: center;
   align-items: center;
   background-color: ${props => {
-    switch (props.type) {
-      case 'success':
-        return theme.colors.success + '15';
-      case 'error':
-        return theme.colors.error + '15';
-      case 'warning':
-        return theme.colors.warning + '15';
-      default:
-        return theme.colors.primary + '15';
-    }
-  }};
+		switch (props.type) {
+			case 'success':
+				return theme.colors.success + '15';
+			case 'error':
+				return theme.colors.error + '15';
+			case 'warning':
+				return theme.colors.warning + '15';
+			default:
+				return theme.colors.primary + '15';
+		}
+	}};
 `;
 
 export const Icon = styled.Text<{ type: ToastProps['type'] }>`
   font-size: ${theme.typography.fontSize.base}px;
   font-family: ${theme.typography.fontFamily.semiBold};
   color: ${props => {
-    switch (props.type) {
-      case 'success':
-        return theme.colors.success;
-      case 'error':
-        return theme.colors.error;
-      case 'warning':
-        return theme.colors.warning;
-      default:
-        return theme.colors.primary;
-    }
-  }};
+		switch (props.type) {
+			case 'success':
+				return theme.colors.success;
+			case 'error':
+				return theme.colors.error;
+			case 'warning':
+				return theme.colors.warning;
+			default:
+				return theme.colors.primary;
+		}
+	}};
 `;
 
 export const TextContainer = styled.View`
@@ -110,15 +110,15 @@ export const ActionButtonText = styled.Text<{ type: ToastProps['type'] }>`
   font-family: ${theme.typography.fontFamily.medium};
   font-size: ${theme.typography.fontSize.sm}px;
   color: ${props => {
-    switch (props.type) {
-      case 'success':
-        return theme.colors.success;
-      case 'error':
-        return theme.colors.error;
-      case 'warning':
-        return theme.colors.warning;
-      default:
-        return theme.colors.primary;
-    }
-  }};
-`; 
+		switch (props.type) {
+			case 'success':
+				return theme.colors.success;
+			case 'error':
+				return theme.colors.error;
+			case 'warning':
+				return theme.colors.warning;
+			default:
+				return theme.colors.primary;
+		}
+	}};
+`;

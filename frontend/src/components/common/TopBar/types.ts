@@ -1,1 +1,1 @@
-export interface TopBarProps {} 
+export interface TopBarProps { }

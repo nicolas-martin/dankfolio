@@ -4,18 +4,18 @@ import { RootStackParamList } from '../../types/index';
 export type ProfileScreenNavigationProp = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 export interface ProfileData {
-    username: string;
-    email: string;
-    walletAddress: string;
-    balance: number;
-    transactions: Transaction[];
+	username: string;
+	email: string;
+	walletAddress: string;
+	balance: number;
+	transactions: Transaction[];
 }
 
 export interface Transaction {
-    id: string;
-    type: 'buy' | 'sell';
-    amount: number;
-    coin: string;
-    date: string;
-    status: 'completed' | 'pending' | 'failed';
+	id: string;
+	type: 'buy' | 'sell';
+	amount: number;
+	coin: string;
+	date: string;
+	status: 'completed' | 'pending' | 'failed';
 } 

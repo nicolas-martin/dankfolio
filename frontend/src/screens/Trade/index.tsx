@@ -126,7 +126,7 @@ const Trade: React.FC = () => {
 						{fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
 							<View style={styles.valueInfo}>
 								<Text style={styles.valueText}>
-								≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
+									≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
 
 								</Text>
 								<Text style={styles.priceText}>
