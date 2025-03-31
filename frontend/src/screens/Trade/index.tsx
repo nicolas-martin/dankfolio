@@ -27,20 +27,23 @@ const Trade: React.FC = () => {
 	const amountInputRef = useRef<TextInput>(null);
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-	const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin);
-	const [toCoin, setToCoin] = useState<Coin | null>(initialToCoin);
+	const [fromCoin, setFromCoin] = useState<Coin>(initialFromCoin);
+	const [toCoin, setToCoin] = useState<Coin>(initialToCoin);
 	const [fromAmount, setFromAmount] = useState(DEFAULT_AMOUNT);
 	const [toAmount, setToAmount] = useState('0');
 	const [tradeDetails, setTradeDetails] = useState<TradeDetailsProps>({
 		exchangeRate: '0',
 		gasFee: '0',
-		spread: '0'
+		spread: '0',
+		total: '0'
 	});
 	const { showToast } = useToast();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [quoteLoading, setQuoteLoading] = useState(false);
 
 	const getQuote = useCallback((amount: string) => {
+		if (parseFloat(amount) === 0) return
+
 		if (debounceTimerRef.current) {
 			clearTimeout(debounceTimerRef.current);
 		}
@@ -154,6 +157,7 @@ const Trade: React.FC = () => {
 							exchangeRate={tradeDetails.exchangeRate}
 							gasFee={tradeDetails.gasFee}
 							spread={tradeDetails.spread}
+							total={tradeDetails.total}
 						/>
 
 						{/* Trade Button */}

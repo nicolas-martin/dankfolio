@@ -211,7 +211,7 @@ export interface TradePayload {
 export interface TradeQuoteResponse {
 	estimatedAmount: number;
 	exchangeRate: string;
-	fee?: {
+	fee: {
 		total: string;
 		spread: string;
 		gas: string;

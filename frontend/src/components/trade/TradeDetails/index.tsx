@@ -8,12 +8,14 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 	exchangeRate,
 	gasFee,
 	spread,
+	total,
 }) => {
 	return (
 		<View style={styles.container}>
 			<Text style={styles.exchangeRate}>{formatExchangeRate(exchangeRate)}</Text>
 			<Text style={styles.feeDetail}>{formatGasFee(gasFee)}</Text>
 			<Text style={styles.feeDetail}>{formatSpread(spread)}</Text>
+			<Text style={styles.feeDetail}>Total Fee: {total} SOL</Text>
 		</View>
 	);
 };

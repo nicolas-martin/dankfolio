@@ -10,11 +10,10 @@ export const MIN_AMOUNT = "0.0001";
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 500;
 
-
 export const fetchTradeQuote = async (
 	amount: string,
-	fromCoin: Coin | null,
-	toCoin: Coin | null,
+	fromCoin: Coin,
+	toCoin: Coin,
 	setQuoteLoading: (loading: boolean) => void,
 	setToAmount: (amount: string) => void,
 	setTradeDetails: (details: TradeDetailsProps) => void,
@@ -22,18 +21,26 @@ export const fetchTradeQuote = async (
 	if (!fromCoin || !toCoin || !amount || parseFloat(amount) <= 0) {
 		return;
 	}
+	console.log(fromCoin)
 
-	const rawAmount = toRawAmount(amount, fromCoin.decimals);
 	try {
 		setQuoteLoading(true);
+		const rawAmount = toRawAmount(amount, fromCoin.decimals)
+
 		const response = await api.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
 
 		setToAmount(response.estimatedAmount.toString());
+
+		// Format fee values using fromCoin's decimals
+		const formattedGasFee = toRawAmount(response.fee.gas, fromCoin.decimals);
+		const formattedSpread = toRawAmount(response.fee.spread, fromCoin.decimals);
+		const formattedTotal = toRawAmount(response.fee.total, fromCoin.decimals);
+
 		setTradeDetails({
 			exchangeRate: response.exchangeRate,
-			gasFee: response.fee?.gas || '0',
-			spread: response.fee?.spread || '0'
-			total: response.fee?.total || '0'
+			gasFee: formattedGasFee,
+			spread: formattedSpread,
+			total: formattedTotal
 		});
 	} catch (error) {
 		console.error('Error fetching trade quote:', error);
@@ -43,10 +50,10 @@ export const fetchTradeQuote = async (
 };
 
 export const handleSwapCoins = (
-	fromCoin: Coin | null,
-	toCoin: Coin | null,
-	setFromCoin: (coin: Coin | null) => void,
-	setToCoin: (coin: Coin | null) => void,
+	fromCoin: Coin,
+	toCoin: Coin,
+	setFromCoin: (coin: Coin) => void,
+	setToCoin: (coin: Coin) => void,
 	fromAmount: string,
 	setFromAmount: (amount: string) => void,
 	toAmount: string,
@@ -59,8 +66,8 @@ export const handleSwapCoins = (
 };
 
 export const handleTrade = async (
-	fromCoin: Coin | null,
-	toCoin: Coin | null,
+	fromCoin: Coin,
+	toCoin: Coin,
 	fromAmount: string,
 	toAmount: string,
 	setIsSubmitting: (submitting: boolean) => void,
@@ -79,7 +86,8 @@ export const handleTrade = async (
 		setIsSubmitting(true);
 
 		// Get keypair from private key
-		const keypair = getKeypairFromPrivateKey(process.env.TEST_PRIVATE_KEY || '');
+		// TODO: FETCH FROM STORAGE
+		const keypair = getKeypairFromPrivateKey(process.env.TEST_PRIVATE_KEY);
 
 		// Convert fromAmount to raw amount
 		const rawAmount = toRawAmount(fromAmount, fromCoin.decimals);
