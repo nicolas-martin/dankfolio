@@ -8,15 +8,15 @@ import SwapButton from '../../components/Trade/SwapButton';
 import TradeDetails from '../../components/Trade/TradeDetails';
 import TradeButton from '../../components/Trade/TradeButton';
 import { useToast } from '../../components/Common/Toast';
-import { styles } from './styles';
-import { TradeScreenParams } from './types';
+import { styles } from './trade_styles';
+import { TradeScreenParams } from './trade_types';
 import {
 	DEFAULT_AMOUNT,
 	QUOTE_DEBOUNCE_MS,
 	fetchTradeQuote,
 	handleSwapCoins,
 	handleTrade
-} from './scripts';
+} from './trade_scripts';
 
 const Trade: React.FC = () => {
 	const navigation = useNavigation();

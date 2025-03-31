@@ -8,15 +8,15 @@ import CoinChart from '../../components/Chart/CoinChart';
 import CoinInfo from '../../components/Chart/CoinInfo';
 import PriceDisplay from '../../components/CoinDetails/PriceDisplay';
 import { Coin, Wallet } from '../../types/index';
-import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './types';
+import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
 	fetchCoinData,
 	fetchPriceHistory,
 	handleTradeNavigation,
 	loadWallet
-} from './scripts';
-import { styles } from './styles';
+} from './coindetail_scripts';
+import { styles } from './coindetail_styles';
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();

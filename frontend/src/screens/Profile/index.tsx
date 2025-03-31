@@ -5,10 +5,10 @@ import { useNavigation } from '@react-navigation/native';
 import TopBar from '../../components/Common/TopBar';
 import { Coin } from '../../types/index';
 import { useToast } from '../../components/Common/Toast';
-import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './scripts';
-import { styles } from './styles'
-import { CoinDetailScreenNavigationProp } from '../CoinDetail/types';
-import { ProfileScreenNavigationProp } from './types';
+import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './profile_scripts';
+import { styles } from './profile_styles';
+import { CoinDetailScreenNavigationProp } from '../CoinDetail/coindetail_types';
+import { ProfileScreenNavigationProp } from './profile_types';
 
 
 const Profile: React.FC<ProfileScreenNavigationProp> = ({ route }) => {

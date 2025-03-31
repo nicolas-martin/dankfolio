@@ -5,15 +5,15 @@ import CoinCard from '../../components/Home/CoinCard';
 import { Wallet, Coin, NotificationProps } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
 import { WalletBalanceResponse } from '../../services/api';
-import { styles } from './styles';
+import { styles } from './home_styles';
 import {
 	NotificationState,
 	fetchAvailableCoins,
 	fetchWalletBalance,
 	handleImportWallet,
 	handleCoinPress
-} from './scripts';
-import { HomeScreenNavigationProp } from './types';
+} from './home_scripts';
+import { HomeScreenNavigationProp } from './home_types';
 
 const Notification: React.FC<NotificationProps> = ({ visible, type, message, onDismiss }) => {
 	if (!visible) return null;

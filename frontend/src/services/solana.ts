@@ -9,6 +9,7 @@ import bs58 from 'bs58';
 import axios from 'axios';
 import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
 import { Wallet } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Use environment variable for Solana RPC endpoint with fallback
 const rpcEndpoint = REACT_APP_SOLANA_RPC_ENDPOINT
@@ -206,7 +207,7 @@ export const buildAndSignSwapTransaction = async (
 export const secureStorage = {
 	saveWallet: async (wallet: Wallet) => {
 		try {
-			localStorage.setItem('wallet', JSON.stringify({
+			await AsyncStorage.setItem('wallet', JSON.stringify({
 				address: wallet.address,
 				privateKey: wallet.privateKey,
 			}));
@@ -219,7 +220,7 @@ export const secureStorage = {
 
 	getWallet: async () => {
 		try {
-			const walletData = localStorage.getItem('wallet');
+			const walletData = await AsyncStorage.getItem('wallet');
 			if (!walletData) return null;
 			return JSON.parse(walletData);
 		} catch (error) {
@@ -230,7 +231,7 @@ export const secureStorage = {
 
 	deleteWallet: async () => {
 		try {
-			localStorage.removeItem('wallet');
+			await AsyncStorage.removeItem('wallet');
 			return true;
 		} catch (error) {
 			console.error('Error deleting wallet:', error);

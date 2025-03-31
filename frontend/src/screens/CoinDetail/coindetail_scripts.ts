@@ -2,7 +2,7 @@ import { Coin, Wallet } from '../../types/index';
 import { WalletBalanceResponse } from '../../services/api';
 import api from '../../services/api';
 import { secureStorage } from '../../services/solana';
-import { TimeframeOption } from './types';
+import { TimeframeOption } from './coindetail_types';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 interface ToastParams {
