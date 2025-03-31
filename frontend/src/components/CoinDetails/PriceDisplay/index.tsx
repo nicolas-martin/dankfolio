@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import PlatformImage from '../../Common/PlatformImage';
-import { PriceDisplayProps } from './types';
-import { styles } from './styles';
-import { DEFAULT_TOKEN_ICON, formatValueChange } from './scripts';
+import { PriceDisplayProps } from './coindetails_types';
+import { styles } from './coindetails_styles';
+import { DEFAULT_TOKEN_ICON, formatValueChange } from './coindetails_scripts';
 
 const formatPrice = (price: number): string => {
 	if (price < 0.01) {

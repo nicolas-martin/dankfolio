@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Linking } from 'react-native';
 import PlatformImage from '../../Common/PlatformImage';
-import { CoinInfoProps } from './types';
-import { styles } from './styles';
+import { CoinInfoProps } from './coininfo_types';
+import { styles } from './coininfo_styles';
 
 const formatNumber = (num: number): string => {
 	if (num >= 1000000000) {

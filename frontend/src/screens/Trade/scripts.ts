@@ -2,7 +2,7 @@
 import { Coin } from '../../types/index';
 import api from '../../services/api';
 import { buildAndSignSwapTransaction, getKeypairFromPrivateKey } from '../../services/solana';
-import { ToastProps } from '../../components/Common/Toast/types';
+import { ToastProps } from '../../components/Common/Toast/toast_types';
 import { RefObject } from 'react';
 import { toRawAmount } from 'utils/numberFormat';
 

@@ -1,8 +1,8 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
-import { TradeButtonProps } from './types';
-import { styles } from './styles';
-import { SPINNER_SIZE, SPINNER_COLOR, getButtonState } from './scripts';
+import { TradeButtonProps } from './tradebutton_types';
+import { styles } from './tradebutton_styles';
+import { SPINNER_SIZE, SPINNER_COLOR, getButtonState } from './tradebutton_scripts';
 
 const TradeButton: React.FC<TradeButtonProps> = ({
 	onPress,

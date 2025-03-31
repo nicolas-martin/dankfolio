@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Image, View } from 'react-native';
-import { CommonProps } from './types';
-import { getImageSource, getContainerStyles, getImageStyles } from './scripts';
+import { CommonProps } from './platformimage_types';
+import { getImageSource, getContainerStyles, getImageStyles } from './platformimage_scripts';
 
 const PlatformImage: React.FC<CommonProps> = (props) => {
 	const [hasError, setHasError] = useState(false);

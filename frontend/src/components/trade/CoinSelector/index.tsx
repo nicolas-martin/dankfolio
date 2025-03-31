@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, Image, TextInput, ActivityIndicator, Platform } from 'react-native';
 import { theme } from '../../../utils/theme';
-import { CoinSelectorProps } from './types';
-import { styles } from './styles';
-import { DEFAULT_ICON, getCoinIcon, renderCoinBalance } from './scripts';
+import { CoinSelectorProps } from './coinselector_types';
+import { styles } from './coinselector_styles';
+import { DEFAULT_ICON, getCoinIcon, renderCoinBalance } from './coinselector_scripts';
 
 const CoinSelector: React.FC<CoinSelectorProps> = ({
 	label,

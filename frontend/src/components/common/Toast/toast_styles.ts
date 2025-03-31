@@ -1,7 +1,7 @@
 import styled from '@emotion/native';
 import { Animated } from 'react-native';
 import { theme } from '../../../utils/theme';
-import { ToastProps } from './types';
+import { ToastProps } from './toast_types';
 
 export const ToastContainer = styled(Animated.View)`
   position: absolute;

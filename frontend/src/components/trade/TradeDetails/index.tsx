@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { TradeDetailsProps } from './types';
-import { styles } from './styles';
-import { formatExchangeRate, formatGasFee, formatSpread } from './scripts';
+import { TradeDetailsProps } from './tradedetails_types';
+import { styles } from './tradedetails_styles';
+import { formatExchangeRate, formatGasFee, formatSpread } from './tradedetails_scripts';
 
 const TradeDetails: React.FC<TradeDetailsProps> = ({
 	exchangeRate,

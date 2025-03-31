@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { formatNumber, formatPrice } from '../../../utils/numberFormat';
-import { CoinCardProps } from './types';
-import { styles } from './styles';
-import { DEFAULT_LOGO } from './scripts';
+import { CoinCardProps } from './coincard_types';
+import { styles } from './coincard_styles';
+import { DEFAULT_LOGO } from './coincard_scripts';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const logoUrl = coin.icon_url || DEFAULT_LOGO;

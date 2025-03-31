@@ -4,8 +4,8 @@ import * as Haptics from "expo-haptics";
 import { VictoryChart, VictoryLine, VictoryAxis } from "victory";
 import { CartesianChart, Line } from "victory-native";
 import { theme } from "../../../utils/theme";
-import { getScreenWidth } from './scripts';
-import { styles } from './styles';
+import { getScreenWidth } from './coinchart_scripts';
+import { styles } from './coinchart_styles';
 
 interface Props {
 	data: { x: Date; y: number }[];

@@ -2,14 +2,14 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../utils/theme';
-import { ToastProps, ToastContextProps } from './types';
-import * as S from './styles';
+import { ToastProps, ToastContextProps } from './toast_types';
+import * as S from './toast_styles';
 import {
 	TOAST_ICONS,
 	getGradientColors,
 	getToastActions,
 	animateToast
-} from './scripts';
+} from './toast_scripts';
 
 const ToastContext = createContext<ToastContextProps | undefined>(undefined);
 

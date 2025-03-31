@@ -1,9 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
 import BackButton from '../BackButton';
-import { TopBarProps } from './types';
-import { styles } from './styles';
-import { getContainerStyle } from './scripts';
+import { TopBarProps } from './topbar_types';
+import { styles } from './topbar_styles';
+import { getContainerStyle } from './topbar_scripts';
 
 const TopBar: React.FC<TopBarProps> = () => {
 	return (

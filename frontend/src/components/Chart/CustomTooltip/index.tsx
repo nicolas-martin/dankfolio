@@ -1,6 +1,6 @@
 import React from 'react';
 import { G, Rect, Text as SvgText } from 'react-native-svg';
-import { CustomTooltipProps } from './types';
+import { CustomTooltipProps } from './customtooltip_types';
 
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ x, y, text = 'Tooltip' }) => {
 	const tooltipX = x || 0;

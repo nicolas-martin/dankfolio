@@ -1,6 +1,6 @@
 import { Coin, RootStackParamList, } from '../../types/index';
 import { WalletBalanceResponse } from '../../services/api';
-import { ToastProps } from '../../components/Common/Toast/types';
+import { ToastProps } from '../../components/Common/Toast/toast_types';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/types';
 

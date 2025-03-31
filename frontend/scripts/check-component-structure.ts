@@ -182,7 +182,8 @@ const PATTERN_CONFIGS: PatternConfig[] = [
 			// Style imports from wrong locations
 			/import\s+{[^}]*}\s+from\s+['"]styled-components['"]/,
 			/import\s+{[^}]*}\s+from\s+['"]@emotion[^'"]*['"]/,
-			/import\s+{[^}]*}\s+from\s+['"](?!\.\/styles)[^'"]*style[^'"]*['"]/
+			// allow the new `./{component}_style` import
+			// /import\s+{[^}]*}\s+from\s+['"](?!\.\/styles)[^'"]*style[^'"]*['"]/
 		],
 		contentPrefix: 'Style in component: '
 	},
