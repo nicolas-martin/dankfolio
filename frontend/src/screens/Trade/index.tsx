@@ -17,6 +17,7 @@ import {
 	handleSwapCoins,
 	handleTrade
 } from './trade_scripts';
+import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
 
 const Trade: React.FC = () => {
 	const navigation = useNavigation();
@@ -25,17 +26,15 @@ const Trade: React.FC = () => {
 
 	const amountInputRef = useRef<TextInput>(null);
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-	const errorLogged = useRef<string[]>([]);
 
 	const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin);
 	const [toCoin, setToCoin] = useState<Coin | null>(initialToCoin);
 	const [fromAmount, setFromAmount] = useState(DEFAULT_AMOUNT);
 	const [toAmount, setToAmount] = useState('0');
-	const [exchangeRate, setExchangeRate] = useState('');
-	const [tradeDetails, setTradeDetails] = useState({
-		estimatedFee: '0.00',
-		spread: '0.00',
-		gasFee: '0.00',
+	const [tradeDetails, setTradeDetails] = useState<TradeDetailsProps>({
+		exchangeRate: '0',
+		gasFee: '0',
+		spread: '0'
 	});
 	const { showToast } = useToast();
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,9 +52,7 @@ const Trade: React.FC = () => {
 				toCoin,
 				setQuoteLoading,
 				setToAmount,
-				setExchangeRate,
 				setTradeDetails,
-				errorLogged
 			);
 		}, QUOTE_DEBOUNCE_MS);
 	}, [fromCoin, toCoin]);
@@ -154,7 +151,7 @@ const Trade: React.FC = () => {
 
 						{/* Trade Details */}
 						<TradeDetails
-							exchangeRate={exchangeRate}
+							exchangeRate={tradeDetails.exchangeRate}
 							gasFee={tradeDetails.gasFee}
 							spread={tradeDetails.spread}
 						/>

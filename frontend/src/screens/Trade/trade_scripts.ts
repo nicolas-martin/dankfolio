@@ -3,8 +3,8 @@ import { Coin } from '../../types/index';
 import api from '../../services/api';
 import { buildAndSignSwapTransaction, getKeypairFromPrivateKey } from '../../services/solana';
 import { ToastProps } from '../../components/Common/Toast/toast_types';
-import { RefObject } from 'react';
 import { toRawAmount } from 'utils/numberFormat';
+import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
 
 export const MIN_AMOUNT = "0.0001";
 export const DEFAULT_AMOUNT = "0.0001";
@@ -17,42 +17,26 @@ export const fetchTradeQuote = async (
 	toCoin: Coin | null,
 	setQuoteLoading: (loading: boolean) => void,
 	setToAmount: (amount: string) => void,
-	setExchangeRate: (rate: string) => void,
-	setTradeDetails: (details: { estimatedFee: string; spread: string; gasFee: string; }) => void,
-	errorLogged: RefObject<string[]>
-): Promise<void> => {
-	if (!amount || !fromCoin || !toCoin) {
+	setTradeDetails: (details: TradeDetailsProps) => void,
+) => {
+	if (!fromCoin || !toCoin || !amount || parseFloat(amount) <= 0) {
 		return;
 	}
 
+	const rawAmount = toRawAmount(amount, fromCoin.decimals);
 	try {
 		setQuoteLoading(true);
-		// Convert the decimal amount to raw amount using the fromCoin's decimals
-		const rawAmount = toRawAmount(amount, fromCoin.decimals);
-		const quote = await api.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
+		const response = await api.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
 
-		// Extract values from the quote response
-		const {
-			to_amount = '0',
-			exchange_rate = '0',
-			estimated_fee = '0',
-			spread_amount = '0',
-			gas_fee = '0'
-		} = quote as any;
-
-		setToAmount(to_amount);
-		setExchangeRate(exchange_rate);
+		setToAmount(response.estimatedAmount.toString());
 		setTradeDetails({
-			estimatedFee: estimated_fee,
-			spread: spread_amount,
-			gasFee: gas_fee
+			exchangeRate: response.exchangeRate,
+			gasFee: response.fee?.gas || '0',
+			spread: response.fee?.spread || '0'
+			total: response.fee?.total || '0'
 		});
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		if (!errorLogged.current.includes(errorMessage)) {
-			console.error('❌ Error fetching trade quote:', errorMessage);
-			errorLogged.current.push(errorMessage);
-		}
+		console.error('Error fetching trade quote:', error);
 	} finally {
 		setQuoteLoading(false);
 	}

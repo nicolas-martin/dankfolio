@@ -208,7 +208,7 @@ export interface TradePayload {
 	signed_transaction: string;
 }
 
-interface TradeQuoteResponse {
+export interface TradeQuoteResponse {
 	estimatedAmount: number;
 	exchangeRate: string;
 	fee?: {
