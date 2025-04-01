@@ -1,21 +1,25 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../utils/theme';
+import { MD3Theme } from 'react-native-paper';
 
-export const styles = StyleSheet.create({
-	button: {
-		backgroundColor: theme.colors.primary,
-		borderRadius: 10,
-		padding: 15,
-		alignItems: 'center',
-		marginTop: 20,
-	},
-	disabled: {
-		opacity: 0.5,
-	},
-	text: {
-		color: '#fff',
-		fontWeight: 'bold',
-		fontSize: 16,
-	},
+export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+  button: {
+    borderRadius: theme.roundness,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  buttonContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  buttonText: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    letterSpacing: 0.25,
+  },
 });
-

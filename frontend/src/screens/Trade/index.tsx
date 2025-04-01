@@ -20,7 +20,6 @@ import { TradeScreenParams } from './trade_types';
 import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
 
 import { usePortfolioStore } from '../../store/portfolio';
-import Toast from '../../components/Common/Toast';
 
 import {
   DEFAULT_AMOUNT,
@@ -192,7 +191,6 @@ const Trade: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <Toast />
     </View>
   );
 };

@@ -1,60 +1,32 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../utils/theme';
+import { MD3Theme } from 'react-native-paper';
 
-export const styles = StyleSheet.create({
-	container: {
-		paddingHorizontal: theme.spacing.lg,
-		paddingVertical: theme.spacing.md,
-		alignItems: 'flex-start',
-	},
-	topRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: theme.spacing.sm,
-	},
-	changeRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-	},
-	icon: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		marginRight: theme.spacing.sm,
-		backgroundColor: theme.colors.surface,
-	},
-	name: {
-		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.onSurfaceVariant,
-		fontWeight: '500',
-	},
-	price: {
-		fontSize: theme.typography.fontSize['3xl'],
-		fontWeight: 'bold',
-		color: theme.colors.onSurface,
-		marginBottom: theme.spacing.xs,
-	},
-	change: {
-		fontSize: theme.typography.fontSize.base,
-		fontWeight: '500',
-	},
-	period: {
-		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.onSurfaceVariant,
-		fontWeight: '500',
-	},
-	positiveChange: {
-		color: theme.colors.primary,
-		backgroundColor: 'rgba(0, 200, 5, 0.1)',
-		paddingHorizontal: theme.spacing.sm,
-		paddingVertical: theme.spacing.xs,
-		borderRadius: theme.borderRadius.sm,
-	},
-	negativeChange: {
-		color: theme.colors.error,
-		backgroundColor: 'rgba(255, 75, 75, 0.1)',
-		paddingHorizontal: theme.spacing.sm,
-		paddingVertical: theme.spacing.xs,
-		borderRadius: theme.borderRadius.sm,
-	},
+export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  icon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  nameText: {
+    marginLeft: 8,
+  },
+  priceText: {
+    marginBottom: 8,
+  },
+  changeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  changeText: {},
+  periodText: {
+    marginLeft: 4,
+  },
 });

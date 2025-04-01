@@ -1,14 +1,14 @@
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, Image } from 'react-native';
 import { Text, Card, useTheme } from 'react-native-paper';
 import { formatNumber, formatPrice } from '../../../utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
 import { DEFAULT_LOGO } from './coincard_scripts';
-import { styles } from './coincard_styles';
+import { createStyles } from './coincard_styles';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
   const theme = useTheme();
-
+  const styles = createStyles(theme);
   const logoUrl = coin.icon_url || DEFAULT_LOGO;
 
   return (

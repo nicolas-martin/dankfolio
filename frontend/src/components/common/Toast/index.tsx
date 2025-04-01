@@ -1,15 +1,15 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Portal, Snackbar, Text, useTheme } from 'react-native-paper';
+import { Portal, Snackbar, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastProps, ToastType } from './toast_types';
-import {
-  ICON_CHECK,
-  ICON_WARNING,
-  ICON_LINK,
-} from '../../../utils/icons';
+import { createStyles } from './toast_styles';
+import { getToastColor } from './toast_constants';
+import { ToastContent } from './ToastContent';
 
-const ToastContext = createContext<{ showToast: (options: ToastProps) => void; hideToast: () => void } | null>(null);
+const ToastContext = createContext<{
+  showToast: (options: ToastProps) => void;
+  hideToast: () => void;
+} | null>(null);
 
 const defaults: ToastProps = {
   message: '',
@@ -18,7 +18,7 @@ const defaults: ToastProps = {
   visible: false,
 };
 
-type ToastAction = 
+type ToastAction =
   | { type: 'SHOW'; payload: Partial<ToastProps> }
   | { type: 'HIDE' }
   | { type: 'HYDRATE'; payload: ToastProps };
@@ -40,6 +40,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [state, dispatch] = useReducer(reducer, defaults);
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const styles = createStyles(theme, insets);
 
   const toast = useMemo(
     () => ({
@@ -53,41 +54,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     []
   );
 
-  const getToastColor = (type: ToastType) => {
-    switch (type) {
-      case 'success':
-        return theme.colors.primary;
-      case 'error':
-        return theme.colors.error;
-      case 'info':
-        return theme.colors.secondary;
-      case 'warning':
-        return '#FFA000'; // Hardcode warning color
-      default:
-        return theme.colors.primary;
-    }
-  };
-
-  const styles = StyleSheet.create({
-    snackbar: {
-      position: 'absolute',
-      left: insets.left,
-      right: insets.right,
-      bottom: insets.bottom,
-      backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: 8,
-    },
-    content: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    message: {
-      color: theme.colors.onSurface,
-      marginLeft: 8,
-      flex: 1,
-    },
-  });
-
   return (
     <ToastContext.Provider value={toast}>
       {children}
@@ -96,11 +62,20 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           visible={state.visible || false}
           onDismiss={toast.hideToast}
           duration={state.duration}
-          style={[styles.snackbar, { borderLeftColor: getToastColor(state.type || 'info'), borderLeftWidth: 4 }]}
+          style={[
+            styles.snackbar,
+            {
+              borderLeftColor: getToastColor(state.type || 'info', theme),
+              borderLeftWidth: 4,
+            },
+          ]}
         >
-          <View style={styles.content}>
-            <Text style={styles.message}>{state.message}</Text>
-          </View>
+          <ToastContent
+            message={state.message}
+            type={state.type || 'info'}
+            onClose={toast.hideToast}
+            styles={styles}
+          />
         </Snackbar>
       </Portal>
     </ToastContext.Provider>
@@ -115,4 +90,51 @@ export const useToast = () => {
   return toast;
 };
 
+// Standalone Toast component for backward compatibility
+const Toast: React.FC = () => {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const [state, dispatch] = useReducer(reducer, defaults);
+  const styles = createStyles(theme, insets);
+
+  const toast = useMemo(
+    () => ({
+      showToast(options: Partial<ToastProps>) {
+        dispatch({ type: 'SHOW', payload: options });
+      },
+      hideToast() {
+        dispatch({ type: 'HIDE' });
+      },
+    }),
+    []
+  );
+
+  return (
+    <ToastContext.Provider value={toast}>
+      <Portal>
+        <Snackbar
+          visible={state.visible || false}
+          onDismiss={toast.hideToast}
+          duration={state.duration}
+          style={[
+            styles.snackbar,
+            {
+              borderLeftColor: getToastColor(state.type || 'info', theme),
+              borderLeftWidth: 4,
+            },
+          ]}
+        >
+          <ToastContent
+            message={state.message}
+            type={state.type || 'info'}
+            onClose={toast.hideToast}
+            styles={styles}
+          />
+        </Snackbar>
+      </Portal>
+    </ToastContext.Provider>
+  );
+};
+
+export { Toast };
 export default ToastProvider;
