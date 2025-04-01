@@ -54,7 +54,7 @@ const HomeScreen = () => {
 
 	const handleImportWalletCallback = useCallback(async (privateKey: string) => {
 		try {
-			const newWallet = await handleImportWallet(privateKey, setWallet, fetchWalletBalance);
+			await handleImportWallet(privateKey, setWallet, fetchWalletBalance);
 			showNotification('success', 'Wallet imported successfully');
 		} catch (error) {
 			showNotification('error', 'Failed to import wallet');

@@ -1,11 +1,10 @@
 // import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Coin } from '../../types/index';
+import { Coin, Wallet, Base58PrivateKey } from '../../types/index';
 import api from '../../services/api';
-import { buildAndSignSwapTransaction, generateWallet, getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
+import { buildAndSignSwapTransaction } from '../../services/solana';
 import { ToastProps } from '../../components/Common/Toast/toast_types';
 import { toRawAmount } from 'utils/numberFormat';
 import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
-import { Wallet } from '../../types/index';
 
 export const MIN_AMOUNT = "0.0001";
 export const DEFAULT_AMOUNT = "0.0001";
@@ -67,51 +66,50 @@ export const handleSwapCoins = (
 export const handleTrade = async (
 	fromCoin: Coin,
 	toCoin: Coin,
-	fromAmount: string,
-	toAmount: string,
-	setIsSubmitting: (submitting: boolean) => void,
-	showToast: (params: ToastProps) => void,
-	navigate: (screen: string) => void,
-	wallet: Wallet
+	amount: string,
+	slippage: number,
+	wallet: Wallet,
+	showNotification: (type: ToastProps['type'], message: string) => void,
+	navigation: any
 ): Promise<void> => {
-	if (!fromCoin || !toCoin || !fromAmount || !toAmount) {
-		showToast({
-			type: 'error',
-			message: 'Please select coins and enter an amount'
-		});
-		return;
-	}
-
 	try {
-		setIsSubmitting(true);
+		console.log('🔄 Starting trade:', {
+			fromCoin: fromCoin.symbol,
+			toCoin: toCoin.symbol,
+			amount,
+			slippage,
+			walletAddress: wallet.address,
+			privateKeyType: 'Base58'  // Now we're explicit about the format
+		});
 
-		// Convert fromAmount to raw amount
-		const rawAmount = toRawAmount(fromAmount, fromCoin.decimals);
+		// Convert amount to raw units (lamports)
+		const rawAmount = Number(toRawAmount(amount, fromCoin.decimals));
 
-		// Build and sign the swap transaction
-		const txHash = await buildAndSignSwapTransaction(
+		// Build and sign the transaction
+		const signedTransaction = await buildAndSignSwapTransaction(
 			fromCoin.id,
 			toCoin.id,
-			parseFloat(rawAmount),
-			0.5, // Default slippage
+			rawAmount,
+			slippage,
 			wallet
 		);
 
-		showToast({
-			type: 'success',
-			message: 'Trade executed successfully! 🎉',
-			txHash
+		// Execute the trade
+		const response = await api.executeTrade({
+			from_coin_id: fromCoin.id,
+			to_coin_id: toCoin.id,
+			amount: parseFloat(amount),
+			signed_transaction: signedTransaction
 		});
 
-		// Navigate back to home screen
-		navigate('Home');
+		if (response.transaction_hash) {
+			showNotification('success', 'Trade executed successfully!');
+			navigation.navigate('Home');
+		} else {
+			throw new Error('No transaction hash received');
+		}
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		showToast({
-			type: 'error',
-			message: `Trade failed: ${errorMessage}`
-		});
-	} finally {
-		setIsSubmitting(false);
+		console.error('❌ Trade error:', error);
+		showNotification('error', error.message || 'Failed to execute trade');
 	}
 };

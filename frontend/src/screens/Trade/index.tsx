@@ -94,13 +94,12 @@ const Trade: React.FC = () => {
 			fromCoin,
 			toCoin,
 			fromAmount,
-			toAmount,
-			setIsSubmitting,
-			showToast,
-			navigation.navigate,
-			wallet
+			0.5, // 0.5% slippage
+			wallet,
+			(type, message) => showToast({ type, message }),
+			navigation
 		);
-	}, [fromCoin, toCoin, fromAmount, toAmount, showToast, navigation, wallet]);
+	}, [fromCoin, toCoin, fromAmount, showToast, navigation, wallet]);
 
 	const getTradeButtonLabel = (): string => {
 		if (isSubmitting) return 'Processing...';

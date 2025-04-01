@@ -22,9 +22,12 @@ export interface Coin {
 	percentage?: number;
 }
 
+/** Base58 encoded private key string */
+export type Base58PrivateKey = string;
+
 export interface Wallet {
 	address: string;
-	privateKey: string;
+	privateKey: Base58PrivateKey;
 	balance: number;
 	publicKey: string;
 }

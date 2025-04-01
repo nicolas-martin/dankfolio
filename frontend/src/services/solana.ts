@@ -83,20 +83,11 @@ const isBase64 = (privateKey: string) => {
 	return privateKey.match(/^[A-Za-z0-9+/]*={0,2}$/) !== null && privateKey.length % 4 === 0;
 };
 
-/**
- * Get a Solana keypair from a private key (supports Base58 and Base64 formats).
- */
 export const getKeypairFromPrivateKey = (privateKey: string): Keypair => {
-	let secretKey;
-
-	if (isBase64(privateKey)) {
-		// Handle Base64 private key
-		secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
-	} else {
-		// Handle Base58 private key
-		secretKey = bs58.decode(privateKey);
-	}
-
+	  // Handle Base64 private key
+	//   const secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
+	// Handle Base58 private key
+	const secretKey = bs58.decode(privateKey);
 	return Keypair.fromSecretKey(secretKey);
 };
 
@@ -196,13 +187,29 @@ export const buildAndSignSwapTransaction = async (
 export const secureStorage = {
 	saveWallet: async (wallet: Wallet): Promise<boolean> => {
 		try {
+			console.log('💾 Saving wallet to storage:', {
+				address: wallet.address,
+				privateKeyLength: wallet.privateKey?.length,
+				privateKeyPreview: wallet.privateKey?.substring(0, 10) + '...',
+				privateKeyFormat: wallet.privateKey?.match(/^[A-Za-z0-9+/]*={0,2}$/) ? 'Base64' : 'Base58'
+			});
+			
 			await AsyncStorage.setItem('wallet', JSON.stringify({
 				address: wallet.address,
 				privateKey: wallet.privateKey,
 			}));
+			
+			// Verify what was saved
+			const savedData = await AsyncStorage.getItem('wallet');
+			console.log('✅ Verified saved wallet:', {
+				saved: !!savedData,
+				dataLength: savedData?.length,
+				parsed: savedData ? JSON.parse(savedData) : null
+			});
+			
 			return true;
 		} catch (error) {
-			console.error('Error saving wallet to secure storage:', error);
+			console.error('❌ Error saving wallet to secure storage:', error);
 			return false;
 		}
 	},
@@ -210,20 +217,42 @@ export const secureStorage = {
 	getWallet: async (): Promise<Wallet | null> => {
 		try {
 			const walletData = await AsyncStorage.getItem('wallet');
+			console.log('📱 Retrieved wallet from storage:', {
+				found: !!walletData,
+				dataLength: walletData?.length
+			});
+			
 			if (!walletData) return null;
-			return JSON.parse(walletData) as Wallet; // Cast to Wallet type
+			
+			const parsed = JSON.parse(walletData) as Wallet;
+			console.log('🔐 Parsed wallet data:', {
+				address: parsed.address,
+				privateKeyLength: parsed.privateKey?.length,
+				privateKeyPreview: parsed.privateKey?.substring(0, 10) + '...',
+				privateKeyFormat: parsed.privateKey?.match(/^[A-Za-z0-9+/]*={0,2}$/) ? 'Base64' : 'Base58'
+			});
+			
+			return parsed;
 		} catch (error) {
-			console.error('Error getting wallet from secure storage:', error);
+			console.error('❌ Error getting wallet from secure storage:', error);
 			return null;
 		}
 	},
 
 	deleteWallet: async (): Promise<boolean> => {
 		try {
+			console.log('🗑️ Deleting wallet from storage');
 			await AsyncStorage.removeItem('wallet');
+			
+			// Verify deletion
+			const remainingData = await AsyncStorage.getItem('wallet');
+			console.log('✅ Verified wallet deletion:', {
+				isDeleted: !remainingData
+			});
+			
 			return true;
 		} catch (error) {
-			console.error('Error deleting wallet from secure storage:', error);
+			console.error('❌ Error deleting wallet from secure storage:', error);
 			return false;
 		}
 	}
