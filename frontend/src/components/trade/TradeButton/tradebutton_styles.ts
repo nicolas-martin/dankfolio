@@ -17,9 +17,4 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  buttonText: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    letterSpacing: 0.25,
-  },
 });

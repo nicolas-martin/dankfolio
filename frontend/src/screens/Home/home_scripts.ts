@@ -107,21 +107,6 @@ export const handleImportWallet = async (
 	}
 };
 
-export const handleLogout = async (
-	setWallet: (wallet: Wallet | null) => void,
-	setCoins: (coins: Coin[]) => void,
-	showNotification: (type: NotificationProps['type'], message: string) => void
-): Promise<void> => {
-	try {
-		await secureStorage.deleteWallet();
-		setWallet(null);
-		setCoins([]);
-	} catch (err) {
-		console.error('Error logging out:', err);
-		showNotification('error', 'Failed to log out');
-	}
-};
-
 export const handleCoinPress = (
 	coin: Coin,
 	solCoin: Coin | null,

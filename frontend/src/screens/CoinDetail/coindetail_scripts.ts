@@ -18,33 +18,6 @@ export const TIMEFRAMES: TimeframeOption[] = [
 	{ label: "1D", value: "1D" },
 ];
 
-export const formatNumber = (num: number): string => {
-	if (num >= 1000000000) {
-		return (num / 1000000000).toFixed(2) + 'B';
-	}
-	if (num >= 1000000) {
-		return (num / 1000000).toFixed(2) + 'M';
-	}
-	if (num >= 1000) {
-		return (num / 1000).toFixed(2) + 'K';
-	}
-	return num.toFixed(2);
-};
-
-// TODO: The balance isn't part of the wallet anymore
-export const loadWallet = async (coinId: string): Promise<{ wallet: Wallet | null; balance: number }> => {
-	try {
-		const savedWallet = await secureStorage.getWallet();
-		if (savedWallet) {
-			return { wallet: savedWallet, balance: 0 };
-		}
-		return { wallet: null, balance: 0 };
-	} catch (error) {
-		console.error('Error loading wallet:', error);
-		return { wallet: null, balance: 0 };
-	}
-};
-
 export const fetchPriceHistory = async (
 	timeframe: string,
 	setLoading: (loading: boolean) => void,

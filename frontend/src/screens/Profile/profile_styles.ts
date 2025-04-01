@@ -48,11 +48,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
   tokenBalance: {
     alignItems: 'flex-end',
     gap: 4,
@@ -92,9 +87,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
     fontWeight: 'bold',
   },
   tokenValueText: {
-    color: theme.colors.onSurfaceVariant,
-  },
-  addressText: {
     color: theme.colors.onSurfaceVariant,
   },
   // Styles for the address copy Button

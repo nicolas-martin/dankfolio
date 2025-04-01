@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
 import { TouchableRipple, Icon, useTheme } from 'react-native-paper';
 import { ICON_SWAP } from '../../../utils/icons';
 import { SwapButtonProps } from './swapbutton_types';
+import { createStyles } from './swapbutton_styles';
 
 const SwapButton: React.FC<SwapButtonProps> = ({ onPress }) => {
   const theme = useTheme();
@@ -24,12 +24,3 @@ const SwapButton: React.FC<SwapButtonProps> = ({ onPress }) => {
 };
 
 export default SwapButton;
-
-const createStyles = (theme: any) => StyleSheet.create({
-  button: {
-    alignSelf: 'center',
-    padding: 12, // p="$3"
-    marginVertical: 8, // my="$2"
-    borderRadius: 999, // rounded="$full"
-  },
-});

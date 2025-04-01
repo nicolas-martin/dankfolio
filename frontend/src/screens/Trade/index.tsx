@@ -29,12 +29,15 @@ import {
   handleTrade
 } from './trade_scripts';
 
+import { useToast } from '../../components/Common/Toast';
+import { createStyles } from './trade_styles';
+
 const Trade: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
   const { initialFromCoin, initialToCoin } = route.params || {};
   const { wallet } = usePortfolioStore();
-  const { showToast } = require('../../components/Common/Toast').useToast();
+  const { showToast } = useToast();
   const theme = useTheme();
   const styles = createStyles(theme);
 
@@ -194,28 +197,5 @@ const Trade: React.FC = () => {
     </View>
   );
 };
-
-const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  noWalletContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  padding: {
-    padding: 16,
-  },
-  valueInfoContainer: {
-    marginVertical: 8,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-});
 
 export default Trade;

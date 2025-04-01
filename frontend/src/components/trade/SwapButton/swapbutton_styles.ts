@@ -1,19 +1,12 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../utils/theme';
+import { MD3Theme } from 'react-native-paper'; // Assuming MD3Theme is needed
 
-export const styles = StyleSheet.create({
-	swapButton: {
-		backgroundColor: theme.colors.primary,
-		width: 40,
-		height: 40,
-		borderRadius: theme.borderRadius.full,
-		justifyContent: 'center',
-		alignItems: 'center',
-		alignSelf: 'center',
-		marginVertical: -theme.spacing.sm,
-		zIndex: 1,
-	},
-	disabled: {
-		opacity: 0.5,
-	},
-});
+// Copied from index.tsx
+export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+  button: {
+    alignSelf: 'center',
+    padding: 12, // p="$3"
+    marginVertical: 8, // my="$2"
+    borderRadius: 999, // rounded="$full"
+  },
+}); 
