@@ -6,7 +6,6 @@ import api from '../../services/api';
 import { buildAndSignSwapTransaction } from '../../services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
 
-export const MIN_AMOUNT = "0.0001";
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 500;
 
