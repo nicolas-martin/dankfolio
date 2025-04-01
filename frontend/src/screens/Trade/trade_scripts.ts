@@ -23,22 +23,6 @@ export const fetchTradeQuote = async (
 		return;
 	}
 
-	console.log('🔄 Trade Quote Request:', {
-		fromCoin: {
-			symbol: fromCoin.symbol,
-			decimals: fromCoin.decimals,
-			price: fromCoin.price,
-			id: fromCoin.id
-		},
-		toCoin: {
-			symbol: toCoin.symbol,
-			decimals: toCoin.decimals,
-			price: toCoin.price,
-			id: toCoin.id
-		},
-		amount,
-	});
-
 	try {
 		setQuoteLoading(true);
 		const rawAmount = toRawAmount(amount, fromCoin.decimals);
@@ -123,7 +107,6 @@ export const handleTrade = async (
 		navigate('Home');
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		console.error('❌ Trade error:', errorMessage);
 		showToast({
 			type: 'error',
 			message: `Trade failed: ${errorMessage}`

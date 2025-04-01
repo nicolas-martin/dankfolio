@@ -101,13 +101,30 @@ export const getKeypairFromPrivateKey = (privateKey: string): Keypair => {
 };
 
 export const buildAndSignSwapTransaction = async (
-	inputMint: string,
-	outputMint: string,
+	fromCoinId: string,
+	toCoinId: string,
 	amount: number,
 	slippage: number,
 	wallet: Wallet
 ): Promise<string> => {
 	try {
+		console.log('🔐 Building swap transaction with:', {
+			fromCoinId,
+			toCoinId,
+			amount,
+			slippage,
+			walletType: typeof wallet,
+			walletKeys: Object.keys(wallet),
+			privateKeyLength: wallet.privateKey?.length,
+			addressLength: wallet.address?.length
+		});
+
+		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
+		console.log('🔑 Generated keypair:', {
+			publicKey: keypair.publicKey.toString(),
+			addressMatch: keypair.publicKey.toString() === wallet.address
+		});
+
 		// Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
 		// const walletBalance = await connection.getBalance(wallet.publicKey);
 		// const minBalanceForRent = 3000000; // 0.003 SOL in lamports
@@ -122,8 +139,8 @@ export const buildAndSignSwapTransaction = async (
 		// Get quote
 		const quoteResponse = await jupiterApi.get('/quote', {
 			params: {
-				inputMint,
-				outputMint,
+				inputMint: fromCoinId,
+				outputMint: toCoinId,
 				amount,
 				slippageBps: slippage * 100, // Convert percentage to basis points
 			},
@@ -160,7 +177,6 @@ export const buildAndSignSwapTransaction = async (
 
 		const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
-		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
 		transaction.sign([keypair]);
 
 		const serializedTransaction = transaction.serialize();
@@ -168,10 +184,7 @@ export const buildAndSignSwapTransaction = async (
 
 		return transactionBase64;
 	} catch (error) {
-		console.error('Error in buildAndSignSwapTransaction:', error);
-		if (error.response) {
-			console.error('API Error Response:', error.response.data);
-		}
+		console.error('❌ Error in buildAndSignSwapTransaction:', error);
 		throw error;
 	}
 };
