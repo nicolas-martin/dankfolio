@@ -31,20 +31,12 @@ export const formatNumber = (num: number): string => {
 	return num.toFixed(2);
 };
 
+// TODO: The balance isn't part of the wallet anymore
 export const loadWallet = async (coinId: string): Promise<{ wallet: Wallet | null; balance: number }> => {
 	try {
 		const savedWallet = await secureStorage.getWallet();
 		if (savedWallet) {
-			if (savedWallet.tokens) {
-				const token = savedWallet.tokens.find((t: any) => t.mint === coinId);
-				return {
-					wallet: savedWallet,
-					balance: token?.amount || 0
-				};
-			} else {
-				console.log('⚠️ No tokens in wallet');
-				return { wallet: savedWallet, balance: 0 };
-			}
+			return { wallet: savedWallet, balance: 0 };
 		}
 		return { wallet: null, balance: 0 };
 	} catch (error) {

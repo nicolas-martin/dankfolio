@@ -1,7 +1,7 @@
 // import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Coin } from '../../types/index';
 import api from '../../services/api';
-import { buildAndSignSwapTransaction, getKeypairFromPrivateKey } from '../../services/solana';
+import { buildAndSignSwapTransaction, generateWallet, getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
 import { ToastProps } from '../../components/Common/Toast/toast_types';
 import { toRawAmount } from 'utils/numberFormat';
 import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
@@ -99,9 +99,14 @@ export const handleTrade = async (
 	try {
 		setIsSubmitting(true);
 
-		// Get keypair from private key
-		// TODO: FETCH FROM STORAGE
-		const keypair = getKeypairFromPrivateKey(process.env.TEST_PRIVATE_KEY);
+		const savedWallet = await secureStorage.getWallet();
+		if (!savedWallet) {
+			showToast({
+				type: 'error',
+				message: 'No wallet found'
+			});
+			return;
+		}
 
 		// Convert fromAmount to raw amount
 		const rawAmount = toRawAmount(fromAmount, fromCoin.decimals);
@@ -112,7 +117,7 @@ export const handleTrade = async (
 			toCoin.id,
 			parseFloat(rawAmount),
 			0.5, // Default slippage
-			{ address: keypair.publicKey.toString(), privateKey: keypair.secretKey.toString(), balance: 0, publicKey: keypair.publicKey.toString() }
+			savedWallet
 		);
 
 		showToast({

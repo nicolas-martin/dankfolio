@@ -65,17 +65,11 @@ jupiterApi.interceptors.response.use(
 		throw error;
 	}
 );
-
-const handleError = (error: unknown) => {
-	console.error('Error:', error);
-	throw error;
-};
-
 /**
  * Generate a new random Solana keypair.
  * Returns an object with the keypair, public key (as string), and private key (base58 encoded).
  */
-export const generateWallet = () => {
+export const generateWallet = (): { keypair: Keypair; publicKey: string; privateKey: string } => {
 	const keypair = Keypair.generate();
 	return {
 		keypair,
@@ -92,7 +86,7 @@ const isBase64 = (privateKey: string) => {
 /**
  * Get a Solana keypair from a private key (supports Base58 and Base64 formats).
  */
-export const getKeypairFromPrivateKey = (privateKey: string) => {
+export const getKeypairFromPrivateKey = (privateKey: string): Keypair => {
 	let secretKey;
 
 	if (isBase64(privateKey)) {
@@ -106,31 +100,13 @@ export const getKeypairFromPrivateKey = (privateKey: string) => {
 	return Keypair.fromSecretKey(secretKey);
 };
 
-/**
- * Check the balance of a Solana account.
- * Returns the balance in SOL.
- */
-export const getBalance = async (publicKeyString: string) => {
-	try {
-		const publicKey = new PublicKey(publicKeyString);
-		const balance = await connection.getBalance(publicKey);
-		return balance / LAMPORTS_PER_SOL;
-	} catch (error) {
-		return handleError(error);
-	}
-};
-
-/**
- * Create and sign a swap transaction using Jupiter.
- * Returns a Base64 encoded signed transaction.
- */
 export const buildAndSignSwapTransaction = async (
 	inputMint: string,
 	outputMint: string,
 	amount: number,
 	slippage: number,
 	wallet: Wallet
-) => {
+): Promise<string> => {
 	try {
 		// Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
 		// const walletBalance = await connection.getBalance(wallet.publicKey);
@@ -205,7 +181,7 @@ export const buildAndSignSwapTransaction = async (
  * In a real app, use a secure storage solution like react-native-keychain.
  */
 export const secureStorage = {
-	saveWallet: async (wallet: Wallet) => {
+	saveWallet: async (wallet: Wallet): Promise<boolean> => {
 		try {
 			await AsyncStorage.setItem('wallet', JSON.stringify({
 				address: wallet.address,
@@ -213,29 +189,30 @@ export const secureStorage = {
 			}));
 			return true;
 		} catch (error) {
-			console.error('Error saving wallet:', error);
+			console.error('Error saving wallet to secure storage:', error);
 			return false;
 		}
 	},
 
-	getWallet: async () => {
+	getWallet: async (): Promise<Wallet | null> => {
 		try {
 			const walletData = await AsyncStorage.getItem('wallet');
 			if (!walletData) return null;
-			return JSON.parse(walletData);
+			return JSON.parse(walletData) as Wallet; // Cast to Wallet type
 		} catch (error) {
-			console.error('Error getting wallet:', error);
+			console.error('Error getting wallet from secure storage:', error);
 			return null;
 		}
 	},
 
-	deleteWallet: async () => {
+	deleteWallet: async (): Promise<boolean> => {
 		try {
 			await AsyncStorage.removeItem('wallet');
 			return true;
 		} catch (error) {
-			console.error('Error deleting wallet:', error);
+			console.error('Error deleting wallet from secure storage:', error);
 			return false;
 		}
 	}
 };
+

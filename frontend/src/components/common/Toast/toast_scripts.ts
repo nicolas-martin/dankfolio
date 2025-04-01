@@ -1,6 +1,6 @@
 import { Animated } from 'react-native';
 import { theme } from '../../../utils/theme';
-import { openSolscanUrl } from '../../../utils/solana';
+import { openSolscanUrl } from '../../../utils/url';
 import { ToastType, ToastAction } from './toast_types';
 
 export const ANIMATION_DURATION = 300;
