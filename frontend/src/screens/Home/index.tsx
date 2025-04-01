@@ -90,11 +90,13 @@ const HomeScreen = () => {
 		<SafeAreaView style={styles.container}>
 			<Button 
 				mode="outlined" 
-				onPress={() => showToast({
-					type: 'success',
-					message: 'Test toast notification',
-					duration: 3000
-				})}
+				onPress={() => {
+					showToast({
+						type: 'success',
+						message: 'Test toast notification',
+						duration: 3000
+					});
+				}}
 				style={{ margin: 16 }}
 			>
 				Show Test Toast
