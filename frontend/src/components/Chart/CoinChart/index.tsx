@@ -1,230 +1,206 @@
-import React, { useState, useEffect } from "react";
-import { View, ActivityIndicator, Text, Platform } from "react-native";
+import React from "react";
+import {
+  CartesianChart,
+  useAreaPath,
+  useChartPressState,
+  useLinePath,
+} from "victory-native";
+import {
+  Circle,
+  Group,
+  Line as SkiaLine,
+  LinearGradient,
+  Path,
+  Skia,
+  Text as SkiaText,
+  useFont,
+  vec,
+} from "@shopify/react-native-skia";
+import { View } from "react-native";
+import { format } from "date-fns";
+import {
+  SharedValue,
+  useDerivedValue,
+} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { VictoryChart, VictoryLine, VictoryAxis } from "victory";
-import { CartesianChart, Line } from "victory-native";
-import { theme } from "../../../utils/theme";
-import { getScreenWidth } from './coinchart_scripts';
-import { styles } from './coinchart_styles';
 
-interface Props {
-	data: { x: Date; y: number }[];
-	loading?: boolean;
-	activePoint?: { x: Date; y: number } | null;
-	onHover?: (point: { x: Date; y: number } | null) => void;
+interface CoinChartProps {
+  data: { x: Date; y: number }[];
+  loading?: boolean;
+  activePoint?: { x: Date; y: number } | null;
+  onHover?: (point: { x: Date; y: number } | null) => void;
 }
 
-const CoinChart: React.FC<Props> = ({ data, loading, activePoint, onHover }) => {
-	const [, setDomain] = useState<{ x: [Date, Date]; y: [number, number] } | undefined>();
-	const [previousData, setPreviousData] = useState<{ x: Date; y: number }[]>([]);
-	const screenWidth = getScreenWidth();
-	const [localActivePoint, setLocalActivePoint] = useState<{ x: Date; y: number } | null>(null);
+const initChartPressState = { x: 0, y: { y: 0 } };
 
-	useEffect(() => {
-		if (data.length > 0) {
-			setPreviousData(data);
-			const xValues = data.map(d => d.x);
-			const yValues = data.map(d => d.y);
-			setDomain({
-				x: [xValues[0], xValues[xValues.length - 1]],
-				y: [Math.min(...yValues), Math.max(...yValues)]
-			});
-		}
-	}, [data]);
+export default function CoinChart({
+  data,
+  loading,
+  onHover,
+}: CoinChartProps) {
+  const { state: chartPress, isActive: isPressActive } = 
+    useChartPressState(initChartPressState);
 
-	const chartData = loading && data.length === 0 ? previousData : data;
+  // Memoize the hover handler
+  const handleHover = React.useCallback(() => {
+    if (!onHover) return;
+    
+    if (isPressActive && chartPress.x.value && chartPress.y.y) {
+      const timestamp = chartPress.x.value.value;
+      const value = chartPress.y.y.value;
+      
+      if (timestamp && value) {
+        onHover({
+          x: new Date(timestamp),
+          y: Number(value),
+        });
+      }
+    } else {
+      onHover(null);
+    }
+  }, [isPressActive, chartPress, onHover]);
 
-	const handleChartTouch = (screenX: number) => {
-		if (!chartData.length) return;
+  // Only run haptic feedback on press state change
+  React.useEffect(() => {
+    if (isPressActive) {
+      Haptics.selectionAsync().catch(() => null);
+    }
+  }, [isPressActive]);
 
-		// Calculate the relative position in the chart
-		const chartWidth = screenWidth - 32; // Account for padding
-		const touchPercent = (screenX - 16) / chartWidth;
-		const index = Math.min(
-			Math.max(
-				Math.round(touchPercent * (chartData.length - 1)),
-				0
-			),
-			chartData.length - 1
-		);
+  // Handle hover updates separately
+  React.useEffect(() => {
+    handleHover();
+  }, [isPressActive, handleHover]);
 
-		const point = chartData[index];
+  if (loading || !data.length) {
+    return null;
+  }
 
-		setLocalActivePoint(point);
+  // Transform data for victory-native
+  const chartData = data.map(point => ({
+    x: point.x.getTime(),
+    y: point.y
+  }));
 
-		// Haptic feedback on iOS
-		if (Platform.OS === 'ios') {
-			Haptics.selectionAsync();
-		}
+  return (
+    <View style={{ height: 200 }}>
+      <CartesianChart
+        data={chartData}
+        xKey="x"
+        yKeys={["y"]}
+        chartPressState={[chartPress]}
+        axisOptions={{
+          tickCount: 5,
+          labelOffset: { x: 12, y: 8 },
+          labelPosition: { x: "outset", y: "inset" },
+          axisSide: { x: "bottom", y: "left" },
+          formatXLabel: (timestamp: number) => 
+            format(new Date(timestamp), "HH:mm"),
+          formatYLabel: (v: number) => `$${v.toFixed(2)}`,
+          lineColor: "rgba(255, 255, 255, 0.1)",
+          labelColor: "rgba(255, 255, 255, 0.5)",
+        }}
+        renderOutside={({ chartBounds }) => (
+          <>
+            {isPressActive && (
+              <PriceIndicator
+                xPosition={chartPress.x.position}
+                yPosition={chartPress.y.y.position}
+                bottom={chartBounds.bottom}
+                top={chartBounds.top}
+                activeValue={chartPress.y.y.value}
+              />
+            )}
+          </>
+        )}
+      >
+        {({ chartBounds, points }) => (
+          <PriceArea
+            points={points.y}
+            {...chartBounds}
+          />
+        )}
+      </CartesianChart>
+    </View>
+  );
+}
 
-		// Call the parent's onHover function if provided
-		if (onHover) {
-			onHover(point);
-		}
-	};
+const PriceArea = ({
+  points,
+  left,
+  right,
+  top,
+  bottom,
+}: {
+  points: any;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}) => {
+  const { path: areaPath } = useAreaPath(points, bottom);
+  const { path: linePath } = useLinePath(points);
 
-	if (chartData.length === 0) {
-		return (
-			<View style={{
-				height: 250,
-				backgroundColor: theme.colors.topBar,
-				justifyContent: 'center',
-				alignItems: 'center'
-			}}>
-				<ActivityIndicator size="large" color={theme.colors.primary} />
-			</View>
-		);
-	}
-
-	// Use the prop value if provided, otherwise use local state
-	const displayPoint = activePoint || localActivePoint;
-
-	return (
-		<View style={{
-			paddingHorizontal: 8,
-			backgroundColor: theme.colors.topBar,
-			height: 250,
-		}}>
-			{loading && (
-				<View style={{
-					position: 'absolute',
-					top: 0,
-					left: 0,
-					right: 0,
-					bottom: 0,
-					justifyContent: 'center',
-					alignItems: 'center',
-					backgroundColor: theme.colors.topBar,
-					zIndex: 1,
-				}}>
-					<ActivityIndicator size="large" color={theme.colors.primary} />
-				</View>
-			)}
-
-			{/* Simple tooltip label showing the selected price */}
-			{
-				displayPoint && (
-					<View style={{
-						position: 'absolute',
-						top: 10,
-						left: 10,
-						backgroundColor: theme.colors.containerBackground,
-						padding: 8,
-						borderRadius: 4,
-						zIndex: 2,
-					}}>
-						<Text style={styles.text}>
-							Price: ${displayPoint.y.toFixed(4)}
-						</Text>
-						<Text style={styles.text}>
-							{displayPoint.x.toLocaleString('en-US', {
-								month: 'short',
-								day: 'numeric',
-								hour: '2-digit',
-								minute: '2-digit'
-							})}
-						</Text>
-					</View>
-				)
-			}
-
-			<View
-				style={{
-					flex: 1,
-					position: 'relative',
-				}}
-				onTouchStart={(e) => {
-					const { locationX } = e.nativeEvent;
-					handleChartTouch(locationX);
-				}}
-				onTouchMove={(e) => {
-					const { locationX } = e.nativeEvent;
-					handleChartTouch(locationX);
-				}}
-				onTouchEnd={() => {
-					setLocalActivePoint(null);
-					if (onHover) onHover(null);
-				}}
-			>
-				{Platform.OS === 'web' ? (
-					<VictoryChart
-						padding={{ left: 50, right: 50, top: 20, bottom: 40 }}
-						domainPadding={{ x: [10, 10], y: [20, 20] }}
-						width={screenWidth - 32}
-						height={200}
-						style={{
-							parent: {
-								backgroundColor: 'transparent'
-							}
-						}}
-					>
-						<VictoryAxis
-							style={{
-								axis: { stroke: 'transparent' },
-								tickLabels: { fill: theme.colors.textSecondary, fontSize: 10 },
-								grid: { stroke: 'transparent' }
-							}}
-							tickFormat={(x) => {
-								const date = new Date(x);
-								return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-							}}
-						/>
-						<VictoryAxis
-							dependentAxis
-							style={{
-								axis: { stroke: 'transparent' },
-								tickLabels: { fill: theme.colors.textSecondary, fontSize: 10 },
-								grid: { stroke: 'transparent' }
-							}}
-							tickFormat={(y) => `$${y.toFixed(4)}`}
-						/>
-						<VictoryLine
-							data={chartData}
-							x="x"
-							y="y"
-							style={{
-								data: {
-									stroke: theme.colors.primary,
-									strokeWidth: 2
-								}
-							}}
-							animate={{
-								duration: 500,
-								onLoad: { duration: 500 }
-							}}
-						/>
-					</VictoryChart>
-				) : (
-					<CartesianChart
-						data={chartData}
-						xKey={"x" as any}
-						yKeys={["y"]}
-						domainPadding={{ left: 10, right: 10, top: 20, bottom: 40 }}
-						axisOptions={{
-							lineColor: "transparent",
-							labelColor: theme.colors.textSecondary,
-							tickCount: { x: 5, y: 5 },
-							formatXLabel: (value) => {
-								const date = new Date(value as any);
-								return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-							},
-							formatYLabel: (value) => `$${(value as number).toFixed(4)}`
-						}}
-					>
-						{({ points }) => (
-							<Line
-								points={points.y}
-								color={theme.colors.primary}
-								strokeWidth={2}
-								curveType="monotoneX"
-								animate={{ type: "timing", duration: 500 }}
-							/>
-						)}
-					</CartesianChart>
-				)}
-			</View>
-		</View >
-	);
+  return (
+    <Group>
+      <Path path={areaPath} style="fill">
+        <LinearGradient
+          start={vec(0, 0)}
+          end={vec(top, bottom)}
+          colors={["#4ECDC4", "rgba(78, 205, 196, 0.2)"]}
+        />
+      </Path>
+      <Path
+        path={linePath}
+        style="stroke"
+        strokeWidth={2}
+        color="#4ECDC4"
+      />
+    </Group>
+  );
 };
 
-export default CoinChart;
+const PriceIndicator = ({
+  xPosition,
+  yPosition,
+  bottom,
+  top,
+  activeValue,
+}: {
+  xPosition: SharedValue<number>;
+  yPosition: SharedValue<number>;
+  bottom: number;
+  top: number;
+  activeValue: SharedValue<number>;
+}) => {
+  const FONT_SIZE = 16;
+  const start = useDerivedValue(() => vec(xPosition.value, bottom));
+  const end = useDerivedValue(() => vec(xPosition.value, top));
+  
+  const displayValue = useDerivedValue(() => 
+    `$${Number(activeValue.value).toFixed(2)}`
+  );
+
+  return (
+    <>
+      <SkiaLine
+        p1={start}
+        p2={end}
+        color="rgba(255, 255, 255, 0.2)"
+        strokeWidth={1}
+      />
+      <Circle
+        cx={xPosition}
+        cy={yPosition}
+        r={6}
+        color="#4ECDC4"
+      />
+      <Circle
+        cx={xPosition}
+        cy={yPosition}
+        r={4}
+        color="rgba(255, 255, 255, 0.25)"
+      />
+    </>
+  );
+};
