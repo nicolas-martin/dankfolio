@@ -1,6 +1,7 @@
-import React, { useCallback, useState, useEffect } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
-import { Text, Button, Icon, useTheme, Portal } from 'react-native-paper';
+import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Portal, Snackbar, Text, useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastProps, ToastType } from './toast_types';
 import {
   ICON_CHECK,
@@ -8,158 +9,110 @@ import {
   ICON_LINK,
 } from '../../../utils/icons';
 
-const TOAST_ICONS = {
-  success: ICON_CHECK,
-  error: ICON_WARNING,
-  info: ICON_LINK,
-  warning: ICON_WARNING,
+const ToastContext = createContext<{ showToast: (options: ToastProps) => void; hideToast: () => void } | null>(null);
+
+const defaults: ToastProps = {
+  message: '',
+  type: 'info',
+  duration: 3000,
+  visible: false,
 };
 
-const getToastColor = (type: ToastType, theme: any) => {
-  switch (type) {
-    case 'success':
-      return theme.colors.primary; // Assuming primary is a good success color
-    case 'error':
-      return theme.colors.error;
-    case 'info':
-      return theme.colors.secondary; // Assuming secondary is a good info color
-    case 'warning':
-      return theme.colors.warning;
+type ToastAction = 
+  | { type: 'SHOW'; payload: Partial<ToastProps> }
+  | { type: 'HIDE' }
+  | { type: 'HYDRATE'; payload: ToastProps };
+
+const reducer = (state: ToastProps, action: ToastAction): ToastProps => {
+  switch (action.type) {
+    case 'SHOW':
+      return { ...state, ...action.payload, visible: true };
+    case 'HYDRATE':
+      return { ...state, ...action.payload, visible: false };
+    case 'HIDE':
+      return { ...state, visible: false };
     default:
-      return theme.colors.primary;
+      return state;
   }
 };
 
-export const useToast = () => {
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(reducer, defaults);
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const styles = StyleSheet.create({
-    toastContainer: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 8,
-      padding: 12,
-      marginHorizontal: 16,
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
+
+  const toast = useMemo(
+    () => ({
+      showToast(options: Partial<ToastProps>) {
+        dispatch({ type: 'SHOW', payload: options });
       },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-      elevation: 5,
-    },
-    toastContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    iconContainer: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 8,
-    },
-    textContainer: {
-      flex: 1,
-    },
-    actionsContainer: {
-      marginTop: 8,
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-    },
-    actionButton: {
-      marginLeft: 8,
-    },
-  });
-  const [visible, setVisible] = useState(false);
-  const [toastProps, setToastProps] = useState<ToastProps | null>(null);
+      hideToast() {
+        dispatch({ type: 'HIDE' });
+      },
+    }),
+    []
+  );
 
-  const onDismiss = useCallback(() => {
-    setVisible(false);
-  }, []);
-
-  const createTransactionAction = useCallback((txHash: string) => ({
-    label: 'View Transaction',
-    onPress: () => {
-      if (Platform.OS === 'web') {
-        window.open(`https://solscan.io/tx/${txHash}`, '_blank');
-      } else {
-        // Handle opening URL in mobile app (e.g., using Linking)
-        console.log(`Opening transaction in mobile app: https://solscan.io/tx/${txHash}`);
-      }
-    },
-    style: 'secondary'
-  }), []);
-
-  const showToast = useCallback((props: ToastProps) => {
-    setToastProps(props);
-    setVisible(true);
-  }, []);
-
-  useEffect(() => {
-    if (toastProps) {
-      // Timeout to auto dismiss after 3 seconds
-      const timeoutId = setTimeout(() => {
-        setVisible(false);
-      }, 3000);
-
-      return () => clearTimeout(timeoutId);
+  const getToastColor = (type: ToastType) => {
+    switch (type) {
+      case 'success':
+        return theme.colors.primary;
+      case 'error':
+        return theme.colors.error;
+      case 'info':
+        return theme.colors.secondary;
+      case 'warning':
+        return '#FFA000'; // Hardcode warning color
+      default:
+        return theme.colors.primary;
     }
-  }, [toastProps, setVisible]);
-
-  const ToastContent = () => {
-    if (!toastProps) return null;
-
-    const { message, type = 'info', actions = [], icon, txHash } = toastProps;
-    const allActions = [
-      ...actions,
-      ...(txHash ? [createTransactionAction(txHash)] : [])
-    ];
-    const toastColor = getToastColor(type, theme);
-
-    return (
-      <Portal>
-        <View style={[styles.toastContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
-          <View style={styles.toastContent}>
-            <View style={[styles.iconContainer, { backgroundColor: toastColor, opacity: 0.2 }]}>
-              <Icon source={icon || TOAST_ICONS[type]} size={20} color={toastColor} />
-            </View>
-            <View style={styles.textContainer}>
-              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </Text>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                {message}
-              </Text>
-            </View>
-          </View>
-          {allActions.length > 0 && (
-            <View style={styles.actionsContainer}>
-              {allActions.map((action, index) => (
-                <Button
-                  key={index}
-                  mode="outlined"
-                  style={[styles.actionButton, { borderColor: toastColor }]}
-                  labelStyle={{ color: toastColor, fontSize: 14 }}
-                  onPress={action.onPress}
-                >
-                  {action.label}
-                </Button>
-              ))}
-            </View>
-          )}
-        </View>
-      </Portal>
-    );
   };
 
-  return { showToast, ToastContent, visible, onDismiss };
-};
-
-export default () => {
-  const { ToastContent, visible, onDismiss } = useToast();
+  const styles = StyleSheet.create({
+    snackbar: {
+      position: 'absolute',
+      left: insets.left,
+      right: insets.right,
+      bottom: insets.bottom,
+      backgroundColor: theme.colors.surfaceVariant,
+      borderRadius: 8,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    message: {
+      color: theme.colors.onSurface,
+      marginLeft: 8,
+      flex: 1,
+    },
+  });
 
   return (
-    <Portal>{visible ? <ToastContent /> : null}</Portal>
+    <ToastContext.Provider value={toast}>
+      {children}
+      <Portal>
+        <Snackbar
+          visible={state.visible || false}
+          onDismiss={toast.hideToast}
+          duration={state.duration}
+          style={[styles.snackbar, { borderLeftColor: getToastColor(state.type || 'info'), borderLeftWidth: 4 }]}
+        >
+          <View style={styles.content}>
+            <Text style={styles.message}>{state.message}</Text>
+          </View>
+        </Snackbar>
+      </Portal>
+    </ToastContext.Provider>
   );
 };
+
+export const useToast = () => {
+  const toast = useContext(ToastContext);
+  if (!toast) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return toast;
+};
+
+export default ToastProvider;

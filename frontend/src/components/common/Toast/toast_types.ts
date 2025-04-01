@@ -9,12 +9,14 @@ export type ToastAction = {
 export interface ToastProps {
 	message: string;
 	type?: ToastType;
+	duration?: number;
+	visible?: boolean;
 	actions?: ToastAction[];
 	icon?: string;
 	txHash?: string;
 }
 
 export interface ToastContextProps {
-	showToast: (props: ToastProps) => void;
+	showToast: (props: Partial<ToastProps>) => void;
 	hideToast: () => void;
 }

@@ -1,11 +1,12 @@
 import './src/utils/polyfills';
-import React, { useState } from 'react';
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Navigation from './src/navigation';
 import { theme as appTheme } from './src/utils/theme';
-import Toast from './src/components/Common/Toast';
+import { ToastProvider } from './src/components/Common/Toast';
 
 const paperTheme = {
   ...MD3LightTheme,
@@ -25,6 +26,7 @@ const paperTheme = {
     onError: appTheme.colors.onError,
     outline: appTheme.colors.outline,
     outlineVariant: appTheme.colors.outlineVariant,
+    warning: appTheme.colors.warning,
   },
 };
 
@@ -35,26 +37,17 @@ const styles = StyleSheet.create({
 });
 
 const App: React.FC = () => {
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastOptions, setToastOptions] = useState({});
-
-  const showToast = (options: any) => {
-    setToastOptions(options);
-    setToastVisible(true);
-  };
-
-  const hideToast = () => {
-    setToastVisible(false);
-  };
-
   return (
-    <PaperProvider theme={paperTheme}>
-      <View style={styles.container}>
-        <StatusBar style="auto" />
-        <Navigation />
-        <Toast />
-      </View>
-    </PaperProvider>
+    <SafeAreaProvider>
+      <PaperProvider theme={paperTheme}>
+        <ToastProvider>
+          <View style={styles.container}>
+            <StatusBar style="auto" />
+            <Navigation />
+          </View>
+        </ToastProvider>
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 };
 
