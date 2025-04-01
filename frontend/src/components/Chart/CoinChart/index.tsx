@@ -6,9 +6,13 @@ import {
   useChartPressState,
 } from "victory-native";
 import {
+  Circle,
   Group,
+  Line,
   LinearGradient,
   Path,
+  Skia,
+  useFont,
   vec,
 } from "@shopify/react-native-skia";
 import { View } from "react-native";
@@ -23,6 +27,8 @@ interface CoinChartProps {
   loading?: boolean;
   activePoint?: { x: Date; y: number } | null;
   onHover?: (point: { x: Date; y: number } | null) => void;
+  lineColor?: string;
+  gradientColor?: string;
 }
 
 const initChartPressState = { x: 0, y: { y: 0 } };
@@ -31,6 +37,8 @@ export default function CoinChart({
   data,
   loading,
   onHover,
+  lineColor = "#4ECDC4",
+  gradientColor = "rgba(78, 205, 196, 0.2)"
 }: CoinChartProps) {
   // console.log("[CoinChart] Initializing with data length:", data.length);
 
@@ -127,13 +135,39 @@ export default function CoinChart({
         }}
       >
         {({ chartBounds, points }) => (
-          <PriceArea
-            points={points.y}
-            left={chartBounds.left}
-            right={chartBounds.right}
-            top={chartBounds.top}
-            bottom={chartBounds.bottom}
-          />
+          <>
+            <PriceArea
+              points={points.y}
+              left={chartBounds.left}
+              right={chartBounds.right}
+              top={chartBounds.top}
+              bottom={chartBounds.bottom}
+              lineColor={lineColor}
+              gradientColor={gradientColor}
+            />
+            {isPressActive && (
+              <Group>
+                <Line
+                  p1={vec(chartPress.x.position.value, chartBounds.top)}
+                  p2={vec(chartPress.x.position.value, chartBounds.bottom)}
+                  color="rgba(255, 255, 255, 0.3)"
+                  strokeWidth={1}
+                />
+                <Circle
+                  cx={chartPress.x.position.value}
+                  cy={chartPress.y.y.position.value}
+                  r={8}
+                  color={lineColor}
+                />
+                <Circle
+                  cx={chartPress.x.position.value}
+                  cy={chartPress.y.y.position.value}
+                  r={5}
+                  color="white"
+                />
+              </Group>
+            )}
+          </>
         )}
       </CartesianChart>
     </View>
@@ -146,12 +180,16 @@ const PriceArea = ({
   right,
   top,
   bottom,
+  lineColor,
+  gradientColor,
 }: {
   points: any;
   left: number;
   right: number;
   top: number;
   bottom: number;
+  lineColor: string;
+  gradientColor: string;
 }) => {
   const { path: areaPath } = useAreaPath(points, bottom);
   const { path: linePath } = useLinePath(points);
@@ -162,14 +200,14 @@ const PriceArea = ({
         <LinearGradient
           start={vec(0, 0)}
           end={vec(top, bottom)}
-          colors={["#4ECDC4", "rgba(78, 205, 196, 0.2)"]}
+          colors={[lineColor, gradientColor]}
         />
       </Path>
       <Path
         path={linePath}
         style="stroke"
         strokeWidth={2}
-        color="#4ECDC4"
+        color={lineColor}
       />
     </Group>
   );
