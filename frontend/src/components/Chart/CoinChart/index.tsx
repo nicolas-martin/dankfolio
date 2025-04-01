@@ -23,6 +23,7 @@ import {
   type SharedValue,
 } from "react-native-reanimated";
 import { useTheme, MD3Theme } from "react-native-paper";
+import * as Haptics from 'expo-haptics';
 
 interface CoinChartProps {
   data: { x: Date; y: number }[];
@@ -86,24 +87,29 @@ export default function CoinChart({
     };
   }, [isPressActive, chartPress]); // Dependencies seem correct
 
-  // Handle hover updates
+  // Handle hover updates (Removed faulty haptic logic from here)
   useDerivedValue(() => {
     'worklet';
-    
     const currentValue = pressValue.value;
-    
-    // If press stops (isPressActive is directly the boolean) or value is null, signal hover end
+
     if (!isPressActive || !currentValue) { 
       runOnJS(memoizedOnHover)(null);
-      return;
+    } else {
+      runOnJS(memoizedOnHover)({
+        x: new Date(currentValue.timestamp),
+        y: currentValue.value
+      });
     }
+  }, [pressValue, isPressActive]); 
 
-    // Pass the valid point data via onHover
-    runOnJS(memoizedOnHover)({
-      x: new Date(currentValue.timestamp),
-      y: currentValue.value
-    });
-  }, [pressValue, isPressActive]); // Dependencies seem correct
+  // --- UseEffect for Haptic Feedback ---
+  React.useEffect(() => {
+    // Check the boolean value directly
+    if (isPressActive) {
+      // Trigger haptic feedback when pressing starts
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, [isPressActive]); // Run when isPressActive changes
 
   if (loading || !data.length) {
     return null;

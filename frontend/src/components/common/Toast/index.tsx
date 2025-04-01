@@ -15,7 +15,7 @@ const ToastContext = createContext<{
 const defaults: ToastProps = {
   message: '',
   type: 'info',
-  duration: 103000,
+  duration: 3000,
   visible: false,
 };
 
