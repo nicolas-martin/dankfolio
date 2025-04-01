@@ -20,7 +20,7 @@ import { TradeScreenParams } from './trade_types';
 import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
 
 import { usePortfolioStore } from '../../store/portfolio';
-import { useToastStore } from '../../store/toast';
+import Toast from '../../components/Common/Toast';
 
 import {
   DEFAULT_AMOUNT,
@@ -35,7 +35,7 @@ const Trade: React.FC = () => {
   const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
   const { initialFromCoin, initialToCoin } = route.params || {};
   const { wallet } = usePortfolioStore();
-  const showToast = useToastStore((state) => state.showToast);
+  const { showToast } = require('../../components/Common/Toast').useToast();
   const theme = useTheme();
   const styles = createStyles(theme);
 
@@ -108,7 +108,8 @@ const Trade: React.FC = () => {
       wallet,
       navigation,
       setIsSubmitting,
-      showToast
+      showToast,
+      //ToastContent
     );
   }, [fromCoin, toCoin, fromAmount, navigation, wallet, showToast]);
 
@@ -191,6 +192,7 @@ const Trade: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Toast />
     </View>
   );
 };

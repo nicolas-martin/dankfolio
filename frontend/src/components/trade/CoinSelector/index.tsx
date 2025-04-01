@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, Image, TextInput, Platform } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { theme } from '../../../utils/theme';
 import { CoinSelectorProps } from './coinselector_types';
 import { styles } from './coinselector_styles';

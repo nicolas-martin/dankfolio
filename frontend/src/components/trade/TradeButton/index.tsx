@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { Button, Text, Icon, useTheme } from 'react-native-paper';
 import { TradeButtonProps } from './tradebutton_types';
 import {

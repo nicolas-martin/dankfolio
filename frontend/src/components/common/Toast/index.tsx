@@ -2,7 +2,6 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Text, Button, Icon, useTheme, Portal } from 'react-native-paper';
 import { ToastProps, ToastType } from './toast_types';
-import { useToastStore } from '../../../store/toast';
 import {
   ICON_CHECK,
   ICON_WARNING,
@@ -32,11 +31,46 @@ const getToastColor = (type: ToastType, theme: any) => {
 };
 
 export const useToast = () => {
-  const showGlueToast = useToastStore((state) => state.showToast);
-  const hideGlueToast = useToastStore((state) => state.hideToast);
   const theme = useTheme();
-  const styles = createStyles(theme);
-
+  const styles = StyleSheet.create({
+    toastContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      padding: 12,
+      marginHorizontal: 16,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    toastContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    iconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 8,
+    },
+    textContainer: {
+      flex: 1,
+    },
+    actionsContainer: {
+      marginTop: 8,
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+    actionButton: {
+      marginLeft: 8,
+    },
+  });
   const [visible, setVisible] = useState(false);
   const [toastProps, setToastProps] = useState<ToastProps | null>(null);
 
@@ -60,8 +94,7 @@ export const useToast = () => {
   const showToast = useCallback((props: ToastProps) => {
     setToastProps(props);
     setVisible(true);
-    showGlueToast(props); // Still call the glue toast for now
-  }, [createTransactionAction, showGlueToast, theme]);
+  }, []);
 
   useEffect(() => {
     if (toastProps) {
@@ -120,53 +153,13 @@ export const useToast = () => {
     );
   };
 
-  return { showToast, hideToast: hideGlueToast, ToastContent, visible, onDismiss };
+  return { showToast, ToastContent, visible, onDismiss };
 };
-
-const createStyles = (theme: any) => StyleSheet.create({
-  toastContainer: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  toastContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  actionsContainer: {
-    marginTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  actionButton: {
-    marginLeft: 8,
-  },
-});
 
 export default () => {
   const { ToastContent, visible, onDismiss } = useToast();
 
   return (
-    <>{visible ? <ToastContent /> : null}</>
+    <Portal>{visible ? <ToastContent /> : null}</Portal>
   );
 };

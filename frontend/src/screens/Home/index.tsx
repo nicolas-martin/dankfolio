@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, SafeAreaView, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, FlatList, StyleSheet } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../../components/Home/CoinCard';
 import { Coin, Wallet } from '../../types/index';

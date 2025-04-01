@@ -2,7 +2,6 @@
 import { Coin, Wallet } from '../../types';
 import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
 
-import { useToastStore } from '../../store/toast';
 import api from '../../services/api';
 import { buildAndSignSwapTransaction } from '../../services/solana';
 import { toRawAmount } from '../../utils/numberFormat';

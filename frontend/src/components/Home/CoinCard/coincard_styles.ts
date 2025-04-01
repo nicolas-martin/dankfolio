@@ -81,4 +81,14 @@ export const styles = StyleSheet.create({
 	negative: {
 		color: theme.colors.error,
 	},
+	card: {
+		marginHorizontal: 8,
+		marginBottom: 8,
+	},
+	content: {
+		padding: 16,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+	},
 });

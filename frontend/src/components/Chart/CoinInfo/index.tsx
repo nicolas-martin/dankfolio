@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { TouchableOpacity, Linking, View, StyleSheet } from 'react-native';
 import { Text, Icon, useTheme, Divider } from 'react-native-paper';
 import { CoinInfoProps } from './coininfo_types';
@@ -23,17 +23,19 @@ const formatNumber = (num: number): string => {
   return num.toFixed(2);
 };
 
-const LinkItem: React.FC<{
+interface LinkItemProps {
   icon: any;
   label: string;
   value: string;
-  onPress: () => void;
-}> = ({ icon: IconComponent, label, value, onPress }) => {
+  onPress: (url: string) => void;
+}
+
+const LinkItem: React.FC<LinkItemProps> = ({ icon: IconComponent, label, value, onPress }) => {
   const theme = useTheme();
   const styles = createStyles(theme);
 
   return (
-    <TouchableOpacity onPress={onPress}>
+    <TouchableOpacity onPress={() => onPress(value)}>
       <View style={styles.linkItemContainer}>
         <View style={[styles.linkItemIconContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
           <Icon source={IconComponent} size={20} color={theme.colors.onSurface} />
@@ -52,11 +54,12 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
   const theme = useTheme();
   const styles = createStyles(theme);
 
-  const handleLinkPress = (url?: string) => {
+  const handleLinkPress = useCallback((url?: string) => {
     if (url) {
-      Linking.openURL(url);
+      const validUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+      Linking.openURL(validUrl);
     }
-  };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -112,7 +115,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
                 icon={ICON_WEBSITE}
                 label="Website"
                 value={metadata.website}
-                onPress={() => handleLinkPress(metadata.website)}
+                onPress={handleLinkPress}
               />
               <Divider style={{ backgroundColor: theme.colors.outline }} />
             </>
@@ -124,7 +127,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
                 icon={ICON_TWITTER}
                 label="Twitter"
                 value={`@${metadata.twitter}`}
-                onPress={() => handleLinkPress(`https://twitter.com/${metadata.twitter}`)}
+                onPress={handleLinkPress}
               />
               <Divider style={{ backgroundColor: theme.colors.outline }} />
             </>
@@ -136,7 +139,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
                 icon={ICON_TELEGRAM}
                 label="Telegram"
                 value={metadata.telegram}
-                onPress={() => handleLinkPress(`https://t.me/${metadata.telegram}`)}
+                onPress={handleLinkPress}
               />
               <Divider style={{ backgroundColor: theme.colors.outline }} />
             </>
@@ -147,7 +150,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
               icon={ICON_DISCORD}
               label="Discord"
               value={metadata.discord}
-              onPress={() => handleLinkPress(metadata.discord)}
+              onPress={handleLinkPress}
             />
           )}
         </View>

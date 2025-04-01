@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Platform, View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { Platform, View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Text, useTheme, Divider, Button } from 'react-native-paper';
 import { useToast } from '../../components/Common/Toast';
