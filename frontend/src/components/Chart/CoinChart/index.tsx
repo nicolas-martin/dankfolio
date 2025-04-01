@@ -32,22 +32,23 @@ export default function CoinChart({
   loading,
   onHover,
 }: CoinChartProps) {
-  console.log("[CoinChart] Initializing with data length:", data.length);
+  // console.log("[CoinChart] Initializing with data length:", data.length);
 
   const { state: chartPress, isActive: isPressActive } =
     useChartPressState(initChartPressState);
 
   // Debug log press state changes
-  React.useEffect(() => {
-    console.log("[CoinChart] Press state:", { isPressActive });
-  }, [isPressActive]);
+  // React.useEffect(() => {
+  //   console.log("[CoinChart] Press state:", { isPressActive });
+  // }, [isPressActive]);
 
   // Memoize the hover callback
   const memoizedOnHover = React.useCallback((point: { x: Date; y: number } | null) => {
-    if (point) {
-      console.log("[CoinChart] Hover update:", 
-        { timestamp: point.x.toISOString(), value: point.y });
-    }
+    // Removed problematic log
+    // if (point) {
+    //   console.log("[CoinChart] Hover update:", 
+    //     { timestamp: point.x.toISOString(), value: point.y });
+    // }
     onHover?.(point);
   }, [onHover]);
 
@@ -55,18 +56,14 @@ export default function CoinChart({
   const pressValue = useDerivedValue(() => {
     'worklet';
 
-    if (!chartPress.x.value || !chartPress.y.y) {
-      console.log("[CoinChart] Missing required values:", {
-        hasXValue: !!chartPress.x.value,
-        hasYValue: !!chartPress.y.y
-      });
+    // Ensure the necessary shared values exist
+    if (!chartPress.x.value || !chartPress.y.y?.value) { 
       return null;
     }
 
+    // Access the primitive value using .value
     const xVal = chartPress.x.value.value;
-    const yVal = chartPress.y.y.value;
-
-    console.log("[CoinChart] Raw values:", { xVal, yVal });
+    const yVal = chartPress.y.y.value.value; // Access the primitive value here
 
     if (typeof xVal !== 'number' || typeof yVal !== 'number') {
       return null;
@@ -76,7 +73,7 @@ export default function CoinChart({
       timestamp: xVal,
       value: yVal,
     };
-  }, [isPressActive, chartPress]);
+  }, [isPressActive, chartPress]); // Dependencies seem correct
 
   // Handle hover updates
   useDerivedValue(() => {
@@ -84,18 +81,18 @@ export default function CoinChart({
     
     const currentValue = pressValue.value;
     
-    console.log("[CoinChart] Derived pressValue:", currentValue);
-    
-    if (!currentValue) {
+    // If press stops (isPressActive is directly the boolean) or value is null, signal hover end
+    if (!isPressActive || !currentValue) { 
       runOnJS(memoizedOnHover)(null);
       return;
     }
 
+    // Pass the valid point data via onHover
     runOnJS(memoizedOnHover)({
       x: new Date(currentValue.timestamp),
       y: currentValue.value
     });
-  }, [pressValue]);
+  }, [pressValue, isPressActive]); // Dependencies seem correct
 
   if (loading || !data.length) {
     return null;
@@ -106,7 +103,7 @@ export default function CoinChart({
       x: point.x.getTime(),
       y: point.y
     };
-    console.log("[CoinChart] Transforming data point:", transformed);
+    // console.log("[CoinChart] Transforming data point:", transformed);
     return transformed;
   });
 
