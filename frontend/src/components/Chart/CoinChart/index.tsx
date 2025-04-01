@@ -55,9 +55,8 @@ export default function CoinChart({
   const pressValue = useDerivedValue(() => {
     'worklet';
 
-    if (!isPressActive || !chartPress.x.value || !chartPress.y.y) {
+    if (!chartPress.x.value || !chartPress.y.y) {
       console.log("[CoinChart] Missing required values:", {
-        isPressActive,
         hasXValue: !!chartPress.x.value,
         hasYValue: !!chartPress.y.y
       });

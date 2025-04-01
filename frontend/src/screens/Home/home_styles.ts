@@ -15,24 +15,24 @@ export const styles = StyleSheet.create({
 	title: {
 		fontSize: theme.typography.fontSize['3xl'],
 		fontWeight: 'bold',
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		marginBottom: theme.spacing.xs,
 	},
 	subtitle: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 	},
 	searchContainer: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: theme.colors.containerBackground,
+		backgroundColor: theme.colors.surface,
 		borderRadius: theme.borderRadius.sm,
 		padding: theme.spacing.md,
 		marginBottom: theme.spacing.xl,
 	},
 	searchInput: {
 		flex: 1,
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		marginLeft: theme.spacing.sm,
 	},
 	content: {
@@ -54,13 +54,14 @@ export const styles = StyleSheet.create({
 	sectionTitle: {
 		fontSize: theme.typography.fontSize.xl,
 		fontWeight: 'bold',
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 	},
 	refreshCoinsButton: {
 		padding: theme.spacing.xs,
 	},
 	refreshCoinsText: {
 		fontSize: theme.typography.fontSize.xl,
+		color: theme.colors.onSurfaceVariant,
 	},
 	coinsList: {
 		paddingBottom: theme.spacing.xl,
@@ -70,7 +71,7 @@ export const styles = StyleSheet.create({
 		alignItems: 'center',
 		padding: theme.spacing.lg,
 		borderBottomWidth: 1,
-		borderBottomColor: theme.colors.border,
+		borderBottomColor: theme.colors.outline,
 	},
 	coinInfo: {
 		flex: 1,
@@ -79,11 +80,11 @@ export const styles = StyleSheet.create({
 	coinName: {
 		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 	},
 	coinSymbol: {
 		fontSize: theme.typography.fontSize.sm,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		marginTop: theme.spacing.xs,
 	},
 	priceInfo: {
@@ -92,16 +93,17 @@ export const styles = StyleSheet.create({
 	price: {
 		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 	},
 	priceChange: {
 		fontSize: theme.typography.fontSize.sm,
-		marginTop: theme.spacing.xs,
+		fontWeight: '600',
+		letterSpacing: 0.25,
 	},
-	positiveChange: {
-		color: theme.colors.success,
+	positive: {
+		color: theme.colors.primary,
 	},
-	negativeChange: {
+	negative: {
 		color: theme.colors.error,
 	},
 	loadingContainer: {
@@ -111,7 +113,7 @@ export const styles = StyleSheet.create({
 		backgroundColor: theme.colors.background,
 	},
 	loadingText: {
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		marginTop: theme.spacing.sm,
 	},
 	centerContainer: {
@@ -131,7 +133,7 @@ export const styles = StyleSheet.create({
 		alignItems: 'center',
 	},
 	noCoinsText: {
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		fontSize: theme.typography.fontSize.base,
 	},
 	profileContainer: {
@@ -148,7 +150,7 @@ export const styles = StyleSheet.create({
 		flex: 1,
 	},
 	profileButtonText: {
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		fontWeight: 'bold',
 		fontSize: theme.typography.fontSize.base,
 	},
@@ -162,7 +164,7 @@ export const styles = StyleSheet.create({
 		zIndex: 1000,
 	},
 	notificationText: {
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		textAlign: 'center',
 		fontWeight: 'bold',
 	},

@@ -1,27 +1,35 @@
 import React from 'react';
-import { Pressable, Icon } from '@gluestack-ui/themed';
+import { StyleSheet } from 'react-native';
+import { TouchableRipple, Icon, useTheme } from 'react-native-paper';
 import { ICON_SWAP } from '../../../utils/icons';
 import { SwapButtonProps } from './swapbutton_types';
 
 const SwapButton: React.FC<SwapButtonProps> = ({ onPress }) => {
+  const theme = useTheme();
+  const styles = createStyles(theme);
   return (
-    <Pressable 
-      alignSelf="center"
-      p="$3"
-      my="$2"
-      rounded="$full"
-      bg="$backgroundDark"
+    <TouchableRipple
       onPress={onPress}
-      _hover={{ bg: '$background' }}
-      _pressed={{ bg: '$background' }}
+      style={[styles.button, { backgroundColor: theme.colors.surfaceVariant }]}
+      borderless={true}
+      rippleColor={theme.colors.surface} // Approximation for $background on press
     >
       <Icon
-        as={ICON_SWAP}
+        source={ICON_SWAP}
         size={24}
-        color="$text"
+        color={theme.colors.onSurface}
       />
-    </Pressable>
+    </TouchableRipple>
   );
 };
 
 export default SwapButton;
+
+const createStyles = (theme: any) => StyleSheet.create({
+  button: {
+    alignSelf: 'center',
+    padding: 12, // p="$3"
+    marginVertical: 8, // my="$2"
+    borderRadius: 999, // rounded="$full"
+  },
+});

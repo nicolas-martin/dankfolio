@@ -65,15 +65,15 @@ export const handleSwapCoins = (
 };
 
 export const handleTrade = async (
-	fromCoin: Coin,
-	toCoin: Coin,
-	amount: string,
-	slippage: number,
-	wallet: Wallet,
-	navigation: any,
-	setIsSubmitting: (isSubmitting: boolean) => void
+fromCoin: Coin,
+toCoin: Coin,
+amount: string,
+slippage: number,
+wallet: Wallet,
+navigation: any,
+setIsSubmitting: (isSubmitting: boolean) => void,
+showToast: (props: any) => void
 ): Promise<void> => {
-	const showToast = useToastStore.getState().showToast;
 	
 	try {
 		setIsSubmitting(true);
@@ -105,13 +105,20 @@ export const handleTrade = async (
 			amount: parseFloat(amount),
 			signed_transaction: signedTransaction
 		});
-
-		if (response.transaction_hash) {
-			showToast({ type: 'success', message: 'Trade executed successfully!' });
-			navigation.navigate('Home');
-		} else {
-			throw new Error('No transaction hash received');
-		}
+if (response.transaction_hash) {
+showToast({
+  type: 'success',
+  message: 'Trade executed successfully!',
+  txHash: response.transaction_hash
+});
+// Add delay before navigation to ensure toast is visible
+setTimeout(() => {
+  navigation.navigate('Home');
+}, 1500);
+} else {
+throw new Error('No transaction hash received');
+}
+		
 	} catch (error) {
 		console.error('❌ Trade error:', error);
 		showToast({ type: 'error', message: error.message || 'Failed to execute trade' });

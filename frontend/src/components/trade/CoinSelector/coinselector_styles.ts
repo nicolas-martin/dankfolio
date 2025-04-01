@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
 		marginBottom: theme.spacing.xl,
 	},
 	label: {
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		marginBottom: theme.spacing.sm,
 	},
 	coinSelector: {
@@ -35,35 +35,35 @@ export const styles = StyleSheet.create({
 		flex: 1,
 	},
 	coinSymbol: {
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		fontWeight: 'bold',
 		fontSize: theme.typography.fontSize.base,
 	},
 	coinName: {
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		fontSize: theme.typography.fontSize.sm,
 	},
 	balanceSection: {
 		alignItems: 'flex-end',
 	},
 	balanceText: {
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '600',
 	},
 	valueText: {
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		fontSize: theme.typography.fontSize.xs,
 		marginTop: 2,
 	},
 	placeholderText: {
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 	},
 	amountInput: {
 		backgroundColor: theme.colors.background,
 		borderRadius: theme.borderRadius.md,
 		padding: theme.spacing.lg,
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		fontSize: theme.typography.fontSize.xl,
 		textAlign: 'right',
 	},
@@ -75,7 +75,7 @@ export const styles = StyleSheet.create({
 		alignItems: 'flex-end',
 	},
 	toAmount: {
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		fontSize: theme.typography.fontSize.xl,
 	},
 });

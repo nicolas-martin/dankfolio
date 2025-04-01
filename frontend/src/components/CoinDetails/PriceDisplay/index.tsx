@@ -1,6 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
-import { Image, Text } from '@gluestack-ui/themed';
+import { View, Image, StyleSheet } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
 import { DEFAULT_TOKEN_ICON, formatValueChange } from './coindetails_scripts';
 
@@ -25,6 +25,9 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
   icon_url,
   name,
 }) => {
+  const theme = useTheme(); // Always use the hook
+  const styles = createStyles(theme);
+
   if (isNaN(periodChange)) return null;
 
   const isPositive = periodChange >= 0;
@@ -32,47 +35,36 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
   const formattedChange = formatValueChange(valueChange, periodChange);
 
   return (
-    <View style={{ padding: 16 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
         <Image
           source={{ uri: icon_url || DEFAULT_TOKEN_ICON }}
           alt={`${name || 'Token'} icon`}
-          width={32}
-          height={32}
-          rounded="$full"
+          style={styles.icon}
           resizeMode="contain"
         />
         {name && (
-          <Text
-            color="$text"
-            fontSize="$xl"
-            fontWeight="$bold"
-            ml="$2"
-          >
+          <Text variant="titleLarge" style={[styles.nameText, { color: theme.colors.onSurface }]}>
             {name}
           </Text>
         )}
       </View>
-      <Text
-        color="$text"
-        fontSize="$3xl"
-        fontWeight="$bold"
-        mb="$2"
-      >
+      <Text variant="displaySmall" style={[styles.priceText, { color: theme.colors.onSurface }]}>
         {formattedPrice}
       </Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={styles.changeRow}>
         <Text
-          color={isPositive ? '$success' : '$error'}
-          fontSize="$lg"
-          fontWeight="$semibold"
+          variant="titleMedium"
+          style={[
+            styles.changeText,
+            { color: isPositive ? theme.colors.primary : theme.colors.error } // Assuming success maps to primary
+          ]}
         >
           {formattedChange}
         </Text>
         <Text
-          color="$textSecondary"
-          fontSize="$base"
-          ml="$1"
+          variant="bodyMedium"
+          style={[styles.periodText, { color: theme.colors.onSurfaceVariant }]}
         >
           {period}
         </Text>
@@ -82,3 +74,38 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 };
 
 export default PriceDisplay;
+
+// Helper function for styles
+const createStyles = (theme: any) => StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  icon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16, // $full approximation
+  },
+  nameText: {
+    fontWeight: 'bold', // Paper variants handle weight, but explicit for clarity
+    marginLeft: 8, // $2
+  },
+  priceText: {
+    fontWeight: 'bold',
+    marginBottom: 8, // $2
+  },
+  changeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  changeText: {
+    // fontWeight: '600', // Paper variants handle weight
+  },
+  periodText: {
+    marginLeft: 4, // $1
+  },
+});

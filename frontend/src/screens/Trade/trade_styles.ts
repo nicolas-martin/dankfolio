@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { theme } from 'utils/theme';
+import { theme } from '../../utils/theme';
 
 export const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#191B1F',
+		backgroundColor: theme.colors.background,
 	},
 	keyboardAvoidingView: {
 		flex: 1,
@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
 		flex: 1,
 	},
 	tradeContainer: {
-		backgroundColor: theme.colors.cardBackGround,
+		backgroundColor: theme.colors.surface,
 		borderRadius: 20,
 		padding: 20,
 		margin: 20,
@@ -25,12 +25,12 @@ export const styles = StyleSheet.create({
 	},
 	valueText: {
 		fontSize: 14,
-		color: '#9F9FD5',
+		color: theme.colors.onSurfaceVariant,
 		textAlign: 'right',
 	},
 	priceText: {
 		fontSize: 12,
-		color: '#9F9FD5',
+		color: theme.colors.onSurfaceVariant,
 		textAlign: 'right',
 		marginTop: 2,
 	},

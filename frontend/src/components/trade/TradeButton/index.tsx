@@ -1,14 +1,14 @@
 import React from 'react';
-import { Button, ButtonText, Icon, Spinner, HStack } from '@gluestack-ui/themed';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Button, Text, Icon, useTheme } from 'react-native-paper';
 import { TradeButtonProps } from './tradebutton_types';
 import {
   ICON_CHECK,
   ICON_WARNING,
-  IconType
 } from '../../../utils/icons';
 
 const BUTTON_STATES: Record<string, {
-  icon?: IconType;
+  icon?: any;
   color: string;
   bg: string;
 }> = {
@@ -40,44 +40,59 @@ const TradeButton: React.FC<TradeButtonProps> = ({
   onPress,
   isSubmitting,
   disabled,
-  label
+  label,
 }) => {
+  const theme = useTheme();
+  const styles = createStyles(theme);
   const state = isSubmitting ? 'processing' : disabled ? 'disabled' : 'default';
-  const { icon: StateIcon, color, bg } = BUTTON_STATES[state];
+  const { icon: StateIcon, color, bg } = BUTTON_STATES[state]; // TODO: Refactor BUTTON_STATES to use theme
+  const textColor = color === '$textLight' ? theme.colors.onPrimary : theme.colors.onSurface;
+  const buttonColor = bg.startsWith('$') ? theme.colors.primary : bg;
 
   return (
     <Button
-      size="lg"
-      variant="solid"
-      bg={bg}
+      mode="contained"
       onPress={onPress}
-      isDisabled={disabled || isSubmitting}
-      rounded="$lg"
-      py="$3"
-      mt="$4"
-      _hover={{
-        opacity: 0.8
-      }}
-      _pressed={{
-        opacity: 0.7
-      }}
+      disabled={disabled || isSubmitting}
+      style={[
+        styles.button,
+        { backgroundColor: buttonColor, marginTop: 16 }, // mt="$4"
+      ]}
+      contentStyle={styles.buttonContent}
     >
-      <HStack space="sm" alignItems="center">
+      <View style={styles.buttonInner}>
         {isSubmitting ? (
-          <Spinner size="small" color="$textLight" />
+          <ActivityIndicator size="small" color={textColor} />
         ) : StateIcon ? (
-          <Icon as={StateIcon} size={20} color={color} />
+          <Icon source={StateIcon} size={20} color={textColor} />
         ) : null}
-        <ButtonText
-          color={color}
-          fontWeight="$bold"
-          fontSize="$lg"
-        >
+        <Text style={[styles.buttonText, { color: textColor }]}>
           {label}
-        </ButtonText>
-      </HStack>
-    </Button>
+        </Text>
+    </View>
+  </Button>
   );
 };
 
 export default TradeButton;
+
+const createStyles = (theme: any) => StyleSheet.create({
+  button: {
+    borderRadius: 16, // rounded="$lg"
+    paddingVertical: 12, // py="$3"
+  },
+  buttonContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8, // space="sm"
+  },
+  buttonText: {
+    fontWeight: 'bold', // fontWeight="$bold"
+    fontSize: 18, // fontSize="$lg"
+  },
+});

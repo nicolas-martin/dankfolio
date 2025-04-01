@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
 	},
 	header: {
 		padding: theme.spacing.lg,
-		backgroundColor: '#191B1F',
+		backgroundColor: theme.colors.surface,
 		borderRadius: theme.borderRadius.lg,
 		margin: theme.spacing.lg,
 	},
@@ -87,15 +87,15 @@ export const styles = StyleSheet.create({
 		backgroundColor: theme.colors.primary,
 	},
 	timeframeLabel: {
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '600',
 	},
 	timeframeLabelActive: {
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 	},
 	balanceSection: {
-		backgroundColor: theme.colors.containerBackground,
+		backgroundColor: theme.colors.surface,
 		borderRadius: theme.borderRadius.lg,
 		padding: theme.spacing.lg,
 		margin: theme.spacing.xl,
@@ -103,7 +103,7 @@ export const styles = StyleSheet.create({
 	balanceTitle: {
 		fontSize: theme.typography.fontSize['2xl'],
 		fontWeight: 'bold',
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		marginBottom: theme.spacing.lg,
 	},
 	balanceDetails: {
@@ -116,18 +116,18 @@ export const styles = StyleSheet.create({
 	},
 	balanceLabel: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 	},
 	balanceValue: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		fontWeight: 'bold',
 	},
 	metadataLoader: {
 		marginVertical: theme.spacing.xl,
 	},
 	statsContainer: {
-		backgroundColor: theme.colors.containerBackground,
+		backgroundColor: theme.colors.surface,
 		borderRadius: theme.borderRadius.lg,
 		padding: theme.spacing.lg,
 		margin: theme.spacing.xl,
@@ -135,7 +135,7 @@ export const styles = StyleSheet.create({
 	sectionTitle: {
 		fontSize: theme.typography.fontSize.xl,
 		fontWeight: 'bold',
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		marginBottom: theme.spacing.lg,
 	},
 	statItem: {
@@ -143,12 +143,12 @@ export const styles = StyleSheet.create({
 	},
 	statLabel: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		marginBottom: theme.spacing.xs,
 	},
 	statValue: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 	},
 	bottomButtonContainer: {
 		position: 'absolute',
@@ -158,7 +158,7 @@ export const styles = StyleSheet.create({
 		padding: theme.spacing.lg,
 		backgroundColor: theme.colors.background,
 		borderTopWidth: 1,
-		borderTopColor: theme.colors.border,
+		borderTopColor: theme.colors.outline,
 	},
 	bottomBuyButton: {
 		backgroundColor: theme.colors.primary,
@@ -168,7 +168,7 @@ export const styles = StyleSheet.create({
 		...theme.shadows.md,
 	},
 	bottomBuyButtonText: {
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		fontWeight: 'bold',
 		fontSize: theme.typography.fontSize.lg,
 	},

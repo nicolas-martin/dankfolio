@@ -1,146 +1,172 @@
-import React from 'react';
-import {
-  useToast as useGlueToast,
-  Toast as GlueToast,
-  ToastTitle,
-  ToastDescription,
-  Button,
-  ButtonText,
-  HStack,
-  VStack,
-  Icon,
-  Box,
-} from '@gluestack-ui/themed';
+import React, { useCallback, useState, useEffect } from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
+import { Text, Button, Icon, useTheme, Portal } from 'react-native-paper';
 import { ToastProps, ToastType } from './toast_types';
 import { useToastStore } from '../../../store/toast';
 import {
   ICON_CHECK,
   ICON_WARNING,
   ICON_LINK,
-  IconType
 } from '../../../utils/icons';
 
-const TOAST_ICONS: Record<ToastType, IconType> = {
+const TOAST_ICONS = {
   success: ICON_CHECK,
   error: ICON_WARNING,
   info: ICON_LINK,
   warning: ICON_WARNING,
 };
 
-const TOAST_COLORS: Record<ToastType, string> = {
-  success: '$success',
-  error: '$error',
-  info: '$primary',
-  warning: '$warning',
-};
-
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <>{children}</>;
+const getToastColor = (type: ToastType, theme: any) => {
+  switch (type) {
+    case 'success':
+      return theme.colors.primary; // Assuming primary is a good success color
+    case 'error':
+      return theme.colors.error;
+    case 'info':
+      return theme.colors.secondary; // Assuming secondary is a good info color
+    case 'warning':
+      return theme.colors.warning;
+    default:
+      return theme.colors.primary;
+  }
 };
 
 export const useToast = () => {
-  const toast = useGlueToast();
   const showGlueToast = useToastStore((state) => state.showToast);
   const hideGlueToast = useToastStore((state) => state.hideToast);
+  const theme = useTheme();
+  const styles = createStyles(theme);
 
-  const createTransactionAction = (txHash: string) => ({
+  const [visible, setVisible] = useState(false);
+  const [toastProps, setToastProps] = useState<ToastProps | null>(null);
+
+  const onDismiss = useCallback(() => {
+    setVisible(false);
+  }, []);
+
+  const createTransactionAction = useCallback((txHash: string) => ({
     label: 'View Transaction',
-    onPress: () => window.open(`https://solscan.io/tx/${txHash}`, '_blank'),
+    onPress: () => {
+      if (Platform.OS === 'web') {
+        window.open(`https://solscan.io/tx/${txHash}`, '_blank');
+      } else {
+        // Handle opening URL in mobile app (e.g., using Linking)
+        console.log(`Opening transaction in mobile app: https://solscan.io/tx/${txHash}`);
+      }
+    },
     style: 'secondary'
-  });
+  }), []);
 
-  const showToast = (props: ToastProps) => {
-    const { message, type = 'info', actions = [], icon, txHash } = props;
-    
+  const showToast = useCallback((props: ToastProps) => {
+    setToastProps(props);
+    setVisible(true);
+    showGlueToast(props); // Still call the glue toast for now
+  }, [createTransactionAction, showGlueToast, theme]);
+
+  useEffect(() => {
+    if (toastProps) {
+      // Timeout to auto dismiss after 3 seconds
+      const timeoutId = setTimeout(() => {
+        setVisible(false);
+      }, 3000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [toastProps, setVisible]);
+
+  const ToastContent = () => {
+    if (!toastProps) return null;
+
+    const { message, type = 'info', actions = [], icon, txHash } = toastProps;
     const allActions = [
       ...actions,
       ...(txHash ? [createTransactionAction(txHash)] : [])
     ];
+    const toastColor = getToastColor(type, theme);
 
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <GlueToast 
-          action="attention"
-          variant="accent"
-          borderColor={TOAST_COLORS[type]}
-          borderWidth="$1"
-          bg="$backgroundDark"
-        >
-          <HStack space="sm" alignItems="flex-start">
-            <Box 
-              mr="$2"
-              p="$2"
-              rounded="$full"
-              bg={TOAST_COLORS[type]}
-              opacity={0.2}
-            >
-              <Icon
-                as={icon ? icon : TOAST_ICONS[type]}
-                size={20}
-                color={TOAST_COLORS[type]}
-              />
-            </Box>
-            
-            <VStack flex={1}>
-              <ToastTitle color="$text">
+    return (
+      <Portal>
+        <View style={[styles.toastContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
+          <View style={styles.toastContent}>
+            <View style={[styles.iconContainer, { backgroundColor: toastColor, opacity: 0.2 }]}>
+              <Icon source={icon || TOAST_ICONS[type]} size={20} color={toastColor} />
+            </View>
+            <View style={styles.textContainer}>
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
                 {type.charAt(0).toUpperCase() + type.slice(1)}
-              </ToastTitle>
-              <ToastDescription color="$textSecondary">
+              </Text>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                 {message}
-              </ToastDescription>
-              
-              {allActions.length > 0 && (
-                <HStack space="sm" mt="$2">
-                  {allActions.map((action, index) => (
-                    <Button
-                      key={index}
-                      variant={action.style === 'primary' ? 'solid' : 'outline'}
-                      size="sm"
-                      borderColor={TOAST_COLORS[type]}
-                      bg={action.style === 'primary' ? TOAST_COLORS[type] : 'transparent'}
-                      onPress={() => {
-                        action.onPress();
-                        toast.close(id);
-                      }}
-                    >
-                      <ButtonText 
-                        color={action.style === 'primary' ? '$textLight' : TOAST_COLORS[type]}
-                        fontSize="$sm"
-                      >
-                        {action.label}
-                      </ButtonText>
-                    </Button>
-                  ))}
-                </HStack>
-              )}
-            </VStack>
-
-            <Button
-              variant="link"
-              onPress={() => toast.close(id)}
-              p="$2"
-              ml="$2"
-              _hover={{
-                opacity: 0.8
-              }}
-            >
-              <Icon 
-                as={ICON_WARNING}  // Using warning icon for close
-                size={16}
-                color="$textSecondary"
-              />
-            </Button>
-          </HStack>
-        </GlueToast>
-      ),
-      duration: 5000,
-    });
-    
-    showGlueToast(props);
+              </Text>
+            </View>
+          </View>
+          {allActions.length > 0 && (
+            <View style={styles.actionsContainer}>
+              {allActions.map((action, index) => (
+                <Button
+                  key={index}
+                  mode="outlined"
+                  style={[styles.actionButton, { borderColor: toastColor }]}
+                  labelStyle={{ color: toastColor, fontSize: 14 }}
+                  onPress={action.onPress}
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </View>
+          )}
+        </View>
+      </Portal>
+    );
   };
 
-  return { showToast, hideToast: hideGlueToast };
+  return { showToast, hideToast: hideGlueToast, ToastContent, visible, onDismiss };
 };
 
-export default GlueToast;
+const createStyles = (theme: any) => StyleSheet.create({
+  toastContainer: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  toastContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  actionsContainer: {
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  actionButton: {
+    marginLeft: 8,
+  },
+});
+
+export default () => {
+  const { ToastContent, visible, onDismiss } = useToast();
+
+  return (
+    <>{visible ? <ToastContent /> : null}</>
+  );
+};

@@ -5,12 +5,10 @@ import {
   ScrollView,
   TextInput,
   View,
+  StyleSheet,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
-import {
-  Box,
-  Text,
-} from '@gluestack-ui/themed';
+import { Text, useTheme } from 'react-native-paper';
 
 import CoinSelector from '../../components/Trade/CoinSelector';
 import SwapButton from '../../components/Trade/SwapButton';
@@ -31,7 +29,6 @@ import {
   handleSwapCoins,
   handleTrade
 } from './trade_scripts';
-import { styles } from './trade_styles';
 
 const Trade: React.FC = () => {
   const navigation = useNavigation();
@@ -39,6 +36,8 @@ const Trade: React.FC = () => {
   const { initialFromCoin, initialToCoin } = route.params || {};
   const { wallet } = usePortfolioStore();
   const showToast = useToastStore((state) => state.showToast);
+  const theme = useTheme();
+  const styles = createStyles(theme);
 
   const amountInputRef = useRef<TextInput>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -58,9 +57,9 @@ const Trade: React.FC = () => {
 
   if (!wallet) {
     return (
-      <Box flex={1} bg="$background" justifyContent="center" alignItems="center">
-        <Text color="$text" fontSize="$lg">No wallet connected. Please connect a wallet to trade.</Text>
-      </Box>
+      <View style={[styles.noWalletContainer, { backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.colors.onSurface, fontSize: 18 }}>No wallet connected. Please connect a wallet to trade.</Text>
+      </View>
     );
   }
 
@@ -108,9 +107,10 @@ const Trade: React.FC = () => {
       0.5, // 0.5% slippage
       wallet,
       navigation,
-      setIsSubmitting
+      setIsSubmitting,
+      showToast
     );
-  }, [fromCoin, toCoin, fromAmount, navigation, wallet]);
+  }, [fromCoin, toCoin, fromAmount, navigation, wallet, showToast]);
 
   const getTradeButtonLabel = (): string => {
     if (isSubmitting) return 'Processing...';
@@ -121,13 +121,13 @@ const Trade: React.FC = () => {
   };
 
   return (
-    <Box flex={1} bg="$background">
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
       >
         <ScrollView style={styles.scrollView}>
-          <Box p="$4">
+          <View style={styles.padding}>
             {/* From Coin Selector */}
             <CoinSelector
               label="From"
@@ -146,14 +146,14 @@ const Trade: React.FC = () => {
 
             {/* Value Info */}
             {fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
-              <Box my="$2">
-                <Text color="$text" fontSize="$lg">
+              <View style={styles.valueInfoContainer}>
+                <Text style={{ color: theme.colors.onSurface, fontSize: 18 }}>
                   ≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
                 </Text>
-                <Text color="$textSecondary" fontSize="$base">
+                <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 16 }}>
                   1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toFixed(2) : '0.00'}
                 </Text>
-              </Box>
+              </View>
             )}
 
             {/* Swap Button */}
@@ -188,11 +188,34 @@ const Trade: React.FC = () => {
               disabled={!fromCoin || !toCoin || !fromAmount || !toAmount || isSubmitting}
               label={getTradeButtonLabel()}
             />
-          </Box>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </Box>
+    </View>
   );
 };
+
+const createStyles = (theme: any) => StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  noWalletContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  padding: {
+    padding: 16,
+  },
+  valueInfoContainer: {
+    marginVertical: 8,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+});
 
 export default Trade;

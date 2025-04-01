@@ -4,7 +4,7 @@ import { theme } from '../../../utils/theme';
 export const styles = StyleSheet.create({
 	container: {
 		padding: theme.spacing.lg,
-		backgroundColor: theme.colors.topBar,
+		backgroundColor: theme.colors.surface,
 		borderRadius: theme.borderRadius.lg,
 		marginTop: theme.spacing.lg,
 	},
@@ -14,12 +14,12 @@ export const styles = StyleSheet.create({
 	title: {
 		fontSize: theme.typography.fontSize['2xl'],
 		fontWeight: 'bold',
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		marginBottom: theme.spacing.lg,
 	},
 	description: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		lineHeight: 24,
 	},
 	detailRow: {
@@ -30,11 +30,11 @@ export const styles = StyleSheet.create({
 	},
 	detailLabel: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 	},
 	detailValue: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		fontWeight: '500',
 	},
 	tagsContainer: {
@@ -53,7 +53,7 @@ export const styles = StyleSheet.create({
 		borderRadius: theme.borderRadius.full,
 	},
 	tagText: {
-		color: '#2A2A3F',
+		color: theme.colors.onSecondary,
 		fontSize: theme.typography.fontSize.sm,
 	},
 	linkRow: {
@@ -74,10 +74,10 @@ export const styles = StyleSheet.create({
 	},
 	linkText: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 	},
 	linkValue: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 	},
 });

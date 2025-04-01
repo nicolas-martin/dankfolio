@@ -1,31 +1,26 @@
 import React from 'react';
-import { Box } from '@gluestack-ui/themed';
+import { StyleSheet } from 'react-native';
+import { useTheme, Appbar } from 'react-native-paper';
 import BackButton from '../components/Common/BackButton';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 
 const CustomHeader: React.FC = () => {
   const route = useRoute();
+  const navigation = useNavigation();
+  const theme = useTheme();
   // Don't show back button on home screen
   const showBackButton = route.name !== 'Home';
 
   return (
-    <Box
-      height={48}
-      flexDirection="row"
-      alignItems="center"
-      px="$4"
-      bg="$background"
-      borderBottomWidth={1}
-      borderBottomColor="$borderLight"
-      shadowColor="$backgroundDark"
-      shadowOffset={{ width: 0, height: 2 }}
-      shadowOpacity={0.1}
-      shadowRadius={3}
-      elevation={3}
-    >
-      {showBackButton && <BackButton />}
-    </Box>
+    <Appbar.Header style={{ backgroundColor: theme.colors.background }}>
+      {showBackButton && <Appbar.BackAction onPress={() => navigation.goBack()} />}
+    </Appbar.Header>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+  },
+});
 
 export default CustomHeader;

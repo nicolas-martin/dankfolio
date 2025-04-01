@@ -21,17 +21,17 @@ export const styles = StyleSheet.create({
 		height: 40,
 		borderRadius: 20,
 		marginRight: theme.spacing.sm,
-		backgroundColor: theme.colors.topBar,
+		backgroundColor: theme.colors.surface,
 	},
 	name: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		fontWeight: '500',
 	},
 	price: {
 		fontSize: theme.typography.fontSize['3xl'],
 		fontWeight: 'bold',
-		color: theme.colors.text,
+		color: theme.colors.onSurface,
 		marginBottom: theme.spacing.xs,
 	},
 	change: {
@@ -40,11 +40,11 @@ export const styles = StyleSheet.create({
 	},
 	period: {
 		fontSize: theme.typography.fontSize.base,
-		color: theme.colors.textSecondary,
+		color: theme.colors.onSurfaceVariant,
 		fontWeight: '500',
 	},
 	positiveChange: {
-		color: theme.colors.success,
+		color: theme.colors.primary,
 		backgroundColor: 'rgba(0, 200, 5, 0.1)',
 		paddingHorizontal: theme.spacing.sm,
 		paddingVertical: theme.spacing.xs,
