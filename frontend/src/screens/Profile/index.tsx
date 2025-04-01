@@ -9,6 +9,7 @@ import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress }
 import { styles } from './profile_styles';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/coindetail_types';
 import { usePortfolioStore } from '../../store/portfolio';
+import WalletDonut from '../../components/WalletDonut';
 
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -27,7 +28,7 @@ const Profile = () => {
 	}
 
 	const TokenCard = ({ token, balance, onPress }: {
-		token: Coin | TokenInfo,
+		token: TokenInfo,
 		balance: number,
 		onPress: () => void
 	}) => (
@@ -113,6 +114,15 @@ const Profile = () => {
 							<Text style={styles.breakdownUsd}>${calculateTotalValue(walletBalance, solCoin).tokenValue.toFixed(2)}</Text>
 						</View>
 					</View>
+				</View>
+
+				{/* Portfolio Distribution */}
+				<View style={styles.portfolioCard}>
+					<Text style={styles.sectionTitle}>Portfolio Distribution</Text>
+					<WalletDonut 
+						tokens={walletBalance.tokens}
+						totalBalance={calculateTotalValue(walletBalance, solCoin).totalValue}
+					/>
 				</View>
 
 				{/* Token List */}
