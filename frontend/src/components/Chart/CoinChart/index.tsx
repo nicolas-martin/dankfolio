@@ -2,27 +2,21 @@ import React from "react";
 import {
   CartesianChart,
   useAreaPath,
-  useChartPressState,
   useLinePath,
+  useChartPressState,
 } from "victory-native";
 import {
-  Circle,
   Group,
-  Line as SkiaLine,
   LinearGradient,
   Path,
-  Skia,
-  Text as SkiaText,
-  useFont,
   vec,
 } from "@shopify/react-native-skia";
 import { View } from "react-native";
 import { format } from "date-fns";
 import {
-  SharedValue,
   useDerivedValue,
+  runOnJS,
 } from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
 
 interface CoinChartProps {
   data: { x: Date; y: number }[];
@@ -38,49 +32,84 @@ export default function CoinChart({
   loading,
   onHover,
 }: CoinChartProps) {
-  const { state: chartPress, isActive: isPressActive } = 
+  console.log("[CoinChart] Initializing with data length:", data.length);
+
+  const { state: chartPress, isActive: isPressActive } =
     useChartPressState(initChartPressState);
 
-  // Memoize the hover handler
-  const handleHover = React.useCallback(() => {
-    if (!onHover) return;
-    
-    if (isPressActive && chartPress.x.value && chartPress.y.y) {
-      const timestamp = chartPress.x.value.value;
-      const value = chartPress.y.y.value;
-      
-      if (timestamp && value) {
-        onHover({
-          x: new Date(timestamp),
-          y: Number(value),
-        });
-      }
-    } else {
-      onHover(null);
-    }
-  }, [isPressActive, chartPress, onHover]);
-
-  // Only run haptic feedback on press state change
+  // Debug log press state changes
   React.useEffect(() => {
-    if (isPressActive) {
-      Haptics.selectionAsync().catch(() => null);
-    }
+    console.log("[CoinChart] Press state:", { isPressActive });
   }, [isPressActive]);
 
-  // Handle hover updates separately
-  React.useEffect(() => {
-    handleHover();
-  }, [isPressActive, handleHover]);
+  // Memoize the hover callback
+  const memoizedOnHover = React.useCallback((point: { x: Date; y: number } | null) => {
+    if (point) {
+      console.log("[CoinChart] Hover update:", 
+        { timestamp: point.x.toISOString(), value: point.y });
+    }
+    onHover?.(point);
+  }, [onHover]);
+
+  // Track chart press state
+  const pressValue = useDerivedValue(() => {
+    'worklet';
+
+    if (!isPressActive || !chartPress.x.value || !chartPress.y.y) {
+      console.log("[CoinChart] Missing required values:", {
+        isPressActive,
+        hasXValue: !!chartPress.x.value,
+        hasYValue: !!chartPress.y.y
+      });
+      return null;
+    }
+
+    const xVal = chartPress.x.value.value;
+    const yVal = chartPress.y.y.value;
+
+    console.log("[CoinChart] Raw values:", { xVal, yVal });
+
+    if (typeof xVal !== 'number' || typeof yVal !== 'number') {
+      return null;
+    }
+
+    return {
+      timestamp: xVal,
+      value: yVal,
+    };
+  }, [isPressActive, chartPress]);
+
+  // Handle hover updates
+  useDerivedValue(() => {
+    'worklet';
+    
+    const currentValue = pressValue.value;
+    
+    console.log("[CoinChart] Derived pressValue:", currentValue);
+    
+    if (!currentValue) {
+      runOnJS(memoizedOnHover)(null);
+      return;
+    }
+
+    runOnJS(memoizedOnHover)({
+      x: new Date(currentValue.timestamp),
+      y: currentValue.value
+    });
+  }, [pressValue]);
 
   if (loading || !data.length) {
     return null;
   }
 
-  // Transform data for victory-native
-  const chartData = data.map(point => ({
-    x: point.x.getTime(),
-    y: point.y
-  }));
+  const chartData = data.map(point => {
+    const transformed = {
+      x: point.x.getTime(),
+      y: point.y
+    };
+    console.log("[CoinChart] Transforming data point:", transformed);
+    return transformed;
+  });
 
   return (
     <View style={{ height: 200 }}>
@@ -100,24 +129,14 @@ export default function CoinChart({
           lineColor: "rgba(255, 255, 255, 0.1)",
           labelColor: "rgba(255, 255, 255, 0.5)",
         }}
-        renderOutside={({ chartBounds }) => (
-          <>
-            {isPressActive && (
-              <PriceIndicator
-                xPosition={chartPress.x.position}
-                yPosition={chartPress.y.y.position}
-                bottom={chartBounds.bottom}
-                top={chartBounds.top}
-                activeValue={chartPress.y.y.value}
-              />
-            )}
-          </>
-        )}
       >
         {({ chartBounds, points }) => (
           <PriceArea
             points={points.y}
-            {...chartBounds}
+            left={chartBounds.left}
+            right={chartBounds.right}
+            top={chartBounds.top}
+            bottom={chartBounds.bottom}
           />
         )}
       </CartesianChart>
@@ -157,50 +176,5 @@ const PriceArea = ({
         color="#4ECDC4"
       />
     </Group>
-  );
-};
-
-const PriceIndicator = ({
-  xPosition,
-  yPosition,
-  bottom,
-  top,
-  activeValue,
-}: {
-  xPosition: SharedValue<number>;
-  yPosition: SharedValue<number>;
-  bottom: number;
-  top: number;
-  activeValue: SharedValue<number>;
-}) => {
-  const FONT_SIZE = 16;
-  const start = useDerivedValue(() => vec(xPosition.value, bottom));
-  const end = useDerivedValue(() => vec(xPosition.value, top));
-  
-  const displayValue = useDerivedValue(() => 
-    `$${Number(activeValue.value).toFixed(2)}`
-  );
-
-  return (
-    <>
-      <SkiaLine
-        p1={start}
-        p2={end}
-        color="rgba(255, 255, 255, 0.2)"
-        strokeWidth={1}
-      />
-      <Circle
-        cx={xPosition}
-        cy={yPosition}
-        r={6}
-        color="#4ECDC4"
-      />
-      <Circle
-        cx={xPosition}
-        cy={yPosition}
-        r={4}
-        color="rgba(255, 255, 255, 0.25)"
-      />
-    </>
   );
 };
