@@ -13,6 +13,7 @@ import {
 } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
 import { usePortfolioStore } from '../../store/portfolio';
+import { useToastStore } from '../../store/toast';
 
 const Notification: React.FC<NotificationProps> = ({ visible, type, message, onDismiss }) => {
 	if (!visible) return null;
@@ -46,6 +47,21 @@ const HomeScreen = () => {
 
 	// Portfolio store
 	const { wallet, walletBalance, isLoading, setWallet, fetchWalletBalance } = usePortfolioStore();
+	const showToast = useToastStore((state) => state.showToast);
+
+	// Test toast on mount
+	useEffect(() => {
+		showToast({
+			type: 'success',
+			message: '🎉 Welcome to Dankfolio! This is a test toast.',
+			actions: [
+				{
+					label: 'Cool!',
+					onPress: () => console.log('Toast action clicked')
+				}
+			]
+		});
+	}, []);
 
 	const showNotification = useCallback((type: NotificationProps['type'], message: string): void => {
 		setNotification({ visible: true, type, message });
@@ -55,11 +71,17 @@ const HomeScreen = () => {
 	const handleImportWalletCallback = useCallback(async (privateKey: string) => {
 		try {
 			await handleImportWallet(privateKey, setWallet, fetchWalletBalance);
-			showNotification('success', 'Wallet imported successfully');
+			showToast({
+				type: 'success',
+				message: 'Wallet imported successfully'
+			});
 		} catch (error) {
-			showNotification('error', 'Failed to import wallet');
+			showToast({
+				type: 'error',
+				message: 'Failed to import wallet'
+			});
 		}
-	}, [fetchWalletBalance, setWallet, showNotification]);
+	}, [fetchWalletBalance, setWallet, showToast]);
 
 	const handleCoinPressCallback = useCallback((coin: Coin) => {
 		handleCoinPress(coin, solCoin, walletBalance, navigation.navigate);
@@ -68,22 +90,25 @@ const HomeScreen = () => {
 	const onRefresh = useCallback(async () => {
 		try {
 			setLoading(true);
-			await fetchAvailableCoins(setLoading, setSolCoin, setCoins, showNotification);
+			await fetchAvailableCoins(setLoading, setSolCoin, setCoins);
 			if (wallet?.address) {
 				await fetchWalletBalance(wallet.address);
 			}
 		} catch (error) {
 			console.error('Error refreshing data:', error);
-			showNotification('error', 'Failed to refresh data');
+			showToast({
+				type: 'error',
+				message: 'Failed to refresh data'
+			});
 		} finally {
 			setLoading(false);
 		}
-	}, [wallet, fetchWalletBalance, showNotification]);
+	}, [wallet, fetchWalletBalance, showToast]);
 
 	const initializeData = useCallback(async (): Promise<void> => {
 		try {
 			setLoading(true);
-			await fetchAvailableCoins(setLoading, setSolCoin, setCoins, showNotification);
+			await fetchAvailableCoins(setLoading, setSolCoin, setCoins);
 
 			if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
 				console.log('🧪 Development mode detected, auto-importing test wallet');
@@ -91,11 +116,14 @@ const HomeScreen = () => {
 			}
 		} catch (err) {
 			console.error('Error initializing data:', err);
-			showNotification('error', 'Failed to load initial data');
+			showToast({
+				type: 'error',
+				message: 'Failed to load initial data'
+			});
 		} finally {
 			setLoading(false);
 		}
-	}, [handleImportWalletCallback, showNotification]);
+	}, [handleImportWalletCallback, showToast]);
 
 	useEffect(() => {
 		initializeData();
@@ -140,12 +168,18 @@ const HomeScreen = () => {
 							style={styles.profileButton}
 							onPress={() => {
 								if (!wallet?.address) {
-									showNotification('error', 'No wallet connected');
+									showToast({
+										type: 'error',
+										message: 'No wallet connected'
+									});
 									return;
 								}
 
 								if (!walletBalance) {
-									showNotification('error', 'Wallet balance not loaded');
+									showToast({
+										type: 'error',
+										message: 'Wallet balance not loaded'
+									});
 									return;
 								}
 

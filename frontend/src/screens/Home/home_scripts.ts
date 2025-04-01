@@ -31,8 +31,7 @@ export interface NotificationState {
 export const fetchAvailableCoins = async (
 	setLoading: (loading: boolean) => void,
 	setSolCoin: (coin: Coin | null) => void,
-	setCoins: (coins: Coin[]) => void,
-	showNotification: (type: NotificationProps['type'], message: string) => void
+	setCoins: (coins: Coin[]) => void
 ): Promise<void> => {
 	try {
 		setLoading(true);
@@ -57,7 +56,7 @@ export const fetchAvailableCoins = async (
 		}
 	} catch (err) {
 		console.error('❌ Error fetching coins:', err);
-		showNotification('error', 'Failed to fetch available coins');
+		throw err; // Let the caller handle the error with toast
 	} finally {
 		setLoading(false);
 	}

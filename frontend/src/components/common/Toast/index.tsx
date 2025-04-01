@@ -1,8 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React from 'react';
 import { Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../../../utils/theme';
-import { ToastProps, ToastContextProps } from './toast_types';
+import { ToastProps } from './toast_types';
 import * as S from './toast_styles';
 import {
 	TOAST_ICONS,
@@ -10,34 +8,23 @@ import {
 	getToastActions,
 	animateToast
 } from './toast_scripts';
-
-const ToastContext = createContext<ToastContextProps | undefined>(undefined);
+import { useToastStore } from '../../../store/toast';
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-	const [toast, setToast] = useState<ToastProps | null>(null);
-
-	const showToast = useCallback((props: ToastProps) => {
-		setToast(props);
-	}, []);
-
-	const hideToast = useCallback(() => {
-		setToast(null);
-	}, []);
-
+	const toast = useToastStore((state) => state.toast);
+	
 	return (
-		<ToastContext.Provider value={{ showToast, hideToast }}>
+		<>
 			{children}
 			{toast && <Toast {...toast} />}
-		</ToastContext.Provider>
+		</>
 	);
 };
 
 export const useToast = () => {
-	const context = useContext(ToastContext);
-	if (!context) {
-		throw new Error('useToast must be used within a ToastProvider');
-	}
-	return context;
+	const showToast = useToastStore((state) => state.showToast);
+	const hideToast = useToastStore((state) => state.hideToast);
+	return { showToast, hideToast };
 };
 
 const Toast: React.FC<ToastProps> = ({
@@ -47,9 +34,9 @@ const Toast: React.FC<ToastProps> = ({
 	icon,
 	txHash
 }) => {
-	const { hideToast } = useToast();
+	const hideToast = useToastStore((state) => state.hideToast);
 	const opacity = React.useRef(new Animated.Value(0)).current;
-	const translateY = React.useRef(new Animated.Value(-100)).current;
+	const translateY = React.useRef(new Animated.Value(S.INITIAL_POSITION)).current;
 
 	React.useEffect(() => {
 		const timer = animateToast(opacity, translateY, hideToast);
@@ -59,16 +46,10 @@ const Toast: React.FC<ToastProps> = ({
 	const allActions = getToastActions(actions, txHash);
 
 	return (
-		<S.ToastContainer style={{ opacity, transform: [{ translateY }] }}>
-			<LinearGradient
+		<S.ToastContainer style={S.getAnimatedStyle(opacity, translateY)}>
+			<S.GradientBackground
 				colors={getGradientColors(type)}
-				start={{ x: 0, y: 0 }}
-				end={{ x: 1, y: 1 }}
-				style={{
-					borderRadius: theme.borderRadius.md,
-					padding: theme.spacing.lg,
-					...theme.shadows.md,
-				}}
+				{...S.GRADIENT_PROPS}
 			>
 				<S.ToastContent>
 					<S.MessageContainer>
@@ -104,7 +85,7 @@ const Toast: React.FC<ToastProps> = ({
 						</S.ActionsContainer>
 					)}
 				</S.ToastContent>
-			</LinearGradient>
+			</S.GradientBackground>
 		</S.ToastContainer>
 	);
 };

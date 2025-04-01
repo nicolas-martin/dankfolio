@@ -2,6 +2,7 @@ import { Animated } from 'react-native';
 import { theme } from '../../../utils/theme';
 import { openSolscanUrl } from '../../../utils/url';
 import { ToastType, ToastAction } from './toast_types';
+import { INITIAL_POSITION, FINAL_POSITION } from './toast_styles';
 
 export const ANIMATION_DURATION = 300;
 export const TOAST_DISPLAY_DURATION = 5000;
@@ -16,13 +17,13 @@ export const TOAST_ICONS: Record<ToastType, string> = {
 export const getGradientColors = (type: ToastType) => {
 	switch (type) {
 		case 'success':
-			return [theme.colors.success + '15', theme.colors.success + '05'] as const;
+			return ['#1B1F2E', '#1B1F2E'] as const;
 		case 'error':
-			return [theme.colors.error + '15', theme.colors.error + '05'] as const;
+			return ['#1B1F2E', '#1B1F2E'] as const;
 		case 'warning':
-			return [theme.colors.warning + '15', theme.colors.warning + '05'] as const;
+			return ['#1B1F2E', '#1B1F2E'] as const;
 		default:
-			return [theme.colors.primary + '15', theme.colors.primary + '05'] as const;
+			return ['#1B1F2E', '#1B1F2E'] as const;
 	}
 };
 
@@ -51,7 +52,7 @@ export const animateToast = (
 			useNativeDriver: true,
 		}),
 		Animated.timing(translateY, {
-			toValue: 0,
+			toValue: FINAL_POSITION,
 			duration: ANIMATION_DURATION,
 			useNativeDriver: true,
 		})
@@ -66,7 +67,7 @@ export const animateToast = (
 				useNativeDriver: true,
 			}),
 			Animated.timing(translateY, {
-				toValue: -100,
+				toValue: INITIAL_POSITION,
 				duration: ANIMATION_DURATION,
 				useNativeDriver: true,
 			})

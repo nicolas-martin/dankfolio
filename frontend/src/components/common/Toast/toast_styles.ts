@@ -1,5 +1,6 @@
 import styled from '@emotion/native';
 import { Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../utils/theme';
 import { ToastProps } from './toast_types';
 
@@ -10,6 +11,32 @@ export const ToastContainer = styled(Animated.View)`
   right: 20px;
   z-index: 9999;
 `;
+
+export const GradientBackground = styled(LinearGradient)`
+  border-radius: ${theme.borderRadius.md}px;
+  padding: ${theme.spacing.lg}px;
+  shadow-color: ${theme.shadows.md.shadowColor};
+  shadow-offset: 0px ${theme.shadows.md.shadowOffset.height}px;
+  shadow-opacity: ${theme.shadows.md.shadowOpacity};
+  shadow-radius: ${theme.shadows.md.shadowRadius}px;
+  elevation: ${theme.shadows.md.elevation};
+`;
+
+// Default gradient props
+export const GRADIENT_PROPS = {
+  start: { x: 0, y: 0 },
+  end: { x: 1, y: 1 }
+} as const;
+
+// Animation values for reuse
+export const INITIAL_POSITION = -100;
+export const FINAL_POSITION = 0;
+
+// Animation configuration
+export const getAnimatedStyle = (opacity: Animated.Value, translateY: Animated.Value) => ({
+  opacity,
+  transform: [{ translateY }]
+});
 
 export const ToastContent = styled.View`
   gap: ${theme.spacing.md}px;
@@ -72,12 +99,12 @@ export const TextContainer = styled.View`
 export const Title = styled.Text`
   font-size: ${theme.typography.fontSize.base}px;
   font-family: ${theme.typography.fontFamily.semiBold};
-  color: ${theme.colors.text};
+  color: #FFFFFF;
   margin-bottom: 2px;
 `;
 
 export const Message = styled.Text`
-  color: ${theme.colors.textSecondary};
+  color: rgba(255, 255, 255, 0.8);
   font-size: ${theme.typography.fontSize.sm}px;
   font-family: ${theme.typography.fontFamily.regular};
   line-height: 20px;
@@ -90,7 +117,7 @@ export const CloseButton = styled.TouchableOpacity`
 `;
 
 export const CloseButtonText = styled.Text`
-  color: ${theme.colors.textSecondary};
+  color: rgba(255, 255, 255, 0.6);
   font-size: ${theme.typography.fontSize.lg}px;
   opacity: 0.8;
 `;

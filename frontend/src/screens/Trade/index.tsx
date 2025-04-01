@@ -7,10 +7,10 @@ import CoinSelector from '../../components/Trade/CoinSelector';
 import SwapButton from '../../components/Trade/SwapButton';
 import TradeDetails from '../../components/Trade/TradeDetails';
 import TradeButton from '../../components/Trade/TradeButton';
-import { useToast } from '../../components/Common/Toast';
 import { styles } from './trade_styles';
 import { TradeScreenParams } from './trade_types';
 import { usePortfolioStore } from '../../store/portfolio';
+import { useToastStore } from '../../store/toast';
 import {
 	DEFAULT_AMOUNT,
 	QUOTE_DEBOUNCE_MS,
@@ -25,6 +25,7 @@ const Trade: React.FC = () => {
 	const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
 	const { initialFromCoin, initialToCoin } = route.params || {};
 	const { wallet } = usePortfolioStore();
+	const showToast = useToastStore((state) => state.showToast);
 
 	const amountInputRef = useRef<TextInput>(null);
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -39,7 +40,6 @@ const Trade: React.FC = () => {
 		priceImpactPct: '0',
 		totalFee: '0'
 	});
-	const { showToast } = useToast();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [quoteLoading, setQuoteLoading] = useState(false);
 
