@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -245,6 +246,9 @@ func (c *JupiterClient) GetQuote(params QuoteParams) (*JupiterQuoteResponse, err
 	if err := json.Unmarshal(body, &quoteResp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal quote response: %w", err)
 	}
+
+	// Log the quote response
+	log.Printf("🔄 RAW Jupiter Quote Response: %+v", quoteResp)
 
 	return &quoteResp, nil
 }

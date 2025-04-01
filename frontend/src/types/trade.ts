@@ -3,20 +3,15 @@ import { RootStackParamList } from './index';
 
 export type TradeScreenProps = NativeStackScreenProps<RootStackParamList, 'Trade'>;
 
+// TODO: Duplicate?
 export interface TradeQuoteResponse {
 	estimatedAmount: string;
 	exchangeRate: string;
 	fee?: {
 		total: string;
-		spread: string;
+		priceImpactPct: string;
 		gas: string;
 	};
-}
-
-export interface TradeDetails {
-	estimatedFee: string;
-	spread: string;
-	gasFee: string;
 }
 
 export interface AmountInputProps {

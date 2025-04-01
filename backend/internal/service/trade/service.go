@@ -128,7 +128,7 @@ func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 }
 
 // GetTradeQuote gets a quote for a potential trade
-func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, amount float64) (*TradeQuote, error) {
+func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, amount string) (*TradeQuote, error) {
 	// Convert amount to raw units based on decimals
 	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinID)
 	if err != nil {
@@ -144,11 +144,13 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 	quote, err := s.jupiterClient.GetQuote(coin.QuoteParams{
 		InputMint:        fromCoinID,
 		OutputMint:       toCoinID,
-		Amount:           fmt.Sprintf("%.0f", amount), // Amount is already in raw units (lamports for SOL)
-		SlippageBps:      100,                         // 1% slippage
+		Amount:           amount, // Amount is already in raw units (lamports for SOL)
+		SlippageBps:      100,    // 1% slippage
 		SwapMode:         "ExactIn",
-		OnlyDirectRoutes: false, // Allow indirect routes for better prices
-		MaxAccounts:      64,
+		OnlyDirectRoutes: true,
+		// TODO: Allow indirect routes for better prices
+		// OnlyDirectRoutes: false,
+		MaxAccounts: 64,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
@@ -158,12 +160,6 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 	outAmount, err := strconv.ParseFloat(quote.OutAmount, 64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse out amount: %w", err)
-	}
-
-	// Calculate price impact
-	priceImpact, err := strconv.ParseFloat(quote.PriceImpactPct, 64)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse price impact: %w", err)
 	}
 
 	// Calculate network fee from route plan
@@ -177,11 +173,12 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 	}
 
 	// Calculate estimated amount in token decimals
-	estimatedAmount := outAmount / math.Pow10(toCoin.Decimals)
+	estimatedAmount := outAmount / math.Pow10(fromCoin.Decimals)
 	networkFeeInTokens := totalFeeAmount / math.Pow10(fromCoin.Decimals)
 
 	// Calculate exchange rate
-	exchangeRate := estimatedAmount / amount
+	initialAmount, _ := strconv.ParseFloat(amount, 64)
+	exchangeRate := outAmount / initialAmount
 
 	// Build route summary for logging
 	var routeSummary []string
@@ -190,29 +187,29 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 	}
 
 	// Log detailed quote information
-	log.Printf("🔄 Jupiter Quote Details: \n"+
-		"- Input: %.8f %s\n"+
-		"- Output: %.8f %s\n"+
-		"- Price Impact: %.4f%%\n"+
-		"- Route: %v\n"+
-		"- Slippage: %d bps\n"+
-		"- Time Taken: %.2fms\n"+
-		"- Fee: %.8f %s\n",
-		amount, fromCoin.Symbol,
+	log.Printf("🔄 Jupiter Quote Details:\n"+
+		"Input: %v %s\n"+
+		"Output: %v %s\n"+
+		"Price Impact: %v%%\n"+
+		"Route: %v\n"+
+		"Network Fee: %v %s\n",
+		initialAmount, fromCoin.Symbol,
 		estimatedAmount, toCoin.Symbol,
-		priceImpact,
+		quote.PriceImpactPct,
 		routeSummary,
-		quote.SlippageBps,
-		*quote.TimeTaken,
-		networkFeeInTokens, fromCoin.Symbol)
+		networkFeeInTokens, fromCoin.Symbol,
+	)
+
+	log.Printf("Successfully retrieved quote: &{EstimatedAmount:%v ExchangeRate:%v Fee:{Total:%v PriceImpactPct:%v Gas:%v}}\n",
+		estimatedAmount, exchangeRate, networkFeeInTokens, quote.PriceImpactPct, networkFeeInTokens)
 
 	return &TradeQuote{
-		EstimatedAmount: fmt.Sprintf("%.8f", estimatedAmount),
-		ExchangeRate:    fmt.Sprintf("%.8f", exchangeRate),
+		EstimatedAmount: strconv.FormatFloat(estimatedAmount, 'f', -1, 64),
+		ExchangeRate:    strconv.FormatFloat(exchangeRate, 'f', -1, 64),
 		Fee: TradeFee{
-			Total:  fmt.Sprintf("%.8f", networkFeeInTokens),
-			Gas:    fmt.Sprintf("%.8f", networkFeeInTokens),
-			Spread: fmt.Sprintf("%.8f", priceImpact),
+			Total:          strconv.FormatFloat(networkFeeInTokens, 'f', -1, 64),
+			Gas:            strconv.FormatFloat(networkFeeInTokens, 'f', -1, 64),
+			PriceImpactPct: quote.PriceImpactPct,
 		},
 	}, nil
 }

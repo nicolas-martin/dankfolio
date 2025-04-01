@@ -21,6 +21,14 @@ export const formatNumber = (
 	if (value >= 1e3) return `${prefix}${(value / 1e3).toFixed(decimals)}K`;
 	return `${prefix}${value.toFixed(decimals)}`;
 };
+export const formatPct = (value: string, decimals: number = 2): string => {
+	const intVal = parseFloat(value)
+	if (intVal === 0) {
+		return "0.0000";
+	}
+
+	return `${intVal.toFixed(decimals)}`;
+}
 
 /**
  * Format a price number with appropriate decimal places
@@ -35,7 +43,7 @@ export const formatPrice = (
 	if (value === null || value === undefined) return 'N/A';
 
 	const prefix: string = includeDollarSign ? '$' : '';
-	return `${prefix}${value.toFixed(6)}`;
+	return `${prefix}${value.toFixed(6)} `;
 };
 
 /**

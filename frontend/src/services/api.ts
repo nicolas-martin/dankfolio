@@ -213,7 +213,7 @@ export interface TradeQuoteResponse {
 	exchangeRate: string;
 	fee: {
 		total: string;
-		spread: string;
+		priceImpactPct: string;
 		gas: string;
 	};
 }

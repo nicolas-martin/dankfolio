@@ -34,8 +34,8 @@ const Trade: React.FC = () => {
 	const [tradeDetails, setTradeDetails] = useState<TradeDetailsProps>({
 		exchangeRate: '0',
 		gasFee: '0',
-		spread: '0',
-		total: '0'
+		priceImpactPct: '0',
+		totalFee: '0'
 	});
 	const { showToast } = useToast();
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -156,8 +156,8 @@ const Trade: React.FC = () => {
 						<TradeDetails
 							exchangeRate={tradeDetails.exchangeRate}
 							gasFee={tradeDetails.gasFee}
-							spread={tradeDetails.spread}
-							total={tradeDetails.total}
+							priceImpactPct={tradeDetails.priceImpactPct}
+							totalFee={tradeDetails.totalFee}
 						/>
 
 						{/* Trade Button */}

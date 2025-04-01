@@ -135,9 +135,14 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 		respondError(w, "Invalid amount parameter", http.StatusBadRequest)
 		return
 	}
+	if amount <= 0 {
+		log.Printf("Amount cannot be 0", amount)
+		respondError(w, "Amount cannot be 0", http.StatusBadRequest)
+		return
+	}
 
 	// Get quote from service
-	quote, err := h.tradeService.GetTradeQuote(r.Context(), fromCoinID, toCoinID, amount)
+	quote, err := h.tradeService.GetTradeQuote(r.Context(), fromCoinID, toCoinID, amountStr)
 	if err != nil {
 		log.Printf("Error getting trade quote: %v", err)
 		respondError(w, fmt.Sprintf("Failed to get trade quote: %v", err), http.StatusInternalServerError)

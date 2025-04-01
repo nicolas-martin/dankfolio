@@ -21,29 +21,43 @@ export const fetchTradeQuote = async (
 	if (!fromCoin || !toCoin || !amount || parseFloat(amount) <= 0) {
 		return;
 	}
-	console.log(fromCoin)
+
+	console.log('🔄 Trade Quote Request:', {
+		fromCoin: {
+			symbol: fromCoin.symbol,
+			decimals: fromCoin.decimals,
+			price: fromCoin.price,
+			id: fromCoin.id
+		},
+		toCoin: {
+			symbol: toCoin.symbol,
+			decimals: toCoin.decimals,
+			price: toCoin.price,
+			id: toCoin.id
+		},
+		amount,
+	});
 
 	try {
 		setQuoteLoading(true);
-		const rawAmount = toRawAmount(amount, fromCoin.decimals)
+		const rawAmount = toRawAmount(amount, fromCoin.decimals);
 
 		const response = await api.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
 
 		setToAmount(response.estimatedAmount.toString());
 
-		// Format fee values using fromCoin's decimals
-		const formattedGasFee = toRawAmount(response.fee.gas, fromCoin.decimals);
-		const formattedSpread = toRawAmount(response.fee.spread, fromCoin.decimals);
-		const formattedTotal = toRawAmount(response.fee.total, fromCoin.decimals);
+		const formattedGasFee = response.fee.gas;
+		const formattedPriceImpact = response.fee.priceImpactPct;
+		const formattedTotal = response.fee.total;
 
 		setTradeDetails({
 			exchangeRate: response.exchangeRate,
 			gasFee: formattedGasFee,
-			spread: formattedSpread,
-			total: formattedTotal
+			priceImpactPct: formattedPriceImpact,
+			totalFee: formattedTotal
 		});
 	} catch (error) {
-		console.error('Error fetching trade quote:', error);
+		console.error('❌ Error fetching trade quote:', error);
 	} finally {
 		setQuoteLoading(false);
 	}

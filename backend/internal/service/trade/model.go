@@ -9,9 +9,9 @@ type TradeQuote struct {
 
 // TradeFee represents the fee components for a trade
 type TradeFee struct {
-	Total  string `json:"total"`
-	Spread string `json:"spread"`
-	Gas    string `json:"gas"`
+	Total          string `json:"total"`
+	PriceImpactPct string `json:"priceImpactPct"`
+	Gas            string `json:"gas"`
 }
 
 // CalculateTradeFee calculates the trade fee based on amount and price
