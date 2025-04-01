@@ -1,34 +1,10 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import { LinearGradient, vec } from "@shopify/react-native-skia";
+import React from "react";
+import { StyleSheet, View } from "react-native";
 import { Pie, PolarChart } from "victory-native";
-import { usePortfolioStore } from "../../store/portfolio";
+import { useTheme, MD3Theme } from "react-native-paper";
 import { TokenInfo } from "../../services/api";
-
-function calculateGradientPoints(
-  radius: number,
-  startAngle: number,
-  endAngle: number,
-  centerX: number,
-  centerY: number,
-) {
-  const midAngle = (startAngle + endAngle) / 2;
-  const startRad = (Math.PI / 180) * startAngle;
-  const midRad = (Math.PI / 180) * midAngle;
-
-  const startX = centerX + radius * 0.5 * Math.cos(startRad);
-  const startY = centerY + radius * 0.5 * Math.sin(startRad);
-  const endX = centerX + radius * Math.cos(midRad);
-  const endY = centerY + radius * Math.sin(midRad);
-
-  return { startX, startY, endX, endY };
-}
-
-interface HoverInfo {
-  token: TokenInfo;
-  x: number;
-  y: number;
-}
+import { createStyles } from "./donut_style";
+import Color from 'color';
 
 interface ChartDataItem extends Record<string, unknown> {
   value: number;
@@ -43,7 +19,8 @@ interface WalletDonutProps {
 }
 
 export default function WalletDonut({ tokens, totalBalance }: WalletDonutProps) {
-  const [hoveredToken, setHoveredToken] = useState<HoverInfo | null>(null);
+  const theme = useTheme();
+  const styles = createStyles(theme);
 
   if (!tokens.length || !totalBalance) {
     return null;
@@ -51,18 +28,10 @@ export default function WalletDonut({ tokens, totalBalance }: WalletDonutProps) 
 
   const chartData: ChartDataItem[] = tokens.map((token) => ({
     value: (token.value / totalBalance) * 100,
-    color: generateTokenColor(token.symbol),
+    color: generateTokenColor(token.symbol, theme),
     label: token.symbol,
     token,
   }));
-
-  const handleSlicePress = (token: TokenInfo, center: { x: number; y: number }) => {
-    setHoveredToken({
-      token,
-      x: center.x,
-      y: center.y,
-    });
-  };
 
   return (
     <View style={styles.container}>
@@ -73,88 +42,51 @@ export default function WalletDonut({ tokens, totalBalance }: WalletDonutProps) 
           valueKey={"value"}
           labelKey={"label"}
         >
-          <Pie.Chart innerRadius={"50%"}>
-            {({ slice }: any) => {
-              const sliceData = slice as {
-                radius: number;
-                startAngle: number;
-                endAngle: number;
-                center: { x: number; y: number };
-                color: string;
-                data: ChartDataItem;
-              };
-              
-              const { startX, startY, endX, endY } = calculateGradientPoints(
-                sliceData.radius,
-                sliceData.startAngle,
-                sliceData.endAngle,
-                sliceData.center.x,
-                sliceData.center.y,
-              );
-
-              return (
-                <TouchableOpacity
-                  onPress={() =>
-                    handleSlicePress(sliceData.data.token, sliceData.center)
-                  }
-                >
-                  <Pie.Slice animate={{ type: "spring" }}>
-                    <LinearGradient
-                      start={vec(startX, startY)}
-                      end={vec(endX, endY)}
-                      colors={[sliceData.color, `${sliceData.color}50`]}
-                      positions={[0, 1]}
-                    />
-                  </Pie.Slice>
-                  <Pie.SliceAngularInset
-                    animate={{ type: "spring" }}
-                    angularInset={{
-                      angularStrokeWidth: 5,
-                      angularStrokeColor: "white",
-                    }}
-                  />
-                </TouchableOpacity>
-              );
-            }}
+          <Pie.Chart
+            innerRadius={"50%"}
+          >
+            {({ slice }) => (
+              <Pie.Slice
+                animate={{ type: "spring" }}
+              >
+                <Pie.Label />
+              </Pie.Slice>
+            )}
           </Pie.Chart>
         </PolarChart>
-
-        {hoveredToken && (
-          <View
-            style={[
-              styles.tooltip,
-              {
-                position: "absolute",
-                left: hoveredToken.x,
-                top: hoveredToken.y,
-              },
-            ]}
-          >
-            <Text style={styles.tokenSymbol}>
-              {hoveredToken.token.symbol.toUpperCase()}
-            </Text>
-            <Text style={styles.tokenBalance}>
-              Balance: {formatNumber(hoveredToken.token.balance)}
-            </Text>
-            <Text style={styles.tokenValue}>
-              Value: ${formatNumber(hoveredToken.token.value)}
-            </Text>
-            <Text style={styles.tokenPercentage}>
-              {((hoveredToken.token.value / totalBalance) * 100).toFixed(2)}% of Portfolio
-            </Text>
-          </View>
-        )}
       </View>
     </View>
   );
 }
 
-function generateTokenColor(symbol: string): string {
+function generateTokenColor(symbol: string, theme: MD3Theme): string {
+  // Create a palette of colors based on theme
+  const baseColors = [
+    theme.colors.primary,
+    theme.colors.secondary,
+    theme.colors.tertiary,
+    theme.colors.primaryContainer,
+    theme.colors.secondaryContainer,
+    theme.colors.tertiaryContainer,
+  ];
+
+  // Generate variations of each color
+  const colorPalette = baseColors.flatMap(baseColor => {
+    const color = Color(baseColor);
+    return [
+      color.lighten(0.2).hex(),
+      color.hex(),
+      color.darken(0.2).hex()
+    ];
+  });
+
+  // Use the symbol to deterministically pick a color
   const hash = symbol.split("").reduce((acc, char) => {
     acc = (acc << 5) - acc + char.charCodeAt(0);
     return acc & acc;
   }, 0);
-  return `hsl(${Math.abs(hash) % 360}, 70%, 50%)`;
+
+  return colorPalette[Math.abs(hash) % colorPalette.length];
 }
 
 function formatNumber(num: number): string {
@@ -163,46 +95,3 @@ function formatNumber(num: number): string {
     maximumFractionDigits: 2,
   }).format(num);
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  chartContainer: {
-    height: 400,
-    padding: 25,
-    position: "relative",
-  },
-  tooltip: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    padding: 10,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    transform: [{ translateX: -100 }, { translateY: -80 }],
-    minWidth: 200,
-  },
-  tokenSymbol: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  tokenBalance: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  tokenValue: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  tokenPercentage: {
-    fontSize: 14,
-    color: "#666",
-  },
-});

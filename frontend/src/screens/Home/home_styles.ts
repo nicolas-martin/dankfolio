@@ -1,43 +1,68 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../utils/theme';
+import { MD3Theme } from 'react-native-paper';
 
-export const styles = StyleSheet.create({
+// Define spacing and typography constants
+const spacing = {
+	xs: 4,
+	sm: 8,
+	md: 12,
+	lg: 16,
+	xl: 24,
+};
+
+const typography = {
+	fontSize: {
+		sm: 12,
+		base: 14,
+		lg: 16,
+		xl: 18,
+		'2xl': 20,
+		'3xl': 24,
+	},
+};
+
+const borderRadius = {
+	sm: 4,
+	md: 8,
+	lg: 12,
+};
+
+export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
 		flex: 1,
 		backgroundColor: theme.colors.background,
 	},
 	header: {
-		paddingHorizontal: theme.spacing.xl,
-		paddingTop: theme.spacing.xl,
-		paddingBottom: theme.spacing.md,
+		paddingHorizontal: spacing.xl,
+		paddingTop: spacing.xl,
+		paddingBottom: spacing.md,
 		alignItems: 'center',
 	},
 	title: {
-		fontSize: theme.typography.fontSize['3xl'],
+		fontSize: typography.fontSize['3xl'],
 		fontWeight: 'bold',
 		color: theme.colors.onSurface,
-		marginBottom: theme.spacing.xs,
+		marginBottom: spacing.xs,
 	},
 	subtitle: {
-		fontSize: theme.typography.fontSize.base,
+		fontSize: typography.fontSize.base,
 		color: theme.colors.onSurfaceVariant,
 	},
 	searchContainer: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: theme.borderRadius.sm,
-		padding: theme.spacing.md,
-		marginBottom: theme.spacing.xl,
+		borderRadius: borderRadius.sm,
+		padding: spacing.md,
+		marginBottom: spacing.xl,
 	},
 	searchInput: {
 		flex: 1,
 		color: theme.colors.onSurface,
-		marginLeft: theme.spacing.sm,
+		marginLeft: spacing.sm,
 	},
 	content: {
 		flex: 1,
-		padding: theme.spacing.xl,
 	},
 	listContainer: {
 		flex: 1,
@@ -49,54 +74,56 @@ export const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		marginBottom: theme.spacing.lg,
+		paddingHorizontal: 16,
+		paddingVertical: 8,
 	},
 	sectionTitle: {
-		fontSize: theme.typography.fontSize.xl,
+		fontSize: 20,
 		fontWeight: 'bold',
 		color: theme.colors.onSurface,
 	},
 	refreshCoinsButton: {
-		padding: theme.spacing.xs,
+		padding: 8,
 	},
 	refreshCoinsText: {
-		fontSize: theme.typography.fontSize.xl,
+		fontSize: 24,
 		color: theme.colors.onSurfaceVariant,
 	},
 	coinsList: {
-		paddingBottom: theme.spacing.xl,
+		paddingHorizontal: 16,
+		paddingBottom: 16,
 	},
 	coinItem: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		padding: theme.spacing.lg,
+		padding: spacing.lg,
 		borderBottomWidth: 1,
 		borderBottomColor: theme.colors.outline,
 	},
 	coinInfo: {
 		flex: 1,
-		marginLeft: theme.spacing.lg,
+		marginLeft: spacing.lg,
 	},
 	coinName: {
-		fontSize: theme.typography.fontSize.base,
+		fontSize: typography.fontSize.base,
 		fontWeight: '600',
 		color: theme.colors.onSurface,
 	},
 	coinSymbol: {
-		fontSize: theme.typography.fontSize.sm,
+		fontSize: typography.fontSize.sm,
 		color: theme.colors.onSurfaceVariant,
-		marginTop: theme.spacing.xs,
+		marginTop: spacing.xs,
 	},
 	priceInfo: {
 		alignItems: 'flex-end',
 	},
 	price: {
-		fontSize: theme.typography.fontSize.base,
+		fontSize: typography.fontSize.base,
 		fontWeight: '600',
 		color: theme.colors.onSurface,
 	},
 	priceChange: {
-		fontSize: theme.typography.fontSize.sm,
+		fontSize: typography.fontSize.sm,
 		fontWeight: '600',
 		letterSpacing: 0.25,
 	},
@@ -113,54 +140,49 @@ export const styles = StyleSheet.create({
 		backgroundColor: theme.colors.background,
 	},
 	loadingText: {
+		fontSize: 18,
+		marginBottom: 16,
 		color: theme.colors.onSurface,
-		marginTop: theme.spacing.sm,
 	},
 	centerContainer: {
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: theme.colors.background,
 	},
 	errorText: {
 		color: theme.colors.error,
 		textAlign: 'center',
-		marginHorizontal: theme.spacing.xl,
+		marginHorizontal: spacing.xl,
 	},
 	noCoinsContainer: {
-		flex: 1,
-		justifyContent: 'center',
+		padding: 16,
 		alignItems: 'center',
 	},
 	noCoinsText: {
+		fontSize: 16,
 		color: theme.colors.onSurfaceVariant,
-		fontSize: theme.typography.fontSize.base,
 	},
 	profileContainer: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginTop: theme.spacing.xl,
+		padding: 16,
 	},
 	profileButton: {
 		backgroundColor: theme.colors.primary,
-		padding: theme.spacing.lg,
-		borderRadius: theme.borderRadius.md,
+		padding: 12,
+		borderRadius: 8,
 		alignItems: 'center',
-		flex: 1,
 	},
 	profileButtonText: {
-		color: theme.colors.onSurface,
+		fontSize: 16,
 		fontWeight: 'bold',
-		fontSize: theme.typography.fontSize.base,
+		color: theme.colors.onPrimary,
 	},
 	notification: {
 		position: 'absolute',
-		top: theme.spacing.xl,
-		left: theme.spacing.xl,
-		right: theme.spacing.xl,
-		padding: theme.spacing.lg,
-		borderRadius: theme.borderRadius.md,
+		top: spacing.xl,
+		left: spacing.xl,
+		right: spacing.xl,
+		padding: spacing.lg,
+		borderRadius: borderRadius.md,
 		zIndex: 1000,
 	},
 	notificationText: {

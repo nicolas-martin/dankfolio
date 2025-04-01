@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, FlatList, StyleSheet } from 'react-native';
-import { ActivityIndicator } from 'react-native-paper';
+import { View, Text, TouchableOpacity, SafeAreaView, FlatList } from 'react-native';
+import { ActivityIndicator, useTheme } from 'react-native-paper';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../../components/Home/CoinCard';
-import { Coin, Wallet } from '../../types/index';
+import { Coin } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
 import {
 	fetchAvailableCoins,
@@ -13,16 +13,17 @@ import {
 import { HomeScreenNavigationProp } from './home_types';
 import { usePortfolioStore } from '../../store/portfolio';
 import { useToast } from '../../components/Common/Toast';
-import { useTheme } from 'react-native-paper';
+import { createStyles } from './home_styles';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const [coins, setCoins] = useState<Coin[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [solCoin, setSolCoin] = useState<Coin | null>(null);
-	const { wallet, walletBalance, isLoading, setWallet, fetchWalletBalance } = usePortfolioStore();
+	const { wallet, walletBalance, isLoading: isWalletLoading, setWallet, fetchWalletBalance } = usePortfolioStore();
 	const { showToast } = useToast();
 	const theme = useTheme();
+	const styles = createStyles(theme);
 
 	const handleImportWalletCallback = useCallback(async (privateKey: string) => {
 		try {
@@ -85,77 +86,9 @@ const HomeScreen = () => {
 		initializeData();
 	}, [initializeData]);
 
-	const styles = StyleSheet.create({
-		container: {
-			flex: 1,
-			backgroundColor: theme.colors.background,
-		},
-		content: {
-			flex: 1,
-		},
-		coinsSection: {
-			flex: 1,
-		},
-		sectionHeader: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			paddingHorizontal: 16,
-			paddingVertical: 8,
-		},
-		sectionTitle: {
-			fontSize: 20,
-			fontWeight: 'bold',
-			color: theme.colors.onSurface,
-		},
-		refreshCoinsButton: {
-			padding: 8,
-		},
-		refreshCoinsText: {
-			fontSize: 24,
-			color: theme.colors.onSurfaceVariant,
-		},
-		coinsList: {
-			paddingHorizontal: 16,
-			paddingBottom: 16,
-		},
-		noCoinsContainer: {
-			padding: 16,
-			alignItems: 'center',
-		},
-		noCoinsText: {
-			fontSize: 16,
-			color: theme.colors.onSurfaceVariant,
-		},
-		profileContainer: {
-			padding: 16,
-		},
-		profileButton: {
-			backgroundColor: theme.colors.primary,
-			padding: 12,
-			borderRadius: 8,
-			alignItems: 'center',
-		},
-		profileButtonText: {
-			fontSize: 16,
-			fontWeight: 'bold',
-			color: theme.colors.onPrimary,
-		},
-		centerContainer: {
-			flex: 1,
-			justifyContent: 'center',
-			alignItems: 'center',
-		},
-		loadingText: {
-			fontSize: 18,
-			marginBottom: 16,
-			color: theme.colors.onSurface,
-		},
-	});
-
 	return (
 		<SafeAreaView style={styles.container}>
-			<TouchableOpacity onPress={() => showToast({ 
+			<TouchableOpacity onPress={() => showToast({
 				type: 'success',
 				message: 'Test toast notification',
 				duration: 3000

@@ -79,6 +79,7 @@
     "@testing-library/react-native": "^13.2.0",
     "@tsconfig/react-native": "^3.0.5",
     "@types/chalk": "^2.2.0",
+    "@types/color": "^4.2.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.10",

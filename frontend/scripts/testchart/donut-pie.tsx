@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, View, Text } from "react-native";
 import { LinearGradient, vec } from "@shopify/react-native-skia";
 import { Pie, PolarChart } from "victory-native";
-import { useTheme, MD3Theme } from "react-native-paper";
+import { useTheme, MD3Theme, Button, Card } from "react-native-paper";
 
 function calculateGradientPoints(
   radius: number,
@@ -43,6 +43,10 @@ const DATA = (numberPoints = 5) =>
     color: generateRandomColor(),
     label: `Label ${index + 1}`,
   }));
+
+function descriptionForRoute(segment: string): string {
+  return `Chart showing data for ${segment}`;
+}
 
 const createStyles = (theme: MD3Theme) => StyleSheet.create({
   safeView: {
@@ -95,7 +99,7 @@ export default function DonutChart(props: { segment: string }) {
                       animate={{ type: "spring" }}
                       angularInset={{
                         angularStrokeWidth: 5,
-                        angularStrokeColor: "white",
+                        angularStrokeColor: theme.colors.onSurface,
                       }}
                     />
                   </>
@@ -106,9 +110,11 @@ export default function DonutChart(props: { segment: string }) {
         </View>
 
         <View style={{ flexGrow: 1, padding: 15 }}>
-          <InfoCard style={{ flex: 0, marginBottom: 16 }}>
-            {description}
-          </InfoCard>
+          <Card style={{ marginBottom: 16 }}>
+            <Card.Content>
+              <Text>{description}</Text>
+            </Card.Content>
+          </Card>
 
           <View
             style={{
@@ -119,10 +125,11 @@ export default function DonutChart(props: { segment: string }) {
             }}
           >
             <Button
-              style={{ flex: 1 }}
+              mode="contained"
               onPress={() => setData((data) => DATA(data.length))}
-              title="Shuffle Data"
-            />
+            >
+              Shuffle Data
+            </Button>
           </View>
         </View>
       </ScrollView>
