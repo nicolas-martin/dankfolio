@@ -1,10 +1,11 @@
 // import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Coin, Wallet, Base58PrivateKey } from '../../types/index';
+import { Coin, Wallet } from '../../types';
+import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
+
+import { useToastStore } from '../../store/toast';
 import api from '../../services/api';
 import { buildAndSignSwapTransaction } from '../../services/solana';
-import { ToastProps } from '../../components/Common/Toast/toast_types';
-import { toRawAmount } from 'utils/numberFormat';
-import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
+import { toRawAmount } from '../../utils/numberFormat';
 
 export const MIN_AMOUNT = "0.0001";
 export const DEFAULT_AMOUNT = "0.0001";
@@ -69,17 +70,20 @@ export const handleTrade = async (
 	amount: string,
 	slippage: number,
 	wallet: Wallet,
-	showNotification: (type: ToastProps['type'], message: string) => void,
-	navigation: any
+	navigation: any,
+	setIsSubmitting: (isSubmitting: boolean) => void
 ): Promise<void> => {
+	const showToast = useToastStore.getState().showToast;
+	
 	try {
+		setIsSubmitting(true);
 		console.log('🔄 Starting trade:', {
 			fromCoin: fromCoin.symbol,
 			toCoin: toCoin.symbol,
 			amount,
 			slippage,
 			walletAddress: wallet.address,
-			privateKeyType: 'Base58'  // Now we're explicit about the format
+			privateKeyType: 'Base58'
 		});
 
 		// Convert amount to raw units (lamports)
@@ -103,13 +107,15 @@ export const handleTrade = async (
 		});
 
 		if (response.transaction_hash) {
-			showNotification('success', 'Trade executed successfully!');
+			showToast({ type: 'success', message: 'Trade executed successfully!' });
 			navigation.navigate('Home');
 		} else {
 			throw new Error('No transaction hash received');
 		}
 	} catch (error) {
 		console.error('❌ Trade error:', error);
-		showNotification('error', error.message || 'Failed to execute trade');
+		showToast({ type: 'error', message: error.message || 'Failed to execute trade' });
+	} finally {
+		setIsSubmitting(false);
 	}
 };

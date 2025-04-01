@@ -9,7 +9,7 @@ export const TOAST_DISPLAY_DURATION = 5000;
 
 export const TOAST_ICONS: Record<ToastType, string> = {
 	success: '✓',
-	error: '!',
+	error: '✕',
 	info: 'ℹ',
 	warning: '!',
 };
@@ -17,13 +17,13 @@ export const TOAST_ICONS: Record<ToastType, string> = {
 export const getGradientColors = (type: ToastType) => {
 	switch (type) {
 		case 'success':
-			return ['#1B1F2E', '#1B1F2E'] as const;
+			return ['#2A3244', '#2A3244'] as const;
 		case 'error':
-			return ['#1B1F2E', '#1B1F2E'] as const;
+			return ['#2A3244', '#2A3244'] as const;
 		case 'warning':
-			return ['#1B1F2E', '#1B1F2E'] as const;
+			return ['#2A3244', '#2A3244'] as const;
 		default:
-			return ['#1B1F2E', '#1B1F2E'] as const;
+			return ['#2A3244', '#2A3244'] as const;
 	}
 };
 

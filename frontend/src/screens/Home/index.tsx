@@ -49,25 +49,6 @@ const HomeScreen = () => {
 	const { wallet, walletBalance, isLoading, setWallet, fetchWalletBalance } = usePortfolioStore();
 	const showToast = useToastStore((state) => state.showToast);
 
-	// Test toast on mount
-	useEffect(() => {
-		showToast({
-			type: 'success',
-			message: '🎉 Welcome to Dankfolio! This is a test toast.',
-			actions: [
-				{
-					label: 'Cool!',
-					onPress: () => console.log('Toast action clicked')
-				}
-			]
-		});
-	}, []);
-
-	const showNotification = useCallback((type: NotificationProps['type'], message: string): void => {
-		setNotification({ visible: true, type, message });
-		setTimeout(() => setNotification({ visible: false, type: 'info', message: '' }), 3000);
-	}, []);
-
 	const handleImportWalletCallback = useCallback(async (privateKey: string) => {
 		try {
 			await handleImportWallet(privateKey, setWallet, fetchWalletBalance);

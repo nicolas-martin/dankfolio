@@ -7,19 +7,21 @@ import { ToastProps } from './toast_types';
 export const ToastContainer = styled(Animated.View)`
   position: absolute;
   top: 40px;
-  left: 20px;
-  right: 20px;
-  z-index: 9999;
+  left: 16px;
+  right: 16px;
+  z-index: 999999;
 `;
 
 export const GradientBackground = styled(LinearGradient)`
-  border-radius: ${theme.borderRadius.md}px;
-  padding: ${theme.spacing.lg}px;
-  shadow-color: ${theme.shadows.md.shadowColor};
-  shadow-offset: 0px ${theme.shadows.md.shadowOffset.height}px;
-  shadow-opacity: ${theme.shadows.md.shadowOpacity};
-  shadow-radius: ${theme.shadows.md.shadowRadius}px;
-  elevation: ${theme.shadows.md.elevation};
+  border-radius: 12px;
+  padding: 16px;
+  shadow-color: #000000;
+  shadow-offset: 0px 8px;
+  shadow-opacity: 0.35;
+  shadow-radius: 12px;
+  elevation: 12;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.1);
 `;
 
 // Default gradient props
@@ -39,7 +41,7 @@ export const getAnimatedStyle = (opacity: Animated.Value, translateY: Animated.V
 });
 
 export const ToastContent = styled.View`
-  gap: ${theme.spacing.md}px;
+  gap: 12px;
 `;
 
 export const MessageContainer = styled.View`
@@ -51,27 +53,30 @@ export const MessageContainer = styled.View`
 export const LeftContent = styled.View`
   flex-direction: row;
   flex: 1;
-  gap: ${theme.spacing.md}px;
+  gap: 12px;
+  align-items: center;
 `;
 
 export const IconContainer = styled.View<{ type: ToastProps['type'] }>`
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
   justify-content: center;
   align-items: center;
   background-color: ${props => {
-		switch (props.type) {
-			case 'success':
-				return theme.colors.success + '15';
-			case 'error':
-				return theme.colors.error + '15';
-			case 'warning':
-				return theme.colors.warning + '15';
-			default:
-				return theme.colors.primary + '15';
-		}
-	}};
+    switch (props.type) {
+      case 'success':
+        return '#4CAF50';
+      case 'error':
+        return '#F44336';
+      case 'warning':
+        return '#FF9800';
+      default:
+        return '#2196F3';
+    }
+  }};
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.2);
 `;
 
 export const Icon = styled.Text<{ type: ToastProps['type'] }>`

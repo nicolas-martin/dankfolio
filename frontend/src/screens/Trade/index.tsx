@@ -1,16 +1,28 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Text, TextInput } from 'react-native';
-import { Coin } from '../../types/index';
+import {
+	View,
+	KeyboardAvoidingView,
+	Platform,
+	ScrollView,
+	SafeAreaView,
+	Text,
+	TextInput
+} from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+
 import TopBar from '../../components/Common/TopBar';
 import CoinSelector from '../../components/Trade/CoinSelector';
 import SwapButton from '../../components/Trade/SwapButton';
 import TradeDetails from '../../components/Trade/TradeDetails';
 import TradeButton from '../../components/Trade/TradeButton';
-import { styles } from './trade_styles';
+
+import { Coin } from '../../types';
 import { TradeScreenParams } from './trade_types';
+import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
+
 import { usePortfolioStore } from '../../store/portfolio';
 import { useToastStore } from '../../store/toast';
+
 import {
 	DEFAULT_AMOUNT,
 	QUOTE_DEBOUNCE_MS,
@@ -18,7 +30,7 @@ import {
 	handleSwapCoins,
 	handleTrade
 } from './trade_scripts';
-import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
+import { styles } from './trade_styles';
 
 const Trade: React.FC = () => {
 	const navigation = useNavigation();
@@ -96,10 +108,10 @@ const Trade: React.FC = () => {
 			fromAmount,
 			0.5, // 0.5% slippage
 			wallet,
-			(type, message) => showToast({ type, message }),
-			navigation
+			navigation,
+			setIsSubmitting
 		);
-	}, [fromCoin, toCoin, fromAmount, showToast, navigation, wallet]);
+	}, [fromCoin, toCoin, fromAmount, navigation, wallet]);
 
 	const getTradeButtonLabel = (): string => {
 		if (isSubmitting) return 'Processing...';
