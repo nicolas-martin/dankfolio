@@ -5,167 +5,167 @@ import { CoinInfoProps } from './coininfo_types';
 import { createStyles } from './coininfo_styles';
 import { LinkItem } from './LinkItem';
 import {
-  ICON_WEBSITE,
-  ICON_TWITTER,
-  ICON_TELEGRAM,
-  ICON_DISCORD,
+	ICON_WEBSITE,
+	ICON_TWITTER,
+	ICON_TELEGRAM,
+	ICON_DISCORD,
 } from '../../../utils/icons';
 
 const formatNumber = (num: number): string => {
-  if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
-  if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-  if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
-  return num.toFixed(2);
+	if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
+	if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+	if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+	return num.toFixed(2);
 };
 
 const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
-  const theme = useTheme();
-  const styles = createStyles(theme);
+	const theme = useTheme();
+	const styles = createStyles(theme);
 
-  const handleLinkPress = useCallback((url?: string) => {
-    if (url) {
-      const validUrl = url.startsWith('http://') || url.startsWith('https://')
-        ? url
-        : `https://${url}`;
-      Linking.openURL(validUrl);
-    }
-  }, []);
+	const handleLinkPress = useCallback((url?: string) => {
+		if (url) {
+			const validUrl = url.startsWith('http://') || url.startsWith('https://')
+				? url
+				: `https://${url}`;
+			Linking.openURL(validUrl);
+		}
+	}, []);
 
-  return (
-    <View style={styles.container}>
-      {metadata.description && (
-        <View>
-          <Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-            About
-          </Text>
-          <Text
-            variant="bodyLarge"
-            style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}
-          >
-            {metadata.description}
-          </Text>
-        </View>
-      )}
+	return (
+		<View style={styles.container}>
+			{metadata.description && (
+				<View>
+					<Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+						About
+					</Text>
+					<Text
+						variant="bodyLarge"
+						style={[styles.sectionDescription, { color: theme.colors.onSurfaceVariant }]}
+					>
+						{metadata.description}
+					</Text>
+				</View>
+			)}
 
-      <View>
-        <Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-          Details
-        </Text>
+			<View>
+				<Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+					Details
+				</Text>
 
-        {metadata.decimals !== undefined && (
-          <View style={styles.detailRow}>
-            <Text
-              variant="bodyLarge"
-              style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}
-            >
-              Decimals
-            </Text>
-            <Text
-              variant="bodyLarge"
-              style={[styles.detailValue, { color: theme.colors.onSurface }]}
-            >
-              {metadata.decimals}
-            </Text>
-          </View>
-        )}
+				{metadata.decimals !== undefined && (
+					<View style={styles.detailRow}>
+						<Text
+							variant="bodyLarge"
+							style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}
+						>
+							Decimals
+						</Text>
+						<Text
+							variant="bodyLarge"
+							style={[styles.detailValue, { color: theme.colors.onSurface }]}
+						>
+							{metadata.decimals}
+						</Text>
+					</View>
+				)}
 
-        {metadata.daily_volume !== undefined && (
-          <View style={styles.detailRow}>
-            <Text
-              variant="bodyLarge"
-              style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}
-            >
-              24h Volume
-            </Text>
-            <Text
-              variant="bodyLarge"
-              style={[styles.detailValue, { color: theme.colors.onSurface }]}
-            >
-              ${formatNumber(metadata.daily_volume)}
-            </Text>
-          </View>
-        )}
+				{metadata.daily_volume !== undefined && (
+					<View style={styles.detailRow}>
+						<Text
+							variant="bodyLarge"
+							style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}
+						>
+							24h Volume
+						</Text>
+						<Text
+							variant="bodyLarge"
+							style={[styles.detailValue, { color: theme.colors.onSurface }]}
+						>
+							${formatNumber(metadata.daily_volume)}
+						</Text>
+					</View>
+				)}
 
-        {metadata.tags && metadata.tags.length > 0 && (
-          <View style={styles.tagsContainer}>
-            <Text
-              variant="bodyLarge"
-              style={[styles.tagsLabel, { color: theme.colors.onSurfaceVariant }]}
-            >
-              Tags
-            </Text>
-            <View style={styles.tagsInnerContainer}>
-              {metadata.tags.map((tag, index) => (
-                <View
-                  key={index}
-                  style={[styles.tagItem, { backgroundColor: theme.colors.surfaceVariant }]}
-                >
-                  <Text
-                    variant="bodyMedium"
-                    style={[styles.tagText, { color: theme.colors.onSurface }]}
-                  >
-                    {tag}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-      </View>
+				{metadata.tags && metadata.tags.length > 0 && (
+					<View style={styles.tagsContainer}>
+						<Text
+							variant="bodyLarge"
+							style={[styles.tagsLabel, { color: theme.colors.onSurfaceVariant }]}
+						>
+							Tags
+						</Text>
+						<View style={styles.tagsInnerContainer}>
+							{metadata.tags.map((tag, index) => (
+								<View
+									key={index}
+									style={[styles.tagItem, { backgroundColor: theme.colors.surfaceVariant }]}
+								>
+									<Text
+										variant="bodyMedium"
+										style={[styles.tagText, { color: theme.colors.onSurface }]}
+									>
+										{tag}
+									</Text>
+								</View>
+							))}
+						</View>
+					</View>
+				)}
+			</View>
 
-      <View>
-        <Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-          Links
-        </Text>
-        <View style={[styles.linksContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
-          {metadata.website && (
-            <>
-              <LinkItem
-                icon={ICON_WEBSITE}
-                label="Website"
-                value={metadata.website}
-                onPress={handleLinkPress}
-              />
-              <Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
-            </>
-          )}
+			<View>
+				<Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+					Links
+				</Text>
+				<View style={[styles.linksContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
+					{metadata.website && (
+						<>
+							<LinkItem
+								icon={ICON_WEBSITE}
+								label="Website"
+								value={metadata.website}
+								onPress={handleLinkPress}
+							/>
+							<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+						</>
+					)}
 
-          {metadata.twitter && (
-            <>
-              <LinkItem
-                icon={ICON_TWITTER}
-                label="Twitter"
-                value={`@${metadata.twitter}`}
-                onPress={handleLinkPress}
-              />
-              <Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
-            </>
-          )}
+					{metadata.twitter && (
+						<>
+							<LinkItem
+								icon={ICON_TWITTER}
+								label="Twitter"
+								value={`@${metadata.twitter}`}
+								onPress={handleLinkPress}
+							/>
+							<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+						</>
+					)}
 
-          {metadata.telegram && (
-            <>
-              <LinkItem
-                icon={ICON_TELEGRAM}
-                label="Telegram"
-                value={metadata.telegram}
-                onPress={handleLinkPress}
-              />
-              <Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
-            </>
-          )}
+					{metadata.telegram && (
+						<>
+							<LinkItem
+								icon={ICON_TELEGRAM}
+								label="Telegram"
+								value={metadata.telegram}
+								onPress={handleLinkPress}
+							/>
+							<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+						</>
+					)}
 
-          {metadata.discord && (
-            <LinkItem
-              icon={ICON_DISCORD}
-              label="Discord"
-              value={metadata.discord}
-              onPress={handleLinkPress}
-            />
-          )}
-        </View>
-      </View>
-    </View>
-  );
+					{metadata.discord && (
+						<LinkItem
+							icon={ICON_DISCORD}
+							label="Discord"
+							value={metadata.discord}
+							onPress={handleLinkPress}
+						/>
+					)}
+				</View>
+			</View>
+		</View>
+	);
 };
 
 export default CoinInfo;
