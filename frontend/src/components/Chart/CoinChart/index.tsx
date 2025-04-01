@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import {
   useDerivedValue,
   runOnJS,
+  type SharedValue,
 } from "react-native-reanimated";
 
 interface CoinChartProps {
@@ -134,41 +135,30 @@ export default function CoinChart({
           labelColor: "rgba(255, 255, 255, 0.5)",
         }}
       >
-        {({ chartBounds, points }) => (
-          <>
-            <PriceArea
-              points={points.y}
-              left={chartBounds.left}
-              right={chartBounds.right}
-              top={chartBounds.top}
-              bottom={chartBounds.bottom}
-              lineColor={lineColor}
-              gradientColor={gradientColor}
-            />
-            {isPressActive && (
-              <Group>
-                <Line
-                  p1={vec(chartPress.x.position.value, chartBounds.top)}
-                  p2={vec(chartPress.x.position.value, chartBounds.bottom)}
-                  color="rgba(255, 255, 255, 0.3)"
-                  strokeWidth={1}
+        {({ chartBounds, points }) => {
+          return (
+            <>
+              <PriceArea
+                points={points.y}
+                left={chartBounds.left}
+                right={chartBounds.right}
+                top={chartBounds.top}
+                bottom={chartBounds.bottom}
+                lineColor={lineColor}
+                gradientColor={gradientColor}
+              />
+              {isPressActive && (
+                <ChartIndicator
+                  xPosition={chartPress.x.position}
+                  yPosition={chartPress.y.y.position}
+                  top={chartBounds.top}
+                  bottom={chartBounds.bottom}
+                  lineColor={lineColor}
                 />
-                <Circle
-                  cx={chartPress.x.position.value}
-                  cy={chartPress.y.y.position.value}
-                  r={8}
-                  color={lineColor}
-                />
-                <Circle
-                  cx={chartPress.x.position.value}
-                  cy={chartPress.y.y.position.value}
-                  r={5}
-                  color="white"
-                />
-              </Group>
-            )}
-          </>
-        )}
+              )}
+            </>
+          );
+        }}
       </CartesianChart>
     </View>
   );
@@ -209,6 +199,46 @@ const PriceArea = ({
         strokeWidth={2}
         color={lineColor}
       />
+    </Group>
+  );
+};
+
+const ChartIndicator = ({
+  xPosition,
+  yPosition,
+  top,
+  bottom,
+  lineColor,
+}: {
+  xPosition: SharedValue<number>;
+  yPosition: SharedValue<number>;
+  top: number;
+  bottom: number;
+  lineColor: string;
+}) => {
+  return (
+    <Group>
+      {/* Vertical Line */}
+      <Line
+        p1={vec(xPosition.value, top)} // Access .value here for vec
+        p2={vec(xPosition.value, bottom)} // Access .value here for vec
+        color="rgba(255, 255, 255, 0.7)" 
+        strokeWidth={1.5}
+      />
+      {/* Indicator Dots */}
+      <Circle 
+        cx={xPosition} // Pass SharedValue directly
+        cy={yPosition} // Pass SharedValue directly
+        r={8} 
+        color={lineColor} 
+      />
+      <Circle 
+        cx={xPosition} // Pass SharedValue directly
+        cy={yPosition} // Pass SharedValue directly
+        r={5} 
+        color="white" 
+      />
+      {/* SkiaText label could be added here later */}
     </Group>
   );
 };
