@@ -90,13 +90,15 @@ export interface PriceData {
 }
 
 export interface Token {
+	id: string;
 	symbol: string;
 	name: string;
-	balance: number;
-	value: number;
-	percentage: number;
-	address: string;
-	logoURI?: string;
+	decimals: number;
+	balance: string;
+	price: number;
+	icon_url: string;
+	description: string;
+	website: string;
 }
 
 // Re-export all types from other files

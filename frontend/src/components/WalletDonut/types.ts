@@ -1,7 +1,7 @@
-import { TokenInfo } from '../../services/api';
+import { Token } from '../../types';
 
 export interface WalletDonutProps {
-  tokens: TokenInfo[];
+  tokens: Token[];
   totalBalance: number;
 }
 
@@ -12,19 +12,19 @@ export interface ChartData extends Record<string, unknown> {
   value: number;
 }
 
-export interface TokenSegment {
-  token: TokenInfo;
+export interface PieSliceData {
   startAngle: number;
   endAngle: number;
   color: string;
+  value: number;
+  x: string;
+  y: number;
 }
 
 export interface PieSliceProps {
-  slice: {
-    startAngle: number;
-    endAngle: number;
-    color: string;
-    value: number;
-    data: ChartData;
-  };
+  slice: PieSliceData;
+}
+
+export interface PieEventProps {
+  slice: PieSliceData;
 } 
