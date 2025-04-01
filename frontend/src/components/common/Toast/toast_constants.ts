@@ -21,21 +21,10 @@ export const getToastForegroundColor = (type: ToastType, theme: MD3Theme) => {
   }
 };
 
-// New: Gets background color based on type (SOLID)
+// New: Gets background color (COMMON)
 export const getToastBackgroundColor = (type: ToastType, theme: MD3Theme) => {
-  // Option 2: Use solid lighter theme colors
-  switch (type) {
-    case 'success':
-      // TODO: Define theme.colors.successContainer if needed
-      return (theme.colors as any).successContainer || theme.colors.primaryContainer; 
-    case 'error':
-      // TODO: Define theme.colors.errorContainer if needed
-      return (theme.colors as any).errorContainer || theme.colors.errorContainer; // Fallback? Maybe surface?
-    case 'warning':
-       // TODO: Define theme.colors.warningContainer if needed
-       return (theme.colors as any).warningContainer || theme.colors.secondaryContainer; // Example fallback
-    case 'info':
-    default:
-      return theme.colors.secondaryContainer || theme.colors.primaryContainer; 
-  }
+  // Always return surfaceVariant for a consistent background
+  return theme.colors.surfaceVariant;
 };
+
+// Remove getToastOpacity function if it's still there and unused

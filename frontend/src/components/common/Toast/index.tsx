@@ -15,7 +15,7 @@ const ToastContext = createContext<{
 const defaults: ToastProps = {
   message: '',
   type: 'info',
-  duration: 3000,
+  duration: 103000,
   visible: false,
 };
 
@@ -59,8 +59,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const toastForegroundColor = getToastForegroundColor(toastType, theme);
   const ToastIcon = getToastIcon(toastType);
 
-  console.log('[ToastProvider] Rendering Snackbar. State:', JSON.stringify(state), 'FG Color:', toastForegroundColor);
-
   return (
     <ToastContext.Provider value={toast}>
       {children}
@@ -80,13 +78,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         >
           <View style={styles.content}>
             <View style={styles.messageContainer}>
-              <IconButton
-                icon={ToastIcon}
-                size={20}
-                iconColor={toastForegroundColor}
-                disabled
+              <ToastIcon 
+                size={20} 
+                color={toastForegroundColor} 
+                style={styles.statusIcon}
               />
-              <Text style={[styles.message, { color: theme.colors.onSurface }]}>
+              <Text style={[styles.message, { color: theme.colors.onSurfaceVariant }]}>
                 {state.message}
               </Text>
             </View>
@@ -95,7 +92,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               size={20}
               onPress={toast.hideToast}
               style={styles.closeButton}
-              iconColor={theme.colors.onSurface}
+              iconColor={theme.colors.onSurfaceVariant}
             />
           </View>
         </Snackbar>

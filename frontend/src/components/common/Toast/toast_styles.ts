@@ -31,5 +31,8 @@ export const createStyles = (theme: MD3Theme, insets: EdgeInsets) => {
     closeIcon: {
       color: theme.colors.onSurfaceVariant,
     },
+    statusIcon: {
+      marginRight: 8,
+    },
   });
 }; 
