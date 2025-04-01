@@ -8,13 +8,23 @@ import { useToast } from '../../components/Common/Toast';
 import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './profile_scripts';
 import { styles } from './profile_styles';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/coindetail_types';
-import { ProfileScreenNavigationProp } from './profile_types';
+import { usePortfolioStore } from '../../store/portfolio';
 
-
-const Profile: React.FC<ProfileScreenNavigationProp> = ({ route }) => {
+const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const { showToast } = useToast();
-	const { walletBalance, walletAddress, solCoin } = route.params;
+	const { wallet, walletBalance, solCoin } = usePortfolioStore();
+
+	if (!wallet || !walletBalance) {
+		return (
+			<SafeAreaView style={styles.container}>
+				<TopBar />
+				<View style={styles.centerContainer}>
+					<Text style={styles.loadingText}>No wallet data available</Text>
+				</View>
+			</SafeAreaView>
+		);
+	}
 
 	const TokenCard = ({ token, balance, onPress }: {
 		token: Coin | TokenInfo,
@@ -77,10 +87,10 @@ const Profile: React.FC<ProfileScreenNavigationProp> = ({ route }) => {
 					<Text style={styles.title}>🎭 Profile</Text>
 					<Text style={styles.subtitle}>Your Portfolio</Text>
 					<TouchableOpacity
-						onPress={() => copyToClipboard(walletAddress, 'Wallet', showToast)}
+						onPress={() => copyToClipboard(wallet.address, 'Wallet', showToast)}
 						style={styles.addressContainer}
 					>
-						<Text style={styles.walletAddressText}>Address: {formatAddress(walletAddress)}</Text>
+						<Text style={styles.walletAddressText}>Address: {formatAddress(wallet.address)}</Text>
 						<Text style={styles.copyIcon}>📋</Text>
 					</TouchableOpacity>
 				</View>
@@ -105,33 +115,17 @@ const Profile: React.FC<ProfileScreenNavigationProp> = ({ route }) => {
 					</View>
 				</View>
 
-				<View style={styles.tokensContainer}>
-					<Text style={styles.sectionTitle}>Your Assets</Text>
-
-					{/* SOL Balance Card */}
-					{solCoin && (
+				{/* Token List */}
+				<View style={styles.tokensSection}>
+					<Text style={styles.sectionTitle}>Your Tokens</Text>
+					{walletBalance.tokens.map((token) => (
 						<TokenCard
-							token={solCoin}
-							balance={walletBalance.sol_balance}
-							onPress={() => handleTokenPress(solCoin, solCoin, walletBalance, navigation.navigate)}
+							key={token.id}
+							token={token}
+							balance={token.balance}
+							onPress={() => handleTokenPress(token, solCoin, navigation.navigate)}
 						/>
-					)}
-
-					{/* Token List */}
-					{walletBalance.tokens.length === 0 ? (
-						<View style={styles.emptyStateContainer}>
-							<Text style={styles.emptyStateText}>No token assets found in wallet 🔍</Text>
-						</View>
-					) : (
-						walletBalance.tokens.map((token) => (
-							<TokenCard
-								key={token.symbol}
-								token={token}
-								balance={token.balance}
-								onPress={() => handleTokenPress(token, solCoin, walletBalance, navigation.navigate)}
-							/>
-						))
-					)}
+					))}
 				</View>
 			</ScrollView>
 		</SafeAreaView>

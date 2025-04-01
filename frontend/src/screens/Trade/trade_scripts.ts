@@ -5,6 +5,7 @@ import { buildAndSignSwapTransaction, generateWallet, getKeypairFromPrivateKey, 
 import { ToastProps } from '../../components/Common/Toast/toast_types';
 import { toRawAmount } from 'utils/numberFormat';
 import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
+import { Wallet } from '../../types/index';
 
 export const MIN_AMOUNT = "0.0001";
 export const DEFAULT_AMOUNT = "0.0001";
@@ -86,7 +87,8 @@ export const handleTrade = async (
 	toAmount: string,
 	setIsSubmitting: (submitting: boolean) => void,
 	showToast: (params: ToastProps) => void,
-	navigate: (screen: string) => void
+	navigate: (screen: string) => void,
+	wallet: Wallet
 ): Promise<void> => {
 	if (!fromCoin || !toCoin || !fromAmount || !toAmount) {
 		showToast({
@@ -99,15 +101,6 @@ export const handleTrade = async (
 	try {
 		setIsSubmitting(true);
 
-		const savedWallet = await secureStorage.getWallet();
-		if (!savedWallet) {
-			showToast({
-				type: 'error',
-				message: 'No wallet found'
-			});
-			return;
-		}
-
 		// Convert fromAmount to raw amount
 		const rawAmount = toRawAmount(fromAmount, fromCoin.decimals);
 
@@ -117,7 +110,7 @@ export const handleTrade = async (
 			toCoin.id,
 			parseFloat(rawAmount),
 			0.5, // Default slippage
-			savedWallet
+			wallet
 		);
 
 		showToast({

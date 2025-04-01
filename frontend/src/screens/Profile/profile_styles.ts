@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		padding: 20,
+		padding: 40,
 	},
 	errorText: {
 		color: '#FF6B6B',
@@ -177,5 +177,14 @@ export const styles = StyleSheet.create({
 		color: '#fff',
 		fontWeight: 'bold',
 		textAlign: 'center',
+	},
+	loadingText: {
+		color: '#fff',
+		fontSize: 16,
+		textAlign: 'center',
+		marginBottom: 20,
+	},
+	tokensSection: {
+		padding: 15,
 	},
 });

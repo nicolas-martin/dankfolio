@@ -4,16 +4,15 @@ import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../../components/Home/CoinCard';
 import { Wallet, Coin, NotificationProps } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
-import { WalletBalanceResponse } from '../../services/api';
 import { styles } from './home_styles';
 import {
 	NotificationState,
 	fetchAvailableCoins,
-	fetchWalletBalance,
 	handleImportWallet,
 	handleCoinPress
 } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
+import { usePortfolioStore } from '../../store/portfolio';
 
 const Notification: React.FC<NotificationProps> = ({ visible, type, message, onDismiss }) => {
 	if (!visible) return null;
@@ -38,32 +37,48 @@ const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const [coins, setCoins] = useState<Coin[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [wallet, setWallet] = useState<Wallet | null>(null);
 	const [solCoin, setSolCoin] = useState<Coin | null>(null);
-	const [walletBalance, setWalletBalance] = useState<WalletBalanceResponse | null>(null);
 	const [notification, setNotification] = useState<NotificationState>({
 		visible: false,
 		type: 'info',
 		message: '',
 	});
 
+	// Portfolio store
+	const { wallet, walletBalance, isLoading, setWallet, fetchWalletBalance } = usePortfolioStore();
+
 	const showNotification = useCallback((type: NotificationProps['type'], message: string): void => {
 		setNotification({ visible: true, type, message });
 		setTimeout(() => setNotification({ visible: false, type: 'info', message: '' }), 3000);
 	}, []);
 
-	const fetchWalletBalanceCallback = useCallback(async (address: string) => {
-		await fetchWalletBalance(address, setWalletBalance, showNotification);
-	}, [showNotification]);
-
 	const handleImportWalletCallback = useCallback(async (privateKey: string) => {
 		try {
-			await handleImportWallet(privateKey, setWallet, fetchWalletBalanceCallback);
+			const newWallet = await handleImportWallet(privateKey, setWallet, fetchWalletBalance);
 			showNotification('success', 'Wallet imported successfully');
 		} catch (error) {
 			showNotification('error', 'Failed to import wallet');
 		}
-	}, [fetchWalletBalanceCallback, showNotification]);
+	}, [fetchWalletBalance, setWallet, showNotification]);
+
+	const handleCoinPressCallback = useCallback((coin: Coin) => {
+		handleCoinPress(coin, solCoin, walletBalance, navigation.navigate);
+	}, [solCoin, walletBalance, navigation]);
+
+	const onRefresh = useCallback(async () => {
+		try {
+			setLoading(true);
+			await fetchAvailableCoins(setLoading, setSolCoin, setCoins, showNotification);
+			if (wallet?.address) {
+				await fetchWalletBalance(wallet.address);
+			}
+		} catch (error) {
+			console.error('Error refreshing data:', error);
+			showNotification('error', 'Failed to refresh data');
+		} finally {
+			setLoading(false);
+		}
+	}, [wallet, fetchWalletBalance, showNotification]);
 
 	const initializeData = useCallback(async (): Promise<void> => {
 		try {
@@ -86,36 +101,14 @@ const HomeScreen = () => {
 		initializeData();
 	}, [initializeData]);
 
-	const handleCoinPressCallback = useCallback((coin: Coin) => {
-		handleCoinPress(coin, solCoin, walletBalance, navigation.navigate);
-	}, [solCoin, walletBalance, navigation]);
-
-	const onRefresh = useCallback((): void => {
-		fetchAvailableCoins(setLoading, setSolCoin, setCoins, showNotification);
-	}, [showNotification]);
-
-	if (loading) {
-		return (
-			<SafeAreaView style={styles.loadingContainer}>
-				<ActivityIndicator size="large" color="#6A5ACD" />
-				<Text style={styles.loadingText}>Loading wallet...</Text>
-			</SafeAreaView>
-		);
-	}
-
 	return (
 		<SafeAreaView style={styles.container}>
 			<Notification
 				visible={notification.visible}
 				type={notification.type}
 				message={notification.message}
-				onDismiss={() => setNotification({ visible: false, type: 'info', message: '' })}
+				onDismiss={() => setNotification({ ...notification, visible: false })}
 			/>
-
-			<View style={styles.header}>
-				<Text style={styles.title}>🚀 DankFolio</Text>
-				<Text style={styles.subtitle}>Trade memes securely</Text>
-			</View>
 
 			{wallet ? (
 				<View style={styles.content}>

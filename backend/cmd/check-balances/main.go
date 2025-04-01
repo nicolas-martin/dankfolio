@@ -14,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
+	"github.com/olekukonko/tablewriter"
 )
 
 type WalletInfo struct {
@@ -36,22 +37,17 @@ func checkBalance(ctx context.Context, walletService *wallet.Service, keyPath st
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token balances: %v", err)
 	}
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Token", "Address", "Balance", "Price", "($)"})
 
 	fmt.Printf("Public Key: %s\n", keypair.PublicKey())
 	fmt.Printf("SOL Balance: %.9f SOL\n", walletBalance.SolBalance)
-	fmt.Printf("\nToken Balances:\n")
-	fmt.Printf("%-20s %-40s %-12s %-15s %-15s\n", "Token", "Address", "Balance", "Price ($)", "Value ($)")
-	fmt.Printf("%-20s %-40s %-12s %-15s %-15s\n", "-----", "-------", "-------", "---------", "---------")
 
 	for _, token := range walletBalance.Tokens {
-		fmt.Printf("%-20s %-40s %-12.4f $%-14.4f $%-14.2f\n",
-			token.Symbol,
-			token.ID,
-			token.Balance,
-			token.Price,
-			token.Value,
-		)
+		table.Append([]string{token.Symbol, token.ID, fmt.Sprintf("%f", token.Balance), fmt.Sprintf("%f", token.Price), fmt.Sprintf("%f", token.Value)})
 	}
+
+	table.Render()
 
 	return &WalletInfo{
 		Path:      keyPath,

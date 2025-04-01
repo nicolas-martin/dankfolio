@@ -17,7 +17,6 @@ export const calculateTotalValue = (
 export const handleTokenPress = (
     token: Coin | null,
     solCoin: Coin | null,
-    walletBalance: WalletBalanceResponse,
     navigate: CoinDetailScreenNavigationProp['navigate']
 ): void => {
     if (!token?.id) {
@@ -52,8 +51,7 @@ export const handleTokenPress = (
         coinName: token.name,
         daily_volume: token.daily_volume,
         coin: token || undefined,
-        solCoin: solCoin || undefined,
-        walletBalance
+        solCoin: solCoin || undefined
     };
 
     navigate('CoinDetail', navigationParams);

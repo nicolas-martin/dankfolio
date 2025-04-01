@@ -40,6 +40,7 @@ func New(client *rpc.Client, coinService *coin.Service) *Service {
 }
 
 // GetTokens returns all tokens in a wallet
+// TODO: Add solana as part of the list of coins returned instead of being special
 func (s *Service) GetTokens(ctx context.Context, address string) (*WalletBalance, error) {
 	// Parse the public key
 	pubKey, err := solana.PublicKeyFromBase58(address)

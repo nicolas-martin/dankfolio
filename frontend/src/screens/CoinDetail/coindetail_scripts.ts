@@ -142,7 +142,6 @@ export const fetchCoinData = async (
 export const handleTradeNavigation = (
 	coin: Coin | null,
 	solCoin: Coin | null,
-	walletBalance: WalletBalanceResponse | undefined,
 	showToast: (params: ToastParams) => void,
 	navigate: (screen: string, params: any) => void
 ) => {
@@ -156,24 +155,9 @@ export const handleTradeNavigation = (
 			return;
 		}
 
-		// Special handling for SOL balance - already in SOL format
-		const fromBalance = solCoin.id === 'So11111111111111111111111111111111111111112'
-			? (walletBalance?.sol_balance || 0)
-			: walletBalance?.tokens.find(token => token.id === solCoin.id)?.balance || 0;
-
-		const toBalance = coin.id === 'So11111111111111111111111111111111111111112'
-			? (walletBalance?.sol_balance || 0)
-			: walletBalance?.tokens.find(token => token.id === coin.id)?.balance || 0;
-
 		navigate('Trade', {
-			initialFromCoin: {
-				...solCoin,
-				balance: fromBalance
-			},
-			initialToCoin: {
-				...coin,
-				balance: toBalance
-			}
+			initialFromCoin: solCoin,
+			initialToCoin: coin
 		});
 	}
 };

@@ -7,16 +7,16 @@ import TopBar from '../../components/Common/TopBar';
 import CoinChart from '../../components/Chart/CoinChart';
 import CoinInfo from '../../components/Chart/CoinInfo';
 import PriceDisplay from '../../components/CoinDetails/PriceDisplay';
-import { Coin, Wallet } from '../../types/index';
+import { Coin } from '../../types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
 	fetchCoinData,
 	fetchPriceHistory,
 	handleTradeNavigation,
-	loadWallet
 } from './coindetail_scripts';
 import { styles } from './coindetail_styles';
+import { usePortfolioStore } from '../../store/portfolio';
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -26,12 +26,11 @@ const CoinDetail: React.FC = () => {
 	const [solCoin] = useState<Coin | null>(initialSolCoin || null);
 	const [loading, setLoading] = useState(true);
 	const [priceHistory, setPriceHistory] = useState<{ x: Date; y: number }[]>([]);
-	const [wallet, setWallet] = useState<Wallet | null>(null);
 	const [coin, setCoin] = useState<Coin | null>(null);
 	const [metadataLoading, setMetadataLoading] = useState(true);
-	const [walletBalance, setWalletBalance] = useState<number>(0);
 	const [hoverPoint, setHoverPoint] = useState<{ x: Date; y: number } | null>(null);
 	const { showToast } = useToast();
+	const { wallet, walletBalance } = usePortfolioStore();
 
 	useEffect(() => {
 		fetchCoinData(initialCoin, setMetadataLoading, setCoin);
@@ -39,14 +38,6 @@ const CoinDetail: React.FC = () => {
 
 	useEffect(() => {
 		if (!coin) return;
-
-		const initWallet = async () => {
-			const { wallet: loadedWallet, balance } = await loadWallet(coin.id);
-			setWallet(loadedWallet);
-			setWalletBalance(balance);
-		};
-
-		initWallet();
 		fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, coin);
 	}, [selectedTimeframe, coin]);
 
@@ -119,19 +110,19 @@ const CoinDetail: React.FC = () => {
 				</View>
 
 				{/* Your Holdings Section */}
-				{wallet && walletBalance > 0 && (
+				{wallet && walletBalance && (
 					<View style={styles.balanceSection}>
 						<Text style={styles.balanceTitle}>Your Holdings</Text>
 						<View style={styles.balanceDetails}>
 							<View style={styles.balanceRow}>
 								<Text style={styles.balanceLabel}>Value</Text>
 								<Text style={styles.balanceValue}>
-									${(walletBalance * (priceHistory[priceHistory.length - 1]?.y || 0)).toFixed(2)}
+									${(walletBalance.sol_balance * (priceHistory[priceHistory.length - 1]?.y || 0)).toFixed(2)}
 								</Text>
 							</View>
 							<View style={styles.balanceRow}>
 								<Text style={styles.balanceLabel}>Quantity</Text>
-								<Text style={styles.balanceValue}>{walletBalance.toFixed(4)} {coin?.symbol}</Text>
+								<Text style={styles.balanceValue}>{walletBalance.sol_balance.toFixed(4)} {coin?.symbol}</Text>
 							</View>
 						</View>
 					</View>
@@ -168,7 +159,6 @@ const CoinDetail: React.FC = () => {
 						onPress={() => handleTradeNavigation(
 							coin,
 							solCoin,
-							route.params.walletBalance,
 							showToast,
 							navigation.navigate
 						)}

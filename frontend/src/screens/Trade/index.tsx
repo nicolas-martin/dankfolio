@@ -10,6 +10,7 @@ import TradeButton from '../../components/Trade/TradeButton';
 import { useToast } from '../../components/Common/Toast';
 import { styles } from './trade_styles';
 import { TradeScreenParams } from './trade_types';
+import { usePortfolioStore } from '../../store/portfolio';
 import {
 	DEFAULT_AMOUNT,
 	QUOTE_DEBOUNCE_MS,
@@ -23,6 +24,7 @@ const Trade: React.FC = () => {
 	const navigation = useNavigation();
 	const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
 	const { initialFromCoin, initialToCoin } = route.params || {};
+	const { wallet } = usePortfolioStore();
 
 	const amountInputRef = useRef<TextInput>(null);
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,6 +42,16 @@ const Trade: React.FC = () => {
 	const { showToast } = useToast();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [quoteLoading, setQuoteLoading] = useState(false);
+
+	if (!wallet) {
+		return (
+			<SafeAreaView style={styles.container}>
+				<View style={styles.tradeContainer}>
+					<Text>No wallet connected. Please connect a wallet to trade.</Text>
+				</View>
+			</SafeAreaView>
+		);
+	}
 
 	const getQuote = useCallback((amount: string) => {
 		if (parseFloat(amount) === 0) return
@@ -85,9 +97,10 @@ const Trade: React.FC = () => {
 			toAmount,
 			setIsSubmitting,
 			showToast,
-			navigation.navigate
+			navigation.navigate,
+			wallet
 		);
-	}, [fromCoin, toCoin, fromAmount, toAmount, showToast, navigation]);
+	}, [fromCoin, toCoin, fromAmount, toAmount, showToast, navigation, wallet]);
 
 	const getTradeButtonLabel = (): string => {
 		if (isSubmitting) return 'Processing...';
