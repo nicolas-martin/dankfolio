@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, Pressable } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, ScrollView } from 'react-native';
 import { ActivityIndicator, Text, useTheme, Button } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
@@ -46,6 +46,27 @@ const CoinDetail: React.FC = () => {
     fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, coin);
   }, [selectedTimeframe, coin]);
 
+  // Use useMemo to calculate display values to avoid direct shared value access in render
+  const displayData = useMemo(() => {
+    const lastPoint = priceHistory.length > 0 ? priceHistory[priceHistory.length - 1] : null;
+    const firstPoint = priceHistory.length > 0 ? priceHistory[0] : null;
+
+    const currentPrice = hoverPoint?.y ?? lastPoint?.y ?? 0;
+    let periodChange = 0;
+    let valueChange = 0;
+
+    if (lastPoint && firstPoint && firstPoint.y !== 0) {
+      periodChange = ((lastPoint.y - firstPoint.y) / firstPoint.y) * 100;
+      valueChange = lastPoint.y - firstPoint.y;
+    }
+
+    return {
+      currentPrice,
+      periodChange,
+      valueChange,
+    };
+  }, [priceHistory, hoverPoint]);
+
   if (loading && !coin) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -64,14 +85,9 @@ const CoinDetail: React.FC = () => {
         {coin && priceHistory.length >= 2 && (
           <View style={styles.priceDisplayContainer}>
             <PriceDisplay
-              price={hoverPoint?.y || priceHistory[priceHistory.length - 1]?.y || 0}
-              periodChange={
-                ((priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y) /
-                  priceHistory[0]?.y) * 100
-              }
-              valueChange={
-                priceHistory[priceHistory.length - 1]?.y - priceHistory[0]?.y
-              }
+              price={displayData.currentPrice}
+              periodChange={displayData.periodChange}
+              valueChange={displayData.valueChange}
               period={selectedTimeframe}
               icon_url={coin.icon_url}
               name={coin.name}
@@ -86,26 +102,28 @@ const CoinDetail: React.FC = () => {
             activePoint={hoverPoint}
             onHover={handleChartHover}
           />
-
-          <View style={styles.timeframeButtonsContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.timeframeButtonsInnerContainer}
-            >
-              {TIMEFRAMES.map((tf) => (
-                <Pressable
+        </View>
+        <View style={styles.timeframeButtonsContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.timeframeButtonsInnerContainer}
+          >
+            {TIMEFRAMES.map((tf) => {
+              const isSelected = selectedTimeframe === tf.value;
+              return (
+                <Button
                   key={tf.value}
-                  style={styles.timeframeButton}
+                  mode={isSelected ? 'contained-tonal' : 'outlined'}
                   onPress={() => setSelectedTimeframe(tf.value)}
+                  style={styles.timeframeButton}
+                  compact
                 >
-                  <Text style={styles.timeframeButtonText}>
-                    {tf.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
+                  {tf.label}
+                </Button>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {wallet && walletBalance && (

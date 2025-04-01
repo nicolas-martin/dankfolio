@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, FlatList } from 'react-native';
-import { ActivityIndicator, useTheme } from 'react-native-paper';
+import { View, Text, SafeAreaView, FlatList } from 'react-native';
+import { ActivityIndicator, useTheme, Button, IconButton } from 'react-native-paper';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../../components/Home/CoinCard';
 import { Coin } from '../../types/index';
@@ -88,22 +88,28 @@ const HomeScreen = () => {
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<TouchableOpacity onPress={() => showToast({
-				type: 'success',
-				message: 'Test toast notification',
-				duration: 3000
-			})}>
-				<Text>Show Test Toast</Text>
-			</TouchableOpacity>
+			<Button 
+				mode="outlined" 
+				onPress={() => showToast({
+					type: 'success',
+					message: 'Test toast notification',
+					duration: 3000
+				})}
+				style={{ margin: 16 }}
+			>
+				Show Test Toast
+			</Button>
 
 			{wallet ? (
 				<View style={styles.content}>
 					<View style={styles.coinsSection}>
 						<View style={styles.sectionHeader}>
 							<Text style={styles.sectionTitle}>Available Coins</Text>
-							<TouchableOpacity onPress={onRefresh} style={styles.refreshCoinsButton}>
-								<Text style={styles.refreshCoinsText}>🔄</Text>
-							</TouchableOpacity>
+							<IconButton
+								icon="refresh"
+								size={24}
+								onPress={onRefresh}
+							/>
 						</View>
 						{coins.length > 0 ? (
 							<FlatList
@@ -122,8 +128,8 @@ const HomeScreen = () => {
 						)}
 					</View>
 					<View style={styles.profileContainer}>
-						<TouchableOpacity
-							style={styles.profileButton}
+						<Button
+							mode="contained"
 							onPress={() => {
 								if (!wallet?.address) {
 									showToast({
@@ -148,8 +154,8 @@ const HomeScreen = () => {
 								});
 							}}
 						>
-							<Text style={styles.profileButtonText}>View Profile</Text>
-						</TouchableOpacity>
+							View Profile
+						</Button>
 					</View>
 				</View>
 			) : (

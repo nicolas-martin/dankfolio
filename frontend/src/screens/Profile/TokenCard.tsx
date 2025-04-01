@@ -1,11 +1,10 @@
 import React from 'react';
 import { TouchableOpacity, View, Image } from 'react-native';
-import { Text, Icon, useTheme } from 'react-native-paper';
+import { Text, Icon, useTheme, Button } from 'react-native-paper';
 import { TokenInfo } from '../../services/api';
 import { ICON_COINS, ICON_LINK } from '../../utils/icons';
 import { createStyles } from './profile_styles';
-import { copyToClipboard } from './profile_scripts';
-import { formatAddress } from './profile_scripts';
+import { copyToClipboard, formatAddress } from './profile_scripts';
 import { useToast } from '../../components/Common/Toast';
 
 interface TokenCardProps {
@@ -42,16 +41,16 @@ export const TokenCard: React.FC<TokenCardProps> = ({ token, balance, onPress })
             <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
               {token.symbol}
             </Text>
-            <TouchableOpacity
+            <Button 
+              mode="text"
+              icon={ICON_LINK}
               onPress={() => copyToClipboard(token.id || '', token.symbol, showToast)}
+              contentStyle={styles.addressButtonContent}
+              labelStyle={styles.addressButtonLabel}
+              compact
             >
-              <View style={styles.addressRow}>
-                <Text variant="bodySmall" style={styles.addressText}>
-                  {formatAddress(token.id)}
-                </Text>
-                <Icon source={ICON_LINK} size={16} color={theme.colors.onSurfaceVariant} />
-              </View>
-            </TouchableOpacity>
+              {formatAddress(token.id)}
+            </Button>
           </View>
 
           <View style={styles.tokenBalance}>

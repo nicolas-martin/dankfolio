@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Icon, useTheme } from 'react-native-paper';
+import { View, ScrollView } from 'react-native';
+import { Text, Icon, useTheme, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
 import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './profile_scripts';
@@ -49,19 +49,16 @@ const Profile = () => {
               <Text variant="headlineSmall" style={{ color: theme.colors.onSurface }}>
                 Profile
               </Text>
-              <TouchableOpacity
+              <Button
+                mode="text"
+                icon={ICON_LINK}
                 onPress={() => copyToClipboard(wallet.address, 'Wallet', showToast)}
+                contentStyle={styles.addressButtonContent}
+                labelStyle={styles.addressButtonLabel}
+                compact
               >
-                <View style={styles.addressRow}>
-                  <Text
-                    variant="bodyMedium"
-                    style={styles.addressText}
-                  >
-                    {formatAddress(wallet.address)}
-                  </Text>
-                  <Icon source={ICON_LINK} size={16} color={theme.colors.onSurfaceVariant} />
-                </View>
-              </TouchableOpacity>
+                {formatAddress(wallet.address)}
+              </Button>
             </View>
           </View>
 

@@ -97,4 +97,16 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
   addressText: {
     color: theme.colors.onSurfaceVariant,
   },
+  // Styles for the address copy Button
+  addressButtonContent: {
+    justifyContent: 'flex-start', // Align icon and text to the left
+    marginLeft: -8, // Reduce default left padding
+  },
+  addressButtonLabel: {
+    fontSize: 12, // Match previous Text variant="bodySmall"
+    color: theme.colors.onSurfaceVariant,
+    textTransform: 'none', // Prevent uppercase default
+    marginLeft: -4, // Adjust spacing between icon and text
+    letterSpacing: 0, // Remove default letter spacing
+  },
 });

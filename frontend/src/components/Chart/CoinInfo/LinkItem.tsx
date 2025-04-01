@@ -1,11 +1,11 @@
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { Text, Icon, useTheme } from 'react-native-paper';
+import { Text, Icon as PaperIcon, useTheme } from 'react-native-paper';
 import { ICON_LINK } from '../../../utils/icons';
 import { createStyles } from './coininfo_styles';
 
 interface LinkItemProps {
-  icon: any;
+  icon: React.ComponentType<any>;
   label: string;
   value: string;
   onPress: (url: string) => void;
@@ -27,7 +27,7 @@ export const LinkItem: React.FC<LinkItemProps> = ({
           styles.linkItemIconContainer,
           { backgroundColor: theme.colors.surfaceVariant }
         ]}>
-          <Icon source={IconComponent} size={20} color={theme.colors.onSurface} />
+          <IconComponent size={20} color={theme.colors.onSurface} />
         </View>
         <View style={styles.linkItemTextContainer}>
           <Text
@@ -44,7 +44,7 @@ export const LinkItem: React.FC<LinkItemProps> = ({
             {value}
           </Text>
         </View>
-        <Icon source={ICON_LINK} size={16} color={theme.colors.onSurfaceVariant} />
+        <PaperIcon source={ICON_LINK} size={16} color={theme.colors.onSurfaceVariant} />
       </View>
     </TouchableOpacity>
   );

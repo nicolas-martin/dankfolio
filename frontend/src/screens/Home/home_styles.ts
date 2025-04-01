@@ -82,13 +82,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: 'bold',
 		color: theme.colors.onSurface,
 	},
-	refreshCoinsButton: {
-		padding: 8,
-	},
-	refreshCoinsText: {
-		fontSize: 24,
-		color: theme.colors.onSurfaceVariant,
-	},
 	coinsList: {
 		paddingHorizontal: 16,
 		paddingBottom: 16,
@@ -164,17 +157,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	profileContainer: {
 		padding: 16,
-	},
-	profileButton: {
-		backgroundColor: theme.colors.primary,
-		padding: 12,
-		borderRadius: 8,
-		alignItems: 'center',
-	},
-	profileButtonText: {
-		fontSize: 16,
-		fontWeight: 'bold',
-		color: theme.colors.onPrimary,
 	},
 	notification: {
 		position: 'absolute',

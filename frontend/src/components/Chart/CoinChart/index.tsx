@@ -22,6 +22,7 @@ import {
   runOnJS,
   type SharedValue,
 } from "react-native-reanimated";
+import { useTheme, MD3Theme } from "react-native-paper";
 
 interface CoinChartProps {
   data: { x: Date; y: number }[];
@@ -43,6 +44,7 @@ export default function CoinChart({
 }: CoinChartProps) {
   // console.log("[CoinChart] Initializing with data length:", data.length);
 
+  const theme = useTheme();
   const { state: chartPress, isActive: isPressActive } =
     useChartPressState(initChartPressState);
 
@@ -154,6 +156,7 @@ export default function CoinChart({
                   top={chartBounds.top}
                   bottom={chartBounds.bottom}
                   lineColor={lineColor}
+                  theme={theme}
                 />
               )}
             </>
@@ -209,12 +212,14 @@ const ChartIndicator = ({
   top,
   bottom,
   lineColor,
+  theme,
 }: {
   xPosition: SharedValue<number>;
   yPosition: SharedValue<number>;
   top: number;
   bottom: number;
   lineColor: string;
+  theme: MD3Theme;
 }) => {
   return (
     <Group>
@@ -222,7 +227,7 @@ const ChartIndicator = ({
       <Line
         p1={vec(xPosition.value, top)} // Access .value here for vec
         p2={vec(xPosition.value, bottom)} // Access .value here for vec
-        color="rgba(255, 255, 255, 0.7)" 
+        color={theme.colors.outline}
         strokeWidth={1.5}
       />
       {/* Indicator Dots */}

@@ -25,37 +25,32 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
   },
   chartSection: {
     marginHorizontal: 16,
+    marginBottom: 16,
     position: 'relative',
     backgroundColor: theme.colors.background,
-    height: Platform.select({ web: 400, ios: 300, android: 300, default: 250 }),
+    height: Platform.select({ web: 350, ios: 250, android: 250, default: 200 }),
     overflow: 'hidden',
   },
   timeframeButtonsContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 16,
-    right: 16,
-    marginTop: 8,
-    borderRadius: 4,
+    marginHorizontal: 16,
+    marginTop: 12,
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     backgroundColor: theme.colors.background,
   },
   timeframeButtonsInnerContainer: {
-    flexGrow: 1,
     justifyContent: 'center',
-    gap: 8,
+    gap: 16,
     paddingHorizontal: 8,
   },
   timeframeButton: {
-    minWidth: 48,
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 4,
-  },
-  timeframeButtonText: {
-    fontWeight: '600',
+    // Keeping some basic styles, Button props handle most visual aspects
+    // alignItems: 'center', // Default Button alignment is fine
+    // paddingHorizontal: 12, // Use Button's internal padding via 'compact'
+    // paddingVertical: 8,
+    // borderRadius: 8, // Button handles its own border radius
+    // borderWidth: 1, // Button mode handles border
+    // borderColor: theme.colors.outlineVariant, // Button mode handles border
   },
   holdingsContainer: {
     backgroundColor: theme.colors.surfaceVariant,
