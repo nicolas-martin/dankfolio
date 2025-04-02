@@ -36,7 +36,7 @@ const Trade: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
   const { initialFromCoin, initialToCoin } = route.params || {};
-  const { wallet } = usePortfolioStore();
+  const { wallet, walletBalance, fetchWalletBalance } = usePortfolioStore();
   const { showToast } = useToast();
   const theme = useTheme();
   const styles = createStyles(theme);
@@ -57,13 +57,15 @@ const Trade: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
 
-  if (!wallet) {
-    return (
-      <View style={[styles.noWalletContainer, { backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: theme.colors.onSurface, fontSize: 18 }}>No wallet connected. Please connect a wallet to trade.</Text>
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (wallet?.address) {
+      console.log('🔄 Trade screen: Fetching wallet balance for', wallet.address);
+      fetchWalletBalance(wallet.address).catch(error => {
+        console.error('❌ Failed to fetch balance on trade screen:', error);
+        showToast({ type: 'error', message: 'Failed to load balance.' });
+      });
+    }
+  }, [wallet?.address, fetchWalletBalance]);
 
   const getQuote = useCallback((amount: string) => {
     if (parseFloat(amount) === 0) return;
@@ -102,6 +104,12 @@ const Trade: React.FC = () => {
   }, [fromCoin, toCoin, fromAmount, toAmount]);
 
   const onTradePress = useCallback(() => {
+    if (!wallet) {
+      console.error('❌ Trade button pressed but wallet is null!');
+      showToast({ type: 'error', message: 'Wallet not connected.' });
+      return;
+    }
+
     handleTrade(
       fromCoin,
       toCoin,
@@ -123,6 +131,14 @@ const Trade: React.FC = () => {
     return 'Swap';
   };
 
+  if (!wallet) {
+    return (
+      <View style={[styles.noWalletContainer, { backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.colors.onSurface, fontSize: 18 }}>No wallet connected. Please connect a wallet to trade.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
@@ -137,12 +153,6 @@ const Trade: React.FC = () => {
               selectedCoin={fromCoin || undefined}
               amount={fromAmount}
               onAmountChange={setFromAmount}
-              onCoinSelect={() => {
-                const coin = fromCoin;
-                if (coin) {
-                  setFromCoin(coin);
-                }
-              }}
               isInput
               inputRef={amountInputRef as React.RefObject<TextInput>}
               approxValue={fromCoin && fromAmount && parseFloat(fromAmount) > 0 ? `≈ $${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}` : undefined}
@@ -158,12 +168,6 @@ const Trade: React.FC = () => {
               selectedCoin={toCoin || undefined}
               amount={toAmount}
               isAmountLoading={quoteLoading}
-              onCoinSelect={() => {
-                const coin = toCoin;
-                if (coin) {
-                  setToCoin(coin);
-                }
-              }}
             />
 
             {/* Trade Details */}

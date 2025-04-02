@@ -2,9 +2,10 @@ import React from 'react';
 import { View, Text, Image, TextInput, Platform } from 'react-native';
 import { ActivityIndicator, Card } from 'react-native-paper';
 import { theme } from '../../../utils/theme';
-import { CoinSelectorProps } from './coinselector_types';
+import { CoinSelectorProps } from './types';
 import { styles } from './coinselector_styles';
 import { DEFAULT_ICON, getCoinIcon, renderCoinBalance } from './coinselector_scripts';
+import { usePortfolioStore } from '../../../store/portfolio';
 
 const CoinSelector: React.FC<CoinSelectorProps> = ({
 	label,
@@ -17,10 +18,18 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 	approxValue,
 	rateText,
 }) => {
-	const renderCoinItem = () => {
-		if (!selectedCoin) return <Text style={styles.placeholderText}>Select coin</Text>;
+	const { walletBalance } = usePortfolioStore();
 
-		const { balance, value } = renderCoinBalance(selectedCoin);
+	const renderCoinItem = () => {
+		if (!selectedCoin) {
+			return (
+				<View style={styles.coinContainer}>
+					<Text style={styles.placeholderText}>Select coin</Text>
+				</View>
+			);
+		}
+
+		const { balance, value } = renderCoinBalance(selectedCoin, walletBalance);
 
 		return (
 			<View style={styles.coinContainer}>
@@ -37,7 +46,7 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 				</View>
 				<View style={styles.balanceSection}>
 					<Text style={styles.balanceText}>{balance}</Text>
-					<Text style={styles.valueText}>${value}</Text>
+					<Text style={styles.valueText}>${value.toFixed(4)}</Text>
 				</View>
 			</View>
 		);
