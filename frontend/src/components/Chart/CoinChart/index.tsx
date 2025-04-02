@@ -12,8 +12,8 @@ import {
 	LinearGradient,
 	Path,
 	Skia,
-	useFont,
 	vec,
+	useFont,
 } from "@shopify/react-native-skia";
 import { View } from "react-native";
 import { format } from "date-fns";
@@ -26,6 +26,11 @@ import { useTheme, MD3Theme } from "react-native-paper";
 import * as Haptics from 'expo-haptics';
 import { CoinChartProps, PricePoint } from "./types";
 
+// *** IMPORTANT: Ensure this font file exists at this path ***
+// Go up 4 levels to frontend/, then assets/fonts/
+// import inter from "../../../../assets/fonts/inter-medium.ttf"; // Use correct filename case
+const inter = require("../../../../assets/fonts/inter-medium.ttf"); // Try using require
+
 const initChartPressState = { x: 0, y: { y: 0 } };
 
 export default function CoinChart({
@@ -33,13 +38,17 @@ export default function CoinChart({
 	loading,
 	onHover,
 }: CoinChartProps) {
-	// console.log("[CoinChart] Initializing with data length:", data.length);
+	// Log incoming data once
+	React.useEffect(() => {
+		console.log("[CoinChart] Received data prop:", JSON.stringify(data.slice(0, 5))); // Log first 5 points
+	}, [data]);
 
 	const theme = useTheme();
-	// Set colors directly from theme
-	const finalLineColor = theme.colors.primary;
-	const finalGradientColor = `${finalLineColor}33`; // Use primary with ~20% opacity
-	
+
+	// *** Load font using useFont and direct import ***
+	const fontSize = 12;
+	const font = useFont(inter, fontSize); // Use imported font object
+
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);
 
@@ -99,14 +108,10 @@ export default function CoinChart({
 		}
 	}, [isPressActive]); // Run when isPressActive changes
 
-	if (loading || !data.length) {
-		return null;
-	}
-
-	// Map PriceData[] to PricePoint[] for the chart
+	// Calculate chartData (safe even if data is empty)
 	const chartData: PricePoint[] = data.map(point => {
-		const timestamp = new Date(point.timestamp).getTime(); // Use PriceData.timestamp
-		const value = typeof point.value === 'string' ? parseFloat(point.value) : point.value; // Use PriceData.value
+		const timestamp = new Date(point.timestamp).getTime();
+		const value = typeof point.value === 'string' ? parseFloat(point.value) : point.value;
 		return {
 			timestamp,
 			price: value,
@@ -116,22 +121,33 @@ export default function CoinChart({
 		};
 	});
 
+	// --- Conditional Return (Now after all hooks) ---
+	if (loading || !data.length || !font) {
+		console.log("[CoinChart] Skipping render (loading, no data, or font not loaded)");
+		return null;
+	}
+	// --- End of Conditional Return ---
+
 	return (
-		<View style={{ height: 200 }}>
+		<View style={{ height: 250 }}>
 			<CartesianChart
 				data={chartData}
 				xKey="x"
 				yKeys={["y"]}
 				chartPressState={[chartPress]}
+				padding={0}
 				axisOptions={{
+					font: font,
 					tickCount: 5,
-					labelOffset: { x: 12, y: 8 },
+					labelOffset: { x: 0, y: 0 },
 					labelPosition: { x: "outset", y: "inset" },
 					axisSide: { x: "bottom", y: "left" },
-					formatXLabel: (timestamp: number) =>
-						format(new Date(timestamp), "HH:mm"),
-					formatYLabel: (v: number) => `$${v.toFixed(2)}`,
-					lineColor: theme.colors.outlineVariant,
+					formatXLabel: (value) => format(new Date(value), "HH:mm"),
+					formatYLabel: (value) => "",
+					lineColor: {
+						grid: { x: theme.colors.outlineVariant, y: theme.colors.outlineVariant },
+						frame: theme.colors.outlineVariant
+					},
 					labelColor: theme.colors.onSurfaceVariant,
 				}}
 			>
@@ -144,8 +160,8 @@ export default function CoinChart({
 								right={chartBounds.right}
 								top={chartBounds.top}
 								bottom={chartBounds.bottom}
-								lineColor={finalLineColor}
-								gradientColor={finalGradientColor}
+								lineColor={theme.colors.primary}
+								gradientColor={`${theme.colors.primary}33`}
 							/>
 							{isPressActive && (
 								<ChartIndicator
@@ -153,7 +169,7 @@ export default function CoinChart({
 									yPosition={chartPress.y.y.position}
 									top={chartBounds.top}
 									bottom={chartBounds.bottom}
-									lineColor={finalLineColor}
+									lineColor={theme.colors.primary}
 									theme={theme}
 								/>
 							)}

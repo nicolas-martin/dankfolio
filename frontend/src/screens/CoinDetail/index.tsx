@@ -121,30 +121,24 @@ const CoinDetail: React.FC = () => {
         </View>
 
         <View style={styles.timeframeButtonsContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.timeframeButtonsInnerContainer}
-          >
-            {TIMEFRAMES.map((tf) => {
-              const isSelected = selectedTimeframe === tf.value;
-              return (
-                <TouchableOpacity
-                  key={tf.value}
-                  onPress={() => setSelectedTimeframe(tf.value)}
-                  style={styles.timeframeButton}
-                >
-                  <Text style={[
-                    styles.timeframeButtonText,
-                    isSelected && styles.timeframeButtonTextSelected
-                  ]}>
-                    {tf.label}
-                  </Text>
-                  {isSelected && <View style={styles.timeframeButtonUnderline} />}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          {TIMEFRAMES.map((tf) => {
+            const isSelected = selectedTimeframe === tf.value;
+            return (
+              <TouchableOpacity
+                key={tf.value}
+                onPress={() => setSelectedTimeframe(tf.value)}
+                style={styles.timeframeButton}
+              >
+                <Text style={[
+                  styles.timeframeButtonText,
+                  isSelected && styles.timeframeButtonTextSelected
+                ]}>
+                  {tf.label}
+                </Text>
+                {isSelected && <View style={styles.timeframeButtonUnderline} />}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {coin && priceHistory.length > 0 && walletBalance && (
