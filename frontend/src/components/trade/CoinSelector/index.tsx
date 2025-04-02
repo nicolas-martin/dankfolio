@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TextInput, Platform } from 'react-native';
-import { ActivityIndicator } from 'react-native-paper';
+import { ActivityIndicator, Card } from 'react-native-paper';
 import { theme } from '../../../utils/theme';
 import { CoinSelectorProps } from './coinselector_types';
 import { styles } from './coinselector_styles';
@@ -14,6 +14,8 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 	onAmountChange,
 	isInput = false,
 	inputRef,
+	approxValue,
+	rateText,
 }) => {
 	const renderCoinItem = () => {
 		if (!selectedCoin) return <Text style={styles.placeholderText}>Select coin</Text>;
@@ -37,6 +39,12 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 					<Text style={styles.balanceText}>{balance}</Text>
 					<Text style={styles.valueText}>${value}</Text>
 				</View>
+				{(approxValue || rateText) && (
+					<View style={styles.valueHintContainer}>
+						{approxValue && <Text style={styles.approxValueText}>{approxValue}</Text>}
+						{rateText && <Text style={styles.rateText}>{rateText}</Text>}
+					</View>
+				)}
 			</View>
 		);
 	};
@@ -73,13 +81,15 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 	};
 
 	return (
-		<View style={styles.container}>
-			<Text style={styles.label}>{label}</Text>
-			<View style={styles.coinSelector}>
-				{renderCoinItem()}
-			</View>
-			{renderAmount()}
-		</View>
+		<Card style={styles.container}>
+			<Card.Content>
+				<Text style={styles.label}>{label}</Text>
+				<View style={styles.coinSelector}>
+					{renderCoinItem()}
+				</View>
+				{renderAmount()}
+			</Card.Content>
+		</Card>
 	);
 };
 

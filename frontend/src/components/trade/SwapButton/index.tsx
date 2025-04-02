@@ -9,6 +9,7 @@ const SwapButton: React.FC<SwapButtonProps> = ({ onPress }) => {
   const styles = createStyles(theme);
   return (
     <TouchableRipple
+      disabled={true}
       onPress={onPress}
       style={[styles.button, { backgroundColor: theme.colors.surfaceVariant }]}
       borderless={true}

@@ -4,6 +4,9 @@ import type { MaybeNumber } from 'victory-native/dist/types';
 export interface CoinChartProps {
   data: PriceData[];
   period?: string;
+  loading?: boolean;
+  activePoint?: PricePoint | null;
+  onHover?: (point: PricePoint | null) => void;
 }
 
 export interface PricePoint extends Record<string, unknown> {

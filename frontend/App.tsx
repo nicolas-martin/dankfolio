@@ -4,9 +4,18 @@ import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  configureReanimatedLogger,
+  ReanimatedLogLevel,
+} from 'react-native-reanimated';
 import Navigation from './src/navigation';
 import { theme as appTheme } from './src/utils/theme';
 import { ToastProvider } from './src/components/Common/Toast';
+
+// Disable Reanimated strict mode warnings
+configureReanimatedLogger({
+  strict: false,
+});
 
 const paperTheme = {
   ...MD3LightTheme,

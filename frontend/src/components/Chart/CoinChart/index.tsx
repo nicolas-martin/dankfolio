@@ -24,13 +24,7 @@ import {
 } from "react-native-reanimated";
 import { useTheme, MD3Theme } from "react-native-paper";
 import * as Haptics from 'expo-haptics';
-
-interface CoinChartProps {
-	data: { x: Date; y: number }[];
-	loading?: boolean;
-	activePoint?: { x: Date; y: number } | null;
-	onHover?: (point: { x: Date; y: number } | null) => void;
-}
+import { CoinChartProps, PricePoint } from "./types";
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
@@ -55,37 +49,26 @@ export default function CoinChart({
 	// }, [isPressActive]);
 
 	// Memoize the hover callback
-	const memoizedOnHover = React.useCallback((point: { x: Date; y: number } | null) => {
-		// Removed problematic log
-		// if (point) {
-		//   console.log("[CoinChart] Hover update:", 
-		//     { timestamp: point.x.toISOString(), value: point.y });
-		// }
+	const memoizedOnHover = React.useCallback((point: PricePoint | null) => {
 		onHover?.(point);
 	}, [onHover]);
 
 	// Track chart press state
 	const pressValue = useDerivedValue(() => {
 		'worklet';
-
-		// Ensure the necessary shared values exist
-		if (!chartPress.x.value || !chartPress.y.y?.value) {
+		if (!chartPress.x.value || !chartPress.y.y?.value || !isPressActive) {
 			return null;
 		}
-
-		// Access the primitive value using .value
 		const xVal = chartPress.x.value.value;
-		const yVal = chartPress.y.y.value.value; // Access the primitive value here
-
+		const yVal = chartPress.y.y.value.value;
 		if (typeof xVal !== 'number' || typeof yVal !== 'number') {
 			return null;
 		}
-
 		return {
 			timestamp: xVal,
 			value: yVal,
 		};
-	}, [isPressActive, chartPress]); // Dependencies seem correct
+	}, [isPressActive, chartPress]);
 
 	// Handle hover updates (Removed faulty haptic logic from here)
 	useDerivedValue(() => {
@@ -95,10 +78,15 @@ export default function CoinChart({
 		if (!isPressActive || !currentValue) {
 			runOnJS(memoizedOnHover)(null);
 		} else {
-			runOnJS(memoizedOnHover)({
-				x: new Date(currentValue.timestamp),
+			// Construct the full PricePoint object
+			const point: PricePoint = {
+				timestamp: currentValue.timestamp,
+				price: currentValue.value,
+				value: currentValue.value,
+				x: currentValue.timestamp,
 				y: currentValue.value
-			});
+			};
+			runOnJS(memoizedOnHover)(point);
 		}
 	}, [pressValue, isPressActive]);
 
@@ -115,13 +103,17 @@ export default function CoinChart({
 		return null;
 	}
 
-	const chartData = data.map(point => {
-		const transformed = {
-			x: point.x.getTime(),
-			y: point.y
+	// Map PriceData[] to PricePoint[] for the chart
+	const chartData: PricePoint[] = data.map(point => {
+		const timestamp = new Date(point.timestamp).getTime(); // Use PriceData.timestamp
+		const value = typeof point.value === 'string' ? parseFloat(point.value) : point.value; // Use PriceData.value
+		return {
+			timestamp,
+			price: value,
+			value,
+			x: timestamp,
+			y: value
 		};
-		// console.log("[CoinChart] Transforming data point:", transformed);
-		return transformed;
 	});
 
 	return (

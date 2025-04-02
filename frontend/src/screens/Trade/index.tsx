@@ -145,22 +145,12 @@ const Trade: React.FC = () => {
               }}
               isInput
               inputRef={amountInputRef as React.RefObject<TextInput>}
+              approxValue={fromCoin && fromAmount && parseFloat(fromAmount) > 0 ? `≈ $${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}` : undefined}
+              rateText={fromCoin ? `1 ${fromCoin.symbol} = $${fromCoin.price ? fromCoin.price.toFixed(2) : '0.00'}` : undefined}
             />
 
-            {/* Value Info */}
-            {fromCoin && fromAmount && parseFloat(fromAmount) > 0 && (
-              <View style={styles.valueInfoContainer}>
-                <Text style={{ color: theme.colors.onSurface, fontSize: 18 }}>
-                  ≈ ${(parseFloat(fromAmount) * (fromCoin.price || 0)).toFixed(6)}
-                </Text>
-                <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 16 }}>
-                  1 {fromCoin.symbol} = ${fromCoin.price ? fromCoin.price.toFixed(2) : '0.00'}
-                </Text>
-              </View>
-            )}
-
             {/* Swap Button */}
-            <SwapButton onPress={onSwapPress} />
+            {/* <SwapButton onPress={onSwapPress} /> */}
 
             {/* To Coin Selector */}
             <CoinSelector

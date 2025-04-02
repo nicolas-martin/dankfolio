@@ -68,14 +68,24 @@ export const styles = StyleSheet.create({
 		textAlign: 'right',
 	},
 	toAmountContainer: {
-		backgroundColor: theme.colors.background,
-		borderRadius: theme.borderRadius.md,
-		padding: theme.spacing.lg,
-		justifyContent: 'center',
+		flex: 1,
 		alignItems: 'flex-end',
 	},
 	toAmount: {
-		color: theme.colors.onSurface,
-		fontSize: theme.typography.fontSize.xl,
+		fontSize: 24,
+		fontWeight: 'bold',
+		color: theme.colors.text,
+	},
+	valueHintContainer: {
+		marginTop: 4,
+		alignItems: 'flex-end',
+	},
+	approxValueText: {
+		fontSize: 14,
+		color: theme.colors.textSecondary,
+	},
+	rateText: {
+		fontSize: 12,
+		color: theme.colors.textSecondary,
 	},
 });

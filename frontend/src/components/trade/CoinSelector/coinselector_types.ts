@@ -10,4 +10,6 @@ export interface CoinSelectorProps {
 	onCoinSelect?: (coinId: string) => void;
 	isInput?: boolean;
 	inputRef?: React.RefObject<TextInput>;
+	approxValue?: string;
+	rateText?: string;
 }

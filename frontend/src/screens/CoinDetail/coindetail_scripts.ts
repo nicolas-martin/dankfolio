@@ -1,4 +1,4 @@
-import { Coin, Wallet } from '../../types/index';
+import { Coin, Wallet, PriceData } from '../../types/index';
 import { WalletBalanceResponse } from '../../services/api';
 import api from '../../services/api';
 import { secureStorage } from '../../services/solana';
@@ -21,7 +21,7 @@ export const TIMEFRAMES: TimeframeOption[] = [
 export const fetchPriceHistory = async (
 	timeframe: string,
 	setLoading: (loading: boolean) => void,
-	setPriceHistory: (history: { x: Date; y: number }[]) => void,
+	setPriceHistory: (history: PriceData[]) => void,
 	coin: Coin | null
 ) => {
 	try {
@@ -69,11 +69,12 @@ export const fetchPriceHistory = async (
 		);
 
 		if (response?.data?.items) {
-			const mapped = response.data.items
+			const mapped: PriceData[] = response.data.items
 				.filter(item => item.value !== null && item.unixTime !== null)
 				.map(item => ({
-					x: new Date(item.unixTime * 1000),
-					y: item.value
+					timestamp: new Date(item.unixTime * 1000).toISOString(),
+					value: item.value,
+					unixTime: item.unixTime
 				}));
 			setPriceHistory(mapped);
 		} else {

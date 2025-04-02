@@ -24,8 +24,10 @@ export const fetchTradeQuote = async (
 	try {
 		setQuoteLoading(true);
 		const rawAmount = toRawAmount(amount, fromCoin.decimals);
+		console.log('📊 Sending raw amount to quote API:', rawAmount);
 
 		const response = await api.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
+		console.log('📬 Received quote API response:', JSON.stringify(response, null, 2));
 
 		setToAmount(response.estimatedAmount.toString());
 
