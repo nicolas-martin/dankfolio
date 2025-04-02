@@ -38,10 +38,6 @@ export default function CoinChart({
 	loading,
 	onHover,
 }: CoinChartProps) {
-	// Log incoming data once
-	React.useEffect(() => {
-		console.log("[CoinChart] Received data prop:", JSON.stringify(data.slice(0, 5))); // Log first 5 points
-	}, [data]);
 
 	const theme = useTheme();
 
@@ -51,11 +47,6 @@ export default function CoinChart({
 
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);
-
-	// Debug log press state changes
-	// React.useEffect(() => {
-	//   console.log("[CoinChart] Press state:", { isPressActive });
-	// }, [isPressActive]);
 
 	// Memoize the hover callback
 	const memoizedOnHover = React.useCallback((point: PricePoint | null) => {
