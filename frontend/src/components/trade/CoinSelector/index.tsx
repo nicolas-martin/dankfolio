@@ -39,12 +39,6 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 					<Text style={styles.balanceText}>{balance}</Text>
 					<Text style={styles.valueText}>${value}</Text>
 				</View>
-				{(approxValue || rateText) && (
-					<View style={styles.valueHintContainer}>
-						{approxValue && <Text style={styles.approxValueText}>{approxValue}</Text>}
-						{rateText && <Text style={styles.rateText}>{rateText}</Text>}
-					</View>
-				)}
 			</View>
 		);
 	};
@@ -88,6 +82,12 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 					{renderCoinItem()}
 				</View>
 				{renderAmount()}
+				{(approxValue || rateText) && (
+					<View style={styles.valueHintContainer}>
+						{approxValue && <Text style={styles.approxValueText}>{approxValue}</Text>}
+						{rateText && <Text style={styles.rateText}>{rateText}</Text>}
+					</View>
+				)}
 			</Card.Content>
 		</Card>
 	);

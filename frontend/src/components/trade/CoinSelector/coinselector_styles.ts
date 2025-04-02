@@ -79,13 +79,16 @@ export const styles = StyleSheet.create({
 	valueHintContainer: {
 		marginTop: 4,
 		alignItems: 'flex-end',
+		paddingHorizontal: theme.spacing.lg,
 	},
 	approxValueText: {
 		fontSize: 14,
 		color: theme.colors.textSecondary,
+		textAlign: 'right',
 	},
 	rateText: {
 		fontSize: 12,
 		color: theme.colors.textSecondary,
+		textAlign: 'right',
 	},
 });
