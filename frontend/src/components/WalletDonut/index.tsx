@@ -1,4 +1,5 @@
 import React from "react";
+import { View } from "react-native";
 import { Pie, PolarChart } from "victory-native";
 import { useTheme, MD3Theme } from "react-native-paper";
 import { TokenInfo } from "../../services/api";
