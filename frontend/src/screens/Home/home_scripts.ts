@@ -110,7 +110,6 @@ export const handleImportWallet = async (
 export const handleCoinPress = (
 	coin: Coin,
 	solCoin: Coin | null,
-	walletBalance: WalletBalanceResponse | null,
 	navigate: (screen: string, params: any) => void
 ): void => {
 	console.log('🏠 HomeScreen -> CoinDetail with coins:', {
@@ -135,12 +134,5 @@ export const handleCoinPress = (
 		} : null
 	});
 
-	navigate('CoinDetail', {
-		coinId: coin.id,
-		coinName: coin.name,
-		daily_volume: coin.daily_volume,
-		coin: coin,
-		solCoin: solCoin,
-		walletBalance: walletBalance
-	});
+	navigate('CoinDetail', { coin: coin, solCoin: coin });
 };

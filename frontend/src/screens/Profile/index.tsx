@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
-import { Text, Icon, useTheme, Button } from 'react-native-paper';
+import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
 import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './profile_scripts';
@@ -13,7 +13,6 @@ import {
   ICON_PROFILE,
   ICON_WALLET,
   ICON_COINS,
-  ICON_LINK,
 } from '../../utils/icons';
 
 const Profile = () => {
@@ -49,16 +48,17 @@ const Profile = () => {
               <Text variant="headlineSmall" style={{ color: theme.colors.onSurface }}>
                 Profile
               </Text>
-              <Button
-                mode="text"
-                icon={ICON_LINK}
-                onPress={() => copyToClipboard(wallet.address, 'Wallet', showToast)}
-                contentStyle={styles.addressButtonContent}
-                labelStyle={styles.addressButtonLabel}
-                compact
-              >
-                {formatAddress(wallet.address)}
-              </Button>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {formatAddress(wallet.address)}
+                </Text>
+                <IconButton
+                  icon="content-copy"
+                  size={16}
+                  onPress={() => copyToClipboard(wallet.address, 'Wallet', showToast)}
+                  style={{ margin: 0, padding: 0, marginLeft: 4 }}
+                />
+              </View>
             </View>
           </View>
 

@@ -60,7 +60,7 @@ const HomeScreen = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [wallet, fetchWalletBalance, showToast]);
+	}, [wallet, fetchWalletBalance]);
 
 	const initializeData = useCallback(async (): Promise<void> => {
 		try {
@@ -88,8 +88,8 @@ const HomeScreen = () => {
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<Button 
-				mode="outlined" 
+			<Button
+				mode="outlined"
 				onPress={() => {
 					showToast({
 						type: 'success',

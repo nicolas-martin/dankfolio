@@ -5,14 +5,15 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 2,
+    flex: 3,
     minWidth: 0,
     paddingRight: 8,
   },
   rightSection: {
     alignItems: 'flex-end',
-    flex: 1,
+    flex: 2,
     marginLeft: 8,
+    minWidth: 100,
   },
   nameSection: {
     flex: 1,
@@ -37,8 +38,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
     color: theme.colors.onSurfaceVariant,
     fontSize: 14,
     marginTop: 4,
-    maxWidth: '90%',
     letterSpacing: 0.25,
+    flexShrink: 1,
   },
   price: {
     color: theme.colors.onSurface,
@@ -46,12 +47,14 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 4,
     letterSpacing: 0.5,
+    textAlign: 'right',
   },
   volume: {
     color: theme.colors.onSurfaceVariant,
     fontSize: 12,
     marginBottom: 4,
     letterSpacing: 0.25,
+    textAlign: 'right',
   },
   card: {
     marginHorizontal: 8,

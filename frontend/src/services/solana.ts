@@ -84,7 +84,7 @@ const isBase64 = (privateKey: string) => {
 };
 
 export const getKeypairFromPrivateKey = (privateKey: string): Keypair => {
-	  // Handle Base64 private key
+	// Handle Base64 private key
 	//   const secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
 	// Handle Base58 private key
 	const secretKey = bs58.decode(privateKey);
@@ -193,12 +193,12 @@ export const secureStorage = {
 				privateKeyPreview: wallet.privateKey?.substring(0, 10) + '...',
 				privateKeyFormat: wallet.privateKey?.match(/^[A-Za-z0-9+/]*={0,2}$/) ? 'Base64' : 'Base58'
 			});
-			
+
 			await AsyncStorage.setItem('wallet', JSON.stringify({
 				address: wallet.address,
 				privateKey: wallet.privateKey,
 			}));
-			
+
 			// Verify what was saved
 			const savedData = await AsyncStorage.getItem('wallet');
 			console.log('✅ Verified saved wallet:', {
@@ -206,7 +206,7 @@ export const secureStorage = {
 				dataLength: savedData?.length,
 				parsed: savedData ? JSON.parse(savedData) : null
 			});
-			
+
 			return true;
 		} catch (error) {
 			console.error('❌ Error saving wallet to secure storage:', error);
@@ -221,9 +221,9 @@ export const secureStorage = {
 				found: !!walletData,
 				dataLength: walletData?.length
 			});
-			
+
 			if (!walletData) return null;
-			
+
 			const parsed = JSON.parse(walletData) as Wallet;
 			console.log('🔐 Parsed wallet data:', {
 				address: parsed.address,
@@ -231,7 +231,7 @@ export const secureStorage = {
 				privateKeyPreview: parsed.privateKey?.substring(0, 10) + '...',
 				privateKeyFormat: parsed.privateKey?.match(/^[A-Za-z0-9+/]*={0,2}$/) ? 'Base64' : 'Base58'
 			});
-			
+
 			return parsed;
 		} catch (error) {
 			console.error('❌ Error getting wallet from secure storage:', error);
@@ -243,13 +243,13 @@ export const secureStorage = {
 		try {
 			console.log('🗑️ Deleting wallet from storage');
 			await AsyncStorage.removeItem('wallet');
-			
+
 			// Verify deletion
 			const remainingData = await AsyncStorage.getItem('wallet');
 			console.log('✅ Verified wallet deletion:', {
 				isDeleted: !remainingData
 			});
-			
+
 			return true;
 		} catch (error) {
 			console.error('❌ Error deleting wallet from secure storage:', error);

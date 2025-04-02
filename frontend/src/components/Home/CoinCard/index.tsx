@@ -21,14 +21,14 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
           />
           <View style={styles.nameSection}>
             <Text style={styles.symbol}>{coin.symbol}</Text>
-            <Text style={styles.name} numberOfLines={1}>{coin.name || coin.symbol}</Text>
+            {/* <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail"> {coin.name || coin.symbol} </Text> */}
           </View>
         </View>
 
         <View style={styles.rightSection}>
-          <Text style={styles.price}>{formatPrice(Number(coin.price))}</Text>
+          <Text style={styles.price} numberOfLines={1}>{formatPrice(Number(coin.price))}</Text>
           {typeof coin.daily_volume === 'number' && (
-            <Text style={styles.volume}>Vol: {formatNumber(coin.daily_volume, true)}</Text>
+            <Text style={styles.volume} numberOfLines={1}>Vol: {formatNumber(coin.daily_volume, true)}</Text>
           )}
         </View>
       </Card.Content>
