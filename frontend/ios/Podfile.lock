@@ -1563,7 +1563,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-skia (1.11.18):
+  - react-native-skia (1.12.3):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1897,7 +1897,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNGestureHandler (2.24.0):
+  - RNGestureHandler (2.25.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2488,7 +2488,7 @@ SPEC CHECKSUMS:
   React-microtasksnativemodule: d9b946675010659cddd1c7611c074216579c8ad3
   react-native-get-random-values: d16467cf726c618e9c7a8c3c39c31faa2244bbba
   react-native-safe-area-context: 1550432038745277e5ce44b4be1abb94306d8f68
-  react-native-skia: d897170273e51d0983251a3f906342ef539f1263
+  react-native-skia: 1f6394b2a596681a0e4e61f94a5a8f9548316449
   React-nativeconfig: 67fa7a63ea288cb5b1d0dd2deaf240405fec164f
   React-NativeModulesApple: 34b7a4d7441a4ee78d18109ff107c1ccf7c074a9
   React-perflogger: d1149037ac466ad2141d4ae541ca16cb73b2343b
@@ -2519,7 +2519,7 @@ SPEC CHECKSUMS:
   ReactNativeART: b0ebceda8689ce026fff56b2f820664029480a4e
   RNCAsyncStorage: ff8f69859448bde50f1c25d3e7eb37555fed33ab
   RNCClipboard: 5ab9f1b524a2f7472b1ea36f8b8346fb4f5fe967
-  RNGestureHandler: 6aedf747478f64fbeddb3ad5d5d0dfdf2361d136
+  RNGestureHandler: 8dab066435239ff9f56934a2dae9080734cfec2b
   RNReanimated: d3b6cc70edd33d2d204c6fed3b8d16c6bf6a091c
   RNScreens: 2629b92a0f38e7432677bee3bc08a352ac5b4279
   RNSVG: bbbdd17e8730c0f2a9cb416e5f37be87e29ebc90
