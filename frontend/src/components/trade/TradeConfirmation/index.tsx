@@ -67,11 +67,6 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		return `$${(parseFloat(amount) * coin.price).toFixed(2)}`;
 	};
 
-	const calculateFeeUSD = (feeAmount: string): string => {
-		if (!latestFromCoin || !feeAmount || isNaN(parseFloat(feeAmount))) return '$0.00';
-		return `$${(parseFloat(feeAmount) * latestFromCoin.price).toFixed(2)}`;
-	};
-
 	const renderRow = (label: string, value: string, subValue?: string) => (
 		<View style={styles.row}>
 			<Text style={styles.label}>{label}</Text>
@@ -108,10 +103,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				<View style={styles.divider} />
 
 				<View style={styles.section}>
-					<Text style={styles.label}>Transaction Details</Text>
-					{renderRow('Network Fee', fees.gasFee, calculateFeeUSD(fees.gasFee))}
+					{/* <Text style={styles.label}>Transaction Details</Text> */}
 					{renderRow('Price Impact', `${roundedPriceImpact}%`)}
-					{renderRow('Total Fee', fees.totalFee, calculateFeeUSD(fees.totalFee))}
+					{renderRow('Total Fee', `$${fees.totalFee}`)}
 				</View>
 
 				{parseFloat(fees.priceImpactPct) > 2 && (
