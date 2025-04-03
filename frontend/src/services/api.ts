@@ -129,8 +129,19 @@ const api: API = {
 
 	getCoinByID: async (id: string): Promise<Coin> => {
 		console.log('🔄 Fetching coin by ID:', id);
-		const response = await apiClient.get<Coin>(`/api/tokens/${id}`);
-		return response.data;
+		try {
+			const response = await apiClient.get<Coin>(`/api/tokens/${id}`);
+			console.log('💰 Coin data received:', {
+				id,
+				symbol: response.data.symbol,
+				price: response.data.price,
+				decimals: response.data.decimals
+			});
+			return response.data;
+		} catch (error) {
+			console.error('❌ Error fetching coin:', error);
+			throw handleApiError(error as AxiosError);
+		}
 	}
 };
 

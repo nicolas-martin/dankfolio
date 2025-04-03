@@ -5,11 +5,13 @@ import { MD3Theme } from 'react-native-paper'; // Assuming MD3Theme is needed
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
 		flex: 1,
+		backgroundColor: theme.colors.background,
 	},
 	noWalletContainer: {
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
+		backgroundColor: theme.colors.background,
 	},
 	padding: {
 		padding: 16,

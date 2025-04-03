@@ -24,10 +24,27 @@ export const fetchTradeQuote = async (
 	try {
 		setQuoteLoading(true);
 		const rawAmount = toRawAmount(amount, fromCoin.decimals);
-		console.log('📊 Sending raw amount to quote API:', rawAmount);
+		console.log('📊 Trade Quote Request:', {
+			amount,
+			rawAmount,
+			fromCoin: {
+				symbol: fromCoin.symbol,
+				decimals: fromCoin.decimals,
+				price: fromCoin.price
+			},
+			toCoin: {
+				symbol: toCoin.symbol,
+				decimals: toCoin.decimals,
+				price: toCoin.price
+			}
+		});
 
 		const response = await api.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
-		console.log('📬 Received quote API response:', JSON.stringify(response, null, 2));
+		console.log('📬 Trade Quote Response:', {
+			estimatedAmount: response.estimatedAmount,
+			exchangeRate: response.exchangeRate,
+			fees: response.fee
+		});
 
 		setToAmount(response.estimatedAmount.toString());
 
@@ -65,16 +82,16 @@ export const handleSwapCoins = (
 };
 
 export const handleTrade = async (
-fromCoin: Coin,
-toCoin: Coin,
-amount: string,
-slippage: number,
-wallet: Wallet,
-navigation: any,
-setIsSubmitting: (isSubmitting: boolean) => void,
-showToast: (props: any) => void
+	fromCoin: Coin,
+	toCoin: Coin,
+	amount: string,
+	slippage: number,
+	wallet: Wallet,
+	navigation: any,
+	setIsSubmitting: (isSubmitting: boolean) => void,
+	showToast: (props: any) => void
 ): Promise<void> => {
-	
+
 	try {
 		setIsSubmitting(true);
 		console.log('🔄 Starting trade:', {
@@ -105,20 +122,20 @@ showToast: (props: any) => void
 			amount: parseFloat(amount),
 			signed_transaction: signedTransaction
 		});
-if (response.transaction_hash) {
-showToast({
-  type: 'success',
-  message: 'Trade executed successfully!',
-  txHash: response.transaction_hash
-});
-// Add delay before navigation to ensure toast is visible
-setTimeout(() => {
-  navigation.navigate('Home');
-}, 1500);
-} else {
-throw new Error('No transaction hash received');
-}
-		
+		if (response.transaction_hash) {
+			showToast({
+				type: 'success',
+				message: 'Trade executed successfully!',
+				txHash: response.transaction_hash
+			});
+			// Add delay before navigation to ensure toast is visible
+			setTimeout(() => {
+				navigation.navigate('Home');
+			}, 1500);
+		} else {
+			throw new Error('No transaction hash received');
+		}
+
 	} catch (error) {
 		console.error('❌ Trade error:', error);
 		showToast({ type: 'error', message: error.message || 'Failed to execute trade' });

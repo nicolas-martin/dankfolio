@@ -4,7 +4,6 @@ import bs58 from 'bs58';
 import { Buffer } from 'buffer';
 import { useCoinStore } from '../../store/coins';
 import { HomeScreenNavigationProp } from './home_types';
-import { Keypair } from '@solana/web3.js';
 
 export const SOL_MINT = 'So11111111111111111111111111111111111111112';
 

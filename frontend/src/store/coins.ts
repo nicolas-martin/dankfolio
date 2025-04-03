@@ -71,12 +71,23 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	getCoinByID: async (id: string) => {
 		const state = get();
 		if (state.coinMap[id]) {
-			console.log("found coin in statemap")
+			console.log("💰 Found coin in state:", {
+				id,
+				symbol: state.coinMap[id].symbol,
+				price: state.coinMap[id].price,
+				decimals: state.coinMap[id].decimals
+			});
 			return state.coinMap[id];
 		}
 
 		try {
 			const coin = await api.getCoinByID(id);
+			console.log("💰 Fetched coin from API:", {
+				id,
+				symbol: coin.symbol,
+				price: coin.price,
+				decimals: coin.decimals
+			});
 			state.setCoin(coin);
 			return coin;
 		} catch (error) {

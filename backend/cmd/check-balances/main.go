@@ -32,7 +32,7 @@ func checkBalance(ctx context.Context, walletService *wallet.Service, keyPath st
 	}
 
 	// Get token balances
-	walletBalance, err := walletService.GetTokens(ctx, keypair.PublicKey().String())
+	walletBalance, err := walletService.GetWalletBalances(ctx, keypair.PublicKey().String())
 	if err != nil {
 		log.Fatalf("failed to get token balances: %v", err)
 	}

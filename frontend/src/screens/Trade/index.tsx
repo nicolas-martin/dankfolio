@@ -10,6 +10,7 @@ import { useCoinStore } from '../../store/coins';
 import { Coin } from '../../types';
 import CoinSelector from '../../components/Trade/CoinSelector';
 import TradeDetails from '../../components/Trade/TradeDetails';
+import TradeConfirmation from '../../components/Trade/TradeConfirmation';
 import { fetchTradeQuote, handleTrade } from './trade_scripts';
 import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
 
@@ -37,6 +38,7 @@ const Trade: React.FC = () => {
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
 
 	// Get portfolio token data if available
 	const fromPortfolioToken = useMemo(() => {
@@ -48,8 +50,15 @@ const Trade: React.FC = () => {
 	}, [tokens, toCoin.id]);
 
 	const handleFromAmountChange = async (amount: string) => {
+		console.log('🔄 From Amount Change:', {
+			amount,
+			fromCoin: fromCoin.symbol,
+			toCoin: toCoin.symbol
+		});
+
 		setFromAmount(amount);
 		if (!amount || isNaN(parseFloat(amount))) {
+			console.log('❌ Invalid amount, clearing toAmount');
 			setToAmount('');
 			return;
 		}
@@ -65,31 +74,73 @@ const Trade: React.FC = () => {
 	};
 
 	const handleToAmountChange = async (amount: string) => {
+		console.log('🔄 To Amount Change:', {
+			amount,
+			fromCoin: fromCoin.symbol,
+			toCoin: toCoin.symbol
+		});
+
 		setToAmount(amount);
 		if (!amount || isNaN(parseFloat(amount))) {
+			console.log('❌ Invalid amount, clearing fromAmount');
 			setFromAmount('');
 			return;
 		}
 
 		await fetchTradeQuote(
 			amount,
-			toCoin,
-			fromCoin,
+			fromCoin,  // This should be the source coin for reverse quote
+			toCoin,    // This should be the target coin for reverse quote
 			setIsQuoteLoading,
 			setFromAmount,
 			setTradeDetails
 		);
 	};
 
+	useEffect(() => {
+		console.log('💱 Trade Details Updated:', {
+			exchangeRate: tradeDetails.exchangeRate,
+			fromAmount,
+			toAmount,
+			fromCoin: fromCoin.symbol,
+			toCoin: toCoin.symbol
+		});
+	}, [tradeDetails, fromAmount, toAmount]);
+
+	useEffect(() => {
+		// Log price information whenever coins or amounts change
+		console.log('💰 Price Debug:', {
+			fromCoin: {
+				symbol: fromCoin.symbol,
+				price: fromCoin.price,
+				amount: fromAmount,
+				valueUSD: fromAmount ? parseFloat(fromAmount) * fromCoin.price : 0
+			},
+			toCoin: {
+				symbol: toCoin.symbol,
+				price: toCoin.price,
+				amount: toAmount,
+				valueUSD: toAmount ? parseFloat(toAmount) * toCoin.price : 0
+			}
+		});
+	}, [fromCoin, toCoin, fromAmount, toAmount]);
+
 	const handleTradeSubmit = async () => {
 		if (!fromAmount || !toAmount || !wallet) {
 			showToast({ type: 'error', message: !wallet ? 'Please connect your wallet' : 'Please enter valid amounts' });
 			return;
 		}
+		setIsConfirmationVisible(true);
+	};
+
+	const handleTradeConfirm = async () => {
+		if (!wallet) {
+			showToast({ type: 'error', message: 'Please connect your wallet' });
+			return;
+		}
 
 		setIsLoading(true);
 		try {
-
 			await handleTrade(
 				fromCoin,
 				toCoin,
@@ -100,6 +151,7 @@ const Trade: React.FC = () => {
 				setIsLoading,
 				showToast
 			);
+			setIsConfirmationVisible(false);
 		} catch (error) {
 			console.error('Error executing trade:', error);
 			showToast({ type: 'error', message: 'Failed to execute trade' });
@@ -119,7 +171,7 @@ const Trade: React.FC = () => {
 
 	if (!wallet) {
 		return (
-			<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+			<View style={styles.noWalletContainer}>
 				<Text style={{ color: theme.colors.onSurface }}>Please connect your wallet to trade</Text>
 			</View>
 		);
@@ -189,13 +241,36 @@ const Trade: React.FC = () => {
 				<Button
 					mode="contained"
 					onPress={handleTradeSubmit}
-					loading={isLoading}
-					disabled={isLoading || !fromAmount || !toAmount}
+					disabled={!fromAmount || !toAmount}
 					style={{ width: '100%' }}
 				>
 					Trade
 				</Button>
 			</View>
+
+			<TradeConfirmation
+				isVisible={isConfirmationVisible}
+				onClose={() => setIsConfirmationVisible(false)}
+				onConfirm={handleTradeConfirm}
+				fromCoin={{
+					symbol: fromCoin.symbol,
+					amount: fromAmount,
+					value: `$${(parseFloat(fromAmount) * fromCoin.price).toFixed(2)}`
+				}}
+				toCoin={{
+					symbol: toCoin.symbol,
+					amount: toAmount,
+					value: `$${(parseFloat(toAmount) * toCoin.price).toFixed(2)}`
+				}}
+				fees={{
+					gasFee: tradeDetails.gasFee,
+					gasFeeUSD: `$${(parseFloat(tradeDetails.gasFee) * fromCoin.price).toFixed(2)}`,
+					priceImpactPct: tradeDetails.priceImpactPct,
+					totalFee: tradeDetails.totalFee,
+					totalFeeUSD: `$${(parseFloat(tradeDetails.totalFee) * fromCoin.price).toFixed(2)}`
+				}}
+				isLoading={isLoading}
+			/>
 		</View>
 	);
 };
