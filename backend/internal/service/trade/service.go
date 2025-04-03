@@ -128,7 +128,7 @@ func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 }
 
 // GetTradeQuote gets a quote for a potential trade
-func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, amount string) (*TradeQuote, error) {
+func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string) (*TradeQuote, error) {
 	// Convert amount to raw units based on decimals
 	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinID)
 	if err != nil {
@@ -142,15 +142,15 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 
 	// Get quote from Jupiter with enhanced parameters
 	quote, err := s.jupiterClient.GetQuote(coin.QuoteParams{
-		InputMint:        fromCoinID,
-		OutputMint:       toCoinID,
-		Amount:           amount, // Amount is already in raw units (lamports for SOL)
-		SlippageBps:      100,    // 1% slippage
-		SwapMode:         "ExactIn",
-		OnlyDirectRoutes: true,
+		InputMint:   fromCoinID,
+		OutputMint:  toCoinID,
+		Amount:      inputAmount, // Amount is already in raw units (lamports for SOL)
+		SlippageBps: 100,         // 1% slippage
+		SwapMode:    "ExactIn",
 		// TODO: Allow indirect routes for better prices
-		// OnlyDirectRoutes: false,
-		MaxAccounts: 64,
+		// OnlyDirectRoutes: true,
+		OnlyDirectRoutes: false,
+		MaxAccounts:      64,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
@@ -173,11 +173,12 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 	}
 
 	// Calculate estimated amount in token decimals
-	estimatedAmount := outAmount / math.Pow10(fromCoin.Decimals)
-	networkFeeInTokens := totalFeeAmount / math.Pow10(fromCoin.Decimals)
+	// NOTE: if this is unreliable just forward the raw amount to the frontend
+	estimatedAmount := outAmount / math.Pow10(toCoin.Decimals)
+	networkFeeInTokens := totalFeeAmount / math.Pow10(toCoin.Decimals)
 
 	// Calculate exchange rate
-	initialAmount, _ := strconv.ParseFloat(amount, 64)
+	initialAmount, _ := strconv.ParseFloat(inputAmount, 64)
 	exchangeRate := outAmount / initialAmount
 
 	// Build route summary for logging
@@ -211,5 +212,6 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 			Gas:            strconv.FormatFloat(networkFeeInTokens, 'f', -1, 64),
 			PriceImpactPct: quote.PriceImpactPct,
 		},
+		RoutePlan: quote.RoutePlan,
 	}, nil
 }

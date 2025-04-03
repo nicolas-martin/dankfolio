@@ -139,33 +139,32 @@ type CoinGeckoMetadata struct {
 // JupiterQuoteResponse represents the response from Jupiter's quote endpoint
 type JupiterQuoteResponse struct {
 	InputMint            string `json:"inputMint"`
-	OutputMint           string `json:"outputMint"`
-	Amount               string `json:"amount"`
 	InAmount             string `json:"inAmount"`
+	OutputMint           string `json:"outputMint"`
 	OutAmount            string `json:"outAmount"`
 	OtherAmountThreshold string `json:"otherAmountThreshold"`
 	SwapMode             string `json:"swapMode"`
-	SlippageBps          int32  `json:"slippageBps"`
+	SlippageBps          int    `json:"slippageBps"`
 	PlatformFee          *struct {
 		Amount string `json:"amount"`
-		FeeBps int32  `json:"feeBps"`
-	} `json:"platformFee,omitempty"`
+		FeeBps int    `json:"feeBps"`
+	} `json:"platformFee"`
 	PriceImpactPct string `json:"priceImpactPct"`
 	RoutePlan      []struct {
 		SwapInfo struct {
 			AmmKey     string `json:"ammKey"`
-			Label      string `json:"label,omitempty"`
+			Label      string `json:"label"`
 			InputMint  string `json:"inputMint"`
 			OutputMint string `json:"outputMint"`
 			InAmount   string `json:"inAmount"`
 			OutAmount  string `json:"outAmount"`
 			FeeAmount  string `json:"feeAmount"`
 			FeeMint    string `json:"feeMint"`
-			Percent    int32  `json:"percent"`
 		} `json:"swapInfo"`
+		Percent int `json:"percent"`
 	} `json:"routePlan"`
-	ContextSlot *int64   `json:"contextSlot,omitempty"`
-	TimeTaken   *float64 `json:"timeTaken,omitempty"`
+	ContextSlot int64   `json:"contextSlot"`
+	TimeTaken   float64 `json:"timeTaken"`
 }
 
 // QuoteParams represents all possible parameters for the Jupiter quote endpoint

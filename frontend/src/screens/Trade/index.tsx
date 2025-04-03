@@ -260,6 +260,7 @@ const Trade: React.FC = () => {
 							gasFee={tradeDetails.gasFee}
 							priceImpactPct={tradeDetails.priceImpactPct}
 							totalFee={tradeDetails.totalFee}
+							route={tradeDetails.route}
 						/>
 					)}
 				</View>
@@ -290,11 +291,7 @@ const Trade: React.FC = () => {
 					symbol: toCoin.symbol,
 					amount: toAmount,
 				}}
-				fees={{
-					gasFee: tradeDetails.gasFee,
-					priceImpactPct: tradeDetails.priceImpactPct,
-					totalFee: tradeDetails.totalFee
-				}}
+				fees={tradeDetails}
 				isLoading={isLoading}
 			/>
 		</View>

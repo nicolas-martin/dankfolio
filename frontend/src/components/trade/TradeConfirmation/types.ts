@@ -18,6 +18,7 @@ interface TradeConfirmationProps {
 		gasFee: string;
 		priceImpactPct: string;
 		totalFee: string;
+		route?: string;
 	};
 	isLoading?: boolean;
 }

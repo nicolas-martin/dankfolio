@@ -3,4 +3,5 @@ export interface TradeDetailsProps {
 	gasFee: string;
 	priceImpactPct: string;
 	totalFee: string;
+	route?: string;
 }
