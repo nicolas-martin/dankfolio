@@ -15,7 +15,7 @@ import (
 
 const (
 	jupiterPriceURL         = "https://api.jup.ag/price/v2"
-	jupiterTokenMetadataURL = "https://token.jup.ag/strict"
+	jupiterTokenMetadataURL = "https://api.jup.ag/tokens/v1/token"
 )
 
 // TokenMetadataCache represents a cache for token metadata
@@ -107,6 +107,7 @@ func (c *JupiterClient) GetTokenPrices(tokenAddresses []string) (map[string]floa
 
 	// Make request
 	url := fmt.Sprintf("%s?ids=%s", jupiterPriceURL, addressList)
+	log.Printf("🔄 Fetching token prices from Jupiter: %s", url)
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token prices: %w", err)
@@ -123,6 +124,8 @@ func (c *JupiterClient) GetTokenPrices(tokenAddresses []string) (map[string]floa
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	log.Printf("🔄 Raw Jupiter price response: %s", string(body))
+
 	// Parse response
 	var result struct {
 		Data map[string]struct {
@@ -130,6 +133,7 @@ func (c *JupiterClient) GetTokenPrices(tokenAddresses []string) (map[string]floa
 			Type  string `json:"type"`
 			Price string `json:"price"`
 		} `json:"data"`
+		TimeTaken float64 `json:"timeTaken"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal price response: %w", err)
@@ -142,6 +146,7 @@ func (c *JupiterClient) GetTokenPrices(tokenAddresses []string) (map[string]floa
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse price for token %s: %w", addr, err)
 		}
+		log.Printf("💰 Token price from Jupiter: %s = %f", addr, price)
 		prices[addr] = price
 	}
 

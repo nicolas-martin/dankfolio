@@ -103,16 +103,21 @@ const (
 	jupiterQuoteURL      = jupiterSwapBaseURL + "/quote"
 )
 
-// JupiterTokenInfoResponse represents the detailed token information from Jupiter API
+// JupiterTokenInfoResponse represents the response from Jupiter's token info API
 type JupiterTokenInfoResponse struct {
-	Address     string   `json:"address"`
-	Name        string   `json:"name"`
-	Symbol      string   `json:"symbol"`
-	Decimals    int      `json:"decimals"`
-	LogoURI     string   `json:"logoURI"`
-	Tags        []string `json:"tags,omitempty"`
-	DailyVolume float64  `json:"daily_volume,omitempty"`
-	CreatedAt   string   `json:"created_at,omitempty"`
+	Address           string                 `json:"address"`
+	Name              string                 `json:"name"`
+	Symbol            string                 `json:"symbol"`
+	Decimals          int                    `json:"decimals"`
+	LogoURI           string                 `json:"logoURI"`
+	Tags              []string               `json:"tags"`
+	DailyVolume       float64                `json:"daily_volume"`
+	CreatedAt         string                 `json:"created_at"`
+	FreezeAuthority   *string                `json:"freeze_authority"`
+	MintAuthority     *string                `json:"mint_authority"`
+	PermanentDelegate *string                `json:"permanent_delegate"`
+	MintedAt          string                 `json:"minted_at"`
+	Extensions        map[string]interface{} `json:"extensions"`
 }
 
 // CoinGeckoMetadata represents the raw response from CoinGecko API
