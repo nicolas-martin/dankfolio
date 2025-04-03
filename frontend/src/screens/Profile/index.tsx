@@ -6,7 +6,6 @@ import { useToast } from '../../components/Common/Toast';
 import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './profile_scripts';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/coindetail_types';
 import { usePortfolioStore } from '../../store/portfolio';
-import { useCoinStore } from '../../store/coins';
 import { createStyles } from './profile_styles';
 import { TokenCard } from './TokenCard';
 import WalletDonut from '../../components/WalletDonut';
@@ -20,7 +19,6 @@ const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const { showToast } = useToast();
 	const { wallet, porfolio: portfolio } = usePortfolioStore();
-	const { getCoinByID } = useCoinStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
@@ -65,22 +63,22 @@ const Profile = () => {
 					</View>
 
 					<View style={[styles.card, styles.portfolioValueCard, { backgroundColor: theme.colors.surfaceVariant }]}>
-					<Text variant="titleLarge" style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
-					Portfolio Value
-					</Text>
-					<Text variant="displaySmall" style={{ color: theme.colors.onSurface }}>
-					${totalValue.totalValue.toFixed(2)}
-					</Text>
-					<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-					{portfolio.tokens.length} Token{portfolio.tokens.length !== 1 ? 's' : ''}
-					</Text>
+						<Text variant="titleLarge" style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
+							Portfolio Value
+						</Text>
+						<Text variant="displaySmall" style={{ color: theme.colors.onSurface }}>
+							${totalValue.totalValue.toFixed(2)}
+						</Text>
+						<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
+							{portfolio.tokens.length} Token{portfolio.tokens.length !== 1 ? 's' : ''}
+						</Text>
 					</View>
-					
+
 					<View style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]}>
-					<Text variant="titleLarge" style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
-					Distribution
-					</Text>
-					<WalletDonut tokens={portfolio.tokens} totalBalance={totalValue.totalValue} />
+						<Text variant="titleLarge" style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
+							Distribution
+						</Text>
+						<WalletDonut tokens={portfolio.tokens} totalBalance={totalValue.totalValue} />
 					</View>
 
 					<View>
