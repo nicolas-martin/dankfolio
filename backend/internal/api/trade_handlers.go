@@ -26,9 +26,10 @@ func NewTradeHandlers(tradeService *trade.Service) *TradeHandlers {
 // RegisterRoutes registers all trade-related routes
 func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
 	r.Get("/trades/quote", h.GetTradeQuote)
-	r.Post("/trades/execute", h.ExecuteTrade)
 	r.Get("/trades/{id}", h.GetTradeByID)
 	r.Get("/trades", h.ListTrades)
+	r.Post("/trades/execute", h.ExecuteTrade)
+	r.Get("/tokens/prices", h.GetTokenPrices)
 }
 
 // ExecuteTrade handles a trade execution request
@@ -151,4 +152,27 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Successfully retrieved quote: %+v", quote)
 	respondJSON(w, quote, http.StatusOK)
+}
+
+// GetTokenPrices returns prices for multiple tokens
+func (h *TradeHandlers) GetTokenPrices(w http.ResponseWriter, r *http.Request) {
+	// Parse token addresses from query param
+	tokenAddresses := r.URL.Query()["ids"]
+	if len(tokenAddresses) == 0 {
+		respondError(w, "No ids provided", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("🔍 Getting prices for tokens: %v", tokenAddresses)
+
+	// Get prices from Jupiter
+	prices, err := h.tradeService.GetTokenPrices(r.Context(), tokenAddresses)
+	if err != nil {
+		log.Printf("❌ Error getting token prices: %v", err)
+		respondError(w, fmt.Sprintf("Failed to get token prices: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("✅ Successfully retrieved prices for %d tokens", len(prices))
+	respondJSON(w, prices, http.StatusOK)
 }

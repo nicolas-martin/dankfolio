@@ -154,10 +154,12 @@ func (s *Service) enrichCoin(coin *model.Coin) error {
 
 	// Get price from Jupiter
 	log.Printf("Fetching Jupiter price for %s (%s)", coin.Symbol, coin.ID)
-	price, err := s.jupiterClient.GetTokenPrice(coin.ID)
+	prices, err := s.jupiterClient.GetTokenPrices([]string{coin.ID})
 	if err != nil {
 		log.Printf("Warning: Error fetching price for %s: %v", coin.ID, err)
 	} else {
+		// NOTE: lower case?
+		price := prices[coin.ID]
 		coin.Price = price
 		log.Printf("Got Jupiter price for %s: %f", coin.ID, price)
 	}

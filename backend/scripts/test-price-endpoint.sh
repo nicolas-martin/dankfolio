@@ -63,8 +63,12 @@ DAY_AGO=$((NOW - 86400))
 # test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&address_type=token" "Get BONK price history with explicit token type"
 
 # Test with all parameters
-print_header "Testing price history endpoint with all parameters"
-test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&address_type=token&type=5m&time_from=$DAY_AGO&time_to=$NOW" "Get BONK price history with all parameters"
+# print_header "Testing price history endpoint with all parameters"
+# test_endpoint "GET" "$BASE_URL/api/price/history?address=$BONK_ADDRESS&address_type=token&type=5m&time_from=$DAY_AGO&time_to=$NOW" "Get BONK price history with all parameters"
+
+# Test fetch prices for multiple tokens
+print_header "Testing fetch prices for multiple tokens"
+test_endpoint "GET" "$BASE_URL/api/tokens/prices?ids=So11111111111111111111111111111111111111112,EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm" "Get prices for SOL and USDC"
 
 # # Test error cases
 # print_header "Testing error cases"

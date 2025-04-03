@@ -126,15 +126,8 @@ func (c *JupiterClient) GetTokenPrices(tokenAddresses []string) (map[string]floa
 
 	log.Printf("🔄 Raw Jupiter price response: %s", string(body))
 
-	// Parse response
-	var result struct {
-		Data map[string]struct {
-			ID    string `json:"id"`
-			Type  string `json:"type"`
-			Price string `json:"price"`
-		} `json:"data"`
-		TimeTaken float64 `json:"timeTaken"`
-	}
+	// Parse response using the correct model
+	var result JupiterPriceResponse
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal price response: %w", err)
 	}
@@ -151,21 +144,6 @@ func (c *JupiterClient) GetTokenPrices(tokenAddresses []string) (map[string]floa
 	}
 
 	return prices, nil
-}
-
-// GetTokenPrice is a convenience method for getting a single token's price
-func (c *JupiterClient) GetTokenPrice(tokenAddress string) (float64, error) {
-	prices, err := c.GetTokenPrices([]string{tokenAddress})
-	if err != nil {
-		return 0, err
-	}
-
-	price, ok := prices[tokenAddress]
-	if !ok {
-		return 0, fmt.Errorf("no price data found for token: %s", tokenAddress)
-	}
-
-	return price, nil
 }
 
 // GetQuote fetches a swap quote from Jupiter API

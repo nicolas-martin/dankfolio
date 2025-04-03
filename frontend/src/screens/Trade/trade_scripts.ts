@@ -9,6 +9,16 @@ import { toRawAmount } from '../../utils/numberFormat';
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 500;
 
+// Function to get prices for multiple tokens in a single API call
+export const getTokenPrices = async (tokenIds: string[]): Promise<Record<string, number>> => {
+	try {
+		return await api.getTokenPrices(tokenIds);
+	} catch (error) {
+		console.error('❌ Error fetching token prices:', error);
+		return Object.fromEntries(tokenIds.map(id => [id, 0]));
+	}
+};
+
 export const fetchTradeQuote = async (
 	amount: string,
 	fromCoin: Coin,
@@ -23,6 +33,12 @@ export const fetchTradeQuote = async (
 
 	try {
 		setQuoteLoading(true);
+
+		// Get latest prices for both coins in a single API call
+		const prices = await getTokenPrices([fromCoin.id, toCoin.id]);
+		fromCoin.price = prices[fromCoin.id];
+		toCoin.price = prices[toCoin.id];
+
 		const rawAmount = toRawAmount(amount, fromCoin.decimals);
 		console.log('📊 Trade Quote Request:', {
 			amount,

@@ -45,6 +45,7 @@ interface API {
 	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
 	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
 	getCoinByID: (id: string) => Promise<Coin>;
+	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
 }
 
 const api: API = {
@@ -140,6 +141,22 @@ const api: API = {
 			return response.data;
 		} catch (error) {
 			console.error('❌ Error fetching coin:', error);
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	getTokenPrices: async (tokenIds: string[]): Promise<Record<string, number>> => {
+		try {
+			console.log('🔍 Fetching prices for tokens:', tokenIds);
+			const response = await apiClient.get<Record<string, number>>('/api/tokens/prices', {
+				params: {
+					token_ids: tokenIds
+				}
+			});
+			console.log('💰 Token prices received:', response.data);
+			return response.data;
+		} catch (error) {
+			console.error('❌ Error fetching token prices:', error);
 			throw handleApiError(error as AxiosError);
 		}
 	}

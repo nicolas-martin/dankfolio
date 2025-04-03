@@ -215,3 +215,8 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		RoutePlan: quote.RoutePlan,
 	}, nil
 }
+
+// GetTokenPrices gets prices for multiple tokens from Jupiter
+func (s *Service) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
+	return s.jupiterClient.GetTokenPrices(tokenAddresses)
+}
