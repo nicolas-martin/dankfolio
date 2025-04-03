@@ -60,12 +60,10 @@ export const styles = StyleSheet.create({
 		color: theme.colors.onSurfaceVariant,
 	},
 	amountInput: {
-		backgroundColor: theme.colors.background,
-		borderRadius: theme.borderRadius.md,
-		padding: theme.spacing.lg,
-		color: theme.colors.onSurface,
+		backgroundColor: 'transparent',
 		fontSize: theme.typography.fontSize.xl,
 		textAlign: 'right',
+		marginVertical: theme.spacing.sm,
 	},
 	toAmountContainer: {
 		flex: 1,

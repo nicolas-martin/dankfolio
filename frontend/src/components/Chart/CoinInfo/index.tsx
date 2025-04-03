@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { View, Linking } from 'react-native';
-import { Text, useTheme, Divider } from 'react-native-paper';
+import { Text, useTheme, Divider, Chip } from 'react-native-paper';
 import { CoinInfoProps } from './coininfo_types';
 import { createStyles } from './coininfo_styles';
 import { LinkItem } from './LinkItem';
@@ -96,17 +96,14 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 						</Text>
 						<View style={styles.tagsInnerContainer}>
 							{metadata.tags.map((tag, index) => (
-								<View
+								<Chip
 									key={index}
-									style={[styles.tagItem, { backgroundColor: theme.colors.surfaceVariant }]}
+									mode="outlined"
+									style={styles.tagItem}
+									compact
 								>
-									<Text
-										variant="bodyMedium"
-										style={[styles.tagText, { color: theme.colors.onSurface }]}
-									>
-										{tag}
-									</Text>
-								</View>
+									{tag}
+								</Chip>
 							))}
 						</View>
 					</View>

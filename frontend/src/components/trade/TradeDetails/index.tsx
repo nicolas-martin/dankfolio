@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from 'react-native-paper';
 import { TradeDetailsProps } from './tradedetails_types';
 import { styles } from './tradedetails_styles';
 import { formatExchangeRate, formatPriceImpactPct } from './tradedetails_scripts';
@@ -11,9 +12,9 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 }) => {
 	return (
 		<View style={styles.container}>
-			<Text style={styles.exchangeRate}>{formatExchangeRate(exchangeRate)}</Text>
-			<Text style={styles.feeDetail}>{formatPriceImpactPct(priceImpactPct)}</Text>
-			<Text style={styles.feeDetail}>Total Fee: {totalFee} SOL</Text>
+			<Text variant="bodyMedium" style={styles.exchangeRate}>{formatExchangeRate(exchangeRate)}</Text>
+			<Text variant="bodySmall" style={styles.feeDetail}>{formatPriceImpactPct(priceImpactPct)}</Text>
+			<Text variant="bodySmall" style={styles.feeDetail}>Total Fee: {totalFee} SOL</Text>
 		</View>
 	);
 };

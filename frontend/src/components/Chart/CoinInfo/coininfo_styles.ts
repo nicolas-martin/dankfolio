@@ -54,10 +54,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	// Tags styles
 	tagsContainer: {
-		marginTop: 8,
+		marginTop: 16,
 	},
 	tagsLabel: {
-		fontSize: 16,
 		marginBottom: 8,
 	},
 	tagsInnerContainer: {
@@ -66,9 +65,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		gap: 8,
 	},
 	tagItem: {
-		paddingHorizontal: 12,
-		paddingVertical: 4,
-		borderRadius: 999,
+		marginRight: 8,
+		marginBottom: 8,
 	},
 	tagText: {
 		fontSize: 14,

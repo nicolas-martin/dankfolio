@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { ActivityIndicator, Text, useTheme, Button } from 'react-native-paper';
+import { ActivityIndicator, Text, useTheme, Button, ToggleButton } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
 import CoinChart from '../../components/Chart/CoinChart';
@@ -72,12 +72,12 @@ const CoinDetail: React.FC = () => {
 	const holdingsValue = useMemo((): number => {
 		const token = portfolio?.tokens.find(tokenInfo => tokenInfo.id === initialCoin.id);
 		return token?.value ?? 0; // Use value for USD value
-		}, [portfolio, initialCoin.id]);
-		
-		const holdingsQuantity = useMemo((): number => {
+	}, [portfolio, initialCoin.id]);
+
+	const holdingsQuantity = useMemo((): number => {
 		const token = portfolio?.tokens.find(tokenInfo => tokenInfo.id === initialCoin.id);
 		return token?.balance ?? 0; // Use balance for quantity
-		}, [portfolio, initialCoin.id]);
+	}, [portfolio, initialCoin.id]);
 
 	if (loading && !initialCoin) {
 		return (
@@ -117,24 +117,28 @@ const CoinDetail: React.FC = () => {
 				</View>
 
 				<View style={styles.timeframeButtonsContainer}>
-					{TIMEFRAMES.map((tf) => {
-						const isSelected = selectedTimeframe === tf.value;
-						return (
-							<TouchableOpacity
+					<ToggleButton.Row
+						onValueChange={value => value && setSelectedTimeframe(value)}
+						value={selectedTimeframe}
+					>
+						{TIMEFRAMES.map((tf) => (
+							<ToggleButton
 								key={tf.value}
-								onPress={() => setSelectedTimeframe(tf.value)}
-								style={styles.timeframeButton}
-							>
-								<Text style={[
-									styles.timeframeButtonText,
-									isSelected && styles.timeframeButtonTextSelected
-								]}>
-									{tf.label}
-								</Text>
-								{isSelected && <View style={styles.timeframeButtonUnderline} />}
-							</TouchableOpacity>
-						);
-					})}
+								icon={() => (
+									<Text
+										variant="bodyMedium"
+										style={[
+											styles.timeframeButtonText,
+											selectedTimeframe === tf.value && styles.timeframeButtonTextSelected
+										]}
+									>
+										{tf.label}
+									</Text>
+								)}
+								value={tf.value}
+							/>
+						))}
+					</ToggleButton.Row>
 				</View>
 
 				{holdingsValue > 0 && (
@@ -153,7 +157,7 @@ const CoinDetail: React.FC = () => {
 								<Text style={styles.holdingsDetailLabel}>Quantity</Text>
 								<Text style={styles.holdingsDetailValue}>
 									{holdingsQuantity.toFixed(4)} {initialCoin?.symbol}
-									</Text>
+								</Text>
 							</View>
 						</View>
 					</View>
@@ -192,17 +196,17 @@ const CoinDetail: React.FC = () => {
 						style={styles.tradeButton}
 						labelStyle={styles.tradeButtonLabel}
 						onPress={async () => {
-						const solData = await getCoinByID('So11111111111111111111111111111111111111112');
-						if (!solData) {
-						showToast({ message: 'Could not load SOL data. Please try again.' });
-						return;
-						}
-						handleTradeNavigation(
-						initialCoin,
-						solData,
-						showToast,
-						navigation.navigate
-						);
+							const solData = await getCoinByID('So11111111111111111111111111111111111111112');
+							if (!solData) {
+								showToast({ message: 'Could not load SOL data. Please try again.' });
+								return;
+							}
+							handleTradeNavigation(
+								initialCoin,
+								solData,
+								showToast,
+								navigation.navigate
+							);
 						}}>
 						Trade {initialCoin.name}
 					</Button>

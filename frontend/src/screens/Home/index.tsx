@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, SafeAreaView, FlatList } from 'react-native';
-import { ActivityIndicator, useTheme, Button, IconButton } from 'react-native-paper';
+import { View, SafeAreaView, FlatList } from 'react-native';
+import { ActivityIndicator, useTheme, Button, IconButton, Text } from 'react-native-paper';
 import { TEST_PRIVATE_KEY } from '@env';
 import CoinCard from '../../components/Home/CoinCard';
 import { Coin } from '../../types/index';
@@ -66,7 +66,7 @@ const HomeScreen = () => {
 		} finally {
 			setLoading(false);
 		}
-		}, [wallet, fetchWalletBalance, fetchCoins, showToast]); // Removed 'coins' dependency
+	}, [wallet, fetchWalletBalance, fetchCoins, showToast]); // Removed 'coins' dependency
 
 	const initializeData = useCallback(async (): Promise<void> => {
 		try {
@@ -91,7 +91,7 @@ const HomeScreen = () => {
 		} finally {
 			setLoading(false);
 		}
-		}, [handleImportWalletCallback, fetchCoins, showToast]); // Removed 'coins' dependency
+	}, [handleImportWalletCallback, fetchCoins, showToast]); // Removed 'coins' dependency
 
 	useEffect(() => {
 		initializeData();
@@ -117,7 +117,7 @@ const HomeScreen = () => {
 				<View style={styles.content}>
 					<View style={styles.coinsSection}>
 						<View style={styles.sectionHeader}>
-							<Text style={styles.sectionTitle}>Available Coins</Text>
+							<Text variant="titleLarge" style={styles.sectionTitle}>Available Coins</Text>
 							<IconButton
 								icon="refresh"
 								size={24}
@@ -136,7 +136,7 @@ const HomeScreen = () => {
 							/>
 						) : (
 							<View style={styles.noCoinsContainer}>
-								<Text style={styles.noCoinsText}>No coins available for trading</Text>
+								<Text variant="bodyMedium" style={styles.noCoinsText}>No coins available for trading</Text>
 							</View>
 						)}
 					</View>
@@ -152,7 +152,7 @@ const HomeScreen = () => {
 			) : (
 				<View style={styles.content}>
 					<View style={styles.centerContainer}>
-						<Text style={styles.loadingText}>Loading wallet...</Text>
+						<Text variant="bodyLarge" style={styles.loadingText}>Loading wallet...</Text>
 						<ActivityIndicator size="large" color="#6A5ACD" />
 					</View>
 				</View>

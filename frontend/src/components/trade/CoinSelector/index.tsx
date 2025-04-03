@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TextInput, Platform } from 'react-native';
-import { ActivityIndicator, Card } from 'react-native-paper';
+import { View, Image, Platform } from 'react-native';
+import { ActivityIndicator, Card, TextInput, Text } from 'react-native-paper';
 import { theme } from '../../../utils/theme';
 import { CoinSelectorProps } from './types';
 import { styles } from './coinselector_styles';
@@ -24,7 +24,7 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 		if (!selectedCoin) {
 			return (
 				<View style={styles.coinContainer}>
-					<Text style={styles.placeholderText}>Select coin</Text>
+					<Text variant="bodyMedium" style={styles.placeholderText}>Select coin</Text>
 				</View>
 			);
 		}
@@ -40,13 +40,13 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 						defaultSource={{ uri: DEFAULT_ICON }}
 					/>
 					<View style={styles.coinInfo}>
-						<Text style={styles.coinSymbol}>{selectedCoin.symbol}</Text>
-						<Text style={styles.coinName}>{selectedCoin.name}</Text>
+						<Text variant="titleMedium" style={styles.coinSymbol}>{selectedCoin.symbol}</Text>
+						<Text variant="bodySmall" style={styles.coinName}>{selectedCoin.name}</Text>
 					</View>
 				</View>
 				<View style={styles.balanceSection}>
-					<Text style={styles.balanceText}>{balance}</Text>
-					<Text style={styles.valueText}>${value.toFixed(4)}</Text>
+					<Text variant="bodyMedium" style={styles.balanceText}>{balance}</Text>
+					<Text variant="bodySmall" style={styles.valueText}>${value.toFixed(4)}</Text>
 				</View>
 			</View>
 		);
@@ -56,18 +56,27 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 		if (isInput) {
 			return (
 				<TextInput
+					mode="outlined"
 					style={styles.amountInput}
 					value={amount}
-					onChangeText={onAmountChange}
+					onChangeText={(text) => {
+						// Only allow digits and one decimal point
+						const regex = /^\d*\.?\d*$/;
+						if ((regex.test(text) || text === '') && onAmountChange) {
+							onAmountChange(text);
+						}
+					}}
 					placeholder="0.00"
 					placeholderTextColor={theme.colors.textSecondary}
 					selectionColor={theme.colors.primary}
 					ref={inputRef}
 					autoCorrect={false}
-					spellCheck={false}
 					autoCapitalize="none"
-					onBlur={(e) => e.preventDefault()}
 					keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
+					activeOutlineColor={theme.colors.primary}
+					outlineColor={theme.colors.textSecondary}
+					textColor={theme.colors.onSurface}
+					right={<TextInput.Affix text={selectedCoin?.symbol} />}
 				/>
 			);
 		}
@@ -77,7 +86,7 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 				{isAmountLoading ? (
 					<ActivityIndicator size="small" color={theme.colors.primary} />
 				) : (
-					<Text style={styles.toAmount}>{amount || '0.00'}</Text>
+					<Text variant="headlineMedium" style={styles.toAmount}>{amount || '0.00'}</Text>
 				)}
 			</View>
 		);
@@ -86,15 +95,15 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 	return (
 		<Card style={styles.container}>
 			<Card.Content>
-				<Text style={styles.label}>{label}</Text>
+				<Text variant="labelLarge" style={styles.label}>{label}</Text>
 				<View style={styles.coinSelector}>
 					{renderCoinItem()}
 				</View>
 				{renderAmount()}
 				{(approxValue || rateText) && (
 					<View style={styles.valueHintContainer}>
-						{approxValue && <Text style={styles.approxValueText}>{approxValue}</Text>}
-						{rateText && <Text style={styles.rateText}>{rateText}</Text>}
+						{approxValue && <Text variant="bodySmall" style={styles.approxValueText}>{approxValue}</Text>}
+						{rateText && <Text variant="bodySmall" style={styles.rateText}>{rateText}</Text>}
 					</View>
 				)}
 			</Card.Content>
