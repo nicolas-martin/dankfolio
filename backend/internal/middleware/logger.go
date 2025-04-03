@@ -34,6 +34,7 @@ func RequestLogger(next http.Handler) http.Handler {
 
 		// Calculate duration
 		duration := time.Since(start)
+		durationStr := duration.String()
 
 		// Color status code based on range
 		statusColor := color.New(color.Bold)
@@ -52,11 +53,19 @@ func RequestLogger(next http.Handler) http.Handler {
 		methodColor := color.New(color.FgBlue, color.Bold)
 
 		// Print request line
-		fmt.Printf("%s %s %s %s\n",
+		cacheStatus := w.Header().Get("X-Cache")
+		cacheColor := color.New(color.FgGreen)
+		cacheStr := ""
+		if cacheStatus == "HIT" {
+			cacheStr = cacheColor.Sprint("[cache:HIT]")
+		}
+
+		fmt.Printf("%s %s %s %s %s\n",
 			methodColor.Sprint(fmt.Sprintf("%-7s", r.Method)),
-			statusColor.Sprintf("%d", ww.Status()),
-			duration.String(),
+			cacheStr,
 			r.URL.String(),
+			statusColor.Sprintf("%d", ww.Status()),
+			durationStr,
 		)
 
 		// Log response body if it's JSON

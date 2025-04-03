@@ -42,8 +42,14 @@ func NewRouter(
 func (r *Router) Setup() http.Handler {
 	router := chi.NewRouter()
 
-	// Set up middleware
+	// Initialize cache middleware with 5 minute TTL
+	// TODO: GOOD IDEA BUT THE REQUEST ISN"T PASSED TO THE LOGGER
+	// cache := custommiddleware.NewCache(5 * time.Minute)
+	// router.Use(cache.CacheMiddleware)
+
 	router.Use(custommiddleware.RequestLogger)
+
+	// Set up middleware
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Recoverer)
@@ -67,8 +73,9 @@ func (r *Router) Setup() http.Handler {
 		}, http.StatusOK)
 	})
 
-	// API routes
+	// API routes with caching for GET requests
 	router.Route("/api", func(apiRouter chi.Router) {
+
 		// Register all routes through their respective handlers
 		r.walletHandlers.RegisterRoutes(apiRouter)
 		r.coinHandlers.RegisterRoutes(apiRouter)
