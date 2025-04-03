@@ -7,11 +7,11 @@ export type TradeScreenProps = NativeStackScreenProps<RootStackParamList, 'Trade
 export interface TradeQuoteResponse {
 	estimatedAmount: string;
 	exchangeRate: string;
-	fee?: {
-		total: string;
-		priceImpactPct: string;
-		gas: string;
-	};
+	fee: string;
+	priceImpact: string;
+	routePlan: string[];
+	inputMint: string;
+	outputMint: string;
 }
 
 export interface AmountInputProps {

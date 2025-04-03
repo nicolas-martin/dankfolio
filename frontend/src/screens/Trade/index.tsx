@@ -117,8 +117,8 @@ const Trade: React.FC = () => {
 
 		await fetchTradeQuote(
 			amount,
-			fromCoin,  // This should be the source coin for reverse quote
-			toCoin,    // This should be the target coin for reverse quote
+			toCoin,
+			fromCoin,
 			setIsQuoteLoading,
 			setFromAmount,
 			setTradeDetails

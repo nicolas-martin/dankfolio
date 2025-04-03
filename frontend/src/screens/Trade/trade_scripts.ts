@@ -56,30 +56,16 @@ export const fetchTradeQuote = async (
 		});
 
 		const response = await api.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
-		console.log('📬 Trade Quote Response:', {
-			estimatedAmount: response.estimatedAmount,
-			exchangeRate: response.exchangeRate,
-			fees: response.fee,
-			routePlan: response.routePlan
-		});
+		console.log('📬 Trade Quote Response:', response);
 
 		setToAmount(response.estimatedAmount);
 
-		const formattedGasFee = response.fee.gas;
-		const formattedPriceImpact = response.fee.priceImpactPct;
-		const formattedTotal = response.fee.total;
-
-		// Format route as a readable string
-		const route = response.routePlan
-			.map(r => `${r.swapInfo.label} (${r.percent}%)`)
-			.join(' → ');
-
 		setTradeDetails({
 			exchangeRate: response.exchangeRate,
-			gasFee: formattedGasFee,
-			priceImpactPct: formattedPriceImpact,
-			totalFee: formattedTotal,
-			route: route
+			gasFee: response.fee,
+			priceImpactPct: response.priceImpact,
+			totalFee: response.fee,
+			route: response.routePlan.join(' → ')
 		});
 	} catch (error) {
 		console.error('❌ Error fetching trade quote:', error);
