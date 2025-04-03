@@ -68,9 +68,9 @@ export const handleImportWallet = async (privateKey: string): Promise<Wallet> =>
 };
 
 export const handleCoinPress = (coin: Coin, navigation: HomeScreenNavigationProp) => {
-	navigation.navigate('Trade', {
-		coinId: coin.id,
-		symbol: coin.symbol,
+	navigation.navigate('CoinDetail', {
+		coin,
+		fromScreen: 'Home'
 	});
 };
 

@@ -1,9 +1,15 @@
+import { Coin } from './index';
+
 export type RootStackParamList = {
 	Splash: undefined;
 	Home: undefined;
 	Profile: undefined;
+	CoinDetail: {
+		coin: Coin;
+		fromScreen: string;
+	};
 	Trade: {
-		coinId: string;
-		symbol: string;
+		initialFromCoin: Coin;
+		initialToCoin: Coin;
 	};
 }; 

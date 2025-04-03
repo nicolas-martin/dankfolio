@@ -132,12 +132,18 @@ const Trade: React.FC = () => {
 					<View style={styles.valueInfoContainer}>
 						<CoinSelector
 							label="From"
-							selectedCoin={fromCoin}
-							amount={fromAmount}
-							onAmountChange={handleFromAmountChange}
+							coinData={{
+								coin: fromCoin,
+								balance: fromPortfolioToken ? {
+									amount: fromPortfolioToken.amount,
+									value: fromPortfolioToken.value
+								} : undefined
+							}}
+							amount={{
+								value: fromAmount,
+								onChange: handleFromAmountChange,
+							}}
 							isInput
-							approxValue={fromPortfolioToken?.value?.toFixed(2)}
-							rateText={fromPortfolioToken ? `Balance: ${fromPortfolioToken.amount.toFixed(4)} ${fromCoin.symbol}` : undefined}
 						/>
 					</View>
 
@@ -152,13 +158,19 @@ const Trade: React.FC = () => {
 					<View style={styles.valueInfoContainer}>
 						<CoinSelector
 							label="To"
-							selectedCoin={toCoin}
-							amount={toAmount}
-							onAmountChange={handleToAmountChange}
+							coinData={{
+								coin: toCoin,
+								balance: toPortfolioToken ? {
+									amount: toPortfolioToken.amount,
+									value: toPortfolioToken.value
+								} : undefined
+							}}
+							amount={{
+								value: toAmount,
+								onChange: handleToAmountChange,
+								isLoading: isQuoteLoading
+							}}
 							isInput
-							approxValue={toPortfolioToken?.value?.toFixed(2)}
-							rateText={toPortfolioToken ? `Balance: ${toPortfolioToken.amount.toFixed(4)} ${toCoin.symbol}` : undefined}
-							isAmountLoading={isQuoteLoading}
 						/>
 					</View>
 
