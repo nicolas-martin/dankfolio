@@ -1,5 +1,5 @@
 import { Coin } from '../../../types/index';
-import { WalletBalanceResponse, TokenInfo } from '../../../services/api';
+import { WalletBalanceResponse } from '../../../services/api';
 
 export const DEFAULT_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 
@@ -12,13 +12,13 @@ export const renderCoinBalance = (coin: Coin, walletBalance: WalletBalanceRespon
 	let coinBalanceAmount = 0; // Amount in standard units
 	const coinDecimals = coin?.decimals ?? 0;
 
-	if (walletBalance && coin && walletBalance.tokens) {
-	// Find the token (including SOL) in the tokens array
-	const tokenInfo = walletBalance.tokens.find((token: TokenInfo) => token.id === coin.id);
-	if (tokenInfo) {
-	// Balance is already in standard units for all tokens in the array
-	coinBalanceAmount = tokenInfo.balance || 0;
-	}
+	if (walletBalance && coin && walletBalance.balances) {
+		// Find the token (including SOL) in the tokens array
+		const tokenInfo = walletBalance.balances.find(balance => balance.id === coin.id);
+		if (tokenInfo) {
+			// Balance is already in standard units for all tokens in the array
+			coinBalanceAmount = tokenInfo.amount || 0;
+		}
 	}
 
 	// Calculate the exact USD value using the standard unit balance amount

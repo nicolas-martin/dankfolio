@@ -1,60 +1,69 @@
 import { create } from 'zustand';
-import { WalletBalanceResponse } from '../services/api';
 import { Wallet } from '../types';
 import api from '../services/api';
-import { secureStorage } from '../services/solana';
+import { Coin } from '../types';
 import { useCoinStore } from './coins';
+
+export interface PortfolioToken {
+	id: string;
+	amount: number;
+	price: number;
+	value: number;
+	coin: Coin;
+}
 
 interface PortfolioState {
 	wallet: Wallet | null;
-	portfolio: WalletBalanceResponse | null;
 	isLoading: boolean;
 	error: string | null;
-
-	// Actions
+	tokens: PortfolioToken[];
 	setWallet: (wallet: Wallet | null) => void;
-	setPortfolio: (portfolio: WalletBalanceResponse | null) => void;
+	clearWallet: () => void;
 	fetchPortfolioBalance: (address: string) => Promise<void>;
-	clearWallet: () => Promise<void>;
 }
 
 export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	wallet: null,
-	portfolio: null,
 	isLoading: false,
 	error: null,
+	tokens: [],
 
-	setWallet: (wallet: Wallet | null) => set({ wallet }),
-	setPortfolio: (portfolio: WalletBalanceResponse | null) => set({ portfolio }),
+	setWallet: (wallet) => {
+		set({ wallet });
+	},
+
+	clearWallet: () => {
+		set({ wallet: null, tokens: [], error: null });
+	},
 
 	fetchPortfolioBalance: async (address: string) => {
 		try {
 			set({ isLoading: true, error: null });
 			const balance = await api.getWalletBalance(address);
 
-			// Pre-fetch token data for all tokens, including SOL
+			// Pre-fetch and transform API response into our internal PortfolioToken format
 			const coinStore = useCoinStore.getState();
-			await Promise.all(balance.balances.map(token => coinStore.getCoinByID(token.id)));
+			const tokens = await Promise.all(
+				balance.balances.map(async (balance) => {
+					const coin = await coinStore.getCoinByID(balance.id);
+					if (!coin) return null;
 
-			set({ portfolio: balance });
-		} catch (error) {
-			set({ error: (error as Error).message });
-			console.error('❌ Error fetching wallet balance:', error);
-		} finally {
-			set({ isLoading: false });
-		}
-	},
+					return {
+						id: balance.id,
+						amount: balance.amount,
+						price: coin.price,
+						value: balance.amount * coin.price,
+						coin: coin
+					};
+				})
+			);
 
-	clearWallet: async () => {
-		try {
-			set({ isLoading: true });
-			await secureStorage.deleteWallet();
-			set({ wallet: null, portfolio: null });
+			set({
+				tokens: tokens.filter((token): token is PortfolioToken => token !== null),
+				isLoading: false
+			});
 		} catch (error) {
-			set({ error: (error as Error).message });
-			console.error('Error clearing wallet:', error);
-		} finally {
-			set({ isLoading: false });
+			set({ error: (error as Error).message, isLoading: false });
 		}
 	},
 }));

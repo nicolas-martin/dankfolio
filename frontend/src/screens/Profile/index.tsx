@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
-import { Text, Icon, useTheme, IconButton, List } from 'react-native-paper';
+import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
-import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './profile_scripts';
+import { handleTokenPress, copyToClipboard, formatAddress } from './profile_scripts';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/coindetail_types';
 import { usePortfolioStore } from '../../store/portfolio';
 import { createStyles } from './profile_styles';
 import { TokenCard } from './TokenCard';
-import WalletDonut from '../../components/WalletDonut';
 import {
 	ICON_PROFILE,
 	ICON_WALLET,
@@ -18,12 +17,15 @@ import {
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const { showToast } = useToast();
-	const { wallet, porfolio: portfolio } = usePortfolioStore();
+	const { wallet, tokens } = usePortfolioStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	const [distributionExpanded, setDistributionExpanded] = useState(true);
 
-	if (!wallet || !portfolio) {
+	const totalValue = useMemo(() => {
+		return tokens.reduce((sum, token) => sum + token.value, 0);
+	}, [tokens]);
+
+	if (!wallet || tokens.length === 0) {
 		return (
 			<View style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
 				<Icon source={ICON_WALLET} size={48} color={theme.colors.onSurfaceVariant} />
@@ -36,8 +38,6 @@ const Profile = () => {
 			</View>
 		);
 	}
-
-	const totalValue = calculateTotalValue(portfolio);
 
 	return (
 		<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -68,23 +68,11 @@ const Profile = () => {
 							Portfolio Value
 						</Text>
 						<Text variant="displaySmall" style={{ color: theme.colors.onSurface }}>
-							${totalValue.totalValue.toFixed(2)}
+							${totalValue.toFixed(2)}
 						</Text>
 						<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-							{portfolio.tokens.length} Token{portfolio.tokens.length !== 1 ? 's' : ''}
+							{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
 						</Text>
-					</View>
-
-					<View style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]}>
-						<List.Accordion
-							title="Distribution"
-							expanded={distributionExpanded}
-							onPress={() => setDistributionExpanded(!distributionExpanded)}
-							titleStyle={[styles.cardTitle, { color: theme.colors.onSurface }]}
-							style={{ backgroundColor: theme.colors.surfaceVariant, marginHorizontal: -16, marginTop: -16, marginBottom: -16 }}
-						>
-							<WalletDonut tokens={portfolio.tokens} totalBalance={totalValue.totalValue} />
-						</List.Accordion>
 					</View>
 
 					<View>
@@ -98,12 +86,11 @@ const Profile = () => {
 							</Text>
 						</View>
 
-						{portfolio.tokens.map((token) => (
+						{tokens.map((token) => (
 							<TokenCard
 								key={token.id}
-								token={token}
-								balance={token.balance}
-								onPress={() => handleTokenPress(token, navigation.navigate)}
+								profileCoin={token}
+								onPress={() => handleTokenPress(token.coin, navigation.navigate)}
 							/>
 						))}
 					</View>

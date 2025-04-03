@@ -39,6 +39,7 @@
     "cheerio": "^1.0.0",
     "date-fns": "^4.1.0",
     "expo": "~52.0.37",
+    "expo-clipboard": "^7.0.1",
     "expo-dev-client": "~5.0.14",
     "expo-haptics": "^14.0.1",
     "expo-linear-gradient": "^14.0.2",

@@ -1,27 +1,23 @@
 import React from 'react';
 import { TouchableOpacity, View, Image } from 'react-native';
 import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
-import { TokenInfo } from '../../services/api';
 import { ICON_COINS } from '../../utils/icons';
 import { createStyles } from './profile_styles';
 import { copyToClipboard, formatAddress } from './profile_scripts';
 import { useToast } from '../../components/Common/Toast';
 import { useCoinStore } from '../../store/coins';
+import { ProfileCoin } from './profile_types';
 interface TokenCardProps {
-	token: TokenInfo;
-	balance: number;
+	profileCoin: ProfileCoin;
 	onPress: () => void;
 }
 
-export const TokenCard: React.FC<TokenCardProps> = ({ token, balance, onPress }) => {
+export const TokenCard: React.FC<TokenCardProps> = ({ profileCoin, onPress }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
-	const { coinMap } = useCoinStore();
 
-	// Get full coin details from the store using the ID from the token prop
-	const fullCoinDetails = coinMap[token.id];
-	const iconUrl = fullCoinDetails?.icon_url || token.icon_url; // Fallback to prop if needed
+	const iconUrl = profileCoin.coin.icon_url;
 	return (
 		<TouchableOpacity onPress={onPress}>
 			<View style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]}>
@@ -30,7 +26,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ token, balance, onPress })
 						<View style={[styles.tokenIconContainer, { backgroundColor: theme.colors.background }]}>
 							<Image
 								source={{ uri: iconUrl }}
-								alt={`${token.symbol} icon`}
+								alt={`${profileCoin.coin.symbol} icon`}
 								style={styles.tokenImage}
 								resizeMode="contain"
 							/>
@@ -43,16 +39,16 @@ export const TokenCard: React.FC<TokenCardProps> = ({ token, balance, onPress })
 
 					<View style={styles.tokenInfoMiddle}>
 						<Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-							{token.symbol}
+							{profileCoin.coin.symbol}
 						</Text>
 						<View style={{ flexDirection: 'row', alignItems: 'center' }}>
 							<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-								{formatAddress(token.id)}
+								{formatAddress(profileCoin.coin.id)}
 							</Text>
 							<IconButton
 								icon="content-copy"
 								size={16}
-								onPress={() => copyToClipboard(token.id, token.symbol, showToast)}
+								onPress={() => copyToClipboard(profileCoin.coin.id, profileCoin.coin.symbol, showToast)}
 								style={{ margin: 0, padding: 0, marginLeft: 4 }}
 							/>
 						</View>
@@ -60,10 +56,10 @@ export const TokenCard: React.FC<TokenCardProps> = ({ token, balance, onPress })
 
 					<View style={styles.tokenBalance}>
 						<Text variant="bodyLarge" style={styles.tokenBalanceText}>
-							{balance.toFixed(4)}
+							{profileCoin.amount.toFixed(4)}
 						</Text>
 						<Text variant="bodySmall" style={styles.tokenValueText}>
-							${(balance * (token.price || 0)).toFixed(2)}
+							${(profileCoin.amount * (profileCoin.coin.price || 0)).toFixed(2)}
 						</Text>
 					</View>
 				</View>

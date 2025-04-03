@@ -1,5 +1,6 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { WalletBalanceResponse } from '../services/api';
+import { Keypair } from '@solana/web3.js';
 
 export interface Coin {
 	id: string;
@@ -30,6 +31,7 @@ export interface Wallet {
 	privateKey: Base58PrivateKey;
 	balance: number;
 	publicKey: string;
+	keypair?: Keypair;
 }
 
 export type RootStackParamList = {
@@ -52,10 +54,11 @@ export type RootStackParamList = {
 }
 
 export interface NotificationProps {
-	visible: boolean;
 	type: 'success' | 'error' | 'warning' | 'info';
 	message: string;
-	onDismiss: () => void;
+	duration?: number;
+	visible?: boolean;
+	onDismiss?: () => void;
 }
 
 export type NavigationProp = NativeStackNavigationProp<RootStackParamList>;

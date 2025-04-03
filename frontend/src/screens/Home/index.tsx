@@ -1,120 +1,47 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { View, SafeAreaView, FlatList } from 'react-native';
-import { ActivityIndicator, useTheme, Button, IconButton, Text } from 'react-native-paper';
-import { TEST_PRIVATE_KEY } from '@env';
+import { useTheme, Button, IconButton, Text } from 'react-native-paper';
 import CoinCard from '../../components/Home/CoinCard';
-import { Coin } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
-import {
-	SOL_MINT,
-	handleImportWallet,
-	handleCoinPress
-} from './home_scripts';
+import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
 import { usePortfolioStore } from '../../store/portfolio';
 import { useCoinStore } from '../../store/coins';
 import { useToast } from '../../components/Common/Toast';
 import { createStyles } from './home_styles';
+import { Coin } from '../../types';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
-	const [loading, setLoading] = useState(true);
-	const { wallet, setWallet, fetchPortfolioBalance } = usePortfolioStore();
+	const { wallet } = usePortfolioStore();
 	const { availableCoins: coins, fetchAvailableCoins: fetchCoins } = useCoinStore();
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	const handleImportWalletCallback = useCallback(async (privateKey: string) => {
-		try {
-			// Use the returned wallet instead of relying on a possibly stale closure
-			const importedWallet = await handleImportWallet(privateKey, setWallet);
-			showToast({
-				type: 'success',
-				message: 'Wallet imported successfully'
-			});
-			if (importedWallet?.address) {
-				await fetchPortfolioBalance(importedWallet.address);
-			}
-		} catch (error) {
-			showToast({
-				type: 'error',
-				message: 'Failed to import wallet'
-			});
-		}
-	}, [setWallet, showToast, fetchPortfolioBalance]);
-
 	const handleCoinPressCallback = useCallback((coin: Coin) => {
-		handleCoinPress(coin, navigation.navigate);
+		handleCoinPress(coin, navigation);
 	}, [navigation]);
 
 	const onRefresh = useCallback(async () => {
 		try {
-			setLoading(true);
 			await fetchCoins();
-			console.log('🔄 Refreshed coins:', {
-				count: coins.length,
-				symbols: coins.map(c => c.symbol),
-				hasSol: coins.some(c => c.id === SOL_MINT)
+			showToast({
+				type: 'success',
+				message: 'Coins refreshed successfully!',
+				duration: 3000
 			});
-			if (wallet?.address) {
-				await fetchPortfolioBalance(wallet.address);
-			}
 		} catch (error) {
-			console.error('Error refreshing data:', error);
 			showToast({
 				type: 'error',
-				message: 'Failed to refresh data'
+				message: 'Failed to refresh coins',
+				duration: 3000
 			});
-		} finally {
-			setLoading(false);
 		}
-	}, [wallet, fetchCoins, showToast, fetchPortfolioBalance, coins]);
-
-	const initializeData = useCallback(async (): Promise<void> => {
-		try {
-			setLoading(true);
-			await fetchCoins();
-			console.log('🚀 Initialized coins:', {
-				count: coins.length,
-				symbols: coins.map(c => c.symbol),
-				hasSol: coins.some(c => c.id === SOL_MINT)
-			});
-			if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
-				console.log('🧪 Development mode detected, auto-importing test wallet');
-				await handleImportWalletCallback(TEST_PRIVATE_KEY);
-			}
-		} catch (err) {
-			console.error('Error initializing data:', err);
-			showToast({
-				type: 'error',
-				message: 'Failed to load initial data'
-			});
-		} finally {
-			setLoading(false);
-		}
-	}, [handleImportWalletCallback, fetchCoins, showToast, coins]);
-
-	useEffect(() => {
-		initializeData();
-	}, [initializeData]);
+	}, [fetchCoins, showToast]);
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<Button
-				mode="outlined"
-				onPress={() => {
-					showToast({
-						type: 'success',
-						message: 'Test toast notification',
-						duration: 3000
-					});
-				}}
-				style={{ margin: 16 }}
-			>
-				Show Test Toast
-			</Button>
 			{wallet ? (
 				<View style={styles.content}>
 					<View style={styles.coinsSection}>
@@ -154,8 +81,7 @@ const HomeScreen = () => {
 			) : (
 				<View style={styles.content}>
 					<View style={styles.centerContainer}>
-						<Text variant="bodyLarge" style={styles.loadingText}>Loading wallet...</Text>
-						<ActivityIndicator size="large" color="#6A5ACD" />
+						<Text variant="bodyLarge" style={styles.loadingText}>Please connect your wallet</Text>
 					</View>
 				</View>
 			)}

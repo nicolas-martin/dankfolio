@@ -18,7 +18,7 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 	approxValue,
 	rateText,
 }) => {
-	const { porfolio: portfolio } = usePortfolioStore();
+	const { portfolio } = usePortfolioStore();
 
 	const renderCoinItem = () => {
 		if (!selectedCoin) {

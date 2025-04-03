@@ -28,7 +28,7 @@ const CoinDetail: React.FC = () => {
 	const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
 	const { showToast } = useToast();
-	const { porfolio: portfolio } = usePortfolioStore();
+	const { tokens } = usePortfolioStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
@@ -72,15 +72,9 @@ const CoinDetail: React.FC = () => {
 		};
 	}, [priceHistory, hoverPoint, parseValue]);
 
-	const holdingsValue = useMemo((): number => {
-		const token = portfolio?.tokens.find(tokenInfo => tokenInfo.id === initialCoin.id);
-		return token?.value ?? 0; // Use value for USD value
-	}, [portfolio, initialCoin.id]);
-
-	const holdingsQuantity = useMemo((): number => {
-		const token = portfolio?.tokens.find(tokenInfo => tokenInfo.id === initialCoin.id);
-		return token?.balance ?? 0; // Use balance for quantity
-	}, [portfolio, initialCoin.id]);
+	const portfolioToken = useMemo(() => {
+		return tokens.find(token => token.id === initialCoin.id);
+	}, [tokens, initialCoin.id]);
 
 	if (loading && !initialCoin) {
 		return (
@@ -144,7 +138,7 @@ const CoinDetail: React.FC = () => {
 					</ToggleButton.Row>
 				</View>
 
-				{holdingsValue > 0 && (
+				{portfolioToken && (
 					<View style={styles.holdingsContainer}>
 						<Text style={styles.holdingsTitle}>
 							Your Holdings
@@ -153,13 +147,13 @@ const CoinDetail: React.FC = () => {
 							<View style={styles.holdingsDetailRow}>
 								<Text style={styles.holdingsDetailLabel}>Value</Text>
 								<Text style={styles.holdingsDetailValue}>
-									${holdingsValue.toFixed(4)}
+									${portfolioToken.value.toFixed(4)}
 								</Text>
 							</View>
 							<View style={styles.holdingsDetailRow}>
 								<Text style={styles.holdingsDetailLabel}>Quantity</Text>
 								<Text style={styles.holdingsDetailValue}>
-									{holdingsQuantity.toFixed(4)} {initialCoin?.symbol}
+									{portfolioToken.amount.toFixed(4)} {initialCoin?.symbol}
 								</Text>
 							</View>
 						</View>
@@ -196,12 +190,10 @@ const CoinDetail: React.FC = () => {
 				<View style={styles.tradeButtonContainer}>
 					<Button
 						mode="contained"
-						style={styles.tradeButton}
-						labelStyle={styles.tradeButtonLabel}
 						onPress={async () => {
 							const solData = await getCoinByID('So11111111111111111111111111111111111111112');
 							if (!solData) {
-								showToast({ message: 'Could not load SOL data. Please try again.' });
+								showToast({ type: 'error', message: 'Could not load SOL data. Please try again.' });
 								return;
 							}
 							handleTradeNavigation(
@@ -210,8 +202,10 @@ const CoinDetail: React.FC = () => {
 								showToast,
 								navigation.navigate
 							);
-						}}>
-						Trade {initialCoin.name}
+						}}
+						style={styles.tradeButton}
+					>
+						Trade {initialCoin.symbol}
 					</Button>
 				</View>
 			)}
