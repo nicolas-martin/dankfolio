@@ -5,56 +5,17 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/coindetail_types';
 
 export const calculateTotalValue = (
-    walletBalance: WalletBalanceResponse,
-    solCoin: Coin | null
-): { tokenValue: number; solValue: number; totalValue: number } => {
-    const tokenValue = walletBalance.tokens.reduce((sum, token) => sum + token.value, 0);
-    const solValue = walletBalance.sol_balance * (solCoin?.price || 0);
-    const totalValue = tokenValue + solValue;
-    return { tokenValue, solValue, totalValue };
+    walletBalance: WalletBalanceResponse
+): { totalValue: number } => {
+    const totalValue = walletBalance.tokens.reduce((sum, token) => sum + token.value, 0);
+    return { totalValue };
 };
 
 export const handleTokenPress = (
-    token: Coin | null,
-    solCoin: Coin | null,
+    token: Coin,
     navigate: CoinDetailScreenNavigationProp['navigate']
 ): void => {
-    if (!token?.id) {
-        console.error('❌ No token ID available for:', token?.symbol);
-        return;
-    }
-
-    console.log('👛 ProfileScreen -> CoinDetail with coins:', {
-        selectedCoin: {
-            id: token.id,
-            name: token.name,
-            symbol: token.symbol,
-            decimals: token.decimals,
-            price: token.price,
-            daily_volume: token.daily_volume,
-            icon_url: token.icon_url,
-            address: token.id
-        },
-        solCoin: solCoin ? {
-            id: solCoin.id,
-            symbol: solCoin.symbol,
-            name: solCoin.name,
-            decimals: solCoin.decimals,
-            price: solCoin.price,
-            icon_url: solCoin.icon_url,
-            address: solCoin.id
-        } : null
-    });
-
-    const navigationParams: RootStackParamList['CoinDetail'] = {
-        coinId: token.id,
-        coinName: token.name,
-        daily_volume: token.daily_volume,
-        coin: token || undefined,
-        solCoin: solCoin || undefined
-    };
-
-    navigate('CoinDetail', navigationParams);
+    navigate('CoinDetail', { coin: token });
 };
 
 export const copyToClipboard = (

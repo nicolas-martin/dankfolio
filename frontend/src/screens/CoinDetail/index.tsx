@@ -7,32 +7,28 @@ import CoinChart from '../../components/Chart/CoinChart';
 import { PricePoint } from '../../components/Chart/CoinChart/types';
 import CoinInfo from '../../components/Chart/CoinInfo';
 import PriceDisplay from '../../components/CoinDetails/PriceDisplay';
-import { Coin, PriceData } from '../../types';
+import { PriceData } from '../../types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
-	fetchCoinData,
 	fetchPriceHistory,
 	handleTradeNavigation,
 } from './coindetail_scripts';
 import { createStyles } from './coindetail_styles';
 import { usePortfolioStore } from '../../store/portfolio';
+import { useCoinStore } from '../../store/coins';
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
-	const { coin: initialCoin, solCoin: initialSolCoin } = route.params;
+	const { coin: initialCoin } = route.params;
 	const [selectedTimeframe, setSelectedTimeframe] = useState("15m");
-	const [solCoin] = useState<Coin | null>(initialSolCoin || null);
+	const { getCoinByID } = useCoinStore();
 	const [loading, setLoading] = useState(true);
 	const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);
-	const [coin, setCoin] = useState<Coin | null>(null);
-	// TODO: CHECK IF METADAT IS SET BY THE BACKEND
-	// WE MIGHT NOT HAVE TO DO IT HERE
-	const [metadataLoading, setMetadataLoading] = useState(true);
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
 	const { showToast } = useToast();
-	const { walletBalance } = usePortfolioStore();
+	const { porfolio: portfolio } = usePortfolioStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
@@ -46,13 +42,9 @@ const CoinDetail: React.FC = () => {
 	}, []);
 
 	useEffect(() => {
-		fetchCoinData(initialCoin, setMetadataLoading, setCoin);
-	}, [initialCoin]);
-
-	useEffect(() => {
-		if (!coin) return;
-		fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, coin);
-	}, [selectedTimeframe, coin]);
+		if (!initialCoin) return;
+		fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, initialCoin);
+	}, [selectedTimeframe, initialCoin]);
 
 	const displayData = useMemo(() => {
 		const lastDataPoint = priceHistory.length > 0 ? priceHistory[priceHistory.length - 1] : null;
@@ -77,15 +69,17 @@ const CoinDetail: React.FC = () => {
 		};
 	}, [priceHistory, hoverPoint, parseValue]);
 
-	const holdingsValue = useMemo(() => {
-		if (!walletBalance) return '0.00';
+	const holdingsValue = useMemo((): number => {
+		const token = portfolio?.tokens.find(tokenInfo => tokenInfo.id === initialCoin.id);
+		return token?.value ?? 0; // Use value for USD value
+		}, [portfolio, initialCoin.id]);
+		
+		const holdingsQuantity = useMemo((): number => {
+		const token = portfolio?.tokens.find(tokenInfo => tokenInfo.id === initialCoin.id);
+		return token?.balance ?? 0; // Use balance for quantity
+		}, [portfolio, initialCoin.id]);
 
-		const lastDataPoint = priceHistory.length > 0 ? priceHistory[priceHistory.length - 1] : null;
-		const currentPrice = parseValue(lastDataPoint?.value);
-		return (walletBalance.sol_balance * currentPrice).toFixed(2);
-	}, [priceHistory, walletBalance, parseValue]);
-
-	if (loading && !coin) {
+	if (loading && !initialCoin) {
 		return (
 			<View style={[styles.container, styles.centered]}>
 				<ActivityIndicator size="large" color={theme.colors.primary} />
@@ -100,15 +94,15 @@ const CoinDetail: React.FC = () => {
 				contentContainerStyle={styles.scrollViewContent}
 				bounces={false}
 			>
-				{coin && priceHistory.length >= 2 && (
+				{initialCoin && priceHistory.length >= 2 && (
 					<View style={styles.priceDisplayContainer}>
 						<PriceDisplay
 							price={displayData.currentPrice}
 							periodChange={displayData.periodChange}
 							valueChange={displayData.valueChange}
 							period={selectedTimeframe}
-							icon_url={coin.icon_url}
-							name={coin.name}
+							icon_url={initialCoin.icon_url}
+							name={initialCoin.name}
 						/>
 					</View>
 				)}
@@ -143,7 +137,7 @@ const CoinDetail: React.FC = () => {
 					})}
 				</View>
 
-				{coin && priceHistory.length > 0 && walletBalance && (
+				{holdingsValue > 0 && (
 					<View style={styles.holdingsContainer}>
 						<Text style={styles.holdingsTitle}>
 							Your Holdings
@@ -152,35 +146,35 @@ const CoinDetail: React.FC = () => {
 							<View style={styles.holdingsDetailRow}>
 								<Text style={styles.holdingsDetailLabel}>Value</Text>
 								<Text style={styles.holdingsDetailValue}>
-									${holdingsValue}
+									${holdingsValue.toFixed(4)}
 								</Text>
 							</View>
 							<View style={styles.holdingsDetailRow}>
 								<Text style={styles.holdingsDetailLabel}>Quantity</Text>
 								<Text style={styles.holdingsDetailValue}>
-									{walletBalance.sol_balance.toFixed(4)} {coin?.symbol}
-								</Text>
+									{holdingsQuantity.toFixed(4)} {initialCoin?.symbol}
+									</Text>
 							</View>
 						</View>
 					</View>
 				)}
 
-				{!metadataLoading && coin ? (
+				{initialCoin ? (
 					<View style={styles.coinInfoContainer}>
 						<Text style={styles.holdingsTitle}>
-							About {coin.name}
+							About {initialCoin.name}
 						</Text>
 						<CoinInfo
 							metadata={{
-								name: coin.name,
-								description: coin.description,
-								website: coin.website,
-								twitter: coin.twitter,
-								telegram: coin.telegram,
-								daily_volume: coin.daily_volume,
-								decimals: coin.decimals,
-								tags: coin.tags || [],
-								symbol: coin.symbol
+								name: initialCoin.name,
+								description: initialCoin.description,
+								website: initialCoin.website,
+								twitter: initialCoin.twitter,
+								telegram: initialCoin.telegram,
+								daily_volume: initialCoin.daily_volume,
+								decimals: initialCoin.decimals,
+								tags: initialCoin.tags || [],
+								symbol: initialCoin.symbol
 							}}
 						/>
 					</View>
@@ -191,20 +185,26 @@ const CoinDetail: React.FC = () => {
 				)}
 			</ScrollView>
 
-			{coin && (
+			{initialCoin && (
 				<View style={styles.tradeButtonContainer}>
 					<Button
 						mode="contained"
 						style={styles.tradeButton}
 						labelStyle={styles.tradeButtonLabel}
-						onPress={() => handleTradeNavigation(
-							coin,
-							solCoin,
-							showToast,
-							navigation.navigate
-						)}
-					>
-						Trade {coin.name}
+						onPress={async () => {
+						const solData = await getCoinByID('So11111111111111111111111111111111111111112');
+						if (!solData) {
+						showToast({ message: 'Could not load SOL data. Please try again.' });
+						return;
+						}
+						handleTradeNavigation(
+						initialCoin,
+						solData,
+						showToast,
+						navigation.navigate
+						);
+						}}>
+						Trade {initialCoin.name}
 					</Button>
 				</View>
 			)}

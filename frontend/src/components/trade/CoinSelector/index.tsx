@@ -18,7 +18,7 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 	approxValue,
 	rateText,
 }) => {
-	const { walletBalance } = usePortfolioStore();
+	const { porfolio: portfolio } = usePortfolioStore();
 
 	const renderCoinItem = () => {
 		if (!selectedCoin) {
@@ -29,7 +29,7 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 			);
 		}
 
-		const { balance, value } = renderCoinBalance(selectedCoin, walletBalance);
+		const { balance, value } = renderCoinBalance(selectedCoin, portfolio);
 
 		return (
 			<View style={styles.coinContainer}>

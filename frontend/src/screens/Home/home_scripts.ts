@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
+import { useCoinStore } from '../../store/coins';
 
 export const SOL_MINT = 'So11111111111111111111111111111111111111112';
 
@@ -29,32 +30,20 @@ export interface NotificationState {
 }
 
 export const fetchAvailableCoins = async (
-	setLoading: (loading: boolean) => void,
-	setSolCoin: (coin: Coin | null) => void,
-	setCoins: (coins: Coin[]) => void
+setLoading: (loading: boolean) => void
 ): Promise<void> => {
 	try {
 		setLoading(true);
-		const coinsData = await api.getAvailableCoins();
-		if (Array.isArray(coinsData) && coinsData.length > 0) {
-			// Find and store SOL coin
-			const sol = coinsData.find(c => c.id === SOL_MINT);
-			if (sol) {
-				console.log('💫 Found SOL coin in available coins:', {
-					id: sol.id,
-					symbol: sol.symbol,
-					price: sol.price,
-					decimals: sol.decimals,
-					daily_volume: sol.daily_volume
-				});
+		await useCoinStore.getState().fetchAvailableCoins();
+		const coins = useCoinStore.getState().availableCoins;
 
-				setSolCoin(sol);
-			}
-			setCoins(coinsData);
-		} else {
-			console.log('⚠️ No coins received or empty array');
-		}
-	} catch (err) {
+		console.log('🏠 Home fetched coins:', {
+			total: coins.length,
+			symbols: coins.map(c => c.symbol),
+			hasSol: coins.some(c => c.id === SOL_MINT)
+		});
+		// No longer setting local state here, store handles it
+		} catch (err) {
 		console.error('❌ Error fetching coins:', err);
 		throw err; // Let the caller handle the error with toast
 	} finally {
@@ -62,24 +51,11 @@ export const fetchAvailableCoins = async (
 	}
 };
 
-export const fetchWalletBalance = async (
-	address: string,
-	setWalletBalance: (balance: WalletBalanceResponse | null) => void,
-	showNotification: (type: NotificationProps['type'], message: string) => void
-): Promise<void> => {
-	try {
-		const balance = await api.getWalletBalance(address);
-		setWalletBalance(balance);
-	} catch (err) {
-		console.error('❌ Error fetching wallet balance:', err);
-		showNotification('error', 'Failed to fetch wallet balance');
-	}
-};
 
 export const handleImportWallet = async (
 	privateKey: string,
 	setWallet: (wallet: Wallet | null) => void,
-	fetchWalletBalance: (address: string) => Promise<void>
+	fetchPortfolioBalance: (address: string) => Promise<void>
 ): Promise<void> => {
 	try {
 		// Convert to Base58 if needed
@@ -99,8 +75,8 @@ export const handleImportWallet = async (
 		};
 		setWallet(walletData);
 		await secureStorage.saveWallet(walletData);
-		// Fetch balance immediately after setting wallet
-		await fetchWalletBalance(walletData.address);
+		// Fetch balance immediately after setting wallet using the store action
+		await fetchPortfolioBalance(walletData.address);
 	} catch (error) {
 		console.error('❌ Error importing wallet:', error);
 		throw error; // Let the caller handle the error
@@ -109,30 +85,8 @@ export const handleImportWallet = async (
 
 export const handleCoinPress = (
 	coin: Coin,
-	solCoin: Coin | null,
 	navigate: (screen: string, params: any) => void
 ): void => {
-	console.log('🏠 HomeScreen -> CoinDetail with coins:', {
-		selectedCoin: {
-			id: coin.id,
-			name: coin.name,
-			symbol: coin.symbol,
-			decimals: coin.decimals,
-			price: coin.price,
-			daily_volume: coin.daily_volume,
-			icon_url: coin.icon_url,
-			address: coin.id
-		},
-		solCoin: solCoin ? {
-			id: solCoin.id,
-			symbol: solCoin.symbol,
-			name: solCoin.name,
-			decimals: solCoin.decimals,
-			price: solCoin.price,
-			icon_url: solCoin.icon_url,
-			address: solCoin.id
-		} : null
-	});
 
-	navigate('CoinDetail', { coin: coin, solCoin: coin });
+	navigate('CoinDetail', { coin: coin });
 };

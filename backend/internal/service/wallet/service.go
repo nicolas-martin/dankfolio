@@ -19,10 +19,9 @@ type TokenInfo struct {
 	Percentage float64 `json:"percentage"` // Additional field specific to wallet tokens
 }
 
-// WalletBalance represents a wallet's complete balance including SOL and tokens
+// WalletBalance represents a wallet's complete balance
 type WalletBalance struct {
-	SolBalance float64     `json:"sol_balance"`
-	Tokens     []TokenInfo `json:"tokens"`
+	Tokens []TokenInfo `json:"tokens"`
 }
 
 // Service handles wallet-related operations
@@ -39,8 +38,7 @@ func New(client *rpc.Client, coinService *coin.Service) *Service {
 	}
 }
 
-// GetTokens returns all tokens in a wallet
-// TODO: Add solana as part of the list of coins returned instead of being special
+// GetTokens returns all tokens in a wallet including SOL
 func (s *Service) GetTokens(ctx context.Context, address string) (*WalletBalance, error) {
 	// Parse the public key
 	pubKey, err := solana.PublicKeyFromBase58(address)
@@ -61,15 +59,53 @@ func (s *Service) GetTokens(ctx context.Context, address string) (*WalletBalance
 	// Convert lamports to SOL (balance.Value is in lamports)
 	solBalance := float64(balance.Value) / 1e9
 
-	// Get token balances
+	// Get enriched SOL data from coin service
+	solData, err := s.coinService.GetCoinByID(ctx, "So11111111111111111111111111111111111111112")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get SOL data: %v", err)
+	}
+
+	// Get other token balances
 	tokens, err := s.getTokenBalances(ctx, address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token balances: %v", err)
 	}
 
+	// Create SOL token info
+	solToken := TokenInfo{
+		Coin: model.Coin{
+			ID:      solData.ID,
+			Name:    solData.Name,
+			Symbol:  solData.Symbol,
+			Price:   solData.Price,
+			Balance: solBalance,
+		},
+		Value: solBalance * solData.Price,
+	}
+
+	// Combine SOL with other tokens
+	allTokens := append([]TokenInfo{solToken}, tokens...)
+
+	// Recalculate total value and percentages including SOL
+	var totalValue float64
+	for _, token := range allTokens {
+		totalValue += token.Value
+	}
+
+	// Update percentages
+	for i := range allTokens {
+		if totalValue > 0 {
+			allTokens[i].Percentage = (allTokens[i].Value / totalValue) * 100
+		}
+	}
+
+	// Sort by value descending
+	sort.Slice(allTokens, func(i, j int) bool {
+		return allTokens[i].Value > allTokens[j].Value
+	})
+
 	return &WalletBalance{
-		SolBalance: solBalance,
-		Tokens:     tokens,
+		Tokens: allTokens,
 	}, nil
 }
 
@@ -138,31 +174,18 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Token
 
 		// Create token info with enriched data
 		token := TokenInfo{
-			Coin:  *coinData,
+			Coin: model.Coin{
+				ID:      coinData.ID,
+				Name:    coinData.Name,
+				Symbol:  coinData.Symbol,
+				Price:   coinData.Price,
+				Balance: balance,
+			},
 			Value: balance * coinData.Price,
 		}
-		token.Balance = balance // Override the balance with actual wallet balance
 
 		tokens = append(tokens, token)
 	}
-
-	// Calculate total value and percentages
-	var totalValue float64
-	for _, token := range tokens {
-		totalValue += token.Value
-	}
-
-	// Calculate percentages
-	for i := range tokens {
-		if totalValue > 0 {
-			tokens[i].Percentage = (tokens[i].Value / totalValue) * 100
-		}
-	}
-
-	// Sort by value descending
-	sort.Slice(tokens, func(i, j int) bool {
-		return tokens[i].Value > tokens[j].Value
-	})
 
 	return tokens, nil
 }

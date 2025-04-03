@@ -20,7 +20,6 @@ import (
 type WalletInfo struct {
 	Path      string
 	PublicKey string
-	Balance   float64
 	Tokens    []wallet.TokenInfo
 }
 
@@ -41,7 +40,6 @@ func checkBalance(ctx context.Context, walletService *wallet.Service, keyPath st
 	table.SetHeader([]string{"Token", "Address", "Balance", "Price", "($)"})
 
 	fmt.Printf("Public Key: %s\n", keypair.PublicKey())
-	fmt.Printf("SOL Balance: %.9f SOL\n", walletBalance.SolBalance)
 
 	for _, token := range walletBalance.Tokens {
 		table.Append([]string{token.Symbol, token.ID, fmt.Sprintf("%f", token.Balance), fmt.Sprintf("%f", token.Price), fmt.Sprintf("%f", token.Value)})
@@ -52,7 +50,6 @@ func checkBalance(ctx context.Context, walletService *wallet.Service, keyPath st
 	return &WalletInfo{
 		Path:      keyPath,
 		PublicKey: keypair.PublicKey().String(),
-		Balance:   walletBalance.SolBalance,
 		Tokens:    walletBalance.Tokens,
 	}, nil
 }

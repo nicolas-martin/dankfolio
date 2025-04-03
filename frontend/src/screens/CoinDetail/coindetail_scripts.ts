@@ -1,7 +1,5 @@
-import { Coin, Wallet, PriceData } from '../../types/index';
-import { WalletBalanceResponse } from '../../services/api';
+import { Coin, PriceData } from '../../types/index';
 import api from '../../services/api';
-import { secureStorage } from '../../services/solana';
 import { TimeframeOption } from './coindetail_types';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -88,40 +86,19 @@ export const fetchPriceHistory = async (
 	}
 };
 
-export const fetchCoinData = async (
-	initialCoin: Coin | null,
-	setMetadataLoading: (loading: boolean) => void,
-	setCoin: (coin: Coin | null) => void
-) => {
-	if (!initialCoin) return;
-	setMetadataLoading(true);
-
-	try {
-		// If daily_volume is 0, it means we're coming from profile page
-		// and need fresh data
-		if (initialCoin.daily_volume === 0) {
-			const freshCoinData = await api.getCoinByID(initialCoin.id);
-			setCoin({ ...initialCoin, ...freshCoinData });
-		} else {
-			setCoin(initialCoin);
-		}
-	} catch (error) {
-		console.error('❌ Failed to fetch coin details:', error);
-		setCoin(initialCoin);
-	}
-
-	setMetadataLoading(false);
-};
-
 export const handleTradeNavigation = (
-	coin: Coin | null,
-	solCoin: Coin | null,
+	toCoin: Coin | null,
+	fromCoin: Coin | null,
 	showToast: (params: ToastParams) => void,
 	navigate: (screen: string, params: any) => void
 ) => {
-	if (coin && solCoin) {
+	console.log("--------------")
+	console.log(toCoin)
+	console.log(fromCoin)
+	console.log("--------------")
+	if (toCoin && fromCoin) {
 		// Prevent trading the same coin
-		if (coin.id === solCoin.id) {
+		if (toCoin.id === fromCoin.id) {
 			showToast({
 				type: 'error',
 				message: 'Cannot trade a coin for itself'
@@ -130,8 +107,8 @@ export const handleTradeNavigation = (
 		}
 
 		navigate('Trade', {
-			initialFromCoin: solCoin,
-			initialToCoin: coin
+			initialFromCoin: fromCoin,
+			initialToCoin: toCoin
 		});
 	}
 };

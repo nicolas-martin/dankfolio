@@ -36,7 +36,7 @@ const Trade: React.FC = () => {
 	const navigation = useNavigation();
 	const route = useRoute<RouteProp<Record<string, TradeScreenParams>, string>>();
 	const { initialFromCoin, initialToCoin } = route.params || {};
-	const { wallet, walletBalance, fetchWalletBalance } = usePortfolioStore();
+	const { wallet, porfolio: portfolio, fetchPorfolioBalance: fetchWalletBalance } = usePortfolioStore();
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);

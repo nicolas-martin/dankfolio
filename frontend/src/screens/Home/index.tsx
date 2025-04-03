@@ -6,21 +6,21 @@ import CoinCard from '../../components/Home/CoinCard';
 import { Coin } from '../../types/index';
 import { useNavigation } from '@react-navigation/native';
 import {
-	fetchAvailableCoins,
+	SOL_MINT,
 	handleImportWallet,
 	handleCoinPress
 } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
 import { usePortfolioStore } from '../../store/portfolio';
+import { useCoinStore } from '../../store/coins';
 import { useToast } from '../../components/Common/Toast';
 import { createStyles } from './home_styles';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
-	const [coins, setCoins] = useState<Coin[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [solCoin, setSolCoin] = useState<Coin | null>(null);
-	const { wallet, walletBalance, isLoading: isWalletLoading, setWallet, fetchWalletBalance } = usePortfolioStore();
+	const { wallet, isLoading: isWalletLoading, setWallet, fetchPorfolioBalance: fetchWalletBalance } = usePortfolioStore();
+	const { availableCoins: coins, fetchAvailableCoins: fetchCoins } = useCoinStore();
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -41,13 +41,19 @@ const HomeScreen = () => {
 	}, [fetchWalletBalance, setWallet, showToast]);
 
 	const handleCoinPressCallback = useCallback((coin: Coin) => {
-		handleCoinPress(coin, solCoin, walletBalance, navigation.navigate);
-	}, [solCoin, walletBalance, navigation]);
+		handleCoinPress(coin, navigation.navigate);
+	}, [navigation]);
 
 	const onRefresh = useCallback(async () => {
 		try {
 			setLoading(true);
-			await fetchAvailableCoins(setLoading, setSolCoin, setCoins);
+			await fetchCoins();
+			console.log('🔄 Refreshed coins:', {
+				count: coins.length,
+				symbols: coins.map(c => c.symbol),
+				hasSol: coins.some(c => c.id === SOL_MINT)
+			});
+
 			if (wallet?.address) {
 				await fetchWalletBalance(wallet.address);
 			}
@@ -60,12 +66,17 @@ const HomeScreen = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [wallet, fetchWalletBalance]);
+		}, [wallet, fetchWalletBalance, fetchCoins, showToast]); // Removed 'coins' dependency
 
 	const initializeData = useCallback(async (): Promise<void> => {
 		try {
 			setLoading(true);
-			await fetchAvailableCoins(setLoading, setSolCoin, setCoins);
+			await fetchCoins();
+			console.log('🚀 Initialized coins:', {
+				count: coins.length,
+				symbols: coins.map(c => c.symbol),
+				hasSol: coins.some(c => c.id === SOL_MINT)
+			});
 
 			if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
 				console.log('🧪 Development mode detected, auto-importing test wallet');
@@ -80,7 +91,7 @@ const HomeScreen = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [handleImportWalletCallback, showToast]);
+		}, [handleImportWalletCallback, fetchCoins, showToast]); // Removed 'coins' dependency
 
 	useEffect(() => {
 		initializeData();
@@ -113,9 +124,9 @@ const HomeScreen = () => {
 								onPress={onRefresh}
 							/>
 						</View>
-						{coins.length > 0 ? (
+						{coins.length > 0 ? ( // Use the locally renamed variable 'coins'
 							<FlatList
-								data={coins}
+								data={coins} // Use the locally renamed variable 'coins'
 								keyExtractor={(item) => item.id || item.symbol}
 								renderItem={({ item }) => (
 									<CoinCard coin={item} onPress={() => handleCoinPressCallback(item)} />
@@ -132,29 +143,7 @@ const HomeScreen = () => {
 					<View style={styles.profileContainer}>
 						<Button
 							mode="contained"
-							onPress={() => {
-								if (!wallet?.address) {
-									showToast({
-										type: 'error',
-										message: 'No wallet connected'
-									});
-									return;
-								}
-
-								if (!walletBalance) {
-									showToast({
-										type: 'error',
-										message: 'Wallet balance not loaded'
-									});
-									return;
-								}
-
-								navigation.navigate('Profile', {
-									walletAddress: wallet.address,
-									walletBalance: walletBalance,
-									solCoin: solCoin
-								});
-							}}
+							onPress={() => navigation.navigate('Profile')}
 						>
 							View Profile
 						</Button>

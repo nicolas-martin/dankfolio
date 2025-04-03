@@ -7,7 +7,6 @@ export type CoinDetailScreenNavigationProp = NativeStackNavigationProp<RootStack
 export type CoinDetailScreenRouteProp = RouteProp<{
 	CoinDetail: {
 		coin: Coin;
-		solCoin: Coin;
 	};
 }, 'CoinDetail'>;
 

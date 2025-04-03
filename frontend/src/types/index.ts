@@ -38,25 +38,16 @@ export type RootStackParamList = {
 		initialFromCoin?: Coin | null;
 		initialToCoin?: Coin | null;
 	};
-	Profile: {
-		walletAddress: string;
-		walletBalance: WalletBalanceResponse;
-		solCoin: Coin | null;
-	};
+	Profile: undefined;
 	CoinDetail: {
-		coinId: string;
-		coinName: string;
-		daily_volume?: number;
 		coin?: Coin;
 		solCoin?: Coin;
-		walletBalance?: WalletBalanceResponse;
 	};
 	CoinSelect: {
 		onSelect: (coin: Coin) => void;
 		excludeCoinId?: string;
 		currentCoinId?: string;
 	};
-	ChartTest: undefined;
 	[key: string]: undefined | object;
 }
 
