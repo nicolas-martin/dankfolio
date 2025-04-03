@@ -9,7 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
+	"sync"
+	"time"
 
+	"github.com/blocto/solana-go-sdk/client"
+	"github.com/blocto/solana-go-sdk/common"
+	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	"github.com/blocto/solana-go-sdk/rpc"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
 
@@ -18,7 +25,23 @@ const (
 	SolTokenAddress = "So11111111111111111111111111111111111111112"
 	// TrendingTokensFile is the default path to the trending tokens file
 	TrendingTokensFile = "cmd/trending/trending_tokens.json"
+	// CacheExpiration is the duration for which cached data is valid
+	CacheExpiration = 5 * time.Minute
 )
+
+// Config holds the configuration for the coin service
+type Config struct {
+	BirdEyeBaseURL    string
+	BirdEyeAPIKey     string
+	TrendingTokenPath string // Optional: override default trending tokens path
+	CoinGeckoAPIKey   string // Uncomment when needed
+}
+
+// Cache represents a cached item with expiration
+type Cache struct {
+	Data       interface{}
+	Expiration time.Time
+}
 
 // TrendingToken represents a token from the trending list
 type TrendingToken struct {
@@ -27,20 +50,14 @@ type TrendingToken struct {
 	Volume float64 `json:"volume"`
 }
 
-// Config holds the configuration for the coin service
-type Config struct {
-	BirdEyeBaseURL    string
-	BirdEyeAPIKey     string
-	CoinGeckoAPIKey   string
-	TrendingTokenPath string // Optional: override default trending tokens path
-}
-
 // Service handles coin-related operations
 type Service struct {
 	config        *Config
 	httpClient    *http.Client
 	jupiterClient *JupiterClient
 	coins         map[string]model.Coin
+	cache         map[string]Cache
+	mu            sync.RWMutex
 }
 
 // NewService creates a new CoinService instance
@@ -50,6 +67,7 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient *JupiterC
 		httpClient:    httpClient,
 		jupiterClient: jupiterClient,
 		coins:         make(map[string]model.Coin),
+		cache:         make(map[string]Cache),
 	}
 
 	if err := service.refreshCoins(); err != nil {
@@ -76,11 +94,16 @@ func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
 // GetCoinByID returns a coin by its ID
 func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, error) {
 	if coin, exists := s.coins[id]; exists {
+		// Even if the coin exists, we need to ensure it's enriched
+		if err := s.enrichCoin(&coin); err != nil {
+			return nil, fmt.Errorf("failed to enrich existing coin %s: %w", id, err)
+		}
+		s.coins[id] = coin // Store the enriched version back
 		return &coin, nil
 	}
 
 	coin := model.Coin{ID: id}
-	if err := s.enrichCoinData(&coin); err != nil {
+	if err := s.enrichCoin(&coin); err != nil {
 		return nil, fmt.Errorf("failed to fetch coin %s: %w", id, err)
 	}
 
@@ -88,17 +111,25 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 	return &coin, nil
 }
 
-// GetTokenDetails fetches detailed information about a token from Jupiter API
+// GetTokenDetails fetches detailed information about a token
 func (s *Service) GetTokenDetails(ctx context.Context, tokenAddress string) (*model.Coin, error) {
 	return s.GetCoinByID(ctx, tokenAddress)
 }
 
-// enrichCoinData enriches a coin with data
-// External Services:
-// - Jupiter API: Used to fetch token info and current price
-// - CoinGecko API: Used to enrich with additional metadata (optional)
-func (s *Service) enrichCoinData(coin *model.Coin) error {
-	// Get Jupiter data
+// enrichCoin enriches a coin with data from Jupiter and IPFS
+func (s *Service) enrichCoin(coin *model.Coin) error {
+	// Check cache first
+	s.mu.RLock()
+	if cached, exists := s.cache[coin.ID]; exists && time.Now().Before(cached.Expiration) {
+		if cachedCoin, ok := cached.Data.(model.Coin); ok {
+			*coin = cachedCoin // Copy all fields from cached coin
+			s.mu.RUnlock()
+			return nil
+		}
+	}
+	s.mu.RUnlock()
+
+	// Get Jupiter data for basic info
 	jupiterInfo, err := s.jupiterClient.GetTokenInfo(coin.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get Jupiter info: %w", err)
@@ -112,66 +143,97 @@ func (s *Service) enrichCoinData(coin *model.Coin) error {
 	coin.Tags = jupiterInfo.Tags
 	coin.IconUrl = jupiterInfo.LogoURI
 	coin.CreatedAt = jupiterInfo.CreatedAt
-	coin.Description = fmt.Sprintf("%s (%s) is a Solana token.", jupiterInfo.Name, jupiterInfo.Symbol)
 
 	// Get price from Jupiter
 	price, err := s.jupiterClient.GetTokenPrice(coin.ID)
-	if err == nil {
+	if err != nil {
+		log.Printf("Warning: Error fetching price for %s: %v", coin.ID, err)
+	} else {
 		coin.Price = price
 	}
 
-	// Try to enrich with CoinGecko data
-	if err := s.enrichWithCoinGecko(coin); err != nil {
-		log.Printf("Warning: Could not enrich %s with CoinGecko data: %v", coin.Symbol, err)
+	// Get metadata account for the token
+	metadataAccount, err := s.getMetadataAccount(coin.ID)
+	if err != nil {
+		log.Printf("Warning: Error fetching metadata for %s: %v", coin.ID, err)
+		return nil // Not all tokens have metadata, so this is not a fatal error
 	}
+
+	// Fetch off-chain metadata
+	uri := resolveIPFSGateway(metadataAccount.Data.Uri)
+	metadata, err := fetchOffChainMetadataWithFallback(uri)
+	if err != nil {
+		log.Printf("Warning: Error fetching off-chain metadata for %s: %v", coin.ID, err)
+	}
+
+	// Enrich with metadata
+	s.enrichFromMetadata(coin, metadata)
+
+	// Cache the fully enriched coin
+	s.mu.Lock()
+	s.cache[coin.ID] = Cache{
+		Data:       *coin,
+		Expiration: time.Now().Add(CacheExpiration),
+	}
+	s.mu.Unlock()
 
 	return nil
 }
 
-// enrichWithCoinGecko enriches a coin with data from CoinGecko API
-// External Services:
-// - CoinGecko API: Fetches social links, website, and other metadata
-// Endpoint: https://api.coingecko.com/api/v3/coins/solana/contract/{address}
-func (s *Service) enrichWithCoinGecko(coin *model.Coin) error {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.coingecko.com/api/v3/coins/solana/contract/%s", coin.ID), nil)
-	if err != nil {
-		return err
+// enrichFromMetadata updates coin fields from metadata
+func (s *Service) enrichFromMetadata(coin *model.Coin, metadata map[string]interface{}) {
+	if description, ok := metadata["description"].(string); ok {
+		coin.Description = description
+	} else {
+		coin.Description = fmt.Sprintf("%s (%s) is a Solana token.", coin.Name, coin.Symbol)
 	}
 
-	req.Header.Set("accept", "application/json")
-	req.Header.Set("x-cg-demo-api-key", s.config.CoinGeckoAPIKey)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	// Handle website field with multiple possible names
+	if website, ok := metadata["website"].(string); ok {
+		coin.Website = website
+	} else if website, ok := metadata["external_url"].(string); ok {
+		coin.Website = website
+	} else if website, ok := metadata["createdOn"].(string); ok {
+		coin.Website = website
 	}
 
-	var geckoData CoinGeckoMetadata
-	if err := json.NewDecoder(resp.Body).Decode(&geckoData); err != nil {
-		return err
+	// Image/Icon URL (only if not set by Jupiter)
+	if coin.IconUrl == "" {
+		if image, ok := metadata["image"].(string); ok {
+			coin.IconUrl = image
+		}
 	}
 
-	if len(geckoData.Links.Homepage) > 0 {
-		coin.Website = geckoData.Links.Homepage[0]
+	// Social links
+	if twitter, ok := metadata["twitter"].(string); ok {
+		coin.Twitter = twitter
 	}
-	coin.Twitter = geckoData.Links.TwitterScreenName
-	coin.Telegram = geckoData.Links.TelegramChannelIdentifier
-	coin.LastUpdated = geckoData.LastUpdated
-	coin.CoingeckoID = geckoData.ID
+	if telegram, ok := metadata["telegram"].(string); ok {
+		coin.Telegram = telegram
+	}
 
-	return nil
+	// Check attributes array as fallback
+	if attributes, ok := metadata["attributes"].([]interface{}); ok {
+		for _, attr := range attributes {
+			if attrMap, ok := attr.(map[string]interface{}); ok {
+				trait := fmt.Sprintf("%v", attrMap["trait_type"])
+				value := fmt.Sprintf("%v", attrMap["value"])
+				switch strings.ToLower(trait) {
+				case "twitter":
+					if coin.Twitter == "" {
+						coin.Twitter = value
+					}
+				case "telegram":
+					if coin.Telegram == "" {
+						coin.Telegram = value
+					}
+				}
+			}
+		}
+	}
 }
 
 // refreshCoins updates the coin list from external APIs
-// External Services:
-// - Jupiter API: Primary source for token info and prices
-// - CoinGecko API: Secondary source for additional metadata
-// - Local file: Trending tokens list from cmd/trending/trending_tokens.json
 func (s *Service) refreshCoins() error {
 	if os.Getenv("APP_ENV") == "development" {
 		for _, coin := range MockCoins {
@@ -180,13 +242,15 @@ func (s *Service) refreshCoins() error {
 		return nil
 	}
 
-	// Load trending tokens from local file (includes SOL)
+	// Load trending tokens from local file
 	trending, err := s.loadTrendingTokens()
 	if err != nil {
 		return fmt.Errorf("failed to load trending tokens: %w", err)
 	}
 
-	// Enrich each trending token with Jupiter and CoinGecko data
+	newCoins := make(map[string]model.Coin)
+
+	// Load and enrich each trending token
 	for _, t := range trending {
 		coin := model.Coin{
 			ID:          t.Mint,
@@ -194,13 +258,17 @@ func (s *Service) refreshCoins() error {
 			DailyVolume: t.Volume,
 		}
 
-		if err := s.enrichCoinData(&coin); err != nil {
+		if err := s.enrichCoin(&coin); err != nil {
 			log.Printf("Warning: Error enriching token %s: %v", t.Symbol, err)
 			continue
 		}
 
-		s.coins[t.Mint] = coin
+		newCoins[t.Mint] = coin
 	}
+
+	s.mu.Lock()
+	s.coins = newCoins
+	s.mu.Unlock()
 
 	return nil
 }
@@ -292,4 +360,129 @@ func (s *Service) loadTrendingTokens() ([]TrendingToken, error) {
 	}
 
 	return trending, nil
+}
+
+// resolveIPFSGateway rewrites the URI if it uses a known gateway that might be unreliable.
+func resolveIPFSGateway(uri string) string {
+	if strings.Contains(uri, "/ipfs/") {
+		parts := strings.Split(uri, "/ipfs/")
+		if len(parts) >= 2 {
+			cid := parts[1]
+			return "ipfs://" + cid
+		}
+	}
+	return uri
+}
+
+// fetchOffChainMetadataWithFallback attempts to fetch off-chain metadata
+// using a list of HTTP gateways as fallback for IPFS content.
+func fetchOffChainMetadataWithFallback(uri string) (map[string]interface{}, error) {
+	var offchainMeta map[string]interface{}
+
+	if strings.HasPrefix(uri, "ipfs://") {
+		cid := strings.TrimPrefix(uri, "ipfs://")
+		gateways := []string{
+			"https://ipfs.io/ipfs/",
+			"https://dweb.link/ipfs/",
+			"https://cloudflare-ipfs.com/ipfs/",
+		}
+		var err error
+		for _, gw := range gateways {
+			fullURL := gw + cid
+			log.Printf("Attempting gateway: %s", fullURL)
+			offchainMeta, err = fetchOffChainMetadataHTTP(fullURL)
+			if err == nil {
+				return offchainMeta, nil
+			}
+			log.Printf("Gateway %s failed: %v", gw, err)
+		}
+		return nil, err
+	}
+
+	if strings.HasPrefix(uri, "http") {
+		return fetchOffChainMetadataHTTP(uri)
+	}
+
+	return nil, nil
+}
+
+// fetchOffChainMetadataHTTP fetches JSON metadata from the given HTTP URL.
+func fetchOffChainMetadataHTTP(url string) (map[string]interface{}, error) {
+	var offchainMeta map[string]interface{}
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP status %d", resp.StatusCode)
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&offchainMeta); err != nil {
+		return nil, err
+	}
+	return offchainMeta, nil
+}
+
+// getMetadataAccount retrieves the metadata account for a token
+func (s *Service) getMetadataAccount(mint string) (*token_metadata.Metadata, error) {
+	mintPubkey := common.PublicKeyFromString(mint)
+	metadataAccount, err := token_metadata.GetTokenMetaPubkey(mintPubkey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get metadata account: %w", err)
+	}
+
+	c := client.NewClient(rpc.MainnetRPCEndpoint)
+	accountInfo, err := c.GetAccountInfo(context.Background(), metadataAccount.ToBase58())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account info: %w", err)
+	}
+
+	metadata, err := token_metadata.MetadataDeserialize(accountInfo.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse metadata: %w", err)
+	}
+
+	return &metadata, nil
+}
+
+// enrichWithCoinGecko enriches a coin with data from CoinGecko API
+// External Services:
+// - CoinGecko API: Fetches social links, website, and other metadata
+// Endpoint: https://api.coingecko.com/api/v3/coins/solana/contract/{address}
+func (s *Service) enrichWithCoinGecko(coin *model.Coin) error {
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.coingecko.com/api/v3/coins/solana/contract/%s", coin.ID), nil)
+	if err != nil {
+		return fmt.Errorf("failed to create coingecko request for %s: %w", coin.ID, err)
+	}
+
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("x-cg-demo-api-key", s.config.CoinGeckoAPIKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to execute coingecko request for %s: %w", coin.ID, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code %d from coingecko for %s (%s)", resp.StatusCode, coin.ID, req.URL.String())
+	}
+
+	var geckoData CoinGeckoMetadata
+	if err := json.NewDecoder(resp.Body).Decode(&geckoData); err != nil {
+		return fmt.Errorf("failed to decode coingecko response for %s: %w", coin.ID, err)
+	}
+
+	if len(geckoData.Links.Homepage) > 0 {
+		coin.Website = geckoData.Links.Homepage[0]
+	}
+	coin.Twitter = geckoData.Links.TwitterScreenName
+	coin.Telegram = geckoData.Links.TelegramChannelIdentifier
+	coin.LastUpdated = geckoData.LastUpdated
+	coin.CoingeckoID = geckoData.ID
+
+	return nil
 }
