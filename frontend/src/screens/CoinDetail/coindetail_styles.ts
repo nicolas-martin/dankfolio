@@ -6,6 +6,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		flex: 1,
 		backgroundColor: theme.colors.background,
 	},
+	content: {
+		flex: 1,
+	},
 	centered: {
 		flex: 1,
 		justifyContent: 'center',
@@ -91,21 +94,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 	},
 	tradeButtonContainer: {
-		position: 'absolute',
-		bottom: 0,
-		left: 0,
-		right: 0,
 		padding: 16,
-		borderTopWidth: 1,
-		borderTopColor: theme.colors.outline,
-		shadowColor: "#000",
-		shadowOffset: {
-			width: 0,
-			height: -3,
-		},
-		shadowOpacity: 0.3,
-		shadowRadius: 4,
-		elevation: 5,
 	},
 	tradeButton: {
 		backgroundColor: theme.colors.primary,

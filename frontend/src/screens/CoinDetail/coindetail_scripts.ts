@@ -96,10 +96,6 @@ export const handleTradeNavigation = (
 	showToast: (params: ToastParams) => void,
 	navigate: (screen: string, params: any) => void
 ) => {
-	console.log("--------------")
-	console.log(toCoin)
-	console.log(fromCoin)
-	console.log("--------------")
 	if (toCoin && fromCoin) {
 		// Prevent trading the same coin
 		if (toCoin.id === fromCoin.id) {

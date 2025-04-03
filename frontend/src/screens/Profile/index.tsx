@@ -3,7 +3,7 @@ import { View, ScrollView } from 'react-native';
 import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
-import { handleTokenPress, copyToClipboard, formatAddress } from './profile_scripts';
+import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/coindetail_types';
 import { usePortfolioStore } from '../../store/portfolio';
 import { createStyles } from './profile_styles';
@@ -23,6 +23,10 @@ const Profile = () => {
 
 	const totalValue = useMemo(() => {
 		return tokens.reduce((sum, token) => sum + token.value, 0);
+	}, [tokens]);
+
+	const sortedTokens = useMemo(() => {
+		return sortTokensByValue(tokens);
 	}, [tokens]);
 
 	if (!wallet || tokens.length === 0) {
@@ -86,7 +90,7 @@ const Profile = () => {
 							</Text>
 						</View>
 
-						{tokens.map((token) => (
+						{sortedTokens.map((token) => (
 							<TokenCard
 								key={token.id}
 								profileCoin={token}

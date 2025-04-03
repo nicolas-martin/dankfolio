@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { ActivityIndicator, Text, useTheme, Button, ToggleButton } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
@@ -85,131 +85,132 @@ const CoinDetail: React.FC = () => {
 	}
 
 	return (
-		<View style={styles.container}>
-			<ScrollView
-				style={styles.scrollView}
-				contentContainerStyle={styles.scrollViewContent}
-				bounces={false}
-			>
-				{initialCoin && priceHistory.length >= 2 && (
-					<View style={styles.priceDisplayContainer}>
-						<PriceDisplay
-							price={displayData.currentPrice}
-							periodChange={displayData.periodChange}
-							valueChange={displayData.valueChange}
-							period={selectedTimeframe}
-							icon_url={initialCoin.icon_url}
-							name={initialCoin.name}
+		<SafeAreaView style={styles.container}>
+			<View style={styles.content}>
+				<ScrollView
+					style={styles.scrollView}
+					contentContainerStyle={styles.scrollViewContent}
+					bounces={false}
+				>
+					{initialCoin && priceHistory.length >= 2 && (
+						<View style={styles.priceDisplayContainer}>
+							<PriceDisplay
+								price={displayData.currentPrice}
+								periodChange={displayData.periodChange}
+								valueChange={displayData.valueChange}
+								period={selectedTimeframe}
+								icon_url={initialCoin.icon_url}
+								name={initialCoin.name}
+							/>
+						</View>
+					)}
+
+					<View style={{ marginHorizontal: 16 }}>
+						<CoinChart
+							data={priceHistory}
+							loading={loading}
+							activePoint={hoverPoint}
+							onHover={handleChartHover}
 						/>
 					</View>
-				)}
 
-				<View style={{ marginHorizontal: 16 }}>
-					<CoinChart
-						data={priceHistory}
-						loading={loading}
-						activePoint={hoverPoint}
-						onHover={handleChartHover}
-					/>
-				</View>
+					<View style={styles.timeframeButtonsContainer}>
+						<ToggleButton.Row
+							onValueChange={value => value && setSelectedTimeframe(value)}
+							value={selectedTimeframe}
+						>
+							{TIMEFRAMES.map((tf) => (
+								<ToggleButton
+									key={tf.value}
+									icon={() => (
+										<Text
+											variant="bodyMedium"
+											style={[
+												styles.timeframeButtonText,
+												selectedTimeframe === tf.value && styles.timeframeButtonTextSelected
+											]}
+										>
+											{tf.label}
+										</Text>
+									)}
+									value={tf.value}
+								/>
+							))}
+						</ToggleButton.Row>
+					</View>
 
-				<View style={styles.timeframeButtonsContainer}>
-					<ToggleButton.Row
-						onValueChange={value => value && setSelectedTimeframe(value)}
-						value={selectedTimeframe}
-					>
-						{TIMEFRAMES.map((tf) => (
-							<ToggleButton
-								key={tf.value}
-								icon={() => (
-									<Text
-										variant="bodyMedium"
-										style={[
-											styles.timeframeButtonText,
-											selectedTimeframe === tf.value && styles.timeframeButtonTextSelected
-										]}
-									>
-										{tf.label}
+					{portfolioToken && (
+						<View style={styles.holdingsContainer}>
+							<Text style={styles.holdingsTitle}>
+								Your Holdings
+							</Text>
+							<View style={styles.holdingsDetails}>
+								<View style={styles.holdingsDetailRow}>
+									<Text style={styles.holdingsDetailLabel}>Value</Text>
+									<Text style={styles.holdingsDetailValue}>
+										${portfolioToken.value.toFixed(4)}
 									</Text>
-								)}
-								value={tf.value}
-							/>
-						))}
-					</ToggleButton.Row>
-				</View>
-
-				{portfolioToken && (
-					<View style={styles.holdingsContainer}>
-						<Text style={styles.holdingsTitle}>
-							Your Holdings
-						</Text>
-						<View style={styles.holdingsDetails}>
-							<View style={styles.holdingsDetailRow}>
-								<Text style={styles.holdingsDetailLabel}>Value</Text>
-								<Text style={styles.holdingsDetailValue}>
-									${portfolioToken.value.toFixed(4)}
-								</Text>
-							</View>
-							<View style={styles.holdingsDetailRow}>
-								<Text style={styles.holdingsDetailLabel}>Quantity</Text>
-								<Text style={styles.holdingsDetailValue}>
-									{portfolioToken.amount.toFixed(4)} {initialCoin?.symbol}
-								</Text>
+								</View>
+								<View style={styles.holdingsDetailRow}>
+									<Text style={styles.holdingsDetailLabel}>Quantity</Text>
+									<Text style={styles.holdingsDetailValue}>
+										{portfolioToken.amount.toFixed(4)} {initialCoin?.symbol}
+									</Text>
+								</View>
 							</View>
 						</View>
-					</View>
-				)}
+					)}
 
-				{initialCoin ? (
-					<View style={styles.coinInfoContainer}>
-						<Text style={styles.holdingsTitle}>
-							About {initialCoin.name}
-						</Text>
-						<CoinInfo
-							metadata={{
-								name: initialCoin.name,
-								description: initialCoin.description,
-								website: initialCoin.website,
-								twitter: initialCoin.twitter,
-								telegram: initialCoin.telegram,
-								daily_volume: initialCoin.daily_volume,
-								decimals: initialCoin.decimals,
-								tags: initialCoin.tags || [],
-								symbol: initialCoin.symbol
+					{initialCoin ? (
+						<View style={styles.coinInfoContainer}>
+							<Text style={styles.holdingsTitle}>
+								About {initialCoin.name}
+							</Text>
+							<CoinInfo
+								metadata={{
+									name: initialCoin.name,
+									description: initialCoin.description,
+									website: initialCoin.website,
+									twitter: initialCoin.twitter,
+									telegram: initialCoin.telegram,
+									daily_volume: initialCoin.daily_volume,
+									decimals: initialCoin.decimals,
+									tags: initialCoin.tags || [],
+									symbol: initialCoin.symbol
+								}}
+							/>
+						</View>
+					) : (
+						<View style={styles.loadingContainer}>
+							<ActivityIndicator color={theme.colors.primary} />
+						</View>
+					)}
+				</ScrollView>
+
+				{initialCoin && (
+					<View style={styles.tradeButtonContainer}>
+						<Button
+							mode="contained"
+							onPress={async () => {
+								const solData = await getCoinByID('So11111111111111111111111111111111111111112');
+								if (!solData) {
+									showToast({ type: 'error', message: 'Could not load SOL data. Please try again.' });
+									return;
+								}
+								handleTradeNavigation(
+									initialCoin,
+									solData,
+									showToast,
+									navigation.navigate
+								);
 							}}
-						/>
-					</View>
-				) : (
-					<View style={styles.loadingContainer}>
-						<ActivityIndicator color={theme.colors.primary} />
+						>
+							Trade
+						</Button>
 					</View>
 				)}
-			</ScrollView>
-
-			{initialCoin && (
-				<View style={styles.tradeButtonContainer}>
-					<Button
-						mode="contained"
-						onPress={async () => {
-							const solData = await getCoinByID('So11111111111111111111111111111111111111112');
-							if (!solData) {
-								showToast({ type: 'error', message: 'Could not load SOL data. Please try again.' });
-								return;
-							}
-							handleTradeNavigation(
-								initialCoin,
-								solData,
-								showToast,
-								navigation.navigate
-							);
-						}}
-						style={styles.tradeButton}
-					>
-						Trade {initialCoin.symbol}
-					</Button>
-				</View>
-			)}
-		</View>
+			</View>
+		</SafeAreaView>
 	);
 };
 

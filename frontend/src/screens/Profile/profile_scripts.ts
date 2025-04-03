@@ -27,3 +27,7 @@ export const formatAddress = (address: string): string => {
 	if (!address) return '';
 	return `${address.slice(0, 4)}...${address.slice(-4)}`;
 };
+
+export const sortTokensByValue = (tokens: ProfileCoin[]): ProfileCoin[] => {
+	return [...tokens].sort((a, b) => b.value - a.value);
+};
