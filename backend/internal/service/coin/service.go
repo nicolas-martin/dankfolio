@@ -91,21 +91,29 @@ func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
 
 // GetCoinByID returns a coin by its ID
 func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, error) {
-	if coin, exists := s.coins[id]; exists {
+	s.mu.RLock()
+	coin, exists := s.coins[id]
+	s.mu.RUnlock()
+
+	if exists {
 		// Even if the coin exists, we need to ensure it's enriched
 		if err := s.enrichCoin(&coin); err != nil {
 			return nil, fmt.Errorf("failed to enrich existing coin %s: %w", id, err)
 		}
+		s.mu.Lock()
 		s.coins[id] = coin // Store the enriched version back
+		s.mu.Unlock()
 		return &coin, nil
 	}
 
-	coin := model.Coin{ID: id}
+	coin = model.Coin{ID: id}
 	if err := s.enrichCoin(&coin); err != nil {
 		return nil, fmt.Errorf("failed to fetch coin %s: %w", id, err)
 	}
 
+	s.mu.Lock()
 	s.coins[id] = coin
+	s.mu.Unlock()
 	return &coin, nil
 }
 

@@ -1,23 +1,25 @@
-export interface TradeConfirmationProps {
+import { Coin } from '../../../types';
+
+interface TradeConfirmationProps {
 	isVisible: boolean;
 	onClose: () => void;
 	onConfirm: () => void;
 	fromCoin: {
+		id: string;
 		symbol: string;
 		amount: string;
-		value: string;
 	};
 	toCoin: {
+		id: string;
 		symbol: string;
 		amount: string;
-		value: string;
 	};
 	fees: {
 		gasFee: string;
-		gasFeeUSD: string;
 		priceImpactPct: string;
 		totalFee: string;
-		totalFeeUSD: string;
 	};
 	isLoading?: boolean;
-} 
+}
+
+export type { TradeConfirmationProps }; 

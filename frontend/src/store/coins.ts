@@ -12,7 +12,7 @@ interface CoinState {
 	setAvailableCoins: (coins: Coin[]) => void;
 	setCoin: (coin: Coin) => void;
 	fetchAvailableCoins: () => Promise<void>;
-	getCoinByID: (id: string) => Promise<Coin | null>;
+	getCoinByID: (id: string, forceRefresh?: boolean) => Promise<Coin | null>;
 }
 
 export const useCoinStore = create<CoinState>((set, get) => ({
@@ -68,9 +68,9 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		}
 	},
 
-	getCoinByID: async (id: string) => {
+	getCoinByID: async (id: string, forceRefresh: boolean = false) => {
 		const state = get();
-		if (state.coinMap[id]) {
+		if (!forceRefresh && state.coinMap[id]) {
 			console.log("💰 Found coin in state:", {
 				id,
 				symbol: state.coinMap[id].symbol,

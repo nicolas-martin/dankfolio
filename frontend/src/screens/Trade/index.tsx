@@ -40,6 +40,34 @@ const Trade: React.FC = () => {
 	const styles = createStyles(theme);
 	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
 
+	// Refresh coin prices on screen load
+	useEffect(() => {
+		let isMounted = true;
+		const refreshCoinPrices = async () => {
+			try {
+				const [updatedFromCoin, updatedToCoin] = await Promise.all([
+					getCoinByID(fromCoin.id, true),  // Force refresh
+					getCoinByID(toCoin.id, true)     // Force refresh
+				]);
+				if (!isMounted) return;
+				if (updatedFromCoin) setFromCoin(updatedFromCoin);
+				if (updatedToCoin) setToCoin(updatedToCoin);
+			} catch (error) {
+				console.error('Failed to refresh coin prices:', error);
+				if (isMounted) {
+					showToast({
+						type: 'error',
+						message: 'Failed to refresh prices. Please try again later.'
+					});
+				}
+			}
+		};
+		refreshCoinPrices();
+		return () => {
+			isMounted = false;
+		};
+	}, []); // Only run on mount
+
 	// Get portfolio token data if available
 	const fromPortfolioToken = useMemo(() => {
 		return tokens.find(token => token.id === fromCoin.id);
@@ -253,21 +281,19 @@ const Trade: React.FC = () => {
 				onClose={() => setIsConfirmationVisible(false)}
 				onConfirm={handleTradeConfirm}
 				fromCoin={{
+					id: fromCoin.id,
 					symbol: fromCoin.symbol,
 					amount: fromAmount,
-					value: `$${(parseFloat(fromAmount) * fromCoin.price).toFixed(2)}`
 				}}
 				toCoin={{
+					id: toCoin.id,
 					symbol: toCoin.symbol,
 					amount: toAmount,
-					value: `$${(parseFloat(toAmount) * toCoin.price).toFixed(2)}`
 				}}
 				fees={{
 					gasFee: tradeDetails.gasFee,
-					gasFeeUSD: `$${(parseFloat(tradeDetails.gasFee) * fromCoin.price).toFixed(2)}`,
 					priceImpactPct: tradeDetails.priceImpactPct,
-					totalFee: tradeDetails.totalFee,
-					totalFeeUSD: `$${(parseFloat(tradeDetails.totalFee) * fromCoin.price).toFixed(2)}`
+					totalFee: tradeDetails.totalFee
 				}}
 				isLoading={isLoading}
 			/>
