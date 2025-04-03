@@ -12,17 +12,11 @@ import (
 	"github.com/fatih/color"
 )
 
-const (
-	boxTop    = "┌─── %s "
-	boxMiddle = "├─── %s "
-	boxBottom = "└─── %s "
-	boxLine   = "│ "
-	boxFill   = "─"
-)
-
 // RequestLogger returns a middleware that logs HTTP requests in a colorful and informative format
 func RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Add a divider between requests
+		fmt.Println("----------------------------------------")
 		start := time.Now()
 
 		// Create response wrapper
@@ -41,14 +35,6 @@ func RequestLogger(next http.Handler) http.Handler {
 		// Calculate duration
 		duration := time.Since(start)
 
-		// Format duration based on scale
-		var durationStr string
-		if duration.Milliseconds() > 0 {
-			durationStr = fmt.Sprintf("%dms", duration.Milliseconds())
-		} else {
-			durationStr = fmt.Sprintf("%dµs", duration.Microseconds())
-		}
-
 		// Color status code based on range
 		statusColor := color.New(color.Bold)
 		switch {
@@ -65,72 +51,25 @@ func RequestLogger(next http.Handler) http.Handler {
 		// Color method
 		methodColor := color.New(color.FgBlue, color.Bold)
 
-		// Print box top
-		printBoxLine(boxTop, "Request", 80)
-
-		// Print request info
-		fmt.Printf("%s%s │ %s │ %s %s %s │ %s\n",
-			boxLine,
-			time.Now().Format("2006/01/02 15:04:05"),
+		// Print request line
+		fmt.Printf("%s %s %s %s\n",
 			methodColor.Sprint(fmt.Sprintf("%-7s", r.Method)),
-			r.Host,
-			// r.URL.Path,
-			r.URL.String(),
 			statusColor.Sprintf("%d", ww.Status()),
-			durationStr,
+			duration.String(),
+			r.URL.String(),
 		)
 
-		// Log request body if present
-		if len(reqBody) > 0 {
-			printBoxLine(boxMiddle, "Request Body", 80)
-			if isJSON(reqBody) {
-				var prettyJSON bytes.Buffer
-				if err := json.Indent(&prettyJSON, reqBody, "", "  "); err == nil {
-					// Split the JSON by lines and prefix each line
-					lines := strings.Split(prettyJSON.String(), "\n")
-					for _, line := range lines {
-						if line != "" {
-							fmt.Printf("%s%s\n", boxLine, line)
-						}
-					}
-				}
-			} else {
-				fmt.Printf("%s%s\n", boxLine, string(reqBody))
+		// Log response body if it's JSON
+		if len(ww.body) > 0 && isJSON(ww.body) {
+			var prettyJSON bytes.Buffer
+			if err := json.Indent(&prettyJSON, ww.body, "", "  "); err == nil {
+				fmt.Println(prettyJSON.String())
 			}
 		}
 
-		// Log response body if captured
-		if len(ww.body) > 0 {
-			printBoxLine(boxMiddle, "Response Body", 80)
-			if isJSON(ww.body) {
-				var prettyJSON bytes.Buffer
-				if err := json.Indent(&prettyJSON, ww.body, "", "  "); err == nil {
-					// Split the JSON by lines and prefix each line
-					lines := strings.Split(prettyJSON.String(), "\n")
-					for _, line := range lines {
-						if line != "" {
-							fmt.Printf("%s%s\n", boxLine, line)
-						}
-					}
-				}
-			} else {
-				fmt.Printf("%s%s\n", boxLine, string(ww.body))
-			}
-		}
-
-		// Print box bottom
-		printBoxLine(boxBottom, "End", 80)
+		// Add a divider between requests
+		fmt.Println("----------------------------------------")
 	})
-}
-
-// printBoxLine prints a box line with the given format and title
-func printBoxLine(format, title string, width int) {
-	fmt.Printf(format, title)
-	remaining := width - len(title) - len(format) + 2 // +2 for %s
-	for i := 0; i < remaining; i++ {
-		fmt.Print(boxFill)
-	}
-	fmt.Println()
 }
 
 // isJSON checks if the byte slice is valid JSON

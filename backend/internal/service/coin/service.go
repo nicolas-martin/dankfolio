@@ -130,10 +130,12 @@ func (s *Service) enrichCoin(coin *model.Coin) error {
 	s.mu.RUnlock()
 
 	// Get Jupiter data for basic info
+	log.Printf("Fetching Jupiter token info for %s (%s)", coin.Symbol, coin.ID)
 	jupiterInfo, err := s.jupiterClient.GetTokenInfo(coin.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get Jupiter info: %w", err)
 	}
+	log.Printf("Got Jupiter token info for %s: %s (%s)", coin.ID, jupiterInfo.Name, jupiterInfo.Symbol)
 
 	// Basic info from Jupiter
 	coin.Name = jupiterInfo.Name
@@ -145,11 +147,13 @@ func (s *Service) enrichCoin(coin *model.Coin) error {
 	coin.CreatedAt = jupiterInfo.CreatedAt
 
 	// Get price from Jupiter
+	log.Printf("Fetching Jupiter price for %s (%s)", coin.Symbol, coin.ID)
 	price, err := s.jupiterClient.GetTokenPrice(coin.ID)
 	if err != nil {
 		log.Printf("Warning: Error fetching price for %s: %v", coin.ID, err)
 	} else {
 		coin.Price = price
+		log.Printf("Got Jupiter price for %s: %f", coin.ID, price)
 	}
 
 	// Get metadata account for the token

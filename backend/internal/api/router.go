@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	custommiddleware "github.com/nicolas-martin/dankfolio/internal/middleware"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/internal/service/solana"
@@ -42,7 +43,7 @@ func (r *Router) Setup() http.Handler {
 	router := chi.NewRouter()
 
 	// Set up middleware
-	router.Use(middleware.Logger)
+	router.Use(custommiddleware.RequestLogger)
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Recoverer)
