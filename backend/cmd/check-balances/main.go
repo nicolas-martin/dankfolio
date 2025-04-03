@@ -20,38 +20,32 @@ import (
 type WalletInfo struct {
 	Path      string
 	PublicKey string
-	Tokens    []wallet.TokenInfo
+	Tokens    []wallet.Balance
 }
 
-func checkBalance(ctx context.Context, walletService *wallet.Service, keyPath string) (*WalletInfo, error) {
+func checkBalance(ctx context.Context, walletService *wallet.Service, keyPath string) {
 	fmt.Printf("\nChecking balance for: %s\n", keyPath)
 
 	keypair, err := solana.PrivateKeyFromSolanaKeygenFile(keyPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse keypair: %v", err)
+		log.Fatalf("failed to parse keypair: %v", err)
 	}
 
 	// Get token balances
 	walletBalance, err := walletService.GetTokens(ctx, keypair.PublicKey().String())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get token balances: %v", err)
+		log.Fatalf("failed to get token balances: %v", err)
 	}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Token", "Address", "Balance", "Price", "($)"})
+	table.SetHeader([]string{"Address", "Amount"})
 
 	fmt.Printf("Public Key: %s\n", keypair.PublicKey())
 
-	for _, token := range walletBalance.Tokens {
-		table.Append([]string{token.Symbol, token.ID, fmt.Sprintf("%f", token.Balance), fmt.Sprintf("%f", token.Price), fmt.Sprintf("%f", token.Value)})
+	for _, token := range walletBalance.Balances {
+		table.Append([]string{token.ID, fmt.Sprintf("%f", token.Amount)})
 	}
 
 	table.Render()
-
-	return &WalletInfo{
-		Path:      keyPath,
-		PublicKey: keypair.PublicKey().String(),
-		Tokens:    walletBalance.Tokens,
-	}, nil
 }
 
 func main() {
@@ -64,7 +58,7 @@ func main() {
 	projectRoot := filepath.Join(wd, "../..")
 
 	// Load environment variables from project root
-	if err := godotenv.Load(filepath.Join(projectRoot, ".env")); err != nil {
+	if err = godotenv.Load(filepath.Join(projectRoot, ".env")); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
@@ -97,25 +91,5 @@ func main() {
 	}
 
 	// Check wallet balance
-	info, err := checkBalance(ctx, walletService, absPath)
-	if err != nil {
-		log.Fatalf("Error checking wallet balance: %v", err)
-	}
-
-	if info != nil {
-		// Calculate total portfolio value in USD
-		var totalValue float64
-		for _, token := range info.Tokens {
-			totalValue += token.Value
-		}
-
-		fmt.Printf("\nPortfolio Summary:\n")
-		fmt.Printf("Total Value: $%.2f\n", totalValue)
-		fmt.Printf("\nToken Distribution:\n")
-		for _, token := range info.Tokens {
-			fmt.Printf("%-20s %.2f%%\n", token.Symbol, token.Percentage)
-		}
-	} else {
-		fmt.Println("No valid wallet found")
-	}
+	checkBalance(ctx, walletService, absPath)
 }

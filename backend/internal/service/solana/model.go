@@ -9,7 +9,6 @@ const (
 	raydiumBaseHost = "https://api.raydium.io"
 	raydiumSwapHost = "https://transaction-v1.raydium.io"
 	// Common token mints
-	SolMint  = "So11111111111111111111111111111111111111112"
 	USDCMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 	// Default RPC endpoint
 	defaultDevnetRPC = "https://api.mainnet-beta.solana.com"

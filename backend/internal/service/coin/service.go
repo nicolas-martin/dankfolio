@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	// SolTokenAddress is the native SOL token address
-	SolTokenAddress = "So11111111111111111111111111111111111111112"
 	// TrendingTokensFile is the default path to the trending tokens file
 	TrendingTokensFile = "cmd/trending/trending_tokens.json"
 	// CacheExpiration is the duration for which cached data is valid
@@ -486,7 +484,6 @@ func (s *Service) enrichWithCoinGecko(coin *model.Coin) error {
 	coin.Twitter = geckoData.Links.TwitterScreenName
 	coin.Telegram = geckoData.Links.TelegramChannelIdentifier
 	coin.LastUpdated = geckoData.LastUpdated
-	coin.CoingeckoID = geckoData.ID
 
 	return nil
 }
