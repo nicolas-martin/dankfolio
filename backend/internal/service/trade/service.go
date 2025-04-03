@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -127,6 +128,7 @@ func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 	return trades, nil
 }
 
+// OnlyDirectRoutes: false,
 // GetTradeQuote gets a quote for a potential trade
 func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string) (*TradeQuote, error) {
 	// Convert amount to raw units based on decimals
@@ -147,13 +149,71 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		Amount:      inputAmount, // Amount is already in raw units (lamports for SOL)
 		SlippageBps: 100,         // 1% slippage
 		SwapMode:    "ExactIn",
-		// TODO: Allow indirect routes for better prices
-		// OnlyDirectRoutes: true,
-		OnlyDirectRoutes: false,
-		MaxAccounts:      64,
+		// NOTE: Allow indirect routes for better prices
+		// NOTE: Indirect routes will have different feeMints
+		// I'm not sure how the indirect route will affect the transaction submission
+		OnlyDirectRoutes: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
+	}
+
+	// Collect all unique feeMint addresses
+	feeMints := make(map[string]bool)
+	for _, route := range quote.RoutePlan {
+		feeMints[route.SwapInfo.FeeMint] = true
+	}
+
+	// Convert map keys to slice
+	feeMintAddresses := make([]string, 0, len(feeMints))
+	for mint := range feeMints {
+		feeMintAddresses = append(feeMintAddresses, mint)
+	}
+
+	// Retrieve token prices
+	prices, err := s.jupiterClient.GetTokenPrices(feeMintAddresses)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token prices: %w", err)
+	}
+
+	var totalFeeInUSD float64
+	var routeSummary []string
+	for _, route := range quote.RoutePlan {
+		routeSummary = append(routeSummary, route.SwapInfo.Label)
+
+		feeAmount, err := strconv.ParseFloat(route.SwapInfo.FeeAmount, 64)
+		if err != nil {
+			log.Printf("Couldn't parse route fee %s. Skipping", err)
+			continue
+		}
+
+		// Get the price of the feeMint in USD
+		price, exists := prices[route.SwapInfo.FeeMint]
+		if !exists {
+			log.Printf("Price for feeMint %s not found. Skipping", route.SwapInfo.FeeMint)
+			continue
+		}
+
+		// Convert fee to USD
+		feeInUSD := feeAmount * price
+		totalFeeInUSD += feeInUSD
+	}
+
+	if quote.PlatformFee != nil {
+		platformFeeAmount, err := strconv.ParseFloat(quote.PlatformFee.Amount, 64)
+		if err != nil {
+			log.Printf("Couldn't parse platform fee %s", err)
+		} else {
+			// Get the price of the platform feeMint in USD
+			price, exists := prices[model.SolMint]
+			if !exists {
+				log.Printf("Price for platform feeMint %s not found. Skipping", model.SolMint)
+			} else {
+				// Convert platform fee to USD
+				platformFeeInUSD := platformFeeAmount * price
+				totalFeeInUSD += platformFeeInUSD
+			}
+		}
 	}
 
 	// Convert outAmount to float64
@@ -162,40 +222,14 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		return nil, fmt.Errorf("failed to parse out amount: %w", err)
 	}
 
-	var totalFeeAmount float64
-	var routeSummary []string
-	for _, route := range quote.RoutePlan {
-		routeSummary = append(routeSummary, route.SwapInfo.Label)
-
-		if route.SwapInfo.FeeMint != model.SolMint {
-			log.Printf("unexpected feemint in route found %s, expected %s. Skipping", route.SwapInfo.FeeMint, model.SolMint)
-			continue
-		}
-		feeAmount, err := strconv.ParseFloat(route.SwapInfo.FeeAmount, 64)
-		if err != nil {
-			log.Printf("Couldn't parse route fee %s. Skipping", err)
-			continue
-		}
-		totalFeeAmount += feeAmount
-	}
-
-	if quote.PlatformFee != nil {
-		platformFeeFloat, err := strconv.ParseFloat(quote.PlatformFee.Amount, 64)
-		if err != nil {
-			log.Printf("Couldn't parse platform fee %s", err)
-		}
-		totalFeeAmount += platformFeeFloat
-	}
-
-	// NOTE: if this is unreliable just forward the raw amount to the frontend
-	// amount is in the destination currency
 	estimatedAmountInCoin := outAmount / math.Pow10(toCoin.Decimals)
-	// Fee is in the from currency
-	totalFeeInCoin := totalFeeAmount / math.Pow10(fromCoin.Decimals)
+	totalFeeInUSDCoin := totalFeeInUSD / math.Pow10(9)
 
 	// Calculate exchange rate
 	initialAmount, _ := strconv.ParseFloat(inputAmount, 64)
 	exchangeRate := outAmount / initialAmount
+
+	truncatedPriceImpact := truncateDecimals(quote.PriceImpactPct, 6)
 
 	// Log detailed quote information
 	log.Printf("🔄 Jupiter Quote Details:\n"+
@@ -203,19 +237,19 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		"Output: %v %s\n"+
 		"Price Impact: %v%%\n"+
 		"Route: %v\n"+
-		"Network Fee: %v %s\n",
+		"Total Fee: %v USD\n",
 		initialAmount, fromCoin.Symbol,
 		estimatedAmountInCoin, toCoin.Symbol,
 		quote.PriceImpactPct,
 		routeSummary,
-		totalFeeInCoin, fromCoin.Symbol,
+		totalFeeInUSD,
 	)
 
 	return &TradeQuote{
-		EstimatedAmount: strconv.FormatFloat(estimatedAmountInCoin, 'f', -1, 64),
-		ExchangeRate:    strconv.FormatFloat(exchangeRate, 'f', -1, 64),
-		Fee:             strconv.FormatFloat(totalFeeInCoin, 'f', -1, 64),
-		PriceImpact:     quote.PriceImpactPct,
+		EstimatedAmount: TruncateAndFormatFloat(estimatedAmountInCoin, 6),
+		ExchangeRate:    TruncateAndFormatFloat(exchangeRate, 6),
+		Fee:             TruncateAndFormatFloat(totalFeeInUSDCoin, 9),
+		PriceImpact:     truncatedPriceImpact,
 		RoutePlan:       routeSummary,
 		InputMint:       quote.InputMint,
 		OutputMint:      quote.OutputMint,
@@ -225,4 +259,21 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 // GetTokenPrices gets prices for multiple tokens from Jupiter
 func (s *Service) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
 	return s.jupiterClient.GetTokenPrices(tokenAddresses)
+}
+
+func truncateDecimals(input string, digits int) string {
+	i := strings.IndexByte(input, '.')
+	if i == -1 || len(input) < i+digits+1 {
+		return input // no dot or not enough digits
+	}
+	return input[:i+digits+1] // keep dot + digits
+}
+
+func TruncateAndFormatFloat(value float64, decimalPlaces int) string {
+	if decimalPlaces < 0 {
+		return strconv.FormatFloat(value, 'f', -1, 64)
+	}
+	factor := math.Pow(10, float64(decimalPlaces))
+	truncatedValue := math.Trunc(value*factor) / factor
+	return strconv.FormatFloat(truncatedValue, 'f', decimalPlaces, 64)
 }

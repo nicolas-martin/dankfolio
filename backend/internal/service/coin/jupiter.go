@@ -196,8 +196,6 @@ func (c *JupiterClient) GetQuote(params QuoteParams) (*JupiterQuoteResponse, err
 
 	if params.MaxAccounts > 0 {
 		queryParams.Add("maxAccounts", fmt.Sprintf("%d", params.MaxAccounts))
-	} else {
-		queryParams.Add("maxAccounts", "64") // Jupiter Frontend default
 	}
 
 	// Construct the full URL with query parameters
@@ -226,7 +224,7 @@ func (c *JupiterClient) GetQuote(params QuoteParams) (*JupiterQuoteResponse, err
 	}
 
 	// Log the quote response
-	log.Printf("🔄 RAW Jupiter Quote Response: %+v", quoteResp)
+	log.Printf("🔄 RAW Jupiter Quote Response: %s", body)
 
 	return &quoteResp, nil
 }
