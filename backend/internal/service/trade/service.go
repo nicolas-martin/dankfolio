@@ -168,12 +168,13 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		routeSummary = append(routeSummary, route.SwapInfo.Label)
 
 		if route.SwapInfo.FeeMint != model.SolMint {
-			return nil, fmt.Errorf("unexpected feemint in route found %s, expected %s", route.SwapInfo.FeeMint, model.SolMint)
+			log.Printf("unexpected feemint in route found %s, expected %s. Skipping", route.SwapInfo.FeeMint, model.SolMint)
+			continue
 		}
 		feeAmount, err := strconv.ParseFloat(route.SwapInfo.FeeAmount, 64)
 		if err != nil {
-			log.Printf("Couldn't parse route fee %s, skiping", err)
-			continue // Skip if we can't parse the fee
+			log.Printf("Couldn't parse route fee %s. Skipping", err)
+			continue
 		}
 		totalFeeAmount += feeAmount
 	}
@@ -186,9 +187,10 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		totalFeeAmount += platformFeeFloat
 	}
 
-	// Calculate estimated amount in token decimals
 	// NOTE: if this is unreliable just forward the raw amount to the frontend
+	// amount is in the destination currency
 	estimatedAmountInCoin := outAmount / math.Pow10(toCoin.Decimals)
+	// Fee is in the from currency
 	totalFeeInCoin := totalFeeAmount / math.Pow10(fromCoin.Decimals)
 
 	// Calculate exchange rate
@@ -209,17 +211,14 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		totalFeeInCoin, fromCoin.Symbol,
 	)
 
-	log.Printf("Successfully retrieved quote: EstimatedAmount:%v ExchangeRate:%v Fee:{Total:%v PriceImpactPct:%v}\n",
-		estimatedAmountInCoin, exchangeRate, totalFeeInCoin, quote.PriceImpactPct)
-
 	return &TradeQuote{
 		EstimatedAmount: strconv.FormatFloat(estimatedAmountInCoin, 'f', -1, 64),
 		ExchangeRate:    strconv.FormatFloat(exchangeRate, 'f', -1, 64),
-		Fee: TradeFee{
-			Total:          strconv.FormatFloat(totalFeeInCoin, 'f', -1, 64),
-			PriceImpactPct: quote.PriceImpactPct,
-		},
-		RoutePlan: quote.RoutePlan,
+		Fee:             strconv.FormatFloat(totalFeeInCoin, 'f', -1, 64),
+		PriceImpact:     quote.PriceImpactPct,
+		RoutePlan:       routeSummary,
+		InputMint:       quote.InputMint,
+		OutputMint:      quote.OutputMint,
 	}, nil
 }
 

@@ -4,20 +4,11 @@ package trade
 type TradeQuote struct {
 	EstimatedAmount string   `json:"estimatedAmount"`
 	ExchangeRate    string   `json:"exchangeRate"`
-	Fee             TradeFee `json:"fee"`
-	RoutePlan       []struct {
-		SwapInfo struct {
-			AmmKey     string `json:"ammKey"`
-			Label      string `json:"label"`
-			InputMint  string `json:"inputMint"`
-			OutputMint string `json:"outputMint"`
-			InAmount   string `json:"inAmount"`
-			OutAmount  string `json:"outAmount"`
-			FeeAmount  string `json:"feeAmount"`
-			FeeMint    string `json:"feeMint"`
-		} `json:"swapInfo"`
-		Percent int `json:"percent"`
-	} `json:"routePlan"`
+	Fee             string   `json:"fee"`
+	PriceImpact     string   `json:"priceImpact"`
+	RoutePlan       []string `json:"routePlan"`
+	InputMint       string   `json:"inputMint"`
+	OutputMint      string   `json:"outputMint"`
 }
 
 // TradeFee represents the fee components for a trade
