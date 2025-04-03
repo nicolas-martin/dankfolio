@@ -36,7 +36,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 			{metadata.description && (
 				<View>
 					<Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-						About
+						Description
 					</Text>
 					<Text
 						variant="bodyLarge"

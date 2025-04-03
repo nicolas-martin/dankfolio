@@ -43,7 +43,10 @@ const CoinDetail: React.FC = () => {
 
 	useEffect(() => {
 		if (!initialCoin) return;
-		fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, initialCoin);
+
+		// Only pass true for isInitialLoad on first mount
+		const isInitialLoad = !priceHistory.length;
+		fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, initialCoin, isInitialLoad);
 	}, [selectedTimeframe, initialCoin]);
 
 	const displayData = useMemo(() => {

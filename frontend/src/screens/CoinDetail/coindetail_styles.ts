@@ -56,6 +56,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderRadius: 8,
 		padding: 16,
 		marginHorizontal: 32,
+		marginBottom: 32,
 	},
 	holdingsTitle: {
 		fontSize: 24,
@@ -64,7 +65,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurface,
 	},
 	holdingsDetails: {
-		marginBottom: 32,
+		marginBottom: 8,
 	},
 	holdingsDetailRow: {
 		flexDirection: 'row',

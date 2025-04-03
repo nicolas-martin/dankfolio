@@ -20,10 +20,14 @@ export const fetchPriceHistory = async (
 	timeframe: string,
 	setLoading: (loading: boolean) => void,
 	setPriceHistory: (history: PriceData[]) => void,
-	coin: Coin | null
+	coin: Coin | null,
+	isInitialLoad: boolean = false
 ) => {
 	try {
-		setLoading(true);
+		// Only set loading on initial load
+		if (isInitialLoad) {
+			setLoading(true);
+		}
 
 		// If no coin is provided, we can't fetch the price history
 		if (!coin) {

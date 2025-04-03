@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView } from 'react-native';
-import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
+import { Text, Icon, useTheme, IconButton, List } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '../../components/Common/Toast';
 import { handleTokenPress, calculateTotalValue, copyToClipboard, formatAddress } from './profile_scripts';
@@ -21,6 +21,7 @@ const Profile = () => {
 	const { wallet, porfolio: portfolio } = usePortfolioStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+	const [distributionExpanded, setDistributionExpanded] = useState(true);
 
 	if (!wallet || !portfolio) {
 		return (
@@ -75,10 +76,15 @@ const Profile = () => {
 					</View>
 
 					<View style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]}>
-						<Text variant="titleLarge" style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
-							Distribution
-						</Text>
-						<WalletDonut tokens={portfolio.tokens} totalBalance={totalValue.totalValue} />
+						<List.Accordion
+							title="Distribution"
+							expanded={distributionExpanded}
+							onPress={() => setDistributionExpanded(!distributionExpanded)}
+							titleStyle={[styles.cardTitle, { color: theme.colors.onSurface }]}
+							style={{ backgroundColor: theme.colors.surfaceVariant, marginHorizontal: -16, marginTop: -16, marginBottom: -16 }}
+						>
+							<WalletDonut tokens={portfolio.tokens} totalBalance={totalValue.totalValue} />
+						</List.Accordion>
 					</View>
 
 					<View>
