@@ -150,7 +150,7 @@ const api: API = {
 			console.log('🔍 Fetching prices for tokens:', tokenIds);
 			const response = await apiClient.get<Record<string, number>>('/api/tokens/prices', {
 				params: {
-					token_ids: tokenIds
+					ids: tokenIds.join(',')
 				}
 			});
 			console.log('💰 Token prices received:', response.data);
@@ -179,6 +179,7 @@ apiClient.interceptors.request.use(
 			url: config.url,
 			baseURL: config.baseURL,
 			data: config.data,
+			params: config.params,
 			headers: config.headers
 		});
 		return config;

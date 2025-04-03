@@ -24,7 +24,7 @@ type TradeQuote struct {
 type TradeFee struct {
 	Total          string `json:"total"`
 	PriceImpactPct string `json:"priceImpactPct"`
-	Gas            string `json:"gas"`
+	Gas            string `json:"gas,omnitempty"`
 }
 
 // CalculateTradeFee calculates the trade fee based on amount and price

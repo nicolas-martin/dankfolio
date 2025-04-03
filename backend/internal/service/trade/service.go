@@ -162,30 +162,38 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		return nil, fmt.Errorf("failed to parse out amount: %w", err)
 	}
 
-	// Calculate network fee from route plan
 	var totalFeeAmount float64
+	var routeSummary []string
 	for _, route := range quote.RoutePlan {
+		routeSummary = append(routeSummary, route.SwapInfo.Label)
+
+		if route.SwapInfo.FeeMint != model.SolMint {
+			return nil, fmt.Errorf("unexpected feemint in route found %s, expected %s", route.SwapInfo.FeeMint, model.SolMint)
+		}
 		feeAmount, err := strconv.ParseFloat(route.SwapInfo.FeeAmount, 64)
 		if err != nil {
+			log.Printf("Couldn't parse route fee %s, skiping", err)
 			continue // Skip if we can't parse the fee
 		}
 		totalFeeAmount += feeAmount
 	}
 
+	if quote.PlatformFee != nil {
+		platformFeeFloat, err := strconv.ParseFloat(quote.PlatformFee.Amount, 64)
+		if err != nil {
+			log.Printf("Couldn't parse platform fee %s", err)
+		}
+		totalFeeAmount += platformFeeFloat
+	}
+
 	// Calculate estimated amount in token decimals
 	// NOTE: if this is unreliable just forward the raw amount to the frontend
-	estimatedAmount := outAmount / math.Pow10(toCoin.Decimals)
-	networkFeeInTokens := totalFeeAmount / math.Pow10(toCoin.Decimals)
+	estimatedAmountInCoin := outAmount / math.Pow10(toCoin.Decimals)
+	totalFeeInCoin := totalFeeAmount / math.Pow10(fromCoin.Decimals)
 
 	// Calculate exchange rate
 	initialAmount, _ := strconv.ParseFloat(inputAmount, 64)
 	exchangeRate := outAmount / initialAmount
-
-	// Build route summary for logging
-	var routeSummary []string
-	for _, route := range quote.RoutePlan {
-		routeSummary = append(routeSummary, route.SwapInfo.Label)
-	}
 
 	// Log detailed quote information
 	log.Printf("🔄 Jupiter Quote Details:\n"+
@@ -195,21 +203,20 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		"Route: %v\n"+
 		"Network Fee: %v %s\n",
 		initialAmount, fromCoin.Symbol,
-		estimatedAmount, toCoin.Symbol,
+		estimatedAmountInCoin, toCoin.Symbol,
 		quote.PriceImpactPct,
 		routeSummary,
-		networkFeeInTokens, fromCoin.Symbol,
+		totalFeeInCoin, fromCoin.Symbol,
 	)
 
-	log.Printf("Successfully retrieved quote: &{EstimatedAmount:%v ExchangeRate:%v Fee:{Total:%v PriceImpactPct:%v Gas:%v}}\n",
-		estimatedAmount, exchangeRate, networkFeeInTokens, quote.PriceImpactPct, networkFeeInTokens)
+	log.Printf("Successfully retrieved quote: EstimatedAmount:%v ExchangeRate:%v Fee:{Total:%v PriceImpactPct:%v}\n",
+		estimatedAmountInCoin, exchangeRate, totalFeeInCoin, quote.PriceImpactPct)
 
 	return &TradeQuote{
-		EstimatedAmount: strconv.FormatFloat(estimatedAmount, 'f', -1, 64),
+		EstimatedAmount: strconv.FormatFloat(estimatedAmountInCoin, 'f', -1, 64),
 		ExchangeRate:    strconv.FormatFloat(exchangeRate, 'f', -1, 64),
 		Fee: TradeFee{
-			Total:          strconv.FormatFloat(networkFeeInTokens, 'f', -1, 64),
-			Gas:            strconv.FormatFloat(networkFeeInTokens, 'f', -1, 64),
+			Total:          strconv.FormatFloat(totalFeeInCoin, 'f', -1, 64),
 			PriceImpactPct: quote.PriceImpactPct,
 		},
 		RoutePlan: quote.RoutePlan,

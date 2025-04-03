@@ -13,11 +13,6 @@ import (
 	"time"
 )
 
-const (
-	jupiterPriceURL         = "https://api.jup.ag/price/v2"
-	jupiterTokenMetadataURL = "https://api.jup.ag/tokens/v1/token"
-)
-
 // TokenMetadataCache represents a cache for token metadata
 type TokenMetadataCache struct {
 	sync.RWMutex
