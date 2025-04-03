@@ -39,7 +39,7 @@ func (h *WalletHandlers) GetWalletBalance(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	tokens, err := h.walletService.GetTokens(r.Context(), address)
+	tokens, err := h.walletService.GetWalletBalances(r.Context(), address)
 	if err != nil {
 		respondError(w, err.Error(), http.StatusInternalServerError)
 		return

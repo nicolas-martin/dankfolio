@@ -1,6 +1,4 @@
 import { Coin, Wallet, NotificationProps, Base58PrivateKey } from '../../types/index';
-import { WalletBalanceResponse } from '../../services/api';
-import api from '../../services/api';
 import { getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
@@ -30,33 +28,29 @@ export interface NotificationState {
 }
 
 export const fetchAvailableCoins = async (
-setLoading: (loading: boolean) => void
+	setLoading: (loading: boolean) => void
 ): Promise<void> => {
 	try {
 		setLoading(true);
 		await useCoinStore.getState().fetchAvailableCoins();
 		const coins = useCoinStore.getState().availableCoins;
-
 		console.log('🏠 Home fetched coins:', {
 			total: coins.length,
 			symbols: coins.map(c => c.symbol),
 			hasSol: coins.some(c => c.id === SOL_MINT)
 		});
-		// No longer setting local state here, store handles it
-		} catch (err) {
+	} catch (err) {
 		console.error('❌ Error fetching coins:', err);
-		throw err; // Let the caller handle the error with toast
+		throw err;
 	} finally {
 		setLoading(false);
 	}
 };
 
-
 export const handleImportWallet = async (
 	privateKey: string,
 	setWallet: (wallet: Wallet | null) => void,
-	fetchPortfolioBalance: (address: string) => Promise<void>
-): Promise<void> => {
+): Promise<Wallet> => {
 	try {
 		// Convert to Base58 if needed
 		const base58PrivateKey = convertToBase58(privateKey);
@@ -65,7 +59,6 @@ export const handleImportWallet = async (
 			originalLength: privateKey.length,
 			convertedLength: base58PrivateKey.length
 		});
-
 		const keypair = getKeypairFromPrivateKey(base58PrivateKey);
 		const walletData: Wallet = {
 			address: keypair.publicKey.toString(),
@@ -75,11 +68,10 @@ export const handleImportWallet = async (
 		};
 		setWallet(walletData);
 		await secureStorage.saveWallet(walletData);
-		// Fetch balance immediately after setting wallet using the store action
-		await fetchPortfolioBalance(walletData.address);
+		return walletData;
 	} catch (error) {
 		console.error('❌ Error importing wallet:', error);
-		throw error; // Let the caller handle the error
+		throw error;
 	}
 };
 
@@ -87,6 +79,6 @@ export const handleCoinPress = (
 	coin: Coin,
 	navigate: (screen: string, params: any) => void
 ): void => {
-
 	navigate('CoinDetail', { coin: coin });
 };
+

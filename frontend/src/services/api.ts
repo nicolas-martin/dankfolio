@@ -20,7 +20,6 @@ export interface Coin {
 	icon_url: string;
 	tags: string[];
 	price: number;
-	balance?: number;
 	daily_volume: number;
 	website?: string;
 	twitter?: string;
@@ -28,20 +27,15 @@ export interface Coin {
 	coingecko_id?: string;
 	created_at: string;
 	last_updated?: string;
-	value?: number;
-	percentage?: number;
 }
 
-// TokenInfo extends Coin but makes certain fields required for wallet tokens
-export interface TokenInfo extends Coin {
-	balance: number;   // Required for wallet tokens
-	value: number;     // Required for wallet tokens
-	percentage: number; // Required for wallet tokens
+export interface balance {
+	id: string;
+	amount: number;
 }
 
-// WalletBalanceResponse matches the backend's WalletBalance struct
 export interface WalletBalanceResponse {
-tokens: TokenInfo[];
+	balances: balance[];
 }
 
 interface API {

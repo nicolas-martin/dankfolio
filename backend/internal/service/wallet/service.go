@@ -36,9 +36,7 @@ func New(rpcClient *rpc.Client, coinService *coin.Service) *Service {
 	}
 }
 
-// GetTokens returns all tokens in a wallet including SOL
-func (s *Service) GetTokens(ctx context.Context, address string) (*WalletBalance, error) {
-	// Parse the public key
+func (s *Service) GetWalletBalances(ctx context.Context, address string) (*WalletBalance, error) {
 	pubKey, err := solana.PublicKeyFromBase58(address)
 	if err != nil {
 		return nil, fmt.Errorf("invalid address: %v", err)

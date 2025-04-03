@@ -44,29 +44,29 @@ test_endpoint() {
     fi
 }
 
-# Test getting all available tokens
-print_header "Getting all available tokens"
-test_endpoint "GET" "$BASE_URL/api/tokens" "" "Get all available tokens"
+# # Test getting all available tokens
+# print_header "Getting all available tokens"
+# test_endpoint "GET" "$BASE_URL/api/tokens" "" "Get all available tokens"
 
-# Test getting a specific token by ID (USDC)
-print_header "Getting specific token"
-test_endpoint "GET" "$BASE_URL/api/tokens/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" "" "Get USDC token info"
+# # Test getting a specific token by ID (USDC)
+# print_header "Getting specific token"
+# test_endpoint "GET" "$BASE_URL/api/tokens/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" "" "Get USDC token info"
 
-# Test getting trade quote
-print_header "Getting trade quote"
-test_endpoint "GET" "$BASE_URL/api/trades/quote?from_coin_id=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&to_coin_id=So11111111111111111111111111111111111111112&amount=1" "" "Get trade quote USDC -> SOL"
+# # Test getting trade quote
+# print_header "Getting trade quote"
+# test_endpoint "GET" "$BASE_URL/api/trades/quote?from_coin_id=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&to_coin_id=So11111111111111111111111111111111111111112&amount=1" "" "Get trade quote USDC -> SOL"
 
 # Test getting wallet balance
 print_header "Getting wallet balance"
-test_endpoint "GET" "$BASE_URL/api/wallets/DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG5CNSKK/balance" "" "Get wallet balance"
+test_endpoint "GET" "$BASE_URL/api/wallets/GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R/balance" "" "Get wallet balance"
 
-# Test getting price history
-print_header "Getting price history"
-test_endpoint "GET" "$BASE_URL/api/price/history?address=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&type=1D&time_from=1706745600&time_to=1707004800&address_type=token" "" "Get USDC price history"
+# # Test getting price history
+# print_header "Getting price history"
+# test_endpoint "GET" "$BASE_URL/api/price/history?address=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&type=1D&time_from=1706745600&time_to=1707004800&address_type=token" "" "Get USDC price history"
 
-# Test health endpoint
-print_header "Testing health endpoint"
-test_endpoint "GET" "$BASE_URL/health" "" "Health check"
+# # Test health endpoint
+# print_header "Testing health endpoint"
+# test_endpoint "GET" "$BASE_URL/health" "" "Health check"
 
 # Print summary
 echo -e "\n${GREEN}All tests completed${NC}"

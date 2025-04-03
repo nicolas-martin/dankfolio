@@ -1,10 +1,4 @@
-import {
-	Keypair,
-	Connection,
-	PublicKey,
-	LAMPORTS_PER_SOL,
-	VersionedTransaction
-} from '@solana/web3.js';
+import { Keypair, VersionedTransaction } from '@solana/web3.js';
 import bs58 from 'bs58';
 import axios from 'axios';
 import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
@@ -18,28 +12,6 @@ if (!rpcEndpoint) {
 	throw new Error('No Solana RPC endpoint provided');
 }
 console.log('🔧 Using Solana RPC endpoint:', rpcEndpoint);
-
-// Initialize Solana connection
-const connection = new Connection(rpcEndpoint, 'confirmed');
-
-// Constants for Raydium API
-// const API_SWAP_HOST = 'https://transaction-v1.raydium.io';
-// const API_BASE_HOST = 'https://api.raydium.io';
-
-// Raydium API URLs
-// const API_URLS = {
-//     SWAP_HOST: API_SWAP_HOST,
-//     BASE_HOST: API_BASE_HOST,
-//     SWAP_QUOTE: '/compute/swap-base-in',
-//     SWAP_TRANSACTION: '/transaction/swap-base-in'
-// };
-
-// Hardcoded compute unit prices (in microLamports)
-// const COMPUTE_UNIT_PRICES = {
-//     VERY_HIGH: '1000', // vh
-//     HIGH: '500',       // h
-//     MEDIUM: '250'      // m
-// };
 
 const jupiterApi = axios.create({
 	baseURL: process.env.REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
@@ -65,23 +37,6 @@ jupiterApi.interceptors.response.use(
 		throw error;
 	}
 );
-/**
- * Generate a new random Solana keypair.
- * Returns an object with the keypair, public key (as string), and private key (base58 encoded).
- */
-export const generateWallet = (): { keypair: Keypair; publicKey: string; privateKey: string } => {
-	const keypair = Keypair.generate();
-	return {
-		keypair,
-		publicKey: keypair.publicKey.toString(),
-		privateKey: bs58.encode(keypair.secretKey)
-	};
-};
-
-const isBase64 = (privateKey: string) => {
-	// Basic check for Base64 format (may not be 100% accurate)
-	return privateKey.match(/^[A-Za-z0-9+/]*={0,2}$/) !== null && privateKey.length % 4 === 0;
-};
 
 export const getKeypairFromPrivateKey = (privateKey: string): Keypair => {
 	// Handle Base64 private key

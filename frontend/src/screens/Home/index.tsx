@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, SafeAreaView, FlatList } from 'react-native';
 import { ActivityIndicator, useTheme, Button, IconButton, Text } from 'react-native-paper';
@@ -19,7 +20,7 @@ import { createStyles } from './home_styles';
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const [loading, setLoading] = useState(true);
-	const { wallet, isLoading: isWalletLoading, setWallet, fetchPorfolioBalance: fetchWalletBalance } = usePortfolioStore();
+	const { wallet, setWallet, fetchPortfolioBalance } = usePortfolioStore();
 	const { availableCoins: coins, fetchAvailableCoins: fetchCoins } = useCoinStore();
 	const { showToast } = useToast();
 	const theme = useTheme();
@@ -27,18 +28,22 @@ const HomeScreen = () => {
 
 	const handleImportWalletCallback = useCallback(async (privateKey: string) => {
 		try {
-			await handleImportWallet(privateKey, setWallet, fetchWalletBalance);
+			// Use the returned wallet instead of relying on a possibly stale closure
+			const importedWallet = await handleImportWallet(privateKey, setWallet);
 			showToast({
 				type: 'success',
 				message: 'Wallet imported successfully'
 			});
+			if (importedWallet?.address) {
+				await fetchPortfolioBalance(importedWallet.address);
+			}
 		} catch (error) {
 			showToast({
 				type: 'error',
 				message: 'Failed to import wallet'
 			});
 		}
-	}, [fetchWalletBalance, setWallet, showToast]);
+	}, [setWallet, showToast, fetchPortfolioBalance]);
 
 	const handleCoinPressCallback = useCallback((coin: Coin) => {
 		handleCoinPress(coin, navigation.navigate);
@@ -53,9 +58,8 @@ const HomeScreen = () => {
 				symbols: coins.map(c => c.symbol),
 				hasSol: coins.some(c => c.id === SOL_MINT)
 			});
-
 			if (wallet?.address) {
-				await fetchWalletBalance(wallet.address);
+				await fetchPortfolioBalance(wallet.address);
 			}
 		} catch (error) {
 			console.error('Error refreshing data:', error);
@@ -66,7 +70,7 @@ const HomeScreen = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [wallet, fetchWalletBalance, fetchCoins, showToast]); // Removed 'coins' dependency
+	}, [wallet, fetchCoins, showToast, fetchPortfolioBalance, coins]);
 
 	const initializeData = useCallback(async (): Promise<void> => {
 		try {
@@ -77,7 +81,6 @@ const HomeScreen = () => {
 				symbols: coins.map(c => c.symbol),
 				hasSol: coins.some(c => c.id === SOL_MINT)
 			});
-
 			if (process.env.NODE_ENV === 'development' && TEST_PRIVATE_KEY) {
 				console.log('🧪 Development mode detected, auto-importing test wallet');
 				await handleImportWalletCallback(TEST_PRIVATE_KEY);
@@ -91,7 +94,7 @@ const HomeScreen = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [handleImportWalletCallback, fetchCoins, showToast]); // Removed 'coins' dependency
+	}, [handleImportWalletCallback, fetchCoins, showToast, coins]);
 
 	useEffect(() => {
 		initializeData();
@@ -112,7 +115,6 @@ const HomeScreen = () => {
 			>
 				Show Test Toast
 			</Button>
-
 			{wallet ? (
 				<View style={styles.content}>
 					<View style={styles.coinsSection}>
@@ -124,9 +126,9 @@ const HomeScreen = () => {
 								onPress={onRefresh}
 							/>
 						</View>
-						{coins.length > 0 ? ( // Use the locally renamed variable 'coins'
+						{coins.length > 0 ? (
 							<FlatList
-								data={coins} // Use the locally renamed variable 'coins'
+								data={coins}
 								keyExtractor={(item) => item.id || item.symbol}
 								renderItem={({ item }) => (
 									<CoinCard coin={item} onPress={() => handleCoinPressCallback(item)} />
@@ -162,3 +164,4 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
+
