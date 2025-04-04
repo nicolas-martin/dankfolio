@@ -13,7 +13,7 @@ import { Coin } from '@/types';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
-	const { wallet } = usePortfolioStore();
+	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
 	const { availableCoins: coins, fetchAvailableCoins: fetchCoins } = useCoinStore();
 	const { showToast } = useToast();
 	const theme = useTheme();
@@ -25,7 +25,12 @@ const HomeScreen = () => {
 
 	const onRefresh = useCallback(async () => {
 		try {
-			await fetchCoins();
+			// Fetch both coins and wallet balance
+			await Promise.all([
+				fetchCoins(),
+				wallet ? fetchPortfolioBalance(wallet.address) : null
+			].filter(Boolean));
+
 			showToast({
 				type: 'success',
 				message: 'Coins refreshed successfully!',
@@ -38,7 +43,7 @@ const HomeScreen = () => {
 				duration: 3000
 			});
 		}
-	}, [fetchCoins, showToast]);
+	}, [fetchCoins, fetchPortfolioBalance, wallet, showToast]);
 
 	return (
 		<SafeAreaView style={styles.container}>
@@ -48,10 +53,10 @@ const HomeScreen = () => {
 						<View style={styles.sectionHeader}>
 							<Text variant="titleLarge" style={styles.sectionTitle}>Available Coins</Text>
 							<IconButton
-							icon="refresh"
-							size={24}
-							onPress={onRefresh}
-							testID="refresh-button"
+								icon="refresh"
+								size={24}
+								onPress={onRefresh}
+								testID="refresh-button"
 							/>
 						</View>
 						{coins.length > 0 ? (
@@ -91,4 +96,3 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
-

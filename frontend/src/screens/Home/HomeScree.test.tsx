@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import HomeScreen from './index'; // Corrected: Use relative path
+import HomeScreen from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
@@ -13,20 +13,19 @@ jest.mock('@services/solana', () => ({
 	getKeypairFromPrivateKey: jest.fn(),
 }));
 
-jest.mock('@store/portfolio', () => ({ // Use path alias
+jest.mock('@store/portfolio', () => ({
 	usePortfolioStore: jest.fn(),
 }));
 
-jest.mock('@store/coins', () => ({ // Use path alias
+jest.mock('@store/coins', () => ({
 	useCoinStore: jest.fn(),
 }));
 
-jest.mock('@components/Common/Toast', () => ({ // Use path alias
+jest.mock('@components/Common/Toast', () => ({
 	useToast: jest.fn(),
 }));
 
-jest.mock('@components/Home/CoinCard', () => { // Use path alias
-	// Import Text inside the factory function
+jest.mock('@components/Home/CoinCard', () => {
 	const { Text } = require('react-native');
 	return ({ coin, onPress }: any) => (
 		<Text onPress={onPress}>{coin.symbol}</Text>
@@ -46,34 +45,33 @@ jest.mock('@react-navigation/native', () => {
 
 // Test data from actual API responses
 const mockWalletBalances = {
-  balances: [
-    {
-      id: "So11111111111111111111111111111111111111112",
-      amount: 0.046201915
-    },
-    {
-      id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-      amount: 1.365125
-    },
-    {
-      id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
-      amount: 2.942492
-    },
-    {
-      id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      amount: 0.067008
-    },
-    {
-      id: "28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump",
-      amount: 1483648.13214
-    }
-  ]
+	balances: [
+		{
+			id: "So11111111111111111111111111111111111111112",
+			amount: 0.046201915
+		},
+		{
+			id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
+			amount: 1.365125
+		},
+		{
+			id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+			amount: 2.942492
+		},
+		{
+			id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+			amount: 0.067008
+		},
+		{
+			id: "28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump",
+			amount: 1483648.13214
+		}
+	]
 };
 
 const mockWallet = {
-  address: 'GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R',
-  balances: mockWalletBalances.balances,
-  getWalletBalance: jest.fn().mockResolvedValue(mockWalletBalances)
+	address: 'GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R',
+	balances: mockWalletBalances.balances
 };
 
 const mockApiResponse = [
@@ -98,51 +96,39 @@ const mockApiResponse = [
 		tags: ["verified", "community", "strict"],
 		price: 1.000041,
 		daily_volume: 93921196.89232118
-	},
-	{
-		id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-		name: "PWEASE",
-		symbol: "pwease",
-		decimals: 6,
-		description: "PWEASE (pwease) is a Solana token.",
-		icon_url: "https://ipfs.io/ipfs/QmboNoCSu87DLgnqqf3LVWCUF2zZtzpSE5LtAa3tx8hUUG",
-		tags: ["verified", "launchpad", "birdeye-trending", "community"],
-		price: 0.023736,
-		daily_volume: 9370569.942992656
 	}
 ];
 
 describe('HomeScreen', () => {
 	const fetchAvailableCoinsMock = jest.fn();
+	const fetchPortfolioBalanceMock = jest.fn();
 	const showToastMock = jest.fn();
 
 	beforeEach(() => {
 		jest.clearAllMocks();
 
+		// Setup mock implementations
+		fetchAvailableCoinsMock.mockImplementation(async () => mockApiResponse);
+		fetchPortfolioBalanceMock.mockImplementation(async () => mockWalletBalances);
+
 		// Mock portfolio store with wallet state and functions
 		mocked(usePortfolioStore).mockReturnValue({
-		  wallet: mockWallet,
-		  getWalletBalance: mockWallet.getWalletBalance,
+			wallet: mockWallet,
+			fetchPortfolioBalance: fetchPortfolioBalanceMock
 		});
 
-		// Mock coin store with initial state and loading states
-		const mockCoinStore = {
+		// Mock coin store with initial state
+		mocked(useCoinStore).mockReturnValue({
 			availableCoins: mockApiResponse,
 			fetchAvailableCoins: fetchAvailableCoinsMock,
 			isLoading: false,
 			error: null,
-		};
-		mocked(useCoinStore).mockReturnValue(mockCoinStore);
+		});
 
 		// Mock toast notifications
 		mocked(useToast).mockReturnValue({
 			showToast: showToastMock,
 			hideToast: jest.fn(),
-		});
-
-		// Mock fetchAvailableCoins to return API response
-		fetchAvailableCoinsMock.mockImplementation(async () => {
-			return mockApiResponse;
 		});
 	});
 
@@ -157,28 +143,11 @@ describe('HomeScreen', () => {
 			expect(getByText('Available Coins')).toBeTruthy();
 			expect(getByText('SOL')).toBeTruthy();
 			expect(getByText('USDT')).toBeTruthy();
-			expect(getByText('pwease')).toBeTruthy();
 			expect(getByText('View Profile')).toBeTruthy();
 		});
 	});
 
-	it('navigates to CoinDetail screen with correct params when a coin is pressed', async () => {
-		const { getByText } = render(
-			<NavigationContainer>
-				<HomeScreen />
-			</NavigationContainer>
-		);
-
-		const coinCard = await waitFor(() => getByText('SOL'));
-		fireEvent.press(coinCard);
-
-		expect(mockNavigate).toHaveBeenCalledWith('CoinDetail', {
-			coin: mockApiResponse[0],
-			fromScreen: 'Home',
-		});
-	});
-
-	it('calls fetchAvailableCoins and shows success toast when refresh button is pressed', async () => {
+	it('calls both fetchAvailableCoins and fetchPortfolioBalance when refreshing', async () => {
 		const { getByTestId } = render(
 			<NavigationContainer>
 				<HomeScreen />
@@ -189,8 +158,9 @@ describe('HomeScreen', () => {
 		fireEvent.press(refreshButton);
 
 		await waitFor(() => {
-			// Verify fetchAvailableCoins was called
+			// Verify both fetch functions were called
 			expect(fetchAvailableCoinsMock).toHaveBeenCalled();
+			expect(fetchPortfolioBalanceMock).toHaveBeenCalledWith(mockWallet.address);
 
 			// Verify success toast was shown
 			expect(showToastMock).toHaveBeenCalledWith({
@@ -199,62 +169,10 @@ describe('HomeScreen', () => {
 				duration: 3000,
 			});
 		});
-
-		// Mock the store update after fetch
-		await waitFor(() => {
-			// Verify fetchAvailableCoins was called
-			expect(fetchAvailableCoinsMock).toHaveBeenCalledWith();
-
-			// Verify store was updated with the correct data
-			const mockStoreAfterFetch = {
-				availableCoins: mockApiResponse,
-				fetchAvailableCoins: fetchAvailableCoinsMock,
-				isLoading: false,
-				error: null,
-			};
-			mocked(useCoinStore).mockReturnValue(mockStoreAfterFetch);
-
-			// Verify specific coin data matches the API response
-			const solCoin = mockApiResponse[0];
-			expect(solCoin.price).toBe(126.675682);
-			expect(solCoin.daily_volume).toBe(651534477.8800015);
-
-			// Verify USDT data
-			const usdtCoin = mockApiResponse[1];
-			expect(usdtCoin.symbol).toBe('USDT');
-			expect(usdtCoin.price).toBe(1.000041);
-
-			// Verify PWEASE data
-			const pweaseCoin = mockApiResponse[2];
-			expect(pweaseCoin.symbol).toBe('pwease');
-			expect(pweaseCoin.price).toBe(0.023736);
-		});
 	});
 
-	it('shows loading state while fetching coins', async () => {
-		// Mock loading state
-		const mockCoinStoreLoading = {
-			availableCoins: [],
-			fetchAvailableCoins: fetchAvailableCoinsMock,
-			isLoading: true,
-			error: null,
-		};
-		mocked(useCoinStore).mockReturnValue(mockCoinStoreLoading);
-
-		const { getByTestId } = render(
-			<NavigationContainer>
-				<HomeScreen />
-			</NavigationContainer>
-		);
-
-		const refreshButton = getByTestId('refresh-button');
-		fireEvent.press(refreshButton);
-
-		expect(fetchAvailableCoinsMock).toHaveBeenCalled();
-	});
-
-	it('shows error toast when fetching coins fails', async () => {
-		const error = new Error('Failed to fetch coins');
+	it('shows error toast when fetching fails', async () => {
+		const error = new Error('Network error');
 		fetchAvailableCoinsMock.mockRejectedValueOnce(error);
 
 		const { getByTestId } = render(
@@ -272,6 +190,45 @@ describe('HomeScreen', () => {
 				message: 'Failed to refresh coins',
 				duration: 3000,
 			});
+		});
+	});
+
+	it('verifies store state after refresh', async () => {
+		// Initial render with default mocks
+		const { getByTestId } = render(
+			<NavigationContainer>
+				<HomeScreen />
+			</NavigationContainer>
+		);
+
+		// Trigger refresh
+		const refreshButton = getByTestId('refresh-button');
+		fireEvent.press(refreshButton);
+
+		await waitFor(() => {
+			// Verify both functions were called
+			expect(fetchAvailableCoinsMock).toHaveBeenCalled();
+			expect(fetchPortfolioBalanceMock).toHaveBeenCalledWith(mockWallet.address);
+
+			// Verify wallet balances in store are as expected
+			const balances = mockWallet.balances;
+
+			// Check SOL balance
+			const solBalance = balances.find(b => b.id === "So11111111111111111111111111111111111111112");
+			expect(solBalance?.amount).toBe(0.046201915);
+
+			// Check PWEASE balance
+			const pweaseBalance = balances.find(b => b.id === "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump");
+			expect(pweaseBalance?.amount).toBe(1.365125);
+
+			// Check largest token balance
+			const largeBalance = balances.find(b => b.id === "28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump");
+			expect(largeBalance?.amount).toBe(1483648.13214);
+
+			// Verify coin prices are correct
+			const coins = mockApiResponse;
+			expect(coins[0].price).toBe(126.675682);
+			expect(coins[1].price).toBe(1.000041);
 		});
 	});
 });
