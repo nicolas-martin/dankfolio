@@ -177,33 +177,33 @@ describe('HomeScreen', () => {
 	});
 
 	it('shows error toast when fetching fails', async () => {
-	  // Both calls will fail
-	  const error = new Error('Network error');
-	  fetchAvailableCoinsMock.mockRejectedValueOnce(error);
-	  fetchPortfolioBalanceMock.mockRejectedValueOnce(error);
+		// Both calls will fail
+		const error = new Error('Network error');
+		fetchAvailableCoinsMock.mockRejectedValueOnce(error);
+		fetchPortfolioBalanceMock.mockRejectedValueOnce(error);
 
-	  const { getByTestId } = render(
-	    <NavigationContainer>
-	      <HomeScreen />
-	    </NavigationContainer>
-	  );
+		const { getByTestId } = render(
+			<NavigationContainer>
+				<HomeScreen />
+			</NavigationContainer>
+		);
 
-	  // Initial state check
-	  expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
-	  expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
-	  expect(showToastMock).not.toHaveBeenCalled();
+		// Initial state check
+		expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
+		expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
+		expect(showToastMock).not.toHaveBeenCalled();
 
-	  // Trigger refresh
-	  const refreshButton = getByTestId('refresh-button');
-	  fireEvent.press(refreshButton);
+		// Trigger refresh
+		const refreshButton = getByTestId('refresh-button');
+		fireEvent.press(refreshButton);
 
-	  await waitFor(() => {
-	    // Both fetch functions should be called exactly once
-	    expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
-	    expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
-	    // Error toast should be shown once
-	    expect(showToastMock).toHaveBeenCalledTimes(1);
-	    // Verify error message
+		await waitFor(() => {
+			// Both fetch functions should be called exactly once
+			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
+			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
+			// Error toast should be shown once
+			expect(showToastMock).toHaveBeenCalledTimes(1);
+			// Verify error message
 			expect(showToastMock).toHaveBeenCalledWith({
 				type: 'error',
 				message: 'Failed to refresh coins',
