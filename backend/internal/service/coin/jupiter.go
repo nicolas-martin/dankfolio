@@ -158,11 +158,7 @@ func (c *JupiterClient) GetQuote(params QuoteParams) (*JupiterQuoteResponse, err
 	queryParams.Add("outputMint", params.OutputMint)
 	queryParams.Add("amount", params.Amount)
 
-	// Optional parameters with defaults
-	if params.SlippageBps == 0 {
-		params.SlippageBps = 50 // Default slippage of 0.5%
-	}
-	queryParams.Add("slippageBps", fmt.Sprintf("%d", params.SlippageBps))
+	queryParams.Add("slippageBps", params.SlippageBps)
 
 	if params.SwapMode == "" {
 		params.SwapMode = "ExactIn" // Default swap mode

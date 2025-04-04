@@ -172,7 +172,7 @@ type QuoteParams struct {
 	InputMint                  string
 	OutputMint                 string
 	Amount                     string
-	SlippageBps                int
+	SlippageBps                string
 	SwapMode                   string // "ExactIn" or "ExactOut"
 	Dexes                      []string
 	ExcludeDexes               []string

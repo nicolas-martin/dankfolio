@@ -1,5 +1,5 @@
-import { Coin, Wallet, NotificationProps, Base58PrivateKey } from '../../types/index';
-import { getKeypairFromPrivateKey, secureStorage } from '../../services/solana';
+import { Coin, Wallet, Base58PrivateKey } from '../../types/index';
+import { getKeypairFromPrivateKey } from '../../services/solana';
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
 import { useCoinStore } from '../../store/coins';
@@ -22,11 +22,6 @@ export const convertToBase58 = (privateKey: string): Base58PrivateKey => {
 	return privateKey;
 };
 
-export interface NotificationState {
-	visible: boolean;
-	type: NotificationProps['type'];
-	message: string;
-}
 
 export const fetchAvailableCoins = async (
 	setLoading: (loading: boolean) => void

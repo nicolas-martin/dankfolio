@@ -6,7 +6,10 @@
     "paths": {
       "*": ["src/*"],
       "@/*": ["src/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@store/*": ["src/store/*"],
+      "@services/*": ["src/services/*"],
+      "@components/*": ["src/components/*"]
     },
     "types": ["node"],
     "lib": ["es2020", "dom"],

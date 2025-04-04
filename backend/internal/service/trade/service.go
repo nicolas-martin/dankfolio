@@ -130,7 +130,7 @@ func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 
 // OnlyDirectRoutes: false,
 // GetTradeQuote gets a quote for a potential trade
-func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string) (*TradeQuote, error) {
+func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
 	// Convert amount to raw units based on decimals
 	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinID)
 	if err != nil {
@@ -147,7 +147,7 @@ func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string
 		InputMint:   fromCoinID,
 		OutputMint:  toCoinID,
 		Amount:      inputAmount, // Amount is already in raw units (lamports for SOL)
-		SlippageBps: 100,         // 1% slippage
+		SlippageBps: slippageBsp,
 		SwapMode:    "ExactIn",
 		// NOTE: Allow indirect routes for better prices
 		// NOTE: Indirect routes will have different feeMints

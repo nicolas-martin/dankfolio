@@ -115,8 +115,22 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 	fromCoinID := r.URL.Query().Get("from_coin_id")
 	toCoinID := r.URL.Query().Get("to_coin_id")
 	amountStr := r.URL.Query().Get("amount")
+	slippageBspStr := r.URL.Query().Get("slippageBps")
 
-	log.Printf("Quote request params: fromCoinID=%s, toCoinID=%s, amount=%s", fromCoinID, toCoinID, amountStr)
+	log.Printf("Quote request params: fromCoinID=%s, toCoinID=%s, amount=%s, slippageBsp=%s", fromCoinID, toCoinID, amountStr, slippageBspStr)
+
+	var slippageBsp int64
+	if slippageBspStr != "" {
+		var err error
+		slippageBsp, err = strconv.ParseInt(slippageBspStr, 10, 64)
+		if err != nil {
+			respondError(w, "Invalid bsp parameter", http.StatusBadRequest)
+			return
+		}
+	}
+	if slippageBsp <= 0 {
+		slippageBspStr = "100"
+	}
 
 	// SOL is the default currency if not specified
 	if fromCoinID == "" {
@@ -132,18 +146,16 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 
 	amount, err := strconv.ParseFloat(amountStr, 64)
 	if err != nil {
-		log.Printf("Invalid amount parameter: %s, error: %v", amountStr, err)
 		respondError(w, "Invalid amount parameter", http.StatusBadRequest)
 		return
 	}
 	if amount <= 0 {
-		log.Printf("Amount cannot be 0", amount)
 		respondError(w, "Amount cannot be 0", http.StatusBadRequest)
 		return
 	}
 
 	// Get quote from service
-	quote, err := h.tradeService.GetTradeQuote(r.Context(), fromCoinID, toCoinID, amountStr)
+	quote, err := h.tradeService.GetTradeQuote(r.Context(), fromCoinID, toCoinID, amountStr, slippageBspStr)
 	if err != nil {
 		log.Printf("Error getting trade quote: %v", err)
 		respondError(w, fmt.Sprintf("Failed to get trade quote: %v", err), http.StatusInternalServerError)

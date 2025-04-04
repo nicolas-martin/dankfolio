@@ -1,32 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 
-// Define spacing and typography constants
-const spacing = {
-	xs: 4,
-	sm: 8,
-	md: 12,
-	lg: 16,
-	xl: 24,
-};
-
-const typography = {
-	fontSize: {
-		sm: 12,
-		base: 14,
-		lg: 16,
-		xl: 18,
-		'2xl': 20,
-		'3xl': 24,
-	},
-};
-
-const borderRadius = {
-	sm: 4,
-	md: 8,
-	lg: 12,
-};
-
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
 		flex: 1,
