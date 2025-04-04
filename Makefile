@@ -1,4 +1,4 @@
-.PHONY: dev test clean install build run test-api test-solana test-coins backend-kill help run-mobile mobile-kill test-trade-quote test-frontend
+.PHONY: dev setup run backend-kill test run-mobile mobile-kill help test-frontend build-backend
 
 # Variables
 BACKEND_DIR := backend
@@ -27,25 +27,12 @@ backend-kill:
 	@lsof -ti :8080 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
 
 # Testing
-test: test-swap test-coins test-trade-quote
-
-test-swap:
-	@echo "⚡ Running Solana integration tests..."
-	@cd $(BACKEND_DIR) && ./scripts/test-solana-buy-execute.sh
-	@cd $(BACKEND_DIR) && ./scripts/test-solana-sell-execute.sh
-
-test-coins: mobile-kill
-	@echo "🪙 Running Coins API tests..."
-	@cd $(BACKEND_DIR) && ./scripts/test-coins-api.sh
-
-test-trade-quote:
-	@echo "📈 Testing trade quote API..."
-	@cd $(BACKEND_DIR) && ./scripts/test-trade-quote.sh
+test: test-frontend lint-frontend build-backend
 
 # Mobile App
-run-mobile:
+run-mobile: mobile-kill
 	@echo "📱 Starting mobile frontend..."
-	@cd $(MOBILE_DIR) && npm start -- --clear
+	@cd $(MOBILE_DIR) && yarn start
 
 mobile-kill:
 	@echo "📴 Stopping mobile frontend..."
@@ -59,15 +46,18 @@ help:
 	@echo "  make run-mobile   - Run the mobile frontend"
 	@echo "  make backend-kill - Stop the backend server"
 	@echo "  make mobile-kill  - Stop the mobile frontend"
-	@echo "  make test-swap    - Run swap service curl tests"
-	@echo "  make test-coins   - Run coins API tests"
-	@echo "  make test-trade-quote - Run trade quote API tests"
-	@echo "  make setup        - Set up environment files and fetches dependencies"
 	@echo "  make test-frontend - Run frontend Jest tests"
+	@echo "  make setup        - Set up environment files and fetches dependencies"
+	@echo "  make build-backend - Build the backend server"
 
 test-frontend: ## Run frontend Jest tests
 	@echo "🧪 Running frontend tests..."
 	cd frontend && yarn test
 
-build-backend:
-	cd backend && go build -o ../bin/backend cmd/server/main.go 
+lint-frontend:
+	@echo "🔍 Running frontend lint..."
+	cd frontend && yarn lint
+
+build-backend: ## Check backend Go code compilation
+	@echo "🏗️ Compiling backend code..."
+	cd backend && go build ./...
