@@ -110,57 +110,60 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 				)}
 			</View>
 
-			<View>
-				<Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-					Links
-				</Text>
-				<View style={[styles.linksContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
-					{metadata.website && (
-						<>
+			{/* Conditionally render the Links section */}
+			{(metadata.website || metadata.twitter || metadata.telegram || metadata.discord) && (
+				<View>
+					<Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+						Links
+					</Text>
+					<View style={[styles.linksContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
+						{metadata.website && (
+							<>
+								<LinkItem
+									icon={ICON_WEBSITE}
+									label="Website"
+									value={metadata.website}
+									onPress={handleLinkPress}
+								/>
+								<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+							</>
+						)}
+
+						{metadata.twitter && (
+							<>
+								<LinkItem
+									icon={ICON_TWITTER}
+									label="Twitter"
+									value={`@${metadata.twitter}`}
+									onPress={handleLinkPress}
+								/>
+								<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+							</>
+						)}
+
+						{metadata.telegram && (
+							<>
+								<LinkItem
+									icon={ICON_TELEGRAM}
+									label="Telegram"
+									value={metadata.telegram}
+									onPress={handleLinkPress}
+								/>
+								<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+							</>
+						)}
+
+						{metadata.discord && (
 							<LinkItem
-								icon={ICON_WEBSITE}
-								label="Website"
-								value={metadata.website}
+								icon={ICON_DISCORD}
+								label="Discord"
+								value={metadata.discord}
 								onPress={handleLinkPress}
 							/>
-							<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
-						</>
-					)}
-
-					{metadata.twitter && (
-						<>
-							<LinkItem
-								icon={ICON_TWITTER}
-								label="Twitter"
-								value={`@${metadata.twitter}`}
-								onPress={handleLinkPress}
-							/>
-							<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
-						</>
-					)}
-
-					{metadata.telegram && (
-						<>
-							<LinkItem
-								icon={ICON_TELEGRAM}
-								label="Telegram"
-								value={metadata.telegram}
-								onPress={handleLinkPress}
-							/>
-							<Divider style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
-						</>
-					)}
-
-					{metadata.discord && (
-						<LinkItem
-							icon={ICON_DISCORD}
-							label="Discord"
-							value={metadata.discord}
-							onPress={handleLinkPress}
-						/>
-					)}
+						)}
+					</View>
 				</View>
-			</View>
+			)}
 		</View>
 	);
 };

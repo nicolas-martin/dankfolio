@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, Platform } from 'react-native';
 import { Card, TextInput, Text, ActivityIndicator } from 'react-native-paper';
-import { CoinSelectorProps } from '@/types';
+import { CoinSelectorProps } from './types';
 import { styles } from './coinselector_styles';
 import { DEFAULT_ICON, getCoinIcon } from './coinselector_scripts';
 import { theme } from '../../../utils/theme';

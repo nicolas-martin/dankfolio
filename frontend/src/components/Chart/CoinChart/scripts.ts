@@ -1,5 +1,5 @@
 import { PriceData } from '@/types';
-import { PricePoint } from '@/types';
+import { PricePoint } from './types';
 
 export const prepareChartData = (data: PriceData[]): PricePoint[] => {
 	return data.map(point => {
