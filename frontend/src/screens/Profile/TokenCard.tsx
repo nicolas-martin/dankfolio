@@ -24,6 +24,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ profileCoin, onPress }) =>
 					{iconUrl ? ( // Use the iconUrl derived from the store
 						<View style={[styles.tokenIconContainer, { backgroundColor: theme.colors.background }]}>
 							<Image
+								testID={`${profileCoin.coin.symbol}-icon`}
 								source={{ uri: iconUrl }}
 								alt={`${profileCoin.coin.symbol} icon`}
 								style={styles.tokenImage}

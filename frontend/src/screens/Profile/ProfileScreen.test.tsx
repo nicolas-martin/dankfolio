@@ -1,8 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import ProfileScreen from './index';
-import ProfileScreen from './index';
+import Profile from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useToast } from '@components/Common/Toast';
 import { mocked } from 'jest-mock';
@@ -43,11 +42,11 @@ jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'MaterialCom
 
 // Mock react-native-paper's Icon component
 jest.mock('react-native-paper', () => {
-  const actualPaper = jest.requireActual('react-native-paper');
-  return {
-    ...actualPaper,
-    Icon: () => 'MockedPaperIcon',
-  };
+	const actualPaper = jest.requireActual('react-native-paper');
+	return {
+		...actualPaper,
+		Icon: () => 'MockedPaperIcon',
+	};
 });
 
 // Mock navigation
@@ -126,7 +125,7 @@ describe('Profile Screen', () => {
 	});
 
 	it('renders tokens with correct values', () => {
-		const { getAllByTestId, getByText, getByAltText } = render(
+		const { getAllByTestId, getByText, getByRole } = render(
 			<NavigationContainer>
 				<ProfileScreen />
 			</NavigationContainer>
@@ -137,7 +136,7 @@ describe('Profile Screen', () => {
 			const card = getAllByTestId(`token-card-${token.id}`)[0];
 			expect(card.props.children).toBe(`$${token.value.toFixed(2)}`);
 			expect(getByText(token.coin.name)).toBeTruthy();
-			expect(getByAltText(`${token.coin.name} icon`)).toBeTruthy();
+			expect(getByRole('image', { name: `${token.coin.name} icon` })).toBeTruthy();
 		});
 	});
 
@@ -167,7 +166,7 @@ describe('Profile Screen', () => {
 
 		const { getByText } = render(
 			<NavigationContainer>
-				<Profile />
+				<ProfileScreen />
 			</NavigationContainer>
 		);
 
@@ -177,7 +176,7 @@ describe('Profile Screen', () => {
 	it('uses correct store hooks and call counts', () => {
 		render(
 			<NavigationContainer>
-				<Profile />
+				<ProfileScreen />
 			</NavigationContainer>
 		);
 
