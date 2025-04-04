@@ -1,4 +1,4 @@
-.PHONY: dev test clean install build run test-api test-solana test-coins backend-kill help run-mobile mobile-kill test-trade-quote
+.PHONY: dev test clean install build run test-api test-solana test-coins backend-kill help run-mobile mobile-kill test-trade-quote test-frontend
 
 # Variables
 BACKEND_DIR := backend
@@ -15,6 +15,7 @@ setup:
 	@echo "📦 Installing dependencies..."
 	@cd $(BACKEND_DIR) && go mod download
 	@echo "✅ Dependencies installed"
+	@./setup.sh
 
 # Server Management
 run: backend-kill
@@ -61,4 +62,12 @@ help:
 	@echo "  make test-swap    - Run swap service curl tests"
 	@echo "  make test-coins   - Run coins API tests"
 	@echo "  make test-trade-quote - Run trade quote API tests"
-	@echo "  make setup        - Set up environment files and fetches dependencies" 
+	@echo "  make setup        - Set up environment files and fetches dependencies"
+	@echo "  make test-frontend - Run frontend Jest tests"
+
+test-frontend: ## Run frontend Jest tests
+	@echo "🧪 Running frontend tests..."
+	cd frontend && yarn test
+
+build-backend:
+	cd backend && go build -o ../bin/backend cmd/server/main.go 

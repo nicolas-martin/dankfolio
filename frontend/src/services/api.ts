@@ -7,16 +7,13 @@ if (!baseURL) {
 	throw new Error('No API URL provided for api');
 }
 
-console.log('🔧 API URL:', baseURL); // Debug log
-
-// --- Define apiClient BEFORE the api object that uses it ---
 const apiClient = axios.create({
 	baseURL,
 	headers: {
 		'Content-Type': 'application/json',
 		'Accept': 'application/json',
 	},
-	timeout: 30000, // 30 seconds
+	timeout: 30000,
 });
 
 // Add request interceptor for debugging
@@ -168,7 +165,6 @@ const api: API = {
 	},
 
 	getCoinByID: async (id: string): Promise<Coin> => {
-		console.log('🔄 Fetching coin by ID:', id);
 		try {
 			const response = await apiClient.get<Coin>(`/api/tokens/${id}`);
 			return response.data;

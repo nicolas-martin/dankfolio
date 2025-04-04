@@ -32,7 +32,8 @@ const mockAxiosInstance = mockedAxiosCreate();
 
 describe('API Service', () => {
 
-	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
+	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable for log
+	let consoleErrorSpy: jest.SpyInstance; // Declare the spy variable for error
 
 	// Define mock data structures based on interfaces in api.ts
 	const mockCoin: Coin = {
@@ -84,8 +85,9 @@ describe('API Service', () => {
 	};
 
 	beforeEach(() => {
-		// Silence console.log before each test
+		// Silence console.log and console.error before each test
 		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+		consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
 		// Clear calls on the *instance's* methods
 		mockAxiosInstance.get.mockClear();
@@ -94,9 +96,10 @@ describe('API Service', () => {
 		mockedAxiosCreate.mockClear();
 	});
 
-	// Add afterEach to restore the original console.log
+	// Add afterEach to restore the original console methods
 	afterEach(() => {
 		consoleLogSpy.mockRestore();
+		consoleErrorSpy.mockRestore(); // Restore error spy
 	});
 
 	it('executeTrade successfully calls POST /api/trades/execute', async () => {
