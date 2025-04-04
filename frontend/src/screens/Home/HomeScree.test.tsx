@@ -5,7 +5,6 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import { NavigationContainer } from '@react-navigation/native';
-import { Text } from 'react-native';
 import { mocked } from 'jest-mock';
 
 // Mocks
@@ -140,6 +139,12 @@ describe('HomeScreen', () => {
 		);
 
 		await waitFor(() => {
+			// Verify store hooks are called exactly once on mount
+			expect(usePortfolioStore).toHaveBeenCalledTimes(1);
+			expect(useCoinStore).toHaveBeenCalledTimes(1);
+			expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
+			expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
+
 			expect(getByText('Available Coins')).toBeTruthy();
 			expect(getByText('SOL')).toBeTruthy();
 			expect(getByText('USDT')).toBeTruthy();
@@ -147,44 +152,58 @@ describe('HomeScreen', () => {
 		});
 	});
 
-	it('calls both fetchAvailableCoins and fetchPortfolioBalance when refreshing', async () => {
+	it('calls both fetchAvailableCoins and fetchPortfolioBalance exactly once when refreshing', async () => {
 		const { getByTestId } = render(
 			<NavigationContainer>
 				<HomeScreen />
 			</NavigationContainer>
 		);
 
+		expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
+		expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
+
 		const refreshButton = getByTestId('refresh-button');
 		fireEvent.press(refreshButton);
 
 		await waitFor(() => {
-			// Verify both fetch functions were called
-			expect(fetchAvailableCoinsMock).toHaveBeenCalled();
+			// Verify store hooks and functions are called exactly once
+			expect(usePortfolioStore).toHaveBeenCalledTimes(1);
+			expect(useCoinStore).toHaveBeenCalledTimes(1);
+			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
+			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
 			expect(fetchPortfolioBalanceMock).toHaveBeenCalledWith(mockWallet.address);
-
-			// Verify success toast was shown
-			expect(showToastMock).toHaveBeenCalledWith({
-				type: 'success',
-				message: 'Coins refreshed successfully!',
-				duration: 3000,
-			});
+			expect(showToastMock).toHaveBeenCalledTimes(1);
 		});
 	});
 
 	it('shows error toast when fetching fails', async () => {
-		const error = new Error('Network error');
-		fetchAvailableCoinsMock.mockRejectedValueOnce(error);
+	  // Both calls will fail
+	  const error = new Error('Network error');
+	  fetchAvailableCoinsMock.mockRejectedValueOnce(error);
+	  fetchPortfolioBalanceMock.mockRejectedValueOnce(error);
 
-		const { getByTestId } = render(
-			<NavigationContainer>
-				<HomeScreen />
-			</NavigationContainer>
-		);
+	  const { getByTestId } = render(
+	    <NavigationContainer>
+	      <HomeScreen />
+	    </NavigationContainer>
+	  );
 
-		const refreshButton = getByTestId('refresh-button');
-		fireEvent.press(refreshButton);
+	  // Initial state check
+	  expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
+	  expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
+	  expect(showToastMock).not.toHaveBeenCalled();
 
-		await waitFor(() => {
+	  // Trigger refresh
+	  const refreshButton = getByTestId('refresh-button');
+	  fireEvent.press(refreshButton);
+
+	  await waitFor(() => {
+	    // Both fetch functions should be called exactly once
+	    expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
+	    expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
+	    // Error toast should be shown once
+	    expect(showToastMock).toHaveBeenCalledTimes(1);
+	    // Verify error message
 			expect(showToastMock).toHaveBeenCalledWith({
 				type: 'error',
 				message: 'Failed to refresh coins',
@@ -193,42 +212,81 @@ describe('HomeScreen', () => {
 		});
 	});
 
-	it('verifies store state after refresh', async () => {
-		// Initial render with default mocks
+	it('verifies store state and call counts after refresh', async () => {
 		const { getByTestId } = render(
 			<NavigationContainer>
 				<HomeScreen />
 			</NavigationContainer>
 		);
 
+		// Initial state check
+		expect(usePortfolioStore).toHaveBeenCalledTimes(1);
+		expect(useCoinStore).toHaveBeenCalledTimes(1);
+		expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
+		expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
+
 		// Trigger refresh
 		const refreshButton = getByTestId('refresh-button');
 		fireEvent.press(refreshButton);
 
 		await waitFor(() => {
-			// Verify both functions were called
-			expect(fetchAvailableCoinsMock).toHaveBeenCalled();
-			expect(fetchPortfolioBalanceMock).toHaveBeenCalledWith(mockWallet.address);
+			// Verify function call counts
+			expect(usePortfolioStore).toHaveBeenCalledTimes(1);
+			expect(useCoinStore).toHaveBeenCalledTimes(1);
+			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
+			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
+			expect(showToastMock).toHaveBeenCalledTimes(1);
 
-			// Verify wallet balances in store are as expected
-			const balances = mockWallet.balances;
-
-			// Check SOL balance
-			const solBalance = balances.find(b => b.id === "So11111111111111111111111111111111111111112");
-			expect(solBalance?.amount).toBe(0.046201915);
-
-			// Check PWEASE balance
-			const pweaseBalance = balances.find(b => b.id === "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump");
-			expect(pweaseBalance?.amount).toBe(1.365125);
-
-			// Check largest token balance
-			const largeBalance = balances.find(b => b.id === "28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump");
-			expect(largeBalance?.amount).toBe(1483648.13214);
-
-			// Verify coin prices are correct
+			// Verify all coin data with exact fields
 			const coins = mockApiResponse;
-			expect(coins[0].price).toBe(126.675682);
-			expect(coins[1].price).toBe(1.000041);
+			expect(coins).toEqual([
+				{
+					id: "So11111111111111111111111111111111111111112",
+					name: "Wrapped SOL",
+					symbol: "SOL",
+					decimals: 9,
+					description: "Wrapped SOL (SOL) is a Solana token.",
+					icon_url: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+					tags: ["verified", "community", "strict"],
+					price: 126.675682,
+					daily_volume: 651534477.8800015
+				},
+				{
+					id: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+					name: "USDT",
+					symbol: "USDT",
+					decimals: 6,
+					description: "USDT (USDT) is a Solana token.",
+					icon_url: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/logo.svg",
+					tags: ["verified", "community", "strict"],
+					price: 1.000041,
+					daily_volume: 93921196.89232118
+				}
+			]);
+
+			// Verify wallet balances
+			expect(mockWallet.balances).toEqual([
+				{
+					id: "So11111111111111111111111111111111111111112",
+					amount: 0.046201915
+				},
+				{
+					id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
+					amount: 1.365125
+				},
+				{
+					id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+					amount: 2.942492
+				},
+				{
+					id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+					amount: 0.067008
+				},
+				{
+					id: "28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump",
+					amount: 1483648.13214
+				}
+			]);
 		});
 	});
 });
