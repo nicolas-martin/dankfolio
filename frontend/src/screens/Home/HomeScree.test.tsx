@@ -44,33 +44,72 @@ jest.mock('@react-navigation/native', () => {
 	};
 });
 
-// Test data
-const mockWallet = {
-	address: 'GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R',
-	balances: [
-		{ id: 'So11111111111111111111111111111111111111112', amount: 0.0462 },
-	],
+// Test data from actual API responses
+const mockWalletBalances = {
+  balances: [
+    {
+      id: "So11111111111111111111111111111111111111112",
+      amount: 0.046201915
+    },
+    {
+      id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
+      amount: 1.365125
+    },
+    {
+      id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+      amount: 2.942492
+    },
+    {
+      id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      amount: 0.067008
+    },
+    {
+      id: "28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump",
+      amount: 1483648.13214
+    }
+  ]
 };
 
-const mockCoins = [
+const mockWallet = {
+  address: 'GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R',
+  balances: mockWalletBalances.balances,
+  getWalletBalance: jest.fn().mockResolvedValue(mockWalletBalances)
+};
+
+const mockApiResponse = [
 	{
-		id: 'So11111111111111111111111111111111111111112',
-		name: 'Wrapped SOL',
-		symbol: 'SOL',
-		description: 'Wrapped SOL (SOL) is a Solana token.',
-		icon_url: 'https://solana.com/logo.png',
-		price: 126.67,
-		daily_volume: 651534477,
+		id: "So11111111111111111111111111111111111111112",
+		name: "Wrapped SOL",
+		symbol: "SOL",
+		decimals: 9,
+		description: "Wrapped SOL (SOL) is a Solana token.",
+		icon_url: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+		tags: ["verified", "community", "strict"],
+		price: 126.675682,
+		daily_volume: 651534477.8800015
 	},
 	{
-		id: 'CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump',
-		name: 'PWEASE',
-		symbol: 'pwease',
-		description: 'PWEASE (pwease) is a Solana token.',
-		icon_url: 'https://solana.com/logo.png',
-		price: 0.023,
-		daily_volume: 9370569,
+		id: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+		name: "USDT",
+		symbol: "USDT",
+		decimals: 6,
+		description: "USDT (USDT) is a Solana token.",
+		icon_url: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/logo.svg",
+		tags: ["verified", "community", "strict"],
+		price: 1.000041,
+		daily_volume: 93921196.89232118
 	},
+	{
+		id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
+		name: "PWEASE",
+		symbol: "pwease",
+		decimals: 6,
+		description: "PWEASE (pwease) is a Solana token.",
+		icon_url: "https://ipfs.io/ipfs/QmboNoCSu87DLgnqqf3LVWCUF2zZtzpSE5LtAa3tx8hUUG",
+		tags: ["verified", "launchpad", "birdeye-trending", "community"],
+		price: 0.023736,
+		daily_volume: 9370569.942992656
+	}
 ];
 
 describe('HomeScreen', () => {
@@ -80,14 +119,15 @@ describe('HomeScreen', () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
 
-		// Mock portfolio store with wallet state
+		// Mock portfolio store with wallet state and functions
 		mocked(usePortfolioStore).mockReturnValue({
-			wallet: mockWallet,
+		  wallet: mockWallet,
+		  getWalletBalance: mockWallet.getWalletBalance,
 		});
 
 		// Mock coin store with initial state and loading states
 		const mockCoinStore = {
-			availableCoins: mockCoins,
+			availableCoins: mockApiResponse,
 			fetchAvailableCoins: fetchAvailableCoinsMock,
 			isLoading: false,
 			error: null,
@@ -99,55 +139,10 @@ describe('HomeScreen', () => {
 			showToast: showToastMock,
 			hideToast: jest.fn(),
 		});
-	});
 
-	// Add test for loading state
-	it('shows loading state while fetching coins', async () => {
-		// Mock loading state
-		const mockCoinStoreLoading = {
-			availableCoins: [],
-			fetchAvailableCoins: fetchAvailableCoinsMock,
-			isLoading: true,
-			error: null,
-		};
-		mocked(useCoinStore).mockReturnValue(mockCoinStoreLoading);
-
-		// Verify loading state is handled
+		// Mock fetchAvailableCoins to return API response
 		fetchAvailableCoinsMock.mockImplementation(async () => {
-			await new Promise(resolve => setTimeout(resolve, 100)); // Simulate API delay
-		});
-
-		const { getByTestId } = render(
-			<NavigationContainer>
-				<HomeScreen />
-			</NavigationContainer>
-		);
-
-		fireEvent.press(getByTestId('refresh-button'));
-
-		expect(fetchAvailableCoinsMock).toHaveBeenCalled();
-		expect(useCoinStore).toHaveBeenCalled();
-	});
-
-	// Add test for error handling
-	it('shows error toast when fetching coins fails', async () => {
-		const error = new Error('Failed to fetch coins');
-		fetchAvailableCoinsMock.mockRejectedValueOnce(error);
-
-		const { getByTestId } = render(
-			<NavigationContainer>
-				<HomeScreen />
-			</NavigationContainer>
-		);
-
-		fireEvent.press(getByTestId('refresh-button'));
-
-		await waitFor(() => {
-			expect(showToastMock).toHaveBeenCalledWith({
-				type: 'error',
-				message: 'Failed to refresh coins',
-				duration: 3000,
-			});
+			return mockApiResponse;
 		});
 	});
 
@@ -161,6 +156,7 @@ describe('HomeScreen', () => {
 		await waitFor(() => {
 			expect(getByText('Available Coins')).toBeTruthy();
 			expect(getByText('SOL')).toBeTruthy();
+			expect(getByText('USDT')).toBeTruthy();
 			expect(getByText('pwease')).toBeTruthy();
 			expect(getByText('View Profile')).toBeTruthy();
 		});
@@ -177,7 +173,7 @@ describe('HomeScreen', () => {
 		fireEvent.press(coinCard);
 
 		expect(mockNavigate).toHaveBeenCalledWith('CoinDetail', {
-			coin: mockCoins[0],
+			coin: mockApiResponse[0],
 			fromScreen: 'Home',
 		});
 	});
@@ -189,16 +185,91 @@ describe('HomeScreen', () => {
 			</NavigationContainer>
 		);
 
-		// Find the refresh button using its test ID
 		const refreshButton = getByTestId('refresh-button');
-
 		fireEvent.press(refreshButton);
 
 		await waitFor(() => {
+			// Verify fetchAvailableCoins was called
 			expect(fetchAvailableCoinsMock).toHaveBeenCalled();
+
+			// Verify success toast was shown
 			expect(showToastMock).toHaveBeenCalledWith({
 				type: 'success',
 				message: 'Coins refreshed successfully!',
+				duration: 3000,
+			});
+		});
+
+		// Mock the store update after fetch
+		await waitFor(() => {
+			// Verify fetchAvailableCoins was called
+			expect(fetchAvailableCoinsMock).toHaveBeenCalledWith();
+
+			// Verify store was updated with the correct data
+			const mockStoreAfterFetch = {
+				availableCoins: mockApiResponse,
+				fetchAvailableCoins: fetchAvailableCoinsMock,
+				isLoading: false,
+				error: null,
+			};
+			mocked(useCoinStore).mockReturnValue(mockStoreAfterFetch);
+
+			// Verify specific coin data matches the API response
+			const solCoin = mockApiResponse[0];
+			expect(solCoin.price).toBe(126.675682);
+			expect(solCoin.daily_volume).toBe(651534477.8800015);
+
+			// Verify USDT data
+			const usdtCoin = mockApiResponse[1];
+			expect(usdtCoin.symbol).toBe('USDT');
+			expect(usdtCoin.price).toBe(1.000041);
+
+			// Verify PWEASE data
+			const pweaseCoin = mockApiResponse[2];
+			expect(pweaseCoin.symbol).toBe('pwease');
+			expect(pweaseCoin.price).toBe(0.023736);
+		});
+	});
+
+	it('shows loading state while fetching coins', async () => {
+		// Mock loading state
+		const mockCoinStoreLoading = {
+			availableCoins: [],
+			fetchAvailableCoins: fetchAvailableCoinsMock,
+			isLoading: true,
+			error: null,
+		};
+		mocked(useCoinStore).mockReturnValue(mockCoinStoreLoading);
+
+		const { getByTestId } = render(
+			<NavigationContainer>
+				<HomeScreen />
+			</NavigationContainer>
+		);
+
+		const refreshButton = getByTestId('refresh-button');
+		fireEvent.press(refreshButton);
+
+		expect(fetchAvailableCoinsMock).toHaveBeenCalled();
+	});
+
+	it('shows error toast when fetching coins fails', async () => {
+		const error = new Error('Failed to fetch coins');
+		fetchAvailableCoinsMock.mockRejectedValueOnce(error);
+
+		const { getByTestId } = render(
+			<NavigationContainer>
+				<HomeScreen />
+			</NavigationContainer>
+		);
+
+		const refreshButton = getByTestId('refresh-button');
+		fireEvent.press(refreshButton);
+
+		await waitFor(() => {
+			expect(showToastMock).toHaveBeenCalledWith({
+				type: 'error',
+				message: 'Failed to refresh coins',
 				duration: 3000,
 			});
 		});
