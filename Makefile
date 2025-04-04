@@ -27,7 +27,7 @@ backend-kill:
 	@lsof -ti :8080 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
 
 # Testing
-test: test-frontend lint-frontend build-backend
+test: build-backend lint-frontend test-frontend 
 
 # Mobile App
 run-mobile: mobile-kill

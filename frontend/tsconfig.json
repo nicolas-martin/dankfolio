@@ -1,39 +1,58 @@
 {
-  "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "strict": false,
-    "baseUrl": ".",
-    "paths": {
-      "*": ["src/*"],
-      "@/*": ["src/*"],
-      "@types/*": ["src/types/*"],
-      "@store/*": ["src/store/*"],
-      "@services/*": ["src/services/*"],
-      "@components/*": ["src/components/*"]
-    },
-    "types": ["node", "jest"], // Added "jest" to explicitly include its types
-    "lib": ["es2020", "dom"],
-    "esModuleInterop": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "allowSyntheticDefaultImports": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "allowUnusedLabels": true,
-    "allowUnreachableCode": false,
-    "declaration": true
-  },
-  "exclude": [
-    "**/*.spec.ts",
-    // Removed *.test.ts exclusion
-    // Removed *.test.tsx exclusion
-    "**/*.spec.tsx",
-    "scripts/**/*"
-  ],
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "src/types/**/*",
-    "scripts/**/*"
-  ]
+	"extends": "expo/tsconfig.base",
+	"compilerOptions": {
+		"strict": false,
+		"baseUrl": ".",
+		"paths": {
+			"*": [
+				"src/*"
+			],
+			"@/*": [
+				"src/*"
+			],
+			"@types/*": [
+				"src/types/*"
+			],
+			"@store/*": [
+				"src/store/*"
+			],
+			"@services/*": [
+				"src/services/*"
+			],
+			"@components/*": [
+				"src/components/*"
+			]
+		},
+		"types": [
+			"node",
+			"jest"
+		], // Added "jest" to explicitly include its types
+		"lib": [
+			"es2020",
+			"dom"
+		],
+		"esModuleInterop": true,
+		"moduleResolution": "bundler",
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"allowSyntheticDefaultImports": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"allowUnusedLabels": true,
+		"allowUnreachableCode": false,
+		"declaration": true
+	},
+	"exclude": [
+		"**/*.spec.ts",
+		// Removed *.test.ts exclusion
+		// Removed *.test.tsx exclusion
+		"**/*.spec.tsx",
+		"scripts/**/*"
+	],
+	"include": [
+		"**/*.ts",
+		"**/*.tsx",
+		"src/types/**/*",
+		"scripts/**/*"
+	]
 }

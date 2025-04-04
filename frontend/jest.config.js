@@ -3,7 +3,7 @@ module.exports = {
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 	setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
 	transformIgnorePatterns: [
-		'node_modules/(?!(react-native|lucide-react-native|react-native-vector-icons|@react-native|react-native-paper|victory-.*|@shopify/react-native-skia|react-native-reanimated|d3-.*|internmap|expo-haptics|expo-modules-core)/)',
+		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-paper|lucide-react-native|react-native-vector-icons|victory-.*|@shopify/react-native-skia|react-native-reanimated|d3-.*|internmap|expo-haptics|expo-modules-core)/)',
 	],
 	moduleNameMapper: {
 		'^@env$': '<rootDir>/src/__mocks__/env.ts',

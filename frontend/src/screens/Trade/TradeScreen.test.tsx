@@ -84,10 +84,6 @@ const mockCoinStoreReturn = {
 // --- Mock Component Creator ---
 const createMockComponent = (name: string) => (props: any) => {
 	// Use imports now, not require
-	// const React = require('react');
-	// const View = require('react-native').View;
-	// const Text = require('react-native').Text;
-	// const TextInput = require('react-native').TextInput;
 
 	// Special handling for CoinSelector to include an input
 	if (name === 'CoinSelector') {
@@ -252,7 +248,6 @@ describe('TradeScreen', () => {
 
 		// Check if main components are rendered (using mocks)
 		expect(getAllByTestId('mock-CoinSelector').length).toBe(2); // Check for two instances
-		// expect(await findByTestId('mock-TradeDetails')).toBeTruthy(); // Comment out for now
 		expect(getByText('Trade')).toBeTruthy(); // Correct button text is "Trade"
 
 		// Check initial state rendering (e.g., correct coins in selectors if mock passes props)
@@ -272,21 +267,17 @@ describe('TradeScreen', () => {
 		// 2. Mock the implementation of fetchTradeQuote for this test
 		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
 			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
-				// Simulate async fetch
 				act(() => {
-					setIsQuoteLoading(true);
-				});
-				await new Promise(res => setTimeout(res, 0)); // minimal delay
-				act(() => {
-					// Call state setters with mock data
+					// Call setToAmount with the expected quote amount
 					setToAmount(mockQuoteData.estimatedAmount);
+					// Also set the trade details
 					setTradeDetails({
 						exchangeRate: mockQuoteData.exchangeRate,
+						gasFee: mockQuoteData.totalFee, // Assuming gasFee uses totalFee for mock
 						priceImpactPct: mockQuoteData.priceImpactPct,
 						totalFee: mockQuoteData.totalFee,
-						route: mockQuoteData.route
+						route: mockQuoteData.route,
 					});
-					setIsQuoteLoading(false);
 				});
 			}
 		);
