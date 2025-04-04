@@ -4,7 +4,7 @@
 // import { useTheme, MD3Theme } from "react-native-paper";
 // import { createStyles } from "./donut_style";
 // import Color from 'color';
-// import { usePortfolioStore } from '../../store/portfolio';
+// import { usePortfolioStore } from '@store/portfolio';
 // const { portfolio } = usePortfolioStore();
 
 // interface ChartDataItem extends Record<string, unknown> {

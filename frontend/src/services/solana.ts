@@ -2,7 +2,7 @@ import { Keypair, VersionedTransaction } from '@solana/web3.js';
 import bs58 from 'bs58';
 import axios from 'axios';
 import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
-import { Wallet } from '../types';
+import { Wallet } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Use environment variable for Solana RPC endpoint with fallback

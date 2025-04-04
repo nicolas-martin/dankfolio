@@ -1,5 +1,5 @@
 require('./load-env.js');
-import { getKeypairFromPrivateKey, buildAndSignSwapTransaction } from '../src/services/solana';
+import { getKeypairFromPrivateKey, buildAndSignSwapTransaction } from '@/src/services/solana';
 
 // Test constants
 const SOL_MINT = 'So11111111111111111111111111111111111111112';

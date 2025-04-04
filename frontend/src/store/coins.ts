@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { Coin } from '../types';
-import api from '../services/api';
+import { Coin } from '@/types';
+import api from '@/services/api';
 
 interface CoinState {
 	availableCoins: Coin[];

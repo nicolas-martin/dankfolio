@@ -1,9 +1,9 @@
 // import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Coin, Wallet } from '../../types';
-import { TradeDetailsProps } from '../../components/Trade/TradeDetails/tradedetails_types';
+import { Coin, Wallet } from '@/types';
+import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 
-import api from '../../services/api';
-import { buildAndSignSwapTransaction } from '../../services/solana';
+import api from '@/services/api';
+import { buildAndSignSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
 
 export const DEFAULT_AMOUNT = "0.0001";

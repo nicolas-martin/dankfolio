@@ -1,5 +1,5 @@
 import Clipboard from '@react-native-clipboard/clipboard';
-import { NotificationProps } from '../../types';
+import { NotificationProps } from '@/types';
 import { ProfileCoin } from './profile_types';
 
 export const handleTokenPress = (token: ProfileCoin['coin'], navigate: (screen: string, params: any) => void) => {

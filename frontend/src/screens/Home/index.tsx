@@ -1,15 +1,15 @@
 import React, { useCallback } from 'react';
 import { View, SafeAreaView, FlatList } from 'react-native';
 import { useTheme, Button, IconButton, Text } from 'react-native-paper';
-import CoinCard from '../../components/Home/CoinCard';
+import CoinCard from '@components/Home/CoinCard';
 import { useNavigation } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
-import { usePortfolioStore } from '../../store/portfolio';
-import { useCoinStore } from '../../store/coins';
-import { useToast } from '../../components/Common/Toast';
+import { usePortfolioStore } from '@store/portfolio';
+import { useCoinStore } from '@store/coins';
+import { useToast } from '@components/Common/Toast';
 import { createStyles } from './home_styles';
-import { Coin } from '../../types';
+import { Coin } from '@/types';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();

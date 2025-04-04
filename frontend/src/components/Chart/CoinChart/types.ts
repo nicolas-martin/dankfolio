@@ -1,5 +1,4 @@
-import { PriceData } from '../../../types';
-import type { MaybeNumber } from 'victory-native/dist/types';
+import { PriceData } from '@/types';
 
 export interface CoinChartProps {
 	data: PriceData[];

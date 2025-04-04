@@ -1,5 +1,5 @@
-import { Coin } from '../../../types/index';
-import { WalletBalanceResponse } from '../../../services/api';
+import { Coin } from '@/types/index';
+import { WalletBalanceResponse } from '@/services/api';
 
 export const DEFAULT_ICON = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 

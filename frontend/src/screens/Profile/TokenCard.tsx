@@ -4,7 +4,7 @@ import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
 import { ICON_COINS } from '../../utils/icons';
 import { createStyles } from './profile_styles';
 import { copyToClipboard, formatAddress } from './profile_scripts';
-import { useToast } from '../../components/Common/Toast';
+import { useToast } from '@components/Common/Toast';
 import { ProfileCoin } from './profile_types';
 interface TokenCardProps {
 	profileCoin: ProfileCoin;

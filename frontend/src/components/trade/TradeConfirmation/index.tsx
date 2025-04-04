@@ -3,9 +3,9 @@ import { View } from 'react-native';
 import { Modal, Portal, Text, Button, useTheme } from 'react-native-paper';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
-import { useCoinStore } from '../../../store/coins';
-import { useToast } from '../../../components/Common/Toast';
-import { Coin } from '../../../types';
+import { useCoinStore } from '@store/coins';
+import { useToast } from '@components/Common/Toast';
+import { Coin } from '@/types';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,

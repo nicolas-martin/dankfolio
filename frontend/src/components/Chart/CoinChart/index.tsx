@@ -11,7 +11,6 @@ import {
 	Line,
 	LinearGradient,
 	Path,
-	Skia,
 	vec,
 	useFont,
 } from "@shopify/react-native-skia";

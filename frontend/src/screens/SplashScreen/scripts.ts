@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LoadingState } from './types';
-import { usePortfolioStore } from '../../store/portfolio';
-import { useCoinStore } from '../../store/coins';
+import { usePortfolioStore } from '@store/portfolio';
+import { useCoinStore } from '@store/coins';
 
 export const useLoadingState = (navigation: any) => {
 	const [loadingState, setLoadingState] = useState<LoadingState>({

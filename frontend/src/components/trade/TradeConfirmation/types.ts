@@ -1,4 +1,4 @@
-import { Coin } from '../../../types';
+import { Coin } from '@/types';
 
 interface TradeConfirmationProps {
 	isVisible: boolean;

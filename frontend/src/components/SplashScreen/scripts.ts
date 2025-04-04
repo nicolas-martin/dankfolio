@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { LoadingState } from './types';
-import { usePortfolioStore } from '../../store/portfolio';
+import { usePortfolioStore } from '@store/portfolio';
 
 export const useLoadingState = (onLoadComplete: () => void) => {
 	const [loadingState, setLoadingState] = useState<LoadingState>({

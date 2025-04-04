@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { Wallet } from '../types';
-import api from '../services/api';
-import { Coin } from '../types';
+import { Wallet } from '@/types';
+import api from '@/services/api';
+import { Coin } from '@/types';
 import { useCoinStore } from './coins';
 
 export interface PortfolioToken {

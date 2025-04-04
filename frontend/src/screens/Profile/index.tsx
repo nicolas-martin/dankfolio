@@ -2,10 +2,10 @@ import React, { useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { useToast } from '../../components/Common/Toast';
+import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
 import { CoinDetailScreenNavigationProp } from '../CoinDetail/coindetail_types';
-import { usePortfolioStore } from '../../store/portfolio';
+import { usePortfolioStore } from '@store/portfolio';
 import { createStyles } from './profile_styles';
 import { TokenCard } from './TokenCard';
 import {

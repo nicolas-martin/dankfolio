@@ -1,5 +1,5 @@
 import { TextInput } from 'react-native';
-import { Coin } from '../../../types';
+import { Coin } from '@/types';
 
 export interface CoinData {
 	coin: Coin;

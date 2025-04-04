@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, ScrollView, SafeAreaView } from 'react-native';
 import { ActivityIndicator, Text, useTheme, Button, ToggleButton } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { useToast } from '../../components/Common/Toast';
-import CoinChart from '../../components/Chart/CoinChart';
-import { PricePoint } from '../../components/Chart/CoinChart/types';
-import CoinInfo from '../../components/Chart/CoinInfo';
-import PriceDisplay from '../../components/CoinDetails/PriceDisplay';
-import { PriceData } from '../../types';
+import { useToast } from '@components/Common/Toast';
+import CoinChart from '@components/Chart/CoinChart';
+import { PricePoint } from '@components/Chart/CoinChart/types';
+import CoinInfo from '@components/Chart/CoinInfo';
+import PriceDisplay from '@components/CoinDetails/PriceDisplay';
+import { PriceData } from '@/types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
@@ -15,8 +15,8 @@ import {
 	handleTradeNavigation,
 } from './coindetail_scripts';
 import { createStyles } from './coindetail_styles';
-import { usePortfolioStore } from '../../store/portfolio';
-import { useCoinStore } from '../../store/coins';
+import { usePortfolioStore } from '@store/portfolio';
+import { useCoinStore } from '@store/coins';
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();

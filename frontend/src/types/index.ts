@@ -1,5 +1,4 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { WalletBalanceResponse } from '../services/api';
 import { Keypair } from '@solana/web3.js';
 
 export interface Coin {

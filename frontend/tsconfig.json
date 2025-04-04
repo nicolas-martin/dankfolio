@@ -11,7 +11,7 @@
       "@services/*": ["src/services/*"],
       "@components/*": ["src/components/*"]
     },
-    "types": ["node"],
+    "types": ["node", "jest"], // Added "jest" to explicitly include its types
     "lib": ["es2020", "dom"],
     "esModuleInterop": true,
     "noImplicitAny": true,

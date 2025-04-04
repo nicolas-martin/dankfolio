@@ -1,5 +1,5 @@
-import { Coin, PriceData } from '../../types/index';
-import api from '../../services/api';
+import { Coin, PriceData } from '@/types/index';
+import api from '@/services/api';
 import { TimeframeOption } from './coindetail_types';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
