@@ -120,6 +120,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						onPress={onClose}
 						style={styles.button}
 						disabled={isLoading}
+						testID="cancel-trade-button"
 					>
 						Cancel
 					</Button>
@@ -129,8 +130,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						style={styles.button}
 						loading={isLoading}
 						disabled={isLoading}
+						testID="confirm-trade-button"
 					>
-						Confirm
+						Confirm Trade
 					</Button>
 				</View>
 			</Modal>
