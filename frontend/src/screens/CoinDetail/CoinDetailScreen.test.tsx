@@ -1,28 +1,69 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import CoinDetailScreen from './index'; // Assuming default export
-import { usePortfolioStore } from '@store/portfolio';
-import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import * as CoinDetailScripts from './coindetail_scripts';
-import { Coin } from '@/types'; // Assuming Coin type is in @/types
+import { Coin } from '@/types';
+import { handleTradeNavigation } from './coindetail_scripts';
+import { View } from 'react-native'; // Keep View for createMockComponent
+import { Button, Text, ToggleButton, useTheme } from 'react-native-paper'; // Removed Divider, Chip
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { mocked } from 'jest-mock'; // Import mocked helper
 
-// --- Define Mock Component Creator Globally ---
-const createMockComponent = (name: string) => (props: any) => {
-	const React = require('react');
-	const View = require('react-native').View;
-	const Text = require('react-native').Text;
-	// Include testID for easier querying and spread other props
-	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
+import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
+import { useCoinStore } from '@store/coins';
+
+const mockPortfolioStoreReturn = {
+	wallet: null,
+	isLoading: false,
+	error: null,
+	tokens: [] as PortfolioToken[],
+	setWallet: jest.fn(),
+	clearWallet: jest.fn(),
+	fetchPortfolioBalance: jest.fn(),
 };
 
-// --- Mock Child Components using Top-Level jest.mock (Re-adding CoinInfo mock) ---
-jest.mock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'));
-jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
-jest.mock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
+const mockCoinStoreReturn = {
+	availableCoins: [] as Coin[],
+	coinMap: {} as Record<string, Coin>,
+	isLoading: false,
+	error: null,
+	setAvailableCoins: jest.fn(),
+	setCoin: jest.fn(),
+	fetchAvailableCoins: jest.fn(),
+	getCoinByID: jest.fn(),
+};
 
-// --- Mock Data ---
+const mockGetCoinByID = jest.fn();
+const mockFetchPriceHistory = jest.spyOn(CoinDetailScripts, 'fetchPriceHistory').mockImplementation(
+	async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
+		if (!coin) return;
+		act(() => {
+			setLoading(true);
+		});
+		await new Promise(resolve => setTimeout(resolve, 10));
+
+		const now = Date.now();
+		const pastUnix = Math.floor((now - 100000) / 1000);
+		const nowUnix = Math.floor(now / 1000);
+
+		act(() => {
+			setPriceHistory([
+				{
+					timestamp: new Date(pastUnix * 1000).toISOString(),
+					value: coin.price * 0.98,
+					unixTime: pastUnix
+				},
+				{
+					timestamp: new Date(nowUnix * 1000).toISOString(),
+					value: coin.price,
+					unixTime: nowUnix
+				}
+			]);
+			setLoading(false);
+		});
+	}
+);
 const mockInitialCoin: Coin = {
 	id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
 	name: "WEN",
@@ -38,27 +79,33 @@ const mockInitialCoin: Coin = {
 	tags: ["meme", "community"],
 	created_at: "2024-01-01T00:00:00Z"
 };
-
 const mockSolCoin: Coin = {
 	id: "So11111111111111111111111111111111111111112",
-	name: "Wrapped SOL",
+	name: "Solana",
 	symbol: "SOL",
-	icon_url: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+	icon_url: "sol_icon_url",
 	decimals: 9,
-	price: 130.50,
-	description: "Wrapped SOL",
-	website: "",
-	twitter: "",
+	price: 200.0,
+	description: "Solana Blockchain",
+	website: "https://solana.com",
+	twitter: "https://twitter.com/solana",
 	telegram: "",
-	daily_volume: 9876543.21,
-	tags: ["defi"],
-	created_at: "2024-01-01T00:00:00Z"
+	daily_volume: 5000000000,
+	tags: ["layer-1"],
+	created_at: "2024-01-01T00:00:00Z",
 };
 
+const createMockComponent = (name: string) => (props: any) => {
+	const React = require('react');
+	const View = require('react-native').View;
+	const Text = require('react-native').Text;
+	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
+};
 
-// --- Mocks ---
+// Mock Stores by path only
+jest.mock('@store/portfolio');
+jest.mock('@store/coins');
 
-// React Navigation
 const mockNavigate = jest.fn();
 const mockRoute = {
 	params: { coin: mockInitialCoin },
@@ -74,14 +121,6 @@ jest.mock('@react-navigation/native', () => {
 	};
 });
 
-// Stores
-const mockUsePortfolioStore = usePortfolioStore as unknown as jest.Mock;
-const mockUseCoinStore = useCoinStore as unknown as jest.Mock;
-const mockGetCoinByID = jest.fn();
-jest.mock('@store/portfolio');
-jest.mock('@store/coins');
-
-// Toast
 const mockShowToast = jest.fn();
 jest.mock('@components/Common/Toast', () => ({
 	useToast: () => ({
@@ -90,10 +129,12 @@ jest.mock('@components/Common/Toast', () => ({
 	}),
 }));
 
-// Child Components
-// REMOVED: Mock child components to render their name and accept props
+// Mock Child Components
+jest.mock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'));
+jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
+jest.mock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
 
-// React Native Paper Components (add more as needed)
+// Mock react-native-paper
 jest.mock('react-native-paper', () => {
 	const actualPaper = jest.requireActual('react-native-paper');
 	const React = require('react'); // Require React inside the factory
@@ -108,15 +149,13 @@ jest.mock('react-native-paper', () => {
 			disabled={props.disabled}
 			style={props.style}
 			accessibilityRole="button"
-			testID={props.testID || 'mock-button'} // Add a default testID
+			testID={props.testID || 'mock-button'}
 		>
-			{/* Render children, likely just text */}
 			<Text style={props.labelStyle}>{props.children}</Text>
 		</Pressable>
 	);
 
 	const MockToggleButton = (props: any) => {
-		// Use onPress from props if available, falling back to onValueChange for ToggleButton.Row context
 		const onPress = () => props.onPress ? props.onPress(props.value) : props.onValueChange(props.value);
 		return (
 			<Pressable onPress={onPress} testID={`toggle-button-${props.value}`}>
@@ -125,18 +164,9 @@ jest.mock('react-native-paper', () => {
 		);
 	}
 	MockToggleButton.Row = (props: any) => {
-		// Map children to pass down the onValueChange prop
-		const childrenWithProps = React.Children.map(props.children, (child: any) => {
-			if (React.isValidElement(child)) {
-				// Ensure onValueChange is passed down, used by individual ToggleButton mock
-				return React.cloneElement(child, { onValueChange: props.onValueChange, value: child.props.value } as any);
-			}
-			return child;
-		});
-		return <View testID="toggle-button-row">{childrenWithProps}</View>;
+		return <View testID="toggle-button-row">{props.children}</View>;
 	}
 
-	// Static Theme Mock
 	const mockTheme = {
 		colors: {
 			primary: 'purple',
@@ -144,44 +174,36 @@ jest.mock('react-native-paper', () => {
 			onSurfaceVariant: 'gray',
 			surfaceVariant: 'whitesmoke',
 			outline: 'lightgray',
-			// Add other colors used by your components if needed
 		},
-		// Add other theme properties if needed
 	};
 
 	return {
 		...actualPaper,
 		ToggleButton: MockToggleButton,
-		ActivityIndicator: actualPaper.ActivityIndicator, // Keep real one
-		Text: actualPaper.Text, // Keep real one
-		Button: MockButton, // Use Mock Button
-		useTheme: () => mockTheme, // Use Mock Theme
-		Divider: (props: any) => <View testID="mock-divider" style={props.style} />, // Simple Divider mock if needed
-		Chip: (props: any) => <View testID="mock-chip" style={props.style}><Text>{props.children}</Text></View> // Simple Chip mock if needed
+		ActivityIndicator: actualPaper.ActivityIndicator,
+		Text: actualPaper.Text,
+		Button: MockButton,
+		useTheme: () => mockTheme,
+		Divider: (props: any) => <View testID="mock-divider" style={props.style} />,
+		Chip: (props: any) => <View testID="mock-chip" style={props.style}><Text>{props.children}</Text></View>
 	};
 });
 
-// Mock Skia to prevent native module errors
+
 jest.mock('@shopify/react-native-skia', () => ({
-	// Provide basic mocks for exports used by components (e.g., CoinChart)
-	// This prevents errors related to the native RNSkiaModule not being found.
 	Canvas: (props: any) => {
 		const View = require('react-native').View;
 		return <View {...props} testID="mock-skia-canvas" />;
 	},
-	// Add mock for useFont
-	useFont: jest.fn().mockReturnValue({}), // Return a dummy object
-	// Add mock for rect
-	rect: jest.fn().mockReturnValue({}), // Return a dummy object
-	// Add other commonly used exports
-	Path: (props: any) => { // Mock Path component
+	useFont: jest.fn().mockReturnValue({}),
+	rect: jest.fn().mockReturnValue({}),
+	Path: (props: any) => {
 		const View = require('react-native').View;
 		return <View {...props} testID="mock-skia-path" />;
 	},
-	Skia: { // Mock Skia object with Path.Make
+	Skia: {
 		Path: {
 			Make: jest.fn(() => ({
-				// Return a mock path object with methods victory might call
 				moveTo: jest.fn(),
 				lineTo: jest.fn(),
 				close: jest.fn(),
@@ -189,12 +211,11 @@ jest.mock('@shopify/react-native-skia', () => ({
 			})),
 		},
 	},
-	// Mocks for hooks if needed by victory-native internals
 	useSharedValue: jest.fn((initialValue) => ({ value: initialValue })),
 	useComputedValue: jest.fn((fn, args) => ({ value: fn() })),
 }));
 
-// Mock Expo Haptics
+
 jest.mock('expo-haptics', () => ({
 	impactAsync: jest.fn(),
 	notificationAsync: jest.fn(),
@@ -211,46 +232,10 @@ jest.mock('expo-haptics', () => ({
 	},
 }));
 
-// Scripts
-const mockFetchPriceHistory = jest.spyOn(CoinDetailScripts, 'fetchPriceHistory').mockImplementation(
-	async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
-		if (!coin) return;
-		// Wrap state updates in act
-		act(() => {
-			setLoading(true);
-		});
-		await new Promise(resolve => setTimeout(resolve, 10)); // Minimal delay
-
-		// Create mock data matching the structure set by the *actual* mapping
-		const now = Date.now();
-		const pastUnix = Math.floor((now - 100000) / 1000);
-		const nowUnix = Math.floor(now / 1000);
-
-		// Wrap state updates in act
-		act(() => {
-			setPriceHistory([
-				{
-					timestamp: new Date(pastUnix * 1000).toISOString(),
-					value: coin.price * 0.98, // Value should be number
-					unixTime: pastUnix
-				},
-				{
-					timestamp: new Date(nowUnix * 1000).toISOString(),
-					value: coin.price, // Value should be number
-					unixTime: nowUnix
-				}
-			]);
-			setLoading(false);
-		});
-	}
-);
-const mockHandleTradeNavigation = jest.spyOn(CoinDetailScripts, 'handleTradeNavigation').mockImplementation(() => { });
-
-// Icons (using the same robust mock from ProfileScreen)
+// Mock Icons
 jest.mock('lucide-react-native', () => {
 	const React = require('react');
 	const Text = require('react-native').Text;
-	// Add testID prop to the mock icon
 	const createMockIcon = (name: string) => (props: any) => <Text {...props} testID={`icon-${name}`}>{name}</Text>;
 	return {
 		ArrowLeft: createMockIcon('ArrowLeft'), Home: createMockIcon('Home'),
@@ -262,40 +247,55 @@ jest.mock('lucide-react-native', () => {
 		AlertCircle: createMockIcon('AlertCircle'), Globe: createMockIcon('Globe'),
 		Link: createMockIcon('Link'), ArrowUpDown: createMockIcon('ArrowUpDown'),
 		Wallet: createMockIcon('Wallet'), MessageCircle: createMockIcon('MessageCircle'),
-		Twitter: createMockIcon('Twitter'), Copy: createMockIcon('Copy'), // Added Copy if used by IconButton
+		Twitter: createMockIcon('Twitter'), Copy: createMockIcon('Copy'),
 	};
 });
 
-
-// --- Test Suite ---
+jest.mock('./coindetail_scripts', () => {
+	const originalModule = jest.requireActual('./coindetail_scripts');
+	return {
+		...originalModule,
+		fetchPriceHistory: jest.fn(),
+		handleTradeNavigation: jest.fn(),
+	};
+});
 
 describe('CoinDetail Screen', () => {
+	const mockedHandleTradeNavigation = handleTradeNavigation as jest.Mock;
 
 	beforeEach(() => {
-		// Reset mocks before each test
 		jest.clearAllMocks();
+		mockedHandleTradeNavigation.mockClear();
 
-		// Apply mocks by default before each test
-		jest.doMock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'));
-		jest.doMock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
-		jest.doMock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
+		mockPortfolioStoreReturn.tokens = [];
+		Object.values(mockPortfolioStoreReturn).forEach(mockFn => {
+			if (jest.isMockFunction(mockFn)) {
+				mockFn.mockClear();
+			}
+		});
+		Object.values(mockCoinStoreReturn).forEach(mockFn => {
+			if (jest.isMockFunction(mockFn)) {
+				mockFn.mockClear();
+			}
+		});
+		mockGetCoinByID.mockClear();
+		mockFetchPriceHistory.mockClear();
 
-		// Setup default store mock implementations
-		mockUsePortfolioStore.mockReturnValue({
-			tokens: [], // Default to no holdings
-			// Add other store state/functions if needed
+		mockCoinStoreReturn.getCoinByID.mockImplementation(mockGetCoinByID);
+		mockGetCoinByID.mockImplementation(async (id) => {
+			if (id === mockSolCoin.id) return mockSolCoin;
+			if (id === mockInitialCoin.id) return mockInitialCoin;
+			return null;
 		});
-		mockUseCoinStore.mockReturnValue({
-			getCoinByID: mockGetCoinByID.mockResolvedValue(mockSolCoin), // Default mock for getCoinByID
-			// Add other store state/functions if needed
-		});
-		// Reset route params if necessary, though usually set per test
+
+		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
+		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
+
 		mockRoute.params.coin = mockInitialCoin;
 	});
 
 	it('renders correctly with initial coin data', async () => {
-		// Define the expected structure of the mock history data for comparison
-		const now = Date.now(); // Use a fixed time for predictable calculations if needed, but Date.now() is fine here
+		const now = Date.now();
 		const pastUnix = Math.floor((now - 100000) / 1000);
 		const nowUnix = Math.floor(now / 1000);
 		const expectedMockHistory = [
@@ -311,16 +311,13 @@ describe('CoinDetail Screen', () => {
 			}
 		];
 
-		// Re-configure the mock for this specific test run to use the exact data
 		mockFetchPriceHistory.mockImplementation(
 			async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
 				if (!coin) return;
-				// Wrap state updates in act
 				act(() => {
 					setLoading(true);
 				});
-				await new Promise(resolve => setTimeout(resolve, 0)); // Near-instant resolve
-				// Wrap state updates in act
+				await new Promise(resolve => setTimeout(resolve, 0));
 				act(() => {
 					setPriceHistory(expectedMockHistory);
 					setLoading(false);
@@ -332,51 +329,42 @@ describe('CoinDetail Screen', () => {
 			<CoinDetailScreen />
 		);
 
-		// Wait for price history to load
-		await waitFor(() => expect(getByTestId('mock-PriceDisplay')).toBeTruthy()); // Wait until PriceDisplay renders
+		await waitFor(() => expect(getByTestId('mock-PriceDisplay')).toBeTruthy());
 
-		// --- Assert PriceDisplay Props --- 
 		const priceDisplayMock = getByTestId('mock-PriceDisplay');
 		const firstDataPoint = expectedMockHistory[0];
 		const lastDataPoint = expectedMockHistory[expectedMockHistory.length - 1];
-		const expectedPrice = lastDataPoint.value; // Assuming no hover initially
+		const expectedPrice = lastDataPoint.value;
 		const expectedValueChange = lastDataPoint.value - firstDataPoint.value;
 		const expectedPeriodChange = ((lastDataPoint.value - firstDataPoint.value) / firstDataPoint.value) * 100;
 
 		expect(priceDisplayMock.props.price).toBeCloseTo(expectedPrice);
 		expect(priceDisplayMock.props.periodChange).toBeCloseTo(expectedPeriodChange);
 		expect(priceDisplayMock.props.valueChange).toBeCloseTo(expectedValueChange);
-		expect(priceDisplayMock.props.period).toBe("15m"); // Initial timeframe
+		expect(priceDisplayMock.props.period).toBe("15m");
 		expect(priceDisplayMock.props.icon_url).toBe(mockInitialCoin.icon_url);
 		expect(priceDisplayMock.props.name).toBe(mockInitialCoin.name);
 
-		// --- Assert CoinChart Props --- 
 		const coinChartMock = getByTestId('mock-CoinChart');
 		expect(coinChartMock.props.data).toEqual(expectedMockHistory);
-		expect(coinChartMock.props.loading).toBe(false); // Should be false after waiting
-		expect(coinChartMock.props.activePoint).toBeNull(); // Initial state
+		expect(coinChartMock.props.loading).toBe(false);
+		expect(coinChartMock.props.activePoint).toBeNull();
 
-		// --- Assert CoinInfo Props (already tested in detail, basic check here is ok) ---
 		expect(getByTestId('mock-CoinInfo')).toBeTruthy();
 
-		// Check for timeframe buttons (using testID from mock)
 		expect(getByTestId('toggle-button-1D')).toBeTruthy();
 		expect(getByTestId('toggle-button-4H')).toBeTruthy();
 
-		// Check for "About" section title
 		expect(await findByText(`About ${mockInitialCoin.name}`)).toBeTruthy();
 
-		// Check for Trade button
 		expect(getByText('Trade')).toBeTruthy();
 	});
 
 	it('displays coin information correctly', async () => {
 		const { findByTestId, findByText } = render(<CoinDetailScreen />);
 
-		// Wait for initial load
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
-		// Check that CoinInfo mock receives correct props
 		const coinInfoMock = await findByTestId('mock-CoinInfo');
 		expect(coinInfoMock.props.metadata).toEqual({
 			name: mockInitialCoin.name,
@@ -392,7 +380,6 @@ describe('CoinDetail Screen', () => {
 	});
 
 	it('does not display social/website links when not provided', async () => {
-		// Use a coin object without links
 		const mockCoinWithoutLinks: Coin = {
 			...mockInitialCoin,
 			website: "",
@@ -401,13 +388,10 @@ describe('CoinDetail Screen', () => {
 		};
 		mockRoute.params.coin = mockCoinWithoutLinks;
 
-		// Use findByTestId
 		const { queryByText, findByTestId, queryByTestId } = render(<CoinDetailScreen />);
 
-		// Wait for initial load
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
-		// Check that CoinInfo mock receives correct props with empty links
 		const coinInfoMock = await findByTestId('mock-CoinInfo');
 		expect(coinInfoMock.props.metadata).toEqual({
 			name: mockCoinWithoutLinks.name,
@@ -423,60 +407,68 @@ describe('CoinDetail Screen', () => {
 	});
 
 	it('displays holdings information when token is in portfolio', async () => {
-		const mockHolding = {
+		const mockHolding: PortfolioToken = {
 			id: mockInitialCoin.id,
-			amount: 10000, // Example amount
-			value: 10000 * mockInitialCoin.price, // Calculated value
+			amount: 10000,
+			value: 10000 * mockInitialCoin.price,
 			coin: mockInitialCoin,
+			price: mockInitialCoin.price,
 		};
-		mockUsePortfolioStore.mockReturnValue({ tokens: [mockHolding] });
+
+		mockPortfolioStoreReturn.tokens = [mockHolding];
 
 		const { findByText } = render(<CoinDetailScreen />);
 
-		// Wait for initial load
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
-		// Check for Holdings section title
 		expect(await findByText('Your Holdings')).toBeTruthy();
 
-		// Check for displayed value (formatted to 4 decimals as in component)
 		expect(await findByText(`$${mockHolding.value.toFixed(4)}`)).toBeTruthy();
 
-		// Check for displayed quantity (formatted to 4 decimals + symbol)
 		expect(await findByText(`${mockHolding.amount.toFixed(4)} ${mockInitialCoin.symbol}`)).toBeTruthy();
 	});
 
 	it('does not display holdings information when token is not in portfolio', async () => {
-		// Note: beforeEach already sets tokens: []
 		const { queryByText } = render(<CoinDetailScreen />);
 
-		// Wait for initial load
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
-		// Check that Holdings section title is NOT present
 		expect(queryByText('Your Holdings')).toBeNull();
 	});
 
 	it('calls store hooks correct number of times', async () => {
 		const { getByText } = render(<CoinDetailScreen />);
 
-		// Initial render checks
-		expect(mockUsePortfolioStore).toHaveBeenCalledTimes(1);
-		expect(mockUseCoinStore).toHaveBeenCalledTimes(1);
-		expect(mockGetCoinByID).not.toHaveBeenCalled(); // Not called yet
+		expect(mocked(usePortfolioStore)).toHaveBeenCalledTimes(1);
+		expect(mocked(useCoinStore)).toHaveBeenCalledTimes(1);
+		expect(mockCoinStoreReturn.getCoinByID).not.toHaveBeenCalled();
 
-		// Find and press the Trade button
 		const tradeButton = getByText('Trade');
 		fireEvent.press(tradeButton);
 
-		// NOTE: Fetches SOL before going to trade screen
 		await waitFor(() => {
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(1); // Called inside onPress
+			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(1);
 		});
-
-		// Ensure hooks themselves weren't called again (Inconsistent in test env)
-		// expect(mockUsePortfolioStore).toHaveBeenCalledTimes(2); // Adjusted from 1 to 2
-		// expect(mockUseCoinStore).toHaveBeenCalledTimes(1);
 	});
 
+	it('navigates to Trade screen with correct parameters on Trade button press', async () => {
+		const { getByText } = render(<CoinDetailScreen />);
+
+		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
+
+		const tradeButton = getByText('Trade');
+		fireEvent.press(tradeButton);
+
+		await waitFor(() => {
+			expect(mockGetCoinByID).toHaveBeenCalledWith(mockSolCoin.id);
+		});
+
+		expect(mockedHandleTradeNavigation).toHaveBeenCalledTimes(1);
+		expect(mockedHandleTradeNavigation).toHaveBeenCalledWith(
+			mockInitialCoin,
+			mockSolCoin,
+			mockShowToast,
+			mockNavigate
+		);
+	});
 }); 
