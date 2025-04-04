@@ -2,166 +2,14 @@ import axios, { AxiosError } from 'axios';
 
 import { REACT_APP_API_URL } from '@env';
 
-// Default to localost if API_URL is not set
-const baseURL = REACT_APP_API_URL
+const baseURL = REACT_APP_API_URL;
 if (!baseURL) {
-	console.error('🚨 No API URL provided for api');
 	throw new Error('No API URL provided for api');
 }
 
 console.log('🔧 API URL:', baseURL); // Debug log
 
-export interface Coin {
-	id: string;
-	name: string;
-	symbol: string;
-	decimals: number;
-	description: string;
-	icon_url: string;
-	tags: string[];
-	price: number;
-	daily_volume: number;
-	website?: string;
-	twitter?: string;
-	telegram?: string;
-	coingecko_id?: string;
-	created_at: string;
-	last_updated?: string;
-}
-
-export interface balance {
-	id: string;
-	amount: number;
-}
-
-export interface WalletBalanceResponse {
-	balances: balance[];
-}
-
-interface API {
-	executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
-	getAvailableCoins: () => Promise<Coin[]>;
-	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
-	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
-	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
-	getCoinByID: (id: string) => Promise<Coin>;
-	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
-}
-
-const api: API = {
-	executeTrade: async (payload: TradePayload): Promise<TradeResponse> => {
-		try {
-			console.log('🔄 Executing trade with payload:', payload);
-			const response = await apiClient.post('/api/trades/execute', payload, {
-				headers: {
-					'X-Debug-Mode': 'true'
-				}
-			});
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error executing trade:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getAvailableCoins: async () => {
-		try {
-			const response = await apiClient.get<Coin[]>('/api/tokens');
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error getting coins:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getTradeQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<TradeQuoteResponse> => {
-		try {
-			console.log('🔄 Getting trade quote:', {
-				from_coin_id: fromCoin,
-				to_coin_id: toCoin,
-				amount
-			});
-
-			const response = await apiClient.get<TradeQuoteResponse>('/api/trades/quote', {
-				params: {
-					from_coin_id: fromCoin,
-					to_coin_id: toCoin,
-					amount
-				}
-			});
-
-			console.log('✅ Trade quote received:', response.data);
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error getting trade quote:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getPriceHistory: async (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => {
-		try {
-			const response = await apiClient.get<PriceHistoryResponse>('/api/price/history', {
-				params: {
-					address,
-					type,
-					time_from: timeFrom,
-					time_to: timeTo,
-					address_type: addressType
-				}
-			});
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error getting price history:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getWalletBalance: async (address: string): Promise<WalletBalanceResponse> => {
-		try {
-			console.log('🔍 Fetching wallet balance for address:', address);
-			const response = await apiClient.get<WalletBalanceResponse>(`/api/wallets/${address}/balance`);
-			console.log('✅ Wallet balance received:', response.data); // Log the entire payload
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error fetching wallet balance:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getCoinByID: async (id: string): Promise<Coin> => {
-		console.log('🔄 Fetching coin by ID:', id);
-		try {
-			const response = await apiClient.get<Coin>(`/api/tokens/${id}`);
-			console.log('💰 Coin data received:', {
-				id,
-				symbol: response.data.symbol,
-				price: response.data.price,
-				decimals: response.data.decimals
-			});
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error fetching coin:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	},
-
-	getTokenPrices: async (tokenIds: string[]): Promise<Record<string, number>> => {
-		try {
-			console.log('🔍 Fetching prices for tokens:', tokenIds);
-			const response = await apiClient.get<Record<string, number>>('/api/tokens/prices', {
-				params: {
-					ids: tokenIds.join(',')
-				}
-			});
-			console.log('💰 Token prices received:', response.data);
-			return response.data;
-		} catch (error) {
-			console.error('❌ Error fetching token prices:', error);
-			throw handleApiError(error as AxiosError);
-		}
-	}
-};
-
+// --- Define apiClient BEFORE the api object that uses it ---
 const apiClient = axios.create({
 	baseURL,
 	headers: {
@@ -208,6 +56,141 @@ apiClient.interceptors.response.use(
 	}
 );
 
+export interface Coin {
+	id: string;
+	name: string;
+	symbol: string;
+	decimals: number;
+	description: string;
+	icon_url: string;
+	tags: string[];
+	price: number;
+	daily_volume: number;
+	website?: string;
+	twitter?: string;
+	telegram?: string;
+	coingecko_id?: string;
+	created_at: string;
+	last_updated?: string;
+}
+
+export interface balance {
+	id: string;
+	amount: number;
+}
+
+export interface WalletBalanceResponse {
+	balances: balance[];
+}
+
+export interface PriceHistoryResponse {
+	data: {
+		items: Array<{
+			unixTime: number;
+			value: number;
+		}>;
+	};
+	success: boolean;
+}
+
+interface API {
+	executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
+	getAvailableCoins: () => Promise<Coin[]>;
+	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
+	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
+	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
+	getCoinByID: (id: string) => Promise<Coin>;
+	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
+}
+
+const api: API = {
+	executeTrade: async (payload: TradePayload): Promise<TradeResponse> => {
+		try {
+			const response = await apiClient.post('/api/trades/execute', payload, {
+				headers: {
+					'X-Debug-Mode': 'true'
+				}
+			});
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	getAvailableCoins: async () => {
+		try {
+			const response = await apiClient.get<Coin[]>('/api/tokens');
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	getTradeQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<TradeQuoteResponse> => {
+		try {
+			const response = await apiClient.get<TradeQuoteResponse>('/api/trades/quote', {
+				params: {
+					from_coin_id: fromCoin,
+					to_coin_id: toCoin,
+					amount
+				}
+			});
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	getPriceHistory: async (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => {
+		try {
+			const response = await apiClient.get<PriceHistoryResponse>('/api/price/history', {
+				params: {
+					address,
+					type,
+					time_from: timeFrom,
+					time_to: timeTo,
+					address_type: addressType
+				}
+			});
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	getWalletBalance: async (address: string): Promise<WalletBalanceResponse> => {
+		try {
+			const response = await apiClient.get<WalletBalanceResponse>(`/api/wallets/${address}/balance`);
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	getCoinByID: async (id: string): Promise<Coin> => {
+		console.log('🔄 Fetching coin by ID:', id);
+		try {
+			const response = await apiClient.get<Coin>(`/api/tokens/${id}`);
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	getTokenPrices: async (tokenIds: string[]): Promise<Record<string, number>> => {
+		try {
+			const response = await apiClient.get<Record<string, number>>('/api/tokens/prices', {
+				params: {
+					ids: tokenIds.join(',')
+				}
+			});
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	}
+};
+
 interface ErrorDetails {
 	message: string;
 	status?: number;
@@ -235,16 +218,6 @@ export interface TradeQuoteResponse {
 	routePlan: string[];
 	inputMint: string;
 	outputMint: string;
-}
-
-export interface PriceHistoryResponse {
-	data: {
-		items: Array<{
-			unixTime: number;
-			value: number;
-		}>;
-	};
-	success: boolean;
 }
 
 // Enhanced error handler
