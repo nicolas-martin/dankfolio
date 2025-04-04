@@ -1,14 +1,10 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import CoinDetailScreen from './index'; // Assuming default export
-import { useToast } from '@components/Common/Toast';
+import CoinDetailScreen from './index';
 import * as CoinDetailScripts from './coindetail_scripts';
 import { Coin } from '@/types';
 import { handleTradeNavigation } from './coindetail_scripts';
-import { View } from 'react-native'; // Keep View for createMockComponent
-import { Button, Text, ToggleButton, useTheme } from 'react-native-paper'; // Removed Divider, Chip
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { mocked } from 'jest-mock'; // Import mocked helper
+import { mocked } from 'jest-mock';
 
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
@@ -164,7 +160,14 @@ jest.mock('react-native-paper', () => {
 		);
 	}
 	MockToggleButton.Row = (props: any) => {
-		return <View testID="toggle-button-row">{props.children}</View>;
+		// Restore original mock: Map children to pass down onValueChange
+		const childrenWithProps = React.Children.map(props.children, (child: any) => {
+			if (React.isValidElement(child)) {
+				return React.cloneElement(child, { onValueChange: props.onValueChange, value: child.props.value } as any);
+			}
+			return child;
+		});
+		return <View testID="toggle-button-row">{childrenWithProps}</View>;
 	}
 
 	const mockTheme = {
@@ -213,23 +216,6 @@ jest.mock('@shopify/react-native-skia', () => ({
 	},
 	useSharedValue: jest.fn((initialValue) => ({ value: initialValue })),
 	useComputedValue: jest.fn((fn, args) => ({ value: fn() })),
-}));
-
-
-jest.mock('expo-haptics', () => ({
-	impactAsync: jest.fn(),
-	notificationAsync: jest.fn(),
-	selectionAsync: jest.fn(),
-	ImpactFeedbackStyle: {
-		Light: 'Light',
-		Medium: 'Medium',
-		Heavy: 'Heavy',
-	},
-	NotificationFeedbackType: {
-		Success: 'Success',
-		Warning: 'Warning',
-		Error: 'Error',
-	},
 }));
 
 // Mock Icons
@@ -469,6 +455,32 @@ describe('CoinDetail Screen', () => {
 			mockSolCoin,
 			mockShowToast,
 			mockNavigate
+		);
+	});
+
+	it('calls fetchPriceHistory with correct arguments on timeframe change', async () => {
+		const { getByTestId } = render(<CoinDetailScreen />);
+
+		// 1. Wait for the initial fetch to complete
+		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
+
+		// 2. Clear mocks AFTER initial load to focus on the click trigger
+		mockFetchPriceHistory.mockClear();
+
+		// 3. Find and press the '1D' button
+		const button1D = getByTestId('toggle-button-1D');
+		fireEvent.press(button1D);
+
+		// 4. Wait for the new fetch triggered by the press
+		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalledTimes(1));
+
+		// 5. Assert the arguments of the call
+		expect(mockFetchPriceHistory).toHaveBeenCalledWith(
+			'1D',                 // Expected timeframe
+			expect.any(Function), // setLoading state setter
+			expect.any(Function), // setPriceHistory state setter
+			mockInitialCoin,      // The coin object
+			true                  // isInitialLoad should be true in this test context
 		);
 	});
 }); 
