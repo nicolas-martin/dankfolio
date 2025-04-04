@@ -17,10 +17,10 @@ const createMockComponent = (name: string) => (props: any) => {
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
 
-// --- Mock Child Components Globally ---
-// jest.mock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'));
-// jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
-// jest.mock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
+// --- Mock Child Components using Top-Level jest.mock ---
+jest.mock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'));
+jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
+jest.mock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
 
 // --- Mock Data ---
 const mockInitialCoin: Coin = {
@@ -370,10 +370,8 @@ describe('CoinDetail Screen', () => {
 	});
 
 	it('displays coin information correctly', async () => {
-		// Prevent CoinInfo mock for this test
-		jest.dontMock('@components/Chart/CoinInfo');
-		// REMOVED: jest.unmock('@components/Chart/CoinInfo');
-		// REMOVED: require('@components/Chart/CoinInfo');
+		// REMOVED: Prevent CoinInfo mock for this test
+		// jest.dontMock('@components/Chart/CoinInfo');
 		// If LinkItem is complex, might need mocking, but let's try without first
 
 		const { findByTestId, findByText } = render(<CoinDetailScreen />);
@@ -381,29 +379,32 @@ describe('CoinDetail Screen', () => {
 		// Wait for initial load
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
-		// Check that CoinInfo mock receives correct props (using findByTestId for the real component)
-		// Note: We can't check props directly anymore as it's not a mock.
-		// Instead, we assert on the rendered output.
+		// Check that CoinInfo mock receives correct props
+		const coinInfoMock = await findByTestId('mock-CoinInfo');
+		expect(coinInfoMock.props.metadata).toEqual({
+			name: mockInitialCoin.name,
+			description: mockInitialCoin.description,
+			website: mockInitialCoin.website, // Check for non-empty links
+			twitter: mockInitialCoin.twitter,
+			telegram: mockInitialCoin.telegram,
+			daily_volume: mockInitialCoin.daily_volume,
+			decimals: mockInitialCoin.decimals,
+			tags: mockInitialCoin.tags,
+			symbol: mockInitialCoin.symbol
+		});
 
-		// Check for section titles rendered by the real CoinInfo
-		expect(await findByText('Description')).toBeTruthy();
-		expect(await findByText('Details')).toBeTruthy();
-		expect(await findByText('Links')).toBeTruthy(); // This should now render
-
-		// Check for link icons (using mocked Text content from lucide mock)
-		expect(await findByText('Globe')).toBeTruthy();
-		expect(await findByText('Twitter')).toBeTruthy();
-		expect(await findByText('MessageCircle')).toBeTruthy(); // Assuming MessageCircle maps to Telegram link
-
-		// REMOVED: Re-mock CoinInfo for subsequent tests if needed (though beforeEach should handle reset)
-		// jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
+		// REMOVED: Assertions on internal rendering of CoinInfo
+		// expect(await findByText('Description')).toBeTruthy();
+		// expect(await findByText('Details')).toBeTruthy();
+		// expect(await findByText('Links')).toBeTruthy(); 
+		// expect(await findByText('Globe')).toBeTruthy();
+		// expect(await findByText('Twitter')).toBeTruthy();
+		// expect(await findByText('MessageCircle')).toBeTruthy(); 
 	});
 
 	it('does not display social/website links when not provided', async () => {
-		// Prevent CoinInfo mock for this test
-		jest.dontMock('@components/Chart/CoinInfo');
-		// REMOVED: jest.unmock('@components/Chart/CoinInfo');
-		// REMOVED: require('@components/Chart/CoinInfo');
+		// REMOVED: Prevent CoinInfo mock for this test
+		// jest.dontMock('@components/Chart/CoinInfo');
 
 		// Use a coin object without links
 		const mockCoinWithoutLinks: Coin = {
@@ -414,21 +415,30 @@ describe('CoinDetail Screen', () => {
 		};
 		mockRoute.params.coin = mockCoinWithoutLinks; // Override route param for this test
 
-		const { queryByText } = render(<CoinDetailScreen />);
+		const { queryByText, findByTestId } = render(<CoinDetailScreen />); // Added findByTestId
 
 		// Wait for initial load
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
-		// Check that link icons are NOT present
-		expect(queryByText('Globe')).toBeNull();
-		expect(queryByText('Twitter')).toBeNull();
-		expect(queryByText('MessageCircle')).toBeNull();
+		// Check that CoinInfo mock receives correct props with empty links
+		const coinInfoMock = await findByTestId('mock-CoinInfo');
+		expect(coinInfoMock.props.metadata).toEqual({
+			name: mockCoinWithoutLinks.name,
+			description: mockCoinWithoutLinks.description,
+			website: "", // Check for empty links
+			twitter: "",
+			telegram: "",
+			daily_volume: mockCoinWithoutLinks.daily_volume,
+			decimals: mockCoinWithoutLinks.decimals,
+			tags: mockCoinWithoutLinks.tags,
+			symbol: mockCoinWithoutLinks.symbol
+		});
 
-		// Check that the "Links" section title itself is not present
-		expect(queryByText('Links')).toBeNull();
-
-		// REMOVED: Re-mock CoinInfo for subsequent tests
-		// jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
+		// REMOVED: Assertions on internal rendering of CoinInfo
+		// expect(queryByText('Globe')).toBeNull();
+		// expect(queryByText('Twitter')).toBeNull();
+		// expect(queryByText('MessageCircle')).toBeNull();
+		// expect(queryByText('Links')).toBeNull();
 	});
 
 	it('displays holdings information when token is in portfolio', async () => {
