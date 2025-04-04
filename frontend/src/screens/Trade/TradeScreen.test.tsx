@@ -4,8 +4,10 @@ import { mocked } from 'jest-mock';
 import TradeScreen from './index';
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
+import { useToast } from '@components/Common/Toast';
 import * as TradeScripts from './trade_scripts';
 import { Coin, Wallet } from '@/types';
+import { View, Text, TextInput } from 'react-native';
 
 const mockFromCoin: Coin = {
 	id: "So11111111111111111111111111111111111111112",
@@ -81,10 +83,11 @@ const mockCoinStoreReturn = {
 
 // --- Mock Component Creator ---
 const createMockComponent = (name: string) => (props: any) => {
-	const React = require('react');
-	const View = require('react-native').View;
-	const Text = require('react-native').Text;
-	const TextInput = require('react-native').TextInput;
+	// Use imports now, not require
+	// const React = require('react');
+	// const View = require('react-native').View;
+	// const Text = require('react-native').Text;
+	// const TextInput = require('react-native').TextInput;
 
 	// Special handling for CoinSelector to include an input
 	if (name === 'CoinSelector') {
@@ -150,6 +153,7 @@ jest.mock('@components/Common/Toast', () => ({
 // Mock Child Components
 jest.mock('@components/Trade/CoinSelector', () => createMockComponent('CoinSelector'));
 jest.mock('@components/Trade/TradeDetails', () => createMockComponent('TradeDetails'));
+// Restore simple mock for TradeConfirmation
 jest.mock('@components/Trade/TradeConfirmation', () => createMockComponent('TradeConfirmation'));
 
 // Mock Local Scripts
@@ -485,7 +489,6 @@ describe('TradeScreen', () => {
 
 	// Add more tests here for:
 	// - Review Trade button shows confirmation
-	// - Confirm Trade button calls handleTrade
 	// - Error handling (insufficient balance, API errors)
 
 }); 
