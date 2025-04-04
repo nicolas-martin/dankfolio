@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import CoinDetailScreen from './index'; // Assuming default export
 import { usePortfolioStore } from '@store/portfolio';
@@ -7,6 +7,20 @@ import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import * as CoinDetailScripts from './coindetail_scripts';
 import { Coin } from '@/types'; // Assuming Coin type is in @/types
+
+// --- Define Mock Component Creator Globally ---
+const createMockComponent = (name: string) => (props: any) => {
+	const React = require('react');
+	const View = require('react-native').View;
+	const Text = require('react-native').Text;
+	// Include testID for easier querying and spread other props
+	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
+};
+
+// --- Mock Child Components Globally ---
+// jest.mock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'));
+// jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
+// jest.mock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
 
 // --- Mock Data ---
 const mockInitialCoin: Coin = {
@@ -77,25 +91,31 @@ jest.mock('@components/Common/Toast', () => ({
 }));
 
 // Child Components
-// Mock child components to render their name and accept props
-const createMockComponent = (name: string) => (props: any) => {
-	const React = require('react');
-	const View = require('react-native').View;
-	const Text = require('react-native').Text;
-	// Include testID for easier querying and spread other props
-	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
-};
-jest.mock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'));
-jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
-jest.mock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
+// REMOVED: Mock child components to render their name and accept props
 
 // React Native Paper Components (add more as needed)
 jest.mock('react-native-paper', () => {
 	const actualPaper = jest.requireActual('react-native-paper');
+	const React = require('react'); // Require React inside the factory
+	const Pressable = require('react-native').Pressable;
+	const Text = require('react-native').Text;
+	const View = require('react-native').View;
+
+	// Simple Mock Button
+	const MockButton = (props: any) => (
+		<Pressable
+			onPress={props.onPress}
+			disabled={props.disabled}
+			style={props.style}
+			accessibilityRole="button"
+			testID={props.testID || 'mock-button'} // Add a default testID
+		>
+			{/* Render children, likely just text */}
+			<Text style={props.labelStyle}>{props.children}</Text>
+		</Pressable>
+	);
+
 	const MockToggleButton = (props: any) => {
-		const React = require('react');
-		const Pressable = require('react-native').Pressable;
-		const Text = require('react-native').Text;
 		// Use onPress from props if available, falling back to onValueChange for ToggleButton.Row context
 		const onPress = () => props.onPress ? props.onPress(props.value) : props.onValueChange(props.value);
 		return (
@@ -105,8 +125,6 @@ jest.mock('react-native-paper', () => {
 		);
 	}
 	MockToggleButton.Row = (props: any) => {
-		const React = require('react');
-		const View = require('react-native').View;
 		// Map children to pass down the onValueChange prop
 		const childrenWithProps = React.Children.map(props.children, (child: any) => {
 			if (React.isValidElement(child)) {
@@ -117,23 +135,90 @@ jest.mock('react-native-paper', () => {
 		});
 		return <View testID="toggle-button-row">{childrenWithProps}</View>;
 	}
+
+	// Static Theme Mock
+	const mockTheme = {
+		colors: {
+			primary: 'purple',
+			onSurface: 'black',
+			onSurfaceVariant: 'gray',
+			surfaceVariant: 'whitesmoke',
+			outline: 'lightgray',
+			// Add other colors used by your components if needed
+		},
+		// Add other theme properties if needed
+	};
+
 	return {
 		...actualPaper,
 		ToggleButton: MockToggleButton,
-		// Ensure other used components like ActivityIndicator, Text, Button are included
-		ActivityIndicator: actualPaper.ActivityIndicator,
-		Text: actualPaper.Text,
-		Button: actualPaper.Button,
-		useTheme: actualPaper.useTheme, // Keep actual useTheme
+		ActivityIndicator: actualPaper.ActivityIndicator, // Keep real one
+		Text: actualPaper.Text, // Keep real one
+		Button: MockButton, // Use Mock Button
+		useTheme: () => mockTheme, // Use Mock Theme
+		Divider: (props: any) => <View testID="mock-divider" style={props.style} />, // Simple Divider mock if needed
+		Chip: (props: any) => <View testID="mock-chip" style={props.style}><Text>{props.children}</Text></View> // Simple Chip mock if needed
 	};
 });
 
+// Mock Skia to prevent native module errors
+jest.mock('@shopify/react-native-skia', () => ({
+	// Provide basic mocks for exports used by components (e.g., CoinChart)
+	// This prevents errors related to the native RNSkiaModule not being found.
+	Canvas: (props: any) => {
+		const View = require('react-native').View;
+		return <View {...props} testID="mock-skia-canvas" />;
+	},
+	// Add mock for useFont
+	useFont: jest.fn().mockReturnValue({}), // Return a dummy object
+	// Add mock for rect
+	rect: jest.fn().mockReturnValue({}), // Return a dummy object
+	// Add other commonly used exports
+	Path: (props: any) => { // Mock Path component
+		const View = require('react-native').View;
+		return <View {...props} testID="mock-skia-path" />;
+	},
+	Skia: { // Mock Skia object with Path.Make
+		Path: {
+			Make: jest.fn(() => ({
+				// Return a mock path object with methods victory might call
+				moveTo: jest.fn(),
+				lineTo: jest.fn(),
+				close: jest.fn(),
+				addRect: jest.fn(),
+			})),
+		},
+	},
+	// Mocks for hooks if needed by victory-native internals
+	useSharedValue: jest.fn((initialValue) => ({ value: initialValue })),
+	useComputedValue: jest.fn((fn, args) => ({ value: fn() })),
+}));
+
+// Mock Expo Haptics
+jest.mock('expo-haptics', () => ({
+	impactAsync: jest.fn(),
+	notificationAsync: jest.fn(),
+	selectionAsync: jest.fn(),
+	ImpactFeedbackStyle: {
+		Light: 'Light',
+		Medium: 'Medium',
+		Heavy: 'Heavy',
+	},
+	NotificationFeedbackType: {
+		Success: 'Success',
+		Warning: 'Warning',
+		Error: 'Error',
+	},
+}));
 
 // Scripts
 const mockFetchPriceHistory = jest.spyOn(CoinDetailScripts, 'fetchPriceHistory').mockImplementation(
 	async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
 		if (!coin) return;
-		setLoading(true);
+		// Wrap state updates in act
+		act(() => {
+			setLoading(true);
+		});
 		await new Promise(resolve => setTimeout(resolve, 10)); // Minimal delay
 
 		// Create mock data matching the structure set by the *actual* mapping
@@ -141,19 +226,22 @@ const mockFetchPriceHistory = jest.spyOn(CoinDetailScripts, 'fetchPriceHistory')
 		const pastUnix = Math.floor((now - 100000) / 1000);
 		const nowUnix = Math.floor(now / 1000);
 
-		setPriceHistory([
-			{
-				timestamp: new Date(pastUnix * 1000).toISOString(),
-				value: coin.price * 0.98, // Value should be number
-				unixTime: pastUnix
-			},
-			{
-				timestamp: new Date(nowUnix * 1000).toISOString(),
-				value: coin.price, // Value should be number
-				unixTime: nowUnix
-			}
-		]);
-		setLoading(false);
+		// Wrap state updates in act
+		act(() => {
+			setPriceHistory([
+				{
+					timestamp: new Date(pastUnix * 1000).toISOString(),
+					value: coin.price * 0.98, // Value should be number
+					unixTime: pastUnix
+				},
+				{
+					timestamp: new Date(nowUnix * 1000).toISOString(),
+					value: coin.price, // Value should be number
+					unixTime: nowUnix
+				}
+			]);
+			setLoading(false);
+		});
 	}
 );
 const mockHandleTradeNavigation = jest.spyOn(CoinDetailScripts, 'handleTradeNavigation').mockImplementation(() => { });
@@ -186,7 +274,12 @@ describe('CoinDetail Screen', () => {
 		// Reset mocks before each test
 		jest.clearAllMocks();
 
-		// Setup default mock implementations
+		// Apply mocks by default before each test
+		jest.doMock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'));
+		jest.doMock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
+		jest.doMock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
+
+		// Setup default store mock implementations
 		mockUsePortfolioStore.mockReturnValue({
 			tokens: [], // Default to no holdings
 			// Add other store state/functions if needed
@@ -221,10 +314,16 @@ describe('CoinDetail Screen', () => {
 		mockFetchPriceHistory.mockImplementation(
 			async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
 				if (!coin) return;
-				setLoading(true);
+				// Wrap state updates in act
+				act(() => {
+					setLoading(true);
+				});
 				await new Promise(resolve => setTimeout(resolve, 0)); // Near-instant resolve
-				setPriceHistory(expectedMockHistory);
-				setLoading(false);
+				// Wrap state updates in act
+				act(() => {
+					setPriceHistory(expectedMockHistory);
+					setLoading(false);
+				});
 			}
 		);
 
@@ -268,35 +367,44 @@ describe('CoinDetail Screen', () => {
 
 		// Check for Trade button
 		expect(getByText('Trade')).toBeTruthy();
-
-		// Check for link icons (using mocked Text content)
-		expect(await findByText('Globe')).toBeTruthy();
-		expect(await findByText('Twitter')).toBeTruthy();
-		expect(await findByText('MessageCircle')).toBeTruthy(); // Assuming MessageCircle maps to Telegram link
 	});
 
 	it('displays coin information correctly', async () => {
-		const { findByTestId } = render(<CoinDetailScreen />);
+		// Prevent CoinInfo mock for this test
+		jest.dontMock('@components/Chart/CoinInfo');
+		// REMOVED: jest.unmock('@components/Chart/CoinInfo');
+		// REMOVED: require('@components/Chart/CoinInfo');
+		// If LinkItem is complex, might need mocking, but let's try without first
+
+		const { findByTestId, findByText } = render(<CoinDetailScreen />);
 
 		// Wait for initial load
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
-		// Check that CoinInfo mock receives correct props
-		const coinInfoMock = await findByTestId('mock-CoinInfo');
-		expect(coinInfoMock.props.metadata).toEqual({
-			name: mockInitialCoin.name,
-			description: mockInitialCoin.description,
-			website: mockInitialCoin.website,
-			twitter: mockInitialCoin.twitter,
-			telegram: mockInitialCoin.telegram,
-			daily_volume: mockInitialCoin.daily_volume,
-			decimals: mockInitialCoin.decimals,
-			tags: mockInitialCoin.tags,
-			symbol: mockInitialCoin.symbol
-		});
+		// Check that CoinInfo mock receives correct props (using findByTestId for the real component)
+		// Note: We can't check props directly anymore as it's not a mock.
+		// Instead, we assert on the rendered output.
+
+		// Check for section titles rendered by the real CoinInfo
+		expect(await findByText('Description')).toBeTruthy();
+		expect(await findByText('Details')).toBeTruthy();
+		expect(await findByText('Links')).toBeTruthy(); // This should now render
+
+		// Check for link icons (using mocked Text content from lucide mock)
+		expect(await findByText('Globe')).toBeTruthy();
+		expect(await findByText('Twitter')).toBeTruthy();
+		expect(await findByText('MessageCircle')).toBeTruthy(); // Assuming MessageCircle maps to Telegram link
+
+		// REMOVED: Re-mock CoinInfo for subsequent tests if needed (though beforeEach should handle reset)
+		// jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
 	});
 
 	it('does not display social/website links when not provided', async () => {
+		// Prevent CoinInfo mock for this test
+		jest.dontMock('@components/Chart/CoinInfo');
+		// REMOVED: jest.unmock('@components/Chart/CoinInfo');
+		// REMOVED: require('@components/Chart/CoinInfo');
+
 		// Use a coin object without links
 		const mockCoinWithoutLinks: Coin = {
 			...mockInitialCoin, // Start with base data
@@ -315,6 +423,12 @@ describe('CoinDetail Screen', () => {
 		expect(queryByText('Globe')).toBeNull();
 		expect(queryByText('Twitter')).toBeNull();
 		expect(queryByText('MessageCircle')).toBeNull();
+
+		// Check that the "Links" section title itself is not present
+		expect(queryByText('Links')).toBeNull();
+
+		// REMOVED: Re-mock CoinInfo for subsequent tests
+		// jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
 	});
 
 	it('displays holdings information when token is in portfolio', async () => {

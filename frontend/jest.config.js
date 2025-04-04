@@ -3,14 +3,16 @@ module.exports = {
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 	setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
 	transformIgnorePatterns: [
-		'node_modules/(?!(react-native|lucide-react-native|react-native-vector-icons|@react-native|react-native-paper)/)',
+		'node_modules/(?!(react-native|lucide-react-native|react-native-vector-icons|@react-native|react-native-paper|victory-.*|@shopify/react-native-skia|react-native-reanimated|d3-.*|internmap|expo-haptics|expo-modules-core)/)',
 	],
 	moduleNameMapper: {
 		'^@env$': '<rootDir>/src/__mocks__/env.ts',
 		'^@store/(.*)$': '<rootDir>/src/store/$1',
 		'^@components/(.*)$': '<rootDir>/src/components/$1',
 		'^@services/(.*)$': '<rootDir>/src/services/$1', // Added missing mapping
-		'^@/(.*)$': '<rootDir>/src/$1' // Added for general @/ alias
+		'^@/(.*)$': '<rootDir>/src/$1', // Added for general @/ alias
+		// Mock font files
+		'\\.(ttf)$': '<rootDir>/src/__mocks__/fileMock.js'
 	},
 	transform: {
 		'^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],
