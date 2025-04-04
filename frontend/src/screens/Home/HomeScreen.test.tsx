@@ -102,9 +102,11 @@ describe('HomeScreen', () => {
 	const fetchAvailableCoinsMock = jest.fn();
 	const fetchPortfolioBalanceMock = jest.fn();
 	const showToastMock = jest.fn();
+	let consoleLogSpy: jest.SpyInstance;
 
 	beforeEach(() => {
 		jest.clearAllMocks();
+		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 
 		// Setup mock implementations
 		fetchAvailableCoinsMock.mockImplementation(async () => mockApiResponse);
@@ -129,6 +131,10 @@ describe('HomeScreen', () => {
 			showToast: showToastMock,
 			hideToast: jest.fn(),
 		});
+	});
+
+	afterEach(() => {
+		consoleLogSpy.mockRestore();
 	});
 
 	it('renders coin list and profile button when wallet is connected', async () => {

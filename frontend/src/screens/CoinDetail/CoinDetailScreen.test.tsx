@@ -248,9 +248,12 @@ jest.mock('./coindetail_scripts', () => {
 
 describe('CoinDetail Screen', () => {
 	const mockedHandleTradeNavigation = handleTradeNavigation as jest.Mock;
+	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
 
 	beforeEach(() => {
 		jest.clearAllMocks();
+		// Silence console.log
+		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 		mockedHandleTradeNavigation.mockClear();
 
 		mockPortfolioStoreReturn.tokens = [];
@@ -278,6 +281,11 @@ describe('CoinDetail Screen', () => {
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
 
 		mockRoute.params.coin = mockInitialCoin;
+	});
+
+	// Add afterEach to restore the original console.log
+	afterEach(() => {
+		consoleLogSpy.mockRestore();
 	});
 
 	it('renders correctly with initial coin data', async () => {

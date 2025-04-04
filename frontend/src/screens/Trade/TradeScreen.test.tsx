@@ -215,13 +215,14 @@ jest.mock('react-native-paper', () => {
 // --- Test Suite ---
 describe('TradeScreen', () => {
 
-	beforeEach(() => {
-		// Reset mocks
-		jest.clearAllMocks();
-		mockNavigate.mockClear();
+	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
 
-		// Reset store function calls and mutable state
-		mockPortfolioStoreReturn.tokens = [mockFromPortfolioToken]; // Default state for most tests
+	beforeEach(() => {
+		jest.clearAllMocks();
+		// Silence console.log before each test
+		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+		mockNavigate.mockClear();
+		mockPortfolioStoreReturn.tokens = [mockFromPortfolioToken];
 		Object.values(mockPortfolioStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 		Object.values(mockCoinStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 
@@ -239,6 +240,11 @@ describe('TradeScreen', () => {
 		// Reset route params if needed (though usually static here)
 		mockRoute.params.initialFromCoin = mockFromCoin;
 		mockRoute.params.initialToCoin = mockToCoin;
+	});
+
+	// Add afterEach to restore the original console.log
+	afterEach(() => {
+		consoleLogSpy.mockRestore();
 	});
 
 	it('renders correctly with initial coins', async () => {

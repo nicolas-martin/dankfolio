@@ -150,21 +150,25 @@ const mockWallet = {
 
 describe('Profile Screen', () => {
 	const showToastMock = jest.fn();
+	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-
-		// Mock portfolio store
+		// Silence console.log
+		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 		mocked(usePortfolioStore).mockReturnValue({
 			wallet: mockWallet,
 			tokens: mockProfileTokens,
 		});
-
-		// Mock toast
 		mocked(useToast).mockReturnValue({
 			showToast: showToastMock,
 			hideToast: jest.fn(),
 		});
+	});
+
+	// Add afterEach to restore the original console.log
+	afterEach(() => {
+		consoleLogSpy.mockRestore();
 	});
 
 	it('renders tokens with correct values', () => {

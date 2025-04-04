@@ -173,8 +173,12 @@ jest.mock('react-native-paper', () => {
 // --- Test Suite ---
 describe('TradeScreen Confirmation Behavior', () => {
 
+	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
+
 	beforeEach(() => {
 		jest.clearAllMocks();
+		// Silence console.log before each test
+		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 		mockNavigate.mockClear();
 		mockPortfolioStoreReturn.tokens = [mockFromPortfolioToken];
 		Object.values(mockPortfolioStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
@@ -188,6 +192,11 @@ describe('TradeScreen Confirmation Behavior', () => {
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
 		mockRoute.params.initialFromCoin = mockFromCoin;
 		mockRoute.params.initialToCoin = mockToCoin;
+	});
+
+	// Add afterEach to restore the original console.log
+	afterEach(() => {
+		consoleLogSpy.mockRestore();
 	});
 
 	// The test moved from the original file
