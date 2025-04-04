@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, within } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import Profile from './index';
+import ProfileScreen from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useToast } from '@components/Common/Toast';
 import { mocked } from 'jest-mock';
@@ -23,30 +23,73 @@ jest.mock('@react-native-clipboard/clipboard', () => ({
 
 // Mock TokenCard component
 jest.mock('./TokenCard', () => ({
-	TokenCard: ({ profileCoin, onPress }: { profileCoin: ProfileCoin; onPress: () => void }) => (
-		require('react-native').View.render({
-			testID: `token-card-${profileCoin.id}`,
-			onPress,
-			children: `$${profileCoin.value.toFixed(2)}`
-		})
-	)
+	TokenCard: ({ profileCoin, onPress }: { profileCoin: ProfileCoin; onPress: () => void }) => {
+		const React = require('react');
+		const View = require('react-native').View;
+		const Text = require('react-native').Text;
+		// Use a View with accessibility props for the image mock
+		const MockImage = (props: any) => <View {...props} />;
+
+		return (
+			// Mock the TouchableOpacity behaviour with onPress on the root View
+			<View testID={`token-card-${profileCoin.id}`} onPress={onPress}>
+				{/* Mock Image with correct accessibility props */}
+				<MockImage
+					accessibilityRole="image"
+					// Use accessibilityLabel for the 'name' lookup in getByRole
+					accessibilityLabel={`${profileCoin.coin.name} icon`}
+				/>
+				{/* Render symbol (like the actual component) */}
+				<Text>{profileCoin.coin.symbol}</Text>
+				{/* Render value */}
+				<Text>{`$${profileCoin.value.toFixed(2)}`}</Text>
+				{/* Add other elements if needed by tests, e.g., address */}
+				{/* <Text>{formatAddress(profileCoin.coin.id)}</Text> */}
+			</View>
+		);
+	}
 }));
 
 // Mock lucide-react-native
-jest.mock('lucide-react-native', () => ({
-	Icon: () => 'MockedIcon',
-}));
+jest.mock('lucide-react-native', () => {
+	const React = require('react');
+	const Text = require('react-native').Text;
+
+	// Helper to create a mock icon component
+	const createMockIcon = (name: string) => (props: any) => <Text {...props}>{name}</Text>;
+
+	// Mock all icons used in utils/icons.ts
+	return {
+		ArrowLeft: createMockIcon('ArrowLeft'),
+		Home: createMockIcon('Home'),
+		Coins: createMockIcon('Coins'),
+		Settings: createMockIcon('Settings'),
+		Search: createMockIcon('Search'),
+		Plus: createMockIcon('Plus'),
+		Trash: createMockIcon('Trash'),
+		Pencil: createMockIcon('Pencil'),
+		User: createMockIcon('User'),
+		Menu: createMockIcon('Menu'),
+		X: createMockIcon('X'),
+		Check: createMockIcon('Check'),
+		AlertCircle: createMockIcon('AlertCircle'),
+		Globe: createMockIcon('Globe'),
+		Link: createMockIcon('Link'),
+		ArrowUpDown: createMockIcon('ArrowUpDown'),
+		Wallet: createMockIcon('Wallet'),
+		MessageCircle: createMockIcon('MessageCircle'), // Used for Telegram & Discord fallback
+		Twitter: createMockIcon('Twitter'),
+		// Add any other icons from lucide-react-native used directly if needed
+	};
+});
 
 // Mock react-native-vector-icons/MaterialCommunityIcons
-jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'MaterialCommunityIcons');
-
-// Mock react-native-paper's Icon component
-jest.mock('react-native-paper', () => {
-	const actualPaper = jest.requireActual('react-native-paper');
-	return {
-		...actualPaper,
-		Icon: () => 'MockedPaperIcon',
-	};
+jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
+	const React = require('react'); // Ensure React is in scope for JSX
+	const Text = require('react-native').Text; // Get Text component
+	// Return a functional component that renders Text
+	const MockIconComponent = (props: any) => <Text {...props}>MockMCI</Text>;
+	return { default: MockIconComponent }; // Export as default
 });
 
 // Mock navigation
@@ -134,16 +177,16 @@ describe('Profile Screen', () => {
 		// Verify tokens are present with correct values, icons, and names
 		mockProfileTokens.forEach(token => {
 			const card = getAllByTestId(`token-card-${token.id}`)[0];
-			expect(card.props.children).toBe(`$${token.value.toFixed(2)}`);
-			expect(getByText(token.coin.name)).toBeTruthy();
-			expect(getByRole('image', { name: `${token.coin.name} icon` })).toBeTruthy();
+			expect(within(card).getByText(`$${token.value.toFixed(2)}`)).toBeTruthy();
+			expect(within(card).getByText(token.coin.symbol)).toBeTruthy();
+			expect(within(card).getByLabelText(`${token.coin.name} icon`)).toBeTruthy();
 		});
 	});
 
 	it('navigates to CoinDetail screen when token is pressed', () => {
 		const { getByTestId } = render(
 			<NavigationContainer>
-				<Profile />
+				<ProfileScreen />
 			</NavigationContainer>
 		);
 
