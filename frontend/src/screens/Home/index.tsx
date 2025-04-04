@@ -48,9 +48,10 @@ const HomeScreen = () => {
 						<View style={styles.sectionHeader}>
 							<Text variant="titleLarge" style={styles.sectionTitle}>Available Coins</Text>
 							<IconButton
-								icon="refresh"
-								size={24}
-								onPress={onRefresh}
+							icon="refresh"
+							size={24}
+							onPress={onRefresh}
+							testID="refresh-button"
 							/>
 						</View>
 						{coins.length > 0 ? (

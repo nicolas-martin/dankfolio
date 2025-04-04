@@ -9,6 +9,7 @@ module.exports = {
     '^@env$': '<rootDir>/src/__mocks__/env.ts',
     '^@store/(.*)$': '<rootDir>/src/store/$1',
     '^@components/(.*)$': '<rootDir>/src/components/$1',
+    '^@services/(.*)$': '<rootDir>/src/services/$1', // Added missing mapping
     '^@/(.*)$': '<rootDir>/src/$1' // Added for general @/ alias
   },
   transform: {
