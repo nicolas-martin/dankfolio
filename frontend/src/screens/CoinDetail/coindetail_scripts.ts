@@ -96,7 +96,15 @@ export const handleTradeNavigation = (
 	showToast: (params: ToastParams) => void,
 	navigate: (screen: string, params: any) => void
 ) => {
-	if (toCoin && fromCoin) {
+	if (!toCoin) {
+		showToast({
+			type: 'error',
+			message: 'Please select a coin to trade'
+		});
+		return;
+	}
+
+	if (fromCoin) {
 		// Prevent trading the same coin
 		if (toCoin.id === fromCoin.id) {
 			showToast({
@@ -108,6 +116,11 @@ export const handleTradeNavigation = (
 
 		navigate('Trade', {
 			initialFromCoin: fromCoin,
+			initialToCoin: toCoin
+		});
+	} else {
+		navigate('Trade', {
+			initialFromCoin: null,
 			initialToCoin: toCoin
 		});
 	}

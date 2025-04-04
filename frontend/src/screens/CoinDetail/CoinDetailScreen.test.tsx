@@ -441,7 +441,8 @@ describe('CoinDetail Screen', () => {
 		fireEvent.press(tradeButton);
 
 		await waitFor(() => {
-			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(1);
+			// we shouldn't call any extra
+			expect(mockCoinStoreReturn.getCoinByID).not.toHaveBeenCalled()
 		});
 	});
 
@@ -454,13 +455,13 @@ describe('CoinDetail Screen', () => {
 		fireEvent.press(tradeButton);
 
 		await waitFor(() => {
-			expect(mockGetCoinByID).toHaveBeenCalledWith(mockSolCoin.id);
+			expect(mockGetCoinByID).not.toHaveBeenCalled();
 		});
 
 		expect(mockedHandleTradeNavigation).toHaveBeenCalledTimes(1);
 		expect(mockedHandleTradeNavigation).toHaveBeenCalledWith(
 			mockInitialCoin,
-			mockSolCoin,
+			null,
 			mockShowToast,
 			mockNavigate
 		);

@@ -13,6 +13,7 @@ import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import { fetchTradeQuote, handleTrade } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
+import { SOLANA_ADDRESS } from '@/util/constants';
 
 type TradeScreenNavigationProp = NavigationProp<Record<string, TradeScreenParams>>;
 type TradeScreenRouteProp = RouteProp<Record<string, TradeScreenParams>, string>;
@@ -23,7 +24,7 @@ const Trade: React.FC = () => {
 	const { initialFromCoin, initialToCoin } = route.params;
 	const { tokens, wallet } = usePortfolioStore();
 	const { getCoinByID } = useCoinStore();
-	const [fromCoin, setFromCoin] = useState<Coin>(initialFromCoin);
+	const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin);
 	const [toCoin, setToCoin] = useState<Coin>(initialToCoin);
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
@@ -45,13 +46,25 @@ const Trade: React.FC = () => {
 		let isMounted = true;
 		const refreshCoinPrices = async () => {
 			try {
+				// Determine the ID for the 'from' coin, defaulting to Solana if initialFromCoin is null
+				const fromCoinId = initialFromCoin?.id ?? SOLANA_ADDRESS; // Default to Solana address if initialFromCoin is null/undefined
+
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
-					getCoinByID(fromCoin.id, true),  // Force refresh
-					getCoinByID(toCoin.id, true)     // Force refresh
+					getCoinByID(fromCoinId, true),         // Use the determined ID, force refresh
+					getCoinByID(toCoin.id, true)           // Force refresh for the 'to' coin
 				]);
 				if (!isMounted) return;
-				if (updatedFromCoin) setFromCoin(updatedFromCoin);
-				if (updatedToCoin) setToCoin(updatedToCoin);
+
+				// Set the state based on fetched data
+				// Only update if the fetched coin data is valid
+				if (updatedFromCoin) {
+					setFromCoin(updatedFromCoin);
+				}
+
+				if (updatedToCoin) {
+					setToCoin(updatedToCoin);
+				}
+
 			} catch (error) {
 				console.error('Failed to refresh coin prices:', error);
 				if (isMounted) {
@@ -70,18 +83,19 @@ const Trade: React.FC = () => {
 
 	// Get portfolio token data if available
 	const fromPortfolioToken = useMemo(() => {
-		return tokens.find(token => token.id === fromCoin.id);
-	}, [tokens, fromCoin.id]);
+		return tokens.find(token => token.id === fromCoin?.id);
+	}, [tokens, fromCoin]);
 
 	const toPortfolioToken = useMemo(() => {
-		return tokens.find(token => token.id === toCoin.id);
-	}, [tokens, toCoin.id]);
+		return tokens.find(token => token.id === toCoin?.id);
+	}, [tokens, toCoin]);
 
 	const handleFromAmountChange = async (amount: string) => {
+		if (!fromCoin) return;
 		console.log('🔄 From Amount Change:', {
 			amount,
-			fromCoin: fromCoin.symbol,
-			toCoin: toCoin.symbol
+			fromCoin: fromCoin?.symbol,
+			toCoin: toCoin?.symbol
 		});
 
 		setFromAmount(amount);
@@ -102,10 +116,11 @@ const Trade: React.FC = () => {
 	};
 
 	const handleToAmountChange = async (amount: string) => {
+		if (!fromCoin) return;
 		console.log('🔄 To Amount Change:', {
 			amount,
-			fromCoin: fromCoin.symbol,
-			toCoin: toCoin.symbol
+			fromCoin: fromCoin?.symbol,
+			toCoin: toCoin?.symbol
 		});
 
 		setToAmount(amount);
@@ -130,13 +145,14 @@ const Trade: React.FC = () => {
 			exchangeRate: tradeDetails.exchangeRate,
 			fromAmount,
 			toAmount,
-			fromCoin: fromCoin.symbol,
-			toCoin: toCoin.symbol
+			fromCoin: fromCoin?.symbol,
+			toCoin: toCoin?.symbol
 		});
-	}, [tradeDetails, fromAmount, toAmount]);
+	}, [tradeDetails, fromAmount, toAmount, fromCoin, toCoin]);
 
 	useEffect(() => {
 		// Log price information whenever coins or amounts change
+		if (!fromCoin || !toCoin) return;
 		console.log('💰 Price Debug:', {
 			fromCoin: {
 				symbol: fromCoin.symbol,
@@ -166,6 +182,10 @@ const Trade: React.FC = () => {
 			showToast({ type: 'error', message: 'Please connect your wallet' });
 			return;
 		}
+		if (!fromCoin) {
+			showToast({ type: 'error', message: 'From coin is not selected' });
+			return;
+		}
 
 		setIsLoading(true);
 		try {
@@ -191,6 +211,10 @@ const Trade: React.FC = () => {
 	const handleSwapCoins = () => {
 		const tempCoin = fromCoin;
 		const tempAmount = fromAmount;
+		if (!tempCoin) {
+			console.warn('Cannot swap with null fromCoin');
+			return;
+		}
 		setFromCoin(toCoin);
 		setToCoin(tempCoin);
 		setFromAmount(toAmount);
@@ -209,23 +233,25 @@ const Trade: React.FC = () => {
 		<View style={styles.container}>
 			<ScrollView style={styles.scrollView}>
 				<View style={styles.padding}>
-					<View style={styles.valueInfoContainer}>
-						<CoinSelector
-							label="From"
-							coinData={{
-								coin: fromCoin,
-								balance: fromPortfolioToken ? {
-									amount: fromPortfolioToken.amount,
-									value: fromPortfolioToken.value
-								} : undefined
-							}}
-							amount={{
-								value: fromAmount,
-								onChange: handleFromAmountChange,
-							}}
-							isInput
-						/>
-					</View>
+					{fromCoin && (
+						<View style={styles.valueInfoContainer}>
+							<CoinSelector
+								label="From"
+								coinData={{
+									coin: fromCoin,
+									balance: fromPortfolioToken ? {
+										amount: fromPortfolioToken.amount,
+										value: fromPortfolioToken.value
+									} : undefined
+								}}
+								amount={{
+									value: fromAmount,
+									onChange: handleFromAmountChange,
+								}}
+								isInput
+							/>
+						</View>
+					)}
 
 					<Button
 						mode="text"
@@ -282,8 +308,8 @@ const Trade: React.FC = () => {
 				onClose={() => setIsConfirmationVisible(false)}
 				onConfirm={handleTradeConfirm}
 				fromCoin={{
-					id: fromCoin.id,
-					symbol: fromCoin.symbol,
+					id: fromCoin?.id ?? '',
+					symbol: fromCoin?.symbol ?? '',
 					amount: fromAmount,
 				}}
 				toCoin={{

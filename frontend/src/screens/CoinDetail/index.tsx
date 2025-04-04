@@ -192,18 +192,14 @@ const CoinDetail: React.FC = () => {
 						<Button
 							mode="contained"
 							onPress={async () => {
-								const solData = await getCoinByID('So11111111111111111111111111111111111111112');
-								if (!solData) {
-									showToast({ type: 'error', message: 'Could not load SOL data. Please try again.' });
-									return;
-								}
 								handleTradeNavigation(
 									initialCoin,
-									solData,
+									null,
 									showToast,
 									navigation.navigate
 								);
 							}}
+							testID="trade-button"
 						>
 							Trade
 						</Button>

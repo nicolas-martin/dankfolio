@@ -2,12 +2,58 @@ import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { mocked } from 'jest-mock';
 import TradeScreen from './index';
-import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
-import { useCoinStore } from '@store/coins';
-import { useToast } from '@components/Common/Toast';
 import * as TradeScripts from './trade_scripts';
 import { Coin, Wallet } from '@/types';
 import { View, Text, TextInput } from 'react-native';
+import { SOLANA_ADDRESS } from '@/util/constants';
+
+// Mock Stores
+jest.mock('@store/portfolio');
+jest.mock('@store/coins');
+
+// Import store hooks AND types needed
+import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
+import { useCoinStore } from '@store/coins';
+
+// Add common mocks for RNGH and Reanimated
+jest.mock('react-native-gesture-handler', () => {
+	const View = require('react-native').View;
+	return {
+		GestureHandlerRootView: View,
+		// Add other gesture handler exports if needed, e.g., State, Directions
+	};
+});
+jest.mock('react-native-reanimated', () => {
+	const Reanimated = require('react-native-reanimated/mock');
+	// Modify or add mocks as needed
+	Reanimated.useSharedValue = jest.fn(() => ({ value: 0 }));
+	Reanimated.withTiming = jest.fn((toValue, _, cb) => {
+		// Immediately invoke callback if provided
+		if (cb) { cb(true); }
+		return toValue; // Return the target value directly
+	});
+	Reanimated.withSpring = jest.fn((toValue, _, cb) => {
+		// Immediately invoke callback if provided
+		if (cb) { cb(true); }
+		return toValue; // Return the target value directly
+	});
+	Reanimated.useAnimatedStyle = jest.fn(() => ({}));
+	// Mock other Reanimated functions/hooks if your component uses them
+	return Reanimated;
+});
+
+// Mock Navigation - Define factory returning jest.fn()
+const mockNavigate = jest.fn();
+jest.mock('@react-navigation/native', () => ({
+	// Return new mocks for the hooks
+	useNavigation: jest.fn(() => ({ navigate: mockNavigate })),
+	useRoute: jest.fn(), // Mock function for useRoute
+	// Include other exports from react-navigation if needed directly by the component
+	// Example: DefaultTheme: jest.requireActual('@react-navigation/native').DefaultTheme
+}));
+
+// Import hooks AFTER the mock definition - these will be the mock functions
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const mockFromCoin: Coin = {
 	id: "So11111111111111111111111111111111111111112",
@@ -83,22 +129,18 @@ const mockCoinStoreReturn = {
 
 // --- Mock Component Creator ---
 const createMockComponent = (name: string) => (props: any) => {
-	// Use imports now, not require
-
-	// Special handling for CoinSelector to include an input
+	// Special handling for CoinSelector to include an input and expose coin prop
 	if (name === 'CoinSelector') {
-		const { label, amount } = props;
-		// Use label to distinguish inputs
+		const { label, amount, coinData } = props;
 		const inputTestID = `coin-selector-input-${label?.toLowerCase() || 'unknown'}`;
 		return (
-			<View testID={`mock-${name}`} {...props}>
+			<View testID={`mock-${name}-${label?.toLowerCase() || 'unknown'}`} {...props} mockPassedCoin={coinData?.coin}>
 				<Text>{label}</Text>
-				{/* Render other parts of CoinSelector if needed for testID lookups */}
 				{amount?.onChange && (
 					<TextInput
 						testID={inputTestID}
 						value={amount.value}
-						onChangeText={amount.onChange} // Call the passed onChange prop
+						onChangeText={amount.onChange}
 						placeholder={`Enter ${label} amount`}
 						keyboardType="numeric"
 					/>
@@ -111,31 +153,6 @@ const createMockComponent = (name: string) => (props: any) => {
 	// Default mock for other components
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
-
-// --- Mock Modules ---
-
-// Mock Stores
-jest.mock('@store/portfolio');
-jest.mock('@store/coins');
-
-// Mock Navigation
-const mockNavigate = jest.fn();
-const mockRoute = {
-	params: {
-		initialFromCoin: mockFromCoin,
-		initialToCoin: mockToCoin,
-	},
-};
-jest.mock('@react-navigation/native', () => {
-	const actualNav = jest.requireActual('@react-navigation/native');
-	return {
-		...actualNav,
-		useNavigation: () => ({
-			navigate: mockNavigate,
-		}),
-		useRoute: () => (mockRoute),
-	};
-});
 
 // Mock Toast
 const mockShowToast = jest.fn();
@@ -207,47 +224,56 @@ jest.mock('react-native-paper', () => {
 	};
 });
 
-
 // --- Test Suite ---
 describe('TradeScreen', () => {
 
-	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
-
 	beforeEach(() => {
-		jest.clearAllMocks();
-		// Silence console.log before each test
-		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
-		mockNavigate.mockClear();
+		jest.clearAllMocks(); // Good practice to clear previous mocks first
+
+		// Silence console methods for the upcoming test
+		jest.spyOn(console, 'log').mockImplementation(() => { });
+		jest.spyOn(console, 'error').mockImplementation(() => { });
+		jest.spyOn(console, 'warn').mockImplementation(() => { });
+
+		// No need to clear mockNavigate here as useNavigation mock creates a new one each time
+		// mockNavigate.mockClear(); 
+		(useRoute as jest.Mock).mockClear(); // Clear the imported mock function
 		mockPortfolioStoreReturn.tokens = [mockFromPortfolioToken];
 		Object.values(mockPortfolioStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 		Object.values(mockCoinStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 
-		// Assign specific implementation for getCoinByID
-		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id, forceRefresh) => {
-			if (id === mockFromCoin.id) return mockFromCoin;
-			if (id === mockToCoin.id) return mockToCoin;
-			return null;
-		});
-
-		// Setup default store return values
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
 
-		// Reset route params if needed (though usually static here)
-		mockRoute.params.initialFromCoin = mockFromCoin;
-		mockRoute.params.initialToCoin = mockToCoin;
+		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id, forceRefresh) => {
+			if (id === mockFromCoin.id) return mockFromCoin;
+			if (id === mockToCoin.id) return mockToCoin;
+			if (id === SOLANA_ADDRESS) return { ...mockFromCoin, id: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL' };
+			return null;
+		});
+
+		// Reset useRoute mock using the imported mock function
+		(useRoute as jest.Mock).mockReturnValue({
+			key: 'TradeScreen-Default',
+			name: 'TradeScreen',
+			params: {
+				initialFromCoin: mockFromCoin,
+				initialToCoin: mockToCoin,
+			},
+		});
 	});
 
-	// Add afterEach to restore the original console.log
 	afterEach(() => {
-		consoleLogSpy.mockRestore();
+		// Restore all mocks created with jest.spyOn or jest.mock
+		jest.restoreAllMocks();
 	});
 
 	it('renders correctly with initial coins', async () => {
-		const { getAllByTestId, findByTestId, getByText } = render(<TradeScreen />);
+		const { getAllByTestId, findByTestId, getByText, getByTestId } = render(<TradeScreen />);
 
-		// Check if main components are rendered (using mocks)
-		expect(getAllByTestId('mock-CoinSelector').length).toBe(2); // Check for two instances
+		// Check if main components are rendered (using mocks with specific IDs)
+		expect(getByTestId('mock-CoinSelector-from')).toBeTruthy();
+		expect(getByTestId('mock-CoinSelector-to')).toBeTruthy();
 		expect(getByText('Trade')).toBeTruthy(); // Correct button text is "Trade"
 
 		// Check initial state rendering (e.g., correct coins in selectors if mock passes props)
@@ -327,12 +353,11 @@ describe('TradeScreen', () => {
 	it('calls store hooks and initial fetch expected number of times', async () => {
 		render(<TradeScreen />);
 
-		// Wait for the useEffect calls to getCoinByID to complete
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
-		// Assert hook call counts
-		expect(mocked(usePortfolioStore)).toHaveBeenCalledTimes(1);
-		expect(mocked(useCoinStore)).toHaveBeenCalledTimes(1);
+		// Assert hook call counts using the require syntax
+		expect(require('@store/portfolio').usePortfolioStore).toHaveBeenCalledTimes(1);
+		expect(require('@store/coins').useCoinStore).toHaveBeenCalledTimes(1);
 
 		// Assert specific function call count within useEffect
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2);
@@ -482,6 +507,30 @@ describe('TradeScreen', () => {
 			expect.any(Function),  // setIsLoading
 			mockShowToast         // showToast
 		);
+	});
+
+	it('should call getCoinByID with SOLANA_ADDRESS when initialFromCoin is null', async () => {
+		// Arrange: Override the useRoute mock using the imported mock function
+		(useRoute as jest.Mock).mockReturnValue({
+			key: 'TradeScreen-NullFrom',
+			name: 'TradeScreen',
+			params: {
+				initialFromCoin: null, // Set to null for this test
+				initialToCoin: mockToCoin, // Ensure toCoin is set
+			},
+		});
+
+		// Act: Render the component
+		render(<TradeScreen />);
+
+		// Assert: Wait for the effect and check the calls
+		await waitFor(() => {
+			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalled();
+		});
+
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenNthCalledWith(1, SOLANA_ADDRESS, true);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenNthCalledWith(2, mockToCoin.id, true);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2);
 	});
 
 	// Add more tests here for:

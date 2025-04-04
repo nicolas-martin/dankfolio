@@ -1,6 +1,6 @@
 import { Coin } from '@/types/index';
 
 export type TradeScreenParams = {
-	initialFromCoin: Coin;
+	initialFromCoin: Coin | null;
 	initialToCoin: Coin;
 };

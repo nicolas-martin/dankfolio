@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Coin } from '@/types';
 import api from '@/services/api';
+import { SOLANA_ADDRESS } from '@/util/constants';
 
 interface CoinState {
 	availableCoins: Coin[];
@@ -39,10 +40,10 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			const coins = await api.getAvailableCoins();
 
 			// Make sure SOL is included in available coins
-			const solCoin = coins.find(c => c.id === 'So11111111111111111111111111111111111111112');
+			const solCoin = coins.find(c => c.id === SOLANA_ADDRESS);
 			if (!solCoin) {
 				console.log('🔍 SOL not found in available coins, fetching separately...');
-				const solData = await api.getCoinByID('So11111111111111111111111111111111111111112');
+				const solData = await api.getCoinByID(SOLANA_ADDRESS);
 				coins.unshift(solData); // Add SOL at the beginning of the array
 			}
 
@@ -58,7 +59,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			console.log('🗺️ Updated coin store:', {
 				availableCoinsCount: coins.length,
 				coinMapSize: Object.keys(coinMap).length,
-				hasSol: !!coinMap['So11111111111111111111111111111111111111112']
+				hasSol: !!coinMap[SOLANA_ADDRESS]
 			});
 		} catch (error) {
 			set({ error: (error as Error).message });
