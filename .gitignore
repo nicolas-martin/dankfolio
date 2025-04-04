@@ -13,6 +13,12 @@
 /frontend/.pnp
 /frontend/.pnp.js
 /frontend/coverage
+/frontend/.expo/
+/frontend/.expo-shared/
+/frontend/web-build/
+/frontend/ios/build/
+/frontend/android/build/
+/frontend/android/app/build/
 
 # Backend specific
 /backend/bin/
