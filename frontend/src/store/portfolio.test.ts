@@ -1,12 +1,10 @@
-// frontend/src/store/portfolio.test.ts
 import { act } from '@testing-library/react-native';
 import { usePortfolioStore } from './portfolio';
 import { useCoinStore } from './coins';
 import api from '@/services/api';
-import { Wallet, Coin } from '@/types'; // Assuming Coin is in @/types
-import { WalletBalanceResponse } from '@/services/api'; // Import specific type
+import { Wallet, Coin } from '@/types';
+import { WalletBalanceResponse } from '@/services/api';
 
-// --- Mocks ---
 jest.mock('@/services/api');
 const mockedApi = api as jest.Mocked<typeof api>;
 
@@ -14,7 +12,6 @@ const mockedApi = api as jest.Mocked<typeof api>;
 const mockGetCoinByID = jest.fn();
 jest.mock('./coins', () => ({
 	useCoinStore: {
-		// Mock the getState method directly on the exported object
 		getState: jest.fn(() => ({
 			getCoinByID: mockGetCoinByID,
 			// Add other coin state properties if portfolio store uses them directly
@@ -26,7 +23,6 @@ jest.mock('./coins', () => ({
 	},
 }));
 
-// --- Mock Data ---
 const mockWalletData: Wallet = { address: 'wallet123', balance: 1000, privateKey: 'privKey', publicKey: 'pubKey' };
 const mockSolCoin: Coin = { id: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
 const mockUsdcCoin: Coin = { id: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
@@ -35,22 +31,18 @@ const mockApiBalanceResponse: WalletBalanceResponse = {
 	balances: [
 		{ id: 'solana', amount: 5 },
 		{ id: 'usd-coin', amount: 250 },
-		{ id: 'unknown-coin', amount: 100 }, // Coin that might not be found in coinStore
+		{ id: 'unknown-coin', amount: 100 },
 	]
 };
 
-// --- Test Suite ---
 describe('Zustand Portfolio Store', () => {
 	let consoleErrorSpy: jest.SpyInstance;
 	const initialState = usePortfolioStore.getState();
 
 	beforeEach(() => {
-		// Reset store state
 		usePortfolioStore.setState(initialState, true);
-		// Reset mocks
 		jest.clearAllMocks();
-		mockGetCoinByID.mockClear(); // Clear coin store mock specifically
-		// Silence console errors
+		mockGetCoinByID.mockClear();
 		consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 	});
 
@@ -78,7 +70,6 @@ describe('Zustand Portfolio Store', () => {
 	});
 
 	it('clearWallet resets wallet, tokens, and error', () => {
-		// Set some initial state
 		act(() => {
 			usePortfolioStore.setState({
 				wallet: mockWalletData,
@@ -100,11 +91,10 @@ describe('Zustand Portfolio Store', () => {
 	describe('fetchPortfolioBalance', () => {
 		it('fetches balance, gets coin data, calculates value, and updates state', async () => {
 			mockedApi.getWalletBalance.mockResolvedValue(mockApiBalanceResponse);
-			// Mock coin store responses for the balances received
 			mockGetCoinByID.mockImplementation(async (id) => {
 				if (id === 'solana') return mockSolCoin;
 				if (id === 'usd-coin') return mockUsdcCoin;
-				if (id === 'unknown-coin') return null; // Simulate coin not found
+				if (id === 'unknown-coin') return null;
 				return null;
 			});
 
@@ -121,7 +111,7 @@ describe('Zustand Portfolio Store', () => {
 			expect(mockedApi.getWalletBalance).toHaveBeenCalledWith(mockWalletData.address);
 
 			// Check coin store calls
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3); // Called for each balance item
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
 			expect(mockGetCoinByID).toHaveBeenCalledWith('solana');
 			expect(mockGetCoinByID).toHaveBeenCalledWith('usd-coin');
 			expect(mockGetCoinByID).toHaveBeenCalledWith('unknown-coin');
@@ -159,16 +149,15 @@ describe('Zustand Portfolio Store', () => {
 			expect(state.error).toBe(errorMessage);
 			expect(state.tokens).toEqual([]);
 			expect(mockedApi.getWalletBalance).toHaveBeenCalledTimes(1);
-			expect(mockGetCoinByID).not.toHaveBeenCalled(); // Should not be called if balance fetch fails
+			expect(mockGetCoinByID).not.toHaveBeenCalled();
 		});
 
 		it('handles errors when getCoinByID fails for some tokens', async () => {
 			const balanceError = 'Error fetching coin details';
 			mockedApi.getWalletBalance.mockResolvedValue(mockApiBalanceResponse);
-			// Fail for USDC, succeed for SOL
 			mockGetCoinByID.mockImplementation(async (id) => {
 				if (id === 'solana') return mockSolCoin;
-				if (id === 'usd-coin') throw new Error(balanceError); // Simulate error for USDC
+				if (id === 'usd-coin') throw new Error(balanceError);
 				return null;
 			});
 
@@ -181,7 +170,7 @@ describe('Zustand Portfolio Store', () => {
 			expect(state.error).toBe(balanceError);
 
 			expect(mockedApi.getWalletBalance).toHaveBeenCalledTimes(1);
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3); // Still called for all balances
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
 
 			// Check final tokens state (should be empty because Promise.all rejects on first error)
 			expect(state.tokens).toHaveLength(0);
@@ -189,8 +178,8 @@ describe('Zustand Portfolio Store', () => {
 		});
 
 		it('sets loading state correctly', async () => {
-			mockedApi.getWalletBalance.mockResolvedValue({ balances: [] }); // Resolve quickly
-			mockGetCoinByID.mockResolvedValue(null); // Coins don't matter here
+			mockedApi.getWalletBalance.mockResolvedValue({ balances: [] });
+			mockGetCoinByID.mockResolvedValue(null);
 
 			expect(usePortfolioStore.getState().isLoading).toBe(false);
 
@@ -198,17 +187,16 @@ describe('Zustand Portfolio Store', () => {
 				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);
 			});
 
-			expect(usePortfolioStore.getState().isLoading).toBe(true); // Should be loading immediately after call
+			expect(usePortfolioStore.getState().isLoading).toBe(true);
 
-			await promise; // Wait for completion
+			await promise;
 
-			expect(usePortfolioStore.getState().isLoading).toBe(false); // Should not be loading after completion
+			expect(usePortfolioStore.getState().isLoading).toBe(false);
 		});
 
 		it('handles errors when getCoinByID fails for all tokens', async () => {
 			const errorMessage = 'Error fetching coin details';
 			mockedApi.getWalletBalance.mockResolvedValue(mockApiBalanceResponse);
-			// Fail for all coins
 			mockGetCoinByID.mockImplementation(() => { throw new Error(errorMessage); });
 
 			await act(async () => {
@@ -220,13 +208,9 @@ describe('Zustand Portfolio Store', () => {
 			expect(state.error).toBe(errorMessage);
 			expect(state.tokens).toEqual([]);
 			expect(mockedApi.getWalletBalance).toHaveBeenCalledTimes(1);
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3); // Still called for all balances
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
 
-			// Check final tokens state (should be empty because Promise.all rejects on first error)
 			expect(state.tokens).toHaveLength(0);
-			// expect(state.tokens[0]).toEqual(
-			//     expect.objectContaining({ id: 'solana', coin: mockSolCoin })
-			// );
 		});
 	});
 }); 

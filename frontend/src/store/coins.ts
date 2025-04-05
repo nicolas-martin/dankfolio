@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Coin } from '@/types';
 import api from '@/services/api';
-import { SOLANA_ADDRESS } from '@/util/constants';
+import { SOLANA_ADDRESS } from 'utils/constants';
 
 interface CoinState {
 	availableCoins: Coin[];

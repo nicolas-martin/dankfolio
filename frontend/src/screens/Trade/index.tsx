@@ -13,7 +13,7 @@ import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import { fetchTradeQuote, handleTrade } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
-import { SOLANA_ADDRESS } from '@/util/constants';
+import { SOLANA_ADDRESS } from 'utils/constants';
 
 type TradeScreenNavigationProp = NavigationProp<Record<string, TradeScreenParams>>;
 type TradeScreenRouteProp = RouteProp<Record<string, TradeScreenParams>, string>;

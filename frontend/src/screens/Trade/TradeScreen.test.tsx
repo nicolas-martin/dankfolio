@@ -5,7 +5,7 @@ import TradeScreen from './index';
 import * as TradeScripts from './trade_scripts';
 import { Coin, Wallet } from '@/types';
 import { View, Text, TextInput } from 'react-native';
-import { SOLANA_ADDRESS } from '@/util/constants';
+import { SOLANA_ADDRESS } from 'utils/constants';
 
 // Mock Stores
 jest.mock('@store/portfolio');
