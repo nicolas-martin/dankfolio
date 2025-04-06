@@ -1,17 +1,15 @@
 # 🎮 Dankfolio
 
-## 🎯 Project Roadmap
-
 ### 🔄 Trading Features
 - [ ] Implement another AMM when Jupiter can't get a quote/route (i.e., Raydium)
 - [ ] Debug Jupiter quote issue (api permission related?)
 
 ### 📊 Token Information
 - [ ] Find reliable APIs for additional token data:
-  - [ ] Twitter integration
-  - [ ] Website information
-  - [ ] Telegram links
-  - [ ] Market cap data
+  - [x] Twitter integration
+  - [x] Website information
+  - [x] Telegram links
+  - [x] Market cap data
 
 ### 💅 UI Improvements
 
