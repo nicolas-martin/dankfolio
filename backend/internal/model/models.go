@@ -12,14 +12,13 @@ type Coin struct {
 	Symbol      string   `json:"symbol"`
 	Decimals    int      `json:"decimals"`
 	Description string   `json:"description"`
-	IconUrl     string   `json:"icon_url"` // Same as LogoURI/LogoURL
+	IconUrl     string   `json:"icon_url"`
 	Tags        []string `json:"tags,omitempty"`
 
 	// Price and Market Data
 	Price       float64 `json:"price"`
 	Change24h   float64 `json:"change_24h,omitempty"`
 	MarketCap   float64 `json:"market_cap,omitempty"`
-	Volume24h   float64 `json:"volume_24h,omitempty"`
 	DailyVolume float64 `json:"daily_volume,omitempty"`
 
 	// Social and External Links
