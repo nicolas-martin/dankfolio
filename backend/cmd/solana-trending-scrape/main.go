@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -31,127 +30,132 @@ type TokenInfo struct {
 }
 
 const (
-	baseURL                 = "https://www.birdeye.so/?chain=solana"
-	rowSelector             = "section.border-b tbody tr"                 // Relaxed specificity: Find rows in a section with border-b
-	nameSelector            = "div.truncate.text-subtitle-medium-14"      // Updated: Selector for the name div
-	iconSelector            = "td a img:not([src*='network/solana.png'])" // Target img within link, excluding the overlay icon
-	mintAddressLinkSelector = "td a"                                      // Updated: Selector for the main link (get href)
-	outputFile              = "trending_solana_tokens.json"
-	userAgent               = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
+	baseURL = "https://www.birdeye.so/?chain=solana"
+	// Selectors focused ONLY on the modal
+	viewMoreButtonSelector = `section.border-b div[type="button"][data-state="closed"]` // Keep this to trigger modal
+	modalSelector          = "div[role='dialog']"                                       // Modal container
+	modalRowSelector       = "div[role='dialog'] table tbody tr"                        // Rows within the modal's table
+	modalLinkSelector      = "td a"                                                     // Link within a row containing token info
+	modalIconSelector      = "img:not([src*='network/solana.png'])"                     // Image within the link (excluding overlay)
+	modalNameSelector      = "div[class*='text-subtitle']"                              // Name div within the link (more robust class match)
+	modalVolumeSelector    = "td:nth-child(4) span"                                     // Volume span (assumes 4th column)
+	// Other constants
+	outputFile = "../../data/trending_solana_tokens.json"
+	userAgent  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
 )
 
 func main() {
 	url := baseURL
 
-	// --- SELECTORS TO UPDATE ---
-	// Updated based on browser inspection & using XPath for initial row selection (April 6, 2025)
-	// tokenRowSelectorXPath := `//section[.//h4[contains(text(), 'Trending Tokens')]]//tbody/tr` // XPath to find rows in the specific table - Removed, using CSS selector constant now
-	// volumeSelector := `td:nth-child(???))` // Volume column wasn't clear in the trending table, commenting out for now - Removed
-	// --- END SELECTORS TO UPDATE ---
-
-	// Create context with options
+	// --- Context Setup (same as before) ---
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true), // Run headless unless debugging
+		chromedp.Flag("headless", true),
 		chromedp.Flag("disable-gpu", true),
 		chromedp.UserAgent(userAgent),
 	)
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	defer cancel()
-
 	taskCtx, cancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(log.Printf))
 	defer cancel()
-
-	// Create a timeout context
-	timeoutCtx, cancel := context.WithTimeout(taskCtx, 120*time.Second) // Increased overall timeout to 120s
+	timeoutCtx, cancel := context.WithTimeout(taskCtx, 120*time.Second) // Overall timeout
 	defer cancel()
 
 	var tokens []TokenInfo
-	var tokenNodes []*cdp.Node
-	var sectionHTML string // Variable to store the section's HTML
+	var modalNodes []*cdp.Node
 
-	log.Println("Navigating to", url, "and finding token rows...")
+	log.Println("Navigating to", url, "clicking 'View more', and waiting for modal...")
 	err := chromedp.Run(timeoutCtx,
 		chromedp.Navigate(url),
-		// Wait for the table body to be visible as an indicator
-		chromedp.WaitVisible(`tbody`, chromedp.ByQuery),
-		// Add a delay for dynamic content loading
-		chromedp.Sleep(5*time.Second),
-		// Get all token row nodes using the rowSelector constant
-		chromedp.Nodes(rowSelector, &tokenNodes, chromedp.ByQueryAll),
-		// Also get the HTML of the parent section to inspect for hidden data/modals
-		chromedp.OuterHTML("section.border-b", &sectionHTML, chromedp.ByQuery),
+		chromedp.WaitVisible(`tbody`, chromedp.ByQuery), // Wait for initial table structure
+		chromedp.Sleep(2*time.Second),                   // Short delay before click
+		// Click "View more" to load the modal
+		chromedp.Click(viewMoreButtonSelector, chromedp.ByQuery, chromedp.NodeVisible),
+		// Wait for the modal dialog to appear
+		chromedp.WaitVisible(modalSelector, chromedp.ByQuery),
+		chromedp.Sleep(1*time.Second), // Small delay after modal visible
 	)
+
 	if err != nil {
-		log.Fatalf("Chromedp navigation and node selection failed: %v", err)
+		log.Fatalf("Failed to navigate, click 'View more', or wait for modal: %v", err)
+		// If the script should continue without the modal, change Fatalf to Printf and return or handle differently.
 	}
 
-	log.Printf("Found %d potential token rows. Extracting data...", len(tokenNodes))
-	// Log the captured HTML for inspection
-	log.Println("--- HTML of Trending Tokens Section ---")
-	log.Println(sectionHTML)
-	log.Println("--- End HTML of Section ---")
+	log.Println("Modal appeared. Extracting data directly from modal rows...")
 
-	tokens = make([]TokenInfo, 0, len(tokenNodes))
-
-	// Create a new context for extraction tasks with the main timeout
-	extractCtx, cancelExtract := context.WithTimeout(timeoutCtx, 15*time.Second) // Re-use the original timeout duration for overall extraction phase
+	// --- Extract Data Directly From Modal ---
+	extractCtx, cancelExtract := context.WithTimeout(timeoutCtx, 60*time.Second) // Timeout for modal scraping
 	defer cancelExtract()
 
-	for i, node := range tokenNodes {
-		// Add a check to break the loop after processing the first 10 rows
-		if i >= 10 {
-			log.Println("Reached limit of 10 tokens. Stopping extraction.")
-			break
-		}
+	err = chromedp.Run(extractCtx,
+		chromedp.Nodes(modalRowSelector, &modalNodes, chromedp.ByQueryAll),
+	)
 
-		log.Printf("--> Processing row %d...", i+1)
-		var name, iconURL, mintAddressHref string // Raw values
+	if err != nil {
+		log.Fatalf("Failed to get rows from modal: %v", err)
+	}
 
-		// Create a context with a shorter timeout *per row*
-		rowCtx, rowCancel := context.WithTimeout(extractCtx, 15*time.Second) // Increased to 15-second timeout for this specific row
+	log.Printf("Found %d rows in modal. Processing up to first 10...", len(modalNodes))
 
-		err := chromedp.Run(rowCtx, // Use the per-row context here
-			// Extract Name
-			chromedp.TextContent(nameSelector, &name, chromedp.ByQuery, chromedp.FromNode(node)),
-			// Extract Icon URL
-			chromedp.AttributeValue(iconSelector, "src", &iconURL, nil, chromedp.ByQuery, chromedp.FromNode(node)),
-			// Extract Mint Address Link
-			chromedp.AttributeValue(mintAddressLinkSelector, "href", &mintAddressHref, nil, chromedp.ByQuery, chromedp.FromNode(node)),
+	// Limit to first 10 rows if more are found
+	if len(modalNodes) > 10 {
+		modalNodes = modalNodes[:10]
+	}
+
+	tokens = make([]TokenInfo, 0, len(modalNodes))
+
+	for i, node := range modalNodes {
+		var name, iconURL, addressHref, volume string
+		var linkNode *cdp.Node    // Need the link node to extract multiple attributes from it
+		var linkNodes []*cdp.Node // Slice to hold results from Nodes
+
+		rowCtx, rowCancel := context.WithTimeout(extractCtx, 10*time.Second) // Timeout per row
+
+		// Get the main link node first using Nodes
+		err = chromedp.Run(rowCtx,
+			chromedp.Nodes(modalLinkSelector, &linkNodes, chromedp.ByQuery, chromedp.FromNode(node)), // Use Nodes
 		)
-		rowCancel() // Cancel the row context as soon as we're done with it or it errors/times out
 
-		log.Printf("<-- Finished chromedp.Run for row %d (Error: %v)", i+1, err)
+		// Check for errors and if any nodes were found
 		if err != nil {
-			// Check if the error is a context deadline exceeded error
-			if errors.Is(err, context.DeadlineExceeded) {
-				log.Printf("    Timeout extracting data for row %d. Skipping row.", i+1)
-			} else {
-				log.Printf("    Error extracting data for row %d: %v. Skipping row.", i+1, err)
-			}
-			continue // Skip this row if extraction failed or timed out
+			log.Printf("WARN: Error querying link node in modal row %d: %v. Skipping.", i+1, err)
+			rowCancel()
+			continue
 		}
+		if len(linkNodes) == 0 {
+			log.Printf("WARN: Could not find link node in modal row %d. Skipping.", i+1)
+			rowCancel()
+			continue
+		}
+		linkNode = linkNodes[0] // Assign the first found node
 
-		log.Printf("    Processing extracted data for row %d...", i+1)
+		// Extract details using the linkNode as the base where appropriate
+		err = chromedp.Run(rowCtx,
+			chromedp.AttributeValue(modalLinkSelector, "href", &addressHref, nil, chromedp.ByQuery, chromedp.FromNode(node)), // Get href from link in row
+			chromedp.TextContent(modalNameSelector, &name, chromedp.ByQuery, chromedp.FromNode(linkNode)),                    // Get name from within link node
+			chromedp.AttributeValue(modalIconSelector, "src", &iconURL, nil, chromedp.ByQuery, chromedp.FromNode(linkNode)),  // Get icon src from within link node
+			chromedp.TextContent(modalVolumeSelector, &volume, chromedp.ByQuery, chromedp.FromNode(node)),                    // Get volume from row node directly
+		)
+		rowCancel()
 
-		// Trim spaces first
-		trimmedIconURL := strings.TrimSpace(iconURL)
+		if err != nil {
+			log.Printf("WARN: Failed to extract details from modal row %d: %v. Skipping.", i+1, err)
+			continue
+		}
 
 		token := TokenInfo{
-			Name:        strings.TrimSpace(name),
-			IconURL:     trimmedIconURL, // Use the trimmed, raw extracted URL
-			MintAddress: strings.TrimSpace(mintAddressHref),
+			Name:    strings.TrimSpace(name),
+			IconURL: strings.TrimSpace(iconURL),
+			Volume:  strings.TrimSpace(volume),
 		}
 
 		// Process mint address from href
-		if strings.Contains(mintAddressHref, "/token/") {
-			parts := strings.Split(mintAddressHref, "/token/")
+		if strings.Contains(addressHref, "/token/") {
+			parts := strings.Split(addressHref, "/token/")
 			if len(parts) > 1 {
-				// Remove potential query parameters like ?chain=solana
 				addressParts := strings.Split(parts[1], "?")
 				token.MintAddress = addressParts[0]
 			}
 		} else {
-			log.Printf("WARN: Could not parse mint address from href: %s", mintAddressHref)
 			token.MintAddress = ""
 		}
 
@@ -159,19 +163,16 @@ func main() {
 		if token.Name != "" && token.MintAddress != "" {
 			tokens = append(tokens, token)
 		} else {
-			log.Printf("WARN: Skipping row %d due to missing Name or MintAddress (Name: '%s', Address Href: '%s')", i+1, token.Name, mintAddressHref)
+			log.Printf("WARN: Skipping modal row %d due to missing Name or MintAddress (Name: '%s', Address Href: '%s')", i+1, token.Name, addressHref)
 		}
-
-		// Add a small delay between processing rows
-		time.Sleep(250 * time.Millisecond)
 	}
 
-	log.Println("--- Extraction Complete --- --- Extracted Solana Tokens ---")
+	// --- Log Extracted Data ---
+	log.Println("--- Extraction Complete --- --- Extracted Solana Tokens (from Modal) ---")
 	if len(tokens) == 0 {
-		log.Println("No valid tokens extracted. Double-check the CSS selectors in the script against the current website structure.")
+		log.Println("No valid tokens extracted from modal.")
 		return
 	}
-
 	for _, token := range tokens {
 		fmt.Printf("Name: %s\n", token.Name)
 		fmt.Printf("  Volume: %s\n", token.Volume)
@@ -180,18 +181,16 @@ func main() {
 		fmt.Println("-----------------------------")
 	}
 
-	// Save to JSON without HTML escaping
+	// --- Save to JSON (same as before) ---
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
-	encoder.SetEscapeHTML(false) // Prevent escaping of &, <, >
-	encoder.SetIndent("", "  ")  // Keep the pretty printing
-
-	err = encoder.Encode(tokens) // Use = instead of :=
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	err = encoder.Encode(tokens)
 	if err != nil {
 		log.Fatalf("Failed to encode tokens to JSON buffer: %v", err)
 	}
-
-	err = os.WriteFile(outputFile, buf.Bytes(), 0644) // Use = instead of :=
+	err = os.WriteFile(outputFile, buf.Bytes(), 0644)
 	if err != nil {
 		log.Fatalf("Failed to write JSON to file %s: %v", outputFile, err)
 	}

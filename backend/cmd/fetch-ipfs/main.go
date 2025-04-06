@@ -120,7 +120,7 @@ func fetchOffChainMetadataHTTP(url string) (map[string]interface{}, error) {
 
 func main() {
 	// Use your token mint address.
-	mint := common.PublicKeyFromString("28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump")
+	mint := common.PublicKeyFromString("2iJacucgFpF2WjYzwx2ZXBs4bw7eYEScqxcayXZJpump")
 	metadataAccount, err := token_metadata.GetTokenMetaPubkey(mint)
 	if err != nil {
 		log.Fatalf("failed to get metadata account, err: %v", err)
