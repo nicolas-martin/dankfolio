@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -66,6 +67,7 @@ func main() {
 
 	var tokens []TokenInfo
 	var tokenNodes []*cdp.Node
+	var sectionHTML string // Variable to store the section's HTML
 
 	log.Println("Navigating to", url, "and finding token rows...")
 	err := chromedp.Run(timeoutCtx,
@@ -76,12 +78,19 @@ func main() {
 		chromedp.Sleep(5*time.Second),
 		// Get all token row nodes using the rowSelector constant
 		chromedp.Nodes(rowSelector, &tokenNodes, chromedp.ByQueryAll),
+		// Also get the HTML of the parent section to inspect for hidden data/modals
+		chromedp.OuterHTML("section.border-b", &sectionHTML, chromedp.ByQuery),
 	)
 	if err != nil {
 		log.Fatalf("Chromedp navigation and node selection failed: %v", err)
 	}
 
 	log.Printf("Found %d potential token rows. Extracting data...", len(tokenNodes))
+	// Log the captured HTML for inspection
+	log.Println("--- HTML of Trending Tokens Section ---")
+	log.Println(sectionHTML)
+	log.Println("--- End HTML of Section ---")
+
 	tokens = make([]TokenInfo, 0, len(tokenNodes))
 
 	// Create a new context for extraction tasks with the main timeout
@@ -123,9 +132,13 @@ func main() {
 		}
 
 		log.Printf("    Processing extracted data for row %d...", i+1)
+
+		// Trim spaces first
+		trimmedIconURL := strings.TrimSpace(iconURL)
+
 		token := TokenInfo{
 			Name:        strings.TrimSpace(name),
-			IconURL:     strings.TrimSpace(iconURL),
+			IconURL:     trimmedIconURL, // Use the trimmed, raw extracted URL
 			MintAddress: strings.TrimSpace(mintAddressHref),
 		}
 
@@ -167,13 +180,18 @@ func main() {
 		fmt.Println("-----------------------------")
 	}
 
-	// Save to JSON
-	jsonData, err := json.MarshalIndent(tokens, "", "  ")
+	// Save to JSON without HTML escaping
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false) // Prevent escaping of &, <, >
+	encoder.SetIndent("", "  ")  // Keep the pretty printing
+
+	err = encoder.Encode(tokens) // Use = instead of :=
 	if err != nil {
-		log.Fatalf("Failed to marshal tokens to JSON: %v", err)
+		log.Fatalf("Failed to encode tokens to JSON buffer: %v", err)
 	}
 
-	err = os.WriteFile(outputFile, jsonData, 0644)
+	err = os.WriteFile(outputFile, buf.Bytes(), 0644) // Use = instead of :=
 	if err != nil {
 		log.Fatalf("Failed to write JSON to file %s: %v", outputFile, err)
 	}
