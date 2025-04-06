@@ -15,18 +15,17 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-// Adjust this struct based on the actual API response structure
-type ApiResponse struct {
-	Data struct {
-		Tokens []TokenInfo `json:"tokens"` // Assuming the tokens are in a nested structure
-	} `json:"data"`
+// Top-level structure for the JSON output
+type ScrapeOutput struct {
+	ScrapeTimestamp time.Time            `json:"scrapeTimestamp"`
+	Tokens          map[string]TokenInfo `json:"tokens"`
 }
 
+// Simplified struct for individual token details (no timestamp here)
 type TokenInfo struct {
-	Name        string
-	Volume      string // Keep as string for easier extraction
-	IconURL     string
-	MintAddress string
+	Name    string `json:"Name"`
+	Volume  string `json:"Volume"`
+	IconURL string `json:"IconURL"`
 }
 
 const (
@@ -40,12 +39,42 @@ const (
 	modalNameSelector      = "div[class*='text-subtitle']"                              // Name div within the link (more robust class match)
 	modalVolumeSelector    = "td:nth-child(4) span"                                     // Volume span (assumes 4th column)
 	// Other constants
-	outputFile = "../../data/trending_solana_tokens.json"
+	outputFile = "../../data/trending_solana_tokens.json" // Use the data directory
 	userAgent  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
+	cacheTTL   = 24 * time.Hour // Cache duration
 )
 
 func main() {
 	url := baseURL
+
+	// --- Check for Existing Data and Timestamp ---
+	var existingData ScrapeOutput
+	fileData, err := os.ReadFile(outputFile)
+
+	if err == nil {
+		// File exists, try to decode
+		err = json.Unmarshal(fileData, &existingData)
+		if err == nil {
+			// Decode successful, check timestamp
+			if time.Since(existingData.ScrapeTimestamp) < cacheTTL {
+				log.Printf("Cached data in %s is fresh (scraped at %s). Using cached data.", outputFile, existingData.ScrapeTimestamp.Format(time.RFC3339))
+				// Optional: Print cached data for confirmation
+				logAndPrintData(existingData) // Use a helper to avoid repetition
+				return                        // Exit successfully using cached data
+			}
+			log.Printf("Cached data in %s is older than %v (scraped at %s). Proceeding with fresh scrape.", outputFile, cacheTTL, existingData.ScrapeTimestamp.Format(time.RFC3339))
+		} else {
+			log.Printf("WARN: Found file %s but failed to decode JSON: %v. Proceeding with fresh scrape.", outputFile, err)
+		}
+	} else if os.IsNotExist(err) {
+		log.Printf("No existing data file found at %s. Proceeding with fresh scrape.", outputFile)
+	} else {
+		// Other file reading error
+		log.Printf("WARN: Error reading file %s: %v. Proceeding with fresh scrape.", outputFile, err)
+	}
+
+	// --- Proceed with Scraping if Necessary ---
+	log.Println("Starting fresh scrape process...")
 
 	// --- Context Setup (same as before) ---
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
@@ -60,11 +89,12 @@ func main() {
 	timeoutCtx, cancel := context.WithTimeout(taskCtx, 120*time.Second) // Overall timeout
 	defer cancel()
 
-	var tokens []TokenInfo
+	// Use the simplified TokenInfo map
+	tokensMap := make(map[string]TokenInfo)
 	var modalNodes []*cdp.Node
 
 	log.Println("Navigating to", url, "clicking 'View more', and waiting for modal...")
-	err := chromedp.Run(timeoutCtx,
+	err = chromedp.Run(timeoutCtx,
 		chromedp.Navigate(url),
 		chromedp.WaitVisible(`tbody`, chromedp.ByQuery), // Wait for initial table structure
 		chromedp.Sleep(2*time.Second),                   // Short delay before click
@@ -100,8 +130,6 @@ func main() {
 	if len(modalNodes) > 10 {
 		modalNodes = modalNodes[:10]
 	}
-
-	tokens = make([]TokenInfo, 0, len(modalNodes))
 
 	for i, node := range modalNodes {
 		var name, iconURL, addressHref, volume string
@@ -142,58 +170,69 @@ func main() {
 			continue
 		}
 
-		token := TokenInfo{
-			Name:    strings.TrimSpace(name),
-			IconURL: strings.TrimSpace(iconURL),
-			Volume:  strings.TrimSpace(volume),
-		}
-
 		// Process mint address from href
+		mintAddress := ""
 		if strings.Contains(addressHref, "/token/") {
 			parts := strings.Split(addressHref, "/token/")
 			if len(parts) > 1 {
 				addressParts := strings.Split(parts[1], "?")
-				token.MintAddress = addressParts[0]
+				mintAddress = addressParts[0]
+			}
+		}
+
+		// Validate essential info
+		trimmedName := strings.TrimSpace(name)
+		if trimmedName != "" && mintAddress != "" {
+			// Create TokenInfo (no timestamp) and add to map
+			tokensMap[mintAddress] = TokenInfo{
+				Name:    trimmedName,
+				IconURL: strings.TrimSpace(iconURL),
+				Volume:  strings.TrimSpace(volume),
 			}
 		} else {
-			token.MintAddress = ""
-		}
-
-		// Only add if we have essential info (Name and MintAddress)
-		if token.Name != "" && token.MintAddress != "" {
-			tokens = append(tokens, token)
-		} else {
-			log.Printf("WARN: Skipping modal row %d due to missing Name or MintAddress (Name: '%s', Address Href: '%s')", i+1, token.Name, addressHref)
+			log.Printf("WARN: Skipping modal row %d due to missing Name or MintAddress (Name: '%s', Mint: '%s')", i+1, trimmedName, mintAddress)
 		}
 	}
 
-	// --- Log Extracted Data ---
-	log.Println("--- Extraction Complete --- --- Extracted Solana Tokens (from Modal) ---")
-	if len(tokens) == 0 {
-		log.Println("No valid tokens extracted from modal.")
-		return
-	}
-	for _, token := range tokens {
-		fmt.Printf("Name: %s\n", token.Name)
-		fmt.Printf("  Volume: %s\n", token.Volume)
-		fmt.Printf("  Icon: %s\n", token.IconURL)
-		fmt.Printf("  Mint Address: %s\n", token.MintAddress)
-		fmt.Println("-----------------------------")
+	// --- Prepare Final Output ---
+	finalOutput := ScrapeOutput{
+		ScrapeTimestamp: time.Now(), // Set timestamp for the whole run
+		Tokens:          tokensMap,  // Assign the map
 	}
 
-	// --- Save to JSON (same as before) ---
+	// --- Log Extracted Data (Map) ---
+	logAndPrintData(finalOutput) // Use helper function
+
+	// --- Save Final Output Struct to JSON ---
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
-	err = encoder.Encode(tokens)
+	err = encoder.Encode(finalOutput) // Encode the top-level struct
 	if err != nil {
-		log.Fatalf("Failed to encode tokens to JSON buffer: %v", err)
+		log.Fatalf("Failed to encode final output to JSON buffer: %v", err)
 	}
 	err = os.WriteFile(outputFile, buf.Bytes(), 0644)
 	if err != nil {
-		log.Fatalf("Failed to write JSON to file %s: %v", outputFile, err)
+		log.Fatalf("Failed to write final JSON to file %s: %v", outputFile, err)
 	}
 
-	log.Printf("Successfully saved %d tokens to %s", len(tokens), outputFile)
+	log.Printf("Successfully saved data for %d tokens to %s", len(finalOutput.Tokens), outputFile)
+}
+
+// Helper function to log and print token data
+func logAndPrintData(data ScrapeOutput) {
+	log.Println("--- Solana Tokens Data ---")
+	if len(data.Tokens) == 0 {
+		log.Println("No token data available.")
+		return
+	}
+	log.Printf("Timestamp: %s", data.ScrapeTimestamp.Format(time.RFC3339))
+	for mintAddr, token := range data.Tokens {
+		fmt.Printf("MintAddress: %s\n", mintAddr)
+		fmt.Printf("  Name: %s\n", token.Name)
+		fmt.Printf("  Volume: %s\n", token.Volume)
+		fmt.Printf("  Icon: %s\n", token.IconURL)
+		fmt.Println("-----------------------------")
+	}
 }
