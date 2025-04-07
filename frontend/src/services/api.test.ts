@@ -128,15 +128,15 @@ describe('API Service', () => {
 		expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
 	});
 
-	it('getAvailableCoins successfully calls GET /api/tokens', async () => {
-		const mockCoins: Coin[] = [mockCoin, { ...mockCoin, id: 'coin2', symbol: 'MCK2' }];
-		mockAxiosInstance.get.mockResolvedValue({ data: mockCoins });
+	it('getAvailableCoins successfully calls GET /api/tokens with trending=true param when trendingOnly is true', async () => {
+		const mockTrendingCoins: Coin[] = [{ ...mockCoin, tags: ['trending'] }];
+		mockAxiosInstance.get.mockResolvedValue({ data: mockTrendingCoins });
 
-		const result = await api.getAvailableCoins();
+		const result = await api.getAvailableCoins(true);
 
 		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens');
-		expect(result).toEqual(mockCoins);
+		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens', { params: { trending: 'true' } });
+		expect(result).toEqual(mockTrendingCoins);
 	});
 
 	it('getAvailableCoins handles API errors', async () => {
@@ -147,7 +147,8 @@ describe('API Service', () => {
 			message: 'Not Found',
 			status: 404,
 		});
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens');
+		// Check it was called with empty params when no argument provided
+		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens', { params: {} });
 	});
 
 
