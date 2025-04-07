@@ -141,15 +141,6 @@ const Trade: React.FC = () => {
 		);
 	};
 
-	useEffect(() => {
-		console.log('💱 Trade Details Updated:', {
-			exchangeRate: tradeDetails.exchangeRate,
-			fromAmount,
-			toAmount,
-			fromCoin: fromCoin?.symbol,
-			toCoin: toCoin?.symbol
-		});
-	}, [tradeDetails, fromAmount, toAmount, fromCoin, toCoin]);
 
 	useEffect(() => {
 		// Log price information whenever coins or amounts change
@@ -175,6 +166,20 @@ const Trade: React.FC = () => {
 			showToast({ type: 'error', message: !wallet ? 'Please connect your wallet' : 'Please enter valid amounts' });
 			return;
 		}
+
+		// Check if the user has sufficient balance
+		const numericFromAmount = parseFloat(fromAmount); // User input is a string, needs parsing
+		const availableBalance = fromPortfolioToken?.amount ?? 0; // Use optional chaining and nullish coalescing
+
+		if (numericFromAmount > availableBalance) {
+			showToast({
+				type: 'error',
+				// Use the numeric availableBalance directly, formatted
+				message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.`
+			});
+			return;
+		}
+
 		setIsConfirmationVisible(true);
 	};
 

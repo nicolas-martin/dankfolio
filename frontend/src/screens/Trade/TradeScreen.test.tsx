@@ -533,6 +533,80 @@ describe('TradeScreen', () => {
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2);
 	});
 
+	it('should show insufficient balance error if fromAmount exceeds available balance', async () => {
+		// Arrange: Set a specific low balance for the from coin
+		const lowBalanceToken: PortfolioToken = {
+			...mockFromPortfolioToken,
+			amount: 5, // Only 5 SOL available
+			value: 5 * mockFromCoin.price,
+		};
+		mocked(usePortfolioStore).mockReturnValue({
+			...mockPortfolioStoreReturn,
+			tokens: [lowBalanceToken],
+		});
+
+		// Mock useRoute to provide initial coins
+		mocked(useRoute).mockReturnValue({
+			params: { initialFromCoin: mockFromCoin, initialToCoin: mockToCoin },
+			key: 'test-key', // Add missing properties
+			name: 'Trade', // Add missing properties
+			path: undefined // Add missing properties
+		});
+
+		// Mock getCoinByID to return the coins
+		mocked(useCoinStore().getCoinByID).mockImplementation(async (id) => {
+			if (id === mockFromCoin.id) return mockFromCoin;
+			if (id === mockToCoin.id) return mockToCoin;
+			return null;
+		});
+
+		// Mock fetchTradeQuote to provide a dummy toAmount when fromAmount changes
+		mocked(TradeScripts.fetchTradeQuote).mockImplementation(async (
+			amount, fromCoin, toCoin, setLoading, setAmount, setDetails
+		) => {
+			if (setAmount) {
+				// Simulate getting a quote (e.g., 1 SOL -> 1000 WEN)
+				const numericAmount = parseFloat(amount);
+				if (!isNaN(numericAmount)) {
+					setAmount((numericAmount * 1000).toString());
+				}
+			}
+		});
+
+		const { getByTestId, findByText, getByText } = render(<TradeScreen />);
+
+		// Wait for initial coin data to load (important because of useEffect)
+		await waitFor(() => {
+			expect(getByTestId('mock-CoinSelector-from')).toBeTruthy();
+			expect(getByTestId('mock-CoinSelector-to')).toBeTruthy();
+		});
+
+		// Act: Enter an amount greater than the balance
+		const fromInput = getByTestId('coin-selector-input-from');
+		fireEvent.changeText(fromInput, '6'); // Try to trade 6 SOL (more than the 5 available)
+
+		// Wait for the quote to update the 'to' amount
+		await waitFor(() => {
+			expect(mocked(TradeScripts.fetchTradeQuote)).toHaveBeenCalled();
+		});
+
+		// Act: Press the trade button
+		const tradeButton = getByText('Trade');
+		fireEvent.press(tradeButton);
+
+		// Assert: Check if the insufficient funds toast message was shown
+		await waitFor(() => {
+			expect(mockShowToast).toHaveBeenCalledWith({
+				type: 'error',
+				message: expect.stringContaining(`Insufficient ${mockFromCoin.symbol}. You only have 5.000000 ${mockFromCoin.symbol}`),
+			});
+		});
+
+		// Assert: Ensure Trade Confirmation is not shown and handleTrade is not called
+		expect(getByTestId('mock-TradeConfirmation')).toHaveProp('isVisible', false);
+		expect(mocked(TradeScripts.handleTrade)).not.toHaveBeenCalled();
+	});
+
 	// Add more tests here for:
 	// - Review Trade button shows confirmation
 	// - Error handling (insufficient balance, API errors)
