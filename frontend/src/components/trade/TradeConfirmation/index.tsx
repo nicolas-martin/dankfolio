@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View } from 'react-native';
-import { Modal, Portal, Text, Button, useTheme } from 'react-native-paper';
+import { Modal, Portal, Text, Button, useTheme, ActivityIndicator } from 'react-native-paper';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
 import { useCoinStore } from '@store/coins';
@@ -90,7 +90,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				<Modal visible={isVisible} onDismiss={onClose} contentContainerStyle={styles.container}>
 					<Text style={styles.title}>Confirm Trade</Text>
 					<View style={styles.loadingContainer}>
-						<Text>Loading prices...</Text>
+						<ActivityIndicator animating={true} testID="loading-spinner" />
 					</View>
 				</Modal>
 			</Portal>
