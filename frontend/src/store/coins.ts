@@ -12,7 +12,7 @@ interface CoinState {
 	// Actions
 	setAvailableCoins: (coins: Coin[]) => void;
 	setCoin: (coin: Coin) => void;
-	fetchAvailableCoins: () => Promise<void>;
+	fetchAvailableCoins: (trendingOnly?: boolean) => Promise<void>;
 	getCoinByID: (id: string, forceRefresh?: boolean) => Promise<Coin | null>;
 }
 
@@ -34,38 +34,43 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		coinMap: { ...state.coinMap, [coin.id]: coin }
 	})),
 
-	fetchAvailableCoins: async () => {
+	fetchAvailableCoins: async (trendingOnly?: boolean) => {
 		try {
 			set({ isLoading: true, error: null });
-			const coins = await api.getAvailableCoins();
+			const coins = await api.getAvailableCoins(trendingOnly);
 
-			// Make sure SOL is included in available coins
-			const solCoin = coins.find(c => c.id === SOLANA_ADDRESS);
-			if (!solCoin) {
-				console.log('🔍 SOL not found in available coins, fetching separately...');
-				const solData = await api.getCoinByID(SOLANA_ADDRESS);
-				coins.unshift(solData); // Add SOL at the beginning of the array
+			if (!trendingOnly) {
+				const solCoin = coins.find(c => c.id === SOLANA_ADDRESS);
+				if (!solCoin) {
+					console.log('🔍 SOL not found in available coins, fetching separately...');
+					const solData = await get().getCoinByID(SOLANA_ADDRESS, true);
+					if (solData) {
+						coins.unshift(solData);
+					}
+				}
 			}
 
-			console.log('💰 Available coins:', coins.map(c => ({ symbol: c.symbol, id: c.id })));
+			console.log(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map(c => ({ symbol: c.symbol, id: c.id })));
 
-			// Update both availableCoins and coinMap
 			const coinMap = coins.reduce((acc, coin) => {
 				acc[coin.id] = coin;
 				return acc;
 			}, {} as Record<string, Coin>);
 
-			set({ availableCoins: coins, coinMap });
+			if (!trendingOnly) {
+				set({ availableCoins: coins, coinMap, isLoading: false });
+			} else {
+				set({ coinMap, isLoading: false });
+			}
+
 			console.log('🗺️ Updated coin store:', {
-				availableCoinsCount: coins.length,
-				coinMapSize: Object.keys(coinMap).length,
-				hasSol: !!coinMap[SOLANA_ADDRESS]
+				availableCoinsCount: get().availableCoins.length,
+				coinMapSize: Object.keys(get().coinMap).length,
+				hasSol: !!get().coinMap[SOLANA_ADDRESS]
 			});
 		} catch (error) {
-			set({ error: (error as Error).message });
-			console.error('❌ Error fetching available coins:', error);
-		} finally {
-			set({ isLoading: false });
+			set({ error: (error as Error).message, isLoading: false });
+			console.error(`❌ Error fetching ${trendingOnly ? 'trending' : 'all'} available coins:`, error);
 		}
 	},
 

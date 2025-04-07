@@ -25,9 +25,9 @@ const HomeScreen = () => {
 
 	const onRefresh = useCallback(async () => {
 		try {
-			// Fetch both coins and wallet balance
+			// Fetch only trending coins and wallet balance
 			await Promise.all([
-				fetchCoins(),
+				fetchCoins(true),
 				wallet ? fetchPortfolioBalance(wallet.address) : null
 			].filter(Boolean));
 

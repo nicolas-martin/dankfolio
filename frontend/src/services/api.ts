@@ -92,7 +92,7 @@ export interface PriceHistoryResponse {
 
 interface API {
 	executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
-	getAvailableCoins: () => Promise<Coin[]>;
+	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
 	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
 	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
 	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
@@ -114,9 +114,10 @@ const api: API = {
 		}
 	},
 
-	getAvailableCoins: async () => {
+	getAvailableCoins: async (trendingOnly?: boolean) => {
 		try {
-			const response = await apiClient.get<Coin[]>('/api/tokens');
+			const params = trendingOnly ? { trending: 'true' } : {};
+			const response = await apiClient.get<Coin[]>('/api/tokens', { params });
 			return response.data;
 		} catch (error) {
 			throw handleApiError(error as AxiosError);

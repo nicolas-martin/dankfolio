@@ -189,11 +189,6 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 	return enrichedCoin, nil
 }
 
-// GetTokenDetails fetches detailed information about a token
-func (s *Service) GetTokenDetails(ctx context.Context, tokenAddress string) (*model.Coin, error) {
-	return s.GetCoinByID(ctx, tokenAddress)
-}
-
 // fetchAndCacheCoin handles caching and calls the core EnrichCoinData function.
 // This is used for dynamically enriching tokens not found in the initial file load.
 // Renamed from enrichCoin
@@ -308,7 +303,7 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 
 	// Optional: Clear the dynamic cache after a successful load/refresh?
 	// This ensures the cache doesn't contain stale dynamically fetched items.
-	s.cache = make(map[string]Cache)
+	// s.cache = make(map[string]Cache)
 	log.Println("Dynamic coin cache cleared after loading data from file.")
 
 	return nil // Success
