@@ -2,10 +2,12 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/nicolas-martin/dankfolio/internal/model"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 )
 
@@ -21,13 +23,30 @@ func NewCoinHandlers(coinService *coin.Service) *CoinHandlers {
 	}
 }
 
-// GetCoins returns a list of all available coins
+// GetCoins returns a list of available coins, optionally filtered by trending status
 func (h *CoinHandlers) GetCoins(w http.ResponseWriter, r *http.Request) {
-	// Fetch coins from the service
-	coins, err := h.coinService.GetCoins(r.Context())
-	if err != nil {
-		respondError(w, "Failed to retrieve coins: "+err.Error(), http.StatusInternalServerError)
-		return
+	// Check for the 'trending' query parameter
+	filterTrending := r.URL.Query().Get("trending") == "true"
+
+	var coins []model.Coin
+	var err error
+
+	if filterTrending {
+		// Fetch only trending coins from the service
+		log.Println("Fetching only trending coins based on query parameter...")
+		coins, err = h.coinService.GetTrendingCoins(r.Context())
+		if err != nil {
+			respondError(w, "Failed to retrieve trending coins: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Fetch all coins from the service
+		log.Println("Fetching all coins...")
+		coins, err = h.coinService.GetCoins(r.Context())
+		if err != nil {
+			respondError(w, "Failed to retrieve all coins: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	respondJSON(w, coins, http.StatusOK)
@@ -55,6 +74,6 @@ func (h *CoinHandlers) GetCoinByID(w http.ResponseWriter, r *http.Request) {
 
 // RegisterRoutes registers all coin-related routes
 func (h *CoinHandlers) RegisterRoutes(r chi.Router) {
-	r.Get("/tokens", h.GetCoins)
+	r.Get("/tokens", h.GetCoins) // Handles both all tokens and ?trending=true
 	r.Get("/tokens/{id}", h.GetCoinByID)
 }

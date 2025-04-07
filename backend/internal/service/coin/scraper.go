@@ -287,6 +287,7 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 
 			// Add successfully (or partially) enriched coin
 			mu.Lock()
+			enriched.IsTrending = true
 			enrichedCoins = append(enrichedCoins, *enriched)
 			mu.Unlock()
 			log.Printf("Successfully processed enrichment for: %s (%s)", enriched.Name, enriched.ID)

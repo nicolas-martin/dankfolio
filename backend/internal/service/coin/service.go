@@ -104,16 +104,38 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient *JupiterC
 
 // GetCoins returns a list of all available coins
 func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
+	s.mu.RLock()
 	coins := make([]model.Coin, 0, len(s.coins))
 	for _, coin := range s.coins {
 		coins = append(coins, coin)
 	}
+	s.mu.RUnlock()
 
+	// Sort by volume descending
 	sort.Slice(coins, func(i, j int) bool {
 		return coins[i].DailyVolume > coins[j].DailyVolume
 	})
 
 	return coins, nil
+}
+
+// GetTrendingCoins returns only the coins loaded from the trending file
+func (s *Service) GetTrendingCoins(ctx context.Context) ([]model.Coin, error) {
+	s.mu.RLock()
+	trendingCoins := make([]model.Coin, 0)
+	for _, coin := range s.coins {
+		if coin.IsTrending {
+			trendingCoins = append(trendingCoins, coin)
+		}
+	}
+	s.mu.RUnlock()
+
+	// Sort trending coins by volume descending (or other criteria if needed)
+	sort.Slice(trendingCoins, func(i, j int) bool {
+		return trendingCoins[i].DailyVolume > trendingCoins[j].DailyVolume
+	})
+
+	return trendingCoins, nil
 }
 
 // GetCoinByID returns a coin by its ID
@@ -320,6 +342,11 @@ func (s *Service) loadEnrichedCoinsFromFile() ([]model.Coin, time.Time, error) {
 		// if len(preview) > 200 { preview = preview[:200] + "..." }
 		// log.Printf("Data preview: %s", preview)
 		return nil, time.Time{}, fmt.Errorf("failed to decode enriched JSON from %s: %w", filePath, err)
+	}
+
+	// Set IsTrending flag for all coins loaded from the file
+	for i := range fileOutput.Tokens {
+		fileOutput.Tokens[i].IsTrending = true
 	}
 
 	// Log timestamp from file
