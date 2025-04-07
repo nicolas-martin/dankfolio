@@ -40,6 +40,7 @@ const Trade: React.FC = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
+	const [isLoadingTrade, setIsLoadingTrade] = useState<boolean>(false);
 
 	// Refresh coin prices on screen load
 	useEffect(() => {
@@ -187,16 +188,17 @@ const Trade: React.FC = () => {
 			return;
 		}
 
-		setIsLoading(true);
+		setIsLoadingTrade(true);
 		try {
 			await handleTrade(
 				fromCoin,
 				toCoin,
 				fromAmount,
+				// TODO: Make this configurable
 				0.5, // 0.5% slippage
 				wallet,
 				navigation,
-				setIsLoading,
+				setIsLoadingTrade,
 				showToast
 			);
 			setIsConfirmationVisible(false);
@@ -204,7 +206,7 @@ const Trade: React.FC = () => {
 			console.error('Error executing trade:', error);
 			showToast({ type: 'error', message: 'Failed to execute trade' });
 		} finally {
-			setIsLoading(false);
+			setIsLoadingTrade(false);
 		}
 	};
 
@@ -303,17 +305,19 @@ const Trade: React.FC = () => {
 				</Button>
 			</View>
 
-			<TradeConfirmation
-				isVisible={isConfirmationVisible}
-				onClose={() => setIsConfirmationVisible(false)}
-				onConfirm={handleTradeConfirm}
-				fromAmount={fromAmount}
-				toAmount={toAmount}
-				fromCoin={fromCoin}
-				toCoin={toCoin}
-				fees={tradeDetails}
-				isLoading={isLoading}
-			/>
+			{fromCoin && toCoin && (
+				<TradeConfirmation
+					isVisible={isConfirmationVisible}
+					onClose={() => setIsConfirmationVisible(false)}
+					onConfirm={handleTradeConfirm}
+					fromAmount={fromAmount}
+					toAmount={toAmount}
+					toCoin={toCoin}
+					fromCoin={fromCoin}
+					fees={tradeDetails}
+					isLoading={isLoadingTrade}
+				/>
+			)}
 		</View>
 	);
 };

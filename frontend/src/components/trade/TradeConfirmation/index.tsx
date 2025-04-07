@@ -34,6 +34,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	}, [isVisible]);
 
 	// Refresh prices when modal becomes visible
+	// TODO: Fetch another quote also?
 	useEffect(() => {
 		const refreshPrices = async () => {
 			if (!isVisible || hasRefreshedRef.current) return;

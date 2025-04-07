@@ -367,7 +367,6 @@ describe('CoinDetail Screen', () => {
 			twitter: mockInitialCoin.twitter,
 			telegram: mockInitialCoin.telegram,
 			daily_volume: mockInitialCoin.daily_volume,
-			decimals: mockInitialCoin.decimals,
 			tags: mockInitialCoin.tags,
 			symbol: mockInitialCoin.symbol
 		});
@@ -394,7 +393,6 @@ describe('CoinDetail Screen', () => {
 			twitter: "",
 			telegram: "",
 			daily_volume: mockCoinWithoutLinks.daily_volume,
-			decimals: mockCoinWithoutLinks.decimals,
 			tags: mockCoinWithoutLinks.tags,
 			symbol: mockCoinWithoutLinks.symbol
 		});
