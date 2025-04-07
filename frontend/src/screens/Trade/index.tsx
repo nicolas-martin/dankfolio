@@ -13,7 +13,7 @@ import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import { fetchTradeQuote, handleTrade } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
-import { SOLANA_ADDRESS } from 'utils/constants';
+import { SOLANA_ADDRESS } from '@/utils/constants';
 
 type TradeScreenNavigationProp = NavigationProp<Record<string, TradeScreenParams>>;
 type TradeScreenRouteProp = RouteProp<Record<string, TradeScreenParams>, string>;
@@ -307,16 +307,10 @@ const Trade: React.FC = () => {
 				isVisible={isConfirmationVisible}
 				onClose={() => setIsConfirmationVisible(false)}
 				onConfirm={handleTradeConfirm}
-				fromCoin={{
-					id: fromCoin?.id ?? '',
-					symbol: fromCoin?.symbol ?? '',
-					amount: fromAmount,
-				}}
-				toCoin={{
-					id: toCoin.id,
-					symbol: toCoin.symbol,
-					amount: toAmount,
-				}}
+				fromAmount={fromAmount}
+				toAmount={toAmount}
+				fromCoin={fromCoin}
+				toCoin={toCoin}
 				fees={tradeDetails}
 				isLoading={isLoading}
 			/>

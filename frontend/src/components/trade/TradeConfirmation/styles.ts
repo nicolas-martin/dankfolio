@@ -55,4 +55,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontSize: 12,
 		marginTop: 8,
 	},
+	loadingContainer: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingVertical: 20,
+	},
 }); 

@@ -52,23 +52,6 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 					Details
 				</Text>
 
-				{metadata.decimals !== undefined && (
-					<View style={styles.detailRow}>
-						<Text
-							variant="bodyLarge"
-							style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}
-						>
-							Decimals
-						</Text>
-						<Text
-							variant="bodyLarge"
-							style={[styles.detailValue, { color: theme.colors.onSurface }]}
-						>
-							{metadata.decimals}
-						</Text>
-					</View>
-				)}
-
 				{metadata.daily_volume !== undefined && (
 					<View style={styles.detailRow}>
 						<Text

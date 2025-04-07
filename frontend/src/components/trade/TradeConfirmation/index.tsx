@@ -11,6 +11,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,
 	onClose,
 	onConfirm,
+	fromAmount,
+	toAmount,
 	fromCoin,
 	toCoin,
 	fees,
@@ -20,8 +22,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	const styles = createStyles(theme);
 	const { getCoinByID } = useCoinStore();
 	const { showToast } = useToast();
-	const [latestFromCoin, setLatestFromCoin] = useState<Coin | null>(null);
-	const [latestToCoin, setLatestToCoin] = useState<Coin | null>(null);
+	const [latestFromCoin, setLatestFromCoin] = useState<Coin>();
+	const [latestToCoin, setLatestToCoin] = useState<Coin>();
 	const hasRefreshedRef = useRef(false);
 
 	// Reset the ref when modal closes
@@ -38,6 +40,10 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 			try {
 				hasRefreshedRef.current = true;
+				if (!fromCoin || !toCoin) {
+					throw new Error('Coin data is missing');
+				}
+
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
 					getCoinByID(fromCoin.id, true),
 					getCoinByID(toCoin.id, true)
@@ -60,11 +66,11 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		};
 
 		refreshPrices();
-	}, [isVisible, fromCoin.id, toCoin.id, getCoinByID, onClose, showToast]);
+	}, [isVisible, fromCoin?.id, toCoin?.id, getCoinByID, onClose, showToast]);
 
-	const calculateValue = (amount: string, coin: Coin | null): string => {
+	const calculateValue = (amount: string, coin: Coin): string => {
 		if (!coin || !amount || isNaN(parseFloat(amount))) return '$0.00';
-		return `$${(parseFloat(amount) * coin.price).toFixed(2)}`;
+		return `$${(parseFloat(amount) * coin.price).toFixed(4)}`;
 	};
 
 	const renderRow = (label: string, value: string, subValue?: string) => (
@@ -77,6 +83,21 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		</View>
 	);
 
+	if (!latestFromCoin || !latestToCoin) {
+		// Return a loading state or null while data is being fetched
+		return (
+			<Portal>
+				<Modal visible={isVisible} onDismiss={onClose} contentContainerStyle={styles.container}>
+					<Text style={styles.title}>Confirm Trade</Text>
+					<View style={styles.loadingContainer}>
+						<Text>Loading prices...</Text>
+					</View>
+				</Modal>
+			</Portal>
+		);
+	}
+
+	// If we've reached this point, latestFromCoin and latestToCoin are defined.
 	const roundedPriceImpact = parseFloat(fees.priceImpactPct).toFixed(4);
 
 	return (
@@ -90,20 +111,19 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 				<View style={styles.section}>
 					<Text style={styles.label}>You Pay</Text>
-					{renderRow('Amount', `${fromCoin.amount} ${fromCoin.symbol}`)}
-					{renderRow('Value', calculateValue(fromCoin.amount, latestFromCoin))}
+					{renderRow('Amount', `${fromAmount} ${latestFromCoin.symbol}`)}
+					{renderRow('Value', calculateValue(fromAmount, latestFromCoin))}
 				</View>
 
 				<View style={styles.section}>
 					<Text style={styles.label}>You Receive</Text>
-					{renderRow('Amount', `${toCoin.amount} ${toCoin.symbol}`)}
-					{renderRow('Value', calculateValue(toCoin.amount, latestToCoin))}
+					{renderRow('Amount', `${toAmount} ${latestToCoin.symbol}`)}
+					{renderRow('Value', calculateValue(toAmount, latestToCoin))}
 				</View>
 
 				<View style={styles.divider} />
 
 				<View style={styles.section}>
-					{/* <Text style={styles.label}>Transaction Details</Text> */}
 					{renderRow('Price Impact', `${roundedPriceImpact}%`)}
 					{renderRow('Total Fee', `$${fees.totalFee}`)}
 				</View>

@@ -1,6 +1,5 @@
 import { act } from '@testing-library/react-native';
 import { usePortfolioStore } from './portfolio';
-import { useCoinStore } from './coins';
 import api from '@/services/api';
 import { Wallet, Coin } from '@/types';
 import { WalletBalanceResponse } from '@/services/api';

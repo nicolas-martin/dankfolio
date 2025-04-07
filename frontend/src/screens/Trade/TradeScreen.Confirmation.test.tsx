@@ -4,7 +4,6 @@ import { mocked } from 'jest-mock';
 import TradeScreen from './index'; // The component under test
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
-import { useToast } from '@components/Common/Toast';
 import * as TradeScripts from './trade_scripts';
 import { Coin, Wallet } from '@/types';
 import { View, Text, TextInput, Pressable } from 'react-native';

@@ -4,16 +4,10 @@ interface TradeConfirmationProps {
 	isVisible: boolean;
 	onClose: () => void;
 	onConfirm: () => void;
-	fromCoin: {
-		id: string;
-		symbol: string;
-		amount: string;
-	};
-	toCoin: {
-		id: string;
-		symbol: string;
-		amount: string;
-	};
+	fromAmount: string;
+	toAmount: string;
+	fromCoin: Coin;
+	toCoin: Coin;
 	fees: {
 		gasFee: string;
 		priceImpactPct: string;

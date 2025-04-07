@@ -174,7 +174,6 @@ const CoinDetail: React.FC = () => {
 									twitter: initialCoin.twitter,
 									telegram: initialCoin.telegram,
 									daily_volume: initialCoin.daily_volume,
-									decimals: initialCoin.decimals,
 									tags: initialCoin.tags || [],
 									symbol: initialCoin.symbol
 								}}

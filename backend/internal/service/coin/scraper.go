@@ -266,13 +266,12 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 				s.httpClient,
 				s.solanaRPCClient,
 			)
-
 			if err != nil {
 				errMessage := fmt.Sprintf("ERROR: enrichScrapedTokens: Failed EnrichCoinData for %s (%s): %v", token.Name, token.MintAddress, err)
 				log.Println(errMessage)
 				// Record the error
 				errMu.Lock()
-				encounteredErrors = append(encounteredErrors, fmt.Errorf(errMessage)) // Append formatted error
+				encounteredErrors = append(encounteredErrors, fmt.Errorf("%s", errMessage)) // Append formatted error
 				errMu.Unlock()
 				// Decide whether to add partial data if available
 				if enriched == nil {
@@ -291,7 +290,6 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 			enrichedCoins = append(enrichedCoins, *enriched)
 			mu.Unlock()
 			log.Printf("Successfully processed enrichment for: %s (%s)", enriched.Name, enriched.ID)
-
 		}(scrapedToken)
 	}
 
