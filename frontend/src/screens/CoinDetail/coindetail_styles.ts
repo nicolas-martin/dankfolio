@@ -9,6 +9,13 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	content: {
 		flex: 1,
 	},
+	header: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 16,
+		paddingTop: 8,
+		paddingBottom: 8,
+	},
 	centered: {
 		flex: 1,
 		justifyContent: 'center',

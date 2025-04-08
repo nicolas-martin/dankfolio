@@ -12,6 +12,7 @@
 		"lint": "tsc --noEmit",
 		"check-structure": "ts-node scripts/check-component-structure.ts",
 		"check-diagnostics": "ts-node scripts/check-diagnostics.ts",
+		"prestart": "yarn lint && yarn test",
 		"test": "jest",
 		"test:watch": "jest --watch",
 		"test:coverage": "jest --coverage"
@@ -90,6 +91,7 @@
 		"chalk": "^5.3.0",
 		"jest": "^29.7.0",
 		"node-fetch": "^3.3.2",
+		"react-test-renderer": "18.3.1",
 		"rpc-websockets": "^10.0.0",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.8.2"

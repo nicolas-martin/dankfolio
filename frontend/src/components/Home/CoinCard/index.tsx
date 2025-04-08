@@ -12,7 +12,11 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const logoUrl = coin.icon_url || DEFAULT_LOGO;
 
 	return (
-		<Card style={styles.card} onPress={() => onPress(coin)}>
+		<Card
+			style={styles.card}
+			onPress={() => onPress(coin)}
+			testID={`coin-card-${coin.id}`}
+		>
 			<Card.Content style={styles.content}>
 				<View style={styles.leftSection}>
 					<Image

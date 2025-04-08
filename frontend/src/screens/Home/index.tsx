@@ -46,7 +46,7 @@ const HomeScreen = () => {
 	}, [fetchCoins, fetchPortfolioBalance, wallet, showToast]);
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<SafeAreaView style={styles.container} testID="home-screen">
 			{wallet ? (
 				<View style={styles.content}>
 					<View style={styles.coinsSection}>
