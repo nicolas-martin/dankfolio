@@ -1,171 +1,176 @@
 {
-	"scrapeTimestamp": "2025-04-06T22:38:08.27379Z",
-	"tokens": [
-		{
-			"id": "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh",
-			"name": "Wrapped BTC (Portal)",
-			"symbol": "WBTC",
-			"decimals": 8,
-			"description": "Wrapped BTC (Portal) (WBTC) is a Solana token.",
-			"icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh/logo.png",
-			"tags": [
-				"verified",
-				"community",
-				"strict",
-				"birdeye-trending"
-			],
-			"price": 78585.59779875,
-			"daily_volume": 17861526.17632606,
-			"created_at": "2024-04-26T10:56:58.893768Z"
-		},
-		{
-			"id": "2LfUbYGmy75aUtAzbZycgVvumfsARKayCjfxGEcYktNx",
-			"name": "Sad & Poor Index",
-			"symbol": "S&P",
-			"decimals": 6,
-			"description": "Sad & Poor Index (S&P) is a Solana token.",
-			"icon_url": "https://ipfs.io/ipfs/QmbpBYT3NXTBMnw4zPejhdqokAEqThDUurQU7C6kD29ufv",
-			"tags": [
-				"birdeye-trending",
-				"unknown",
-				"launchpad"
-			],
-			"price": 0.000206833,
-			"daily_volume": 6856.231531030679,
-			"website": "https://x.com/newsyjohnson/status/1908353852312871123?s=46&t=5NHNeEQz7t9zOBnZEfP4Gg",
-			"created_at": "2025-04-06T14:29:39.020294Z"
-		},
-		{
-			"id": "FasH397CeZLNYWkd3wWK9vrmjd1z93n3b59DssRXpump",
-			"name": "The Next Bitcoin",
-			"symbol": "BUTTCOIN",
-			"decimals": 6,
-			"description": "Unlock the power of your farts by collecting butt coins.",
-			"icon_url": "https://ipfs.io/ipfs/QmVfhGnJmuUoJ8wdnEfRP1RaCg8GQ9WJgotiXVj5ARNGFd",
-			"tags": [
-				"verified",
-				"launchpad",
-				"birdeye-trending",
-				"community"
-			],
-			"price": 0.00946067,
-			"daily_volume": 2791967.516172468,
-			"website": "https://www.youtube.com/watch?v=uh-zxexGSA4&t=86s",
-			"created_at": "2025-01-30T16:57:38.574633Z"
-		},
-		{
-			"id": "B91Nyc6SnWqr5DRR34eEMKuZrWh4zBhW9VhX4UNLpump",
-			"name": "Chicken Jockey",
-			"symbol": "jockey",
-			"decimals": 6,
-			"description": "Its a baby zombie riding a chicken",
-			"icon_url": "https://ipfs.io/ipfs/QmfF7svgykQL2FCEkNFU8tYrDpv3FsHSicXSkCBxQ5hDpv",
-			"tags": [
-				"launchpad",
-				"unknown",
-				"birdeye-trending"
-			],
-			"price": 0.000740393,
-			"daily_volume": 30395.800706580583,
-			"created_at": "2025-03-20T00:55:17.610751Z"
-		},
-		{
-			"id": "C3DwDjT17gDvvCYC2nsdGHxDHVmQRdhKfpAdqQ29pump",
-			"name": "Retard Finder Coin",
-			"symbol": "RFC",
-			"decimals": 6,
-			"description": "The most retarded coin in crypto.",
-			"icon_url": "https://ipfs.io/ipfs/Qmbi9jsNn718gvh85C2vuj4CSsu5JmuYq1W7B1vk2ys88W",
-			"tags": [
-				"birdeye-trending",
-				"launchpad",
-				"unknown"
-			],
-			"price": 0.017006,
-			"daily_volume": 1720902.5005782368,
-			"website": "https://www.retardfindercoin.com",
-			"created_at": "2025-03-24T22:34:37.712739Z"
-		},
-		{
-			"id": "E9QmooerMJryxF1atA68wH7UyoRndTY8ejjFb2uNpump",
-			"name": "Red light therapy",
-			"symbol": "REDLIGHT",
-			"decimals": 6,
-			"description": "Red light therapy (REDLIGHT) is a Solana token.",
-			"icon_url": "https://ipfs.io/ipfs/QmWWrWT76Q5rU74n3wNDJNzCY1J3t8p1PyfSqnGGo7UjLe",
-			"tags": [
-				"launchpad",
-				"unknown",
-				"birdeye-trending"
-			],
-			"price": 0.00029681,
-			"daily_volume": 7887.434380455615,
-			"created_at": "2025-04-06T17:48:52.973211Z"
-		},
-		{
-			"id": "Hb6nmULRia1QTvNUHDX7uYJFrSqckHqyZ1pAHLUNpump",
-			"name": "Black Monday",
-			"symbol": "BM",
-			"decimals": 6,
-			"description": "Today is a crazy day, a black Monday, let's remember this day.",
-			"icon_url": "https://ipfs.io/ipfs/QmRzZXFiJSXJ3GXDLp48UzMvhdoN6d59KGowH8ogKDBrj8",
-			"tags": [
-				"birdeye-trending",
-				"unknown"
-			],
-			"price": 0.00021504,
-			"created_at": "2025-04-05T20:56:04.093447Z"
-		},
-		{
-			"id": "GMk6j2defJhS7F194toqmJNFNhAkbDXhYJo5oR3Rpump",
-			"name": "Pumpswap",
-			"symbol": "Pumpswap",
-			"decimals": 6,
-			"description": "Pumpswap is an exchange based token of pumpswap exchange. The token function is to provide liquidity, use to vote, hold to get more e.t.c",
-			"icon_url": "https://ipfs.io/ipfs/QmfZPpUeWvY2x8TzSBaa7k8BcXws23ccswxo141gfDAifr",
-			"tags": [
-				"unknown",
-				"launchpad",
-				"birdeye-trending"
-			],
-			"price": 0.00455109,
-			"daily_volume": 40065.16484945294,
-			"telegram": "https://Https://t.me/pumpsam",
-			"created_at": "2024-10-24T15:08:31.422267Z"
-		},
-		{
-			"id": "6w7VuHSpEnmrzCfRNfXHxfjGjAahzq95of9M8QZ6pump",
-			"name": "Sowwy about the cwash",
-			"symbol": "Oowpsie",
-			"decimals": 6,
-			"description": "Sowwy about the cwash (Oowpsie) is a Solana token.",
-			"icon_url": "https://ipfs.io/ipfs/QmPATGpthu43k3Z2v7a6ar41i63wvxVHXcc6nHUZxPGy9q",
-			"tags": [
-				"birdeye-trending",
-				"launchpad",
-				"unknown"
-			],
-			"price": 0.0000108046,
-			"daily_volume": 6641.994865700241,
-			"website": "https://x.com/WatcherGuru/status/1908914538121936959",
-			"created_at": "2025-04-06T16:15:59.924563Z"
-		},
-		{
-			"id": "FtUEW73K6vEYHfbkfpdBZfWpxgQar2HipGdbutEhpump",
-			"name": "titcoin",
-			"symbol": "titcoin",
-			"decimals": 6,
-			"description": "$titcoin the breast technology",
-			"icon_url": "https://ipfs.io/ipfs/QmdnAHMWTbxfRkwdf1QweP8rJL1SCe2XbjFTFzCCjw5oAD",
-			"tags": [
-				"community",
-				"launchpad",
-				"verified",
-				"birdeye-trending"
-			],
-			"price": 0.029003,
-			"daily_volume": 5155668.676789549,
-			"created_at": "2025-03-06T16:55:03.252924Z"
-		}
-	]
+  "scrapeTimestamp": "2025-04-08T03:26:37.017783Z",
+  "tokens": [
+    {
+      "id": "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh",
+      "name": "Wrapped BTC (Portal)",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "description": "Wrapped BTC (Portal) (WBTC) is a Solana token.",
+      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh/logo.png",
+      "tags": [
+        "verified",
+        "strict",
+        "birdeye-trending",
+        "community"
+      ],
+      "price": 79829.1098711,
+      "daily_volume": 40438223.827195376,
+      "created_at": "2024-04-26T10:56:58.893768Z"
+    },
+    {
+      "id": "FtUEW73K6vEYHfbkfpdBZfWpxgQar2HipGdbutEhpump",
+      "name": "titcoin",
+      "symbol": "titcoin",
+      "decimals": 6,
+      "description": "$titcoin the breast technology",
+      "icon_url": "https://ipfs.io/ipfs/QmdnAHMWTbxfRkwdf1QweP8rJL1SCe2XbjFTFzCCjw5oAD",
+      "tags": [
+        "launchpad",
+        "verified",
+        "birdeye-trending",
+        "community"
+      ],
+      "price": 0.030533,
+      "daily_volume": 8526465.376129331,
+      "created_at": "2025-03-06T16:55:03.252924Z"
+    },
+    {
+      "id": "EiKZAWphC65hFKz9kygWgKGcRZUGgdMmH2zSPtbGpump",
+      "name": "New Ancient DNA Cloned Wolf",
+      "symbol": "REMUS",
+      "decimals": 6,
+      "description": "New Ancient DNA Cloned Wolf (REMUS) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmWKz6NeL5vMnzGgrCTnWB5s1c6CJ4pMBuB2761uUzKhBk",
+      "tags": [
+        "launchpad",
+        "unknown",
+        "birdeye-trending"
+      ],
+      "price": 0.00615566,
+      "daily_volume": 3511093.246358415,
+      "website": "https://www.newyorker.com/magazine/2025/04/14/the-dire-wolf-is-back",
+      "created_at": "2025-04-07T11:41:32.435865Z"
+    },
+    {
+      "id": "C3DwDjT17gDvvCYC2nsdGHxDHVmQRdhKfpAdqQ29pump",
+      "name": "Retard Finder Coin",
+      "symbol": "RFC",
+      "decimals": 6,
+      "description": "The most retarded coin in crypto.",
+      "icon_url": "https://ipfs.io/ipfs/Qmbi9jsNn718gvh85C2vuj4CSsu5JmuYq1W7B1vk2ys88W",
+      "tags": [
+        "launchpad",
+        "unknown",
+        "birdeye-trending"
+      ],
+      "price": 0.037558,
+      "daily_volume": 2957717.225517186,
+      "website": "https://www.retardfindercoin.com",
+      "created_at": "2025-03-24T22:34:37.712739Z"
+    },
+    {
+      "id": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+      "name": "Jupiter",
+      "symbol": "JUP",
+      "decimals": 6,
+      "description": "JUP is the official governance token for Jupiter.",
+      "icon_url": "https://static.jup.ag/jup/icon.png",
+      "tags": [
+        "verified",
+        "strict",
+        "community",
+        "birdeye-trending"
+      ],
+      "price": 0.342857,
+      "daily_volume": 29978241.044161536,
+      "website": "https://jup.ag",
+      "twitter": "https://twitter.com/JupiterExchange",
+      "created_at": "2024-04-26T10:56:58.893768Z"
+    },
+    {
+      "id": "7CHTaFLQEHndoPkafA31twwSjZnZGtKNgKwPxqwtpump",
+      "name": "humanize",
+      "symbol": "humanize",
+      "decimals": 6,
+      "description": "humanize your animal with the easiest way",
+      "icon_url": "https://ipfs.io/ipfs/QmRQ21Bnesfj5xDfDko5mpMhX5UpUU85ih4EETXsPwbK6f",
+      "tags": [
+        "launchpad",
+        "unknown",
+        "birdeye-trending"
+      ],
+      "price": 0.000496455,
+      "daily_volume": 28173.64994803216,
+      "website": "https://x.com/sorryforffud/status/1909350395727507964",
+      "created_at": "2025-04-07T21:10:53.668911Z"
+    },
+    {
+      "id": "J3NKxxXZcnNiMjKw9hYb2K4LUxgwB6t1FtPtQVsv3KFr",
+      "name": "SPX6900 (Wormhole)",
+      "symbol": "SPX",
+      "decimals": 8,
+      "description": "SPX6900 (Wormhole) (SPX) is a Solana token.",
+      "icon_url": "https://i.imgur.com/fLpAyY4.png",
+      "tags": [
+        "verified",
+        "community",
+        "birdeye-trending"
+      ],
+      "price": 0.487011,
+      "daily_volume": 4458528.569740467,
+      "created_at": "2024-04-26T10:56:58.893768Z"
+    },
+    {
+      "id": "DitHyRMQiSDhn5cnKMJV2CDDt6sVct96YrECiM49pump",
+      "name": "Housecoin",
+      "symbol": "House",
+      "decimals": 6,
+      "description": "The housing market will fail again",
+      "icon_url": "https://ipfs.io/ipfs/QmaGqTXDBUBLMU9xGpT4xzYArJmqFFTo3LAU6wZLepWcWe",
+      "tags": [
+        "launchpad",
+        "birdeye-trending",
+        "community",
+        "verified"
+      ],
+      "price": 0.00805477,
+      "daily_volume": 797711.6788452939,
+      "created_at": "2025-03-24T16:44:43.116251Z"
+    },
+    {
+      "id": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "name": "Bonk",
+      "symbol": "Bonk",
+      "decimals": 5,
+      "description": "The Official Bonk Inu token",
+      "icon_url": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
+      "tags": [
+        "verified",
+        "strict",
+        "birdeye-trending",
+        "community"
+      ],
+      "price": 0.0000103307,
+      "daily_volume": 5751707.154414384,
+      "created_at": "2024-04-26T10:56:58.893768Z"
+    },
+    {
+      "id": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
+      "name": "Popcat",
+      "symbol": "POPCAT",
+      "decimals": 9,
+      "description": "POPCAT POP POP POP POP",
+      "icon_url": "https://arweave.net/A1etRNMKxhlNGTf-gNBtJ75QJJ4NJtbKh_UXQTlLXzI",
+      "tags": [
+        "verified",
+        "strict",
+        "birdeye-trending",
+        "community"
+      ],
+      "price": 0.14161725,
+      "daily_volume": 2755223.84126912,
+      "created_at": "2024-04-26T10:56:58.893768Z"
+    }
+  ]
 }

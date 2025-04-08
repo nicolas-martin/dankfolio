@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import './src/utils/polyfills';
 import React, { useEffect, useCallback } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
@@ -9,6 +10,7 @@ import {
 	configureReanimatedLogger,
 	ReanimatedLogLevel,
 } from 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Navigation from './src/navigation';
 import { theme as appTheme } from './src/utils/theme';
 import { ToastProvider } from './src/components/Common/Toast';
@@ -104,16 +106,18 @@ const App: React.FC = () => {
 	}
 
 	return (
-		<SafeAreaProvider onLayout={onLayoutRootView}>
-			<PaperProvider theme={paperTheme}>
-				<ToastProvider>
-					<View style={styles.container}>
-						<StatusBar style="auto" />
-						<Navigation />
-					</View>
-				</ToastProvider>
-			</PaperProvider>
-		</SafeAreaProvider>
+		<GestureHandlerRootView style={{ flex: 1 }}>
+			<SafeAreaProvider onLayout={onLayoutRootView}>
+				<PaperProvider theme={paperTheme}>
+					<ToastProvider>
+						<View style={styles.container}>
+							<StatusBar style="auto" />
+							<Navigation />
+						</View>
+					</ToastProvider>
+				</PaperProvider>
+			</SafeAreaProvider>
+		</GestureHandlerRootView>
 	);
 };
 

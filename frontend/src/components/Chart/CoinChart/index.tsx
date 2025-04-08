@@ -1,19 +1,10 @@
 import React from "react";
 import {
 	CartesianChart,
-	useAreaPath,
-	useLinePath,
 	useChartPressState,
-} from "victory-native";
-import {
-	Circle,
-	Group,
+	Area,
 	Line,
-	LinearGradient,
-	Path,
-	vec,
-	useFont,
-} from "@shopify/react-native-skia";
+} from "victory-native";
 import { View } from "react-native";
 import { format } from "date-fns";
 import {
@@ -21,14 +12,9 @@ import {
 	runOnJS,
 	type SharedValue,
 } from "react-native-reanimated";
-import { useTheme, MD3Theme } from "react-native-paper";
+import { useTheme, MD3Theme, Text } from "react-native-paper";
 import * as Haptics from 'expo-haptics';
 import { CoinChartProps, PricePoint } from "./types";
-
-// *** IMPORTANT: Ensure this font file exists at this path ***
-// Go up 4 levels to frontend/, then assets/fonts/
-// import inter from "../../../../assets/fonts/inter-medium.ttf"; // Use correct filename case
-const inter = require("../../../../assets/fonts/inter-medium.ttf"); // Try using require
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
@@ -39,10 +25,6 @@ export default function CoinChart({
 }: CoinChartProps) {
 
 	const theme = useTheme();
-
-	// *** Load font using useFont and direct import ***
-	const fontSize = 12;
-	const font = useFont(inter, fontSize); // Use imported font object
 
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);
@@ -91,12 +73,10 @@ export default function CoinChart({
 
 	// --- UseEffect for Haptic Feedback ---
 	React.useEffect(() => {
-		// Check the boolean value directly
 		if (isPressActive) {
-			// Trigger haptic feedback when pressing starts
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 		}
-	}, [isPressActive]); // Run when isPressActive changes
+	}, [isPressActive]);
 
 	// Calculate chartData (safe even if data is empty)
 	const chartData: PricePoint[] = data.map(point => {
@@ -111,10 +91,14 @@ export default function CoinChart({
 		};
 	});
 
-	// --- Conditional Return (Now after all hooks) ---
-	if (loading || !data.length || !font) {
-		console.log("[CoinChart] Skipping render (loading, no data, or font not loaded)");
-		return null;
+	// --- Conditional Return (Remove font check) ---
+	if (loading || !data.length) {
+		console.log("[CoinChart] Skipping render (loading or no data)");
+		return (
+			<View style={{ height: 250, justifyContent: 'center', alignItems: 'center' }}>
+				<Text>Loading Chart...</Text>
+			</View>
+		);
 	}
 	// --- End of Conditional Return ---
 
@@ -124,10 +108,8 @@ export default function CoinChart({
 				data={chartData}
 				xKey="x"
 				yKeys={["y"]}
-				chartPressState={[chartPress]}
 				padding={0}
 				axisOptions={{
-					font: font,
 					tickCount: 5,
 					labelOffset: { x: 0, y: 0 },
 					labelPosition: { x: "outset", y: "inset" },
@@ -144,25 +126,17 @@ export default function CoinChart({
 				{({ chartBounds, points }) => {
 					return (
 						<>
-							<PriceArea
+							<Area
 								points={points.y}
-								left={chartBounds.left}
-								right={chartBounds.right}
-								top={chartBounds.top}
-								bottom={chartBounds.bottom}
-								lineColor={theme.colors.primary}
-								gradientColor={`${theme.colors.primary}33`}
+								y0={chartBounds.bottom}
+								color={theme.colors.primary}
+								opacity={0.3}
 							/>
-							{isPressActive && (
-								<ChartIndicator
-									xPosition={chartPress.x.position}
-									yPosition={chartPress.y.y.position}
-									top={chartBounds.top}
-									bottom={chartBounds.bottom}
-									lineColor={theme.colors.primary}
-									theme={theme}
-								/>
-							)}
+							<Line
+								points={points.y}
+								color={theme.colors.primary}
+								strokeWidth={2}
+							/>
 						</>
 					);
 				}}
@@ -170,84 +144,3 @@ export default function CoinChart({
 		</View>
 	);
 }
-
-const PriceArea = ({
-	points,
-	left,
-	right,
-	top,
-	bottom,
-	lineColor,
-	gradientColor,
-}: {
-	points: any;
-	left: number;
-	right: number;
-	top: number;
-	bottom: number;
-	lineColor: string;
-	gradientColor: string;
-}) => {
-	const { path: areaPath } = useAreaPath(points, bottom);
-	const { path: linePath } = useLinePath(points);
-
-	return (
-		<Group>
-			<Path path={areaPath} style="fill">
-				<LinearGradient
-					start={vec(0, 0)}
-					end={vec(top, bottom)}
-					colors={[lineColor, gradientColor]}
-				/>
-			</Path>
-			<Path
-				path={linePath}
-				style="stroke"
-				strokeWidth={2}
-				color={lineColor}
-			/>
-		</Group>
-	);
-};
-
-const ChartIndicator = ({
-	xPosition,
-	yPosition,
-	top,
-	bottom,
-	lineColor,
-	theme,
-}: {
-	xPosition: SharedValue<number>;
-	yPosition: SharedValue<number>;
-	top: number;
-	bottom: number;
-	lineColor: string;
-	theme: MD3Theme;
-}) => {
-	return (
-		<Group>
-			{/* Vertical Line */}
-			<Line
-				p1={vec(xPosition.value, top)} // Access .value here for vec
-				p2={vec(xPosition.value, bottom)} // Access .value here for vec
-				color={theme.colors.outline}
-				strokeWidth={1.5}
-			/>
-			{/* Indicator Dots */}
-			<Circle
-				cx={xPosition} // Pass SharedValue directly
-				cy={yPosition} // Pass SharedValue directly
-				r={8}
-				color={lineColor}
-			/>
-			<Circle
-				cx={xPosition} // Pass SharedValue directly
-				cy={yPosition} // Pass SharedValue directly
-				r={5}
-				color={theme.colors.surface}
-			/>
-			{/* SkiaText label could be added here later */}
-		</Group>
-	);
-};
