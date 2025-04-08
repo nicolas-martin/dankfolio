@@ -24,8 +24,8 @@
 		"@react-native-async-storage/async-storage": "1.23.1",
 		"@react-native-clipboard/clipboard": "^1.16.2",
 		"@react-native-community/art": "^1.2.0",
-		"@react-navigation/native": "^7.0.0",
-		"@react-navigation/native-stack": "^7.0.0",
+		"@react-navigation/native": "7.0.0",
+		"@react-navigation/native-stack": "7.0.0",
 		"@shopify/react-native-skia": "^1.12.3",
 		"@solana/spl-token": "^0.4.12",
 		"@solana/web3.js": "^1.98.0",
@@ -36,7 +36,7 @@
 		"bs58": "^6.0.0",
 		"buffer": "^6.0.3",
 		"cheerio": "^1.0.0",
-		"date-fns": "^4.1.0",
+		"date-fns": "4.1.0",
 		"expo": "~52.0.37",
 		"expo-clipboard": "^7.0.1",
 		"expo-dev-client": "~5.0.14",
@@ -56,7 +56,7 @@
 		"react-native-get-random-values": "^1.11.0",
 		"react-native-paper": "^5.13.1",
 		"react-native-paper-toast": "^2.1.0",
-		"react-native-reanimated": "^3.17.1",
+		"react-native-reanimated": "3.17.1",
 		"react-native-safe-area-context": "^5.2.0",
 		"react-native-screens": "^4.9.1",
 		"react-native-skia": "^0.0.1",
@@ -68,7 +68,7 @@
 		"recharts": "^2.15.1",
 		"styled-components": "^6.1.16",
 		"tweetnacl": "^1.0.3",
-		"victory-native": "^41.16.1",
+		"victory-native": "41.16.1",
 		"zustand": "^5.0.3"
 	},
 	"devDependencies": {
@@ -97,4 +97,3 @@
 	"private": true,
 	"packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
-
