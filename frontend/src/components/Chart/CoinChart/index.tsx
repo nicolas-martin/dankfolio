@@ -11,9 +11,11 @@ import {
 	useDerivedValue,
 	runOnJS,
 	type SharedValue,
+	cancelAnimation,
 } from "react-native-reanimated";
 import { useTheme, MD3Theme, Text } from "react-native-paper";
 import * as Haptics from 'expo-haptics';
+import { useFocusEffect } from '@react-navigation/native';
 import { CoinChartProps, PricePoint } from "./types";
 
 const initChartPressState = { x: 0, y: { y: 0 } };
@@ -23,18 +25,43 @@ export default function CoinChart({
 	loading,
 	onHover,
 }: CoinChartProps) {
-
 	const theme = useTheme();
+	const isMounted = React.useRef(true);
+	const animations = React.useRef<SharedValue<any>[]>([]);
+
+	// Use useFocusEffect for better navigation lifecycle handling
+	useFocusEffect(
+		React.useCallback(() => {
+			return () => {
+				// Cleanup animations when screen loses focus
+				animations.current.forEach(anim => {
+					cancelAnimation(anim);
+				});
+			};
+		}, [])
+	);
+
+	React.useEffect(() => {
+		return () => {
+			isMounted.current = false;
+			// Cleanup all animations on unmount
+			animations.current.forEach(anim => {
+				cancelAnimation(anim);
+			});
+		};
+	}, []);
 
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);
 
-	// Memoize the hover callback
+	// Memoize the hover callback with isMounted check
 	const memoizedOnHover = React.useCallback((point: PricePoint | null) => {
-		onHover?.(point);
+		if (isMounted.current) {
+			onHover?.(point);
+		}
 	}, [onHover]);
 
-	// Track chart press state
+	// Track chart press state with cleanup
 	const pressValue = useDerivedValue(() => {
 		'worklet';
 		if (!chartPress.x.value || !chartPress.y.y?.value || !isPressActive) {
@@ -51,35 +78,47 @@ export default function CoinChart({
 		};
 	}, [isPressActive, chartPress]);
 
-	// Handle hover updates (Removed faulty haptic logic from here)
-	useDerivedValue(() => {
+	// Handle hover updates with cleanup
+	const hoverEffect = useDerivedValue(() => {
 		'worklet';
 		const currentValue = pressValue.value;
 
 		if (!isPressActive || !currentValue) {
 			runOnJS(memoizedOnHover)(null);
-		} else {
-			// Construct the full PricePoint object
-			const point: PricePoint = {
-				timestamp: currentValue.timestamp,
-				price: currentValue.value,
-				value: currentValue.value,
-				x: currentValue.timestamp,
-				y: currentValue.value
-			};
-			runOnJS(memoizedOnHover)(point);
+			return;
 		}
+
+		// Construct the full PricePoint object
+		const point: PricePoint = {
+			timestamp: currentValue.timestamp,
+			price: currentValue.value,
+			value: currentValue.value,
+			x: currentValue.timestamp,
+			y: currentValue.value
+		};
+		runOnJS(memoizedOnHover)(point);
 	}, [pressValue, isPressActive]);
 
-	// --- UseEffect for Haptic Feedback ---
+	// Store animation references
 	React.useEffect(() => {
-		if (isPressActive) {
-			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+		animations.current = [pressValue, hoverEffect];
+	}, [pressValue, hoverEffect]);
+
+	// --- UseEffect for Haptic Feedback with cleanup ---
+	React.useEffect(() => {
+		let isSubscribed = true;
+
+		if (isPressActive && isSubscribed) {
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 		}
+
+		return () => {
+			isSubscribed = false;
+		};
 	}, [isPressActive]);
 
 	// Calculate chartData (safe even if data is empty)
-	const chartData: PricePoint[] = data.map(point => {
+	const chartData: PricePoint[] = React.useMemo(() => data.map(point => {
 		const timestamp = new Date(point.timestamp).getTime();
 		const value = typeof point.value === 'string' ? parseFloat(point.value) : point.value;
 		return {
@@ -89,18 +128,15 @@ export default function CoinChart({
 			x: timestamp,
 			y: value
 		};
-	});
+	}), [data]);
 
-	// --- Conditional Return (Remove font check) ---
 	if (loading || !data.length) {
-		console.log("[CoinChart] Skipping render (loading or no data)");
 		return (
 			<View style={{ height: 250, justifyContent: 'center', alignItems: 'center' }}>
 				<Text>Loading Chart...</Text>
 			</View>
 		);
 	}
-	// --- End of Conditional Return ---
 
 	return (
 		<View style={{ height: 250 }}>
@@ -123,23 +159,21 @@ export default function CoinChart({
 					labelColor: theme.colors.onSurfaceVariant,
 				}}
 			>
-				{({ chartBounds, points }) => {
-					return (
-						<>
-							<Area
-								points={points.y}
-								y0={chartBounds.bottom}
-								color={theme.colors.primary}
-								opacity={0.3}
-							/>
-							<Line
-								points={points.y}
-								color={theme.colors.primary}
-								strokeWidth={2}
-							/>
-						</>
-					);
-				}}
+				{({ chartBounds, points }) => (
+					<>
+						<Area
+							points={points.y}
+							y0={chartBounds.bottom}
+							color={theme.colors.primary}
+							opacity={0.3}
+						/>
+						<Line
+							points={points.y}
+							color={theme.colors.primary}
+							strokeWidth={2}
+						/>
+					</>
+				)}
 			</CartesianChart>
 		</View>
 	);
