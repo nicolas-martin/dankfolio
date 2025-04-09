@@ -93,11 +93,6 @@ const Trade: React.FC = () => {
 
 	const handleFromAmountChange = async (amount: string) => {
 		if (!fromCoin) return;
-		console.log('🔄 From Amount Change:', {
-			amount,
-			fromCoin: fromCoin?.symbol,
-			toCoin: toCoin?.symbol
-		});
 
 		setFromAmount(amount);
 		if (!amount || isNaN(parseFloat(amount))) {
@@ -140,26 +135,6 @@ const Trade: React.FC = () => {
 			setTradeDetails
 		);
 	};
-
-
-	useEffect(() => {
-		// Log price information whenever coins or amounts change
-		if (!fromCoin || !toCoin) return;
-		console.log('💰 Price Debug:', {
-			fromCoin: {
-				symbol: fromCoin.symbol,
-				price: fromCoin.price,
-				amount: fromAmount,
-				valueUSD: fromAmount ? parseFloat(fromAmount) * fromCoin.price : 0
-			},
-			toCoin: {
-				symbol: toCoin.symbol,
-				price: toCoin.price,
-				amount: toAmount,
-				valueUSD: toAmount ? parseFloat(toAmount) * toCoin.price : 0
-			}
-		});
-	}, [fromCoin, toCoin, fromAmount, toAmount]);
 
 	const handleTradeSubmit = async () => {
 		if (!fromAmount || !toAmount || !wallet) {
