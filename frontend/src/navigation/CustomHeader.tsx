@@ -12,7 +12,7 @@ const CustomHeader: React.FC = () => {
 
 	return (
 		<Appbar.Header style={{ backgroundColor: theme.colors.background }}>
-			{showBackButton && <Appbar.BackAction onPress={() => navigation.goBack()} />}
+			{showBackButton && <Appbar.BackAction testID="back-button" onPress={() => navigation.goBack()} />}
 		</Appbar.Header>
 	);
 };

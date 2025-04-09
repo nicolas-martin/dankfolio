@@ -14,8 +14,8 @@ module.exports = {
 		'^@services/(.*)$': '<rootDir>/src/__mocks__/services/$1',
 		'^@env$': '<rootDir>/src/__mocks__/env.ts',
 		'^@utils/(.*)$': '<rootDir>/src/utils/$1',
-		// Mock font files
-		'\\.(ttf)$': '<rootDir>/src/__mocks__/fileMock.js',
+		// Mock font and image files
+		'\\.(ttf|png|jpg|jpeg|gif)$': '<rootDir>/src/__mocks__/fileMock.js',
 		// Mock external packages
 		'^react-native-reanimated$': '<rootDir>/src/__mocks__/react-native-reanimated.ts',
 		'^@shopify/react-native-skia$': '<rootDir>/src/__mocks__/@shopify/react-native-skia.ts',

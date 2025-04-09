@@ -6,6 +6,7 @@ import Home from '@screens/Home';
 import { PaperProvider } from 'react-native-paper';
 import { ToastProvider } from '@components/Common/Toast';
 import { formatPrice } from '@utils/numberFormat';
+import CustomHeader from '../../navigation/CustomHeader';
 
 const Stack = createNativeStackNavigator();
 
@@ -52,7 +53,13 @@ describe('CoinDetail Navigation', () => {
 		<PaperProvider>
 			<ToastProvider>
 				<NavigationContainer>
-					<Stack.Navigator initialRouteName="Home">
+					<Stack.Navigator
+						initialRouteName="Home"
+						screenOptions={{
+							header: () => <CustomHeader />,
+							headerShown: true,
+						}}
+					>
 						<Stack.Screen name="Home" component={Home} />
 						<Stack.Screen
 							name="CoinDetail"
