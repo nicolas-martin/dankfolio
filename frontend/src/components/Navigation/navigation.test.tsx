@@ -1,0 +1,208 @@
+import { NavigationContainer } from '@react-navigation/native';
+import { render, fireEvent, act } from '@testing-library/react-native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import CoinDetail from '@screens/CoinDetail';
+import Home from '@screens/Home';
+import { PaperProvider } from 'react-native-paper';
+import { ToastProvider } from '@components/Common/Toast';
+import { formatPrice } from '@utils/numberFormat';
+import CustomHeader from './CustomHeader';
+import { Coin } from '@/types';
+import { HomeScreenNavigationProp } from '@screens/Home/home_types';
+
+const Stack = createNativeStackNavigator();
+
+// Test data
+const mockCoin = {
+	id: 'bitcoin',
+	name: 'Bitcoin',
+	symbol: 'BTC',
+	icon_url: 'https://example.com/btc.png',
+	price: '50000',
+	description: 'Digital gold',
+	website: 'https://bitcoin.org',
+	twitter: 'https://twitter.com/bitcoin',
+	telegram: 'https://t.me/bitcoin',
+	daily_volume: '1000000',
+	tags: ['cryptocurrency'],
+};
+
+// Mock home scripts
+jest.mock('@screens/Home/home_scripts', () => ({
+	handleCoinPress: (coin: Coin, navigation: HomeScreenNavigationProp) => {
+		navigation.navigate('CoinDetail', {
+			coin,
+			fromScreen: 'Home'
+		});
+	},
+}));
+
+// Mock CoinDetail scripts
+jest.mock('@screens/CoinDetail/coindetail_scripts', () => ({
+	TIMEFRAMES: [
+		{ label: '1H', value: '1h' },
+		{ label: '24H', value: '24h' },
+		{ label: '7D', value: '7d' },
+	],
+	fetchPriceHistory: jest.fn().mockImplementation(() => Promise.resolve([])),
+	handleTradeNavigation: jest.fn(),
+}));
+
+// Mock Chart components
+jest.mock('@components/Chart/CoinChart', () => {
+	const { View } = require('react-native');
+	return () => <View testID="coin-chart" />;
+});
+
+jest.mock('@components/Chart/CoinInfo', () => {
+	const { View, Text } = require('react-native');
+	return ({ metadata }: { metadata: { description: string } }) => (
+		<View testID="coin-info">
+			<Text>{metadata.description}</Text>
+		</View>
+	);
+});
+
+jest.mock('@components/CoinDetails/PriceDisplay', () => {
+	const { View } = require('react-native');
+	return () => <View testID="price-display" />;
+});
+
+// Mock stores with minimal required data
+jest.mock('@store/coins', () => ({
+	useCoinStore: () => ({
+		availableCoins: [mockCoin],
+		getCoinByID: (id: string) => mockCoin,
+		fetchAvailableCoins: jest.fn().mockImplementation(() => Promise.resolve()),
+		isLoading: false,
+		error: null
+	}),
+}));
+
+// Mock portfolio store for wallet state
+jest.mock('@store/portfolio', () => ({
+	usePortfolioStore: () => ({
+		wallet: {
+			address: 'mock-address',
+			connected: true
+		},
+		tokens: [{
+			id: 'bitcoin',
+			amount: 1.5,
+			value: 75000,
+		}],
+	}),
+}));
+
+// Mock toast with minimal implementation
+jest.mock('@components/Common/Toast', () => ({
+	useToast: () => ({
+		showToast: jest.fn(),
+		hideToast: jest.fn(),
+	}),
+	ToastProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+describe('CoinDetail Navigation', () => {
+	beforeEach(() => {
+		jest.clearAllMocks();
+	});
+
+	const renderTestNavigator = () => {
+		return render(
+			<PaperProvider>
+				<ToastProvider>
+					<NavigationContainer>
+						<Stack.Navigator
+							initialRouteName="Home"
+							screenOptions={{
+								header: () => <CustomHeader />,
+								headerShown: true,
+							}}
+						>
+							<Stack.Screen name="Home" component={Home} />
+							<Stack.Screen
+								name="CoinDetail"
+								component={CoinDetail}
+								initialParams={{ coin: mockCoin }}
+							/>
+						</Stack.Navigator>
+					</NavigationContainer>
+				</ToastProvider>
+			</PaperProvider>
+		);
+	};
+
+	it('should navigate between Home and CoinDetail screens with data persistence', async () => {
+		const { getByTestId, getByText, queryByText, findByTestId } = renderTestNavigator();
+
+		// Wait for initial render
+		await findByTestId('home-screen');
+
+		// Verify we start on Home screen with correct content
+		expect(getByText('Available Coins')).toBeTruthy();
+
+		// Verify coin data is displayed on Home screen
+		expect(getByText('BTC')).toBeTruthy();
+		expect(getByText(formatPrice(Number(mockCoin.price)))).toBeTruthy();
+
+		// Navigate to CoinDetail by pressing the coin card
+		await act(async () => {
+			const coinCard = getByTestId('coin-card-bitcoin');
+			fireEvent.press(coinCard);
+		});
+
+		// Wait for CoinDetail screen to load and verify essential content
+		const coinDetailScreen = await findByTestId('coin-detail-screen');
+		expect(coinDetailScreen).toBeTruthy();
+
+		// Wait for content to load
+		await findByTestId('coin-info');
+		expect(getByText('About Bitcoin')).toBeTruthy();
+		expect(getByText('Digital gold')).toBeTruthy();
+
+		// Press back button
+		await act(async () => {
+			const backButton = getByTestId('back-button');
+			fireEvent.press(backButton);
+		});
+
+		// Wait for home screen
+		await findByTestId('home-screen');
+		expect(queryByText('About Bitcoin')).toBeNull();
+	});
+
+	it('should maintain coin detail view state when navigating multiple times', async () => {
+		const { getByTestId, getByText, findByTestId } = renderTestNavigator();
+
+		// Wait for initial render
+		await findByTestId('home-screen');
+
+		// First navigation to detail
+		await act(async () => {
+			const coinCard = getByTestId('coin-card-bitcoin');
+			fireEvent.press(coinCard);
+		});
+
+		// Wait for detail screen and content
+		await findByTestId('coin-detail-screen');
+		await findByTestId('coin-info');
+		expect(getByText('About Bitcoin')).toBeTruthy();
+
+		// Navigate back
+		await act(async () => {
+			const backButton = getByTestId('back-button');
+			fireEvent.press(backButton);
+		});
+		await findByTestId('home-screen');
+
+		// Navigate to detail again
+		await act(async () => {
+			const coinCard = getByTestId('coin-card-bitcoin');
+			fireEvent.press(coinCard);
+		});
+		await findByTestId('coin-detail-screen');
+		await findByTestId('coin-info');
+		expect(getByText('About Bitcoin')).toBeTruthy();
+	});
+}); 

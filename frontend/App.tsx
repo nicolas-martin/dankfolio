@@ -11,7 +11,7 @@ import {
 	ReanimatedLogLevel,
 } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Navigation from './src/navigation';
+import Navigation from '@components/Navigation';
 import { theme as appTheme } from './src/utils/theme';
 import { ToastProvider } from './src/components/Common/Toast';
 import { usePortfolioStore } from './src/store/portfolio';

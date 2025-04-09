@@ -5,10 +5,10 @@ import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
 
 // Import screens
-import Home from '../screens/Home';
-import Profile from '../screens/Profile';
-import CoinDetail from '../screens/CoinDetail';
-import Trade from '../screens/Trade';
+import Home from '@screens/Home';
+import Profile from '@screens/Profile';
+import CoinDetail from '@screens/CoinDetail';
+import Trade from '@screens/Trade';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

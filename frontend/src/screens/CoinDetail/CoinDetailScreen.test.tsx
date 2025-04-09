@@ -31,35 +31,7 @@ const mockCoinStoreReturn = {
 };
 
 const mockGetCoinByID = jest.fn();
-const mockFetchPriceHistory = jest.spyOn(CoinDetailScripts, 'fetchPriceHistory').mockImplementation(
-	async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
-		if (!coin) return;
-		act(() => {
-			setLoading(true);
-		});
-		await new Promise(resolve => setTimeout(resolve, 10));
-
-		const now = Date.now();
-		const pastUnix = Math.floor((now - 100000) / 1000);
-		const nowUnix = Math.floor(now / 1000);
-
-		act(() => {
-			setPriceHistory([
-				{
-					timestamp: new Date(pastUnix * 1000).toISOString(),
-					value: coin.price * 0.98,
-					unixTime: pastUnix
-				},
-				{
-					timestamp: new Date(nowUnix * 1000).toISOString(),
-					value: coin.price,
-					unixTime: nowUnix
-				}
-			]);
-			setLoading(false);
-		});
-	}
-);
+const mockFetchPriceHistory = jest.spyOn(CoinDetailScripts, 'fetchPriceHistory');
 const mockInitialCoin: Coin = {
 	id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
 	name: "WEN",
@@ -270,6 +242,42 @@ describe('CoinDetail Screen', () => {
 		mockGetCoinByID.mockClear();
 		mockFetchPriceHistory.mockClear();
 
+		// Reset mockFetchPriceHistory implementation
+		mockFetchPriceHistory.mockImplementation(async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
+			if (!coin) return;
+
+			// Only set loading if it's the initial load
+			if (isInitialLoad) {
+				act(() => {
+					setLoading(true);
+				});
+			}
+
+			await new Promise(resolve => setTimeout(resolve, 10));
+
+			const now = Date.now();
+			const pastUnix = Math.floor((now - 100000) / 1000);
+			const nowUnix = Math.floor(now / 1000);
+
+			act(() => {
+				setPriceHistory([
+					{
+						timestamp: new Date(pastUnix * 1000).toISOString(),
+						value: coin.price * 0.98,
+						unixTime: pastUnix
+					},
+					{
+						timestamp: new Date(nowUnix * 1000).toISOString(),
+						value: coin.price,
+						unixTime: nowUnix
+					}
+				]);
+				if (isInitialLoad) {
+					setLoading(false);
+				}
+			});
+		});
+
 		mockCoinStoreReturn.getCoinByID.mockImplementation(mockGetCoinByID);
 		mockGetCoinByID.mockImplementation(async (id) => {
 			if (id === mockSolCoin.id) return mockSolCoin;
@@ -468,8 +476,21 @@ describe('CoinDetail Screen', () => {
 	it('calls fetchPriceHistory with correct arguments on timeframe change', async () => {
 		const { getByTestId } = render(<CoinDetailScreen />);
 
-		// 1. Wait for the initial fetch to complete
-		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
+		// 1. Wait for the initial fetch to complete and verify it was called with initial load true
+		await waitFor(() => {
+			expect(mockFetchPriceHistory).toHaveBeenCalledWith(
+				'15m',
+				expect.any(Function),
+				expect.any(Function),
+				mockInitialCoin,
+				true
+			);
+		});
+
+		// Wait for state updates to complete
+		await act(async () => {
+			await new Promise(resolve => setTimeout(resolve, 100));
+		});
 
 		// 2. Clear mocks AFTER initial load to focus on the click trigger
 		mockFetchPriceHistory.mockClear();
@@ -487,7 +508,7 @@ describe('CoinDetail Screen', () => {
 			expect.any(Function), // setLoading state setter
 			expect.any(Function), // setPriceHistory state setter
 			mockInitialCoin,      // The coin object
-			true                  // isInitialLoad should be true in this test context
+			false                 // isInitialLoad should be false since priceHistory is not empty
 		);
 	});
 }); 
