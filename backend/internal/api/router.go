@@ -31,7 +31,7 @@ func NewRouter(
 	walletHandlers *WalletHandlers,
 ) *Router {
 	return &Router{
-		tradeHandlers:  NewTradeHandlers(tradeService),
+		tradeHandlers:  NewTradeHandlers(tradeService, solanaService), // Pass solanaService
 		coinHandlers:   NewCoinHandlers(coinService),
 		priceHandlers:  NewPriceHandlers(priceService),
 		walletHandlers: walletHandlers,

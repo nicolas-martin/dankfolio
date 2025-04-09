@@ -5,8 +5,7 @@ import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_t
 import api from '@/services/api';
 import { buildAndSignSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
-import { usePortfolioStore } from '@/store/portfolio';
-
+// import { usePortfolioStore } from '@/store/portfolio'; // No longer needed here
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 500;
 
@@ -91,73 +90,36 @@ export const handleSwapCoins = (
 	setToAmount(fromAmount);
 };
 
-export const handleTrade = async (
+// New function to handle only the signing part
+export const signTradeTransaction = async (
 	fromCoin: Coin,
 	toCoin: Coin,
 	amount: string,
 	slippage: number,
-	wallet: Wallet,
-	navigation: any,
-	setIsSubmitting: (isSubmitting: boolean) => void,
-	showToast: (props: any) => void
-): Promise<{ transaction_hash: string } | undefined> => {
+	wallet: Wallet
+): Promise<string> => {
+	console.log('🔑 Signing trade transaction:', {
+		fromCoin: fromCoin.symbol,
+		toCoin: toCoin.symbol,
+		amount,
+		slippage,
+		walletAddress: wallet.address,
+	});
 
-	try {
-		setIsSubmitting(true);
-		console.log('🔄 Starting trade:', {
-			fromCoin: fromCoin.symbol,
-			toCoin: toCoin.symbol,
-			amount,
-			slippage,
-			walletAddress: wallet.address,
-			privateKeyType: 'Base58'
-		});
+	// Convert amount to raw units (lamports)
+	const rawAmount = Number(toRawAmount(amount, fromCoin.decimals));
 
-		// Convert amount to raw units (lamports)
-		const rawAmount = Number(toRawAmount(amount, fromCoin.decimals));
+	// Build and sign the transaction
+	const signedTransaction = await buildAndSignSwapTransaction(
+		fromCoin.id,
+		toCoin.id,
+		rawAmount,
+		slippage,
+		wallet
+	);
 
-		// Build and sign the transaction
-		const signedTransaction = await buildAndSignSwapTransaction(
-			fromCoin.id,
-			toCoin.id,
-			rawAmount,
-			slippage,
-			wallet
-		);
-
-		// Execute the trade
-		const response = await api.executeTrade({
-			from_coin_id: fromCoin.id,
-			to_coin_id: toCoin.id,
-			amount: parseFloat(amount),
-			signed_transaction: signedTransaction
-		});
-
-		if (response.transaction_hash) {
-			// Refresh portfolio balance after successful trade
-			const portfolioStore = usePortfolioStore.getState();
-			await portfolioStore.fetchPortfolioBalance(wallet.address);
-
-			showToast({
-				type: 'success',
-				message: 'Trade executed successfully!',
-				txHash: response.transaction_hash
-			});
-			// Add delay before navigation to ensure toast is visible
-			setTimeout(() => {
-				navigation.navigate('Home');
-			}, 1500);
-
-			return response;
-		} else {
-			throw new Error('No transaction hash received');
-		}
-
-	} catch (error) {
-		console.error('❌ Trade error:', error);
-		showToast({ type: 'error', message: error.message || 'Failed to execute trade' });
-		return undefined;
-	} finally {
-		setIsSubmitting(false);
-	}
+	console.log('✅ Transaction signed.');
+	return signedTransaction;
 };
+
+// Removed handleTrade function as its logic is moved to the screen component

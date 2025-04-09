@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
@@ -26,8 +25,8 @@ func (s *SolanaTradeService) ExecuteTrade(ctx context.Context, trade *model.Trad
 	}
 
 	// Update trade status and transaction hash
-	trade.Status = "completed"
-	trade.CompletedAt = time.Now()
+	trade.Status = "submitted" // Changed from "completed"
+	// trade.CompletedAt = time.Now() // Completion is not immediate
 	trade.TransactionHash = sig.String()
 
 	return nil
@@ -78,46 +77,49 @@ func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signe
 		log.Printf("❌ Failed to submit transaction: %v", err)
 		return solana.Signature{}, fmt.Errorf("failed to submit transaction: %w", err)
 	}
-	log.Printf("✅ Transaction submitted with signature: %s", sig.String())
+	log.Printf("✅ Transaction submitted with signature: %s. Returning immediately.", sig.String())
+	log.Printf("🔍 View on Solscan: https://solscan.io/tx/%s?cluster=devnet", sig.String()) // Assuming devnet, adjust cluster if needed
 
-	// Wait for confirmation with timeout
-	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
-	defer cancel()
+	// Return signature immediately without waiting for confirmation
+	return sig, nil
+}
 
-	// Poll for status
-	for {
-		select {
-		case <-ctx.Done():
-			return solana.Signature{}, fmt.Errorf("timeout waiting for transaction confirmation")
-		default:
-			status, err := s.client.GetSignatureStatuses(ctx, true, sig)
-			if err != nil {
-				log.Printf("❌ Failed to get transaction status: %v", err)
-				return solana.Signature{}, fmt.Errorf("failed to get transaction status: %w", err)
-			}
+// GetTransactionConfirmationStatus retrieves the confirmation status of a given transaction signature.
+// Corrected return type from *rpc.SignatureStatusesResult to *rpc.GetSignatureStatusesResult
+func (s *SolanaTradeService) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
+	log.Printf("🔍 Checking confirmation status for signature: %s", sigStr)
 
-			if len(status.Value) == 0 || status.Value[0] == nil {
-				log.Printf("⏳ Transaction not yet processed, waiting...")
-				time.Sleep(time.Second)
-				continue
-			}
-
-			if status.Value[0].Err != nil {
-				log.Printf("❌ Transaction failed with error: %v", status.Value[0].Err)
-				return solana.Signature{}, fmt.Errorf("transaction failed: %v", status.Value[0].Err)
-			}
-
-			if status.Value[0].Confirmations != nil {
-				log.Printf("✅ Transaction confirmed with %d confirmations", *status.Value[0].Confirmations)
-			}
-
-			if status.Value[0].ConfirmationStatus == rpc.ConfirmationStatusFinalized {
-				log.Printf("✅ Transaction finalized!")
-				log.Printf("🔍 View on Solscan: https://solscan.io/tx/%s", sig.String())
-				return sig, nil
-			}
-
-			time.Sleep(time.Second)
-		}
+	sig, err := solana.SignatureFromBase58(sigStr)
+	if err != nil {
+		log.Printf("❌ Invalid signature format: %v", err)
+		return nil, fmt.Errorf("invalid signature format: %w", err)
 	}
+
+	// Get signature statuses
+	status, err := s.client.GetSignatureStatuses(ctx, true, sig)
+	if err != nil {
+		log.Printf("❌ Failed to get transaction status for %s: %v", sigStr, err)
+		return nil, fmt.Errorf("failed to get transaction status: %w", err)
+	}
+
+	if status == nil || len(status.Value) == 0 || status.Value[0] == nil {
+		log.Printf("⏳ Transaction %s not yet found or processed.", sigStr)
+		// Return nil status without error, indicating it's not found yet.
+		// The handler can interpret this as 0 confirmations or pending.
+		return nil, nil
+	}
+
+	if status.Value[0].Err != nil {
+		log.Printf("❌ Transaction %s failed with error: %v", sigStr, status.Value[0].Err)
+		// Return the status containing the error
+		return status, fmt.Errorf("transaction failed: %v", status.Value[0].Err)
+	}
+
+	confirmations := uint64(0)
+	if status.Value[0].Confirmations != nil {
+		confirmations = *status.Value[0].Confirmations
+	}
+	log.Printf("✅ Transaction %s status: %s, Confirmations: %d", sigStr, status.Value[0].ConfirmationStatus, confirmations)
+
+	return status, nil
 }

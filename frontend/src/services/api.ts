@@ -91,7 +91,8 @@ export interface PriceHistoryResponse {
 }
 
 interface API {
-	executeTrade: (payload: TradePayload) => Promise<TradeResponse>;
+	submitTrade: (payload: TradePayload) => Promise<SubmitTradeResponse>; // Renamed and updated response type
+	getTradeStatus: (txHash: string) => Promise<TradeStatusResponse>; // Added new status check function
 	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
 	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
 	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
@@ -101,9 +102,9 @@ interface API {
 }
 
 const api: API = {
-	executeTrade: async (payload: TradePayload): Promise<TradeResponse> => {
+	submitTrade: async (payload: TradePayload): Promise<SubmitTradeResponse> => { // Renamed function
 		try {
-			const response = await apiClient.post('/api/trades/execute', payload, {
+			const response = await apiClient.post('/api/trades/submit', payload, { // Updated endpoint
 				headers: {
 					'X-Debug-Mode': 'true'
 				}
@@ -185,7 +186,16 @@ const api: API = {
 		} catch (error) {
 			throw handleApiError(error as AxiosError);
 		}
-	}
+	},
+
+	getTradeStatus: async (txHash: string): Promise<TradeStatusResponse> => { // Added new function
+		try {
+			const response = await apiClient.get<TradeStatusResponse>(`/api/trades/status/${txHash}`);
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
 };
 
 interface ErrorDetails {
@@ -194,10 +204,19 @@ interface ErrorDetails {
 	data?: any;
 }
 
-export interface TradeResponse {
-	status: string;
-	trade_id: string;
+// Renamed to reflect the submit action's response
+export interface SubmitTradeResponse {
+	trade_id?: string; // Optional as per backend handler
 	transaction_hash: string;
+}
+
+// New interface for the status endpoint response
+export interface TradeStatusResponse {
+	transaction_hash: string;
+	status: string; // e.g., "Pending", "Confirmed", "Finalized"
+	confirmations: number;
+	finalized: boolean;
+	error?: any; // Include error details if the transaction failed
 }
 
 export interface TradePayload {

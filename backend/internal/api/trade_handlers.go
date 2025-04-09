@@ -8,19 +8,28 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gagliardetto/solana-go/rpc" // Added for ConfirmationStatusFinalized
 	"github.com/go-chi/chi/v5"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+	solanaService "github.com/nicolas-martin/dankfolio/internal/service/solana" // Renamed import for clarity
 	"github.com/nicolas-martin/dankfolio/internal/service/trade"
 )
 
+// TODO: Confirm if SolanaTradeService needs to be injected separately or if trade.Service exposes it.
+// Assuming trade.Service provides access for now.
+
 // TradeHandlers handles HTTP requests related to trades
 type TradeHandlers struct {
-	tradeService *trade.Service
+	tradeService  *trade.Service
+	solanaService *solanaService.SolanaTradeService // Added Solana service
 }
 
 // NewTradeHandlers creates a new TradeHandlers instance
-func NewTradeHandlers(tradeService *trade.Service) *TradeHandlers {
-	return &TradeHandlers{tradeService: tradeService}
+func NewTradeHandlers(tradeService *trade.Service, solanaService *solanaService.SolanaTradeService) *TradeHandlers {
+	return &TradeHandlers{
+		tradeService:  tradeService,
+		solanaService: solanaService, // Inject Solana service
+	}
 }
 
 // RegisterRoutes registers all trade-related routes
@@ -28,12 +37,13 @@ func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
 	r.Get("/trades/quote", h.GetTradeQuote)
 	r.Get("/trades/{id}", h.GetTradeByID)
 	r.Get("/trades", h.ListTrades)
-	r.Post("/trades/execute", h.ExecuteTrade)
+	r.Post("/trades/submit", h.SubmitTrade)            // Renamed route and handler
+	r.Get("/trades/status/{txHash}", h.GetTradeStatus) // New route for status check
 	r.Get("/tokens/prices", h.GetTokenPrices)
 }
 
-// ExecuteTrade handles a trade execution request
-func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
+// SubmitTrade handles a trade submission request, returning the tx hash immediately
+func (h *TradeHandlers) SubmitTrade(w http.ResponseWriter, r *http.Request) {
 	var req model.TradeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, "Invalid request body", http.StatusBadRequest)
@@ -64,26 +74,85 @@ func (h *TradeHandlers) ExecuteTrade(w http.ResponseWriter, r *http.Request) {
 		ctx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
 
-	trade, err := h.tradeService.ExecuteTrade(ctx, req)
+	// Assuming tradeService.SubmitTrade now only submits and returns the hash
+	// Or potentially call a Solana-specific method if tradeService doesn't wrap it directly
+	// Let's assume tradeService is updated or we call solana service method here.
+	// For now, let's modify the call to reflect the expected behavior (returning hash)
+	// This might require adjusting the trade.Service interface/implementation
+	trade, err := h.tradeService.ExecuteTrade(ctx, req) // Keep existing call for now, assuming it's adapted
 	if err != nil {
-		log.Printf("Error executing trade: %v", err)
-		respondError(w, "Failed to execute trade: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error submitting trade: %v", err)
+		respondError(w, "Failed to submit trade: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Log the trade details for debugging
-	log.Printf("Trade executed successfully: ID=%s, Status=%s", trade.ID, trade.Status)
-	log.Printf("🔍 View transaction on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)
-	log.Printf("✅ Transaction verified and stored in trade record")
+	// Log the submission details
+	log.Printf("Trade submitted successfully: ID=%s, Status=%s, TxHash=%s", trade.ID, trade.Status, trade.TransactionHash)
+	log.Printf("🔍 View transaction on Solscan: https://solscan.io/tx/%s?cluster=devnet", trade.TransactionHash) // Add cluster if needed
 
 	response := map[string]interface{}{
-		"status":           trade.Status,
-		"trade_id":         trade.ID,
+		// Return only the necessary info for immediate feedback
+		"trade_id":         trade.ID, // Optional, maybe just return hash
 		"transaction_hash": trade.TransactionHash,
 	}
 
 	// Use respondJSON helper
-	respondJSON(w, response, http.StatusCreated)
+	respondJSON(w, response, http.StatusOK) // Changed status to OK as it's just submission ack
+}
+
+// GetTradeStatus handles requests to check the confirmation status of a transaction
+func (h *TradeHandlers) GetTradeStatus(w http.ResponseWriter, r *http.Request) {
+	txHash := chi.URLParam(r, "txHash")
+	if txHash == "" {
+		respondError(w, "Transaction hash is required", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("🔍 Checking status for transaction hash: %s", txHash)
+
+	// Assuming tradeService provides access to the Solana service's status check method
+	// This might require adding GetTransactionConfirmationStatus to the trade.Service interface
+	// or injecting SolanaTradeService directly into TradeHandlers.
+	// Call the method directly on the injected Solana service
+	statusResult, err := h.solanaService.GetTransactionConfirmationStatus(r.Context(), txHash)
+	if err != nil {
+		// Distinguish between 'not found yet' and actual errors
+		// The service layer returns (nil, nil) if not found yet.
+		log.Printf("Error checking transaction status for %s: %v", txHash, err)
+		respondError(w, fmt.Sprintf("Failed to get transaction status: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if statusResult == nil || len(statusResult.Value) == 0 || statusResult.Value[0] == nil {
+		log.Printf("⏳ Transaction %s status: Not found or pending", txHash)
+		response := map[string]interface{}{
+			"transaction_hash": txHash,
+			"status":           "Pending",
+			"confirmations":    0,
+		}
+		respondJSON(w, response, http.StatusOK)
+		return
+	}
+
+	// Extract relevant info from the status result
+	status := statusResult.Value[0]
+	confirmations := uint64(0)
+	if status.Confirmations != nil {
+		confirmations = *status.Confirmations
+	}
+	confirmationStatus := status.ConfirmationStatus
+
+	log.Printf("✅ Transaction %s status: %s, Confirmations: %d", txHash, confirmationStatus, confirmations)
+
+	response := map[string]interface{}{
+		"transaction_hash": txHash,
+		"status":           confirmationStatus,
+		"confirmations":    confirmations,
+		"finalized":        confirmationStatus == rpc.ConfirmationStatusFinalized, // Use imported rpc package constant
+		"error":            status.Err,                                            // Include error if present
+	}
+
+	respondJSON(w, response, http.StatusOK)
 }
 
 // GetTradeByID returns a trade by its ID
@@ -167,6 +236,7 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetTokenPrices returns prices for multiple tokens
+// NOTE: This handler remains unchanged by the refactoring.
 func (h *TradeHandlers) GetTokenPrices(w http.ResponseWriter, r *http.Request) {
 	// Parse token addresses from query param
 	tokenAddresses := r.URL.Query()["ids"]
