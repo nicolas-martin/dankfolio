@@ -18,7 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { CoinChartProps, PricePoint } from "./types";
 import { useFont } from "@shopify/react-native-skia";
-import { inter } from "@assets/fonts/inter-medium.ttf";
+import inter from "@assets/fonts/inter-medium.ttf";
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
