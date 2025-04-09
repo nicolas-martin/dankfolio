@@ -1,10 +1,8 @@
-import './setup';
-import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CoinDetail from '../index';
-import Home from '../../Home';
+import CoinDetail from '@screens/CoinDetail';
+import Home from '@screens/Home';
 import { PaperProvider } from 'react-native-paper';
 import { ToastProvider } from '@components/Common/Toast';
 import { formatPrice } from '@utils/numberFormat';
@@ -50,7 +48,7 @@ jest.mock('@store/portfolio', () => ({
 }));
 
 describe('CoinDetail Navigation', () => {
-	const TestNavigator = () => (
+	const renderTestNavigator = () => render(
 		<PaperProvider>
 			<ToastProvider>
 				<NavigationContainer>
@@ -67,14 +65,12 @@ describe('CoinDetail Navigation', () => {
 		</PaperProvider>
 	);
 
-	it('should navigate between Home and CoinDetail screens with data persistence', async () => {
-		const { getByTestId, getByText, queryByText } = render(<TestNavigator />);
+	it('should navigate between Home and CoinDetail screens with data persistence', () => {
+		const { getByTestId, getByText, queryByText } = renderTestNavigator();
 
 		// Verify we start on Home screen with correct content
-		await waitFor(() => {
-			expect(getByTestId('home-screen')).toBeTruthy();
-			expect(getByText('Available Coins')).toBeTruthy();
-		});
+		expect(getByTestId('home-screen')).toBeTruthy();
+		expect(getByText('Available Coins')).toBeTruthy();
 
 		// Verify coin data is displayed on Home screen
 		expect(getByText('BTC')).toBeTruthy();
@@ -85,11 +81,7 @@ describe('CoinDetail Navigation', () => {
 		fireEvent.press(coinCard);
 
 		// Verify CoinDetail screen is displayed with correct data
-		await waitFor(() => {
-			expect(getByTestId('coin-detail-screen')).toBeTruthy();
-		});
-
-		// Verify coin details are displayed
+		expect(getByTestId('coin-detail-screen')).toBeTruthy();
 		expect(getByText('About Bitcoin')).toBeTruthy();
 		expect(getByText('Digital gold')).toBeTruthy();
 		expect(getByText('Your Holdings')).toBeTruthy();
@@ -100,14 +92,12 @@ describe('CoinDetail Navigation', () => {
 		fireEvent.press(backButton);
 
 		// Verify we're back on Home screen
-		await waitFor(() => {
-			expect(getByTestId('home-screen')).toBeTruthy();
-			expect(queryByText('About Bitcoin')).toBeNull();
-		});
+		expect(getByTestId('home-screen')).toBeTruthy();
+		expect(queryByText('About Bitcoin')).toBeNull();
 	});
 
-	it('should preserve timeframe selection when navigating', async () => {
-		const { getByTestId, getByText } = render(<TestNavigator />);
+	it('should preserve timeframe selection when navigating', () => {
+		const { getByTestId, getByText } = renderTestNavigator();
 
 		// Navigate to CoinDetail
 		const coinCard = getByTestId('coin-card-bitcoin');
@@ -118,7 +108,7 @@ describe('CoinDetail Navigation', () => {
 		fireEvent.press(hourButton);
 
 		// Verify timeframe changed
-		expect(hourButton).toHaveStyle({ color: expect.any(String) }); // Selected state
+		expect(hourButton).toHaveStyle({ color: expect.any(String) });
 
 		// Navigate back
 		const backButton = getByTestId('back-button');
@@ -128,9 +118,7 @@ describe('CoinDetail Navigation', () => {
 		fireEvent.press(coinCard);
 
 		// Verify timeframe selection persisted
-		await waitFor(() => {
-			const hourButtonAfterReturn = getByText('1H');
-			expect(hourButtonAfterReturn).toHaveStyle({ color: expect.any(String) });
-		});
+		const hourButtonAfterReturn = getByText('1H');
+		expect(hourButtonAfterReturn).toHaveStyle({ color: expect.any(String) });
 	});
 }); 
