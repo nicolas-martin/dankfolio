@@ -87,15 +87,6 @@ const CoinDetail: React.FC = () => {
 	return (
 		<SafeAreaView style={styles.container} testID="coin-detail-screen">
 			<View style={styles.content}>
-				<View style={styles.header}>
-					<Button
-						icon="arrow-left"
-						onPress={() => navigation.goBack()}
-						testID="back-button"
-					>
-						Back
-					</Button>
-				</View>
 				<ScrollView
 					style={styles.scrollView}
 					contentContainerStyle={styles.scrollViewContent}
