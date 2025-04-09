@@ -31,3 +31,17 @@ export const formatAddress = (address: string): string => {
 export const sortTokensByValue = (tokens: ProfileCoin[]): ProfileCoin[] => {
 	return [...tokens].sort((a, b) => b.value - a.value);
 };
+export const handleRefresh = async () => {
+	if (!wallet) return;
+	setIsRefreshing(true);
+	try {
+		await fetchPortfolioBalance(wallet.address);
+	} catch (error) {
+		showToast({
+			message: 'Error refreshing portfolio',
+			type: 'error'
+		});
+	} finally {
+		setIsRefreshing(false);
+	}
+};

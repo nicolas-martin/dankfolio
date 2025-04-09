@@ -105,7 +105,7 @@ const api: API = {
 		try {
 			const response = await apiClient.post('/api/trades/execute', payload, {
 				headers: {
-					'X-Debug-Mode': 'false'
+					'X-Debug-Mode': 'true'
 				}
 			});
 			return response.data;

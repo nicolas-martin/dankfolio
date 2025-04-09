@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, ScrollView, RefreshControl } from 'react-native';
 import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
@@ -17,9 +17,11 @@ import {
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const { showToast } = useToast();
-	const { wallet, tokens } = usePortfolioStore();
+	const { wallet, tokens, fetchPortfolioBalance, isLoading } = usePortfolioStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+
+	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	const totalValue = useMemo(() => {
 		return tokens.reduce((sum, token) => sum + token.value, 0);
@@ -28,6 +30,21 @@ const Profile = () => {
 	const sortedTokens = useMemo(() => {
 		return sortTokensByValue(tokens);
 	}, [tokens]);
+
+	const handleRefresh = async () => {
+		if (!wallet) return;
+		setIsRefreshing(true);
+		try {
+			await fetchPortfolioBalance(wallet.address);
+		} catch (error) {
+			showToast({
+				message: 'Error refreshing portfolio',
+				type: 'error'
+			});
+		} finally {
+			setIsRefreshing(false);
+		}
+	};
 
 	if (!wallet || tokens.length === 0) {
 		return (
@@ -45,7 +62,17 @@ const Profile = () => {
 
 	return (
 		<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-			<ScrollView contentContainerStyle={styles.scrollContent}>
+			<ScrollView
+				contentContainerStyle={styles.scrollContent}
+				refreshControl={
+					<RefreshControl
+						refreshing={isRefreshing || isLoading}
+						onRefresh={handleRefresh}
+						colors={[theme.colors.primary]}
+						tintColor={theme.colors.primary}
+					/>
+				}
+			>
 				<View style={styles.contentPadding}>
 					<View style={styles.profileHeaderRow}>
 						<Icon source={ICON_PROFILE} size={32} color={theme.colors.onSurface} />

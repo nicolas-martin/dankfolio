@@ -5,6 +5,7 @@ import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_t
 import api from '@/services/api';
 import { buildAndSignSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
+import { usePortfolioStore } from '@/store/portfolio';
 
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 500;
@@ -99,7 +100,7 @@ export const handleTrade = async (
 	navigation: any,
 	setIsSubmitting: (isSubmitting: boolean) => void,
 	showToast: (props: any) => void
-): Promise<void> => {
+): Promise<{ transaction_hash: string } | undefined> => {
 
 	try {
 		setIsSubmitting(true);
@@ -131,7 +132,12 @@ export const handleTrade = async (
 			amount: parseFloat(amount),
 			signed_transaction: signedTransaction
 		});
+
 		if (response.transaction_hash) {
+			// Refresh portfolio balance after successful trade
+			const portfolioStore = usePortfolioStore.getState();
+			await portfolioStore.fetchPortfolioBalance(wallet.address);
+
 			showToast({
 				type: 'success',
 				message: 'Trade executed successfully!',
@@ -141,6 +147,8 @@ export const handleTrade = async (
 			setTimeout(() => {
 				navigation.navigate('Home');
 			}, 1500);
+
+			return response;
 		} else {
 			throw new Error('No transaction hash received');
 		}
@@ -148,6 +156,7 @@ export const handleTrade = async (
 	} catch (error) {
 		console.error('❌ Trade error:', error);
 		showToast({ type: 'error', message: error.message || 'Failed to execute trade' });
+		return undefined;
 	} finally {
 		setIsSubmitting(false);
 	}
