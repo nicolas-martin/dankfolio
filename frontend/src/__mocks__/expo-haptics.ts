@@ -1,5 +1,5 @@
 module.exports = {
-	impactAsync: jest.fn(),
+	impactAsync: jest.fn().mockResolvedValue(undefined),
 	ImpactFeedbackStyle: {
 		Light: 'light',
 	},

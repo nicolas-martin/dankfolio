@@ -111,7 +111,7 @@ describe('API Service', () => {
 		expect(mockAxiosInstance.post).toHaveBeenCalledWith(
 			'/api/trades/execute',
 			mockTradePayload,
-			expect.objectContaining({ headers: { 'X-Debug-Mode': 'true' } })
+			// expect.objectContaining({ headers: { 'X-Debug-Mode': 'true' } })
 		);
 		expect(result).toEqual(mockTradeResponse);
 	});

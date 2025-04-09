@@ -172,13 +172,17 @@ export default function CoinChart({
 	if (loading || !data.length) {
 		return (
 			<View style={{ height: 250, justifyContent: 'center', alignItems: 'center' }}>
-				<Text>Loading Chart...</Text>
+				<Text testID="loading-text" accessibilityLabel="loading chart">Loading Chart...</Text>
 			</View>
 		);
 	}
 
 	return (
-		<View style={{ height: 250 }}>
+		<View
+			style={{ height: 250 }}
+			accessibilityLabel="coin price chart"
+			testID="coin-chart-container"
+		>
 			<CartesianChart
 				data={chartData}
 				xKey="x"

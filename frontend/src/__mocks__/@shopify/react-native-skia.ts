@@ -1,3 +1,10 @@
+import React from 'react';
+import { View } from 'react-native';
+
+const mockComponent = (name: string) => {
+	return jest.fn((props: any) => React.createElement(View, { ...props, testID: name }));
+};
+
 export { };
 
 interface TurboModuleRegistry {
@@ -20,9 +27,12 @@ if (!global.TurboModuleRegistry) {
 }
 
 module.exports = {
-	Canvas: 'Canvas',
-	Fill: 'Fill',
-	Path: 'Path',
+	Canvas: mockComponent('Canvas'),
+	Fill: mockComponent('Fill'),
+	Path: mockComponent('Path'),
+	Line: mockComponent('Line'),
+	Circle: mockComponent('Circle'),
+	Group: mockComponent('Group'),
 	useFont: () => ({ fontFamily: 'mock-font' }),
 	Skia: {
 		Path: {
