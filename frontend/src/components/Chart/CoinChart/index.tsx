@@ -12,15 +12,59 @@ import {
 	runOnJS,
 	type SharedValue,
 	cancelAnimation,
+	useAnimatedStyle,
 } from "react-native-reanimated";
 import { useTheme, MD3Theme, Text } from "react-native-paper";
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { CoinChartProps, PricePoint } from "./types";
 import { useFont } from "@shopify/react-native-skia";
+import { Circle, Group, Line as SkiaLine } from "@shopify/react-native-skia";
 import inter from "@assets/fonts/inter-medium.ttf";
 
 const initChartPressState = { x: 0, y: { y: 0 } };
+
+// Active Value Indicator Component
+const ActiveValueIndicator = ({
+	xPosition,
+	yPosition,
+	bottom,
+	top,
+	activeValue,
+	lineColor,
+	indicatorColor,
+}: {
+	xPosition: SharedValue<number>;
+	yPosition: SharedValue<number>;
+	activeValue: SharedValue<number>;
+	bottom: number;
+	top: number;
+	lineColor: string;
+	indicatorColor: string;
+}) => {
+	return (
+		<>
+			<SkiaLine
+				p1={{ x: xPosition.value, y: bottom }}
+				p2={{ x: xPosition.value, y: top }}
+				color={lineColor}
+				strokeWidth={1}
+			/>
+			<Circle
+				cx={xPosition}
+				cy={yPosition}
+				r={10}
+				color={indicatorColor}
+			/>
+			<Circle
+				cx={xPosition}
+				cy={yPosition}
+				r={8}
+				color="hsla(0, 0, 100%, 0.25)"
+			/>
+		</>
+	);
+};
 
 export default function CoinChart({
 	data,
@@ -31,13 +75,12 @@ export default function CoinChart({
 	const isMounted = React.useRef(true);
 	const animations = React.useRef<SharedValue<any>[]>([]);
 	const fontSize = 12;
-	const font = useFont(inter, fontSize); // Use imported font object
+	const font = useFont(inter, fontSize);
 
 	// Use useFocusEffect for better navigation lifecycle handling
 	useFocusEffect(
 		React.useCallback(() => {
 			return () => {
-				// Cleanup animations when screen loses focus
 				animations.current.forEach(anim => {
 					cancelAnimation(anim);
 				});
@@ -48,7 +91,6 @@ export default function CoinChart({
 	React.useEffect(() => {
 		return () => {
 			isMounted.current = false;
-			// Cleanup all animations on unmount
 			animations.current.forEach(anim => {
 				cancelAnimation(anim);
 			});
@@ -58,14 +100,12 @@ export default function CoinChart({
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);
 
-	// Memoize the hover callback with isMounted check
 	const memoizedOnHover = React.useCallback((point: PricePoint | null) => {
 		if (isMounted.current) {
 			onHover?.(point);
 		}
 	}, [onHover]);
 
-	// Track chart press state with cleanup
 	const pressValue = useDerivedValue(() => {
 		'worklet';
 		if (!chartPress.x.value || !chartPress.y.y?.value || !isPressActive) {
@@ -82,7 +122,6 @@ export default function CoinChart({
 		};
 	}, [isPressActive, chartPress]);
 
-	// Handle hover updates with cleanup
 	const hoverEffect = useDerivedValue(() => {
 		'worklet';
 		const currentValue = pressValue.value;
@@ -92,7 +131,6 @@ export default function CoinChart({
 			return;
 		}
 
-		// Construct the full PricePoint object
 		const point: PricePoint = {
 			timestamp: currentValue.timestamp,
 			price: currentValue.value,
@@ -103,12 +141,10 @@ export default function CoinChart({
 		runOnJS(memoizedOnHover)(point);
 	}, [pressValue, isPressActive]);
 
-	// Store animation references
 	React.useEffect(() => {
 		animations.current = [pressValue, hoverEffect];
 	}, [pressValue, hoverEffect]);
 
-	// --- UseEffect for Haptic Feedback with cleanup ---
 	React.useEffect(() => {
 		let isSubscribed = true;
 
@@ -121,7 +157,6 @@ export default function CoinChart({
 		};
 	}, [isPressActive]);
 
-	// Calculate chartData (safe even if data is empty)
 	const chartData: PricePoint[] = React.useMemo(() => data.map(point => {
 		const timestamp = new Date(point.timestamp).getTime();
 		const value = typeof point.value === 'string' ? parseFloat(point.value) : point.value;
@@ -164,6 +199,21 @@ export default function CoinChart({
 					},
 					labelColor: theme.colors.onSurfaceVariant,
 				}}
+				renderOutside={({ chartBounds }) => (
+					<>
+						{isPressActive && pressValue.value && (
+							<ActiveValueIndicator
+								xPosition={chartPress.x.position}
+								yPosition={chartPress.y.y.position}
+								bottom={chartBounds.bottom}
+								top={chartBounds.top}
+								activeValue={chartPress.y.y.value}
+								lineColor={theme.colors.outlineVariant}
+								indicatorColor={theme.colors.primary}
+							/>
+						)}
+					</>
+				)}
 			>
 				{({ chartBounds, points }) => (
 					<>
