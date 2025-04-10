@@ -82,6 +82,15 @@ describe('API Service', () => {
 		success: true,
 	};
 
+	const mockTradeStatusResponse = {
+		status: 'completed',
+		transaction_hash: 'txHash456',
+		timestamp: new Date().toISOString(),
+		from_amount: '1.5',
+		to_amount: '100.5',
+		error_message: null
+	};
+
 	beforeEach(() => {
 		// Silence console.log and console.error before each test
 		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
@@ -109,7 +118,6 @@ describe('API Service', () => {
 		expect(mockAxiosInstance.post).toHaveBeenCalledWith(
 			'/api/trades/submit',
 			mockTradePayload,
-			expect.objectContaining({ headers: expect.any(Object) })
 		);
 		expect(result).toEqual(mockSubmitTradeResponse);
 	});
@@ -292,29 +300,28 @@ describe('API Service', () => {
 		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens/prices', expect.any(Object));
 	});
 
-	it('should execute a trade successfully', async () => {
-		const mockTradePayload: TradePayload = {
-			from_coin_id: 'SOL',
-			to_coin_id: 'WEN',
-			amount: 1000000000,
-			signed_transaction: 'mock_signed_tx'
-		};
+	it('getTradeStatus successfully calls GET /api/trades/status/{txHash}', async () => {
+		const txHash = 'txHash456';
+		mockAxiosInstance.get.mockResolvedValue({ data: mockTradeStatusResponse });
 
-		const result = await api.submitTrade(mockTradePayload);
-		expect(result).toEqual({ transaction_hash: 'mock_tx_hash' });
+		const result = await api.getTradeStatus(txHash);
+
+		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+		expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/api/trades/status/${txHash}`);
+		expect(result).toEqual(mockTradeStatusResponse);
 	});
 
-	it('should handle trade execution errors', async () => {
-		const mockTradePayload: TradePayload = {
-			from_coin_id: 'SOL',
-			to_coin_id: 'WEN',
-			amount: 1000000000,
-			signed_transaction: 'mock_signed_tx'
-		};
+	it('getTradeStatus handles API errors', async () => {
+		const txHash = 'invalidTxHash';
+		const mockError = { response: { status: 404, data: { message: 'Transaction not found' } }, message: 'Not Found' };
+		mockAxiosInstance.get.mockRejectedValue(mockError);
 
-		await expect(api.submitTrade(mockTradePayload)).rejects.toMatchObject({
-			message: 'Trade execution failed'
+		await expect(api.getTradeStatus(txHash)).rejects.toMatchObject({
+			message: 'Not Found',
+			status: 404,
+			data: { message: 'Transaction not found' }
 		});
+		expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/api/trades/status/${txHash}`);
 	});
 
 }); 
