@@ -14,7 +14,15 @@ import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal'; // Added Status Modal
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types'; // Added Status Type
-import { fetchTradeQuote, signTradeTransaction } from './trade_scripts'; // Changed handleTrade to signTradeTransaction
+import {
+	fetchTradeQuote,
+	signTradeTransaction,
+	executeTrade, // Added
+	pollTradeStatus, // Added
+	startPolling, // Added
+	stopPolling, // Added
+	handleSwapCoins as swapCoinsUtil // Renamed import
+} from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import api from '@/services/api'; // Added api import
 import { openSolscanUrl } from '@/utils/url'; // Added url util
@@ -52,6 +60,37 @@ const Trade: React.FC = () => {
 	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
+
+	// --- Wrapped Polling Functions for Component Context ---
+	// Wrap stopPolling to automatically pass dependencies
+	const componentStopPolling = () => {
+		stopPolling(pollingIntervalRef, setIsLoadingTrade);
+	};
+
+	// Wrap pollTradeStatus
+	const componentPollTradeStatus = async (txHash: string) => {
+		await pollTradeStatus(
+			txHash,
+			setPollingConfirmations,
+			setPollingStatus,
+			setPollingError,
+			componentStopPolling, // Use wrapped stopPolling
+			showToast,
+			wallet
+		);
+	};
+
+	// Wrap startPolling
+	const componentStartPolling = (txHash: string) => {
+		startPolling(
+			txHash,
+			() => componentPollTradeStatus(txHash), // Pass the actual polling function
+			componentStopPolling,
+			pollingIntervalRef
+		);
+	};
+
+	// --- End Wrapped Polling Functions ---
 
 	// Early return if toCoin is null
 	if (!toCoin) {
@@ -156,177 +195,83 @@ const Trade: React.FC = () => {
 		);
 	};
 
-	const handleTradeSubmit = async () => {
+	// Use new handleTradeSubmit that calls executeTrade
+	const handleTradeSubmitClick = () => {
 		if (!fromAmount || !toAmount || !wallet) {
 			showToast({ type: 'error', message: !wallet ? 'Please connect your wallet' : 'Please enter valid amounts' });
 			return;
 		}
 
 		// Check if the user has sufficient balance
-		const numericFromAmount = parseFloat(fromAmount); // User input is a string, needs parsing
-		const availableBalance = fromPortfolioToken?.amount ?? 0; // Use optional chaining and nullish coalescing
+		const numericFromAmount = parseFloat(fromAmount);
+		const availableBalance = fromPortfolioToken?.amount ?? 0;
 
 		if (numericFromAmount > availableBalance) {
 			showToast({
 				type: 'error',
-				// Use the numeric availableBalance directly, formatted
 				message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.`
 			});
 			return;
 		}
-
+		// Only opens the confirmation modal now
 		setIsConfirmationVisible(true);
 	};
 
 	// Clear interval on unmount
 	useEffect(() => {
 		return () => {
-			if (pollingIntervalRef.current) {
-				clearInterval(pollingIntervalRef.current);
-			}
+			// Use componentStopPolling for cleanup
+			componentStopPolling();
 		};
-	}, []);
+	}, []); // Empty dependency array ensures this runs only on mount and unmount
 
-	const stopPolling = () => {
-		if (pollingIntervalRef.current) {
-			clearInterval(pollingIntervalRef.current);
-			pollingIntervalRef.current = null;
-			console.log('Polling stopped.');
-		}
-		setIsLoadingTrade(false); // Also signifies polling has stopped
-	};
-
-	const pollTransactionStatus = async (txHash: string) => {
-		console.log(`Polling status for ${txHash}...`);
-		try {
-			const statusResult = await api.getTradeStatus(txHash);
-
-			if (!statusResult) {
-				console.log('Transaction status not found yet, continuing poll...');
-				// Keep status as 'polling'
-				return;
-			}
-
-			setPollingConfirmations(statusResult.confirmations);
-
-			if (statusResult.error) {
-				console.error('Transaction failed:', statusResult.error);
-				setPollingStatus('failed');
-				setPollingError(typeof statusResult.error === 'string' ? statusResult.error : JSON.stringify(statusResult.error));
-				stopPolling();
-			} else if (statusResult.finalized) {
-				console.log('Transaction finalized!');
-				setPollingStatus('finalized');
-				stopPolling();
-				// Refresh portfolio balance after successful finalization
-				usePortfolioStore.getState().fetchPortfolioBalance(wallet!.address);
-				showToast({ type: 'success', message: 'Trade finalized successfully!' });
-				// Consider navigating home after modal close?
-			} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') { // Check backend status strings
-				console.log(`Transaction confirmed with ${statusResult.confirmations} confirmations.`);
-				setPollingStatus('confirmed');
-				// Continue polling until finalized
-			} else {
-				console.log(`Current status: ${statusResult.status}, continuing poll...`);
-				setPollingStatus('polling'); // Explicitly set back to polling if not confirmed/finalized/failed
-			}
-
-		} catch (error: any) {
-			console.error('Error polling transaction status:', error);
-			setPollingStatus('failed');
-			setPollingError(error?.message || 'Failed to fetch transaction status');
-			stopPolling();
-		}
-	};
-
-
-	const handleTradeConfirm = async () => {
-		if (!wallet || !fromCoin) {
-			showToast({ type: 'error', message: !wallet ? 'Wallet not connected' : 'From coin missing' });
+	// --- New handleTradeConfirm using executeTrade --- 
+	const handleTradeConfirmClick = async () => {
+		if (!wallet || !fromCoin || !toCoin || !fromAmount) {
+			showToast({ type: 'error', message: 'Missing trade information' });
 			return;
 		}
-
-		setIsLoadingTrade(true);
-		setIsConfirmationVisible(false); // Close confirmation modal
-		setPollingStatus('pending'); // Initial status for the new modal
-		setSubmittedTxHash(null); // Reset hash
-		setPollingError(null); // Reset error
-		setPollingConfirmations(0); // Reset confirmations
-		setIsStatusModalVisible(true); // Show status modal
-
-		try {
-			// 1. Sign Transaction
-			console.log('Attempting to sign transaction...');
-			const signedTransaction = await signTradeTransaction(
-				fromCoin,
-				toCoin,
-				fromAmount,
-				0.5, // TODO: Make slippage configurable
-				wallet
-			);
-			console.log('Transaction signed successfully.');
-
-			// 2. Submit Transaction
-			console.log('Attempting to submit transaction...');
-			const submitResponse = await api.submitTrade({
-				from_coin_id: fromCoin.id,
-				to_coin_id: toCoin.id,
-				amount: parseFloat(fromAmount), // Ensure amount is number if required by API
-				signed_transaction: signedTransaction,
-			});
-			console.log('Transaction submitted:', submitResponse);
-
-			if (submitResponse.transaction_hash) {
-				setSubmittedTxHash(submitResponse.transaction_hash);
-				setPollingStatus('polling'); // Move to polling state
-
-				// 3. Start Polling
-				stopPolling(); // Clear any previous interval
-
-				// Initial poll after 1 second delay
-				setTimeout(async () => {
-					await pollTransactionStatus(submitResponse.transaction_hash);
-
-					// Start regular polling every 3 seconds
-					pollingIntervalRef.current = setInterval(() => {
-						pollTransactionStatus(submitResponse.transaction_hash);
-					}, 3000); // Poll every 3 seconds
-				}, 1000); // 1 second delay before first poll
-
-			} else {
-				throw new Error('Submission did not return a transaction hash.');
-			}
-
-		} catch (error: any) {
-			console.error('Error during trade signing or submission:', error);
-			const errorMessage = error?.message || 'Failed to sign or submit trade';
-			showToast({ type: 'error', message: errorMessage });
-			setPollingStatus('failed');
-			setPollingError(errorMessage);
-			// Don't stopPolling() here, let the modal show the failure
-			setIsLoadingTrade(false); // Stop general loading indicator if needed
-		}
-		// Note: setIsLoadingTrade(false) is handled within stopPolling or on error
+		await executeTrade(
+			wallet,
+			fromCoin,
+			toCoin,
+			fromAmount,
+			0.5, // TODO: Make slippage configurable
+			showToast,
+			setIsLoadingTrade,
+			setIsConfirmationVisible,
+			setPollingStatus,
+			setSubmittedTxHash,
+			setPollingError,
+			setPollingConfirmations,
+			setIsStatusModalVisible,
+			componentStartPolling // Pass wrapped startPolling
+		);
 	};
 
 	const handleCloseStatusModal = () => {
 		setIsStatusModalVisible(false);
-		stopPolling(); // Ensure polling stops when modal is manually closed
+		componentStopPolling(); // Use wrapped stopPolling
 		// Navigate to home screen
 		navigation.navigate('Home');
 	};
 
+	// --- Update handleSwapCoins to use imported util --- 
 	const handleSwapCoins = () => {
 		if (!fromCoin || !toCoin) {
 			console.warn('Cannot swap with null coins');
 			return;
 		}
-		const tempCoin = fromCoin;
-		const tempAmount = fromAmount;
-		setFromCoin(toCoin);
-		setToCoin(tempCoin);
-		setFromAmount(toAmount);
-		setToAmount(tempAmount);
+		swapCoinsUtil(
+			fromCoin,
+			toCoin,
+			setFromCoin,
+			setToCoin,
+			fromAmount,
+			setFromAmount,
+			toAmount,
+			setToAmount
+		);
 	};
 
 	if (!wallet) {
@@ -403,7 +348,7 @@ const Trade: React.FC = () => {
 			<View style={styles.padding}>
 				<Button
 					mode="contained"
-					onPress={handleTradeSubmit}
+					onPress={handleTradeSubmitClick} // Use new handler
 					disabled={!fromAmount || !toAmount}
 					style={{ width: '100%' }}
 				>
@@ -415,7 +360,7 @@ const Trade: React.FC = () => {
 				<TradeConfirmation
 					isVisible={isConfirmationVisible}
 					onClose={() => setIsConfirmationVisible(false)}
-					onConfirm={handleTradeConfirm}
+					onConfirm={handleTradeConfirmClick} // Use new handler
 					fromAmount={fromAmount}
 					toAmount={toAmount}
 					toCoin={toCoin}
