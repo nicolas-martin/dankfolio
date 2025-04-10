@@ -1,135 +1,43 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { mocked } from 'jest-mock';
 import TradeScreen from './index';
 import * as TradeScripts from './trade_scripts';
-import { Coin, Wallet } from '@/types';
+import { Coin } from '@/types';
 import { View, Text, TextInput } from 'react-native';
 import { SOLANA_ADDRESS } from '@/utils/constants';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { fetchTradeQuote, signTradeTransaction, handleSwapCoins } from './trade_scripts';
+import api from '@/services/api';
+import { mockFromCoin, mockToCoin, mockWallet, mockFromPortfolioToken } from '@/__mocks__/testData';
+import { mockPortfolioStoreReturn, usePortfolioStore } from '@/__mocks__/store/portfolio';
+import { mockCoinStoreReturn, useCoinStore } from '@/__mocks__/store/coins';
+import { fetchTradeQuote as mockFetchTradeQuote, signTradeTransaction as mockSignTradeTransaction } from '@/__mocks__/services/trade_scripts';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { PortfolioToken } from '@/store/portfolio';
 
 // Mock Stores
 jest.mock('@store/portfolio');
 jest.mock('@store/coins');
 
-// Import store hooks AND types needed
-import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
-import { useCoinStore } from '@store/coins';
-
-// Add common mocks for RNGH and Reanimated
-jest.mock('react-native-gesture-handler', () => {
-	const View = require('react-native').View;
-	return {
-		GestureHandlerRootView: View,
-		// Add other gesture handler exports if needed, e.g., State, Directions
-	};
-});
-jest.mock('react-native-reanimated', () => {
-	const Reanimated = require('react-native-reanimated/mock');
-	// Modify or add mocks as needed
-	Reanimated.useSharedValue = jest.fn(() => ({ value: 0 }));
-	Reanimated.withTiming = jest.fn((toValue, _, cb) => {
-		// Immediately invoke callback if provided
-		if (cb) { cb(true); }
-		return toValue; // Return the target value directly
-	});
-	Reanimated.withSpring = jest.fn((toValue, _, cb) => {
-		// Immediately invoke callback if provided
-		if (cb) { cb(true); }
-		return toValue; // Return the target value directly
-	});
-	Reanimated.useAnimatedStyle = jest.fn(() => ({}));
-	// Mock other Reanimated functions/hooks if your component uses them
-	return Reanimated;
-});
-
-// Mock Navigation - Define factory returning jest.fn()
+// Mock Navigation
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
-	// Return new mocks for the hooks
 	useNavigation: jest.fn(() => ({ navigate: mockNavigate })),
-	useRoute: jest.fn(), // Mock function for useRoute
-	// Include other exports from react-navigation if needed directly by the component
-	// Example: DefaultTheme: jest.requireActual('@react-navigation/native').DefaultTheme
+	useRoute: jest.fn(),
 }));
 
-// Import hooks AFTER the mock definition - these will be the mock functions
-import { useNavigation, useRoute } from '@react-navigation/native';
+// Mock Toast
+const mockShowToast = jest.fn();
+jest.mock('@components/Common/Toast', () => ({
+	useToast: () => ({
+		showToast: mockShowToast,
+		hideToast: jest.fn(),
+	}),
+}));
 
-const mockFromCoin: Coin = {
-	id: "So11111111111111111111111111111111111111112",
-	name: "Solana",
-	symbol: "SOL",
-	icon_url: "sol_icon_url",
-	decimals: 9,
-	price: 150.0,
-	description: "Solana Blockchain",
-	website: "https://solana.com",
-	twitter: "https://twitter.com/solana",
-	telegram: "",
-	daily_volume: 5e9,
-	tags: ["layer-1"],
-	created_at: "2024-01-01T00:00:00Z",
-};
-
-const mockToCoin: Coin = {
-	id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
-	name: "WEN",
-	symbol: "WEN",
-	icon_url: "wen_icon_url",
-	decimals: 5,
-	price: 0.00011,
-	description: "WEN",
-	website: "https://wen-foundation.org",
-	twitter: "https://twitter.com/wenwencoin",
-	telegram: "https://t.me/wenwencoinsol",
-	daily_volume: 123456.78,
-	tags: ["meme", "community"],
-	created_at: "2024-01-01T00:00:00Z"
-};
-
-const mockWallet: Wallet = {
-	address: 'TestWalletAddress12345',
-	privateKey: 'TestPrivateKey12345',
-	publicKey: 'TestPublicKey67890',
-	balance: 0,
-};
-
-const mockFromPortfolioToken: PortfolioToken = {
-	id: mockFromCoin.id,
-	amount: 10,
-	price: mockFromCoin.price,
-	value: 10 * mockFromCoin.price,
-	coin: mockFromCoin,
-};
-
-// --- Define Full Mock Return Values for Stores ---
-const mockPortfolioStoreReturn = {
-	wallet: mockWallet,
-	isLoading: false,
-	error: null,
-	tokens: [mockFromPortfolioToken] as PortfolioToken[],
-	setWallet: jest.fn(),
-	clearWallet: jest.fn(),
-	fetchPortfolioBalance: jest.fn(),
-};
-
-const mockCoinStoreReturn = {
-	availableCoins: [mockFromCoin, mockToCoin] as Coin[],
-	coinMap: {
-		[mockFromCoin.id]: mockFromCoin,
-		[mockToCoin.id]: mockToCoin,
-	} as Record<string, Coin>,
-	isLoading: false,
-	error: null,
-	setAvailableCoins: jest.fn(),
-	setCoin: jest.fn(),
-	fetchAvailableCoins: jest.fn(),
-	getCoinByID: jest.fn().mockResolvedValue(null), // Default mock
-};
-
-// --- Mock Component Creator ---
+// Mock Child Components
 const createMockComponent = (name: string) => (props: any) => {
-	// Special handling for CoinSelector to include an input and expose coin prop
 	if (name === 'CoinSelector') {
 		const { label, amount, coinData } = props;
 		const inputTestID = `coin-selector-input-${label?.toLowerCase() || 'unknown'}`;
@@ -149,43 +57,26 @@ const createMockComponent = (name: string) => (props: any) => {
 			</View>
 		);
 	}
-
-	// Default mock for other components
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
 
-// Mock Toast
-const mockShowToast = jest.fn();
-jest.mock('@components/Common/Toast', () => ({
-	useToast: () => ({
-		showToast: mockShowToast,
-		hideToast: jest.fn(),
-	}),
-}));
-
-// Mock Child Components
 jest.mock('@components/Trade/CoinSelector', () => createMockComponent('CoinSelector'));
 jest.mock('@components/Trade/TradeDetails', () => createMockComponent('TradeDetails'));
-// Restore simple mock for TradeConfirmation
 jest.mock('@components/Trade/TradeConfirmation', () => createMockComponent('TradeConfirmation'));
 
 // Mock Local Scripts
-jest.mock('./trade_scripts', () => {
-	const originalModule = jest.requireActual('./trade_scripts');
-	return {
-		...originalModule,
-		// Mock functions we spy on or want to control
-		fetchTradeQuote: jest.fn(),
-		handleTrade: jest.fn(),
-	};
-});
+jest.mock('./trade_scripts', () => ({
+	fetchTradeQuote: jest.fn(),
+	signTradeTransaction: jest.fn(),
+	handleSwapCoins: jest.fn(),
+	DEFAULT_AMOUNT: "0.0001",
+	QUOTE_DEBOUNCE_MS: 500,
+}));
 
 // Mock Services
 jest.mock('@/services/api', () => ({
-	// Mock specific API functions used by trade_scripts if necessary
-	getTokenPrices: jest.fn().mockResolvedValue({}),
-	getTradeQuote: jest.fn().mockResolvedValue({ estimatedAmount: '0', fee: '0', priceImpact: '0', exchangeRate: '0', routePlan: [] }),
-	executeTrade: jest.fn().mockResolvedValue({ transaction_hash: 'mock_tx_hash' }),
+	submitTrade: jest.fn(),
+	getTradeStatus: jest.fn()
 }));
 jest.mock('@/services/solana', () => ({
 	buildAndSignSwapTransaction: jest.fn().mockResolvedValue('mock_signed_tx'),
@@ -226,9 +117,29 @@ jest.mock('react-native-paper', () => {
 
 // --- Test Suite ---
 describe('TradeScreen', () => {
+	const renderWithProvider = (component: ReactElement) => {
+		return render(
+			<PaperProvider>
+				{component}
+			</PaperProvider>
+		);
+	};
 
 	beforeEach(() => {
-		jest.clearAllMocks(); // Good practice to clear previous mocks first
+		// Clear all mocks
+		jest.clearAllMocks();
+
+		// Setup your mocks
+		(mockFetchTradeQuote as jest.Mock).mockResolvedValue(undefined);
+		(mockSignTradeTransaction as jest.Mock).mockResolvedValue('mock_signed_tx');
+		(api.submitTrade as jest.Mock).mockResolvedValue({ transaction_hash: 'mock_tx_hash' });
+		(api.getTradeStatus as jest.Mock).mockResolvedValue({
+			status: 'completed',
+			transaction_hash: 'mock_tx_hash',
+			timestamp: new Date().toISOString(),
+			from_amount: '1.5',
+			to_amount: '100.5'
+		});
 
 		// Silence console methods for the upcoming test
 		jest.spyOn(console, 'log').mockImplementation(() => { });
@@ -269,7 +180,7 @@ describe('TradeScreen', () => {
 	});
 
 	it('renders correctly with initial coins', async () => {
-		const { getAllByTestId, findByTestId, getByText, getByTestId } = render(<TradeScreen />);
+		const { getAllByTestId, findByTestId, getByText, getByTestId } = renderWithProvider(<TradeScreen />);
 
 		// Check if main components are rendered (using mocks with specific IDs)
 		expect(getByTestId('mock-CoinSelector-from')).toBeTruthy();
@@ -308,7 +219,7 @@ describe('TradeScreen', () => {
 			}
 		);
 
-		const { getByTestId, findByTestId } = render(<TradeScreen />); // Add findByTestId
+		const { getByTestId, findByTestId } = renderWithProvider(<TradeScreen />); // Add findByTestId
 
 		// Wait for initial price refresh to potentially finish
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
@@ -351,7 +262,7 @@ describe('TradeScreen', () => {
 	});
 
 	it('calls store hooks and initial fetch expected number of times', async () => {
-		render(<TradeScreen />);
+		renderWithProvider(<TradeScreen />);
 
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
@@ -385,7 +296,7 @@ describe('TradeScreen', () => {
 			}
 		);
 
-		const { getByTestId, getByText } = render(<TradeScreen />);
+		const { getByTestId, getByText } = renderWithProvider(<TradeScreen />);
 
 		// Wait for initial price refresh
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
@@ -429,7 +340,7 @@ describe('TradeScreen', () => {
 			}
 		);
 
-		const { getByTestId, getByText, findByTestId } = render(<TradeScreen />); // Add findByTestId
+		const { getByTestId, getByText, findByTestId } = renderWithProvider(<TradeScreen />); // Add findByTestId
 
 		// Wait for initial price refresh
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
@@ -466,7 +377,7 @@ describe('TradeScreen', () => {
 			}
 		);
 
-		const { getByTestId, getByText, findByTestId } = render(<TradeScreen />);
+		const { getByTestId, getByText, findByTestId } = renderWithProvider(<TradeScreen />);
 
 		// Wait for initial price refresh
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
@@ -485,7 +396,7 @@ describe('TradeScreen', () => {
 		const confirmationModal = await findByTestId('mock-TradeConfirmation');
 
 		// Clear handleTrade mock before triggering confirm
-		(TradeScripts.handleTrade as jest.Mock).mockClear();
+		(TradeScripts.handleSwapCoins as jest.Mock).mockClear();
 
 		// Extract and call the onConfirm prop passed to the mock modal
 		const onConfirm = confirmationModal.props.onConfirm;
@@ -494,10 +405,10 @@ describe('TradeScreen', () => {
 		});
 
 		// Assert that handleTrade was called
-		await waitFor(() => expect(TradeScripts.handleTrade).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(TradeScripts.handleSwapCoins).toHaveBeenCalledTimes(1));
 
 		// Assert handleTrade arguments
-		expect(TradeScripts.handleTrade).toHaveBeenCalledWith(
+		expect(TradeScripts.handleSwapCoins).toHaveBeenCalledWith(
 			mockFromCoin,         // fromCoin
 			mockToCoin,           // toCoin
 			initialFromAmount,    // amount
@@ -521,7 +432,7 @@ describe('TradeScreen', () => {
 		});
 
 		// Act: Render the component
-		render(<TradeScreen />);
+		renderWithProvider(<TradeScreen />);
 
 		// Assert: Wait for the effect and check the calls
 		await waitFor(() => {
@@ -573,7 +484,7 @@ describe('TradeScreen', () => {
 			}
 		});
 
-		const { getByTestId, findByText, getByText } = render(<TradeScreen />);
+		const { getByTestId, findByText, getByText } = renderWithProvider(<TradeScreen />);
 
 		// Wait for initial coin data to load (important because of useEffect)
 		await waitFor(() => {
@@ -604,7 +515,33 @@ describe('TradeScreen', () => {
 
 		// Assert: Ensure Trade Confirmation is not shown and handleTrade is not called
 		expect(getByTestId('mock-TradeConfirmation')).toHaveProp('isVisible', false);
-		expect(mocked(TradeScripts.handleTrade)).not.toHaveBeenCalled();
+		expect(mocked(TradeScripts.handleSwapCoins)).not.toHaveBeenCalled();
+	});
+
+	it('executes trade flow correctly when confirmation modal is confirmed', async () => {
+		const { getByTestId } = renderWithProvider(<TradeScreen />);
+
+		// Trigger trade submission
+		fireEvent.press(getByTestId('mock-button')); // Updated to match the actual test ID
+
+		// Confirm the trade in the confirmation modal
+		const confirmationModal = getByTestId('mock-TradeConfirmation');
+		fireEvent.press(confirmationModal.props.onConfirm);
+
+		// Verify transaction signing was attempted
+		await waitFor(() => expect(mockSignTradeTransaction).toHaveBeenCalledTimes(1));
+
+		// Verify trade submission to API
+		await waitFor(() => expect(api.submitTrade).toHaveBeenCalledTimes(1));
+		expect(api.submitTrade).toHaveBeenCalledWith({
+			signed_transaction: 'mock_signed_tx',
+			from_coin_id: expect.any(String),
+			to_coin_id: expect.any(String),
+			amount: expect.any(Number)
+		});
+
+		// Verify status polling started
+		await waitFor(() => expect(api.getTradeStatus).toHaveBeenCalledWith('mock_tx_hash'));
 	});
 
 	// Add more tests here for:

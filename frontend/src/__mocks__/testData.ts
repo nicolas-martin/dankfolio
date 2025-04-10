@@ -1,0 +1,49 @@
+import { Coin, Wallet } from '@/types';
+import { PortfolioToken } from '@/store/portfolio';
+
+export const mockFromCoin: Coin = {
+	id: "So11111111111111111111111111111111111111112",
+	name: "Solana",
+	symbol: "SOL",
+	icon_url: "sol_icon_url",
+	decimals: 9,
+	price: 150.0,
+	description: "Solana Blockchain",
+	website: "https://solana.com",
+	twitter: "https://twitter.com/solana",
+	telegram: "",
+	daily_volume: 5e9,
+	tags: ["layer-1"],
+	created_at: "2024-01-01T00:00:00Z",
+};
+
+export const mockToCoin: Coin = {
+	id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
+	name: "WEN",
+	symbol: "WEN",
+	icon_url: "wen_icon_url",
+	decimals: 5,
+	price: 0.00011,
+	description: "WEN",
+	website: "https://wen-foundation.org",
+	twitter: "https://twitter.com/wenwencoin",
+	telegram: "https://t.me/wenwencoinsol",
+	daily_volume: 123456.78,
+	tags: ["meme", "community"],
+	created_at: "2024-01-01T00:00:00Z"
+};
+
+export const mockWallet: Wallet = {
+	address: 'TestWalletAddress12345',
+	privateKey: 'TestPrivateKey12345',
+	publicKey: 'TestPublicKey67890',
+	balance: 0,
+};
+
+export const mockFromPortfolioToken: PortfolioToken = {
+	id: mockFromCoin.id,
+	amount: 10,
+	price: mockFromCoin.price,
+	value: 10 * mockFromCoin.price,
+	coin: mockFromCoin,
+}; 
