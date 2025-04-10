@@ -31,7 +31,13 @@ export const formatAddress = (address: string): string => {
 export const sortTokensByValue = (tokens: ProfileCoin[]): ProfileCoin[] => {
 	return [...tokens].sort((a, b) => b.value - a.value);
 };
-export const handleRefresh = async () => {
+
+export const handleRefresh = async (
+	wallet: { address: string },
+	setIsRefreshing: (value: boolean) => void,
+	fetchPortfolioBalance: (address: string) => Promise<void>,
+	showToast: (props: NotificationProps) => void
+) => {
 	if (!wallet) return;
 	setIsRefreshing(true);
 	try {

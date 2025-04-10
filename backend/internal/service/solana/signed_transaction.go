@@ -5,10 +5,26 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"sync"
+	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/internal/model"
+)
+
+// MockTransactionState tracks the state of mock transactions
+type MockTransactionState struct {
+	FirstSeenAt   time.Time
+	NumChecks     int
+	Confirmations uint64
+	IsFinalized   bool
+}
+
+// Global map to track mock transaction states with mutex for thread safety
+var (
+	mockTxStates = make(map[string]*MockTransactionState)
+	mockTxMutex  sync.RWMutex
 )
 
 // ExecuteTrade executes a pre-signed transaction from the frontend
@@ -84,11 +100,12 @@ func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signe
 	return sig, nil
 }
 
-// GetTransactionConfirmationStatus retrieves the confirmation status of a given transaction signature.
-// Corrected return type from *rpc.SignatureStatusesResult to *rpc.GetSignatureStatusesResult
 func (s *SolanaTradeService) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
-	log.Printf("🔍 Checking confirmation status for signature: %s", sigStr)
+	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		return getMockTransactionStatus(sigStr)
+	}
 
+	log.Printf("🔍 Checking confirmation status for signature: %s", sigStr)
 	sig, err := solana.SignatureFromBase58(sigStr)
 	if err != nil {
 		log.Printf("❌ Invalid signature format: %v", err)
@@ -122,4 +139,90 @@ func (s *SolanaTradeService) GetTransactionConfirmationStatus(ctx context.Contex
 	log.Printf("✅ Transaction %s status: %s, Confirmations: %d", sigStr, status.Value[0].ConfirmationStatus, confirmations)
 
 	return status, nil
+}
+
+// Helper function to create uint64 pointer
+func ptr(v uint64) *uint64 {
+	return &v
+}
+
+// getMockTransactionStatus handles the mock transaction status progression
+func getMockTransactionStatus(sigStr string) (*rpc.GetSignatureStatusesResult, error) {
+	// Special case for testing error scenarios
+	if len(sigStr) > 5 && sigStr[:5] == "error" {
+		log.Printf("❌ Mock error case triggered for test signature")
+		return &rpc.GetSignatureStatusesResult{
+			Value: []*rpc.SignatureStatusesResult{
+				{
+					Slot:               uint64(time.Now().Unix()),
+					Confirmations:      nil,
+					Err:                fmt.Errorf("mock transaction error: insufficient funds"),
+					ConfirmationStatus: "",
+				},
+			},
+		}, fmt.Errorf("transaction failed: insufficient funds")
+	}
+
+	mockTxMutex.Lock()
+	state, exists := mockTxStates[sigStr]
+	if !exists {
+		// First time seeing this transaction
+		state = &MockTransactionState{
+			FirstSeenAt:   time.Now(),
+			NumChecks:     0,
+			Confirmations: 0,
+			IsFinalized:   false,
+		}
+		mockTxStates[sigStr] = state
+	}
+	state.NumChecks++
+	mockTxMutex.Unlock()
+
+	// Initial state - always pending on first check
+	if state.NumChecks == 1 {
+		log.Printf("⏳ Transaction %s not yet found or processed.", sigStr)
+		return nil, nil
+	}
+
+	// Progress through confirmation states
+	timeSinceFirst := time.Since(state.FirstSeenAt)
+	if !state.IsFinalized {
+		if timeSinceFirst < 10*time.Second {
+			// Increment confirmations by 2-3 each check
+			state.Confirmations += 2 + uint64(state.NumChecks%2)
+			log.Printf("✅ Transaction %s status: confirmed, Confirmations: %d", sigStr, state.Confirmations)
+			return &rpc.GetSignatureStatusesResult{
+				Value: []*rpc.SignatureStatusesResult{
+					{
+						Slot:               uint64(time.Now().Unix()),
+						Confirmations:      ptr(state.Confirmations),
+						Err:                nil,
+						ConfirmationStatus: rpc.ConfirmationStatusConfirmed,
+					},
+				},
+			}, nil
+		} else {
+			// After 10 seconds, finalize the transaction
+			state.IsFinalized = true
+			state.Confirmations = 0 // Reset to 0 for finalized state
+		}
+	}
+
+	// Return finalized state
+	if state.IsFinalized {
+		log.Printf("✅ Transaction %s status: finalized, Confirmations: 0", sigStr)
+		return &rpc.GetSignatureStatusesResult{
+			Value: []*rpc.SignatureStatusesResult{
+				{
+					Slot:               uint64(time.Now().Unix()),
+					Confirmations:      ptr(uint64(0)),
+					Err:                nil,
+					ConfirmationStatus: rpc.ConfirmationStatusFinalized,
+				},
+			},
+		}, nil
+	}
+
+	// This should never happen due to the logic above, but added for completeness
+	return nil, fmt.Errorf("unexpected state in mock transaction")
 }

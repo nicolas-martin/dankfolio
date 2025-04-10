@@ -8,6 +8,7 @@ import { createStyles } from './trade_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
+import { RootStackParamList } from '@/types';
 import CoinSelector from '@components/Trade/CoinSelector';
 import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
@@ -19,17 +20,17 @@ import api from '@/services/api'; // Added api import
 import { openSolscanUrl } from '@/utils/url'; // Added url util
 import { SOLANA_ADDRESS } from '@/utils/constants';
 
-type TradeScreenNavigationProp = NavigationProp<Record<string, TradeScreenParams>>;
-type TradeScreenRouteProp = RouteProp<Record<string, TradeScreenParams>, string>;
+type TradeScreenNavigationProp = NavigationProp<RootStackParamList>;
+type TradeScreenRouteProp = RouteProp<RootStackParamList, 'Trade'>;
 
 const Trade: React.FC = () => {
 	const navigation = useNavigation<TradeScreenNavigationProp>();
 	const route = useRoute<TradeScreenRouteProp>();
-	const { initialFromCoin, initialToCoin } = route.params;
+	const { initialFromCoin = null, initialToCoin = null } = route.params || {};
 	const { tokens, wallet } = usePortfolioStore();
 	const { getCoinByID } = useCoinStore();
 	const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin);
-	const [toCoin, setToCoin] = useState<Coin>(initialToCoin);
+	const [toCoin, setToCoin] = useState<Coin | null>(initialToCoin);
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
 	const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -52,6 +53,15 @@ const Trade: React.FC = () => {
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
 
+	// Early return if toCoin is null
+	if (!toCoin) {
+		return (
+			<View style={styles.noWalletContainer}>
+				<Text style={{ color: theme.colors.onSurface }}>Invalid trade pair. Please select coins to trade.</Text>
+			</View>
+		);
+	}
+
 	// Refresh coin prices on screen load
 	useEffect(() => {
 		let isMounted = true;
@@ -62,7 +72,7 @@ const Trade: React.FC = () => {
 
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
 					getCoinByID(fromCoinId, true),         // Use the determined ID, force refresh
-					getCoinByID(toCoin.id, true)           // Force refresh for the 'to' coin
+					getCoinByID(toCoin?.id ?? SOLANA_ADDRESS, true)           // Force refresh for the 'to' coin
 				]);
 				if (!isMounted) return;
 
@@ -102,7 +112,7 @@ const Trade: React.FC = () => {
 	}, [tokens, toCoin]);
 
 	const handleFromAmountChange = async (amount: string) => {
-		if (!fromCoin) return;
+		if (!fromCoin || !toCoin) return;
 
 		setFromAmount(amount);
 		if (!amount || isNaN(parseFloat(amount))) {
@@ -122,7 +132,7 @@ const Trade: React.FC = () => {
 	};
 
 	const handleToAmountChange = async (amount: string) => {
-		if (!fromCoin) return;
+		if (!fromCoin || !toCoin) return;
 		console.log('🔄 To Amount Change:', {
 			amount,
 			fromCoin: fromCoin?.symbol,
@@ -297,17 +307,17 @@ const Trade: React.FC = () => {
 	const handleCloseStatusModal = () => {
 		setIsStatusModalVisible(false);
 		stopPolling(); // Ensure polling stops when modal is manually closed
-		// Optionally navigate home or reset state further
-		// navigation.navigate('Home');
+		// Navigate to home screen
+		navigation.navigate('Home');
 	};
 
 	const handleSwapCoins = () => {
-		const tempCoin = fromCoin;
-		const tempAmount = fromAmount;
-		if (!tempCoin) {
-			console.warn('Cannot swap with null fromCoin');
+		if (!fromCoin || !toCoin) {
+			console.warn('Cannot swap with null coins');
 			return;
 		}
+		const tempCoin = fromCoin;
+		const tempAmount = fromAmount;
 		setFromCoin(toCoin);
 		setToCoin(tempCoin);
 		setFromAmount(toAmount);

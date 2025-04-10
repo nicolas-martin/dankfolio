@@ -1,6 +1,6 @@
 // frontend/src/services/api.test.ts
 import axios from 'axios';
-import api, { Coin, TradePayload, TradeQuoteResponse, WalletBalanceResponse, PriceHistoryResponse, TradeResponse } from './api'; // Import the default export and types
+import api, { Coin, TradePayload, TradeQuoteResponse, WalletBalanceResponse, PriceHistoryResponse } from './api'; // Import the default export and types
 
 // --- Mock axios using the factory pattern --- 
 jest.mock('axios', () => {
@@ -57,9 +57,7 @@ describe('API Service', () => {
 		signed_transaction: 'mockSignedTx',
 	};
 
-	const mockTradeResponse: TradeResponse = {
-		status: 'success',
-		trade_id: 'trade123',
+	const mockSubmitTradeResponse = {
 		transaction_hash: 'txHash456',
 	};
 
@@ -102,25 +100,25 @@ describe('API Service', () => {
 		consoleErrorSpy.mockRestore(); // Restore error spy
 	});
 
-	it('executeTrade successfully calls POST /api/trades/execute', async () => {
-		mockAxiosInstance.post.mockResolvedValue({ data: mockTradeResponse });
+	it('submitTrade successfully calls POST /api/trades/submit', async () => {
+		mockAxiosInstance.post.mockResolvedValue({ data: mockSubmitTradeResponse });
 
-		const result = await api.executeTrade(mockTradePayload);
+		const result = await api.submitTrade(mockTradePayload);
 
 		expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
 		expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-			'/api/trades/execute',
+			'/api/trades/submit',
 			mockTradePayload,
 			expect.objectContaining({ headers: expect.any(Object) })
 		);
-		expect(result).toEqual(mockTradeResponse);
+		expect(result).toEqual(mockSubmitTradeResponse);
 	});
 
-	it('executeTrade handles API errors', async () => {
+	it('submitTrade handles API errors', async () => {
 		const mockError = { response: { status: 500, data: { message: 'Server Error' } }, message: 'Request failed' };
 		mockAxiosInstance.post.mockRejectedValue(mockError);
 
-		await expect(api.executeTrade(mockTradePayload)).rejects.toMatchObject({
+		await expect(api.submitTrade(mockTradePayload)).rejects.toMatchObject({
 			message: 'Request failed',
 			status: 500,
 			data: { message: 'Server Error' }
@@ -292,6 +290,31 @@ describe('API Service', () => {
 			status: 503,
 		});
 		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens/prices', expect.any(Object));
+	});
+
+	it('should execute a trade successfully', async () => {
+		const mockTradePayload: TradePayload = {
+			from_coin_id: 'SOL',
+			to_coin_id: 'WEN',
+			amount: 1000000000,
+			signed_transaction: 'mock_signed_tx'
+		};
+
+		const result = await api.submitTrade(mockTradePayload);
+		expect(result).toEqual({ transaction_hash: 'mock_tx_hash' });
+	});
+
+	it('should handle trade execution errors', async () => {
+		const mockTradePayload: TradePayload = {
+			from_coin_id: 'SOL',
+			to_coin_id: 'WEN',
+			amount: 1000000000,
+			signed_transaction: 'mock_signed_tx'
+		};
+
+		await expect(api.submitTrade(mockTradePayload)).rejects.toMatchObject({
+			message: 'Trade execution failed'
+		});
 	});
 
 }); 

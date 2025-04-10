@@ -109,12 +109,16 @@ func (h *TradeHandlers) GetTradeStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("🔍 Checking status for transaction hash: %s", txHash)
+	ctx := r.Context()
+	if r.Header.Get("X-Debug-Mode") == "true" {
+		ctx = context.WithValue(ctx, model.DebugModeKey, true)
+	}
 
 	// Assuming tradeService provides access to the Solana service's status check method
 	// This might require adding GetTransactionConfirmationStatus to the trade.Service interface
 	// or injecting SolanaTradeService directly into TradeHandlers.
 	// Call the method directly on the injected Solana service
-	statusResult, err := h.solanaService.GetTransactionConfirmationStatus(r.Context(), txHash)
+	statusResult, err := h.solanaService.GetTransactionConfirmationStatus(ctx, txHash)
 	if err != nil {
 		// Distinguish between 'not found yet' and actual errors
 		// The service layer returns (nil, nil) if not found yet.
