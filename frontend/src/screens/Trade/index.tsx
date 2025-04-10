@@ -282,11 +282,16 @@ const Trade: React.FC = () => {
 
 				// 3. Start Polling
 				stopPolling(); // Clear any previous interval
-				pollingIntervalRef.current = setInterval(() => {
-					pollTransactionStatus(submitResponse.transaction_hash);
-				}, 5000); // Poll every 5 seconds
-				// Initial poll immediately
-				pollTransactionStatus(submitResponse.transaction_hash);
+
+				// Initial poll after 1 second delay
+				setTimeout(async () => {
+					await pollTransactionStatus(submitResponse.transaction_hash);
+
+					// Start regular polling every 3 seconds
+					pollingIntervalRef.current = setInterval(() => {
+						pollTransactionStatus(submitResponse.transaction_hash);
+					}, 3000); // Poll every 3 seconds
+				}, 1000); // 1 second delay before first poll
 
 			} else {
 				throw new Error('Submission did not return a transaction hash.');

@@ -102,9 +102,12 @@ func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signe
 
 func (s *SolanaTradeService) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		log.Print("X-Debug-Mode: true")
 		return getMockTransactionStatus(sigStr)
 	}
 
+	// TODO: possible bug if the tx hash is old and already finalized.
+	// it's an edge case...
 	log.Printf("🔍 Checking confirmation status for signature: %s", sigStr)
 	sig, err := solana.SignatureFromBase58(sigStr)
 	if err != nil {
@@ -184,10 +187,13 @@ func getMockTransactionStatus(sigStr string) (*rpc.GetSignatureStatusesResult, e
 		return nil, nil
 	}
 
-	// Progress through confirmation states
-	timeSinceFirst := time.Since(state.FirstSeenAt)
+	// Progress through confirmation states based on number of checks
+	// We know frontend polls every 5 seconds, so:
+	// Check 1: Pending
+	// Check 2-3: Confirmed with increasing confirmations
+	// Check 4+: Finalized
 	if !state.IsFinalized {
-		if timeSinceFirst < 10*time.Second {
+		if state.NumChecks <= 3 {
 			// Increment confirmations by 2-3 each check
 			state.Confirmations += 2 + uint64(state.NumChecks%2)
 			log.Printf("✅ Transaction %s status: confirmed, Confirmations: %d", sigStr, state.Confirmations)
@@ -202,7 +208,7 @@ func getMockTransactionStatus(sigStr string) (*rpc.GetSignatureStatusesResult, e
 				},
 			}, nil
 		} else {
-			// After 10 seconds, finalize the transaction
+			// After 3 checks (15 seconds of polling), finalize the transaction
 			state.IsFinalized = true
 			state.Confirmations = 0 // Reset to 0 for finalized state
 		}

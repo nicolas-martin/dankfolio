@@ -12,6 +12,7 @@ const apiClient = axios.create({
 	headers: {
 		'Content-Type': 'application/json',
 		'Accept': 'application/json',
+		'X-Debug-Mode': 'true',
 	},
 	timeout: 30000,
 });
@@ -104,11 +105,7 @@ interface API {
 const api: API = {
 	submitTrade: async (payload: TradePayload): Promise<SubmitTradeResponse> => { // Renamed function
 		try {
-			const response = await apiClient.post('/api/trades/submit', payload, { // Updated endpoint
-				headers: {
-					'X-Debug-Mode': 'false'
-				}
-			});
+			const response = await apiClient.post('/api/trades/submit', payload);
 			return response.data;
 		} catch (error) {
 			throw handleApiError(error as AxiosError);
