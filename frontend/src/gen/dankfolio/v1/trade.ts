@@ -83,6 +83,45 @@ export interface ListTradesResponse {
   trades: Trade[];
 }
 
+/** GetTokenPricesRequest is the request for getting token prices */
+export interface GetTokenPricesRequest {
+  tokenIds: string[];
+}
+
+/** GetTokenPricesResponse is the response containing token prices */
+export interface GetTokenPricesResponse {
+  prices: { [key: string]: number };
+}
+
+export interface GetTokenPricesResponse_PricesEntry {
+  key: string;
+  value: number;
+}
+
+/** PrepareTransferRequest is the request for preparing a transfer */
+export interface PrepareTransferRequest {
+  fromAddress: string;
+  toAddress: string;
+  /** Optional, empty for SOL */
+  tokenMint: string;
+  amount: number;
+}
+
+/** PrepareTransferResponse is the response with the unsigned transaction */
+export interface PrepareTransferResponse {
+  unsignedTransaction: string;
+}
+
+/** SubmitTransferRequest is the request for submitting a signed transfer */
+export interface SubmitTransferRequest {
+  signedTransaction: string;
+}
+
+/** SubmitTransferResponse is the response after submitting a transfer */
+export interface SubmitTransferResponse {
+  transactionHash: string;
+}
+
 function createBaseTrade(): Trade {
   return {
     id: "",
@@ -1108,6 +1147,491 @@ export const ListTradesResponse = {
   },
 };
 
+function createBaseGetTokenPricesRequest(): GetTokenPricesRequest {
+  return { tokenIds: [] };
+}
+
+export const GetTokenPricesRequest = {
+  encode(message: GetTokenPricesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.tokenIds) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetTokenPricesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTokenPricesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.tokenIds.push(reader.string());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTokenPricesRequest {
+    return { tokenIds: Array.isArray(object?.tokenIds) ? object.tokenIds.map((e: any) => String(e)) : [] };
+  },
+
+  toJSON(message: GetTokenPricesRequest): unknown {
+    const obj: any = {};
+    if (message.tokenIds?.length) {
+      obj.tokenIds = message.tokenIds;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetTokenPricesRequest>, I>>(base?: I): GetTokenPricesRequest {
+    return GetTokenPricesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetTokenPricesRequest>, I>>(object: I): GetTokenPricesRequest {
+    const message = createBaseGetTokenPricesRequest();
+    message.tokenIds = object.tokenIds?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseGetTokenPricesResponse(): GetTokenPricesResponse {
+  return { prices: {} };
+}
+
+export const GetTokenPricesResponse = {
+  encode(message: GetTokenPricesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    Object.entries(message.prices).forEach(([key, value]) => {
+      GetTokenPricesResponse_PricesEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).ldelim();
+    });
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetTokenPricesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTokenPricesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = GetTokenPricesResponse_PricesEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.prices[entry1.key] = entry1.value;
+          }
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTokenPricesResponse {
+    return {
+      prices: isObject(object.prices)
+        ? Object.entries(object.prices).reduce<{ [key: string]: number }>((acc, [key, value]) => {
+          acc[key] = Number(value);
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: GetTokenPricesResponse): unknown {
+    const obj: any = {};
+    if (message.prices) {
+      const entries = Object.entries(message.prices);
+      if (entries.length > 0) {
+        obj.prices = {};
+        entries.forEach(([k, v]) => {
+          obj.prices[k] = v;
+        });
+      }
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetTokenPricesResponse>, I>>(base?: I): GetTokenPricesResponse {
+    return GetTokenPricesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetTokenPricesResponse>, I>>(object: I): GetTokenPricesResponse {
+    const message = createBaseGetTokenPricesResponse();
+    message.prices = Object.entries(object.prices ?? {}).reduce<{ [key: string]: number }>((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = Number(value);
+      }
+      return acc;
+    }, {});
+    return message;
+  },
+};
+
+function createBaseGetTokenPricesResponse_PricesEntry(): GetTokenPricesResponse_PricesEntry {
+  return { key: "", value: 0 };
+}
+
+export const GetTokenPricesResponse_PricesEntry = {
+  encode(message: GetTokenPricesResponse_PricesEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== 0) {
+      writer.uint32(17).double(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetTokenPricesResponse_PricesEntry {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTokenPricesResponse_PricesEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        case 2:
+          if (tag !== 17) {
+            break;
+          }
+
+          message.value = reader.double();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTokenPricesResponse_PricesEntry {
+    return { key: isSet(object.key) ? String(object.key) : "", value: isSet(object.value) ? Number(object.value) : 0 };
+  },
+
+  toJSON(message: GetTokenPricesResponse_PricesEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== 0) {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetTokenPricesResponse_PricesEntry>, I>>(
+    base?: I,
+  ): GetTokenPricesResponse_PricesEntry {
+    return GetTokenPricesResponse_PricesEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetTokenPricesResponse_PricesEntry>, I>>(
+    object: I,
+  ): GetTokenPricesResponse_PricesEntry {
+    const message = createBaseGetTokenPricesResponse_PricesEntry();
+    message.key = object.key ?? "";
+    message.value = object.value ?? 0;
+    return message;
+  },
+};
+
+function createBasePrepareTransferRequest(): PrepareTransferRequest {
+  return { fromAddress: "", toAddress: "", tokenMint: "", amount: 0 };
+}
+
+export const PrepareTransferRequest = {
+  encode(message: PrepareTransferRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.fromAddress !== "") {
+      writer.uint32(10).string(message.fromAddress);
+    }
+    if (message.toAddress !== "") {
+      writer.uint32(18).string(message.toAddress);
+    }
+    if (message.tokenMint !== "") {
+      writer.uint32(26).string(message.tokenMint);
+    }
+    if (message.amount !== 0) {
+      writer.uint32(33).double(message.amount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): PrepareTransferRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePrepareTransferRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.fromAddress = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.toAddress = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.tokenMint = reader.string();
+          continue;
+        case 4:
+          if (tag !== 33) {
+            break;
+          }
+
+          message.amount = reader.double();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PrepareTransferRequest {
+    return {
+      fromAddress: isSet(object.fromAddress) ? String(object.fromAddress) : "",
+      toAddress: isSet(object.toAddress) ? String(object.toAddress) : "",
+      tokenMint: isSet(object.tokenMint) ? String(object.tokenMint) : "",
+      amount: isSet(object.amount) ? Number(object.amount) : 0,
+    };
+  },
+
+  toJSON(message: PrepareTransferRequest): unknown {
+    const obj: any = {};
+    if (message.fromAddress !== "") {
+      obj.fromAddress = message.fromAddress;
+    }
+    if (message.toAddress !== "") {
+      obj.toAddress = message.toAddress;
+    }
+    if (message.tokenMint !== "") {
+      obj.tokenMint = message.tokenMint;
+    }
+    if (message.amount !== 0) {
+      obj.amount = message.amount;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PrepareTransferRequest>, I>>(base?: I): PrepareTransferRequest {
+    return PrepareTransferRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PrepareTransferRequest>, I>>(object: I): PrepareTransferRequest {
+    const message = createBasePrepareTransferRequest();
+    message.fromAddress = object.fromAddress ?? "";
+    message.toAddress = object.toAddress ?? "";
+    message.tokenMint = object.tokenMint ?? "";
+    message.amount = object.amount ?? 0;
+    return message;
+  },
+};
+
+function createBasePrepareTransferResponse(): PrepareTransferResponse {
+  return { unsignedTransaction: "" };
+}
+
+export const PrepareTransferResponse = {
+  encode(message: PrepareTransferResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.unsignedTransaction !== "") {
+      writer.uint32(10).string(message.unsignedTransaction);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): PrepareTransferResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePrepareTransferResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.unsignedTransaction = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PrepareTransferResponse {
+    return { unsignedTransaction: isSet(object.unsignedTransaction) ? String(object.unsignedTransaction) : "" };
+  },
+
+  toJSON(message: PrepareTransferResponse): unknown {
+    const obj: any = {};
+    if (message.unsignedTransaction !== "") {
+      obj.unsignedTransaction = message.unsignedTransaction;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PrepareTransferResponse>, I>>(base?: I): PrepareTransferResponse {
+    return PrepareTransferResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PrepareTransferResponse>, I>>(object: I): PrepareTransferResponse {
+    const message = createBasePrepareTransferResponse();
+    message.unsignedTransaction = object.unsignedTransaction ?? "";
+    return message;
+  },
+};
+
+function createBaseSubmitTransferRequest(): SubmitTransferRequest {
+  return { signedTransaction: "" };
+}
+
+export const SubmitTransferRequest = {
+  encode(message: SubmitTransferRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.signedTransaction !== "") {
+      writer.uint32(10).string(message.signedTransaction);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubmitTransferRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubmitTransferRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.signedTransaction = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubmitTransferRequest {
+    return { signedTransaction: isSet(object.signedTransaction) ? String(object.signedTransaction) : "" };
+  },
+
+  toJSON(message: SubmitTransferRequest): unknown {
+    const obj: any = {};
+    if (message.signedTransaction !== "") {
+      obj.signedTransaction = message.signedTransaction;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubmitTransferRequest>, I>>(base?: I): SubmitTransferRequest {
+    return SubmitTransferRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubmitTransferRequest>, I>>(object: I): SubmitTransferRequest {
+    const message = createBaseSubmitTransferRequest();
+    message.signedTransaction = object.signedTransaction ?? "";
+    return message;
+  },
+};
+
+function createBaseSubmitTransferResponse(): SubmitTransferResponse {
+  return { transactionHash: "" };
+}
+
+export const SubmitTransferResponse = {
+  encode(message: SubmitTransferResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.transactionHash !== "") {
+      writer.uint32(10).string(message.transactionHash);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubmitTransferResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubmitTransferResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.transactionHash = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubmitTransferResponse {
+    return { transactionHash: isSet(object.transactionHash) ? String(object.transactionHash) : "" };
+  },
+
+  toJSON(message: SubmitTransferResponse): unknown {
+    const obj: any = {};
+    if (message.transactionHash !== "") {
+      obj.transactionHash = message.transactionHash;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubmitTransferResponse>, I>>(base?: I): SubmitTransferResponse {
+    return SubmitTransferResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubmitTransferResponse>, I>>(object: I): SubmitTransferResponse {
+    const message = createBaseSubmitTransferResponse();
+    message.transactionHash = object.transactionHash ?? "";
+    return message;
+  },
+};
+
 export interface TradeServiceImplementation<CallContextExt = {}> {
   /** GetTradeQuote returns a quote for a potential trade */
   getTradeQuote(
@@ -1131,6 +1655,21 @@ export interface TradeServiceImplementation<CallContextExt = {}> {
     request: ListTradesRequest,
     context: CallContext & CallContextExt,
   ): Promise<DeepPartial<ListTradesResponse>>;
+  /** GetTokenPrices returns prices for multiple tokens */
+  getTokenPrices(
+    request: GetTokenPricesRequest,
+    context: CallContext & CallContextExt,
+  ): Promise<DeepPartial<GetTokenPricesResponse>>;
+  /** PrepareTransfer prepares an unsigned transfer transaction */
+  prepareTransfer(
+    request: PrepareTransferRequest,
+    context: CallContext & CallContextExt,
+  ): Promise<DeepPartial<PrepareTransferResponse>>;
+  /** SubmitTransfer submits a signed transfer transaction */
+  submitTransfer(
+    request: SubmitTransferRequest,
+    context: CallContext & CallContextExt,
+  ): Promise<DeepPartial<SubmitTransferResponse>>;
 }
 
 export interface TradeServiceClient<CallOptionsExt = {}> {
@@ -1156,6 +1695,21 @@ export interface TradeServiceClient<CallOptionsExt = {}> {
     request: DeepPartial<ListTradesRequest>,
     options?: CallOptions & CallOptionsExt,
   ): Promise<ListTradesResponse>;
+  /** GetTokenPrices returns prices for multiple tokens */
+  getTokenPrices(
+    request: DeepPartial<GetTokenPricesRequest>,
+    options?: CallOptions & CallOptionsExt,
+  ): Promise<GetTokenPricesResponse>;
+  /** PrepareTransfer prepares an unsigned transfer transaction */
+  prepareTransfer(
+    request: DeepPartial<PrepareTransferRequest>,
+    options?: CallOptions & CallOptionsExt,
+  ): Promise<PrepareTransferResponse>;
+  /** SubmitTransfer submits a signed transfer transaction */
+  submitTransfer(
+    request: DeepPartial<SubmitTransferRequest>,
+    options?: CallOptions & CallOptionsExt,
+  ): Promise<SubmitTransferResponse>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
@@ -1189,6 +1743,10 @@ function fromJsonTimestamp(o: any): Date {
   } else {
     return fromTimestamp(Timestamp.fromJSON(o));
   }
+}
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
 }
 
 function isSet(value: any): boolean {

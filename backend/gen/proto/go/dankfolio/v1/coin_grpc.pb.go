@@ -21,7 +21,6 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	CoinService_GetAvailableCoins_FullMethodName = "/dankfolio.v1.CoinService/GetAvailableCoins"
 	CoinService_GetCoinByID_FullMethodName       = "/dankfolio.v1.CoinService/GetCoinByID"
-	CoinService_GetTokenPrices_FullMethodName    = "/dankfolio.v1.CoinService/GetTokenPrices"
 )
 
 // CoinServiceClient is the client API for CoinService service.
@@ -32,8 +31,6 @@ type CoinServiceClient interface {
 	GetAvailableCoins(ctx context.Context, in *GetAvailableCoinsRequest, opts ...grpc.CallOption) (*GetAvailableCoinsResponse, error)
 	// GetCoinByID returns a specific coin by ID
 	GetCoinByID(ctx context.Context, in *GetCoinByIDRequest, opts ...grpc.CallOption) (*Coin, error)
-	// GetTokenPrices returns prices for multiple tokens
-	GetTokenPrices(ctx context.Context, in *GetTokenPricesRequest, opts ...grpc.CallOption) (*GetTokenPricesResponse, error)
 }
 
 type coinServiceClient struct {
@@ -62,15 +59,6 @@ func (c *coinServiceClient) GetCoinByID(ctx context.Context, in *GetCoinByIDRequ
 	return out, nil
 }
 
-func (c *coinServiceClient) GetTokenPrices(ctx context.Context, in *GetTokenPricesRequest, opts ...grpc.CallOption) (*GetTokenPricesResponse, error) {
-	out := new(GetTokenPricesResponse)
-	err := c.cc.Invoke(ctx, CoinService_GetTokenPrices_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CoinServiceServer is the server API for CoinService service.
 // All implementations must embed UnimplementedCoinServiceServer
 // for forward compatibility
@@ -79,8 +67,6 @@ type CoinServiceServer interface {
 	GetAvailableCoins(context.Context, *GetAvailableCoinsRequest) (*GetAvailableCoinsResponse, error)
 	// GetCoinByID returns a specific coin by ID
 	GetCoinByID(context.Context, *GetCoinByIDRequest) (*Coin, error)
-	// GetTokenPrices returns prices for multiple tokens
-	GetTokenPrices(context.Context, *GetTokenPricesRequest) (*GetTokenPricesResponse, error)
 	mustEmbedUnimplementedCoinServiceServer()
 }
 
@@ -93,9 +79,6 @@ func (UnimplementedCoinServiceServer) GetAvailableCoins(context.Context, *GetAva
 }
 func (UnimplementedCoinServiceServer) GetCoinByID(context.Context, *GetCoinByIDRequest) (*Coin, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCoinByID not implemented")
-}
-func (UnimplementedCoinServiceServer) GetTokenPrices(context.Context, *GetTokenPricesRequest) (*GetTokenPricesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTokenPrices not implemented")
 }
 func (UnimplementedCoinServiceServer) mustEmbedUnimplementedCoinServiceServer() {}
 
@@ -146,24 +129,6 @@ func _CoinService_GetCoinByID_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CoinService_GetTokenPrices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTokenPricesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CoinServiceServer).GetTokenPrices(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CoinService_GetTokenPrices_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CoinServiceServer).GetTokenPrices(ctx, req.(*GetTokenPricesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CoinService_ServiceDesc is the grpc.ServiceDesc for CoinService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -178,10 +143,6 @@ var CoinService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCoinByID",
 			Handler:    _CoinService_GetCoinByID_Handler,
-		},
-		{
-			MethodName: "GetTokenPrices",
-			Handler:    _CoinService_GetTokenPrices_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

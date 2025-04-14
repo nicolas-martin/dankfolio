@@ -22,6 +22,15 @@ service TradeService {
 
   // ListTrades returns all trades
   rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
+
+  // GetTokenPrices returns prices for multiple tokens
+  rpc GetTokenPrices(GetTokenPricesRequest) returns (GetTokenPricesResponse);
+
+  // PrepareTransfer prepares an unsigned transfer transaction
+  rpc PrepareTransfer(PrepareTransferRequest) returns (PrepareTransferResponse);
+
+  // SubmitTransfer submits a signed transfer transaction
+  rpc SubmitTransfer(SubmitTransferRequest) returns (SubmitTransferResponse);
 }
 
 // Trade represents a meme trading transaction
@@ -101,4 +110,37 @@ message ListTradesRequest {
 // ListTradesResponse is the response containing a list of trades
 message ListTradesResponse {
   repeated Trade trades = 1;
-} 
+}
+
+// GetTokenPricesRequest is the request for getting token prices
+message GetTokenPricesRequest {
+  repeated string token_ids = 1;
+}
+
+// GetTokenPricesResponse is the response containing token prices
+message GetTokenPricesResponse {
+  map<string, double> prices = 1;
+}
+
+// PrepareTransferRequest is the request for preparing a transfer
+message PrepareTransferRequest {
+  string from_address = 1;
+  string to_address = 2;
+  string token_mint = 3;  // Optional, empty for SOL
+  double amount = 4;
+}
+
+// PrepareTransferResponse is the response with the unsigned transaction
+message PrepareTransferResponse {
+  string unsigned_transaction = 1;
+}
+
+// SubmitTransferRequest is the request for submitting a signed transfer
+message SubmitTransferRequest {
+  string signed_transaction = 1;
+}
+
+// SubmitTransferResponse is the response after submitting a transfer
+message SubmitTransferResponse {
+  string transaction_hash = 1;
+}

@@ -5,6 +5,7 @@ import { Timestamp } from "../../google/protobuf/timestamp";
 
 export const protobufPackage = "dankfolio.v1";
 
+/** Coin represents a token or currency */
 export interface Coin {
   id: string;
   name: string;
@@ -33,19 +34,6 @@ export interface GetAvailableCoinsResponse {
 
 export interface GetCoinByIDRequest {
   id: string;
-}
-
-export interface GetTokenPricesRequest {
-  tokenIds: string[];
-}
-
-export interface GetTokenPricesResponse {
-  prices: { [key: string]: number };
-}
-
-export interface GetTokenPricesResponse_PricesEntry {
-  key: string;
-  value: number;
 }
 
 function createBaseCoin(): Coin {
@@ -504,216 +492,6 @@ export const GetCoinByIDRequest = {
   },
 };
 
-function createBaseGetTokenPricesRequest(): GetTokenPricesRequest {
-  return { tokenIds: [] };
-}
-
-export const GetTokenPricesRequest = {
-  encode(message: GetTokenPricesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.tokenIds) {
-      writer.uint32(10).string(v!);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): GetTokenPricesRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetTokenPricesRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.tokenIds.push(reader.string());
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetTokenPricesRequest {
-    return { tokenIds: Array.isArray(object?.tokenIds) ? object.tokenIds.map((e: any) => String(e)) : [] };
-  },
-
-  toJSON(message: GetTokenPricesRequest): unknown {
-    const obj: any = {};
-    if (message.tokenIds?.length) {
-      obj.tokenIds = message.tokenIds;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetTokenPricesRequest>, I>>(base?: I): GetTokenPricesRequest {
-    return GetTokenPricesRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetTokenPricesRequest>, I>>(object: I): GetTokenPricesRequest {
-    const message = createBaseGetTokenPricesRequest();
-    message.tokenIds = object.tokenIds?.map((e) => e) || [];
-    return message;
-  },
-};
-
-function createBaseGetTokenPricesResponse(): GetTokenPricesResponse {
-  return { prices: {} };
-}
-
-export const GetTokenPricesResponse = {
-  encode(message: GetTokenPricesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    Object.entries(message.prices).forEach(([key, value]) => {
-      GetTokenPricesResponse_PricesEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).ldelim();
-    });
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): GetTokenPricesResponse {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetTokenPricesResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          const entry1 = GetTokenPricesResponse_PricesEntry.decode(reader, reader.uint32());
-          if (entry1.value !== undefined) {
-            message.prices[entry1.key] = entry1.value;
-          }
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetTokenPricesResponse {
-    return {
-      prices: isObject(object.prices)
-        ? Object.entries(object.prices).reduce<{ [key: string]: number }>((acc, [key, value]) => {
-          acc[key] = Number(value);
-          return acc;
-        }, {})
-        : {},
-    };
-  },
-
-  toJSON(message: GetTokenPricesResponse): unknown {
-    const obj: any = {};
-    if (message.prices) {
-      const entries = Object.entries(message.prices);
-      if (entries.length > 0) {
-        obj.prices = {};
-        entries.forEach(([k, v]) => {
-          obj.prices[k] = v;
-        });
-      }
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetTokenPricesResponse>, I>>(base?: I): GetTokenPricesResponse {
-    return GetTokenPricesResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetTokenPricesResponse>, I>>(object: I): GetTokenPricesResponse {
-    const message = createBaseGetTokenPricesResponse();
-    message.prices = Object.entries(object.prices ?? {}).reduce<{ [key: string]: number }>((acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key] = Number(value);
-      }
-      return acc;
-    }, {});
-    return message;
-  },
-};
-
-function createBaseGetTokenPricesResponse_PricesEntry(): GetTokenPricesResponse_PricesEntry {
-  return { key: "", value: 0 };
-}
-
-export const GetTokenPricesResponse_PricesEntry = {
-  encode(message: GetTokenPricesResponse_PricesEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.key !== "") {
-      writer.uint32(10).string(message.key);
-    }
-    if (message.value !== 0) {
-      writer.uint32(17).double(message.value);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): GetTokenPricesResponse_PricesEntry {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetTokenPricesResponse_PricesEntry();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.key = reader.string();
-          continue;
-        case 2:
-          if (tag !== 17) {
-            break;
-          }
-
-          message.value = reader.double();
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetTokenPricesResponse_PricesEntry {
-    return { key: isSet(object.key) ? String(object.key) : "", value: isSet(object.value) ? Number(object.value) : 0 };
-  },
-
-  toJSON(message: GetTokenPricesResponse_PricesEntry): unknown {
-    const obj: any = {};
-    if (message.key !== "") {
-      obj.key = message.key;
-    }
-    if (message.value !== 0) {
-      obj.value = message.value;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetTokenPricesResponse_PricesEntry>, I>>(
-    base?: I,
-  ): GetTokenPricesResponse_PricesEntry {
-    return GetTokenPricesResponse_PricesEntry.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetTokenPricesResponse_PricesEntry>, I>>(
-    object: I,
-  ): GetTokenPricesResponse_PricesEntry {
-    const message = createBaseGetTokenPricesResponse_PricesEntry();
-    message.key = object.key ?? "";
-    message.value = object.value ?? 0;
-    return message;
-  },
-};
-
 export interface CoinServiceImplementation<CallContextExt = {}> {
   /** GetAvailableCoins returns a list of available coins */
   getAvailableCoins(
@@ -722,11 +500,6 @@ export interface CoinServiceImplementation<CallContextExt = {}> {
   ): Promise<DeepPartial<GetAvailableCoinsResponse>>;
   /** GetCoinByID returns a specific coin by ID */
   getCoinByID(request: GetCoinByIDRequest, context: CallContext & CallContextExt): Promise<DeepPartial<Coin>>;
-  /** GetTokenPrices returns prices for multiple tokens */
-  getTokenPrices(
-    request: GetTokenPricesRequest,
-    context: CallContext & CallContextExt,
-  ): Promise<DeepPartial<GetTokenPricesResponse>>;
 }
 
 export interface CoinServiceClient<CallOptionsExt = {}> {
@@ -737,11 +510,6 @@ export interface CoinServiceClient<CallOptionsExt = {}> {
   ): Promise<GetAvailableCoinsResponse>;
   /** GetCoinByID returns a specific coin by ID */
   getCoinByID(request: DeepPartial<GetCoinByIDRequest>, options?: CallOptions & CallOptionsExt): Promise<Coin>;
-  /** GetTokenPrices returns prices for multiple tokens */
-  getTokenPrices(
-    request: DeepPartial<GetTokenPricesRequest>,
-    options?: CallOptions & CallOptionsExt,
-  ): Promise<GetTokenPricesResponse>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
@@ -775,10 +543,6 @@ function fromJsonTimestamp(o: any): Date {
   } else {
     return fromTimestamp(Timestamp.fromJSON(o));
   }
-}
-
-function isObject(value: any): boolean {
-  return typeof value === "object" && value !== null;
 }
 
 function isSet(value: any): boolean {

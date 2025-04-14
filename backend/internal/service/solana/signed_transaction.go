@@ -132,6 +132,7 @@ func (s *SolanaTradeService) GetTransactionConfirmationStatus(ctx context.Contex
 		return nil, nil
 	}
 
+	// NOTE: Do we always check the first entry?
 	if status.Value[0].Err != nil {
 		log.Printf("❌ Transaction %s failed with error: %v", sigStr, status.Value[0].Err)
 		// Return the status containing the error

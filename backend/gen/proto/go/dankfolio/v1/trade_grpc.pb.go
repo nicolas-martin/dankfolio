@@ -19,11 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	TradeService_GetTradeQuote_FullMethodName  = "/dankfolio.v1.TradeService/GetTradeQuote"
-	TradeService_SubmitTrade_FullMethodName    = "/dankfolio.v1.TradeService/SubmitTrade"
-	TradeService_GetTradeStatus_FullMethodName = "/dankfolio.v1.TradeService/GetTradeStatus"
-	TradeService_GetTradeByID_FullMethodName   = "/dankfolio.v1.TradeService/GetTradeByID"
-	TradeService_ListTrades_FullMethodName     = "/dankfolio.v1.TradeService/ListTrades"
+	TradeService_GetTradeQuote_FullMethodName   = "/dankfolio.v1.TradeService/GetTradeQuote"
+	TradeService_SubmitTrade_FullMethodName     = "/dankfolio.v1.TradeService/SubmitTrade"
+	TradeService_GetTradeStatus_FullMethodName  = "/dankfolio.v1.TradeService/GetTradeStatus"
+	TradeService_GetTradeByID_FullMethodName    = "/dankfolio.v1.TradeService/GetTradeByID"
+	TradeService_ListTrades_FullMethodName      = "/dankfolio.v1.TradeService/ListTrades"
+	TradeService_GetTokenPrices_FullMethodName  = "/dankfolio.v1.TradeService/GetTokenPrices"
+	TradeService_PrepareTransfer_FullMethodName = "/dankfolio.v1.TradeService/PrepareTransfer"
+	TradeService_SubmitTransfer_FullMethodName  = "/dankfolio.v1.TradeService/SubmitTransfer"
 )
 
 // TradeServiceClient is the client API for TradeService service.
@@ -40,6 +43,12 @@ type TradeServiceClient interface {
 	GetTradeByID(ctx context.Context, in *GetTradeByIDRequest, opts ...grpc.CallOption) (*Trade, error)
 	// ListTrades returns all trades
 	ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error)
+	// GetTokenPrices returns prices for multiple tokens
+	GetTokenPrices(ctx context.Context, in *GetTokenPricesRequest, opts ...grpc.CallOption) (*GetTokenPricesResponse, error)
+	// PrepareTransfer prepares an unsigned transfer transaction
+	PrepareTransfer(ctx context.Context, in *PrepareTransferRequest, opts ...grpc.CallOption) (*PrepareTransferResponse, error)
+	// SubmitTransfer submits a signed transfer transaction
+	SubmitTransfer(ctx context.Context, in *SubmitTransferRequest, opts ...grpc.CallOption) (*SubmitTransferResponse, error)
 }
 
 type tradeServiceClient struct {
@@ -95,6 +104,33 @@ func (c *tradeServiceClient) ListTrades(ctx context.Context, in *ListTradesReque
 	return out, nil
 }
 
+func (c *tradeServiceClient) GetTokenPrices(ctx context.Context, in *GetTokenPricesRequest, opts ...grpc.CallOption) (*GetTokenPricesResponse, error) {
+	out := new(GetTokenPricesResponse)
+	err := c.cc.Invoke(ctx, TradeService_GetTokenPrices_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradeServiceClient) PrepareTransfer(ctx context.Context, in *PrepareTransferRequest, opts ...grpc.CallOption) (*PrepareTransferResponse, error) {
+	out := new(PrepareTransferResponse)
+	err := c.cc.Invoke(ctx, TradeService_PrepareTransfer_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradeServiceClient) SubmitTransfer(ctx context.Context, in *SubmitTransferRequest, opts ...grpc.CallOption) (*SubmitTransferResponse, error) {
+	out := new(SubmitTransferResponse)
+	err := c.cc.Invoke(ctx, TradeService_SubmitTransfer_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradeServiceServer is the server API for TradeService service.
 // All implementations must embed UnimplementedTradeServiceServer
 // for forward compatibility
@@ -109,6 +145,12 @@ type TradeServiceServer interface {
 	GetTradeByID(context.Context, *GetTradeByIDRequest) (*Trade, error)
 	// ListTrades returns all trades
 	ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error)
+	// GetTokenPrices returns prices for multiple tokens
+	GetTokenPrices(context.Context, *GetTokenPricesRequest) (*GetTokenPricesResponse, error)
+	// PrepareTransfer prepares an unsigned transfer transaction
+	PrepareTransfer(context.Context, *PrepareTransferRequest) (*PrepareTransferResponse, error)
+	// SubmitTransfer submits a signed transfer transaction
+	SubmitTransfer(context.Context, *SubmitTransferRequest) (*SubmitTransferResponse, error)
 	mustEmbedUnimplementedTradeServiceServer()
 }
 
@@ -130,6 +172,15 @@ func (UnimplementedTradeServiceServer) GetTradeByID(context.Context, *GetTradeBy
 }
 func (UnimplementedTradeServiceServer) ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTrades not implemented")
+}
+func (UnimplementedTradeServiceServer) GetTokenPrices(context.Context, *GetTokenPricesRequest) (*GetTokenPricesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTokenPrices not implemented")
+}
+func (UnimplementedTradeServiceServer) PrepareTransfer(context.Context, *PrepareTransferRequest) (*PrepareTransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PrepareTransfer not implemented")
+}
+func (UnimplementedTradeServiceServer) SubmitTransfer(context.Context, *SubmitTransferRequest) (*SubmitTransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransfer not implemented")
 }
 func (UnimplementedTradeServiceServer) mustEmbedUnimplementedTradeServiceServer() {}
 
@@ -234,6 +285,60 @@ func _TradeService_ListTrades_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradeService_GetTokenPrices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTokenPricesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradeServiceServer).GetTokenPrices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TradeService_GetTokenPrices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradeServiceServer).GetTokenPrices(ctx, req.(*GetTokenPricesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradeService_PrepareTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareTransferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradeServiceServer).PrepareTransfer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TradeService_PrepareTransfer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradeServiceServer).PrepareTransfer(ctx, req.(*PrepareTransferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradeService_SubmitTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitTransferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradeServiceServer).SubmitTransfer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TradeService_SubmitTransfer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradeServiceServer).SubmitTransfer(ctx, req.(*SubmitTransferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TradeService_ServiceDesc is the grpc.ServiceDesc for TradeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -260,6 +365,18 @@ var TradeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTrades",
 			Handler:    _TradeService_ListTrades_Handler,
+		},
+		{
+			MethodName: "GetTokenPrices",
+			Handler:    _TradeService_GetTokenPrices_Handler,
+		},
+		{
+			MethodName: "PrepareTransfer",
+			Handler:    _TradeService_PrepareTransfer_Handler,
+		},
+		{
+			MethodName: "SubmitTransfer",
+			Handler:    _TradeService_SubmitTransfer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

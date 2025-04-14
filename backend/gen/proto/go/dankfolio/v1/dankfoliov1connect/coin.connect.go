@@ -38,9 +38,6 @@ const (
 	CoinServiceGetAvailableCoinsProcedure = "/dankfolio.v1.CoinService/GetAvailableCoins"
 	// CoinServiceGetCoinByIDProcedure is the fully-qualified name of the CoinService's GetCoinByID RPC.
 	CoinServiceGetCoinByIDProcedure = "/dankfolio.v1.CoinService/GetCoinByID"
-	// CoinServiceGetTokenPricesProcedure is the fully-qualified name of the CoinService's
-	// GetTokenPrices RPC.
-	CoinServiceGetTokenPricesProcedure = "/dankfolio.v1.CoinService/GetTokenPrices"
 )
 
 // CoinServiceClient is a client for the dankfolio.v1.CoinService service.
@@ -49,8 +46,6 @@ type CoinServiceClient interface {
 	GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	// GetCoinByID returns a specific coin by ID
 	GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error)
-	// GetTokenPrices returns prices for multiple tokens
-	GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error)
 }
 
 // NewCoinServiceClient constructs a client for the dankfolio.v1.CoinService service. By default, it
@@ -76,12 +71,6 @@ func NewCoinServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(coinServiceMethods.ByName("GetCoinByID")),
 			connect.WithClientOptions(opts...),
 		),
-		getTokenPrices: connect.NewClient[v1.GetTokenPricesRequest, v1.GetTokenPricesResponse](
-			httpClient,
-			baseURL+CoinServiceGetTokenPricesProcedure,
-			connect.WithSchema(coinServiceMethods.ByName("GetTokenPrices")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -89,7 +78,6 @@ func NewCoinServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 type coinServiceClient struct {
 	getAvailableCoins *connect.Client[v1.GetAvailableCoinsRequest, v1.GetAvailableCoinsResponse]
 	getCoinByID       *connect.Client[v1.GetCoinByIDRequest, v1.Coin]
-	getTokenPrices    *connect.Client[v1.GetTokenPricesRequest, v1.GetTokenPricesResponse]
 }
 
 // GetAvailableCoins calls dankfolio.v1.CoinService.GetAvailableCoins.
@@ -102,19 +90,12 @@ func (c *coinServiceClient) GetCoinByID(ctx context.Context, req *connect.Reques
 	return c.getCoinByID.CallUnary(ctx, req)
 }
 
-// GetTokenPrices calls dankfolio.v1.CoinService.GetTokenPrices.
-func (c *coinServiceClient) GetTokenPrices(ctx context.Context, req *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error) {
-	return c.getTokenPrices.CallUnary(ctx, req)
-}
-
 // CoinServiceHandler is an implementation of the dankfolio.v1.CoinService service.
 type CoinServiceHandler interface {
 	// GetAvailableCoins returns a list of available coins
 	GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	// GetCoinByID returns a specific coin by ID
 	GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error)
-	// GetTokenPrices returns prices for multiple tokens
-	GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error)
 }
 
 // NewCoinServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -136,20 +117,12 @@ func NewCoinServiceHandler(svc CoinServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(coinServiceMethods.ByName("GetCoinByID")),
 		connect.WithHandlerOptions(opts...),
 	)
-	coinServiceGetTokenPricesHandler := connect.NewUnaryHandler(
-		CoinServiceGetTokenPricesProcedure,
-		svc.GetTokenPrices,
-		connect.WithSchema(coinServiceMethods.ByName("GetTokenPrices")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/dankfolio.v1.CoinService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CoinServiceGetAvailableCoinsProcedure:
 			coinServiceGetAvailableCoinsHandler.ServeHTTP(w, r)
 		case CoinServiceGetCoinByIDProcedure:
 			coinServiceGetCoinByIDHandler.ServeHTTP(w, r)
-		case CoinServiceGetTokenPricesProcedure:
-			coinServiceGetTokenPricesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -165,8 +138,4 @@ func (UnimplementedCoinServiceHandler) GetAvailableCoins(context.Context, *conne
 
 func (UnimplementedCoinServiceHandler) GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.GetCoinByID is not implemented"))
-}
-
-func (UnimplementedCoinServiceHandler) GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.GetTokenPrices is not implemented"))
 }

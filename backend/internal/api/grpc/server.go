@@ -9,6 +9,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/middleware"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 	"golang.org/x/net/http2"
@@ -21,15 +22,17 @@ type Server struct {
 	coinService   *coin.Service
 	walletService *wallet.Service
 	tradeService  *trade.Service
+	priceService  *price.Service
 }
 
 // NewServer creates a new Server instance
-func NewServer(coinService *coin.Service, walletService *wallet.Service, tradeService *trade.Service) *Server {
+func NewServer(coinService *coin.Service, walletService *wallet.Service, tradeService *trade.Service, priceService *price.Service) *Server {
 	return &Server{
 		mux:           http.NewServeMux(),
 		coinService:   coinService,
 		walletService: walletService,
 		tradeService:  tradeService,
+		priceService:  priceService,
 	}
 }
 
@@ -50,6 +53,13 @@ func (s *Server) Start(port int) error {
 
 	path, handler = dankfoliov1connect.NewTradeServiceHandler(
 		NewTradeServer(s.tradeService),
+		connect.WithInterceptors(),
+	)
+	s.mux.Handle(path, handler)
+
+	// Register PriceService handler
+	path, handler = dankfoliov1connect.NewPriceServiceHandler(
+		NewPriceServer(s.priceService),
 		connect.WithInterceptors(),
 	)
 	s.mux.Handle(path, handler)

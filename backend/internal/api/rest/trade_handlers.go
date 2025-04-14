@@ -219,7 +219,7 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get quote from service
-	quote, err := h.tradeService.GetTradeQuote(ctx, fromCoinID, toCoinID, amount)
+	quote, err := h.tradeService.GetTradeQuote(ctx, fromCoinID, toCoinID, amountStr, "0.05")
 	if err != nil {
 		respondError(w, fmt.Sprintf("Failed to get trade quote: %v", err), http.StatusInternalServerError)
 		return
@@ -264,7 +264,7 @@ func (h *TradeHandlers) PrepareTransfer(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Call service to prepare transfer
-	unsignedTx, err := h.solanaService.PrepareTransfer(r.Context(), req.FromAddress, req.ToAddress, req.TokenMint, req.Amount)
+	unsignedTx, err := h.solanaService.CreateTransferTransaction(r.Context(), req.FromAddress, req.ToAddress, req.TokenMint, req.Amount)
 	if err != nil {
 		respondError(w, fmt.Sprintf("Failed to prepare transfer: %v", err), http.StatusInternalServerError)
 		return
@@ -290,14 +290,14 @@ func (h *TradeHandlers) SubmitTransfer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Submit the signed transaction
-	txHash, err := h.solanaService.SubmitTransfer(r.Context(), req.SignedTransaction)
+	sig, err := h.solanaService.ExecuteSignedTransaction(r.Context(), req.SignedTransaction)
 	if err != nil {
 		respondError(w, fmt.Sprintf("Failed to submit transfer: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	response := TransferResponse{
-		TransactionHash: txHash,
+		TransactionHash: sig.String(),
 	}
 	respondJSON(w, response, http.StatusOK)
 }

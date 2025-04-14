@@ -3,11 +3,11 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { Coin, GetAvailableCoinsRequest, GetAvailableCoinsResponse, GetCoinByIDRequest, GetTokenPricesRequest, GetTokenPricesResponse } from "./coin_pb.js";
+import { Coin, GetAvailableCoinsRequest, GetAvailableCoinsResponse, GetCoinByIDRequest } from "./coin_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
- * CoinService provides operations for managing coins
+ * CoinService provides methods for interacting with coin data
  *
  * @generated from service dankfolio.v1.CoinService
  */
@@ -34,17 +34,6 @@ export const CoinService = {
       name: "GetCoinByID",
       I: GetCoinByIDRequest,
       O: Coin,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * GetTokenPrices returns prices for multiple tokens
-     *
-     * @generated from rpc dankfolio.v1.CoinService.GetTokenPrices
-     */
-    getTokenPrices: {
-      name: "GetTokenPrices",
-      I: GetTokenPricesRequest,
-      O: GetTokenPricesResponse,
       kind: MethodKind.Unary,
     },
   }

@@ -17,7 +17,8 @@ import (
 
 // Service handles trade-related operations
 type Service struct {
-	solanaService *solana.SolanaTradeService
+	// TODO: Maybe these are redundant
+	SolanaService *solana.SolanaTradeService
 	coinService   *coin.Service
 	jupiterClient *coin.JupiterClient
 	mu            sync.RWMutex
@@ -27,7 +28,7 @@ type Service struct {
 // NewService creates a new TradeService instance
 func NewService(ss *solana.SolanaTradeService, cs *coin.Service, jc *coin.JupiterClient) *Service {
 	return &Service{
-		solanaService: ss,
+		SolanaService: ss,
 		coinService:   cs,
 		jupiterClient: jc,
 		trades:        make(map[string]*model.Trade),
@@ -79,7 +80,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	}
 
 	// Execute signed transaction on blockchain
-	err := s.solanaService.ExecuteTrade(ctx, trade, req.SignedTransaction)
+	err := s.SolanaService.ExecuteTrade(ctx, trade, req.SignedTransaction)
 	if err != nil {
 		trade.Status = "failed"
 		s.mu.Lock()

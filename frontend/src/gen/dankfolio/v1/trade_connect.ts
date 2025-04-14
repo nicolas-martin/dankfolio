@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { GetTradeByIDRequest, GetTradeQuoteRequest, GetTradeQuoteResponse, GetTradeStatusRequest, GetTradeStatusResponse, ListTradesRequest, ListTradesResponse, SubmitTradeRequest, SubmitTradeResponse, Trade } from "./trade_pb.js";
+import { GetTokenPricesRequest, GetTokenPricesResponse, GetTradeByIDRequest, GetTradeQuoteRequest, GetTradeQuoteResponse, GetTradeStatusRequest, GetTradeStatusResponse, ListTradesRequest, ListTradesResponse, PrepareTransferRequest, PrepareTransferResponse, SubmitTradeRequest, SubmitTradeResponse, SubmitTransferRequest, SubmitTransferResponse, Trade } from "./trade_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -67,6 +67,39 @@ export const TradeService = {
       name: "ListTrades",
       I: ListTradesRequest,
       O: ListTradesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GetTokenPrices returns prices for multiple tokens
+     *
+     * @generated from rpc dankfolio.v1.TradeService.GetTokenPrices
+     */
+    getTokenPrices: {
+      name: "GetTokenPrices",
+      I: GetTokenPricesRequest,
+      O: GetTokenPricesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * PrepareTransfer prepares an unsigned transfer transaction
+     *
+     * @generated from rpc dankfolio.v1.TradeService.PrepareTransfer
+     */
+    prepareTransfer: {
+      name: "PrepareTransfer",
+      I: PrepareTransferRequest,
+      O: PrepareTransferResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * SubmitTransfer submits a signed transfer transaction
+     *
+     * @generated from rpc dankfolio.v1.TradeService.SubmitTransfer
+     */
+    submitTransfer: {
+      name: "SubmitTransfer",
+      I: SubmitTransferRequest,
+      O: SubmitTransferResponse,
       kind: MethodKind.Unary,
     },
   }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
+	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/api/rest"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
@@ -65,21 +66,33 @@ func main() {
 	// Initialize the wallet service with coin service
 	walletService := wallet.New(solanaClient, coinService)
 
-	// Initialize handlers
+	// Initialize REST handlers
 	walletHandlers := rest.NewWalletHandlers(walletService)
 
-	// Initialize router
+	// Initialize REST router
 	router := rest.NewRouter(solanaService, tradeService, coinService, priceService, walletHandlers)
-	server := &http.Server{
+	httpServer := &http.Server{
 		Addr:    ":8080",
 		Handler: router.Setup(),
 	}
 
-	// Start server
+	// Initialize gRPC server
+	grpcServer := grpcapi.NewServer(coinService, walletService, tradeService, priceService)
+	grpcPort := 9000
+
+	// Start REST server
 	go func() {
-		log.Printf("Server starting on %s", server.Addr)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+		log.Printf("HTTP server starting on %s", httpServer.Addr)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
+
+	// Start gRPC server
+	go func() {
+		log.Printf("Starting gRPC server on port %d", grpcPort)
+		if err := grpcServer.Start(grpcPort); err != nil {
+			log.Fatalf("gRPC server error: %v", err)
 		}
 	}()
 
@@ -87,14 +100,17 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutting down server...")
+	log.Println("Shutting down servers...")
 
-	// Gracefully shutdown
+	// Gracefully shutdown HTTP server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+	if err := httpServer.Shutdown(ctx); err != nil {
+		log.Fatal("HTTP server forced to shutdown:", err)
 	}
 
-	log.Println("Server exited properly")
+	// Stop gRPC server
+	grpcServer.Stop()
+
+	log.Println("Servers exited properly")
 }

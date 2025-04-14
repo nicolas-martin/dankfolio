@@ -8,6 +8,7 @@ import (
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	solanaService "github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -15,13 +16,15 @@ import (
 // TradeServer implements the TradeService API
 type TradeServer struct {
 	dankfoliov1connect.UnimplementedTradeServiceHandler
-	tradeService *trade.Service
+	tradeService  *trade.Service
+	solanaService *solanaService.SolanaTradeService
 }
 
 // NewTradeServer creates a new TradeServer
-func NewTradeServer(tradeService *trade.Service) *TradeServer {
+func NewTradeServer(tradeService *trade.Service, solanaService *solanaService.SolanaTradeService) *TradeServer {
 	return &TradeServer{
-		tradeService: tradeService,
+		tradeService:  tradeService,
+		solanaService: solanaService,
 	}
 }
 
@@ -88,18 +91,32 @@ func (s *TradeServer) GetTradeStatus(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction_hash is required"))
 	}
 
-	status, err := s.tradeService.GetTradeStatus(ctx, req.Msg.TransactionHash)
+	status, err := s.tradeService.SolanaService.GetTransactionConfirmationStatus(ctx, req.Msg.TransactionHash)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 	}
 
-	res := connect.NewResponse(&pb.GetTradeStatusResponse{
-		TransactionHash: status.TransactionHash,
-		Status:          status.Status,
-		Confirmations:   int32(status.Confirmations),
-		Finalized:       status.Finalized,
-		Error:           status.Error,
-	})
+	response := &pb.GetTradeStatusResponse{
+		TransactionHash: req.Msg.TransactionHash,
+	}
+
+	// Check if status is nil or has no values (transaction not found yet)
+	if status == nil || len(status.Value) == 0 || status.Value[0] == nil {
+		response.Status = "Pending"
+		response.Confirmations = 0
+		response.Finalized = false
+	} else {
+		// Transaction found, populate status details
+		response.Status = string(status.Value[0].ConfirmationStatus)
+		if status.Value[0].Confirmations != nil {
+			response.Confirmations = int32(*status.Value[0].Confirmations)
+		}
+		response.Finalized = status.Value[0].ConfirmationStatus == "finalized"
+		errorMessage := fmt.Sprintf("%s", status.Value[0].Err)
+		response.Error = &errorMessage
+	}
+
+	res := connect.NewResponse(response)
 	return res, nil
 }
 
@@ -138,6 +155,76 @@ func (s *TradeServer) ListTrades(
 
 	res := connect.NewResponse(&pb.ListTradesResponse{
 		Trades: pbTrades,
+	})
+	return res, nil
+}
+
+// GetTokenPrices returns prices for multiple tokens
+func (s *TradeServer) GetTokenPrices(
+	ctx context.Context,
+	req *connect.Request[pb.GetTokenPricesRequest],
+) (*connect.Response[pb.GetTokenPricesResponse], error) {
+	tokenIDs := req.Msg.TokenIds
+	if len(tokenIDs) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no token IDs provided"))
+	}
+
+	prices, err := s.tradeService.GetTokenPrices(ctx, tokenIDs)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get token prices: %w", err))
+	}
+
+	// Convert map to proto response
+	priceMap := make(map[string]float64)
+	for id, price := range prices {
+		priceMap[id] = price
+	}
+
+	res := connect.NewResponse(&pb.GetTokenPricesResponse{
+		Prices: priceMap,
+	})
+	return res, nil
+}
+
+// PrepareTransfer prepares an unsigned transfer transaction
+func (s *TradeServer) PrepareTransfer(
+	ctx context.Context,
+	req *connect.Request[pb.PrepareTransferRequest],
+) (*connect.Response[pb.PrepareTransferResponse], error) {
+	if req.Msg.FromAddress == "" || req.Msg.ToAddress == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from and to addresses are required"))
+	}
+	if req.Msg.Amount <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("amount must be greater than 0"))
+	}
+
+	unsignedTx, err := s.solanaService.CreateTransferTransaction(ctx, req.Msg.FromAddress, req.Msg.ToAddress, req.Msg.TokenMint, req.Msg.Amount)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare transfer: %w", err))
+	}
+
+	res := connect.NewResponse(&pb.PrepareTransferResponse{
+		UnsignedTransaction: unsignedTx,
+	})
+	return res, nil
+}
+
+// SubmitTransfer submits a signed transfer transaction
+func (s *TradeServer) SubmitTransfer(
+	ctx context.Context,
+	req *connect.Request[pb.SubmitTransferRequest],
+) (*connect.Response[pb.SubmitTransferResponse], error) {
+	if req.Msg.SignedTransaction == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("signed transaction is required"))
+	}
+
+	sig, err := s.solanaService.ExecuteSignedTransaction(ctx, req.Msg.SignedTransaction)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to submit transfer: %w", err))
+	}
+
+	res := connect.NewResponse(&pb.SubmitTransferResponse{
+		TransactionHash: sig.String(),
 	})
 	return res, nil
 }

@@ -6,18 +6,16 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1;dankfoliov1";
 
-// CoinService provides operations for managing coins
+// CoinService provides methods for interacting with coin data
 service CoinService {
   // GetAvailableCoins returns a list of available coins
   rpc GetAvailableCoins(GetAvailableCoinsRequest) returns (GetAvailableCoinsResponse);
-
+  
   // GetCoinByID returns a specific coin by ID
   rpc GetCoinByID(GetCoinByIDRequest) returns (Coin);
-
-  // GetTokenPrices returns prices for multiple tokens
-  rpc GetTokenPrices(GetTokenPricesRequest) returns (GetTokenPricesResponse);
 }
 
+// Coin represents a token or currency
 message Coin {
   string id = 1;
   string name = 2;
@@ -48,10 +46,4 @@ message GetCoinByIDRequest {
   string id = 1;
 }
 
-message GetTokenPricesRequest {
-  repeated string token_ids = 1;
-}
-
-message GetTokenPricesResponse {
-  map<string, double> prices = 1;
-} 
+// Note: GetTokenPricesRequest and GetTokenPricesResponse have been moved to trade.proto
