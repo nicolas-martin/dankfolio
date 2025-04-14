@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package dankfolio.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nma/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+
+// WalletService provides operations for managing Solana wallets
+service WalletService {
+  // GetWalletBalances returns the balances for all tokens in a wallet
+  rpc GetWalletBalances(GetWalletBalancesRequest) returns (GetWalletBalancesResponse) {
+    option (google.api.http) = {
+      get: "/api/wallet/{address}/balances"
+    };
+  }
+
+  // CreateWallet generates a new Solana wallet
+  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse) {
+    option (google.api.http) = {
+      post: "/api/wallet"
+    };
+  }
+}
+
+// Balance represents information about a token balance
+message Balance {
+  string id = 1;           // Token mint address or identifier
+  double amount = 2;       // Token amount
+}
+
+// WalletBalance represents a wallet's complete balance
+message WalletBalance {
+  repeated Balance balances = 1;  // List of token balances
+}
+
+// GetWalletBalancesRequest is the request for GetWalletBalances
+message GetWalletBalancesRequest {
+  string address = 1;  // Solana wallet address
+}
+
+// GetWalletBalancesResponse is the response for GetWalletBalances
+message GetWalletBalancesResponse {
+  WalletBalance wallet_balance = 1;
+}
+
+// CreateWalletRequest is the request for CreateWallet
+message CreateWalletRequest {
+  // Empty for now as we don't need any parameters
+}
+
+// CreateWalletResponse is the response for CreateWallet
+message CreateWalletResponse {
+  string public_key = 1;   // Wallet's public key
+  string secret_key = 2;   // Wallet's private key (handle with care)
+} 

@@ -1,4 +1,4 @@
-package api
+package rest
 
 import (
 	"log"
@@ -31,7 +31,7 @@ func NewRouter(
 	walletHandlers *WalletHandlers,
 ) *Router {
 	return &Router{
-		tradeHandlers:  NewTradeHandlers(tradeService, solanaService), // Pass solanaService
+		tradeHandlers:  NewTradeHandlers(tradeService, solanaService),
 		coinHandlers:   NewCoinHandlers(coinService),
 		priceHandlers:  NewPriceHandlers(priceService),
 		walletHandlers: walletHandlers,
@@ -42,11 +42,6 @@ func NewRouter(
 func (r *Router) Setup() http.Handler {
 	router := chi.NewRouter()
 
-	// Initialize cache middleware with 5 minute TTL
-	// TODO: GOOD IDEA BUT THE REQUEST ISN"T PASSED TO THE LOGGER
-	// cache := custommiddleware.NewCache(5 * time.Minute)
-	// router.Use(cache.CacheMiddleware)
-
 	router.Use(custommiddleware.RequestLogger)
 
 	// Set up middleware
@@ -56,12 +51,12 @@ func (r *Router) Setup() http.Handler {
 
 	// Enable CORS with proper configuration
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:8081", "http://localhost:3000"}, // Add your frontend origins
+		AllowedOrigins:   []string{"http://localhost:8081", "http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Debug-Mode"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
+		MaxAge:           300,
 	}))
 
 	// Health check
@@ -75,7 +70,6 @@ func (r *Router) Setup() http.Handler {
 
 	// API routes with caching for GET requests
 	router.Route("/api", func(apiRouter chi.Router) {
-
 		// Register all routes through their respective handlers
 		r.walletHandlers.RegisterRoutes(apiRouter)
 		r.coinHandlers.RegisterRoutes(apiRouter)

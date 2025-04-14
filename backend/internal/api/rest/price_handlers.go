@@ -1,4 +1,4 @@
-package api
+package rest
 
 import (
 	"net/http"
@@ -7,11 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/nicolas-martin/dankfolio/internal/service/price"
 )
-
-// RegisterRoutes registers all price-related routes
-func (h *PriceHandlers) RegisterRoutes(r chi.Router) {
-	r.Get("/price/history", h.GetPriceHistory)
-}
 
 // PriceHandlers handles HTTP requests related to price data
 type PriceHandlers struct {
@@ -76,4 +71,9 @@ func (h *PriceHandlers) GetPriceHistory(w http.ResponseWriter, r *http.Request) 
 	}
 
 	respondJSON(w, priceHistory, http.StatusOK)
+}
+
+// RegisterRoutes registers all price-related routes
+func (h *PriceHandlers) RegisterRoutes(r chi.Router) {
+	r.Get("/price/history", h.GetPriceHistory)
 }

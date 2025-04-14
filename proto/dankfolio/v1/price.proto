@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package dankfolio.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nma/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+
+// PriceService provides methods for retrieving price history data
+service PriceService {
+  // GetPriceHistory returns historical price data for a given address
+  rpc GetPriceHistory(GetPriceHistoryRequest) returns (GetPriceHistoryResponse) {}
+}
+
+// GetPriceHistoryRequest represents a request for price history data
+message GetPriceHistoryRequest {
+  string address = 1;
+  string type = 2;
+  google.protobuf.Timestamp time_from = 3;
+  google.protobuf.Timestamp time_to = 4;
+  string address_type = 5;
+}
+
+// GetPriceHistoryResponse represents the response containing price history data
+message GetPriceHistoryResponse {
+  PriceHistoryData data = 1;
+  bool success = 2;
+}
+
+// PriceHistoryData contains a list of price history items
+message PriceHistoryData {
+  repeated PriceHistoryItem items = 1;
+}
+
+// PriceHistoryItem represents a single price point with timestamp and value
+message PriceHistoryItem {
+  google.protobuf.Timestamp unix_time = 1;
+  double value = 2;
+} 

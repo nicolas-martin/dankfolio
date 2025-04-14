@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package dankfolio.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nma/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+
+// CoinService provides operations for managing coins
+service CoinService {
+  // GetAvailableCoins returns a list of available coins
+  rpc GetAvailableCoins(GetAvailableCoinsRequest) returns (GetAvailableCoinsResponse) {
+    option (google.api.http) = {
+      get: "/api/tokens"
+    };
+  }
+
+  // GetCoinByID returns a specific coin by ID
+  rpc GetCoinByID(GetCoinByIDRequest) returns (Coin) {
+    option (google.api.http) = {
+      get: "/api/tokens/{id}"
+    };
+  }
+
+  // GetTokenPrices returns prices for multiple tokens
+  rpc GetTokenPrices(GetTokenPricesRequest) returns (GetTokenPricesResponse) {
+    option (google.api.http) = {
+      get: "/api/tokens/prices"
+    };
+  }
+}
+
+message Coin {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 decimals = 4;
+  string description = 5;
+  string icon_url = 6;
+  repeated string tags = 7;
+  double price = 8;
+  double daily_volume = 9;
+  optional string website = 10;
+  optional string twitter = 11;
+  optional string telegram = 12;
+  optional string coingecko_id = 13;
+  google.protobuf.Timestamp created_at = 14;
+  optional google.protobuf.Timestamp last_updated = 15;
+}
+
+message GetAvailableCoinsRequest {
+  optional bool trending_only = 1;
+}
+
+message GetAvailableCoinsResponse {
+  repeated Coin coins = 1;
+}
+
+message GetCoinByIDRequest {
+  string id = 1;
+}
+
+message GetTokenPricesRequest {
+  repeated string token_ids = 1;
+}
+
+message GetTokenPricesResponse {
+  map<string, double> prices = 1;
+} 

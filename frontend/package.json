@@ -18,6 +18,9 @@
 		"test:coverage": "jest --coverage"
 	},
 	"dependencies": {
+		"@connectrpc/connect": "^1.4.0",
+		"@connectrpc/connect-web": "^1.4.0",
+		"@protobuf-ts/runtime": "^2.9.4",
 		"@emotion/native": "^11.11.0",
 		"@emotion/react": "^11.11.0",
 		"@expo/metro-runtime": "~4.0.1",

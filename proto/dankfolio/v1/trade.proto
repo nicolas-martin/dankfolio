@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package dankfolio.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nma/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+
+// TradeService provides operations for trading tokens on Solana
+service TradeService {
+  // GetTradeQuote returns a quote for a potential trade
+  rpc GetTradeQuote(GetTradeQuoteRequest) returns (GetTradeQuoteResponse) {
+    option (google.api.http) = {
+      get: "/api/trades/quote"
+    };
+  }
+
+  // SubmitTrade submits a trade for execution
+  rpc SubmitTrade(SubmitTradeRequest) returns (SubmitTradeResponse) {
+    option (google.api.http) = {
+      post: "/api/trades/submit"
+      body: "*"
+    };
+  }
+
+  // GetTradeStatus returns the status of a trade
+  rpc GetTradeStatus(GetTradeStatusRequest) returns (GetTradeStatusResponse) {
+    option (google.api.http) = {
+      get: "/api/trades/status/{transaction_hash}"
+    };
+  }
+
+  // GetTradeByID returns details of a specific trade
+  rpc GetTradeByID(GetTradeByIDRequest) returns (Trade) {
+    option (google.api.http) = {
+      get: "/api/trades/{id}"
+    };
+  }
+
+  // ListTrades returns all trades
+  rpc ListTrades(ListTradesRequest) returns (ListTradesResponse) {
+    option (google.api.http) = {
+      get: "/api/trades"
+    };
+  }
+}
+
+// Trade represents a meme trading transaction
+message Trade {
+  string id = 1;
+  string user_id = 2;
+  string from_coin_id = 3;
+  string to_coin_id = 4;
+  string coin_symbol = 5;
+  string type = 6;
+  double amount = 7;
+  double price = 8;
+  double fee = 9;
+  string status = 10;
+  string transaction_hash = 11;
+  google.protobuf.Timestamp created_at = 12;
+  optional google.protobuf.Timestamp completed_at = 13;
+}
+
+// GetTradeQuoteRequest is the request for getting a trade quote
+message GetTradeQuoteRequest {
+  string from_coin_id = 1;
+  string to_coin_id = 2;
+  string amount = 3;
+  optional string slippage_bps = 4;
+}
+
+// GetTradeQuoteResponse is the response containing trade quote details
+message GetTradeQuoteResponse {
+  string estimated_amount = 1;
+  string exchange_rate = 2;
+  string fee = 3;
+  string price_impact = 4;
+  repeated string route_plan = 5;
+  string input_mint = 6;
+  string output_mint = 7;
+}
+
+// SubmitTradeRequest is the request for submitting a trade
+message SubmitTradeRequest {
+  string from_coin_id = 1;
+  string to_coin_id = 2;
+  double amount = 3;
+  string signed_transaction = 4;
+}
+
+// SubmitTradeResponse is the response after submitting a trade
+message SubmitTradeResponse {
+  string trade_id = 1;
+  string transaction_hash = 2;
+}
+
+// GetTradeStatusRequest is the request for checking trade status
+message GetTradeStatusRequest {
+  string transaction_hash = 1;
+}
+
+// GetTradeStatusResponse is the response containing trade status
+message GetTradeStatusResponse {
+  string transaction_hash = 1;
+  string status = 2;
+  int32 confirmations = 3;
+  bool finalized = 4;
+  optional string error = 5;
+}
+
+// GetTradeByIDRequest is the request for getting a trade by ID
+message GetTradeByIDRequest {
+  string id = 1;
+}
+
+// ListTradesRequest is the request for listing trades
+message ListTradesRequest {
+  // Empty for now, could add pagination/filtering later
+}
+
+// ListTradesResponse is the response containing a list of trades
+message ListTradesResponse {
+  repeated Trade trades = 1;
+} 
