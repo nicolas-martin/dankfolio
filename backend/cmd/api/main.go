@@ -11,7 +11,7 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
-	"github.com/nicolas-martin/dankfolio/backend/internal/api"
+	"github.com/nicolas-martin/dankfolio/backend/internal/api/rest"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
@@ -66,10 +66,10 @@ func main() {
 	walletService := wallet.New(solanaClient, coinService)
 
 	// Initialize handlers
-	walletHandlers := api.NewWalletHandlers(walletService)
+	walletHandlers := rest.NewWalletHandlers(walletService)
 
 	// Initialize router
-	router := api.NewRouter(solanaService, tradeService, coinService, priceService, walletHandlers)
+	router := rest.NewRouter(solanaService, tradeService, coinService, priceService, walletHandlers)
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router.Setup(),
