@@ -8,7 +8,6 @@ import (
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
-	solanaService "github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -16,15 +15,13 @@ import (
 // TradeServer implements the TradeService API
 type TradeServer struct {
 	dankfoliov1connect.UnimplementedTradeServiceHandler
-	tradeService  *trade.Service
-	solanaService *solanaService.SolanaTradeService
+	tradeService *trade.Service
 }
 
 // NewTradeServer creates a new TradeServer
-func NewTradeServer(tradeService *trade.Service, solanaService *solanaService.SolanaTradeService) *TradeServer {
+func NewTradeServer(tradeService *trade.Service) *TradeServer {
 	return &TradeServer{
-		tradeService:  tradeService,
-		solanaService: solanaService,
+		tradeService: tradeService,
 	}
 }
 
@@ -198,7 +195,7 @@ func (s *TradeServer) PrepareTransfer(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("amount must be greater than 0"))
 	}
 
-	unsignedTx, err := s.solanaService.CreateTransferTransaction(ctx, req.Msg.FromAddress, req.Msg.ToAddress, req.Msg.TokenMint, req.Msg.Amount)
+	unsignedTx, err := s.tradeService.SolanaService.CreateTransferTransaction(ctx, req.Msg.FromAddress, req.Msg.ToAddress, req.Msg.TokenMint, req.Msg.Amount)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare transfer: %w", err))
 	}
@@ -218,7 +215,7 @@ func (s *TradeServer) SubmitTransfer(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("signed transaction is required"))
 	}
 
-	sig, err := s.solanaService.ExecuteSignedTransaction(ctx, req.Msg.SignedTransaction)
+	sig, err := s.tradeService.SolanaService.ExecuteSignedTransaction(ctx, req.Msg.SignedTransaction)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to submit transfer: %w", err))
 	}

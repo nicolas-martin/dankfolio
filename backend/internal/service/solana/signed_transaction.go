@@ -237,23 +237,15 @@ func getMockTransactionStatus(sigStr string) (*rpc.GetSignatureStatusesResult, e
 	return nil, fmt.Errorf("unexpected state in mock transaction")
 }
 
-// TransferParams contains parameters for token transfers
-type TransferParams struct {
-	FromAddress string  // Sender's wallet address
-	ToAddress   string  // Recipient's wallet address
-	TokenMint   string  // Token mint address (empty for SOL)
-	Amount      float64 // Amount to transfer
-}
-
 // CreateTransferTransaction creates an unsigned transfer transaction
-func (s *SolanaTradeService) CreateTransferTransaction(ctx context.Context, params TransferParams) (string, error) {
+func (s *SolanaTradeService) CreateTransferTransaction(ctx context.Context, FromAddress string, ToAddress string, TokenMint string, Amount float64) (string, error) {
 	// Convert addresses to public keys
-	fromPubkey, err := solana.PublicKeyFromBase58(params.FromAddress)
+	fromPubkey, err := solana.PublicKeyFromBase58(FromAddress)
 	if err != nil {
 		return "", fmt.Errorf("invalid from address: %w", err)
 	}
 
-	toPubkey, err := solana.PublicKeyFromBase58(params.ToAddress)
+	toPubkey, err := solana.PublicKeyFromBase58(ToAddress)
 	if err != nil {
 		return "", fmt.Errorf("invalid to address: %w", err)
 	}
@@ -266,9 +258,9 @@ func (s *SolanaTradeService) CreateTransferTransaction(ctx context.Context, para
 
 	var instructions []solana.Instruction
 
-	if params.TokenMint == "" {
+	if TokenMint == "" {
 		// SOL transfer
-		lamports := uint64(params.Amount * float64(solana.LAMPORTS_PER_SOL))
+		lamports := uint64(Amount * float64(solana.LAMPORTS_PER_SOL))
 		instructions = append(instructions, system.NewTransferInstruction(
 			lamports,
 			fromPubkey,
@@ -276,7 +268,7 @@ func (s *SolanaTradeService) CreateTransferTransaction(ctx context.Context, para
 		).Build())
 	} else {
 		// SPL token transfer
-		mintPubkey, err := solana.PublicKeyFromBase58(params.TokenMint)
+		mintPubkey, err := solana.PublicKeyFromBase58(TokenMint)
 		if err != nil {
 			return "", fmt.Errorf("invalid token mint address: %w", err)
 		}
@@ -308,7 +300,7 @@ func (s *SolanaTradeService) CreateTransferTransaction(ctx context.Context, para
 		// Add transfer instruction
 		instructions = append(instructions,
 			token.NewTransferCheckedInstruction(
-				uint64(params.Amount),
+				uint64(Amount),
 				9, // Most tokens use 9 decimals, but this should be fetched from the mint
 				fromATA,
 				toATA,
