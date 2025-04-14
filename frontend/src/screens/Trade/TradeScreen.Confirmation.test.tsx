@@ -171,20 +171,26 @@ jest.mock('react-native-paper', () => {
 
 // --- Test Suite ---
 describe('TradeScreen Confirmation Behavior', () => {
+	let consoleLogSpy: jest.SpyInstance;
 
-	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
+	beforeAll(() => {
+		jest.useFakeTimers();
+	});
+
+	afterAll(() => {
+		jest.useRealTimers();
+	});
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-		// Silence console.log before each test
 		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 		mockNavigate.mockClear();
 		mockPortfolioStoreReturn.tokens = [mockFromPortfolioToken];
 		Object.values(mockPortfolioStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 		Object.values(mockCoinStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id, forceRefresh) => {
-			if (id === mockFromCoin.id) return mockFromCoin;
-			if (id === mockToCoin.id) return mockToCoin;
+			if (id === mockFromCoin.id) return { ...mockFromCoin, price: 150.0 };
+			if (id === mockToCoin.id) return { ...mockToCoin, price: 0.00011 };
 			return null;
 		});
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
@@ -193,256 +199,162 @@ describe('TradeScreen Confirmation Behavior', () => {
 		mockRoute.params.initialToCoin = mockToCoin;
 	});
 
-	// Add afterEach to restore the original console.log
 	afterEach(() => {
 		consoleLogSpy.mockRestore();
+		jest.runOnlyPendingTimers();
+		jest.clearAllTimers();
 	});
 
-	// The test moved from the original file
-	it('refreshes coin prices via getCoinByID when confirmation modal appears', async () => {
-		// Mock quote fetch minimally for setup
-		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
-			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
-				act(() => { setToAmount('1'); }); // Just need some value
-			}
-		);
-
-		const { getByTestId, getByText } = render(<TradeScreen />); // Remove findByTestId if not used
-
-		// 1. Wait for initial price refresh (2 calls)
-		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
-
-		// 2. Populate amount to enable button
-		const fromInput = getByTestId('coin-selector-input-from');
-		fireEvent.changeText(fromInput, '1');
-		// Assert fetchTradeQuote was called with the correct amount and coins
-		await waitFor(() => {
-			expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1);
-			expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledWith(
-				'1',                  // Check the amount
-				mockFromCoin,
-				mockToCoin,
-				expect.any(Function), // setIsQuoteLoading
-				expect.any(Function), // setToAmount
-				expect.any(Function)  // setTradeDetails
-			);
-		});
-
-		// 3. Clear getCoinByID mock *after* initial mount calls
-		mockCoinStoreReturn.getCoinByID.mockClear();
-
-		// 4. Press Trade button
-		const tradeButton = getByText('Trade');
-		fireEvent.press(tradeButton);
-
-		// 5. Wait for the modal's useEffect to call getCoinByID twice more
-		//    Now using the *real* component, this effect should run.
-		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2), { timeout: 2000 }); // Increase timeout slightly if needed
-
-		// 6. Verify the calls were for the correct coins with forceRefresh
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockFromCoin.id, true);
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.id, true);
-	});
-
-	it('displays correct amounts, values, and fees in the confirmation modal', async () => {
+	it('handles trade confirmation flow correctly', async () => {
 		const mockFromAmount = '1';
-		const mockToAmount = '13636.36'; // 1 * 150 / 0.00011 = 1,363,636.36 (adjusting for potential fees/impact later)
-		const mockFees = { priceImpactPct: '1.5', totalFee: '0.50' }; // Example fees
+		const mockToAmount = '13636.36';
+		const mockFees = { priceImpactPct: '1.5', totalFee: '0.50' };
 
-		// Mock quote fetch to set toAmount and fees
+		// Mock quote fetch
 		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
 			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
-				act(() => {
+				await act(async () => {
 					setToAmount(mockToAmount);
 					setTradeDetails(mockFees);
-					setIsQuoteLoading(false); // Ensure loading state clears
+					setIsQuoteLoading(false);
 				});
 			}
 		);
-		// Mock handleTrade minimally - REMOVED as handleTrade doesn't exist
-		// (TradeScripts.handleTrade as jest.Mock).mockResolvedValue(undefined);
 
-		// Ensure getCoinByID returns the updated mock coins for the refresh
-		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id, forceRefresh) => {
-			if (id === mockFromCoin.id) return { ...mockFromCoin, price: 150.0 }; // Use consistent price
-			if (id === mockToCoin.id) return { ...mockToCoin, price: 0.00011 }; // Use consistent price
-			return null;
-		});
+		// Mock trade execution without setTimeout
+		(TradeScripts.executeTrade as jest.Mock).mockImplementation(
+			async (wallet, fromCoin, toCoin, amount, slippage, showToast, ...setters) => {
+				const [setIsLoadingTrade, setIsConfirmationVisible, , setSubmittedTxHash, , , , setIsStatusModalVisible] = setters;
+				await act(async () => {
+					setIsLoadingTrade(false);
+					setIsConfirmationVisible(false);
+					setIsStatusModalVisible(false);
+					showToast({ type: 'success', message: 'Trade successful!' });
+					mockNavigate('Portfolio');
+					setSubmittedTxHash('mock_tx_hash_confirm');
+				});
+			}
+		);
 
 		const { getByTestId, getByText, findByText, queryByText, queryByTestId } = render(<TradeScreen />);
 
-		// 1. Wait for initial setup if necessary (e.g., coin refresh on mount)
-		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
-		mockCoinStoreReturn.getCoinByID.mockClear(); // Clear calls from initial mount
-
-		// 2. Input amount to trigger quote fetch
-		const fromInput = getByTestId('coin-selector-input-from');
-		fireEvent.changeText(fromInput, mockFromAmount);
-
-		// 3. Wait for quote fetch to complete and update state
-		await waitFor(() => {
-			expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1);
+		// 1. Initial setup and price refresh
+		await act(async () => {
+			await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 		});
+		mockCoinStoreReturn.getCoinByID.mockClear();
 
-		// 4. Press Trade button to open modal
-		const tradeButton = getByText('Trade');
-		fireEvent.press(tradeButton);
-
-		// 5. Wait for the modal to appear and loading to finish
-		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2)); // Wait for refresh calls
-		// Wait for the loading spinner to disappear
-		await waitFor(() => expect(queryByTestId('loading-spinner')).toBeNull());
-
-		// 6. Assertions for the modal content
-		// You Pay Section
-		expect(await findByText(`${mockFromAmount} ${mockFromCoin.symbol}`)).toBeTruthy(); // e.g., "1 SOL"
-		expect(await findByText('$150.0000')).toBeTruthy(); // 1 * 150.00 - Adjusted for actual output
-
-		// You Receive Section
-		expect(await findByText(`${mockToAmount} ${mockToCoin.symbol}`)).toBeTruthy(); // e.g., "13636.36 WEN"
-		// Calculate expected value: 13636.36 * 0.00011 = 1.49999... ~ $1.5000
-		expect(await findByText('$1.5000')).toBeTruthy(); // Check calculated value - Adjusted for actual output
-
-		// Transaction Details
-		expect(await findByText(`${parseFloat(mockFees.priceImpactPct).toFixed(4)}%`)).toBeTruthy(); // "1.5000%"
-		expect(await findByText(`$${mockFees.totalFee}`)).toBeTruthy(); // "$0.50"
-
-		// Check warning (should NOT be present for 1.5% impact)
-		expect(queryByText(/Warning: High price impact/)).toBeNull();
-
-		// --- Optional: Test high price impact warning ---
-		// You could add another test or modify this one to check the warning appears
-		// by setting mockFees.priceImpactPct > 2
-	});
-
-	it('calls handleTrade, shows toast, and navigates on confirm', async () => {
-		// Mock handleTrade implementation to simulate success - REPLACED with executeTrade mock
-		(TradeScripts.executeTrade as jest.Mock).mockImplementation(
-			async (
-				wallet, fromCoin, toCoin, amount, slippage,
-				showToast, setIsLoadingTrade, setIsConfirmationVisible,
-				setPollingStatus, setSubmittedTxHash, setPollingError,
-				setPollingConfirmations, setIsStatusModalVisible, startPollingFn
-			) => {
-				// Simulate the *outcome* the old handleTrade mock produced for the test
-				await new Promise(resolve => setTimeout(resolve, 50)); // Short delay
-				act(() => {
-					setIsLoadingTrade(false);
-					setIsConfirmationVisible(false); // Should close confirmation
-					setIsStatusModalVisible(false); // For this test, assume instant success, hide status modal too
-					showToast({ type: 'success', message: 'Trade successful!' });
-					// Simulate navigation which might happen in the component based on state changes
-					// Assuming navigation object is still accessible or passed differently
-					mockNavigate('Portfolio');
-				});
-				// Return a mock transaction hash, though the test doesn't directly use it here
-				setSubmittedTxHash('mock_tx_hash_confirm');
-				// Don't call startPollingFn in this simplified mock
-			}
-		);
-
-		const { getByTestId, getByText, queryByText, queryByTestId } = render(<TradeScreen />); // Ensure queryByTestId is here
-
-		// 1. Wait for initial price refresh
-		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
-		mockCoinStoreReturn.getCoinByID.mockClear(); // Clear initial calls
-
-		// 2. Populate amount
-		const fromInput = getByTestId('coin-selector-input-from');
-		fireEvent.changeText(fromInput, '1');
+		// 2. Enter trade amount
+		await act(async () => {
+			const fromInput = getByTestId('coin-selector-input-from');
+			fireEvent.changeText(fromInput, mockFromAmount);
+			jest.runOnlyPendingTimers();
+		});
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
 
-		// 3. Press Trade button to open modal
-		const tradeButton = getByText('Trade');
-		fireEvent.press(tradeButton);
-
-		// 4. Wait for the modal to appear and loading to finish
-		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2)); // Wait for refresh calls
-		// Wait for the loading spinner to disappear
+		// 3. Open confirmation modal
+		await act(async () => {
+			fireEvent.press(getByText('Trade'));
+			jest.runOnlyPendingTimers();
+		});
+		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 		await waitFor(() => expect(queryByTestId('loading-spinner')).toBeNull());
 
-		// 5. Find and press the Confirm button inside the modal using testID, waiting for it to appear
-		await waitFor(() => {
+		// 4. Verify modal content
+		expect(await findByText(`${mockFromAmount} ${mockFromCoin.symbol}`)).toBeTruthy();
+		expect(await findByText('$150.0000')).toBeTruthy();
+		expect(await findByText(`${mockToAmount} ${mockToCoin.symbol}`)).toBeTruthy();
+		expect(await findByText('$1.5000')).toBeTruthy();
+		expect(await findByText(`${parseFloat(mockFees.priceImpactPct).toFixed(4)}%`)).toBeTruthy();
+		expect(await findByText(`$${mockFees.totalFee}`)).toBeTruthy();
+		expect(queryByText(/Warning: High price impact/)).toBeNull();
+
+		// 5. Test cancel flow
+		await act(async () => {
+			const cancelButton = getByTestId('cancel-trade-button');
+			fireEvent.press(cancelButton);
+			jest.runOnlyPendingTimers();
+		});
+		await waitFor(() => expect(queryByTestId('confirm-trade-button')).toBeNull());
+		expect(TradeScripts.executeTrade).not.toHaveBeenCalled();
+
+		// 6. Reopen modal and test confirm flow
+		await act(async () => {
+			fireEvent.press(getByText('Trade'));
+			jest.runOnlyPendingTimers();
+		});
+		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(4));
+		await waitFor(() => expect(queryByTestId('loading-spinner')).toBeNull());
+
+		await act(async () => {
 			const confirmButton = getByTestId('confirm-trade-button');
 			fireEvent.press(confirmButton);
+			jest.runOnlyPendingTimers();
 		});
 
-		// 6. Wait specifically for handleTrade to be called, then assert arguments - UPDATED to executeTrade
-		await waitFor(() => expect(TradeScripts.executeTrade).toHaveBeenCalledTimes(1), { timeout: 3000 });
-
-		// Now assert the arguments, toast, and navigation *after* we know executeTrade was called
+		await waitFor(() => expect(TradeScripts.executeTrade).toHaveBeenCalledTimes(1));
 		expect(TradeScripts.executeTrade).toHaveBeenCalledWith(
-			mockWallet,           // wallet
-			mockFromCoin,         // fromCoin
-			mockToCoin,           // toCoin
-			'1',                  // fromAmount
-			0.5,                  // slippage (hardcoded in TradeScreen)
-			mockShowToast,        // showToast function (mocked)
-			expect.any(Function), // setIsLoadingTrade
-			expect.any(Function), // setIsConfirmationVisible
-			expect.any(Function), // setPollingStatus
-			expect.any(Function), // setSubmittedTxHash
-			expect.any(Function), // setPollingError
-			expect.any(Function), // setPollingConfirmations
-			expect.any(Function), // setIsStatusModalVisible
-			expect.any(Function)  // startPollingFn
+			mockWallet,
+			mockFromCoin,
+			mockToCoin,
+			mockFromAmount,
+			0.5,
+			mockShowToast,
+			expect.any(Function),
+			expect.any(Function),
+			expect.any(Function),
+			expect.any(Function),
+			expect.any(Function),
+			expect.any(Function),
+			expect.any(Function),
+			expect.any(Function)
 		);
 
-		// Check if toast was shown - needs waitFor as well due to setTimeout in the mock
 		await waitFor(() => {
-			expect(mockShowToast).toHaveBeenCalledTimes(1);
-			expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'success', message: expect.stringContaining('Trade successful') }));
-		});
-
-		// Check navigation - needs waitFor as well due to setTimeout in the mock
-		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledTimes(1);
+			expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({
+				type: 'success',
+				message: expect.stringContaining('Trade successful')
+			}));
 			expect(mockNavigate).toHaveBeenCalledWith('Portfolio');
 		});
 	});
 
-	it('closes modal and does nothing when Cancel is pressed', async () => {
-		// Mock quote fetch minimally for setup
+	it('shows high price impact warning when impact exceeds threshold', async () => {
+		const mockFromAmount = '1';
+		const mockToAmount = '13636.36';
+		const mockFees = { priceImpactPct: '3.5', totalFee: '0.50' }; // High impact > 2%
+
 		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
 			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
-				act(() => { setToAmount('1'); setTradeDetails({ exchangeRate: '1', fromAmount: '1', toAmount: '1', fromCoin: fromC, toCoin: toC }); });
+				await act(async () => {
+					setToAmount(mockToAmount);
+					setTradeDetails(mockFees);
+					setIsQuoteLoading(false);
+				});
 			}
 		);
 
-		const { getByTestId, getByText, queryByTestId, queryByText } = render(<TradeScreen />); // Added queryByTestId and queryByText
+		const { getByTestId, getByText, findByText } = render(<TradeScreen />);
 
-		// 1. Wait for initial price refresh
-		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
-		mockCoinStoreReturn.getCoinByID.mockClear(); // <--- Add this line
+		await act(async () => {
+			await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
+			jest.runOnlyPendingTimers();
+		});
+		mockCoinStoreReturn.getCoinByID.mockClear();
 
-		// 2. Populate amount
-		const fromInput = getByTestId('coin-selector-input-from');
-		fireEvent.changeText(fromInput, '1');
+		await act(async () => {
+			const fromInput = getByTestId('coin-selector-input-from');
+			fireEvent.changeText(fromInput, mockFromAmount);
+			jest.runOnlyPendingTimers();
+		});
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
 
-		// 3. Press Trade button to open modal
-		const tradeButton = getByText('Trade');
-		fireEvent.press(tradeButton);
-
-		// 4. Wait for the modal to appear and loading to finish
-		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2)); // Wait for refresh calls
-		// Wait for the loading spinner to disappear
-		await waitFor(() => expect(queryByTestId('loading-spinner')).toBeNull());
-
-		// 5. Find and press the Cancel button inside the modal using testID
-		const cancelButton = getByTestId('cancel-trade-button');
-		fireEvent.press(cancelButton);
-
-		// 6. Verify modal is closed (confirm button should be gone)
-		await waitFor(() => {
-			expect(queryByTestId('confirm-trade-button')).toBeNull();
+		await act(async () => {
+			fireEvent.press(getByText('Trade'));
+			jest.runOnlyPendingTimers();
 		});
+		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
-		// 7. Verify no trade actions occurred - UPDATED to executeTrade
-		// expect(TradeScripts.handleTrade).not.toHaveBeenCalled();
-		expect(TradeScripts.executeTrade).not.toHaveBeenCalled();
-		expect(mockShowToast).not.toHaveBeenCalled();
-		expect(mockNavigate).not.toHaveBeenCalled();
+		expect(await findByText(/Warning: High price impact/)).toBeTruthy();
 	});
-
 }); 

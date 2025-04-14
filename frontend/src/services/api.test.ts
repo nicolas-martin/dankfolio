@@ -57,38 +57,35 @@ describe('API Service', () => {
 		signed_transaction: 'mockSignedTx',
 	};
 
-	const mockSubmitTradeResponse = {
-		transaction_hash: 'txHash456',
-	};
-
-	const mockTradeQuoteResponse: TradeQuoteResponse = {
-		estimatedAmount: '150.5',
-		exchangeRate: '100.33',
-		fee: '0.01',
-		priceImpact: '0.05',
-		routePlan: ['RouteA', 'RouteB'],
-		inputMint: 'inputMintAddress',
-		outputMint: 'outputMintAddress',
-	};
-
-	const mockWalletBalanceResponse: WalletBalanceResponse = {
-		balances: [{ id: 'mockCoinId', amount: 10 }],
-	};
-
-	const mockPriceHistoryResponse: PriceHistoryResponse = {
-		data: {
-			items: [{ unixTime: Date.now() / 1000, value: 100 }],
+	const mockResponses = {
+		submitTrade: { transaction_hash: 'txHash456' },
+		tradeQuote: {
+			estimatedAmount: '150.5',
+			exchangeRate: '100.33',
+			fee: '0.01',
+			priceImpact: '0.05',
+			routePlan: ['RouteA', 'RouteB'],
+			inputMint: 'inputMintAddress',
+			outputMint: 'outputMintAddress',
+		} as TradeQuoteResponse,
+		walletBalance: {
+			balances: [{ id: 'mockCoinId', amount: 10 }],
+		} as WalletBalanceResponse,
+		priceHistory: {
+			data: {
+				items: [{ unixTime: Date.now() / 1000, value: 100 }],
+			},
+			success: true,
+		} as PriceHistoryResponse,
+		tradeStatus: {
+			status: 'completed',
+			transaction_hash: 'txHash456',
+			timestamp: new Date().toISOString(),
+			from_amount: '1.5',
+			to_amount: '100.5',
+			error_message: null
 		},
-		success: true,
-	};
-
-	const mockTradeStatusResponse = {
-		status: 'completed',
-		transaction_hash: 'txHash456',
-		timestamp: new Date().toISOString(),
-		from_amount: '1.5',
-		to_amount: '100.5',
-		error_message: null
+		tokenPrices: { coin1: 10, coin2: 20, coin3: 30 }
 	};
 
 	beforeEach(() => {
@@ -109,219 +106,151 @@ describe('API Service', () => {
 		consoleErrorSpy.mockRestore(); // Restore error spy
 	});
 
-	it('submitTrade successfully calls POST /api/trades/submit', async () => {
-		mockAxiosInstance.post.mockResolvedValue({ data: mockSubmitTradeResponse });
+	describe('Token-related endpoints', () => {
+		it('handles token operations successfully', async () => {
+			// Test getAvailableCoins with trending
+			mockAxiosInstance.get.mockResolvedValueOnce({ data: [{ ...mockCoin, tags: ['trending'] }] });
+			const trendingResult = await api.getAvailableCoins(true);
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens', { params: { trending: 'true' } });
+			expect(trendingResult[0].tags).toContain('trending');
 
-		const result = await api.submitTrade(mockTradePayload);
+			// Test getCoinByID
+			mockAxiosInstance.get.mockResolvedValueOnce({ data: mockCoin });
+			const coinResult = await api.getCoinByID('mockCoinId');
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens/mockCoinId');
+			expect(coinResult).toEqual(mockCoin);
 
-		expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-			'/api/trades/submit',
-			mockTradePayload,
-		);
-		expect(result).toEqual(mockSubmitTradeResponse);
-	});
-
-	it('submitTrade handles API errors', async () => {
-		const mockError = { response: { status: 500, data: { message: 'Server Error' } }, message: 'Request failed' };
-		mockAxiosInstance.post.mockRejectedValue(mockError);
-
-		await expect(api.submitTrade(mockTradePayload)).rejects.toMatchObject({
-			message: 'Request failed',
-			status: 500,
-			data: { message: 'Server Error' }
+			// Test getTokenPrices
+			const tokenIds = ['coin1', 'coin2', 'coin3'];
+			mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tokenPrices });
+			const pricesResult = await api.getTokenPrices(tokenIds);
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens/prices', {
+				params: { ids: tokenIds.join(',') }
+			});
+			expect(pricesResult).toEqual(mockResponses.tokenPrices);
 		});
-		expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
-	});
 
-	it('getAvailableCoins successfully calls GET /api/tokens with trending=true param when trendingOnly is true', async () => {
-		const mockTrendingCoins: Coin[] = [{ ...mockCoin, tags: ['trending'] }];
-		mockAxiosInstance.get.mockResolvedValue({ data: mockTrendingCoins });
+		it('handles token operation errors', async () => {
+			// Test getAvailableCoins error
+			mockAxiosInstance.get.mockRejectedValueOnce({ response: { status: 404 }, message: 'Not Found' });
+			await expect(api.getAvailableCoins()).rejects.toMatchObject({
+				message: 'Not Found',
+				status: 404,
+			});
 
-		const result = await api.getAvailableCoins(true);
+			// Test getCoinByID error
+			mockAxiosInstance.get.mockRejectedValueOnce({ response: { status: 404 }, message: 'Not Found' });
+			await expect(api.getCoinByID('invalidId')).rejects.toMatchObject({
+				message: 'Not Found',
+				status: 404,
+			});
 
-		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens', { params: { trending: 'true' } });
-		expect(result).toEqual(mockTrendingCoins);
-	});
-
-	it('getAvailableCoins handles API errors', async () => {
-		const mockError = { response: { status: 404 }, message: 'Not Found' };
-		mockAxiosInstance.get.mockRejectedValue(mockError);
-
-		await expect(api.getAvailableCoins()).rejects.toMatchObject({
-			message: 'Not Found',
-			status: 404,
+			// Test getTokenPrices error
+			mockAxiosInstance.get.mockRejectedValueOnce({ response: { status: 503 }, message: 'Service Unavailable' });
+			await expect(api.getTokenPrices(['coin1'])).rejects.toMatchObject({
+				message: 'Service Unavailable',
+				status: 503,
+			});
 		});
-		// Check it was called with empty params when no argument provided
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens', { params: {} });
 	});
 
+	describe('Trade-related endpoints', () => {
+		it('handles trade operations successfully', async () => {
+			// Test submitTrade
+			mockAxiosInstance.post.mockResolvedValueOnce({ data: mockResponses.submitTrade });
+			const submitResult = await api.submitTrade(mockTradePayload);
+			expect(mockAxiosInstance.post).toHaveBeenCalledWith('/api/trades/submit', mockTradePayload);
+			expect(submitResult).toEqual(mockResponses.submitTrade);
 
-	it('getTradeQuote successfully calls GET /api/trades/quote with params', async () => {
-		mockAxiosInstance.get.mockResolvedValue({ data: mockTradeQuoteResponse });
-		const fromCoin = 'coin1';
-		const toCoin = 'coin2';
-		const amount = '10';
+			// Test getTradeQuote
+			mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeQuote });
+			const quoteResult = await api.getTradeQuote('coin1', 'coin2', '10');
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/trades/quote', {
+				params: {
+					from_coin_id: 'coin1',
+					to_coin_id: 'coin2',
+					amount: '10'
+				}
+			});
+			expect(quoteResult).toEqual(mockResponses.tradeQuote);
 
-		const result = await api.getTradeQuote(fromCoin, toCoin, amount);
-
-		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/trades/quote', {
-			params: {
-				from_coin_id: fromCoin,
-				to_coin_id: toCoin,
-				amount
-			}
+			// Test getTradeStatus
+			mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeStatus });
+			const statusResult = await api.getTradeStatus('txHash456');
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/trades/status/txHash456');
+			expect(statusResult).toEqual(mockResponses.tradeStatus);
 		});
-		expect(result).toEqual(mockTradeQuoteResponse);
-	});
 
-	it('getTradeQuote handles API errors', async () => {
-		const mockError = { response: { status: 400 }, message: 'Bad Request' };
-		mockAxiosInstance.get.mockRejectedValue(mockError);
+		it('handles trade operation errors', async () => {
+			// Test submitTrade error
+			mockAxiosInstance.post.mockRejectedValueOnce({
+				response: { status: 500, data: { message: 'Server Error' } },
+				message: 'Request failed'
+			});
+			await expect(api.submitTrade(mockTradePayload)).rejects.toMatchObject({
+				message: 'Request failed',
+				status: 500,
+				data: { message: 'Server Error' }
+			});
 
-		await expect(api.getTradeQuote('c1', 'c2', '1')).rejects.toMatchObject({
-			message: 'Bad Request',
-			status: 400,
+			// Test getTradeQuote error
+			mockAxiosInstance.get.mockRejectedValueOnce({ response: { status: 400 }, message: 'Bad Request' });
+			await expect(api.getTradeQuote('c1', 'c2', '1')).rejects.toMatchObject({
+				message: 'Bad Request',
+				status: 400,
+			});
+
+			// Test getTradeStatus error
+			mockAxiosInstance.get.mockRejectedValueOnce({
+				response: { status: 404, data: { message: 'Transaction not found' } },
+				message: 'Not Found'
+			});
+			await expect(api.getTradeStatus('invalidTxHash')).rejects.toMatchObject({
+				message: 'Not Found',
+				status: 404,
+				data: { message: 'Transaction not found' }
+			});
 		});
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/trades/quote', expect.any(Object));
 	});
 
+	describe('Wallet and Price History endpoints', () => {
+		it('handles wallet and price operations successfully', async () => {
+			// Test getWalletBalance
+			mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.walletBalance });
+			const balanceResult = await api.getWalletBalance('wallet123');
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/wallets/wallet123/balance');
+			expect(balanceResult).toEqual(mockResponses.walletBalance);
 
-	it('getPriceHistory successfully calls GET /api/price/history with params', async () => {
-		mockAxiosInstance.get.mockResolvedValue({ data: mockPriceHistoryResponse });
-		const address = 'addr1';
-		const type = 'daily';
-		const timeFrom = 't1';
-		const timeTo = 't2';
-		const addressType = 'wallet';
-
-		const result = await api.getPriceHistory(address, type, timeFrom, timeTo, addressType);
-
-		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/price/history', {
-			params: {
-				address,
-				type,
-				time_from: timeFrom,
-				time_to: timeTo,
-				address_type: addressType
-			}
+			// Test getPriceHistory
+			mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.priceHistory });
+			const historyResult = await api.getPriceHistory('addr1', 'daily', 't1', 't2', 'wallet');
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/price/history', {
+				params: {
+					address: 'addr1',
+					type: 'daily',
+					time_from: 't1',
+					time_to: 't2',
+					address_type: 'wallet'
+				}
+			});
+			expect(historyResult).toEqual(mockResponses.priceHistory);
 		});
-		expect(result).toEqual(mockPriceHistoryResponse);
-	});
 
-	it('getPriceHistory handles API errors', async () => {
-		const mockError = { message: 'Network Error' }; // No response object
-		mockAxiosInstance.get.mockRejectedValue(mockError);
+		it('handles wallet and price operation errors', async () => {
+			// Test getWalletBalance error
+			mockAxiosInstance.get.mockRejectedValueOnce({ response: { status: 401 }, message: 'Unauthorized' });
+			await expect(api.getWalletBalance('wallet123')).rejects.toMatchObject({
+				message: 'Unauthorized',
+				status: 401,
+			});
 
-		await expect(api.getPriceHistory('a', 't', 't1', 't2', 'at')).rejects.toMatchObject({
-			message: 'Network Error',
-			status: undefined, // No status if response is missing
+			// Test getPriceHistory error
+			mockAxiosInstance.get.mockRejectedValueOnce({ message: 'Network Error' });
+			await expect(api.getPriceHistory('a', 't', 't1', 't2', 'at')).rejects.toMatchObject({
+				message: 'Network Error',
+				status: undefined,
+			});
 		});
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/price/history', expect.any(Object));
-	});
-
-
-	it('getWalletBalance successfully calls GET /api/wallets/{address}/balance', async () => {
-		const address = 'wallet123';
-		mockAxiosInstance.get.mockResolvedValue({ data: mockWalletBalanceResponse });
-
-		const result = await api.getWalletBalance(address);
-
-		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/api/wallets/${address}/balance`);
-		expect(result).toEqual(mockWalletBalanceResponse);
-	});
-
-	it('getWalletBalance handles API errors', async () => {
-		const address = 'wallet123';
-		const mockError = { response: { status: 401 }, message: 'Unauthorized' };
-		mockAxiosInstance.get.mockRejectedValue(mockError);
-
-		await expect(api.getWalletBalance(address)).rejects.toMatchObject({
-			message: 'Unauthorized',
-			status: 401,
-		});
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/api/wallets/${address}/balance`);
-	});
-
-
-	it('getCoinByID successfully calls GET /api/tokens/{id}', async () => {
-		const id = 'mockCoinId';
-		mockAxiosInstance.get.mockResolvedValue({ data: mockCoin });
-
-		const result = await api.getCoinByID(id);
-
-		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/api/tokens/${id}`);
-		expect(result).toEqual(mockCoin);
-	});
-
-	it('getCoinByID handles API errors', async () => {
-		const id = 'mockCoinId';
-		const mockError = { response: { status: 404 }, message: 'Not Found' };
-		mockAxiosInstance.get.mockRejectedValue(mockError);
-
-		await expect(api.getCoinByID(id)).rejects.toMatchObject({
-			message: 'Not Found',
-			status: 404,
-		});
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/api/tokens/${id}`);
-	});
-
-
-	it('getTokenPrices successfully calls GET /api/tokens/prices with joined IDs', async () => {
-		const tokenIds = ['coin1', 'coin2', 'coin3'];
-		const mockPrices: Record<string, number> = { coin1: 10, coin2: 20, coin3: 30 };
-		mockAxiosInstance.get.mockResolvedValue({ data: mockPrices });
-
-		const result = await api.getTokenPrices(tokenIds);
-
-		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens/prices', {
-			params: {
-				ids: tokenIds.join(',')
-			}
-		});
-		expect(result).toEqual(mockPrices);
-	});
-
-	it('getTokenPrices handles API errors', async () => {
-		const tokenIds = ['coin1', 'coin2'];
-		const mockError = { response: { status: 503 }, message: 'Service Unavailable' };
-		mockAxiosInstance.get.mockRejectedValue(mockError);
-
-		await expect(api.getTokenPrices(tokenIds)).rejects.toMatchObject({
-			message: 'Service Unavailable',
-			status: 503,
-		});
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/tokens/prices', expect.any(Object));
-	});
-
-	it('getTradeStatus successfully calls GET /api/trades/status/{txHash}', async () => {
-		const txHash = 'txHash456';
-		mockAxiosInstance.get.mockResolvedValue({ data: mockTradeStatusResponse });
-
-		const result = await api.getTradeStatus(txHash);
-
-		expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/api/trades/status/${txHash}`);
-		expect(result).toEqual(mockTradeStatusResponse);
-	});
-
-	it('getTradeStatus handles API errors', async () => {
-		const txHash = 'invalidTxHash';
-		const mockError = { response: { status: 404, data: { message: 'Transaction not found' } }, message: 'Not Found' };
-		mockAxiosInstance.get.mockRejectedValue(mockError);
-
-		await expect(api.getTradeStatus(txHash)).rejects.toMatchObject({
-			message: 'Not Found',
-			status: 404,
-			data: { message: 'Transaction not found' }
-		});
-		expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/api/trades/status/${txHash}`);
 	});
 
 }); 

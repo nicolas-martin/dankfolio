@@ -103,7 +103,7 @@ jest.mock('@components/Common/Toast', () => ({
 	ToastProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-describe('CoinDetail Navigation', () => {
+describe('Navigation Flow', () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
 	});
@@ -133,76 +133,56 @@ describe('CoinDetail Navigation', () => {
 		);
 	};
 
-	it('should navigate between Home and CoinDetail screens with data persistence', async () => {
+	it('handles complete navigation flow with data persistence', async () => {
 		const { getByTestId, getByText, queryByText, findByTestId } = renderTestNavigator();
 
-		// Wait for initial render
+		// 1. Initial Home Screen Render
 		await findByTestId('home-screen');
-
-		// Verify we start on Home screen with correct content
 		expect(getByText('Available Coins')).toBeTruthy();
-
-		// Verify coin data is displayed on Home screen
 		expect(getByText('BTC')).toBeTruthy();
 		expect(getByText(formatPrice(Number(mockCoin.price)))).toBeTruthy();
 
-		// Navigate to CoinDetail by pressing the coin card
+		// 2. First Navigation to CoinDetail
 		await act(async () => {
 			const coinCard = getByTestId('coin-card-bitcoin');
 			fireEvent.press(coinCard);
 		});
 
-		// Wait for CoinDetail screen to load and verify essential content
+		// Verify CoinDetail content
 		const coinDetailScreen = await findByTestId('coin-detail-screen');
 		expect(coinDetailScreen).toBeTruthy();
-
-		// Wait for content to load
 		await findByTestId('coin-info');
 		expect(getByText('About Bitcoin')).toBeTruthy();
 		expect(getByText('Digital gold')).toBeTruthy();
 
-		// Press back button
+		// 3. Navigate Back to Home
 		await act(async () => {
 			const backButton = getByTestId('back-button');
 			fireEvent.press(backButton);
 		});
 
-		// Wait for home screen
+		// Verify back on Home screen
 		await findByTestId('home-screen');
 		expect(queryByText('About Bitcoin')).toBeNull();
-	});
 
-	it('should maintain coin detail view state when navigating multiple times', async () => {
-		const { getByTestId, getByText, findByTestId } = renderTestNavigator();
-
-		// Wait for initial render
-		await findByTestId('home-screen');
-
-		// First navigation to detail
+		// 4. Second Navigation to CoinDetail (testing state persistence)
 		await act(async () => {
 			const coinCard = getByTestId('coin-card-bitcoin');
 			fireEvent.press(coinCard);
 		});
 
-		// Wait for detail screen and content
+		// Verify CoinDetail content is preserved
 		await findByTestId('coin-detail-screen');
 		await findByTestId('coin-info');
 		expect(getByText('About Bitcoin')).toBeTruthy();
+		expect(getByText('Digital gold')).toBeTruthy();
 
-		// Navigate back
+		// 5. Final Navigation Back
 		await act(async () => {
 			const backButton = getByTestId('back-button');
 			fireEvent.press(backButton);
 		});
 		await findByTestId('home-screen');
-
-		// Navigate to detail again
-		await act(async () => {
-			const coinCard = getByTestId('coin-card-bitcoin');
-			fireEvent.press(coinCard);
-		});
-		await findByTestId('coin-detail-screen');
-		await findByTestId('coin-info');
-		expect(getByText('About Bitcoin')).toBeTruthy();
+		expect(queryByText('About Bitcoin')).toBeNull();
 	});
 }); 

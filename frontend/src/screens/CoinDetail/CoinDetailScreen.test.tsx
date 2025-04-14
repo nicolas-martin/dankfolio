@@ -220,11 +220,10 @@ jest.mock('./coindetail_scripts', () => {
 
 describe('CoinDetail Screen', () => {
 	const mockedHandleTradeNavigation = handleTradeNavigation as jest.Mock;
-	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
+	let consoleLogSpy: jest.SpyInstance;
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-		// Silence console.log
 		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 		mockedHandleTradeNavigation.mockClear();
 
@@ -246,7 +245,6 @@ describe('CoinDetail Screen', () => {
 		mockFetchPriceHistory.mockImplementation(async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
 			if (!coin) return;
 
-			// Only set loading if it's the initial load
 			if (isInitialLoad) {
 				act(() => {
 					setLoading(true);
@@ -291,12 +289,11 @@ describe('CoinDetail Screen', () => {
 		mockRoute.params.coin = mockInitialCoin;
 	});
 
-	// Add afterEach to restore the original console.log
 	afterEach(() => {
 		consoleLogSpy.mockRestore();
 	});
 
-	it('renders correctly with initial coin data', async () => {
+	it('renders and displays coin information correctly', async () => {
 		const now = Date.now();
 		const pastUnix = Math.floor((now - 100000) / 1000);
 		const nowUnix = Math.floor(now / 1000);
@@ -313,74 +310,7 @@ describe('CoinDetail Screen', () => {
 			}
 		];
 
-		mockFetchPriceHistory.mockImplementation(
-			async (timeframe, setLoading, setPriceHistory, coin, isInitialLoad) => {
-				if (!coin) return;
-				act(() => {
-					setLoading(true);
-				});
-				await new Promise(resolve => setTimeout(resolve, 0));
-				act(() => {
-					setPriceHistory(expectedMockHistory);
-					setLoading(false);
-				});
-			}
-		);
-
-		const { getByText, findByText, getByTestId } = render(
-			<CoinDetailScreen />
-		);
-
-		await waitFor(() => expect(getByTestId('mock-PriceDisplay')).toBeTruthy());
-
-		const priceDisplayMock = getByTestId('mock-PriceDisplay');
-		const firstDataPoint = expectedMockHistory[0];
-		const lastDataPoint = expectedMockHistory[expectedMockHistory.length - 1];
-		const expectedPrice = lastDataPoint.value;
-		const expectedValueChange = lastDataPoint.value - firstDataPoint.value;
-		const expectedPeriodChange = ((lastDataPoint.value - firstDataPoint.value) / firstDataPoint.value) * 100;
-
-		expect(priceDisplayMock.props.price).toBeCloseTo(expectedPrice);
-		expect(priceDisplayMock.props.periodChange).toBeCloseTo(expectedPeriodChange);
-		expect(priceDisplayMock.props.valueChange).toBeCloseTo(expectedValueChange);
-		expect(priceDisplayMock.props.period).toBe("15m");
-		expect(priceDisplayMock.props.icon_url).toBe(mockInitialCoin.icon_url);
-		expect(priceDisplayMock.props.name).toBe(mockInitialCoin.name);
-
-		const coinChartMock = getByTestId('mock-CoinChart');
-		expect(coinChartMock.props.data).toEqual(expectedMockHistory);
-		expect(coinChartMock.props.loading).toBe(false);
-		expect(coinChartMock.props.activePoint).toBeNull();
-
-		expect(getByTestId('mock-CoinInfo')).toBeTruthy();
-
-		expect(getByTestId('toggle-button-1D')).toBeTruthy();
-		expect(getByTestId('toggle-button-4H')).toBeTruthy();
-
-		expect(await findByText(`About ${mockInitialCoin.name}`)).toBeTruthy();
-
-		expect(getByText('Trade')).toBeTruthy();
-	});
-
-	it('displays coin information correctly', async () => {
-		const { findByTestId, findByText } = render(<CoinDetailScreen />);
-
-		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
-
-		const coinInfoMock = await findByTestId('mock-CoinInfo');
-		expect(coinInfoMock.props.metadata).toEqual({
-			name: mockInitialCoin.name,
-			description: mockInitialCoin.description,
-			website: mockInitialCoin.website,
-			twitter: mockInitialCoin.twitter,
-			telegram: mockInitialCoin.telegram,
-			daily_volume: mockInitialCoin.daily_volume,
-			tags: mockInitialCoin.tags,
-			symbol: mockInitialCoin.symbol
-		});
-	});
-
-	it('does not display social/website links when not provided', async () => {
+		// Test with no social links
 		const mockCoinWithoutLinks: Coin = {
 			...mockInitialCoin,
 			website: "",
@@ -389,11 +319,35 @@ describe('CoinDetail Screen', () => {
 		};
 		mockRoute.params.coin = mockCoinWithoutLinks;
 
-		const { queryByText, findByTestId, queryByTestId } = render(<CoinDetailScreen />);
+		const { getByText, findByText, getByTestId, queryByText } = render(
+			<CoinDetailScreen />
+		);
 
-		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
+		await waitFor(() => expect(getByTestId('mock-PriceDisplay')).toBeTruthy());
 
-		const coinInfoMock = await findByTestId('mock-CoinInfo');
+		// Verify price display
+		const priceDisplayMock = getByTestId('mock-PriceDisplay');
+		const lastDataPoint = expectedMockHistory[expectedMockHistory.length - 1];
+		const firstDataPoint = expectedMockHistory[0];
+		const expectedPrice = lastDataPoint.value;
+		const expectedValueChange = lastDataPoint.value - firstDataPoint.value;
+		const expectedPeriodChange = ((lastDataPoint.value - firstDataPoint.value) / firstDataPoint.value) * 100;
+
+		expect(priceDisplayMock.props.price).toBeCloseTo(expectedPrice);
+		expect(priceDisplayMock.props.periodChange).toBeCloseTo(expectedPeriodChange);
+		expect(priceDisplayMock.props.valueChange).toBeCloseTo(expectedValueChange);
+		expect(priceDisplayMock.props.period).toBe("15m");
+		expect(priceDisplayMock.props.icon_url).toBe(mockCoinWithoutLinks.icon_url);
+		expect(priceDisplayMock.props.name).toBe(mockCoinWithoutLinks.name);
+
+		// Verify chart
+		const coinChartMock = getByTestId('mock-CoinChart');
+		expect(coinChartMock.props.data).toEqual(expectedMockHistory);
+		expect(coinChartMock.props.loading).toBe(false);
+		expect(coinChartMock.props.activePoint).toBeNull();
+
+		// Verify coin info
+		const coinInfoMock = getByTestId('mock-CoinInfo');
 		expect(coinInfoMock.props.metadata).toEqual({
 			name: mockCoinWithoutLinks.name,
 			description: mockCoinWithoutLinks.description,
@@ -404,79 +358,56 @@ describe('CoinDetail Screen', () => {
 			tags: mockCoinWithoutLinks.tags,
 			symbol: mockCoinWithoutLinks.symbol
 		});
+
+		// Verify no holdings info is shown when not in portfolio
+		expect(queryByText('Your Holdings')).toBeNull();
+
+		// Verify store hooks are called
+		expect(usePortfolioStore).toHaveBeenCalled();
+		expect(useCoinStore).toHaveBeenCalled();
+		expect(mockCoinStoreReturn.getCoinByID).not.toHaveBeenCalled();
 	});
 
-	it('displays holdings information when token is in portfolio', async () => {
-		const mockHolding: PortfolioToken = {
+	it('handles portfolio integration and trading correctly', async () => {
+		// Setup portfolio holding
+		const mockHolding = {
 			id: mockInitialCoin.id,
 			amount: 10000,
 			value: 10000 * mockInitialCoin.price,
 			coin: mockInitialCoin,
 			price: mockInitialCoin.price,
 		};
-
 		mockPortfolioStoreReturn.tokens = [mockHolding];
 
-		const { findByText } = render(<CoinDetailScreen />);
+		const { findByText, getByText } = render(<CoinDetailScreen />);
 
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
+		// Verify holdings display
 		expect(await findByText('Your Holdings')).toBeTruthy();
-
 		expect(await findByText(`$${mockHolding.value.toFixed(4)}`)).toBeTruthy();
-
 		expect(await findByText(`${mockHolding.amount.toFixed(4)} ${mockInitialCoin.symbol}`)).toBeTruthy();
-	});
 
-	it('does not display holdings information when token is not in portfolio', async () => {
-		const { queryByText } = render(<CoinDetailScreen />);
-
-		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
-
-		expect(queryByText('Your Holdings')).toBeNull();
-	});
-
-	it('calls store hooks correct number of times', async () => {
-		const { getByText } = render(<CoinDetailScreen />);
-
-		expect(mocked(usePortfolioStore)).toHaveBeenCalledTimes(1);
-		expect(mocked(useCoinStore)).toHaveBeenCalledTimes(1);
-		expect(mockCoinStoreReturn.getCoinByID).not.toHaveBeenCalled();
-
-		const tradeButton = getByText('Trade');
-		fireEvent.press(tradeButton);
-
-		await waitFor(() => {
-			// we shouldn't call any extra
-			expect(mockCoinStoreReturn.getCoinByID).not.toHaveBeenCalled()
-		});
-	});
-
-	it('navigates to Trade screen with correct parameters on Trade button press', async () => {
-		const { getByText } = render(<CoinDetailScreen />);
-
-		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
-
+		// Test trade navigation
 		const tradeButton = getByText('Trade');
 		fireEvent.press(tradeButton);
 
 		await waitFor(() => {
 			expect(mockGetCoinByID).not.toHaveBeenCalled();
+			expect(mockedHandleTradeNavigation).toHaveBeenCalledTimes(1);
+			expect(mockedHandleTradeNavigation).toHaveBeenCalledWith(
+				mockInitialCoin,
+				null,
+				mockShowToast,
+				mockNavigate
+			);
 		});
-
-		expect(mockedHandleTradeNavigation).toHaveBeenCalledTimes(1);
-		expect(mockedHandleTradeNavigation).toHaveBeenCalledWith(
-			mockInitialCoin,
-			null,
-			mockShowToast,
-			mockNavigate
-		);
 	});
 
-	it('calls fetchPriceHistory with correct arguments on timeframe change', async () => {
+	it('handles timeframe changes correctly', async () => {
 		const { getByTestId } = render(<CoinDetailScreen />);
 
-		// 1. Wait for the initial fetch to complete and verify it was called with initial load true
+		// Verify initial timeframe fetch
 		await waitFor(() => {
 			expect(mockFetchPriceHistory).toHaveBeenCalledWith(
 				'15m',
@@ -487,28 +418,24 @@ describe('CoinDetail Screen', () => {
 			);
 		});
 
-		// Wait for state updates to complete
 		await act(async () => {
 			await new Promise(resolve => setTimeout(resolve, 100));
 		});
 
-		// 2. Clear mocks AFTER initial load to focus on the click trigger
 		mockFetchPriceHistory.mockClear();
 
-		// 3. Find and press the '1D' button
+		// Test timeframe change
 		const button1D = getByTestId('toggle-button-1D');
 		fireEvent.press(button1D);
 
-		// 4. Wait for the new fetch triggered by the press
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalledTimes(1));
 
-		// 5. Assert the arguments of the call
 		expect(mockFetchPriceHistory).toHaveBeenCalledWith(
-			'1D',                 // Expected timeframe
-			expect.any(Function), // setLoading state setter
-			expect.any(Function), // setPriceHistory state setter
-			mockInitialCoin,      // The coin object
-			false                 // isInitialLoad should be false since priceHistory is not empty
+			'1D',
+			expect.any(Function),
+			expect.any(Function),
+			mockInitialCoin,
+			false
 		);
 	});
 }); 

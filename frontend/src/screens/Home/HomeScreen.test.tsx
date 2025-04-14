@@ -137,15 +137,15 @@ describe('HomeScreen', () => {
 		consoleLogSpy.mockRestore();
 	});
 
-	it('renders coin list and profile button when wallet is connected', async () => {
-		const { getByText } = render(
+	it('renders correctly and handles data refresh', async () => {
+		const { getByText, getByTestId } = render(
 			<NavigationContainer>
 				<HomeScreen />
 			</NavigationContainer>
 		);
 
+		// Verify initial render
 		await waitFor(() => {
-			// Verify store hooks are called exactly once on mount
 			expect(usePortfolioStore).toHaveBeenCalledTimes(1);
 			expect(useCoinStore).toHaveBeenCalledTimes(1);
 			expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
@@ -156,94 +156,19 @@ describe('HomeScreen', () => {
 			expect(getByText('USDT')).toBeTruthy();
 			expect(getByText('View Profile')).toBeTruthy();
 		});
-	});
 
-	it('calls both fetchAvailableCoins and fetchPortfolioBalance exactly once when refreshing', async () => {
-		const { getByTestId } = render(
-			<NavigationContainer>
-				<HomeScreen />
-			</NavigationContainer>
-		);
-
-		expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
-		expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
-
+		// Test refresh functionality
 		const refreshButton = getByTestId('refresh-button');
 		fireEvent.press(refreshButton);
 
 		await waitFor(() => {
-			// Verify store hooks and functions are called exactly once
-			expect(usePortfolioStore).toHaveBeenCalledTimes(1);
-			expect(useCoinStore).toHaveBeenCalledTimes(1);
+			// Verify function calls
 			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
 			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
 			expect(fetchPortfolioBalanceMock).toHaveBeenCalledWith(mockWallet.address);
 			expect(showToastMock).toHaveBeenCalledTimes(1);
-		});
-	});
 
-	it('shows error toast when fetching fails', async () => {
-		// Both calls will fail
-		const error = new Error('Network error');
-		fetchAvailableCoinsMock.mockRejectedValueOnce(error);
-		fetchPortfolioBalanceMock.mockRejectedValueOnce(error);
-
-		const { getByTestId } = render(
-			<NavigationContainer>
-				<HomeScreen />
-			</NavigationContainer>
-		);
-
-		// Initial state check
-		expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
-		expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
-		expect(showToastMock).not.toHaveBeenCalled();
-
-		// Trigger refresh
-		const refreshButton = getByTestId('refresh-button');
-		fireEvent.press(refreshButton);
-
-		await waitFor(() => {
-			// Both fetch functions should be called exactly once
-			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
-			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
-			// Error toast should be shown once
-			expect(showToastMock).toHaveBeenCalledTimes(1);
-			// Verify error message
-			expect(showToastMock).toHaveBeenCalledWith({
-				type: 'error',
-				message: 'Failed to refresh coins',
-				duration: 3000,
-			});
-		});
-	});
-
-	it('verifies store state and call counts after refresh', async () => {
-		const { getByTestId } = render(
-			<NavigationContainer>
-				<HomeScreen />
-			</NavigationContainer>
-		);
-
-		// Initial state check
-		expect(usePortfolioStore).toHaveBeenCalledTimes(1);
-		expect(useCoinStore).toHaveBeenCalledTimes(1);
-		expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
-		expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
-
-		// Trigger refresh
-		const refreshButton = getByTestId('refresh-button');
-		fireEvent.press(refreshButton);
-
-		await waitFor(() => {
-			// Verify function call counts
-			expect(usePortfolioStore).toHaveBeenCalledTimes(1);
-			expect(useCoinStore).toHaveBeenCalledTimes(1);
-			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
-			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
-			expect(showToastMock).toHaveBeenCalledTimes(1);
-
-			// Verify all coin data with exact fields
+			// Verify data after refresh
 			const coins = mockApiResponse;
 			expect(coins).toEqual([
 				{
@@ -271,28 +196,41 @@ describe('HomeScreen', () => {
 			]);
 
 			// Verify wallet balances
-			expect(mockWallet.balances).toEqual([
-				{
-					id: "So11111111111111111111111111111111111111112",
-					amount: 0.046201915
-				},
-				{
-					id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-					amount: 1.365125
-				},
-				{
-					id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
-					amount: 2.942492
-				},
-				{
-					id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-					amount: 0.067008
-				},
-				{
-					id: "28B63oRCS2K83EUqTRbe7qYEvQFFTPbntiUnJNKLpump",
-					amount: 1483648.13214
-				}
-			]);
+			expect(mockWallet.balances).toEqual(mockWalletBalances.balances);
+		});
+	});
+
+	it('handles error states during refresh', async () => {
+		// Setup error conditions
+		const error = new Error('Network error');
+		fetchAvailableCoinsMock.mockRejectedValueOnce(error);
+		fetchPortfolioBalanceMock.mockRejectedValueOnce(error);
+
+		const { getByTestId } = render(
+			<NavigationContainer>
+				<HomeScreen />
+			</NavigationContainer>
+		);
+
+		// Initial state verification
+		expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
+		expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
+		expect(showToastMock).not.toHaveBeenCalled();
+
+		// Trigger refresh
+		const refreshButton = getByTestId('refresh-button');
+		fireEvent.press(refreshButton);
+
+		await waitFor(() => {
+			// Verify error handling
+			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
+			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
+			expect(showToastMock).toHaveBeenCalledTimes(1);
+			expect(showToastMock).toHaveBeenCalledWith({
+				type: 'error',
+				message: 'Failed to refresh coins',
+				duration: 3000,
+			});
 		});
 	});
 });

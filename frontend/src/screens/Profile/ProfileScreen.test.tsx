@@ -150,11 +150,10 @@ const mockWallet = {
 
 describe('Profile Screen', () => {
 	const showToastMock = jest.fn();
-	let consoleLogSpy: jest.SpyInstance; // Declare the spy variable
+	let consoleLogSpy: jest.SpyInstance;
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-		// Silence console.log
 		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 		mocked(usePortfolioStore).mockReturnValue({
 			wallet: mockWallet,
@@ -166,35 +165,34 @@ describe('Profile Screen', () => {
 		});
 	});
 
-	// Add afterEach to restore the original console.log
 	afterEach(() => {
 		consoleLogSpy.mockRestore();
 	});
 
-	it('renders tokens with correct values', () => {
-		const { getAllByTestId, getByText, getByRole } = render(
+	it('handles token display and interaction correctly', () => {
+		// Test initial render with tokens
+		const { getAllByTestId, getByText, getByTestId } = render(
 			<NavigationContainer>
 				<ProfileScreen />
 			</NavigationContainer>
 		);
 
-		// Verify tokens are present with correct values, icons, and names
+		// Verify store hooks are called correctly
+		expect(usePortfolioStore).toHaveBeenCalledTimes(1);
+		expect(useToast).toHaveBeenCalledTimes(1);
+
+		// Verify tokens are rendered correctly
 		mockProfileTokens.forEach(token => {
 			const card = getAllByTestId(`token-card-${token.id}`)[0];
-			expect(within(card).getByText(`$${token.value.toFixed(2)}`)).toBeTruthy();
-			expect(within(card).getByText(token.coin.symbol)).toBeTruthy();
-			expect(within(card).getByLabelText(`${token.coin.name} icon`)).toBeTruthy();
+			const cardContent = within(card);
+
+			// Check token details are displayed correctly
+			expect(cardContent.getByText(`$${token.value.toFixed(2)}`)).toBeTruthy();
+			expect(cardContent.getByText(token.coin.symbol)).toBeTruthy();
+			expect(cardContent.getByLabelText(`${token.coin.name} icon`)).toBeTruthy();
 		});
-	});
 
-	it('navigates to CoinDetail screen when token is pressed', () => {
-		const { getByTestId } = render(
-			<NavigationContainer>
-				<ProfileScreen />
-			</NavigationContainer>
-		);
-
-		// Press the SOL token card
+		// Test navigation on token press
 		const solCard = getByTestId(`token-card-${mockProfileTokens[0].id}`);
 		fireEvent.press(solCard);
 
@@ -204,8 +202,8 @@ describe('Profile Screen', () => {
 		expect(mockNavigate).toHaveBeenCalledTimes(1);
 	});
 
-	it('displays empty state when no wallet data is available', () => {
-		// Mock empty portfolio
+	it('handles empty wallet state correctly', () => {
+		// Mock empty portfolio state
 		mocked(usePortfolioStore).mockReturnValue({
 			wallet: null,
 			tokens: [],
@@ -217,16 +215,10 @@ describe('Profile Screen', () => {
 			</NavigationContainer>
 		);
 
+		// Verify empty state message
 		expect(getByText('No wallet data available')).toBeTruthy();
-	});
 
-	it('uses correct store hooks and call counts', () => {
-		render(
-			<NavigationContainer>
-				<ProfileScreen />
-			</NavigationContainer>
-		);
-
+		// Verify store hooks are still called
 		expect(usePortfolioStore).toHaveBeenCalledTimes(1);
 		expect(useToast).toHaveBeenCalledTimes(1);
 	});
