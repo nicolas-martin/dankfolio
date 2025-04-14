@@ -58,9 +58,9 @@ const createMockComponent = (name: string) => (props: any) => {
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
 
-jest.mock('@components/Trade/CoinSelector', () => createMockComponent('CoinSelector'));
-jest.mock('@components/Trade/TradeDetails', () => createMockComponent('TradeDetails'));
-jest.mock('@components/Trade/TradeConfirmation', () => createMockComponent('TradeConfirmation'));
+jest.mock('@components/Trade/CoinSelector', () => createMockComponent('CoinSelector')); 
+jest.mock('@components/Trade/TradeDetails', () => createMockComponent('TradeDetails')); 
+jest.mock('@components/Trade/TradeConfirmation', () => createMockComponent('TradeConfirmation')); 
 
 // Mock Local Scripts
 jest.mock('./trade_scripts', () => ({

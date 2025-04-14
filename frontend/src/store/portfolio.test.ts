@@ -1,11 +1,16 @@
 import { act } from '@testing-library/react-native';
 import { usePortfolioStore } from './portfolio';
-import api from '@/services/api';
 import { Wallet, Coin } from '@/types';
 import { WalletBalanceResponse } from '@/services/api';
 
+import api from '@/services/api';
+
+
 jest.mock('@/services/api');
+
 const mockedApi = api as jest.Mocked<typeof api>;
+
+
 
 // Mock the coin store module to export an object with the mocked getState
 const mockGetCoinByID = jest.fn();
@@ -21,6 +26,7 @@ jest.mock('./coins', () => ({
 		// subscribe: jest.fn(), 
 	},
 }));
+
 
 const mockWalletData: Wallet = { address: 'wallet123', balance: 1000, privateKey: 'privKey', publicKey: 'pubKey' };
 const mockSolCoin: Coin = { id: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
@@ -110,7 +116,7 @@ describe('Zustand Portfolio Store', () => {
 			expect(mockedApi.getWalletBalance).toHaveBeenCalledWith(mockWalletData.address);
 
 			// Check coin store calls
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);//number of calls
 			expect(mockGetCoinByID).toHaveBeenCalledWith('solana');
 			expect(mockGetCoinByID).toHaveBeenCalledWith('usd-coin');
 			expect(mockGetCoinByID).toHaveBeenCalledWith('unknown-coin');
@@ -169,7 +175,7 @@ describe('Zustand Portfolio Store', () => {
 			expect(state.error).toBe(balanceError);
 
 			expect(mockedApi.getWalletBalance).toHaveBeenCalledTimes(1);
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);//number of calls
 
 			// Check final tokens state (should be empty because Promise.all rejects on first error)
 			expect(state.tokens).toHaveLength(0);
@@ -207,7 +213,7 @@ describe('Zustand Portfolio Store', () => {
 			expect(state.error).toBe(errorMessage);
 			expect(state.tokens).toEqual([]);
 			expect(mockedApi.getWalletBalance).toHaveBeenCalledTimes(1);
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);//number of calls
 
 			expect(state.tokens).toHaveLength(0);
 		});
