@@ -11,12 +11,12 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
-	"github.com/nicolas-martin/dankfolio/internal/api"
-	"github.com/nicolas-martin/dankfolio/internal/service/coin"
-	"github.com/nicolas-martin/dankfolio/internal/service/price"
-	"github.com/nicolas-martin/dankfolio/internal/service/solana"
-	"github.com/nicolas-martin/dankfolio/internal/service/trade"
-	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
+	"github.com/nicolas-martin/dankfolio/backend/internal/api"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
 func main() {

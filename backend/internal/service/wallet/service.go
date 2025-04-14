@@ -7,8 +7,8 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 )
 
 // Balance represents information about a token balance

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nicolas-martin/dankfolio/internal/service/price"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 )
 
 type TrendingToken struct {

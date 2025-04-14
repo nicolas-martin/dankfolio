@@ -13,7 +13,7 @@ import (
 
 	"github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/rpc"
-	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 const (

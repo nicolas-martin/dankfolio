@@ -11,7 +11,7 @@ import (
 	"github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/common"
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
-	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // EnrichCoinData fetches detailed information for a given mint address using Jupiter,

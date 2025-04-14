@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/nicolas-martin/dankfolio/internal/service/price"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 )
 
 // PriceHandlers handles HTTP requests related to price data

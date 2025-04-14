@@ -10,9 +10,9 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/go-chi/chi/v5"
-	"github.com/nicolas-martin/dankfolio/internal/model"
-	solanaService "github.com/nicolas-martin/dankfolio/internal/service/solana"
-	"github.com/nicolas-martin/dankfolio/internal/service/trade"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	solanaService "github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 )
 
 // TradeHandlers handles HTTP requests related to trades

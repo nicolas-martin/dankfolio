@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // Service handles price-related operations

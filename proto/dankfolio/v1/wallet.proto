@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package dankfolio.v1;
 
-option go_package = "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1;dankfoliov1";
 
 // WalletService provides operations for managing Solana wallets
 service WalletService {

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nicolas-martin/dankfolio/internal/service/price"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 )
 
 func init() {

@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/service/coin"
-	"github.com/nicolas-martin/dankfolio/internal/service/solana"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
 )
 
 // Service handles trade-related operations

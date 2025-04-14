@@ -14,7 +14,7 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
-	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // --- Constants moved from cmd/solana-trending-scrape ---

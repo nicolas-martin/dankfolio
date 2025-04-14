@@ -4,7 +4,7 @@ package dankfolio.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1;dankfoliov1";
 
 // CoinService provides operations for managing coins
 service CoinService {

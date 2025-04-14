@@ -2,7 +2,7 @@ package wallet
 
 import (
 	"github.com/gagliardetto/solana-go"
-	"github.com/nicolas-martin/dankfolio/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // CreateSolanaWallet creates a new Solana wallet and returns the wallet information

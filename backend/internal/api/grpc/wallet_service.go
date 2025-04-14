@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 
-	pb "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1"
-	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

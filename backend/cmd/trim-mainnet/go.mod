@@ -1,6 +1,6 @@
-module github.com/nma/dankfolio/backend/cmd/trim-mainnet
+module github.com/nicolas-martin/dankfolio/backend/cmd/trim-mainnet
 
-go 1.23.6
+go 1.21
 
 require (
 	github.com/briandowns/spinner v1.23.2

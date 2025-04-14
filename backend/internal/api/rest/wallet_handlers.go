@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
 // WalletHandlers handles HTTP requests for wallet operations

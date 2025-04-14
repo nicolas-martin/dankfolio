@@ -7,11 +7,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	custommiddleware "github.com/nicolas-martin/dankfolio/internal/middleware"
-	"github.com/nicolas-martin/dankfolio/internal/service/coin"
-	"github.com/nicolas-martin/dankfolio/internal/service/price"
-	"github.com/nicolas-martin/dankfolio/internal/service/solana"
-	"github.com/nicolas-martin/dankfolio/internal/service/trade"
+	custommiddleware "github.com/nicolas-martin/dankfolio/backend/internal/middleware"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 )
 
 // Router handles all HTTP routing

@@ -12,8 +12,8 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
-	"github.com/nicolas-martin/dankfolio/internal/service/coin"
-	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 	"github.com/olekukonko/tablewriter"
 )
 

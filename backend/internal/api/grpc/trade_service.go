@@ -3,9 +3,9 @@ package grpc
 import (
 	"context"
 
-	pb "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1"
-	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/service/trade"
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"

@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/nicolas-martin/dankfolio/internal/model"
-	"github.com/nicolas-martin/dankfolio/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 )
 
 // CoinHandlers handles HTTP requests related to coins

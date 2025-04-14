@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/nma/dankfolio/gen/proto/go/dankfolio/v1"
+	v1 "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1"
 	http "net/http"
 	strings "strings"
 )

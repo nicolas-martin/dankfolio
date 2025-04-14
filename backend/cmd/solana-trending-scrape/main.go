@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/nicolas-martin/dankfolio/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 )
 
 const testTimeout = 120 * time.Second // Timeout for just the scraping test
