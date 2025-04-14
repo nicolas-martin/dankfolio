@@ -9,21 +9,9 @@ plugins:
   - plugin: buf.build/protocolbuffers/go:v1.31.0
     out: backend/gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/grpc/go:v1.3.0
-    out: backend/gen/proto/go
-    opt: paths=source_relative
-  - plugin: buf.build/grpc-ecosystem/gateway:v2.19.0
-    out: backend/gen/proto/go
-    opt: paths=source_relative
   - plugin: buf.build/connectrpc/go
     out: backend/gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/connectrpc/es
+  - plugin: buf.build/bufbuild/es
     out: frontend/src/gen
     opt: target=ts
-  - plugin: buf.build/community/stephenh-ts-proto:v1.156.2
-    out: frontend/src/gen
-    opt:
-      - esModuleInterop=true
-      - outputServices=nice-grpc
-      - useExactTypes=true 

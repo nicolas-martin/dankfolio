@@ -823,23 +823,6 @@
   resolved "https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@bufbuild/connect-web@^0.13.0":
-  version "0.13.0"
-  resolved "https://registry.yarnpkg.com/@bufbuild/connect-web/-/connect-web-0.13.0.tgz#87301c92d49d3c3f9acb99729c2f7505d739aa4a"
-  integrity sha512-Ys9VFDWYktD9yFQSLOlkpsD42LonDNMCysLCfjXFuxlupYuf4f7qg0zkT5bESyTfqk4xtRDSSGR3xygaj/ONIQ==
-  dependencies:
-    "@bufbuild/connect" "0.13.0"
-
-"@bufbuild/connect@0.13.0":
-  version "0.13.0"
-  resolved "https://registry.yarnpkg.com/@bufbuild/connect/-/connect-0.13.0.tgz#97a84a2cac747c7a52d4421a3382d8d165f61c99"
-  integrity sha512-eZSMbVLyUFtXiZNORgCEvv580xKZeYQdMOWj2i/nxOcpXQcrEzTMTA7SZzWv4k4gveWCOSRoWmYDeOhfWXJv0g==
-
-"@bufbuild/protobuf@^2.2.5":
-  version "2.2.5"
-  resolved "https://registry.yarnpkg.com/@bufbuild/protobuf/-/protobuf-2.2.5.tgz#8e82c0af292113b4a89f8b658c71c4636c8d2e36"
-  integrity sha512-/g5EzJifw5GF8aren8wZ/G5oMuPoGeS6MQD3ca8ddcvdXR5UELUfdTZITCGNhNXynY/AYl3Z4plmxdj/tRl/hQ==
-
 "@callstack/react-theme-provider@^3.0.9":
   version "3.0.9"
   resolved "https://registry.npmjs.org/@callstack/react-theme-provider/-/react-theme-provider-3.0.9.tgz"
@@ -847,6 +830,16 @@
   dependencies:
     deepmerge "^3.2.0"
     hoist-non-react-statics "^3.3.0"
+
+"@connectrpc/connect-web@^1.4.0":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@connectrpc/connect-web/-/connect-web-1.6.1.tgz#71db9e54c8902fc83e4a25736e6e5f96f4941d55"
+  integrity sha512-GVfxQOmt3TtgTaKeXLS/EA2IHa3nHxwe2BCHT7X0Q/0hohM+nP5DDnIItGEjGrGdt3LTTqWqE4s70N4h+qIMlQ==
+
+"@connectrpc/connect@^1.4.0":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@connectrpc/connect/-/connect-1.6.1.tgz#58578c459fed91677bc799d2ce5200d3bd22b07e"
+  integrity sha512-KchMDNtU4CDTdkyf0qG7ugJ6qHTOR/aI7XebYn3OTCNagaDYWiZUVKgRgwH79yeMkpNgvEUaXSK7wKjaBK9b/Q==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -1663,6 +1656,11 @@
   version "0.11.0"
   resolved "https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
+
+"@protobuf-ts/runtime@^2.9.4":
+  version "2.9.6"
+  resolved "https://registry.yarnpkg.com/@protobuf-ts/runtime/-/runtime-2.9.6.tgz#a687ce90d76e053b3b8a3b1abbe99264d2d6bda2"
+  integrity sha512-C0CfpKx4n4LBbUrajOdRj2BTbd3qBoK0SiKWLq7RgCoU6xiN4wesBMFHUOBp3fFzKeZwgU8Q2KtzaqzIvPLRXg==
 
 "@react-native-async-storage/async-storage@1.23.1":
   version "1.23.1"
