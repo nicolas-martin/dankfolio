@@ -2,33 +2,20 @@ syntax = "proto3";
 
 package dankfolio.v1;
 
-import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/nma/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+option go_package = "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
 
 // CoinService provides operations for managing coins
 service CoinService {
   // GetAvailableCoins returns a list of available coins
-  rpc GetAvailableCoins(GetAvailableCoinsRequest) returns (GetAvailableCoinsResponse) {
-    option (google.api.http) = {
-      get: "/api/tokens"
-    };
-  }
+  rpc GetAvailableCoins(GetAvailableCoinsRequest) returns (GetAvailableCoinsResponse);
 
   // GetCoinByID returns a specific coin by ID
-  rpc GetCoinByID(GetCoinByIDRequest) returns (Coin) {
-    option (google.api.http) = {
-      get: "/api/tokens/{id}"
-    };
-  }
+  rpc GetCoinByID(GetCoinByIDRequest) returns (Coin);
 
   // GetTokenPrices returns prices for multiple tokens
-  rpc GetTokenPrices(GetTokenPricesRequest) returns (GetTokenPricesResponse) {
-    option (google.api.http) = {
-      get: "/api/tokens/prices"
-    };
-  }
+  rpc GetTokenPrices(GetTokenPricesRequest) returns (GetTokenPricesResponse);
 }
 
 message Coin {

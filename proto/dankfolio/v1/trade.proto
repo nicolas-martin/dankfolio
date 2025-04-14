@@ -2,48 +2,26 @@ syntax = "proto3";
 
 package dankfolio.v1;
 
-import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/nma/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+option go_package = "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
 
 // TradeService provides operations for trading tokens on Solana
 service TradeService {
   // GetTradeQuote returns a quote for a potential trade
-  rpc GetTradeQuote(GetTradeQuoteRequest) returns (GetTradeQuoteResponse) {
-    option (google.api.http) = {
-      get: "/api/trades/quote"
-    };
-  }
+  rpc GetTradeQuote(GetTradeQuoteRequest) returns (GetTradeQuoteResponse);
 
   // SubmitTrade submits a trade for execution
-  rpc SubmitTrade(SubmitTradeRequest) returns (SubmitTradeResponse) {
-    option (google.api.http) = {
-      post: "/api/trades/submit"
-      body: "*"
-    };
-  }
+  rpc SubmitTrade(SubmitTradeRequest) returns (SubmitTradeResponse);
 
   // GetTradeStatus returns the status of a trade
-  rpc GetTradeStatus(GetTradeStatusRequest) returns (GetTradeStatusResponse) {
-    option (google.api.http) = {
-      get: "/api/trades/status/{transaction_hash}"
-    };
-  }
+  rpc GetTradeStatus(GetTradeStatusRequest) returns (GetTradeStatusResponse);
 
   // GetTradeByID returns details of a specific trade
-  rpc GetTradeByID(GetTradeByIDRequest) returns (Trade) {
-    option (google.api.http) = {
-      get: "/api/trades/{id}"
-    };
-  }
+  rpc GetTradeByID(GetTradeByIDRequest) returns (Trade);
 
   // ListTrades returns all trades
-  rpc ListTrades(ListTradesRequest) returns (ListTradesResponse) {
-    option (google.api.http) = {
-      get: "/api/trades"
-    };
-  }
+  rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
 }
 
 // Trade represents a meme trading transaction

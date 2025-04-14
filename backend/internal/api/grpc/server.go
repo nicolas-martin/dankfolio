@@ -9,6 +9,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	pb "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/internal/api/middleware"
 	"github.com/nicolas-martin/dankfolio/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/internal/service/wallet"
@@ -87,7 +88,8 @@ func (s *Server) Start(grpcPort, httpPort int) error {
 	// Start HTTP server (gRPC-Gateway)
 	httpAddr := fmt.Sprintf(":%d", httpPort)
 	log.Printf("Starting gRPC-Gateway server on %s", httpAddr)
-	return http.ListenAndServe(httpAddr, s.httpMux)
+	handler := middleware.CORSMiddleware(s.httpMux)
+	return http.ListenAndServe(httpAddr, handler)
 }
 
 // Stop gracefully stops the gRPC server

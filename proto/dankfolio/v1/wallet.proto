@@ -2,26 +2,15 @@ syntax = "proto3";
 
 package dankfolio.v1;
 
-import "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
-
-option go_package = "github.com/nma/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
+option go_package = "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1;dankfoliov1";
 
 // WalletService provides operations for managing Solana wallets
 service WalletService {
   // GetWalletBalances returns the balances for all tokens in a wallet
-  rpc GetWalletBalances(GetWalletBalancesRequest) returns (GetWalletBalancesResponse) {
-    option (google.api.http) = {
-      get: "/api/wallet/{address}/balances"
-    };
-  }
+  rpc GetWalletBalances(GetWalletBalancesRequest) returns (GetWalletBalancesResponse);
 
   // CreateWallet generates a new Solana wallet
-  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse) {
-    option (google.api.http) = {
-      post: "/api/wallet"
-    };
-  }
+  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
 }
 
 // Balance represents information about a token balance
