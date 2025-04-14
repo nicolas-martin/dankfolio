@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
@@ -25,25 +26,42 @@ func NewTradeServer(tradeService *trade.Service) *TradeServer {
 	}
 }
 
-// GetTradeQuote returns a quote for a potential trade
+// GetTradeQuote fetches a trade quote
 func (s *TradeServer) GetTradeQuote(
 	ctx context.Context,
 	req *connect.Request[pb.GetTradeQuoteRequest],
 ) (*connect.Response[pb.GetTradeQuoteResponse], error) {
+	// Log the incoming request
+	log.Printf("Received GetTradeQuote request: from_coin_id=%s, to_coin_id=%s, amount=%s", req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount)
+
 	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.Amount == "" {
+		log.Printf("Invalid request: missing required fields")
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and amount are required"))
 	}
 
 	// Check for debug header
 	requestCtx := ctx
 	if req.Header().Get("X-Debug-Mode") == "true" {
+		log.Printf("Debug mode enabled")
 		requestCtx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
 
-	quote, err := s.tradeService.GetTradeQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, *req.Msg.SlippageBps)
+	// Use slippage directly since it's no longer a pointer
+	slippageBps := req.Msg.SlippageBps
+	// If empty, set a default value
+	if slippageBps == "" {
+		slippageBps = "50" // Default value of 0.5%
+	}
+
+	// Call the trade service to get the quote
+	quote, err := s.tradeService.GetTradeQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps)
 	if err != nil {
+		log.Printf("Error fetching trade quote: %v", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))
 	}
+
+	// Log the response before returning
+	log.Printf("Trade quote response: estimated_amount=%s, exchange_rate=%s, fee=%s, price_impact=%s", quote.EstimatedAmount, quote.ExchangeRate, quote.Fee, quote.PriceImpact)
 
 	res := connect.NewResponse(&pb.GetTradeQuoteResponse{
 		EstimatedAmount: quote.EstimatedAmount,

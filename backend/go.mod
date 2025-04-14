@@ -15,7 +15,6 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/net v0.35.0
-	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.5
 )
 
@@ -31,7 +30,6 @@ require (
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -56,5 +54,4 @@ require (
 	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940 // indirect
 )

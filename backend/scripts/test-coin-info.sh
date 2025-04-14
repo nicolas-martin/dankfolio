@@ -66,7 +66,10 @@ test_endpoint "POST" "dankfolio.v1.WalletService/GetWalletBalances" "{ \"address
 
 # Test getting price history
 print_header "Getting price history"
-test_endpoint "POST" "dankfolio.v1.PriceService/GetPriceHistory" "{ \"address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\", \"type\": \"1D\", \"time_from\": \"1706745600\", \"time_to\": \"1707004800\", \"address_type\": \"token\" }" "Get USDC price history"
+# Convert Unix timestamps to RFC3339 format for Protobuf Timestamp compatibility
+# 1706745600 = Feb 1, 2024 00:00:00 UTC
+# 1707004800 = Feb 3, 2024 00:00:00 UTC
+test_endpoint "POST" "dankfolio.v1.PriceService/GetPriceHistory" "{ \"address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\", \"type\": \"1D\", \"time_from\": \"2024-02-01T00:00:00Z\", \"time_to\": \"2024-02-03T00:00:00Z\", \"address_type\": \"token\" }" "Get USDC price history"
 
 # Print summary
 echo -e "\n${GREEN}All tests completed${NC}"

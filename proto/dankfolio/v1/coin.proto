@@ -35,7 +35,7 @@ message Coin {
 }
 
 message GetAvailableCoinsRequest {
-  optional bool trending_only = 1;
+  bool trending_only = 1; // Changed from optional to required
 }
 
 message GetAvailableCoinsResponse {

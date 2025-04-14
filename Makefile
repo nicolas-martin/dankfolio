@@ -24,7 +24,7 @@ run: backend-kill
 
 backend-kill:
 	@echo "🛑 Stopping backend server..."
-	@lsof -ti :8080 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
+	@lsof -ti :9000 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
 
 # Testing
 test: build-backend lint-frontend test-frontend 

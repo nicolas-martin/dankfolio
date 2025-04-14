@@ -55,7 +55,7 @@ message GetTradeQuoteRequest {
   string from_coin_id = 1;
   string to_coin_id = 2;
   string amount = 3;
-  optional string slippage_bps = 4;
+  string slippage_bps = 4; // Changed from optional to required
 }
 
 // GetTradeQuoteResponse is the response containing trade quote details

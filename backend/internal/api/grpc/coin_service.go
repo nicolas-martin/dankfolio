@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"connectrpc.com/connect"
@@ -31,7 +32,12 @@ func (s *CoinServiceServer) GetAvailableCoins(
 	var modelCoins []model.Coin
 	var err error
 
-	if *req.Msg.TrendingOnly {
+	if req.Msg == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("request message is nil"))
+	}
+
+	// TrendingOnly is now a regular bool, no need to dereference
+	if req.Msg.TrendingOnly {
 		modelCoins, err = s.coinService.GetTrendingCoins(ctx)
 	} else {
 		modelCoins, err = s.coinService.GetCoins(ctx)
@@ -93,6 +99,21 @@ func convertModelCoinToProto(c model.Coin) *pb.Coin {
 		}
 	}
 
+	// Initialize pointer variables with safe defaults
+	var websitePtr, twitterPtr, telegramPtr, coingeckoIdPtr *string
+
+	// Only set pointers for non-empty strings
+	if c.Website != "" {
+		websitePtr = &c.Website
+	}
+	if c.Twitter != "" {
+		twitterPtr = &c.Twitter
+	}
+	if c.Telegram != "" {
+		telegramPtr = &c.Telegram
+	}
+	// CoingeckoId is not in the model, keep it nil
+
 	return &pb.Coin{
 		Id:          c.ID,
 		Name:        c.Name,
@@ -103,10 +124,10 @@ func convertModelCoinToProto(c model.Coin) *pb.Coin {
 		Tags:        c.Tags,
 		Price:       c.Price,
 		DailyVolume: c.DailyVolume,
-		Website:     &c.Website,
-		Twitter:     &c.Twitter,
-		Telegram:    &c.Telegram,
-		CoingeckoId: nil, // Not in model
+		Website:     websitePtr,
+		Twitter:     twitterPtr,
+		Telegram:    telegramPtr,
+		CoingeckoId: coingeckoIdPtr, // Not in model
 		CreatedAt:   timestamppb.New(createdAt),
 		LastUpdated: lastUpdated,
 	}
