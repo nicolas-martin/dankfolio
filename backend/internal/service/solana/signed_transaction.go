@@ -294,11 +294,10 @@ func (s *SolanaTradeService) CreateTransferTransaction(ctx context.Context, para
 		// Check if recipient's ATA exists
 		ataInfo, err := s.client.GetAccountInfo(ctx, toATA)
 		if err != nil || ataInfo == nil {
-			// Create ATA for recipient
+			// Create ATA for recipient - updated to use correct number of arguments
 			instructions = append(instructions,
 				associatedtokenaccount.NewCreateInstruction(
 					fromPubkey, // Payer
-					toATA,      // Associated token account
 					toPubkey,   // Owner
 					mintPubkey, // Mint
 				).Build(),

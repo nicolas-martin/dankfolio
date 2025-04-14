@@ -109,7 +109,7 @@ func fetchAndStorePriceHistory(apiKey string) error {
 
 			// Create directory if it doesn't exist
 			dirPath := filepath.Join(wd, "cmd", "fetch-mock-data", "price_history", token.Symbol)
-			if err := os.MkdirAll(dirPath, 0755); err != nil {
+			if err := os.MkdirAll(dirPath, 0o755); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", dirPath, err)
 			}
 

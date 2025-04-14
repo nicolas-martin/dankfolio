@@ -15,8 +15,8 @@ type PriceHistoryData struct {
 
 // PriceHistoryItem represents a single price point
 type PriceHistoryItem struct {
-	UnixTime time.Time `json:"unix_time"`
-	Value    float64   `json:"value"`
+	UnixTime int64   `json:"unix_time"`
+	Value    float64 `json:"value"`
 }
 
 // PriceHistoryRequest represents a request for price history data

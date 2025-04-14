@@ -1,4 +1,4 @@
-module github.com/nicolas-martin/dankfolio
+module github.com/nicolas-martin/dankfolio/backend
 
 go 1.24.2
 
@@ -13,7 +13,6 @@ require (
 	github.com/go-chi/cors v1.2.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/joho/godotenv v1.5.1
-	github.com/nicolas-martin/dankfolio/backend v0.0.0-20250414193657-7eccca81f7f3
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/net v0.35.0

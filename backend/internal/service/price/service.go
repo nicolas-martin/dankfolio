@@ -160,7 +160,7 @@ func (s *Service) generateRandomPriceHistory(address string) (*model.PriceHistor
 		}
 
 		items = append(items, model.PriceHistoryItem{
-			UnixTime: pointTime.Unix(),
+			UnixTime: pointTime.Unix(), // Convert time.Time to Unix timestamp (int64)
 			Value:    currentPrice,
 		})
 	}

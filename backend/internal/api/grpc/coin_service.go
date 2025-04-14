@@ -31,7 +31,7 @@ func (s *CoinServiceServer) GetAvailableCoins(
 	var modelCoins []model.Coin
 	var err error
 
-	if req.Msg.TrendingOnly {
+	if *req.Msg.TrendingOnly {
 		modelCoins, err = s.coinService.GetTrendingCoins(ctx)
 	} else {
 		modelCoins, err = s.coinService.GetCoins(ctx)

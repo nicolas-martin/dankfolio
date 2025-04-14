@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	dankfoliov1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
@@ -27,8 +27,8 @@ func NewWalletServer(walletService *wallet.Service) *WalletServer {
 // GetWalletBalance returns the balance for a wallet
 func (s *WalletServer) GetWalletBalance(
 	ctx context.Context,
-	req *connect.Request[dankfoliov1.GetWalletBalanceRequest],
-) (*connect.Response[dankfoliov1.GetWalletBalanceResponse], error) {
+	req *connect.Request[pb.GetWalletBalanceRequest],
+) (*connect.Response[pb.GetWalletBalanceResponse], error) {
 	if req.Msg.Address == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("wallet address is required"))
 	}
@@ -38,7 +38,7 @@ func (s *WalletServer) GetWalletBalance(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get wallet balance: %w", err))
 	}
 
-	return connect.NewResponse(&dankfoliov1.GetWalletBalanceResponse{
+	return connect.NewResponse(&pb.GetWalletBalanceResponse{
 		Balance: convertModelBalanceToPb(balance),
 		Success: true,
 	}), nil
@@ -47,8 +47,8 @@ func (s *WalletServer) GetWalletBalance(
 // GetWalletHistory returns the transaction history for a wallet
 func (s *WalletServer) GetWalletHistory(
 	ctx context.Context,
-	req *connect.Request[dankfoliov1.GetWalletHistoryRequest],
-) (*connect.Response[dankfoliov1.GetWalletHistoryResponse], error) {
+	req *connect.Request[pb.GetWalletHistoryRequest],
+) (*connect.Response[pb.GetWalletHistoryResponse], error) {
 	if req.Msg.Address == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("wallet address is required"))
 	}
@@ -58,30 +58,30 @@ func (s *WalletServer) GetWalletHistory(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get wallet history: %w", err))
 	}
 
-	pbTransactions := make([]*dankfoliov1.Transaction, len(transactions))
+	pbTransactions := make([]*pb.Transaction, len(transactions))
 	for i, tx := range transactions {
 		pbTransactions[i] = convertModelTransactionToPb(tx)
 	}
 
-	return connect.NewResponse(&dankfoliov1.GetWalletHistoryResponse{
+	return connect.NewResponse(&pb.GetWalletHistoryResponse{
 		Transactions: pbTransactions,
 		Success:      true,
 	}), nil
 }
 
 // Helper function to convert model.WalletBalance to pb.WalletBalance
-func convertModelBalanceToPb(balance *model.WalletBalance) *dankfoliov1.WalletBalance {
-	return &dankfoliov1.WalletBalance{
+func convertModelBalanceToPb(balance *model.WalletBalance) *pb.WalletBalance {
+	return &pb.WalletBalance{
 		TotalUsdValue: balance.TotalUSDValue,
 		Tokens:        convertModelTokenBalancesToPb(balance.Tokens),
 	}
 }
 
 // Helper function to convert model.TokenBalances to pb.Balances
-func convertModelTokenBalancesToPb(tokens []model.Balance) []*dankfoliov1.Balance {
-	pbTokens := make([]*dankfoliov1.Balance, len(tokens))
+func convertModelTokenBalancesToPb(tokens []model.Balance) []*pb.Balance {
+	pbTokens := make([]*pb.Balance, len(tokens))
 	for i, token := range tokens {
-		pbTokens[i] = &dankfoliov1.Balance{
+		pbTokens[i] = &pb.Balance{
 			Symbol:    token.Symbol,
 			Amount:    token.Amount,
 			UsdValue:  token.USDValue,
@@ -92,8 +92,8 @@ func convertModelTokenBalancesToPb(tokens []model.Balance) []*dankfoliov1.Balanc
 }
 
 // Helper function to convert model.Transaction to pb.Transaction
-func convertModelTransactionToPb(tx model.Transaction) *dankfoliov1.Transaction {
-	return &dankfoliov1.Transaction{
+func convertModelTransactionToPb(tx model.Transaction) *pb.Transaction {
+	return &pb.Transaction{
 		Hash:        tx.Hash,
 		Type:        tx.Type,
 		Amount:      tx.Amount,
