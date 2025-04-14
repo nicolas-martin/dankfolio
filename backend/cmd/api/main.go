@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +11,6 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
-	"github.com/nicolas-martin/dankfolio/backend/internal/api/rest"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
@@ -67,26 +65,26 @@ func main() {
 	walletService := wallet.New(solanaClient, coinService)
 
 	// Initialize REST handlers
-	walletHandlers := rest.NewWalletHandlers(walletService)
+	// walletHandlers := rest.NewWalletHandlers(walletService)
 
-	// Initialize REST router
-	router := rest.NewRouter(solanaService, tradeService, coinService, priceService, walletHandlers)
-	httpServer := &http.Server{
-		Addr:    ":8080",
-		Handler: router.Setup(),
-	}
+	// // Initialize REST router
+	// router := rest.NewRouter(solanaService, tradeService, coinService, priceService, walletHandlers)
+	// httpServer := &http.Server{
+	// 	Addr:    ":8080",
+	// 	Handler: router.Setup(),
+	// }
 
 	// Initialize gRPC server
 	grpcServer := grpcapi.NewServer(coinService, walletService, tradeService, priceService)
 	grpcPort := 9000
 
 	// Start REST server
-	go func() {
-		log.Printf("HTTP server starting on %s", httpServer.Addr)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("HTTP server error: %v", err)
-		}
-	}()
+	// go func() {
+	// 	log.Printf("HTTP server starting on %s", httpServer.Addr)
+	// 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 		log.Fatalf("HTTP server error: %v", err)
+	// 	}
+	// }()
 
 	// Start gRPC server
 	go func() {
@@ -103,11 +101,11 @@ func main() {
 	log.Println("Shutting down servers...")
 
 	// Gracefully shutdown HTTP server
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := httpServer.Shutdown(ctx); err != nil {
-		log.Fatal("HTTP server forced to shutdown:", err)
-	}
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// if err := httpServer.Shutdown(ctx); err != nil {
+	// 	log.Fatal("HTTP server forced to shutdown:", err)
+	// }
 
 	// Stop gRPC server
 	grpcServer.Stop()

@@ -24,7 +24,7 @@ func NewWalletServer(walletService *wallet.Service) *WalletServer {
 }
 
 // GetWalletBalance returns the balance for a wallet
-func (s *WalletServer) GetWalletBalance(
+func (s *WalletServer) GetWalletBalances(
 	ctx context.Context,
 	req *connect.Request[pb.GetWalletBalancesRequest],
 ) (*connect.Response[pb.GetWalletBalancesResponse], error) {
