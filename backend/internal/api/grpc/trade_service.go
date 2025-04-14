@@ -34,7 +34,13 @@ func (s *TradeServer) GetTradeQuote(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and amount are required"))
 	}
 
-	quote, err := s.tradeService.GetTradeQuote(ctx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, *req.Msg.SlippageBps)
+	// Check for debug header
+	requestCtx := ctx
+	if req.Header().Get("X-Debug-Mode") == "true" {
+		requestCtx = context.WithValue(ctx, model.DebugModeKey, true)
+	}
+
+	quote, err := s.tradeService.GetTradeQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, *req.Msg.SlippageBps)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))
 	}
@@ -67,7 +73,13 @@ func (s *TradeServer) SubmitTrade(
 		SignedTransaction: req.Msg.SignedTransaction,
 	}
 
-	trade, err := s.tradeService.ExecuteTrade(ctx, tradeReq)
+	// Check for debug header
+	requestCtx := ctx
+	if req.Header().Get("X-Debug-Mode") == "true" {
+		requestCtx = context.WithValue(ctx, model.DebugModeKey, true)
+	}
+
+	trade, err := s.tradeService.ExecuteTrade(requestCtx, tradeReq)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to execute trade: %w", err))
 	}
@@ -88,7 +100,13 @@ func (s *TradeServer) GetTradeStatus(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction_hash is required"))
 	}
 
-	status, err := s.tradeService.SolanaService.GetTransactionConfirmationStatus(ctx, req.Msg.TransactionHash)
+	// Check for debug header
+	requestCtx := ctx
+	if req.Header().Get("X-Debug-Mode") == "true" {
+		requestCtx = context.WithValue(ctx, model.DebugModeKey, true)
+	}
+
+	status, err := s.tradeService.SolanaService.GetTransactionConfirmationStatus(requestCtx, req.Msg.TransactionHash)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 	}
