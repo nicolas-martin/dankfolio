@@ -91,19 +91,40 @@ export interface PriceHistoryResponse {
 	success: boolean;
 }
 
+export interface TokenTransferPrepareRequest {
+	fromAddress: string;
+	toAddress: string;
+	tokenMint?: string; // Optional, empty for SOL
+	amount: number;
+}
+
+export interface TokenTransferPrepareResponse {
+	unsignedTransaction: string;
+}
+
+export interface TokenTransferSubmitRequest {
+	signedTransaction: string;
+}
+
+export interface TokenTransferResponse {
+	transactionHash: string;
+}
+
 interface API {
-	submitTrade: (payload: TradePayload) => Promise<SubmitTradeResponse>; // Renamed and updated response type
-	getTradeStatus: (txHash: string) => Promise<TradeStatusResponse>; // Added new status check function
+	submitSwap: (payload: TradePayload) => Promise<SubmitTradeResponse>; // Renamed and updated response type
+	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>; // Added new status check function
 	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
 	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
 	getPriceHistory: (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
 	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
 	getCoinByID: (id: string) => Promise<Coin>;
 	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
+	prepareTokenTransfer: (payload: TokenTransferPrepareRequest) => Promise<TokenTransferPrepareResponse>;
+	submitTokenTransfer: (payload: TokenTransferSubmitRequest) => Promise<TokenTransferResponse>;
 }
 
 const api: API = {
-	submitTrade: async (payload: TradePayload): Promise<SubmitTradeResponse> => { // Renamed function
+	submitSwap: async (payload: TradePayload): Promise<SubmitTradeResponse> => { // Renamed function
 		try {
 			const response = await apiClient.post('/api/trades/submit', payload);
 			return response.data;
@@ -185,9 +206,27 @@ const api: API = {
 		}
 	},
 
-	getTradeStatus: async (txHash: string): Promise<TradeStatusResponse> => { // Added new function
+	getSwapStatus: async (txHash: string): Promise<TradeStatusResponse> => { // Added new function
 		try {
 			const response = await apiClient.get<TradeStatusResponse>(`/api/trades/status/${txHash}`);
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	prepareTokenTransfer: async (payload: TokenTransferPrepareRequest): Promise<TokenTransferPrepareResponse> => {
+		try {
+			const response = await apiClient.post<TokenTransferPrepareResponse>('/api/transfer/prepare', payload);
+			return response.data;
+		} catch (error) {
+			throw handleApiError(error as AxiosError);
+		}
+	},
+
+	submitTokenTransfer: async (payload: TokenTransferSubmitRequest): Promise<TokenTransferResponse> => {
+		try {
+			const response = await apiClient.post<TokenTransferResponse>('/api/transfer/submit', payload);
 			return response.data;
 		} catch (error) {
 			throw handleApiError(error as AxiosError);

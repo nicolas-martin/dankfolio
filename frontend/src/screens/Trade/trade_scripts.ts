@@ -152,7 +152,7 @@ export const pollTradeStatus = async (
 ) => {
 	console.log(`Polling status for ${txHash}...`);
 	try {
-		const statusResult = await api.getTradeStatus(txHash);
+		const statusResult = await api.getSwapStatus(txHash);
 
 		if (!statusResult) {
 			console.log('Transaction status not found yet, continuing poll...');
@@ -246,7 +246,7 @@ export const executeTrade = async (
 
 		// 2. Submit Transaction
 		console.log('Attempting to submit transaction...');
-		const submitResponse = await api.submitTrade({
+		const submitResponse = await api.submitSwap({
 			from_coin_id: fromCoin.id,
 			to_coin_id: toCoin.id,
 			amount: parseFloat(fromAmount),

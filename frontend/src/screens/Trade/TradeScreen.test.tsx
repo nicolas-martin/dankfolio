@@ -133,8 +133,8 @@ describe('TradeScreen', () => {
 		// Setup your mocks
 		(mockFetchTradeQuote as jest.Mock).mockResolvedValue(undefined);
 		(mockSignTradeTransaction as jest.Mock).mockResolvedValue('mock_signed_tx');
-		(api.submitTrade as jest.Mock).mockResolvedValue({ transaction_hash: 'mock_tx_hash' });
-		(api.getTradeStatus as jest.Mock).mockResolvedValue({
+		(api.submitSwap as jest.Mock).mockResolvedValue({ transaction_hash: 'mock_tx_hash' });
+		(api.getSwapStatus as jest.Mock).mockResolvedValue({
 			status: 'completed',
 			transaction_hash: 'mock_tx_hash',
 			timestamp: new Date().toISOString(),

@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/gagliardetto/solana-go"
+	associatedtokenaccount "github.com/gagliardetto/solana-go/programs/associated-token-account"
+	"github.com/gagliardetto/solana-go/programs/system"
+	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/internal/model"
 )
@@ -231,4 +234,107 @@ func getMockTransactionStatus(sigStr string) (*rpc.GetSignatureStatusesResult, e
 
 	// This should never happen due to the logic above, but added for completeness
 	return nil, fmt.Errorf("unexpected state in mock transaction")
+}
+
+// TransferParams contains parameters for token transfers
+type TransferParams struct {
+	FromAddress string  // Sender's wallet address
+	ToAddress   string  // Recipient's wallet address
+	TokenMint   string  // Token mint address (empty for SOL)
+	Amount      float64 // Amount to transfer
+}
+
+// CreateTransferTransaction creates an unsigned transfer transaction
+func (s *SolanaTradeService) CreateTransferTransaction(ctx context.Context, params TransferParams) (string, error) {
+	// Convert addresses to public keys
+	fromPubkey, err := solana.PublicKeyFromBase58(params.FromAddress)
+	if err != nil {
+		return "", fmt.Errorf("invalid from address: %w", err)
+	}
+
+	toPubkey, err := solana.PublicKeyFromBase58(params.ToAddress)
+	if err != nil {
+		return "", fmt.Errorf("invalid to address: %w", err)
+	}
+
+	// Get recent blockhash
+	recentBlockhash, err := s.client.GetRecentBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return "", fmt.Errorf("failed to get recent blockhash: %w", err)
+	}
+
+	var instructions []solana.Instruction
+
+	if params.TokenMint == "" {
+		// SOL transfer
+		lamports := uint64(params.Amount * float64(solana.LAMPORTS_PER_SOL))
+		instructions = append(instructions, system.NewTransferInstruction(
+			lamports,
+			fromPubkey,
+			toPubkey,
+		).Build())
+	} else {
+		// SPL token transfer
+		mintPubkey, err := solana.PublicKeyFromBase58(params.TokenMint)
+		if err != nil {
+			return "", fmt.Errorf("invalid token mint address: %w", err)
+		}
+
+		// Get associated token accounts for both sender and recipient
+		fromATA, _, err := solana.FindAssociatedTokenAddress(fromPubkey, mintPubkey)
+		if err != nil {
+			return "", fmt.Errorf("failed to find sender's token account: %w", err)
+		}
+
+		toATA, _, err := solana.FindAssociatedTokenAddress(toPubkey, mintPubkey)
+		if err != nil {
+			return "", fmt.Errorf("failed to find recipient's token account: %w", err)
+		}
+
+		// Check if recipient's ATA exists
+		ataInfo, err := s.client.GetAccountInfo(ctx, toATA)
+		if err != nil || ataInfo == nil {
+			// Create ATA for recipient
+			instructions = append(instructions,
+				associatedtokenaccount.NewCreateInstruction(
+					fromPubkey, // Payer
+					toATA,      // Associated token account
+					toPubkey,   // Owner
+					mintPubkey, // Mint
+				).Build(),
+			)
+		}
+
+		// Add transfer instruction
+		instructions = append(instructions,
+			token.NewTransferCheckedInstruction(
+				uint64(params.Amount),
+				9, // Most tokens use 9 decimals, but this should be fetched from the mint
+				fromATA,
+				toATA,
+				mintPubkey,
+				fromPubkey,
+				[]solana.PublicKey{},
+			).Build(),
+		)
+	}
+
+	// Create transaction
+	tx, err := solana.NewTransaction(
+		instructions,
+		recentBlockhash.Value.Blockhash,
+		solana.TransactionPayer(fromPubkey),
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	// Serialize transaction
+	txBytes, err := tx.MarshalBinary()
+	if err != nil {
+		return "", fmt.Errorf("failed to serialize transaction: %w", err)
+	}
+
+	// Return base64 encoded transaction
+	return base64.StdEncoding.EncodeToString(txBytes), nil
 }

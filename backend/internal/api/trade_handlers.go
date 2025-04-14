@@ -32,6 +32,29 @@ func NewTradeHandlers(tradeService *trade.Service, solanaService *solanaService.
 	}
 }
 
+// TransferRequest represents a token transfer request
+type TransferRequest struct {
+	FromAddress string  `json:"fromAddress"`
+	ToAddress   string  `json:"toAddress"`
+	TokenMint   string  `json:"tokenMint"` // Optional, empty for SOL
+	Amount      float64 `json:"amount"`
+}
+
+// TransferPrepareResponse represents the response for preparing a transfer
+type TransferPrepareResponse struct {
+	UnsignedTransaction string `json:"unsignedTransaction"`
+}
+
+// TransferSubmitRequest represents a request to submit a signed transfer transaction
+type TransferSubmitRequest struct {
+	SignedTransaction string `json:"signedTransaction"`
+}
+
+// TransferResponse represents a token transfer response
+type TransferResponse struct {
+	TransactionHash string `json:"transactionHash"`
+}
+
 // RegisterRoutes registers all trade-related routes
 func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
 	r.Get("/trades/quote", h.GetTradeQuote)
@@ -40,6 +63,8 @@ func (h *TradeHandlers) RegisterRoutes(r chi.Router) {
 	r.Post("/trades/submit", h.SubmitTrade)            // Renamed route and handler
 	r.Get("/trades/status/{txHash}", h.GetTradeStatus) // New route for status check
 	r.Get("/tokens/prices", h.GetTokenPrices)
+	r.Post("/transfer/prepare", h.PrepareTransfer) // New route for preparing transfers
+	r.Post("/transfer/submit", h.SubmitTransfer)   // New route for submitting signed transfers
 }
 
 // SubmitTrade handles a trade submission request, returning the tx hash immediately
@@ -261,4 +286,63 @@ func (h *TradeHandlers) GetTokenPrices(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("✅ Successfully retrieved prices for %d tokens", len(prices))
 	respondJSON(w, prices, http.StatusOK)
+}
+
+// PrepareTransfer prepares an unsigned transfer transaction
+func (h *TradeHandlers) PrepareTransfer(w http.ResponseWriter, r *http.Request) {
+	var req TransferRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate request
+	if req.FromAddress == "" || req.ToAddress == "" || req.Amount <= 0 {
+		respondError(w, "Missing required fields or invalid amount", http.StatusBadRequest)
+		return
+	}
+
+	// Create unsigned transaction
+	unsignedTx, err := h.solanaService.CreateTransferTransaction(r.Context(), solanaService.TransferParams{
+		FromAddress: req.FromAddress,
+		ToAddress:   req.ToAddress,
+		TokenMint:   req.TokenMint,
+		Amount:      req.Amount,
+	})
+	if err != nil {
+		log.Printf("Failed to create transfer transaction: %v", err)
+		respondError(w, fmt.Sprintf("Failed to create transfer transaction: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, TransferPrepareResponse{
+		UnsignedTransaction: unsignedTx,
+	}, http.StatusOK)
+}
+
+// SubmitTransfer submits a signed transfer transaction
+func (h *TradeHandlers) SubmitTransfer(w http.ResponseWriter, r *http.Request) {
+	var req TransferSubmitRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate request
+	if req.SignedTransaction == "" {
+		respondError(w, "Signed transaction is required", http.StatusBadRequest)
+		return
+	}
+
+	// Execute the signed transaction
+	sig, err := h.solanaService.ExecuteSignedTransaction(r.Context(), req.SignedTransaction)
+	if err != nil {
+		log.Printf("Failed to execute transfer: %v", err)
+		respondError(w, fmt.Sprintf("Failed to execute transfer: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, TransferResponse{
+		TransactionHash: sig.String(),
+	}, http.StatusOK)
 }

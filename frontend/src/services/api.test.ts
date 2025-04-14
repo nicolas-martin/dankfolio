@@ -158,7 +158,7 @@ describe('API Service', () => {
 		it('handles trade operations successfully', async () => {
 			// Test submitTrade
 			mockAxiosInstance.post.mockResolvedValueOnce({ data: mockResponses.submitTrade });
-			const submitResult = await api.submitTrade(mockTradePayload);
+			const submitResult = await api.submitSwap(mockTradePayload);
 			expect(mockAxiosInstance.post).toHaveBeenCalledWith('/api/trades/submit', mockTradePayload);
 			expect(submitResult).toEqual(mockResponses.submitTrade);
 
@@ -176,7 +176,7 @@ describe('API Service', () => {
 
 			// Test getTradeStatus
 			mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeStatus });
-			const statusResult = await api.getTradeStatus('txHash456');
+			const statusResult = await api.getSwapStatus('txHash456');
 			expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/trades/status/txHash456');
 			expect(statusResult).toEqual(mockResponses.tradeStatus);
 		});
@@ -187,7 +187,7 @@ describe('API Service', () => {
 				response: { status: 500, data: { message: 'Server Error' } },
 				message: 'Request failed'
 			});
-			await expect(api.submitTrade(mockTradePayload)).rejects.toMatchObject({
+			await expect(api.submitSwap(mockTradePayload)).rejects.toMatchObject({
 				message: 'Request failed',
 				status: 500,
 				data: { message: 'Server Error' }
@@ -205,7 +205,7 @@ describe('API Service', () => {
 				response: { status: 404, data: { message: 'Transaction not found' } },
 				message: 'Not Found'
 			});
-			await expect(api.getTradeStatus('invalidTxHash')).rejects.toMatchObject({
+			await expect(api.getSwapStatus('invalidTxHash')).rejects.toMatchObject({
 				message: 'Not Found',
 				status: 404,
 				data: { message: 'Transaction not found' }
