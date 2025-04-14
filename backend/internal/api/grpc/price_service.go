@@ -2,16 +2,17 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 
+	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-// PriceServer implements the PriceService gRPC service
+// PriceServer implements the PriceService API
 type PriceServer struct {
-	pb.UnimplementedPriceServiceServer
+	dankfoliov1connect.UnimplementedPriceServiceHandler
 	priceService *price.Service
 }
 
@@ -23,34 +24,44 @@ func NewPriceServer(priceService *price.Service) *PriceServer {
 }
 
 // GetPriceHistory returns price history data for a given token
-func (s *PriceServer) GetPriceHistory(ctx context.Context, req *pb.GetPriceHistoryRequest) (*pb.GetPriceHistoryResponse, error) {
-	if req.Address == "" {
-		return nil, status.Error(codes.InvalidArgument, "address is required")
+func (s *PriceServer) GetPriceHistory(
+	ctx context.Context,
+	req *connect.Request[pb.GetPriceHistoryRequest],
+) (*connect.Response[pb.GetPriceHistoryResponse], error) {
+	if req.Msg.Address == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("address is required"))
 	}
 
 	// Set default values if not provided
-	addressType := req.AddressType
+	addressType := req.Msg.AddressType
 	if addressType == "" {
 		addressType = "token"
 	}
 
-	historyType := req.HistoryType
+	historyType := req.Msg.Type
 	if historyType == "" {
 		historyType = "15m"
 	}
 
-	if req.TimeFrom == "" {
-		return nil, status.Error(codes.InvalidArgument, "time_from is required")
+	if req.Msg.TimeFrom == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time_from is required"))
 	}
 
-	if req.TimeTo == "" {
-		return nil, status.Error(codes.InvalidArgument, "time_to is required")
+	if req.Msg.TimeTo == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time_to is required"))
 	}
 
 	// Get price history from service
-	priceHistory, err := s.priceService.GetPriceHistory(ctx, req.Address, historyType, req.TimeFrom, req.TimeTo, addressType)
+	priceHistory, err := s.priceService.GetPriceHistory(
+		ctx,
+		req.Msg.Address,
+		historyType,
+		req.Msg.TimeFrom.AsTime().Format("2006-01-02T15:04:05Z"),
+		req.Msg.TimeTo.AsTime().Format("2006-01-02T15:04:05Z"),
+		addressType,
+	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get price history: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get price history: %w", err))
 	}
 
 	// Convert to protobuf response
@@ -62,10 +73,11 @@ func (s *PriceServer) GetPriceHistory(ctx context.Context, req *pb.GetPriceHisto
 		}
 	}
 
-	return &pb.GetPriceHistoryResponse{
-		Data: &pb.GetPriceHistoryResponse_Data{
+	res := connect.NewResponse(&pb.GetPriceHistoryResponse{
+		Data: &pb.PriceHistoryData{
 			Items: pbItems,
 		},
 		Success: priceHistory.Success,
-	}, nil
+	})
+	return res, nil
 }

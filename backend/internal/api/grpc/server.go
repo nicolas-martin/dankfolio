@@ -11,6 +11,8 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 // Server represents the API server
@@ -52,10 +54,15 @@ func (s *Server) Start(port int) error {
 	)
 	s.mux.Handle(path, handler)
 
-	// Start HTTP server with CORS middleware
+	// Start HTTP server with CORS middleware and HTTP/2 support
 	addr := fmt.Sprintf(":%d", port)
 	log.Printf("Starting Connect RPC server on %s", addr)
-	return http.ListenAndServe(addr, middleware.CORSMiddleware(s.mux))
+
+	// Wrap the mux with CORS middleware
+	handler = middleware.CORSMiddleware(s.mux)
+
+	// Use h2c for HTTP/2 without TLS
+	return http.ListenAndServe(addr, h2c.NewHandler(handler, &http2.Server{}))
 }
 
 // Stop gracefully stops the server

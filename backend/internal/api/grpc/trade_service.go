@@ -2,18 +2,19 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 
+	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// TradeServer implements the TradeService gRPC service
+// TradeServer implements the TradeService API
 type TradeServer struct {
-	pb.UnimplementedTradeServiceServer
+	dankfoliov1connect.UnimplementedTradeServiceHandler
 	tradeService *trade.Service
 }
 
@@ -25,17 +26,20 @@ func NewTradeServer(tradeService *trade.Service) *TradeServer {
 }
 
 // GetTradeQuote returns a quote for a potential trade
-func (s *TradeServer) GetTradeQuote(ctx context.Context, req *pb.GetTradeQuoteRequest) (*pb.GetTradeQuoteResponse, error) {
-	if req.FromCoinId == "" || req.ToCoinId == "" || req.Amount == "" {
-		return nil, status.Error(codes.InvalidArgument, "from_coin_id, to_coin_id, and amount are required")
+func (s *TradeServer) GetTradeQuote(
+	ctx context.Context,
+	req *connect.Request[pb.GetTradeQuoteRequest],
+) (*connect.Response[pb.GetTradeQuoteResponse], error) {
+	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.Amount == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and amount are required"))
 	}
 
-	quote, err := s.tradeService.GetTradeQuote(ctx, req.FromCoinId, req.ToCoinId, req.Amount, req.SlippageBps)
+	quote, err := s.tradeService.GetTradeQuote(ctx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, req.Msg.SlippageBps)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get trade quote: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))
 	}
 
-	return &pb.GetTradeQuoteResponse{
+	res := connect.NewResponse(&pb.GetTradeQuoteResponse{
 		EstimatedAmount: quote.EstimatedAmount,
 		ExchangeRate:    quote.ExchangeRate,
 		Fee:             quote.Fee,
@@ -43,72 +47,88 @@ func (s *TradeServer) GetTradeQuote(ctx context.Context, req *pb.GetTradeQuoteRe
 		RoutePlan:       quote.RoutePlan,
 		InputMint:       quote.InputMint,
 		OutputMint:      quote.OutputMint,
-	}, nil
+	})
+	return res, nil
 }
 
 // SubmitTrade submits a trade for execution
-func (s *TradeServer) SubmitTrade(ctx context.Context, req *pb.SubmitTradeRequest) (*pb.SubmitTradeResponse, error) {
-	if req.FromCoinId == "" || req.ToCoinId == "" || req.SignedTransaction == "" {
-		return nil, status.Error(codes.InvalidArgument, "from_coin_id, to_coin_id, and signed_transaction are required")
+func (s *TradeServer) SubmitTrade(
+	ctx context.Context,
+	req *connect.Request[pb.SubmitTradeRequest],
+) (*connect.Response[pb.SubmitTradeResponse], error) {
+	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.SignedTransaction == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and signed_transaction are required"))
 	}
 
 	tradeReq := model.TradeRequest{
-		FromCoinID:        req.FromCoinId,
-		ToCoinID:          req.ToCoinId,
-		Amount:            req.Amount,
-		SignedTransaction: req.SignedTransaction,
+		FromCoinID:        req.Msg.FromCoinId,
+		ToCoinID:          req.Msg.ToCoinId,
+		Amount:            req.Msg.Amount,
+		SignedTransaction: req.Msg.SignedTransaction,
 	}
 
 	trade, err := s.tradeService.ExecuteTrade(ctx, tradeReq)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to execute trade: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to execute trade: %w", err))
 	}
 
-	return &pb.SubmitTradeResponse{
+	res := connect.NewResponse(&pb.SubmitTradeResponse{
 		TradeId:         trade.ID,
 		TransactionHash: trade.TransactionHash,
-	}, nil
+	})
+	return res, nil
 }
 
 // GetTradeStatus returns the status of a trade
-func (s *TradeServer) GetTradeStatus(ctx context.Context, req *pb.GetTradeStatusRequest) (*pb.GetTradeStatusResponse, error) {
-	if req.TransactionHash == "" {
-		return nil, status.Error(codes.InvalidArgument, "transaction_hash is required")
+func (s *TradeServer) GetTradeStatus(
+	ctx context.Context,
+	req *connect.Request[pb.GetTradeStatusRequest],
+) (*connect.Response[pb.GetTradeStatusResponse], error) {
+	if req.Msg.TransactionHash == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction_hash is required"))
 	}
 
-	status, err := s.tradeService.GetTradeStatus(ctx, req.TransactionHash)
+	status, err := s.tradeService.GetTradeStatus(ctx, req.Msg.TransactionHash)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get trade status: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 	}
 
-	return &pb.GetTradeStatusResponse{
+	res := connect.NewResponse(&pb.GetTradeStatusResponse{
 		TransactionHash: status.TransactionHash,
 		Status:          status.Status,
 		Confirmations:   int32(status.Confirmations),
 		Finalized:       status.Finalized,
 		Error:           status.Error,
-	}, nil
+	})
+	return res, nil
 }
 
 // GetTradeByID returns details of a specific trade
-func (s *TradeServer) GetTradeByID(ctx context.Context, req *pb.GetTradeByIDRequest) (*pb.Trade, error) {
-	if req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "id is required")
+func (s *TradeServer) GetTradeByID(
+	ctx context.Context,
+	req *connect.Request[pb.GetTradeByIDRequest],
+) (*connect.Response[pb.Trade], error) {
+	if req.Msg.Id == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("id is required"))
 	}
 
-	trade, err := s.tradeService.GetTradeByID(ctx, req.Id)
+	trade, err := s.tradeService.GetTradeByID(ctx, req.Msg.Id)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get trade: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade: %w", err))
 	}
 
-	return convertModelTradeToPb(trade), nil
+	res := connect.NewResponse(convertModelTradeToPb(trade))
+	return res, nil
 }
 
 // ListTrades returns all trades
-func (s *TradeServer) ListTrades(ctx context.Context, req *pb.ListTradesRequest) (*pb.ListTradesResponse, error) {
+func (s *TradeServer) ListTrades(
+	ctx context.Context,
+	req *connect.Request[pb.ListTradesRequest],
+) (*connect.Response[pb.ListTradesResponse], error) {
 	trades, err := s.tradeService.ListTrades(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to list trades: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to list trades: %w", err))
 	}
 
 	pbTrades := make([]*pb.Trade, len(trades))
@@ -116,9 +136,10 @@ func (s *TradeServer) ListTrades(ctx context.Context, req *pb.ListTradesRequest)
 		pbTrades[i] = convertModelTradeToPb(trade)
 	}
 
-	return &pb.ListTradesResponse{
+	res := connect.NewResponse(&pb.ListTradesResponse{
 		Trades: pbTrades,
-	}, nil
+	})
+	return res, nil
 }
 
 // Helper function to convert model.Trade to pb.Trade

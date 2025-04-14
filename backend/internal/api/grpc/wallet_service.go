@@ -2,16 +2,18 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 
-	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"connectrpc.com/connect"
+	dankfoliov1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-// WalletServer implements the WalletService gRPC service
+// WalletServer implements the WalletService API
 type WalletServer struct {
-	pb.UnimplementedWalletServiceServer
+	dankfoliov1connect.UnimplementedWalletServiceHandler
 	walletService *wallet.Service
 }
 
@@ -22,55 +24,82 @@ func NewWalletServer(walletService *wallet.Service) *WalletServer {
 	}
 }
 
-// GetWalletBalances returns the balances for all tokens in a wallet
-func (s *WalletServer) GetWalletBalances(ctx context.Context, req *pb.GetWalletBalancesRequest) (*pb.GetWalletBalancesResponse, error) {
-	if req.Address == "" {
-		return nil, status.Error(codes.InvalidArgument, "address is required")
+// GetWalletBalance returns the balance for a wallet
+func (s *WalletServer) GetWalletBalance(
+	ctx context.Context,
+	req *connect.Request[dankfoliov1.GetWalletBalanceRequest],
+) (*connect.Response[dankfoliov1.GetWalletBalanceResponse], error) {
+	if req.Msg.Address == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("wallet address is required"))
 	}
 
-	balances, err := s.walletService.GetWalletBalances(ctx, req.Address)
+	balance, err := s.walletService.GetBalance(ctx, req.Msg.Address)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get wallet balances: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get wallet balance: %w", err))
 	}
 
-	// Convert domain model to protobuf response
-	pbBalances := make([]*pb.Balance, 0, len(balances.Balances))
-	for _, b := range balances.Balances {
-		pbBalances = append(pbBalances, &pb.Balance{
-			Id:     b.ID,
-			Amount: b.Amount,
-		})
-	}
-
-	return &pb.GetWalletBalancesResponse{
-		WalletBalance: &pb.WalletBalance{
-			Balances: pbBalances,
-		},
-	}, nil
+	return connect.NewResponse(&dankfoliov1.GetWalletBalanceResponse{
+		Balance: convertModelBalanceToPb(balance),
+		Success: true,
+	}), nil
 }
 
-// CreateWallet generates a new Solana wallet
-func (s *WalletServer) CreateWallet(ctx context.Context, req *pb.CreateWalletRequest) (*pb.CreateWalletResponse, error) {
-	// Create a new wallet using the wallet package
-	newWallet, err := wallet.CreateSolanaWallet()
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create wallet: %v", err)
+// GetWalletHistory returns the transaction history for a wallet
+func (s *WalletServer) GetWalletHistory(
+	ctx context.Context,
+	req *connect.Request[dankfoliov1.GetWalletHistoryRequest],
+) (*connect.Response[dankfoliov1.GetWalletHistoryResponse], error) {
+	if req.Msg.Address == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("wallet address is required"))
 	}
 
-	return &pb.CreateWalletResponse{
-		PublicKey: newWallet.PublicKey,
-		SecretKey: newWallet.SecretKey,
-	}, nil
+	transactions, err := s.walletService.GetHistory(ctx, req.Msg.Address)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get wallet history: %w", err))
+	}
+
+	pbTransactions := make([]*dankfoliov1.Transaction, len(transactions))
+	for i, tx := range transactions {
+		pbTransactions[i] = convertModelTransactionToPb(tx)
+	}
+
+	return connect.NewResponse(&dankfoliov1.GetWalletHistoryResponse{
+		Transactions: pbTransactions,
+		Success:      true,
+	}), nil
 }
 
-// GetWalletBalance implements the GetWalletBalance RPC method
-func (s *WalletServer) GetWalletBalance(ctx context.Context, req *pb.GetWalletBalanceRequest) (*pb.GetWalletBalanceResponse, error) {
-	balance, err := s.walletService.GetWalletBalance(ctx, req.GetWalletId())
-	if err != nil {
-		return nil, err
+// Helper function to convert model.WalletBalance to pb.WalletBalance
+func convertModelBalanceToPb(balance *model.WalletBalance) *dankfoliov1.WalletBalance {
+	return &dankfoliov1.WalletBalance{
+		TotalUsdValue: balance.TotalUSDValue,
+		Tokens:        convertModelTokenBalancesToPb(balance.Tokens),
 	}
+}
 
-	return &pb.GetWalletBalanceResponse{
-		Balance: balance,
-	}, nil
+// Helper function to convert model.TokenBalances to pb.Balances
+func convertModelTokenBalancesToPb(tokens []model.Balance) []*dankfoliov1.Balance {
+	pbTokens := make([]*dankfoliov1.Balance, len(tokens))
+	for i, token := range tokens {
+		pbTokens[i] = &dankfoliov1.Balance{
+			Symbol:    token.Symbol,
+			Amount:    token.Amount,
+			UsdValue:  token.USDValue,
+			TokenType: token.TokenType,
+		}
+	}
+	return pbTokens
+}
+
+// Helper function to convert model.Transaction to pb.Transaction
+func convertModelTransactionToPb(tx model.Transaction) *dankfoliov1.Transaction {
+	return &dankfoliov1.Transaction{
+		Hash:        tx.Hash,
+		Type:        tx.Type,
+		Amount:      tx.Amount,
+		UsdValue:    tx.USDValue,
+		TokenSymbol: tx.TokenSymbol,
+		TokenType:   tx.TokenType,
+		Timestamp:   tx.Timestamp.Unix(),
+	}
 }
