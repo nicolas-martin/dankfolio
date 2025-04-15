@@ -130,7 +130,7 @@ export const signTradeTransaction = async (
 // --- New Trade Execution and Polling Functions ---
 
 export const stopPolling = (
-	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>,
+	pollingIntervalRef: React.RefObject<NodeJS.Timeout | null>,
 	setIsLoadingTrade: (loading: boolean) => void
 ) => {
 	if (pollingIntervalRef.current) {
@@ -175,7 +175,7 @@ export const pollTradeStatus = async (
 			}
 			showToast({ type: 'success', message: 'Trade finalized successfully!' });
 		} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') {
-			console.log(`Transaction confirmed with ${statusResult.confirmations} confirmations.`);
+			console.log(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization...`);
 			setPollingStatus('confirmed');
 		} else {
 			console.log(`Current status: ${statusResult.status}, continuing poll...`);
@@ -193,7 +193,7 @@ export const startPolling = (
 	txHash: string,
 	pollFn: () => Promise<void>, // Function that executes one poll
 	stopPollingFn: () => void, // Function to stop polling
-	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>
+	pollingIntervalRef: React.RefObject<NodeJS.Timeout | null>
 ) => {
 	stopPollingFn(); // Clear any previous interval
 
