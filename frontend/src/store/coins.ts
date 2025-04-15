@@ -50,17 +50,19 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				}
 			}
 
-			console.log(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map(c => ({ symbol: c.symbol, id: c.id })));
-
+			// Always update coinMap immediately after fetching available coins
 			const coinMap = coins.reduce((acc, coin) => {
 				acc[coin.id] = coin;
 				return acc;
 			}, {} as Record<string, Coin>);
+			set({ coinMap });
+
+			console.log(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map(c => ({ symbol: c.symbol, id: c.id })));
 
 			if (!trendingOnly) {
-				set({ availableCoins: coins, coinMap, isLoading: false });
+				set({ availableCoins: coins, isLoading: false });
 			} else {
-				set({ coinMap, isLoading: false });
+				set({ isLoading: false });
 			}
 
 			console.log('🗺️ Updated coin store:', {

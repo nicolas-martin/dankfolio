@@ -41,22 +41,42 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			set({ isLoading: true, error: null });
 			const balance = await grpcApi.getWalletBalance(address);
 
-			// Pre-fetch and transform API response into our internal PortfolioToken format
 			const coinStore = useCoinStore.getState();
-			const tokens = await Promise.all(
-				balance.balances.map(async (balance) => {
-					const coin = await coinStore.getCoinByID(balance.id);
-					if (!coin) return null;
+			const coinMap = coinStore.coinMap; // Use coinMap as the source of truth for all loaded coins
 
-					return {
-						id: balance.id,
-						amount: balance.amount,
-						price: coin.price,
-						value: balance.amount * coin.price,
-						coin: coin
-					};
+			const balanceIds = balance.balances.map(b => b.id);
+			const missingIds = balanceIds.filter(id => !coinMap[id]);
+
+			// Fetch missing coins in parallel and update coinMap as needed
+			const fetchedCoins = await Promise.all(
+				missingIds.map(async (id) => {
+					const coin = await coinStore.getCoinByID(id);
+					return coin;
 				})
 			);
+
+			// After fetching missing coins, update the coinMap in the store
+			fetchedCoins.forEach(coin => {
+				if (coin) {
+					coinStore.setCoin(coin);
+				}
+			});
+
+			// Always use the up-to-date coinStore.coinMap for lookups
+			const updatedCoinMap = useCoinStore.getState().coinMap;
+
+			// Build tokens using the global coinMap
+			const tokens = balance.balances.map((balance) => {
+				const coin = updatedCoinMap[balance.id];
+				if (!coin) return null;
+				return {
+					id: balance.id,
+					amount: balance.amount,
+					price: coin.price,
+					value: balance.amount * coin.price,
+					coin: coin
+				};
+			});
 
 			set({
 				tokens: tokens.filter((token): token is PortfolioToken => token !== null),
