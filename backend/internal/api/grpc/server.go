@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"connectrpc.com/connect"
-	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/_goconnect"
+	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/middleware"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"

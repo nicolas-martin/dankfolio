@@ -6,7 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
-	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/_goconnect"
+	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
