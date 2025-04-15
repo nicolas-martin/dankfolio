@@ -26,7 +26,16 @@ func main() {
 
 	// Set development mode if not specified
 	if os.Getenv("APP_ENV") == "" {
+		log.Println("APP_ENV not set, defaulting to development")
 		os.Setenv("APP_ENV", "development")
+	}
+
+	if os.Getenv("SOLANA_RPC_ENDPOINT") == "" {
+		log.Fatal("not found SOLANA_RPC_ENDPOINT in environment")
+	}
+
+	if os.Getenv("BIRDEYE_API_KEY") == "" {
+		log.Fatal("not found BIRDEYE_API_KEY in environment")
 	}
 
 	// Initialize services

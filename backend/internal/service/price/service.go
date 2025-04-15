@@ -51,6 +51,11 @@ func NewService(baseURL string) *Service {
 
 // GetPriceHistory retrieves price history for a given token
 func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFrom, timeTo, addressType string) (*PriceHistory, error) {
+	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		log.Print("X-Debug-Mode: true")
+		return s.loadMockPriceHistory(address, historyType)
+	}
+
 	url := fmt.Sprintf("%s/price/history/%s?type=%s&time_from=%s&time_to=%s&address_type=%s",
 		s.baseURL, address, historyType, timeFrom, timeTo, addressType)
 
@@ -78,7 +83,7 @@ func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, tim
 	return &priceHistory, nil
 }
 
-func (s *Service) loadMockPriceHistory(address string, historyType string) (*model.PriceHistoryResponse, error) {
+func (s *Service) loadMockPriceHistory(address string, historyType string) (*PriceHistory, error) {
 	// Map of addresses to symbols
 	addressToSymbol := map[string]string{
 		"So11111111111111111111111111111111111111112":  "SOL",
@@ -112,7 +117,7 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*mod
 	}
 	defer file.Close()
 
-	var priceHistory model.PriceHistoryResponse
+	var priceHistory PriceHistory
 	if err := json.NewDecoder(file).Decode(&priceHistory); err != nil {
 		return nil, fmt.Errorf("failed to decode mock data: %w", err)
 	}
@@ -120,7 +125,7 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*mod
 	return &priceHistory, nil
 }
 
-func (s *Service) generateRandomPriceHistory(address string) (*model.PriceHistoryResponse, error) {
+func (s *Service) generateRandomPriceHistory(address string) (*PriceHistory, error) {
 	// Default to 100 points for smoother chart
 	numPoints := 100
 	volatility := 0.03                // Base volatility for normal movements
@@ -131,7 +136,7 @@ func (s *Service) generateRandomPriceHistory(address string) (*model.PriceHistor
 	basePrice := 0.01 * math.Pow(10, magnitude) // This gives us a range from 0.01 to 1.00
 
 	// Generate price points
-	var items []model.PriceHistoryItem
+	var items []PriceHistoryItem
 	currentPrice := basePrice
 	now := time.Now()
 
@@ -159,8 +164,8 @@ func (s *Service) generateRandomPriceHistory(address string) (*model.PriceHistor
 			currentPrice = 0.01
 		}
 
-		items = append(items, model.PriceHistoryItem{
-			UnixTime: pointTime.Unix(), // Convert time.Time to Unix timestamp (int64)
+		items = append(items, PriceHistoryItem{
+			UnixTime: fmt.Sprintf("%d", pointTime.Unix()), // Convert time.Time to Unix timestamp (int64)
 			Value:    currentPrice,
 		})
 	}
@@ -168,9 +173,9 @@ func (s *Service) generateRandomPriceHistory(address string) (*model.PriceHistor
 	log.Printf("🎲 Generated %d random price points for %s with base price %.6f",
 		len(items), address, basePrice)
 
-	response := &model.PriceHistoryResponse{
+	response := &PriceHistory{
 		Data: struct {
-			Items []model.PriceHistoryItem `json:"items"`
+			Items []PriceHistoryItem `json:"items"`
 		}{
 			Items: items,
 		},

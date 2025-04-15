@@ -15,7 +15,24 @@ service PriceService {
 // GetPriceHistoryRequest represents a request for price history data
 message GetPriceHistoryRequest {
   string address = 1;
-  string type = 2;
+  enum PriceHistoryType {
+    PRICE_HISTORY_TYPE_UNSPECIFIED = 0;
+    ONE_MINUTE = 1;
+    THREE_MINUTE = 2;
+    FIVE_MINUTE = 3;
+    FIFTEEN_MINUTE = 4;
+    THIRTY_MINUTE = 5;
+    ONE_HOUR = 6;
+    TWO_HOUR = 7;
+    FOUR_HOUR = 8;
+    SIX_HOUR = 9;
+    EIGHT_HOUR = 10;
+    TWELVE_HOUR = 11;
+    ONE_DAY = 12;
+    THREE_DAY = 13;
+    ONE_WEEK = 14;
+  }
+  PriceHistoryType type = 2;
   google.protobuf.Timestamp time_from = 3;
   google.protobuf.Timestamp time_to = 4;
   string address_type = 5;
@@ -34,6 +51,6 @@ message PriceHistoryData {
 
 // PriceHistoryItem represents a single price point with timestamp and value
 message PriceHistoryItem {
-  google.protobuf.Timestamp unix_time = 1;
+  int64 unix_time = 1;  // Changed from google.protobuf.Timestamp to int64 to represent Unix timestamp directly
   double value = 2;
-} 
+}

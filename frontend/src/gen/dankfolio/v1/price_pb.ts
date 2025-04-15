@@ -2,8 +2,8 @@
 // @generated from file dankfolio/v1/price.proto (package dankfolio.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv1";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv1";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv1";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv1";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/price.proto.
  */
 export const file_dankfolio_v1_price: GenFile = /*@__PURE__*/
-  fileDesc("ChhkYW5rZm9saW8vdjEvcHJpY2UucHJvdG8SDGRhbmtmb2xpby52MSKpAQoWR2V0UHJpY2VIaXN0b3J5UmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJEgwKBHR5cGUYAiABKAkSLQoJdGltZV9mcm9tGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgd0aW1lX3RvGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIUCgxhZGRyZXNzX3R5cGUYBSABKAkiWAoXR2V0UHJpY2VIaXN0b3J5UmVzcG9uc2USLAoEZGF0YRgBIAEoCzIeLmRhbmtmb2xpby52MS5QcmljZUhpc3RvcnlEYXRhEg8KB3N1Y2Nlc3MYAiABKAgiQQoQUHJpY2VIaXN0b3J5RGF0YRItCgVpdGVtcxgBIAMoCzIeLmRhbmtmb2xpby52MS5QcmljZUhpc3RvcnlJdGVtIlAKEFByaWNlSGlzdG9yeUl0ZW0SLQoJdW5peF90aW1lGAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBINCgV2YWx1ZRgCIAEoATJwCgxQcmljZVNlcnZpY2USYAoPR2V0UHJpY2VIaXN0b3J5EiQuZGFua2ZvbGlvLnYxLkdldFByaWNlSGlzdG9yeVJlcXVlc3QaJS5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVzcG9uc2UiAEK2AQoQY29tLmRhbmtmb2xpby52MUIKUHJpY2VQcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChhkYW5rZm9saW8vdjEvcHJpY2UucHJvdG8SDGRhbmtmb2xpby52MSL3AwoWR2V0UHJpY2VIaXN0b3J5UmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJEkMKBHR5cGUYAiABKA4yNS5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVxdWVzdC5QcmljZUhpc3RvcnlUeXBlEi0KCXRpbWVfZnJvbRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKwoHdGltZV90bxgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMYWRkcmVzc190eXBlGAUgASgJIpQCChBQcmljZUhpc3RvcnlUeXBlEiIKHlBSSUNFX0hJU1RPUllfVFlQRV9VTlNQRUNJRklFRBAAEg4KCk9ORV9NSU5VVEUQARIQCgxUSFJFRV9NSU5VVEUQAhIPCgtGSVZFX01JTlVURRADEhIKDkZJRlRFRU5fTUlOVVRFEAQSEQoNVEhJUlRZX01JTlVURRAFEgwKCE9ORV9IT1VSEAYSDAoIVFdPX0hPVVIQBxINCglGT1VSX0hPVVIQCBIMCghTSVhfSE9VUhAJEg4KCkVJR0hUX0hPVVIQChIPCgtUV0VMVkVfSE9VUhALEgsKB09ORV9EQVkQDBINCglUSFJFRV9EQVkQDRIMCghPTkVfV0VFSxAOIlgKF0dldFByaWNlSGlzdG9yeVJlc3BvbnNlEiwKBGRhdGEYASABKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5RGF0YRIPCgdzdWNjZXNzGAIgASgIIkEKEFByaWNlSGlzdG9yeURhdGESLQoFaXRlbXMYASADKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5SXRlbSI0ChBQcmljZUhpc3RvcnlJdGVtEhEKCXVuaXhfdGltZRgBIAEoAxINCgV2YWx1ZRgCIAEoATJwCgxQcmljZVNlcnZpY2USYAoPR2V0UHJpY2VIaXN0b3J5EiQuZGFua2ZvbGlvLnYxLkdldFByaWNlSGlzdG9yeVJlcXVlc3QaJS5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVzcG9uc2UiAEK2AQoQY29tLmRhbmtmb2xpby52MUIKUHJpY2VQcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * GetPriceHistoryRequest represents a request for price history data
@@ -26,9 +26,9 @@ export type GetPriceHistoryRequest = Message<"dankfolio.v1.GetPriceHistoryReques
   address: string;
 
   /**
-   * @generated from field: string type = 2;
+   * @generated from field: dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType type = 2;
    */
-  type: string;
+  type: GetPriceHistoryRequest_PriceHistoryType;
 
   /**
    * @generated from field: google.protobuf.Timestamp time_from = 3;
@@ -52,6 +52,92 @@ export type GetPriceHistoryRequest = Message<"dankfolio.v1.GetPriceHistoryReques
  */
 export const GetPriceHistoryRequestSchema: GenMessage<GetPriceHistoryRequest> = /*@__PURE__*/
   messageDesc(file_dankfolio_v1_price, 0);
+
+/**
+ * @generated from enum dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType
+ */
+export enum GetPriceHistoryRequest_PriceHistoryType {
+  /**
+   * @generated from enum value: PRICE_HISTORY_TYPE_UNSPECIFIED = 0;
+   */
+  PRICE_HISTORY_TYPE_UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: ONE_MINUTE = 1;
+   */
+  ONE_MINUTE = 1,
+
+  /**
+   * @generated from enum value: THREE_MINUTE = 2;
+   */
+  THREE_MINUTE = 2,
+
+  /**
+   * @generated from enum value: FIVE_MINUTE = 3;
+   */
+  FIVE_MINUTE = 3,
+
+  /**
+   * @generated from enum value: FIFTEEN_MINUTE = 4;
+   */
+  FIFTEEN_MINUTE = 4,
+
+  /**
+   * @generated from enum value: THIRTY_MINUTE = 5;
+   */
+  THIRTY_MINUTE = 5,
+
+  /**
+   * @generated from enum value: ONE_HOUR = 6;
+   */
+  ONE_HOUR = 6,
+
+  /**
+   * @generated from enum value: TWO_HOUR = 7;
+   */
+  TWO_HOUR = 7,
+
+  /**
+   * @generated from enum value: FOUR_HOUR = 8;
+   */
+  FOUR_HOUR = 8,
+
+  /**
+   * @generated from enum value: SIX_HOUR = 9;
+   */
+  SIX_HOUR = 9,
+
+  /**
+   * @generated from enum value: EIGHT_HOUR = 10;
+   */
+  EIGHT_HOUR = 10,
+
+  /**
+   * @generated from enum value: TWELVE_HOUR = 11;
+   */
+  TWELVE_HOUR = 11,
+
+  /**
+   * @generated from enum value: ONE_DAY = 12;
+   */
+  ONE_DAY = 12,
+
+  /**
+   * @generated from enum value: THREE_DAY = 13;
+   */
+  THREE_DAY = 13,
+
+  /**
+   * @generated from enum value: ONE_WEEK = 14;
+   */
+  ONE_WEEK = 14,
+}
+
+/**
+ * Describes the enum dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType.
+ */
+export const GetPriceHistoryRequest_PriceHistoryTypeSchema: GenEnum<GetPriceHistoryRequest_PriceHistoryType> = /*@__PURE__*/
+  enumDesc(file_dankfolio_v1_price, 0, 0);
 
 /**
  * GetPriceHistoryResponse represents the response containing price history data
@@ -103,9 +189,11 @@ export const PriceHistoryDataSchema: GenMessage<PriceHistoryData> = /*@__PURE__*
  */
 export type PriceHistoryItem = Message<"dankfolio.v1.PriceHistoryItem"> & {
   /**
-   * @generated from field: google.protobuf.Timestamp unix_time = 1;
+   * Changed from google.protobuf.Timestamp to int64 to represent Unix timestamp directly
+   *
+   * @generated from field: int64 unix_time = 1;
    */
-  unixTime?: Timestamp;
+  unixTime: bigint;
 
   /**
    * @generated from field: double value = 2;

@@ -38,29 +38,35 @@ func NewServer(coinService *coin.Service, walletService *wallet.Service, tradeSe
 
 // Start starts the Connect RPC server
 func (s *Server) Start(port int) error {
+	// Create logger interceptor
+	logInterceptor := middleware.GRPCLoggerInterceptor()
+
+	// Default interceptors for all handlers
+	defaultInterceptors := connect.WithInterceptors(logInterceptor)
+
 	// Register Connect RPC handlers
 	path, handler := dankfoliov1connect.NewCoinServiceHandler(
 		NewCoinServiceServer(s.coinService),
-		connect.WithInterceptors(),
+		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
 
 	path, handler = dankfoliov1connect.NewWalletServiceHandler(
 		NewWalletServer(s.walletService),
-		connect.WithInterceptors(),
+		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
 
 	path, handler = dankfoliov1connect.NewTradeServiceHandler(
 		NewTradeServer(s.tradeService),
-		connect.WithInterceptors(),
+		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
 
 	// Register PriceService handler
 	path, handler = dankfoliov1connect.NewPriceServiceHandler(
 		NewPriceServer(s.priceService),
-		connect.WithInterceptors(),
+		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
 

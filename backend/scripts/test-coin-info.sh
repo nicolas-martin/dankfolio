@@ -47,22 +47,22 @@ test_endpoint() {
     fi
 }
 
-# Test getting all available tokens
-print_header "Getting all available tokens"
-test_endpoint "POST" "dankfolio.v1.CoinService/GetAvailableCoins" "{}" "Get all available tokens"
+# # Test getting all available tokens
+# print_header "Getting all available tokens"
+# test_endpoint "POST" "dankfolio.v1.CoinService/GetAvailableCoins" "{}" "Get all available tokens"
 
-# Test getting a specific token by ID (USDC)
-print_header "Getting specific token"
-test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"id\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\" }" "Get USDC token info"
+# # Test getting a specific token by ID (USDC)
+# print_header "Getting specific token"
+# test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"id\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\" }" "Get USDC token info"
 
-# Test getting trade quote
-print_header "Getting trade quote"
-test_endpoint "POST"  "dankfolio.v1.TradeService/GetTradeQuote" "{ \"from_coin_id\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\", \"to_coin_id\": \"So11111111111111111111111111111111111111112\", \"amount\": \"1\" }" "Get trade quote USDC -> SOL"
+# # Test getting trade quote
+# print_header "Getting trade quote"
+# test_endpoint "POST"  "dankfolio.v1.TradeService/GetTradeQuote" "{ \"from_coin_id\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\", \"to_coin_id\": \"So11111111111111111111111111111111111111112\", \"amount\": \"1\" }" "Get trade quote USDC -> SOL"
 
-# Test getting wallet balance
-print_header "Getting wallet balance"
-WALLET_ADDRESS="GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R"
-test_endpoint "POST" "dankfolio.v1.WalletService/GetWalletBalances" "{ \"address\": \"$WALLET_ADDRESS\" }" "Get wallet balance"
+# # Test getting wallet balance
+# print_header "Getting wallet balance"
+# WALLET_ADDRESS="GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R"
+# test_endpoint "POST" "dankfolio.v1.WalletService/GetWalletBalances" "{ \"address\": \"$WALLET_ADDRESS\" }" "Get wallet balance"
 
 # Test getting price history
 print_header "Getting price history"

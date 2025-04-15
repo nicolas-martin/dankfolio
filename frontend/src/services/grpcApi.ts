@@ -1,5 +1,5 @@
 import { tradeClient, coinClient, priceClient, walletClient } from './grpc/apiClient';
-import { Timestamp } from '@bufbuild/protobuf/wkt';
+import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import {
   Coin,
   TradePayload,
@@ -13,6 +13,30 @@ import {
   TokenTransferSubmitRequest,
   TokenTransferResponse
 } from './api';
+
+// Helper function to safely serialize objects with BigInt values
+const safeStringify = (obj: any, indent = 2): string => {
+  return JSON.stringify(obj, (_, value) => 
+    typeof value === 'bigint' ? value.toString() + 'n' : value
+  , indent);
+};
+
+// Logger functions for consistent request/response logging
+const logRequest = (serviceName: string, methodName: string, params: any): void => {
+  console.log(`📤 gRPC ${serviceName}.${methodName} Request:`, safeStringify(params));
+};
+
+const logResponse = (serviceName: string, methodName: string, response: any): void => {
+  console.log(`📥 gRPC ${serviceName}.${methodName} Response:`, safeStringify(response));
+};
+
+const logError = (serviceName: string, methodName: string, error: any): void => {
+  console.error(`❌ gRPC ${serviceName}.${methodName} Error:`, safeStringify({
+    message: error.message || 'Unknown error',
+    code: error.code,
+    data: error.metadata ? (typeof error.metadata.toObject === 'function' ? error.metadata.toObject() : error.metadata) : undefined
+  }));
+};
 
 // Interface matching the REST API
 interface API {
@@ -30,10 +54,12 @@ interface API {
 
 // Helper to convert timestamp strings to Timestamp objects
 const convertToTimestamp = (dateString: string): Timestamp => {
-  const timestamp = new Timestamp();
-  timestamp.seconds = BigInt(Math.floor(new Date(dateString).getTime() / 1000));
-  timestamp.nanos = (new Date(dateString).getTime() % 1000) * 1000000;
-  return timestamp;
+  try {
+    // Use the more reliable timestampFromDate API
+    return timestampFromDate(new Date(dateString));
+  } catch (error) {
+	throw new Error(`Invalid date string: ${dateString}`);
+  }
 };
 
 // Error handling
@@ -44,22 +70,38 @@ interface ErrorDetails {
   code?: number;
 }
 
-const handleGrpcError = (error: any): never => {
+const handleGrpcError = (error: any, serviceName: string, methodName: string): never => {
   const errorDetails: ErrorDetails = {
     message: error.message || 'Unknown error',
     code: error.code,
-    data: error.metadata?.toObject(),
+    data: undefined, // Initialize as undefined
   };
 
-  console.error('gRPC API Error:', JSON.stringify(errorDetails, null, 2));
+  // Safely access metadata if it exists and has a toObject method
+  try {
+    if (error.metadata && typeof error.metadata.toObject === 'function') {
+      errorDetails.data = error.metadata.toObject();
+    } else if (error.metadata) {
+      // If metadata exists but doesn't have toObject method
+      errorDetails.data = error.metadata;
+    }
+  } catch (metadataError) {
+    console.error('Error accessing metadata:', metadataError);
+  }
+
+  // Log the error with the service and method name for better tracing
+  logError(serviceName, methodName, error);
+  
   throw errorDetails;
 };
 
 // Implementation of the API interface using gRPC
 const grpcApi: API = {
   submitSwap: async (payload: TradePayload): Promise<SubmitTradeResponse> => {
+    const serviceName = "TradeService";
+    const methodName = "submitTrade";
     try {
-      console.log('🔍 gRPC Submit Trade Request:', payload);
+      logRequest(serviceName, methodName, payload);
       
       const response = await tradeClient.submitTrade({
         fromCoinId: payload.from_coin_id,
@@ -68,21 +110,27 @@ const grpcApi: API = {
         signedTransaction: payload.signed_transaction
       });
       
+      logResponse(serviceName, methodName, response);
+      
       // Convert the response to match the expected REST API structure
       return {
         trade_id: response.tradeId,
         transaction_hash: response.transactionHash
       };
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   getSwapStatus: async (txHash: string): Promise<TradeStatusResponse> => {
+    const serviceName = 'TradeService';
+    const methodName = 'getTradeStatus';
     try {
-      console.log('🔍 gRPC Get Swap Status Request:', txHash);
+      logRequest(serviceName, methodName, { txHash });
       
       const response = await tradeClient.getTradeStatus({ txHash });
+      
+      logResponse(serviceName, methodName, response);
       
       // Convert the response to match the expected REST API structure
       return {
@@ -93,19 +141,21 @@ const grpcApi: API = {
         error: response.error
       };
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   getAvailableCoins: async (trendingOnly?: boolean): Promise<Coin[]> => {
+    const serviceName = 'CoinService';
+    const methodName = 'getAvailableCoins';
     try {
-      console.log('🔍 gRPC Get Available Coins Request, trending only:', trendingOnly);
+      logRequest(serviceName, methodName, { trendingOnly });
       
-      const response = await coinClient.getAvailableCoins({ 
-        trendingOnly: trendingOnly || false
-      });
+      const response = await coinClient.getAvailableCoins({ trendingOnly });
       
-      // Convert the response coins to match the REST API structure
+      logResponse(serviceName, methodName, response);
+      
+      // Convert the response to match the expected REST API structure
       return response.coins.map(coin => ({
         id: coin.id,
         name: coin.name,
@@ -124,19 +174,23 @@ const grpcApi: API = {
         last_updated: coin.lastUpdated ? new Date(Number(coin.lastUpdated.seconds) * 1000).toISOString() : undefined,
       }));
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   getTradeQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<TradeQuoteResponse> => {
+    const serviceName = 'TradeService';
+    const methodName = 'getTradeQuote';
     try {
-      console.log('🔍 gRPC Get Trade Quote Request:', { fromCoin, toCoin, amount });
+      logRequest(serviceName, methodName, { fromCoin, toCoin, amount });
       
       const response = await tradeClient.getTradeQuote({
         fromCoinId: fromCoin,
         toCoinId: toCoin,
         amount: amount
       });
+      
+      logResponse(serviceName, methodName, response);
       
       // Return the response directly as it matches the expected structure
       return {
@@ -149,15 +203,17 @@ const grpcApi: API = {
         outputMint: response.outputMint
       };
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   getPriceHistory: async (address: string, type: string, timeFrom: string, timeTo: string, addressType: string): Promise<PriceHistoryResponse> => {
+    const serviceName = 'PriceService';
+    const methodName = 'getPriceHistory';
     try {
-      console.log('🔍 gRPC Get Price History Request:', { address, type, timeFrom, timeTo, addressType });
+      logRequest(serviceName, methodName, { address, type, timeFrom, timeTo, addressType });
       
-      // Convert timeFrom and timeTo to timestamps
+      // Convert timeFrom and timeTo to timestamps without fallbacks
       const fromTimestamp = convertToTimestamp(timeFrom);
       const toTimestamp = convertToTimestamp(timeTo);
       
@@ -168,6 +224,8 @@ const grpcApi: API = {
         timeTo: toTimestamp,
         addressType
       });
+      
+      logResponse(serviceName, methodName, response);
       
       // Convert the response to match the expected REST API structure
       return {
@@ -180,15 +238,19 @@ const grpcApi: API = {
         success: response.success
       };
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   getWalletBalance: async (address: string): Promise<WalletBalanceResponse> => {
+    const serviceName = 'WalletService';
+    const methodName = 'getWalletBalances';
     try {
-      console.log('🔍 gRPC Get Wallet Balance Request:', address);
+      logRequest(serviceName, methodName, { address });
       
       const response = await walletClient.getWalletBalances({ address });
+      
+      logResponse(serviceName, methodName, response);
       
       // Convert the response to match the expected REST API structure
       return {
@@ -198,15 +260,19 @@ const grpcApi: API = {
         })) || []
       };
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   getCoinByID: async (id: string): Promise<Coin> => {
+    const serviceName = 'CoinService';
+    const methodName = 'getCoinByID';
     try {
-      console.log('🔍 gRPC Get Coin By ID Request:', id);
+      logRequest(serviceName, methodName, { id });
       
       const response = await coinClient.getCoinByID({ id });
+      
+      logResponse(serviceName, methodName, response);
       
       // Convert the response to match the expected REST API structure
       return {
@@ -227,26 +293,32 @@ const grpcApi: API = {
         last_updated: response.lastUpdated ? new Date(Number(response.lastUpdated.seconds) * 1000).toISOString() : undefined,
       };
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   getTokenPrices: async (tokenIds: string[]): Promise<Record<string, number>> => {
+    const serviceName = 'TradeService';
+    const methodName = 'getTokenPrices';
     try {
-      console.log('🔍 gRPC Get Token Prices Request:', tokenIds);
+      logRequest(serviceName, methodName, { tokenIds });
       
       const response = await tradeClient.getTokenPrices({ tokenIds });
+      
+      logResponse(serviceName, methodName, response);
       
       // The response structure is already a map of token IDs to prices
       return response.prices;
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   prepareTokenTransfer: async (payload: TokenTransferPrepareRequest): Promise<TokenTransferPrepareResponse> => {
+    const serviceName = 'TradeService';
+    const methodName = 'prepareTransfer';
     try {
-      console.log('🔍 gRPC Prepare Token Transfer Request:', payload);
+      logRequest(serviceName, methodName, payload);
       
       const response = await tradeClient.prepareTransfer({
         fromAddress: payload.fromAddress,
@@ -255,29 +327,35 @@ const grpcApi: API = {
         amount: payload.amount
       });
       
+      logResponse(serviceName, methodName, response);
+      
       // Convert the response to match the expected REST API structure
       return {
         unsignedTransaction: response.unsignedTransaction
       };
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   },
 
   submitTokenTransfer: async (payload: TokenTransferSubmitRequest): Promise<TokenTransferResponse> => {
+    const serviceName = 'TradeService';
+    const methodName = 'submitTransfer';
     try {
-      console.log('🔍 gRPC Submit Token Transfer Request:', payload);
+      logRequest(serviceName, methodName, payload);
       
       const response = await tradeClient.submitTransfer({
         signedTransaction: payload.signedTransaction
       });
+      
+      logResponse(serviceName, methodName, response);
       
       // Convert the response to match the expected REST API structure
       return {
         transactionHash: response.transactionHash
       };
     } catch (error) {
-      return handleGrpcError(error);
+      return handleGrpcError(error, serviceName, methodName);
     }
   }
 };

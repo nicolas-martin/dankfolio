@@ -68,8 +68,8 @@ export const fetchPriceHistory = async (
 		const response = await grpcApi.getPriceHistory(
 			coin.id,
 			timeframe,
-			time_to,
-			time_from,
+			time_from, // Changed order: time_from should be first (earlier date)
+			time_to,   // time_to should be second (later date)
 			"token"
 		);
 
