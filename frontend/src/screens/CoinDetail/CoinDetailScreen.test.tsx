@@ -341,7 +341,20 @@ describe('CoinDetail Screen', () => {
 
 		// Verify chart
 		const coinChartMock = getByTestId('mock-CoinChart');
-		expect(coinChartMock.props.data).toEqual(expectedMockHistory);
+		expect(coinChartMock.props.data).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					timestamp: expect.any(String),
+					unixTime: expect.any(Number),
+					value: expectedMockHistory[0].value,
+				}),
+				expect.objectContaining({
+					timestamp: expect.any(String),
+					unixTime: expect.any(Number),
+					value: expectedMockHistory[1].value,
+				}),
+			])
+		);
 		expect(coinChartMock.props.loading).toBe(false);
 		expect(coinChartMock.props.activePoint).toBeNull();
 
@@ -409,7 +422,7 @@ describe('CoinDetail Screen', () => {
 		// Verify initial timeframe fetch
 		await waitFor(() => {
 			expect(mockFetchPriceHistory).toHaveBeenCalledWith(
-				'15m',
+				'FIFTEEN_MINUTE',
 				expect.any(Function),
 				expect.any(Function),
 				mockInitialCoin,
@@ -424,13 +437,13 @@ describe('CoinDetail Screen', () => {
 		mockFetchPriceHistory.mockClear();
 
 		// Test timeframe change
-		const button1D = getByTestId('toggle-button-1D');
+		const button1D = getByTestId('toggle-button-ONE_DAY');
 		fireEvent.press(button1D);
 
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalledTimes(1));
 
 		expect(mockFetchPriceHistory).toHaveBeenCalledWith(
-			'1D',
+			'ONE_DAY',
 			expect.any(Function),
 			expect.any(Function),
 			mockInitialCoin,

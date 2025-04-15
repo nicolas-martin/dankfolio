@@ -1,27 +1,28 @@
 import { act } from '@testing-library/react-native';
 import { usePortfolioStore } from './portfolio';
 import { Wallet, Coin } from '@/types';
-import { WalletBalanceResponse } from '@/services/api';
-import api from '@/services/api';
+import grpcApi from '@/services/grpcApi';
+import * as coinStoreModule from './coins';
 
-jest.mock('@/services/api');
-const mockedApi = api as jest.Mocked<typeof api>;
+jest.mock('@/services/grpcApi');
 
-// Mock the coin store module to export an object with the mocked getState
+let coinMap: Record<string, Coin>;
 const mockGetCoinByID = jest.fn();
-jest.mock('./coins', () => ({
-	useCoinStore: {
-		getState: jest.fn(() => ({
-			getCoinByID: mockGetCoinByID,
-		})),
-	},
-}));
+const mockSetCoin = jest.fn((coin: Coin) => {
+	coinMap[coin.id] = coin;
+});
 
 const mockWalletData: Wallet = { address: 'wallet123', balance: 1000, privateKey: 'privKey', publicKey: 'pubKey' };
 const mockSolCoin: Coin = { id: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
 const mockUsdcCoin: Coin = { id: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
 
-const mockApiBalanceResponse: WalletBalanceResponse = {
+const mockApiBalanceResponseSuccess = {
+	balances: [
+		{ id: 'solana', amount: 5 },
+		{ id: 'usd-coin', amount: 250 },
+	]
+};
+const mockApiBalanceResponseWithUnknown = {
 	balances: [
 		{ id: 'solana', amount: 5 },
 		{ id: 'usd-coin', amount: 250 },
@@ -37,6 +38,18 @@ describe('Zustand Portfolio Store', () => {
 		usePortfolioStore.setState(initialState, true);
 		jest.clearAllMocks();
 		mockGetCoinByID.mockClear();
+		mockSetCoin.mockClear();
+		coinMap = { solana: mockSolCoin };
+		jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockImplementation(() => ({
+			getCoinByID: mockGetCoinByID,
+			setCoin: mockSetCoin,
+			get coinMap() { return coinMap; },
+			availableCoins: [],
+			isLoading: false,
+			error: null,
+			setAvailableCoins: jest.fn(),
+			fetchAvailableCoins: jest.fn(),
+		}));
 		consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 	});
 
@@ -80,14 +93,20 @@ describe('Zustand Portfolio Store', () => {
 
 	describe('Portfolio Balance Operations', () => {
 		it('handles successful portfolio balance fetch and updates', async () => {
-			// Test loading state transitions
-			expect(usePortfolioStore.getState().isLoading).toBe(false);
+			// Set up coinMap for this test
+			coinMap = { solana: mockSolCoin };
+			mockGetCoinByID.mockClear();
+			mockSetCoin.mockClear();
+			const coinStore = require('./coins').useCoinStore;
+			(coinStore.getState as jest.Mock).mockReturnValue({
+				getCoinByID: mockGetCoinByID,
+				setCoin: mockSetCoin,
+				get coinMap() { return coinMap; },
+			});
 
-			mockedApi.getWalletBalance.mockResolvedValue(mockApiBalanceResponse);
+			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
 			mockGetCoinByID.mockImplementation(async (id) => {
-				if (id === 'solana') return mockSolCoin;
 				if (id === 'usd-coin') return mockUsdcCoin;
-				if (id === 'unknown-coin') return null;
 				return null;
 			});
 
@@ -103,10 +122,12 @@ describe('Zustand Portfolio Store', () => {
 			const state = usePortfolioStore.getState();
 			expect(state.isLoading).toBe(false);
 			expect(state.error).toBeNull();
-			expect(mockedApi.getWalletBalance).toHaveBeenCalledWith(mockWalletData.address);
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
+			expect(grpcApi.getWalletBalance).toHaveBeenCalledWith(mockWalletData.address);
+			// Only usd-coin should trigger getCoinByID (solana is cached)
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(1);
+			expect(mockGetCoinByID).toHaveBeenCalledWith('usd-coin');
 
-			// Verify token calculations
+			// Verify token calculations (only coins that exist in coinMap)
 			expect(state.tokens).toHaveLength(2);
 			expect(state.tokens).toEqual(expect.arrayContaining([
 				expect.objectContaining({
@@ -126,24 +147,26 @@ describe('Zustand Portfolio Store', () => {
 			]));
 		});
 
-		it('handles various error scenarios in portfolio operations', async () => {
-			// Test API fetch error
-			mockedApi.getWalletBalance.mockRejectedValue(new Error('Failed to fetch balance'));
-			await act(async () => {
-				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);
+		it('handles error if any coin cannot be fetched', async () => {
+			coinMap = { solana: mockSolCoin };
+			mockGetCoinByID.mockClear();
+			mockSetCoin.mockClear();
+			const coinStore = require('./coins').useCoinStore;
+			(coinStore.getState as jest.Mock).mockReturnValue({
+				getCoinByID: mockGetCoinByID,
+				setCoin: mockSetCoin,
+				availableCoins: [],
+				isLoading: false,
+				error: null,
+				setAvailableCoins: jest.fn(),
+				fetchAvailableCoins: jest.fn(),
+				get coinMap() { return coinMap; },
 			});
 
-			let state = usePortfolioStore.getState();
-			expect(state.error).toBe('Failed to fetch balance');
-			expect(state.tokens).toEqual([]);
-			expect(mockGetCoinByID).not.toHaveBeenCalled();
-			expect(mockedApi.getWalletBalance).toHaveBeenCalledTimes(1);
-
-			// Test partial coin fetch failure
-			mockedApi.getWalletBalance.mockResolvedValue(mockApiBalanceResponse);
+			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseWithUnknown);
 			mockGetCoinByID.mockImplementation(async (id) => {
-				if (id === 'solana') return mockSolCoin;
-				if (id === 'usd-coin') throw new Error('Error fetching coin details');
+				if (id === 'usd-coin') return mockUsdcCoin;
+				if (id === 'unknown-coin') return null; // Simulate missing coin
 				return null;
 			});
 
@@ -151,27 +174,114 @@ describe('Zustand Portfolio Store', () => {
 				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);
 			});
 
-			state = usePortfolioStore.getState();
-			expect(state.error).toBe('Error fetching coin details');
-			expect(state.tokens).toHaveLength(0);
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
-			expect(mockedApi.getWalletBalance).toHaveBeenCalledTimes(2);
+			const state = usePortfolioStore.getState();
+			// Error should include the missing coin id
+			expect(state.error).toEqual(expect.stringContaining('Some coins could not be loaded: [unknown-coin]'));
+			// Tokens should include all successfully loaded coins
+			expect(state.tokens).toHaveLength(2);
+			expect(state.tokens).toEqual(expect.arrayContaining([
+				expect.objectContaining({
+					id: 'solana',
+					amount: 5,
+					price: 150,
+					value: 750,
+					coin: mockSolCoin
+				}),
+				expect.objectContaining({
+					id: 'usd-coin',
+					amount: 250,
+					price: 1,
+					value: 250,
+					coin: mockUsdcCoin
+				})
+			]));
+			// Should call getCoinByID for usd-coin and unknown-coin
+			expect(mockGetCoinByID).toHaveBeenCalledWith('usd-coin');
+			expect(mockGetCoinByID).toHaveBeenCalledWith('unknown-coin');
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(2);
+		});
 
-			// Reset mock counters for the next test
-			jest.clearAllMocks();
-
-			// Test complete coin fetch failure
-			mockedApi.getWalletBalance.mockResolvedValue(mockApiBalanceResponse);
-			mockGetCoinByID.mockRejectedValue(new Error('Error fetching coin details'));
+		it('handles API fetch error', async () => {
+			(grpcApi.getWalletBalance as jest.Mock).mockRejectedValue(new Error('Failed to fetch balance'));
 			await act(async () => {
 				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);
 			});
 
-			state = usePortfolioStore.getState();
-			expect(state.error).toBe('Error fetching coin details');
+			const state = usePortfolioStore.getState();
+			expect(state.error).toBe('Failed to fetch balance');
 			expect(state.tokens).toEqual([]);
-			expect(mockGetCoinByID).toHaveBeenCalledTimes(3);
-			expect(mockedApi.getWalletBalance).toHaveBeenCalledTimes(1);
+			expect(mockGetCoinByID).not.toHaveBeenCalled();
+			expect(grpcApi.getWalletBalance).toHaveBeenCalledTimes(1);
+		});
+
+		it('handles all coins missing (partial coin fetch failure)', async () => {
+			coinMap = {};
+			mockGetCoinByID.mockClear();
+			mockSetCoin.mockClear();
+			const coinStore = require('./coins').useCoinStore;
+			(coinStore.getState as jest.Mock).mockReturnValue({
+				getCoinByID: mockGetCoinByID,
+				setCoin: mockSetCoin,
+				availableCoins: [],
+				isLoading: false,
+				error: null,
+				setAvailableCoins: jest.fn(),
+				fetchAvailableCoins: jest.fn(),
+				get coinMap() { return coinMap; },
+			});
+
+			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
+			mockGetCoinByID.mockImplementation(async (id) => null);
+
+			await act(async () => {
+				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);
+			});
+
+			const state = usePortfolioStore.getState();
+			expect(state.error).toContain('solana');
+			expect(state.error).toContain('usd-coin');
+			expect(state.error).toContain('Some coins could not be loaded');
+			expect(state.tokens).toEqual([]);
+			// Should call getCoinByID for both coins
+			expect(mockGetCoinByID).toHaveBeenCalledWith('solana');
+			expect(mockGetCoinByID).toHaveBeenCalledWith('usd-coin');
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(2);
+			expect(grpcApi.getWalletBalance).toHaveBeenCalledTimes(1);
+		});
+
+		it('handles all coins missing (complete coin fetch failure)', async () => {
+			coinMap = {};
+			mockGetCoinByID.mockClear();
+			mockSetCoin.mockClear();
+			const coinStore = require('./coins').useCoinStore;
+			(coinStore.getState as jest.Mock).mockReturnValue({
+				getCoinByID: mockGetCoinByID,
+				setCoin: mockSetCoin,
+				availableCoins: [],
+				isLoading: false,
+				error: null,
+				setAvailableCoins: jest.fn(),
+				fetchAvailableCoins: jest.fn(),
+				get coinMap() { return coinMap; },
+			});
+
+			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
+			mockGetCoinByID.mockRejectedValue(new Error('Error fetching coin details'));
+
+			await act(async () => {
+				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);
+			});
+
+			const state = usePortfolioStore.getState();
+			expect(state.error).toContain('solana');
+			expect(state.error).toContain('usd-coin');
+			expect(state.error).toContain('Some coins could not be loaded');
+			expect(state.tokens).toEqual([]);
+			// Should call getCoinByID for both coins
+			expect(mockGetCoinByID).toHaveBeenCalledWith('solana');
+			expect(mockGetCoinByID).toHaveBeenCalledWith('usd-coin');
+			expect(mockGetCoinByID).toHaveBeenCalledTimes(2);
+			expect(grpcApi.getWalletBalance).toHaveBeenCalledTimes(1);
 		});
 	});
 }); 

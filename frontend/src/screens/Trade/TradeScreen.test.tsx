@@ -6,13 +6,13 @@ import * as TradeScripts from './trade_scripts';
 import { View, Text, TextInput } from 'react-native';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { Provider as PaperProvider } from 'react-native-paper';
-import api from '@/services/api';
 import { mockFromCoin, mockToCoin, mockWallet, mockFromPortfolioToken } from '@/__mocks__/testData';
 import { mockPortfolioStoreReturn, usePortfolioStore } from '@/__mocks__/store/portfolio';
 import { mockCoinStoreReturn, useCoinStore } from '@/__mocks__/store/coins';
 import { fetchTradeQuote as mockFetchTradeQuote, signTradeTransaction as mockSignTradeTransaction } from '@/__mocks__/services/trade_scripts';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { PortfolioToken } from '@/store/portfolio';
+import grpcApi from '@/services/grpcApi';
 
 // Mock Stores
 jest.mock('@store/portfolio');
@@ -76,11 +76,6 @@ jest.mock('./trade_scripts', () => ({
 }));
 
 // Mock Services
-jest.mock('@/services/api', () => ({
-	submitTrade: jest.fn(),
-	getTradeStatus: jest.fn(),
-	submitSwap: jest.fn()
-}));
 jest.mock('@/services/solana', () => ({
 	buildAndSignSwapTransaction: jest.fn().mockResolvedValue('mock_signed_tx'),
 }));
@@ -113,9 +108,13 @@ jest.mock('react-native-paper', () => {
 		Button: MockButton,
 		Text: actualPaper.Text,
 		useTheme: () => mockTheme,
+		Modal: ({ children }: any) => <>{children}</>, // Mock Modal to avoid timer leaks
 		// Add other components used by TradeScreen if needed
 	};
 });
+
+// Mock grpcApi
+jest.mock('@/services/grpcApi');
 
 // --- Test Suite ---
 describe('TradeScreen', () => {
@@ -134,8 +133,8 @@ describe('TradeScreen', () => {
 		// Setup your mocks
 		(mockFetchTradeQuote as jest.Mock).mockResolvedValue(undefined);
 		(mockSignTradeTransaction as jest.Mock).mockResolvedValue('mock_signed_tx');
-		(api.submitSwap as jest.Mock).mockResolvedValue({ transaction_hash: 'mock_tx_hash' });
-		(api.getSwapStatus as jest.Mock).mockResolvedValue({
+		(grpcApi.submitSwap as jest.Mock).mockResolvedValue({ transaction_hash: 'mock_tx_hash' });
+		(grpcApi.getSwapStatus as jest.Mock).mockResolvedValue({
 			status: 'completed',
 			transaction_hash: 'mock_tx_hash',
 			timestamp: new Date().toISOString(),

@@ -45,5 +45,3 @@ message GetAvailableCoinsResponse {
 message GetCoinByIDRequest {
   string id = 1;
 }
-
-// Note: GetTokenPricesRequest and GetTokenPricesResponse have been moved to trade.proto

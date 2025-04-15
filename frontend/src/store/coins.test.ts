@@ -1,12 +1,11 @@
 // frontend/src/store/coins.test.ts
 import { act } from '@testing-library/react-native';
 import { useCoinStore } from './coins';
-import api from '@/services/api';
+import grpcApi from '@/services/grpcApi';
 import { Coin } from '@/types';
 
 // Mock the API service
-jest.mock('@/services/api');
-const mockedApi = api as jest.Mocked<typeof api>;
+jest.mock('@/services/grpcApi');
 
 // Mock Coin Data
 const mockSolCoin: Coin = { id: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
@@ -73,8 +72,7 @@ describe('Zustand Coin Store', () => {
 		it('handles fetchAvailableCoins operations correctly', async () => {
 			// Test loading state
 			const fetchPromise = act(async () => {
-				mockedApi.getAvailableCoins.mockResolvedValue([mockWenCoin, mockOtherCoin]);
-				mockedApi.getCoinByID.mockResolvedValue(mockSolCoin);
+				(grpcApi.getAvailableCoins as jest.Mock).mockResolvedValue([mockSolCoin, mockWenCoin, mockOtherCoin]);
 				await useCoinStore.getState().fetchAvailableCoins();
 			});
 
@@ -86,12 +84,16 @@ describe('Zustand Coin Store', () => {
 			const state = useCoinStore.getState();
 			expect(state.isLoading).toBe(false);
 			expect(state.error).toBeNull();
-			expect(mockedApi.getAvailableCoins).toHaveBeenCalledTimes(1);
-			expect(mockedApi.getCoinByID).toHaveBeenCalledWith(mockSolCoin.id);
+			expect(grpcApi.getAvailableCoins).toHaveBeenCalledTimes(1);
 			expect(state.availableCoins).toEqual([mockSolCoin, mockWenCoin, mockOtherCoin]);
+			expect(state.coinMap).toEqual({
+				[mockSolCoin.id]: mockSolCoin,
+				[mockWenCoin.id]: mockWenCoin,
+				[mockOtherCoin.id]: mockOtherCoin,
+			});
 
 			// Test error handling
-			mockedApi.getAvailableCoins.mockRejectedValue(new Error('Network Error'));
+			(grpcApi.getAvailableCoins as jest.Mock).mockRejectedValue(new Error('Network Error'));
 			await act(async () => {
 				await useCoinStore.getState().fetchAvailableCoins();
 			});
@@ -111,19 +113,19 @@ describe('Zustand Coin Store', () => {
 				return await useCoinStore.getState().getCoinByID(mockWenCoin.id);
 			});
 			expect(coin).toEqual(mockWenCoin);
-			expect(mockedApi.getCoinByID).not.toHaveBeenCalled();
+			expect(grpcApi.getCoinByID).not.toHaveBeenCalled();
 
 			// Test force refresh
 			const updatedWenCoin = { ...mockWenCoin, price: 0.0002 };
-			mockedApi.getCoinByID.mockResolvedValue(updatedWenCoin);
+			(grpcApi.getCoinByID as jest.Mock).mockResolvedValue(updatedWenCoin);
 			coin = await act(async () => {
 				return await useCoinStore.getState().getCoinByID(mockWenCoin.id, true);
 			});
 			expect(coin).toEqual(updatedWenCoin);
-			expect(mockedApi.getCoinByID).toHaveBeenCalledWith(mockWenCoin.id);
+			expect(grpcApi.getCoinByID).toHaveBeenCalledWith(mockWenCoin.id);
 
 			// Test error handling
-			mockedApi.getCoinByID.mockRejectedValue(new Error('Coin Not Found'));
+			(grpcApi.getCoinByID as jest.Mock).mockRejectedValue(new Error('Coin Not Found'));
 			coin = await act(async () => {
 				return await useCoinStore.getState().getCoinByID('nonExistentId');
 			});
