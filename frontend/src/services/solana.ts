@@ -1,7 +1,6 @@
 import { Keypair, VersionedTransaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import axios from 'axios';
-import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
+import { REACT_APP_SOLANA_RPC_ENDPOINT, REACT_APP_JUPITER_API_URL } from '@env';
 import { Wallet } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -13,30 +12,79 @@ if (!rpcEndpoint) {
 }
 console.log('🔧 Using Solana RPC endpoint:', rpcEndpoint);
 
-const jupiterApi = axios.create({
-	baseURL: process.env.REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
-	headers: {
-		Accept: 'application/json',
-		'Content-Type': 'application/json',
-		'Access-Control-Allow-Origin': '*',
-		'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-		'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-	}
-});
+const defaultHeaders = {
+	Accept: 'application/json',
+	'Content-Type': 'application/json',
+	'Access-Control-Allow-Origin': '*',
+	'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+	'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+};
 
-// Add response interceptor for better error handling
-jupiterApi.interceptors.response.use(
-	response => response,
-	error => {
-		console.error('Jupiter API Error:', {
-			message: error.message,
-			config: error.config,
-			status: error.response?.status,
-			data: error.response?.data
-		});
-		throw error;
+const handleFetchError = async (response: Response): Promise<any> => {
+	const errorDetails: any = {
+		message: response.statusText || 'Unknown error',
+		status: response.status,
+	};
+
+	try {
+		errorDetails.data = await response.json();
+	} catch (e) {
+		errorDetails.data = await response.text();
 	}
-);
+
+	console.error('API Error:', JSON.stringify(errorDetails, null, 2));
+	throw errorDetails;
+};
+
+const jupiterApiFetch = async (url: string, method: string = 'GET', data: any = null, params: any = null, customHeaders: any = {}) => {
+	const headers = { ...defaultHeaders, ...customHeaders };
+	const fullURL = (REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1') + url;
+
+	console.log('🔍 Request:', {
+		method,
+		url,
+		baseURL: REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
+		data,
+		params,
+		headers
+	});
+
+	let queryString = '';
+	if (params && method === 'GET') {
+		queryString = '?' + new URLSearchParams(params).toString();
+	}
+
+	const options: RequestInit = {
+		method,
+		headers,
+		body: data ? JSON.stringify(data) : null,
+	};
+
+	try {
+		const response = await fetch(fullURL + queryString, options);
+
+		console.log('✅ Response:', {
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers
+		});
+
+		if (!response.ok) {
+			return handleFetchError(response);
+		}
+
+		try {
+			const responseData = await response.json();
+			return responseData;
+		} catch (e) {
+			return response.text();
+		}
+
+	} catch (error: any) {
+		console.error('❌ Response Error:', error.message);
+		throw { message: error.message };
+	}
+};
 
 export const getKeypairFromPrivateKey = (privateKey: string): Keypair => {
 	// Handle Base64 private key
@@ -83,24 +131,22 @@ export const buildAndSignSwapTransaction = async (
 		// }
 
 		// Get quote
-		const quoteResponse = await jupiterApi.get('/quote', {
-			params: {
-				inputMint: fromCoinId,
-				outputMint: toCoinId,
-				amount,
-				slippageBps: slippage * 100, // Convert percentage to basis points
-			},
+		const quoteResponse = await jupiterApiFetch('/quote', 'GET', null, {
+			inputMint: fromCoinId,
+			outputMint: toCoinId,
+			amount,
+			slippageBps: slippage * 100, // Convert percentage to basis points
 		});
 
-		if (!quoteResponse.data) {
+		if (!quoteResponse) {
 			throw new Error('No quote data received');
 		}
 
-		console.log('Quote response:', quoteResponse.data);
+		console.log('Quote response:', quoteResponse);
 
 		// Request swap transaction with the correct body structure
 		const swapRequestBody = {
-			quoteResponse: quoteResponse.data,
+			quoteResponse: quoteResponse,
 			userPublicKey: wallet.publicKey.toString(),
 			wrapUnwrapSOL: true,
 			dynamicComputeUnitLimit: true,
@@ -113,13 +159,13 @@ export const buildAndSignSwapTransaction = async (
 			}
 		};
 
-		const swapResponse = await jupiterApi.post('/swap', swapRequestBody);
+		const swapResponse = await jupiterApiFetch('/swap', 'POST', swapRequestBody);
 
-		if (!swapResponse.data || !swapResponse.data.swapTransaction) {
+		if (!swapResponse || !swapResponse.swapTransaction) {
 			throw new Error('No swap transaction received');
 		}
 
-		const swapTransactionBuf = Buffer.from(swapResponse.data.swapTransaction, 'base64');
+		const swapTransactionBuf = Buffer.from(swapResponse.swapTransaction, 'base64');
 
 		const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
@@ -212,4 +258,3 @@ export const secureStorage = {
 		}
 	}
 };
-

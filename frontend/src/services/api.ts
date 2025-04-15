@@ -1,5 +1,3 @@
-import axios, { AxiosError } from 'axios';
-
 import { REACT_APP_API_URL } from '@env';
 
 const baseURL = REACT_APP_API_URL;
@@ -7,52 +5,97 @@ if (!baseURL) {
 	throw new Error('No API URL provided for api');
 }
 
-const apiClient = axios.create({
-	baseURL,
-	headers: {
-		'Content-Type': 'application/json',
-		'Accept': 'application/json',
-		'X-Debug-Mode': 'true',
-	},
-	timeout: 30000,
-});
+const defaultHeaders = {
+	'Content-Type': 'application/json',
+	'Accept': 'application/json',
+	'X-Debug-Mode': 'true',
+};
 
-// Add request interceptor for debugging
-apiClient.interceptors.request.use(
-	(config) => {
-		console.log('🔍 Request:', {
-			method: config.method,
-			url: config.url,
-			baseURL: config.baseURL,
-			data: config.data,
-			params: config.params,
-			headers: config.headers
-		});
-		return config;
-	},
-	(error) => Promise.reject(error)
-);
+// Debug function to log requests
+const logRequest = (method: string, url: string, data?: any, params?: any, headers?: any) => {
+	console.log('🔍 Request:', {
+		method,
+		url,
+		baseURL,
+		data,
+		params,
+		headers
+	});
+};
 
-// Add response interceptor for debugging
-apiClient.interceptors.response.use(
-	(response) => {
-		console.log('✅ Response:', {
-			status: response.status,
-			data: response.data,
-			headers: response.headers
-		});
-		return response;
-	},
-	(error) => {
-		console.error('❌ Response Error:', {
-			message: error.message,
-			status: error.response?.status,
-			data: error.response?.data,
-			config: error.config
-		});
-		return Promise.reject(error);
+// Debug function to log responses
+const logResponse = (status: number, data: any, headers: any) => {
+	console.log('✅ Response:', {
+		status,
+		data,
+		headers
+	});
+};
+
+// Debug function to log errors
+const logError = (message: string, status?: number, data?: any, config?: any) => {
+	console.error('❌ Response Error:', {
+		message,
+		status,
+		data,
+		config
+	});
+};
+
+const handleFetchError = async (response: Response): Promise<any> => {
+	const errorDetails: ErrorDetails = {
+		message: response.statusText || 'Unknown error',
+		status: response.status,
+	};
+
+	try {
+		errorDetails.data = await response.json();
+	} catch (e) {
+		errorDetails.data = await response.text();
 	}
-);
+
+	logError(errorDetails.message, errorDetails.status, errorDetails.data);
+	throw errorDetails;
+};
+
+const apiFetch = async (url: string, method: string = 'GET', data: any = null, params: any = null, customHeaders: any = {}) => {
+	const headers = { ...defaultHeaders, ...customHeaders };
+	const fullURL = baseURL + url;
+
+	logRequest(method, url, data, params, headers);
+
+	let queryString = '';
+	if (params && method === 'GET') {
+		queryString = '?' + new URLSearchParams(params).toString();
+	}
+
+	const options: RequestInit = {
+		method,
+		headers,
+		body: data ? JSON.stringify(data) : null,
+	};
+
+	try {
+		const response = await fetch(fullURL + queryString, options);
+
+		logResponse(response.status, response.statusText, response.headers);
+
+		if (!response.ok) {
+			return handleFetchError(response);
+		}
+
+		try {
+			const responseData = await response.json();
+			return responseData;
+		} catch (e) {
+			return response.text();
+		}
+
+	} catch (error: any) {
+		logError(error.message);
+		throw { message: error.message };
+	}
+};
 
 export interface Coin {
 	id: string;
@@ -125,112 +168,59 @@ interface API {
 
 const api: API = {
 	submitSwap: async (payload: TradePayload): Promise<SubmitTradeResponse> => { // Renamed function
-		try {
-			const response = await apiClient.post('/api/trades/submit', payload);
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		return apiFetch('/api/trades/submit', 'POST', payload);
 	},
 
 	getAvailableCoins: async (trendingOnly?: boolean) => {
-		try {
-			const params = trendingOnly ? { trending: 'true' } : {};
-			const response = await apiClient.get<Coin[]>('/api/tokens', { params });
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		const params = trendingOnly ? { trending: 'true' } : {};
+		return apiFetch('/api/tokens', 'GET', null, params);
 	},
 
 	getTradeQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<TradeQuoteResponse> => {
-		try {
-			const response = await apiClient.get<TradeQuoteResponse>('/api/trades/quote', {
-				params: {
-					from_coin_id: fromCoin,
-					to_coin_id: toCoin,
-					amount
-				}
-			});
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		const params = {
+			from_coin_id: fromCoin,
+			to_coin_id: toCoin,
+			amount
+		};
+		return apiFetch('/api/trades/quote', 'GET', null, params);
 	},
 
 	getPriceHistory: async (address: string, type: string, timeFrom: string, timeTo: string, addressType: string) => {
-		try {
-			const response = await apiClient.get<PriceHistoryResponse>('/api/price/history', {
-				params: {
-					address,
-					type,
-					time_from: timeFrom,
-					time_to: timeTo,
-					address_type: addressType
-				}
-			});
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		const params = {
+			address,
+			type,
+			time_from: timeFrom,
+			time_to: timeTo,
+			address_type: addressType
+		};
+		return apiFetch('/api/price/history', 'GET', null, params);
 	},
 
 	getWalletBalance: async (address: string): Promise<WalletBalanceResponse> => {
-		try {
-			const response = await apiClient.get<WalletBalanceResponse>(`/api/wallets/${address}/balance`);
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		return apiFetch(`/api/wallets/${address}/balance`, 'GET');
 	},
 
 	getCoinByID: async (id: string): Promise<Coin> => {
-		try {
-			const response = await apiClient.get<Coin>(`/api/tokens/${id}`);
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		return apiFetch(`/api/tokens/${id}`, 'GET');
 	},
 
 	getTokenPrices: async (tokenIds: string[]): Promise<Record<string, number>> => {
-		try {
-			const response = await apiClient.get<Record<string, number>>('/api/tokens/prices', {
-				params: {
-					ids: tokenIds.join(',')
-				}
-			});
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		const params = {
+			ids: tokenIds.join(',')
+		};
+		return apiFetch('/api/tokens/prices', 'GET', null, params);
 	},
 
 	getSwapStatus: async (txHash: string): Promise<TradeStatusResponse> => { // Added new function
-		try {
-			const response = await apiClient.get<TradeStatusResponse>(`/api/trades/status/${txHash}`);
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		return apiFetch(`/api/trades/status/${txHash}`, 'GET');
 	},
 
 	prepareTokenTransfer: async (payload: TokenTransferPrepareRequest): Promise<TokenTransferPrepareResponse> => {
-		try {
-			const response = await apiClient.post<TokenTransferPrepareResponse>('/api/transfer/prepare', payload);
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		return apiFetch('/api/transfer/prepare', 'POST', payload);
 	},
 
 	submitTokenTransfer: async (payload: TokenTransferSubmitRequest): Promise<TokenTransferResponse> => {
-		try {
-			const response = await apiClient.post<TokenTransferResponse>('/api/transfer/submit', payload);
-			return response.data;
-		} catch (error) {
-			throw handleApiError(error as AxiosError);
-		}
+		return apiFetch('/api/transfer/submit', 'POST', payload);
 	},
 };
 
@@ -271,22 +261,5 @@ export interface TradeQuoteResponse {
 	inputMint: string;
 	outputMint: string;
 }
-
-// Enhanced error handler
-const handleApiError = (error: AxiosError): never => {
-	const errorDetails: ErrorDetails = {
-		message: error.message || 'Unknown error',
-		status: error.response?.status,
-		data: error.response?.data,
-	};
-
-	console.error('API Error:', JSON.stringify(errorDetails, null, 2));
-
-	if (errorDetails?.data?.error?.includes('Transaction')) {
-		console.error('Transaction Error Details:', errorDetails.data.error);
-	}
-
-	throw errorDetails;
-};
 
 export default api;
