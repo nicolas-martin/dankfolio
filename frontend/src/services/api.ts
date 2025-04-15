@@ -1,9 +1,9 @@
-import { REACT_APP_API_URL } from '@env';
-
-const baseURL = REACT_APP_API_URL;
-if (!baseURL) {
-	throw new Error('No API URL provided for api');
+if (!process.env.REACT_APP_API_URL) {
+	throw new Error('REACT_APP_API_URL environment variable is required');
 }
+
+const API_URL: string = process.env.REACT_APP_API_URL;
+const baseURL = API_URL;
 
 const defaultHeaders = {
 	'Content-Type': 'application/json',

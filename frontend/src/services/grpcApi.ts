@@ -15,6 +15,20 @@ import {
 	TokenTransferResponse
 } from './api';
 
+if (!process.env.DEBUG_MODE) {
+	throw new Error('DEBUG_MODE environment variable is required');
+}
+const DEBUG_MODE = process.env.DEBUG_MODE === 'true';
+
+// Helper function to get headers with debug mode
+const getRequestHeaders = (): Headers => {
+	const headers = new Headers();
+	if (DEBUG_MODE) {
+		headers.set("X-Debug-Mode", "true");
+	}
+	return headers;
+};
+
 // Helper function to safely serialize objects with BigInt values
 const safeStringify = (obj: any, indent = 2): string => {
 	return JSON.stringify(obj, (_, value) =>
@@ -129,12 +143,9 @@ const grpcApi: API = {
 		try {
 			logRequest(serviceName, methodName, { txHash });
 
-			const headers = new Headers();
-			headers.set("X-Debug-Mode", "true");
-
 			const response = await tradeClient.getTradeStatus(
 				{ transactionHash: txHash },
-				{ headers }
+				{ headers: getRequestHeaders() }
 			);
 
 			logResponse(serviceName, methodName, response);
@@ -158,7 +169,10 @@ const grpcApi: API = {
 		try {
 			logRequest(serviceName, methodName, { trendingOnly });
 
-			const response = await coinClient.getAvailableCoins({ trendingOnly });
+			const response = await coinClient.getAvailableCoins(
+				{ trendingOnly },
+				{ headers: getRequestHeaders() }
+			);
 
 			logResponse(serviceName, methodName, response);
 
@@ -248,7 +262,7 @@ const grpcApi: API = {
 				timeFrom: fromTimestamp,
 				timeTo: toTimestamp,
 				addressType: addressType
-			});
+			}, { headers: getRequestHeaders() });
 
 			logResponse(serviceName, methodName, response);
 

@@ -1,16 +1,20 @@
-import { Keypair, VersionedTransaction } from '@solana/web3.js';
+import { Keypair, VersionedTransaction, Connection, PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { REACT_APP_SOLANA_RPC_ENDPOINT, REACT_APP_JUPITER_API_URL } from '@env';
 import { Wallet } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Use environment variable for Solana RPC endpoint with fallback
-const rpcEndpoint = REACT_APP_SOLANA_RPC_ENDPOINT
-if (!rpcEndpoint) {
-	console.error('🚨 No Solana RPC endpoint provided');
-	throw new Error('No Solana RPC endpoint provided');
+if (!process.env.REACT_APP_SOLANA_RPC_ENDPOINT) {
+	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
 }
-console.log('🔧 Using Solana RPC endpoint:', rpcEndpoint);
+
+if (!process.env.REACT_APP_JUPITER_API_URL) {
+	throw new Error('REACT_APP_JUPITER_API_URL environment variable is required');
+}
+
+const SOLANA_RPC_ENDPOINT: string = process.env.REACT_APP_SOLANA_RPC_ENDPOINT;
+const JUPITER_API_URL: string = process.env.REACT_APP_JUPITER_API_URL;
+
+console.log('🔧 Using Solana RPC endpoint:', SOLANA_RPC_ENDPOINT);
 
 const defaultHeaders = {
 	Accept: 'application/json',
@@ -38,12 +42,12 @@ const handleFetchError = async (response: Response): Promise<any> => {
 
 const jupiterApiFetch = async (url: string, method: string = 'GET', data: any = null, params: any = null, customHeaders: any = {}) => {
 	const headers = { ...defaultHeaders, ...customHeaders };
-	const fullURL = (REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1') + url;
+	const fullURL = (JUPITER_API_URL || 'https://api.jup.ag/swap/v1') + url;
 
 	console.log('🔍 Request:', {
 		method,
 		url,
-		baseURL: REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
+		baseURL: JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
 		data,
 		params,
 		headers

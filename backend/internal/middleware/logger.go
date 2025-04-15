@@ -142,9 +142,14 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 				reqDetails = fmt.Sprintf("failed to marshal request: %v", err)
 			}
 
+			debugModeColor := color.New(color.FgGreen, color.Bold)
+			if req.Header().Get("X-Debug-Mode") == "true" {
+				debugModeColor = color.New(color.FgYellow, color.Bold)
+			}
+
 			log.Printf("📤 gRPC Request [%s] %s: %s",
 				req.Peer().Addr,
-				req.Spec().Procedure,
+				debugModeColor.Sprintf("%s", req.Spec().Procedure),
 				reqDetails)
 
 			// Call the handler
@@ -182,9 +187,9 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 					errDetails = fmt.Sprintf(`{"message": "%s"}`, err.Error())
 				}
 
-				log.Printf("❌ gRPC Error [%s] %s: (took %v)%s ",
+				log.Printf("❌ gRPC Error [%s] %s: (took %v) %s",
 					req.Peer().Addr,
-					req.Spec().Procedure,
+					debugModeColor.Sprintf("%s", req.Spec().Procedure),
 					duration,
 					errDetails)
 				return nil, err
@@ -198,7 +203,7 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 
 			log.Printf("📥 gRPC Response [%s] %s (took %v): %s",
 				req.Peer().Addr,
-				req.Spec().Procedure,
+				debugModeColor.Sprintf("%s", req.Spec().Procedure),
 				duration,
 				resDetails,
 			)
