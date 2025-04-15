@@ -13,6 +13,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -40,6 +42,70 @@ type PriceHistoryData struct {
 type PriceHistoryItem struct {
 	UnixTime int64   `json:"unixTime"`
 	Value    float64 `json:"value"`
+}
+
+var (
+	addressToSymbolCache map[string]string
+	addressToSymbolOnce  sync.Once
+)
+
+func loadAddressToSymbol() map[string]string {
+	addressToSymbolOnce.Do(func() {
+		addressToSymbolCache = map[string]string{}
+		wd, _ := os.Getwd()
+		trendingPath := filepath.Join(wd, "data", "trending_solana_tokens_enriched.json")
+		priceHistoryPath := filepath.Join(wd, "data", "price_history")
+		log.Printf("[DEBUG] Opening %s...", trendingPath)
+		file, err := os.Open(trendingPath)
+		var symbolToAddress map[string]string
+		if err == nil {
+			defer file.Close()
+			log.Printf("[DEBUG] Successfully opened trending_solana_tokens_enriched.json")
+			var enriched struct {
+				Tokens []struct {
+					ID     string `json:"id"`
+					Symbol string `json:"symbol"`
+				} `json:"tokens"`
+			}
+			if err := json.NewDecoder(file).Decode(&enriched); err == nil {
+				log.Printf("[DEBUG] Successfully parsed trending_solana_tokens_enriched.json, found %d tokens", len(enriched.Tokens))
+				symbolToAddress = make(map[string]string)
+				for _, t := range enriched.Tokens {
+					if t.ID != "" && t.Symbol != "" {
+						symbolToAddress[t.ID] = t.Symbol
+					}
+				}
+			} else {
+				log.Printf("[DEBUG] Failed to parse trending_solana_tokens_enriched.json: %v", err)
+			}
+		} else {
+			log.Printf("[DEBUG] Failed to open trending_solana_tokens_enriched.json: %v", err)
+		}
+		log.Printf("[DEBUG] Reading %s directory...", priceHistoryPath)
+		entries, err := os.ReadDir(priceHistoryPath)
+		if err == nil {
+			log.Printf("[DEBUG] Found %d symbol directories in price_history", len(entries))
+			for _, entry := range entries {
+				if entry.IsDir() {
+					dirSymbol := strings.ToLower(entry.Name())
+					if symbolToAddress != nil {
+						for address, symbol := range symbolToAddress {
+							if strings.ToLower(symbol) == dirSymbol {
+								addressToSymbolCache[address] = dirSymbol
+								log.Printf("[DEBUG] Added mapping: %s -> %s", address, dirSymbol)
+							}
+						}
+					}
+				}
+			}
+		} else {
+			log.Printf("[DEBUG] Failed to read price_history directory: %v", err)
+		}
+		log.Printf("addressToSymbolCache: %+v", addressToSymbolCache)
+		addressToSymbolCache["So11111111111111111111111111111111111111112"] = "sol"
+		addressToSymbolCache["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] = "usdc"
+	})
+	return addressToSymbolCache
 }
 
 // NewService creates a new price service
@@ -107,48 +173,37 @@ func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, tim
 }
 
 func (s *Service) loadMockPriceHistory(address string, historyType string) (*PriceHistory, error) {
-	// Map of addresses to symbols
-	addressToSymbol := map[string]string{
-		"So11111111111111111111111111111111111111112":  "SOL",
-		"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "USDC",
-		"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB": "USDT",
-		"9oqb8z7hyjjKG8raKtgexXskYRSN9Kcr5BoNkyekpump": "STAR10",
-		"AibtWaMW9a5n6ZAKNhBM8Adm9FdiHRvou7QATkChye8U": "Telepathy",
-		"CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump": "PWEASE",
-		"E3DJkV7TG4ADDg6o7cA5ZNkmCMLhP9rxgfzxPoCpump":  "DEER",
-		"HNg5PYJmtqcmzXrv6S9zP1CDKk5BgDuyFBxbvNApump":  "ALCH",
-		"6pKHwNCpzgZuC9o5FzvCZkYSUGfQddhUYtMyDbEVpump": "Baby",
-		"EKBZDhaSiAmUQNeJbkAkhJTEZPAN8WC5fShnUTyxpump": "100",
-		"9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump": "Fartcoin",
-		"ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82":  "BOME",
-	}
-
+	addressToSymbol := loadAddressToSymbol()
+	log.Printf("Looking up address: %s", address)
 	symbol, exists := addressToSymbol[address]
 	if !exists {
-		// If the coin is not in our map, generate random but believable data
-		log.Printf("🎲 Generating random price history for unknown token: %s", address)
+		log.Printf("Address not found in addressToSymbolCache: %s", address)
 		return s.generateRandomPriceHistory(address)
 	}
 
 	// Construct the path to the mock data file
-	filename := filepath.Join("cmd", "fetch-mock-data", "price_history", symbol, fmt.Sprintf("%s.json", historyType))
+	wd, _ := os.Getwd()
+	filename := filepath.Join(wd, "data", "price_history", symbol, fmt.Sprintf("%s.json", historyType))
 	fmt.Printf("📂 Looking for mock data file: %s\n", filename)
 
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open mock data file %s: %w", filename, err)
+		log.Printf("failed to open mock data file %s: %s", filename, err)
+		return s.generateRandomPriceHistory(address)
 	}
 	defer file.Close()
 
 	var priceHistory PriceHistory
 	if err := json.NewDecoder(file).Decode(&priceHistory); err != nil {
-		return nil, fmt.Errorf("failed to decode mock data: %w", err)
+		log.Printf("failed to decode mock data: %s", err)
+		return s.generateRandomPriceHistory(address)
 	}
 
 	return &priceHistory, nil
 }
 
 func (s *Service) generateRandomPriceHistory(address string) (*PriceHistory, error) {
+	log.Printf("🎲 Generating random price history for unknown token: %s", address)
 	// Default to 100 points for smoother chart
 	numPoints := 100
 	volatility := 0.03                // Base volatility for normal movements

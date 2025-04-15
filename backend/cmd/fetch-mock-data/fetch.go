@@ -21,30 +21,33 @@ type TrendingToken struct {
 var timeframes = []string{"15m", "1H", "4H", "1D", "1W"}
 
 func loadTrendingTokens(wd string) ([]TrendingToken, error) {
-	// Try different possible paths for the trending tokens file
-	paths := []string{
-		filepath.Join(wd, "cmd", "trending", "trending_tokens.json"),
-		filepath.Join("cmd", "trending", "trending_tokens.json"),
-	}
-
-	var file *os.File
-	var err error
-	for _, path := range paths {
-		file, err = os.Open(path)
-		if err == nil {
-			defer file.Close()
-			break
-		}
-	}
+	// Load trending tokens from enriched JSON file
+	path := filepath.Join("..", "..", "data", "trending_solana_tokens_enriched.json")
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open trending tokens file: %w", err)
 	}
+	defer file.Close()
 
-	var tokens []TrendingToken
-	if err := json.NewDecoder(file).Decode(&tokens); err != nil {
+	var enriched struct {
+		Tokens []struct {
+			Symbol      string  `json:"symbol"`
+			Mint        string  `json:"id"`
+			DailyVolume float64 `json:"daily_volume"`
+		} `json:"tokens"`
+	}
+	if err := json.NewDecoder(file).Decode(&enriched); err != nil {
 		return nil, fmt.Errorf("failed to decode trending tokens: %w", err)
 	}
 
+	tokens := make([]TrendingToken, 0, len(enriched.Tokens))
+	for _, t := range enriched.Tokens {
+		tokens = append(tokens, TrendingToken{
+			Symbol: t.Symbol,
+			Mint:   t.Mint,
+			Volume: t.DailyVolume,
+		})
+	}
 	return tokens, nil
 }
 
@@ -99,8 +102,8 @@ func fetchAndStorePriceHistory(apiKey string) error {
 				duration = 604800
 			}
 
-			timeTo := fmt.Sprintf("%d", now)
-			timeFrom := fmt.Sprintf("%d", now-(points*duration))
+			timeTo := time.Unix(now, 0).UTC().Format(time.RFC3339)
+			timeFrom := time.Unix(now-(points*duration), 0).UTC().Format(time.RFC3339)
 
 			history, err := priceService.GetPriceHistory(context.Background(), token.Mint, timeframe, timeFrom, timeTo, "token")
 			if err != nil {
@@ -109,7 +112,7 @@ func fetchAndStorePriceHistory(apiKey string) error {
 			}
 
 			// Create directory if it doesn't exist
-			dirPath := filepath.Join(wd, "cmd", "fetch-mock-data", "price_history", token.Symbol)
+			dirPath := filepath.Join(wd, "..", "data", "price_history", token.Symbol)
 			if err := os.MkdirAll(dirPath, 0o755); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", dirPath, err)
 			}
