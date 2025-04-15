@@ -2,17 +2,18 @@ import { Keypair, VersionedTransaction, Connection, PublicKey } from '@solana/we
 import bs58 from 'bs58';
 import { Wallet } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { REACT_APP_SOLANA_RPC_ENDPOINT, REACT_APP_JUPITER_API_URL } from '@env';
 
-if (!process.env.REACT_APP_SOLANA_RPC_ENDPOINT) {
+if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
 	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
 }
 
-if (!process.env.REACT_APP_JUPITER_API_URL) {
+if (!REACT_APP_JUPITER_API_URL) {
 	throw new Error('REACT_APP_JUPITER_API_URL environment variable is required');
 }
 
-const SOLANA_RPC_ENDPOINT: string = process.env.REACT_APP_SOLANA_RPC_ENDPOINT;
-const JUPITER_API_URL: string = process.env.REACT_APP_JUPITER_API_URL;
+const SOLANA_RPC_ENDPOINT: string = REACT_APP_SOLANA_RPC_ENDPOINT;
+const JUPITER_API_URL: string = REACT_APP_JUPITER_API_URL;
 
 console.log('🔧 Using Solana RPC endpoint:', SOLANA_RPC_ENDPOINT);
 

@@ -17,12 +17,13 @@ import { ToastProvider } from './src/components/Common/Toast';
 import { usePortfolioStore } from './src/store/portfolio';
 import { useCoinStore } from './src/store/coins';
 import { handleImportWallet } from './src/screens/Home/home_scripts';
+import { TEST_PRIVATE_KEY } from '@env';
 
-if (!process.env.REACT_APP_TEST_PRIVATE_KEY) {
-	throw new Error('REACT_APP_TEST_PRIVATE_KEY environment variable is required');
+if (!TEST_PRIVATE_KEY) {
+	throw new Error('TEST_PRIVATE_KEY environment variable is required');
 }
 
-const TEST_PRIVATE_KEY: string = process.env.REACT_APP_TEST_PRIVATE_KEY;
+const TEST_PRIVATE_KEY_VALUE: string = TEST_PRIVATE_KEY;
 
 // Disable Reanimated strict mode warnings
 configureReanimatedLogger({
@@ -75,7 +76,7 @@ const App: React.FC = () => {
 		async function prepare() {
 			try {
 				// Initialize wallet first
-				const wallet = await handleImportWallet(TEST_PRIVATE_KEY);
+				const wallet = await handleImportWallet(TEST_PRIVATE_KEY_VALUE);
 				if (wallet) {
 					setWallet(wallet);
 				}

@@ -1,8 +1,10 @@
-if (!process.env.REACT_APP_API_URL) {
+import { REACT_APP_API_URL } from '@env';
+
+if (!REACT_APP_API_URL) {
 	throw new Error('REACT_APP_API_URL environment variable is required');
 }
 
-const API_URL: string = process.env.REACT_APP_API_URL;
+const API_URL: string = REACT_APP_API_URL;
 const baseURL = API_URL;
 
 const defaultHeaders = {

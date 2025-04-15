@@ -14,11 +14,12 @@ import {
 	TokenTransferSubmitRequest,
 	TokenTransferResponse
 } from './api';
+import { DEBUG_MODE as ENV_DEBUG_MODE } from '@env';
 
-if (!process.env.DEBUG_MODE) {
+if (!ENV_DEBUG_MODE) {
 	throw new Error('DEBUG_MODE environment variable is required');
 }
-const DEBUG_MODE = process.env.DEBUG_MODE === 'true';
+const DEBUG_MODE = ENV_DEBUG_MODE === 'true';
 
 // Helper function to get headers with debug mode
 const getRequestHeaders = (): Headers => {
