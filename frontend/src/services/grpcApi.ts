@@ -43,6 +43,20 @@ const logRequest = (serviceName: string, methodName: string, params: any): void 
 };
 
 const logResponse = (serviceName: string, methodName: string, response: any): void => {
+	// Special handling for getPriceHistory response to prevent large logs
+	if (serviceName === 'PriceService' && methodName === 'getPriceHistory' && response?.data?.items) {
+		const items = response.data.items;
+		const count = items.length;
+		if (count === 0) {
+			console.log(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [empty] }, ... }`);
+			return;
+		} else {
+			const first = safeStringify(items[0], 0);
+			const last = safeStringify(items[count - 1], 0);
+			console.log(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [count=${count}, first=${first}, last=${last}] }, ... }`);
+			return;
+		}
+	}
 	console.log(`📥 gRPC ${serviceName}.${methodName} Response:`, safeStringify(response));
 };
 

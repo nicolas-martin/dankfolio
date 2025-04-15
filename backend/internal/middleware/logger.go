@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 
 	"connectrpc.com/connect"
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 )
 
 // RequestLogger returns a middleware that logs HTTP requests in a colorful and informative format
@@ -196,9 +197,26 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 			}
 
 			// Log the successful response
-			resDetails, err := structToJSON(res.Any())
-			if err != nil {
-				resDetails = fmt.Sprintf("failed to marshal response: %v", err)
+			var resDetails string
+			if req.Spec().Procedure == "/dankfolio.v1.PriceService/GetPriceHistory" {
+				if respTyped, ok := res.Any().(*pb.GetPriceHistoryResponse); ok && respTyped.GetData() != nil {
+					items := respTyped.GetData().GetItems()
+					count := len(items)
+					if count == 0 {
+						resDetails = "{ data: { items: [empty] }, ... }"
+					} else {
+						first, _ := structToJSON(items[0])
+						last, _ := structToJSON(items[count-1])
+						resDetails = fmt.Sprintf("{ data: { items: [count=%d, first=%s, last=%s] }, ... }", count, first, last)
+					}
+				}
+			}
+			if resDetails == "" {
+				var err error
+				resDetails, err = structToJSON(res.Any())
+				if err != nil {
+					resDetails = fmt.Sprintf("failed to marshal response: %v", err)
+				}
 			}
 
 			log.Printf("📥 gRPC Response [%s] %s (took %v): %s",
