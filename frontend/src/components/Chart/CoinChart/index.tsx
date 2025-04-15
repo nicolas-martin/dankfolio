@@ -12,7 +12,6 @@ import {
 	runOnJS,
 	type SharedValue,
 	cancelAnimation,
-	useAnimatedStyle,
 } from "react-native-reanimated";
 import { useTheme, MD3Theme, Text } from "react-native-paper";
 import * as Haptics from 'expo-haptics';
@@ -30,7 +29,6 @@ const ActiveValueIndicator = ({
 	yPosition,
 	bottom,
 	top,
-	activeValue,
 	lineColor,
 	indicatorColor,
 }: {

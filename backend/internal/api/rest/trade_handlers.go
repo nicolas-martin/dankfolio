@@ -155,12 +155,21 @@ func (h *TradeHandlers) GetTradeStatus(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("✅ Transaction %s status: %s, Confirmations: %d", txHash, confirmationStatus, confirmations)
 
+	// Only include error field if there's an actual error
+	var errorValue interface{} = nil
+	if status.Err != nil {
+		errorStr := fmt.Sprintf("%v", status.Err)
+		if errorStr != "<nil>" {
+			errorValue = errorStr
+		}
+	}
+
 	response := map[string]interface{}{
 		"transaction_hash": txHash,
 		"status":           confirmationStatus,
 		"confirmations":    confirmations,
 		"finalized":        confirmationStatus == rpc.ConfirmationStatusFinalized,
-		"error":            status.Err,
+		"error":            errorValue,
 	}
 
 	respondJSON(w, response, http.StatusOK)

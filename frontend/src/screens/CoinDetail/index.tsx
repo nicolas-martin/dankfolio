@@ -98,7 +98,7 @@ const CoinDetail: React.FC = () => {
 								price={displayData.currentPrice}
 								periodChange={displayData.periodChange}
 								valueChange={displayData.valueChange}
-								period={selectedTimeframe}
+								period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
 								icon_url={initialCoin.icon_url}
 								name={initialCoin.name}
 							/>

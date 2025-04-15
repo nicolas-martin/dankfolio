@@ -129,7 +129,13 @@ const grpcApi: API = {
 		try {
 			logRequest(serviceName, methodName, { txHash });
 
-			const response = await tradeClient.getTradeStatus({ txHash });
+			const headers = new Headers();
+			headers.set("X-Debug-Mode", "true");
+
+			const response = await tradeClient.getTradeStatus(
+				{ transactionHash: txHash },
+				{ headers }
+			);
 
 			logResponse(serviceName, methodName, response);
 
@@ -250,7 +256,7 @@ const grpcApi: API = {
 			return {
 				data: {
 					items: response.data?.items.map(item => ({
-						unixTime: Number(item.unixTime?.seconds || 0),
+						unixTime: Number(item.unixTime),
 						value: item.value
 					})) || []
 				},

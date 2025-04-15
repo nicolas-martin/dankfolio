@@ -145,8 +145,14 @@ func (s *TradeServer) GetTradeStatus(
 			response.Confirmations = int32(*status.Value[0].Confirmations)
 		}
 		response.Finalized = status.Value[0].ConfirmationStatus == "finalized"
-		errorMessage := fmt.Sprintf("%s", status.Value[0].Err)
-		response.Error = &errorMessage
+
+		// Convert error to string if present
+		if status.Value[0].Err != nil {
+			errStr := fmt.Sprintf("%v", status.Value[0].Err)
+			if errStr != "<nil>" {
+				response.Error = &errStr
+			}
+		}
 	}
 
 	res := connect.NewResponse(response)
