@@ -1,0 +1,215 @@
+import { Keypair, VersionedTransaction } from '@solana/web3.js';
+import bs58 from 'bs58';
+import axios from 'axios';
+import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
+import { Wallet } from '@/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Use environment variable for Solana RPC endpoint with fallback
+const rpcEndpoint = REACT_APP_SOLANA_RPC_ENDPOINT
+if (!rpcEndpoint) {
+	console.error('🚨 No Solana RPC endpoint provided');
+	throw new Error('No Solana RPC endpoint provided');
+}
+console.log('🔧 Using Solana RPC endpoint:', rpcEndpoint);
+
+const jupiterApi = axios.create({
+	baseURL: process.env.REACT_APP_JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
+	headers: {
+		Accept: 'application/json',
+		'Content-Type': 'application/json',
+		'Access-Control-Allow-Origin': '*',
+		'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+		'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+	}
+});
+
+// Add response interceptor for better error handling
+jupiterApi.interceptors.response.use(
+	response => response,
+	error => {
+		console.error('Jupiter API Error:', {
+			message: error.message,
+			config: error.config,
+			status: error.response?.status,
+			data: error.response?.data
+		});
+		throw error;
+	}
+);
+
+export const getKeypairFromPrivateKey = (privateKey: string): Keypair => {
+	// Handle Base64 private key
+	//   const secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
+	// Handle Base58 private key
+	const secretKey = bs58.decode(privateKey);
+	return Keypair.fromSecretKey(secretKey);
+};
+
+export const buildAndSignSwapTransaction = async (
+	fromCoinId: string,
+	toCoinId: string,
+	amount: number,
+	slippage: number,
+	wallet: Wallet
+): Promise<string> => {
+	try {
+		console.log('🔐 Building swap transaction with:', {
+			fromCoinId,
+			toCoinId,
+			amount,
+			slippage,
+			walletType: typeof wallet,
+			walletKeys: Object.keys(wallet),
+			privateKeyLength: wallet.privateKey?.length,
+			addressLength: wallet.address?.length
+		});
+
+		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
+		console.log('🔑 Generated keypair:', {
+			publicKey: keypair.publicKey.toString(),
+			addressMatch: keypair.publicKey.toString() === wallet.address
+		});
+
+		// Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
+		// const walletBalance = await connection.getBalance(wallet.publicKey);
+		// const minBalanceForRent = 3000000; // 0.003 SOL in lamports
+
+		// if (walletBalance < minBalanceForRent) {
+		// 	throw new Error(
+		// 		`Insufficient SOL for rent. Need at least 0.003 SOL for account creation. Current balance: ${walletBalance / LAMPORTS_PER_SOL
+		// 		} SOL`
+		// 	);
+		// }
+
+		// Get quote
+		const quoteResponse = await jupiterApi.get('/quote', {
+			params: {
+				inputMint: fromCoinId,
+				outputMint: toCoinId,
+				amount,
+				slippageBps: slippage * 100, // Convert percentage to basis points
+			},
+		});
+
+		if (!quoteResponse.data) {
+			throw new Error('No quote data received');
+		}
+
+		console.log('Quote response:', quoteResponse.data);
+
+		// Request swap transaction with the correct body structure
+		const swapRequestBody = {
+			quoteResponse: quoteResponse.data,
+			userPublicKey: wallet.publicKey.toString(),
+			wrapUnwrapSOL: true,
+			dynamicComputeUnitLimit: true,
+			dynamicSlippage: true,
+			prioritizationFeeLamports: {
+				priorityLevelWithMaxLamports: {
+					maxLamports: 1000000,
+					priorityLevel: "veryHigh"
+				}
+			}
+		};
+
+		const swapResponse = await jupiterApi.post('/swap', swapRequestBody);
+
+		if (!swapResponse.data || !swapResponse.data.swapTransaction) {
+			throw new Error('No swap transaction received');
+		}
+
+		const swapTransactionBuf = Buffer.from(swapResponse.data.swapTransaction, 'base64');
+
+		const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+
+		transaction.sign([keypair]);
+
+		const serializedTransaction = transaction.serialize();
+		const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
+
+		return transactionBase64;
+	} catch (error) {
+		console.error('❌ Error in buildAndSignSwapTransaction:', error);
+		throw error;
+	}
+};
+
+/**
+ * Secure storage functions for the wallet.
+ * In a real app, use a secure storage solution like react-native-keychain.
+ */
+export const secureStorage = {
+	saveWallet: async (wallet: Wallet): Promise<boolean> => {
+		try {
+			console.log('💾 Saving wallet to storage:', {
+				address: wallet.address,
+				privateKeyLength: wallet.privateKey?.length,
+				privateKeyPreview: wallet.privateKey?.substring(0, 10) + '...',
+				privateKeyFormat: wallet.privateKey?.match(/^[A-Za-z0-9+/]*={0,2}$/) ? 'Base64' : 'Base58'
+			});
+
+			await AsyncStorage.setItem('wallet', JSON.stringify({
+				address: wallet.address,
+				privateKey: wallet.privateKey,
+			}));
+
+			// Verify what was saved
+			const savedData = await AsyncStorage.getItem('wallet');
+			console.log('✅ Verified saved wallet:', {
+				saved: !!savedData,
+				dataLength: savedData?.length,
+				parsed: savedData ? JSON.parse(savedData) : null
+			});
+
+			return true;
+		} catch (error) {
+			console.error('❌ Error saving wallet to secure storage:', error);
+			return false;
+		}
+	},
+
+	getWallet: async (): Promise<Wallet | null> => {
+		try {
+			const walletData = await AsyncStorage.getItem('wallet');
+			console.log('📱 Retrieved wallet from storage:', {
+				found: !!walletData,
+				dataLength: walletData?.length
+			});
+
+			if (!walletData) return null;
+
+			const parsed = JSON.parse(walletData) as Wallet;
+			console.log('🔐 Parsed wallet data:', {
+				address: parsed.address,
+				privateKeyLength: parsed.privateKey?.length,
+				privateKeyPreview: parsed.privateKey?.substring(0, 10) + '...',
+				privateKeyFormat: parsed.privateKey?.match(/^[A-Za-z0-9+/]*={0,2}$/) ? 'Base64' : 'Base58'
+			});
+
+			return parsed;
+		} catch (error) {
+			console.error('❌ Error getting wallet from secure storage:', error);
+			return null;
+		}
+	},
+
+	deleteWallet: async (): Promise<boolean> => {
+		try {
+			console.log('🗑️ Deleting wallet from storage');
+			await AsyncStorage.removeItem('wallet');
+
+			// Verify deletion
+			const remainingData = await AsyncStorage.getItem('wallet');
+			console.log('✅ Verified wallet deletion:', {
+				isDeleted: !remainingData
+			});
+
+			return true;
+		} catch (error) {
+			console.error('❌ Error deleting wallet from secure storage:', error);
+			return false;
+		}
+	}
+};
+
