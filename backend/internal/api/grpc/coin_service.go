@@ -7,7 +7,7 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
-	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
+	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/_goconnect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,11 +24,15 @@ func NewCoinServiceServer(coinService *coin.Service) *CoinServiceServer {
 	return &CoinServiceServer{coinService: coinService}
 }
 
+//	type CoinServiceHandler interface {
+//		// GetAvailableCoins returns a list of available coins
+//
+//		// GetCoinByID returns a specific coin by ID
+//
+//	}
+//
 // GetAvailableCoins returns a list of available coins
-func (s *CoinServiceServer) GetAvailableCoins(
-	ctx context.Context,
-	req *connect.Request[pb.GetAvailableCoinsRequest],
-) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+func (s *CoinServiceServer) GetAvailableCoins(ctx context.Context, req *connect.Request[pb.GetAvailableCoinsRequest]) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
 	var modelCoins []model.Coin
 	var err error
 
@@ -54,10 +58,7 @@ func (s *CoinServiceServer) GetAvailableCoins(
 }
 
 // GetCoinByID returns a specific coin by ID
-func (s *CoinServiceServer) GetCoinByID(
-	ctx context.Context,
-	req *connect.Request[pb.GetCoinByIDRequest],
-) (*connect.Response[pb.Coin], error) {
+func (s *CoinServiceServer) GetCoinByID(ctx context.Context, req *connect.Request[pb.GetCoinByIDRequest]) (*connect.Response[pb.Coin], error) {
 	modelCoin, err := s.coinService.GetCoinByID(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, err

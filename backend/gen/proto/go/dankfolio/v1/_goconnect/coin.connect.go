@@ -2,13 +2,13 @@
 //
 // Source: dankfolio/v1/coin.proto
 
-package dankfoliov1connect
+package _goconnect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	_go "github.com/nicolas-martin/dankfolio/backend/gen/proto/go"
 	http "net/http"
 	strings "strings"
 )
@@ -43,9 +43,9 @@ const (
 // CoinServiceClient is a client for the dankfolio.v1.CoinService service.
 type CoinServiceClient interface {
 	// GetAvailableCoins returns a list of available coins
-	GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
+	GetAvailableCoins(context.Context, *connect.Request[_go.GetAvailableCoinsRequest]) (*connect.Response[_go.GetAvailableCoinsResponse], error)
 	// GetCoinByID returns a specific coin by ID
-	GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error)
+	GetCoinByID(context.Context, *connect.Request[_go.GetCoinByIDRequest]) (*connect.Response[_go.Coin], error)
 }
 
 // NewCoinServiceClient constructs a client for the dankfolio.v1.CoinService service. By default, it
@@ -57,15 +57,15 @@ type CoinServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewCoinServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) CoinServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	coinServiceMethods := v1.File_dankfolio_v1_coin_proto.Services().ByName("CoinService").Methods()
+	coinServiceMethods := _go.File_dankfolio_v1_coin_proto.Services().ByName("CoinService").Methods()
 	return &coinServiceClient{
-		getAvailableCoins: connect.NewClient[v1.GetAvailableCoinsRequest, v1.GetAvailableCoinsResponse](
+		getAvailableCoins: connect.NewClient[_go.GetAvailableCoinsRequest, _go.GetAvailableCoinsResponse](
 			httpClient,
 			baseURL+CoinServiceGetAvailableCoinsProcedure,
 			connect.WithSchema(coinServiceMethods.ByName("GetAvailableCoins")),
 			connect.WithClientOptions(opts...),
 		),
-		getCoinByID: connect.NewClient[v1.GetCoinByIDRequest, v1.Coin](
+		getCoinByID: connect.NewClient[_go.GetCoinByIDRequest, _go.Coin](
 			httpClient,
 			baseURL+CoinServiceGetCoinByIDProcedure,
 			connect.WithSchema(coinServiceMethods.ByName("GetCoinByID")),
@@ -76,26 +76,26 @@ func NewCoinServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // coinServiceClient implements CoinServiceClient.
 type coinServiceClient struct {
-	getAvailableCoins *connect.Client[v1.GetAvailableCoinsRequest, v1.GetAvailableCoinsResponse]
-	getCoinByID       *connect.Client[v1.GetCoinByIDRequest, v1.Coin]
+	getAvailableCoins *connect.Client[_go.GetAvailableCoinsRequest, _go.GetAvailableCoinsResponse]
+	getCoinByID       *connect.Client[_go.GetCoinByIDRequest, _go.Coin]
 }
 
 // GetAvailableCoins calls dankfolio.v1.CoinService.GetAvailableCoins.
-func (c *coinServiceClient) GetAvailableCoins(ctx context.Context, req *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error) {
+func (c *coinServiceClient) GetAvailableCoins(ctx context.Context, req *connect.Request[_go.GetAvailableCoinsRequest]) (*connect.Response[_go.GetAvailableCoinsResponse], error) {
 	return c.getAvailableCoins.CallUnary(ctx, req)
 }
 
 // GetCoinByID calls dankfolio.v1.CoinService.GetCoinByID.
-func (c *coinServiceClient) GetCoinByID(ctx context.Context, req *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error) {
+func (c *coinServiceClient) GetCoinByID(ctx context.Context, req *connect.Request[_go.GetCoinByIDRequest]) (*connect.Response[_go.Coin], error) {
 	return c.getCoinByID.CallUnary(ctx, req)
 }
 
 // CoinServiceHandler is an implementation of the dankfolio.v1.CoinService service.
 type CoinServiceHandler interface {
 	// GetAvailableCoins returns a list of available coins
-	GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
+	GetAvailableCoins(context.Context, *connect.Request[_go.GetAvailableCoinsRequest]) (*connect.Response[_go.GetAvailableCoinsResponse], error)
 	// GetCoinByID returns a specific coin by ID
-	GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error)
+	GetCoinByID(context.Context, *connect.Request[_go.GetCoinByIDRequest]) (*connect.Response[_go.Coin], error)
 }
 
 // NewCoinServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -104,7 +104,7 @@ type CoinServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewCoinServiceHandler(svc CoinServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	coinServiceMethods := v1.File_dankfolio_v1_coin_proto.Services().ByName("CoinService").Methods()
+	coinServiceMethods := _go.File_dankfolio_v1_coin_proto.Services().ByName("CoinService").Methods()
 	coinServiceGetAvailableCoinsHandler := connect.NewUnaryHandler(
 		CoinServiceGetAvailableCoinsProcedure,
 		svc.GetAvailableCoins,
@@ -132,10 +132,10 @@ func NewCoinServiceHandler(svc CoinServiceHandler, opts ...connect.HandlerOption
 // UnimplementedCoinServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedCoinServiceHandler struct{}
 
-func (UnimplementedCoinServiceHandler) GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error) {
+func (UnimplementedCoinServiceHandler) GetAvailableCoins(context.Context, *connect.Request[_go.GetAvailableCoinsRequest]) (*connect.Response[_go.GetAvailableCoinsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.GetAvailableCoins is not implemented"))
 }
 
-func (UnimplementedCoinServiceHandler) GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error) {
+func (UnimplementedCoinServiceHandler) GetCoinByID(context.Context, *connect.Request[_go.GetCoinByIDRequest]) (*connect.Response[_go.Coin], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.GetCoinByID is not implemented"))
 }

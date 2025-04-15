@@ -2,13 +2,13 @@
 //
 // Source: dankfolio/v1/trade.proto
 
-package dankfoliov1connect
+package _goconnect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	_go "github.com/nicolas-martin/dankfolio/backend/gen/proto/go"
 	http "net/http"
 	strings "strings"
 )
@@ -61,21 +61,21 @@ const (
 // TradeServiceClient is a client for the dankfolio.v1.TradeService service.
 type TradeServiceClient interface {
 	// GetTradeQuote returns a quote for a potential trade
-	GetTradeQuote(context.Context, *connect.Request[v1.GetTradeQuoteRequest]) (*connect.Response[v1.GetTradeQuoteResponse], error)
+	GetTradeQuote(context.Context, *connect.Request[_go.GetTradeQuoteRequest]) (*connect.Response[_go.GetTradeQuoteResponse], error)
 	// SubmitTrade submits a trade for execution
-	SubmitTrade(context.Context, *connect.Request[v1.SubmitTradeRequest]) (*connect.Response[v1.SubmitTradeResponse], error)
+	SubmitTrade(context.Context, *connect.Request[_go.SubmitTradeRequest]) (*connect.Response[_go.SubmitTradeResponse], error)
 	// GetTradeStatus returns the status of a trade
-	GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error)
+	GetTradeStatus(context.Context, *connect.Request[_go.GetTradeStatusRequest]) (*connect.Response[_go.GetTradeStatusResponse], error)
 	// GetTradeByID returns details of a specific trade
-	GetTradeByID(context.Context, *connect.Request[v1.GetTradeByIDRequest]) (*connect.Response[v1.Trade], error)
+	GetTradeByID(context.Context, *connect.Request[_go.GetTradeByIDRequest]) (*connect.Response[_go.Trade], error)
 	// ListTrades returns all trades
-	ListTrades(context.Context, *connect.Request[v1.ListTradesRequest]) (*connect.Response[v1.ListTradesResponse], error)
+	ListTrades(context.Context, *connect.Request[_go.ListTradesRequest]) (*connect.Response[_go.ListTradesResponse], error)
 	// GetTokenPrices returns prices for multiple tokens
-	GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error)
+	GetTokenPrices(context.Context, *connect.Request[_go.GetTokenPricesRequest]) (*connect.Response[_go.GetTokenPricesResponse], error)
 	// PrepareTransfer prepares an unsigned transfer transaction
-	PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error)
+	PrepareTransfer(context.Context, *connect.Request[_go.PrepareTransferRequest]) (*connect.Response[_go.PrepareTransferResponse], error)
 	// SubmitTransfer submits a signed transfer transaction
-	SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error)
+	SubmitTransfer(context.Context, *connect.Request[_go.SubmitTransferRequest]) (*connect.Response[_go.SubmitTransferResponse], error)
 }
 
 // NewTradeServiceClient constructs a client for the dankfolio.v1.TradeService service. By default,
@@ -87,51 +87,51 @@ type TradeServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewTradeServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) TradeServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	tradeServiceMethods := v1.File_dankfolio_v1_trade_proto.Services().ByName("TradeService").Methods()
+	tradeServiceMethods := _go.File_dankfolio_v1_trade_proto.Services().ByName("TradeService").Methods()
 	return &tradeServiceClient{
-		getTradeQuote: connect.NewClient[v1.GetTradeQuoteRequest, v1.GetTradeQuoteResponse](
+		getTradeQuote: connect.NewClient[_go.GetTradeQuoteRequest, _go.GetTradeQuoteResponse](
 			httpClient,
 			baseURL+TradeServiceGetTradeQuoteProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("GetTradeQuote")),
 			connect.WithClientOptions(opts...),
 		),
-		submitTrade: connect.NewClient[v1.SubmitTradeRequest, v1.SubmitTradeResponse](
+		submitTrade: connect.NewClient[_go.SubmitTradeRequest, _go.SubmitTradeResponse](
 			httpClient,
 			baseURL+TradeServiceSubmitTradeProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("SubmitTrade")),
 			connect.WithClientOptions(opts...),
 		),
-		getTradeStatus: connect.NewClient[v1.GetTradeStatusRequest, v1.GetTradeStatusResponse](
+		getTradeStatus: connect.NewClient[_go.GetTradeStatusRequest, _go.GetTradeStatusResponse](
 			httpClient,
 			baseURL+TradeServiceGetTradeStatusProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("GetTradeStatus")),
 			connect.WithClientOptions(opts...),
 		),
-		getTradeByID: connect.NewClient[v1.GetTradeByIDRequest, v1.Trade](
+		getTradeByID: connect.NewClient[_go.GetTradeByIDRequest, _go.Trade](
 			httpClient,
 			baseURL+TradeServiceGetTradeByIDProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("GetTradeByID")),
 			connect.WithClientOptions(opts...),
 		),
-		listTrades: connect.NewClient[v1.ListTradesRequest, v1.ListTradesResponse](
+		listTrades: connect.NewClient[_go.ListTradesRequest, _go.ListTradesResponse](
 			httpClient,
 			baseURL+TradeServiceListTradesProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("ListTrades")),
 			connect.WithClientOptions(opts...),
 		),
-		getTokenPrices: connect.NewClient[v1.GetTokenPricesRequest, v1.GetTokenPricesResponse](
+		getTokenPrices: connect.NewClient[_go.GetTokenPricesRequest, _go.GetTokenPricesResponse](
 			httpClient,
 			baseURL+TradeServiceGetTokenPricesProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("GetTokenPrices")),
 			connect.WithClientOptions(opts...),
 		),
-		prepareTransfer: connect.NewClient[v1.PrepareTransferRequest, v1.PrepareTransferResponse](
+		prepareTransfer: connect.NewClient[_go.PrepareTransferRequest, _go.PrepareTransferResponse](
 			httpClient,
 			baseURL+TradeServicePrepareTransferProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("PrepareTransfer")),
 			connect.WithClientOptions(opts...),
 		),
-		submitTransfer: connect.NewClient[v1.SubmitTransferRequest, v1.SubmitTransferResponse](
+		submitTransfer: connect.NewClient[_go.SubmitTransferRequest, _go.SubmitTransferResponse](
 			httpClient,
 			baseURL+TradeServiceSubmitTransferProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("SubmitTransfer")),
@@ -142,74 +142,74 @@ func NewTradeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // tradeServiceClient implements TradeServiceClient.
 type tradeServiceClient struct {
-	getTradeQuote   *connect.Client[v1.GetTradeQuoteRequest, v1.GetTradeQuoteResponse]
-	submitTrade     *connect.Client[v1.SubmitTradeRequest, v1.SubmitTradeResponse]
-	getTradeStatus  *connect.Client[v1.GetTradeStatusRequest, v1.GetTradeStatusResponse]
-	getTradeByID    *connect.Client[v1.GetTradeByIDRequest, v1.Trade]
-	listTrades      *connect.Client[v1.ListTradesRequest, v1.ListTradesResponse]
-	getTokenPrices  *connect.Client[v1.GetTokenPricesRequest, v1.GetTokenPricesResponse]
-	prepareTransfer *connect.Client[v1.PrepareTransferRequest, v1.PrepareTransferResponse]
-	submitTransfer  *connect.Client[v1.SubmitTransferRequest, v1.SubmitTransferResponse]
+	getTradeQuote   *connect.Client[_go.GetTradeQuoteRequest, _go.GetTradeQuoteResponse]
+	submitTrade     *connect.Client[_go.SubmitTradeRequest, _go.SubmitTradeResponse]
+	getTradeStatus  *connect.Client[_go.GetTradeStatusRequest, _go.GetTradeStatusResponse]
+	getTradeByID    *connect.Client[_go.GetTradeByIDRequest, _go.Trade]
+	listTrades      *connect.Client[_go.ListTradesRequest, _go.ListTradesResponse]
+	getTokenPrices  *connect.Client[_go.GetTokenPricesRequest, _go.GetTokenPricesResponse]
+	prepareTransfer *connect.Client[_go.PrepareTransferRequest, _go.PrepareTransferResponse]
+	submitTransfer  *connect.Client[_go.SubmitTransferRequest, _go.SubmitTransferResponse]
 }
 
 // GetTradeQuote calls dankfolio.v1.TradeService.GetTradeQuote.
-func (c *tradeServiceClient) GetTradeQuote(ctx context.Context, req *connect.Request[v1.GetTradeQuoteRequest]) (*connect.Response[v1.GetTradeQuoteResponse], error) {
+func (c *tradeServiceClient) GetTradeQuote(ctx context.Context, req *connect.Request[_go.GetTradeQuoteRequest]) (*connect.Response[_go.GetTradeQuoteResponse], error) {
 	return c.getTradeQuote.CallUnary(ctx, req)
 }
 
 // SubmitTrade calls dankfolio.v1.TradeService.SubmitTrade.
-func (c *tradeServiceClient) SubmitTrade(ctx context.Context, req *connect.Request[v1.SubmitTradeRequest]) (*connect.Response[v1.SubmitTradeResponse], error) {
+func (c *tradeServiceClient) SubmitTrade(ctx context.Context, req *connect.Request[_go.SubmitTradeRequest]) (*connect.Response[_go.SubmitTradeResponse], error) {
 	return c.submitTrade.CallUnary(ctx, req)
 }
 
 // GetTradeStatus calls dankfolio.v1.TradeService.GetTradeStatus.
-func (c *tradeServiceClient) GetTradeStatus(ctx context.Context, req *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error) {
+func (c *tradeServiceClient) GetTradeStatus(ctx context.Context, req *connect.Request[_go.GetTradeStatusRequest]) (*connect.Response[_go.GetTradeStatusResponse], error) {
 	return c.getTradeStatus.CallUnary(ctx, req)
 }
 
 // GetTradeByID calls dankfolio.v1.TradeService.GetTradeByID.
-func (c *tradeServiceClient) GetTradeByID(ctx context.Context, req *connect.Request[v1.GetTradeByIDRequest]) (*connect.Response[v1.Trade], error) {
+func (c *tradeServiceClient) GetTradeByID(ctx context.Context, req *connect.Request[_go.GetTradeByIDRequest]) (*connect.Response[_go.Trade], error) {
 	return c.getTradeByID.CallUnary(ctx, req)
 }
 
 // ListTrades calls dankfolio.v1.TradeService.ListTrades.
-func (c *tradeServiceClient) ListTrades(ctx context.Context, req *connect.Request[v1.ListTradesRequest]) (*connect.Response[v1.ListTradesResponse], error) {
+func (c *tradeServiceClient) ListTrades(ctx context.Context, req *connect.Request[_go.ListTradesRequest]) (*connect.Response[_go.ListTradesResponse], error) {
 	return c.listTrades.CallUnary(ctx, req)
 }
 
 // GetTokenPrices calls dankfolio.v1.TradeService.GetTokenPrices.
-func (c *tradeServiceClient) GetTokenPrices(ctx context.Context, req *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error) {
+func (c *tradeServiceClient) GetTokenPrices(ctx context.Context, req *connect.Request[_go.GetTokenPricesRequest]) (*connect.Response[_go.GetTokenPricesResponse], error) {
 	return c.getTokenPrices.CallUnary(ctx, req)
 }
 
 // PrepareTransfer calls dankfolio.v1.TradeService.PrepareTransfer.
-func (c *tradeServiceClient) PrepareTransfer(ctx context.Context, req *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error) {
+func (c *tradeServiceClient) PrepareTransfer(ctx context.Context, req *connect.Request[_go.PrepareTransferRequest]) (*connect.Response[_go.PrepareTransferResponse], error) {
 	return c.prepareTransfer.CallUnary(ctx, req)
 }
 
 // SubmitTransfer calls dankfolio.v1.TradeService.SubmitTransfer.
-func (c *tradeServiceClient) SubmitTransfer(ctx context.Context, req *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error) {
+func (c *tradeServiceClient) SubmitTransfer(ctx context.Context, req *connect.Request[_go.SubmitTransferRequest]) (*connect.Response[_go.SubmitTransferResponse], error) {
 	return c.submitTransfer.CallUnary(ctx, req)
 }
 
 // TradeServiceHandler is an implementation of the dankfolio.v1.TradeService service.
 type TradeServiceHandler interface {
 	// GetTradeQuote returns a quote for a potential trade
-	GetTradeQuote(context.Context, *connect.Request[v1.GetTradeQuoteRequest]) (*connect.Response[v1.GetTradeQuoteResponse], error)
+	GetTradeQuote(context.Context, *connect.Request[_go.GetTradeQuoteRequest]) (*connect.Response[_go.GetTradeQuoteResponse], error)
 	// SubmitTrade submits a trade for execution
-	SubmitTrade(context.Context, *connect.Request[v1.SubmitTradeRequest]) (*connect.Response[v1.SubmitTradeResponse], error)
+	SubmitTrade(context.Context, *connect.Request[_go.SubmitTradeRequest]) (*connect.Response[_go.SubmitTradeResponse], error)
 	// GetTradeStatus returns the status of a trade
-	GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error)
+	GetTradeStatus(context.Context, *connect.Request[_go.GetTradeStatusRequest]) (*connect.Response[_go.GetTradeStatusResponse], error)
 	// GetTradeByID returns details of a specific trade
-	GetTradeByID(context.Context, *connect.Request[v1.GetTradeByIDRequest]) (*connect.Response[v1.Trade], error)
+	GetTradeByID(context.Context, *connect.Request[_go.GetTradeByIDRequest]) (*connect.Response[_go.Trade], error)
 	// ListTrades returns all trades
-	ListTrades(context.Context, *connect.Request[v1.ListTradesRequest]) (*connect.Response[v1.ListTradesResponse], error)
+	ListTrades(context.Context, *connect.Request[_go.ListTradesRequest]) (*connect.Response[_go.ListTradesResponse], error)
 	// GetTokenPrices returns prices for multiple tokens
-	GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error)
+	GetTokenPrices(context.Context, *connect.Request[_go.GetTokenPricesRequest]) (*connect.Response[_go.GetTokenPricesResponse], error)
 	// PrepareTransfer prepares an unsigned transfer transaction
-	PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error)
+	PrepareTransfer(context.Context, *connect.Request[_go.PrepareTransferRequest]) (*connect.Response[_go.PrepareTransferResponse], error)
 	// SubmitTransfer submits a signed transfer transaction
-	SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error)
+	SubmitTransfer(context.Context, *connect.Request[_go.SubmitTransferRequest]) (*connect.Response[_go.SubmitTransferResponse], error)
 }
 
 // NewTradeServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -218,7 +218,7 @@ type TradeServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	tradeServiceMethods := v1.File_dankfolio_v1_trade_proto.Services().ByName("TradeService").Methods()
+	tradeServiceMethods := _go.File_dankfolio_v1_trade_proto.Services().ByName("TradeService").Methods()
 	tradeServiceGetTradeQuoteHandler := connect.NewUnaryHandler(
 		TradeServiceGetTradeQuoteProcedure,
 		svc.GetTradeQuote,
@@ -294,34 +294,34 @@ func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedTradeServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedTradeServiceHandler struct{}
 
-func (UnimplementedTradeServiceHandler) GetTradeQuote(context.Context, *connect.Request[v1.GetTradeQuoteRequest]) (*connect.Response[v1.GetTradeQuoteResponse], error) {
+func (UnimplementedTradeServiceHandler) GetTradeQuote(context.Context, *connect.Request[_go.GetTradeQuoteRequest]) (*connect.Response[_go.GetTradeQuoteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTradeQuote is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) SubmitTrade(context.Context, *connect.Request[v1.SubmitTradeRequest]) (*connect.Response[v1.SubmitTradeResponse], error) {
+func (UnimplementedTradeServiceHandler) SubmitTrade(context.Context, *connect.Request[_go.SubmitTradeRequest]) (*connect.Response[_go.SubmitTradeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.SubmitTrade is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error) {
+func (UnimplementedTradeServiceHandler) GetTradeStatus(context.Context, *connect.Request[_go.GetTradeStatusRequest]) (*connect.Response[_go.GetTradeStatusResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTradeStatus is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) GetTradeByID(context.Context, *connect.Request[v1.GetTradeByIDRequest]) (*connect.Response[v1.Trade], error) {
+func (UnimplementedTradeServiceHandler) GetTradeByID(context.Context, *connect.Request[_go.GetTradeByIDRequest]) (*connect.Response[_go.Trade], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTradeByID is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) ListTrades(context.Context, *connect.Request[v1.ListTradesRequest]) (*connect.Response[v1.ListTradesResponse], error) {
+func (UnimplementedTradeServiceHandler) ListTrades(context.Context, *connect.Request[_go.ListTradesRequest]) (*connect.Response[_go.ListTradesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.ListTrades is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error) {
+func (UnimplementedTradeServiceHandler) GetTokenPrices(context.Context, *connect.Request[_go.GetTokenPricesRequest]) (*connect.Response[_go.GetTokenPricesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTokenPrices is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error) {
+func (UnimplementedTradeServiceHandler) PrepareTransfer(context.Context, *connect.Request[_go.PrepareTransferRequest]) (*connect.Response[_go.PrepareTransferResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.PrepareTransfer is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error) {
+func (UnimplementedTradeServiceHandler) SubmitTransfer(context.Context, *connect.Request[_go.SubmitTransferRequest]) (*connect.Response[_go.SubmitTransferResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.SubmitTransfer is not implemented"))
 }

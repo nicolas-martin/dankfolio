@@ -6,7 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
-	"github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/dankfoliov1connect"
+	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/_goconnect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
@@ -40,7 +40,6 @@ func (s *WalletServer) GetWalletBalances(
 	return connect.NewResponse(&pb.GetWalletBalancesResponse{
 		WalletBalance: convertModelBalanceToPb(balances),
 	}), nil
-
 }
 
 // Helper function to convert model.WalletBalance to pb.WalletBalance

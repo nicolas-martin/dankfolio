@@ -2,13 +2,13 @@
 //
 // Source: dankfolio/v1/wallet.proto
 
-package dankfoliov1connect
+package _goconnect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	_go "github.com/nicolas-martin/dankfolio/backend/gen/proto/go"
 	http "net/http"
 	strings "strings"
 )
@@ -44,9 +44,9 @@ const (
 // WalletServiceClient is a client for the dankfolio.v1.WalletService service.
 type WalletServiceClient interface {
 	// GetWalletBalances returns the balances for all tokens in a wallet
-	GetWalletBalances(context.Context, *connect.Request[v1.GetWalletBalancesRequest]) (*connect.Response[v1.GetWalletBalancesResponse], error)
+	GetWalletBalances(context.Context, *connect.Request[_go.GetWalletBalancesRequest]) (*connect.Response[_go.GetWalletBalancesResponse], error)
 	// CreateWallet generates a new Solana wallet
-	CreateWallet(context.Context, *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error)
+	CreateWallet(context.Context, *connect.Request[_go.CreateWalletRequest]) (*connect.Response[_go.CreateWalletResponse], error)
 }
 
 // NewWalletServiceClient constructs a client for the dankfolio.v1.WalletService service. By
@@ -58,15 +58,15 @@ type WalletServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewWalletServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) WalletServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	walletServiceMethods := v1.File_dankfolio_v1_wallet_proto.Services().ByName("WalletService").Methods()
+	walletServiceMethods := _go.File_dankfolio_v1_wallet_proto.Services().ByName("WalletService").Methods()
 	return &walletServiceClient{
-		getWalletBalances: connect.NewClient[v1.GetWalletBalancesRequest, v1.GetWalletBalancesResponse](
+		getWalletBalances: connect.NewClient[_go.GetWalletBalancesRequest, _go.GetWalletBalancesResponse](
 			httpClient,
 			baseURL+WalletServiceGetWalletBalancesProcedure,
 			connect.WithSchema(walletServiceMethods.ByName("GetWalletBalances")),
 			connect.WithClientOptions(opts...),
 		),
-		createWallet: connect.NewClient[v1.CreateWalletRequest, v1.CreateWalletResponse](
+		createWallet: connect.NewClient[_go.CreateWalletRequest, _go.CreateWalletResponse](
 			httpClient,
 			baseURL+WalletServiceCreateWalletProcedure,
 			connect.WithSchema(walletServiceMethods.ByName("CreateWallet")),
@@ -77,26 +77,26 @@ func NewWalletServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // walletServiceClient implements WalletServiceClient.
 type walletServiceClient struct {
-	getWalletBalances *connect.Client[v1.GetWalletBalancesRequest, v1.GetWalletBalancesResponse]
-	createWallet      *connect.Client[v1.CreateWalletRequest, v1.CreateWalletResponse]
+	getWalletBalances *connect.Client[_go.GetWalletBalancesRequest, _go.GetWalletBalancesResponse]
+	createWallet      *connect.Client[_go.CreateWalletRequest, _go.CreateWalletResponse]
 }
 
 // GetWalletBalances calls dankfolio.v1.WalletService.GetWalletBalances.
-func (c *walletServiceClient) GetWalletBalances(ctx context.Context, req *connect.Request[v1.GetWalletBalancesRequest]) (*connect.Response[v1.GetWalletBalancesResponse], error) {
+func (c *walletServiceClient) GetWalletBalances(ctx context.Context, req *connect.Request[_go.GetWalletBalancesRequest]) (*connect.Response[_go.GetWalletBalancesResponse], error) {
 	return c.getWalletBalances.CallUnary(ctx, req)
 }
 
 // CreateWallet calls dankfolio.v1.WalletService.CreateWallet.
-func (c *walletServiceClient) CreateWallet(ctx context.Context, req *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error) {
+func (c *walletServiceClient) CreateWallet(ctx context.Context, req *connect.Request[_go.CreateWalletRequest]) (*connect.Response[_go.CreateWalletResponse], error) {
 	return c.createWallet.CallUnary(ctx, req)
 }
 
 // WalletServiceHandler is an implementation of the dankfolio.v1.WalletService service.
 type WalletServiceHandler interface {
 	// GetWalletBalances returns the balances for all tokens in a wallet
-	GetWalletBalances(context.Context, *connect.Request[v1.GetWalletBalancesRequest]) (*connect.Response[v1.GetWalletBalancesResponse], error)
+	GetWalletBalances(context.Context, *connect.Request[_go.GetWalletBalancesRequest]) (*connect.Response[_go.GetWalletBalancesResponse], error)
 	// CreateWallet generates a new Solana wallet
-	CreateWallet(context.Context, *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error)
+	CreateWallet(context.Context, *connect.Request[_go.CreateWalletRequest]) (*connect.Response[_go.CreateWalletResponse], error)
 }
 
 // NewWalletServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -105,7 +105,7 @@ type WalletServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewWalletServiceHandler(svc WalletServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	walletServiceMethods := v1.File_dankfolio_v1_wallet_proto.Services().ByName("WalletService").Methods()
+	walletServiceMethods := _go.File_dankfolio_v1_wallet_proto.Services().ByName("WalletService").Methods()
 	walletServiceGetWalletBalancesHandler := connect.NewUnaryHandler(
 		WalletServiceGetWalletBalancesProcedure,
 		svc.GetWalletBalances,
@@ -133,10 +133,10 @@ func NewWalletServiceHandler(svc WalletServiceHandler, opts ...connect.HandlerOp
 // UnimplementedWalletServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedWalletServiceHandler struct{}
 
-func (UnimplementedWalletServiceHandler) GetWalletBalances(context.Context, *connect.Request[v1.GetWalletBalancesRequest]) (*connect.Response[v1.GetWalletBalancesResponse], error) {
+func (UnimplementedWalletServiceHandler) GetWalletBalances(context.Context, *connect.Request[_go.GetWalletBalancesRequest]) (*connect.Response[_go.GetWalletBalancesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.WalletService.GetWalletBalances is not implemented"))
 }
 
-func (UnimplementedWalletServiceHandler) CreateWallet(context.Context, *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error) {
+func (UnimplementedWalletServiceHandler) CreateWallet(context.Context, *connect.Request[_go.CreateWalletRequest]) (*connect.Response[_go.CreateWalletResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.WalletService.CreateWallet is not implemented"))
 }

@@ -2,13 +2,13 @@
 //
 // Source: dankfolio/v1/price.proto
 
-package dankfoliov1connect
+package _goconnect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	_go "github.com/nicolas-martin/dankfolio/backend/gen/proto/go"
 	http "net/http"
 	strings "strings"
 )
@@ -41,7 +41,7 @@ const (
 // PriceServiceClient is a client for the dankfolio.v1.PriceService service.
 type PriceServiceClient interface {
 	// GetPriceHistory returns historical price data for a given address
-	GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error)
+	GetPriceHistory(context.Context, *connect.Request[_go.GetPriceHistoryRequest]) (*connect.Response[_go.GetPriceHistoryResponse], error)
 }
 
 // NewPriceServiceClient constructs a client for the dankfolio.v1.PriceService service. By default,
@@ -53,9 +53,9 @@ type PriceServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewPriceServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PriceServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	priceServiceMethods := v1.File_dankfolio_v1_price_proto.Services().ByName("PriceService").Methods()
+	priceServiceMethods := _go.File_dankfolio_v1_price_proto.Services().ByName("PriceService").Methods()
 	return &priceServiceClient{
-		getPriceHistory: connect.NewClient[v1.GetPriceHistoryRequest, v1.GetPriceHistoryResponse](
+		getPriceHistory: connect.NewClient[_go.GetPriceHistoryRequest, _go.GetPriceHistoryResponse](
 			httpClient,
 			baseURL+PriceServiceGetPriceHistoryProcedure,
 			connect.WithSchema(priceServiceMethods.ByName("GetPriceHistory")),
@@ -66,18 +66,18 @@ func NewPriceServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // priceServiceClient implements PriceServiceClient.
 type priceServiceClient struct {
-	getPriceHistory *connect.Client[v1.GetPriceHistoryRequest, v1.GetPriceHistoryResponse]
+	getPriceHistory *connect.Client[_go.GetPriceHistoryRequest, _go.GetPriceHistoryResponse]
 }
 
 // GetPriceHistory calls dankfolio.v1.PriceService.GetPriceHistory.
-func (c *priceServiceClient) GetPriceHistory(ctx context.Context, req *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error) {
+func (c *priceServiceClient) GetPriceHistory(ctx context.Context, req *connect.Request[_go.GetPriceHistoryRequest]) (*connect.Response[_go.GetPriceHistoryResponse], error) {
 	return c.getPriceHistory.CallUnary(ctx, req)
 }
 
 // PriceServiceHandler is an implementation of the dankfolio.v1.PriceService service.
 type PriceServiceHandler interface {
 	// GetPriceHistory returns historical price data for a given address
-	GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error)
+	GetPriceHistory(context.Context, *connect.Request[_go.GetPriceHistoryRequest]) (*connect.Response[_go.GetPriceHistoryResponse], error)
 }
 
 // NewPriceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -86,7 +86,7 @@ type PriceServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewPriceServiceHandler(svc PriceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	priceServiceMethods := v1.File_dankfolio_v1_price_proto.Services().ByName("PriceService").Methods()
+	priceServiceMethods := _go.File_dankfolio_v1_price_proto.Services().ByName("PriceService").Methods()
 	priceServiceGetPriceHistoryHandler := connect.NewUnaryHandler(
 		PriceServiceGetPriceHistoryProcedure,
 		svc.GetPriceHistory,
@@ -106,6 +106,6 @@ func NewPriceServiceHandler(svc PriceServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedPriceServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedPriceServiceHandler struct{}
 
-func (UnimplementedPriceServiceHandler) GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error) {
+func (UnimplementedPriceServiceHandler) GetPriceHistory(context.Context, *connect.Request[_go.GetPriceHistoryRequest]) (*connect.Response[_go.GetPriceHistoryResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.PriceService.GetPriceHistory is not implemented"))
 }
