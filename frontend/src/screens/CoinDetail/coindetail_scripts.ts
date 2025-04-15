@@ -1,5 +1,5 @@
 import { Coin, PriceData } from '@/types/index';
-import api from '@/services/api';
+import grpcApi from '@/services/grpcApi';
 import { TimeframeOption } from './coindetail_types';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -62,7 +62,7 @@ export const fetchPriceHistory = async (
 
 		const time_to = time_from - (points * durationPerPoint);
 
-		const response = await api.getPriceHistory(
+		const response = await grpcApi.getPriceHistory(
 			coin.id,
 			timeframe,
 			time_to.toString(),

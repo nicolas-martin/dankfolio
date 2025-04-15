@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import { Wallet } from '@/types';
-import api from '@/services/api';
-import { Coin } from '@/types';
+import { Wallet, Coin } from '@/types';
 import { useCoinStore } from './coins';
+import grpcApi from '@/services/grpcApi';
+import { SOLANA_ADDRESS } from '@/utils/constants';
 
 export interface PortfolioToken {
 	id: string;
@@ -39,7 +39,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	fetchPortfolioBalance: async (address: string) => {
 		try {
 			set({ isLoading: true, error: null });
-			const balance = await api.getWalletBalance(address);
+			const balance = await grpcApi.getWalletBalance(address);
 
 			// Pre-fetch and transform API response into our internal PortfolioToken format
 			const coinStore = useCoinStore.getState();

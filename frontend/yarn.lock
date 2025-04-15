@@ -841,10 +841,10 @@
   resolved "https://registry.yarnpkg.com/@connectrpc/connect-web/-/connect-web-2.0.2.tgz#02f109e21eb06b31ee2558eeed39b1bf03cc9089"
   integrity sha512-QANMFPiL2o66BdBEctg4TsQLe5ozsBLqcle3dCBp7BwGlNGTY6NnNnqmt+YRnpeMW88GgomJwWNMGCrRD9pRKA==
 
-"@connectrpc/connect@^1.4.0":
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/@connectrpc/connect/-/connect-1.6.1.tgz#58578c459fed91677bc799d2ce5200d3bd22b07e"
-  integrity sha512-KchMDNtU4CDTdkyf0qG7ugJ6qHTOR/aI7XebYn3OTCNagaDYWiZUVKgRgwH79yeMkpNgvEUaXSK7wKjaBK9b/Q==
+"@connectrpc/connect@^2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@connectrpc/connect/-/connect-2.0.2.tgz#acd05e1408737c860e732137dc6f960321d2c628"
+  integrity sha512-xZuylIUNvNlH52e/4eQsZvY4QZyDJRtEFEDnn/yBrv5Xi5ZZI/p8X+GAHH35ucVaBvv9u7OzHZo8+tEh1EFTxA==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"

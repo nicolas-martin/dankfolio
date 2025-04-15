@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Coin } from '@/types';
-import api from '@/services/api';
+import grpcApi from '@/services/grpcApi';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 
 interface CoinState {
@@ -37,7 +37,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	fetchAvailableCoins: async (trendingOnly?: boolean) => {
 		try {
 			set({ isLoading: true, error: null });
-			const coins = await api.getAvailableCoins(trendingOnly);
+			const coins = await grpcApi.getAvailableCoins(trendingOnly);
 
 			if (!trendingOnly) {
 				const solCoin = coins.find(c => c.id === SOLANA_ADDRESS);
@@ -87,7 +87,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		}
 
 		try {
-			const coin = await api.getCoinByID(id);
+			const coin = await grpcApi.getCoinByID(id);
 			console.log("💰 Fetched coin from API:", {
 				id,
 				symbol: coin.symbol,

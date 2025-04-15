@@ -19,7 +19,7 @@
 	},
 	"dependencies": {
 		"@bufbuild/protobuf": "^2.2.5",
-		"@connectrpc/connect": "^1.4.0",
+		"@connectrpc/connect": "^2.0.2",
 		"@connectrpc/connect-web": "^2.0.2",
 		"@emotion/native": "^11.11.0",
 		"@emotion/react": "^11.11.0",

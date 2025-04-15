@@ -2,7 +2,7 @@
 import { Coin, Wallet } from '@/types';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 
-import api from '@/services/api';
+import grpcApi from '@/services/grpcApi';
 import { buildAndSignSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
 import { usePortfolioStore } from '@/store/portfolio'; // Import portfolio store for balance refresh
@@ -15,7 +15,7 @@ export const QUOTE_DEBOUNCE_MS = 500;
 // Function to get prices for multiple tokens in a single API call
 export const getTokenPrices = async (tokenIds: string[]): Promise<Record<string, number>> => {
 	try {
-		return await api.getTokenPrices(tokenIds);
+		return await grpcApi.getTokenPrices(tokenIds);
 	} catch (error) {
 		console.error('❌ Error fetching token prices:', error);
 		return Object.fromEntries(tokenIds.map(id => [id, 0]));
@@ -58,7 +58,7 @@ export const fetchTradeQuote = async (
 			}
 		});
 
-		const response = await api.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
+		const response = await grpcApi.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
 		console.log('📬 Trade Quote Response:', response);
 
 		setToAmount(response.estimatedAmount);
@@ -152,7 +152,7 @@ export const pollTradeStatus = async (
 ) => {
 	console.log(`Polling status for ${txHash}...`);
 	try {
-		const statusResult = await api.getSwapStatus(txHash);
+		const statusResult = await grpcApi.getSwapStatus(txHash);
 
 		if (!statusResult) {
 			console.log('Transaction status not found yet, continuing poll...');
@@ -246,7 +246,7 @@ export const executeTrade = async (
 
 		// 2. Submit Transaction
 		console.log('Attempting to submit transaction...');
-		const submitResponse = await api.submitSwap({
+		const submitResponse = await grpcApi.submitSwap({
 			from_coin_id: fromCoin.id,
 			to_coin_id: toCoin.id,
 			amount: parseFloat(fromAmount),
