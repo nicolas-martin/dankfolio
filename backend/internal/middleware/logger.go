@@ -15,6 +15,7 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // RequestLogger returns a middleware that logs HTTP requests in a colorful and informative format
@@ -144,7 +145,7 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 			}
 
 			debugModeColor := color.New(color.FgGreen, color.Bold)
-			if req.Header().Get("X-Debug-Mode") == "true" {
+			if req.Header().Get("x-debug-mode") == "true" {
 				debugModeColor = color.New(color.FgYellow, color.Bold)
 			}
 
@@ -240,4 +241,16 @@ func structToJSON(v interface{}) (string, error) {
 		return "", err
 	}
 	return string(bytes), nil
+}
+
+// GRPCDebugModeInterceptor sets debug mode in context if x-debug-mode header is present
+func GRPCDebugModeInterceptor() connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			if req.Header().Get("x-debug-mode") == "true" {
+				ctx = context.WithValue(ctx, model.DebugModeKey, true)
+			}
+			return next(ctx, req)
+		}
+	}
 }

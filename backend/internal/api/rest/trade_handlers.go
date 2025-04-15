@@ -92,7 +92,7 @@ func (h *TradeHandlers) SubmitTrade(w http.ResponseWriter, r *http.Request) {
 
 	// Check for debug header
 	ctx := r.Context()
-	if r.Header.Get("X-Debug-Mode") == "true" {
+	if r.Header.Get("x-debug-mode") == "true" {
 		ctx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
 
@@ -124,7 +124,7 @@ func (h *TradeHandlers) GetTradeStatus(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("🔍 Checking status for transaction hash: %s", txHash)
 	ctx := r.Context()
-	if r.Header.Get("X-Debug-Mode") == "true" {
+	if r.Header.Get("x-debug-mode") == "true" {
 		ctx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
 
@@ -223,7 +223,7 @@ func (h *TradeHandlers) GetTradeQuote(w http.ResponseWriter, r *http.Request) {
 
 	// Check for debug header
 	ctx := r.Context()
-	if r.Header.Get("X-Debug-Mode") == "true" {
+	if r.Header.Get("x-debug-mode") == "true" {
 		ctx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
 

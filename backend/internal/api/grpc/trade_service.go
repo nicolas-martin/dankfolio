@@ -41,7 +41,7 @@ func (s *TradeServer) GetTradeQuote(
 
 	// Check for debug header
 	requestCtx := ctx
-	if req.Header().Get("X-Debug-Mode") == "true" {
+	if req.Header().Get("x-debug-mode") == "true" {
 		log.Printf("Debug mode enabled")
 		requestCtx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
@@ -93,7 +93,7 @@ func (s *TradeServer) SubmitTrade(
 
 	// Check for debug header
 	requestCtx := ctx
-	if req.Header().Get("X-Debug-Mode") == "true" {
+	if req.Header().Get("x-debug-mode") == "true" {
 		requestCtx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
 
@@ -118,13 +118,7 @@ func (s *TradeServer) GetTradeStatus(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction_hash is required"))
 	}
 
-	// Check for debug header
-	requestCtx := ctx
-	if req.Header().Get("X-Debug-Mode") == "true" {
-		requestCtx = context.WithValue(ctx, model.DebugModeKey, true)
-	}
-
-	status, err := s.tradeService.SolanaService.GetTransactionConfirmationStatus(requestCtx, req.Msg.TransactionHash)
+	status, err := s.tradeService.SolanaService.GetTransactionConfirmationStatus(ctx, req.Msg.TransactionHash)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 	}

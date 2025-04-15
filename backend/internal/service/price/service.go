@@ -57,7 +57,7 @@ func NewService(baseURL string, birdEyeAPIKEY string) *Service {
 // GetPriceHistory retrieves price history for a given token
 func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFrom, timeTo, addressType string) (*PriceHistory, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		log.Print("X-Debug-Mode: true")
+		log.Print("x-debug-mode: true")
 		return s.loadMockPriceHistory(address, historyType)
 	}
 	// RFC3339     = "2006-01-02T15:04:05Z07:00"

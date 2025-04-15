@@ -10,7 +10,7 @@ const baseURL = API_URL;
 const defaultHeaders = {
 	'Content-Type': 'application/json',
 	'Accept': 'application/json',
-	'X-Debug-Mode': 'true',
+	'x-debug-mode': 'true',
 };
 
 // Debug function to log requests

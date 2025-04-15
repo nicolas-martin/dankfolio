@@ -105,7 +105,7 @@ func (s *SolanaTradeService) ExecuteSignedTransaction(ctx context.Context, signe
 
 func (s *SolanaTradeService) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		log.Print("X-Debug-Mode: true")
+		log.Print("x-debug-mode: true")
 		return getMockTransactionStatus(sigStr)
 	}
 

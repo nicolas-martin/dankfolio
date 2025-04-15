@@ -25,7 +25,7 @@ const DEBUG_MODE = ENV_DEBUG_MODE === 'true';
 const getRequestHeaders = (): Headers => {
 	const headers = new Headers();
 	if (DEBUG_MODE) {
-		headers.set("X-Debug-Mode", "true");
+		headers.set("x-debug-mode", "true");
 	}
 	return headers;
 };

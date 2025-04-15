@@ -40,9 +40,10 @@ func NewServer(coinService *coin.Service, walletService *wallet.Service, tradeSe
 func (s *Server) Start(port int) error {
 	// Create logger interceptor
 	logInterceptor := middleware.GRPCLoggerInterceptor()
+	debugModeInterceptor := middleware.GRPCDebugModeInterceptor()
 
 	// Default interceptors for all handlers
-	defaultInterceptors := connect.WithInterceptors(logInterceptor)
+	defaultInterceptors := connect.WithInterceptors(debugModeInterceptor, logInterceptor)
 
 	// Register Connect RPC handlers
 	path, handler := dankfoliov1connect.NewCoinServiceHandler(
