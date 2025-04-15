@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios';
 import { tradeClient, coinClient, priceClient, walletClient } from './grpc/apiClient';
 import { Timestamp } from '@bufbuild/protobuf/wkt';
 import {
@@ -30,7 +29,7 @@ interface API {
 }
 
 // Helper to convert timestamp strings to Timestamp objects
-const toTimestamp = (dateString: string): Timestamp => {
+const convertToTimestamp = (dateString: string): Timestamp => {
   const timestamp = new Timestamp();
   timestamp.seconds = BigInt(Math.floor(new Date(dateString).getTime() / 1000));
   timestamp.nanos = (new Date(dateString).getTime() % 1000) * 1000000;
@@ -121,8 +120,8 @@ const grpcApi: API = {
         twitter: coin.twitter,
         telegram: coin.telegram,
         coingecko_id: coin.coingeckoId,
-        created_at: coin.createdAt?.toDate().toISOString() ?? new Date().toISOString(),
-        last_updated: coin.lastUpdated?.toDate().toISOString(),
+        created_at: coin.createdAt ? new Date(Number(coin.createdAt.seconds) * 1000).toISOString() : new Date().toISOString(),
+        last_updated: coin.lastUpdated ? new Date(Number(coin.lastUpdated.seconds) * 1000).toISOString() : undefined,
       }));
     } catch (error) {
       return handleGrpcError(error);
@@ -159,8 +158,8 @@ const grpcApi: API = {
       console.log('🔍 gRPC Get Price History Request:', { address, type, timeFrom, timeTo, addressType });
       
       // Convert timeFrom and timeTo to timestamps
-      const fromTimestamp = toTimestamp(timeFrom);
-      const toTimestamp = toTimestamp(timeTo);
+      const fromTimestamp = convertToTimestamp(timeFrom);
+      const toTimestamp = convertToTimestamp(timeTo);
       
       const response = await priceClient.getPriceHistory({
         address,
@@ -224,8 +223,8 @@ const grpcApi: API = {
         twitter: response.twitter,
         telegram: response.telegram,
         coingecko_id: response.coingeckoId,
-        created_at: response.createdAt?.toDate().toISOString() ?? new Date().toISOString(),
-        last_updated: response.lastUpdated?.toDate().toISOString(),
+        created_at: response.createdAt ? new Date(Number(response.createdAt.seconds) * 1000).toISOString() : new Date().toISOString(),
+        last_updated: response.lastUpdated ? new Date(Number(response.lastUpdated.seconds) * 1000).toISOString() : undefined,
       };
     } catch (error) {
       return handleGrpcError(error);

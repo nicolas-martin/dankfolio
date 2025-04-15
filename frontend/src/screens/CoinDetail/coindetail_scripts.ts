@@ -36,37 +36,40 @@ export const fetchPriceHistory = async (
 			return;
 		}
 
-		const time_from = Math.floor(Date.now() / 1000);
+		// Calculate the date range based on the timeframe
+		const now = new Date();
+		let startDate = new Date(now);
 		const points = 100;
-		var durationPerPoint = 900;
 
 		switch (timeframe) {
 			case '15m':
-				durationPerPoint = 900;
+				startDate = new Date(now.getTime() - points * 15 * 60 * 1000);
 				break;
 			case '1H':
-				durationPerPoint = 3600;
+				startDate = new Date(now.getTime() - points * 60 * 60 * 1000);
 				break;
 			case '4H':
-				durationPerPoint = 14400;
+				startDate = new Date(now.getTime() - points * 4 * 60 * 60 * 1000);
 				break;
 			case '1D':
-				durationPerPoint = 86400;
+				startDate = new Date(now.getTime() - points * 24 * 60 * 60 * 1000);
 				break;
 			case '1W':
-				durationPerPoint = 604800;
+				startDate = new Date(now.getTime() - points * 7 * 24 * 60 * 60 * 1000);
 				break;
 			default:
 				throw new Error(`Invalid timeframe: ${timeframe}`);
 		}
 
-		const time_to = time_from - (points * durationPerPoint);
+		// Format dates in RFC3339 format
+		const time_to = now.toISOString();
+		const time_from = startDate.toISOString();
 
 		const response = await grpcApi.getPriceHistory(
 			coin.id,
 			timeframe,
-			time_to.toString(),
-			time_from.toString(),
+			time_to,
+			time_from,
 			"token"
 		);
 
