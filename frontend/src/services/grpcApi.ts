@@ -14,7 +14,6 @@ import {
 	TokenTransferSubmitRequest,
 	TokenTransferResponse
 } from './api';
-import { G } from 'react-native-svg';
 
 // Helper function to safely serialize objects with BigInt values
 const safeStringify = (obj: any, indent = 2): string => {
@@ -235,7 +234,6 @@ const grpcApi: API = {
 				"ONE_WEEK": GetPriceHistoryRequest_PriceHistoryType.ONE_WEEK,
 			};
 
-			// Use the mapping or default to UNSPECIFIED
 			const priceHistoryType = typeMap[type] ?? GetPriceHistoryRequest_PriceHistoryType.PRICE_HISTORY_TYPE_UNSPECIFIED;
 
 			const response = await priceClient.getPriceHistory({

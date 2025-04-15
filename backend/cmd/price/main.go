@@ -24,7 +24,7 @@ func main() {
 		fmt.Println("BIRDEYE_API_KEY not found in environment")
 		return
 	}
-	s := price.NewService(apiKey)
+	s := price.NewService("https://public-api.birdeye.so/defi", apiKey)
 	mintAdd := "6pKHwNCpzgZuC9o5FzvCZkYSUGfQddhUYtMyDbEVpump"
 	from := time.Now().Add(-24 * time.Hour).Unix() // 24 hours ago
 	to := time.Now().Unix()

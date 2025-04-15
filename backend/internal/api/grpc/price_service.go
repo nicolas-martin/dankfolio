@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
@@ -104,7 +103,7 @@ func (s *PriceServer) GetPriceHistory(
 	pbItems := make([]*pb.PriceHistoryItem, len(priceHistory.Data.Items))
 	for i, item := range priceHistory.Data.Items {
 		pbItems[i] = &pb.PriceHistoryItem{
-			UnixTime: parseUnixTime(item.UnixTime).Unix(),
+			UnixTime: item.UnixTime,
 			Value:    item.Value,
 		}
 	}
@@ -116,13 +115,4 @@ func (s *PriceServer) GetPriceHistory(
 		Success: priceHistory.Success,
 	})
 	return res, nil
-}
-
-func parseUnixTime(unixTimeStr string) time.Time {
-	parsedTime, err := time.Parse("2006-01-02T15:04:05Z", unixTimeStr)
-	if err != nil {
-		// Handle parsing error, e.g., return zero time or log the error
-		return time.Time{}
-	}
-	return parsedTime
 }

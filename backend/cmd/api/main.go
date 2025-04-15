@@ -34,6 +34,10 @@ func main() {
 		log.Fatal("not found SOLANA_RPC_ENDPOINT in environment")
 	}
 
+	if os.Getenv("BIRDEYE_ENDPOINT") == "" {
+		log.Fatal("not found BIRDEYE_ENDPOINT in environment")
+	}
+
 	if os.Getenv("BIRDEYE_API_KEY") == "" {
 		log.Fatal("not found BIRDEYE_API_KEY in environment")
 	}
@@ -65,7 +69,7 @@ func main() {
 	tradeService := trade.NewService(solanaService, coinService, jupiterClient)
 
 	// Initialize the price service
-	priceService := price.NewService(os.Getenv("BIRDEYE_API_KEY"))
+	priceService := price.NewService(os.Getenv("BIRDEYE_ENDPOINT"), os.Getenv("BIRDEYE_API_KEY"))
 
 	// Initialize Solana RPC client
 	solanaClient := rpc.New(os.Getenv("SOLANA_RPC_ENDPOINT"))

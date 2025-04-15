@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -60,7 +61,7 @@ func fetchAndStorePriceHistory(apiKey string) error {
 		return fmt.Errorf("failed to load trending tokens: %w", err)
 	}
 
-	priceService := price.NewService(apiKey)
+	priceService := price.NewService("https://public-api.birdeye.so/defi", apiKey)
 	now := time.Now().Unix()
 
 	// Add SOL and USDC to the beginning of the list
@@ -101,7 +102,7 @@ func fetchAndStorePriceHistory(apiKey string) error {
 			timeTo := fmt.Sprintf("%d", now)
 			timeFrom := fmt.Sprintf("%d", now-(points*duration))
 
-			history, err := priceService.GetPriceHistory(nil, token.Mint, timeframe, timeFrom, timeTo, "token")
+			history, err := priceService.GetPriceHistory(context.Background(), token.Mint, timeframe, timeFrom, timeTo, "token")
 			if err != nil {
 				log.Printf("Error fetching price history for %s (%s): %v", token.Symbol, timeframe, err)
 				continue

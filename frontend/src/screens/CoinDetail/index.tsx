@@ -22,7 +22,7 @@ const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
 	const { coin: initialCoin } = route.params;
-	const [selectedTimeframe, setSelectedTimeframe] = useState("15m");
+	const [selectedTimeframe, setSelectedTimeframe] = useState("FIFTEEN_MINUTE");
 	const { getCoinByID } = useCoinStore();
 	const [loading, setLoading] = useState(true);
 	const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);

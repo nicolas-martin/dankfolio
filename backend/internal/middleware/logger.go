@@ -182,11 +182,11 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 					errDetails = fmt.Sprintf(`{"message": "%s"}`, err.Error())
 				}
 
-				log.Printf("❌ gRPC Error [%s] %s: %s (took %v)",
+				log.Printf("❌ gRPC Error [%s] %s: (took %v)%s ",
 					req.Peer().Addr,
 					req.Spec().Procedure,
-					errDetails,
-					duration)
+					duration,
+					errDetails)
 				return nil, err
 			}
 

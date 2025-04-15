@@ -9,8 +9,10 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -18,8 +20,9 @@ import (
 
 // Service handles price-related operations
 type Service struct {
-	httpClient *http.Client
-	baseURL    string
+	httpClient    *http.Client
+	baseURL       string
+	birdEyeAPIKEY string
 }
 
 // PriceHistory represents the response from the price history API
@@ -35,34 +38,54 @@ type PriceHistoryData struct {
 
 // PriceHistoryItem represents a single price point
 type PriceHistoryItem struct {
-	UnixTime string  `json:"unix_time"`
+	UnixTime int64   `json:"unixTime"`
 	Value    float64 `json:"value"`
 }
 
 // NewService creates a new price service
-func NewService(baseURL string) *Service {
+func NewService(baseURL string, birdEyeAPIKEY string) *Service {
 	return &Service{
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		baseURL: baseURL,
+		baseURL:       baseURL,
+		birdEyeAPIKEY: birdEyeAPIKEY,
 	}
 }
 
+// TODO: We have another birdeye call here... they're everywhere 😥
 // GetPriceHistory retrieves price history for a given token
 func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFrom, timeTo, addressType string) (*PriceHistory, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
 		log.Print("X-Debug-Mode: true")
 		return s.loadMockPriceHistory(address, historyType)
 	}
+	// RFC3339     = "2006-01-02T15:04:05Z07:00"
+	startMili, err := time.Parse(time.RFC3339, timeFrom)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse time_from: %w", err)
+	}
+	endMili, err := time.Parse(time.RFC3339, timeTo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse time_to: %w", err)
+	}
+	queryParams := url.Values{}
+	queryParams.Add("address", address)
+	queryParams.Add("address_type", addressType)
+	queryParams.Add("type", historyType)
+	queryParams.Add("time_from", strconv.FormatInt(startMili.Unix(), 10))
+	queryParams.Add("time_to", strconv.FormatInt(endMili.Unix(), 10))
+	fullURL := fmt.Sprintf("%s/history_price?%s", s.baseURL, queryParams.Encode())
 
-	url := fmt.Sprintf("%s/price/history/%s?type=%s&time_from=%s&time_to=%s&address_type=%s",
-		s.baseURL, address, historyType, timeFrom, timeTo, addressType)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("X-API-KEY", s.birdEyeAPIKEY)
+	req.Header.Set("x-chain", "solana")
+	log.Printf("Request URL: %s", req.URL.String())
+	log.Printf("Request Headers: %v", req.Header)
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -165,7 +188,7 @@ func (s *Service) generateRandomPriceHistory(address string) (*PriceHistory, err
 		}
 
 		items = append(items, PriceHistoryItem{
-			UnixTime: fmt.Sprintf("%d", pointTime.Unix()), // Convert time.Time to Unix timestamp (int64)
+			UnixTime: pointTime.Unix(), // No need for string conversion
 			Value:    currentPrice,
 		})
 	}
