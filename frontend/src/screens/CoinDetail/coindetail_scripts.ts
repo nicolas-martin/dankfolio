@@ -10,10 +10,10 @@ interface ToastParams {
 }
 
 export const TIMEFRAMES: TimeframeOption[] = [
-	{ label: "15m", value: "15m" },
-	{ label: "1H", value: "1H" },
-	{ label: "4H", value: "4H" },
-	{ label: "1D", value: "1D" },
+	{ label: "15m", value: "FIFTEEN_MINUTE" },
+	{ label: "1H", value: "ONE_HOUR" },
+	{ label: "4H", value: "FOUR_HOUR" },
+	{ label: "1D", value: "ONE_DAY" },
 ];
 
 export const fetchPriceHistory = async (
@@ -41,20 +41,22 @@ export const fetchPriceHistory = async (
 		let startDate = new Date(now);
 		const points = 100;
 
+		// TODO: This has to change, we want "fifteen minute before now", not 
+		// 100 points of 15 minutes.
 		switch (timeframe) {
-			case '15m':
+			case 'FIFTEEN_MINUTE':
 				startDate = new Date(now.getTime() - points * 15 * 60 * 1000);
 				break;
-			case '1H':
+			case 'ONE_HOUR':
 				startDate = new Date(now.getTime() - points * 60 * 60 * 1000);
 				break;
-			case '4H':
+			case 'FOUR_HOUR':
 				startDate = new Date(now.getTime() - points * 4 * 60 * 60 * 1000);
 				break;
-			case '1D':
+			case 'ONE_DAY':
 				startDate = new Date(now.getTime() - points * 24 * 60 * 60 * 1000);
 				break;
-			case '1W':
+			case 'ONE_WEEK':
 				startDate = new Date(now.getTime() - points * 7 * 24 * 60 * 60 * 1000);
 				break;
 			default:
@@ -65,11 +67,12 @@ export const fetchPriceHistory = async (
 		const time_to = now.toISOString();
 		const time_from = startDate.toISOString();
 
+
 		const response = await grpcApi.getPriceHistory(
 			coin.id,
 			timeframe,
-			time_from, // Changed order: time_from should be first (earlier date)
-			time_to,   // time_to should be second (later date)
+			time_from,
+			time_to,
 			"token"
 		);
 

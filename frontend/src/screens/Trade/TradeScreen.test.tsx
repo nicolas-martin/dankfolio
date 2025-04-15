@@ -78,7 +78,8 @@ jest.mock('./trade_scripts', () => ({
 // Mock Services
 jest.mock('@/services/api', () => ({
 	submitTrade: jest.fn(),
-	getTradeStatus: jest.fn()
+	getTradeStatus: jest.fn(),
+	submitSwap: jest.fn()
 }));
 jest.mock('@/services/solana', () => ({
 	buildAndSignSwapTransaction: jest.fn().mockResolvedValue('mock_signed_tx'),
