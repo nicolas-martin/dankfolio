@@ -56,7 +56,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ profileCoin, onPress }) =>
 
 					<View style={styles.tokenBalance}>
 						<Text variant="bodyLarge" style={styles.tokenBalanceText}>
-							{profileCoin.amount.toFixed(4)}
+							{profileCoin.amount.toFixed(6)}
 						</Text>
 						<Text variant="bodySmall" style={styles.tokenValueText}>
 							${(profileCoin.amount * (profileCoin.coin.price || 0)).toFixed(4)}

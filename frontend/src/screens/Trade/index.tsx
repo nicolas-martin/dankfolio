@@ -19,7 +19,8 @@ import {
 	pollTradeStatus, // Added
 	startPolling, // Added
 	stopPolling, // Added
-	handleSwapCoins as swapCoinsUtil // Renamed import
+	handleSwapCoins as swapCoinsUtil, // Renamed import
+	QUOTE_DEBOUNCE_MS
 } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { SOLANA_ADDRESS } from '@/utils/constants';
@@ -56,6 +57,7 @@ const Trade: React.FC = () => {
 	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
+	const quoteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	// --- Wrapped Polling Functions for Component Context ---
 	// Wrap stopPolling to automatically pass dependencies
@@ -156,14 +158,26 @@ const Trade: React.FC = () => {
 			return;
 		}
 
-		await fetchTradeQuote(
-			amount,
-			fromCoin,
-			toCoin,
-			setIsQuoteLoading,
-			setToAmount,
-			setTradeDetails
-		);
+		// Clear any existing timeout
+		if (quoteTimeoutRef.current) {
+			clearTimeout(quoteTimeoutRef.current);
+		}
+
+		// Set loading state immediately
+		setIsQuoteLoading(true);
+
+		// Create new timeout
+		quoteTimeoutRef.current = setTimeout(async () => {
+			await fetchTradeQuote(
+				amount,
+				fromCoin,
+				toCoin,
+				setIsQuoteLoading,
+				setToAmount,
+				setTradeDetails
+			);
+			quoteTimeoutRef.current = null;
+		}, QUOTE_DEBOUNCE_MS);
 	};
 
 	const handleToAmountChange = async (amount: string) => {
@@ -181,14 +195,26 @@ const Trade: React.FC = () => {
 			return;
 		}
 
-		await fetchTradeQuote(
-			amount,
-			toCoin,
-			fromCoin,
-			setIsQuoteLoading,
-			setFromAmount,
-			setTradeDetails
-		);
+		// Clear any existing timeout
+		if (quoteTimeoutRef.current) {
+			clearTimeout(quoteTimeoutRef.current);
+		}
+
+		// Set loading state immediately
+		setIsQuoteLoading(true);
+
+		// Create new timeout
+		quoteTimeoutRef.current = setTimeout(async () => {
+			await fetchTradeQuote(
+				amount,
+				toCoin,
+				fromCoin,
+				setIsQuoteLoading,
+				setFromAmount,
+				setTradeDetails
+			);
+			quoteTimeoutRef.current = null;
+		}, QUOTE_DEBOUNCE_MS);
 	};
 
 	// Use new handleTradeSubmit that calls executeTrade
@@ -218,6 +244,9 @@ const Trade: React.FC = () => {
 		return () => {
 			// Use componentStopPolling for cleanup
 			componentStopPolling();
+			if (quoteTimeoutRef.current) {
+				clearTimeout(quoteTimeoutRef.current);
+			}
 		};
 	}, []); // Empty dependency array ensures this runs only on mount and unmount
 

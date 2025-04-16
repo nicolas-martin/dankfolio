@@ -131,7 +131,7 @@ const handleGrpcError = (error: any, serviceName: string, methodName: string): n
 const grpcApi: API = {
 	submitSwap: async (payload: TradePayload): Promise<SubmitSwapResponse> => {
 		const serviceName = "TradeService";
-		const methodName = "submitTrade";
+		const methodName = "submitSwap";
 		try {
 			logRequest(serviceName, methodName, payload);
 
@@ -140,7 +140,9 @@ const grpcApi: API = {
 				toCoinId: payload.to_coin_id,
 				amount: payload.amount,
 				signedTransaction: payload.signed_transaction
-			});
+			},
+				{ headers: getRequestHeaders() }
+			);
 
 			logResponse(serviceName, methodName, response);
 
@@ -156,7 +158,7 @@ const grpcApi: API = {
 
 	getSwapStatus: async (txHash: string): Promise<TradeStatusResponse> => {
 		const serviceName = 'TradeService';
-		const methodName = 'getTradeStatus';
+		const methodName = 'getSwapStatus';
 		try {
 			logRequest(serviceName, methodName, { txHash });
 

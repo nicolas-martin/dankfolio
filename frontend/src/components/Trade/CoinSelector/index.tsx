@@ -75,11 +75,11 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 						{balance && (
 							<View style={styles.balanceSection}>
 								<Text variant="bodyMedium" style={styles.balanceText}>
-									{balance.amount.toFixed(4)} {coin.symbol}
+									{balance.amount.toFixed(6)} {coin.symbol}
 								</Text>
 								{balance.value && (
 									<Text variant="bodySmall" style={styles.valueText}>
-										${balance.value.toFixed(2)}
+										${balance.value.toFixed(4)}
 									</Text>
 								)}
 							</View>
