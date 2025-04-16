@@ -89,4 +89,10 @@ export const styles = StyleSheet.create({
 		color: theme.colors.textSecondary,
 		textAlign: 'right',
 	},
+	dollarValue: {
+		fontSize: theme.typography.fontSize.sm,
+		color: theme.colors.onSurfaceVariant,
+		textAlign: 'right',
+		marginTop: 4,
+	},
 });

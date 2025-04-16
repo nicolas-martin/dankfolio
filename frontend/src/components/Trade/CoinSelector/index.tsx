@@ -15,32 +15,44 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 }) => {
 	const { coin, balance } = coinData;
 
+	const calculateDollarValue = (amountStr: string): string => {
+		if (!amountStr || !coin?.price) return '$0.00';
+		const numericAmount = parseFloat(amountStr);
+		if (isNaN(numericAmount)) return '$0.00';
+		return `$${(numericAmount * coin.price).toFixed(4)}`;
+	};
+
 	const renderAmount = () => {
 		if (isInput) {
 			return (
-				<TextInput
-					ref={inputRef}
-					mode="outlined"
-					style={styles.amountInput}
-					value={amount.value}
-					onChangeText={(text) => {
-						// Only allow digits and one decimal point
-						const regex = /^\d*\.?\d*$/;
-						if ((regex.test(text) || text === '') && amount.onChange) {
-							amount.onChange(text);
-						}
-					}}
-					placeholder="0.00"
-					placeholderTextColor={theme.colors.textSecondary}
-					selectionColor={theme.colors.primary}
-					autoCorrect={false}
-					autoCapitalize="none"
-					keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
-					activeOutlineColor={theme.colors.primary}
-					outlineColor={theme.colors.textSecondary}
-					textColor={theme.colors.onSurface}
-					right={<TextInput.Affix text={coin.symbol} />}
-				/>
+				<View>
+					<TextInput
+						ref={inputRef}
+						mode="outlined"
+						style={styles.amountInput}
+						value={amount.value}
+						onChangeText={(text) => {
+							// Only allow digits and one decimal point
+							const regex = /^\d*\.?\d*$/;
+							if ((regex.test(text) || text === '') && amount.onChange) {
+								amount.onChange(text);
+							}
+						}}
+						placeholder="0.00"
+						placeholderTextColor={theme.colors.textSecondary}
+						selectionColor={theme.colors.primary}
+						autoCorrect={false}
+						autoCapitalize="none"
+						keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
+						activeOutlineColor={theme.colors.primary}
+						outlineColor={theme.colors.textSecondary}
+						textColor={theme.colors.onSurface}
+						right={<TextInput.Affix text={coin.symbol} />}
+					/>
+					<Text style={styles.dollarValue}>
+						{calculateDollarValue(amount.value)}
+					</Text>
+				</View>
 			);
 		}
 
@@ -49,7 +61,12 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 				{amount.isLoading ? (
 					<ActivityIndicator size="small" color={theme.colors.primary} />
 				) : (
-					<Text variant="headlineMedium" style={styles.toAmount}>{amount.value || '0.00'}</Text>
+					<>
+						<Text variant="headlineMedium" style={styles.toAmount}>{amount.value || '0.00'}</Text>
+						<Text style={styles.dollarValue}>
+							{calculateDollarValue(amount.value)}
+						</Text>
+					</>
 				)}
 			</View>
 		);
