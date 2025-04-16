@@ -1,35 +1,62 @@
-import React, { useCallback } from 'react';
-import { View, Linking } from 'react-native';
-import { Text, useTheme, Divider, Chip } from 'react-native-paper';
-import { CoinInfoProps } from './coininfo_types';
+import React from 'react';
+import { View, TouchableOpacity } from 'react-native';
+import { Text, useTheme, Divider, Chip, Icon as PaperIcon } from 'react-native-paper';
+import { CoinInfoProps, LinkItemProps } from './coininfo_types';
 import { createStyles } from './coininfo_styles';
-import { LinkItem } from './LinkItem';
 import {
-	ICON_WEBSITE,
-	ICON_TWITTER,
-	ICON_TELEGRAM,
-	ICON_DISCORD,
-} from '../../../utils/icons';
+	WebsiteIconComponent,
+	TwitterIconComponent,
+	TelegramIconComponent,
+	DiscordIconComponent,
+	LinkIconComponent,
+	formatNumber,
+	handleLinkPress,
+} from './scripts';
 
-const formatNumber = (num: number): string => {
-	if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
-	if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-	if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
-	return num.toFixed(2);
-};
-
-const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
+// Sub-component for link items
+const LinkItem: React.FC<LinkItemProps> = ({
+	icon: IconComponent,
+	label,
+	value,
+	onPress,
+}) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	const handleLinkPress = useCallback((url?: string) => {
-		if (url) {
-			const validUrl = url.startsWith('http://') || url.startsWith('https://')
-				? url
-				: `https://${url}`;
-			Linking.openURL(validUrl);
-		}
-	}, []);
+	return (
+		<TouchableOpacity onPress={() => onPress(value)}>
+			<View style={styles.linkItemContainer}>
+				<View style={[
+					styles.linkItemIconContainer,
+					{ backgroundColor: theme.colors.surfaceVariant }
+				]}>
+					<IconComponent size={20} color={theme.colors.onSurface} />
+				</View>
+				<View style={styles.linkItemTextContainer}>
+					<Text
+						variant="titleMedium"
+						style={[styles.linkItemLabel, { color: theme.colors.onSurface }]}
+					>
+						{label}
+					</Text>
+					<Text
+						variant="bodyMedium"
+						style={[styles.linkItemValue, { color: theme.colors.onSurfaceVariant }]}
+						numberOfLines={1}
+					>
+						{value}
+					</Text>
+				</View>
+				<PaperIcon source={LinkIconComponent} size={16} color={theme.colors.onSurfaceVariant} />
+			</View>
+		</TouchableOpacity>
+	);
+};
+
+// Main component
+const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
+	const theme = useTheme();
+	const styles = createStyles(theme);
 
 	return (
 		<View style={styles.container}>
@@ -103,7 +130,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 						{metadata.website && (
 							<>
 								<LinkItem
-									icon={ICON_WEBSITE}
+									icon={WebsiteIconComponent}
 									label="Website"
 									value={metadata.website}
 									onPress={handleLinkPress}
@@ -115,7 +142,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 						{metadata.twitter && (
 							<>
 								<LinkItem
-									icon={ICON_TWITTER}
+									icon={TwitterIconComponent}
 									label="Twitter"
 									value={`@${metadata.twitter}`}
 									onPress={handleLinkPress}
@@ -127,7 +154,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 						{metadata.telegram && (
 							<>
 								<LinkItem
-									icon={ICON_TELEGRAM}
+									icon={TelegramIconComponent}
 									label="Telegram"
 									value={metadata.telegram}
 									onPress={handleLinkPress}
@@ -138,7 +165,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 
 						{metadata.discord && (
 							<LinkItem
-								icon={ICON_DISCORD}
+								icon={DiscordIconComponent}
 								label="Discord"
 								value={metadata.discord}
 								onPress={handleLinkPress}

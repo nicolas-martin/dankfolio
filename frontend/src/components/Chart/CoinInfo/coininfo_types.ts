@@ -13,4 +13,11 @@ export interface CoinMetadata {
 
 export interface CoinInfoProps {
 	metadata: CoinMetadata;
+}
+
+export interface LinkItemProps {
+	icon: React.ComponentType<any>;
+	label: string;
+	value: string;
+	onPress: (url: string) => void;
 } 
