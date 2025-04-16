@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, ScrollView, RefreshControl } from 'react-native';
-import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
+import { Text, useTheme, IconButton, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
@@ -9,9 +9,10 @@ import { usePortfolioStore } from '@store/portfolio';
 import { createStyles } from './profile_styles';
 import { TokenCard } from './TokenCard';
 import {
-	ICON_PROFILE,
-	ICON_WALLET,
-	ICON_COINS,
+	ProfileIcon,
+	WalletIcon,
+	CoinsIcon,
+	SendIcon
 } from '../../utils/icons';
 
 const Profile = () => {
@@ -49,7 +50,7 @@ const Profile = () => {
 	if (!wallet || tokens.length === 0) {
 		return (
 			<View style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
-				<Icon source={ICON_WALLET} size={48} color={theme.colors.onSurfaceVariant} />
+				<WalletIcon size={48} color={theme.colors.onSurfaceVariant} />
 				<Text
 					variant="titleLarge"
 					style={{ color: theme.colors.onSurface, marginTop: 16 }}
@@ -75,7 +76,7 @@ const Profile = () => {
 			>
 				<View style={styles.contentPadding}>
 					<View style={styles.profileHeaderRow}>
-						<Icon source={ICON_PROFILE} size={32} color={theme.colors.onSurface} />
+						<ProfileIcon size={32} color={theme.colors.onSurface} />
 						<View style={styles.profileHeaderTextContainer}>
 							<Text variant="headlineSmall" style={{ color: theme.colors.onSurface }}>
 								Profile
@@ -104,11 +105,19 @@ const Profile = () => {
 						<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
 							{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
 						</Text>
+						<Button
+							mode="contained"
+							icon={() => <SendIcon size={20} color={theme.colors.onPrimary} />}
+							onPress={() => navigation.navigate('SendTokens')}
+							style={{ marginTop: 16 }}
+						>
+							Send Tokens
+						</Button>
 					</View>
 
 					<View>
 						<View style={styles.yourTokensHeader}>
-							<Icon source={ICON_COINS} size={24} color={theme.colors.onSurface} />
+							<CoinsIcon size={24} color={theme.colors.onSurface} />
 							<Text
 								variant="titleLarge"
 								style={[styles.tokenHeaderText, { color: theme.colors.onSurface }]}
@@ -130,5 +139,5 @@ const Profile = () => {
 		</View>
 	);
 };
-
 export default Profile;
+

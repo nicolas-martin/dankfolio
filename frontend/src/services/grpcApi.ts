@@ -43,6 +43,11 @@ interface API {
 	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
 	prepareTokenTransfer: (payload: TokenTransferPrepareRequest) => Promise<TokenTransferPrepareResponse>;
 	submitTokenTransfer: (payload: TokenTransferSubmitRequest) => Promise<TokenTransferResponse>;
+	getTransferTransaction: (params: {
+		toAddress: string;
+		tokenMint: string;
+		amount: string;
+	}) => Promise<any>;
 }
 
 // Helper function to safely serialize objects with BigInt values
@@ -411,6 +416,33 @@ const grpcApi: API = {
 			// Convert the response to match the expected REST API structure
 			return {
 				transactionHash: response.transactionHash
+			};
+		} catch (error) {
+			return handleGrpcError(error, serviceName, methodName);
+		}
+	},
+
+	async getTransferTransaction(params: {
+		toAddress: string;
+		tokenMint: string;
+		amount: string;
+	}) {
+		const serviceName = 'TradeService';
+		const methodName = 'prepareTransfer';
+		try {
+			logRequest(serviceName, methodName, params);
+
+			const response = await tradeClient.prepareTransfer({
+				fromAddress: '', // This will be filled by the backend
+				toAddress: params.toAddress,
+				tokenMint: params.tokenMint,
+				amount: parseFloat(params.amount)
+			}, { headers: getRequestHeaders() });
+
+			logResponse(serviceName, methodName, response);
+
+			return {
+				unsignedTransaction: response.unsignedTransaction
 			};
 		} catch (error) {
 			return handleGrpcError(error, serviceName, methodName);

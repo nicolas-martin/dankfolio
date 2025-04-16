@@ -9,6 +9,7 @@ import Home from '@screens/Home';
 import Profile from '@screens/Profile';
 import CoinDetail from '@screens/CoinDetail';
 import Trade from '@screens/Trade';
+import SendTokens from '@screens/SendTokens';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -28,6 +29,7 @@ const Navigation = () => {
 				<Stack.Screen name="Profile" component={Profile} />
 				<Stack.Screen name="CoinDetail" component={CoinDetail} />
 				<Stack.Screen name="Trade" component={Trade} />
+				<Stack.Screen name="SendTokens" component={SendTokens} />
 			</Stack.Navigator>
 		</NavigationContainer>
 	);

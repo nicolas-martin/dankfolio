@@ -5,6 +5,7 @@ import { CoinSelectorProps } from './types';
 import { styles } from './coinselector_styles';
 import { DEFAULT_ICON, getCoinIcon } from './coinselector_scripts';
 import { theme } from '../../../utils/theme';
+import { formatCurrency } from '@utils/formatters';
 
 const CoinSelector: React.FC<CoinSelectorProps> = ({
 	label,
@@ -92,11 +93,11 @@ const CoinSelector: React.FC<CoinSelectorProps> = ({
 						{balance && (
 							<View style={styles.balanceSection}>
 								<Text variant="bodyMedium" style={styles.balanceText}>
-									{balance.amount.toFixed(6)} {coin.symbol}
+									{formatCurrency(balance.amount, 8)}
 								</Text>
 								{balance.value && (
 									<Text variant="bodySmall" style={styles.valueText}>
-										${balance.value.toFixed(4)}
+										≈ ${formatCurrency(balance.value, 2)}
 									</Text>
 								)}
 							</View>

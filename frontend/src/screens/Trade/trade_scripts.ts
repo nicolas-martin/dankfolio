@@ -10,7 +10,7 @@ import type { ToastProps } from '@/components/Common/Toast/toast_types'; // Use 
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 
 export const DEFAULT_AMOUNT = "0.0001";
-export const QUOTE_DEBOUNCE_MS = 500;
+export const QUOTE_DEBOUNCE_MS = 1000
 
 // Function to get prices for multiple tokens in a single API call
 export const getTokenPrices = async (tokenIds: string[]): Promise<Record<string, number>> => {

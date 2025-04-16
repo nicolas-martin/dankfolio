@@ -3,6 +3,7 @@ import bs58 from 'bs58';
 import { Wallet } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { REACT_APP_SOLANA_RPC_ENDPOINT, REACT_APP_JUPITER_API_URL } from '@env';
+import grpcApi from '@/services/grpcApi';
 
 if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
 	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
@@ -182,6 +183,56 @@ export const buildAndSignSwapTransaction = async (
 		return transactionBase64;
 	} catch (error) {
 		console.error('❌ Error in buildAndSignSwapTransaction:', error);
+		throw error;
+	}
+};
+
+export const buildAndSignTransferTransaction = async (
+	toAddress: string,
+	tokenMint: string,
+	amount: number,
+	wallet: Wallet
+): Promise<string> => {
+	try {
+		console.log('🔐 Building transfer transaction:', {
+			toAddress,
+			tokenMint: tokenMint || 'SOL',
+			amount,
+			fromAddress: wallet.address
+		});
+
+		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
+		console.log('🔑 Generated keypair:', {
+			publicKey: keypair.publicKey.toString(),
+			addressMatch: keypair.publicKey.toString() === wallet.address
+		});
+
+		// Prepare the transfer transaction using our gRPC API
+		const prepareResponse = await grpcApi.prepareTokenTransfer({
+			fromAddress: wallet.address,
+			toAddress,
+			tokenMint,
+			amount
+		});
+
+		if (!prepareResponse.unsignedTransaction) {
+			throw new Error('No unsigned transaction received');
+		}
+
+		// Decode and deserialize the transaction
+		const transactionBuf = Buffer.from(prepareResponse.unsignedTransaction, 'base64');
+		const transaction = VersionedTransaction.deserialize(transactionBuf);
+
+		// Sign the transaction
+		transaction.sign([keypair]);
+
+		// Serialize and encode the signed transaction
+		const serializedTransaction = transaction.serialize();
+		const signedTransactionBase64 = Buffer.from(serializedTransaction).toString('base64');
+
+		return signedTransactionBase64;
+	} catch (error) {
+		console.error('❌ Error in buildAndSignTransferTransaction:', error);
 		throw error;
 	}
 };

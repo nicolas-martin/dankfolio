@@ -12,4 +12,5 @@ export type RootStackParamList = {
 		initialFromCoin: Coin;
 		initialToCoin: Coin;
 	};
+	SendTokens: undefined;
 }; 
