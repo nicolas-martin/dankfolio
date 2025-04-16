@@ -1,19 +1,19 @@
 import {
-	ICON_CHECK,
-	ICON_WARNING,
-	ICON_LINK,
-} from '../../../utils/icons';
+	CheckIcon,
+	WarningIcon,
+	LinkIcon,
+} from '@components/Common/Icons';
 import { ToastType } from './toast_types';
 
 export const getToastIcon = (type: ToastType) => {
 	switch (type) {
 		case 'success':
-			return ICON_CHECK;
+			return CheckIcon;
 		case 'warning':
 		case 'error':
-			return ICON_WARNING;
+			return WarningIcon;
 		case 'info':
 		default:
-			return ICON_LINK;
+			return LinkIcon;
 	}
 };

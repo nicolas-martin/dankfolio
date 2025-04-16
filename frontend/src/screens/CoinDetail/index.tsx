@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { ActivityIndicator, Text, useTheme, Button, ToggleButton } from 'react-native-paper';
+import { ActivityIndicator, Text, useTheme, Button, SegmentedButtons } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import CoinChart from '@components/Chart/CoinChart';
@@ -115,28 +115,15 @@ const CoinDetail: React.FC = () => {
 					</View>
 
 					<View style={styles.timeframeButtonsContainer}>
-						<ToggleButton.Row
-							onValueChange={value => value && setSelectedTimeframe(value)}
+						<SegmentedButtons
 							value={selectedTimeframe}
-						>
-							{TIMEFRAMES.map((tf) => (
-								<ToggleButton
-									key={tf.value}
-									icon={() => (
-										<Text
-											variant="bodyMedium"
-											style={[
-												styles.timeframeButtonText,
-												selectedTimeframe === tf.value && styles.timeframeButtonTextSelected
-											]}
-										>
-											{tf.label}
-										</Text>
-									)}
-									value={tf.value}
-								/>
-							))}
-						</ToggleButton.Row>
+							onValueChange={value => setSelectedTimeframe(value)}
+							buttons={TIMEFRAMES.map(tf => ({
+								value: tf.value,
+								label: tf.label
+							}))}
+							density="small"
+						/>
 					</View>
 
 					{portfolioToken && (

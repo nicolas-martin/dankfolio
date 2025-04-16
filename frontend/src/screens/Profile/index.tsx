@@ -13,7 +13,7 @@ import {
 	WalletIcon,
 	CoinsIcon,
 	SendIcon
-} from '../../utils/icons';
+} from '@components/Common/Icons';
 
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();

@@ -34,32 +34,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		backgroundColor: theme.colors.surfaceVariant,
 	},
 	timeframeButtonsContainer: {
-		flexDirection: 'row',
-		justifyContent: 'center',
+		marginHorizontal: 16,
 		marginVertical: 16,
-	},
-	timeframeButtonsInnerContainer: {
-		justifyContent: 'center',
-		gap: 12,
-		paddingHorizontal: 8,
-	},
-	timeframeButton: {
-		paddingVertical: 8,
-		paddingHorizontal: 8,
-		alignItems: 'center',
-	},
-	timeframeButtonText: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		fontWeight: '500',
-	},
-	timeframeButtonTextSelected: {
-		color: theme.colors.primary,
-	},
-	timeframeButtonUnderline: {
-		height: 2,
-		width: '80%',
-		backgroundColor: theme.colors.primary,
 	},
 	holdingsContainer: {
 		backgroundColor: theme.colors.surfaceVariant,

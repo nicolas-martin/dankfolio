@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, View, Image } from 'react-native';
-import { Text, Icon, useTheme, IconButton } from 'react-native-paper';
-import { ICON_COINS } from '../../utils/icons';
+import { Text, useTheme, IconButton } from 'react-native-paper';
+import { CoinsIcon } from '@components/Common/Icons';
 import { createStyles } from './profile_styles';
 import { copyToClipboard, formatAddress } from './profile_scripts';
 import { useToast } from '@components/Common/Toast';
@@ -33,7 +33,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ profileCoin, onPress }) =>
 						</View>
 					) : (
 						<View style={[styles.tokenIconContainer, styles.centered, { backgroundColor: theme.colors.background }]}>
-							<Icon source={ICON_COINS} size={24} color={theme.colors.onSurfaceVariant} />
+							<CoinsIcon size={24} color={theme.colors.onSurfaceVariant} />
 						</View>
 					)}
 
