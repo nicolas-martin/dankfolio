@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { mocked } from 'jest-mock';
 import TradeScreen from './index'; // The component under test
@@ -6,7 +5,7 @@ import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import * as TradeScripts from './trade_scripts';
 import { Coin, Wallet } from '@/types';
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 
 // --- Mock Data (Copied from original file) ---
 const mockFromCoin: Coin = {
@@ -134,11 +133,6 @@ jest.mock('./trade_scripts', () => {
 		executeTrade: jest.fn(),
 	};
 });
-jest.mock('@/services/api', () => ({
-	getTokenPrices: jest.fn().mockResolvedValue({}),
-	getTradeQuote: jest.fn().mockResolvedValue({ estimatedAmount: '0', fee: '0', priceImpact: '0', exchangeRate: '0', routePlan: [] }),
-	executeTrade: jest.fn().mockResolvedValue({ transaction_hash: 'mock_tx_hash' }),
-}));
 jest.mock('@/services/solana', () => ({
 	buildAndSignSwapTransaction: jest.fn().mockResolvedValue('mock_signed_tx'),
 }));

@@ -8,11 +8,11 @@ option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/da
 
 // TradeService provides operations for trading tokens on Solana
 service TradeService {
-  // GetTradeQuote returns a quote for a potential trade
-  rpc GetTradeQuote(GetTradeQuoteRequest) returns (GetTradeQuoteResponse);
+  // GetSwapQuote returns a quote for a potential trade
+  rpc GetSwapQuote(GetSwapQuoteRequest) returns (GetSwapQuoteResponse);
 
-  // SubmitTrade submits a trade for execution
-  rpc SubmitTrade(SubmitTradeRequest) returns (SubmitTradeResponse);
+  // SubmitSwap submits a trade for execution
+  rpc SubmitSwap(SubmitSwapRequest) returns (SubmitSwapResponse);
 
   // GetTradeStatus returns the status of a trade
   rpc GetTradeStatus(GetTradeStatusRequest) returns (GetTradeStatusResponse);
@@ -50,16 +50,16 @@ message Trade {
   optional google.protobuf.Timestamp completed_at = 13;
 }
 
-// GetTradeQuoteRequest is the request for getting a trade quote
-message GetTradeQuoteRequest {
+// GetSwapQuoteRequest is the request for getting a trade quote
+message GetSwapQuoteRequest {
   string from_coin_id = 1;
   string to_coin_id = 2;
   string amount = 3;
   string slippage_bps = 4; // Changed from optional to required
 }
 
-// GetTradeQuoteResponse is the response containing trade quote details
-message GetTradeQuoteResponse {
+// GetSwapQuoteResponse is the response containing trade quote details
+message GetSwapQuoteResponse {
   string estimated_amount = 1;
   string exchange_rate = 2;
   string fee = 3;
@@ -69,16 +69,16 @@ message GetTradeQuoteResponse {
   string output_mint = 7;
 }
 
-// SubmitTradeRequest is the request for submitting a trade
-message SubmitTradeRequest {
+// SubmitSwapRequest is the request for submitting a trade
+message SubmitSwapRequest {
   string from_coin_id = 1;
   string to_coin_id = 2;
   double amount = 3;
   string signed_transaction = 4;
 }
 
-// SubmitTradeResponse is the response after submitting a trade
-message SubmitTradeResponse {
+// SubmitSwapResponse is the response after submitting a trade
+message SubmitSwapResponse {
   string trade_id = 1;
   string transaction_hash = 2;
 }

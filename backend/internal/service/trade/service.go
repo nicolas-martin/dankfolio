@@ -130,8 +130,8 @@ func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 }
 
 // OnlyDirectRoutes: false,
-// GetTradeQuote gets a quote for a potential trade
-func (s *Service) GetTradeQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
+// GetSwapQuote gets a quote for a potential trade
+func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
 	// Convert amount to raw units based on decimals
 	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinID)
 	if err != nil {

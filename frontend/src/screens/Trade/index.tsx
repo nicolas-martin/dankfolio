@@ -3,7 +3,6 @@ import { View, ScrollView } from 'react-native';
 import { Text, useTheme, Button } from 'react-native-paper';
 import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
-import { TradeScreenParams } from './trade_types';
 import { createStyles } from './trade_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
@@ -16,7 +15,6 @@ import TradeStatusModal from '@components/Trade/TradeStatusModal'; // Added Stat
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types'; // Added Status Type
 import {
 	fetchTradeQuote,
-	signTradeTransaction,
 	executeTrade, // Added
 	pollTradeStatus, // Added
 	startPolling, // Added
@@ -24,8 +22,6 @@ import {
 	handleSwapCoins as swapCoinsUtil // Renamed import
 } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
-import api from '@/services/api'; // Added api import
-import { openSolscanUrl } from '@/utils/url'; // Added url util
 import { SOLANA_ADDRESS } from '@/utils/constants';
 
 type TradeScreenNavigationProp = NavigationProp<RootStackParamList>;

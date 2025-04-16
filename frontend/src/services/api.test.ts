@@ -1,6 +1,6 @@
 // frontend/src/services/api.test.ts
 import grpcApi from './grpcApi'; // Import grpcApi only
-import { Coin, TradePayload, TradeQuoteResponse, WalletBalanceResponse, PriceHistoryResponse } from './api'; // Import types from api
+import { Coin, TradePayload, TradeQuoteResponse, WalletBalanceResponse, PriceHistoryResponse } from './grpc/model'; // Import types from api
 
 // --- Mock grpcApi ---
 jest.mock('./grpcApi', () => {
@@ -185,7 +185,7 @@ describe('API Service', () => {
 
 			// Test getTradeQuote
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeQuote });
-			const quoteResult = await grpcApi.getTradeQuote('coin1', 'coin2', '10');
+			const quoteResult = await grpcApi.getSwapQuote('coin1', 'coin2', '10');
 			expect(mockedGrpcApi.getTradeQuote).toHaveBeenCalledWith('coin1', 'coin2', '10');
 			expect(quoteResult).toEqual(mockResponses.tradeQuote);
 

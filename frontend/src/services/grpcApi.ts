@@ -4,10 +4,10 @@ import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import {
 	Coin,
 	TradePayload,
-	TradeQuoteResponse,
+	TradeQuoteResponse as SwapQuoteResponse,
 	WalletBalanceResponse,
 	PriceHistoryResponse,
-	SubmitTradeResponse,
+	SubmitTradeResponse as SubmitSwapResponse,
 	TradeStatusResponse,
 	TokenTransferPrepareRequest,
 	TokenTransferPrepareResponse,
@@ -30,6 +30,20 @@ const getRequestHeaders = (): Headers => {
 	}
 	return headers;
 };
+
+// Interface matching the REST API
+interface API {
+	getSwapQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<SwapQuoteResponse>;
+	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;
+	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;
+	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
+	getPriceHistory: (address: string, type: string | number, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
+	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
+	getCoinByID: (id: string) => Promise<Coin>;
+	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
+	prepareTokenTransfer: (payload: TokenTransferPrepareRequest) => Promise<TokenTransferPrepareResponse>;
+	submitTokenTransfer: (payload: TokenTransferSubmitRequest) => Promise<TokenTransferResponse>;
+}
 
 // Helper function to safely serialize objects with BigInt values
 const safeStringify = (obj: any, indent = 2): string => {
@@ -69,19 +83,6 @@ const logError = (serviceName: string, methodName: string, error: any): void => 
 	}));
 };
 
-// Interface matching the REST API
-interface API {
-	submitSwap: (payload: TradePayload) => Promise<SubmitTradeResponse>;
-	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;
-	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
-	getTradeQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<TradeQuoteResponse>;
-	getPriceHistory: (address: string, type: string | number, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
-	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
-	getCoinByID: (id: string) => Promise<Coin>;
-	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
-	prepareTokenTransfer: (payload: TokenTransferPrepareRequest) => Promise<TokenTransferPrepareResponse>;
-	submitTokenTransfer: (payload: TokenTransferSubmitRequest) => Promise<TokenTransferResponse>;
-}
 
 // Helper to convert timestamp strings to Timestamp objects
 const convertToTimestamp = (dateString: string): Timestamp => {
@@ -128,13 +129,13 @@ const handleGrpcError = (error: any, serviceName: string, methodName: string): n
 
 // Implementation of the API interface using gRPC
 const grpcApi: API = {
-	submitSwap: async (payload: TradePayload): Promise<SubmitTradeResponse> => {
+	submitSwap: async (payload: TradePayload): Promise<SubmitSwapResponse> => {
 		const serviceName = "TradeService";
 		const methodName = "submitTrade";
 		try {
 			logRequest(serviceName, methodName, payload);
 
-			const response = await tradeClient.submitTrade({
+			const response = await tradeClient.submitSwap({
 				fromCoinId: payload.from_coin_id,
 				toCoinId: payload.to_coin_id,
 				amount: payload.amount,
@@ -215,13 +216,13 @@ const grpcApi: API = {
 		}
 	},
 
-	getTradeQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<TradeQuoteResponse> => {
+	getSwapQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<SwapQuoteResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'getTradeQuote';
 		try {
 			logRequest(serviceName, methodName, { fromCoin, toCoin, amount });
 
-			const response = await tradeClient.getTradeQuote({
+			const response = await tradeClient.getSwapQuote({
 				fromCoinId: fromCoin,
 				toCoinId: toCoin,
 				amount: amount

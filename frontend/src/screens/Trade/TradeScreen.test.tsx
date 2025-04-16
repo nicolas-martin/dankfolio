@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import { ReactElement } from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { mocked } from 'jest-mock';
 import TradeScreen from './index';
@@ -10,7 +10,7 @@ import { mockFromCoin, mockToCoin, mockWallet, mockFromPortfolioToken } from '@/
 import { mockPortfolioStoreReturn, usePortfolioStore } from '@/__mocks__/store/portfolio';
 import { mockCoinStoreReturn, useCoinStore } from '@/__mocks__/store/coins';
 import { fetchTradeQuote as mockFetchTradeQuote, signTradeTransaction as mockSignTradeTransaction } from '@/__mocks__/services/trade_scripts';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import type { PortfolioToken } from '@/store/portfolio';
 import grpcApi from '@/services/grpcApi';
 

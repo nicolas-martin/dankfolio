@@ -33,12 +33,11 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// TradeServiceGetTradeQuoteProcedure is the fully-qualified name of the TradeService's
-	// GetTradeQuote RPC.
-	TradeServiceGetTradeQuoteProcedure = "/dankfolio.v1.TradeService/GetTradeQuote"
-	// TradeServiceSubmitTradeProcedure is the fully-qualified name of the TradeService's SubmitTrade
+	// TradeServiceGetSwapQuoteProcedure is the fully-qualified name of the TradeService's GetSwapQuote
 	// RPC.
-	TradeServiceSubmitTradeProcedure = "/dankfolio.v1.TradeService/SubmitTrade"
+	TradeServiceGetSwapQuoteProcedure = "/dankfolio.v1.TradeService/GetSwapQuote"
+	// TradeServiceSubmitSwapProcedure is the fully-qualified name of the TradeService's SubmitSwap RPC.
+	TradeServiceSubmitSwapProcedure = "/dankfolio.v1.TradeService/SubmitSwap"
 	// TradeServiceGetTradeStatusProcedure is the fully-qualified name of the TradeService's
 	// GetTradeStatus RPC.
 	TradeServiceGetTradeStatusProcedure = "/dankfolio.v1.TradeService/GetTradeStatus"
@@ -60,10 +59,10 @@ const (
 
 // TradeServiceClient is a client for the dankfolio.v1.TradeService service.
 type TradeServiceClient interface {
-	// GetTradeQuote returns a quote for a potential trade
-	GetTradeQuote(context.Context, *connect.Request[v1.GetTradeQuoteRequest]) (*connect.Response[v1.GetTradeQuoteResponse], error)
-	// SubmitTrade submits a trade for execution
-	SubmitTrade(context.Context, *connect.Request[v1.SubmitTradeRequest]) (*connect.Response[v1.SubmitTradeResponse], error)
+	// GetSwapQuote returns a quote for a potential trade
+	GetSwapQuote(context.Context, *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error)
+	// SubmitSwap submits a trade for execution
+	SubmitSwap(context.Context, *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error)
 	// GetTradeStatus returns the status of a trade
 	GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error)
 	// GetTradeByID returns details of a specific trade
@@ -89,16 +88,16 @@ func NewTradeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	tradeServiceMethods := v1.File_dankfolio_v1_trade_proto.Services().ByName("TradeService").Methods()
 	return &tradeServiceClient{
-		getTradeQuote: connect.NewClient[v1.GetTradeQuoteRequest, v1.GetTradeQuoteResponse](
+		getSwapQuote: connect.NewClient[v1.GetSwapQuoteRequest, v1.GetSwapQuoteResponse](
 			httpClient,
-			baseURL+TradeServiceGetTradeQuoteProcedure,
-			connect.WithSchema(tradeServiceMethods.ByName("GetTradeQuote")),
+			baseURL+TradeServiceGetSwapQuoteProcedure,
+			connect.WithSchema(tradeServiceMethods.ByName("GetSwapQuote")),
 			connect.WithClientOptions(opts...),
 		),
-		submitTrade: connect.NewClient[v1.SubmitTradeRequest, v1.SubmitTradeResponse](
+		submitSwap: connect.NewClient[v1.SubmitSwapRequest, v1.SubmitSwapResponse](
 			httpClient,
-			baseURL+TradeServiceSubmitTradeProcedure,
-			connect.WithSchema(tradeServiceMethods.ByName("SubmitTrade")),
+			baseURL+TradeServiceSubmitSwapProcedure,
+			connect.WithSchema(tradeServiceMethods.ByName("SubmitSwap")),
 			connect.WithClientOptions(opts...),
 		),
 		getTradeStatus: connect.NewClient[v1.GetTradeStatusRequest, v1.GetTradeStatusResponse](
@@ -142,8 +141,8 @@ func NewTradeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // tradeServiceClient implements TradeServiceClient.
 type tradeServiceClient struct {
-	getTradeQuote   *connect.Client[v1.GetTradeQuoteRequest, v1.GetTradeQuoteResponse]
-	submitTrade     *connect.Client[v1.SubmitTradeRequest, v1.SubmitTradeResponse]
+	getSwapQuote    *connect.Client[v1.GetSwapQuoteRequest, v1.GetSwapQuoteResponse]
+	submitSwap      *connect.Client[v1.SubmitSwapRequest, v1.SubmitSwapResponse]
 	getTradeStatus  *connect.Client[v1.GetTradeStatusRequest, v1.GetTradeStatusResponse]
 	getTradeByID    *connect.Client[v1.GetTradeByIDRequest, v1.Trade]
 	listTrades      *connect.Client[v1.ListTradesRequest, v1.ListTradesResponse]
@@ -152,14 +151,14 @@ type tradeServiceClient struct {
 	submitTransfer  *connect.Client[v1.SubmitTransferRequest, v1.SubmitTransferResponse]
 }
 
-// GetTradeQuote calls dankfolio.v1.TradeService.GetTradeQuote.
-func (c *tradeServiceClient) GetTradeQuote(ctx context.Context, req *connect.Request[v1.GetTradeQuoteRequest]) (*connect.Response[v1.GetTradeQuoteResponse], error) {
-	return c.getTradeQuote.CallUnary(ctx, req)
+// GetSwapQuote calls dankfolio.v1.TradeService.GetSwapQuote.
+func (c *tradeServiceClient) GetSwapQuote(ctx context.Context, req *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error) {
+	return c.getSwapQuote.CallUnary(ctx, req)
 }
 
-// SubmitTrade calls dankfolio.v1.TradeService.SubmitTrade.
-func (c *tradeServiceClient) SubmitTrade(ctx context.Context, req *connect.Request[v1.SubmitTradeRequest]) (*connect.Response[v1.SubmitTradeResponse], error) {
-	return c.submitTrade.CallUnary(ctx, req)
+// SubmitSwap calls dankfolio.v1.TradeService.SubmitSwap.
+func (c *tradeServiceClient) SubmitSwap(ctx context.Context, req *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error) {
+	return c.submitSwap.CallUnary(ctx, req)
 }
 
 // GetTradeStatus calls dankfolio.v1.TradeService.GetTradeStatus.
@@ -194,10 +193,10 @@ func (c *tradeServiceClient) SubmitTransfer(ctx context.Context, req *connect.Re
 
 // TradeServiceHandler is an implementation of the dankfolio.v1.TradeService service.
 type TradeServiceHandler interface {
-	// GetTradeQuote returns a quote for a potential trade
-	GetTradeQuote(context.Context, *connect.Request[v1.GetTradeQuoteRequest]) (*connect.Response[v1.GetTradeQuoteResponse], error)
-	// SubmitTrade submits a trade for execution
-	SubmitTrade(context.Context, *connect.Request[v1.SubmitTradeRequest]) (*connect.Response[v1.SubmitTradeResponse], error)
+	// GetSwapQuote returns a quote for a potential trade
+	GetSwapQuote(context.Context, *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error)
+	// SubmitSwap submits a trade for execution
+	SubmitSwap(context.Context, *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error)
 	// GetTradeStatus returns the status of a trade
 	GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error)
 	// GetTradeByID returns details of a specific trade
@@ -219,16 +218,16 @@ type TradeServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	tradeServiceMethods := v1.File_dankfolio_v1_trade_proto.Services().ByName("TradeService").Methods()
-	tradeServiceGetTradeQuoteHandler := connect.NewUnaryHandler(
-		TradeServiceGetTradeQuoteProcedure,
-		svc.GetTradeQuote,
-		connect.WithSchema(tradeServiceMethods.ByName("GetTradeQuote")),
+	tradeServiceGetSwapQuoteHandler := connect.NewUnaryHandler(
+		TradeServiceGetSwapQuoteProcedure,
+		svc.GetSwapQuote,
+		connect.WithSchema(tradeServiceMethods.ByName("GetSwapQuote")),
 		connect.WithHandlerOptions(opts...),
 	)
-	tradeServiceSubmitTradeHandler := connect.NewUnaryHandler(
-		TradeServiceSubmitTradeProcedure,
-		svc.SubmitTrade,
-		connect.WithSchema(tradeServiceMethods.ByName("SubmitTrade")),
+	tradeServiceSubmitSwapHandler := connect.NewUnaryHandler(
+		TradeServiceSubmitSwapProcedure,
+		svc.SubmitSwap,
+		connect.WithSchema(tradeServiceMethods.ByName("SubmitSwap")),
 		connect.WithHandlerOptions(opts...),
 	)
 	tradeServiceGetTradeStatusHandler := connect.NewUnaryHandler(
@@ -269,10 +268,10 @@ func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOpti
 	)
 	return "/dankfolio.v1.TradeService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case TradeServiceGetTradeQuoteProcedure:
-			tradeServiceGetTradeQuoteHandler.ServeHTTP(w, r)
-		case TradeServiceSubmitTradeProcedure:
-			tradeServiceSubmitTradeHandler.ServeHTTP(w, r)
+		case TradeServiceGetSwapQuoteProcedure:
+			tradeServiceGetSwapQuoteHandler.ServeHTTP(w, r)
+		case TradeServiceSubmitSwapProcedure:
+			tradeServiceSubmitSwapHandler.ServeHTTP(w, r)
 		case TradeServiceGetTradeStatusProcedure:
 			tradeServiceGetTradeStatusHandler.ServeHTTP(w, r)
 		case TradeServiceGetTradeByIDProcedure:
@@ -294,12 +293,12 @@ func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedTradeServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedTradeServiceHandler struct{}
 
-func (UnimplementedTradeServiceHandler) GetTradeQuote(context.Context, *connect.Request[v1.GetTradeQuoteRequest]) (*connect.Response[v1.GetTradeQuoteResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTradeQuote is not implemented"))
+func (UnimplementedTradeServiceHandler) GetSwapQuote(context.Context, *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetSwapQuote is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) SubmitTrade(context.Context, *connect.Request[v1.SubmitTradeRequest]) (*connect.Response[v1.SubmitTradeResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.SubmitTrade is not implemented"))
+func (UnimplementedTradeServiceHandler) SubmitSwap(context.Context, *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.SubmitSwap is not implemented"))
 }
 
 func (UnimplementedTradeServiceHandler) GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error) {

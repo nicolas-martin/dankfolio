@@ -58,7 +58,7 @@ export const fetchTradeQuote = async (
 			}
 		});
 
-		const response = await grpcApi.getTradeQuote(fromCoin.id, toCoin.id, rawAmount);
+		const response = await grpcApi.getSwapQuote(fromCoin.id, toCoin.id, rawAmount);
 		console.log('📬 Trade Quote Response:', response);
 
 		setToAmount(response.estimatedAmount);

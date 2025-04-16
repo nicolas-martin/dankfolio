@@ -26,13 +26,13 @@ func NewTradeServer(tradeService *trade.Service) *TradeServer {
 	}
 }
 
-// GetTradeQuote fetches a trade quote
-func (s *TradeServer) GetTradeQuote(
+// GetSwapQuote fetches a trade quote
+func (s *TradeServer) GetSwapQuote(
 	ctx context.Context,
-	req *connect.Request[pb.GetTradeQuoteRequest],
-) (*connect.Response[pb.GetTradeQuoteResponse], error) {
+	req *connect.Request[pb.GetSwapQuoteRequest],
+) (*connect.Response[pb.GetSwapQuoteResponse], error) {
 	// Log the incoming request
-	log.Printf("Received GetTradeQuote request: from_coin_id=%s, to_coin_id=%s, amount=%s", req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount)
+	log.Printf("Received GetSwapQuote request: from_coin_id=%s, to_coin_id=%s, amount=%s", req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount)
 
 	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.Amount == "" {
 		log.Printf("Invalid request: missing required fields")
@@ -54,7 +54,7 @@ func (s *TradeServer) GetTradeQuote(
 	}
 
 	// Call the trade service to get the quote
-	quote, err := s.tradeService.GetTradeQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps)
+	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps)
 	if err != nil {
 		log.Printf("Error fetching trade quote: %v", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))
@@ -63,7 +63,7 @@ func (s *TradeServer) GetTradeQuote(
 	// Log the response before returning
 	log.Printf("Trade quote response: estimated_amount=%s, exchange_rate=%s, fee=%s, price_impact=%s", quote.EstimatedAmount, quote.ExchangeRate, quote.Fee, quote.PriceImpact)
 
-	res := connect.NewResponse(&pb.GetTradeQuoteResponse{
+	res := connect.NewResponse(&pb.GetSwapQuoteResponse{
 		EstimatedAmount: quote.EstimatedAmount,
 		ExchangeRate:    quote.ExchangeRate,
 		Fee:             quote.Fee,
@@ -75,11 +75,11 @@ func (s *TradeServer) GetTradeQuote(
 	return res, nil
 }
 
-// SubmitTrade submits a trade for execution
-func (s *TradeServer) SubmitTrade(
+// SubmitSwap submits a trade for execution
+func (s *TradeServer) SubmitSwap(
 	ctx context.Context,
-	req *connect.Request[pb.SubmitTradeRequest],
-) (*connect.Response[pb.SubmitTradeResponse], error) {
+	req *connect.Request[pb.SubmitSwapRequest],
+) (*connect.Response[pb.SubmitSwapResponse], error) {
 	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.SignedTransaction == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and signed_transaction are required"))
 	}
@@ -102,7 +102,7 @@ func (s *TradeServer) SubmitTrade(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to execute trade: %w", err))
 	}
 
-	res := connect.NewResponse(&pb.SubmitTradeResponse{
+	res := connect.NewResponse(&pb.SubmitSwapResponse{
 		TradeId:         trade.ID,
 		TransactionHash: trade.TransactionHash,
 	})
