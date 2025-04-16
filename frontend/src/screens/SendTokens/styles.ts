@@ -52,4 +52,44 @@ export const createStyles = (theme: MD3Theme) =>
 			fontSize: 16,
 			fontWeight: 'bold',
 		},
+		amountContainer: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 8,
+		},
+		maxButton: {
+			backgroundColor: theme.colors.primaryContainer,
+			paddingHorizontal: 12,
+			paddingVertical: 8,
+			borderRadius: 8,
+			justifyContent: 'center',
+		},
+		maxButtonText: {
+			color: theme.colors.onPrimaryContainer,
+			fontSize: 14,
+			fontWeight: '600',
+		},
+		percentageContainer: {
+			flexDirection: 'row',
+			gap: 8,
+			marginTop: 8,
+		},
+		percentageButton: {
+			backgroundColor: theme.colors.surfaceVariant,
+			paddingHorizontal: 8,
+			paddingVertical: 4,
+			borderRadius: 4,
+			flex: 1,
+			alignItems: 'center',
+		},
+		percentageButtonText: {
+			color: theme.colors.onSurfaceVariant,
+			fontSize: 12,
+			fontWeight: '600',
+		},
+		balanceText: {
+			fontSize: 12,
+			color: theme.colors.onSurfaceVariant,
+			marginTop: 4,
+		},
 	}); 

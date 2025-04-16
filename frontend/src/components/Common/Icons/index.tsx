@@ -57,4 +57,5 @@ export const TelegramIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase
 export const DiscordIcon: React.FC<IconBaseProps> = (props) => <MaterialIconBase name="discord" {...props} />;
 
 // Status icons
-export const WarningIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="alert-circle" {...props} />; 
+export const WarningIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="alert-circle" {...props} />;
+export const ChevronDownIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="chevron-down" {...props} />; 

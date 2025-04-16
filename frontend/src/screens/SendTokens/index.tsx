@@ -93,14 +93,37 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 				<View style={styles.inputContainer}>
 					<Text style={styles.label}>Amount</Text>
-					<TextInput
-						style={styles.input}
-						value={amount}
-						onChangeText={(text) => setAmount(text)}
-						placeholder="0.00"
-						placeholderTextColor={theme.colors.onSurfaceVariant}
-						keyboardType="decimal-pad"
-					/>
+					<View style={styles.amountContainer}>
+						<TextInput
+							style={[styles.input, { flex: 1 }]}
+							value={amount}
+							onChangeText={(text) => setAmount(text)}
+							placeholder="0.00"
+							placeholderTextColor={theme.colors.onSurfaceVariant}
+							keyboardType="decimal-pad"
+						/>
+					</View>
+					{selectedToken && (
+						<>
+							{/* <Text style={styles.balanceText}>
+								{formatTokenBalance(selectedToken.amount)} {selectedToken.coin.symbol}
+							</Text> */}
+							<View style={styles.percentageContainer}>
+								{[10, 25, 50, 75, 100].map((percent) => (
+									<TouchableOpacity
+										key={percent}
+										style={styles.percentageButton}
+										onPress={() => {
+											const amount = (selectedToken.amount * percent) / 100;
+											setAmount(amount.toString());
+										}}
+									>
+										<Text style={styles.percentageButtonText}>{percent}%</Text>
+									</TouchableOpacity>
+								))}
+							</View>
+						</>
+					)}
 				</View>
 
 				<View style={styles.inputContainer}>

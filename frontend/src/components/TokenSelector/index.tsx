@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Image, TouchableOpacity, TextInput, FlatList } from 'react-native';
 import { Modal, Portal, Text, useTheme } from 'react-native-paper';
-import { CheckIcon, SearchIcon } from '@components/Common/Icons';
+import { ChevronDownIcon, SearchIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { PortfolioToken } from '@store/portfolio';
 import { createStyles } from './styles';
@@ -22,13 +22,18 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		token.coin.name.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
+	const handleTokenSelect = useCallback((token: PortfolioToken) => {
+		onSelectToken(token);
+		// Small delay to prevent flickering
+		requestAnimationFrame(() => {
+			onDismiss();
+		});
+	}, [onSelectToken, onDismiss]);
+
 	const renderItem = ({ item: token }: { item: PortfolioToken }) => (
 		<TouchableOpacity
 			style={styles.tokenItem}
-			onPress={() => {
-				onSelectToken(token);
-				onDismiss();
-			}}
+			onPress={() => handleTokenSelect(token)}
 		>
 			<Image source={{ uri: token.coin.icon_url }} style={styles.tokenIcon} />
 			<View style={styles.tokenDetails}>
@@ -48,6 +53,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				visible={visible}
 				onDismiss={onDismiss}
 				contentContainerStyle={styles.modalContent}
+				dismissable={true}
 			>
 				<View style={styles.searchContainer}>
 					<TextInput
@@ -86,6 +92,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		});
 	};
 
+	const handleDismiss = useCallback(() => {
+		setModalVisible(false);
+	}, []);
+
 	return (
 		<>
 			<TouchableOpacity
@@ -112,12 +122,12 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						<Text style={styles.tokenSymbol}>{label || 'Select Token'}</Text>
 					)}
 				</View>
-				<CheckIcon size={20} color={theme.colors.onSurface} />
+				<ChevronDownIcon size={20} color={theme.colors.onSurface} />
 			</TouchableOpacity>
 
 			<TokenSearchModal
 				visible={modalVisible}
-				onDismiss={() => setModalVisible(false)}
+				onDismiss={handleDismiss}
 				tokens={tokens}
 				selectedToken={selectedToken}
 				onSelectToken={onSelectToken}
