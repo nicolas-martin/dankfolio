@@ -31,7 +31,6 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		}
 	});
 
-
 	const handleSubmit = async () => {
 		try {
 			if (!wallet) {
@@ -42,14 +41,15 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			setError(null);
 			setIsLoading(true);
 
-			const validationError = validateForm({
+			const validationError = await validateForm({
 				toAddress: recipientAddress,
 				amount,
 				selectedToken: selectedToken?.id
-			});
+			}, selectedToken);
 
 			if (validationError) {
 				setError(validationError);
+				setIsLoading(false);
 				return;
 			}
 

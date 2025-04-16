@@ -1,17 +1,37 @@
 import { TokenTransferFormData } from './types';
 import { Wallet } from '@/types';
 import grpcApi from '@/services/grpcApi';
+import { PortfolioToken } from '@store/portfolio';
+import { validateSolanaAddress } from '@/services/solana';
 
-export const validateForm = (formData: TokenTransferFormData): string | null => {
+export const validateForm = async (
+	formData: TokenTransferFormData,
+	selectedToken?: PortfolioToken
+): Promise<string | null> => {
 	if (!formData.toAddress) {
 		return 'Recipient address is required';
 	}
+
+	const isValidAddress = await validateSolanaAddress(formData.toAddress);
+	if (!isValidAddress) {
+		return 'Invalid Solana address';
+	}
+
 	if (!formData.amount || parseFloat(formData.amount) <= 0) {
 		return 'Please enter a valid amount';
 	}
+
 	if (!formData.selectedToken) {
 		return 'Please select a token';
 	}
+
+	if (selectedToken) {
+		const amount = parseFloat(formData.amount);
+		if (amount > selectedToken.amount) {
+			return `Insufficient balance. Maximum available: ${formatTokenBalance(selectedToken.amount)} ${selectedToken.coin.symbol}`;
+		}
+	}
+
 	return null;
 };
 

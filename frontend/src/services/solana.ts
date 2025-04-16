@@ -237,6 +237,15 @@ export const buildAndSignTransferTransaction = async (
 	}
 };
 
+export const validateSolanaAddress = async (address: string): Promise<boolean> => {
+	try {
+		const publicKey = new PublicKey(address);
+		return await PublicKey.isOnCurve(publicKey.toBytes());
+	} catch (error) {
+		return false;
+	}
+};
+
 /**
  * Secure storage functions for the wallet.
  * In a real app, use a secure storage solution like react-native-keychain.
