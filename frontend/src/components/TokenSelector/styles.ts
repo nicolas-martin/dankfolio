@@ -17,6 +17,14 @@ export const createStyles = (theme: MD3Theme) =>
 			alignItems: 'center',
 			flex: 1,
 		},
+		selectedTokenDetails: {
+			flex: 1,
+			marginLeft: 8,
+		},
+		tokenAmount: {
+			...theme.fonts.bodySmall,
+			color: theme.colors.onSurfaceVariant,
+		},
 		tokenIcon: {
 			width: 24,
 			height: 24,
@@ -30,9 +38,11 @@ export const createStyles = (theme: MD3Theme) =>
 		modalContent: {
 			backgroundColor: theme.colors.background,
 			padding: 16,
-			borderTopLeftRadius: 16,
-			borderTopRightRadius: 16,
-			maxHeight: '80%',
+			borderRadius: 16,
+			height: '60%',
+			width: '90%',
+			alignSelf: 'center',
+			marginVertical: 'auto',
 		},
 		searchContainer: {
 			marginBottom: 16,
@@ -42,6 +52,9 @@ export const createStyles = (theme: MD3Theme) =>
 			borderRadius: 8,
 			paddingHorizontal: 12,
 			paddingVertical: 8,
+			color: theme.colors.onSurface,
+			height: 40,
+			width: '100%',
 		},
 		tokenList: {
 			flex: 1,

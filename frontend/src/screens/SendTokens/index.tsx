@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
@@ -17,6 +17,20 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const [recipientAddress, setRecipientAddress] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	// on mount, fetch tokens
+	useEffect(() => {
+		if (!wallet) {
+			setError('No wallet connected');
+			return;
+		}
+
+		if (tokens.length === 0) {
+			setError('No tokens in portfolio');
+			return;
+		}
+	});
+
 
 	const handleSubmit = async () => {
 		try {

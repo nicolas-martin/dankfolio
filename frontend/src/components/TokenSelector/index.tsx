@@ -79,6 +79,13 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const styles = createStyles(theme);
 	const [modalVisible, setModalVisible] = useState(false);
 
+	const formatValue = (value: number) => {
+		return value.toLocaleString('en-US', {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 6,
+		});
+	};
+
 	return (
 		<>
 			<TouchableOpacity
@@ -92,9 +99,14 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								source={{ uri: selectedToken.coin.icon_url }}
 								style={styles.tokenIcon}
 							/>
-							<Text style={styles.tokenSymbol}>
-								{selectedToken.coin.symbol}
-							</Text>
+							<View style={styles.selectedTokenDetails}>
+								<Text style={styles.tokenSymbol}>
+									{selectedToken.coin.symbol}
+								</Text>
+								<Text style={styles.tokenAmount}>
+									{formatValue(selectedToken.amount)} (${formatValue(selectedToken.value)})
+								</Text>
+							</View>
 						</>
 					) : (
 						<Text style={styles.tokenSymbol}>{label || 'Select Token'}</Text>
