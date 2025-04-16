@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
@@ -43,7 +44,7 @@ func loadTrendingTokens(wd string) ([]TrendingToken, error) {
 	tokens := make([]TrendingToken, 0, len(enriched.Tokens))
 	for _, t := range enriched.Tokens {
 		tokens = append(tokens, TrendingToken{
-			Symbol: t.Symbol,
+			Symbol: strings.ToLower(t.Symbol),
 			Mint:   t.Mint,
 			Volume: t.DailyVolume,
 		})
@@ -69,8 +70,8 @@ func fetchAndStorePriceHistory(apiKey string) error {
 
 	// Add SOL and USDC to the beginning of the list
 	defaultTokens := []TrendingToken{
-		{Symbol: "SOL", Mint: "So11111111111111111111111111111111111111112", Volume: 0},
-		{Symbol: "USDC", Mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", Volume: 0},
+		{Symbol: "sol", Mint: "So11111111111111111111111111111111111111112", Volume: 0},
+		{Symbol: "usdc", Mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", Volume: 0},
 	}
 	tokens = append(defaultTokens, tokens...)
 
@@ -112,7 +113,7 @@ func fetchAndStorePriceHistory(apiKey string) error {
 			}
 
 			// Create directory if it doesn't exist
-			dirPath := filepath.Join(wd, "..", "data", "price_history", token.Symbol)
+			dirPath := filepath.Join(wd, "..", "..", "data", "price_history", token.Symbol)
 			if err := os.MkdirAll(dirPath, 0o755); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", dirPath, err)
 			}

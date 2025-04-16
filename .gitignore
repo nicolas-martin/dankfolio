@@ -61,4 +61,3 @@ Thumbs.db
 tmp/
 **/tmp
 **/pools_temp.json
-price_history/

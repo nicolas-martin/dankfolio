@@ -1,71 +1,131 @@
 {
-  "scrapeTimestamp": "2025-04-09T15:50:47.908129Z",
+  "scrapeTimestamp": "2025-04-16T15:48:32.007862Z",
   "tokens": [
     {
-      "id": "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh",
-      "name": "Wrapped BTC (Portal)",
-      "symbol": "WBTC",
-      "decimals": 8,
-      "description": "Wrapped BTC (Portal) (WBTC) is a Solana token.",
-      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh/logo.png",
+      "id": "6596PvLrJfN6bPUKU85KdSDuU4nAL2QoSarDZF5Yzo9j",
+      "name": "Official Launchlab Token (real)",
+      "symbol": "gaydium",
+      "decimals": 6,
+      "description": "Official Raydium Launchlab Token",
+      "icon_url": "https://ipfs.io/ipfs/bafkreihlef3g5lwdtduyh24qzfuqlh5ty45dtoasa3l6ipl662pekfkb7u",
+      "tags": [
+        "unknown"
+      ],
+      "price": 0.000370834,
+      "created_at": "2025-04-16T14:18:57.566183Z"
+    },
+    {
+      "id": "J7BZSnaKjEJuwY8vMqN7rNAc3oM8bZ2w2ZWXPZssbT5G",
+      "name": "emojification",
+      "symbol": "EMOJIFY",
+      "decimals": 6,
+      "description": "emojification (EMOJIFY) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmREXZn1CGvP5yCzy5wx648DjDLwRPkA3MjpBpphYSH5CJ",
+      "tags": [
+        "launchpad",
+        "unknown"
+      ],
+      "price": 0.0000568621,
+      "daily_volume": 29954.67927189148,
+      "created_at": "2025-04-15T16:06:02.036521Z"
+    },
+    {
+      "id": "8BtoThi2ZoXnF7QQK1Wjmh2JuBw9FjVvhnGMVZ2vpump",
+      "name": "Dark Eclipse",
+      "symbol": "DARK",
+      "decimals": 6,
+      "description": "Leave immediately. You shouldn't be here. Do not look where it's darkest.",
+      "icon_url": "https://ipfs.io/ipfs/QmVhcHM7DU62qZpAYfN8NKz8GaNBXzcGahhWBbn4nWGbtm",
+      "tags": [
+        "launchpad",
+        "verified",
+        "community",
+        "community-assist",
+        "birdeye-trending"
+      ],
+      "price": 0.025199,
+      "daily_volume": 3196757.9154537176,
+      "created_at": "2024-11-24T07:50:05.895373Z"
+    },
+    {
+      "id": "DNrmDMs2czDaAwgzg2BmvM7Jn5ZqA6VN5huRqCrSpump",
+      "name": "tungtungtung",
+      "symbol": "Sahur",
+      "decimals": 6,
+      "description": "Tung tung tung sahur!",
+      "icon_url": "https://ipfs.io/ipfs/QmZqivkCk7AgTrzJpzo9cpwe1888LfaLQAKcqFmuYzMYLX",
+      "tags": [
+        "unknown",
+        "launchpad",
+        "birdeye-trending"
+      ],
+      "price": 0.000958521,
+      "daily_volume": 187627.1150965392,
+      "website": "https://www.tiktok.com/t/ZP82L7DCm/",
+      "created_at": "2025-03-06T01:49:04.318624Z"
+    },
+    {
+      "id": "13TVvChoA7S2qdB7GhP8sDret3aPBetBjvWHtL3Ymeme",
+      "name": "Manipulated Time",
+      "symbol": "TIME",
+      "decimals": 6,
+      "description": "So I've measured time, I've compressed and condensed time, I've bent it, my day is 6 am to noon and I'm not crazy, you're crazy to think it takes 24 hours just like some dude in a cave did 300 years ago, my second day starts at noon and goes till 6pm, that's day 2, and the next day is from 6pm to midnight, what I've done now is I have changed and manipulated time I now get 24 days a week, stack it up over a week I kick your butt, stack it up over a month you're toast, stack it up over 5 years my entire life is different than it would've been otherwise.",
+      "icon_url": "https://cook.mypinata.cloud/ipfs/bafkreiggrdlduwjjtnhqmruopodegsnc7hl4avvvb3zhmfjtsid5zy7yom",
+      "tags": [
+        "unknown"
+      ],
+      "price": 0.00336478,
+      "daily_volume": 2563054.012649859,
+      "created_at": "2025-04-15T14:43:52.862965Z"
+    },
+    {
+      "id": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+      "name": "Raydium",
+      "symbol": "RAY",
+      "decimals": 6,
+      "description": "Raydium (RAY) is a Solana token.",
+      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R/logo.png",
       "tags": [
         "verified",
+        "community",
         "strict",
-        "birdeye-trending",
-        "community"
+        "birdeye-trending"
       ],
-      "price": 77253.9478521,
-      "daily_volume": 21287000.15493576,
+      "price": 2.331991,
+      "daily_volume": 4115137.5646434855,
       "created_at": "2024-04-26T10:56:58.893768Z"
     },
     {
-      "id": "B91Nyc6SnWqr5DRR34eEMKuZrWh4zBhW9VhX4UNLpump",
-      "name": "Chicken Jockey",
-      "symbol": "jockey",
+      "id": "9kvTPjemayUL7XKPyjhqavbcLtY5VP2ha1G5vPuppump",
+      "name": "fitcoin",
+      "symbol": "fitcoin",
       "decimals": 6,
-      "description": "Its a baby zombie riding a chicken",
-      "icon_url": "https://ipfs.io/ipfs/QmfF7svgykQL2FCEkNFU8tYrDpv3FsHSicXSkCBxQ5hDpv",
+      "description": "$fitcoin do you even lift bro?",
+      "icon_url": "https://ipfs.io/ipfs/Qmc9PgFPL8YSph3geVJAHEo7rYEXAacjqFDBxN9AMJxsZ9",
       "tags": [
         "launchpad",
         "unknown",
         "birdeye-trending"
       ],
-      "price": 0.00596923,
-      "daily_volume": 961808.2431687468,
-      "created_at": "2025-03-20T00:55:17.610751Z"
+      "price": 0.000475278,
+      "daily_volume": 16407.398838774967,
+      "created_at": "2025-04-15T22:50:13.204172Z"
     },
     {
-      "id": "4A3qjPKQYJ4eYx2V5AhQfkkBLMc4LuvdDJhDx7iBpump",
-      "name": "PREASE",
-      "symbol": "PREASE",
+      "id": "6rj9mHEuB52bUTyRUzwV9ZN1buPDHgBYb5zQJi1tpump",
+      "name": "Colossal Squid",
+      "symbol": "CS",
       "decimals": 6,
-      "description": "PREASE (PREASE) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmSUNLJTKV8kK8JXjGoVFNXjhHzRP4GF51CbnH8vhqZsBv",
+      "description": "Colossal Squid (CS) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmaR7CpS6whdXZvpkhFSzj2gqTdCrhRrLjoV9iXynwqL7z",
       "tags": [
-        "birdeye-trending",
-        "launchpad",
-        "unknown"
+        "unknown",
+        "launchpad"
       ],
-      "price": 0.000780539,
-      "daily_volume": 525724.1086533872,
-      "created_at": "2025-04-08T17:33:02.347380Z"
-    },
-    {
-      "id": "FtUEW73K6vEYHfbkfpdBZfWpxgQar2HipGdbutEhpump",
-      "name": "titcoin",
-      "symbol": "titcoin",
-      "decimals": 6,
-      "description": "$titcoin the breast technology",
-      "icon_url": "https://ipfs.io/ipfs/QmdnAHMWTbxfRkwdf1QweP8rJL1SCe2XbjFTFzCCjw5oAD",
-      "tags": [
-        "launchpad",
-        "verified",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 0.024138,
-      "daily_volume": 6917641.443004838,
-      "created_at": "2025-03-06T16:55:03.252924Z"
+      "price": 0.000264561,
+      "daily_volume": 2030.4486009713305,
+      "website": "https://www.discoverwildlife.com/animal-facts/marine-animals/colossal-squid-alive-south-atlantic-ocean",
+      "created_at": "2025-04-15T23:45:34.412592Z"
     },
     {
       "id": "C3DwDjT17gDvvCYC2nsdGHxDHVmQRdhKfpAdqQ29pump",
@@ -76,100 +136,30 @@
       "icon_url": "https://ipfs.io/ipfs/Qmbi9jsNn718gvh85C2vuj4CSsu5JmuYq1W7B1vk2ys88W",
       "tags": [
         "launchpad",
-        "birdeye-trending",
         "verified",
-        "community-assist"
+        "community-assist",
+        "birdeye-trending"
       ],
-      "price": 0.075895,
-      "daily_volume": 7202221.063117856,
+      "price": 0.087473,
+      "daily_volume": 9272754.393644609,
       "website": "https://www.retardfindercoin.com",
       "created_at": "2025-03-24T22:34:37.712739Z"
     },
     {
-      "id": "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs",
-      "name": "Ether (Portal)",
-      "symbol": "ETH",
-      "decimals": 8,
-      "description": "Ether (Portal) (ETH) is a Solana token.",
-      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs/logo.png",
+      "id": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
+      "name": "Popcat",
+      "symbol": "POPCAT",
+      "decimals": 9,
+      "description": "POPCAT POP POP POP POP",
+      "icon_url": "https://arweave.net/A1etRNMKxhlNGTf-gNBtJ75QJJ4NJtbKh_UXQTlLXzI",
       "tags": [
         "verified",
+        "community",
         "strict",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 1492.37137068,
-      "daily_volume": 25603504.31476804,
-      "created_at": "2024-04-26T10:56:58.893768Z"
-    },
-    {
-      "id": "FWAr6oWa6CHg6WUcXu8CqkmsdbhtEqL8t31QTonppump",
-      "name": "PVS",
-      "symbol": "PVS",
-      "decimals": 6,
-      "description": "PVS is the utility token of the Paraverse ecosystem, primarily used for paying for rendering services, receiving airdrop rewards, accessing 3D application experiences, and trading or exchanging on exchanges.",
-      "icon_url": "https://ipfs.io/ipfs/QmcxfygqFL47c9r4oSXFUCeDa3Bt2xL1gy6PWbv8XMWH3d",
-      "tags": [
-        "unknown",
-        "launchpad",
         "birdeye-trending"
       ],
-      "price": 0.00455967,
-      "daily_volume": 2202027.0178512386,
-      "website": "https://paraverse.cc/pvs/",
-      "twitter": "https://twitter.com/PVT_Paraverse",
-      "created_at": "2025-03-13T04:11:06.651024Z"
-    },
-    {
-      "id": "H2kyHPka6nFrkrSKXGuyxDTai1sJZyWZ5Uzbq2bJpump",
-      "name": "Fat Factory Model",
-      "symbol": "FFM",
-      "decimals": 6,
-      "description": "Make America Great Again",
-      "icon_url": "https://ipfs.io/ipfs/QmVhZauJVikTAEP1as8Tfx4SFA9A2Q2aF5hpFDvuva3jyK",
-      "tags": [
-        "launchpad",
-        "unknown",
-        "birdeye-trending"
-      ],
-      "price": 0.000763776,
-      "daily_volume": 3976.738204419029,
-      "website": "https://www.tiktok.com/@axiang67/video/7490539237108878634",
-      "created_at": "2025-04-08T00:33:41.667968Z"
-    },
-    {
-      "id": "FasH397CeZLNYWkd3wWK9vrmjd1z93n3b59DssRXpump",
-      "name": "The Next Bitcoin",
-      "symbol": "BUTTCOIN",
-      "decimals": 6,
-      "description": "Unlock the power of your farts by collecting butt coins.",
-      "icon_url": "https://ipfs.io/ipfs/QmVfhGnJmuUoJ8wdnEfRP1RaCg8GQ9WJgotiXVj5ARNGFd",
-      "tags": [
-        "verified",
-        "launchpad",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 0.00971924,
-      "daily_volume": 3202528.476971858,
-      "website": "https://www.youtube.com/watch?v=uh-zxexGSA4&t=86s",
-      "created_at": "2025-01-30T16:57:38.574633Z"
-    },
-    {
-      "id": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-      "name": "Bonk",
-      "symbol": "Bonk",
-      "decimals": 5,
-      "description": "The Official Bonk Inu token",
-      "icon_url": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
-      "tags": [
-        "verified",
-        "strict",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 0.0000100191,
-      "daily_volume": 3998498.596528123,
+      "price": 0.252474864,
+      "daily_volume": 29074522.41213873,
       "created_at": "2024-04-26T10:56:58.893768Z"
     }
   ]
