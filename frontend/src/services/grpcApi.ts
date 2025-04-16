@@ -13,18 +13,19 @@ import {
 	TokenTransferPrepareResponse,
 	TokenTransferSubmitRequest,
 	TokenTransferResponse
-} from './api';
-import { DEBUG_MODE as ENV_DEBUG_MODE } from '@env';
+} from './grpc/model';
+import { DEBUG_MODE } from '@env';
 
-if (!ENV_DEBUG_MODE) {
+if (!DEBUG_MODE) {
 	throw new Error('DEBUG_MODE environment variable is required');
 }
-const DEBUG_MODE = ENV_DEBUG_MODE === 'true';
+
+const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
 // Helper function to get headers with debug mode
 const getRequestHeaders = (): Headers => {
 	const headers = new Headers();
-	if (DEBUG_MODE) {
+	if (IS_DEBUG_MODE) {
 		headers.set("x-debug-mode", "true");
 	}
 	return headers;
