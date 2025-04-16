@@ -2,29 +2,21 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
+import TokenSelector from '@components/TokenSelector';
 import { TokenTransferFormData, SendTokensScreenProps } from './types';
+import { PortfolioToken } from '@store/portfolio';
 import { validateForm, handleTokenTransfer, formatTokenBalance } from './scripts';
 import { createStyles } from './styles';
-import { Dropdown } from 'react-native-paper-dropdown';
 
 const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const { wallet, tokens } = usePortfolioStore();
-	const [showDropDown, setShowDropDown] = useState(false);
-
-	const [formData, setFormData] = useState<TokenTransferFormData>({
-		toAddress: '',
-		amount: '',
-		selectedToken: ''
-	});
-	const [error, setError] = useState<string | null>(null);
+	const [selectedToken, setSelectedToken] = useState<PortfolioToken | undefined>(undefined);
+	const [amount, setAmount] = useState('');
+	const [recipientAddress, setRecipientAddress] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
-
-	const tokenOptions = tokens.map(token => ({
-		label: `${token.coin.symbol} - ${formatTokenBalance(token.amount)}`,
-		value: token.id
-	}));
+	const [error, setError] = useState<string | null>(null);
 
 	const handleSubmit = async () => {
 		try {
@@ -36,16 +28,24 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			setError(null);
 			setIsLoading(true);
 
-			const validationError = validateForm(formData);
+			const validationError = validateForm({
+				toAddress: recipientAddress,
+				amount,
+				selectedToken: selectedToken?.id
+			});
+
 			if (validationError) {
 				setError(validationError);
 				return;
 			}
 
-			const txHash = await handleTokenTransfer(formData, wallet);
-			console.log('Transaction submitted:', txHash);
+			const txHash = await handleTokenTransfer({
+				toAddress: recipientAddress,
+				amount,
+				selectedToken: selectedToken?.id
+			}, wallet);
 
-			// Navigate back or to transaction status screen
+			console.log('Transaction submitted:', txHash);
 			navigation.goBack();
 		} catch (err) {
 			setError(err.message || 'Failed to send tokens');
@@ -68,13 +68,12 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				<Text style={styles.title}>Send Tokens</Text>
 
 				<View style={styles.inputContainer}>
-					<Text style={styles.label}>Recipient Address</Text>
-					<TextInput
-						style={styles.input}
-						value={formData.toAddress}
-						onChangeText={(text) => setFormData({ ...formData, toAddress: text })}
-						placeholder="Enter recipient's address"
-						placeholderTextColor={theme.colors.onSurfaceVariant}
+					<Text style={styles.label}>Token</Text>
+					<TokenSelector
+						selectedToken={selectedToken}
+						tokens={tokens}
+						onSelectToken={setSelectedToken}
+						label="Select token to send"
 					/>
 				</View>
 
@@ -82,8 +81,8 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 					<Text style={styles.label}>Amount</Text>
 					<TextInput
 						style={styles.input}
-						value={formData.amount}
-						onChangeText={(text) => setFormData({ ...formData, amount: text })}
+						value={amount}
+						onChangeText={(text) => setAmount(text)}
 						placeholder="0.00"
 						placeholderTextColor={theme.colors.onSurfaceVariant}
 						keyboardType="decimal-pad"
@@ -91,12 +90,13 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				</View>
 
 				<View style={styles.inputContainer}>
-					<Dropdown
-						label="Select Token"
-						mode="outlined"
-						options={tokenOptions}
-						value={formData.selectedToken}
-						onSelect={(value: string) => setFormData({ ...formData, selectedToken: value })}
+					<Text style={styles.label}>Recipient Address</Text>
+					<TextInput
+						style={styles.input}
+						value={recipientAddress}
+						onChangeText={(text) => setRecipientAddress(text)}
+						placeholder="Enter recipient's address"
+						placeholderTextColor={theme.colors.onSurfaceVariant}
 					/>
 				</View>
 
