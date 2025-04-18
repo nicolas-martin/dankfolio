@@ -81,31 +81,16 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			<ScrollView contentContainerStyle={styles.contentPadding}>
 				<Text style={styles.title}>Send Tokens</Text>
 
-				<Card elevation={0} style={styles.inlineCard}>
-					<Card.Content style={styles.inlineContainer}>
-						<View style={styles.inlineSelectorContainer}>
-							<TokenSelector
-								selectedToken={selectedToken}
-								tokens={tokens}
-								onSelectToken={setSelectedToken}
-								label="Select token to send"
-							/>
-						</View>
-						<View style={styles.inputWithValueContainer}>
-							<TextInput
-								style={styles.inlineInput}
-								value={amount}
-								onChangeText={(text) => setAmount(text)}
-								placeholder="0.00"
-								placeholderTextColor={theme.colors.onSurfaceVariant}
-								keyboardType="decimal-pad"
-							/>
-							<Text style={styles.inlineValueText}>
-								{`$${selectedToken && amount ? (parseFloat(amount) * selectedToken.price).toFixed(2) : '0.00'}`}
-							</Text>
-						</View>
-					</Card.Content>
-				</Card>
+				<TokenSelector
+					style={styles.inputContainer}
+					selectedToken={selectedToken}
+					tokens={tokens}
+					onSelectToken={setSelectedToken}
+					label="Select token to send"
+					amountValue={amount}
+					onAmountChange={setAmount}
+					isAmountEditable={true}
+				/>
 
 				{selectedToken && (
 					<View style={styles.percentageContainer}>

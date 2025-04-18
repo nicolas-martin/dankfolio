@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
-import { View, Image, TouchableOpacity, TextInput, FlatList } from 'react-native';
-import { Modal, Portal, Text, useTheme } from 'react-native-paper';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
+import { Modal, Portal, Text, useTheme, Card } from 'react-native-paper';
 import { ChevronDownIcon, SearchIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { PortfolioToken } from '@store/portfolio';
@@ -81,6 +81,11 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	onSelectToken,
 	label,
 	style,
+	amountValue,
+	onAmountChange,
+	amountPlaceholder = '0.00',
+	isAmountEditable = true,
+	isAmountLoading = false,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -90,29 +95,62 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		setModalVisible(false);
 	}, []);
 
+	const calculatedValue = useMemo(() => {
+		if (selectedToken && amountValue && !isNaN(parseFloat(amountValue))) {
+			return (parseFloat(amountValue) * selectedToken.price).toFixed(2);
+		}
+		return '0.00';
+	}, [selectedToken, amountValue]);
+
 	return (
 		<>
-			<TouchableOpacity
-				style={[styles.container, style]}
-				onPress={() => setModalVisible(true)}
-			>
-				<View style={styles.tokenInfo}>
-					{selectedToken ? (
-						<>
-							<Image
-								source={{ uri: selectedToken.coin.icon_url }}
-								style={styles.tokenIcon}
-							/>
-							<Text style={styles.tokenSymbol}>
-								{selectedToken.coin.symbol}
+			<Card elevation={0} style={[styles.cardContainer, style]}>
+				<Card.Content style={styles.cardContent}>
+					<TouchableOpacity
+						style={styles.selectorButtonContainer}
+						onPress={() => setModalVisible(true)}
+						disabled={!onSelectToken}
+					>
+						<View style={styles.tokenInfo}>
+							{selectedToken ? (
+								<>
+									<Image
+										source={{ uri: selectedToken.coin.icon_url }}
+										style={styles.tokenIcon}
+									/>
+									<Text style={styles.tokenSymbol}>
+										{selectedToken.coin.symbol}
+									</Text>
+								</>
+							) : (
+								<Text style={styles.tokenSymbol}>{label || 'Select Token'}</Text>
+							)}
+						</View>
+						<ChevronDownIcon size={20} color={theme.colors.onSurface} />
+					</TouchableOpacity>
+
+					{onAmountChange && (
+						<View style={styles.inputContainer}>
+							{isAmountLoading ? (
+								<ActivityIndicator size="small" color={theme.colors.primary} style={{ height: styles.amountInput.height }} />
+							) : (
+								<TextInput
+									style={styles.amountInput}
+									value={amountValue}
+									onChangeText={onAmountChange}
+									placeholder={amountPlaceholder}
+									placeholderTextColor={theme.colors.onSurfaceVariant}
+									keyboardType="decimal-pad"
+									editable={isAmountEditable}
+								/>
+							)}
+							<Text style={styles.valueText}>
+								{`$${calculatedValue}`}
 							</Text>
-						</>
-					) : (
-						<Text style={styles.tokenSymbol}>{label || 'Select Token'}</Text>
+						</View>
 					)}
-				</View>
-				<ChevronDownIcon size={20} color={theme.colors.onSurface} />
-			</TouchableOpacity>
+				</Card.Content>
+			</Card>
 
 			<TokenSearchModal
 				visible={modalVisible}

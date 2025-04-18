@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'; // Added useRef
-import { View, ScrollView } from 'react-native';
-import { Text, useTheme, Button } from 'react-native-paper';
+import { View, ScrollView, TextInput } from 'react-native'; // Added TextInput
+import { Text, useTheme, Button, Card } from 'react-native-paper'; // Added Card
 import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './trade_styles';
@@ -8,7 +8,8 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { RootStackParamList } from '@/types';
-import CoinSelector from '@components/Trade/CoinSelector';
+import TokenSelector from '@components/TokenSelector';
+import { PortfolioToken } from '@store/portfolio';
 import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal'; // Added Status Modal
@@ -147,6 +148,30 @@ const Trade: React.FC = () => {
 	const toPortfolioToken = useMemo(() => {
 		return tokens.find(token => token.id === toCoin?.id);
 	}, [tokens, toCoin]);
+
+	// Handler for the 'From' TokenSelector
+	const handleSelectFromToken = (token: PortfolioToken) => {
+		if (token.id === toCoin?.id) {
+			// If selected token is the same as the 'to' token, swap them
+			handleSwapCoins();
+		} else {
+			setFromCoin(token.coin);
+			setFromAmount(''); // Clear amounts on new selection
+			setToAmount('');
+		}
+	};
+
+	// Handler for the 'To' TokenSelector
+	const handleSelectToToken = (token: PortfolioToken) => {
+		if (token.id === fromCoin?.id) {
+			// If selected token is the same as the 'from' token, swap them
+			handleSwapCoins();
+		} else {
+			setToCoin(token.coin);
+			setFromAmount(''); // Clear amounts on new selection
+			setToAmount('');
+		}
+	};
 
 	const handleFromAmountChange = async (amount: string) => {
 		if (!fromCoin || !toCoin) return;
@@ -311,25 +336,18 @@ const Trade: React.FC = () => {
 		<View style={styles.container}>
 			<ScrollView style={styles.scrollView}>
 				<View style={styles.padding}>
-					{fromCoin && (
-						<View style={styles.valueInfoContainer}>
-							<CoinSelector
-								label="From"
-								coinData={{
-									coin: fromCoin,
-									balance: fromPortfolioToken ? {
-										amount: fromPortfolioToken.amount,
-										value: fromPortfolioToken.value
-									} : undefined
-								}}
-								amount={{
-									value: fromAmount,
-									onChange: handleFromAmountChange,
-								}}
-								isInput
-							/>
-						</View>
-					)}
+					{/* From Coin Section */}
+					<Text variant="labelLarge" style={{ marginBottom: 4 }}>From</Text>
+					<TokenSelector
+						style={styles.valueInfoContainer}
+						selectedToken={fromPortfolioToken}
+						tokens={tokens}
+						onSelectToken={handleSelectFromToken}
+						label={fromCoin ? undefined : 'Select Token'}
+						amountValue={fromAmount}
+						onAmountChange={handleFromAmountChange}
+						isAmountEditable={true}
+					/>
 
 					<Button
 						mode="text"
@@ -339,24 +357,19 @@ const Trade: React.FC = () => {
 						Swap
 					</Button>
 
-					<View style={styles.valueInfoContainer}>
-						<CoinSelector
-							label="To"
-							coinData={{
-								coin: toCoin,
-								balance: toPortfolioToken ? {
-									amount: toPortfolioToken.amount,
-									value: toPortfolioToken.value
-								} : undefined
-							}}
-							amount={{
-								value: toAmount,
-								onChange: handleToAmountChange,
-								isLoading: isQuoteLoading
-							}}
-							isInput
-						/>
-					</View>
+					{/* To Coin Section */}
+					<Text variant="labelLarge" style={{ marginBottom: 4 }}>To</Text>
+					<TokenSelector
+						style={styles.valueInfoContainer}
+						selectedToken={toPortfolioToken}
+						tokens={tokens}
+						onSelectToken={handleSelectToToken}
+						label={toCoin ? undefined : 'Select Token'}
+						amountValue={toAmount}
+						onAmountChange={handleToAmountChange}
+						isAmountEditable={!isQuoteLoading}
+						isAmountLoading={isQuoteLoading}
+					/>
 
 					{fromAmount && toAmount && (
 						<TradeDetails
