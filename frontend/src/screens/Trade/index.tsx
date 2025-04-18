@@ -91,15 +91,6 @@ const Trade: React.FC = () => {
 
 	// --- End Wrapped Polling Functions ---
 
-	// Early return if toCoin is null
-	if (!toCoin) {
-		return (
-			<View style={styles.noWalletContainer}>
-				<Text style={{ color: theme.colors.onSurface }}>Invalid trade pair. Please select coins to trade.</Text>
-			</View>
-		);
-	}
-
 	// Refresh coin prices on screen load
 	useEffect(() => {
 		let isMounted = true;
@@ -150,24 +141,24 @@ const Trade: React.FC = () => {
 	}, [tokens, toCoin]);
 
 	// Handler for the 'From' TokenSelector
-	const handleSelectFromToken = (token: PortfolioToken) => {
+	const handleSelectFromToken = (token: Coin) => {
 		if (token.id === toCoin?.id) {
 			// If selected token is the same as the 'to' token, swap them
 			handleSwapCoins();
 		} else {
-			setFromCoin(token.coin);
+			setFromCoin(token);
 			setFromAmount(''); // Clear amounts on new selection
 			setToAmount('');
 		}
 	};
 
 	// Handler for the 'To' TokenSelector
-	const handleSelectToToken = (token: PortfolioToken) => {
+	const handleSelectToToken = (token: Coin) => {
 		if (token.id === fromCoin?.id) {
 			// If selected token is the same as the 'from' token, swap them
 			handleSwapCoins();
 		} else {
-			setToCoin(token.coin);
+			setToCoin(token);
 			setFromAmount(''); // Clear amounts on new selection
 			setToAmount('');
 		}
@@ -324,6 +315,15 @@ const Trade: React.FC = () => {
 		);
 	};
 
+	// Early return if toCoin is null
+	if (!toCoin) {
+		return (
+			<View style={styles.noWalletContainer}>
+				<Text style={{ color: theme.colors.onSurface }}>Invalid trade pair. Please select coins to trade.</Text>
+			</View>
+		);
+	}
+
 	if (!wallet) {
 		return (
 			<View style={styles.noWalletContainer}>
@@ -341,7 +341,6 @@ const Trade: React.FC = () => {
 					<TokenSelector
 						style={styles.valueInfoContainer}
 						selectedToken={fromCoin ?? undefined}
-						tokens={tokens}
 						onSelectToken={handleSelectFromToken}
 						label={fromCoin ? undefined : 'Select Token'}
 						amountValue={fromAmount}
@@ -362,7 +361,6 @@ const Trade: React.FC = () => {
 					<TokenSelector
 						style={styles.valueInfoContainer}
 						selectedToken={toCoin ?? undefined}
-						tokens={tokens}
 						onSelectToken={handleSelectToToken}
 						label={toCoin ? undefined : 'Select Token'}
 						amountValue={toAmount}

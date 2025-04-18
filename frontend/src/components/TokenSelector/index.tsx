@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { Modal, Portal, Text, useTheme, Card } from 'react-native-paper';
 import { ChevronDownIcon, SearchIcon } from '@components/Common/Icons';
@@ -35,6 +35,10 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		});
 	}, [onSelectToken, onDismiss]);
 
+	useEffect(() => {
+		console.log('[TokenSearchModal] Visibility changed:', visible);
+	}, [visible]);
+
 	const renderItem = ({ item: coin }: { item: Coin }) => {
 		const portfolioToken = portfolioTokens.find(t => t.id === coin.id);
 		return (
@@ -61,7 +65,11 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		<Portal>
 			<Modal
 				visible={visible}
-				onDismiss={onDismiss}
+				onDismiss={() => {
+					console.log('[TokenSearchModal] Modal onDismiss triggered');
+					// Call onDismiss directly without requestAnimationFrame
+					onDismiss();
+				}}
 				contentContainerStyle={styles.modalContent}
 				dismissable={true}
 			>
@@ -102,6 +110,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const { tokens: portfolioTokens } = usePortfolioStore();
 
 	const handleDismiss = useCallback(() => {
+		console.log('[TokenSelector] handleDismiss called');
 		setModalVisible(false);
 	}, []);
 
@@ -123,7 +132,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				<Card.Content style={styles.cardContent}>
 					<TouchableOpacity
 						style={styles.selectorButtonContainer}
-						onPress={() => setModalVisible(true)}
+						onPress={() => {
+							console.log('[TokenSelector] Opening modal');
+							setModalVisible(true);
+						}}
 						disabled={!onSelectToken}
 					>
 						<View style={styles.tokenInfo}>
