@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure
+
+## Directory Organization
+- Root directory: `./dankfolio`
+- Backend: `./dankfolio/backend`
+- Frontend: `./dankfolio/frontend`
+
+## Make Commands
+- `make run`: Terminates existing backend and runs a new one
+- `make run-mobile`: Terminates existing instance, starts new one, runs 2 linters
+
+## Working Directory Rules
+- Backend operations must be run from `./dankfolio/backend`
+- Frontend operations must be run from `./dankfolio/frontend`
+- Make commands must be run from root `./dankfolio`

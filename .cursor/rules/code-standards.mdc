@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Code Standards and Practices
+
+## General Guidelines
+- Use project-specific naming and comments
+- Create modular, reusable components
+- Focus on performance and responsiveness
+- Avoid generic boilerplate
+- Keep code changes minimal and focused
+- Extract ALL business logic to scripts.ts files
+
+## Development Rules
+- Skip database concerns; work in memory until storage solutions are addressed
+- Test all API endpoints before completion
+- Use 0.000000001 as default SOLANA amount
+- Limit changes strictly to user input
+- Avoid over-optimization and over-engineering
+- Get explicit permission for future-proofing changes
+- NO styling changes without explicit permission
+- NO comment rephrasing without purpose
+
+## Linting
+- Include 'frontend/' prefix in file paths
+- Fix linting errors with specific rule references
+- Run `yarn lint`, `make run-mobile`, or `yarn check-structure`
+- If stuck in linting loop, re-run command
+- Maximum 3 attempts to fix same linting error before escalation
