@@ -6,6 +6,11 @@ import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { PortfolioToken } from '@store/portfolio';
 import { createStyles } from './styles';
 
+// Helper function to determine if the prop is a PortfolioToken
+const isPortfolioToken = (token: any): token is PortfolioToken => {
+	return token && typeof token === 'object' && 'amount' in token && 'value' in token;
+};
+
 const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	visible,
 	onDismiss,
@@ -102,6 +107,12 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		return '0.00';
 	}, [selectedToken, amountValue]);
 
+	// Get the base Coin object, whether from PortfolioToken or Coin prop
+	const displayCoin = useMemo(() => {
+		if (!selectedToken) return null;
+		return isPortfolioToken(selectedToken) ? selectedToken.coin : selectedToken;
+	}, [selectedToken]);
+
 	return (
 		<>
 			<Card elevation={0} style={[styles.cardContainer, style]}>
@@ -112,14 +123,14 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						disabled={!onSelectToken}
 					>
 						<View style={styles.tokenInfo}>
-							{selectedToken ? (
+							{displayCoin ? (
 								<>
 									<Image
-										source={{ uri: selectedToken.coin.icon_url }}
+										source={{ uri: displayCoin.icon_url }}
 										style={styles.tokenIcon}
 									/>
 									<Text style={styles.tokenSymbol}>
-										{selectedToken.coin.symbol}
+										{displayCoin.symbol}
 									</Text>
 								</>
 							) : (

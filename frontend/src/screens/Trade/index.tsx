@@ -340,7 +340,7 @@ const Trade: React.FC = () => {
 					<Text variant="labelLarge" style={{ marginBottom: 4 }}>From</Text>
 					<TokenSelector
 						style={styles.valueInfoContainer}
-						selectedToken={fromPortfolioToken}
+						selectedToken={fromCoin ?? undefined}
 						tokens={tokens}
 						onSelectToken={handleSelectFromToken}
 						label={fromCoin ? undefined : 'Select Token'}
@@ -361,7 +361,7 @@ const Trade: React.FC = () => {
 					<Text variant="labelLarge" style={{ marginBottom: 4 }}>To</Text>
 					<TokenSelector
 						style={styles.valueInfoContainer}
-						selectedToken={toPortfolioToken}
+						selectedToken={toCoin ?? undefined}
 						tokens={tokens}
 						onSelectToken={handleSelectToToken}
 						label={toCoin ? undefined : 'Select Token'}

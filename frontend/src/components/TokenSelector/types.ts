@@ -1,7 +1,8 @@
+import { Coin } from '@/types';
 import { PortfolioToken } from '@store/portfolio';
 
 export interface TokenSelectorProps {
-	selectedToken?: PortfolioToken;
+	selectedToken?: PortfolioToken | Coin;
 	tokens: PortfolioToken[];
 	onSelectToken: (token: PortfolioToken) => void;
 	label?: string;
