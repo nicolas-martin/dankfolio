@@ -3,54 +3,59 @@ import { View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator }
 import { Modal, Portal, Text, useTheme, Card } from 'react-native-paper';
 import { ChevronDownIcon, SearchIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
-import { PortfolioToken } from '@store/portfolio';
+import { usePortfolioStore } from '@store/portfolio';
+import { useCoinStore } from '@store/coins';
+import { Coin } from '@/types';
 import { createStyles } from './styles';
-
-// Helper function to determine if the prop is a PortfolioToken
-const isPortfolioToken = (token: any): token is PortfolioToken => {
-	return token && typeof token === 'object' && 'amount' in token && 'value' in token;
-};
 
 const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	visible,
 	onDismiss,
-	tokens,
 	selectedToken,
 	onSelectToken,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const [searchQuery, setSearchQuery] = useState('');
+	const { tokens: portfolioTokens } = usePortfolioStore();
+	const { availableCoins } = useCoinStore();
 
-	const filteredTokens = tokens.filter(token =>
-		token.coin.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-		token.coin.name.toLowerCase().includes(searchQuery.toLowerCase())
-	);
+	const filteredCoins = useMemo(() => {
+		return availableCoins.filter(coin =>
+			coin.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			coin.name.toLowerCase().includes(searchQuery.toLowerCase())
+		);
+	}, [availableCoins, searchQuery]);
 
-	const handleTokenSelect = useCallback((token: PortfolioToken) => {
-		onSelectToken(token);
+	const handleTokenSelect = useCallback((coin: Coin) => {
+		onSelectToken(coin);
 		// Small delay to prevent flickering
 		requestAnimationFrame(() => {
 			onDismiss();
 		});
 	}, [onSelectToken, onDismiss]);
 
-	const renderItem = ({ item: token }: { item: PortfolioToken }) => (
-		<TouchableOpacity
-			style={styles.tokenItem}
-			onPress={() => handleTokenSelect(token)}
-		>
-			<Image source={{ uri: token.coin.icon_url }} style={styles.tokenIcon} />
-			<View style={styles.tokenDetails}>
-				<Text style={styles.tokenSymbol}>{token.coin.symbol}</Text>
-				<Text style={styles.tokenName}>{token.coin.name}</Text>
-				<Text style={styles.tokenAddress}>
-					{token.coin.id.slice(0, 6)}...{token.coin.id.slice(-6)}
-				</Text>
-			</View>
-			<Text style={styles.tokenBalance}>{token.amount}</Text>
-		</TouchableOpacity>
-	);
+	const renderItem = ({ item: coin }: { item: Coin }) => {
+		const portfolioToken = portfolioTokens.find(t => t.id === coin.id);
+		return (
+			<TouchableOpacity
+				style={styles.tokenItem}
+				onPress={() => handleTokenSelect(coin)}
+			>
+				<Image source={{ uri: coin.icon_url }} style={styles.tokenIcon} />
+				<View style={styles.tokenDetails}>
+					<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
+					<Text style={styles.tokenName}>{coin.name}</Text>
+					<Text style={styles.tokenAddress}>
+						{coin.id.slice(0, 6)}...{coin.id.slice(-6)}
+					</Text>
+				</View>
+				{portfolioToken && (
+					<Text style={styles.tokenBalance}>{portfolioToken.amount}</Text>
+				)}
+			</TouchableOpacity>
+		);
+	};
 
 	return (
 		<Portal>
@@ -70,9 +75,9 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 					/>
 				</View>
 				<FlatList
-					data={filteredTokens}
+					data={filteredCoins}
 					renderItem={renderItem}
-					keyExtractor={token => token.id}
+					keyExtractor={coin => coin.id}
 					style={styles.tokenList}
 				/>
 			</Modal>
@@ -82,7 +87,6 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 const TokenSelector: React.FC<TokenSelectorProps> = ({
 	selectedToken,
-	tokens,
 	onSelectToken,
 	label,
 	style,
@@ -95,6 +99,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const [modalVisible, setModalVisible] = useState(false);
+	const { tokens: portfolioTokens } = usePortfolioStore();
 
 	const handleDismiss = useCallback(() => {
 		setModalVisible(false);
@@ -107,11 +112,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		return '0.00';
 	}, [selectedToken, amountValue]);
 
-	// Get the base Coin object, whether from PortfolioToken or Coin prop
-	const displayCoin = useMemo(() => {
+	const portfolioToken = useMemo(() => {
 		if (!selectedToken) return null;
-		return isPortfolioToken(selectedToken) ? selectedToken.coin : selectedToken;
-	}, [selectedToken]);
+		return portfolioTokens.find(t => t.id === selectedToken.id);
+	}, [selectedToken, portfolioTokens]);
 
 	return (
 		<>
@@ -123,14 +127,14 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						disabled={!onSelectToken}
 					>
 						<View style={styles.tokenInfo}>
-							{displayCoin ? (
+							{selectedToken ? (
 								<>
 									<Image
-										source={{ uri: displayCoin.icon_url }}
+										source={{ uri: selectedToken.icon_url }}
 										style={styles.tokenIcon}
 									/>
 									<Text style={styles.tokenSymbol}>
-										{displayCoin.symbol}
+										{selectedToken.symbol}
 									</Text>
 								</>
 							) : (
@@ -158,6 +162,11 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							<Text style={styles.valueText}>
 								{`$${calculatedValue}`}
 							</Text>
+							{portfolioToken && (
+								<Text style={styles.valueText}>
+									{portfolioToken.amount}
+								</Text>
+							)}
 						</View>
 					)}
 				</Card.Content>
@@ -166,7 +175,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 			<TokenSearchModal
 				visible={modalVisible}
 				onDismiss={handleDismiss}
-				tokens={tokens}
 				selectedToken={selectedToken}
 				onSelectToken={onSelectToken}
 			/>
