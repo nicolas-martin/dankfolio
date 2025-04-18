@@ -5,6 +5,8 @@ export interface TokenSelectorProps {
 	tokens: PortfolioToken[];
 	onSelectToken: (token: PortfolioToken) => void;
 	label?: string;
+	/** Optional custom style for container to override default styles */
+	style?: any;
 }
 
 export interface TokenSearchModalProps extends TokenSelectorProps {

@@ -19,6 +19,48 @@ export const createStyles = (theme: MD3Theme) =>
 		inputContainer: {
 			marginBottom: 20,
 		},
+		inlineContainer: {
+			flexDirection: 'row',
+			alignItems: 'flex-start',
+			width: '100%',
+		},
+		inlineSelectorContainer: {
+			flex: 1,
+			marginRight: 12,
+		},
+		inputWithValueContainer: {
+			flex: 2,
+			alignItems: 'flex-end',
+			marginLeft: 8,
+		},
+		inlineInput: {
+			height: 48,
+			paddingHorizontal: 0,
+			paddingVertical: 0,
+			borderRadius: 8,
+			color: theme.colors.onSurface,
+			fontSize: 24,
+			fontWeight: 'bold',
+			textAlign: 'right',
+			backgroundColor: 'transparent',
+			borderWidth: 0,
+			width: '100%',
+		},
+		inlineValueText: {
+			color: theme.colors.onSurfaceVariant,
+			fontSize: 14,
+			marginTop: 2,
+			textAlign: 'right',
+			width: '100%',
+		},
+		inlineCard: {
+			marginBottom: 20,
+			width: '100%',
+			borderRadius: 12,
+			backgroundColor: theme.colors.surfaceVariant,
+			padding: 8,
+			borderWidth: 0,
+		},
 		label: {
 			fontSize: 16,
 			color: theme.colors.onSurface,

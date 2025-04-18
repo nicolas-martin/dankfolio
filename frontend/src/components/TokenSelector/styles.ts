@@ -6,33 +6,34 @@ export const createStyles = (theme: MD3Theme) =>
 		container: {
 			flexDirection: 'row',
 			alignItems: 'center',
+			justifyContent: 'space-between',
 			padding: 12,
-			backgroundColor: theme.colors.surface,
+			backgroundColor: 'transparent',
 			borderRadius: 8,
-			borderWidth: 1,
-			borderColor: theme.colors.outline,
 		},
 		tokenInfo: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			flex: 1,
 		},
 		selectedTokenDetails: {
 			flex: 1,
-			marginLeft: 8,
+			marginLeft: 12,
 		},
 		tokenAmount: {
 			...theme.fonts.bodySmall,
 			color: theme.colors.onSurfaceVariant,
+			marginTop: 2,
 		},
 		tokenIcon: {
-			width: 24,
-			height: 24,
-			borderRadius: 12,
+			width: 36,
+			height: 36,
+			borderRadius: 18,
 			marginRight: 8,
 		},
 		tokenSymbol: {
 			...theme.fonts.titleMedium,
+			fontSize: 18,
+			fontWeight: '600',
 			color: theme.colors.onSurface,
 		},
 		modalContent: {

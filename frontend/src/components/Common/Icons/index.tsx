@@ -2,6 +2,7 @@ import React from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import Feather from 'react-native-vector-icons/Feather';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import type { IconProps as RNVIconProps } from 'react-native-vector-icons/Icon';
 
 type IconBaseProps = Omit<RNVIconProps, 'name'>;
@@ -26,6 +27,11 @@ const FontAwesome6IconBase: React.FC<IconProps> = (props) => {
 	return <FontAwesome6 solid name={name} size={size} color={color} style={style} />;
 };
 
+const AntDesignIconBase: React.FC<IconProps> = (props) => {
+	const { name, size = 24, color = '#000', style } = props;
+	return <AntDesign name={name} size={size} color={color} style={style} />;
+};
+
 // Navigation icons
 export const BackIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="arrow-left" {...props} />;
 export const HomeIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="home" {...props} />;
@@ -38,7 +44,7 @@ export const EditIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase nam
 export const CloseIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="x" {...props} />;
 export const CheckIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="check" {...props} />;
 export const SearchIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="search" {...props} />;
-export const SwapIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="swap-vertical" {...props} />;
+export const SwapIcon: React.FC<IconBaseProps> = (props) => <AntDesignIconBase name="swap" {...props} />;
 export const SendIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="send" {...props} />;
 
 // Feature icons

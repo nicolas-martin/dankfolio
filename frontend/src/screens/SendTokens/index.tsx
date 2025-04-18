@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text, useTheme, Card } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import TokenSelector from '@components/TokenSelector';
 import { TokenTransferFormData, SendTokensScreenProps } from './types';
@@ -81,50 +81,56 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			<ScrollView contentContainerStyle={styles.contentPadding}>
 				<Text style={styles.title}>Send Tokens</Text>
 
-				<View style={styles.inputContainer}>
-					<Text style={styles.label}>Token</Text>
-					<TokenSelector
-						selectedToken={selectedToken}
-						tokens={tokens}
-						onSelectToken={setSelectedToken}
-						label="Select token to send"
-					/>
-				</View>
+				<Card elevation={0} style={styles.inlineCard}>
+					<Card.Content style={styles.inlineContainer}>
+						<View style={styles.inlineSelectorContainer}>
+							<TokenSelector
+								selectedToken={selectedToken}
+								tokens={tokens}
+								onSelectToken={setSelectedToken}
+								label="Select token to send"
+							/>
+						</View>
+						<View style={styles.inputWithValueContainer}>
+							<TextInput
+								style={styles.inlineInput}
+								value={amount}
+								onChangeText={(text) => setAmount(text)}
+								placeholder="0.00"
+								placeholderTextColor={theme.colors.onSurfaceVariant}
+								keyboardType="decimal-pad"
+							/>
+							<Text style={styles.inlineValueText}>
+								{`$${selectedToken && amount ? (parseFloat(amount) * selectedToken.price).toFixed(2) : '0.00'}`}
+							</Text>
+						</View>
+					</Card.Content>
+				</Card>
 
-				<View style={styles.inputContainer}>
-					<Text style={styles.label}>Amount</Text>
-					<View style={styles.amountContainer}>
-						<TextInput
-							style={[styles.input, { flex: 1 }]}
-							value={amount}
-							onChangeText={(text) => setAmount(text)}
-							placeholder="0.00"
-							placeholderTextColor={theme.colors.onSurfaceVariant}
-							keyboardType="decimal-pad"
-						/>
+				{selectedToken && (
+					<View style={styles.percentageContainer}>
+						{[10, 25, 50, 75, 100].map((percent) => (
+							<TouchableOpacity
+								key={percent}
+								style={styles.percentageButton}
+								onPress={() => {
+									const calculatedAmount = (selectedToken.amount * percent) / 100;
+									let amountStr = calculatedAmount.toFixed(9);
+									amountStr = parseFloat(amountStr).toString();
+									if (amountStr.length > 12) {
+										amountStr = amountStr.substring(0, 12);
+										if (amountStr.endsWith('.')) {
+											amountStr = amountStr.substring(0, 11);
+										}
+									}
+									setAmount(amountStr);
+								}}
+							>
+								<Text style={styles.percentageButtonText}>{percent}%</Text>
+							</TouchableOpacity>
+						))}
 					</View>
-					{selectedToken && (
-						<>
-							{/* <Text style={styles.balanceText}>
-								{formatTokenBalance(selectedToken.amount)} {selectedToken.coin.symbol}
-							</Text> */}
-							<View style={styles.percentageContainer}>
-								{[10, 25, 50, 75, 100].map((percent) => (
-									<TouchableOpacity
-										key={percent}
-										style={styles.percentageButton}
-										onPress={() => {
-											const amount = (selectedToken.amount * percent) / 100;
-											setAmount(amount.toString());
-										}}
-									>
-										<Text style={styles.percentageButtonText}>{percent}%</Text>
-									</TouchableOpacity>
-								))}
-							</View>
-						</>
-					)}
-				</View>
+				)}
 
 				<View style={styles.inputContainer}>
 					<Text style={styles.label}>Recipient Address</Text>
