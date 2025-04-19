@@ -1,53 +1,130 @@
 {
-  "scrapeTimestamp": "2025-04-18T17:54:32.21407Z",
+  "scrapeTimestamp": "2025-04-19T20:22:26.890769Z",
   "tokens": [
     {
-      "id": "7dGEYMPsAVxJY3qQJaCHwLPkCCx9SSE52H4k1wF617uE",
-      "name": "Bitcoin Printer",
-      "symbol": "BRRR",
-      "decimals": 9,
-      "description": "Bitcoin Printer (BRRR) - A Solana Token",
-      "icon_url": "https://gateway.pinata.cloud/ipfs/QmSe5HMJhYKeHfhpR2r2iffewJxebPzZ7ws7RQibM6Jvw2",
-      "tags": [
-        "unknown",
-        "token-2022"
-      ],
-      "price": 0.000755248219,
-      "daily_volume": 1059811.093312766,
-      "created_at": "2025-04-17T17:01:18.882945Z"
-    },
-    {
-      "id": "8BtoThi2ZoXnF7QQK1Wjmh2JuBw9FjVvhnGMVZ2vpump",
-      "name": "Dark Eclipse",
-      "symbol": "DARK",
+      "id": "4ufYLNRmETB8KFw42aUcqdpnTHDqfBnAfcNoD3Jzpump",
+      "name": "Ɍε₮₳ɌÐȿ",
+      "symbol": "taɌD",
       "decimals": 6,
-      "description": "Leave immediately. You shouldn't be here. Do not look where it's darkest.",
-      "icon_url": "https://ipfs.io/ipfs/QmVhcHM7DU62qZpAYfN8NKz8GaNBXzcGahhWBbn4nWGbtm",
+      "description": "Zero Skill Coin is the coin for all the degen \r\nɌε₮₳ɌÐȿ that call the blockchain home.",
+      "icon_url": "https://ipfs.io/ipfs/QmSNf8jFfxfsGoRCbgHEmPnoUmmXA1wGdpWvjPkhutBu1X",
       "tags": [
         "launchpad",
-        "verified",
-        "community-assist",
-        "community",
-        "birdeye-trending"
+        "unknown"
       ],
-      "price": 0.032372,
-      "daily_volume": 7986934.197319862,
-      "created_at": "2024-11-24T07:50:05.895373Z"
+      "price": 0.000559878,
+      "daily_volume": 0.00288223334,
+      "website": "https://www.merriam-webster.com/dictionary/retard",
+      "telegram": "https://t.me/zeroskillcoinofficial",
+      "created_at": "2025-04-19T04:03:03.594142Z"
     },
     {
-      "id": "GkaTKeL8vMwV3i7kCaz2vVPoUyW98vaKSQuxXNRHpump",
-      "name": "The Straight Frog",
-      "symbol": "TSF",
+      "id": "8oosbx7jJrZxm5m4ThKhBpvwwG4QpoAe6i4GiG19pump",
+      "name": "Wizard Gang",
+      "symbol": "Wizard",
       "decimals": 6,
-      "description": "The Straight Frog (TSF) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/Qmf5NLxoVivxDQAeAYDQwQxWdxcM4V93PVMMmieZVhykaB",
+      "description": "One of the most iconic sings of a legendary wizard is a tower that can't be entered by ordinary means. It exists between moments or only appears at certain times and is filled with magic that defies understanding. To be invited inside is a once-in-a-lifetime event.",
+      "icon_url": "https://ipfs.io/ipfs/QmPDkpeSfqc8UcsqgqsMKimB8qw7uDqExAm9CMS7MjKpQ9",
       "tags": [
         "unknown",
         "launchpad"
       ],
-      "price": 0.000347376,
-      "daily_volume": 232795.69842030905,
-      "created_at": "2025-04-17T19:34:03.516916Z"
+      "price": 0.00401806,
+      "daily_volume": 1271160.4874884358,
+      "created_at": "2025-04-09T15:51:52.170487Z"
+    },
+    {
+      "id": "2G4RMDbXu79f5Yff6fBjKgXknuGvrFCr7iYmiTKy3fVc",
+      "name": "SHART",
+      "symbol": "SHART",
+      "decimals": 9,
+      "description": "SHART (SHART) - A Solana Token",
+      "icon_url": "https://gateway.pinata.cloud/ipfs/QmR6EScEi3pr1SSro3DswQpu6peeKz4sfKuUkaU6YDW6Zv",
+      "tags": [
+        "token-2022",
+        "unknown"
+      ],
+      "price": 0.000404579519,
+      "daily_volume": 569896.000727201,
+      "created_at": "2025-04-18T17:44:10.860239Z"
+    },
+    {
+      "id": "7e1zigq4YpSRt7fPxkvwSEPfzHon2atfkB4Zscampump",
+      "name": "Mount Rushmore",
+      "symbol": "MR",
+      "decimals": 6,
+      "description": "Mount Rushmore (MR) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmXmdFtmj1DipLgrpwWnYqAspiNSMXYf5EXwqQMVhKWMeo",
+      "tags": [
+        "launchpad",
+        "unknown"
+      ],
+      "price": 0.000612519,
+      "daily_volume": 133181.34000844185,
+      "created_at": "2025-04-18T19:22:27.695948Z"
+    },
+    {
+      "id": "4hybryA7PCCqSvnoaisyF2cMz13NNqcXoxNBoGvnpump",
+      "name": "NEW VINE",
+      "symbol": "XORIGINALS",
+      "decimals": 6,
+      "description": "NEW VINE (XORIGINALS) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmTSH69yNp8QGFeqZr4d9wYzvUFWmWMqrYZcm8hMs3yypP",
+      "tags": [
+        "launchpad",
+        "unknown"
+      ],
+      "price": 0.00112681,
+      "daily_volume": 124817.5568868806,
+      "created_at": "2025-04-18T20:14:34.419681Z"
+    },
+    {
+      "id": "BQeZ2wJFuMeCpEgJShZuGq4tojxbpZZY99RR5sTjpump",
+      "name": "God Of The Internet",
+      "symbol": "KIBO",
+      "decimals": 6,
+      "description": "God Of The Internet (KIBO) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmZj4RHFeViWww3osR652pYGbxF929XCSvvp2vB2j8A5nW",
+      "tags": [
+        "launchpad",
+        "unknown"
+      ],
+      "price": 0.000477952,
+      "website": "https://knowyourmeme.com/memes/people/kibo",
+      "created_at": "2025-04-19T17:35:21.329174Z"
+    },
+    {
+      "id": "GGJMmQ5GFz2dG5qHFz2k1EuP5Ls7jAWPmhiAaLFspump",
+      "name": "Tim Cheese",
+      "symbol": "Tim",
+      "decimals": 6,
+      "description": "The Official Tim Cheese Coin",
+      "icon_url": "https://ipfs.io/ipfs/QmQkBojuF377LraXLkRNrH9VEGFkvEYPFpjEHMzmXRezLd",
+      "tags": [
+        "launchpad",
+        "unknown"
+      ],
+      "price": 0.000220747,
+      "daily_volume": 2270.4522845929087,
+      "created_at": "2025-04-18T21:36:56.339124Z"
+    },
+    {
+      "id": "C3DwDjT17gDvvCYC2nsdGHxDHVmQRdhKfpAdqQ29pump",
+      "name": "Retard Finder Coin",
+      "symbol": "RFC",
+      "decimals": 6,
+      "description": "The most retarded coin in crypto.",
+      "icon_url": "https://ipfs.io/ipfs/Qmbi9jsNn718gvh85C2vuj4CSsu5JmuYq1W7B1vk2ys88W",
+      "tags": [
+        "launchpad",
+        "verified",
+        "community-assist",
+        "birdeye-trending"
+      ],
+      "price": 0.056377,
+      "daily_volume": 8004313.736351716,
+      "website": "https://www.retardfindercoin.com",
+      "created_at": "2025-03-24T22:34:37.712739Z"
     },
     {
       "id": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
@@ -58,12 +135,12 @@
       "icon_url": "https://arweave.net/A1etRNMKxhlNGTf-gNBtJ75QJJ4NJtbKh_UXQTlLXzI",
       "tags": [
         "verified",
-        "strict",
         "community",
+        "strict",
         "birdeye-trending"
       ],
-      "price": 0.237237886,
-      "daily_volume": 25804198.07498949,
+      "price": 0.241129103,
+      "daily_volume": 14576705.527743263,
       "created_at": "2024-04-26T10:56:58.893768Z"
     },
     {
@@ -78,89 +155,9 @@
         "community",
         "birdeye-trending"
       ],
-      "price": 0.79971,
-      "daily_volume": 7681549.215713603,
+      "price": 0.804625,
+      "daily_volume": 1198151.9104393844,
       "created_at": "2024-12-04T14:14:21.378341Z"
-    },
-    {
-      "id": "8T7RjdERSeQNqUhthUgEEUr33g6xdVVxND5YmgjSpump",
-      "name": "First Ever Meme Currency",
-      "symbol": "Kekels",
-      "decimals": 6,
-      "description": "First Ever Meme Currency (Kekels) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmSpPfCzK3Zu4aJp9XMmxX8Yc1avJdSgNi2tDPLbQupYLj",
-      "tags": [
-        "launchpad",
-        "unknown"
-      ],
-      "price": 0.00104991,
-      "daily_volume": 129328.426098844,
-      "created_at": "2025-04-17T05:13:51.277893Z"
-    },
-    {
-      "id": "BdQR2zt6eJ5vJNWBHbE9wnjc6iDBYyQbfoSwCRX6pump",
-      "name": "auto.fun",
-      "symbol": "FUN",
-      "decimals": 6,
-      "description": "Launch of our Native $FUN token which will be the internal revenue product of our platform: auto.fun!",
-      "icon_url": "https://ipfs.io/ipfs/QmYFFAS8im3AFgx3GTmGMf3E7nt1BYcjT5CVH8cbiRWquG",
-      "tags": [
-        "launchpad",
-        "unknown"
-      ],
-      "price": 0.00247675,
-      "daily_volume": 226499.39808458544,
-      "website": "https://auto.fun",
-      "telegram": "https://t.me/autodotfun",
-      "created_at": "2025-04-12T20:26:09.919784Z"
-    },
-    {
-      "id": "EqjDyrwdw8Ky9tSuYv9N8YcaoZcYUaH2qyBWWoH7pump",
-      "name": "buy, hold, join the cult",
-      "symbol": "cultcoin",
-      "decimals": 6,
-      "description": "biggest cult movement on solana",
-      "icon_url": "https://ipfs.io/ipfs/QmVci4rqGvnostGN93Dx8VYNKDszyxTHVvn7DvmYnFKhWH",
-      "tags": [
-        "unknown",
-        "launchpad"
-      ],
-      "price": 0.000773609,
-      "daily_volume": 1794.4039522442,
-      "created_at": "2025-04-15T06:20:54.261638Z"
-    },
-    {
-      "id": "5z37F9LJ4evEn2UncteJAyPgoJJNtCPGgm1onNespump",
-      "name": "Jellification",
-      "symbol": "Jelly",
-      "decimals": 6,
-      "description": "We dream of a world made of jelly",
-      "icon_url": "https://ipfs.io/ipfs/QmRDoYNYjAJFXQBsxVThQ8E2y1xs7iaFap23t12VH74WTq",
-      "tags": [
-        "launchpad",
-        "unknown"
-      ],
-      "price": 0.000118775,
-      "daily_volume": 14627.371041437378,
-      "website": "https://jellification.com",
-      "telegram": "https://t.me/Solana_Jelly",
-      "created_at": "2025-04-17T18:29:31.892565Z"
-    },
-    {
-      "id": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
-      "name": "dogwifhat",
-      "symbol": "$WIF",
-      "decimals": 6,
-      "description": "Popular meme Dogwifhat vibes wif frens onchain @Dogwifcoin on X",
-      "icon_url": "https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link",
-      "tags": [
-        "verified",
-        "strict",
-        "community"
-      ],
-      "price": 0.400238,
-      "daily_volume": 2179178.9391634753,
-      "created_at": "2024-04-26T10:56:58.893768Z"
     }
   ]
 }

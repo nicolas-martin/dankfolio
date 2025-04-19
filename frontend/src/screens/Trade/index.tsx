@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'; // Added useRef
-import { View, ScrollView, TextInput } from 'react-native'; // Added TextInput
-import { Text, useTheme, Button, Card } from 'react-native-paper'; // Added Card
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { View, ScrollView, SafeAreaView } from 'react-native';
+import { Text, useTheme, Button } from 'react-native-paper';
 import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './trade_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
+import { SwapIcon } from '@components/Common/Icons';
 import { RootStackParamList } from '@/types';
 import TokenSelector from '@components/TokenSelector';
-import { PortfolioToken } from '@store/portfolio';
 import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal'; // Added Status Modal
@@ -333,7 +333,7 @@ const Trade: React.FC = () => {
 	}
 
 	return (
-		<View style={styles.container}>
+		<SafeAreaView style={styles.container}>
 			<ScrollView style={styles.scrollView}>
 				<View style={styles.padding}>
 					{/* From Coin Section */}
@@ -350,6 +350,7 @@ const Trade: React.FC = () => {
 
 					<Button
 						mode="text"
+						icon={({ size, color }) => <SwapIcon size={size} color={color} />}
 						onPress={handleSwapCoins}
 						style={styles.valueInfoContainer}
 					>
@@ -386,7 +387,6 @@ const Trade: React.FC = () => {
 					mode="contained"
 					onPress={handleTradeSubmitClick} // Use new handler
 					disabled={!fromAmount || !toAmount}
-					style={{ width: '100%' }}
 				>
 					Trade
 				</Button>
@@ -415,7 +415,7 @@ const Trade: React.FC = () => {
 				confirmations={pollingConfirmations}
 				error={pollingError}
 			/>
-		</View>
+		</SafeAreaView>
 	);
 };
 
