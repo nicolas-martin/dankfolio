@@ -8,9 +8,9 @@ export interface TokenSelectorProps {
 	style?: any;
 	amountValue?: string;
 	onAmountChange?: (amount: string) => void;
-	amountPlaceholder?: string;
 	isAmountEditable?: boolean;
 	isAmountLoading?: boolean;
+	showOnlyPortfolioTokens?: boolean;
 }
 
 export interface TokenSearchModalProps {
@@ -18,4 +18,5 @@ export interface TokenSearchModalProps {
 	onDismiss: () => void;
 	selectedToken?: Coin;
 	onSelectToken: (token: Coin) => void;
+	showOnlyPortfolioTokens?: boolean;
 } 

@@ -342,14 +342,15 @@ const Trade: React.FC = () => {
 						style={styles.valueInfoContainer}
 						selectedToken={fromCoin ?? undefined}
 						onSelectToken={handleSelectFromToken}
-						label={fromCoin ? undefined : 'Select Token'}
+						label={'Select Token'}
 						amountValue={fromAmount}
 						onAmountChange={handleFromAmountChange}
 						isAmountEditable={true}
+						showOnlyPortfolioTokens={true}
 					/>
 
 					<Button
-						mode="text"
+						mode="elevated"
 						icon={({ size, color }) => <SwapIcon size={size} color={color} />}
 						onPress={handleSwapCoins}
 						style={styles.valueInfoContainer}
@@ -368,6 +369,7 @@ const Trade: React.FC = () => {
 						onAmountChange={handleToAmountChange}
 						isAmountEditable={!isQuoteLoading}
 						isAmountLoading={isQuoteLoading}
+						showOnlyPortfolioTokens={false}
 					/>
 
 					{fromAmount && toAmount && (

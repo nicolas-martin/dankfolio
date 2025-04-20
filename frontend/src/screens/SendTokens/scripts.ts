@@ -1,8 +1,15 @@
 import { TokenTransferFormData } from './types';
-import { Wallet } from '@/types';
+import { Wallet, Coin } from '@/types';
 import grpcApi from '@/services/grpcApi';
 import { PortfolioToken } from '@store/portfolio';
 import { validateSolanaAddress } from '@/services/solana';
+
+export const handleTokenSelect = (
+	coin: Coin,
+	tokens: PortfolioToken[]
+): PortfolioToken | undefined => {
+	return tokens.find(t => t.coin.id === coin.id);
+};
 
 export const validateForm = async (
 	formData: TokenTransferFormData,
@@ -68,4 +75,8 @@ export const formatTokenBalance = (balance: number): string => {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 6
 	});
+};
+
+export const getDefaultSolanaToken = (tokens: PortfolioToken[]): PortfolioToken | undefined => {
+	return tokens.find(t => t.coin.symbol === 'SOL');
 }; 

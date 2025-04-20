@@ -5,8 +5,15 @@ import { usePortfolioStore } from '@store/portfolio';
 import TokenSelector from '@components/TokenSelector';
 import { TokenTransferFormData, SendTokensScreenProps } from './types';
 import { PortfolioToken } from '@store/portfolio';
-import { validateForm, handleTokenTransfer, formatTokenBalance } from './scripts';
+import {
+	validateForm,
+	handleTokenTransfer,
+	formatTokenBalance,
+	handleTokenSelect,
+	getDefaultSolanaToken
+} from './scripts';
 import { createStyles } from './styles';
+import { Coin } from '@/types';
 
 const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const theme = useTheme();
@@ -18,7 +25,17 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	// on mount, fetch tokens
+	// Initialize with SOL token
+	useEffect(() => {
+		if (tokens.length > 0 && !selectedToken) {
+			const solToken = getDefaultSolanaToken(tokens);
+			if (solToken) {
+				setSelectedToken(solToken);
+			}
+		}
+	}, [tokens]);
+
+	// Error handling effect
 	useEffect(() => {
 		if (!wallet) {
 			setError('No wallet connected');
@@ -29,7 +46,12 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			setError('No tokens in portfolio');
 			return;
 		}
-	});
+	}, [wallet, tokens]);
+
+	const onTokenSelect = (coin: Coin) => {
+		const portfolioToken = handleTokenSelect(coin, tokens);
+		setSelectedToken(portfolioToken);
+	};
 
 	const handleSubmit = async () => {
 		try {
@@ -83,13 +105,13 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 				<TokenSelector
 					style={styles.inputContainer}
-					selectedToken={selectedToken}
-					tokens={tokens}
-					onSelectToken={setSelectedToken}
+					selectedToken={selectedToken?.coin}
+					onSelectToken={onTokenSelect}
 					label="Select token to send"
 					amountValue={amount}
 					onAmountChange={setAmount}
 					isAmountEditable={true}
+					showOnlyPortfolioTokens={true}
 				/>
 
 				{selectedToken && (

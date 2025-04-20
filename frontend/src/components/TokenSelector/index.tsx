@@ -7,12 +7,14 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { createStyles } from './styles';
+import { handleAmountInputChange, calculateUsdValue, findPortfolioToken } from './scripts';
 
 const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	visible,
 	onDismiss,
 	selectedToken,
 	onSelectToken,
+	showOnlyPortfolioTokens = false,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -21,11 +23,15 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	const { availableCoins } = useCoinStore();
 
 	const filteredCoins = useMemo(() => {
-		return availableCoins.filter(coin =>
+		let coins = showOnlyPortfolioTokens
+			? availableCoins.filter(coin => portfolioTokens.some(token => token.id === coin.id))
+			: availableCoins;
+
+		return coins.filter(coin =>
 			coin.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			coin.name.toLowerCase().includes(searchQuery.toLowerCase())
 		);
-	}, [availableCoins, searchQuery]);
+	}, [availableCoins, searchQuery, showOnlyPortfolioTokens, portfolioTokens]);
 
 	const handleTokenSelect = useCallback((coin: Coin) => {
 		onSelectToken(coin);
@@ -100,31 +106,36 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	style,
 	amountValue,
 	onAmountChange,
-	amountPlaceholder = '0.00',
 	isAmountEditable = true,
 	isAmountLoading = false,
+	showOnlyPortfolioTokens = false,
 }) => {
+	const amountPlaceholder = '0.00';
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const [modalVisible, setModalVisible] = useState(false);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 
+	const calculatedValue = useMemo(() => {
+		return calculateUsdValue(selectedToken, amountValue);
+	}, [selectedToken, amountValue]);
+
+	const portfolioToken = useMemo(() => {
+		return findPortfolioToken(selectedToken, portfolioTokens);
+	}, [selectedToken, portfolioTokens]);
+
+	// Effect to handle default token selection
+	useEffect(() => {
+		if (selectedToken && onSelectToken && !portfolioToken) {
+			// Only call onSelectToken if we don't already have this token in our portfolio
+			onSelectToken(selectedToken);
+		}
+	}, [selectedToken, onSelectToken, portfolioToken]); // Add proper dependencies
+
 	const handleDismiss = useCallback(() => {
 		console.log('[TokenSelector] handleDismiss called');
 		setModalVisible(false);
 	}, []);
-
-	const calculatedValue = useMemo(() => {
-		if (selectedToken && amountValue && !isNaN(parseFloat(amountValue))) {
-			return (parseFloat(amountValue) * selectedToken.price).toFixed(2);
-		}
-		return '0.00';
-	}, [selectedToken, amountValue]);
-
-	const portfolioToken = useMemo(() => {
-		if (!selectedToken) return null;
-		return portfolioTokens.find(t => t.id === selectedToken.id);
-	}, [selectedToken, portfolioTokens]);
 
 	return (
 		<>
@@ -164,7 +175,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								<TextInput
 									style={styles.amountInput}
 									value={amountValue}
-									onChangeText={onAmountChange}
+									onChangeText={(text) => onAmountChange && handleAmountInputChange(text, onAmountChange)}
 									placeholder={amountPlaceholder}
 									placeholderTextColor={theme.colors.onSurfaceVariant}
 									keyboardType="decimal-pad"
@@ -189,6 +200,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				onDismiss={handleDismiss}
 				selectedToken={selectedToken}
 				onSelectToken={onSelectToken}
+				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
 			/>
 		</>
 	);
