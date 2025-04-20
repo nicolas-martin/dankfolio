@@ -21,6 +21,8 @@ module.exports = {
 		'^@shopify/react-native-skia$': '<rootDir>/src/__mocks__/@shopify/react-native-skia.ts',
 		'^victory-native$': '<rootDir>/src/__mocks__/victory-native.ts',
 		'^expo-haptics$': '<rootDir>/src/__mocks__/expo-haptics.ts',
+		// Mock all vector icons with a single pattern
+		'^react-native-vector-icons/.*$': '<rootDir>/src/__mocks__/react-native-vector-icons.js',
 	},
 	transform: {
 		'^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],

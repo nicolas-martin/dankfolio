@@ -36,34 +36,21 @@ jest.mock('@components/Common/Toast', () => ({
 
 // Mock Child Components
 const createMockComponent = (name: string) => (props: any) => {
-	if (name === 'TokenSelector') {
-		const { selectedToken, onSelectToken, label, amountValue, onAmountChange, testID } = props;
-		// Get the parent text from the testID prop
-		const parentText = testID?.includes('from') ? 'from' : testID?.includes('to') ? 'to' : 'unknown';
-		const inputTestID = `token-selector-input-${parentText}`;
-		return (
-			<View testID={`mock-${name}-${parentText}`} {...props}>
-				<Text>{label || selectedToken?.symbol || 'Select Token'}</Text>
-				{onAmountChange && (
-					<TextInput
-						testID={inputTestID}
-						value={amountValue}
-						onChangeText={onAmountChange}
-						placeholder="Enter amount"
-						keyboardType="numeric"
-						editable={props.isAmountEditable}
-					/>
-				)}
-				<Text>{name}</Text>
-			</View>
-		);
+	if (name === 'TradeDetails') {
+		return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 	}
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
 
-jest.mock('@components/Common/TokenSelector', () => createMockComponent('TokenSelector'));
+// Mock Modules
+jest.mock('@store/portfolio');
+jest.mock('@store/coins');
+jest.mock('@components/Common/TokenSelector', () => {
+	return require('../../__mocks__/components/Common/TokenSelector').default;
+});
 jest.mock('@components/Trade/TradeDetails', () => createMockComponent('TradeDetails'));
 jest.mock('@components/Trade/TradeConfirmation', () => createMockComponent('TradeConfirmation'));
+jest.mock('@components/Trade/TradeStatusModal', () => createMockComponent('TradeStatusModal'));
 
 // Mock Local Scripts
 jest.mock('./trade_scripts', () => ({

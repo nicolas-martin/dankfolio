@@ -76,27 +76,8 @@ const mockCoinStoreReturn = {
 	getCoinByID: jest.fn().mockResolvedValue(null),
 };
 
-// --- Mock Component Creator (Copied, needed for CoinSelector) ---
+// --- Mock Component Creator (only for non-TokenSelector components)
 const createMockComponent = (name: string) => (props: any) => {
-	if (name === 'CoinSelector') {
-		const { label, amount } = props;
-		const inputTestID = `token-selector-input-${label?.toLowerCase() || 'unknown'}`;
-		return (
-			<View testID={`mock-${name}`} {...props}>
-				<Text>{label}</Text>
-				{amount?.onChange && (
-					<TextInput
-						testID={inputTestID}
-						value={amount.value}
-						onChangeText={amount.onChange}
-						placeholder={`Enter ${label} amount`}
-						keyboardType="numeric"
-					/>
-				)}
-				<Text>{name}</Text>
-			</View>
-		);
-	}
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
 
@@ -122,7 +103,9 @@ const mockShowToast = jest.fn();
 jest.mock('@components/Common/Toast', () => ({
 	useToast: () => ({ showToast: mockShowToast, hideToast: jest.fn() }),
 }));
-jest.mock('@components/Common/TokenSelector', () => createMockComponent('TokenSelector'));
+jest.mock('@components/Common/TokenSelector', () => {
+	return require('../../__mocks__/components/Common/TokenSelector').default;
+});
 jest.mock('@components/Trade/TradeDetails', () => createMockComponent('TradeDetails'));
 // *** DO NOT MOCK @components/Trade/TradeConfirmation here ***
 jest.mock('./trade_scripts', () => {
@@ -240,7 +223,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 
 		// 2. Enter trade amount
 		await act(async () => {
-			const fromInput = getByTestId('coin-selector-input-from');
+			const fromInput = getByTestId('token-selector-input-from');
 			fireEvent.changeText(fromInput, mockFromAmount);
 			jest.runOnlyPendingTimers();
 		});
@@ -337,7 +320,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 		mockCoinStoreReturn.getCoinByID.mockClear();
 
 		await act(async () => {
-			const fromInput = getByTestId('coin-selector-input-from');
+			const fromInput = getByTestId('token-selector-input-from');
 			fireEvent.changeText(fromInput, mockFromAmount);
 			jest.runOnlyPendingTimers();
 		});
