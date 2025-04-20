@@ -29,33 +29,37 @@ rm -rf ./node_modules && yarn install && cd ios && rm -rf build Pods Podfile.loc
 
 ## CodeCoverage
 ```
-→ yarn test --coverage
 yarn run v1.22.22
 $ jest --coverage
- PASS  src/store/coins.test.ts
  PASS  src/screens/Profile/ProfileScreen.test.tsx
+ PASS  src/components/Common/TokenSelector/TokenSelector.test.tsx
+ PASS  src/components/Chart/CoinChart/index.test.tsx
  PASS  src/screens/Home/HomeScreen.test.tsx
+ PASS  src/store/portfolio.test.ts
  PASS  src/services/api.test.ts
  PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
- PASS  src/components/Navigation/navigation.test.tsx
- PASS  src/store/portfolio.test.ts
- PASS  src/components/Chart/CoinChart/index.test.tsx
+ PASS  src/store/coins.test.ts
  PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
+ PASS  src/components/Common/Navigation/navigation.test.tsx
  PASS  src/screens/Trade/TradeScreen.test.tsx
 ------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------
 File                                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
 ------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------
-All files                           |   57.62 |       50 |   60.91 |   58.51 |
+All files                           |   60.28 |    53.88 |   64.86 |   61.16 |
  components/Chart/CoinChart         |   91.07 |    89.28 |   76.19 |    90.9 |
   index.tsx                         |   91.07 |    89.28 |   76.19 |    90.9 | 82-83,115,196-197
  components/Common/Icons            |   60.71 |        0 |   23.07 |   88.23 |
   index.tsx                         |   60.71 |        0 |   23.07 |   88.23 | 21-22,31-32
+ components/Common/Navigation       |     100 |      100 |     100 |     100 |
+  CustomHeader.tsx                  |     100 |      100 |     100 |     100 |
+ components/Common/TokenSelector    |   97.01 |     92.5 |      96 |   96.87 |
+  index.tsx                         |   95.74 |    88.88 |      95 |   95.55 | 76-78
+  scripts.ts                        |     100 |      100 |     100 |     100 |
+  styles.ts                         |     100 |      100 |     100 |     100 |
  components/Home/CoinCard           |     100 |       50 |     100 |     100 |
   coincard_scripts.ts               |     100 |      100 |     100 |     100 |
   coincard_styles.ts                |     100 |      100 |     100 |     100 |
   index.tsx                         |     100 |       50 |     100 |     100 | 12-34
- components/Navigation              |     100 |      100 |     100 |     100 |
-  CustomHeader.tsx                  |     100 |      100 |     100 |     100 |
  components/Trade/TradeConfirmation |      85 |    82.14 |     100 |   86.48 |
   index.tsx                         |   84.21 |    82.14 |     100 |   86.11 | 45,54,60-65
   styles.ts                         |     100 |      100 |     100 |     100 |
@@ -96,9 +100,9 @@ All files                           |   57.62 |       50 |   60.91 |   58.51 |
   url.ts                            |      20 |        0 |       0 |      20 | 4,8-17
 ------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------
 
-Test Suites: 10 passed, 10 total
-Tests:       38 passed, 38 total
+Test Suites: 11 passed, 11 total
+Tests:       54 passed, 54 total
 Snapshots:   0 total
-Time:        3.237 s, estimated 4 s
-✨  Done in 4.04s.
+Time:        3.127 s
+✨  Done in 3.80s.
 ```

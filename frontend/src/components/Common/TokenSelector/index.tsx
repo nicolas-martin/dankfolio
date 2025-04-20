@@ -15,6 +15,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	selectedToken,
 	onSelectToken,
 	showOnlyPortfolioTokens = false,
+	testID,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -78,6 +79,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				}}
 				contentContainerStyle={styles.modalContent}
 				dismissable={true}
+				testID={testID}
 			>
 				<View style={styles.searchContainer}>
 					<TextInput
@@ -109,6 +111,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	isAmountEditable = true,
 	isAmountLoading = false,
 	showOnlyPortfolioTokens = false,
+	testID,
 }) => {
 	const amountPlaceholder = '0.00';
 	const theme = useTheme();
@@ -148,6 +151,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							setModalVisible(true);
 						}}
 						disabled={!onSelectToken}
+						testID={testID}
 					>
 						<View style={styles.tokenInfo}>
 							{selectedToken ? (
@@ -170,7 +174,12 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 					{onAmountChange && (
 						<View style={styles.inputContainer}>
 							{isAmountLoading ? (
-								<ActivityIndicator size="small" color={theme.colors.primary} style={{ height: styles.amountInput.height }} />
+								<ActivityIndicator
+									size="small"
+									color={theme.colors.primary}
+									style={{ height: styles.amountInput.height }}
+									testID="activity-indicator"
+								/>
 							) : (
 								<TextInput
 									style={styles.amountInput}
@@ -201,6 +210,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				selectedToken={selectedToken}
 				onSelectToken={onSelectToken}
 				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
+				testID="token-search-modal"
 			/>
 		</>
 	);

@@ -21,4 +21,6 @@ export interface TokenSearchModalProps {
 	selectedToken?: Coin;
 	onSelectToken: (token: Coin) => void;
 	showOnlyPortfolioTokens?: boolean;
+	/** Optional testID for testing */
+	testID?: string;
 } 

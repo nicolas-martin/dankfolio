@@ -8,6 +8,7 @@ import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
 	configureReanimatedLogger,
+	ReanimatedLogLevel,
 } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Navigation from '@components/Common/Navigation';
