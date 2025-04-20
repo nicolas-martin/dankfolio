@@ -3,6 +3,7 @@ import { Wallet, Coin } from '@/types';
 import grpcApi from '@/services/grpcApi';
 import { PortfolioToken } from '@store/portfolio';
 import { validateSolanaAddress } from '@/services/solana';
+import { buildAndSignTransferTransaction } from '@/services/solana';
 
 export const handleTokenSelect = (
 	coin: Coin,
@@ -28,7 +29,7 @@ export const validateForm = async (
 		return 'Please enter a valid amount';
 	}
 
-	if (!formData.selectedToken) {
+	if (!formData.selectedTokenMint) {
 		return 'Please select a token';
 	}
 
@@ -48,15 +49,11 @@ export const handleTokenTransfer = async (
 ): Promise<string> => {
 	try {
 		// Prepare the transfer transaction
-		const prepareResponse = await grpcApi.prepareTokenTransfer({
-			fromAddress: wallet.address,
-			toAddress: formData.toAddress,
-			tokenMint: formData.selectedToken === 'SOL' ? '' : formData.selectedToken,
-			amount: parseFloat(formData.amount)
-		});
-
-		// TODO: Sign the transaction using wallet
-		const signedTransaction = ''; // This needs to be implemented
+		const signedTransaction = await buildAndSignTransferTransaction(formData.toAddress,
+			formData.selectedTokenMint,
+			parseFloat(formData.amount),
+			wallet,
+		);
 
 		// Submit the signed transaction
 		const submitResponse = await grpcApi.submitTokenTransfer({

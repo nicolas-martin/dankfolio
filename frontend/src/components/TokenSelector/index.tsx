@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { Modal, Portal, Text, useTheme, Card } from 'react-native-paper';
-import { ChevronDownIcon, SearchIcon } from '@components/Common/Icons';
+import { ChevronDownIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';

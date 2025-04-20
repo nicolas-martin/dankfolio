@@ -1,5 +1,4 @@
 import { Coin } from '@/types';
-import { PortfolioToken } from '@store/portfolio';
 
 /**
  * Validates the amount input to allow only digits and a single decimal point.

@@ -1,13 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@navigation/types';
-import { Token } from '@store/portfolio/types';
+import { RootStackParamList } from '@types/navigation';
 
 export type SendTokensScreenProps = NativeStackScreenProps<RootStackParamList, 'SendTokens'>;
 
 export interface TokenTransferFormData {
 	toAddress: string;
 	amount: string;
-	selectedToken: string | undefined;
+	selectedTokenMint: string;
 }
 
 export interface TokenOption {

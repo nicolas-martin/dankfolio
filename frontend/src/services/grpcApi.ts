@@ -43,11 +43,7 @@ interface API {
 	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
 	prepareTokenTransfer: (payload: TokenTransferPrepareRequest) => Promise<TokenTransferPrepareResponse>;
 	submitTokenTransfer: (payload: TokenTransferSubmitRequest) => Promise<TokenTransferResponse>;
-	getTransferTransaction: (params: {
-		toAddress: string;
-		tokenMint: string;
-		amount: string;
-	}) => Promise<any>;
+	getTransferTransaction: (params: { toAddress: string; tokenMint: string; amount: string; }) => Promise<any>;
 }
 
 // Helper function to safely serialize objects with BigInt values

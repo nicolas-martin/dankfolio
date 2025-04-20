@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { Text, useTheme, Card } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import TokenSelector from '@components/TokenSelector';
-import { TokenTransferFormData, SendTokensScreenProps } from './types';
+import { SendTokensScreenProps } from './types';
 import { PortfolioToken } from '@store/portfolio';
 import {
 	validateForm,
 	handleTokenTransfer,
-	formatTokenBalance,
 	handleTokenSelect,
 	getDefaultSolanaToken
 } from './scripts';
