@@ -80,7 +80,7 @@ const mockCoinStoreReturn = {
 const createMockComponent = (name: string) => (props: any) => {
 	if (name === 'CoinSelector') {
 		const { label, amount } = props;
-		const inputTestID = `coin-selector-input-${label?.toLowerCase() || 'unknown'}`;
+		const inputTestID = `token-selector-input-${label?.toLowerCase() || 'unknown'}`;
 		return (
 			<View testID={`mock-${name}`} {...props}>
 				<Text>{label}</Text>
@@ -122,7 +122,7 @@ const mockShowToast = jest.fn();
 jest.mock('@components/Common/Toast', () => ({
 	useToast: () => ({ showToast: mockShowToast, hideToast: jest.fn() }),
 }));
-jest.mock('@components/Trade/CoinSelector', () => createMockComponent('CoinSelector'));
+jest.mock('@components/Common/TokenSelector', () => createMockComponent('TokenSelector'));
 jest.mock('@components/Trade/TradeDetails', () => createMockComponent('TradeDetails'));
 // *** DO NOT MOCK @components/Trade/TradeConfirmation here ***
 jest.mock('./trade_scripts', () => {

@@ -4,7 +4,7 @@ module.exports = {
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 	setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
 	transformIgnorePatterns: [
-		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia)/)',
+		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia|react-native-vector-icons)/)',
 	],
 	moduleNameMapper: {
 		'^@/(.*)$': '<rootDir>/src/$1', // Matches @/anything
@@ -20,7 +20,7 @@ module.exports = {
 		'^react-native-reanimated$': '<rootDir>/src/__mocks__/react-native-reanimated.ts',
 		'^@shopify/react-native-skia$': '<rootDir>/src/__mocks__/@shopify/react-native-skia.ts',
 		'^victory-native$': '<rootDir>/src/__mocks__/victory-native.ts',
-		'^expo-haptics$': '<rootDir>/src/__mocks__/expo-haptics.ts'
+		'^expo-haptics$': '<rootDir>/src/__mocks__/expo-haptics.ts',
 	},
 	transform: {
 		'^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],

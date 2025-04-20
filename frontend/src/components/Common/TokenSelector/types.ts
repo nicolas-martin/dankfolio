@@ -11,6 +11,8 @@ export interface TokenSelectorProps {
 	isAmountEditable?: boolean;
 	isAmountLoading?: boolean;
 	showOnlyPortfolioTokens?: boolean;
+	/** Optional testID for testing */
+	testID?: string;
 }
 
 export interface TokenSearchModalProps {

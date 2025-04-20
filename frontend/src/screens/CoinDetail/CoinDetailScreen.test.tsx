@@ -64,8 +64,26 @@ const mockSolCoin: Coin = {
 
 const createMockComponent = (name: string) => (props: any) => {
 	const React = require('react');
-	const View = require('react-native').View;
-	const Text = require('react-native').Text;
+	const { View, Text, TextInput } = require('react-native');
+	if (name === 'CoinSelector') {
+		const { label, amount } = props;
+		const inputTestID = `token-selector-input-${label?.toLowerCase() || 'unknown'}`;
+		return (
+			<View testID={`mock-${name}`} {...props}>
+				<Text>{label}</Text>
+				{amount?.onChange && (
+					<TextInput
+						testID={inputTestID}
+						value={amount.value}
+						onChangeText={amount.onChange}
+						placeholder={`Enter ${label} amount`}
+						keyboardType="numeric"
+					/>
+				)}
+				<Text>{name}</Text>
+			</View>
+		);
+	}
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
 
@@ -417,7 +435,7 @@ describe('CoinDetail Screen', () => {
 	});
 
 	it('handles timeframe changes correctly', async () => {
-		const { getByTestId } = render(<CoinDetailScreen />);
+		const { getByText } = render(<CoinDetailScreen />);
 
 		// Verify initial timeframe fetch
 		await waitFor(() => {
@@ -437,7 +455,7 @@ describe('CoinDetail Screen', () => {
 		mockFetchPriceHistory.mockClear();
 
 		// Test timeframe change
-		const button1D = getByTestId('toggle-button-ONE_DAY');
+		const button1D = getByText('1D');
 		fireEvent.press(button1D);
 
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalledTimes(1));

@@ -9,7 +9,7 @@ import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { SwapIcon } from '@components/Common/Icons';
 import { RootStackParamList } from '@/types';
-import TokenSelector from '@components/TokenSelector';
+import TokenSelector from '@components/Common/TokenSelector';
 import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal'; // Added Status Modal
@@ -347,6 +347,7 @@ const Trade: React.FC = () => {
 						onAmountChange={handleFromAmountChange}
 						isAmountEditable={true}
 						showOnlyPortfolioTokens={true}
+						testID="from-token-selector"
 					/>
 
 					<Button
@@ -370,6 +371,7 @@ const Trade: React.FC = () => {
 						isAmountEditable={!isQuoteLoading}
 						isAmountLoading={isQuoteLoading}
 						showOnlyPortfolioTokens={false}
+						testID="to-token-selector"
 					/>
 
 					{fromAmount && toAmount && (

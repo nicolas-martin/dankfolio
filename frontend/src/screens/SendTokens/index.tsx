@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
-import TokenSelector from '@components/TokenSelector';
+import TokenSelector from 'components/Common/TokenSelector';
 import { SendTokensScreenProps } from './types';
 import { PortfolioToken } from '@store/portfolio';
 import {

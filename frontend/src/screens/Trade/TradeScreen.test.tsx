@@ -36,19 +36,22 @@ jest.mock('@components/Common/Toast', () => ({
 
 // Mock Child Components
 const createMockComponent = (name: string) => (props: any) => {
-	if (name === 'CoinSelector') {
-		const { label, amount, coinData } = props;
-		const inputTestID = `coin-selector-input-${label?.toLowerCase() || 'unknown'}`;
+	if (name === 'TokenSelector') {
+		const { selectedToken, onSelectToken, label, amountValue, onAmountChange, testID } = props;
+		// Get the parent text from the testID prop
+		const parentText = testID?.includes('from') ? 'from' : testID?.includes('to') ? 'to' : 'unknown';
+		const inputTestID = `token-selector-input-${parentText}`;
 		return (
-			<View testID={`mock-${name}-${label?.toLowerCase() || 'unknown'}`} {...props} mockPassedCoin={coinData?.coin}>
-				<Text>{label}</Text>
-				{amount?.onChange && (
+			<View testID={`mock-${name}-${parentText}`} {...props}>
+				<Text>{label || selectedToken?.symbol || 'Select Token'}</Text>
+				{onAmountChange && (
 					<TextInput
 						testID={inputTestID}
-						value={amount.value}
-						onChangeText={amount.onChange}
-						placeholder={`Enter ${label} amount`}
+						value={amountValue}
+						onChangeText={onAmountChange}
+						placeholder="Enter amount"
 						keyboardType="numeric"
+						editable={props.isAmountEditable}
 					/>
 				)}
 				<Text>{name}</Text>
@@ -58,7 +61,7 @@ const createMockComponent = (name: string) => (props: any) => {
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
 
-jest.mock('@components/Trade/CoinSelector', () => createMockComponent('CoinSelector'));
+jest.mock('@components/Common/TokenSelector', () => createMockComponent('TokenSelector'));
 jest.mock('@components/Trade/TradeDetails', () => createMockComponent('TradeDetails'));
 jest.mock('@components/Trade/TradeConfirmation', () => createMockComponent('TradeConfirmation'));
 
@@ -216,7 +219,7 @@ describe('TradeScreen', () => {
 		const { getByTestId } = renderWithProvider(<TradeScreen />);
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
-		const fromInput = getByTestId('coin-selector-input-from');
+		const fromInput = getByTestId('token-selector-input-from');
 		const testAmount = '1.5';
 		fireEvent.changeText(fromInput, testAmount);
 
@@ -229,7 +232,7 @@ describe('TradeScreen', () => {
 				expect.any(Function),
 				expect.any(Function)
 			);
-			expect(getByTestId('coin-selector-input-to').props.value).toBe(mockQuoteData.estimatedAmount);
+			expect(getByTestId('token-selector-input-to').props.value).toBe(mockQuoteData.estimatedAmount);
 		});
 	});
 
@@ -260,16 +263,16 @@ describe('TradeScreen', () => {
 		const { getByTestId, getByText } = renderWithProvider(<TradeScreen />);
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
-		const fromInput = getByTestId('coin-selector-input-from');
+		const fromInput = getByTestId('token-selector-input-from');
 		fireEvent.changeText(fromInput, initialFromAmount);
 
-		await waitFor(() => expect(getByTestId('coin-selector-input-to').props.value).toBe(initialToAmount));
+		await waitFor(() => expect(getByTestId('token-selector-input-to').props.value).toBe(initialToAmount));
 
 		fireEvent.press(getByText('Swap'));
 
 		await waitFor(() => {
 			expect(fromInput.props.value).toBe(initialToAmount);
-			expect(getByTestId('coin-selector-input-to').props.value).toBe(initialFromAmount);
+			expect(getByTestId('token-selector-input-to').props.value).toBe(initialFromAmount);
 		});
 	});
 
@@ -290,7 +293,7 @@ describe('TradeScreen', () => {
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
 		// Set amount and trigger quote
-		const fromInput = getByTestId('coin-selector-input-from');
+		const fromInput = getByTestId('token-selector-input-from');
 		fireEvent.changeText(fromInput, initialFromAmount);
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
 
@@ -348,7 +351,7 @@ describe('TradeScreen', () => {
 		const { getByTestId, getByText } = renderWithProvider(<TradeScreen />);
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
-		const fromInput = getByTestId('coin-selector-input-from');
+		const fromInput = getByTestId('token-selector-input-from');
 		fireEvent.changeText(fromInput, '6');
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalled());
 

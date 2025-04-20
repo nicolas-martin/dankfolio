@@ -1,12 +1,12 @@
 // frontend/src/services/api.test.ts
 import grpcApi from './grpcApi'; // Import grpcApi only
-import { Coin, TradePayload, TradeQuoteResponse, WalletBalanceResponse, PriceHistoryResponse } from './grpc/model'; // Import types from api
+import { Coin, TradePayload } from './grpc/model'; // Import types from api
 
 // --- Mock grpcApi ---
 jest.mock('./grpcApi', () => {
 	const mockResponses = {
 		submitTrade: { transaction_hash: 'txHash456' },
-		tradeQuote: {
+		swapQuote: {
 			estimatedAmount: '150.5',
 			exchangeRate: '100.33',
 			fee: '0.01',
@@ -36,9 +36,9 @@ jest.mock('./grpcApi', () => {
 	};
 
 	const mockGrpcApi = {
+		getSwapQuote: jest.fn().mockResolvedValue(mockResponses.swapQuote),
 		submitSwap: jest.fn().mockResolvedValue(mockResponses.submitTrade),
 		getAvailableCoins: jest.fn().mockResolvedValue([{ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK', decimals: 8, description: 'A mock coin for testing', icon_url: 'http://example.com/icon.png', tags: ['mock', 'test', 'trending'], price: 100, daily_volume: 1000000, website: 'http://example.com', created_at: new Date().toISOString() }]),
-		getTradeQuote: jest.fn().mockResolvedValue(mockResponses.tradeQuote),
 		getPriceHistory: jest.fn().mockResolvedValue(mockResponses.priceHistory),
 		getWalletBalance: jest.fn().mockResolvedValue(mockResponses.walletBalance),
 		getCoinByID: jest.fn().mockResolvedValue({ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK', decimals: 8, description: 'A mock coin for testing', icon_url: 'http://example.com/icon.png', tags: ['mock', 'test', 'trending'], price: 100, daily_volume: 1000000, website: 'http://example.com', created_at: new Date().toISOString() }),
@@ -82,7 +82,7 @@ describe('API Service', () => {
 
 	const mockResponses = {
 		submitTrade: { transaction_hash: 'txHash456' },
-		tradeQuote: {
+		swapQuote: {
 			estimatedAmount: '150.5',
 			exchangeRate: '100.33',
 			fee: '0.01',
@@ -186,8 +186,8 @@ describe('API Service', () => {
 			// Test getTradeQuote
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeQuote });
 			const quoteResult = await grpcApi.getSwapQuote('coin1', 'coin2', '10');
-			expect(mockedGrpcApi.getTradeQuote).toHaveBeenCalledWith('coin1', 'coin2', '10');
-			expect(quoteResult).toEqual(mockResponses.tradeQuote);
+			expect(mockedGrpcApi.getSwapQuote).toHaveBeenCalledWith('coin1', 'coin2', '10');
+			expect(quoteResult).toEqual(mockResponses.swapQuote);
 
 			// Test getTradeStatus
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeStatus });
