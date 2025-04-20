@@ -58,6 +58,10 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				setError('No wallet connected');
 				return;
 			}
+			if (!selectedToken) {
+				setError('No token selected');
+				return;
+			}
 
 			setError(null);
 			setIsLoading(true);
@@ -65,7 +69,7 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			const validationError = await validateForm({
 				toAddress: recipientAddress,
 				amount,
-				selectedToken: selectedToken?.id
+				selectedTokenMint: selectedToken.id
 			}, selectedToken);
 
 			if (validationError) {
@@ -77,7 +81,7 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			const txHash = await handleTokenTransfer({
 				toAddress: recipientAddress,
 				amount,
-				selectedToken: selectedToken?.id
+				selectedTokenMint: selectedToken.id
 			}, wallet);
 
 			console.log('Transaction submitted:', txHash);
