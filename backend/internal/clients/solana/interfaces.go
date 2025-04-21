@@ -9,8 +9,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
-//go:generate mockery --name=ClientAPI --output=mocks --outpkg=mocks --case=snake
-
 // ClientAPI defines the interface for Solana blockchain interactions
 type ClientAPI interface {
 	// GetMetadataAccount retrieves the metadata account for a token

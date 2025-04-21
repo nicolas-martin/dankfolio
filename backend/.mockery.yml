@@ -1,0 +1,15 @@
+template: testify
+formatter: goimports
+# Enable expecter via CLI or env, not here:
+# (you'd run: mockery --with-expecter)
+packages:
+  github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter:
+    config:
+      # core settings only
+      dir: "{{.InterfaceDir}}/mocks"         # place next to source
+      filename: "{{.InterfaceName}}.go"
+      pkgname: mocks                  # replaces old outpkg
+      template-data:
+        unroll-variadic: true         # variadic helper
+    interfaces:
+      ClientAPI:

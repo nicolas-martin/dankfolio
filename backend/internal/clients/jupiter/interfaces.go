@@ -1,7 +1,5 @@
 package jupiter
 
-//go:generate mockery --name=ClientAPI --output=mocks --outpkg=mocks --case=snake
-
 // ClientAPI defines the interface for Jupiter API interactions
 type ClientAPI interface {
 	// GetTokenInfo fetches detailed information about a token from Jupiter API
