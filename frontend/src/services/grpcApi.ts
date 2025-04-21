@@ -362,7 +362,7 @@ const grpcApi: API = {
 		try {
 			logRequest(serviceName, methodName, { tokenIds });
 
-			const response = await tradeClient.getTokenPrices({ tokenIds });
+			const response = await priceClient.getTokenPrices({ tokenIds });
 
 			logResponse(serviceName, methodName, response);
 
@@ -379,7 +379,7 @@ const grpcApi: API = {
 		try {
 			logRequest(serviceName, methodName, payload);
 
-			const response = await tradeClient.prepareTransfer({
+			const response = await walletClient.prepareTransfer({
 				fromAddress: payload.fromAddress,
 				toAddress: payload.toAddress,
 				tokenMint: payload.tokenMint || '',
@@ -403,7 +403,7 @@ const grpcApi: API = {
 		try {
 			logRequest(serviceName, methodName, payload);
 
-			const response = await tradeClient.submitTransfer({
+			const response = await walletClient.submitTransfer({
 				signedTransaction: payload.signedTransaction
 			});
 
@@ -428,7 +428,7 @@ const grpcApi: API = {
 		try {
 			logRequest(serviceName, methodName, params);
 
-			const response = await tradeClient.prepareTransfer({
+			const response = await walletClient.prepareTransfer({
 				fromAddress: '', // This will be filled by the backend
 				toAddress: params.toAddress,
 				tokenMint: params.tokenMint,

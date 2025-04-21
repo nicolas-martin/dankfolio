@@ -122,7 +122,7 @@ func (s *TradeServer) GetTrade(
 		if identifier.Id == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("trade ID is required"))
 		}
-		trade, err = s.tradeService.GetTradeByID(ctx, identifier.Id)
+		trade, err = s.tradeService.GetTrade(ctx, identifier.Id)
 	case *pb.GetTradeRequest_TransactionHash:
 		if identifier.TransactionHash == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction hash is required"))

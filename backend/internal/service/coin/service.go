@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"os"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -23,13 +23,11 @@ type Service struct {
 	jupiterClient  *jupiter.Client
 	solanaClient   *solana.Client
 	offchainClient *offchain.Client
-	coins          map[string]model.Coin
-	cache          map[string]Cache
-	mu             sync.RWMutex
+	store          db.Store
 }
 
 // NewService creates a new CoinService instance
-func NewService(config *Config, httpClient *http.Client, jupiterClient *jupiter.Client) *Service {
+func NewService(config *Config, httpClient *http.Client, jupiterClient *jupiter.Client, store db.Store) *Service {
 	// Ensure TrendingTokenPath has a default value
 	if config.TrendingTokenPath == "" {
 		config.TrendingTokenPath = defaultTrendingTokenPath
@@ -47,8 +45,7 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient *jupiter.
 		jupiterClient:  jupiterClient,
 		solanaClient:   solanaClient,
 		offchainClient: offchainClient,
-		coins:          make(map[string]model.Coin),
-		cache:          make(map[string]Cache),
+		store:          store,
 	}
 
 	// Perform initial data load or refresh, with a timeout
@@ -66,12 +63,10 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient *jupiter.
 
 // GetCoins returns a list of all available coins
 func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
-	s.mu.RLock()
-	coins := make([]model.Coin, 0, len(s.coins))
-	for _, coin := range s.coins {
-		coins = append(coins, coin)
+	coins, err := s.store.ListCoins(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list coins: %w", err)
 	}
-	s.mu.RUnlock()
 
 	// Sort by volume descending
 	sort.Slice(coins, func(i, j int) bool {
@@ -83,16 +78,12 @@ func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
 
 // GetTrendingCoins returns only the coins loaded from the trending file
 func (s *Service) GetTrendingCoins(ctx context.Context) ([]model.Coin, error) {
-	s.mu.RLock()
-	trendingCoins := make([]model.Coin, 0)
-	for _, coin := range s.coins {
-		if coin.IsTrending {
-			trendingCoins = append(trendingCoins, coin)
-		}
+	trendingCoins, err := s.store.ListTrendingCoins(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list trending coins: %w", err)
 	}
-	s.mu.RUnlock()
 
-	// Sort trending coins by volume descending (or other criteria if needed)
+	// Sort trending coins by volume descending
 	sort.Slice(trendingCoins, func(i, j int) bool {
 		return trendingCoins[i].DailyVolume > trendingCoins[j].DailyVolume
 	})
@@ -102,51 +93,23 @@ func (s *Service) GetTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 
 // GetCoinByID returns a coin by its ID
 func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, error) {
-	s.mu.RLock()
-	// Check cache first (might be slightly more up-to-date than file if refreshed recently)
-	if cached, exists := s.cache[id]; exists && time.Now().Before(cached.Expiration) {
-		if cachedCoin, ok := cached.Data.(model.Coin); ok {
-			s.mu.RUnlock()
-			log.Printf("GetCoinByID: Cache hit for %s", id)
-			return &cachedCoin, nil
-		}
-	}
-	// Check the main map loaded from file
-	coin, exists := s.coins[id]
-	s.mu.RUnlock()
-
-	if exists {
-		log.Printf("GetCoinByID: Found %s in loaded coins map", id)
-		// Cache the coin found in the main map if it wasn't in the cache
-		s.mu.Lock()
-		if _, cacheExists := s.cache[id]; !cacheExists {
-			s.cache[id] = Cache{
-				Data:       coin,
-				Expiration: time.Now().Add(CacheExpiration), // Use standard cache expiration
-			}
-			log.Printf("GetCoinByID: Added %s to cache from main map", id)
-		}
-		s.mu.Unlock()
-		return &coin, nil
+	// Try to get from store
+	coin, err := s.store.GetCoin(ctx, id)
+	if err == nil {
+		return coin, nil
 	}
 
-	// --- If not found in cache or file, attempt dynamic enrichment ---
-	// This handles cases where a token exists but wasn't in the last scraped/enriched file.
-	log.Printf("GetCoinByID: %s not found in cache or file, attempting dynamic enrichment...", id)
+	// If not found, attempt dynamic enrichment
+	log.Printf("GetCoinByID: %s not found in store, attempting dynamic enrichment...", id)
 	enrichedCoin, err := s.fetchAndCacheCoin(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("coin %s not found and dynamic enrichment failed: %w", id, err)
 	}
 
-	// Add the newly enriched coin to the main map and cache
-	s.mu.Lock()
-	s.coins[id] = *enrichedCoin
-	s.cache[id] = Cache{
-		Data:       *enrichedCoin,
-		Expiration: time.Now().Add(CacheExpiration),
+	// Store the newly enriched coin
+	if err := s.store.UpsertCoin(ctx, enrichedCoin); err != nil {
+		log.Printf("Warning: Failed to store enriched coin %s: %v", id, err)
 	}
-	s.mu.Unlock()
-	log.Printf("GetCoinByID: Successfully dynamically enriched and added %s", id)
 
 	return enrichedCoin, nil
 }
@@ -155,20 +118,7 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 // This is used for dynamically enriching tokens not found in the initial file load.
 // Renamed from enrichCoin
 func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*model.Coin, error) {
-	// Check cache first
-	s.mu.RLock()
-	if cached, exists := s.cache[mintAddress]; exists && time.Now().Before(cached.Expiration) {
-		if cachedCoin, ok := cached.Data.(model.Coin); ok {
-			s.mu.RUnlock()
-			log.Printf("fetchAndCacheCoin: Cache hit for %s", mintAddress) // Updated log message
-			return &cachedCoin, nil
-		}
-	}
-	s.mu.RUnlock()
-
-	log.Printf("fetchAndCacheCoin: Cache miss for %s, calling EnrichCoinData...", mintAddress) // Updated log message
-	// Call the exported enrichment function from enrich.go, passing the service's clients
-	// Provide empty initial values as we don't have scraped data in this context (dynamic enrichment)
+	log.Printf("fetchAndCacheCoin: Enriching coin %s...", mintAddress)
 	enrichedCoin, err := s.EnrichCoinData(
 		ctx,
 		mintAddress,
@@ -177,19 +127,9 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 		0,  // No initial volume
 	)
 	if err != nil {
-		// Don't cache errors persistently here, allow retry on next request
-		log.Printf("ERROR: fetchAndCacheCoin: Failed to enrich %s: %v", mintAddress, err) // Updated log message
+		log.Printf("ERROR: fetchAndCacheCoin: Failed to enrich %s: %v", mintAddress, err)
 		return nil, fmt.Errorf("failed to enrich coin %s: %w", mintAddress, err)
 	}
-
-	// Cache the successfully enriched coin
-	s.mu.Lock()
-	s.cache[mintAddress] = Cache{
-		Data:       *enrichedCoin,
-		Expiration: time.Now().Add(CacheExpiration),
-	}
-	s.mu.Unlock()
-	log.Printf("fetchAndCacheCoin: Successfully enriched and cached %s", mintAddress) // Updated log message
 
 	return enrichedCoin, nil
 }
@@ -197,47 +137,18 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 // loadOrRefreshData checks if the trending data file is fresh. If not, it triggers
 // a scrape and enrichment process before loading the data into the service.
 func (s *Service) loadOrRefreshData(ctx context.Context) error {
-	log.Println("Checking freshness of trending coin data file...")
 	filePath := s.config.TrendingTokenPath
-	needsRefresh := false
+	info, err := os.Stat(filePath)
+	needsRefresh := true
 
-	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			log.Printf("Trending data file not found at %s. Triggering refresh.", filePath)
-			needsRefresh = true
-		} else {
-			// Other error accessing file stat (permissions?), log warning but attempt load anyway
-			log.Printf("WARN: Error checking file stat for %s: %v. Attempting to load anyway.", filePath, err)
-		}
-	} else {
-		// File exists, check its modification time
-		if time.Since(fileInfo.ModTime()) > TrendingDataTTL {
-			log.Printf("Trending data file %s is older than TTL (%v). Triggering refresh.", filePath, TrendingDataTTL)
-			needsRefresh = true
-		} else {
-			log.Printf("Trending data file %s is fresh (ModTime: %s). Skipping refresh.", filePath, fileInfo.ModTime().Format(time.RFC3339))
-		}
+	if err == nil {
+		age := time.Since(info.ModTime())
+		needsRefresh = age > TrendingDataTTL
+		log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
 	}
 
-	// --- Perform scrape if needed ---
-	if needsRefresh {
-		log.Println("Attempting to scrape and enrich new trending data...")
-		// Use the context passed to loadOrRefreshData for the scrape operation
-		if scrapeErr := s.scrapeAndEnrichToFile(ctx); scrapeErr != nil {
-			// Log the scraping error, but DO NOT return immediately.
-			// We still want to try loading whatever data might exist (even if stale).
-			log.Printf("ERROR: Scraping and enrichment failed: %v. Will attempt to load existing data.", scrapeErr)
-			// Optionally, return the error if loading stale data is unacceptable
-			// return fmt.Errorf("scraping failed, cannot proceed: %w", scrapeErr)
-		} else {
-			log.Println("Scraping and enrichment completed successfully.")
-		}
-	}
-
-	// --- Load data from file (always attempt after checking/refreshing) ---
-	log.Println("Loading enriched coin data from file...")
-	enrichedCoins, timestamp, loadErr := s.loadEnrichedCoinsFromFile()
+	// Load the enriched coins from file
+	enrichedCoins, timestamp, loadErr := loadEnrichedCoinsFromFile(filePath)
 	if loadErr != nil {
 		// If scraping was needed but failed, and loading also fails, return the load error.
 		// If the file just doesn't exist after a failed scrape, this loadErr will reflect that.
@@ -248,24 +159,17 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		return fmt.Errorf("failed to load enriched coins from file: %w", loadErr)
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Replace the existing map with the newly loaded data
-	s.coins = make(map[string]model.Coin, len(enrichedCoins))
+	// Store all coins
 	for _, coin := range enrichedCoins {
-		s.coins[coin.ID] = coin
+		if err := s.store.UpsertCoin(ctx, &coin); err != nil {
+			log.Printf("Warning: Failed to store coin %s: %v", coin.ID, err)
+		}
 	}
 
-	log.Printf("Coin map refresh complete from file (Timestamp: %s). Total coins loaded: %d",
-		timestamp.Format(time.RFC3339), len(s.coins))
+	log.Printf("Coin store refresh complete from file (Timestamp: %s). Total coins loaded: %d",
+		timestamp.Format(time.RFC3339), len(enrichedCoins))
 
-	// Optional: Clear the dynamic cache after a successful load/refresh?
-	// This ensures the cache doesn't contain stale dynamically fetched items.
-	// s.cache = make(map[string]Cache)
-	log.Println("Dynamic coin cache cleared after loading data from file.")
-
-	return nil // Success
+	return nil
 }
 
 // loadEnrichedCoinsFromFile reads and parses the JSON file containing pre-enriched Coin data.

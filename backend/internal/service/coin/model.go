@@ -26,12 +26,6 @@ type Config struct {
 	SolanaRPCEndpoint string // Add Solana RPC endpoint needed for enrichment client
 }
 
-// Cache represents a cached item with expiration
-type Cache struct {
-	Data       interface{}
-	Expiration time.Time
-}
-
 // --- Structs matching the scraper's NEW JSON output (Enriched Data) ---
 
 // EnrichedFileOutput matches the top-level structure of the NEW trending_solana_tokens.json

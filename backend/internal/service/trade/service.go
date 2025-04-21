@@ -7,10 +7,10 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
@@ -19,24 +19,47 @@ import (
 
 // Service handles trade-related operations
 type Service struct {
-	// TODO: Maybe these are redundant
 	SolanaService *solana.SolanaTradeService
 	coinService   *coin.Service
 	priceService  *price.Service
 	jupiterClient *jupiter.Client
-	mu            sync.RWMutex
-	trades        map[string]*model.Trade // In-memory storage using trade ID as key
+	store         db.Store
 }
 
 // NewService creates a new TradeService instance
-func NewService(ss *solana.SolanaTradeService, cs *coin.Service, ps *price.Service, jc *jupiter.Client) *Service {
+func NewService(ss *solana.SolanaTradeService, cs *coin.Service, ps *price.Service, jc *jupiter.Client, store db.Store) *Service {
 	return &Service{
 		SolanaService: ss,
 		coinService:   cs,
 		priceService:  ps,
 		jupiterClient: jc,
-		trades:        make(map[string]*model.Trade),
+		store:         store,
 	}
+}
+
+// GetTrade retrieves a trade by its ID
+func (s *Service) GetTrade(ctx context.Context, id string) (*model.Trade, error) {
+	return s.store.GetTrade(ctx, id)
+}
+
+// ListTrades returns all trades
+func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
+	return s.store.ListTrades(ctx)
+}
+
+// CreateTrade creates a new trade
+func (s *Service) CreateTrade(ctx context.Context, trade *model.Trade) error {
+	return s.store.CreateTrade(ctx, trade)
+}
+
+// UpdateTrade updates an existing trade
+func (s *Service) UpdateTrade(ctx context.Context, trade *model.Trade) error {
+	return s.store.UpdateTrade(ctx, trade)
+}
+
+// DeleteTrade deletes a trade by its ID
+func (s *Service) DeleteTrade(ctx context.Context, id string) error {
+	return s.store.DeleteTrade(ctx, id)
 }
 
 // ExecuteTrade executes a trade based on the provided request
@@ -63,9 +86,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 			TransactionHash: "5Bu8arrurLxsP9dEvdXX3kBd5PqP6tNUubSZUmoJNRE7ijGPnKW9MU9QQfUerJaorYQxPAmLCnD3D7gW8CihWJy6",
 		}
 
-		s.mu.Lock()
-		s.trades[trade.ID] = trade
-		s.mu.Unlock()
+		s.store.CreateTrade(ctx, trade)
 
 		log.Printf("🔧 Debug mode: Simulated trade completed")
 		return trade, nil
@@ -88,9 +109,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	err := s.SolanaService.ExecuteTrade(ctx, trade, req.SignedTransaction)
 	if err != nil {
 		trade.Status = "failed"
-		s.mu.Lock()
-		s.trades[trade.ID] = trade
-		s.mu.Unlock()
+		s.store.UpdateTrade(ctx, trade)
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", err)
 	}
 
@@ -99,40 +118,12 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	trade.Status = "completed"
 	trade.CompletedAt = &now
 
-	s.mu.Lock()
-	s.trades[trade.ID] = trade
-	s.mu.Unlock()
+	s.store.UpdateTrade(ctx, trade)
 
 	// Log blockchain explorer URL
 	log.Printf("✅ Trade completed! View on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)
 
 	return trade, nil
-}
-
-// GetTradeByID retrieves a trade by its ID
-func (s *Service) GetTradeByID(ctx context.Context, id string) (*model.Trade, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	trade, found := s.trades[id]
-	if !found {
-		return nil, fmt.Errorf("trade not found: %s", id)
-	}
-
-	return trade, nil
-}
-
-// ListTrades returns a list of all trades
-func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	trades := make([]*model.Trade, 0, len(s.trades))
-	for _, trade := range s.trades {
-		trades = append(trades, trade)
-	}
-
-	return trades, nil
 }
 
 // GetSwapQuote gets a quote for a potential trade
@@ -283,10 +274,12 @@ func TruncateAndFormatFloat(value float64, decimalPlaces int) string {
 
 // GetTradeByTransactionHash retrieves a trade by its transaction hash
 func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	trades, err := s.ListTrades(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list trades: %w", err)
+	}
 
-	for _, trade := range s.trades {
+	for _, trade := range trades {
 		if trade.TransactionHash == txHash {
 			return trade, nil
 		}

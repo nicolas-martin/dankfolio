@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/joho/godotenv"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
@@ -25,6 +27,7 @@ type Config struct {
 	BirdEyeAPIKey     string
 	CoinGeckoAPIKey   string
 	GRPCPort          int
+	CacheExpiry       time.Duration
 }
 
 func loadConfig() (*Config, error) {
@@ -33,12 +36,24 @@ func loadConfig() (*Config, error) {
 		log.Printf("Warning: Error loading .env file: %v", err)
 	}
 
+	// Parse cache expiry duration from environment variable (default to 5 minutes)
+	cacheExpiry := 5 * time.Minute
+	if expiryStr := os.Getenv("CACHE_EXPIRY_SECONDS"); expiryStr != "" {
+		expirySecs, err := strconv.Atoi(expiryStr)
+		if err != nil {
+			log.Printf("Warning: Invalid CACHE_EXPIRY_SECONDS value: %v, using default", err)
+		} else {
+			cacheExpiry = time.Duration(expirySecs) * time.Second
+		}
+	}
+
 	config := &Config{
 		SolanaRPCEndpoint: os.Getenv("SOLANA_RPC_ENDPOINT"),
 		BirdEyeEndpoint:   os.Getenv("BIRDEYE_ENDPOINT"),
 		BirdEyeAPIKey:     os.Getenv("BIRDEYE_API_KEY"),
 		CoinGeckoAPIKey:   os.Getenv("COINGECKO_API_KEY"),
 		GRPCPort:          9000, // Default value
+		CacheExpiry:       cacheExpiry,
 	}
 
 	// Validate required fields
@@ -76,13 +91,18 @@ func main() {
 	// Initialize Jupiter client
 	jupiterClient := jupiter.NewClient(httpClient)
 
+	// Initialize store with configured cache expiry
+	store := memory.NewWithConfig(memory.Config{
+		DefaultCacheExpiry: config.CacheExpiry,
+	})
+
 	// Initialize coin service
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:  config.BirdEyeEndpoint,
 		BirdEyeAPIKey:   config.BirdEyeAPIKey,
 		CoinGeckoAPIKey: config.CoinGeckoAPIKey,
 	}
-	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient)
+	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 
 	// Initialize Solana service
 	solanaService, err := solana.NewSolanaTradeService(config.SolanaRPCEndpoint)
@@ -94,7 +114,7 @@ func main() {
 	priceService := price.NewService(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
 
 	// Initialize trade service with all dependencies
-	tradeService := trade.NewService(solanaService, coinService, priceService, jupiterClient)
+	tradeService := trade.NewService(solanaService, coinService, priceService, jupiterClient, store)
 
 	// Initialize wallet service
 	walletService := wallet.New(solanaService.GetRPCClient(), coinService)
