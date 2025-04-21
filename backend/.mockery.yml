@@ -8,8 +8,38 @@ packages:
       # core settings only
       dir: "{{.InterfaceDir}}/mocks"         # place next to source
       filename: "{{.InterfaceName}}.go"
-      pkgname: mocks                  # replaces old outpkg
+      pkgname: "mocks"
       template-data:
         unroll-variadic: true         # variadic helper
     interfaces:
       ClientAPI:
+  github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain:
+    config:
+      # core settings only
+      dir: "{{.InterfaceDir}}/mocks"         # place next to source
+      filename: "{{.InterfaceName}}.go"
+      pkgname: "mocks"
+      template-data:
+        unroll-variadic: true         # variadic helper
+    interfaces:
+      ClientAPI:
+  github.com/nicolas-martin/dankfolio/backend/internal/clients/solana:
+    config:
+      # core settings only
+      dir: "{{.InterfaceDir}}/mocks"         # place next to source
+      filename: "{{.InterfaceName}}.go"
+      pkgname: "mocks"
+      template-data:
+        unroll-variadic: true         # variadic helper
+    interfaces:
+      ClientAPI:
+  github.com/nicolas-martin/dankfolio/backend/internal/db:
+    config:
+      # core settings only
+      dir: "{{.InterfaceDir}}/mocks"         # place next to source
+      filename: "{{.InterfaceName}}.go"
+      pkgname: "mocks"
+      template-data:
+        unroll-variadic: true         # variadic helper
+    interfaces:
+      Store:
