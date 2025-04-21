@@ -4,27 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"math"
 	"math/rand"
-	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // Service handles price-related operations
 type Service struct {
-	httpClient    *http.Client
-	baseURL       string
-	birdEyeAPIKEY string
+	birdeyeClient *birdeye.Client
 }
 
 // PriceHistory represents the response from the price history API
@@ -111,68 +106,38 @@ func loadAddressToSymbol() map[string]string {
 // NewService creates a new price service
 func NewService(baseURL string, birdEyeAPIKEY string) *Service {
 	return &Service{
-		httpClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
-		baseURL:       baseURL,
-		birdEyeAPIKEY: birdEyeAPIKEY,
+		birdeyeClient: birdeye.NewClient(baseURL, birdEyeAPIKEY),
 	}
 }
 
-// TODO: We have another birdeye call here... they're everywhere 😥
 // GetPriceHistory retrieves price history for a given token
-func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFrom, timeTo, addressType string) (*PriceHistory, error) {
+func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFrom, timeTo, addressType string) (*birdeye.PriceHistory, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
 		log.Print("x-debug-mode: true")
 		return s.loadMockPriceHistory(address, historyType)
 	}
-	// RFC3339     = "2006-01-02T15:04:05Z07:00"
-	startMili, err := time.Parse(time.RFC3339, timeFrom)
+
+	startTime, err := time.Parse(time.RFC3339, timeFrom)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time_from: %w", err)
 	}
-	endMili, err := time.Parse(time.RFC3339, timeTo)
+	endTime, err := time.Parse(time.RFC3339, timeTo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time_to: %w", err)
 	}
-	queryParams := url.Values{}
-	queryParams.Add("address", address)
-	queryParams.Add("address_type", addressType)
-	queryParams.Add("type", historyType)
-	queryParams.Add("time_from", strconv.FormatInt(startMili.Unix(), 10))
-	queryParams.Add("time_to", strconv.FormatInt(endMili.Unix(), 10))
-	fullURL := fmt.Sprintf("%s/history_price?%s", s.baseURL, queryParams.Encode())
 
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("accept", "application/json")
-	req.Header.Set("X-API-KEY", s.birdEyeAPIKEY)
-	req.Header.Set("x-chain", "solana")
-	log.Printf("Request URL: %s", req.URL.String())
-	log.Printf("Request Headers: %v", req.Header)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+	params := birdeye.PriceHistoryParams{
+		Address:     address,
+		AddressType: addressType,
+		HistoryType: historyType,
+		TimeFrom:    startTime,
+		TimeTo:      endTime,
 	}
 
-	var priceHistory PriceHistory
-	if err := json.NewDecoder(resp.Body).Decode(&priceHistory); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &priceHistory, nil
+	return s.birdeyeClient.GetPriceHistory(ctx, params)
 }
 
-func (s *Service) loadMockPriceHistory(address string, historyType string) (*PriceHistory, error) {
+func (s *Service) loadMockPriceHistory(address string, historyType string) (*birdeye.PriceHistory, error) {
 	addressToSymbol := loadAddressToSymbol()
 	log.Printf("Looking up address: %s", address)
 	symbol, exists := addressToSymbol[address]
@@ -193,7 +158,7 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*Pri
 	}
 	defer file.Close()
 
-	var priceHistory PriceHistory
+	var priceHistory birdeye.PriceHistory
 	if err := json.NewDecoder(file).Decode(&priceHistory); err != nil {
 		log.Printf("failed to decode mock data: %s", err)
 		return s.generateRandomPriceHistory(address)
@@ -202,7 +167,7 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*Pri
 	return &priceHistory, nil
 }
 
-func (s *Service) generateRandomPriceHistory(address string) (*PriceHistory, error) {
+func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHistory, error) {
 	log.Printf("🎲 Generating random price history for unknown token: %s", address)
 	// Default to 100 points for smoother chart
 	numPoints := 100
@@ -214,7 +179,7 @@ func (s *Service) generateRandomPriceHistory(address string) (*PriceHistory, err
 	basePrice := 0.01 * math.Pow(10, magnitude) // This gives us a range from 0.01 to 1.00
 
 	// Generate price points
-	var items []PriceHistoryItem
+	var items []birdeye.PriceHistoryItem
 	currentPrice := basePrice
 	now := time.Now()
 
@@ -242,8 +207,8 @@ func (s *Service) generateRandomPriceHistory(address string) (*PriceHistory, err
 			currentPrice = 0.01
 		}
 
-		items = append(items, PriceHistoryItem{
-			UnixTime: pointTime.Unix(), // No need for string conversion
+		items = append(items, birdeye.PriceHistoryItem{
+			UnixTime: pointTime.Unix(),
 			Value:    currentPrice,
 		})
 	}
@@ -251,14 +216,10 @@ func (s *Service) generateRandomPriceHistory(address string) (*PriceHistory, err
 	log.Printf("🎲 Generated %d random price points for %s with base price %.6f",
 		len(items), address, basePrice)
 
-	response := &PriceHistory{
-		Data: struct {
-			Items []PriceHistoryItem `json:"items"`
-		}{
+	return &birdeye.PriceHistory{
+		Data: birdeye.PriceHistoryData{
 			Items: items,
 		},
 		Success: true,
-	}
-
-	return response, nil
+	}, nil
 }

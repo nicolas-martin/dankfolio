@@ -3,27 +3,24 @@ package solana
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/common"
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	"github.com/gagliardetto/solana-go/rpc"
 )
 
 // Client handles interactions with the Solana RPC
 type Client struct {
 	rpcClient *client.Client
+	rpcConn   *rpc.Client
 }
 
 // NewClient creates a new instance of Client
 func NewClient(endpoint string) *Client {
-	if endpoint == "" {
-		endpoint = client.MainnetRPCEndpoint
-		log.Printf("No Solana RPC endpoint provided, using default: %s", endpoint)
-	}
-
 	return &Client{
 		rpcClient: client.NewClient(endpoint),
+		rpcConn:   rpc.New(endpoint),
 	}
 }
 
@@ -49,4 +46,9 @@ func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*token_me
 	}
 
 	return &metadata, nil
+}
+
+// GetRpcConnection returns the underlying RPC connection for direct usage
+func (c *Client) GetRpcConnection() *rpc.Client {
+	return c.rpcConn
 }

@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 )
 
 // Client handles interactions with external metadata sources
@@ -16,12 +15,6 @@ type Client struct {
 
 // NewClient creates a new instance of Client
 func NewClient(httpClient *http.Client) *Client {
-	if httpClient == nil {
-		httpClient = &http.Client{
-			Timeout: 10 * time.Second,
-		}
-	}
-
 	return &Client{
 		httpClient: httpClient,
 	}

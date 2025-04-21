@@ -7,9 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -17,15 +14,12 @@ import (
 // Solana metadata, and off-chain sources. It populates and returns a model.Coin.
 // It takes initial basic info (name, icon, volume) which might come from a preliminary scrape,
 // and overwrites/enriches it.
-func EnrichCoinData(
+func (s *Service) EnrichCoinData(
 	ctx context.Context,
 	mintAddress string,
 	initialName string,
 	initialIconURL string,
 	initialVolume float64,
-	jupiterClient *jupiter.Client,
-	solanaClient *solana.Client,
-	offchainClient *offchain.Client,
 ) (*model.Coin, error) {
 	log.Printf("EnrichCoinData: Starting enrichment for %s", mintAddress)
 
@@ -39,7 +33,7 @@ func EnrichCoinData(
 
 	// 1. Get Jupiter data for basic info & price (overwrites initial values if found)
 	log.Printf("EnrichCoinData: Fetching Jupiter token info for %s", mintAddress)
-	jupiterInfo, err := jupiterClient.GetTokenInfo(mintAddress)
+	jupiterInfo, err := s.jupiterClient.GetTokenInfo(mintAddress)
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Failed to get Jupiter info for %s: %v. Continuing enrichment.", mintAddress, err)
 		// Continue enrichment even if Jupiter info fails, maybe metadata has info.
@@ -56,7 +50,7 @@ func EnrichCoinData(
 
 	// 2. Get price from Jupiter (even if GetTokenInfo failed, price might work)
 	log.Printf("EnrichCoinData: Fetching Jupiter price for %s", mintAddress)
-	prices, err := jupiterClient.GetTokenPrices([]string{mintAddress})
+	prices, err := s.jupiterClient.GetTokenPrices([]string{mintAddress})
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching price for %s: %v", mintAddress, err)
 	} else if price, ok := prices[mintAddress]; ok {
@@ -68,7 +62,7 @@ func EnrichCoinData(
 
 	// 3. Get Solana on-chain metadata account
 	log.Printf("EnrichCoinData: Fetching on-chain metadata account for %s", mintAddress)
-	metadataAccount, err := solanaClient.GetMetadataAccount(ctx, mintAddress)
+	metadataAccount, err := s.solanaClient.GetMetadataAccount(ctx, mintAddress)
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching on-chain metadata account for %s: %v. Cannot fetch off-chain data.", mintAddress, err)
 		// If we can't get the metadata account, we can't get the URI for off-chain metadata.
@@ -80,7 +74,7 @@ func EnrichCoinData(
 	// 4. Fetch off-chain metadata using the URI from the on-chain account
 	uri := strings.TrimSpace(metadataAccount.Data.Uri)
 	log.Printf("EnrichCoinData: Fetching off-chain metadata for %s from URI: %s", mintAddress, uri)
-	offchainMeta, err := offchainClient.FetchMetadata(uri)
+	offchainMeta, err := s.offchainClient.FetchMetadata(uri)
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching off-chain metadata for %s (URI: %s): %v", mintAddress, uri, err)
 		// Proceed without off-chain data, enrich with what we have

@@ -256,15 +256,12 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 				initialVolume = 0
 			}
 
-			enriched, err := EnrichCoinData(
+			enriched, err := s.EnrichCoinData(
 				enrichTaskCtx, // Use the task-specific context
 				token.MintAddress,
 				token.Name,
 				token.IconURL,
 				initialVolume,
-				s.jupiterClient,
-				s.httpClient,
-				s.solanaRPCClient,
 			)
 			if err != nil {
 				errMessage := fmt.Sprintf("ERROR: enrichScrapedTokens: Failed EnrichCoinData for %s (%s): %v", token.Name, token.MintAddress, err)
