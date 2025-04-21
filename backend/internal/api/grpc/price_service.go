@@ -116,3 +116,30 @@ func (s *PriceServer) GetPriceHistory(
 	})
 	return res, nil
 }
+
+// GetTokenPrices returns current prices for multiple tokens
+func (s *PriceServer) GetTokenPrices(
+	ctx context.Context,
+	req *connect.Request[pb.GetTokenPricesRequest],
+) (*connect.Response[pb.GetTokenPricesResponse], error) {
+	tokenIDs := req.Msg.TokenIds
+	if len(tokenIDs) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no token IDs provided"))
+	}
+
+	prices, err := s.priceService.GetTokenPrices(ctx, tokenIDs)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get token prices: %w", err))
+	}
+
+	// Convert map to proto response
+	priceMap := make(map[string]float64)
+	for id, price := range prices {
+		priceMap[id] = price
+	}
+
+	res := connect.NewResponse(&pb.GetTokenPricesResponse{
+		Prices: priceMap,
+	})
+	return res, nil
+}

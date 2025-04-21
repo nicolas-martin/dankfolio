@@ -223,3 +223,18 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 		Success: true,
 	}, nil
 }
+
+// GetTokenPrices returns current prices for multiple tokens
+func (s *Service) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
+	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		// Return mock prices for debug mode
+		mockPrices := make(map[string]float64)
+		for _, addr := range tokenAddresses {
+			mockPrices[addr] = 1.0 + rand.Float64() // Random price between 1.0 and 2.0
+		}
+		return mockPrices, nil
+	}
+
+	// Get real prices from BirdEye API
+	return s.birdeyeClient.GetTokenPrices(ctx, tokenAddresses)
+}

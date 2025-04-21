@@ -2,10 +2,13 @@ package wallet
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/programs/system"
+	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
@@ -22,6 +25,12 @@ type WalletBalance struct {
 	Balances []Balance `json:"balances"`
 }
 
+// WalletInfo represents a wallet's public and private keys
+type WalletInfo struct {
+	PublicKey string `json:"public_key"`
+	SecretKey string `json:"secret_key"`
+}
+
 // Service handles wallet-related operations
 type Service struct {
 	rpcClient   *rpc.Client
@@ -34,6 +43,169 @@ func New(rpcClient *rpc.Client, coinService *coin.Service) *Service {
 		rpcClient:   rpcClient,
 		coinService: coinService,
 	}
+}
+
+// CreateWallet generates a new Solana wallet
+func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
+	// Generate a new keypair
+	account := solana.NewWallet()
+
+	return &WalletInfo{
+		PublicKey: account.PublicKey().String(),
+		SecretKey: account.PrivateKey.String(),
+	}, nil
+}
+
+// PrepareTransfer prepares an unsigned transfer transaction
+func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, tokenMint string, amount float64) (string, error) {
+	// Parse addresses
+	fromPubKey, err := solana.PublicKeyFromBase58(fromAddress)
+	if err != nil {
+		return "", fmt.Errorf("invalid from address: %w", err)
+	}
+
+	toPubKey, err := solana.PublicKeyFromBase58(toAddress)
+	if err != nil {
+		return "", fmt.Errorf("invalid to address: %w", err)
+	}
+
+	// Create transaction
+	var tx *solana.Transaction
+	if tokenMint == "" {
+		// SOL transfer
+		lamports := uint64(amount * float64(solana.LAMPORTS_PER_SOL))
+		tx, err = s.createSolTransfer(ctx, fromPubKey, toPubKey, lamports)
+	} else {
+		// Token transfer
+		tx, err = s.createTokenTransfer(ctx, fromPubKey, toPubKey, tokenMint, amount)
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to create transfer transaction: %w", err)
+	}
+
+	// Serialize transaction
+	serializedTx, err := tx.MarshalBinary()
+	if err != nil {
+		return "", fmt.Errorf("failed to serialize transaction: %w", err)
+	}
+
+	return base64.StdEncoding.EncodeToString(serializedTx), nil
+}
+
+// SubmitTransfer submits a signed transfer transaction
+func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) (string, error) {
+	// Decode signed transaction
+	txBytes, err := base64.StdEncoding.DecodeString(signedTransaction)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode signed transaction: %w", err)
+	}
+
+	// Parse transaction
+	tx, err := solana.TransactionFromBytes(txBytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse transaction: %w", err)
+	}
+
+	// Submit transaction
+	sig, err := s.rpcClient.SendTransaction(ctx, tx)
+	if err != nil {
+		return "", fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	return sig.String(), nil
+}
+
+// createSolTransfer creates a SOL transfer transaction
+func (s *Service) createSolTransfer(ctx context.Context, from, to solana.PublicKey, lamports uint64) (*solana.Transaction, error) {
+	// Get recent blockhash
+	recent, err := s.rpcClient.GetRecentBlockhash(ctx, rpc.CommitmentConfirmed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
+	}
+
+	// Create transfer instruction
+	transferIx := system.NewTransferInstruction(
+		lamports,
+		from,
+		to,
+	).Build()
+
+	// Create transaction
+	tx, err := solana.NewTransaction(
+		[]solana.Instruction{transferIx},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(from),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	return tx, nil
+}
+
+// createTokenTransfer creates a token transfer transaction
+func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.PublicKey, tokenMint string, amount float64) (*solana.Transaction, error) {
+	// Get token mint info
+	mintPubKey, err := solana.PublicKeyFromBase58(tokenMint)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token mint address: %w", err)
+	}
+
+	// Get token account info
+	fromATA, _, err := solana.FindAssociatedTokenAddress(from, mintPubKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find source token account: %w", err)
+	}
+
+	toATA, _, err := solana.FindAssociatedTokenAddress(to, mintPubKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find destination token account: %w", err)
+	}
+
+	// Get recent blockhash
+	recent, err := s.rpcClient.GetRecentBlockhash(ctx, rpc.CommitmentConfirmed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
+	}
+
+	// Get token decimals
+	mintAcct, err := s.rpcClient.GetAccountInfo(ctx, mintPubKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get mint info: %w", err)
+	}
+
+	var mintInfo struct {
+		Decimals uint8 `json:"decimals"`
+	}
+	if err := json.Unmarshal(mintAcct.Value.Data.GetRawJSON(), &mintInfo); err != nil {
+		return nil, fmt.Errorf("failed to parse mint info: %w", err)
+	}
+
+	// Convert amount to raw units
+	rawAmount := uint64(amount * float64(uint64(1)<<mintInfo.Decimals))
+
+	// Create transfer instruction
+	transferIx := token.NewTransferCheckedInstruction(
+		rawAmount,
+		mintInfo.Decimals,
+		fromATA,
+		mintPubKey,
+		toATA,
+		from,
+		[]solana.PublicKey{},
+	).Build()
+
+	// Create transaction
+	tx, err := solana.NewTransaction(
+		[]solana.Instruction{transferIx},
+		recent.Value.Blockhash,
+		solana.TransactionPayer(from),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	return tx, nil
 }
 
 func (s *Service) GetWalletBalances(ctx context.Context, address string) (*WalletBalance, error) {

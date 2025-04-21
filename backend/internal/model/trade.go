@@ -6,19 +6,22 @@ import (
 
 // Trade represents a meme trading transaction
 type Trade struct {
-	ID              string    `json:"id"`
-	UserID          string    `json:"user_id"`
-	FromCoinID      string    `json:"from_coin_id"` // Input token mint address
-	ToCoinID        string    `json:"to_coin_id"`   // Output token mint address
-	CoinSymbol      string    `json:"coin_symbol"`
-	Type            string    `json:"type"` // "swap"
-	Amount          float64   `json:"amount"`
-	Price           float64   `json:"price"`
-	Fee             float64   `json:"fee"`
-	Status          string    `json:"status"` // "pending", "completed", "failed"
-	TransactionHash string    `json:"transaction_hash,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
-	CompletedAt     time.Time `json:"completed_at,omitempty"`
+	ID              string     `json:"id"`
+	UserID          string     `json:"user_id"`
+	FromCoinID      string     `json:"from_coin_id"` // Input token mint address
+	ToCoinID        string     `json:"to_coin_id"`   // Output token mint address
+	CoinSymbol      string     `json:"coin_symbol"`
+	Type            string     `json:"type"` // "swap"
+	Amount          float64    `json:"amount"`
+	Price           float64    `json:"price"`
+	Fee             float64    `json:"fee"`
+	Status          string     `json:"status"` // "pending", "completed", "failed"
+	TransactionHash string     `json:"transaction_hash,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	CompletedAt     *time.Time `json:"completed_at,omitempty"`
+	Confirmations   int32      `json:"confirmations"`
+	Finalized       bool       `json:"finalized"`
+	Error           *string    `json:"error,omitempty"`
 }
 
 // TradeRequest represents a request to trade meme coins

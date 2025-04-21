@@ -25,3 +25,8 @@ func NewSolanaTradeService(rpcEndpoint string) (*SolanaTradeService, error) {
 
 	return service, nil
 }
+
+// GetRPCClient returns the RPC client
+func (s *SolanaTradeService) GetRPCClient() *rpc.Client {
+	return s.client
+}

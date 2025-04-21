@@ -13,6 +13,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
 )
 
@@ -21,16 +22,18 @@ type Service struct {
 	// TODO: Maybe these are redundant
 	SolanaService *solana.SolanaTradeService
 	coinService   *coin.Service
+	priceService  *price.Service
 	jupiterClient *jupiter.Client
 	mu            sync.RWMutex
 	trades        map[string]*model.Trade // In-memory storage using trade ID as key
 }
 
 // NewService creates a new TradeService instance
-func NewService(ss *solana.SolanaTradeService, cs *coin.Service, jc *jupiter.Client) *Service {
+func NewService(ss *solana.SolanaTradeService, cs *coin.Service, ps *price.Service, jc *jupiter.Client) *Service {
 	return &Service{
 		SolanaService: ss,
 		coinService:   cs,
+		priceService:  ps,
 		jupiterClient: jc,
 		trades:        make(map[string]*model.Trade),
 	}
@@ -45,6 +48,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		// Simulate processing delay
 		time.Sleep(2 * time.Second)
 
+		now := time.Now()
 		// Create simulated trade
 		trade := &model.Trade{
 			ID:              fmt.Sprintf("trade_%d", time.Now().UnixNano()),
@@ -54,8 +58,8 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 			Amount:          req.Amount,
 			Fee:             CalculateTradeFee(req.Amount, 1.0),
 			Status:          "completed",
-			CreatedAt:       time.Now(),
-			CompletedAt:     time.Now(),
+			CreatedAt:       now,
+			CompletedAt:     &now,
 			TransactionHash: "5Bu8arrurLxsP9dEvdXX3kBd5PqP6tNUubSZUmoJNRE7ijGPnKW9MU9QQfUerJaorYQxPAmLCnD3D7gW8CihWJy6",
 		}
 
@@ -91,8 +95,9 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	}
 
 	// Update trade status and store in memory
+	now := time.Now()
 	trade.Status = "completed"
-	trade.CompletedAt = time.Now()
+	trade.CompletedAt = &now
 
 	s.mu.Lock()
 	s.trades[trade.ID] = trade
@@ -132,7 +137,7 @@ func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 
 // GetSwapQuote gets a quote for a potential trade
 func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
-	// Convert amount to raw units based on decimals
+	// Parse addresses
 	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get from coin: %w", err)
@@ -176,8 +181,8 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 		feeMintAddresses = append(feeMintAddresses, mint)
 	}
 
-	// Retrieve token prices
-	prices, err := s.jupiterClient.GetTokenPrices(feeMintAddresses)
+	// Retrieve token prices using price service
+	prices, err := s.priceService.GetTokenPrices(ctx, feeMintAddresses)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token prices: %w", err)
 	}
@@ -258,11 +263,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 	}, nil
 }
 
-// GetTokenPrices gets prices for multiple tokens from Jupiter
-func (s *Service) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
-	return s.jupiterClient.GetTokenPrices(tokenAddresses)
-}
-
+// Helper functions for string manipulation
 func truncateDecimals(input string, digits int) string {
 	i := strings.IndexByte(input, '.')
 	if i == -1 || len(input) < i+digits+1 {
@@ -278,4 +279,18 @@ func TruncateAndFormatFloat(value float64, decimalPlaces int) string {
 	factor := math.Pow(10, float64(decimalPlaces))
 	truncatedValue := math.Trunc(value*factor) / factor
 	return strconv.FormatFloat(truncatedValue, 'f', decimalPlaces, 64)
+}
+
+// GetTradeByTransactionHash retrieves a trade by its transaction hash
+func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, trade := range s.trades {
+		if trade.TransactionHash == txHash {
+			return trade, nil
+		}
+	}
+
+	return nil, fmt.Errorf("trade not found for transaction hash: %s", txHash)
 }

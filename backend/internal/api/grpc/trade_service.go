@@ -109,60 +109,54 @@ func (s *TradeServer) SubmitSwap(
 	return res, nil
 }
 
-// GetTradeStatus returns the status of a trade
-func (s *TradeServer) GetTradeStatus(
+// GetTrade returns details and status of a specific trade
+func (s *TradeServer) GetTrade(
 	ctx context.Context,
-	req *connect.Request[pb.GetTradeStatusRequest],
-) (*connect.Response[pb.GetTradeStatusResponse], error) {
-	if req.Msg.TransactionHash == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction_hash is required"))
-	}
+	req *connect.Request[pb.GetTradeRequest],
+) (*connect.Response[pb.Trade], error) {
+	var trade *model.Trade
+	var err error
 
-	status, err := s.tradeService.SolanaService.GetTransactionConfirmationStatus(ctx, req.Msg.TransactionHash)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
-	}
-
-	response := &pb.GetTradeStatusResponse{
-		TransactionHash: req.Msg.TransactionHash,
-	}
-
-	// Check if status is nil or has no values (transaction not found yet)
-	if status == nil || len(status.Value) == 0 || status.Value[0] == nil {
-		response.Status = "Pending"
-		response.Confirmations = 0
-		response.Finalized = false
-	} else {
-		// Transaction found, populate status details
-		response.Status = string(status.Value[0].ConfirmationStatus)
-		if status.Value[0].Confirmations != nil {
-			response.Confirmations = int32(*status.Value[0].Confirmations)
+	switch identifier := req.Msg.Identifier.(type) {
+	case *pb.GetTradeRequest_Id:
+		if identifier.Id == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("trade ID is required"))
 		}
-		response.Finalized = status.Value[0].ConfirmationStatus == "finalized"
+		trade, err = s.tradeService.GetTradeByID(ctx, identifier.Id)
+	case *pb.GetTradeRequest_TransactionHash:
+		if identifier.TransactionHash == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction hash is required"))
+		}
+		// Get transaction status
+		status, err := s.tradeService.SolanaService.GetTransactionConfirmationStatus(ctx, identifier.TransactionHash)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
+		}
 
-		// Convert error to string if present
-		if status.Value[0].Err != nil {
-			errStr := fmt.Sprintf("%v", status.Value[0].Err)
-			if errStr != "<nil>" {
-				response.Error = &errStr
+		// Get the trade by transaction hash
+		trade, err = s.tradeService.GetTradeByTransactionHash(ctx, identifier.TransactionHash)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade: %w", err))
+		}
+
+		// Update trade with status information
+		if status != nil && len(status.Value) > 0 && status.Value[0] != nil {
+			trade.Status = string(status.Value[0].ConfirmationStatus)
+			if status.Value[0].Confirmations != nil {
+				trade.Confirmations = int32(*status.Value[0].Confirmations)
+			}
+			trade.Finalized = status.Value[0].ConfirmationStatus == "finalized"
+			if status.Value[0].Err != nil {
+				errStr := fmt.Sprintf("%v", status.Value[0].Err)
+				if errStr != "<nil>" {
+					trade.Error = &errStr
+				}
 			}
 		}
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("either trade ID or transaction hash is required"))
 	}
 
-	res := connect.NewResponse(response)
-	return res, nil
-}
-
-// GetTradeByID returns details of a specific trade
-func (s *TradeServer) GetTradeByID(
-	ctx context.Context,
-	req *connect.Request[pb.GetTradeByIDRequest],
-) (*connect.Response[pb.Trade], error) {
-	if req.Msg.Id == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("id is required"))
-	}
-
-	trade, err := s.tradeService.GetTradeByID(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade: %w", err))
 	}
@@ -192,76 +186,6 @@ func (s *TradeServer) ListTrades(
 	return res, nil
 }
 
-// GetTokenPrices returns prices for multiple tokens
-func (s *TradeServer) GetTokenPrices(
-	ctx context.Context,
-	req *connect.Request[pb.GetTokenPricesRequest],
-) (*connect.Response[pb.GetTokenPricesResponse], error) {
-	tokenIDs := req.Msg.TokenIds
-	if len(tokenIDs) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no token IDs provided"))
-	}
-
-	prices, err := s.tradeService.GetTokenPrices(ctx, tokenIDs)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get token prices: %w", err))
-	}
-
-	// Convert map to proto response
-	priceMap := make(map[string]float64)
-	for id, price := range prices {
-		priceMap[id] = price
-	}
-
-	res := connect.NewResponse(&pb.GetTokenPricesResponse{
-		Prices: priceMap,
-	})
-	return res, nil
-}
-
-// PrepareTransfer prepares an unsigned transfer transaction
-func (s *TradeServer) PrepareTransfer(
-	ctx context.Context,
-	req *connect.Request[pb.PrepareTransferRequest],
-) (*connect.Response[pb.PrepareTransferResponse], error) {
-	if req.Msg.FromAddress == "" || req.Msg.ToAddress == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from and to addresses are required"))
-	}
-	if req.Msg.Amount <= 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("amount must be greater than 0"))
-	}
-
-	unsignedTx, err := s.tradeService.SolanaService.CreateTransferTransaction(ctx, req.Msg.FromAddress, req.Msg.ToAddress, req.Msg.TokenMint, req.Msg.Amount)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare transfer: %w", err))
-	}
-
-	res := connect.NewResponse(&pb.PrepareTransferResponse{
-		UnsignedTransaction: unsignedTx,
-	})
-	return res, nil
-}
-
-// SubmitTransfer submits a signed transfer transaction
-func (s *TradeServer) SubmitTransfer(
-	ctx context.Context,
-	req *connect.Request[pb.SubmitTransferRequest],
-) (*connect.Response[pb.SubmitTransferResponse], error) {
-	if req.Msg.SignedTransaction == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("signed transaction is required"))
-	}
-
-	sig, err := s.tradeService.SolanaService.ExecuteSignedTransaction(ctx, req.Msg.SignedTransaction)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to submit transfer: %w", err))
-	}
-
-	res := connect.NewResponse(&pb.SubmitTransferResponse{
-		TransactionHash: sig.String(),
-	})
-	return res, nil
-}
-
 // Helper function to convert model.Trade to pb.Trade
 func convertModelTradeToPb(trade *model.Trade) *pb.Trade {
 	pbTrade := &pb.Trade{
@@ -277,10 +201,16 @@ func convertModelTradeToPb(trade *model.Trade) *pb.Trade {
 		Status:          trade.Status,
 		TransactionHash: trade.TransactionHash,
 		CreatedAt:       timestamppb.New(trade.CreatedAt),
+		Confirmations:   trade.Confirmations,
+		Finalized:       trade.Finalized,
 	}
 
-	if !trade.CompletedAt.IsZero() {
-		pbTrade.CompletedAt = timestamppb.New(trade.CompletedAt)
+	if trade.CompletedAt != nil {
+		pbTrade.CompletedAt = timestamppb.New(*trade.CompletedAt)
+	}
+
+	if trade.Error != nil {
+		pbTrade.Error = trade.Error
 	}
 
 	return pbTrade

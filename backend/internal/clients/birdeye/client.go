@@ -97,3 +97,53 @@ type PriceHistoryParams struct {
 	TimeFrom    time.Time // Start time
 	TimeTo      time.Time // End time
 }
+
+// GetTokenPrices retrieves current prices for multiple tokens
+func (c *Client) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
+	// Prepare query parameters
+	queryParams := url.Values{}
+	for _, addr := range tokenAddresses {
+		queryParams.Add("token_addresses", addr)
+	}
+
+	fullURL := fmt.Sprintf("%s/token_price?%s", c.baseURL, queryParams.Encode())
+
+	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("X-API-KEY", c.apiKey)
+	req.Header.Set("x-chain", "solana")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var response struct {
+		Data map[string]struct {
+			Value float64 `json:"value"`
+		} `json:"data"`
+		Success bool `json:"success"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	// Convert response to map[string]float64
+	prices := make(map[string]float64)
+	for addr, data := range response.Data {
+		prices[addr] = data.Value
+	}
+
+	return prices, nil
+}
