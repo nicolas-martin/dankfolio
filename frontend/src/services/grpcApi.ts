@@ -163,8 +163,8 @@ const grpcApi: API = {
 		try {
 			logRequest(serviceName, methodName, { txHash });
 
-			const response = await tradeClient.getTradeStatus(
-				{ transactionHash: txHash },
+			const response = await tradeClient.getTrade(
+				{ identifier: { case: 'transactionHash', value: txHash } },
 				{ headers: getRequestHeaders() }
 			);
 

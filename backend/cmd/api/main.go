@@ -13,10 +13,10 @@ import (
 	"github.com/joho/godotenv"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	solanaclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
@@ -104,20 +104,17 @@ func main() {
 	}
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 
-	// Initialize Solana service
-	solanaService, err := solana.NewSolanaTradeService(config.SolanaRPCEndpoint)
-	if err != nil {
-		log.Fatalf("Failed to initialize Solana service: %v", err)
-	}
+	// Initialize Solana client
+	solanaClient := solanaclient.NewClient(config.SolanaRPCEndpoint)
 
 	// Initialize price service
 	priceService := price.NewService(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
 
 	// Initialize trade service with all dependencies
-	tradeService := trade.NewService(solanaService, coinService, priceService, jupiterClient, store)
+	tradeService := trade.NewService(solanaClient, coinService, priceService, jupiterClient, store)
 
 	// Initialize wallet service
-	walletService := wallet.New(solanaService.GetRPCClient(), coinService)
+	walletService := wallet.New(solanaClient.GetRpcConnection())
 
 	// Initialize gRPC server
 	grpcServer := grpcapi.NewServer(coinService, walletService, tradeService, priceService)

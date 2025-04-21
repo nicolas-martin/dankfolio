@@ -128,7 +128,7 @@ func (s *TradeServer) GetTrade(
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction hash is required"))
 		}
 		// Get transaction status
-		status, err := s.tradeService.SolanaService.GetTransactionConfirmationStatus(ctx, identifier.TransactionHash)
+		status, err := s.tradeService.GetTransactionStatus(ctx, identifier.TransactionHash)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 		}

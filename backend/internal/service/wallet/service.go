@@ -11,37 +11,17 @@ import (
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 )
-
-// Balance represents information about a token balance
-type Balance struct {
-	ID     string  `json:"id"`
-	Amount float64 `json:"amount"`
-}
-
-// WalletBalance represents a wallet's complete balance
-type WalletBalance struct {
-	Balances []Balance `json:"balances"`
-}
-
-// WalletInfo represents a wallet's public and private keys
-type WalletInfo struct {
-	PublicKey string `json:"public_key"`
-	SecretKey string `json:"secret_key"`
-}
 
 // Service handles wallet-related operations
 type Service struct {
-	rpcClient   *rpc.Client
-	coinService *coin.Service
+	rpcClient *rpc.Client
 }
 
 // New creates a new wallet service
-func New(rpcClient *rpc.Client, coinService *coin.Service) *Service {
+func New(rpcClient *rpc.Client) *Service {
 	return &Service{
-		rpcClient:   rpcClient,
-		coinService: coinService,
+		rpcClient: rpcClient,
 	}
 }
 
@@ -281,12 +261,6 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 			continue
 		}
 
-		// "tokenAmount": {
-		//     "amount": "1483648132140",
-		//     "decimals": 6,
-		//     "uiAmount": 1483648.13214,
-		//     "uiAmountString": "1483648.13214"
-		// }
 		var parsedAccount struct {
 			Parsed struct {
 				Info struct {
@@ -306,14 +280,6 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 		if parsedAccount.Parsed.Info.TokenAmount.UiAmount <= 0 {
 			continue
 		}
-
-		// NOTE: Let's not enrich the data here, we might only care about a few things
-		// // Get enriched coin data from coin service
-		// coinData, err := s.coinService.GetCoinByID(ctx, mintAddress)
-		// if err != nil {
-		// 	fmt.Printf("Warning: failed to get coin data for %s: %v\n", mintAddress, err)
-		// 	continue
-		// }
 
 		// Create token info with enriched data
 		token := Balance{

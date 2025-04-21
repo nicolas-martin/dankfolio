@@ -4,16 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 	"github.com/olekukonko/tablewriter"
 )
@@ -66,24 +62,8 @@ func main() {
 	ctx := context.Background()
 	client := rpc.New("https://api.mainnet-beta.solana.com")
 
-	// Initialize services
-	httpClient := &http.Client{
-		Timeout: time.Second * 10,
-	}
-
-	coinServiceConfig := &coin.Config{
-		BirdEyeBaseURL:    "https://public-api.birdeye.so",
-		BirdEyeAPIKey:     os.Getenv("BIRDEYE_API_KEY"),
-		CoinGeckoAPIKey:   os.Getenv("COINGECKO_API_KEY"),
-		TrendingTokenPath: filepath.Join(projectRoot, "cmd", "trending", "trending_tokens.json"),
-	}
-
-	// Initialize Jupiter client
-	jupiterClient := jupiter.NewClient(httpClient)
-
 	// Initialize the coin service with Jupiter client
-	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient)
-	walletService := wallet.New(client, coinService)
+	walletService := wallet.New(client)
 
 	// Define wallet path
 	walletPath := filepath.Join(projectRoot, "keys/mainnet-wallet-1.json")

@@ -9,17 +9,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
 )
 
 // Service handles trade-related operations
 type Service struct {
-	SolanaService *solana.SolanaTradeService
+	solanaClient  *solana.Client
 	coinService   *coin.Service
 	priceService  *price.Service
 	jupiterClient *jupiter.Client
@@ -27,9 +28,9 @@ type Service struct {
 }
 
 // NewService creates a new TradeService instance
-func NewService(ss *solana.SolanaTradeService, cs *coin.Service, ps *price.Service, jc *jupiter.Client, store db.Store) *Service {
+func NewService(sc *solana.Client, cs *coin.Service, ps *price.Service, jc *jupiter.Client, store db.Store) *Service {
 	return &Service{
-		SolanaService: ss,
+		solanaClient:  sc,
 		coinService:   cs,
 		priceService:  ps,
 		jupiterClient: jc,
@@ -65,8 +66,6 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 // ExecuteTrade executes a trade based on the provided request
 func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*model.Trade, error) {
 	// Check for debug header in context
-	// NOTE: Don't forget about this mdoe
-
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
 		// Simulate processing delay
 		time.Sleep(2 * time.Second)
@@ -106,7 +105,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	}
 
 	// Execute signed transaction on blockchain
-	err := s.SolanaService.ExecuteTrade(ctx, trade, req.SignedTransaction)
+	err := s.solanaClient.ExecuteTrade(ctx, trade, req.SignedTransaction)
 	if err != nil {
 		trade.Status = "failed"
 		s.store.UpdateTrade(ctx, trade)
@@ -286,4 +285,9 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 	}
 
 	return nil, fmt.Errorf("trade not found for transaction hash: %s", txHash)
+}
+
+// GetTransactionStatus gets the confirmation status of a transaction
+func (s *Service) GetTransactionStatus(ctx context.Context, txHash string) (*rpc.GetSignatureStatusesResult, error) {
+	return s.solanaClient.GetTransactionConfirmationStatus(ctx, txHash)
 }
