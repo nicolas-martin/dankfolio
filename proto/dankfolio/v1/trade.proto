@@ -14,23 +14,11 @@ service TradeService {
   // SubmitSwap submits a trade for execution
   rpc SubmitSwap(SubmitSwapRequest) returns (SubmitSwapResponse);
 
-  // GetTradeStatus returns the status of a trade
-  rpc GetTradeStatus(GetTradeStatusRequest) returns (GetTradeStatusResponse);
-
-  // GetTradeByID returns details of a specific trade
-  rpc GetTradeByID(GetTradeByIDRequest) returns (Trade);
+  // GetTrade returns details and status of a specific trade
+  rpc GetTrade(GetTradeRequest) returns (Trade);
 
   // ListTrades returns all trades
   rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
-
-  // GetTokenPrices returns prices for multiple tokens
-  rpc GetTokenPrices(GetTokenPricesRequest) returns (GetTokenPricesResponse);
-
-  // PrepareTransfer prepares an unsigned transfer transaction
-  rpc PrepareTransfer(PrepareTransferRequest) returns (PrepareTransferResponse);
-
-  // SubmitTransfer submits a signed transfer transaction
-  rpc SubmitTransfer(SubmitTransferRequest) returns (SubmitTransferResponse);
 }
 
 // Trade represents a meme trading transaction
@@ -48,6 +36,9 @@ message Trade {
   string transaction_hash = 11;
   google.protobuf.Timestamp created_at = 12;
   optional google.protobuf.Timestamp completed_at = 13;
+  int32 confirmations = 14;
+  bool finalized = 15;
+  optional string error = 16;
 }
 
 // GetSwapQuoteRequest is the request for getting a trade quote
@@ -55,7 +46,7 @@ message GetSwapQuoteRequest {
   string from_coin_id = 1;
   string to_coin_id = 2;
   string amount = 3;
-  string slippage_bps = 4; // Changed from optional to required
+  string slippage_bps = 4;
 }
 
 // GetSwapQuoteResponse is the response containing trade quote details
@@ -83,23 +74,12 @@ message SubmitSwapResponse {
   string transaction_hash = 2;
 }
 
-// GetTradeStatusRequest is the request for checking trade status
-message GetTradeStatusRequest {
-  string transaction_hash = 1;
-}
-
-// GetTradeStatusResponse is the response containing trade status
-message GetTradeStatusResponse {
-  string transaction_hash = 1;
-  string status = 2;
-  int32 confirmations = 3;
-  bool finalized = 4;
-  optional string error = 5;
-}
-
-// GetTradeByIDRequest is the request for getting a trade by ID
-message GetTradeByIDRequest {
-  string id = 1;
+// GetTradeRequest is the request for getting trade details and status
+message GetTradeRequest {
+  oneof identifier {
+    string id = 1;
+    string transaction_hash = 2;
+  }
 }
 
 // ListTradesRequest is the request for listing trades
@@ -110,37 +90,4 @@ message ListTradesRequest {
 // ListTradesResponse is the response containing a list of trades
 message ListTradesResponse {
   repeated Trade trades = 1;
-}
-
-// GetTokenPricesRequest is the request for getting token prices
-message GetTokenPricesRequest {
-  repeated string token_ids = 1;
-}
-
-// GetTokenPricesResponse is the response containing token prices
-message GetTokenPricesResponse {
-  map<string, double> prices = 1;
-}
-
-// PrepareTransferRequest is the request for preparing a transfer
-message PrepareTransferRequest {
-  string from_address = 1;
-  string to_address = 2;
-  string token_mint = 3;  // Optional, empty for SOL
-  double amount = 4;
-}
-
-// PrepareTransferResponse is the response with the unsigned transaction
-message PrepareTransferResponse {
-  string unsigned_transaction = 1;
-}
-
-// SubmitTransferRequest is the request for submitting a signed transfer
-message SubmitTransferRequest {
-  string signed_transaction = 1;
-}
-
-// SubmitTransferResponse is the response after submitting a transfer
-message SubmitTransferResponse {
-  string transaction_hash = 1;
 }

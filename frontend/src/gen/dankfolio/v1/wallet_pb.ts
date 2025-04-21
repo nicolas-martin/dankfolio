@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/wallet.proto.
  */
 export const file_dankfolio_v1_wallet: GenFile = /*@__PURE__*/
-  fileDesc("ChlkYW5rZm9saW8vdjEvd2FsbGV0LnByb3RvEgxkYW5rZm9saW8udjEiJQoHQmFsYW5jZRIKCgJpZBgBIAEoCRIOCgZhbW91bnQYAiABKAEiOAoNV2FsbGV0QmFsYW5jZRInCghiYWxhbmNlcxgBIAMoCzIVLmRhbmtmb2xpby52MS5CYWxhbmNlIisKGEdldFdhbGxldEJhbGFuY2VzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIlAKGUdldFdhbGxldEJhbGFuY2VzUmVzcG9uc2USMwoOd2FsbGV0X2JhbGFuY2UYASABKAsyGy5kYW5rZm9saW8udjEuV2FsbGV0QmFsYW5jZSIVChNDcmVhdGVXYWxsZXRSZXF1ZXN0Ij4KFENyZWF0ZVdhbGxldFJlc3BvbnNlEhIKCnB1YmxpY19rZXkYASABKAkSEgoKc2VjcmV0X2tleRgCIAEoCTLMAQoNV2FsbGV0U2VydmljZRJkChFHZXRXYWxsZXRCYWxhbmNlcxImLmRhbmtmb2xpby52MS5HZXRXYWxsZXRCYWxhbmNlc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0V2FsbGV0QmFsYW5jZXNSZXNwb25zZRJVCgxDcmVhdGVXYWxsZXQSIS5kYW5rZm9saW8udjEuQ3JlYXRlV2FsbGV0UmVxdWVzdBoiLmRhbmtmb2xpby52MS5DcmVhdGVXYWxsZXRSZXNwb25zZUK3AQoQY29tLmRhbmtmb2xpby52MUILV2FsbGV0UHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z");
+  fileDesc("ChlkYW5rZm9saW8vdjEvd2FsbGV0LnByb3RvEgxkYW5rZm9saW8udjEiJQoHQmFsYW5jZRIKCgJpZBgBIAEoCRIOCgZhbW91bnQYAiABKAEiOAoNV2FsbGV0QmFsYW5jZRInCghiYWxhbmNlcxgBIAMoCzIVLmRhbmtmb2xpby52MS5CYWxhbmNlIisKGEdldFdhbGxldEJhbGFuY2VzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIlAKGUdldFdhbGxldEJhbGFuY2VzUmVzcG9uc2USMwoOd2FsbGV0X2JhbGFuY2UYASABKAsyGy5kYW5rZm9saW8udjEuV2FsbGV0QmFsYW5jZSIVChNDcmVhdGVXYWxsZXRSZXF1ZXN0Ij4KFENyZWF0ZVdhbGxldFJlc3BvbnNlEhIKCnB1YmxpY19rZXkYASABKAkSEgoKc2VjcmV0X2tleRgCIAEoCSJmChZQcmVwYXJlVHJhbnNmZXJSZXF1ZXN0EhQKDGZyb21fYWRkcmVzcxgBIAEoCRISCgp0b19hZGRyZXNzGAIgASgJEhIKCnRva2VuX21pbnQYAyABKAkSDgoGYW1vdW50GAQgASgBIjcKF1ByZXBhcmVUcmFuc2ZlclJlc3BvbnNlEhwKFHVuc2lnbmVkX3RyYW5zYWN0aW9uGAEgASgJIjMKFVN1Ym1pdFRyYW5zZmVyUmVxdWVzdBIaChJzaWduZWRfdHJhbnNhY3Rpb24YASABKAkiMgoWU3VibWl0VHJhbnNmZXJSZXNwb25zZRIYChB0cmFuc2FjdGlvbl9oYXNoGAEgASgJMokDCg1XYWxsZXRTZXJ2aWNlEmQKEUdldFdhbGxldEJhbGFuY2VzEiYuZGFua2ZvbGlvLnYxLkdldFdhbGxldEJhbGFuY2VzUmVxdWVzdBonLmRhbmtmb2xpby52MS5HZXRXYWxsZXRCYWxhbmNlc1Jlc3BvbnNlElUKDENyZWF0ZVdhbGxldBIhLmRhbmtmb2xpby52MS5DcmVhdGVXYWxsZXRSZXF1ZXN0GiIuZGFua2ZvbGlvLnYxLkNyZWF0ZVdhbGxldFJlc3BvbnNlEl4KD1ByZXBhcmVUcmFuc2ZlchIkLmRhbmtmb2xpby52MS5QcmVwYXJlVHJhbnNmZXJSZXF1ZXN0GiUuZGFua2ZvbGlvLnYxLlByZXBhcmVUcmFuc2ZlclJlc3BvbnNlElsKDlN1Ym1pdFRyYW5zZmVyEiMuZGFua2ZvbGlvLnYxLlN1Ym1pdFRyYW5zZmVyUmVxdWVzdBokLmRhbmtmb2xpby52MS5TdWJtaXRUcmFuc2ZlclJlc3BvbnNlQrcBChBjb20uZGFua2ZvbGlvLnYxQgtXYWxsZXRQcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM");
 
 /**
  * Balance represents information about a token balance
@@ -147,6 +147,99 @@ export const CreateWalletResponseSchema: GenMessage<CreateWalletResponse> = /*@_
   messageDesc(file_dankfolio_v1_wallet, 5);
 
 /**
+ * PrepareTransferRequest is the request for preparing a transfer
+ *
+ * @generated from message dankfolio.v1.PrepareTransferRequest
+ */
+export type PrepareTransferRequest = Message<"dankfolio.v1.PrepareTransferRequest"> & {
+  /**
+   * @generated from field: string from_address = 1;
+   */
+  fromAddress: string;
+
+  /**
+   * @generated from field: string to_address = 2;
+   */
+  toAddress: string;
+
+  /**
+   * Optional, empty for SOL
+   *
+   * @generated from field: string token_mint = 3;
+   */
+  tokenMint: string;
+
+  /**
+   * @generated from field: double amount = 4;
+   */
+  amount: number;
+};
+
+/**
+ * Describes the message dankfolio.v1.PrepareTransferRequest.
+ * Use `create(PrepareTransferRequestSchema)` to create a new message.
+ */
+export const PrepareTransferRequestSchema: GenMessage<PrepareTransferRequest> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_wallet, 6);
+
+/**
+ * PrepareTransferResponse is the response with the unsigned transaction
+ *
+ * @generated from message dankfolio.v1.PrepareTransferResponse
+ */
+export type PrepareTransferResponse = Message<"dankfolio.v1.PrepareTransferResponse"> & {
+  /**
+   * @generated from field: string unsigned_transaction = 1;
+   */
+  unsignedTransaction: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.PrepareTransferResponse.
+ * Use `create(PrepareTransferResponseSchema)` to create a new message.
+ */
+export const PrepareTransferResponseSchema: GenMessage<PrepareTransferResponse> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_wallet, 7);
+
+/**
+ * SubmitTransferRequest is the request for submitting a signed transfer
+ *
+ * @generated from message dankfolio.v1.SubmitTransferRequest
+ */
+export type SubmitTransferRequest = Message<"dankfolio.v1.SubmitTransferRequest"> & {
+  /**
+   * @generated from field: string signed_transaction = 1;
+   */
+  signedTransaction: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.SubmitTransferRequest.
+ * Use `create(SubmitTransferRequestSchema)` to create a new message.
+ */
+export const SubmitTransferRequestSchema: GenMessage<SubmitTransferRequest> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_wallet, 8);
+
+/**
+ * SubmitTransferResponse is the response after submitting a transfer
+ *
+ * @generated from message dankfolio.v1.SubmitTransferResponse
+ */
+export type SubmitTransferResponse = Message<"dankfolio.v1.SubmitTransferResponse"> & {
+  /**
+   * @generated from field: string transaction_hash = 1;
+   */
+  transactionHash: string;
+};
+
+/**
+ * Describes the message dankfolio.v1.SubmitTransferResponse.
+ * Use `create(SubmitTransferResponseSchema)` to create a new message.
+ */
+export const SubmitTransferResponseSchema: GenMessage<SubmitTransferResponse> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_wallet, 9);
+
+/**
  * WalletService provides operations for managing Solana wallets
  *
  * @generated from service dankfolio.v1.WalletService
@@ -171,6 +264,26 @@ export const WalletService: GenService<{
     methodKind: "unary";
     input: typeof CreateWalletRequestSchema;
     output: typeof CreateWalletResponseSchema;
+  },
+  /**
+   * PrepareTransfer prepares an unsigned transfer transaction
+   *
+   * @generated from rpc dankfolio.v1.WalletService.PrepareTransfer
+   */
+  prepareTransfer: {
+    methodKind: "unary";
+    input: typeof PrepareTransferRequestSchema;
+    output: typeof PrepareTransferResponseSchema;
+  },
+  /**
+   * SubmitTransfer submits a signed transfer transaction
+   *
+   * @generated from rpc dankfolio.v1.WalletService.SubmitTransfer
+   */
+  submitTransfer: {
+    methodKind: "unary";
+    input: typeof SubmitTransferRequestSchema;
+    output: typeof SubmitTransferResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dankfolio_v1_wallet, 0);

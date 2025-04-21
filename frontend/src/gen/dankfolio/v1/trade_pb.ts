@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/trade.proto.
  */
 export const file_dankfolio_v1_trade: GenFile = /*@__PURE__*/
-  fileDesc("ChhkYW5rZm9saW8vdjEvdHJhZGUucHJvdG8SDGRhbmtmb2xpby52MSK/AgoFVHJhZGUSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIUCgxmcm9tX2NvaW5faWQYAyABKAkSEgoKdG9fY29pbl9pZBgEIAEoCRITCgtjb2luX3N5bWJvbBgFIAEoCRIMCgR0eXBlGAYgASgJEg4KBmFtb3VudBgHIAEoARINCgVwcmljZRgIIAEoARILCgNmZWUYCSABKAESDgoGc3RhdHVzGAogASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMY29tcGxldGVkX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgAiAEBQg8KDV9jb21wbGV0ZWRfYXQiZQoTR2V0U3dhcFF1b3RlUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJIqcBChRHZXRTd2FwUXVvdGVSZXNwb25zZRIYChBlc3RpbWF0ZWRfYW1vdW50GAEgASgJEhUKDWV4Y2hhbmdlX3JhdGUYAiABKAkSCwoDZmVlGAMgASgJEhQKDHByaWNlX2ltcGFjdBgEIAEoCRISCgpyb3V0ZV9wbGFuGAUgAygJEhIKCmlucHV0X21pbnQYBiABKAkSEwoLb3V0cHV0X21pbnQYByABKAkiaQoRU3VibWl0U3dhcFJlcXVlc3QSFAoMZnJvbV9jb2luX2lkGAEgASgJEhIKCnRvX2NvaW5faWQYAiABKAkSDgoGYW1vdW50GAMgASgBEhoKEnNpZ25lZF90cmFuc2FjdGlvbhgEIAEoCSJAChJTdWJtaXRTd2FwUmVzcG9uc2USEAoIdHJhZGVfaWQYASABKAkSGAoQdHJhbnNhY3Rpb25faGFzaBgCIAEoCSIxChVHZXRUcmFkZVN0YXR1c1JlcXVlc3QSGAoQdHJhbnNhY3Rpb25faGFzaBgBIAEoCSKKAQoWR2V0VHJhZGVTdGF0dXNSZXNwb25zZRIYChB0cmFuc2FjdGlvbl9oYXNoGAEgASgJEg4KBnN0YXR1cxgCIAEoCRIVCg1jb25maXJtYXRpb25zGAMgASgFEhEKCWZpbmFsaXplZBgEIAEoCBISCgVlcnJvchgFIAEoCUgAiAEBQggKBl9lcnJvciIhChNHZXRUcmFkZUJ5SURSZXF1ZXN0EgoKAmlkGAEgASgJIhMKEUxpc3RUcmFkZXNSZXF1ZXN0IjkKEkxpc3RUcmFkZXNSZXNwb25zZRIjCgZ0cmFkZXMYASADKAsyEy5kYW5rZm9saW8udjEuVHJhZGUiKgoVR2V0VG9rZW5QcmljZXNSZXF1ZXN0EhEKCXRva2VuX2lkcxgBIAMoCSKJAQoWR2V0VG9rZW5QcmljZXNSZXNwb25zZRJACgZwcmljZXMYASADKAsyMC5kYW5rZm9saW8udjEuR2V0VG9rZW5QcmljZXNSZXNwb25zZS5QcmljZXNFbnRyeRotCgtQcmljZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAE6AjgBImYKFlByZXBhcmVUcmFuc2ZlclJlcXVlc3QSFAoMZnJvbV9hZGRyZXNzGAEgASgJEhIKCnRvX2FkZHJlc3MYAiABKAkSEgoKdG9rZW5fbWludBgDIAEoCRIOCgZhbW91bnQYBCABKAEiNwoXUHJlcGFyZVRyYW5zZmVyUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkiMwoVU3VibWl0VHJhbnNmZXJSZXF1ZXN0EhoKEnNpZ25lZF90cmFuc2FjdGlvbhgBIAEoCSIyChZTdWJtaXRUcmFuc2ZlclJlc3BvbnNlEhgKEHRyYW5zYWN0aW9uX2hhc2gYASABKAkyxgUKDFRyYWRlU2VydmljZRJVCgxHZXRTd2FwUXVvdGUSIS5kYW5rZm9saW8udjEuR2V0U3dhcFF1b3RlUmVxdWVzdBoiLmRhbmtmb2xpby52MS5HZXRTd2FwUXVvdGVSZXNwb25zZRJPCgpTdWJtaXRTd2FwEh8uZGFua2ZvbGlvLnYxLlN1Ym1pdFN3YXBSZXF1ZXN0GiAuZGFua2ZvbGlvLnYxLlN1Ym1pdFN3YXBSZXNwb25zZRJbCg5HZXRUcmFkZVN0YXR1cxIjLmRhbmtmb2xpby52MS5HZXRUcmFkZVN0YXR1c1JlcXVlc3QaJC5kYW5rZm9saW8udjEuR2V0VHJhZGVTdGF0dXNSZXNwb25zZRJGCgxHZXRUcmFkZUJ5SUQSIS5kYW5rZm9saW8udjEuR2V0VHJhZGVCeUlEUmVxdWVzdBoTLmRhbmtmb2xpby52MS5UcmFkZRJPCgpMaXN0VHJhZGVzEh8uZGFua2ZvbGlvLnYxLkxpc3RUcmFkZXNSZXF1ZXN0GiAuZGFua2ZvbGlvLnYxLkxpc3RUcmFkZXNSZXNwb25zZRJbCg5HZXRUb2tlblByaWNlcxIjLmRhbmtmb2xpby52MS5HZXRUb2tlblByaWNlc1JlcXVlc3QaJC5kYW5rZm9saW8udjEuR2V0VG9rZW5QcmljZXNSZXNwb25zZRJeCg9QcmVwYXJlVHJhbnNmZXISJC5kYW5rZm9saW8udjEuUHJlcGFyZVRyYW5zZmVyUmVxdWVzdBolLmRhbmtmb2xpby52MS5QcmVwYXJlVHJhbnNmZXJSZXNwb25zZRJbCg5TdWJtaXRUcmFuc2ZlchIjLmRhbmtmb2xpby52MS5TdWJtaXRUcmFuc2ZlclJlcXVlc3QaJC5kYW5rZm9saW8udjEuU3VibWl0VHJhbnNmZXJSZXNwb25zZUK2AQoQY29tLmRhbmtmb2xpby52MUIKVHJhZGVQcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChhkYW5rZm9saW8vdjEvdHJhZGUucHJvdG8SDGRhbmtmb2xpby52MSKHAwoFVHJhZGUSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIUCgxmcm9tX2NvaW5faWQYAyABKAkSEgoKdG9fY29pbl9pZBgEIAEoCRITCgtjb2luX3N5bWJvbBgFIAEoCRIMCgR0eXBlGAYgASgJEg4KBmFtb3VudBgHIAEoARINCgVwcmljZRgIIAEoARILCgNmZWUYCSABKAESDgoGc3RhdHVzGAogASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMY29tcGxldGVkX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgAiAEBEhUKDWNvbmZpcm1hdGlvbnMYDiABKAUSEQoJZmluYWxpemVkGA8gASgIEhIKBWVycm9yGBAgASgJSAGIAQFCDwoNX2NvbXBsZXRlZF9hdEIICgZfZXJyb3IiZQoTR2V0U3dhcFF1b3RlUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJIqcBChRHZXRTd2FwUXVvdGVSZXNwb25zZRIYChBlc3RpbWF0ZWRfYW1vdW50GAEgASgJEhUKDWV4Y2hhbmdlX3JhdGUYAiABKAkSCwoDZmVlGAMgASgJEhQKDHByaWNlX2ltcGFjdBgEIAEoCRISCgpyb3V0ZV9wbGFuGAUgAygJEhIKCmlucHV0X21pbnQYBiABKAkSEwoLb3V0cHV0X21pbnQYByABKAkiaQoRU3VibWl0U3dhcFJlcXVlc3QSFAoMZnJvbV9jb2luX2lkGAEgASgJEhIKCnRvX2NvaW5faWQYAiABKAkSDgoGYW1vdW50GAMgASgBEhoKEnNpZ25lZF90cmFuc2FjdGlvbhgEIAEoCSJAChJTdWJtaXRTd2FwUmVzcG9uc2USEAoIdHJhZGVfaWQYASABKAkSGAoQdHJhbnNhY3Rpb25faGFzaBgCIAEoCSJJCg9HZXRUcmFkZVJlcXVlc3QSDAoCaWQYASABKAlIABIaChB0cmFuc2FjdGlvbl9oYXNoGAIgASgJSABCDAoKaWRlbnRpZmllciITChFMaXN0VHJhZGVzUmVxdWVzdCI5ChJMaXN0VHJhZGVzUmVzcG9uc2USIwoGdHJhZGVzGAEgAygLMhMuZGFua2ZvbGlvLnYxLlRyYWRlMscCCgxUcmFkZVNlcnZpY2USVQoMR2V0U3dhcFF1b3RlEiEuZGFua2ZvbGlvLnYxLkdldFN3YXBRdW90ZVJlcXVlc3QaIi5kYW5rZm9saW8udjEuR2V0U3dhcFF1b3RlUmVzcG9uc2USTwoKU3VibWl0U3dhcBIfLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVxdWVzdBogLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVzcG9uc2USPgoIR2V0VHJhZGUSHS5kYW5rZm9saW8udjEuR2V0VHJhZGVSZXF1ZXN0GhMuZGFua2ZvbGlvLnYxLlRyYWRlEk8KCkxpc3RUcmFkZXMSHy5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1JlcXVlc3QaIC5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1Jlc3BvbnNlQrYBChBjb20uZGFua2ZvbGlvLnYxQgpUcmFkZVByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * Trade represents a meme trading transaction
@@ -84,6 +84,21 @@ export type Trade = Message<"dankfolio.v1.Trade"> & {
    * @generated from field: optional google.protobuf.Timestamp completed_at = 13;
    */
   completedAt?: Timestamp;
+
+  /**
+   * @generated from field: int32 confirmations = 14;
+   */
+  confirmations: number;
+
+  /**
+   * @generated from field: bool finalized = 15;
+   */
+  finalized: boolean;
+
+  /**
+   * @generated from field: optional string error = 16;
+   */
+  error?: string;
 };
 
 /**
@@ -115,8 +130,6 @@ export type GetSwapQuoteRequest = Message<"dankfolio.v1.GetSwapQuoteRequest"> & 
   amount: string;
 
   /**
-   * Changed from optional to required
-   *
    * @generated from field: string slippage_bps = 4;
    */
   slippageBps: string;
@@ -237,81 +250,35 @@ export const SubmitSwapResponseSchema: GenMessage<SubmitSwapResponse> = /*@__PUR
   messageDesc(file_dankfolio_v1_trade, 4);
 
 /**
- * GetTradeStatusRequest is the request for checking trade status
+ * GetTradeRequest is the request for getting trade details and status
  *
- * @generated from message dankfolio.v1.GetTradeStatusRequest
+ * @generated from message dankfolio.v1.GetTradeRequest
  */
-export type GetTradeStatusRequest = Message<"dankfolio.v1.GetTradeStatusRequest"> & {
+export type GetTradeRequest = Message<"dankfolio.v1.GetTradeRequest"> & {
   /**
-   * @generated from field: string transaction_hash = 1;
+   * @generated from oneof dankfolio.v1.GetTradeRequest.identifier
    */
-  transactionHash: string;
+  identifier: {
+    /**
+     * @generated from field: string id = 1;
+     */
+    value: string;
+    case: "id";
+  } | {
+    /**
+     * @generated from field: string transaction_hash = 2;
+     */
+    value: string;
+    case: "transactionHash";
+  } | { case: undefined; value?: undefined };
 };
 
 /**
- * Describes the message dankfolio.v1.GetTradeStatusRequest.
- * Use `create(GetTradeStatusRequestSchema)` to create a new message.
+ * Describes the message dankfolio.v1.GetTradeRequest.
+ * Use `create(GetTradeRequestSchema)` to create a new message.
  */
-export const GetTradeStatusRequestSchema: GenMessage<GetTradeStatusRequest> = /*@__PURE__*/
+export const GetTradeRequestSchema: GenMessage<GetTradeRequest> = /*@__PURE__*/
   messageDesc(file_dankfolio_v1_trade, 5);
-
-/**
- * GetTradeStatusResponse is the response containing trade status
- *
- * @generated from message dankfolio.v1.GetTradeStatusResponse
- */
-export type GetTradeStatusResponse = Message<"dankfolio.v1.GetTradeStatusResponse"> & {
-  /**
-   * @generated from field: string transaction_hash = 1;
-   */
-  transactionHash: string;
-
-  /**
-   * @generated from field: string status = 2;
-   */
-  status: string;
-
-  /**
-   * @generated from field: int32 confirmations = 3;
-   */
-  confirmations: number;
-
-  /**
-   * @generated from field: bool finalized = 4;
-   */
-  finalized: boolean;
-
-  /**
-   * @generated from field: optional string error = 5;
-   */
-  error?: string;
-};
-
-/**
- * Describes the message dankfolio.v1.GetTradeStatusResponse.
- * Use `create(GetTradeStatusResponseSchema)` to create a new message.
- */
-export const GetTradeStatusResponseSchema: GenMessage<GetTradeStatusResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 6);
-
-/**
- * GetTradeByIDRequest is the request for getting a trade by ID
- *
- * @generated from message dankfolio.v1.GetTradeByIDRequest
- */
-export type GetTradeByIDRequest = Message<"dankfolio.v1.GetTradeByIDRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
-
-/**
- * Describes the message dankfolio.v1.GetTradeByIDRequest.
- * Use `create(GetTradeByIDRequestSchema)` to create a new message.
- */
-export const GetTradeByIDRequestSchema: GenMessage<GetTradeByIDRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 7);
 
 /**
  * ListTradesRequest is the request for listing trades
@@ -328,7 +295,7 @@ export type ListTradesRequest = Message<"dankfolio.v1.ListTradesRequest"> & {
  * Use `create(ListTradesRequestSchema)` to create a new message.
  */
 export const ListTradesRequestSchema: GenMessage<ListTradesRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 8);
+  messageDesc(file_dankfolio_v1_trade, 6);
 
 /**
  * ListTradesResponse is the response containing a list of trades
@@ -347,138 +314,7 @@ export type ListTradesResponse = Message<"dankfolio.v1.ListTradesResponse"> & {
  * Use `create(ListTradesResponseSchema)` to create a new message.
  */
 export const ListTradesResponseSchema: GenMessage<ListTradesResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 9);
-
-/**
- * GetTokenPricesRequest is the request for getting token prices
- *
- * @generated from message dankfolio.v1.GetTokenPricesRequest
- */
-export type GetTokenPricesRequest = Message<"dankfolio.v1.GetTokenPricesRequest"> & {
-  /**
-   * @generated from field: repeated string token_ids = 1;
-   */
-  tokenIds: string[];
-};
-
-/**
- * Describes the message dankfolio.v1.GetTokenPricesRequest.
- * Use `create(GetTokenPricesRequestSchema)` to create a new message.
- */
-export const GetTokenPricesRequestSchema: GenMessage<GetTokenPricesRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 10);
-
-/**
- * GetTokenPricesResponse is the response containing token prices
- *
- * @generated from message dankfolio.v1.GetTokenPricesResponse
- */
-export type GetTokenPricesResponse = Message<"dankfolio.v1.GetTokenPricesResponse"> & {
-  /**
-   * @generated from field: map<string, double> prices = 1;
-   */
-  prices: { [key: string]: number };
-};
-
-/**
- * Describes the message dankfolio.v1.GetTokenPricesResponse.
- * Use `create(GetTokenPricesResponseSchema)` to create a new message.
- */
-export const GetTokenPricesResponseSchema: GenMessage<GetTokenPricesResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 11);
-
-/**
- * PrepareTransferRequest is the request for preparing a transfer
- *
- * @generated from message dankfolio.v1.PrepareTransferRequest
- */
-export type PrepareTransferRequest = Message<"dankfolio.v1.PrepareTransferRequest"> & {
-  /**
-   * @generated from field: string from_address = 1;
-   */
-  fromAddress: string;
-
-  /**
-   * @generated from field: string to_address = 2;
-   */
-  toAddress: string;
-
-  /**
-   * Optional, empty for SOL
-   *
-   * @generated from field: string token_mint = 3;
-   */
-  tokenMint: string;
-
-  /**
-   * @generated from field: double amount = 4;
-   */
-  amount: number;
-};
-
-/**
- * Describes the message dankfolio.v1.PrepareTransferRequest.
- * Use `create(PrepareTransferRequestSchema)` to create a new message.
- */
-export const PrepareTransferRequestSchema: GenMessage<PrepareTransferRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 12);
-
-/**
- * PrepareTransferResponse is the response with the unsigned transaction
- *
- * @generated from message dankfolio.v1.PrepareTransferResponse
- */
-export type PrepareTransferResponse = Message<"dankfolio.v1.PrepareTransferResponse"> & {
-  /**
-   * @generated from field: string unsigned_transaction = 1;
-   */
-  unsignedTransaction: string;
-};
-
-/**
- * Describes the message dankfolio.v1.PrepareTransferResponse.
- * Use `create(PrepareTransferResponseSchema)` to create a new message.
- */
-export const PrepareTransferResponseSchema: GenMessage<PrepareTransferResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 13);
-
-/**
- * SubmitTransferRequest is the request for submitting a signed transfer
- *
- * @generated from message dankfolio.v1.SubmitTransferRequest
- */
-export type SubmitTransferRequest = Message<"dankfolio.v1.SubmitTransferRequest"> & {
-  /**
-   * @generated from field: string signed_transaction = 1;
-   */
-  signedTransaction: string;
-};
-
-/**
- * Describes the message dankfolio.v1.SubmitTransferRequest.
- * Use `create(SubmitTransferRequestSchema)` to create a new message.
- */
-export const SubmitTransferRequestSchema: GenMessage<SubmitTransferRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 14);
-
-/**
- * SubmitTransferResponse is the response after submitting a transfer
- *
- * @generated from message dankfolio.v1.SubmitTransferResponse
- */
-export type SubmitTransferResponse = Message<"dankfolio.v1.SubmitTransferResponse"> & {
-  /**
-   * @generated from field: string transaction_hash = 1;
-   */
-  transactionHash: string;
-};
-
-/**
- * Describes the message dankfolio.v1.SubmitTransferResponse.
- * Use `create(SubmitTransferResponseSchema)` to create a new message.
- */
-export const SubmitTransferResponseSchema: GenMessage<SubmitTransferResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 15);
+  messageDesc(file_dankfolio_v1_trade, 7);
 
 /**
  * TradeService provides operations for trading tokens on Solana
@@ -507,23 +343,13 @@ export const TradeService: GenService<{
     output: typeof SubmitSwapResponseSchema;
   },
   /**
-   * GetTradeStatus returns the status of a trade
+   * GetTrade returns details and status of a specific trade
    *
-   * @generated from rpc dankfolio.v1.TradeService.GetTradeStatus
+   * @generated from rpc dankfolio.v1.TradeService.GetTrade
    */
-  getTradeStatus: {
+  getTrade: {
     methodKind: "unary";
-    input: typeof GetTradeStatusRequestSchema;
-    output: typeof GetTradeStatusResponseSchema;
-  },
-  /**
-   * GetTradeByID returns details of a specific trade
-   *
-   * @generated from rpc dankfolio.v1.TradeService.GetTradeByID
-   */
-  getTradeByID: {
-    methodKind: "unary";
-    input: typeof GetTradeByIDRequestSchema;
+    input: typeof GetTradeRequestSchema;
     output: typeof TradeSchema;
   },
   /**
@@ -535,36 +361,6 @@ export const TradeService: GenService<{
     methodKind: "unary";
     input: typeof ListTradesRequestSchema;
     output: typeof ListTradesResponseSchema;
-  },
-  /**
-   * GetTokenPrices returns prices for multiple tokens
-   *
-   * @generated from rpc dankfolio.v1.TradeService.GetTokenPrices
-   */
-  getTokenPrices: {
-    methodKind: "unary";
-    input: typeof GetTokenPricesRequestSchema;
-    output: typeof GetTokenPricesResponseSchema;
-  },
-  /**
-   * PrepareTransfer prepares an unsigned transfer transaction
-   *
-   * @generated from rpc dankfolio.v1.TradeService.PrepareTransfer
-   */
-  prepareTransfer: {
-    methodKind: "unary";
-    input: typeof PrepareTransferRequestSchema;
-    output: typeof PrepareTransferResponseSchema;
-  },
-  /**
-   * SubmitTransfer submits a signed transfer transaction
-   *
-   * @generated from rpc dankfolio.v1.TradeService.SubmitTransfer
-   */
-  submitTransfer: {
-    methodKind: "unary";
-    input: typeof SubmitTransferRequestSchema;
-    output: typeof SubmitTransferResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dankfolio_v1_trade, 0);

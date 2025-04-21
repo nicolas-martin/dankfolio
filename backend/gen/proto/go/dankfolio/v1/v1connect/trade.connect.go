@@ -38,23 +38,10 @@ const (
 	TradeServiceGetSwapQuoteProcedure = "/dankfolio.v1.TradeService/GetSwapQuote"
 	// TradeServiceSubmitSwapProcedure is the fully-qualified name of the TradeService's SubmitSwap RPC.
 	TradeServiceSubmitSwapProcedure = "/dankfolio.v1.TradeService/SubmitSwap"
-	// TradeServiceGetTradeStatusProcedure is the fully-qualified name of the TradeService's
-	// GetTradeStatus RPC.
-	TradeServiceGetTradeStatusProcedure = "/dankfolio.v1.TradeService/GetTradeStatus"
-	// TradeServiceGetTradeByIDProcedure is the fully-qualified name of the TradeService's GetTradeByID
-	// RPC.
-	TradeServiceGetTradeByIDProcedure = "/dankfolio.v1.TradeService/GetTradeByID"
+	// TradeServiceGetTradeProcedure is the fully-qualified name of the TradeService's GetTrade RPC.
+	TradeServiceGetTradeProcedure = "/dankfolio.v1.TradeService/GetTrade"
 	// TradeServiceListTradesProcedure is the fully-qualified name of the TradeService's ListTrades RPC.
 	TradeServiceListTradesProcedure = "/dankfolio.v1.TradeService/ListTrades"
-	// TradeServiceGetTokenPricesProcedure is the fully-qualified name of the TradeService's
-	// GetTokenPrices RPC.
-	TradeServiceGetTokenPricesProcedure = "/dankfolio.v1.TradeService/GetTokenPrices"
-	// TradeServicePrepareTransferProcedure is the fully-qualified name of the TradeService's
-	// PrepareTransfer RPC.
-	TradeServicePrepareTransferProcedure = "/dankfolio.v1.TradeService/PrepareTransfer"
-	// TradeServiceSubmitTransferProcedure is the fully-qualified name of the TradeService's
-	// SubmitTransfer RPC.
-	TradeServiceSubmitTransferProcedure = "/dankfolio.v1.TradeService/SubmitTransfer"
 )
 
 // TradeServiceClient is a client for the dankfolio.v1.TradeService service.
@@ -63,18 +50,10 @@ type TradeServiceClient interface {
 	GetSwapQuote(context.Context, *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error)
 	// SubmitSwap submits a trade for execution
 	SubmitSwap(context.Context, *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error)
-	// GetTradeStatus returns the status of a trade
-	GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error)
-	// GetTradeByID returns details of a specific trade
-	GetTradeByID(context.Context, *connect.Request[v1.GetTradeByIDRequest]) (*connect.Response[v1.Trade], error)
+	// GetTrade returns details and status of a specific trade
+	GetTrade(context.Context, *connect.Request[v1.GetTradeRequest]) (*connect.Response[v1.Trade], error)
 	// ListTrades returns all trades
 	ListTrades(context.Context, *connect.Request[v1.ListTradesRequest]) (*connect.Response[v1.ListTradesResponse], error)
-	// GetTokenPrices returns prices for multiple tokens
-	GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error)
-	// PrepareTransfer prepares an unsigned transfer transaction
-	PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error)
-	// SubmitTransfer submits a signed transfer transaction
-	SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error)
 }
 
 // NewTradeServiceClient constructs a client for the dankfolio.v1.TradeService service. By default,
@@ -100,16 +79,10 @@ func NewTradeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(tradeServiceMethods.ByName("SubmitSwap")),
 			connect.WithClientOptions(opts...),
 		),
-		getTradeStatus: connect.NewClient[v1.GetTradeStatusRequest, v1.GetTradeStatusResponse](
+		getTrade: connect.NewClient[v1.GetTradeRequest, v1.Trade](
 			httpClient,
-			baseURL+TradeServiceGetTradeStatusProcedure,
-			connect.WithSchema(tradeServiceMethods.ByName("GetTradeStatus")),
-			connect.WithClientOptions(opts...),
-		),
-		getTradeByID: connect.NewClient[v1.GetTradeByIDRequest, v1.Trade](
-			httpClient,
-			baseURL+TradeServiceGetTradeByIDProcedure,
-			connect.WithSchema(tradeServiceMethods.ByName("GetTradeByID")),
+			baseURL+TradeServiceGetTradeProcedure,
+			connect.WithSchema(tradeServiceMethods.ByName("GetTrade")),
 			connect.WithClientOptions(opts...),
 		),
 		listTrades: connect.NewClient[v1.ListTradesRequest, v1.ListTradesResponse](
@@ -118,37 +91,15 @@ func NewTradeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(tradeServiceMethods.ByName("ListTrades")),
 			connect.WithClientOptions(opts...),
 		),
-		getTokenPrices: connect.NewClient[v1.GetTokenPricesRequest, v1.GetTokenPricesResponse](
-			httpClient,
-			baseURL+TradeServiceGetTokenPricesProcedure,
-			connect.WithSchema(tradeServiceMethods.ByName("GetTokenPrices")),
-			connect.WithClientOptions(opts...),
-		),
-		prepareTransfer: connect.NewClient[v1.PrepareTransferRequest, v1.PrepareTransferResponse](
-			httpClient,
-			baseURL+TradeServicePrepareTransferProcedure,
-			connect.WithSchema(tradeServiceMethods.ByName("PrepareTransfer")),
-			connect.WithClientOptions(opts...),
-		),
-		submitTransfer: connect.NewClient[v1.SubmitTransferRequest, v1.SubmitTransferResponse](
-			httpClient,
-			baseURL+TradeServiceSubmitTransferProcedure,
-			connect.WithSchema(tradeServiceMethods.ByName("SubmitTransfer")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
 // tradeServiceClient implements TradeServiceClient.
 type tradeServiceClient struct {
-	getSwapQuote    *connect.Client[v1.GetSwapQuoteRequest, v1.GetSwapQuoteResponse]
-	submitSwap      *connect.Client[v1.SubmitSwapRequest, v1.SubmitSwapResponse]
-	getTradeStatus  *connect.Client[v1.GetTradeStatusRequest, v1.GetTradeStatusResponse]
-	getTradeByID    *connect.Client[v1.GetTradeByIDRequest, v1.Trade]
-	listTrades      *connect.Client[v1.ListTradesRequest, v1.ListTradesResponse]
-	getTokenPrices  *connect.Client[v1.GetTokenPricesRequest, v1.GetTokenPricesResponse]
-	prepareTransfer *connect.Client[v1.PrepareTransferRequest, v1.PrepareTransferResponse]
-	submitTransfer  *connect.Client[v1.SubmitTransferRequest, v1.SubmitTransferResponse]
+	getSwapQuote *connect.Client[v1.GetSwapQuoteRequest, v1.GetSwapQuoteResponse]
+	submitSwap   *connect.Client[v1.SubmitSwapRequest, v1.SubmitSwapResponse]
+	getTrade     *connect.Client[v1.GetTradeRequest, v1.Trade]
+	listTrades   *connect.Client[v1.ListTradesRequest, v1.ListTradesResponse]
 }
 
 // GetSwapQuote calls dankfolio.v1.TradeService.GetSwapQuote.
@@ -161,34 +112,14 @@ func (c *tradeServiceClient) SubmitSwap(ctx context.Context, req *connect.Reques
 	return c.submitSwap.CallUnary(ctx, req)
 }
 
-// GetTradeStatus calls dankfolio.v1.TradeService.GetTradeStatus.
-func (c *tradeServiceClient) GetTradeStatus(ctx context.Context, req *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error) {
-	return c.getTradeStatus.CallUnary(ctx, req)
-}
-
-// GetTradeByID calls dankfolio.v1.TradeService.GetTradeByID.
-func (c *tradeServiceClient) GetTradeByID(ctx context.Context, req *connect.Request[v1.GetTradeByIDRequest]) (*connect.Response[v1.Trade], error) {
-	return c.getTradeByID.CallUnary(ctx, req)
+// GetTrade calls dankfolio.v1.TradeService.GetTrade.
+func (c *tradeServiceClient) GetTrade(ctx context.Context, req *connect.Request[v1.GetTradeRequest]) (*connect.Response[v1.Trade], error) {
+	return c.getTrade.CallUnary(ctx, req)
 }
 
 // ListTrades calls dankfolio.v1.TradeService.ListTrades.
 func (c *tradeServiceClient) ListTrades(ctx context.Context, req *connect.Request[v1.ListTradesRequest]) (*connect.Response[v1.ListTradesResponse], error) {
 	return c.listTrades.CallUnary(ctx, req)
-}
-
-// GetTokenPrices calls dankfolio.v1.TradeService.GetTokenPrices.
-func (c *tradeServiceClient) GetTokenPrices(ctx context.Context, req *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error) {
-	return c.getTokenPrices.CallUnary(ctx, req)
-}
-
-// PrepareTransfer calls dankfolio.v1.TradeService.PrepareTransfer.
-func (c *tradeServiceClient) PrepareTransfer(ctx context.Context, req *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error) {
-	return c.prepareTransfer.CallUnary(ctx, req)
-}
-
-// SubmitTransfer calls dankfolio.v1.TradeService.SubmitTransfer.
-func (c *tradeServiceClient) SubmitTransfer(ctx context.Context, req *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error) {
-	return c.submitTransfer.CallUnary(ctx, req)
 }
 
 // TradeServiceHandler is an implementation of the dankfolio.v1.TradeService service.
@@ -197,18 +128,10 @@ type TradeServiceHandler interface {
 	GetSwapQuote(context.Context, *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error)
 	// SubmitSwap submits a trade for execution
 	SubmitSwap(context.Context, *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error)
-	// GetTradeStatus returns the status of a trade
-	GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error)
-	// GetTradeByID returns details of a specific trade
-	GetTradeByID(context.Context, *connect.Request[v1.GetTradeByIDRequest]) (*connect.Response[v1.Trade], error)
+	// GetTrade returns details and status of a specific trade
+	GetTrade(context.Context, *connect.Request[v1.GetTradeRequest]) (*connect.Response[v1.Trade], error)
 	// ListTrades returns all trades
 	ListTrades(context.Context, *connect.Request[v1.ListTradesRequest]) (*connect.Response[v1.ListTradesResponse], error)
-	// GetTokenPrices returns prices for multiple tokens
-	GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error)
-	// PrepareTransfer prepares an unsigned transfer transaction
-	PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error)
-	// SubmitTransfer submits a signed transfer transaction
-	SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error)
 }
 
 // NewTradeServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -230,16 +153,10 @@ func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(tradeServiceMethods.ByName("SubmitSwap")),
 		connect.WithHandlerOptions(opts...),
 	)
-	tradeServiceGetTradeStatusHandler := connect.NewUnaryHandler(
-		TradeServiceGetTradeStatusProcedure,
-		svc.GetTradeStatus,
-		connect.WithSchema(tradeServiceMethods.ByName("GetTradeStatus")),
-		connect.WithHandlerOptions(opts...),
-	)
-	tradeServiceGetTradeByIDHandler := connect.NewUnaryHandler(
-		TradeServiceGetTradeByIDProcedure,
-		svc.GetTradeByID,
-		connect.WithSchema(tradeServiceMethods.ByName("GetTradeByID")),
+	tradeServiceGetTradeHandler := connect.NewUnaryHandler(
+		TradeServiceGetTradeProcedure,
+		svc.GetTrade,
+		connect.WithSchema(tradeServiceMethods.ByName("GetTrade")),
 		connect.WithHandlerOptions(opts...),
 	)
 	tradeServiceListTradesHandler := connect.NewUnaryHandler(
@@ -248,42 +165,16 @@ func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(tradeServiceMethods.ByName("ListTrades")),
 		connect.WithHandlerOptions(opts...),
 	)
-	tradeServiceGetTokenPricesHandler := connect.NewUnaryHandler(
-		TradeServiceGetTokenPricesProcedure,
-		svc.GetTokenPrices,
-		connect.WithSchema(tradeServiceMethods.ByName("GetTokenPrices")),
-		connect.WithHandlerOptions(opts...),
-	)
-	tradeServicePrepareTransferHandler := connect.NewUnaryHandler(
-		TradeServicePrepareTransferProcedure,
-		svc.PrepareTransfer,
-		connect.WithSchema(tradeServiceMethods.ByName("PrepareTransfer")),
-		connect.WithHandlerOptions(opts...),
-	)
-	tradeServiceSubmitTransferHandler := connect.NewUnaryHandler(
-		TradeServiceSubmitTransferProcedure,
-		svc.SubmitTransfer,
-		connect.WithSchema(tradeServiceMethods.ByName("SubmitTransfer")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/dankfolio.v1.TradeService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case TradeServiceGetSwapQuoteProcedure:
 			tradeServiceGetSwapQuoteHandler.ServeHTTP(w, r)
 		case TradeServiceSubmitSwapProcedure:
 			tradeServiceSubmitSwapHandler.ServeHTTP(w, r)
-		case TradeServiceGetTradeStatusProcedure:
-			tradeServiceGetTradeStatusHandler.ServeHTTP(w, r)
-		case TradeServiceGetTradeByIDProcedure:
-			tradeServiceGetTradeByIDHandler.ServeHTTP(w, r)
+		case TradeServiceGetTradeProcedure:
+			tradeServiceGetTradeHandler.ServeHTTP(w, r)
 		case TradeServiceListTradesProcedure:
 			tradeServiceListTradesHandler.ServeHTTP(w, r)
-		case TradeServiceGetTokenPricesProcedure:
-			tradeServiceGetTokenPricesHandler.ServeHTTP(w, r)
-		case TradeServicePrepareTransferProcedure:
-			tradeServicePrepareTransferHandler.ServeHTTP(w, r)
-		case TradeServiceSubmitTransferProcedure:
-			tradeServiceSubmitTransferHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -301,26 +192,10 @@ func (UnimplementedTradeServiceHandler) SubmitSwap(context.Context, *connect.Req
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.SubmitSwap is not implemented"))
 }
 
-func (UnimplementedTradeServiceHandler) GetTradeStatus(context.Context, *connect.Request[v1.GetTradeStatusRequest]) (*connect.Response[v1.GetTradeStatusResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTradeStatus is not implemented"))
-}
-
-func (UnimplementedTradeServiceHandler) GetTradeByID(context.Context, *connect.Request[v1.GetTradeByIDRequest]) (*connect.Response[v1.Trade], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTradeByID is not implemented"))
+func (UnimplementedTradeServiceHandler) GetTrade(context.Context, *connect.Request[v1.GetTradeRequest]) (*connect.Response[v1.Trade], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTrade is not implemented"))
 }
 
 func (UnimplementedTradeServiceHandler) ListTrades(context.Context, *connect.Request[v1.ListTradesRequest]) (*connect.Response[v1.ListTradesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.ListTrades is not implemented"))
-}
-
-func (UnimplementedTradeServiceHandler) GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetTokenPrices is not implemented"))
-}
-
-func (UnimplementedTradeServiceHandler) PrepareTransfer(context.Context, *connect.Request[v1.PrepareTransferRequest]) (*connect.Response[v1.PrepareTransferResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.PrepareTransfer is not implemented"))
-}
-
-func (UnimplementedTradeServiceHandler) SubmitTransfer(context.Context, *connect.Request[v1.SubmitTransferRequest]) (*connect.Response[v1.SubmitTransferResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.SubmitTransfer is not implemented"))
 }

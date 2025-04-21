@@ -6,10 +6,13 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1;dankfoliov1";
 
-// PriceService provides methods for retrieving price history data
+// PriceService provides methods for retrieving price data
 service PriceService {
   // GetPriceHistory returns historical price data for a given address
   rpc GetPriceHistory(GetPriceHistoryRequest) returns (GetPriceHistoryResponse) {}
+
+  // GetTokenPrices returns current prices for multiple tokens
+  rpc GetTokenPrices(GetTokenPricesRequest) returns (GetTokenPricesResponse) {}
 }
 
 // GetPriceHistoryRequest represents a request for price history data
@@ -53,4 +56,14 @@ message PriceHistoryData {
 message PriceHistoryItem {
   int64 unix_time = 1;  // Changed from google.protobuf.Timestamp to int64 to represent Unix timestamp directly
   double value = 2;
+}
+
+// GetTokenPricesRequest is the request for getting token prices
+message GetTokenPricesRequest {
+  repeated string token_ids = 1;
+}
+
+// GetTokenPricesResponse is the response containing token prices
+message GetTokenPricesResponse {
+  map<string, double> prices = 1;
 }

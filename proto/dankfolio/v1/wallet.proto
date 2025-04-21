@@ -11,6 +11,12 @@ service WalletService {
 
   // CreateWallet generates a new Solana wallet
   rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
+
+  // PrepareTransfer prepares an unsigned transfer transaction
+  rpc PrepareTransfer(PrepareTransferRequest) returns (PrepareTransferResponse);
+
+  // SubmitTransfer submits a signed transfer transaction
+  rpc SubmitTransfer(SubmitTransferRequest) returns (SubmitTransferResponse);
 }
 
 // Balance represents information about a token balance
@@ -43,4 +49,27 @@ message CreateWalletRequest {
 message CreateWalletResponse {
   string public_key = 1;   // Wallet's public key
   string secret_key = 2;   // Wallet's private key (handle with care)
+}
+
+// PrepareTransferRequest is the request for preparing a transfer
+message PrepareTransferRequest {
+  string from_address = 1;
+  string to_address = 2;
+  string token_mint = 3;  // Optional, empty for SOL
+  double amount = 4;
+}
+
+// PrepareTransferResponse is the response with the unsigned transaction
+message PrepareTransferResponse {
+  string unsigned_transaction = 1;
+}
+
+// SubmitTransferRequest is the request for submitting a signed transfer
+message SubmitTransferRequest {
+  string signed_transaction = 1;
+}
+
+// SubmitTransferResponse is the response after submitting a transfer
+message SubmitTransferResponse {
+  string transaction_hash = 1;
 } 
