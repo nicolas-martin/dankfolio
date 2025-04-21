@@ -8,7 +8,7 @@ packages:
       # core settings only
       dir: "{{.InterfaceDir}}/mocks"         # place next to source
       filename: "{{.InterfaceName}}.go"
-      pkgname: "mocks"
+      pkgname: "{{.SrcPackageName}}Mocks"
       template-data:
         unroll-variadic: true         # variadic helper
     interfaces:
@@ -18,7 +18,7 @@ packages:
       # core settings only
       dir: "{{.InterfaceDir}}/mocks"         # place next to source
       filename: "{{.InterfaceName}}.go"
-      pkgname: "mocks"
+      pkgname: "{{.SrcPackageName}}Mocks"
       template-data:
         unroll-variadic: true         # variadic helper
     interfaces:
@@ -28,7 +28,7 @@ packages:
       # core settings only
       dir: "{{.InterfaceDir}}/mocks"         # place next to source
       filename: "{{.InterfaceName}}.go"
-      pkgname: "mocks"
+      pkgname: "{{.SrcPackageName}}Mocks"
       template-data:
         unroll-variadic: true         # variadic helper
     interfaces:
@@ -38,7 +38,7 @@ packages:
       # core settings only
       dir: "{{.InterfaceDir}}/mocks"         # place next to source
       filename: "{{.InterfaceName}}.go"
-      pkgname: "mocks"
+      pkgname: "{{.SrcPackageName}}Mocks"
       template-data:
         unroll-variadic: true         # variadic helper
     interfaces:

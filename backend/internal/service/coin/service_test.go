@@ -225,20 +225,23 @@ func TestGetCoinByID(t *testing.T) {
 func NewMockJupiterClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *jupiterMocks.MockClientAPI {
+},
+) *jupiterMocks.MockClientAPI {
 	return jupiterMocks.NewMockClientAPI(t)
 }
 
 func NewMockSolanaClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *solanaMocks.MockClientAPI {
+},
+) *solanaMocks.MockClientAPI {
 	return solanaMocks.NewMockClientAPI(t)
 }
 
 func NewMockOffchainClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *offchainMocks.MockClientAPI {
+},
+) *offchainMocks.MockClientAPI {
 	return offchainMocks.NewMockClientAPI(t)
 }

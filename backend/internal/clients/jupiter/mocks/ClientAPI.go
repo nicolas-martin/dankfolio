@@ -2,7 +2,7 @@
 // github.com/vektra/mockery
 // template: testify
 
-package mocks
+package jupiterMocks
 
 import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
