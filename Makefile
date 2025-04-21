@@ -40,7 +40,7 @@ frontend-lint:
 
 backend-generate-mocks:
 	@echo "Generating mocks..."
-	cd backend && go generate ./...
+	cd backend && mockery
 
 backend-build: proto ## Check backend Go code compilation
 	@echo "🏗️ Compiling backend code..."

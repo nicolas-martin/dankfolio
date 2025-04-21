@@ -34,6 +34,7 @@ func (s *Service) EnrichCoinData(
 	// 1. Get Jupiter data for basic info & price (overwrites initial values if found)
 	log.Printf("EnrichCoinData: Fetching Jupiter token info for %s", mintAddress)
 	jupiterInfo, err := s.jupiterClient.GetTokenInfo(mintAddress)
+	jupiterInfoSuccess := err == nil
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Failed to get Jupiter info for %s: %v. Continuing enrichment.", mintAddress, err)
 		// Continue enrichment even if Jupiter info fails, maybe metadata has info.
@@ -51,6 +52,7 @@ func (s *Service) EnrichCoinData(
 	// 2. Get price from Jupiter (even if GetTokenInfo failed, price might work)
 	log.Printf("EnrichCoinData: Fetching Jupiter price for %s", mintAddress)
 	prices, err := s.jupiterClient.GetTokenPrices([]string{mintAddress})
+	jupiterPriceSuccess := err == nil
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching price for %s: %v", mintAddress, err)
 	} else if price, ok := prices[mintAddress]; ok {
@@ -58,6 +60,7 @@ func (s *Service) EnrichCoinData(
 		log.Printf("EnrichCoinData: Got Jupiter price for %s: %f", mintAddress, coin.Price)
 	} else {
 		log.Printf("WARN: EnrichCoinData: Price data not found for %s in Jupiter response", mintAddress)
+		jupiterPriceSuccess = false
 	}
 
 	// 3. Get Solana on-chain metadata account
@@ -66,9 +69,12 @@ func (s *Service) EnrichCoinData(
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching on-chain metadata account for %s: %v. Cannot fetch off-chain data.", mintAddress, err)
 		// If we can't get the metadata account, we can't get the URI for off-chain metadata.
-		// We might still have Jupiter data, so return the partially enriched coin.
+		// Check if we have any successful data before returning
+		if !jupiterInfoSuccess && !jupiterPriceSuccess {
+			return nil, fmt.Errorf("failed to enrich coin %s: no data available from any source", mintAddress)
+		}
 		enrichFromMetadata(&coin, nil) // Ensure default description is set
-		return &coin, nil              // Return potentially partially enriched coin, not a fatal error for enrichment itself
+		return &coin, nil              // Return partially enriched coin since we have some Jupiter data
 	}
 
 	// 4. Fetch off-chain metadata using the URI from the on-chain account
@@ -77,6 +83,10 @@ func (s *Service) EnrichCoinData(
 	offchainMeta, err := s.offchainClient.FetchMetadata(uri)
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching off-chain metadata for %s (URI: %s): %v", mintAddress, uri, err)
+		// Check if we have any successful data before returning
+		if !jupiterInfoSuccess && !jupiterPriceSuccess {
+			return nil, fmt.Errorf("failed to enrich coin %s: no data available from any source", mintAddress)
+		}
 		// Proceed without off-chain data, enrich with what we have
 		enrichFromMetadata(&coin, nil) // Ensure default description is set
 	} else {

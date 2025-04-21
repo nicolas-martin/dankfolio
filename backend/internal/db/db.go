@@ -7,8 +7,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
-//go:generate mockery --name=Store --output=mocks --outpkg=mocks --case=snake
-
 // Store defines the interface for database operations
 type Store interface {
 	// Coin operations

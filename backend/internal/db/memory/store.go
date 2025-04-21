@@ -35,6 +35,7 @@ type cacheItem struct {
 	expiration time.Time
 }
 
+var _ db.Store = (*Store)(nil) // Ensure Store implements db.Store
 // New creates a new in-memory store with default configuration
 func New() *Store {
 	return NewWithConfig(Config{

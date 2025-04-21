@@ -111,7 +111,13 @@ func main() {
 	priceService := price.NewService(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
 
 	// Initialize trade service with all dependencies
-	tradeService := trade.NewService(solanaClient, coinService, priceService, jupiterClient, store)
+	tradeService := trade.NewService(
+		solanaClient.(*solanaclient.Client),
+		coinService,
+		priceService,
+		jupiterClient.(*jupiter.Client),
+		store,
+	)
 
 	// Initialize wallet service
 	walletService := wallet.New(solanaClient.GetRpcConnection())

@@ -2,17 +2,16 @@ package coin
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
 	jupiterMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
 	offchainMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain/mocks"
 	solanaMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
-	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	dbMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -26,8 +25,8 @@ func TestNewService(t *testing.T) {
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	httpClient := &http.Client{}
-	jupiterClient := new(jupiterMocks.ClientAPI)
-	store := new(dbMocks.Store)
+	jupiterClient := jupiterMocks.NewMockClientAPI(t)
+	store := dbMocks.NewMockStore(t)
 
 	// Test
 	service := NewService(config, httpClient, jupiterClient, store)
@@ -42,7 +41,7 @@ func TestNewService(t *testing.T) {
 func TestGetCoins(t *testing.T) {
 	// Setup
 	ctx := context.Background()
-	store := new(dbMocks.Store)
+	store := dbMocks.NewMockStore(t)
 	service := &Service{store: store}
 
 	// Create test coins
@@ -76,7 +75,7 @@ func TestGetCoins(t *testing.T) {
 func TestGetTrendingCoins(t *testing.T) {
 	// Setup
 	ctx := context.Background()
-	store := new(dbMocks.Store)
+	store := dbMocks.NewMockStore(t)
 	service := &Service{store: store}
 
 	// Create test coins
@@ -119,10 +118,10 @@ func TestGetTrendingCoins(t *testing.T) {
 func TestGetCoinByID(t *testing.T) {
 	// Setup
 	ctx := context.Background()
-	store := new(dbMocks.Store)
-	jupiterClient := new(jupiterMocks.ClientAPI)
-	solanaClient := new(solanaMocks.ClientAPI)
-	offchainClient := new(offchainMocks.ClientAPI)
+	store := dbMocks.NewMockStore(t)
+	jupiterClient := jupiterMocks.NewMockClientAPI(t)
+	solanaClient := solanaMocks.NewMockClientAPI(t)
+	offchainClient := offchainMocks.NewMockClientAPI(t)
 	service := &Service{
 		store:          store,
 		jupiterClient:  jupiterClient,
@@ -182,7 +181,7 @@ func TestGetCoinByID(t *testing.T) {
 			"image":       "http://example.com/image.png",
 		}
 
-		store.On("GetCoin", ctx, "newcoin").Return(nil, db.ErrNotFound)
+		store.On("GetCoin", ctx, "newcoin").Return(nil, errors.New("not found"))
 		jupiterClient.On("GetTokenInfo", "newcoin").Return(jupiterInfo, nil)
 		jupiterClient.On("GetTokenPrices", []string{"newcoin"}).Return(map[string]float64{"newcoin": 1.5}, nil)
 		solanaClient.On("GetMetadataAccount", ctx, "newcoin").Return(metadata, nil)
@@ -205,8 +204,10 @@ func TestGetCoinByID(t *testing.T) {
 	})
 
 	t.Run("Non-existent coin with Jupiter error", func(t *testing.T) {
-		store.On("GetCoin", ctx, "invalid").Return(nil, db.ErrNotFound)
+		store.On("GetCoin", ctx, "invalid").Return(nil, errors.New("not found"))
 		jupiterClient.On("GetTokenInfo", "invalid").Return(nil, assert.AnError)
+		jupiterClient.On("GetTokenPrices", []string{"invalid"}).Return(map[string]float64{"invalid": 0}, assert.AnError)
+		solanaClient.On("GetMetadataAccount", ctx, "invalid").Return(nil, assert.AnError)
 
 		// Test
 		coin, err := service.GetCoinByID(ctx, "invalid")
@@ -216,29 +217,28 @@ func TestGetCoinByID(t *testing.T) {
 		assert.Nil(t, coin)
 		store.AssertExpectations(t)
 		jupiterClient.AssertExpectations(t)
+		solanaClient.AssertExpectations(t)
 	})
 }
 
-// NewMockJupiterClient creates a new mock Jupiter client
+// Helper functions for creating mocks
 func NewMockJupiterClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *mocks.ClientAPI {
-	return mocks.NewClientAPI(t)
+}) *jupiterMocks.MockClientAPI {
+	return jupiterMocks.NewMockClientAPI(t)
 }
 
-// NewMockSolanaClient creates a new mock Solana client
 func NewMockSolanaClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *solanaMocks.ClientAPI {
-	return solanaMocks.NewClientAPI(t)
+}) *solanaMocks.MockClientAPI {
+	return solanaMocks.NewMockClientAPI(t)
 }
 
-// NewMockOffchainClient creates a new mock Offchain client
 func NewMockOffchainClient(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *offchainMocks.ClientAPI {
-	return offchainMocks.NewClientAPI(t)
+}) *offchainMocks.MockClientAPI {
+	return offchainMocks.NewMockClientAPI(t)
 }
