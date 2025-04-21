@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
@@ -20,13 +21,13 @@ type Service struct {
 	// TODO: Maybe these are redundant
 	SolanaService *solana.SolanaTradeService
 	coinService   *coin.Service
-	jupiterClient *coin.JupiterClient
+	jupiterClient *jupiter.Client
 	mu            sync.RWMutex
 	trades        map[string]*model.Trade // In-memory storage using trade ID as key
 }
 
 // NewService creates a new TradeService instance
-func NewService(ss *solana.SolanaTradeService, cs *coin.Service, jc *coin.JupiterClient) *Service {
+func NewService(ss *solana.SolanaTradeService, cs *coin.Service, jc *jupiter.Client) *Service {
 	return &Service{
 		SolanaService: ss,
 		coinService:   cs,
@@ -129,7 +130,6 @@ func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 	return trades, nil
 }
 
-// OnlyDirectRoutes: false,
 // GetSwapQuote gets a quote for a potential trade
 func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
 	// Convert amount to raw units based on decimals
@@ -143,12 +143,17 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 		return nil, fmt.Errorf("failed to get to coin: %w", err)
 	}
 
+	slippageBpsInt, err := strconv.Atoi(slippageBsp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid slippage value: %w", err)
+	}
+
 	// Get quote from Jupiter with enhanced parameters
-	quote, err := s.jupiterClient.GetQuote(coin.QuoteParams{
+	quote, err := s.jupiterClient.GetQuote(jupiter.QuoteParams{
 		InputMint:   fromCoinID,
 		OutputMint:  toCoinID,
 		Amount:      inputAmount, // Amount is already in raw units (lamports for SOL)
-		SlippageBps: slippageBsp,
+		SlippageBps: slippageBpsInt,
 		SwapMode:    "ExactIn",
 		// NOTE: Allow indirect routes for better prices
 		// NOTE: Indirect routes will have different feeMints
@@ -200,17 +205,13 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 		totalFeeInUSD += feeInUSD
 	}
 
+	// Add platform fee if present
 	if quote.PlatformFee != nil {
 		platformFeeAmount, err := strconv.ParseFloat(quote.PlatformFee.Amount, 64)
 		if err != nil {
-			log.Printf("Couldn't parse platform fee %s", err)
+			log.Printf("Couldn't parse platform fee %s. Skipping", err)
 		} else {
-			// Get the price of the platform feeMint in USD
-			price, exists := prices[model.SolMint]
-			if !exists {
-				log.Printf("Price for platform feeMint %s not found. Skipping", model.SolMint)
-			} else {
-				// Convert platform fee to USD
+			if price, exists := prices[quote.PlatformFee.FeeMint]; exists {
 				platformFeeInUSD := platformFeeAmount * price
 				totalFeeInUSD += platformFeeInUSD
 			}

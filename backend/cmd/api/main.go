@@ -11,6 +11,7 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/solana"
@@ -60,7 +61,7 @@ func main() {
 	}
 
 	// Initialize Jupiter client
-	jupiterClient := coin.NewJupiterClient()
+	jupiterClient := jupiter.NewClient(httpClient)
 
 	// Initialize the coin service with Jupiter client
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient)

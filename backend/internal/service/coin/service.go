@@ -11,8 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blocto/solana-go-sdk/client"
-	"github.com/blocto/solana-go-sdk/rpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -54,39 +55,36 @@ type EnrichedFileOutput struct {
 
 // Service handles coin-related operations
 type Service struct {
-	config          *Config
-	httpClient      *http.Client
-	jupiterClient   *JupiterClient
-	solanaRPCClient *client.Client
-	coins           map[string]model.Coin
-	cache           map[string]Cache
-	mu              sync.RWMutex
+	config         *Config
+	jupiterClient  *jupiter.Client
+	solanaClient   *solana.Client
+	offchainClient *offchain.Client
+	coins          map[string]model.Coin
+	cache          map[string]Cache
+	mu             sync.RWMutex
 }
 
 // NewService creates a new CoinService instance
-func NewService(config *Config, httpClient *http.Client, jupiterClient *JupiterClient) *Service {
+func NewService(config *Config, httpClient *http.Client, jupiterClient *jupiter.Client) *Service {
 	// Ensure TrendingTokenPath has a default value
 	if config.TrendingTokenPath == "" {
 		config.TrendingTokenPath = defaultTrendingTokenPath
 		log.Printf("TrendingTokenPath not set in config, using default: %s", defaultTrendingTokenPath)
 	}
 
-	// Ensure Solana RPC endpoint is set (provide a default or require it)
-	if config.SolanaRPCEndpoint == "" {
-		config.SolanaRPCEndpoint = rpc.MainnetRPCEndpoint // Default to mainnet
-		log.Printf("SolanaRPCEndpoint not set in config, using default: %s", config.SolanaRPCEndpoint)
-	}
+	// Create Solana client
+	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
 
-	// Create Solana RPC client for the service
-	solanaRPCClient := client.NewClient(config.SolanaRPCEndpoint)
+	// Create offchain client
+	offchainClient := offchain.NewClient(httpClient)
 
 	service := &Service{
-		config:          config,
-		httpClient:      httpClient,
-		jupiterClient:   jupiterClient,
-		solanaRPCClient: solanaRPCClient,
-		coins:           make(map[string]model.Coin),
-		cache:           make(map[string]Cache),
+		config:         config,
+		jupiterClient:  jupiterClient,
+		solanaClient:   solanaClient,
+		offchainClient: offchainClient,
+		coins:          make(map[string]model.Coin),
+		cache:          make(map[string]Cache),
 	}
 
 	// Perform initial data load or refresh, with a timeout
@@ -214,8 +212,8 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 		"", // No initial icon
 		0,  // No initial volume
 		s.jupiterClient,
-		s.httpClient,
-		s.solanaRPCClient,
+		s.solanaClient,
+		s.offchainClient,
 	)
 	if err != nil {
 		// Don't cache errors persistently here, allow retry on next request

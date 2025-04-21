@@ -2,15 +2,14 @@ package coin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
+	"time"
 
-	"github.com/blocto/solana-go-sdk/client"
-	"github.com/blocto/solana-go-sdk/common"
-	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -24,11 +23,10 @@ func EnrichCoinData(
 	initialName string,
 	initialIconURL string,
 	initialVolume float64,
-	jupiterClient *JupiterClient, // Assuming JupiterClient is accessible or passed
-	httpClient *http.Client, // Pass shared HTTP client
-	solanaClient *client.Client, // Pass shared Solana client
+	jupiterClient *jupiter.Client,
+	solanaClient *solana.Client,
+	offchainClient *offchain.Client,
 ) (*model.Coin, error) {
-
 	log.Printf("EnrichCoinData: Starting enrichment for %s", mintAddress)
 
 	// Initialize coin with basic info or defaults
@@ -50,10 +48,10 @@ func EnrichCoinData(
 		coin.Name = jupiterInfo.Name // Overwrite name
 		coin.Symbol = jupiterInfo.Symbol
 		coin.Decimals = jupiterInfo.Decimals
-		coin.DailyVolume = jupiterInfo.DailyVolume // Overwrite volume
-		coin.Tags = jupiterInfo.Tags
 		coin.IconUrl = jupiterInfo.LogoURI // Overwrite icon
-		coin.CreatedAt = jupiterInfo.CreatedAt
+		coin.DailyVolume = jupiterInfo.DailyVolume
+		coin.Tags = jupiterInfo.Tags
+		coin.CreatedAt = jupiterInfo.CreatedAt.Format(time.RFC3339)
 	}
 
 	// 2. Get price from Jupiter (even if GetTokenInfo failed, price might work)
@@ -61,12 +59,8 @@ func EnrichCoinData(
 	prices, err := jupiterClient.GetTokenPrices([]string{mintAddress})
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching price for %s: %v", mintAddress, err)
-	} else if priceData, ok := prices[mintAddress]; ok {
-		// The response structure might be nested, adjust access accordingly
-		// Assuming priceData is the direct price or contains it.
-		// If priceData is a struct like { price: 1.23 }, access priceData.Price
-		// For now, assuming priceData IS the price float. Adjust if needed based on actual JupiterClient response.
-		coin.Price = priceData // Assign the price
+	} else if price, ok := prices[mintAddress]; ok {
+		coin.Price = price
 		log.Printf("EnrichCoinData: Got Jupiter price for %s: %f", mintAddress, coin.Price)
 	} else {
 		log.Printf("WARN: EnrichCoinData: Price data not found for %s in Jupiter response", mintAddress)
@@ -74,7 +68,7 @@ func EnrichCoinData(
 
 	// 3. Get Solana on-chain metadata account
 	log.Printf("EnrichCoinData: Fetching on-chain metadata account for %s", mintAddress)
-	metadataAccount, err := getMetadataAccount(ctx, mintAddress, solanaClient)
+	metadataAccount, err := solanaClient.GetMetadataAccount(ctx, mintAddress)
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching on-chain metadata account for %s: %v. Cannot fetch off-chain data.", mintAddress, err)
 		// If we can't get the metadata account, we can't get the URI for off-chain metadata.
@@ -84,9 +78,9 @@ func EnrichCoinData(
 	}
 
 	// 4. Fetch off-chain metadata using the URI from the on-chain account
-	uri := resolveIPFSGateway(metadataAccount.Data.Uri)
-	log.Printf("EnrichCoinData: Fetching off-chain metadata for %s from resolved URI: %s", mintAddress, uri)
-	offchainMeta, err := fetchOffChainMetadataWithFallback(uri, httpClient)
+	uri := strings.TrimSpace(metadataAccount.Data.Uri)
+	log.Printf("EnrichCoinData: Fetching off-chain metadata for %s from URI: %s", mintAddress, uri)
+	offchainMeta, err := offchainClient.FetchMetadata(uri)
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching off-chain metadata for %s (URI: %s): %v", mintAddress, uri, err)
 		// Proceed without off-chain data, enrich with what we have
@@ -99,147 +93,6 @@ func EnrichCoinData(
 
 	log.Printf("EnrichCoinData: Enrichment complete for %s", mintAddress)
 	return &coin, nil
-}
-
-// --- Helper Functions (moved from service.go, now unexported) ---
-
-// getMetadataAccount retrieves the metadata account for a token
-func getMetadataAccount(ctx context.Context, mint string, solanaClient *client.Client) (*token_metadata.Metadata, error) {
-	mintPubkey := common.PublicKeyFromString(mint)
-	metadataAccountPDA, err := token_metadata.GetTokenMetaPubkey(mintPubkey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive metadata account PDA for %s: %w", mint, err)
-	}
-
-	accountInfo, err := solanaClient.GetAccountInfo(ctx, metadataAccountPDA.ToBase58())
-	if err != nil {
-		// Consider checking for specific errors, like account not found
-		return nil, fmt.Errorf("failed to get account info for metadata PDA %s (mint: %s): %w", metadataAccountPDA.ToBase58(), mint, err)
-	}
-	if len(accountInfo.Data) == 0 {
-		return nil, fmt.Errorf("metadata account %s for mint %s has no data", metadataAccountPDA.ToBase58(), mint)
-	}
-
-	metadata, err := token_metadata.MetadataDeserialize(accountInfo.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse metadata for %s: %w", mint, err)
-	}
-
-	return &metadata, nil
-}
-
-// resolveIPFSGateway rewrites the URI if it uses a known gateway that might be unreliable,
-// preferring the ipfs:// scheme for fallback logic.
-func resolveIPFSGateway(uri string) string {
-	uri = strings.Trim(uri, "\x00") // Trim null characters sometimes present
-	if strings.HasPrefix(uri, "https://") && strings.Contains(uri, "/ipfs/") {
-		parts := strings.Split(uri, "/ipfs/")
-		if len(parts) >= 2 {
-			cid := parts[1]
-			log.Printf("resolveIPFSGateway: Rewriting %s to ipfs://%s", uri, cid)
-			return "ipfs://" + cid
-		}
-	}
-	return uri // Return original if not a recognized HTTP IPFS gateway URL
-}
-
-// fetchOffChainMetadataWithFallback attempts to fetch off-chain metadata
-// using a list of HTTP gateways as fallback for IPFS content.
-func fetchOffChainMetadataWithFallback(uri string, httpClient *http.Client) (map[string]interface{}, error) {
-	uri = strings.TrimSpace(uri)
-	if uri == "" {
-		return nil, fmt.Errorf("cannot fetch metadata from empty URI")
-	}
-
-	if strings.HasPrefix(uri, "ipfs://") {
-		cid := strings.TrimPrefix(uri, "ipfs://")
-		if cid == "" {
-			return nil, fmt.Errorf("invalid ipfs URI: empty CID")
-		}
-		// Consider making gateways configurable
-		gateways := []string{
-			"https://ipfs.io/ipfs/",
-			"https://dweb.link/ipfs/",
-			"https://cloudflare-ipfs.com/ipfs/",
-			"https://gateway.pinata.cloud/ipfs/", // Add more gateways
-			"https://storry.tv/ipfs/",
-		}
-		var lastErr error
-		for _, gw := range gateways {
-			fullURL := gw + cid
-			log.Printf("fetchOffChainMetadataWithFallback: Attempting IPFS gateway: %s", fullURL)
-			metadata, err := fetchOffChainMetadataHTTP(fullURL, httpClient)
-			if err == nil {
-				return metadata, nil // Success!
-			}
-			log.Printf("fetchOffChainMetadataWithFallback: Gateway %s failed for CID %s: %v", gw, cid, err)
-			lastErr = err // Keep track of the last error
-		}
-		log.Printf("ERROR: fetchOffChainMetadataWithFallback: All IPFS gateways failed for CID %s.", cid)
-		return nil, fmt.Errorf("all IPFS gateways failed for %s: %w", uri, lastErr)
-	}
-
-	if strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://") {
-		log.Printf("fetchOffChainMetadataWithFallback: Fetching metadata directly from HTTP(S) URI: %s", uri)
-		return fetchOffChainMetadataHTTP(uri, httpClient)
-	}
-
-	if strings.HasPrefix(uri, "ar://") {
-		// Arweave gateway logic (similar to IPFS)
-		arweaveTxId := strings.TrimPrefix(uri, "ar://")
-		if arweaveTxId == "" {
-			return nil, fmt.Errorf("invalid arweave URI: empty TxID")
-		}
-		gateways := []string{
-			"https://arweave.net/",
-		}
-		var lastErr error
-		for _, gw := range gateways {
-			fullURL := gw + arweaveTxId
-			log.Printf("fetchOffChainMetadataWithFallback: Attempting Arweave gateway: %s", fullURL)
-			metadata, err := fetchOffChainMetadataHTTP(fullURL, httpClient)
-			if err == nil {
-				return metadata, nil // Success!
-			}
-			log.Printf("fetchOffChainMetadataWithFallback: Arweave Gateway %s failed for TxID %s: %v", gw, arweaveTxId, err)
-			lastErr = err
-		}
-		log.Printf("ERROR: fetchOffChainMetadataWithFallback: All Arweave gateways failed for TxID %s.", arweaveTxId)
-		return nil, fmt.Errorf("all Arweave gateways failed for %s: %w", uri, lastErr)
-	}
-
-	log.Printf("WARN: fetchOffChainMetadataWithFallback: Unsupported URI scheme or non-fetchable URI: %s", uri)
-	return nil, fmt.Errorf("unsupported URI scheme or non-fetchable URI: %s", uri)
-}
-
-// fetchOffChainMetadataHTTP fetches JSON metadata from the given HTTP URL.
-func fetchOffChainMetadataHTTP(url string, httpClient *http.Client) (map[string]interface{}, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request for %s: %w", url, err)
-	}
-	// Set a reasonable User-Agent
-	req.Header.Set("User-Agent", "DankfolioEnrichmentBot/1.0")
-
-	// Use the passed-in httpClient
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("http get failed for %s: %w", url, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// Read body for more details, but limit size
-		// bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, fmt.Errorf("http status %d for %s", resp.StatusCode, url)
-	}
-
-	var offchainMeta map[string]interface{}
-	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(&offchainMeta); err != nil {
-		return nil, fmt.Errorf("failed to decode JSON from %s: %w", url, err)
-	}
-	return offchainMeta, nil
 }
 
 // enrichFromMetadata updates coin fields from off-chain metadata (map).
@@ -334,7 +187,6 @@ func enrichFromMetadata(coin *model.Coin, metadata map[string]interface{}) {
 	coin.Twitter = cleanSocialLink(coin.Twitter, "twitter.com")
 	coin.Telegram = cleanSocialLink(coin.Telegram, "t.me")
 	coin.Website = ensureHttpHttps(coin.Website)
-
 }
 
 // cleanSocialLink ensures a social link points to the correct domain and has https.

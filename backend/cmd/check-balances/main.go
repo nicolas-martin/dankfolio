@@ -12,6 +12,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/joho/godotenv"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 	"github.com/olekukonko/tablewriter"
@@ -77,7 +78,10 @@ func main() {
 		TrendingTokenPath: filepath.Join(projectRoot, "cmd", "trending", "trending_tokens.json"),
 	}
 
-	jupiterClient := coin.NewJupiterClient()
+	// Initialize Jupiter client
+	jupiterClient := jupiter.NewClient(httpClient)
+
+	// Initialize the coin service with Jupiter client
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient)
 	walletService := wallet.New(client, coinService)
 
