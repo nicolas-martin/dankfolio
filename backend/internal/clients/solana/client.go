@@ -16,28 +16,16 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
-// MockTransactionState tracks the state of mock transactions
-type MockTransactionState struct {
-	FirstSeenAt   time.Time
-	NumChecks     int
-	Confirmations uint64
-	IsFinalized   bool
-}
-
-// Global map to track mock transaction states with mutex for thread safety
-var (
-	mockTxStates = make(map[string]*MockTransactionState)
-	mockTxMutex  sync.RWMutex
-)
-
 // Client handles interactions with the Solana RPC
 type Client struct {
 	rpcClient *client.Client
 	rpcConn   *rpc.Client
 }
 
+var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
+
 // NewClient creates a new instance of Client
-func NewClient(endpoint string) *Client {
+func NewClient(endpoint string) ClientAPI {
 	return &Client{
 		rpcClient: client.NewClient(endpoint),
 		rpcConn:   rpc.New(endpoint),
@@ -238,3 +226,17 @@ func getMockTransactionStatus(sigStr string) (*rpc.GetSignatureStatusesResult, e
 		}, nil
 	}
 }
+
+// MockTransactionState tracks the state of mock transactions
+type MockTransactionState struct {
+	FirstSeenAt   time.Time
+	NumChecks     int
+	Confirmations uint64
+	IsFinalized   bool
+}
+
+// Global map to track mock transaction states with mutex for thread safety
+var (
+	mockTxStates = make(map[string]*MockTransactionState)
+	mockTxMutex  sync.RWMutex
+)

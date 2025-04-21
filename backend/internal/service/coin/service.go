@@ -20,14 +20,14 @@ import (
 // Service handles coin-related operations
 type Service struct {
 	config         *Config
-	jupiterClient  *jupiter.Client
-	solanaClient   *solana.Client
-	offchainClient *offchain.Client
+	jupiterClient  jupiter.ClientAPI
+	solanaClient   solana.ClientAPI
+	offchainClient offchain.ClientAPI
 	store          db.Store
 }
 
 // NewService creates a new CoinService instance
-func NewService(config *Config, httpClient *http.Client, jupiterClient *jupiter.Client, store db.Store) *Service {
+func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store) *Service {
 	// Ensure TrendingTokenPath has a default value
 	if config.TrendingTokenPath == "" {
 		config.TrendingTokenPath = defaultTrendingTokenPath

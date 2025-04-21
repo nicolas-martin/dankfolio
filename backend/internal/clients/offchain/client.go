@@ -13,8 +13,10 @@ type Client struct {
 	httpClient *http.Client
 }
 
+var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
+
 // NewClient creates a new instance of Client
-func NewClient(httpClient *http.Client) *Client {
+func NewClient(httpClient *http.Client) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
 	}

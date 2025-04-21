@@ -27,6 +27,8 @@ type Client struct {
 	cache      *cache
 }
 
+var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
+
 type cache struct {
 	sync.RWMutex
 	data        map[string]*TokenInfoResponse
@@ -34,7 +36,7 @@ type cache struct {
 }
 
 // NewClient creates a new instance of Client
-func NewClient(httpClient *http.Client) *Client {
+func NewClient(httpClient *http.Client) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
 		cache: &cache{
