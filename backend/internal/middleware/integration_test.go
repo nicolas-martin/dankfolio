@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -32,7 +33,7 @@ func newMockCoinServiceHandler(coinService *mockCoinService) *mockCoinServiceHan
 
 // GetCoinByID implements the GetCoinByID RPC method
 func (s *mockCoinServiceHandler) GetCoinByID(ctx context.Context, req *connect.Request[pb.GetCoinByIDRequest]) (*connect.Response[pb.Coin], error) {
-	ctx, coin, err := s.coinService.GetCoin(ctx, req.Msg.Id)
+	coin, err := s.coinService.GetCoin(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -55,10 +56,10 @@ func newMockCoinService() *mockCoinService {
 	}
 }
 
-func (s *mockCoinService) GetCoin(ctx context.Context, id string) (context.Context, *model.Coin, error) {
+func (s *mockCoinService) GetCoin(ctx context.Context, id string) (*model.Coin, error) {
 	// Use the real in-memory DB
-	if coin, ok, newCtx := s.db.Get(ctx, id); ok {
-		return newCtx, &coin, nil
+	if coin, ok := s.db.Get(id); ok {
+		return &coin, nil
 	}
 
 	// If not found, create a new coin
@@ -70,13 +71,14 @@ func (s *mockCoinService) GetCoin(ctx context.Context, id string) (context.Conte
 
 	// Store in the real DB
 	s.db.Set(id, coin, 1*time.Minute)
-	return ctx, &coin, nil
+	return &coin, nil
 }
 
 func TestCacheAndLoggerIntegration(t *testing.T) {
-	// Capture log output
+	// Capture log output while also writing to stderr
 	var logBuffer bytes.Buffer
-	log.SetOutput(&logBuffer)
+	multiWriter := io.MultiWriter(&logBuffer, os.Stderr)
+	log.SetOutput(multiWriter)
 	defer log.SetOutput(os.Stderr) // Restore default output
 
 	// Setup test server with the real in-memory DB
@@ -84,8 +86,8 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	path, handler := dankfoliov1connect.NewCoinServiceHandler(
 		newMockCoinServiceHandler(coinService),
 		connect.WithInterceptors(
-			GRPCLoggerInterceptor(),
-			GRPCDebugModeInterceptor(),
+			GRPCLoggerInterceptor(),    // Logger to capture cache hits
+			GRPCDebugModeInterceptor(), // Debug mode last
 		),
 	)
 
@@ -116,7 +118,7 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	assert.Contains(t, firstLogs, "gRPC Request")
 	assert.Contains(t, firstLogs, "gRPC Response")
 	assert.Contains(t, firstLogs, "coin123")
-	assert.Contains(t, firstLogs, "[cache:MISS]")
+	assert.Contains(t, firstLogs, "[cache:MISS] key=coin:coin123")
 
 	// Second request - should be a cache hit
 	logBuffer.Reset()
@@ -133,7 +135,7 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	assert.Contains(t, secondLogs, "gRPC Request")
 	assert.Contains(t, secondLogs, "gRPC Response")
 	assert.Contains(t, secondLogs, "coin123")
-	assert.Contains(t, secondLogs, "[cache:HIT:coin:coin123]")
+	assert.Contains(t, secondLogs, "[cache:HIT] key=coin:coin123")
 
 	// Third request with different ID - should be a cache miss
 	logBuffer.Reset()
@@ -150,7 +152,7 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	assert.Contains(t, thirdLogs, "gRPC Request")
 	assert.Contains(t, thirdLogs, "gRPC Response")
 	assert.Contains(t, thirdLogs, "coin456")
-	assert.Contains(t, thirdLogs, "[cache:MISS]")
+	assert.Contains(t, thirdLogs, "[cache:MISS] key=coin:coin456")
 
 	// Verify timing - but only if the difference is significant
 	if secondDuration < firstDuration {

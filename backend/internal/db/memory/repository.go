@@ -49,8 +49,7 @@ func (r *MemoryRepository[T]) Get(ctx context.Context, id string) (*T, error) {
 	defer r.mu.RUnlock()
 
 	// Try cache first
-	if item, ok, newCtx := r.cache.Get(ctx, id); ok {
-		ctx = newCtx
+	if item, ok := r.cache.Get(id); ok {
 		return &item, nil
 	}
 
@@ -70,8 +69,7 @@ func (r *MemoryRepository[T]) List(ctx context.Context) ([]T, error) {
 	defer r.mu.RUnlock()
 
 	// Try cache first
-	if items, ok, newCtx := r.listCache.Get(ctx, "all"); ok {
-		ctx = newCtx
+	if items, ok := r.listCache.Get("all"); ok {
 		return items, nil
 	}
 
@@ -155,4 +153,20 @@ func (r *MemoryRepository[T]) Delete(ctx context.Context, id string) error {
 	r.cache.Delete(id)
 	r.listCache.Delete("all")
 	return nil
+}
+
+// GetCoin retrieves a coin from the cache
+func (r *MemoryRepository[T]) GetCoin(ctx context.Context, id string) (*T, error) {
+	if item, ok := r.cache.Get(id); ok {
+		return &item, nil
+	}
+	return nil, fmt.Errorf("item not found: %s", id)
+}
+
+// GetList retrieves a list from the cache
+func (r *MemoryRepository[T]) GetList(ctx context.Context, id string) (*[]T, error) {
+	if items, ok := r.listCache.Get(id); ok {
+		return &items, nil
+	}
+	return nil, fmt.Errorf("list not found: %s", id)
 }
