@@ -10,21 +10,21 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
-// WalletServer implements the WalletService API
-type WalletServer struct {
+// walletServiceHandler implements the WalletService API
+type walletServiceHandler struct {
 	dankfoliov1connect.UnimplementedWalletServiceHandler
 	walletService *wallet.Service
 }
 
-// NewWalletServer creates a new WalletServer
-func NewWalletServer(walletService *wallet.Service) *WalletServer {
-	return &WalletServer{
+// newWalletServiceHandler creates a new walletServiceHandler
+func newWalletServiceHandler(walletService *wallet.Service) *walletServiceHandler {
+	return &walletServiceHandler{
 		walletService: walletService,
 	}
 }
 
 // GetWalletBalance returns the balance for a wallet
-func (s *WalletServer) GetWalletBalances(
+func (s *walletServiceHandler) GetWalletBalances(
 	ctx context.Context,
 	req *connect.Request[pb.GetWalletBalancesRequest],
 ) (*connect.Response[pb.GetWalletBalancesResponse], error) {
@@ -43,7 +43,7 @@ func (s *WalletServer) GetWalletBalances(
 }
 
 // CreateWallet generates a new Solana wallet
-func (s *WalletServer) CreateWallet(
+func (s *walletServiceHandler) CreateWallet(
 	ctx context.Context,
 	req *connect.Request[pb.CreateWalletRequest],
 ) (*connect.Response[pb.CreateWalletResponse], error) {
@@ -59,7 +59,7 @@ func (s *WalletServer) CreateWallet(
 }
 
 // PrepareTransfer prepares an unsigned transfer transaction
-func (s *WalletServer) PrepareTransfer(
+func (s *walletServiceHandler) PrepareTransfer(
 	ctx context.Context,
 	req *connect.Request[pb.PrepareTransferRequest],
 ) (*connect.Response[pb.PrepareTransferResponse], error) {
@@ -82,7 +82,7 @@ func (s *WalletServer) PrepareTransfer(
 }
 
 // SubmitTransfer submits a signed transfer transaction
-func (s *WalletServer) SubmitTransfer(
+func (s *walletServiceHandler) SubmitTransfer(
 	ctx context.Context,
 	req *connect.Request[pb.SubmitTransferRequest],
 ) (*connect.Response[pb.SubmitTransferResponse], error) {

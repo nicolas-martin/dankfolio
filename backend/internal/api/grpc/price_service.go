@@ -10,21 +10,21 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 )
 
-// PriceServer implements the PriceService API
-type PriceServer struct {
+// priceServiceHandler implements the PriceService API
+type priceServiceHandler struct {
 	dankfoliov1connect.UnimplementedPriceServiceHandler
 	priceService *price.Service
 }
 
-// NewPriceServer creates a new PriceServer
-func NewPriceServer(priceService *price.Service) *PriceServer {
-	return &PriceServer{
+// newPriceServiceHandler creates a new priceServiceHandler
+func newPriceServiceHandler(priceService *price.Service) *priceServiceHandler {
+	return &priceServiceHandler{
 		priceService: priceService,
 	}
 }
 
 // GetPriceHistory returns price history data for a given token
-func (s *PriceServer) GetPriceHistory(
+func (s *priceServiceHandler) GetPriceHistory(
 	ctx context.Context,
 	req *connect.Request[pb.GetPriceHistoryRequest],
 ) (*connect.Response[pb.GetPriceHistoryResponse], error) {
@@ -118,7 +118,7 @@ func (s *PriceServer) GetPriceHistory(
 }
 
 // GetTokenPrices returns current prices for multiple tokens
-func (s *PriceServer) GetTokenPrices(
+func (s *priceServiceHandler) GetTokenPrices(
 	ctx context.Context,
 	req *connect.Request[pb.GetTokenPricesRequest],
 ) (*connect.Response[pb.GetTokenPricesResponse], error) {

@@ -13,21 +13,21 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// TradeServer implements the TradeService API
-type TradeServer struct {
+// tradeServiceHandler implements the TradeService API
+type tradeServiceHandler struct {
 	dankfoliov1connect.UnimplementedTradeServiceHandler
 	tradeService *trade.Service
 }
 
-// NewTradeServer creates a new TradeServer
-func NewTradeServer(tradeService *trade.Service) *TradeServer {
-	return &TradeServer{
+// newTradeServiceHandler creates a new tradeServiceHandler
+func newTradeServiceHandler(tradeService *trade.Service) *tradeServiceHandler {
+	return &tradeServiceHandler{
 		tradeService: tradeService,
 	}
 }
 
 // GetSwapQuote fetches a trade quote
-func (s *TradeServer) GetSwapQuote(
+func (s *tradeServiceHandler) GetSwapQuote(
 	ctx context.Context,
 	req *connect.Request[pb.GetSwapQuoteRequest],
 ) (*connect.Response[pb.GetSwapQuoteResponse], error) {
@@ -76,7 +76,7 @@ func (s *TradeServer) GetSwapQuote(
 }
 
 // SubmitSwap submits a trade for execution
-func (s *TradeServer) SubmitSwap(
+func (s *tradeServiceHandler) SubmitSwap(
 	ctx context.Context,
 	req *connect.Request[pb.SubmitSwapRequest],
 ) (*connect.Response[pb.SubmitSwapResponse], error) {
@@ -110,7 +110,7 @@ func (s *TradeServer) SubmitSwap(
 }
 
 // GetTrade returns details and status of a specific trade
-func (s *TradeServer) GetTrade(
+func (s *tradeServiceHandler) GetTrade(
 	ctx context.Context,
 	req *connect.Request[pb.GetTradeRequest],
 ) (*connect.Response[pb.Trade], error) {
@@ -166,7 +166,7 @@ func (s *TradeServer) GetTrade(
 }
 
 // ListTrades returns all trades
-func (s *TradeServer) ListTrades(
+func (s *tradeServiceHandler) ListTrades(
 	ctx context.Context,
 	req *connect.Request[pb.ListTradesRequest],
 ) (*connect.Response[pb.ListTradesResponse], error) {
@@ -200,17 +200,22 @@ func convertModelTradeToPb(trade *model.Trade) *pb.Trade {
 		Fee:             trade.Fee,
 		Status:          trade.Status,
 		TransactionHash: trade.TransactionHash,
-		CreatedAt:       timestamppb.New(trade.CreatedAt),
 		Confirmations:   trade.Confirmations,
 		Finalized:       trade.Finalized,
 	}
 
-	if trade.CompletedAt != nil {
-		pbTrade.CompletedAt = timestamppb.New(*trade.CompletedAt)
+	// Handle error string - create a new pointer if there's an error
+	if trade.Error != nil {
+		errStr := *trade.Error
+		pbTrade.Error = &errStr
 	}
 
-	if trade.Error != nil {
-		pbTrade.Error = trade.Error
+	if !trade.CreatedAt.IsZero() {
+		pbTrade.CreatedAt = timestamppb.New(trade.CreatedAt)
+	}
+
+	if trade.CompletedAt != nil {
+		pbTrade.CompletedAt = timestamppb.New(*trade.CompletedAt)
 	}
 
 	return pbTrade

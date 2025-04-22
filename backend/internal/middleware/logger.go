@@ -48,7 +48,11 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 			cacheStr := ""
 			if cacheKey := ctx.Value("cache_hit"); cacheKey != nil {
 				if key, ok := cacheKey.(string); ok {
-					cacheStr = cacheColor.Sprintf(" [cache:HIT:%s]", key)
+					if key != "" {
+						cacheStr = cacheColor.Sprintf(" [cache:HIT:%s]", key)
+					} else {
+						cacheStr = cacheColor.Sprintf(" [cache:MISS]")
+					}
 				}
 			}
 

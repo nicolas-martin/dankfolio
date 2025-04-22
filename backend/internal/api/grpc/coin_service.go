@@ -13,26 +13,19 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// CoinServiceServer implements the CoinService API
-type CoinServiceServer struct {
+// coinServiceHandler implements the CoinService API
+type coinServiceHandler struct {
 	dankfoliov1connect.UnimplementedCoinServiceHandler
 	coinService *coin.Service
 }
 
-// NewCoinServiceServer creates a new CoinServiceServer
-func NewCoinServiceServer(coinService *coin.Service) *CoinServiceServer {
-	return &CoinServiceServer{coinService: coinService}
+// newCoinServiceHandler creates a new coinServiceHandler
+func newCoinServiceHandler(coinService *coin.Service) *coinServiceHandler {
+	return &coinServiceHandler{coinService: coinService}
 }
 
-//	type CoinServiceHandler interface {
-//		// GetAvailableCoins returns a list of available coins
-//
-//		// GetCoinByID returns a specific coin by ID
-//
-//	}
-//
 // GetAvailableCoins returns a list of available coins
-func (s *CoinServiceServer) GetAvailableCoins(ctx context.Context, req *connect.Request[pb.GetAvailableCoinsRequest]) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+func (s *coinServiceHandler) GetAvailableCoins(ctx context.Context, req *connect.Request[pb.GetAvailableCoinsRequest]) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
 	var modelCoins []model.Coin
 	var err error
 
@@ -58,7 +51,7 @@ func (s *CoinServiceServer) GetAvailableCoins(ctx context.Context, req *connect.
 }
 
 // GetCoinByID returns a specific coin by ID
-func (s *CoinServiceServer) GetCoinByID(ctx context.Context, req *connect.Request[pb.GetCoinByIDRequest]) (*connect.Response[pb.Coin], error) {
+func (s *coinServiceHandler) GetCoinByID(ctx context.Context, req *connect.Request[pb.GetCoinByIDRequest]) (*connect.Response[pb.Coin], error) {
 	modelCoin, err := s.coinService.GetCoinByID(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, err
@@ -70,7 +63,7 @@ func (s *CoinServiceServer) GetCoinByID(ctx context.Context, req *connect.Reques
 }
 
 // GetTokenPrices returns prices for multiple tokens
-func (s *CoinServiceServer) GetTokenPrices(
+func (s *coinServiceHandler) GetTokenPrices(
 	ctx context.Context,
 	req *connect.Request[pb.GetTokenPricesRequest],
 ) (*connect.Response[pb.GetTokenPricesResponse], error) {

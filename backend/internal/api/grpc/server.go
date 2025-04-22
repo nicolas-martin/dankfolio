@@ -47,26 +47,26 @@ func (s *Server) Start(port int) error {
 
 	// Register Connect RPC handlers
 	path, handler := dankfoliov1connect.NewCoinServiceHandler(
-		NewCoinServiceServer(s.coinService),
+		newCoinServiceHandler(s.coinService),
 		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
 
 	path, handler = dankfoliov1connect.NewWalletServiceHandler(
-		NewWalletServer(s.walletService),
+		newWalletServiceHandler(s.walletService),
 		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
 
 	path, handler = dankfoliov1connect.NewTradeServiceHandler(
-		NewTradeServer(s.tradeService),
+		newTradeServiceHandler(s.tradeService),
 		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
 
 	// Register PriceService handler
 	path, handler = dankfoliov1connect.NewPriceServiceHandler(
-		NewPriceServer(s.priceService),
+		newPriceServiceHandler(s.priceService),
 		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)

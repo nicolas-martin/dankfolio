@@ -1,19 +1,23 @@
 module github.com/nicolas-martin/dankfolio/backend
 
-go 1.24.2
+go 1.23
+
+toolchain go1.24.2
 
 require (
-	connectrpc.com/connect v1.18.1
+	connectrpc.com/connect v1.15.0
 	github.com/blocto/solana-go-sdk v1.30.0
 	github.com/chromedp/cdproto v0.0.0-20250403032234-65de8f5d025b
 	github.com/chromedp/chromedp v0.13.6
 	github.com/fatih/color v1.18.0
 	github.com/gagliardetto/solana-go v1.12.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.8.4
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/net v0.35.0
+	google.golang.org/grpc v1.62.1
 	google.golang.org/protobuf v1.36.5
 )
 
@@ -29,6 +33,7 @@ require (
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -55,5 +60,6 @@ require (
 	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
