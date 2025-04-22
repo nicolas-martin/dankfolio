@@ -112,10 +112,11 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	}
 	firstLogs := logBuffer.String()
 
-	// Verify first request logs - should show a request and response
+	// Verify first request logs - should show a request and response with cache miss
 	assert.Contains(t, firstLogs, "gRPC Request")
 	assert.Contains(t, firstLogs, "gRPC Response")
-	assert.Contains(t, firstLogs, "coin123") // Verify the coin ID is in the logs
+	assert.Contains(t, firstLogs, "coin123")
+	assert.Contains(t, firstLogs, "[cache:MISS]")
 
 	// Second request - should be a cache hit
 	logBuffer.Reset()
@@ -128,10 +129,11 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	}
 	secondLogs := logBuffer.String()
 
-	// Verify second request logs - should show a request and response
+	// Verify second request logs - should show a request and response with cache hit
 	assert.Contains(t, secondLogs, "gRPC Request")
 	assert.Contains(t, secondLogs, "gRPC Response")
-	assert.Contains(t, secondLogs, "coin123") // Verify the coin ID is in the logs
+	assert.Contains(t, secondLogs, "coin123")
+	assert.Contains(t, secondLogs, "[cache:HIT:coin:coin123]")
 
 	// Third request with different ID - should be a cache miss
 	logBuffer.Reset()
@@ -144,10 +146,11 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	}
 	thirdLogs := logBuffer.String()
 
-	// Verify third request logs - should show a request and response
+	// Verify third request logs - should show a request and response with cache miss
 	assert.Contains(t, thirdLogs, "gRPC Request")
 	assert.Contains(t, thirdLogs, "gRPC Response")
-	assert.Contains(t, thirdLogs, "coin456") // Verify the coin ID is in the logs
+	assert.Contains(t, thirdLogs, "coin456")
+	assert.Contains(t, thirdLogs, "[cache:MISS]")
 
 	// Verify timing - but only if the difference is significant
 	if secondDuration < firstDuration {

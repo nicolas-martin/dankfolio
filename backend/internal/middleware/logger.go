@@ -11,6 +11,7 @@ import (
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 )
 
 // GRPCLoggerInterceptor creates an interceptor that logs all gRPC requests and responses
@@ -46,14 +47,22 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 			// Check for cache hits
 			cacheColor := color.New(color.FgYellow, color.Bold)
 			cacheStr := ""
-			if cacheKey := ctx.Value("cache_hit"); cacheKey != nil {
+			log.Printf("[Logger] Checking context for cache_hit value")
+			if cacheKey := ctx.Value(memory.CacheHitContextKey); cacheKey != nil {
+				log.Printf("[Logger] Found cache_hit in context: %v", cacheKey)
 				if key, ok := cacheKey.(string); ok {
+					log.Printf("[Logger] Cache key is string: %s", key)
 					if key != "" {
 						cacheStr = cacheColor.Sprintf(" [cache:HIT:%s]", key)
 					} else {
 						cacheStr = cacheColor.Sprintf(" [cache:MISS]")
 					}
+				} else {
+					log.Printf("[Logger] Cache key is not a string type: %T", cacheKey)
 				}
+			} else {
+				log.Printf("[Logger] No cache_hit found in context")
+				cacheStr = cacheColor.Sprintf(" [cache:MISS]")
 			}
 
 			// Log the response or error

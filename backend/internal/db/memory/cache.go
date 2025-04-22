@@ -64,18 +64,24 @@ func (c *TypedCache[T]) Get(ctx context.Context, id string) (T, bool, context.Co
 
 	var zero T
 	key := c.getCacheKey(id)
+	log.Printf("[Cache] Looking up key: %s", key)
+
 	item, exists := c.items[key]
 	if !exists {
+		log.Printf("[Cache] MISS: Key not found: %s", key)
 		return zero, false, ctx
 	}
 
 	if time.Now().After(item.expiration) {
+		log.Printf("[Cache] MISS: Key expired: %s", key)
 		delete(c.items, key)
 		return zero, false, ctx
 	}
 
 	// Set cache hit in context
+	log.Printf("[Cache] HIT: Found key: %s", key)
 	newCtx := context.WithValue(ctx, CacheHitContextKey, key)
+	log.Printf("[Cache] Set context value for key %s: %v", key, newCtx.Value(CacheHitContextKey))
 	return item.value, true, newCtx
 }
 
