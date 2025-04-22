@@ -40,27 +40,37 @@ func NewService(sc *solana.Client, cs *coin.Service, ps *price.Service, jc *jupi
 
 // GetTrade retrieves a trade by its ID
 func (s *Service) GetTrade(ctx context.Context, id string) (*model.Trade, error) {
-	return s.store.GetTrade(ctx, id)
+	return s.store.Trades().Get(ctx, id)
 }
 
 // ListTrades returns all trades
 func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
-	return s.store.ListTrades(ctx)
+	trades, err := s.store.Trades().List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert []model.Trade to []*model.Trade to match interface
+	tradePtrs := make([]*model.Trade, len(trades))
+	for i := range trades {
+		tradePtrs[i] = &trades[i]
+	}
+	return tradePtrs, nil
 }
 
 // CreateTrade creates a new trade
 func (s *Service) CreateTrade(ctx context.Context, trade *model.Trade) error {
-	return s.store.CreateTrade(ctx, trade)
+	return s.store.Trades().Create(ctx, trade)
 }
 
 // UpdateTrade updates an existing trade
 func (s *Service) UpdateTrade(ctx context.Context, trade *model.Trade) error {
-	return s.store.UpdateTrade(ctx, trade)
+	return s.store.Trades().Update(ctx, trade)
 }
 
 // DeleteTrade deletes a trade by its ID
 func (s *Service) DeleteTrade(ctx context.Context, id string) error {
-	return s.store.DeleteTrade(ctx, id)
+	return s.store.Trades().Delete(ctx, id)
 }
 
 // ExecuteTrade executes a trade based on the provided request
@@ -85,7 +95,10 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 			TransactionHash: "5Bu8arrurLxsP9dEvdXX3kBd5PqP6tNUubSZUmoJNRE7ijGPnKW9MU9QQfUerJaorYQxPAmLCnD3D7gW8CihWJy6",
 		}
 
-		s.store.CreateTrade(ctx, trade)
+		err := s.store.Trades().Create(ctx, trade)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create trade: %w", err)
+		}
 
 		log.Printf("🔧 Debug mode: Simulated trade completed")
 		return trade, nil
@@ -101,14 +114,17 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		Fee:        CalculateTradeFee(req.Amount, 1.0),
 		Status:     "pending",
 		CreatedAt:  time.Now(),
-		UserID:     "",
 	}
 
 	// Execute signed transaction on blockchain
 	err := s.solanaClient.ExecuteTrade(ctx, trade, req.SignedTransaction)
 	if err != nil {
 		trade.Status = "failed"
-		s.store.UpdateTrade(ctx, trade)
+		errStr := err.Error()
+		trade.Error = &errStr
+		if err := s.store.Trades().Update(ctx, trade); err != nil {
+			log.Printf("Warning: Failed to update failed trade status: %v", err)
+		}
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", err)
 	}
 
@@ -116,8 +132,11 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	now := time.Now()
 	trade.Status = "completed"
 	trade.CompletedAt = &now
+	trade.Finalized = true
 
-	s.store.UpdateTrade(ctx, trade)
+	if err := s.store.Trades().Update(ctx, trade); err != nil {
+		log.Printf("Warning: Failed to update completed trade status: %v", err)
+	}
 
 	// Log blockchain explorer URL
 	log.Printf("✅ Trade completed! View on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)

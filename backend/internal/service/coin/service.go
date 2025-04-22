@@ -61,7 +61,7 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 
 // GetCoins returns a list of all available coins
 func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
-	coins, err := s.store.ListCoins(ctx)
+	coins, err := s.store.Coins().List(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list coins: %w", err)
 	}
@@ -92,7 +92,7 @@ func (s *Service) GetTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 // GetCoinByID returns a coin by its ID
 func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, error) {
 	// Try to get from store
-	coin, err := s.store.GetCoin(ctx, id)
+	coin, err := s.store.Coins().Get(ctx, id)
 	if err == nil {
 		return coin, nil
 	}
@@ -105,7 +105,7 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 	}
 
 	// Store the newly enriched coin
-	if err := s.store.UpsertCoin(ctx, enrichedCoin); err != nil {
+	if err := s.store.Coins().Upsert(ctx, enrichedCoin); err != nil {
 		log.Printf("Warning: Failed to store enriched coin %s: %v", id, err)
 	}
 
@@ -159,7 +159,7 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 
 	// Store all coins
 	for _, coin := range enrichedCoins {
-		if err := s.store.UpsertCoin(ctx, &coin); err != nil {
+		if err := s.store.Coins().Upsert(ctx, &coin); err != nil {
 			log.Printf("Warning: Failed to store coin %s: %v", coin.ID, err)
 		}
 	}

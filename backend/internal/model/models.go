@@ -1,5 +1,9 @@
 package model
 
+import (
+	"time"
+)
+
 const (
 	SolMint = "So11111111111111111111111111111111111111112"
 )
@@ -42,17 +46,33 @@ func (c Coin) GetID() string {
 
 // Trade represents a cryptocurrency trade
 type Trade struct {
-	ID                string  `json:"id"`
-	CoinID            string  `json:"coin_id"`
-	Amount            float64 `json:"amount"`
-	Price             float64 `json:"price"`
-	Timestamp         int64   `json:"timestamp"`
-	SignedTransaction string  `json:"signed_transaction"` // Base64 encoded signed transaction
-	Status            string  `json:"status"`             // Status of the trade (e.g., "submitted", "confirmed", "failed")
-	TransactionHash   string  `json:"transaction_hash"`   // Solana transaction signature/hash
+	ID              string     `json:"id"`
+	UserID          string     `json:"user_id"`
+	FromCoinID      string     `json:"from_coin_id"`
+	ToCoinID        string     `json:"to_coin_id"`
+	CoinSymbol      string     `json:"coin_symbol"`
+	Type            string     `json:"type"`
+	Amount          float64    `json:"amount"`
+	Price           float64    `json:"price"`
+	Fee             float64    `json:"fee"`
+	Status          string     `json:"status"`
+	TransactionHash string     `json:"transaction_hash"`
+	CreatedAt       time.Time  `json:"created_at"`
+	CompletedAt     *time.Time `json:"completed_at,omitempty"`
+	Confirmations   int32      `json:"confirmations"`
+	Finalized       bool       `json:"finalized"`
+	Error           *string    `json:"error,omitempty"`
 }
 
 // GetID implements the Entity interface
 func (t Trade) GetID() string {
 	return t.ID
+}
+
+// TradeRequest represents a request to execute a trade
+type TradeRequest struct {
+	FromCoinID        string  `json:"from_coin_id"`
+	ToCoinID          string  `json:"to_coin_id"`
+	Amount            float64 `json:"amount"`
+	SignedTransaction string  `json:"signed_transaction"`
 }
