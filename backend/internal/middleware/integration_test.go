@@ -3,7 +3,6 @@ package middleware
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -74,73 +73,18 @@ func (s *mockCoinService) GetCoin(ctx context.Context, id string) (context.Conte
 	return ctx, &coin, nil
 }
 
-// GRPCCacheInterceptor creates a caching interceptor for the test
-func GRPCCacheInterceptor(cache *memory.TypedCache[model.Coin]) connect.UnaryInterceptorFunc {
-	return func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			// Only handle GetCoinByID requests
-			if req.Spec().Procedure != "/dankfolio.v1.CoinService/GetCoinByID" {
-				return next(ctx, req)
-			}
-
-			// Try to get coin ID from request
-			coinReq, ok := req.Any().(*pb.GetCoinByIDRequest)
-			if !ok {
-				return next(ctx, req)
-			}
-
-			cacheKey := fmt.Sprintf("coin:%s", coinReq.Id)
-
-			// Try cache first
-			if coin, ok, newCtx := cache.Get(ctx, coinReq.Id); ok {
-				// Set cache hit in context
-				ctx = context.WithValue(newCtx, "cache_hit", cacheKey)
-				// Return cached response
-				return connect.NewResponse(&pb.Coin{
-					Id:     coin.ID,
-					Name:   coin.Name,
-					Symbol: coin.Symbol,
-				}), nil
-			}
-
-			// Cache miss, call the handler
-			res, err := next(ctx, req)
-			if err != nil {
-				return nil, err
-			}
-
-			// Cache the result
-			if coin, ok := res.Any().(*pb.Coin); ok {
-				cache.Set(coinReq.Id, model.Coin{
-					ID:     coin.Id,
-					Name:   coin.Name,
-					Symbol: coin.Symbol,
-				}, 1*time.Minute)
-			}
-
-			// Set cache miss in context
-			ctx = context.WithValue(ctx, "cache_hit", "")
-			return res, nil
-		}
-	}
-}
-
 func TestCacheAndLoggerIntegration(t *testing.T) {
 	// Capture log output
 	var logBuffer bytes.Buffer
 	log.SetOutput(&logBuffer)
 	defer log.SetOutput(os.Stderr) // Restore default output
 
-	// Setup cache and service
-	cache := memory.NewTypedCache[model.Coin]("coin:")
+	// Setup test server with the real in-memory DB
 	coinService := newMockCoinService()
-
-	// Setup test server with cache interceptor
 	path, handler := dankfoliov1connect.NewCoinServiceHandler(
 		newMockCoinServiceHandler(coinService),
 		connect.WithInterceptors(
 			GRPCLoggerInterceptor(),
-			GRPCCacheInterceptor(cache),
 			GRPCDebugModeInterceptor(),
 		),
 	)
