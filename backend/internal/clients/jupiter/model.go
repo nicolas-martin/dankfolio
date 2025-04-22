@@ -37,16 +37,16 @@ type QuotedPrice struct {
 
 // TokenInfoResponse represents the response from Jupiter's token info API
 type TokenInfoResponse struct {
-	Address     string    `json:"address"`
-	ChainID     int       `json:"chainId"`
-	Decimals    int       `json:"decimals"`
-	Name        string    `json:"name"`
-	Symbol      string    `json:"symbol"`
-	LogoURI     string    `json:"logoURI"`
-	Extensions  []string  `json:"extensions"`
-	DailyVolume float64   `json:"dailyVolume"`
-	Tags        []string  `json:"tags"`
-	CreatedAt   time.Time `json:"createdAt"`
+	Address     string                 `json:"address"`
+	ChainID     int                    `json:"chainId"`
+	Decimals    int                    `json:"decimals"`
+	Name        string                 `json:"name"`
+	Symbol      string                 `json:"symbol"`
+	LogoURI     string                 `json:"logoURI"`
+	Extensions  map[string]interface{} `json:"extensions"`
+	DailyVolume float64                `json:"dailyVolume"`
+	Tags        []string               `json:"tags"`
+	CreatedAt   time.Time              `json:"createdAt"`
 }
 
 // SwapInfo represents information about a swap in a route

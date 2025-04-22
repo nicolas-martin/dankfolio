@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
@@ -22,9 +21,4 @@ type Store interface {
 	CreateTrade(ctx context.Context, trade *model.Trade) error
 	UpdateTrade(ctx context.Context, trade *model.Trade) error
 	DeleteTrade(ctx context.Context, id string) error
-
-	// Cache operations
-	GetCached(ctx context.Context, key string) (interface{}, bool)
-	SetCached(ctx context.Context, key string, value interface{}, expiration time.Duration) error
-	DeleteCached(ctx context.Context, key string) error
 }

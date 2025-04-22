@@ -6,7 +6,6 @@ package dbMocks
 
 import (
 	"context"
-	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	mock "github.com/stretchr/testify/mock"
@@ -81,52 +80,6 @@ func (_c *MockStore_CreateTrade_Call) Return(err error) *MockStore_CreateTrade_C
 }
 
 func (_c *MockStore_CreateTrade_Call) RunAndReturn(run func(ctx context.Context, trade *model.Trade) error) *MockStore_CreateTrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeleteCached provides a mock function for the type MockStore
-func (_mock *MockStore) DeleteCached(ctx context.Context, key string) error {
-	ret := _mock.Called(ctx, key)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteCached")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = returnFunc(ctx, key)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// MockStore_DeleteCached_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteCached'
-type MockStore_DeleteCached_Call struct {
-	*mock.Call
-}
-
-// DeleteCached is a helper method to define mock.On call
-//   - ctx
-//   - key
-func (_e *MockStore_Expecter) DeleteCached(ctx interface{}, key interface{}) *MockStore_DeleteCached_Call {
-	return &MockStore_DeleteCached_Call{Call: _e.mock.On("DeleteCached", ctx, key)}
-}
-
-func (_c *MockStore_DeleteCached_Call) Run(run func(ctx context.Context, key string)) *MockStore_DeleteCached_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockStore_DeleteCached_Call) Return(err error) *MockStore_DeleteCached_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *MockStore_DeleteCached_Call) RunAndReturn(run func(ctx context.Context, key string) error) *MockStore_DeleteCached_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -219,63 +172,6 @@ func (_c *MockStore_DeleteTrade_Call) Return(err error) *MockStore_DeleteTrade_C
 }
 
 func (_c *MockStore_DeleteTrade_Call) RunAndReturn(run func(ctx context.Context, id string) error) *MockStore_DeleteTrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetCached provides a mock function for the type MockStore
-func (_mock *MockStore) GetCached(ctx context.Context, key string) (interface{}, bool) {
-	ret := _mock.Called(ctx, key)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetCached")
-	}
-
-	var r0 interface{}
-	var r1 bool
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (interface{}, bool)); ok {
-		return returnFunc(ctx, key)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) interface{}); ok {
-		r0 = returnFunc(ctx, key)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) bool); ok {
-		r1 = returnFunc(ctx, key)
-	} else {
-		r1 = ret.Get(1).(bool)
-	}
-	return r0, r1
-}
-
-// MockStore_GetCached_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCached'
-type MockStore_GetCached_Call struct {
-	*mock.Call
-}
-
-// GetCached is a helper method to define mock.On call
-//   - ctx
-//   - key
-func (_e *MockStore_Expecter) GetCached(ctx interface{}, key interface{}) *MockStore_GetCached_Call {
-	return &MockStore_GetCached_Call{Call: _e.mock.On("GetCached", ctx, key)}
-}
-
-func (_c *MockStore_GetCached_Call) Run(run func(ctx context.Context, key string)) *MockStore_GetCached_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockStore_GetCached_Call) Return(ifaceVal interface{}, b bool) *MockStore_GetCached_Call {
-	_c.Call.Return(ifaceVal, b)
-	return _c
-}
-
-func (_c *MockStore_GetCached_Call) RunAndReturn(run func(ctx context.Context, key string) (interface{}, bool)) *MockStore_GetCached_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -558,54 +454,6 @@ func (_c *MockStore_ListTrendingCoins_Call) Return(coins []model.Coin, err error
 }
 
 func (_c *MockStore_ListTrendingCoins_Call) RunAndReturn(run func(ctx context.Context) ([]model.Coin, error)) *MockStore_ListTrendingCoins_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// SetCached provides a mock function for the type MockStore
-func (_mock *MockStore) SetCached(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
-	ret := _mock.Called(ctx, key, value, expiration)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SetCached")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, interface{}, time.Duration) error); ok {
-		r0 = returnFunc(ctx, key, value, expiration)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// MockStore_SetCached_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetCached'
-type MockStore_SetCached_Call struct {
-	*mock.Call
-}
-
-// SetCached is a helper method to define mock.On call
-//   - ctx
-//   - key
-//   - value
-//   - expiration
-func (_e *MockStore_Expecter) SetCached(ctx interface{}, key interface{}, value interface{}, expiration interface{}) *MockStore_SetCached_Call {
-	return &MockStore_SetCached_Call{Call: _e.mock.On("SetCached", ctx, key, value, expiration)}
-}
-
-func (_c *MockStore_SetCached_Call) Run(run func(ctx context.Context, key string, value interface{}, expiration time.Duration)) *MockStore_SetCached_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(interface{}), args[3].(time.Duration))
-	})
-	return _c
-}
-
-func (_c *MockStore_SetCached_Call) Return(err error) *MockStore_SetCached_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *MockStore_SetCached_Call) RunAndReturn(run func(ctx context.Context, key string, value interface{}, expiration time.Duration) error) *MockStore_SetCached_Call {
 	_c.Call.Return(run)
 	return _c
 }

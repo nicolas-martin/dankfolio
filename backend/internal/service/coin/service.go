@@ -28,10 +28,8 @@ type Service struct {
 
 // NewService creates a new CoinService instance
 func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store) *Service {
-	// Ensure TrendingTokenPath has a default value
 	if config.TrendingTokenPath == "" {
-		config.TrendingTokenPath = defaultTrendingTokenPath
-		log.Printf("TrendingTokenPath not set in config, using default: %s", defaultTrendingTokenPath)
+		log.Fatal("TrendingTokenPath is required")
 	}
 
 	// Create Solana client
@@ -147,8 +145,8 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
 	}
 
-	// Load the enriched coins from file
-	enrichedCoins, timestamp, loadErr := loadEnrichedCoinsFromFile(filePath)
+	// Load the enriched coins from file using the service method
+	enrichedCoins, timestamp, loadErr := s.loadEnrichedCoinsFromFile()
 	if loadErr != nil {
 		// If scraping was needed but failed, and loading also fails, return the load error.
 		// If the file just doesn't exist after a failed scrape, this loadErr will reflect that.

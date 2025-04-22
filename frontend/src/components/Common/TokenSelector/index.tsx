@@ -1,13 +1,18 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { Modal, Portal, Text, useTheme, Card } from 'react-native-paper';
-import { ChevronDownIcon } from '@components/Common/Icons';
+import { ChevronDownIcon, CoinsIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { createStyles } from './styles';
 import { handleAmountInputChange, calculateUsdValue, findPortfolioToken } from './scripts';
+
+const DefaultTokenIcon = () => {
+	const theme = useTheme();
+	return <CoinsIcon size={24} color={theme.colors.primary} />;
+};
 
 const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	visible,
@@ -53,7 +58,11 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				style={styles.tokenItem}
 				onPress={() => handleTokenSelect(coin)}
 			>
-				<Image source={{ uri: coin.icon_url }} style={styles.tokenIcon} />
+				{coin.icon_url ? (
+					<Image source={{ uri: coin.icon_url }} style={styles.tokenIcon} />
+				) : (
+					<DefaultTokenIcon />
+				)}
 				<View style={styles.tokenDetails}>
 					<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
 					<Text style={styles.tokenName}>{coin.name}</Text>
@@ -156,10 +165,14 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						<View style={styles.tokenInfo}>
 							{selectedToken ? (
 								<>
-									<Image
-										source={{ uri: selectedToken.icon_url }}
-										style={styles.tokenIcon}
-									/>
+									{selectedToken.icon_url ? (
+										<Image
+											source={{ uri: selectedToken.icon_url }}
+											style={styles.tokenIcon}
+										/>
+									) : (
+										<DefaultTokenIcon />
+									)}
 									<Text style={styles.tokenSymbol}>
 										{selectedToken.symbol}
 									</Text>

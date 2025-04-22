@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -70,7 +69,7 @@ func loadConfig() (*Config, error) {
 	}
 
 	if len(missingVars) > 0 {
-		return nil, fmt.Errorf("missing required environment variables: %v", missingVars)
+		log.Fatalf("missing required environment variables: %v", missingVars)
 	}
 
 	return config, nil
@@ -98,9 +97,10 @@ func main() {
 
 	// Initialize coin service
 	coinServiceConfig := &coin.Config{
-		BirdEyeBaseURL:  config.BirdEyeEndpoint,
-		BirdEyeAPIKey:   config.BirdEyeAPIKey,
-		CoinGeckoAPIKey: config.CoinGeckoAPIKey,
+		BirdEyeBaseURL:    config.BirdEyeEndpoint,
+		BirdEyeAPIKey:     config.BirdEyeAPIKey,
+		CoinGeckoAPIKey:   config.CoinGeckoAPIKey,
+		TrendingTokenPath: "trending_solana_tokens_enriched.json",
 	}
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 

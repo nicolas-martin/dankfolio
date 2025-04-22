@@ -14,6 +14,8 @@ const (
 	defaultCacheExpiry = 5 * time.Minute
 	coinCachePrefix    = "coin:"
 	tradeCachePrefix   = "trade:"
+	coinListPrefix     = "coins:"
+	tradeListPrefix    = "trades:"
 )
 
 // Config holds configuration for the memory store
@@ -23,25 +25,17 @@ type Config struct {
 
 // Store implements the db.Store interface using in-memory storage
 type Store struct {
-	mu     sync.RWMutex
-	coins  map[string]model.Coin
-	trades map[string]*model.Trade
-	cache  map[string]cacheItem
-	config Config
-}
-
-type cacheItem struct {
-	value      interface{}
-	expiration time.Time
+	mu             sync.RWMutex
+	coins          map[string]model.Coin
+	trades         map[string]*model.Trade
+	coinCache      *TypedCache[model.Coin]
+	coinListCache  *TypedCache[[]model.Coin]
+	tradeCache     *TypedCache[*model.Trade]
+	tradeListCache *TypedCache[[]*model.Trade]
+	config         Config
 }
 
 var _ db.Store = (*Store)(nil) // Ensure Store implements db.Store
-// New creates a new in-memory store with default configuration
-func New() *Store {
-	return NewWithConfig(Config{
-		DefaultCacheExpiry: defaultCacheExpiry,
-	})
-}
 
 // NewWithConfig creates a new in-memory store with custom configuration
 func NewWithConfig(config Config) *Store {
@@ -51,44 +45,14 @@ func NewWithConfig(config Config) *Store {
 	}
 
 	return &Store{
-		coins:  make(map[string]model.Coin),
-		trades: make(map[string]*model.Trade),
-		cache:  make(map[string]cacheItem),
-		config: config,
+		coins:          make(map[string]model.Coin),
+		trades:         make(map[string]*model.Trade),
+		coinCache:      NewTypedCache[model.Coin](coinCachePrefix),
+		coinListCache:  NewTypedCache[[]model.Coin](coinListPrefix),
+		tradeCache:     NewTypedCache[*model.Trade](tradeCachePrefix),
+		tradeListCache: NewTypedCache[[]*model.Trade](tradeListPrefix),
+		config:         config,
 	}
-}
-
-// Ensure Store implements db.Store interface
-var _ db.Store = (*Store)(nil)
-
-// Internal cache methods
-func (s *Store) getCacheKey(prefix, id string) string {
-	return prefix + id
-}
-
-func (s *Store) setCache(key string, value interface{}) {
-	s.cache[key] = cacheItem{
-		value:      value,
-		expiration: time.Now().Add(s.config.DefaultCacheExpiry),
-	}
-}
-
-func (s *Store) getFromCache(key string) (interface{}, bool) {
-	item, exists := s.cache[key]
-	if !exists {
-		return nil, false
-	}
-
-	if time.Now().After(item.expiration) {
-		delete(s.cache, key)
-		return nil, false
-	}
-
-	return item.value, true
-}
-
-func (s *Store) invalidateCache(key string) {
-	delete(s.cache, key)
 }
 
 // Coin operations
@@ -97,11 +61,9 @@ func (s *Store) GetCoin(ctx context.Context, id string) (*model.Coin, error) {
 	defer s.mu.RUnlock()
 
 	// Try cache first
-	cacheKey := s.getCacheKey(coinCachePrefix, id)
-	if cached, ok := s.getFromCache(cacheKey); ok {
-		if coin, ok := cached.(model.Coin); ok {
-			return &coin, nil
-		}
+	if coin, ok, newCtx := s.coinCache.Get(ctx, id); ok {
+		ctx = newCtx
+		return &coin, nil
 	}
 
 	// If not in cache, get from storage
@@ -111,7 +73,7 @@ func (s *Store) GetCoin(ctx context.Context, id string) (*model.Coin, error) {
 	}
 
 	// Cache the result
-	s.setCache(cacheKey, coin)
+	s.coinCache.Set(id, coin, s.config.DefaultCacheExpiry)
 	return &coin, nil
 }
 
@@ -120,11 +82,9 @@ func (s *Store) ListCoins(ctx context.Context) ([]model.Coin, error) {
 	defer s.mu.RUnlock()
 
 	// Try cache first
-	cacheKey := "coins:list"
-	if cached, ok := s.getFromCache(cacheKey); ok {
-		if coins, ok := cached.([]model.Coin); ok {
-			return coins, nil
-		}
+	if coins, ok, newCtx := s.coinListCache.Get(ctx, "all"); ok {
+		ctx = newCtx
+		return coins, nil
 	}
 
 	// If not in cache, get from storage
@@ -134,7 +94,7 @@ func (s *Store) ListCoins(ctx context.Context) ([]model.Coin, error) {
 	}
 
 	// Cache the result
-	s.setCache(cacheKey, coins)
+	s.coinListCache.Set("all", coins, s.config.DefaultCacheExpiry)
 	return coins, nil
 }
 
@@ -143,11 +103,9 @@ func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 	defer s.mu.RUnlock()
 
 	// Try cache first
-	cacheKey := "coins:trending"
-	if cached, ok := s.getFromCache(cacheKey); ok {
-		if coins, ok := cached.([]model.Coin); ok {
-			return coins, nil
-		}
+	if coins, ok, newCtx := s.coinListCache.Get(ctx, "trending"); ok {
+		ctx = newCtx
+		return coins, nil
 	}
 
 	// If not in cache, get from storage
@@ -159,7 +117,7 @@ func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 	}
 
 	// Cache the result
-	s.setCache(cacheKey, trending)
+	s.coinListCache.Set("trending", trending, s.config.DefaultCacheExpiry)
 	return trending, nil
 }
 
@@ -174,9 +132,9 @@ func (s *Store) UpsertCoin(ctx context.Context, coin *model.Coin) error {
 	s.coins[coin.ID] = *coin
 
 	// Invalidate related caches
-	s.invalidateCache(s.getCacheKey(coinCachePrefix, coin.ID))
-	s.invalidateCache("coins:list")
-	s.invalidateCache("coins:trending")
+	s.coinCache.Delete(coin.ID)
+	s.coinListCache.Delete("all")
+	s.coinListCache.Delete("trending")
 	return nil
 }
 
@@ -187,9 +145,9 @@ func (s *Store) DeleteCoin(ctx context.Context, id string) error {
 	delete(s.coins, id)
 
 	// Invalidate related caches
-	s.invalidateCache(s.getCacheKey(coinCachePrefix, id))
-	s.invalidateCache("coins:list")
-	s.invalidateCache("coins:trending")
+	s.coinCache.Delete(id)
+	s.coinListCache.Delete("all")
+	s.coinListCache.Delete("trending")
 	return nil
 }
 
@@ -199,11 +157,9 @@ func (s *Store) GetTrade(ctx context.Context, id string) (*model.Trade, error) {
 	defer s.mu.RUnlock()
 
 	// Try cache first
-	cacheKey := s.getCacheKey(tradeCachePrefix, id)
-	if cached, ok := s.getFromCache(cacheKey); ok {
-		if trade, ok := cached.(*model.Trade); ok {
-			return trade, nil
-		}
+	if trade, ok, newCtx := s.tradeCache.Get(ctx, id); ok {
+		ctx = newCtx
+		return trade, nil
 	}
 
 	// If not in cache, get from storage
@@ -213,7 +169,7 @@ func (s *Store) GetTrade(ctx context.Context, id string) (*model.Trade, error) {
 	}
 
 	// Cache the result
-	s.setCache(cacheKey, trade)
+	s.tradeCache.Set(id, trade, s.config.DefaultCacheExpiry)
 	return trade, nil
 }
 
@@ -222,11 +178,9 @@ func (s *Store) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 	defer s.mu.RUnlock()
 
 	// Try cache first
-	cacheKey := "trades:list"
-	if cached, ok := s.getFromCache(cacheKey); ok {
-		if trades, ok := cached.([]*model.Trade); ok {
-			return trades, nil
-		}
+	if trades, ok, newCtx := s.tradeListCache.Get(ctx, "all"); ok {
+		ctx = newCtx
+		return trades, nil
 	}
 
 	// If not in cache, get from storage
@@ -236,7 +190,7 @@ func (s *Store) ListTrades(ctx context.Context) ([]*model.Trade, error) {
 	}
 
 	// Cache the result
-	s.setCache(cacheKey, trades)
+	s.tradeListCache.Set("all", trades, s.config.DefaultCacheExpiry)
 	return trades, nil
 }
 
@@ -255,8 +209,8 @@ func (s *Store) CreateTrade(ctx context.Context, trade *model.Trade) error {
 	s.trades[trade.ID] = trade
 
 	// Invalidate related caches
-	s.invalidateCache(s.getCacheKey(tradeCachePrefix, trade.ID))
-	s.invalidateCache("trades:list")
+	s.tradeCache.Delete(trade.ID)
+	s.tradeListCache.Delete("all")
 	return nil
 }
 
@@ -275,8 +229,8 @@ func (s *Store) UpdateTrade(ctx context.Context, trade *model.Trade) error {
 	s.trades[trade.ID] = trade
 
 	// Invalidate related caches
-	s.invalidateCache(s.getCacheKey(tradeCachePrefix, trade.ID))
-	s.invalidateCache("trades:list")
+	s.tradeCache.Delete(trade.ID)
+	s.tradeListCache.Delete("all")
 	return nil
 }
 
@@ -287,32 +241,7 @@ func (s *Store) DeleteTrade(ctx context.Context, id string) error {
 	delete(s.trades, id)
 
 	// Invalidate related caches
-	s.invalidateCache(s.getCacheKey(tradeCachePrefix, id))
-	s.invalidateCache("trades:list")
-	return nil
-}
-
-// Cache operations (these are now internal only)
-func (s *Store) GetCached(ctx context.Context, key string) (interface{}, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.getFromCache(key)
-}
-
-func (s *Store) SetCached(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.cache[key] = cacheItem{
-		value:      value,
-		expiration: time.Now().Add(expiration),
-	}
-	return nil
-}
-
-func (s *Store) DeleteCached(ctx context.Context, key string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.invalidateCache(key)
+	s.tradeCache.Delete(id)
+	s.tradeListCache.Delete("all")
 	return nil
 }
