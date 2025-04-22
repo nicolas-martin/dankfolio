@@ -7,6 +7,7 @@ package dbMocks
 import (
 	"context"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -38,366 +39,48 @@ func (_m *MockStore) EXPECT() *MockStore_Expecter {
 	return &MockStore_Expecter{mock: &_m.Mock}
 }
 
-// CreateTrade provides a mock function for the type MockStore
-func (_mock *MockStore) CreateTrade(ctx context.Context, trade *model.Trade) error {
-	ret := _mock.Called(ctx, trade)
+// Coins provides a mock function for the type MockStore
+func (_mock *MockStore) Coins() db.Repository[model.Coin] {
+	ret := _mock.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateTrade")
+		panic("no return value specified for Coins")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Trade) error); ok {
-		r0 = returnFunc(ctx, trade)
+	var r0 db.Repository[model.Coin]
+	if returnFunc, ok := ret.Get(0).(func() db.Repository[model.Coin]); ok {
+		r0 = returnFunc()
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Repository[model.Coin])
+		}
 	}
 	return r0
 }
 
-// MockStore_CreateTrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateTrade'
-type MockStore_CreateTrade_Call struct {
+// MockStore_Coins_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Coins'
+type MockStore_Coins_Call struct {
 	*mock.Call
 }
 
-// CreateTrade is a helper method to define mock.On call
-//   - ctx
-//   - trade
-func (_e *MockStore_Expecter) CreateTrade(ctx interface{}, trade interface{}) *MockStore_CreateTrade_Call {
-	return &MockStore_CreateTrade_Call{Call: _e.mock.On("CreateTrade", ctx, trade)}
+// Coins is a helper method to define mock.On call
+func (_e *MockStore_Expecter) Coins() *MockStore_Coins_Call {
+	return &MockStore_Coins_Call{Call: _e.mock.On("Coins")}
 }
 
-func (_c *MockStore_CreateTrade_Call) Run(run func(ctx context.Context, trade *model.Trade)) *MockStore_CreateTrade_Call {
+func (_c *MockStore_Coins_Call) Run(run func()) *MockStore_Coins_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*model.Trade))
+		run()
 	})
 	return _c
 }
 
-func (_c *MockStore_CreateTrade_Call) Return(err error) *MockStore_CreateTrade_Call {
-	_c.Call.Return(err)
+func (_c *MockStore_Coins_Call) Return(repository db.Repository[model.Coin]) *MockStore_Coins_Call {
+	_c.Call.Return(repository)
 	return _c
 }
 
-func (_c *MockStore_CreateTrade_Call) RunAndReturn(run func(ctx context.Context, trade *model.Trade) error) *MockStore_CreateTrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeleteCoin provides a mock function for the type MockStore
-func (_mock *MockStore) DeleteCoin(ctx context.Context, id string) error {
-	ret := _mock.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteCoin")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = returnFunc(ctx, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// MockStore_DeleteCoin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteCoin'
-type MockStore_DeleteCoin_Call struct {
-	*mock.Call
-}
-
-// DeleteCoin is a helper method to define mock.On call
-//   - ctx
-//   - id
-func (_e *MockStore_Expecter) DeleteCoin(ctx interface{}, id interface{}) *MockStore_DeleteCoin_Call {
-	return &MockStore_DeleteCoin_Call{Call: _e.mock.On("DeleteCoin", ctx, id)}
-}
-
-func (_c *MockStore_DeleteCoin_Call) Run(run func(ctx context.Context, id string)) *MockStore_DeleteCoin_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockStore_DeleteCoin_Call) Return(err error) *MockStore_DeleteCoin_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *MockStore_DeleteCoin_Call) RunAndReturn(run func(ctx context.Context, id string) error) *MockStore_DeleteCoin_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeleteTrade provides a mock function for the type MockStore
-func (_mock *MockStore) DeleteTrade(ctx context.Context, id string) error {
-	ret := _mock.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteTrade")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = returnFunc(ctx, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// MockStore_DeleteTrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteTrade'
-type MockStore_DeleteTrade_Call struct {
-	*mock.Call
-}
-
-// DeleteTrade is a helper method to define mock.On call
-//   - ctx
-//   - id
-func (_e *MockStore_Expecter) DeleteTrade(ctx interface{}, id interface{}) *MockStore_DeleteTrade_Call {
-	return &MockStore_DeleteTrade_Call{Call: _e.mock.On("DeleteTrade", ctx, id)}
-}
-
-func (_c *MockStore_DeleteTrade_Call) Run(run func(ctx context.Context, id string)) *MockStore_DeleteTrade_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockStore_DeleteTrade_Call) Return(err error) *MockStore_DeleteTrade_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *MockStore_DeleteTrade_Call) RunAndReturn(run func(ctx context.Context, id string) error) *MockStore_DeleteTrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetCoin provides a mock function for the type MockStore
-func (_mock *MockStore) GetCoin(ctx context.Context, id string) (*model.Coin, error) {
-	ret := _mock.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetCoin")
-	}
-
-	var r0 *model.Coin
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*model.Coin, error)); ok {
-		return returnFunc(ctx, id)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *model.Coin); ok {
-		r0 = returnFunc(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Coin)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockStore_GetCoin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCoin'
-type MockStore_GetCoin_Call struct {
-	*mock.Call
-}
-
-// GetCoin is a helper method to define mock.On call
-//   - ctx
-//   - id
-func (_e *MockStore_Expecter) GetCoin(ctx interface{}, id interface{}) *MockStore_GetCoin_Call {
-	return &MockStore_GetCoin_Call{Call: _e.mock.On("GetCoin", ctx, id)}
-}
-
-func (_c *MockStore_GetCoin_Call) Run(run func(ctx context.Context, id string)) *MockStore_GetCoin_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockStore_GetCoin_Call) Return(coin *model.Coin, err error) *MockStore_GetCoin_Call {
-	_c.Call.Return(coin, err)
-	return _c
-}
-
-func (_c *MockStore_GetCoin_Call) RunAndReturn(run func(ctx context.Context, id string) (*model.Coin, error)) *MockStore_GetCoin_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetTrade provides a mock function for the type MockStore
-func (_mock *MockStore) GetTrade(ctx context.Context, id string) (*model.Trade, error) {
-	ret := _mock.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetTrade")
-	}
-
-	var r0 *model.Trade
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*model.Trade, error)); ok {
-		return returnFunc(ctx, id)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *model.Trade); ok {
-		r0 = returnFunc(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Trade)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockStore_GetTrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTrade'
-type MockStore_GetTrade_Call struct {
-	*mock.Call
-}
-
-// GetTrade is a helper method to define mock.On call
-//   - ctx
-//   - id
-func (_e *MockStore_Expecter) GetTrade(ctx interface{}, id interface{}) *MockStore_GetTrade_Call {
-	return &MockStore_GetTrade_Call{Call: _e.mock.On("GetTrade", ctx, id)}
-}
-
-func (_c *MockStore_GetTrade_Call) Run(run func(ctx context.Context, id string)) *MockStore_GetTrade_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockStore_GetTrade_Call) Return(trade *model.Trade, err error) *MockStore_GetTrade_Call {
-	_c.Call.Return(trade, err)
-	return _c
-}
-
-func (_c *MockStore_GetTrade_Call) RunAndReturn(run func(ctx context.Context, id string) (*model.Trade, error)) *MockStore_GetTrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// ListCoins provides a mock function for the type MockStore
-func (_mock *MockStore) ListCoins(ctx context.Context) ([]model.Coin, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListCoins")
-	}
-
-	var r0 []model.Coin
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]model.Coin, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []model.Coin); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Coin)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockStore_ListCoins_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListCoins'
-type MockStore_ListCoins_Call struct {
-	*mock.Call
-}
-
-// ListCoins is a helper method to define mock.On call
-//   - ctx
-func (_e *MockStore_Expecter) ListCoins(ctx interface{}) *MockStore_ListCoins_Call {
-	return &MockStore_ListCoins_Call{Call: _e.mock.On("ListCoins", ctx)}
-}
-
-func (_c *MockStore_ListCoins_Call) Run(run func(ctx context.Context)) *MockStore_ListCoins_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockStore_ListCoins_Call) Return(coins []model.Coin, err error) *MockStore_ListCoins_Call {
-	_c.Call.Return(coins, err)
-	return _c
-}
-
-func (_c *MockStore_ListCoins_Call) RunAndReturn(run func(ctx context.Context) ([]model.Coin, error)) *MockStore_ListCoins_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// ListTrades provides a mock function for the type MockStore
-func (_mock *MockStore) ListTrades(ctx context.Context) ([]*model.Trade, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListTrades")
-	}
-
-	var r0 []*model.Trade
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]*model.Trade, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []*model.Trade); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Trade)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockStore_ListTrades_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListTrades'
-type MockStore_ListTrades_Call struct {
-	*mock.Call
-}
-
-// ListTrades is a helper method to define mock.On call
-//   - ctx
-func (_e *MockStore_Expecter) ListTrades(ctx interface{}) *MockStore_ListTrades_Call {
-	return &MockStore_ListTrades_Call{Call: _e.mock.On("ListTrades", ctx)}
-}
-
-func (_c *MockStore_ListTrades_Call) Run(run func(ctx context.Context)) *MockStore_ListTrades_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockStore_ListTrades_Call) Return(trades []*model.Trade, err error) *MockStore_ListTrades_Call {
-	_c.Call.Return(trades, err)
-	return _c
-}
-
-func (_c *MockStore_ListTrades_Call) RunAndReturn(run func(ctx context.Context) ([]*model.Trade, error)) *MockStore_ListTrades_Call {
+func (_c *MockStore_Coins_Call) RunAndReturn(run func() db.Repository[model.Coin]) *MockStore_Coins_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -458,94 +141,48 @@ func (_c *MockStore_ListTrendingCoins_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
-// UpdateTrade provides a mock function for the type MockStore
-func (_mock *MockStore) UpdateTrade(ctx context.Context, trade *model.Trade) error {
-	ret := _mock.Called(ctx, trade)
+// Trades provides a mock function for the type MockStore
+func (_mock *MockStore) Trades() db.Repository[model.Trade] {
+	ret := _mock.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for UpdateTrade")
+		panic("no return value specified for Trades")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Trade) error); ok {
-		r0 = returnFunc(ctx, trade)
+	var r0 db.Repository[model.Trade]
+	if returnFunc, ok := ret.Get(0).(func() db.Repository[model.Trade]); ok {
+		r0 = returnFunc()
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Repository[model.Trade])
+		}
 	}
 	return r0
 }
 
-// MockStore_UpdateTrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateTrade'
-type MockStore_UpdateTrade_Call struct {
+// MockStore_Trades_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Trades'
+type MockStore_Trades_Call struct {
 	*mock.Call
 }
 
-// UpdateTrade is a helper method to define mock.On call
-//   - ctx
-//   - trade
-func (_e *MockStore_Expecter) UpdateTrade(ctx interface{}, trade interface{}) *MockStore_UpdateTrade_Call {
-	return &MockStore_UpdateTrade_Call{Call: _e.mock.On("UpdateTrade", ctx, trade)}
+// Trades is a helper method to define mock.On call
+func (_e *MockStore_Expecter) Trades() *MockStore_Trades_Call {
+	return &MockStore_Trades_Call{Call: _e.mock.On("Trades")}
 }
 
-func (_c *MockStore_UpdateTrade_Call) Run(run func(ctx context.Context, trade *model.Trade)) *MockStore_UpdateTrade_Call {
+func (_c *MockStore_Trades_Call) Run(run func()) *MockStore_Trades_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*model.Trade))
+		run()
 	})
 	return _c
 }
 
-func (_c *MockStore_UpdateTrade_Call) Return(err error) *MockStore_UpdateTrade_Call {
-	_c.Call.Return(err)
+func (_c *MockStore_Trades_Call) Return(repository db.Repository[model.Trade]) *MockStore_Trades_Call {
+	_c.Call.Return(repository)
 	return _c
 }
 
-func (_c *MockStore_UpdateTrade_Call) RunAndReturn(run func(ctx context.Context, trade *model.Trade) error) *MockStore_UpdateTrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// UpsertCoin provides a mock function for the type MockStore
-func (_mock *MockStore) UpsertCoin(ctx context.Context, coin *model.Coin) error {
-	ret := _mock.Called(ctx, coin)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpsertCoin")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Coin) error); ok {
-		r0 = returnFunc(ctx, coin)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// MockStore_UpsertCoin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpsertCoin'
-type MockStore_UpsertCoin_Call struct {
-	*mock.Call
-}
-
-// UpsertCoin is a helper method to define mock.On call
-//   - ctx
-//   - coin
-func (_e *MockStore_Expecter) UpsertCoin(ctx interface{}, coin interface{}) *MockStore_UpsertCoin_Call {
-	return &MockStore_UpsertCoin_Call{Call: _e.mock.On("UpsertCoin", ctx, coin)}
-}
-
-func (_c *MockStore_UpsertCoin_Call) Run(run func(ctx context.Context, coin *model.Coin)) *MockStore_UpsertCoin_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*model.Coin))
-	})
-	return _c
-}
-
-func (_c *MockStore_UpsertCoin_Call) Return(err error) *MockStore_UpsertCoin_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *MockStore_UpsertCoin_Call) RunAndReturn(run func(ctx context.Context, coin *model.Coin) error) *MockStore_UpsertCoin_Call {
+func (_c *MockStore_Trades_Call) RunAndReturn(run func() db.Repository[model.Trade]) *MockStore_Trades_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -34,3 +34,25 @@ type Coin struct {
 	// Internal state flag
 	IsTrending bool `json:"-"` // Flag indicating if loaded from trending file, excluded from JSON
 }
+
+// GetID implements the Entity interface
+func (c Coin) GetID() string {
+	return c.ID
+}
+
+// Trade represents a cryptocurrency trade
+type Trade struct {
+	ID                string  `json:"id"`
+	CoinID            string  `json:"coin_id"`
+	Amount            float64 `json:"amount"`
+	Price             float64 `json:"price"`
+	Timestamp         int64   `json:"timestamp"`
+	SignedTransaction string  `json:"signed_transaction"` // Base64 encoded signed transaction
+	Status            string  `json:"status"`             // Status of the trade (e.g., "submitted", "confirmed", "failed")
+	TransactionHash   string  `json:"transaction_hash"`   // Solana transaction signature/hash
+}
+
+// GetID implements the Entity interface
+func (t Trade) GetID() string {
+	return t.ID
+}

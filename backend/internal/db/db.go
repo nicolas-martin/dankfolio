@@ -8,17 +8,20 @@ import (
 
 // Store defines the interface for database operations
 type Store interface {
-	// Coin operations
-	GetCoin(ctx context.Context, id string) (*model.Coin, error)
-	ListCoins(ctx context.Context) ([]model.Coin, error)
-	ListTrendingCoins(ctx context.Context) ([]model.Coin, error)
-	UpsertCoin(ctx context.Context, coin *model.Coin) error
-	DeleteCoin(ctx context.Context, id string) error
+	// Repository operations
+	Coins() Repository[model.Coin]
+	Trades() Repository[model.Trade]
 
-	// Trade operations
-	GetTrade(ctx context.Context, id string) (*model.Trade, error)
-	ListTrades(ctx context.Context) ([]*model.Trade, error)
-	CreateTrade(ctx context.Context, trade *model.Trade) error
-	UpdateTrade(ctx context.Context, trade *model.Trade) error
-	DeleteTrade(ctx context.Context, id string) error
+	// Custom operations
+	ListTrendingCoins(ctx context.Context) ([]model.Coin, error)
+}
+
+// Repository defines generic CRUD operations
+type Repository[T any] interface {
+	Get(ctx context.Context, id string) (*T, error)
+	List(ctx context.Context) ([]T, error)
+	Create(ctx context.Context, item *T) error
+	Update(ctx context.Context, item *T) error
+	Upsert(ctx context.Context, item *T) error
+	Delete(ctx context.Context, id string) error
 }
