@@ -1,119 +1,120 @@
 {
-  "scrapeTimestamp": "2025-04-19T20:22:26.890769Z",
+  "scrapeTimestamp": "2025-04-23T16:46:12.300112Z",
   "tokens": [
     {
-      "id": "4ufYLNRmETB8KFw42aUcqdpnTHDqfBnAfcNoD3Jzpump",
-      "name": "Ɍε₮₳ɌÐȿ",
-      "symbol": "taɌD",
-      "decimals": 6,
-      "description": "Zero Skill Coin is the coin for all the degen \r\nɌε₮₳ɌÐȿ that call the blockchain home.",
-      "icon_url": "https://ipfs.io/ipfs/QmSNf8jFfxfsGoRCbgHEmPnoUmmXA1wGdpWvjPkhutBu1X",
-      "tags": [
-        "launchpad",
-        "unknown"
-      ],
-      "price": 0.000559878,
-      "daily_volume": 0.00288223334,
-      "website": "https://www.merriam-webster.com/dictionary/retard",
-      "telegram": "https://t.me/zeroskillcoinofficial",
-      "created_at": "2025-04-19T04:03:03.594142Z"
-    },
-    {
-      "id": "8oosbx7jJrZxm5m4ThKhBpvwwG4QpoAe6i4GiG19pump",
-      "name": "Wizard Gang",
-      "symbol": "Wizard",
-      "decimals": 6,
-      "description": "One of the most iconic sings of a legendary wizard is a tower that can't be entered by ordinary means. It exists between moments or only appears at certain times and is filled with magic that defies understanding. To be invited inside is a once-in-a-lifetime event.",
-      "icon_url": "https://ipfs.io/ipfs/QmPDkpeSfqc8UcsqgqsMKimB8qw7uDqExAm9CMS7MjKpQ9",
-      "tags": [
-        "unknown",
-        "launchpad"
-      ],
-      "price": 0.00401806,
-      "daily_volume": 1271160.4874884358,
-      "created_at": "2025-04-09T15:51:52.170487Z"
-    },
-    {
-      "id": "2G4RMDbXu79f5Yff6fBjKgXknuGvrFCr7iYmiTKy3fVc",
-      "name": "SHART",
-      "symbol": "SHART",
+      "id": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
+      "name": "Popcat",
+      "symbol": "POPCAT",
       "decimals": 9,
-      "description": "SHART (SHART) - A Solana Token",
-      "icon_url": "https://gateway.pinata.cloud/ipfs/QmR6EScEi3pr1SSro3DswQpu6peeKz4sfKuUkaU6YDW6Zv",
+      "description": "Popcat (POPCAT) is a Solana token.",
+      "icon_url": "https://arweave.net/A1etRNMKxhlNGTf-gNBtJ75QJJ4NJtbKh_UXQTlLXzI",
       "tags": [
-        "token-2022",
-        "unknown"
+        "verified",
+        "strict",
+        "birdeye-trending",
+        "community"
       ],
-      "price": 0.000404579519,
-      "daily_volume": 569896.000727201,
-      "created_at": "2025-04-18T17:44:10.860239Z"
+      "price": 0.35166583,
+      "created_at": "0001-01-01T00:00:00Z"
     },
     {
-      "id": "7e1zigq4YpSRt7fPxkvwSEPfzHon2atfkB4Zscampump",
-      "name": "Mount Rushmore",
-      "symbol": "MR",
-      "decimals": 6,
-      "description": "Mount Rushmore (MR) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmXmdFtmj1DipLgrpwWnYqAspiNSMXYf5EXwqQMVhKWMeo",
+      "id": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "name": "Bonk",
+      "symbol": "Bonk",
+      "decimals": 5,
+      "description": "Bonk (Bonk) is a Solana token.",
+      "icon_url": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
       "tags": [
-        "launchpad",
-        "unknown"
+        "verified",
+        "birdeye-trending",
+        "strict",
+        "community"
       ],
-      "price": 0.000612519,
-      "daily_volume": 133181.34000844185,
-      "created_at": "2025-04-18T19:22:27.695948Z"
+      "price": 0.0000153705,
+      "created_at": "0001-01-01T00:00:00Z"
     },
     {
-      "id": "4hybryA7PCCqSvnoaisyF2cMz13NNqcXoxNBoGvnpump",
-      "name": "NEW VINE",
-      "symbol": "XORIGINALS",
+      "id": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+      "name": "dogwifhat",
+      "symbol": "$WIF",
       "decimals": 6,
-      "description": "NEW VINE (XORIGINALS) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmTSH69yNp8QGFeqZr4d9wYzvUFWmWMqrYZcm8hMs3yypP",
+      "description": "dogwifhat ($WIF) is a Solana token.",
+      "icon_url": "https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link",
       "tags": [
-        "launchpad",
-        "unknown"
+        "verified",
+        "strict",
+        "community"
       ],
-      "price": 0.00112681,
-      "daily_volume": 124817.5568868806,
-      "created_at": "2025-04-18T20:14:34.419681Z"
+      "price": 0.546578,
+      "created_at": "0001-01-01T00:00:00Z"
     },
     {
-      "id": "BQeZ2wJFuMeCpEgJShZuGq4tojxbpZZY99RR5sTjpump",
-      "name": "God Of The Internet",
-      "symbol": "KIBO",
+      "id": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
+      "name": "TROLL",
+      "symbol": "TROLL",
       "decimals": 6,
-      "description": "God Of The Internet (KIBO) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmZj4RHFeViWww3osR652pYGbxF929XCSvvp2vB2j8A5nW",
+      "description": "TROLL (TROLL) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmWV8QgmH1gSw41yapzsFwkC8yPbzoSreAcJbzqfvo2sVq",
       "tags": [
-        "launchpad",
-        "unknown"
+        "community-assist",
+        "verified"
       ],
-      "price": 0.000477952,
-      "website": "https://knowyourmeme.com/memes/people/kibo",
-      "created_at": "2025-04-19T17:35:21.329174Z"
+      "price": 0.016001,
+      "created_at": "0001-01-01T00:00:00Z"
     },
     {
-      "id": "GGJMmQ5GFz2dG5qHFz2k1EuP5Ls7jAWPmhiAaLFspump",
-      "name": "Tim Cheese",
-      "symbol": "Tim",
+      "id": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+      "name": "OFFICIAL TRUMP",
+      "symbol": "TRUMP",
       "decimals": 6,
-      "description": "The Official Tim Cheese Coin",
-      "icon_url": "https://ipfs.io/ipfs/QmQkBojuF377LraXLkRNrH9VEGFkvEYPFpjEHMzmXRezLd",
+      "description": "OFFICIAL TRUMP (TRUMP) is a Solana token.",
+      "icon_url": "https://arweave.net/VQrPjACwnQRmxdKBTqNwPiyo65x7LAT773t8Kd7YBzw",
       "tags": [
-        "launchpad",
-        "unknown"
+        "verified",
+        "birdeye-trending",
+        "community"
       ],
-      "price": 0.000220747,
-      "daily_volume": 2270.4522845929087,
-      "created_at": "2025-04-18T21:36:56.339124Z"
+      "price": 14.207941,
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh",
+      "name": "Wrapped BTC (Portal)",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "description": "Wrapped BTC (Portal) (WBTC) is a Solana token.",
+      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh/logo.png",
+      "tags": [
+        "verified",
+        "birdeye-trending",
+        "strict",
+        "community"
+      ],
+      "price": 93613.47723188,
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+      "name": "Jupiter",
+      "symbol": "JUP",
+      "decimals": 6,
+      "description": "Jupiter (JUP) is a Solana token.",
+      "icon_url": "https://static.jup.ag/jup/icon.png",
+      "tags": [
+        "verified",
+        "community",
+        "birdeye-trending",
+        "strict"
+      ],
+      "price": 0.455544,
+      "created_at": "0001-01-01T00:00:00Z"
     },
     {
       "id": "C3DwDjT17gDvvCYC2nsdGHxDHVmQRdhKfpAdqQ29pump",
       "name": "Retard Finder Coin",
       "symbol": "RFC",
       "decimals": 6,
-      "description": "The most retarded coin in crypto.",
+      "description": "Retard Finder Coin (RFC) is a Solana token.",
       "icon_url": "https://ipfs.io/ipfs/Qmbi9jsNn718gvh85C2vuj4CSsu5JmuYq1W7B1vk2ys88W",
       "tags": [
         "launchpad",
@@ -121,43 +122,39 @@
         "community-assist",
         "birdeye-trending"
       ],
-      "price": 0.056377,
-      "daily_volume": 8004313.736351716,
-      "website": "https://www.retardfindercoin.com",
-      "created_at": "2025-03-24T22:34:37.712739Z"
+      "price": 0.032446,
+      "created_at": "0001-01-01T00:00:00Z"
     },
     {
-      "id": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
-      "name": "Popcat",
-      "symbol": "POPCAT",
-      "decimals": 9,
-      "description": "POPCAT POP POP POP POP",
-      "icon_url": "https://arweave.net/A1etRNMKxhlNGTf-gNBtJ75QJJ4NJtbKh_UXQTlLXzI",
-      "tags": [
-        "verified",
-        "community",
-        "strict",
-        "birdeye-trending"
-      ],
-      "price": 0.241129103,
-      "daily_volume": 14576705.527743263,
-      "created_at": "2024-04-26T10:56:58.893768Z"
-    },
-    {
-      "id": "MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u",
-      "name": "Magic Eden",
-      "symbol": "ME",
+      "id": "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump",
+      "name": "AI Rig Complex",
+      "symbol": "arc",
       "decimals": 6,
-      "description": "$ME is powering the onchain economy and represents the most powerful suite of cross chain trading, minting, and wallet protocols. Adopted by Magic Eden as their official token, $ME will represent the largest community of onchain users who will earn $ME for trading all assets on all chains.",
-      "icon_url": "https://arweave.net/hhifTzaEDnPKnYNi4aAhkZTUkNLoK6d3nMiQPAjByn4",
+      "description": "AI Rig Complex (arc) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmPDJuEobBcLZihjFCvkWA8c1FiW7UzM2ctFdiffSLxf1d",
       "tags": [
         "verified",
-        "community",
-        "birdeye-trending"
+        "launchpad",
+        "birdeye-trending",
+        "community"
       ],
-      "price": 0.804625,
-      "daily_volume": 1198151.9104393844,
-      "created_at": "2024-12-04T14:14:21.378341Z"
+      "price": 0.049943,
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+      "name": "Pudgy Penguins",
+      "symbol": "PENGU",
+      "decimals": 6,
+      "description": "Pudgy Penguins (PENGU) is a Solana token.",
+      "icon_url": "https://arweave.net/BW67hICaKGd2_wamSB0IQq-x7Xwtmr2oJj1WnWGJRHU",
+      "tags": [
+        "verified",
+        "birdeye-trending",
+        "community"
+      ],
+      "price": 0.00694898,
+      "created_at": "0001-01-01T00:00:00Z"
     }
   ]
 }

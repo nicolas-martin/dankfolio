@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
@@ -31,6 +32,8 @@ const (
 	scrapeMaxConcurrentEnrich    = 5                 // Limit concurrency for enrichment API calls
 	scrapeDefaultTimeout         = 120 * time.Second // Overall timeout for scrape + enrich
 	scrapeMaxRowsToProcess       = 10                // Limit how many rows to process from modal
+	// New selectors for the BIRDEYE INSIGHTS modal
+	scrapeInsightsSkipSelector = `button:contains("SKIP"), button:contains("Skip"), button:contains("skip"), button[class*="skip"], button[class*="Skip"]`
 )
 
 // Basic info scraped directly from Birdeye modal
@@ -115,7 +118,7 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 // ScrapeBasicTokenInfo handles the browser automation part to get initial token details.
 // Exported for testing.
 func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo, error) {
-	log.Println("Executing ScrapeBasicTokenInfo...")
+	log.Println("=== Starting ScrapeBasicTokenInfo ===")
 	// --- Chromedp Setup ---
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", true),
@@ -123,35 +126,178 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		chromedp.Flag("no-sandbox", true),
 		chromedp.UserAgent(scrapeUserAgent),
 	)
+	log.Printf("Browser options: %+v", opts)
+
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx, opts...)
 	defer cancelAlloc()
 	taskCtx, cancelTask := chromedp.NewContext(allocCtx, chromedp.WithLogf(log.Printf))
 	defer cancelTask()
-	timeoutCtx, cancelTimeout := context.WithTimeout(taskCtx, scrapeDefaultTimeout) // Use overall timeout
+	timeoutCtx, cancelTimeout := context.WithTimeout(taskCtx, scrapeDefaultTimeout)
 	defer cancelTimeout()
 
 	// --- Scrape Logic (Navigate, Click, Extract) ---
 	scrapedTokens := []scrapedTokenInfo{}
 	var modalNodes []*cdp.Node
 
-	log.Println("Navigating to", scrapeBaseURL, "clicking 'View more', and waiting for modal...")
+	// Step 1: Initial Navigation
+	log.Println("Step 1: Navigating to", scrapeBaseURL)
 	err := chromedp.Run(timeoutCtx,
 		chromedp.Navigate(scrapeBaseURL),
-		chromedp.WaitVisible(`tbody`, chromedp.ByQuery),
-		chromedp.Sleep(2*time.Second),
-		chromedp.Click(scrapeViewMoreButtonSelector, chromedp.ByQuery, chromedp.NodeVisible),
-		chromedp.WaitVisible(scrapeModalSelector, chromedp.ByQuery),
-		chromedp.Sleep(1*time.Second),
+		// Wait for page to be ready
+		chromedp.WaitReady("body", chromedp.ByQuery),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("birdeye navigation/modal interaction failed: %w", err)
+		return nil, fmt.Errorf("initial navigation failed: %w", err)
 	}
 
-	log.Println("Modal appeared. Extracting data from modal rows...")
-	extractCtx, cancelExtract := context.WithTimeout(timeoutCtx, 60*time.Second)
-	defer cancelExtract()
+	// Handle BIRDEYE INSIGHTS modal
+	log.Println("Attempting to dismiss modal with ESC key...")
 
-	err = chromedp.Run(extractCtx,
+	// First verify if modal is present
+	var modalVisible bool
+	err = chromedp.Run(timeoutCtx,
+		chromedp.EvaluateAsDevTools(`!!document.querySelector('div[role="dialog"]')`, &modalVisible),
+	)
+	if err != nil {
+		log.Printf("Warning: Error checking modal presence: %v", err)
+	}
+
+	if modalVisible {
+		// Try to dismiss with ESC key
+		err = chromedp.Run(timeoutCtx,
+			input.DispatchKeyEvent(input.KeyDown).
+				WithKey("Escape").
+				WithCode("Escape").
+				WithWindowsVirtualKeyCode(27), // ESC key code
+		)
+		if err != nil {
+			log.Printf("Warning: Could not send ESC key: %v", err)
+		}
+
+		// Also send the key up event
+		err = chromedp.Run(timeoutCtx,
+			input.DispatchKeyEvent(input.KeyUp).
+				WithKey("Escape").
+				WithCode("Escape").
+				WithWindowsVirtualKeyCode(27),
+		)
+		if err != nil {
+			log.Printf("Warning: Could not send ESC key up: %v", err)
+		}
+
+		// Wait a moment for any transitions
+		time.Sleep(1 * time.Second)
+
+		// Verify modal is gone
+		var modalStillVisible bool
+		err = chromedp.Run(timeoutCtx,
+			chromedp.EvaluateAsDevTools(`!!document.querySelector('div[role="dialog"]')`, &modalStillVisible),
+		)
+		if err != nil {
+			log.Printf("Warning: Error checking if modal was dismissed: %v", err)
+		}
+
+		if modalStillVisible {
+			return nil, fmt.Errorf("failed to dismiss modal, cannot proceed with scraping")
+		}
+
+		log.Println("Modal successfully dismissed")
+	} else {
+		log.Println("No modal detected, proceeding with scraping")
+	}
+
+	// Step 2: Wait for table to be visible
+	log.Println("Waiting for trending tokens table to load...")
+	var tablePresent bool
+	err = chromedp.Run(timeoutCtx,
+		// Wait for any table cell that contains a $ symbol (likely price/volume data)
+		chromedp.WaitReady("tbody", chromedp.ByQuery),
+		chromedp.Evaluate(`!!document.querySelector('tbody td:contains("$")')`, &tablePresent),
+	)
+	if err != nil {
+		log.Printf("Warning: Error waiting for table content: %v", err)
+	} else if !tablePresent {
+		log.Println("Warning: Table is present but may not contain expected data")
+	} else {
+		log.Println("Table with data is now visible")
+	}
+
+	// Log the current state of the table
+	var currentTableHTML string
+	err = chromedp.Run(timeoutCtx,
+		chromedp.OuterHTML("tbody", &currentTableHTML, chromedp.ByQuery),
+	)
+	if err != nil {
+		log.Printf("Warning: Could not get table HTML: %v", err)
+	} else {
+		log.Printf("Current table HTML:\n%s", currentTableHTML)
+	}
+
+	// Step 3: Check for View More button
+	log.Printf("Step 3: Looking for View More button with selector: %s", scrapeViewMoreButtonSelector)
+	var viewMoreHTML string
+	err = chromedp.Run(timeoutCtx,
+		chromedp.OuterHTML(scrapeViewMoreButtonSelector, &viewMoreHTML, chromedp.ByQuery),
+	)
+	if err != nil {
+		log.Printf("Warning: Could not find View More button: %v", err)
+	} else {
+		log.Printf("Found View More button HTML: %s", viewMoreHTML)
+	}
+
+	// Step 4: Click View More
+	log.Printf("Step 4: Attempting to click View More button...")
+	err = chromedp.Run(timeoutCtx,
+		chromedp.Click(scrapeViewMoreButtonSelector, chromedp.ByQuery, chromedp.NodeVisible),
+	)
+	if err != nil {
+		log.Printf("Warning: Failed to click View More button: %v", err)
+	} else {
+		log.Println("Successfully clicked View More button")
+	}
+
+	// Step 5: Wait for and check modal
+	log.Printf("Step 5: Waiting for modal with selector: %s", scrapeModalSelector)
+	err = chromedp.Run(timeoutCtx,
+		chromedp.WaitVisible(scrapeModalSelector, chromedp.ByQuery),
+	)
+	if err != nil {
+		log.Printf("Warning: Modal did not appear: %v", err)
+		// Check what dialogs are visible
+		var dialogsHTML string
+		if dialogErr := chromedp.Run(timeoutCtx,
+			chromedp.OuterHTML(scrapeModalSelector, &dialogsHTML, chromedp.ByQuery),
+		); dialogErr == nil {
+			log.Printf("Found dialogs: %s", dialogsHTML)
+		}
+	} else {
+		log.Println("Modal is now visible")
+	}
+
+	// Capture screenshot and page state before step 6
+	log.Println("Capturing page state before attempting to extract data...")
+	var buf []byte
+	var pageHTML string
+	err = chromedp.Run(timeoutCtx,
+		chromedp.CaptureScreenshot(&buf),
+		chromedp.OuterHTML("html", &pageHTML, chromedp.ByQuery),
+	)
+	if err != nil {
+		log.Printf("Warning: Failed to capture page state: %v", err)
+	} else {
+		// Save screenshot
+		if err := os.WriteFile("debug_screenshot.png", buf, 0644); err != nil {
+			log.Printf("Warning: Failed to save screenshot: %v", err)
+		} else {
+			log.Println("Screenshot saved to debug_screenshot.png")
+		}
+		// Log HTML
+		log.Printf("Current page HTML:\n%s", pageHTML)
+	}
+
+	// Step 6: Extract data from modal
+	log.Printf("Step 6: Looking for rows with selector: %s", scrapeModalRowSelector)
+	err = chromedp.Run(timeoutCtx,
 		chromedp.Nodes(scrapeModalRowSelector, &modalNodes, chromedp.ByQueryAll),
 	)
 	if err != nil {
@@ -163,7 +309,8 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		modalNodes = modalNodes[:scrapeMaxRowsToProcess]
 	}
 
-	rowProcessingCtx, cancelRowProcessing := context.WithCancel(extractCtx)
+	// Process each row
+	rowProcessingCtx, cancelRowProcessing := context.WithCancel(timeoutCtx)
 	defer cancelRowProcessing()
 
 	for i, node := range modalNodes {
@@ -171,11 +318,12 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		var linkNodes []*cdp.Node
 		rowCtx, rowCancel := context.WithTimeout(rowProcessingCtx, 10*time.Second)
 
+		log.Printf("Processing row %d...", i+1)
 		err = chromedp.Run(rowCtx,
 			chromedp.Nodes(scrapeModalLinkSelector, &linkNodes, chromedp.ByQuery, chromedp.FromNode(node)),
 		)
 		if err != nil || len(linkNodes) == 0 {
-			log.Printf("WARN: ScrapeBasicTokenInfo: Could not find link node in row %d. Skipping. Err: %v", i+1, err)
+			log.Printf("WARN: Could not find link node in row %d. Skipping. Err: %v", i+1, err)
 			rowCancel()
 			continue
 		}
@@ -190,7 +338,7 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		rowCancel()
 
 		if err != nil {
-			log.Printf("WARN: ScrapeBasicTokenInfo: Failed to extract details from row %d: %v. Skipping.", i+1, err)
+			log.Printf("WARN: Failed to extract details from row %d: %v. Skipping.", i+1, err)
 			continue
 		}
 
@@ -211,11 +359,17 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 				VolumeStr:   strings.TrimSpace(volumeStr),
 				IconURL:     strings.TrimSpace(iconURL),
 			})
+			log.Printf("Successfully extracted token from row %d: %s (%s)", i+1, trimmedName, mintAddress)
 		} else {
-			log.Printf("WARN: ScrapeBasicTokenInfo: Skipping row %d due to missing Name ('%s') or MintAddress ('%s')", i+1, trimmedName, mintAddress)
+			log.Printf("WARN: Skipping row %d due to missing Name ('%s') or MintAddress ('%s')", i+1, trimmedName, mintAddress)
 		}
 	}
 
+	if len(scrapedTokens) == 0 {
+		return nil, fmt.Errorf("no tokens were successfully scraped")
+	}
+
+	log.Printf("Successfully scraped %d tokens", len(scrapedTokens))
 	return scrapedTokens, nil
 }
 
