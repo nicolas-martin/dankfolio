@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +15,26 @@ import (
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	"github.com/blocto/solana-go-sdk/rpc"
 	"github.com/olekukonko/tablewriter"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 )
+
+type TrendingTokens struct {
+	ScrapeTimestamp string  `json:"scrapeTimestamp"`
+	Tokens          []Token `json:"tokens"`
+}
+
+type Token struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Symbol      string   `json:"symbol"`
+	Decimals    int      `json:"decimals"`
+	Description string   `json:"description"`
+	IconURL     string   `json:"icon_url"`
+	Tags        []string `json:"tags"`
+	Price       float64  `json:"price"`
+	CreatedAt   string   `json:"created_at"`
+}
 
 // printOnChainMetadata formats and prints on-chain metadata in a table.
 func printOnChainMetadata(data map[string]any, caption string) {
@@ -40,105 +58,20 @@ func printOnChainMetadata(data map[string]any, caption string) {
 	table.Render()
 }
 
-func formatUint16(n uint16) string {
-	return strings.TrimSpace(string(rune(n)))
-}
-
-// resolveIPFSGateway rewrites the URI if it uses a known gateway that might be unreliable.
-func resolveIPFSGateway(uri string) string {
-	// Check if the URI contains an IPFS gateway domain.
-	if strings.Contains(uri, "/ipfs/") {
-		parts := strings.Split(uri, "/ipfs/")
-		if len(parts) >= 2 {
-			cid := parts[1]
-			// Return a standardized format, leaving the gateway resolution to our fallback logic.
-			return "ipfs://" + cid
-		}
-	}
-	return uri
-}
-
-// fetchOffChainMetadataWithFallback attempts to fetch off-chain metadata
-// using a list of HTTP gateways as fallback for IPFS content.
-func fetchOffChainMetadataWithFallback(uri string) (map[string]interface{}, error) {
-	var offchainMeta map[string]interface{}
-
-	// If the URI uses the ipfs:// scheme, try a list of gateways.
-	if strings.HasPrefix(uri, "ipfs://") {
-		cid := strings.TrimPrefix(uri, "ipfs://")
-		// List of fallback gateways.
-		gateways := []string{
-			"https://ipfs.io/ipfs/",
-			"https://dweb.link/ipfs/",
-			"https://cloudflare-ipfs.com/ipfs/",
-		}
-		var err error
-		for _, gw := range gateways {
-			fullURL := gw + cid
-			log.Printf("Attempting gateway: %s", fullURL)
-			offchainMeta, err = fetchOffChainMetadataHTTP(fullURL)
-			if err == nil {
-				// Success
-				return offchainMeta, nil
-			}
-			log.Printf("Gateway %s failed: %v", gw, err)
-		}
-		return nil, err
-	}
-
-	// Otherwise, if it's a standard HTTP URL, try directly.
-	if strings.HasPrefix(uri, "http") {
-		return fetchOffChainMetadataHTTP(uri)
-	}
-
-	return nil, nil
-}
-
-// fetchOffChainMetadataHTTP fetches JSON metadata from the given HTTP URL.
-func fetchOffChainMetadataHTTP(url string) (map[string]interface{}, error) {
-	var offchainMeta map[string]interface{}
-	client := http.Client{
-		Timeout: 10 * time.Second,
-	}
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, err
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(body, &offchainMeta); err != nil {
-		return nil, err
-	}
-	return offchainMeta, nil
-}
-
-func main() {
-	// Use your token mint address.
-	mint := common.PublicKeyFromString("2iJacucgFpF2WjYzwx2ZXBs4bw7eYEScqxcayXZJpump")
+func fetchTokenMetadata(c *client.Client, offchainClient offchain.ClientAPI, mint common.PublicKey) error {
 	metadataAccount, err := token_metadata.GetTokenMetaPubkey(mint)
 	if err != nil {
-		log.Fatalf("failed to get metadata account, err: %v", err)
+		return fmt.Errorf("failed to get metadata account: %w", err)
 	}
 
-	// Create a new RPC client.
-	c := client.NewClient(rpc.MainnetRPCEndpoint)
-
-	// Get account info.
 	accountInfo, err := c.GetAccountInfo(context.Background(), metadataAccount.ToBase58())
 	if err != nil {
-		log.Fatalf("failed to get accountInfo, err: %v", err)
+		return fmt.Errorf("failed to get accountInfo: %w", err)
 	}
 
-	// Deserialize on-chain metadata.
 	metadata, err := token_metadata.MetadataDeserialize(accountInfo.Data)
 	if err != nil {
-		log.Fatalf("failed to parse metaAccount, err: %v", err)
+		return fmt.Errorf("failed to parse metaAccount: %w", err)
 	}
 
 	data := map[string]any{
@@ -151,21 +84,56 @@ func main() {
 		"Primary Sale Happened":   fmt.Sprintf("%t", metadata.PrimarySaleHappened),
 		"Is Mutable":              fmt.Sprintf("%t", metadata.IsMutable),
 	}
-	printOnChainMetadata(data, "On-Chain Metadata")
+	printOnChainMetadata(data, fmt.Sprintf("On-Chain Metadata for %s", metadata.Data.Name))
+
 	if metadata.Data.Creators != nil {
-		log.Println("Creators:")
+		log.Printf("Creators for %s:", metadata.Data.Name)
 		for _, c := range *metadata.Data.Creators {
 			log.Printf("  - Address: %s, Verified: %t, Share: %d%%\n", c.Address, c.Verified, c.Share)
 		}
 	}
 
-	// Prepare and resolve the URI.
-	uri := resolveIPFSGateway(metadata.Data.Uri)
-	log.Printf("Fetching off-chain metadata from URI: %s", uri)
-	offchainMeta, err := fetchOffChainMetadataWithFallback(uri)
+	log.Printf("🔍 Fetching off-chain metadata for %s...", metadata.Data.Name)
+	offchainMeta, err := offchainClient.FetchMetadata(metadata.Data.Uri)
 	if err != nil {
-		log.Fatalf("failed to fetch off-chain metadata, err: %v", err)
+		return fmt.Errorf("failed to fetch off-chain metadata: %w", err)
 	}
 
-	printOnChainMetadata(offchainMeta, "Off-Chain Metadata")
+	printOnChainMetadata(offchainMeta, fmt.Sprintf("Off-Chain Metadata for %s", metadata.Data.Name))
+	return nil
+}
+
+func main() {
+	// Read trending tokens file
+	data, err := os.ReadFile("../../data/trending_solana_tokens_enriched.json")
+	if err != nil {
+		log.Fatalf("Failed to read trending tokens file: %v", err)
+	}
+
+	var trending TrendingTokens
+	if err := json.Unmarshal(data, &trending); err != nil {
+		log.Fatalf("Failed to parse trending tokens JSON: %v", err)
+	}
+
+	// Create RPC client
+	c := client.NewClient(rpc.MainnetRPCEndpoint)
+
+	// Create HTTP client with timeout
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	// Create offchain client
+	offchainClient := offchain.NewClient(httpClient)
+
+	log.Printf("📊 Processing %d trending tokens from %s", len(trending.Tokens), trending.ScrapeTimestamp)
+
+	for _, token := range trending.Tokens {
+		log.Printf("\n🪙 Processing token: %s (%s)", token.Name, token.Symbol)
+		mint := common.PublicKeyFromString(token.ID)
+		if err := fetchTokenMetadata(c, offchainClient, mint); err != nil {
+			log.Printf("❌ Error processing %s: %v", token.Name, err)
+			continue
+		}
+	}
 }
