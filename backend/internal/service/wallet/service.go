@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/gagliardetto/solana-go"
+	associatedtokenaccount "github.com/gagliardetto/solana-go/programs/associated-token-account"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
@@ -161,6 +163,15 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 		return nil, fmt.Errorf("invalid token mint address: %w", err)
 	}
 
+	// Verify the mint account exists and is valid
+	mintAcct, err := s.rpcClient.GetAccountInfo(ctx, mintPubKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get mint info: %w", err)
+	}
+	if mintAcct.Value == nil || mintAcct.Value.Data == nil {
+		return nil, fmt.Errorf("invalid token mint: account not found")
+	}
+
 	// Get token account info
 	fromATA, _, err := solana.FindAssociatedTokenAddress(from, mintPubKey)
 	if err != nil {
@@ -172,42 +183,85 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 		return nil, fmt.Errorf("failed to find destination token account: %w", err)
 	}
 
+	// Check if source ATA exists
+	fromATAInfo, err := s.rpcClient.GetAccountInfo(ctx, fromATA)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check source token account: %w", err)
+	}
+	if fromATAInfo.Value == nil || fromATAInfo.Value.Owner.Equals(solana.SystemProgramID) {
+		return nil, fmt.Errorf("source token account does not exist")
+	}
+
 	// Get recent blockhash
 	recent, err := s.rpcClient.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
 
-	// Get token decimals
-	mintAcct, err := s.rpcClient.GetAccountInfo(ctx, mintPubKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get mint info: %w", err)
+	// Build instructions
+	var instructions []solana.Instruction
+
+	// Check if destination ATA needs to be created
+	toATAInfo, err := s.rpcClient.GetAccountInfo(ctx, toATA)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return nil, fmt.Errorf("failed to check destination token account: %w", err)
 	}
 
-	var mintInfo struct {
-		Decimals uint8 `json:"decimals"`
+	// If destination ATA doesn't exist or missing, create it
+	if toATAInfo == nil || toATAInfo.Value == nil || toATAInfo.Value.Owner.Equals(solana.SystemProgramID) {
+		log.Printf("Creating destination token account: %s\n", toATA)
+		createATAIx, err := associatedtokenaccount.NewCreateInstruction(
+			from,       // Payer
+			to,         // Wallet address (owner)
+			mintPubKey, // Token mint
+		).ValidateAndBuild()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create ATA instruction: %w", err)
+		}
+		instructions = append(instructions, createATAIx)
 	}
+
+	// Get token decimals
+	var mintInfo struct {
+		Type string `json:"type"`
+		Info struct {
+			IsInitialized bool   `json:"isInitialized"`
+			Decimals      uint8  `json:"decimals"`
+			MintAuthority string `json:"mintAuthority"`
+			Supply        string `json:"supply"`
+		} `json:"info"`
+	}
+
+	// Try parsing as a token account first
 	if err := json.Unmarshal(mintAcct.Value.Data.GetRawJSON(), &mintInfo); err != nil {
-		return nil, fmt.Errorf("failed to parse mint info: %w", err)
+		// If that fails, try parsing as raw mint data
+		data := mintAcct.Value.Data.GetBinary()
+		if len(data) < 4 {
+			return nil, fmt.Errorf("invalid mint data length")
+		}
+		// Decimals is at offset 4 in the mint data structure
+		decimals := data[4]
+		mintInfo.Info.Decimals = decimals
 	}
 
 	// Convert amount to raw units
-	rawAmount := uint64(amount * float64(uint64(1)<<mintInfo.Decimals))
+	rawAmount := uint64(amount * float64(uint64(1)<<mintInfo.Info.Decimals))
 
-	// Create transfer instruction
+	// Add transfer instruction
 	transferIx := token.NewTransferCheckedInstruction(
 		rawAmount,
-		mintInfo.Decimals,
+		mintInfo.Info.Decimals,
 		fromATA,
 		mintPubKey,
 		toATA,
 		from,
 		[]solana.PublicKey{},
 	).Build()
+	instructions = append(instructions, transferIx)
 
-	// Create transaction
+	// Create transaction with all instructions
 	tx, err := solana.NewTransaction(
-		[]solana.Instruction{transferIx},
+		instructions,
 		recent.Value.Blockhash,
 		solana.TransactionPayer(from),
 	)
@@ -302,22 +356,16 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 			} `json:"parsed"`
 		}
 
-		if err = json.Unmarshal(parsedData, &parsedAccount); err != nil {
-			continue
+		if err := json.Unmarshal(parsedData, &parsedAccount); err != nil {
+			return nil, fmt.Errorf("failed to parse token account data: %w", err)
 		}
 
-		// Skip if no balance
-		if parsedAccount.Parsed.Info.TokenAmount.UiAmount <= 0 {
-			continue
+		if parsedAccount.Parsed.Info.TokenAmount.UiAmount > 0 {
+			tokens = append(tokens, Balance{
+				ID:     parsedAccount.Parsed.Info.Mint,
+				Amount: parsedAccount.Parsed.Info.TokenAmount.UiAmount,
+			})
 		}
-
-		// Create token info with enriched data
-		token := Balance{
-			ID:     parsedAccount.Parsed.Info.Mint,
-			Amount: parsedAccount.Parsed.Info.TokenAmount.UiAmount,
-		}
-
-		tokens = append(tokens, token)
 	}
 
 	return tokens, nil

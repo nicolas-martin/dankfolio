@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -27,10 +26,10 @@ func run() error {
 		log.Printf("Warning: Error loading .env file: %v\n", err)
 	}
 
-	// Command line flags
-	recipientAddr := flag.String("to", "6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav", "Recipient's Solana address")
-	amount := flag.Float64("amount", 0.000000001, "Amount of SOL to send")
-	flag.Parse()
+	// Hardcoded values
+	recipientAddr := "6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav"
+	amount := 0.000000001
+	tokenMint := "C3DwDjT17gDvvCYC2nsdGHxDHVmQRdhKfpAdqQ29pump"
 
 	rpcURL := "https://api.mainnet-beta.solana.com"
 
@@ -59,7 +58,11 @@ func run() error {
 	walletService := wallet.New(rpcClient)
 
 	log.Printf("🔑 Using wallet: %s\n", senderPubKey)
-	log.Printf("📤 Sending %.9f SOL to %s\n", *amount, *recipientAddr)
+	if tokenMint == "" {
+		log.Printf("📤 Sending %.9f SOL to %s\n", amount, recipientAddr)
+	} else {
+		log.Printf("📤 Sending %.9f tokens (mint: %s) to %s\n", amount, tokenMint, recipientAddr)
+	}
 
 	// Get latest blockhash with confirmed commitment
 	recent, err := rpcClient.GetLatestBlockhash(context.Background(), rpc.CommitmentConfirmed)
@@ -71,9 +74,9 @@ func run() error {
 	unsignedTx, err := walletService.PrepareTransfer(
 		context.Background(),
 		senderPubKey,
-		*recipientAddr,
-		"", // empty token mint for SOL transfers
-		*amount,
+		recipientAddr,
+		tokenMint,
+		amount,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to prepare transfer: %w", err)
