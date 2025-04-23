@@ -12,7 +12,7 @@ const (
 	// TrendingDataTTL is the maximum age for the scraped trending data file
 	TrendingDataTTL = 24 * time.Hour
 	// defaultTrendingTokenPath is the default location if not overridden in config
-	defaultTrendingTokenPath = "data/trending_solana_tokens_enriched.json"
+	defaultTrendingTokenPath = "backend/data/trending_solana_tokens_enriched.json"
 	// Initial load timeout
 	initialLoadTimeout = 3 * time.Minute // Max time for initial load/scrape
 )

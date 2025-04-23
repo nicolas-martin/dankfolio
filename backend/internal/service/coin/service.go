@@ -145,6 +145,13 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
 	}
 
+	if needsRefresh {
+		log.Printf("Trending data is too old, triggering scrape and enrichment...")
+		if err := s.ScrapeAndEnrichToFile(ctx); err != nil {
+			log.Printf("WARNING: Failed to refresh trending data: %v. Will attempt to use existing data.", err)
+		}
+	}
+
 	// Load the enriched coins from file using the service method
 	enrichedCoins, timestamp, loadErr := s.loadEnrichedCoinsFromFile()
 	if loadErr != nil {

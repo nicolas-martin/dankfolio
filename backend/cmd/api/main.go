@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -96,11 +97,12 @@ func main() {
 	})
 
 	// Initialize coin service
+	wd, _ := os.Getwd()
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:    config.BirdEyeEndpoint,
 		BirdEyeAPIKey:     config.BirdEyeAPIKey,
 		CoinGeckoAPIKey:   config.CoinGeckoAPIKey,
-		TrendingTokenPath: "trending_solana_tokens_enriched.json",
+		TrendingTokenPath: filepath.Join(wd, "data/trending_solana_tokens_enriched.json"),
 	}
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 
