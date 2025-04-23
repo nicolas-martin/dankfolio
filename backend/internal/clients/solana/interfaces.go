@@ -22,4 +22,7 @@ type ClientAPI interface {
 
 	// ExecuteSignedTransaction submits a signed transaction to the Solana blockchain
 	ExecuteSignedTransaction(ctx context.Context, signedTx string) (solana.Signature, error)
+
+	// GetTransactionConfirmationStatus gets the confirmation status of a transaction
+	GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error)
 }

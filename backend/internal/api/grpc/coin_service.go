@@ -62,27 +62,6 @@ func (s *coinServiceHandler) GetCoinByID(ctx context.Context, req *connect.Reque
 	return res, nil
 }
 
-// GetTokenPrices returns prices for multiple tokens
-func (s *coinServiceHandler) GetTokenPrices(
-	ctx context.Context,
-	req *connect.Request[pb.GetTokenPricesRequest],
-) (*connect.Response[pb.GetTokenPricesResponse], error) {
-	// Get prices from Jupiter client through coin service
-	prices := make(map[string]float64)
-	for _, id := range req.Msg.TokenIds {
-		coin, err := s.coinService.GetCoinByID(ctx, id)
-		if err != nil {
-			continue // Skip failed coins
-		}
-		prices[id] = coin.Price
-	}
-
-	res := connect.NewResponse(&pb.GetTokenPricesResponse{
-		Prices: prices,
-	})
-	return res, nil
-}
-
 // Helper function to convert model.Coin to proto Coin
 func convertModelCoinToProto(c model.Coin) *pb.Coin {
 	createdAt, _ := time.Parse(time.RFC3339, c.CreatedAt)

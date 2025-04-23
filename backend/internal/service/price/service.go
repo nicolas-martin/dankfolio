@@ -14,12 +14,14 @@ import (
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // Service handles price-related operations
 type Service struct {
 	birdeyeClient *birdeye.Client
+	jupiterClient jupiter.ClientAPI
 }
 
 var (
@@ -28,9 +30,10 @@ var (
 )
 
 // NewService creates a new price service
-func NewService(baseURL string, birdEyeAPIKEY string) *Service {
+func NewService(birdeyeClient *birdeye.Client, jupiterClient jupiter.ClientAPI) *Service {
 	return &Service{
-		birdeyeClient: birdeye.NewClient(baseURL, birdEyeAPIKEY),
+		birdeyeClient: birdeyeClient,
+		jupiterClient: jupiterClient,
 	}
 }
 
@@ -159,8 +162,8 @@ func (s *Service) GetTokenPrices(ctx context.Context, tokenAddresses []string) (
 		return mockPrices, nil
 	}
 
-	// Get real prices from BirdEye API
-	return s.birdeyeClient.GetTokenPrices(ctx, tokenAddresses)
+	// Get real prices from Jupiter API
+	return s.jupiterClient.GetTokenPrices(tokenAddresses)
 }
 
 func loadAddressToSymbol() map[string]string {

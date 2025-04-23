@@ -357,7 +357,7 @@ const grpcApi: API = {
 	},
 
 	getTokenPrices: async (tokenIds: string[]): Promise<Record<string, number>> => {
-		const serviceName = 'TradeService';
+		const serviceName = 'PriceService';
 		const methodName = 'getTokenPrices';
 		try {
 			logRequest(serviceName, methodName, { tokenIds });

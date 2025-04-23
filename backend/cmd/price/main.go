@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 )
 
@@ -24,7 +27,17 @@ func main() {
 		fmt.Println("BIRDEYE_API_KEY not found in environment")
 		return
 	}
-	s := price.NewService("https://public-api.birdeye.so/defi", apiKey)
+
+	// Initialize clients
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	birdeyeClient := birdeye.NewClient("https://public-api.birdeye.so/defi", apiKey)
+	jupiterClient := jupiter.NewClient(httpClient)
+
+	// Initialize price service with clients
+	s := price.NewService(birdeyeClient, jupiterClient)
+
 	mintAdd := "6pKHwNCpzgZuC9o5FzvCZkYSUGfQddhUYtMyDbEVpump"
 	from := time.Now().Add(-24 * time.Hour).Unix() // 24 hours ago
 	to := time.Now().Unix()

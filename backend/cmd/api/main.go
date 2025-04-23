@@ -12,8 +12,9 @@ import (
 
 	"github.com/joho/godotenv"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
-	solanaclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
@@ -91,6 +92,9 @@ func main() {
 	// Initialize Jupiter client
 	jupiterClient := jupiter.NewClient(httpClient)
 
+	// Initialize BirdEye client
+	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
+
 	// Initialize store with configured cache expiry
 	store := memory.NewWithConfig(memory.Config{
 		DefaultCacheExpiry: config.CacheExpiry,
@@ -108,17 +112,17 @@ func main() {
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 
 	// Initialize Solana client
-	solanaClient := solanaclient.NewClient(config.SolanaRPCEndpoint)
+	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
 
 	// Initialize price service
-	priceService := price.NewService(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
+	priceService := price.NewService(birdeyeClient, jupiterClient)
 
 	// Initialize trade service with all dependencies
 	tradeService := trade.NewService(
-		solanaClient.(*solanaclient.Client),
+		solanaClient,
 		coinService,
 		priceService,
-		jupiterClient.(*jupiter.Client),
+		jupiterClient,
 		store,
 	)
 

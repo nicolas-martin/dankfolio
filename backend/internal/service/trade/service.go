@@ -20,15 +20,15 @@ import (
 
 // Service handles trade-related operations
 type Service struct {
-	solanaClient  *solana.Client
+	solanaClient  solana.ClientAPI
 	coinService   *coin.Service
 	priceService  *price.Service
-	jupiterClient *jupiter.Client
+	jupiterClient jupiter.ClientAPI
 	store         db.Store
 }
 
 // NewService creates a new TradeService instance
-func NewService(sc *solana.Client, cs *coin.Service, ps *price.Service, jc *jupiter.Client, store db.Store) *Service {
+func NewService(sc solana.ClientAPI, cs *coin.Service, ps *price.Service, jc jupiter.ClientAPI, store db.Store) *Service {
 	return &Service{
 		solanaClient:  sc,
 		coinService:   cs,

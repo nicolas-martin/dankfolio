@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 )
 
@@ -65,7 +68,16 @@ func fetchAndStorePriceHistory(apiKey string) error {
 		return fmt.Errorf("failed to load trending tokens: %w", err)
 	}
 
-	priceService := price.NewService("https://public-api.birdeye.so/defi", apiKey)
+	// Initialize clients
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	birdeyeClient := birdeye.NewClient("https://public-api.birdeye.so/defi", apiKey)
+	jupiterClient := jupiter.NewClient(httpClient)
+
+	// Initialize price service with clients
+	priceService := price.NewService(birdeyeClient, jupiterClient)
+
 	now := time.Now().Unix()
 
 	// Add SOL and USDC to the beginning of the list
