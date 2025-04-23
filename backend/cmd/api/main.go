@@ -103,6 +103,7 @@ func main() {
 		BirdEyeAPIKey:     config.BirdEyeAPIKey,
 		CoinGeckoAPIKey:   config.CoinGeckoAPIKey,
 		TrendingTokenPath: filepath.Join(wd, "data/trending_solana_tokens_enriched.json"),
+		SolanaRPCEndpoint: config.SolanaRPCEndpoint,
 	}
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 

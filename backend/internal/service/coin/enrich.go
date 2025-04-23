@@ -82,20 +82,11 @@ func (s *Service) EnrichCoinData(
 	log.Printf("EnrichCoinData: Fetching off-chain metadata for %s from URI: %s", mintAddress, uri)
 	offchainMeta, err := s.offchainClient.FetchMetadata(uri)
 	if err != nil {
-		log.Printf("WARN: EnrichCoinData: Error fetching off-chain metadata for %s (URI: %s): %v", mintAddress, uri, err)
-		// Check if we have any successful data before returning
-		if !jupiterInfoSuccess && !jupiterPriceSuccess {
-			return nil, fmt.Errorf("failed to enrich coin %s: no data available from any source", mintAddress)
-		}
-		// Proceed without off-chain data, enrich with what we have
-		enrichFromMetadata(&coin, nil) // Ensure default description is set
-	} else {
-		log.Printf("EnrichCoinData: Successfully fetched off-chain metadata for %s", mintAddress)
-		// 5. Enrich with off-chain metadata (description, website, socials, etc.)
-		enrichFromMetadata(&coin, offchainMeta)
+		log.Printf("❌ EnrichCoinData: Failed to fetch off-chain metadata for %s (URI: %s): %v", mintAddress, uri, err)
+		return nil, fmt.Errorf("failed to fetch metadata for %s: %w", mintAddress, err)
 	}
 
-	log.Printf("EnrichCoinData: Enrichment complete for %s", mintAddress)
+	enrichFromMetadata(&coin, offchainMeta)
 	return &coin, nil
 }
 

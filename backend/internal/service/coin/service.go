@@ -31,6 +31,9 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 	if config.TrendingTokenPath == "" {
 		log.Fatal("TrendingTokenPath is required")
 	}
+	if config.SolanaRPCEndpoint == "" {
+		log.Fatal("SolanaRPCEndpoint is required")
+	}
 
 	// Create Solana client
 	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
@@ -143,6 +146,7 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		age := time.Since(info.ModTime())
 		needsRefresh = age > TrendingDataTTL
 		log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
+		needsRefresh = true
 	}
 
 	if needsRefresh {

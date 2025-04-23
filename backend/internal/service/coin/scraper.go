@@ -229,8 +229,6 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 	)
 	if err != nil {
 		log.Printf("Warning: Could not get table HTML: %v", err)
-	} else {
-		log.Printf("Current table HTML:\n%s", currentTableHTML)
 	}
 
 	// Step 3: Check for View More button
@@ -286,13 +284,11 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		log.Printf("Warning: Failed to capture page state: %v", err)
 	} else {
 		// Save screenshot
-		if err := os.WriteFile("debug_screenshot.png", buf, 0644); err != nil {
+		if err := os.WriteFile("debug_screenshot.png", buf, 0o644); err != nil {
 			log.Printf("Warning: Failed to save screenshot: %v", err)
 		} else {
 			log.Println("Screenshot saved to debug_screenshot.png")
 		}
-		// Log HTML
-		log.Printf("Current page HTML:\n%s", pageHTML)
 	}
 
 	// Step 6: Extract data from modal
