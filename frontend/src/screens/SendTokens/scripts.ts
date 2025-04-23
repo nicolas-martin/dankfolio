@@ -48,8 +48,9 @@ export const handleTokenTransfer = async (
 	wallet: Wallet
 ): Promise<string> => {
 	try {
-		// Prepare the transfer transaction
-		const signedTransaction = await buildAndSignTransferTransaction(formData.toAddress,
+		// Prepare and sign the transfer transaction
+		const signedTransaction = await buildAndSignTransferTransaction(
+			formData.toAddress,
 			formData.selectedTokenMint,
 			parseFloat(formData.amount),
 			wallet,
@@ -63,7 +64,25 @@ export const handleTokenTransfer = async (
 		return submitResponse.transactionHash;
 	} catch (error) {
 		console.error('Token transfer failed:', error);
-		throw error;
+
+		// Handle specific error cases
+		if (error.message?.includes('Blockhash not found') ||
+			error.message?.includes('Transaction expired')) {
+			throw new Error('Transaction expired. Please try submitting again.');
+		}
+
+		if (error.message?.includes('insufficient funds')) {
+			throw new Error('Insufficient funds for this transaction. Please check your balance and try again.');
+		}
+
+		// For network or RPC errors, suggest retry
+		if (error.message?.includes('network') || error.message?.includes('timeout')) {
+			throw new Error('Network error. Please check your connection and try again.');
+		}
+
+		// For other errors, pass through the error message but clean it up
+		const errorMessage = error.message || 'Failed to send tokens';
+		throw new Error(errorMessage.replace(/\(.*?\)/g, '').trim());
 	}
 };
 

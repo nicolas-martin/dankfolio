@@ -146,7 +146,6 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		age := time.Since(info.ModTime())
 		needsRefresh = age > TrendingDataTTL
 		log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
-		needsRefresh = true
 	}
 
 	if needsRefresh {

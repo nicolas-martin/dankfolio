@@ -201,10 +201,6 @@ export const buildAndSignTransferTransaction = async (
 		});
 
 		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
-		console.log('🔑 Generated keypair:', {
-			publicKey: keypair.publicKey.toString(),
-			addressMatch: keypair.publicKey.toString() === wallet.address
-		});
 
 		// Prepare the transfer transaction using our gRPC API
 		const prepareResponse = await grpcApi.prepareTokenTransfer({
@@ -232,6 +228,10 @@ export const buildAndSignTransferTransaction = async (
 		return signedTransactionBase64;
 	} catch (error) {
 		console.error('❌ Error in buildAndSignTransferTransaction:', error);
+		// Add more descriptive error message for blockhash errors
+		if (error.message?.includes('Blockhash not found')) {
+			throw new Error('Transaction expired. Please try again. If this persists, refresh the page.');
+		}
 		throw error;
 	}
 };

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
@@ -38,38 +39,52 @@ func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
 
 // PrepareTransfer prepares an unsigned transfer transaction
 func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, tokenMint string, amount float64) (string, error) {
+	log.Printf("🔄 Preparing transfer: From=%s To=%s Amount=%.9f TokenMint=%s\n",
+		fromAddress, toAddress, amount, tokenMint)
+
 	// Parse addresses
 	fromPubKey, err := solana.PublicKeyFromBase58(fromAddress)
 	if err != nil {
+		log.Printf("❌ Invalid from address: %v\n", err)
 		return "", fmt.Errorf("invalid from address: %w", err)
 	}
+	log.Printf("✅ From address parsed: %s\n", fromPubKey)
 
 	toPubKey, err := solana.PublicKeyFromBase58(toAddress)
 	if err != nil {
+		log.Printf("❌ Invalid to address: %v\n", err)
 		return "", fmt.Errorf("invalid to address: %w", err)
 	}
+	log.Printf("✅ To address parsed: %s\n", toPubKey)
 
 	// Create transaction
 	var tx *solana.Transaction
 	if tokenMint == "" {
-		// SOL transfer
+		log.Printf("🪙 Creating SOL transfer transaction\n")
 		lamports := uint64(amount * float64(solana.LAMPORTS_PER_SOL))
+		log.Printf("💰 Amount in lamports: %d\n", lamports)
 		tx, err = s.createSolTransfer(ctx, fromPubKey, toPubKey, lamports)
 	} else {
-		// Token transfer
+		log.Printf("🪙 Creating token transfer transaction\n")
 		tx, err = s.createTokenTransfer(ctx, fromPubKey, toPubKey, tokenMint, amount)
 	}
 	if err != nil {
+		log.Printf("❌ Failed to create transfer transaction: %v\n", err)
 		return "", fmt.Errorf("failed to create transfer transaction: %w", err)
 	}
+	log.Printf("✅ Transaction created successfully\n")
 
 	// Serialize transaction
 	serializedTx, err := tx.MarshalBinary()
 	if err != nil {
+		log.Printf("❌ Failed to serialize transaction: %v\n", err)
 		return "", fmt.Errorf("failed to serialize transaction: %w", err)
 	}
+	log.Printf("✅ Transaction serialized successfully\n")
 
-	return base64.StdEncoding.EncodeToString(serializedTx), nil
+	encoded := base64.StdEncoding.EncodeToString(serializedTx)
+	log.Printf("✅ Transaction encoded successfully (length: %d)\n", len(encoded))
+	return encoded, nil
 }
 
 // SubmitTransfer submits a signed transfer transaction
@@ -86,8 +101,13 @@ func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) 
 		return "", fmt.Errorf("failed to parse transaction: %w", err)
 	}
 
-	// Submit transaction
-	sig, err := s.rpcClient.SendTransaction(ctx, tx)
+	// Submit transaction with optimized options
+	maxRetries := uint(3)
+	sig, err := s.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+		SkipPreflight:       false,
+		PreflightCommitment: rpc.CommitmentConfirmed,
+		MaxRetries:          &maxRetries,
+	})
 	if err != nil {
 		return "", fmt.Errorf("failed to submit transaction: %w", err)
 	}
@@ -97,28 +117,38 @@ func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) 
 
 // createSolTransfer creates a SOL transfer transaction
 func (s *Service) createSolTransfer(ctx context.Context, from, to solana.PublicKey, lamports uint64) (*solana.Transaction, error) {
+	log.Printf("🔄 Creating SOL transfer: From=%s To=%s Lamports=%d\n", from, to, lamports)
+
 	// Get recent blockhash
-	recent, err := s.rpcClient.GetRecentBlockhash(ctx, rpc.CommitmentConfirmed)
+	log.Printf("🔍 Getting recent blockhash...\n")
+	recent, err := s.rpcClient.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
 	if err != nil {
+		log.Printf("❌ Failed to get recent blockhash: %+v\n", err)
 		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
+	log.Printf("✅ Got recent blockhash: %s\n", recent.Value.Blockhash)
 
 	// Create transfer instruction
+	log.Printf("🔄 Creating transfer instruction...\n")
 	transferIx := system.NewTransferInstruction(
 		lamports,
 		from,
 		to,
 	).Build()
+	log.Printf("✅ Transfer instruction created\n")
 
 	// Create transaction
+	log.Printf("🔄 Building transaction...\n")
 	tx, err := solana.NewTransaction(
 		[]solana.Instruction{transferIx},
 		recent.Value.Blockhash,
 		solana.TransactionPayer(from),
 	)
 	if err != nil {
+		log.Printf("❌ Failed to create transaction: %v\n", err)
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
+	log.Printf("✅ Transaction built successfully\n")
 
 	return tx, nil
 }
@@ -143,7 +173,7 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 	}
 
 	// Get recent blockhash
-	recent, err := s.rpcClient.GetRecentBlockhash(ctx, rpc.CommitmentConfirmed)
+	recent, err := s.rpcClient.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
