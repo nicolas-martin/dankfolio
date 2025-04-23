@@ -168,8 +168,14 @@ const Trade: React.FC = () => {
 		if (!fromCoin || !toCoin) return;
 
 		setFromAmount(amount);
+		console.log('🔄 From Amount Change:', {
+			amount,
+			fromCoin: fromCoin?.symbol,
+			toCoin: toCoin?.symbol
+		});
+
+		// Don't fetch quote for empty or invalid input
 		if (!amount || isNaN(parseFloat(amount))) {
-			console.log('❌ Invalid amount, clearing toAmount');
 			setToAmount('');
 			return;
 		}
@@ -184,29 +190,37 @@ const Trade: React.FC = () => {
 
 		// Create new timeout
 		quoteTimeoutRef.current = setTimeout(async () => {
-			await fetchTradeQuote(
-				amount,
-				fromCoin,
-				toCoin,
-				setIsQuoteLoading,
-				setToAmount,
-				setTradeDetails
-			);
+			try {
+				await fetchTradeQuote(
+					amount,
+					fromCoin,
+					toCoin,
+					setIsQuoteLoading,
+					setToAmount,
+					setTradeDetails
+				);
+			} catch (error: any) {
+				showToast({
+					type: 'error',
+					message: error?.message || 'Failed to fetch trade quote'
+				});
+			}
 			quoteTimeoutRef.current = null;
 		}, QUOTE_DEBOUNCE_MS);
 	};
 
 	const handleToAmountChange = async (amount: string) => {
 		if (!fromCoin || !toCoin) return;
+
+		setToAmount(amount);
 		console.log('🔄 To Amount Change:', {
 			amount,
 			fromCoin: fromCoin?.symbol,
 			toCoin: toCoin?.symbol
 		});
 
-		setToAmount(amount);
+		// Don't fetch quote for empty or invalid input
 		if (!amount || isNaN(parseFloat(amount))) {
-			console.log('❌ Invalid amount, clearing fromAmount');
 			setFromAmount('');
 			return;
 		}
@@ -221,14 +235,21 @@ const Trade: React.FC = () => {
 
 		// Create new timeout
 		quoteTimeoutRef.current = setTimeout(async () => {
-			await fetchTradeQuote(
-				amount,
-				toCoin,
-				fromCoin,
-				setIsQuoteLoading,
-				setFromAmount,
-				setTradeDetails
-			);
+			try {
+				await fetchTradeQuote(
+					amount,
+					toCoin,
+					fromCoin,
+					setIsQuoteLoading,
+					setFromAmount,
+					setTradeDetails
+				);
+			} catch (error: any) {
+				showToast({
+					type: 'error',
+					message: error?.message || 'Failed to fetch trade quote'
+				});
+			}
 			quoteTimeoutRef.current = null;
 		}, QUOTE_DEBOUNCE_MS);
 	};

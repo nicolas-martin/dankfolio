@@ -15,10 +15,11 @@ export const QUOTE_DEBOUNCE_MS = 1000
 // Function to get prices for multiple tokens in a single API call
 export const getTokenPrices = async (tokenIds: string[]): Promise<Record<string, number>> => {
 	try {
-		return await grpcApi.getTokenPrices(tokenIds);
+		const prices = await grpcApi.getTokenPrices(tokenIds);
+		return prices;
 	} catch (error) {
 		console.error('❌ Error fetching token prices:', error);
-		return Object.fromEntries(tokenIds.map(id => [id, 0]));
+		throw error; // Propagate error to caller
 	}
 };
 
@@ -70,8 +71,18 @@ export const fetchTradeQuote = async (
 			totalFee: response.fee,
 			route: response.routePlan.join(' → ')
 		});
-	} catch (error) {
+	} catch (error: any) {
 		console.error('❌ Error fetching trade quote:', error);
+		// Only reset trade details, but keep the amount values
+		setTradeDetails({
+			exchangeRate: '0',
+			gasFee: '0',
+			priceImpactPct: '0',
+			totalFee: '0',
+			route: ''
+		});
+		// Re-throw error to be handled by the component
+		throw error;
 	} finally {
 		setQuoteLoading(false);
 	}
