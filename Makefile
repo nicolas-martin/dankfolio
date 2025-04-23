@@ -1,11 +1,10 @@
-.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build
+.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build backend-generate-mocks frontend-lint proto
 
 # Variables
 BACKEND_DIR := backend
 MOBILE_DIR := frontend
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
-
 
 # Server Management
 run: backend-kill proto
@@ -52,12 +51,15 @@ backend-test: backend-build backend-generate-mocks ## Run backend tests
 
 # Helpers
 help:
-	@echo "🛠️  Available commands:"
-	@echo "  make test         - Run all tests"
-	@echo "  make run          - Run the backend server"
-	@echo "  make run-mobile   - Run the mobile frontend"
-	@echo "  make backend-kill - Stop the backend server"
-	@echo "  make mobile-kill  - Stop the mobile frontend"
-	@echo "  make frontend-test - Run frontend Jest tests"
-	@echo "  make setup        - Set up environment files and fetches dependencies"
-	@echo "  make backend-build - Build the backend server"
+	@echo "\033[33m🛠️  Available commands:\033[0m"
+	@echo "  \033[33mmake run\033[0m          - Run the backend server (stops existing instance first)"
+	@echo "  \033[33mmake run-mobile\033[0m   - Run the mobile frontend (stops existing instance first)"
+	@echo "  \033[33mmake test\033[0m         - Run all backend and frontend tests"
+	@echo "  \033[33mmake proto\033[0m        - Generate protobuf files"
+	@echo "  \033[33mmake frontend-test\033[0m - Run frontend Jest tests"
+	@echo "  \033[33mmake frontend-lint\033[0m - Run frontend linter"
+	@echo "  \033[33mmake backend-kill\033[0m  - Stop the backend server"
+	@echo "  \033[33mmake mobile-kill\033[0m   - Stop the mobile frontend"
+	@echo "  \033[33mmake backend-build\033[0m - Build and check backend Go code compilation"
+	@echo "  \033[33mmake backend-test\033[0m  - Run backend tests (includes build and mock generation)"
+	@echo "  \033[33mmake backend-generate-mocks\033[0m - Generate backend mocks"

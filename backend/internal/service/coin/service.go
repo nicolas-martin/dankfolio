@@ -220,6 +220,3 @@ func (s *Service) loadEnrichedCoinsFromFile() ([]model.Coin, time.Time, error) {
 
 	return fileOutput.Tokens, fileOutput.ScrapeTimestamp, nil
 }
-
-// --- Removed parseVolume, moved to scraper.go ---
-// --- Removed scraper constants, moved to scraper.go ---

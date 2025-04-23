@@ -41,18 +41,18 @@ type scrapedTokenInfo struct {
 	IconURL     string
 }
 
-// scrapeAndEnrichToFile orchestrates the scraping and enrichment process.
-func (s *Service) scrapeAndEnrichToFile(ctx context.Context) error {
+// ScrapeAndEnrichToFile orchestrates the scraping and enrichment process.
+func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 	log.Println("Starting Solana trending token scrape and enrichment process...")
 	startTime := time.Now()
 
 	outputFile := s.config.TrendingTokenPath
 	if outputFile == "" {
-		return fmt.Errorf("scrapeAndEnrichToFile: output file path (TrendingTokenPath) is not configured")
+		return fmt.Errorf("ScrapeAndEnrichToFile: output file path (TrendingTokenPath) is not configured")
 	}
 
 	// Step 1: Scrape basic info using Chromedp
-	scrapedTokens, err := s.ScrapeBasicTokenInfo(ctx)
+	scrapedTokens, err := s.scrapeBasicTokenInfo(ctx)
 	if err != nil {
 		return fmt.Errorf("failed during basic token scraping: %w", err)
 	}
@@ -114,7 +114,7 @@ func (s *Service) scrapeAndEnrichToFile(ctx context.Context) error {
 
 // ScrapeBasicTokenInfo handles the browser automation part to get initial token details.
 // Exported for testing.
-func (s *Service) ScrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo, error) {
+func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo, error) {
 	log.Println("Executing ScrapeBasicTokenInfo...")
 	// --- Chromedp Setup ---
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],

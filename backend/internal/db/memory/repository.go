@@ -4,25 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sync"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 )
 
-// Entity represents a storable entity with an ID
-type Entity interface {
-	GetID() string
-}
-
-// Repository defines generic CRUD operations
-type Repository[T Entity] interface {
-	Get(ctx context.Context, id string) (*T, error)
-	List(ctx context.Context) ([]T, error)
-	Create(ctx context.Context, item *T) error
-	Update(ctx context.Context, item *T) error
-	Upsert(ctx context.Context, item *T) error
-	Delete(ctx context.Context, id string) error
-}
-
 // MemoryRepository implements Repository using in-memory storage
-type MemoryRepository[T Entity] struct {
+type MemoryRepository[T db.Entity] struct {
 	items     map[string]T
 	cache     *TypedCache[T]
 	listCache *TypedCache[[]T]
@@ -31,7 +18,7 @@ type MemoryRepository[T Entity] struct {
 }
 
 // NewRepository creates a new memory repository
-func NewRepository[T Entity](cachePrefix string, config Config) *MemoryRepository[T] {
+func NewRepository[T db.Entity](cachePrefix string, config Config) *MemoryRepository[T] {
 	if config.DefaultCacheExpiry <= 0 {
 		config.DefaultCacheExpiry = defaultCacheExpiry
 	}
