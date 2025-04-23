@@ -3,6 +3,7 @@ import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import TokenSelector from 'components/Common/TokenSelector';
+import { useToast } from '@components/Common/Toast';
 import { SendTokensScreenProps } from './types';
 import { PortfolioToken } from '@store/portfolio';
 import {
@@ -18,11 +19,11 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const { wallet, tokens } = usePortfolioStore();
+	const { showToast } = useToast();
 	const [selectedToken, setSelectedToken] = useState<PortfolioToken | undefined>(undefined);
 	const [amount, setAmount] = useState('');
 	const [recipientAddress, setRecipientAddress] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 
 	// Initialize with SOL token
 	useEffect(() => {
@@ -37,15 +38,21 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	// Error handling effect
 	useEffect(() => {
 		if (!wallet) {
-			setError('No wallet connected');
+			showToast({
+				type: 'error',
+				message: 'No wallet connected'
+			});
 			return;
 		}
 
 		if (tokens.length === 0) {
-			setError('No tokens in portfolio');
+			showToast({
+				type: 'error',
+				message: 'No tokens in portfolio'
+			});
 			return;
 		}
-	}, [wallet, tokens]);
+	}, [wallet, tokens, showToast]);
 
 	const onTokenSelect = (coin: Coin) => {
 		const portfolioToken = handleTokenSelect(coin, tokens);
@@ -55,15 +62,20 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const handleSubmit = async () => {
 		try {
 			if (!wallet) {
-				setError('No wallet connected');
+				showToast({
+					type: 'error',
+					message: 'No wallet connected'
+				});
 				return;
 			}
 			if (!selectedToken) {
-				setError('No token selected');
+				showToast({
+					type: 'error',
+					message: 'No token selected'
+				});
 				return;
 			}
 
-			setError(null);
 			setIsLoading(true);
 
 			const validationError = await validateForm({
@@ -73,7 +85,10 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			}, selectedToken);
 
 			if (validationError) {
-				setError(validationError);
+				showToast({
+					type: 'error',
+					message: validationError
+				});
 				setIsLoading(false);
 				return;
 			}
@@ -85,9 +100,16 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			}, wallet);
 
 			console.log('Transaction submitted:', txHash);
+			showToast({
+				type: 'success',
+				message: 'Transaction submitted successfully'
+			});
 			navigation.goBack();
 		} catch (err) {
-			setError(err.message || 'Failed to send tokens');
+			showToast({
+				type: 'error',
+				message: err.message || 'Failed to send tokens'
+			});
 		} finally {
 			setIsLoading(false);
 		}
@@ -152,8 +174,6 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 						placeholderTextColor={theme.colors.onSurfaceVariant}
 					/>
 				</View>
-
-				{error && <Text style={styles.errorText}>{error}</Text>}
 
 				<TouchableOpacity
 					onPress={handleSubmit}

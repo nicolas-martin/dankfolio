@@ -24,6 +24,26 @@ type ToastAction =
 	| { type: 'HIDE' }
 	| { type: 'HYDRATE'; payload: ToastProps };
 
+// Format error message for user display
+const formatErrorMessage = (message: string): string => {
+	// Handle gRPC errors
+	if (message.includes('[internal]')) {
+		const grpcMatch = message.match(/failed to ([\w\s]+):/);
+		if (grpcMatch) {
+			return `Failed to ${grpcMatch[1]}. Please try again.`;
+		}
+	}
+
+	// Handle RPC errors
+	if (message.includes('RPCError')) {
+		if (message.includes('Method not found')) {
+			return 'Network connection error. Please check your connection and try again.';
+		}
+	}
+
+	return message;
+};
+
 const reducer = (state: ToastProps, action: ToastAction): ToastProps => {
 	switch (action.type) {
 		case 'SHOW':
@@ -46,7 +66,21 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const toast = useMemo(
 		() => ({
 			showToast(options: Partial<ToastProps>) {
-				dispatch({ type: 'SHOW', payload: options });
+				// Log errors when toast type is 'error'
+				if (options.type === 'error') {
+					const errorData = {
+						...(options.data && { data: options.data }),
+					};
+
+					// Detailed error logging for debugging
+					console.error('🚨 Error:', options.message, errorData);
+
+					// Format message for user display
+					const userMessage = formatErrorMessage(options.message || '');
+					dispatch({ type: 'SHOW', payload: { ...options, message: userMessage } });
+				} else {
+					dispatch({ type: 'SHOW', payload: options });
+				}
 			},
 			hideToast() {
 				dispatch({ type: 'HIDE' });
