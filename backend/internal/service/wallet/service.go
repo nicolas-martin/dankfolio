@@ -201,7 +201,7 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 	// Convert amount to raw units
 	rawAmount := uint64(amount * float64(uint64(1)<<decimals))
 
-	// Build transfer instruction
+	// Build transfer instruction with explicit signer
 	transferIx := token.NewTransferCheckedInstruction(
 		rawAmount,
 		decimals,
@@ -209,12 +209,26 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 		mint,
 		toATA,
 		from,
-		[]solana.PublicKey{},
+		[]solana.PublicKey{}, // No additional signers needed, from is already a required signer
 	).Build()
 
 	// Combine all instructions
 	instructions := append(createInstructions, transferIx)
-	return s.buildTransaction(ctx, from, instructions)
+
+	// Build transaction with from as fee payer and signer
+	tx, err := s.buildTransaction(ctx, from, instructions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build transaction: %w", err)
+	}
+
+	// Log transaction details for debugging
+	log.Printf("📝 Transaction details:")
+	log.Printf("  - Required signatures: %d", tx.Message.Header.NumRequiredSignatures)
+	log.Printf("  - Read-only signers: %d", tx.Message.Header.NumReadonlySignedAccounts)
+	log.Printf("  - Read-only non-signers: %d", tx.Message.Header.NumReadonlyUnsignedAccounts)
+	log.Printf("  - Fee payer: %s", tx.Message.AccountKeys[0].String())
+
+	return tx, nil
 }
 
 // SubmitTransfer submits a signed transfer transaction

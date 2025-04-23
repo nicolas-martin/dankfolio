@@ -80,6 +80,11 @@ func (s *Service) EnrichCoinData(
 	// 4. Fetch off-chain metadata using the URI from the on-chain account
 	uri := strings.TrimSpace(metadataAccount.Data.Uri)
 	log.Printf("EnrichCoinData: Fetching off-chain metadata for %s from URI: %s", mintAddress, uri)
+	if uri == "" {
+		log.Printf("no URI found for %s, %v", mintAddress, metadataAccount.Data)
+		return &coin, nil
+	}
+
 	offchainMeta, err := s.offchainClient.FetchMetadata(uri)
 	if err != nil {
 		log.Printf("❌ EnrichCoinData: Failed to fetch off-chain metadata for %s (URI: %s): %v", mintAddress, uri, err)
