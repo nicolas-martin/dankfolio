@@ -3,7 +3,7 @@ import { View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator }
 import { Modal, Portal, Text, useTheme, Card } from 'react-native-paper';
 import { ChevronDownIcon, CoinsIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
-import { usePortfolioStore } from '@store/portfolio';
+import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { createStyles } from './styles';
@@ -28,16 +28,20 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	const { tokens: portfolioTokens } = usePortfolioStore();
 	const { availableCoins } = useCoinStore();
 
-	const filteredCoins = useMemo(() => {
-		let coins = showOnlyPortfolioTokens
-			? availableCoins.filter(coin => portfolioTokens.some(token => token.id === coin.id))
+	const baseList = useMemo(() => {
+		return showOnlyPortfolioTokens
+			? portfolioTokens.map(token => token.coin)
 			: availableCoins;
+	}, [showOnlyPortfolioTokens, portfolioTokens, availableCoins]);
 
-		return coins.filter(coin =>
+	const filteredCoins = useMemo(() => {
+		if (!searchQuery) return baseList;
+
+		return baseList.filter(coin =>
 			coin.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			coin.name.toLowerCase().includes(searchQuery.toLowerCase())
 		);
-	}, [availableCoins, searchQuery, showOnlyPortfolioTokens, portfolioTokens]);
+	}, [baseList, searchQuery]);
 
 	const handleTokenSelect = useCallback((coin: Coin) => {
 		onSelectToken(coin);
@@ -51,7 +55,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		console.log('[TokenSearchModal] Visibility changed:', visible);
 	}, [visible]);
 
-	const renderItem = ({ item: coin }: { item: Coin }) => {
+	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
 		const portfolioToken = portfolioTokens.find(t => t.id === coin.id);
 		return (
 			<TouchableOpacity
@@ -75,7 +79,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				)}
 			</TouchableOpacity>
 		);
-	};
+	}, [handleTokenSelect, styles.tokenItem, styles.tokenIcon, styles.tokenDetails, styles.tokenAddress, styles.tokenBalance, portfolioTokens]);
 
 	return (
 		<Portal>

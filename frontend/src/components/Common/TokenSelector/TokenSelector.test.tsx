@@ -168,8 +168,8 @@ describe('TokenSelector', () => {
 			// Mock store with portfolio containing only BTC and ETH
 			(usePortfolioStore as unknown as jest.Mock).mockReturnValue({
 				tokens: [
-					{ id: 'bitcoin', amount: '1.5' },
-					{ id: 'ethereum', amount: '10' }
+					{ id: 'bitcoin', coin: mockCoin, amount: 1.5, price: mockCoin.price, value: 1.5 * mockCoin.price },
+					{ id: 'ethereum', coin: mockEthCoin, amount: 10, price: mockEthCoin.price, value: 10 * mockEthCoin.price }
 				]
 			});
 
@@ -228,6 +228,198 @@ describe('TokenSelector', () => {
 			expect(getAllTokensGetByText('Bitcoin')).toBeTruthy();
 			expect(getAllTokensGetByText('Ethereum')).toBeTruthy();
 			expect(getAllTokensQueryByText('Solana')).toBeNull();
+		});
+
+		it('correctly extracts and displays coin info from PortfolioTokens', async () => {
+			// Create more test coins
+			const mockDogeCoin: Coin = {
+				id: 'dogecoin',
+				symbol: 'DOGE',
+				name: 'Dogecoin',
+				icon_url: 'https://example.com/doge.png',
+				price: 0.1,
+				decimals: 8,
+				description: 'Much wow',
+				tags: ['meme'],
+				daily_volume: 100000,
+				created_at: new Date().toISOString(),
+			};
+
+			const mockShibaCoin: Coin = {
+				id: 'shiba',
+				symbol: 'SHIB',
+				name: 'Shiba Inu',
+				icon_url: 'https://example.com/shib.png',
+				price: 0.00001,
+				decimals: 8,
+				description: 'Very meme',
+				tags: ['meme'],
+				daily_volume: 50000,
+				created_at: new Date().toISOString(),
+			};
+
+			const mockArbCoin: Coin = {
+				id: 'arbitrum',
+				symbol: 'ARB',
+				name: 'Arbitrum',
+				icon_url: 'https://example.com/arb.png',
+				price: 1.5,
+				decimals: 18,
+				description: 'L2 scaling',
+				tags: ['l2'],
+				daily_volume: 200000,
+				created_at: new Date().toISOString(),
+			};
+
+			// Create portfolio with BTC and DOGE only
+			const portfolioTokens = [
+				{
+					id: 'bitcoin',
+					coin: mockCoin,
+					amount: 1.5,
+					price: mockCoin.price,
+					value: 1.5 * mockCoin.price
+				},
+				{
+					id: 'dogecoin',
+					coin: mockDogeCoin,
+					amount: 10000,
+					price: mockDogeCoin.price,
+					value: 10000 * mockDogeCoin.price
+				}
+			];
+
+			// Mock store with more available coins than what's in portfolio
+			(usePortfolioStore as unknown as jest.Mock).mockReturnValue({
+				tokens: portfolioTokens
+			});
+			(useCoinStore as unknown as jest.Mock).mockReturnValue({
+				availableCoins: [mockCoin, mockDogeCoin, mockShibaCoin, mockArbCoin]
+			});
+
+			const { getByText, getByTestId, queryByText } = renderWithProvider(
+				<TokenSelector
+					onSelectToken={mockOnSelectToken}
+					testID="token-selector-button"
+					showOnlyPortfolioTokens={true}
+				/>
+			);
+
+			// Open the modal
+			await act(async () => {
+				fireEvent.press(getByTestId('token-selector-button'));
+				jest.runAllTimers();
+			});
+
+			// Verify portfolio tokens are shown
+			expect(getByText('BTC')).toBeTruthy();
+			expect(getByText('Bitcoin')).toBeTruthy();
+			expect(getByText('DOGE')).toBeTruthy();
+			expect(getByText('Dogecoin')).toBeTruthy();
+			expect(queryByText('1.5')).toBeTruthy();
+			expect(queryByText('10000')).toBeTruthy();
+
+			// Verify non-portfolio tokens are NOT shown
+			expect(queryByText('SHIB')).toBeNull();
+			expect(queryByText('Shiba Inu')).toBeNull();
+			expect(queryByText('ARB')).toBeNull();
+			expect(queryByText('Arbitrum')).toBeNull();
+		});
+
+		it('shows all available coins when showOnlyPortfolioTokens is false', async () => {
+			// Create more test coins
+			const mockDogeCoin: Coin = {
+				id: 'dogecoin',
+				symbol: 'DOGE',
+				name: 'Dogecoin',
+				icon_url: 'https://example.com/doge.png',
+				price: 0.1,
+				decimals: 8,
+				description: 'Much wow',
+				tags: ['meme'],
+				daily_volume: 100000,
+				created_at: new Date().toISOString(),
+			};
+
+			const mockShibaCoin: Coin = {
+				id: 'shiba',
+				symbol: 'SHIB',
+				name: 'Shiba Inu',
+				icon_url: 'https://example.com/shib.png',
+				price: 0.00001,
+				decimals: 8,
+				description: 'Very meme',
+				tags: ['meme'],
+				daily_volume: 50000,
+				created_at: new Date().toISOString(),
+			};
+
+			const mockArbCoin: Coin = {
+				id: 'arbitrum',
+				symbol: 'ARB',
+				name: 'Arbitrum',
+				icon_url: 'https://example.com/arb.png',
+				price: 1.5,
+				decimals: 18,
+				description: 'L2 scaling',
+				tags: ['l2'],
+				daily_volume: 200000,
+				created_at: new Date().toISOString(),
+			};
+
+			// Create portfolio with BTC and DOGE only
+			const portfolioTokens = [
+				{
+					id: 'bitcoin',
+					coin: mockCoin,
+					amount: 1.5,
+					price: mockCoin.price,
+					value: 1.5 * mockCoin.price
+				},
+				{
+					id: 'dogecoin',
+					coin: mockDogeCoin,
+					amount: 10000,
+					price: mockDogeCoin.price,
+					value: 10000 * mockDogeCoin.price
+				}
+			];
+
+			// Mock store with more available coins than what's in portfolio
+			(usePortfolioStore as unknown as jest.Mock).mockReturnValue({
+				tokens: portfolioTokens
+			});
+			(useCoinStore as unknown as jest.Mock).mockReturnValue({
+				availableCoins: [mockCoin, mockDogeCoin, mockShibaCoin, mockArbCoin]
+			});
+
+			const { getByText, getByTestId, queryByText } = renderWithProvider(
+				<TokenSelector
+					onSelectToken={mockOnSelectToken}
+					testID="token-selector-button"
+					showOnlyPortfolioTokens={false} // Set to false to show all coins
+				/>
+			);
+
+			// Open the modal
+			await act(async () => {
+				fireEvent.press(getByTestId('token-selector-button'));
+				jest.runAllTimers();
+			});
+
+			// Verify ALL coins are shown, regardless of portfolio status
+			expect(getByText('BTC')).toBeTruthy(); // In portfolio
+			expect(getByText('Bitcoin')).toBeTruthy();
+			expect(getByText('DOGE')).toBeTruthy(); // In portfolio
+			expect(getByText('Dogecoin')).toBeTruthy();
+			expect(getByText('SHIB')).toBeTruthy(); // Not in portfolio
+			expect(getByText('Shiba Inu')).toBeTruthy();
+			expect(getByText('ARB')).toBeTruthy(); // Not in portfolio
+			expect(getByText('Arbitrum')).toBeTruthy();
+
+			// Verify portfolio amounts are still shown for portfolio tokens
+			expect(queryByText('1.5')).toBeTruthy();
+			expect(queryByText('10000')).toBeTruthy();
 		});
 	});
 
@@ -315,13 +507,25 @@ describe('TokenSelector', () => {
 
 		describe('findPortfolioToken', () => {
 			const portfolioTokens = [
-				{ id: 'bitcoin', amount: '1.5' },
-				{ id: 'ethereum', amount: '10' },
+				{
+					id: 'bitcoin',
+					coin: mockCoin,
+					amount: 1.5,
+					price: mockCoin.price,
+					value: 1.5 * mockCoin.price
+				},
+				{
+					id: 'ethereum',
+					coin: { ...mockCoin, id: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
+					amount: 10,
+					price: 3000,
+					value: 30000
+				}
 			];
 
 			it('finds matching portfolio token', () => {
 				const result = findPortfolioToken(mockCoin, portfolioTokens);
-				expect(result).toEqual({ id: 'bitcoin', amount: '1.5' });
+				expect(result).toEqual(portfolioTokens[0]);
 			});
 
 			it('returns undefined when token not found', () => {
