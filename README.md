@@ -29,31 +29,32 @@ rm -rf ./node_modules && yarn install && cd ios && rm -rf build Pods Podfile.loc
 
 ## CodeCoverage
 ```
+→ yarn test --coverage
 yarn run v1.22.22
 $ jest --coverage
  PASS  src/screens/Profile/ProfileScreen.test.tsx
  PASS  src/components/Common/TokenSelector/TokenSelector.test.tsx
  PASS  src/components/Chart/CoinChart/index.test.tsx
- PASS  src/screens/Home/HomeScreen.test.tsx
- PASS  src/store/portfolio.test.ts
  PASS  src/services/api.test.ts
- PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
+ PASS  src/screens/Home/HomeScreen.test.tsx
  PASS  src/store/coins.test.ts
- PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
+ PASS  src/store/portfolio.test.ts
  PASS  src/components/Common/Navigation/navigation.test.tsx
+ PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
+ PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
  PASS  src/screens/Trade/TradeScreen.test.tsx
-------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
 File                                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
-------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------
-All files                           |   60.28 |    53.88 |   64.86 |   61.16 |
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
+All files                           |   60.52 |     54.5 |   65.76 |   61.19 |
  components/Chart/CoinChart         |   91.07 |    89.28 |   76.19 |    90.9 |
   index.tsx                         |   91.07 |    89.28 |   76.19 |    90.9 | 82-83,115,196-197
  components/Common/Icons            |   60.71 |        0 |   23.07 |   88.23 |
   index.tsx                         |   60.71 |        0 |   23.07 |   88.23 | 21-22,31-32
  components/Common/Navigation       |     100 |      100 |     100 |     100 |
   CustomHeader.tsx                  |     100 |      100 |     100 |     100 |
- components/Common/TokenSelector    |   97.01 |     92.5 |      96 |   96.87 |
-  index.tsx                         |   95.74 |    88.88 |      95 |   95.55 | 76-78
+ components/Common/TokenSelector    |   94.66 |    89.36 |    92.3 |   94.44 |
+  index.tsx                         |   92.72 |    85.29 |   90.47 |   92.45 | 13-14,89-91
   scripts.ts                        |     100 |      100 |     100 |     100 |
   styles.ts                         |     100 |      100 |     100 |     100 |
  components/Home/CoinCard           |     100 |       50 |     100 |     100 |
@@ -83,9 +84,9 @@ All files                           |   60.28 |    53.88 |   64.86 |   61.16 |
   index.tsx                         |   67.85 |       70 |      70 |   69.23 | 36-46,91,111
   profile_scripts.ts                |   45.45 |       25 |   66.66 |   47.36 | 10-18,41-51
   profile_styles.ts                 |     100 |      100 |     100 |     100 |
- screens/Trade                      |   48.94 |    43.47 |   67.56 |   49.13 |
-  index.tsx                         |   65.41 |    54.11 |   76.92 |    66.4 | 119-121,145-151,157-163,172-174,179,200-232,239-240,264,272-273,294-297,303-304,320,328,355
-  trade_scripts.ts                  |   26.47 |    13.33 |      40 |   26.73 | 17-21,33-76,90-93,104-125,157-182,227-270
+ screens/Trade                      |   51.11 |    46.32 |      75 |   50.75 |
+  index.tsx                         |   66.46 |    55.66 |   84.61 |   66.45 | ...220-221,238-239,255-256,260-261,267-268,284-285,297-298,322,330-331,352-355,368-369,388,396,423
+  trade_scripts.ts                  |   25.96 |    13.33 |   44.44 |   25.96 | 17-22,34-87,101-104,115-136,168-193,238-281
   trade_styles.ts                   |     100 |      100 |     100 |     100 |
  services                           |   22.62 |    27.27 |   31.81 |   22.79 |
   grpcApi.ts                        |   22.62 |    27.27 |   31.81 |   22.79 | 20,63-76,90-94,116,122,134-156,171-174,187-444
@@ -98,11 +99,11 @@ All files                           |   60.28 |    53.88 |   64.86 |   61.16 |
   constants.ts                      |     100 |      100 |     100 |     100 |
   numberFormat.ts                   |   27.58 |    16.12 |      20 |   34.78 | 3-7,15-22,25-30,59-60
   url.ts                            |      20 |        0 |       0 |      20 | 4,8-17
-------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
 
 Test Suites: 11 passed, 11 total
-Tests:       54 passed, 54 total
+Tests:       57 passed, 57 total
 Snapshots:   0 total
-Time:        3.127 s
-✨  Done in 3.80s.
+Time:        5.326 s, estimated 9 s
+✨  Done in 6.10s.
 ```
