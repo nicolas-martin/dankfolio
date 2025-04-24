@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
 import { Text, useTheme, Button } from 'react-native-paper';
 import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
@@ -142,54 +142,89 @@ const Trade: React.FC = () => {
 
 	// Handler for the 'From' TokenSelector
 	const handleSelectFromToken = (token: Coin) => {
+		console.log('🎯 handleSelectFromToken:', {
+			newToken: token.symbol,
+			currentFromAmount: fromAmount,
+			currentToToken: toCoin?.symbol,
+			isSameAsCurrent: token.id === fromCoin?.id
+		});
+
+		// Skip if selecting the same token that's already selected
+		if (token.id === fromCoin?.id) {
+			console.log('⏭️ Skipping selection - same token already selected');
+			return;
+		}
+
 		if (token.id === toCoin?.id) {
-			// If selected token is the same as the 'to' token, swap them
+			console.log('🔄 Swapping tokens due to same selection');
 			handleSwapCoins();
 		} else {
 			setFromCoin(token);
-			setFromAmount(''); // Clear amounts on new selection
-			setToAmount('');
+			// Only clear amounts if we're actually changing to a different token
+			if (fromCoin && token.id !== fromCoin.id) {
+				console.log('🧹 Clearing amounts on new token selection');
+				setFromAmount('');
+				setToAmount('');
+			}
 		}
 	};
 
 	// Handler for the 'To' TokenSelector
 	const handleSelectToToken = (token: Coin) => {
-		if (token.id === fromCoin?.id) {
-			// If selected token is the same as the 'from' token, swap them
-			handleSwapCoins();
-		} else {
-			setToCoin(token);
-			setFromAmount(''); // Clear amounts on new selection
-			setToAmount('');
-		}
-	};
-
-	const handleFromAmountChange = async (amount: string) => {
-		if (!fromCoin || !toCoin) return;
-
-		setFromAmount(amount);
-		console.log('🔄 From Amount Change:', {
-			amount,
-			fromCoin: fromCoin?.symbol,
-			toCoin: toCoin?.symbol
+		console.log('🎯 handleSelectToToken:', {
+			newToken: token.symbol,
+			currentToAmount: toAmount,
+			currentFromToken: fromCoin?.symbol,
+			isSameAsCurrent: token.id === toCoin?.id
 		});
 
-		// Don't fetch quote for empty or invalid input
-		if (!amount || isNaN(parseFloat(amount))) {
-			setToAmount('');
+		// Skip if selecting the same token that's already selected
+		if (token.id === toCoin?.id) {
+			console.log('⏭️ Skipping selection - same token already selected');
 			return;
 		}
 
-		// Clear any existing timeout
+		if (token.id === fromCoin?.id) {
+			console.log('🔄 Swapping tokens due to same selection');
+			handleSwapCoins();
+		} else {
+			setToCoin(token);
+			// Only clear amounts if we're actually changing to a different token
+			if (toCoin && token.id !== toCoin.id) {
+				console.log('🧹 Clearing amounts on new token selection');
+				setFromAmount('');
+				setToAmount('');
+			}
+		}
+	};
+
+	const handleFromAmountChange = useCallback((amount: string) => {
+		console.log('🎯 handleFromAmountChange START:', { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
+		setFromAmount(amount);
+		console.log('💾 Setting fromAmount:', amount);
+
+		// Skip quote fetch for incomplete numbers
+		if (!amount || amount === '.' || amount.endsWith('.')) {
+			console.log('⏭️ Skipping quote fetch for incomplete number:', amount);
+			return;
+		}
+
+		if (!fromCoin || !toCoin) {
+			console.log('❌ Skipping quote fetch - missing coins');
+			return;
+		}
+
+		console.log('🔄 Preparing quote fetch:', { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
+
 		if (quoteTimeoutRef.current) {
+			console.log('🗑️ Clearing existing timeout');
 			clearTimeout(quoteTimeoutRef.current);
 		}
 
-		// Set loading state immediately
 		setIsQuoteLoading(true);
 
-		// Create new timeout
 		quoteTimeoutRef.current = setTimeout(async () => {
+			console.log('⏰ Quote timeout triggered:', { amount });
 			try {
 				await fetchTradeQuote(
 					amount,
@@ -200,6 +235,7 @@ const Trade: React.FC = () => {
 					setTradeDetails
 				);
 			} catch (error: any) {
+				console.error('❌ Quote fetch error:', error);
 				showToast({
 					type: 'error',
 					message: error?.message || 'Failed to fetch trade quote'
@@ -207,34 +243,34 @@ const Trade: React.FC = () => {
 			}
 			quoteTimeoutRef.current = null;
 		}, QUOTE_DEBOUNCE_MS);
-	};
+	}, [fromCoin, toCoin, fetchTradeQuote, setIsQuoteLoading, setToAmount, setTradeDetails, showToast]);
 
-	const handleToAmountChange = async (amount: string) => {
-		if (!fromCoin || !toCoin) return;
-
+	const handleToAmountChange = useCallback((amount: string) => {
+		console.log('🎯 handleToAmountChange START:', { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
 		setToAmount(amount);
-		console.log('🔄 To Amount Change:', {
-			amount,
-			fromCoin: fromCoin?.symbol,
-			toCoin: toCoin?.symbol
-		});
+		console.log('💾 Setting toAmount:', amount);
 
-		// Don't fetch quote for empty or invalid input
-		if (!amount || isNaN(parseFloat(amount))) {
-			setFromAmount('');
+		// Skip quote fetch for incomplete numbers
+		if (!amount || amount === '.' || amount.endsWith('.')) {
+			console.log('⏭️ Skipping quote fetch for incomplete number:', amount);
 			return;
 		}
 
-		// Clear any existing timeout
+		if (!fromCoin || !toCoin) {
+			console.log('❌ Skipping quote fetch - missing coins');
+			return;
+		}
+
+		console.log('🔄 Preparing quote fetch:', { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
+
 		if (quoteTimeoutRef.current) {
+			console.log('🗑️ Clearing existing timeout');
 			clearTimeout(quoteTimeoutRef.current);
 		}
 
-		// Set loading state immediately
-		setIsQuoteLoading(true);
-
-		// Create new timeout
 		quoteTimeoutRef.current = setTimeout(async () => {
+			console.log('⏰ Quote timeout triggered:', { amount });
+			setIsQuoteLoading(true);
 			try {
 				await fetchTradeQuote(
 					amount,
@@ -245,6 +281,7 @@ const Trade: React.FC = () => {
 					setTradeDetails
 				);
 			} catch (error: any) {
+				console.error('❌ Quote fetch error:', error);
 				showToast({
 					type: 'error',
 					message: error?.message || 'Failed to fetch trade quote'
@@ -252,7 +289,7 @@ const Trade: React.FC = () => {
 			}
 			quoteTimeoutRef.current = null;
 		}, QUOTE_DEBOUNCE_MS);
-	};
+	}, [fromCoin, toCoin, fetchTradeQuote, setIsQuoteLoading, setFromAmount, setTradeDetails, showToast]);
 
 	// Use new handleTradeSubmit that calls executeTrade
 	const handleTradeSubmitClick = () => {
@@ -320,10 +357,18 @@ const Trade: React.FC = () => {
 
 	// --- Update handleSwapCoins to use imported util --- 
 	const handleSwapCoins = () => {
+		console.log('🔄 handleSwapCoins START:', {
+			fromCoin: fromCoin?.symbol,
+			toCoin: toCoin?.symbol,
+			fromAmount,
+			toAmount
+		});
+
 		if (!fromCoin || !toCoin) {
-			console.warn('Cannot swap with null coins');
+			console.warn('❌ Cannot swap with null coins');
 			return;
 		}
+
 		swapCoinsUtil(
 			fromCoin,
 			toCoin,
@@ -334,6 +379,8 @@ const Trade: React.FC = () => {
 			toAmount,
 			setToAmount
 		);
+
+		console.log('✅ Swap completed');
 	};
 
 	// Early return if toCoin is null
@@ -389,8 +436,7 @@ const Trade: React.FC = () => {
 						label={toCoin ? undefined : 'Select Token'}
 						amountValue={toAmount}
 						onAmountChange={handleToAmountChange}
-						isAmountEditable={!isQuoteLoading}
-						isAmountLoading={isQuoteLoading}
+						isAmountEditable={true}
 						showOnlyPortfolioTokens={false}
 						testID="to-token-selector"
 					/>
@@ -410,10 +456,11 @@ const Trade: React.FC = () => {
 			<View style={styles.padding}>
 				<Button
 					mode="contained"
-					onPress={handleTradeSubmitClick} // Use new handler
-					disabled={!fromAmount || !toAmount}
+					onPress={handleTradeSubmitClick}
+					disabled={!fromAmount || !toAmount || isQuoteLoading}
+					loading={isQuoteLoading}
 				>
-					Trade
+					{isQuoteLoading ? 'Fetching Quote...' : 'Trade'}
 				</Button>
 			</View>
 

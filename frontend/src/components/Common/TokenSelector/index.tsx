@@ -140,13 +140,17 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		return findPortfolioToken(selectedToken, portfolioTokens);
 	}, [selectedToken, portfolioTokens]);
 
-	// Effect to handle default token selection
+	// Track whether initial selection has been made
+	const [hasInitialSelection, setHasInitialSelection] = useState(false);
+
+	// Effect to handle default token selection only once
 	useEffect(() => {
-		if (selectedToken && onSelectToken && !portfolioToken) {
-			// Only call onSelectToken if we don't already have this token in our portfolio
+		if (selectedToken && onSelectToken && !portfolioToken && !hasInitialSelection) {
+			console.log('🎯 Initial token selection:', selectedToken.symbol);
+			setHasInitialSelection(true);
 			onSelectToken(selectedToken);
 		}
-	}, [selectedToken, onSelectToken, portfolioToken]); // Add proper dependencies
+	}, [selectedToken, onSelectToken, portfolioToken, hasInitialSelection]);
 
 	const handleDismiss = useCallback(() => {
 		console.log('[TokenSelector] handleDismiss called');
