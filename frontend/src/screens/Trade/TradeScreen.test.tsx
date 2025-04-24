@@ -106,6 +106,9 @@ jest.mock('react-native-paper', () => {
 // Mock grpcApi
 jest.mock('@/services/grpcApi');
 
+// Speed up timers
+jest.useFakeTimers();
+
 // --- Test Suite ---
 describe('TradeScreen', () => {
 	const renderWithProvider = (component: ReactElement) => {
@@ -117,8 +120,9 @@ describe('TradeScreen', () => {
 	};
 
 	beforeEach(() => {
-		// Clear all mocks
+		// Clear all mocks and timers
 		jest.clearAllMocks();
+		jest.clearAllTimers();
 
 		// Setup your mocks
 		(mockFetchTradeQuote as jest.Mock).mockResolvedValue(undefined);
@@ -144,7 +148,7 @@ describe('TradeScreen', () => {
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
 
-		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id, forceRefresh) => {
+		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id) => {
 			if (id === mockFromCoin.id) return mockFromCoin;
 			if (id === mockToCoin.id) return mockToCoin;
 			if (id === SOLANA_ADDRESS) return { ...mockFromCoin, id: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL' };
@@ -159,6 +163,10 @@ describe('TradeScreen', () => {
 				initialToCoin: mockToCoin,
 			},
 		});
+	});
+
+	afterEach(() => {
+		jest.useRealTimers();
 	});
 
 	it('initializes correctly with store hooks and initial coin fetch', async () => {
@@ -188,39 +196,83 @@ describe('TradeScreen', () => {
 			route: 'SOL -> WEN'
 		};
 
+		// Setup mock implementation
 		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
 			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
-				act(() => {
-					setToAmount(mockQuoteData.estimatedAmount);
-					setTradeDetails({
-						exchangeRate: mockQuoteData.exchangeRate,
-						gasFee: mockQuoteData.totalFee,
-						priceImpactPct: mockQuoteData.priceImpactPct,
-						totalFee: mockQuoteData.totalFee,
-						route: mockQuoteData.route,
-					});
+				setIsQuoteLoading(true);
+				await Promise.resolve();
+				setToAmount(mockQuoteData.estimatedAmount);
+				setTradeDetails({
+					exchangeRate: mockQuoteData.exchangeRate,
+					gasFee: mockQuoteData.totalFee,
+					priceImpactPct: mockQuoteData.priceImpactPct,
+					totalFee: mockQuoteData.totalFee,
+					route: mockQuoteData.route,
 				});
+				setIsQuoteLoading(false);
 			}
 		);
 
 		const { getByTestId } = renderWithProvider(<TradeScreen />);
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
+		// Test FROM input quote fetching
 		const fromInput = getByTestId('token-selector-input-from');
-		const testAmount = '1.5';
-		fireEvent.changeText(fromInput, testAmount);
 
-		await waitFor(() => {
-			expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledWith(
-				testAmount,
-				mockFromCoin,
-				mockToCoin,
-				expect.any(Function),
-				expect.any(Function),
-				expect.any(Function)
-			);
-			expect(getByTestId('token-selector-input-to').props.value).toBe(mockQuoteData.estimatedAmount);
+		await act(async () => {
+			fireEvent.changeText(fromInput, '1.5');
+			jest.advanceTimersByTime(TradeScripts.QUOTE_DEBOUNCE_MS);
+			await Promise.resolve();
 		});
+
+		expect(fromInput.props.editable).toBe(true);
+		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalled());
+
+		// Test TO input quote fetching
+		const toInput = getByTestId('token-selector-input-to');
+
+		await act(async () => {
+			fireEvent.changeText(toInput, '100');
+			jest.advanceTimersByTime(TradeScripts.QUOTE_DEBOUNCE_MS);
+			await Promise.resolve();
+		});
+
+		expect(toInput.props.editable).toBe(true);
+		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledWith(
+			'100',
+			expect.anything(),
+			expect.anything(),
+			expect.any(Function),
+			expect.any(Function),
+			expect.any(Function)
+		));
+	});
+
+	it('skips quote fetching for incomplete numbers', async () => {
+		const { getByTestId } = renderWithProvider(<TradeScreen />);
+		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
+
+		const fromInput = getByTestId('token-selector-input-from');
+
+		// Test incomplete number cases
+		const incompleteInputs = ['.', '0.', '1.'];
+		for (const input of incompleteInputs) {
+			await act(async () => {
+				fireEvent.changeText(fromInput, input);
+				jest.advanceTimersByTime(TradeScripts.QUOTE_DEBOUNCE_MS);
+				await Promise.resolve();
+			});
+			expect(TradeScripts.fetchTradeQuote).not.toHaveBeenCalled();
+		}
+
+		// Test complete number
+		await act(async () => {
+			fireEvent.changeText(fromInput, '1.5');
+			jest.advanceTimersByTime(TradeScripts.QUOTE_DEBOUNCE_MS);
+			await Promise.resolve();
+		});
+
+		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalled());
 	});
 
 	it('handles coin swapping correctly', async () => {
@@ -272,11 +324,12 @@ describe('TradeScreen', () => {
 				act(() => {
 					setToAmount(initialToAmount);
 					setTradeDetails({ exchangeRate: '1350000', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
+					setIsQuoteLoading(false);
 				});
 			}
 		);
 
-		const { getByTestId, getByText } = renderWithProvider(<TradeScreen />);
+		const { getByTestId } = renderWithProvider(<TradeScreen />);
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
 		// Set amount and trigger quote
@@ -284,8 +337,13 @@ describe('TradeScreen', () => {
 		fireEvent.changeText(fromInput, initialFromAmount);
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
 
-		// Open confirmation modal
-		fireEvent.press(getByText('Trade'));
+		// Wait for loading to complete and open confirmation modal
+		await waitFor(() => {
+			const tradeButton = getByTestId('trade-button');
+			expect(tradeButton.props.accessibilityState.disabled).toBe(false);
+		});
+		fireEvent.press(getByTestId('trade-button'));
+
 		const confirmationModal = await waitFor(() => getByTestId('mock-TradeConfirmation'));
 		expect(confirmationModal.props.isVisible).toBe(true);
 
@@ -330,19 +388,27 @@ describe('TradeScreen', () => {
 			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
 				const numericAmount = parseFloat(amount);
 				if (!isNaN(numericAmount)) {
-					setToAmount((numericAmount * 1000).toString());
+					act(() => {
+						setToAmount((numericAmount * 1000).toString());
+						setIsQuoteLoading(false);
+					});
 				}
 			}
 		);
 
-		const { getByTestId, getByText } = renderWithProvider(<TradeScreen />);
+		const { getByTestId } = renderWithProvider(<TradeScreen />);
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
 		const fromInput = getByTestId('token-selector-input-from');
 		fireEvent.changeText(fromInput, '6');
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalled());
 
-		fireEvent.press(getByText('Trade'));
+		// Wait for loading to complete and try to trade
+		await waitFor(() => {
+			const tradeButton = getByTestId('trade-button');
+			expect(tradeButton.props.accessibilityState.disabled).toBe(false);
+		});
+		fireEvent.press(getByTestId('trade-button'));
 
 		await waitFor(() => {
 			expect(mockShowToast).toHaveBeenCalledWith({

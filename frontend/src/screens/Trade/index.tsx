@@ -459,6 +459,7 @@ const Trade: React.FC = () => {
 					onPress={handleTradeSubmitClick}
 					disabled={!fromAmount || !toAmount || isQuoteLoading}
 					loading={isQuoteLoading}
+					testID="trade-button"
 				>
 					{isQuoteLoading ? 'Fetching Quote...' : 'Trade'}
 				</Button>
