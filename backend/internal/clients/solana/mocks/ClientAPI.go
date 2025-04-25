@@ -247,3 +247,60 @@ func (_c *MockClientAPI_GetRpcConnection_Call) RunAndReturn(run func() *rpc.Clie
 	_c.Call.Return(run)
 	return _c
 }
+
+// GetTransactionConfirmationStatus provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
+	ret := _mock.Called(ctx, sigStr)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionConfirmationStatus")
+	}
+
+	var r0 *rpc.GetSignatureStatusesResult
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*rpc.GetSignatureStatusesResult, error)); ok {
+		return returnFunc(ctx, sigStr)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *rpc.GetSignatureStatusesResult); ok {
+		r0 = returnFunc(ctx, sigStr)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*rpc.GetSignatureStatusesResult)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, sigStr)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClientAPI_GetTransactionConfirmationStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionConfirmationStatus'
+type MockClientAPI_GetTransactionConfirmationStatus_Call struct {
+	*mock.Call
+}
+
+// GetTransactionConfirmationStatus is a helper method to define mock.On call
+//   - ctx
+//   - sigStr
+func (_e *MockClientAPI_Expecter) GetTransactionConfirmationStatus(ctx interface{}, sigStr interface{}) *MockClientAPI_GetTransactionConfirmationStatus_Call {
+	return &MockClientAPI_GetTransactionConfirmationStatus_Call{Call: _e.mock.On("GetTransactionConfirmationStatus", ctx, sigStr)}
+}
+
+func (_c *MockClientAPI_GetTransactionConfirmationStatus_Call) Run(run func(ctx context.Context, sigStr string)) *MockClientAPI_GetTransactionConfirmationStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_GetTransactionConfirmationStatus_Call) Return(getSignatureStatusesResult *rpc.GetSignatureStatusesResult, err error) *MockClientAPI_GetTransactionConfirmationStatus_Call {
+	_c.Call.Return(getSignatureStatusesResult, err)
+	return _c
+}
+
+func (_c *MockClientAPI_GetTransactionConfirmationStatus_Call) RunAndReturn(run func(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error)) *MockClientAPI_GetTransactionConfirmationStatus_Call {
+	_c.Call.Return(run)
+	return _c
+}

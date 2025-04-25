@@ -1,19 +1,79 @@
 {
-  "scrapeTimestamp": "2025-04-23T17:49:14.733316Z",
+  "scrapeTimestamp": "2025-04-25T13:33:56.528579Z",
   "tokens": [
     {
-      "id": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-      "name": "OFFICIAL TRUMP",
-      "symbol": "TRUMP",
+      "id": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+      "name": "trencher",
+      "symbol": "TRENCHER",
       "decimals": 6,
-      "description": "OFFICIAL TRUMP (TRUMP) is a Solana token.",
-      "icon_url": "https://arweave.net/VQrPjACwnQRmxdKBTqNwPiyo65x7LAT773t8Kd7YBzw",
+      "description": "trencher (TRENCHER) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmdBP8iv4jVkTDk1JgomNMNJefAAFzDvpqTnk7AWN8ah1Y",
+      "tags": [
+        "launchpad",
+        "unknown"
+      ],
+      "price": 0.00761457,
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
+      "name": "TROLL",
+      "symbol": "TROLL",
+      "decimals": 6,
+      "description": "TROLL (TROLL) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmWV8QgmH1gSw41yapzsFwkC8yPbzoSreAcJbzqfvo2sVq",
+      "tags": [
+        "community-assist",
+        "verified"
+      ],
+      "price": 0.018433,
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "name": "Bonk",
+      "symbol": "Bonk",
+      "decimals": 5,
+      "description": "The Official Bonk Inu token",
+      "icon_url": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
       "tags": [
         "verified",
-        "birdeye-trending",
-        "community"
+        "community",
+        "strict",
+        "birdeye-trending"
       ],
-      "price": 12.581996,
+      "price": 0.0000155864,
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
+      "name": "Popcat",
+      "symbol": "POPCAT",
+      "decimals": 9,
+      "description": "POPCAT POP POP POP POP",
+      "icon_url": "https://arweave.net/A1etRNMKxhlNGTf-gNBtJ75QJJ4NJtbKh_UXQTlLXzI",
+      "tags": [
+        "verified",
+        "community",
+        "strict",
+        "birdeye-trending"
+      ],
+      "price": 0.40174396,
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+      "name": "dogwifhat",
+      "symbol": "$WIF",
+      "decimals": 6,
+      "description": "Popular meme Dogwifhat vibes wif frens onchain @Dogwifcoin on X",
+      "icon_url": "https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link",
+      "tags": [
+        "verified",
+        "community",
+        "strict"
+      ],
+      "price": 0.619473,
       "created_at": "0001-01-01T00:00:00Z"
     },
     {
@@ -30,130 +90,70 @@
         "community-assist",
         "birdeye-trending"
       ],
-      "price": 0.033533,
+      "price": 0.03595,
       "created_at": "0001-01-01T00:00:00Z"
     },
     {
-      "id": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
-      "name": "TROLL",
-      "symbol": "TROLL",
+      "id": "CxpGDVrX2rA6penHD2zhopPYNMXAtXutizWSktwytZ18",
+      "name": "Z△L△ △I",
+      "symbol": "ZALA",
       "decimals": 6,
-      "description": "TROLL (TROLL) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmWV8QgmH1gSw41yapzsFwkC8yPbzoSreAcJbzqfvo2sVq",
-      "tags": [
-        "community-assist",
-        "verified"
-      ],
-      "price": 0.019651,
-      "created_at": "0001-01-01T00:00:00Z"
-    },
-    {
-      "id": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
-      "name": "Popcat",
-      "symbol": "POPCAT",
-      "decimals": 9,
-      "description": "POPCAT POP POP POP POP",
-      "icon_url": "https://arweave.net/A1etRNMKxhlNGTf-gNBtJ75QJJ4NJtbKh_UXQTlLXzI",
-      "tags": [
-        "verified",
-        "strict",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 0.351471785,
-      "created_at": "0001-01-01T00:00:00Z"
-    },
-    {
-      "id": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-      "name": "Bonk",
-      "symbol": "Bonk",
-      "decimals": 5,
-      "description": "The Official Bonk Inu token",
-      "icon_url": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
-      "tags": [
-        "verified",
-        "birdeye-trending",
-        "strict",
-        "community"
-      ],
-      "price": 0.0000154609,
-      "created_at": "0001-01-01T00:00:00Z"
-    },
-    {
-      "id": "8oosbx7jJrZxm5m4ThKhBpvwwG4QpoAe6i4GiG19pump",
-      "name": "Wizard Gang",
-      "symbol": "Wizard",
-      "decimals": 6,
-      "description": "One of the most iconic sings of a legendary wizard is a tower that can't be entered by ordinary means. It exists between moments or only appears at certain times and is filled with magic that defies understanding. To be invited inside is a once-in-a-lifetime event.",
-      "icon_url": "https://ipfs.io/ipfs/QmPDkpeSfqc8UcsqgqsMKimB8qw7uDqExAm9CMS7MjKpQ9",
-      "tags": [
-        "launchpad",
-        "community-assist",
-        "verified"
-      ],
-      "price": 0.00463764,
-      "created_at": "0001-01-01T00:00:00Z"
-    },
-    {
-      "id": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
-      "name": "Pudgy Penguins",
-      "symbol": "PENGU",
-      "decimals": 6,
-      "description": "For the people. By the people.",
-      "icon_url": "https://arweave.net/BW67hICaKGd2_wamSB0IQq-x7Xwtmr2oJj1WnWGJRHU",
-      "tags": [
-        "verified",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 0.0068466,
-      "created_at": "0001-01-01T00:00:00Z"
-    },
-    {
-      "id": "jriiULJQwgqdU48hTv1eKqK4ipCiCWBnP9CZbonpump",
-      "name": "ELIXIR AI",
-      "symbol": "ELXAI",
-      "decimals": 6,
-      "description": "AI-based web3 ecosystem that allows users to create high-quality 3D assets in just a few minutes using only text prompts or 2D images.",
-      "icon_url": "https://ipfs.io/ipfs/Qmdy7SFDE4gxVoQozhX1zVqkg1LFULHymfgWDNLBWeQ9SR",
+      "description": "Zala AI, the artificial influencer",
+      "icon_url": "https://ipfs.io/ipfs/QmUaDbuzVdFZy4uvH4tNsFq8byXnq2SiCfM1zudfQs1EhZ",
       "tags": [
         "launchpad",
         "unknown"
       ],
-      "price": 0.000719992,
-      "website": "https://elixir-ai.pro/",
-      "telegram": "https://t.me/elixir_ai",
+      "price": 0.00362288,
+      "website": "https://dev.fun/p/65b6496d4f06da20c463",
+      "telegram": "https://t.me/ZALA_AI",
       "created_at": "0001-01-01T00:00:00Z"
     },
     {
-      "id": "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh",
-      "name": "Wrapped BTC (Portal)",
-      "symbol": "WBTC",
-      "decimals": 8,
-      "description": "Wrapped BTC (Portal) (WBTC) is a Solana token.",
-      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh/logo.png",
-      "tags": [
-        "verified",
-        "community",
-        "birdeye-trending",
-        "strict"
-      ],
-      "price": 93678.92294728,
-      "created_at": "0001-01-01T00:00:00Z"
-    },
-    {
-      "id": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
-      "name": "dogwifhat",
-      "symbol": "$WIF",
+      "id": "5UuVmAgRCX29qrjFor1gQwnAysVkaYrpBMwmKmfBpump",
+      "name": "ACT BLUE: The AI Prophecy",
+      "symbol": "ACTBLUE",
       "decimals": 6,
-      "description": "Popular meme Dogwifhat vibes wif frens onchain @Dogwifcoin on X",
-      "icon_url": "https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link",
+      "description": "ACT BLUE: The AI Prophecy (ACTBLUE) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmbGZGfmQzuNeiPTpQpDJJc9ey2GV2fLdcbB4qK9HDXaDD",
+      "tags": [
+        "unknown",
+        "launchpad"
+      ],
+      "price": 0.00016244,
+      "website": "https://cyborgism.wiki/hypha/act_i",
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+      "name": "OFFICIAL TRUMP",
+      "symbol": "TRUMP",
+      "decimals": 6,
+      "description": "OFFICIAL TRUMP (TRUMP) is a Solana token.",
+      "icon_url": "https://arweave.net/VQrPjACwnQRmxdKBTqNwPiyo65x7LAT773t8Kd7YBzw",
       "tags": [
         "verified",
-        "strict",
+        "birdeye-trending",
         "community"
       ],
-      "price": 0.547626,
+      "price": 13.002244,
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    {
+      "id": "HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC",
+      "name": "ai16z",
+      "symbol": "ai16z",
+      "decimals": 9,
+      "description": "ai16z (ai16z) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmcNTVAoyJ7zDbPnN9jwiMoB8uCoJBUP9RGmmiGGHv44yX",
+      "tags": [
+        "verified",
+        "launchpad",
+        "token-2022",
+        "birdeye-trending",
+        "community"
+      ],
+      "price": 0.236354239,
       "created_at": "0001-01-01T00:00:00Z"
     }
   ]
