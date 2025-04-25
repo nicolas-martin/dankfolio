@@ -17,7 +17,7 @@ const testTimeout = 300 * time.Second // Increased timeout to 5 minutes for debu
 
 func main() {
 	// Configure logging with timestamps and file/line numbers
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
 	log.Println("--- Starting Solana Token Scraping and Enrichment ---")
 
 	// Get absolute path for data file
@@ -28,7 +28,7 @@ func main() {
 
 	// Ensure data directory exists
 	dataDir := filepath.Dir(absPath)
-	if err := os.MkdirAll(dataDir, 0755); err != nil {
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		log.Fatalf("Failed to create data directory: %v", err)
 	}
 
@@ -48,6 +48,7 @@ func main() {
 	// Create service with config for output file
 	config := &coin.Config{
 		TrendingTokenPath: absPath,
+		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	s := coin.NewService(config, httpClient, jupiterClient, store)
 
@@ -56,6 +57,7 @@ func main() {
 	log.Printf("Test timeout: %v", testTimeout)
 
 	// Call the full pipeline
+	// NOTE: This is called by the coin service on start.
 	if err := s.ScrapeAndEnrichToFile(ctx); err != nil {
 		log.Fatalf("Scraping and enrichment failed: %v", err)
 	}

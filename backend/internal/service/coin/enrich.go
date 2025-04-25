@@ -40,13 +40,28 @@ func (s *Service) EnrichCoinData(
 		// Continue enrichment even if Jupiter info fails, maybe metadata has info.
 	} else {
 		log.Printf("EnrichCoinData: Got Jupiter token info for %s: %s (%s)", mintAddress, jupiterInfo.Name, jupiterInfo.Symbol)
-		coin.Name = jupiterInfo.Name // Overwrite name
-		coin.Symbol = jupiterInfo.Symbol
-		coin.Decimals = jupiterInfo.Decimals
-		coin.IconUrl = jupiterInfo.LogoURI // Overwrite icon
-		coin.DailyVolume = jupiterInfo.DailyVolume
-		coin.Tags = jupiterInfo.Tags
-		coin.CreatedAt = jupiterInfo.CreatedAt.Format(time.RFC3339)
+		// Only override values if they are non-empty/non-zero from Jupiter
+		if jupiterInfo.Name != "" {
+			coin.Name = jupiterInfo.Name // Overwrite name
+		}
+		if jupiterInfo.Symbol != "" {
+			coin.Symbol = jupiterInfo.Symbol
+		}
+		if jupiterInfo.Decimals > 0 {
+			coin.Decimals = jupiterInfo.Decimals
+		}
+		if jupiterInfo.LogoURI != "" {
+			coin.IconUrl = jupiterInfo.LogoURI // Overwrite icon
+		}
+		if jupiterInfo.DailyVolume > 0 {
+			coin.DailyVolume = jupiterInfo.DailyVolume
+		}
+		if len(jupiterInfo.Tags) > 0 {
+			coin.Tags = jupiterInfo.Tags
+		}
+		if !jupiterInfo.CreatedAt.IsZero() {
+			coin.CreatedAt = jupiterInfo.CreatedAt.Format(time.RFC3339)
+		}
 	}
 
 	// 2. Get price from Jupiter (even if GetTokenInfo failed, price might work)

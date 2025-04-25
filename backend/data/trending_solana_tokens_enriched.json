@@ -1,20 +1,6 @@
 {
-  "scrapeTimestamp": "2025-04-25T13:33:56.528579Z",
+  "scrapeTimestamp": "2025-04-25T14:24:34.475604Z",
   "tokens": [
-    {
-      "id": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
-      "name": "trencher",
-      "symbol": "TRENCHER",
-      "decimals": 6,
-      "description": "trencher (TRENCHER) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmdBP8iv4jVkTDk1JgomNMNJefAAFzDvpqTnk7AWN8ah1Y",
-      "tags": [
-        "launchpad",
-        "unknown"
-      ],
-      "price": 0.00761457,
-      "created_at": "0001-01-01T00:00:00Z"
-    },
     {
       "id": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
       "name": "TROLL",
@@ -26,24 +12,22 @@
         "community-assist",
         "verified"
       ],
-      "price": 0.018433,
-      "created_at": "0001-01-01T00:00:00Z"
+      "price": 0.018764,
+      "daily_volume": 25610000
     },
     {
-      "id": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-      "name": "Bonk",
-      "symbol": "Bonk",
-      "decimals": 5,
-      "description": "The Official Bonk Inu token",
-      "icon_url": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
+      "id": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+      "name": "trencher",
+      "symbol": "TRENCHER",
+      "decimals": 6,
+      "description": "trencher (TRENCHER) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmdBP8iv4jVkTDk1JgomNMNJefAAFzDvpqTnk7AWN8ah1Y",
       "tags": [
-        "verified",
-        "community",
-        "strict",
-        "birdeye-trending"
+        "launchpad",
+        "unknown"
       ],
-      "price": 0.0000155864,
-      "created_at": "0001-01-01T00:00:00Z"
+      "price": 0.00700611,
+      "daily_volume": 36640000
     },
     {
       "id": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
@@ -54,44 +38,28 @@
       "icon_url": "https://arweave.net/A1etRNMKxhlNGTf-gNBtJ75QJJ4NJtbKh_UXQTlLXzI",
       "tags": [
         "verified",
-        "community",
         "strict",
+        "community",
         "birdeye-trending"
       ],
-      "price": 0.40174396,
-      "created_at": "0001-01-01T00:00:00Z"
+      "price": 0.414497751,
+      "daily_volume": 121420000
     },
     {
-      "id": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
-      "name": "dogwifhat",
-      "symbol": "$WIF",
-      "decimals": 6,
-      "description": "Popular meme Dogwifhat vibes wif frens onchain @Dogwifcoin on X",
-      "icon_url": "https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link",
+      "id": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "name": "Bonk",
+      "symbol": "Bonk",
+      "decimals": 5,
+      "description": "The Official Bonk Inu token",
+      "icon_url": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
       "tags": [
         "verified",
+        "strict",
         "community",
-        "strict"
-      ],
-      "price": 0.619473,
-      "created_at": "0001-01-01T00:00:00Z"
-    },
-    {
-      "id": "8BtoThi2ZoXnF7QQK1Wjmh2JuBw9FjVvhnGMVZ2vpump",
-      "name": "Dark Eclipse",
-      "symbol": "DARK",
-      "decimals": 6,
-      "description": "Leave immediately. You shouldn't be here. Do not look where it's darkest.",
-      "icon_url": "https://ipfs.io/ipfs/QmVhcHM7DU62qZpAYfN8NKz8GaNBXzcGahhWBbn4nWGbtm",
-      "tags": [
-        "launchpad",
-        "community",
-        "verified",
-        "community-assist",
         "birdeye-trending"
       ],
-      "price": 0.03595,
-      "created_at": "0001-01-01T00:00:00Z"
+      "price": 0.0000159871,
+      "daily_volume": 10060000
     },
     {
       "id": "CxpGDVrX2rA6penHD2zhopPYNMXAtXutizWSktwytZ18",
@@ -104,25 +72,26 @@
         "launchpad",
         "unknown"
       ],
-      "price": 0.00362288,
+      "price": 0.00349203,
+      "daily_volume": 18160000,
       "website": "https://dev.fun/p/65b6496d4f06da20c463",
-      "telegram": "https://t.me/ZALA_AI",
-      "created_at": "0001-01-01T00:00:00Z"
+      "telegram": "https://t.me/ZALA_AI"
     },
     {
-      "id": "5UuVmAgRCX29qrjFor1gQwnAysVkaYrpBMwmKmfBpump",
-      "name": "ACT BLUE: The AI Prophecy",
-      "symbol": "ACTBLUE",
-      "decimals": 6,
-      "description": "ACT BLUE: The AI Prophecy (ACTBLUE) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmbGZGfmQzuNeiPTpQpDJJc9ey2GV2fLdcbB4qK9HDXaDD",
+      "id": "C29ebrgYjYoJPMGPnPSGY1q3mMGk4iDSqnQeQQA7moon",
+      "name": "Nobody Sausage",
+      "symbol": "NOBODY",
+      "decimals": 9,
+      "description": "Anybody Can be a Nobody",
+      "icon_url": "https://imagedelivery.net/TKv7KPMH2OHcr6ck7xjakw/122470db-2978-4620-8242-549349e82100/public",
       "tags": [
-        "unknown",
-        "launchpad"
+        "community-assist",
+        "verified",
+        "moonshot"
       ],
-      "price": 0.00016244,
-      "website": "https://cyborgism.wiki/hypha/act_i",
-      "created_at": "0001-01-01T00:00:00Z"
+      "price": 0.012981217,
+      "daily_volume": 34910000,
+      "website": "https://nobodysausage.club"
     },
     {
       "id": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
@@ -136,8 +105,38 @@
         "birdeye-trending",
         "community"
       ],
-      "price": 13.002244,
-      "created_at": "0001-01-01T00:00:00Z"
+      "price": 13.303341,
+      "daily_volume": 261769999.99999997
+    },
+    {
+      "id": "5UuVmAgRCX29qrjFor1gQwnAysVkaYrpBMwmKmfBpump",
+      "name": "ACT BLUE: The AI Prophecy",
+      "symbol": "ACTBLUE",
+      "decimals": 6,
+      "description": "ACT BLUE: The AI Prophecy (ACTBLUE) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmbGZGfmQzuNeiPTpQpDJJc9ey2GV2fLdcbB4qK9HDXaDD",
+      "tags": [
+        "unknown",
+        "launchpad"
+      ],
+      "price": 0.000123051,
+      "daily_volume": 10680000,
+      "website": "https://cyborgism.wiki/hypha/act_i"
+    },
+    {
+      "id": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+      "name": "dogwifhat",
+      "symbol": "$WIF",
+      "decimals": 6,
+      "description": "Popular meme Dogwifhat vibes wif frens onchain @Dogwifcoin on X",
+      "icon_url": "https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link",
+      "tags": [
+        "verified",
+        "strict",
+        "community"
+      ],
+      "price": 0.649755,
+      "daily_volume": 11550000
     },
     {
       "id": "HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC",
@@ -149,12 +148,12 @@
       "tags": [
         "verified",
         "launchpad",
-        "token-2022",
         "birdeye-trending",
+        "token-2022",
         "community"
       ],
-      "price": 0.236354239,
-      "created_at": "0001-01-01T00:00:00Z"
+      "price": 0.2386613,
+      "daily_volume": 25390000
     }
   ]
 }

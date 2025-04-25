@@ -67,9 +67,7 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 	// Step 2: Enrich the scraped tokens concurrently
 	enrichedCoins, err := s.enrichScrapedTokens(ctx, scrapedTokens)
 	if err != nil {
-		// Log enrichment errors but proceed if we got *any* results
-		log.Printf("WARN: Encountered errors during enrichment process: %v", err)
-		// We might still have partial results in enrichedCoins, so don't return error yet
+		return fmt.Errorf("encountered errors during enrichment process: %v", err)
 	}
 	if len(enrichedCoins) == 0 {
 		return fmt.Errorf("enrichment process completed, but no tokens were successfully enriched (or survived errors)")
@@ -95,7 +93,6 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 		log.Printf("  Mint: %s, Name: %s, Symbol: %s, Price: %.6f, Volume: %.2f",
 			t.ID, t.Name, t.Symbol, t.Price, t.DailyVolume)
 	}
-	log.Println("-------------------------------------")
 
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
@@ -105,6 +102,7 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 		return fmt.Errorf("failed to encode final enriched output to JSON buffer: %w", err)
 	}
 
+	log.Printf("Writing enriched data to file: %s", outputFile)
 	if err := os.WriteFile(outputFile, buf.Bytes(), 0o644); err != nil {
 		return fmt.Errorf("failed to write final enriched JSON to file %s: %w", outputFile, err)
 	}
@@ -346,11 +344,7 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 				VolumeStr:   strings.TrimSpace(volumeStr),
 				IconURL:     strings.TrimSpace(iconURL),
 			})
-			log.Print("-----------")
-			log.Print("-----------")
 			log.Printf("MintAddress: %s, Name: %s, Volume: %s, IconURL: %s", mintAddress, trimmedName, volumeStr, iconURL)
-			log.Print("-----------")
-			log.Print("-----------")
 			log.Printf("Successfully extracted token from row %d: %s (%s)", i+1, trimmedName, mintAddress)
 		} else {
 			log.Printf("WARN: Skipping row %d due to missing Name ('%s') or MintAddress ('%s')", i+1, trimmedName, mintAddress)
@@ -360,7 +354,6 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 	if len(scrapedTokens) == 0 {
 		return nil, fmt.Errorf("no tokens were successfully scraped")
 	}
-	log.Fatalf("Scraped %d tokens", len(scrapedTokens))
 
 	log.Printf("Successfully scraped %d tokens", len(scrapedTokens))
 	return scrapedTokens, nil

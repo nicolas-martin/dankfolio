@@ -52,6 +52,7 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 	// Perform initial data load or refresh, with a timeout
 	ctx, cancel := context.WithTimeout(context.Background(), initialLoadTimeout)
 	defer cancel()
+
 	if err := service.loadOrRefreshData(ctx); err != nil {
 		// Log as warning, not fatal. Service might still work partially with cached/dynamic data.
 		log.Printf("Warning: Initial data load/refresh failed: %v", err)
