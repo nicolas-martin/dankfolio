@@ -274,21 +274,12 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 
 	// Capture screenshot and page state before step 6
 	log.Println("Capturing page state before attempting to extract data...")
-	var buf []byte
 	var pageHTML string
 	err = chromedp.Run(timeoutCtx,
-		chromedp.CaptureScreenshot(&buf),
 		chromedp.OuterHTML("html", &pageHTML, chromedp.ByQuery),
 	)
 	if err != nil {
 		log.Printf("Warning: Failed to capture page state: %v", err)
-	} else {
-		// Save screenshot
-		if err := os.WriteFile("debug_screenshot.png", buf, 0o644); err != nil {
-			log.Printf("Warning: Failed to save screenshot: %v", err)
-		} else {
-			log.Println("Screenshot saved to debug_screenshot.png")
-		}
 	}
 
 	// Step 6: Extract data from modal
@@ -355,6 +346,11 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 				VolumeStr:   strings.TrimSpace(volumeStr),
 				IconURL:     strings.TrimSpace(iconURL),
 			})
+			log.Print("-----------")
+			log.Print("-----------")
+			log.Printf("MintAddress: %s, Name: %s, Volume: %s, IconURL: %s", mintAddress, trimmedName, volumeStr, iconURL)
+			log.Print("-----------")
+			log.Print("-----------")
 			log.Printf("Successfully extracted token from row %d: %s (%s)", i+1, trimmedName, mintAddress)
 		} else {
 			log.Printf("WARN: Skipping row %d due to missing Name ('%s') or MintAddress ('%s')", i+1, trimmedName, mintAddress)
@@ -364,6 +360,7 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 	if len(scrapedTokens) == 0 {
 		return nil, fmt.Errorf("no tokens were successfully scraped")
 	}
+	log.Fatalf("Scraped %d tokens", len(scrapedTokens))
 
 	log.Printf("Successfully scraped %d tokens", len(scrapedTokens))
 	return scrapedTokens, nil
