@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
-import { Modal, Portal, Text, useTheme, Card } from 'react-native-paper';
+import { Modal as RNModal, View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
+import { Text, useTheme, Card } from 'react-native-paper';
 import { ChevronDownIcon, CoinsIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
@@ -45,15 +45,10 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 	const handleTokenSelect = useCallback((coin: Coin) => {
 		onSelectToken(coin);
-		// Small delay to prevent flickering
 		requestAnimationFrame(() => {
 			onDismiss();
 		});
 	}, [onSelectToken, onDismiss]);
-
-	useEffect(() => {
-		console.log('[TokenSearchModal] Visibility changed:', visible);
-	}, [visible]);
 
 	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
 		const portfolioToken = portfolioTokens.find(t => t.id === coin.id);
@@ -82,35 +77,38 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	}, [handleTokenSelect, styles.tokenItem, styles.tokenIcon, styles.tokenDetails, styles.tokenAddress, styles.tokenBalance, portfolioTokens]);
 
 	return (
-		<Portal>
-			<Modal
-				visible={visible}
-				onDismiss={() => {
-					console.log('[TokenSearchModal] Modal onDismiss triggered');
-					// Call onDismiss directly without requestAnimationFrame
-					onDismiss();
-				}}
-				contentContainerStyle={styles.modalContent}
-				dismissable={true}
-				testID={testID}
+		<RNModal
+			visible={visible}
+			animationType="fade"
+			transparent
+			onRequestClose={onDismiss}
+			testID={testID}
+		>
+			<TouchableOpacity
+				style={styles.modalOverlay}
+				activeOpacity={1}
+				onPressOut={onDismiss}
 			>
-				<View style={styles.searchContainer}>
-					<TextInput
-						style={styles.searchInput}
-						placeholder="Search tokens"
-						value={searchQuery}
-						onChangeText={setSearchQuery}
-						placeholderTextColor={theme.colors.onSurfaceVariant}
+				<View style={styles.modalContent}>
+					<View style={styles.searchContainer}>
+						<TextInput
+							style={styles.searchInput}
+							placeholder="Search tokens"
+							value={searchQuery}
+							onChangeText={setSearchQuery}
+							placeholderTextColor={theme.colors.onSurfaceVariant}
+						/>
+					</View>
+					<FlatList
+						data={filteredCoins}
+						renderItem={renderItem}
+						keyExtractor={coin => coin.id}
+						style={styles.tokenList}
+						keyboardShouldPersistTaps="handled"
 					/>
 				</View>
-				<FlatList
-					data={filteredCoins}
-					renderItem={renderItem}
-					keyExtractor={coin => coin.id}
-					style={styles.tokenList}
-				/>
-			</Modal>
-		</Portal>
+			</TouchableOpacity>
+		</RNModal>
 	);
 };
 
@@ -153,7 +151,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	}, [selectedToken, onSelectToken, portfolioToken, hasInitialSelection]);
 
 	const handleDismiss = useCallback(() => {
-		console.log('[TokenSelector] handleDismiss called');
 		setModalVisible(false);
 	}, []);
 
@@ -164,7 +161,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 					<TouchableOpacity
 						style={styles.selectorButtonContainer}
 						onPress={() => {
-							console.log('[TokenSelector] Opening modal');
 							setModalVisible(true);
 						}}
 						disabled={!onSelectToken}
@@ -225,14 +221,17 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				</Card.Content>
 			</Card>
 
-			<TokenSearchModal
-				visible={modalVisible}
-				onDismiss={handleDismiss}
-				selectedToken={selectedToken}
-				onSelectToken={onSelectToken}
-				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
-				testID="token-search-modal"
-			/>
+			{modalVisible && (
+				<TokenSearchModal
+					visible={modalVisible}
+					onDismiss={handleDismiss}
+					selectedToken={selectedToken}
+					onSelectToken={onSelectToken}
+					showOnlyPortfolioTokens={showOnlyPortfolioTokens}
+					testID="token-search-modal"
+				/>
+			)}
+
 		</>
 	);
 };

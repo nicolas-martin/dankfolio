@@ -123,4 +123,10 @@ export const createStyles = (theme: MD3Theme) =>
 			textAlign: 'right',
 			width: '100%',
 		},
+		modalOverlay: {
+			flex: 1,
+			backgroundColor: 'rgba(0, 0, 0, 0.5)',
+			justifyContent: 'center',
+			padding: 20,
+		},
 	}); 
