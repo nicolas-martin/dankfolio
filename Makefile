@@ -49,6 +49,41 @@ backend-test: backend-build backend-generate-mocks ## Run backend tests
 	@echo "🧪 Running backend tests..."
 	cd backend && go test ./... -v
 
+cleanup:
+	DEPCHECK_OUTPUT=depcheck-output.txt
+	@echo "Running depcheck..."
+	@depcheck > $(DEPCHECK_OUTPUT)
+	@echo "Extracting unused dependencies..."
+	@./cleanup.sh < $(DEPCHECK_OUTPUT)
+
+clean-build:
+	@echo "🧹 Starting clean process..."
+	@echo "   - Removing ios/build directory..."
+	@rm -rf frontend/ios/build
+	@echo "   - Removing ios/Pods directory..."
+	@rm -rf frontend/ios/Pods
+	@echo "   - Removing ios/Podfile.lock file..."
+	@rm -f frontend/ios/Podfile.lock
+	@echo "   - Removing node_modules directory..."
+	@rm -rf frontend/node_modules
+	@echo "🧼 Clean process finished."
+	@echo ""
+	@echo "📦 Installing dependencies..."
+	@if [ -f frontend/yarn.lock ]; then \
+		echo "   - Using Yarn to install JavaScript dependencies..."; \
+		cd frontend && yarn install; \
+	else \
+		echo "   - Using npm to install JavaScript dependencies..."; \
+		cd frontend && npm install; \
+	fi
+	@echo "   - Installing iOS Pods..."
+	@cd frontend && npx pod-install
+	@echo "✅ Dependencies installed."
+	@echo ""
+	@echo "🚀 Attempting to build and run on iOS Simulator..."
+	@cd frontend && npx expo run:ios
+	@echo "✅ Script finished."
+
 # Helpers
 help:
 	@echo "\033[33m🛠️  Available commands:\033[0m"
