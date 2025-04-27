@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, Button, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { styles } from './styles';
-import { handleGenerateWallet, handleImportWallet } from './scripts';
+import { handleGenerateWallet, handleImportWallet, storeCredentials } from './scripts';
 import { WalletSetupScreenProps } from './types';
 import { Keypair } from '@solana/web3.js';
 import { useToast } from '@/components/Common/Toast';
+import { DEBUG_MODE, TEST_PRIVATE_KEY } from '@env';
+import { Buffer } from 'buffer';
+import bs58 from 'bs58';
+
+const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
 const WalletSetupScreen = ({ onWalletSetupComplete }: WalletSetupScreenProps) => {
 	const [mnemonic, setMnemonic] = useState('');
@@ -56,6 +61,35 @@ const WalletSetupScreen = ({ onWalletSetupComplete }: WalletSetupScreenProps) =>
 		}
 	};
 
+	const loadDebugWallet = async () => {
+		if (!TEST_PRIVATE_KEY) {
+			showToast({ message: 'TEST_PRIVATE_KEY environment variable not set.', type: 'error' });
+			return;
+		}
+		setIsLoading(true);
+		try {
+			console.log("🔧 Loading debug wallet from TEST_PRIVATE_KEY (assuming Base64)...");
+			const keypairBytes = Buffer.from(TEST_PRIVATE_KEY, 'base64');
+			if (keypairBytes.length !== 64) {
+				throw new Error(`Decoded TEST_PRIVATE_KEY has incorrect length: ${keypairBytes.length}, expected 64`);
+			}
+			const keypair = Keypair.fromSecretKey(keypairBytes);
+			const privateKeyHex = keypairBytes.toString('hex');
+			const placeholderMnemonic = 'debug test key loaded - mnemonic not applicable';
+
+			await storeCredentials(privateKeyHex, placeholderMnemonic);
+
+			showToast({ message: 'Debug wallet loaded successfully!', type: 'success' });
+			onWalletSetupComplete(keypair);
+
+		} catch (err: any) {
+			console.error("Load Debug Wallet Error:", err);
+			showToast({ message: err.message || 'Error loading debug wallet.', type: 'error' });
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	return (
 		<View style={styles.container}>
 			<Text style={styles.title}>Wallet Setup</Text>
@@ -78,6 +112,18 @@ const WalletSetupScreen = ({ onWalletSetupComplete }: WalletSetupScreenProps) =>
 				autoCorrect={false}
 			/>
 			<Button title="Import Wallet using Mnemonic" onPress={importWallet} disabled={isLoading} />
+
+			{IS_DEBUG_MODE && (
+				<>
+					<Text style={[styles.orText, { marginTop: 30 }]}>- OR (DEBUG) -</Text>
+					<Button
+						title="Load Debug Wallet (TEST_PRIVATE_KEY)"
+						onPress={loadDebugWallet}
+						disabled={isLoading}
+						color="orange"
+					/>
+				</>
+			)}
 		</View>
 	);
 };

@@ -9,7 +9,7 @@ const KEYCHAIN_USERNAME_PRIVATE_KEY = 'userPrivateKeyHex'; // Store 64-byte keyp
 const KEYCHAIN_USERNAME_MNEMONIC = 'userMnemonic';
 
 // Helper to store credentials safely
-const storeCredentials = async (privateKeyHex: string, mnemonic: string): Promise<void> => {
+export const storeCredentials = async (privateKeyHex: string, mnemonic: string): Promise<void> => {
 	// Store the 64-byte keypair hex
 	await Keychain.setGenericPassword(KEYCHAIN_USERNAME_PRIVATE_KEY, privateKeyHex, { service: KEYCHAIN_SERVICE });
 	await Keychain.setGenericPassword(KEYCHAIN_USERNAME_MNEMONIC, mnemonic, { service: KEYCHAIN_SERVICE });
@@ -22,14 +22,20 @@ export const handleGenerateWallet = async (): Promise<Keypair | null> => {
 		const newWalletData = await grpcApi.createWallet();
 		if (!newWalletData || !newWalletData.secret_key || !newWalletData.mnemonic) {
 			console.error('❌ Failed to generate wallet from API or missing data');
-			// Throw error instead of returning null to allow UI to catch it
 			throw new Error('Failed to generate wallet from API.');
 		}
 
 		let keypairBytes: Buffer;
 		try {
-			// Assume secret_key is a Base64 encoded string of the 64-byte keypair
-			keypairBytes = Buffer.from(newWalletData.secret_key, 'base64');
+			// Remove potential surrounding quotes from the secret_key string
+			let base64Key = newWalletData.secret_key;
+			if (base64Key.startsWith('"') && base64Key.endsWith('"')) {
+				base64Key = base64Key.substring(1, base64Key.length - 1);
+				console.log('✂️ Removed surrounding quotes from secretKey string.');
+			}
+
+			// Now decode the cleaned Base64 string
+			keypairBytes = Buffer.from(base64Key, 'base64');
 			if (keypairBytes.length !== 64) {
 				throw new Error(`Decoded keypair has incorrect length: ${keypairBytes.length}, expected 64`);
 			}
@@ -40,27 +46,21 @@ export const handleGenerateWallet = async (): Promise<Keypair | null> => {
 			throw new Error('Could not decode secret key from API response.');
 		}
 
-		// Convert the 64-byte keypair to hex for storage
 		const privateKeyHex = keypairBytes.toString('hex');
 		const mnemonic = newWalletData.mnemonic;
 
-		// Store securely FIRST
 		await storeCredentials(privateKeyHex, mnemonic);
 
-		// THEN reconstruct the Keypair object
 		const keypair = Keypair.fromSecretKey(keypairBytes);
 
-		// Verify public key matches (optional sanity check)
 		if (keypair.publicKey.toBase58() !== newWalletData.public_key) {
 			console.warn('⚠️ WARNING: Reconstructed public key does not match public key from API!');
-			// This might indicate an issue with secret_key format or decoding
 		}
 
 		console.log('✅ New wallet generated, stored, and Keypair created.');
-		return keypair; // Return keypair only after successful storage
+		return keypair;
 	} catch (error) {
 		console.error('❌ Error in handleGenerateWallet:', error);
-		// Re-throw the error so the calling UI component can handle it (e.g., show toast)
 		throw error;
 	}
 };
