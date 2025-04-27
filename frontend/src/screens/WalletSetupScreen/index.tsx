@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Button, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import { handleGenerateWallet, handleImportWallet, storeCredentials } from './scripts';
 import { WalletSetupScreenProps } from './types';
 import { Keypair } from '@solana/web3.js';
@@ -8,10 +8,14 @@ import { useToast } from '@/components/Common/Toast';
 import { DEBUG_MODE, TEST_PRIVATE_KEY } from '@env';
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
+import { useTheme } from 'react-native-paper';
 
 const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
 const WalletSetupScreen = ({ onWalletSetupComplete }: WalletSetupScreenProps) => {
+	const theme = useTheme();
+	const styles = createStyles(theme);
+
 	const [mnemonic, setMnemonic] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 	const { showToast } = useToast();
