@@ -41,8 +41,7 @@ const mockToCoin: Coin = {
 const mockWallet: Wallet = {
 	address: 'TestWalletAddress12345',
 	privateKey: 'TestPrivateKey12345',
-	publicKey: 'TestPublicKey67890',
-	balance: 0,
+	mnemonic: 'test mnemonic phrase',
 };
 const mockFromPortfolioToken: PortfolioToken = {
 	id: mockFromCoin.id,

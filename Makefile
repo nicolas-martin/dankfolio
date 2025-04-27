@@ -7,7 +7,7 @@ ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
 
 # Server Management
-run: backend-kill proto
+run: backend-kill
 	@echo "🚀 Starting backend server..."
 	@cd $(BACKEND_DIR) && set -a && source .env && set +a && go run cmd/api/main.go
 
@@ -15,7 +15,7 @@ backend-kill:
 	@echo "🛑 Stopping backend server..."
 	@lsof -ti :9000 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
 
-run-mobile: mobile-kill proto
+run-mobile: mobile-kill
 	@echo "📱 Starting mobile frontend..."
 	@cd $(MOBILE_DIR) && yarn start
 

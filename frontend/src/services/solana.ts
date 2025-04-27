@@ -152,7 +152,7 @@ export const buildAndSignSwapTransaction = async (
 		// Request swap transaction with the correct body structure
 		const swapRequestBody = {
 			quoteResponse: quoteResponse,
-			userPublicKey: wallet.publicKey.toString(),
+			userPublicKey: wallet.address,
 			wrapUnwrapSOL: true,
 			dynamicComputeUnitLimit: true,
 			dynamicSlippage: true,

@@ -28,8 +28,7 @@ export type Base58PrivateKey = string;
 export interface Wallet {
 	address: string;
 	privateKey: Base58PrivateKey;
-	balance: number;
-	publicKey: string;
+	mnemonic: string;
 	keypair?: Keypair;
 }
 

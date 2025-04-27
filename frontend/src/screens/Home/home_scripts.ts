@@ -50,8 +50,7 @@ export const handleImportWallet = async (privateKey: string): Promise<Wallet> =>
 		const wallet: Wallet = {
 			address: keypair.publicKey.toString(),
 			privateKey: base58PrivateKey,
-			balance: 0,
-			publicKey: keypair.publicKey.toString(),
+			mnemonic: '', // No mnemonic for imported wallets
 			keypair
 		};
 		return wallet;

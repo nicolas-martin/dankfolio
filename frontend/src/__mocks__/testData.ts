@@ -36,8 +36,7 @@ export const mockToCoin: Coin = {
 export const mockWallet: Wallet = {
 	address: 'TestWalletAddress12345',
 	privateKey: 'TestPrivateKey12345',
-	publicKey: 'TestPublicKey67890',
-	balance: 0,
+	mnemonic: 'test mnemonic phrase for wallet',
 };
 
 export const mockFromPortfolioToken: PortfolioToken = {

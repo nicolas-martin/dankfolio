@@ -12,7 +12,7 @@ const mockSetCoin = jest.fn((coin: Coin) => {
 	coinMap[coin.id] = coin;
 });
 
-const mockWalletData: Wallet = { address: 'wallet123', balance: 1000, privateKey: 'privKey', publicKey: 'pubKey' };
+const mockWalletData: Wallet = { address: 'wallet123', privateKey: 'privKey', mnemonic: 'mnemonic' };
 const mockSolCoin: Coin = { id: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
 const mockUsdcCoin: Coin = { id: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
 

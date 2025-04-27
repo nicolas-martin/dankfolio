@@ -50,6 +50,12 @@ export interface TokenTransferSubmitRequest {
     signedTransaction: string;
 }
 
+export interface CreateWalletResponse {
+	public_key: string;
+	secret_key: string;
+	mnemonic: string;
+}
+
 export interface TokenTransferResponse {
     transactionHash: string;
 }
