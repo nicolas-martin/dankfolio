@@ -1,7 +1,8 @@
 package offchain
 
-// ClientAPI defines the interface for external metadata interactions
+import "context"
+
 type ClientAPI interface {
-	// FetchMetadata fetches JSON metadata from a URI with fallback support for IPFS and Arweave
 	FetchMetadata(uri string) (map[string]interface{}, error)
+	FetchRawData(ctx context.Context, uri string) (data []byte, contentType string, err error)
 }

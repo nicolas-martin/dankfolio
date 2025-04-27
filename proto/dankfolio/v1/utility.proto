@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package dankfolio.v1;
+
+option go_package = "github.com/dankfolio/backend/gen/dankfolio/v1;dankfoliov1"; // Adjust if your module path differs
+
+// UtilityService provides common helper and proxy functionalities.
+service UtilityService {
+  // GetProxiedImage fetches an image from an external URL via the backend proxy.
+  // This helps centralize fetching logic, caching, and handle network security policies.
+  rpc GetProxiedImage(GetProxiedImageRequest) returns (GetProxiedImageResponse);
+
+  // Future utility RPCs can be added here...
+}
+
+message GetProxiedImageRequest {
+  // The original URL of the image to fetch (e.g., from IPFS, Arweave, HTTP).
+  string image_url = 1;
+}
+
+message GetProxiedImageResponse {
+  // The raw byte data of the fetched image.
+  bytes image_data = 1;
+  // The MIME type of the image (e.g., "image/png", "image/jpeg").
+  string content_type = 2;
+} 

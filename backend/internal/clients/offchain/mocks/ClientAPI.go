@@ -5,6 +5,8 @@
 package offchainMocks
 
 import (
+	"context"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -87,6 +89,69 @@ func (_c *MockClientAPI_FetchMetadata_Call) Return(stringToIfaceVal map[string]i
 }
 
 func (_c *MockClientAPI_FetchMetadata_Call) RunAndReturn(run func(uri string) (map[string]interface{}, error)) *MockClientAPI_FetchMetadata_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FetchRawData provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) FetchRawData(ctx context.Context, uri string) ([]byte, string, error) {
+	ret := _mock.Called(ctx, uri)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FetchRawData")
+	}
+
+	var r0 []byte
+	var r1 string
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]byte, string, error)); ok {
+		return returnFunc(ctx, uri)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []byte); ok {
+		r0 = returnFunc(ctx, uri)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]byte)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) string); ok {
+		r1 = returnFunc(ctx, uri)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = returnFunc(ctx, uri)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockClientAPI_FetchRawData_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FetchRawData'
+type MockClientAPI_FetchRawData_Call struct {
+	*mock.Call
+}
+
+// FetchRawData is a helper method to define mock.On call
+//   - ctx
+//   - uri
+func (_e *MockClientAPI_Expecter) FetchRawData(ctx interface{}, uri interface{}) *MockClientAPI_FetchRawData_Call {
+	return &MockClientAPI_FetchRawData_Call{Call: _e.mock.On("FetchRawData", ctx, uri)}
+}
+
+func (_c *MockClientAPI_FetchRawData_Call) Run(run func(ctx context.Context, uri string)) *MockClientAPI_FetchRawData_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_FetchRawData_Call) Return(data []byte, contentType string, err error) *MockClientAPI_FetchRawData_Call {
+	_c.Call.Return(data, contentType, err)
+	return _c
+}
+
+func (_c *MockClientAPI_FetchRawData_Call) RunAndReturn(run func(ctx context.Context, uri string) ([]byte, string, error)) *MockClientAPI_FetchRawData_Call {
 	_c.Call.Return(run)
 	return _c
 }
