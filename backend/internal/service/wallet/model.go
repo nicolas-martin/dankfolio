@@ -15,6 +15,7 @@ type WalletBalance struct {
 type WalletInfo struct {
 	PublicKey string `json:"public_key"`
 	SecretKey string `json:"secret_key"`
+	Mnemonic  string `json:"mnemonic"`
 }
 
 // Parse the JSON data into our struct

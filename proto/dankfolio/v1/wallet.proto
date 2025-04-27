@@ -49,6 +49,7 @@ message CreateWalletRequest {
 message CreateWalletResponse {
   string public_key = 1;   // Wallet's public key
   string secret_key = 2;   // Wallet's private key (handle with care)
+  string mnemonic = 3;      // Mnemonic phrase for wallet recovery
 }
 
 // PrepareTransferRequest is the request for preparing a transfer

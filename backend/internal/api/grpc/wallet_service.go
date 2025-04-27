@@ -55,6 +55,7 @@ func (s *walletServiceHandler) CreateWallet(
 	return connect.NewResponse(&pb.CreateWalletResponse{
 		PublicKey: wallet.PublicKey,
 		SecretKey: wallet.SecretKey,
+		Mnemonic:  wallet.Mnemonic,
 	}), nil
 }
 

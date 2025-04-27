@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/tyler-smith/go-bip39"
 )
 
 // Service handles wallet-related operations
@@ -117,10 +119,49 @@ func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, 
 
 // CreateWallet generates a new Solana wallet
 func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
-	account := solana.NewWallet()
+	log.Println("Generating new Solana wallet...")
+
+	// 1. Generate a new mnemonic phrase (12 words - 128 bits)
+	entropy, err := bip39.NewEntropy(128)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to generate entropy: %v", err)
+	}
+	mnemonic, err := bip39.NewMnemonic(entropy)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to generate mnemonic: %v", err)
+	}
+	log.Printf(" - Generated Mnemonic (SAVE THIS SECURELY!): %s\n", mnemonic)
+
+	// 2. Generate the seed from the mnemonic
+	seed := bip39.NewSeed(mnemonic, "") // Standard empty passphrase
+
+	// 3. Create the standard library ed25519 private key (64 bytes) from the first 32 bytes of the seed.
+	if len(seed) < 32 {
+		log.Fatalf("FATAL: Generated seed is too short: %d bytes, expected at least 32", len(seed))
+	}
+	// This function returns the 64-byte key: 32-byte private scalar (derived from seed) + 32-byte public key
+	stdLibPrivateKey := ed25519.NewKeyFromSeed(seed[:32])
+	log.Println(" - Derived Ed25519 key material from seed.")
+
+	// 4. Cast the standard library key (which is []byte) to solana.PrivateKey type.
+	// The solana-go library uses this 64-byte format internally.
+	solanaPrivateKey := solana.PrivateKey(stdLibPrivateKey)
+
+	// 5. Get the corresponding Solana public key using the method from solana.PrivateKey
+	publicKey := solanaPrivateKey.PublicKey()
+	log.Printf(" - Derived Public Key: %s\n", publicKey.String())
+
+	// 6. Save the Solana Private Key (as JSON byte array - full 64 bytes)
+	// This format is directly usable by `solana-keygen verify` and other tools expecting the keypair file.
+	privateKeyBytes := []byte(solanaPrivateKey) // This is the 64-byte keypair
+	jsonData, err := json.Marshal(privateKeyBytes)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to marshal private key to JSON: %v", err)
+	}
 	return &WalletInfo{
-		PublicKey: account.PublicKey().String(),
-		SecretKey: account.PrivateKey.String(),
+		PublicKey: publicKey.String(),
+		SecretKey: string(jsonData),
+		Mnemonic:  mnemonic,
 	}, nil
 }
 
