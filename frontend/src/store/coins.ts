@@ -59,11 +59,8 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 
 			console.log(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map(c => ({ symbol: c.symbol, id: c.id })));
 
-			if (!trendingOnly) {
-				set({ availableCoins: coins, isLoading: false });
-			} else {
-				set({ isLoading: false });
-			}
+			// Update availableCoins regardless of trendingOnly flag
+			set({ availableCoins: coins, isLoading: false });
 
 			console.log('🗺️ Updated coin store:', {
 				availableCoinsCount: get().availableCoins.length,
