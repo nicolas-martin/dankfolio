@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Wallet, Coin } from '@/types';
+import { Keypair } from '@solana/web3.js';
 import { useCoinStore } from './coins';
 import grpcApi from '@/services/grpcApi';
 import { SOLANA_ADDRESS } from '@/utils/constants';
@@ -17,9 +18,9 @@ interface PortfolioState {
 	isLoading: boolean;
 	error: string | null;
 	tokens: PortfolioToken[];
-	setWallet: (wallet: Wallet | null) => void;
+	setWallet: (keypair: Keypair | null) => void;
 	clearWallet: () => void;
-	fetchPortfolioBalance: (address: string) => Promise<void>;
+	fetchPortfolioBalance: () => Promise<void>;
 }
 
 export const usePortfolioStore = create<PortfolioState>((set, get) => ({
@@ -28,28 +29,44 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	error: null,
 	tokens: [],
 
-	setWallet: (wallet) => {
-		set({ wallet });
+	setWallet: (keypair) => {
+		if (keypair) {
+			const newWallet: Wallet = {
+				keypair: keypair,
+				address: keypair.publicKey.toBase58(),
+				privateKey: '' as any,
+				mnemonic: '',
+			};
+			set({ wallet: newWallet });
+		} else {
+			set({ wallet: null });
+		}
 	},
 
 	clearWallet: () => {
 		set({ wallet: null, tokens: [], error: null });
 	},
 
-	fetchPortfolioBalance: async (address: string) => {
+	fetchPortfolioBalance: async () => {
+		const wallet = get().wallet;
+		if (!wallet?.keypair) {
+			set({ error: "Wallet not set", isLoading: false, tokens: [] });
+			return;
+		}
+		const address = wallet.keypair.publicKey.toBase58();
+
 		try {
 			set({ isLoading: true, error: null });
 			const balance = await grpcApi.getWalletBalance(address);
 
 			const coinStore = useCoinStore.getState();
-			let coinMap = coinStore.coinMap; // Use coinMap as the source of truth for all loaded coins
+			let coinMap = coinStore.coinMap;
 
 			const balanceIds = balance.balances.map(b => b.id);
 			const missingIds = balanceIds.filter(id => !coinMap[id]);
 
 			let missingCount = 0;
 			const missingCoinIds: string[] = [];
-			// Fetch missing coins in parallel, but allow partial success
 			await Promise.all(
 				missingIds.map(async (id) => {
 					try {
@@ -68,10 +85,8 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 					}
 				})
 			);
-			// Refresh coinMap after updates
 			coinMap = useCoinStore.getState().coinMap;
 
-			// Build tokens using the up-to-date coinMap
 			const tokens = balance.balances.map((balance) => {
 				const coin = coinMap[balance.id];
 				if (!coin) return null;
@@ -90,6 +105,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 				error: missingCount > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
 			});
 		} catch (error) {
+			console.error("Failed to fetch portfolio balance:", error);
 			set({ error: (error as Error).message, isLoading: false, tokens: [] });
 		}
 	},

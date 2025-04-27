@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import './src/utils/polyfills';
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
@@ -12,18 +12,13 @@ import {
 } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Navigation from '@components/Common/Navigation';
-import { theme as appTheme } from './src/utils/theme';
-import { ToastProvider } from './src/components/Common/Toast';
-import { usePortfolioStore } from './src/store/portfolio';
-import { useCoinStore } from './src/store/coins';
-import { handleImportWallet } from './src/screens/Home/home_scripts';
-import { TEST_PRIVATE_KEY } from '@env';
-
-if (!TEST_PRIVATE_KEY) {
-	throw new Error('TEST_PRIVATE_KEY environment variable is required');
-}
-
-const TEST_PRIVATE_KEY_VALUE: string = TEST_PRIVATE_KEY;
+import { theme as appTheme } from '@utils/theme';
+import { ToastProvider } from '@components/Common/Toast';
+import { usePortfolioStore } from '@store/portfolio';
+import { useCoinStore } from '@store/coins';
+import { retrieveWalletFromStorage } from '@screens/WalletSetupScreen/scripts';
+import WalletSetupScreen from '@screens/WalletSetupScreen';
+import { Keypair } from '@solana/web3.js';
 
 // Disable Reanimated strict mode warnings
 configureReanimatedLogger({
@@ -68,46 +63,64 @@ const styles = StyleSheet.create({
 });
 
 const App: React.FC = () => {
-	const [appIsReady, setAppIsReady] = React.useState(false);
-	const { fetchPortfolioBalance, setWallet } = usePortfolioStore();
+	const [appIsReady, setAppIsReady] = useState(false);
+	const [needsWalletSetup, setNeedsWalletSetup] = useState<boolean | null>(null);
+	const { fetchPortfolioBalance, setWallet, wallet } = usePortfolioStore();
 	const { fetchAvailableCoins } = useCoinStore();
+
+	const handleWalletSetupComplete = (newKeypair: Keypair) => {
+		setWallet(newKeypair);
+		setNeedsWalletSetup(false);
+	};
 
 	useEffect(() => {
 		async function prepare() {
+			let existingKeypair: Keypair | null = null;
 			try {
-				// Initialize wallet first
-				const wallet = await handleImportWallet(TEST_PRIVATE_KEY_VALUE);
-				if (wallet) {
-					setWallet(wallet);
-				}
+				existingKeypair = await retrieveWalletFromStorage();
 
-				// Load all required data
-				await Promise.all([
-					fetchPortfolioBalance(wallet?.address),
-					fetchAvailableCoins()
-				]);
+				if (existingKeypair) {
+					console.log("Existing wallet keypair found, setting in store.");
+					setWallet(existingKeypair);
+					setNeedsWalletSetup(false);
+				} else {
+					console.log("No existing wallet found, showing setup screen.");
+					setNeedsWalletSetup(true);
+				}
 			} catch (e) {
-				console.warn(e);
+				console.warn('Error during app preparation:', e);
+				setNeedsWalletSetup(true);
 			} finally {
 				setAppIsReady(true);
 			}
 		}
 
 		prepare();
-	}, [fetchPortfolioBalance, fetchAvailableCoins, setWallet]);
+	}, [setWallet]);
+
+	useEffect(() => {
+		if (wallet && !needsWalletSetup) {
+			async function loadData() {
+				try {
+					await Promise.all([
+						fetchPortfolioBalance(),
+						fetchAvailableCoins()
+					]);
+				} catch (e) {
+					console.warn('Error fetching data after wallet setup:', e);
+				}
+			}
+			loadData();
+		}
+	}, [wallet, needsWalletSetup, fetchPortfolioBalance, fetchAvailableCoins]);
 
 	const onLayoutRootView = useCallback(async () => {
 		if (appIsReady) {
-			// This tells the splash screen to hide immediately! If we call this after
-			// `setAppIsReady`, then we may see a blank screen while the app is
-			// loading its initial state and rendering its first pixels. So instead,
-			// we hide the splash screen once we know the root view has already
-			// performed layout.
 			await SplashScreen.hideAsync();
 		}
 	}, [appIsReady]);
 
-	if (!appIsReady) {
+	if (!appIsReady || needsWalletSetup === null) {
 		return null;
 	}
 
@@ -118,7 +131,11 @@ const App: React.FC = () => {
 					<ToastProvider>
 						<View style={styles.container}>
 							<StatusBar style="auto" />
-							<Navigation />
+							{needsWalletSetup ? (
+								<WalletSetupScreen onWalletSetupComplete={handleWalletSetupComplete} />
+							) : (
+								<Navigation />
+							)}
 						</View>
 					</ToastProvider>
 				</PaperProvider>
