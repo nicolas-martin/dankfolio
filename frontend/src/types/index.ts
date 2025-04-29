@@ -1,5 +1,6 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Keypair } from '@solana/web3.js';
+import { Token as SearchToken } from '@/services/grpc/model';
 
 export interface Coin {
 	id: string;
@@ -37,8 +38,11 @@ export type RootStackParamList = {
 	Trade: {
 		initialFromCoin?: Coin | null;
 		initialToCoin?: Coin | null;
+		selectedToken?: SearchToken;
 	};
 	Profile: undefined;
+	Search: undefined;
+	SendTokens: undefined;
 	CoinDetail: {
 		coin?: Coin;
 		solCoin?: Coin;

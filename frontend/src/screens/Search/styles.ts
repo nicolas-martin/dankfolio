@@ -1,10 +1,129 @@
 import { StyleSheet } from 'react-native';
+import { MD3Theme } from 'react-native-paper';
 
-export const styles = StyleSheet.create({
+export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
+		flex: 1,
+		backgroundColor: theme.colors.background,
+	},
+	searchContainer: {
+		padding: 16,
+		backgroundColor: theme.colors.surfaceVariant,
+		borderBottomWidth: 1,
+		borderBottomColor: theme.colors.outlineVariant,
+	},
+	searchInput: {
+		height: 40,
+		backgroundColor: theme.colors.surface,
+		borderRadius: 8,
+		paddingHorizontal: 12,
+		color: theme.colors.onSurface,
+	},
+	listContainer: {
+		flex: 1,
+	},
+	tokenItem: {
+		flexDirection: 'row',
+		padding: 16,
+		alignItems: 'center',
+		borderBottomWidth: 1,
+		borderBottomColor: theme.colors.outlineVariant,
+	},
+	tokenImage: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		marginRight: 12,
+	},
+	tokenInfo: {
+		flex: 1,
+	},
+	tokenNameRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 4,
+	},
+	tokenName: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+	},
+	tokenSymbol: {
+		fontSize: 14,
+		color: theme.colors.onSurfaceVariant,
+		marginLeft: 8,
+	},
+	tokenMetrics: {
+		flexDirection: 'row',
+		alignItems: 'center',
+	},
+	tokenPrice: {
+		fontSize: 14,
+		color: theme.colors.onSurface,
+		marginRight: 12,
+	},
+	tokenVolume: {
+		fontSize: 12,
+		color: theme.colors.onSurfaceVariant,
+	},
+	priceChangePositive: {
+		fontSize: 14,
+		color: theme.colors.primary,
+		marginLeft: 'auto',
+	},
+	priceChangeNegative: {
+		fontSize: 14,
+		color: theme.colors.error,
+		marginLeft: 'auto',
+	},
+	errorContainer: {
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: '#FFFFFF',
+		padding: 16,
+	},
+	errorText: {
+		fontSize: 16,
+		color: theme.colors.error,
+		textAlign: 'center',
+	},
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	emptyContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 16,
+	},
+	emptyText: {
+		fontSize: 16,
+		color: theme.colors.onSurfaceVariant,
+		textAlign: 'center',
+	},
+	filtersContainer: {
+		flexDirection: 'row',
+		paddingHorizontal: 16,
+		paddingVertical: 8,
+		backgroundColor: theme.colors.surfaceVariant,
+	},
+	filterButton: {
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 16,
+		backgroundColor: theme.colors.surface,
+		marginRight: 8,
+	},
+	filterButtonActive: {
+		backgroundColor: theme.colors.primary,
+	},
+	filterButtonText: {
+		fontSize: 14,
+		color: theme.colors.onSurface,
+	},
+	filterButtonTextActive: {
+		color: theme.colors.onPrimary,
 	},
 }); 

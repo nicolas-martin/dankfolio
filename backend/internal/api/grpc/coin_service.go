@@ -2,42 +2,47 @@ package grpc
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"strings"
 	"time"
 
+	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
-	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 )
 
-// CoinService implements the CoinService gRPC service
-type CoinService struct {
-	pb.UnimplementedCoinServiceServer
-	store         db.Store
-	jupiterClient jupiter.ClientAPI
+// coinServiceHandler implements the CoinService API
+type coinServiceHandler struct {
+	dankfoliov1connect.UnimplementedCoinServiceHandler
+	coinService *coin.Service
 }
 
-// NewCoinService creates a new CoinService
-func NewCoinService(store db.Store, jupiterClient jupiter.ClientAPI) *CoinService {
-	return &CoinService{
-		store:         store,
-		jupiterClient: jupiterClient,
+// newCoinServiceHandler creates a new coinServiceHandler
+func newCoinServiceHandler(coinService *coin.Service) *coinServiceHandler {
+	return &coinServiceHandler{
+		coinService: coinService,
 	}
 }
 
 // GetAvailableCoins returns a list of available coins
-func (s *CoinService) GetAvailableCoins(ctx context.Context, req *pb.GetAvailableCoinsRequest) (*pb.GetAvailableCoinsResponse, error) {
+func (s *coinServiceHandler) GetAvailableCoins(
+	ctx context.Context,
+	req *connect.Request[pb.GetAvailableCoinsRequest],
+) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
 	var coins []model.Coin
 	var err error
 
-	if req.TrendingOnly {
-		coins, err = s.store.ListTrendingCoins(ctx)
+	if req.Msg.TrendingOnly {
+		coins, err = s.coinService.GetTrendingCoins(ctx)
 	} else {
-		coins, err = s.store.Coins().List(ctx)
+		coins, err = s.coinService.GetCoins(ctx)
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to list coins: %w", err))
 	}
 
 	pbCoins := make([]*pb.Coin, len(coins))
@@ -45,151 +50,144 @@ func (s *CoinService) GetAvailableCoins(ctx context.Context, req *pb.GetAvailabl
 		pbCoins[i] = convertModelCoinToPbCoin(&coin)
 	}
 
-	return &pb.GetAvailableCoinsResponse{
+	res := connect.NewResponse(&pb.GetAvailableCoinsResponse{
 		Coins: pbCoins,
-	}, nil
+	})
+	return res, nil
 }
 
 // GetCoinByID returns a specific coin by ID
-func (s *CoinService) GetCoinByID(ctx context.Context, req *pb.GetCoinByIDRequest) (*pb.Coin, error) {
-	coin, err := s.store.Coins().Get(ctx, req.Id)
+func (s *coinServiceHandler) GetCoinByID(
+	ctx context.Context,
+	req *connect.Request[pb.GetCoinByIDRequest],
+) (*connect.Response[pb.Coin], error) {
+	coin, err := s.coinService.GetCoinByID(ctx, req.Msg.Id)
 	if err != nil {
-		return nil, err
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin: %w", err))
 	}
 
-	return convertModelCoinToPbCoin(coin), nil
+	res := connect.NewResponse(convertModelCoinToPbCoin(coin))
+	return res, nil
 }
 
-// SearchTokenByMint implements pb.CoinServiceServer
-func (s *CoinService) SearchTokenByMint(ctx context.Context, req *pb.SearchTokenByMintRequest) (*pb.SearchTokenByMintResponse, error) {
-	token, err := s.store.Tokens().Get(ctx, req.MintAddress)
+// SearchTokenByMint searches for a token by mint address
+func (s *coinServiceHandler) SearchTokenByMint(
+	ctx context.Context,
+	req *connect.Request[pb.SearchTokenByMintRequest],
+) (*connect.Response[pb.SearchTokenByMintResponse], error) {
+	// The mint address is the same as the coin ID in our model
+	coin, err := s.coinService.GetCoinByID(ctx, req.Msg.MintAddress)
 	if err != nil {
-		// If token not found in cache, try to fetch from Jupiter
-		jupiterToken, err := s.jupiterClient.GetTokenInfo(ctx, req.MintAddress)
-		if err != nil {
-			return nil, err
-		}
-
-		// Convert and save to cache
-		token = &model.Token{
-			MintAddress:   jupiterToken.Address,
-			Symbol:        jupiterToken.Symbol,
-			Name:          jupiterToken.Name,
-			Decimals:      int32(jupiterToken.Decimals),
-			LogoURI:       jupiterToken.LogoURI,
-			CoingeckoID:   jupiterToken.CoingeckoID,
-			PriceUSD:      jupiterToken.PriceUSD,
-			MarketCapUSD:  jupiterToken.MarketCapUSD,
-			Volume24h:     jupiterToken.Volume24h,
-			LastUpdatedAt: time.Now(),
-			Tags:          jupiterToken.Tags,
-		}
-
-		if err := s.store.Tokens().Create(ctx, token); err != nil {
-			return nil, err
-		}
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get token info for mint address %s: %w", req.Msg.MintAddress, err))
 	}
 
-	return &pb.SearchTokenByMintResponse{
-		Token: convertModelTokenToPbToken(token),
-	}, nil
+	res := connect.NewResponse(&pb.SearchTokenByMintResponse{
+		Token: convertModelCoinToTokenInfo(coin),
+	})
+	return res, nil
 }
 
-// GetAllTokens implements pb.CoinServiceServer
-func (s *CoinService) GetAllTokens(ctx context.Context, _ *pb.GetAllTokensRequest) (*pb.GetAllTokensResponse, error) {
-	// Try to get from cache first
-	tokens, err := s.store.Tokens().List(ctx)
-	if err != nil || len(tokens) == 0 {
-		// If not in cache or empty, fetch from Jupiter
-		jupiterTokens, err := s.jupiterClient.GetAllTokens(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// Convert and save to cache
-		tokens = make([]model.Token, len(jupiterTokens.Tokens))
-		for i, jt := range jupiterTokens.Tokens {
-			token := model.Token{
-				MintAddress:   jt.Address,
-				Symbol:        jt.Symbol,
-				Name:          jt.Name,
-				Decimals:      int32(jt.Decimals),
-				LogoURI:       jt.LogoURI,
-				CoingeckoID:   jt.CoingeckoID,
-				PriceUSD:      jt.PriceUSD,
-				MarketCapUSD:  jt.MarketCapUSD,
-				Volume24h:     jt.Volume24h,
-				LastUpdatedAt: time.Now(),
-				Tags:          jt.Tags,
-			}
-			tokens[i] = token
-			if err := s.store.Tokens().Create(ctx, &token); err != nil {
-				return nil, err
-			}
-		}
+// GetAllTokens returns a list of all available tokens
+func (s *coinServiceHandler) GetAllTokens(
+	ctx context.Context,
+	req *connect.Request[pb.GetAllTokensRequest],
+) (*connect.Response[pb.GetAllTokensResponse], error) {
+	coins, err := s.coinService.GetCoins(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get tokens: %w", err))
 	}
 
 	// Convert to proto message
-	pbTokens := make([]*pb.TokenInfo, len(tokens))
-	for i, token := range tokens {
-		pbTokens[i] = convertModelTokenToPbToken(&token)
+	pbTokens := make([]*pb.TokenInfo, len(coins))
+	for i, coin := range coins {
+		pbTokens[i] = convertModelCoinToTokenInfo(&coin)
 	}
 
-	return &pb.GetAllTokensResponse{
+	res := connect.NewResponse(&pb.GetAllTokensResponse{
 		Tokens: pbTokens,
-	}, nil
+	})
+	return res, nil
 }
 
-// Search implements pb.CoinServiceServer
-func (s *CoinService) Search(ctx context.Context, req *pb.SearchRequest) (*pb.SearchResponse, error) {
-	tokens, err := s.store.SearchTokens(ctx, req.Query, req.Tags, req.MinVolume24h, req.Limit, req.Offset, req.SortBy, req.SortDesc)
+// Search allows searching tokens by various criteria
+func (s *coinServiceHandler) Search(
+	ctx context.Context,
+	req *connect.Request[pb.SearchRequest],
+) (*connect.Response[pb.SearchResponse], error) {
+	log.Printf("Received search request: %+v", req)
+
+	// Get all coins from the service
+	coins, err := s.coinService.GetCoins(ctx)
 	if err != nil {
-		return nil, err
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to search tokens: %w", err))
 	}
 
-	pbTokens := make([]*pb.TokenInfo, len(tokens))
-	for i, token := range tokens {
-		pbTokens[i] = convertModelTokenToPbToken(&token)
+	// Filter coins based on min_volume_24h and search query
+	var filteredCoins []model.Coin
+	for _, coin := range coins {
+		if coin.DailyVolume < req.Msg.MinVolume_24H {
+			continue
+		}
+
+		// Check if query matches name, symbol, or mint address (ID)
+		if req.Msg.Query != "" {
+			query := strings.ToLower(req.Msg.Query)
+			name := strings.ToLower(coin.Name)
+			symbol := strings.ToLower(coin.Symbol)
+			mintAddress := strings.ToLower(coin.ID) // ID is the mint address
+
+			if !strings.Contains(name, query) &&
+				!strings.Contains(symbol, query) &&
+				!strings.Contains(mintAddress, query) {
+				continue
+			}
+		}
+
+		filteredCoins = append(filteredCoins, coin)
 	}
 
-	return &pb.SearchResponse{
-		Tokens:     pbTokens,
-		TotalCount: int32(len(tokens)),
-	}, nil
+	// Convert to proto message
+	pbTokens := make([]*pb.TokenInfo, len(filteredCoins))
+	for i, coin := range filteredCoins {
+		pbTokens[i] = convertModelCoinToTokenInfo(&coin)
+	}
+
+	res := connect.NewResponse(&pb.SearchResponse{
+		Tokens: pbTokens,
+	})
+	return res, nil
 }
 
 func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 	return &pb.Coin{
-		Id:          coin.ID,
+		Id:          coin.ID, // This is the mint address
 		Name:        coin.Name,
 		Symbol:      coin.Symbol,
-		Decimals:    coin.Decimals,
+		Decimals:    int32(coin.Decimals),
 		Description: coin.Description,
-		IconUrl:     coin.IconURL,
+		IconUrl:     coin.IconUrl,
 		Tags:        coin.Tags,
 		Price:       coin.Price,
 		DailyVolume: coin.DailyVolume,
 		Website:     &coin.Website,
 		Twitter:     &coin.Twitter,
 		Telegram:    &coin.Telegram,
-		CoingeckoId: &coin.CoingeckoID,
 		CreatedAt:   nil, // TODO: implement timestamp conversion
 		LastUpdated: nil, // TODO: implement timestamp conversion
 	}
 }
 
-func convertModelTokenToPbToken(token *model.Token) *pb.TokenInfo {
+func convertModelCoinToTokenInfo(coin *model.Coin) *pb.TokenInfo {
 	return &pb.TokenInfo{
-		MintAddress:    token.MintAddress,
-		Symbol:         token.Symbol,
-		Name:           token.Name,
-		Decimals:       token.Decimals,
-		LogoUri:        token.LogoURI,
-		CoingeckoId:    token.CoingeckoID,
-		PriceUsd:       token.PriceUSD,
-		MarketCapUsd:   token.MarketCapUSD,
-		Volume24h:      token.Volume24h,
-		PriceChange24h: token.PriceChange24h,
-		LastUpdatedAt:  token.LastUpdatedAt.Unix(),
+		MintAddress:   coin.ID, // ID is the mint address
+		Symbol:        coin.Symbol,
+		Name:          coin.Name,
+		Decimals:      int32(coin.Decimals),
+		LogoUri:       coin.IconUrl,
+		CoingeckoId:   "", // Not available in coin model
+		PriceUsd:      coin.Price,
+		MarketCapUsd:  0, // Not available in coin model
+		Volume_24H:    coin.DailyVolume,
+		LastUpdatedAt: time.Now().Unix(), // Using current time as this is not tracked in coin model
 	}
 }
