@@ -96,3 +96,27 @@ type QuoteParams struct {
 	OnlyDirectRoutes    bool   `json:"onlyDirectRoutes,omitempty"`
 	AsLegacyTransaction bool   `json:"asLegacyTransaction,omitempty"`
 }
+
+// TokenListResponse represents the response from Jupiter's token list API
+type TokenListResponse struct {
+	Tokens []TokenListInfo `json:"tokens"`
+}
+
+// TokenListInfo represents detailed token information from Jupiter's token list
+type TokenListInfo struct {
+	Address      string                 `json:"address"`
+	ChainID      int                    `json:"chainId"`
+	Decimals     int                    `json:"decimals"`
+	Name         string                 `json:"name"`
+	Symbol       string                 `json:"symbol"`
+	LogoURI      string                 `json:"logoURI"`
+	Extensions   map[string]interface{} `json:"extensions"`
+	DailyVolume  float64                `json:"dailyVolume"`
+	Tags         []string               `json:"tags"`
+	CreatedAt    time.Time              `json:"createdAt"`
+	CoingeckoID  string                 `json:"coingeckoId,omitempty"`
+	PriceUSD     float64                `json:"priceUsd,omitempty"`
+	MarketCapUSD float64                `json:"marketCapUsd,omitempty"`
+	Volume24h    float64                `json:"volume24h,omitempty"`
+	Change24h    float64                `json:"change24h,omitempty"`
+}

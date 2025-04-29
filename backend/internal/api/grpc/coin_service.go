@@ -2,115 +2,194 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
-	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// coinServiceHandler implements the CoinService API
-type coinServiceHandler struct {
-	dankfoliov1connect.UnimplementedCoinServiceHandler
-	coinService *coin.Service
+// CoinService implements the CoinService gRPC service
+type CoinService struct {
+	pb.UnimplementedCoinServiceServer
+	store         db.Store
+	jupiterClient jupiter.ClientAPI
 }
 
-// newCoinServiceHandler creates a new coinServiceHandler
-func newCoinServiceHandler(coinService *coin.Service) *coinServiceHandler {
-	return &coinServiceHandler{coinService: coinService}
+// NewCoinService creates a new CoinService
+func NewCoinService(store db.Store, jupiterClient jupiter.ClientAPI) *CoinService {
+	return &CoinService{
+		store:         store,
+		jupiterClient: jupiterClient,
+	}
 }
 
 // GetAvailableCoins returns a list of available coins
-func (s *coinServiceHandler) GetAvailableCoins(ctx context.Context, req *connect.Request[pb.GetAvailableCoinsRequest]) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
-	var modelCoins []model.Coin
+func (s *CoinService) GetAvailableCoins(ctx context.Context, req *pb.GetAvailableCoinsRequest) (*pb.GetAvailableCoinsResponse, error) {
+	var coins []model.Coin
 	var err error
 
-	if req.Msg == nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("request message is nil"))
+	if req.TrendingOnly {
+		coins, err = s.store.ListTrendingCoins(ctx)
+	} else {
+		coins, err = s.store.Coins().List(ctx)
 	}
 
-	// TrendingOnly is now a regular bool, no need to dereference
-	if req.Msg.TrendingOnly {
-		modelCoins, err = s.coinService.GetTrendingCoins(ctx)
-	} else {
-		modelCoins, err = s.coinService.GetCoins(ctx)
-	}
 	if err != nil {
 		return nil, err
 	}
 
-	coins := convertModelCoinsToProto(modelCoins)
-	res := connect.NewResponse(&pb.GetAvailableCoinsResponse{
-		Coins: coins,
-	})
-	return res, nil
+	pbCoins := make([]*pb.Coin, len(coins))
+	for i, coin := range coins {
+		pbCoins[i] = convertModelCoinToPbCoin(&coin)
+	}
+
+	return &pb.GetAvailableCoinsResponse{
+		Coins: pbCoins,
+	}, nil
 }
 
 // GetCoinByID returns a specific coin by ID
-func (s *coinServiceHandler) GetCoinByID(ctx context.Context, req *connect.Request[pb.GetCoinByIDRequest]) (*connect.Response[pb.Coin], error) {
-	modelCoin, err := s.coinService.GetCoinByID(ctx, req.Msg.Id)
+func (s *CoinService) GetCoinByID(ctx context.Context, req *pb.GetCoinByIDRequest) (*pb.Coin, error) {
+	coin, err := s.store.Coins().Get(ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	coin := convertModelCoinToProto(*modelCoin)
-	res := connect.NewResponse(coin)
-	return res, nil
+	return convertModelCoinToPbCoin(coin), nil
 }
 
-// Helper function to convert model.Coin to proto Coin
-func convertModelCoinToProto(c model.Coin) *pb.Coin {
-	createdAt, _ := time.Parse(time.RFC3339, c.CreatedAt)
-	var lastUpdated *timestamppb.Timestamp
-	if c.LastUpdated != "" {
-		if t, err := time.Parse(time.RFC3339, c.LastUpdated); err == nil {
-			lastUpdated = timestamppb.New(t)
+// SearchTokenByMint implements pb.CoinServiceServer
+func (s *CoinService) SearchTokenByMint(ctx context.Context, req *pb.SearchTokenByMintRequest) (*pb.SearchTokenByMintResponse, error) {
+	token, err := s.store.Tokens().Get(ctx, req.MintAddress)
+	if err != nil {
+		// If token not found in cache, try to fetch from Jupiter
+		jupiterToken, err := s.jupiterClient.GetTokenInfo(ctx, req.MintAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		// Convert and save to cache
+		token = &model.Token{
+			MintAddress:   jupiterToken.Address,
+			Symbol:        jupiterToken.Symbol,
+			Name:          jupiterToken.Name,
+			Decimals:      int32(jupiterToken.Decimals),
+			LogoURI:       jupiterToken.LogoURI,
+			CoingeckoID:   jupiterToken.CoingeckoID,
+			PriceUSD:      jupiterToken.PriceUSD,
+			MarketCapUSD:  jupiterToken.MarketCapUSD,
+			Volume24h:     jupiterToken.Volume24h,
+			LastUpdatedAt: time.Now(),
+			Tags:          jupiterToken.Tags,
+		}
+
+		if err := s.store.Tokens().Create(ctx, token); err != nil {
+			return nil, err
 		}
 	}
 
-	// Initialize pointer variables with safe defaults
-	var websitePtr, twitterPtr, telegramPtr, coingeckoIdPtr *string
+	return &pb.SearchTokenByMintResponse{
+		Token: convertModelTokenToPbToken(token),
+	}, nil
+}
 
-	// Only set pointers for non-empty strings
-	if c.Website != "" {
-		websitePtr = &c.Website
-	}
-	if c.Twitter != "" {
-		twitterPtr = &c.Twitter
-	}
-	if c.Telegram != "" {
-		telegramPtr = &c.Telegram
-	}
-	// CoingeckoId is not in the model, keep it nil
+// GetAllTokens implements pb.CoinServiceServer
+func (s *CoinService) GetAllTokens(ctx context.Context, _ *pb.GetAllTokensRequest) (*pb.GetAllTokensResponse, error) {
+	// Try to get from cache first
+	tokens, err := s.store.Tokens().List(ctx)
+	if err != nil || len(tokens) == 0 {
+		// If not in cache or empty, fetch from Jupiter
+		jupiterTokens, err := s.jupiterClient.GetAllTokens(ctx)
+		if err != nil {
+			return nil, err
+		}
 
+		// Convert and save to cache
+		tokens = make([]model.Token, len(jupiterTokens.Tokens))
+		for i, jt := range jupiterTokens.Tokens {
+			token := model.Token{
+				MintAddress:   jt.Address,
+				Symbol:        jt.Symbol,
+				Name:          jt.Name,
+				Decimals:      int32(jt.Decimals),
+				LogoURI:       jt.LogoURI,
+				CoingeckoID:   jt.CoingeckoID,
+				PriceUSD:      jt.PriceUSD,
+				MarketCapUSD:  jt.MarketCapUSD,
+				Volume24h:     jt.Volume24h,
+				LastUpdatedAt: time.Now(),
+				Tags:          jt.Tags,
+			}
+			tokens[i] = token
+			if err := s.store.Tokens().Create(ctx, &token); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// Convert to proto message
+	pbTokens := make([]*pb.TokenInfo, len(tokens))
+	for i, token := range tokens {
+		pbTokens[i] = convertModelTokenToPbToken(&token)
+	}
+
+	return &pb.GetAllTokensResponse{
+		Tokens: pbTokens,
+	}, nil
+}
+
+// Search implements pb.CoinServiceServer
+func (s *CoinService) Search(ctx context.Context, req *pb.SearchRequest) (*pb.SearchResponse, error) {
+	tokens, err := s.store.SearchTokens(ctx, req.Query, req.Tags, req.MinVolume24h, req.Limit, req.Offset, req.SortBy, req.SortDesc)
+	if err != nil {
+		return nil, err
+	}
+
+	pbTokens := make([]*pb.TokenInfo, len(tokens))
+	for i, token := range tokens {
+		pbTokens[i] = convertModelTokenToPbToken(&token)
+	}
+
+	return &pb.SearchResponse{
+		Tokens:     pbTokens,
+		TotalCount: int32(len(tokens)),
+	}, nil
+}
+
+func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 	return &pb.Coin{
-		Id:          c.ID,
-		Name:        c.Name,
-		Symbol:      c.Symbol,
-		Decimals:    int32(c.Decimals),
-		Description: c.Description,
-		IconUrl:     c.IconUrl,
-		Tags:        c.Tags,
-		Price:       c.Price,
-		DailyVolume: c.DailyVolume,
-		Website:     websitePtr,
-		Twitter:     twitterPtr,
-		Telegram:    telegramPtr,
-		CoingeckoId: coingeckoIdPtr, // Not in model
-		CreatedAt:   timestamppb.New(createdAt),
-		LastUpdated: lastUpdated,
+		Id:          coin.ID,
+		Name:        coin.Name,
+		Symbol:      coin.Symbol,
+		Decimals:    coin.Decimals,
+		Description: coin.Description,
+		IconUrl:     coin.IconURL,
+		Tags:        coin.Tags,
+		Price:       coin.Price,
+		DailyVolume: coin.DailyVolume,
+		Website:     &coin.Website,
+		Twitter:     &coin.Twitter,
+		Telegram:    &coin.Telegram,
+		CoingeckoId: &coin.CoingeckoID,
+		CreatedAt:   nil, // TODO: implement timestamp conversion
+		LastUpdated: nil, // TODO: implement timestamp conversion
 	}
 }
 
-// Helper function to convert slice of model.Coin to proto Coins
-func convertModelCoinsToProto(modelCoins []model.Coin) []*pb.Coin {
-	coins := make([]*pb.Coin, len(modelCoins))
-	for i, c := range modelCoins {
-		coins[i] = convertModelCoinToProto(c)
+func convertModelTokenToPbToken(token *model.Token) *pb.TokenInfo {
+	return &pb.TokenInfo{
+		MintAddress:    token.MintAddress,
+		Symbol:         token.Symbol,
+		Name:           token.Name,
+		Decimals:       token.Decimals,
+		LogoUri:        token.LogoURI,
+		CoingeckoId:    token.CoingeckoID,
+		PriceUsd:       token.PriceUSD,
+		MarketCapUsd:   token.MarketCapUSD,
+		Volume24h:      token.Volume24h,
+		PriceChange24h: token.PriceChange24h,
+		LastUpdatedAt:  token.LastUpdatedAt.Unix(),
 	}
-	return coins
 }

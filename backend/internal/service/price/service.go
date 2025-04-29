@@ -163,7 +163,7 @@ func (s *Service) GetTokenPrices(ctx context.Context, tokenAddresses []string) (
 	}
 
 	// Get real prices from Jupiter API
-	return s.jupiterClient.GetTokenPrices(tokenAddresses)
+	return s.jupiterClient.GetTokenPrices(ctx, tokenAddresses)
 }
 
 func loadAddressToSymbol() map[string]string {

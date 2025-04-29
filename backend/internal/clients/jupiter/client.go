@@ -1,6 +1,7 @@
 package jupiter
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,10 +15,14 @@ import (
 )
 
 const (
+	// Base URL for Jupiter API
+	baseURL = "https://api.jup.ag"
+
 	// API endpoints
-	priceURL     = "https://api.jup.ag/price/v2"
-	swapBaseURL  = "https://api.jup.ag/swap/v1"
-	tokenInfoURL = "https://api.jup.ag/tokens/v1/token"
+	priceURL     = baseURL + "/price/v2"
+	swapBaseURL  = baseURL + "/swap/v1"
+	tokenInfoURL = baseURL + "/tokens/v1/token"
+	tokenListURL = baseURL + "/tokens/v1/list"
 	quoteURL     = swapBaseURL + "/quote"
 )
 
@@ -31,7 +36,7 @@ var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 type cache struct {
 	sync.RWMutex
-	data        map[string]*TokenInfoResponse
+	data        map[string]*TokenListInfo
 	lastUpdated time.Time
 }
 
@@ -40,13 +45,13 @@ func NewClient(httpClient *http.Client) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
 		cache: &cache{
-			data: make(map[string]*TokenInfoResponse),
+			data: make(map[string]*TokenListInfo),
 		},
 	}
 }
 
 // GetTokenInfo fetches detailed information about a token from Jupiter API
-func (c *Client) GetTokenInfo(tokenAddress string) (*TokenInfoResponse, error) {
+func (c *Client) GetTokenInfo(ctx context.Context, tokenAddress string) (*TokenListInfo, error) {
 	// Check cache first
 	c.cache.RLock()
 	if info, exists := c.cache.data[tokenAddress]; exists {
@@ -57,8 +62,13 @@ func (c *Client) GetTokenInfo(tokenAddress string) (*TokenInfoResponse, error) {
 	}
 	c.cache.RUnlock()
 
-	url := fmt.Sprintf("%s/%s", tokenInfoURL, tokenAddress)
-	resp, err := c.httpClient.Get(url)
+	url := fmt.Sprintf("%s/tokens/v1/token/%s", baseURL, tokenAddress)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token info: %w", err)
 	}
@@ -73,7 +83,7 @@ func (c *Client) GetTokenInfo(tokenAddress string) (*TokenInfoResponse, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var tokenInfo TokenInfoResponse
+	var tokenInfo TokenListInfo
 	if err := json.Unmarshal(body, &tokenInfo); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal token info: %w", err)
 	}
@@ -88,16 +98,21 @@ func (c *Client) GetTokenInfo(tokenAddress string) (*TokenInfoResponse, error) {
 }
 
 // GetTokenPrices fetches prices for one or more tokens from Jupiter API
-func (c *Client) GetTokenPrices(tokenAddresses []string) (map[string]float64, error) {
+func (c *Client) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
 	if len(tokenAddresses) == 0 {
 		return nil, fmt.Errorf("no token addresses provided")
 	}
 
 	addressList := strings.Join(tokenAddresses, ",")
-	url := fmt.Sprintf("%s?ids=%s", priceURL, addressList)
+	url := fmt.Sprintf("%s/price/v2?ids=%s", baseURL, addressList)
 	log.Printf("🔄 Fetching token prices from Jupiter: %s", url)
 
-	resp, err := c.httpClient.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token prices: %w", err)
 	}
@@ -134,7 +149,7 @@ func (c *Client) GetTokenPrices(tokenAddresses []string) (map[string]float64, er
 }
 
 // GetQuote fetches a swap quote from Jupiter API
-func (c *Client) GetQuote(params QuoteParams) (*QuoteResponse, error) {
+func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteResponse, error) {
 	queryParams := url.Values{}
 	queryParams.Set("inputMint", params.InputMint)
 	queryParams.Set("outputMint", params.OutputMint)
@@ -156,8 +171,13 @@ func (c *Client) GetQuote(params QuoteParams) (*QuoteResponse, error) {
 		queryParams.Set("asLegacyTransaction", "true")
 	}
 
-	fullURL := fmt.Sprintf("%s?%s", quoteURL, queryParams.Encode())
-	resp, err := c.httpClient.Get(fullURL)
+	fullURL := fmt.Sprintf("%s/swap/v1/quote?%s", baseURL, queryParams.Encode())
+	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch quote: %w", err)
 	}
@@ -180,4 +200,43 @@ func (c *Client) GetQuote(params QuoteParams) (*QuoteResponse, error) {
 	}
 
 	return &quoteResp, nil
+}
+
+// GetAllTokens fetches all tokens from Jupiter API
+func (c *Client) GetAllTokens(ctx context.Context) (*TokenListResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", tokenListURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch token list: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var tokenList TokenListResponse
+	if err := json.Unmarshal(body, &tokenList); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal token list: %w", err)
+	}
+
+	// Update cache
+	c.cache.Lock()
+	for i := range tokenList.Tokens {
+		token := &tokenList.Tokens[i] // Get pointer to token in slice
+		c.cache.data[token.Address] = token
+	}
+	c.cache.lastUpdated = time.Now()
+	c.cache.Unlock()
+
+	return &tokenList, nil
 }

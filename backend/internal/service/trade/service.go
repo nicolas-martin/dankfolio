@@ -163,7 +163,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 	}
 
 	// Get quote from Jupiter with enhanced parameters
-	quote, err := s.jupiterClient.GetQuote(jupiter.QuoteParams{
+	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
 		InputMint:   fromCoinID,
 		OutputMint:  toCoinID,
 		Amount:      inputAmount, // Amount is already in raw units (lamports for SOL)

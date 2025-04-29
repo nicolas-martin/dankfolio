@@ -61,3 +61,4 @@ Thumbs.db
 tmp/
 **/tmp
 **/pools_temp.json
+**/token_cache.json

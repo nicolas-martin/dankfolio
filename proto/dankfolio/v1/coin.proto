@@ -13,6 +13,15 @@ service CoinService {
   
   // GetCoinByID returns a specific coin by ID
   rpc GetCoinByID(GetCoinByIDRequest) returns (Coin);
+
+  // SearchTokenByMint searches for a token by mint address
+  rpc SearchTokenByMint(SearchTokenByMintRequest) returns (SearchTokenByMintResponse);
+
+  // GetAllTokens returns a list of all available tokens
+  rpc GetAllTokens(GetAllTokensRequest) returns (GetAllTokensResponse);
+
+  // Search allows searching tokens by various criteria
+  rpc Search(SearchRequest) returns (SearchResponse);
 }
 
 // Coin represents a token or currency
@@ -44,4 +53,49 @@ message GetAvailableCoinsResponse {
 
 message GetCoinByIDRequest {
   string id = 1;
+}
+
+message TokenInfo {
+  string mint_address = 1;
+  string symbol = 2;
+  string name = 3;
+  int32 decimals = 4;
+  string logo_uri = 5;
+  string coingecko_id = 6;
+  double price_usd = 7;
+  double market_cap_usd = 8;
+  double volume_24h = 9;
+  double price_change_24h = 10;
+  int64 last_updated_at = 11;
+}
+
+message SearchTokenByMintRequest {
+  string mint_address = 1;
+}
+
+message SearchTokenByMintResponse {
+  TokenInfo token = 1;
+}
+
+message GetAllTokensRequest {
+  // Empty request
+}
+
+message GetAllTokensResponse {
+  repeated TokenInfo tokens = 1;
+}
+
+message SearchRequest {
+  string query = 1;                // Text to search in name, symbol, or mint address
+  repeated string tags = 2;        // Filter by tags
+  double min_volume_24h = 3;      // Minimum 24h volume
+  int32 limit = 4;                // Maximum number of results (default: 20)
+  int32 offset = 5;               // Offset for pagination
+  string sort_by = 6;             // Sort field (price_usd, volume_22h, market_cap_usd)
+  bool sort_desc = 7;            // Sort direction (default: true)
+}
+
+message SearchResponse {
+  repeated TokenInfo tokens = 1;   // Search results
+  int32 total_count = 2;          // Total number of matches (for pagination)
 }
