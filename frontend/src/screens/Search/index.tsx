@@ -8,8 +8,9 @@ import {
 	ActivityIndicator,
 	TouchableOpacity,
 	RefreshControl,
+	SafeAreaView,
 } from 'react-native';
-import { useTheme } from '@react-navigation/native';
+import { useTheme } from 'react-native-paper';
 import debounce from 'lodash/debounce';
 import { SearchScreenProps, SearchState } from './types';
 import { createStyles } from './styles';
@@ -58,6 +59,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	);
 
 	const handleSearch = (text: string) => {
+		console.log("handle search", text);
 		setState(prev => ({ ...prev, query: text }));
 		debouncedSearch(text);
 	};
@@ -140,33 +142,35 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	};
 
 	return (
-		<View style={styles.container}>
-			<View style={styles.searchContainer}>
-				<TextInput
-					style={styles.searchInput}
-					placeholder="Search tokens..."
-					placeholderTextColor={theme.colors.textSecondary}
-					value={state.query}
-					onChangeText={handleSearch}
-					autoCapitalize="none"
-					autoCorrect={false}
+		<SafeAreaView style={styles.safeArea}>
+			<View style={styles.container}>
+				<View style={styles.searchContainer}>
+					<TextInput
+						style={styles.searchInput}
+						placeholder="Search tokens..."
+						placeholderTextColor={theme.colors.onSurfaceVariant}
+						value={state.query}
+						onChangeText={handleSearch}
+						autoCapitalize="none"
+						autoCorrect={false}
+					/>
+				</View>
+				<FlatList
+					data={state.tokens}
+					renderItem={renderTokenItem}
+					keyExtractor={token => token.mintAddress}
+					contentContainerStyle={styles.listContainer}
+					ListEmptyComponent={renderEmptyComponent}
+					refreshControl={
+						<RefreshControl
+							refreshing={state.isLoading}
+							onRefresh={handleRefresh}
+							tintColor={theme.colors.primary}
+						/>
+					}
 				/>
 			</View>
-			<FlatList
-				data={state.tokens}
-				renderItem={renderTokenItem}
-				keyExtractor={token => token.mintAddress}
-				contentContainerStyle={styles.listContainer}
-				ListEmptyComponent={renderEmptyComponent}
-				refreshControl={
-					<RefreshControl
-						refreshing={state.isLoading}
-						onRefresh={handleRefresh}
-						tintColor={theme.colors.primary}
-					/>
-				}
-			/>
-		</View>
+		</SafeAreaView>
 	);
 };
 
