@@ -95,6 +95,14 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 					}
 				}
 			}
+			// Add specific handling for GetProxiedImage responses
+			if req.Spec().Procedure == "/dankfolio.v1.UtilityService/GetProxiedImage" {
+				if respTyped, ok := res.Any().(*pb.GetProxiedImageResponse); ok {
+					dataLen := len(respTyped.GetImageData())
+					contentType := respTyped.GetContentType()
+					resDetails = fmt.Sprintf("{ imageData: [size=%d bytes], contentType: %q }", dataLen, contentType)
+				}
+			}
 			if resDetails == "" {
 				var err error
 				resDetails, err = structToJSON(res.Any())

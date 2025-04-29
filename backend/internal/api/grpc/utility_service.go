@@ -51,9 +51,9 @@ func NewService(fetcher imageservice.RawDataFetcher) *Service {
 
 // GetProxiedImage fetches an image from an external URL via the backend proxy,
 // using an in-memory cache.
-// Corrected signature to use dankfoliov1 types inside connect types
 func (s *Service) GetProxiedImage(ctx context.Context, req *connect.Request[dankfoliov1.GetProxiedImageRequest]) (*connect.Response[dankfoliov1.GetProxiedImageResponse], error) {
 	imageURL := req.Msg.GetImageUrl()
+
 	if imageURL == "" {
 		log.Printf("❌ GetProxiedImage: Empty image_url received")
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("image_url cannot be empty"))
@@ -65,14 +65,12 @@ func (s *Service) GetProxiedImage(ctx context.Context, req *connect.Request[dank
 	if cached, found := s.cache.Get(imageURL); found {
 		if cachedData, ok := cached.(*CachedImageData); ok {
 			log.Printf("✅ GetProxiedImage: Cache hit for URL: %s", imageURL)
-			// Corrected response type creation
 			resp := &dankfoliov1.GetProxiedImageResponse{
 				ImageData:   cachedData.Data,
 				ContentType: cachedData.ContentType,
 			}
 			return connect.NewResponse(resp), nil
 		} else {
-			// Item was in cache but not the expected type, log warning and continue to fetch
 			log.Printf("⚠️ GetProxiedImage: Cache item for %s had unexpected type: %T", imageURL, cached)
 		}
 	}
@@ -83,7 +81,6 @@ func (s *Service) GetProxiedImage(ctx context.Context, req *connect.Request[dank
 	data, contentType, err := s.fetcher.FetchRawData(ctx, imageURL)
 	if err != nil {
 		log.Printf("❌ GetProxiedImage: Failed to fetch raw data for %s: %v", imageURL, err)
-		// Consider mapping specific fetch errors to gRPC/Connect status codes
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to fetch image from %s: %w", imageURL, err))
 	}
 
@@ -97,7 +94,6 @@ func (s *Service) GetProxiedImage(ctx context.Context, req *connect.Request[dank
 	s.cache.Set(imageURL, cacheItem, cache.DefaultExpiration)
 
 	// 4. Return response
-	// Corrected response type creation
 	resp := &dankfoliov1.GetProxiedImageResponse{
 		ImageData:   data,
 		ContentType: contentType,

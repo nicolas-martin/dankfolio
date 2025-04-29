@@ -54,10 +54,10 @@ export const useProxiedImage = (originalImageUrl: string | undefined): UseProxie
 					if (isMounted) setImageUri(DEFAULT_LOGO);
 				}
 			} catch (err) {
-				console.error(`useProxiedImage: Error fetching proxied image for ${urlToFetch}:`, err);
+				console.error(`Error fetching proxied image for ${urlToFetch}:`, err);
 				if (isMounted) {
 					setError(err.message);
-					setImageUri(DEFAULT_LOGO); // Fallback on error
+					setImageUri(DEFAULT_LOGO);
 				}
 			} finally {
 				if (isMounted) setIsLoading(false);

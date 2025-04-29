@@ -480,8 +480,6 @@ const grpcApi: API = {
 
 			const response = await utilityClient.getProxiedImage({ imageUrl });
 
-			logResponse(serviceName, methodName, response);
-
 			return response;
 		} catch (error) {
 			return handleGrpcError(error, serviceName, methodName);
