@@ -436,13 +436,23 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 
 	// Check if any errors occurred during enrichment
 	if len(encounteredErrors) > 0 {
-		// Combine errors into a single error to return (optional)
-		// For simplicity, we just return the first error for now, but log all.
-		log.Printf("Enrichment finished with %d errors.", len(encounteredErrors))
-		return enrichedCoins, fmt.Errorf("enrichment failed for one or more tokens (first error: %w)", encounteredErrors[0])
+		// Log that errors occurred, but don't return an error here.
+		// We want to proceed to save the partially enriched data.
+		log.Printf("Enrichment finished with %d errors. Proceeding with successfully enriched tokens.", len(encounteredErrors))
+		// return enrichedCoins, fmt.Errorf("enrichment failed for one or more tokens (first error: %w)", encounteredErrors[0])
 	}
 
-	return enrichedCoins, nil // Success, no errors encountered
+	// This logging might be redundant now, consider removing or adjusting
+	log.Printf("Successfully enriched %d tokens. Encountered %d errors.", len(enrichedCoins), len(encounteredErrors))
+
+	// This block seems like a leftover from previous attempts, ensure it's fully commented or removed if the above check handles it.
+	// if len(encounteredErrors) > 0 {
+	// 	log.Printf("Enrichment finished with %d errors. Proceeding to save successfully enriched tokens.", len(encounteredErrors))
+	// 	// Don't return the error here, allow saving partial results.
+	// 	// return fmt.Errorf("encountered errors during enrichment process: %w", encounteredErrors[0])
+	// }
+
+	return enrichedCoins, nil // Return successfully enriched coins and nil error
 }
 
 // parseVolume converts volume strings like "$1.23M", "$500.5K", "$100" to float64
