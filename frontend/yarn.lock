@@ -6636,14 +6636,14 @@ react-native-keychain@^10.0.0:
   resolved "https://registry.yarnpkg.com/react-native-keychain/-/react-native-keychain-10.0.0.tgz#1de6f54d27b2376deaac4d51883c066f53b7be7b"
   integrity sha512-YzPKSAnSzGEJ12IK6CctNLU79T1W15WDrElRQ+1/FsOazGX9ucFPTQwgYe8Dy8jiSEDJKM4wkVa3g4lD2Z+Pnw==
 
-react-native-paper@5.12.1:
-  version "5.12.1"
-  resolved "https://registry.npmjs.org/react-native-paper/-/react-native-paper-5.12.1.tgz"
-  integrity sha512-6ZBBJBsHxXUG5mD22Q0tArTlk5GpGlhZDkRU1RRqPtTpxWCMc7Dbc04pU3+qG0peJQCAO6GnXqUbkZ0YLnMPNg==
+react-native-paper@^5.13.5:
+  version "5.13.5"
+  resolved "https://registry.yarnpkg.com/react-native-paper/-/react-native-paper-5.13.5.tgz#e5c2e3ca444da59c214296af8bd1622928dc1204"
+  integrity sha512-aaUVy7bzv9PGTMB2+bfrGwX5D9bjQFPjPemOyUjHZxka/xgFozIyDjtLPUIaYZ5LcvJhXH4zhc/S6N+zpdIwrQ==
   dependencies:
     "@callstack/react-theme-provider" "^3.0.9"
     color "^3.1.2"
-    use-latest-callback "^0.1.5"
+    use-latest-callback "^0.2.3"
 
 react-native-reanimated@~3.16.1:
   version "3.16.7"
@@ -7809,7 +7809,7 @@ uri-js@^4.2.2:
   dependencies:
     punycode "^2.1.0"
 
-use-latest-callback@^0.1.5, use-latest-callback@^0.2.1, use-latest-callback@^0.2.3:
+use-latest-callback@^0.2.1, use-latest-callback@^0.2.3:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/use-latest-callback/-/use-latest-callback-0.2.3.tgz#2d644d3063040b9bc2d4c55bb525a13ae3de9e16"
   integrity sha512-7vI3fBuyRcP91pazVboc4qu+6ZqM8izPWX9k7cRnT8hbD5svslcknsh3S9BUhaK11OmgTV4oWZZVSeQAiV53SQ==

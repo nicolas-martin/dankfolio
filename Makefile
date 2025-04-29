@@ -21,7 +21,8 @@ run-mobile: mobile-kill
 
 mobile-kill:
 	@echo "📴 Stopping mobile frontend..."
-	@pkill -f "expo start" || echo "✅ No mobile server running"
+	@pkill -f "expo start" || echo "✅ No Expo process running"
+	@lsof -ti :8081 | xargs kill -9 2>/dev/null || echo "✅ No Metro bundler running"
 
 test: backend-test frontend-test 
 
