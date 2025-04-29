@@ -11,9 +11,12 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
+
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
@@ -95,6 +98,12 @@ func main() {
 	// Initialize BirdEye client
 	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
 
+	// Initialize Solana client
+	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
+
+	// Initialize offchain client
+	offchainClient := offchain.NewClient(httpClient)
+
 	// Initialize store with configured cache expiry
 	store := memory.NewWithConfig(memory.Config{
 		DefaultCacheExpiry: config.CacheExpiry,
@@ -111,9 +120,6 @@ func main() {
 	}
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 
-	// Initialize Solana client
-	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
-
 	// Initialize price service
 	priceService := price.NewService(birdeyeClient, jupiterClient)
 
@@ -129,8 +135,18 @@ func main() {
 	// Initialize wallet service
 	walletService := wallet.New(solanaClient.GetRpcConnection())
 
+	// Initialize Image Service / Utility Service
+	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
+	utilitySvc := grpcapi.NewService(imageFetcher)
+
 	// Initialize gRPC server
-	grpcServer := grpcapi.NewServer(coinService, walletService, tradeService, priceService)
+	grpcServer := grpcapi.NewServer(
+		coinService,
+		walletService,
+		tradeService,
+		priceService,
+		utilitySvc,
+	)
 
 	// Start gRPC server
 	go func() {

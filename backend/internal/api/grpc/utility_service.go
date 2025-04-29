@@ -37,8 +37,11 @@ type Service struct {
 // NewService creates a new instance of the image proxy Service.
 // It requires a RawDataFetcher implementation (like an adapter for offchain.Client).
 func NewService(fetcher imageservice.RawDataFetcher) *Service {
-	// Create a cache with a default expiration of 5 minutes, and purge expired items every 10 minutes.
-	c := cache.New(5*time.Minute, 10*time.Minute)
+	// Create a cache with a default expiration of 7 days (approx), and purge expired items every hour.
+	// Use cache.NoExpiration for non-expiring cache if desired, but periodic cleanup is still good.
+	cacheDuration := 7 * 24 * time.Hour
+	cleanupInterval := 1 * time.Hour
+	c := cache.New(cacheDuration, cleanupInterval)
 
 	return &Service{
 		fetcher: fetcher,

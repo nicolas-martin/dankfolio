@@ -18,21 +18,29 @@ import (
 
 // Server represents the API server
 type Server struct {
-	mux           *http.ServeMux
-	coinService   *coin.Service
-	walletService *wallet.Service
-	tradeService  *trade.Service
-	priceService  *price.Service
+	mux            *http.ServeMux
+	coinService    *coin.Service
+	walletService  *wallet.Service
+	tradeService   *trade.Service
+	priceService   *price.Service
+	utilityService *Service
 }
 
 // NewServer creates a new Server instance
-func NewServer(coinService *coin.Service, walletService *wallet.Service, tradeService *trade.Service, priceService *price.Service) *Server {
+func NewServer(
+	coinService *coin.Service,
+	walletService *wallet.Service,
+	tradeService *trade.Service,
+	priceService *price.Service,
+	utilityService *Service,
+) *Server {
 	return &Server{
-		mux:           http.NewServeMux(),
-		coinService:   coinService,
-		walletService: walletService,
-		tradeService:  tradeService,
-		priceService:  priceService,
+		mux:            http.NewServeMux(),
+		coinService:    coinService,
+		walletService:  walletService,
+		tradeService:   tradeService,
+		priceService:   priceService,
+		utilityService: utilityService,
 	}
 }
 
@@ -67,6 +75,13 @@ func (s *Server) Start(port int) error {
 	// Register PriceService handler
 	path, handler = dankfoliov1connect.NewPriceServiceHandler(
 		newPriceServiceHandler(s.priceService),
+		defaultInterceptors,
+	)
+	s.mux.Handle(path, handler)
+
+	// Register UtilityService handler
+	path, handler = dankfoliov1connect.NewUtilityServiceHandler(
+		s.utilityService,
 		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
