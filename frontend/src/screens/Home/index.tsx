@@ -75,14 +75,6 @@ const HomeScreen = () => {
 							</View>
 						)}
 					</View>
-					<View style={styles.profileContainer}>
-						<Button
-							mode="contained"
-							onPress={() => navigation.navigate('Profile')}
-						>
-							View Profile
-						</Button>
-					</View>
 				</View>
 			) : (
 				<View style={styles.content}>

@@ -20,7 +20,7 @@ interface PortfolioState {
 	tokens: PortfolioToken[];
 	setWallet: (keypair: Keypair | null) => void;
 	clearWallet: () => void;
-	fetchPortfolioBalance: () => Promise<void>;
+	fetchPortfolioBalance: (address: string) => Promise<void>;
 }
 
 export const usePortfolioStore = create<PortfolioState>((set, get) => ({
@@ -47,14 +47,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 		set({ wallet: null, tokens: [], error: null });
 	},
 
-	fetchPortfolioBalance: async () => {
-		const wallet = get().wallet;
-		if (!wallet?.keypair) {
-			set({ error: "Wallet not set", isLoading: false, tokens: [] });
-			return;
-		}
-		const address = wallet.keypair.publicKey.toBase58();
-
+	fetchPortfolioBalance: async (address: string) => {
 		try {
 			set({ isLoading: true, error: null });
 			const balance = await grpcApi.getWalletBalance(address);
