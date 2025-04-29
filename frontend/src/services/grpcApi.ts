@@ -1,5 +1,6 @@
 import { tradeClient, coinClient, priceClient, walletClient, utilityClient } from './grpc/apiClient';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
+import { TokenInfo } from "@/gen/dankfolio/v1/coin_pb";
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { GetProxiedImageResponse } from "@/gen/dankfolio/v1/utility_pb";
 import {
@@ -14,7 +15,12 @@ import {
 	TokenTransferPrepareResponse,
 	TokenTransferSubmitRequest,
 	TokenTransferResponse,
-	CreateWalletResponse
+	CreateWalletResponse,
+	SearchTokensRequest,
+	SearchTokensResponse,
+	SearchTokenByMintRequest,
+	SearchTokenByMintResponse,
+	Token
 } from './grpc/model';
 import { DEBUG_MODE } from '@env';
 
@@ -48,6 +54,8 @@ interface API {
 	getTransferTransaction: (params: { toAddress: string; tokenMint: string; amount: string; }) => Promise<any>;
 	createWallet: () => Promise<CreateWalletResponse>;
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
+	searchTokens: (params: SearchTokensRequest) => Promise<SearchTokensResponse>;
+	searchTokenByMint: (mintAddress: string) => Promise<SearchTokenByMintResponse>;
 }
 
 // Helper function to safely serialize objects with BigInt values
@@ -484,6 +492,80 @@ const grpcApi: API = {
 			const response = await utilityClient.getProxiedImage({ imageUrl });
 
 			return response;
+		} catch (error) {
+			return handleGrpcError(error, serviceName, methodName);
+		}
+	},
+
+	searchTokens: async (params: SearchTokensRequest): Promise<SearchTokensResponse> => {
+		const serviceName = 'CoinService';
+		const methodName = 'search';
+		try {
+			logRequest(serviceName, methodName, params);
+
+			const response = await coinClient.search({
+				query: params.query,
+				tags: params.tags || [],
+				minVolume24h: params.minVolume24h || 0,
+				limit: params.limit || 20,
+				offset: params.offset || 0,
+				sortBy: params.sortBy || '',
+				sortDesc: params.sortDesc || false
+			}, { headers: getRequestHeaders() });
+
+			logResponse(serviceName, methodName, response);
+
+			return {
+				tokens: response.tokens.map((token: TokenInfo) => ({
+					mintAddress: token.mintAddress,
+					symbol: token.symbol,
+					name: token.name,
+					decimals: token.decimals,
+					logoURI: token.logoUri,
+					coingeckoId: token.coingeckoId,
+					priceUSD: token.priceUsd,
+					marketCapUSD: token.marketCapUsd,
+					volume24h: token.volume24h,
+					priceChange24h: token.priceChange24h,
+					lastUpdatedAt: token.lastUpdatedAt ? new Date(Number(token.lastUpdatedAt)).toISOString() : '',
+					tags: [] // TokenInfo doesn't have tags, so we return an empty array
+				}))
+			};
+		} catch (error) {
+			return handleGrpcError(error, serviceName, methodName);
+		}
+	},
+
+	searchTokenByMint: async (mintAddress: string): Promise<SearchTokenByMintResponse> => {
+		const serviceName = 'CoinService';
+		const methodName = 'searchTokenByMint';
+		try {
+			logRequest(serviceName, methodName, { mintAddress });
+
+			const response = await coinClient.searchTokenByMint({ mintAddress }, { headers: getRequestHeaders() });
+
+			logResponse(serviceName, methodName, response);
+
+			if (!response.token) {
+				return { token: undefined };
+			}
+
+			return {
+				token: {
+					mintAddress: response.token.mintAddress,
+					symbol: response.token.symbol,
+					name: response.token.name,
+					decimals: response.token.decimals,
+					logoURI: response.token.logoUri,
+					coingeckoId: response.token.coingeckoId,
+					priceUSD: response.token.priceUsd,
+					marketCapUSD: response.token.marketCapUsd,
+					volume24h: response.token.volume24h,
+					priceChange24h: response.token.priceChange24h,
+					lastUpdatedAt: response.token.lastUpdatedAt ? new Date(Number(response.token.lastUpdatedAt)).toISOString() : '',
+					tags: [] // TokenInfo doesn't have tags, so we return an empty array
+				}
+			};
 		} catch (error) {
 			return handleGrpcError(error, serviceName, methodName);
 		}
