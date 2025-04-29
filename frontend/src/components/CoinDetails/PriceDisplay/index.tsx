@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Image } from 'react-native';
+import { View, Image, ActivityIndicator } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
-import { DEFAULT_TOKEN_ICON, formatValueChange, formatPrice } from './coindetails_scripts';
+import { formatValueChange, formatPrice } from './coindetails_scripts';
 import { createStyles } from './coindetails_styles';
-
+import { useProxiedImage } from '@/hooks/useProxiedImage';
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	price,
@@ -17,6 +17,8 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
+	const { imageUri, isLoading } = useProxiedImage(icon_url);
+
 	if (isNaN(periodChange)) return null;
 
 	const isPositive = periodChange >= 0;
@@ -26,12 +28,20 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	return (
 		<View style={styles.container}>
 			<View style={styles.headerRow}>
-				<Image
-					source={{ uri: icon_url || DEFAULT_TOKEN_ICON }}
-					alt={`${name || 'Token'} icon`}
-					style={styles.icon}
-					resizeMode="contain"
-				/>
+				{isLoading ? (
+					<View style={[styles.icon, { justifyContent: 'center', alignItems: 'center' }]}>
+						<ActivityIndicator size="small" />
+					</View>
+				) : imageUri ? (
+					<Image
+						source={{ uri: imageUri }}
+						alt={`${name || 'Token'} icon`}
+						style={styles.icon}
+						resizeMode="contain"
+					/>
+				) : (
+					<View style={styles.icon} />
+				)}
 				{name && (
 					<Text
 						variant="titleLarge"

@@ -8,6 +8,7 @@ import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { createStyles } from './styles';
 import { handleAmountInputChange, calculateUsdValue, findPortfolioToken } from './scripts';
+import { useProxiedImage } from '@/hooks/useProxiedImage';
 
 const DefaultTokenIcon = () => {
 	const theme = useTheme();
@@ -50,6 +51,22 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		});
 	}, [onSelectToken, onDismiss]);
 
+	// Inline component for rendering the icon using the hook
+	const RenderIcon: React.FC<{ iconUrl: string | undefined }> = React.memo(({ iconUrl }) => {
+		const { imageUri, isLoading } = useProxiedImage(iconUrl);
+		return (
+			<View style={[styles.tokenIcon, { justifyContent: 'center', alignItems: 'center' }]}>
+				{isLoading ? (
+					<ActivityIndicator size="small" />
+				) : imageUri ? (
+					<Image source={{ uri: imageUri }} style={styles.tokenIcon} />
+				) : (
+					<DefaultTokenIcon />
+				)}
+			</View>
+		);
+	});
+
 	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
 		const portfolioToken = portfolioTokens.find(t => t.id === coin.id);
 		return (
@@ -57,11 +74,8 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				style={styles.tokenItem}
 				onPress={() => handleTokenSelect(coin)}
 			>
-				{coin.icon_url ? (
-					<Image source={{ uri: coin.icon_url }} style={styles.tokenIcon} />
-				) : (
-					<DefaultTokenIcon />
-				)}
+				{/* Use the inline RenderIcon component */}
+				<RenderIcon iconUrl={coin.icon_url} />
 				<View style={styles.tokenDetails}>
 					<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
 					<Text style={styles.tokenName}>{coin.name}</Text>
@@ -130,6 +144,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const [modalVisible, setModalVisible] = useState(false);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 
+	const { imageUri: selectedTokenImageUri, isLoading: isSelectedTokenImageLoading } = useProxiedImage(selectedToken?.icon_url);
+
 	const calculatedValue = useMemo(() => {
 		return calculateUsdValue(selectedToken, amountValue);
 	}, [selectedToken, amountValue]);
@@ -138,10 +154,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		return findPortfolioToken(selectedToken, portfolioTokens);
 	}, [selectedToken, portfolioTokens]);
 
-	// Track whether initial selection has been made
 	const [hasInitialSelection, setHasInitialSelection] = useState(false);
 
-	// Effect to handle default token selection only once
 	useEffect(() => {
 		if (selectedToken && onSelectToken && !portfolioToken && !hasInitialSelection) {
 			console.log('🎯 Initial token selection:', selectedToken.symbol);
@@ -169,13 +183,15 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						<View style={styles.tokenInfo}>
 							{selectedToken ? (
 								<>
-									{selectedToken.icon_url ? (
+									{isSelectedTokenImageLoading ? (
+										<View style={[styles.tokenIcon, { justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="small" /></View>
+									) : selectedTokenImageUri ? (
 										<Image
-											source={{ uri: selectedToken.icon_url }}
+											source={{ uri: selectedTokenImageUri }}
 											style={styles.tokenIcon}
 										/>
 									) : (
-										<DefaultTokenIcon />
+										<View style={[styles.tokenIcon, { justifyContent: 'center', alignItems: 'center' }]}><DefaultTokenIcon /></View>
 									)}
 									<Text style={styles.tokenSymbol}>
 										{selectedToken.symbol}

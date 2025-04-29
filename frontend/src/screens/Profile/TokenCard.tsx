@@ -1,11 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, View, Image } from 'react-native';
+import { TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { CoinsIcon } from '@components/Common/Icons';
 import { createStyles } from './profile_styles';
 import { copyToClipboard, formatAddress } from './profile_scripts';
 import { useToast } from '@components/Common/Toast';
 import { ProfileCoin } from './profile_types';
+import { useProxiedImage } from '@/hooks/useProxiedImage';
+
 interface TokenCardProps {
 	profileCoin: ProfileCoin;
 	onPress: () => void;
@@ -16,26 +18,31 @@ export const TokenCard: React.FC<TokenCardProps> = ({ profileCoin, onPress }) =>
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
 
-	const iconUrl = profileCoin.coin.icon_url;
+	const { imageUri, isLoading } = useProxiedImage(profileCoin.coin.icon_url);
+
 	return (
 		<TouchableOpacity onPress={onPress}>
 			<View style={[styles.card, { backgroundColor: theme.colors.surfaceVariant }]}>
 				<View style={styles.tokenCardRow}>
-					{iconUrl ? ( // Use the iconUrl derived from the store
-						<View style={[styles.tokenIconContainer, { backgroundColor: theme.colors.background }]}>
+					<View style={[styles.tokenIconContainer, { backgroundColor: theme.colors.background }]}>
+						{isLoading ? (
+							<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+								<ActivityIndicator size="small" color={theme.colors.onSurfaceVariant} />
+							</View>
+						) : imageUri ? (
 							<Image
 								testID={`${profileCoin.coin.symbol}-icon`}
-								source={{ uri: iconUrl }}
+								source={{ uri: imageUri }}
 								alt={`${profileCoin.coin.symbol} icon`}
 								style={styles.tokenImage}
 								resizeMode="contain"
 							/>
-						</View>
-					) : (
-						<View style={[styles.tokenIconContainer, styles.centered, { backgroundColor: theme.colors.background }]}>
-							<CoinsIcon size={24} color={theme.colors.onSurfaceVariant} />
-						</View>
-					)}
+						) : (
+							<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+								<CoinsIcon size={24} color={theme.colors.onSurfaceVariant} />
+							</View>
+						)}
+					</View>
 
 					<View style={styles.tokenInfoMiddle}>
 						<Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>

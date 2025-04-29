@@ -1,38 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Image, ActivityIndicator } from 'react-native';
 import { Text, Card, useTheme } from 'react-native-paper';
 import { formatNumber, formatPrice } from '../../../utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
-import { DEFAULT_LOGO, fetchAndSetProxiedImage } from './coincard_scripts';
 import { createStyles } from './coincard_styles';
+import { useProxiedImage } from '@/hooks/useProxiedImage';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	const [imageUri, setImageUri] = useState<string | null>(null);
-	const [isLoadingImage, setIsLoadingImage] = useState(true);
-
-	useEffect(() => {
-		let isMounted = true;
-		setIsLoadingImage(true);
-		setImageUri(null);
-
-		const loadImage = async () => {
-			await fetchAndSetProxiedImage(coin.icon_url, (uri) => {
-				if (isMounted) {
-					setImageUri(uri);
-					setIsLoadingImage(false);
-				}
-			});
-		};
-
-		loadImage();
-
-		return () => {
-			isMounted = false;
-		};
-	}, [coin.icon_url]);
+	const { imageUri, isLoading } = useProxiedImage(coin.icon_url);
 
 	return (
 		<Card
@@ -42,7 +20,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 		>
 			<Card.Content style={styles.content}>
 				<View style={styles.leftSection}>
-					{isLoadingImage || !imageUri ? (
+					{isLoading || !imageUri ? (
 						<View style={styles.logo}><ActivityIndicator size="small" /></View>
 					) : (
 						<Image

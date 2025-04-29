@@ -1,6 +1,7 @@
-import { tradeClient, coinClient, priceClient, walletClient } from './grpc/apiClient';
+import { tradeClient, coinClient, priceClient, walletClient, utilityClient } from './grpc/apiClient';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
+import { GetProxiedImageResponse } from "@/gen/dankfolio/v1/utility_pb";
 import {
 	Coin,
 	TradePayload,
@@ -46,6 +47,7 @@ interface API {
 	submitTokenTransfer: (payload: TokenTransferSubmitRequest) => Promise<TokenTransferResponse>;
 	getTransferTransaction: (params: { toAddress: string; tokenMint: string; amount: string; }) => Promise<any>;
 	createWallet: () => Promise<CreateWalletResponse>;
+	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
 }
 
 // Helper function to safely serialize objects with BigInt values
@@ -446,6 +448,7 @@ const grpcApi: API = {
 			return handleGrpcError(error, serviceName, methodName);
 		}
 	},
+
 	async createWallet(): Promise<CreateWalletResponse> {
 		const serviceName = 'WalletService';
 		const methodName = 'createWallet';
@@ -454,7 +457,7 @@ const grpcApi: API = {
 			logRequest(serviceName, methodName, {});
 
 			const response = await walletClient.createWallet(
-				{}, {headers: getRequestHeaders()});
+				{}, { headers: getRequestHeaders() });
 
 			logResponse(serviceName, methodName, response);
 
@@ -464,6 +467,22 @@ const grpcApi: API = {
 				mnemonic: response.mnemonic
 			}
 
+		} catch (error) {
+			return handleGrpcError(error, serviceName, methodName);
+		}
+	},
+
+	getProxiedImage: async (imageUrl: string): Promise<GetProxiedImageResponse> => {
+		const serviceName = 'UtilityService';
+		const methodName = 'getProxiedImage';
+		try {
+			logRequest(serviceName, methodName, { imageUrl });
+
+			const response = await utilityClient.getProxiedImage({ imageUrl });
+
+			logResponse(serviceName, methodName, response);
+
+			return response;
 		} catch (error) {
 			return handleGrpcError(error, serviceName, methodName);
 		}
