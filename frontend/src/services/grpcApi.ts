@@ -308,6 +308,9 @@ const grpcApi: API = {
 	getWalletBalance: async (address: string): Promise<WalletBalanceResponse> => {
 		const serviceName = 'WalletService';
 		const methodName = 'getWalletBalances';
+		if (address === '') {
+			throw new Error('Address cannot be empty');
+		}
 		try {
 			logRequest(serviceName, methodName, { address });
 
@@ -476,7 +479,7 @@ const grpcApi: API = {
 		const serviceName = 'UtilityService';
 		const methodName = 'getProxiedImage';
 		try {
-			logRequest(serviceName, methodName, { imageUrl });
+			// logRequest(serviceName, methodName, { imageUrl });
 
 			const response = await utilityClient.getProxiedImage({ imageUrl });
 

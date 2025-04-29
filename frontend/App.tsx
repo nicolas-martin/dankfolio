@@ -102,8 +102,12 @@ const App: React.FC = () => {
 		if (wallet && !needsWalletSetup) {
 			async function loadData() {
 				try {
+					if (!wallet?.address) {
+						console.warn('No wallet address available');
+						return;
+					}
 					await Promise.all([
-						fetchPortfolioBalance(),
+						fetchPortfolioBalance(wallet.address),
 						fetchAvailableCoins()
 					]);
 				} catch (e) {

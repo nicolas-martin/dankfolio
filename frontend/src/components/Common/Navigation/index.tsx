@@ -41,7 +41,7 @@ const TabNavigator = () => {
 				component={Home}
 				options={{
 					tabBarLabel: 'Home',
-					tabBarIcon: ({ color, focused }) => <HomeIcon color={color} size={24} />,
+					tabBarIcon: ({ color }: { color: string }) => <HomeIcon color={color} size={24} />,
 				}}
 			/>
 			<Tab.Screen
@@ -49,7 +49,7 @@ const TabNavigator = () => {
 				component={Search}
 				options={{
 					tabBarLabel: 'Search',
-					tabBarIcon: ({ color, focused }) => <SearchIcon color={color} size={24} />,
+					tabBarIcon: ({ color }: { color: string }) => <SearchIcon color={color} size={24} />,
 				}}
 			/>
 			<Tab.Screen
@@ -57,7 +57,7 @@ const TabNavigator = () => {
 				component={Profile}
 				options={{
 					tabBarLabel: 'Profile',
-					tabBarIcon: ({ color, focused }) => <ProfileIcon color={color} size={24} />,
+					tabBarIcon: ({ color }: { color: string }) => <ProfileIcon color={color} size={24} />,
 				}}
 			/>
 		</Tab.Navigator>

@@ -48,6 +48,9 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	},
 
 	fetchPortfolioBalance: async (address: string) => {
+		if (address === ''){
+			throw new Error('Address is empty');
+		}
 		try {
 			set({ isLoading: true, error: null });
 			const balance = await grpcApi.getWalletBalance(address);

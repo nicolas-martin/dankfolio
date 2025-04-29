@@ -72,11 +72,27 @@ const WalletSetupScreen = ({ onWalletSetupComplete }: WalletSetupScreenProps) =>
 		}
 		setIsLoading(true);
 		try {
-			console.log("🔧 Loading debug wallet from TEST_PRIVATE_KEY (assuming Base64)...");
-			const keypairBytes = Buffer.from(TEST_PRIVATE_KEY, 'base64');
-			if (keypairBytes.length !== 64) {
-				throw new Error(`Decoded TEST_PRIVATE_KEY has incorrect length: ${keypairBytes.length}, expected 64`);
+			console.log("🔧 Attempting to load debug wallet...");
+			let keypairBytes: Buffer;
+
+			// Try Base64 first
+			try {
+				keypairBytes = Buffer.from(TEST_PRIVATE_KEY, 'base64');
+				console.log("✅ Decoded TEST_PRIVATE_KEY as Base64");
+			} catch (base64Error) {
+				// If Base64 fails, try bs58
+				try {
+					keypairBytes = Buffer.from(bs58.decode(TEST_PRIVATE_KEY));
+					console.log("✅ Decoded TEST_PRIVATE_KEY as bs58");
+				} catch (bs58Error) {
+					throw new Error('TEST_PRIVATE_KEY is neither valid Base64 nor bs58 format');
+				}
 			}
+
+			if (keypairBytes.length !== 64) {
+				throw new Error(`Decoded private key has incorrect length: ${keypairBytes.length}, expected 64 bytes`);
+			}
+
 			const keypair = Keypair.fromSecretKey(keypairBytes);
 			const privateKeyHex = keypairBytes.toString('hex');
 			const placeholderMnemonic = 'debug test key loaded - mnemonic not applicable';
@@ -88,7 +104,10 @@ const WalletSetupScreen = ({ onWalletSetupComplete }: WalletSetupScreenProps) =>
 
 		} catch (err: any) {
 			console.error("Load Debug Wallet Error:", err);
-			showToast({ message: err.message || 'Error loading debug wallet.', type: 'error' });
+			showToast({
+				message: `Error loading debug wallet: ${err.message}`,
+				type: 'error'
+			});
 		} finally {
 			setIsLoading(false);
 		}

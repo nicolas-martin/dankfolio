@@ -17,7 +17,7 @@ const mockCoin = {
 	id: 'bitcoin',
 	name: 'Bitcoin',
 	symbol: 'BTC',
-	icon_url: 'https://example.com/btc.png',
+	icon_url: 'https://example.com/btc-from-nav.png',
 	price: '50000',
 	description: 'Digital gold',
 	website: 'https://bitcoin.org',

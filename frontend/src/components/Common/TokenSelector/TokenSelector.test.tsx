@@ -5,13 +5,24 @@ import TokenSelector from './index';
 import { handleAmountInputChange, calculateUsdValue, findPortfolioToken } from './scripts';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
+import { useProxiedImage } from '@/hooks/useProxiedImage';
 import { Coin } from '@/types';
 
-// Mock the stores
+//BUG: SOMEHOW THESE TESTS ARE POLUTING THE STORE?
+
+// Mock the stores and hooks
 jest.mock('@store/portfolio');
 jest.mock('@store/coins');
+jest.mock('@/hooks/useProxiedImage');
 jest.mock('@components/Common/Icons', () => ({
 	ChevronDownIcon: 'ChevronDownIcon',
+}));
+
+// Mock implementation for useProxiedImage
+(useProxiedImage as jest.Mock).mockImplementation((url: string) => ({
+	imageUri: url, // Just return the URL as is for testing
+	isLoading: false,
+	error: null
 }));
 
 const renderWithProvider = (component: React.ReactElement) => {
@@ -27,7 +38,7 @@ describe('TokenSelector', () => {
 		id: 'bitcoin',
 		symbol: 'BTC',
 		name: 'Bitcoin',
-		icon_url: 'https://example.com/btc.png',
+		icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/bitcoin/logo.png',
 		price: 50000,
 		decimals: 8,
 		description: 'Bitcoin description',
@@ -44,6 +55,13 @@ describe('TokenSelector', () => {
 		jest.useFakeTimers();
 		(usePortfolioStore as unknown as jest.Mock).mockReturnValue({ tokens: [] });
 		(useCoinStore as unknown as jest.Mock).mockReturnValue({ availableCoins: [mockCoin] });
+		// Reset and set up useProxiedImage mock for each test
+		(useProxiedImage as jest.Mock).mockReset();
+		(useProxiedImage as jest.Mock).mockImplementation((url: string) => ({
+			imageUri: url,
+			isLoading: false,
+			error: null
+		}));
 	});
 
 	afterEach(() => {
@@ -87,7 +105,7 @@ describe('TokenSelector', () => {
 				id: 'ethereum',
 				symbol: 'ETH',
 				name: 'Ethereum',
-				icon_url: 'https://example.com/eth.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/ethereum/logo.png',
 				price: 3000,
 				decimals: 18,
 				description: 'Ethereum description',
@@ -143,7 +161,7 @@ describe('TokenSelector', () => {
 				id: 'ethereum',
 				symbol: 'ETH',
 				name: 'Ethereum',
-				icon_url: 'https://example.com/eth.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/ethereum/logo.png',
 				price: 3000,
 				decimals: 18,
 				description: 'Ethereum description',
@@ -156,7 +174,7 @@ describe('TokenSelector', () => {
 				id: 'solana',
 				symbol: 'SOL',
 				name: 'Solana',
-				icon_url: 'https://example.com/sol.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/solana/logo.png',
 				price: 100,
 				decimals: 9,
 				description: 'Solana description',
@@ -236,7 +254,7 @@ describe('TokenSelector', () => {
 				id: 'dogecoin',
 				symbol: 'DOGE',
 				name: 'Dogecoin',
-				icon_url: 'https://example.com/doge.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/dogecoin/logo.png',
 				price: 0.1,
 				decimals: 8,
 				description: 'Much wow',
@@ -249,7 +267,7 @@ describe('TokenSelector', () => {
 				id: 'shiba',
 				symbol: 'SHIB',
 				name: 'Shiba Inu',
-				icon_url: 'https://example.com/shib.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/shiba-inu/logo.png',
 				price: 0.00001,
 				decimals: 8,
 				description: 'Very meme',
@@ -262,7 +280,7 @@ describe('TokenSelector', () => {
 				id: 'arbitrum',
 				symbol: 'ARB',
 				name: 'Arbitrum',
-				icon_url: 'https://example.com/arb.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/arbitrum/logo.png',
 				price: 1.5,
 				decimals: 18,
 				description: 'L2 scaling',
@@ -332,7 +350,7 @@ describe('TokenSelector', () => {
 				id: 'dogecoin',
 				symbol: 'DOGE',
 				name: 'Dogecoin',
-				icon_url: 'https://example.com/doge.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/dogecoin/logo.png',
 				price: 0.1,
 				decimals: 8,
 				description: 'Much wow',
@@ -345,7 +363,7 @@ describe('TokenSelector', () => {
 				id: 'shiba',
 				symbol: 'SHIB',
 				name: 'Shiba Inu',
-				icon_url: 'https://example.com/shib.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/shiba-inu/logo.png',
 				price: 0.00001,
 				decimals: 8,
 				description: 'Very meme',
@@ -358,7 +376,7 @@ describe('TokenSelector', () => {
 				id: 'arbitrum',
 				symbol: 'ARB',
 				name: 'Arbitrum',
-				icon_url: 'https://example.com/arb.png',
+				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/arbitrum/logo.png',
 				price: 1.5,
 				decimals: 18,
 				description: 'L2 scaling',
