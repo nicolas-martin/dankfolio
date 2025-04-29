@@ -3,6 +3,7 @@ import { Keypair } from '@solana/web3.js';
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer'; // Import Buffer for hex conversion
 import grpcApi from '@/services/grpcApi'; // Import grpcApi
+import { usePortfolioStore } from '@store/portfolio';
 
 const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
 const KEYCHAIN_USERNAME_PRIVATE_KEY = 'userPrivateKeyHex'; // Store 64-byte keypair hex
@@ -57,6 +58,9 @@ export const handleGenerateWallet = async (): Promise<Keypair | null> => {
 			console.warn('⚠️ WARNING: Reconstructed public key does not match public key from API!');
 		}
 
+		// Store in portfolio store
+		usePortfolioStore.getState().setWallet(keypair);
+
 		console.log('✅ New wallet generated, stored, and Keypair created.');
 		return keypair;
 	} catch (error) {
@@ -74,7 +78,7 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair | nu
 		}
 		const seed = await bip39.mnemonicToSeed(mnemonic);
 		// Derive the keypair using the Solana path (first 32 bytes of seed)
-		const derivedSeed = seed.slice(0, 32);
+		const derivedSeed = seed.subarray(0, 32);
 		const keypair = Keypair.fromSeed(derivedSeed);
 
 		// Convert the 64-byte keypair (secret + public) to hex for storage consistency
@@ -83,6 +87,9 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair | nu
 
 		// Store securely FIRST
 		await storeCredentials(privateKeyHex, mnemonic);
+
+		// Store in portfolio store
+		usePortfolioStore.getState().setWallet(keypair);
 
 		console.log('✅ Wallet imported from mnemonic, stored, and Keypair created.');
 		return keypair; // Return keypair only after successful storage
@@ -108,6 +115,8 @@ export const retrieveWalletFromStorage = async (): Promise<Keypair | null> => {
 				return null; // Treat as no wallet found
 			}
 			const keypair = Keypair.fromSecretKey(keypairBytes);
+			// Store in portfolio store
+			usePortfolioStore.getState().setWallet(keypair);
 			console.log('✅ Keypair reconstructed from stored 64-byte keypair.');
 			return keypair;
 		} else {
