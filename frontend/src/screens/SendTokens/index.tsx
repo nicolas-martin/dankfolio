@@ -81,7 +81,7 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			const validationError = await validateForm({
 				toAddress: recipientAddress,
 				amount,
-				selectedTokenMint: selectedToken.id
+				selectedTokenMint: selectedToken.mintAddress
 			}, selectedToken);
 
 			if (validationError) {
@@ -96,7 +96,7 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			const txHash = await handleTokenTransfer({
 				toAddress: recipientAddress,
 				amount,
-				selectedTokenMint: selectedToken.id
+				selectedTokenMint: selectedToken.mintAddress
 			}, wallet);
 
 			console.log('Transaction submitted:', txHash);

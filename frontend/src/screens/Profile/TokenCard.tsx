@@ -18,7 +18,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ profileCoin, onPress }) =>
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
 
-	const { imageUri, isLoading } = useProxiedImage(profileCoin.coin.icon_url);
+	const { imageUri, isLoading } = useProxiedImage(profileCoin.coin.iconUrl);
 
 	return (
 		<TouchableOpacity onPress={onPress}>
@@ -50,12 +50,12 @@ export const TokenCard: React.FC<TokenCardProps> = ({ profileCoin, onPress }) =>
 						</Text>
 						<View style={{ flexDirection: 'row', alignItems: 'center' }}>
 							<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-								{formatAddress(profileCoin.coin.id)}
+								{formatAddress(profileCoin.coin.mintAddress)}
 							</Text>
 							<IconButton
 								icon="content-copy"
 								size={16}
-								onPress={() => copyToClipboard(profileCoin.coin.id, profileCoin.coin.symbol, showToast)}
+								onPress={() => copyToClipboard(profileCoin.coin.mintAddress, profileCoin.coin.symbol, showToast)}
 								style={{ margin: 0, padding: 0, marginLeft: 4 }}
 							/>
 						</View>

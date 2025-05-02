@@ -1,7 +1,7 @@
 import { act } from '@testing-library/react-native';
 import { usePortfolioStore } from './portfolio';
 import { Wallet, Coin } from '@/types';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 import * as coinStoreModule from './coins';
 
 jest.mock('@/services/grpcApi');
@@ -9,12 +9,12 @@ jest.mock('@/services/grpcApi');
 let coinMap: Record<string, Coin>;
 const mockGetCoinByID = jest.fn();
 const mockSetCoin = jest.fn((coin: Coin) => {
-	coinMap[coin.id] = coin;
+	coinMap[coin.mintAddress] = coin;
 });
 
 const mockWalletData: Wallet = { address: 'wallet123', privateKey: 'privKey', mnemonic: 'mnemonic' };
-const mockSolCoin: Coin = { id: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
-const mockUsdcCoin: Coin = { id: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
+const mockSolCoin: Coin = { mintAddress: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
+const mockUsdcCoin: Coin = { mintAddress: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
 
 const mockApiBalanceResponseSuccess = {
 	balances: [
@@ -67,7 +67,7 @@ describe('Zustand Portfolio Store', () => {
 
 			// Test setWallet
 			act(() => {
-				usePortfolioStore.getState().setWallet(mockWalletData);
+				usePortfolioStore.getState().setWallet(mockWalletData.keypair ? mockWalletData.keypair : null);
 			});
 			expect(usePortfolioStore.getState().wallet).toEqual(mockWalletData);
 
@@ -75,7 +75,7 @@ describe('Zustand Portfolio Store', () => {
 			act(() => {
 				usePortfolioStore.setState({
 					wallet: mockWalletData,
-					tokens: [{ id: 'solana', amount: 5, price: 150, value: 750, coin: mockSolCoin }],
+					tokens: [{ mintAddress: 'solana', amount: 5, price: 150, value: 750, coin: mockSolCoin }],
 					error: 'Some error'
 				});
 			});

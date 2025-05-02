@@ -2,35 +2,35 @@ import { Coin, Wallet } from '@/types';
 import { PortfolioToken } from '@/store/portfolio';
 
 export const mockFromCoin: Coin = {
-	id: "So11111111111111111111111111111111111111112",
+	mintAddress: "So11111111111111111111111111111111111111112",
 	name: "Solana",
 	symbol: "SOL",
-	icon_url: "sol_icon_url",
+	iconUrl: "sol_icon_url",
 	decimals: 9,
 	price: 150.0,
 	description: "Solana Blockchain",
 	website: "https://solana.com",
 	twitter: "https://twitter.com/solana",
 	telegram: "",
-	daily_volume: 5e9,
+	dailyVolume: 5e9,
 	tags: ["layer-1"],
-	created_at: "2024-01-01T00:00:00Z",
+	createdAt: new Date("2024-01-01T00:00:00Z"),
 };
 
 export const mockToCoin: Coin = {
-	id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
+	mintAddress: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
 	name: "WEN",
 	symbol: "WEN",
-	icon_url: "wen_icon_url",
+	iconUrl: "wen_icon_url",
 	decimals: 5,
 	price: 0.00011,
 	description: "WEN",
 	website: "https://wen-foundation.org",
 	twitter: "https://twitter.com/wenwencoin",
 	telegram: "https://t.me/wenwencoinsol",
-	daily_volume: 123456.78,
+	dailyVolume: 123456.78,
 	tags: ["meme", "community"],
-	created_at: "2024-01-01T00:00:00Z"
+	createdAt: new Date("2024-01-01T00:00:00Z")
 };
 
 export const mockWallet: Wallet = {
@@ -40,7 +40,7 @@ export const mockWallet: Wallet = {
 };
 
 export const mockFromPortfolioToken: PortfolioToken = {
-	id: mockFromCoin.id,
+	mintAddress: mockFromCoin.mintAddress,
 	amount: 10,
 	price: mockFromCoin.price,
 	value: 10 * mockFromCoin.price,

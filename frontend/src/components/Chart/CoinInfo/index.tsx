@@ -79,19 +79,13 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 					Details
 				</Text>
 
-				{metadata.daily_volume !== undefined && (
+				{metadata.dailyVolume !== undefined && (
 					<View style={styles.detailRow}>
-						<Text
-							variant="bodyLarge"
-							style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}
-						>
+						<Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>
 							24h Volume
 						</Text>
-						<Text
-							variant="bodyLarge"
-							style={[styles.detailValue, { color: theme.colors.onSurface }]}
-						>
-							${formatNumber(metadata.daily_volume)}
+						<Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>
+							${formatNumber(metadata.dailyVolume)}
 						</Text>
 					</View>
 				)}

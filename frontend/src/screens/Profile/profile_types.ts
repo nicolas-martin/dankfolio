@@ -9,7 +9,7 @@ export type ProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Pro
 export type ProfileScreenNavigationProp = ProfileScreenProps['navigation'];
 
 export interface ProfileCoin {
-	id: string;
+	mintAddress: string;
 	amount: number;
 	price: number;
 	value: number;

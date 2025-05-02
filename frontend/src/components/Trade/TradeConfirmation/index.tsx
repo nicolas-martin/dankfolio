@@ -46,8 +46,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				}
 
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
-					getCoinByID(fromCoin.id, true),
-					getCoinByID(toCoin.id, true)
+					getCoinByID(fromCoin.mintAddress, true),
+					getCoinByID(toCoin.mintAddress, true)
 				]);
 
 				if (!updatedFromCoin || !updatedToCoin) {
@@ -67,7 +67,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		};
 
 		refreshPrices();
-	}, [isVisible, fromCoin?.id, toCoin?.id, getCoinByID, onClose, showToast]);
+	}, [isVisible, fromCoin?.mintAddress, toCoin?.mintAddress, getCoinByID, onClose, showToast]);
 
 	const calculateValue = (amount: string, coin: Coin): string => {
 		if (!coin || !amount || isNaN(parseFloat(amount))) return '$0.00';

@@ -49,5 +49,5 @@ export const findPortfolioToken = (selectedToken?: Coin, portfolioTokens: any[] 
 		return undefined;
 	}
 
-	return portfolioTokens.find(token => token.id === selectedToken.id);
+	return portfolioTokens.find(token => token.mintAddress === selectedToken.mintAddress);
 }; 

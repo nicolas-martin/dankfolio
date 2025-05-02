@@ -62,7 +62,7 @@ const HomeScreen = () => {
 						{coins.length > 0 ? (
 							<FlatList
 								data={coins}
-								keyExtractor={(item) => item.id || item.symbol}
+								keyExtractor={(item) => item.mintAddress || item.symbol}
 								renderItem={({ item }) => (
 									<CoinCard coin={item} onPress={() => handleCoinPressCallback(item)} />
 								)}

@@ -77,21 +77,21 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 	// Step 3: Prepare and save the final output
 	finalOutput := EnrichedFileOutput{
 		ScrapeTimestamp: time.Now().UTC(), // Use UTC time
-		Tokens:          enrichedCoins,
+		Coins:           enrichedCoins,
 	}
 
 	// Log summary before saving
 	log.Printf("--- Saving Enriched Solana Tokens Data ---")
 	log.Printf("Timestamp: %s", finalOutput.ScrapeTimestamp.Format(time.RFC3339))
-	log.Printf("Total Tokens to Save: %d", len(finalOutput.Tokens))
+	log.Printf("Total Coins to Save: %d", len(finalOutput.Coins))
 	// Optionally log details of first few tokens
-	for i, t := range finalOutput.Tokens {
+	for i, t := range finalOutput.Coins {
 		if i >= 3 {
 			log.Println("...")
 			break
 		}
 		log.Printf("  Mint: %s, Name: %s, Symbol: %s, Price: %.6f, Volume: %.2f",
-			t.ID, t.Name, t.Symbol, t.Price, t.DailyVolume)
+			t.MintAddress, t.Name, t.Symbol, t.Price, t.Volume24h)
 	}
 
 	var buf bytes.Buffer
@@ -107,8 +107,8 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 		return fmt.Errorf("failed to write final enriched JSON to file %s: %w", outputFile, err)
 	}
 
-	log.Printf("Successfully saved enriched data for %d tokens to %s (Total time: %v)",
-		len(finalOutput.Tokens), outputFile, time.Since(startTime))
+	log.Printf("Successfully saved enriched data for %d coins to %s (Total time: %v)",
+		len(finalOutput.Coins), outputFile, time.Since(startTime))
 
 	return nil // Success
 }
@@ -427,7 +427,7 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 			enriched.IsTrending = true
 			enrichedCoins = append(enrichedCoins, *enriched)
 			mu.Unlock()
-			log.Printf("Successfully processed enrichment for: %s (%s)", enriched.Name, enriched.ID)
+			log.Printf("Successfully processed enrichment for: %s (%s)", enriched.Name, enriched.MintAddress)
 		}(scrapedToken)
 	}
 

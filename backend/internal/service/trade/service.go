@@ -238,7 +238,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 		return nil, fmt.Errorf("failed to parse out amount: %w", err)
 	}
 
-	estimatedAmountInCoin := outAmount / math.Pow10(toCoin.Decimals)
+	estimatedAmountInCoin := outAmount / math.Pow10(int(toCoin.Decimals))
 	totalFeeInUSDCoin := totalFeeInUSD / math.Pow10(9)
 
 	// Calculate exchange rate

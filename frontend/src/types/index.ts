@@ -1,24 +1,23 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Keypair } from '@solana/web3.js';
-import { Token as SearchToken } from '@/services/grpc/model';
 
 export interface Coin {
-	id: string;
+	mintAddress: string;
 	name: string;
 	symbol: string;
 	decimals: number;
 	description: string;
-	icon_url: string;
+	iconUrl: string;
 	tags: string[];
 	price: number;
 	balance?: number;
-	daily_volume: number;
+	dailyVolume: number;
 	website?: string;
 	twitter?: string;
 	telegram?: string;
-	coingecko_id?: string;
-	created_at: string;
-	last_updated?: string;
+	coingeckoId?: string;
+	createdAt?: Date;
+	lastUpdated?: Date;
 	value?: number;
 	percentage?: number;
 }
@@ -38,7 +37,7 @@ export type RootStackParamList = {
 	Trade: {
 		initialFromCoin?: Coin | null;
 		initialToCoin?: Coin | null;
-		selectedToken?: SearchToken;
+		selectedToken?: Coin;
 	};
 	Profile: undefined;
 	Search: undefined;
@@ -83,18 +82,6 @@ export interface PriceData {
 	timestamp: string;
 	value: string | number;
 	unixTime?: number;
-}
-
-export interface Token {
-	id: string;
-	symbol: string;
-	name: string;
-	decimals: number;
-	balance: string;
-	price: number;
-	icon_url: string;
-	description: string;
-	website: string;
 }
 
 // Re-export all types from other files

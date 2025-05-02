@@ -31,7 +31,7 @@ type Config struct {
 // EnrichedFileOutput matches the top-level structure of the NEW trending_solana_tokens.json
 type EnrichedFileOutput struct {
 	ScrapeTimestamp time.Time    `json:"scrapeTimestamp"`
-	Tokens          []model.Coin `json:"tokens"` // Contains fully enriched Coin models
+	Coins           []model.Coin `json:"coins"` // Contains fully enriched Coin models
 }
 
 // --- End scraper JSON structs ---

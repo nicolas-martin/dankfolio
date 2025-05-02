@@ -26,8 +26,8 @@ type Balance struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id     string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`           // Token mint address or identifier
-	Amount float64 `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"` // Token amount
+	Id     string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`           // Coin mint address or identifier
+	Amount float64 `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"` // Coin amount
 }
 
 func (x *Balance) Reset() {

@@ -2,11 +2,11 @@ import { create } from 'zustand';
 import { Wallet, Coin } from '@/types';
 import { Keypair } from '@solana/web3.js';
 import { useCoinStore } from './coins';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 
 export interface PortfolioToken {
-	id: string;
+	mintAddress: string;
 	amount: number;
 	price: number;
 	value: number;
@@ -48,7 +48,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	},
 
 	fetchPortfolioBalance: async (address: string) => {
-		if (address === ''){
+		if (address === '') {
 			throw new Error('Address is empty');
 		}
 		try {
@@ -58,13 +58,13 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			const coinStore = useCoinStore.getState();
 			let coinMap = coinStore.coinMap;
 
-			const balanceIds = balance.balances.map(b => b.id);
-			const missingIds = balanceIds.filter(id => !coinMap[id]);
+			const balanceIds = balance.balances.map((b: { id: string }) => b.id);
+			const missingIds = balanceIds.filter((id: string) => !coinMap[id]);
 
 			let missingCount = 0;
 			const missingCoinIds: string[] = [];
 			await Promise.all(
-				missingIds.map(async (id) => {
+				missingIds.map(async (id: string) => {
 					try {
 						const coin = await coinStore.getCoinByID(id);
 						if (coin) {
@@ -83,20 +83,20 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			);
 			coinMap = useCoinStore.getState().coinMap;
 
-			const tokens = balance.balances.map((balance) => {
+			const tokens = balance.balances.map((balance: { id: string; amount: number }) => {
 				const coin = coinMap[balance.id];
 				if (!coin) return null;
 				return {
-					id: balance.id,
+					mintAddress: balance.id,
 					amount: balance.amount,
 					price: coin.price,
 					value: balance.amount * coin.price,
 					coin: coin
-				};
+				} as PortfolioToken;
 			});
 
 			set({
-				tokens: tokens.filter((token): token is PortfolioToken => token !== null),
+				tokens: tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null),
 				isLoading: false,
 				error: missingCount > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
 			});

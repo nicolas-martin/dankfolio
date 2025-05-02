@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Buffer } from 'buffer';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 
 // Can potentially move DEFAULT_LOGO to a constants file
 const DEFAULT_LOGO = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
@@ -42,9 +42,9 @@ export const useProxiedImage = (originalImageUrl: string | undefined): UseProxie
 				// console.log(`useProxiedImage: Requesting proxied image for ${urlToFetch}`);
 				const response = await grpcApi.getProxiedImage(urlToFetch);
 
-				if (response.imageData && response.contentType) {
-					const base64 = Buffer.from(response.imageData).toString('base64');
-					const dataUri = `data:${response.contentType};base64,${base64}`;
+				if (response.imageData) {
+					const base64 = response.imageData;
+					const dataUri = `data:image/png;base64,${base64}`;
 					if (isMounted) {
 						setImageUri(dataUri);
 						// console.log(`useProxiedImage: Success for ${urlToFetch}`);

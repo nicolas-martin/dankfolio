@@ -10,13 +10,13 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	const { imageUri, isLoading } = useProxiedImage(coin.icon_url);
+	const { imageUri, isLoading } = useProxiedImage(coin.iconUrl);
 
 	return (
 		<Card
 			style={styles.card}
 			onPress={() => onPress(coin)}
-			testID={`coin-card-${coin.id}`}
+			testID={`coin-card-${coin.mintAddress}`}
 		>
 			<Card.Content style={styles.content}>
 				<View style={styles.leftSection}>
@@ -37,8 +37,8 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 
 				<View style={styles.rightSection}>
 					<Text style={styles.price} numberOfLines={1}>{formatPrice(Number(coin.price))}</Text>
-					{typeof coin.daily_volume === 'number' && (
-						<Text style={styles.volume} numberOfLines={1}>Vol: {formatNumber(coin.daily_volume, true)}</Text>
+					{typeof coin.dailyVolume === 'number' && (
+						<Text style={styles.volume} numberOfLines={1}>Vol: {formatNumber(coin.dailyVolume, true)}</Text>
 					)}
 				</View>
 			</Card.Content>

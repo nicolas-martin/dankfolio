@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/price.proto.
  */
 export const file_dankfolio_v1_price: GenFile = /*@__PURE__*/
-  fileDesc("ChhkYW5rZm9saW8vdjEvcHJpY2UucHJvdG8SDGRhbmtmb2xpby52MSL3AwoWR2V0UHJpY2VIaXN0b3J5UmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJEkMKBHR5cGUYAiABKA4yNS5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVxdWVzdC5QcmljZUhpc3RvcnlUeXBlEi0KCXRpbWVfZnJvbRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKwoHdGltZV90bxgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMYWRkcmVzc190eXBlGAUgASgJIpQCChBQcmljZUhpc3RvcnlUeXBlEiIKHlBSSUNFX0hJU1RPUllfVFlQRV9VTlNQRUNJRklFRBAAEg4KCk9ORV9NSU5VVEUQARIQCgxUSFJFRV9NSU5VVEUQAhIPCgtGSVZFX01JTlVURRADEhIKDkZJRlRFRU5fTUlOVVRFEAQSEQoNVEhJUlRZX01JTlVURRAFEgwKCE9ORV9IT1VSEAYSDAoIVFdPX0hPVVIQBxINCglGT1VSX0hPVVIQCBIMCghTSVhfSE9VUhAJEg4KCkVJR0hUX0hPVVIQChIPCgtUV0VMVkVfSE9VUhALEgsKB09ORV9EQVkQDBINCglUSFJFRV9EQVkQDRIMCghPTkVfV0VFSxAOIlgKF0dldFByaWNlSGlzdG9yeVJlc3BvbnNlEiwKBGRhdGEYASABKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5RGF0YRIPCgdzdWNjZXNzGAIgASgIIkEKEFByaWNlSGlzdG9yeURhdGESLQoFaXRlbXMYASADKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5SXRlbSI0ChBQcmljZUhpc3RvcnlJdGVtEhEKCXVuaXhfdGltZRgBIAEoAxINCgV2YWx1ZRgCIAEoASIqChVHZXRUb2tlblByaWNlc1JlcXVlc3QSEQoJdG9rZW5faWRzGAEgAygJIokBChZHZXRUb2tlblByaWNlc1Jlc3BvbnNlEkAKBnByaWNlcxgBIAMoCzIwLmRhbmtmb2xpby52MS5HZXRUb2tlblByaWNlc1Jlc3BvbnNlLlByaWNlc0VudHJ5Gi0KC1ByaWNlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoAToCOAEyzwEKDFByaWNlU2VydmljZRJgCg9HZXRQcmljZUhpc3RvcnkSJC5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVxdWVzdBolLmRhbmtmb2xpby52MS5HZXRQcmljZUhpc3RvcnlSZXNwb25zZSIAEl0KDkdldFRva2VuUHJpY2VzEiMuZGFua2ZvbGlvLnYxLkdldFRva2VuUHJpY2VzUmVxdWVzdBokLmRhbmtmb2xpby52MS5HZXRUb2tlblByaWNlc1Jlc3BvbnNlIgBCtgEKEGNvbS5kYW5rZm9saW8udjFCClByaWNlUHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("ChhkYW5rZm9saW8vdjEvcHJpY2UucHJvdG8SDGRhbmtmb2xpby52MSL3AwoWR2V0UHJpY2VIaXN0b3J5UmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJEkMKBHR5cGUYAiABKA4yNS5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVxdWVzdC5QcmljZUhpc3RvcnlUeXBlEi0KCXRpbWVfZnJvbRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKwoHdGltZV90bxgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMYWRkcmVzc190eXBlGAUgASgJIpQCChBQcmljZUhpc3RvcnlUeXBlEiIKHlBSSUNFX0hJU1RPUllfVFlQRV9VTlNQRUNJRklFRBAAEg4KCk9ORV9NSU5VVEUQARIQCgxUSFJFRV9NSU5VVEUQAhIPCgtGSVZFX01JTlVURRADEhIKDkZJRlRFRU5fTUlOVVRFEAQSEQoNVEhJUlRZX01JTlVURRAFEgwKCE9ORV9IT1VSEAYSDAoIVFdPX0hPVVIQBxINCglGT1VSX0hPVVIQCBIMCghTSVhfSE9VUhAJEg4KCkVJR0hUX0hPVVIQChIPCgtUV0VMVkVfSE9VUhALEgsKB09ORV9EQVkQDBINCglUSFJFRV9EQVkQDRIMCghPTkVfV0VFSxAOIlgKF0dldFByaWNlSGlzdG9yeVJlc3BvbnNlEiwKBGRhdGEYASABKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5RGF0YRIPCgdzdWNjZXNzGAIgASgIIkEKEFByaWNlSGlzdG9yeURhdGESLQoFaXRlbXMYASADKAsyHi5kYW5rZm9saW8udjEuUHJpY2VIaXN0b3J5SXRlbSI0ChBQcmljZUhpc3RvcnlJdGVtEhEKCXVuaXhfdGltZRgBIAEoAxINCgV2YWx1ZRgCIAEoASIpChRHZXRDb2luUHJpY2VzUmVxdWVzdBIRCgl0b2tlbl9pZHMYASADKAkihwEKFUdldENvaW5QcmljZXNSZXNwb25zZRI/CgZwcmljZXMYASADKAsyLy5kYW5rZm9saW8udjEuR2V0Q29pblByaWNlc1Jlc3BvbnNlLlByaWNlc0VudHJ5Gi0KC1ByaWNlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoAToCOAEyzAEKDFByaWNlU2VydmljZRJgCg9HZXRQcmljZUhpc3RvcnkSJC5kYW5rZm9saW8udjEuR2V0UHJpY2VIaXN0b3J5UmVxdWVzdBolLmRhbmtmb2xpby52MS5HZXRQcmljZUhpc3RvcnlSZXNwb25zZSIAEloKDUdldENvaW5QcmljZXMSIi5kYW5rZm9saW8udjEuR2V0Q29pblByaWNlc1JlcXVlc3QaIy5kYW5rZm9saW8udjEuR2V0Q29pblByaWNlc1Jlc3BvbnNlIgBCtgEKEGNvbS5kYW5rZm9saW8udjFCClByaWNlUHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * GetPriceHistoryRequest represents a request for price history data
@@ -209,11 +209,11 @@ export const PriceHistoryItemSchema: GenMessage<PriceHistoryItem> = /*@__PURE__*
   messageDesc(file_dankfolio_v1_price, 3);
 
 /**
- * GetTokenPricesRequest is the request for getting token prices
+ * GetCoinPricesRequest is the request for getting token prices
  *
- * @generated from message dankfolio.v1.GetTokenPricesRequest
+ * @generated from message dankfolio.v1.GetCoinPricesRequest
  */
-export type GetTokenPricesRequest = Message<"dankfolio.v1.GetTokenPricesRequest"> & {
+export type GetCoinPricesRequest = Message<"dankfolio.v1.GetCoinPricesRequest"> & {
   /**
    * @generated from field: repeated string token_ids = 1;
    */
@@ -221,18 +221,18 @@ export type GetTokenPricesRequest = Message<"dankfolio.v1.GetTokenPricesRequest"
 };
 
 /**
- * Describes the message dankfolio.v1.GetTokenPricesRequest.
- * Use `create(GetTokenPricesRequestSchema)` to create a new message.
+ * Describes the message dankfolio.v1.GetCoinPricesRequest.
+ * Use `create(GetCoinPricesRequestSchema)` to create a new message.
  */
-export const GetTokenPricesRequestSchema: GenMessage<GetTokenPricesRequest> = /*@__PURE__*/
+export const GetCoinPricesRequestSchema: GenMessage<GetCoinPricesRequest> = /*@__PURE__*/
   messageDesc(file_dankfolio_v1_price, 4);
 
 /**
- * GetTokenPricesResponse is the response containing token prices
+ * GetCoinPricesResponse is the response containing token prices
  *
- * @generated from message dankfolio.v1.GetTokenPricesResponse
+ * @generated from message dankfolio.v1.GetCoinPricesResponse
  */
-export type GetTokenPricesResponse = Message<"dankfolio.v1.GetTokenPricesResponse"> & {
+export type GetCoinPricesResponse = Message<"dankfolio.v1.GetCoinPricesResponse"> & {
   /**
    * @generated from field: map<string, double> prices = 1;
    */
@@ -240,10 +240,10 @@ export type GetTokenPricesResponse = Message<"dankfolio.v1.GetTokenPricesRespons
 };
 
 /**
- * Describes the message dankfolio.v1.GetTokenPricesResponse.
- * Use `create(GetTokenPricesResponseSchema)` to create a new message.
+ * Describes the message dankfolio.v1.GetCoinPricesResponse.
+ * Use `create(GetCoinPricesResponseSchema)` to create a new message.
  */
-export const GetTokenPricesResponseSchema: GenMessage<GetTokenPricesResponse> = /*@__PURE__*/
+export const GetCoinPricesResponseSchema: GenMessage<GetCoinPricesResponse> = /*@__PURE__*/
   messageDesc(file_dankfolio_v1_price, 5);
 
 /**
@@ -263,14 +263,14 @@ export const PriceService: GenService<{
     output: typeof GetPriceHistoryResponseSchema;
   },
   /**
-   * GetTokenPrices returns current prices for multiple tokens
+   * GetCoinPrices returns current prices for multiple tokens
    *
-   * @generated from rpc dankfolio.v1.PriceService.GetTokenPrices
+   * @generated from rpc dankfolio.v1.PriceService.GetCoinPrices
    */
-  getTokenPrices: {
+  getCoinPrices: {
     methodKind: "unary";
-    input: typeof GetTokenPricesRequestSchema;
-    output: typeof GetTokenPricesResponseSchema;
+    input: typeof GetCoinPricesRequestSchema;
+    output: typeof GetCoinPricesResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dankfolio_v1_price, 0);

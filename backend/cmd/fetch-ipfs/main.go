@@ -19,12 +19,12 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 )
 
-type TrendingTokens struct {
-	ScrapeTimestamp string  `json:"scrapeTimestamp"`
-	Tokens          []Token `json:"tokens"`
+type TrendingCoins struct {
+	ScrapeTimestamp string `json:"scrapeTimestamp"`
+	Coins           []Coin `json:"coins"`
 }
 
-type Token struct {
+type Coin struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
 	Symbol      string   `json:"symbol"`
@@ -110,7 +110,7 @@ func main() {
 		log.Fatalf("Failed to read trending tokens file: %v", err)
 	}
 
-	var trending TrendingTokens
+	var trending TrendingCoins
 	if err := json.Unmarshal(data, &trending); err != nil {
 		log.Fatalf("Failed to parse trending tokens JSON: %v", err)
 	}
@@ -126,13 +126,13 @@ func main() {
 	// Create offchain client
 	offchainClient := offchain.NewClient(httpClient)
 
-	log.Printf("📊 Processing %d trending tokens from %s", len(trending.Tokens), trending.ScrapeTimestamp)
+	log.Printf("📊 Processing %d trending coins from %s", len(trending.Coins), trending.ScrapeTimestamp)
 
-	for _, token := range trending.Tokens {
-		log.Printf("\n🪙 Processing token: %s (%s)", token.Name, token.Symbol)
-		mint := common.PublicKeyFromString(token.ID)
+	for _, coin := range trending.Coins {
+		log.Printf("\n🪙 Processing coins: %s (%s)", coin.Name, coin.Symbol)
+		mint := common.PublicKeyFromString(coin.ID)
 		if err := fetchTokenMetadata(c, offchainClient, mint); err != nil {
-			log.Printf("❌ Error processing %s: %v", token.Name, err)
+			log.Printf("❌ Error processing %s: %v", coin.Name, err)
 			continue
 		}
 	}

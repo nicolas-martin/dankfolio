@@ -2,7 +2,7 @@ import { Keypair, VersionedTransaction, PublicKey, Transaction } from '@solana/w
 import bs58 from 'bs58';
 import { Wallet } from '@/types';
 import { REACT_APP_SOLANA_RPC_ENDPOINT, REACT_APP_JUPITER_API_URL } from '@env';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 
 if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
 	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
@@ -188,14 +188,14 @@ export const buildAndSignSwapTransaction = async (
 
 export const buildAndSignTransferTransaction = async (
 	toAddress: string,
-	tokenMint: string,
+	coinMint: string,
 	amount: number,
 	wallet: Wallet
 ): Promise<string> => {
 	try {
 		console.log('🔐 Building transfer transaction:', {
 			toAddress,
-			tokenMint: tokenMint || 'SOL',
+			coinMint: coinMint || 'SOL',
 			amount,
 			fromAddress: wallet.address
 		});
@@ -204,10 +204,10 @@ export const buildAndSignTransferTransaction = async (
 		console.log('🔑 Using keypair with public key:', keypair.publicKey.toString());
 
 		// Prepare the transfer transaction using our gRPC API
-		const prepareResponse = await grpcApi.prepareTokenTransfer({
+		const prepareResponse = await grpcApi.prepareCoinTransfer({
 			fromAddress: wallet.address,
 			toAddress,
-			tokenMint,
+			coinMint,
 			amount
 		});
 

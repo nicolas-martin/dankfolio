@@ -141,24 +141,24 @@ func (_c *MockStore_ListTrendingCoins_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
-// SearchTokens provides a mock function for the type MockStore
-func (_mock *MockStore) SearchTokens(ctx context.Context, query string, tags []string, minVolume24h float64, limit int32, offset int32, sortBy string, sortDesc bool) ([]model.Token, error) {
+// SearchCoins provides a mock function for the type MockStore
+func (_mock *MockStore) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit int32, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
 	ret := _mock.Called(ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
 
 	if len(ret) == 0 {
-		panic("no return value specified for SearchTokens")
+		panic("no return value specified for SearchCoins")
 	}
 
-	var r0 []model.Token
+	var r0 []model.Coin
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []string, float64, int32, int32, string, bool) ([]model.Token, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []string, float64, int32, int32, string, bool) ([]model.Coin, error)); ok {
 		return returnFunc(ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []string, float64, int32, int32, string, bool) []model.Token); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, []string, float64, int32, int32, string, bool) []model.Coin); ok {
 		r0 = returnFunc(ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Token)
+			r0 = ret.Get(0).([]model.Coin)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string, []string, float64, int32, int32, string, bool) error); ok {
@@ -169,12 +169,12 @@ func (_mock *MockStore) SearchTokens(ctx context.Context, query string, tags []s
 	return r0, r1
 }
 
-// MockStore_SearchTokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SearchTokens'
-type MockStore_SearchTokens_Call struct {
+// MockStore_SearchCoins_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SearchCoins'
+type MockStore_SearchCoins_Call struct {
 	*mock.Call
 }
 
-// SearchTokens is a helper method to define mock.On call
+// SearchCoins is a helper method to define mock.On call
 //   - ctx
 //   - query
 //   - tags
@@ -183,69 +183,23 @@ type MockStore_SearchTokens_Call struct {
 //   - offset
 //   - sortBy
 //   - sortDesc
-func (_e *MockStore_Expecter) SearchTokens(ctx interface{}, query interface{}, tags interface{}, minVolume24h interface{}, limit interface{}, offset interface{}, sortBy interface{}, sortDesc interface{}) *MockStore_SearchTokens_Call {
-	return &MockStore_SearchTokens_Call{Call: _e.mock.On("SearchTokens", ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)}
+func (_e *MockStore_Expecter) SearchCoins(ctx interface{}, query interface{}, tags interface{}, minVolume24h interface{}, limit interface{}, offset interface{}, sortBy interface{}, sortDesc interface{}) *MockStore_SearchCoins_Call {
+	return &MockStore_SearchCoins_Call{Call: _e.mock.On("SearchCoins", ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)}
 }
 
-func (_c *MockStore_SearchTokens_Call) Run(run func(ctx context.Context, query string, tags []string, minVolume24h float64, limit int32, offset int32, sortBy string, sortDesc bool)) *MockStore_SearchTokens_Call {
+func (_c *MockStore_SearchCoins_Call) Run(run func(ctx context.Context, query string, tags []string, minVolume24h float64, limit int32, offset int32, sortBy string, sortDesc bool)) *MockStore_SearchCoins_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].([]string), args[3].(float64), args[4].(int32), args[5].(int32), args[6].(string), args[7].(bool))
 	})
 	return _c
 }
 
-func (_c *MockStore_SearchTokens_Call) Return(tokens []model.Token, err error) *MockStore_SearchTokens_Call {
-	_c.Call.Return(tokens, err)
+func (_c *MockStore_SearchCoins_Call) Return(coins []model.Coin, err error) *MockStore_SearchCoins_Call {
+	_c.Call.Return(coins, err)
 	return _c
 }
 
-func (_c *MockStore_SearchTokens_Call) RunAndReturn(run func(ctx context.Context, query string, tags []string, minVolume24h float64, limit int32, offset int32, sortBy string, sortDesc bool) ([]model.Token, error)) *MockStore_SearchTokens_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Tokens provides a mock function for the type MockStore
-func (_mock *MockStore) Tokens() db.Repository[model.Token] {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Tokens")
-	}
-
-	var r0 db.Repository[model.Token]
-	if returnFunc, ok := ret.Get(0).(func() db.Repository[model.Token]); ok {
-		r0 = returnFunc()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(db.Repository[model.Token])
-		}
-	}
-	return r0
-}
-
-// MockStore_Tokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Tokens'
-type MockStore_Tokens_Call struct {
-	*mock.Call
-}
-
-// Tokens is a helper method to define mock.On call
-func (_e *MockStore_Expecter) Tokens() *MockStore_Tokens_Call {
-	return &MockStore_Tokens_Call{Call: _e.mock.On("Tokens")}
-}
-
-func (_c *MockStore_Tokens_Call) Run(run func()) *MockStore_Tokens_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *MockStore_Tokens_Call) Return(repository db.Repository[model.Token]) *MockStore_Tokens_Call {
-	_c.Call.Return(repository)
-	return _c
-}
-
-func (_c *MockStore_Tokens_Call) RunAndReturn(run func() db.Repository[model.Token]) *MockStore_Tokens_Call {
+func (_c *MockStore_SearchCoins_Call) RunAndReturn(run func(ctx context.Context, query string, tags []string, minVolume24h float64, limit int32, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error)) *MockStore_SearchCoins_Call {
 	_c.Call.Return(run)
 	return _c
 }

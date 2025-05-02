@@ -5,19 +5,20 @@ import { PriceDisplayProps } from './coindetails_types';
 import { formatValueChange, formatPrice } from './coindetails_scripts';
 import { createStyles } from './coindetails_styles';
 import { useProxiedImage } from '@/hooks/useProxiedImage';
+import { TokenImage } from '@/components/Common/TokenImage';
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	price,
 	periodChange,
 	valueChange,
 	period,
-	icon_url,
+	iconUrl,
 	name,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	const { imageUri, isLoading } = useProxiedImage(icon_url);
+	const { imageUri, isLoading } = useProxiedImage(iconUrl);
 
 	if (isNaN(periodChange)) return null;
 
@@ -33,12 +34,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 						<ActivityIndicator size="small" />
 					</View>
 				) : imageUri ? (
-					<Image
-						source={{ uri: imageUri }}
-						alt={`${name || 'Token'} icon`}
-						style={styles.icon}
-						resizeMode="contain"
-					/>
+					<TokenImage uri={iconUrl} size={40} />
 				) : (
 					<View style={styles.icon} />
 				)}

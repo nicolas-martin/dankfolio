@@ -1,19 +1,19 @@
 export interface Coin {
-	id: string;
+	mintAddress: string;
 	name: string;
 	symbol: string;
 	decimals: number;
 	description: string;
-	icon_url: string;
+	iconUrl: string;
 	tags: string[];
 	price: number;
-	daily_volume: number;
+	dailyVolume: number;
 	website?: string;
 	twitter?: string;
 	telegram?: string;
-	coingecko_id?: string;
-	created_at: string;
-	last_updated?: string;
+	coingeckoId?: string;
+	createdAt?: Date;
+	lastUpdated?: Date;
 }
 
 export interface balance {
@@ -35,18 +35,18 @@ export interface PriceHistoryResponse {
 	success: boolean;
 }
 
-export interface TokenTransferPrepareRequest {
+export interface CoinTransferPrepareRequest {
 	fromAddress: string;
 	toAddress: string;
-	tokenMint?: string; // Optional, empty for SOL
+	coinMint?: string; // Optional, empty for SOL
 	amount: number;
 }
 
-export interface TokenTransferPrepareResponse {
+export interface CoinTransferPrepareResponse {
 	unsignedTransaction: string;
 }
 
-export interface TokenTransferSubmitRequest {
+export interface CoinTransferSubmitRequest {
 	signedTransaction: string;
 }
 
@@ -56,7 +56,7 @@ export interface CreateWalletResponse {
 	mnemonic: string;
 }
 
-export interface TokenTransferResponse {
+export interface CoinTransferResponse {
 	transactionHash: string;
 }
 
@@ -74,10 +74,10 @@ export interface TradeStatusResponse {
 }
 
 export interface TradePayload {
-	from_coin_id: string;
-	to_coin_id: string;
+	fromCoinMintAddress: string;
+	toCoinMintAddress: string;
 	amount: number;
-	signed_transaction: string;
+	signedTransaction: string;
 }
 
 export interface TradeQuoteResponse {
@@ -90,22 +90,7 @@ export interface TradeQuoteResponse {
 	outputMint: string;
 }
 
-export interface Token {
-	mintAddress: string;
-	symbol: string;
-	name: string;
-	decimals: number;
-	logoURI: string;
-	coingeckoId?: string;
-	priceUSD: number;
-	marketCapUSD: number;
-	volume24h: number;
-	priceChange24h: number;
-	lastUpdatedAt: string;
-	tags?: string[];
-}
-
-export interface SearchTokensRequest {
+export interface SearchCoinsRequest {
 	query: string;
 	tags?: string[];
 	minVolume24h?: number;
@@ -115,14 +100,51 @@ export interface SearchTokensRequest {
 	sortDesc?: boolean;
 }
 
-export interface SearchTokensResponse {
-	tokens: Token[];
+export interface SearchCoinsResponse {
+	coins: Coin[];
 }
 
-export interface SearchTokenByMintRequest {
+export interface SearchCoinByMintRequest {
 	mintAddress: string;
 }
 
-export interface SearchTokenByMintResponse {
-	token?: Token;
+export interface SearchCoinByMintResponse {
+	coin?: Coin;
+}
+
+export interface API {
+	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
+	getCoinByID: (mintAddress: string) => Promise<Coin>;
+	searchCoins: (params: SearchCoinsRequest) => Promise<SearchCoinsResponse>;
+	searchCoinByMint: (mintAddress: string) => Promise<SearchCoinByMintResponse>;
+	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;
+	getSwapQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<SwapQuoteResponse>;
+	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;
+	getPriceHistory: (address: string, type: string | number, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
+	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
+	getCoinPrices: (coinIds: string[]) => Promise<Record<string, number>>;
+	prepareCoinTransfer: (payload: CoinTransferPrepareRequest) => Promise<CoinTransferPrepareResponse>;
+	submitCoinTransfer: (payload: CoinTransferSubmitRequest) => Promise<CoinTransferResponse>;
+	getTransferTransaction: (params: { toAddress: string; coinMint: string; amount: string; }) => Promise<any>;
+	createWallet: () => Promise<CreateWalletResponse>;
+	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
+}
+
+export interface GetProxiedImageResponse {
+	imageData: string;
+}
+
+export interface SwapQuoteResponse {
+	estimatedAmount: string;
+	exchangeRate: string;
+	fee: string;
+	priceImpact: string;
+	routePlan: string[];
+	inputMint: string;
+	outputMint: string;
+}
+
+export interface SubmitSwapResponse {
+	transactionHash: string;
+	tradeId: string;
 }

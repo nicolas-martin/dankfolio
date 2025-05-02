@@ -1,5 +1,5 @@
 // frontend/src/services/api.test.ts
-import grpcApi from './grpcApi'; // Import grpcApi only
+import { grpcApi } from '@/services/grpcApi';
 import { Coin, TradePayload } from './grpc/model'; // Import types from api
 
 // --- Mock grpcApi ---
@@ -60,24 +60,26 @@ describe('API Service', () => {
 
 	// Define mock data structures based on interfaces in api.ts
 	const mockCoin: Coin = {
-		id: 'mockCoinId',
+		mintAddress: 'mockCoinId',
 		name: 'Mock Coin',
-		symbol: 'MCK',
-		decimals: 8,
+		symbol: 'MOCK',
+		decimals: 9,
 		description: 'A mock coin for testing',
-		icon_url: 'http://example.com/icon.png',
-		tags: ['mock', 'test', 'trending'],
+		iconUrl: 'https://example.com/mock.png',
+		tags: ['test'],
 		price: 100,
-		daily_volume: 1000000,
-		website: 'http://example.com',
-		created_at: expect.any(String),
+		dailyVolume: 1000000,
+		website: 'https://example.com',
+		twitter: 'https://twitter.com/mock',
+		telegram: 'https://t.me/mock',
+		coingeckoId: 'mock'
 	};
 
 	const mockTradePayload: TradePayload = {
-		from_coin_id: 'coin1',
-		to_coin_id: 'coin2',
-		amount: 1.5,
-		signed_transaction: 'mockSignedTx',
+		fromCoinMintAddress: 'coin1',
+		toCoinMintAddress: 'coin2',
+		amount: 1000,
+		signedTransaction: 'signed_tx'
 	};
 
 	const mockResponses = {
@@ -146,7 +148,7 @@ describe('API Service', () => {
 			// Test getTokenPrices
 			const tokenIds = ['coin1', 'coin2', 'coin3'];
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tokenPrices });
-			const pricesResult = await grpcApi.getTokenPrices(tokenIds);
+			const pricesResult = await grpcApi.getCoinPrices(tokenIds);
 			expect(mockedGrpcApi.getTokenPrices).toHaveBeenCalledWith(tokenIds);
 			expect(pricesResult).toEqual(mockResponses.tokenPrices);
 		});

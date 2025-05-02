@@ -72,7 +72,7 @@ func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
 
 	// Sort by volume descending
 	sort.Slice(coins, func(i, j int) bool {
-		return coins[i].DailyVolume > coins[j].DailyVolume
+		return coins[i].Volume24h > coins[j].Volume24h
 	})
 
 	return coins, nil
@@ -87,7 +87,7 @@ func (s *Service) GetTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 
 	// Sort trending coins by volume descending
 	sort.Slice(trendingCoins, func(i, j int) bool {
-		return trendingCoins[i].DailyVolume > trendingCoins[j].DailyVolume
+		return trendingCoins[i].Volume24h > trendingCoins[j].Volume24h
 	})
 
 	return trendingCoins, nil
@@ -171,7 +171,7 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 	// Store all coins
 	for _, coin := range enrichedCoins {
 		if err := s.store.Coins().Upsert(ctx, &coin); err != nil {
-			log.Printf("Warning: Failed to store coin %s: %v", coin.ID, err)
+			log.Printf("Warning: Failed to store coin %s: %v", coin.MintAddress, err)
 		}
 	}
 
@@ -212,8 +212,8 @@ func (s *Service) loadEnrichedCoinsFromFile() ([]model.Coin, time.Time, error) {
 	}
 
 	// Set IsTrending flag for all coins loaded from the file
-	for i := range fileOutput.Tokens {
-		fileOutput.Tokens[i].IsTrending = true
+	for i := range fileOutput.Coins {
+		fileOutput.Coins[i].IsTrending = true
 	}
 
 	// Log timestamp from file
@@ -224,10 +224,19 @@ func (s *Service) loadEnrichedCoinsFromFile() ([]model.Coin, time.Time, error) {
 			filePath, fileOutput.ScrapeTimestamp.Format(time.RFC3339))
 	}
 
-	if len(fileOutput.Tokens) == 0 {
-		log.Printf("WARN: Enriched coin file %s contained zero tokens in the 'tokens' list.", filePath)
+	if len(fileOutput.Coins) == 0 {
+		log.Printf("WARN: Enriched coin file %s contained zero tokens in the 'coins' list.", filePath)
 		// Return empty slice, not an error
 	}
 
-	return fileOutput.Tokens, fileOutput.ScrapeTimestamp, nil
+	return fileOutput.Coins, fileOutput.ScrapeTimestamp, nil
+}
+
+// SearchCoins searches for coins using the DB's SearchCoins
+func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
+	coins, err := s.store.SearchCoins(ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search coins: %w", err)
+	}
+	return coins, nil
 }

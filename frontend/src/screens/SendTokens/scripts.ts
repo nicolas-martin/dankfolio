@@ -1,15 +1,16 @@
 import { TokenTransferFormData } from './types';
 import { Wallet, Coin } from '@/types';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 import { PortfolioToken } from '@store/portfolio';
 import { validateSolanaAddress } from '@/services/solana';
 import { buildAndSignTransferTransaction } from '@/services/solana';
+import { SOLANA_ADDRESS } from '@/utils/constants';
 
 export const handleTokenSelect = (
 	coin: Coin,
 	tokens: PortfolioToken[]
 ): PortfolioToken | undefined => {
-	return tokens.find(t => t.coin.id === coin.id);
+	return tokens.find(t => t.coin.mintAddress === coin.mintAddress);
 };
 
 export const validateForm = async (
@@ -57,7 +58,7 @@ export const handleTokenTransfer = async (
 		);
 
 		// Submit the signed transaction
-		const submitResponse = await grpcApi.submitTokenTransfer({
+		const submitResponse = await grpcApi.submitCoinTransfer({
 			signedTransaction
 		});
 

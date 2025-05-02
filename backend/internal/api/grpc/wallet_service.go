@@ -105,18 +105,18 @@ func (s *walletServiceHandler) SubmitTransfer(
 // Helper function to convert model.WalletBalance to pb.WalletBalance
 func convertModelBalanceToPb(balance *wallet.WalletBalance) *pb.WalletBalance {
 	return &pb.WalletBalance{
-		Balances: convertModelTokenBalancesToPb(balance.Balances),
+		Balances: convertModelCoinBalancesToPb(balance.Balances),
 	}
 }
 
 // Helper function to convert model.TokenBalances to pb.Balances
-func convertModelTokenBalancesToPb(tokens []wallet.Balance) []*pb.Balance {
-	pbTokens := make([]*pb.Balance, len(tokens))
-	for i, token := range tokens {
-		pbTokens[i] = &pb.Balance{
-			Id:     token.ID,
-			Amount: token.Amount,
+func convertModelCoinBalancesToPb(coins []wallet.Balance) []*pb.Balance {
+	pbCoins := make([]*pb.Balance, len(coins))
+	for i, coin := range coins {
+		pbCoins[i] = &pb.Balance{
+			Id:     coin.ID,
+			Amount: coin.Amount,
 		}
 	}
-	return pbTokens
+	return pbCoins
 }

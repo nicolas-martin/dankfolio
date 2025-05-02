@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Coin, PriceData } from '@/types/index';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 import { TimeframeOption } from './coindetail_types';
+import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 interface ToastParams {
@@ -69,7 +71,7 @@ export const fetchPriceHistory = async (
 
 
 		const response = await grpcApi.getPriceHistory(
-			coin.id,
+			coin.mintAddress,
 			timeframe,
 			time_from,
 			time_to,
@@ -89,7 +91,7 @@ export const fetchPriceHistory = async (
 			setPriceHistory([]);
 		}
 	} catch (error) {
-		console.error("Error fetching price history:", error);
+		console.error(`Error fetching price history for ${coin?.mintAddress}:`, error);
 		setPriceHistory([]);
 	} finally {
 		setLoading(false);
@@ -112,7 +114,7 @@ export const handleTradeNavigation = (
 
 	if (fromCoin) {
 		// Prevent trading the same coin
-		if (toCoin.id === fromCoin.id) {
+		if (toCoin.mintAddress === fromCoin.mintAddress) {
 			showToast({
 				type: 'error',
 				message: 'Cannot trade a coin for itself'

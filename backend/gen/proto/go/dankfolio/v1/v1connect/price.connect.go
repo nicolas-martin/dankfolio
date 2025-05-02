@@ -36,17 +36,17 @@ const (
 	// PriceServiceGetPriceHistoryProcedure is the fully-qualified name of the PriceService's
 	// GetPriceHistory RPC.
 	PriceServiceGetPriceHistoryProcedure = "/dankfolio.v1.PriceService/GetPriceHistory"
-	// PriceServiceGetTokenPricesProcedure is the fully-qualified name of the PriceService's
-	// GetTokenPrices RPC.
-	PriceServiceGetTokenPricesProcedure = "/dankfolio.v1.PriceService/GetTokenPrices"
+	// PriceServiceGetCoinPricesProcedure is the fully-qualified name of the PriceService's
+	// GetCoinPrices RPC.
+	PriceServiceGetCoinPricesProcedure = "/dankfolio.v1.PriceService/GetCoinPrices"
 )
 
 // PriceServiceClient is a client for the dankfolio.v1.PriceService service.
 type PriceServiceClient interface {
 	// GetPriceHistory returns historical price data for a given address
 	GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error)
-	// GetTokenPrices returns current prices for multiple tokens
-	GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error)
+	// GetCoinPrices returns current prices for multiple tokens
+	GetCoinPrices(context.Context, *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error)
 }
 
 // NewPriceServiceClient constructs a client for the dankfolio.v1.PriceService service. By default,
@@ -66,10 +66,10 @@ func NewPriceServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(priceServiceMethods.ByName("GetPriceHistory")),
 			connect.WithClientOptions(opts...),
 		),
-		getTokenPrices: connect.NewClient[v1.GetTokenPricesRequest, v1.GetTokenPricesResponse](
+		getCoinPrices: connect.NewClient[v1.GetCoinPricesRequest, v1.GetCoinPricesResponse](
 			httpClient,
-			baseURL+PriceServiceGetTokenPricesProcedure,
-			connect.WithSchema(priceServiceMethods.ByName("GetTokenPrices")),
+			baseURL+PriceServiceGetCoinPricesProcedure,
+			connect.WithSchema(priceServiceMethods.ByName("GetCoinPrices")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -78,7 +78,7 @@ func NewPriceServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 // priceServiceClient implements PriceServiceClient.
 type priceServiceClient struct {
 	getPriceHistory *connect.Client[v1.GetPriceHistoryRequest, v1.GetPriceHistoryResponse]
-	getTokenPrices  *connect.Client[v1.GetTokenPricesRequest, v1.GetTokenPricesResponse]
+	getCoinPrices   *connect.Client[v1.GetCoinPricesRequest, v1.GetCoinPricesResponse]
 }
 
 // GetPriceHistory calls dankfolio.v1.PriceService.GetPriceHistory.
@@ -86,17 +86,17 @@ func (c *priceServiceClient) GetPriceHistory(ctx context.Context, req *connect.R
 	return c.getPriceHistory.CallUnary(ctx, req)
 }
 
-// GetTokenPrices calls dankfolio.v1.PriceService.GetTokenPrices.
-func (c *priceServiceClient) GetTokenPrices(ctx context.Context, req *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error) {
-	return c.getTokenPrices.CallUnary(ctx, req)
+// GetCoinPrices calls dankfolio.v1.PriceService.GetCoinPrices.
+func (c *priceServiceClient) GetCoinPrices(ctx context.Context, req *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error) {
+	return c.getCoinPrices.CallUnary(ctx, req)
 }
 
 // PriceServiceHandler is an implementation of the dankfolio.v1.PriceService service.
 type PriceServiceHandler interface {
 	// GetPriceHistory returns historical price data for a given address
 	GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error)
-	// GetTokenPrices returns current prices for multiple tokens
-	GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error)
+	// GetCoinPrices returns current prices for multiple tokens
+	GetCoinPrices(context.Context, *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error)
 }
 
 // NewPriceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -112,18 +112,18 @@ func NewPriceServiceHandler(svc PriceServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(priceServiceMethods.ByName("GetPriceHistory")),
 		connect.WithHandlerOptions(opts...),
 	)
-	priceServiceGetTokenPricesHandler := connect.NewUnaryHandler(
-		PriceServiceGetTokenPricesProcedure,
-		svc.GetTokenPrices,
-		connect.WithSchema(priceServiceMethods.ByName("GetTokenPrices")),
+	priceServiceGetCoinPricesHandler := connect.NewUnaryHandler(
+		PriceServiceGetCoinPricesProcedure,
+		svc.GetCoinPrices,
+		connect.WithSchema(priceServiceMethods.ByName("GetCoinPrices")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/dankfolio.v1.PriceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PriceServiceGetPriceHistoryProcedure:
 			priceServiceGetPriceHistoryHandler.ServeHTTP(w, r)
-		case PriceServiceGetTokenPricesProcedure:
-			priceServiceGetTokenPricesHandler.ServeHTTP(w, r)
+		case PriceServiceGetCoinPricesProcedure:
+			priceServiceGetCoinPricesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -137,6 +137,6 @@ func (UnimplementedPriceServiceHandler) GetPriceHistory(context.Context, *connec
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.PriceService.GetPriceHistory is not implemented"))
 }
 
-func (UnimplementedPriceServiceHandler) GetTokenPrices(context.Context, *connect.Request[v1.GetTokenPricesRequest]) (*connect.Response[v1.GetTokenPricesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.PriceService.GetTokenPrices is not implemented"))
+func (UnimplementedPriceServiceHandler) GetCoinPrices(context.Context, *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.PriceService.GetCoinPrices is not implemented"))
 }

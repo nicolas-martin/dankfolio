@@ -21,8 +21,8 @@ service WalletService {
 
 // Balance represents information about a token balance
 message Balance {
-  string id = 1;           // Token mint address or identifier
-  double amount = 2;       // Token amount
+  string id = 1;           // Coin mint address or identifier
+  double amount = 2;       // Coin amount
 }
 
 // WalletBalance represents a wallet's complete balance

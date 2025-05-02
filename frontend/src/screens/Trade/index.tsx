@@ -97,11 +97,11 @@ const Trade: React.FC = () => {
 		const refreshCoinPrices = async () => {
 			try {
 				// Determine the ID for the 'from' coin, defaulting to Solana if initialFromCoin is null
-				const fromCoinId = initialFromCoin?.id ?? SOLANA_ADDRESS; // Default to Solana address if initialFromCoin is null/undefined
+				const fromCoinMintAddress = initialFromCoin?.mintAddress ?? SOLANA_ADDRESS; // Default to Solana address if initialFromCoin is null/undefined
 
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
-					getCoinByID(fromCoinId, true),         // Use the determined ID, force refresh
-					getCoinByID(toCoin?.id ?? SOLANA_ADDRESS, true)           // Force refresh for the 'to' coin
+					getCoinByID(fromCoinMintAddress, true),         // Use the determined ID, force refresh
+					getCoinByID(toCoin?.mintAddress ?? SOLANA_ADDRESS, true)           // Force refresh for the 'to' coin
 				]);
 				if (!isMounted) return;
 
@@ -133,11 +133,11 @@ const Trade: React.FC = () => {
 
 	// Get portfolio token data if available
 	const fromPortfolioToken = useMemo(() => {
-		return tokens.find(token => token.id === fromCoin?.id);
+		return tokens.find(token => token.mintAddress === fromCoin?.mintAddress);
 	}, [tokens, fromCoin]);
 
 	const toPortfolioToken = useMemo(() => {
-		return tokens.find(token => token.id === toCoin?.id);
+		return tokens.find(token => token.mintAddress === toCoin?.mintAddress);
 	}, [tokens, toCoin]);
 
 	// Handler for the 'From' TokenSelector
@@ -146,22 +146,22 @@ const Trade: React.FC = () => {
 			newToken: token.symbol,
 			currentFromAmount: fromAmount,
 			currentToToken: toCoin?.symbol,
-			isSameAsCurrent: token.id === fromCoin?.id
+			isSameAsCurrent: token.mintAddress === fromCoin?.mintAddress
 		});
 
 		// Skip if selecting the same token that's already selected
-		if (token.id === fromCoin?.id) {
+		if (token.mintAddress === fromCoin?.mintAddress) {
 			console.log('⏭️ Skipping selection - same token already selected');
 			return;
 		}
 
-		if (token.id === toCoin?.id) {
+		if (token.mintAddress === toCoin?.mintAddress) {
 			console.log('🔄 Swapping tokens due to same selection');
 			handleSwapCoins();
 		} else {
 			setFromCoin(token);
 			// Only clear amounts if we're actually changing to a different token
-			if (fromCoin && token.id !== fromCoin.id) {
+			if (fromCoin && token.mintAddress !== fromCoin.mintAddress) {
 				console.log('🧹 Clearing amounts on new token selection');
 				setFromAmount('');
 				setToAmount('');
@@ -175,22 +175,22 @@ const Trade: React.FC = () => {
 			newToken: token.symbol,
 			currentToAmount: toAmount,
 			currentFromToken: fromCoin?.symbol,
-			isSameAsCurrent: token.id === toCoin?.id
+			isSameAsCurrent: token.mintAddress === toCoin?.mintAddress
 		});
 
 		// Skip if selecting the same token that's already selected
-		if (token.id === toCoin?.id) {
+		if (token.mintAddress === toCoin?.mintAddress) {
 			console.log('⏭️ Skipping selection - same token already selected');
 			return;
 		}
 
-		if (token.id === fromCoin?.id) {
+		if (token.mintAddress === fromCoin?.mintAddress) {
 			console.log('🔄 Swapping tokens due to same selection');
 			handleSwapCoins();
 		} else {
 			setToCoin(token);
 			// Only clear amounts if we're actually changing to a different token
-			if (toCoin && token.id !== toCoin.id) {
+			if (toCoin && token.mintAddress !== toCoin.mintAddress) {
 				console.log('🧹 Clearing amounts on new token selection');
 				setFromAmount('');
 				setToAmount('');

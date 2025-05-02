@@ -32,7 +32,7 @@ jest.mock('./TokenCard', () => ({
 
 		return (
 			// Mock the TouchableOpacity behaviour with onPress on the root View
-			<View testID={`token-card-${profileCoin.id}`} onPress={onPress}>
+			<View testID={`token-card-${profileCoin.mintAddress}`} onPress={onPress}>
 				{/* Mock Image with correct accessibility props */}
 				<MockImage
 					accessibilityRole="image"
@@ -107,39 +107,39 @@ jest.mock('@react-navigation/native', () => {
 // Test data based on actual API response
 const mockProfileTokens: ProfileCoin[] = [
 	{
-		id: "So11111111111111111111111111111111111111112",
-		amount: 0.046201915,
-		price: 126.675682,
-		value: 5.852816,
+		mintAddress: "So11111111111111111111111111111111111111112",
+		amount: 100,
+		price: 50,
+		value: 5000,
 		coin: {
-			id: "So11111111111111111111111111111111111111112",
+			mintAddress: "So11111111111111111111111111111111111111112",
 			name: "Wrapped SOL",
 			symbol: "SOL",
 			decimals: 9,
 			description: "Wrapped SOL (SOL) is a Solana token.",
-			icon_url: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+			iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
 			tags: ["verified", "community", "strict"],
 			price: 126.675682,
-			daily_volume: 651534477.8800015,
-			created_at: "2023-01-01T00:00:00Z"
+			dailyVolume: 651534477.8800015,
+			createdAt: new Date("2023-01-01T00:00:00Z")
 		}
 	},
 	{
-		id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-		amount: 1.365125,
-		price: 0.023736,
-		value: 0.032402,
+		mintAddress: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
+		amount: 1000,
+		price: 0.1,
+		value: 100,
 		coin: {
-			id: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
+			mintAddress: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
 			name: "PWEASE",
 			symbol: "pwease",
 			decimals: 6,
 			description: "PWEASE (pwease) is a Solana token.",
-			icon_url: "https://ipfs.io/ipfs/QmboNoCSu87DLgnqqf3LVWCUF2zZtzpSE5LtAa3tx8hUUG",
+			iconUrl: "https://ipfs.io/ipfs/QmboNoCSu87DLgnqqf3LVWCUF2zZtzpSE5LtAa3tx8hUUG",
 			tags: ["verified", "launchpad", "birdeye-trending", "community"],
 			price: 0.023736,
-			daily_volume: 9370569.942992656,
-			created_at: "2023-01-01T00:00:00Z"
+			dailyVolume: 9370569.942992656,
+			createdAt: new Date("2023-01-01T00:00:00Z")
 		}
 	}
 ];
@@ -183,7 +183,7 @@ describe('Profile Screen', () => {
 
 		// Verify tokens are rendered correctly
 		mockProfileTokens.forEach(token => {
-			const card = getAllByTestId(`token-card-${token.id}`)[0];
+			const card = getAllByTestId(`token-card-${token.mintAddress}`)[0];
 			const cardContent = within(card);
 
 			// Check token details are displayed correctly
@@ -193,7 +193,7 @@ describe('Profile Screen', () => {
 		});
 
 		// Test navigation on token press
-		const solCard = getByTestId(`token-card-${mockProfileTokens[0].id}`);
+		const solCard = getByTestId(`token-card-${mockProfileTokens[0].mintAddress}`);
 		fireEvent.press(solCard);
 
 		expect(mockNavigate).toHaveBeenCalledWith('CoinDetail', {

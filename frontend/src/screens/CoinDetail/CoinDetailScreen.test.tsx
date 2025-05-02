@@ -18,7 +18,48 @@ const mockPortfolioStoreReturn = {
 	fetchPortfolioBalance: jest.fn(),
 };
 
+const mockSolCoin: Coin = {
+	mintAddress: "So11111111111111111111111111111111111111112",
+	name: "Solana",
+	symbol: "SOL",
+	decimals: 9,
+	description: "Solana is a high-performance blockchain platform",
+	iconUrl: "https://example.com/sol.png",
+	tags: ["Layer 1"],
+	price: 100.0,
+	dailyVolume: 1000000,
+	website: "https://solana.com",
+	twitter: "https://twitter.com/solana",
+	telegram: "https://t.me/solana",
+	coingeckoId: "solana"
+};
+
+const mockInitialCoin: Coin = {
+	mintAddress: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
+	name: "Test Coin",
+	symbol: "TEST",
+	decimals: 9,
+	description: "A test coin",
+	iconUrl: "https://example.com/test.png",
+	tags: ["DeFi"],
+	price: 150.0,
+	dailyVolume: 500000,
+	website: "https://test.com",
+	twitter: "https://twitter.com/test",
+	telegram: "https://t.me/test",
+	coingeckoId: "test"
+};
+
 const mockCoinStoreReturn = {
+	coins: {
+		[mockSolCoin.mintAddress]: mockSolCoin,
+		[mockInitialCoin.mintAddress]: mockInitialCoin
+	},
+	getCoinByID: jest.fn((mintAddress: string) => {
+		if (mintAddress === mockSolCoin.mintAddress) return mockSolCoin;
+		if (mintAddress === mockInitialCoin.mintAddress) return mockInitialCoin;
+		return null;
+	}),
 	availableCoins: [] as Coin[],
 	coinMap: {} as Record<string, Coin>,
 	isLoading: false,
@@ -26,41 +67,10 @@ const mockCoinStoreReturn = {
 	setAvailableCoins: jest.fn(),
 	setCoin: jest.fn(),
 	fetchAvailableCoins: jest.fn(),
-	getCoinByID: jest.fn(),
 };
 
 const mockGetCoinByID = jest.fn();
 const mockFetchPriceHistory = jest.spyOn(CoinDetailScripts, 'fetchPriceHistory');
-const mockInitialCoin: Coin = {
-	id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
-	name: "WEN",
-	symbol: "WEN",
-	icon_url: "https://logos.usdcfreesol.workers.dev/ekpggsjmfqkzk9kqansqyxcf8fbopzl7xih5hwjmji.webp",
-	decimals: 5,
-	price: 0.00011104,
-	description: "WEN",
-	website: "https://wen-foundation.org",
-	twitter: "https://twitter.com/wenwencoin",
-	telegram: "https://t.me/wenwencoinsol",
-	daily_volume: 123456.78,
-	tags: ["meme", "community"],
-	created_at: "2024-01-01T00:00:00Z"
-};
-const mockSolCoin: Coin = {
-	id: "So11111111111111111111111111111111111111112",
-	name: "Solana",
-	symbol: "SOL",
-	icon_url: "sol_icon_url",
-	decimals: 9,
-	price: 200.0,
-	description: "Solana Blockchain",
-	website: "https://solana.com",
-	twitter: "https://twitter.com/solana",
-	telegram: "",
-	daily_volume: 5000000000,
-	tags: ["layer-1"],
-	created_at: "2024-01-01T00:00:00Z",
-};
 
 const createMockComponent = (name: string) => (props: any) => {
 	const React = require('react');
@@ -295,8 +305,8 @@ describe('CoinDetail Screen', () => {
 
 		mockCoinStoreReturn.getCoinByID.mockImplementation(mockGetCoinByID);
 		mockGetCoinByID.mockImplementation(async (id) => {
-			if (id === mockSolCoin.id) return mockSolCoin;
-			if (id === mockInitialCoin.id) return mockInitialCoin;
+			if (id === mockSolCoin.mintAddress) return mockSolCoin;
+			if (id === mockInitialCoin.mintAddress) return mockInitialCoin;
 			return null;
 		});
 
@@ -354,7 +364,7 @@ describe('CoinDetail Screen', () => {
 		expect(priceDisplayMock.props.periodChange).toBeCloseTo(expectedPeriodChange);
 		expect(priceDisplayMock.props.valueChange).toBeCloseTo(expectedValueChange);
 		expect(priceDisplayMock.props.period).toBe("15m");
-		expect(priceDisplayMock.props.icon_url).toBe(mockCoinWithoutLinks.icon_url);
+		expect(priceDisplayMock.props.iconUrl).toBe(mockCoinWithoutLinks.iconUrl);
 		expect(priceDisplayMock.props.name).toBe(mockCoinWithoutLinks.name);
 
 		// Verify chart
@@ -378,16 +388,18 @@ describe('CoinDetail Screen', () => {
 
 		// Verify coin info
 		const coinInfoMock = getByTestId('mock-CoinInfo');
-		expect(coinInfoMock.props.metadata).toEqual({
+		const mockCoinMetadata = {
 			name: mockCoinWithoutLinks.name,
 			description: mockCoinWithoutLinks.description,
-			website: "",
-			twitter: "",
-			telegram: "",
-			daily_volume: mockCoinWithoutLinks.daily_volume,
+			website: mockCoinWithoutLinks.website,
+			twitter: mockCoinWithoutLinks.twitter,
+			telegram: mockCoinWithoutLinks.telegram,
+			dailyVolume: mockCoinWithoutLinks.dailyVolume,
+			decimals: mockCoinWithoutLinks.decimals,
 			tags: mockCoinWithoutLinks.tags,
 			symbol: mockCoinWithoutLinks.symbol
-		});
+		};
+		expect(coinInfoMock.props.metadata).toEqual(mockCoinMetadata);
 
 		// Verify no holdings info is shown when not in portfolio
 		expect(queryByText('Your Holdings')).toBeNull();
@@ -401,11 +413,11 @@ describe('CoinDetail Screen', () => {
 	it('handles portfolio integration and trading correctly', async () => {
 		// Setup portfolio holding
 		const mockHolding = {
-			id: mockInitialCoin.id,
-			amount: 10000,
-			value: 10000 * mockInitialCoin.price,
+			mintAddress: mockInitialCoin.mintAddress,
+			amount: 100,
+			value: 15000,
 			coin: mockInitialCoin,
-			price: mockInitialCoin.price,
+			price: 150.0
 		};
 		mockPortfolioStoreReturn.tokens = [mockHolding];
 

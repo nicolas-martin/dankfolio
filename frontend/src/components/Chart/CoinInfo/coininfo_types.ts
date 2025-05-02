@@ -5,7 +5,7 @@ export interface CoinMetadata {
 	twitter?: string;
 	telegram?: string;
 	discord?: string;
-	daily_volume?: number;
+	dailyVolume?: number;
 	decimals?: number;
 	tags?: string[];
 	symbol?: string;

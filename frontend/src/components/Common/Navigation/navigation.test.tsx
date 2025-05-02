@@ -13,26 +13,26 @@ import { HomeScreenNavigationProp } from '@screens/Home/home_types';
 const Stack = createNativeStackNavigator();
 
 // Test data
-const mockCoin = {
-	id: 'bitcoin',
+const mockCoin: Coin = {
+	mintAddress: 'bitcoin',
 	name: 'Bitcoin',
 	symbol: 'BTC',
-	icon_url: 'https://example.com/btc-from-nav.png',
-	price: '50000',
+	iconUrl: 'https://example.com/btc-from-nav.png',
+	price: 50000,
 	description: 'Digital gold',
 	website: 'https://bitcoin.org',
 	twitter: 'https://twitter.com/bitcoin',
 	telegram: 'https://t.me/bitcoin',
-	daily_volume: '1000000',
+	dailyVolume: 1000000,
 	tags: ['cryptocurrency'],
+	decimals: 8
 };
 
 // Mock home scripts
 jest.mock('@screens/Home/home_scripts', () => ({
 	handleCoinPress: (coin: Coin, navigation: HomeScreenNavigationProp) => {
 		navigation.navigate('CoinDetail', {
-			coin,
-			fromScreen: 'Home'
+			coin
 		});
 	},
 }));
@@ -87,9 +87,11 @@ jest.mock('@store/portfolio', () => ({
 			connected: true
 		},
 		tokens: [{
-			id: 'bitcoin',
+			mintAddress: 'bitcoin',
 			amount: 1.5,
 			value: 75000,
+			coin: mockCoin,
+			price: 50000
 		}],
 	}),
 }));

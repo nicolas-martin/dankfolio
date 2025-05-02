@@ -3,6 +3,6 @@ export interface PriceDisplayProps {
 	periodChange: number;
 	valueChange: number;
 	period: string;
-	icon_url: string;
+	iconUrl: string;
 	name: string;
 }

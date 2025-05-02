@@ -73,8 +73,8 @@ const CoinDetail: React.FC = () => {
 	}, [priceHistory, hoverPoint, parseValue]);
 
 	const portfolioToken = useMemo(() => {
-		return tokens.find(token => token.id === initialCoin.id);
-	}, [tokens, initialCoin.id]);
+		return tokens.find(token => token.mintAddress === initialCoin.mintAddress);
+	}, [tokens, initialCoin.mintAddress]);
 
 	if (loading && !initialCoin) {
 		return (
@@ -99,7 +99,7 @@ const CoinDetail: React.FC = () => {
 								periodChange={displayData.periodChange}
 								valueChange={displayData.valueChange}
 								period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
-								icon_url={initialCoin.icon_url}
+								iconUrl={initialCoin.iconUrl}
 								name={initialCoin.name}
 							/>
 						</View>
@@ -160,7 +160,7 @@ const CoinDetail: React.FC = () => {
 									website: initialCoin.website,
 									twitter: initialCoin.twitter,
 									telegram: initialCoin.telegram,
-									daily_volume: initialCoin.daily_volume,
+									dailyVolume: initialCoin.dailyVolume,
 									tags: initialCoin.tags || [],
 									symbol: initialCoin.symbol
 								}}

@@ -33,7 +33,7 @@ export const fetchAvailableCoins = async (
 		console.log('🏠 Home fetched coins:', {
 			total: coins.length,
 			symbols: coins.map(c => c.symbol),
-			hasSol: coins.some(c => c.id === SOL_MINT)
+			hasSol: coins.some(c => c.mintAddress === SOL_MINT)
 		});
 	} catch (err) {
 		console.error('❌ Error fetching coins:', err);
@@ -62,8 +62,7 @@ export const handleImportWallet = async (privateKey: string): Promise<Wallet> =>
 
 export const handleCoinPress = (coin: Coin, navigation: HomeScreenNavigationProp) => {
 	navigation.navigate('CoinDetail', {
-		coin,
-		fromScreen: 'Home'
+		coin
 	});
 };
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Coin } from '@/types';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 
 interface CoinState {
@@ -13,7 +13,7 @@ interface CoinState {
 	setAvailableCoins: (coins: Coin[]) => void;
 	setCoin: (coin: Coin) => void;
 	fetchAvailableCoins: (trendingOnly?: boolean) => Promise<void>;
-	getCoinByID: (id: string, forceRefresh?: boolean) => Promise<Coin | null>;
+	getCoinByID: (mintAddress: string, forceRefresh?: boolean) => Promise<Coin | null>;
 }
 
 export const useCoinStore = create<CoinState>((set, get) => ({
@@ -24,14 +24,14 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 
 	setAvailableCoins: (coins: Coin[]) => {
 		const coinMap = coins.reduce((acc, coin) => {
-			acc[coin.id] = coin;
+			acc[coin.mintAddress] = coin;
 			return acc;
 		}, {} as Record<string, Coin>);
 		set({ availableCoins: coins, coinMap });
 	},
 
 	setCoin: (coin: Coin) => set(state => ({
-		coinMap: { ...state.coinMap, [coin.id]: coin }
+		coinMap: { ...state.coinMap, [coin.mintAddress]: coin }
 	})),
 
 	fetchAvailableCoins: async (trendingOnly?: boolean) => {
@@ -40,7 +40,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			const coins = await grpcApi.getAvailableCoins(trendingOnly);
 
 			if (!trendingOnly) {
-				const solCoin = coins.find(c => c.id === SOLANA_ADDRESS);
+				const solCoin = coins.find((c: Coin) => c.mintAddress === SOLANA_ADDRESS);
 				if (!solCoin) {
 					console.log('🔍 SOL not found in available coins, fetching separately...');
 					const solData = await get().getCoinByID(SOLANA_ADDRESS, true);
@@ -51,13 +51,13 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			}
 
 			// Always update coinMap immediately after fetching available coins
-			const coinMap = coins.reduce((acc, coin) => {
-				acc[coin.id] = coin;
+			const coinMap = coins.reduce((acc: Record<string, Coin>, coin: Coin) => {
+				acc[coin.mintAddress] = coin;
 				return acc;
 			}, {} as Record<string, Coin>);
 			set({ coinMap });
 
-			console.log(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map(c => ({ symbol: c.symbol, id: c.id })));
+			console.log(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map((c: Coin) => ({ symbol: c.symbol, mintAddress: c.mintAddress })));
 
 			// Update availableCoins regardless of trendingOnly flag
 			set({ availableCoins: coins, isLoading: false });
@@ -73,22 +73,22 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		}
 	},
 
-	getCoinByID: async (id: string, forceRefresh: boolean = false) => {
+	getCoinByID: async (mintAddress: string, forceRefresh: boolean = false) => {
 		const state = get();
-		if (!forceRefresh && state.coinMap[id]) {
+		if (!forceRefresh && state.coinMap[mintAddress]) {
 			console.log("💰 Found coin in state:", {
-				id,
-				symbol: state.coinMap[id].symbol,
-				price: state.coinMap[id].price,
-				decimals: state.coinMap[id].decimals
+				mintAddress,
+				symbol: state.coinMap[mintAddress].symbol,
+				price: state.coinMap[mintAddress].price,
+				decimals: state.coinMap[mintAddress].decimals
 			});
-			return state.coinMap[id];
+			return state.coinMap[mintAddress];
 		}
 
 		try {
-			const coin = await grpcApi.getCoinByID(id);
+			const coin = await grpcApi.getCoinByID(mintAddress);
 			console.log("💰 Fetched coin from API:", {
-				id,
+				mintAddress,
 				symbol: coin.symbol,
 				price: coin.price,
 				decimals: coin.decimals
@@ -96,7 +96,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			state.setCoin(coin);
 			return coin;
 		} catch (error) {
-			console.error(`❌ Error fetching coin ${id}:`, error);
+			console.error(`❌ Error fetching coin ${mintAddress}:`, error);
 			set({ error: (error as Error).message });
 			return null;
 		}

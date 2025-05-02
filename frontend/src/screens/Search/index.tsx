@@ -1,177 +1,160 @@
-import React, { useCallback, useState } from 'react';
-import {
-	View,
-	TextInput,
-	FlatList,
-	Image,
-	Text,
-	ActivityIndicator,
-	TouchableOpacity,
-	RefreshControl,
-	SafeAreaView,
-} from 'react-native';
-import { useTheme } from 'react-native-paper';
-import debounce from 'lodash/debounce';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, TextInput, FlatList, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { SearchScreenProps, SearchState } from './types';
-import { createStyles } from './styles';
-import {
-	DEBOUNCE_DELAY,
-	DEFAULT_FILTERS,
-	performSearch,
-	formatPrice,
-	formatVolume,
-	formatPriceChange,
-	getTokenLogoURI,
-} from './scripts';
-import { Token } from '@/services/grpc/model';
+import { performSearch, getTokenLogoURI, DEBOUNCE_DELAY } from './scripts';
+import { Coin } from '@/types';
+import { TokenImage } from '@/components/Common/TokenImage';
+import { formatPrice, formatPercentage } from '@/utils/format';
+
+const initialState: SearchState = {
+	loading: false,
+	error: null,
+	results: [],
+	filters: {
+		query: '',
+		tags: [],
+		minVolume24h: 0,
+		sortBy: 'volume',
+		sortDesc: true
+	}
+};
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const [state, setState] = useState<SearchState>(initialState);
 
-	const [state, setState] = useState<SearchState>({
-		query: '',
-		tokens: [],
-		isLoading: false,
-		filters: DEFAULT_FILTERS,
-	});
+	const handleSearch = useCallback(async (query: string) => {
+		setState(prev => ({ ...prev, loading: true, error: null }));
+		try {
+			const results = await performSearch(query, state.filters);
+			setState(prev => ({ ...prev, loading: false, results }));
+		} catch (error) {
+			setState(prev => ({
+				...prev,
+				loading: false,
+				error: error instanceof Error ? error.message : 'An error occurred'
+			}));
+		}
+	}, [state.filters]);
 
-	const debouncedSearch = useCallback(
-		debounce(async (query: string) => {
-			if (!query.trim()) {
-				setState(prev => ({ ...prev, tokens: [], isLoading: false }));
-				return;
+	useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			if (state.filters.query) {
+				handleSearch(state.filters.query);
 			}
+		}, DEBOUNCE_DELAY);
 
-			try {
-				setState(prev => ({ ...prev, isLoading: true, error: undefined }));
-				const tokens = await performSearch(query, state.filters);
-				setState(prev => ({ ...prev, tokens, isLoading: false }));
-			} catch (error) {
-				setState(prev => ({
-					...prev,
-					isLoading: false,
-					error: 'Failed to fetch tokens',
-				}));
-			}
-		}, DEBOUNCE_DELAY),
-		[state.filters]
-	);
+		return () => clearTimeout(timeoutId);
+	}, [state.filters.query, handleSearch]);
 
-	const handleSearch = (text: string) => {
-		console.log("handle search", text);
-		setState(prev => ({ ...prev, query: text }));
-		debouncedSearch(text);
+	const handleQueryChange = (query: string) => {
+		setState(prev => ({
+			...prev,
+			filters: { ...prev.filters, query }
+		}));
 	};
 
-	const handleRefresh = () => {
-		debouncedSearch(state.query);
-	};
-
-	const handleTokenPress = (token: Token) => {
-		navigation.navigate('Trade', { selectedToken: token });
-	};
-
-	const renderTokenItem = ({ item: token }: { item: Token }) => (
+	const renderItem = ({ item }: { item: Coin }) => (
 		<TouchableOpacity
 			style={styles.tokenItem}
-			onPress={() => handleTokenPress(token)}
+			onPress={() => navigation.navigate('CoinDetail', { coin: item })}
 		>
-			<Image
-				source={{ uri: getTokenLogoURI(token) }}
-				style={styles.tokenImage}
-			/>
 			<View style={styles.tokenInfo}>
-				<View style={styles.tokenNameRow}>
-					<Text style={styles.tokenName}>{token.name}</Text>
-					<Text style={styles.tokenSymbol}>{token.symbol}</Text>
+				<TokenImage uri={getTokenLogoURI(item)} size={40} />
+				<View style={styles.tokenDetails}>
+					<Text style={styles.tokenSymbol}>{item.symbol}</Text>
+					<Text style={styles.tokenName}>{item.name}</Text>
 				</View>
-				<View style={styles.tokenMetrics}>
-					<Text style={styles.tokenPrice}>
-						{formatPrice(token.priceUSD)}
-					</Text>
-					<Text style={styles.tokenVolume}>
-						Vol: {formatVolume(token.volume24h)}
-					</Text>
-					<Text
-						style={
-							token.priceChange24h >= 0
-								? styles.priceChangePositive
-								: styles.priceChangeNegative
-						}
-					>
-						{formatPriceChange(token.priceChange24h)}
-					</Text>
-				</View>
+			</View>
+			<View style={styles.tokenMetrics}>
+				<Text style={styles.tokenPrice}>{formatPrice(item.price)}</Text>
+				<Text style={[
+					styles.tokenChange,
+					{ color: item.percentage && item.percentage >= 0 ? '#4CAF50' : '#F44336' }
+				]}>
+					{item.percentage ? formatPercentage(item.percentage) : 'N/A'}
+				</Text>
 			</View>
 		</TouchableOpacity>
 	);
 
-	const renderEmptyComponent = () => {
-		if (state.isLoading) {
-			return (
-				<View style={styles.loadingContainer}>
-					<ActivityIndicator size="large" color={theme.colors.primary} />
-				</View>
-			);
-		}
-
-		if (state.error) {
-			return (
-				<View style={styles.errorContainer}>
-					<Text style={styles.errorText}>{state.error}</Text>
-				</View>
-			);
-		}
-
-		if (state.query.trim()) {
-			return (
-				<View style={styles.emptyContainer}>
-					<Text style={styles.emptyText}>No tokens found</Text>
-				</View>
-			);
-		}
-
-		return (
-			<View style={styles.emptyContainer}>
-				<Text style={styles.emptyText}>
-					Search for tokens by name, symbol, or address
-				</Text>
-			</View>
-		);
-	};
-
 	return (
-		<SafeAreaView style={styles.safeArea}>
-			<View style={styles.container}>
-				<View style={styles.searchContainer}>
-					<TextInput
-						style={styles.searchInput}
-						placeholder="Search tokens..."
-						placeholderTextColor={theme.colors.onSurfaceVariant}
-						value={state.query}
-						onChangeText={handleSearch}
-						autoCapitalize="none"
-						autoCorrect={false}
-					/>
-				</View>
-				<FlatList
-					data={state.tokens}
-					renderItem={renderTokenItem}
-					keyExtractor={token => token.mintAddress}
-					contentContainerStyle={styles.listContainer}
-					ListEmptyComponent={renderEmptyComponent}
-					refreshControl={
-						<RefreshControl
-							refreshing={state.isLoading}
-							onRefresh={handleRefresh}
-							tintColor={theme.colors.primary}
-						/>
-					}
-				/>
-			</View>
-		</SafeAreaView>
+		<View style={styles.container}>
+			<TextInput
+				style={styles.searchInput}
+				placeholder="Search tokens..."
+				value={state.filters.query}
+				onChangeText={handleQueryChange}
+				autoCapitalize="none"
+				autoCorrect={false}
+			/>
+			{state.error && (
+				<Text style={styles.errorText}>{state.error}</Text>
+			)}
+			<FlatList
+				data={state.results}
+				renderItem={renderItem}
+				keyExtractor={item => item.mintAddress}
+				style={styles.list}
+			/>
+		</View>
 	);
 };
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: '#fff',
+		padding: 16
+	},
+	searchInput: {
+		height: 40,
+		borderWidth: 1,
+		borderColor: '#ddd',
+		borderRadius: 8,
+		paddingHorizontal: 16,
+		marginBottom: 16
+	},
+	list: {
+		flex: 1
+	},
+	tokenItem: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingVertical: 12,
+		borderBottomWidth: 1,
+		borderBottomColor: '#eee'
+	},
+	tokenInfo: {
+		flexDirection: 'row',
+		alignItems: 'center'
+	},
+	tokenDetails: {
+		marginLeft: 12
+	},
+	tokenSymbol: {
+		fontSize: 16,
+		fontWeight: 'bold'
+	},
+	tokenName: {
+		fontSize: 14,
+		color: '#666'
+	},
+	tokenMetrics: {
+		alignItems: 'flex-end'
+	},
+	tokenPrice: {
+		fontSize: 16,
+		fontWeight: '500'
+	},
+	tokenChange: {
+		fontSize: 14,
+		marginTop: 4
+	},
+	errorText: {
+		color: '#F44336',
+		marginBottom: 16
+	}
+});
 
 export default SearchScreen; 

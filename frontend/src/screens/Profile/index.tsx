@@ -131,7 +131,7 @@ const Profile = () => {
 
 							{sortedTokens.map((token) => (
 								<TokenCard
-									key={token.id}
+									key={token.mintAddress}
 									profileCoin={token}
 									onPress={() => handleTokenPress(token.coin, navigation.navigate)}
 								/>

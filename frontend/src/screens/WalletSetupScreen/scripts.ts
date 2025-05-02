@@ -2,7 +2,7 @@ import * as Keychain from 'react-native-keychain';
 import { Keypair } from '@solana/web3.js';
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer'; // Import Buffer for hex conversion
-import grpcApi from '@/services/grpcApi'; // Import grpcApi
+import { grpcApi } from '@/services/grpcApi'; // Import grpcApi
 import { usePortfolioStore } from '@store/portfolio';
 
 const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';

@@ -12,7 +12,7 @@ import { mockCoinStoreReturn, useCoinStore } from '@/__mocks__/store/coins';
 import { fetchTradeQuote as mockFetchTradeQuote, signTradeTransaction as mockSignTradeTransaction } from '@/__mocks__/services/trade_scripts';
 import { useRoute } from '@react-navigation/native';
 import type { PortfolioToken } from '@/store/portfolio';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 
 // Mock Stores
 jest.mock('@store/portfolio');
@@ -127,13 +127,13 @@ describe('TradeScreen', () => {
 		// Setup your mocks
 		(mockFetchTradeQuote as jest.Mock).mockResolvedValue(undefined);
 		(mockSignTradeTransaction as jest.Mock).mockResolvedValue('mock_signed_tx');
-		(grpcApi.submitSwap as jest.Mock).mockResolvedValue({ transaction_hash: 'mock_tx_hash' });
+		(grpcApi.submitSwap as jest.Mock).mockResolvedValue({ transactionHash: 'mock_tx_hash' });
 		(grpcApi.getSwapStatus as jest.Mock).mockResolvedValue({
 			status: 'completed',
-			transaction_hash: 'mock_tx_hash',
+			transactionHash: 'mock_tx_hash',
 			timestamp: new Date().toISOString(),
-			from_amount: '1.5',
-			to_amount: '100.5'
+			fromAmount: '1.5',
+			toAmount: '100.5'
 		});
 
 		// Silence console methods
@@ -148,10 +148,10 @@ describe('TradeScreen', () => {
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
 
-		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id) => {
-			if (id === mockFromCoin.id) return mockFromCoin;
-			if (id === mockToCoin.id) return mockToCoin;
-			if (id === SOLANA_ADDRESS) return { ...mockFromCoin, id: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL' };
+		mockCoinStoreReturn.getCoinByID.mockImplementation(async (mintAddress: string) => {
+			if (mintAddress === mockFromCoin.mintAddress) return mockFromCoin;
+			if (mintAddress === mockToCoin.mintAddress) return mockToCoin;
+			if (mintAddress === SOLANA_ADDRESS) return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL' };
 			return null;
 		});
 
@@ -179,8 +179,8 @@ describe('TradeScreen', () => {
 		});
 
 		// Verify correct coin fetching
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockFromCoin.id, true);
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.id, true);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockFromCoin.mintAddress, true);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, true);
 
 		// Verify store actions that should NOT be called on mount
 		expect(mockPortfolioStoreReturn.fetchPortfolioBalance).not.toHaveBeenCalled();
@@ -282,7 +282,7 @@ describe('TradeScreen', () => {
 		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
 			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
 				act(() => {
-					setToAmount(fromC.id === mockFromCoin.id ? initialToAmount : initialFromAmount);
+					setToAmount(fromC.mintAddress === mockFromCoin.mintAddress ? initialToAmount : initialFromAmount);
 					setTradeDetails({ exchangeRate: '1350000', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
 				});
 			}
@@ -433,7 +433,7 @@ describe('TradeScreen', () => {
 
 		await waitFor(() => {
 			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenNthCalledWith(1, SOLANA_ADDRESS, true);
-			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenNthCalledWith(2, mockToCoin.id, true);
+			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenNthCalledWith(2, mockToCoin.mintAddress, true);
 			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2);
 		});
 	});

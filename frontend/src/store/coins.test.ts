@@ -1,16 +1,16 @@
 // frontend/src/store/coins.test.ts
 import { act } from '@testing-library/react-native';
 import { useCoinStore } from './coins';
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 import { Coin } from '@/types';
 
 // Mock the API service
 jest.mock('@/services/grpcApi');
 
 // Mock Coin Data
-const mockSolCoin: Coin = { id: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
-const mockWenCoin: Coin = { id: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI', symbol: 'WEN', name: 'Wen', price: 0.0001, decimals: 5, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
-const mockOtherCoin: Coin = { id: 'otherCoinId', symbol: 'OTH', name: 'Other', price: 10, decimals: 6, description: '', icon_url: '', tags: [], daily_volume: 0, created_at: '' };
+const mockSolCoin: Coin = { mintAddress: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
+const mockWenCoin: Coin = { mintAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI', symbol: 'WEN', name: 'Wen', price: 0.0001, decimals: 5, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
+const mockOtherCoin: Coin = { mintAddress: 'otherCoinId', symbol: 'OTH', name: 'Other', price: 10, decimals: 6, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
 
 describe('Zustand Coin Store', () => {
 	let consoleLogSpy: jest.SpyInstance;
@@ -46,8 +46,8 @@ describe('Zustand Coin Store', () => {
 			let state = useCoinStore.getState();
 			expect(state.availableCoins).toEqual(coins);
 			expect(state.coinMap).toEqual({
-				[mockSolCoin.id]: mockSolCoin,
-				[mockWenCoin.id]: mockWenCoin,
+				[mockSolCoin.mintAddress]: mockSolCoin,
+				[mockWenCoin.mintAddress]: mockWenCoin,
 			});
 
 			// Test setCoin functionality
@@ -56,14 +56,14 @@ describe('Zustand Coin Store', () => {
 				useCoinStore.getState().setCoin(updatedSolCoin);
 			});
 			state = useCoinStore.getState();
-			expect(state.coinMap[mockSolCoin.id]).toEqual(updatedSolCoin);
+			expect(state.coinMap[mockSolCoin.mintAddress]).toEqual(updatedSolCoin);
 
 			// Test adding another coin
 			act(() => {
 				useCoinStore.getState().setCoin(mockOtherCoin);
 			});
 			state = useCoinStore.getState();
-			expect(state.coinMap[mockOtherCoin.id]).toEqual(mockOtherCoin);
+			expect(state.coinMap[mockOtherCoin.mintAddress]).toEqual(mockOtherCoin);
 			expect(Object.keys(state.coinMap).length).toBe(3);
 		});
 	});
@@ -87,9 +87,9 @@ describe('Zustand Coin Store', () => {
 			expect(grpcApi.getAvailableCoins).toHaveBeenCalledTimes(1);
 			expect(state.availableCoins).toEqual([mockSolCoin, mockWenCoin, mockOtherCoin]);
 			expect(state.coinMap).toEqual({
-				[mockSolCoin.id]: mockSolCoin,
-				[mockWenCoin.id]: mockWenCoin,
-				[mockOtherCoin.id]: mockOtherCoin,
+				[mockSolCoin.mintAddress]: mockSolCoin,
+				[mockWenCoin.mintAddress]: mockWenCoin,
+				[mockOtherCoin.mintAddress]: mockOtherCoin,
 			});
 
 			// Test error handling
@@ -110,7 +110,7 @@ describe('Zustand Coin Store', () => {
 
 			// Test cached retrieval
 			let coin = await act(async () => {
-				return await useCoinStore.getState().getCoinByID(mockWenCoin.id);
+				return await useCoinStore.getState().getCoinByID(mockWenCoin.mintAddress);
 			});
 			expect(coin).toEqual(mockWenCoin);
 			expect(grpcApi.getCoinByID).not.toHaveBeenCalled();
@@ -119,10 +119,10 @@ describe('Zustand Coin Store', () => {
 			const updatedWenCoin = { ...mockWenCoin, price: 0.0002 };
 			(grpcApi.getCoinByID as jest.Mock).mockResolvedValue(updatedWenCoin);
 			coin = await act(async () => {
-				return await useCoinStore.getState().getCoinByID(mockWenCoin.id, true);
+				return await useCoinStore.getState().getCoinByID(mockWenCoin.mintAddress, true);
 			});
 			expect(coin).toEqual(updatedWenCoin);
-			expect(grpcApi.getCoinByID).toHaveBeenCalledWith(mockWenCoin.id);
+			expect(grpcApi.getCoinByID).toHaveBeenCalledWith(mockWenCoin.mintAddress);
 
 			// Test error handling
 			(grpcApi.getCoinByID as jest.Mock).mockRejectedValue(new Error('Coin Not Found'));

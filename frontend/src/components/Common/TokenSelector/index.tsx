@@ -68,19 +68,19 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	});
 
 	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
-		const portfolioToken = portfolioTokens.find(t => t.id === coin.id);
+		const portfolioToken = portfolioTokens.find(t => t.mintAddress === coin.mintAddress);
 		return (
 			<TouchableOpacity
 				style={styles.tokenItem}
 				onPress={() => handleTokenSelect(coin)}
 			>
 				{/* Use the inline RenderIcon component */}
-				<RenderIcon iconUrl={coin.icon_url} />
+				<RenderIcon iconUrl={coin.iconUrl} />
 				<View style={styles.tokenDetails}>
 					<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
 					<Text style={styles.tokenName}>{coin.name}</Text>
 					<Text style={styles.tokenAddress}>
-						{coin.id.slice(0, 6)}...{coin.id.slice(-6)}
+						{coin.mintAddress.slice(0, 6)}...{coin.mintAddress.slice(-6)}
 					</Text>
 				</View>
 				{portfolioToken && (
@@ -116,7 +116,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 					<FlatList
 						data={filteredCoins}
 						renderItem={renderItem}
-						keyExtractor={coin => coin.id}
+						keyExtractor={coin => coin.mintAddress}
 						style={styles.tokenList}
 						keyboardShouldPersistTaps="handled"
 					/>
@@ -144,7 +144,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const [modalVisible, setModalVisible] = useState(false);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 
-	const { imageUri: selectedTokenImageUri, isLoading: isSelectedTokenImageLoading } = useProxiedImage(selectedToken?.icon_url);
+	const { imageUri: selectedTokenImageUri, isLoading: isSelectedTokenImageLoading } = useProxiedImage(selectedToken?.iconUrl);
 
 	const calculatedValue = useMemo(() => {
 		return calculateUsdValue(selectedToken, amountValue);

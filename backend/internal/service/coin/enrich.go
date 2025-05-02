@@ -25,10 +25,12 @@ func (s *Service) EnrichCoinData(
 
 	// Initialize coin with basic info or defaults
 	coin := model.Coin{
-		ID:          mintAddress,
+		MintAddress: mintAddress,
 		Name:        initialName,
 		IconUrl:     initialIconURL,
-		DailyVolume: initialVolume,
+		Volume24h:   initialVolume,
+		CreatedAt:   time.Now().Format(time.RFC3339),
+		LastUpdated: time.Now().Format(time.RFC3339),
 	}
 
 	// 1. Get Jupiter data for basic info & price (overwrites initial values if found)
@@ -54,13 +56,10 @@ func (s *Service) EnrichCoinData(
 			coin.IconUrl = jupiterInfo.LogoURI // Overwrite icon
 		}
 		if jupiterInfo.DailyVolume > 0 {
-			coin.DailyVolume = jupiterInfo.DailyVolume
+			coin.Volume24h = jupiterInfo.DailyVolume
 		}
 		if len(jupiterInfo.Tags) > 0 {
 			coin.Tags = jupiterInfo.Tags
-		}
-		if !jupiterInfo.CreatedAt.IsZero() {
-			coin.CreatedAt = jupiterInfo.CreatedAt.Format(time.RFC3339)
 		}
 	}
 
@@ -202,6 +201,19 @@ func enrichFromMetadata(coin *model.Coin, metadata map[string]interface{}) {
 	coin.Twitter = cleanSocialLink(coin.Twitter, "twitter.com")
 	coin.Telegram = cleanSocialLink(coin.Telegram, "t.me")
 	coin.Website = ensureHttpHttps(coin.Website)
+
+	// Update the other instances of LogoUrl to IconUrl
+	if coin.IconUrl == "" {
+		coin.IconUrl = "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/" + coin.MintAddress + "/logo.png"
+	}
+
+	if coin.IconUrl == "" {
+		coin.IconUrl = fmt.Sprintf("https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/%s/logo.png", coin.MintAddress)
+	}
+
+	if coin.IconUrl == "" {
+		coin.IconUrl = "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+	}
 }
 
 // cleanSocialLink ensures a social link points to the correct domain and has https.

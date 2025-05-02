@@ -19,14 +19,14 @@ export const file_dankfolio_v1_wallet: GenFile = /*@__PURE__*/
  */
 export type Balance = Message<"dankfolio.v1.Balance"> & {
   /**
-   * Token mint address or identifier
+   * Coin mint address or identifier
    *
    * @generated from field: string id = 1;
    */
   id: string;
 
   /**
-   * Token amount
+   * Coin amount
    *
    * @generated from field: double amount = 2;
    */

@@ -9,34 +9,34 @@ import { View, Text, TextInput } from 'react-native';
 
 // --- Mock Data (Copied from original file) ---
 const mockFromCoin: Coin = {
-	id: "So11111111111111111111111111111111111111112",
+	mintAddress: "So11111111111111111111111111111111111111112",
 	name: "Solana",
 	symbol: "SOL",
-	icon_url: "sol_icon_url",
+	iconUrl: "sol_icon_url",
 	decimals: 9,
 	price: 150.0,
 	description: "Solana Blockchain",
 	website: "https://solana.com",
 	twitter: "https://twitter.com/solana",
 	telegram: "",
-	daily_volume: 5e9,
+	dailyVolume: 5e9,
 	tags: ["layer-1"],
-	created_at: "2024-01-01T00:00:00Z",
+	createdAt: new Date()
 };
 const mockToCoin: Coin = {
-	id: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
+	mintAddress: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
 	name: "WEN",
 	symbol: "WEN",
-	icon_url: "wen_icon_url",
+	iconUrl: "wen_icon_url",
 	decimals: 5,
 	price: 0.00011,
 	description: "WEN",
 	website: "https://wen-foundation.org",
 	twitter: "https://twitter.com/wenwencoin",
 	telegram: "https://t.me/wenwencoinsol",
-	daily_volume: 123456.78,
+	dailyVolume: 123456.78,
 	tags: ["meme", "community"],
-	created_at: "2024-01-01T00:00:00Z"
+	createdAt: new Date()
 };
 const mockWallet: Wallet = {
 	address: 'TestWalletAddress12345',
@@ -44,7 +44,7 @@ const mockWallet: Wallet = {
 	mnemonic: 'test mnemonic phrase',
 };
 const mockFromPortfolioToken: PortfolioToken = {
-	id: mockFromCoin.id,
+	mintAddress: mockFromCoin.mintAddress,
 	amount: 10,
 	price: mockFromCoin.price,
 	value: 10 * mockFromCoin.price,
@@ -64,8 +64,8 @@ const mockPortfolioStoreReturn = {
 const mockCoinStoreReturn = {
 	availableCoins: [mockFromCoin, mockToCoin] as Coin[],
 	coinMap: {
-		[mockFromCoin.id]: mockFromCoin,
-		[mockToCoin.id]: mockToCoin,
+		[mockFromCoin.mintAddress]: mockFromCoin,
+		[mockToCoin.mintAddress]: mockToCoin,
 	} as Record<string, Coin>,
 	isLoading: false,
 	error: null,
@@ -165,8 +165,8 @@ describe('TradeScreen Confirmation Behavior', () => {
 		Object.values(mockPortfolioStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 		Object.values(mockCoinStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id, forceRefresh) => {
-			if (id === mockFromCoin.id) return { ...mockFromCoin, price: 150.0 };
-			if (id === mockToCoin.id) return { ...mockToCoin, price: 0.00011 };
+			if (id === mockFromCoin.mintAddress) return { ...mockFromCoin, price: 150.0 };
+			if (id === mockToCoin.mintAddress) return { ...mockToCoin, price: 0.00011 };
 			return null;
 		});
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);

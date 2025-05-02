@@ -117,19 +117,19 @@ func (s *priceServiceHandler) GetPriceHistory(
 	return res, nil
 }
 
-// GetTokenPrices returns current prices for multiple tokens
-func (s *priceServiceHandler) GetTokenPrices(
+// GetCoinPrices returns current prices for multiple coins
+func (s *priceServiceHandler) GetCoinPrices(
 	ctx context.Context,
-	req *connect.Request[pb.GetTokenPricesRequest],
-) (*connect.Response[pb.GetTokenPricesResponse], error) {
-	tokenIDs := req.Msg.TokenIds
-	if len(tokenIDs) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no token IDs provided"))
+	req *connect.Request[pb.GetCoinPricesRequest],
+) (*connect.Response[pb.GetCoinPricesResponse], error) {
+	coinIDs := req.Msg.TokenIds
+	if len(coinIDs) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no coin IDs provided"))
 	}
 
-	prices, err := s.priceService.GetTokenPrices(ctx, tokenIDs)
+	prices, err := s.priceService.GetTokenPrices(ctx, coinIDs)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get token prices: %w", err))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get coin prices: %w", err))
 	}
 
 	// Convert map to proto response
@@ -138,7 +138,7 @@ func (s *priceServiceHandler) GetTokenPrices(
 		priceMap[id] = price
 	}
 
-	res := connect.NewResponse(&pb.GetTokenPricesResponse{
+	res := connect.NewResponse(&pb.GetCoinPricesResponse{
 		Prices: priceMap,
 	})
 	return res, nil

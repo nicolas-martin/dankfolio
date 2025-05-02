@@ -1,171 +1,43 @@
-import { tradeClient, coinClient, priceClient, walletClient, utilityClient } from './grpc/apiClient';
-import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
-import { TokenInfo } from "@/gen/dankfolio/v1/coin_pb";
-import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
-import { GetProxiedImageResponse } from "@/gen/dankfolio/v1/utility_pb";
-import {
-	Coin,
-	TradePayload,
-	TradeQuoteResponse as SwapQuoteResponse,
-	WalletBalanceResponse,
-	PriceHistoryResponse,
-	SubmitTradeResponse as SubmitSwapResponse,
-	TradeStatusResponse,
-	TokenTransferPrepareRequest,
-	TokenTransferPrepareResponse,
-	TokenTransferSubmitRequest,
-	TokenTransferResponse,
-	CreateWalletResponse,
-	SearchTokensRequest,
-	SearchTokensResponse,
-	SearchTokenByMintRequest,
-	SearchTokenByMintResponse,
-	Token
-} from './grpc/model';
+import { REACT_APP_API_URL } from '@env';
+import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
+import { API, Coin, SearchCoinsRequest, SearchCoinsResponse, SearchCoinByMintResponse, TradePayload, SubmitSwapResponse, SwapQuoteResponse, TradeStatusResponse, PriceHistoryResponse, WalletBalanceResponse, CoinTransferPrepareRequest, CoinTransferPrepareResponse, CoinTransferSubmitRequest, CoinTransferResponse, CreateWalletResponse, GetProxiedImageResponse } from './grpc/model';
 import { DEBUG_MODE } from '@env';
+import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
+import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
+import * as grpcUtils from './grpc/grpcUtils';
 
 if (!DEBUG_MODE) {
-	throw new Error('DEBUG_MODE environment variable is required');
+	console.log = () => { };
 }
-
-const IS_DEBUG_MODE = DEBUG_MODE === 'true';
-
-// Helper function to get headers with debug mode
-const getRequestHeaders = (): Headers => {
-	const headers = new Headers();
-	if (IS_DEBUG_MODE) {
-		headers.set("x-debug-mode", "true");
-	}
-	return headers;
-};
-
-// Interface matching the REST API
-interface API {
-	getSwapQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<SwapQuoteResponse>;
-	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;
-	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;
-	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
-	getPriceHistory: (address: string, type: string | number, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
-	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
-	getCoinByID: (id: string) => Promise<Coin>;
-	getTokenPrices: (tokenIds: string[]) => Promise<Record<string, number>>;
-	prepareTokenTransfer: (payload: TokenTransferPrepareRequest) => Promise<TokenTransferPrepareResponse>;
-	submitTokenTransfer: (payload: TokenTransferSubmitRequest) => Promise<TokenTransferResponse>;
-	getTransferTransaction: (params: { toAddress: string; tokenMint: string; amount: string; }) => Promise<any>;
-	createWallet: () => Promise<CreateWalletResponse>;
-	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
-	searchTokens: (params: SearchTokensRequest) => Promise<SearchTokensResponse>;
-	searchTokenByMint: (mintAddress: string) => Promise<SearchTokenByMintResponse>;
-}
-
-// Helper function to safely serialize objects with BigInt values
-const safeStringify = (obj: any, indent = 2): string => {
-	return JSON.stringify(obj, (_, value) =>
-		typeof value === 'bigint' ? value.toString() + 'n' : value
-		, indent);
-};
-
-// Logger functions for consistent request/response logging
-const logRequest = (serviceName: string, methodName: string, params: any): void => {
-	console.log(`📤 gRPC ${serviceName}.${methodName} Request:`, safeStringify(params));
-};
-
-const logResponse = (serviceName: string, methodName: string, response: any): void => {
-	// Special handling for getPriceHistory response to prevent large logs
-	if (serviceName === 'PriceService' && methodName === 'getPriceHistory' && response?.data?.items) {
-		const items = response.data.items;
-		const count = items.length;
-		if (count === 0) {
-			console.log(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [empty] }, ... }`);
-			return;
-		} else {
-			const first = safeStringify(items[0], 0);
-			const last = safeStringify(items[count - 1], 0);
-			console.log(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [count=${count}, first=${first}, last=${last}] }, ... }`);
-			return;
-		}
-	}
-	console.log(`📥 gRPC ${serviceName}.${methodName} Response:`, safeStringify(response));
-};
-
-const logError = (serviceName: string, methodName: string, error: any): void => {
-	console.error(`❌ gRPC ${serviceName}.${methodName} Error:`, safeStringify({
-		message: error.message || 'Unknown error',
-		code: error.code,
-		data: error.metadata ? (typeof error.metadata.toObject === 'function' ? error.metadata.toObject() : error.metadata) : undefined
-	}));
-};
-
 
 // Helper to convert timestamp strings to Timestamp objects
-const convertToTimestamp = (dateString: string): Timestamp => {
-	try {
-		// Use the more reliable timestampFromDate API
-		return timestampFromDate(new Date(dateString));
-	} catch (error) {
-		throw new Error(`Invalid date string: ${dateString}`);
-	}
-};
-
-// Error handling
-interface ErrorDetails {
-	message: string;
-	status?: number;
-	data?: any;
-	code?: number;
+function convertToTimestamp(dateStr: string): Timestamp {
+	return timestampFromDate(new Date(dateStr));
 }
 
-const handleGrpcError = (error: any, serviceName: string, methodName: string): never => {
-	const errorDetails: ErrorDetails = {
-		message: error.message || 'Unknown error',
-		code: error.code,
-		data: undefined, // Initialize as undefined
-	};
-
-	// Safely access metadata if it exists and has a toObject method
-	try {
-		if (error.metadata && typeof error.metadata.toObject === 'function') {
-			errorDetails.data = error.metadata.toObject();
-		} else if (error.metadata) {
-			// If metadata exists but doesn't have toObject method
-			errorDetails.data = error.metadata;
-		}
-	} catch (metadataError) {
-		console.error('Error accessing metadata:', metadataError);
-	}
-
-	// Log the error with the service and method name for better tracing
-	logError(serviceName, methodName, error);
-
-	throw errorDetails;
-};
-
 // Implementation of the API interface using gRPC
-const grpcApi: API = {
+export const grpcApi: API = {
 	submitSwap: async (payload: TradePayload): Promise<SubmitSwapResponse> => {
 		const serviceName = "TradeService";
 		const methodName = "submitSwap";
 		try {
-			logRequest(serviceName, methodName, payload);
+			grpcUtils.logRequest(serviceName, methodName, payload);
 
 			const response = await tradeClient.submitSwap({
-				fromCoinId: payload.from_coin_id,
-				toCoinId: payload.to_coin_id,
+				fromCoinId: payload.fromCoinMintAddress,
+				toCoinId: payload.toCoinMintAddress,
 				amount: payload.amount,
-				signedTransaction: payload.signed_transaction
-			},
-				{ headers: getRequestHeaders() }
-			);
+				signedTransaction: payload.signedTransaction
+			}, { headers: grpcUtils.getRequestHeaders() });
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Convert the response to match the expected REST API structure
 			return {
-				trade_id: response.tradeId,
-				transaction_hash: response.transactionHash
+				transactionHash: response.transactionHash,
+				tradeId: response.tradeId
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -173,14 +45,14 @@ const grpcApi: API = {
 		const serviceName = 'TradeService';
 		const methodName = 'getSwapStatus';
 		try {
-			logRequest(serviceName, methodName, { txHash });
+			grpcUtils.logRequest(serviceName, methodName, { txHash });
 
 			const response = await tradeClient.getTrade(
 				{ identifier: { case: 'transactionHash', value: txHash } },
-				{ headers: getRequestHeaders() }
+				{ headers: grpcUtils.getRequestHeaders() }
 			);
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
 			// Convert the response to match the expected REST API structure
 			return {
@@ -191,7 +63,7 @@ const grpcApi: API = {
 				error: response.error
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -199,35 +71,35 @@ const grpcApi: API = {
 		const serviceName = 'CoinService';
 		const methodName = 'getAvailableCoins';
 		try {
-			logRequest(serviceName, methodName, { trendingOnly });
+			grpcUtils.logRequest(serviceName, methodName, { trendingOnly });
 
 			const response = await coinClient.getAvailableCoins(
 				{ trendingOnly },
-				{ headers: getRequestHeaders() }
+				{ headers: grpcUtils.getRequestHeaders() }
 			);
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Convert the response to match the expected REST API structure
+			// Convert the response to match our frontend model
 			return response.coins.map(coin => ({
-				id: coin.id,
+				mintAddress: coin.mintAddress,
 				name: coin.name,
 				symbol: coin.symbol,
 				decimals: coin.decimals,
 				description: coin.description,
-				icon_url: coin.iconUrl,
+				iconUrl: coin.iconUrl,
 				tags: coin.tags,
 				price: coin.price,
-				daily_volume: coin.dailyVolume,
+				dailyVolume: coin.dailyVolume,
 				website: coin.website,
 				twitter: coin.twitter,
 				telegram: coin.telegram,
-				coingecko_id: coin.coingeckoId,
-				created_at: coin.createdAt ? new Date(Number(coin.createdAt.seconds) * 1000).toISOString() : new Date().toISOString(),
-				last_updated: coin.lastUpdated ? new Date(Number(coin.lastUpdated.seconds) * 1000).toISOString() : undefined,
+				coingeckoId: coin.coingeckoId,
+				createdAt: coin.createdAt ? new Date(Number(coin.createdAt.seconds) * 1000) : undefined,
+				lastUpdated: coin.lastUpdated ? new Date(Number(coin.lastUpdated.seconds) * 1000) : undefined
 			}));
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -235,15 +107,15 @@ const grpcApi: API = {
 		const serviceName = 'TradeService';
 		const methodName = 'getTradeQuote';
 		try {
-			logRequest(serviceName, methodName, { fromCoin, toCoin, amount });
+			grpcUtils.logRequest(serviceName, methodName, { fromCoin, toCoin, amount });
 
 			const response = await tradeClient.getSwapQuote({
 				fromCoinId: fromCoin,
 				toCoinId: toCoin,
 				amount: amount
-			});
+			}, { headers: grpcUtils.getRequestHeaders() });
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
 			// Return the response directly as it matches the expected structure
 			return {
@@ -256,7 +128,7 @@ const grpcApi: API = {
 				outputMint: response.outputMint
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -264,7 +136,7 @@ const grpcApi: API = {
 		const serviceName = 'PriceService';
 		const methodName = 'getPriceHistory';
 		try {
-			logRequest(serviceName, methodName, { address, type, timeFrom, timeTo, addressType });
+			grpcUtils.logRequest(serviceName, methodName, { address, type, timeFrom, timeTo, addressType });
 
 			// Convert timeFrom and timeTo to timestamps without fallbacks
 			const fromTimestamp = convertToTimestamp(timeFrom);
@@ -294,9 +166,9 @@ const grpcApi: API = {
 				timeFrom: fromTimestamp,
 				timeTo: toTimestamp,
 				addressType: addressType
-			}, { headers: getRequestHeaders() });
+			}, { headers: grpcUtils.getRequestHeaders() });
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
 			// Convert the response to match the expected REST API structure
 			return {
@@ -309,7 +181,7 @@ const grpcApi: API = {
 				success: response.success
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -320,11 +192,11 @@ const grpcApi: API = {
 			throw new Error('Address cannot be empty');
 		}
 		try {
-			logRequest(serviceName, methodName, { address });
+			grpcUtils.logRequest(serviceName, methodName, { address });
 
-			const response = await walletClient.getWalletBalances({ address });
+			const response = await walletClient.getWalletBalances({ address }, { headers: grpcUtils.getRequestHeaders() });
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
 			// Convert the response to match the expected REST API structure
 			return {
@@ -334,129 +206,203 @@ const grpcApi: API = {
 				})) || []
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
-	getCoinByID: async (id: string): Promise<Coin> => {
+	getCoinByID: async (mintAddress: string): Promise<Coin> => {
 		const serviceName = 'CoinService';
 		const methodName = 'getCoinByID';
 		try {
-			logRequest(serviceName, methodName, { id });
+			grpcUtils.logRequest(serviceName, methodName, { mintAddress });
 
-			const response = await coinClient.getCoinByID({ id });
+			const response = await coinClient.getCoinByID(
+				{ mintAddress },
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Convert the response to match the expected REST API structure
 			return {
-				id: response.id,
+				mintAddress: response.mintAddress,
 				name: response.name,
 				symbol: response.symbol,
 				decimals: response.decimals,
 				description: response.description,
-				icon_url: response.iconUrl,
+				iconUrl: response.iconUrl,
 				tags: response.tags,
 				price: response.price,
-				daily_volume: response.dailyVolume,
+				dailyVolume: response.dailyVolume,
 				website: response.website,
 				twitter: response.twitter,
 				telegram: response.telegram,
-				coingecko_id: response.coingeckoId,
-				created_at: response.createdAt ? new Date(Number(response.createdAt.seconds) * 1000).toISOString() : new Date().toISOString(),
-				last_updated: response.lastUpdated ? new Date(Number(response.lastUpdated.seconds) * 1000).toISOString() : undefined,
+				coingeckoId: response.coingeckoId,
+				createdAt: response.createdAt ? new Date(Number(response.createdAt.seconds) * 1000) : undefined,
+				lastUpdated: response.lastUpdated ? new Date(Number(response.lastUpdated.seconds) * 1000) : undefined
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
-	getTokenPrices: async (tokenIds: string[]): Promise<Record<string, number>> => {
+	getCoinPrices: async (coinIds: string[]): Promise<Record<string, number>> => {
 		const serviceName = 'PriceService';
-		const methodName = 'getTokenPrices';
+		const methodName = 'getCoinPrices';
 		try {
-			logRequest(serviceName, methodName, { tokenIds });
+			grpcUtils.logRequest(serviceName, methodName, { coinIds });
 
-			const response = await priceClient.getTokenPrices({ tokenIds });
+			const response = await priceClient.getCoinPrices(
+				{ tokenIds: coinIds },
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// The response structure is already a map of token IDs to prices
 			return response.prices;
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
-	prepareTokenTransfer: async (payload: TokenTransferPrepareRequest): Promise<TokenTransferPrepareResponse> => {
+	prepareCoinTransfer: async (payload: CoinTransferPrepareRequest): Promise<CoinTransferPrepareResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'prepareTransfer';
 		try {
-			logRequest(serviceName, methodName, payload);
+			grpcUtils.logRequest(serviceName, methodName, payload);
 
 			const response = await walletClient.prepareTransfer({
 				fromAddress: payload.fromAddress,
 				toAddress: payload.toAddress,
-				tokenMint: payload.tokenMint || '',
+				tokenMint: payload.coinMint || '', // Note: Backend still uses 'token' in field name
 				amount: payload.amount
 			});
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Convert the response to match the expected REST API structure
 			return {
 				unsignedTransaction: response.unsignedTransaction
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
-	submitTokenTransfer: async (payload: TokenTransferSubmitRequest): Promise<TokenTransferResponse> => {
+	submitCoinTransfer: async (payload: CoinTransferSubmitRequest): Promise<CoinTransferResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'submitTransfer';
 		try {
-			logRequest(serviceName, methodName, payload);
+			grpcUtils.logRequest(serviceName, methodName, payload);
 
 			const response = await walletClient.submitTransfer({
 				signedTransaction: payload.signedTransaction
 			});
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Convert the response to match the expected REST API structure
 			return {
 				transactionHash: response.transactionHash
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		}
+	},
+
+	searchCoins: async (params: SearchCoinsRequest): Promise<SearchCoinsResponse> => {
+		const serviceName = 'CoinService';
+		const methodName = 'searchCoins';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, params);
+
+			const response = await coinClient.search(params);
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			return {
+				coins: response.coins.map(coin => ({
+					mintAddress: coin.mintAddress,
+					name: coin.name,
+					symbol: coin.symbol,
+					decimals: coin.decimals,
+					description: coin.description,
+					iconUrl: coin.iconUrl,
+					tags: coin.tags,
+					price: coin.price,
+					dailyVolume: coin.dailyVolume,
+					website: coin.website,
+					twitter: coin.twitter,
+					telegram: coin.telegram,
+					coingeckoId: coin.coingeckoId,
+					createdAt: coin.createdAt ? new Date(Number(coin.createdAt.seconds) * 1000) : undefined,
+					lastUpdated: coin.lastUpdated ? new Date(Number(coin.lastUpdated.seconds) * 1000) : undefined
+				}))
+			};
+		} catch (error) {
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		}
+	},
+
+	searchCoinByMint: async (mintAddress: string): Promise<SearchCoinByMintResponse> => {
+		const serviceName = 'CoinService';
+		const methodName = 'searchCoinByMint';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { mintAddress });
+
+			const response = await coinClient.searchCoinByMint({ mintAddress });
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			if (!response.coin) {
+				return { coin: undefined };
+			}
+
+			return {
+				coin: {
+					mintAddress: response.coin.mintAddress,
+					name: response.coin.name,
+					symbol: response.coin.symbol,
+					decimals: response.coin.decimals,
+					description: response.coin.description,
+					iconUrl: response.coin.iconUrl,
+					tags: response.coin.tags,
+					price: response.coin.price,
+					dailyVolume: response.coin.dailyVolume,
+					website: response.coin.website,
+					twitter: response.coin.twitter,
+					telegram: response.coin.telegram,
+					coingeckoId: response.coin.coingeckoId,
+					createdAt: response.coin.createdAt ? new Date(Number(response.coin.createdAt.seconds) * 1000) : undefined,
+					lastUpdated: response.coin.lastUpdated ? new Date(Number(response.coin.lastUpdated.seconds) * 1000) : undefined
+				}
+			};
+		} catch (error) {
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
 	async getTransferTransaction(params: {
 		toAddress: string;
-		tokenMint: string;
+		coinMint: string;
 		amount: string;
 	}) {
 		const serviceName = 'TradeService';
 		const methodName = 'prepareTransfer';
 		try {
-			logRequest(serviceName, methodName, params);
+			grpcUtils.logRequest(serviceName, methodName, params);
 
 			const response = await walletClient.prepareTransfer({
 				fromAddress: '', // This will be filled by the backend
 				toAddress: params.toAddress,
-				tokenMint: params.tokenMint,
+				tokenMint: params.coinMint, // Note: Backend still uses 'token' in field name
 				amount: parseFloat(params.amount)
-			}, { headers: getRequestHeaders() });
+			}, { headers: grpcUtils.getRequestHeaders() });
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
 			return {
 				unsignedTransaction: response.unsignedTransaction
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
@@ -465,12 +411,12 @@ const grpcApi: API = {
 		const methodName = 'createWallet';
 
 		try {
-			logRequest(serviceName, methodName, {});
+			grpcUtils.logRequest(serviceName, methodName, {});
 
 			const response = await walletClient.createWallet(
-				{}, { headers: getRequestHeaders() });
+				{}, { headers: grpcUtils.getRequestHeaders() });
 
-			logResponse(serviceName, methodName, response);
+			grpcUtils.logResponse(serviceName, methodName, response);
 
 			return {
 				public_key: response.publicKey,
@@ -479,97 +425,28 @@ const grpcApi: API = {
 			}
 
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
 	getProxiedImage: async (imageUrl: string): Promise<GetProxiedImageResponse> => {
-		const serviceName = 'UtilityService';
-		const methodName = 'getProxiedImage';
+		const serviceName = "UtilityService";
+		const methodName = "getProxiedImage";
 		try {
-			// logRequest(serviceName, methodName, { imageUrl });
+			grpcUtils.logRequest(serviceName, methodName, { imageUrl });
 
-			const response = await utilityClient.getProxiedImage({ imageUrl });
+			const response = await utilityClient.getProxiedImage(
+				{ imageUrl },
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
 
-			return response;
-		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
-		}
-	},
-
-	searchTokens: async (params: SearchTokensRequest): Promise<SearchTokensResponse> => {
-		const serviceName = 'CoinService';
-		const methodName = 'search';
-		try {
-			logRequest(serviceName, methodName, params);
-
-			const response = await coinClient.search({
-				query: params.query,
-				tags: params.tags || [],
-				minVolume24h: params.minVolume24h || 0,
-				limit: params.limit || 20,
-				offset: params.offset || 0,
-				sortBy: params.sortBy || '',
-				sortDesc: params.sortDesc || false
-			}, { headers: getRequestHeaders() });
-
-			logResponse(serviceName, methodName, response);
+			// grpcUtils.logResponse(serviceName, methodName, response);
 
 			return {
-				tokens: response.tokens.map((token: TokenInfo) => ({
-					mintAddress: token.mintAddress,
-					symbol: token.symbol,
-					name: token.name,
-					decimals: token.decimals,
-					logoURI: token.logoUri,
-					coingeckoId: token.coingeckoId,
-					priceUSD: token.priceUsd,
-					marketCapUSD: token.marketCapUsd,
-					volume24h: token.volume24h,
-					priceChange24h: token.priceChange24h,
-					lastUpdatedAt: token.lastUpdatedAt ? new Date(Number(token.lastUpdatedAt)).toISOString() : '',
-					tags: [] // TokenInfo doesn't have tags, so we return an empty array
-				}))
+				imageData: Buffer.from(response.imageData).toString('base64')
 			};
 		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
-		}
-	},
-
-	searchTokenByMint: async (mintAddress: string): Promise<SearchTokenByMintResponse> => {
-		const serviceName = 'CoinService';
-		const methodName = 'searchTokenByMint';
-		try {
-			logRequest(serviceName, methodName, { mintAddress });
-
-			const response = await coinClient.searchTokenByMint({ mintAddress }, { headers: getRequestHeaders() });
-
-			logResponse(serviceName, methodName, response);
-
-			if (!response.token) {
-				return { token: undefined };
-			}
-
-			return {
-				token: {
-					mintAddress: response.token.mintAddress,
-					symbol: response.token.symbol,
-					name: response.token.name,
-					decimals: response.token.decimals,
-					logoURI: response.token.logoUri,
-					coingeckoId: response.token.coingeckoId,
-					priceUSD: response.token.priceUsd,
-					marketCapUSD: response.token.marketCapUsd,
-					volume24h: response.token.volume24h,
-					priceChange24h: response.token.priceChange24h,
-					lastUpdatedAt: response.token.lastUpdatedAt ? new Date(Number(response.token.lastUpdatedAt)).toISOString() : '',
-					tags: [] // TokenInfo doesn't have tags, so we return an empty array
-				}
-			};
-		} catch (error) {
-			return handleGrpcError(error, serviceName, methodName);
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	}
 };
-
-export default grpcApi;

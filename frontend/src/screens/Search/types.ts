@@ -1,20 +1,21 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/types';
-import { Token } from '@/services/grpc/model';
+import { RootStackParamList, Coin } from '@/types';
 
 export type SearchScreenProps = NativeStackScreenProps<RootStackParamList, 'Search'>;
 
 export interface SearchFilters {
+	query: string;
 	tags?: string[];
 	minVolume24h?: number;
+	limit?: number;
+	offset?: number;
 	sortBy?: string;
 	sortDesc?: boolean;
 }
 
 export interface SearchState {
-	query: string;
-	tokens: Token[];
-	isLoading: boolean;
-	error?: string;
+	loading: boolean;
+	error: string | null;
+	results: Coin[];
 	filters: SearchFilters;
 } 

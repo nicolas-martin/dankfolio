@@ -1,14 +1,25 @@
 import { SearchFilters } from './types';
-import grpcApi from '@/services/grpcApi';
-import { Token } from '@/services/grpc/model';
+import { grpcApi } from '@/services/grpcApi';
+import { Coin } from '@/types';
 
 export const DEBOUNCE_DELAY = 300; // ms
 
 export const DEFAULT_FILTERS: SearchFilters = {
+	query: '',
 	tags: [],
 	minVolume24h: 0,
-	sortBy: 'volume_24h',
+	sortBy: 'volume',
 	sortDesc: true
+};
+
+export const searchTokens = async (filters: SearchFilters): Promise<Coin[]> => {
+	try {
+		const response = await grpcApi.searchCoins(filters);
+		return response.coins;
+	} catch (error) {
+		console.error('Error searching tokens:', error);
+		throw error;
+	}
 };
 
 export const performSearch = async (
@@ -16,9 +27,9 @@ export const performSearch = async (
 	filters: SearchFilters = DEFAULT_FILTERS,
 	limit: number = 20,
 	offset: number = 0
-): Promise<Token[]> => {
+): Promise<Coin[]> => {
 	try {
-		const response = await grpcApi.searchTokens({
+		const response = await grpcApi.searchCoins({
 			query,
 			tags: filters.tags,
 			minVolume24h: filters.minVolume24h,
@@ -27,7 +38,7 @@ export const performSearch = async (
 			sortBy: filters.sortBy,
 			sortDesc: filters.sortDesc
 		});
-		return response.tokens;
+		return response.coins;
 	} catch (error) {
 		console.error('Search error:', error);
 		throw error;
@@ -64,6 +75,11 @@ export const formatPriceChange = (change: number): string => {
 	return `${sign}${change.toFixed(2)}%`;
 };
 
-export const getTokenLogoURI = (token: Token): string => {
-	return token.logoURI || 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+export const getTokenLogoURI = (token: Coin): string => {
+	return token.iconUrl || '';
+};
+
+export const formatTokenBalance = (balance: number, decimals: number): string => {
+	if (!balance) return '0';
+	return (balance / Math.pow(10, decimals)).toFixed(decimals);
 }; 

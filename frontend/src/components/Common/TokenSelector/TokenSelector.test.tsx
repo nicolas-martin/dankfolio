@@ -35,16 +35,43 @@ const renderWithProvider = (component: React.ReactElement) => {
 
 describe('TokenSelector', () => {
 	const mockCoin: Coin = {
-		id: 'bitcoin',
-		symbol: 'BTC',
-		name: 'Bitcoin',
-		icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/bitcoin/logo.png',
-		price: 50000,
-		decimals: 8,
-		description: 'Bitcoin description',
-		tags: ['cryptocurrency'],
-		daily_volume: 1000000,
-		created_at: new Date().toISOString(),
+		mintAddress: "So11111111111111111111111111111111111111112",
+		name: "Solana",
+		symbol: "SOL",
+		iconUrl: "https://example.com/sol.png",
+		decimals: 9,
+		price: 150.0,
+		description: "Solana Blockchain",
+		website: "https://solana.com",
+		twitter: "https://twitter.com/solana",
+		telegram: "",
+		dailyVolume: 5e9,
+		tags: ["layer-1"],
+		createdAt: new Date("2024-01-01T00:00:00Z"),
+	};
+
+	const mockEthCoin: Coin = {
+		mintAddress: "So11111111111111111111111111111111111111113",
+		name: "Ethereum",
+		symbol: "ETH",
+		iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/ethereum/logo.png",
+		decimals: 18,
+		price: 3000,
+		description: "Ethereum Blockchain",
+		website: "https://ethereum.org",
+		twitter: "https://twitter.com/ethereum",
+		telegram: "",
+		dailyVolume: 500000,
+		createdAt: new Date("2024-01-01T00:00:00Z"),
+		tags: ["cryptocurrency"],
+	};
+
+	const mockPortfolioToken = {
+		mintAddress: mockCoin.mintAddress,
+		amount: 1.5,
+		price: mockCoin.price,
+		value: 1.5 * mockCoin.price,
+		coin: mockCoin
 	};
 
 	const mockOnSelectToken = jest.fn();
@@ -85,7 +112,7 @@ describe('TokenSelector', () => {
 					testID="token-selector-button"
 				/>
 			);
-			expect(getByText('BTC')).toBeTruthy();
+			expect(getByText('SOL')).toBeTruthy();
 		});
 
 		it('renders amount input when onAmountChange is provided', () => {
@@ -102,19 +129,22 @@ describe('TokenSelector', () => {
 
 		it('switches between different tokens correctly', async () => {
 			const mockEthCoin: Coin = {
-				id: 'ethereum',
-				symbol: 'ETH',
-				name: 'Ethereum',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/ethereum/logo.png',
-				price: 3000,
+				mintAddress: "So11111111111111111111111111111111111111113",
+				name: "Ethereum",
+				symbol: "ETH",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/ethereum/logo.png",
 				decimals: 18,
-				description: 'Ethereum description',
-				tags: ['cryptocurrency'],
-				daily_volume: 500000,
-				created_at: new Date().toISOString(),
+				price: 3000,
+				description: "Ethereum Blockchain",
+				website: "https://ethereum.org",
+				twitter: "https://twitter.com/ethereum",
+				telegram: "",
+				dailyVolume: 500000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["cryptocurrency"],
 			};
 
-			// Mock available coins to include both BTC and ETH
+			// Mock available coins to include both SOL and ETH
 			(useCoinStore as unknown as jest.Mock).mockReturnValue({
 				availableCoins: [mockCoin, mockEthCoin]
 			});
@@ -136,62 +166,68 @@ describe('TokenSelector', () => {
 				jest.runAllTimers();
 			});
 
-			// Search for BTC
+			// Search for SOL
 			const searchInput = getByPlaceholderText('Search tokens');
 			await act(async () => {
-				fireEvent.changeText(searchInput, 'BTC');
+				fireEvent.changeText(searchInput, 'SOL');
 				jest.runAllTimers();
 			});
 
-			// Select BTC from the list
+			// Select SOL from the list
 			await act(async () => {
-				fireEvent.press(getByText('Bitcoin'));
+				fireEvent.press(getByText('Solana'));
 				jest.runAllTimers();
 			});
 
-			// Verify BTC is now selected
-			expect(getByText('BTC')).toBeTruthy();
+			// Verify SOL is now selected
+			expect(getByText('SOL')).toBeTruthy();
 
-			// Verify onSelectToken was called with BTC
+			// Verify onSelectToken was called with SOL
 			expect(mockOnSelectToken).toHaveBeenCalledWith(mockCoin);
 		});
 
 		it('filters tokens based on showOnlyPortfolioTokens flag', async () => {
 			const mockEthCoin: Coin = {
-				id: 'ethereum',
-				symbol: 'ETH',
-				name: 'Ethereum',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/ethereum/logo.png',
-				price: 3000,
+				mintAddress: "So11111111111111111111111111111111111111113",
+				name: "Ethereum",
+				symbol: "ETH",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/ethereum/logo.png",
 				decimals: 18,
-				description: 'Ethereum description',
-				tags: ['cryptocurrency'],
-				daily_volume: 500000,
-				created_at: new Date().toISOString(),
+				price: 3000,
+				description: "Ethereum Blockchain",
+				website: "https://ethereum.org",
+				twitter: "https://twitter.com/ethereum",
+				telegram: "",
+				dailyVolume: 500000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["cryptocurrency"],
 			};
 
 			const mockSolCoin: Coin = {
-				id: 'solana',
-				symbol: 'SOL',
-				name: 'Solana',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/solana/logo.png',
-				price: 100,
+				mintAddress: "So11111111111111111111111111111111111111114",
+				name: "Solana",
+				symbol: "SOL",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/solana/logo.png",
 				decimals: 9,
-				description: 'Solana description',
-				tags: ['cryptocurrency'],
-				daily_volume: 200000,
-				created_at: new Date().toISOString(),
+				price: 100,
+				description: "Solana Blockchain",
+				website: "https://solana.com",
+				twitter: "https://twitter.com/solana",
+				telegram: "",
+				dailyVolume: 200000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["cryptocurrency"],
 			};
 
-			// Mock store with portfolio containing only BTC and ETH
+			// Mock store with portfolio containing only SOL and ETH
 			(usePortfolioStore as unknown as jest.Mock).mockReturnValue({
 				tokens: [
-					{ id: 'bitcoin', coin: mockCoin, amount: 1.5, price: mockCoin.price, value: 1.5 * mockCoin.price },
-					{ id: 'ethereum', coin: mockEthCoin, amount: 10, price: mockEthCoin.price, value: 10 * mockEthCoin.price }
+					{ mintAddress: mockCoin.mintAddress, coin: mockCoin, amount: 1.5, price: mockCoin.price, value: 1.5 * mockCoin.price },
+					{ mintAddress: mockEthCoin.mintAddress, coin: mockEthCoin, amount: 10, price: mockEthCoin.price, value: 10 * mockEthCoin.price }
 				]
 			});
 
-			// Mock available coins to include BTC, ETH, and SOL
+			// Mock available coins to include SOL, ETH, and SOL
 			(useCoinStore as unknown as jest.Mock).mockReturnValue({
 				availableCoins: [mockCoin, mockEthCoin, mockSolCoin]
 			});
@@ -212,9 +248,8 @@ describe('TokenSelector', () => {
 			});
 
 			// Verify all tokens are visible
-			expect(getAllTokensGetByText('Bitcoin')).toBeTruthy();
-			expect(getAllTokensGetByText('Ethereum')).toBeTruthy();
 			expect(getAllTokensGetByText('Solana')).toBeTruthy();
+			expect(getAllTokensGetByText('Ethereum')).toBeTruthy();
 
 			// Close the modal
 			await act(async () => {
@@ -243,7 +278,7 @@ describe('TokenSelector', () => {
 			});
 
 			// Verify only portfolio tokens are visible
-			expect(getAllTokensGetByText('Bitcoin')).toBeTruthy();
+			expect(getAllTokensGetByText('Solana')).toBeTruthy();
 			expect(getAllTokensGetByText('Ethereum')).toBeTruthy();
 			expect(getAllTokensQueryByText('Solana')).toBeNull();
 		});
@@ -251,59 +286,68 @@ describe('TokenSelector', () => {
 		it('correctly extracts and displays coin info from PortfolioTokens', async () => {
 			// Create more test coins
 			const mockDogeCoin: Coin = {
-				id: 'dogecoin',
-				symbol: 'DOGE',
-				name: 'Dogecoin',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/dogecoin/logo.png',
-				price: 0.1,
+				mintAddress: "So11111111111111111111111111111111111111115",
+				name: "Dogecoin",
+				symbol: "DOGE",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/dogecoin/logo.png",
 				decimals: 8,
-				description: 'Much wow',
-				tags: ['meme'],
-				daily_volume: 100000,
-				created_at: new Date().toISOString(),
+				price: 0.1,
+				description: "Much wow",
+				website: "",
+				twitter: "",
+				telegram: "",
+				dailyVolume: 100000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["meme"],
 			};
 
 			const mockShibaCoin: Coin = {
-				id: 'shiba',
-				symbol: 'SHIB',
-				name: 'Shiba Inu',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/shiba-inu/logo.png',
-				price: 0.00001,
+				mintAddress: "So11111111111111111111111111111111111111116",
+				name: "Shiba Inu",
+				symbol: "SHIB",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/shiba-inu/logo.png",
 				decimals: 8,
-				description: 'Very meme',
-				tags: ['meme'],
-				daily_volume: 50000,
-				created_at: new Date().toISOString(),
+				price: 0.00001,
+				description: "Very meme",
+				website: "",
+				twitter: "",
+				telegram: "",
+				dailyVolume: 50000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["meme"],
 			};
 
 			const mockArbCoin: Coin = {
-				id: 'arbitrum',
-				symbol: 'ARB',
-				name: 'Arbitrum',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/arbitrum/logo.png',
-				price: 1.5,
+				mintAddress: "So11111111111111111111111111111111111111117",
+				name: "Arbitrum",
+				symbol: "ARB",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/arbitrum/logo.png",
 				decimals: 18,
-				description: 'L2 scaling',
-				tags: ['l2'],
-				daily_volume: 200000,
-				created_at: new Date().toISOString(),
+				price: 1.5,
+				description: "L2 scaling",
+				website: "",
+				twitter: "",
+				telegram: "",
+				dailyVolume: 200000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["l2"],
 			};
 
-			// Create portfolio with BTC and DOGE only
+			// Create portfolio with SOL and DOGE only
 			const portfolioTokens = [
 				{
-					id: 'bitcoin',
+					mintAddress: mockCoin.mintAddress,
 					coin: mockCoin,
 					amount: 1.5,
 					price: mockCoin.price,
 					value: 1.5 * mockCoin.price
 				},
 				{
-					id: 'dogecoin',
-					coin: mockDogeCoin,
-					amount: 10000,
-					price: mockDogeCoin.price,
-					value: 10000 * mockDogeCoin.price
+					mintAddress: mockEthCoin.mintAddress,
+					coin: mockEthCoin,
+					amount: 10,
+					price: mockEthCoin.price,
+					value: 10 * mockEthCoin.price
 				}
 			];
 
@@ -330,12 +374,12 @@ describe('TokenSelector', () => {
 			});
 
 			// Verify portfolio tokens are shown
-			expect(getByText('BTC')).toBeTruthy();
-			expect(getByText('Bitcoin')).toBeTruthy();
+			expect(getByText('SOL')).toBeTruthy();
+			expect(getByText('Solana')).toBeTruthy();
 			expect(getByText('DOGE')).toBeTruthy();
 			expect(getByText('Dogecoin')).toBeTruthy();
 			expect(queryByText('1.5')).toBeTruthy();
-			expect(queryByText('10000')).toBeTruthy();
+			expect(queryByText('10')).toBeTruthy();
 
 			// Verify non-portfolio tokens are NOT shown
 			expect(queryByText('SHIB')).toBeNull();
@@ -347,59 +391,68 @@ describe('TokenSelector', () => {
 		it('shows all available coins when showOnlyPortfolioTokens is false', async () => {
 			// Create more test coins
 			const mockDogeCoin: Coin = {
-				id: 'dogecoin',
-				symbol: 'DOGE',
-				name: 'Dogecoin',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/dogecoin/logo.png',
-				price: 0.1,
+				mintAddress: "So11111111111111111111111111111111111111115",
+				name: "Dogecoin",
+				symbol: "DOGE",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/dogecoin/logo.png",
 				decimals: 8,
-				description: 'Much wow',
-				tags: ['meme'],
-				daily_volume: 100000,
-				created_at: new Date().toISOString(),
+				price: 0.1,
+				description: "Much wow",
+				website: "",
+				twitter: "",
+				telegram: "",
+				dailyVolume: 100000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["meme"],
 			};
 
 			const mockShibaCoin: Coin = {
-				id: 'shiba',
-				symbol: 'SHIB',
-				name: 'Shiba Inu',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/shiba-inu/logo.png',
-				price: 0.00001,
+				mintAddress: "So11111111111111111111111111111111111111116",
+				name: "Shiba Inu",
+				symbol: "SHIB",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/shiba-inu/logo.png",
 				decimals: 8,
-				description: 'Very meme',
-				tags: ['meme'],
-				daily_volume: 50000,
-				created_at: new Date().toISOString(),
+				price: 0.00001,
+				description: "Very meme",
+				website: "",
+				twitter: "",
+				telegram: "",
+				dailyVolume: 50000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["meme"],
 			};
 
 			const mockArbCoin: Coin = {
-				id: 'arbitrum',
-				symbol: 'ARB',
-				name: 'Arbitrum',
-				icon_url: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/arbitrum/logo.png',
-				price: 1.5,
+				mintAddress: "So11111111111111111111111111111111111111117",
+				name: "Arbitrum",
+				symbol: "ARB",
+				iconUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/arbitrum/logo.png",
 				decimals: 18,
-				description: 'L2 scaling',
-				tags: ['l2'],
-				daily_volume: 200000,
-				created_at: new Date().toISOString(),
+				price: 1.5,
+				description: "L2 scaling",
+				website: "",
+				twitter: "",
+				telegram: "",
+				dailyVolume: 200000,
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+				tags: ["l2"],
 			};
 
-			// Create portfolio with BTC and DOGE only
+			// Create portfolio with SOL and DOGE only
 			const portfolioTokens = [
 				{
-					id: 'bitcoin',
+					mintAddress: mockCoin.mintAddress,
 					coin: mockCoin,
 					amount: 1.5,
 					price: mockCoin.price,
 					value: 1.5 * mockCoin.price
 				},
 				{
-					id: 'dogecoin',
-					coin: mockDogeCoin,
-					amount: 10000,
-					price: mockDogeCoin.price,
-					value: 10000 * mockDogeCoin.price
+					mintAddress: mockEthCoin.mintAddress,
+					coin: mockEthCoin,
+					amount: 10,
+					price: mockEthCoin.price,
+					value: 10 * mockEthCoin.price
 				}
 			];
 
@@ -426,8 +479,8 @@ describe('TokenSelector', () => {
 			});
 
 			// Verify ALL coins are shown, regardless of portfolio status
-			expect(getByText('BTC')).toBeTruthy(); // In portfolio
-			expect(getByText('Bitcoin')).toBeTruthy();
+			expect(getByText('SOL')).toBeTruthy(); // In portfolio
+			expect(getByText('Solana')).toBeTruthy();
 			expect(getByText('DOGE')).toBeTruthy(); // In portfolio
 			expect(getByText('Dogecoin')).toBeTruthy();
 			expect(getByText('SHIB')).toBeTruthy(); // Not in portfolio
@@ -437,7 +490,7 @@ describe('TokenSelector', () => {
 
 			// Verify portfolio amounts are still shown for portfolio tokens
 			expect(queryByText('1.5')).toBeTruthy();
-			expect(queryByText('10000')).toBeTruthy();
+			expect(queryByText('10')).toBeTruthy();
 		});
 	});
 
@@ -480,10 +533,10 @@ describe('TokenSelector', () => {
 			fireEvent.press(getByTestId('token-selector-button'));
 			const searchInput = getByPlaceholderText('Search tokens');
 			await act(async () => {
-				fireEvent.changeText(searchInput, 'BTC');
+				fireEvent.changeText(searchInput, 'SOL');
 			});
 
-			expect(getByText('Bitcoin')).toBeTruthy();
+			expect(getByText('Solana')).toBeTruthy();
 		});
 	});
 
@@ -514,7 +567,7 @@ describe('TokenSelector', () => {
 		describe('calculateUsdValue', () => {
 			it('calculates correct USD value', () => {
 				const result = calculateUsdValue(mockCoin, '2');
-				expect(result).toBe('100000.00');
+				expect(result).toBe('300.00');
 			});
 
 			it('returns 0.00 for invalid inputs', () => {
@@ -526,14 +579,14 @@ describe('TokenSelector', () => {
 		describe('findPortfolioToken', () => {
 			const portfolioTokens = [
 				{
-					id: 'bitcoin',
+					mintAddress: mockCoin.mintAddress,
 					coin: mockCoin,
 					amount: 1.5,
 					price: mockCoin.price,
 					value: 1.5 * mockCoin.price
 				},
 				{
-					id: 'ethereum',
+					mintAddress: mockEthCoin.mintAddress,
 					coin: { ...mockCoin, id: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
 					amount: 10,
 					price: 3000,
@@ -548,7 +601,7 @@ describe('TokenSelector', () => {
 
 			it('returns undefined when token not found', () => {
 				const result = findPortfolioToken(
-					{ ...mockCoin, id: 'nonexistent' },
+					{ ...mockCoin, mintAddress: 'nonexistent' },
 					portfolioTokens
 				);
 				expect(result).toBeUndefined();

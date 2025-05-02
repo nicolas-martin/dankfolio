@@ -16,8 +16,7 @@ const (
 	defaultCacheExpiry = 5 * time.Minute
 	coinCachePrefix    = "coin:"
 	tradeCachePrefix   = "trade:"
-	tokenCachePrefix   = "token:"
-	tokenCacheFile     = "data/token_cache.json"
+	coinCacheFile      = "data/coin_cache.json"
 )
 
 // Config holds configuration for the memory store
@@ -29,7 +28,6 @@ type Config struct {
 type Store struct {
 	coins  *MemoryRepository[model.Coin]
 	trades *MemoryRepository[model.Trade]
-	tokens *MemoryRepository[model.Token]
 	config Config
 }
 
@@ -45,13 +43,12 @@ func NewWithConfig(config Config) *Store {
 	store := &Store{
 		coins:  NewRepository[model.Coin](coinCachePrefix, config),
 		trades: NewRepository[model.Trade](tradeCachePrefix, config),
-		tokens: NewRepository[model.Token](tokenCachePrefix, config),
 		config: config,
 	}
 
-	// Load token cache from file if it exists
-	if err := store.loadTokenCache(); err != nil {
-		fmt.Printf("Warning: Failed to load token cache: %v\n", err)
+	// Load coin cache from file if it exists
+	if err := store.loadCoinCache(); err != nil {
+		fmt.Printf("Warning: Failed to load coin cache: %v\n", err)
 	}
 
 	return store
@@ -65,11 +62,6 @@ func (s *Store) Coins() db.Repository[model.Coin] {
 // Trades returns the trade repository
 func (s *Store) Trades() db.Repository[model.Trade] {
 	return s.trades
-}
-
-// Tokens returns the token repository
-func (s *Store) Tokens() db.Repository[model.Token] {
-	return s.tokens
 }
 
 // ListTrendingCoins returns only the trending coins
@@ -88,63 +80,63 @@ func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 	return trending, nil
 }
 
-// SearchTokens implements db.Store
-func (s *Store) SearchTokens(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Token, error) {
-	tokens, err := s.tokens.List(ctx)
+// SearchCoins implements db.Store
+func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
+	coins, err := s.coins.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter and sort tokens using the same logic from the file implementation
-	filtered := model.FilterAndSortTokens(tokens, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
+	// Filter and sort coins
+	filtered := model.FilterAndSortCoins(coins, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
 	return filtered, nil
 }
 
-// loadTokenCache loads tokens from the cache file
-func (s *Store) loadTokenCache() error {
-	data, err := os.ReadFile(tokenCacheFile)
+// loadCoinCache loads coins from the cache file
+func (s *Store) loadCoinCache() error {
+	data, err := os.ReadFile(coinCacheFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil // File doesn't exist yet, which is fine
 		}
-		return fmt.Errorf("failed to read token cache: %w", err)
+		return fmt.Errorf("failed to read coin cache: %w", err)
 	}
 
-	var tokens []model.Token
-	if err := json.Unmarshal(data, &tokens); err != nil {
-		return fmt.Errorf("failed to unmarshal token cache: %w", err)
+	var coins []model.Coin
+	if err := json.Unmarshal(data, &coins); err != nil {
+		return fmt.Errorf("failed to unmarshal coin cache: %w", err)
 	}
 
-	// Store tokens in memory
+	// Store coins in memory
 	ctx := context.Background()
-	for i := range tokens {
-		if err := s.tokens.Create(ctx, &tokens[i]); err != nil {
-			return fmt.Errorf("failed to store token in memory: %w", err)
+	for i := range coins {
+		if err := s.coins.Create(ctx, &coins[i]); err != nil {
+			return fmt.Errorf("failed to store coin in memory: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// SaveTokenCache saves the current tokens to the cache file
-func (s *Store) SaveTokenCache() error {
+// SaveCoinCache saves the current coins to the cache file
+func (s *Store) SaveCoinCache() error {
 	ctx := context.Background()
-	tokens, err := s.tokens.List(ctx)
+	coins, err := s.coins.List(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get tokens from memory: %w", err)
+		return fmt.Errorf("failed to get coins from memory: %w", err)
 	}
 
-	data, err := json.Marshal(tokens)
+	data, err := json.Marshal(coins)
 	if err != nil {
-		return fmt.Errorf("failed to marshal tokens: %w", err)
+		return fmt.Errorf("failed to marshal coins: %w", err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(tokenCacheFile), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(coinCacheFile), 0755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
-	if err := os.WriteFile(tokenCacheFile, data, 0644); err != nil {
-		return fmt.Errorf("failed to write token cache: %w", err)
+	if err := os.WriteFile(coinCacheFile, data, 0644); err != nil {
+		return fmt.Errorf("failed to write coin cache: %w", err)
 	}
 
 	return nil

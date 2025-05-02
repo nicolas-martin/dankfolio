@@ -2,20 +2,21 @@
 import { Coin, Wallet } from '@/types';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 
-import grpcApi from '@/services/grpcApi';
+import { grpcApi } from '@/services/grpcApi';
 import { buildAndSignSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
 import { usePortfolioStore } from '@/store/portfolio'; // Import portfolio store for balance refresh
 import type { ToastProps } from '@/components/Common/Toast/toast_types'; // Use ToastProps
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
+import { SOLANA_ADDRESS } from '@/utils/constants';
 
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 1000
 
 // Function to get prices for multiple tokens in a single API call
-export const getTokenPrices = async (tokenIds: string[]): Promise<Record<string, number>> => {
+export const getCoinPrices = async (mintAddresses: string[]): Promise<Record<string, number>> => {
 	try {
-		const prices = await grpcApi.getTokenPrices(tokenIds);
+		const prices = await grpcApi.getCoinPrices(mintAddresses);
 		return prices;
 	} catch (error) {
 		console.error('❌ Error fetching token prices:', error);
@@ -39,9 +40,9 @@ export const fetchTradeQuote = async (
 		setQuoteLoading(true);
 
 		// Get latest prices for both coins in a single API call
-		const prices = await getTokenPrices([fromCoin.id, toCoin.id]);
-		fromCoin.price = prices[fromCoin.id];
-		toCoin.price = prices[toCoin.id];
+		const prices = await getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]);
+		fromCoin.price = prices[fromCoin.mintAddress];
+		toCoin.price = prices[toCoin.mintAddress];
 
 		const rawAmount = toRawAmount(amount, fromCoin.decimals);
 		console.log('📊 Trade Quote Request:', {
@@ -59,7 +60,7 @@ export const fetchTradeQuote = async (
 			}
 		});
 
-		const response = await grpcApi.getSwapQuote(fromCoin.id, toCoin.id, rawAmount);
+		const response = await grpcApi.getSwapQuote(fromCoin.mintAddress, toCoin.mintAddress, rawAmount);
 		console.log('📬 Trade Quote Response:', response);
 
 		setToAmount(response.estimatedAmount);
@@ -125,8 +126,8 @@ export const signTradeTransaction = async (
 
 	// Build and sign the transaction
 	const signedTransaction = await buildAndSignSwapTransaction(
-		fromCoin.id,
-		toCoin.id,
+		fromCoin.mintAddress,
+		toCoin.mintAddress,
 		rawAmount,
 		slippage,
 		wallet
@@ -141,7 +142,7 @@ export const signTradeTransaction = async (
 // --- New Trade Execution and Polling Functions ---
 
 export const stopPolling = (
-	pollingIntervalRef: React.RefObject<NodeJS.Timeout | null>,
+	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>,
 	setIsLoadingTrade: (loading: boolean) => void
 ) => {
 	if (pollingIntervalRef.current) {
@@ -204,19 +205,18 @@ export const startPolling = (
 	txHash: string,
 	pollFn: () => Promise<void>, // Function that executes one poll
 	stopPollingFn: () => void, // Function to stop polling
-	pollingIntervalRef: React.RefObject<NodeJS.Timeout | null>
+	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>
 ) => {
-	stopPollingFn(); // Clear any previous interval
+	// Clear any existing interval
+	if (pollingIntervalRef.current) {
+		clearInterval(pollingIntervalRef.current);
+	}
 
-	// Initial poll after 1 second delay
-	setTimeout(async () => {
-		await pollFn();
+	// Start polling immediately
+	pollFn();
 
-		// Start regular polling every 3 seconds if not already stopped
-		if (pollingIntervalRef.current === null) { // Check if stopPolling was called during the initial poll
-			pollingIntervalRef.current = setInterval(pollFn, 3000);
-		}
-	}, 1000);
+	// Set up interval for subsequent polls
+	pollingIntervalRef.current = setInterval(pollFn, 3000);
 };
 
 export const executeTrade = async (
@@ -225,7 +225,7 @@ export const executeTrade = async (
 	toCoin: Coin,
 	fromAmount: string,
 	slippage: number,
-	showToast: (params: ToastProps) => void, // Use ToastProps
+	showToast: (params: ToastProps) => void,
 	setIsLoadingTrade: (loading: boolean) => void,
 	setIsConfirmationVisible: (visible: boolean) => void,
 	setPollingStatus: (status: PollingStatus) => void,
@@ -233,19 +233,17 @@ export const executeTrade = async (
 	setPollingError: (error: string | null) => void,
 	setPollingConfirmations: (confirmations: number) => void,
 	setIsStatusModalVisible: (visible: boolean) => void,
-	startPollingFn: (txHash: string) => void // Pass the startPolling function reference
+	startPollingFn: (txHash: string) => void
 ) => {
-	setIsLoadingTrade(true);
-	setIsConfirmationVisible(false); // Close confirmation modal
-	setPollingStatus('pending'); // Initial status for the new modal
-	setSubmittedTxHash(null); // Reset hash
-	setPollingError(null); // Reset error
-	setPollingConfirmations(0); // Reset confirmations
-	setIsStatusModalVisible(true); // Show status modal
-
 	try {
-		// 1. Sign Transaction
-		console.log('Attempting to sign transaction...');
+		setIsLoadingTrade(true);
+		setIsConfirmationVisible(false);
+		setPollingStatus('pending');
+		setPollingError(null);
+		setPollingConfirmations(0);
+		setIsStatusModalVisible(true);
+
+		// Sign the transaction
 		const signedTransaction = await signTradeTransaction(
 			fromCoin,
 			toCoin,
@@ -253,31 +251,30 @@ export const executeTrade = async (
 			slippage,
 			wallet
 		);
-		console.log('Transaction signed successfully.');
 
-		// 2. Submit Transaction
-		console.log('Attempting to submit transaction...');
+		// Submit the signed transaction
 		const submitResponse = await grpcApi.submitSwap({
-			from_coin_id: fromCoin.id,
-			to_coin_id: toCoin.id,
-			amount: parseFloat(fromAmount),
-			signed_transaction: signedTransaction,
+			fromCoinMintAddress: fromCoin.mintAddress,
+			toCoinMintAddress: toCoin.mintAddress,
+			amount: Number(toRawAmount(fromAmount, fromCoin.decimals)),
+			signedTransaction: signedTransaction
 		});
-		console.log('Transaction submitted:', submitResponse);
 
-		if (submitResponse.transaction_hash) {
-			setSubmittedTxHash(submitResponse.transaction_hash);
-			setPollingStatus('polling'); // Move to polling state
-			startPollingFn(submitResponse.transaction_hash); // Start polling using the passed function
+		if (submitResponse.transactionHash) {
+			setSubmittedTxHash(submitResponse.transactionHash);
+			// Start polling using the passed function
+			startPollingFn(submitResponse.transactionHash);
 		} else {
-			throw new Error('Submission did not return a transaction hash.');
+			throw new Error('No transaction hash received');
 		}
 	} catch (error: any) {
-		console.error('Error during trade signing or submission:', error);
-		const errorMessage = error?.message || 'Failed to sign or submit trade';
-		showToast({ type: 'error', message: errorMessage });
+		console.error('❌ Error executing trade:', error);
 		setPollingStatus('failed');
-		setPollingError(errorMessage);
-		setIsLoadingTrade(false); // Stop general loading indicator if needed
+		setPollingError(error?.message || 'Failed to execute trade');
+		setIsLoadingTrade(false);
+		showToast({
+			type: 'error',
+			message: error?.message || 'Failed to execute trade'
+		});
 	}
 };
