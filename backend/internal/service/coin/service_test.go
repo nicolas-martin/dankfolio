@@ -47,14 +47,12 @@ func TestGetCoins(t *testing.T) {
 	// Create test coins
 	testCoins := []model.Coin{
 		{
-			ID:          "coin1",
+			MintAddress: "coin1",
 			Name:        "Test Coin 1",
-			DailyVolume: 1000.0,
+			Volume24h:   1000.0,
 		},
 		{
-			ID:          "coin2",
-			Name:        "Test Coin 2",
-			DailyVolume: 2000.0,
+			Volume24h: 2000.0,
 		},
 	}
 
@@ -81,21 +79,21 @@ func TestGetTrendingCoins(t *testing.T) {
 	// Create test coins
 	testCoins := []model.Coin{
 		{
-			ID:          "coin1",
+			MintAddress: "coin1",
 			Name:        "Test Coin 1",
-			DailyVolume: 1000.0,
+			Volume24h:   1000.0,
 			IsTrending:  true,
 		},
 		{
-			ID:          "coin2",
+			MintAddress: "coin2",
 			Name:        "Test Coin 2",
-			DailyVolume: 2000.0,
+			Volume24h:   2000.0,
 			IsTrending:  false,
 		},
 		{
-			ID:          "coin3",
+			MintAddress: "coin3",
 			Name:        "Test Coin 3",
-			DailyVolume: 3000.0,
+			Volume24h:   3000.0,
 			IsTrending:  true,
 		},
 	}
@@ -130,9 +128,9 @@ func TestGetCoinByID(t *testing.T) {
 	}
 
 	testCoin := model.Coin{
-		ID:          "coin1",
+		MintAddress: "coin1",
 		Name:        "Test Coin 1",
-		DailyVolume: 1000.0,
+		Volume24h:   1000.0,
 		CreatedAt:   time.Now().Format(time.RFC3339),
 	}
 
@@ -147,7 +145,7 @@ func TestGetCoinByID(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, coin)
-		assert.Equal(t, testCoin.ID, coin.ID)
+		assert.Equal(t, testCoin.MintAddress, coin.MintAddress)
 		assert.Equal(t, testCoin.Name, coin.Name)
 		store.AssertExpectations(t)
 	})
@@ -194,7 +192,7 @@ func TestGetCoinByID(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, coin)
-		assert.Equal(t, "newcoin", coin.ID)
+		assert.Equal(t, "newcoin", coin.MintAddress)
 		assert.Equal(t, jupiterInfo.Name, coin.Name)
 		assert.Equal(t, jupiterInfo.Symbol, coin.Symbol)
 		store.AssertExpectations(t)

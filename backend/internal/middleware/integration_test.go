@@ -33,15 +33,15 @@ func newMockCoinServiceHandler(coinService *mockCoinService) *mockCoinServiceHan
 
 // GetCoinByID implements the GetCoinByID RPC method
 func (s *mockCoinServiceHandler) GetCoinByID(ctx context.Context, req *connect.Request[pb.GetCoinByIDRequest]) (*connect.Response[pb.Coin], error) {
-	coin, err := s.coinService.GetCoin(ctx, req.Msg.Id)
+	coin, err := s.coinService.GetCoin(ctx, req.Msg.MintAddress)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
 	return connect.NewResponse(&pb.Coin{
-		Id:     coin.ID,
-		Name:   coin.Name,
-		Symbol: coin.Symbol,
+		MintAddress: coin.MintAddress,
+		Name:        coin.Name,
+		Symbol:      coin.Symbol,
 	}), nil
 }
 
@@ -64,9 +64,9 @@ func (s *mockCoinService) GetCoin(ctx context.Context, id string) (*model.Coin, 
 
 	// If not found, create a new coin
 	coin := model.Coin{
-		ID:     id,
-		Name:   "Test Coin",
-		Symbol: "TEST",
+		MintAddress: id,
+		Name:        "Test Coin",
+		Symbol:      "TEST",
 	}
 
 	// Store in the real DB
@@ -106,7 +106,7 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	// First request - should be a cache miss
 	logBuffer.Reset() // Clear buffer before request
 	start := time.Now()
-	req := connect.NewRequest(&pb.GetCoinByIDRequest{Id: "coin123"})
+	req := connect.NewRequest(&pb.GetCoinByIDRequest{MintAddress: "coin123"})
 	_, err := client.GetCoinByID(context.Background(), req)
 	firstDuration := time.Since(start)
 	if err != nil {
@@ -123,7 +123,7 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	// Second request - should be a cache hit
 	logBuffer.Reset()
 	start = time.Now()
-	req = connect.NewRequest(&pb.GetCoinByIDRequest{Id: "coin123"})
+	req = connect.NewRequest(&pb.GetCoinByIDRequest{MintAddress: "coin123"})
 	_, err = client.GetCoinByID(context.Background(), req)
 	secondDuration := time.Since(start)
 	if err != nil {
@@ -140,7 +140,7 @@ func TestCacheAndLoggerIntegration(t *testing.T) {
 	// Third request with different ID - should be a cache miss
 	logBuffer.Reset()
 	start = time.Now()
-	req = connect.NewRequest(&pb.GetCoinByIDRequest{Id: "coin456"})
+	req = connect.NewRequest(&pb.GetCoinByIDRequest{MintAddress: "coin456"})
 	_, err = client.GetCoinByID(context.Background(), req)
 	thirdDuration := time.Since(start)
 	if err != nil {
