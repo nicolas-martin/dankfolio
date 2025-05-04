@@ -26,6 +26,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	listContainer: {
 		flex: 1,
 	},
+	listContent: {
+		paddingHorizontal: 16,
+	},
 	tokenItem: {
 		flexDirection: 'row',
 		padding: 16,
@@ -41,6 +44,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	tokenInfo: {
 		flex: 1,
+	},
+	tokenDetails: {
+		marginLeft: 12,
 	},
 	tokenNameRow: {
 		flexDirection: 'row',

@@ -11,17 +11,17 @@ service CoinService {
   // GetCoinByID returns a specific coin by ID
   rpc GetCoinByID(GetCoinByIDRequest) returns (Coin);
 
-  // SearchCoinByMint searches for a token by mint address
+  // SearchCoinByMint searches for a coin by mint address
   rpc SearchCoinByMint(SearchCoinByMintRequest) returns (SearchCoinByMintResponse);
 
-  // GetAllCoins returns a list of all available tokens
+  // GetAllCoins returns a list of all available coins
   rpc GetAllCoins(GetAllCoinsRequest) returns (GetAllCoinsResponse);
 
-  // Search allows searching tokens by various criteria
+  // Search allows searching coins by various criteria
   rpc Search(SearchRequest) returns (SearchResponse);
 }
 
-// Coin represents a token or currency (unified definition)
+// Coin represents a coin or currency (unified definition)
 message Coin {
   string mint_address = 1;
   string name = 2;

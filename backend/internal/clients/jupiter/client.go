@@ -29,14 +29,13 @@ const (
 // Client handles interactions with the Jupiter API
 type Client struct {
 	httpClient *http.Client
-	cache      *cache
 }
 
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 type cache struct {
 	sync.RWMutex
-	data        map[string]*TokenListInfo
+	data        map[string]*CoinListInfo
 	lastUpdated time.Time
 }
 
@@ -44,24 +43,11 @@ type cache struct {
 func NewClient(httpClient *http.Client) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
-		cache: &cache{
-			data: make(map[string]*TokenListInfo),
-		},
 	}
 }
 
-// GetTokenInfo fetches detailed information about a token from Jupiter API
-func (c *Client) GetTokenInfo(ctx context.Context, tokenAddress string) (*TokenListInfo, error) {
-	// Check cache first
-	c.cache.RLock()
-	if info, exists := c.cache.data[tokenAddress]; exists {
-		if time.Since(c.cache.lastUpdated) < 1*time.Hour {
-			c.cache.RUnlock()
-			return info, nil
-		}
-	}
-	c.cache.RUnlock()
-
+// GetCoinInfo fetches detailed information about a token from Jupiter API
+func (c *Client) GetCoinInfo(ctx context.Context, tokenAddress string) (*CoinListInfo, error) {
 	url := fmt.Sprintf("%s/tokens/v1/token/%s", baseURL, tokenAddress)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -83,22 +69,16 @@ func (c *Client) GetTokenInfo(ctx context.Context, tokenAddress string) (*TokenL
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var tokenInfo TokenListInfo
+	var tokenInfo CoinListInfo
 	if err := json.Unmarshal(body, &tokenInfo); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal token info: %w", err)
 	}
 
-	// Update cache
-	c.cache.Lock()
-	c.cache.data[tokenAddress] = &tokenInfo
-	c.cache.lastUpdated = time.Now()
-	c.cache.Unlock()
-
 	return &tokenInfo, nil
 }
 
-// GetTokenPrices fetches prices for one or more tokens from Jupiter API
-func (c *Client) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
+// GetCoinPrices fetches prices for one or more tokens from Jupiter API
+func (c *Client) GetCoinPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
 	if len(tokenAddresses) == 0 {
 		return nil, fmt.Errorf("no token addresses provided")
 	}
@@ -142,7 +122,7 @@ func (c *Client) GetTokenPrices(ctx context.Context, tokenAddresses []string) (m
 			continue
 		}
 		prices[addr] = price
-		log.Printf("💰 Token price from Jupiter: %s = %f", addr, price)
+		log.Printf("💰 Coin price from Jupiter: %s = %f", addr, price)
 	}
 
 	return prices, nil
@@ -202,8 +182,8 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 	return &quoteResp, nil
 }
 
-// GetAllTokens fetches all tokens from Jupiter API
-func (c *Client) GetAllTokens(ctx context.Context) (*TokenListResponse, error) {
+// GetAllCoins fetches all tokens from Jupiter API
+func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", tokenListURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -224,19 +204,10 @@ func (c *Client) GetAllTokens(ctx context.Context) (*TokenListResponse, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var tokenList TokenListResponse
+	var tokenList CoinListResponse
 	if err := json.Unmarshal(body, &tokenList); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal token list: %w", err)
 	}
-
-	// Update cache
-	c.cache.Lock()
-	for i := range tokenList.Tokens {
-		token := &tokenList.Tokens[i] // Get pointer to token in slice
-		c.cache.data[token.Address] = token
-	}
-	c.cache.lastUpdated = time.Now()
-	c.cache.Unlock()
 
 	return &tokenList, nil
 }

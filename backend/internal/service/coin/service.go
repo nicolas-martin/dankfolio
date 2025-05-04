@@ -28,7 +28,7 @@ type Service struct {
 
 // NewService creates a new CoinService instance
 func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store) *Service {
-	if config.TrendingTokenPath == "" {
+	if config.TrendingCoinPath == "" {
 		log.Fatal("TrendingTokenPath is required")
 	}
 	if config.SolanaRPCEndpoint == "" {
@@ -139,7 +139,7 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 // loadOrRefreshData checks if the trending data file is fresh. If not, it triggers
 // a scrape and enrichment process before loading the data into the service.
 func (s *Service) loadOrRefreshData(ctx context.Context) error {
-	filePath := s.config.TrendingTokenPath
+	filePath := s.config.TrendingCoinPath
 	info, err := os.Stat(filePath)
 	needsRefresh := true
 
@@ -183,7 +183,7 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 
 // loadEnrichedCoinsFromFile reads and parses the JSON file containing pre-enriched Coin data.
 func (s *Service) loadEnrichedCoinsFromFile() ([]model.Coin, time.Time, error) {
-	filePath := s.config.TrendingTokenPath
+	filePath := s.config.TrendingCoinPath
 	log.Printf("Attempting to load enriched coins from: %s", filePath)
 
 	fileData, err := os.ReadFile(filePath)
@@ -230,6 +230,22 @@ func (s *Service) loadEnrichedCoinsFromFile() ([]model.Coin, time.Time, error) {
 	}
 
 	return fileOutput.Coins, fileOutput.ScrapeTimestamp, nil
+}
+
+func (s *Service) GetAllTokens(ctx context.Context) error {
+	resp, err := s.jupiterClient.GetAllCoins(ctx)
+	if err != nil {
+		return err
+	}
+	for _, v := range resp.Coins {
+		mC := v.ToCoin()
+		err = s.store.Coins().Upsert(ctx, mC)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // SearchCoins searches for coins using the DB's SearchCoins

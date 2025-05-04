@@ -11,7 +11,7 @@ service PriceService {
   // GetPriceHistory returns historical price data for a given address
   rpc GetPriceHistory(GetPriceHistoryRequest) returns (GetPriceHistoryResponse) {}
 
-  // GetCoinPrices returns current prices for multiple tokens
+  // GetCoinPrices returns current prices for multiple coins
   rpc GetCoinPrices(GetCoinPricesRequest) returns (GetCoinPricesResponse) {}
 }
 
@@ -58,12 +58,12 @@ message PriceHistoryItem {
   double value = 2;
 }
 
-// GetCoinPricesRequest is the request for getting token prices
+// GetCoinPricesRequest is the request for getting coin prices
 message GetCoinPricesRequest {
-  repeated string token_ids = 1;
+  repeated string coin_ids = 1;
 }
 
-// GetCoinPricesResponse is the response containing token prices
+// GetCoinPricesResponse is the response containing coin prices
 message GetCoinPricesResponse {
   map<string, double> prices = 1;
 }

@@ -6,7 +6,7 @@ option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/da
 
 // WalletService provides operations for managing Solana wallets
 service WalletService {
-  // GetWalletBalances returns the balances for all tokens in a wallet
+  // GetWalletBalances returns the balances for all coins in a wallet
   rpc GetWalletBalances(GetWalletBalancesRequest) returns (GetWalletBalancesResponse);
 
   // CreateWallet generates a new Solana wallet
@@ -19,7 +19,7 @@ service WalletService {
   rpc SubmitTransfer(SubmitTransferRequest) returns (SubmitTransferResponse);
 }
 
-// Balance represents information about a token balance
+// Balance represents information about a coin balance
 message Balance {
   string id = 1;           // Coin mint address or identifier
   double amount = 2;       // Coin amount
@@ -27,7 +27,7 @@ message Balance {
 
 // WalletBalance represents a wallet's complete balance
 message WalletBalance {
-  repeated Balance balances = 1;  // List of token balances
+  repeated Balance balances = 1;  // List of coin balances
 }
 
 // GetWalletBalancesRequest is the request for GetWalletBalances
@@ -56,7 +56,7 @@ message CreateWalletResponse {
 message PrepareTransferRequest {
   string from_address = 1;
   string to_address = 2;
-  string token_mint = 3;  // Optional, empty for SOL
+  string coin_mint = 3;  // Optional, empty for SOL
   double amount = 4;
 }
 

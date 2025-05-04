@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -86,6 +87,7 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Loaded %d coins from memory", len(coins))
 
 	// Filter and sort coins
 	filtered := model.FilterAndSortCoins(coins, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
@@ -131,11 +133,11 @@ func (s *Store) SaveCoinCache() error {
 		return fmt.Errorf("failed to marshal coins: %w", err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(coinCacheFile), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(coinCacheFile), 0o755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
-	if err := os.WriteFile(coinCacheFile, data, 0644); err != nil {
+	if err := os.WriteFile(coinCacheFile, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write coin cache: %w", err)
 	}
 

@@ -18,7 +18,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
-	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
@@ -31,6 +31,7 @@ type Config struct {
 	BirdEyeAPIKey     string
 	CoinGeckoAPIKey   string
 	GRPCPort          int
+	DBURL             string
 	CacheExpiry       time.Duration
 }
 
@@ -56,6 +57,7 @@ func loadConfig() (*Config, error) {
 		BirdEyeEndpoint:   os.Getenv("BIRDEYE_ENDPOINT"),
 		BirdEyeAPIKey:     os.Getenv("BIRDEYE_API_KEY"),
 		CoinGeckoAPIKey:   os.Getenv("COINGECKO_API_KEY"),
+		DBURL:             os.Getenv("DB_URL"),
 		GRPCPort:          9000, // Default value
 		CacheExpiry:       cacheExpiry,
 	}
@@ -71,6 +73,9 @@ func loadConfig() (*Config, error) {
 	}
 	if config.BirdEyeAPIKey == "" {
 		missingVars = append(missingVars, "BIRDEYE_API_KEY")
+	}
+	if config.DBURL == "" {
+		missingVars = append(missingVars, "DB_URL")
 	}
 
 	if len(missingVars) > 0 {
@@ -105,9 +110,10 @@ func main() {
 	offchainClient := offchain.NewClient(httpClient)
 
 	// Initialize store with configured cache expiry
-	store := memory.NewWithConfig(memory.Config{
-		DefaultCacheExpiry: config.CacheExpiry,
-	})
+	store, err := postgres.NewStore(config.DBURL, true)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
 
 	// Initialize coin service
 	wd, _ := os.Getwd()
@@ -115,7 +121,7 @@ func main() {
 		BirdEyeBaseURL:    config.BirdEyeEndpoint,
 		BirdEyeAPIKey:     config.BirdEyeAPIKey,
 		CoinGeckoAPIKey:   config.CoinGeckoAPIKey,
-		TrendingTokenPath: filepath.Join(wd, "data/trending_solana_tokens_enriched.json"),
+		TrendingCoinPath: filepath.Join(wd, "data/trending_solana_tokens_enriched.json"),
 		SolanaRPCEndpoint: config.SolanaRPCEndpoint,
 	}
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)

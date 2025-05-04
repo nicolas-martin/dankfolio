@@ -35,7 +35,7 @@ func (s *Service) EnrichCoinData(
 
 	// 1. Get Jupiter data for basic info & price (overwrites initial values if found)
 	log.Printf("EnrichCoinData: Fetching Jupiter token info for %s", mintAddress)
-	jupiterInfo, err := s.jupiterClient.GetTokenInfo(ctx, mintAddress)
+	jupiterInfo, err := s.jupiterClient.GetCoinInfo(ctx, mintAddress)
 	jupiterInfoSuccess := err == nil
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Failed to get Jupiter info for %s: %v. Continuing enrichment.", mintAddress, err)
@@ -65,7 +65,7 @@ func (s *Service) EnrichCoinData(
 
 	// 2. Get price from Jupiter (even if GetTokenInfo failed, price might work)
 	log.Printf("EnrichCoinData: Fetching Jupiter price for %s", mintAddress)
-	prices, err := s.jupiterClient.GetTokenPrices(ctx, []string{mintAddress})
+	prices, err := s.jupiterClient.GetCoinPrices(ctx, []string{mintAddress})
 	jupiterPriceSuccess := err == nil
 	if err != nil {
 		log.Printf("WARN: EnrichCoinData: Error fetching price for %s: %v", mintAddress, err)

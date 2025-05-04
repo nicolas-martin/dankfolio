@@ -1,71 +1,72 @@
 {
-  "scrapeTimestamp": "2025-05-02T18:23:15.959096Z",
+  "scrapeTimestamp": "2025-05-04T17:51:52.276876Z",
   "coins": [
     {
-      "mint_address": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
-      "name": "TROLL",
-      "symbol": "TROLL",
+      "mint_address": "5VsVZBRZ34bf6LbpsJ5kwZZUFii5Gj2xKVc5BgRGpump",
+      "name": "MegaFuckingEuphoriaRetardSender",
+      "symbol": "MFERS",
       "decimals": 6,
-      "description": "TROLL (TROLL) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmWV8QgmH1gSw41yapzsFwkC8yPbzoSreAcJbzqfvo2sVq",
-      "tags": [
-        "community-assist",
-        "verified"
-      ],
-      "price": 0.02706,
-      "volume24h": 11480000,
-      "created_at": "2025-05-02T14:22:44-04:00",
-      "last_updated": "2025-05-02T14:22:44-04:00"
-    },
-    {
-      "mint_address": "AFMyfmGLmZ7VGfqbQ3aUaHtNQnH3mE4T1foJyimppump",
-      "name": "Before GTA6",
-      "symbol": "BeforeGTA6",
-      "decimals": 6,
-      "description": "Before GTA6 (BeforeGTA6) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmQP6o8nJjs6x5oKmERytJLPihHZjMNqMRSY3o4ZgiMMsi",
+      "description": "Mega. Fucking. Euphoria. Retard. Sender. MFER.",
+      "icon_url": "https://ipfs.io/ipfs/QmestPP6VuJi1H8ptAts3T9v9CQXatSztpmr882vF2WkaR",
       "tags": [
         "launchpad",
         "unknown"
       ],
-      "price": 0.00193945,
-      "volume24h": 18680000,
-      "website": "https://www.tiktok.com/discover/before-GTA-6",
-      "created_at": "2025-05-02T14:22:44-04:00",
-      "last_updated": "2025-05-02T14:22:44-04:00"
+      "price": 0.00125103,
+      "volume24h": 5730000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
     },
     {
-      "mint_address": "SWjRWeYMjv9akDkTRjexgGLhHTa2qeBNMEN3UW9pump",
-      "name": "ongodnocapbussinfr",
-      "symbol": "GENZ",
+      "mint_address": "2MVy9drHqSBinPoSyUrUVS19m5u8Cjj3mZcnpYshpump",
+      "name": "NEW USA CITY",
+      "symbol": "Starbase",
       "decimals": 6,
-      "description": "Gen Z is bussin on god no cap fr fr. Sheesh. Aura. Bet.",
-      "icon_url": "https://ipfs.io/ipfs/QmQ2W1yVpDevJToVQwUje6TKnRwsG4BJnkNvh5c8N4kJDW",
+      "description": "NEW USA CITY (Starbase) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmTzpcUL1PTSRD2jJdbiuMCh9yz8fh45KTHgpoWoUVKw97",
       "tags": [
-        "launchpad",
-        "unknown"
+        "unknown",
+        "launchpad"
       ],
-      "price": 0.00366638,
-      "volume24h": 10780000,
-      "created_at": "2025-05-02T14:22:44-04:00",
-      "last_updated": "2025-05-02T14:22:44-04:00"
+      "price": 0.000784906,
+      "volume24h": 11780000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
     },
     {
-      "mint_address": "JmMRbLcKgNCu17yHZDAn4strE5NjmWJ4pCeJ7s7boop",
-      "name": "Boopa",
-      "symbol": "Boopa",
-      "decimals": 9,
-      "description": "Boopa is the trenchers pet",
-      "icon_url": "https://mainnet-boop.s3.us-east-1.amazonaws.com/JmMRbLcKgNCu17yHZDAn4strE5NjmWJ4pCeJ7s7boop/291c2e4d276caed75175e081d11bb55ceeb98cf923022d82514d9c232cbfab55.jpg",
+      "mint_address": "38PgzpJYu2HkiYvV8qePFakB8tuobPdGm2FFEn7Dpump",
+      "name": "New XAI gork",
+      "symbol": "gork",
+      "decimals": 6,
+      "description": "New XAI gork (gork) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmXkHvTBRFMyY5ozYHXcF7JHqqLBTorca3dXAdF3ooD5e3",
       "tags": [
         "launchpad",
         "community-assist",
         "verified"
       ],
-      "price": 0.00637373999,
-      "volume24h": 25290000,
-      "created_at": "2025-05-02T14:22:44-04:00",
-      "last_updated": "2025-05-02T14:22:44-04:00"
+      "price": 0.085173,
+      "volume24h": 88270000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
+    },
+    {
+      "mint_address": "DitHyRMQiSDhn5cnKMJV2CDDt6sVct96YrECiM49pump",
+      "name": "Housecoin",
+      "symbol": "House",
+      "decimals": 6,
+      "description": "The housing market will fail again",
+      "icon_url": "https://ipfs.io/ipfs/QmaGqTXDBUBLMU9xGpT4xzYArJmqFFTo3LAU6wZLepWcWe",
+      "tags": [
+        "launchpad",
+        "community-assist",
+        "verified",
+        "community"
+      ],
+      "price": 0.082947,
+      "volume24h": 30810000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
     },
     {
       "mint_address": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
@@ -80,43 +81,58 @@
         "birdeye-trending",
         "community"
       ],
-      "price": 0.395106323,
-      "volume24h": 76900000,
-      "created_at": "2025-05-02T14:22:44-04:00",
-      "last_updated": "2025-05-02T14:22:44-04:00"
+      "price": 0.368832794,
+      "volume24h": 47600000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
     },
     {
-      "mint_address": "Abp4pr6YHDTtmT2HUH9PZQPt3DGByXhGgi5kQHCppump",
-      "name": "Instead of buying bitcoin",
-      "symbol": "Me in 2009",
+      "mint_address": "4rofaXgSuYt4d2Zc81PKPwc3stYb7Uecq6Fug28Mpump",
+      "name": "May the 4th be with you",
+      "symbol": "May4th",
       "decimals": 6,
-      "description": "Instead of buying bitcoin (Me in 2009) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmeQ24UmGdZrU4iL49ndsbdfbFv3cJiDvoYjCVmDwYbA7m",
+      "description": "May the 4th be with you.",
+      "icon_url": "https://ipfs.io/ipfs/QmYgtxXJyeTrnL6dkEGXFxNYmm9vE3Vexb9n7UJn4VE2zQ",
       "tags": [
         "launchpad",
         "unknown"
       ],
-      "price": 0.000397542,
-      "volume24h": 5120000,
-      "website": "https://x.com/search?q=%22Instead%20of%20buying%20bitcoin%22&src=typed_query&f=top",
-      "created_at": "2025-05-02T14:22:45-04:00",
-      "last_updated": "2025-05-02T14:22:45-04:00"
+      "price": 0.000145745,
+      "volume24h": 3370000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
     },
     {
-      "mint_address": "6EXW1uMsNWX9e69Apw6DfFgnX3cc1AWjsQo75zDepump",
-      "name": "We don't need a job",
-      "symbol": "LockedIn",
+      "mint_address": "3eemkcxo74XnwaEEuiRcUfJfYH9me1HGo4Taw6V2pump",
+      "name": "Shibashi",
+      "symbol": "犬",
       "decimals": 6,
-      "description": "We don't need a job",
-      "icon_url": "https://ipfs.io/ipfs/QmYfnGkdRVpqwVNFErVUrdduHvPvkutM25pqqLpuLi63XR",
+      "description": "Shibashi (犬) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmdkgAWCAfUUvnmshCgsw4HtzXqrLdEhzyx6pXMd35utZh",
       "tags": [
         "launchpad",
         "unknown"
       ],
-      "price": 0.00111562,
-      "volume24h": 3660000,
-      "created_at": "2025-05-02T14:22:45-04:00",
-      "last_updated": "2025-05-02T14:22:45-04:00"
+      "price": 0.000126025,
+      "volume24h": 4010000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
+    },
+    {
+      "mint_address": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
+      "name": "TROLL",
+      "symbol": "TROLL",
+      "decimals": 6,
+      "description": "TROLL (TROLL) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmWV8QgmH1gSw41yapzsFwkC8yPbzoSreAcJbzqfvo2sVq",
+      "tags": [
+        "community-assist",
+        "verified"
+      ],
+      "price": 0.030492,
+      "volume24h": 13100000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
     },
     {
       "mint_address": "Ce2gx9KGXJ6C9Mp5b5x1sn9Mg87JwEbrQby4Zqo3pump",
@@ -130,27 +146,27 @@
         "verified",
         "launchpad"
       ],
-      "price": 0.014579,
-      "volume24h": 10930000,
-      "created_at": "2025-05-02T14:22:45-04:00",
-      "last_updated": "2025-05-02T14:22:45-04:00"
+      "price": 0.013967,
+      "volume24h": 7590000,
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
     },
     {
-      "mint_address": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
-      "name": "Pudgy Penguins",
-      "symbol": "PENGU",
+      "mint_address": "HD8tKPbYp2kctueWh4vkX6Y3673MakpLMWmxg97epump",
+      "name": "hot sauce coin",
+      "symbol": "HOTSAUCE",
       "decimals": 6,
-      "description": "For the people. By the people.",
-      "icon_url": "https://arweave.net/BW67hICaKGd2_wamSB0IQq-x7Xwtmr2oJj1WnWGJRHU",
+      "description": "hot sauce coin",
+      "icon_url": "https://ipfs.io/ipfs/QmTo3fD9GSRWMRKkzzuhVnuGLS1SJQ4ud6enUzhJGnLuA9",
       "tags": [
-        "verified",
-        "birdeye-trending",
-        "community"
+        "launchpad",
+        "unknown"
       ],
-      "price": 0.012293,
-      "volume24h": 20800000,
-      "created_at": "2025-05-02T14:22:45-04:00",
-      "last_updated": "2025-05-02T14:22:45-04:00"
+      "price": 0.00042452,
+      "volume24h": 4019999.9999999995,
+      "website": "https://x.com/blknoiz06/status/1919014473215439168",
+      "created_at": "2025-05-04T13:51:51-04:00",
+      "last_updated": "2025-05-04T13:51:51-04:00"
     }
   ]
 }

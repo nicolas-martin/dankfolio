@@ -21,7 +21,7 @@ import (
 func TestNewService(t *testing.T) {
 	// Setup
 	config := &Config{
-		TrendingTokenPath: "testdata/trending_solana_tokens_enriched.json",
+		TrendingCoinPath:  "testdata/trending_solana_tokens_enriched.json",
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	httpClient := &http.Client{}
@@ -152,7 +152,7 @@ func TestGetCoinByID(t *testing.T) {
 
 	t.Run("Non-existent coin with Jupiter fallback", func(t *testing.T) {
 		// Setup Jupiter mock
-		jupiterInfo := &jupiter.TokenInfoResponse{
+		jupiterInfo := &jupiter.CoinInfoResponse{
 			Name:        "New Coin",
 			Symbol:      "NEW",
 			Decimals:    9,

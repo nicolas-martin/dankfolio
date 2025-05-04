@@ -122,12 +122,12 @@ func (s *priceServiceHandler) GetCoinPrices(
 	ctx context.Context,
 	req *connect.Request[pb.GetCoinPricesRequest],
 ) (*connect.Response[pb.GetCoinPricesResponse], error) {
-	coinIDs := req.Msg.TokenIds
+	coinIDs := req.Msg.CoinIds
 	if len(coinIDs) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no coin IDs provided"))
 	}
 
-	prices, err := s.priceService.GetTokenPrices(ctx, coinIDs)
+	prices, err := s.priceService.GetCoinPrices(ctx, coinIDs)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get coin prices: %w", err))
 	}

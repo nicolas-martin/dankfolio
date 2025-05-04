@@ -47,7 +47,7 @@ func main() {
 
 	// Create service with config for output file
 	config := &coin.Config{
-		TrendingTokenPath: absPath,
+		TrendingCoinPath: absPath,
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	s := coin.NewService(config, httpClient, jupiterClient, store)
@@ -63,5 +63,5 @@ func main() {
 	}
 
 	log.Println("--- Scraping and Enrichment Complete ---")
-	log.Printf("Enriched data saved to: %s", config.TrendingTokenPath)
+	log.Printf("Enriched data saved to: %s", config.TrendingCoinPath)
 }

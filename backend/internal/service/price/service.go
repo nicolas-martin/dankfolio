@@ -151,8 +151,8 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 	}, nil
 }
 
-// GetTokenPrices returns current prices for multiple tokens
-func (s *Service) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
+// GetCoinPrices returns current prices for multiple tokens
+func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
 		// Return mock prices for debug mode
 		mockPrices := make(map[string]float64)
@@ -163,7 +163,7 @@ func (s *Service) GetTokenPrices(ctx context.Context, tokenAddresses []string) (
 	}
 
 	// Get real prices from Jupiter API
-	return s.jupiterClient.GetTokenPrices(ctx, tokenAddresses)
+	return s.jupiterClient.GetCoinPrices(ctx, tokenAddresses)
 }
 
 func loadAddressToSymbol() map[string]string {
@@ -179,15 +179,15 @@ func loadAddressToSymbol() map[string]string {
 			defer file.Close()
 			log.Printf("[DEBUG] Successfully opened trending_solana_tokens_enriched.json")
 			var enriched struct {
-				Tokens []struct {
+				Coins []struct {
 					ID     string `json:"id"`
 					Symbol string `json:"symbol"`
 				} `json:"tokens"`
 			}
 			if err := json.NewDecoder(file).Decode(&enriched); err == nil {
-				log.Printf("[DEBUG] Successfully parsed trending_solana_tokens_enriched.json, found %d tokens", len(enriched.Tokens))
+				log.Printf("[DEBUG] Successfully parsed trending_solana_tokens_enriched.json, found %d tokens", len(enriched.Coins))
 				symbolToAddress = make(map[string]string)
-				for _, t := range enriched.Tokens {
+				for _, t := range enriched.Coins {
 					if t.ID != "" && t.Symbol != "" {
 						symbolToAddress[t.ID] = t.Symbol
 					}

@@ -49,7 +49,7 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 	log.Println("Starting Solana trending token scrape and enrichment process...")
 	startTime := time.Now()
 
-	outputFile := s.config.TrendingTokenPath
+	outputFile := s.config.TrendingCoinPath
 	if outputFile == "" {
 		return fmt.Errorf("ScrapeAndEnrichToFile: output file path (TrendingTokenPath) is not configured")
 	}

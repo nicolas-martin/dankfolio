@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, TextInput, FlatList, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TextInput, FlatList, TouchableOpacity, Text, SafeAreaView } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import { SearchScreenProps, SearchState } from './types';
 import { performSearch, getTokenLogoURI, DEBOUNCE_DELAY } from './scripts';
 import { Coin } from '@/types';
 import { TokenImage } from '@/components/Common/TokenImage';
 import { formatPrice, formatPercentage } from '@/utils/format';
+import { createStyles } from './styles';
 
 const initialState: SearchState = {
 	loading: false,
@@ -21,6 +23,8 @@ const initialState: SearchState = {
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	const [state, setState] = useState<SearchState>(initialState);
+	const theme = useTheme();
+	const styles = createStyles(theme);
 
 	const handleSearch = useCallback(async (query: string) => {
 		setState(prev => ({ ...prev, loading: true, error: null }));
@@ -61,15 +65,14 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 			<View style={styles.tokenInfo}>
 				<TokenImage uri={getTokenLogoURI(item)} size={40} />
 				<View style={styles.tokenDetails}>
-					<Text style={styles.tokenSymbol}>{item.symbol}</Text>
 					<Text style={styles.tokenName}>{item.name}</Text>
+					<Text style={styles.tokenSymbol}>{item.symbol}</Text>
 				</View>
 			</View>
 			<View style={styles.tokenMetrics}>
 				<Text style={styles.tokenPrice}>{formatPrice(item.price)}</Text>
 				<Text style={[
-					styles.tokenChange,
-					{ color: item.percentage && item.percentage >= 0 ? '#4CAF50' : '#F44336' }
+					item.percentage && item.percentage >= 0 ? styles.priceChangePositive : styles.priceChangeNegative
 				]}>
 					{item.percentage ? formatPercentage(item.percentage) : 'N/A'}
 				</Text>
@@ -78,83 +81,35 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	);
 
 	return (
-		<View style={styles.container}>
-			<TextInput
-				style={styles.searchInput}
-				placeholder="Search tokens..."
-				value={state.filters.query}
-				onChangeText={handleQueryChange}
-				autoCapitalize="none"
-				autoCorrect={false}
-			/>
-			{state.error && (
-				<Text style={styles.errorText}>{state.error}</Text>
-			)}
-			<FlatList
-				data={state.results}
-				renderItem={renderItem}
-				keyExtractor={item => item.mintAddress}
-				style={styles.list}
-			/>
-		</View>
+		<SafeAreaView style={styles.safeArea}>
+			<View style={styles.container}>
+				<View style={styles.searchContainer}>
+					<TextInput
+						style={styles.searchInput}
+						placeholder="Search tokens..."
+						value={state.filters.query}
+						onChangeText={handleQueryChange}
+						autoCapitalize="none"
+						autoCorrect={false}
+						placeholderTextColor={theme.colors.onSurfaceVariant}
+					/>
+				</View>
+				{state.error ? (
+					<View style={styles.errorContainer}>
+						<Text style={styles.errorText}>{state.error}</Text>
+					</View>
+				) : (
+					<FlatList
+						data={state.results}
+						renderItem={renderItem}
+						keyExtractor={item => item.mintAddress}
+						style={styles.listContainer}
+						contentContainerStyle={styles.listContent}
+					/>
+				)}
+			</View>
+		</SafeAreaView>
 	);
 };
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#fff',
-		padding: 16
-	},
-	searchInput: {
-		height: 40,
-		borderWidth: 1,
-		borderColor: '#ddd',
-		borderRadius: 8,
-		paddingHorizontal: 16,
-		marginBottom: 16
-	},
-	list: {
-		flex: 1
-	},
-	tokenItem: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: '#eee'
-	},
-	tokenInfo: {
-		flexDirection: 'row',
-		alignItems: 'center'
-	},
-	tokenDetails: {
-		marginLeft: 12
-	},
-	tokenSymbol: {
-		fontSize: 16,
-		fontWeight: 'bold'
-	},
-	tokenName: {
-		fontSize: 14,
-		color: '#666'
-	},
-	tokenMetrics: {
-		alignItems: 'flex-end'
-	},
-	tokenPrice: {
-		fontSize: 16,
-		fontWeight: '500'
-	},
-	tokenChange: {
-		fontSize: 14,
-		marginTop: 4
-	},
-	errorText: {
-		color: '#F44336',
-		marginBottom: 16
-	}
-});
 
 export default SearchScreen; 

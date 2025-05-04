@@ -191,7 +191,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 	}
 
 	// Retrieve token prices using price service
-	prices, err := s.priceService.GetTokenPrices(ctx, feeMintAddresses)
+	prices, err := s.priceService.GetCoinPrices(ctx, feeMintAddresses)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token prices: %w", err)
 	}

@@ -45,7 +45,7 @@ const (
 type PriceServiceClient interface {
 	// GetPriceHistory returns historical price data for a given address
 	GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error)
-	// GetCoinPrices returns current prices for multiple tokens
+	// GetCoinPrices returns current prices for multiple coins
 	GetCoinPrices(context.Context, *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error)
 }
 
@@ -95,7 +95,7 @@ func (c *priceServiceClient) GetCoinPrices(ctx context.Context, req *connect.Req
 type PriceServiceHandler interface {
 	// GetPriceHistory returns historical price data for a given address
 	GetPriceHistory(context.Context, *connect.Request[v1.GetPriceHistoryRequest]) (*connect.Response[v1.GetPriceHistoryResponse], error)
-	// GetCoinPrices returns current prices for multiple tokens
+	// GetCoinPrices returns current prices for multiple coins
 	GetCoinPrices(context.Context, *connect.Request[v1.GetCoinPricesRequest]) (*connect.Response[v1.GetCoinPricesResponse], error)
 }
 

@@ -2,8 +2,14 @@ package db
 
 import (
 	"context"
+	"errors"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+)
+
+// Predefined errors
+var (
+	ErrNotFound = errors.New("record not found")
 )
 
 // Entity represents a storable entity with an ID

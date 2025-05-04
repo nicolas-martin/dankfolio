@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1;dankfoliov1";
 
-// TradeService provides operations for trading tokens on Solana
+// TradeService provides operations for trading coins on Solana
 service TradeService {
   // GetSwapQuote returns a quote for a potential trade
   rpc GetSwapQuote(GetSwapQuoteRequest) returns (GetSwapQuoteResponse);

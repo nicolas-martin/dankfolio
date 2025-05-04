@@ -38,24 +38,24 @@ func (_m *MockClientAPI) EXPECT() *MockClientAPI_Expecter {
 	return &MockClientAPI_Expecter{mock: &_m.Mock}
 }
 
-// GetAllTokens provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) GetAllTokens(ctx context.Context) (*jupiter.TokenListResponse, error) {
+// GetAllCoins provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetAllCoins(ctx context.Context) (*jupiter.CoinListResponse, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAllTokens")
+		panic("no return value specified for GetAllCoins")
 	}
 
-	var r0 *jupiter.TokenListResponse
+	var r0 *jupiter.CoinListResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (*jupiter.TokenListResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (*jupiter.CoinListResponse, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) *jupiter.TokenListResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) *jupiter.CoinListResponse); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*jupiter.TokenListResponse)
+			r0 = ret.Get(0).(*jupiter.CoinListResponse)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -66,30 +66,144 @@ func (_mock *MockClientAPI) GetAllTokens(ctx context.Context) (*jupiter.TokenLis
 	return r0, r1
 }
 
-// MockClientAPI_GetAllTokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAllTokens'
-type MockClientAPI_GetAllTokens_Call struct {
+// MockClientAPI_GetAllCoins_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAllCoins'
+type MockClientAPI_GetAllCoins_Call struct {
 	*mock.Call
 }
 
-// GetAllTokens is a helper method to define mock.On call
+// GetAllCoins is a helper method to define mock.On call
 //   - ctx
-func (_e *MockClientAPI_Expecter) GetAllTokens(ctx interface{}) *MockClientAPI_GetAllTokens_Call {
-	return &MockClientAPI_GetAllTokens_Call{Call: _e.mock.On("GetAllTokens", ctx)}
+func (_e *MockClientAPI_Expecter) GetAllCoins(ctx interface{}) *MockClientAPI_GetAllCoins_Call {
+	return &MockClientAPI_GetAllCoins_Call{Call: _e.mock.On("GetAllCoins", ctx)}
 }
 
-func (_c *MockClientAPI_GetAllTokens_Call) Run(run func(ctx context.Context)) *MockClientAPI_GetAllTokens_Call {
+func (_c *MockClientAPI_GetAllCoins_Call) Run(run func(ctx context.Context)) *MockClientAPI_GetAllCoins_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context))
 	})
 	return _c
 }
 
-func (_c *MockClientAPI_GetAllTokens_Call) Return(tokenListResponse *jupiter.TokenListResponse, err error) *MockClientAPI_GetAllTokens_Call {
-	_c.Call.Return(tokenListResponse, err)
+func (_c *MockClientAPI_GetAllCoins_Call) Return(coinListResponse *jupiter.CoinListResponse, err error) *MockClientAPI_GetAllCoins_Call {
+	_c.Call.Return(coinListResponse, err)
 	return _c
 }
 
-func (_c *MockClientAPI_GetAllTokens_Call) RunAndReturn(run func(ctx context.Context) (*jupiter.TokenListResponse, error)) *MockClientAPI_GetAllTokens_Call {
+func (_c *MockClientAPI_GetAllCoins_Call) RunAndReturn(run func(ctx context.Context) (*jupiter.CoinListResponse, error)) *MockClientAPI_GetAllCoins_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetCoinInfo provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetCoinInfo(ctx context.Context, address string) (*jupiter.CoinListInfo, error) {
+	ret := _mock.Called(ctx, address)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCoinInfo")
+	}
+
+	var r0 *jupiter.CoinListInfo
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*jupiter.CoinListInfo, error)); ok {
+		return returnFunc(ctx, address)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *jupiter.CoinListInfo); ok {
+		r0 = returnFunc(ctx, address)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*jupiter.CoinListInfo)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, address)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClientAPI_GetCoinInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCoinInfo'
+type MockClientAPI_GetCoinInfo_Call struct {
+	*mock.Call
+}
+
+// GetCoinInfo is a helper method to define mock.On call
+//   - ctx
+//   - address
+func (_e *MockClientAPI_Expecter) GetCoinInfo(ctx interface{}, address interface{}) *MockClientAPI_GetCoinInfo_Call {
+	return &MockClientAPI_GetCoinInfo_Call{Call: _e.mock.On("GetCoinInfo", ctx, address)}
+}
+
+func (_c *MockClientAPI_GetCoinInfo_Call) Run(run func(ctx context.Context, address string)) *MockClientAPI_GetCoinInfo_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_GetCoinInfo_Call) Return(coinListInfo *jupiter.CoinListInfo, err error) *MockClientAPI_GetCoinInfo_Call {
+	_c.Call.Return(coinListInfo, err)
+	return _c
+}
+
+func (_c *MockClientAPI_GetCoinInfo_Call) RunAndReturn(run func(ctx context.Context, address string) (*jupiter.CoinListInfo, error)) *MockClientAPI_GetCoinInfo_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetCoinPrices provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetCoinPrices(ctx context.Context, addresses []string) (map[string]float64, error) {
+	ret := _mock.Called(ctx, addresses)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCoinPrices")
+	}
+
+	var r0 map[string]float64
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) (map[string]float64, error)); ok {
+		return returnFunc(ctx, addresses)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) map[string]float64); ok {
+		r0 = returnFunc(ctx, addresses)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]float64)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = returnFunc(ctx, addresses)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClientAPI_GetCoinPrices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCoinPrices'
+type MockClientAPI_GetCoinPrices_Call struct {
+	*mock.Call
+}
+
+// GetCoinPrices is a helper method to define mock.On call
+//   - ctx
+//   - addresses
+func (_e *MockClientAPI_Expecter) GetCoinPrices(ctx interface{}, addresses interface{}) *MockClientAPI_GetCoinPrices_Call {
+	return &MockClientAPI_GetCoinPrices_Call{Call: _e.mock.On("GetCoinPrices", ctx, addresses)}
+}
+
+func (_c *MockClientAPI_GetCoinPrices_Call) Run(run func(ctx context.Context, addresses []string)) *MockClientAPI_GetCoinPrices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]string))
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_GetCoinPrices_Call) Return(stringToFloat64 map[string]float64, err error) *MockClientAPI_GetCoinPrices_Call {
+	_c.Call.Return(stringToFloat64, err)
+	return _c
+}
+
+func (_c *MockClientAPI_GetCoinPrices_Call) RunAndReturn(run func(ctx context.Context, addresses []string) (map[string]float64, error)) *MockClientAPI_GetCoinPrices_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -147,120 +261,6 @@ func (_c *MockClientAPI_GetQuote_Call) Return(quoteResponse *jupiter.QuoteRespon
 }
 
 func (_c *MockClientAPI_GetQuote_Call) RunAndReturn(run func(ctx context.Context, params jupiter.QuoteParams) (*jupiter.QuoteResponse, error)) *MockClientAPI_GetQuote_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetTokenInfo provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) GetTokenInfo(ctx context.Context, tokenAddress string) (*jupiter.TokenListInfo, error) {
-	ret := _mock.Called(ctx, tokenAddress)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetTokenInfo")
-	}
-
-	var r0 *jupiter.TokenListInfo
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*jupiter.TokenListInfo, error)); ok {
-		return returnFunc(ctx, tokenAddress)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *jupiter.TokenListInfo); ok {
-		r0 = returnFunc(ctx, tokenAddress)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*jupiter.TokenListInfo)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, tokenAddress)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockClientAPI_GetTokenInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTokenInfo'
-type MockClientAPI_GetTokenInfo_Call struct {
-	*mock.Call
-}
-
-// GetTokenInfo is a helper method to define mock.On call
-//   - ctx
-//   - tokenAddress
-func (_e *MockClientAPI_Expecter) GetTokenInfo(ctx interface{}, tokenAddress interface{}) *MockClientAPI_GetTokenInfo_Call {
-	return &MockClientAPI_GetTokenInfo_Call{Call: _e.mock.On("GetTokenInfo", ctx, tokenAddress)}
-}
-
-func (_c *MockClientAPI_GetTokenInfo_Call) Run(run func(ctx context.Context, tokenAddress string)) *MockClientAPI_GetTokenInfo_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockClientAPI_GetTokenInfo_Call) Return(tokenListInfo *jupiter.TokenListInfo, err error) *MockClientAPI_GetTokenInfo_Call {
-	_c.Call.Return(tokenListInfo, err)
-	return _c
-}
-
-func (_c *MockClientAPI_GetTokenInfo_Call) RunAndReturn(run func(ctx context.Context, tokenAddress string) (*jupiter.TokenListInfo, error)) *MockClientAPI_GetTokenInfo_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetTokenPrices provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) GetTokenPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
-	ret := _mock.Called(ctx, tokenAddresses)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetTokenPrices")
-	}
-
-	var r0 map[string]float64
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) (map[string]float64, error)); ok {
-		return returnFunc(ctx, tokenAddresses)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) map[string]float64); ok {
-		r0 = returnFunc(ctx, tokenAddresses)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]float64)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []string) error); ok {
-		r1 = returnFunc(ctx, tokenAddresses)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockClientAPI_GetTokenPrices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTokenPrices'
-type MockClientAPI_GetTokenPrices_Call struct {
-	*mock.Call
-}
-
-// GetTokenPrices is a helper method to define mock.On call
-//   - ctx
-//   - tokenAddresses
-func (_e *MockClientAPI_Expecter) GetTokenPrices(ctx interface{}, tokenAddresses interface{}) *MockClientAPI_GetTokenPrices_Call {
-	return &MockClientAPI_GetTokenPrices_Call{Call: _e.mock.On("GetTokenPrices", ctx, tokenAddresses)}
-}
-
-func (_c *MockClientAPI_GetTokenPrices_Call) Run(run func(ctx context.Context, tokenAddresses []string)) *MockClientAPI_GetTokenPrices_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]string))
-	})
-	return _c
-}
-
-func (_c *MockClientAPI_GetTokenPrices_Call) Return(stringToFloat64 map[string]float64, err error) *MockClientAPI_GetTokenPrices_Call {
-	_c.Call.Return(stringToFloat64, err)
-	return _c
-}
-
-func (_c *MockClientAPI_GetTokenPrices_Call) RunAndReturn(run func(ctx context.Context, tokenAddresses []string) (map[string]float64, error)) *MockClientAPI_GetTokenPrices_Call {
 	_c.Call.Return(run)
 	return _c
 }

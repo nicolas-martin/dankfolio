@@ -2,15 +2,17 @@ package jupiter
 
 import (
 	"time"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // PriceResponse represents the response from Jupiter Price API V2
 type PriceResponse struct {
-	Data map[string]TokenData `json:"data"`
+	Data map[string]CoinData `json:"data"`
 }
 
-// TokenData represents price data for a specific token
-type TokenData struct {
+// CoinData represents price data for a specific token
+type CoinData struct {
 	Price     string     `json:"price"`
 	ExtraInfo *ExtraInfo `json:"extraInfo,omitempty"`
 }
@@ -35,8 +37,8 @@ type QuotedPrice struct {
 	SellPrice string `json:"sellPrice,omitempty"`
 }
 
-// TokenInfoResponse represents the response from Jupiter's token info API
-type TokenInfoResponse struct {
+// CoinInfoResponse represents the response from Jupiter's token info API
+type CoinInfoResponse struct {
 	Address     string                 `json:"address"`
 	ChainID     int                    `json:"chainId"`
 	Decimals    int                    `json:"decimals"`
@@ -97,13 +99,13 @@ type QuoteParams struct {
 	AsLegacyTransaction bool   `json:"asLegacyTransaction,omitempty"`
 }
 
-// TokenListResponse represents the response from Jupiter's token list API
-type TokenListResponse struct {
-	Tokens []TokenListInfo `json:"tokens"`
+// CoinListResponse represents the response from Jupiter's token list API
+type CoinListResponse struct {
+	Coins []CoinListInfo `json:"tokens"`
 }
 
-// TokenListInfo represents detailed token information from Jupiter's token list
-type TokenListInfo struct {
+// CoinListInfo represents detailed token information from Jupiter's token list
+type CoinListInfo struct {
 	Address      string                 `json:"address"`
 	ChainID      int                    `json:"chainId"`
 	Decimals     int                    `json:"decimals"`
@@ -119,4 +121,28 @@ type TokenListInfo struct {
 	MarketCapUSD float64                `json:"marketCapUsd,omitempty"`
 	Volume24h    float64                `json:"volume24h,omitempty"`
 	Change24h    float64                `json:"change24h,omitempty"`
+}
+
+// convert to model.Coin
+func (t *CoinListInfo) ToCoin() *model.Coin {
+	return &model.Coin{
+		MintAddress: t.Address,
+		Name:        t.Name,
+		Symbol:      t.Symbol,
+		Decimals:    t.Decimals,
+		Description: "",
+		IconUrl:     t.LogoURI,
+		Tags:        t.Tags,
+		Price:       t.PriceUSD,
+		Change24h:   t.Change24h,
+		MarketCap:   t.MarketCapUSD,
+		Volume24h:   t.Volume24h,
+		Website:     "",
+		Twitter:     "",
+		Telegram:    "",
+		Discord:     "",
+		CreatedAt:   "",
+		LastUpdated: "",
+		IsTrending:  false,
+	}
 }
