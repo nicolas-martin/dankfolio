@@ -2,10 +2,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { View, TextInput, FlatList, SafeAreaView } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { SearchScreenProps, SearchState } from './types';
-import { performSearch, DEBOUNCE_DELAY } from './scripts';
+import { performSearch, DEBOUNCE_DELAY, getEnrichedCoinData, handleCoinNavigation } from './scripts';
 import { Coin } from '@/types';
 import SearchResultItem from '@/components/Common/SearchResultItem';
 import { createStyles } from './styles';
+import { useToast } from '@/components/Common/Toast';
 
 const initialState: SearchState = {
 	loading: false,
@@ -24,6 +25,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	const [state, setState] = useState<SearchState>(initialState);
 	const theme = useTheme();
 	const styles = createStyles(theme);
+	const toast = useToast();
 
 	const handleSearch = useCallback(async (query: string) => {
 		setState(prev => ({ ...prev, loading: true, error: null }));
@@ -59,7 +61,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	const renderItem = ({ item }: { item: Coin }) => (
 		<SearchResultItem
 			coin={item}
-			onPress={(coin) => navigation.navigate('CoinDetail', { coin })}
+			onPress={(coin) => handleCoinNavigation(coin, navigation, toast)}
 			isEnriched={item.price !== undefined && item.dailyVolume !== undefined}
 		/>
 	);

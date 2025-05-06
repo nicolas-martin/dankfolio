@@ -1,8 +1,11 @@
 import { SearchFilters } from './types';
 import { grpcApi } from '@/services/grpcApi';
 import { Coin } from '@/types';
+import { useCoinStore } from '@store/coins';
+import { useToast } from '@/components/Common/Toast';
+import { NavigationProp } from '@react-navigation/native';
 
-export const DEBOUNCE_DELAY = 300; // ms
+export const DEBOUNCE_DELAY = 1000; // ms
 
 export const DEFAULT_FILTERS: SearchFilters = {
 	query: '',
@@ -82,4 +85,44 @@ export const getTokenLogoURI = (token: Coin): string => {
 export const formatTokenBalance = (balance: number, decimals: number): string => {
 	if (!balance) return '0';
 	return (balance / Math.pow(10, decimals)).toFixed(decimals);
+};
+
+export const getEnrichedCoinData = async (coin: Coin): Promise<Coin> => {
+	try {
+		// Get the coin store instance
+		const coinStore = useCoinStore.getState();
+
+		// Try to get enriched data from the store
+		const enrichedCoin = await coinStore.getCoinByID(coin.mintAddress);
+
+		if (!enrichedCoin) {
+			throw new Error(`Failed to get enriched data for coin ${coin.mintAddress}`);
+		}
+
+		// Update the coin in the store
+		coinStore.setCoin(enrichedCoin);
+
+		return enrichedCoin;
+	} catch (error) {
+		console.error(`Error enriching coin data for ${coin.mintAddress}:`, error);
+		throw error;
+	}
+};
+
+export const handleCoinNavigation = async (
+	coin: Coin,
+	navigation: NavigationProp<any>,
+	toast = useToast()
+): Promise<void> => {
+	try {
+		const enrichedCoin = await getEnrichedCoinData(coin);
+		navigation.navigate('CoinDetail', { coin: enrichedCoin });
+	} catch (error) {
+		toast.showToast({
+			type: 'error',
+			message: 'Failed to load coin data',
+			duration: 3000
+		});
+		console.error('Failed to get enriched coin data:', error);
+	}
 }; 
