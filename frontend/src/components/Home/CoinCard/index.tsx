@@ -31,13 +31,19 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 					)}
 					<View style={styles.nameSection}>
 						<Text style={styles.symbol}>{coin.symbol}</Text>
-						{/* <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail"> {coin.name || coin.symbol} </Text> */}
+						{coin.balance !== undefined && (
+							<Text style={styles.balance} numberOfLines={1}>
+								Balance: {formatNumber(coin.balance, false)}
+							</Text>
+						)}
 					</View>
 				</View>
 
 				<View style={styles.rightSection}>
 					<Text style={styles.price} numberOfLines={1}>{formatPrice(Number(coin.price))}</Text>
-					{typeof coin.dailyVolume === 'number' && (
+					{coin.value !== undefined ? (
+						<Text style={styles.volume} numberOfLines={1}>Value: {formatPrice(coin.value)}</Text>
+					) : typeof coin.dailyVolume === 'number' && (
 						<Text style={styles.volume} numberOfLines={1}>Vol: {formatNumber(coin.dailyVolume, true)}</Text>
 					)}
 				</View>

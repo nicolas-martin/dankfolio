@@ -7,7 +7,7 @@ import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } f
 import { CoinDetailScreenNavigationProp } from '@screens/CoinDetail/coindetail_types';
 import { usePortfolioStore } from '@store/portfolio';
 import { createStyles } from './profile_styles';
-import { TokenCard } from './TokenCard';
+import CoinCard from '@/components/Home/CoinCard';
 import {
 	ProfileIcon,
 	WalletIcon,
@@ -130,11 +130,16 @@ const Profile = () => {
 							</View>
 
 							{sortedTokens.map((token) => (
-								<TokenCard
-									key={token.mintAddress}
-									profileCoin={token}
-									onPress={() => handleTokenPress(token.coin, navigation.navigate)}
-								/>
+								<View key={token.mintAddress}>
+									<CoinCard
+										coin={{
+											...token.coin,
+											value: token.value,
+											balance: token.amount
+										}}
+										onPress={() => handleTokenPress(token.coin, navigation.navigate)}
+									/>
+								</View>
 							))}
 						</View>
 					</View>

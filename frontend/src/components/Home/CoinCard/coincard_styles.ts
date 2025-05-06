@@ -34,6 +34,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: 'bold',
 		letterSpacing: 0.5,
 	},
+	balance: {
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
+		marginTop: 4,
+		letterSpacing: 0.25,
+	},
 	name: {
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 14,

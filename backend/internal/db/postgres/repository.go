@@ -164,7 +164,14 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 			Error:           errorStr,
 		}
 	case schema.RawCoin:
-		return &v // For RawCoin, we just return itself since it's both schema and model
+		return &model.RawCoin{
+			MintAddress: v.MintAddress,
+			Symbol:      v.Symbol,
+			Name:        v.Name,
+			Decimals:    v.Decimals,
+			LogoUrl:     v.LogoUrl,
+			UpdatedAt:   v.UpdatedAt.Format(time.RFC3339),
+		}
 	default:
 		panic(fmt.Sprintf("unsupported type for toModel: %T", s))
 	}
@@ -215,8 +222,16 @@ func (r *Repository[S, M]) fromModel(m M) interface{} {
 			Finalized:       v.Finalized,
 			Error:           v.Error,
 		}
-	case schema.RawCoin:
-		return &v // For RawCoin, we just return itself since it's both schema and model
+	case model.RawCoin:
+		updatedAt, _ := time.Parse(time.RFC3339, v.UpdatedAt)
+		return &schema.RawCoin{
+			MintAddress: v.MintAddress,
+			Symbol:      v.Symbol,
+			Name:        v.Name,
+			Decimals:    v.Decimals,
+			LogoUrl:     v.LogoUrl,
+			UpdatedAt:   updatedAt,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported type for fromModel: %T", m))
 	}
