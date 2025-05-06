@@ -1,7 +1,7 @@
 import { Coin } from '@/types';
 
 export interface TokenSelectorProps {
-	selectedToken?: Coin;
+	selectedToken: Coin;
 	onSelectToken: (token: Coin) => void;
 	label?: string;
 	/** Optional custom style for container to override default styles */

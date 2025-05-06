@@ -400,6 +400,14 @@ const Trade: React.FC = () => {
 		);
 	}
 
+	if (!fromCoin) {
+		return (
+			<View style={styles.noWalletContainer}>
+				<Text style={{ color: theme.colors.onSurface }}>Please select a coin to trade from</Text>
+			</View>
+		);
+	}
+
 	return (
 		<SafeAreaView style={styles.container}>
 			<ScrollView style={styles.scrollView}>
@@ -408,10 +416,10 @@ const Trade: React.FC = () => {
 					<Text variant="labelLarge" style={{ marginBottom: 4 }}>From</Text>
 					<TokenSelector
 						style={styles.valueInfoContainer}
-						selectedToken={fromCoin ?? undefined}
+						selectedToken={fromCoin}
 						onSelectToken={handleSelectFromToken}
 						label={'Select Token'}
-						amountValue={fromAmount}
+						amountValue={fromAmount || '0.00'}
 						onAmountChange={handleFromAmountChange}
 						isAmountEditable={true}
 						showOnlyPortfolioTokens={true}
