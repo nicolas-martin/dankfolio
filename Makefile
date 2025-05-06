@@ -1,4 +1,4 @@
-.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build backend-generate-mocks frontend-lint proto
+.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build backend-generate-mocks frontend-lint proto db-migrate-up psql
 
 # Variables
 BACKEND_DIR := backend
@@ -85,6 +85,34 @@ clean-build:
 	@cd frontend && npx expo run:ios
 	@echo "✅ Script finished."
 
+# Database Migrations (Backend)
+# Loads variables from backend/.env and applies migrations
+db-migrate-up:
+	@echo "==> Applying database migrations (UP)..."
+	@( \
+		cd backend && \
+		set -a && \
+		[ -f .env ] && . .env; \
+		set +a && \
+		echo "    Using DB_URL: $$DB_URL" && \
+		goose \
+			-dir internal/db/migrations \
+			postgres "$$DB_URL" \
+			up \
+	)
+	@echo "==> Database migrations applied."
+
+# Run psql with environment variables from backend/.env
+psql:
+	@echo "🔗 Connecting to Postgres with psql using DB_URL from .env..."
+	@( \
+		cd backend && \
+		set -a && \
+		[ -f .env ] && . .env; \
+		set +a && \
+		psql "$$DB_URL" \
+	)
+
 # Helpers
 help:
 	@echo "\033[33m🛠️  Available commands:\033[0m"
@@ -99,3 +127,5 @@ help:
 	@echo "  \033[33mmake backend-build\033[0m - Build and check backend Go code compilation"
 	@echo "  \033[33mmake backend-test\033[0m  - Run backend tests (includes build and mock generation)"
 	@echo "  \033[33mmake backend-generate-mocks\033[0m - Generate backend mocks"
+	@echo "  \033[33mmake db-migrate-up\033[0m - Apply database migrations"
+	@echo "  \033[33mmake psql\033[0m          - Connect to Postgres using DB_URL from .env"
