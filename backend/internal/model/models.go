@@ -156,3 +156,18 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 	}
 	return filtered[start:end]
 }
+
+// RawCoin represents a raw token from Jupiter without enrichment
+type RawCoin struct {
+	MintAddress string `json:"mint_address"`
+	Symbol      string `json:"symbol"`
+	Name        string `json:"name"`
+	Decimals    int    `json:"decimals"`
+	LogoUrl     string `json:"logo_url"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
+// GetID implements the Entity interface
+func (r RawCoin) GetID() string {
+	return r.MintAddress
+}

@@ -27,9 +27,10 @@ type Config struct {
 
 // Store implements the db.Store interface using in-memory storage
 type Store struct {
-	coins  *MemoryRepository[model.Coin]
-	trades *MemoryRepository[model.Trade]
-	config Config
+	coins    *MemoryRepository[model.Coin]
+	trades   *MemoryRepository[model.Trade]
+	rawCoins *MemoryRepository[model.RawCoin]
+	config   Config
 }
 
 var _ db.Store = (*Store)(nil) // Ensure Store implements db.Store
@@ -42,9 +43,10 @@ func NewWithConfig(config Config) *Store {
 	}
 
 	store := &Store{
-		coins:  NewRepository[model.Coin](coinCachePrefix, config),
-		trades: NewRepository[model.Trade](tradeCachePrefix, config),
-		config: config,
+		coins:    NewRepository[model.Coin](coinCachePrefix, config),
+		trades:   NewRepository[model.Trade](tradeCachePrefix, config),
+		rawCoins: NewRepository[model.RawCoin]("rawcoin:", config),
+		config:   config,
 	}
 
 	// Load coin cache from file if it exists
@@ -63,6 +65,11 @@ func (s *Store) Coins() db.Repository[model.Coin] {
 // Trades returns the trade repository
 func (s *Store) Trades() db.Repository[model.Trade] {
 	return s.trades
+}
+
+// RawCoins returns the raw coins repository
+func (s *Store) RawCoins() db.Repository[model.RawCoin] {
+	return s.rawCoins
 }
 
 // ListTrendingCoins returns only the trending coins

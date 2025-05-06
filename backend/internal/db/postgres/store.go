@@ -22,7 +22,7 @@ type Store struct {
 	// Specialized repositories using the generic implementation
 	coinsRepo    db.Repository[model.Coin]
 	tradesRepo   db.Repository[model.Trade]
-	rawCoinsRepo db.Repository[schema.RawCoin]
+	rawCoinsRepo db.Repository[model.RawCoin]
 }
 
 var _ db.Store = (*Store)(nil) // Compile-time check for interface implementation
@@ -63,7 +63,7 @@ func NewStore(dsn string, enableSQLLogging bool) (*Store, error) {
 		// Initialize repositories, explicitly casting the types
 		coinsRepo:    NewRepository[schema.Coin, model.Coin](dbConn),
 		tradesRepo:   NewRepository[schema.Trade, model.Trade](dbConn),
-		rawCoinsRepo: NewRepository[schema.RawCoin, schema.RawCoin](dbConn),
+		rawCoinsRepo: NewRepository[schema.RawCoin, model.RawCoin](dbConn),
 	}
 
 	return store, nil
@@ -89,7 +89,7 @@ func (s *Store) Trades() db.Repository[model.Trade] {
 }
 
 // RawCoins returns the raw coins repository.
-func (s *Store) RawCoins() db.Repository[schema.RawCoin] {
+func (s *Store) RawCoins() db.Repository[model.RawCoin] {
 	return s.rawCoinsRepo
 }
 

@@ -8,7 +8,6 @@ import (
 	"context"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
-	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -143,19 +142,19 @@ func (_c *MockStore_ListTrendingCoins_Call) RunAndReturn(run func(ctx context.Co
 }
 
 // RawCoins provides a mock function for the type MockStore
-func (_mock *MockStore) RawCoins() db.Repository[schema.RawCoin] {
+func (_mock *MockStore) RawCoins() db.Repository[model.RawCoin] {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for RawCoins")
 	}
 
-	var r0 db.Repository[schema.RawCoin]
-	if returnFunc, ok := ret.Get(0).(func() db.Repository[schema.RawCoin]); ok {
+	var r0 db.Repository[model.RawCoin]
+	if returnFunc, ok := ret.Get(0).(func() db.Repository[model.RawCoin]); ok {
 		r0 = returnFunc()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(db.Repository[schema.RawCoin])
+			r0 = ret.Get(0).(db.Repository[model.RawCoin])
 		}
 	}
 	return r0
@@ -178,12 +177,12 @@ func (_c *MockStore_RawCoins_Call) Run(run func()) *MockStore_RawCoins_Call {
 	return _c
 }
 
-func (_c *MockStore_RawCoins_Call) Return(repository db.Repository[schema.RawCoin]) *MockStore_RawCoins_Call {
+func (_c *MockStore_RawCoins_Call) Return(repository db.Repository[model.RawCoin]) *MockStore_RawCoins_Call {
 	_c.Call.Return(repository)
 	return _c
 }
 
-func (_c *MockStore_RawCoins_Call) RunAndReturn(run func() db.Repository[schema.RawCoin]) *MockStore_RawCoins_Call {
+func (_c *MockStore_RawCoins_Call) RunAndReturn(run func() db.Repository[model.RawCoin]) *MockStore_RawCoins_Call {
 	_c.Call.Return(run)
 	return _c
 }

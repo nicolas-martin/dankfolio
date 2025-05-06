@@ -3,7 +3,6 @@ package jupiter
 import (
 	"time"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -148,14 +147,14 @@ func (t *CoinListInfo) ToModelCoin() *model.Coin {
 	}
 }
 
-// ToRawCoin converts CoinListInfo to schema.RawCoin
-func (t *CoinListInfo) ToRawCoin() *schema.RawCoin {
-	return &schema.RawCoin{
+// ToRawCoin converts CoinListInfo to model.RawCoin
+func (t *CoinListInfo) ToRawCoin() *model.RawCoin {
+	return &model.RawCoin{
 		MintAddress: t.Address,
 		Name:        t.Name,
 		Symbol:      t.Symbol,
 		Decimals:    t.Decimals,
 		LogoUrl:     t.LogoURI,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().Format(time.RFC3339),
 	}
 }

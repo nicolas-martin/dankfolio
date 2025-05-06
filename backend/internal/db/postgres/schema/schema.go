@@ -33,9 +33,9 @@ func (Coin) TableName() string {
 	return "coins"
 }
 
-// GetID returns the primary key for Coin
+// GetID returns the primary key column name for Coin
 func (c Coin) GetID() string {
-	return c.MintAddress
+	return "mint_address"
 }
 
 // RawCoin represents the structure of the 'raw_coins' table for raw Jupiter tokens.
@@ -53,9 +53,9 @@ func (RawCoin) TableName() string {
 	return "raw_coins"
 }
 
-// GetID returns the primary key for RawCoin
+// GetID returns the primary key column name for RawCoin
 func (r RawCoin) GetID() string {
-	return r.MintAddress
+	return "mint_address"
 }
 
 // Trade represents the structure of the 'trades' table in the database.
@@ -79,6 +79,11 @@ type Trade struct {
 	// Define relationships (optional but good practice)
 	FromCoin Coin `gorm:"foreignKey:FromCoinID"`
 	ToCoin   Coin `gorm:"foreignKey:ToCoinID"`
+}
+
+// GetID returns the primary key column name for Trade
+func (t Trade) GetID() string {
+	return "id"
 }
 
 // TableName overrides the default table name generation.

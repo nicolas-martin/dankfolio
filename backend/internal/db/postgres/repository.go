@@ -15,26 +15,25 @@ import (
 )
 
 // Repository implements the generic db.Repository interface using GORM.
-type Repository[S schema.Coin | schema.Trade | schema.RawCoin, M model.Coin | model.Trade | schema.RawCoin] struct {
+type Repository[S interface {
+	schema.Coin | schema.Trade | schema.RawCoin
+	db.Entity
+}, M model.Coin | model.Trade | model.RawCoin] struct {
 	db *gorm.DB
 }
 
 // NewRepository creates a new GORM repository.
-func NewRepository[S schema.Coin | schema.Trade | schema.RawCoin, M model.Coin | model.Trade | schema.RawCoin](db *gorm.DB) *Repository[S, M] {
+func NewRepository[S interface {
+	schema.Coin | schema.Trade | schema.RawCoin
+	db.Entity
+}, M model.Coin | model.Trade | model.RawCoin](db *gorm.DB) *Repository[S, M] {
 	return &Repository[S, M]{db: db}
 }
 
 // Get retrieves an entity by its ID.
 func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 	var schemaItem S
-	pkColumn := "id" // Default for Trade
-
-	switch any(schemaItem).(type) {
-	case schema.Coin:
-		pkColumn = "mint_address"
-	}
-
-	if err := r.db.WithContext(ctx).First(&schemaItem, pkColumn+" = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&schemaItem, fmt.Sprintf("%s = ?", schemaItem.GetID()), id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("%w: item with id %s not found", db.ErrNotFound, id)
 		}
@@ -42,7 +41,7 @@ func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 	}
 
 	modelItem := r.toModel(schemaItem)
-	return modelItem.(*M), nil // Type assertion needed here
+	return modelItem.(*M), nil
 }
 
 // List retrieves all entities.
@@ -71,21 +70,10 @@ func (r *Repository[S, M]) Create(ctx context.Context, item *M) error {
 
 // Update modifies an existing entity.
 func (r *Repository[S, M]) Update(ctx context.Context, item *M) error {
-	modelItem := *item // Dereference pointer
+	modelItem := *item
 	schemaItem := r.fromModel(modelItem)
 
-	// Use Omit to prevent updating primary key
-	// Need to get the primary key field name dynamically or assume 'ID'/'MintAddress'
-	// For now, assuming primary key field name based on type.
-	pkColumn := "id" // Default for Trade
-
-	// Determine the type of M to set the correct primary key name
-	switch any(modelItem).(type) {
-	case model.Coin:
-		pkColumn = "mint_address"
-	}
-
-	if err := r.db.WithContext(ctx).Model(schemaItem).Omit(pkColumn).Updates(schemaItem).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(schemaItem).Omit(schemaItem.(db.Entity).GetID()).Updates(schemaItem).Error; err != nil {
 		return fmt.Errorf("failed to update item: %w", err)
 	}
 	return nil
@@ -93,19 +81,11 @@ func (r *Repository[S, M]) Update(ctx context.Context, item *M) error {
 
 // Upsert inserts or updates an entity.
 func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) error {
-	schemaItem := r.fromModel(*item) // Dereference pointer
-	// Use Clauses(clause.OnConflict) for upsert
-	// Determine the primary key column based on the type for conflict target
-	pkColumn := "id" // Default for Trade
-
-	switch any(*item).(type) {
-	case model.Coin:
-		pkColumn = "mint_address"
-	}
-
+	schemaItem := r.fromModel(*item)
+	var s S // Create zero value of S to get the column name
 	if err := r.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: pkColumn}},
-		DoUpdates: clause.AssignmentColumns(getColumnNames(schemaItem)), // Update all columns except PK
+		Columns:   []clause.Column{{Name: s.GetID()}},
+		DoUpdates: clause.AssignmentColumns(getColumnNames(schemaItem)),
 	}).Create(schemaItem).Error; err != nil {
 		return fmt.Errorf("failed to upsert item: %w", err)
 	}
@@ -114,16 +94,8 @@ func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) error {
 
 // Delete removes an entity by its ID.
 func (r *Repository[S, M]) Delete(ctx context.Context, id string) error {
-	// Create an empty instance of S to infer the table name and PK column
 	var schemaItem S
-	pkColumn := "id" // Default
-
-	switch any(schemaItem).(type) {
-	case schema.Coin:
-		pkColumn = "mint_address"
-	}
-
-	dbResult := r.db.WithContext(ctx).Where(fmt.Sprintf("%s = ?", pkColumn), id).Delete(&schemaItem)
+	dbResult := r.db.WithContext(ctx).Where(fmt.Sprintf("%s = ?", schemaItem.GetID()), id).Delete(&schemaItem)
 	if dbResult.Error != nil {
 		return fmt.Errorf("failed to delete item with id %s: %w", id, dbResult.Error)
 	}
@@ -261,7 +233,7 @@ func getColumnNames(data interface{}) []string {
 	case *schema.Trade:
 		return []string{"user_id", "from_coin_id", "to_coin_id", "type", "amount", "price", "fee", "status", "transaction_hash", "completed_at", "confirmations", "finalized", "error"}
 	case *schema.RawCoin:
-		return []string{"mint_address", "symbol", "name", "decimals", "logo_url", "updated_at"}
+		return []string{"symbol", "name", "decimals", "logo_url", "updated_at"}
 	default:
 		return []string{} // Should not happen with current generic constraints
 	}
