@@ -252,7 +252,7 @@ export const grpcApi: API = {
 			grpcUtils.logRequest(serviceName, methodName, { coinIds });
 
 			const response = await priceClient.getCoinPrices(
-				{ tokenIds: coinIds },
+				{ coinIds },
 				{ headers: grpcUtils.getRequestHeaders() }
 			);
 

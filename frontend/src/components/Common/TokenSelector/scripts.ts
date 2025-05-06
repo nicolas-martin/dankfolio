@@ -34,8 +34,10 @@ export const calculateUsdValue = (token?: Coin, amount?: string): string => {
 		return '0.00';
 	}
 
+	// The amount is already in human-readable format (i.e., already divided by decimals)
+	// and the price from the backend is normalized per token unit
 	const value = parseFloat(amount) * token.price;
-	return value.toFixed(2);
+	return value.toFixed(4);
 };
 
 /**

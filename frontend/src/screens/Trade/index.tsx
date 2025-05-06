@@ -91,45 +91,30 @@ const Trade: React.FC = () => {
 
 	// --- End Wrapped Polling Functions ---
 
-	// Refresh coin prices on screen load
+	// Refresh coin prices periodically
 	useEffect(() => {
-		let isMounted = true;
-		const refreshCoinPrices = async () => {
+		const refreshPrices = async () => {
+			if (!fromCoin || !toCoin) return;
+
 			try {
-				// Determine the ID for the 'from' coin, defaulting to Solana if initialFromCoin is null
-				const fromCoinMintAddress = initialFromCoin?.mintAddress ?? SOLANA_ADDRESS; // Default to Solana address if initialFromCoin is null/undefined
-
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
-					getCoinByID(fromCoinMintAddress, true),         // Use the determined ID, force refresh
-					getCoinByID(toCoin?.mintAddress ?? SOLANA_ADDRESS, true)           // Force refresh for the 'to' coin
+					getCoinByID(fromCoin.mintAddress, true),
+					getCoinByID(toCoin.mintAddress, true)
 				]);
-				if (!isMounted) return;
 
-				// Set the state based on fetched data
-				// Only update if the fetched coin data is valid
-				if (updatedFromCoin) {
-					setFromCoin(updatedFromCoin);
-				}
-
-				if (updatedToCoin) {
-					setToCoin(updatedToCoin);
-				}
-
+				if (updatedFromCoin) setFromCoin(updatedFromCoin);
+				if (updatedToCoin) setToCoin(updatedToCoin);
 			} catch (error) {
 				console.error('Failed to refresh coin prices:', error);
-				if (isMounted) {
-					showToast({
-						type: 'error',
-						message: 'Failed to refresh prices. Please try again later.'
-					});
-				}
 			}
 		};
-		refreshCoinPrices();
-		return () => {
-			isMounted = false;
-		};
-	}, [getCoinByID, initialFromCoin, initialToCoin, showToast]); // Dependencies added
+
+		// Refresh immediately and then every 10 seconds
+		refreshPrices();
+		const interval = setInterval(refreshPrices, 10000);
+
+		return () => clearInterval(interval);
+	}, [fromCoin?.mintAddress, toCoin?.mintAddress, getCoinByID]);
 
 	// Get portfolio token data if available
 	const fromPortfolioToken = useMemo(() => {

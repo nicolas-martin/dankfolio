@@ -41,26 +41,28 @@ export const fetchTradeQuote = async (
 
 		// Get latest prices for both coins in a single API call
 		const prices = await getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]);
-		fromCoin.price = prices[fromCoin.mintAddress];
-		toCoin.price = prices[toCoin.mintAddress];
 
-		const rawAmount = toRawAmount(amount, fromCoin.decimals);
+		// Create new coin objects with updated prices to avoid mutating the original objects
+		const updatedFromCoin = { ...fromCoin, price: prices[fromCoin.mintAddress] };
+		const updatedToCoin = { ...toCoin, price: prices[toCoin.mintAddress] };
+
+		const rawAmount = toRawAmount(amount, updatedFromCoin.decimals);
 		console.log('📊 Trade Quote Request:', {
 			amount,
 			rawAmount,
 			fromCoin: {
-				symbol: fromCoin.symbol,
-				decimals: fromCoin.decimals,
-				price: fromCoin.price
+				symbol: updatedFromCoin.symbol,
+				decimals: updatedFromCoin.decimals,
+				price: updatedFromCoin.price
 			},
 			toCoin: {
-				symbol: toCoin.symbol,
-				decimals: toCoin.decimals,
-				price: toCoin.price
+				symbol: updatedToCoin.symbol,
+				decimals: updatedToCoin.decimals,
+				price: updatedToCoin.price
 			}
 		});
 
-		const response = await grpcApi.getSwapQuote(fromCoin.mintAddress, toCoin.mintAddress, rawAmount);
+		const response = await grpcApi.getSwapQuote(updatedFromCoin.mintAddress, updatedToCoin.mintAddress, rawAmount);
 		console.log('📬 Trade Quote Response:', response);
 
 		setToAmount(response.estimatedAmount);
