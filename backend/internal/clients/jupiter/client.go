@@ -16,13 +16,14 @@ import (
 
 const (
 	// Base URL for Jupiter API
-	baseURL = "https://api.jup.ag"
+	baseURL  = "https://api.jup.ag"
+	lightURL = "https://lite-api.jup.ag"
 
 	// API endpoints
 	priceURL     = baseURL + "/price/v2"
 	swapBaseURL  = baseURL + "/swap/v1"
 	tokenInfoURL = baseURL + "/tokens/v1/token"
-	tokenListURL = baseURL + "/tokens/v1/list"
+	tokenListURL = lightURL + "/tokens/v1/all"
 	quoteURL     = swapBaseURL + "/quote"
 )
 
@@ -184,12 +185,18 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 
 // GetAllCoins fetches all tokens from Jupiter API
 func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
+	// Use a custom http.Client with a large timeout for this long-running request
+	customClient := &http.Client{
+		Timeout: 5 * time.Minute,
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", tokenListURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+	log.Printf("🔄 Fetching all tokens from Jupiter: %s", tokenListURL)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := customClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token list: %w", err)
 	}
@@ -204,10 +211,10 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var tokenList CoinListResponse
-	if err := json.Unmarshal(body, &tokenList); err != nil {
+	var tokens []CoinListInfo
+	if err := json.Unmarshal(body, &tokens); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal token list: %w", err)
 	}
 
-	return &tokenList, nil
+	return &CoinListResponse{Coins: tokens}, nil
 }

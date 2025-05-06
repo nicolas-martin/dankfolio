@@ -3,6 +3,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import type { IconProps as RNVIconProps } from 'react-native-vector-icons/Icon';
 
 type IconBaseProps = Omit<RNVIconProps, 'name'>;
@@ -59,7 +60,7 @@ export const LinkIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase nam
 
 // Social icons
 export const TwitterIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="twitter" {...props} />;
-export const TelegramIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="telegram" {...props} />;
+export const TelegramIcon: React.FC<IconBaseProps> = (props) => <FontAwesome name="telegram" size={props.size ?? 24} color={props.color ?? '#000'} style={props.style} />;
 export const DiscordIcon: React.FC<IconBaseProps> = (props) => <MaterialIconBase name="discord" {...props} />;
 
 // Status icons

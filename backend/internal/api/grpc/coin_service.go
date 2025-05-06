@@ -90,14 +90,14 @@ func (s *coinServiceHandler) GetAllCoins(
 	ctx context.Context,
 	req *connect.Request[pb.GetAllCoinsRequest],
 ) (*connect.Response[pb.GetAllCoinsResponse], error) {
-	coins, err := s.coinService.GetCoins(ctx)
+	coins, err := s.coinService.GetAllTokens(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get coins: %w", err))
 	}
 
-	pbCoins := make([]*pb.Coin, len(coins))
-	for i, coin := range coins {
-		pbCoins[i] = convertModelCoinToPbCoin(&coin)
+	pbCoins := make([]*pb.Coin, len(coins.Coins))
+	for i, coin := range coins.Coins {
+		pbCoins[i] = convertModelCoinToPbCoin(coin.ToModelCoin())
 	}
 
 	res := connect.NewResponse(&pb.GetAllCoinsResponse{

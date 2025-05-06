@@ -20,8 +20,9 @@ import (
 type Store struct {
 	db *gorm.DB
 	// Specialized repositories using the generic implementation
-	coinsRepo  db.Repository[model.Coin]
-	tradesRepo db.Repository[model.Trade]
+	coinsRepo    db.Repository[model.Coin]
+	tradesRepo   db.Repository[model.Trade]
+	rawCoinsRepo db.Repository[schema.RawCoin]
 }
 
 var _ db.Store = (*Store)(nil) // Compile-time check for interface implementation
@@ -60,8 +61,9 @@ func NewStore(dsn string, enableSQLLogging bool) (*Store, error) {
 	store := &Store{
 		db: dbConn,
 		// Initialize repositories, explicitly casting the types
-		coinsRepo:  NewRepository[schema.Coin, model.Coin](dbConn),
-		tradesRepo: NewRepository[schema.Trade, model.Trade](dbConn),
+		coinsRepo:    NewRepository[schema.Coin, model.Coin](dbConn),
+		tradesRepo:   NewRepository[schema.Trade, model.Trade](dbConn),
+		rawCoinsRepo: NewRepository[schema.RawCoin, schema.RawCoin](dbConn),
 	}
 
 	return store, nil
@@ -84,6 +86,11 @@ func (s *Store) Coins() db.Repository[model.Coin] {
 // Trades returns the trade repository.
 func (s *Store) Trades() db.Repository[model.Trade] {
 	return s.tradesRepo
+}
+
+// RawCoins returns the raw coins repository.
+func (s *Store) RawCoins() db.Repository[schema.RawCoin] {
+	return s.rawCoinsRepo
 }
 
 // --- Custom Operations ---
@@ -109,60 +116,30 @@ func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 
 // SearchCoins searches for coins based on criteria.
 func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
+	// 1. Search enriched coins
 	var schemaCoins []schema.Coin
-
 	tx := s.db.WithContext(ctx).Model(&schema.Coin{})
 
-	// Apply search query (simple case-insensitive search on name and symbol)
 	if query != "" {
 		searchQuery := "%" + strings.ToLower(query) + "%"
 		tx = tx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ?", searchQuery, searchQuery)
 	}
-
-	// Apply tag filter (match any tag in the list)
 	if len(tags) > 0 {
-		// Use array overlap operator && for PostgreSQL
 		tx = tx.Where("tags && ?", pq.Array(tags))
 	}
-
-	// Apply minimum volume filter
 	if minVolume24h > 0 {
 		tx = tx.Where("volume_24h >= ?", minVolume24h)
 	}
-
-	// Apply sorting
 	if sortBy != "" {
-		// Basic validation/mapping of sortBy field to prevent SQL injection
-		// In a real app, map API sort fields to actual DB columns securely.
-		dbColumn := "created_at" // default sort
-		switch strings.ToLower(sortBy) {
-		case "name":
-			dbColumn = "name"
-		case "symbol":
-			dbColumn = "symbol"
-		case "price":
-			dbColumn = "price"
-		case "volume24h":
-			dbColumn = "volume_24h"
-		case "marketcap":
-			dbColumn = "market_cap"
-		case "created_at":
-			dbColumn = "created_at"
-		case "last_updated":
-			dbColumn = "last_updated"
-		}
-
+		dbColumn := mapSortBy(sortBy)
 		order := "ASC"
 		if sortDesc {
 			order = "DESC"
 		}
 		tx = tx.Order(fmt.Sprintf("%s %s", dbColumn, order))
 	} else {
-		// Default sort order if none provided
 		tx = tx.Order("created_at DESC")
 	}
-
-	// Apply pagination
 	if limit > 0 {
 		tx = tx.Limit(int(limit))
 	}
@@ -170,18 +147,111 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 		tx = tx.Offset(int(offset))
 	}
 
-	// Execute query
 	if err := tx.Find(&schemaCoins).Error; err != nil {
 		return nil, fmt.Errorf("failed to search coins: %w", err)
 	}
 
-	// Map schema to model
-	modelCoins := make([]model.Coin, len(schemaCoins))
-	coinMapper := s.coinsRepo.(*Repository[schema.Coin, model.Coin])
-	for i, sc := range schemaCoins {
-		modelCoin := coinMapper.toModel(sc)
-		modelCoins[i] = *modelCoin.(*model.Coin)
+	enriched := mapSchemaCoinsToModel(schemaCoins)
+
+	// 2. Search raw coins
+	var rawCoins []schema.RawCoin
+	rawTx := s.db.WithContext(ctx).Model(&schema.RawCoin{})
+	if query != "" {
+		searchQuery := "%" + strings.ToLower(query) + "%"
+		rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ?", searchQuery, searchQuery)
+	}
+	if limit > 0 {
+		rawTx = rawTx.Limit(int(limit))
+	}
+	if offset > 0 {
+		rawTx = rawTx.Offset(int(offset))
+	}
+	if err := rawTx.Find(&rawCoins).Error; err != nil {
+		return nil, fmt.Errorf("failed to search raw coins: %w", err)
 	}
 
-	return modelCoins, nil
+	raw := mapRawCoinsToModel(rawCoins)
+
+	// 3. Merge results, prioritizing enriched coins if MintAddress is duplicated
+	coinMap := make(map[string]model.Coin)
+	result := make([]model.Coin, 0, len(enriched)+len(raw))
+
+	// Add enriched coins first
+	for _, coin := range enriched {
+		coinMap[coin.MintAddress] = coin
+		result = append(result, coin)
+	}
+	// Add raw coins only if not already present
+	for _, coin := range raw {
+		if _, exists := coinMap[coin.MintAddress]; !exists {
+			result = append(result, coin)
+		}
+	}
+
+	return result, nil
+}
+
+// Helper to map sortBy to DB column
+func mapSortBy(sortBy string) string {
+	switch strings.ToLower(sortBy) {
+	case "name":
+		return "name"
+	case "symbol":
+		return "symbol"
+	case "price":
+		return "price"
+	case "volume24h":
+		return "volume_24h"
+	case "marketcap":
+		return "market_cap"
+	case "created_at":
+		return "created_at"
+	case "last_updated":
+		return "last_updated"
+	default:
+		return "created_at"
+	}
+}
+
+// Helper to map []schema.Coin to []model.Coin
+func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
+	coins := make([]model.Coin, len(schemaCoins))
+	for i, sc := range schemaCoins {
+		coins[i] = model.Coin{
+			MintAddress: sc.MintAddress,
+			Name:        sc.Name,
+			Symbol:      sc.Symbol,
+			Decimals:    sc.Decimals,
+			Description: sc.Description,
+			IconUrl:     sc.IconUrl,
+			Tags:        sc.Tags,
+			Price:       sc.Price,
+			Change24h:   sc.Change24h,
+			MarketCap:   sc.MarketCap,
+			Volume24h:   sc.Volume24h,
+			Website:     sc.Website,
+			Twitter:     sc.Twitter,
+			Telegram:    sc.Telegram,
+			Discord:     sc.Discord,
+			IsTrending:  sc.IsTrending,
+			CreatedAt:   sc.CreatedAt.Format(time.RFC3339),
+			LastUpdated: sc.LastUpdated.Format(time.RFC3339),
+		}
+	}
+	return coins
+}
+
+// Helper to map []schema.RawCoin to []model.Coin
+func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {
+	coins := make([]model.Coin, len(rawCoins))
+	for i, rc := range rawCoins {
+		coins[i] = model.Coin{
+			MintAddress: rc.MintAddress,
+			Name:        rc.Name,
+			Symbol:      rc.Symbol,
+			Decimals:    rc.Decimals,
+			IconUrl:     rc.LogoUrl,
+		}
+	}
+	return coins
 }

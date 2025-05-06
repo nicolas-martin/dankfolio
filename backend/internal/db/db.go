@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -22,6 +23,7 @@ type Store interface {
 	// Repository operations
 	Coins() Repository[model.Coin]
 	Trades() Repository[model.Trade]
+	RawCoins() Repository[schema.RawCoin]
 
 	// Custom operations
 	ListTrendingCoins(ctx context.Context) ([]model.Coin, error)

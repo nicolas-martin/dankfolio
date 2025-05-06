@@ -232,20 +232,21 @@ func (s *Service) loadEnrichedCoinsFromFile() ([]model.Coin, time.Time, error) {
 	return fileOutput.Coins, fileOutput.ScrapeTimestamp, nil
 }
 
-func (s *Service) GetAllTokens(ctx context.Context) error {
+func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, error) {
 	resp, err := s.jupiterClient.GetAllCoins(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, v := range resp.Coins {
-		mC := v.ToCoin()
-		err = s.store.Coins().Upsert(ctx, mC)
+		// Store in raw_coins table
+		rawCoin := v.ToRawCoin()
+		err = s.store.RawCoins().Upsert(ctx, rawCoin)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return resp, nil
 }
 
 // SearchCoins searches for coins using the DB's SearchCoins

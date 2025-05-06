@@ -75,6 +75,16 @@ FOR EACH ROW
 EXECUTE FUNCTION update_last_updated_column();
 -- +goose StatementEnd
 
+-- Create raw_coins table
+CREATE TABLE raw_coins (
+    mint_address TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    decimals INTEGER NOT NULL,
+    logo_url TEXT,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- +goose Down
 -- +goose StatementBegin
 SELECT 'down SQL query';
@@ -89,3 +99,4 @@ DROP FUNCTION IF EXISTS update_last_updated_column();
 
 DROP TABLE IF EXISTS trades;
 DROP TABLE IF EXISTS coins;
+DROP TABLE IF EXISTS raw_coins;

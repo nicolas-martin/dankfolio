@@ -33,6 +33,31 @@ func (Coin) TableName() string {
 	return "coins"
 }
 
+// GetID returns the primary key for Coin
+func (c Coin) GetID() string {
+	return c.MintAddress
+}
+
+// RawCoin represents the structure of the 'raw_coins' table for raw Jupiter tokens.
+type RawCoin struct {
+	MintAddress string    `gorm:"primaryKey;column:mint_address"`
+	Symbol      string    `gorm:"column:symbol;not null"`
+	Name        string    `gorm:"column:name;not null"`
+	Decimals    int       `gorm:"column:decimals;not null"`
+	LogoUrl     string    `gorm:"column:logo_url"`
+	UpdatedAt   time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP"`
+}
+
+// TableName overrides the default table name generation for RawCoin.
+func (RawCoin) TableName() string {
+	return "raw_coins"
+}
+
+// GetID returns the primary key for RawCoin
+func (r RawCoin) GetID() string {
+	return r.MintAddress
+}
+
 // Trade represents the structure of the 'trades' table in the database.
 type Trade struct {
 	ID              string     `gorm:"primaryKey;column:id"`

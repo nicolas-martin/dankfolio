@@ -95,6 +95,10 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 					}
 				}
 			}
+			if req.Spec().Procedure == "/dankfolio.v1.CoinService/GetAllCoins" {
+				// NOTE: skip logging for the GetAllCoins
+				return res, nil
+			}
 			// Add specific handling for GetProxiedImage responses
 			if req.Spec().Procedure == "/dankfolio.v1.UtilityService/GetProxiedImage" {
 				// NOTE: skip logging for the proxied image data

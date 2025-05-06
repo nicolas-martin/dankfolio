@@ -15,19 +15,26 @@ import (
 )
 
 // Repository implements the generic db.Repository interface using GORM.
-type Repository[S schema.Coin | schema.Trade, M model.Coin | model.Trade] struct {
+type Repository[S schema.Coin | schema.Trade | schema.RawCoin, M model.Coin | model.Trade | schema.RawCoin] struct {
 	db *gorm.DB
 }
 
 // NewRepository creates a new GORM repository.
-func NewRepository[S schema.Coin | schema.Trade, M model.Coin | model.Trade](db *gorm.DB) *Repository[S, M] {
+func NewRepository[S schema.Coin | schema.Trade | schema.RawCoin, M model.Coin | model.Trade | schema.RawCoin](db *gorm.DB) *Repository[S, M] {
 	return &Repository[S, M]{db: db}
 }
 
 // Get retrieves an entity by its ID.
 func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 	var schemaItem S
-	if err := r.db.WithContext(ctx).First(&schemaItem, "id = ?", id).Error; err != nil {
+	pkColumn := "id" // Default for Trade
+
+	switch any(schemaItem).(type) {
+	case schema.Coin:
+		pkColumn = "mint_address"
+	}
+
+	if err := r.db.WithContext(ctx).First(&schemaItem, pkColumn+" = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("%w: item with id %s not found", db.ErrNotFound, id)
 		}
@@ -140,7 +147,7 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 			Decimals:    v.Decimals,
 			Description: v.Description,
 			IconUrl:     v.IconUrl,
-			Tags:        v.Tags, // Direct assignment pq.StringArray -> []string
+			Tags:        v.Tags,
 			Price:       v.Price,
 			Change24h:   v.Change24h,
 			MarketCap:   v.MarketCap,
@@ -149,17 +156,11 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 			Twitter:     v.Twitter,
 			Telegram:    v.Telegram,
 			Discord:     v.Discord,
-			IsTrending:  v.IsTrending, // Added
-			// Assuming CreatedAt/LastUpdated in model are strings for now?
-			// If they are time.Time, use direct assignment:
-			// CreatedAt: v.CreatedAt,
-			// LastUpdated: v.LastUpdated,
-			// If they are strings:
+			IsTrending:  v.IsTrending,
 			CreatedAt:   v.CreatedAt.Format(time.RFC3339),
 			LastUpdated: v.LastUpdated.Format(time.RFC3339),
 		}
 	case schema.Trade:
-		// Need to handle potential nil pointers for CompletedAt and Error
 		var completedAt *time.Time
 		if v.CompletedAt != nil {
 			completedAt = v.CompletedAt
@@ -174,11 +175,10 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 		}
 
 		return &model.Trade{
-			ID:         v.ID,
-			UserID:     v.UserID,
-			FromCoinID: v.FromCoinID,
-			ToCoinID:   v.ToCoinID,
-			// CoinSymbol:      v.FromCoin.Symbol, // Or ToCoin? Decide how to handle this
+			ID:              v.ID,
+			UserID:          v.UserID,
+			FromCoinID:      v.FromCoinID,
+			ToCoinID:        v.ToCoinID,
 			Type:            v.Type,
 			Amount:          v.Amount,
 			Price:           v.Price,
@@ -191,6 +191,8 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 			Finalized:       v.Finalized,
 			Error:           errorStr,
 		}
+	case schema.RawCoin:
+		return &v // For RawCoin, we just return itself since it's both schema and model
 	default:
 		panic(fmt.Sprintf("unsupported type for toModel: %T", s))
 	}
@@ -201,10 +203,6 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 func (r *Repository[S, M]) fromModel(m M) interface{} {
 	switch v := any(m).(type) {
 	case model.Coin:
-		// Handle potential string to time parsing if needed, assuming direct mapping for now
-		// createdAt, _ := time.Parse(time.RFC3339, v.CreatedAt)
-		// lastUpdated, _ := time.Parse(time.RFC3339, v.LastUpdated)
-
 		return &schema.Coin{
 			MintAddress: v.MintAddress,
 			Name:        v.Name,
@@ -212,7 +210,7 @@ func (r *Repository[S, M]) fromModel(m M) interface{} {
 			Decimals:    v.Decimals,
 			Description: v.Description,
 			IconUrl:     v.IconUrl,
-			Tags:        v.Tags, // Direct assignment []string -> pq.StringArray
+			Tags:        v.Tags,
 			Price:       v.Price,
 			Change24h:   v.Change24h,
 			MarketCap:   v.MarketCap,
@@ -221,10 +219,7 @@ func (r *Repository[S, M]) fromModel(m M) interface{} {
 			Twitter:     v.Twitter,
 			Telegram:    v.Telegram,
 			Discord:     v.Discord,
-			IsTrending:  v.IsTrending, // Added
-			// Assuming direct time.Time mapping is desired for DB
-			// CreatedAt: createdAt,
-			// LastUpdated: lastUpdated,
+			IsTrending:  v.IsTrending,
 		}
 	case model.Trade:
 		var txHash *string
@@ -241,13 +236,15 @@ func (r *Repository[S, M]) fromModel(m M) interface{} {
 			Price:           v.Price,
 			Fee:             v.Fee,
 			Status:          v.Status,
-			TransactionHash: txHash, // Pointer assignment
+			TransactionHash: txHash,
 			CreatedAt:       v.CreatedAt,
 			CompletedAt:     v.CompletedAt,
 			Confirmations:   v.Confirmations,
 			Finalized:       v.Finalized,
 			Error:           v.Error,
 		}
+	case schema.RawCoin:
+		return &v // For RawCoin, we just return itself since it's both schema and model
 	default:
 		panic(fmt.Sprintf("unsupported type for fromModel: %T", m))
 	}
@@ -263,6 +260,8 @@ func getColumnNames(data interface{}) []string {
 		return []string{"name", "symbol", "decimals", "description", "icon_url", "tags", "price", "change_24h", "market_cap", "volume_24h", "website", "twitter", "telegram", "discord", "is_trending", "last_updated"}
 	case *schema.Trade:
 		return []string{"user_id", "from_coin_id", "to_coin_id", "type", "amount", "price", "fee", "status", "transaction_hash", "completed_at", "confirmations", "finalized", "error"}
+	case *schema.RawCoin:
+		return []string{"mint_address", "symbol", "name", "decimals", "logo_url", "updated_at"}
 	default:
 		return []string{} // Should not happen with current generic constraints
 	}
