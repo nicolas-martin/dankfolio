@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
@@ -134,8 +135,9 @@ func (s *tradeServiceHandler) GetTrade(
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 		}
+		log.Printf("💥💥💥💥Trade status: %v", status)
 
-		// // Get the trade by transaction hash
+		// Get the trade by transaction hash
 		trade, err = s.tradeService.GetTradeByTransactionHash(ctx, identifier.TransactionHash)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade: %w", err))
@@ -143,15 +145,48 @@ func (s *tradeServiceHandler) GetTrade(
 
 		// Update trade with status information
 		if status != nil && len(status.Value) > 0 && status.Value[0] != nil {
-			trade.Status = string(status.Value[0].ConfirmationStatus)
-			if status.Value[0].Confirmations != nil {
-				trade.Confirmations = int32(*status.Value[0].Confirmations)
+			statusChanged := false
+			txStatus := status.Value[0]
+
+			// Update confirmation status
+			if trade.Status != string(txStatus.ConfirmationStatus) {
+				trade.Status = string(txStatus.ConfirmationStatus)
+				statusChanged = true
 			}
-			trade.Finalized = status.Value[0].ConfirmationStatus == "finalized"
-			if status.Value[0].Err != nil {
-				errStr := fmt.Sprintf("%v", status.Value[0].Err)
+
+			// Update confirmations
+			if txStatus.Confirmations != nil && trade.Confirmations != int32(*txStatus.Confirmations) {
+				trade.Confirmations = int32(*txStatus.Confirmations)
+				statusChanged = true
+			}
+
+			// Update finalized status
+			if trade.Finalized != (txStatus.ConfirmationStatus == "finalized") {
+				trade.Finalized = txStatus.ConfirmationStatus == "finalized"
+				if trade.Finalized {
+					now := time.Now()
+					trade.CompletedAt = &now
+				}
+				statusChanged = true
+			}
+
+			// Update error if present
+			if txStatus.Err != nil {
+				errStr := fmt.Sprintf("%v", txStatus.Err)
 				if errStr != "<nil>" {
 					trade.Error = &errStr
+					trade.Status = "failed"
+					statusChanged = true
+				}
+			}
+
+			// Save updates if anything changed
+			if statusChanged {
+				if err := s.tradeService.UpdateTrade(ctx, trade); err != nil {
+					log.Printf("Warning: Failed to update trade status: %v", err)
+				} else {
+					log.Printf("✅ Updated trade status: %s -> %s (Confirmations: %d, Finalized: %v)",
+						identifier.TransactionHash, trade.Status, trade.Confirmations, trade.Finalized)
 				}
 			}
 		}
