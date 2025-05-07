@@ -2,8 +2,7 @@ import { ReactElement } from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { mocked } from 'jest-mock';
 import TradeScreen from './index';
-import * as TradeScripts from './trade_scripts';
-import { View, Text, TextInput } from 'react-native';
+import { View, Text } from 'react-native';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { mockFromCoin, mockToCoin, mockWallet, mockFromPortfolioToken } from '@/__mocks__/testData';
@@ -13,6 +12,7 @@ import { fetchTradeQuote as mockFetchTradeQuote, signTradeTransaction as mockSig
 import { useRoute } from '@react-navigation/native';
 import type { PortfolioToken } from '@/store/portfolio';
 import { grpcApi } from '@/services/grpcApi';
+import * as TradeScripts from '../../__mocks__/screens/Trade/trade_scripts';
 
 // Mock Stores
 jest.mock('@store/portfolio');
@@ -53,17 +53,7 @@ jest.mock('@components/Trade/TradeConfirmation', () => createMockComponent('Trad
 jest.mock('@components/Trade/TradeStatusModal', () => createMockComponent('TradeStatusModal'));
 
 // Mock Local Scripts
-jest.mock('./trade_scripts', () => ({
-	fetchTradeQuote: jest.fn(),
-	signTradeTransaction: jest.fn(),
-	handleSwapCoins: jest.fn(),
-	executeTrade: jest.fn(),
-	startPolling: jest.fn(),
-	pollTradeStatus: jest.fn(),
-	stopPolling: jest.fn(),
-	DEFAULT_AMOUNT: "0.0001",
-	QUOTE_DEBOUNCE_MS: 500,
-}));
+jest.mock('./trade_scripts', () => require('../../__mocks__/screens/Trade/trade_scripts'));
 
 // Mock Services
 jest.mock('@/services/solana', () => ({
@@ -316,6 +306,18 @@ describe('TradeScreen', () => {
 	});
 
 	it('executes complete trade flow with confirmation', async () => {
+		const mockFromAmount = '1';
+
+		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
+			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
+				act(() => {
+					setToAmount('1350000');
+					setTradeDetails({ exchangeRate: '1350000', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
+					setIsQuoteLoading(false);
+				});
+			}
+		);
+
 		const { getByTestId } = renderWithProvider(<TradeScreen />);
 
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
@@ -327,9 +329,23 @@ describe('TradeScreen', () => {
 		// Wait for quote to be fetched
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
 
+		// Wait for loading to complete and open confirmation modal
+		await waitFor(() => {
+			const tradeButton = getByTestId('trade-button');
+			expect(tradeButton.props.accessibilityState.disabled).toBe(false);
+		});
+
 		// Trigger trade execution
-		const tradeButton = getByTestId('trade-button');
-		fireEvent.press(tradeButton);
+		fireEvent.press(getByTestId('trade-button'));
+
+		// Wait for confirmation modal to appear
+		const confirmationModal = await waitFor(() => getByTestId('mock-TradeConfirmation'));
+		expect(confirmationModal.props.isVisible).toBe(true);
+
+		// Confirm trade
+		await act(async () => {
+			await confirmationModal.props.onConfirm();
+		});
 
 		// Verify trade execution
 		await waitFor(() => {
