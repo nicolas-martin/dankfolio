@@ -74,6 +74,35 @@ func (s *Service) getOrCreateATA(ctx context.Context, payer, owner, mint solana.
 	return ata, instructions, nil
 }
 
+// getTokenAccount gets or creates a token account for a given mint and owner
+func (s *Service) getTokenAccount(ctx context.Context, mint, owner solana.PublicKey) (solana.PublicKey, []solana.Instruction, error) {
+	ata, _, err := solana.FindAssociatedTokenAddress(owner, mint)
+	if err != nil {
+		return solana.PublicKey{}, nil, fmt.Errorf("failed to find associated token address: %w", err)
+	}
+
+	info, err := s.rpcClient.GetAccountInfo(ctx, ata)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return solana.PublicKey{}, nil, fmt.Errorf("failed to check token account: %w", err)
+	}
+
+	var instructions []solana.Instruction
+	if info == nil || info.Value == nil || info.Value.Owner.Equals(solana.SystemProgramID) {
+		log.Printf("Creating token account: %s\n", ata)
+		createATAIx, err := associatedtokenaccount.NewCreateInstruction(
+			owner,
+			owner,
+			mint,
+		).ValidateAndBuild()
+		if err != nil {
+			return solana.PublicKey{}, nil, fmt.Errorf("failed to create ATA instruction: %w", err)
+		}
+		instructions = append(instructions, createATAIx)
+	}
+
+	return ata, instructions, nil
+}
+
 // getMintInfo retrieves and parses mint account information
 func (s *Service) getMintInfo(ctx context.Context, mint solana.PublicKey) (uint8, error) {
 	mintAcct, err := s.rpcClient.GetAccountInfo(ctx, mint)
@@ -102,7 +131,7 @@ func (s *Service) getMintInfo(ctx context.Context, mint solana.PublicKey) (uint8
 	return mintInfo.Info.Decimals, nil
 }
 
-// buildAndSignTransaction creates a transaction with the given instructions
+// buildTransaction creates a transaction with the given instructions
 func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, instructions []solana.Instruction) (*solana.Transaction, error) {
 	recent, err := s.rpcClient.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
 	if err != nil {
@@ -190,18 +219,33 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 		log.Printf("❌ Failed to create transfer transaction: %v\n", err)
 		return "", fmt.Errorf("failed to create transfer transaction: %w", err)
 	}
-	log.Printf("✅ Transaction created successfully\n")
 
-	serializedTx, err := tx.MarshalBinary()
+	// Serialize transaction to bytes
+	txBytes, err := tx.MarshalBinary()
 	if err != nil {
-		log.Printf("❌ Failed to serialize transaction: %v\n", err)
 		return "", fmt.Errorf("failed to serialize transaction: %w", err)
 	}
-	log.Printf("✅ Transaction serialized successfully\n")
 
-	encoded := base64.StdEncoding.EncodeToString(serializedTx)
-	log.Printf("✅ Transaction encoded successfully (length: %d)\n", len(encoded))
-	return encoded, nil
+	// Encode transaction as base64
+	unsignedTx := base64.StdEncoding.EncodeToString(txBytes)
+
+	// Create trade record
+	trade := &model.Trade{
+		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		FromCoinID:          coinMint,
+		ToCoinID:            coinMint, // For transfers, both from and to are the same coin
+		Type:                "transfer",
+		Amount:              amount,
+		Status:              "pending",
+		UnsignedTransaction: unsignedTx,
+		CreatedAt:           time.Now(),
+	}
+
+	if err := s.store.Trades().Create(ctx, trade); err != nil {
+		log.Printf("Warning: Failed to create trade record: %v", err)
+	}
+
+	return unsignedTx, nil
 }
 
 // createTokenTransfer creates a token transfer transaction
@@ -416,4 +460,20 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 	}
 
 	return tokens, nil
+}
+
+// submitTransaction submits a signed transaction to the blockchain
+func (s *Service) submitTransaction(ctx context.Context, tx *solana.Transaction) (solana.Signature, error) {
+	// Submit transaction with optimized options
+	maxRetries := uint(3)
+	sig, err := s.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+		SkipPreflight:       false,
+		PreflightCommitment: rpc.CommitmentConfirmed,
+		MaxRetries:          &maxRetries,
+	})
+	if err != nil {
+		return solana.Signature{}, fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	return sig, nil
 }
