@@ -145,23 +145,28 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 		if v.TransactionHash != nil {
 			txHash = *v.TransactionHash
 		}
+		var unsignedTx string
+		if v.UnsignedTransaction != nil {
+			unsignedTx = *v.UnsignedTransaction
+		}
 
 		return &model.Trade{
-			ID:              v.ID,
-			UserID:          v.UserID,
-			FromCoinID:      v.FromCoinID,
-			ToCoinID:        v.ToCoinID,
-			Type:            v.Type,
-			Amount:          v.Amount,
-			Price:           v.Price,
-			Fee:             v.Fee,
-			Status:          v.Status,
-			TransactionHash: txHash,
-			CreatedAt:       v.CreatedAt,
-			CompletedAt:     completedAt,
-			Confirmations:   v.Confirmations,
-			Finalized:       v.Finalized,
-			Error:           errorStr,
+			ID:                  v.ID,
+			UserID:              v.UserID,
+			FromCoinID:          v.FromCoinID,
+			ToCoinID:            v.ToCoinID,
+			Type:                v.Type,
+			Amount:              v.Amount,
+			Price:               v.Price,
+			Fee:                 v.Fee,
+			Status:              v.Status,
+			TransactionHash:     txHash,
+			UnsignedTransaction: unsignedTx,
+			CreatedAt:           v.CreatedAt,
+			CompletedAt:         completedAt,
+			Confirmations:       v.Confirmations,
+			Finalized:           v.Finalized,
+			Error:               errorStr,
 		}
 	case schema.RawCoin:
 		return &model.RawCoin{
@@ -205,22 +210,27 @@ func (r *Repository[S, M]) fromModel(m M) interface{} {
 		if v.TransactionHash != "" {
 			txHash = &v.TransactionHash
 		}
+		var unsignedTx *string
+		if v.UnsignedTransaction != "" {
+			unsignedTx = &v.UnsignedTransaction
+		}
 		return &schema.Trade{
-			ID:              v.ID,
-			UserID:          v.UserID,
-			FromCoinID:      v.FromCoinID,
-			ToCoinID:        v.ToCoinID,
-			Type:            v.Type,
-			Amount:          v.Amount,
-			Price:           v.Price,
-			Fee:             v.Fee,
-			Status:          v.Status,
-			TransactionHash: txHash,
-			CreatedAt:       v.CreatedAt,
-			CompletedAt:     v.CompletedAt,
-			Confirmations:   v.Confirmations,
-			Finalized:       v.Finalized,
-			Error:           v.Error,
+			ID:                  v.ID,
+			UserID:              v.UserID,
+			FromCoinID:          v.FromCoinID,
+			ToCoinID:            v.ToCoinID,
+			Type:                v.Type,
+			Amount:              v.Amount,
+			Price:               v.Price,
+			Fee:                 v.Fee,
+			Status:              v.Status,
+			TransactionHash:     txHash,
+			UnsignedTransaction: unsignedTx,
+			CreatedAt:           v.CreatedAt,
+			CompletedAt:         v.CompletedAt,
+			Confirmations:       v.Confirmations,
+			Finalized:           v.Finalized,
+			Error:               v.Error,
 		}
 	case model.RawCoin:
 		updatedAt, _ := time.Parse(time.RFC3339, v.UpdatedAt)
