@@ -27,6 +27,7 @@ type Store interface {
 	// Custom operations
 	ListTrendingCoins(ctx context.Context) ([]model.Coin, error)
 	SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error)
+	GetByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error)
 }
 
 // Repository defines generic CRUD operations

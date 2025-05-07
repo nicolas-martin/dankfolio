@@ -3,99 +3,75 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"flag"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/joho/godotenv"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
 func main() {
-	if err := run(); err != nil {
-		log.Printf("❌ Error: %v\n", err)
+	// Parse command line flags
+	rpcEndpoint := flag.String("rpc", "https://api.mainnet-beta.solana.com", "Solana RPC endpoint")
+	walletPath := flag.String("wallet", "", "Path to wallet keypair file")
+	toAddress := flag.String("to", "", "Destination wallet address")
+	amount := flag.Float64("amount", 0, "Amount to send")
+	coinMint := flag.String("coin", "", "Coin mint address (empty for SOL)")
+	flag.Parse()
+
+	// Validate required flags
+	if *walletPath == "" || *toAddress == "" || *amount <= 0 {
+		fmt.Println("Error: wallet path, destination address, and amount are required")
+		flag.Usage()
 		os.Exit(1)
 	}
-}
 
-func run() error {
-	err := godotenv.Load("../../../frontend/.env")
+	// Initialize RPC client
+	client := rpc.New(*rpcEndpoint)
+
+	// Initialize memory store
+	store := memory.NewWithConfig(memory.Config{})
+
+	// Initialize the wallet service
+	walletService := wallet.New(client, store)
+
+	// Read and parse the wallet file
+	keyBytes, err := os.ReadFile(*walletPath)
 	if err != nil {
-		log.Printf("Warning: Error loading .env file: %v\n", err)
+		log.Fatalf("Error reading wallet file: %v", err)
 	}
 
-	// Hardcoded values
-	recipientAddr := "6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav"
-	amount := 0.000000001
-	tokenMint := "C3DwDjT17gDvvCYC2nsdGHxDHVmQRdhKfpAdqQ29pump"
+	// Remove quotes if present
+	keyStr := strings.Trim(string(keyBytes), "\"")
 
-	rpcURL := "https://api.mainnet-beta.solana.com"
+	// Parse the private key
+	privateKey := solana.MustPrivateKeyFromBase58(keyStr)
+	publicKey := privateKey.PublicKey()
 
-	// Get private key from env
-	privateKeyStr := os.Getenv("TEST_PRIVATE_KEY")
-	if privateKeyStr == "" {
-		return fmt.Errorf("TEST_PRIVATE_KEY environment variable is required")
-	}
-
-	// Decode base64 private key
-	privateKeyBytes, err := base64.StdEncoding.DecodeString(privateKeyStr)
-	if err != nil {
-		return fmt.Errorf("failed to decode private key: %w", err)
-	}
-
-	// Convert to Solana private key
-	privateKey := solana.PrivateKey(privateKeyBytes)
-
-	// Get public key from private key
-	senderPubKey := privateKey.PublicKey().String()
-
-	// Initialize RPC client with consistent commitment
-	rpcClient := rpc.New(rpcURL)
-
-	// Create wallet service
-	walletService := wallet.New(rpcClient)
-
-	log.Printf("🔑 Using wallet: %s\n", senderPubKey)
-	if tokenMint == "" {
-		log.Printf("📤 Sending %.9f SOL to %s\n", amount, recipientAddr)
-	} else {
-		log.Printf("📤 Sending %.9f tokens (mint: %s) to %s\n", amount, tokenMint, recipientAddr)
-	}
-
-	// Get latest blockhash with confirmed commitment
-	recent, err := rpcClient.GetLatestBlockhash(context.Background(), rpc.CommitmentConfirmed)
-	if err != nil {
-		return fmt.Errorf("failed to get recent blockhash: %w", err)
-	}
+	fmt.Printf("Sending from wallet: %s\n", publicKey.String())
 
 	// Prepare the transfer
-	unsignedTx, err := walletService.PrepareTransfer(
-		context.Background(),
-		senderPubKey,
-		recipientAddr,
-		tokenMint,
-		amount,
-	)
+	unsignedTx, err := walletService.PrepareTransfer(context.Background(), publicKey.String(), *toAddress, *coinMint, *amount)
 	if err != nil {
-		return fmt.Errorf("failed to prepare transfer: %w", err)
+		log.Fatalf("Error preparing transfer: %v", err)
 	}
 
 	// Decode the unsigned transaction
 	txBytes, err := base64.StdEncoding.DecodeString(unsignedTx)
 	if err != nil {
-		return fmt.Errorf("failed to decode transaction: %w", err)
+		log.Fatalf("Error decoding transaction: %v", err)
 	}
 
 	// Parse the transaction
 	tx, err := solana.TransactionFromBytes(txBytes)
 	if err != nil {
-		return fmt.Errorf("failed to parse transaction: %w", err)
+		log.Fatalf("Error parsing transaction: %v", err)
 	}
-
-	// Update transaction with fresh blockhash
-	tx.Message.RecentBlockhash = recent.Value.Blockhash
 
 	// Sign the transaction
 	_, err = tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
@@ -105,24 +81,20 @@ func run() error {
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to sign transaction: %w", err)
+		log.Fatalf("Error signing transaction: %v", err)
 	}
 
 	// Serialize the signed transaction
 	signedTx, err := tx.MarshalBinary()
 	if err != nil {
-		return fmt.Errorf("failed to serialize signed transaction: %w", err)
+		log.Fatalf("Error serializing signed transaction: %v", err)
 	}
 
-	// Submit the transaction
-	txHash, err := walletService.SubmitTransfer(
-		context.Background(),
-		base64.StdEncoding.EncodeToString(signedTx),
-	)
+	// Submit the transfer
+	txHash, err := walletService.SubmitTransfer(context.Background(), base64.StdEncoding.EncodeToString(signedTx))
 	if err != nil {
-		return fmt.Errorf("failed to submit transfer: %w", err)
+		log.Fatalf("Error submitting transfer: %v", err)
 	}
 
-	log.Printf("✅ Transaction sent! Hash: %s\n", txHash)
-	return nil
+	fmt.Printf("Transfer submitted successfully. Transaction hash: %s\n", txHash)
 }

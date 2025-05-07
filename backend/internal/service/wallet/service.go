@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/gagliardetto/solana-go"
 	associatedtokenaccount "github.com/gagliardetto/solana-go/programs/associated-token-account"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/tyler-smith/go-bip39"
 )
@@ -21,12 +23,14 @@ import (
 // Service handles wallet-related operations
 type Service struct {
 	rpcClient *rpc.Client
+	store     db.Store
 }
 
 // New creates a new wallet service
-func New(rpcClient *rpc.Client) *Service {
+func New(rpcClient *rpc.Client, store db.Store) *Service {
 	return &Service{
 		rpcClient: rpcClient,
+		store:     store,
 	}
 }
 
@@ -295,6 +299,23 @@ func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) 
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	// Create a trade record for this transfer
+	trade := &model.Trade{
+		ID:              fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		Type:            "transfer",
+		Status:          "submitted",
+		TransactionHash: sig.String(),
+		CreatedAt:       time.Now(),
+		Confirmations:   0,
+		Finalized:       false,
+	}
+
+	// Save the trade record
+	if err := s.store.Trades().Create(ctx, trade); err != nil {
+		log.Printf("Warning: Failed to create trade record: %v", err)
+		// Don't fail the transaction if trade record creation fails
 	}
 
 	return sig.String(), nil
