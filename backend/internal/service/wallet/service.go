@@ -294,28 +294,25 @@ func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) 
 	maxRetries := uint(3)
 	sig, err := s.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 		SkipPreflight:       false,
-		PreflightCommitment: rpc.CommitmentConfirmed,
+		PreflightCommitment: rpc.CommitmentFinalized,
 		MaxRetries:          &maxRetries,
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to submit transaction: %w", err)
 	}
 
-	// Create a trade record for this transfer
+	// Create initial trade record with minimal information
 	trade := &model.Trade{
 		ID:              fmt.Sprintf("trade_%d", time.Now().UnixNano()),
 		Type:            "transfer",
 		Status:          "submitted",
 		TransactionHash: sig.String(),
 		CreatedAt:       time.Now(),
-		Confirmations:   0,
-		Finalized:       false,
 	}
 
-	// Save the trade record
+	// Try to create the trade record, but don't fail if it doesn't work
 	if err := s.store.Trades().Create(ctx, trade); err != nil {
 		log.Printf("Warning: Failed to create trade record: %v", err)
-		// Don't fail the transaction if trade record creation fails
 	}
 
 	return sig.String(), nil
