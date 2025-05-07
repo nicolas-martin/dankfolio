@@ -1,9 +1,14 @@
-import { Keypair, VersionedTransaction, PublicKey, Transaction } from '@solana/web3.js';
+import { Keypair, VersionedTransaction, PublicKey, Transaction, Connection } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { Wallet, Base58PrivateKey } from '@/types';
 import { REACT_APP_SOLANA_RPC_ENDPOINT, REACT_APP_JUPITER_API_URL } from '@env';
 import { grpcApi } from '@/services/grpcApi';
 import { usePortfolioStore } from '@/store/portfolio';
+import 'react-native-get-random-values';
+import { Buffer } from 'buffer';
+
+// Ensure Buffer is available globally
+global.Buffer = Buffer;
 
 if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
 	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
@@ -15,6 +20,8 @@ if (!REACT_APP_JUPITER_API_URL) {
 
 const SOLANA_RPC_ENDPOINT: string = REACT_APP_SOLANA_RPC_ENDPOINT;
 const JUPITER_API_URL: string = REACT_APP_JUPITER_API_URL;
+
+const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
 
 console.log('🔧 Using Solana RPC endpoint:', SOLANA_RPC_ENDPOINT);
 
@@ -231,6 +238,13 @@ export const buildAndSignTransferTransaction = async (
 		// Sign the transaction
 		console.log('✍️ Signing transaction...');
 		const transaction = Transaction.from(transactionBuf);
+
+		// Always get a fresh blockhash to ensure transaction is recent
+		const { blockhash } = await connection.getLatestBlockhash('confirmed');
+		console.log('🔑 Setting fresh blockhash:', blockhash);
+		transaction.recentBlockhash = blockhash;
+
+		// Sign with our keypair
 		transaction.sign(keypair);
 
 		// Serialize the signed transaction

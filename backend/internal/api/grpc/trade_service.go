@@ -135,7 +135,7 @@ func (s *tradeServiceHandler) GetTrade(
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 		}
-		log.Printf("💥💥💥💥Trade status: %v", status)
+		log.Printf("💥💥💥💥Trade status: %s", status.Value[0].ConfirmationStatus)
 
 		// Get the trade by transaction hash
 		trade, err = s.tradeService.GetTradeByTransactionHash(ctx, identifier.TransactionHash)
