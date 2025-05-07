@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
@@ -10,10 +10,16 @@ import {
 	validateForm,
 	handleTokenTransfer,
 	handleTokenSelect,
-	getDefaultSolanaToken
+	getDefaultSolanaToken,
+	startPolling,
+	stopPolling,
+	pollTransactionStatus
 } from './scripts';
 import { createStyles } from './styles';
 import { Coin } from '@/types';
+import TradeConfirmation from '@components/Trade/TradeConfirmation';
+import TradeStatusModal from '@components/Trade/TradeStatusModal';
+import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 
 const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const theme = useTheme();
@@ -24,6 +30,15 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const [amount, setAmount] = useState('');
 	const [recipientAddress, setRecipientAddress] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
+
+	// New state variables for confirmation and polling
+	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
+	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
+	const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null);
+	const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending');
+	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
+	const [pollingError, setPollingError] = useState<string | null>(null);
+	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
 	// Initialize with SOL token
 	useEffect(() => {
@@ -54,9 +69,44 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		}
 	}, [wallet, tokens, showToast]);
 
+	// Cleanup polling on unmount
+	useEffect(() => {
+		return () => {
+			if (pollingIntervalRef.current) {
+				clearInterval(pollingIntervalRef.current);
+			}
+		};
+	}, []);
+
 	const onTokenSelect = (coin: Coin) => {
 		const portfolioToken = handleTokenSelect(coin, tokens);
 		setSelectedToken(portfolioToken);
+	};
+
+	// Wrapped polling functions for component context
+	const componentStopPolling = () => {
+		stopPolling(pollingIntervalRef, setIsLoading);
+	};
+
+	const componentPollStatus = async (txHash: string) => {
+		await pollTransactionStatus(
+			txHash,
+			setPollingConfirmations,
+			setPollingStatus,
+			setPollingError,
+			componentStopPolling,
+			showToast,
+			wallet
+		);
+	};
+
+	const componentStartPolling = (txHash: string) => {
+		startPolling(
+			txHash,
+			() => componentPollStatus(txHash),
+			componentStopPolling,
+			pollingIntervalRef
+		);
 	};
 
 	const handleSubmit = async () => {
@@ -76,8 +126,6 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				return;
 			}
 
-			setIsLoading(true);
-
 			const validationError = await validateForm({
 				toAddress: recipientAddress,
 				amount,
@@ -89,30 +137,51 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 					type: 'error',
 					message: validationError
 				});
-				setIsLoading(false);
 				return;
 			}
+
+			// Show confirmation modal
+			setIsConfirmationVisible(true);
+		} catch (err) {
+			showToast({
+				type: 'error',
+				message: err.message || 'Failed to validate transfer'
+			});
+		}
+	};
+
+	const handleConfirmSubmit = async () => {
+		try {
+			setIsLoading(true);
+			setIsConfirmationVisible(false);
 
 			const txHash = await handleTokenTransfer({
 				toAddress: recipientAddress,
 				amount,
-				selectedTokenMint: selectedToken.mintAddress
+				selectedTokenMint: selectedToken!.mintAddress
 			});
 
 			console.log('Transaction submitted:', txHash);
-			showToast({
-				type: 'success',
-				message: 'Transaction submitted successfully'
-			});
-			navigation.goBack();
+			setSubmittedTxHash(txHash);
+			setIsStatusModalVisible(true);
+			componentStartPolling(txHash);
+
 		} catch (err) {
 			showToast({
 				type: 'error',
 				message: err.message || 'Failed to send tokens'
 			});
-		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	const handleCloseStatusModal = () => {
+		setIsStatusModalVisible(false);
+		setPollingStatus('pending');
+		setPollingConfirmations(0);
+		setPollingError(null);
+		setSubmittedTxHash(null);
+		navigation.goBack();
 	};
 
 	if (!wallet) {
@@ -192,6 +261,33 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 					</Text>
 				</TouchableOpacity>
 			</ScrollView>
+
+			{/* Confirmation Modal */}
+			<TradeConfirmation
+				isVisible={isConfirmationVisible}
+				onClose={() => setIsConfirmationVisible(false)}
+				onConfirm={handleConfirmSubmit}
+				fromCoin={selectedToken?.coin}
+				toCoin={selectedToken?.coin}
+				fromAmount={amount}
+				toAmount="0"
+				fees={{
+					priceImpactPct: "0",
+					totalFee: "0",
+					gasFee: "0",
+					route: "Direct Transfer"
+				}}
+			/>
+
+			{/* Status Modal */}
+			<TradeStatusModal
+				isVisible={isStatusModalVisible}
+				onClose={handleCloseStatusModal}
+				status={pollingStatus}
+				confirmations={pollingConfirmations}
+				error={pollingError}
+				txHash={submittedTxHash}
+			/>
 		</View>
 	);
 };
