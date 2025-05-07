@@ -5,6 +5,22 @@ import { grpcApi } from '@/services/grpcApi';
 import * as coinStoreModule from './coins';
 import * as Keychain from 'react-native-keychain';
 
+// Mock solana service
+jest.mock('@/services/solana', () => ({
+	getKeypairFromPrivateKey: jest.fn().mockImplementation(() => ({
+		publicKey: {
+			toString: () => 'wallet123'
+		}
+	}))
+}));
+
+// Mock grpcApi
+jest.mock('@/services/grpcApi', () => ({
+	grpcApi: {
+		getWalletBalance: jest.fn(),
+	},
+}));
+
 // Mock Keychain
 jest.mock('react-native-keychain');
 
@@ -38,14 +54,11 @@ const mockApiBalanceResponseWithUnknown = {
 
 // Mock keychain responses
 beforeEach(() => {
-	(Keychain.getGenericPassword as jest.Mock).mockImplementation((options) => {
-		if (options.username === 'userPrivateKey') {
-			return Promise.resolve({ password: mockWalletData.privateKey });
-		}
-		if (options.username === 'userMnemonic') {
-			return Promise.resolve({ password: mockWalletData.mnemonic });
-		}
-		return Promise.resolve(null);
+	(Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
+		password: JSON.stringify({
+			privateKey: mockWalletData.privateKey,
+			mnemonic: mockWalletData.mnemonic
+		})
 	});
 });
 
@@ -124,20 +137,20 @@ describe('Zustand Portfolio Store', () => {
 			// Verify token calculations (only coins that exist in coinMap)
 			expect(state.tokens).toHaveLength(2);
 			expect(state.tokens).toEqual(expect.arrayContaining([
-				expect.objectContaining({
-					id: 'solana',
+				{
+					mintAddress: 'solana',
 					amount: 5,
 					price: 150,
 					value: 750,
 					coin: mockSolCoin
-				}),
-				expect.objectContaining({
-					id: 'usd-coin',
+				},
+				{
+					mintAddress: 'usd-coin',
 					amount: 250,
 					price: 1,
 					value: 250,
 					coin: mockUsdcCoin
-				})
+				}
 			]));
 		});
 
@@ -174,20 +187,20 @@ describe('Zustand Portfolio Store', () => {
 			// Tokens should include all successfully loaded coins
 			expect(state.tokens).toHaveLength(2);
 			expect(state.tokens).toEqual(expect.arrayContaining([
-				expect.objectContaining({
-					id: 'solana',
+				{
+					mintAddress: 'solana',
 					amount: 5,
 					price: 150,
 					value: 750,
 					coin: mockSolCoin
-				}),
-				expect.objectContaining({
-					id: 'usd-coin',
+				},
+				{
+					mintAddress: 'usd-coin',
 					amount: 250,
 					price: 1,
 					value: 250,
 					coin: mockUsdcCoin
-				})
+				}
 			]));
 			// Should call getCoinByID for usd-coin and unknown-coin
 			expect(mockGetCoinByID).toHaveBeenCalledWith('usd-coin');
