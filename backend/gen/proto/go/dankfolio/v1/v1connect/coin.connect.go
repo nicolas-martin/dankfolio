@@ -53,11 +53,11 @@ type CoinServiceClient interface {
 	GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	// GetCoinByID returns a specific coin by ID
 	GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error)
-	// SearchCoinByMint searches for a token by mint address
+	// SearchCoinByMint searches for a coin by mint address
 	SearchCoinByMint(context.Context, *connect.Request[v1.SearchCoinByMintRequest]) (*connect.Response[v1.SearchCoinByMintResponse], error)
-	// GetAllCoins returns a list of all available tokens
+	// GetAllCoins returns a list of all available coins
 	GetAllCoins(context.Context, *connect.Request[v1.GetAllCoinsRequest]) (*connect.Response[v1.GetAllCoinsResponse], error)
-	// Search allows searching tokens by various criteria
+	// Search allows searching coins by various criteria
 	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
 }
 
@@ -145,11 +145,11 @@ type CoinServiceHandler interface {
 	GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	// GetCoinByID returns a specific coin by ID
 	GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error)
-	// SearchCoinByMint searches for a token by mint address
+	// SearchCoinByMint searches for a coin by mint address
 	SearchCoinByMint(context.Context, *connect.Request[v1.SearchCoinByMintRequest]) (*connect.Response[v1.SearchCoinByMintResponse], error)
-	// GetAllCoins returns a list of all available tokens
+	// GetAllCoins returns a list of all available coins
 	GetAllCoins(context.Context, *connect.Request[v1.GetAllCoinsRequest]) (*connect.Response[v1.GetAllCoinsResponse], error)
-	// Search allows searching tokens by various criteria
+	// Search allows searching coins by various criteria
 	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
 }
 

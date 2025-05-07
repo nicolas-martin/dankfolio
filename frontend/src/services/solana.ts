@@ -228,92 +228,19 @@ export const buildAndSignTransferTransaction = async (
 		const transactionBuf = Buffer.from(prepareResponse.unsignedTransaction, 'base64');
 		console.log('📦 Transaction buffer length:', transactionBuf.length);
 
-		try {
-			// Try to deserialize as a legacy Transaction
-			const transaction = Transaction.from(transactionBuf);
-			console.log('🔍 Deserialized as Legacy Transaction');
+		// Sign the transaction
+		console.log('✍️ Signing transaction...');
+		const transaction = Transaction.from(transactionBuf);
+		transaction.sign(keypair);
 
-			// Log transaction details
-			console.log('📝 Transaction details:', {
-				numRequiredSignatures: transaction.signatures.length,
-				instructions: transaction.instructions.length,
-				recentBlockhash: transaction.recentBlockhash,
-				feePayer: transaction.feePayer?.toString()
-			});
+		// Serialize the signed transaction
+		console.log('📦 Serializing signed transaction...');
+		const serializedTransaction = transaction.serialize().toString('base64');
+		console.log('✅ Transaction signed and serialized');
 
-			// Verify the transaction is properly formed
-			if (!transaction.feePayer) {
-				transaction.feePayer = keypair.publicKey;
-				console.log('📝 Set fee payer:', keypair.publicKey.toString());
-			}
-
-			// Clear any existing signatures
-			transaction.signatures = [];
-
-			// Sign the transaction
-			console.log('✍️ Signing transaction...');
-			transaction.partialSign(keypair);
-			console.log('✅ Transaction signed');
-
-			// Verify signature
-			const isComplete = transaction.verifySignatures();
-			console.log('🔍 Signature verification:', isComplete ? '✅ Valid' : '❌ Invalid');
-
-			// Serialize and encode the signed transaction
-			console.log('📤 Serializing transaction...');
-			const serializedTransaction = transaction.serialize();
-			const signedTransactionBase64 = Buffer.from(serializedTransaction).toString('base64');
-			console.log('✅ Transaction successfully serialized, length:', serializedTransaction.length);
-
-			return signedTransactionBase64;
-		} catch (error) {
-			console.error('❌ Transaction processing error:', error);
-
-			// Try alternative deserialization if the first attempt failed
-			try {
-				console.log('🔄 Attempting alternative deserialization...');
-				const transaction = new Transaction();
-				const recovered = Transaction.from(transactionBuf);
-				transaction.recentBlockhash = recovered.recentBlockhash;
-				transaction.feePayer = keypair.publicKey;
-				recovered.instructions.forEach(ix => transaction.add(ix));
-
-				console.log('📝 Reconstructed transaction details:', {
-					numRequiredSignatures: transaction.signatures.length,
-					instructions: transaction.instructions.length,
-					recentBlockhash: transaction.recentBlockhash,
-					feePayer: transaction.feePayer?.toString()
-				});
-
-				// Sign the transaction
-				console.log('✍️ Signing reconstructed transaction...');
-				transaction.partialSign(keypair);
-				console.log('✅ Reconstructed transaction signed');
-
-				// Verify signature
-				const isComplete = transaction.verifySignatures();
-				console.log('🔍 Signature verification:', isComplete ? '✅ Valid' : '❌ Invalid');
-
-				if (!isComplete) {
-					throw new Error('Transaction signature verification failed');
-				}
-
-				// Serialize and encode the signed transaction
-				const serializedTransaction = transaction.serialize();
-				const signedTransactionBase64 = Buffer.from(serializedTransaction).toString('base64');
-				console.log('✅ Reconstructed transaction serialized, length:', serializedTransaction.length);
-
-				return signedTransactionBase64;
-			} catch (populateError) {
-				console.error('❌ Alternative deserialization failed:', populateError);
-				throw new Error(`Failed to process transaction: ${error.message}`);
-			}
-		}
+		return serializedTransaction;
 	} catch (error) {
-		console.error('❌ Error in buildAndSignTransferTransaction:', error);
-		if (error.message?.includes('Blockhash not found')) {
-			throw new Error('Transaction expired. Please try again. If this persists, refresh the page.');
-		}
+		console.error('Failed to build and sign transaction:', error);
 		throw error;
 	}
 };
