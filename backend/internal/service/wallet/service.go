@@ -108,6 +108,7 @@ func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
+	log.Printf("✅ Recent blockhash: %s\n", recent.Value.Blockhash)
 
 	tx, err := solana.NewTransaction(
 		instructions,
@@ -294,7 +295,7 @@ func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) 
 	maxRetries := uint(3)
 	sig, err := s.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 		SkipPreflight:       false,
-		PreflightCommitment: rpc.CommitmentFinalized,
+		PreflightCommitment: rpc.CommitmentConfirmed,
 		MaxRetries:          &maxRetries,
 	})
 	if err != nil {
