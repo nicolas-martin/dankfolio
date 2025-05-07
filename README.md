@@ -36,21 +36,22 @@ https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
 To clear this warning, run:
 `watchman watch-del '/Users/nma/dev/dankfolio' ; watchman watch-project '/Users/nma/dev/dankfolio'`
 
- PASS  src/screens/Profile/ProfileScreen.test.tsx
  PASS  src/screens/Home/HomeScreen.test.tsx
- PASS  src/components/Chart/CoinChart/index.test.tsx
- PASS  src/store/portfolio.test.ts
- PASS  src/services/api.test.ts
- PASS  src/store/coins.test.ts
- PASS  src/components/Common/Navigation/navigation.test.tsx
- PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
  PASS  src/components/Common/TokenSelector/TokenSelector.test.tsx
+ PASS  src/store/coins.test.ts
+ PASS  src/components/Chart/CoinChart/index.test.tsx
  PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
- PASS  src/screens/Trade/TradeScreen.test.tsx (5.19 s)
+ PASS  src/services/api.test.ts
+ PASS  src/store/portfolio.test.ts
+ PASS  src/screens/Profile/ProfileScreen.test.tsx
+ PASS  src/utils/numberFormat.test.ts
+ PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
+ PASS  src/components/Common/Navigation/navigation.test.tsx
+ PASS  src/screens/Trade/TradeScreen.test.tsx
 ------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
 File                                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
 ------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
-All files                           |    57.5 |    50.67 |   60.68 |   58.09 |
+All files                           |    60.2 |    57.34 |    62.6 |   60.05 |
  components/Chart/CoinChart         |   91.07 |    89.28 |   76.19 |    90.9 |
   index.tsx                         |   91.07 |    89.28 |   76.19 |    90.9 | 82-83,115,196-197
  components/Common/Icons            |   46.42 |        0 |       0 |   76.47 |
@@ -102,15 +103,15 @@ All files                           |    57.5 |    50.67 |   60.68 |   58.09 |
  store                              |    84.9 |     60.6 |   94.73 |   83.67 |
   coins.ts                          |   90.24 |       60 |     100 |   89.18 | 45-48
   portfolio.ts                      |   81.53 |    61.11 |   88.88 |   80.32 | 49,58,71-75,81-92,97
- utils                              |      40 |    36.36 |   28.57 |   44.11 |
+ utils                              |   89.61 |    97.14 |   81.81 |   86.44 |
   constants.ts                      |     100 |      100 |     100 |     100 |
-  numberFormat.ts                   |   44.82 |     38.7 |      40 |   52.17 | 3-7,21-22,25-30,59-60
+  numberFormat.ts                   |     100 |      100 |     100 |     100 |
   url.ts                            |      20 |        0 |       0 |      20 | 4,8-17
 ------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
 
-Test Suites: 11 passed, 11 total
-Tests:       56 passed, 56 total
+Test Suites: 12 passed, 12 total
+Tests:       81 passed, 81 total
 Snapshots:   0 total
-Time:        5.596 s
-✨  Done in 6.07s.
+Time:        4.244 s
+✨  Done in 4.57s.
 ```

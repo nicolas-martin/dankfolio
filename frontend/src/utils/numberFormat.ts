@@ -64,9 +64,6 @@ export const formatPrice = (
 
 	if (price === 0) return `${prefix}0.00`;
 
-	// For very small numbers, use scientific notation
-	if (price < 0.00001) return `${prefix}${price.toExponential(2)}`;
-
 	// Dynamic decimal places based on price magnitude
 	if (price < 0.01) return `${prefix}${price.toFixed(8)}`;
 	if (price < 1) return `${prefix}${price.toFixed(6)}`;
