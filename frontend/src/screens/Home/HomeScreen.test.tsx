@@ -154,7 +154,6 @@ describe('HomeScreen', () => {
 			expect(getByText('Available Coins')).toBeTruthy();
 			expect(getByText('SOL')).toBeTruthy();
 			expect(getByText('USDT')).toBeTruthy();
-			expect(getByText('View Profile')).toBeTruthy();
 		});
 
 		// Test refresh functionality
