@@ -68,20 +68,19 @@ const App: React.FC = () => {
 	const { fetchPortfolioBalance, setWallet, wallet } = usePortfolioStore();
 	const { fetchAvailableCoins } = useCoinStore();
 
-	const handleWalletSetupComplete = (newKeypair: Keypair) => {
-		setWallet(newKeypair);
+	const handleWalletSetupComplete = async (newKeypair: Keypair) => {
+		await setWallet(newKeypair.publicKey.toBase58());
 		setNeedsWalletSetup(false);
 	};
 
 	useEffect(() => {
 		async function prepare() {
-			let existingKeypair: Keypair | null = null;
 			try {
-				existingKeypair = await retrieveWalletFromStorage();
+				const publicKey = await retrieveWalletFromStorage();
 
-				if (existingKeypair) {
-					console.log("Existing wallet keypair found, setting in store.");
-					setWallet(existingKeypair);
+				if (publicKey) {
+					console.log("Existing wallet found, setting in store.");
+					await setWallet(publicKey);
 					setNeedsWalletSetup(false);
 				} else {
 					console.log("No existing wallet found, showing setup screen.");

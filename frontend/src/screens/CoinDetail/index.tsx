@@ -178,7 +178,7 @@ const CoinDetail: React.FC = () => {
 						<Button
 							mode="contained"
 							onPress={async () => {
-								handleTradeNavigation(
+								await handleTradeNavigation(
 									initialCoin,
 									null,
 									showToast,

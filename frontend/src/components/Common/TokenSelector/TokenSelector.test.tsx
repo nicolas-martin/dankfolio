@@ -7,6 +7,7 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { useProxiedImage } from '@/hooks/useProxiedImage';
 import { Coin } from '@/types';
+import { mockSolCoin } from '@/__mocks__/testData';
 
 //BUG: SOMEHOW THESE TESTS ARE POLUTING THE STORE?
 
@@ -97,6 +98,17 @@ describe('TokenSelector', () => {
 	});
 
 	describe('Component Rendering', () => {
+		it('renders correctly', () => {
+			const { getByTestId } = render(
+				<TokenSelector
+					onSelectToken={mockOnSelectToken}
+					testID="token-selector-button"
+					selectedToken={mockSolCoin}
+				/>
+			);
+			expect(getByTestId('token-selector-button')).toBeTruthy();
+		});
+
 		it('renders correctly without a selected token', () => {
 			const { getByText } = renderWithProvider(
 				<TokenSelector onSelectToken={mockOnSelectToken} testID="token-selector-button" />

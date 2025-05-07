@@ -16,10 +16,10 @@ export const convertToBase58 = (privateKey: string): Base58PrivateKey => {
 	if (isBase64(privateKey)) {
 		// Convert Base64 to Base58
 		const secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
-		return bs58.encode(secretKey);
+		return bs58.encode(secretKey) as Base58PrivateKey;
 	}
 	// Already in Base58 format
-	return privateKey;
+	return privateKey as Base58PrivateKey;
 };
 
 

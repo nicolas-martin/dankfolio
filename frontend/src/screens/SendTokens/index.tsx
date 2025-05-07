@@ -122,6 +122,13 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			</View>
 		);
 	}
+	if (!selectedToken) {
+		return (
+			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+				<Text style={styles.title}>No token selected</Text>
+			</View>
+		);
+	}
 
 	return (
 		<View style={styles.container}>
@@ -130,7 +137,7 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 				<TokenSelector
 					style={styles.inputContainer}
-					selectedToken={selectedToken?.coin}
+					selectedToken={selectedToken.coin}
 					onSelectToken={onTokenSelect}
 					label="Select token to send"
 					amountValue={amount}

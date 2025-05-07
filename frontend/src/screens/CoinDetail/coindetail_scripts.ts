@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Coin, PriceData } from '@/types/index';
+import { Coin } from '@/types';
+import { PriceData } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
 import { TimeframeOption } from './coindetail_types';
 import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb';
+import { useCoinStore } from '@/store/coins';
+import { SOLANA_ADDRESS } from '@/utils/constants';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 interface ToastParams {
@@ -98,7 +101,7 @@ export const fetchPriceHistory = async (
 	}
 };
 
-export const handleTradeNavigation = (
+export const handleTradeNavigation = async (
 	toCoin: Coin | null,
 	fromCoin: Coin | null,
 	showToast: (params: ToastParams) => void,
@@ -112,24 +115,28 @@ export const handleTradeNavigation = (
 		return;
 	}
 
-	if (fromCoin) {
-		// Prevent trading the same coin
-		if (toCoin.mintAddress === fromCoin.mintAddress) {
-			showToast({
-				type: 'error',
-				message: 'Cannot trade a coin for itself'
-			});
-			return;
-		}
+	let selectedFromCoin = fromCoin;
 
-		navigate('Trade', {
-			initialFromCoin: fromCoin,
-			initialToCoin: toCoin
-		});
-	} else {
-		navigate('Trade', {
-			initialFromCoin: null,
-			initialToCoin: toCoin
-		});
+	// If no fromCoin provided, try to get SOL
+	if (!selectedFromCoin) {
+		try {
+			selectedFromCoin = await useCoinStore.getState().getCoinByID(SOLANA_ADDRESS);
+		} catch (error) {
+			console.error('Failed to get SOL coin:', error);
+		}
 	}
+
+	// Prevent trading the same coin
+	if (selectedFromCoin && toCoin.mintAddress === selectedFromCoin.mintAddress) {
+		showToast({
+			type: 'error',
+			message: 'Cannot trade a coin for itself'
+		});
+		return;
+	}
+
+	navigate('Trade', {
+		initialFromCoin: selectedFromCoin,
+		initialToCoin: toCoin
+	});
 };

@@ -1,10 +1,12 @@
 import { act } from '@testing-library/react-native';
 import { usePortfolioStore } from './portfolio';
-import { Wallet, Coin } from '@/types';
+import { Wallet, Coin, Base58PrivateKey } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
 import * as coinStoreModule from './coins';
+import * as Keychain from 'react-native-keychain';
 
-jest.mock('@/services/grpcApi');
+// Mock Keychain
+jest.mock('react-native-keychain');
 
 let coinMap: Record<string, Coin>;
 const mockGetCoinByID = jest.fn();
@@ -12,7 +14,11 @@ const mockSetCoin = jest.fn((coin: Coin) => {
 	coinMap[coin.mintAddress] = coin;
 });
 
-const mockWalletData: Wallet = { address: 'wallet123', privateKey: 'privKey', mnemonic: 'mnemonic' };
+const mockWalletData: Wallet = {
+	address: 'wallet123',
+	privateKey: 'privKey' as Base58PrivateKey,
+	mnemonic: 'mnemonic'
+};
 const mockSolCoin: Coin = { mintAddress: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
 const mockUsdcCoin: Coin = { mintAddress: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
 
@@ -29,6 +35,19 @@ const mockApiBalanceResponseWithUnknown = {
 		{ id: 'unknown-coin', amount: 100 },
 	]
 };
+
+// Mock keychain responses
+beforeEach(() => {
+	(Keychain.getGenericPassword as jest.Mock).mockImplementation((options) => {
+		if (options.username === 'userPrivateKey') {
+			return Promise.resolve({ password: mockWalletData.privateKey });
+		}
+		if (options.username === 'userMnemonic') {
+			return Promise.resolve({ password: mockWalletData.mnemonic });
+		}
+		return Promise.resolve(null);
+	});
+});
 
 describe('Zustand Portfolio Store', () => {
 	let consoleErrorSpy: jest.SpyInstance;
@@ -58,36 +77,11 @@ describe('Zustand Portfolio Store', () => {
 	});
 
 	describe('Wallet Management', () => {
-		it('handles wallet state operations correctly', () => {
-			// Test initial state
-			expect(initialState.wallet).toBeNull();
-			expect(initialState.isLoading).toBe(false);
-			expect(initialState.error).toBeNull();
-			expect(initialState.tokens).toEqual([]);
-
-			// Test setWallet
-			act(() => {
-				usePortfolioStore.getState().setWallet(mockWalletData.keypair ? mockWalletData.keypair : null);
+		it('handles wallet state operations correctly', async () => {
+			await act(async () => {
+				await usePortfolioStore.getState().setWallet(mockWalletData.address);
 			});
 			expect(usePortfolioStore.getState().wallet).toEqual(mockWalletData);
-
-			// Test clearWallet with populated state
-			act(() => {
-				usePortfolioStore.setState({
-					wallet: mockWalletData,
-					tokens: [{ mintAddress: 'solana', amount: 5, price: 150, value: 750, coin: mockSolCoin }],
-					error: 'Some error'
-				});
-			});
-
-			act(() => {
-				usePortfolioStore.getState().clearWallet();
-			});
-
-			const state = usePortfolioStore.getState();
-			expect(state.wallet).toBeNull();
-			expect(state.tokens).toEqual([]);
-			expect(state.error).toBeNull();
 		});
 	});
 

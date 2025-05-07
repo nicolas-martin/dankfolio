@@ -1,9 +1,17 @@
 import { create } from 'zustand';
-import { Wallet, Coin } from '@/types';
+import { Wallet, Coin, Base58PrivateKey } from '@/types';
 import { Keypair } from '@solana/web3.js';
 import { useCoinStore } from './coins';
 import { grpcApi } from '@/services/grpcApi';
 import { SOLANA_ADDRESS } from '@/utils/constants';
+import * as Keychain from 'react-native-keychain';
+import bs58 from 'bs58';
+import { Buffer } from 'buffer';
+import { getKeypairFromPrivateKey } from '@/services/solana';
+
+const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
+const KEYCHAIN_USERNAME_PRIVATE_KEY = 'userPrivateKey';
+const KEYCHAIN_USERNAME_MNEMONIC = 'userMnemonic';
 
 export interface PortfolioToken {
 	mintAddress: string;
@@ -18,7 +26,7 @@ interface PortfolioState {
 	isLoading: boolean;
 	error: string | null;
 	tokens: PortfolioToken[];
-	setWallet: (keypair: Keypair | null) => void;
+	setWallet: (publicKey: string) => Promise<void>;
 	clearWallet: () => void;
 	fetchPortfolioBalance: (address: string) => Promise<void>;
 }
@@ -29,17 +37,65 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	error: null,
 	tokens: [],
 
-	setWallet: (keypair) => {
-		if (keypair) {
-			const newWallet: Wallet = {
-				keypair: keypair,
-				address: keypair.publicKey.toBase58(),
-				privateKey: '' as any,
-				mnemonic: '',
-			};
-			set({ wallet: newWallet });
-		} else {
-			set({ wallet: null });
+	setWallet: async (publicKey: string) => {
+		console.log('🔐 Setting wallet with public key:', publicKey);
+
+		try {
+			// Get credentials from keychain
+			console.log('📥 Retrieving credentials from keychain...');
+			const credentials = await Keychain.getGenericPassword({
+				service: KEYCHAIN_SERVICE
+			});
+
+			if (!credentials) {
+				console.error('❌ No credentials found in keychain');
+				throw new Error('No credentials found in keychain');
+			}
+
+			try {
+				const parsedCredentials = JSON.parse(credentials.password);
+				const privateKey = parsedCredentials.privateKey;
+				const mnemonic = parsedCredentials.mnemonic;
+
+				if (!privateKey) {
+					throw new Error('No private key found in stored credentials');
+				}
+
+				const newWallet: Wallet = {
+					address: publicKey,
+					privateKey: privateKey as Base58PrivateKey,
+					mnemonic: mnemonic || ''
+				};
+
+				console.log('💼 Setting wallet in store:', {
+					address: newWallet.address,
+					privateKeyFormat: 'base58',
+					privateKeyLength: newWallet.privateKey.length,
+					privateKeyPreview: newWallet.privateKey.substring(0, 10) + '...',
+					hasMnemonic: !!newWallet.mnemonic
+				});
+
+				// Verify the private key format
+				try {
+					const keypair = getKeypairFromPrivateKey(newWallet.privateKey);
+					console.log('✅ Verified private key format:', {
+						derivedPublicKey: keypair.publicKey.toString(),
+						matchesAddress: keypair.publicKey.toString() === newWallet.address
+					});
+				} catch (error) {
+					console.error('❌ Error verifying private key format:', error);
+					throw new Error('Invalid private key format');
+				}
+
+				set({ wallet: newWallet });
+			} catch (error) {
+				console.error('❌ Error parsing stored credentials:', error);
+				throw new Error('Invalid credentials format in keychain');
+			}
+		} catch (error) {
+			console.error('❌ Error setting wallet:', error);
+			set({ error: error instanceof Error ? error.message : 'Unknown error setting wallet' });
+			throw error;
 		}
 	},
 

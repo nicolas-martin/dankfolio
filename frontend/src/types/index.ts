@@ -22,8 +22,8 @@ export interface Coin {
 	percentage?: number;
 }
 
-/** Base58 encoded private key string */
-export type Base58PrivateKey = string;
+/** Base58 encoded private key string with type safety */
+export type Base58PrivateKey = string & { readonly __brand: unique symbol };
 
 export interface Wallet {
 	address: string;

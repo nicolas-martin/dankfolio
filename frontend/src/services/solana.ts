@@ -1,8 +1,9 @@
 import { Keypair, VersionedTransaction, PublicKey, Transaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { Wallet } from '@/types';
+import { Wallet, Base58PrivateKey } from '@/types';
 import { REACT_APP_SOLANA_RPC_ENDPOINT, REACT_APP_JUPITER_API_URL } from '@env';
 import { grpcApi } from '@/services/grpcApi';
+import { usePortfolioStore } from '@/store/portfolio';
 
 if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
 	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
@@ -91,22 +92,36 @@ const jupiterApiFetch = async (url: string, method: string = 'GET', data: any = 
 	}
 };
 
-export const getKeypairFromPrivateKey = (privateKey: string): Keypair => {
-	// Handle Base64 private key
-	//   const secretKey = new Uint8Array(Buffer.from(privateKey, 'base64'));
-	// Handle Base58 private key
-	const secretKey = bs58.decode(privateKey);
-	return Keypair.fromSecretKey(secretKey);
+export const getKeypairFromPrivateKey = (privateKey: Base58PrivateKey): Keypair => {
+	try {
+		const secretKey = bs58.decode(privateKey);
+		if (secretKey.length !== 64) {
+			throw new Error(`Invalid private key length: ${secretKey.length} bytes. Expected 64 bytes.`);
+		}
+		const keypair = Keypair.fromSecretKey(secretKey);
+		console.log('🔐 Created keypair from Base58 private key:', {
+			publicKey: keypair.publicKey.toString(),
+			secretKeyLength: keypair.secretKey.length
+		});
+		return keypair;
+	} catch (error) {
+		console.error('❌ Error creating keypair:', error);
+		throw error;
+	}
 };
 
 export const buildAndSignSwapTransaction = async (
 	fromCoinId: string,
 	toCoinId: string,
 	amount: number,
-	slippage: number,
-	wallet: Wallet
+	slippage: number
 ): Promise<string> => {
 	try {
+		const wallet = usePortfolioStore.getState().wallet;
+		if (!wallet) {
+			throw new Error('No wallet found in store');
+		}
+
 		console.log('🔐 Building swap transaction with:', {
 			fromCoinId,
 			toCoinId,
@@ -123,17 +138,6 @@ export const buildAndSignSwapTransaction = async (
 			publicKey: keypair.publicKey.toString(),
 			addressMatch: keypair.publicKey.toString() === wallet.address
 		});
-
-		// Check if wallet has enough SOL for rent (about 0.003 SOL to be safe)
-		// const walletBalance = await connection.getBalance(wallet.publicKey);
-		// const minBalanceForRent = 3000000; // 0.003 SOL in lamports
-
-		// if (walletBalance < minBalanceForRent) {
-		// 	throw new Error(
-		// 		`Insufficient SOL for rent. Need at least 0.003 SOL for account creation. Current balance: ${walletBalance / LAMPORTS_PER_SOL
-		// 		} SOL`
-		// 	);
-		// }
 
 		// Get quote
 		const quoteResponse = await jupiterApiFetch('/quote', 'GET', null, {
@@ -189,10 +193,14 @@ export const buildAndSignSwapTransaction = async (
 export const buildAndSignTransferTransaction = async (
 	toAddress: string,
 	coinMint: string,
-	amount: number,
-	wallet: Wallet
+	amount: number
 ): Promise<string> => {
 	try {
+		const wallet = usePortfolioStore.getState().wallet;
+		if (!wallet) {
+			throw new Error('No wallet found in store');
+		}
+
 		console.log('🔐 Building transfer transaction:', {
 			toAddress,
 			coinMint: coinMint || 'SOL',

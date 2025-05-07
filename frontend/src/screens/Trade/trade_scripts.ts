@@ -112,15 +112,13 @@ export const signTradeTransaction = async (
 	fromCoin: Coin,
 	toCoin: Coin,
 	amount: string,
-	slippage: number,
-	wallet: Wallet
+	slippage: number
 ): Promise<string> => {
 	console.log('🔑 Signing trade transaction:', {
 		fromCoin: fromCoin.symbol,
 		toCoin: toCoin.symbol,
 		amount,
-		slippage,
-		walletAddress: wallet.address,
+		slippage
 	});
 
 	// Convert amount to raw units (lamports)
@@ -131,8 +129,7 @@ export const signTradeTransaction = async (
 		fromCoin.mintAddress,
 		toCoin.mintAddress,
 		rawAmount,
-		slippage,
-		wallet
+		slippage
 	);
 
 	console.log('✅ Transaction signed.');
@@ -222,7 +219,6 @@ export const startPolling = (
 };
 
 export const executeTrade = async (
-	wallet: Wallet,
 	fromCoin: Coin,
 	toCoin: Coin,
 	fromAmount: string,
@@ -250,8 +246,7 @@ export const executeTrade = async (
 			fromCoin,
 			toCoin,
 			fromAmount,
-			slippage,
-			wallet
+			slippage
 		);
 
 		// Submit the signed transaction

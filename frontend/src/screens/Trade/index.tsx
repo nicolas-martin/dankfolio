@@ -311,16 +311,16 @@ const Trade: React.FC = () => {
 
 	// --- New handleTradeConfirm using executeTrade --- 
 	const handleTradeConfirmClick = async () => {
-		if (!wallet || !fromCoin || !toCoin || !fromAmount) {
-			showToast({ type: 'error', message: 'Missing trade information' });
+		if (!fromCoin || !toCoin || !fromAmount) {
+			showToast({ type: 'error', message: 'Missing required trade parameters' });
 			return;
 		}
+
 		await executeTrade(
-			wallet,
 			fromCoin,
 			toCoin,
 			fromAmount,
-			0.5, // TODO: Make slippage configurable
+			1, // 1% slippage
 			showToast,
 			setIsLoadingTrade,
 			setIsConfirmationVisible,
@@ -329,7 +329,7 @@ const Trade: React.FC = () => {
 			setPollingError,
 			setPollingConfirmations,
 			setIsStatusModalVisible,
-			componentStartPolling // Pass wrapped startPolling
+			componentStartPolling
 		);
 	};
 
