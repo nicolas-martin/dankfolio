@@ -38,4 +38,5 @@ type Repository[T Entity] interface {
 	Update(ctx context.Context, item *T) error
 	Upsert(ctx context.Context, item *T) error
 	Delete(ctx context.Context, id string) error
+	GetByField(ctx context.Context, field string, value interface{}) (*T, error)
 }
