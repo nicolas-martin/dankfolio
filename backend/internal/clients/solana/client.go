@@ -3,8 +3,10 @@ package solana
 import (
 	"context"
 	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"log"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -83,6 +85,22 @@ func (c *Client) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx 
 
 // ExecuteSignedTransaction submits a signed transaction to the Solana blockchain
 func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) (solana.Signature, error) {
+	// In debug mode, generate a unique transaction hash
+	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		log.Print("x-debug-mode: true")
+		// Generate a valid Solana signature (64 bytes)
+		sigBytes := make([]byte, 64)
+		// Use timestamp for first 8 bytes to ensure uniqueness
+		binary.BigEndian.PutUint64(sigBytes[:8], uint64(time.Now().UnixNano()))
+		// Fill rest with random bytes
+		if _, err := rand.Read(sigBytes[8:]); err != nil {
+			return solana.Signature{}, fmt.Errorf("failed to generate debug signature: %w", err)
+		}
+		sig := solana.SignatureFromBytes(sigBytes)
+		log.Printf("✅ Debug mode: Generated unique transaction signature: %s", sig.String())
+		return sig, nil
+	}
+
 	log.Printf("🔍 Decoding signed transaction: %s", signedTx)
 	decodedTx, err := base64.StdEncoding.DecodeString(signedTx)
 	if err != nil {

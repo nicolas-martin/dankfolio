@@ -119,11 +119,13 @@ func (s *tradeServiceHandler) GetTrade(
 
 	switch identifier := req.Msg.Identifier.(type) {
 	case *pb.GetTradeRequest_Id:
+		log.Printf("Received GetTrade request with ID: %s", identifier.Id)
 		if identifier.Id == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("trade ID is required"))
 		}
 		trade, err = s.tradeService.GetTrade(ctx, identifier.Id)
 	case *pb.GetTradeRequest_TransactionHash:
+		log.Printf("Received GetTrade request with TransactionHash: %s", identifier.TransactionHash)
 		if identifier.TransactionHash == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction hash is required"))
 		}
@@ -133,7 +135,7 @@ func (s *tradeServiceHandler) GetTrade(
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 		}
 
-		// Get the trade by transaction hash
+		// // Get the trade by transaction hash
 		trade, err = s.tradeService.GetTradeByTransactionHash(ctx, identifier.TransactionHash)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade: %w", err))
