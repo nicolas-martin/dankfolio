@@ -8,7 +8,7 @@ import {
 	formatValueChange,
 	formatAddress,
 	formatPct
-} from '../numberFormat';
+} from './numberFormat';
 
 describe('Number Formatting Utilities', () => {
 	describe('toRawAmount', () => {
@@ -45,7 +45,7 @@ describe('Number Formatting Utilities', () => {
 	describe('formatPrice', () => {
 		it('formats prices with appropriate decimal places', () => {
 			expect(formatPrice(0)).toBe('$0.00');
-			expect(formatPrice(0.000001)).toBe('$1.00e-6');
+			expect(formatPrice(0.000001)).toBe('$0.00000100');
 			expect(formatPrice(0.1)).toBe('$0.100000');
 			expect(formatPrice(1.23)).toBe('$1.2300');
 			expect(formatPrice(12.34)).toBe('$12.34');
@@ -53,9 +53,9 @@ describe('Number Formatting Utilities', () => {
 			expect(formatPrice(1234567.89)).toBe('$1.23M');
 		});
 
-		it('uses scientific notation for very small numbers', () => {
-			expect(formatPrice(0.000001)).toBe('$1.00e-6');
-			expect(formatPrice(0.00000001)).toBe('$1.00e-8');
+		it('handles very small numbers with fixed decimals', () => {
+			expect(formatPrice(0.000001)).toBe('$0.00000100');
+			expect(formatPrice(0.00000001)).toBe('$0.00000001');
 		});
 
 		it('handles null/undefined values', () => {
