@@ -91,9 +91,42 @@ const Trade: React.FC = () => {
 
 	// --- End Wrapped Polling Functions ---
 
+	// Initialize coins and fetch fresh data
+	useEffect(() => {
+		const initializeCoins = async () => {
+			const promises = [];
+
+			// If initialFromCoin is provided, fetch fresh data
+			if (initialFromCoin) {
+				promises.push(getCoinByID(initialFromCoin.mintAddress, true).then(coin => {
+					if (coin) setFromCoin(coin);
+				}));
+			}
+			// If no initialFromCoin, use SOL as default
+			else {
+				promises.push(getCoinByID(SOLANA_ADDRESS, true).then(coin => {
+					if (coin) setFromCoin(coin);
+				}));
+			}
+
+			// If initialToCoin is provided, fetch fresh data
+			if (initialToCoin) {
+				promises.push(getCoinByID(initialToCoin.mintAddress, true).then(coin => {
+					if (coin) setToCoin(coin);
+				}));
+			}
+
+			await Promise.all(promises);
+		};
+
+		initializeCoins();
+	}, [initialFromCoin, initialToCoin, getCoinByID]);
+
 	// Refresh coin prices periodically
 	useEffect(() => {
-		const refreshPrices = async () => {
+		// Only set up the interval for periodic updates
+		// Skip the immediate refresh since we already have fresh data
+		const interval = setInterval(async () => {
 			if (!fromCoin || !toCoin) return;
 
 			try {
@@ -107,11 +140,7 @@ const Trade: React.FC = () => {
 			} catch (error) {
 				console.error('Failed to refresh coin prices:', error);
 			}
-		};
-
-		// Refresh immediately and then every 10 seconds
-		refreshPrices();
-		const interval = setInterval(refreshPrices, 10000);
+		}, 10000);
 
 		return () => clearInterval(interval);
 	}, [fromCoin?.mintAddress, toCoin?.mintAddress, getCoinByID]);

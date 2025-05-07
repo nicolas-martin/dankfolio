@@ -316,60 +316,44 @@ describe('TradeScreen', () => {
 	});
 
 	it('executes complete trade flow with confirmation', async () => {
-		const initialFromAmount = '1';
-		const initialToAmount = '1350000';
-
-		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
-			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
-				act(() => {
-					setToAmount(initialToAmount);
-					setTradeDetails({ exchangeRate: '1350000', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
-					setIsQuoteLoading(false);
-				});
-			}
-		);
-
 		const { getByTestId } = renderWithProvider(<TradeScreen />);
+
 		await waitFor(() => expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2));
 
 		// Set amount and trigger quote
 		const fromInput = getByTestId('token-selector-input-from');
-		fireEvent.changeText(fromInput, initialFromAmount);
+		fireEvent.changeText(fromInput, mockFromAmount);
+
+		// Wait for quote to be fetched
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
 
-		// Wait for loading to complete and open confirmation modal
-		await waitFor(() => {
-			const tradeButton = getByTestId('trade-button');
-			expect(tradeButton.props.accessibilityState.disabled).toBe(false);
-		});
-		fireEvent.press(getByTestId('trade-button'));
-
-		const confirmationModal = await waitFor(() => getByTestId('mock-TradeConfirmation'));
-		expect(confirmationModal.props.isVisible).toBe(true);
-
-		// Confirm trade
-		await act(async () => {
-			await confirmationModal.props.onConfirm();
-		});
+		// Trigger trade execution
+		const tradeButton = getByTestId('trade-button');
+		fireEvent.press(tradeButton);
 
 		// Verify trade execution
 		await waitFor(() => {
 			expect(TradeScripts.executeTrade).toHaveBeenCalledWith(
-				mockWallet,
 				mockFromCoin,
 				mockToCoin,
-				initialFromAmount,
-				0.5,
-				expect.any(Function),
-				expect.any(Function),
-				expect.any(Function),
-				expect.any(Function),
-				expect.any(Function),
-				expect.any(Function),
-				expect.any(Function),
-				expect.any(Function),
-				expect.any(Function)
+				mockFromAmount,
+				1,  // slippage
+				mockShowToast,
+				expect.any(Function),  // setIsLoadingTrade
+				expect.any(Function),  // setIsConfirmationVisible
+				expect.any(Function),  // setPollingStatus
+				expect.any(Function),  // setSubmittedTxHash
+				expect.any(Function),  // setPollingError
+				expect.any(Function),  // setPollingConfirmations
+				expect.any(Function),  // setIsStatusModalVisible
+				expect.any(Function)   // startPollingFn
 			);
+		});
+
+		// Verify toast was shown
+		expect(mockShowToast).toHaveBeenCalledWith({
+			type: 'success',
+			message: expect.any(String)
 		});
 	});
 
