@@ -44,6 +44,20 @@ func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 	return modelItem.(*M), nil
 }
 
+// GetByField retrieves an entity by a specific field value.
+func (r *Repository[S, M]) GetByField(ctx context.Context, field string, value interface{}) (*M, error) {
+	var schemaItem S
+	if err := r.db.WithContext(ctx).Where(field+" = ?", value).First(&schemaItem).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("%w: item with %s = %v not found", db.ErrNotFound, field, value)
+		}
+		return nil, fmt.Errorf("failed to get item by %s = %v: %w", field, value, err)
+	}
+
+	modelItem := r.toModel(schemaItem)
+	return modelItem.(*M), nil
+}
+
 // List retrieves all entities.
 func (r *Repository[S, M]) List(ctx context.Context) ([]M, error) {
 	var schemaItems []S

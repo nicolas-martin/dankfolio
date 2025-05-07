@@ -346,18 +346,30 @@ func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) 
 		return "", fmt.Errorf("failed to submit transaction: %w", err)
 	}
 
-	// Create initial trade record with minimal information
-	trade := &model.Trade{
-		ID:              fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		Type:            "transfer",
-		Status:          "submitted",
-		TransactionHash: sig.String(),
-		CreatedAt:       time.Now(),
+	// Get the unsigned transaction from the signed one
+	msgBytes, err := tx.Message.MarshalBinary()
+	if err != nil {
+		log.Printf("Warning: Failed to marshal unsigned transaction: %v", err)
+		return sig.String(), nil
+	}
+	unsignedTx := base64.StdEncoding.EncodeToString(msgBytes)
+
+	// Find the trade record by unsigned transaction
+	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", unsignedTx)
+	if err != nil {
+		log.Printf("Warning: Failed to find trade record: %v", err)
+		return sig.String(), nil
 	}
 
-	// Try to create the trade record, but don't fail if it doesn't work
-	if err := s.store.Trades().Create(ctx, trade); err != nil {
-		log.Printf("Warning: Failed to create trade record: %v", err)
+	// Update the trade record
+	now := time.Now()
+	trade.Status = "finalized"
+	trade.TransactionHash = sig.String()
+	trade.CompletedAt = &now
+	trade.Finalized = true
+
+	if err := s.store.Trades().Update(ctx, trade); err != nil {
+		log.Printf("Warning: Failed to update trade record: %v", err)
 	}
 
 	return sig.String(), nil
