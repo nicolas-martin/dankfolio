@@ -292,18 +292,11 @@ func TruncateAndFormatFloat(value float64, decimalPlaces int) string {
 
 // GetTradeByTransactionHash retrieves a trade by its transaction hash
 func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
-	trades, err := s.ListTrades(ctx)
+	trade, err := s.store.GetByTransactionHash(ctx, txHash)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list trades: %w", err)
+		return nil, fmt.Errorf("failed to get trade by transaction hash: %w", err)
 	}
-
-	for _, trade := range trades {
-		if trade.TransactionHash == txHash {
-			return trade, nil
-		}
-	}
-
-	return nil, fmt.Errorf("trade not found for transaction hash: %s", txHash)
+	return trade, nil
 }
 
 // GetTransactionStatus gets the confirmation status of a transaction

@@ -139,7 +139,7 @@ func main() {
 	)
 
 	// Initialize wallet service
-	walletService := wallet.New(solanaClient.GetRpcConnection())
+	walletService := wallet.New(solanaClient.GetRpcConnection(), store)
 
 	// Initialize Image Service / Utility Service
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
