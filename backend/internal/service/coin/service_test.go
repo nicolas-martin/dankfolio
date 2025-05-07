@@ -10,13 +10,48 @@ import (
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	jupiterMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	offchainMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain/mocks"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	solanaMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	dbMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+// mockService extends Service to override loadOrRefreshData
+type mockService struct {
+	*Service                // Embed as pointer to allow method overriding
+	loadOrRefreshDataCalled bool
+}
+
+func newMockService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, solanaClient solana.ClientAPI, offchainClient offchain.ClientAPI, store db.Store) *mockService {
+	baseService := &Service{
+		config:         config,
+		jupiterClient:  jupiterClient,
+		solanaClient:   solanaClient,
+		offchainClient: offchainClient,
+		store:          store,
+	}
+	s := &mockService{
+		Service: baseService,
+	}
+
+	// Call loadOrRefreshData immediately to match the behavior of NewService
+	ctx, cancel := context.WithTimeout(context.Background(), initialLoadTimeout)
+	defer cancel()
+	_ = s.loadOrRefreshData(ctx)
+
+	return s
+}
+
+// Override loadOrRefreshData to do nothing in tests
+func (m *mockService) loadOrRefreshData(ctx context.Context) error {
+	m.loadOrRefreshDataCalled = true
+	return nil
+}
 
 func TestNewService(t *testing.T) {
 	// Setup
@@ -26,38 +61,53 @@ func TestNewService(t *testing.T) {
 	}
 	httpClient := &http.Client{}
 	jupiterClient := jupiterMocks.NewMockClientAPI(t)
+	solanaClient := solanaMocks.NewMockClientAPI(t)
+	offchainClient := offchainMocks.NewMockClientAPI(t)
 	store := dbMocks.NewMockStore(t)
 
 	// Test
-	service := NewService(config, httpClient, jupiterClient, store)
+	service := newMockService(config, httpClient, jupiterClient, solanaClient, offchainClient, store)
 
 	// Assertions
 	assert.NotNil(t, service)
-	assert.Equal(t, config, service.config)
-	assert.Equal(t, jupiterClient, service.jupiterClient)
-	assert.Equal(t, store, service.store)
+	assert.Equal(t, config, service.Service.config)
+	assert.Equal(t, jupiterClient, service.Service.jupiterClient)
+	assert.Equal(t, solanaClient, service.Service.solanaClient)
+	assert.Equal(t, offchainClient, service.Service.offchainClient)
+	assert.Equal(t, store, service.Service.store)
+	assert.True(t, service.loadOrRefreshDataCalled, "loadOrRefreshData should have been called")
 }
 
 func TestGetCoins(t *testing.T) {
 	// Setup
 	ctx := context.Background()
+	config := &Config{
+		TrendingCoinPath:  "testdata/trending_solana_tokens_enriched.json",
+		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
+	}
+	httpClient := &http.Client{}
+	jupiterClient := jupiterMocks.NewMockClientAPI(t)
+	solanaClient := solanaMocks.NewMockClientAPI(t)
+	offchainClient := offchainMocks.NewMockClientAPI(t)
 	store := dbMocks.NewMockStore(t)
-	service := &Service{store: store}
+	coinRepo := dbMocks.NewMockRepository[model.Coin](t)
 
-	// Create test coins
-	testCoins := []model.Coin{
+	// Setup store expectations
+	store.On("Coins").Return(coinRepo)
+	coinRepo.On("List", ctx).Return([]model.Coin{
 		{
 			MintAddress: "coin1",
 			Name:        "Test Coin 1",
 			Volume24h:   1000.0,
 		},
 		{
-			Volume24h: 2000.0,
+			MintAddress: "coin2",
+			Name:        "Test Coin 2",
+			Volume24h:   2000.0,
 		},
-	}
+	}, nil)
 
-	// Setup expectations
-	store.On("ListCoins", ctx).Return(testCoins, nil)
+	service := newMockService(config, httpClient, jupiterClient, solanaClient, offchainClient, store)
 
 	// Test
 	coins, err := service.GetCoins(ctx)
@@ -68,13 +118,23 @@ func TestGetCoins(t *testing.T) {
 	assert.Equal(t, "Test Coin 2", coins[0].Name) // Should be sorted by volume
 	assert.Equal(t, "Test Coin 1", coins[1].Name)
 	store.AssertExpectations(t)
+	coinRepo.AssertExpectations(t)
 }
 
 func TestGetTrendingCoins(t *testing.T) {
 	// Setup
 	ctx := context.Background()
+	config := &Config{
+		TrendingCoinPath:  "testdata/trending_solana_tokens_enriched.json",
+		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
+	}
+	httpClient := &http.Client{}
+	jupiterClient := jupiterMocks.NewMockClientAPI(t)
+	solanaClient := solanaMocks.NewMockClientAPI(t)
+	offchainClient := offchainMocks.NewMockClientAPI(t)
 	store := dbMocks.NewMockStore(t)
-	service := &Service{store: store}
+
+	service := newMockService(config, httpClient, jupiterClient, solanaClient, offchainClient, store)
 
 	// Create test coins
 	testCoins := []model.Coin{
@@ -116,16 +176,18 @@ func TestGetTrendingCoins(t *testing.T) {
 func TestGetCoinByID(t *testing.T) {
 	// Setup
 	ctx := context.Background()
-	store := dbMocks.NewMockStore(t)
+	config := &Config{
+		TrendingCoinPath:  "testdata/trending_solana_tokens_enriched.json",
+		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
+	}
+	httpClient := &http.Client{}
 	jupiterClient := jupiterMocks.NewMockClientAPI(t)
 	solanaClient := solanaMocks.NewMockClientAPI(t)
 	offchainClient := offchainMocks.NewMockClientAPI(t)
-	service := &Service{
-		store:          store,
-		jupiterClient:  jupiterClient,
-		solanaClient:   solanaClient,
-		offchainClient: offchainClient,
-	}
+	store := dbMocks.NewMockStore(t)
+	coinRepo := dbMocks.NewMockRepository[model.Coin](t)
+
+	service := newMockService(config, httpClient, jupiterClient, solanaClient, offchainClient, store)
 
 	testCoin := model.Coin{
 		MintAddress: "coin1",
@@ -134,11 +196,12 @@ func TestGetCoinByID(t *testing.T) {
 		CreatedAt:   time.Now().Format(time.RFC3339),
 	}
 
-	// Setup expectations
-	store.On("GetCoin", ctx, "coin1").Return(&testCoin, nil)
-
 	// Test cases
 	t.Run("Existing coin", func(t *testing.T) {
+		// Setup store expectations
+		store.On("Coins").Return(coinRepo)
+		coinRepo.On("Get", ctx, "coin1").Return(&testCoin, nil)
+
 		// Test
 		coin, err := service.GetCoinByID(ctx, "coin1")
 
@@ -148,11 +211,13 @@ func TestGetCoinByID(t *testing.T) {
 		assert.Equal(t, testCoin.MintAddress, coin.MintAddress)
 		assert.Equal(t, testCoin.Name, coin.Name)
 		store.AssertExpectations(t)
+		coinRepo.AssertExpectations(t)
 	})
 
 	t.Run("Non-existent coin with Jupiter fallback", func(t *testing.T) {
 		// Setup Jupiter mock
-		jupiterInfo := &jupiter.CoinInfoResponse{
+		jupiterInfo := &jupiter.CoinListInfo{
+			Address:     "newcoin",
 			Name:        "New Coin",
 			Symbol:      "NEW",
 			Decimals:    9,
@@ -179,12 +244,15 @@ func TestGetCoinByID(t *testing.T) {
 			"image":       "http://example.com/image.png",
 		}
 
-		store.On("GetCoin", ctx, "newcoin").Return(nil, errors.New("not found"))
-		jupiterClient.On("GetTokenInfo", "newcoin").Return(jupiterInfo, nil)
-		jupiterClient.On("GetTokenPrices", []string{"newcoin"}).Return(map[string]float64{"newcoin": 1.5}, nil)
+		// Setup store expectations
+		store.On("Coins").Return(coinRepo)
+		coinRepo.On("Get", ctx, "newcoin").Return(nil, errors.New("not found"))
+		coinRepo.On("Upsert", ctx, mock.AnythingOfType("*model.Coin")).Return(nil)
+
+		jupiterClient.On("GetCoinInfo", ctx, "newcoin").Return(jupiterInfo, nil)
+		jupiterClient.On("GetCoinPrices", ctx, []string{"newcoin"}).Return(map[string]float64{"newcoin": 1.5}, nil)
 		solanaClient.On("GetMetadataAccount", ctx, "newcoin").Return(metadata, nil)
 		offchainClient.On("FetchMetadata", "http://example.com/metadata.json").Return(metadataJSON, nil)
-		store.On("UpsertCoin", ctx, mock.AnythingOfType("*model.Coin")).Return(nil)
 
 		// Test
 		coin, err := service.GetCoinByID(ctx, "newcoin")
@@ -195,17 +263,23 @@ func TestGetCoinByID(t *testing.T) {
 		assert.Equal(t, "newcoin", coin.MintAddress)
 		assert.Equal(t, jupiterInfo.Name, coin.Name)
 		assert.Equal(t, jupiterInfo.Symbol, coin.Symbol)
+		assert.Equal(t, 1.5, coin.Price)
 		store.AssertExpectations(t)
+		coinRepo.AssertExpectations(t)
 		jupiterClient.AssertExpectations(t)
 		solanaClient.AssertExpectations(t)
 		offchainClient.AssertExpectations(t)
 	})
 
 	t.Run("Non-existent coin with Jupiter error", func(t *testing.T) {
-		store.On("GetCoin", ctx, "invalid").Return(nil, errors.New("not found"))
-		jupiterClient.On("GetTokenInfo", "invalid").Return(nil, assert.AnError)
-		jupiterClient.On("GetTokenPrices", []string{"invalid"}).Return(map[string]float64{"invalid": 0}, assert.AnError)
-		solanaClient.On("GetMetadataAccount", ctx, "invalid").Return(nil, assert.AnError)
+		// Setup store expectations
+		store.On("Coins").Return(coinRepo)
+		coinRepo.On("Get", ctx, "invalid").Return(nil, errors.New("not found"))
+
+		// Setup Jupiter mock to return error
+		jupiterClient.On("GetCoinInfo", ctx, "invalid").Return(nil, errors.New("not found"))
+		jupiterClient.On("GetCoinPrices", ctx, []string{"invalid"}).Return(nil, errors.New("not found"))
+		solanaClient.On("GetMetadataAccount", ctx, "invalid").Return(nil, errors.New("not found"))
 
 		// Test
 		coin, err := service.GetCoinByID(ctx, "invalid")
@@ -213,7 +287,9 @@ func TestGetCoinByID(t *testing.T) {
 		// Assertions
 		assert.Error(t, err)
 		assert.Nil(t, coin)
+		assert.Contains(t, err.Error(), "not found and dynamic enrichment failed")
 		store.AssertExpectations(t)
+		coinRepo.AssertExpectations(t)
 		jupiterClient.AssertExpectations(t)
 		solanaClient.AssertExpectations(t)
 	})

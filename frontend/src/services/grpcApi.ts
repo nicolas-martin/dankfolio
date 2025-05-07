@@ -273,7 +273,7 @@ export const grpcApi: API = {
 			const response = await walletClient.prepareTransfer({
 				fromAddress: payload.fromAddress,
 				toAddress: payload.toAddress,
-				tokenMint: payload.coinMint || '', // Note: Backend still uses 'token' in field name
+				coinMint: payload.coinMint,
 				amount: payload.amount
 			});
 
@@ -390,9 +390,9 @@ export const grpcApi: API = {
 			grpcUtils.logRequest(serviceName, methodName, params);
 
 			const response = await walletClient.prepareTransfer({
-				fromAddress: '', // This will be filled by the backend
+				fromAddress: '',
 				toAddress: params.toAddress,
-				tokenMint: params.coinMint, // Note: Backend still uses 'token' in field name
+				coinMint: params.coinMint,
 				amount: parseFloat(params.amount)
 			}, { headers: grpcUtils.getRequestHeaders() });
 

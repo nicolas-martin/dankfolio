@@ -166,9 +166,9 @@ func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
 }
 
 // PrepareTransfer prepares an unsigned transfer transaction
-func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, tokenMint string, amount float64) (string, error) {
-	log.Printf("🔄 Preparing transfer: From=%s To=%s Amount=%.9f TokenMint=%s\n",
-		fromAddress, toAddress, amount, tokenMint)
+func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, coinMint string, amount float64) (string, error) {
+	log.Printf("🔄 Preparing transfer: From=%s To=%s Amount=%.9f CoinMint=%s\n",
+		fromAddress, toAddress, amount, coinMint)
 
 	from, err := s.parseAddress(fromAddress, "from")
 	if err != nil {
@@ -180,7 +180,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, t
 		return "", err
 	}
 
-	tx, err := s.createTokenTransfer(ctx, from, to, tokenMint, amount)
+	tx, err := s.createTokenTransfer(ctx, from, to, coinMint, amount)
 	if err != nil {
 		log.Printf("❌ Failed to create transfer transaction: %v\n", err)
 		return "", fmt.Errorf("failed to create transfer transaction: %w", err)

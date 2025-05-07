@@ -49,7 +49,7 @@ const (
 
 // WalletServiceClient is a client for the dankfolio.v1.WalletService service.
 type WalletServiceClient interface {
-	// GetWalletBalances returns the balances for all tokens in a wallet
+	// GetWalletBalances returns the balances for all coins in a wallet
 	GetWalletBalances(context.Context, *connect.Request[v1.GetWalletBalancesRequest]) (*connect.Response[v1.GetWalletBalancesResponse], error)
 	// CreateWallet generates a new Solana wallet
 	CreateWallet(context.Context, *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error)
@@ -127,7 +127,7 @@ func (c *walletServiceClient) SubmitTransfer(ctx context.Context, req *connect.R
 
 // WalletServiceHandler is an implementation of the dankfolio.v1.WalletService service.
 type WalletServiceHandler interface {
-	// GetWalletBalances returns the balances for all tokens in a wallet
+	// GetWalletBalances returns the balances for all coins in a wallet
 	GetWalletBalances(context.Context, *connect.Request[v1.GetWalletBalancesRequest]) (*connect.Response[v1.GetWalletBalancesResponse], error)
 	// CreateWallet generates a new Solana wallet
 	CreateWallet(context.Context, *connect.Request[v1.CreateWalletRequest]) (*connect.Response[v1.CreateWalletResponse], error)
