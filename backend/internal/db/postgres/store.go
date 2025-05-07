@@ -52,11 +52,11 @@ func NewStore(dsn string, enableSQLLogging bool) (*Store, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	// Optional: Auto-migrate schema (useful for dev, but we primarily use Goose)
+	// NOTE: Auto-migrate schema (useful for dev, but we primarily use Goose)
 	// Comment out if only Goose migrations are preferred.
-	// if err := dbConn.AutoMigrate(&schema.Coin{}, &schema.Trade{}); err != nil {
-	// 	 return nil, fmt.Errorf("failed to auto-migrate schema: %w", err)
-	// }
+	if err := dbConn.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}); err != nil {
+		return nil, fmt.Errorf("failed to auto-migrate schema: %w", err)
+	}
 
 	store := &Store{
 		db: dbConn,
