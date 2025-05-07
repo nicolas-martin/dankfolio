@@ -4,6 +4,7 @@ import { Coin } from '@/types';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@/components/Common/Toast';
 import { NavigationProp } from '@react-navigation/native';
+import { formatPrice, formatVolume, formatPercentage } from '@/utils/numberFormat';
 
 export const DEBOUNCE_DELAY = 1000; // ms
 
@@ -48,36 +49,6 @@ export const performSearch = async (
 	}
 };
 
-export const formatPrice = (price: number): string => {
-	if (price >= 1) {
-		return `$${price.toFixed(2)}`;
-	}
-	// For very small numbers, use scientific notation
-	if (price < 0.00001) {
-		return `$${price.toExponential(2)}`;
-	}
-	// For small numbers, show more decimal places
-	return `$${price.toFixed(6)}`;
-};
-
-export const formatVolume = (volume: number): string => {
-	if (volume >= 1_000_000_000) {
-		return `$${(volume / 1_000_000_000).toFixed(1)}B`;
-	}
-	if (volume >= 1_000_000) {
-		return `$${(volume / 1_000_000).toFixed(1)}M`;
-	}
-	if (volume >= 1_000) {
-		return `$${(volume / 1_000).toFixed(1)}K`;
-	}
-	return `$${volume.toFixed(0)}`;
-};
-
-export const formatPriceChange = (change: number): string => {
-	const sign = change >= 0 ? '+' : '';
-	return `${sign}${change.toFixed(2)}%`;
-};
-
 export const getTokenLogoURI = (token: Coin): string => {
 	return token.iconUrl || '';
 };
@@ -87,25 +58,24 @@ export const formatTokenBalance = (balance: number, decimals: number): string =>
 	return (balance / Math.pow(10, decimals)).toFixed(decimals);
 };
 
-export const getEnrichedCoinData = async (coin: Coin): Promise<Coin> => {
+export const handleSearchPress = (
+	navigation: NavigationProp<any>,
+	searchQuery: string
+) => {
+	if (!searchQuery.trim()) return;
+	navigation.navigate('Search', { searchQuery });
+};
+
+export const getEnrichedCoinData = async (
+	coin: Coin,
+	getCoinByID: (id: string, forceRefresh?: boolean) => Promise<Coin | null>
+): Promise<Coin | null> => {
 	try {
-		// Get the coin store instance
-		const coinStore = useCoinStore.getState();
-
-		// Try to get enriched data from the store
-		const enrichedCoin = await coinStore.getCoinByID(coin.mintAddress);
-
-		if (!enrichedCoin) {
-			throw new Error(`Failed to get enriched data for coin ${coin.mintAddress}`);
-		}
-
-		// Update the coin in the store
-		coinStore.setCoin(enrichedCoin);
-
+		const enrichedCoin = await getCoinByID(coin.mintAddress, true);
 		return enrichedCoin;
 	} catch (error) {
-		console.error(`Error enriching coin data for ${coin.mintAddress}:`, error);
-		throw error;
+		console.error('Failed to get enriched coin data:', error);
+		return null;
 	}
 };
 
@@ -115,7 +85,7 @@ export const handleCoinNavigation = async (
 	toast = useToast()
 ): Promise<void> => {
 	try {
-		const enrichedCoin = await getEnrichedCoinData(coin);
+		const enrichedCoin = await getEnrichedCoinData(coin, useCoinStore.getState().getCoinByID);
 		navigation.navigate('CoinDetail', { coin: enrichedCoin });
 	} catch (error) {
 		toast.showToast({
@@ -125,4 +95,8 @@ export const handleCoinNavigation = async (
 		});
 		console.error('Failed to get enriched coin data:', error);
 	}
-}; 
+};
+
+// Re-export formatting functions with any necessary customization
+export { formatPrice, formatVolume };
+export const formatPriceChange = (change: number): string => formatPercentage(change, 2, true); 
