@@ -38,17 +38,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	tokens: [],
 
 	setWallet: async (publicKey: string) => {
-		console.log('🔐 Setting wallet with public key:', publicKey);
+		console.log('🔐 Loading wallet credentials...');
 
 		try {
-			// Get credentials from keychain
-			console.log('📥 Retrieving credentials from keychain...');
 			const credentials = await Keychain.getGenericPassword({
 				service: KEYCHAIN_SERVICE
 			});
 
 			if (!credentials) {
-				console.error('❌ No credentials found in keychain');
 				throw new Error('No credentials found in keychain');
 			}
 
@@ -67,34 +64,26 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 					mnemonic: mnemonic || ''
 				};
 
-				console.log('💼 Setting wallet in store:', {
-					address: newWallet.address,
-					privateKeyFormat: 'base58',
-					privateKeyLength: newWallet.privateKey.length,
-					privateKeyPreview: newWallet.privateKey.substring(0, 10) + '...',
-					hasMnemonic: !!newWallet.mnemonic
-				});
-
 				// Verify the private key format
 				try {
 					const keypair = getKeypairFromPrivateKey(newWallet.privateKey);
-					console.log('✅ Verified private key format:', {
-						derivedPublicKey: keypair.publicKey.toString(),
-						matchesAddress: keypair.publicKey.toString() === newWallet.address
-					});
+					if (keypair.publicKey.toString() !== newWallet.address) {
+						throw new Error('Public key mismatch');
+					}
 				} catch (error) {
-					console.error('❌ Error verifying private key format:', error);
+					console.error('❌ Invalid private key format');
 					throw new Error('Invalid private key format');
 				}
 
 				set({ wallet: newWallet });
+				console.log('✅ Wallet loaded successfully');
 			} catch (error) {
-				console.error('❌ Error parsing stored credentials:', error);
+				console.error('❌ Error parsing credentials:', error);
 				throw new Error('Invalid credentials format in keychain');
 			}
 		} catch (error) {
-			console.error('❌ Error setting wallet:', error);
-			set({ error: error instanceof Error ? error.message : 'Unknown error setting wallet' });
+			console.error('❌ Error loading wallet:', error);
+			set({ error: error instanceof Error ? error.message : 'Unknown error loading wallet' });
 			throw error;
 		}
 	},

@@ -47,22 +47,13 @@ export const toBase58PrivateKey = (bytes: Uint8Array): Base58PrivateKey => {
 
 // Helper to store credentials safely
 export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: string): Promise<void> => {
-	console.log('🔐 Storing credentials:', {
-		privateKeyFormat: 'Base58',
-		privateKeyLength: privateKey.length,
-		privateKeyPreview: privateKey.substring(0, 10) + '...',
-		privateKeyFullHex: Buffer.from(bs58.decode(privateKey)).toString('hex'),
-		mnemonicLength: mnemonic.length,
-		mnemonicPreview: mnemonic.substring(0, 10) + '...',
-		service: KEYCHAIN_SERVICE
-	});
+	console.log('🔐 Storing wallet credentials...');
 
 	try {
 		// First clear any existing credentials
 		await Keychain.resetGenericPassword({
 			service: KEYCHAIN_SERVICE
 		});
-		console.log('🧹 Cleared existing credentials');
 
 		// Store credentials with a fixed username and JSON string as password
 		const credentials = JSON.stringify({
@@ -74,7 +65,6 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 			service: KEYCHAIN_SERVICE,
 			accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED
 		});
-		console.log('✅ Credentials stored in keychain');
 
 		// Verify the stored credentials
 		const storedCredentials = await Keychain.getGenericPassword({
@@ -90,21 +80,6 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 			const retrievedPrivateKey = parsedCredentials.privateKey;
 			const retrievedMnemonic = parsedCredentials.mnemonic;
 
-			console.log('🔍 Stored vs Retrieved:', {
-				original: {
-					privateKey: privateKey.substring(0, 10) + '...',
-					privateKeyLength: privateKey.length,
-					privateKeyHex: Buffer.from(bs58.decode(privateKey)).toString('hex').substring(0, 10) + '...',
-				},
-				retrieved: {
-					privateKey: retrievedPrivateKey ? retrievedPrivateKey.substring(0, 10) + '...' : 'null',
-					privateKeyLength: retrievedPrivateKey?.length || 0,
-					privateKeyHex: retrievedPrivateKey ?
-						Buffer.from(bs58.decode(retrievedPrivateKey)).toString('hex').substring(0, 10) + '...' :
-						'null',
-				}
-			});
-
 			if (!retrievedPrivateKey || retrievedPrivateKey !== privateKey) {
 				throw new Error('Failed to verify stored private key - mismatch in retrieved value');
 			}
@@ -115,19 +90,18 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 				throw new Error(`Retrieved key has invalid length: ${keypairBytes.length} bytes`);
 			}
 			const keypair = Keypair.fromSecretKey(keypairBytes);
-			console.log('✅ Successfully verified keypair creation from stored key');
 
 			if (!retrievedMnemonic || retrievedMnemonic !== mnemonic) {
 				throw new Error('Failed to verify stored mnemonic');
 			}
 
-			console.log('✅ All credentials verified successfully');
+			console.log('✅ Wallet credentials stored and verified');
 		} catch (error) {
 			console.error('❌ Error verifying stored credentials:', error);
 			throw error;
 		}
 	} catch (error) {
-		console.error('❌ Error storing or verifying credentials:', error);
+		console.error('❌ Error storing credentials:', error);
 		// Clean up on failure
 		await Keychain.resetGenericPassword({
 			service: KEYCHAIN_SERVICE
@@ -138,88 +112,52 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 
 export const handleGenerateWallet = async (): Promise<Keypair> => {
 	try {
-		console.log("📞 Calling grpcApi.createWallet...");
+		console.log("📝 Generating new wallet...");
 		const newWalletData = await grpcApi.createWallet();
 		if (!newWalletData || !newWalletData.secret_key || !newWalletData.mnemonic) {
-			console.error('❌ Failed to generate wallet from API or missing data:', {
-				hasWalletData: !!newWalletData,
-				hasSecretKey: !!newWalletData?.secret_key,
-				hasMnemonic: !!newWalletData?.mnemonic
-			});
 			throw new Error('Failed to generate wallet from API.');
 		}
 
-		let keypairBytes: Buffer;
-		try {
-			// Remove potential surrounding quotes from the secret_key string
-			let base64Key = newWalletData.secret_key;
-			if (base64Key.startsWith('"') && base64Key.endsWith('"')) {
-				base64Key = base64Key.substring(1, base64Key.length - 1);
-				console.log('✂️ Removed surrounding quotes from secretKey string.');
-			}
+		let base64Key = newWalletData.secret_key;
+		if (base64Key.startsWith('"') && base64Key.endsWith('"')) {
+			base64Key = base64Key.substring(1, base64Key.length - 1);
+		}
 
-			// Log the Base64 key format
-			console.log('🔑 Processing secret key:', {
-				base64Length: base64Key.length,
-				base64Preview: base64Key.substring(0, 10) + '...'
-			});
-
-			// Decode the Base64 key
-			keypairBytes = Buffer.from(base64Key, 'base64');
-			console.log('📦 Decoded keypair bytes:', {
-				length: keypairBytes.length,
-				isValidLength: keypairBytes.length === 64
-			});
-
-			if (keypairBytes.length !== 64) {
-				throw new Error(`Decoded keypair has incorrect length: ${keypairBytes.length}, expected 64`);
-			}
-		} catch (e) {
-			console.error('❌ Error decoding Base64 secret_key from API:', e);
-			console.error('Raw secret_key received:', newWalletData.secret_key);
-			throw new Error('Could not decode secret key from API response.');
+		const keypairBytes = Buffer.from(base64Key, 'base64');
+		if (keypairBytes.length !== 64) {
+			throw new Error(`Decoded keypair has incorrect length: ${keypairBytes.length}, expected 64`);
 		}
 
 		// Create keypair and convert to Base58
 		const keypair = Keypair.fromSecretKey(keypairBytes);
 		const base58PrivateKey = toBase58PrivateKey(keypairBytes);
 
-		console.log('🔑 Created keypair:', {
-			publicKey: keypair.publicKey.toString(),
-			base58PrivateKeyLength: base58PrivateKey.length,
-			base58PrivateKeyPreview: base58PrivateKey.substring(0, 10) + '...'
-		});
-
 		// Store securely in Base58 format
 		await storeCredentials(base58PrivateKey, newWalletData.mnemonic);
 
+		// Verify public key matches
 		if (keypair.publicKey.toBase58() !== newWalletData.public_key) {
-			console.warn('⚠️ WARNING: Public key mismatch:', {
-				derived: keypair.publicKey.toBase58(),
-				received: newWalletData.public_key
-			});
+			console.warn('⚠️ Public key mismatch detected');
 		}
 
 		// Store in portfolio store
 		await usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());
 
-		console.log('✅ New wallet generated, stored, and Keypair created.');
+		console.log('✅ New wallet generated and stored');
 		return keypair;
 	} catch (error) {
-		console.error('❌ Error in handleGenerateWallet:', error);
+		console.error('❌ Error generating wallet:', error);
 		throw error;
 	}
 };
 
 export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => {
 	try {
-		console.log('🔑 Importing wallet with mnemonic...');
+		console.log('🔑 Importing wallet from mnemonic...');
 		if (!bip39.validateMnemonic(mnemonic)) {
-			console.error('❌ Invalid mnemonic phrase provided.');
 			throw new Error('Invalid mnemonic phrase.');
 		}
 		const seed = await bip39.mnemonicToSeed(mnemonic);
-		// Derive the keypair using the Solana path (first 32 bytes of seed)
 		const derivedSeed = seed.subarray(0, 32);
 		const keypair = Keypair.fromSeed(derivedSeed);
 
@@ -232,10 +170,10 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => 
 		// Store in portfolio store
 		await usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());
 
-		console.log('✅ Wallet imported from mnemonic, stored, and Keypair created.');
+		console.log('✅ Wallet imported and stored');
 		return keypair;
 	} catch (error) {
-		console.error('❌ Error in handleImportWallet:', error);
+		console.error('❌ Error importing wallet:', error);
 		throw error;
 	}
 };
@@ -247,11 +185,10 @@ export const retrieveWalletFromStorage = async (): Promise<string | null> => {
 		});
 
 		if (!credentials) {
-			console.log('❓ No wallet credentials found in secure storage.');
+			console.log('ℹ️ No wallet found in storage');
 			return null;
 		}
 
-		console.log('🔑 Retrieved credentials from secure storage.');
 		try {
 			const parsedCredentials = JSON.parse(credentials.password);
 			const privateKey = parsedCredentials.privateKey;
@@ -263,17 +200,17 @@ export const retrieveWalletFromStorage = async (): Promise<string | null> => {
 			}
 			// Verify the keypair is valid by reconstructing it
 			const keypair = Keypair.fromSecretKey(keypairBytes);
-			console.log('✅ Valid keypair found in storage.');
+			console.log('✅ Wallet retrieved from storage');
 			return keypair.publicKey.toBase58();
 		} catch (error) {
-			console.warn('⚠️ Invalid private key in storage. Clearing credentials.');
+			console.warn('⚠️ Invalid wallet data in storage, clearing credentials');
 			await Keychain.resetGenericPassword({
 				service: KEYCHAIN_SERVICE
 			});
 			return null;
 		}
 	} catch (error) {
-		console.error('❌ Error retrieving wallet from storage:', error);
+		console.error('❌ Error accessing storage:', error);
 		return null;
 	}
 };
@@ -286,20 +223,19 @@ export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 		});
 
 		if (!credentials) {
-			console.log('❓ No credentials found in secure storage.');
+			console.log('ℹ️ No mnemonic found in storage');
 			return null;
 		}
 
 		try {
 			const parsedCredentials = JSON.parse(credentials.password);
-			console.log('🔑 Retrieved mnemonic from secure storage.');
 			return parsedCredentials.mnemonic;
 		} catch (error) {
-			console.error('❌ Error parsing stored credentials:', error);
+			console.error('❌ Error parsing stored mnemonic:', error);
 			return null;
 		}
 	} catch (error) {
-		console.error('❌ Error retrieving mnemonic from storage:', error);
+		console.error('❌ Error accessing storage:', error);
 		return null;
 	}
 }; 
