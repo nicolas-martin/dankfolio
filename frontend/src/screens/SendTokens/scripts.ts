@@ -46,7 +46,6 @@ export const validateForm = async (
 
 export const handleTokenTransfer = async (
 	formData: TokenTransferFormData,
-	wallet: Wallet
 ): Promise<string> => {
 	try {
 		// Prepare and sign the transfer transaction
@@ -54,7 +53,6 @@ export const handleTokenTransfer = async (
 			formData.toAddress,
 			formData.selectedTokenMint,
 			parseFloat(formData.amount),
-			wallet,
 		);
 
 		// Submit the signed transaction

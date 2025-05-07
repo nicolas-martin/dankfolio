@@ -97,7 +97,7 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				toAddress: recipientAddress,
 				amount,
 				selectedTokenMint: selectedToken.mintAddress
-			}, wallet);
+			});
 
 			console.log('Transaction submitted:', txHash);
 			showToast({

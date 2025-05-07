@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Coin represents a token or currency (unified definition)
+// Coin represents a coin or currency (unified definition)
 type Coin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
