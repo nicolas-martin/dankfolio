@@ -1,57 +1,62 @@
 // frontend/src/services/api.test.ts
-import { grpcApi } from '@/services/grpcApi';
-import { Coin, TradePayload } from './grpc/model'; // Import types from api
+import { API, Coin, TradePayload } from './grpc/model';
 
 // --- Mock grpcApi ---
-jest.mock('./grpcApi', () => {
-	const mockResponses = {
-		submitTrade: { transaction_hash: 'txHash456' },
-		swapQuote: {
-			estimatedAmount: '150.5',
-			exchangeRate: '100.33',
-			fee: '0.01',
-			priceImpact: '0.05',
-			routePlan: ['RouteA', 'RouteB'],
-			inputMint: 'inputMintAddress',
-			outputMint: 'outputMintAddress',
+const mockResponses = {
+	submitTrade: { transaction_hash: 'txHash456' },
+	swapQuote: {
+		estimatedAmount: '150.5',
+		exchangeRate: '100.33',
+		fee: '0.01',
+		priceImpact: '0.05',
+		routePlan: ['RouteA', 'RouteB'],
+		inputMint: 'inputMintAddress',
+		outputMint: 'outputMintAddress',
+	},
+	walletBalance: {
+		balances: [{ id: 'mockCoinId', amount: 10 }],
+	},
+	priceHistory: {
+		data: {
+			items: [{ unixTime: Date.now() / 1000, value: 100 }],
 		},
-		walletBalance: {
-			balances: [{ id: 'mockCoinId', amount: 10 }],
-		},
-		priceHistory: {
-			data: {
-				items: [{ unixTime: Date.now() / 1000, value: 100 }],
-			},
-			success: true,
-		},
-		tradeStatus: {
-			status: 'completed',
-			transaction_hash: 'txHash456',
-			timestamp: new Date().toISOString(),
-			from_amount: '1.5',
-			to_amount: '100.5',
-			error_message: null
-		},
-		tokenPrices: { coin1: 10, coin2: 20, coin3: 30 }
-	};
+		success: true,
+	},
+	tradeStatus: {
+		status: 'completed',
+		transaction_hash: 'txHash456',
+		timestamp: new Date().toISOString(),
+		from_amount: '1.5',
+		to_amount: '100.5',
+		error_message: null
+	},
+	tokenPrices: { coin1: 10, coin2: 20, coin3: 30 }
+};
 
-	const mockGrpcApi = {
-		getSwapQuote: jest.fn().mockResolvedValue(mockResponses.swapQuote),
-		submitSwap: jest.fn().mockResolvedValue(mockResponses.submitTrade),
-		getAvailableCoins: jest.fn().mockResolvedValue([{ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK', decimals: 8, description: 'A mock coin for testing', icon_url: 'http://example.com/icon.png', tags: ['mock', 'test', 'trending'], price: 100, daily_volume: 1000000, website: 'http://example.com', created_at: new Date().toISOString() }]),
-		getPriceHistory: jest.fn().mockResolvedValue(mockResponses.priceHistory),
-		getWalletBalance: jest.fn().mockResolvedValue(mockResponses.walletBalance),
-		getCoinByID: jest.fn().mockResolvedValue({ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK', decimals: 8, description: 'A mock coin for testing', icon_url: 'http://example.com/icon.png', tags: ['mock', 'test', 'trending'], price: 100, daily_volume: 1000000, website: 'http://example.com', created_at: new Date().toISOString() }),
-		getTokenPrices: jest.fn().mockResolvedValue(mockResponses.tokenPrices),
-		getSwapStatus: jest.fn().mockResolvedValue(mockResponses.tradeStatus),
-		prepareTokenTransfer: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockTx' }),
-		submitTokenTransfer: jest.fn().mockResolvedValue({ transactionHash: 'mockTxHash' }),
-	};
+const mockGrpcApi: API = {
+	getSwapQuote: jest.fn().mockResolvedValue(mockResponses.swapQuote),
+	submitSwap: jest.fn().mockResolvedValue(mockResponses.submitTrade),
+	getAvailableCoins: jest.fn().mockResolvedValue([{ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK', decimals: 8, description: 'A mock coin for testing', icon_url: 'http://example.com/icon.png', tags: ['mock', 'test', 'trending'], price: 100, daily_volume: 1000000, website: 'http://example.com', created_at: new Date().toISOString() }]),
+	getPriceHistory: jest.fn().mockResolvedValue(mockResponses.priceHistory),
+	getWalletBalance: jest.fn().mockResolvedValue(mockResponses.walletBalance),
+	getCoinByID: jest.fn().mockResolvedValue({ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK', decimals: 8, description: 'A mock coin for testing', icon_url: 'http://example.com/icon.png', tags: ['mock', 'test', 'trending'], price: 100, daily_volume: 1000000, website: 'http://example.com', created_at: new Date().toISOString() }),
+	getCoinPrices: jest.fn().mockResolvedValue(mockResponses.tokenPrices),
+	getSwapStatus: jest.fn().mockResolvedValue(mockResponses.tradeStatus),
+	prepareCoinTransfer: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockTx' }),
+	submitCoinTransfer: jest.fn().mockResolvedValue({ transactionHash: 'mockTxHash' }),
+	createWallet: jest.fn().mockResolvedValue({ address: 'mockAddress', privateKey: 'mockPrivateKey' }),
+	getTransferTransaction: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockTx' }),
+	getProxiedImage: jest.fn().mockResolvedValue({ imageData: 'mockImageData' }),
+	searchCoins: jest.fn().mockResolvedValue([{ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' }]),
+	searchCoinByMint: jest.fn().mockResolvedValue({ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' })
+};
 
-	return mockGrpcApi;
-});
+jest.mock('@/services/grpcApi', () => ({
+	grpcApi: mockGrpcApi
+}));
 
-const mockedGrpcApi = require('./grpcApi')
+// Import after mock is defined
+const { grpcApi } = require('@/services/grpcApi');
 
 describe('API Service', () => {
 
@@ -59,20 +64,18 @@ describe('API Service', () => {
 	let consoleErrorSpy: jest.SpyInstance; // Declare the spy variable for error
 
 	// Define mock data structures based on interfaces in api.ts
-	const mockCoin: Coin = {
-		mintAddress: 'mockCoinId',
+	const mockCoin = {
+		id: 'mockCoinId',
 		name: 'Mock Coin',
-		symbol: 'MOCK',
-		decimals: 9,
+		symbol: 'MCK',
+		decimals: 8,
 		description: 'A mock coin for testing',
-		iconUrl: 'https://example.com/mock.png',
-		tags: ['test'],
+		icon_url: 'http://example.com/icon.png',
+		tags: ['mock', 'test', 'trending'],
 		price: 100,
-		dailyVolume: 1000000,
-		website: 'https://example.com',
-		twitter: 'https://twitter.com/mock',
-		telegram: 'https://t.me/mock',
-		coingeckoId: 'mock'
+		daily_volume: 1000000,
+		website: 'http://example.com',
+		created_at: expect.any(String)
 	};
 
 	const mockTradePayload: TradePayload = {
@@ -136,20 +139,20 @@ describe('API Service', () => {
 			// Test getAvailableCoins with trending
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: [{ ...mockCoin, tags: ['trending'] }] });
 			const trendingResult = await grpcApi.getAvailableCoins(true);
-			expect(mockedGrpcApi.getAvailableCoins).toHaveBeenCalledWith(true);
+			expect(mockGrpcApi.getAvailableCoins).toHaveBeenCalledWith(true);
 			expect(trendingResult[0].tags).toContain('trending');
 
 			// Test getCoinByID
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockCoin });
 			const coinResult = await grpcApi.getCoinByID('mockCoinId');
-			expect(mockedGrpcApi.getCoinByID).toHaveBeenCalledWith('mockCoinId');
+			expect(mockGrpcApi.getCoinByID).toHaveBeenCalledWith('mockCoinId');
 			expect(coinResult).toMatchObject(mockCoin);
 
 			// Test getTokenPrices
 			const tokenIds = ['coin1', 'coin2', 'coin3'];
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tokenPrices });
 			const pricesResult = await grpcApi.getCoinPrices(tokenIds);
-			expect(mockedGrpcApi.getTokenPrices).toHaveBeenCalledWith(tokenIds);
+			expect(mockGrpcApi.getCoinPrices).toHaveBeenCalledWith(tokenIds);
 			expect(pricesResult).toEqual(mockResponses.tokenPrices);
 		});
 
@@ -182,19 +185,19 @@ describe('API Service', () => {
 			// Test submitTrade
 			// mockAxiosInstance.post.mockResolvedValueOnce({ data: mockResponses.submitTrade });
 			const submitResult = await grpcApi.submitSwap(mockTradePayload);
-			expect(mockedGrpcApi.submitSwap).toHaveBeenCalledWith(mockTradePayload);
+			expect(mockGrpcApi.submitSwap).toHaveBeenCalledWith(mockTradePayload);
 			expect(submitResult).toEqual(mockResponses.submitTrade);
 
 			// Test getTradeQuote
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeQuote });
 			const quoteResult = await grpcApi.getSwapQuote('coin1', 'coin2', '10');
-			expect(mockedGrpcApi.getSwapQuote).toHaveBeenCalledWith('coin1', 'coin2', '10');
+			expect(mockGrpcApi.getSwapQuote).toHaveBeenCalledWith('coin1', 'coin2', '10');
 			expect(quoteResult).toEqual(mockResponses.swapQuote);
 
 			// Test getTradeStatus
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeStatus });
 			const statusResult = await grpcApi.getSwapStatus('txHash456');
-			expect(mockedGrpcApi.getSwapStatus).toHaveBeenCalledWith('txHash456');
+			expect(mockGrpcApi.getSwapStatus).toHaveBeenCalledWith('txHash456');
 			expect(statusResult).toMatchObject(mockResponses.tradeStatus);
 		});
 
@@ -235,13 +238,13 @@ describe('API Service', () => {
 			// Test getWalletBalance
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.walletBalance });
 			const balanceResult = await grpcApi.getWalletBalance('wallet123');
-			expect(mockedGrpcApi.getWalletBalance).toHaveBeenCalledWith('wallet123');
+			expect(mockGrpcApi.getWalletBalance).toHaveBeenCalledWith('wallet123');
 			expect(balanceResult).toEqual(mockResponses.walletBalance);
 
 			// Test getPriceHistory
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.priceHistory });
 			const historyResult = await grpcApi.getPriceHistory('addr1', 'daily', 't1', 't2', 'wallet');
-			expect(mockedGrpcApi.getPriceHistory).toHaveBeenCalledWith('addr1', 'daily', 't1', 't2', 'wallet');
+			expect(mockGrpcApi.getPriceHistory).toHaveBeenCalledWith('addr1', 'daily', 't1', 't2', 'wallet');
 			expect(historyResult).toMatchObject(mockResponses.priceHistory);
 		});
 

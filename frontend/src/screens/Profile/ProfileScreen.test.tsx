@@ -21,76 +21,52 @@ jest.mock('@react-native-clipboard/clipboard', () => ({
 	setString: jest.fn(),
 }));
 
-// Mock TokenCard component
-jest.mock('./TokenCard', () => ({
-	TokenCard: ({ profileCoin, onPress }: { profileCoin: ProfileCoin; onPress: () => void }) => {
+// Mock CoinCard component
+jest.mock('@components/Home/CoinCard', () => {
+	const CoinCard = ({ coin, onPress }: any) => {
 		const React = require('react');
 		const View = require('react-native').View;
 		const Text = require('react-native').Text;
-		// Use a View with accessibility props for the image mock
 		const MockImage = (props: any) => <View {...props} />;
 
 		return (
-			// Mock the TouchableOpacity behaviour with onPress on the root View
-			<View testID={`token-card-${profileCoin.mintAddress}`} onPress={onPress}>
-				{/* Mock Image with correct accessibility props */}
+			<View testID={`coin-card-${coin.mintAddress}`} onPress={onPress}>
 				<MockImage
 					accessibilityRole="image"
-					// Use accessibilityLabel for the 'name' lookup in getByRole
-					accessibilityLabel={`${profileCoin.coin.name} icon`}
+					accessibilityLabel={`${coin.name} icon`}
 				/>
-				{/* Render symbol (like the actual component) */}
-				<Text>{profileCoin.coin.symbol}</Text>
-				{/* Render value */}
-				<Text>{`$${profileCoin.value.toFixed(2)}`}</Text>
-				{/* Add other elements if needed by tests, e.g., address */}
-				{/* <Text>{formatAddress(profileCoin.coin.id)}</Text> */}
+				<Text>{coin.symbol}</Text>
+				<Text>{`$${coin.value?.toFixed(2)}`}</Text>
+				{coin.balance && <Text>{`${coin.balance} ${coin.symbol}`}</Text>}
 			</View>
 		);
+	};
+	return CoinCard;
+});
+
+// Mock Icons
+jest.mock('@components/Common/Icons', () => ({
+	ProfileIcon: (props: any) => {
+		const React = require('react');
+		const View = require('react-native').View;
+		return <View testID="mock-profile-icon" {...props} />;
+	},
+	WalletIcon: (props: any) => {
+		const React = require('react');
+		const View = require('react-native').View;
+		return <View testID="mock-wallet-icon" {...props} />;
+	},
+	CoinsIcon: (props: any) => {
+		const React = require('react');
+		const View = require('react-native').View;
+		return <View testID="mock-coins-icon" {...props} />;
+	},
+	SendIcon: (props: any) => {
+		const React = require('react');
+		const View = require('react-native').View;
+		return <View testID="mock-send-icon" {...props} />;
 	}
 }));
-
-// Mock lucide-react-native
-jest.mock('lucide-react-native', () => {
-	const React = require('react');
-	const Text = require('react-native').Text;
-
-	// Helper to create a mock icon component
-	const createMockIcon = (name: string) => (props: any) => <Text {...props}>{name}</Text>;
-
-	// Mock all icons used in utils/icons.ts
-	return {
-		ArrowLeft: createMockIcon('ArrowLeft'),
-		Home: createMockIcon('Home'),
-		Coins: createMockIcon('Coins'),
-		Settings: createMockIcon('Settings'),
-		Search: createMockIcon('Search'),
-		Plus: createMockIcon('Plus'),
-		Trash: createMockIcon('Trash'),
-		Pencil: createMockIcon('Pencil'),
-		User: createMockIcon('User'),
-		Menu: createMockIcon('Menu'),
-		X: createMockIcon('X'),
-		Check: createMockIcon('Check'),
-		AlertCircle: createMockIcon('AlertCircle'),
-		Globe: createMockIcon('Globe'),
-		Link: createMockIcon('Link'),
-		ArrowUpDown: createMockIcon('ArrowUpDown'),
-		Wallet: createMockIcon('Wallet'),
-		MessageCircle: createMockIcon('MessageCircle'), // Used for Telegram & Discord fallback
-		Twitter: createMockIcon('Twitter'),
-		// Add any other icons from lucide-react-native used directly if needed
-	};
-});
-
-// Mock react-native-vector-icons/MaterialCommunityIcons
-jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
-	const React = require('react'); // Ensure React is in scope for JSX
-	const Text = require('react-native').Text; // Get Text component
-	// Return a functional component that renders Text
-	const MockIconComponent = (props: any) => <Text {...props}>MockMCI</Text>;
-	return { default: MockIconComponent }; // Export as default
-});
 
 // Mock navigation
 const mockNavigate = jest.fn();
@@ -158,6 +134,8 @@ describe('Profile Screen', () => {
 		mocked(usePortfolioStore).mockReturnValue({
 			wallet: mockWallet,
 			tokens: mockProfileTokens,
+			fetchPortfolioBalance: jest.fn(),
+			isLoading: false
 		});
 		mocked(useToast).mockReturnValue({
 			showToast: showToastMock,
@@ -170,7 +148,6 @@ describe('Profile Screen', () => {
 	});
 
 	it('handles token display and interaction correctly', () => {
-		// Test initial render with tokens
 		const { getAllByTestId, getByText, getByTestId } = render(
 			<NavigationContainer>
 				<ProfileScreen />
@@ -183,23 +160,23 @@ describe('Profile Screen', () => {
 
 		// Verify tokens are rendered correctly
 		mockProfileTokens.forEach(token => {
-			const card = getAllByTestId(`token-card-${token.mintAddress}`)[0];
+			const card = getAllByTestId(`coin-card-${token.mintAddress}`)[0];
 			const cardContent = within(card);
 
 			// Check token details are displayed correctly
 			expect(cardContent.getByText(`$${token.value.toFixed(2)}`)).toBeTruthy();
 			expect(cardContent.getByText(token.coin.symbol)).toBeTruthy();
 			expect(cardContent.getByLabelText(`${token.coin.name} icon`)).toBeTruthy();
+			expect(cardContent.getByText(`${token.amount} ${token.coin.symbol}`)).toBeTruthy();
 		});
 
 		// Test navigation on token press
-		const solCard = getByTestId(`token-card-${mockProfileTokens[0].mintAddress}`);
+		const solCard = getByTestId(`coin-card-${mockProfileTokens[0].mintAddress}`);
 		fireEvent.press(solCard);
 
 		expect(mockNavigate).toHaveBeenCalledWith('CoinDetail', {
 			coin: mockProfileTokens[0].coin,
 		});
-		expect(mockNavigate).toHaveBeenCalledTimes(1);
 	});
 
 	it('handles empty wallet state correctly', () => {

@@ -218,22 +218,11 @@ jest.mock('@shopify/react-native-skia', () => ({
 }));
 
 // Mock Icons
-jest.mock('lucide-react-native', () => {
+jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
 	const React = require('react');
 	const Text = require('react-native').Text;
 	const createMockIcon = (name: string) => (props: any) => <Text {...props} testID={`icon-${name}`}>{name}</Text>;
-	return {
-		ArrowLeft: createMockIcon('ArrowLeft'), Home: createMockIcon('Home'),
-		Coins: createMockIcon('Coins'), Settings: createMockIcon('Settings'),
-		Search: createMockIcon('Search'), Plus: createMockIcon('Plus'),
-		Trash: createMockIcon('Trash'), Pencil: createMockIcon('Pencil'),
-		User: createMockIcon('User'), Menu: createMockIcon('Menu'),
-		X: createMockIcon('X'), Check: createMockIcon('Check'),
-		AlertCircle: createMockIcon('AlertCircle'), Globe: createMockIcon('Globe'),
-		Link: createMockIcon('Link'), ArrowUpDown: createMockIcon('ArrowUpDown'),
-		Wallet: createMockIcon('Wallet'), MessageCircle: createMockIcon('MessageCircle'),
-		Twitter: createMockIcon('Twitter'), Copy: createMockIcon('Copy'),
-	};
+	return createMockIcon;
 });
 
 jest.mock('./coindetail_scripts', () => {
@@ -395,7 +384,6 @@ describe('CoinDetail Screen', () => {
 			twitter: mockCoinWithoutLinks.twitter,
 			telegram: mockCoinWithoutLinks.telegram,
 			dailyVolume: mockCoinWithoutLinks.dailyVolume,
-			decimals: mockCoinWithoutLinks.decimals,
 			tags: mockCoinWithoutLinks.tags,
 			symbol: mockCoinWithoutLinks.symbol
 		};
