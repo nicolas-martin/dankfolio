@@ -150,6 +150,10 @@ func (r *MemoryRepository[T]) GetCoin(ctx context.Context, id string) (*T, error
 	return nil, fmt.Errorf("item not found: %s", id)
 }
 
+func (r *MemoryRepository[T]) GetByField(ctx context.Context, field string, value interface{}) (*T, error) {
+	return nil, fmt.Errorf("GetByField not implemented")
+}
+
 // GetList retrieves a list from the cache
 func (r *MemoryRepository[T]) GetList(ctx context.Context, id string) (*[]T, error) {
 	if items, ok := r.listCache.Get(id); ok {
