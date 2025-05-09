@@ -1,7 +1,7 @@
 import { Keypair, VersionedTransaction, PublicKey, Transaction, Connection } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { Wallet, Base58PrivateKey } from '@/types';
-import { REACT_APP_SOLANA_RPC_ENDPOINT, REACT_APP_JUPITER_API_URL } from '@env';
+import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
 import { grpcApi } from '@/services/grpcApi';
 import { usePortfolioStore } from '@/store/portfolio';
 import 'react-native-get-random-values';
@@ -14,90 +14,9 @@ if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
 	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
 }
 
-if (!REACT_APP_JUPITER_API_URL) {
-	throw new Error('REACT_APP_JUPITER_API_URL environment variable is required');
-}
-
 const SOLANA_RPC_ENDPOINT: string = REACT_APP_SOLANA_RPC_ENDPOINT;
-const JUPITER_API_URL: string = REACT_APP_JUPITER_API_URL;
 
 const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
-
-console.log('🔧 Using Solana RPC endpoint:', SOLANA_RPC_ENDPOINT);
-
-const defaultHeaders = {
-	Accept: 'application/json',
-	'Content-Type': 'application/json',
-	'Access-Control-Allow-Origin': '*',
-	'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-	'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-};
-
-const handleFetchError = async (response: Response): Promise<any> => {
-	const errorDetails: any = {
-		message: response.statusText || 'Unknown error',
-		status: response.status,
-	};
-
-	try {
-		errorDetails.data = await response.json();
-	} catch (e) {
-		errorDetails.data = await response.text();
-	}
-
-	console.error('API Error:', JSON.stringify(errorDetails, null, 2));
-	throw errorDetails;
-};
-
-const jupiterApiFetch = async (url: string, method: string = 'GET', data: any = null, params: any = null, customHeaders: any = {}) => {
-	const headers = { ...defaultHeaders, ...customHeaders };
-	const fullURL = (JUPITER_API_URL || 'https://api.jup.ag/swap/v1') + url;
-
-	console.log('🔍 Request:', {
-		method,
-		url,
-		baseURL: JUPITER_API_URL || 'https://api.jup.ag/swap/v1',
-		data,
-		params,
-		headers
-	});
-
-	let queryString = '';
-	if (params && method === 'GET') {
-		queryString = '?' + new URLSearchParams(params).toString();
-	}
-
-	const options: RequestInit = {
-		method,
-		headers,
-		body: data ? JSON.stringify(data) : null,
-	};
-
-	try {
-		const response = await fetch(fullURL + queryString, options);
-
-		console.log('✅ Response:', {
-			status: response.status,
-			statusText: response.statusText,
-			headers: response.headers
-		});
-
-		if (!response.ok) {
-			return handleFetchError(response);
-		}
-
-		try {
-			const responseData = await response.json();
-			return responseData;
-		} catch (e) {
-			return response.text();
-		}
-
-	} catch (error: any) {
-		console.error('❌ Response Error:', error.message);
-		throw { message: error.message };
-	}
-};
 
 export const getKeypairFromPrivateKey = (privateKey: Base58PrivateKey): Keypair => {
 	try {
@@ -146,49 +65,35 @@ export const buildAndSignSwapTransaction = async (
 			addressMatch: keypair.publicKey.toString() === wallet.address
 		});
 
-		// Get quote
-		const quoteResponse = await jupiterApiFetch('/quote', 'GET', null, {
-			inputMint: fromCoinId,
-			outputMint: toCoinId,
-			amount,
-			slippageBps: slippage * 100, // Convert percentage to basis points
-		});
-
-		if (!quoteResponse) {
-			throw new Error('No quote data received');
-		}
-
-		console.log('Quote response:', quoteResponse);
-
-		// Request swap transaction with the correct body structure
-		const swapRequestBody = {
-			quoteResponse: quoteResponse,
+		// Prepare the swap transaction using our gRPC API
+		const prepareSwapRequest = {
+			fromCoinId,
+			toCoinId,
+			amount: amount.toString(),
+			slippageBps: (slippage * 100).toString(),
 			userPublicKey: wallet.address,
-			wrapUnwrapSOL: true,
-			dynamicComputeUnitLimit: true,
-			dynamicSlippage: true,
-			prioritizationFeeLamports: {
-				priorityLevelWithMaxLamports: {
-					maxLamports: 1000000,
-					priorityLevel: "veryHigh"
-				}
-			}
+			fromAddress: wallet.address
 		};
+		const prepareResponse = await grpcApi.prepareSwap(prepareSwapRequest);
 
-		const swapResponse = await jupiterApiFetch('/swap', 'POST', swapRequestBody);
-
-		if (!swapResponse || !swapResponse.swapTransaction) {
-			throw new Error('No swap transaction received');
+		if (!prepareResponse.unsignedTransaction) {
+			throw new Error('No unsigned transaction received');
 		}
 
-		const swapTransactionBuf = Buffer.from(swapResponse.swapTransaction, 'base64');
+		// Decode and deserialize the transaction
+		console.log('📥 Decoding transaction...');
+		const transactionBuf = Buffer.from(prepareResponse.unsignedTransaction, 'base64');
+		console.log('📦 Transaction buffer length:', transactionBuf.length);
 
-		const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
-
+		// Sign the transaction
+		console.log('✍️ Signing transaction...');
+		const transaction = VersionedTransaction.deserialize(transactionBuf);
 		transaction.sign([keypair]);
 
+		// Serialize the signed transaction
 		const serializedTransaction = transaction.serialize();
 		const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
+		console.log('✅ Transaction signed and serialized');
 
 		return transactionBase64;
 	} catch (error) {
