@@ -153,7 +153,7 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 // GetTransactionConfirmationStatus gets the confirmation status of a transaction
 func (c *Client) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		log.Print("x-debug-mode: true")
+		log.Print("mocking confirmations")
 		return getMockTransactionStatus(sigStr)
 	}
 
@@ -232,9 +232,18 @@ func getMockTransactionStatus(sigStr string) (*rpc.GetSignatureStatusesResult, e
 				Confirmations:      &state.Confirmations,
 			}},
 		}, nil
+	case elapsed < 8*time.Second:
+		// Transaction confirmed
+		state.Confirmations = 31
+		return &rpc.GetSignatureStatusesResult{
+			Value: []*rpc.SignatureStatusesResult{{
+				ConfirmationStatus: rpc.ConfirmationStatusConfirmed,
+				Confirmations:      &state.Confirmations,
+			}},
+		}, nil
 	default:
 		// Transaction finalized
-		state.Confirmations = 32
+		state.Confirmations = 40
 		state.IsFinalized = true
 		return &rpc.GetSignatureStatusesResult{
 			Value: []*rpc.SignatureStatusesResult{{

@@ -366,7 +366,7 @@ const Trade: React.FC = () => {
 		setIsStatusModalVisible(false);
 		componentStopPolling(); // Use wrapped stopPolling
 		// Navigate to home screen
-		navigation.navigate('Home');
+		navigation.navigate('MainTabs', { screen: 'Home' });
 	};
 
 	// --- Update handleSwapCoins to use imported util --- 
