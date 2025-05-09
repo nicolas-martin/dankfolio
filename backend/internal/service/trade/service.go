@@ -2,6 +2,8 @@ package trade
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"math"
@@ -139,6 +141,16 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		time.Sleep(2 * time.Second)
 
 		now := time.Now()
+		// Generate a unique debug transaction hash
+		debugTxHashBytes := make([]byte, 64)
+		// Use timestamp for first 8 bytes to ensure uniqueness
+		binary.BigEndian.PutUint64(debugTxHashBytes[:8], uint64(time.Now().UnixNano()))
+		// Fill rest with random bytes
+		if _, err := rand.Read(debugTxHashBytes[8:]); err != nil {
+			return nil, fmt.Errorf("failed to generate debug transaction hash: %w", err)
+		}
+		debugTxHash := solanago.SignatureFromBytes(debugTxHashBytes).String()
+
 		// Create simulated trade
 		trade := &model.Trade{
 			ID:              fmt.Sprintf("trade_%d", time.Now().UnixNano()),
@@ -150,7 +162,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 			Status:          "completed",
 			CreatedAt:       now,
 			CompletedAt:     &now,
-			TransactionHash: "5Bu8arrurLxsP9dEvdXX3kBd5PqP6tNUubSZUmoJNRE7ijGPnKW9MU9QQfUerJaorYQxPAmLCnD3D7gW8CihWJy6",
+			TransactionHash: debugTxHash,
 		}
 
 		err := s.store.Trades().Create(ctx, trade)

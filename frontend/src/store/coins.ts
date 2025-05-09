@@ -16,6 +16,12 @@ interface CoinState {
 	getCoinByID: (mintAddress: string, forceRefresh?: boolean) => Promise<Coin | null>;
 }
 
+// Helper to log the current coin store state for debugging
+function logCoinStoreState(context: string) {
+	const state = useCoinStore.getState();
+	console.log(`🪙 [CoinStore] ${context} | availableCoins: ${state.availableCoins.length}, coinMap keys: [${Object.keys(state.coinMap).join(', ')}]`);
+}
+
 export const useCoinStore = create<CoinState>((set, get) => ({
 	availableCoins: [],
 	coinMap: {},
@@ -35,6 +41,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	})),
 
 	fetchAvailableCoins: async (trendingOnly?: boolean) => {
+		logCoinStoreState('Before fetchAvailableCoins');
 		try {
 			set({ isLoading: true, error: null });
 			const coins = await grpcApi.getAvailableCoins(trendingOnly);
@@ -67,13 +74,16 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				coinMapSize: Object.keys(get().coinMap).length,
 				hasSol: !!get().coinMap[SOLANA_ADDRESS]
 			});
+			logCoinStoreState('After fetchAvailableCoins');
 		} catch (error) {
 			set({ error: (error as Error).message, isLoading: false });
 			console.error(`❌ Error fetching ${trendingOnly ? 'trending' : 'all'} available coins:`, error);
+			logCoinStoreState('Error in fetchAvailableCoins');
 		}
 	},
 
 	getCoinByID: async (mintAddress: string, forceRefresh: boolean = false) => {
+		logCoinStoreState(`Before getCoinByID(${mintAddress}, forceRefresh=${forceRefresh})`);
 		const state = get();
 		if (!forceRefresh && state.coinMap[mintAddress]) {
 			console.log("💰 Found coin in state:", {
@@ -82,6 +92,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				price: state.coinMap[mintAddress].price,
 				decimals: state.coinMap[mintAddress].decimals
 			});
+			logCoinStoreState(`Cache hit getCoinByID(${mintAddress})`);
 			return state.coinMap[mintAddress];
 		}
 
@@ -94,10 +105,12 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				decimals: coin.decimals
 			});
 			state.setCoin(coin);
+			logCoinStoreState(`After API fetch getCoinByID(${mintAddress})`);
 			return coin;
 		} catch (error) {
 			console.error(`❌ Error fetching coin ${mintAddress}:`, error);
 			set({ error: (error as Error).message });
+			logCoinStoreState(`Error in getCoinByID(${mintAddress})`);
 			return null;
 		}
 	}

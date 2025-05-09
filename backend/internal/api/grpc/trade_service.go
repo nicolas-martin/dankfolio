@@ -144,12 +144,14 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade status: %w", err))
 		}
-		log.Printf("💥💥💥💥Trade status: %s", status.Value[0].ConfirmationStatus)
 
 		// Get the trade by transaction hash
 		trade, err = s.tradeService.GetTradeByTransactionHash(ctx, identifier.TransactionHash)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade: %w", err))
+		}
+		if trade == nil {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("trade not found for transaction hash: %s", identifier.TransactionHash))
 		}
 
 		// Update trade with status information
