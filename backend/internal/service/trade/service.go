@@ -2,7 +2,6 @@ package trade
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -112,6 +111,7 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAm
 	// 3. Create a new Trade record
 	trade := &model.Trade{
 		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		UserID:              fromAddress,
 		FromCoinID:          fromCoinID,
 		ToCoinID:            toCoinID,
 		Type:                "swap",
@@ -231,15 +231,6 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
 	}
 
-	// Marshal the full quote to json.RawMessage for swap
-	quoteRaw, err := json.Marshal(quote)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal raw quote: %w", err)
-	}
-
-	// 🪵 LOG: Print the raw Jupiter quote payload
-	log.Printf("[JUPITER] Raw quote payload: %s", string(quoteRaw))
-
 	// Collect all unique feeMint addresses
 	feeMints := make(map[string]bool)
 	for _, route := range quote.RoutePlan {
@@ -331,7 +322,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 		RoutePlan:       routeSummary,
 		InputMint:       quote.InputMint,
 		OutputMint:      quote.OutputMint,
-		Raw:             quoteRaw,
+		Raw:             quote.RawPayload,
 	}, nil
 }
 
