@@ -11,6 +11,9 @@ service TradeService {
   // GetSwapQuote returns a quote for a potential trade
   rpc GetSwapQuote(GetSwapQuoteRequest) returns (GetSwapQuoteResponse);
 
+  // PrepareSwap prepares an unsigned swap transaction
+  rpc PrepareSwap(PrepareSwapRequest) returns (PrepareSwapResponse);
+
   // SubmitSwap submits a trade for execution
   rpc SubmitSwap(SubmitSwapRequest) returns (SubmitSwapResponse);
 
@@ -58,6 +61,21 @@ message GetSwapQuoteResponse {
   repeated string route_plan = 5;
   string input_mint = 6;
   string output_mint = 7;
+}
+
+// PrepareSwapRequest is the request for preparing a swap transaction
+message PrepareSwapRequest {
+  string from_coin_id = 1;
+  string to_coin_id = 2;
+  string amount = 3;
+  string slippage_bps = 4;
+  string user_public_key = 5;
+  string from_address = 6;
+}
+
+// PrepareSwapResponse is the response with the unsigned transaction
+message PrepareSwapResponse {
+  string unsigned_transaction = 1;
 }
 
 // SubmitSwapRequest is the request for submitting a trade

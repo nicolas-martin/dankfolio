@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
@@ -73,6 +74,73 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 	return s.store.Trades().Delete(ctx, id)
 }
 
+// PrepareSwap prepares an unsigned swap transaction and creates a trade record
+func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAmount, slippageBps, userPublicKey, fromAddress string) (string, error) {
+	// Parse and validate fromAddress (public key)
+	fromPubKey, err := solanago.PublicKeyFromBase58(fromAddress)
+	if err != nil {
+		return "", fmt.Errorf("invalid from address: %w", err)
+	}
+	log.Printf("✅ from address parsed: %s", fromPubKey)
+
+	// 1. Use the TradeService's GetSwapQuote for all conversion and logic
+	tradeQuote, err := s.GetSwapQuote(ctx, fromCoinID, toCoinID, inputAmount, slippageBps)
+	if err != nil {
+		return "", fmt.Errorf("failed to get trade quote: %w", err)
+	}
+
+	// Convert tradeQuote to SwapQuoteRequestBody
+	quoteReq := jupiter.SwapQuoteRequestBody{
+		EstimatedAmount: tradeQuote.EstimatedAmount,
+		ExchangeRate:    tradeQuote.ExchangeRate,
+		Fee:             tradeQuote.Fee,
+		PriceImpact:     tradeQuote.PriceImpact,
+		RoutePlan:       tradeQuote.RoutePlan,
+		InputMint:       tradeQuote.InputMint,
+		OutputMint:      tradeQuote.OutputMint,
+	}
+
+	unsignedTx, err := s.jupiterClient.CreateSwapTransaction(ctx, quoteReq, fromPubKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to create swap transaction: %w", err)
+	}
+
+	// Convert price and fee to float64 with error handling
+	price, err := strconv.ParseFloat(tradeQuote.ExchangeRate, 64)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse exchange rate: %w", err)
+	}
+	fee, err := strconv.ParseFloat(tradeQuote.Fee, 64)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse fee: %w", err)
+	}
+	amount, err := strconv.ParseFloat(inputAmount, 64)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse input amount: %w", err)
+	}
+
+	// 3. Create a new Trade record
+	trade := &model.Trade{
+		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		FromCoinID:          fromCoinID,
+		ToCoinID:            toCoinID,
+		Type:                "swap",
+		Amount:              amount,
+		Price:               price,
+		Fee:                 fee,
+		Status:              "prepared",
+		UnsignedTransaction: unsignedTx,
+		CreatedAt:           time.Now(),
+		Confirmations:       0,
+		Finalized:           false,
+	}
+	if err := s.store.Trades().Create(ctx, trade); err != nil {
+		return "", fmt.Errorf("failed to create trade record: %w", err)
+	}
+
+	return unsignedTx, nil
+}
+
 // ExecuteTrade executes a trade based on the provided request
 func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*model.Trade, error) {
 	// Check for debug header in context
@@ -128,14 +196,9 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", err)
 	}
 
-	// Update trade status and store in memory
-	now := time.Now()
-	trade.Status = "completed"
-	trade.CompletedAt = &now
-	trade.Finalized = true
-
-	if err := s.store.Trades().Update(ctx, trade); err != nil {
-		log.Printf("Warning: Failed to update completed trade status: %v", err)
+	// Always create the trade record in the DB before executing the blockchain transaction
+	if err := s.store.Trades().Create(ctx, trade); err != nil {
+		return nil, fmt.Errorf("failed to create trade: %w", err)
 	}
 
 	// Log blockchain explorer URL

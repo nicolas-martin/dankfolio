@@ -187,6 +187,64 @@ func (_c *MockRepository_Get_Call[T]) RunAndReturn(run func(ctx context.Context,
 	return _c
 }
 
+// GetByField provides a mock function for the type MockRepository
+func (_mock *MockRepository[T]) GetByField(ctx context.Context, field string, value interface{}) (*T, error) {
+	ret := _mock.Called(ctx, field, value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByField")
+	}
+
+	var r0 *T
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, interface{}) (*T, error)); ok {
+		return returnFunc(ctx, field, value)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, interface{}) *T); ok {
+		r0 = returnFunc(ctx, field, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*T)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, interface{}) error); ok {
+		r1 = returnFunc(ctx, field, value)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_GetByField_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByField'
+type MockRepository_GetByField_Call[T db.Entity] struct {
+	*mock.Call
+}
+
+// GetByField is a helper method to define mock.On call
+//   - ctx
+//   - field
+//   - value
+func (_e *MockRepository_Expecter[T]) GetByField(ctx interface{}, field interface{}, value interface{}) *MockRepository_GetByField_Call[T] {
+	return &MockRepository_GetByField_Call[T]{Call: _e.mock.On("GetByField", ctx, field, value)}
+}
+
+func (_c *MockRepository_GetByField_Call[T]) Run(run func(ctx context.Context, field string, value interface{})) *MockRepository_GetByField_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *MockRepository_GetByField_Call[T]) Return(v *T, err error) *MockRepository_GetByField_Call[T] {
+	_c.Call.Return(v, err)
+	return _c
+}
+
+func (_c *MockRepository_GetByField_Call[T]) RunAndReturn(run func(ctx context.Context, field string, value interface{}) (*T, error)) *MockRepository_GetByField_Call[T] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // List provides a mock function for the type MockRepository
 func (_mock *MockRepository[T]) List(ctx context.Context) ([]T, error) {
 	ret := _mock.Called(ctx)
