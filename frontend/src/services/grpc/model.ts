@@ -112,6 +112,15 @@ export interface SearchCoinByMintResponse {
 	coin?: Coin;
 }
 
+export interface PrepareSwapRequest {
+	fromCoinId: string;
+	toCoinId: string;
+	amount: string;
+	slippageBps: string;
+	userPublicKey: string;
+	fromAddress: string;
+}
+
 export interface API {
 	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
 	getCoinByID: (mintAddress: string) => Promise<Coin>;
@@ -128,6 +137,7 @@ export interface API {
 	getTransferTransaction: (params: { toAddress: string; coinMint: string; amount: string; }) => Promise<any>;
 	createWallet: () => Promise<CreateWalletResponse>;
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
+	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string }>;
 }
 
 export interface GetProxiedImageResponse {

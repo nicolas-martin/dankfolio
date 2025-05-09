@@ -448,5 +448,32 @@ export const grpcApi: API = {
 		} catch (error) {
 			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
+	},
+
+	prepareSwap: async ({ fromCoinId, toCoinId, amount, slippageBps, userPublicKey, fromAddress }: {
+		fromCoinId: string;
+		toCoinId: string;
+		amount: string;
+		slippageBps: string;
+		userPublicKey: string;
+		fromAddress: string;
+	}): Promise<{ unsignedTransaction: string }> => {
+		const serviceName = 'TradeService';
+		const methodName = 'prepareSwap';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { fromCoinId, toCoinId, amount, slippageBps, userPublicKey, fromAddress });
+			const response = await tradeClient.prepareSwap({
+				fromCoinId,
+				toCoinId,
+				amount,
+				slippageBps,
+				userPublicKey,
+				fromAddress
+			}, { headers: grpcUtils.getRequestHeaders() });
+			grpcUtils.logResponse(serviceName, methodName, response);
+			return { unsignedTransaction: response.unsignedTransaction };
+		} catch (error) {
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		}
 	}
 };
