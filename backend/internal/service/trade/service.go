@@ -2,6 +2,7 @@ package trade
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -75,7 +76,7 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 }
 
 // PrepareSwap prepares an unsigned swap transaction and creates a trade record
-func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAmount, slippageBps, userPublicKey, fromAddress string) (string, error) {
+func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAmount, slippageBps, fromAddress string) (string, error) {
 	// Parse and validate fromAddress (public key)
 	fromPubKey, err := solanago.PublicKeyFromBase58(fromAddress)
 	if err != nil {
@@ -89,18 +90,7 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAm
 		return "", fmt.Errorf("failed to get trade quote: %w", err)
 	}
 
-	// Convert tradeQuote to SwapQuoteRequestBody
-	quoteReq := jupiter.SwapQuoteRequestBody{
-		EstimatedAmount: tradeQuote.EstimatedAmount,
-		ExchangeRate:    tradeQuote.ExchangeRate,
-		Fee:             tradeQuote.Fee,
-		PriceImpact:     tradeQuote.PriceImpact,
-		RoutePlan:       tradeQuote.RoutePlan,
-		InputMint:       tradeQuote.InputMint,
-		OutputMint:      tradeQuote.OutputMint,
-	}
-
-	unsignedTx, err := s.jupiterClient.CreateSwapTransaction(ctx, quoteReq, fromPubKey)
+	unsignedTx, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to create swap transaction: %w", err)
 	}
@@ -241,6 +231,15 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
 	}
 
+	// Marshal the full quote to json.RawMessage for swap
+	quoteRaw, err := json.Marshal(quote)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal raw quote: %w", err)
+	}
+
+	// 🪵 LOG: Print the raw Jupiter quote payload
+	log.Printf("[JUPITER] Raw quote payload: %s", string(quoteRaw))
+
 	// Collect all unique feeMint addresses
 	feeMints := make(map[string]bool)
 	for _, route := range quote.RoutePlan {
@@ -332,6 +331,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 		RoutePlan:       routeSummary,
 		InputMint:       quote.InputMint,
 		OutputMint:      quote.OutputMint,
+		Raw:             quoteRaw,
 	}, nil
 }
 

@@ -21,5 +21,5 @@ type ClientAPI interface {
 	GetAllCoins(ctx context.Context) (*CoinListResponse, error)
 
 	// CreateSwapTransaction requests an unsigned swap transaction from Jupiter
-	CreateSwapTransaction(ctx context.Context, quoteResp SwapQuoteRequestBody, userPublicKey solanago.PublicKey) (string, error)
+	CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey) (string, error)
 }

@@ -182,6 +182,9 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 		return nil, fmt.Errorf("failed to unmarshal quote response: %w", err)
 	}
 
+	// Store the raw JSON payload in the struct for later use
+	quoteResp.RawPayload = json.RawMessage(body)
+
 	return &quoteResp, nil
 }
 
@@ -222,7 +225,10 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 }
 
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter
-func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp SwapQuoteRequestBody, userPublicKey solanago.PublicKey) (string, error) {
+func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey) (string, error) {
+	// 🪵 LOG: Print the raw quoteResp for debugging
+	log.Printf("[JUPITER] quoteResp (raw): %s", string(quoteResp))
+
 	swapReq := map[string]interface{}{
 		"quoteResponse":           quoteResp,
 		"userPublicKey":           userPublicKey.String(),
@@ -241,7 +247,10 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp SwapQuoteR
 		return "", fmt.Errorf("failed to marshal swap request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/swap", strings.NewReader(string(body)))
+	// 🪵 LOG: Print the full outgoing payload for debugging
+	log.Printf("[JUPITER] Outgoing swap payload, url %s: %s", "https://lite-api.jup.ag/swap/v1/swap", string(body))
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://lite-api.jup.ag/swap/v1/swap", strings.NewReader(string(body)))
 	if err != nil {
 		return "", fmt.Errorf("failed to create swap request: %w", err)
 	}
@@ -255,13 +264,20 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp SwapQuoteR
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
+		log.Printf("[JUPITER] Non-200 response from Jupiter: %s", string(b))
 		return "", fmt.Errorf("swap request failed: %s", string(b))
 	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read swap response body: %w", err)
+	}
+	log.Printf("[JUPITER] Raw swap response body: %s", string(b))
 
 	var swapResp struct {
 		SwapTransaction string `json:"swapTransaction"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&swapResp); err != nil {
+	if err := json.Unmarshal(b, &swapResp); err != nil {
 		return "", fmt.Errorf("failed to decode swap response: %w", err)
 	}
 	if swapResp.SwapTransaction == "" {
