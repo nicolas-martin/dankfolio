@@ -36,6 +36,9 @@ const (
 	// TradeServiceGetSwapQuoteProcedure is the fully-qualified name of the TradeService's GetSwapQuote
 	// RPC.
 	TradeServiceGetSwapQuoteProcedure = "/dankfolio.v1.TradeService/GetSwapQuote"
+	// TradeServicePrepareSwapProcedure is the fully-qualified name of the TradeService's PrepareSwap
+	// RPC.
+	TradeServicePrepareSwapProcedure = "/dankfolio.v1.TradeService/PrepareSwap"
 	// TradeServiceSubmitSwapProcedure is the fully-qualified name of the TradeService's SubmitSwap RPC.
 	TradeServiceSubmitSwapProcedure = "/dankfolio.v1.TradeService/SubmitSwap"
 	// TradeServiceGetTradeProcedure is the fully-qualified name of the TradeService's GetTrade RPC.
@@ -48,6 +51,8 @@ const (
 type TradeServiceClient interface {
 	// GetSwapQuote returns a quote for a potential trade
 	GetSwapQuote(context.Context, *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error)
+	// PrepareSwap prepares an unsigned swap transaction
+	PrepareSwap(context.Context, *connect.Request[v1.PrepareSwapRequest]) (*connect.Response[v1.PrepareSwapResponse], error)
 	// SubmitSwap submits a trade for execution
 	SubmitSwap(context.Context, *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error)
 	// GetTrade returns details and status of a specific trade
@@ -71,6 +76,12 @@ func NewTradeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			httpClient,
 			baseURL+TradeServiceGetSwapQuoteProcedure,
 			connect.WithSchema(tradeServiceMethods.ByName("GetSwapQuote")),
+			connect.WithClientOptions(opts...),
+		),
+		prepareSwap: connect.NewClient[v1.PrepareSwapRequest, v1.PrepareSwapResponse](
+			httpClient,
+			baseURL+TradeServicePrepareSwapProcedure,
+			connect.WithSchema(tradeServiceMethods.ByName("PrepareSwap")),
 			connect.WithClientOptions(opts...),
 		),
 		submitSwap: connect.NewClient[v1.SubmitSwapRequest, v1.SubmitSwapResponse](
@@ -97,6 +108,7 @@ func NewTradeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 // tradeServiceClient implements TradeServiceClient.
 type tradeServiceClient struct {
 	getSwapQuote *connect.Client[v1.GetSwapQuoteRequest, v1.GetSwapQuoteResponse]
+	prepareSwap  *connect.Client[v1.PrepareSwapRequest, v1.PrepareSwapResponse]
 	submitSwap   *connect.Client[v1.SubmitSwapRequest, v1.SubmitSwapResponse]
 	getTrade     *connect.Client[v1.GetTradeRequest, v1.Trade]
 	listTrades   *connect.Client[v1.ListTradesRequest, v1.ListTradesResponse]
@@ -105,6 +117,11 @@ type tradeServiceClient struct {
 // GetSwapQuote calls dankfolio.v1.TradeService.GetSwapQuote.
 func (c *tradeServiceClient) GetSwapQuote(ctx context.Context, req *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error) {
 	return c.getSwapQuote.CallUnary(ctx, req)
+}
+
+// PrepareSwap calls dankfolio.v1.TradeService.PrepareSwap.
+func (c *tradeServiceClient) PrepareSwap(ctx context.Context, req *connect.Request[v1.PrepareSwapRequest]) (*connect.Response[v1.PrepareSwapResponse], error) {
+	return c.prepareSwap.CallUnary(ctx, req)
 }
 
 // SubmitSwap calls dankfolio.v1.TradeService.SubmitSwap.
@@ -126,6 +143,8 @@ func (c *tradeServiceClient) ListTrades(ctx context.Context, req *connect.Reques
 type TradeServiceHandler interface {
 	// GetSwapQuote returns a quote for a potential trade
 	GetSwapQuote(context.Context, *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error)
+	// PrepareSwap prepares an unsigned swap transaction
+	PrepareSwap(context.Context, *connect.Request[v1.PrepareSwapRequest]) (*connect.Response[v1.PrepareSwapResponse], error)
 	// SubmitSwap submits a trade for execution
 	SubmitSwap(context.Context, *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error)
 	// GetTrade returns details and status of a specific trade
@@ -145,6 +164,12 @@ func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOpti
 		TradeServiceGetSwapQuoteProcedure,
 		svc.GetSwapQuote,
 		connect.WithSchema(tradeServiceMethods.ByName("GetSwapQuote")),
+		connect.WithHandlerOptions(opts...),
+	)
+	tradeServicePrepareSwapHandler := connect.NewUnaryHandler(
+		TradeServicePrepareSwapProcedure,
+		svc.PrepareSwap,
+		connect.WithSchema(tradeServiceMethods.ByName("PrepareSwap")),
 		connect.WithHandlerOptions(opts...),
 	)
 	tradeServiceSubmitSwapHandler := connect.NewUnaryHandler(
@@ -169,6 +194,8 @@ func NewTradeServiceHandler(svc TradeServiceHandler, opts ...connect.HandlerOpti
 		switch r.URL.Path {
 		case TradeServiceGetSwapQuoteProcedure:
 			tradeServiceGetSwapQuoteHandler.ServeHTTP(w, r)
+		case TradeServicePrepareSwapProcedure:
+			tradeServicePrepareSwapHandler.ServeHTTP(w, r)
 		case TradeServiceSubmitSwapProcedure:
 			tradeServiceSubmitSwapHandler.ServeHTTP(w, r)
 		case TradeServiceGetTradeProcedure:
@@ -186,6 +213,10 @@ type UnimplementedTradeServiceHandler struct{}
 
 func (UnimplementedTradeServiceHandler) GetSwapQuote(context.Context, *connect.Request[v1.GetSwapQuoteRequest]) (*connect.Response[v1.GetSwapQuoteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.GetSwapQuote is not implemented"))
+}
+
+func (UnimplementedTradeServiceHandler) PrepareSwap(context.Context, *connect.Request[v1.PrepareSwapRequest]) (*connect.Response[v1.PrepareSwapResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.TradeService.PrepareSwap is not implemented"))
 }
 
 func (UnimplementedTradeServiceHandler) SubmitSwap(context.Context, *connect.Request[v1.SubmitSwapRequest]) (*connect.Response[v1.SubmitSwapResponse], error) {

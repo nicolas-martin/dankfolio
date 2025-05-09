@@ -1,6 +1,10 @@
 package jupiter
 
-import "context"
+import (
+	"context"
+
+	solanago "github.com/gagliardetto/solana-go"
+)
 
 // ClientAPI defines the interface for Jupiter API interactions
 type ClientAPI interface {
@@ -15,4 +19,7 @@ type ClientAPI interface {
 
 	// GetAllCoins fetches all available tokens from Jupiter API
 	GetAllCoins(ctx context.Context) (*CoinListResponse, error)
+
+	// CreateSwapTransaction requests an unsigned swap transaction from Jupiter
+	CreateSwapTransaction(ctx context.Context, quoteResp SwapQuoteRequestBody, userPublicKey solanago.PublicKey) (string, error)
 }

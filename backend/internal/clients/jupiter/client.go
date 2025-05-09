@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	solanago "github.com/gagliardetto/solana-go"
 )
 
 const (
@@ -217,4 +219,53 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 	}
 
 	return &CoinListResponse{Coins: tokens}, nil
+}
+
+// CreateSwapTransaction requests an unsigned swap transaction from Jupiter
+func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp SwapQuoteRequestBody, userPublicKey solanago.PublicKey) (string, error) {
+	swapReq := map[string]interface{}{
+		"quoteResponse":           quoteResp,
+		"userPublicKey":           userPublicKey.String(),
+		"wrapUnwrapSOL":           true,
+		"dynamicComputeUnitLimit": true,
+		"dynamicSlippage":         true,
+		"prioritizationFeeLamports": map[string]interface{}{
+			"priorityLevelWithMaxLamports": map[string]interface{}{
+				"maxLamports":   1000000,
+				"priorityLevel": "veryHigh",
+			},
+		},
+	}
+	body, err := json.Marshal(swapReq)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal swap request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/swap", strings.NewReader(string(body)))
+	if err != nil {
+		return "", fmt.Errorf("failed to create swap request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send swap request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("swap request failed: %s", string(b))
+	}
+
+	var swapResp struct {
+		SwapTransaction string `json:"swapTransaction"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&swapResp); err != nil {
+		return "", fmt.Errorf("failed to decode swap response: %w", err)
+	}
+	if swapResp.SwapTransaction == "" {
+		return "", fmt.Errorf("no swap transaction received from Jupiter")
+	}
+	return swapResp.SwapTransaction, nil
 }

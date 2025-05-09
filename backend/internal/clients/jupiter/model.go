@@ -158,3 +158,14 @@ func (t *CoinListInfo) ToRawCoin() *model.RawCoin {
 		UpdatedAt:   time.Now().Format(time.RFC3339),
 	}
 }
+
+// SwapQuoteRequestBody represents the structure sent as quoteResponse in the Jupiter swap transaction request
+type SwapQuoteRequestBody struct {
+	EstimatedAmount string   `json:"estimated_amount"`
+	ExchangeRate    string   `json:"exchange_rate"`
+	Fee             string   `json:"fee"`
+	PriceImpact     string   `json:"price_impact"`
+	RoutePlan       []string `json:"route_plan"`
+	InputMint       string   `json:"input_mint"`
+	OutputMint      string   `json:"output_mint"`
+}

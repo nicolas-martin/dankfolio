@@ -7,6 +7,7 @@ package jupiterMocks
 import (
 	"context"
 
+	"github.com/gagliardetto/solana-go"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -36,6 +37,62 @@ type MockClientAPI_Expecter struct {
 
 func (_m *MockClientAPI) EXPECT() *MockClientAPI_Expecter {
 	return &MockClientAPI_Expecter{mock: &_m.Mock}
+}
+
+// CreateSwapTransaction provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) CreateSwapTransaction(ctx context.Context, quoteResp jupiter.SwapQuoteRequestBody, userPublicKey solana.PublicKey) (string, error) {
+	ret := _mock.Called(ctx, quoteResp, userPublicKey)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateSwapTransaction")
+	}
+
+	var r0 string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, jupiter.SwapQuoteRequestBody, solana.PublicKey) (string, error)); ok {
+		return returnFunc(ctx, quoteResp, userPublicKey)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, jupiter.SwapQuoteRequestBody, solana.PublicKey) string); ok {
+		r0 = returnFunc(ctx, quoteResp, userPublicKey)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, jupiter.SwapQuoteRequestBody, solana.PublicKey) error); ok {
+		r1 = returnFunc(ctx, quoteResp, userPublicKey)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClientAPI_CreateSwapTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateSwapTransaction'
+type MockClientAPI_CreateSwapTransaction_Call struct {
+	*mock.Call
+}
+
+// CreateSwapTransaction is a helper method to define mock.On call
+//   - ctx
+//   - quoteResp
+//   - userPublicKey
+func (_e *MockClientAPI_Expecter) CreateSwapTransaction(ctx interface{}, quoteResp interface{}, userPublicKey interface{}) *MockClientAPI_CreateSwapTransaction_Call {
+	return &MockClientAPI_CreateSwapTransaction_Call{Call: _e.mock.On("CreateSwapTransaction", ctx, quoteResp, userPublicKey)}
+}
+
+func (_c *MockClientAPI_CreateSwapTransaction_Call) Run(run func(ctx context.Context, quoteResp jupiter.SwapQuoteRequestBody, userPublicKey solana.PublicKey)) *MockClientAPI_CreateSwapTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(jupiter.SwapQuoteRequestBody), args[2].(solana.PublicKey))
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_CreateSwapTransaction_Call) Return(s string, err error) *MockClientAPI_CreateSwapTransaction_Call {
+	_c.Call.Return(s, err)
+	return _c
+}
+
+func (_c *MockClientAPI_CreateSwapTransaction_Call) RunAndReturn(run func(ctx context.Context, quoteResp jupiter.SwapQuoteRequestBody, userPublicKey solana.PublicKey) (string, error)) *MockClientAPI_CreateSwapTransaction_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // GetAllCoins provides a mock function for the type MockClientAPI

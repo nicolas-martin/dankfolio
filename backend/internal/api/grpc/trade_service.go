@@ -28,10 +28,7 @@ func newTradeServiceHandler(tradeService *trade.Service) *tradeServiceHandler {
 }
 
 // GetSwapQuote fetches a trade quote
-func (s *tradeServiceHandler) GetSwapQuote(
-	ctx context.Context,
-	req *connect.Request[pb.GetSwapQuoteRequest],
-) (*connect.Response[pb.GetSwapQuoteResponse], error) {
+func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Request[pb.GetSwapQuoteRequest]) (*connect.Response[pb.GetSwapQuoteResponse], error) {
 	// Log the incoming request
 	log.Printf("Received GetSwapQuote request: from_coin_id=%s, to_coin_id=%s, amount=%s", req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount)
 
@@ -77,10 +74,25 @@ func (s *tradeServiceHandler) GetSwapQuote(
 }
 
 // SubmitSwap submits a trade for execution
-func (s *tradeServiceHandler) SubmitSwap(
-	ctx context.Context,
-	req *connect.Request[pb.SubmitSwapRequest],
-) (*connect.Response[pb.SubmitSwapResponse], error) {
+func (s *tradeServiceHandler) PrepareSwap(ctx context.Context, req *connect.Request[pb.PrepareSwapRequest]) (*connect.Response[pb.PrepareSwapResponse], error) {
+	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.Amount == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and amount are required"))
+	}
+
+	unsignedTx, err := s.tradeService.PrepareSwap(ctx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, req.Msg.SlippageBps)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare swap: %w", err))
+	}
+
+	res := connect.NewResponse(&pb.PrepareSwapResponse{
+		UnsignedTransaction: unsignedTx,
+	})
+
+	return res, nil
+}
+
+// SubmitSwap submits a trade for execution
+func (s *tradeServiceHandler) SubmitSwap(ctx context.Context, req *connect.Request[pb.SubmitSwapRequest]) (*connect.Response[pb.SubmitSwapResponse], error) {
 	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.SignedTransaction == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and signed_transaction are required"))
 	}
@@ -111,10 +123,7 @@ func (s *tradeServiceHandler) SubmitSwap(
 }
 
 // GetTrade returns details and status of a specific trade
-func (s *tradeServiceHandler) GetTrade(
-	ctx context.Context,
-	req *connect.Request[pb.GetTradeRequest],
-) (*connect.Response[pb.Trade], error) {
+func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request[pb.GetTradeRequest]) (*connect.Response[pb.Trade], error) {
 	var trade *model.Trade
 	var err error
 
@@ -203,10 +212,7 @@ func (s *tradeServiceHandler) GetTrade(
 }
 
 // ListTrades returns all trades
-func (s *tradeServiceHandler) ListTrades(
-	ctx context.Context,
-	req *connect.Request[pb.ListTradesRequest],
-) (*connect.Response[pb.ListTradesResponse], error) {
+func (s *tradeServiceHandler) ListTrades(ctx context.Context, req *connect.Request[pb.ListTradesRequest]) (*connect.Response[pb.ListTradesResponse], error) {
 	trades, err := s.tradeService.ListTrades(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to list trades: %w", err))
