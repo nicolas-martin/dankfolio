@@ -31,7 +31,7 @@ const TabNavigator = () => {
 				backgroundColor: theme.colors.surface,
 				borderTopWidth: 1,
 				borderTopColor: theme.colors.outlineVariant,
-				height: 65,
+				height: 100,
 			}}
 			labeled={true}
 			theme={theme}
