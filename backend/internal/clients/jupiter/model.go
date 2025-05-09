@@ -1,6 +1,7 @@
 package jupiter
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -77,6 +78,9 @@ type QuoteResponse struct {
 	ContextSlot          int64        `json:"contextSlot"`
 	TimeTaken            float64      `json:"timeTaken"`
 	PlatformFee          *PlatformFee `json:"platformFee,omitempty"`
+
+	// RawPayload stores the original JSON response from Jupiter for use in swap requests
+	RawPayload json.RawMessage `json:"-"`
 }
 
 // PlatformFee represents the platform fee information in a quote

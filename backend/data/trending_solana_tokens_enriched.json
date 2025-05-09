@@ -1,74 +1,38 @@
 {
-  "scrapeTimestamp": "2025-05-06T16:04:25.276978Z",
+  "scrapeTimestamp": "2025-05-09T18:03:27.46495Z",
   "coins": [
     {
-      "mint_address": "9j6twpYWrV1ueJok76D9YK8wJTVoG9Zy8spC7wnTpump",
-      "name": "urmom",
-      "symbol": "urmom",
+      "mint_address": "6bdTRHhdZenJQYLTxaYc8kH74GBNP9DoGhPnCjfypump",
+      "name": "fog",
+      "symbol": "fog",
       "decimals": 6,
-      "description": "urmom (urmom) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmRW6Lq3NUngs3xN5MMHrSZa59fvqMCYgqcMk9cnPcPZ87",
+      "description": "",
+      "icon_url": "https://ipfs.io/ipfs/QmXidbXWxeQhQzKaveJUQyzn4RHMNYHzUbLaSHH8PnUPpJ",
       "tags": [
         "launchpad",
         "unknown"
       ],
-      "price": 0.00749954,
-      "volume24h": 15080000,
-      "created_at": "2025-05-06T12:04:23-04:00",
-      "last_updated": "2025-05-06T12:04:23-04:00"
+      "price": 0.00278619,
+      "volume24h": 9060000,
+      "created_at": "2025-05-09T14:03:24-04:00",
+      "last_updated": "2025-05-09T14:03:24-04:00"
     },
     {
-      "mint_address": "G1jydhghPMLBXRFPR3wyJ9HbpKPR3Rv7M8Yakfo5pump",
-      "name": "stickman",
-      "symbol": "stickman",
+      "mint_address": "GS1ufkaGWe2SVbkmUqp5dCPtWdDumDcjoyJFPJmSpump",
+      "name": "GIGANT",
+      "symbol": "GIGANT",
       "decimals": 6,
-      "description": "stickman (stickman) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmNX8AkN1GZYgikqa9yqCwaTJ37nUBYJGhkzwra7fUL8Co",
+      "description": "no name. no origin.\r\nthe chain remembers only his words.\r\nminted in silence. followed in fear.\r\nthose who ask why… are already lost.",
+      "icon_url": "https://ipfs.io/ipfs/QmXjTwjjgrMa4siyMiuRQTGs6JhJwb1MBviqLY9YDvu4E8",
       "tags": [
-        "launchpad",
-        "unknown"
+        "unknown",
+        "launchpad"
       ],
-      "price": 0.00255787,
-      "volume24h": 7170000,
-      "created_at": "2025-05-06T12:04:23-04:00",
-      "last_updated": "2025-05-06T12:04:23-04:00"
-    },
-    {
-      "mint_address": "KMNo3nJsBXfcpJTVhZcXLW7RmTwTt4GVFE7suUBo9sS",
-      "name": "Kamino",
-      "symbol": "KMNO",
-      "decimals": 6,
-      "description": "KMNO is the native token of Kamino Finance",
-      "icon_url": "https://cdn.kamino.finance/kamino.svg",
-      "tags": [
-        "verified",
-        "strict",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 0.074391,
-      "volume24h": 248070000,
-      "website": "https://www.kamino.finance/",
-      "twitter": "https://twitter.com/KaminoFinance",
-      "created_at": "2025-05-06T12:04:23-04:00",
-      "last_updated": "2025-05-06T12:04:23-04:00"
-    },
-    {
-      "mint_address": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
-      "name": "Pudgy Penguins",
-      "symbol": "PENGU",
-      "decimals": 6,
-      "description": "For the people. By the people.",
-      "icon_url": "https://arweave.net/BW67hICaKGd2_wamSB0IQq-x7Xwtmr2oJj1WnWGJRHU",
-      "tags": [
-        "verified",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 0.01103,
-      "volume24h": 15820000,
-      "created_at": "2025-05-06T12:04:23-04:00",
-      "last_updated": "2025-05-06T12:04:23-04:00"
+      "price": 0.00379402,
+      "volume24h": 6690000,
+      "website": "https://gigant.fromblock218.com/",
+      "created_at": "2025-05-09T14:03:24-04:00",
+      "last_updated": "2025-05-09T14:03:24-04:00"
     },
     {
       "mint_address": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
@@ -83,46 +47,61 @@
         "birdeye-trending",
         "community"
       ],
-      "price": 0.383903215,
-      "volume24h": 84950000,
-      "created_at": "2025-05-06T12:04:23-04:00",
-      "last_updated": "2025-05-06T12:04:23-04:00"
+      "price": 0.504772397,
+      "volume24h": 144580000,
+      "created_at": "2025-05-09T14:03:24-04:00",
+      "last_updated": "2025-05-09T14:03:24-04:00"
     },
     {
-      "mint_address": "BQX1cjcRHXmrqNtoFWwmE5bZj7RPneTmqXB979b2pump",
-      "name": "Italian Brainrot",
-      "symbol": "Italianrot",
+      "mint_address": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+      "name": "Pudgy Penguins",
+      "symbol": "PENGU",
       "decimals": 6,
-      "description": "Viral Italian animal brainrot trend on tiktok",
-      "icon_url": "https://ipfs.io/ipfs/QmZLiix8P5kAUk577DGtSMHZohMqJFLem3iHfiWaKqX6RH",
+      "description": "For the people. By the people.",
+      "icon_url": "https://arweave.net/BW67hICaKGd2_wamSB0IQq-x7Xwtmr2oJj1WnWGJRHU",
       "tags": [
-        "launchpad",
+        "verified",
         "birdeye-trending",
-        "community-assist",
-        "verified"
+        "community"
       ],
-      "price": 0.00798879,
-      "volume24h": 8109999.999999999,
-      "website": "https://www.tiktok.com/discover/animal-brainrot-italy",
-      "created_at": "2025-05-06T12:04:24-04:00",
-      "last_updated": "2025-05-06T12:04:24-04:00"
+      "price": 0.014303,
+      "volume24h": 34420000,
+      "created_at": "2025-05-09T14:03:24-04:00",
+      "last_updated": "2025-05-09T14:03:24-04:00"
     },
     {
-      "mint_address": "GPAgU9Wg2awAsucCuhgGKHMi7FCEQpVzbg2bL2gipump",
-      "name": "Taking Back Debt",
-      "symbol": "DEBT",
+      "mint_address": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "name": "Bonk",
+      "symbol": "Bonk",
+      "decimals": 5,
+      "description": "The Official Bonk Inu token",
+      "icon_url": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
+      "tags": [
+        "verified",
+        "strict",
+        "birdeye-trending",
+        "community"
+      ],
+      "price": 0.0000216844,
+      "volume24h": 15590000,
+      "created_at": "2025-05-09T14:03:24-04:00",
+      "last_updated": "2025-05-09T14:03:24-04:00"
+    },
+    {
+      "mint_address": "9j6twpYWrV1ueJok76D9YK8wJTVoG9Zy8spC7wnTpump",
+      "name": "urmom",
+      "symbol": "urmom",
       "decimals": 6,
-      "description": "ESCAPE THE SYSTEM.\r\nBUILD WITH $DEBT.",
-      "icon_url": "https://ipfs.io/ipfs/QmR9xrwh1kTDnfqLpeqZfQ1ohVtpGVkr3uanDt9uwEbxJY",
+      "description": "urmom (urmom) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/QmRW6Lq3NUngs3xN5MMHrSZa59fvqMCYgqcMk9cnPcPZ87",
       "tags": [
         "launchpad",
         "unknown"
       ],
-      "price": 0.000107941,
-      "volume24h": 2730000,
-      "website": "https://takingbackdebt.com",
-      "created_at": "2025-05-06T12:04:24-04:00",
-      "last_updated": "2025-05-06T12:04:24-04:00"
+      "price": 0.00759107,
+      "volume24h": 16320000,
+      "created_at": "2025-05-09T14:03:25-04:00",
+      "last_updated": "2025-05-09T14:03:25-04:00"
     },
     {
       "mint_address": "HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC",
@@ -138,43 +117,64 @@
         "community",
         "birdeye-trending"
       ],
-      "price": 0.25206987,
-      "volume24h": 26190000,
-      "created_at": "2025-05-06T12:04:24-04:00",
-      "last_updated": "2025-05-06T12:04:24-04:00"
+      "price": 0.348839825,
+      "volume24h": 40710000,
+      "created_at": "2025-05-09T14:03:25-04:00",
+      "last_updated": "2025-05-09T14:03:25-04:00"
     },
     {
-      "mint_address": "9Wkcek2EZFmJf5L2XmC5rfnNVBrdndbMe6yW8fbfbonk",
-      "name": "Chachamaru",
-      "symbol": "CHACHA",
+      "mint_address": "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs",
+      "name": "Ether (Portal)",
+      "symbol": "ETH",
+      "decimals": 8,
+      "description": "",
+      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs/logo.png",
+      "tags": [
+        "verified",
+        "strict",
+        "birdeye-trending",
+        "community"
+      ],
+      "price": 2343.17140474,
+      "volume24h": 60100000,
+      "created_at": "2025-05-09T14:03:25-04:00",
+      "last_updated": "2025-05-09T14:03:25-04:00"
+    },
+    {
+      "mint_address": "MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUzScPP5",
+      "name": "cat in a dogs world",
+      "symbol": "MEW",
+      "decimals": 5,
+      "description": "cat in a dogs world (MEW)",
+      "icon_url": "https://bafkreidlwyr565dxtao2ipsze6bmzpszqzybz7sqi2zaet5fs7k53henju.ipfs.nftstorage.link/",
+      "tags": [
+        "verified",
+        "strict",
+        "community"
+      ],
+      "price": 0.0035502,
+      "volume24h": 30520000,
+      "twitter": "https://twitter.com/MewsWorld",
+      "telegram": "https://t.me/MewsWorld",
+      "created_at": "2025-05-09T14:03:25-04:00",
+      "last_updated": "2025-05-09T14:03:25-04:00"
+    },
+    {
+      "mint_address": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+      "name": "dogwifhat",
+      "symbol": "$WIF",
       "decimals": 6,
-      "description": "Chachamaru the Shiba Inu.",
-      "icon_url": "https://ipfs.io/ipfs/bafybeid7foodhdl34ifexfiruyvfodwcveuq4hqy356h6qp7wjv45uj3ci",
+      "description": "Popular meme Dogwifhat vibes wif frens onchain @Dogwifcoin on X",
+      "icon_url": "https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link",
       "tags": [
-        "launchpad",
-        "community-assist",
-        "verified"
+        "verified",
+        "strict",
+        "community"
       ],
-      "price": 0.00281354,
-      "volume24h": 5380000,
-      "created_at": "2025-05-06T12:04:24-04:00",
-      "last_updated": "2025-05-06T12:04:24-04:00"
-    },
-    {
-      "mint_address": "14AALaZZowAceKjf7LuwLyGM2gSzkjPmyNUzW1asboop",
-      "name": "girlfriend",
-      "symbol": "gf",
-      "decimals": 9,
-      "description": "there is no second best (unless you're gay)",
-      "icon_url": "https://mainnet-boop.s3.us-east-1.amazonaws.com/14AALaZZowAceKjf7LuwLyGM2gSzkjPmyNUzW1asboop/913b26c15e98f48a59152b2a4b9b50d731260aa6fcf33e1df8bc0faecbab02bd.jpg",
-      "tags": [
-        "launchpad",
-        "unknown"
-      ],
-      "price": 0.00175968709,
-      "volume24h": 6500000,
-      "created_at": "2025-05-06T12:04:24-04:00",
-      "last_updated": "2025-05-06T12:04:24-04:00"
+      "price": 0.726591,
+      "volume24h": 8369999.999999999,
+      "created_at": "2025-05-09T14:03:25-04:00",
+      "last_updated": "2025-05-09T14:03:25-04:00"
     }
   ]
 }

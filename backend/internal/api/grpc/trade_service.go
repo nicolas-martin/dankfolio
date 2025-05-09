@@ -79,7 +79,7 @@ func (s *tradeServiceHandler) PrepareSwap(ctx context.Context, req *connect.Requ
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and amount are required"))
 	}
 
-	unsignedTx, err := s.tradeService.PrepareSwap(ctx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, req.Msg.SlippageBps)
+	unsignedTx, err := s.tradeService.PrepareSwap(ctx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, req.Msg.SlippageBps, req.Msg.UserPublicKey)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare swap: %w", err))
 	}

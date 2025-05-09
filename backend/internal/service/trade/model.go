@@ -9,6 +9,7 @@ type TradeQuote struct {
 	RoutePlan       []string `json:"routePlan"`
 	InputMint       string   `json:"inputMint"`
 	OutputMint      string   `json:"outputMint"`
+	Raw             []byte   `json:"-"` // Full raw quote response for Jupiter swap
 }
 
 // TradeFee represents the fee components for a trade
