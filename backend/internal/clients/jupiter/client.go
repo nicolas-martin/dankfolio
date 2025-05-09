@@ -185,6 +185,8 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 	// Store the raw JSON payload in the struct for later use
 	quoteResp.RawPayload = json.RawMessage(body)
 
+	log.Printf("***************🔄 Raw Jupiter quote payload: %s", string(quoteResp.RawPayload))
+
 	return &quoteResp, nil
 }
 
@@ -229,8 +231,14 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 	// 🪵 LOG: Print the raw quoteResp for debugging
 	log.Printf("[JUPITER] quoteResp (raw): %s", string(quoteResp))
 
+	// Unmarshal quoteResp to a map so it is sent as a JSON object, not a string
+	var quoteObj map[string]interface{}
+	if err := json.Unmarshal(quoteResp, &quoteObj); err != nil {
+		return "", fmt.Errorf("failed to unmarshal quoteResp: %w", err)
+	}
+
 	swapReq := map[string]interface{}{
-		"quoteResponse":           quoteResp,
+		"quoteResponse":           quoteObj, // Pass as object, not []byte
 		"userPublicKey":           userPublicKey.String(),
 		"wrapUnwrapSOL":           true,
 		"dynamicComputeUnitLimit": true,
