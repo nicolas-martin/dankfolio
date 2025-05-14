@@ -18,7 +18,7 @@ type ClientAPI interface {
 	GetRpcConnection() *rpc.Client
 
 	// ExecuteTrade executes a pre-signed transaction
-	ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) error
+	ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) (string, error)
 
 	// ExecuteSignedTransaction submits a signed transaction to the Solana blockchain
 	ExecuteSignedTransaction(ctx context.Context, signedTx string) (solana.Signature, error)

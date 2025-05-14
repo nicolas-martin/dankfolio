@@ -3,6 +3,7 @@ package trade
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"log"
@@ -113,7 +114,7 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAm
 	// 3. Create a new Trade record
 	trade := &model.Trade{
 		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		UserID:              fromAddress,
+		UserID:              fromPubKey.String(), // Set the user_id to the wallet address
 		FromCoinID:          fromCoinID,
 		ToCoinID:            toCoinID,
 		Type:                "swap",
@@ -153,7 +154,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 
 		// Create simulated trade
 		trade := &model.Trade{
-			ID:              fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+			ID:              fmt.Sprintf("trade_simulated_%d", time.Now().UnixNano()),
 			FromCoinID:      req.FromCoinID,
 			ToCoinID:        req.ToCoinID,
 			Type:            "swap",
@@ -174,37 +175,55 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		return trade, nil
 	}
 
-	// Regular trade execution logic
-	trade := &model.Trade{
-		ID:         fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		FromCoinID: req.FromCoinID,
-		ToCoinID:   req.ToCoinID,
-		Type:       "swap",
-		Amount:     req.Amount,
-		Fee:        CalculateTradeFee(req.Amount, 1.0),
-		Status:     "pending",
-		CreatedAt:  time.Now(),
+	// Decode signed transaction to get unsigned transaction
+	txBytes, err := base64.StdEncoding.DecodeString(req.SignedTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode signed transaction: %w", err)
+	}
+
+	// Parse transaction
+	tx, err := solanago.TransactionFromBytes(txBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse transaction: %w", err)
+	}
+
+	// Get the unsigned transaction from the signed one
+	msgBytes, err := tx.Message.MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal unsigned transaction: %w", err)
+	}
+	unsignedTx := base64.StdEncoding.EncodeToString(msgBytes)
+
+	// Find existing trade record by unsigned transaction
+	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", unsignedTx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find existing trade record: %w", err)
+	}
+	if trade == nil {
+		return nil, fmt.Errorf("no trade record found for the given transaction")
 	}
 
 	// Execute signed transaction on blockchain
-	err := s.solanaClient.ExecuteTrade(ctx, trade, req.SignedTransaction)
+	txHash, err := s.solanaClient.ExecuteTrade(ctx, trade, req.SignedTransaction)
 	if err != nil {
 		trade.Status = "failed"
 		errStr := err.Error()
 		trade.Error = &errStr
-		if err := s.store.Trades().Update(ctx, trade); err != nil {
+		if err = s.store.Trades().Update(ctx, trade); err != nil {
 			log.Printf("Warning: Failed to update failed trade status: %v", err)
 		}
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", err)
 	}
 
-	// Always create the trade record in the DB before executing the blockchain transaction
-	if err := s.store.Trades().Create(ctx, trade); err != nil {
-		return nil, fmt.Errorf("failed to create trade: %w", err)
+	// Update trade record with transaction hash and status
+	trade.Status = "submitted"
+	trade.TransactionHash = txHash
+	if err := s.store.Trades().Update(ctx, trade); err != nil {
+		log.Printf("Warning: Failed to update trade status: %v", err)
 	}
 
 	// Log blockchain explorer URL
-	log.Printf("✅ Trade completed! View on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)
+	log.Printf("✅ Trade submitted! View on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)
 
 	return trade, nil
 }

@@ -64,23 +64,23 @@ func (c *Client) GetRpcConnection() *rpc.Client {
 }
 
 // ExecuteTrade executes a pre-signed transaction from the frontend
-func (c *Client) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) error {
+func (c *Client) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) (string, error) {
 	// Execute the signed transaction
 	if signedTx == "" {
-		return fmt.Errorf("signed transaction is required for trade execution")
+		return "", fmt.Errorf("signed transaction is required for trade execution")
 	}
 
 	// Execute the signed transaction
 	sig, err := c.ExecuteSignedTransaction(ctx, signedTx)
 	if err != nil {
-		return fmt.Errorf("failed to execute signed transaction: %w", err)
+		return "", fmt.Errorf("failed to execute signed transaction: %w", err)
 	}
 
 	// Update trade status and transaction hash
 	trade.Status = "submitted"
 	trade.TransactionHash = sig.String()
 
-	return nil
+	return sig.String(), nil
 }
 
 // ExecuteSignedTransaction submits a signed transaction to the Solana blockchain
