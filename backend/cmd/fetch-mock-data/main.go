@@ -90,7 +90,7 @@ func fetchAndStorePriceHistory(apiKey string) error {
 		Timeout: 10 * time.Second,
 	}
 	birdeyeClient := birdeye.NewClient("https://public-api.birdeye.so/defi", apiKey)
-	jupiterClient := jupiter.NewClient(httpClient)
+	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "")
 
 	// Initialize price service with clients
 	priceService := price.NewService(birdeyeClient, jupiterClient)
