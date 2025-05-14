@@ -33,9 +33,16 @@ type Config struct {
 	GRPCPort          int
 	DBURL             string
 	CacheExpiry       time.Duration
+	JupiterApiKey     string
+	JupiterApiUrl     string
+	Env               string
 }
 
 func loadConfig() (*Config, error) {
+	// // Base URL for Jupiter API
+	// baseURL  = "https://api.jup.ag"
+	// lightURL = "https://lite-api.jup.ag"
+
 	// Load environment variables
 	if err := godotenv.Load(".env"); err != nil {
 		log.Printf("Warning: Error loading .env file: %v", err)
@@ -60,6 +67,9 @@ func loadConfig() (*Config, error) {
 		DBURL:             os.Getenv("DB_URL"),
 		GRPCPort:          9000, // Default value
 		CacheExpiry:       cacheExpiry,
+		JupiterApiKey:     os.Getenv("JUPITER_API_KEY"),
+		JupiterApiUrl:     os.Getenv("JUPITER_API_URL"),
+		Env:               os.Getenv("APP_ENV"),
 	}
 
 	// Validate required fields
@@ -76,6 +86,15 @@ func loadConfig() (*Config, error) {
 	}
 	if config.DBURL == "" {
 		missingVars = append(missingVars, "DB_URL")
+	}
+	if config.JupiterApiKey == "" {
+		missingVars = append(missingVars, "JUPITER_API_KEY")
+	}
+	if config.JupiterApiUrl == "" {
+		missingVars = append(missingVars, "JUPITER_API_URL")
+	}
+	if config.Env == "" {
+		missingVars = append(missingVars, "APP_ENV")
 	}
 
 	if len(missingVars) > 0 {
@@ -98,7 +117,7 @@ func main() {
 	}
 
 	// Initialize Jupiter client
-	jupiterClient := jupiter.NewClient(httpClient)
+	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey)
 
 	// Initialize BirdEye client
 	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey)

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, ActivityIndicator } from 'react-native';
 import { Text, Card, useTheme } from 'react-native-paper';
-import { formatNumber, formatPrice } from '../../../utils/numberFormat';
+import { formatTokenBalance, formatNumber, formatPrice } from '../../../utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
 import { createStyles } from './coincard_styles';
 import { useProxiedImage } from '@/hooks/useProxiedImage';
@@ -33,7 +33,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 						<Text style={styles.symbol}>{coin.symbol}</Text>
 						{coin.balance !== undefined && (
 							<Text style={styles.balance} numberOfLines={1}>
-								Balance: {formatNumber(coin.balance, false)}
+								{formatTokenBalance(coin.balance)}
 							</Text>
 						)}
 					</View>

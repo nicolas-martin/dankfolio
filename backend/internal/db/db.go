@@ -23,6 +23,7 @@ type Store interface {
 	Coins() Repository[model.Coin]
 	Trades() Repository[model.Trade]
 	RawCoins() Repository[model.RawCoin]
+	Wallet() Repository[model.Wallet]
 
 	// Custom operations
 	ListTrendingCoins(ctx context.Context) ([]model.Coin, error)
@@ -38,5 +39,5 @@ type Repository[T Entity] interface {
 	Update(ctx context.Context, item *T) error
 	Upsert(ctx context.Context, item *T) error
 	Delete(ctx context.Context, id string) error
-	GetByField(ctx context.Context, field string, value interface{}) (*T, error)
+	GetByField(ctx context.Context, field string, value any) (*T, error)
 }

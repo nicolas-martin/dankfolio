@@ -23,6 +23,7 @@ type Store struct {
 	coinsRepo    db.Repository[model.Coin]
 	tradesRepo   db.Repository[model.Trade]
 	rawCoinsRepo db.Repository[model.RawCoin]
+	walletRepo   db.Repository[model.Wallet]
 }
 
 var _ db.Store = (*Store)(nil) // Compile-time check for interface implementation
@@ -54,7 +55,7 @@ func NewStore(dsn string, enableSQLLogging bool) (*Store, error) {
 
 	// NOTE: Auto-migrate schema (useful for dev, but we primarily use Goose)
 	// Comment out if only Goose migrations are preferred.
-	if err := dbConn.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}); err != nil {
+	if err := dbConn.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}); err != nil {
 		return nil, fmt.Errorf("failed to auto-migrate schema: %w", err)
 	}
 
@@ -76,6 +77,10 @@ func (s *Store) Close() error {
 		return fmt.Errorf("failed to get underlying sql.DB for closing: %w", err)
 	}
 	return sqlDB.Close()
+}
+
+func (s *Store) Wallet() db.Repository[model.Wallet] {
+	return s.walletRepo
 }
 
 // Coins returns the coin repository.

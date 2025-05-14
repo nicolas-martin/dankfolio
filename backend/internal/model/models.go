@@ -151,10 +151,7 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 	if start >= len(filtered) {
 		return []Coin{}
 	}
-	end := int(offset + limit)
-	if end > len(filtered) {
-		end = len(filtered)
-	}
+	end := min(int(offset+limit), len(filtered))
 	return filtered[start:end]
 }
 

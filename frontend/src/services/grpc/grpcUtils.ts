@@ -44,7 +44,7 @@ export const logError = (serviceName: string, methodName: string, error: any): v
 	console.error(`❌ gRPC ${serviceName}.${methodName} Error:`, safeStringify({
 		message: error.message || 'Unknown error',
 		code: error.code,
-		data: error.metadata ? (typeof error.metadata.toObject === 'function' ? error.metadata.toObject() : error.metadata) : undefined
+		// data: error.metadata ? (typeof error.metadata.toObject === 'function' ? error.metadata.toObject() : error.metadata) : undefined
 	}));
 };
 
