@@ -84,6 +84,7 @@ message SubmitSwapRequest {
   string to_coin_id = 2;
   double amount = 3;
   string signed_transaction = 4;
+  string unsigned_transaction = 5; // used to retreive the record in the backend
 }
 
 // SubmitSwapResponse is the response after submitting a trade

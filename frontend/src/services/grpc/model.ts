@@ -48,6 +48,7 @@ export interface CoinTransferPrepareResponse {
 
 export interface CoinTransferSubmitRequest {
 	signedTransaction: string;
+	unsignedTransaction: string; // used to retreive the record
 }
 
 export interface CreateWalletResponse {
@@ -78,6 +79,7 @@ export interface TradePayload {
 	toCoinMintAddress: string;
 	amount: number;
 	signedTransaction: string;
+	unsignedTransaction: string; // used to retreive the record
 }
 
 export interface TradeQuoteResponse {
