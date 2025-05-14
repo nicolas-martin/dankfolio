@@ -91,7 +91,12 @@ func (s *walletServiceHandler) SubmitTransfer(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("signed transaction is required"))
 	}
 
-	txHash, err := s.walletService.SubmitTransfer(ctx, req.Msg.SignedTransaction)
+	transferRequest := &wallet.TransferRequest{
+		SignedTransaction:   req.Msg.SignedTransaction,
+		UnsignedTransaction: req.Msg.UnsignedTransaction,
+	}
+
+	txHash, err := s.walletService.SubmitTransfer(ctx, transferRequest)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to submit transfer: %w", err))
 	}

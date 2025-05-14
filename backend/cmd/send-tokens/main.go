@@ -90,8 +90,10 @@ func main() {
 		log.Fatalf("Error serializing signed transaction: %v", err)
 	}
 
+	transferReq := &wallet.TransferRequest{SignedTransaction: base64.StdEncoding.EncodeToString(signedTx), UnsignedTransaction: unsignedTx}
+
 	// Submit the transfer
-	txHash, err := walletService.SubmitTransfer(context.Background(), base64.StdEncoding.EncodeToString(signedTx))
+	txHash, err := walletService.SubmitTransfer(context.Background(), transferReq)
 	if err != nil {
 		log.Fatalf("Error submitting transfer: %v", err)
 	}

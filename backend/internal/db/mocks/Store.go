@@ -85,63 +85,6 @@ func (_c *MockStore_Coins_Call) RunAndReturn(run func() db.Repository[model.Coin
 	return _c
 }
 
-// GetByTransactionHash provides a mock function for the type MockStore
-func (_mock *MockStore) GetByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
-	ret := _mock.Called(ctx, txHash)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetByTransactionHash")
-	}
-
-	var r0 *model.Trade
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*model.Trade, error)); ok {
-		return returnFunc(ctx, txHash)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *model.Trade); ok {
-		r0 = returnFunc(ctx, txHash)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Trade)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, txHash)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockStore_GetByTransactionHash_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByTransactionHash'
-type MockStore_GetByTransactionHash_Call struct {
-	*mock.Call
-}
-
-// GetByTransactionHash is a helper method to define mock.On call
-//   - ctx
-//   - txHash
-func (_e *MockStore_Expecter) GetByTransactionHash(ctx interface{}, txHash interface{}) *MockStore_GetByTransactionHash_Call {
-	return &MockStore_GetByTransactionHash_Call{Call: _e.mock.On("GetByTransactionHash", ctx, txHash)}
-}
-
-func (_c *MockStore_GetByTransactionHash_Call) Run(run func(ctx context.Context, txHash string)) *MockStore_GetByTransactionHash_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockStore_GetByTransactionHash_Call) Return(trade *model.Trade, err error) *MockStore_GetByTransactionHash_Call {
-	_c.Call.Return(trade, err)
-	return _c
-}
-
-func (_c *MockStore_GetByTransactionHash_Call) RunAndReturn(run func(ctx context.Context, txHash string) (*model.Trade, error)) *MockStore_GetByTransactionHash_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // ListTrendingCoins provides a mock function for the type MockStore
 func (_mock *MockStore) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 	ret := _mock.Called(ctx)

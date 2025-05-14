@@ -33,3 +33,8 @@ var parsedAccount struct {
 		Type string `json:"type"`
 	} `json:"parsed"`
 }
+
+type TransferRequest struct {
+	SignedTransaction   string `json:"signed_transaction"`
+	UnsignedTransaction string `json:"unsigned_transaction"`
+}

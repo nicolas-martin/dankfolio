@@ -3,7 +3,6 @@ package trade
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"log"
@@ -175,27 +174,8 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		return trade, nil
 	}
 
-	// Decode signed transaction to get unsigned transaction
-	txBytes, err := base64.StdEncoding.DecodeString(req.SignedTransaction)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode signed transaction: %w", err)
-	}
-
-	// Parse transaction
-	tx, err := solanago.TransactionFromBytes(txBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse transaction: %w", err)
-	}
-
-	// Get the unsigned transaction from the signed one
-	msgBytes, err := tx.Message.MarshalBinary()
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal unsigned transaction: %w", err)
-	}
-	unsignedTx := base64.StdEncoding.EncodeToString(msgBytes)
-
 	// Find existing trade record by unsigned transaction
-	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", unsignedTx)
+	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", req.UnsignedTransaction)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find existing trade record: %w", err)
 	}
@@ -377,7 +357,7 @@ func TruncateAndFormatFloat(value float64, decimalPlaces int) string {
 
 // GetTradeByTransactionHash retrieves a trade by its transaction hash
 func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
-	trade, err := s.store.GetByTransactionHash(ctx, txHash)
+	trade, err := s.store.Trades().GetByField(ctx, "transaction_hash", txHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trade by transaction hash: %w", err)
 	}

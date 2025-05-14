@@ -335,9 +335,9 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 }
 
 // SubmitTransfer submits a signed transfer transaction
-func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) (string, error) {
+func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (string, error) {
 	// Decode signed transaction
-	txBytes, err := base64.StdEncoding.DecodeString(signedTransaction)
+	txBytes, err := base64.StdEncoding.DecodeString(req.SignedTransaction)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode signed transaction: %w", err)
 	}
@@ -359,16 +359,8 @@ func (s *Service) SubmitTransfer(ctx context.Context, signedTransaction string) 
 		return "", fmt.Errorf("failed to submit transaction: %w", err)
 	}
 
-	// Get the unsigned transaction from the signed one
-	msgBytes, err := tx.Message.MarshalBinary()
-	if err != nil {
-		log.Printf("Warning: Failed to marshal unsigned transaction: %v", err)
-		return sig.String(), nil
-	}
-	unsignedTx := base64.StdEncoding.EncodeToString(msgBytes)
-
 	// Find the trade record by unsigned transaction
-	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", unsignedTx)
+	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", req.UnsignedTransaction)
 	if err != nil {
 		log.Printf("Warning: Failed to find trade record: %v", err)
 		return sig.String(), nil

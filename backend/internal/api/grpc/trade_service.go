@@ -98,10 +98,11 @@ func (s *tradeServiceHandler) SubmitSwap(ctx context.Context, req *connect.Reque
 	}
 
 	tradeReq := model.TradeRequest{
-		FromCoinID:        req.Msg.FromCoinId,
-		ToCoinID:          req.Msg.ToCoinId,
-		Amount:            req.Msg.Amount,
-		SignedTransaction: req.Msg.SignedTransaction,
+		FromCoinID:          req.Msg.FromCoinId,
+		ToCoinID:            req.Msg.ToCoinId,
+		Amount:              req.Msg.Amount,
+		SignedTransaction:   req.Msg.SignedTransaction,
+		UnsignedTransaction: req.Msg.UnsignedTransaction,
 	}
 
 	// Check for debug header

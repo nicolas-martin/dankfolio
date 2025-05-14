@@ -73,10 +73,11 @@ func (t Trade) GetID() string {
 
 // TradeRequest represents a request to execute a trade
 type TradeRequest struct {
-	FromCoinID        string  `json:"from_coin_id"`
-	ToCoinID          string  `json:"to_coin_id"`
-	Amount            float64 `json:"amount"`
-	SignedTransaction string  `json:"signed_transaction"`
+	FromCoinID          string  `json:"from_coin_id"`
+	ToCoinID            string  `json:"to_coin_id"`
+	Amount              float64 `json:"amount"`
+	SignedTransaction   string  `json:"signed_transaction"`
+	UnsignedTransaction string  `json:"unsigned_transaction"`
 }
 
 // FilterAndSortCoins filters and sorts a list of coins based on search criteria
