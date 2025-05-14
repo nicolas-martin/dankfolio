@@ -239,7 +239,10 @@ func (c *Client) GetRequest(ctx context.Context, url string, target any) error {
 	// Add common headers here if needed in the future
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", c.apiKey)
+	// On free tier, we don't need to add the API key
+	if c.apiKey != "" {
+		req.Header.Set("x-api-key", c.apiKey)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -281,8 +284,11 @@ func (c *Client) PostRequest(ctx context.Context, url string, requestBody any, t
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", c.apiKey)
 	req.Header.Set("Accept", "application/json")
+	// On free tier, we don't need to add the API key
+	if c.apiKey != "" {
+		req.Header.Set("x-api-key", c.apiKey)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

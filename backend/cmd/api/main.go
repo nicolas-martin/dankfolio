@@ -75,6 +75,9 @@ func loadConfig() (*Config, error) {
 	// Validate required fields
 	var missingVars []string
 
+	if config.Env == "" {
+		missingVars = append(missingVars, "APP_ENV")
+	}
 	if config.SolanaRPCEndpoint == "" {
 		missingVars = append(missingVars, "SOLANA_RPC_ENDPOINT")
 	}
@@ -87,14 +90,13 @@ func loadConfig() (*Config, error) {
 	if config.DBURL == "" {
 		missingVars = append(missingVars, "DB_URL")
 	}
-	if config.JupiterApiKey == "" {
-		missingVars = append(missingVars, "JUPITER_API_KEY")
+	if config.Env != "development" {
+		if config.JupiterApiKey == "" {
+			missingVars = append(missingVars, "JUPITER_API_KEY")
+		}
 	}
 	if config.JupiterApiUrl == "" {
 		missingVars = append(missingVars, "JUPITER_API_URL")
-	}
-	if config.Env == "" {
-		missingVars = append(missingVars, "APP_ENV")
 	}
 
 	if len(missingVars) > 0 {

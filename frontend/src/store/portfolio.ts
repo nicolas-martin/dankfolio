@@ -93,44 +93,58 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	},
 
 	fetchPortfolioBalance: async (address: string) => {
+		console.log('🔄 [PortfolioStore] fetchPortfolioBalance called for address:', address);
 		if (address === '') {
+			console.warn('⚠️ [PortfolioStore] fetchPortfolioBalance called with empty address');
 			throw new Error('Address is empty');
 		}
 		try {
 			set({ isLoading: true, error: null });
+			console.log('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
 			const balance = await grpcApi.getWalletBalance(address);
+			console.log('✅ [PortfolioStore] Received balance data:', balance);
 
 			const coinStore = useCoinStore.getState();
 			let coinMap = coinStore.coinMap;
 
 			const balanceIds = balance.balances.map((b: { id: string }) => b.id);
+			console.log('📊 [PortfolioStore] Balance IDs:', balanceIds);
+
 			const missingIds = balanceIds.filter((id: string) => !coinMap[id]);
+			console.log('🔍 [PortfolioStore] Missing coin IDs in CoinStore cache:', missingIds);
 
 			let missingCount = 0;
 			const missingCoinIds: string[] = [];
-			await Promise.all(
-				missingIds.map(async (id: string) => {
-					try {
-						const coin = await coinStore.getCoinByID(id);
-						if (coin) {
-							coinStore.setCoin(coin);
-						} else {
-							missingCount++;
-							missingCoinIds.push(id);
-							console.warn(`⚠️ Could not fetch coin details for id: ${id}`);
-						}
-					} catch (err) {
+			const fetchPromises = missingIds.map(async (id: string) => {
+				console.log(`⏳ [PortfolioStore] Attempting to fetch missing coin details for ${id}`);
+				try {
+					const coin = await coinStore.getCoinByID(id);
+					if (coin) {
+						coinStore.setCoin(coin);
+						console.log(`✅ [PortfolioStore] Successfully fetched and set coin ${id}`);
+					} else {
 						missingCount++;
 						missingCoinIds.push(id);
-						console.warn(`⚠️ Error fetching coin details for id: ${id}`, err);
+						console.warn(`⚠️ [PortfolioStore] Could not fetch coin details for id: ${id}`);
 					}
-				})
-			);
-			coinMap = useCoinStore.getState().coinMap;
+				} catch (err) {
+					missingCount++;
+					missingCoinIds.push(id);
+					console.warn(`⚠️ [PortfolioStore] Error fetching coin details for id: ${id}`, err);
+				}
+			});
+
+			await Promise.all(fetchPromises);
+
+			coinMap = useCoinStore.getState().coinMap; // Get updated map after fetches
+			console.log('🗺️ [PortfolioStore] Updated CoinStore coinMap size after fetching missing coins:', Object.keys(coinMap).length);
 
 			const tokens = balance.balances.map((balance: { id: string; amount: number }) => {
 				const coin = coinMap[balance.id];
-				if (!coin) return null;
+				if (!coin) {
+					console.warn(`⚠️ [PortfolioStore] Skipping token for balance ID ${balance.id} because coin data is missing.`);
+					return null;
+				}
 				return {
 					mintAddress: balance.id,
 					amount: balance.amount,
@@ -140,13 +154,18 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 				} as PortfolioToken;
 			});
 
+			console.log('📈 [PortfolioStore] Processed tokens before filtering:', tokens.length);
+			const filteredTokens = tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null);
+			console.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
+
 			set({
-				tokens: tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null),
+				tokens: filteredTokens,
 				isLoading: false,
 				error: missingCount > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
 			});
+			console.log('✅ [PortfolioStore] fetchPortfolioBalance finished.');
 		} catch (error) {
-			console.error("Failed to fetch portfolio balance:", error);
+			console.error("❌ [PortfolioStore] Failed to fetch portfolio balance:", error);
 			set({ error: (error as Error).message, isLoading: false, tokens: [] });
 		}
 	},
