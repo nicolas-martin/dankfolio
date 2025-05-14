@@ -40,14 +40,14 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: 60 * time.Second, // Increased HTTP timeout
 	}
-	jupiterClient := jupiter.NewClient(httpClient)
+	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "")
 	store := memory.NewWithConfig(memory.Config{
 		DefaultCacheExpiry: 5 * time.Minute,
 	})
 
 	// Create service with config for output file
 	config := &coin.Config{
-		TrendingCoinPath: absPath,
+		TrendingCoinPath:  absPath,
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	s := coin.NewService(config, httpClient, jupiterClient, store)
