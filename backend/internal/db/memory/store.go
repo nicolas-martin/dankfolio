@@ -155,19 +155,3 @@ func (s *Store) SaveCoinCache() error {
 
 	return nil
 }
-
-// GetByTransactionHash retrieves a trade by its transaction hash
-func (s *Store) GetByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
-	trades, err := s.trades.List(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list trades: %w", err)
-	}
-
-	for _, trade := range trades {
-		if trade.TransactionHash == txHash {
-			return &trade, nil
-		}
-	}
-
-	return nil, fmt.Errorf("%w: trade with transaction hash %s not found", db.ErrNotFound, txHash)
-}

@@ -260,19 +260,3 @@ func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {
 	}
 	return coins
 }
-
-// GetByTransactionHash retrieves a trade by its transaction hash
-func (s *Store) GetByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
-	var schemaTrade schema.Trade
-	if err := s.db.WithContext(ctx).Where("transaction_hash = ?", txHash).First(&schemaTrade).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("%w: trade with transaction hash %s not found", db.ErrNotFound, txHash)
-		}
-		return nil, fmt.Errorf("failed to get trade by transaction hash: %w", err)
-	}
-
-	// Convert schema to model using the existing repository's toModel function
-	tradeMapper := s.tradesRepo.(*Repository[schema.Trade, model.Trade])
-	modelTrade := tradeMapper.toModel(schemaTrade)
-	return modelTrade.(*model.Trade), nil
-}
