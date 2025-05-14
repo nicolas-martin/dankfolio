@@ -14,9 +14,12 @@ export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 1000
 
 // Function to get prices for multiple tokens in a single API call
+// NOTE: Should we use the store instead?
 export const getCoinPrices = async (mintAddresses: string[]): Promise<Record<string, number>> => {
 	try {
+		console.log('i????s it me??');
 		const prices = await grpcApi.getCoinPrices(mintAddresses);
+		console.log('i????s it me??');
 		return prices;
 	} catch (error) {
 		console.error('❌ Error fetching token prices:', error);

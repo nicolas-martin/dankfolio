@@ -45,10 +45,12 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 					throw new Error('Coin data is missing');
 				}
 
+				console.log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
 					getCoinByID(fromCoin.mintAddress, true),
 					getCoinByID(toCoin.mintAddress, true)
 				]);
+				console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
 				if (!updatedFromCoin || !updatedToCoin) {
 					throw new Error('Failed to fetch updated coin data');
