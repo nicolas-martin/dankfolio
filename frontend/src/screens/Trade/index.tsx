@@ -124,12 +124,29 @@ const Trade: React.FC = () => {
 
 	// Refresh coin prices periodically
 	useEffect(() => {
-		// Only set up the interval for periodic updates
-		// Skip the immediate refresh since we already have fresh data
-		const interval = setInterval(async () => {
-			if (!fromCoin || !toCoin) return;
+		console.log('🔵 [Trade] Component mounted with coins:', {
+			fromCoin: fromCoin?.symbol,
+			toCoin: toCoin?.symbol,
+			fromMint: fromCoin?.mintAddress,
+			toMint: toCoin?.mintAddress
+		});
+
+		// Store interval in ref for access across component
+		pollingIntervalRef.current = setInterval(async () => {
+			console.log('⏰ [Trade] Polling interval triggered for coins:', {
+				fromCoin: fromCoin?.symbol,
+				toCoin: toCoin?.symbol,
+				fromMint: fromCoin?.mintAddress,
+				toMint: toCoin?.mintAddress
+			});
+
+			if (!fromCoin || !toCoin) {
+				console.log('⚠️ [Trade] Skipping poll - missing coins');
+				return;
+			}
 
 			try {
+				console.log('🔄 [Trade] Fetching fresh coin data...');
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
 					getCoinByID(fromCoin.mintAddress, true),
 					getCoinByID(toCoin.mintAddress, true)
@@ -137,13 +154,35 @@ const Trade: React.FC = () => {
 
 				if (updatedFromCoin) setFromCoin(updatedFromCoin);
 				if (updatedToCoin) setToCoin(updatedToCoin);
+				console.log('✅ [Trade] Successfully updated coin data');
 			} catch (error) {
-				console.error('Failed to refresh coin prices:', error);
+				console.error('❌ [Trade] Failed to refresh coin prices:', error);
 			}
 		}, 10000);
 
-		return () => clearInterval(interval);
+		// Cleanup function
+		return () => {
+			console.log('🔴 [Trade] Component unmounting - cleaning up interval', {
+				fromCoin: fromCoin?.symbol,
+				toCoin: toCoin?.symbol,
+				fromMint: fromCoin?.mintAddress,
+				toMint: toCoin?.mintAddress
+			});
+			if (pollingIntervalRef.current) {
+				clearInterval(pollingIntervalRef.current);
+				pollingIntervalRef.current = null;
+				console.log('✅ [Trade] Interval cleared successfully');
+			}
+		};
 	}, [fromCoin?.mintAddress, toCoin?.mintAddress, getCoinByID]);
+
+	// Add component mount/unmount logging
+	useEffect(() => {
+		console.log('🟢 [Trade] Trade screen mounted');
+		return () => {
+			console.log('🔴 [Trade] Trade screen unmounted');
+		};
+	}, []);
 
 	// Get portfolio token data if available
 	const fromPortfolioToken = useMemo(() => {
@@ -345,6 +384,14 @@ const Trade: React.FC = () => {
 			return;
 		}
 
+		console.log('🛑 [Trade] Stopping price polling before trade execution');
+		// Clear any existing intervals
+		if (pollingIntervalRef.current) {
+			clearInterval(pollingIntervalRef.current);
+			pollingIntervalRef.current = null;
+			console.log('✅ [Trade] Price polling stopped');
+		}
+
 		await executeTrade(
 			fromCoin,
 			toCoin,
@@ -362,12 +409,27 @@ const Trade: React.FC = () => {
 		);
 	};
 
-	const handleCloseStatusModal = () => {
+	const handleCloseStatusModal = useCallback(() => {
+		console.log('🔄 Cleaning up trade screen...');
 		setIsStatusModalVisible(false);
 		componentStopPolling(); // Use wrapped stopPolling
+
+		// Reset all trade state
+		setFromAmount('');
+		setToAmount('');
+		setTradeDetails({
+			exchangeRate: '0',
+			gasFee: '0',
+			priceImpactPct: '0',
+			totalFee: '0'
+		});
+
 		// Navigate to home screen
-		navigation.navigate('MainTabs', { screen: 'Home' });
-	};
+		navigation.reset({
+			index: 0,
+			routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
+		});
+	}, [navigation, componentStopPolling]);
 
 	// --- Update handleSwapCoins to use imported util --- 
 	const handleSwapCoins = () => {

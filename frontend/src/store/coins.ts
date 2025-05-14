@@ -83,10 +83,11 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	},
 
 	getCoinByID: async (mintAddress: string, forceRefresh: boolean = false) => {
+		console.log(`🔄 [CoinStore] getCoinByID called for ${mintAddress} (forceRefresh: ${forceRefresh})`);
 		logCoinStoreState(`Before getCoinByID(${mintAddress}, forceRefresh=${forceRefresh})`);
 		const state = get();
 		if (!forceRefresh && state.coinMap[mintAddress]) {
-			console.log("💰 Found coin in state:", {
+			console.log("💰 [CoinStore] Found coin in state (cache hit):", {
 				mintAddress,
 				symbol: state.coinMap[mintAddress].symbol,
 				price: state.coinMap[mintAddress].price,
@@ -96,9 +97,10 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			return state.coinMap[mintAddress];
 		}
 
+		console.log(`⏳ [CoinStore] Fetching coin ${mintAddress} from API...`);
 		try {
 			const coin = await grpcApi.getCoinByID(mintAddress);
-			console.log("💰 Fetched coin from API:", {
+			console.log("💰 [CoinStore] Fetched coin from API:", {
 				mintAddress,
 				symbol: coin.symbol,
 				price: coin.price,
@@ -108,7 +110,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			logCoinStoreState(`After API fetch getCoinByID(${mintAddress})`);
 			return coin;
 		} catch (error) {
-			console.error(`❌ Error fetching coin ${mintAddress}:`, error);
+			console.error(`❌ [CoinStore] Error fetching coin ${mintAddress}:`, error);
 			set({ error: (error as Error).message });
 			logCoinStoreState(`Error in getCoinByID(${mintAddress})`);
 			return null;
