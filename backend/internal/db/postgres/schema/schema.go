@@ -6,6 +6,16 @@ import (
 	"github.com/lib/pq"
 )
 
+type Wallet struct {
+	ID        string    `gorm:"primaryKey;column:id"`
+	PublicKey string    `gorm:"column:public_key;not null;unique"`
+	CreatedAt time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
+}
+
+func (w Wallet) GetID() string {
+	return w.ID
+}
+
 // Coin represents the structure of the 'coins' table in the database.
 type Coin struct {
 	MintAddress string         `gorm:"primaryKey;column:mint_address"`

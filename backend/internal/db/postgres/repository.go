@@ -16,17 +16,17 @@ import (
 
 // Repository implements the generic db.Repository interface using GORM.
 type Repository[S interface {
-	schema.Coin | schema.Trade | schema.RawCoin
+	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet
 	db.Entity
-}, M model.Coin | model.Trade | model.RawCoin] struct {
+}, M model.Coin | model.Trade | model.RawCoin | model.Wallet] struct {
 	db *gorm.DB
 }
 
 // NewRepository creates a new GORM repository.
 func NewRepository[S interface {
-	schema.Coin | schema.Trade | schema.RawCoin
+	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet
 	db.Entity
-}, M model.Coin | model.Trade | model.RawCoin](db *gorm.DB) *Repository[S, M] {
+}, M model.Coin | model.Trade | model.RawCoin | model.Wallet](db *gorm.DB) *Repository[S, M] {
 	return &Repository[S, M]{db: db}
 }
 
@@ -45,7 +45,7 @@ func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 }
 
 // GetByField retrieves an entity by a specific field value.
-func (r *Repository[S, M]) GetByField(ctx context.Context, field string, value interface{}) (*M, error) {
+func (r *Repository[S, M]) GetByField(ctx context.Context, field string, value any) (*M, error) {
 	var schemaItem S
 	if err := r.db.WithContext(ctx).Where(field+" = ?", value).First(&schemaItem).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -123,7 +123,7 @@ func (r *Repository[S, M]) Delete(ctx context.Context, id string) error {
 
 // toModel converts a schema type (S) to a model type (M).
 // Requires type assertion on the result.
-func (r *Repository[S, M]) toModel(s S) interface{} {
+func (r *Repository[S, M]) toModel(s S) any {
 	switch v := any(s).(type) {
 	case schema.Coin:
 		return &model.Coin{
@@ -191,6 +191,12 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 			LogoUrl:     v.LogoUrl,
 			UpdatedAt:   v.UpdatedAt.Format(time.RFC3339),
 		}
+	case schema.Wallet:
+		return &model.Wallet{
+			ID:        v.ID,
+			PublicKey: v.PublicKey,
+			CreatedAt: v.CreatedAt,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported type for toModel: %T", s))
 	}
@@ -198,7 +204,7 @@ func (r *Repository[S, M]) toModel(s S) interface{} {
 
 // fromModel converts a model type (M) to a schema type (S).
 // Requires type assertion on the result.
-func (r *Repository[S, M]) fromModel(m M) interface{} {
+func (r *Repository[S, M]) fromModel(m M) any {
 	switch v := any(m).(type) {
 	case model.Coin:
 		return &schema.Coin{
@@ -256,6 +262,12 @@ func (r *Repository[S, M]) fromModel(m M) interface{} {
 			LogoUrl:     v.LogoUrl,
 			UpdatedAt:   updatedAt,
 		}
+	case model.Wallet:
+		return &schema.Wallet{
+			ID:        v.ID,
+			PublicKey: v.PublicKey,
+			CreatedAt: v.CreatedAt,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported type for fromModel: %T", m))
 	}
@@ -264,7 +276,7 @@ func (r *Repository[S, M]) fromModel(m M) interface{} {
 // Helper to get column names for OnConflict update
 // Note: This is a basic implementation; a more robust version might use reflection
 // or struct tags to exclude primary keys, created_at, etc.
-func getColumnNames(data interface{}) []string {
+func getColumnNames(data any) []string {
 	switch data.(type) {
 	case *schema.Coin:
 		// Explicitly list columns to update, excluding primary key and created_at
@@ -273,6 +285,8 @@ func getColumnNames(data interface{}) []string {
 		return []string{"user_id", "from_coin_id", "to_coin_id", "type", "amount", "price", "fee", "status", "transaction_hash", "completed_at", "confirmations", "finalized", "error"}
 	case *schema.RawCoin:
 		return []string{"symbol", "name", "decimals", "logo_url", "updated_at"}
+	case *schema.Wallet:
+		return []string{"public_key", "created_at"}
 	default:
 		return []string{} // Should not happen with current generic constraints
 	}

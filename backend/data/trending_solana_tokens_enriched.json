@@ -1,38 +1,58 @@
 {
-  "scrapeTimestamp": "2025-05-09T18:03:27.46495Z",
+  "scrapeTimestamp": "2025-05-14T16:12:39.078757Z",
   "coins": [
     {
-      "mint_address": "6bdTRHhdZenJQYLTxaYc8kH74GBNP9DoGhPnCjfypump",
-      "name": "fog",
-      "symbol": "fog",
+      "mint_address": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+      "name": "Jupiter",
+      "symbol": "JUP",
       "decimals": 6,
-      "description": "",
-      "icon_url": "https://ipfs.io/ipfs/QmXidbXWxeQhQzKaveJUQyzn4RHMNYHzUbLaSHH8PnUPpJ",
+      "description": "JUP is the official governance token for Jupiter.",
+      "icon_url": "https://static.jup.ag/jup/icon.png",
+      "tags": [
+        "verified",
+        "birdeye-trending",
+        "strict",
+        "community"
+      ],
+      "price": 0.558,
+      "volume24h": 35520000,
+      "website": "https://jup.ag",
+      "twitter": "https://twitter.com/JupiterExchange",
+      "created_at": "2025-05-14T12:12:37-04:00",
+      "last_updated": "2025-05-14T12:12:37-04:00"
+    },
+    {
+      "mint_address": "7RhcnEJ4Nz5BNkUg5V5vWZaGGiFgnTjEPvLFYLGfbonk",
+      "name": "DOOM",
+      "symbol": "DOOM",
+      "decimals": 6,
+      "description": "Doom the Cat.",
+      "icon_url": "https://ipfs.io/ipfs/bafybeidx7lymaicrm2aj62ksbu2vlqwmesfja4eduakgh3j3u3ejcpgnnq",
       "tags": [
         "launchpad",
         "unknown"
       ],
-      "price": 0.00278619,
-      "volume24h": 9060000,
-      "created_at": "2025-05-09T14:03:24-04:00",
-      "last_updated": "2025-05-09T14:03:24-04:00"
+      "price": 0.00049436,
+      "volume24h": 46790000,
+      "created_at": "2025-05-14T12:12:37-04:00",
+      "last_updated": "2025-05-14T12:12:37-04:00"
     },
     {
-      "mint_address": "GS1ufkaGWe2SVbkmUqp5dCPtWdDumDcjoyJFPJmSpump",
-      "name": "GIGANT",
-      "symbol": "GIGANT",
-      "decimals": 6,
-      "description": "no name. no origin.\r\nthe chain remembers only his words.\r\nminted in silence. followed in fear.\r\nthose who ask why… are already lost.",
-      "icon_url": "https://ipfs.io/ipfs/QmXjTwjjgrMa4siyMiuRQTGs6JhJwb1MBviqLY9YDvu4E8",
+      "mint_address": "Ey59PH7Z4BFU4HjyKnyMdWt5GGN76KazTAwQihoUXRnk",
+      "name": "Ben Pasternak (clout.me)",
+      "symbol": "PASTERNAK",
+      "decimals": 9,
+      "description": "Ben Pasternak (clout.me) (PASTERNAK) is a Solana token.",
+      "icon_url": "https://ipfs.io/ipfs/bafkreiaeanpnjbua4uuwy4zcrnq6yn4eegu3didqw7t6xmkcxta4zz7yku",
       "tags": [
-        "unknown",
-        "launchpad"
+        "token-2022",
+        "community-assist",
+        "verified"
       ],
-      "price": 0.00379402,
-      "volume24h": 6690000,
-      "website": "https://gigant.fromblock218.com/",
-      "created_at": "2025-05-09T14:03:24-04:00",
-      "last_updated": "2025-05-09T14:03:24-04:00"
+      "price": 0.213101199,
+      "volume24h": 158170000,
+      "created_at": "2025-05-14T12:12:37-04:00",
+      "last_updated": "2025-05-14T12:12:37-04:00"
     },
     {
       "mint_address": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
@@ -47,27 +67,10 @@
         "birdeye-trending",
         "community"
       ],
-      "price": 0.504772397,
-      "volume24h": 144580000,
-      "created_at": "2025-05-09T14:03:24-04:00",
-      "last_updated": "2025-05-09T14:03:24-04:00"
-    },
-    {
-      "mint_address": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
-      "name": "Pudgy Penguins",
-      "symbol": "PENGU",
-      "decimals": 6,
-      "description": "For the people. By the people.",
-      "icon_url": "https://arweave.net/BW67hICaKGd2_wamSB0IQq-x7Xwtmr2oJj1WnWGJRHU",
-      "tags": [
-        "verified",
-        "birdeye-trending",
-        "community"
-      ],
-      "price": 0.014303,
-      "volume24h": 34420000,
-      "created_at": "2025-05-09T14:03:24-04:00",
-      "last_updated": "2025-05-09T14:03:24-04:00"
+      "price": 0.539002413,
+      "volume24h": 109230000,
+      "created_at": "2025-05-14T12:12:37-04:00",
+      "last_updated": "2025-05-14T12:12:37-04:00"
     },
     {
       "mint_address": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
@@ -82,82 +85,76 @@
         "birdeye-trending",
         "community"
       ],
-      "price": 0.0000216844,
-      "volume24h": 15590000,
-      "created_at": "2025-05-09T14:03:24-04:00",
-      "last_updated": "2025-05-09T14:03:24-04:00"
+      "price": 0.0000231712,
+      "volume24h": 26770000,
+      "created_at": "2025-05-14T12:12:37-04:00",
+      "last_updated": "2025-05-14T12:12:37-04:00"
     },
     {
-      "mint_address": "9j6twpYWrV1ueJok76D9YK8wJTVoG9Zy8spC7wnTpump",
-      "name": "urmom",
-      "symbol": "urmom",
-      "decimals": 6,
-      "description": "urmom (urmom) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmRW6Lq3NUngs3xN5MMHrSZa59fvqMCYgqcMk9cnPcPZ87",
-      "tags": [
-        "launchpad",
-        "unknown"
-      ],
-      "price": 0.00759107,
-      "volume24h": 16320000,
-      "created_at": "2025-05-09T14:03:25-04:00",
-      "last_updated": "2025-05-09T14:03:25-04:00"
-    },
-    {
-      "mint_address": "HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC",
-      "name": "ai16z",
-      "symbol": "ai16z",
-      "decimals": 9,
-      "description": "ai16z (ai16z) is a Solana token.",
-      "icon_url": "https://ipfs.io/ipfs/QmcNTVAoyJ7zDbPnN9jwiMoB8uCoJBUP9RGmmiGGHv44yX",
-      "tags": [
-        "verified",
-        "launchpad",
-        "token-2022",
-        "community",
-        "birdeye-trending"
-      ],
-      "price": 0.348839825,
-      "volume24h": 40710000,
-      "created_at": "2025-05-09T14:03:25-04:00",
-      "last_updated": "2025-05-09T14:03:25-04:00"
-    },
-    {
-      "mint_address": "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs",
-      "name": "Ether (Portal)",
-      "symbol": "ETH",
+      "mint_address": "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh",
+      "name": "Wrapped BTC (Portal)",
+      "symbol": "WBTC",
       "decimals": 8,
       "description": "",
-      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs/logo.png",
+      "icon_url": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh/logo.png",
       "tags": [
         "verified",
         "strict",
         "birdeye-trending",
         "community"
       ],
-      "price": 2343.17140474,
-      "volume24h": 60100000,
-      "created_at": "2025-05-09T14:03:25-04:00",
-      "last_updated": "2025-05-09T14:03:25-04:00"
+      "price": 103601.00994166,
+      "volume24h": 80870000,
+      "created_at": "2025-05-14T12:12:38-04:00",
+      "last_updated": "2025-05-14T12:12:38-04:00"
     },
     {
-      "mint_address": "MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUzScPP5",
-      "name": "cat in a dogs world",
-      "symbol": "MEW",
-      "decimals": 5,
-      "description": "cat in a dogs world (MEW)",
-      "icon_url": "https://bafkreidlwyr565dxtao2ipsze6bmzpszqzybz7sqi2zaet5fs7k53henju.ipfs.nftstorage.link/",
+      "mint_address": "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
+      "name": "USELESS COIN",
+      "symbol": "USELESS",
+      "decimals": 6,
+      "description": "USELESS COIN",
+      "icon_url": "https://ipfs.io/ipfs/bafkreihsdoqkmpr5ryebaduoutyhj3nxco6wdp4s4743l2qrae4sz4hqrm",
       "tags": [
-        "verified",
-        "strict",
-        "community"
+        "unknown",
+        "launchpad"
       ],
-      "price": 0.0035502,
-      "volume24h": 30520000,
-      "twitter": "https://twitter.com/MewsWorld",
-      "telegram": "https://t.me/MewsWorld",
-      "created_at": "2025-05-09T14:03:25-04:00",
-      "last_updated": "2025-05-09T14:03:25-04:00"
+      "price": 0.020916,
+      "volume24h": 33490000.000000004,
+      "created_at": "2025-05-14T12:12:38-04:00",
+      "last_updated": "2025-05-14T12:12:38-04:00"
+    },
+    {
+      "mint_address": "8V6pDEmXV3iKC3nVjDUeDqMPBrTq8y69EovCxTokyyFd",
+      "name": "Uberdotfun",
+      "symbol": "UBER",
+      "decimals": 9,
+      "description": "Launching a no-code Web3 LLM builder powered by\n@believeapp \n\nAnyone can build a Web3 wallet-integrated projects.  Join the AI revolution and build something amazing!\n\n@launchcoin $UBER +Uberdotfun https://t.co/TQlKkZ9eI7",
+      "icon_url": "https://ipfs.io/ipfs/bafkreicfwrjxsh4gdhpntdx7mnb7zvzcy2oltv3ixgmfhy3kpzn3ozdoqm",
+      "tags": [
+        "launchpad",
+        "unknown"
+      ],
+      "price": 0.00836903164,
+      "volume24h": 26450000,
+      "created_at": "2025-05-14T12:12:38-04:00",
+      "last_updated": "2025-05-14T12:12:38-04:00"
+    },
+    {
+      "mint_address": "AtortPA9SVbkKmdzu5zg4jxgkR4howvPshorA9jYbonk",
+      "name": "IKUN",
+      "symbol": "IKUN",
+      "decimals": 6,
+      "description": "https://x.com/theunipcs/status/1921812571406864475",
+      "icon_url": "https://ipfs.io/ipfs/bafkreieg3xfobdjms5kx2idbcxxia2w5jspjb3msgoa3b6ml7ehhqmap7q",
+      "tags": [
+        "unknown",
+        "launchpad"
+      ],
+      "price": 0.00800228,
+      "volume24h": 24170000,
+      "created_at": "2025-05-14T12:12:38-04:00",
+      "last_updated": "2025-05-14T12:12:38-04:00"
     },
     {
       "mint_address": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
@@ -171,10 +168,10 @@
         "strict",
         "community"
       ],
-      "price": 0.726591,
-      "volume24h": 8369999.999999999,
-      "created_at": "2025-05-09T14:03:25-04:00",
-      "last_updated": "2025-05-09T14:03:25-04:00"
+      "price": 1.086121,
+      "volume24h": 26660000,
+      "created_at": "2025-05-14T12:12:38-04:00",
+      "last_updated": "2025-05-14T12:12:38-04:00"
     }
   ]
 }

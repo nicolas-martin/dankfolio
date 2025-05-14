@@ -23,7 +23,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	if (isNaN(periodChange)) return null;
 
 	const isPositive = periodChange >= 0;
-	const formattedPrice = `$${formatPrice(price)}`;
+	const formattedPrice = `${formatPrice(price)}`;
 	const formattedChange = formatValueChange(valueChange, periodChange);
 
 	return (

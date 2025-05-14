@@ -6,8 +6,13 @@ import (
 
 // Wallet represents a Solana wallet
 type Wallet struct {
+	ID        string
 	PublicKey string `json:"public_key"`
-	SecretKey string `json:"secret_key"`
+	CreatedAt time.Time
+}
+
+func (w Wallet) GetID() string {
+	return w.ID
 }
 
 // DepositRequest represents a request to deposit funds

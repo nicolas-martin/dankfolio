@@ -30,6 +30,7 @@ type Store struct {
 	coins    *MemoryRepository[model.Coin]
 	trades   *MemoryRepository[model.Trade]
 	rawCoins *MemoryRepository[model.RawCoin]
+	wallet   *MemoryRepository[model.Wallet]
 	config   Config
 }
 
@@ -55,6 +56,10 @@ func NewWithConfig(config Config) *Store {
 	}
 
 	return store
+}
+
+func (s *Store) Wallet() db.Repository[model.Wallet] {
+	return s.wallet
 }
 
 // Coins returns the coin repository

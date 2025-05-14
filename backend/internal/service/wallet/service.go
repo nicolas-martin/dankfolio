@@ -15,6 +15,7 @@ import (
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/google/uuid"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/tyler-smith/go-bip39"
@@ -190,13 +191,25 @@ func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
 	privateKeyBytes := []byte(solanaPrivateKey) // This is the 64-byte keypair
 	jsonData, err := json.Marshal(privateKeyBytes)
 	if err != nil {
-		log.Fatalf("FATAL: Failed to marshal private key to JSON: %v", err)
+		return nil, fmt.Errorf("failed to marshal private key: %w", err)
 	}
-	return &WalletInfo{
+
+	walletInfo := &WalletInfo{
 		PublicKey: publicKey.String(),
 		SecretKey: string(jsonData),
 		Mnemonic:  mnemonic,
-	}, nil
+	}
+
+	err = s.store.Wallet().Create(ctx, &model.Wallet{
+		ID:        uuid.New().String(),
+		PublicKey: walletInfo.PublicKey,
+		CreatedAt: time.Now(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error storing wallet in db: %w", err)
+	}
+
+	return walletInfo, nil
 }
 
 // PrepareTransfer prepares an unsigned transfer transaction
