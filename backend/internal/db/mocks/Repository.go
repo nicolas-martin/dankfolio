@@ -188,7 +188,7 @@ func (_c *MockRepository_Get_Call[T]) RunAndReturn(run func(ctx context.Context,
 }
 
 // GetByField provides a mock function for the type MockRepository
-func (_mock *MockRepository[T]) GetByField(ctx context.Context, field string, value interface{}) (*T, error) {
+func (_mock *MockRepository[T]) GetByField(ctx context.Context, field string, value any) (*T, error) {
 	ret := _mock.Called(ctx, field, value)
 
 	if len(ret) == 0 {
@@ -197,17 +197,17 @@ func (_mock *MockRepository[T]) GetByField(ctx context.Context, field string, va
 
 	var r0 *T
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, interface{}) (*T, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, any) (*T, error)); ok {
 		return returnFunc(ctx, field, value)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, interface{}) *T); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, any) *T); ok {
 		r0 = returnFunc(ctx, field, value)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*T)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, interface{}) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, any) error); ok {
 		r1 = returnFunc(ctx, field, value)
 	} else {
 		r1 = ret.Error(1)
@@ -228,9 +228,9 @@ func (_e *MockRepository_Expecter[T]) GetByField(ctx interface{}, field interfac
 	return &MockRepository_GetByField_Call[T]{Call: _e.mock.On("GetByField", ctx, field, value)}
 }
 
-func (_c *MockRepository_GetByField_Call[T]) Run(run func(ctx context.Context, field string, value interface{})) *MockRepository_GetByField_Call[T] {
+func (_c *MockRepository_GetByField_Call[T]) Run(run func(ctx context.Context, field string, value any)) *MockRepository_GetByField_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(interface{}))
+		run(args[0].(context.Context), args[1].(string), args[2].(any))
 	})
 	return _c
 }
@@ -240,7 +240,7 @@ func (_c *MockRepository_GetByField_Call[T]) Return(v *T, err error) *MockReposi
 	return _c
 }
 
-func (_c *MockRepository_GetByField_Call[T]) RunAndReturn(run func(ctx context.Context, field string, value interface{}) (*T, error)) *MockRepository_GetByField_Call[T] {
+func (_c *MockRepository_GetByField_Call[T]) RunAndReturn(run func(ctx context.Context, field string, value any) (*T, error)) *MockRepository_GetByField_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }

@@ -99,20 +99,29 @@ func (_c *MockClientAPI_ExecuteSignedTransaction_Call) RunAndReturn(run func(ctx
 }
 
 // ExecuteTrade provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) error {
+func (_mock *MockClientAPI) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) (string, error) {
 	ret := _mock.Called(ctx, trade, signedTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ExecuteTrade")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Trade, string) error); ok {
+	var r0 string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Trade, string) (string, error)); ok {
+		return returnFunc(ctx, trade, signedTx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Trade, string) string); ok {
 		r0 = returnFunc(ctx, trade, signedTx)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Trade, string) error); ok {
+		r1 = returnFunc(ctx, trade, signedTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // MockClientAPI_ExecuteTrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteTrade'
@@ -135,12 +144,12 @@ func (_c *MockClientAPI_ExecuteTrade_Call) Run(run func(ctx context.Context, tra
 	return _c
 }
 
-func (_c *MockClientAPI_ExecuteTrade_Call) Return(err error) *MockClientAPI_ExecuteTrade_Call {
-	_c.Call.Return(err)
+func (_c *MockClientAPI_ExecuteTrade_Call) Return(s string, err error) *MockClientAPI_ExecuteTrade_Call {
+	_c.Call.Return(s, err)
 	return _c
 }
 
-func (_c *MockClientAPI_ExecuteTrade_Call) RunAndReturn(run func(ctx context.Context, trade *model.Trade, signedTx string) error) *MockClientAPI_ExecuteTrade_Call {
+func (_c *MockClientAPI_ExecuteTrade_Call) RunAndReturn(run func(ctx context.Context, trade *model.Trade, signedTx string) (string, error)) *MockClientAPI_ExecuteTrade_Call {
 	_c.Call.Return(run)
 	return _c
 }

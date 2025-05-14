@@ -169,3 +169,9 @@ type RawCoin struct {
 func (r RawCoin) GetID() string {
 	return r.MintAddress
 }
+
+// // TokenBalance represents a token balance for a specific mint
+// type TokenBalance struct {
+// 	MintAddress string  `json:"mint_address"`
+// 	Amount      float64 `json:"amount"`
+// }
