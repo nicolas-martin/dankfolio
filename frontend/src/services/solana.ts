@@ -36,13 +36,13 @@ export const getKeypairFromPrivateKey = (privateKey: Base58PrivateKey): Keypair 
 	}
 };
 
-export const buildAndSignSwapTransaction = async (
+export const prepareSwapRequest = async(
 	fromCoinId: string,
 	toCoinId: string,
 	amount: number,
 	slippage: number
 ): Promise<string> => {
-	try {
+	try{
 		const wallet = usePortfolioStore.getState().wallet;
 		if (!wallet) {
 			throw new Error('No wallet found in store');
@@ -59,12 +59,6 @@ export const buildAndSignSwapTransaction = async (
 			addressLength: wallet.address?.length
 		});
 
-		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
-		console.log('🔑 Generated keypair:', {
-			publicKey: keypair.publicKey.toString(),
-			addressMatch: keypair.publicKey.toString() === wallet.address
-		});
-
 		// Prepare the swap transaction using our gRPC API
 		const prepareSwapRequest = {
 			fromCoinId,
@@ -79,10 +73,30 @@ export const buildAndSignSwapTransaction = async (
 		if (!prepareResponse.unsignedTransaction) {
 			throw new Error('No unsigned transaction received');
 		}
+		return prepareResponse.unsignedTransaction;
+	}
+	catch (error) {
+		console.error('❌ Error in prepareSwapRequest:', error);
+		throw error;
+	}
+}
+
+export const signSwapTransaction = async (unsignedTransaction:string): Promise<string> => {
+	try {
+		const wallet = usePortfolioStore.getState().wallet;
+		if (!wallet) {
+			throw new Error('No wallet found in store');
+		}
+
+		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
+		console.log('🔑 Generated keypair:', {
+			publicKey: keypair.publicKey.toString(),
+			addressMatch: keypair.publicKey.toString() === wallet.address
+		});
 
 		// Decode and deserialize the transaction
 		console.log('📥 Decoding transaction...');
-		const transactionBuf = Buffer.from(prepareResponse.unsignedTransaction, 'base64');
+		const transactionBuf = Buffer.from(unsignedTransaction, 'base64');
 		console.log('📦 Transaction buffer length:', transactionBuf.length);
 
 		// Sign the transaction
@@ -102,11 +116,12 @@ export const buildAndSignSwapTransaction = async (
 	}
 };
 
-export const buildAndSignTransferTransaction = async (
-	toAddress: string,
+export const prepareCoinTransfer = async (
+		toAddress: string,
 	coinMint: string,
 	amount: number
-): Promise<string> => {
+	): Promise<string> => {
+
 	try {
 		const wallet = usePortfolioStore.getState().wallet;
 		if (!wallet) {
@@ -120,9 +135,6 @@ export const buildAndSignTransferTransaction = async (
 			fromAddress: wallet.address
 		});
 
-		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
-		console.log('🔑 Using keypair with public key:', keypair.publicKey.toString());
-
 		// Prepare the transfer transaction using our gRPC API
 		const prepareResponse = await grpcApi.prepareCoinTransfer({
 			fromAddress: wallet.address,
@@ -134,10 +146,29 @@ export const buildAndSignTransferTransaction = async (
 		if (!prepareResponse.unsignedTransaction) {
 			throw new Error('No unsigned transaction received');
 		}
+		return prepareResponse.unsignedTransaction;
+	}
+	catch (error) {
+		console.error('❌ Error in prepareCoinTransfer:', error);
+		throw error;
+	};
+};
+
+export const buildAndSignTransferTransaction = async (
+	unsignedTransaction: string,
+): Promise<string> => {
+	try{
+		const wallet = usePortfolioStore.getState().wallet;
+		if (!wallet) {
+			throw new Error('No wallet found in store');
+		}
+		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
+		console.log('🔑 Using keypair with public key:', keypair.publicKey.toString());
+
 
 		// Decode and deserialize the transaction
 		console.log('📥 Decoding transaction...');
-		const transactionBuf = Buffer.from(prepareResponse.unsignedTransaction, 'base64');
+		const transactionBuf = Buffer.from(unsignedTransaction, 'base64');
 		console.log('📦 Transaction buffer length:', transactionBuf.length);
 
 		// Sign the transaction

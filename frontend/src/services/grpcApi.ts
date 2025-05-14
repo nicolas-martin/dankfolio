@@ -1,4 +1,3 @@
-import { REACT_APP_API_URL } from '@env';
 import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
 import { API, Coin, SearchCoinsRequest, SearchCoinsResponse, SearchCoinByMintResponse, TradePayload, SubmitSwapResponse, SwapQuoteResponse, TradeStatusResponse, PriceHistoryResponse, WalletBalanceResponse, CoinTransferPrepareRequest, CoinTransferPrepareResponse, CoinTransferSubmitRequest, CoinTransferResponse, CreateWalletResponse, GetProxiedImageResponse } from './grpc/model';
 import { DEBUG_MODE } from '@env';
@@ -27,7 +26,8 @@ export const grpcApi: API = {
 				fromCoinId: payload.fromCoinMintAddress,
 				toCoinId: payload.toCoinMintAddress,
 				amount: payload.amount,
-				signedTransaction: payload.signedTransaction
+				signedTransaction: payload.signedTransaction,
+				unsignedTransaction: payload.unsignedTransaction
 			}, { headers: grpcUtils.getRequestHeaders() });
 
 			grpcUtils.logResponse(serviceName, methodName, response);
@@ -294,7 +294,9 @@ export const grpcApi: API = {
 			grpcUtils.logRequest(serviceName, methodName, payload);
 
 			const response = await walletClient.submitTransfer({
-				signedTransaction: payload.signedTransaction
+				signedTransaction: payload.signedTransaction,
+				unsignedTransaction: payload.unsignedTransaction
+				
 			});
 
 			grpcUtils.logResponse(serviceName, methodName, response);

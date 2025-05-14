@@ -68,6 +68,7 @@ message PrepareTransferResponse {
 // SubmitTransferRequest is the request for submitting a signed transfer
 message SubmitTransferRequest {
   string signed_transaction = 1;
+  string unsigned_transaction = 2; // used to retreive the record in the backend
 }
 
 // SubmitTransferResponse is the response after submitting a transfer

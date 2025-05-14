@@ -3,8 +3,7 @@ import { Wallet, Coin } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
 import { PortfolioToken } from '@store/portfolio';
 import { validateSolanaAddress } from '@/services/solana';
-import { buildAndSignTransferTransaction } from '@/services/solana';
-import { SOLANA_ADDRESS } from '@/utils/constants';
+import { prepareCoinTransfer, signTransferTransaction } from '@/services/solana';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { ToastProps } from '@components/Common/Toast/toast_types';
 import { usePortfolioStore } from '@/store/portfolio';
@@ -47,20 +46,14 @@ export const validateForm = async (
 	return null;
 };
 
-export const handleTokenTransfer = async (
-	formData: TokenTransferFormData
-): Promise<string> => {
+export const handleTokenTransfer = async (formData: TokenTransferFormData): Promise<string> => {
 	try {
-		// Prepare and sign the transfer transaction
-		const signedTransaction = await buildAndSignTransferTransaction(
-			formData.toAddress,
-			formData.selectedTokenMint,
-			parseFloat(formData.amount)
-		);
+		const unsignedTransaction = await prepareCoinTransfer(formData.toAddress, formData.selectedTokenMint, parseFloat(formData.amount));
+		const signedTransaction = await signTransferTransaction(unsignedTransaction);
 
-		// Submit the signed transaction
 		const submitResponse = await grpcApi.submitCoinTransfer({
-			signedTransaction
+			signedTransaction,
+			unsignedTransaction
 		});
 
 		return submitResponse.transactionHash;

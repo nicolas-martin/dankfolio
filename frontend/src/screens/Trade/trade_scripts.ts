@@ -3,7 +3,7 @@ import { Coin, Wallet } from '@/types';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 
 import { grpcApi } from '@/services/grpcApi';
-import { buildAndSignSwapTransaction } from '@/services/solana';
+import { prepareSwapRequest, signSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
 import { usePortfolioStore } from '@/store/portfolio'; // Import portfolio store for balance refresh
 import type { ToastProps } from '@/components/Common/Toast/toast_types'; // Use ToastProps
@@ -110,39 +110,6 @@ export const handleSwapCoins = (
 	setToAmount(fromAmount);
 };
 
-// New function to handle only the signing part
-export const signTradeTransaction = async (
-	fromCoin: Coin,
-	toCoin: Coin,
-	amount: string,
-	slippage: number
-): Promise<string> => {
-	console.log('🔑 Signing trade transaction:', {
-		fromCoin: fromCoin.symbol,
-		toCoin: toCoin.symbol,
-		amount,
-		slippage
-	});
-
-	// Convert amount to raw units (lamports)
-	const rawAmount = Number(toRawAmount(amount, fromCoin.decimals));
-
-	// Build and sign the transaction
-	const signedTransaction = await buildAndSignSwapTransaction(
-		fromCoin.mintAddress,
-		toCoin.mintAddress,
-		rawAmount,
-		slippage
-	);
-
-	console.log('✅ Transaction signed.');
-	return signedTransaction;
-};
-
-// Removed handleTrade function as its logic is moved to the screen component
-
-// --- New Trade Execution and Polling Functions ---
-
 export const stopPolling = (
 	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>,
 	setIsLoadingTrade: (loading: boolean) => void
@@ -244,20 +211,35 @@ export const executeTrade = async (
 		setPollingConfirmations(0);
 		setIsStatusModalVisible(true);
 
-		// Sign the transaction
-		const signedTransaction = await signTradeTransaction(
-			fromCoin,
-			toCoin,
-			fromAmount,
-			slippage
-		);
+	console.log('🔑 Signing trade transaction:', {
+		fromCoin: fromCoin.symbol,
+		toCoin: toCoin.symbol,
+		fromAmount,
+		slippage
+	});
+
+	// Convert amount to raw units (lamports)
+	const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
+
+	// Build and sign the transaction
+	const unsignedTx = await prepareSwapRequest(
+		fromCoin.mintAddress,
+		toCoin.mintAddress,
+		rawAmount,
+		slippage
+	);
+
+	const signedTx = await signSwapTransaction(unsignedTx);
+
+	console.log('✅ Transaction signed.');
 
 		// Submit the signed transaction
 		const submitResponse = await grpcApi.submitSwap({
 			fromCoinMintAddress: fromCoin.mintAddress,
 			toCoinMintAddress: toCoin.mintAddress,
 			amount: Number(toRawAmount(fromAmount, fromCoin.decimals)),
-			signedTransaction: signedTransaction
+			signedTransaction: signedTx,
+			unsignedTx: unsignedTx,
 		});
 
 		if (submitResponse.transactionHash) {
