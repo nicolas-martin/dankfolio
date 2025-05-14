@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
@@ -134,9 +135,7 @@ func (s *priceServiceHandler) GetCoinPrices(
 
 	// Convert map to proto response
 	priceMap := make(map[string]float64)
-	for id, price := range prices {
-		priceMap[id] = price
-	}
+	maps.Copy(priceMap, prices)
 
 	res := connect.NewResponse(&pb.GetCoinPricesResponse{
 		Prices: priceMap,
