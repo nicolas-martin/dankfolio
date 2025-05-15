@@ -36,8 +36,7 @@ type Coin struct {
 	CreatedAt   string `json:"created_at,omitempty"`
 	LastUpdated string `json:"last_updated,omitempty"`
 
-	// Internal state flag
-	IsTrending bool `json:"-"` // Flag indicating if loaded from trending file, excluded from JSON
+	IsTrending bool `json:"is_trending,omitempty"`
 }
 
 // GetID implements the Entity interface

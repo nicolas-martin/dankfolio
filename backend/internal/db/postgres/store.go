@@ -103,7 +103,7 @@ func (s *Store) RawCoins() db.Repository[model.RawCoin] {
 // ListTrendingCoins returns coins marked as trending.
 func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 	var schemaCoins []schema.Coin
-	if err := s.db.WithContext(ctx).Where("is_trending = ?", true).Order("last_updated ASC").Find(&schemaCoins).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where("is_trending = ?", true).Order("last_updated DESC").Find(&schemaCoins).Error; err != nil {
 		return nil, fmt.Errorf("failed to list trending coins: %w", err)
 	}
 
