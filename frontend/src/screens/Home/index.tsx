@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { View, SafeAreaView, FlatList } from 'react-native';
 import { useTheme, Button, IconButton, Text } from 'react-native-paper';
 import CoinCard from '@components/Home/CoinCard';
@@ -14,10 +14,25 @@ import { Coin } from '@/types';
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
-	const { availableCoins: coins, fetchAvailableCoins: fetchCoins } = useCoinStore();
+	const { availableCoins, fetchAvailableCoins } = useCoinStore();
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+
+	// Shared logic for fetching trending coins and portfolio
+	const fetchTrendingAndPortfolio = useCallback(async () => {
+		await fetchAvailableCoins(true);
+		if (wallet) {
+			await fetchPortfolioBalance(wallet.address);
+		}
+	}, [fetchAvailableCoins, fetchPortfolioBalance, wallet]);
+
+	// Fetch trending coins and portfolio on mount if not already loaded
+	useEffect(() => {
+		if (availableCoins.length === 0) {
+			fetchTrendingAndPortfolio();
+		}
+	}, [availableCoins.length, fetchTrendingAndPortfolio]);
 
 	const handleCoinPressCallback = useCallback((coin: Coin) => {
 		handleCoinPress(coin, navigation);
@@ -25,12 +40,7 @@ const HomeScreen = () => {
 
 	const onRefresh = useCallback(async () => {
 		try {
-			// Fetch only trending coins and wallet balance
-			await Promise.all([
-				fetchCoins(true),
-				wallet ? fetchPortfolioBalance(wallet.address) : null
-			].filter(Boolean));
-
+			await fetchTrendingAndPortfolio();
 			showToast({
 				type: 'success',
 				message: 'Coins refreshed successfully!',
@@ -43,7 +53,7 @@ const HomeScreen = () => {
 				duration: 3000
 			});
 		}
-	}, [fetchCoins, fetchPortfolioBalance, wallet, showToast]);
+	}, [fetchTrendingAndPortfolio, showToast]);
 
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">
@@ -59,9 +69,9 @@ const HomeScreen = () => {
 								testID="refresh-button"
 							/>
 						</View>
-						{coins.length > 0 ? (
+						{availableCoins.length > 0 ? (
 							<FlatList
-								data={coins}
+								data={availableCoins}
 								keyExtractor={(item) => item.mintAddress || item.symbol}
 								renderItem={({ item }) => (
 									<CoinCard coin={item} onPress={() => handleCoinPressCallback(item)} />
