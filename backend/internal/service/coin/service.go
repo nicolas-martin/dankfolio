@@ -2,11 +2,9 @@ package coin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"sort"
 	"time"
 
@@ -28,9 +26,6 @@ type Service struct {
 
 // NewService creates a new CoinService instance
 func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store) *Service {
-	if config.TrendingCoinPath == "" {
-		log.Fatal("TrendingTokenPath is required")
-	}
 	if config.SolanaRPCEndpoint == "" {
 		log.Fatal("SolanaRPCEndpoint is required")
 	}
@@ -139,97 +134,59 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 // loadOrRefreshData checks if the trending data file is fresh. If not, it triggers
 // a scrape and enrichment process before loading the data into the service.
 func (s *Service) loadOrRefreshData(ctx context.Context) error {
-	filePath := s.config.TrendingCoinPath
-	info, err := os.Stat(filePath)
-	needsRefresh := true
-
-	if err == nil {
-		age := time.Since(info.ModTime())
-		needsRefresh = age > TrendingDataTTL
-		log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
+	// get the trending by asc order
+	c, err := s.store.ListTrendingCoins(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get latest trending coin: %w", err)
 	}
 
-	if needsRefresh {
-		log.Printf("Trending data is too old, triggering scrape and enrichment...")
-		if err := s.ScrapeAndEnrichToFile(ctx); err != nil {
-			log.Printf("WARNING: Failed to refresh trending data: %v. Will attempt to use existing data.", err)
-		}
+	// 2025-05-14 20:35:42.431158+00
+	updatedTime, err := time.Parse(c[0].LastUpdated, time.RFC3339)
+	if err != nil {
+		return fmt.Errorf("failed to parse last updated time: %w", err)
 	}
 
-	// Load the enriched coins from file using the service method
-	enrichedCoins, timestamp, loadErr := s.loadEnrichedCoinsFromFile()
-	if loadErr != nil {
-		// If scraping was needed but failed, and loading also fails, return the load error.
-		// If the file just doesn't exist after a failed scrape, this loadErr will reflect that.
-		log.Printf("ERROR: Failed to load enriched coins from file %s: %v", filePath, loadErr)
-		if needsRefresh && err != nil { // If refresh was needed and stat failed initially
-			return fmt.Errorf("initial file stat error: %v, and subsequent load failed: %w", err, loadErr)
-		}
-		return fmt.Errorf("failed to load enriched coins from file: %w", loadErr)
+	age := time.Since(updatedTime)
+	needsRefresh := age > TrendingDataTTL
+	log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
+
+	// if we don't need to refresh, we can just use what's in the DB
+	if !needsRefresh {
+		return nil
+	}
+
+	log.Printf("Trending data is too old, triggering scrape and enrichment...")
+	enrichedCoins, err := s.ScrapeAndEnrichToFile(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to scrape and enrich coins: %w", err)
 	}
 
 	// Store all coins
-	for _, coin := range enrichedCoins {
+	for _, coin := range enrichedCoins.Coins {
+		// update all previous coins to not trending
+		coins, err := s.store.Coins().List(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to list coins for updating trending status: %w", err)
+		}
+		// update the coins to not trending
+		for _, c := range coins {
+			c.IsTrending = false
+			c.LastUpdated = time.Now().Format(time.RFC3339)
+			err := s.store.Coins().Update(ctx, &c)
+			if err != nil {
+				return fmt.Errorf("failed to update trending coin %s: %w", c.MintAddress, err)
+			}
+		}
+
 		if err := s.store.Coins().Upsert(ctx, &coin); err != nil {
-			log.Printf("Warning: Failed to store coin %s: %v", coin.MintAddress, err)
+			log.Printf("Failed to store coin %s: %v", coin.MintAddress, err)
 		}
 	}
 
 	log.Printf("Coin store refresh complete from file (Timestamp: %s). Total coins loaded: %d",
-		timestamp.Format(time.RFC3339), len(enrichedCoins))
+		enrichedCoins.ScrapeTimestamp.Format(time.RFC3339), len(enrichedCoins.Coins))
 
 	return nil
-}
-
-// loadEnrichedCoinsFromFile reads and parses the JSON file containing pre-enriched Coin data.
-func (s *Service) loadEnrichedCoinsFromFile() ([]model.Coin, time.Time, error) {
-	filePath := s.config.TrendingCoinPath
-	log.Printf("Attempting to load enriched coins from: %s", filePath)
-
-	fileData, err := os.ReadFile(filePath)
-	if err != nil {
-		// Return specific error for not found, caller handles it
-		if os.IsNotExist(err) {
-			return nil, time.Time{}, fmt.Errorf("enriched coin file not found at %s: %w", filePath, err)
-		}
-		return nil, time.Time{}, fmt.Errorf("error reading enriched coin file %s: %w", filePath, err)
-	}
-
-	if len(fileData) == 0 {
-		log.Printf("WARN: Enriched coin file %s is empty.", filePath)
-		return []model.Coin{}, time.Time{}, nil // Return empty list, not error
-	}
-
-	var fileOutput EnrichedFileOutput // Use the struct defined in this file
-	err = json.Unmarshal(fileData, &fileOutput)
-	if err != nil {
-		log.Printf("ERROR: Error unmarshalling enriched coin data from %s: %v", filePath, err)
-		// Attempt to log the problematic data snippet if possible (be careful with large files)
-		// preview := string(fileData)
-		// if len(preview) > 200 { preview = preview[:200] + "..." }
-		// log.Printf("Data preview: %s", preview)
-		return nil, time.Time{}, fmt.Errorf("failed to decode enriched JSON from %s: %w", filePath, err)
-	}
-
-	// Set IsTrending flag for all coins loaded from the file
-	for i := range fileOutput.Coins {
-		fileOutput.Coins[i].IsTrending = true
-	}
-
-	// Log timestamp from file
-	if fileOutput.ScrapeTimestamp.IsZero() {
-		log.Printf("WARN: Enriched coin file %s has zero timestamp in JSON.", filePath)
-	} else {
-		log.Printf("Successfully decoded enriched coin data from %s (JSON Timestamp: %s)",
-			filePath, fileOutput.ScrapeTimestamp.Format(time.RFC3339))
-	}
-
-	if len(fileOutput.Coins) == 0 {
-		log.Printf("WARN: Enriched coin file %s contained zero tokens in the 'coins' list.", filePath)
-		// Return empty slice, not an error
-	}
-
-	return fileOutput.Coins, fileOutput.ScrapeTimestamp, nil
 }
 
 func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, error) {

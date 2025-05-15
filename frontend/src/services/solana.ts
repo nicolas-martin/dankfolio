@@ -154,7 +154,7 @@ export const prepareCoinTransfer = async (
 	};
 };
 
-export const buildAndSignTransferTransaction = async (
+export const signTransferTransaction = async (
 	unsignedTransaction: string,
 ): Promise<string> => {
 	try{

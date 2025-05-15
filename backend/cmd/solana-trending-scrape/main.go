@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -47,7 +48,6 @@ func main() {
 
 	// Create service with config for output file
 	config := &coin.Config{
-		TrendingCoinPath:  absPath,
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	s := coin.NewService(config, httpClient, jupiterClient, store)
@@ -58,10 +58,11 @@ func main() {
 
 	// Call the full pipeline
 	// NOTE: This is called by the coin service on start.
-	if err := s.ScrapeAndEnrichToFile(ctx); err != nil {
+	enrichedCoins, err := s.ScrapeAndEnrichToFile(ctx)
+	if err != nil {
 		log.Fatalf("Scraping and enrichment failed: %v", err)
 	}
 
 	log.Println("--- Scraping and Enrichment Complete ---")
-	log.Printf("Enriched data saved to: %s", config.TrendingCoinPath)
+	fmt.Printf("Enriched coins: %v\n", enrichedCoins)
 }
