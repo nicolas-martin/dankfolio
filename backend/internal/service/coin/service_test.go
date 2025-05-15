@@ -56,7 +56,6 @@ func (m *mockService) loadOrRefreshData(ctx context.Context) error {
 func TestNewService(t *testing.T) {
 	// Setup
 	config := &Config{
-		TrendingCoinPath:  "testdata/trending_solana_tokens_enriched.json",
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	httpClient := &http.Client{}
@@ -70,11 +69,11 @@ func TestNewService(t *testing.T) {
 
 	// Assertions
 	assert.NotNil(t, service)
-	assert.Equal(t, config, service.Service.config)
-	assert.Equal(t, jupiterClient, service.Service.jupiterClient)
-	assert.Equal(t, solanaClient, service.Service.solanaClient)
-	assert.Equal(t, offchainClient, service.Service.offchainClient)
-	assert.Equal(t, store, service.Service.store)
+	assert.Equal(t, config, service.config)
+	assert.Equal(t, jupiterClient, service.jupiterClient)
+	assert.Equal(t, solanaClient, service.solanaClient)
+	assert.Equal(t, offchainClient, service.offchainClient)
+	assert.Equal(t, store, service.store)
 	assert.True(t, service.loadOrRefreshDataCalled, "loadOrRefreshData should have been called")
 }
 
@@ -82,7 +81,6 @@ func TestGetCoins(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	config := &Config{
-		TrendingCoinPath:  "testdata/trending_solana_tokens_enriched.json",
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	httpClient := &http.Client{}
@@ -125,7 +123,6 @@ func TestGetTrendingCoins(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	config := &Config{
-		TrendingCoinPath:  "testdata/trending_solana_tokens_enriched.json",
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	httpClient := &http.Client{}
@@ -177,7 +174,6 @@ func TestGetCoinByID(t *testing.T) {
 	// Setup
 	ctx := context.Background()
 	config := &Config{
-		TrendingCoinPath:  "testdata/trending_solana_tokens_enriched.json",
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	httpClient := &http.Client{}

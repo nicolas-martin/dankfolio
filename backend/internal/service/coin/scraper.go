@@ -1,12 +1,9 @@
 package coin
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,38 +42,32 @@ type scrapedTokenInfo struct {
 }
 
 // ScrapeAndEnrichToFile orchestrates the scraping and enrichment process.
-func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
+func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutput, error) {
 	log.Println("Starting Solana trending token scrape and enrichment process...")
-	startTime := time.Now()
-
-	outputFile := s.config.TrendingCoinPath
-	if outputFile == "" {
-		return fmt.Errorf("ScrapeAndEnrichToFile: output file path (TrendingTokenPath) is not configured")
-	}
 
 	// Step 1: Scrape basic info using Chromedp
 	scrapedTokens, err := s.scrapeBasicTokenInfo(ctx)
 	if err != nil {
-		return fmt.Errorf("failed during basic token scraping: %w", err)
+		return nil, fmt.Errorf("failed during basic token scraping: %w", err)
 	}
 	if len(scrapedTokens) == 0 {
-		return fmt.Errorf("no tokens were successfully scraped from the modal, cannot proceed")
+		return nil, fmt.Errorf("no tokens were successfully scraped from the modal, cannot proceed")
 	}
 	log.Printf("Successfully scraped basic info for %d tokens.", len(scrapedTokens))
 
 	// Step 2: Enrich the scraped tokens concurrently
 	enrichedCoins, err := s.enrichScrapedTokens(ctx, scrapedTokens)
 	if err != nil {
-		return fmt.Errorf("encountered errors during enrichment process: %v", err)
+		return nil, fmt.Errorf("encountered errors during enrichment process: %v", err)
 	}
 	if len(enrichedCoins) == 0 {
-		return fmt.Errorf("enrichment process completed, but no tokens were successfully enriched (or survived errors)")
+		return nil, fmt.Errorf("enrichment process completed, but no tokens were successfully enriched (or survived errors)")
 	}
 	log.Printf("Enrichment process complete. Successfully processed (fully or partially): %d tokens.", len(enrichedCoins))
 
 	// Step 3: Prepare and save the final output
-	finalOutput := EnrichedFileOutput{
-		ScrapeTimestamp: time.Now().UTC(), // Use UTC time
+	finalOutput := &EnrichedFileOutput{
+		ScrapeTimestamp: time.Now(),
 		Coins:           enrichedCoins,
 	}
 
@@ -94,23 +85,7 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) error {
 			t.MintAddress, t.Name, t.Symbol, t.Price, t.Volume24h)
 	}
 
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(finalOutput); err != nil {
-		return fmt.Errorf("failed to encode final enriched output to JSON buffer: %w", err)
-	}
-
-	log.Printf("Writing enriched data to file: %s", outputFile)
-	if err := os.WriteFile(outputFile, buf.Bytes(), 0o644); err != nil {
-		return fmt.Errorf("failed to write final enriched JSON to file %s: %w", outputFile, err)
-	}
-
-	log.Printf("Successfully saved enriched data for %d coins to %s (Total time: %v)",
-		len(finalOutput.Coins), outputFile, time.Since(startTime))
-
-	return nil // Success
+	return finalOutput, nil
 }
 
 // ScrapeBasicTokenInfo handles the browser automation part to get initial token details.
