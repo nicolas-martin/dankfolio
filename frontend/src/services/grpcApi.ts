@@ -17,10 +17,16 @@ function convertToTimestamp(dateStr: string): Timestamp {
 // Implementation of the API interface using gRPC
 export const grpcApi: API = {
 	submitSwap: async (payload: TradePayload): Promise<SubmitSwapResponse> => {
+		// validate payload
+
+
 		const serviceName = "TradeService";
 		const methodName = "submitSwap";
 		try {
 			grpcUtils.logRequest(serviceName, methodName, payload);
+			if (payload.unsignedTransaction === '' || payload.signedTransaction === '') {
+				throw new Error('unsigned and signed transaction cannot be empty');
+			}
 
 			const response = await tradeClient.submitSwap({
 				fromCoinId: payload.fromCoinMintAddress,

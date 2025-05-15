@@ -1,8 +1,20 @@
 # 🎮 Dankfolio
 
+### NOTE
+In order for the raw_coins to be populated which is required for the search functionality. We currently have to trigger the jupiter call to /tokens/v1/all which is currently done manually by triggering. We should also think about using the `new` endpoint periodically which is not implemented currently.
+
+```bash
+→ grpcurl -plaintext \
+  -import-path proto/dankfolio/v1 \
+  -proto coin.proto \
+  -d '{}' \
+  localhost:9000 \
+  dankfolio.v1.CoinService/GetAllCoins
+```
+
 ### 🔄 Trading Features
-- [ ] Implement another AMM when Jupiter can't get a quote/route (i.e., Raydium)
-- [ ] Debug Jupiter quote issue (api permission related?)
+- [x] Implement another AMM when Jupiter can't get a quote/route (i.e., Raydium)
+- [x] Debug Jupiter quote issue (api permission related?)
 
 ### 📊 Token Information
 - [ ] Find reliable APIs for additional token data:

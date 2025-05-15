@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/gagliardetto/solana-go"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -111,6 +112,16 @@ func (s *coinServiceHandler) GetAllCoins(
 
 // Search allows searching coins by various criteria
 func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb.SearchRequest]) (*connect.Response[pb.SearchResponse], error) {
+	// validate if the req.Msg.Query is a valid mint address
+	solanaAddress, err := solana.PublicKeyFromBase58(req.Msg.Query)
+	if err == nil {
+		coin, err := s.coinService.GetCoinByID(ctx, solanaAddress.String())
+		if err != nil {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", solanaAddress.String(), err))
+		}
+		return connect.NewResponse(&pb.SearchResponse{Coins: []*pb.Coin{convertModelCoinToPbCoin(coin)}}), nil
+	}
+
 	coins, err := s.coinService.SearchCoins(ctx, req.Msg.Query, req.Msg.Tags, req.Msg.MinVolume_24H, req.Msg.Limit, req.Msg.Offset, req.Msg.SortBy, req.Msg.SortDesc)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to search coins: %w", err))
