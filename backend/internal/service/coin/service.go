@@ -141,14 +141,17 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 	}
 
 	// 2025-05-14 20:35:42.431158+00
-	updatedTime, err := time.Parse(c[0].LastUpdated, time.RFC3339)
-	if err != nil {
-		return fmt.Errorf("failed to parse last updated time: %w", err)
-	}
+	needsRefresh := true
+	if len(c) != 0 {
+		updatedTime, err := time.Parse(time.RFC3339, c[0].LastUpdated)
+		if err != nil {
+			return fmt.Errorf("failed to parse last updated time: %w", err)
+		}
 
-	age := time.Since(updatedTime)
-	needsRefresh := age > TrendingDataTTL
-	log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
+		age := time.Since(updatedTime)
+		needsRefresh = age > TrendingDataTTL
+		log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
+	}
 
 	// if we don't need to refresh, we can just use what's in the DB
 	if !needsRefresh {
@@ -161,23 +164,24 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		return fmt.Errorf("failed to scrape and enrich coins: %w", err)
 	}
 
+	// update all previous coins to not trending
+	coins, err := s.store.Coins().List(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to list coins for updating trending status: %w", err)
+	}
+	// update the coins to not trending
+	log.Printf("Updating %d coins to not trending", len(coins))
+	for _, c := range coins {
+		c.IsTrending = false
+		c.LastUpdated = time.Now().Format(time.RFC3339)
+		err := s.store.Coins().Update(ctx, &c)
+		if err != nil {
+			return fmt.Errorf("failed to update trending coin %s: %w", c.MintAddress, err)
+		}
+	}
+
 	// Store all coins
 	for _, coin := range enrichedCoins.Coins {
-		// update all previous coins to not trending
-		coins, err := s.store.Coins().List(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to list coins for updating trending status: %w", err)
-		}
-		// update the coins to not trending
-		for _, c := range coins {
-			c.IsTrending = false
-			c.LastUpdated = time.Now().Format(time.RFC3339)
-			err := s.store.Coins().Update(ctx, &c)
-			if err != nil {
-				return fmt.Errorf("failed to update trending coin %s: %w", c.MintAddress, err)
-			}
-		}
-
 		if err := s.store.Coins().Upsert(ctx, &coin); err != nil {
 			log.Printf("Failed to store coin %s: %v", coin.MintAddress, err)
 		}

@@ -87,7 +87,9 @@ func (r *Repository[S, M]) Update(ctx context.Context, item *M) error {
 	modelItem := *item
 	schemaItem := r.fromModel(modelItem)
 
-	if err := r.db.WithContext(ctx).Model(schemaItem).Omit(schemaItem.(db.Entity).GetID()).Updates(schemaItem).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(schemaItem).
+		Select(getColumnNames(schemaItem)).
+		Updates(schemaItem).Error; err != nil {
 		return fmt.Errorf("failed to update item: %w", err)
 	}
 	return nil
@@ -224,6 +226,7 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			Telegram:    v.Telegram,
 			Discord:     v.Discord,
 			IsTrending:  v.IsTrending,
+			LastUpdated: time.Now(),
 		}
 	case model.Trade:
 		var txHash *string
@@ -280,7 +283,11 @@ func getColumnNames(data any) []string {
 	switch data.(type) {
 	case *schema.Coin:
 		// Explicitly list columns to update, excluding primary key and created_at
-		return []string{"name", "symbol", "decimals", "description", "icon_url", "tags", "price", "change_24h", "market_cap", "volume_24h", "website", "twitter", "telegram", "discord", "is_trending", "last_updated"}
+		return []string{
+			"name", "symbol", "decimals", "description", "icon_url", "tags",
+			"price", "change_24h", "market_cap", "volume_24h", "website",
+			"twitter", "telegram", "discord", "is_trending", "last_updated",
+		}
 	case *schema.Trade:
 		return []string{"user_id", "from_coin_id", "to_coin_id", "type", "amount", "price", "fee", "status", "transaction_hash", "completed_at", "confirmations", "finalized", "error"}
 	case *schema.RawCoin:
