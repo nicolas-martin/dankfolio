@@ -211,27 +211,27 @@ export const executeTrade = async (
 		setPollingConfirmations(0);
 		setIsStatusModalVisible(true);
 
-	console.log('🔑 Signing trade transaction:', {
-		fromCoin: fromCoin.symbol,
-		toCoin: toCoin.symbol,
-		fromAmount,
-		slippage
-	});
+		console.log('🔑 Signing trade transaction:', {
+			fromCoin: fromCoin.symbol,
+			toCoin: toCoin.symbol,
+			fromAmount,
+			slippage
+		});
 
-	// Convert amount to raw units (lamports)
-	const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
+		// Convert amount to raw units (lamports)
+		const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
 
-	// Build and sign the transaction
-	const unsignedTx = await prepareSwapRequest(
-		fromCoin.mintAddress,
-		toCoin.mintAddress,
-		rawAmount,
-		slippage
-	);
+		// Build and sign the transaction
+		const unsignedTx = await prepareSwapRequest(
+			fromCoin.mintAddress,
+			toCoin.mintAddress,
+			rawAmount,
+			slippage
+		);
 
-	const signedTx = await signSwapTransaction(unsignedTx);
+		const signedTx = await signSwapTransaction(unsignedTx);
 
-	console.log('✅ Transaction signed.');
+		console.log('✅ Transaction signed.');
 
 		// Submit the signed transaction
 		const submitResponse = await grpcApi.submitSwap({
@@ -239,7 +239,7 @@ export const executeTrade = async (
 			toCoinMintAddress: toCoin.mintAddress,
 			amount: Number(toRawAmount(fromAmount, fromCoin.decimals)),
 			signedTransaction: signedTx,
-			unsignedTx: unsignedTx,
+			unsignedTransaction: unsignedTx,
 		});
 
 		if (submitResponse.transactionHash) {

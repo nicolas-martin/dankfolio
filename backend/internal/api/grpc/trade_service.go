@@ -93,8 +93,8 @@ func (s *tradeServiceHandler) PrepareSwap(ctx context.Context, req *connect.Requ
 
 // SubmitSwap submits a trade for execution
 func (s *tradeServiceHandler) SubmitSwap(ctx context.Context, req *connect.Request[pb.SubmitSwapRequest]) (*connect.Response[pb.SubmitSwapResponse], error) {
-	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.SignedTransaction == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and signed_transaction are required"))
+	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.SignedTransaction == "" || req.Msg.UnsignedTransaction == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, signed_transaction and unsigned_transaction are required"))
 	}
 
 	tradeReq := model.TradeRequest{
