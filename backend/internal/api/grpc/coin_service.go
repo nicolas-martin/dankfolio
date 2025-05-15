@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"connectrpc.com/connect"
@@ -33,6 +34,8 @@ func (s *coinServiceHandler) GetAvailableCoins(
 ) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
 	var coins []model.Coin
 	var err error
+
+	log.Printf("&&&&&&&&&&&&&&&&&&&&&&&&&&&&& GetAvailableCoins: TrendingOnly=%v", req.Msg.TrendingOnly)
 
 	if req.Msg.TrendingOnly {
 		coins, err = s.coinService.GetTrendingCoins(ctx)

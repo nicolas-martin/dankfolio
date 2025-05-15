@@ -19,6 +19,10 @@ const safeStringify = (obj: any, indent = 2): string => {
 };
 
 export const logRequest = (serviceName: string, methodName: string, params: any): void => {
+	if (methodName === 'getProxiedImage') {
+		// don't log proxied image request
+		return
+	}
 	console.log(`📤 gRPC ${serviceName}.${methodName} Request:`, safeStringify(params));
 };
 

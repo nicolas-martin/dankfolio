@@ -118,26 +118,16 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			const fetchPromises = missingIds.map(async (id: string) => {
 				console.log(`⏳ [PortfolioStore] Attempting to fetch missing coin details for ${id}`);
 				try {
-					const coin = await coinStore.getCoinByID(id);
-					if (coin) {
-						coinStore.setCoin(coin);
-						console.log(`✅ [PortfolioStore] Successfully fetched and set coin ${id}`);
-					} else {
-						missingCount++;
-						missingCoinIds.push(id);
-						console.warn(`⚠️ [PortfolioStore] Could not fetch coin details for id: ${id}`);
-					}
+					await coinStore.getCoinByID(id);
 				} catch (err) {
-					missingCount++;
-					missingCoinIds.push(id);
 					console.warn(`⚠️ [PortfolioStore] Error fetching coin details for id: ${id}`, err);
 				}
 			});
 
 			await Promise.all(fetchPromises);
 
-			coinMap = useCoinStore.getState().coinMap; // Get updated map after fetches
-			console.log('🗺️ [PortfolioStore] Updated CoinStore coinMap size after fetching missing coins:', Object.keys(coinMap).length);
+			// Re-read coinMap after fetching missing coins
+			coinMap = useCoinStore.getState().coinMap;
 
 			const tokens = balance.balances.map((balance: { id: string; amount: number }) => {
 				const coin = coinMap[balance.id];

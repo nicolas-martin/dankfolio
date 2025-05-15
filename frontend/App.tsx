@@ -65,8 +65,7 @@ const styles = StyleSheet.create({
 const App: React.FC = () => {
 	const [appIsReady, setAppIsReady] = useState(false);
 	const [needsWalletSetup, setNeedsWalletSetup] = useState<boolean | null>(null);
-	const { fetchPortfolioBalance, setWallet, wallet } = usePortfolioStore();
-	const { fetchAvailableCoins } = useCoinStore();
+	const { setWallet, wallet } = usePortfolioStore();
 
 	const handleWalletSetupComplete = async (newKeypair: Keypair) => {
 		await setWallet(newKeypair.publicKey.toBase58());
@@ -96,26 +95,6 @@ const App: React.FC = () => {
 
 		prepare();
 	}, [setWallet]);
-
-	useEffect(() => {
-		if (wallet && !needsWalletSetup) {
-			async function loadData() {
-				try {
-					if (!wallet?.address) {
-						console.warn('No wallet address available');
-						return;
-					}
-					await Promise.all([
-						fetchPortfolioBalance(wallet.address),
-						fetchAvailableCoins()
-					]);
-				} catch (e) {
-					console.warn('Error fetching data after wallet setup:', e);
-				}
-			}
-			loadData();
-		}
-	}, [wallet, needsWalletSetup, fetchPortfolioBalance, fetchAvailableCoins]);
 
 	const onLayoutRootView = useCallback(async () => {
 		if (appIsReady) {
