@@ -5,7 +5,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	leftSection: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		flex: 3,
+		// this is responsible for the name wrapping
+		flex: 10,
 		minWidth: 0,
 		paddingRight: 8,
 	},

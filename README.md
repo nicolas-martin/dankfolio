@@ -13,8 +13,8 @@ In order for the raw_coins to be populated which is required for the search func
 ```
 
 ### Improvements
-- [ ] Add contract display in coin details
-- [ ] Add more space to the coin name in profile and home
+- [x] Add contract display in coin details
+- [x] Add more space to the coin name in profile and home
 - [ ] Improve graph usability
     - [ ] Shadow when highlighting
     - [ ] Rouding ticks

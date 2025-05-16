@@ -5,4 +5,5 @@ export interface PriceDisplayProps {
 	period: string;
 	iconUrl: string;
 	name: string;
+	address: string;
 }
