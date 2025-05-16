@@ -13,7 +13,7 @@ import Profile from '@screens/Profile';
 import Search from '@screens/Search';
 import CoinDetail from '@screens/CoinDetail';
 import Trade from '@screens/Trade';
-import SendTokens from '@screens/SendTokens';
+import Send from '@screens/Send';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createMaterialBottomTabNavigator();
@@ -83,7 +83,7 @@ const Navigation = () => {
 				/>
 				<Stack.Screen name="CoinDetail" component={CoinDetail} />
 				<Stack.Screen name="Trade" component={Trade} />
-				<Stack.Screen name="SendTokens" component={SendTokens} />
+				<Stack.Screen name="SendTokens" component={Send} />
 			</Stack.Navigator>
 		</NavigationContainer>
 	);
