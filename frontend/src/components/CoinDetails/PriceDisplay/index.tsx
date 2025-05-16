@@ -7,7 +7,6 @@ import { formatValueChange, formatPrice, formatAddress, copyToClipboard } from '
 import { createStyles } from './coindetails_styles';
 import { useProxiedImage } from '@/hooks/useProxiedImage';
 import { TokenImage } from '@/components/Common/TokenImage';
-import { format } from 'date-fns';
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	price, periodChange, valueChange, period, iconUrl, name, address, hoveredPoint,
@@ -80,11 +79,11 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					{period}
 				</Text>
 			</View>
-			{hoveredPoint && (
+			{/* {hoveredPoint && (
 				<Text variant="bodySmall" style={styles.timestampText}>
 					{format(new Date(hoveredPoint.timestamp), "EEEE MMM d 'at' h:mm a")}
 				</Text>
-			)}
+			)} */}
 		</View>
 	);
 };
