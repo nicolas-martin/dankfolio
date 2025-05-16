@@ -67,7 +67,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					variant="titleMedium"
 					style={[
 						styles.changeText,
-						{ color: isPositive ? theme.colors.primary : theme.colors.error }
+						isPositive ? styles.changePositive : styles.changeNegative
 					]}
 				>
 					{formattedChange}

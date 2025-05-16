@@ -26,6 +26,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 	},
 	changeText: {},
+	changePositive: {
+		color: '#4CAF50',
+	},
+	changeNegative: {
+		color: '#F44336',
+	},
 	periodText: {
 		marginLeft: 4,
 	},
