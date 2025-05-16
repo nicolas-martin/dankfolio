@@ -60,9 +60,9 @@ const CoinDetail: React.FC = () => {
 		let periodChange = 0;
 		let valueChange = 0;
 
-		if (lastDataPoint && firstDataPoint && firstValue !== 0) {
-			periodChange = ((lastValue - firstValue) / firstValue) * 100;
-			valueChange = lastValue - firstValue;
+		if (firstDataPoint && firstValue !== 0) {
+			periodChange = ((currentPrice - firstValue) / firstValue) * 100;
+			valueChange = currentPrice - firstValue;
 		}
 
 		return {
