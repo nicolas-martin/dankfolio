@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { CoinChartProps, PricePoint } from "./types";
 import { useFont } from "@shopify/react-native-skia";
-import { Circle, Line as SkiaLine } from "@shopify/react-native-skia";
+import { Circle, Line as SkiaLine, Text as SkiaText } from "@shopify/react-native-skia";
 import { createStyles } from "./styles";
 import inter from "@assets/fonts/inter-medium.ttf";
 
@@ -27,7 +27,7 @@ const ActiveValueIndicator = ({ xPosition, yPosition, bottom, top, lineColor, in
 }) => {
 	return (
 		<>
-			<SkiaLine p1={{ x: xPosition.value, y: bottom }} p2={{ x: xPosition.value, y: top }} color={lineColor} strokeWidth={1} />
+			<SkiaLine p1={{ x: xPosition.value, y: bottom }} p2={{ x: xPosition.value, y: top + 30 }} color={lineColor} strokeWidth={1} />
 			<Circle cx={xPosition} cy={yPosition} r={10} color={indicatorColor} />
 			<Circle cx={xPosition} cy={yPosition} r={8} color="hsla(0, 0, 100%, 0.25)"
 			/>
@@ -149,9 +149,19 @@ export default function CoinChart({
 					},
 					labelColor: theme.colors.onSurfaceVariant,
 				}}
-				renderOutside={({ chartBounds }) => (
-					<>
-						{isPressActive && typeof activeX === 'number' && typeof activeY === 'number' && (
+				renderOutside={({ chartBounds }) => {
+					if (!isPressActive || typeof activeX !== 'number' || !font) return null;
+					const label = format(new Date(activeX), "EEE MMM d 'at' h:mm a");
+					// measure label width, center it around rawX, clamp to borders
+					const rawX = chartPress.x.position.value;
+					const textWidth = font.measureText(label).width;
+					const half = textWidth / 2;
+					const xPos = Math.min(
+						Math.max(rawX - half, chartBounds.left),
+						chartBounds.right - textWidth
+					);
+					return (
+						<>
 							<ActiveValueIndicator
 								xPosition={chartPress.x.position}
 								yPosition={chartPress.y.y.position}
@@ -161,9 +171,16 @@ export default function CoinChart({
 								lineColor={theme.colors.outlineVariant}
 								indicatorColor={theme.colors.primary}
 							/>
-						)}
-					</>
-				)}
+							<SkiaText
+								x={xPos}
+								y={chartBounds.top + 20}
+								text={label}
+								font={font}
+								color={theme.colors.onSurfaceVariant}
+							/>
+						</>
+					);
+				}}
 			>
 				{({ chartBounds, points }) => (
 					<>
