@@ -102,6 +102,7 @@ const CoinDetail: React.FC = () => {
 								iconUrl={initialCoin.iconUrl}
 								name={initialCoin.name}
 								address={initialCoin.mintAddress}
+								hoveredPoint={hoverPoint}
 							/>
 						</View>
 					)}
