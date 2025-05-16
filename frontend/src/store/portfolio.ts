@@ -1,17 +1,10 @@
 import { create } from 'zustand';
 import { Wallet, Coin, Base58PrivateKey } from '@/types';
-import { Keypair } from '@solana/web3.js';
 import { useCoinStore } from './coins';
 import { grpcApi } from '@/services/grpcApi';
-import { SOLANA_ADDRESS } from '@/utils/constants';
 import * as Keychain from 'react-native-keychain';
-import bs58 from 'bs58';
-import { Buffer } from 'buffer';
 import { getKeypairFromPrivateKey } from '@/services/solana';
-
 const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
-const KEYCHAIN_USERNAME_PRIVATE_KEY = 'userPrivateKey';
-const KEYCHAIN_USERNAME_MNEMONIC = 'userMnemonic';
 
 export interface PortfolioToken {
 	mintAddress: string;
@@ -113,14 +106,17 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			const missingIds = balanceIds.filter((id: string) => !coinMap[id]);
 			console.log('🔍 [PortfolioStore] Missing coin IDs in CoinStore cache:', missingIds);
 
-			let missingCount = 0;
 			const missingCoinIds: string[] = [];
 			const fetchPromises = missingIds.map(async (id: string) => {
 				console.log(`⏳ [PortfolioStore] Attempting to fetch missing coin details for ${id}`);
 				try {
-					await coinStore.getCoinByID(id);
+					const coin = await coinStore.getCoinByID(id);
+					if (!coin) {
+						missingCoinIds.push(id);
+					}
 				} catch (err) {
 					console.warn(`⚠️ [PortfolioStore] Error fetching coin details for id: ${id}`, err);
+					missingCoinIds.push(id);
 				}
 			});
 
@@ -151,7 +147,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			set({
 				tokens: filteredTokens,
 				isLoading: false,
-				error: missingCount > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
+				error: missingCoinIds.length > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
 			});
 			console.log('✅ [PortfolioStore] fetchPortfolioBalance finished.');
 		} catch (error) {
