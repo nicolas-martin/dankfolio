@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, Image } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -6,7 +5,7 @@ import { SplashScreenNavigationProp } from './types';
 import { useLoadingState } from './scripts';
 import { createStyles } from './styles';
 
-const SplashScreen = () => {
+const Splash = () => {
 	const navigation = useNavigation<SplashScreenNavigationProp>();
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -30,4 +29,4 @@ const SplashScreen = () => {
 	);
 };
 
-export default SplashScreen; 
+export default Splash; 

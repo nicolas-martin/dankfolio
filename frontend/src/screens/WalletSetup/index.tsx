@@ -13,7 +13,7 @@ import { usePortfolioStore } from '@store/portfolio';
 
 const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
-const WalletSetupScreen = ({ onWalletSetupComplete }: WalletSetupScreenProps) => {
+const WalletSetup = ({ onWalletSetupComplete }: WalletSetupScreenProps) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
@@ -131,4 +131,4 @@ const WalletSetupScreen = ({ onWalletSetupComplete }: WalletSetupScreenProps) =>
 	);
 };
 
-export default WalletSetupScreen; 
+export default WalletSetup; 

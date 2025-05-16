@@ -21,7 +21,7 @@ import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 
-const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
+const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const { wallet, tokens } = usePortfolioStore();
@@ -292,4 +292,4 @@ const SendTokensScreen: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	);
 };
 
-export default SendTokensScreen; 
+export default Send; 
