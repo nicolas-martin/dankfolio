@@ -29,4 +29,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	periodText: {
 		marginLeft: 4,
 	},
+	timestampText: {
+		marginTop: 4,
+		color: theme.colors.onSurfaceVariant,
+	},
 });
