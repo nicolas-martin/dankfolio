@@ -133,6 +133,7 @@ export default function CoinChart({
 				data={chartData}
 				xKey="x"
 				yKeys={["y"]}
+				domainPadding={{ top: 25 }}
 				padding={0}
 				chartPressState={[chartPress]}
 				axisOptions={{
