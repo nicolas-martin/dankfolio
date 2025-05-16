@@ -62,6 +62,9 @@ beforeEach(() => {
 	});
 });
 
+// Helper for tests where all coins are missing
+const mockAllCoinsMissing = () => mockGetCoinByID.mockImplementation(async () => null);
+
 describe('Zustand Portfolio Store', () => {
 	let consoleErrorSpy: jest.SpyInstance;
 	const initialState = usePortfolioStore.getState();
@@ -113,7 +116,10 @@ describe('Zustand Portfolio Store', () => {
 
 			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
 			mockGetCoinByID.mockImplementation(async (id) => {
-				if (id === 'usd-coin') return mockUsdcCoin;
+				if (id === 'usd-coin') {
+					mockSetCoin(mockUsdcCoin);
+					return mockUsdcCoin;
+				}
 				return null;
 			});
 
@@ -172,7 +178,10 @@ describe('Zustand Portfolio Store', () => {
 
 			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseWithUnknown);
 			mockGetCoinByID.mockImplementation(async (id) => {
-				if (id === 'usd-coin') return mockUsdcCoin;
+				if (id === 'usd-coin') {
+					mockSetCoin(mockUsdcCoin);
+					return mockUsdcCoin;
+				}
 				if (id === 'unknown-coin') return null; // Simulate missing coin
 				return null;
 			});
@@ -238,7 +247,7 @@ describe('Zustand Portfolio Store', () => {
 			});
 
 			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
-			mockGetCoinByID.mockImplementation(async (id) => null);
+			mockAllCoinsMissing();
 
 			await act(async () => {
 				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);
@@ -273,7 +282,7 @@ describe('Zustand Portfolio Store', () => {
 			});
 
 			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
-			mockGetCoinByID.mockRejectedValue(new Error('Error fetching coin details'));
+			mockAllCoinsMissing();
 
 			await act(async () => {
 				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);

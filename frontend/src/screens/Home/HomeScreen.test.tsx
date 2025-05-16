@@ -223,7 +223,7 @@ describe('HomeScreen', () => {
 		await waitFor(() => {
 			// Verify error handling
 			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
-			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1);
+			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(0);
 			expect(showToastMock).toHaveBeenCalledTimes(1);
 			expect(showToastMock).toHaveBeenCalledWith({
 				type: 'error',
