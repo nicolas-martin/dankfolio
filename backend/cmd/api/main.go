@@ -43,8 +43,10 @@ func loadConfig() (*Config, error) {
 	// lightURL = "https://lite-api.jup.ag"
 
 	// Load environment variables
-	if err := godotenv.Load(".env"); err != nil {
-		log.Printf("Warning: Error loading .env file: %v", err)
+	if os.Getenv("APP_ENV") == "development" {
+		if err := godotenv.Load(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Parse cache expiry duration from environment variable (default to 5 minutes)
