@@ -15,10 +15,13 @@ In order for the raw_coins to be populated which is required for the search func
 ### Improvements
 - [x] Add contract display in coin details
 - [x] Add more space to the coin name in profile and home
-- [ ] Improve graph usability
-    - [ ] Shadow when highlighting
-    - [ ] Rouding ticks
-    - [ ] Double check data accuracy when highligting the graph
+- [x] Improve graph usability
+    - [x] Formatted DT on graph when dragging
+    - [x] Fix change update and color
+    - [x] Hover label position fix when reaching the edge of the screen
+    - [x] Label, vertical line and domain padding
+    - [x] Shadow when highlighting
+    - [x] Double check data accuracy when highligting the graph
 
 
 ### 💅 UI Improvements

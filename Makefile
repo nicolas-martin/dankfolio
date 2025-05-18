@@ -6,6 +6,12 @@ MOBILE_DIR := frontend
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
 
+# prod-build: backend-test
+prod-build:
+	@cd ${BACKEND_DIR} && GOOS=linux GOARCH=amd64 go build -o bin/dankfolio ./cmd/api
+	@scp ./backend/bin/dankfolio root@172.105.101.233:/opt/dankfolio
+	@scp ./backend/.env.prod root@172.105.101.233:/etc/dankfolio/.env
+
 # Server Management
 run: backend-kill
 	@echo "🚀 Starting backend server..."
