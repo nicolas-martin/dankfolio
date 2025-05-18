@@ -91,11 +91,11 @@ func loadConfig() (*Config, error) {
 	if config.DBURL == "" {
 		missingVars = append(missingVars, "DB_URL")
 	}
-	if config.Env != "development" {
-		if config.JupiterApiKey == "" {
-			missingVars = append(missingVars, "JUPITER_API_KEY")
-		}
-	}
+	// if config.Env != "development" {
+	// 	if config.JupiterApiKey == "" {
+	// 		missingVars = append(missingVars, "JUPITER_API_KEY")
+	// 	}
+	// }
 	if config.JupiterApiUrl == "" {
 		missingVars = append(missingVars, "JUPITER_API_URL")
 	}
