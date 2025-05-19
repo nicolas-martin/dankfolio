@@ -53,6 +53,7 @@ func (s *Service) EnrichCoinData(
 			coin.Decimals = jupiterInfo.Decimals
 		}
 		if jupiterInfo.LogoURI != "" {
+			log.Printf("EnrichCoinData: Overwriting icon URL %s with Jupiter logo %s", coin.IconUrl, jupiterInfo.LogoURI)
 			coin.IconUrl = jupiterInfo.LogoURI // Overwrite icon
 		}
 		if jupiterInfo.DailyVolume > 0 {
@@ -111,7 +112,7 @@ func (s *Service) EnrichCoinData(
 
 // enrichFromMetadata updates coin fields from off-chain metadata (map).
 // Handles missing fields gracefully and provides defaults.
-func enrichFromMetadata(coin *model.Coin, metadata map[string]interface{}) {
+func enrichFromMetadata(coin *model.Coin, metadata map[string]any) {
 	if metadata == nil {
 		// Ensure description has a default if metadata is nil or fetch failed
 		if coin.Description == "" {
@@ -147,7 +148,7 @@ func enrichFromMetadata(coin *model.Coin, metadata map[string]interface{}) {
 	// Social links (check multiple common keys)
 	if twitter, ok := metadata["twitter"].(string); ok && twitter != "" {
 		coin.Twitter = twitter
-	} else if twitter, ok := metadata["extensions"].(map[string]interface{}); ok {
+	} else if twitter, ok := metadata["extensions"].(map[string]any); ok {
 		if tw, ok := twitter["twitter"].(string); ok && tw != "" {
 			coin.Twitter = tw
 		}
@@ -155,7 +156,7 @@ func enrichFromMetadata(coin *model.Coin, metadata map[string]interface{}) {
 
 	if telegram, ok := metadata["telegram"].(string); ok && telegram != "" {
 		coin.Telegram = telegram
-	} else if telegram, ok := metadata["extensions"].(map[string]interface{}); ok {
+	} else if telegram, ok := metadata["extensions"].(map[string]any); ok {
 		if tg, ok := telegram["telegram"].(string); ok && tg != "" {
 			coin.Telegram = tg
 		}
@@ -164,9 +165,9 @@ func enrichFromMetadata(coin *model.Coin, metadata map[string]interface{}) {
 	// Add more social links if needed (Discord, etc.) following the pattern above
 
 	// Fallback for social links from attributes array (less common now but good backup)
-	if attributes, ok := metadata["attributes"].([]interface{}); ok {
+	if attributes, ok := metadata["attributes"].([]any); ok {
 		for _, attr := range attributes {
-			if attrMap, ok := attr.(map[string]interface{}); ok {
+			if attrMap, ok := attr.(map[string]any); ok {
 				trait := ""
 				value := ""
 				if t, ok := attrMap["trait_type"].(string); ok {
