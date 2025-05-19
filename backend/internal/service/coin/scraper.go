@@ -91,14 +91,20 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutpu
 // ScrapeBasicTokenInfo handles the browser automation part to get initial token details.
 // Exported for testing.
 func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo, error) {
+	path := chromePath()
+	if path == "" {
+		panic("unsupported OS")
+	}
+
 	log.Println("=== Starting ScrapeBasicTokenInfo ===")
 	// --- Chromedp Setup ---
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true),
-		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("no-sandbox", true),
-		chromedp.UserAgent(scrapeUserAgent),
+		chromedp.DisableGPU,
+		chromedp.Headless,
+		chromedp.NoSandbox,
+		chromedp.ExecPath(path),
 	)
+
 	log.Printf("Browser options: %+v", opts)
 
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx, opts...)
