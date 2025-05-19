@@ -3,6 +3,8 @@
 .env.test
 .env.prod
 **/keys
+ios/
+android/
 
 # Frontend specific
 **/node_modules
