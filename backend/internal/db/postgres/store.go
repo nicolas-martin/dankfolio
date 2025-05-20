@@ -65,6 +65,7 @@ func NewStore(dsn string, enableSQLLogging bool) (*Store, error) {
 		coinsRepo:    NewRepository[schema.Coin, model.Coin](dbConn),
 		tradesRepo:   NewRepository[schema.Trade, model.Trade](dbConn),
 		rawCoinsRepo: NewRepository[schema.RawCoin, model.RawCoin](dbConn),
+		walletRepo:   NewRepository[schema.Wallet, model.Wallet](dbConn),
 	}
 
 	return store, nil
