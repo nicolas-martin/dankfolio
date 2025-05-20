@@ -1,5 +1,7 @@
 # 🎮 Dankfolio
 
+## TODO:
+- [ ] Make wallet creation fully frontend and only send public key to the backend
 
 - Problem:
 May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Step 1: Navigating to https://www.birdeye.so/?chain=solana

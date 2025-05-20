@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "jsEngine": "hermes",
     "plugins": [
       [
         "expo-dev-client",
@@ -24,9 +25,9 @@
       "backgroundColor": "#000000"
     },
     "ios": {
+      "jsEngine": "jsc",
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.dankfoliomobile",
-      "jsEngine": "hermes",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
