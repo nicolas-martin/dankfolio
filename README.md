@@ -2,6 +2,8 @@
 
 ## TODO:
 - [ ] Make wallet creation fully frontend and only send public key to the backend
+- [ ] There's a bug where in the profile when we have 0 coin we still see SOL
+- [ ] Optimize the graph fetching by fetching ALL points at once and then filter/aggregate by time.
 
 - Problem:
 May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Step 1: Navigating to https://www.birdeye.so/?chain=solana
