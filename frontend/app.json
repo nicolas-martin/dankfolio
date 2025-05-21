@@ -16,7 +16,8 @@
     ],
     "updates": {
       "enabled": true,
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/efd2922e-0415-49a7-bae1-fd28bc35805d"
     },
     "newArchEnabled": true,
     "assetBundlePatterns": [
@@ -39,7 +40,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.dankfoliomobile",
+      "package": "com.anonymous.dankfoliomobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -48,6 +49,9 @@
       "eas": {
         "projectId": "efd2922e-0415-49a7-bae1-fd28bc35805d"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
