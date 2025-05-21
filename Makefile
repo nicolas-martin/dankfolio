@@ -9,8 +9,10 @@ LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
 # prod-build: backend-test
 prod-build:
 	@cd ${BACKEND_DIR} && GOOS=linux GOARCH=amd64 go build -o bin/dankfolio ./cmd/api
-	@scp ./backend/bin/dankfolio root@172.105.101.233:/opt/dankfolio
-	@scp ./backend/.env.prod root@172.105.101.233:/etc/dankfolio/.env
+	@ssh linode 'sudo systemctl stop dankfolio'
+	@scp ./backend/bin/dankfolio linode:/opt/dankfolio
+	@scp ./backend/.env.prod linode:/etc/dankfolio/.env
+	@ssh linode 'sudo systemctl start dankfolio'
 
 # Server Management
 run: backend-kill
