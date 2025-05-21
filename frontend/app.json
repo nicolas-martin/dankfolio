@@ -16,8 +16,7 @@
     ],
     "updates": {
       "enabled": true,
-      "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/efd2922e-0415-49a7-bae1-fd28bc35805d"
+      "fallbackToCacheTimeout": 0
     },
     "newArchEnabled": true,
     "assetBundlePatterns": [
