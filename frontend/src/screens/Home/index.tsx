@@ -61,7 +61,7 @@ const HomeScreen = () => {
 				<View style={styles.content}>
 					<View style={styles.coinsSection}>
 						<View style={styles.sectionHeader}>
-							<Text variant="titleLarge" style={styles.sectionTitle}>Available Coins 🚀</Text>
+							<Text variant="titleLarge" style={styles.sectionTitle}>Available Coins 🤑</Text>
 							<IconButton
 								icon="refresh"
 								size={24}
