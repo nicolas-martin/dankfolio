@@ -15,7 +15,27 @@ import { usePortfolioStore } from '@store/portfolio';
 import { retrieveWalletFromStorage } from '@screens/WalletSetup/scripts';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
+import * as Updates from 'expo-updates';
+import { Platform } from 'react-native';
 
+useEffect(() => {
+	(async () => {
+		try {
+			const update = await Updates.checkForUpdateAsync();
+			console.log(`[OTA] Is update available? ${update.isAvailable}`);
+			if (update.isAvailable) {
+				console.log('[OTA] Fetching update...');
+				await Updates.fetchUpdateAsync();
+				console.log('[OTA] Reloading to apply update...');
+				Updates.reloadAsync();
+			} else {
+				console.log('[OTA] No update available');
+			}
+		} catch (e) {
+			console.log(`[OTA] Update check failed: ${(e as Error).message}`);
+		}
+	})();
+}, []);
 // Disable Reanimated strict mode warnings
 configureReanimatedLogger({
 	strict: false,

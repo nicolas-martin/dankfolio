@@ -26,7 +26,6 @@
     "simulator-release": {
       "extends": "production",
       "distribution": "internal",
-      "developmentClient": true,
       "ios": {
         "simulator": true,
         "buildConfiguration": "Release"
