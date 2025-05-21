@@ -10,6 +10,7 @@ import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './home_styles';
 import { Coin } from '@/types';
+import { OTAUpdater } from '@components/OTAupdate';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -57,6 +58,7 @@ const HomeScreen = () => {
 
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">
+			<OTAUpdater />
 			{wallet ? (
 				<View style={styles.content}>
 					<View style={styles.coinsSection}>
