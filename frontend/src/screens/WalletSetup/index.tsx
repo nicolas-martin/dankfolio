@@ -95,7 +95,7 @@ const WalletSetup = ({ onWalletSetupComplete }: WalletSetupScreenProps) => {
 
 	return (
 		<View style={styles.container}>
-			<Text style={styles.title}>Wallet Setup</Text>
+			<Text style={styles.title}>Wallet Setup!</Text>
 
 			{isLoading && <ActivityIndicator size="large" style={{ marginBottom: 20 }} />}
 
