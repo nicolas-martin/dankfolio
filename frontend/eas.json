@@ -16,6 +16,7 @@
       "distribution": "internal"
     },
     "production": {
+      "environment": "production",
       "autoIncrement": true
     },
     "simulator-release": {
