@@ -396,9 +396,6 @@ func (s *Service) GetWalletBalances(ctx context.Context, address string) (*Walle
 		return nil, fmt.Errorf("failed to get SOL balance: %v", err)
 	}
 
-	// Convert lamports to SOL (balance.Value is in lamports)
-	// solBalance := float64(balance.Value) / 1e9
-
 	// Get other token balances
 	tokenBalances, err := s.getTokenBalances(ctx, address)
 	if err != nil {
@@ -406,14 +403,17 @@ func (s *Service) GetWalletBalances(ctx context.Context, address string) (*Walle
 	}
 
 	solValue := float64(solData.Value) / float64(solana.LAMPORTS_PER_SOL)
-	// Create SOL token info
-	solBalance := Balance{
-		ID:     model.SolMint,
-		Amount: solValue,
+	var allBalances []Balance
+	if solValue > 0 {
+		// Only include SOL if balance is greater than zero
+		solBalance := Balance{
+			ID:     model.SolMint,
+			Amount: solValue,
+		}
+		allBalances = append([]Balance{solBalance}, tokenBalances...)
+	} else {
+		allBalances = tokenBalances
 	}
-
-	// Combine SOL with other tokens
-	allBalances := append([]Balance{solBalance}, tokenBalances...)
 
 	return &WalletBalance{
 		Balances: allBalances,
