@@ -1,13 +1,37 @@
 import { ConnectError } from '@connectrpc/connect';
-import { DEBUG_MODE } from '@env';
+import log from '@/utils/logger'; // Import the new logger
+import { Coin as FrontendCoin } from '@/types';
+import { Coin as ModelCoin } from './model';
 
-const IS_DEBUG_MODE = DEBUG_MODE === 'true';
+// Helper to map gRPC model.Coin to FrontendCoin
+export function mapGrpcCoinToFrontendCoin(grpcCoin: ModelCoin): FrontendCoin {
+	return {
+		mintAddress: grpcCoin.mintAddress,
+		name: grpcCoin.name,
+		symbol: grpcCoin.symbol,
+		decimals: grpcCoin.decimals,
+		description: grpcCoin.description,
+		iconUrl: grpcCoin.iconUrl,
+		tags: grpcCoin.tags, // Assuming tags is string[] in both
+		price: grpcCoin.price,
+		dailyVolume: grpcCoin.dailyVolume,
+		website: grpcCoin.website,
+		twitter: grpcCoin.twitter,
+		telegram: grpcCoin.telegram,
+		coingeckoId: grpcCoin.coingeckoId,
+		createdAt: grpcCoin.createdAt, // Already Date | undefined in ModelCoin
+		lastUpdated: grpcCoin.lastUpdated, // Already Date | undefined in ModelCoin
+	};
+}
 
 export const getRequestHeaders = () => {
 	const headers = new Headers();
-	if (IS_DEBUG_MODE) {
-		headers.set("x-debug-mode", "true");
-	}
+	// x-debug-mode header can be set based on logger's level if needed,
+	// but for now, let's assume the backend inspects logs based on its own config
+	// or this header is set by a different mechanism if still required.
+	// if (log.getLevel() <= log.levels.DEBUG) { // Example condition
+	//  headers.set("x-debug-mode", "true");
+	// }
 	return headers;
 };
 
@@ -23,7 +47,7 @@ export const logRequest = (serviceName: string, methodName: string, params: any)
 		// don't log proxied image request
 		return
 	}
-	console.log(`📤 gRPC ${serviceName}.${methodName} Request:`, safeStringify(params));
+	log.debug(`📤 gRPC ${serviceName}.${methodName} Request:`, safeStringify(params));
 };
 
 export const logResponse = (serviceName: string, methodName: string, response: any): void => {
@@ -32,20 +56,20 @@ export const logResponse = (serviceName: string, methodName: string, response: a
 		const items = response.data.items;
 		const count = items.length;
 		if (count === 0) {
-			console.log(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [empty] }, ... }`);
+			log.debug(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [empty] }, ... }`);
 			return;
 		} else {
 			const first = safeStringify(items[0], 0);
 			const last = safeStringify(items[count - 1], 0);
-			console.log(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [count=${count}, first=${first}, last=${last}] }, ... }`);
+			log.debug(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [count=${count}, first=${first}, last=${last}] }, ... }`);
 			return;
 		}
 	}
-	console.log(`📥 gRPC ${serviceName}.${methodName} Response:`, safeStringify(response));
+	log.debug(`📥 gRPC ${serviceName}.${methodName} Response:`, safeStringify(response));
 };
 
 export const logError = (serviceName: string, methodName: string, error: any): void => {
-	console.error(`❌ gRPC ${serviceName}.${methodName} Error:`, safeStringify({
+	log.error(`❌ gRPC ${serviceName}.${methodName} Error:`, safeStringify({
 		message: error.message || 'Unknown error',
 		code: error.code,
 		// data: error.metadata ? (typeof error.metadata.toObject === 'function' ? error.metadata.toObject() : error.metadata) : undefined

@@ -136,7 +136,6 @@ export interface API {
 	getCoinPrices: (coinIds: string[]) => Promise<Record<string, number>>;
 	prepareCoinTransfer: (payload: CoinTransferPrepareRequest) => Promise<CoinTransferPrepareResponse>;
 	submitCoinTransfer: (payload: CoinTransferSubmitRequest) => Promise<CoinTransferResponse>;
-	getTransferTransaction: (params: { toAddress: string; coinMint: string; amount: string; }) => Promise<any>;
 	createWallet: () => Promise<CreateWalletResponse>;
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
 	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string }>;

@@ -1,13 +1,11 @@
 import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
 import { API, Coin, SearchCoinsRequest, SearchCoinsResponse, SearchCoinByMintResponse, TradePayload, SubmitSwapResponse, SwapQuoteResponse, TradeStatusResponse, PriceHistoryResponse, WalletBalanceResponse, CoinTransferPrepareRequest, CoinTransferPrepareResponse, CoinTransferSubmitRequest, CoinTransferResponse, CreateWalletResponse, GetProxiedImageResponse } from './grpc/model';
-import { DEBUG_MODE } from '@env';
+// import { DEBUG_MODE } from '@env'; // DEBUG_MODE is now handled by the logger
+import log from '@/utils/logger'; // Import the new logger
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import * as grpcUtils from './grpc/grpcUtils';
-
-if (!DEBUG_MODE) {
-	console.log = () => { };
-}
+import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils'; // Import the new mapper
 
 // Helper to convert timestamp strings to Timestamp objects
 function convertToTimestamp(dateStr: string): Timestamp {
@@ -87,23 +85,7 @@ export const grpcApi: API = {
 			grpcUtils.logResponse(serviceName, methodName, response);
 
 			// Convert the response to match our frontend model
-			return response.coins.map(coin => ({
-				mintAddress: coin.mintAddress,
-				name: coin.name,
-				symbol: coin.symbol,
-				decimals: coin.decimals,
-				description: coin.description,
-				iconUrl: coin.iconUrl,
-				tags: coin.tags,
-				price: coin.price,
-				dailyVolume: coin.dailyVolume,
-				website: coin.website,
-				twitter: coin.twitter,
-				telegram: coin.telegram,
-				coingeckoId: coin.coingeckoId,
-				createdAt: coin.createdAt ? new Date(Number(coin.createdAt.seconds) * 1000) : undefined,
-				lastUpdated: coin.lastUpdated ? new Date(Number(coin.lastUpdated.seconds) * 1000) : undefined
-			}));
+			return response.coins.map(mapGrpcCoinToFrontendCoin);
 		} catch (error) {
 			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
@@ -229,23 +211,7 @@ export const grpcApi: API = {
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
-			return {
-				mintAddress: response.mintAddress,
-				name: response.name,
-				symbol: response.symbol,
-				decimals: response.decimals,
-				description: response.description,
-				iconUrl: response.iconUrl,
-				tags: response.tags,
-				price: response.price,
-				dailyVolume: response.dailyVolume,
-				website: response.website,
-				twitter: response.twitter,
-				telegram: response.telegram,
-				coingeckoId: response.coingeckoId,
-				createdAt: response.createdAt ? new Date(Number(response.createdAt.seconds) * 1000) : undefined,
-				lastUpdated: response.lastUpdated ? new Date(Number(response.lastUpdated.seconds) * 1000) : undefined
-			};
+			return mapGrpcCoinToFrontendCoin(response);
 		} catch (error) {
 			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
@@ -326,23 +292,7 @@ export const grpcApi: API = {
 			grpcUtils.logResponse(serviceName, methodName, response);
 
 			return {
-				coins: response.coins.map(coin => ({
-					mintAddress: coin.mintAddress,
-					name: coin.name,
-					symbol: coin.symbol,
-					decimals: coin.decimals,
-					description: coin.description,
-					iconUrl: coin.iconUrl,
-					tags: coin.tags,
-					price: coin.price,
-					dailyVolume: coin.dailyVolume,
-					website: coin.website,
-					twitter: coin.twitter,
-					telegram: coin.telegram,
-					coingeckoId: coin.coingeckoId,
-					createdAt: coin.createdAt ? new Date(Number(coin.createdAt.seconds) * 1000) : undefined,
-					lastUpdated: coin.lastUpdated ? new Date(Number(coin.lastUpdated.seconds) * 1000) : undefined
-				}))
+				coins: response.coins.map(mapGrpcCoinToFrontendCoin)
 			};
 		} catch (error) {
 			return grpcUtils.handleGrpcError(error, serviceName, methodName);
@@ -364,55 +314,15 @@ export const grpcApi: API = {
 			}
 
 			return {
-				coin: {
-					mintAddress: response.coin.mintAddress,
-					name: response.coin.name,
-					symbol: response.coin.symbol,
-					decimals: response.coin.decimals,
-					description: response.coin.description,
-					iconUrl: response.coin.iconUrl,
-					tags: response.coin.tags,
-					price: response.coin.price,
-					dailyVolume: response.coin.dailyVolume,
-					website: response.coin.website,
-					twitter: response.coin.twitter,
-					telegram: response.coin.telegram,
-					coingeckoId: response.coin.coingeckoId,
-					createdAt: response.coin.createdAt ? new Date(Number(response.coin.createdAt.seconds) * 1000) : undefined,
-					lastUpdated: response.coin.lastUpdated ? new Date(Number(response.coin.lastUpdated.seconds) * 1000) : undefined
-				}
+				coin: mapGrpcCoinToFrontendCoin(response.coin)
 			};
 		} catch (error) {
 			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
 	},
 
-	async getTransferTransaction(params: {
-		toAddress: string;
-		coinMint: string;
-		amount: string;
-	}) {
-		const serviceName = 'TradeService';
-		const methodName = 'prepareTransfer';
-		try {
-			grpcUtils.logRequest(serviceName, methodName, params);
-
-			const response = await walletClient.prepareTransfer({
-				fromAddress: '',
-				toAddress: params.toAddress,
-				coinMint: params.coinMint,
-				amount: parseFloat(params.amount)
-			}, { headers: grpcUtils.getRequestHeaders() });
-
-			grpcUtils.logResponse(serviceName, methodName, response);
-
-			return {
-				unsignedTransaction: response.unsignedTransaction
-			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
-		}
-	},
+	// Redundant getTransferTransaction was removed.
+	// The functionality is covered by prepareCoinTransfer which correctly uses fromAddress.
 
 	async createWallet(): Promise<CreateWalletResponse> {
 		const serviceName = 'WalletService';

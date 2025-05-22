@@ -14,6 +14,7 @@ module.exports = {
 		'^@services/(.*)$': '<rootDir>/src/__mocks__/services/$1', // Matches @services/anything
 		'^@env$': '<rootDir>/src/__mocks__/env.ts', // Matches @env
 		'^@utils/(.*)$': '<rootDir>/src/utils/$1', // Matches @utils/anything
+		'^loglevel$': '<rootDir>/src/__mocks__/loglevel.ts', // Mock loglevel
 		// Mock font and image files
 		'\\.(ttf|png|jpg|jpeg|gif)$': '<rootDir>/src/__mocks__/fileMock.js', // Mock files
 		// Mock external packages
