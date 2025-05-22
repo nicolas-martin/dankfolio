@@ -47,7 +47,7 @@ const Profile = () => {
 		}
 	};
 
-	if (!wallet || tokens.length === 0) {
+	if (!wallet) {
 		return (
 			<SafeAreaView style={styles.safeArea}>
 				<View style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
@@ -129,18 +129,24 @@ const Profile = () => {
 								</Text>
 							</View>
 
-							{sortedTokens.map((token) => (
-								<View key={token.mintAddress}>
-									<CoinCard
-										coin={{
-											...token.coin,
-											value: token.value,
-											balance: token.amount
-										}}
-										onPress={() => handleTokenPress(token.coin, navigation.navigate)}
-									/>
-								</View>
-							))}
+							{sortedTokens.length === 0 ? (
+								<Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 24 }}>
+									No tokens found in this wallet
+								</Text>
+							) : (
+								sortedTokens.map((token) => (
+									<View key={token.mintAddress}>
+										<CoinCard
+											coin={{
+												...token.coin,
+												value: token.value,
+												balance: token.amount
+											}}
+											onPress={() => handleTokenPress(token.coin, navigation.navigate)}
+										/>
+									</View>
+								))
+							)}
 						</View>
 					</View>
 				</ScrollView>
