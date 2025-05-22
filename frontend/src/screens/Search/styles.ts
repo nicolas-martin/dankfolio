@@ -10,11 +10,24 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		flex: 1,
 		backgroundColor: theme.colors.background,
 	},
-	searchContainer: {
+	contentPadding: {
 		padding: 16,
+	},
+	headerRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 16,
+		gap: 12,
+	},
+	card: {
+		padding: 16,
+		borderRadius: 8,
+		marginBottom: 12,
 		backgroundColor: theme.colors.surfaceVariant,
-		borderBottomWidth: 1,
-		borderBottomColor: theme.colors.outlineVariant,
+	},
+	searchCard: {
+		marginBottom: 16,
+		backgroundColor: theme.colors.surface,
 	},
 	searchInput: {
 		height: 40,
@@ -23,11 +36,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingHorizontal: 12,
 		color: theme.colors.onSurface,
 	},
-	listContainer: {
+	flex1: {
 		flex: 1,
 	},
 	listContent: {
 		paddingHorizontal: 16,
+		paddingBottom: 16,
 	},
 	tokenItem: {
 		flexDirection: 'row',
@@ -112,6 +126,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontSize: 16,
 		color: theme.colors.onSurfaceVariant,
 		textAlign: 'center',
+		marginTop: 16,
 	},
 	filtersContainer: {
 		flexDirection: 'row',
