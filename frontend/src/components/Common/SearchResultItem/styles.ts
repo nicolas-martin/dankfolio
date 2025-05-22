@@ -8,8 +8,6 @@ export const createStyles = (theme: MD3Theme) =>
 			alignItems: 'center',
 			paddingVertical: 8,
 			paddingHorizontal: 16,
-			borderBottomWidth: 1,
-			borderBottomColor: theme.colors.outlineVariant,
 		},
 		tokenInfo: {
 			flex: 1,

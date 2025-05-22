@@ -1,12 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, TextInput, FlatList, SafeAreaView } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { View, TextInput, FlatList, SafeAreaView, ActivityIndicator } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
 import { SearchScreenProps, SearchState } from './types';
 import { performSearch, DEBOUNCE_DELAY, getEnrichedCoinData, handleCoinNavigation } from './scripts';
 import { Coin } from '@/types';
 import SearchResultItem from '@/components/Common/SearchResultItem';
 import { createStyles } from './styles';
 import { useToast } from '@/components/Common/Toast';
+import { SearchIcon } from '@components/Common/Icons';
 
 const initialState: SearchState = {
 	loading: false,
@@ -59,34 +60,69 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	};
 
 	const renderItem = ({ item }: { item: Coin }) => (
-		<SearchResultItem
-			coin={item}
-			onPress={(coin) => handleCoinNavigation(coin, navigation, toast)}
-			isEnriched={item.price !== undefined && item.dailyVolume !== undefined}
-		/>
+		<View style={styles.card}>
+			<SearchResultItem
+				coin={item}
+				onPress={(coin) => handleCoinNavigation(coin, navigation, toast)}
+				isEnriched={item.price !== undefined && item.dailyVolume !== undefined}
+			/>
+		</View>
 	);
+
+	const showEmpty = !state.loading && !state.error && state.results.length === 0 && state.filters.query;
+	const showError = !state.loading && !!state.error;
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
-			<View style={styles.container}>
-				<View style={styles.searchContainer}>
-					<TextInput
-						style={styles.searchInput}
-						placeholder="Search tokens..."
-						value={state.filters.query}
-						onChangeText={handleQueryChange}
-						autoCapitalize="none"
-						autoCorrect={false}
-						placeholderTextColor={theme.colors.onSurfaceVariant}
-					/>
+			<View style={[styles.container, { backgroundColor: theme.colors.background }]}> 
+				<View style={styles.contentPadding}>
+					{/* Header Row */}
+					<View style={styles.headerRow}>
+						<SearchIcon size={32} color={theme.colors.onSurface} />
+						<Text variant="headlineSmall" style={{ color: theme.colors.onSurface, marginLeft: 12 }}>
+							Search
+						</Text>
+					</View>
+					{/* Search Bar Card */}
+					<View style={[styles.card, styles.searchCard]}>
+						<TextInput
+							style={styles.searchInput}
+							placeholder="Search tokens..."
+							value={state.filters.query}
+							onChangeText={handleQueryChange}
+							autoCapitalize="none"
+							autoCorrect={false}
+							placeholderTextColor={theme.colors.onSurfaceVariant}
+						/>
+					</View>
 				</View>
-				<FlatList
-					data={state.results}
-					renderItem={renderItem}
-					keyExtractor={item => item.mintAddress}
-					style={styles.listContainer}
-					contentContainerStyle={styles.listContent}
-				/>
+				{/* Results List */}
+				<View style={styles.flex1}>
+					{state.loading && (
+						<View style={styles.loadingContainer}>
+							<ActivityIndicator size="large" color={theme.colors.primary} />
+						</View>
+					)}
+					{showError && (
+						<View style={styles.emptyContainer}>
+							<Text style={styles.emptyText}>Error: {state.error}</Text>
+						</View>
+					)}
+					{showEmpty && (
+						<View style={styles.emptyContainer}>
+							<SearchIcon size={48} color={theme.colors.onSurfaceVariant} />
+							<Text style={styles.emptyText}>No tokens found</Text>
+						</View>
+					)}
+					{!state.loading && !showError && !showEmpty && (
+						<FlatList
+							data={state.results}
+							renderItem={renderItem}
+							keyExtractor={item => item.mintAddress}
+							contentContainerStyle={styles.listContent}
+						/>
+					)}
+				</View>
 			</View>
 		</SafeAreaView>
 	);
