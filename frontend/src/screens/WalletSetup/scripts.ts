@@ -5,6 +5,8 @@ import { Buffer } from 'buffer'; // Import Buffer for hex conversion
 import { grpcApi } from '@/services/grpcApi'; // Import grpcApi
 import { usePortfolioStore } from '@store/portfolio';
 import bs58 from 'bs58';
+import { useState } from 'react';
+import { WalletSetupStep, WalletSetupState, WalletSetupScreenProps } from './types';
 
 // Branded type for Base58 private keys to ensure type safety
 type Base58PrivateKey = string & { readonly __brand: unique symbol };
@@ -238,4 +240,52 @@ export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 		console.error('❌ Error accessing storage:', error);
 		return null;
 	}
-}; 
+};
+
+// --- Dankfolio WalletSetup Business Logic ---
+export const WELCOME_TITLE = 'Welcome to the future of finance';
+export const WELCOME_DESC = 'Your gateway to the decentralized world. Manage your digital assets with ease and security.';
+export const CREATE_WALLET_TITLE = 'Create a new wallet';
+export const CREATE_WALLET_DESC = 'This will be your new wallet. You can use it to store, send, and receive digital assets.';
+export const IMPORT_WALLET_TITLE = 'Recovery phrase';
+export const IMPORT_WALLET_DESC = 'Enter your 12-word recovery phrase';
+export const TERMS_TEXT = 'By proceeding, you agree to our Terms of Service and Privacy Policy.';
+export const DEFAULT_SOL_AMOUNT = 0.000000001;
+
+export function useWalletSetupLogic(props: WalletSetupScreenProps) {
+	const [step, setStep] = useState<WalletSetupStep>('welcome');
+	const [recoveryPhrase, setRecoveryPhrase] = useState('');
+
+	const goToCreate = () => setStep('create');
+	const goToImport = () => setStep('import');
+	const goToWelcome = () => setStep('welcome');
+
+	const handleCreateWallet = () => {
+		props.onCreateWallet();
+	};
+
+	const handleImportWallet = () => {
+		props.onImportWallet();
+	};
+
+	const handleRecoveryPhraseChange = (value: string) => {
+		setRecoveryPhrase(value);
+	};
+
+	const isRecoveryPhraseValid = () => {
+		// Simple validation: 12 words, separated by spaces
+		return recoveryPhrase.trim().split(/\s+/).length === 12;
+	};
+
+	return {
+		step,
+		goToCreate,
+		goToImport,
+		goToWelcome,
+		handleCreateWallet,
+		handleImportWallet,
+		recoveryPhrase,
+		handleRecoveryPhraseChange,
+		isRecoveryPhraseValid,
+	};
+} 
