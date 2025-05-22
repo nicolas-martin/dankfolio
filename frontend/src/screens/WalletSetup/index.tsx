@@ -10,60 +10,51 @@ import { Buffer } from 'buffer';
 import bs58 from 'bs58';
 import { useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
+import {
+	Container,
+	Section,
+	Title,
+	Subtitle,
+	ButtonRow,
+	ActionButton,
+	ButtonText,
+	TermsText,
+	RecoveryInput,
+	IconPlaceholder,
+} from './styles';
+import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_TITLE, IMPORT_WALLET_DESC, TERMS_TEXT } from './scripts';
 
 const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
-const WalletSetup = ({ onWalletSetupComplete }: WalletSetupScreenProps) => {
+const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
-
-	const [mnemonic, setMnemonic] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
 	const { showToast } = useToast();
 	const { setWallet } = usePortfolioStore();
+	const {
+		step,
+		goToCreate,
+		goToImport,
+		goToWelcome,
+		handleCreateWallet,
+		handleImportWallet,
+		recoveryPhrase,
+		handleRecoveryPhraseChange,
+		isRecoveryPhraseValid,
+	} = useWalletSetupLogic(props);
 
 	const generateWallet = async () => {
-		setIsLoading(true);
 		try {
 			const keypair = await handleGenerateWallet();
 			if (keypair) {
 				showToast({ message: 'Wallet generated successfully!', type: 'success' });
-				onWalletSetupComplete(keypair);
+				props.onWalletSetupComplete(keypair);
 			} else {
 				showToast({ message: 'Failed to generate wallet. Please try again.', type: 'error' });
 			}
 		} catch (err: any) {
 			console.error("Generate Wallet Error:", err);
 			showToast({ message: err.message || 'Error generating wallet.', type: 'error' });
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	const importWallet = async () => {
-		if (!mnemonic.trim()) {
-			Alert.alert('Missing Mnemonic', 'Please enter your 12 or 24-word mnemonic phrase.');
-			return;
-		}
-		setIsLoading(true);
-		try {
-			const wordCount = mnemonic.trim().split(/\s+/).length;
-			if (wordCount !== 12 && wordCount !== 24) {
-				throw new Error('Mnemonic must be 12 or 24 words.');
-			}
-
-			const keypair = await handleImportWallet(mnemonic.trim());
-			if (keypair) {
-				showToast({ message: 'Wallet imported successfully!', type: 'success' });
-				onWalletSetupComplete(keypair);
-			} else {
-				showToast({ message: 'Failed to import wallet. Please try again.', type: 'error' });
-			}
-		} catch (err: any) {
-			console.error("Import Wallet Error:", err);
-			showToast({ message: err.message || 'Error importing wallet.', type: 'error' });
-		} finally {
-			setIsLoading(false);
 		}
 	};
 
@@ -86,7 +77,7 @@ const WalletSetup = ({ onWalletSetupComplete }: WalletSetupScreenProps) => {
 
 			console.log('✅ Created keypair from debug wallet');
 			await setWallet(keypair.publicKey.toBase58());
-			onWalletSetupComplete(keypair);
+			props.onWalletSetupComplete(keypair);
 		} catch (error: any) {
 			console.error('Load Debug Wallet Error:', error);
 			showToast({ message: `Error loading debug wallet: ${error.message}`, type: 'error' });
@@ -94,40 +85,59 @@ const WalletSetup = ({ onWalletSetupComplete }: WalletSetupScreenProps) => {
 	};
 
 	return (
-		<View style={styles.container}>
-			<Text style={styles.title}>Wallet Setup!</Text>
-
-			{isLoading && <ActivityIndicator size="large" style={{ marginBottom: 20 }} />}
-
-			<Button title="Generate New Wallet" onPress={generateWallet} disabled={isLoading} />
-
-			<Text style={styles.orText}>- OR -</Text>
-
-			<TextInput
-				style={styles.mnemonicInput}
-				placeholder="Enter your 12 or 24 word mnemonic phrase"
-				value={mnemonic}
-				onChangeText={setMnemonic}
-				editable={!isLoading}
-				multiline
-				numberOfLines={3}
-				autoCapitalize="none"
-				autoCorrect={false}
-			/>
-			<Button title="Import Wallet using Mnemonic" onPress={importWallet} disabled={isLoading} />
-
-			{IS_DEBUG_MODE && (
+		<Container>
+			{step === 'welcome' && (
 				<>
-					<Text style={[styles.orText, { marginTop: 30 }]}>- OR (DEBUG) -</Text>
-					<Button
-						title="Load Debug Wallet (TEST_PRIVATE_KEY)"
-						onPress={loadDebugWallet}
-						disabled={isLoading}
-						color="orange"
-					/>
+					<Section>
+						<Title>{WELCOME_TITLE}</Title>
+						<Subtitle>{WELCOME_DESC}</Subtitle>
+					</Section>
+					<ButtonRow>
+						<ActionButton onPress={goToCreate} bg="#F5C754">
+							<ButtonText>Create a new wallet</ButtonText>
+						</ActionButton>
+						<ActionButton onPress={goToImport} bg="#F2F0E8">
+							<ButtonText>Import a recovery phrase</ButtonText>
+						</ActionButton>
+					</ButtonRow>
+					<TermsText>{TERMS_TEXT}</TermsText>
 				</>
 			)}
-		</View>
+			{step === 'create' && (
+				<Section>
+					<IconPlaceholder />
+					<Title>{CREATE_WALLET_TITLE}</Title>
+					<Subtitle>{CREATE_WALLET_DESC}</Subtitle>
+					<ActionButton onPress={handleCreateWallet} bg="#F5C754" style={{ marginTop: 32 }}>
+						<ButtonText>Create a new wallet</ButtonText>
+					</ActionButton>
+				</Section>
+			)}
+			{step === 'import' && (
+				<Section>
+					<IconPlaceholder />
+					<Title>{IMPORT_WALLET_TITLE}</Title>
+					<Subtitle>{IMPORT_WALLET_DESC}</Subtitle>
+					<RecoveryInput
+						placeholder="Enter your 12-word phrase"
+						value={recoveryPhrase}
+						onChangeText={handleRecoveryPhraseChange}
+						multiline
+						numberOfLines={3}
+						autoCapitalize="none"
+						autoCorrect={false}
+					/>
+					<ActionButton
+						onPress={handleImportWallet}
+						bg="#F5C754"
+						disabled={!isRecoveryPhraseValid()}
+						style={{ marginTop: 16 }}
+					>
+						<ButtonText>Next</ButtonText>
+					</ActionButton>
+				</Section>
+			)}
+		</Container>
 	);
 };
 
