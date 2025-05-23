@@ -6,9 +6,15 @@ export interface WalletSetupScreenProps {
 	onImportWallet: () => void;
 }
 
-export type WalletSetupStep = 'welcome' | 'create' | 'import';
+export type WalletSetupStep = 'welcome' | 'create' | 'import' | 'creating';
 
 export interface WalletSetupState {
 	step: WalletSetupStep;
 	recoveryPhrase: string;
+}
+
+export interface WalletInfo {
+	publicKey: string;
+	mnemonic: string;
+	isLoading: boolean;
 } 
