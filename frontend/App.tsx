@@ -134,7 +134,7 @@ const App: React.FC = () => {
 		} else {
 			// This case handles when the wallet is cleared from the store
 			logger.info("Wallet address cleared from store, clearing Sentry user context.");
-			Sentry.configureScope(scope => scope.setUser(null));
+			Sentry.withScope(scope => scope.setUser(null));
 		}
 	}, [wallet?.address]);
 
