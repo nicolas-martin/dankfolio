@@ -126,12 +126,11 @@ const App: React.FC = () => {
 					<ToastProvider>
 						<View style={styles.container}>
 							<StatusBar style="auto" />
-							<Button onPress={() => { Sentry.captureException(new Error('First error')) }}>Try!</Button>
 							{needsWalletSetup ? (
-								<WalletSetupScreen 
+								<WalletSetupScreen
 									onWalletSetupComplete={handleWalletSetupComplete}
-									onCreateWallet={() => {}}
-									onImportWallet={() => {}}
+									onCreateWallet={() => { }}
+									onImportWallet={() => { }}
 								/>
 							) : (
 								<Navigation />
