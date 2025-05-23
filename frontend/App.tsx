@@ -17,6 +17,7 @@ import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
+import Constants from 'expo-constants';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -88,6 +89,14 @@ const App: React.FC = () => {
 	};
 
 	useEffect(() => {
+		// This effect runs once on app mount
+		logger.log('App launched'); // Using logger.log as per previous convention for general app info
+		Sentry.setContext('appStart', { 
+			version: Constants.expoConfig?.version, 
+			build: Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode?.toString(), // Handle Android build number
+			timestamp: new Date().toISOString() 
+		});
+
 		async function prepare() {
 			logger.breadcrumb({ message: 'App: Preparing - Checking wallet storage', category: 'app_lifecycle' });
 			try {
@@ -96,6 +105,7 @@ const App: React.FC = () => {
 				if (publicKey) {
 					logger.info("Existing wallet found, setting in store.");
 					logger.breadcrumb({ message: 'App: Existing wallet found', category: 'app_lifecycle' });
+					Sentry.setUser({ id: publicKey }); // Set user context on initial load
 					await setWallet(publicKey);
 					setNeedsWalletSetup(false);
 				} else {
@@ -115,6 +125,18 @@ const App: React.FC = () => {
 
 		prepare();
 	}, [setWallet]);
+
+	// Effect to update Sentry user context when wallet address changes
+	useEffect(() => {
+		if (wallet?.address) {
+			logger.info("Wallet address updated in store, setting Sentry user context.", { walletAddress: wallet.address });
+			Sentry.setUser({ id: wallet.address });
+		} else {
+			// This case handles when the wallet is cleared from the store
+			logger.info("Wallet address cleared from store, clearing Sentry user context.");
+			Sentry.configureScope(scope => scope.setUser(null));
+		}
+	}, [wallet?.address]);
 
 	const onLayoutRootView = useCallback(async () => {
 		if (appIsReady) {
