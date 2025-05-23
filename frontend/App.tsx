@@ -4,7 +4,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
-import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { PaperProvider, MD3LightTheme, Button } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { configureReanimatedLogger } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -15,6 +15,23 @@ import { usePortfolioStore } from '@store/portfolio';
 import { retrieveWalletFromStorage } from '@screens/WalletSetup/scripts';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
+
+	// Adds more context data to events (IP address, cookies, user, etc.)
+	// For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+	sendDefaultPii: true,
+
+	// Configure Session Replay
+	replaysSessionSampleRate: 0.1,
+	replaysOnErrorSampleRate: 1,
+	integrations: [Sentry.mobileReplayIntegration()],
+
+	// uncomment the line below to enable Spotlight (https://spotlightjs.com)
+	// spotlight: __DEV__,
+});
 
 // Disable Reanimated strict mode warnings
 configureReanimatedLogger({
@@ -109,8 +126,13 @@ const App: React.FC = () => {
 					<ToastProvider>
 						<View style={styles.container}>
 							<StatusBar style="auto" />
+							<Button onPress={() => { Sentry.captureException(new Error('First error')) }}>Try!</Button>
 							{needsWalletSetup ? (
-								<WalletSetupScreen onWalletSetupComplete={handleWalletSetupComplete} />
+								<WalletSetupScreen 
+									onWalletSetupComplete={handleWalletSetupComplete}
+									onCreateWallet={() => {}}
+									onImportWallet={() => {}}
+								/>
 							) : (
 								<Navigation />
 							)}
@@ -122,4 +144,4 @@ const App: React.FC = () => {
 	);
 };
 
-export default App;
+export default Sentry.wrap(App);
