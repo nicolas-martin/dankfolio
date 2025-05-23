@@ -1,24 +1,73 @@
-import log from 'loglevel';
-import { DEBUG_MODE } from '@env'; // Assuming DEBUG_MODE is 'true' or 'false' string
+import * as Sentry from '@sentry/react-native';
+import type { SeverityLevel } from '@sentry/react-native';
 
-// Default to WARN if DEBUG_MODE is not set or is not 'true'
-let logLevel: log.LogLevelDesc = log.levels.WARN;
+type LogLevel = 'log' | 'info' | 'warn' | 'error';
 
-if (DEBUG_MODE === 'true') {
-	logLevel = log.levels.DEBUG;
+const levelMap: Record<LogLevel, SeverityLevel> = {
+	log: 'info',
+	info: 'info',
+	warn: 'warning',
+	error: 'error',
+};
+
+function logToConsole(level: LogLevel, ...args: any[]) {
+	if (__DEV__) {
+		// eslint-disable-next-line no-console
+		console[level](...args);
+	}
 }
 
-log.setLevel(logLevel);
+function captureSentry(level: LogLevel, args: any[]) {
+	const msg = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
 
-// You can add more configurations here, like custom formatters if needed
-// For example, to prefix logs with the level:
-// const originalFactory = log.methodFactory;
-// log.methodFactory = (methodName, logLevel, loggerName) => {
-//   const rawMethod = originalFactory(methodName, logLevel, loggerName);
-//   return (message) => {
-//     rawMethod(`[${methodName.toUpperCase()}] ${message}`);
-//   };
-// };
-// log.setLevel(log.getLevel()); // Apply the changes
+	if (level === 'error') {
+		Sentry.captureMessage(msg, 'error');
+	} else {
+		Sentry.addBreadcrumb({
+			category: 'log',
+			level: levelMap[level],
+			message: msg,
+		});
+	}
+}
 
-export default log;
+export const logger = {
+	log: (...args: any[]) => {
+		logToConsole('log', ...args);
+		if (!__DEV__) captureSentry('log', args);
+	},
+
+	info: (...args: any[]) => {
+		logToConsole('info', ...args);
+		if (!__DEV__) captureSentry('info', args);
+	},
+
+	warn: (...args: any[]) => {
+		logToConsole('warn', ...args);
+		if (!__DEV__) captureSentry('warn', args);
+	},
+
+	error: (...args: any[]) => {
+		logToConsole('error', ...args);
+		if (!__DEV__) captureSentry('error', args);
+	},
+
+	exception: (error: unknown, context?: Record<string, any>) => {
+		if (__DEV__) {
+			console.error(error);
+			if (context) console.info('context:', context);
+		}
+
+		if (!__DEV__) {
+			if (context) Sentry.setContext('exception-context', context);
+			Sentry.captureException(error);
+		}
+	},
+
+	breadcrumb: (message: string, category = 'app', level: LogLevel = 'info') => {
+		if (!__DEV__) {
+			Sentry.addBreadcrumb({ message, category, level: levelMap[level] });
+		}
+	},
+};
+
