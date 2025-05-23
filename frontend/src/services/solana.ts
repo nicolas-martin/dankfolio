@@ -1,14 +1,18 @@
 import { Keypair, VersionedTransaction, PublicKey, Transaction, Connection } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { Wallet, Base58PrivateKey } from '@/types';
+import { RawWalletData, Wallet, Base58PrivateKey } from '@/types';
 import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
 import { grpcApi } from '@/services/grpcApi';
+import log from '@/utils/logger';
+import * as Keychain from 'react-native-keychain';
 import { usePortfolioStore } from '@/store/portfolio';
 import 'react-native-get-random-values';
 import { Buffer } from 'buffer';
 
 // Ensure Buffer is available globally
 global.Buffer = Buffer;
+
+const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
 
 if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
 	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
@@ -25,13 +29,13 @@ export const getKeypairFromPrivateKey = (privateKey: Base58PrivateKey): Keypair 
 			throw new Error(`Invalid private key length: ${secretKey.length} bytes. Expected 64 bytes.`);
 		}
 		const keypair = Keypair.fromSecretKey(secretKey);
-		console.log('🔐 Created keypair from Base58 private key:', {
-			publicKey: keypair.publicKey.toString(),
-			secretKeyLength: keypair.secretKey.length
-		});
+		// console.log('🔐 Created keypair from Base58 private key:', { // Sensitive data removed
+		// 	publicKey: keypair.publicKey.toString(),
+		// 	secretKeyLength: keypair.secretKey.length
+		// });
 		return keypair;
 	} catch (error) {
-		console.error('❌ Error creating keypair:', error);
+		// console.error('❌ Error creating keypair:', error); // Sensitive data removed
 		throw error;
 	}
 };
@@ -43,20 +47,20 @@ export const prepareSwapRequest = async(
 	slippage: number
 ): Promise<string> => {
 	try{
-		const wallet = usePortfolioStore.getState().wallet;
-		if (!wallet) {
-			throw new Error('No wallet found in store');
+		const walletState = usePortfolioStore.getState().wallet;
+		if (!walletState || !walletState.address) {
+			throw new Error('No wallet address found in store');
 		}
+		const walletAddress = walletState.address;
 
-		console.log('🔐 Building swap transaction with:', {
+		log.info('🔐 Building swap transaction with:', {
 			fromCoinId,
 			toCoinId,
 			amount,
 			slippage,
-			walletType: typeof wallet,
-			walletKeys: Object.keys(wallet),
-			privateKeyLength: wallet.privateKey?.length,
-			addressLength: wallet.address?.length
+			// walletType: typeof walletState, // Should be 'object' or 'null'
+			// walletKeys: walletState ? Object.keys(walletState) : [], // Should be ['address'] or []
+			addressLength: walletAddress?.length
 		});
 
 		// Prepare the swap transaction using our gRPC API
@@ -65,8 +69,8 @@ export const prepareSwapRequest = async(
 			toCoinId,
 			amount: amount.toString(),
 			slippageBps: (slippage * 100).toString(),
-			userPublicKey: wallet.address,
-			fromAddress: wallet.address
+			userPublicKey: walletAddress,
+			fromAddress: walletAddress
 		};
 		const prepareResponse = await grpcApi.prepareSwap(prepareSwapRequest);
 
@@ -76,42 +80,64 @@ export const prepareSwapRequest = async(
 		return prepareResponse.unsignedTransaction;
 	}
 	catch (error) {
-		console.error('❌ Error in prepareSwapRequest:', error);
+		log.error('❌ Error in prepareSwapRequest:', error);
 		throw error;
 	}
 }
 
 export const signSwapTransaction = async (unsignedTransaction:string): Promise<string> => {
 	try {
-		const wallet = usePortfolioStore.getState().wallet;
-		if (!wallet) {
-			throw new Error('No wallet found in store');
+		const walletState = usePortfolioStore.getState().wallet;
+		if (!walletState || !walletState.address) {
+			throw new Error('No wallet address found in store for signing');
+		}
+		const walletAddress = walletState.address;
+
+		const credentials = await Keychain.getGenericPassword({ service: KEYCHAIN_SERVICE });
+		if (!credentials) {
+			throw new Error('No credentials found in keychain for signing');
 		}
 
-		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
-		console.log('🔑 Generated keypair:', {
-			publicKey: keypair.publicKey.toString(),
-			addressMatch: keypair.publicKey.toString() === wallet.address
-		});
+		let privateKey: Base58PrivateKey;
+		try {
+			const parsedCredentials = JSON.parse(credentials.password) as Partial<RawWalletData>;
+			if (!parsedCredentials.privateKey) {
+				throw new Error('Private key not found in stored credentials');
+			}
+			privateKey = parsedCredentials.privateKey as Base58PrivateKey;
+		} catch (parseError) {
+			log.error('❌ Error parsing credentials from keychain:', parseError);
+			throw new Error('Invalid credentials format in keychain');
+		}
+
+		const keypair = getKeypairFromPrivateKey(privateKey);
+		// console.log('🔑 Generated keypair:', { // Sensitive data removed
+		// 	publicKey: keypair.publicKey.toString(),
+		// 	addressMatch: keypair.publicKey.toString() === walletAddress
+		// });
+
+		if (keypair.publicKey.toString() !== walletAddress) {
+			throw new Error('Keychain private key does not match wallet address in store.');
+		}
 
 		// Decode and deserialize the transaction
-		console.log('📥 Decoding transaction...');
+		log.debug('📥 Decoding transaction...');
 		const transactionBuf = Buffer.from(unsignedTransaction, 'base64');
-		console.log('📦 Transaction buffer length:', transactionBuf.length);
+		log.debug('📦 Transaction buffer length:', transactionBuf.length);
 
 		// Sign the transaction
-		console.log('✍️ Signing transaction...');
+		log.debug('✍️ Signing transaction...');
 		const transaction = VersionedTransaction.deserialize(transactionBuf);
 		transaction.sign([keypair]);
 
 		// Serialize the signed transaction
 		const serializedTransaction = transaction.serialize();
 		const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
-		console.log('✅ Transaction signed and serialized');
+		log.info('✅ Transaction signed and serialized');
 
 		return transactionBase64;
 	} catch (error) {
-		console.error('❌ Error in buildAndSignSwapTransaction:', error);
+		log.error('❌ Error in buildAndSignSwapTransaction:', error);
 		throw error;
 	}
 };
@@ -123,21 +149,22 @@ export const prepareCoinTransfer = async (
 	): Promise<string> => {
 
 	try {
-		const wallet = usePortfolioStore.getState().wallet;
-		if (!wallet) {
-			throw new Error('No wallet found in store');
+		const walletState = usePortfolioStore.getState().wallet;
+		if (!walletState || !walletState.address) {
+			throw new Error('No wallet address found in store');
 		}
+		const walletAddress = walletState.address;
 
-		console.log('🔐 Building transfer transaction:', {
+		log.info('🔐 Building transfer transaction:', {
 			toAddress,
 			coinMint: coinMint || 'SOL',
 			amount,
-			fromAddress: wallet.address
+			fromAddress: walletAddress
 		});
 
 		// Prepare the transfer transaction using our gRPC API
 		const prepareResponse = await grpcApi.prepareCoinTransfer({
-			fromAddress: wallet.address,
+			fromAddress: walletAddress,
 			toAddress,
 			coinMint,
 			amount
@@ -149,7 +176,7 @@ export const prepareCoinTransfer = async (
 		return prepareResponse.unsignedTransaction;
 	}
 	catch (error) {
-		console.error('❌ Error in prepareCoinTransfer:', error);
+		log.error('❌ Error in prepareCoinTransfer:', error);
 		throw error;
 	};
 };
@@ -158,39 +185,61 @@ export const signTransferTransaction = async (
 	unsignedTransaction: string,
 ): Promise<string> => {
 	try{
-		const wallet = usePortfolioStore.getState().wallet;
-		if (!wallet) {
-			throw new Error('No wallet found in store');
+		const walletState = usePortfolioStore.getState().wallet;
+		if (!walletState || !walletState.address) {
+			throw new Error('No wallet address found in store for signing');
 		}
-		const keypair = getKeypairFromPrivateKey(wallet.privateKey);
-		console.log('🔑 Using keypair with public key:', keypair.publicKey.toString());
+		const walletAddress = walletState.address;
 
+		const credentials = await Keychain.getGenericPassword({ service: KEYCHAIN_SERVICE });
+		if (!credentials) {
+			throw new Error('No credentials found in keychain for signing');
+		}
+
+		let privateKey: Base58PrivateKey;
+		try {
+			const parsedCredentials = JSON.parse(credentials.password) as Partial<RawWalletData>;
+			if (!parsedCredentials.privateKey) {
+				throw new Error('Private key not found in stored credentials');
+			}
+			privateKey = parsedCredentials.privateKey as Base58PrivateKey;
+		} catch (parseError) {
+			log.error('❌ Error parsing credentials from keychain:', parseError);
+			throw new Error('Invalid credentials format in keychain');
+		}
+
+		const keypair = getKeypairFromPrivateKey(privateKey);
+		// console.log('🔑 Using keypair with public key:', keypair.publicKey.toString()); // Sensitive data removed
+
+		if (keypair.publicKey.toString() !== walletAddress) {
+			throw new Error('Keychain private key does not match wallet address in store.');
+		}
 
 		// Decode and deserialize the transaction
-		console.log('📥 Decoding transaction...');
+		log.debug('📥 Decoding transaction...');
 		const transactionBuf = Buffer.from(unsignedTransaction, 'base64');
-		console.log('📦 Transaction buffer length:', transactionBuf.length);
+		log.debug('📦 Transaction buffer length:', transactionBuf.length);
 
 		// Sign the transaction
-		console.log('✍️ Signing transaction...');
+		log.debug('✍️ Signing transaction...');
 		const transaction = Transaction.from(transactionBuf);
 
 		// Always get a fresh blockhash to ensure transaction is recent
 		const { blockhash } = await connection.getLatestBlockhash('confirmed');
-		console.log('🔑 Setting fresh blockhash:', blockhash);
+		log.debug('🔑 Setting fresh blockhash:', blockhash);
 		transaction.recentBlockhash = blockhash;
 
 		// Sign with our keypair
 		transaction.sign(keypair);
 
 		// Serialize the signed transaction
-		console.log('📦 Serializing signed transaction...');
+		log.debug('📦 Serializing signed transaction...');
 		const serializedTransaction = transaction.serialize().toString('base64');
-		console.log('✅ Transaction signed and serialized');
+		log.info('✅ Transaction signed and serialized');
 
 		return serializedTransaction;
 	} catch (error) {
-		console.error('Failed to build and sign transaction:', error);
+		log.error('Failed to build and sign transaction:', error);
 		throw error;
 	}
 };

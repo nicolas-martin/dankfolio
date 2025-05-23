@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Coin } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
+import log from '@/utils/logger';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 
 interface CoinState {
@@ -14,12 +15,6 @@ interface CoinState {
 	setCoin: (coin: Coin) => void;
 	fetchAvailableCoins: (trendingOnly?: boolean) => Promise<void>;
 	getCoinByID: (mintAddress: string, forceRefresh?: boolean) => Promise<Coin | null>;
-}
-
-// Helper to log the current coin store state for debugging
-function logCoinStoreState(context: string) {
-	const state = useCoinStore.getState();
-	console.log(`🪙 [CoinStore] ${context} | availableCoins: ${state.availableCoins.length}, coinMap keys: [${Object.keys(state.coinMap).join(', ')}]`);
 }
 
 export const useCoinStore = create<CoinState>((set, get) => ({
@@ -41,7 +36,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	})),
 
 	fetchAvailableCoins: async (trendingOnly?: boolean) => {
-		logCoinStoreState('Before fetchAvailableCoins');
+		log.debug(`🪙 [CoinStore] Before fetchAvailableCoins | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 		try {
 			set({ isLoading: true, error: null });
 			const coins = await grpcApi.getAvailableCoins(trendingOnly);
@@ -49,7 +44,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			if (!trendingOnly) {
 				const solCoin = coins.find((c: Coin) => c.mintAddress === SOLANA_ADDRESS);
 				if (!solCoin) {
-					console.log('🔍 SOL not found in available coins, fetching separately...');
+					log.info('🔍 SOL not found in available coins, fetching separately...');
 					const solData = await get().getCoinByID(SOLANA_ADDRESS, true);
 					if (solData) {
 						coins.unshift(solData);
@@ -64,55 +59,55 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			}, {} as Record<string, Coin>);
 			set({ coinMap });
 
-			console.log(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map((c: Coin) => ({ symbol: c.symbol, mintAddress: c.mintAddress })));
+			log.info(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map((c: Coin) => ({ symbol: c.symbol, mintAddress: c.mintAddress })));
 
 			// Update availableCoins regardless of trendingOnly flag
 			set({ availableCoins: coins, isLoading: false });
 
-			console.log('🗺️ Updated coin store:', {
+			log.debug('🗺️ Updated coin store:', {
 				availableCoinsCount: get().availableCoins.length,
 				coinMapSize: Object.keys(get().coinMap).length,
 				hasSol: !!get().coinMap[SOLANA_ADDRESS]
 			});
-			logCoinStoreState('After fetchAvailableCoins');
+			log.debug(`🪙 [CoinStore] After fetchAvailableCoins | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 		} catch (error) {
 			set({ error: (error as Error).message, isLoading: false });
-			console.error(`❌ Error fetching ${trendingOnly ? 'trending' : 'all'} available coins:`, error);
-			logCoinStoreState('Error in fetchAvailableCoins');
+			log.error(`❌ Error fetching ${trendingOnly ? 'trending' : 'all'} available coins:`, error);
+			log.debug(`🪙 [CoinStore] Error in fetchAvailableCoins | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 		}
 	},
 
 	getCoinByID: async (mintAddress: string, forceRefresh: boolean = false) => {
-		console.log(`🔄 [CoinStore] getCoinByID called for ${mintAddress} (forceRefresh: ${forceRefresh})`);
-		logCoinStoreState(`Before getCoinByID(${mintAddress}, forceRefresh=${forceRefresh})`);
+		log.info(`🔄 [CoinStore] getCoinByID called for ${mintAddress} (forceRefresh: ${forceRefresh})`);
+		log.debug(`🪙 [CoinStore] Before getCoinByID(${mintAddress}, forceRefresh=${forceRefresh}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 		const state = get();
 		if (!forceRefresh && state.coinMap[mintAddress]) {
-			console.log("💰 [CoinStore] Found coin in state (cache hit):", {
+			log.debug("💰 [CoinStore] Found coin in state (cache hit):", {
 				mintAddress,
 				symbol: state.coinMap[mintAddress].symbol,
 				price: state.coinMap[mintAddress].price,
 				decimals: state.coinMap[mintAddress].decimals
 			});
-			logCoinStoreState(`Cache hit getCoinByID(${mintAddress})`);
+			log.debug(`🪙 [CoinStore] Cache hit getCoinByID(${mintAddress}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 			return state.coinMap[mintAddress];
 		}
 
-		console.log(`⏳ [CoinStore] Fetching coin ${mintAddress} from API...`);
+		log.info(`⏳ [CoinStore] Fetching coin ${mintAddress} from API...`);
 		try {
 			const coin = await grpcApi.getCoinByID(mintAddress);
-			console.log("💰 [CoinStore] Fetched coin from API:", {
+			log.debug("💰 [CoinStore] Fetched coin from API:", {
 				mintAddress,
 				symbol: coin.symbol,
 				price: coin.price,
 				decimals: coin.decimals
 			});
 			state.setCoin(coin);
-			logCoinStoreState(`After API fetch getCoinByID(${mintAddress})`);
+			log.debug(`🪙 [CoinStore] After API fetch getCoinByID(${mintAddress}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 			return coin;
 		} catch (error) {
-			console.error(`❌ [CoinStore] Error fetching coin ${mintAddress}:`, error);
+			log.error(`❌ [CoinStore] Error fetching coin ${mintAddress}:`, error);
 			set({ error: (error as Error).message });
-			logCoinStoreState(`Error in getCoinByID(${mintAddress})`);
+			log.debug(`🪙 [CoinStore] Error in getCoinByID(${mintAddress}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 			return null;
 		}
 	}

@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react-native';
 import { usePortfolioStore } from './portfolio';
-import { Wallet, Coin, Base58PrivateKey } from '@/types';
+import { RawWalletData, Wallet, Coin, Base58PrivateKey } from '@/types'; // Import RawWalletData
 import { grpcApi } from '@/services/grpcApi';
 import * as coinStoreModule from './coins';
 import * as Keychain from 'react-native-keychain';
@@ -30,7 +30,7 @@ const mockSetCoin = jest.fn((coin: Coin) => {
 	coinMap[coin.mintAddress] = coin;
 });
 
-const mockWalletData: Wallet = {
+const mockWalletData: RawWalletData = { // Changed type to RawWalletData
 	address: 'wallet123',
 	privateKey: 'privKey' as Base58PrivateKey,
 	mnemonic: 'mnemonic'
@@ -97,7 +97,7 @@ describe('Zustand Portfolio Store', () => {
 			await act(async () => {
 				await usePortfolioStore.getState().setWallet(mockWalletData.address);
 			});
-			expect(usePortfolioStore.getState().wallet).toEqual(mockWalletData);
+			expect(usePortfolioStore.getState().wallet).toEqual({ address: mockWalletData.address }); // Modified assertion
 		});
 	});
 
