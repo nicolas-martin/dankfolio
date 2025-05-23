@@ -4,7 +4,7 @@ module.exports = {
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 	setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
 	transformIgnorePatterns: [
-		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia|react-native-vector-icons|uuid|expo-updates|expo-modules-core)/)',
+		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia|react-native-vector-icons|uuid|expo-updates|expo-modules-core|@sentry)/)',
 	],
 	moduleNameMapper: {
 		'^@/(.*)$': '<rootDir>/src/$1', // Matches @/anything

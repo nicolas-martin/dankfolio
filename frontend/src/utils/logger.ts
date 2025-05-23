@@ -1,9 +1,10 @@
 import * as Sentry from '@sentry/react-native';
 import type { SeverityLevel } from '@sentry/react-native';
 
-type LogLevel = 'log' | 'info' | 'warn' | 'error';
+type LogLevel = 'debug' | 'log' | 'info' | 'warn' | 'error';
 
 const levelMap: Record<LogLevel, SeverityLevel> = {
+	debug: 'debug',
 	log: 'info',
 	info: 'info',
 	warn: 'warning',
@@ -13,7 +14,13 @@ const levelMap: Record<LogLevel, SeverityLevel> = {
 function logToConsole(level: LogLevel, ...args: any[]) {
 	if (__DEV__) {
 		// eslint-disable-next-line no-console
-		console[level](...args);
+		if (level === 'debug') {
+			// Use console.log for debug if console.debug is not available
+			const debugFn = console.debug || console.log;
+			debugFn(...args);
+		} else {
+			console[level](...args);
+		}
 	}
 }
 
@@ -32,6 +39,11 @@ function captureSentry(level: LogLevel, args: any[]) {
 }
 
 export const logger = {
+	debug: (...args: any[]) => {
+		logToConsole('debug', ...args);
+		if (!__DEV__) captureSentry('debug', args);
+	},
+
 	log: (...args: any[]) => {
 		logToConsole('log', ...args);
 		if (!__DEV__) captureSentry('log', args);
