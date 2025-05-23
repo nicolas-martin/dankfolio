@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/fatih/color"
@@ -32,10 +32,11 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 				debugModeColor = color.New(color.FgYellow, color.Bold)
 			}
 
-			log.Printf("📤 gRPC Request [%s] %s: %s",
-				req.Peer().Addr,
-				debugModeColor.Sprintf("%s", req.Spec().Procedure),
-				reqDetails)
+			slog.Info("📤 gRPC Request",
+				slog.String("peer", req.Peer().Addr),
+				slog.String("procedure", debugModeColor.Sprintf("%s", req.Spec().Procedure)),
+				slog.String("request", reqDetails),
+			)
 
 			// Call the handler
 			res, err := next(ctx, req)
@@ -50,7 +51,7 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 				var errDetails string
 				if ok {
 					// Create a map that includes both error details and message
-					errMap := map[string]interface{}{
+					errMap := map[string]any{
 						"code":    connectErr.Code(),
 						"message": connectErr.Message(),
 					}
@@ -72,11 +73,12 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 					errDetails = fmt.Sprintf(`{"message": "%s"}`, err.Error())
 				}
 
-				log.Printf("❌ gRPC Error [%s] %s (took %v): %s",
-					req.Peer().Addr,
-					debugModeColor.Sprintf("%s", req.Spec().Procedure),
-					duration,
-					errDetails)
+				slog.Error("❌ gRPC Error",
+					slog.String("peer", req.Peer().Addr),
+					slog.String("procedure", debugModeColor.Sprintf("%s", req.Spec().Procedure)),
+					slog.Duration("duration", duration),
+					slog.String("error", errDetails),
+				)
 				return nil, err
 			}
 
@@ -117,11 +119,11 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 				}
 			}
 
-			log.Printf("📥 gRPC Response [%s] %s (took %v): %s",
-				req.Peer().Addr,
-				debugModeColor.Sprintf("%s", req.Spec().Procedure),
-				duration,
-				resDetails,
+			slog.Info("📥 gRPC Response",
+				slog.String("peer", req.Peer().Addr),
+				slog.String("procedure", debugModeColor.Sprintf("%s", req.Spec().Procedure)),
+				slog.Duration("duration", duration),
+				slog.String("response", resDetails),
 			)
 
 			return res, nil
@@ -131,7 +133,7 @@ func GRPCLoggerInterceptor() connect.UnaryInterceptorFunc {
 }
 
 // Helper to convert structs to JSON
-func structToJSON(v interface{}) (string, error) {
+func structToJSON(v any) (string, error) {
 	// For sensitive data, you might want to redact certain fields
 	bytes, err := json.Marshal(v)
 	if err != nil {

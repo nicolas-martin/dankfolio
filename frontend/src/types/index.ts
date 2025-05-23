@@ -25,11 +25,15 @@ export interface Coin {
 /** Base58 encoded private key string with type safety */
 export type Base58PrivateKey = string & { readonly __brand: unique symbol };
 
-export interface Wallet {
+export interface RawWalletData {
 	address: string;
 	privateKey: Base58PrivateKey;
 	mnemonic: string;
 	keypair?: Keypair;
+}
+
+export interface Wallet {
+	address: string;
 }
 
 export type RootStackParamList = {

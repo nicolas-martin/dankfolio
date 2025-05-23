@@ -3,12 +3,13 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog" // Import slog
 	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger" // Alias gorm's logger
 
 	"github.com/lib/pq"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
@@ -29,13 +30,17 @@ type Store struct {
 var _ db.Store = (*Store)(nil) // Compile-time check for interface implementation
 
 // NewStore creates a new PostgreSQL store instance.
-func NewStore(dsn string, enableSQLLogging bool) (*Store, error) {
+// enableSQLLogging parameter is removed, appLogLevel is used instead.
+func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level) (*Store, error) {
 	gormConfig := &gorm.Config{}
-	if enableSQLLogging {
-		gormConfig.Logger = logger.Default.LogMode(logger.Info)
+
+	var gormLogLevel gormlogger.LogLevel
+	if appLogLevel <= slog.LevelDebug {
+		gormLogLevel = gormlogger.Info // Show all SQL logs for debug
 	} else {
-		gormConfig.Logger = logger.Default.LogMode(logger.Silent)
+		gormLogLevel = gormlogger.Warn // Show only slow queries and errors for info/warn
 	}
+	gormConfig.Logger = gormlogger.Default.LogMode(gormLogLevel)
 
 	dbConn, err := gorm.Open(postgres.Open(dsn), gormConfig)
 	if err != nil {
@@ -55,8 +60,10 @@ func NewStore(dsn string, enableSQLLogging bool) (*Store, error) {
 
 	// NOTE: Auto-migrate schema (useful for dev, but we primarily use Goose)
 	// Comment out if only Goose migrations are preferred.
-	if err := dbConn.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}); err != nil {
-		return nil, fmt.Errorf("failed to auto-migrate schema: %w", err)
+	if enableAutoMigrate { // Control auto-migration
+		if err := dbConn.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}); err != nil {
+			return nil, fmt.Errorf("failed to auto-migrate schema: %w", err)
+		}
 	}
 
 	store := &Store{

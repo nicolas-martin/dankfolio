@@ -1,7 +1,11 @@
 package main
 
 import (
-	"log"
+	"context"
+	"fmt"
+	"io"
+	"log"      // Import standard log for pre-slog setup errors
+	"log/slog" // Import slog
 	"net/http"
 	"os"
 	"os/signal"
@@ -9,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
@@ -18,6 +23,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
+	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
@@ -37,6 +43,69 @@ type Config struct {
 	Env               string
 }
 
+// ColorHandler implements slog.Handler interface with colored output
+type ColorHandler struct {
+	level     slog.Level
+	outStream io.Writer
+	errStream io.Writer
+}
+
+// NewColorHandler creates a new ColorHandler with specified log level and output streams
+func NewColorHandler(level slog.Level, out, err io.Writer) *ColorHandler {
+	return &ColorHandler{
+		level:     level,
+		outStream: out,
+		errStream: err,
+	}
+}
+
+func (h *ColorHandler) Enabled(_ context.Context, level slog.Level) bool {
+	return level >= h.level
+}
+
+func (h *ColorHandler) Handle(_ context.Context, r slog.Record) error {
+	timestamp := r.Time.Format("15:04:05")
+
+	// Get colored level text
+	var levelText string
+	switch r.Level {
+	case slog.LevelDebug:
+		levelText = color.New(color.FgCyan).Sprint("DEBUG")
+	case slog.LevelInfo:
+		levelText = color.New(color.FgGreen).Sprint("INFO")
+	case slog.LevelWarn:
+		levelText = color.New(color.FgYellow).Sprint("WARN")
+	case slog.LevelError:
+		levelText = color.New(color.FgRed).Sprint("ERROR")
+	default:
+		levelText = r.Level.String()
+	}
+
+	// Format log message
+	msg := fmt.Sprintf("[%s] %-5s %s\n", timestamp, levelText, r.Message)
+
+	// Decide output stream based on severity
+	var out io.Writer
+	if r.Level >= slog.LevelError {
+		out = h.errStream
+	} else {
+		out = h.outStream
+	}
+
+	_, err := fmt.Fprint(out, msg)
+	return err
+}
+
+func (h *ColorHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	// For simplicity, return same handler (ignoring attrs)
+	return h
+}
+
+func (h *ColorHandler) WithGroup(name string) slog.Handler {
+	// For simplicity, return same handler (ignoring group)
+	return h
+}
+
 func loadConfig() (*Config, error) {
 	// // Base URL for Jupiter API
 	// baseURL  = "https://api.jup.ag"
@@ -45,6 +114,7 @@ func loadConfig() (*Config, error) {
 	// Load environment variables
 	if os.Getenv("APP_ENV") == "development" {
 		if err := godotenv.Load(); err != nil {
+			// slog is not configured yet, use original log.Fatal
 			log.Fatal(err)
 		}
 	}
@@ -54,7 +124,8 @@ func loadConfig() (*Config, error) {
 	if expiryStr := os.Getenv("CACHE_EXPIRY_SECONDS"); expiryStr != "" {
 		expirySecs, err := strconv.Atoi(expiryStr)
 		if err != nil {
-			log.Printf("Warning: Invalid CACHE_EXPIRY_SECONDS value: %v, using default", err)
+			// slog not configured yet, or use a temp logger if this happens often before main setup
+			log.Printf("Warning: Invalid CACHE_EXPIRY_SECONDS value: %v, using default. Slog not yet initialized.", err)
 		} else {
 			cacheExpiry = time.Duration(expirySecs) * time.Second
 		}
@@ -101,6 +172,7 @@ func loadConfig() (*Config, error) {
 	}
 
 	if len(missingVars) > 0 {
+		// Slog not configured yet
 		log.Fatalf("missing required environment variables: %v", missingVars)
 	}
 
@@ -108,11 +180,25 @@ func loadConfig() (*Config, error) {
 }
 
 func main() {
+	// Setup logger
+	logLevel := slog.LevelInfo
+	if os.Getenv("APP_ENV") == "development" {
+		logLevel = slog.LevelDebug
+	}
+
+	// Create color handler and set it as default
+	handler := logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
+	slogger := slog.New(handler)
+	slog.SetDefault(slogger)
+
 	// Load and validate configuration
 	config, err := loadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		slog.Error("Failed to load configuration", slog.Any("error", err))
+		os.Exit(1)
 	}
+
+	slog.Info("Configuration loaded successfully", "env", config.Env, "port", config.GRPCPort)
 
 	// Initialize HTTP client
 	httpClient := &http.Client{
@@ -132,9 +218,10 @@ func main() {
 	offchainClient := offchain.NewClient(httpClient)
 
 	// Initialize store with configured cache expiry
-	store, err := postgres.NewStore(config.DBURL, true)
+	store, err := postgres.NewStore(config.DBURL, true, logLevel) // Pass logLevel
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		slog.Error("Failed to connect to database", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	// Initialize coin service
@@ -174,11 +261,20 @@ func main() {
 		utilitySvc,
 	)
 
+	slog.Debug("Debug message")
+	slog.Info("Info message")
+	slog.Warn("Warning message")
+	slog.Error("Error message")
+
 	// Start gRPC server
 	go func() {
-		log.Printf("Starting gRPC server on port %d", config.GRPCPort)
+		slog.Info("Starting gRPC server", slog.Int("port", config.GRPCPort))
 		if err := grpcServer.Start(config.GRPCPort); err != nil {
-			log.Fatalf("gRPC server error: %v", err)
+			slog.Error("gRPC server error", slog.Any("error", err))
+			// Consider if os.Exit(1) is appropriate in a goroutine,
+			// might need channel to signal main goroutine for shutdown.
+			// For now, this matches previous log.Fatalf behavior.
+			os.Exit(1)
 		}
 	}()
 
@@ -186,10 +282,10 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutting down servers...")
+	slog.Info("Shutting down servers...")
 
 	// Stop gRPC server
 	grpcServer.Stop()
 
-	log.Println("Servers exited properly")
+	slog.Info("Servers exited properly")
 }
