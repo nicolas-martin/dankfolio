@@ -8,6 +8,7 @@ import { CoinDetailScreenNavigationProp } from '@screens/CoinDetail/coindetail_t
 import { usePortfolioStore } from '@store/portfolio';
 import { createStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';
+import * as Sentry from '@sentry/react-native';
 import {
 	ProfileIcon,
 	WalletIcon,
@@ -149,6 +150,7 @@ const Profile = () => {
 							)}
 						</View>
 					</View>
+					<Button onPress={() => { Sentry.captureException(new Error('First error')) }}>Send test sentry error</Button>
 				</ScrollView>
 			</View>
 		</SafeAreaView>
