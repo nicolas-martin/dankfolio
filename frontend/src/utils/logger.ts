@@ -2,10 +2,10 @@ import log from 'loglevel';
 import { DEBUG_MODE } from '@env'; // Assuming DEBUG_MODE is 'true' or 'false' string
 
 // Default to WARN if DEBUG_MODE is not set or is not 'true'
-let logLevel = log.levels.WARN;
+let logLevel: log.LogLevelDesc = log.levels.WARN;
 
 if (DEBUG_MODE === 'true') {
-  logLevel = log.levels.DEBUG;
+	logLevel = log.levels.DEBUG;
 }
 
 log.setLevel(logLevel);

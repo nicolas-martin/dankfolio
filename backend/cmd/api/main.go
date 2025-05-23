@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"io"
 	"log"      // Import standard log for pre-slog setup errors
 	"log/slog" // Import slog
 	"net/http"
@@ -10,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
@@ -19,6 +23,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
+	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
@@ -36,6 +41,69 @@ type Config struct {
 	JupiterApiKey     string
 	JupiterApiUrl     string
 	Env               string
+}
+
+// ColorHandler implements slog.Handler interface with colored output
+type ColorHandler struct {
+	level     slog.Level
+	outStream io.Writer
+	errStream io.Writer
+}
+
+// NewColorHandler creates a new ColorHandler with specified log level and output streams
+func NewColorHandler(level slog.Level, out, err io.Writer) *ColorHandler {
+	return &ColorHandler{
+		level:     level,
+		outStream: out,
+		errStream: err,
+	}
+}
+
+func (h *ColorHandler) Enabled(_ context.Context, level slog.Level) bool {
+	return level >= h.level
+}
+
+func (h *ColorHandler) Handle(_ context.Context, r slog.Record) error {
+	timestamp := r.Time.Format("15:04:05")
+
+	// Get colored level text
+	var levelText string
+	switch r.Level {
+	case slog.LevelDebug:
+		levelText = color.New(color.FgCyan).Sprint("DEBUG")
+	case slog.LevelInfo:
+		levelText = color.New(color.FgGreen).Sprint("INFO")
+	case slog.LevelWarn:
+		levelText = color.New(color.FgYellow).Sprint("WARN")
+	case slog.LevelError:
+		levelText = color.New(color.FgRed).Sprint("ERROR")
+	default:
+		levelText = r.Level.String()
+	}
+
+	// Format log message
+	msg := fmt.Sprintf("[%s] %-5s %s\n", timestamp, levelText, r.Message)
+
+	// Decide output stream based on severity
+	var out io.Writer
+	if r.Level >= slog.LevelError {
+		out = h.errStream
+	} else {
+		out = h.outStream
+	}
+
+	_, err := fmt.Fprint(out, msg)
+	return err
+}
+
+func (h *ColorHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	// For simplicity, return same handler (ignoring attrs)
+	return h
+}
+
+func (h *ColorHandler) WithGroup(name string) slog.Handler {
+	// For simplicity, return same handler (ignoring group)
+	return h
 }
 
 func loadConfig() (*Config, error) {
@@ -112,17 +180,16 @@ func loadConfig() (*Config, error) {
 }
 
 func main() {
-	// Setup slog first
+	// Setup logger
 	logLevel := slog.LevelInfo
-	if os.Getenv("LOG_LEVEL") == "debug" {
-		logLevel = slog.LevelDebug
-	} else if os.Getenv("APP_ENV") == "development" {
+	if os.Getenv("APP_ENV") == "development" {
 		logLevel = slog.LevelDebug
 	}
 
-	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel})
-	logger := slog.New(jsonHandler)
-	slog.SetDefault(logger)
+	// Create color handler and set it as default
+	handler := logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
+	slogger := slog.New(handler)
+	slog.SetDefault(slogger)
 
 	// Load and validate configuration
 	config, err := loadConfig()
@@ -193,6 +260,11 @@ func main() {
 		priceService,
 		utilitySvc,
 	)
+
+	slog.Debug("Debug message")
+	slog.Info("Info message")
+	slog.Warn("Warning message")
+	slog.Error("Error message")
 
 	// Start gRPC server
 	go func() {

@@ -268,7 +268,7 @@ export const grpcApi: API = {
 			const response = await walletClient.submitTransfer({
 				signedTransaction: payload.signedTransaction,
 				unsignedTransaction: payload.unsignedTransaction
-				
+
 			});
 
 			grpcUtils.logResponse(serviceName, methodName, response);

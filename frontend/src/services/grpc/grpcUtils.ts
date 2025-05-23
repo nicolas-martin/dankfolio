@@ -1,10 +1,13 @@
 import { ConnectError } from '@connectrpc/connect';
 import log from '@/utils/logger'; // Import the new logger
 import { Coin as FrontendCoin } from '@/types';
-import { Coin as ModelCoin } from './model';
+import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
+import { DEBUG_MODE } from '@env';
+
+const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
 // Helper to map gRPC model.Coin to FrontendCoin
-export function mapGrpcCoinToFrontendCoin(grpcCoin: ModelCoin): FrontendCoin {
+export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 	return {
 		mintAddress: grpcCoin.mintAddress,
 		name: grpcCoin.name,
@@ -19,19 +22,16 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: ModelCoin): FrontendCoin {
 		twitter: grpcCoin.twitter,
 		telegram: grpcCoin.telegram,
 		coingeckoId: grpcCoin.coingeckoId,
-		createdAt: grpcCoin.createdAt, // Already Date | undefined in ModelCoin
-		lastUpdated: grpcCoin.lastUpdated, // Already Date | undefined in ModelCoin
+		createdAt: grpcCoin.createdAt ? new Date(Number(grpcCoin.createdAt.seconds) * 1000) : undefined,
+		lastUpdated: grpcCoin.lastUpdated ? new Date(Number(grpcCoin.lastUpdated.seconds) * 1000) : undefined,
 	};
 }
 
 export const getRequestHeaders = () => {
 	const headers = new Headers();
-	// x-debug-mode header can be set based on logger's level if needed,
-	// but for now, let's assume the backend inspects logs based on its own config
-	// or this header is set by a different mechanism if still required.
-	// if (log.getLevel() <= log.levels.DEBUG) { // Example condition
-	//  headers.set("x-debug-mode", "true");
-	// }
+	if (IS_DEBUG_MODE) {
+		headers.set("x-debug-mode", "true");
+	}
 	return headers;
 };
 
