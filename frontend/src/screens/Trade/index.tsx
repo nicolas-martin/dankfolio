@@ -12,19 +12,20 @@ import { RootStackParamList } from '@/types';
 import TokenSelector from '@components/Common/TokenSelector';
 import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
-import TradeStatusModal from '@components/Trade/TradeStatusModal'; // Added Status Modal
-import { PollingStatus } from '@components/Trade/TradeStatusModal/types'; // Added Status Type
+import TradeStatusModal from '@components/Trade/TradeStatusModal';
+import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import {
 	fetchTradeQuote,
-	executeTrade, // Added
-	pollTradeStatus, // Added
-	startPolling, // Added
-	stopPolling, // Added
-	handleSwapCoins as swapCoinsUtil, // Renamed import
+	executeTrade,
+	pollTradeStatus,
+	startPolling,
+	stopPolling,
+	handleSwapCoins as swapCoinsUtil,
 	QUOTE_DEBOUNCE_MS
 } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { SOLANA_ADDRESS } from '@/utils/constants';
+import { logger } from '@/utils/logger';
 
 type TradeScreenNavigationProp = NavigationProp<RootStackParamList>;
 type TradeScreenRouteProp = RouteProp<RootStackParamList, 'Trade'>;
@@ -39,7 +40,6 @@ const Trade: React.FC = () => {
 	const [toCoin, setToCoin] = useState<Coin | null>(initialToCoin);
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
-	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(false);
 	const [tradeDetails, setTradeDetails] = useState<TradeDetailsProps>({
 		exchangeRate: '0',
@@ -50,201 +50,121 @@ const Trade: React.FC = () => {
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false); // For initial confirm modal
-	const [isLoadingTrade, setIsLoadingTrade] = useState<boolean>(false); // General loading state (signing, submitting)
-	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false); // For status/polling modal
+	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
+	const [isLoadingTrade, setIsLoadingTrade] = useState<boolean>(false);
+	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
 	const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null);
 	const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending');
 	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
 	const [pollingError, setPollingError] = useState<string | null>(null);
-	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
+	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const quoteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	// --- Wrapped Polling Functions for Component Context ---
-	// Wrap stopPolling to automatically pass dependencies
 	const componentStopPolling = () => {
 		stopPolling(pollingIntervalRef, setIsLoadingTrade);
 	};
 
-	// Wrap pollTradeStatus
 	const componentPollTradeStatus = async (txHash: string) => {
-		await pollTradeStatus(
-			txHash,
-			setPollingConfirmations,
-			setPollingStatus,
-			setPollingError,
-			componentStopPolling, // Use wrapped stopPolling
-			showToast,
-			wallet
-		);
+		await pollTradeStatus(txHash, setPollingConfirmations, setPollingStatus, setPollingError, componentStopPolling, showToast, wallet);
 	};
 
-	// Wrap startPolling
 	const componentStartPolling = (txHash: string) => {
-		startPolling(
-			txHash,
-			() => componentPollTradeStatus(txHash), // Pass the actual polling function
-			componentStopPolling,
-			pollingIntervalRef
-		);
+		startPolling(txHash, () => componentPollTradeStatus(txHash), componentStopPolling, pollingIntervalRef);
 	};
 
-	// --- End Wrapped Polling Functions ---
-
-	// Initialize coins and fetch fresh data
 	useEffect(() => {
+		logger.breadcrumb({ category: 'navigation', message: 'Viewed TradeScreen' });
+		logger.debug(`[Trade] Initializing with initialFromCoin: ${initialFromCoin?.symbol}, initialToCoin: ${initialToCoin?.symbol}`);
 		const initializeCoins = async () => {
 			const promises = [];
-
-			// If initialFromCoin is provided, fetch fresh data
 			if (initialFromCoin) {
-				promises.push(getCoinByID(initialFromCoin.mintAddress, true).then(coin => {
-					if (coin) setFromCoin(coin);
-				}));
+				promises.push(getCoinByID(initialFromCoin.mintAddress, true).then(coin => { if (coin) setFromCoin(coin); }));
+			} else {
+				promises.push(getCoinByID(SOLANA_ADDRESS, true).then(coin => { if (coin) setFromCoin(coin); }));
 			}
-			// If no initialFromCoin, use SOL as default
-			else {
-				promises.push(getCoinByID(SOLANA_ADDRESS, true).then(coin => {
-					if (coin) setFromCoin(coin);
-				}));
-			}
-
-			// If initialToCoin is provided, fetch fresh data
 			if (initialToCoin) {
-				promises.push(getCoinByID(initialToCoin.mintAddress, true).then(coin => {
-					if (coin) setToCoin(coin);
-				}));
+				promises.push(getCoinByID(initialToCoin.mintAddress, true).then(coin => { if (coin) setToCoin(coin); }));
 			}
-
 			await Promise.all(promises);
 		};
-
 		initializeCoins();
 	}, [initialFromCoin, initialToCoin, getCoinByID]);
 
-	// Refresh coin prices periodically
 	useEffect(() => {
-		console.log('🔵 [Trade] Component mounted with coins:', {
-			fromCoin: fromCoin?.symbol,
-			toCoin: toCoin?.symbol,
-			fromMint: fromCoin?.mintAddress,
-			toMint: toCoin?.mintAddress
-		});
-
-		// Store interval in ref for access across component
+		logger.debug('[Trade] Component mounted, setting up coin price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
 		pollingIntervalRef.current = setInterval(async () => {
-			console.log('⏰ [Trade] Polling interval triggered for coins:', {
-				fromCoin: fromCoin?.symbol,
-				toCoin: toCoin?.symbol,
-				fromMint: fromCoin?.mintAddress,
-				toMint: toCoin?.mintAddress
-			});
-
+			logger.debug('[Trade] Polling interval triggered for coin prices', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
 			if (!fromCoin || !toCoin) {
-				console.log('⚠️ [Trade] Skipping poll - missing coins');
+				logger.debug('[Trade] Skipping price poll - missing coins');
 				return;
 			}
-
 			try {
-				console.log('🔄 [Trade] Fetching fresh coin data...');
+				logger.debug('[Trade] Fetching fresh coin data for price polling...');
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
 					getCoinByID(fromCoin.mintAddress, true),
 					getCoinByID(toCoin.mintAddress, true)
 				]);
-
 				if (updatedFromCoin) setFromCoin(updatedFromCoin);
 				if (updatedToCoin) setToCoin(updatedToCoin);
-				console.log('✅ [Trade] Successfully updated coin data');
-			} catch (error) {
-				console.error('❌ [Trade] Failed to refresh coin prices:', error);
+				logger.debug('[Trade] Successfully updated coin data from price polling');
+			} catch (error: any) {
+				logger.error('[Trade] Failed to refresh coin prices during polling', { errorMessage: error?.message, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 			}
 		}, 10000);
-
-		// Cleanup function
 		return () => {
-			console.log('🔴 [Trade] Component unmounting - cleaning up interval', {
-				fromCoin: fromCoin?.symbol,
-				toCoin: toCoin?.symbol,
-				fromMint: fromCoin?.mintAddress,
-				toMint: toCoin?.mintAddress
-			});
+			logger.debug('[Trade] Component unmounting - cleaning up price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
 			if (pollingIntervalRef.current) {
 				clearInterval(pollingIntervalRef.current);
 				pollingIntervalRef.current = null;
-				console.log('✅ [Trade] Interval cleared successfully');
+				logger.debug('[Trade] Price polling interval cleared successfully');
 			}
 		};
 	}, [fromCoin?.mintAddress, toCoin?.mintAddress, getCoinByID]);
 
-	// Add component mount/unmount logging
 	useEffect(() => {
-		console.log('🟢 [Trade] Trade screen mounted');
+		logger.debug('[Trade] Trade screen mounted (second useEffect, consider merging if appropriate)');
 		return () => {
-			console.log('🔴 [Trade] Trade screen unmounted');
+			logger.debug('[Trade] Trade screen unmounted (second useEffect, consider merging if appropriate)');
 		};
 	}, []);
 
-	// Get portfolio token data if available
-	const fromPortfolioToken = useMemo(() => {
-		return tokens.find(token => token.mintAddress === fromCoin?.mintAddress);
-	}, [tokens, fromCoin]);
+	const fromPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === fromCoin?.mintAddress), [tokens, fromCoin]);
+	const toPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === toCoin?.mintAddress), [tokens, toCoin]);
 
-	const toPortfolioToken = useMemo(() => {
-		return tokens.find(token => token.mintAddress === toCoin?.mintAddress);
-	}, [tokens, toCoin]);
-
-	// Handler for the 'From' TokenSelector
 	const handleSelectFromToken = (token: Coin) => {
-		console.log('🎯 handleSelectFromToken:', {
-			newToken: token.symbol,
-			currentFromAmount: fromAmount,
-			currentToToken: toCoin?.symbol,
-			isSameAsCurrent: token.mintAddress === fromCoin?.mintAddress
-		});
-
-		// Skip if selecting the same token that's already selected
+		logger.breadcrumb({ category: 'trade', message: 'Selected "from" token', data: { tokenSymbol: token.symbol, currentFromAmount, currentToTokenSymbol: toCoin?.symbol } });
+		logger.debug('[Trade] handleSelectFromToken called', { newTokenSymbol: token.symbol, currentFromAmount: fromAmount, currentToTokenSymbol: toCoin?.symbol, isSameAsCurrent: token.mintAddress === fromCoin?.mintAddress });
 		if (token.mintAddress === fromCoin?.mintAddress) {
-			console.log('⏭️ Skipping selection - same token already selected');
+			logger.debug('[Trade] Skipping "from" token selection - same token already selected');
 			return;
 		}
-
 		if (token.mintAddress === toCoin?.mintAddress) {
-			console.log('🔄 Swapping tokens due to same selection');
+			logger.debug('[Trade] Selected "from" token is the same as current "to" token. Swapping tokens.');
 			handleSwapCoins();
 		} else {
 			setFromCoin(token);
-			// Only clear amounts if we're actually changing to a different token
 			if (fromCoin && token.mintAddress !== fromCoin.mintAddress) {
-				console.log('🧹 Clearing amounts on new token selection');
+				logger.debug('[Trade] Clearing amounts due to new "from" token selection');
 				setFromAmount('');
 				setToAmount('');
 			}
 		}
 	};
 
-	// Handler for the 'To' TokenSelector
 	const handleSelectToToken = (token: Coin) => {
-		console.log('🎯 handleSelectToToken:', {
-			newToken: token.symbol,
-			currentToAmount: toAmount,
-			currentFromToken: fromCoin?.symbol,
-			isSameAsCurrent: token.mintAddress === toCoin?.mintAddress
-		});
-
-		// Skip if selecting the same token that's already selected
+		logger.breadcrumb({ category: 'trade', message: 'Selected "to" token', data: { tokenSymbol: token.symbol, currentToAmount: toAmount, currentFromTokenSymbol: fromCoin?.symbol } });
+		logger.debug('[Trade] handleSelectToToken called', { newTokenSymbol: token.symbol, currentToAmount: toAmount, currentFromTokenSymbol: fromCoin?.symbol, isSameAsCurrent: token.mintAddress === toCoin?.mintAddress });
 		if (token.mintAddress === toCoin?.mintAddress) {
-			console.log('⏭️ Skipping selection - same token already selected');
+			logger.debug('[Trade] Skipping "to" token selection - same token already selected');
 			return;
 		}
-
 		if (token.mintAddress === fromCoin?.mintAddress) {
-			console.log('🔄 Swapping tokens due to same selection');
+			logger.debug('[Trade] Selected "to" token is the same as current "from" token. Swapping tokens.');
 			handleSwapCoins();
 		} else {
 			setToCoin(token);
-			// Only clear amounts if we're actually changing to a different token
 			if (toCoin && token.mintAddress !== toCoin.mintAddress) {
-				console.log('🧹 Clearing amounts on new token selection');
+				logger.debug('[Trade] Clearing amounts due to new "to" token selection');
 				setFromAmount('');
 				setToAmount('');
 			}
@@ -252,326 +172,159 @@ const Trade: React.FC = () => {
 	};
 
 	const handleFromAmountChange = useCallback((amount: string) => {
-		console.log('🎯 handleFromAmountChange START:', { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
+		logger.debug('[Trade] handleFromAmountChange START', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		setFromAmount(amount);
-		console.log('💾 Setting fromAmount:', amount);
-
-		// Skip quote fetch for incomplete numbers
+		logger.debug('[Trade] Setting fromAmount in state', { amount });
 		if (!amount || amount === '.' || amount.endsWith('.')) {
-			console.log('⏭️ Skipping quote fetch for incomplete number:', amount);
+			logger.debug('[Trade] Skipping quote fetch: incomplete number input for fromAmount', { amount });
 			return;
 		}
-
 		if (!fromCoin || !toCoin) {
-			console.log('❌ Skipping quote fetch - missing coins');
+			logger.debug('[Trade] Skipping quote fetch: missing fromCoin or toCoin in fromAmountChange');
 			return;
 		}
-
-		console.log('🔄 Preparing quote fetch:', { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
-
+		logger.debug('[Trade] Preparing to fetch trade quote due to fromAmount change', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		if (quoteTimeoutRef.current) {
-			console.log('🗑️ Clearing existing timeout');
+			logger.debug('[Trade] Clearing existing quote fetch timeout (fromAmountChange)');
 			clearTimeout(quoteTimeoutRef.current);
 		}
-
 		setIsQuoteLoading(true);
-
 		quoteTimeoutRef.current = setTimeout(async () => {
-			console.log('⏰ Quote timeout triggered:', { amount });
+			logger.breadcrumb({ category: 'trade', message: "Fetching quote for 'from' amount change", data: { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
+			logger.debug('[Trade] Quote fetch timeout triggered (fromAmountChange)', { amount });
 			try {
-				await fetchTradeQuote(
-					amount,
-					fromCoin,
-					toCoin,
-					setIsQuoteLoading,
-					setToAmount,
-					setTradeDetails
-				);
+				await fetchTradeQuote(amount, fromCoin, toCoin, setIsQuoteLoading, setToAmount, setTradeDetails);
 			} catch (error: any) {
-				console.error('❌ Quote fetch error:', error);
-				showToast({
-					type: 'error',
-					message: error?.message || 'Failed to fetch trade quote'
-				});
+				logger.error('[Trade] Error fetching trade quote (fromAmountChange)', { errorMessage: error?.message, amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
+				showToast({ type: 'error', message: error?.message || 'Failed to fetch trade quote' });
 			}
 			quoteTimeoutRef.current = null;
 		}, QUOTE_DEBOUNCE_MS);
 	}, [fromCoin, toCoin, fetchTradeQuote, setIsQuoteLoading, setToAmount, setTradeDetails, showToast]);
 
 	const handleToAmountChange = useCallback((amount: string) => {
-		console.log('🎯 handleToAmountChange START:', { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
+		logger.debug('[Trade] handleToAmountChange START', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		setToAmount(amount);
-		console.log('💾 Setting toAmount:', amount);
-
-		// Skip quote fetch for incomplete numbers
+		logger.debug('[Trade] Setting toAmount in state', { amount });
 		if (!amount || amount === '.' || amount.endsWith('.')) {
-			console.log('⏭️ Skipping quote fetch for incomplete number:', amount);
+			logger.debug('[Trade] Skipping quote fetch: incomplete number input for toAmount', { amount });
 			return;
 		}
-
 		if (!fromCoin || !toCoin) {
-			console.log('❌ Skipping quote fetch - missing coins');
+			logger.debug('[Trade] Skipping quote fetch: missing fromCoin or toCoin in toAmountChange');
 			return;
 		}
-
-		console.log('🔄 Preparing quote fetch:', { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
-
+		logger.debug('[Trade] Preparing to fetch trade quote due to toAmount change (solving for fromAmount)', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		if (quoteTimeoutRef.current) {
-			console.log('🗑️ Clearing existing timeout');
+			logger.debug('[Trade] Clearing existing quote fetch timeout (toAmountChange)');
 			clearTimeout(quoteTimeoutRef.current);
 		}
-
+		setIsQuoteLoading(true);
 		quoteTimeoutRef.current = setTimeout(async () => {
-			console.log('⏰ Quote timeout triggered:', { amount });
-			setIsQuoteLoading(true);
+			logger.breadcrumb({ category: 'trade', message: "Fetching quote for 'to' amount change", data: { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
+			logger.debug('[Trade] Quote fetch timeout triggered (toAmountChange)', { amount });
 			try {
-				await fetchTradeQuote(
-					amount,
-					toCoin,
-					fromCoin,
-					setIsQuoteLoading,
-					setFromAmount,
-					setTradeDetails
-				);
+				await fetchTradeQuote(amount, toCoin, fromCoin, setIsQuoteLoading, setFromAmount, setTradeDetails);
 			} catch (error: any) {
-				console.error('❌ Quote fetch error:', error);
-				showToast({
-					type: 'error',
-					message: error?.message || 'Failed to fetch trade quote'
-				});
+				logger.error('[Trade] Error fetching trade quote (toAmountChange)', { errorMessage: error?.message, amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
+				showToast({ type: 'error', message: error?.message || 'Failed to fetch trade quote' });
 			}
 			quoteTimeoutRef.current = null;
 		}, QUOTE_DEBOUNCE_MS);
 	}, [fromCoin, toCoin, fetchTradeQuote, setIsQuoteLoading, setFromAmount, setTradeDetails, showToast]);
 
-	// Use new handleTradeSubmit that calls executeTrade
 	const handleTradeSubmitClick = () => {
+		logger.breadcrumb({ category: 'trade', message: 'Trade button pressed, validating trade', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount, toAmount } });
 		if (!fromAmount || !toAmount || !wallet) {
 			showToast({ type: 'error', message: !wallet ? 'Please connect your wallet' : 'Please enter valid amounts' });
 			return;
 		}
-
-		// Check if the user has sufficient balance
 		const numericFromAmount = parseFloat(fromAmount);
 		const availableBalance = fromPortfolioToken?.amount ?? 0;
-
 		if (numericFromAmount > availableBalance) {
-			showToast({
-				type: 'error',
-				message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.`
-			});
+			showToast({ type: 'error', message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.` });
 			return;
 		}
-		// Only opens the confirmation modal now
+		logger.breadcrumb({ category: 'ui', message: 'Trade confirmation modal opened', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount, toAmount } });
 		setIsConfirmationVisible(true);
 	};
 
-	// Clear interval on unmount
 	useEffect(() => {
 		return () => {
-			// Use componentStopPolling for cleanup
 			componentStopPolling();
-			if (quoteTimeoutRef.current) {
-				clearTimeout(quoteTimeoutRef.current);
-			}
+			if (quoteTimeoutRef.current) clearTimeout(quoteTimeoutRef.current);
 		};
-	}, []); // Empty dependency array ensures this runs only on mount and unmount
+	}, []);
 
-	// --- New handleTradeConfirm using executeTrade --- 
 	const handleTradeConfirmClick = async () => {
+		logger.breadcrumb({ category: 'trade', message: 'Trade confirmed by user', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount } });
 		if (!fromCoin || !toCoin || !fromAmount) {
 			showToast({ type: 'error', message: 'Missing required trade parameters' });
 			return;
 		}
-
-		console.log('🛑 [Trade] Stopping price polling before trade execution');
-		// Clear any existing intervals
+		logger.info('[Trade] Stopping price polling before trade execution.');
 		if (pollingIntervalRef.current) {
 			clearInterval(pollingIntervalRef.current);
 			pollingIntervalRef.current = null;
-			console.log('✅ [Trade] Price polling stopped');
+			logger.info('[Trade] Price polling stopped.');
 		}
-
-		await executeTrade(
-			fromCoin,
-			toCoin,
-			fromAmount,
-			1, // 1% slippage
-			showToast,
-			setIsLoadingTrade,
-			setIsConfirmationVisible,
-			setPollingStatus,
-			setSubmittedTxHash,
-			setPollingError,
-			setPollingConfirmations,
-			setIsStatusModalVisible,
-			componentStartPolling
-		);
+		// Breadcrumb for status modal opening will be in executeTrade or here if it's set directly.
+		// For now, assuming executeTrade handles its own breadcrumbs for submission/status modal.
+		await executeTrade(fromCoin, toCoin, fromAmount, 1, showToast, setIsLoadingTrade, setIsConfirmationVisible, setPollingStatus, setSubmittedTxHash, setPollingError, setPollingConfirmations, setIsStatusModalVisible, componentStartPolling);
 	};
 
 	const handleCloseStatusModal = useCallback(() => {
-		console.log('🔄 Cleaning up trade screen...');
+		logger.breadcrumb({ category: 'ui', message: 'Trade status modal closed', data: { submittedTxHash, pollingStatus } });
+		logger.info('[Trade] Cleaning up trade screen and resetting state after status modal close.');
 		setIsStatusModalVisible(false);
-		componentStopPolling(); // Use wrapped stopPolling
-
-		// Reset all trade state
+		componentStopPolling();
 		setFromAmount('');
 		setToAmount('');
-		setTradeDetails({
-			exchangeRate: '0',
-			gasFee: '0',
-			priceImpactPct: '0',
-			totalFee: '0'
-		});
+		setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
+		navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
+	}, [navigation, componentStopPolling, submittedTxHash, pollingStatus]);
 
-		// Navigate to home screen
-		navigation.reset({
-			index: 0,
-			routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
-		});
-	}, [navigation, componentStopPolling]);
-
-	// --- Update handleSwapCoins to use imported util --- 
 	const handleSwapCoins = () => {
-		console.log('🔄 handleSwapCoins START:', {
-			fromCoin: fromCoin?.symbol,
-			toCoin: toCoin?.symbol,
-			fromAmount,
-			toAmount
-		});
-
+		logger.breadcrumb({ category: 'trade', message: 'Pressed swap tokens button', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
+		logger.debug('[Trade] handleSwapCoins START', { fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol, fromAmount, toAmount });
 		if (!fromCoin || !toCoin) {
-			console.warn('❌ Cannot swap with null coins');
+			logger.warn('[Trade] Cannot swap with null coins', { fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 			return;
 		}
-
-		swapCoinsUtil(
-			fromCoin,
-			toCoin,
-			setFromCoin,
-			setToCoin,
-			fromAmount,
-			setFromAmount,
-			toAmount,
-			setToAmount
-		);
-
-		console.log('✅ Swap completed');
+		swapCoinsUtil(fromCoin, toCoin, setFromCoin, setToCoin, fromAmount, setFromAmount, toAmount, setToAmount);
+		logger.debug('[Trade] Swap completed successfully via utility');
+	};
+	
+	const handleCloseConfirmationModal = () => {
+		logger.breadcrumb({ category: 'ui', message: 'Trade confirmation modal closed' });
+		setIsConfirmationVisible(false);
 	};
 
-	// Early return if toCoin is null
-	if (!toCoin) {
-		return (
-			<View style={styles.noWalletContainer}>
-				<Text style={{ color: theme.colors.onSurface }}>Invalid trade pair. Please select coins to trade.</Text>
-			</View>
-		);
-	}
-
-	if (!wallet) {
-		return (
-			<View style={styles.noWalletContainer}>
-				<Text style={{ color: theme.colors.onSurface }}>Please connect your wallet to trade</Text>
-			</View>
-		);
-	}
-
-	if (!fromCoin) {
-		return (
-			<View style={styles.noWalletContainer}>
-				<Text style={{ color: theme.colors.onSurface }}>Please select a coin to trade from</Text>
-			</View>
-		);
-	}
+	if (!toCoin) return <View style={styles.noWalletContainer}><Text style={{ color: theme.colors.onSurface }}>Invalid trade pair. Please select coins to trade.</Text></View>;
+	if (!wallet) return <View style={styles.noWalletContainer}><Text style={{ color: theme.colors.onSurface }}>Please connect your wallet to trade</Text></View>;
+	if (!fromCoin) return <View style={styles.noWalletContainer}><Text style={{ color: theme.colors.onSurface }}>Please select a coin to trade from</Text></View>;
 
 	return (
 		<SafeAreaView style={styles.container}>
 			<ScrollView style={styles.scrollView}>
 				<View style={styles.padding}>
-					{/* From Coin Section */}
 					<Text variant="labelLarge" style={{ marginBottom: 4 }}>From</Text>
-					<TokenSelector
-						style={styles.valueInfoContainer}
-						selectedToken={fromCoin}
-						onSelectToken={handleSelectFromToken}
-						label={'Select Token'}
-						amountValue={fromAmount || '0.00'}
-						onAmountChange={handleFromAmountChange}
-						isAmountEditable={true}
-						showOnlyPortfolioTokens={true}
-						testID="from-token-selector"
-					/>
-
-					<Button
-						mode="elevated"
-						icon={({ size, color }) => <SwapIcon size={size} color={color} />}
-						onPress={handleSwapCoins}
-						style={styles.valueInfoContainer}
-					>
-						Swap
-					</Button>
-
-					{/* To Coin Section */}
+					<TokenSelector style={styles.valueInfoContainer} selectedToken={fromCoin} onSelectToken={handleSelectFromToken} label={'Select Token'} amountValue={fromAmount || '0.00'} onAmountChange={handleFromAmountChange} isAmountEditable={true} showOnlyPortfolioTokens={true} testID="from-token-selector" />
+					<Button mode="elevated" icon={({ size, color }) => <SwapIcon size={size} color={color} />} onPress={handleSwapCoins} style={styles.valueInfoContainer}>Swap</Button>
 					<Text variant="labelLarge" style={{ marginBottom: 4 }}>To</Text>
-					<TokenSelector
-						style={styles.valueInfoContainer}
-						selectedToken={toCoin ?? undefined}
-						onSelectToken={handleSelectToToken}
-						label={toCoin ? undefined : 'Select Token'}
-						amountValue={toAmount}
-						onAmountChange={handleToAmountChange}
-						isAmountEditable={true}
-						showOnlyPortfolioTokens={false}
-						testID="to-token-selector"
-					/>
-
-					{fromAmount && toAmount && (
-						<TradeDetails
-							exchangeRate={tradeDetails.exchangeRate}
-							gasFee={tradeDetails.gasFee}
-							priceImpactPct={tradeDetails.priceImpactPct}
-							totalFee={tradeDetails.totalFee}
-							route={tradeDetails.route}
-						/>
-					)}
+					<TokenSelector style={styles.valueInfoContainer} selectedToken={toCoin ?? undefined} onSelectToken={handleSelectToToken} label={toCoin ? undefined : 'Select Token'} amountValue={toAmount} onAmountChange={handleToAmountChange} isAmountEditable={true} showOnlyPortfolioTokens={false} testID="to-token-selector" />
+					{fromAmount && toAmount && <TradeDetails exchangeRate={tradeDetails.exchangeRate} gasFee={tradeDetails.gasFee} priceImpactPct={tradeDetails.priceImpactPct} totalFee={tradeDetails.totalFee} route={tradeDetails.route} />}
 				</View>
 			</ScrollView>
-
 			<View style={styles.padding}>
-				<Button
-					mode="contained"
-					onPress={handleTradeSubmitClick}
-					disabled={!fromAmount || !toAmount || isQuoteLoading}
-					loading={isQuoteLoading}
-					testID="trade-button"
-				>
+				<Button mode="contained" onPress={handleTradeSubmitClick} disabled={!fromAmount || !toAmount || isQuoteLoading} loading={isQuoteLoading} testID="trade-button">
 					{isQuoteLoading ? 'Fetching Quote...' : 'Trade'}
 				</Button>
 			</View>
-
 			{fromCoin && toCoin && (
-				<TradeConfirmation
-					isVisible={isConfirmationVisible}
-					onClose={() => setIsConfirmationVisible(false)}
-					onConfirm={handleTradeConfirmClick} // Use new handler
-					fromAmount={fromAmount}
-					toAmount={toAmount}
-					toCoin={toCoin}
-					fromCoin={fromCoin}
-					fees={tradeDetails}
-					isLoading={isLoadingTrade} // Keep using this for the confirm button loading state
-				/>
+				<TradeConfirmation isVisible={isConfirmationVisible} onClose={handleCloseConfirmationModal} onConfirm={handleTradeConfirmClick} fromAmount={fromAmount} toAmount={toAmount} toCoin={toCoin} fromCoin={fromCoin} fees={tradeDetails} isLoading={isLoadingTrade} />
 			)}
-
-			{/* New Status Modal */}
-			<TradeStatusModal
-				isVisible={isStatusModalVisible}
-				onClose={handleCloseStatusModal}
-				txHash={submittedTxHash}
-				status={pollingStatus}
-				confirmations={pollingConfirmations}
-				error={pollingError}
-			/>
+			<TradeStatusModal isVisible={isStatusModalVisible} onClose={handleCloseStatusModal} txHash={submittedTxHash} status={pollingStatus} confirmations={pollingConfirmations} error={pollingError} />
 		</SafeAreaView>
 	);
 };

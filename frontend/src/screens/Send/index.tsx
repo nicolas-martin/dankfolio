@@ -20,6 +20,7 @@ import { Coin } from '@/types';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
+import { logger } from '@/utils/logger';
 
 const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const theme = useTheme();
@@ -39,6 +40,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+	useEffect(() => {
+		logger.breadcrumb({ category: 'navigation', message: 'Viewed SendTokensScreen' });
+	}, []);
 
 	// Initialize with SOL token
 	useEffect(() => {
@@ -79,6 +84,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	}, []);
 
 	const onTokenSelect = (coin: Coin) => {
+		logger.breadcrumb({ category: 'ui', message: 'Selected token for sending', data: { tokenSymbol: coin.symbol, tokenMint: coin.mintAddress } });
 		const portfolioToken = handleTokenSelect(coin, tokens);
 		setSelectedToken(portfolioToken);
 	};
@@ -141,6 +147,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			}
 
 			// Show confirmation modal
+			logger.breadcrumb({ category: 'ui', message: 'Send confirmation modal opened', data: { toAddress: recipientAddress, amount, token: selectedToken.coin.symbol } });
 			setIsConfirmationVisible(true);
 		} catch (err) {
 			showToast({
@@ -151,9 +158,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	};
 
 	const handleConfirmSubmit = async () => {
+		logger.breadcrumb({ category: 'send_tokens', message: 'Send confirmed by user', data: { toAddress: recipientAddress, amount, token: selectedToken?.coin.symbol } });
 		try {
 			setIsLoading(true);
-			setIsConfirmationVisible(false);
+			setIsConfirmationVisible(false); // Close confirmation modal
 
 			const txHash = await handleTokenTransfer({
 				toAddress: recipientAddress,
@@ -161,8 +169,9 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				selectedTokenMint: selectedToken!.mintAddress
 			});
 
-			console.log('Transaction submitted:', txHash);
+			// logger.debug('Transaction submitted:', txHash); // Already logged in handleTokenTransfer if successful
 			setSubmittedTxHash(txHash);
+			logger.breadcrumb({ category: 'ui', message: 'Send status modal opened', data: { txHash } });
 			setIsStatusModalVisible(true);
 			componentStartPolling(txHash);
 
@@ -176,6 +185,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	};
 
 	const handleCloseStatusModal = () => {
+		logger.breadcrumb({ category: 'ui', message: 'Send status modal closed', data: { txHash: submittedTxHash, finalStatus: pollingStatus } });
 		setIsStatusModalVisible(false);
 		setPollingStatus('pending');
 		setPollingConfirmations(0);
@@ -265,7 +275,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			{/* Confirmation Modal */}
 			<TradeConfirmation
 				isVisible={isConfirmationVisible}
-				onClose={() => setIsConfirmationVisible(false)}
+				onClose={() => {
+					logger.breadcrumb({ category: 'ui', message: 'Send confirmation modal closed' });
+					setIsConfirmationVisible(false);
+				}}
 				onConfirm={handleConfirmSubmit}
 				fromCoin={selectedToken?.coin}
 				toCoin={selectedToken?.coin}

@@ -8,6 +8,7 @@ import SearchResultItem from '@/components/Common/SearchResultItem';
 import { createStyles } from './styles';
 import { useToast } from '@/components/Common/Toast';
 import { SearchIcon } from '@components/Common/Icons';
+import { logger } from '@/utils/logger';
 
 const initialState: SearchState = {
 	loading: false,
@@ -28,7 +29,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	const styles = createStyles(theme);
 	const toast = useToast();
 
+	useEffect(() => {
+		logger.breadcrumb({ category: 'navigation', message: 'Viewed SearchScreen' });
+	}, []);
+
 	const handleSearch = useCallback(async (query: string) => {
+		logger.breadcrumb({ category: 'search', message: 'Search performed', data: { query } });
 		setState(prev => ({ ...prev, loading: true, error: null }));
 		try {
 			const results = await performSearch(query, state.filters);
@@ -63,7 +69,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 		<View style={styles.card}>
 			<SearchResultItem
 				coin={item}
-				onPress={(coin) => handleCoinNavigation(coin, navigation, toast)}
+				onPress={(coin) => {
+					logger.breadcrumb({ category: 'ui', message: 'Pressed search result item', data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } });
+					handleCoinNavigation(coin, navigation, toast);
+				}}
 				isEnriched={item.price !== undefined && item.dailyVolume !== undefined}
 			/>
 		</View>

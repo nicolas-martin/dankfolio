@@ -1,5 +1,6 @@
 import { Wallet } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '@/utils/logger';
 
 /**
  * Secure storage functions for the wallet.
@@ -8,29 +9,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const secureStorage = {
 	saveWallet: async (wallet: Wallet): Promise<boolean> => {
 		try {
-			console.log('💾 Saving wallet to storage:', {
+			// Log with less sensitive data for production
+			logger.info('Saving wallet to storage', {
 				address: wallet.address,
 				privateKeyLength: wallet.privateKey?.length,
-				privateKeyPreview: wallet.privateKey?.substring(0, 10) + '...',
-				privateKeyFormat: wallet.privateKey?.match(/^[A-Za-z0-9+/]*={0,2}$/) ? 'Base64' : 'Base58'
+				// Avoid logging privateKeyPreview or format in production logs
 			});
 
 			await AsyncStorage.setItem('wallet', JSON.stringify({
 				address: wallet.address,
-				privateKey: wallet.privateKey,
+				privateKey: wallet.privateKey, // Storing the actual private key
 			}));
 
-			// Verify what was saved
+			// Verification log for debugging, could be logger.debug
 			const savedData = await AsyncStorage.getItem('wallet');
-			console.log('✅ Verified saved wallet:', {
+			logger.info('Verified saved wallet state', {
 				saved: !!savedData,
-				dataLength: savedData?.length,
-				parsed: savedData ? JSON.parse(savedData) : null
+				// dataLength: savedData?.length, // Potentially sensitive if key length is known
 			});
 
 			return true;
 		} catch (error) {
-			console.error('❌ Error saving wallet to secure storage:', error);
+			logger.exception(error, { functionName: 'secureStorage.saveWallet' });
 			return false;
 		}
 	},
@@ -38,42 +38,41 @@ export const secureStorage = {
 	getWallet: async (): Promise<Wallet | null> => {
 		try {
 			const walletData = await AsyncStorage.getItem('wallet');
-			console.log('📱 Retrieved wallet from storage:', {
+			logger.info('Retrieved wallet from storage', {
 				found: !!walletData,
-				dataLength: walletData?.length
+				// dataLength: walletData?.length, // Potentially sensitive
 			});
 
 			if (!walletData) return null;
 
 			const parsed = JSON.parse(walletData) as Wallet;
-			console.log('🔐 Parsed wallet data:', {
+			// Log with less sensitive data for production
+			logger.info('Parsed wallet data', {
 				address: parsed.address,
 				privateKeyLength: parsed.privateKey?.length,
-				privateKeyPreview: parsed.privateKey?.substring(0, 10) + '...',
-				privateKeyFormat: parsed.privateKey?.match(/^[A-Za-z0-9+/]*={0,2}$/) ? 'Base64' : 'Base58'
 			});
 
 			return parsed;
 		} catch (error) {
-			console.error('❌ Error getting wallet from secure storage:', error);
+			logger.exception(error, { functionName: 'secureStorage.getWallet' });
 			return null;
 		}
 	},
 
 	deleteWallet: async (): Promise<boolean> => {
 		try {
-			console.log('🗑️ Deleting wallet from storage');
+			logger.info('Deleting wallet from storage');
 			await AsyncStorage.removeItem('wallet');
 
-			// Verify deletion
+			// Verification log
 			const remainingData = await AsyncStorage.getItem('wallet');
-			console.log('✅ Verified wallet deletion:', {
+			logger.info('Verified wallet deletion', {
 				isDeleted: !remainingData
 			});
 
 			return true;
 		} catch (error) {
-			console.error('❌ Error deleting wallet from secure storage:', error);
+			logger.exception(error, { functionName: 'secureStorage.deleteWallet' });
 			return false;
 		}
 	}

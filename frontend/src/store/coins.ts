@@ -44,7 +44,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			if (!trendingOnly) {
 				const solCoin = coins.find((c: Coin) => c.mintAddress === SOLANA_ADDRESS);
 				if (!solCoin) {
-					log.info('🔍 SOL not found in available coins, fetching separately...');
+					log.debug('SOL not found in available coins, fetching separately...'); // Changed to debug
 					const solData = await get().getCoinByID(SOLANA_ADDRESS, true);
 					if (solData) {
 						coins.unshift(solData);
@@ -59,7 +59,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			}, {} as Record<string, Coin>);
 			set({ coinMap });
 
-			log.info(`💰 Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map((c: Coin) => ({ symbol: c.symbol, mintAddress: c.mintAddress })));
+			log.debug(`Fetched ${trendingOnly ? 'trending' : 'all'} available coins:`, coins.map((c: Coin) => ({ symbol: c.symbol, mintAddress: c.mintAddress }))); // Changed to debug
 
 			// Update availableCoins regardless of trendingOnly flag
 			set({ availableCoins: coins, isLoading: false });
@@ -78,7 +78,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	},
 
 	getCoinByID: async (mintAddress: string, forceRefresh: boolean = false) => {
-		log.info(`🔄 [CoinStore] getCoinByID called for ${mintAddress} (forceRefresh: ${forceRefresh})`);
+		log.debug(`[CoinStore] getCoinByID called for ${mintAddress} (forceRefresh: ${forceRefresh})`); // Changed to debug
 		log.debug(`🪙 [CoinStore] Before getCoinByID(${mintAddress}, forceRefresh=${forceRefresh}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 		const state = get();
 		if (!forceRefresh && state.coinMap[mintAddress]) {
@@ -92,7 +92,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			return state.coinMap[mintAddress];
 		}
 
-		log.info(`⏳ [CoinStore] Fetching coin ${mintAddress} from API...`);
+		log.debug(`[CoinStore] Fetching coin ${mintAddress} from API...`); // Changed to debug
 		try {
 			const coin = await grpcApi.getCoinByID(mintAddress);
 			log.debug("💰 [CoinStore] Fetched coin from API:", {

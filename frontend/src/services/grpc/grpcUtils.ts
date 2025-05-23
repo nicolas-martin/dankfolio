@@ -47,10 +47,17 @@ export const logRequest = (serviceName: string, methodName: string, params: any)
 		// don't log proxied image request
 		return
 	}
-	log.debug(`📤 gRPC ${serviceName}.${methodName} Request:`, safeStringify(params));
+	log.info(`📤 gRPC Request: ${serviceName}.${methodName}`);
+	log.debug(`📤 gRPC ${serviceName}.${methodName} Request Details:`, safeStringify(params));
 };
 
 export const logResponse = (serviceName: string, methodName: string, response: any): void => {
+	log.info(`📥 gRPC Response: ${serviceName}.${methodName}`);
+	// Special handling for getProxiedImage response to prevent logging base64 data
+	if (serviceName === 'UtilityService' && methodName === 'getProxiedImage') {
+		log.debug(`📥 gRPC ${serviceName}.${methodName} Response: { imageData: [REDACTED] }`);
+		return;
+	}
 	// Special handling for getPriceHistory response to prevent large logs
 	if (serviceName === 'PriceService' && methodName === 'getPriceHistory' && response?.data?.items) {
 		const items = response.data.items;
@@ -61,11 +68,11 @@ export const logResponse = (serviceName: string, methodName: string, response: a
 		} else {
 			const first = safeStringify(items[0], 0);
 			const last = safeStringify(items[count - 1], 0);
-			log.debug(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [count=${count}, first=${first}, last=${last}] }, ... }`);
+			log.debug(`📥 gRPC ${serviceName}.${methodName} Response Details: { data: { items: [count=${count}, first=${first}, last=${last}] }, ... }`);
 			return;
 		}
 	}
-	log.debug(`📥 gRPC ${serviceName}.${methodName} Response:`, safeStringify(response));
+	log.debug(`📥 gRPC ${serviceName}.${methodName} Response Details:`, safeStringify(response));
 };
 
 export const logError = (serviceName: string, methodName: string, error: any): void => {

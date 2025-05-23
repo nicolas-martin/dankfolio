@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LoadingState } from './types';
 import { usePortfolioStore } from '@store/portfolio';
+import { logger } from '@/utils/logger';
 
 export const useLoadingState = (onLoadComplete: () => void) => {
 	const [loadingState, setLoadingState] = useState<LoadingState>({
@@ -38,7 +39,7 @@ export const useLoadingState = (onLoadComplete: () => void) => {
 					});
 				}, 1500);
 			} catch (error) {
-				console.error('Error loading initial data:', error);
+				logger.exception(error, { functionName: 'loadData', context: 'useLoadingState' });
 				// Handle error appropriately
 			}
 		};

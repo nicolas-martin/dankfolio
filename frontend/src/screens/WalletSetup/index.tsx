@@ -11,6 +11,7 @@ import bs58 from 'bs58';
 import { useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_TITLE, IMPORT_WALLET_DESC, TERMS_TEXT, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
+import { logger } from '@/utils/logger';
 
 const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
@@ -19,6 +20,11 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
 	const { setWallet } = usePortfolioStore();
+
+	useEffect(() => {
+		logger.breadcrumb({ category: 'navigation', message: `Viewed WalletSetupScreen step: ${step}` });
+	}, [step]);
+
 	const {
 		step,
 		goToCreate,
@@ -42,19 +48,19 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 				showToast({ message: 'Failed to generate wallet. Please try again.', type: 'error' });
 			}
 		} catch (err: any) {
-			console.error("Generate Wallet Error:", err);
+			logger.exception(err, { functionName: 'generateWallet', context: 'WalletSetupScreen' });
 			showToast({ message: err.message || 'Error generating wallet.', type: 'error' });
 		}
 	};
 
 	const loadDebugWallet = async () => {
 		try {
-			console.log('🔧 Attempting to load debug wallet...');
+			logger.debug('Attempting to load debug wallet...');
 			if (!TEST_PRIVATE_KEY) {
 				throw new Error('TEST_PRIVATE_KEY not found in environment');
 			}
 
-			console.log('✅ Decoded TEST_PRIVATE_KEY as Base64');
+			logger.debug('Decoded TEST_PRIVATE_KEY as Base64');
 			const base58PrivateKey = base64ToBase58PrivateKey(TEST_PRIVATE_KEY);
 
 			// Store the credentials
@@ -64,11 +70,11 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 			const keypairBytes = Buffer.from(bs58.decode(base58PrivateKey));
 			const keypair = Keypair.fromSecretKey(keypairBytes);
 
-			console.log('✅ Created keypair from debug wallet');
+			logger.debug('Created keypair from debug wallet');
 			await setWallet(keypair.publicKey.toBase58());
 			props.onWalletSetupComplete(keypair);
 		} catch (error: any) {
-			console.error('Load Debug Wallet Error:', error);
+			logger.error('Load Debug Wallet Error', { errorMessage: error.message });
 			showToast({ message: `Error loading debug wallet: ${error.message}`, type: 'error' });
 		}
 	};
@@ -93,13 +99,19 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 					</View>
 					<View style={styles.buttonRow}>
 						<TouchableOpacity 
-							onPress={goToCreate} 
+							onPress={() => {
+								logger.breadcrumb({ category: 'ui', message: 'Create new wallet button pressed (welcome step)' });
+								goToCreate();
+							}} 
 							style={[styles.actionButton, styles.actionButtonYellow]}
 						>
 							<Text style={styles.buttonText}>Create a new wallet</Text>
 						</TouchableOpacity>
 						<TouchableOpacity 
-							onPress={goToImport} 
+							onPress={() => {
+								logger.breadcrumb({ category: 'ui', message: 'Import recovery phrase button pressed (welcome step)' });
+								goToImport();
+							}} 
 							style={[styles.actionButton, styles.actionButtonLight]}
 						>
 							<Text style={styles.buttonText}>Import a recovery phrase</Text>
@@ -110,7 +122,10 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						<View style={styles.debugButtonContainer}>
 							<Button
 								title="Load Debug Wallet (TEST_PRIVATE_KEY)"
-								onPress={loadDebugWallet}
+								onPress={() => {
+									logger.breadcrumb({ category: 'ui', message: 'Debug wallet load pressed' });
+									loadDebugWallet();
+								}}
 								color="lightgray"
 							/>
 						</View>

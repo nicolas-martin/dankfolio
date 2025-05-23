@@ -5,6 +5,7 @@ import { useCoinStore } from '@store/coins';
 import { useToast } from '@/components/Common/Toast';
 import { NavigationProp } from '@react-navigation/native';
 import { formatPrice, formatVolume, formatPercentage } from '@/utils/numberFormat';
+import { logger } from '@/utils/logger';
 
 export const DEBOUNCE_DELAY = 1000; // ms
 
@@ -21,7 +22,7 @@ export const searchTokens = async (filters: SearchFilters): Promise<Coin[]> => {
 		const response = await grpcApi.searchCoins(filters);
 		return response.coins;
 	} catch (error) {
-		console.error('Error searching tokens:', error);
+		logger.exception(error, { functionName: 'searchTokens', params: { filters } });
 		throw error;
 	}
 };
@@ -44,7 +45,7 @@ export const performSearch = async (
 		});
 		return response.coins;
 	} catch (error) {
-		console.error('Search error:', error);
+		logger.exception(error, { functionName: 'performSearch', params: { query, filters, limit, offset } });
 		throw error;
 	}
 };
@@ -74,7 +75,7 @@ export const getEnrichedCoinData = async (
 		const enrichedCoin = await getCoinByID(coin.mintAddress, true);
 		return enrichedCoin;
 	} catch (error) {
-		console.error('Failed to get enriched coin data:', error);
+		logger.exception(error, { functionName: 'getEnrichedCoinData', params: { coinMint: coin.mintAddress } });
 		return null;
 	}
 };
@@ -86,6 +87,11 @@ export const handleCoinNavigation = async (
 ): Promise<void> => {
 	try {
 		const enrichedCoin = await getEnrichedCoinData(coin, useCoinStore.getState().getCoinByID);
+		logger.breadcrumb({ 
+			category: 'navigation', 
+			message: 'Navigating to CoinDetail from Search', 
+			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } 
+		});
 		navigation.navigate('CoinDetail', { coin: enrichedCoin });
 	} catch (error) {
 		toast.showToast({
@@ -93,7 +99,7 @@ export const handleCoinNavigation = async (
 			message: 'Failed to load coin data',
 			duration: 3000
 		});
-		console.error('Failed to get enriched coin data:', error);
+		logger.exception(error, { functionName: 'handleCoinNavigation', params: { coinMint: coin.mintAddress } });
 	}
 };
 
