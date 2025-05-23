@@ -53,7 +53,7 @@ export const prepareSwapRequest = async(
 		}
 		const walletAddress = walletState.address;
 
-		log.info('🔐 Building swap transaction with:', {
+		log.debug('Building swap transaction with:', {
 			fromCoinId,
 			toCoinId,
 			amount,
@@ -133,7 +133,7 @@ export const signSwapTransaction = async (unsignedTransaction:string): Promise<s
 		// Serialize the signed transaction
 		const serializedTransaction = transaction.serialize();
 		const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
-		log.info('✅ Transaction signed and serialized');
+		log.debug('Swap transaction signed and serialized');
 
 		return transactionBase64;
 	} catch (error) {
@@ -155,7 +155,7 @@ export const prepareCoinTransfer = async (
 		}
 		const walletAddress = walletState.address;
 
-		log.info('🔐 Building transfer transaction:', {
+		log.debug('Building transfer transaction:', {
 			toAddress,
 			coinMint: coinMint || 'SOL',
 			amount,
@@ -235,7 +235,7 @@ export const signTransferTransaction = async (
 		// Serialize the signed transaction
 		log.debug('📦 Serializing signed transaction...');
 		const serializedTransaction = transaction.serialize().toString('base64');
-		log.info('✅ Transaction signed and serialized');
+		log.debug('Transfer transaction signed and serialized');
 
 		return serializedTransaction;
 	} catch (error) {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react'; // Added useEffect
 import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { Text, useTheme, IconButton, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import {
 	CoinsIcon,
 	SendIcon
 } from '@components/Common/Icons';
+import { logger } from '@/utils/logger'; // Added logger
 
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -22,6 +23,10 @@ const Profile = () => {
 	const { wallet, tokens, fetchPortfolioBalance, isLoading } = usePortfolioStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+
+	useEffect(() => {
+		logger.breadcrumb({ category: 'navigation', message: 'Viewed ProfileScreen' });
+	}, []);
 
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -35,6 +40,7 @@ const Profile = () => {
 
 	const handleRefresh = async () => {
 		if (!wallet) return;
+		logger.breadcrumb({ category: 'profile', message: 'Portfolio refresh initiated from ProfileScreen' });
 		setIsRefreshing(true);
 		try {
 			await fetchPortfolioBalance(wallet.address);
@@ -92,7 +98,10 @@ const Profile = () => {
 									<IconButton
 										icon="content-copy"
 										size={16}
-										onPress={() => copyToClipboard(wallet.address, 'Wallet', showToast)}
+										onPress={() => {
+											logger.breadcrumb({ category: 'ui', message: 'Copied wallet address to clipboard from ProfileScreen' });
+											copyToClipboard(wallet.address, 'Wallet', showToast);
+										}}
 										style={{ margin: 0, padding: 0, marginLeft: 4 }}
 									/>
 								</View>
@@ -112,7 +121,10 @@ const Profile = () => {
 							<Button
 								mode="contained"
 								icon={() => <SendIcon size={20} color={theme.colors.onPrimary} />}
-								onPress={() => navigation.navigate('SendTokens')}
+								onPress={() => {
+									logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
+									navigation.navigate('SendTokens');
+								}}
 								style={{ marginTop: 16 }}
 							>
 								Send Tokens
@@ -143,7 +155,10 @@ const Profile = () => {
 												value: token.value,
 												balance: token.amount
 											}}
-											onPress={() => handleTokenPress(token.coin, navigation.navigate)}
+											onPress={() => {
+												logger.breadcrumb({ category: 'ui', message: 'Pressed token card on ProfileScreen', data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress } });
+												handleTokenPress(token.coin, navigation.navigate);
+											}}
 										/>
 									</View>
 								))
@@ -157,4 +172,3 @@ const Profile = () => {
 	);
 };
 export default Profile;
-

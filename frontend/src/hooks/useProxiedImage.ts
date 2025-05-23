@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Buffer } from 'buffer';
 import { grpcApi } from '@/services/grpcApi';
+import { logger } from '@/utils/logger';
 
 // Can potentially move DEFAULT_LOGO to a constants file
 const DEFAULT_LOGO = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
@@ -28,7 +29,12 @@ export const useProxiedImage = (originalImageUrl: string | undefined): UseProxie
 
 		const fetchImage = async () => {
 			if (!urlToFetch) {
-				console.log("useProxiedImage: No URL and no default logo.");
+				// This case should ideally not happen if DEFAULT_LOGO is always defined
+				// If it does, it's a minor operational detail, not an error.
+				// Keeping as console.log for local dev visibility if needed, but logger.debug might also be suitable.
+				// For Sentry, this might be too noisy.
+				// console.log("useProxiedImage: No URL and no default logo provided, and no internal default set.");
+				logger.debug("useProxiedImage: No URL provided, and no default logo available.");
 				setIsLoading(false);
 				setImageUri(null); // Or a placeholder image URI
 				return;
@@ -50,11 +56,11 @@ export const useProxiedImage = (originalImageUrl: string | undefined): UseProxie
 						// console.log(`useProxiedImage: Success for ${urlToFetch}`);
 					}
 				} else {
-					console.warn(`useProxiedImage: Empty response for ${urlToFetch}, using default.`);
+					logger.warn(`useProxiedImage: Empty image data response, using default.`, { urlToFetch });
 					if (isMounted) setImageUri(DEFAULT_LOGO);
 				}
 			} catch (err) {
-				console.error(`Error fetching proxied image for ${urlToFetch}:`, err);
+				logger.exception(err, { functionName: 'fetchImage', context: 'useProxiedImage', params: { urlToFetch } });
 				if (isMounted) {
 					setError(err.message);
 					setImageUri(DEFAULT_LOGO);

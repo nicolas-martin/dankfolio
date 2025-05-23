@@ -11,6 +11,7 @@ import { useFont } from "@shopify/react-native-skia";
 import { Circle, Line as SkiaLine, Text as SkiaText } from "@shopify/react-native-skia";
 import { createStyles } from "./styles";
 import inter from "@assets/fonts/inter-medium.ttf";
+import { logger } from '@/utils/logger';
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
@@ -92,7 +93,9 @@ export default function CoinChart({
 	React.useEffect(() => {
 		let isSubscribed = true;
 		if (isPressActive && isSubscribed) {
-			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((error) => { 
+				logger.warn('Haptics impact failed', { error: error?.message, location: 'CoinChart.useEffect[isPressActive]' });
+			});
 		}
 		return () => {
 			isSubscribed = false;
