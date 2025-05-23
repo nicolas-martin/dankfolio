@@ -64,9 +64,16 @@ export const logger = {
 		}
 	},
 
-	breadcrumb: (message: string, category = 'app', level: LogLevel = 'info') => {
+	breadcrumb: (
+		messageOrOptions:{ message: string; category?: string; level?: LogLevel; data?: Record<string, any> },
+	) => {
 		if (!__DEV__) {
-			Sentry.addBreadcrumb({ message, category, level: levelMap[level] });
+				Sentry.addBreadcrumb({
+					message: messageOrOptions.message,
+					category: messageOrOptions.category || 'app',
+					level: levelMap[messageOrOptions.level || 'info'],
+					data: messageOrOptions.data,
+				});
 		}
 	},
 };

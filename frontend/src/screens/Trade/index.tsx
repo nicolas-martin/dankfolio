@@ -294,7 +294,7 @@ const Trade: React.FC = () => {
 		swapCoinsUtil(fromCoin, toCoin, setFromCoin, setToCoin, fromAmount, setFromAmount, toAmount, setToAmount);
 		logger.debug('[Trade] Swap completed successfully via utility');
 	};
-	
+
 	const handleCloseConfirmationModal = () => {
 		logger.breadcrumb({ category: 'ui', message: 'Trade confirmation modal closed' });
 		setIsConfirmationVisible(false);
