@@ -6,7 +6,7 @@ import { grpcApi } from '@/services/grpcApi'; // Import grpcApi
 import { usePortfolioStore } from '@store/portfolio';
 import bs58 from 'bs58';
 import { useState } from 'react';
-import { WalletSetupStep, WalletSetupState, WalletSetupScreenProps } from './types';
+import { WalletSetupStep, WalletSetupState, WalletSetupScreenProps, WalletInfo } from './types';
 
 // Branded type for Base58 private keys to ensure type safety
 type Base58PrivateKey = string & { readonly __brand: unique symbol };
@@ -251,21 +251,61 @@ export const IMPORT_WALLET_TITLE = 'Recovery phrase';
 export const IMPORT_WALLET_DESC = 'Enter your 12-word recovery phrase';
 export const TERMS_TEXT = 'By proceeding, you agree to our Terms of Service and Privacy Policy.';
 export const DEFAULT_SOL_AMOUNT = 0.000000001;
+export const CREATING_WALLET_TITLE = 'Creating your wallet';
+export const CREATING_WALLET_DESC = 'Please wait while we set up your wallet...';
+export const WALLET_CREATED_TITLE = 'Wallet successfully created!';
+export const WALLET_CREATED_DESC = 'Your wallet has been created. Here is your recovery phrase. Make sure to save it in a secure place.';
 
 export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	const [step, setStep] = useState<WalletSetupStep>('welcome');
 	const [recoveryPhrase, setRecoveryPhrase] = useState('');
+	const [walletInfo, setWalletInfo] = useState<WalletInfo>({
+		publicKey: '',
+		mnemonic: '',
+		isLoading: false
+	});
 
 	const goToCreate = () => setStep('create');
 	const goToImport = () => setStep('import');
 	const goToWelcome = () => setStep('welcome');
 
-	const handleCreateWallet = () => {
-		props.onCreateWallet();
+	const handleCreateWallet = async () => {
+		setStep('creating');
+		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
+		
+		try {
+			const keypair = await handleGenerateWallet();
+			setWalletInfo({
+				publicKey: keypair.publicKey.toBase58(),
+				mnemonic: await retrieveMnemonicFromStorage() || '',
+				isLoading: false
+			});
+			
+			// Delay the call to onWalletSetupComplete to allow showing the success screen
+			setTimeout(() => {
+				props.onWalletSetupComplete(keypair);
+			}, 5000);
+		} catch (error) {
+			console.error('Failed to create wallet:', error);
+			setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: false }));
+			setStep('create'); // Go back to create screen on error
+		}
 	};
 
-	const handleImportWallet = () => {
-		props.onImportWallet();
+	const handleImportWalletClick = async () => {
+		if (!isRecoveryPhraseValid()) return;
+		
+		setStep('creating');
+		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
+		
+		try {
+			const keypair = await handleImportWallet(recoveryPhrase);
+			props.onWalletSetupComplete(keypair);
+		} catch (error) {
+			console.error('Failed to import wallet:', error);
+			setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: false }));
+			setStep('import'); // Go back to import screen on error
+		}
 	};
 
 	const handleRecoveryPhraseChange = (value: string) => {
@@ -283,9 +323,10 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		goToImport,
 		goToWelcome,
 		handleCreateWallet,
-		handleImportWallet,
+		handleImportWallet: handleImportWalletClick,
 		recoveryPhrase,
 		handleRecoveryPhraseChange,
 		isRecoveryPhraseValid,
+		walletInfo
 	};
 } 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Button, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Button, TextInput, Alert, ActivityIndicator, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { createStyles } from './styles';
 import { handleGenerateWallet, handleImportWallet, storeCredentials, base64ToBase58PrivateKey } from './scripts';
 import { WalletSetupScreenProps } from './types';
@@ -10,19 +10,7 @@ import { Buffer } from 'buffer';
 import bs58 from 'bs58';
 import { useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
-import {
-	Container,
-	Section,
-	Title,
-	Subtitle,
-	ButtonRow,
-	ActionButton,
-	ButtonText,
-	TermsText,
-	RecoveryInput,
-	IconPlaceholder,
-} from './styles';
-import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_TITLE, IMPORT_WALLET_DESC, TERMS_TEXT } from './scripts';
+import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_TITLE, IMPORT_WALLET_DESC, TERMS_TEXT, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 
 const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
@@ -41,6 +29,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		recoveryPhrase,
 		handleRecoveryPhraseChange,
 		isRecoveryPhraseValid,
+		walletInfo
 	} = useWalletSetupLogic(props);
 
 	const generateWallet = async () => {
@@ -84,25 +73,41 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		}
 	};
 
+	const renderMnemonicWords = (mnemonic: string) => {
+		const words = mnemonic.split(' ');
+		return words.map((word, index) => (
+			<View key={`word-${index}`} style={styles.mnemonicWord}>
+				<Text style={styles.wordNumber}>{index + 1}.</Text>
+				<Text style={styles.wordText}>{word}</Text>
+			</View>
+		));
+	};
+
 	return (
-		<Container>
+		<View style={styles.container}>
 			{step === 'welcome' && (
 				<>
-					<Section>
-						<Title>{WELCOME_TITLE}</Title>
-						<Subtitle>{WELCOME_DESC}</Subtitle>
-					</Section>
-					<ButtonRow>
-						<ActionButton onPress={goToCreate} bg="#F5C754">
-							<ButtonText>Create a new wallet</ButtonText>
-						</ActionButton>
-						<ActionButton onPress={goToImport} bg="#F2F0E8">
-							<ButtonText>Import a recovery phrase</ButtonText>
-						</ActionButton>
-					</ButtonRow>
-					<TermsText>{TERMS_TEXT}</TermsText>
+					<View style={styles.section}>
+						<Text style={styles.title}>{WELCOME_TITLE}</Text>
+						<Text style={styles.subtitle}>{WELCOME_DESC}</Text>
+					</View>
+					<View style={styles.buttonRow}>
+						<TouchableOpacity 
+							onPress={goToCreate} 
+							style={[styles.actionButton, styles.actionButtonYellow]}
+						>
+							<Text style={styles.buttonText}>Create a new wallet</Text>
+						</TouchableOpacity>
+						<TouchableOpacity 
+							onPress={goToImport} 
+							style={[styles.actionButton, styles.actionButtonLight]}
+						>
+							<Text style={styles.buttonText}>Import a recovery phrase</Text>
+						</TouchableOpacity>
+					</View>
+					<Text style={styles.termsText}>{TERMS_TEXT}</Text>
 					{IS_DEBUG_MODE && (
-						<View style={{ marginTop: 'auto', paddingBottom: 20 }}>
+						<View style={styles.debugButtonContainer}>
 							<Button
 								title="Load Debug Wallet (TEST_PRIVATE_KEY)"
 								onPress={loadDebugWallet}
@@ -113,21 +118,25 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 				</>
 			)}
 			{step === 'create' && (
-				<Section>
-					<IconPlaceholder />
-					<Title>{CREATE_WALLET_TITLE}</Title>
-					<Subtitle>{CREATE_WALLET_DESC}</Subtitle>
-					<ActionButton onPress={handleCreateWallet} bg="#F5C754" style={{ marginTop: 32 }}>
-						<ButtonText>Create a new wallet</ButtonText>
-					</ActionButton>
-				</Section>
+				<View style={styles.section}>
+					<View style={styles.iconPlaceholder} />
+					<Text style={styles.title}>{CREATE_WALLET_TITLE}</Text>
+					<Text style={styles.subtitle}>{CREATE_WALLET_DESC}</Text>
+					<TouchableOpacity 
+						onPress={handleCreateWallet} 
+						style={[styles.actionButton, styles.actionButtonYellow, { marginTop: 32 }]}
+					>
+						<Text style={styles.buttonText}>Create a new wallet</Text>
+					</TouchableOpacity>
+				</View>
 			)}
 			{step === 'import' && (
-				<Section>
-					<IconPlaceholder />
-					<Title>{IMPORT_WALLET_TITLE}</Title>
-					<Subtitle>{IMPORT_WALLET_DESC}</Subtitle>
-					<RecoveryInput
+				<View style={styles.section}>
+					<View style={styles.iconPlaceholder} />
+					<Text style={styles.title}>{IMPORT_WALLET_TITLE}</Text>
+					<Text style={styles.subtitle}>{IMPORT_WALLET_DESC}</Text>
+					<TextInput
+						style={styles.recoveryInput}
 						placeholder="Enter your 12-word phrase"
 						value={recoveryPhrase}
 						onChangeText={handleRecoveryPhraseChange}
@@ -136,17 +145,55 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						autoCapitalize="none"
 						autoCorrect={false}
 					/>
-					<ActionButton
+					<TouchableOpacity
 						onPress={handleImportWallet}
-						bg="#F5C754"
+						style={[
+							styles.actionButton, 
+							styles.actionButtonYellow, 
+							{ marginTop: 16, opacity: isRecoveryPhraseValid() ? 1 : 0.5 }
+						]}
 						disabled={!isRecoveryPhraseValid()}
-						style={{ marginTop: 16 }}
 					>
-						<ButtonText>Next</ButtonText>
-					</ActionButton>
-				</Section>
+						<Text style={styles.buttonText}>Next</Text>
+					</TouchableOpacity>
+				</View>
 			)}
-		</Container>
+			{step === 'creating' && (
+				<View style={styles.loadingContainer}>
+					{walletInfo.isLoading ? (
+						<>
+							<View style={styles.spinnerContainer}>
+								<ActivityIndicator size="large" color="#F5C754" />
+							</View>
+							<Text style={styles.title}>{CREATING_WALLET_TITLE}</Text>
+							<Text style={styles.subtitle}>{CREATING_WALLET_DESC}</Text>
+						</>
+					) : (
+						<ScrollView showsVerticalScrollIndicator={false}>
+							<View style={styles.centeredContent}>
+								<View style={styles.iconPlaceholder} />
+								<Text style={styles.title}>{WALLET_CREATED_TITLE}</Text>
+								<Text style={styles.subtitle}>{WALLET_CREATED_DESC}</Text>
+								
+								<View style={styles.walletInfoCard}>
+									<Text style={styles.walletInfoLabel}>Your wallet address</Text>
+									<Text style={styles.walletInfoValue}>{walletInfo.publicKey}</Text>
+									
+									{walletInfo.mnemonic && (
+										<View style={styles.mnemonicContainer}>
+											<Text style={styles.walletInfoLabel}>Recovery phrase</Text>
+											<View style={styles.mnemonicGrid}>
+												{renderMnemonicWords(walletInfo.mnemonic)}
+											</View>
+										</View>
+									)}
+								</View>
+							</View>
+						</ScrollView>
+					)}
+				</View>
+			)}
+		</View>
 	);
 };
 
