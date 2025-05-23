@@ -101,6 +101,15 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						</ActionButton>
 					</ButtonRow>
 					<TermsText>{TERMS_TEXT}</TermsText>
+					{IS_DEBUG_MODE && (
+						<View style={{ marginTop: 'auto', paddingBottom: 20 }}>
+							<Button
+								title="Load Debug Wallet (TEST_PRIVATE_KEY)"
+								onPress={loadDebugWallet}
+								color="lightgray"
+							/>
+						</View>
+					)}
 				</>
 			)}
 			{step === 'create' && (
