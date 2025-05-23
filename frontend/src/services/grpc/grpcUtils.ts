@@ -1,5 +1,5 @@
 import { ConnectError } from '@connectrpc/connect';
-import log from '@/utils/logger'; // Import the new logger
+import { logger as log } from '@/utils/logger'; // Import the new logger
 import { Coin as FrontendCoin } from '@/types';
 import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
 import { DEBUG_MODE } from '@env';
@@ -48,14 +48,14 @@ export const logRequest = (serviceName: string, methodName: string, params: any)
 		return
 	}
 	log.info(`📤 gRPC Request: ${serviceName}.${methodName}`);
-	log.debug(`📤 gRPC ${serviceName}.${methodName} Request Details:`, safeStringify(params));
+	log.log(`📤 gRPC ${serviceName}.${methodName} Request Details:`, safeStringify(params));
 };
 
 export const logResponse = (serviceName: string, methodName: string, response: any): void => {
 	log.info(`📥 gRPC Response: ${serviceName}.${methodName}`);
 	// Special handling for getProxiedImage response to prevent logging base64 data
 	if (serviceName === 'UtilityService' && methodName === 'getProxiedImage') {
-		log.debug(`📥 gRPC ${serviceName}.${methodName} Response: { imageData: [REDACTED] }`);
+		log.log(`📥 gRPC ${serviceName}.${methodName} Response: { imageData: [REDACTED] }`);
 		return;
 	}
 	// Special handling for getPriceHistory response to prevent large logs
@@ -63,16 +63,16 @@ export const logResponse = (serviceName: string, methodName: string, response: a
 		const items = response.data.items;
 		const count = items.length;
 		if (count === 0) {
-			log.debug(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [empty] }, ... }`);
+			log.log(`📥 gRPC ${serviceName}.${methodName} Response: { data: { items: [empty] }, ... }`);
 			return;
 		} else {
 			const first = safeStringify(items[0], 0);
 			const last = safeStringify(items[count - 1], 0);
-			log.debug(`📥 gRPC ${serviceName}.${methodName} Response Details: { data: { items: [count=${count}, first=${first}, last=${last}] }, ... }`);
+			log.log(`📥 gRPC ${serviceName}.${methodName} Response Details: { data: { items: [count=${count}, first=${first}, last=${last}] }, ... }`);
 			return;
 		}
 	}
-	log.debug(`📥 gRPC ${serviceName}.${methodName} Response Details:`, safeStringify(response));
+	log.log(`📥 gRPC ${serviceName}.${methodName} Response Details:`, safeStringify(response));
 };
 
 export const logError = (serviceName: string, methodName: string, error: any): void => {

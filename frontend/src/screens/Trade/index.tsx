@@ -74,7 +74,7 @@ const Trade: React.FC = () => {
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed TradeScreen' });
-		logger.debug(`[Trade] Initializing with initialFromCoin: ${initialFromCoin?.symbol}, initialToCoin: ${initialToCoin?.symbol}`);
+		logger.log(`[Trade] Initializing with initialFromCoin: ${initialFromCoin?.symbol}, initialToCoin: ${initialToCoin?.symbol}`);
 		const initializeCoins = async () => {
 			const promises = [];
 			if (initialFromCoin) {
@@ -91,40 +91,40 @@ const Trade: React.FC = () => {
 	}, [initialFromCoin, initialToCoin, getCoinByID]);
 
 	useEffect(() => {
-		logger.debug('[Trade] Component mounted, setting up coin price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
+		logger.log('[Trade] Component mounted, setting up coin price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
 		pollingIntervalRef.current = setInterval(async () => {
-			logger.debug('[Trade] Polling interval triggered for coin prices', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
+			logger.log('[Trade] Polling interval triggered for coin prices', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
 			if (!fromCoin || !toCoin) {
-				logger.debug('[Trade] Skipping price poll - missing coins');
+				logger.log('[Trade] Skipping price poll - missing coins');
 				return;
 			}
 			try {
-				logger.debug('[Trade] Fetching fresh coin data for price polling...');
+				logger.log('[Trade] Fetching fresh coin data for price polling...');
 				const [updatedFromCoin, updatedToCoin] = await Promise.all([
 					getCoinByID(fromCoin.mintAddress, true),
 					getCoinByID(toCoin.mintAddress, true)
 				]);
 				if (updatedFromCoin) setFromCoin(updatedFromCoin);
 				if (updatedToCoin) setToCoin(updatedToCoin);
-				logger.debug('[Trade] Successfully updated coin data from price polling');
+				logger.log('[Trade] Successfully updated coin data from price polling');
 			} catch (error: any) {
 				logger.error('[Trade] Failed to refresh coin prices during polling', { errorMessage: error?.message, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 			}
 		}, 10000);
 		return () => {
-			logger.debug('[Trade] Component unmounting - cleaning up price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
+			logger.log('[Trade] Component unmounting - cleaning up price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
 			if (pollingIntervalRef.current) {
 				clearInterval(pollingIntervalRef.current);
 				pollingIntervalRef.current = null;
-				logger.debug('[Trade] Price polling interval cleared successfully');
+				logger.log('[Trade] Price polling interval cleared successfully');
 			}
 		};
 	}, [fromCoin?.mintAddress, toCoin?.mintAddress, getCoinByID]);
 
 	useEffect(() => {
-		logger.debug('[Trade] Trade screen mounted (second useEffect, consider merging if appropriate)');
+		logger.log('[Trade] Trade screen mounted (second useEffect, consider merging if appropriate)');
 		return () => {
-			logger.debug('[Trade] Trade screen unmounted (second useEffect, consider merging if appropriate)');
+			logger.log('[Trade] Trade screen unmounted (second useEffect, consider merging if appropriate)');
 		};
 	}, []);
 
@@ -132,19 +132,19 @@ const Trade: React.FC = () => {
 	const toPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === toCoin?.mintAddress), [tokens, toCoin]);
 
 	const handleSelectFromToken = (token: Coin) => {
-		logger.breadcrumb({ category: 'trade', message: 'Selected "from" token', data: { tokenSymbol: token.symbol, currentFromAmount, currentToTokenSymbol: toCoin?.symbol } });
-		logger.debug('[Trade] handleSelectFromToken called', { newTokenSymbol: token.symbol, currentFromAmount: fromAmount, currentToTokenSymbol: toCoin?.symbol, isSameAsCurrent: token.mintAddress === fromCoin?.mintAddress });
+		logger.breadcrumb({ category: 'trade', message: 'Selected "from" token', data: { tokenSymbol: token.symbol, fromAmount, currentToTokenSymbol: toCoin?.symbol } });
+		logger.log('[Trade] handleSelectFromToken called', { newTokenSymbol: token.symbol, currentFromAmount: fromAmount, currentToTokenSymbol: toCoin?.symbol, isSameAsCurrent: token.mintAddress === fromCoin?.mintAddress });
 		if (token.mintAddress === fromCoin?.mintAddress) {
-			logger.debug('[Trade] Skipping "from" token selection - same token already selected');
+			logger.log('[Trade] Skipping "from" token selection - same token already selected');
 			return;
 		}
 		if (token.mintAddress === toCoin?.mintAddress) {
-			logger.debug('[Trade] Selected "from" token is the same as current "to" token. Swapping tokens.');
+			logger.log('[Trade] Selected "from" token is the same as current "to" token. Swapping tokens.');
 			handleSwapCoins();
 		} else {
 			setFromCoin(token);
 			if (fromCoin && token.mintAddress !== fromCoin.mintAddress) {
-				logger.debug('[Trade] Clearing amounts due to new "from" token selection');
+				logger.log('[Trade] Clearing amounts due to new "from" token selection');
 				setFromAmount('');
 				setToAmount('');
 			}
@@ -153,18 +153,18 @@ const Trade: React.FC = () => {
 
 	const handleSelectToToken = (token: Coin) => {
 		logger.breadcrumb({ category: 'trade', message: 'Selected "to" token', data: { tokenSymbol: token.symbol, currentToAmount: toAmount, currentFromTokenSymbol: fromCoin?.symbol } });
-		logger.debug('[Trade] handleSelectToToken called', { newTokenSymbol: token.symbol, currentToAmount: toAmount, currentFromTokenSymbol: fromCoin?.symbol, isSameAsCurrent: token.mintAddress === toCoin?.mintAddress });
+		logger.log('[Trade] handleSelectToToken called', { newTokenSymbol: token.symbol, currentToAmount: toAmount, currentFromTokenSymbol: fromCoin?.symbol, isSameAsCurrent: token.mintAddress === toCoin?.mintAddress });
 		if (token.mintAddress === toCoin?.mintAddress) {
-			logger.debug('[Trade] Skipping "to" token selection - same token already selected');
+			logger.log('[Trade] Skipping "to" token selection - same token already selected');
 			return;
 		}
 		if (token.mintAddress === fromCoin?.mintAddress) {
-			logger.debug('[Trade] Selected "to" token is the same as current "from" token. Swapping tokens.');
+			logger.log('[Trade] Selected "to" token is the same as current "from" token. Swapping tokens.');
 			handleSwapCoins();
 		} else {
 			setToCoin(token);
 			if (toCoin && token.mintAddress !== toCoin.mintAddress) {
-				logger.debug('[Trade] Clearing amounts due to new "to" token selection');
+				logger.log('[Trade] Clearing amounts due to new "to" token selection');
 				setFromAmount('');
 				setToAmount('');
 			}
@@ -172,26 +172,26 @@ const Trade: React.FC = () => {
 	};
 
 	const handleFromAmountChange = useCallback((amount: string) => {
-		logger.debug('[Trade] handleFromAmountChange START', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
+		logger.log('[Trade] handleFromAmountChange START', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		setFromAmount(amount);
-		logger.debug('[Trade] Setting fromAmount in state', { amount });
+		logger.log('[Trade] Setting fromAmount in state', { amount });
 		if (!amount || amount === '.' || amount.endsWith('.')) {
-			logger.debug('[Trade] Skipping quote fetch: incomplete number input for fromAmount', { amount });
+			logger.log('[Trade] Skipping quote fetch: incomplete number input for fromAmount', { amount });
 			return;
 		}
 		if (!fromCoin || !toCoin) {
-			logger.debug('[Trade] Skipping quote fetch: missing fromCoin or toCoin in fromAmountChange');
+			logger.log('[Trade] Skipping quote fetch: missing fromCoin or toCoin in fromAmountChange');
 			return;
 		}
-		logger.debug('[Trade] Preparing to fetch trade quote due to fromAmount change', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
+		logger.log('[Trade] Preparing to fetch trade quote due to fromAmount change', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		if (quoteTimeoutRef.current) {
-			logger.debug('[Trade] Clearing existing quote fetch timeout (fromAmountChange)');
+			logger.log('[Trade] Clearing existing quote fetch timeout (fromAmountChange)');
 			clearTimeout(quoteTimeoutRef.current);
 		}
 		setIsQuoteLoading(true);
 		quoteTimeoutRef.current = setTimeout(async () => {
 			logger.breadcrumb({ category: 'trade', message: "Fetching quote for 'from' amount change", data: { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
-			logger.debug('[Trade] Quote fetch timeout triggered (fromAmountChange)', { amount });
+			logger.log('[Trade] Quote fetch timeout triggered (fromAmountChange)', { amount });
 			try {
 				await fetchTradeQuote(amount, fromCoin, toCoin, setIsQuoteLoading, setToAmount, setTradeDetails);
 			} catch (error: any) {
@@ -203,26 +203,26 @@ const Trade: React.FC = () => {
 	}, [fromCoin, toCoin, fetchTradeQuote, setIsQuoteLoading, setToAmount, setTradeDetails, showToast]);
 
 	const handleToAmountChange = useCallback((amount: string) => {
-		logger.debug('[Trade] handleToAmountChange START', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
+		logger.log('[Trade] handleToAmountChange START', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		setToAmount(amount);
-		logger.debug('[Trade] Setting toAmount in state', { amount });
+		logger.log('[Trade] Setting toAmount in state', { amount });
 		if (!amount || amount === '.' || amount.endsWith('.')) {
-			logger.debug('[Trade] Skipping quote fetch: incomplete number input for toAmount', { amount });
+			logger.log('[Trade] Skipping quote fetch: incomplete number input for toAmount', { amount });
 			return;
 		}
 		if (!fromCoin || !toCoin) {
-			logger.debug('[Trade] Skipping quote fetch: missing fromCoin or toCoin in toAmountChange');
+			logger.log('[Trade] Skipping quote fetch: missing fromCoin or toCoin in toAmountChange');
 			return;
 		}
-		logger.debug('[Trade] Preparing to fetch trade quote due to toAmount change (solving for fromAmount)', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
+		logger.log('[Trade] Preparing to fetch trade quote due to toAmount change (solving for fromAmount)', { amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		if (quoteTimeoutRef.current) {
-			logger.debug('[Trade] Clearing existing quote fetch timeout (toAmountChange)');
+			logger.log('[Trade] Clearing existing quote fetch timeout (toAmountChange)');
 			clearTimeout(quoteTimeoutRef.current);
 		}
 		setIsQuoteLoading(true);
 		quoteTimeoutRef.current = setTimeout(async () => {
 			logger.breadcrumb({ category: 'trade', message: "Fetching quote for 'to' amount change", data: { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
-			logger.debug('[Trade] Quote fetch timeout triggered (toAmountChange)', { amount });
+			logger.log('[Trade] Quote fetch timeout triggered (toAmountChange)', { amount });
 			try {
 				await fetchTradeQuote(amount, toCoin, fromCoin, setIsQuoteLoading, setFromAmount, setTradeDetails);
 			} catch (error: any) {
@@ -286,13 +286,13 @@ const Trade: React.FC = () => {
 
 	const handleSwapCoins = () => {
 		logger.breadcrumb({ category: 'trade', message: 'Pressed swap tokens button', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
-		logger.debug('[Trade] handleSwapCoins START', { fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol, fromAmount, toAmount });
+		logger.log('[Trade] handleSwapCoins START', { fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol, fromAmount, toAmount });
 		if (!fromCoin || !toCoin) {
 			logger.warn('[Trade] Cannot swap with null coins', { fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 			return;
 		}
 		swapCoinsUtil(fromCoin, toCoin, setFromCoin, setToCoin, fromAmount, setFromAmount, toAmount, setToAmount);
-		logger.debug('[Trade] Swap completed successfully via utility');
+		logger.log('[Trade] Swap completed successfully via utility');
 	};
 
 	const handleCloseConfirmationModal = () => {

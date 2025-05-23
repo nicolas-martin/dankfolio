@@ -20,7 +20,7 @@ const KEYCHAIN_USERNAME_MNEMONIC = 'userMnemonic';
 export const base64ToBase58PrivateKey = (base64Key: string): Base58PrivateKey => {
 	// Decode Base64 to bytes
 	const bytes = Buffer.from(base64Key, 'base64');
-	logger.debug('Converting Base64 to Base58', {
+	logger.log('Converting Base64 to Base58', {
 		base64Length: base64Key.length,
 		bytesLength: bytes.length,
 		isValidLength: bytes.length === 64  // This will be logged as part of the object
@@ -33,7 +33,7 @@ export const base64ToBase58PrivateKey = (base64Key: string): Base58PrivateKey =>
 
 	// Convert to Base58
 	const base58Key = bs58.encode(bytes) as Base58PrivateKey;
-	logger.debug('Converted to Base58', {
+	logger.log('Converted to Base58', {
 		base58Length: base58Key.length,
 		base58Preview: base58Key.substring(0, 10) + '...'
 	});

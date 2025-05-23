@@ -34,7 +34,7 @@ export const useProxiedImage = (originalImageUrl: string | undefined): UseProxie
 				// Keeping as console.log for local dev visibility if needed, but logger.debug might also be suitable.
 				// For Sentry, this might be too noisy.
 				// console.log("useProxiedImage: No URL and no default logo provided, and no internal default set.");
-				logger.debug("useProxiedImage: No URL provided, and no default logo available.");
+				logger.log("useProxiedImage: No URL provided, and no default logo available.");
 				setIsLoading(false);
 				setImageUri(null); // Or a placeholder image URI
 				return;
