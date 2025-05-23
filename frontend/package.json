@@ -79,7 +79,7 @@
 		"node-fetch": "^3.3.2",
 		"react-test-renderer": "18.3.1",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.8.2"
+		"typescript": "^5.8.3"
 	},
 	"resolutions": {
 		"use-latest-callback": "^0.2.3"

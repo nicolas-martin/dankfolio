@@ -5,7 +5,7 @@ import CoinChart from './index';
 import { PricePoint } from './types';
 import { PriceData } from '@/types';
 import { View } from 'react-native';
-import { SkiaLine, Circle } from '@shopify/react-native-skia'; // Import the mocked components
+import { Line as SkiaLine, Circle } from '@shopify/react-native-skia'; // Import the mocked components
 
 import { View as RNView, Text as RNText } from 'react-native'; // Import React Native components
 

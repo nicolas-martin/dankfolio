@@ -3,7 +3,7 @@ import bs58 from 'bs58';
 import { RawWalletData, Wallet, Base58PrivateKey } from '@/types';
 import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
 import { grpcApi } from '@/services/grpcApi';
-import log from '@/utils/logger';
+import { logger as log } from '@/utils/logger';
 import * as Keychain from 'react-native-keychain';
 import { usePortfolioStore } from '@/store/portfolio';
 import 'react-native-get-random-values';
@@ -53,7 +53,7 @@ export const prepareSwapRequest = async(
 		}
 		const walletAddress = walletState.address;
 
-		log.debug('Building swap transaction with:', {
+		log.log('Building swap transaction with:', {
 			fromCoinId,
 			toCoinId,
 			amount,
@@ -121,19 +121,19 @@ export const signSwapTransaction = async (unsignedTransaction:string): Promise<s
 		}
 
 		// Decode and deserialize the transaction
-		log.debug('📥 Decoding transaction...');
+		log.log('📥 Decoding transaction...');
 		const transactionBuf = Buffer.from(unsignedTransaction, 'base64');
-		log.debug('📦 Transaction buffer length:', transactionBuf.length);
+		log.log('📦 Transaction buffer length:', transactionBuf.length);
 
 		// Sign the transaction
-		log.debug('✍️ Signing transaction...');
+		log.log('✍️ Signing transaction...');
 		const transaction = VersionedTransaction.deserialize(transactionBuf);
 		transaction.sign([keypair]);
 
 		// Serialize the signed transaction
 		const serializedTransaction = transaction.serialize();
 		const transactionBase64 = Buffer.from(serializedTransaction).toString('base64');
-		log.debug('Swap transaction signed and serialized');
+		log.log('Swap transaction signed and serialized');
 
 		return transactionBase64;
 	} catch (error) {
@@ -155,7 +155,7 @@ export const prepareCoinTransfer = async (
 		}
 		const walletAddress = walletState.address;
 
-		log.debug('Building transfer transaction:', {
+		log.log('Building transfer transaction:', {
 			toAddress,
 			coinMint: coinMint || 'SOL',
 			amount,
@@ -216,26 +216,26 @@ export const signTransferTransaction = async (
 		}
 
 		// Decode and deserialize the transaction
-		log.debug('📥 Decoding transaction...');
+		log.log('📥 Decoding transaction...');
 		const transactionBuf = Buffer.from(unsignedTransaction, 'base64');
-		log.debug('📦 Transaction buffer length:', transactionBuf.length);
+		log.log('📦 Transaction buffer length:', transactionBuf.length);
 
 		// Sign the transaction
-		log.debug('✍️ Signing transaction...');
+		log.log('✍️ Signing transaction...');
 		const transaction = Transaction.from(transactionBuf);
 
 		// Always get a fresh blockhash to ensure transaction is recent
 		const { blockhash } = await connection.getLatestBlockhash('confirmed');
-		log.debug('🔑 Setting fresh blockhash:', blockhash);
+		log.log('🔑 Setting fresh blockhash:', blockhash);
 		transaction.recentBlockhash = blockhash;
 
 		// Sign with our keypair
 		transaction.sign(keypair);
 
 		// Serialize the signed transaction
-		log.debug('📦 Serializing signed transaction...');
+		log.log('📦 Serializing signed transaction...');
 		const serializedTransaction = transaction.serialize().toString('base64');
-		log.debug('Transfer transaction signed and serialized');
+		log.log('Transfer transaction signed and serialized');
 
 		return serializedTransaction;
 	} catch (error) {

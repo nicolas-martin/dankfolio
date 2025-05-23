@@ -45,10 +45,11 @@ const mockGrpcApi: API = {
 	prepareCoinTransfer: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockTx' }),
 	submitCoinTransfer: jest.fn().mockResolvedValue({ transactionHash: 'mockTxHash' }),
 	createWallet: jest.fn().mockResolvedValue({ address: 'mockAddress', privateKey: 'mockPrivateKey' }),
-	getTransferTransaction: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockTx' }),
+	// getTransferTransaction: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockTx' }), // Removed as it's not in API type
 	getProxiedImage: jest.fn().mockResolvedValue({ imageData: 'mockImageData' }),
 	searchCoins: jest.fn().mockResolvedValue([{ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' }]),
-	searchCoinByMint: jest.fn().mockResolvedValue({ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' })
+	searchCoinByMint: jest.fn().mockResolvedValue({ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' }),
+	prepareSwap: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockUnsignedSwapTx' }) // Added missing prepareSwap
 };
 
 jest.mock('@/services/grpcApi', () => ({
@@ -82,7 +83,8 @@ describe('API Service', () => {
 		fromCoinMintAddress: 'coin1',
 		toCoinMintAddress: 'coin2',
 		amount: 1000,
-		signedTransaction: 'signed_tx'
+		signedTransaction: 'signed_tx',
+		unsignedTransaction: 'unsigned_mock_tx' // Added missing property
 	};
 
 	const mockResponses = {

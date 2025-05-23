@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Button, TextInput, Alert, ActivityIndicator, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { createStyles } from './styles';
 import { handleGenerateWallet, handleImportWallet, storeCredentials, base64ToBase58PrivateKey } from './scripts';
@@ -21,10 +21,6 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const { showToast } = useToast();
 	const { setWallet } = usePortfolioStore();
 
-	useEffect(() => {
-		logger.breadcrumb({ category: 'navigation', message: `Viewed WalletSetupScreen step: ${step}` });
-	}, [step]);
-
 	const {
 		step,
 		goToCreate,
@@ -37,6 +33,10 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		isRecoveryPhraseValid,
 		walletInfo
 	} = useWalletSetupLogic(props);
+
+	useEffect(() => {
+		logger.breadcrumb({ category: 'navigation', message: `Viewed WalletSetupScreen step: ${step}` });
+	}, [step]);
 
 	const generateWallet = async () => {
 		try {
@@ -55,12 +55,12 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 
 	const loadDebugWallet = async () => {
 		try {
-			logger.debug('Attempting to load debug wallet...');
+			logger.log('Attempting to load debug wallet...');
 			if (!TEST_PRIVATE_KEY) {
 				throw new Error('TEST_PRIVATE_KEY not found in environment');
 			}
 
-			logger.debug('Decoded TEST_PRIVATE_KEY as Base64');
+			logger.log('Decoded TEST_PRIVATE_KEY as Base64');
 			const base58PrivateKey = base64ToBase58PrivateKey(TEST_PRIVATE_KEY);
 
 			// Store the credentials
@@ -70,7 +70,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 			const keypairBytes = Buffer.from(bs58.decode(base58PrivateKey));
 			const keypair = Keypair.fromSecretKey(keypairBytes);
 
-			logger.debug('Created keypair from debug wallet');
+			logger.log('Created keypair from debug wallet');
 			await setWallet(keypair.publicKey.toBase58());
 			props.onWalletSetupComplete(keypair);
 		} catch (error: any) {

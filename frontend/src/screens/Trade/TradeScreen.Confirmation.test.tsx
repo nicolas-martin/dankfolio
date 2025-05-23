@@ -4,7 +4,7 @@ import TradeScreen from './index'; // The component under test
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import * as TradeScripts from './trade_scripts';
-import { Coin, Wallet, Base58PrivateKey } from '@/types';
+import { Coin, Wallet, RawWalletData, Base58PrivateKey } from '@/types';
 import { View, Text, TextInput } from 'react-native';
 
 // --- Mock Data (Copied from original file) ---
@@ -38,7 +38,7 @@ const mockToCoin: Coin = {
 	tags: ["meme", "community"],
 	createdAt: new Date()
 };
-const mockWallet: Wallet = {
+const mockWallet: RawWalletData = {
 	address: 'TestWalletAddress12345',
 	privateKey: 'TestPrivateKey12345' as Base58PrivateKey,
 	mnemonic: 'test mnemonic phrase',
