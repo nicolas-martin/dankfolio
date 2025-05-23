@@ -1,7 +1,7 @@
 import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
 import { API, Coin, SearchCoinsRequest, SearchCoinsResponse, SearchCoinByMintResponse, TradePayload, SubmitSwapResponse, SwapQuoteResponse, TradeStatusResponse, PriceHistoryResponse, WalletBalanceResponse, CoinTransferPrepareRequest, CoinTransferPrepareResponse, CoinTransferSubmitRequest, CoinTransferResponse, CreateWalletResponse, GetProxiedImageResponse } from './grpc/model';
 // import { DEBUG_MODE } from '@env'; // DEBUG_MODE is now handled by the logger
-import log from '@/utils/logger'; // Import the new logger
+import { logger as log } from '@/utils/logger'; // Import the new logger
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import * as grpcUtils from './grpc/grpcUtils';

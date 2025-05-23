@@ -1,4 +1,4 @@
-import { Wallet } from '@/types';
+import { Wallet, RawWalletData } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '@/utils/logger';
 
@@ -7,7 +7,7 @@ import { logger } from '@/utils/logger';
  * In a real app, use a secure storage solution like react-native-keychain.
  */
 export const secureStorage = {
-	saveWallet: async (wallet: Wallet): Promise<boolean> => {
+	saveWallet: async (wallet: RawWalletData): Promise<boolean> => {
 		try {
 			// Log with less sensitive data for production
 			logger.info('Saving wallet to storage', {
@@ -35,7 +35,7 @@ export const secureStorage = {
 		}
 	},
 
-	getWallet: async (): Promise<Wallet | null> => {
+	getWallet: async (): Promise<RawWalletData | null> => {
 		try {
 			const walletData = await AsyncStorage.getItem('wallet');
 			logger.info('Retrieved wallet from storage', {
@@ -45,7 +45,7 @@ export const secureStorage = {
 
 			if (!walletData) return null;
 
-			const parsed = JSON.parse(walletData) as Wallet;
+			const parsed = JSON.parse(walletData) as RawWalletData;
 			// Log with less sensitive data for production
 			logger.info('Parsed wallet data', {
 				address: parsed.address,

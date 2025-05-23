@@ -1,4 +1,4 @@
-import { Coin, Wallet, Base58PrivateKey } from '@/types';
+import { Coin, Wallet, RawWalletData, Base58PrivateKey } from '@/types';
 import { PortfolioToken } from '@/store/portfolio';
 
 export const mockFromCoin: Coin = {
@@ -33,7 +33,7 @@ export const mockToCoin: Coin = {
 	createdAt: new Date("2024-01-01T00:00:00Z")
 };
 
-export const mockWallet: Wallet = {
+export const mockWallet: RawWalletData = {
 	address: 'TestWalletAddress12345',
 	privateKey: 'TestPrivateKey12345' as Base58PrivateKey,
 	mnemonic: 'test mnemonic phrase for wallet',

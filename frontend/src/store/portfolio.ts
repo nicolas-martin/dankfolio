@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { RawWalletData, Wallet, Coin, Base58PrivateKey } from '@/types';
 import { useCoinStore } from './coins';
 import { grpcApi } from '@/services/grpcApi';
-import log from '@/utils/logger';
+import { logger as log } from '@/utils/logger';
 import * as Keychain from 'react-native-keychain';
 import { getKeypairFromPrivateKey } from '@/services/solana';
 const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
@@ -96,22 +96,22 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 		}
 		try {
 			set({ isLoading: true, error: null });
-			log.debug('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
+			log.log('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
 			const balance = await grpcApi.getWalletBalance(address);
-			log.debug('✅ [PortfolioStore] Received balance data:', balance);
+			log.log('✅ [PortfolioStore] Received balance data:', balance);
 
 			const coinStore = useCoinStore.getState();
 			let coinMap = coinStore.coinMap;
 
 			const balanceIds = balance.balances.map((b: { id: string }) => b.id);
-			log.debug('📊 [PortfolioStore] Balance IDs:', balanceIds);
+			log.log('📊 [PortfolioStore] Balance IDs:', balanceIds);
 
 			const missingIds = balanceIds.filter((id: string) => !coinMap[id]);
-			log.debug('🔍 [PortfolioStore] Missing coin IDs in CoinStore cache:', missingIds);
+			log.log('🔍 [PortfolioStore] Missing coin IDs in CoinStore cache:', missingIds);
 
 			const missingCoinIds: string[] = [];
 			const fetchPromises = missingIds.map(async (id: string) => {
-				log.debug(`⏳ [PortfolioStore] Attempting to fetch missing coin details for ${id}`);
+				log.log(`⏳ [PortfolioStore] Attempting to fetch missing coin details for ${id}`);
 				try {
 					const coin = await coinStore.getCoinByID(id);
 					if (!coin) {
@@ -143,9 +143,9 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 				} as PortfolioToken;
 			});
 
-			log.debug('📈 [PortfolioStore] Processed tokens before filtering:', tokens.length);
+			log.log('📈 [PortfolioStore] Processed tokens before filtering:', tokens.length);
 			const filteredTokens = tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null);
-			log.debug('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
+			log.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
 
 			set({
 				tokens: filteredTokens,
