@@ -7,6 +7,7 @@ import { usePortfolioStore } from '@store/portfolio';
 import bs58 from 'bs58';
 import { useState } from 'react';
 import { WalletSetupStep, WalletSetupState, WalletSetupScreenProps, WalletInfo } from './types';
+import { logger } from '@/utils/logger';
 
 // Branded type for Base58 private keys to ensure type safety
 type Base58PrivateKey = string & { readonly __brand: unique symbol };
@@ -19,19 +20,20 @@ const KEYCHAIN_USERNAME_MNEMONIC = 'userMnemonic';
 export const base64ToBase58PrivateKey = (base64Key: string): Base58PrivateKey => {
 	// Decode Base64 to bytes
 	const bytes = Buffer.from(base64Key, 'base64');
-	console.log('🔄 Converting Base64 to Base58:', {
+	logger.debug('Converting Base64 to Base58', {
 		base64Length: base64Key.length,
 		bytesLength: bytes.length,
-		isValidLength: bytes.length === 64
+		isValidLength: bytes.length === 64  // This will be logged as part of the object
 	});
 
 	if (bytes.length !== 64) {
+		// This error will be caught by the calling function, so no need to log separately here
 		throw new Error(`Invalid private key length: ${bytes.length} bytes. Expected 64 bytes.`);
 	}
 
 	// Convert to Base58
 	const base58Key = bs58.encode(bytes) as Base58PrivateKey;
-	console.log('✅ Converted to Base58:', {
+	logger.debug('Converted to Base58', {
 		base58Length: base58Key.length,
 		base58Preview: base58Key.substring(0, 10) + '...'
 	});
@@ -49,7 +51,8 @@ export const toBase58PrivateKey = (bytes: Uint8Array): Base58PrivateKey => {
 
 // Helper to store credentials safely
 export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: string): Promise<void> => {
-	console.log('🔐 Storing wallet credentials...');
+	logger.breadcrumb({ category: 'wallet_setup', message: 'Storing wallet credentials' });
+	logger.info('Storing wallet credentials...');
 
 	try {
 		// First clear any existing credentials
@@ -97,13 +100,13 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 				throw new Error('Failed to verify stored mnemonic');
 			}
 
-			console.log('✅ Wallet credentials stored and verified');
+			logger.info('Wallet credentials stored and verified');
 		} catch (error) {
-			console.error('❌ Error verifying stored credentials:', error);
+			logger.exception(error, { functionName: 'storeCredentials', context: 'VerificationStep' });
 			throw error;
 		}
 	} catch (error) {
-		console.error('❌ Error storing credentials:', error);
+		logger.exception(error, { functionName: 'storeCredentials' });
 		// Clean up on failure
 		await Keychain.resetGenericPassword({
 			service: KEYCHAIN_SERVICE
@@ -113,8 +116,9 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 };
 
 export const handleGenerateWallet = async (): Promise<Keypair> => {
+	logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generation started' });
 	try {
-		console.log("📝 Generating new wallet...");
+		logger.info("Generating new wallet...");
 		const newWalletData = await grpcApi.createWallet();
 		if (!newWalletData || !newWalletData.secret_key || !newWalletData.mnemonic) {
 			throw new Error('Failed to generate wallet from API.');
@@ -139,24 +143,27 @@ export const handleGenerateWallet = async (): Promise<Keypair> => {
 
 		// Verify public key matches
 		if (keypair.publicKey.toBase58() !== newWalletData.public_key) {
-			console.warn('⚠️ Public key mismatch detected');
+			logger.warn('Public key mismatch detected during wallet generation.', { generatedPubKey: keypair.publicKey.toBase58(), expectedPubKey: newWalletData.public_key });
 		}
 
 		// Store in portfolio store
 		await usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());
 
-		console.log('✅ New wallet generated and stored');
+		logger.info('New wallet generated and stored');
+		logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generated successfully', data: { publicKey: keypair.publicKey.toBase58() } });
 		return keypair;
 	} catch (error) {
-		console.error('❌ Error generating wallet:', error);
+		logger.exception(error, { functionName: 'handleGenerateWallet' });
 		throw error;
 	}
 };
 
 export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => {
+	logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet import started' });
 	try {
-		console.log('🔑 Importing wallet from mnemonic...');
+		logger.info('Importing wallet from mnemonic...');
 		if (!bip39.validateMnemonic(mnemonic)) {
+			// This error is caught and handled by the UI, no need to log as exception here
 			throw new Error('Invalid mnemonic phrase.');
 		}
 		const seed = await bip39.mnemonicToSeed(mnemonic);
@@ -172,10 +179,14 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => 
 		// Store in portfolio store
 		await usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());
 
-		console.log('✅ Wallet imported and stored');
+		logger.info('Wallet imported and stored');
+		logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet imported successfully', data: { publicKey: keypair.publicKey.toBase58() } });
 		return keypair;
 	} catch (error) {
-		console.error('❌ Error importing wallet:', error);
+		// Log as exception if it's not the "Invalid mnemonic phrase" error, which is handled.
+		if (error.message !== 'Invalid mnemonic phrase.') {
+			logger.exception(error, { functionName: 'handleImportWallet' });
+		}
 		throw error;
 	}
 };
@@ -187,7 +198,7 @@ export const retrieveWalletFromStorage = async (): Promise<string | null> => {
 		});
 
 		if (!credentials) {
-			console.log('ℹ️ No wallet found in storage');
+			logger.info('No wallet found in storage.');
 			return null;
 		}
 
@@ -202,17 +213,17 @@ export const retrieveWalletFromStorage = async (): Promise<string | null> => {
 			}
 			// Verify the keypair is valid by reconstructing it
 			const keypair = Keypair.fromSecretKey(keypairBytes);
-			console.log('✅ Wallet retrieved from storage');
+			logger.info('Wallet retrieved from storage.');
 			return keypair.publicKey.toBase58();
 		} catch (error) {
-			console.warn('⚠️ Invalid wallet data in storage, clearing credentials');
+			logger.warn('Invalid wallet data in storage, clearing credentials.', { error: error.message });
 			await Keychain.resetGenericPassword({
 				service: KEYCHAIN_SERVICE
 			});
 			return null;
 		}
 	} catch (error) {
-		console.error('❌ Error accessing storage:', error);
+		logger.error('Error accessing storage during wallet retrieval.', { error: error.message });
 		return null;
 	}
 };
@@ -225,7 +236,7 @@ export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 		});
 
 		if (!credentials) {
-			console.log('ℹ️ No mnemonic found in storage');
+			logger.info('No mnemonic found in storage.');
 			return null;
 		}
 
@@ -233,11 +244,11 @@ export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 			const parsedCredentials = JSON.parse(credentials.password);
 			return parsedCredentials.mnemonic;
 		} catch (error) {
-			console.error('❌ Error parsing stored mnemonic:', error);
+			logger.error('Error parsing stored mnemonic.', { error: error.message });
 			return null;
 		}
 	} catch (error) {
-		console.error('❌ Error accessing storage:', error);
+		logger.error('Error accessing storage during mnemonic retrieval.', { error: error.message });
 		return null;
 	}
 };
@@ -270,6 +281,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	const goToWelcome = () => setStep('welcome');
 
 	const handleCreateWallet = async () => {
+		logger.breadcrumb({ category: 'wallet_setup', message: 'Create wallet process started' });
 		setStep('creating');
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
 		
@@ -286,7 +298,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 				props.onWalletSetupComplete(keypair);
 			}, 5000);
 		} catch (error) {
-			console.error('Failed to create wallet:', error);
+			logger.exception(error, { functionName: 'handleCreateWallet', context: 'useWalletSetupLogic' });
 			setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: false }));
 			setStep('create'); // Go back to create screen on error
 		}
@@ -294,7 +306,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 
 	const handleImportWalletClick = async () => {
 		if (!isRecoveryPhraseValid()) return;
-		
+		logger.breadcrumb({ category: 'wallet_setup', message: 'Import wallet process started' });
 		setStep('creating');
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
 		
@@ -302,7 +314,12 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 			const keypair = await handleImportWallet(recoveryPhrase);
 			props.onWalletSetupComplete(keypair);
 		} catch (error) {
-			console.error('Failed to import wallet:', error);
+			// The error from handleImportWallet (e.g. invalid mnemonic) is already potentially logged there
+			// or is an expected error for the UI.
+			// Only log as a new exception if it's something unexpected here.
+			if (error.message !== 'Invalid mnemonic phrase.') {
+				logger.exception(error, { functionName: 'handleImportWalletClick', context: 'useWalletSetupLogic' });
+			}
 			setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: false }));
 			setStep('import'); // Go back to import screen on error
 		}

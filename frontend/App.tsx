@@ -16,6 +16,8 @@ import { retrieveWalletFromStorage } from '@screens/WalletSetup/scripts';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
 import * as Sentry from '@sentry/react-native';
+import { logger } from '@/utils/logger';
+import Constants from 'expo-constants';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -81,27 +83,42 @@ const App: React.FC = () => {
 	const { setWallet, wallet } = usePortfolioStore();
 
 	const handleWalletSetupComplete = async (newKeypair: Keypair) => {
+		logger.breadcrumb({ message: 'App: Wallet setup complete, navigating to main app', category: 'app_lifecycle' });
 		await setWallet(newKeypair.publicKey.toBase58());
 		setNeedsWalletSetup(false);
 	};
 
 	useEffect(() => {
+		// This effect runs once on app mount
+		logger.log('App launched'); // Using logger.log as per previous convention for general app info
+		Sentry.setContext('appStart', { 
+			version: Constants.expoConfig?.version, 
+			build: Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode?.toString(), // Handle Android build number
+			timestamp: new Date().toISOString() 
+		});
+
 		async function prepare() {
+			logger.breadcrumb({ message: 'App: Preparing - Checking wallet storage', category: 'app_lifecycle' });
 			try {
 				const publicKey = await retrieveWalletFromStorage();
 
 				if (publicKey) {
-					console.log("Existing wallet found, setting in store.");
+					logger.info("Existing wallet found, setting in store.");
+					logger.breadcrumb({ message: 'App: Existing wallet found', category: 'app_lifecycle' });
+					Sentry.setUser({ id: publicKey }); // Set user context on initial load
 					await setWallet(publicKey);
 					setNeedsWalletSetup(false);
 				} else {
-					console.log("No existing wallet found, showing setup screen.");
+					logger.info("No existing wallet found, showing setup screen.");
+					logger.breadcrumb({ message: 'App: No existing wallet found', category: 'app_lifecycle' });
 					setNeedsWalletSetup(true);
 				}
 			} catch (e) {
-				console.warn('Error during app preparation:', e);
+				logger.warn('Error during app preparation', { error: e?.message }); // Using warn as it sets a UI state
+				logger.breadcrumb({ message: 'App: Error during preparation', category: 'app_lifecycle', data: { error: e?.message } });
 				setNeedsWalletSetup(true);
 			} finally {
+				logger.breadcrumb({ message: 'App: Ready', category: 'app_lifecycle' });
 				setAppIsReady(true);
 			}
 		}
@@ -109,8 +126,21 @@ const App: React.FC = () => {
 		prepare();
 	}, [setWallet]);
 
+	// Effect to update Sentry user context when wallet address changes
+	useEffect(() => {
+		if (wallet?.address) {
+			logger.info("Wallet address updated in store, setting Sentry user context.", { walletAddress: wallet.address });
+			Sentry.setUser({ id: wallet.address });
+		} else {
+			// This case handles when the wallet is cleared from the store
+			logger.info("Wallet address cleared from store, clearing Sentry user context.");
+			Sentry.configureScope(scope => scope.setUser(null));
+		}
+	}, [wallet?.address]);
+
 	const onLayoutRootView = useCallback(async () => {
 		if (appIsReady) {
+			logger.breadcrumb({ message: 'App: Layout ready, hiding splash screen', category: 'app_lifecycle' });
 			await SplashScreen.hideAsync();
 		}
 	}, [appIsReady]);
@@ -127,13 +157,15 @@ const App: React.FC = () => {
 						<View style={styles.container}>
 							<StatusBar style="auto" />
 							{needsWalletSetup ? (
+								(logger.breadcrumb({ message: 'App: Navigating to WalletSetupScreen', category: 'navigation' }),
 								<WalletSetupScreen
 									onWalletSetupComplete={handleWalletSetupComplete}
 									onCreateWallet={() => { }}
 									onImportWallet={() => { }}
-								/>
+								/>)
 							) : (
-								<Navigation />
+								(logger.breadcrumb({ message: 'App: Navigating to MainTabs', category: 'navigation' }),
+								<Navigation />)
 							)}
 						</View>
 					</ToastProvider>

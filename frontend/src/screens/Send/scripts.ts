@@ -7,6 +7,7 @@ import { prepareCoinTransfer, signTransferTransaction } from '@/services/solana'
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { ToastProps } from '@components/Common/Toast/toast_types';
 import { usePortfolioStore } from '@/store/portfolio';
+import { logger } from '@/utils/logger';
 
 export const handleTokenSelect = (
 	coin: Coin,
@@ -56,9 +57,10 @@ export const handleTokenTransfer = async (formData: TokenTransferFormData): Prom
 			unsignedTransaction
 		});
 
+		logger.breadcrumb({ category: 'send_tokens', message: 'Token transfer submitted to backend', data: { txHash: submitResponse.transactionHash } });
 		return submitResponse.transactionHash;
 	} catch (error) {
-		console.error('Token transfer failed:', error);
+		logger.exception(error, { functionName: 'handleTokenTransfer', params: { toAddress: formData.toAddress, mint: formData.selectedTokenMint, amount: formData.amount } });
 
 		// Handle specific error cases
 		if (error.message?.includes('Blockhash not found') ||
@@ -100,7 +102,7 @@ export const stopPolling = (
 	if (pollingIntervalRef.current) {
 		clearInterval(pollingIntervalRef.current);
 		pollingIntervalRef.current = null;
-		console.log('Polling stopped.');
+		logger.info('Polling stopped.');
 	}
 	setIsLoadingTrade(false);
 };
@@ -114,24 +116,26 @@ export const pollTransactionStatus = async (
 	showToast: (params: ToastProps) => void,
 	wallet: Wallet | null
 ) => {
-	console.log(`Polling status for ${txHash}...`);
+	logger.info(`Polling status for ${txHash}...`);
 	try {
 		const statusResult = await grpcApi.getSwapStatus(txHash);
 
 		if (!statusResult) {
-			console.log('Transaction status not found yet, continuing poll...');
+			logger.info('Transaction status not found yet, continuing poll...', { txHash });
 			return;
 		}
 
 		setPollingConfirmations(statusResult.confirmations);
 
 		if (statusResult.error) {
-			console.error('Transaction failed:', statusResult.error);
+			logger.error('Transaction failed during polling (Send Screen):', { error: statusResult.error, txHash });
+			logger.breadcrumb({ category: 'send_tokens', level: 'error', message: 'Token transfer failed on backend (Send Screen)', data: { txHash, error: statusResult.error } });
 			setPollingStatus('failed');
 			setPollingError(typeof statusResult.error === 'string' ? statusResult.error : JSON.stringify(statusResult.error));
 			stopPollingFn();
 		} else if (statusResult.finalized) {
-			console.log('Transaction finalized!');
+			logger.info('Transaction finalized (Send Screen)!', { txHash });
+			logger.breadcrumb({ category: 'send_tokens', message: 'Token transfer finalized (Send Screen)', data: { txHash } });
 			setPollingStatus('finalized');
 			stopPollingFn();
 			if (wallet) {
@@ -139,14 +143,14 @@ export const pollTransactionStatus = async (
 			}
 			showToast({ type: 'success', message: 'Transfer finalized successfully!' });
 		} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') {
-			console.log(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization...`);
+			logger.info(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization (Send Screen)...`, { txHash });
 			setPollingStatus('confirmed');
 		} else {
-			console.log(`Current status: ${statusResult.status}, continuing poll...`);
+			logger.info(`Current status: ${statusResult.status}, continuing poll (Send Screen)...`, { txHash, status: statusResult.status });
 			setPollingStatus('polling');
 		}
 	} catch (error: any) {
-		console.error('Error polling transaction status:', error);
+		logger.exception(error, { functionName: 'pollTransactionStatus', context: 'SendScreen', params: { txHash } });
 		setPollingStatus('failed');
 		setPollingError(error?.message || 'Failed to fetch transaction status');
 		stopPollingFn();

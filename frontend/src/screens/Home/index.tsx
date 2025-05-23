@@ -11,6 +11,7 @@ import { useToast } from '@components/Common/Toast';
 import { createStyles } from './home_styles';
 import { Coin } from '@/types';
 import { OTAUpdater } from '@components/OTAupdate';
+import { logger } from '@/utils/logger';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -19,6 +20,10 @@ const HomeScreen = () => {
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+
+	useEffect(() => {
+		logger.breadcrumb({ category: 'navigation', message: 'Viewed HomeScreen' });
+	}, []);
 
 	// Shared logic for fetching trending coins and portfolio
 	const fetchTrendingAndPortfolio = useCallback(async () => {
@@ -56,6 +61,16 @@ const HomeScreen = () => {
 		}
 	}, [fetchTrendingAndPortfolio, showToast]);
 
+	const handlePressCoinCard = useCallback((coin: Coin) => {
+		logger.breadcrumb({ category: 'ui', message: 'Pressed CoinCard on HomeScreen', data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } });
+		handleCoinPressCallback(coin);
+	}, [handleCoinPressCallback]);
+
+	const handleRefreshPress = useCallback(() => {
+		logger.breadcrumb({ category: 'ui', message: 'Pressed Refresh button on HomeScreen' });
+		onRefresh();
+	}, [onRefresh]);
+
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">
 			<OTAUpdater />
@@ -67,7 +82,7 @@ const HomeScreen = () => {
 							<IconButton
 								icon="refresh"
 								size={24}
-								onPress={onRefresh}
+								onPress={handleRefreshPress}
 								testID="refresh-button"
 							/>
 						</View>
@@ -76,7 +91,7 @@ const HomeScreen = () => {
 								data={availableCoins}
 								keyExtractor={(item) => item.mintAddress || item.symbol}
 								renderItem={({ item }) => (
-									<CoinCard coin={item} onPress={() => handleCoinPressCallback(item)} />
+									<CoinCard coin={item} onPress={() => handlePressCoinCard(item)} />
 								)}
 								contentContainerStyle={styles.coinsList}
 								showsVerticalScrollIndicator={false}

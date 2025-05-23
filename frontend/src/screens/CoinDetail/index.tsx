@@ -17,6 +17,7 @@ import {
 import { createStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
+import { logger } from '@/utils/logger';
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -31,6 +32,14 @@ const CoinDetail: React.FC = () => {
 	const { tokens } = usePortfolioStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+
+	useEffect(() => {
+		logger.breadcrumb({
+			category: 'navigation',
+			message: 'Viewed CoinDetailScreen',
+			data: { coinSymbol: initialCoin?.symbol, coinMintAddress: initialCoin?.mintAddress },
+		});
+	}, [initialCoin]);
 
 	const parseValue = (val: string | number | undefined): number => {
 		if (val === undefined) return 0;
@@ -119,7 +128,14 @@ const CoinDetail: React.FC = () => {
 					<View style={styles.timeframeButtonsContainer}>
 						<SegmentedButtons
 							value={selectedTimeframe}
-							onValueChange={value => setSelectedTimeframe(value)}
+							onValueChange={value => {
+								logger.breadcrumb({
+									category: 'ui',
+									message: 'Selected timeframe on CoinDetailScreen',
+									data: { timeframe: value, coinSymbol: initialCoin?.symbol },
+								});
+								setSelectedTimeframe(value);
+							}}
 							buttons={TIMEFRAMES.map(tf => ({
 								value: tf.value,
 								label: tf.label

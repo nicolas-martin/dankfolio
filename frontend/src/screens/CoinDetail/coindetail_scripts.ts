@@ -6,6 +6,7 @@ import { TimeframeOption } from './coindetail_types';
 import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb';
 import { useCoinStore } from '@/store/coins';
 import { SOLANA_ADDRESS } from '@/utils/constants';
+import { logger } from '@/utils/logger';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 interface ToastParams {
@@ -29,25 +30,17 @@ export const fetchPriceHistory = async (
 	isInitialLoad: boolean = false
 ) => {
 	try {
-		// Only set loading on initial load
 		if (isInitialLoad) {
 			setLoading(true);
 		}
-
-		// If no coin is provided, we can't fetch the price history
 		if (!coin) {
-			console.error('❌ No coin provided for price history');
+			logger.error('No coin provided for price history', { functionName: 'fetchPriceHistory' });
 			setPriceHistory([]);
 			return;
 		}
-
-		// Calculate the date range based on the timeframe
 		const now = new Date();
 		let startDate = new Date(now);
 		const points = 100;
-
-		// TODO: This has to change, we want "fifteen minute before now", not 
-		// 100 points of 15 minutes.
 		switch (timeframe) {
 			case 'FIFTEEN_MINUTE':
 				startDate = new Date(now.getTime() - points * 15 * 60 * 1000);
@@ -67,12 +60,8 @@ export const fetchPriceHistory = async (
 			default:
 				throw new Error(`Invalid timeframe: ${timeframe}`);
 		}
-
-		// Format dates in RFC3339 format
 		const time_to = now.toISOString();
 		const time_from = startDate.toISOString();
-
-
 		const response = await grpcApi.getPriceHistory(
 			coin.mintAddress,
 			timeframe,
@@ -80,7 +69,6 @@ export const fetchPriceHistory = async (
 			time_to,
 			"token"
 		);
-
 		if (response?.data?.items) {
 			const mapped: PriceData[] = response.data.items
 				.filter(item => item.value !== null && item.unixTime !== null)
@@ -94,7 +82,7 @@ export const fetchPriceHistory = async (
 			setPriceHistory([]);
 		}
 	} catch (error) {
-		console.error(`Error fetching price history for ${coin?.mintAddress}:`, error);
+		logger.exception(error, { functionName: 'fetchPriceHistory', params: { coinMintAddress: coin?.mintAddress, timeframe } });
 		setPriceHistory([]);
 	} finally {
 		setLoading(false);
@@ -114,19 +102,14 @@ export const handleTradeNavigation = async (
 		});
 		return;
 	}
-
 	let selectedFromCoin = fromCoin;
-
-	// If no fromCoin provided, try to get SOL
 	if (!selectedFromCoin) {
 		try {
 			selectedFromCoin = await useCoinStore.getState().getCoinByID(SOLANA_ADDRESS);
-		} catch (error) {
-			console.error('Failed to get SOL coin:', error);
+		} catch (error: any) {
+			logger.warn('Failed to get SOL coin during trade navigation.', { error: error.message, functionName: 'handleTradeNavigation' });
 		}
 	}
-
-	// Prevent trading the same coin
 	if (selectedFromCoin && toCoin.mintAddress === selectedFromCoin.mintAddress) {
 		showToast({
 			type: 'error',
@@ -134,7 +117,14 @@ export const handleTradeNavigation = async (
 		});
 		return;
 	}
-
+	logger.breadcrumb({
+		category: 'navigation',
+		message: 'Navigating to TradeScreen from CoinDetail',
+		data: { 
+			fromCoin: selectedFromCoin?.symbol || 'N/A', 
+			toCoin: toCoin.symbol 
+		},
+	});
 	navigate('Trade', {
 		initialFromCoin: selectedFromCoin,
 		initialToCoin: toCoin

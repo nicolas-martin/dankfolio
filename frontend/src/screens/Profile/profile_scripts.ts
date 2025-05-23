@@ -1,20 +1,28 @@
 import Clipboard from '@react-native-clipboard/clipboard';
 import { NotificationProps } from '@/types';
 import { ProfileCoin } from './profile_types';
+import { logger } from '@/utils/logger';
 
 export const handleTokenPress = (token: ProfileCoin['coin'], navigate: (screen: string, params: any) => void) => {
+	logger.breadcrumb({
+		category: 'navigation',
+		message: 'Navigating to CoinDetail from ProfileScreen token press',
+		data: { coinSymbol: token.symbol, coinMint: token.mintAddress },
+	});
 	navigate('CoinDetail', { coin: token });
 };
 
 export const copyToClipboard = async (text: string, type: string, showToast: (props: NotificationProps) => void) => {
 	try {
 		Clipboard.setString(text);
+		logger.breadcrumb({ category: 'ui', message: 'Copied to clipboard', data: { type, textLength: text.length } });
 		showToast({
 			type: 'success',
 			message: `${type} address copied to clipboard`,
 			duration: 2000
 		});
 	} catch (error) {
+		logger.breadcrumb({ category: 'ui', level: 'error', message: 'Failed to copy to clipboard', data: { type } });
 		showToast({
 			type: 'error',
 			message: 'Failed to copy to clipboard',
@@ -39,6 +47,7 @@ export const handleRefresh = async (
 	showToast: (props: NotificationProps) => void
 ) => {
 	if (!wallet) return;
+	// Breadcrumb for refresh initiation is in Profile/index.tsx as it's UI initiated
 	setIsRefreshing(true);
 	try {
 		await fetchPortfolioBalance(wallet.address);

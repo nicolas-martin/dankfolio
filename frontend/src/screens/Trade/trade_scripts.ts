@@ -1,6 +1,7 @@
 // import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Coin, Wallet } from '@/types';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
+import { logger } from '@/utils/logger';
 
 import { grpcApi } from '@/services/grpcApi';
 import { prepareSwapRequest, signSwapTransaction } from '@/services/solana';
@@ -17,12 +18,10 @@ export const QUOTE_DEBOUNCE_MS = 1000
 // NOTE: Should we use the store instead?
 export const getCoinPrices = async (mintAddresses: string[]): Promise<Record<string, number>> => {
 	try {
-		console.log('i????s it me??');
 		const prices = await grpcApi.getCoinPrices(mintAddresses);
-		console.log('i????s it me??');
 		return prices;
 	} catch (error) {
-		console.error('❌ Error fetching token prices:', error);
+		logger.exception(error, { functionName: 'getCoinPrices', params: { mintAddresses } });
 		throw error; // Propagate error to caller
 	}
 };
@@ -50,7 +49,7 @@ export const fetchTradeQuote = async (
 		const updatedToCoin = { ...toCoin, price: prices[toCoin.mintAddress] };
 
 		const rawAmount = toRawAmount(amount, updatedFromCoin.decimals);
-		console.log('📊 Trade Quote Request:', {
+		logger.info('Trade Quote Request:', {
 			amount,
 			rawAmount,
 			fromCoin: {
@@ -66,7 +65,7 @@ export const fetchTradeQuote = async (
 		});
 
 		const response = await grpcApi.getSwapQuote(updatedFromCoin.mintAddress, updatedToCoin.mintAddress, rawAmount);
-		console.log('📬 Trade Quote Response:', response);
+		logger.info('Trade Quote Response:', response);
 
 		setToAmount(response.estimatedAmount);
 
@@ -78,7 +77,7 @@ export const fetchTradeQuote = async (
 			route: response.routePlan.join(' → ')
 		});
 	} catch (error: any) {
-		console.error('❌ Error fetching trade quote:', error);
+		logger.exception(error, { functionName: 'fetchTradeQuote', params: { amount, fromCoinSc: fromCoin.symbol, toCoinSc: toCoin.symbol } });
 		// Only reset trade details, but keep the amount values
 		setTradeDetails({
 			exchangeRate: '0',
@@ -117,7 +116,7 @@ export const stopPolling = (
 	if (pollingIntervalRef.current) {
 		clearInterval(pollingIntervalRef.current);
 		pollingIntervalRef.current = null;
-		console.log('Polling stopped.');
+		logger.info('Polling stopped.');
 	}
 	setIsLoadingTrade(false); // Also signifies polling has stopped
 };
@@ -131,24 +130,24 @@ export const pollTradeStatus = async (
 	showToast: (params: ToastProps) => void, // Use ToastProps
 	wallet: Wallet | null // Pass wallet for balance refresh
 ) => {
-	console.log(`Polling status for ${txHash}...`);
+	logger.info(`Polling status for ${txHash}...`);
 	try {
 		const statusResult = await grpcApi.getSwapStatus(txHash);
 
 		if (!statusResult) {
-			console.log('Transaction status not found yet, continuing poll...');
+			logger.info('Transaction status not found yet, continuing poll...', { txHash });
 			return;
 		}
 
 		setPollingConfirmations(statusResult.confirmations);
 
 		if (statusResult.error) {
-			console.error('Transaction failed:', statusResult.error);
+			logger.error('Transaction failed during polling:', { error: statusResult.error, txHash });
 			setPollingStatus('failed');
 			setPollingError(typeof statusResult.error === 'string' ? statusResult.error : JSON.stringify(statusResult.error));
 			stopPollingFn();
 		} else if (statusResult.finalized) {
-			console.log('Transaction finalized!');
+			logger.info('Transaction finalized!', { txHash });
 			setPollingStatus('finalized');
 			stopPollingFn();
 			if (wallet) {
@@ -156,14 +155,14 @@ export const pollTradeStatus = async (
 			}
 			showToast({ type: 'success', message: 'Trade finalized successfully!' });
 		} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') {
-			console.log(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization...`);
+			logger.info(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization...`, { txHash });
 			setPollingStatus('confirmed');
 		} else {
-			console.log(`Current status: ${statusResult.status}, continuing poll...`);
+			logger.info(`Current status: ${statusResult.status}, continuing poll...`, { txHash, status: statusResult.status });
 			setPollingStatus('polling');
 		}
 	} catch (error: any) {
-		console.error('Error polling transaction status:', error);
+		logger.exception(error, { functionName: 'pollTradeStatus', params: { txHash } });
 		setPollingStatus('failed');
 		setPollingError(error?.message || 'Failed to fetch transaction status');
 		stopPollingFn();
@@ -211,7 +210,7 @@ export const executeTrade = async (
 		setPollingConfirmations(0);
 		setIsStatusModalVisible(true);
 
-		console.log('🔑 Signing trade transaction:', {
+		logger.info('Signing trade transaction:', {
 			fromCoin: fromCoin.symbol,
 			toCoin: toCoin.symbol,
 			fromAmount,
@@ -231,7 +230,7 @@ export const executeTrade = async (
 
 		const signedTx = await signSwapTransaction(unsignedTx);
 
-		console.log('✅ Transaction signed.');
+		logger.info('Transaction signed.', { fromCoin: fromCoin.symbol, toCoin: toCoin.symbol, fromAmount });
 
 		// Submit the signed transaction
 		const submitResponse = await grpcApi.submitSwap({
@@ -250,7 +249,7 @@ export const executeTrade = async (
 			throw new Error('No transaction hash received');
 		}
 	} catch (error: any) {
-		console.error('❌ Error executing trade:', error);
+		logger.exception(error, { functionName: 'executeTrade', params: { fromCoinSc: fromCoin.symbol, toCoinSc: toCoin.symbol, fromAmount, slippage } });
 		setPollingStatus('failed');
 		setPollingError(error?.message || 'Failed to execute trade');
 		setIsLoadingTrade(false);
