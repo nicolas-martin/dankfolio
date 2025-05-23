@@ -56,31 +56,35 @@ rm -rf ./node_modules && yarn install && cd ios && rm -rf build Pods Podfile.loc
 
 ## CodeCoverage
 ```
+→ yarn test --coverage
+yarn run v1.22.22
 $ jest --coverage
-watchman warning:  Recrawled this watch 73 times, most recently because:
+watchman warning:  Recrawled this watch 9 times, most recently because:
 MustScanSubDirs UserDroppedTo resolve, please review the information on
 https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
 To clear this warning, run:
 `watchman watch-del '/Users/nma/dev/dankfolio' ; watchman watch-project '/Users/nma/dev/dankfolio'`
 
- PASS  src/screens/Home/HomeScreen.test.tsx
- PASS  src/components/Common/TokenSelector/TokenSelector.test.tsx
  PASS  src/store/coins.test.ts
  PASS  src/components/Chart/CoinChart/index.test.tsx
- PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
- PASS  src/services/api.test.ts
  PASS  src/store/portfolio.test.ts
  PASS  src/screens/Profile/ProfileScreen.test.tsx
  PASS  src/utils/numberFormat.test.ts
- PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
+ PASS  src/components/Common/TokenSelector/TokenSelector.test.tsx
+ PASS  src/services/api.test.ts
+ PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
+ PASS  src/screens/Home/HomeScreen.test.tsx
  PASS  src/components/Common/Navigation/navigation.test.tsx
- PASS  src/screens/Trade/TradeScreen.test.tsx
+ PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
+ PASS  src/screens/Trade/TradeScreen.test.tsx (7.823 s)
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
 ------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
 File                                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
 ------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
-All files                           |    60.2 |    57.34 |    62.6 |   60.05 |
- components/Chart/CoinChart         |   91.07 |    89.28 |   76.19 |    90.9 |
-  index.tsx                         |   91.07 |    89.28 |   76.19 |    90.9 | 82-83,115,196-197
+All files                           |   61.69 |    55.13 |   66.14 |   61.96 |
+ components/Chart/CoinChart         |   88.13 |    86.95 |   68.42 |   89.09 |
+  index.tsx                         |   87.71 |    86.95 |   66.66 |   88.88 | 54-55,65,97,148-149
+  styles.ts                         |     100 |      100 |     100 |     100 |
  components/Common/Icons            |   46.42 |        0 |       0 |   76.47 |
   index.tsx                         |   46.42 |        0 |       0 |   76.47 | 17-18,22-23,27-28,32-33
  components/Common/Navigation       |     100 |      100 |     100 |     100 |
@@ -89,11 +93,15 @@ All files                           |    60.2 |    57.34 |    62.6 |   60.05 |
   index.tsx                         |   96.22 |       75 |      95 |   96.07 | 14-15
   scripts.ts                        |     100 |      100 |     100 |     100 |
   styles.ts                         |     100 |      100 |     100 |     100 |
- components/Home/CoinCard           |     100 |       60 |     100 |     100 |
+ components/Home/CoinCard           |     100 |       80 |     100 |     100 |
   coincard_styles.ts                |     100 |      100 |     100 |     100 |
-  index.tsx                         |     100 |       60 |     100 |     100 | 23-44
- components/Trade/TradeConfirmation |      85 |    82.14 |     100 |   86.48 |
-  index.tsx                         |   84.21 |    82.14 |     100 |   86.11 | 45,54,60-65
+  index.tsx                         |     100 |       80 |     100 |     100 | 34-44
+ components/OTAupdate               |      25 |     3.84 |   42.85 |   27.77 |
+  index.tsx                         |      75 |       50 |   66.66 |      75 | 16-17
+  scripts.ts                        |    9.67 |        0 |      25 |   11.11 | 7-11,18-52
+  styles.ts                         |     100 |      100 |     100 |     100 |
+ components/Trade/TradeConfirmation |   85.71 |    82.14 |     100 |   87.17 |
+  index.tsx                         |      85 |    82.14 |     100 |   86.84 | 45,56,62-67
   styles.ts                         |     100 |      100 |     100 |     100 |
  components/Trade/TradeStatusModal  |   72.72 |    59.37 |      80 |   71.42 |
   index.tsx                         |      70 |    59.37 |      75 |      70 | 24-26,30-32,42,88
@@ -104,41 +112,42 @@ All files                           |    60.2 |    57.34 |    62.6 |   60.05 |
   trade_pb.ts                       |     100 |      100 |     100 |     100 |
   utility_pb.ts                     |     100 |      100 |     100 |     100 |
   wallet_pb.ts                      |     100 |      100 |     100 |     100 |
- hooks                              |   51.35 |    14.28 |     100 |   54.28 |
-  useProxiedImage.ts                |   51.35 |    14.28 |     100 |   54.28 | 31-34,45-63
- screens/CoinDetail                 |   49.48 |    49.12 |   68.75 |   48.38 |
-  coindetail_scripts.ts             |    6.12 |        0 |       0 |    6.12 | 31-100,110-138
+ hooks                              |   67.56 |    28.57 |     100 |   68.57 |
+  useProxiedImage.ts                |   67.56 |    28.57 |     100 |   68.57 | 37-40,51-60
+ screens/CoinDetail                 |   50.49 |    46.55 |   70.58 |   49.48 |
+  coindetail_scripts.ts             |       6 |        0 |       0 |       6 | 32-88,98-128
   coindetail_styles.ts              |     100 |      100 |     100 |     100 |
-  index.tsx                         |   93.47 |    82.35 |    90.9 |   95.34 | 41,80
- screens/Home                       |   53.06 |       50 |      50 |   51.06 |
-  home_scripts.ts                   |   20.68 |        0 |       0 |   20.68 | 12,16-22,29-42,47-59,64
+  index.tsx                         |   93.87 |    81.81 |   91.66 |   95.65 | 50,89
+ screens/Home                       |   94.73 |       60 |    92.3 |   94.44 |
+  home_scripts.ts                   |   66.66 |      100 |       0 |   66.66 | 64
   home_styles.ts                    |     100 |      100 |     100 |     100 |
-  index.tsx                         |     100 |     62.5 |     100 |     100 | 31-62
- screens/Profile                    |   59.61 |    57.14 |   70.58 |   60.86 |
-  index.tsx                         |   67.85 |       70 |      70 |   69.23 | 36-46,94,114
-  profile_scripts.ts                |   45.45 |       25 |   66.66 |   47.36 | 10-18,41-51
+  index.tsx                         |   96.96 |       60 |     100 |   96.87 | 39
+ screens/Profile                    |   56.45 |       50 |   68.42 |   57.14 |
+  index.tsx                         |   62.85 |       60 |   66.66 |   63.63 | 42-53,102-103,125-126,168
+  profile_scripts.ts                |      44 |       25 |   66.66 |   45.45 | 16-26,49-60
   profile_styles.ts                 |     100 |      100 |     100 |     100 |
- screens/Trade                      |   49.45 |    45.51 |    67.5 |   47.92 |
-  index.tsx                         |   68.92 |    57.52 |   80.64 |   67.85 | ...234-235,252-253,269-270,274-275,281-282,298-299,311-312,336,344-345,366-369,382-383,402,410,445
-  trade_scripts.ts                  |    12.5 |     3.12 |    12.5 |    12.5 | 18-23,35-90,104-107,117-136,148-150,164-199,210-218,236-272
+ screens/Trade                      |   52.44 |     46.3 |   70.73 |   50.86 |
+  index.tsx                         |   70.14 |    58.11 |   81.81 |   69.58 | ...169,183-184,188-189,198-199,210-211,214-215,219-220,229-230,239-240,262-263,277-284,291-292,313
+  trade_scripts.ts                  |    11.7 |     3.12 |   14.28 |    11.7 | 20-25,37-92,106-109,117-119,133-168,179-187,205-256
   trade_styles.ts                   |     100 |      100 |     100 |     100 |
- services                           |    5.18 |     3.57 |    4.76 |    5.22 |
-  grpcApi.ts                        |    5.18 |     3.57 |    4.76 |    5.22 | 10-15,21-428,445-449
- services/grpc                      |   55.26 |    18.18 |   57.14 |   55.26 |
+ services                           |    5.26 |        0 |    5.55 |    5.26 |
+  grpcApi.ts                        |    5.26 |        0 |    5.55 |    5.26 | 12,21-346,363,379-394
+ services/grpc                      |   56.52 |       25 |      75 |   56.52 |
   apiClient.ts                      |    87.5 |       50 |     100 |    87.5 | 4
-  grpcUtils.ts                      |   46.66 |       15 |   57.14 |   46.66 | 27-40,44,52-56
- store                              |    84.9 |     60.6 |   94.73 |   83.67 |
-  coins.ts                          |   90.24 |       60 |     100 |   89.18 | 45-48
-  portfolio.ts                      |   81.53 |    61.11 |   88.88 |   80.32 | 49,58,71-75,81-92,97
- utils                              |   89.61 |    97.14 |   81.81 |   86.44 |
+  grpcUtils.ts                      |      50 |    23.07 |      75 |      50 | 11,50-51,55-75,91
+ store                              |   86.55 |     60.6 |      95 |   85.45 |
+  coins.ts                          |      92 |       60 |     100 |    91.3 | 47-50
+  portfolio.ts                      |    82.6 |    61.11 |      90 |   81.25 | 43,52,66-70,78-88,94-95,121-122
+ utils                              |   80.55 |    78.57 |      80 |   81.92 |
   constants.ts                      |     100 |      100 |     100 |     100 |
+  logger.ts                         |   58.06 |    32.14 |   77.77 |   70.83 | 20-25,61-62,70
   numberFormat.ts                   |     100 |      100 |     100 |     100 |
-  url.ts                            |      20 |        0 |       0 |      20 | 4,8-17
+  url.ts                            |      20 |        0 |       0 |      20 | 5,9-18
 ------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
 
 Test Suites: 12 passed, 12 total
 Tests:       81 passed, 81 total
 Snapshots:   0 total
-Time:        4.244 s
-✨  Done in 4.57s.
+Time:        8.947 s, estimated 12 s
+✨  Done in 9.53s.
 ```
