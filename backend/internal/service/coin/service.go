@@ -3,8 +3,9 @@ package coin
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog" // Import slog
 	"net/http"
+	"os" // Import os for Exit
 	"sort"
 	"time"
 
@@ -27,7 +28,8 @@ type Service struct {
 // NewService creates a new CoinService instance
 func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store) *Service {
 	if config.SolanaRPCEndpoint == "" {
-		log.Fatal("SolanaRPCEndpoint is required")
+		slog.Error("SolanaRPCEndpoint is required")
+		os.Exit(1)
 	}
 
 	// Create Solana client
@@ -50,7 +52,7 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 
 	if err := service.loadOrRefreshData(ctx); err != nil {
 		// Log as warning, not fatal. Service might still work partially with cached/dynamic data.
-		log.Printf("Warning: Initial data load/refresh failed: %v", err)
+		slog.Warn("Initial data load/refresh failed", slog.Any("error", err))
 	}
 
 	// TODO: Consider periodic refresh in a background goroutine
@@ -97,7 +99,7 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 	}
 
 	// If not found, attempt dynamic enrichment
-	log.Printf("GetCoinByID: %s not found in store, attempting dynamic enrichment...", id)
+	slog.Info("Coin not found in store, attempting dynamic enrichment", slog.String("coinID", id))
 	enrichedCoin, err := s.fetchAndCacheCoin(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("coin %s not found and dynamic enrichment failed: %w", id, err)
@@ -105,7 +107,7 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 
 	// Store the newly enriched coin
 	if err := s.store.Coins().Upsert(ctx, enrichedCoin); err != nil {
-		log.Printf("Warning: Failed to store enriched coin %s: %v", id, err)
+		slog.Warn("Failed to store enriched coin", slog.String("coinID", id), slog.Any("error", err))
 	}
 
 	return enrichedCoin, nil
@@ -115,7 +117,7 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 // This is used for dynamically enriching tokens not found in the initial file load.
 // Renamed from enrichCoin
 func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*model.Coin, error) {
-	log.Printf("fetchAndCacheCoin: Enriching coin %s...", mintAddress)
+	slog.Debug("Starting dynamic coin enrichment", slog.String("mintAddress", mintAddress))
 	enrichedCoin, err := s.EnrichCoinData(
 		ctx,
 		mintAddress,
@@ -124,10 +126,11 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 		0,  // No initial volume
 	)
 	if err != nil {
-		log.Printf("ERROR: fetchAndCacheCoin: Failed to enrich %s: %v", mintAddress, err)
+		slog.Error("Dynamic coin enrichment failed", slog.String("mintAddress", mintAddress), slog.Any("error", err))
 		return nil, fmt.Errorf("failed to enrich coin %s: %w", mintAddress, err)
 	}
 
+	slog.Debug("Dynamic coin enrichment successful", slog.String("mintAddress", mintAddress))
 	return enrichedCoin, nil
 }
 
@@ -150,15 +153,16 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 
 		age := time.Since(updatedTime)
 		needsRefresh = age > TrendingDataTTL
-		log.Printf("Trending data file age: %v (needs refresh: %v)", age, needsRefresh)
+		slog.Info("Trending data status", slog.Duration("age", age), slog.Bool("needsRefresh", needsRefresh))
 	}
 
 	// if we don't need to refresh, we can just use what's in the DB
 	if !needsRefresh {
+		slog.Info("Trending data is fresh, no refresh needed.")
 		return nil
 	}
 
-	log.Printf("Trending data is too old, triggering scrape and enrichment...")
+	slog.Info("Trending data is too old or missing, triggering scrape and enrichment...")
 	enrichedCoins, err := s.ScrapeAndEnrichToFile(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to scrape and enrich coins: %w", err)
@@ -170,25 +174,28 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		return fmt.Errorf("failed to list coins for updating trending status: %w", err)
 	}
 	// update the coins to not trending
-	log.Printf("Updating %d coins to not trending", len(coins))
+	slog.Debug("Updating trending status for existing coins", slog.Int("count", len(coins)))
 	for _, c := range coins {
 		c.IsTrending = false
 		c.LastUpdated = time.Now().Format(time.RFC3339)
 		err := s.store.Coins().Update(ctx, &c)
 		if err != nil {
-			return fmt.Errorf("failed to update trending coin %s: %w", c.MintAddress, err)
+			// Not returning error here to allow other coins to be updated
+			slog.Error("Failed to update trending status for coin", slog.String("mintAddress", c.MintAddress), slog.Any("error", err))
 		}
 	}
 
 	// Store all coins
+	slog.Debug("Storing enriched coins", slog.Int("count", len(enrichedCoins.Coins)))
 	for _, coin := range enrichedCoins.Coins {
 		if err := s.store.Coins().Upsert(ctx, &coin); err != nil {
-			log.Printf("Failed to store coin %s: %v", coin.MintAddress, err)
+			slog.Warn("Failed to store coin during refresh", slog.String("mintAddress", coin.MintAddress), slog.Any("error", err))
 		}
 	}
 
-	log.Printf("Coin store refresh complete from file (Timestamp: %s). Total coins loaded: %d",
-		enrichedCoins.ScrapeTimestamp.Format(time.RFC3339), len(enrichedCoins.Coins))
+	slog.Info("Coin store refresh complete from file",
+		slog.Time("scrapeTimestamp", enrichedCoins.ScrapeTimestamp),
+		slog.Int("coinsLoaded", len(enrichedCoins.Coins)))
 
 	return nil
 }

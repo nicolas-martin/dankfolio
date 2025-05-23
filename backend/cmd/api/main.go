@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"log"      // Import standard log for pre-slog setup errors
+	"log/slog" // Import slog
 	"net/http"
 	"os"
 	"os/signal"
@@ -45,6 +46,7 @@ func loadConfig() (*Config, error) {
 	// Load environment variables
 	if os.Getenv("APP_ENV") == "development" {
 		if err := godotenv.Load(); err != nil {
+			// slog is not configured yet, use original log.Fatal
 			log.Fatal(err)
 		}
 	}
@@ -54,7 +56,8 @@ func loadConfig() (*Config, error) {
 	if expiryStr := os.Getenv("CACHE_EXPIRY_SECONDS"); expiryStr != "" {
 		expirySecs, err := strconv.Atoi(expiryStr)
 		if err != nil {
-			log.Printf("Warning: Invalid CACHE_EXPIRY_SECONDS value: %v, using default", err)
+			// slog not configured yet, or use a temp logger if this happens often before main setup
+			log.Printf("Warning: Invalid CACHE_EXPIRY_SECONDS value: %v, using default. Slog not yet initialized.", err)
 		} else {
 			cacheExpiry = time.Duration(expirySecs) * time.Second
 		}
@@ -101,6 +104,7 @@ func loadConfig() (*Config, error) {
 	}
 
 	if len(missingVars) > 0 {
+		// Slog not configured yet
 		log.Fatalf("missing required environment variables: %v", missingVars)
 	}
 
@@ -108,11 +112,26 @@ func loadConfig() (*Config, error) {
 }
 
 func main() {
+	// Setup slog first
+	logLevel := slog.LevelInfo
+	if os.Getenv("LOG_LEVEL") == "debug" {
+		logLevel = slog.LevelDebug
+	} else if os.Getenv("APP_ENV") == "development" {
+		logLevel = slog.LevelDebug
+	}
+
+	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel})
+	logger := slog.New(jsonHandler)
+	slog.SetDefault(logger)
+
 	// Load and validate configuration
 	config, err := loadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		slog.Error("Failed to load configuration", slog.Any("error", err))
+		os.Exit(1)
 	}
+
+	slog.Info("Configuration loaded successfully", "env", config.Env, "port", config.GRPCPort)
 
 	// Initialize HTTP client
 	httpClient := &http.Client{
@@ -132,9 +151,10 @@ func main() {
 	offchainClient := offchain.NewClient(httpClient)
 
 	// Initialize store with configured cache expiry
-	store, err := postgres.NewStore(config.DBURL, true)
+	store, err := postgres.NewStore(config.DBURL, true, logLevel) // Pass logLevel
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		slog.Error("Failed to connect to database", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	// Initialize coin service
@@ -176,9 +196,13 @@ func main() {
 
 	// Start gRPC server
 	go func() {
-		log.Printf("Starting gRPC server on port %d", config.GRPCPort)
+		slog.Info("Starting gRPC server", slog.Int("port", config.GRPCPort))
 		if err := grpcServer.Start(config.GRPCPort); err != nil {
-			log.Fatalf("gRPC server error: %v", err)
+			slog.Error("gRPC server error", slog.Any("error", err))
+			// Consider if os.Exit(1) is appropriate in a goroutine,
+			// might need channel to signal main goroutine for shutdown.
+			// For now, this matches previous log.Fatalf behavior.
+			os.Exit(1)
 		}
 	}()
 
@@ -186,10 +210,10 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutting down servers...")
+	slog.Info("Shutting down servers...")
 
 	// Stop gRPC server
 	grpcServer.Stop()
 
-	log.Println("Servers exited properly")
+	slog.Info("Servers exited properly")
 }
