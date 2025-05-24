@@ -66,7 +66,7 @@ func NewService(config *Config) (*Service, error) {
 // GenerateToken creates a new JWT token for a device
 func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTokenRequest) (*dankfoliov1.GenerateTokenResponse, error) {
 	if req.DeviceId == "" {
-		return nil, fmt.Errorf("device_id is required")
+		return nil, fmt.Errorf("DeviceID is required")
 	}
 
 	// Create claims
@@ -78,7 +78,7 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.tokenExpiry)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
-			Issuer:    "dankfolio-backend",
+			Issuer:    "dankfolio",
 			Subject:   req.DeviceId,
 		},
 	}
@@ -107,7 +107,7 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 // ValidateToken parses and validates a JWT token
 func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) {
 	if tokenString == "" {
-		return nil, fmt.Errorf("empty token")
+		return nil, fmt.Errorf("token string is empty")
 	}
 
 	// Parse and validate the JWT token
@@ -119,18 +119,23 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 		return s.jwtSecret, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("invalid token: %w", err)
+		return nil, fmt.Errorf("token invalid: %w", err)
 	}
 
 	// Extract claims
 	claims, ok := token.Claims.(*AuthClaims)
 	if !ok || !token.Valid {
-		return nil, fmt.Errorf("invalid token claims")
+		return nil, fmt.Errorf("token invalid")
+	}
+
+	// Validate required claims fields
+	if claims.DeviceID == "" {
+		return nil, fmt.Errorf("token invalid")
 	}
 
 	// Check if token is expired
 	if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
-		return nil, fmt.Errorf("token expired")
+		return nil, fmt.Errorf("token is expired")
 	}
 
 	return &AuthenticatedUser{

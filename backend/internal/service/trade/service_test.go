@@ -27,16 +27,16 @@ var (
 func setupService(t *testing.T) (
 	*Service,
 	*solanaClientMocks.MockClientAPI,
-	*coinServiceMocks.CoinServiceAPI,
-	*priceServiceMocks.PriceServiceAPI,
-	*jupiterclientmocks.ClientAPI,
+	*coinServiceMocks.MockCoinServiceAPI,
+	*priceServiceMocks.MockPriceServiceAPI,
+	*jupiterclientmocks.MockClientAPI,
 	*dbDataStoreMocks.MockStore,
 	*dbDataStoreMocks.MockRepository[model.Trade],
 ) {
 	mockSolanaClient := solanaClientMocks.NewMockClientAPI(t)
-	mockCoinService := coinServiceMocks.NewCoinServiceAPI(t)
-	mockPriceService := priceServiceMocks.NewPriceServiceAPI(t)
-	mockJupiterClient := jupiterclientmocks.NewClientAPI(t)
+	mockCoinService := coinServiceMocks.NewMockCoinServiceAPI(t)
+	mockPriceService := priceServiceMocks.NewMockPriceServiceAPI(t)
+	mockJupiterClient := jupiterclientmocks.NewMockClientAPI(t)
 	mockStore := dbDataStoreMocks.NewMockStore(t)
 	mockTradeRepo := dbDataStoreMocks.NewMockRepository[model.Trade](t)
 
@@ -50,8 +50,8 @@ func TestGetSwapQuote(t *testing.T) {
 	ctx := context.Background()
 	fromCoinID := "fromCoinID"
 	toCoinID := "toCoinID"
-	inputAmount := "1000000" 
-	slippageBps := "50"    
+	inputAmount := "1000000"
+	slippageBps := "50"
 
 	t.Run("Success", func(t *testing.T) {
 		service, _, mockCoinService, mockPriceService, mockJupiterClient, _, _ := setupService(t)
@@ -64,7 +64,7 @@ func TestGetSwapQuote(t *testing.T) {
 			InputMint:      fromCoinID,
 			OutputMint:     toCoinID,
 			InAmount:       inputAmount,
-			OutAmount:      "2000000000", 
+			OutAmount:      "2000000000",
 			RoutePlan:      []jupiter.RoutePlan{{SwapInfo: jupiter.SwapInfo{Label: "FROM -> TO", FeeMint: "feeCoinID", FeeAmount: "1000"}}},
 			PriceImpactPct: "0.1",
 			RawPayload:     rawQuotePayload,
@@ -77,7 +77,7 @@ func TestGetSwapQuote(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, quote)
 		assert.Equal(t, "2.000000", quote.EstimatedAmount)
-		assert.Equal(t, "0.000000500", quote.Fee) 
+		assert.Equal(t, "0.000000500", quote.Fee)
 		assert.Equal(t, "0.1", quote.PriceImpact)
 		assert.Equal(t, string(rawQuotePayload), string(quote.Raw)) // Compare as strings
 	})
@@ -240,11 +240,11 @@ func TestExecuteTrade(t *testing.T) {
 	expectedTxHash := "final_transaction_hash"
 
 	tradeRequest := model.TradeRequest{
-		FromCoinID:         "fromCoinID",
-		ToCoinID:           "toCoinID",
-		Amount:             1.0,
+		FromCoinID:          "fromCoinID",
+		ToCoinID:            "toCoinID",
+		Amount:              1.0,
 		UnsignedTransaction: unsignedTx,
-		SignedTransaction:  signedTx,
+		SignedTransaction:   signedTx,
 	}
 
 	existingTrade := &model.Trade{
@@ -319,7 +319,7 @@ func TestExecuteTrade(t *testing.T) {
 
 		_, err := service.ExecuteTrade(ctx, tradeRequest)
 		assert.Error(t, err)
-		
+
 		unwrappedErr := errors.Unwrap(err)
 		assert.NotNil(t, unwrappedErr, "Error should be wrapped, unwrapped error should not be nil")
 		if unwrappedErr != nil {
@@ -346,7 +346,7 @@ func TestExecuteTrade(t *testing.T) {
 
 // func TestCalculateTradeFee(t *testing.T) { // Commented out
 //     amount := 100.0
-//     rate := 0.01 
+//     rate := 0.01
 //     expectedFee := 1.0
 //     assert.Equal(t, expectedFee, CalculateTradeFee(amount, rate))
 // }

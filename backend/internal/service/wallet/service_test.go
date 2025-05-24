@@ -93,15 +93,25 @@ func TestGetWalletBalances(t *testing.T) {
 			Value: []*rpc.TokenAccount{
 				{
 					Account: rpc.Account{
-						Data: rpc.DataJSON(json.RawMessage(`{"parsed":{"info":{"mint":"tokenMint1","tokenAmount":{"uiAmount":10.5}}},"program":"spl-token","space":165}`)),
+						Data: func() *rpc.DataBytesOrJSON {
+							data := &rpc.DataBytesOrJSON{}
+							jsonData := []byte(`{"parsed":{"info":{"mint":"tokenMint1","tokenAmount":{"uiAmount":10.5}}},"program":"spl-token","space":165}`)
+							data.UnmarshalJSON(jsonData)
+							return data
+						}(),
 					},
-					Pubkey: solana.MustPublicKeyFromBase58("ataForTokenMint1"),
+					Pubkey: solana.MustPublicKeyFromBase58("Es9vMFrzaCERmJfrF4H2FYQGqPSHhpNgLcbXchH7aG4u"),
 				},
 				{
 					Account: rpc.Account{
-						Data: rpc.DataJSON(json.RawMessage(`{"parsed":{"info":{"mint":"tokenMint2","tokenAmount":{"uiAmount":0.0}}},"program":"spl-token","space":165}`)),
+						Data: func() *rpc.DataBytesOrJSON {
+							data := &rpc.DataBytesOrJSON{}
+							jsonData := []byte(`{"parsed":{"info":{"mint":"tokenMint2","tokenAmount":{"uiAmount":0.0}}},"program":"spl-token","space":165}`)
+							data.UnmarshalJSON(jsonData)
+							return data
+						}(),
 					},
-					Pubkey: solana.MustPublicKeyFromBase58("ataForTokenMint2"),
+					Pubkey: solana.MustPublicKeyFromBase58("So11111111111111111111111111111111111111112"),
 				},
 			},
 		}
@@ -119,10 +129,11 @@ func TestGetWalletBalances(t *testing.T) {
 		foundSOL := false
 		foundToken1 := false
 		for _, b := range walletBalance.Balances {
-			if b.ID == model.SolMint {
+			switch b.ID {
+			case model.SolMint:
 				assert.Equal(t, 2.0, b.Amount)
 				foundSOL = true
-			} else if b.ID == "tokenMint1" {
+			case "tokenMint1":
 				assert.Equal(t, 10.5, b.Amount)
 				foundToken1 = true
 			}
@@ -137,7 +148,17 @@ func TestGetWalletBalances(t *testing.T) {
 		mockRPCClient.On("GetBalance", ctx, testPubKey, rpc.CommitmentConfirmed).Return(&rpc.GetBalanceResult{Value: 0}, nil).Once()
 		tokenAccountsResult := &rpc.GetTokenAccountsResult{
 			Value: []*rpc.TokenAccount{
-				{Account: rpc.Account{Data: rpc.DataJSON(json.RawMessage(`{"parsed":{"info":{"mint":"tokenMint1","tokenAmount":{"uiAmount":5.0}}},"program":"spl-token","space":165}`))}, Pubkey: solana.MustPublicKeyFromBase58("ata1")},
+				{
+					Account: rpc.Account{
+						Data: func() *rpc.DataBytesOrJSON {
+							data := &rpc.DataBytesOrJSON{}
+							jsonData := []byte(`{"parsed":{"info":{"mint":"tokenMint1","tokenAmount":{"uiAmount":5.0}}},"program":"spl-token","space":165}`)
+							data.UnmarshalJSON(jsonData)
+							return data
+						}(),
+					},
+					Pubkey: solana.MustPublicKeyFromBase58("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+				},
 			},
 		}
 		mockRPCClient.On("GetTokenAccountsByOwner", ctx, testPubKey, mock.Anything, mock.Anything).Return(tokenAccountsResult, nil).Once()
@@ -173,7 +194,7 @@ func TestGetWalletBalances(t *testing.T) {
 
 		_, err := service.GetWalletBalances(ctx, testAddress)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to get token balances: rpc gettokens error")
+		assert.Contains(t, err.Error(), "failed to get token balances: failed to get token accounts: rpc gettokens error")
 	})
 }
 
@@ -185,7 +206,7 @@ func TestPrepareTransfer(t *testing.T) {
 	splTokenMint := "Es9vMFrzaCERmJfrF4H2FYQGqPSHhpNgLcbXchH7aG4u"
 	amount := 1.5
 
-	latestBlockhashResult := &rpc.GetLatestBlockhashResult{Value: rpc.BlockhashResult{Blockhash: solana.MustHashFromBase58("GH3w5N9WpGdn9c7sR8vV1mB9stH3sA63KqZ1xYgH8WbK")}}
+	latestBlockhashResult := &rpc.GetLatestBlockhashResult{Value: &rpc.LatestBlockhashResult{Blockhash: solana.MustHashFromBase58("GH3w5N9WpGdn9c7sR8vV1mB9stH3sA63KqZ1xYgH8WbK")}}
 	fromPubKey, _ := solana.PublicKeyFromBase58(fromAddress)
 	splMintKey, _ := solana.PublicKeyFromBase58(splTokenMint)
 
@@ -218,9 +239,9 @@ func TestPrepareTransfer(t *testing.T) {
 		toAta, _, _ := solana.FindAssociatedTokenAddress(toPubKey, splMintKey)
 		mockRPCClient.On("GetAccountInfo", ctx, toAta).Return(&rpc.GetAccountInfoResult{Value: &rpc.Account{Owner: solana.TokenProgramID}}, nil).Once()
 
-		mintAccountData := make([]byte, 82) 
-		mintAccountData[44] = 6      
-		mockRPCClient.On("GetAccountInfo", ctx, splMintKey).Return(&rpc.GetAccountInfoResult{Value: &rpc.Account{Data: rpc.DataBytes(mintAccountData)}}, nil).Once()
+		mintAccountData := make([]byte, 82)
+		mintAccountData[44] = 6
+		mockRPCClient.On("GetAccountInfo", ctx, splMintKey).Return(&rpc.GetAccountInfoResult{Value: &rpc.Account{Data: rpc.DataBytesOrJSONFromBytes(mintAccountData)}}, nil).Once()
 
 		mockRPCClient.On("GetLatestBlockhash", ctx, rpc.CommitmentConfirmed).Return(latestBlockhashResult, nil).Once()
 		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
@@ -243,7 +264,7 @@ func TestSubmitTransfer(t *testing.T) {
 	txBytesForEncoding, _ := txForEncoding.MarshalBinary()
 	signedTx := base64.StdEncoding.EncodeToString(txBytesForEncoding)
 
-	expectedTxSig := solana.MustSignatureFromBase58("5sig8zXVH7z4uTz2gC711w7xYyqAMX7fGj4z6rY1iJq7x8kH9hZ7vP5nQ2mYwX8aBcX3zH5k")
+	expectedTxSig := solana.MustSignatureFromBase58("5VfydnLu4XWeL3tAHMQkjAVTNzHMsLjmM5VQwRXVEQaXGVGkXLamBrUo9ojrn2qLXuudU2hjyuAXshya6A2uFX7j")
 
 	req := &TransferRequest{
 		UnsignedTransaction: unsignedTxForLookup,
