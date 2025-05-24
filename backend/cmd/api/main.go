@@ -260,7 +260,12 @@ func main() {
 	}
 	keyFile := os.Getenv("GRPC_SERVER_KEY_FILE")
 	if keyFile == "" {
-		keyFile = "../../certs/server.key" // Default path relative to backend/cmd/api
+		wd, err := os.Getwd()
+		if err != nil {
+			slog.Error("Failed to get working directory", slog.Any("error", err))
+			os.Exit(1)
+		}
+		keyFile = fmt.Sprintf("%s/../../certs/server.key", wd) // Construct absolute path
 		slog.Warn("GRPC_SERVER_KEY_FILE not set, using default", "path", keyFile)
 	}
 
