@@ -252,14 +252,32 @@ func main() {
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
 	utilitySvc := grpcapi.NewService(imageFetcher)
 
-	// Initialize gRPC server
-	grpcServer := grpcapi.NewServer(
+	// Define certificate and key file paths
+	certFile := os.Getenv("GRPC_SERVER_CERT_FILE")
+	if certFile == "" {
+		certFile = "../../certs/server.crt" // Default path relative to backend/cmd/api
+		slog.Warn("GRPC_SERVER_CERT_FILE not set, using default", "path", certFile)
+	}
+	keyFile := os.Getenv("GRPC_SERVER_KEY_FILE")
+	if keyFile == "" {
+		keyFile = "../../certs/server.key" // Default path relative to backend/cmd/api
+		slog.Warn("GRPC_SERVER_KEY_FILE not set, using default", "path", keyFile)
+	}
+
+	// Initialize gRPC server with TLS
+	grpcServer, err := grpcapi.NewServer(
+		certFile,
+		keyFile,
 		coinService,
 		walletService,
 		tradeService,
 		priceService,
 		utilitySvc,
 	)
+	if err != nil {
+		slog.Error("Failed to create gRPC server with TLS", slog.Any("error", err))
+		os.Exit(1)
+	}
 
 	slog.Debug("Debug message")
 	slog.Info("Info message")
@@ -268,13 +286,11 @@ func main() {
 
 	// Start gRPC server
 	go func() {
-		slog.Info("Starting gRPC server", slog.Int("port", config.GRPCPort))
+		// The Start method in grpc/server.go now includes logging about TLS
+		// slog.Info("Starting gRPC server", slog.Int("port", config.GRPCPort)) // Original log
 		if err := grpcServer.Start(config.GRPCPort); err != nil {
 			slog.Error("gRPC server error", slog.Any("error", err))
-			// Consider if os.Exit(1) is appropriate in a goroutine,
-			// might need channel to signal main goroutine for shutdown.
-			// For now, this matches previous log.Fatalf behavior.
-			os.Exit(1)
+			os.Exit(1) // Exit if server fails to start
 		}
 	}()
 

@@ -54,6 +54,27 @@ In order for the raw_coins to be populated which is required for the search func
 rm -rf ./node_modules && yarn install && cd ios && rm -rf build Pods Podfile.lock && pod install && cd .. && yarn start --reset-cache
 ```
 
+## Internal gRPC Security (Nginx to Backend TLS)
+
+The gRPC communication between the Nginx reverse proxy and the Go backend (`golang` service) is secured using TLS (Transport Layer Security). This ensures that data exchanged between Nginx and the backend within the Docker network is encrypted.
+
+**Key aspects of this setup:**
+
+*   **Self-Signed Certificates:** The TLS setup currently uses self-signed certificates (`server.crt` for the public certificate and `server.key` for the private key). These are located in the `backend/certs/` directory.
+    *   *Note for Production:* For a production environment, managing these certificates securely is crucial. Options include generating them at deployment time, using a private Certificate Authority (CA), or integrating with a secrets management system. Storing self-signed keys directly in the repository is suitable for development but not recommended for production.
+*   **Backend Configuration:** The Go backend service is configured to use these certificates via environment variables:
+    *   `GRPC_SERVER_CERT_FILE`: Specifies the path to the server's public certificate file (e.g., `/app/certs/server.crt` inside the container).
+    *   `GRPC_SERVER_KEY_FILE`: Specifies the path to the server's private key file (e.g., `/app/certs/server.key` inside the container).
+*   **Nginx Configuration:** Nginx is configured as a gRPC client for the backend. It's set up to:
+    *   Use `grpcs` (gRPC over TLS) to communicate with the backend.
+    *   Trust the backend's public certificate (`backend/certs/server.crt`, which is mounted into the Nginx container).
+*   **Docker Compose:** The `deploy/docker-compose.yml` file orchestrates this setup by:
+    *   Mounting the `backend/certs/` directory into the `golang` service container.
+    *   Setting the `GRPC_SERVER_CERT_FILE` and `GRPC_SERVER_KEY_FILE` environment variables for the `golang` service.
+    *   Mounting the `backend/certs/server.crt` file into the `nginx` service container so Nginx can use it as a trusted certificate for the backend connection.
+
+This internal TLS mechanism enhances the security of the application by encrypting traffic between the reverse proxy and the backend service.
+
 ## CodeCoverage
 ```
 → yarn test --coverage

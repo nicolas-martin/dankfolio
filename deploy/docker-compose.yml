@@ -24,8 +24,11 @@ services:
       - ${ENV_FILE}
     environment:
       LOG_FILE: /var/log/golang/app.log
+      GRPC_SERVER_CERT_FILE: /app/certs/server.crt
+      GRPC_SERVER_KEY_FILE: /app/certs/server.key
     volumes:
       - golang_logs:/var/log/golang
+      - ./backend/certs:/app/certs:ro
     networks:
       - backend
 
@@ -69,6 +72,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./nginx.${ENV_TYPE}.conf:/etc/nginx/nginx.conf:ro
+      - ./backend/certs/server.crt:/etc/nginx/certs/backend_server.crt:ro
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
     ports:
