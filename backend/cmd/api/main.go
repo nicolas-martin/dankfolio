@@ -252,6 +252,20 @@ func main() {
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
 	utilitySvc := grpcapi.NewService(imageFetcher)
 
+	// Initialize gRPC server
+	grpcServer := grpcapi.NewServer(
+		coinService,
+		walletService,
+		tradeService,
+		priceService,
+		utilitySvc,
+	)
+
+	slog.Debug("Debug message")
+	slog.Info("Info message")
+	slog.Warn("Warning message")
+	slog.Error("Error message")
+
 	// Define certificate and key file paths
 	certFile := os.Getenv("GRPC_SERVER_CERT_FILE")
 	if certFile == "" {
@@ -260,41 +274,16 @@ func main() {
 	}
 	keyFile := os.Getenv("GRPC_SERVER_KEY_FILE")
 	if keyFile == "" {
-		wd, err := os.Getwd()
-		if err != nil {
-			slog.Error("Failed to get working directory", slog.Any("error", err))
-			os.Exit(1)
-		}
-		keyFile = fmt.Sprintf("%s/../../certs/server.key", wd) // Construct absolute path
+		keyFile = "../../certs/server.key" // Default path relative to backend/cmd/api
 		slog.Warn("GRPC_SERVER_KEY_FILE not set, using default", "path", keyFile)
 	}
 
-	// Initialize gRPC server with TLS
-	grpcServer, err := grpcapi.NewServer(
-		certFile,
-		keyFile,
-		coinService,
-		walletService,
-		tradeService,
-		priceService,
-		utilitySvc,
-	)
-	if err != nil {
-		slog.Error("Failed to create gRPC server with TLS", slog.Any("error", err))
-		os.Exit(1)
-	}
-
-	slog.Debug("Debug message")
-	slog.Info("Info message")
-	slog.Warn("Warning message")
-	slog.Error("Error message")
-
-	// Start gRPC server
+	// Start Connect RPC HTTPS server
 	go func() {
-		// The Start method in grpc/server.go now includes logging about TLS
-		// slog.Info("Starting gRPC server", slog.Int("port", config.GRPCPort)) // Original log
-		if err := grpcServer.Start(config.GRPCPort); err != nil {
-			slog.Error("gRPC server error", slog.Any("error", err))
+		// The Start method in grpc/server.go now includes more detailed logging
+		// slog.Info("Starting Connect RPC HTTPS server", slog.Int("port", config.GRPCPort))
+		if err := grpcServer.Start(config.GRPCPort, certFile, keyFile); err != nil {
+			slog.Error("Connect RPC HTTPS server error", slog.Any("error", err))
 			os.Exit(1) // Exit if server fails to start
 		}
 	}()

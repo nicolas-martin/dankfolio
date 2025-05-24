@@ -75,6 +75,63 @@ The gRPC communication between the Nginx reverse proxy and the Go backend (`gola
 
 This internal TLS mechanism enhances the security of the application by encrypting traffic between the reverse proxy and the backend service.
 
+## Testing with grpcurl and curl
+
+Once the application is running via `docker-compose up`, you can test the `CoinService.GetAvailableCoins` RPC method using `grpcurl` (for gRPC) and `curl` (for the Connect protocol's HTTP/JSON mapping). These commands assume Nginx is proxying requests from `corsairsoftware.io` to the backend.
+
+### `grpcurl` (gRPC)
+
+`grpcurl` allows you to interact with gRPC services.
+
+```bash
+grpcurl \
+  -import-path proto \
+  -proto proto/dankfolio/v1/coin.proto \
+  -d '{"trending_only": false}' \
+  corsairsoftware.io:443 \
+  dankfolio.v1.CoinService/GetAvailableCoins
+```
+
+**Explanation:**
+
+*   `-import-path proto`: Specifies the path to find imported `.proto` files (our protos are in `proto/dankfolio/v1`, so `proto` is the root import path).
+*   `-proto proto/dankfolio/v1/coin.proto`: Specifies the main `.proto` file defining the service.
+*   `-d '{"trending_only": false}'`: The JSON request body for the `GetAvailableCoinsRequest`.
+*   `corsairsoftware.io:443`: The target host and port (Nginx).
+*   `dankfolio.v1.CoinService/GetAvailableCoins`: The fully qualified service and method name.
+
+**Local Testing Notes for `grpcurl`:**
+
+*   **Domain Resolution:** If `corsairsoftware.io` does not resolve to your local Docker Nginx instance (e.g., `127.0.0.1`), you might need to add an entry to your `/etc/hosts` file: `127.0.0.1 corsairsoftware.io`.
+*   **Certificate Trust:** The `corsairsoftware.io` in the Nginx configuration uses Let's Encrypt certificates. For local testing where Nginx might be using self-signed certificates or a different setup, you might encounter certificate trust issues.
+    *   If Nginx is using the production Let's Encrypt certs locally and `corsairsoftware.io` resolves correctly, it should work.
+    *   If you are testing against a local Nginx setup that does **not** use publicly trusted certificates for `corsairsoftware.io` (or if the backend itself was exposed directly with its self-signed cert), you might need to use the `-insecure` flag with `grpcurl`. However, the current Nginx setup is intended for `grpcs` to the backend, so `grpcurl` is interacting with Nginx's front-facing TLS.
+
+### `curl` (Connect Protocol - HTTP/JSON)
+
+The Connect protocol also exposes gRPC services as standard HTTP/JSON endpoints.
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"trending_only": false}' \
+  https://corsairsoftware.io/dankfolio.v1.CoinService/GetAvailableCoins
+```
+
+**Explanation:**
+
+*   `-X POST`: Specifies the HTTP POST method.
+*   `-H "Content-Type: application/json"`: Sets the content type header.
+*   `-d '{"trending_only": false}'`: The JSON request body.
+*   `https://corsairsoftware.io/dankfolio.v1.CoinService/GetAvailableCoins`: The URL for the RPC method. The path is formed by `/Package.Service/Method`.
+
+**Local Testing Notes for `curl`:**
+
+*   **Domain Resolution:** Similar to `grpcurl`, ensure `corsairsoftware.io` resolves to your local Nginx.
+*   **Certificate Trust:**
+    *   If Nginx is using valid, publicly trusted certificates for `corsairsoftware.io`, the command should work as is.
+    *   If you are testing locally and Nginx is using self-signed certificates or certificates not trusted by your system's CA store, you might need to use the `-k` (or `--insecure`) flag with `curl` to bypass certificate validation. Example: `curl -k -X POST ...`.
+
 ## CodeCoverage
 ```
 → yarn test --coverage
