@@ -19,8 +19,13 @@ type Client struct {
 	apiKey     string
 }
 
+// ClientAPI defines the interface for the BirdEye client.
+type ClientAPI interface {
+	GetPriceHistory(ctx context.Context, params PriceHistoryParams) (*PriceHistory, error)
+}
+
 // NewClient creates a new instance of the BirdEye client
-func NewClient(baseURL string, apiKey string) *Client {
+func NewClient(baseURL string, apiKey string) ClientAPI {
 	return &Client{
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -29,6 +34,8 @@ func NewClient(baseURL string, apiKey string) *Client {
 		apiKey:  apiKey,
 	}
 }
+
+var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 // PriceHistory represents the response from the price history API
 type PriceHistory struct {

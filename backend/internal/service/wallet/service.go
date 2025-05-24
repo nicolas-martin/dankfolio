@@ -19,16 +19,17 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/tyler-smith/go-bip39"
+	solanoclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Aliased import
 )
 
 // Service handles wallet-related operations
 type Service struct {
-	rpcClient *rpc.Client
+	rpcClient solanoclient.SolanaRPCClientAPI // Use aliased package for the interface
 	store     db.Store
 }
 
 // New creates a new wallet service
-func New(rpcClient *rpc.Client, store db.Store) *Service {
+func New(rpcClient solanoclient.SolanaRPCClientAPI, store db.Store) *Service { // Accept aliased interface
 	return &Service{
 		rpcClient: rpcClient,
 		store:     store,

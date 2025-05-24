@@ -24,14 +24,14 @@ import (
 // Service handles trade-related operations
 type Service struct {
 	solanaClient  solana.ClientAPI
-	coinService   *coin.Service
-	priceService  *price.Service
+	coinService   coin.CoinServiceAPI     // Use CoinServiceAPI interface from coin package
+	priceService  price.PriceServiceAPI   // Use PriceServiceAPI interface from price package
 	jupiterClient jupiter.ClientAPI
 	store         db.Store
 }
 
 // NewService creates a new TradeService instance
-func NewService(sc solana.ClientAPI, cs *coin.Service, ps *price.Service, jc jupiter.ClientAPI, store db.Store) *Service {
+func NewService(sc solana.ClientAPI, cs coin.CoinServiceAPI, ps price.PriceServiceAPI, jc jupiter.ClientAPI, store db.Store) *Service {
 	return &Service{
 		solanaClient:  sc,
 		coinService:   cs,
@@ -187,12 +187,15 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	txHash, err := s.solanaClient.ExecuteTrade(ctx, trade, req.SignedTransaction)
 	if err != nil {
 		trade.Status = "failed"
-		errStr := err.Error()
+		originalSolanaError := err // Store the original error from solanaClient.ExecuteTrade
+		errStr := originalSolanaError.Error()
 		trade.Error = &errStr
-		if err = s.store.Trades().Update(ctx, trade); err != nil {
-			log.Printf("Warning: Failed to update failed trade status: %v", err)
+		if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
+			log.Printf("Warning: Failed to update failed trade status: %v", errUpdate)
+			// Optionally, you could return a combined error here, e.g., by wrapping errUpdate and originalSolanaError
+			// For now, returning the original operational error is prioritized.
 		}
-		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", err)
+		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", originalSolanaError)
 	}
 
 	// Update trade record with transaction hash and status
