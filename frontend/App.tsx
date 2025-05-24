@@ -18,6 +18,7 @@ import { Keypair } from '@solana/web3.js';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
 import Constants from 'expo-constants';
+import { authService } from '@/services/authService';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -98,6 +99,17 @@ const App: React.FC = () => {
 		});
 
 		async function prepare() {
+			logger.breadcrumb({ message: 'App: Preparing - Initializing authentication', category: 'app_lifecycle' });
+			
+			try {
+				// Initialize authentication service first
+				await authService.initialize();
+				logger.info("Authentication service initialized successfully");
+			} catch (e) {
+				logger.error('Failed to initialize authentication service', { error: e?.message });
+				// Don't block app startup if auth fails - the auth service will retry on demand
+			}
+
 			logger.breadcrumb({ message: 'App: Preparing - Checking wallet storage', category: 'app_lifecycle' });
 			try {
 				const publicKey = await retrieveWalletFromStorage();

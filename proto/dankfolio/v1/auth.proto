@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package dankfolio.v1;
+
+option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1;dankfoliov1";
+
+// AuthService provides authentication token management
+service AuthService {
+  // GenerateToken creates a new bearer token for a device
+  rpc GenerateToken(GenerateTokenRequest) returns (GenerateTokenResponse);
+}
+
+// GenerateTokenRequest represents a request to generate a new token
+message GenerateTokenRequest {
+  // Unique identifier for the device/client
+  string device_id = 1;
+  // Platform identifier (e.g., "mobile", "web", "desktop")
+  string platform = 2;
+}
+
+// GenerateTokenResponse contains the generated token and its metadata
+message GenerateTokenResponse {
+  // The bearer token to use for authentication
+  string token = 1;
+  // Token expiration time in seconds from now
+  int32 expires_in = 2;
+} 

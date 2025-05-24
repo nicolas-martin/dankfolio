@@ -1,9 +1,6 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"io"
 	"log"      // Import standard log for pre-slog setup errors
 	"log/slog" // Import slog
 	"net/http"
@@ -13,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
@@ -24,6 +20,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/auth"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
@@ -41,69 +38,8 @@ type Config struct {
 	JupiterApiKey     string
 	JupiterApiUrl     string
 	Env               string
-}
-
-// ColorHandler implements slog.Handler interface with colored output
-type ColorHandler struct {
-	level     slog.Level
-	outStream io.Writer
-	errStream io.Writer
-}
-
-// NewColorHandler creates a new ColorHandler with specified log level and output streams
-func NewColorHandler(level slog.Level, out, err io.Writer) *ColorHandler {
-	return &ColorHandler{
-		level:     level,
-		outStream: out,
-		errStream: err,
-	}
-}
-
-func (h *ColorHandler) Enabled(_ context.Context, level slog.Level) bool {
-	return level >= h.level
-}
-
-func (h *ColorHandler) Handle(_ context.Context, r slog.Record) error {
-	timestamp := r.Time.Format("15:04:05")
-
-	// Get colored level text
-	var levelText string
-	switch r.Level {
-	case slog.LevelDebug:
-		levelText = color.New(color.FgCyan).Sprint("DEBUG")
-	case slog.LevelInfo:
-		levelText = color.New(color.FgGreen).Sprint("INFO")
-	case slog.LevelWarn:
-		levelText = color.New(color.FgYellow).Sprint("WARN")
-	case slog.LevelError:
-		levelText = color.New(color.FgRed).Sprint("ERROR")
-	default:
-		levelText = r.Level.String()
-	}
-
-	// Format log message
-	msg := fmt.Sprintf("[%s] %-5s %s\n", timestamp, levelText, r.Message)
-
-	// Decide output stream based on severity
-	var out io.Writer
-	if r.Level >= slog.LevelError {
-		out = h.errStream
-	} else {
-		out = h.outStream
-	}
-
-	_, err := fmt.Fprint(out, msg)
-	return err
-}
-
-func (h *ColorHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	// For simplicity, return same handler (ignoring attrs)
-	return h
-}
-
-func (h *ColorHandler) WithGroup(name string) slog.Handler {
-	// For simplicity, return same handler (ignoring group)
-	return h
+	JWTSecret         string
+	TokenExpiry       time.Duration
 }
 
 func loadConfig() (*Config, error) {
@@ -131,6 +67,17 @@ func loadConfig() (*Config, error) {
 		}
 	}
 
+	// Parse token expiry duration (default to 24 hours)
+	tokenExpiry := 24 * time.Hour
+	if expiryStr := os.Getenv("JWT_TOKEN_EXPIRY_HOURS"); expiryStr != "" {
+		expiryHours, err := strconv.Atoi(expiryStr)
+		if err != nil {
+			log.Printf("Warning: Invalid JWT_TOKEN_EXPIRY_HOURS value: %v, using default 24 hours.", err)
+		} else {
+			tokenExpiry = time.Duration(expiryHours) * time.Hour
+		}
+	}
+
 	config := &Config{
 		SolanaRPCEndpoint: os.Getenv("SOLANA_RPC_ENDPOINT"),
 		BirdEyeEndpoint:   os.Getenv("BIRDEYE_ENDPOINT"),
@@ -142,6 +89,8 @@ func loadConfig() (*Config, error) {
 		JupiterApiKey:     os.Getenv("JUPITER_API_KEY"),
 		JupiterApiUrl:     os.Getenv("JUPITER_API_URL"),
 		Env:               os.Getenv("APP_ENV"),
+		JWTSecret:         os.Getenv("JWT_SECRET"),
+		TokenExpiry:       tokenExpiry,
 	}
 
 	// Validate required fields
@@ -224,6 +173,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize auth service
+	authServiceConfig := &auth.Config{
+		JWTSecret:   config.JWTSecret,
+		TokenExpiry: config.TokenExpiry,
+	}
+	authService := auth.NewService(authServiceConfig)
+
 	// Initialize coin service
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:    config.BirdEyeEndpoint,
@@ -252,13 +208,14 @@ func main() {
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
 	utilitySvc := grpcapi.NewService(imageFetcher)
 
-	// Initialize gRPC server
+	// Initialize gRPC server with auth service
 	grpcServer := grpcapi.NewServer(
 		coinService,
 		walletService,
 		tradeService,
 		priceService,
 		utilitySvc,
+		authService,
 	)
 
 	slog.Debug("Debug message")
