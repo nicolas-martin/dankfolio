@@ -1,44 +1,67 @@
 template: testify
 packages:
+  github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}.go" # For ClientAPI in client.go, this might generate ClientAPI.go
+      pkgname: "{{.SrcPackageName}}Mocks"
+      template-data:
+        unroll-variadic: true
+    interfaces:
+      ClientAPI: # From client.go
   github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter:
     config:
-      # core settings only
-      dir: "{{.InterfaceDir}}/mocks"         # place next to source
+      dir: "{{.InterfaceDir}}/mocks"
       filename: "{{.InterfaceName}}.go"
       pkgname: "{{.SrcPackageName}}Mocks"
       template-data:
-        unroll-variadic: true         # variadic helper
+        unroll-variadic: true
     interfaces:
       ClientAPI:
   github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain:
     config:
-      # core settings only
-      dir: "{{.InterfaceDir}}/mocks"         # place next to source
+      dir: "{{.InterfaceDir}}/mocks"
       filename: "{{.InterfaceName}}.go"
       pkgname: "{{.SrcPackageName}}Mocks"
       template-data:
-        unroll-variadic: true         # variadic helper
+        unroll-variadic: true
     interfaces:
       ClientAPI:
   github.com/nicolas-martin/dankfolio/backend/internal/clients/solana:
     config:
-      # core settings only
-      dir: "{{.InterfaceDir}}/mocks"         # place next to source
-      filename: "{{.InterfaceName}}.go"
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}.go" # This will generate ClientAPI.go and SolanaRPCClientAPI.go
       pkgname: "{{.SrcPackageName}}Mocks"
       template-data:
-        unroll-variadic: true         # variadic helper
+        unroll-variadic: true
     interfaces:
-      ClientAPI:
+      ClientAPI: # From interfaces.go
+      SolanaRPCClientAPI: # From rpc_client_api.go
   github.com/nicolas-martin/dankfolio/backend/internal/db:
     config:
-      # core settings only
-      dir: "{{.InterfaceDir}}/mocks"         # place next to source
+      dir: "{{.InterfaceDir}}/mocks"
       filename: "{{.InterfaceName}}.go"
       pkgname: "{{.SrcPackageName}}Mocks"
       template-data:
-        unroll-variadic: true         # variadic helper
-    # all: true
+        unroll-variadic: true
     interfaces:
       Repository:
       Store:
+  github.com/nicolas-martin/dankfolio/backend/internal/service/coin:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}.go" # Expected to generate CoinServiceAPI.go
+      pkgname: "{{.SrcPackageName}}Mocks"
+      template-data:
+        unroll-variadic: true
+    interfaces:
+      CoinServiceAPI: # From api.go
+  github.com/nicolas-martin/dankfolio/backend/internal/service/price:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}.go" # Expected to generate PriceServiceAPI.go
+      pkgname: "{{.SrcPackageName}}Mocks"
+      template-data:
+        unroll-variadic: true
+    interfaces:
+      PriceServiceAPI: # From api.go

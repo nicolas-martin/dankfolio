@@ -119,6 +119,36 @@ func TestGetCoins(t *testing.T) {
 	coinRepo.AssertExpectations(t)
 }
 
+func TestGetCoins_Error(t *testing.T) {
+	// Setup
+	ctx := context.Background()
+	config := &Config{
+		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
+	}
+	httpClient := &http.Client{}
+	jupiterClient := jupiterMocks.NewMockClientAPI(t)
+	solanaClient := solanaMocks.NewMockClientAPI(t)
+	offchainClient := offchainMocks.NewMockClientAPI(t)
+	store := dbMocks.NewMockStore(t)
+	coinRepo := dbMocks.NewMockRepository[model.Coin](t)
+
+	// Setup store expectations
+	store.On("Coins").Return(coinRepo)
+	coinRepo.On("List", ctx).Return(nil, errors.New("store error"))
+
+	service := newMockService(config, httpClient, jupiterClient, solanaClient, offchainClient, store)
+
+	// Test
+	coins, err := service.GetCoins(ctx)
+
+	// Assertions
+	assert.Error(t, err)
+	assert.Nil(t, coins)
+	assert.EqualError(t, err, "failed to list coins: store error")
+	store.AssertExpectations(t)
+	coinRepo.AssertExpectations(t)
+}
+
 func TestGetTrendingCoins(t *testing.T) {
 	// Setup
 	ctx := context.Background()
@@ -167,6 +197,33 @@ func TestGetTrendingCoins(t *testing.T) {
 	assert.Len(t, coins, 2)
 	assert.Equal(t, "Test Coin 3", coins[0].Name) // Should be sorted by volume
 	assert.Equal(t, "Test Coin 1", coins[1].Name)
+	store.AssertExpectations(t)
+}
+
+func TestGetTrendingCoins_Error(t *testing.T) {
+	// Setup
+	ctx := context.Background()
+	config := &Config{
+		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
+	}
+	httpClient := &http.Client{}
+	jupiterClient := jupiterMocks.NewMockClientAPI(t)
+	solanaClient := solanaMocks.NewMockClientAPI(t)
+	offchainClient := offchainMocks.NewMockClientAPI(t)
+	store := dbMocks.NewMockStore(t)
+
+	service := newMockService(config, httpClient, jupiterClient, solanaClient, offchainClient, store)
+
+	// Setup expectations
+	store.On("ListTrendingCoins", ctx).Return(nil, errors.New("store error"))
+
+	// Test
+	coins, err := service.GetTrendingCoins(ctx)
+
+	// Assertions
+	assert.Error(t, err)
+	assert.Nil(t, coins)
+	assert.EqualError(t, err, "failed to list trending coins: store error")
 	store.AssertExpectations(t)
 }
 
@@ -284,6 +341,37 @@ func TestGetCoinByID(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, coin)
 		assert.Contains(t, err.Error(), "not found and dynamic enrichment failed")
+		store.AssertExpectations(t)
+		coinRepo.AssertExpectations(t)
+		jupiterClient.AssertExpectations(t)
+		solanaClient.AssertExpectations(t)
+	})
+
+	t.Run("Store error on Get", func(t *testing.T) {
+		// Setup store expectations
+		store.On("Coins").Return(coinRepo)
+		coinRepo.On("Get", ctx, "errorcoin").Return(nil, errors.New("random store error"))
+
+		// Setup Jupiter mock to return error for "errorcoin" as enrichment will still be attempted
+		jupiterClient.On("GetCoinInfo", ctx, "errorcoin").Return(nil, errors.New("jupiter error for errorcoin")).Maybe()
+		jupiterClient.On("GetCoinPrices", ctx, []string{"errorcoin"}).Return(nil, errors.New("jupiter price error for errorcoin")).Maybe()
+		solanaClient.On("GetMetadataAccount", ctx, "errorcoin").Return(nil, errors.New("solana error for errorcoin")).Maybe()
+		// offchainClient is not directly called in this path if GetMetadataAccount fails or returns nil metadata
+
+		// Test
+		coin, err := service.GetCoinByID(ctx, "errorcoin")
+
+		// Assertions
+		assert.Error(t, err)
+		assert.Nil(t, coin)
+		// The error message will be from the enrichment part because it's tried after the initial store error (that isn't "not found")
+		assert.Contains(t, err.Error(), "not found and dynamic enrichment failed") 
+		// We expect the initial "failed to get coin from store" error to be logged, and then the enrichment error to be returned.
+		// The final error returned is "coin <coinID> not found and dynamic enrichment failed: <enrichment error>"
+		// Let's check for the specific enrichment error part.
+		assert.Contains(t, err.Error(), "failed to enrich coin errorcoin: no data available from any source")
+
+
 		store.AssertExpectations(t)
 		coinRepo.AssertExpectations(t)
 		jupiterClient.AssertExpectations(t)

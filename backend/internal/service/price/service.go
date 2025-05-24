@@ -20,7 +20,7 @@ import (
 
 // Service handles price-related operations
 type Service struct {
-	birdeyeClient *birdeye.Client
+	birdeyeClient birdeye.ClientAPI // Use the interface
 	jupiterClient jupiter.ClientAPI
 }
 
@@ -30,7 +30,7 @@ var (
 )
 
 // NewService creates a new price service
-func NewService(birdeyeClient *birdeye.Client, jupiterClient jupiter.ClientAPI) *Service {
+func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI) *Service { // Accept the interface
 	return &Service{
 		birdeyeClient: birdeyeClient,
 		jupiterClient: jupiterClient,
@@ -38,28 +38,50 @@ func NewService(birdeyeClient *birdeye.Client, jupiterClient jupiter.ClientAPI) 
 }
 
 // GetPriceHistory retrieves price history for a given token
-func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFrom, timeTo, addressType string) (*birdeye.PriceHistory, error) {
+// The method signature in the service was (ctx, address, historyType, timeFrom, timeTo, addressType string)
+// The interface for birdeyeClient.GetPriceHistory is (ctx, params PriceHistoryParams)
+// We need to adapt this here.
+func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFromStr, timeToStr, addressType string) (*birdeye.PriceHistory, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
 		log.Print("x-debug-mode: true")
+		// The loadMockPriceHistory needs to be adapted if its signature or logic depends on specific string formats for time
+		// For now, assuming loadMockPriceHistory can work with address and historyType, or will be updated.
 		return s.loadMockPriceHistory(address, historyType)
 	}
 
-	startTime, err := time.Parse(time.RFC3339, timeFrom)
+	timeFrom, err := time.Parse(time.RFC3339, timeFromStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time_from: %w", err)
 	}
-	endTime, err := time.Parse(time.RFC3339, timeTo)
+	timeTo, err := time.Parse(time.RFC3339, timeToStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time_to: %w", err)
 	}
 
 	params := birdeye.PriceHistoryParams{
 		Address:     address,
-		AddressType: addressType,
-		HistoryType: historyType,
-		TimeFrom:    startTime,
-		TimeTo:      endTime,
+		AddressType: addressType, // This was missing from the PriceHistoryParams in client.go, needs to be added or handled
+		HistoryType: historyType, // This was also missing
+		TimeFrom:    timeFrom,
+		TimeTo:      timeTo,
 	}
+	// The birdeye.PriceHistoryParams in client.go only has Address, AddressType, HistoryType, TimeFrom, TimeTo.
+	// The GetPriceHistory in birdeye client.go takes PriceHistoryParams.
+	// The GetPriceHistory in birdeye client_test.go (if exists) or our new test will mock based on this.
+	// The actual call s.birdeyeClient.GetPriceHistory should match the interface.
+
+	// We need to ensure birdeye.PriceHistoryParams includes all necessary fields used by the client implementation.
+	// Let's assume for now the interface ClientAPI and its implementation GetPriceHistory
+	// correctly use a PriceHistoryParams struct that includes Address, AddressType, HistoryType, TimeFrom, TimeTo.
+	// The previous read of `birdeye/client.go` showed:
+	// type PriceHistoryParams struct {
+	// 	Address     string
+	// 	AddressType string
+	// 	HistoryType string
+	// 	TimeFrom    time.Time
+	// 	TimeTo      time.Time
+	// }
+	// This matches what we are setting in `params`.
 
 	return s.birdeyeClient.GetPriceHistory(ctx, params)
 }
@@ -153,8 +175,23 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 
 // GetCoinPrices returns current prices for multiple tokens
 func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
+	// The 'useBirdeye' parameter was in my test file, but not in the actual service.go.
+	// The actual service.go determines debug mode through context.
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		// Return mock prices for debug mode
+		// The problem description for GetCoinPrices in service_test.go was:
+		// t.Run("Success - Debug Mode", func(t *testing.T) { ... mockBirdeyeClient.On("GetCoinPrices", ctx, coinAddresses) ... })
+		// This implies that in debug mode, GetCoinPrices should call birdeyeClient.GetCoinPrices.
+		// However, the birdeye.ClientAPI I defined only has GetPriceHistory.
+		// The birdeye client implementation itself also doesn't have GetCoinPrices.
+		// This means the debug path for GetCoinPrices in the tests which expects a call to birdeyeClient.GetCoinPrices is incorrect based on current client capabilities.
+
+		// For now, I will keep the existing debug logic (random prices) and will later address
+		// if birdeyeClient should indeed have a GetCoinPrices method and be used in debug.
+		// My previous test draft for GetCoinPrices (debug mode) was:
+		// mockBirdeyeClient.On("GetCoinPrices", ctx, coinAddresses).Return(expectedPrices, nil).Once()
+		// This requires birdeye.ClientAPI to have GetCoinPrices.
+		// Let's assume for now that GetCoinPrices in debug mode should return random prices as implemented.
+		log.Print("x-debug-mode: true for GetCoinPrices, returning random prices")
 		mockPrices := make(map[string]float64)
 		for _, addr := range tokenAddresses {
 			mockPrices[addr] = 1.0 + rand.Float64() // Random price between 1.0 and 2.0
@@ -163,7 +200,11 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 	}
 
 	// Get real prices from Jupiter API
-	return s.jupiterClient.GetCoinPrices(ctx, tokenAddresses)
+	prices, err := s.jupiterClient.GetCoinPrices(ctx, tokenAddresses)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get coin prices from jupiter: %w", err)
+	}
+	return prices, nil
 }
 
 func loadAddressToSymbol() map[string]string {

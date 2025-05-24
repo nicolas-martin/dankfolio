@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package dankfolio.v1;
 
-option go_package = "github.com/dankfolio/backend/gen/dankfolio/v1;dankfoliov1"; // Adjust if your module path differs
+option go_package = "github.com/dankfolio/backend/gen/dankfolio/v1;dankfoliov1";
 
 // UtilityService provides common helper and proxy functionalities.
 service UtilityService {
