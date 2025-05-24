@@ -38,14 +38,14 @@ type Config struct {
 }
 
 // NewService creates a new authentication service
-func NewService(config *Config) *Service {
+func NewService(config *Config) (*Service, error) {
 	jwtSecret := []byte(config.JWTSecret)
 
 	// If no secret provided, generate a random one (for development)
 	if len(jwtSecret) == 0 {
 		randomBytes := make([]byte, 32)
 		if _, err := rand.Read(randomBytes); err != nil {
-			panic(fmt.Sprintf("failed to generate random JWT secret: %v", err))
+			return nil, fmt.Errorf("failed to generate: %w", err)
 		}
 		jwtSecret = []byte(hex.EncodeToString(randomBytes))
 		slog.Warn("No JWT secret provided, generated random secret for development",
@@ -60,7 +60,7 @@ func NewService(config *Config) *Service {
 	return &Service{
 		jwtSecret:   jwtSecret,
 		tokenExpiry: tokenExpiry,
-	}
+	}, nil
 }
 
 // GenerateToken creates a new JWT token for a device
@@ -118,7 +118,6 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 		}
 		return s.jwtSecret, nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("invalid token: %w", err)
 	}

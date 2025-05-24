@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"connectrpc.com/authn"
-	dankfoliov1 "github.com/jasonblanchard/dankfolio/gen/go/dankfolio/v1"
-	authservice "github.com/jasonblanchard/dankfolio/internal/service/auth" // Assuming this is the package for AuthenticatedUser
+	dankfoliov1 "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1"
+	authservice "github.com/nicolas-martin/dankfolio/internal/service/auth" // Assuming this is the package for AuthenticatedUser
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

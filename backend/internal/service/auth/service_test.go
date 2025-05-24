@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	dankfoliov1 "github.com/jasonblanchard/dankfolio/gen/go/dankfolio/v1"
-	"github.com/jasonblanchard/dankfolio/internal/service"
+	dankfoliov1 "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1"
+	"github.com/nicolas-martin/dankfolio/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +25,7 @@ func TestNewService(t *testing.T) {
 
 	t.Run("DefaultExpiry", func(t *testing.T) {
 		cfg := service.Config{
-			JWTSecret:  "test-secret",
+			JWTSecret:   "test-secret",
 			TokenExpiry: 0, // Zero expiry
 		}
 		s, err := NewService(cfg)
@@ -38,7 +38,7 @@ func TestNewService(t *testing.T) {
 		expectedSecret := "my-super-secret-key"
 		expectedExpiry := 2 * time.Hour
 		cfg := service.Config{
-			JWTSecret:  expectedSecret,
+			JWTSecret:   expectedSecret,
 			TokenExpiry: expectedExpiry,
 		}
 		s, err := NewService(cfg)
@@ -51,7 +51,7 @@ func TestNewService(t *testing.T) {
 
 func TestGenerateToken(t *testing.T) {
 	cfg := service.Config{
-		JWTSecret:  "test-generate-secret",
+		JWTSecret:   "test-generate-secret",
 		TokenExpiry: time.Hour,
 	}
 	s, err := NewService(cfg)
