@@ -96,6 +96,9 @@ func loadConfig() (*Config, error) {
 	// Validate required fields
 	var missingVars []string
 
+	if config.JWTSecret == "" {
+		missingVars = append(missingVars, "JWTSecret")
+	}
 	if config.Env == "" {
 		missingVars = append(missingVars, "APP_ENV")
 	}
