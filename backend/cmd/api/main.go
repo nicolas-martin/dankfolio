@@ -181,7 +181,10 @@ func main() {
 		JWTSecret:   config.JWTSecret,
 		TokenExpiry: config.TokenExpiry,
 	}
-	authService := auth.NewService(authServiceConfig)
+	authService, err := auth.NewService(authServiceConfig)
+	if err != nil {
+		panic(err)
+	}
 
 	// Initialize coin service
 	coinServiceConfig := &coin.Config{

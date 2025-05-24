@@ -17,8 +17,8 @@ import (
 
 func TestGetPriceHistory(t *testing.T) {
 	ctx := context.Background()
-	mockBirdeyeClient := birdeyeclientmocks.NewClientAPI(t) // Use new alias
-	mockJupiterClient := jupiterclientmocks.NewClientAPI(t) // Use new alias
+	mockBirdeyeClient := birdeyeclientmocks.NewMockClientAPI(t)
+	mockJupiterClient := jupiterclientmocks.NewMockClientAPI(t)
 
 	service := NewService(mockBirdeyeClient, mockJupiterClient)
 
@@ -70,7 +70,7 @@ func TestGetPriceHistory(t *testing.T) {
 		history, err := service.GetPriceHistory(debugCtx, coinAddress, historyType, timeFromStr, timeToStr, addressType)
 
 		assert.NoError(t, err)
-		assert.NotNil(t, history) // Should return some generated/mocked history
+		assert.NotNil(t, history)       // Should return some generated/mocked history
 		assert.True(t, history.Success) // Assuming generated/mocked history is always success true
 		// mockBirdeyeClient.AssertNotCalled(t, "GetPriceHistory", mock.Anything, mock.Anything) // Removed
 	})
@@ -101,8 +101,8 @@ func TestGetPriceHistory(t *testing.T) {
 
 func TestGetCoinPrices(t *testing.T) {
 	ctx := context.Background()
-	mockBirdeyeClient := birdeyeclientmocks.NewClientAPI(t) // Use new alias
-	mockJupiterClient := jupiterclientmocks.NewClientAPI(t) // Use new alias
+	mockBirdeyeClient := birdeyeclientmocks.NewMockClientAPI(t) // Use new alias
+	mockJupiterClient := jupiterclientmocks.NewMockClientAPI(t) // Use new alias
 
 	service := NewService(mockBirdeyeClient, mockJupiterClient)
 	coinAddresses := []string{"coin1", "coin2"}
@@ -159,7 +159,7 @@ func TestGetCoinPrices(t *testing.T) {
 		// Alternatively, the service could handle this and return empty map, but current code passes it to client.
 		// Let's assume jupiter client is called and returns an error as per its contract.
 		mockJupiterClient.On("GetCoinPrices", ctx, []string{}).Return(nil, errors.New("no token addresses provided")).Once()
-		
+
 		prices, err := service.GetCoinPrices(ctx, []string{})
 
 		assert.Error(t, err)

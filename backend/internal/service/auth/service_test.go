@@ -6,15 +6,16 @@ import (
 	"testing"
 	"time"
 
-	dankfoliov1 "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1"
-	"github.com/nicolas-martin/dankfolio/internal/service"
+	"github.com/golang-jwt/jwt/v5"
+	dankfoliov1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewService(t *testing.T) {
 	t.Run("RandomSecret", func(t *testing.T) {
-		cfg := service.Config{
+		cfg := &Config{
 			JWTSecret: "", // Empty secret
 		}
 		s, err := NewService(cfg)
@@ -24,7 +25,7 @@ func TestNewService(t *testing.T) {
 	})
 
 	t.Run("DefaultExpiry", func(t *testing.T) {
-		cfg := service.Config{
+		cfg := &Config{
 			JWTSecret:   "test-secret",
 			TokenExpiry: 0, // Zero expiry
 		}
@@ -37,7 +38,7 @@ func TestNewService(t *testing.T) {
 	t.Run("ProvidedValues", func(t *testing.T) {
 		expectedSecret := "my-super-secret-key"
 		expectedExpiry := 2 * time.Hour
-		cfg := service.Config{
+		cfg := &Config{
 			JWTSecret:   expectedSecret,
 			TokenExpiry: expectedExpiry,
 		}
@@ -50,7 +51,7 @@ func TestNewService(t *testing.T) {
 }
 
 func TestGenerateToken(t *testing.T) {
-	cfg := service.Config{
+	cfg := &Config{
 		JWTSecret:   "test-generate-secret",
 		TokenExpiry: time.Hour,
 	}
@@ -69,14 +70,14 @@ func TestGenerateToken(t *testing.T) {
 		assert.NoError(t, err)
 		require.NotNil(t, resp)
 		assert.NotEmpty(t, resp.Token)
-		assert.Equal(t, int64(time.Hour.Seconds()), resp.ExpiresIn)
+		assert.Equal(t, int32(time.Hour.Seconds()), resp.ExpiresIn)
 
 		// Validate the token
-		authUser, err := s.ValidateToken(ctx, &dankfoliov1.ValidateTokenRequest{Token: resp.Token})
+		authUser, err := s.ValidateToken(resp.Token)
 		assert.NoError(t, err)
 		require.NotNil(t, authUser)
-		assert.Equal(t, req.DeviceId, authUser.User.GetDeviceId())
-		assert.Equal(t, req.Platform, authUser.User.GetPlatform())
+		assert.Equal(t, req.DeviceId, authUser.DeviceID)
+		assert.Equal(t, req.Platform, authUser.Platform)
 
 		// Parse token and verify claims
 		claims := &AuthClaims{}
@@ -112,12 +113,12 @@ func TestValidateToken(t *testing.T) {
 	testDeviceID := "test-device-for-validation"
 	testPlatform := "test-platform-for-validation"
 
-	cfg1 := service.Config{JWTSecret: "testSecret1", TokenExpiry: 1 * time.Hour}
+	cfg1 := &Config{JWTSecret: "testSecret1", TokenExpiry: 1 * time.Hour}
 	service1, err := NewService(cfg1)
 	require.NoError(t, err)
 	require.NotNil(t, service1)
 
-	cfg2 := service.Config{JWTSecret: "testSecret2", TokenExpiry: 1 * time.Hour}
+	cfg2 := &Config{JWTSecret: "testSecret2", TokenExpiry: 1 * time.Hour}
 	service2, err := NewService(cfg2)
 	require.NoError(t, err)
 	require.NotNil(t, service2)
@@ -132,23 +133,22 @@ func TestValidateToken(t *testing.T) {
 	validTokenString := generateResp.Token
 
 	t.Run("ValidToken", func(t *testing.T) {
-		resp, err := service1.ValidateToken(ctx, &dankfoliov1.ValidateTokenRequest{Token: validTokenString})
+		resp, err := service1.ValidateToken(validTokenString)
 		assert.NoError(t, err)
 		require.NotNil(t, resp)
-		require.NotNil(t, resp.User)
-		assert.Equal(t, testDeviceID, resp.User.GetDeviceId())
-		assert.Equal(t, testPlatform, resp.User.GetPlatform())
+		assert.Equal(t, testDeviceID, resp.DeviceID)
+		assert.Equal(t, testPlatform, resp.Platform)
 	})
 
 	t.Run("EmptyToken", func(t *testing.T) {
-		resp, err := service1.ValidateToken(ctx, &dankfoliov1.ValidateTokenRequest{Token: ""})
+		resp, err := service1.ValidateToken("")
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 		assert.True(t, strings.Contains(err.Error(), "token string is empty"), "Error message should indicate empty token string")
 	})
 
 	t.Run("MalformedToken", func(t *testing.T) {
-		resp, err := service1.ValidateToken(ctx, &dankfoliov1.ValidateTokenRequest{Token: "not-a-jwt-token"})
+		resp, err := service1.ValidateToken("not-a-jwt-token")
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 		// Error message from jwt-go library is "token contains an invalid number of segments"
@@ -171,7 +171,7 @@ func TestValidateToken(t *testing.T) {
 		signedToken, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType) // This is how you sign with "none"
 		require.NoError(t, err, "Failed to sign token with none algorithm")
 
-		resp, err := service1.ValidateToken(ctx, &dankfoliov1.ValidateTokenRequest{Token: signedToken})
+		resp, err := service1.ValidateToken(signedToken)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 		// jwt-go v5 returns "token signature is invalid" when a different signing method is expected
@@ -179,7 +179,7 @@ func TestValidateToken(t *testing.T) {
 	})
 
 	t.Run("ExpiredToken", func(t *testing.T) {
-		shortExpiryCfg := service.Config{JWTSecret: "short-expiry-secret", TokenExpiry: 1 * time.Millisecond}
+		shortExpiryCfg := &Config{JWTSecret: "short-expiry-secret", TokenExpiry: 1 * time.Millisecond}
 		shortExpiryService, err := NewService(shortExpiryCfg)
 		require.NoError(t, err)
 
@@ -193,7 +193,7 @@ func TestValidateToken(t *testing.T) {
 		// Wait for token to expire
 		time.Sleep(5 * time.Millisecond) // Sleep a bit longer than expiry to ensure it's expired
 
-		resp, err := shortExpiryService.ValidateToken(ctx, &dankfoliov1.ValidateTokenRequest{Token: expiredTokenResp.Token})
+		resp, err := shortExpiryService.ValidateToken(expiredTokenResp.Token)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 		// jwt-go v5 returns "token has invalid claims: token is expired"
@@ -203,7 +203,7 @@ func TestValidateToken(t *testing.T) {
 	t.Run("DifferentSecret", func(t *testing.T) {
 		// validTokenString was generated with service1 (and cfg1's secret)
 		// service2 is initialized with cfg2's secret
-		resp, err := service2.ValidateToken(ctx, &dankfoliov1.ValidateTokenRequest{Token: validTokenString})
+		resp, err := service2.ValidateToken(validTokenString)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 		// jwt-go v5 returns "token signature is invalid" for this case
@@ -229,7 +229,7 @@ func TestValidateToken(t *testing.T) {
 		signedToken, err := token.SignedString(service1.jwtSecret)
 		require.NoError(t, err)
 
-		resp, err := service1.ValidateToken(ctx, &dankfoliov1.ValidateTokenRequest{Token: signedToken})
+		resp, err := service1.ValidateToken(signedToken)
 		assert.Error(t, err) // Error should occur because we are trying to parse into AuthClaims
 		assert.Nil(t, resp)
 		// This error is a bit generic, "token invalid" because the claims struct won't match
