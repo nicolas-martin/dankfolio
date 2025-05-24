@@ -32,6 +32,8 @@ export const getRequestHeaders = () => {
 	if (IS_DEBUG_MODE) {
 		headers.set("x-debug-mode", "true");
 	}
+	// Note: Authentication headers are now automatically added via Connect interceptors
+	// See apiClient.ts for the authInterceptor implementation
 	return headers;
 };
 

@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/middleware"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/auth"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
@@ -24,6 +25,7 @@ type Server struct {
 	tradeService   *trade.Service
 	priceService   *price.Service
 	utilityService *Service
+	authService    *auth.Service
 }
 
 // NewServer creates a new Server instance
@@ -33,6 +35,7 @@ func NewServer(
 	tradeService *trade.Service,
 	priceService *price.Service,
 	utilityService *Service,
+	authService *auth.Service,
 ) *Server {
 	return &Server{
 		mux:            http.NewServeMux(),
@@ -41,6 +44,7 @@ func NewServer(
 		tradeService:   tradeService,
 		priceService:   priceService,
 		utilityService: utilityService,
+		authService:    authService,
 	}
 }
 
@@ -50,41 +54,57 @@ func (s *Server) Start(port int) error {
 	logInterceptor := middleware.GRPCLoggerInterceptor()
 	debugModeInterceptor := middleware.GRPCDebugModeInterceptor()
 
+	// Create authentication middleware
+	authMiddleware := middleware.AuthMiddleware(s.authService)
+
 	// Default interceptors for all handlers
 	defaultInterceptors := connect.WithInterceptors(debugModeInterceptor, logInterceptor)
 
-	// Register Connect RPC handlers
-	path, handler := dankfoliov1connect.NewCoinServiceHandler(
-		newCoinServiceHandler(s.coinService),
+	// Register AuthService handler (NOT behind auth middleware - it generates tokens)
+	path, handler := dankfoliov1connect.NewAuthServiceHandler(
+		newAuthServiceHandler(s.authService),
 		defaultInterceptors,
 	)
 	s.mux.Handle(path, handler)
+
+	// Create a sub-mux for protected routes
+	protectedMux := http.NewServeMux()
+
+	// Register protected Connect RPC handlers
+	path, handler = dankfoliov1connect.NewCoinServiceHandler(
+		newCoinServiceHandler(s.coinService),
+		defaultInterceptors,
+	)
+	protectedMux.Handle(path, handler)
 
 	path, handler = dankfoliov1connect.NewWalletServiceHandler(
 		newWalletServiceHandler(s.walletService),
 		defaultInterceptors,
 	)
-	s.mux.Handle(path, handler)
+	protectedMux.Handle(path, handler)
 
 	path, handler = dankfoliov1connect.NewTradeServiceHandler(
 		newTradeServiceHandler(s.tradeService),
 		defaultInterceptors,
 	)
-	s.mux.Handle(path, handler)
+	protectedMux.Handle(path, handler)
 
 	// Register PriceService handler
 	path, handler = dankfoliov1connect.NewPriceServiceHandler(
 		newPriceServiceHandler(s.priceService),
 		defaultInterceptors,
 	)
-	s.mux.Handle(path, handler)
+	protectedMux.Handle(path, handler)
 
 	// Register UtilityService handler
 	path, handler = dankfoliov1connect.NewUtilityServiceHandler(
 		s.utilityService,
 		defaultInterceptors,
 	)
-	s.mux.Handle(path, handler)
+	protectedMux.Handle(path, handler)
+
+	// Wrap protected routes with authentication middleware
+	s.mux.Handle("/", authMiddleware.Wrap(protectedMux))
 
 	// Start HTTP server with CORS middleware and HTTP/2 support
 	addr := fmt.Sprintf(":%d", port)
