@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/fatih/color"
 )
+
+// ensure colorHandler implements slog.Handler
+var _ slog.Handler = (*ColorHandler)(nil)
 
 // ColorHandler implements slog.Handler interface with colored output
 type ColorHandler struct {
@@ -57,9 +61,7 @@ func (h *ColorHandler) Handle(_ context.Context, r slog.Record) error {
 
 	// Collect attributes
 	var attrs []slog.Attr
-	for _, attr := range h.attrs {
-		attrs = append(attrs, attr)
-	}
+	attrs = append(attrs, h.attrs...)
 
 	// Add record attributes
 	r.Attrs(func(attr slog.Attr) bool {
@@ -119,8 +121,8 @@ func (h *ColorHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 		level:     h.level,
 		outStream: h.outStream,
 		errStream: h.errStream,
-		groups:    append([]string{}, h.groups...),                     // Copy groups
-		attrs:     append(append([]slog.Attr{}, h.attrs...), attrs...), // Combine attrs
+		groups:    slices.Clone(h.groups),        // Copy groups
+		attrs:     slices.Concat(h.attrs, attrs), // Combine attrs
 	}
 	return newHandler
 }
@@ -131,8 +133,8 @@ func (h *ColorHandler) WithGroup(name string) slog.Handler {
 		level:     h.level,
 		outStream: h.outStream,
 		errStream: h.errStream,
-		groups:    append(append([]string{}, h.groups...), name), // Add new group
-		attrs:     append([]slog.Attr{}, h.attrs...),             // Copy attrs
+		groups:    append(slices.Clone(h.groups), name), // Add new group
+		attrs:     slices.Clone(h.attrs),                // Copy attrs
 	}
 	return newHandler
 }

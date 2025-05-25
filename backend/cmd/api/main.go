@@ -1,6 +1,7 @@
 package main
 
 import (
+	"hash"
 	"log"      // Import standard log for pre-slog setup errors
 	"log/slog" // Import slog
 	"net/http"
@@ -132,14 +133,16 @@ func loadConfig() (*Config, error) {
 }
 
 func main() {
-	// Setup logger
-	logLevel := slog.LevelInfo
-	if os.Getenv("APP_ENV") == "development" {
-		logLevel = slog.LevelDebug
+	logLevel := slog.LevelDebug
+	var handler slog.Handler
+	handler = logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
+
+	if os.Getenv("APP_ENV") != "development" {
+		logLevel = slog.LevelInfo
+		handler = slog.NewJSONHandler(os.Stdout, nil)
 	}
 
 	// Create color handler and set it as default
-	handler := logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
 	slogger := slog.New(handler)
 	slog.SetDefault(slogger)
 
