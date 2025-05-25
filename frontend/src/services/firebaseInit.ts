@@ -3,15 +3,31 @@ import { initializeAppCheck, AppCheck, CustomProvider } from 'firebase/app-check
 import { logger } from '@/utils/logger';
 import * as Integrity from 'expo-app-integrity';
 import { Platform } from 'react-native';
+import {
+  FIREBASE_API_KEY,
+  FIREBASE_AUTH_DOMAIN,
+  FIREBASE_PROJECT_ID,
+  FIREBASE_STORAGE_BUCKET,
+  FIREBASE_MESSAGING_SENDER_ID,
+  FIREBASE_APP_ID
+} from '@env';
 
-// Firebase configuration using values from GoogleService-Info.plist
-const firebaseConfig = {
-  apiKey: "AIzaSyDwxE91vu2tunrWO3dbLKeWQisyx5R90Js",
-  authDomain: "dankfolio.firebaseapp.com",
-  projectId: "dankfolio",
-  storageBucket: "dankfolio.firebasestorage.app",
-  messagingSenderId: "751348159218",
-  appId: "1:751348159218:ios:e666f33d69531ad426366b",
+// Environment-aware Firebase configuration
+const getFirebaseConfig = () => {
+  // Validate that all required Firebase environment variables are present
+  if (!FIREBASE_API_KEY || !FIREBASE_AUTH_DOMAIN || !FIREBASE_PROJECT_ID || 
+      !FIREBASE_STORAGE_BUCKET || !FIREBASE_MESSAGING_SENDER_ID || !FIREBASE_APP_ID) {
+    throw new Error('Missing required Firebase environment variables. Please check your .env file.');
+  }
+
+  return {
+    apiKey: FIREBASE_API_KEY,
+    authDomain: FIREBASE_AUTH_DOMAIN,
+    projectId: FIREBASE_PROJECT_ID,
+    storageBucket: FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+    appId: FIREBASE_APP_ID,
+  };
 };
 
 let firebaseApp: FirebaseApp | null = null;
@@ -53,7 +69,7 @@ class ExpoAppAttestProvider extends CustomProvider {
 export async function initializeFirebaseServices(): Promise<void> {
   try {
     if (!firebaseApp) {
-      firebaseApp = initializeApp(firebaseConfig);
+      firebaseApp = initializeApp(getFirebaseConfig());
       logger.info('🔥 Firebase app initialized successfully.');
     }
 
