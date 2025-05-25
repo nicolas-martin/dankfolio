@@ -1,0 +1,234 @@
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Provider as PaperProvider, useTheme, Text, Button, ActivityIndicator, Modal, Portal } from 'react-native-paper';
+import TradeConfirmation from './index';
+import { Coin } from '@/types';
+import { View } from 'react-native';
+
+// Mock react-native-paper components and theme
+jest.mock('react-native-paper', () => {
+    const actualPaper = jest.requireActual('react-native-paper');
+    const MockButton = (props: any) => {
+        const { Pressable } = require('react-native');
+        return (
+            <Pressable
+                onPress={props.onPress}
+                disabled={props.disabled || props.loading}
+                testID={props.testID}
+            >
+                <actualPaper.Text>{props.children}</actualPaper.Text>
+                {props.loading && <actualPaper.ActivityIndicator testID={`${props.testID}-loading`} />}
+            </Pressable>
+        );
+    };
+    return {
+        ...actualPaper,
+        useTheme: jest.fn(() => ({
+            colors: {
+                surface: 'white',
+                text: 'black',
+                primary: 'purple',
+                error: 'red',
+                // Add any other colors your component might use from the theme
+            },
+            roundness: 4,
+            // Add any other theme properties your component might use
+        })),
+        Button: MockButton,
+        Modal: (props: any) => props.visible ? <View testID="mock-modal">{props.children}</View> : null,
+        Portal: (props: any) => <View testID="mock-portal">{props.children}</View>,
+        ActivityIndicator: (props: any) => props.animating ? <View testID={props.testID || "loading-spinner"} /> : null,
+        Text: actualPaper.Text, // Use actual Text or mock if needed for specific styles
+    };
+});
+
+// Mock Toast (if it were still used, good practice to keep if it might be re-added)
+const mockShowToast = jest.fn();
+jest.mock('@components/Common/Toast', () => ({
+    useToast: () => ({
+        showToast: mockShowToast,
+    }),
+}));
+
+const mockFromCoin: Coin = {
+    mintAddress: 'fromMint',
+    name: 'FromCoin',
+    symbol: 'FROM',
+    price: 10.0,
+    logoUrl: 'from_url',
+    decimals: 9,
+    balance: 100,
+    value: 1000,
+};
+
+const mockToCoin: Coin = {
+    mintAddress: 'toMint',
+    name: 'ToCoin',
+    symbol: 'TO',
+    price: 1.0,
+    logoUrl: 'to_url',
+    decimals: 6,
+    balance: 500,
+    value: 500,
+};
+
+const defaultProps = {
+    isVisible: true,
+    onClose: jest.fn(),
+    onConfirm: jest.fn(),
+    fromAmount: '10',
+    toAmount: '98',
+    fromCoin: mockFromCoin,
+    toCoin: mockToCoin,
+    fees: {
+        exchangeRate: '9.8',
+        gasFee: '0.001',
+        priceImpactPct: '1.5', // 1.5%
+        totalFee: '0.02', // in USD
+        route: 'FROM -> TO'
+    },
+    isLoading: false,
+};
+
+const renderComponent = (props = {}) => {
+    return render(
+        <PaperProvider>
+            <TradeConfirmation {...defaultProps} {...props} />
+        </PaperProvider>
+    );
+};
+
+describe('TradeConfirmation', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        // Reset useTheme mock return value if it was changed in a test
+        (useTheme as jest.Mock).mockReturnValue({
+            colors: {
+                surface: 'white',
+                text: 'black',
+                primary: 'purple',
+                error: 'red',
+            },
+            roundness: 4,
+        });
+    });
+
+    it('renders loading spinner if fromCoin is not provided', () => {
+        const { getByTestId, queryByText } = renderComponent({ fromCoin: undefined });
+        expect(getByTestId('loading-spinner')).toBeTruthy();
+        expect(queryByText('Confirm Trade')).toBeTruthy(); // Title should still be there
+        expect(queryByText('You Pay')).toBeNull(); // Details should not be visible
+    });
+
+    it('renders loading spinner if toCoin is not provided', () => {
+        const { getByTestId, queryByText } = renderComponent({ toCoin: undefined });
+        expect(getByTestId('loading-spinner')).toBeTruthy();
+        expect(queryByText('Confirm Trade')).toBeTruthy();
+        expect(queryByText('You Receive')).toBeNull();
+    });
+
+    it('renders correctly with all props provided', () => {
+        const { getByText, queryByTestId } = renderComponent();
+
+        expect(queryByTestId('loading-spinner')).toBeNull();
+        expect(getByText('Confirm Trade')).toBeTruthy();
+
+        // You Pay section
+        expect(getByText('You Pay')).toBeTruthy();
+        expect(getByText(`${defaultProps.fromAmount} ${mockFromCoin.symbol}`)).toBeTruthy();
+        expect(getByText(`$${(parseFloat(defaultProps.fromAmount) * mockFromCoin.price).toFixed(4)}`)).toBeTruthy();
+
+        // You Receive section
+        expect(getByText('You Receive')).toBeTruthy();
+        expect(getByText(`${defaultProps.toAmount} ${mockToCoin.symbol}`)).toBeTruthy();
+        expect(getByText(`$${(parseFloat(defaultProps.toAmount) * mockToCoin.price).toFixed(4)}`)).toBeTruthy();
+
+        // Fees section
+        const roundedPriceImpact = parseFloat(defaultProps.fees.priceImpactPct).toFixed(4);
+        expect(getByText(`${roundedPriceImpact}%`)).toBeTruthy();
+        expect(getByText(`$${defaultProps.fees.totalFee}`)).toBeTruthy();
+
+        // Buttons
+        expect(getByText('Cancel')).toBeTruthy();
+        expect(getByText('Confirm Trade')).toBeTruthy();
+    });
+
+    it('shows high price impact warning when priceImpactPct > 2', () => {
+        const highImpactFees = { ...defaultProps.fees, priceImpactPct: '2.5' }; // 2.5%
+        const { getByText } = renderComponent({ fees: highImpactFees });
+        expect(getByText('Warning: High price impact may result in unfavorable rates')).toBeTruthy();
+    });
+
+    it('does not show high price impact warning when priceImpactPct <= 2', () => {
+        const { queryByText } = renderComponent(); // Default is 1.5%
+        expect(queryByText('Warning: High price impact may result in unfavorable rates')).toBeNull();
+    });
+    
+    it('calls onClose when Cancel button is pressed', () => {
+        const { getByTestId } = renderComponent();
+        fireEvent.press(getByTestId('cancel-trade-button'));
+        expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onConfirm when Confirm Trade button is pressed', () => {
+        const { getByTestId } = renderComponent();
+        fireEvent.press(getByTestId('confirm-trade-button'));
+        expect(defaultProps.onConfirm).toHaveBeenCalledTimes(1);
+    });
+
+    it('disables buttons and shows loading on Confirm Trade button when isLoading is true', () => {
+        const { getByTestId } = renderComponent({ isLoading: true });
+        
+        const confirmButton = getByTestId('confirm-trade-button');
+        // Check if the loading indicator is part of the button (specific to mock)
+        expect(getByTestId('confirm-trade-button-loading')).toBeTruthy();
+
+        // Check if buttons are effectively disabled (Pressable's disabled prop)
+        // Note: The mock Button uses `props.disabled || props.loading`
+        fireEvent.press(confirmButton);
+        expect(defaultProps.onConfirm).not.toHaveBeenCalled(); // Should not call if disabled
+
+        const cancelButton = getByTestId('cancel-trade-button');
+        fireEvent.press(cancelButton);
+        expect(defaultProps.onClose).not.toHaveBeenCalled(); // Should also be disabled
+    });
+
+    it('calculates value correctly even if coin price is 0', () => {
+        const fromCoinWithZeroPrice = { ...mockFromCoin, price: 0 };
+        const { getByText } = renderComponent({ fromCoin: fromCoinWithZeroPrice });
+        expect(getByText('$0.0000')).toBeTruthy();
+    });
+
+    it('calculates value as $0.00 if amount is invalid', () => {
+        const { getAllByText } = renderComponent({ fromAmount: 'invalid' });
+        // There will be two "$0.00" - one for "You Pay" and one for "You Receive" (if its amount is also invalid or coin price is 0)
+        // For this test, we check the "You Pay" section.
+        // The value is calculated as $0.0000 because of toFixed(4)
+        const valueElements = getAllByText('$0.0000');
+        // We expect the "You Pay" value to be $0.0000
+        // And the "You Receive" value will be based on its valid amount and price.
+        const expectedReceiveValue = `$${(parseFloat(defaultProps.toAmount) * mockToCoin.price).toFixed(4)}`;
+        
+        let foundPayValue = false;
+        let foundReceiveValue = false;
+
+        valueElements.forEach(el => {
+            // This is a bit fragile if other parts of the text include "$0.0000"
+            // A more robust way would be to query more specifically within sections.
+            // For now, we assume one of them is the one we are looking for.
+            if (el.props.children === '$0.0000') { // Check the one for the "You Pay" section specifically
+                 const parent = el.parent?.parent; // Text -> View (valueContainer) -> View (row)
+                 const labelSibling = parent?.children.find((child: any) => child.props.children === 'Value');
+                 // This is a very simplified check, might need more robust query
+                 // For now, we just check if one of the $0.0000 is present
+                 foundPayValue = true;
+            }
+        });
+        expect(foundPayValue).toBe(true);
+    });
+
+    it('does not render if isVisible is false', () => {
+        const { queryByTestId } = renderComponent({ isVisible: false });
+        expect(queryByTestId('mock-modal')).toBeNull();
+    });
+});

@@ -21,7 +21,8 @@ import {
 	startPolling,
 	stopPolling,
 	handleSwapCoins as swapCoinsUtil,
-	QUOTE_DEBOUNCE_MS
+	QUOTE_DEBOUNCE_MS,
+	getCoinPrices
 } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { SOLANA_ADDRESS } from '@/utils/constants';
@@ -76,16 +77,33 @@ const Trade: React.FC = () => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed TradeScreen' });
 		logger.log(`[Trade] Initializing with initialFromCoin: ${initialFromCoin?.symbol}, initialToCoin: ${initialToCoin?.symbol}`);
 		const initializeCoins = async () => {
-			const promises = [];
+			// Handle initialFromCoin
 			if (initialFromCoin) {
-				promises.push(getCoinByID(initialFromCoin.mintAddress, true).then(coin => { if (coin) setFromCoin(coin); }));
+				setFromCoin(initialFromCoin);
+				const coinFromMap = await getCoinByID(initialFromCoin.mintAddress, false);
+				if (coinFromMap) {
+					setFromCoin(coinFromMap);
+				}
 			} else {
-				promises.push(getCoinByID(SOLANA_ADDRESS, true).then(coin => { if (coin) setFromCoin(coin); }));
+				const solCoin = await getCoinByID(SOLANA_ADDRESS, false);
+				if (solCoin) {
+					setFromCoin(solCoin);
+				} else {
+					const solCoinFromApi = await getCoinByID(SOLANA_ADDRESS, true);
+					if (solCoinFromApi) {
+						setFromCoin(solCoinFromApi);
+					}
+				}
 			}
+
+			// Handle initialToCoin
 			if (initialToCoin) {
-				promises.push(getCoinByID(initialToCoin.mintAddress, true).then(coin => { if (coin) setToCoin(coin); }));
+				setToCoin(initialToCoin);
+				const coinFromMap = await getCoinByID(initialToCoin.mintAddress, false);
+				if (coinFromMap) {
+					setToCoin(coinFromMap);
+				}
 			}
-			await Promise.all(promises);
 		};
 		initializeCoins();
 	}, [initialFromCoin, initialToCoin, getCoinByID]);
@@ -100,13 +118,14 @@ const Trade: React.FC = () => {
 			}
 			try {
 				logger.log('[Trade] Fetching fresh coin data for price polling...');
-				const [updatedFromCoin, updatedToCoin] = await Promise.all([
-					getCoinByID(fromCoin.mintAddress, true),
-					getCoinByID(toCoin.mintAddress, true)
-				]);
-				if (updatedFromCoin) setFromCoin(updatedFromCoin);
-				if (updatedToCoin) setToCoin(updatedToCoin);
-				logger.log('[Trade] Successfully updated coin data from price polling');
+				const prices = await getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]);
+				if (prices) {
+					setFromCoin(prevCoin => prevCoin ? ({ ...prevCoin, price: prices[prevCoin.mintAddress] ?? prevCoin.price }) : null);
+					setToCoin(prevCoin => prevCoin ? ({ ...prevCoin, price: prices[prevCoin.mintAddress] ?? prevCoin.price }) : null);
+					logger.log('[Trade] Successfully updated coin data from price polling');
+				} else {
+					logger.warn('[Trade] getCoinPrices returned no prices.');
+				}
 			} catch (error: any) {
 				logger.error('[Trade] Failed to refresh coin prices during polling', { errorMessage: error?.message, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 			}
@@ -119,7 +138,7 @@ const Trade: React.FC = () => {
 				logger.log('[Trade] Price polling interval cleared successfully');
 			}
 		};
-	}, [fromCoin?.mintAddress, toCoin?.mintAddress, getCoinByID]);
+	}, [fromCoin?.mintAddress, toCoin?.mintAddress]);
 
 	useEffect(() => {
 		logger.log('[Trade] Trade screen mounted (second useEffect, consider merging if appropriate)');

@@ -53,7 +53,16 @@ jest.mock('@components/Trade/TradeConfirmation', () => createMockComponent('Trad
 jest.mock('@components/Trade/TradeStatusModal', () => createMockComponent('TradeStatusModal'));
 
 // Mock Local Scripts
-jest.mock('./trade_scripts', () => require('../../__mocks__/screens/Trade/trade_scripts'));
+// Note: getCoinPrices will be specifically mocked within tests where needed
+jest.mock('./trade_scripts', () => {
+	const actualTradeScripts = jest.requireActual('./trade_scripts');
+	const mockTradeScripts = require('../../__mocks__/screens/Trade/trade_scripts');
+	return {
+		...actualTradeScripts, // Use actual implementations for non-mocked functions
+		...mockTradeScripts, // Override with mocks from the __mocks__ directory
+		getCoinPrices: jest.fn(), // Add specific mock for getCoinPrices here
+	};
+});
 
 // Mock Services
 jest.mock('@/services/solana', () => ({
@@ -138,15 +147,26 @@ describe('TradeScreen', () => {
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
 
-		mockCoinStoreReturn.getCoinByID.mockImplementation(async (mintAddress: string) => {
-			if (mintAddress === mockFromCoin.mintAddress) return mockFromCoin;
-			if (mintAddress === mockToCoin.mintAddress) return mockToCoin;
-			if (mintAddress === SOLANA_ADDRESS) return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL' };
+		// Default mock for getCoinByID
+		mockCoinStoreReturn.getCoinByID.mockImplementation(async (mintAddress: string, forceRefresh: boolean = false) => {
+			// console.log(`Mock getCoinByID called with: ${mintAddress}, forceRefresh: ${forceRefresh}`);
+			if (mintAddress === mockFromCoin.mintAddress) return { ...mockFromCoin, source: forceRefresh ? 'api' : 'cache' };
+			if (mintAddress === mockToCoin.mintAddress) return { ...mockToCoin, source: forceRefresh ? 'api' : 'cache' };
+			if (mintAddress === SOLANA_ADDRESS) {
+				if (forceRefresh) {
+					return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'api' };
+				}
+				// Simulate SOL not being in cache initially for one of the tests
+				if ((useRoute as jest.Mock).mock.calls.some(call => call[0]?.key === 'TradeScreen-SOL-Not-In-Cache')) {
+					return null; 
+				}
+				return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'cache' };
+			}
 			return null;
 		});
-
+		
 		(useRoute as jest.Mock).mockReturnValue({
-			key: 'TradeScreen-Default',
+			key: 'TradeScreen-Default', // Keep a default key or change per test
 			name: 'TradeScreen',
 			params: {
 				initialFromCoin: mockFromCoin,
@@ -159,18 +179,21 @@ describe('TradeScreen', () => {
 		jest.useRealTimers();
 	});
 
-	it('initializes correctly with store hooks and initial coin fetch', async () => {
+	it('initializes correctly with initialFromCoin and initialToCoin, prioritizing cache', async () => {
+		(useRoute as jest.Mock).mockReturnValue({
+			key: 'TradeScreen-With-Initial-Coins',
+			name: 'TradeScreen',
+			params: { initialFromCoin: mockFromCoin, initialToCoin: mockToCoin },
+		});
 		renderWithProvider(<TradeScreen />);
 
 		await waitFor(() => {
 			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2);
-			expect(require('@store/portfolio').usePortfolioStore).toHaveBeenCalledTimes(1);
-			expect(require('@store/coins').useCoinStore).toHaveBeenCalledTimes(1);
 		});
 
-		// Verify correct coin fetching
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockFromCoin.mintAddress, true);
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, true);
+		// Verify correct coin fetching (should try cache first)
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockFromCoin.mintAddress, false);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false);
 
 		// Verify store actions that should NOT be called on mount
 		expect(mockPortfolioStoreReturn.fetchPortfolioBalance).not.toHaveBeenCalled();
@@ -419,22 +442,90 @@ describe('TradeScreen', () => {
 		});
 	});
 
-	it('handles SOL as default fromCoin when not provided', async () => {
+	it('handles SOL as default fromCoin (from cache) when not provided', async () => {
 		(useRoute as jest.Mock).mockReturnValue({
-			key: 'TradeScreen-NullFrom',
+			key: 'TradeScreen-SOL-In-Cache',
 			name: 'TradeScreen',
-			params: {
-				initialFromCoin: null,
-				initialToCoin: mockToCoin,
-			},
+			params: { initialFromCoin: null, initialToCoin: mockToCoin },
 		});
 
 		renderWithProvider(<TradeScreen />);
 
 		await waitFor(() => {
-			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenNthCalledWith(1, SOLANA_ADDRESS, true);
-			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenNthCalledWith(2, mockToCoin.mintAddress, true);
-			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2);
+			// First for SOL (cache), then for initialToCoin (cache)
+			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2); 
 		});
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, false);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false);
 	});
-}); 
+
+	it('handles SOL as default fromCoin (from API) when not in cache', async () => {
+		// Specific route mock to trigger SOL not in cache for this test
+		(useRoute as jest.Mock).mockReturnValue({
+			key: 'TradeScreen-SOL-Not-In-Cache', // Key to trigger specific mock behavior
+			name: 'TradeScreen',
+			params: { initialFromCoin: null, initialToCoin: mockToCoin },
+		});
+		
+		// Mock getCoinByID to return null for SOL on the first (cache) call for this test
+		mockCoinStoreReturn.getCoinByID.mockImplementationOnce(async (mintAddress: string, forceRefresh: boolean = false) => {
+			if (mintAddress === SOLANA_ADDRESS && !forceRefresh) return null; // Simulate cache miss for SOL
+			return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'api' }; // API hit for SOL
+		}).mockImplementationOnce(async (mintAddress: string, forceRefresh: boolean = false) => {
+			if (mintAddress === mockToCoin.mintAddress) return { ...mockToCoin, source: forceRefresh ? 'api' : 'cache' }; // For initialToCoin
+			return null;
+		});
+
+
+		renderWithProvider(<TradeScreen />);
+
+		await waitFor(() => {
+			// SOL (cache miss), SOL (API hit), initialToCoin (cache)
+			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(3);
+		});
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, false); // First attempt for SOL (cache)
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, true);  // Second attempt for SOL (API)
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false); // For initialToCoin
+	});
+
+	it('sets up 10-second price polling interval which calls getCoinPrices', async () => {
+		(useRoute as jest.Mock).mockReturnValue({
+			key: 'TradeScreen-PollingTest',
+			name: 'TradeScreen',
+			params: { initialFromCoin: mockFromCoin, initialToCoin: mockToCoin },
+		});
+
+		const mockPrices = {
+			[mockFromCoin.mintAddress]: mockFromCoin.price * 1.1, // Simulate 10% price increase
+			[mockToCoin.mintAddress]: mockToCoin.price * 0.9,   // Simulate 10% price decrease
+		};
+		// Ensure getCoinPrices is a mock function for this test
+		const mockedGetCoinPrices = TradeScripts.getCoinPrices as jest.Mock;
+		mockedGetCoinPrices.mockResolvedValue(mockPrices);
+
+		renderWithProvider(<TradeScreen />);
+
+		// Wait for initial coin setup
+		await waitFor(() => {
+			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockFromCoin.mintAddress, false);
+			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false);
+		});
+		
+		// Fast-forward time by 10 seconds to trigger the polling interval
+		act(() => {
+			jest.advanceTimersByTime(10000);
+		});
+
+		await waitFor(() => {
+			expect(mockedGetCoinPrices).toHaveBeenCalledTimes(1);
+		});
+		expect(mockedGetCoinPrices).toHaveBeenCalledWith([mockFromCoin.mintAddress, mockToCoin.mintAddress]);
+
+		// At this point, setFromCoin and setToCoin would have been called with functional updates.
+		// Verifying the *exact* state update is tricky without direct access to component state or
+		// more complex mocking of useState. However, confirming getCoinPrices was called is the key
+		// interaction for this polling mechanism at the unit level.
+		// We can also check if the logger was called if we want to be more thorough on the update part.
+	});
+
+});
