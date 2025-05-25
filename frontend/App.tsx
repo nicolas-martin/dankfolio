@@ -19,6 +19,7 @@ import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
 import Constants from 'expo-constants';
 import { authService } from '@/services/authService';
+import { initializeFirebaseServices } from '@/services/firebaseInit';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -99,8 +100,17 @@ const App: React.FC = () => {
 		});
 
 		async function prepare() {
+			// Existing logger.breadcrumb call for starting authentication
+			logger.breadcrumb({ message: 'App: Preparing - Initializing Firebase', category: 'app_lifecycle' });
+			try {
+				await initializeFirebaseServices();
+				logger.info("🔥 Firebase services initialized successfully.");
+			} catch (e) {
+				logger.error('❌ Failed to initialize Firebase services', { error: e?.message });
+				// Decide if this error should block app startup or be handled gracefully
+			}
+
 			logger.breadcrumb({ message: 'App: Preparing - Initializing authentication', category: 'app_lifecycle' });
-			
 			try {
 				// Initialize authentication service first
 				await authService.initialize();

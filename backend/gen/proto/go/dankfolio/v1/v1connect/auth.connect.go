@@ -40,7 +40,8 @@ const (
 
 // AuthServiceClient is a client for the dankfolio.v1.AuthService service.
 type AuthServiceClient interface {
-	// GenerateToken creates a new bearer token for a device
+	// GenerateToken creates a new bearer token for a device,
+	// requiring App Check verification.
 	GenerateToken(context.Context, *connect.Request[v1.GenerateTokenRequest]) (*connect.Response[v1.GenerateTokenResponse], error)
 }
 
@@ -76,7 +77,8 @@ func (c *authServiceClient) GenerateToken(ctx context.Context, req *connect.Requ
 
 // AuthServiceHandler is an implementation of the dankfolio.v1.AuthService service.
 type AuthServiceHandler interface {
-	// GenerateToken creates a new bearer token for a device
+	// GenerateToken creates a new bearer token for a device,
+	// requiring App Check verification.
 	GenerateToken(context.Context, *connect.Request[v1.GenerateTokenRequest]) (*connect.Response[v1.GenerateTokenResponse], error)
 }
 
