@@ -823,10 +823,10 @@
   resolved "https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@bufbuild/protobuf@^2.2.5":
-  version "2.2.5"
-  resolved "https://registry.npmjs.org/@bufbuild/protobuf/-/protobuf-2.2.5.tgz"
-  integrity sha512-/g5EzJifw5GF8aren8wZ/G5oMuPoGeS6MQD3ca8ddcvdXR5UELUfdTZITCGNhNXynY/AYl3Z4plmxdj/tRl/hQ==
+"@bufbuild/protobuf@^2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@bufbuild/protobuf/-/protobuf-2.5.0.tgz#3e38eb5742f186472e4196fc51b058392eab4abc"
+  integrity sha512-nniMblXT+dNyubek2OLKAYJnG/in4tmfS2c5CDnIvqfF9kFlERSG3FCBvmdqerpkWuPv0qhdGKReQ2OqKPG20w==
 
 "@callstack/react-theme-provider@^3.0.9":
   version "3.0.9"

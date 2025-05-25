@@ -6,7 +6,7 @@ toolchain go1.24.2
 
 require (
 	connectrpc.com/authn v0.2.0
-	connectrpc.com/connect v1.16.2
+	connectrpc.com/connect v1.18.1
 	github.com/blocto/solana-go-sdk v1.30.0
 	github.com/chromedp/cdproto v0.0.0-20250403032234-65de8f5d025b
 	github.com/chromedp/chromedp v0.13.6
