@@ -1,6 +1,7 @@
 import { authManager, AuthToken } from './grpc/authManager';
+import { authClient } from '@/services/grpc/apiClient';
 import { logger as log } from '@/utils/logger';
-import { REACT_APP_API_URL, DEBUG_MODE } from '@env';
+import { DEBUG_MODE } from '@env';
 
 export interface TokenRequest {
   deviceId: string;
@@ -13,7 +14,6 @@ export interface TokenResponse {
 }
 
 class AuthService {
-  private readonly tokenEndpoint = `${REACT_APP_API_URL}/auth/token`;
   private readonly isDevelopment = DEBUG_MODE === 'true';
 
   /**
@@ -76,42 +76,26 @@ class AuthService {
 
       let tokenResponse: TokenResponse;
 
-      if (this.isDevelopment) {
-        // Try backend first, fall back to development token
-        try {
-          const response = await fetch(this.tokenEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(tokenRequest),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Token request failed: ${response.status} ${response.statusText}`);
-          }
-
-          tokenResponse = await response.json();
-          log.info('🔐 Bearer token received from backend');
-        } catch (backendError) {
-          log.warn('🔐 Backend auth endpoint unavailable, using development token', { error: backendError?.message });
-          tokenResponse = this.generateDevelopmentToken();
-        }
-      } else {
-        // Production mode - always try backend
-        const response = await fetch(this.tokenEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(tokenRequest),
+      try {
+        // Attempt to get token via gRPC
+        const grpcResponse = await authClient.generateToken({
+          deviceId: tokenRequest.deviceId,
+          platform: tokenRequest.platform,
         });
-
-        if (!response.ok) {
-          throw new Error(`Token request failed: ${response.status} ${response.statusText}`);
+        tokenResponse = {
+          token: grpcResponse.token,
+          expiresIn: grpcResponse.expiresIn,
+        };
+        log.info('🔐 Bearer token received from gRPC');
+      } catch (grpcError) {
+        log.error('❌ Failed to fetch token via gRPC:', grpcError);
+        if (this.isDevelopment) {
+          log.warn('🔐 gRPC unavailable in development, falling back to development token');
+          tokenResponse = this.generateDevelopmentToken();
+        } else {
+          // In production, re-throw the error if gRPC fails
+          throw grpcError;
         }
-
-        tokenResponse = await response.json();
       }
       
       // Calculate expiry date
