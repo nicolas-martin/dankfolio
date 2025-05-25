@@ -1,270 +1,228 @@
-import { AuthService, TOKEN_ENDPOINT_PATH } from './authService';
-import { authManager } from './grpc/authManager';
-import { logger } from '../utils/logger';
-import { DEBUG_MODE } from '@env';
+import { AuthService } from './authService';
+import { authManager, AuthToken } from './grpc/authManager';
+import { authClient } from '@/services/grpc/apiClient';
+import { logger as log } from '@/utils/logger'; // Renamed to log to match source
 
 // Mock dependencies
 jest.mock('./grpc/authManager');
-jest.mock('../utils/logger');
+jest.mock('@/services/grpc/apiClient');
+jest.mock('@/utils/logger'); // Corrected path for logger
 jest.mock('@env', () => ({
   DEBUG_MODE: 'false', // Default to production mode for most tests
-  API_URL: 'http://localhost:8080',
+  // API_URL is no longer needed as fetch is removed
 }));
 
 const mockAuthManager = authManager as jest.Mocked<typeof authManager>;
-const mockLogger = logger as jest.Mocked<typeof logger>;
+const mockAuthClient = authClient as jest.Mocked<typeof authClient>;
+const mockLogger = log as jest.Mocked<typeof log>; // Use log
 
 describe('AuthService', () => {
   let authService: AuthService;
-  let originalFetch: typeof global.fetch;
+
+  const mockTokenRequestPayload = {
+    deviceId: 'mock-device-id',
+    platform: 'mock-platform',
+  };
 
   beforeEach(() => {
     jest.resetAllMocks(); // Reset mocks for each test
-    originalFetch = global.fetch; // Store original fetch
-    global.fetch = jest.fn(); // Mock global fetch
 
-    // Default mock implementations
+    // Default mock implementations for authManager
     mockAuthManager.initialize.mockResolvedValue(undefined);
     mockAuthManager.hasValidToken.mockResolvedValue(false);
     mockAuthManager.getValidToken.mockResolvedValue(null);
-    mockAuthManager.generateTokenRequest.mockResolvedValue({
-      deviceId: 'test-device-id',
-      platform: 'test-platform',
-    });
+    mockAuthManager.generateTokenRequest.mockReturnValue(mockTokenRequestPayload); // Now returns directly
     mockAuthManager.setToken.mockResolvedValue(undefined);
     mockAuthManager.clearToken.mockResolvedValue(undefined);
+    
+    // Default mock for authClient.generateToken
+    // Tests will override this as needed
+    mockAuthClient.generateToken.mockResolvedValue({ token: 'default-grpc-token', expiresIn: 3600 });
 
     authService = new AuthService();
   });
 
-  afterEach(() => {
-    global.fetch = originalFetch; // Restore original fetch
-  });
+  // No longer need afterEach to restore fetch
 
-  describe('constructor', () => {
-    it('should correctly construct the tokenEndpoint', () => {
-      // API_URL is mocked to 'http://localhost:8080'
-      expect((authService as any).tokenEndpoint).toBe(`http://localhost:8080${TOKEN_ENDPOINT_PATH}`);
-    });
-  });
+  // Constructor test is no longer relevant as tokenEndpoint is removed
 
   describe('initialize()', () => {
+    // Tests for initialize() remain largely the same, as they spy on refreshToken
+    // The internal workings of refreshToken have changed, but its contract with initialize has not.
     it('should call authManager.initialize and refreshToken if no valid token exists', async () => {
       mockAuthManager.hasValidToken.mockResolvedValue(false);
-      const refreshTokenSpy = jest.spyOn(authService as any, 'refreshToken').mockResolvedValue(undefined); // Spy and mock implementation
+      const refreshTokenSpy = jest.spyOn(authService, 'refreshToken' as any).mockResolvedValue(undefined);
 
       await authService.initialize();
 
       expect(mockAuthManager.initialize).toHaveBeenCalledTimes(1);
       expect(mockAuthManager.hasValidToken).toHaveBeenCalledTimes(1);
       expect(refreshTokenSpy).toHaveBeenCalledTimes(1);
-
       refreshTokenSpy.mockRestore();
     });
 
     it('should call authManager.initialize and NOT refreshToken if a valid token exists', async () => {
       mockAuthManager.hasValidToken.mockResolvedValue(true);
-      const refreshTokenSpy = jest.spyOn(authService as any, 'refreshToken').mockResolvedValue(undefined);
+      const refreshTokenSpy = jest.spyOn(authService, 'refreshToken' as any).mockResolvedValue(undefined);
 
       await authService.initialize();
 
       expect(mockAuthManager.initialize).toHaveBeenCalledTimes(1);
       expect(mockAuthManager.hasValidToken).toHaveBeenCalledTimes(1);
       expect(refreshTokenSpy).not.toHaveBeenCalled();
-
       refreshTokenSpy.mockRestore();
     });
   });
 
   describe('getAuthToken()', () => {
+    // Tests for getAuthToken() also remain largely the same.
     it('should return token from authManager if valid token exists', async () => {
       const validToken = 'valid-token-from-manager';
       mockAuthManager.getValidToken.mockResolvedValue(validToken);
-      const refreshTokenSpy = jest.spyOn(authService as any, 'refreshToken').mockResolvedValue(undefined);
+      const refreshTokenSpy = jest.spyOn(authService, 'refreshToken' as any).mockResolvedValue(undefined);
 
       const token = await authService.getAuthToken();
 
       expect(token).toBe(validToken);
       expect(mockAuthManager.getValidToken).toHaveBeenCalledTimes(1);
       expect(refreshTokenSpy).not.toHaveBeenCalled();
-
       refreshTokenSpy.mockRestore();
     });
 
     it('should call refreshToken and return new token if no valid token exists initially', async () => {
       const newToken = 'newly-refreshed-token';
-      mockAuthManager.getValidToken.mockResolvedValueOnce(null); // First call returns null
+      mockAuthManager.getValidToken.mockResolvedValueOnce(null); // First call
       
-      // Spy on refreshToken and make it behave as if it successfully fetched a token
-      // and then make getValidToken return the new token on subsequent calls.
-      const refreshTokenSpy = jest.spyOn(authService as any, 'refreshToken').mockImplementation(async () => {
-        // Simulate that refreshToken has successfully updated the token in authManager
-        mockAuthManager.getValidToken.mockResolvedValue(newToken); 
+      const refreshTokenSpy = jest.spyOn(authService, 'refreshToken' as any).mockImplementation(async () => {
+        mockAuthManager.getValidToken.mockResolvedValue(newToken); // Simulate token update
       });
 
       const token = await authService.getAuthToken();
 
       expect(refreshTokenSpy).toHaveBeenCalledTimes(1);
       expect(token).toBe(newToken);
-      expect(mockAuthManager.getValidToken).toHaveBeenCalledTimes(2); // Once initially, once after refresh
-
+      expect(mockAuthManager.getValidToken).toHaveBeenCalledTimes(2);
       refreshTokenSpy.mockRestore();
     });
 
     it('should throw error if refreshToken fails and no token is available', async () => {
       mockAuthManager.getValidToken.mockResolvedValue(null);
-      const refreshTokenSpy = jest.spyOn(authService as any, 'refreshToken').mockRejectedValue(new Error('Refresh failed'));
+      const refreshTokenSpy = jest.spyOn(authService, 'refreshToken' as any).mockRejectedValue(new Error('Refresh failed'));
 
       await expect(authService.getAuthToken()).rejects.toThrow('Refresh failed');
 
       expect(refreshTokenSpy).toHaveBeenCalledTimes(1);
-      expect(mockAuthManager.getValidToken).toHaveBeenCalledTimes(1);
-
+      expect(mockAuthManager.getValidToken).toHaveBeenCalledTimes(1); // Only called once
       refreshTokenSpy.mockRestore();
     });
   });
 
   describe('refreshToken()', () => {
-    const mockTokenRequest = { deviceId: 'test-device', platform: 'test-platform' };
-    const backendTokenResponse = { token: 'backend-token', expiresIn: 3600 };
-    const expectedBackendTokenData = {
-      token: 'backend-token',
-      expiresAt: new Date(new Date().getTime() + backendTokenResponse.expiresIn * 1000),
+    const grpcTokenResponse = { token: 'grpc-token', expiresIn: 3600 };
+    const expectedGrpcTokenData: AuthToken = {
+      token: 'grpc-token',
+      expiresAt: new Date(new Date().getTime() + grpcTokenResponse.expiresIn * 1000),
     };
 
     beforeEach(() => {
-      mockAuthManager.generateTokenRequest.mockResolvedValue(mockTokenRequest);
-      mockAuthManager.setToken.mockResolvedValue(undefined);
+      // This is already set in the main beforeEach, but good to be explicit for this block
+      mockAuthManager.generateTokenRequest.mockReturnValue(mockTokenRequestPayload);
     });
 
     describe('Development Mode (DEBUG_MODE = "true")', () => {
       beforeEach(() => {
-        // Dynamically mock @env for this describe block
-        jest.doMock('@env', () => ({
-          DEBUG_MODE: 'true',
-          API_URL: 'http://localhost:8080', // Keep API_URL consistent
-        }));
-        // Re-initialize authService to pick up the mocked DEBUG_MODE
-        authService = new AuthService();
+        jest.doMock('@env', () => ({ DEBUG_MODE: 'true' }));
+        authService = new AuthService(); // Re-initialize with new DEBUG_MODE
       });
 
       afterEach(() => {
-        jest.dontMock('@env'); // Reset @env mock
+        jest.dontMock('@env');
       });
 
-      it('should use backend token if fetch succeeds', async () => {
-        (global.fetch as jest.Mock).mockResolvedValueOnce(
-          Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(backendTokenResponse),
-          }),
-        );
+      it('should use gRPC token if authClient.generateToken succeeds', async () => {
+        mockAuthClient.generateToken.mockResolvedValue(grpcTokenResponse);
 
         await authService.refreshToken();
 
-        expect(global.fetch).toHaveBeenCalledWith(
-          (authService as any).tokenEndpoint,
-          expect.objectContaining({
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(mockTokenRequest),
-          }),
-        );
+        expect(mockAuthManager.generateTokenRequest).toHaveBeenCalledTimes(1);
+        expect(mockAuthClient.generateToken).toHaveBeenCalledWith(mockTokenRequestPayload);
         expect(mockAuthManager.setToken).toHaveBeenCalledWith(
-          expect.objectContaining({
-            token: expectedBackendTokenData.token,
-          }),
+          expect.objectContaining({ token: grpcTokenResponse.token })
         );
-        // Check expiresAt with a tolerance
         const actualSetTokenArg = mockAuthManager.setToken.mock.calls[0][0];
-        expect(actualSetTokenArg.expiresAt.getTime()).toBeCloseTo(expectedBackendTokenData.expiresAt.getTime(), -2);
+        expect(actualSetTokenArg.expiresAt.getTime()).toBeCloseTo(expectedGrpcTokenData.expiresAt.getTime(), -2); // Tolerance for time diff
+        expect(mockLogger.info).toHaveBeenCalledWith('🔐 Bearer token received from gRPC');
       });
 
-      it('should use development token if fetch fails', async () => {
-        (global.fetch as jest.Mock).mockResolvedValueOnce(
-          Promise.resolve({ ok: false, status: 500 }),
-        );
-        const generateDevTokenSpy = jest.spyOn(authService as any, 'generateDevelopmentToken').mockReturnValue({ token: 'dev-token', expiresIn: 86400});
-
+      it('should use development token if authClient.generateToken fails', async () => {
+        const grpcError = new Error('gRPC connection failed');
+        mockAuthClient.generateToken.mockRejectedValue(grpcError);
+        
+        const devToken = { token: 'dev-fallback-token', expiresIn: 86400 }; // 24 hours
+        const generateDevTokenSpy = jest.spyOn(authService as any, 'generateDevelopmentToken').mockReturnValue(devToken);
 
         await authService.refreshToken();
 
-        expect(global.fetch).toHaveBeenCalledTimes(1);
-        expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to fetch token from backend, using development token. Status: 500'));
+        expect(mockAuthManager.generateTokenRequest).toHaveBeenCalledTimes(1);
+        expect(mockAuthClient.generateToken).toHaveBeenCalledWith(mockTokenRequestPayload);
+        expect(mockLogger.error).toHaveBeenCalledWith('❌ Failed to fetch token via gRPC:', grpcError);
+        expect(mockLogger.warn).toHaveBeenCalledWith('🔐 gRPC unavailable in development, falling back to development token');
         expect(generateDevTokenSpy).toHaveBeenCalledTimes(1);
+        
         expect(mockAuthManager.setToken).toHaveBeenCalledWith(
-          expect.objectContaining({
-            token: 'dev-token',
-          }),
+          expect.objectContaining({ token: devToken.token })
         );
-        // Check expiresAt for dev token (24 hours)
         const actualSetTokenArg = mockAuthManager.setToken.mock.calls[0][0];
-        const expectedDevExpiresAt = new Date(new Date().getTime() + 86400 * 1000);
+        const expectedDevExpiresAt = new Date(new Date().getTime() + devToken.expiresIn * 1000);
         expect(actualSetTokenArg.expiresAt.getTime()).toBeCloseTo(expectedDevExpiresAt.getTime(), -2);
+        
         generateDevTokenSpy.mockRestore();
       });
     });
 
     describe('Production Mode (DEBUG_MODE = "false")', () => {
       beforeEach(() => {
-        // Ensure DEBUG_MODE is false (default mock setup)
-        jest.doMock('@env', () => ({
-            DEBUG_MODE: 'false',
-            API_URL: 'http://localhost:8080',
-        }));
-        authService = new AuthService();
+        jest.doMock('@env', () => ({ DEBUG_MODE: 'false' }));
+        authService = new AuthService(); // Re-initialize
       });
-      
+
       afterEach(() => {
         jest.dontMock('@env');
       });
 
-      it('should use backend token if fetch succeeds', async () => {
-        (global.fetch as jest.Mock).mockResolvedValueOnce(
-          Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(backendTokenResponse),
-          }),
-        );
+      it('should use gRPC token if authClient.generateToken succeeds', async () => {
+        mockAuthClient.generateToken.mockResolvedValue(grpcTokenResponse);
 
         await authService.refreshToken();
 
-        expect(global.fetch).toHaveBeenCalledTimes(1);
+        expect(mockAuthManager.generateTokenRequest).toHaveBeenCalledTimes(1);
+        expect(mockAuthClient.generateToken).toHaveBeenCalledWith(mockTokenRequestPayload);
         expect(mockAuthManager.setToken).toHaveBeenCalledWith(
-          expect.objectContaining({
-            token: expectedBackendTokenData.token,
-          }),
+          expect.objectContaining({ token: grpcTokenResponse.token })
         );
         const actualSetTokenArg = mockAuthManager.setToken.mock.calls[0][0];
-        expect(actualSetTokenArg.expiresAt.getTime()).toBeCloseTo(expectedBackendTokenData.expiresAt.getTime(), -2);
+        expect(actualSetTokenArg.expiresAt.getTime()).toBeCloseTo(expectedGrpcTokenData.expiresAt.getTime(), -2);
+        expect(mockLogger.info).toHaveBeenCalledWith('🔐 Bearer token received from gRPC');
       });
 
-      it('should throw error if fetch fails', async () => {
-        (global.fetch as jest.Mock).mockResolvedValueOnce(
-          Promise.resolve({ ok: false, status: 500 }),
-        );
+      it('should throw error if authClient.generateToken fails', async () => {
+        const grpcError = new Error('gRPC production error');
+        mockAuthClient.generateToken.mockRejectedValue(grpcError);
 
-        await expect(authService.refreshToken()).rejects.toThrow('Failed to refresh token. Status: 500');
-        expect(global.fetch).toHaveBeenCalledTimes(1);
-        expect(mockAuthManager.setToken).not.toHaveBeenCalled();
-      });
+        await expect(authService.refreshToken()).rejects.toThrow(grpcError);
 
-       it('should throw error if fetch rejects (network error)', async () => {
-        const networkError = new Error('Network failure');
-        (global.fetch as jest.Mock).mockRejectedValueOnce(networkError);
-
-        await expect(authService.refreshToken()).rejects.toThrow(`Failed to refresh token: ${networkError.message}`);
-        expect(global.fetch).toHaveBeenCalledTimes(1);
+        expect(mockAuthManager.generateTokenRequest).toHaveBeenCalledTimes(1);
+        expect(mockAuthClient.generateToken).toHaveBeenCalledWith(mockTokenRequestPayload);
+        expect(mockLogger.error).toHaveBeenCalledWith('❌ Failed to fetch token via gRPC:', grpcError);
         expect(mockAuthManager.setToken).not.toHaveBeenCalled();
       });
     });
   });
 
   describe('generateDevelopmentToken()', () => {
-    // This method is private, but its behavior is critical in development.
-    // We've partially tested it via refreshToken in dev mode.
-    // These tests directly invoke it for more detailed checks.
-    it('should return a token with correct structure and claims', () => {
+    it('should return a token with correct structure and claims based on authManager.generateTokenRequest', () => {
+      // Ensure authManager.generateTokenRequest is called by generateDevelopmentToken
+      // (it is, as per the implementation of AuthService)
       const devTokenData = (authService as any).generateDevelopmentToken();
       
       expect(devTokenData).toHaveProperty('token');
@@ -272,19 +230,18 @@ describe('AuthService', () => {
       expect(typeof devTokenData.token).toBe('string');
 
       const parts = devTokenData.token.split('.');
-      expect(parts).toHaveLength(3); // Header, Payload, Signature
+      expect(parts).toHaveLength(3);
 
-      // Decode payload (Base64 URL)
       const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
 
       expect(payload).toHaveProperty('dev', true);
-      expect(payload).toHaveProperty('sub', 'dev-device-id'); // As per implementation
-      expect(payload).toHaveProperty('platform', 'dev-platform'); // As per implementation
+      expect(payload).toHaveProperty('sub', mockTokenRequestPayload.deviceId); // Check against mocked request
+      expect(payload).toHaveProperty('platform', mockTokenRequestPayload.platform); // Check against mocked request
       expect(payload).toHaveProperty('iat');
       expect(payload).toHaveProperty('exp');
 
       const nowInSeconds = Math.floor(Date.now() / 1000);
-      expect(payload.iat).toBeCloseTo(nowInSeconds, -1); // Allow for slight timing differences
+      expect(payload.iat).toBeCloseTo(nowInSeconds, -1);
       expect(payload.exp).toBeCloseTo(nowInSeconds + (24 * 60 * 60), -1);
     });
   });
