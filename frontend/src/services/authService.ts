@@ -131,7 +131,7 @@ class AuthService {
         log.error('❌ Failed to retrieve Firebase App Check token:', error);
         if (this.isDevelopment) {
           log.warn('🔐 App Check token retrieval failed in development, falling back to development app token');
-          const devTokenResponse = this.generateDevelopmentToken("dev-app-check-subject"); // Pass a mock subject/deviceId
+          const devTokenResponse = this.generateDevelopmentToken(AuthService.DEV_APP_CHECK_SUBJECT); // Pass a mock subject/deviceId
           await authManager.setToken({ token: devTokenResponse.token, expiresAt: new Date(Date.now() + devTokenResponse.expiresIn * 1000) });
           return; // Exit early after setting dev token
         }
