@@ -2,6 +2,7 @@ import { initializeApp, FirebaseApp } from 'firebase/app';
 import { initializeAppCheck, AppCheck, CustomProvider } from 'firebase/app-check';
 import { logger } from '@/utils/logger';
 import { Platform } from 'react-native';
+import * as Integrity from 'expo-app-integrity';
 import {
   FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN,
