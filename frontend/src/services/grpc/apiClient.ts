@@ -1,9 +1,4 @@
 import { REACT_APP_API_URL } from '@env';
-
-if (!REACT_APP_API_URL) {
-	throw new Error('REACT_APP_API_URL environment variable is required');
-}
-
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { createClient } from "@connectrpc/connect";
 import { WalletService } from "@/gen/dankfolio/v1/wallet_pb";
@@ -15,6 +10,10 @@ import { AuthService } from "@/gen/dankfolio/v1/auth_pb";
 import { authService } from "../authService";
 import { logger as log } from '@/utils/logger';
 import type { Interceptor } from "@connectrpc/connect";
+
+if (!REACT_APP_API_URL) {
+	throw new Error('REACT_APP_API_URL environment variable is required');
+}
 
 // Authentication interceptor to add bearer tokens to all requests
 const authInterceptor: Interceptor = (next) => async (req) => {
@@ -36,12 +35,12 @@ const transport = createConnectTransport({
 	interceptors: [authInterceptor],
 });
 
-const walletClient = createPromiseClient(WalletService, transport);
-const tradeClient = createPromiseClient(TradeService, transport);
-const coinClient = createPromiseClient(CoinService, transport);
-export const authClient = createPromiseClient(AuthService, transport);
-const priceClient = createPromiseClient(PriceService, transport);
-const utilityClient = createPromiseClient(UtilityService, transport);
+const walletClient = createClient(WalletService, transport);
+const tradeClient = createClient(TradeService, transport);
+const coinClient = createClient(CoinService, transport);
+const authClient = createClient(AuthService, transport);
+const priceClient = createClient(PriceService, transport);
+const utilityClient = createClient(UtilityService, transport);
 
 export { walletClient, tradeClient, coinClient, priceClient, utilityClient, authClient };
 
