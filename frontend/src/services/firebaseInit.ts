@@ -1,36 +1,54 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { initializeAppCheck, AppCheck } from 'firebase/app-check';
-import { logger } from '@/utils/logger'; // Assuming logger path
+import { initializeAppCheck, AppCheck, CustomProvider } from 'firebase/app-check';
+import { logger } from '@/utils/logger';
+import * as Integrity from 'expo-app-integrity';
+import { Platform } from 'react-native';
 
-// Firebase configuration loaded from environment variables
+// Firebase configuration using values from GoogleService-Info.plist
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-  measurementId: process.env.FIREBASE_MEASUREMENT_ID // Optional
+  apiKey: "AIzaSyDwxE91vu2tunrWO3dbLKeWQisyx5R90Js",
+  authDomain: "dankfolio.firebaseapp.com",
+  projectId: "dankfolio",
+  storageBucket: "dankfolio.firebasestorage.app",
+  messagingSenderId: "751348159218",
+  appId: "1:751348159218:ios:e666f33d69531ad426366b",
 };
 
-// Validate required environment variables
-const requiredEnvVars = [
-  'FIREBASE_API_KEY',
-  'FIREBASE_AUTH_DOMAIN',
-  'FIREBASE_PROJECT_ID',
-  'FIREBASE_STORAGE_BUCKET',
-  'FIREBASE_MESSAGING_SENDER_ID',
-  'FIREBASE_APP_ID',
-];
-
-requiredEnvVars.forEach((envVar) => {
-  if (!process.env[envVar]) {
-    logger.error(`❌ Missing required environment variable: ${envVar}`);
-    throw new Error(`Missing required environment variable: ${envVar}`);
-  }
-});
 let firebaseApp: FirebaseApp | null = null;
 let appCheckInstance: AppCheck | null = null;
+
+// Custom App Check provider that uses expo-app-integrity for App Attest
+class ExpoAppAttestProvider extends CustomProvider {
+  constructor(app: FirebaseApp) {
+    super({
+      getToken: async () => {
+        try {
+          // Check if App Attest is supported on this device
+          if (Platform.OS === 'ios' && Integrity.isSupported()) {
+            // Generate a challenge (in production, this should come from your server)
+            const challenge = Math.random().toString(36).substring(2, 15);
+            
+            // Get attestation token from App Attest
+            const attestationToken = await Integrity.attestKey(challenge);
+            
+            logger.info('🔒 App Attest token generated successfully');
+            
+            // Return the token with a reasonable expiration time (1 hour)
+            return {
+              token: attestationToken,
+              expireTimeMillis: Date.now() + (60 * 60 * 1000) // 1 hour
+            };
+          } else {
+            throw new Error('App Attest not supported on this device');
+          }
+        } catch (error) {
+          logger.error('❌ Failed to generate App Attest token:', error);
+          throw error;
+        }
+      }
+    });
+  }
+}
 
 export async function initializeFirebaseServices(): Promise<void> {
   try {
@@ -39,34 +57,23 @@ export async function initializeFirebaseServices(): Promise<void> {
       logger.info('🔥 Firebase app initialized successfully.');
     }
 
-    // Initialize App Check
+    // Initialize App Check with App Attest provider
     if (firebaseApp && !appCheckInstance) {
-      // IMPORTANT: The provider configuration here is a generic placeholder.
-      // For iOS App Attest with Expo, you need to install and use a specific
-      // provider, e.g., from 'expo-firebase-app-check-provider' or 'expo-app-integrity',
-      // or set up a custom provider that bridges to native App Attest.
-      // Refer to Firebase and Expo documentation for the correct setup.
-      // Example (conceptual - actual provider will differ):
-      // import { ExpoFirebaseAppCheckProvider } from 'expo-firebase-app-check-provider'; // Fictional package
-      // const appCheckProvider = new ExpoFirebaseAppCheckProvider(firebaseApp);
-
-      // Using a placeholder provider for now. This will likely not work for App Attest
-      // without the correct native integration and provider setup.
-      // const provider = new ReCaptchaV3Provider("YOUR_RECAPTCHA_V3_SITE_KEY_PLACEHOLDER"); // This is for web, not native App Attest
-
-      // For native platforms, especially with App Attest, direct initialization might look like this,
-      // assuming native setup is complete and a custom provider isn't explicitly passed to initializeAppCheck
-      // if the native Firebase SDK is configured for App Check.
-      // If using a library like `expo-firebase-app-check-provider`, it would handle this.
-
-      // Placeholder for where actual AppCheck initialization would occur with a proper provider
-      // For now, this will initialize AppCheck but likely won't fully work with App Attest
-      // without the correct provider from an Expo package or custom native code.
-      appCheckInstance = initializeAppCheck(firebaseApp, {
-        // provider: new YourActualAppAttestProvider(), // This needs to be replaced
-        isTokenAutoRefreshEnabled: true,
-      });
-      logger.info('🔒 Firebase App Check initialized (provider setup required for App Attest).');
+      if (Platform.OS === 'ios' && Integrity.isSupported()) {
+        // Use App Attest provider for iOS devices that support it
+        const appAttestProvider = new ExpoAppAttestProvider(firebaseApp);
+        
+        appCheckInstance = initializeAppCheck(firebaseApp, {
+          provider: appAttestProvider,
+          isTokenAutoRefreshEnabled: true,
+        });
+        
+        logger.info('🔒 Firebase App Check initialized with App Attest provider');
+      } else {
+        // For development or unsupported devices, we'll skip App Check initialization
+        // In production, you might want to use a debug provider or handle this differently
+        logger.warn('⚠️ App Check not initialized - App Attest not supported on this device/platform');
+      }
     }
   } catch (error) {
     logger.error('❌ Failed to initialize Firebase services:', error);

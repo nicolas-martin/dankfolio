@@ -2,11 +2,15 @@ import { AuthService } from './authService';
 import { authManager, AuthToken } from './grpc/authManager';
 import { authClient } from '@/services/grpc/apiClient';
 import { logger as log } from '@/utils/logger'; // Renamed to log to match source
+import { getAppCheckInstance } from '@/services/firebaseInit';
+import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check';
 
 // Mock dependencies
 jest.mock('./grpc/authManager');
 jest.mock('@/services/grpc/apiClient');
 jest.mock('@/utils/logger'); // Corrected path for logger
+jest.mock('@/services/firebaseInit');
+jest.mock('firebase/app-check');
 jest.mock('@env', () => ({
   DEBUG_MODE: 'false', // Default to production mode for most tests
   // API_URL is no longer needed as fetch is removed
@@ -15,6 +19,8 @@ jest.mock('@env', () => ({
 const mockAuthManager = authManager as jest.Mocked<typeof authManager>;
 const mockAuthClient = authClient as jest.Mocked<typeof authClient>;
 const mockLogger = log as jest.Mocked<typeof log>; // Use log
+const mockGetAppCheckInstance = getAppCheckInstance as jest.MockedFunction<typeof getAppCheckInstance>;
+const mockGetAppCheckTokenFirebase = getAppCheckTokenFirebase as jest.MockedFunction<typeof getAppCheckTokenFirebase>;
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -22,6 +28,11 @@ describe('AuthService', () => {
   const mockTokenRequestPayload = {
     deviceId: 'mock-device-id',
     platform: 'mock-platform',
+  };
+
+  const mockAppCheckInstance = {
+    app: {},
+    // Add other properties if needed
   };
 
   beforeEach(() => {
@@ -38,6 +49,10 @@ describe('AuthService', () => {
     // Default mock for authClient.generateToken
     // Tests will override this as needed
     mockAuthClient.generateToken.mockResolvedValue({ token: 'default-grpc-token', expiresIn: 3600 });
+
+    // Default mocks for Firebase App Check
+    mockGetAppCheckInstance.mockReturnValue(mockAppCheckInstance as any);
+    mockGetAppCheckTokenFirebase.mockResolvedValue({ token: 'mock-app-check-token' } as any);
 
     authService = new AuthService();
   });
@@ -117,7 +132,7 @@ describe('AuthService', () => {
     });
   });
 
-  describe('refreshToken()', () => {
+  describe('refreshToken() with App Check', () => {
     const grpcTokenResponse = { token: 'grpc-token', expiresIn: 3600 };
     const expectedGrpcTokenData: AuthToken = {
       token: 'grpc-token',
@@ -127,6 +142,75 @@ describe('AuthService', () => {
     beforeEach(() => {
       // This is already set in the main beforeEach, but good to be explicit for this block
       mockAuthManager.generateTokenRequest.mockReturnValue(mockTokenRequestPayload);
+    });
+
+    describe('Production Mode (DEBUG_MODE = "false")', () => {
+      beforeEach(() => {
+        jest.doMock('@env', () => ({ DEBUG_MODE: 'false' }));
+        authService = new AuthService(); // Re-initialize with new DEBUG_MODE
+      });
+
+      afterEach(() => {
+        jest.dontMock('@env');
+      });
+
+      it('should use App Check token and gRPC token if both succeed', async () => {
+        mockGetAppCheckTokenFirebase.mockResolvedValue({ token: 'valid-app-check-token' } as any);
+        mockAuthClient.generateToken.mockResolvedValue(grpcTokenResponse);
+
+        await authService.refreshToken();
+
+        expect(mockGetAppCheckInstance).toHaveBeenCalledTimes(1);
+        expect(mockGetAppCheckTokenFirebase).toHaveBeenCalledWith(mockAppCheckInstance, false);
+        expect(mockAuthClient.generateToken).toHaveBeenCalledWith({
+          appCheckToken: 'valid-app-check-token',
+          platform: mockTokenRequestPayload.platform,
+        });
+        expect(mockAuthManager.setToken).toHaveBeenCalledWith(
+          expect.objectContaining({ token: grpcTokenResponse.token })
+        );
+        expect(mockLogger.info).toHaveBeenCalledWith('🔥 Firebase App Check token retrieved successfully.');
+        expect(mockLogger.info).toHaveBeenCalledWith('🔐 Application token received from gRPC backend.');
+      });
+
+      it('should throw error if App Check instance is not available', async () => {
+        mockGetAppCheckInstance.mockReturnValue(null);
+
+        await expect(authService.refreshToken()).rejects.toThrow('App Check not initialized');
+
+        expect(mockGetAppCheckInstance).toHaveBeenCalledTimes(1);
+        expect(mockGetAppCheckTokenFirebase).not.toHaveBeenCalled();
+        expect(mockAuthClient.generateToken).not.toHaveBeenCalled();
+        expect(mockLogger.error).toHaveBeenCalledWith('❌ Firebase App Check instance not available. Cannot refresh token.');
+      });
+
+      it('should throw error if App Check token retrieval fails', async () => {
+        const appCheckError = new Error('App Check token failed');
+        mockGetAppCheckTokenFirebase.mockRejectedValue(appCheckError);
+
+        await expect(authService.refreshToken()).rejects.toThrow(appCheckError);
+
+        expect(mockGetAppCheckInstance).toHaveBeenCalledTimes(1);
+        expect(mockGetAppCheckTokenFirebase).toHaveBeenCalledWith(mockAppCheckInstance, false);
+        expect(mockAuthClient.generateToken).not.toHaveBeenCalled();
+        expect(mockLogger.error).toHaveBeenCalledWith('❌ Failed to retrieve Firebase App Check token:', appCheckError);
+      });
+
+      it('should throw error if gRPC call fails after App Check succeeds', async () => {
+        const grpcError = new Error('gRPC production error');
+        mockGetAppCheckTokenFirebase.mockResolvedValue({ token: 'valid-app-check-token' } as any);
+        mockAuthClient.generateToken.mockRejectedValue(grpcError);
+
+        await expect(authService.refreshToken()).rejects.toThrow(grpcError);
+
+        expect(mockGetAppCheckTokenFirebase).toHaveBeenCalledWith(mockAppCheckInstance, false);
+        expect(mockAuthClient.generateToken).toHaveBeenCalledWith({
+          appCheckToken: 'valid-app-check-token',
+          platform: mockTokenRequestPayload.platform,
+        });
+        expect(mockLogger.error).toHaveBeenCalledWith('❌ Failed to fetch application token via gRPC (after App Check):', grpcError);
+        expect(mockAuthManager.setToken).not.toHaveBeenCalled();
+      });
     });
 
     describe('Development Mode (DEBUG_MODE = "true")', () => {
@@ -139,91 +223,59 @@ describe('AuthService', () => {
         jest.dontMock('@env');
       });
 
-      it('should use gRPC token if authClient.generateToken succeeds', async () => {
+      it('should use App Check token and gRPC token if both succeed', async () => {
+        mockGetAppCheckTokenFirebase.mockResolvedValue({ token: 'valid-app-check-token' } as any);
         mockAuthClient.generateToken.mockResolvedValue(grpcTokenResponse);
 
         await authService.refreshToken();
 
-        expect(mockAuthManager.generateTokenRequest).toHaveBeenCalledTimes(1);
-        expect(mockAuthClient.generateToken).toHaveBeenCalledWith(mockTokenRequestPayload);
+        expect(mockGetAppCheckInstance).toHaveBeenCalledTimes(1);
+        expect(mockGetAppCheckTokenFirebase).toHaveBeenCalledWith(mockAppCheckInstance, false);
+        expect(mockAuthClient.generateToken).toHaveBeenCalledWith({
+          appCheckToken: 'valid-app-check-token',
+          platform: mockTokenRequestPayload.platform,
+        });
         expect(mockAuthManager.setToken).toHaveBeenCalledWith(
           expect.objectContaining({ token: grpcTokenResponse.token })
         );
-        const actualSetTokenArg = mockAuthManager.setToken.mock.calls[0][0];
-        expect(actualSetTokenArg.expiresAt.getTime()).toBeCloseTo(expectedGrpcTokenData.expiresAt.getTime(), -2); // Tolerance for time diff
-        expect(mockLogger.info).toHaveBeenCalledWith('🔐 Bearer token received from gRPC');
       });
 
-      it('should use development token if authClient.generateToken fails', async () => {
-        const grpcError = new Error('gRPC connection failed');
-        mockAuthClient.generateToken.mockRejectedValue(grpcError);
-        
-        const devToken = { token: 'dev-fallback-token', expiresIn: 86400 }; // 24 hours
-        const generateDevTokenSpy = jest.spyOn(authService as any, 'generateDevelopmentToken').mockReturnValue(devToken);
+      it('should use development token if App Check token retrieval fails', async () => {
+        const appCheckError = new Error('App Check token failed');
+        mockGetAppCheckTokenFirebase.mockRejectedValue(appCheckError);
 
         await authService.refreshToken();
 
-        expect(mockAuthManager.generateTokenRequest).toHaveBeenCalledTimes(1);
-        expect(mockAuthClient.generateToken).toHaveBeenCalledWith(mockTokenRequestPayload);
-        expect(mockLogger.error).toHaveBeenCalledWith('❌ Failed to fetch token via gRPC:', grpcError);
-        expect(mockLogger.warn).toHaveBeenCalledWith('🔐 gRPC unavailable in development, falling back to development token');
-        expect(generateDevTokenSpy).toHaveBeenCalledTimes(1);
+        expect(mockGetAppCheckInstance).toHaveBeenCalledTimes(1);
+        expect(mockGetAppCheckTokenFirebase).toHaveBeenCalledWith(mockAppCheckInstance, false);
+        expect(mockAuthClient.generateToken).not.toHaveBeenCalled();
+        expect(mockLogger.error).toHaveBeenCalledWith('❌ Failed to retrieve Firebase App Check token:', appCheckError);
+        expect(mockLogger.warn).toHaveBeenCalledWith('🔐 App Check token retrieval failed in development, falling back to development app token');
         
+        // Should set a development token
         expect(mockAuthManager.setToken).toHaveBeenCalledWith(
-          expect.objectContaining({ token: devToken.token })
+          expect.objectContaining({ 
+            token: expect.stringMatching(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/) // JWT format
+          })
         );
-        const actualSetTokenArg = mockAuthManager.setToken.mock.calls[0][0];
-        const expectedDevExpiresAt = new Date(new Date().getTime() + devToken.expiresIn * 1000);
-        expect(actualSetTokenArg.expiresAt.getTime()).toBeCloseTo(expectedDevExpiresAt.getTime(), -2);
-        
-        generateDevTokenSpy.mockRestore();
-      });
-    });
-
-    describe('Production Mode (DEBUG_MODE = "false")', () => {
-      beforeEach(() => {
-        jest.doMock('@env', () => ({ DEBUG_MODE: 'false' }));
-        authService = new AuthService(); // Re-initialize
       });
 
-      afterEach(() => {
-        jest.dontMock('@env');
-      });
+      it('should throw error if App Check instance is not available', async () => {
+        mockGetAppCheckInstance.mockReturnValue(null);
 
-      it('should use gRPC token if authClient.generateToken succeeds', async () => {
-        mockAuthClient.generateToken.mockResolvedValue(grpcTokenResponse);
+        await expect(authService.refreshToken()).rejects.toThrow('App Check not initialized');
 
-        await authService.refreshToken();
-
-        expect(mockAuthManager.generateTokenRequest).toHaveBeenCalledTimes(1);
-        expect(mockAuthClient.generateToken).toHaveBeenCalledWith(mockTokenRequestPayload);
-        expect(mockAuthManager.setToken).toHaveBeenCalledWith(
-          expect.objectContaining({ token: grpcTokenResponse.token })
-        );
-        const actualSetTokenArg = mockAuthManager.setToken.mock.calls[0][0];
-        expect(actualSetTokenArg.expiresAt.getTime()).toBeCloseTo(expectedGrpcTokenData.expiresAt.getTime(), -2);
-        expect(mockLogger.info).toHaveBeenCalledWith('🔐 Bearer token received from gRPC');
-      });
-
-      it('should throw error if authClient.generateToken fails', async () => {
-        const grpcError = new Error('gRPC production error');
-        mockAuthClient.generateToken.mockRejectedValue(grpcError);
-
-        await expect(authService.refreshToken()).rejects.toThrow(grpcError);
-
-        expect(mockAuthManager.generateTokenRequest).toHaveBeenCalledTimes(1);
-        expect(mockAuthClient.generateToken).toHaveBeenCalledWith(mockTokenRequestPayload);
-        expect(mockLogger.error).toHaveBeenCalledWith('❌ Failed to fetch token via gRPC:', grpcError);
-        expect(mockAuthManager.setToken).not.toHaveBeenCalled();
+        expect(mockGetAppCheckInstance).toHaveBeenCalledTimes(1);
+        expect(mockGetAppCheckTokenFirebase).not.toHaveBeenCalled();
+        expect(mockAuthClient.generateToken).not.toHaveBeenCalled();
       });
     });
   });
 
   describe('generateDevelopmentToken()', () => {
     it('should return a token with correct structure and claims based on authManager.generateTokenRequest', () => {
-      // Ensure authManager.generateTokenRequest is called by generateDevelopmentToken
-      // (it is, as per the implementation of AuthService)
-      const devTokenData = (authService as any).generateDevelopmentToken();
+      const testDeviceId = 'test-device-id-123';
+      const devTokenData = (authService as any).generateDevelopmentToken(testDeviceId);
       
       expect(devTokenData).toHaveProperty('token');
       expect(devTokenData).toHaveProperty('expiresIn', 24 * 60 * 60);
@@ -235,10 +287,12 @@ describe('AuthService', () => {
       const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
 
       expect(payload).toHaveProperty('dev', true);
-      expect(payload).toHaveProperty('sub', mockTokenRequestPayload.deviceId); // Check against mocked request
-      expect(payload).toHaveProperty('platform', mockTokenRequestPayload.platform); // Check against mocked request
+      expect(payload).toHaveProperty('sub', testDeviceId);
+      expect(payload).toHaveProperty('device_id', testDeviceId);
+      expect(payload).toHaveProperty('platform', mockTokenRequestPayload.platform);
       expect(payload).toHaveProperty('iat');
       expect(payload).toHaveProperty('exp');
+      expect(payload).toHaveProperty('iss', 'dankfolio-app-dev');
 
       const nowInSeconds = Math.floor(Date.now() / 1000);
       expect(payload.iat).toBeCloseTo(nowInSeconds, -1);

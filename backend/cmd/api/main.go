@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"      // Import standard log for pre-slog setup errors
 	"log/slog" // Import slog
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/joho/godotenv"
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
@@ -154,6 +156,23 @@ func main() {
 
 	slog.Info("Configuration loaded successfully", "env", config.Env, "port", config.GRPCPort)
 
+	// Initialize Firebase Admin SDK
+	ctx := context.Background()
+	firebaseApp, err := firebase.NewApp(ctx, nil)
+	if err != nil {
+		slog.Error("Failed to initialize Firebase Admin SDK", slog.Any("error", err))
+		os.Exit(1)
+	}
+	slog.Info("🔥 Firebase Admin SDK initialized successfully")
+
+	// Initialize Firebase App Check client
+	appCheckClient, err := firebaseApp.AppCheck(ctx)
+	if err != nil {
+		slog.Error("Failed to initialize Firebase App Check client", slog.Any("error", err))
+		os.Exit(1)
+	}
+	slog.Info("🔒 Firebase App Check client initialized successfully")
+
 	// Initialize HTTP client
 	httpClient := &http.Client{
 		Timeout: time.Second * 10,
@@ -178,10 +197,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Initialize auth service
+	// Initialize auth service with App Check client
 	authServiceConfig := &auth.Config{
-		JWTSecret:   config.JWTSecret,
-		TokenExpiry: config.TokenExpiry,
+		JWTSecret:      config.JWTSecret,
+		TokenExpiry:    config.TokenExpiry,
+		AppCheckClient: appCheckClient,
 	}
 	authService, err := auth.NewService(authServiceConfig)
 	if err != nil {

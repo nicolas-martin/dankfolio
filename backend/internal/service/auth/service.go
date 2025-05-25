@@ -13,11 +13,16 @@ import (
 	dankfoliov1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 )
 
+// AppCheckClientInterface defines the interface for App Check client operations
+type AppCheckClientInterface interface {
+	VerifyToken(token string) (*appcheck.DecodedAppCheckToken, error)
+}
+
 // Service handles authentication operations
 type Service struct {
 	jwtSecret      []byte
 	tokenExpiry    time.Duration
-	appCheckClient *appcheck.Client
+	appCheckClient AppCheckClientInterface
 }
 
 // AuthClaims represents the JWT claims for device authentication
@@ -37,7 +42,7 @@ type AuthenticatedUser struct {
 type Config struct {
 	JWTSecret      string
 	TokenExpiry    time.Duration
-	AppCheckClient *appcheck.Client
+	AppCheckClient AppCheckClientInterface
 }
 
 // NewService creates a new authentication service
@@ -120,7 +125,6 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 		"platform", claims.Platform,
 		"expires_at", claims.ExpiresAt.Time.Format(time.RFC3339))
 
-
 	return &dankfoliov1.GenerateTokenResponse{
 		Token:     signedToken, // This is the application JWT
 		ExpiresIn: int32(s.tokenExpiry.Seconds()),
@@ -132,7 +136,6 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 	if tokenString == "" {
 		return nil, fmt.Errorf("token string is empty")
 	}
-
 
 	token, err := jwt.ParseWithClaims(tokenString, &AuthClaims{}, func(token *jwt.Token) (interface{}, error) {
 
@@ -153,7 +156,6 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 	if claims.DeviceID == "" {
 		return nil, fmt.Errorf("application token missing device identifier")
 	}
-
 
 	if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
 		return nil, fmt.Errorf("application token is expired")
