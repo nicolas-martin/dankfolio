@@ -15,6 +15,9 @@ class AuthService {
   private isRefreshing = false; // Flag to prevent concurrent refresh attempts
   private refreshPromise: Promise<void> | null = null; // Store the current refresh promise
 
+  // Development App Check subject for fallback scenarios
+  private static readonly DEV_APP_CHECK_SUBJECT = 'dev-device-id-' + Math.random().toString(36).substring(2, 15);
+
   /**
    * Initialize the authentication service
    */
@@ -52,9 +55,6 @@ class AuthService {
     return token;
   }
 
-  /**
-   * Generate a development token (for when backend auth is not ready)
-   */
   /**
    * Generate a development token (for when backend auth is not ready or App Check fails in dev)
    * @param deviceId - In development, this might be a mock subject that App Check would have provided.
@@ -106,9 +106,6 @@ class AuthService {
     }
   }
 
-  /**
-   * Internal method to perform the actual token refresh
-   */
   /**
    * Internal method to perform the actual token refresh
    */

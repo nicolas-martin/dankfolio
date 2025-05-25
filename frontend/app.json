@@ -20,7 +20,17 @@
           "project": "dankfolio",
           "organization": "corsair"
         }
-      ]
+      ],
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "14.0"
+          }
+        }
+      ],
+      "expo-device"
     ],
     "updates": {
       "enabled": true,

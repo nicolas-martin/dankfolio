@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"firebase.google.com/go/v4/appcheck"
 	"github.com/golang-jwt/jwt/v5"
 	dankfoliov1 "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 
@@ -13,21 +14,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// MockAppCheckClient implements a mock for Firebase App Check client
+type MockAppCheckClient struct {
+	shouldFail   bool
+	failureError error
+	tokenInfo    *appcheck.DecodedAppCheckToken
+}
+
+func (m *MockAppCheckClient) VerifyToken(token string) (*appcheck.DecodedAppCheckToken, error) {
+	if m.shouldFail {
+		return nil, m.failureError
+	}
+	if m.tokenInfo != nil {
+		return m.tokenInfo, nil
+	}
+	// Default successful response
+	return &appcheck.DecodedAppCheckToken{
+		AppID:   "test-app-id",
+		Subject: "test-device-subject",
+	}, nil
+}
+
 func TestNewService(t *testing.T) {
+	mockAppCheck := &MockAppCheckClient{}
+
 	t.Run("RandomSecret", func(t *testing.T) {
 		cfg := &Config{
-			JWTSecret: "", // Empty secret
+			JWTSecret:      "", // Empty secret
+			AppCheckClient: mockAppCheck,
 		}
 		s, err := NewService(cfg)
 		require.NoError(t, err)
 		assert.NotNil(t, s)
 		assert.NotEmpty(t, s.jwtSecret, "JWT secret should be generated if not provided")
+		assert.NotNil(t, s.appCheckClient, "App Check client should be set")
 	})
 
 	t.Run("DefaultExpiry", func(t *testing.T) {
 		cfg := &Config{
-			JWTSecret:   "test-secret",
-			TokenExpiry: 0, // Zero expiry
+			JWTSecret:      "test-secret",
+			TokenExpiry:    0, // Zero expiry
+			AppCheckClient: mockAppCheck,
 		}
 		s, err := NewService(cfg)
 		require.NoError(t, err)
@@ -39,32 +66,52 @@ func TestNewService(t *testing.T) {
 		expectedSecret := "my-super-secret-key"
 		expectedExpiry := 2 * time.Hour
 		cfg := &Config{
-			JWTSecret:   expectedSecret,
-			TokenExpiry: expectedExpiry,
+			JWTSecret:      expectedSecret,
+			TokenExpiry:    expectedExpiry,
+			AppCheckClient: mockAppCheck,
 		}
 		s, err := NewService(cfg)
 		require.NoError(t, err)
 		assert.NotNil(t, s)
 		assert.Equal(t, []byte(expectedSecret), s.jwtSecret)
 		assert.Equal(t, expectedExpiry, s.tokenExpiry)
+		assert.NotNil(t, s.appCheckClient)
+	})
+
+	t.Run("NilAppCheckClient", func(t *testing.T) {
+		cfg := &Config{
+			JWTSecret:      "test-secret",
+			AppCheckClient: nil,
+		}
+		s, err := NewService(cfg)
+		require.NoError(t, err)
+		assert.NotNil(t, s)
+		assert.Nil(t, s.appCheckClient, "App Check client should be nil when not provided")
 	})
 }
 
 func TestGenerateToken(t *testing.T) {
-	cfg := &Config{
-		JWTSecret:   "test-generate-secret",
-		TokenExpiry: time.Hour,
-	}
-	s, err := NewService(cfg)
-	require.NoError(t, err)
-	require.NotNil(t, s)
-
 	ctx := context.Background()
 
 	t.Run("Success", func(t *testing.T) {
+		mockAppCheck := &MockAppCheckClient{
+			tokenInfo: &appcheck.DecodedAppCheckToken{
+				AppID:   "test-app-id",
+				Subject: "test-device-subject-123",
+			},
+		}
+		cfg := &Config{
+			JWTSecret:      "test-generate-secret",
+			TokenExpiry:    time.Hour,
+			AppCheckClient: mockAppCheck,
+		}
+		s, err := NewService(cfg)
+		require.NoError(t, err)
+		require.NotNil(t, s)
+
 		req := &dankfoliov1.GenerateTokenRequest{
-			DeviceId: "test-device-id",
-			Platform: "test-platform",
+			AppCheckToken: "valid-app-check-token",
+			Platform:      "test-platform",
 		}
 		resp, err := s.GenerateToken(ctx, req)
 		assert.NoError(t, err)
@@ -76,7 +123,7 @@ func TestGenerateToken(t *testing.T) {
 		authUser, err := s.ValidateToken(resp.Token)
 		assert.NoError(t, err)
 		require.NotNil(t, authUser)
-		assert.Equal(t, req.DeviceId, authUser.DeviceID)
+		assert.Equal(t, "test-device-subject-123", authUser.DeviceID) // Should use App Check subject
 		assert.Equal(t, req.Platform, authUser.Platform)
 
 		// Parse token and verify claims
@@ -88,23 +135,71 @@ func TestGenerateToken(t *testing.T) {
 		require.NotNil(t, token)
 		assert.True(t, token.Valid)
 
-		assert.Equal(t, req.DeviceId, claims.DeviceID)
+		assert.Equal(t, "test-device-subject-123", claims.DeviceID) // Should use App Check subject
 		assert.Equal(t, req.Platform, claims.Platform)
-		assert.Equal(t, "dankfolio", claims.Issuer)
-		assert.Equal(t, req.DeviceId, claims.Subject)
-		assert.WithinDuration(t, time.Now().Add(s.tokenExpiry), time.Unix(claims.ExpiresAt.Unix(), 0), 5*time.Second) // Allow 5s clock skew
+		assert.Equal(t, "dankfolio-app", claims.Issuer)
+		assert.Equal(t, "test-device-subject-123", claims.Subject) // Should use App Check subject
+		assert.WithinDuration(t, time.Now().Add(s.tokenExpiry), time.Unix(claims.ExpiresAt.Unix(), 0), 5*time.Second)
 		assert.WithinDuration(t, time.Now(), time.Unix(claims.IssuedAt.Unix(), 0), 5*time.Second)
 	})
 
-	t.Run("MissingDeviceID", func(t *testing.T) {
+	t.Run("MissingAppCheckToken", func(t *testing.T) {
+		mockAppCheck := &MockAppCheckClient{}
+		cfg := &Config{
+			JWTSecret:      "test-secret",
+			AppCheckClient: mockAppCheck,
+		}
+		s, err := NewService(cfg)
+		require.NoError(t, err)
+
 		req := &dankfoliov1.GenerateTokenRequest{
-			DeviceId: "", // Empty DeviceId
-			Platform: "test-platform",
+			AppCheckToken: "", // Empty App Check token
+			Platform:      "test-platform",
 		}
 		resp, err := s.GenerateToken(ctx, req)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
-		assert.True(t, strings.Contains(err.Error(), "DeviceID is required"), "Error message should indicate missing DeviceID")
+		assert.True(t, strings.Contains(err.Error(), "AppCheckToken is required"), "Error message should indicate missing App Check token")
+	})
+
+	t.Run("InvalidAppCheckToken", func(t *testing.T) {
+		mockAppCheck := &MockAppCheckClient{
+			shouldFail:   true,
+			failureError: assert.AnError,
+		}
+		cfg := &Config{
+			JWTSecret:      "test-secret",
+			AppCheckClient: mockAppCheck,
+		}
+		s, err := NewService(cfg)
+		require.NoError(t, err)
+
+		req := &dankfoliov1.GenerateTokenRequest{
+			AppCheckToken: "invalid-app-check-token",
+			Platform:      "test-platform",
+		}
+		resp, err := s.GenerateToken(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.True(t, strings.Contains(err.Error(), "invalid AppCheck token"), "Error message should indicate invalid App Check token")
+	})
+
+	t.Run("NilAppCheckClient", func(t *testing.T) {
+		cfg := &Config{
+			JWTSecret:      "test-secret",
+			AppCheckClient: nil, // No App Check client
+		}
+		s, err := NewService(cfg)
+		require.NoError(t, err)
+
+		req := &dankfoliov1.GenerateTokenRequest{
+			AppCheckToken: "some-token",
+			Platform:      "test-platform",
+		}
+		resp, err := s.GenerateToken(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.True(t, strings.Contains(err.Error(), "internal server error"), "Error message should indicate server configuration error")
 	})
 }
 
@@ -113,20 +208,27 @@ func TestValidateToken(t *testing.T) {
 	testDeviceID := "test-device-for-validation"
 	testPlatform := "test-platform-for-validation"
 
-	cfg1 := &Config{JWTSecret: "testSecret1", TokenExpiry: 1 * time.Hour}
+	mockAppCheck1 := &MockAppCheckClient{
+		tokenInfo: &appcheck.DecodedAppCheckToken{
+			AppID:   "test-app-id",
+			Subject: testDeviceID,
+		},
+	}
+
+	cfg1 := &Config{JWTSecret: "testSecret1", TokenExpiry: 1 * time.Hour, AppCheckClient: mockAppCheck1}
 	service1, err := NewService(cfg1)
 	require.NoError(t, err)
 	require.NotNil(t, service1)
 
-	cfg2 := &Config{JWTSecret: "testSecret2", TokenExpiry: 1 * time.Hour}
+	cfg2 := &Config{JWTSecret: "testSecret2", TokenExpiry: 1 * time.Hour, AppCheckClient: mockAppCheck1}
 	service2, err := NewService(cfg2)
 	require.NoError(t, err)
 	require.NotNil(t, service2)
 
 	// Generate a valid token with service1
 	generateResp, err := service1.GenerateToken(ctx, &dankfoliov1.GenerateTokenRequest{
-		DeviceId: testDeviceID,
-		Platform: testPlatform,
+		AppCheckToken: "valid-app-check-token",
+		Platform:      testPlatform,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, generateResp)
@@ -162,7 +264,7 @@ func TestValidateToken(t *testing.T) {
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
-				Issuer:    "dankfolio",
+				Issuer:    "dankfolio-app",
 				Subject:   testDeviceID,
 			},
 		}
@@ -179,13 +281,19 @@ func TestValidateToken(t *testing.T) {
 	})
 
 	t.Run("ExpiredToken", func(t *testing.T) {
-		shortExpiryCfg := &Config{JWTSecret: "short-expiry-secret", TokenExpiry: 1 * time.Millisecond}
+		mockAppCheckShort := &MockAppCheckClient{
+			tokenInfo: &appcheck.DecodedAppCheckToken{
+				AppID:   "test-app-id",
+				Subject: "device-exp",
+			},
+		}
+		shortExpiryCfg := &Config{JWTSecret: "short-expiry-secret", TokenExpiry: 1 * time.Millisecond, AppCheckClient: mockAppCheckShort}
 		shortExpiryService, err := NewService(shortExpiryCfg)
 		require.NoError(t, err)
 
 		expiredTokenResp, err := shortExpiryService.GenerateToken(ctx, &dankfoliov1.GenerateTokenRequest{
-			DeviceId: "device-exp",
-			Platform: "platform-exp",
+			AppCheckToken: "valid-app-check-token",
+			Platform:      "platform-exp",
 		})
 		require.NoError(t, err)
 		require.NotNil(t, expiredTokenResp)
@@ -221,7 +329,7 @@ func TestValidateToken(t *testing.T) {
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
-				Issuer:    "dankfolio",
+				Issuer:    "dankfolio-app",
 				Subject:   testDeviceID,
 			},
 		}
@@ -235,6 +343,6 @@ func TestValidateToken(t *testing.T) {
 		// This error is a bit generic, "token invalid" because the claims struct won't match
 		// We could also see "token signature is invalid" if the parsing of claims fails in a way that affects signature validation.
 		// The key is that an error *is* returned.
-		assert.True(t, strings.Contains(err.Error(), "token invalid") || strings.Contains(err.Error(), "token signature is invalid"), "Error message should indicate claim type mismatch or general invalidity")
+		assert.True(t, strings.Contains(err.Error(), "token invalid") || strings.Contains(err.Error(), "token signature is invalid") || strings.Contains(err.Error(), "application token"), "Error message should indicate claim type mismatch or general invalidity")
 	})
 }
