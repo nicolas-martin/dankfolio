@@ -120,6 +120,7 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 		"platform", claims.Platform,
 		"expires_at", claims.ExpiresAt.Time.Format(time.RFC3339))
 
+
 	return &dankfoliov1.GenerateTokenResponse{
 		Token:     signedToken, // This is the application JWT
 		ExpiresIn: int32(s.tokenExpiry.Seconds()),
@@ -132,7 +133,9 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 		return nil, fmt.Errorf("token string is empty")
 	}
 
+
 	token, err := jwt.ParseWithClaims(tokenString, &AuthClaims{}, func(token *jwt.Token) (interface{}, error) {
+
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -151,8 +154,10 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 		return nil, fmt.Errorf("application token missing device identifier")
 	}
 
+
 	if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
 		return nil, fmt.Errorf("application token is expired")
+
 	}
 
 	return &AuthenticatedUser{
