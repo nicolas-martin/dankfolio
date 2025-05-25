@@ -2,11 +2,8 @@ import { authManager, AuthToken } from './grpc/authManager';
 import { authClient } from '@/services/grpc/apiClient';
 import { logger as log } from '@/utils/logger';
 import { DEBUG_MODE } from '@env';
-
-export interface TokenRequest {
-  deviceId: string;
-  platform: string;
-}
+import { getAppCheckInstance } from '@/services/firebaseInit';
+import { getToken as getAppCheckTokenFirebase, AppCheckError } from 'firebase/app-check'; // Import AppCheckError if needed for specific error handling
 
 export interface TokenResponse {
   token: string;
@@ -58,16 +55,25 @@ class AuthService {
   /**
    * Generate a development token (for when backend auth is not ready)
    */
-  private generateDevelopmentToken(): TokenResponse {
-    const tokenRequest = authManager.generateTokenRequest();
-    // Simple JWT-like format for development
+  /**
+   * Generate a development token (for when backend auth is not ready or App Check fails in dev)
+   * @param deviceId - In development, this might be a mock subject that App Check would have provided.
+   */
+  private generateDevelopmentToken(deviceId: string): TokenResponse {
+    // const tokenRequest = authManager.generateTokenRequest(); // platform is still useful
+    const platform = authManager.generateTokenRequest().platform; 
+    log.warn(`🔐 Generating development token for deviceId (mock AppCheck subject): ${deviceId}, platform: ${platform}`);
+    
     const header = Buffer.from(JSON.stringify({ alg: 'DEV', typ: 'JWT' })).toString('base64url');
     const payload = Buffer.from(JSON.stringify({
-      sub: tokenRequest.deviceId,
-      platform: tokenRequest.platform,
+      // sub: tokenRequest.deviceId, // Old way
+      sub: deviceId, // New: using passed mock deviceId (AppCheck subject)
+      device_id: deviceId, // Mirroring the 'device_id' claim the backend now creates from subject
+      platform: platform,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
-      dev: true
+      dev: true,
+      iss: "dankfolio-app-dev" // Mock issuer
     })).toString('base64url');
     const signature = 'dev-signature';
     
@@ -103,36 +109,62 @@ class AuthService {
   /**
    * Internal method to perform the actual token refresh
    */
+  /**
+   * Internal method to perform the actual token refresh
+   */
   private async _performTokenRefresh(): Promise<void> {
     try {
-      const tokenRequest = authManager.generateTokenRequest();
-      log.info('🔐 Requesting new bearer token', { deviceId: tokenRequest.deviceId });
+      log.info('🔐 Requesting new application token using App Check...');
+
+      const appCheck = getAppCheckInstance();
+      if (!appCheck) {
+        log.error('❌ Firebase App Check instance not available. Cannot refresh token.');
+        throw new Error('App Check not initialized');
+      }
+
+      let appCheckTokenValue: string;
+      try {
+        const appCheckTokenResult = await getAppCheckTokenFirebase(appCheck, /* forceRefresh= */ false);
+        appCheckTokenValue = appCheckTokenResult.token;
+        log.info('🔥 Firebase App Check token retrieved successfully.');
+      } catch (error) {
+        log.error('❌ Failed to retrieve Firebase App Check token:', error);
+        if (this.isDevelopment) {
+          log.warn('🔐 App Check token retrieval failed in development, falling back to development app token');
+          const devTokenResponse = this.generateDevelopmentToken("dev-app-check-subject"); // Pass a mock subject/deviceId
+          await authManager.setToken({ token: devTokenResponse.token, expiresAt: new Date(Date.now() + devTokenResponse.expiresIn * 1000) });
+          return; // Exit early after setting dev token
+        }
+        throw error; // Re-throw in production or if not handling with dev token
+      }
+      
+      const platform = authManager.generateTokenRequest().platform; // Still useful for platform info
 
       let tokenResponse: TokenResponse;
-
       try {
-        // Attempt to get token via gRPC
+        log.info('🔐 Calling backend GenerateToken with App Check token.', { platform });
         const grpcResponse = await authClient.generateToken({
-          deviceId: tokenRequest.deviceId,
-          platform: tokenRequest.platform,
+          appCheckToken: appCheckTokenValue,
+          platform: platform,
         });
         tokenResponse = {
           token: grpcResponse.token,
           expiresIn: grpcResponse.expiresIn,
         };
-        log.info('🔐 Bearer token received from gRPC');
+        log.info('🔐 Application token received from gRPC backend.');
       } catch (grpcError) {
-        log.error('❌ Failed to fetch token via gRPC:', grpcError);
+        log.error('❌ Failed to fetch application token via gRPC (after App Check):', grpcError);
+        // The dev fallback here is less likely to be useful if App Check token was obtained
+        // but backend call failed. This indicates a backend issue.
+        // Consider if a different dev fallback is needed here or just rethrow.
         if (this.isDevelopment) {
-          log.warn('🔐 gRPC unavailable in development, falling back to development token');
-          tokenResponse = this.generateDevelopmentToken();
-        } else {
-          // In production, re-throw the error if gRPC fails
-          throw grpcError;
+          log.warn('🔐 gRPC call failed in development (after App Check). This might indicate backend issue or mismatched dev JWT.');
+          // Optionally, could use generateDevelopmentToken again, but it might mask backend problems.
+          // For now, let's let it throw to indicate backend communication failure.
         }
+        throw grpcError; // Re-throw to signal failure
       }
       
-      // Calculate expiry date
       const expiresAt = new Date();
       expiresAt.setSeconds(expiresAt.getSeconds() + tokenResponse.expiresIn);
 
@@ -142,9 +174,9 @@ class AuthService {
       };
 
       await authManager.setToken(authToken);
-      log.info('🔐 Bearer token refreshed successfully');
+      log.info('🔐 Application token refreshed and stored successfully.');
     } catch (error) {
-      log.error('❌ Failed to refresh bearer token:', error);
+      log.error('❌ Failed to refresh application token:', error);
       throw error;
     }
   }
