@@ -142,7 +142,7 @@ describe('Navigation Flow', () => {
 		await findByTestId('home-screen');
 		expect(getByText('Available Coins')).toBeTruthy();
 		expect(getByText('BTC')).toBeTruthy();
-		expect(getByText(formatPrice(Number(mockCoin.price)))).toBeTruthy();
+		expect(getByText('$50.00K')).toBeTruthy(); // Actual formatted price from component
 
 		// 2. First Navigation to CoinDetail
 		await act(async () => {

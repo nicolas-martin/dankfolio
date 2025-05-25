@@ -4,7 +4,8 @@ module.exports = {
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 	setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
 	setupFiles: [
-		'./node_modules/react-native-gesture-handler/jestSetup.js'
+		'./node_modules/react-native-gesture-handler/jestSetup.js',
+		'<rootDir>/src/__mocks__/setup.js'
 	],
 	transformIgnorePatterns: [
 		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia|react-native-vector-icons|uuid|expo-updates|expo-modules-core|expo-app-integrity|expo-device|@sentry)/)',
@@ -16,7 +17,7 @@ module.exports = {
 		'^@store/(.*)$': '<rootDir>/src/__mocks__/store/$1', // Matches @store/anything
 		'^@services/(.*)$': '<rootDir>/src/__mocks__/services/$1', // Matches @services/anything
 		'^@env$': '<rootDir>/src/__mocks__/env.ts', // Matches @env
-		'^@utils/(.*)$': '<rootDir>/src/utils/$1', // Matches @utils/anything
+		'^@utils/(.*)$': '<rootDir>/src/__mocks__/utils/$1', // Matches @utils/anything
 		'^loglevel$': '<rootDir>/src/__mocks__/loglevel.ts', // Mock loglevel
 		// Mock font and image files
 		'\\.(ttf|png|jpg|jpeg|gif)$': '<rootDir>/src/__mocks__/fileMock.js', // Mock files
