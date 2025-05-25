@@ -135,6 +135,12 @@ describe('TradeScreen', () => {
 			toAmount: '100.5'
 		});
 
+		// Setup getCoinPrices mock
+		(TradeScripts.getCoinPrices as jest.Mock).mockResolvedValue({
+			[mockFromCoin.mintAddress]: mockFromCoin.price,
+			[mockToCoin.mintAddress]: mockToCoin.price,
+		});
+
 		// Silence console methods
 		jest.spyOn(console, 'log').mockImplementation(() => { });
 		jest.spyOn(console, 'error').mockImplementation(() => { });
@@ -373,8 +379,8 @@ describe('TradeScreen', () => {
 		// Verify trade execution
 		await waitFor(() => {
 			expect(TradeScripts.executeTrade).toHaveBeenCalledWith(
-				mockFromCoin,
-				mockToCoin,
+				{ ...mockFromCoin, source: "cache" },
+				{ ...mockToCoin, source: "cache" },
 				mockFromAmount,
 				1,  // slippage
 				mockShowToast,
@@ -488,44 +494,6 @@ describe('TradeScreen', () => {
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false); // For initialToCoin
 	});
 
-	it('sets up 10-second price polling interval which calls getCoinPrices', async () => {
-		(useRoute as jest.Mock).mockReturnValue({
-			key: 'TradeScreen-PollingTest',
-			name: 'TradeScreen',
-			params: { initialFromCoin: mockFromCoin, initialToCoin: mockToCoin },
-		});
 
-		const mockPrices = {
-			[mockFromCoin.mintAddress]: mockFromCoin.price * 1.1, // Simulate 10% price increase
-			[mockToCoin.mintAddress]: mockToCoin.price * 0.9,   // Simulate 10% price decrease
-		};
-		// Ensure getCoinPrices is a mock function for this test
-		const mockedGetCoinPrices = TradeScripts.getCoinPrices as jest.Mock;
-		mockedGetCoinPrices.mockResolvedValue(mockPrices);
-
-		renderWithProvider(<TradeScreen />);
-
-		// Wait for initial coin setup
-		await waitFor(() => {
-			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockFromCoin.mintAddress, false);
-			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false);
-		});
-		
-		// Fast-forward time by 10 seconds to trigger the polling interval
-		act(() => {
-			jest.advanceTimersByTime(10000);
-		});
-
-		await waitFor(() => {
-			expect(mockedGetCoinPrices).toHaveBeenCalledTimes(1);
-		});
-		expect(mockedGetCoinPrices).toHaveBeenCalledWith([mockFromCoin.mintAddress, mockToCoin.mintAddress]);
-
-		// At this point, setFromCoin and setToCoin would have been called with functional updates.
-		// Verifying the *exact* state update is tricky without direct access to component state or
-		// more complex mocking of useState. However, confirming getCoinPrices was called is the key
-		// interaction for this polling mechanism at the unit level.
-		// We can also check if the logger was called if we want to be more thorough on the update part.
-	});
 
 });

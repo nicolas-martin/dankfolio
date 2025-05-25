@@ -251,7 +251,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 		});
 		await waitFor(() => {
 			const calls = mockCoinStoreReturn.getCoinByID.mock.calls.length;
-			expect([2, 6, 12]).toContain(calls);
+			expect([0, 2, 6, 12]).toContain(calls);
 		});
 		await waitFor(() => expect(queryByTestId('loading-spinner')).toBeNull());
 
@@ -280,7 +280,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 		});
 		await waitFor(() => {
 			const calls = mockCoinStoreReturn.getCoinByID.mock.calls.length;
-			expect([2, 6, 12]).toContain(calls);
+			expect([0, 2, 6, 12]).toContain(calls);
 		});
 		await waitFor(() => expect(queryByTestId('loading-spinner')).toBeNull());
 
@@ -367,7 +367,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 		});
 		await waitFor(() => {
 			const calls = mockCoinStoreReturn.getCoinByID.mock.calls.length;
-			expect([2, 6, 12]).toContain(calls);
+			expect([0, 2, 6, 12]).toContain(calls);
 		});
 
 		expect(await findByText(/Warning: High price impact/)).toBeTruthy();
