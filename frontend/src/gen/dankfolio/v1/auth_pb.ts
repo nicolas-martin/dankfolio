@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/auth.proto.
  */
 export const file_dankfolio_v1_auth: GenFile = /*@__PURE__*/
-  fileDesc("ChdkYW5rZm9saW8vdjEvYXV0aC5wcm90bxIMZGFua2ZvbGlvLnYxIjsKFEdlbmVyYXRlVG9rZW5SZXF1ZXN0EhEKCWRldmljZV9pZBgBIAEoCRIQCghwbGF0Zm9ybRgCIAEoCSI6ChVHZW5lcmF0ZVRva2VuUmVzcG9uc2USDQoFdG9rZW4YASABKAkSEgoKZXhwaXJlc19pbhgCIAEoBTJnCgtBdXRoU2VydmljZRJYCg1HZW5lcmF0ZVRva2VuEiIuZGFua2ZvbGlvLnYxLkdlbmVyYXRlVG9rZW5SZXF1ZXN0GiMuZGFua2ZvbGlvLnYxLkdlbmVyYXRlVG9rZW5SZXNwb25zZUK1AQoQY29tLmRhbmtmb2xpby52MUIJQXV0aFByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw");
+  fileDesc("ChdkYW5rZm9saW8vdjEvYXV0aC5wcm90bxIMZGFua2ZvbGlvLnYxIkEKFEdlbmVyYXRlVG9rZW5SZXF1ZXN0EhcKD2FwcF9jaGVja190b2tlbhgBIAEoCRIQCghwbGF0Zm9ybRgCIAEoCSI6ChVHZW5lcmF0ZVRva2VuUmVzcG9uc2USDQoFdG9rZW4YASABKAkSEgoKZXhwaXJlc19pbhgCIAEoBTJnCgtBdXRoU2VydmljZRJYCg1HZW5lcmF0ZVRva2VuEiIuZGFua2ZvbGlvLnYxLkdlbmVyYXRlVG9rZW5SZXF1ZXN0GiMuZGFua2ZvbGlvLnYxLkdlbmVyYXRlVG9rZW5SZXNwb25zZUK1AQoQY29tLmRhbmtmb2xpby52MUIJQXV0aFByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw");
 
 /**
  * GenerateTokenRequest represents a request to generate a new token
@@ -19,14 +19,14 @@ export const file_dankfolio_v1_auth: GenFile = /*@__PURE__*/
  */
 export type GenerateTokenRequest = Message<"dankfolio.v1.GenerateTokenRequest"> & {
   /**
-   * Unique identifier for the device/client
+   * Firebase App Check token for verifying app integrity
    *
-   * @generated from field: string device_id = 1;
+   * @generated from field: string app_check_token = 1;
    */
-  deviceId: string;
+  appCheckToken: string;
 
   /**
-   * Platform identifier (e.g., "mobile", "web", "desktop")
+   * Platform identifier (e.g., "ios", "android")
    *
    * @generated from field: string platform = 2;
    */
@@ -47,7 +47,7 @@ export const GenerateTokenRequestSchema: GenMessage<GenerateTokenRequest> = /*@_
  */
 export type GenerateTokenResponse = Message<"dankfolio.v1.GenerateTokenResponse"> & {
   /**
-   * The bearer token to use for authentication
+   * The bearer token to use for authentication (now an application JWT)
    *
    * @generated from field: string token = 1;
    */
@@ -75,7 +75,8 @@ export const GenerateTokenResponseSchema: GenMessage<GenerateTokenResponse> = /*
  */
 export const AuthService: GenService<{
   /**
-   * GenerateToken creates a new bearer token for a device
+   * GenerateToken creates a new bearer token for a device,
+   * requiring App Check verification.
    *
    * @generated from rpc dankfolio.v1.AuthService.GenerateToken
    */

@@ -24,9 +24,9 @@ const (
 // GenerateTokenRequest represents a request to generate a new token
 type GenerateTokenRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Unique identifier for the device/client
-	DeviceId string `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
-	// Platform identifier (e.g., "mobile", "web", "desktop")
+	// Firebase App Check token for verifying app integrity
+	AppCheckToken string `protobuf:"bytes,1,opt,name=app_check_token,json=appCheckToken,proto3" json:"app_check_token,omitempty"`
+	// Platform identifier (e.g., "ios", "android")
 	Platform      string `protobuf:"bytes,2,opt,name=platform,proto3" json:"platform,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -62,9 +62,9 @@ func (*GenerateTokenRequest) Descriptor() ([]byte, []int) {
 	return file_dankfolio_v1_auth_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GenerateTokenRequest) GetDeviceId() string {
+func (x *GenerateTokenRequest) GetAppCheckToken() string {
 	if x != nil {
-		return x.DeviceId
+		return x.AppCheckToken
 	}
 	return ""
 }
@@ -79,7 +79,7 @@ func (x *GenerateTokenRequest) GetPlatform() string {
 // GenerateTokenResponse contains the generated token and its metadata
 type GenerateTokenResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The bearer token to use for authentication
+	// The bearer token to use for authentication (now an application JWT)
 	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	// Token expiration time in seconds from now
 	ExpiresIn     int32 `protobuf:"varint,2,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
@@ -135,9 +135,9 @@ var File_dankfolio_v1_auth_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x17dankfolio/v1/auth.proto\x12\fdankfolio.v1\"O\n" +
-	"\x14GenerateTokenRequest\x12\x1b\n" +
-	"\tdevice_id\x18\x01 \x01(\tR\bdeviceId\x12\x1a\n" +
+	"\x17dankfolio/v1/auth.proto\x12\fdankfolio.v1\"Z\n" +
+	"\x14GenerateTokenRequest\x12&\n" +
+	"\x0fapp_check_token\x18\x01 \x01(\tR\rappCheckToken\x12\x1a\n" +
 	"\bplatform\x18\x02 \x01(\tR\bplatform\"L\n" +
 	"\x15GenerateTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1d\n" +

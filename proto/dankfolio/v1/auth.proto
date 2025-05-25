@@ -6,22 +6,23 @@ option go_package = "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/da
 
 // AuthService provides authentication token management
 service AuthService {
-  // GenerateToken creates a new bearer token for a device
+  // GenerateToken creates a new bearer token for a device,
+  // requiring App Check verification.
   rpc GenerateToken(GenerateTokenRequest) returns (GenerateTokenResponse);
 }
 
 // GenerateTokenRequest represents a request to generate a new token
 message GenerateTokenRequest {
-  // Unique identifier for the device/client
-  string device_id = 1;
-  // Platform identifier (e.g., "mobile", "web", "desktop")
+  // Firebase App Check token for verifying app integrity
+  string app_check_token = 1;
+  // Platform identifier (e.g., "ios", "android")
   string platform = 2;
 }
 
 // GenerateTokenResponse contains the generated token and its metadata
 message GenerateTokenResponse {
-  // The bearer token to use for authentication
+  // The bearer token to use for authentication (now an application JWT)
   string token = 1;
   // Token expiration time in seconds from now
   int32 expires_in = 2;
-} 
+}
