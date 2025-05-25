@@ -2,17 +2,33 @@ import { initializeApp, FirebaseApp } from 'firebase/app';
 import { initializeAppCheck, AppCheck } from 'firebase/app-check';
 import { logger } from '@/utils/logger'; // Assuming logger path
 
-// TODO: Replace with your actual Firebase project configuration
+// Firebase configuration loaded from environment variables
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_PLACEHOLDER",
-  authDomain: "YOUR_AUTH_DOMAIN_PLACEHOLDER",
-  projectId: "YOUR_PROJECT_ID_PLACEHOLDER",
-  storageBucket: "YOUR_STORAGE_BUCKET_PLACEHOLDER",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID_PLACEHOLDER",
-  appId: "YOUR_APP_ID_PLACEHOLDER",
-  measurementId: "YOUR_MEASUREMENT_ID_PLACEHOLDER" // Optional
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID // Optional
 };
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'FIREBASE_API_KEY',
+  'FIREBASE_AUTH_DOMAIN',
+  'FIREBASE_PROJECT_ID',
+  'FIREBASE_STORAGE_BUCKET',
+  'FIREBASE_MESSAGING_SENDER_ID',
+  'FIREBASE_APP_ID',
+];
+
+requiredEnvVars.forEach((envVar) => {
+  if (!process.env[envVar]) {
+    logger.error(`❌ Missing required environment variable: ${envVar}`);
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+});
 let firebaseApp: FirebaseApp | null = null;
 let appCheckInstance: AppCheck | null = null;
 
