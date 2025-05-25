@@ -40,4 +40,5 @@ export const executeTrade = jest.fn().mockImplementation(
 
 export const startPolling = jest.fn();
 export const pollTradeStatus = jest.fn();
-export const stopPolling = jest.fn(); 
+export const stopPolling = jest.fn();
+export const getCoinPrices = jest.fn(); 
