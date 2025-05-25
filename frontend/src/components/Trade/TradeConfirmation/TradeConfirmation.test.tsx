@@ -8,8 +8,8 @@ import { View } from 'react-native';
 // Mock react-native-paper components and theme
 jest.mock('react-native-paper', () => {
     const actualPaper = jest.requireActual('react-native-paper');
+    const { View, Pressable } = require('react-native');
     const MockButton = (props: any) => {
-        const { Pressable } = require('react-native');
         return (
             <Pressable
                 onPress={props.onPress}
@@ -55,10 +55,13 @@ const mockFromCoin: Coin = {
     name: 'FromCoin',
     symbol: 'FROM',
     price: 10.0,
-    logoUrl: 'from_url',
+    iconUrl: 'from_url',
     decimals: 9,
     balance: 100,
     value: 1000,
+    description: '',
+    tags: [],
+    dailyVolume: 0,
 };
 
 const mockToCoin: Coin = {
@@ -66,10 +69,13 @@ const mockToCoin: Coin = {
     name: 'ToCoin',
     symbol: 'TO',
     price: 1.0,
-    logoUrl: 'to_url',
+    iconUrl: 'to_url',
     decimals: 6,
     balance: 500,
     value: 500,
+    description: '',
+    tags: [],
+    dailyVolume: 0,
 };
 
 const defaultProps = {
@@ -128,10 +134,12 @@ describe('TradeConfirmation', () => {
     });
 
     it('renders correctly with all props provided', () => {
-        const { getByText, queryByTestId } = renderComponent();
+        const { getByText, getAllByText, queryByTestId } = renderComponent();
 
         expect(queryByTestId('loading-spinner')).toBeNull();
-        expect(getByText('Confirm Trade')).toBeTruthy();
+        // Check for title "Confirm Trade" - it appears twice (title and button)
+        const confirmTradeElements = getAllByText('Confirm Trade');
+        expect(confirmTradeElements.length).toBe(2); // Title and button
 
         // You Pay section
         expect(getByText('You Pay')).toBeTruthy();
@@ -150,7 +158,7 @@ describe('TradeConfirmation', () => {
 
         // Buttons
         expect(getByText('Cancel')).toBeTruthy();
-        expect(getByText('Confirm Trade')).toBeTruthy();
+        // Button text is already checked above with the title
     });
 
     it('shows high price impact warning when priceImpactPct > 2', () => {
@@ -200,31 +208,12 @@ describe('TradeConfirmation', () => {
     });
 
     it('calculates value as $0.00 if amount is invalid', () => {
-        const { getAllByText } = renderComponent({ fromAmount: 'invalid' });
-        // There will be two "$0.00" - one for "You Pay" and one for "You Receive" (if its amount is also invalid or coin price is 0)
-        // For this test, we check the "You Pay" section.
-        // The value is calculated as $0.0000 because of toFixed(4)
-        const valueElements = getAllByText('$0.0000');
-        // We expect the "You Pay" value to be $0.0000
+        const { getByText } = renderComponent({ fromAmount: 'invalid' });
+        // The value is calculated as $0.00 for invalid amount
+        expect(getByText('$0.00')).toBeTruthy();
         // And the "You Receive" value will be based on its valid amount and price.
         const expectedReceiveValue = `$${(parseFloat(defaultProps.toAmount) * mockToCoin.price).toFixed(4)}`;
-        
-        let foundPayValue = false;
-        let foundReceiveValue = false;
-
-        valueElements.forEach(el => {
-            // This is a bit fragile if other parts of the text include "$0.0000"
-            // A more robust way would be to query more specifically within sections.
-            // For now, we assume one of them is the one we are looking for.
-            if (el.props.children === '$0.0000') { // Check the one for the "You Pay" section specifically
-                 const parent = el.parent?.parent; // Text -> View (valueContainer) -> View (row)
-                 const labelSibling = parent?.children.find((child: any) => child.props.children === 'Value');
-                 // This is a very simplified check, might need more robust query
-                 // For now, we just check if one of the $0.0000 is present
-                 foundPayValue = true;
-            }
-        });
-        expect(foundPayValue).toBe(true);
+        expect(getByText(expectedReceiveValue)).toBeTruthy();
     });
 
     it('does not render if isVisible is false', () => {

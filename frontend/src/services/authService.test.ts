@@ -1,9 +1,20 @@
-import { AuthService } from './authService';
+import { authService } from './authService';
 import { authManager, AuthToken } from './grpc/authManager';
 import { authClient } from '@/services/grpc/apiClient';
 import { logger as log } from '@/utils/logger'; // Renamed to log to match source
 import { getAppCheckInstance } from '@/services/firebaseInit';
 import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check';
+import { create } from "@bufbuild/protobuf";
+import { GenerateTokenResponseSchema } from "@/gen/dankfolio/v1/auth_pb";
+
+// Import the class for testing
+class AuthService {
+  async initialize(): Promise<void> { return authService.initialize(); }
+  async getAuthToken(): Promise<string | null> { return authService.getAuthToken(); }
+  async refreshToken(): Promise<void> { return authService.refreshToken(); }
+  async clearAuth(): Promise<void> { return authService.clearAuth(); }
+  async isAuthenticated(): Promise<boolean> { return authService.isAuthenticated(); }
+}
 
 // Mock dependencies
 jest.mock('./grpc/authManager');
@@ -35,6 +46,14 @@ describe('AuthService', () => {
     // Add other properties if needed
   };
 
+  // Helper function to create proper protobuf messages
+  const createMockGenerateTokenResponse = (token: string, expiresIn: number) => {
+    return create(GenerateTokenResponseSchema, {
+      token,
+      expiresIn,
+    });
+  };
+
   beforeEach(() => {
     jest.resetAllMocks(); // Reset mocks for each test
 
@@ -48,7 +67,7 @@ describe('AuthService', () => {
     
     // Default mock for authClient.generateToken
     // Tests will override this as needed
-    mockAuthClient.generateToken.mockResolvedValue({ token: 'default-grpc-token', expiresIn: 3600 });
+    mockAuthClient.generateToken.mockResolvedValue(createMockGenerateTokenResponse('default-grpc-token', 3600));
 
     // Default mocks for Firebase App Check
     mockGetAppCheckInstance.mockReturnValue(mockAppCheckInstance as any);
@@ -156,7 +175,7 @@ describe('AuthService', () => {
 
       it('should use App Check token and gRPC token if both succeed', async () => {
         mockGetAppCheckTokenFirebase.mockResolvedValue({ token: 'valid-app-check-token' } as any);
-        mockAuthClient.generateToken.mockResolvedValue(grpcTokenResponse);
+        mockAuthClient.generateToken.mockResolvedValue(createMockGenerateTokenResponse(grpcTokenResponse.token, grpcTokenResponse.expiresIn));
 
         await authService.refreshToken();
 
@@ -225,7 +244,7 @@ describe('AuthService', () => {
 
       it('should use App Check token and gRPC token if both succeed', async () => {
         mockGetAppCheckTokenFirebase.mockResolvedValue({ token: 'valid-app-check-token' } as any);
-        mockAuthClient.generateToken.mockResolvedValue(grpcTokenResponse);
+        mockAuthClient.generateToken.mockResolvedValue(createMockGenerateTokenResponse(grpcTokenResponse.token, grpcTokenResponse.expiresIn));
 
         await authService.refreshToken();
 

@@ -3,8 +3,11 @@ module.exports = {
 	silent: true,
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 	setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
+	setupFiles: [
+		'./node_modules/react-native-gesture-handler/jestSetup.js'
+	],
 	transformIgnorePatterns: [
-		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia|react-native-vector-icons|uuid|expo-updates|expo-modules-core|@sentry)/)',
+		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia|react-native-vector-icons|uuid|expo-updates|expo-modules-core|expo-app-integrity|expo-device|@sentry)/)',
 	],
 	moduleNameMapper: {
 		'^@/(.*)$': '<rootDir>/src/$1', // Matches @/anything
@@ -23,12 +26,15 @@ module.exports = {
 		'^victory-native$': '<rootDir>/src/__mocks__/victory-native.ts',
 		'^expo-haptics$': '<rootDir>/src/__mocks__/expo-haptics.ts',
 		'\\.(ttf)$': '<rootDir>/src/__mocks__/file-mock.js',
-		'^expo-updates$': '<rootDir>/src/__mocks__/expo-updates.ts'
+		'^expo-updates$': '<rootDir>/src/__mocks__/expo-updates.ts',
+		'^expo-app-integrity$': '<rootDir>/src/__mocks__/expo-app-integrity.ts',
+		// Mock React Native modules
+		'^@react-native-async-storage/async-storage$': '<rootDir>/src/__mocks__/@react-native-async-storage/async-storage.ts',
+		'^react-native-device-info$': '<rootDir>/src/__mocks__/react-native-device-info.ts',
+		'^firebase/app-check$': '<rootDir>/src/__mocks__/firebase/app-check.ts',
+		'^firebase/app$': '<rootDir>/src/__mocks__/firebase/app.ts'
 	},
 	transform: {
 		'^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],
-	},
-	setupFiles: [
-		'./node_modules/react-native-gesture-handler/jestSetup.js'
-	]
+	}
 };
