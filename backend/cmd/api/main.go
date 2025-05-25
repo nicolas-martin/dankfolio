@@ -1,7 +1,6 @@
 package main
 
 import (
-	"hash"
 	"log"      // Import standard log for pre-slog setup errors
 	"log/slog" // Import slog
 	"net/http"
@@ -98,7 +97,7 @@ func loadConfig() (*Config, error) {
 	var missingVars []string
 
 	if config.JWTSecret == "" {
-		missingVars = append(missingVars, "JWTSecret")
+		missingVars = append(missingVars, "JWT_SECRET")
 	}
 	if config.Env == "" {
 		missingVars = append(missingVars, "APP_ENV")
