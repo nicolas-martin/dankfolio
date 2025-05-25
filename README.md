@@ -1,629 +1,153 @@
-# Implementing Secure Authentication: Firebase App Check & JWT with React Native (iOS) and Go (ConnectRPC)
-
-## Introduction
-This document outlines the steps to implement a robust authentication mechanism for a React Native (iOS) application and a Go backend using ConnectRPC. It leverages Firebase App Check (with Apple's App Attest) for initial app integrity verification and a custom application-specific JWT for ongoing session management.
-
-## Main Sections
-I. Frontend Changes (React Native iOS App with Expo)
-II. Backend Changes (Go with ConnectRPC)
-
----
-
-## I. Frontend Changes (React Native iOS App with Expo)
-This section details the modifications and integrations required on the React Native (iOS) client-side, specifically when using Expo.
-
-### 1. Integrate Firebase and App Check for App Attestation
-**Purpose:** To obtain a token from Firebase App Check that verifies the authenticity of your app instance and confirms it's running on a legitimate Apple device via App Attest.
-
-**Packages/Libraries:**
-*   **`firebase`**: The core Firebase SDK for JavaScript.
-    ```bash
-    npx expo install firebase
-    ```
-*   **`expo-app-integrity`** (Optional): Investigate if this package simplifies native App Check integration within an Expo environment. If it provides a more Expo-idiomatic approach or handles native configurations more smoothly than directly using the Firebase JS SDK's App Check module, consider using it. Otherwise, the Firebase JS SDK can be used directly.
-    ```bash
-    npx expo install expo-app-integrity # If you choose to use it
-    ```
-
-**Key Steps:**
-1.  **Firebase Project Setup:**
-    *   Create a new project or use an existing one in the [Firebase Console](https://console.firebase.google.com/).
-2.  **Register iOS App:**
-    *   Add your iOS application to the Firebase project.
-    *   Ensure the **Bundle ID** configured in Firebase exactly matches your iOS app's bundle identifier in Xcode / `app.json`.
-3.  **Enable App Check:**
-    *   In the Firebase Console, navigate to "App Check".
-    *   Register your app for App Check.
-    *   Enable App Attest for your iOS app. You will need your Apple Team ID for this configuration.
-4.  **Initialize Firebase in App:**
-    *   In your application's entry point (e.g., `App.js` or a dedicated Firebase initialization file), initialize Firebase with your project's configuration:
-        ```javascript
-        import firebase from 'firebase/app'; // Or specific imports like 'firebase/app-check'
-        // Add other Firebase services imports as needed
-
-        const firebaseConfig = {
-          // Your Firebase project configuration object
-          apiKey: "...",
-          authDomain: "...",
-          projectId: "...",
-          storageBucket: "...",
-          messagingSenderId: "...",
-          appId: "...",
-          measurementId: "..." // Optional
-        };
-
-        if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
-        }
-        ```
-5.  **Activate Firebase App Check:**
-    *   After initializing Firebase, activate App Check. If using `expo-app-integrity` and it handles activation, follow its specific API. Otherwise, use the Firebase JS SDK:
-        ```javascript
-        import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check"; // Adjust for App Attest
-
-        // Ensure Firebase is initialized before this
-        const appCheck = initializeAppCheck(firebase.app(), {
-          provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_SITE_KEY'), // For web, for App Attest, this will differ.
-                                                                    // For native, you might pass a custom provider or rely on native setup.
-                                                                    // Refer to Firebase docs for App Attest on iOS.
-          isTokenAutoRefreshEnabled: true
-        });
-        ```
-    *   **Note for App Attest:** The `ReCaptchaV3Provider` is typically for web. For native iOS with App Attest, the setup might involve configuring a custom provider or ensuring your native Firebase setup correctly links App Attest. Consult the latest Firebase documentation for `firebase/app-check` with App Attest on native platforms. `expo-app-integrity` might abstract this.
-6.  **Implement Function to Get App Check Token:**
-    *   Create a reusable function to retrieve the App Check token.
-        ```javascript
-        import { getToken } from "firebase/app-check";
-
-        async function getFirebaseAppCheckToken() {
-          try {
-            const appCheckToken = await getToken(firebase.appCheck(), /* forceRefresh= */ false);
-            return appCheckToken.token;
-          } catch (err) {
-            console.error("Error getting App Check token:", err);
-            // Handle error appropriately
-            return null;
-          }
-        }
-        ```
-    *   Again, if `expo-app-integrity` is used, it might provide its own method for this.
-
-### 2. Exchange App Check Token for Your Application JWT
-**Purpose:** To make an initial authenticated call to your backend, sending the Firebase App Check token. The backend will verify this token and, if valid, return your custom application-specific JWT for subsequent session management.
-
-**Packages/Libraries (for ConnectRPC calls):**
-*   **`@connectrpc/connect`**: Core ConnectRPC library.
-*   **`@connectrpc/connect-react-native`**: Recommended for React Native, providing native-optimized transport. (Alternatively, `@connectrpc/connect-web` if your setup is more web-like, but `connect-react-native` is generally preferred for true native apps).
-    ```bash
-    npm install @connectrpc/connect @connectrpc/connect-react-native
-    # or
-    # yarn add @connectrpc/connect @connectrpc/connect-react-native
-    ```
-*   **Your generated Protobuf code**: The client stubs and message types generated from your `.proto` definitions for your authentication service.
-
-**Key Steps:**
-1.  **Create ConnectRPC Client:**
-    *   Set up your ConnectRPC client for the authentication service defined in your Protobuf files.
-        ```javascript
-        // Example: services/auth_connect.js
-        import { createPromiseClient } from "@connectrpc/connect";
-        import { createConnectTransport } from "@connectrpc/connect-react-native"; // Or connect-web
-        import { AuthService } from "./your_protobuf_generated_code/auth_service_connect"; // Adjust path
-
-        const transport = createConnectTransport({
-          baseUrl: "https://your-backend-api.example.com", // Your backend URL
-        });
-
-        export const authClient = createPromiseClient(AuthService, transport);
-        ```
-2.  **Call Backend Authentication Endpoint:**
-    *   Implement a function to call your backend's authentication endpoint (e.g., `AuthService.AuthenticateApp`).
-    *   Pass the Firebase App Check token in the request metadata/headers (e.g., as `X-Firebase-AppCheck`).
-        ```javascript
-        async function exchangeAppCheckTokenForAppJWT() {
-          const firebaseToken = await getFirebaseAppCheckToken();
-          if (!firebaseToken) {
-            console.error("Failed to get Firebase App Check token. Cannot authenticate.");
-            return null;
-          }
-
-          try {
-            const response = await authClient.authenticateApp(
-              {
-                // any request body fields if your service expects them
-              },
-              {
-                headers: { "X-Firebase-AppCheck": firebaseToken },
-              }
-            );
-            // Assuming the response contains your application JWT, e.g., response.appToken
-            return response.appToken;
-          } catch (error) {
-            console.error("Error exchanging App Check token for App JWT:", error);
-            // Handle errors (e.g., invalid App Check token, network issues)
-            return null;
-          }
-        }
-        ```
-
-### 3. Securely Store Your Application JWT
-**Purpose:** To persist the application-specific JWT (received from your backend) securely on the device, preventing the need for frequent re-authentication.
-
-**Package/Library:**
-*   **`expo-secure-store`**: Provides an interface to the native Keychain on iOS (and Android Keystore), suitable for storing sensitive data.
-    ```bash
-    npx expo install expo-secure-store
-    ```
-
-**Key Steps:**
-1.  **Save Application JWT:**
-    *   After successfully receiving the application JWT from your backend, use `SecureStore.setItemAsync()` to save it.
-        ```javascript
-        import * as SecureStore from 'expo-secure-store';
-
-        const APP_JWT_KEY = 'myAppJWT'; // Define a consistent key
-
-        async function saveAppJWT(token) {
-          try {
-            await SecureStore.setItemAsync(APP_JWT_KEY, token);
-            console.log("Application JWT saved securely.");
-          } catch (error) {
-            console.error("Error saving Application JWT:", error);
-          }
-        }
-
-        // Usage after getting the token from backend:
-        // const appJWT = await exchangeAppCheckTokenForAppJWT();
-        // if (appJWT) {
-        //   await saveAppJWT(appJWT);
-        // }
-        ```
-2.  **Retrieve Application JWT:**
-    *   When needed (e.g., for making authenticated API calls), retrieve the JWT using `SecureStore.getItemAsync()`.
-        ```javascript
-        async function getAppJWT() {
-          try {
-            return await SecureStore.getItemAsync(APP_JWT_KEY);
-          } catch (error) {
-            console.error("Error retrieving Application JWT:", error);
-            return null;
-          }
-        }
-        ```
-3.  **Delete Application JWT (e.g., on Logout):**
-    ```javascript
-    async function deleteAppJWT() {
-      try {
-        await SecureStore.deleteItemAsync(APP_JWT_KEY);
-        console.log("Application JWT deleted.");
-      } catch (error) {
-        console.error("Error deleting Application JWT:", error);
-      }
-    }
-    ```
-
-### 4. Make Authenticated gRPC Calls with Your Application JWT
-**Purpose:** For all subsequent API calls to your backend (after the initial App Check token exchange), include your application-specific JWT in the `Authorization` header.
-
-**Packages/Libraries:** Same as in step 2 (`@connectrpc/connect`, `@connectrpc/connect-react-native`, your generated Protobuf code).
-
-**Key Steps:**
-1.  **Implement ConnectRPC Interceptor for Authentication:**
-    *   An interceptor is a powerful ConnectRPC feature that can modify requests and responses. Create one to automatically add the JWT.
-        ```javascript
-        // Example: services/interceptors.js
-        import { Interceptor } from "@connectrpc/connect";
-        import * as SecureStore from 'expo-secure-store'; // Or your getAppJWT function
-
-        const APP_JWT_KEY = 'myAppJWT'; // Must be same key as used for storing
-
-        export const authInterceptor: Interceptor = (next) => async (req) => {
-          const appJWT = await SecureStore.getItemAsync(APP_JWT_KEY); // Or await getAppJWT();
-
-          if (appJWT) {
-            // Add the Authorization header if the token exists
-            if (!req.header) {
-              req.header = new Headers();
-            }
-            req.header.set("Authorization", `Bearer ${appJWT}`);
-          }
-
-          try {
-            return await next(req);
-          } catch (error) {
-            // Handle potential "Unauthenticated" errors globally if desired
-            // e.g., if error.code === connect.Code.Unauthenticated
-            if (error.code === connect.Code.Unauthenticated) { // Assuming connect.Code is available
-                console.warn("Request failed with Unauthenticated. JWT might be expired or invalid.");
-                // Optionally:
-                // - Trigger a token refresh mechanism if you have one
-                // - Navigate to login screen
-                // - Clear the invalid JWT from secure store
-            }
-            throw error; // Re-throw the error to be caught by the caller
-          }
-        };
-        ```
-2.  **Use Interceptor When Creating ConnectRPC Transport/Client:**
-    *   Modify your ConnectRPC client setup to include the `authInterceptor`.
-        ```javascript
-        // Example: services/apiClient.js (or wherever you create your main client)
-        import { createPromiseClient } from "@connectrpc/connect";
-        import { createConnectTransport } from "@connectrpc/connect-react-native";
-        import { YourService } from "./your_protobuf_generated_code/your_service_connect"; // Adjust
-        import { authInterceptor } from "./interceptors"; // Your interceptor
-
-        const transport = createConnectTransport({
-          baseUrl: "https://your-backend-api.example.com",
-          interceptors: [authInterceptor], // Add the interceptor here
-        });
-
-        export const apiClient = createPromiseClient(YourService, transport);
-
-        // If you have multiple services, you can reuse the transport
-        // export const anotherServiceClient = createPromiseClient(AnotherService, transport);
-        ```
-
-This setup ensures that your Firebase App Check token is used for initial bootstrapping trust, and your application-specific JWT is used for ongoing session management, with secure storage and automatic inclusion in API calls via ConnectRPC interceptors.
-
----
-
-## II. Backend Changes (Go with ConnectRPC)
-This section covers the server-side implementation in Go using ConnectRPC to handle authentication.
-
-### 1. Verify Firebase App Check Token
-**Purpose:** To validate the App Check token received from the client to ensure the request is coming from an attested app instance.
-
-**Package/Library:**
-*   **`firebase.google.com/go/v4`**: The official Firebase Admin SDK for Go.
-    ```bash
-    go get firebase.google.com/go/v4
-    ```
-
-**Key Steps:**
-1.  **Initialize Firebase Admin SDK:**
-    *   Ensure the Firebase Admin SDK is initialized at the start of your application. This typically requires a service account key JSON file.
-        ```go
-        import (
-        	"context"
-        	"log"
-
-        	firebase "firebase.google.com/go/v4"
-        	// "firebase.google.com/go/v4/appcheck" // For App Check client
-        	"google.golang.org/api/option"
-        )
-
-        func initializeFirebase() (*firebase.App, error) {
-        	// Make sure GOOGLE_APPLICATION_CREDENTIALS environment variable is set
-        	// or provide the path to your service account key JSON file explicitly.
-        	// opt := option.WithCredentialsFile("path/to/serviceAccountKey.json")
-        	// app, err := firebase.NewApp(context.Background(), nil, opt)
-        	app, err := firebase.NewApp(context.Background(), nil) // Uses GOOGLE_APPLICATION_CREDENTIALS
-        	if err != nil {
-        		log.Fatalf("error initializing app: %v\n", err)
-        		return nil, err
-        	}
-        	return app, nil
-        }
-
-        // Call this once during your application startup
-        // var firebaseApp *firebase.App
-        // func init() {
-        // 	var err error
-        // 	firebaseApp, err = initializeFirebase()
-        // 	if err != nil {
-        // 		// Handle error, perhaps exit or log fatal
-        // 	}
-        // }
-        ```
-2.  **Get App Check Client:**
-    *   Obtain an App Check client from the initialized Firebase app.
-        ```go
-        // import "firebase.google.com/go/v4/appcheck"
-
-        // appCheckClient, err := firebaseApp.AppCheck(context.Background())
-        // if err != nil {
-        //   log.Fatalf("Error getting App Check client: %v\n", err)
-        // }
-        ```
-3.  **Implement Verification in Authentication Handler:**
-    *   In the ConnectRPC handler responsible for the initial authentication (e.g., `AuthenticateApp`), extract the `X-Firebase-AppCheck` header.
-    *   Verify the token using `appCheckClient.VerifyToken()`.
-        ```go
-        import (
-        	"context"
-        	"log"
-        	"net/http" // For header access in Connect interceptor/handler
-
-        	"connectrpc.com/connect"
-        	firebase "firebase.google.com/go/v4"
-        	"firebase.google.com/go/v4/appcheck"
-        	// your_protobuf_generated_code "path/to/your/protobuf/generated/code"
-        )
-
-        // Assume firebaseApp is initialized globally or passed appropriately
-        var firebaseApp *firebase.App 
-        // var appCheckClient *appcheck.Client // Initialize this during startup
-
-        // Example of a ConnectRPC service implementation method
-        // func (s *AuthServiceServer) AuthenticateApp(
-        // 	ctx context.Context,
-        // 	req *connect.Request[your_protobuf_generated_code.AuthenticateAppRequest],
-        // ) (*connect.Response[your_protobuf_generated_code.AuthenticateAppResponse], error) {
-        //
-        // 	// 1. Initialize App Check client if not already done (best to do at startup)
-        // 	if appCheckClient == nil {
-        // 		var err error
-        // 		appCheckClient, err = firebaseApp.AppCheck(context.Background())
-        // 		if err != nil {
-        // 			log.Printf("Error getting App Check client: %v", err)
-        // 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("could not initialize App Check"))
-        // 		}
-        // 	}
-        //
-        // 	// 2. Extract the App Check token from the request header
-        // 	appCheckToken := req.Header().Get("X-Firebase-AppCheck")
-        // 	if appCheckToken == "" {
-        // 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("missing X-Firebase-AppCheck token"))
-        // 	}
-        //
-        // 	// 3. Verify the token
-        // 	_, err := appCheckClient.VerifyToken(appCheckToken)
-        // 	if err != nil {
-        // 		log.Printf("Error verifying App Check token: %v", err)
-        // 		// Consider logging the specific error for debugging but return a generic error to the client.
-        // 		// Firebase Admin SDK might return specific errors for expired/invalid tokens.
-        // 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("invalid App Check token"))
-        // 	}
-        //
-        // 	log.Println("Firebase App Check token verified successfully.")
-        //
-        // 	// 4. If verified, proceed to generate and return your application JWT
-        // 	// appJWT, err := generateYourApplicationJWT(...)
-        // 	// if err != nil { ... }
-        // 	// return connect.NewResponse(&your_protobuf_generated_code.AuthenticateAppResponse{AppToken: appJWT}), nil
-        //   return nil, nil // Placeholder
-        // }
-        ```
-    *   **Note:** The `appCheckClient.VerifyToken()` method returns an `*appcheck.Token` struct which contains claims from the App Check token (like `AppID`, `Subject`). You might want to inspect these, though for basic verification, a `nil` error is sufficient.
-
-### 2. Generate and Sign Your Application JWT
-**Purpose:** After successfully verifying the App Check token, generate your own JWT to be used by the client for subsequent authenticated requests to your API.
-
-**Package/Library:**
-*   **`github.com/golang-jwt/jwt/v5`**: A popular Go library for working with JWTs.
-    ```bash
-    go get github.com/golang-jwt/jwt/v5
-    ```
-
-**Key Steps:**
-1.  **Define JWT Claims:**
-    *   Create a struct for your custom claims. Include standard claims like `RegisteredClaims` (which includes `ExpiresAt`, `IssuedAt`, etc.) and any custom data you need (e.g., `UserID`, `AppID`).
-        ```go
-        import "github.com/golang-jwt/jwt/v5"
-
-        type AppClaims struct {
-        	UserID string `json:"user_id,omitempty"`
-        	AppID  string `json:"app_id,omitempty"` // Could be the Firebase App ID from App Check token
-        	// Add any other custom claims relevant to your application
-        	jwt.RegisteredClaims
-        }
-        ```
-2.  **Create and Sign JWT:**
-    *   Implement a function to generate and sign the JWT. You'll need a secret key. **Store and manage this key securely.**
-        ```go
-        import (
-        	"time"
-        	"github.com/golang-jwt/jwt/v5"
-        )
-
-        // IMPORTANT: This key should be stored securely, e.g., in environment variables or a secret manager.
-        // Do NOT hardcode it in your source code for production.
-        var jwtSecretKey = []byte("your-super-secret-and-strong-key")
-
-        func GenerateApplicationJWT(userID string, appID string) (string, error) {
-        	expirationTime := time.Now().Add(24 * time.Hour) // Example: 24 hours validity
-
-        	claims := &AppClaims{
-        		UserID: userID, // Optional, if your app has users at this stage
-        		AppID:  appID,  // Can be derived from verified App Check token
-        		RegisteredClaims: jwt.RegisteredClaims{
-        			ExpiresAt: jwt.NewNumericDate(expirationTime),
-        			IssuedAt:  jwt.NewNumericDate(time.Now()),
-        			Issuer:    "your-app-name-or-domain", // Replace with your app's identifier
-        		},
-        	}
-
-        	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-        	signedToken, err := token.SignedString(jwtSecretKey)
-        	if err != nil {
-        		return "", err
-        	}
-        	return signedToken, nil
-        }
-
-        // In your AuthenticateApp handler, after App Check verification:
-        // firebaseAppID := appCheckTokenInfo.AppID // If you get this from VerifyToken response
-        // appJWT, err := GenerateApplicationJWT("some-user-id-if-known", firebaseAppID)
-        // if err != nil {
-        //   log.Printf("Error generating application JWT: %v", err)
-        //   return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("could not generate auth token"))
-        // }
-        // response := connect.NewResponse(&your_protobuf_generated_code.AuthenticateAppResponse{
-        // 	AppToken: appJWT,
-        // })
-        // return response, nil
-        ```
-    *   **Security Note:** Consider using asymmetric signing methods (like RS256) for higher security, especially if different services need to verify the token without sharing the secret. HS256 is simpler if the same service issues and verifies.
-
-### 3. Authenticate Subsequent Requests Using Your Application JWT
-**Purpose:** To protect your main API endpoints by ensuring they receive a valid application JWT.
-
-**Package/Library:**
-*   **`connectrpc.com/connect`**: For creating interceptors directly.
-*   **`connectrpc.com/authn`** (Recommended): A ConnectRPC utility package for structured authentication.
-    ```bash
-    go get connectrpc.com/authn
-    ```
-
-**Key Steps (using `connectrpc.com/authn`):**
-1.  **Create an Authenticator:**
-    *   Implement the `authn.Authenticator` interface. This involves a method `Authenticate` that takes the request headers and returns an `authn.Identity` or an error.
-        ```go
-        // Example: auth/jwt_authenticator.go
-        package auth
-
-        import (
-        	"context"
-        	"fmt"
-        	"strings"
-        	"time"
-
-        	"connectrpc.com/authn"
-        	"connectrpc.com/connect"
-        	"github.com/golang-jwt/jwt/v5"
-        )
-
-        // Your AppClaims struct (as defined before)
-        type AppClaims struct {
-        	UserID string `json:"user_id,omitempty"`
-        	AppID  string `json:"app_id,omitempty"`
-        	jwt.RegisteredClaims
-        }
-
-        // jwtSecretKey (as defined before, ensure it's accessible here)
-        var jwtSecretKey = []byte("your-super-secret-and-strong-key") 
-
-        type JWTAuthenticator struct{}
-
-        func NewJWTAuthenticator() *JWTAuthenticator {
-        	return &JWTAuthenticator{}
-        }
-
-        // Authenticate implements authn.Authenticator
-        func (a *JWTAuthenticator) Authenticate(ctx context.Context, spec authn.Specification) (authn.Identity, error) {
-        	authHeader := spec.RequestHeader().Get("Authorization")
-        	if authHeader == "" {
-        		return nil, authn.Errorf(connect.CodeUnauthenticated, "missing Authorization header")
-        	}
-
-        	parts := strings.SplitN(authHeader, " ", 2)
-        	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-        		return nil, authn.Errorf(connect.CodeUnauthenticated, "invalid Authorization header format: expected Bearer token")
-        	}
-        	tokenString := parts[1]
-
-        	claims := &AppClaims{}
-        	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-        		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-        			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-        		}
-        		return jwtSecretKey, nil
-        	})
-
-        	if err != nil {
-        		if err == jwt.ErrSignatureInvalid {
-        			return nil, authn.Errorf(connect.CodeUnauthenticated, "invalid token signature")
-        		}
-        		// Check for specific errors like expired token
-        		// For example, if errors.Is(err, jwt.ErrTokenExpired)
-        		return nil, authn.Errorf(connect.CodeUnauthenticated, "invalid token: %v", err)
-        	}
-
-        	if !token.Valid {
-        		return nil, authn.Errorf(connect.CodeUnauthenticated, "token is invalid")
-        	}
-            
-            // Optionally, perform more checks on claims like Issuer, Audience, etc.
-            // if claims.Issuer != "your-app-name-or-domain" {
-            //     return nil, authn.Errorf(connect.CodeUnauthenticated, "token has invalid issuer")
-            // }
-
-        	// Create an identity. You can make this richer.
-        	// The authn.Identity can be any type. It's often a struct containing user/app info.
-        	// This identity will be available in the context of your RPC handlers.
-        	identity := &AppIdentity{
-        		UserID:    claims.UserID,
-        		AppID:     claims.AppID,
-        		AllClaims: claims,
-        	}
-        	return identity, nil
-        }
-
-        // AppIdentity is a custom type to store authenticated identity information.
-        type AppIdentity struct {
-        	UserID    string
-        	AppID     string
-        	AllClaims *AppClaims
-        }
-
-        // You can add methods to AppIdentity to easily access claims or check permissions.
-        func (id *AppIdentity) GetProperty(key string) string {
-            if key == "user_id" { return id.UserID }
-            if key == "app_id" { return id.AppID }
-            return ""
-        }
-        ```
-2.  **Create Authentication Interceptor:**
-    *   Use `authn.NewInterceptor` with your authenticator.
-        ```go
-        // In your server setup (e.g., main.go or where you configure ConnectRPC services)
-        // import (
-        // 	"net/http"
-        // 	"connectrpc.com/authn"
-        // 	"connectrpc.com/connect"
-        // 	"your-app/auth" // Assuming your JWTAuthenticator is in the auth package
-        // 	your_service_connect "path/to/your/service/connect"
-        // )
-
-        // jwtAuth := auth.NewJWTAuthenticator()
-        // authInterceptor, err := authn.NewInterceptor(jwtAuth)
-        // if err != nil {
-        // 	log.Fatalf("failed to create auth interceptor: %v", err)
-        // }
-        ```
-3.  **Apply Interceptor to Services/Methods:**
-    *   Apply the interceptor to all ConnectRPC service handlers that require authentication.
-        ```go
-        // mux := http.NewServeMux()
-        // // Apply to a specific service.
-        // // You can choose to apply it per service or globally.
-        // path, handler := your_service_connect.NewYourServiceHandler(
-        // 	&YourServiceImpl{}, // Your service implementation
-        // 	connect.WithInterceptors(authInterceptor),
-        // )
-        // mux.Handle(path, handler)
-
-        // http.ListenAndServe(":8080", mux)
-        ```
-4.  **Access Identity in Handlers:**
-    *   In your RPC handlers, you can retrieve the `authn.Identity` (which will be your `AppIdentity`) from the context.
-        ```go
-        // import "connectrpc.com/authn"
-
-        // func (s *YourServiceImpl) ProtectedMethod(
-        // 	ctx context.Context,
-        // 	req *connect.Request[your_protobuf_generated_code.ProtectedRequest],
-        // ) (*connect.Response[your_protobuf_generated_code.ProtectedResponse], error) {
-        //
-        // 	identity := authn.GetIdentity(ctx) // This will be your *auth.AppIdentity
-        // 	if identity == nil {
-        // 		// This shouldn't happen if the interceptor is configured correctly and rejects unauthenticated requests.
-        // 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("identity not found in context"))
-        // 	}
-        //
-        // 	appIdentity, ok := identity.(*auth.AppIdentity)
-        // 	if !ok {
-        // 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("unexpected identity type in context"))
-        // 	}
-        //
-        // 	log.Printf("Request authenticated for AppID: %s, UserID: %s", appIdentity.AppID, appIdentity.UserID)
-        //
-        // 	// Proceed with business logic...
-        // 	return connect.NewResponse(&your_protobuf_generated_code.ProtectedResponse{
-        // 		Message: "Successfully accessed protected method for " + appIdentity.AppID,
-        // 	}), nil
-        // }
-        ```
-
-This backend setup ensures that incoming requests are first validated for app integrity using Firebase App Check, and then subsequent API access is controlled via your custom application JWTs, managed by ConnectRPC interceptors.
+# 🎮 Dankfolio
+
+## TODO:
+- [ ] Make wallet creation fully frontend and only send public key to the backend
+- [ ] There's a bug where in the profile when we have 0 coin we still see SOL
+- [ ] Optimize the graph fetching by fetching ALL points at once and then filter/aggregate by time.
+
+- Problem:
+May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Step 1: Navigating to https://www.birdeye.so/?chain=solana
+May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Warning: Initial data load/refresh failed: failed to scrape and enrich coins: failed during basic token scraping: initial navigation failed: exec: "google-chrome": executable file not found in $PATH
+May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Starting gRPC server on port 9000
+May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Starting Connect RPC server on :9000
+
+- Solution:
+Use a direct page instead 🤦‍♂️
+
+### NOTE
+In order for the raw_coins to be populated which is required for the search functionality. We currently have to trigger the jupiter call to /tokens/v1/all which is currently done manually by triggering. We should also think about using the `new` endpoint periodically which is not implemented currently.
+
+```bash
+→ grpcurl -plaintext \
+  -import-path proto/dankfolio/v1 \
+  -proto coin.proto \
+  -d '{}' \
+  localhost:9000 \
+  dankfolio.v1.CoinService/GetAllCoins
+```
+
+### Improvements
+- [x] Add contract display in coin details
+- [x] Add more space to the coin name in profile and home
+- [x] Improve graph usability
+    - [x] Formatted DT on graph when dragging
+    - [x] Fix change update and color
+    - [x] Hover label position fix when reaching the edge of the screen
+    - [x] Label, vertical line and domain padding
+    - [x] Shadow when highlighting
+    - [x] Double check data accuracy when highligting the graph
+
+
+### 💅 UI Improvements
+
+| Task | Reference |
+|------|-----------|
+| <li>[x] Improve Button Bar Design </li>| <details><summary>View Design</summary><img src="./ss/button_bar.jpg" width="400" alt="Button Bar Design"></details> |
+| <li>[ ] Enhance Coins Detail Header </li>| <details><summary>View Design</summary><img src="./ss/coin_detals_header.png" width="400" alt="Coins Detail Header"></details> |
+| <li>[ ] Update Chart Style </li>| <details><summary>View Design</summary><img src="./ss/chart_style.png" width="400" alt="Chart Style"></details> |
+| <li>[ ] Implement Price Chart Highlight</li>| <details><summary>View Design</summary><img src="./ss/price_chart_highlight.jpg" width="400" alt="Price Chart Highlight"></details> |
+| <li>[x] Create Profile Wallet Breakdown</li>  | <details><summary>View Design</summary><img src="./ss/profile_wallet_breakdown.png" width="400" alt="Profile Wallet Breakdown"></details> |
+
+
+## hard reset
+```bash 
+rm -rf ./node_modules && yarn install && cd ios && rm -rf build Pods Podfile.lock && pod install && cd .. && yarn start --reset-cache
+```
+
+## CodeCoverage
+```
+→ yarn test --coverage
+yarn run v1.22.22
+$ jest --coverage
+watchman warning:  Recrawled this watch 9 times, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/nma/dev/dankfolio' ; watchman watch-project '/Users/nma/dev/dankfolio'`
+
+ PASS  src/store/coins.test.ts
+ PASS  src/components/Chart/CoinChart/index.test.tsx
+ PASS  src/store/portfolio.test.ts
+ PASS  src/screens/Profile/ProfileScreen.test.tsx
+ PASS  src/utils/numberFormat.test.ts
+ PASS  src/components/Common/TokenSelector/TokenSelector.test.tsx
+ PASS  src/services/api.test.ts
+ PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
+ PASS  src/screens/Home/HomeScreen.test.tsx
+ PASS  src/components/Common/Navigation/navigation.test.tsx
+ PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
+ PASS  src/screens/Trade/TradeScreen.test.tsx (7.823 s)
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
+File                                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
+All files                           |   61.69 |    55.13 |   66.14 |   61.96 |
+ components/Chart/CoinChart         |   88.13 |    86.95 |   68.42 |   89.09 |
+  index.tsx                         |   87.71 |    86.95 |   66.66 |   88.88 | 54-55,65,97,148-149
+  styles.ts                         |     100 |      100 |     100 |     100 |
+ components/Common/Icons            |   46.42 |        0 |       0 |   76.47 |
+  index.tsx                         |   46.42 |        0 |       0 |   76.47 | 17-18,22-23,27-28,32-33
+ components/Common/Navigation       |     100 |      100 |     100 |     100 |
+  CustomHeader.tsx                  |     100 |      100 |     100 |     100 |
+ components/Common/TokenSelector    |   97.26 |    81.13 |      96 |   97.14 |
+  index.tsx                         |   96.22 |       75 |      95 |   96.07 | 14-15
+  scripts.ts                        |     100 |      100 |     100 |     100 |
+  styles.ts                         |     100 |      100 |     100 |     100 |
+ components/Home/CoinCard           |     100 |       80 |     100 |     100 |
+  coincard_styles.ts                |     100 |      100 |     100 |     100 |
+  index.tsx                         |     100 |       80 |     100 |     100 | 34-44
+ components/OTAupdate               |      25 |     3.84 |   42.85 |   27.77 |
+  index.tsx                         |      75 |       50 |   66.66 |      75 | 16-17
+  scripts.ts                        |    9.67 |        0 |      25 |   11.11 | 7-11,18-52
+  styles.ts                         |     100 |      100 |     100 |     100 |
+ components/Trade/TradeConfirmation |   85.71 |    82.14 |     100 |   87.17 |
+  index.tsx                         |      85 |    82.14 |     100 |   86.84 | 45,56,62-67
+  styles.ts                         |     100 |      100 |     100 |     100 |
+ components/Trade/TradeStatusModal  |   72.72 |    59.37 |      80 |   71.42 |
+  index.tsx                         |      70 |    59.37 |      75 |      70 | 24-26,30-32,42,88
+  styles.ts                         |     100 |      100 |     100 |     100 |
+ gen/dankfolio/v1                   |     100 |      100 |     100 |     100 |
+  coin_pb.ts                        |     100 |      100 |     100 |     100 |
+  price_pb.ts                       |     100 |      100 |     100 |     100 |
+  trade_pb.ts                       |     100 |      100 |     100 |     100 |
+  utility_pb.ts                     |     100 |      100 |     100 |     100 |
+  wallet_pb.ts                      |     100 |      100 |     100 |     100 |
+ hooks                              |   67.56 |    28.57 |     100 |   68.57 |
+  useProxiedImage.ts                |   67.56 |    28.57 |     100 |   68.57 | 37-40,51-60
+ screens/CoinDetail                 |   50.49 |    46.55 |   70.58 |   49.48 |
+  coindetail_scripts.ts             |       6 |        0 |       0 |       6 | 32-88,98-128
+  coindetail_styles.ts              |     100 |      100 |     100 |     100 |
+  index.tsx                         |   93.87 |    81.81 |   91.66 |   95.65 | 50,89
+ screens/Home                       |   94.73 |       60 |    92.3 |   94.44 |
+  home_scripts.ts                   |   66.66 |      100 |       0 |   66.66 | 64
+  home_styles.ts                    |     100 |      100 |     100 |     100 |
+  index.tsx                         |   96.96 |       60 |     100 |   96.87 | 39
+ screens/Profile                    |   56.45 |       50 |   68.42 |   57.14 |
+  index.tsx                         |   62.85 |       60 |   66.66 |   63.63 | 42-53,102-103,125-126,168
+  profile_scripts.ts                |      44 |       25 |   66.66 |   45.45 | 16-26,49-60
+  profile_styles.ts                 |     100 |      100 |     100 |     100 |
+ screens/Trade                      |   52.44 |     46.3 |   70.73 |   50.86 |
+  index.tsx                         |   70.14 |    58.11 |   81.81 |   69.58 | ...169,183-184,188-189,198-199,210-211,214-215,219-220,229-230,239-240,262-263,277-284,291-292,313
+  trade_scripts.ts                  |    11.7 |     3.12 |   14.28 |    11.7 | 20-25,37-92,106-109,117-119,133-168,179-187,205-256
+  trade_styles.ts                   |     100 |      100 |     100 |     100 |
+ services                           |    5.26 |        0 |    5.55 |    5.26 |
+  grpcApi.ts                        |    5.26 |        0 |    5.55 |    5.26 | 12,21-346,363,379-394
+ services/grpc                      |   56.52 |       25 |      75 |   56.52 |
+  apiClient.ts                      |    87.5 |       50 |     100 |    87.5 | 4
+  grpcUtils.ts                      |      50 |    23.07 |      75 |      50 | 11,50-51,55-75,91
+ store                              |   86.55 |     60.6 |      95 |   85.45 |
+  coins.ts                          |      92 |       60 |     100 |    91.3 | 47-50
+  portfolio.ts                      |    82.6 |    61.11 |      90 |   81.25 | 43,52,66-70,78-88,94-95,121-122
+ utils                              |   80.55 |    78.57 |      80 |   81.92 |
+  constants.ts                      |     100 |      100 |     100 |     100 |
+  logger.ts                         |   58.06 |    32.14 |   77.77 |   70.83 | 20-25,61-62,70
+  numberFormat.ts                   |     100 |      100 |     100 |     100 |
+  url.ts                            |      20 |        0 |       0 |      20 | 5,9-18
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
+
+Test Suites: 12 passed, 12 total
+Tests:       81 passed, 81 total
+Snapshots:   0 total
+Time:        8.947 s, estimated 12 s
+✨  Done in 9.53s.
+```
