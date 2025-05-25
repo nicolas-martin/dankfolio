@@ -96,7 +96,7 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 	slog.Info("Generated new JWT token",
 		"device_id", req.DeviceId,
 		"platform", req.Platform,
-		"expires_at", claims.ExpiresAt.Time.Format(time.RFC3339))
+		"expires_at", claims.ExpiresAt.Format(time.RFC3339))
 
 	return &dankfoliov1.GenerateTokenResponse{
 		Token:     tokenString,
@@ -111,7 +111,7 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 	}
 
 	// Parse and validate the JWT token
-	token, err := jwt.ParseWithClaims(tokenString, &AuthClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &AuthClaims{}, func(token *jwt.Token) (any, error) {
 		// Validate the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -134,7 +134,7 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 	}
 
 	// Check if token is expired
-	if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
+	if claims.ExpiresAt != nil && claims.ExpiresAt.Before(time.Now()) {
 		return nil, fmt.Errorf("token is expired")
 	}
 
