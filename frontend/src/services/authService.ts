@@ -15,6 +15,8 @@ export interface TokenResponse {
 
 class AuthService {
   private readonly isDevelopment = DEBUG_MODE === 'true';
+  private isRefreshing = false; // Flag to prevent concurrent refresh attempts
+  private refreshPromise: Promise<void> | null = null; // Store the current refresh promise
 
   /**
    * Initialize the authentication service
@@ -37,8 +39,17 @@ class AuthService {
     
     if (!token) {
       log.info('🔐 Token not available, requesting new token');
-      await this.refreshToken();
-      token = await authManager.getValidToken();
+      
+      // If already refreshing, wait for the existing refresh to complete
+      if (this.isRefreshing && this.refreshPromise) {
+        log.info('🔐 Token refresh already in progress, waiting...');
+        await this.refreshPromise;
+        token = await authManager.getValidToken();
+      } else {
+        // Start a new refresh
+        await this.refreshToken();
+        token = await authManager.getValidToken();
+      }
     }
     
     return token;
@@ -70,6 +81,29 @@ class AuthService {
    * Request a new token from the backend
    */
   async refreshToken(): Promise<void> {
+    // If already refreshing, return the existing promise
+    if (this.isRefreshing && this.refreshPromise) {
+      log.info('🔐 Token refresh already in progress, returning existing promise');
+      return this.refreshPromise;
+    }
+
+    // Set the refreshing flag and create the promise
+    this.isRefreshing = true;
+    this.refreshPromise = this._performTokenRefresh();
+
+    try {
+      await this.refreshPromise;
+    } finally {
+      // Reset the flags
+      this.isRefreshing = false;
+      this.refreshPromise = null;
+    }
+  }
+
+  /**
+   * Internal method to perform the actual token refresh
+   */
+  private async _performTokenRefresh(): Promise<void> {
     try {
       const tokenRequest = authManager.generateTokenRequest();
       log.info('🔐 Requesting new bearer token', { deviceId: tokenRequest.deviceId });

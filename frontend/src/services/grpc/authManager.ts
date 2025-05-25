@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DeviceInfo from 'react-native-device-info';
 import { logger as log } from '@/utils/logger';
 
 const TOKEN_STORAGE_KEY = 'dankfolio_bearer_token';
@@ -12,6 +13,7 @@ export interface AuthToken {
 class AuthManager {
   private currentToken: string | null = null;
   private tokenExpiry: Date | null = null;
+  private deviceId: string | null = null;
 
   /**
    * Initialize the auth manager by loading any existing token from storage
@@ -22,6 +24,10 @@ class AuthManager {
         AsyncStorage.getItem(TOKEN_STORAGE_KEY),
         AsyncStorage.getItem(TOKEN_EXPIRY_KEY)
       ]);
+
+      // Get the actual device unique ID
+      this.deviceId = await DeviceInfo.getUniqueId();
+      log.info('🔐 Using device unique ID:', this.deviceId);
 
       if (storedToken && storedExpiry) {
         const expiryDate = new Date(storedExpiry);
@@ -99,6 +105,26 @@ class AuthManager {
   }
 
   /**
+   * Clear all auth data including device ID (for complete reset)
+   */
+  async clearAllAuthData(): Promise<void> {
+    try {
+      this.currentToken = null;
+      this.tokenExpiry = null;
+      // Note: We don't clear deviceId since it's obtained from the device directly
+
+      await Promise.all([
+        AsyncStorage.removeItem(TOKEN_STORAGE_KEY),
+        AsyncStorage.removeItem(TOKEN_EXPIRY_KEY)
+      ]);
+
+      log.info('🔐 All auth data cleared');
+    } catch (error) {
+      log.error('❌ Failed to clear all auth data:', error);
+    }
+  }
+
+  /**
    * Check if we have a valid token
    */
   async hasValidToken(): Promise<boolean> {
@@ -111,12 +137,12 @@ class AuthManager {
    * This creates a unique identifier for this app instance
    */
   generateTokenRequest(): { deviceId: string; platform: string } {
-    // URGENT: USE REAL DEVICE ID
-    const deviceId = Math.random().toString(36).substring(2, 15) + 
-                    Math.random().toString(36).substring(2, 15);
+    if (!this.deviceId) {
+      throw new Error('AuthManager not initialized - device ID not available');
+    }
     
     return {
-      deviceId,
+      deviceId: this.deviceId,
       platform: 'mobile'
     };
   }

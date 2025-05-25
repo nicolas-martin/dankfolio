@@ -30,15 +30,21 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 	return next(req);
 };
 
+// Main transport with auth interceptor for authenticated requests
 const transport = createConnectTransport({
 	baseUrl: REACT_APP_API_URL,
 	interceptors: [authInterceptor],
 });
 
+// Separate transport for auth requests (no auth interceptor to prevent circular dependency)
+const authTransport = createConnectTransport({
+	baseUrl: REACT_APP_API_URL,
+});
+
 const walletClient = createClient(WalletService, transport);
 const tradeClient = createClient(TradeService, transport);
 const coinClient = createClient(CoinService, transport);
-const authClient = createClient(AuthService, transport);
+const authClient = createClient(AuthService, authTransport); // Use authTransport without interceptor
 const priceClient = createClient(PriceService, transport);
 const utilityClient = createClient(UtilityService, transport);
 
