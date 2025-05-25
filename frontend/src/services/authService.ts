@@ -3,7 +3,7 @@ import { authClient } from '@/services/grpc/apiClient';
 import { logger as log } from '@/utils/logger';
 import { DEBUG_MODE } from '@env';
 import { getAppCheckInstance } from '@/services/firebaseInit';
-import { getToken as getAppCheckTokenFirebase, AppCheckError } from 'firebase/app-check'; // Import AppCheckError if needed for specific error handling
+import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check'; // Import AppCheckError if needed for specific error handling
 
 export interface TokenResponse {
   token: string;
