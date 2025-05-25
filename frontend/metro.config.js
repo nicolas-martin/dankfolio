@@ -1,6 +1,6 @@
 const { wrapWithReanimatedMetroConfig } = require('react-native-reanimated/metro-config');
 const {
-    getSentryExpoConfig
+	getSentryExpoConfig
 } = require("@sentry/react-native/metro");
 
 /** @type {import('expo/metro-config').MetroConfig} */
@@ -17,6 +17,6 @@ const config = getSentryExpoConfig(__dirname, {
 // Add any custom configuration here
 config.resolver.sourceExts.push('mjs');
 config.resolver.unstable_enablePackageExports = true;
-	
+
 // Wrap the config
 module.exports = wrapWithReanimatedMetroConfig(config);

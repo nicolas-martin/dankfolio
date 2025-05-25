@@ -1,67 +1,65 @@
 {
-	"extends": "expo/tsconfig.base",
-	"compilerOptions": {
-		"strict": false,
-		"jsx": "react-jsx",
-		"module": "esnext",
-		"baseUrl": ".",
-		"paths": {
-			"*": [
-				"src/*"
-			],
-			"@/*": [
-				"src/*"
-			],
-			"@types/*": [
-				"src/types/*"
-			],
-			"@assets/*": [
-				"src/assets/*"
-			],
-			"@utils/*": [
-				"src/utils/*"
-			],
-			"@store/*": [
-				"src/store/*"
-			],
-			"@services/*": [
-				"src/services/*"
-			],
-			"@screens/*": [
-				"src/screens/*"
-			],
-			"@components/*": [
-				"src/components/*"
-			]
-		},
-		"types": [
-			"node",
-			"jest"
-		], // Added "jest" to explicitly include its types
-		"lib": [
-			"es2020",
-			"dom"
-		],
-		"esModuleInterop": true,
-		"moduleResolution": "bundler",
-		"noImplicitAny": true,
-		"strictNullChecks": true,
-		"allowSyntheticDefaultImports": true,
-		"noUnusedLocals": false,
-		"noUnusedParameters": false,
-		"allowUnusedLabels": true,
-		"allowUnreachableCode": false,
-		"declaration": true
-	},
-	"exclude": [
-		"**/*.spec.ts",
-		// Removed *.test.ts exclusion
-		// Removed *.test.tsx exclusion
-		"**/*.spec.tsx",
-		"scripts/**/*"
-	],
-	"include": [
-		"**/*.ts",
-		"**/*.tsx",
-	]
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": false,
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "baseUrl": ".",
+    "paths": {
+      "*": [
+        "src/*"
+      ],
+      "@/*": [
+        "src/*"
+      ],
+      "@types/*": [
+        "src/types/*"
+      ],
+      "@assets/*": [
+        "src/assets/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@store/*": [
+        "src/store/*"
+      ],
+      "@services/*": [
+        "src/services/*"
+      ],
+      "@screens/*": [
+        "src/screens/*"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ]
+    },
+    "types": [
+      "node",
+      "jest"
+    ],
+    "lib": [
+      "es2020",
+      "dom"
+    ],
+    "esModuleInterop": true,
+    "moduleResolution": "bundler",
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "allowSyntheticDefaultImports": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "allowUnusedLabels": true,
+    "allowUnreachableCode": false,
+    "declaration": true
+  },
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "scripts/**/*"
+  ],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

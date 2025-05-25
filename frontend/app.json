@@ -22,15 +22,7 @@
         }
       ],
       "expo-secure-store",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "deploymentTarget": "14.0"
-          }
-        }
-      ],
-      "expo-device"
+      "expo-build-properties"
     ],
     "updates": {
       "enabled": true,
