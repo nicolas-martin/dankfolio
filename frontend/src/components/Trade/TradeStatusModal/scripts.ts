@@ -12,7 +12,7 @@ export const getStatusText = (currentStatus: PollingStatus): string => {
 		case 'polling':
 			return 'Waiting for Confirmation...';
 		case 'confirmed':
-			return 'Transaction Confirmed!';
+			return 'Transaction Confirmed';
 		case 'finalized':
 			return 'Transaction Finalized!';
 		case 'failed':
@@ -30,7 +30,7 @@ export const getStatusDescription = (currentStatus: PollingStatus): string => {
 		case 'polling':
 			return 'Waiting for network confirmation';
 		case 'confirmed':
-			return 'Your transaction has been confirmed by the network';
+			return 'Waiting for final confirmation and processing';
 		case 'finalized':
 			return 'Your transaction is complete and irreversible';
 		case 'failed':
@@ -43,11 +43,11 @@ export const getStatusDescription = (currentStatus: PollingStatus): string => {
 // Status type classification
 export const getStatusType = (currentStatus: PollingStatus): 'loading' | 'success' | 'error' | 'warning' => {
 	switch (currentStatus) {
-		case 'confirmed':
 		case 'finalized':
 			return 'success';
 		case 'failed':
 			return 'error';
+		case 'confirmed':
 		case 'polling':
 			return 'warning';
 		default:
@@ -67,7 +67,7 @@ export const isSuccessStatus = (status: PollingStatus): boolean => {
 
 // Check if status is in progress
 export const isInProgressStatus = (status: PollingStatus): boolean => {
-	return status === 'pending' || status === 'polling';
+	return status === 'pending' || status === 'polling' || status === 'confirmed';
 };
 
 // Format transaction hash for display

@@ -4,9 +4,9 @@ import { MD3Theme } from 'react-native-paper';
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
 		backgroundColor: theme.colors.surface,
-		padding: 24,
+		padding: 20,
 		margin: 16,
-		borderRadius: 16,
+		borderRadius: 20,
 		maxWidth: 400,
 		alignSelf: 'center',
 		elevation: 8,
@@ -26,7 +26,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '700',
 		color: theme.colors.onSurface,
 		textAlign: 'center',
-		marginBottom: 8,
+		marginBottom: 6,
 	},
 	subtitle: {
 		fontSize: 14,
@@ -37,15 +37,15 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	// Status Section
 	statusSection: {
 		alignItems: 'center',
-		marginBottom: 24,
+		marginBottom: 20,
 	},
 	statusIconContainer: {
-		width: 64,
-		height: 64,
-		borderRadius: 32,
+		width: 56,
+		height: 56,
+		borderRadius: 28,
 		alignItems: 'center',
 		justifyContent: 'center',
-		marginBottom: 16,
+		marginBottom: 12,
 	},
 	statusIconLoading: {
 		backgroundColor: theme.colors.surfaceVariant,
@@ -60,10 +60,10 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		backgroundColor: '#FFF3E0',
 	},
 	statusText: {
-		fontSize: 18,
+		fontSize: 16,
 		fontWeight: '600',
 		textAlign: 'center',
-		marginBottom: 8,
+		marginBottom: 6,
 	},
 	statusTextLoading: {
 		color: theme.colors.onSurface,
@@ -78,13 +78,13 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: '#F57C00',
 	},
 	statusDescription: {
-		fontSize: 14,
+		fontSize: 13,
 		color: theme.colors.onSurfaceVariant,
 		textAlign: 'center',
-		lineHeight: 20,
+		lineHeight: 18,
 	},
 
-	// Progress Section
+	// Progress Section - Always visible when in progress
 	progressSection: {
 		backgroundColor: theme.colors.surfaceVariant,
 		borderRadius: 12,
@@ -99,60 +99,79 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginBottom: 12,
 	},
 	progressLabel: {
-		fontSize: 14,
+		fontSize: 13,
 		fontWeight: '600',
 		color: theme.colors.onSurfaceVariant,
 	},
 	confirmationsText: {
-		fontSize: 14,
+		fontSize: 13,
 		fontWeight: '600',
 		color: theme.colors.primary,
 	},
 	progressBar: {
-		height: 6,
+		height: 8,
 		backgroundColor: theme.colors.outline,
-		borderRadius: 3,
+		borderRadius: 4,
 		overflow: 'hidden',
 	},
 	progressFill: {
 		height: '100%',
 		backgroundColor: theme.colors.primary,
+		borderRadius: 4,
+	},
+	
+	// Animated progress indicator
+	progressIndicator: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginTop: 8,
+	},
+	progressDot: {
+		width: 6,
+		height: 6,
 		borderRadius: 3,
+		backgroundColor: theme.colors.primary,
+		marginRight: 4,
+	},
+	progressText: {
+		fontSize: 12,
+		color: theme.colors.onSurfaceVariant,
+		marginLeft: 4,
 	},
 
 	// Transaction Details
 	transactionSection: {
 		backgroundColor: theme.colors.surfaceVariant,
 		borderRadius: 12,
-		padding: 16,
+		padding: 14,
 		marginBottom: 16,
 		width: '100%',
 	},
 	transactionHeader: {
-		fontSize: 14,
+		fontSize: 13,
 		fontWeight: '600',
 		color: theme.colors.onSurfaceVariant,
-		marginBottom: 12,
+		marginBottom: 10,
 		textTransform: 'uppercase',
 		letterSpacing: 0.5,
 	},
 	hashContainer: {
 		backgroundColor: theme.colors.surface,
 		borderRadius: 8,
-		padding: 12,
-		marginBottom: 12,
+		padding: 10,
+		marginBottom: 10,
 		borderWidth: 1,
 		borderColor: theme.colors.outline,
 	},
 	hashLabel: {
-		fontSize: 12,
+		fontSize: 11,
 		color: theme.colors.onSurfaceVariant,
 		marginBottom: 4,
 		textTransform: 'uppercase',
 		letterSpacing: 0.5,
 	},
 	hashText: {
-		fontSize: 14,
+		fontSize: 13,
 		fontFamily: 'monospace',
 		color: theme.colors.onSurface,
 		fontWeight: '500',
@@ -165,7 +184,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	errorSection: {
 		backgroundColor: theme.colors.errorContainer,
 		borderRadius: 12,
-		padding: 16,
+		padding: 14,
 		marginBottom: 16,
 		width: '100%',
 	},
@@ -178,22 +197,22 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginRight: 8,
 	},
 	errorTitle: {
-		fontSize: 14,
+		fontSize: 13,
 		fontWeight: '600',
 		color: theme.colors.onErrorContainer,
 		textTransform: 'uppercase',
 		letterSpacing: 0.5,
 	},
 	errorText: {
-		fontSize: 14,
+		fontSize: 13,
 		color: theme.colors.onErrorContainer,
-		lineHeight: 20,
+		lineHeight: 18,
 	},
 
 	// Actions
 	actionSection: {
 		width: '100%',
-		marginTop: 8,
+		marginTop: 4,
 	},
 	closeButton: {
 		borderRadius: 12,
@@ -210,15 +229,16 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingVertical: 32,
 	},
 	loadingText: {
-		fontSize: 16,
-		color: theme.colors.onSurfaceVariant,
-		marginTop: 16,
+		fontSize: 15,
+		color: theme.colors.onSurface,
+		marginTop: 12,
 		textAlign: 'center',
+		fontWeight: '500',
 	},
 	loadingDescription: {
-		fontSize: 14,
+		fontSize: 13,
 		color: theme.colors.onSurfaceVariant,
-		marginTop: 8,
+		marginTop: 6,
 		textAlign: 'center',
 		opacity: 0.8,
 	},
