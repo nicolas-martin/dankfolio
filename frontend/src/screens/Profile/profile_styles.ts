@@ -15,94 +15,175 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	scrollContent: {
 		flexGrow: 1,
+		paddingBottom: 100,
 	},
 	contentPadding: {
-		padding: 16,
+		paddingHorizontal: 20,
+		paddingTop: 20,
 	},
-	card: {
-		padding: 16,
-		borderRadius: 8,
-		marginBottom: 12,
+	
+	// Header Section
+	headerSection: {
+		marginBottom: 24,
 	},
-	portfolioValueCard: {
-		marginBottom: 16,
-	},
-	cardTitle: {
-		marginBottom: 16,
-		fontWeight: 'bold',
-	},
-	tokenCardRow: {
+	profileHeader: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 12,
+		marginBottom: 8,
 	},
-	tokenIconContainer: {
-		width: 40,
-		height: 40,
+	profileIcon: {
+		marginRight: 12,
+	},
+	profileTitle: {
+		fontSize: 24,
+		fontWeight: '700',
+		color: theme.colors.onSurface,
+	},
+	walletAddressContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginTop: 4,
+	},
+	walletAddress: {
+		fontSize: 14,
+		color: theme.colors.onSurfaceVariant,
+		fontWeight: '400',
+	},
+	copyButton: {
+		marginLeft: 4,
+		marginTop: -2,
+	},
+	
+	// Portfolio Value Card
+	portfolioCard: {
+		backgroundColor: theme.colors.surface,
 		borderRadius: 20,
-		overflow: 'hidden',
+		padding: 24,
+		marginBottom: 24,
+		shadowColor: '#000',
+		shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.1,
+		shadowRadius: 8,
+		elevation: 4,
+	},
+	portfolioHeader: {
+		marginBottom: 16,
+	},
+	portfolioTitle: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+		marginBottom: 4,
+	},
+	portfolioValue: {
+		fontSize: 32,
+		fontWeight: '700',
+		color: theme.colors.onSurface,
+		marginBottom: 8,
+	},
+	portfolioSubtext: {
+		fontSize: 14,
+		color: theme.colors.onSurfaceVariant,
+		marginBottom: 20,
+	},
+	sendButton: {
+		backgroundColor: theme.colors.primary,
+		borderRadius: 12,
+		paddingVertical: 4,
+	},
+	sendButtonContent: {
+		paddingVertical: 8,
+	},
+	
+	// Tokens Section
+	tokensSection: {
+		flex: 1,
+	},
+	tokensHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 16,
+	},
+	tokensIcon: {
+		marginRight: 12,
+	},
+	tokensTitle: {
+		fontSize: 20,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+	},
+	
+	// Empty State
+	emptyStateContainer: {
+		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
+		paddingVertical: 60,
+		paddingHorizontal: 40,
 	},
-	tokenImage: {
-		width: 40,
-		height: 40,
-	},
-	tokenInfoMiddle: {
-		flex: 1,
-		gap: 4,
-	},
-	tokenBalance: {
-		alignItems: 'flex-end',
-		gap: 4,
-	},
-	profileHeaderRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
+	emptyStateIcon: {
 		marginBottom: 16,
-		gap: 12,
+		opacity: 0.6,
 	},
-	profileHeaderTextContainer: {
-		gap: 4,
-	},
-	balanceDetailsRow: {
-		marginTop: 16,
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		gap: 16,
-	},
-	balanceDetailItem: {
-		flex: 1,
-		gap: 4,
-	},
-	balanceDetailItemEnd: {
-		alignItems: 'flex-end',
-	},
-	yourTokensHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 16,
-	},
-	tokenHeaderText: {
-		marginLeft: 8,
-	},
-	tokenBalanceText: {
+	emptyStateTitle: {
+		fontSize: 18,
+		fontWeight: '600',
 		color: theme.colors.onSurface,
-		fontWeight: 'bold',
+		marginBottom: 8,
+		textAlign: 'center',
 	},
-	tokenValueText: {
+	emptyStateText: {
+		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
+		textAlign: 'center',
+		lineHeight: 20,
 	},
-	// Styles for the address copy Button
-	addressButtonContent: {
-		justifyContent: 'flex-start', // Align icon and text to the left
-		marginLeft: -8, // Reduce default left padding
+	
+	// No Wallet State
+	noWalletContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		paddingHorizontal: 40,
 	},
-	addressButtonLabel: {
-		fontSize: 12, // Match previous Text variant="bodySmall"
+	noWalletCard: {
+		backgroundColor: theme.colors.surface,
+		borderRadius: 20,
+		padding: 32,
+		alignItems: 'center',
+		shadowColor: '#000',
+		shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.1,
+		shadowRadius: 8,
+		elevation: 4,
+	},
+	noWalletIcon: {
+		marginBottom: 20,
+		opacity: 0.7,
+	},
+	noWalletTitle: {
+		fontSize: 20,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+		marginBottom: 8,
+		textAlign: 'center',
+	},
+	noWalletText: {
+		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
-		textTransform: 'none', // Prevent uppercase default
-		marginLeft: -4, // Adjust spacing between icon and text
-		letterSpacing: 0, // Remove default letter spacing
+		textAlign: 'center',
+		lineHeight: 20,
+	},
+	
+	// Debug button (temporary)
+	debugButton: {
+		marginTop: 40,
+		marginHorizontal: 20,
 	},
 });
