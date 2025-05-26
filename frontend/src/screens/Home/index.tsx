@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect } from 'react';
-import { View, SafeAreaView, FlatList } from 'react-native';
-import { useTheme, Button, IconButton, Text } from 'react-native-paper';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, SafeAreaView, FlatList, RefreshControl } from 'react-native';
+import { useTheme, Text, Icon } from 'react-native-paper';
 import CoinCard from '@components/Home/CoinCard';
 import { useNavigation } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
@@ -20,6 +20,7 @@ const HomeScreen = () => {
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed HomeScreen' });
@@ -45,6 +46,7 @@ const HomeScreen = () => {
 	}, [navigation]);
 
 	const onRefresh = useCallback(async () => {
+		setIsRefreshing(true);
 		try {
 			await fetchTrendingAndPortfolio();
 			showToast({
@@ -58,58 +60,95 @@ const HomeScreen = () => {
 				message: 'Failed to refresh coins',
 				duration: 3000
 			});
+		} finally {
+			setIsRefreshing(false);
 		}
 	}, [fetchTrendingAndPortfolio, showToast]);
 
 	const handlePressCoinCard = useCallback((coin: Coin) => {
-		logger.breadcrumb({ category: 'ui', message: 'Pressed CoinCard on HomeScreen', data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } });
+		logger.breadcrumb({ 
+			category: 'ui', 
+			message: 'Pressed CoinCard on HomeScreen', 
+			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } 
+		});
 		handleCoinPressCallback(coin);
 	}, [handleCoinPressCallback]);
 
-	const handleRefreshPress = useCallback(() => {
-		logger.breadcrumb({ category: 'ui', message: 'Pressed Refresh button on HomeScreen' });
-		onRefresh();
-	}, [onRefresh]);
+
+
+	const renderEmptyState = () => (
+		<View style={styles.emptyStateContainer}>
+			<View style={styles.emptyStateIcon}>
+				<Icon source="chart-line" size={48} color={theme.colors.onSurfaceVariant} />
+			</View>
+			<Text style={styles.emptyStateTitle}>No Coins Available</Text>
+			<Text style={styles.emptyStateText}>
+				We couldn't find any coins to display right now. Try refreshing to load the latest trending coins.
+			</Text>
+		</View>
+	);
+
+	const renderNoWalletState = () => (
+		<FlatList
+			data={[]}
+			renderItem={() => null}
+			ListEmptyComponent={() => (
+				<View style={styles.noWalletContainer}>
+					<View style={styles.noWalletCard}>
+						<View style={styles.noWalletIcon}>
+							<Icon source="wallet" size={48} color={theme.colors.primary} />
+						</View>
+						<Text style={styles.noWalletTitle}>Connect Your Wallet</Text>
+						<Text style={styles.noWalletText}>
+							Connect your Solana wallet to start trading meme coins and view your portfolio.
+						</Text>
+					</View>
+				</View>
+			)}
+			refreshControl={
+				<RefreshControl
+					refreshing={isRefreshing}
+					onRefresh={onRefresh}
+					colors={[theme.colors.primary]}
+					tintColor={theme.colors.primary}
+				/>
+			}
+		/>
+	);
+
+	const renderCoinsList = () => (
+		<View style={styles.coinsSection}>
+			<View style={styles.sectionHeader}>
+				<Text style={styles.sectionTitle}>Trending Coins</Text>
+			</View>
+			{availableCoins.length > 0 ? (
+				<FlatList
+					data={availableCoins}
+					keyExtractor={(item) => item.mintAddress || item.symbol}
+					renderItem={({ item }) => (
+						<CoinCard coin={item} onPress={() => handlePressCoinCard(item)} />
+					)}
+					contentContainerStyle={styles.coinsList}
+					showsVerticalScrollIndicator={false}
+					refreshControl={
+						<RefreshControl
+							refreshing={isRefreshing}
+							onRefresh={onRefresh}
+							colors={[theme.colors.primary]}
+							tintColor={theme.colors.primary}
+						/>
+					}
+				/>
+			) : (
+				renderEmptyState()
+			)}
+		</View>
+	);
 
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">
 			<OTAUpdater />
-			{wallet ? (
-				<View style={styles.content}>
-					<View style={styles.coinsSection}>
-						<View style={styles.sectionHeader}>
-							<Text variant="titleLarge" style={styles.sectionTitle}>Available Coins</Text>
-							<IconButton
-								icon="refresh"
-								size={24}
-								onPress={handleRefreshPress}
-								testID="refresh-button"
-							/>
-						</View>
-						{availableCoins.length > 0 ? (
-							<FlatList
-								data={availableCoins}
-								keyExtractor={(item) => item.mintAddress || item.symbol}
-								renderItem={({ item }) => (
-									<CoinCard coin={item} onPress={() => handlePressCoinCard(item)} />
-								)}
-								contentContainerStyle={styles.coinsList}
-								showsVerticalScrollIndicator={false}
-							/>
-						) : (
-							<View style={styles.noCoinsContainer}>
-								<Text variant="bodyMedium" style={styles.noCoinsText}>No coins available for trading</Text>
-							</View>
-						)}
-					</View>
-				</View>
-			) : (
-				<View style={styles.content}>
-					<View style={styles.centerContainer}>
-						<Text variant="bodyLarge" style={styles.loadingText}>Please connect your wallet</Text>
-					</View>
-				</View>
-			)}
+			{wallet ? renderCoinsList() : renderNoWalletState()}
 		</SafeAreaView>
 	);
 };
