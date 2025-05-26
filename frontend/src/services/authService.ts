@@ -64,8 +64,9 @@ class AuthService {
 		const platform = authManager.generateTokenRequest().platform;
 		log.warn(`🔐 Generating development token for deviceId (mock AppCheck subject): ${deviceId}, platform: ${platform}`);
 
-		const header = Buffer.from(JSON.stringify({ alg: 'DEV', typ: 'JWT' })).toString('base64url');
-		const payload = Buffer.from(JSON.stringify({
+		// Use base64 encoding and manually convert to base64url format (React Native compatible)
+		const headerJson = JSON.stringify({ alg: 'DEV', typ: 'JWT' });
+		const payloadJson = JSON.stringify({
 			// sub: tokenRequest.deviceId, // Old way
 			sub: deviceId, // New: using passed mock deviceId (AppCheck subject)
 			device_id: deviceId, // Mirroring the 'device_id' claim the backend now creates from subject
@@ -74,7 +75,11 @@ class AuthService {
 			exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
 			dev: true,
 			iss: "dankfolio-app-dev" // Mock issuer
-		})).toString('base64url');
+		});
+
+		// Convert base64 to base64url format (replace + with -, / with _, remove padding =)
+		const header = Buffer.from(headerJson).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+		const payload = Buffer.from(payloadJson).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 		const signature = 'dev-signature';
 
 		return {

@@ -193,7 +193,7 @@ func main() {
 		JWTSecret:      config.JWTSecret,
 		TokenExpiry:    config.TokenExpiry,
 		AppCheckClient: appCheckClient,
-		AppEnv:         config.Env, // Pass AppEnv to auth service config
+		Env:            config.Env, // Pass AppEnv to auth service config
 	}
 	authService, err := auth.NewService(authServiceConfig)
 	if err != nil {

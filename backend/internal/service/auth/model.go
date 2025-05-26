@@ -32,5 +32,5 @@ type Config struct {
 	JWTSecret      string
 	TokenExpiry    time.Duration
 	AppCheckClient AppCheckClientInterface
-	AppEnv         string // Renamed from BackendAppEnv
+	Env            string
 }
