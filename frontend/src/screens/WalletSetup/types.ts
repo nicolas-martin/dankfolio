@@ -15,6 +15,7 @@ export interface WalletSetupState {
 
 export interface WalletInfo {
 	publicKey: string;
+	privateKey: string;
 	mnemonic: string;
 	isLoading: boolean;
 } 

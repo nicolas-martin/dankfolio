@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, TextInput, Alert, ActivityIndicator, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { useTheme, IconButton } from 'react-native-paper';
 import { createStyles } from './styles';
 import { handleGenerateWallet, handleImportWallet, storeCredentials, base64ToBase58PrivateKey } from './scripts';
 import { WalletSetupScreenProps } from './types';
@@ -8,7 +9,6 @@ import { useToast } from '@/components/Common/Toast';
 import { DEBUG_MODE, TEST_PRIVATE_KEY } from '@env';
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
-import { useTheme } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_TITLE, IMPORT_WALLET_DESC, TERMS_TEXT, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
@@ -31,27 +31,14 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		recoveryPhrase,
 		handleRecoveryPhraseChange,
 		isRecoveryPhraseValid,
-		walletInfo
+		walletInfo,
+		confirmWalletSaved,
+		copyToClipboard
 	} = useWalletSetupLogic(props);
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: `Viewed WalletSetupScreen step: ${step}` });
 	}, [step]);
-
-	const generateWallet = async () => {
-		try {
-			const keypair = await handleGenerateWallet();
-			if (keypair) {
-				showToast({ message: 'Wallet generated successfully!', type: 'success' });
-				props.onWalletSetupComplete(keypair);
-			} else {
-				showToast({ message: 'Failed to generate wallet. Please try again.', type: 'error' });
-			}
-		} catch (err: any) {
-			logger.exception(err, { functionName: 'generateWallet', context: 'WalletSetupScreen' });
-			showToast({ message: err.message || 'Error generating wallet.', type: 'error' });
-		}
-	};
 
 	const loadDebugWallet = async () => {
 		try {
@@ -92,32 +79,51 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	return (
 		<View style={styles.container}>
 			{step === 'welcome' && (
-				<>
-					<View style={styles.section}>
+				<View style={styles.welcomeContainer}>
+					<View style={styles.illustrationContainer}>
+						<View style={styles.frameContainer}>
+							<View style={styles.geometricShapes}>
+								<View style={styles.shape1} />
+								<View style={styles.shape2} />
+								<View style={styles.shape3} />
+							</View>
+						</View>
+						<View style={styles.plantContainer}>
+							<View style={styles.plant} />
+						</View>
+						<View style={styles.vaseContainer}>
+							<View style={styles.vase} />
+						</View>
+					</View>
+					
+					<View style={styles.welcomeContent}>
 						<Text style={styles.title}>{WELCOME_TITLE}</Text>
 						<Text style={styles.subtitle}>{WELCOME_DESC}</Text>
+						
+						<View style={styles.buttonContainer}>
+							<TouchableOpacity 
+								onPress={() => {
+									logger.breadcrumb({ category: 'ui', message: 'Create new wallet button pressed (welcome step)' });
+									goToCreate();
+								}} 
+								style={[styles.actionButton, styles.actionButtonYellow]}
+							>
+								<Text style={styles.buttonText}>Create a new wallet</Text>
+							</TouchableOpacity>
+							<TouchableOpacity 
+								onPress={() => {
+									logger.breadcrumb({ category: 'ui', message: 'Import recovery phrase button pressed (welcome step)' });
+									goToImport();
+								}} 
+								style={[styles.actionButton, styles.actionButtonLight]}
+							>
+								<Text style={styles.buttonText}>Import a recovery phrase</Text>
+							</TouchableOpacity>
+						</View>
+						
+						<Text style={styles.termsText}>{TERMS_TEXT}</Text>
 					</View>
-					<View style={styles.buttonRow}>
-						<TouchableOpacity 
-							onPress={() => {
-								logger.breadcrumb({ category: 'ui', message: 'Create new wallet button pressed (welcome step)' });
-								goToCreate();
-							}} 
-							style={[styles.actionButton, styles.actionButtonYellow]}
-						>
-							<Text style={styles.buttonText}>Create a new wallet</Text>
-						</TouchableOpacity>
-						<TouchableOpacity 
-							onPress={() => {
-								logger.breadcrumb({ category: 'ui', message: 'Import recovery phrase button pressed (welcome step)' });
-								goToImport();
-							}} 
-							style={[styles.actionButton, styles.actionButtonLight]}
-						>
-							<Text style={styles.buttonText}>Import a recovery phrase</Text>
-						</TouchableOpacity>
-					</View>
-					<Text style={styles.termsText}>{TERMS_TEXT}</Text>
+					
 					{IS_DEBUG_MODE && (
 						<View style={styles.debugButtonContainer}>
 							<Button
@@ -130,47 +136,84 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 							/>
 						</View>
 					)}
-				</>
+				</View>
 			)}
 			{step === 'create' && (
-				<View style={styles.section}>
-					<View style={styles.iconPlaceholder} />
-					<Text style={styles.title}>{CREATE_WALLET_TITLE}</Text>
-					<Text style={styles.subtitle}>{CREATE_WALLET_DESC}</Text>
-					<TouchableOpacity 
-						onPress={handleCreateWallet} 
-						style={[styles.actionButton, styles.actionButtonYellow, { marginTop: 32 }]}
-					>
-						<Text style={styles.buttonText}>Create a new wallet</Text>
-					</TouchableOpacity>
+				<View style={styles.createContainer}>
+					<View style={styles.headerContainer}>
+						<TouchableOpacity 
+							onPress={() => {
+								logger.breadcrumb({ category: 'ui', message: 'Back button pressed from create step' });
+								goToWelcome();
+							}}
+							style={styles.backButton}
+						>
+							<Text style={styles.backButtonText}>←</Text>
+						</TouchableOpacity>
+						<Text style={styles.headerTitle}>Create a wallet</Text>
+						<View style={styles.headerSpacer} />
+					</View>
+					
+					<View style={styles.createContent}>
+						<Text style={styles.title}>{CREATE_WALLET_TITLE}</Text>
+						<Text style={styles.subtitle}>{CREATE_WALLET_DESC}</Text>
+						
+						<View style={styles.createButtonContainer}>
+							<TouchableOpacity 
+								onPress={handleCreateWallet} 
+								style={[styles.actionButton, styles.actionButtonYellow]}
+							>
+								<Text style={styles.buttonText}>Create a new wallet</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
 				</View>
 			)}
 			{step === 'import' && (
-				<View style={styles.section}>
-					<View style={styles.iconPlaceholder} />
-					<Text style={styles.title}>{IMPORT_WALLET_TITLE}</Text>
-					<Text style={styles.subtitle}>{IMPORT_WALLET_DESC}</Text>
-					<TextInput
-						style={styles.recoveryInput}
-						placeholder="Enter your 12-word phrase"
-						value={recoveryPhrase}
-						onChangeText={handleRecoveryPhraseChange}
-						multiline
-						numberOfLines={3}
-						autoCapitalize="none"
-						autoCorrect={false}
-					/>
-					<TouchableOpacity
-						onPress={handleImportWallet}
-						style={[
-							styles.actionButton, 
-							styles.actionButtonYellow, 
-							{ marginTop: 16, opacity: isRecoveryPhraseValid() ? 1 : 0.5 }
-						]}
-						disabled={!isRecoveryPhraseValid()}
-					>
-						<Text style={styles.buttonText}>Next</Text>
-					</TouchableOpacity>
+				<View style={styles.importContainer}>
+					<View style={styles.headerContainer}>
+						<TouchableOpacity 
+							onPress={() => {
+								logger.breadcrumb({ category: 'ui', message: 'Back button pressed from import step' });
+								goToWelcome();
+							}}
+							style={styles.backButton}
+						>
+							<Text style={styles.backButtonText}>←</Text>
+						</TouchableOpacity>
+						<Text style={styles.headerTitle}>Recovery phrase</Text>
+						<View style={styles.headerSpacer} />
+					</View>
+					
+					<View style={styles.importContent}>
+						<Text style={styles.title}>{IMPORT_WALLET_DESC}</Text>
+						
+						<TextInput
+							style={styles.importRecoveryInput}
+							placeholder="Enter your 12-word phrase"
+							value={recoveryPhrase}
+							onChangeText={handleRecoveryPhraseChange}
+							multiline
+							numberOfLines={8}
+							autoCapitalize="none"
+							autoCorrect={false}
+							textAlignVertical="top"
+						/>
+						
+						<View style={styles.importButtonContainer}>
+							<TouchableOpacity
+								onPress={handleImportWallet}
+								style={[
+									styles.actionButton, 
+									styles.actionButtonYellow, 
+									{ opacity: isRecoveryPhraseValid() ? 1 : 0.5 }
+								]}
+								disabled={!isRecoveryPhraseValid()}
+							>
+								<Text style={styles.buttonText}>Next</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
 				</View>
 			)}
 			{step === 'creating' && (
@@ -191,17 +234,69 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 								<Text style={styles.subtitle}>{WALLET_CREATED_DESC}</Text>
 								
 								<View style={styles.walletInfoCard}>
-									<Text style={styles.walletInfoLabel}>Your wallet address</Text>
-									<Text style={styles.walletInfoValue}>{walletInfo.publicKey}</Text>
+									<View style={styles.walletInfoSection}>
+										<View style={styles.walletInfoHeader}>
+											<Text style={styles.walletInfoLabel}>Public Key</Text>
+											<IconButton
+												icon="content-copy"
+												size={16}
+												onPress={() => {
+													logger.breadcrumb({ category: 'ui', message: 'Copied public key to clipboard from wallet creation' });
+													copyToClipboard(walletInfo.publicKey, 'Public Key', showToast);
+												}}
+												style={styles.copyButton}
+											/>
+										</View>
+										<Text style={styles.walletInfoValue}>{walletInfo.publicKey}</Text>
+									</View>
+									
+									<View style={styles.walletInfoSection}>
+										<View style={styles.walletInfoHeader}>
+											<Text style={styles.walletInfoLabel}>Private Key</Text>
+											<IconButton
+												icon="content-copy"
+												size={16}
+												onPress={() => {
+													logger.breadcrumb({ category: 'ui', message: 'Copied private key to clipboard from wallet creation' });
+													copyToClipboard(walletInfo.privateKey, 'Private Key', showToast);
+												}}
+												style={styles.copyButton}
+											/>
+										</View>
+										<Text style={styles.walletInfoValue}>{walletInfo.privateKey}</Text>
+									</View>
 									
 									{walletInfo.mnemonic && (
-										<View style={styles.mnemonicContainer}>
-											<Text style={styles.walletInfoLabel}>Recovery phrase</Text>
+										<View style={styles.walletInfoSection}>
+											<View style={styles.walletInfoHeader}>
+												<Text style={styles.walletInfoLabel}>Recovery Phrase</Text>
+												<IconButton
+													icon="content-copy"
+													size={16}
+													onPress={() => {
+														logger.breadcrumb({ category: 'ui', message: 'Copied recovery phrase to clipboard from wallet creation' });
+														copyToClipboard(walletInfo.mnemonic, 'Recovery Phrase', showToast);
+													}}
+													style={styles.copyButton}
+												/>
+											</View>
 											<View style={styles.mnemonicGrid}>
 												{renderMnemonicWords(walletInfo.mnemonic)}
 											</View>
 										</View>
 									)}
+								</View>
+								
+								<View style={styles.confirmButtonContainer}>
+									<TouchableOpacity 
+										onPress={() => {
+											logger.breadcrumb({ category: 'ui', message: 'I have saved my wallet information button pressed' });
+											confirmWalletSaved();
+										}} 
+										style={[styles.actionButton, styles.actionButtonYellow]}
+									>
+										<Text style={styles.buttonText}>I have saved my wallet information</Text>
+									</TouchableOpacity>
 								</View>
 							</View>
 						</ScrollView>

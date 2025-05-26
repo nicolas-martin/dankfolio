@@ -6,6 +6,7 @@ import { grpcApi } from '@/services/grpcApi'; // Import grpcApi
 import { usePortfolioStore } from '@store/portfolio';
 import bs58 from 'bs58';
 import { useState } from 'react';
+import { Clipboard } from 'react-native';
 import { WalletSetupStep, WalletSetupState, WalletSetupScreenProps, WalletInfo } from './types';
 import { logger } from '@/utils/logger';
 
@@ -115,7 +116,7 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 	}
 };
 
-export const handleGenerateWallet = async (): Promise<Keypair> => {
+export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; walletData: { publicKey: string; privateKey: string; mnemonic: string } }> => {
 	logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generation started' });
 	try {
 		logger.info("Generating new wallet...");
@@ -151,7 +152,15 @@ export const handleGenerateWallet = async (): Promise<Keypair> => {
 
 		logger.info('New wallet generated and stored');
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generated successfully', data: { publicKey: keypair.publicKey.toBase58() } });
-		return keypair;
+		
+		return {
+			keypair,
+			walletData: {
+				publicKey: newWalletData.public_key,
+				privateKey: base58PrivateKey,
+				mnemonic: newWalletData.mnemonic
+			}
+		};
 	} catch (error) {
 		logger.exception(error, { functionName: 'handleGenerateWallet' });
 		throw error;
@@ -272,6 +281,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	const [recoveryPhrase, setRecoveryPhrase] = useState('');
 	const [walletInfo, setWalletInfo] = useState<WalletInfo>({
 		publicKey: '',
+		privateKey: '',
 		mnemonic: '',
 		isLoading: false
 	});
@@ -286,17 +296,15 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
 		
 		try {
-			const keypair = await handleGenerateWallet();
+			const { keypair, walletData } = await handleGenerateWallet();
 			setWalletInfo({
-				publicKey: keypair.publicKey.toBase58(),
-				mnemonic: await retrieveMnemonicFromStorage() || '',
+				publicKey: walletData.publicKey,
+				privateKey: walletData.privateKey,
+				mnemonic: walletData.mnemonic,
 				isLoading: false
 			});
 			
-			// Delay the call to onWalletSetupComplete to allow showing the success screen
-			setTimeout(() => {
-				props.onWalletSetupComplete(keypair);
-			}, 5000);
+			// Don't automatically navigate - wait for user confirmation
 		} catch (error) {
 			logger.exception(error, { functionName: 'handleCreateWallet', context: 'useWalletSetupLogic' });
 			setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: false }));
@@ -334,6 +342,39 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		return recoveryPhrase.trim().split(/\s+/).length === 12;
 	};
 
+	const confirmWalletSaved = () => {
+		// User confirms they have saved the wallet information
+		logger.breadcrumb({ category: 'wallet_setup', message: 'User confirmed wallet information saved' });
+		
+		// Find the keypair from the stored wallet info
+		if (walletInfo.privateKey) {
+			try {
+				const keypairBytes = Buffer.from(bs58.decode(walletInfo.privateKey));
+				const keypair = Keypair.fromSecretKey(keypairBytes);
+				props.onWalletSetupComplete(keypair);
+			} catch (error) {
+				logger.exception(error, { functionName: 'confirmWalletSaved', context: 'useWalletSetupLogic' });
+			}
+		}
+	};
+
+	const copyToClipboard = async (text: string, label: string, showToast: any) => {
+		try {
+			await Clipboard.setString(text);
+			logger.breadcrumb({ category: 'wallet_setup', message: `Copied ${label} to clipboard` });
+			showToast({
+				message: `${label} copied to clipboard`,
+				type: 'success'
+			});
+		} catch (error) {
+			logger.exception(error, { functionName: 'copyToClipboard', context: 'useWalletSetupLogic' });
+			showToast({
+				message: `Failed to copy ${label}`,
+				type: 'error'
+			});
+		}
+	};
+
 	return {
 		step,
 		goToCreate,
@@ -344,6 +385,8 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		recoveryPhrase,
 		handleRecoveryPhraseChange,
 		isRecoveryPhraseValid,
-		walletInfo
+		walletInfo,
+		confirmWalletSaved,
+		copyToClipboard
 	};
 } 
