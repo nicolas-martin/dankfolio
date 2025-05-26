@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Animated } from 'react-native';
 import { Modal, Portal, Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
 import { TradeStatusModalProps } from './types';
@@ -25,23 +25,86 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
+	
+	// State to prevent quick flashing between states
+	const [displayStatus, setDisplayStatus] = useState(status);
+	const [displayConfirmations, setDisplayConfirmations] = useState(confirmations);
+	const [hasShownProgress, setHasShownProgress] = useState(false);
 
-	const statusType = getStatusType(status);
-	const statusText = getStatusText(status);
-	const statusDescription = getStatusDescription(status);
-	const isFinal = isFinalStatus(status);
-	const isInProgress = isInProgressStatus(status);
+	// Animated values for smooth transitions
+	const [fadeAnim] = useState(new Animated.Value(1));
+	const [progressAnim] = useState(new Animated.Value(0));
+
+	// Update display status with smooth transitions
+	useEffect(() => {
+		if (status !== displayStatus) {
+			// Fade out, update, fade in
+			Animated.sequence([
+				Animated.timing(fadeAnim, {
+					toValue: 0.7,
+					duration: 150,
+					useNativeDriver: true,
+				}),
+				Animated.timing(fadeAnim, {
+					toValue: 1,
+					duration: 150,
+					useNativeDriver: true,
+				}),
+			]).start();
+			
+			setDisplayStatus(status);
+		}
+	}, [status, displayStatus, fadeAnim]);
+
+	// Update confirmations smoothly
+	useEffect(() => {
+		if (confirmations !== displayConfirmations) {
+			setDisplayConfirmations(confirmations);
+		}
+	}, [confirmations, displayConfirmations]);
+
+	// Track if we've shown progress to keep it visible
+	useEffect(() => {
+		if (isInProgressStatus(status) && txHash) {
+			setHasShownProgress(true);
+		}
+	}, [status, txHash]);
+
+	// Animate progress bar
+	useEffect(() => {
+		if (txHash && (isInProgressStatus(displayStatus) || displayStatus === 'finalized')) {
+			let progress;
+			if (displayStatus === 'finalized') {
+				// Always show 100% for finalized transactions
+				progress = 100;
+			} else {
+				progress = getConfirmationProgress(displayConfirmations);
+			}
+			
+			Animated.timing(progressAnim, {
+				toValue: progress / 100,
+				duration: displayStatus === 'finalized' ? 500 : 300, // Slightly longer animation for completion
+				useNativeDriver: false,
+			}).start();
+		}
+	}, [displayConfirmations, displayStatus, txHash, progressAnim]);
+
+	const statusType = getStatusType(displayStatus);
+	const statusText = getStatusText(displayStatus);
+	const statusDescription = getStatusDescription(displayStatus);
+	const isFinal = isFinalStatus(displayStatus);
+	const isInProgress = isInProgressStatus(displayStatus);
 
 	const getStatusIcon = () => {
 		switch (statusType) {
 			case 'success':
-				return <Icon source="check-circle" size={32} color="#2E7D32" />;
+				return <Icon source="check-circle" size={28} color="#2E7D32" />;
 			case 'error':
-				return <Icon source="alert-circle" size={32} color={theme.colors.error} />;
+				return <Icon source="alert-circle" size={28} color={theme.colors.error} />;
 			case 'warning':
-				return <Icon source="clock" size={32} color="#F57C00" />;
+				return <Icon source="clock" size={28} color="#F57C00" />;
 			default:
-				return <ActivityIndicator size={32} color={theme.colors.primary} />;
+				return <ActivityIndicator size={28} color={theme.colors.primary} />;
 		}
 	};
 
@@ -72,21 +135,59 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	};
 
 	const renderProgressSection = () => {
-		if (!isInProgress || !txHash) return null;
+		// Show progress if currently in progress OR if we've shown it before and not failed OR if finalized
+		const shouldShowProgress = isInProgress || (hasShownProgress && displayStatus !== 'failed') || displayStatus === 'finalized';
+		
+		if (!shouldShowProgress) return null;
 
-		const progress = getConfirmationProgress(confirmations);
+		// For pending state without txHash, show preparing message
+		if (displayStatus === 'pending' && !txHash) {
+			return (
+				<View style={styles.progressSection}>
+					<View style={styles.progressIndicator}>
+						<ActivityIndicator size={12} color={theme.colors.primary} />
+						<Text style={styles.progressText}>Preparing transaction...</Text>
+					</View>
+				</View>
+			);
+		}
+
+		const progress = getConfirmationProgress(displayConfirmations);
+		
+		// For finalized transactions, show "Complete" instead of confirmation count
+		const confirmationDisplay = displayStatus === 'finalized' 
+			? 'Complete' 
+			: formatConfirmationsText(displayConfirmations);
 
 		return (
 			<View style={styles.progressSection}>
 				<View style={styles.progressHeader}>
 					<Text style={styles.progressLabel}>Network Confirmations</Text>
 					<Text style={styles.confirmationsText}>
-						{formatConfirmationsText(confirmations)}
+						{confirmationDisplay}
 					</Text>
 				</View>
 				<View style={styles.progressBar}>
-					<View style={[styles.progressFill, { width: `${progress}%` }]} />
+					<Animated.View 
+						style={[
+							styles.progressFill, 
+							{ 
+								width: progressAnim.interpolate({
+									inputRange: [0, 1],
+									outputRange: ['0%', '100%'],
+								})
+							}
+						]} 
+					/>
 				</View>
+				{isInProgress && (
+					<View style={styles.progressIndicator}>
+						<ActivityIndicator size={12} color={theme.colors.primary} />
+						<Text style={styles.progressText}>
+							{displayStatus === 'polling' ? 'Confirming...' : 'Processing...'}
+						</Text>
+					</View>
+				)}
 			</View>
 		);
 	};
@@ -116,7 +217,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	};
 
 	const renderErrorSection = () => {
-		if (status !== 'failed' || !error) return null;
+		if (displayStatus !== 'failed' || !error) return null;
 
 		return (
 			<View style={styles.errorSection}>
@@ -130,31 +231,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			</View>
 		);
 	};
-
-	// Loading state for initial submission
-	if (status === 'pending' && !txHash) {
-		return (
-			<Portal>
-				<Modal
-					visible={isVisible}
-					onDismiss={isFinal ? onClose : undefined}
-					contentContainerStyle={styles.container}
-					dismissable={isFinal}
-				>
-					<View style={styles.header}>
-						<Text style={styles.title}>Transaction Status</Text>
-						<Text style={styles.subtitle}>Processing your request</Text>
-					</View>
-					
-					<View style={styles.loadingContainer}>
-						<ActivityIndicator size="large" color={theme.colors.primary} />
-						<Text style={styles.loadingText}>{statusText}</Text>
-						<Text style={styles.loadingDescription}>{statusDescription}</Text>
-					</View>
-				</Modal>
-			</Portal>
-		);
-	}
 
 	return (
 		<Portal>
@@ -171,7 +247,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				</View>
 
 				{/* Status Section */}
-				<View style={styles.statusSection}>
+				<Animated.View style={[styles.statusSection, { opacity: fadeAnim }]}>
 					<View style={[styles.statusIconContainer, getStatusIconContainerStyle()]}>
 						{getStatusIcon()}
 					</View>
@@ -181,7 +257,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					<Text style={styles.statusDescription}>
 						{statusDescription}
 					</Text>
-				</View>
+				</Animated.View>
 
 				{/* Progress Section */}
 				{renderProgressSection()}
@@ -200,7 +276,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 							onPress={onClose}
 							style={styles.closeButton}
 						>
-							{status === 'failed' ? 'Try Again' : 'Done'}
+							{displayStatus === 'failed' ? 'Try Again' : 'Done'}
 						</Button>
 					</View>
 				)}
