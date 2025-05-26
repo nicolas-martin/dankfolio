@@ -1,4 +1,4 @@
-import { authManager, AuthToken } from './grpc/authManager';
+import { useAuthStore } from '@/store/auth';
 import { authClient } from '@/services/grpc/apiClient';
 import { logger as log } from '@/utils/logger';
 import { APP_ENV } from '@env';
@@ -8,6 +8,12 @@ import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check'; // Im
 export interface TokenResponse {
 	token: string;
 	expiresIn: number; // seconds
+}
+
+// Interface matching the one previously in authManager and used in _performTokenRefresh
+interface AuthToken {
+  token: string;
+  expiresAt: Date;
 }
 
 class AuthService {
@@ -22,11 +28,12 @@ class AuthService {
 	 * Initialize the authentication service
 	 */
 	async initialize(): Promise<void> {
-		await authManager.initialize();
+		// Initialize the new auth store
+		await useAuthStore.getState().initialize();
 
-		// If we don't have a valid token, request one
-		if (!(await authManager.hasValidToken())) {
-			log.info('🔐 No valid token found, requesting new token');
+		// If we don't have a valid token (i.e., not authenticated according to the store), request one
+		if (!useAuthStore.getState().isAuthenticated) {
+			log.info('🔐 No valid token found (store says not authenticated), requesting new token');
 			await this.refreshToken();
 		}
 	}
@@ -35,23 +42,36 @@ class AuthService {
 	 * Get a valid bearer token, refreshing if necessary
 	 */
 	async getAuthToken(): Promise<string | null> {
-		let token = await authManager.getValidToken();
+		let token: string | null = null;
 
-		if (!token) {
-			log.info('🔐 Token not available, requesting new token');
-
+		if (!useAuthStore.getState().isAuthenticated) {
+			log.info('🔐 Token not available (store says not authenticated), requesting new token');
+			
 			// If already refreshing, wait for the existing refresh to complete
 			if (this.isRefreshing && this.refreshPromise) {
 				log.info('🔐 Token refresh already in progress, waiting...');
 				await this.refreshPromise;
-				token = await authManager.getValidToken();
+				// After refresh, check isAuthenticated again
+				if (useAuthStore.getState().isAuthenticated) {
+					token = useAuthStore.getState().token;
+				}
 			} else {
 				// Start a new refresh
 				await this.refreshToken();
-				token = await authManager.getValidToken();
+				// After refresh, check isAuthenticated again
+				if (useAuthStore.getState().isAuthenticated) {
+					token = useAuthStore.getState().token;
+				}
 			}
+		} else {
+			token = useAuthStore.getState().token;
 		}
-
+		
+		// Additional check for token existence, as store.token can be null even if authenticated initially (e.g. during init)
+		if (!token && useAuthStore.getState().isAuthenticated) {
+			token = useAuthStore.getState().token;
+		}
+		
 		return token;
 	}
 
@@ -60,8 +80,7 @@ class AuthService {
 	 * @param deviceId - In development, this might be a mock subject that App Check would have provided.
 	 */
 	private generateDevelopmentToken(deviceId: string): TokenResponse {
-		// const tokenRequest = authManager.generateTokenRequest(); // platform is still useful
-		const platform = authManager.generateTokenRequest().platform;
+		const platform = 'mobile'; // Platform is consistently 'mobile'
 		log.warn(`🔐 Generating development token for deviceId (mock AppCheck subject): ${deviceId}, platform: ${platform}`);
 
 		// Use base64 encoding and manually convert to base64url format (React Native compatible)
@@ -118,7 +137,8 @@ class AuthService {
 		if (this.isDevelopment) {
 			log.warn('🔐 APP_ENV is "development": Bypassing Firebase App Check and generating a local dev token.');
 			const devTokenResponse = this.generateDevelopmentToken(AuthService.DEV_APP_CHECK_SUBJECT);
-			await authManager.setToken({ token: devTokenResponse.token, expiresAt: new Date(Date.now() + devTokenResponse.expiresIn * 1000) });
+			// Use the new auth store's setToken method
+			await useAuthStore.getState().setToken(devTokenResponse.token, new Date(Date.now() + devTokenResponse.expiresIn * 1000));
 			log.info('🔐 Local dev token generated and set.');
 			return;
 		}
@@ -142,13 +162,14 @@ class AuthService {
 				if (this.isDevelopment) {
 					log.warn('🔐 App Check token retrieval failed in development, falling back to development app token');
 					const devTokenResponse = this.generateDevelopmentToken(AuthService.DEV_APP_CHECK_SUBJECT); // Pass a mock subject/deviceId
-					await authManager.setToken({ token: devTokenResponse.token, expiresAt: new Date(Date.now() + devTokenResponse.expiresIn * 1000) });
+					// Use the new auth store's setToken method
+					await useAuthStore.getState().setToken(devTokenResponse.token, new Date(Date.now() + devTokenResponse.expiresIn * 1000));
 					return; // Exit early after setting dev token
 				}
 				throw error; // Re-throw in production or if not handling with dev token
 			}
 
-			const platform = authManager.generateTokenRequest().platform; // Still useful for platform info
+			const platform = 'mobile'; // Platform is consistently 'mobile'
 
 			let tokenResponse: TokenResponse;
 			try {
@@ -183,7 +204,8 @@ class AuthService {
 				expiresAt,
 			};
 
-			await authManager.setToken(authToken);
+			// Use the new auth store's setToken method
+			await useAuthStore.getState().setToken(authToken.token, authToken.expiresAt);
 			log.info('🔐 Application token refreshed and stored successfully.');
 		} catch (error) {
 			log.error('❌ Failed to refresh application token:', error);
@@ -195,7 +217,7 @@ class AuthService {
 	 * Clear the current authentication token
 	 */
 	async clearAuth(): Promise<void> {
-		await authManager.clearToken();
+		await useAuthStore.getState().clearToken();
 		log.info('🔐 Authentication cleared');
 	}
 
@@ -203,7 +225,8 @@ class AuthService {
 	 * Check if the user is authenticated
 	 */
 	async isAuthenticated(): Promise<boolean> {
-		return await authManager.hasValidToken();
+		// Directly return the isAuthenticated state from the store
+		return useAuthStore.getState().isAuthenticated;
 	}
 }
 
