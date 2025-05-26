@@ -140,7 +140,7 @@ describe('Navigation Flow', () => {
 
 		// 1. Initial Home Screen Render
 		await findByTestId('home-screen');
-		expect(getByText('Available Coins')).toBeTruthy();
+		expect(getByText('Trending Coins')).toBeTruthy();
 		expect(getByText('BTC')).toBeTruthy();
 		expect(getByText('$50.00K')).toBeTruthy(); // Actual formatted price from component
 

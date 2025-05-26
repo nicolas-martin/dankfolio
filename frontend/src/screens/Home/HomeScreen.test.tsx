@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { FlatList, RefreshControl } from 'react-native'; // Import components from react-native
 import HomeScreen from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
@@ -151,15 +152,21 @@ describe('HomeScreen', () => {
 			expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
 			expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
 
-			expect(getByText('Available Coins')).toBeTruthy();
+			expect(getByText('Trending Coins')).toBeTruthy();
 			expect(getByText('SOL')).toBeTruthy();
 			expect(getByText('USDT')).toBeTruthy();
 		});
 
 		// Test refresh functionality
-		const refreshButton = getByTestId('refresh-button');
-		fireEvent.press(refreshButton);
-
+		// Ensure the component is rendered before trying to find elements within it
+		const homeScreenComponent = getByTestId('home-screen');
+		const refreshControls = homeScreenComponent.findAllByType(RefreshControl); // Using findAllByType from testing-library
+		if (refreshControls && refreshControls.length > 0) {
+			fireEvent(refreshControls[0], 'onRefresh');
+		} else {
+			throw new Error("RefreshControl not found for testing 'renders correctly and handles data refresh'");
+		}
+		
 		await waitFor(() => {
 			// Verify function calls
 			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
@@ -217,8 +224,13 @@ describe('HomeScreen', () => {
 		expect(showToastMock).not.toHaveBeenCalled();
 
 		// Trigger refresh
-		const refreshButton = getByTestId('refresh-button');
-		fireEvent.press(refreshButton);
+		const homeScreenComponentOnError = getByTestId('home-screen');
+		const refreshControlsOnError = homeScreenComponentOnError.findAllByType(RefreshControl);
+		if (refreshControlsOnError && refreshControlsOnError.length > 0) {
+			fireEvent(refreshControlsOnError[0], 'onRefresh');
+		} else {
+			throw new Error("RefreshControl not found for testing 'handles error states during refresh'");
+		}
 
 		await waitFor(() => {
 			// Verify error handling

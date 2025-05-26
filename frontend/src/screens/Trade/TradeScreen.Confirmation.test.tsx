@@ -1,4 +1,4 @@
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act, within } from '@testing-library/react-native'; // Added within
 import { mocked } from 'jest-mock';
 import TradeScreen from './index'; // The component under test
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
@@ -184,7 +184,8 @@ describe('TradeScreen Confirmation Behavior', () => {
 	it('handles trade confirmation flow correctly', async () => {
 		const mockFromAmount = '1';
 		const mockToAmount = '13636.36';
-		const mockFees = { priceImpactPct: '1.5', totalFee: '0.50' };
+		// Add gasFee to mockFees
+		const mockFees = { priceImpactPct: '1.5', totalFee: '0.50', gasFee: '0.005', exchangeRate: '13636.36' };
 
 		// Mock quote fetch
 		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
@@ -246,7 +247,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 
 		// 3. Open confirmation modal
 		await act(async () => {
-			fireEvent.press(getByText('Trade'));
+			fireEvent.press(getByTestId('trade-button')); 
 			jest.runOnlyPendingTimers();
 		});
 		await waitFor(() => {
@@ -256,13 +257,17 @@ describe('TradeScreen Confirmation Behavior', () => {
 		await waitFor(() => expect(queryByTestId('loading-spinner')).toBeNull());
 
 		// 4. Verify modal content
-		expect(await findByText(`${mockFromAmount} ${mockFromCoin.symbol}`)).toBeTruthy();
-		expect(await findByText('$150.0000')).toBeTruthy();
-		expect(await findByText(`${mockToAmount} ${mockToCoin.symbol}`)).toBeTruthy();
-		expect(await findByText('$1.5000')).toBeTruthy();
-		expect(await findByText(`${parseFloat(mockFees.priceImpactPct).toFixed(4)}%`)).toBeTruthy();
-		expect(await findByText(`$${mockFees.totalFee}`)).toBeTruthy();
-		expect(queryByText(/Warning: High price impact/)).toBeNull();
+		const modalContent = getByTestId('mock-modal-content'); // Assuming TradeConfirmation is rendered within this
+		expect(await within(modalContent).findByText(mockFromAmount)).toBeTruthy();
+		expect(await within(getByTestId('from-coin-details')).findByText(mockFromCoin.symbol)).toBeTruthy();
+		expect(await within(modalContent).findByText('$150.0000')).toBeTruthy();
+		expect(await within(modalContent).findByText(mockToAmount)).toBeTruthy();
+		expect(await within(getByTestId('to-coin-details')).findByText(mockToCoin.symbol)).toBeTruthy();
+		expect(await within(modalContent).findByText('$1.5000')).toBeTruthy();
+		expect(await within(getByTestId('fee-section')).findByText(`${parseFloat(mockFees.priceImpactPct).toFixed(4)}%`)).toBeTruthy();
+		expect(await within(getByTestId('fee-section')).findByText(`$${mockFees.totalFee}`)).toBeTruthy();
+		expect(within(modalContent).queryByText(/High price impact detected/i)).toBeNull();
+
 
 		// 5. Test cancel flow
 		await act(async () => {
@@ -275,7 +280,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 
 		// 6. Reopen modal and test confirm flow
 		await act(async () => {
-			fireEvent.press(getByText('Trade'));
+			fireEvent.press(getByTestId('trade-button')); // Use testID for clarity
 			jest.runOnlyPendingTimers();
 		});
 		await waitFor(() => {
@@ -362,7 +367,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
 
 		await act(async () => {
-			fireEvent.press(getByText('Trade'));
+			fireEvent.press(getByTestId('trade-button')); // Use testID for clarity
 			jest.runOnlyPendingTimers();
 		});
 		await waitFor(() => {
@@ -370,6 +375,6 @@ describe('TradeScreen Confirmation Behavior', () => {
 			expect([0, 2, 6, 12]).toContain(calls);
 		});
 
-		expect(await findByText(/Warning: High price impact/)).toBeTruthy();
+		expect(await findByText(/High price impact detected/i)).toBeTruthy(); // Updated regex
 	});
 }); 
