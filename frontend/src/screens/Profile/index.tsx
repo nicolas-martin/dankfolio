@@ -1,6 +1,6 @@
-import { useMemo, useState, useEffect } from 'react'; // Added useEffect
+import { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
-import { Text, useTheme, IconButton, Button } from 'react-native-paper';
+import { Text, useTheme, IconButton, Button, Icon } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
@@ -15,7 +15,7 @@ import {
 	CoinsIcon,
 	SendIcon
 } from '@components/Common/Icons';
-import { logger } from '@/utils/logger'; // Added logger
+import { logger } from '@/utils/logger';
 
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -54,17 +54,120 @@ const Profile = () => {
 		}
 	};
 
+	const renderHeader = () => (
+		<View style={styles.headerSection}>
+			<View style={styles.profileHeader}>
+				<View style={styles.profileIcon}>
+					<ProfileIcon size={28} color={theme.colors.onSurface} />
+				</View>
+				<Text style={styles.profileTitle}>Portfolio</Text>
+			</View>
+			{wallet && (
+				<View style={styles.walletAddressContainer}>
+					<Text style={styles.walletAddress}>
+						{formatAddress(wallet.address)}
+					</Text>
+					<IconButton
+						icon="content-copy"
+						size={16}
+						onPress={() => {
+							logger.breadcrumb({ category: 'ui', message: 'Copied wallet address to clipboard from ProfileScreen' });
+							copyToClipboard(wallet.address, 'Wallet', showToast);
+						}}
+						style={styles.copyButton}
+					/>
+				</View>
+			)}
+		</View>
+	);
+
+	const renderPortfolioCard = () => (
+		<View style={styles.portfolioCard}>
+			<View style={styles.portfolioHeader}>
+				<Text style={styles.portfolioTitle}>Total Portfolio Value</Text>
+				<Text style={styles.portfolioValue}>
+					${totalValue.toFixed(2)}
+				</Text>
+				<Text style={styles.portfolioSubtext}>
+					{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
+				</Text>
+			</View>
+			<Button
+				mode="contained"
+				icon={() => <SendIcon size={20} color={theme.colors.onPrimary} />}
+				onPress={() => {
+					logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
+					navigation.navigate('SendTokens');
+				}}
+				style={styles.sendButton}
+				contentStyle={styles.sendButtonContent}
+			>
+				Send Tokens
+			</Button>
+		</View>
+	);
+
+	const renderTokensSection = () => (
+		<View style={styles.tokensSection}>
+			<View style={styles.tokensHeader}>
+				<View style={styles.tokensIcon}>
+					<CoinsIcon size={24} color={theme.colors.onSurface} />
+				</View>
+				<Text style={styles.tokensTitle}>Your Tokens</Text>
+			</View>
+
+			{sortedTokens.length === 0 ? (
+				<View style={styles.emptyStateContainer}>
+					<View style={styles.emptyStateIcon}>
+						<Icon source="wallet-outline" size={48} color={theme.colors.onSurfaceVariant} />
+					</View>
+					<Text style={styles.emptyStateTitle}>No Tokens Found</Text>
+					<Text style={styles.emptyStateText}>
+						Your wallet doesn't contain any tokens yet. Start trading to build your portfolio!
+					</Text>
+				</View>
+			) : (
+				sortedTokens.map((token) => (
+					<CoinCard
+						key={token.mintAddress}
+						coin={{
+							...token.coin,
+							value: token.value,
+							balance: token.amount
+						}}
+						onPress={() => {
+							logger.breadcrumb({ 
+								category: 'ui', 
+								message: 'Pressed token card on ProfileScreen', 
+								data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress } 
+							});
+							handleTokenPress(token.coin, navigation.navigate);
+						}}
+					/>
+				))
+			)}
+		</View>
+	);
+
+	const renderNoWalletState = () => (
+		<View style={styles.noWalletContainer}>
+			<View style={styles.noWalletCard}>
+				<View style={styles.noWalletIcon}>
+					<WalletIcon size={48} color={theme.colors.primary} />
+				</View>
+				<Text style={styles.noWalletTitle}>No Wallet Connected</Text>
+				<Text style={styles.noWalletText}>
+					Connect your Solana wallet to view your portfolio and manage your tokens.
+				</Text>
+			</View>
+		</View>
+	);
+
 	if (!wallet) {
 		return (
 			<SafeAreaView style={styles.safeArea}>
-				<View style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
-					<WalletIcon size={48} color={theme.colors.onSurfaceVariant} />
-					<Text
-						variant="titleLarge"
-						style={{ color: theme.colors.onSurface, marginTop: 16 }}
-					>
-						No wallet data available
-					</Text>
+				<View style={[styles.container, styles.centered]}>
+					{renderNoWalletState()}
 				</View>
 			</SafeAreaView>
 		);
@@ -72,7 +175,7 @@ const Profile = () => {
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
-			<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+			<View style={styles.container}>
 				<ScrollView
 					contentContainerStyle={styles.scrollContent}
 					refreshControl={
@@ -85,90 +188,22 @@ const Profile = () => {
 					}
 				>
 					<View style={styles.contentPadding}>
-						<View style={styles.profileHeaderRow}>
-							<ProfileIcon size={32} color={theme.colors.onSurface} />
-							<View style={styles.profileHeaderTextContainer}>
-								<Text variant="headlineSmall" style={{ color: theme.colors.onSurface }}>
-									Profile
-								</Text>
-								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-									<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-										{formatAddress(wallet.address)}
-									</Text>
-									<IconButton
-										icon="content-copy"
-										size={16}
-										onPress={() => {
-											logger.breadcrumb({ category: 'ui', message: 'Copied wallet address to clipboard from ProfileScreen' });
-											copyToClipboard(wallet.address, 'Wallet', showToast);
-										}}
-										style={{ margin: 0, padding: 0, marginLeft: 4 }}
-									/>
-								</View>
-							</View>
-						</View>
-
-						<View style={[styles.card, styles.portfolioValueCard, { backgroundColor: theme.colors.surfaceVariant }]}>
-							<Text variant="titleLarge" style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
-								Portfolio Value
-							</Text>
-							<Text variant="displaySmall" style={{ color: theme.colors.onSurface }}>
-								${totalValue.toFixed(2)}
-							</Text>
-							<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-								{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
-							</Text>
-							<Button
-								mode="contained"
-								icon={() => <SendIcon size={20} color={theme.colors.onPrimary} />}
-								onPress={() => {
-									logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
-									navigation.navigate('SendTokens');
-								}}
-								style={{ marginTop: 16 }}
-							>
-								Send Tokens
-							</Button>
-						</View>
-
-						<View>
-							<View style={styles.yourTokensHeader}>
-								<CoinsIcon size={24} color={theme.colors.onSurface} />
-								<Text
-									variant="titleLarge"
-									style={[styles.tokenHeaderText, { color: theme.colors.onSurface }]}
-								>
-									Your Tokens
-								</Text>
-							</View>
-
-							{sortedTokens.length === 0 ? (
-								<Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 24 }}>
-									No tokens found in this wallet
-								</Text>
-							) : (
-								sortedTokens.map((token) => (
-									<View key={token.mintAddress}>
-										<CoinCard
-											coin={{
-												...token.coin,
-												value: token.value,
-												balance: token.amount
-											}}
-											onPress={() => {
-												logger.breadcrumb({ category: 'ui', message: 'Pressed token card on ProfileScreen', data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress } });
-												handleTokenPress(token.coin, navigation.navigate);
-											}}
-										/>
-									</View>
-								))
-							)}
-						</View>
+						{renderHeader()}
+						{renderPortfolioCard()}
+						{renderTokensSection()}
 					</View>
-					<Button onPress={() => { Sentry.captureException(new Error('First error')) }}>Send test sentry error</Button>
+					
+					{/* Debug button - temporary */}
+					<Button 
+						onPress={() => { Sentry.captureException(new Error('First error')) }}
+						style={styles.debugButton}
+					>
+						Send test sentry error
+					</Button>
 				</ScrollView>
 			</View>
 		</SafeAreaView>
 	);
 };
+
 export default Profile;
