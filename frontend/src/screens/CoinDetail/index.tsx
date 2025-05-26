@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { ActivityIndicator, Text, useTheme, Button, SegmentedButtons } from 'react-native-paper';
+import { ActivityIndicator, Text, useTheme, Button, SegmentedButtons, Icon } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import CoinChart from '@components/Chart/CoinChart';
@@ -93,6 +93,127 @@ const CoinDetail: React.FC = () => {
 		);
 	}
 
+	const renderPriceCard = () => {
+		if (!initialCoin || priceHistory.length < 2) return null;
+
+		return (
+			<View style={styles.priceCard}>
+				<PriceDisplay
+					price={displayData.currentPrice}
+					periodChange={displayData.periodChange}
+					valueChange={displayData.valueChange}
+					period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
+					iconUrl={initialCoin.iconUrl}
+					name={initialCoin.name}
+					address={initialCoin.mintAddress}
+					hoveredPoint={hoverPoint}
+				/>
+			</View>
+		);
+	};
+
+	const renderChartCard = () => {
+		return (
+			<View style={styles.chartContainer}>
+				<View style={{ marginHorizontal: 16 }}>
+					<CoinChart
+						data={priceHistory}
+						loading={loading}
+						activePoint={hoverPoint}
+						onHover={handleChartHover}
+					/>
+				</View>
+			</View>
+		);
+	};
+
+	const renderTimeframeCard = () => {
+		return (
+			<View style={styles.timeframeCard}>
+				<SegmentedButtons
+					value={selectedTimeframe}
+					onValueChange={value => {
+						logger.breadcrumb({
+							category: 'ui',
+							message: 'Selected timeframe on CoinDetailScreen',
+							data: { timeframe: value, coinSymbol: initialCoin?.symbol },
+						});
+						setSelectedTimeframe(value);
+					}}
+					buttons={TIMEFRAMES.map(tf => ({
+						value: tf.value,
+						label: tf.label
+					}))}
+					density="small"
+				/>
+			</View>
+		);
+	};
+
+	const renderHoldingsCard = () => {
+		if (!portfolioToken) return null;
+
+		return (
+			<View style={styles.holdingsCard}>
+				<View style={styles.holdingsHeader}>
+					<View style={styles.holdingsIcon}>
+						<Icon source="wallet" size={14} color={theme.colors.onPrimaryContainer} />
+					</View>
+					<Text style={styles.holdingsTitle}>Your Holdings</Text>
+				</View>
+				<View style={styles.holdingsContent}>
+					<View style={styles.holdingsRow}>
+						<Text style={styles.holdingsLabel}>Portfolio Value</Text>
+						<Text style={styles.holdingsValue}>
+							${portfolioToken.value.toFixed(4)}
+						</Text>
+					</View>
+					<View style={styles.holdingsRow}>
+						<Text style={styles.holdingsLabel}>Token Amount</Text>
+						<Text style={styles.holdingsValue}>
+							{portfolioToken.amount.toFixed(4)} {initialCoin?.symbol}
+						</Text>
+					</View>
+				</View>
+			</View>
+		);
+	};
+
+	const renderAboutCard = () => {
+		if (!initialCoin) {
+			return (
+				<View style={styles.aboutCard}>
+					<View style={styles.loadingContainer}>
+						<ActivityIndicator color={theme.colors.primary} />
+					</View>
+				</View>
+			);
+		}
+
+		return (
+			<View style={styles.aboutCard}>
+				<View style={styles.aboutHeader}>
+					<View style={styles.aboutIcon}>
+						<Icon source="information" size={14} color={theme.colors.onSecondaryContainer} />
+					</View>
+					<Text style={styles.aboutTitle}>About {initialCoin.name}</Text>
+				</View>
+				<CoinInfo
+					metadata={{
+						name: initialCoin.name,
+						description: initialCoin.description,
+						website: initialCoin.website,
+						twitter: initialCoin.twitter,
+						telegram: initialCoin.telegram,
+						dailyVolume: initialCoin.dailyVolume,
+						tags: initialCoin.tags || [],
+						symbol: initialCoin.symbol
+					}}
+				/>
+			</View>
+		);
+	};
+
 	return (
 		<SafeAreaView style={styles.container} testID="coin-detail-screen">
 			<View style={styles.content}>
@@ -100,95 +221,13 @@ const CoinDetail: React.FC = () => {
 					style={styles.scrollView}
 					contentContainerStyle={styles.scrollViewContent}
 					bounces={false}
+					showsVerticalScrollIndicator={false}
 				>
-					{initialCoin && priceHistory.length >= 2 && (
-						<View style={styles.priceDisplayContainer}>
-							<PriceDisplay
-								price={displayData.currentPrice}
-								periodChange={displayData.periodChange}
-								valueChange={displayData.valueChange}
-								period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
-								iconUrl={initialCoin.iconUrl}
-								name={initialCoin.name}
-								address={initialCoin.mintAddress}
-								hoveredPoint={hoverPoint}
-							/>
-						</View>
-					)}
-
-					<View style={{ marginHorizontal: 16 }}>
-						<CoinChart
-							data={priceHistory}
-							loading={loading}
-							activePoint={hoverPoint}
-							onHover={handleChartHover}
-						/>
-					</View>
-
-					<View style={styles.timeframeButtonsContainer}>
-						<SegmentedButtons
-							value={selectedTimeframe}
-							onValueChange={value => {
-								logger.breadcrumb({
-									category: 'ui',
-									message: 'Selected timeframe on CoinDetailScreen',
-									data: { timeframe: value, coinSymbol: initialCoin?.symbol },
-								});
-								setSelectedTimeframe(value);
-							}}
-							buttons={TIMEFRAMES.map(tf => ({
-								value: tf.value,
-								label: tf.label
-							}))}
-							density="small"
-						/>
-					</View>
-
-					{portfolioToken && (
-						<View style={styles.holdingsContainer}>
-							<Text style={styles.holdingsTitle}>
-								Your Holdings
-							</Text>
-							<View style={styles.holdingsDetails}>
-								<View style={styles.holdingsDetailRow}>
-									<Text style={styles.holdingsDetailLabel}>Value</Text>
-									<Text style={styles.holdingsDetailValue}>
-										${portfolioToken.value.toFixed(4)}
-									</Text>
-								</View>
-								<View style={styles.holdingsDetailRow}>
-									<Text style={styles.holdingsDetailLabel}>Quantity</Text>
-									<Text style={styles.holdingsDetailValue}>
-										{portfolioToken.amount.toFixed(4)} {initialCoin?.symbol}
-									</Text>
-								</View>
-							</View>
-						</View>
-					)}
-
-					{initialCoin ? (
-						<View style={styles.coinInfoContainer}>
-							<Text style={styles.holdingsTitle}>
-								About {initialCoin.name}
-							</Text>
-							<CoinInfo
-								metadata={{
-									name: initialCoin.name,
-									description: initialCoin.description,
-									website: initialCoin.website,
-									twitter: initialCoin.twitter,
-									telegram: initialCoin.telegram,
-									dailyVolume: initialCoin.dailyVolume,
-									tags: initialCoin.tags || [],
-									symbol: initialCoin.symbol
-								}}
-							/>
-						</View>
-					) : (
-						<View style={styles.loadingContainer}>
-							<ActivityIndicator color={theme.colors.primary} />
-						</View>
-					)}
+					{renderPriceCard()}
+					{renderChartCard()}
+					{renderTimeframeCard()}
+					{renderHoldingsCard()}
+					{renderAboutCard()}
 				</ScrollView>
 
 				{initialCoin && (
@@ -203,9 +242,10 @@ const CoinDetail: React.FC = () => {
 									navigation.navigate
 								);
 							}}
+							style={styles.tradeButton}
 							testID="trade-button"
 						>
-							Trade
+							Trade {initialCoin.symbol}
 						</Button>
 					</View>
 				)}

@@ -25,6 +25,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 
 	return (
 		<View style={styles.container}>
+			{/* Header with coin info */}
 			<View style={styles.headerRow}>
 				{isLoading ? (
 					<View style={[styles.icon, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -36,35 +37,33 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					<View style={styles.icon} />
 				)}
 				{name && (
-					<Text
-						variant="titleLarge"
-						style={[styles.nameText, { color: theme.colors.onSurface }]}
-					>
+					<Text style={styles.nameText}>
 						{name}
 					</Text>
 				)}
 			</View>
-			<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-				<Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+
+			{/* Address row */}
+			<View style={styles.addressRow}>
+				<Text style={styles.addressText}>
 					{formatAddress(address)}
 				</Text>
 				<IconButton
 					icon="content-copy"
 					size={16}
-					onPress={() => copyToClipboard(address, 'Wallet', showToast)}
-					style={{ margin: 0, padding: 0, marginLeft: 4 }}
+					onPress={() => copyToClipboard(address, 'Address', showToast)}
+					style={{ margin: 0, padding: 0, marginLeft: 8 }}
 				/>
 			</View>
 
-			<Text
-				variant="displaySmall"
-				style={[styles.priceText, { color: theme.colors.onSurface }]}
-			>
+			{/* Price */}
+			<Text style={[styles.priceText, { color: theme.colors.onSurface }]}>
 				{formattedPrice}
 			</Text>
+
+			{/* Change and period */}
 			<View style={styles.changeRow}>
 				<Text
-					variant="titleMedium"
 					style={[
 						styles.changeText,
 						isPositive ? styles.changePositive : styles.changeNegative
@@ -72,15 +71,14 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				>
 					{formattedChange}
 				</Text>
-				<Text
-					variant="bodyMedium"
-					style={[styles.periodText, { color: theme.colors.onSurfaceVariant }]}
-				>
+				<Text style={[styles.periodText, { color: theme.colors.onSurfaceVariant }]}>
 					{period}
 				</Text>
 			</View>
+
+			{/* Timestamp for hovered point */}
 			{/* {hoveredPoint && (
-				<Text variant="bodySmall" style={styles.timestampText}>
+				<Text style={styles.timestampText}>
 					{format(new Date(hoveredPoint.timestamp), "EEEE MMM d 'at' h:mm a")}
 				</Text>
 			)} */}

@@ -3,40 +3,61 @@ import { MD3Theme } from 'react-native-paper';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
-		padding: 16,
+		// Remove padding since it's now handled by the card
 	},
 	headerRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 8,
+		marginBottom: 12,
 	},
 	icon: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
+		width: 40,
+		height: 40,
+		borderRadius: 20,
 	},
 	nameText: {
-		marginLeft: 8,
+		marginLeft: 12,
+		fontSize: 20,
+		fontWeight: '600',
+	},
+	addressRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 20,
+	},
+	addressText: {
+		fontSize: 14,
+		color: theme.colors.onSurfaceVariant,
+		fontFamily: 'monospace',
 	},
 	priceText: {
 		marginBottom: 8,
+		fontSize: 32,
+		fontWeight: '700',
+		letterSpacing: -0.5,
 	},
 	changeRow: {
 		flexDirection: 'row',
-		alignItems: 'center',
+		alignItems: 'baseline',
+		gap: 8,
 	},
-	changeText: {},
+	changeText: {
+		fontSize: 16,
+		fontWeight: '600',
+	},
 	changePositive: {
-		color: '#4CAF50',
+		color: '#2E7D32',
 	},
 	changeNegative: {
-		color: '#F44336',
+		color: '#D32F2F',
 	},
 	periodText: {
-		marginLeft: 4,
+		fontSize: 14,
+		fontWeight: '500',
 	},
 	timestampText: {
-		marginTop: 4,
+		marginTop: 8,
+		fontSize: 12,
 		color: theme.colors.onSurfaceVariant,
 	},
 });
