@@ -39,16 +39,12 @@ type Config struct {
 	CacheExpiry       time.Duration
 	JupiterApiKey     string
 	JupiterApiUrl     string
-	AppEnv            string
+	Env               string
 	JWTSecret         string
 	TokenExpiry       time.Duration
 }
 
 func loadConfig() (*Config, error) {
-	// // Base URL for Jupiter API
-	// baseURL  = "https://api.jup.ag"
-	// lightURL = "https://lite-api.jup.ag"
-
 	// Load environment variables
 	if os.Getenv("APP_ENV") == "development" {
 		if err := godotenv.Load(); err != nil {
@@ -90,7 +86,7 @@ func loadConfig() (*Config, error) {
 		CacheExpiry:       cacheExpiry,
 		JupiterApiKey:     os.Getenv("JUPITER_API_KEY"),
 		JupiterApiUrl:     os.Getenv("JUPITER_API_URL"),
-		AppEnv:            os.Getenv("APP_ENV"),
+		Env:               os.Getenv("APP_ENV"),
 		JWTSecret:         os.Getenv("JWT_SECRET"),
 		TokenExpiry:       tokenExpiry,
 	}
@@ -101,7 +97,7 @@ func loadConfig() (*Config, error) {
 	if config.JWTSecret == "" {
 		missingVars = append(missingVars, "JWT_SECRET")
 	}
-	if config.AppEnv == "" {
+	if config.Env == "" {
 		missingVars = append(missingVars, "APP_ENV")
 	}
 	if config.SolanaRPCEndpoint == "" {
@@ -116,17 +112,11 @@ func loadConfig() (*Config, error) {
 	if config.DBURL == "" {
 		missingVars = append(missingVars, "DB_URL")
 	}
-	// if config.Env != "development" {
-	// 	if config.JupiterApiKey == "" {
-	// 		missingVars = append(missingVars, "JUPITER_API_KEY")
-	// 	}
-	// }
 	if config.JupiterApiUrl == "" {
 		missingVars = append(missingVars, "JUPITER_API_URL")
 	}
 
 	if len(missingVars) > 0 {
-		// Slog not configured yet
 		log.Fatalf("missing required environment variables: %v", missingVars)
 	}
 
@@ -144,9 +134,7 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// Determine log level and handler based on AppEnv from config
-	appEnvForLogging := config.AppEnv
-	if appEnvForLogging != "development" {
+	if config.Env != "development" {
 		logLevel = slog.LevelInfo
 		handler = slog.NewJSONHandler(os.Stdout, nil)
 	} else {
@@ -157,8 +145,7 @@ func main() {
 	slogger := slog.New(handler)
 	slog.SetDefault(slogger)
 
-
-	slog.Info("Configuration loaded successfully", "appEnv", config.AppEnv, "port", config.GRPCPort)
+	slog.Info("Configuration loaded successfully", "appEnv", config.Env, "port", config.GRPCPort)
 
 	// Initialize Firebase Admin SDK
 	ctx := context.Background()
@@ -206,7 +193,7 @@ func main() {
 		JWTSecret:      config.JWTSecret,
 		TokenExpiry:    config.TokenExpiry,
 		AppCheckClient: appCheckClient,
-		AppEnv:         config.AppEnv, // Pass AppEnv to auth service config
+		AppEnv:         config.Env, // Pass AppEnv to auth service config
 	}
 	authService, err := auth.NewService(authServiceConfig)
 	if err != nil {

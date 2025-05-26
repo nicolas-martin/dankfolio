@@ -21,41 +21,10 @@ type AppCheckClientInterface interface {
 	VerifyToken(token string) (*appcheck.DecodedAppCheckToken, error)
 }
 
-// Service handles authentication operations
-type Service struct {
-	jwtSecret      []byte
-	tokenExpiry    time.Duration
-	appCheckClient AppCheckClientInterface
-	appEnv         string // Renamed from backendAppEnv
-}
-
-// AuthClaims represents the JWT claims for device authentication
-type AuthClaims struct {
-	DeviceID string `json:"device_id"` // Derived from AppCheck token's Subject
-	Platform string `json:"platform"`
-	jwt.RegisteredClaims
-}
-
-// AuthenticatedUser represents an authenticated user context from the Application JWT
-type AuthenticatedUser struct {
-	DeviceID string
-	Platform string
-}
-
-// Config holds the configuration for the auth service
-type Config struct {
-	JWTSecret      string
-	TokenExpiry    time.Duration
-	AppCheckClient AppCheckClientInterface
-	AppEnv         string // Renamed from BackendAppEnv
-}
-
 // NewService creates a new authentication service
 func NewService(config *Config) (*Service, error) {
 	if config.AppCheckClient == nil {
-		slog.Warn("No AppCheck client provided to auth.NewService. App Check verification will be critically impaired.")
-		// Depending on strictness, might return an error:
-		// return nil, fmt.Errorf("AppCheckClient is required for auth.Service")
+		return nil, fmt.Errorf("AppCheckClient is required for auth.Service")
 	}
 
 	jwtSecret := []byte(config.JWTSecret)
@@ -133,7 +102,7 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 	slog.Info("Generated new application JWT after App Check verification",
 		"app_check_subject", deviceIDFromAppCheck,
 		"platform", claims.Platform,
-		"expires_at", claims.ExpiresAt.Time.Format(time.RFC3339))
+		"expires_at", claims.ExpiresAt.Format(time.RFC3339))
 
 	return &dankfoliov1.GenerateTokenResponse{
 		Token:     signedToken, // This is the application JWT
@@ -141,8 +110,94 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 	}, nil
 }
 
-// _validateDevTokenClaims performs specific checks on decoded dev token header and payload.
-func _validateDevTokenClaims(headerBytes []byte, payloadBytes []byte) (deviceID string, platform string, err error) {
+// ValidateToken parses and validates an application JWT token
+func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) {
+	if tokenString == "" {
+		return nil, fmt.Errorf("token string is empty")
+	}
+
+	if s.appEnv == "development" {
+		return validateDevToken(tokenString)
+	}
+
+	// Original HS256 validation logic
+	slog.Debug("Attempting to validate a standard HS256 token")
+	token, err := jwt.ParseWithClaims(tokenString, &AuthClaims{}, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.jwtSecret, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("application token invalid: %w", err)
+	}
+
+	claims, ok := token.Claims.(*AuthClaims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("application token claims invalid")
+	}
+
+	if claims.DeviceID == "" {
+		// This check can also use claims.Subject if DeviceID is not a custom claim
+		// but derived from Subject in AuthClaims as it is here.
+		return nil, fmt.Errorf("application token missing device identifier (from subject)")
+	}
+
+	// Note: jwt.ParseWithClaims already validates 'exp', 'iat', 'nbf' if RegisteredClaims is embedded.
+	// So, an explicit check claims.ExpiresAt.Time.Before(time.Now()) is somewhat redundant
+	// if token.Valid is true, but it doesn't hurt to keep for clarity or if specific error is needed.
+	// However, the error from ParseWithClaims (if due to expiry) would be more generic like "token is expired".
+	// If we want our specific message "application token is expired", this explicit check is useful.
+	if claims.ExpiresAt != nil && claims.ExpiresAt.Before(time.Now()) {
+		return nil, fmt.Errorf("application token is expired")
+	}
+	// Additional check to ensure subject (which becomes DeviceID) is present
+	if claims.Subject == "" {
+		return nil, fmt.Errorf("application token missing subject claim")
+	}
+
+	return &AuthenticatedUser{
+		DeviceID: claims.DeviceID, // This is claims.Subject due to struct definition
+		Platform: claims.Platform,
+	}, nil
+}
+
+func validateDevToken(tokenString string) (*AuthenticatedUser, error) {
+	parts := strings.Split(tokenString, ".")
+	if len(parts) == 3 && parts[2] == "dev-signature" {
+		slog.Debug("Attempting to validate a development token (appEnv=development)") // Updated log
+
+		headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
+		if err != nil {
+			slog.Warn("Failed to decode dev token header", "error", err)
+			return nil, fmt.Errorf("invalid dev token: failed to decode header: %w", err)
+		}
+
+		payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+		if err != nil {
+			slog.Warn("Failed to decode dev token payload", "error", err)
+			return nil, fmt.Errorf("invalid dev token: failed to decode payload: %w", err)
+		}
+
+		// Call the updated _validateDevTokenClaims function
+		deviceID, platform, err := validateDevTokenClaims(headerBytes, payloadBytes)
+		if err != nil {
+			// _validateDevTokenClaims already logs specifics for most cases
+			return nil, err
+		}
+
+		slog.Info("Successfully validated development token (appEnv=development)", "device_id", deviceID, "platform", platform) // Updated log
+		return &AuthenticatedUser{
+			DeviceID: deviceID,
+			Platform: platform,
+		}, nil
+	} else {
+		slog.Debug("Backend env is development, but token does not appear to be a dev-signature token. Proceeding to standard validation.") // Updated log
+	}
+	return nil, fmt.Errorf("invalid dev token: expected format 'header.payload.dev-signature', got '%s'", tokenString)
+}
+
+func validateDevTokenClaims(headerBytes []byte, payloadBytes []byte) (deviceID string, platform string, err error) {
 	var headerMap map[string]any
 	if errUnmarshal := json.Unmarshal(headerBytes, &headerMap); errUnmarshal != nil {
 		slog.Warn("Failed to unmarshal dev token header into map for _validateDevTokenClaims", "error", errUnmarshal)
@@ -199,96 +254,6 @@ func _validateDevTokenClaims(headerBytes []byte, payloadBytes []byte) (deviceID 
 	if !subOk || subClaim == "" || subClaim != deviceIDStr {
 		slog.Warn("Dev token 'sub' claim does not match 'device_id', is empty, or missing during map validation", "sub", subClaim, "device_id", deviceIDStr)
 	}
-	
+
 	return deviceIDStr, platformStr, nil
 }
-
-// ValidateToken parses and validates an application JWT token
-func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) {
-	if tokenString == "" {
-		return nil, fmt.Errorf("token string is empty")
-	}
-
-	if s.appEnv == "development" { // Condition changed to appEnv and "development"
-		parts := strings.Split(tokenString, ".")
-		if len(parts) == 3 && parts[2] == "dev-signature" {
-			slog.Debug("Attempting to validate a development token (appEnv=development)") // Updated log
-
-			headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
-			if err != nil {
-				slog.Warn("Failed to decode dev token header", "error", err)
-				return nil, fmt.Errorf("invalid dev token: failed to decode header: %w", err)
-			}
-
-			payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
-			if err != nil {
-				slog.Warn("Failed to decode dev token payload", "error", err)
-				return nil, fmt.Errorf("invalid dev token: failed to decode payload: %w", err)
-			}
-
-			// Call the updated _validateDevTokenClaims function
-			deviceID, platform, err := _validateDevTokenClaims(headerBytes, payloadBytes)
-			if err != nil {
-				// _validateDevTokenClaims already logs specifics for most cases
-				return nil, err
-			}
-
-			slog.Info("Successfully validated development token (appEnv=development)", "device_id", deviceID, "platform", platform) // Updated log
-			return &AuthenticatedUser{
-				DeviceID: deviceID,
-				Platform: platform,
-			}, nil
-		} else {
-			slog.Debug("Backend env is development, but token does not appear to be a dev-signature token. Proceeding to standard validation.") // Updated log
-		}
-	} else {
-		// This is the block for s.appEnv != "development"
-		parts := strings.Split(tokenString, ".")
-		if len(parts) == 3 && parts[2] == "dev-signature" {
-			slog.Warn("Dev-signature token encountered in non-development backend environment. Token will be processed by standard validation and should be rejected.", "appEnv", s.appEnv) // Updated log
-		}
-	}
-
-	// Original HS256 validation logic
-	slog.Debug("Attempting to validate a standard HS256 token")
-	token, err := jwt.ParseWithClaims(tokenString, &AuthClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return s.jwtSecret, nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("application token invalid: %w", err)
-	}
-
-	claims, ok := token.Claims.(*AuthClaims)
-	if !ok || !token.Valid {
-		return nil, fmt.Errorf("application token claims invalid")
-	}
-
-	if claims.DeviceID == "" {
-		// This check can also use claims.Subject if DeviceID is not a custom claim
-		// but derived from Subject in AuthClaims as it is here.
-		return nil, fmt.Errorf("application token missing device identifier (from subject)")
-	}
-
-	// Note: jwt.ParseWithClaims already validates 'exp', 'iat', 'nbf' if RegisteredClaims is embedded.
-	// So, an explicit check claims.ExpiresAt.Time.Before(time.Now()) is somewhat redundant
-	// if token.Valid is true, but it doesn't hurt to keep for clarity or if specific error is needed.
-	// However, the error from ParseWithClaims (if due to expiry) would be more generic like "token is expired".
-	// If we want our specific message "application token is expired", this explicit check is useful.
-	if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
-		return nil, fmt.Errorf("application token is expired")
-	}
-	// Additional check to ensure subject (which becomes DeviceID) is present
-	if claims.Subject == "" {
-		return nil, fmt.Errorf("application token missing subject claim")
-	}
-
-
-	return &AuthenticatedUser{
-		DeviceID: claims.DeviceID, // This is claims.Subject due to struct definition
-		Platform: claims.Platform,
-	}, nil
-}
-// No changes needed for this part, it was moved into the new structure.
