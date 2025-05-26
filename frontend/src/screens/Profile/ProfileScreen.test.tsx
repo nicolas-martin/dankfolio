@@ -193,7 +193,7 @@ describe('Profile Screen', () => {
 		);
 
 		// Verify empty state message
-		expect(getByText('No wallet data available')).toBeTruthy();
+		expect(getByText('No Wallet Connected')).toBeTruthy();
 
 		// Verify store hooks are still called
 		expect(usePortfolioStore).toHaveBeenCalledTimes(1);

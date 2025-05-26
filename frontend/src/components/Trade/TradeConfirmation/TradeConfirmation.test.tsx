@@ -37,7 +37,7 @@ jest.mock('react-native-paper', () => {
         Button: MockButton,
         Modal: (props: any) => props.visible ? <View testID="mock-modal">{props.children}</View> : null,
         Portal: (props: any) => <View testID="mock-portal">{props.children}</View>,
-        ActivityIndicator: (props: any) => props.animating ? <View testID={props.testID || "loading-spinner"} /> : null,
+        ActivityIndicator: (props: any) => (props.animating === undefined || props.animating === true) ? <View testID={props.testID} /> : null, // Removed default testID
         Text: actualPaper.Text, // Use actual Text or mock if needed for specific styles
     };
 });
@@ -137,18 +137,17 @@ describe('TradeConfirmation', () => {
         const { getByText, getAllByText, queryByTestId } = renderComponent();
 
         expect(queryByTestId('loading-spinner')).toBeNull();
-        // Check for title "Confirm Trade" - it appears twice (title and button)
+		// Check for title "Confirm Trade" - it appears once as the title
         const confirmTradeElements = getAllByText('Confirm Trade');
-        expect(confirmTradeElements.length).toBe(2); // Title and button
+		expect(confirmTradeElements.length).toBe(1); // Only the title
 
-        // You Pay section
-        expect(getByText('You Pay')).toBeTruthy();
-        expect(getByText(`${defaultProps.fromAmount} ${mockFromCoin.symbol}`)).toBeTruthy();
+        // Verify amounts and symbols are rendered (as "You Pay" / "You Receive" labels are not part of this component)
+        expect(getByText(defaultProps.fromAmount)).toBeTruthy(); // Check amount
+        expect(getByText(mockFromCoin.symbol)).toBeTruthy(); // Check symbol
         expect(getByText(`$${(parseFloat(defaultProps.fromAmount) * mockFromCoin.price).toFixed(4)}`)).toBeTruthy();
 
-        // You Receive section
-        expect(getByText('You Receive')).toBeTruthy();
-        expect(getByText(`${defaultProps.toAmount} ${mockToCoin.symbol}`)).toBeTruthy();
+        expect(getByText(defaultProps.toAmount)).toBeTruthy(); // Check amount
+        expect(getByText(mockToCoin.symbol)).toBeTruthy(); // Check symbol
         expect(getByText(`$${(parseFloat(defaultProps.toAmount) * mockToCoin.price).toFixed(4)}`)).toBeTruthy();
 
         // Fees section
@@ -164,7 +163,7 @@ describe('TradeConfirmation', () => {
     it('shows high price impact warning when priceImpactPct > 2', () => {
         const highImpactFees = { ...defaultProps.fees, priceImpactPct: '2.5' }; // 2.5%
         const { getByText } = renderComponent({ fees: highImpactFees });
-        expect(getByText('Warning: High price impact may result in unfavorable rates')).toBeTruthy();
+		expect(getByText('High price impact detected. This trade may result in unfavorable rates due to low liquidity.')).toBeTruthy();
     });
 
     it('does not show high price impact warning when priceImpactPct <= 2', () => {

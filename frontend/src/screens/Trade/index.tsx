@@ -464,6 +464,7 @@ const Trade: React.FC = () => {
 								style={styles.swapButton}
 								onPress={handleSwapCoins}
 								disabled={!fromCoin || !toCoin}
+								testID="swap-coins-button" // Added testID
 							>
 								<Icon 
 									source="swap-vertical" 

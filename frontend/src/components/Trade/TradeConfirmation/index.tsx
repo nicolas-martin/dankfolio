@@ -54,9 +54,10 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 	const renderTradeCard = (
 		coin: Coin,
-		amount: string
+		amount: string,
+		cardTestID: string // New parameter for testID
 	) => (
-		<View style={styles.tradeCard}>
+		<View style={styles.tradeCard} testID={cardTestID}> {/* Apply testID here */}
 			<View style={styles.amountRow}>
 				<View style={styles.tokenInfo}>
 					<CoinIcon coin={coin} />
@@ -74,7 +75,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 	const renderTradeCardsWithSwap = () => (
 		<View style={styles.tradeCardsContainer}>
-			{renderTradeCard(fromCoin!, fromAmount)}
+			{renderTradeCard(fromCoin!, fromAmount, "from-coin-details")} {/* Pass testID */}
 
 			{/* Swap Icon */}
 			<View style={styles.swapIconContainer}>
@@ -85,12 +86,12 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				/>
 			</View>
 
-			{renderTradeCard(toCoin!, toAmount)}
+			{renderTradeCard(toCoin!, toAmount, "to-coin-details")} {/* Pass testID */}
 		</View>
 	);
 
 	const renderExchangeSection = () => (
-		<View style={styles.exchangeSection}>
+		<View style={styles.exchangeSection} testID="exchange-rate-section"> {/* Apply testID here */}
 			<View style={styles.exchangeHeader}>
 				<View style={styles.exchangeIcon}>
 					<Icon
@@ -109,7 +110,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		const roundedPriceImpact = parseFloat(fees.priceImpactPct).toFixed(4);
 
 		return (
-			<View style={styles.feeSection}>
+			<View style={styles.feeSection} testID="fee-section"> {/* Apply testID here */}
 				<Text style={styles.feeHeader}>Transaction Details</Text>
 
 				<View style={styles.feeRow}>
@@ -162,7 +163,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						<Text style={styles.subtitle}>Loading trade details...</Text>
 					</View>
 					<View style={styles.loadingContainer}>
-						<ActivityIndicator size="large" color={theme.colors.primary} />
+					<ActivityIndicator size="large" color={theme.colors.primary} testID="loading-spinner" />
 						<Text style={styles.loadingText}>Preparing your trade</Text>
 					</View>
 				</Modal>
