@@ -8,13 +8,17 @@ import { Coin, Wallet, RawWalletData, Base58PrivateKey } from '@/types';
 import { View, Text, TextInput } from 'react-native';
 
 // --- Mock Data (Copied from original file) ---
+// Use consistent mocked prices for predictable test results
+const MOCK_SOL_PRICE = 150.0;
+const MOCK_WEN_PRICE = 0.00011;
+
 const mockFromCoin: Coin = {
 	mintAddress: "So11111111111111111111111111111111111111112",
 	name: "Solana",
 	symbol: "SOL",
 	iconUrl: "sol_icon_url",
 	decimals: 9,
-	price: 150.0,
+	price: MOCK_SOL_PRICE,
 	description: "Solana Blockchain",
 	website: "https://solana.com",
 	twitter: "https://twitter.com/solana",
@@ -29,7 +33,7 @@ const mockToCoin: Coin = {
 	symbol: "WEN",
 	iconUrl: "wen_icon_url",
 	decimals: 5,
-	price: 0.00011,
+	price: MOCK_WEN_PRICE,
 	description: "WEN",
 	website: "https://wen-foundation.org",
 	twitter: "https://twitter.com/wenwencoin",
@@ -113,6 +117,7 @@ jest.mock('./trade_scripts', () => {
 		...originalModule,
 		fetchTradeQuote: jest.fn(),
 		executeTrade: jest.fn(),
+		getCoinPrices: jest.fn(),
 	};
 });
 jest.mock('@/services/solana', () => ({
@@ -164,15 +169,22 @@ describe('TradeScreen Confirmation Behavior', () => {
 		mockPortfolioStoreReturn.tokens = [mockFromPortfolioToken];
 		Object.values(mockPortfolioStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 		Object.values(mockCoinStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
+		// Mock consistent prices for predictable test results
 		mockCoinStoreReturn.getCoinByID.mockImplementation(async (id, forceRefresh) => {
-			if (id === mockFromCoin.mintAddress) return { ...mockFromCoin, price: 150.0 };
-			if (id === mockToCoin.mintAddress) return { ...mockToCoin, price: 0.00011 };
+			if (id === mockFromCoin.mintAddress) return { ...mockFromCoin, price: MOCK_SOL_PRICE };
+			if (id === mockToCoin.mintAddress) return { ...mockToCoin, price: MOCK_WEN_PRICE };
 			return null;
+		});
+		// Mock getCoinPrices API call to return consistent prices
+		(TradeScripts.getCoinPrices as jest.Mock).mockResolvedValue({
+			[mockFromCoin.mintAddress]: MOCK_SOL_PRICE,
+			[mockToCoin.mintAddress]: MOCK_WEN_PRICE,
 		});
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
-		mockRoute.params.initialFromCoin = mockFromCoin;
-		mockRoute.params.initialToCoin = mockToCoin;
+		// Use coins with mocked prices for initial route params
+		mockRoute.params.initialFromCoin = { ...mockFromCoin, price: MOCK_SOL_PRICE };
+		mockRoute.params.initialToCoin = { ...mockToCoin, price: MOCK_WEN_PRICE };
 	});
 
 	afterEach(() => {
@@ -256,14 +268,18 @@ describe('TradeScreen Confirmation Behavior', () => {
 		});
 		await waitFor(() => expect(queryByTestId('loading-spinner')).toBeNull());
 
-		// 4. Verify modal content
-		const modalContent = getByTestId('mock-modal-content'); // Assuming TradeConfirmation is rendered within this
+		// 4. Verify modal content with mocked values
+		const modalContent = getByTestId('mock-modal-content');
 		expect(await within(modalContent).findByText(mockFromAmount)).toBeTruthy();
 		expect(await within(getByTestId('from-coin-details')).findByText(mockFromCoin.symbol)).toBeTruthy();
-		expect(await within(modalContent).findByText('$150.0000')).toBeTruthy();
+		// SOL: 1 * $150.0 = $150.0000
+		const expectedFromValue = `$${(parseFloat(mockFromAmount) * MOCK_SOL_PRICE).toFixed(4)}`;
+		expect(await within(getByTestId('from-coin-details')).findByText(expectedFromValue)).toBeTruthy();
 		expect(await within(modalContent).findByText(mockToAmount)).toBeTruthy();
 		expect(await within(getByTestId('to-coin-details')).findByText(mockToCoin.symbol)).toBeTruthy();
-		expect(await within(modalContent).findByText('$1.5000')).toBeTruthy();
+		// WEN: 13636.36 * $0.00011 = $1.5000
+		const expectedToValue = `$${(parseFloat(mockToAmount) * MOCK_WEN_PRICE).toFixed(4)}`;
+		expect(await within(getByTestId('to-coin-details')).findByText(expectedToValue)).toBeTruthy();
 		expect(await within(getByTestId('fee-section')).findByText(`${parseFloat(mockFees.priceImpactPct).toFixed(4)}%`)).toBeTruthy();
 		expect(await within(getByTestId('fee-section')).findByText(`$${mockFees.totalFee}`)).toBeTruthy();
 		expect(within(modalContent).queryByText(/High price impact detected/i)).toBeNull();
