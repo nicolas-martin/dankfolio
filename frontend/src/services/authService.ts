@@ -1,7 +1,7 @@
 import { authManager, AuthToken } from './grpc/authManager';
 import { authClient } from '@/services/grpc/apiClient';
 import { logger as log } from '@/utils/logger';
-import { DEBUG_MODE } from '@env';
+import { DEBUG_MODE, APP_ENV } from '@env';
 import { getAppCheckInstance } from '@/services/firebaseInit';
 import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check'; // Import AppCheckError if needed for specific error handling
 
@@ -110,6 +110,14 @@ class AuthService {
    * Internal method to perform the actual token refresh
    */
   private async _performTokenRefresh(): Promise<void> {
+    if (APP_ENV === 'local') {
+      log.warn('🔐 APP_ENV is "local": Bypassing Firebase App Check and generating a local dev token.');
+      const devTokenResponse = this.generateDevelopmentToken(AuthService.DEV_APP_CHECK_SUBJECT);
+      await authManager.setToken({ token: devTokenResponse.token, expiresAt: new Date(Date.now() + devTokenResponse.expiresIn * 1000) });
+      log.info('🔐 Local dev token generated and set.');
+      return;
+    }
+
     try {
       log.info('🔐 Requesting new application token using App Check...');
 

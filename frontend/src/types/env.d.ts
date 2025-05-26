@@ -1,5 +1,7 @@
 declare module '@env' {
 	export const DEBUG_MODE: string;
+	// Application Environment
+	export const APP_ENV: string; // e.g., "local", "development", "staging", "production"
 	export const TEST_PRIVATE_KEY: string;
 	export const REACT_APP_API_URL: string;
 	export const REACT_APP_JUPITER_API_URL: string;

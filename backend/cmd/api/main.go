@@ -39,7 +39,7 @@ type Config struct {
 	CacheExpiry       time.Duration
 	JupiterApiKey     string
 	JupiterApiUrl     string
-	Env               string
+	AppEnv            string
 	JWTSecret         string
 	TokenExpiry       time.Duration
 }
@@ -90,7 +90,7 @@ func loadConfig() (*Config, error) {
 		CacheExpiry:       cacheExpiry,
 		JupiterApiKey:     os.Getenv("JUPITER_API_KEY"),
 		JupiterApiUrl:     os.Getenv("JUPITER_API_URL"),
-		Env:               os.Getenv("APP_ENV"),
+		AppEnv:            os.Getenv("APP_ENV"),
 		JWTSecret:         os.Getenv("JWT_SECRET"),
 		TokenExpiry:       tokenExpiry,
 	}
@@ -101,7 +101,7 @@ func loadConfig() (*Config, error) {
 	if config.JWTSecret == "" {
 		missingVars = append(missingVars, "JWT_SECRET")
 	}
-	if config.Env == "" {
+	if config.AppEnv == "" {
 		missingVars = append(missingVars, "APP_ENV")
 	}
 	if config.SolanaRPCEndpoint == "" {
@@ -135,26 +135,30 @@ func loadConfig() (*Config, error) {
 
 func main() {
 	logLevel := slog.LevelDebug
-	var handler slog.Handler
-	handler = logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
+	var handler slog.Handler // Handler will be set after config is loaded
 
-	if os.Getenv("APP_ENV") != "development" {
+	// Load and validate configuration
+	config, err := loadConfig()
+	if err != nil {
+		// Use standard log here as slog might not be initialized if config loading fails early
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Determine log level and handler based on AppEnv from config
+	appEnvForLogging := config.AppEnv
+	if appEnvForLogging != "development" {
 		logLevel = slog.LevelInfo
 		handler = slog.NewJSONHandler(os.Stdout, nil)
+	} else {
+		handler = logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
 	}
 
 	// Create color handler and set it as default
 	slogger := slog.New(handler)
 	slog.SetDefault(slogger)
 
-	// Load and validate configuration
-	config, err := loadConfig()
-	if err != nil {
-		slog.Error("Failed to load configuration", slog.Any("error", err))
-		os.Exit(1)
-	}
 
-	slog.Info("Configuration loaded successfully", "env", config.Env, "port", config.GRPCPort)
+	slog.Info("Configuration loaded successfully", "appEnv", config.AppEnv, "port", config.GRPCPort)
 
 	// Initialize Firebase Admin SDK
 	ctx := context.Background()
@@ -202,6 +206,7 @@ func main() {
 		JWTSecret:      config.JWTSecret,
 		TokenExpiry:    config.TokenExpiry,
 		AppCheckClient: appCheckClient,
+		AppEnv:         config.AppEnv, // Pass AppEnv to auth service config
 	}
 	authService, err := auth.NewService(authServiceConfig)
 	if err != nil {
