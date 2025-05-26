@@ -6,6 +6,7 @@ import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
 import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
 import { useTheme } from 'react-native-paper';
+import { Platform } from 'react-native';
 
 // Import screens
 import Home from '@screens/Home';
@@ -26,12 +27,26 @@ const TabNavigator = () => {
 			initialRouteName="Home"
 			shifting={false}
 			activeColor={theme.colors.primary}
-			inactiveColor={theme.colors.outline}
+			inactiveColor={theme.colors.onSurfaceVariant}
 			barStyle={{
 				backgroundColor: theme.colors.surface,
-				borderTopWidth: 1,
-				borderTopColor: theme.colors.outlineVariant,
-				height: 100,
+				borderTopWidth: 0,
+				elevation: 8,
+				height: Platform.select({
+					ios: 88,
+					android: 80,
+				}),
+				...Platform.select({
+					ios: {
+						shadowColor: '#000',
+						shadowOffset: { width: 0, height: -2 },
+						shadowOpacity: 0.1,
+						shadowRadius: 8,
+					},
+					android: {
+						elevation: 8,
+					},
+				}),
 			}}
 			labeled={true}
 			theme={theme}
@@ -41,23 +56,29 @@ const TabNavigator = () => {
 				component={Home}
 				options={{
 					tabBarLabel: 'Home',
-					tabBarIcon: ({ color }: { color: string }) => <HomeIcon color={color} size={24} />,
+					tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+						<HomeIcon color={color} size={focused ? 26 : 22} />
+					),
 				}}
 			/>
 			<Tab.Screen
 				name="Search"
 				component={Search}
 				options={{
-					tabBarLabel: 'Search',
-					tabBarIcon: ({ color }: { color: string }) => <SearchIcon color={color} size={24} />,
+					tabBarLabel: 'Explore',
+					tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+						<SearchIcon color={color} size={focused ? 26 : 22} />
+					),
 				}}
 			/>
 			<Tab.Screen
 				name="Profile"
 				component={Profile}
 				options={{
-					tabBarLabel: 'Profile',
-					tabBarIcon: ({ color }: { color: string }) => <ProfileIcon color={color} size={24} />,
+					tabBarLabel: 'Portfolio',
+					tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+						<ProfileIcon color={color} size={focused ? 26 : 22} />
+					),
 				}}
 			/>
 		</Tab.Navigator>
