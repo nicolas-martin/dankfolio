@@ -141,57 +141,66 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 	}, nil
 }
 
-// DevTokenHeader represents the header of a development token
-type DevTokenHeader struct {
-	Alg string `json:"alg"`
-	Typ string `json:"typ"`
-}
-
-// DevTokenPayload represents the payload of a development token
-type DevTokenPayload struct {
-	Sub      string `json:"sub"`
-	DeviceID string `json:"device_id"`
-	Platform string `json:"platform"`
-	Iat      int64  `json:"iat"`
-	Exp      int64  `json:"exp"`
-	Dev      bool   `json:"dev"`
-	Iss      string `json:"iss"`
-}
-
 // _validateDevTokenClaims performs specific checks on decoded dev token header and payload.
-func _validateDevTokenClaims(headerBytes []byte, payloadBytes []byte) (*DevTokenPayload, error) {
-	var header DevTokenHeader
-	if err := json.Unmarshal(headerBytes, &header); err != nil {
-		slog.Warn("Failed to unmarshal dev token header for _validateDevTokenClaims", "error", err)
-		return nil, fmt.Errorf("invalid dev token: failed to unmarshal header: %w", err)
+func _validateDevTokenClaims(headerBytes []byte, payloadBytes []byte) (deviceID string, platform string, err error) {
+	var headerMap map[string]any
+	if errUnmarshal := json.Unmarshal(headerBytes, &headerMap); errUnmarshal != nil {
+		slog.Warn("Failed to unmarshal dev token header into map for _validateDevTokenClaims", "error", errUnmarshal)
+		// Return empty strings for deviceID and platform along with the error
+		return "", "", fmt.Errorf("invalid dev token: failed to unmarshal header: %w", errUnmarshal)
 	}
 
-	var payload DevTokenPayload
-	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
-		slog.Warn("Failed to unmarshal dev token payload for _validateDevTokenClaims", "error", err)
-		return nil, fmt.Errorf("invalid dev token: failed to unmarshal payload: %w", err)
+	var payloadMap map[string]any
+	if errUnmarshal := json.Unmarshal(payloadBytes, &payloadMap); errUnmarshal != nil {
+		slog.Warn("Failed to unmarshal dev token payload into map for _validateDevTokenClaims", "error", errUnmarshal)
+		return "", "", fmt.Errorf("invalid dev token: failed to unmarshal payload: %w", errUnmarshal)
 	}
 
-	if header.Alg != "DEV" {
-		return nil, fmt.Errorf("invalid dev token: incorrect algorithm, expected DEV, got %s", header.Alg)
+	// Validate header algorithm
+	alg, ok := headerMap["alg"].(string)
+	if !ok || alg != "DEV" {
+		return "", "", fmt.Errorf("invalid dev token: incorrect or missing 'alg' in header, expected 'DEV', got '%v'", headerMap["alg"])
 	}
-	if !payload.Dev {
-		return nil, fmt.Errorf("invalid dev token: 'dev' claim is not true")
+
+	// Validate 'dev' claim in payload
+	devClaim, ok := payloadMap["dev"].(bool)
+	if !ok || !devClaim {
+		return "", "", fmt.Errorf("invalid dev token: 'dev' claim in payload is missing, not a boolean, or not true")
 	}
-	if payload.Iss != "dankfolio-app-dev" {
-		return nil, fmt.Errorf("invalid dev token: incorrect issuer, expected dankfolio-app-dev, got %s", payload.Iss)
+
+	// Validate 'iss' claim in payload
+	iss, ok := payloadMap["iss"].(string)
+	if !ok || iss != "dankfolio-app-dev" {
+		return "", "", fmt.Errorf("invalid dev token: incorrect or missing 'iss' in payload, expected 'dankfolio-app-dev', got '%v'", payloadMap["iss"])
 	}
-	if payload.Exp <= time.Now().Unix() {
-		return nil, fmt.Errorf("invalid dev token: expired (exp: %d, now: %d)", payload.Exp, time.Now().Unix())
+
+	// Validate 'exp' claim in payload
+	expFloat, ok := payloadMap["exp"].(float64) // JSON numbers are float64 by default
+	if !ok {
+		// It's crucial to return here if 'exp' is not a number, to avoid panic in int64 conversion.
+		return "", "", fmt.Errorf("invalid dev token: 'exp' claim in payload is missing or not a number")
 	}
-	if payload.DeviceID == "" {
-		return nil, fmt.Errorf("invalid dev token: 'device_id' claim is empty")
+	exp := int64(expFloat) // Convert float64 to int64 for time comparison
+	if exp <= time.Now().Unix() {
+		return "", "", fmt.Errorf("invalid dev token: expired (exp: %d, now: %d)", exp, time.Now().Unix())
 	}
-	// Optional: Log 'sub' claim discrepancies but don't make it a validation failure by default.
-	if payload.Sub == "" || payload.Sub != payload.DeviceID {
-		slog.Warn("Dev token 'sub' claim does not match 'device_id' or is empty during _validateDevTokenClaims", "sub", payload.Sub, "device_id", payload.DeviceID)
+
+	// Validate and extract 'device_id' claim from payload
+	deviceIDStr, ok := payloadMap["device_id"].(string)
+	if !ok || deviceIDStr == "" {
+		return "", "", fmt.Errorf("invalid dev token: 'device_id' claim in payload is missing, not a string, or empty")
 	}
-	return &payload, nil
+
+	// Extract 'platform' claim from payload (optional, can be empty, defaults to empty string if missing/wrong type)
+	platformStr, _ := payloadMap["platform"].(string)
+
+	// Optional: Log 'sub' claim discrepancies from payload
+	subClaim, subOk := payloadMap["sub"].(string)
+	if !subOk || subClaim == "" || subClaim != deviceIDStr {
+		slog.Warn("Dev token 'sub' claim does not match 'device_id', is empty, or missing during map validation", "sub", subClaim, "device_id", deviceIDStr)
+	}
+	
+	return deviceIDStr, platformStr, nil
 }
 
 // ValidateToken parses and validates an application JWT token
@@ -217,16 +226,17 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 				return nil, fmt.Errorf("invalid dev token: failed to decode payload: %w", err)
 			}
 
-			validatedPayload, err := _validateDevTokenClaims(headerBytes, payloadBytes)
+			// Call the updated _validateDevTokenClaims function
+			deviceID, platform, err := _validateDevTokenClaims(headerBytes, payloadBytes)
 			if err != nil {
-				// _validateDevTokenClaims already logs specifics
+				// _validateDevTokenClaims already logs specifics for most cases
 				return nil, err
 			}
 
-			slog.Info("Successfully validated development token (appEnv=development)", "device_id", validatedPayload.DeviceID, "platform", validatedPayload.Platform) // Updated log
+			slog.Info("Successfully validated development token (appEnv=development)", "device_id", deviceID, "platform", platform) // Updated log
 			return &AuthenticatedUser{
-				DeviceID: validatedPayload.DeviceID,
-				Platform: validatedPayload.Platform,
+				DeviceID: deviceID,
+				Platform: platform,
 			}, nil
 		} else {
 			slog.Debug("Backend env is development, but token does not appear to be a dev-signature token. Proceeding to standard validation.") // Updated log
