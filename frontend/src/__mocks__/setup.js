@@ -1,3 +1,5 @@
+process.env.REACT_APP_API_URL = 'http://mock.api.url';
+
 // Jest setup file for polyfills and globals
 
 // Add Buffer polyfill for Node.js compatibility

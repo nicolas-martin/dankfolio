@@ -1,9 +1,6 @@
 // frontend/src/__mocks__/env.ts
 // Mock environment variables for Jest tests
 
-if (!process.env.REACT_APP_API_URL) {
-  process.env.REACT_APP_API_URL = 'http://mock-api.test-from-mock-file';
-}
-
-export const REACT_APP_API_URL = process.env.REACT_APP_API_URL;
-export const DEBUG_MODE = 'true'; // Set to development mode for tests to enable fallback behavior
+export const REACT_APP_API_URL = 'http://mock-api.url-from-env-mock-file'; // Directly export a string
+export const DEBUG_MODE = 'true'; // Or 'false', or make it configurable if tests need to vary it
+export const APP_ENV = 'test'; // Provide a default APP_ENV for tests
