@@ -12,6 +12,7 @@ export interface Coin {
 	price: number;
 	balance?: number;
 	dailyVolume: number;
+	change24h?: number;
 	website?: string;
 	twitter?: string;
 	telegram?: string;
