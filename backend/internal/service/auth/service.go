@@ -3,12 +3,12 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64" // For dev token
+	"encoding/base64"
 	"encoding/hex"
-	"encoding/json" // For dev token
+	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strings" // For dev token
+	"strings"
 	"time"
 
 	"firebase.google.com/go/v4/appcheck"
@@ -46,10 +46,10 @@ func NewService(config *Config) (*Service, error) {
 		jwtSecret:      jwtSecret,
 		tokenExpiry:    tokenExpiry,
 		appCheckClient: config.AppCheckClient,
-		appEnv:         config.AppEnv, // Renamed field
+		env:            config.Env, // Renamed field
 	}
 
-	slog.Info("AuthService initialized", "appEnv", s.appEnv, "tokenExpiry", s.tokenExpiry) // Updated log key
+	slog.Info("AuthService initialized", "appEnv", s.env, "tokenExpiry", s.tokenExpiry) // Updated log key
 
 	return s, nil
 }
@@ -116,7 +116,7 @@ func (s *Service) ValidateToken(tokenString string) (*AuthenticatedUser, error) 
 		return nil, fmt.Errorf("token string is empty")
 	}
 
-	if s.appEnv == "development" {
+	if s.env == "development" {
 		return validateDevToken(tokenString)
 	}
 
