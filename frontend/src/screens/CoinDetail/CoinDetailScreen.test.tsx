@@ -129,68 +129,59 @@ jest.mock('@components/Chart/CoinChart', () => createMockComponent('CoinChart'))
 jest.mock('@components/Chart/CoinInfo', () => createMockComponent('CoinInfo'));
 jest.mock('@components/CoinDetails/PriceDisplay', () => createMockComponent('PriceDisplay'));
 
-// Mock react-native-paper
+// Mock react-native-paper (Simplified)
 jest.mock('react-native-paper', () => {
-	const actualPaper = jest.requireActual('react-native-paper');
-	const React = require('react'); // Require React inside the factory
-	const Pressable = require('react-native').Pressable;
-	const Text = require('react-native').Text;
-	const View = require('react-native').View;
+    const ReactNative = require('react-native'); // Use a single require for react-native
+    const React = require('react');
 
-	// Simple Mock Button
-	const MockButton = (props: any) => (
-		<Pressable
-			onPress={props.onPress}
-			disabled={props.disabled}
-			style={props.style}
-			accessibilityRole="button"
-			testID={props.testID || 'mock-button'}
-		>
-			<Text style={props.labelStyle}>{props.children}</Text>
-		</Pressable>
-	);
+    const mockThemeColors = {
+        primary: 'purple',
+        onSurface: 'black',
+        onSurfaceVariant: 'gray',
+        surfaceVariant: 'whitesmoke',
+        outline: 'lightgray',
+        onPrimaryContainer: 'blue',    // Added
+        onSecondaryContainer: 'green', // Added
+        // Add any other colors used by CoinDetailScreen.tsx or its styles if errors occur
+    };
 
-	const MockToggleButton = (props: any) => {
-		const onPress = () => props.onPress ? props.onPress(props.value) : props.onValueChange(props.value);
-		return (
-			<Pressable onPress={onPress} testID={`toggle-button-${props.value}`}>
-				{props.icon ? props.icon() : <Text>{props.value}</Text>}
-			</Pressable>
-		);
-	}
-	MockToggleButton.Row = (props: any) => {
-		// Restore original mock: Map children to pass down onValueChange
-		const childrenWithProps = React.Children.map(props.children, (child: any) => {
-			if (React.isValidElement(child)) {
-				return React.cloneElement(child, { onValueChange: props.onValueChange, value: child.props.value } as any);
-			}
-			return child;
-		});
-		return <View testID="toggle-button-row">{childrenWithProps}</View>;
-	}
-
-	const mockTheme = {
-		colors: {
-			primary: 'purple',
-			onSurface: 'black',
-			onSurfaceVariant: 'gray',
-			surfaceVariant: 'whitesmoke',
-			outline: 'lightgray',
-		},
-	};
-
-	return {
-		...actualPaper,
-		ToggleButton: MockToggleButton,
-		ActivityIndicator: actualPaper.ActivityIndicator,
-		Text: actualPaper.Text,
-		Button: MockButton,
-		useTheme: () => mockTheme,
-		Divider: (props: any) => <View testID="mock-divider" style={props.style} />,
-		Chip: (props: any) => <View testID="mock-chip" style={props.style}><Text>{props.children}</Text></View>
-	};
+    // Basic mock for components used by CoinDetailScreen
+    return {
+        ActivityIndicator: (props: any) => <ReactNative.View testID="mock-activity-indicator" {...props} />,
+        Text: (props: any) => <ReactNative.Text testID="mock-text" {...props}>{props.children}</ReactNative.Text>,
+        useTheme: () => ({ colors: mockThemeColors, roundness: 4, fonts: {} }), // Return a theme object
+        Button: (props: any) => (
+            <ReactNative.Pressable onPress={props.onPress} testID={props.testID || 'mock-rnp-button'} accessibilityRole="button" disabled={props.disabled} style={props.style}>
+                {typeof props.children === 'string' ? <ReactNative.Text style={props.labelStyle}>{props.children}</ReactNative.Text> : props.children}
+            </ReactNative.Pressable>
+        ),
+        SegmentedButtons: (props: any) => {
+            // Mock structure for SegmentedButtons, including onValueChange and buttons prop
+            return (
+                <ReactNative.View testID="mock-segmented-buttons">
+                    {props.buttons.map((button: any) => (
+                        <ReactNative.Pressable
+                            key={button.value}
+                            onPress={() => props.onValueChange(button.value)}
+                            testID={`mock-segmented-button-${button.value}`}
+                        >
+                            <ReactNative.Text>{button.label}</ReactNative.Text>
+                        </ReactNative.Pressable>
+                    ))}
+                </ReactNative.View>
+            );
+        },
+        Icon: (props: any) => <ReactNative.View testID={`mock-icon-${props.source}`} {...props}><ReactNative.Text>{props.source}</ReactNative.Text></ReactNative.View>,
+        // Provide other necessary exports from react-native-paper if they are used directly or by other components
+        // For instance, if PaperProvider is used by tests, or other components are used by CoinDetailScreen
+        // Defaulting to very basic mocks or actual implementations if they don't cause issues
+        Divider: (props: any) => <ReactNative.View testID="mock-divider" style={props.style} />,
+		Chip: (props: any) => <ReactNative.View testID="mock-chip" style={props.style}><ReactNative.Text>{props.children}</ReactNative.Text></ReactNative.View>,
+        // Ensure all exports from react-native-paper that are used are covered
+        // If some are missing, it could lead to errors.
+        // For now, focusing on those directly used by CoinDetailScreen.
+    };
 });
-
 
 jest.mock('@shopify/react-native-skia', () => ({
 	Canvas: (props: any) => {
@@ -409,7 +400,7 @@ describe('CoinDetail Screen', () => {
 		};
 		mockPortfolioStoreReturn.tokens = [mockHolding];
 
-		const { findByText, getByText } = render(<CoinDetailScreen />);
+		const { findByText, getByText, getByTestId } = render(<CoinDetailScreen />); // Add getByTestId
 
 		await waitFor(() => expect(mockFetchPriceHistory).toHaveBeenCalled());
 
@@ -419,7 +410,7 @@ describe('CoinDetail Screen', () => {
 		expect(await findByText(`${mockHolding.amount.toFixed(4)} ${mockInitialCoin.symbol}`)).toBeTruthy();
 
 		// Test trade navigation
-		const tradeButton = getByText('Trade');
+		const tradeButton = getByTestId('trade-button'); // Use getByTestId
 		fireEvent.press(tradeButton);
 
 		await waitFor(() => {

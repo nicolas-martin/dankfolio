@@ -326,7 +326,7 @@ describe('TradeScreen', () => {
 
 		await waitFor(() => expect(getByTestId('token-selector-input-to').props.value).toBe(initialToAmount));
 
-		fireEvent.press(getByText('Swap'));
+		fireEvent.press(getByTestId('swap-coins-button')); // Use testID
 
 		await waitFor(() => {
 			expect(fromInput.props.value).toBe(initialToAmount);
