@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, useTheme, Button } from 'react-native-paper';
+import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import { Text, useTheme, Button, Icon } from 'react-native-paper';
 import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './trade_styles';
@@ -319,31 +319,214 @@ const Trade: React.FC = () => {
 		setIsConfirmationVisible(false);
 	};
 
-	if (!toCoin) return <View style={styles.noWalletContainer}><Text style={{ color: theme.colors.onSurface }}>Invalid trade pair. Please select coins to trade.</Text></View>;
-	if (!wallet) return <View style={styles.noWalletContainer}><Text style={{ color: theme.colors.onSurface }}>Please connect your wallet to trade</Text></View>;
-	if (!fromCoin) return <View style={styles.noWalletContainer}><Text style={{ color: theme.colors.onSurface }}>Please select a coin to trade from</Text></View>;
+	if (!toCoin) return (
+		<View style={styles.noWalletContainer}>
+			<Text style={styles.noWalletText}>
+				Invalid trade pair. Please select coins to trade.
+			</Text>
+		</View>
+	);
+	
+	if (!wallet) return (
+		<View style={styles.noWalletContainer}>
+			<Text style={styles.noWalletText}>
+				Please connect your wallet to trade
+			</Text>
+		</View>
+	);
+	
+	if (!fromCoin) return (
+		<View style={styles.noWalletContainer}>
+			<Text style={styles.noWalletText}>
+				Please select a coin to trade from
+			</Text>
+		</View>
+	);
+
+	const renderTradeCard = (
+		label: string,
+		coin: Coin | null,
+		amount: string,
+		onSelectToken: (token: Coin) => void,
+		onAmountChange: (amount: string) => void,
+		showOnlyPortfolioTokens: boolean,
+		testID: string
+	) => (
+		<View style={styles.tradeCard}>
+			<Text style={styles.cardLabel}>{label}</Text>
+			<TokenSelector
+				selectedToken={coin!}
+				onSelectToken={onSelectToken}
+				label="Select Token"
+				amountValue={amount || '0.00'}
+				onAmountChange={onAmountChange}
+				isAmountEditable={true}
+				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
+				testID={testID}
+			/>
+		</View>
+	);
+
+	const renderTradeDetails = () => {
+		if (!fromAmount || !toAmount || !tradeDetails.exchangeRate || tradeDetails.exchangeRate === '0') {
+			return null;
+		}
+
+		const priceImpact = parseFloat(tradeDetails.priceImpactPct);
+		const showWarning = priceImpact > 5; // Show warning for >5% price impact
+
+		return (
+			<>
+				{showWarning && (
+					<View style={styles.warningContainer}>
+						<View style={styles.warningIcon}>
+							<Icon 
+								source="alert" 
+								size={20} 
+								color="#FF9800"
+							/>
+						</View>
+						<Text style={styles.warningText}>
+							High price impact ({priceImpact.toFixed(2)}%). You may receive significantly less tokens.
+						</Text>
+					</View>
+				)}
+				
+				<View style={styles.detailsContainer}>
+					<View style={styles.detailsHeader}>
+						<View style={styles.detailsIcon}>
+							<Icon source="information" size={14} color={theme.colors.onPrimary} />
+						</View>
+						<Text style={styles.detailsTitle}>Trade Details</Text>
+					</View>
+					
+					<View style={styles.detailRow}>
+						<Text style={styles.detailLabel}>Price Impact</Text>
+						<Text style={[
+							styles.detailValue,
+							{ color: priceImpact > 5 ? '#FF9800' : theme.colors.onSurface }
+						]}>
+							{priceImpact.toFixed(2)}%
+						</Text>
+					</View>
+					
+					<View style={styles.detailRow}>
+						<Text style={styles.detailLabel}>Network Fee</Text>
+						<Text style={styles.detailValue}>{tradeDetails.totalFee} SOL</Text>
+					</View>
+					
+					{tradeDetails.route && (
+						<View style={styles.detailRow}>
+							<Text style={styles.detailLabel}>Route</Text>
+							<Text style={styles.detailValue}>{tradeDetails.route}</Text>
+						</View>
+					)}
+					
+					<View style={styles.exchangeRateRow}>
+						<View style={styles.exchangeRateLabel}>
+							<Icon source="swap-horizontal" size={16} color={theme.colors.onSurfaceVariant} />
+							<Text style={[styles.detailLabel, { marginLeft: 4 }]}>Exchange Rate</Text>
+						</View>
+						<Text style={styles.exchangeRateValue}>
+							1 {fromCoin?.symbol} = {(parseFloat(tradeDetails.exchangeRate) || 0).toFixed(6)} {toCoin?.symbol}
+						</Text>
+					</View>
+				</View>
+			</>
+		);
+	};
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<ScrollView style={styles.scrollView}>
-				<View style={styles.padding}>
-					<Text variant="labelLarge" style={{ marginBottom: 4 }}>From</Text>
-					<TokenSelector style={styles.valueInfoContainer} selectedToken={fromCoin} onSelectToken={handleSelectFromToken} label={'Select Token'} amountValue={fromAmount || '0.00'} onAmountChange={handleFromAmountChange} isAmountEditable={true} showOnlyPortfolioTokens={true} testID="from-token-selector" />
-					<Button mode="elevated" icon={({ size, color }) => <SwapIcon size={size} color={color} />} onPress={handleSwapCoins} style={styles.valueInfoContainer}>Swap</Button>
-					<Text variant="labelLarge" style={{ marginBottom: 4 }}>To</Text>
-					<TokenSelector style={styles.valueInfoContainer} selectedToken={toCoin ?? undefined} onSelectToken={handleSelectToToken} label={toCoin ? undefined : 'Select Token'} amountValue={toAmount} onAmountChange={handleToAmountChange} isAmountEditable={true} showOnlyPortfolioTokens={false} testID="to-token-selector" />
-					{fromAmount && toAmount && <TradeDetails exchangeRate={tradeDetails.exchangeRate} gasFee={tradeDetails.gasFee} priceImpactPct={tradeDetails.priceImpactPct} totalFee={tradeDetails.totalFee} route={tradeDetails.route} />}
+			<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+				<View style={styles.content}>
+					{/* Header */}
+					<View style={styles.header}>
+						<Text style={styles.title}>Trade</Text>
+						<Text style={styles.subtitle}>Swap tokens instantly</Text>
+					</View>
+
+					{/* Trade Cards with Floating Swap Button */}
+					<View style={styles.tradeContainer}>
+						{renderTradeCard(
+							'From',
+							fromCoin,
+							fromAmount,
+							handleSelectFromToken,
+							handleFromAmountChange,
+							true,
+							'from-token-selector'
+						)}
+
+						{/* Floating Swap Button */}
+						<View style={styles.swapButtonContainer}>
+							<TouchableOpacity 
+								style={styles.swapButton}
+								onPress={handleSwapCoins}
+								disabled={!fromCoin || !toCoin}
+							>
+								<Icon 
+									source="swap-vertical" 
+									size={20} 
+									color={theme.colors.onPrimary}
+								/>
+							</TouchableOpacity>
+						</View>
+
+						{renderTradeCard(
+							'To',
+							toCoin,
+							toAmount,
+							handleSelectToToken,
+							handleToAmountChange,
+							false,
+							'to-token-selector'
+						)}
+					</View>
+
+					{/* Trade Details */}
+					{renderTradeDetails()}
 				</View>
 			</ScrollView>
-			<View style={styles.padding}>
-				<Button mode="contained" onPress={handleTradeSubmitClick} disabled={!fromAmount || !toAmount || isQuoteLoading} loading={isQuoteLoading} testID="trade-button">
+
+			{/* Action Button */}
+			<View style={styles.actionContainer}>
+				<Button
+					mode="contained"
+					onPress={handleTradeSubmitClick}
+					disabled={!fromAmount || !toAmount || isQuoteLoading}
+					loading={isQuoteLoading}
+					style={styles.tradeButton}
+					contentStyle={styles.tradeButtonContent}
+					labelStyle={styles.tradeButtonLabel}
+					testID="trade-button"
+				>
 					{isQuoteLoading ? 'Fetching Quote...' : 'Trade'}
 				</Button>
 			</View>
+
+			{/* Modals */}
 			{fromCoin && toCoin && (
-				<TradeConfirmation isVisible={isConfirmationVisible} onClose={handleCloseConfirmationModal} onConfirm={handleTradeConfirmClick} fromAmount={fromAmount} toAmount={toAmount} toCoin={toCoin} fromCoin={fromCoin} fees={tradeDetails} isLoading={isLoadingTrade} />
+				<TradeConfirmation 
+					isVisible={isConfirmationVisible} 
+					onClose={handleCloseConfirmationModal} 
+					onConfirm={handleTradeConfirmClick} 
+					fromAmount={fromAmount} 
+					toAmount={toAmount} 
+					toCoin={toCoin} 
+					fromCoin={fromCoin} 
+					fees={tradeDetails} 
+					isLoading={isLoadingTrade} 
+				/>
 			)}
-			<TradeStatusModal isVisible={isStatusModalVisible} onClose={handleCloseStatusModal} txHash={submittedTxHash} status={pollingStatus} confirmations={pollingConfirmations} error={pollingError} />
+			<TradeStatusModal 
+				isVisible={isStatusModalVisible} 
+				onClose={handleCloseStatusModal} 
+				txHash={submittedTxHash} 
+				status={pollingStatus} 
+				confirmations={pollingConfirmations} 
+				error={pollingError} 
+			/>
 		</SafeAreaView>
 	);
 };
