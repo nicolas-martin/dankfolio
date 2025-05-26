@@ -1,9 +1,9 @@
-import { useAuthStore } from '@/store/auth';
+import useAuthStore from '@/store/auth';
 import { authClient } from '@/services/grpc/apiClient';
 import { logger as log } from '@/utils/logger';
 import { APP_ENV } from '@env';
 import { getAppCheckInstance } from '@/services/firebaseInit';
-import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check'; // Import AppCheckError if needed for specific error handling
+import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check';
 
 export interface TokenResponse {
 	token: string;
@@ -12,8 +12,8 @@ export interface TokenResponse {
 
 // Interface matching the one previously in authManager and used in _performTokenRefresh
 interface AuthToken {
-  token: string;
-  expiresAt: Date;
+	token: string;
+	expiresAt: Date;
 }
 
 class AuthService {
@@ -46,7 +46,7 @@ class AuthService {
 
 		if (!useAuthStore.getState().isAuthenticated) {
 			log.info('🔐 Token not available (store says not authenticated), requesting new token');
-			
+
 			// If already refreshing, wait for the existing refresh to complete
 			if (this.isRefreshing && this.refreshPromise) {
 				log.info('🔐 Token refresh already in progress, waiting...');
@@ -66,12 +66,12 @@ class AuthService {
 		} else {
 			token = useAuthStore.getState().token;
 		}
-		
+
 		// Additional check for token existence, as store.token can be null even if authenticated initially (e.g. during init)
 		if (!token && useAuthStore.getState().isAuthenticated) {
 			token = useAuthStore.getState().token;
 		}
-		
+
 		return token;
 	}
 
