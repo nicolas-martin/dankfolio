@@ -14,6 +14,7 @@ import (
 
 	birdeye "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+
 	// actual_price_service "github.com/nicolas-martin/dankfolio/backend/internal/service/price" // This alias is no longer needed
 	priceMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/price/mocks"     // Import for generated mocks
 )
@@ -22,6 +23,7 @@ import (
 
 func TestGetPriceHistoryHandler(t *testing.T) {
 	mockService := priceMocks.NewMockPriceServiceAPI(t) // Use generated mock
+
 	handler := &priceServiceHandler{
 		priceService: mockService, 
 	}
@@ -241,6 +243,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset mocks for each test
+
 			// mockService.Mock = mock.Mock{} // Reset calls - This is handled by NewMockPriceServiceAPI(t)
 			tt.mockSetup()
 
@@ -270,16 +273,19 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 				}
 			}
 
+
 			// Assertions on mock calls are handled by t.Cleanup in NewMockPriceServiceAPI if using that pattern
 			// or can be done explicitly if needed:
 			// if tt.expectedMockCall { ... }
 			// mockService.AssertExpectations(t) // This might be redundant if NewMockPriceServiceAPI(t) is used correctly
+
 		})
 	}
 }
 
 
 func TestGetCoinPricesHandler(t *testing.T) {
+
 	mockService := priceMocks.NewMockPriceServiceAPI(t) // Use generated mock
 	handler := &priceServiceHandler{ 
 		priceService: mockService, 

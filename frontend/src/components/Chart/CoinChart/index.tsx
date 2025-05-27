@@ -27,6 +27,8 @@ const ActiveValueIndicator = ({ xPosition, yPosition, bottom, top, lineColor, in
 	indicatorColor: string;
 }) => {
 	return (
+		// NOTE: The error "Unexhaustive handling for RCTView" was occurring in the CoinDetail screen when you interacted with the price chart. This was caused by the ActiveValueIndicator component within CoinChart/index.tsx returning a React Native <View> that wrapped Skia components. This <View> was then passed to the renderOutside prop of the CartesianChart, which expects to handle only Skia-drawable elements.
+		// NOTE: return its Skia components (SkiaLine, Circle) directly, grouped by a React Fragment (<>...</>), instead of wrapping them in a <View>. This change ensures that CartesianChart receives the expected Skia component structure, resolving the rendering error.
 		<>
 			<SkiaLine p1={{ x: xPosition.value, y: bottom }} p2={{ x: xPosition.value, y: top + 30 }} color={lineColor} strokeWidth={1} />
 			<Circle cx={xPosition} cy={yPosition} r={6} color={indicatorColor} />
@@ -93,7 +95,7 @@ export default function CoinChart({
 	React.useEffect(() => {
 		let isSubscribed = true;
 		if (isPressActive && isSubscribed) {
-			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((error) => { 
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((error) => {
 				logger.warn('Haptics impact failed', { error: error?.message, location: 'CoinChart.useEffect[isPressActive]' });
 			});
 		}

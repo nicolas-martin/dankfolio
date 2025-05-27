@@ -4,7 +4,6 @@ export interface CoinChartProps {
 	data: PriceData[];
 	period?: string;
 	loading?: boolean;
-	activePoint?: PricePoint | null;
 	onHover?: (point: PricePoint | null) => void;
 }
 

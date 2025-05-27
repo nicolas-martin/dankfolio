@@ -13,6 +13,7 @@ import TokenSelector from '@components/Common/TokenSelector';
 import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
+import RefreshTimer from '@components/Trade/RefreshTimer';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import {
 	fetchTradeQuote,
@@ -60,6 +61,7 @@ const Trade: React.FC = () => {
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const quoteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const [isRefreshTimerActive, setIsRefreshTimerActive] = useState<boolean>(false);
 
 	const componentStopPolling = () => {
 		stopPolling(pollingIntervalRef, setIsLoadingTrade);
@@ -108,30 +110,60 @@ const Trade: React.FC = () => {
 		initializeCoins();
 	}, [initialFromCoin, initialToCoin, getCoinByID]);
 
+	const refreshPrices = async () => {
+		logger.log('[Trade] Refreshing coin prices', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
+		if (!fromCoin || !toCoin) {
+			logger.log('[Trade] Skipping price refresh - missing coins');
+			return;
+		}
+		
+		// Only refresh if we have valid amounts
+		const fromAmountNum = parseFloat(fromAmount || '0');
+		const toAmountNum = parseFloat(toAmount || '0');
+		if (fromAmountNum <= 0 && toAmountNum <= 0) {
+			logger.log('[Trade] Skipping price refresh - no valid amounts entered');
+			return;
+		}
+		
+		try {
+			logger.log('[Trade] Fetching fresh coin data for price refresh...');
+			const prices = await getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]);
+			if (prices) {
+				setFromCoin(prevCoin => prevCoin ? ({ ...prevCoin, price: prices[prevCoin.mintAddress] ?? prevCoin.price }) : null);
+				setToCoin(prevCoin => prevCoin ? ({ ...prevCoin, price: prices[prevCoin.mintAddress] ?? prevCoin.price }) : null);
+				logger.log('[Trade] Successfully updated coin data from price refresh');
+			} else {
+				logger.warn('[Trade] getCoinPrices returned no prices.');
+			}
+		} catch (error: any) {
+			logger.error('[Trade] Failed to refresh coin prices', { errorMessage: error?.message, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
+		}
+	};
+
+	// Check if we have valid amounts for trading
+	const hasValidAmounts = useMemo(() => {
+		const fromAmountNum = parseFloat(fromAmount || '0');
+		const toAmountNum = parseFloat(toAmount || '0');
+		return (fromAmountNum > 0 || toAmountNum > 0) && fromCoin && toCoin;
+	}, [fromAmount, toAmount, fromCoin, toCoin]);
+
+	// Setup polling interval only when coins change
 	useEffect(() => {
-		logger.log('[Trade] Component mounted, setting up coin price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
-		pollingIntervalRef.current = setInterval(async () => {
-			logger.log('[Trade] Polling interval triggered for coin prices', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
-			if (!fromCoin || !toCoin) {
-				logger.log('[Trade] Skipping price poll - missing coins');
-				return;
-			}
-			try {
-				logger.log('[Trade] Fetching fresh coin data for price polling...');
-				const prices = await getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]);
-				if (prices) {
-					setFromCoin(prevCoin => prevCoin ? ({ ...prevCoin, price: prices[prevCoin.mintAddress] ?? prevCoin.price }) : null);
-					setToCoin(prevCoin => prevCoin ? ({ ...prevCoin, price: prices[prevCoin.mintAddress] ?? prevCoin.price }) : null);
-					logger.log('[Trade] Successfully updated coin data from price polling');
-				} else {
-					logger.warn('[Trade] getCoinPrices returned no prices.');
-				}
-			} catch (error: any) {
-				logger.error('[Trade] Failed to refresh coin prices during polling', { errorMessage: error?.message, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
-			}
-		}, 10000);
+		logger.log('[Trade] Setting up coin price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
+		
+		// Clear any existing interval
+		if (pollingIntervalRef.current) {
+			clearInterval(pollingIntervalRef.current);
+			pollingIntervalRef.current = null;
+		}
+		
+		// Only setup polling if we have both coins
+		if (fromCoin && toCoin) {
+			pollingIntervalRef.current = setInterval(refreshPrices, 10000);
+		}
+		
 		return () => {
-			logger.log('[Trade] Component unmounting - cleaning up price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
+			logger.log('[Trade] Cleaning up price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
 			if (pollingIntervalRef.current) {
 				clearInterval(pollingIntervalRef.current);
 				pollingIntervalRef.current = null;
@@ -139,6 +171,11 @@ const Trade: React.FC = () => {
 			}
 		};
 	}, [fromCoin?.mintAddress, toCoin?.mintAddress]);
+
+	// Separate effect to control timer activation based on valid amounts
+	useEffect(() => {
+		setIsRefreshTimerActive(!!hasValidAmounts);
+	}, [hasValidAmounts]);
 
 	useEffect(() => {
 		logger.log('[Trade] Trade screen mounted (second useEffect, consider merging if appropriate)');
@@ -281,7 +318,11 @@ const Trade: React.FC = () => {
 			showToast({ type: 'error', message: 'Missing required trade parameters' });
 			return;
 		}
-		logger.info('[Trade] Stopping price polling before trade execution.');
+		logger.info('[Trade] Stopping price polling and refresh timer before trade execution.');
+		
+		// Stop the refresh timer
+		setIsRefreshTimerActive(false);
+		
 		if (pollingIntervalRef.current) {
 			clearInterval(pollingIntervalRef.current);
 			pollingIntervalRef.current = null;
@@ -487,6 +528,16 @@ const Trade: React.FC = () => {
 
 					{/* Trade Details */}
 					{renderTradeDetails()}
+
+					{/* Refresh Timer */}
+					{hasValidAmounts && (
+						<RefreshTimer
+							duration={10000}
+							isActive={isRefreshTimerActive}
+							onComplete={refreshPrices}
+							visible={!isQuoteLoading}
+						/>
+					)}
 				</View>
 			</ScrollView>
 
