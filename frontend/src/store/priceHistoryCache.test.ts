@@ -1,12 +1,10 @@
+import { PriceData } from 'types';
 import usePriceHistoryCacheStore from './priceHistoryCache';
-
-// Helper to get the initial state for resetting the store between tests
-const getInitialState = () => usePriceHistoryCacheStore.getState();
 
 describe('usePriceHistoryCacheStore', () => {
   beforeEach(() => {
-    // Reset the store to its initial state before each test
-    usePriceHistoryCacheStore.setState(getInitialState(), true);
+    // Reset the store cache before each test
+    usePriceHistoryCacheStore.setState({ cache: {} });
     jest.useRealTimers(); // Default to real timers
   });
 
@@ -17,7 +15,7 @@ describe('usePriceHistoryCacheStore', () => {
   it('should set and get cache entries', () => {
     const { setCache, getCache } = usePriceHistoryCacheStore.getState();
     const key = 'testKey';
-    const data = { value: 'testData' };
+    const data: PriceData[] = [{ timestamp: 'testData', value: 100, unixTime: 100 }];
     const expiry = Date.now() + 1000 * 60 * 5; // 5 minutes from now
 
     setCache(key, data, expiry);
@@ -38,7 +36,7 @@ describe('usePriceHistoryCacheStore', () => {
     jest.useFakeTimers();
     const { setCache, getCache } = usePriceHistoryCacheStore.getState();
     const key = 'expiredKey';
-    const data = { value: 'expiredData' };
+    const data: PriceData[] = [{ timestamp: 'expiredData', value: 100, unixTime: 100 }];
     const expiry = Date.now() + 1000; // Expires in 1 second
 
     setCache(key, data, expiry);
@@ -55,7 +53,7 @@ describe('usePriceHistoryCacheStore', () => {
     jest.useFakeTimers();
     const { setCache, getCache } = usePriceHistoryCacheStore.getState();
     const key = 'validKey';
-    const data = { value: 'validData' };
+    const data: PriceData[] = [{ timestamp: 'validData', value: 100, unixTime: 100 }];
     const expiry = Date.now() + 2000; // Expires in 2 seconds
 
     setCache(key, data, expiry);
@@ -74,12 +72,12 @@ describe('usePriceHistoryCacheStore', () => {
     const { setCache, getCache, clearExpiredCache } = usePriceHistoryCacheStore.getState();
 
     const expiredKey = 'expiredItem';
-    const expiredData = { value: 'iWillExpire' };
+    const expiredData: PriceData[] = [{ timestamp: 'iWillExpire', value: 100, unixTime: 100 }];
     const expiredExpiry = Date.now() + 1000; // Expires in 1 second
     setCache(expiredKey, expiredData, expiredExpiry);
 
     const validKey = 'validItem';
-    const validData = { value: 'iWillPersist' };
+    const validData: PriceData[] = [{ timestamp: 'iWillPersist', value: 100, unixTime: 100 }];
     const validExpiry = Date.now() + 5000; // Expires in 5 seconds
     setCache(validKey, validData, validExpiry);
 

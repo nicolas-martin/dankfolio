@@ -1,4 +1,4 @@
-import { fetchPriceHistory, TIMEFRAMES, TIMEFRAME_CONFIG as ActualTIMEFRAME_CONFIG } from './coindetail_scripts'; // Import actual TIMEFRAME_CONFIG
+import { fetchPriceHistory, TIMEFRAMES, TIMEFRAME_CONFIG } from './coindetail_scripts';
 import { grpcApi } from '@/services/grpcApi';
 import { logger } from '@/utils/logger';
 import usePriceHistoryCacheStore from '@/store/priceHistoryCache'; // Import the cache store
@@ -172,7 +172,7 @@ describe('CoinDetail Scripts', () => {
             "token"
           );
           // Cache should be set after successful fetch
-          const expectedCacheExpiry = mockNow + ActualTIMEFRAME_CONFIG[timeframeValue].roundingMinutes * 60 * 1000;
+          const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG[timeframeValue].roundingMinutes * 60 * 1000;
           expect(mockSetCache).toHaveBeenCalledWith(
             `${sampleCoin.mintAddress}-${timeframeValue}`,
             [{ timestamp: new Date((expectedRoundedTimeTo.getTime() / 1000 - 60) * 1000).toISOString(), value: 100, unixTime: expectedRoundedTimeTo.getTime() / 1000 - 60 }],
@@ -221,7 +221,7 @@ describe('CoinDetail Scripts', () => {
       const mockPriceData: PriceData[] = [{ timestamp: new Date(mockNow - 3600 * 1000).toISOString(), value: 123, unixTime: mockNow / 1000 - 3600 }];
       
       test('Cache Hit: should use cached data and not call API', async () => {
-        const validExpiry = mockNow + ActualTIMEFRAME_CONFIG[selectedTimeframeValue].roundingMinutes * 60 * 1000;
+        const validExpiry = mockNow + TIMEFRAME_CONFIG[selectedTimeframeValue].roundingMinutes * 60 * 1000;
         mockGetCache.mockReturnValue({ data: mockPriceData, expiry: validExpiry });
 
         await fetchPriceHistory(selectedTimeframeValue, mockSetLoading, mockSetPriceHistory, sampleCoin, true);
@@ -244,7 +244,7 @@ describe('CoinDetail Scripts', () => {
         expect(grpcApi.getPriceHistory).toHaveBeenCalledTimes(1);
         expect(mockSetPriceHistory).toHaveBeenCalledWith(expectedFetchedData);
         
-        const expectedCacheExpiry = mockNow + ActualTIMEFRAME_CONFIG[selectedTimeframeValue].roundingMinutes * 60 * 1000;
+        const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG[selectedTimeframeValue].roundingMinutes * 60 * 1000;
         expect(mockSetCache).toHaveBeenCalledWith(cacheKey, expectedFetchedData, expectedCacheExpiry);
         expect(mockSetLoading).toHaveBeenCalledWith(false); // Called for initial load + after fetch
         expect(logger.info).toHaveBeenCalledWith(`Cache miss for ${cacheKey}, fetching new price history.`, { functionName: 'fetchPriceHistory' });
@@ -252,8 +252,8 @@ describe('CoinDetail Scripts', () => {
       });
 
       test('Cache Miss (Expired Cache): should call API, set price history, and update cache', async () => {
-        const expiredExpiry = mockNow - 1000; // Expired
-        mockGetCache.mockReturnValue({ data: mockPriceData, expiry: expiredExpiry });
+        // Mock getCache to return undefined for expired cache (simulating real cache behavior)
+        mockGetCache.mockReturnValue(undefined);
         (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({ data: { items: [{ unixTime: mockNow / 1000, value: 180 }] }, success: true });
         const expectedFetchedData: PriceData[] = [{ timestamp: new Date(mockNow).toISOString(), value: 180, unixTime: mockNow/1000 }];
 
@@ -263,7 +263,7 @@ describe('CoinDetail Scripts', () => {
         expect(grpcApi.getPriceHistory).toHaveBeenCalledTimes(1);
         expect(mockSetPriceHistory).toHaveBeenCalledWith(expectedFetchedData);
 
-        const expectedCacheExpiry = mockNow + ActualTIMEFRAME_CONFIG[selectedTimeframeValue].roundingMinutes * 60 * 1000;
+        const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG[selectedTimeframeValue].roundingMinutes * 60 * 1000;
         expect(mockSetCache).toHaveBeenCalledWith(cacheKey, expectedFetchedData, expectedCacheExpiry);
         expect(mockSetLoading).toHaveBeenCalledWith(false);
         expect(logger.info).toHaveBeenCalledWith(`Cache miss for ${cacheKey}, fetching new price history.`, { functionName: 'fetchPriceHistory' });
@@ -446,7 +446,7 @@ describe('CoinDetail Scripts', () => {
         expect(mockSetPriceHistory).toHaveBeenCalledWith(expectedData);
         
         // Verify caching behavior
-        const expectedCacheExpiry = mockNow + ActualTIMEFRAME_CONFIG[timeframeValue].roundingMinutes * 60 * 1000;
+        const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG[timeframeValue].roundingMinutes * 60 * 1000;
         expect(mockSetCache).toHaveBeenCalledWith(`${sampleCoin.mintAddress}-${timeframeValue}`, expectedData, expectedCacheExpiry);
         expect(mockSetLoading).toHaveBeenCalledWith(false);
       });
@@ -472,7 +472,7 @@ describe('CoinDetail Scripts', () => {
       await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin, false); // isInitialLoad = false
     
       expect(mockSetPriceHistory).toHaveBeenCalledWith(expectedMappedItems);
-      const expectedCacheExpiry = mockNow + ActualTIMEFRAME_CONFIG["1D"].roundingMinutes * 60 * 1000;
+      const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG["1D"].roundingMinutes * 60 * 1000;
       expect(mockSetCache).toHaveBeenCalledWith(`${sampleCoin.mintAddress}-1D`, expectedMappedItems, expectedCacheExpiry);
     });
 
@@ -486,7 +486,7 @@ describe('CoinDetail Scripts', () => {
       await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin, false);
     
       expect(mockSetPriceHistory).toHaveBeenCalledWith([]);
-      const expectedCacheExpiry = mockNow + ActualTIMEFRAME_CONFIG["1D"].roundingMinutes * 60 * 1000;
+      const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG["1D"].roundingMinutes * 60 * 1000;
       expect(mockSetCache).toHaveBeenCalledWith(`${sampleCoin.mintAddress}-1D`, [], expectedCacheExpiry);
     });
     
