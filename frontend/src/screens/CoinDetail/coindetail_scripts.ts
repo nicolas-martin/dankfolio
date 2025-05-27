@@ -67,7 +67,6 @@ export const fetchPriceHistory = async (
 		if (!coin) {
 			logger.error('No coin provided for price history', { functionName: 'fetchPriceHistory' });
 			setPriceHistory([]);
-			if (isInitialLoad) setLoading(false); // Ensure loading is stopped if returning early
 			return;
 		}
 
