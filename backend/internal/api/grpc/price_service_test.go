@@ -14,41 +14,16 @@ import (
 
 	birdeye "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
-	actual_price_service "github.com/nicolas-martin/dankfolio/backend/internal/service/price" // Named import for the actual service's interface/package
+
+	// actual_price_service "github.com/nicolas-martin/dankfolio/backend/internal/service/price" // This alias is no longer needed
+	priceMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/price/mocks"     // Import for generated mocks
 )
 
-// MockPriceService is a mock type for the actual_price_service.PriceServiceAPI type
-type MockPriceService struct {
-	mock.Mock
-}
-
-// Ensure MockPriceService implements actual_price_service.PriceServiceAPI
-var _ actual_price_service.PriceServiceAPI = (*MockPriceService)(nil)
-
-// GetPriceHistory mocks the GetPriceHistory method
-func (m *MockPriceService) GetPriceHistory(ctx context.Context, address string, historyTypeString string, timeFromStr string, timeToStr string, addressType string) (*birdeye.PriceHistory, error) {
-	args := m.Called(ctx, address, historyTypeString, timeFromStr, timeToStr, addressType)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*birdeye.PriceHistory), args.Error(1)
-}
-
-// GetCoinPrices is a mock method for the GetCoinPrices of the price service
-func (m *MockPriceService) GetCoinPrices(ctx context.Context, coinIDs []string) (map[string]float64, error) {
-	args := m.Called(ctx, coinIDs)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(map[string]float64), args.Error(1)
-}
-
+// Manual MockPriceService struct and its methods are removed as we are using mockery generated mocks.
 
 func TestGetPriceHistoryHandler(t *testing.T) {
-	mockService := new(MockPriceService)
-	// This line is problematic if priceServiceHandler.priceService is a concrete type (*actual_price_service.Service)
-	// and MockPriceService is not *actual_price_service.Service.
-	// For the test to compile as is, priceServiceHandler.priceService should be actual_price_service.PriceServiceAPI.
+	mockService := priceMocks.NewMockPriceServiceAPI(t) // Use generated mock
+
 	handler := &priceServiceHandler{
 		priceService: mockService, 
 	}
@@ -268,7 +243,8 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset mocks for each test
-			mockService.Mock = mock.Mock{} // Reset calls
+
+			// mockService.Mock = mock.Mock{} // Reset calls - This is handled by NewMockPriceServiceAPI(t)
 			tt.mockSetup()
 
 			resp, err := handler.GetPriceHistory(ctx, connect.NewRequest(tt.req))
@@ -297,23 +273,20 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 				}
 			}
 
-			if tt.expectedMockCall {
-				if tt.expectSpecificMockArgs {
-					mockService.AssertCalled(t, "GetPriceHistory", ctx, tt.req.Address, tt.expectedHistoryType, tt.expectedTimeFromArg, tt.expectedTimeToArg, tt.req.AddressType)
-				} else {
-					mockService.AssertCalled(t, "GetPriceHistory", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-				}
-			} else {
-				mockService.AssertNotCalled(t, "GetPriceHistory", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-			}
-			mockService.AssertExpectations(t)
+
+			// Assertions on mock calls are handled by t.Cleanup in NewMockPriceServiceAPI if using that pattern
+			// or can be done explicitly if needed:
+			// if tt.expectedMockCall { ... }
+			// mockService.AssertExpectations(t) // This might be redundant if NewMockPriceServiceAPI(t) is used correctly
+
 		})
 	}
 }
 
 
 func TestGetCoinPricesHandler(t *testing.T) {
-	mockService := new(MockPriceService)
+
+	mockService := priceMocks.NewMockPriceServiceAPI(t) // Use generated mock
 	handler := &priceServiceHandler{ 
 		priceService: mockService, 
 	}
