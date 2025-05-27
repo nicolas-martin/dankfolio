@@ -42,37 +42,34 @@ class AuthService {
 	 * Get a valid bearer token, refreshing if necessary
 	 */
 	async getAuthToken(): Promise<string | null> {
-		let token: string | null = null;
+		const state = useAuthStore.getState();
 
-		if (!useAuthStore.getState().isAuthenticated) {
+		// Use the store's isAuthenticated (which already checks token validity and expiration)
+		if (!state.isAuthenticated) {
 			log.info('🔐 Token not available (store says not authenticated), requesting new token');
 
 			// If already refreshing, wait for the existing refresh to complete
 			if (this.isRefreshing && this.refreshPromise) {
 				log.info('🔐 Token refresh already in progress, waiting...');
 				await this.refreshPromise;
-				// After refresh, check isAuthenticated again
-				if (useAuthStore.getState().isAuthenticated) {
-					token = useAuthStore.getState().token;
-				}
 			} else {
 				// Start a new refresh
 				await this.refreshToken();
-				// After refresh, check isAuthenticated again
-				if (useAuthStore.getState().isAuthenticated) {
-					token = useAuthStore.getState().token;
-				}
 			}
-		} else {
-			token = useAuthStore.getState().token;
+			
+			// Return the new token after refresh
+			return useAuthStore.getState().token;
 		}
 
-		// Additional check for token existence, as store.token can be null even if authenticated initially (e.g. during init)
-		if (!token && useAuthStore.getState().isAuthenticated) {
-			token = useAuthStore.getState().token;
-		}
+		return state.token;
+	}
 
-		return token;
+	/**
+	 * Check if the current token needs refresh (for debugging/testing)
+	 */
+	public needsRefresh(): boolean {
+		// Use the store's isAuthenticated (which already checks token validity and expiration)
+		return !useAuthStore.getState().isAuthenticated;
 	}
 
 	/**
