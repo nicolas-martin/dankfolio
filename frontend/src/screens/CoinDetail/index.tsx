@@ -16,15 +16,13 @@ import {
 } from './coindetail_scripts';
 import { createStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
-import { useCoinStore } from '@store/coins';
 import { logger } from '@/utils/logger';
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
 	const { coin: initialCoin } = route.params;
-	const [selectedTimeframe, setSelectedTimeframe] = useState("1D"); // Default to 1D
-	const { getCoinByID } = useCoinStore();
+	const [selectedTimeframe, setSelectedTimeframe] = useState("4H");
 	const [loading, setLoading] = useState(true);
 	const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);

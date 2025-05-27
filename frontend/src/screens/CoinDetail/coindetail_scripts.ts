@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Coin } from '@/types';
 import { PriceData } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
@@ -21,17 +20,9 @@ export const TIMEFRAMES: TimeframeOption[] = [
 	{ label: "1D", value: "1D" },
 	{ label: "1W", value: "1W" },
 	{ label: "1M", value: "1M" },
-	{ label: "1Y", value: "1Y" },
 ];
 
-const TIMEFRAME_CONFIG: Record<string, { granularity: GetPriceHistoryRequest_PriceHistoryType, durationMs: number }> = {
-	"1H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 1 * 60 * 60 * 1000 },
-	"4H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000 },
-	"1D": { granularity: GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE, durationMs: 24 * 60 * 60 * 1000 },
-	"1W": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_HOUR, durationMs: 7 * 24 * 60 * 60 * 1000 },
-	"1M": { granularity: GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR, durationMs: 30 * 24 * 60 * 60 * 1000 },
-	"1Y": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_DAY, durationMs: 365 * 24 * 60 * 60 * 1000 },
-	// Default for any other case, though UI should restrict to above
+const TIMEFRAME_CONFIG: Record<string, { granularity: GetPriceHistoryRequest_PriceHistoryType, durationMs: number, roundingMinutes: number }> = {
 	"1H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 1 * 60 * 60 * 1000, roundingMinutes: 1 },
 	"4H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000, roundingMinutes: 1 },
 	"1D": { granularity: GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE, durationMs: 24 * 60 * 60 * 1000, roundingMinutes: 5 },
@@ -39,18 +30,18 @@ const TIMEFRAME_CONFIG: Record<string, { granularity: GetPriceHistoryRequest_Pri
 	"1M": { granularity: GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR, durationMs: 30 * 24 * 60 * 60 * 1000, roundingMinutes: 240 }, // 4 hours
 	"1Y": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_DAY, durationMs: 365 * 24 * 60 * 60 * 1000, roundingMinutes: 1440 }, // 1 day
 	// Default for any other case, though UI should restrict to above
-	"DEFAULT": { granularity: GetPriceHistoryRequest_PriceHistoryType.FIFTEEN_MINUTE, durationMs: 24 * 60 * 60 * 1000, roundingMinutes: 15 },
+	"DEFAULT": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000, roundingMinutes: 1 },
 };
 
 // Helper function to round date down to the nearest interval
 export function roundDateDown(dateToRound: Date, granularityMinutes: number): Date {
 	const msInMinute = 60 * 1000;
 	const dateInMs = dateToRound.getTime();
-	
+
 	const roundedMs = Math.floor(dateInMs / (granularityMinutes * msInMinute)) * (granularityMinutes * msInMinute);
-	
+
 	const roundedDate = new Date(roundedMs);
-	
+
 	// Zero out seconds and milliseconds, as Math.floor might not perfectly align if granularityMinutes is large
 	// For smaller granularities like 1 or 5 minutes, this is more of a safeguard.
 	// For larger granularities like 60 minutes (1 hour) or 240 minutes (4 hours),
@@ -87,7 +78,7 @@ export const fetchPriceHistory = async (
 
 		const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
 		const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
-		
+
 		const timeToISO = roundedTimeTo.toISOString();
 		const timeFromISO = roundedTimeFrom.toISOString();
 
@@ -162,9 +153,9 @@ export const handleTradeNavigation = async (
 	logger.breadcrumb({
 		category: 'navigation',
 		message: 'Navigating to TradeScreen from CoinDetail',
-		data: { 
-			fromCoin: selectedFromCoin?.symbol || 'N/A', 
-			toCoin: toCoin.symbol 
+		data: {
+			fromCoin: selectedFromCoin?.symbol || 'N/A',
+			toCoin: toCoin.symbol
 		},
 	});
 	navigate('Trade', {
