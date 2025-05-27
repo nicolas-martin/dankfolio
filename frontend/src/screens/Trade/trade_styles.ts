@@ -217,27 +217,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onErrorContainer,
 	},
 
-	// Price Impact Warning
-	warningContainer: {
-		backgroundColor: '#FFF3E0',
-		borderRadius: 12,
-		padding: 16,
-		marginBottom: 20,
-		flexDirection: 'row',
-		alignItems: 'center',
-		borderLeftWidth: 4,
-		borderLeftColor: '#FF9800',
-	},
-	warningIcon: {
-		marginRight: 12,
-	},
-	warningText: {
-		flex: 1,
-		fontSize: 14,
-		color: '#E65100',
-		fontWeight: '500',
-	},
-
 	// Refresh Progress Bar
 	refreshProgressContainer: {
 		backgroundColor: theme.colors.surfaceVariant,

@@ -223,7 +223,6 @@ const actualTIMEFRAMES = [
 	{ label: "1D", value: "1D" },
 	{ label: "1W", value: "1W" },
 	{ label: "1M", value: "1M" },
-	{ label: "1Y", value: "1Y" },
 ];
 
 jest.mock('./coindetail_scripts', () => {
@@ -297,13 +296,13 @@ describe('CoinDetail Screen', () => {
 		consoleLogSpy.mockRestore();
 	});
 
-	it('renders and displays coin information correctly with default timeframe 1D', async () => {
+	it('renders and displays coin information correctly with default timeframe 4H', async () => {
 		const { getByTestId, queryByText } = render(<CoinDetailScreen />);
         
 		// Wait for initial data load triggered by useEffect
 		await waitFor(() => {
 			expect(mockedFetchPriceHistory).toHaveBeenCalledWith(
-				"1D", // Default timeframe from useState("1D")
+				"4H", // Default timeframe from useState("1D")
 				expect.any(Function), // setLoading
 				expect.any(Function), // setPriceHistory
 				mockInitialCoin,
@@ -317,7 +316,7 @@ describe('CoinDetail Screen', () => {
         // Assuming mockFetchPriceHistory provides some data for PriceDisplay props
         // The period prop of PriceDisplay should reflect the selected timeframe's label
         // TIMEFRAMES is mocked, so we find "1D"
-        const defaultTimeframeOption = actualTIMEFRAMES.find(tf => tf.value === "1D");
+        const defaultTimeframeOption = actualTIMEFRAMES.find(tf => tf.value === "4H");
 		expect(priceDisplayMock.props.period).toBe(defaultTimeframeOption?.label); 
 		expect(priceDisplayMock.props.name).toBe(mockInitialCoin.name);
 
@@ -354,20 +353,19 @@ describe('CoinDetail Screen', () => {
 	describe('Timeframe Selection', () => {
 		const timeframesToTest = [
 			{ label: "1H", value: "1H" },
-			{ label: "4H", value: "4H" },
+			{ label: "1D", value: "1D" },
 			{ label: "1W", value: "1W" },
 			{ label: "1M", value: "1M" },
-			{ label: "1Y", value: "1Y" },
 		];
 
 		timeframesToTest.forEach(timeframe => {
 			it(`handles timeframe change to ${timeframe.label} correctly`, async () => {
 				const { getByTestId } = render(<CoinDetailScreen />);
 				
-				// Wait for initial fetch (1D)
+				// Wait for initial fetch (4H)
 				await waitFor(() => {
 					expect(mockedFetchPriceHistory).toHaveBeenCalledWith(
-						"1D", expect.any(Function), expect.any(Function), mockInitialCoin, true
+						"4H", expect.any(Function), expect.any(Function), mockInitialCoin, true
 					);
 				});
 				
@@ -384,7 +382,7 @@ describe('CoinDetail Screen', () => {
 						expect.any(Function), // setLoading
 						expect.any(Function), // setPriceHistory
 						mockInitialCoin,
-						false // isInitialLoad should be false for subsequent fetches
+						true // isInitialLoad is true because priceHistory gets reset or is empty when timeframe changes
 					);
 				});
                 

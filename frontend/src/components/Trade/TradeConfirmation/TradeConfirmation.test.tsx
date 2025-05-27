@@ -151,8 +151,6 @@ describe('TradeConfirmation', () => {
         expect(getByText(`$${(parseFloat(defaultProps.toAmount) * mockToCoin.price).toFixed(4)}`)).toBeTruthy();
 
         // Fees section
-        const roundedPriceImpact = parseFloat(defaultProps.fees.priceImpactPct).toFixed(4);
-        expect(getByText(`${roundedPriceImpact}%`)).toBeTruthy();
         expect(getByText(`$${defaultProps.fees.totalFee}`)).toBeTruthy();
 
         // Buttons
@@ -160,17 +158,6 @@ describe('TradeConfirmation', () => {
         // Button text is already checked above with the title
     });
 
-    it('shows high price impact warning when priceImpactPct > 2', () => {
-        const highImpactFees = { ...defaultProps.fees, priceImpactPct: '2.5' }; // 2.5%
-        const { getByText } = renderComponent({ fees: highImpactFees });
-		expect(getByText('High price impact detected. This trade may result in unfavorable rates due to low liquidity.')).toBeTruthy();
-    });
-
-    it('does not show high price impact warning when priceImpactPct <= 2', () => {
-        const { queryByText } = renderComponent(); // Default is 1.5%
-        expect(queryByText('Warning: High price impact may result in unfavorable rates')).toBeNull();
-    });
-    
     it('calls onClose when Cancel button is pressed', () => {
         const { getByTestId } = renderComponent();
         fireEvent.press(getByTestId('cancel-trade-button'));
