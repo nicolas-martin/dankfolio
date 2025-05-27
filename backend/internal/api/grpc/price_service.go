@@ -14,11 +14,11 @@ import (
 // priceServiceHandler implements the PriceService API
 type priceServiceHandler struct {
 	dankfoliov1connect.UnimplementedPriceServiceHandler
-	priceService *price.Service
+	priceService price.PriceServiceAPI // Changed to interface
 }
 
 // newPriceServiceHandler creates a new priceServiceHandler
-func newPriceServiceHandler(priceService *price.Service) *priceServiceHandler {
+func newPriceServiceHandler(priceService price.PriceServiceAPI) *priceServiceHandler { // Changed to interface
 	return &priceServiceHandler{
 		priceService: priceService,
 	}
