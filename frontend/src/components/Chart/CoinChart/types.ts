@@ -1,10 +1,11 @@
 import { PriceData } from '@/types';
 
 export interface CoinChartProps {
-	data: PriceData[];
+	data: PriceData[]; // Reverted: no longer optional
+	loading?: boolean; // Reverted: can be optional, or required depending on original
 	period?: string;
-	loading?: boolean;
 	onHover?: (point: PricePoint | null) => void;
+	// Removed coinAddress, timeframe, fetchPriceHistory
 }
 
 export interface PricePoint extends Record<string, unknown> {
