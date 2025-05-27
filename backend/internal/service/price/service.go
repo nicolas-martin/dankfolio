@@ -86,6 +86,40 @@ func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, tim
 	return s.birdeyeClient.GetPriceHistory(ctx, params)
 }
 
+// GetCoinPrices returns current prices for multiple tokens
+func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
+	// The 'useBirdeye' parameter was in my test file, but not in the actual service.go.
+	// The actual service.go determines debug mode through context.
+	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		// The problem description for GetCoinPrices in service_test.go was:
+		// t.Run("Success - Debug Mode", func(t *testing.T) { ... mockBirdeyeClient.On("GetCoinPrices", ctx, coinAddresses) ... })
+		// This implies that in debug mode, GetCoinPrices should call birdeyeClient.GetCoinPrices.
+		// However, the birdeye.ClientAPI I defined only has GetPriceHistory.
+		// The birdeye client implementation itself also doesn't have GetCoinPrices.
+		// This means the debug path for GetCoinPrices in the tests which expects a call to birdeyeClient.GetCoinPrices is incorrect based on current client capabilities.
+
+		// For now, I will keep the existing debug logic (random prices) and will later address
+		// if birdeyeClient should indeed have a GetCoinPrices method and be used in debug.
+		// My previous test draft for GetCoinPrices (debug mode) was:
+		// mockBirdeyeClient.On("GetCoinPrices", ctx, coinAddresses).Return(expectedPrices, nil).Once()
+		// This requires birdeye.ClientAPI to have GetCoinPrices.
+		// Let's assume for now that GetCoinPrices in debug mode should return random prices as implemented.
+		log.Print("x-debug-mode: true for GetCoinPrices, returning random prices")
+		mockPrices := make(map[string]float64)
+		for _, addr := range tokenAddresses {
+			mockPrices[addr] = 1.0 + rand.Float64() // Random price between 1.0 and 2.0
+		}
+		return mockPrices, nil
+	}
+
+	// Get real prices from Jupiter API
+	prices, err := s.jupiterClient.GetCoinPrices(ctx, tokenAddresses)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get coin prices from jupiter: %w", err)
+	}
+	return prices, nil
+}
+
 func (s *Service) loadMockPriceHistory(address string, historyType string) (*birdeye.PriceHistory, error) {
 	addressToSymbol := loadAddressToSymbol()
 	log.Printf("Looking up address: %s", address)
@@ -133,7 +167,7 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 	now := time.Now()
 
 	// Add some initial random jumps to create more diverse starting points
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		jump := 1 + (rand.Float64()*0.4 - 0.2) // Random jump between 0.8x and 1.2x
 		currentPrice *= jump
 	}
@@ -149,12 +183,7 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 			change *= 1.5 // 1.5x normal volatility for spikes
 		}
 
-		currentPrice = currentPrice * (1 + change)
-
-		// Ensure price doesn't go below 0.01
-		if currentPrice < 0.01 {
-			currentPrice = 0.01
-		}
+		currentPrice = max(currentPrice*(1+change), 0.01)
 
 		items = append(items, birdeye.PriceHistoryItem{
 			UnixTime: pointTime.Unix(),
@@ -171,40 +200,6 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 		},
 		Success: true,
 	}, nil
-}
-
-// GetCoinPrices returns current prices for multiple tokens
-func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {
-	// The 'useBirdeye' parameter was in my test file, but not in the actual service.go.
-	// The actual service.go determines debug mode through context.
-	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		// The problem description for GetCoinPrices in service_test.go was:
-		// t.Run("Success - Debug Mode", func(t *testing.T) { ... mockBirdeyeClient.On("GetCoinPrices", ctx, coinAddresses) ... })
-		// This implies that in debug mode, GetCoinPrices should call birdeyeClient.GetCoinPrices.
-		// However, the birdeye.ClientAPI I defined only has GetPriceHistory.
-		// The birdeye client implementation itself also doesn't have GetCoinPrices.
-		// This means the debug path for GetCoinPrices in the tests which expects a call to birdeyeClient.GetCoinPrices is incorrect based on current client capabilities.
-
-		// For now, I will keep the existing debug logic (random prices) and will later address
-		// if birdeyeClient should indeed have a GetCoinPrices method and be used in debug.
-		// My previous test draft for GetCoinPrices (debug mode) was:
-		// mockBirdeyeClient.On("GetCoinPrices", ctx, coinAddresses).Return(expectedPrices, nil).Once()
-		// This requires birdeye.ClientAPI to have GetCoinPrices.
-		// Let's assume for now that GetCoinPrices in debug mode should return random prices as implemented.
-		log.Print("x-debug-mode: true for GetCoinPrices, returning random prices")
-		mockPrices := make(map[string]float64)
-		for _, addr := range tokenAddresses {
-			mockPrices[addr] = 1.0 + rand.Float64() // Random price between 1.0 and 2.0
-		}
-		return mockPrices, nil
-	}
-
-	// Get real prices from Jupiter API
-	prices, err := s.jupiterClient.GetCoinPrices(ctx, tokenAddresses)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get coin prices from jupiter: %w", err)
-	}
-	return prices, nil
 }
 
 func loadAddressToSymbol() map[string]string {
