@@ -217,6 +217,78 @@ describe('AuthService', () => {
     });
   });
 
+  describe('Automatic Token Refresh Feature', () => {
+    it('should automatically refresh when store says not authenticated', async () => {
+      // Simulate expired token scenario
+      mockStoreState.isAuthenticated = false;
+      mockStoreState.token = 'expired-token';
+      
+      // Mock successful refresh
+      mockStoreState.setToken.mockImplementation(() => {
+        mockStoreState.isAuthenticated = true;
+        mockStoreState.token = 'fresh-token';
+        return Promise.resolve();
+      });
+      
+      const token = await authService.getAuthToken();
+      
+      expect(mockLogger.info).toHaveBeenCalledWith('🔐 Token not available (store says not authenticated), requesting new token');
+      expect(mockStoreState.setToken).toHaveBeenCalled();
+      expect(token).toBe('fresh-token');
+    });
+
+    it('should not refresh when store says authenticated', async () => {
+      mockStoreState.isAuthenticated = true;
+      mockStoreState.token = 'valid-token';
+      
+      const token = await authService.getAuthToken();
+      
+      expect(mockStoreState.setToken).not.toHaveBeenCalled();
+      expect(token).toBe('valid-token');
+    });
+
+    it('should work for multiple API calls after token refresh', async () => {
+      mockStoreState.isAuthenticated = false;
+      
+      // Mock successful refresh
+      mockStoreState.setToken.mockImplementation(() => {
+        mockStoreState.isAuthenticated = true;
+        mockStoreState.token = 'refreshed-token';
+        return Promise.resolve();
+      });
+      
+      // Multiple API calls should all work
+      const token1 = await authService.getAuthToken();
+      const token2 = await authService.getAuthToken();
+      const token3 = await authService.getAuthToken();
+      
+      expect(token1).toBe('refreshed-token');
+      expect(token2).toBe('refreshed-token');
+      expect(token3).toBe('refreshed-token');
+      
+      // Should only refresh once
+      expect(mockStoreState.setToken).toHaveBeenCalledTimes(1);
+    });
+
+    describe('needsRefresh() helper', () => {
+      it('should return true when store says not authenticated', () => {
+        mockStoreState.isAuthenticated = false;
+        
+        const result = authService.needsRefresh();
+        
+        expect(result).toBe(true);
+      });
+
+      it('should return false when store says authenticated', () => {
+        mockStoreState.isAuthenticated = true;
+        
+        const result = authService.needsRefresh();
+        
+        expect(result).toBe(false);
+      });
+    });
+  });
+
   describe('Token generation', () => {
     it('should generate tokens with correct expiration', async () => {
       const beforeTime = Date.now();
