@@ -1,4 +1,3 @@
-template: testify
 packages:
   github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye:
     config:
