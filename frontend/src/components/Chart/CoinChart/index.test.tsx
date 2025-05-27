@@ -71,7 +71,7 @@ jest.mock('expo-haptics', () => ({
 }));
 
 jest.mock('@react-navigation/native', () => ({
-  useFocusEffect: jest.fn(React.useCallback), 
+  useFocusEffect: jest.fn((callback) => callback()),
 }));
 
 
@@ -85,7 +85,7 @@ jest.mock('@react-navigation/native', () => ({
 
 
 interface PricePoint { 
-  timestamp: number;
+  timestamp: string;
   price: number;
   value: number;
   x: number;
@@ -102,13 +102,13 @@ const defaultProps = {
 };
 
 const sampleData1: PricePoint[] = [ // This can still be used for providing data to the 'data' prop
-  { timestamp: Date.now() - 100000, price: 100, value: 100, x: Date.now() - 100000, y: 100 },
-  { timestamp: Date.now(), price: 102, value: 102, x: Date.now(), y: 102 },
+  { timestamp: new Date(1000000).toISOString(), price: 100, value: 100, x: 1000000, y: 100 },
+  { timestamp: new Date(2000000).toISOString(), price: 102, value: 102, x: 2000000, y: 102 },
 ];
 
 const sampleData2: PricePoint[] = [
-  { timestamp: Date.now() - 100000, price: 200, value: 200, x: Date.now() - 100000, y: 200 },
-  { timestamp: Date.now(), price: 202, value: 202, x: Date.now(), y: 202 },
+  { timestamp: new Date(1000000).toISOString(), price: 200, value: 200, x: 1000000, y: 200 },
+  { timestamp: new Date(2000000).toISOString(), price: 202, value: 202, x: 2000000, y: 202 },
 ];
 
 
@@ -146,10 +146,10 @@ describe('CoinChart Basic Rendering', () => { // Renamed describe block
     // The PricePoint type includes timestamp and value.
     // The component maps point.timestamp to x and point.value to y.
     const expectedChartData = sampleData1.map(p => ({
-      timestamp: p.timestamp,
+      timestamp: p.x, // Use the x value (timestamp number) for timestamp
       price: p.price, // price is used for hover, value for y-axis
       value: p.value,
-      x: p.timestamp, // Mapped from point.timestamp
+      x: p.x, // x remains the timestamp number
       y: p.value      // Mapped from point.value
     }));
     expect(JSON.parse(chart.props['data-points'])).toEqual(expectedChartData);

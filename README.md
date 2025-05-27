@@ -56,51 +56,59 @@ rm -rf ./node_modules && yarn install && cd ios && rm -rf build Pods Podfile.loc
 
 ## CodeCoverage
 ```
+
 yarn run v1.22.22
 $ jest --coverage
- PASS  src/screens/Home/HomeScreen.test.tsx
- PASS  src/components/Common/TokenSelector/TokenSelector.test.tsx
- PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
- PASS  src/components/Chart/CoinChart/index.test.tsx
- PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
- PASS  src/components/Trade/TradeConfirmation/TradeConfirmation.test.tsx
- PASS  src/components/Common/Navigation/navigation.test.tsx
- PASS  src/services/authService.test.ts
- PASS  src/store/portfolio.test.ts
- PASS  src/store/coins.test.ts
+watchman warning:  Recrawled this watch 1 time, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/nma/dev/dankfolio' ; watchman watch-project '/Users/nma/dev/dankfolio'`
+
  PASS  src/screens/Profile/ProfileScreen.test.tsx
- PASS  src/services/api.test.ts
- PASS  src/utils/numberFormat.test.ts
+ PASS  src/components/Common/TokenSelector/TokenSelector.test.tsx
  PASS  src/store/auth.test.ts
+ PASS  src/screens/Home/HomeScreen.test.tsx
+ PASS  src/components/Chart/CoinChart/index.test.tsx
+ PASS  src/store/coins.test.ts
+ PASS  src/screens/CoinDetail/CoinDetailScreen.test.tsx
+ PASS  src/screens/CoinDetail/coindetail_scripts.test.ts
+ PASS  src/utils/numberFormat.test.ts
+ PASS  src/services/api.test.ts
+ PASS  src/store/portfolio.test.ts
+ PASS  src/services/authService.test.ts
+ PASS  src/store/priceHistoryCache.test.ts
+ PASS  src/components/Common/Navigation/navigation.test.tsx
+ PASS  src/components/Trade/TradeConfirmation/TradeConfirmation.test.tsx
  PASS  src/screens/Trade/TradeScreen.test.tsx
+ PASS  src/screens/Trade/TradeScreen.Confirmation.test.tsx
 A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
-------------------------------------|---------|----------|---------|---------|-----------------------------------------
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
 File                                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
-------------------------------------|---------|----------|---------|---------|-----------------------------------------
-All files                           |   61.13 |    52.69 |   66.05 |   61.57 |
- components/Chart/CoinChart         |   88.13 |    86.95 |   68.42 |   89.09 |
-  index.tsx                         |   87.71 |    86.95 |   66.66 |   88.88 | 54-55,65,97,148-149
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
+All files                           |   65.71 |    58.05 |    76.1 |   65.19 |
+ components/Chart/CoinChart         |   67.79 |       48 |   63.15 |   67.27 |
+  index.tsx                         |   66.66 |       48 |   61.11 |   66.66 | 31,63-64,74,89-92,105-106,158-159,168-177
   styles.ts                         |     100 |      100 |     100 |     100 |
- components/Common/Icons            |   46.42 |        0 |       0 |   76.47 |
-  index.tsx                         |   46.42 |        0 |       0 |   76.47 | 17-18,22-23,27-28,32-33
  components/Common/Navigation       |     100 |      100 |     100 |     100 |
   CustomHeader.tsx                  |     100 |      100 |     100 |     100 |
  components/Common/TokenSelector    |   97.26 |    81.13 |      96 |   97.14 |
   index.tsx                         |   96.22 |       75 |      95 |   96.07 | 14-15
   scripts.ts                        |     100 |      100 |     100 |     100 |
   styles.ts                         |     100 |      100 |     100 |     100 |
- components/Home/CoinCard           |     100 |       60 |     100 |     100 |
+ components/Home/CoinCard           |    61.9 |       45 |      80 |   63.15 |
   coincard_styles.ts                |     100 |      100 |     100 |     100 |
-  index.tsx                         |     100 |       60 |     100 |     100 | 23-44
+  index.tsx                         |   57.89 |       45 |      75 |   61.11 | 34-48
  components/OTAupdate               |      25 |     3.84 |   42.85 |   27.77 |
   index.tsx                         |      75 |       50 |   66.66 |      75 | 16-17
   scripts.ts                        |    9.67 |        0 |      25 |   11.11 | 7-11,18-52
   styles.ts                         |     100 |      100 |     100 |     100 |
- components/Trade/TradeConfirmation |     100 |    86.66 |     100 |     100 |
-  index.tsx                         |     100 |    86.66 |     100 |     100 | 18,34
+ components/Trade/TradeConfirmation |     100 |    94.11 |     100 |     100 |
+  index.tsx                         |     100 |    94.11 |     100 |     100 | 19
   styles.ts                         |     100 |      100 |     100 |     100 |
- components/Trade/TradeStatusModal  |   72.72 |    59.37 |      80 |   71.42 |
-  index.tsx                         |      70 |    59.37 |      75 |      70 | 24-26,30-32,42,88
+ components/Trade/TradeStatusModal  |    78.3 |    67.04 |    90.9 |   78.43 |
+  index.tsx                         |   83.33 |    75.43 |   91.66 |   84.12 | 62,69,103-105,116-118,129-131,210,222
+  scripts.ts                        |   68.42 |    51.61 |   88.88 |   68.42 | 13-15,19-21,31-33,37-39,49-52,65,78
   styles.ts                         |     100 |      100 |     100 |     100 |
  gen/dankfolio/v1                   |     100 |      100 |     100 |     100 |
   auth_pb.ts                        |     100 |      100 |     100 |     100 |
@@ -109,45 +117,46 @@ All files                           |   61.13 |    52.69 |   66.05 |   61.57 |
   trade_pb.ts                       |     100 |      100 |     100 |     100 |
   utility_pb.ts                     |     100 |      100 |     100 |     100 |
   wallet_pb.ts                      |     100 |      100 |     100 |     100 |
- hooks                              |   51.35 |    14.28 |     100 |   54.28 |
-  useProxiedImage.ts                |   51.35 |    14.28 |     100 |   54.28 | 37-40,51-69
- screens/CoinDetail                 |   50.49 |    46.55 |   70.58 |   49.48 |
-  coindetail_scripts.ts             |       6 |        0 |       0 |       6 | 32-88,98-128
+ hooks                              |   67.56 |    42.85 |     100 |   68.57 |
+  useProxiedImage.ts                |   67.56 |    42.85 |     100 |   68.57 | 37-40,51-60
+ screens/CoinDetail                 |   84.05 |    66.66 |   91.66 |   83.84 |
+  coindetail_scripts.ts             |      75 |    48.27 |   83.33 |   74.28 | 114-117,143,163-193
   coindetail_styles.ts              |     100 |      100 |     100 |     100 |
-  index.tsx                         |   93.87 |    81.81 |   91.66 |   95.65 | 50,89
- screens/Home                       |   94.73 |       60 |    92.3 |   94.44 |
+  index.tsx                         |   93.75 |    82.35 |   94.11 |   94.91 | 48,87,181
+ screens/Home                       |   87.23 |       60 |   72.22 |   86.66 |
   home_scripts.ts                   |   66.66 |      100 |       0 |   66.66 | 64
   home_styles.ts                    |     100 |      100 |     100 |     100 |
-  index.tsx                         |   96.96 |       60 |     100 |   96.87 | 39
- screens/Profile                    |   56.45 |       50 |   68.42 |   57.14 |
-  index.tsx                         |   62.85 |       60 |   66.66 |   63.63 | 42-53,102-103,125-126,168
+  index.tsx                         |   88.09 |       60 |      75 |    87.8 | 40,80,92-96
+ screens/Profile                    |   61.42 |    56.25 |   73.91 |    62.5 |
+  index.tsx                         |   69.76 |    66.66 |      75 |   70.73 | 42-53,74-75,99-100,198
   profile_scripts.ts                |      44 |       25 |   66.66 |   45.45 | 16-26,49-60
   profile_styles.ts                 |     100 |      100 |     100 |     100 |
- screens/Trade                      |   53.52 |    47.13 |    72.5 |      53 |
-  index.tsx                         |    69.9 |     58.4 |   81.25 |   70.24 | ...,258-259,281-282,296-303,310-311,332
-  trade_scripts.ts                  |   14.89 |     3.12 |   28.57 |   14.89 | ...-109,117-119,133-168,179-187,205-256
+ screens/Trade                      |   56.51 |    54.79 |   73.33 |   56.03 |
+  index.tsx                         |   70.73 |    63.63 |   83.78 |   70.75 | ...305-306,310-311,320-321,330-331,361-362,366-367,370-371,379-380,386-388,391-393,403-410,417-418
+  trade_scripts.ts                  |   12.63 |     3.12 |   14.28 |   12.63 | 21-26,38-93,107-110,118-120,134-169,180-188,206-257
   trade_styles.ts                   |     100 |      100 |     100 |     100 |
- services                           |   23.88 |    18.75 |   29.03 |   23.88 |
-  authService.ts                    |   51.19 |    42.85 |     100 |   51.19 | 52-56,72,116-117,146-212
+ services                           |   23.07 |    23.43 |    25.8 |   23.07 |
+  authService.ts                    |   55.95 |    53.57 |     100 |   55.95 | 72,116-117,146-212
   firebaseInit.ts                   |      10 |        0 |       0 |      10 | 18-23,39-108
-  grpcApi.ts                        |    9.77 |        0 |   11.11 |    9.77 | 12,21-216,235-346,363-394
- services/grpc                      |   64.91 |       40 |      70 |   64.28 |
+  grpcApi.ts                        |    5.26 |        0 |    5.55 |    5.26 | 12,21-346,363,379-394
+ services/grpc                      |    61.4 |    26.66 |      80 |   60.71 |
   apiClient.ts                      |   84.21 |       50 |     100 |   83.33 | 15,25-28
-  grpcUtils.ts                      |   55.26 |    38.46 |    62.5 |   55.26 | 11,60-61,65-74,81,89-93
- store                              |   90.18 |       68 |   96.15 |   89.61 |
+  grpcUtils.ts                      |      50 |    23.07 |      75 |      50 | 11,52-53,57-77,93
+ store                              |   90.96 |    71.42 |   96.77 |   90.36 |
   auth.ts                           |     100 |    82.35 |     100 |     100 | 60-86
   coins.ts                          |      92 |       60 |     100 |    91.3 | 47-50
   portfolio.ts                      |    82.6 |    61.11 |      90 |   81.25 | 43,52,66-70,78-88,94-95,121-122
- utils                              |   75.92 |    75.51 |      75 |    77.1 |
+  priceHistoryCache.ts              |     100 |      100 |     100 |     100 |
+ utils                              |   80.55 |    78.57 |      80 |   81.92 |
   constants.ts                      |     100 |      100 |     100 |     100 |
-  logger.ts                         |   41.93 |    21.42 |   66.66 |   54.16 | 20-25,55-62,70
+  logger.ts                         |   58.06 |    32.14 |   77.77 |   70.83 | 20-25,61-62,70
   numberFormat.ts                   |     100 |      100 |     100 |     100 |
   url.ts                            |      20 |        0 |       0 |      20 | 5,9-18
-------------------------------------|---------|----------|---------|---------|-----------------------------------------
+------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------
 
-Test Suites: 15 passed, 15 total
-Tests:       123 passed, 123 total
+Test Suites: 17 passed, 17 total
+Tests:       140 passed, 140 total
 Snapshots:   0 total
-Time:        5.798 s, estimated 7 s
-✨  Done in 7.56s.
+Time:        3.497 s
+✨  Done in 3.79s.
 ```

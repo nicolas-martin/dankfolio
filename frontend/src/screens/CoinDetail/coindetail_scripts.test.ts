@@ -6,7 +6,6 @@ import { Coin, PriceData } from '@/types';
 import { GetPriceHistoryRequest_PriceHistoryType as PriceHistoryType } from '@/gen/dankfolio/v1/price_pb';
 
 // Mock dependencies
-// Mock dependencies
 jest.mock('@/services/grpcApi', () => ({
   grpcApi: {
     getPriceHistory: jest.fn(),
@@ -47,7 +46,6 @@ const sampleCoin: Coin = {
   dailyVolume: 0,
   tags: [],
   decimals: 9,
-
 };
 
 // Helper to convert PriceHistoryType enum value to its string key
@@ -61,7 +59,6 @@ const getPriceHistoryTypeString = (enumValue: PriceHistoryType): string | undefi
 };
 
 // Replicating TIMEFRAME_CONFIG structure from coindetail_scripts.ts for test calculations
-// Assuming the version with roundingMinutes is the correct one.
 const testTimeframeConfig: Record<string, { granularity: PriceHistoryType, durationMs: number, roundingMinutes: number }> = {
     "1H": { granularity: PriceHistoryType.ONE_MINUTE, durationMs: 1 * 60 * 60 * 1000, roundingMinutes: 1 },
     "4H": { granularity: PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000, roundingMinutes: 1 },
@@ -72,11 +69,47 @@ const testTimeframeConfig: Record<string, { granularity: PriceHistoryType, durat
     "DEFAULT": { granularity: PriceHistoryType.FIFTEEN_MINUTE, durationMs: 24 * 60 * 60 * 1000, roundingMinutes: 15 },
 };
 
-
 // Import the actual roundDateDown function to use it in tests for expected values
 import { roundDateDown as actualRoundDateDown } from './coindetail_scripts';
 
 describe('CoinDetail Scripts', () => {
+  // Use a timestamp that is not perfectly aligned to test rounding
+  const mockNow = 1672531425000; // Sunday, January 1, 2023 00:03:45 GMT
+  let originalDate: DateConstructor;
+
+  beforeAll(() => {
+    // Store the original Date constructor
+    originalDate = global.Date;
+    
+    // Mock Date.now()
+    jest.spyOn(Date, 'now').mockReturnValue(mockNow);
+    
+    // Mock the Date constructor to return our mocked time when called with no arguments
+    global.Date = jest.fn((dateString?: string | number | Date) => {
+      if (dateString !== undefined) {
+        return new originalDate(dateString);
+      }
+      return new originalDate(mockNow);
+    }) as any;
+    
+    // Copy static methods from original Date
+    Object.setPrototypeOf(global.Date, originalDate);
+    Object.getOwnPropertyNames(originalDate).forEach(name => {
+      if (name !== 'length' && name !== 'name' && name !== 'prototype') {
+        (global.Date as any)[name] = (originalDate as any)[name];
+      }
+    });
+    
+    // Ensure Date.now returns our mocked value
+    global.Date.now = jest.fn().mockReturnValue(mockNow);
+  });
+
+  afterAll(() => {
+    // Restore the original Date constructor
+    global.Date = originalDate;
+    jest.restoreAllMocks();
+  });
+
   describe('roundDateDown', () => {
     test('should round down to the nearest 1 minute', () => {
       const date = new Date("2023-01-01T10:03:45.123Z"); // 10:03:45
@@ -110,12 +143,8 @@ describe('CoinDetail Scripts', () => {
   });
 
   describe('fetchPriceHistory', () => {
-    // Use a timestamp that is not perfectly aligned to test rounding
-    const mockNow = 1672531425000; // Sunday, January 1, 2023 00:03:45 GMT
-
     beforeEach(() => {
       jest.clearAllMocks();
-      jest.spyOn(Date, 'now').mockReturnValue(mockNow); // Control Date.now() for consistent expiry calculations
 
       // Reset and assign new mocks for store functions for each test
       mockGetCache = jest.fn();
@@ -125,10 +154,18 @@ describe('CoinDetail Scripts', () => {
         setCache: mockSetCache,
         // other store methods if needed, but not for these tests
       });
+      
+      // Clear mock functions
+      mockSetLoading.mockClear();
+      mockSetPriceHistory.mockClear();
+      
+      // Ensure Date.now is consistently mocked
+      jest.spyOn(Date, 'now').mockReturnValue(mockNow);
     });
 
     afterEach(() => {
-      jest.restoreAllMocks(); // Restores Date.now spy
+      // Don't restore all mocks here, just clear them
+      jest.clearAllMocks();
     });
 
     // Test cases for non-caching behavior (existing tests can be adapted or kept if still relevant)
@@ -284,228 +321,6 @@ describe('CoinDetail Scripts', () => {
       });
     });
 
-    // These existing tests are largely covered by the [Non-Caching] describe block now,
-    // but ensure all specific scenarios (null coin, mapping, empty/null API data) are robustly tested there.
-    /*
-    TIMEFRAMES.forEach(timeframeOption => {
-      const timeframeValue = timeframeOption.value;
-      const config = testTimeframeConfig[timeframeValue] || testTimeframeConfig["DEFAULT"];
-      
-      if (!config) {
-        console.warn(`Skipping test for timeframeValue "${timeframeValue}" as it's not in testTimeframeConfig.`);
-        return;
-      }
-
-      const { granularity, durationMs, roundingMinutes } = config;
-      const expectedGranularityString = getPriceHistoryTypeString(granularity);
-      
-      const currentTime = new Date(mockNow);
-      const expectedRoundedTimeTo = actualRoundDateDown(new Date(currentTime), roundingMinutes);
-      const initialTimeFrom = new Date(currentTime.getTime() - durationMs);
-      const expectedRoundedTimeFrom = actualRoundDateDown(initialTimeFrom, roundingMinutes);
-
-      test(`should call grpcApi.getPriceHistory with rounded time params for ${timeframeValue}`, async () => {
-        (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-          data: { items: [{ unixTime: expectedRoundedTimeTo.getTime() / 1000 - 60, value: 100 }] },
-          success: true,
-        });
-
-        await fetchPriceHistory(timeframeValue, mockSetLoading, mockSetPriceHistory, sampleCoin, true);
-
-        expect(mockSetLoading).toHaveBeenCalledWith(true);
-        expect(grpcApi.getPriceHistory).toHaveBeenCalledTimes(1);
-        expect(grpcApi.getPriceHistory).toHaveBeenCalledWith(
-          sampleCoin.mintAddress,
-          expectedGranularityString,
-          expectedRoundedTimeFrom.toISOString(),
-          expectedRoundedTimeTo.toISOString(),
-          "token"
-        );
-        expect(mockSetPriceHistory).toHaveBeenCalledWith([
-          { timestamp: new Date((expectedRoundedTimeTo.getTime() / 1000 - 60) * 1000).toISOString(), value: 100, unixTime: expectedRoundedTimeTo.getTime() / 1000 - 60 },
-        ]);
-        expect(mockSetLoading).toHaveBeenCalledWith(false);
-      });
-    });
-
-    test('should handle null coin gracefully', async () => {
-      await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, null, true);
-
-      expect(mockSetLoading).toHaveBeenCalledWith(true);
-      expect(logger.error).toHaveBeenCalledWith('No coin provided for price history', { functionName: 'fetchPriceHistory' });
-      expect(grpcApi.getPriceHistory).not.toHaveBeenCalled();
-      expect(mockSetPriceHistory).toHaveBeenCalledWith([]);
-      expect(mockSetLoading).toHaveBeenCalledWith(false);
-    });
-
-    test('should handle grpcApi.getPriceHistory error gracefully', async () => {
-      const errorMessage = 'Network error';
-      (grpcApi.getPriceHistory as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
-
-      await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin, true);
-
-      expect(mockSetLoading).toHaveBeenCalledWith(true);
-      expect(grpcApi.getPriceHistory).toHaveBeenCalledTimes(1);
-      expect(logger.exception).toHaveBeenCalledWith(
-        expect.any(Error),
-        { functionName: 'fetchPriceHistory', params: { coinMintAddress: sampleCoin.mintAddress, timeframe: "1D" } }
-      );
-      expect(mockSetPriceHistory).toHaveBeenCalledWith([]);
-      expect(mockSetLoading).toHaveBeenCalledWith(false);
-    });
-    
-    test('should correctly map response items to PriceData, filtering nulls', async () => {
-      const responseItems = [
-        { unixTime: mockNow / 1000 - 120, value: 99 },
-        { unixTime: null, value: 100 }, // Should be filtered
-        { unixTime: mockNow / 1000 - 60, value: 101 },
-        { unixTime: mockNow / 1000, value: null }, // Should be filtered
-      ];
-      const expectedMappedItems: PriceData[] = [
-        { timestamp: new Date(mockNow - 120 * 1000).toISOString(), value: 99, unixTime: mockNow / 1000 - 120 },
-        { timestamp: new Date(mockNow - 60 * 1000).toISOString(), value: 101, unixTime: mockNow / 1000 - 60 },
-      ];
-      (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-        data: { items: responseItems },
-        success: true,
-      });
-    
-      await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin);
-    
-      expect(mockSetPriceHistory).toHaveBeenCalledWith(expectedMappedItems);
-    });
-
-    test('should handle empty items list from API', async () => {
-      (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-        data: { items: [] },
-        success: true,
-      });
-    
-      await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin);
-    
-      expect(mockSetPriceHistory).toHaveBeenCalledWith([]);
-    });
-    
-    test('should handle null data from API', async () => {
-      (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-        data: null,
-        success: true,
-      });
-    
-      await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin);
-    
-      expect(mockSetPriceHistory).toHaveBeenCalledWith([]);
-    });
-
-    test('should handle undefined data from API', async () => {
-        (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-          // data is undefined
-          success: true,
-        });
-      
-        await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin);
-      
-        expect(mockSetPriceHistory).toHaveBeenCalledWith([]);
-      });
-
-      const timeframeValue = timeframeOption.value;
-      const config = testTimeframeConfig[timeframeValue] || testTimeframeConfig["DEFAULT"];
-      
-      if (!config) {
-        console.warn(`Skipping test for timeframeValue "${timeframeValue}" as it's not in testTimeframeConfig.`);
-        return;
-      }
-
-      const { granularity, durationMs, roundingMinutes } = config;
-      const expectedGranularityString = getPriceHistoryTypeString(granularity);
-      
-      const currentTime = new Date(mockNow);
-      const expectedRoundedTimeTo = actualRoundDateDown(new Date(currentTime), roundingMinutes);
-      const initialTimeFrom = new Date(currentTime.getTime() - durationMs);
-      const expectedRoundedTimeFrom = actualRoundDateDown(initialTimeFrom, roundingMinutes);
-
-      test(`[Original Test - Adapted for Cache Miss] should call grpcApi.getPriceHistory with rounded time params for ${timeframeValue}`, async () => {
-        mockGetCache.mockReturnValue(undefined); // Ensure cache miss
-        (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-          data: { items: [{ unixTime: expectedRoundedTimeTo.getTime() / 1000 - 60, value: 100 }] },
-          success: true,
-        });
-
-        await fetchPriceHistory(timeframeValue, mockSetLoading, mockSetPriceHistory, sampleCoin, true);
-
-        expect(mockSetLoading).toHaveBeenCalledWith(true);
-        expect(grpcApi.getPriceHistory).toHaveBeenCalledTimes(1);
-        expect(grpcApi.getPriceHistory).toHaveBeenCalledWith(
-          sampleCoin.mintAddress,
-          expectedGranularityString,
-          expectedRoundedTimeFrom.toISOString(),
-          expectedRoundedTimeTo.toISOString(),
-          "token"
-        );
-        const expectedData = [{ timestamp: new Date((expectedRoundedTimeTo.getTime() / 1000 - 60) * 1000).toISOString(), value: 100, unixTime: expectedRoundedTimeTo.getTime() / 1000 - 60 }];
-        expect(mockSetPriceHistory).toHaveBeenCalledWith(expectedData);
-        
-        // Verify caching behavior
-        const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG[timeframeValue].roundingMinutes * 60 * 1000;
-        expect(mockSetCache).toHaveBeenCalledWith(`${sampleCoin.mintAddress}-${timeframeValue}`, expectedData, expectedCacheExpiry);
-        expect(mockSetLoading).toHaveBeenCalledWith(false);
-      });
-    });
-
-    test('[Original Test - Adapted] should correctly map response items to PriceData, filtering nulls, and cache result', async () => {
-      mockGetCache.mockReturnValue(undefined); // Cache miss
-      const responseItems = [
-        { unixTime: mockNow / 1000 - 120, value: 99 },
-        { unixTime: null, value: 100 }, // Should be filtered
-        { unixTime: mockNow / 1000 - 60, value: 101 },
-        { unixTime: mockNow / 1000, value: null }, // Should be filtered
-      ];
-      const expectedMappedItems: PriceData[] = [
-        { timestamp: new Date(mockNow - 120 * 1000).toISOString(), value: 99, unixTime: mockNow / 1000 - 120 },
-        { timestamp: new Date(mockNow - 60 * 1000).toISOString(), value: 101, unixTime: mockNow / 1000 - 60 },
-      ];
-      (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-        data: { items: responseItems },
-        success: true,
-      });
-    
-      await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin, false); // isInitialLoad = false
-    
-      expect(mockSetPriceHistory).toHaveBeenCalledWith(expectedMappedItems);
-      const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG["1D"].roundingMinutes * 60 * 1000;
-      expect(mockSetCache).toHaveBeenCalledWith(`${sampleCoin.mintAddress}-1D`, expectedMappedItems, expectedCacheExpiry);
-    });
-
-    test('[Original Test - Adapted] should handle empty items list from API and cache empty result', async () => {
-      mockGetCache.mockReturnValue(undefined); // Cache miss
-      (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-        data: { items: [] },
-        success: true,
-      });
-    
-      await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin, false);
-    
-      expect(mockSetPriceHistory).toHaveBeenCalledWith([]);
-      const expectedCacheExpiry = mockNow + TIMEFRAME_CONFIG["1D"].roundingMinutes * 60 * 1000;
-      expect(mockSetCache).toHaveBeenCalledWith(`${sampleCoin.mintAddress}-1D`, [], expectedCacheExpiry);
-    });
-    
-    test('[Original Test - Adapted] should handle null data from API and not cache', async () => {
-      mockGetCache.mockReturnValue(undefined); // Cache miss
-      (grpcApi.getPriceHistory as jest.Mock).mockResolvedValueOnce({
-        data: null, // API returns null for the data object itself
-        success: true,
-      });
-    
-      await fetchPriceHistory("1D", mockSetLoading, mockSetPriceHistory, sampleCoin, false);
-    
-      expect(mockSetPriceHistory).toHaveBeenCalledWith([]);
-      // If response.data is null, response.data.items access would fail before caching.
-      // The current implementation of fetchPriceHistory handles this by calling setPriceHistory([])
-      // and then setCache is NOT called because the mapping part is skipped.
-      expect(mockSetCache).not.toHaveBeenCalled();
-    });
-    */
   });
 
   // TODO: Test handleTradeNavigation if needed
