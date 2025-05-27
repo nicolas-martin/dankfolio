@@ -280,10 +280,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 		// WEN: 13636.36 * $0.00011 = $1.5000
 		const expectedToValue = `$${(parseFloat(mockToAmount) * MOCK_WEN_PRICE).toFixed(4)}`;
 		expect(await within(getByTestId('to-coin-details')).findByText(expectedToValue)).toBeTruthy();
-		expect(await within(getByTestId('fee-section')).findByText(`${parseFloat(mockFees.priceImpactPct).toFixed(4)}%`)).toBeTruthy();
 		expect(await within(getByTestId('fee-section')).findByText(`$${mockFees.totalFee}`)).toBeTruthy();
-		expect(within(modalContent).queryByText(/High price impact detected/i)).toBeNull();
-
 
 		// 5. Test cancel flow
 		await act(async () => {
@@ -347,50 +344,5 @@ describe('TradeScreen Confirmation Behavior', () => {
 			});
 		});
 		expect(mockNavigate).toHaveBeenCalledWith('Portfolio');
-	});
-
-	it('shows high price impact warning when impact exceeds threshold', async () => {
-		const mockFromAmount = '1';
-		const mockToAmount = '13636.36';
-		const mockFees = { priceImpactPct: '3.5', totalFee: '0.50' }; // High impact > 2%
-
-		(TradeScripts.fetchTradeQuote as jest.Mock).mockImplementation(
-			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
-				await act(async () => {
-					setToAmount(mockToAmount);
-					setTradeDetails(mockFees);
-					setIsQuoteLoading(false);
-				});
-			}
-		);
-
-		const { getByTestId, getByText, findByText } = render(<TradeScreen />);
-
-		await act(async () => {
-			await waitFor(() => {
-				const calls = mockCoinStoreReturn.getCoinByID.mock.calls.length;
-				expect([2, 6, 12]).toContain(calls);
-			});
-			jest.runOnlyPendingTimers();
-		});
-		mockCoinStoreReturn.getCoinByID.mockClear();
-
-		await act(async () => {
-			const fromInput = getByTestId('token-selector-input-from');
-			fireEvent.changeText(fromInput, mockFromAmount);
-			jest.runOnlyPendingTimers();
-		});
-		await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
-
-		await act(async () => {
-			fireEvent.press(getByTestId('trade-button')); // Use testID for clarity
-			jest.runOnlyPendingTimers();
-		});
-		await waitFor(() => {
-			const calls = mockCoinStoreReturn.getCoinByID.mock.calls.length;
-			expect([0, 2, 6, 12]).toContain(calls);
-		});
-
-		expect(await findByText(/High price impact detected/i)).toBeTruthy(); // Updated regex
 	});
 }); 

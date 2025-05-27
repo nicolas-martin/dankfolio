@@ -182,27 +182,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurface,
 	},
 	
-	// Warning Row (inline with fees)
-	warningRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: theme.colors.errorContainer,
-		borderRadius: 8,
-		padding: 10,
-		marginBottom: 8,
-		gap: 8,
-	},
-	warningRowText: {
-		fontSize: 12,
-		fontWeight: '600',
-		color: theme.colors.onErrorContainer,
-		flex: 1,
-	},
-	warningValue: {
-		fontSize: 12,
-		fontWeight: '700',
-		color: theme.colors.onErrorContainer,
-	},
 	totalFeeRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -221,26 +200,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontSize: 14,
 		fontWeight: '700',
 		color: theme.colors.onSurface,
-	},
-
-	// Warning Section
-	warningContainer: {
-		backgroundColor: theme.colors.errorContainer,
-		borderRadius: 12,
-		padding: 14,
-		marginBottom: 16,
-		flexDirection: 'row',
-		alignItems: 'flex-start',
-	},
-	warningIcon: {
-		marginRight: 10,
-		marginTop: 1,
-	},
-	warningText: {
-		fontSize: 13,
-		color: theme.colors.onErrorContainer,
-		flex: 1,
-		lineHeight: 18,
 	},
 
 	// Action Buttons

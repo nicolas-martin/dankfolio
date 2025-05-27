@@ -505,25 +505,9 @@ const Trade: React.FC = () => {
 		}
 
 		const priceImpact = parseFloat(tradeDetails.priceImpactPct);
-		const showWarning = priceImpact > 5; // Show warning for >5% price impact
 
 		return (
 			<>
-				{showWarning && (
-					<View style={styles.warningContainer}>
-						<View style={styles.warningIcon}>
-							<Icon 
-								source="alert" 
-								size={20} 
-								color="#FF9800"
-							/>
-						</View>
-						<Text style={styles.warningText}>
-							High price impact ({priceImpact.toFixed(2)}%). You may receive significantly less tokens.
-						</Text>
-					</View>
-				)}
-				
 				<View style={styles.detailsContainer}>
 					<View style={styles.detailsHeader}>
 						<View style={styles.detailsIcon}>
@@ -534,10 +518,7 @@ const Trade: React.FC = () => {
 					
 					<View style={styles.detailRow}>
 						<Text style={styles.detailLabel}>Price Impact</Text>
-						<Text style={[
-							styles.detailValue,
-							{ color: priceImpact > 5 ? '#FF9800' : theme.colors.onSurface }
-						]}>
+						<Text style={styles.detailValue}>
 							{priceImpact.toFixed(2)}%
 						</Text>
 					</View>

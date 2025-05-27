@@ -85,19 +85,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	);
 
 	const renderFeeSection = () => {
-		const priceImpact = parseFloat(fees.priceImpactPct);
-		const showWarning = priceImpact > 2;
-
 		return (
 			<View style={styles.feeSection} testID="fee-section">
-				{showWarning && (
-					<View style={styles.warningRow}>
-						<Icon source="alert" size={16} color={theme.colors.error} />
-						<Text style={styles.warningRowText}>High Price Impact</Text>
-						<Text style={styles.warningValue}>{priceImpact.toFixed(2)}%</Text>
-					</View>
-				)}
-				
 				<View style={styles.feeRow}>
 					<Text style={styles.feeLabel}>Network Fee</Text>
 					<Text style={styles.feeValue}>${fees.totalFee}</Text>
