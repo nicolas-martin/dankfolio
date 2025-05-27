@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text, useTheme, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import TokenSelector from 'components/Common/TokenSelector';
 import { useToast } from '@components/Common/Toast';
@@ -194,82 +194,132 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		navigation.goBack();
 	};
 
-	if (!wallet) {
-		return (
-			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-				<Text style={styles.title}>No Wallet Connected</Text>
+	const renderNoWalletState = () => (
+		<View style={styles.noWalletContainer}>
+			<View style={styles.noWalletCard}>
+				<Icon source="wallet-outline" size={48} color={theme.colors.onSurfaceVariant} />
+				<Text style={styles.noWalletTitle}>No Wallet</Text>
+				<Text style={styles.noWalletSubtitle}>Connect wallet to continue</Text>
 			</View>
-		);
-	}
-	if (!selectedToken) {
-		return (
-			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-				<Text style={styles.title}>No token selected</Text>
+		</View>
+	);
+
+	const renderNoTokenState = () => (
+		<View style={styles.noWalletContainer}>
+			<View style={styles.noWalletCard}>
+				<Icon source="coins" size={48} color={theme.colors.onSurfaceVariant} />
+				<Text style={styles.noWalletTitle}>No Tokens</Text>
+				<Text style={styles.noWalletSubtitle}>Add tokens to portfolio</Text>
 			</View>
-		);
-	}
+		</View>
+	);
 
-	return (
-		<View style={styles.container}>
-			<ScrollView contentContainerStyle={styles.contentPadding}>
-				<Text style={styles.title}>Send Tokens</Text>
+	const renderTokenCard = () => {
+		if (!selectedToken) return null;
 
+		return (
+			<View style={styles.tokenCard}>
 				<TokenSelector
-					style={styles.inputContainer}
 					selectedToken={selectedToken.coin}
 					onSelectToken={onTokenSelect}
-					label="Select token to send"
+					label=""
 					amountValue={amount}
 					onAmountChange={setAmount}
 					isAmountEditable={true}
 					showOnlyPortfolioTokens={true}
 				/>
+			</View>
+		);
+	};
 
-				{selectedToken && (
-					<View style={styles.percentageContainer}>
-						{[10, 25, 50, 75, 100].map((percent) => (
-							<TouchableOpacity
-								key={percent}
-								style={styles.percentageButton}
-								onPress={() => {
-									const calculatedAmount = (selectedToken.amount * percent) / 100;
-									let amountStr = calculatedAmount.toFixed(9);
-									amountStr = parseFloat(amountStr).toString();
-									if (amountStr.length > 12) {
-										amountStr = amountStr.substring(0, 12);
-										if (amountStr.endsWith('.')) {
-											amountStr = amountStr.substring(0, 11);
-										}
+	const renderAmountCard = () => {
+		if (!selectedToken) return null;
+
+		return (
+			<View style={styles.amountCard}>
+				<View style={styles.percentageContainer}>
+					{[25, 50, 75, 100].map((percent) => (
+						<TouchableOpacity
+							key={percent}
+							style={styles.percentageButton}
+							onPress={() => {
+								const calculatedAmount = (selectedToken.amount * percent) / 100;
+								let amountStr = calculatedAmount.toFixed(9);
+								amountStr = parseFloat(amountStr).toString();
+								if (amountStr.length > 12) {
+									amountStr = amountStr.substring(0, 12);
+									if (amountStr.endsWith('.')) {
+										amountStr = amountStr.substring(0, 11);
 									}
-									setAmount(amountStr);
-								}}
-							>
-								<Text style={styles.percentageButtonText}>{percent}%</Text>
-							</TouchableOpacity>
-						))}
-					</View>
-				)}
-
-				<View style={styles.inputContainer}>
-					<Text style={styles.label}>Recipient Address</Text>
-					<TextInput
-						style={styles.input}
-						value={recipientAddress}
-						onChangeText={(text) => setRecipientAddress(text)}
-						placeholder="Enter recipient's address"
-						placeholderTextColor={theme.colors.onSurfaceVariant}
-					/>
+								}
+								setAmount(amountStr);
+							}}
+						>
+							<Text style={styles.percentageButtonText}>{percent}%</Text>
+						</TouchableOpacity>
+					))}
 				</View>
+			</View>
+		);
+	};
 
-				<TouchableOpacity
-					onPress={handleSubmit}
-					disabled={isLoading}
-					style={[styles.button, isLoading && styles.buttonDisabled]}
-				>
-					<Text style={styles.buttonText}>
-						{isLoading ? 'Sending...' : 'Send Tokens'}
-					</Text>
-				</TouchableOpacity>
+	const renderRecipientCard = () => (
+		<View style={styles.recipientCard}>
+			<View style={styles.recipientHeader}>
+				<Icon source="account" size={20} color={theme.colors.onTertiaryContainer} />
+				<Text style={styles.recipientTitle}>To</Text>
+			</View>
+			<TextInput
+				style={styles.input}
+				value={recipientAddress}
+				onChangeText={(text) => setRecipientAddress(text)}
+				placeholder="Wallet address"
+				placeholderTextColor={theme.colors.onSurfaceVariant}
+				multiline={true}
+				numberOfLines={2}
+			/>
+		</View>
+	);
+
+	const renderSendButton = () => (
+		<TouchableOpacity
+			onPress={handleSubmit}
+			disabled={isLoading}
+			style={[styles.sendButton, isLoading && styles.sendButtonDisabled]}
+		>
+			<Icon source="send" size={20} color={theme.colors.onPrimary} />
+			<Text style={styles.sendButtonText}>
+				{isLoading ? 'Sending...' : 'Send'}
+			</Text>
+		</TouchableOpacity>
+	);
+
+	if (!wallet) {
+		return renderNoWalletState();
+	}
+
+	if (!selectedToken) {
+		return renderNoTokenState();
+	}
+
+	return (
+		<View style={styles.container}>
+			<ScrollView 
+				style={styles.scrollView}
+				contentContainerStyle={styles.content}
+				showsVerticalScrollIndicator={false}
+			>
+				{/* Token Selection Card */}
+				{renderTokenCard()}
+
+				{/* Amount Selection Card */}
+				{renderAmountCard()}
+
+				{/* Recipient Card */}
+				{renderRecipientCard()}
+
+				{/* Send Button */}
+				{renderSendButton()}
 			</ScrollView>
 
 			{/* Confirmation Modal */}
