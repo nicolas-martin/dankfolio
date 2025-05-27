@@ -16,14 +16,53 @@ interface ToastParams {
 }
 
 export const TIMEFRAMES: TimeframeOption[] = [
-	{ label: "15m", value: "FIFTEEN_MINUTE" },
-	{ label: "1H", value: "ONE_HOUR" },
-	{ label: "4H", value: "FOUR_HOUR" },
-	{ label: "1D", value: "ONE_DAY" },
+	{ label: "1H", value: "1H" },
+	{ label: "4H", value: "4H" },
+	{ label: "1D", value: "1D" },
+	{ label: "1W", value: "1W" },
+	{ label: "1M", value: "1M" },
+	{ label: "1Y", value: "1Y" },
 ];
 
+const TIMEFRAME_CONFIG: Record<string, { granularity: GetPriceHistoryRequest_PriceHistoryType, durationMs: number }> = {
+	"1H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 1 * 60 * 60 * 1000 },
+	"4H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000 },
+	"1D": { granularity: GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE, durationMs: 24 * 60 * 60 * 1000 },
+	"1W": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_HOUR, durationMs: 7 * 24 * 60 * 60 * 1000 },
+	"1M": { granularity: GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR, durationMs: 30 * 24 * 60 * 60 * 1000 },
+	"1Y": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_DAY, durationMs: 365 * 24 * 60 * 60 * 1000 },
+	// Default for any other case, though UI should restrict to above
+	"1H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 1 * 60 * 60 * 1000, roundingMinutes: 1 },
+	"4H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000, roundingMinutes: 1 },
+	"1D": { granularity: GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE, durationMs: 24 * 60 * 60 * 1000, roundingMinutes: 5 },
+	"1W": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_HOUR, durationMs: 7 * 24 * 60 * 60 * 1000, roundingMinutes: 60 },
+	"1M": { granularity: GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR, durationMs: 30 * 24 * 60 * 60 * 1000, roundingMinutes: 240 }, // 4 hours
+	"1Y": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_DAY, durationMs: 365 * 24 * 60 * 60 * 1000, roundingMinutes: 1440 }, // 1 day
+	// Default for any other case, though UI should restrict to above
+	"DEFAULT": { granularity: GetPriceHistoryRequest_PriceHistoryType.FIFTEEN_MINUTE, durationMs: 24 * 60 * 60 * 1000, roundingMinutes: 15 },
+};
+
+// Helper function to round date down to the nearest interval
+export function roundDateDown(dateToRound: Date, granularityMinutes: number): Date {
+	const msInMinute = 60 * 1000;
+	const dateInMs = dateToRound.getTime();
+	
+	const roundedMs = Math.floor(dateInMs / (granularityMinutes * msInMinute)) * (granularityMinutes * msInMinute);
+	
+	const roundedDate = new Date(roundedMs);
+	
+	// Zero out seconds and milliseconds, as Math.floor might not perfectly align if granularityMinutes is large
+	// For smaller granularities like 1 or 5 minutes, this is more of a safeguard.
+	// For larger granularities like 60 minutes (1 hour) or 240 minutes (4 hours),
+	// the Math.floor on minutes (or hours derived from minutes) effectively handles this.
+	roundedDate.setSeconds(0, 0);
+
+	return roundedDate;
+}
+
+
 export const fetchPriceHistory = async (
-	timeframe: string,
+	selectedTimeframeValue: string, // e.g., "1H", "4H"
 	setLoading: (loading: boolean) => void,
 	setPriceHistory: (history: PriceData[]) => void,
 	coin: Coin | null,
@@ -38,35 +77,38 @@ export const fetchPriceHistory = async (
 			setPriceHistory([]);
 			return;
 		}
-		const now = new Date();
-		let startDate = new Date(now);
-		const points = 100;
-		switch (timeframe) {
-			case 'FIFTEEN_MINUTE':
-				startDate = new Date(now.getTime() - points * 15 * 60 * 1000);
-				break;
-			case 'ONE_HOUR':
-				startDate = new Date(now.getTime() - points * 60 * 60 * 1000);
-				break;
-			case 'FOUR_HOUR':
-				startDate = new Date(now.getTime() - points * 4 * 60 * 60 * 1000);
-				break;
-			case 'ONE_DAY':
-				startDate = new Date(now.getTime() - points * 24 * 60 * 60 * 1000);
-				break;
-			case 'ONE_WEEK':
-				startDate = new Date(now.getTime() - points * 7 * 24 * 60 * 60 * 1000);
-				break;
-			default:
-				throw new Error(`Invalid timeframe: ${timeframe}`);
+
+		const config = TIMEFRAME_CONFIG[selectedTimeframeValue] || TIMEFRAME_CONFIG["DEFAULT"];
+		const { durationMs, roundingMinutes } = config;
+
+		const currentTime = new Date();
+		let dateTo = new Date(currentTime);
+		let dateFrom = new Date(currentTime.getTime() - durationMs);
+
+		const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
+		const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
+		
+		const timeToISO = roundedTimeTo.toISOString();
+		const timeFromISO = roundedTimeFrom.toISOString();
+
+
+		// Find the key in typeMap (grpcApi.ts) that corresponds to the enum value
+		const typeMap = GetPriceHistoryRequest_PriceHistoryType;
+		const grpcTypeKey = Object.keys(typeMap).find(key => typeMap[key as keyof typeof typeMap] === config.granularity);
+
+
+		if (!grpcTypeKey) {
+			logger.error(`Invalid granularity type for timeframe: ${selectedTimeframeValue}`, { functionName: 'fetchPriceHistory' });
+			setPriceHistory([]);
+			setLoading(false);
+			return;
 		}
-		const time_to = now.toISOString();
-		const time_from = startDate.toISOString();
+
 		const response = await grpcApi.getPriceHistory(
 			coin.mintAddress,
-			timeframe,
-			time_from,
-			time_to,
+			grpcTypeKey, // Pass the string key e.g. "ONE_MINUTE"
+			timeFromISO,
+			timeToISO,
 			"token"
 		);
 		if (response?.data?.items) {
@@ -82,7 +124,7 @@ export const fetchPriceHistory = async (
 			setPriceHistory([]);
 		}
 	} catch (error) {
-		logger.exception(error, { functionName: 'fetchPriceHistory', params: { coinMintAddress: coin?.mintAddress, timeframe } });
+		logger.exception(error, { functionName: 'fetchPriceHistory', params: { coinMintAddress: coin?.mintAddress, timeframe: selectedTimeframeValue } });
 		setPriceHistory([]);
 	} finally {
 		setLoading(false);
