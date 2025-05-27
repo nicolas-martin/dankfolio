@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
-import { Text, useTheme, Button, Icon } from 'react-native-paper';
+import { Text, useTheme, Button, Icon, ProgressBar } from 'react-native-paper';
 import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './trade_styles';
@@ -13,7 +13,7 @@ import TokenSelector from '@components/Common/TokenSelector';
 import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
-import RefreshTimer from '@components/Trade/RefreshTimer';
+
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import {
 	fetchTradeQuote,
@@ -23,6 +23,7 @@ import {
 	stopPolling,
 	handleSwapCoins as swapCoinsUtil,
 	QUOTE_DEBOUNCE_MS,
+	PRICE_REFRESH_INTERVAL_MS,
 	getCoinPrices
 } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
@@ -61,7 +62,10 @@ const Trade: React.FC = () => {
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const quoteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-	const [isRefreshTimerActive, setIsRefreshTimerActive] = useState<boolean>(false);
+	const [refreshProgress, setRefreshProgress] = useState<number>(0);
+	const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+	const refreshStartTimeRef = useRef<number>(0);
+
 
 	const componentStopPolling = () => {
 		stopPolling(pollingIntervalRef, setIsLoadingTrade);
@@ -140,42 +144,73 @@ const Trade: React.FC = () => {
 		}
 	};
 
-	// Check if we have valid amounts for trading
-	const hasValidAmounts = useMemo(() => {
-		const fromAmountNum = parseFloat(fromAmount || '0');
-		const toAmountNum = parseFloat(toAmount || '0');
-		return (fromAmountNum > 0 || toAmountNum > 0) && fromCoin && toCoin;
-	}, [fromAmount, toAmount, fromCoin, toCoin]);
 
-	// Setup polling interval only when coins change
+
+	// Setup polling interval when coins or amounts change
 	useEffect(() => {
-		logger.log('[Trade] Setting up coin price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
+		logger.log('[Trade] Setting up coin price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount, toAmount });
 		
-		// Clear any existing interval
+		// Clear any existing intervals
 		if (pollingIntervalRef.current) {
 			clearInterval(pollingIntervalRef.current);
 			pollingIntervalRef.current = null;
 		}
+		if (progressIntervalRef.current) {
+			clearInterval(progressIntervalRef.current);
+			progressIntervalRef.current = null;
+		}
 		
-		// Only setup polling if we have both coins
-		if (fromCoin && toCoin) {
-			pollingIntervalRef.current = setInterval(refreshPrices, 10000);
+		// Reset progress
+		setRefreshProgress(0);
+		
+		// Only setup polling if we have both coins and valid amounts
+		const hasValidAmounts = (parseFloat(fromAmount || '0') > 0) || (parseFloat(toAmount || '0') > 0);
+		
+		if (fromCoin && toCoin && hasValidAmounts) {
+			logger.log('[Trade] Starting price polling with valid amounts', { fromAmount, toAmount });
+			
+			// Reset progress and start time
+			refreshStartTimeRef.current = Date.now();
+			
+			// Setup price refresh interval
+			pollingIntervalRef.current = setInterval(() => {
+				refreshPrices();
+				// Reset progress when refresh happens
+				setRefreshProgress(0);
+				refreshStartTimeRef.current = Date.now();
+			}, PRICE_REFRESH_INTERVAL_MS);
+			
+			// Setup progress tracking interval (every 100ms)
+			progressIntervalRef.current = setInterval(() => {
+				const elapsed = Date.now() - refreshStartTimeRef.current;
+				const progress = Math.min(elapsed / PRICE_REFRESH_INTERVAL_MS, 1);
+				setRefreshProgress(progress);
+			}, 100);
+		} else {
+			logger.log('[Trade] Not starting price polling - missing coins or amounts', { 
+				hasFromCoin: !!fromCoin, 
+				hasToCoin: !!toCoin, 
+				hasValidAmounts,
+				fromAmount,
+				toAmount 
+			});
 		}
 		
 		return () => {
-			logger.log('[Trade] Cleaning up price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
+			logger.log('[Trade] Cleaning up price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
 			if (pollingIntervalRef.current) {
 				clearInterval(pollingIntervalRef.current);
 				pollingIntervalRef.current = null;
 				logger.log('[Trade] Price polling interval cleared successfully');
 			}
+			if (progressIntervalRef.current) {
+				clearInterval(progressIntervalRef.current);
+				progressIntervalRef.current = null;
+			}
 		};
-	}, [fromCoin?.mintAddress, toCoin?.mintAddress]);
+	}, [fromCoin?.mintAddress, toCoin?.mintAddress, fromAmount, toAmount]);
 
-	// Separate effect to control timer activation based on valid amounts
-	useEffect(() => {
-		setIsRefreshTimerActive(!!hasValidAmounts);
-	}, [hasValidAmounts]);
+
 
 	useEffect(() => {
 		logger.log('[Trade] Trade screen mounted (second useEffect, consider merging if appropriate)');
@@ -301,14 +336,40 @@ const Trade: React.FC = () => {
 			showToast({ type: 'error', message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.` });
 			return;
 		}
+		
+		logger.info('[Trade] Stopping refresh timers before opening confirmation modal');
+		// Stop refresh timers when opening confirmation modal
+		if (pollingIntervalRef.current) {
+			clearInterval(pollingIntervalRef.current);
+			pollingIntervalRef.current = null;
+		}
+		if (progressIntervalRef.current) {
+			clearInterval(progressIntervalRef.current);
+			progressIntervalRef.current = null;
+		}
+		setRefreshProgress(0);
+		
 		logger.breadcrumb({ category: 'ui', message: 'Trade confirmation modal opened', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount, toAmount } });
 		setIsConfirmationVisible(true);
 	};
 
 	useEffect(() => {
 		return () => {
+			logger.info('[Trade] Component unmounting - cleaning up all intervals and timeouts');
 			componentStopPolling();
-			if (quoteTimeoutRef.current) clearTimeout(quoteTimeoutRef.current);
+			if (quoteTimeoutRef.current) {
+				clearTimeout(quoteTimeoutRef.current);
+				quoteTimeoutRef.current = null;
+			}
+			// Clean up price refresh and progress intervals
+			if (pollingIntervalRef.current) {
+				clearInterval(pollingIntervalRef.current);
+				pollingIntervalRef.current = null;
+			}
+			if (progressIntervalRef.current) {
+				clearInterval(progressIntervalRef.current);
+				progressIntervalRef.current = null;
+			}
 		};
 	}, []);
 
@@ -318,18 +379,23 @@ const Trade: React.FC = () => {
 			showToast({ type: 'error', message: 'Missing required trade parameters' });
 			return;
 		}
-		logger.info('[Trade] Stopping price polling and refresh timer before trade execution.');
+		logger.info('[Trade] Stopping price polling and progress tracking before trade execution.');
 		
-		// Stop the refresh timer
-		setIsRefreshTimerActive(false);
-		
+		// Stop all intervals to prevent infinite loops
 		if (pollingIntervalRef.current) {
 			clearInterval(pollingIntervalRef.current);
 			pollingIntervalRef.current = null;
 			logger.info('[Trade] Price polling stopped.');
 		}
-		// Breadcrumb for status modal opening will be in executeTrade or here if it's set directly.
-		// For now, assuming executeTrade handles its own breadcrumbs for submission/status modal.
+		if (progressIntervalRef.current) {
+			clearInterval(progressIntervalRef.current);
+			progressIntervalRef.current = null;
+			logger.info('[Trade] Progress tracking stopped.');
+		}
+		
+		// Reset progress to prevent UI issues
+		setRefreshProgress(0);
+		
 		await executeTrade(fromCoin, toCoin, fromAmount, 1, showToast, setIsLoadingTrade, setIsConfirmationVisible, setPollingStatus, setSubmittedTxHash, setPollingError, setPollingConfirmations, setIsStatusModalVisible, componentStartPolling);
 	};
 
@@ -358,6 +424,31 @@ const Trade: React.FC = () => {
 	const handleCloseConfirmationModal = () => {
 		logger.breadcrumb({ category: 'ui', message: 'Trade confirmation modal closed' });
 		setIsConfirmationVisible(false);
+		
+		// Restart refresh timers if we have valid amounts and coins
+		const hasValidAmounts = (parseFloat(fromAmount || '0') > 0) || (parseFloat(toAmount || '0') > 0);
+		if (fromCoin && toCoin && hasValidAmounts) {
+			logger.info('[Trade] Restarting refresh timers after confirmation modal close');
+			
+			// Reset progress and start time
+			setRefreshProgress(0);
+			refreshStartTimeRef.current = Date.now();
+			
+			// Setup price refresh interval
+			pollingIntervalRef.current = setInterval(() => {
+				refreshPrices();
+				// Reset progress when refresh happens
+				setRefreshProgress(0);
+				refreshStartTimeRef.current = Date.now();
+			}, PRICE_REFRESH_INTERVAL_MS);
+			
+			// Setup progress tracking interval (every 100ms)
+			progressIntervalRef.current = setInterval(() => {
+				const elapsed = Date.now() - refreshStartTimeRef.current;
+				const progress = Math.min(elapsed / PRICE_REFRESH_INTERVAL_MS, 1);
+				setRefreshProgress(progress);
+			}, 100);
+		}
 	};
 
 	if (!toCoin) return (
@@ -526,18 +617,37 @@ const Trade: React.FC = () => {
 						)}
 					</View>
 
+					{/* Refresh Progress Bar */}
+					{fromCoin && toCoin && ((parseFloat(fromAmount || '0') > 0) || (parseFloat(toAmount || '0') > 0)) && (
+						<View style={styles.refreshProgressContainer}>
+							<View style={styles.refreshProgressHeader}>
+								<View style={styles.refreshProgressIcon}>
+									<Icon 
+										source="refresh" 
+										size={16} 
+										color={theme.colors.onSurfaceVariant}
+									/>
+								</View>
+								<Text style={styles.refreshProgressText}>
+									Price Refresh Timer
+								</Text>
+							</View>
+							<ProgressBar 
+								progress={refreshProgress}
+								color={theme.colors.primary}
+								style={styles.refreshProgressBar}
+								testID="refresh-progress-bar"
+							/>
+							<Text style={styles.refreshProgressLabel}>
+								{refreshProgress >= 1 ? 'Refreshing...' : `Next refresh in ${Math.ceil((1 - refreshProgress) * (PRICE_REFRESH_INTERVAL_MS / 1000))}s`}
+							</Text>
+						</View>
+					)}
+
 					{/* Trade Details */}
 					{renderTradeDetails()}
 
-					{/* Refresh Timer */}
-					{hasValidAmounts && (
-						<RefreshTimer
-							duration={10000}
-							isActive={isRefreshTimerActive}
-							onComplete={refreshPrices}
-							visible={!isQuoteLoading}
-						/>
-					)}
+
 				</View>
 			</ScrollView>
 

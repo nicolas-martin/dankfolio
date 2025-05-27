@@ -237,4 +237,35 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: '#E65100',
 		fontWeight: '500',
 	},
+
+	// Refresh Progress Bar
+	refreshProgressContainer: {
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 12,
+		padding: 16,
+		marginBottom: 20,
+	},
+	refreshProgressHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 12,
+	},
+	refreshProgressIcon: {
+		marginRight: 8,
+	},
+	refreshProgressText: {
+		fontSize: 14,
+		color: theme.colors.onSurfaceVariant,
+		fontWeight: '500',
+	},
+	refreshProgressBar: {
+		height: 6,
+		borderRadius: 3,
+	},
+	refreshProgressLabel: {
+		fontSize: 12,
+		color: theme.colors.onSurfaceVariant,
+		textAlign: 'center',
+		marginTop: 8,
+	},
 }); 
