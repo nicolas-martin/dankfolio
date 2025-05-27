@@ -118,6 +118,18 @@ describe('TradeScreen', () => {
 		);
 	};
 
+	beforeAll(() => {
+		// Speed up timers
+		jest.useFakeTimers();
+	});
+
+	afterAll(() => {
+		// Clean up all timers and restore real timers
+		jest.clearAllTimers();
+		jest.useRealTimers();
+		jest.restoreAllMocks();
+	});
+
 	beforeEach(() => {
 		// Clear all mocks and timers
 		jest.clearAllMocks();
@@ -179,10 +191,6 @@ describe('TradeScreen', () => {
 				initialToCoin: mockToCoin,
 			},
 		});
-	});
-
-	afterEach(() => {
-		jest.useRealTimers();
 	});
 
 	it('initializes correctly with initialFromCoin and initialToCoin, prioritizing cache', async () => {
