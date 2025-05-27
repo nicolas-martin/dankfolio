@@ -119,7 +119,6 @@ const CoinDetail: React.FC = () => {
 					<CoinChart
 						data={priceHistory}
 						loading={loading}
-						activePoint={hoverPoint}
 						onHover={handleChartHover}
 					/>
 				</View>
@@ -157,7 +156,7 @@ const CoinDetail: React.FC = () => {
 			<View style={styles.holdingsCard}>
 				<View style={styles.holdingsHeader}>
 					<View style={styles.holdingsIcon}>
-						<Icon source="wallet" size={14} color={theme.colors.onPrimaryContainer} />
+						<Icon source="wallet" size={16} color={theme.colors.onPrimaryContainer} />
 					</View>
 					<Text style={styles.holdingsTitle}>Your Holdings</Text>
 				</View>
@@ -194,7 +193,7 @@ const CoinDetail: React.FC = () => {
 			<View style={styles.aboutCard}>
 				<View style={styles.aboutHeader}>
 					<View style={styles.aboutIcon}>
-						<Icon source="information" size={14} color={theme.colors.onSecondaryContainer} />
+						<Icon source="information-outline" size={16} color={theme.colors.onSecondaryContainer} />
 					</View>
 					<Text style={styles.aboutTitle}>About {initialCoin.name}</Text>
 				</View>
