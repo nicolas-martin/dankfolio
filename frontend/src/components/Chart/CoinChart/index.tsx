@@ -27,12 +27,12 @@ const ActiveValueIndicator = ({ xPosition, yPosition, bottom, top, lineColor, in
 	indicatorColor: string;
 }) => {
 	return (
-		<View testID="active-value-indicator">
+		<>
 			<SkiaLine p1={{ x: xPosition.value, y: bottom }} p2={{ x: xPosition.value, y: top + 30 }} color={lineColor} strokeWidth={1} />
 			<Circle cx={xPosition} cy={yPosition} r={6} color={indicatorColor} />
 			<Circle cx={xPosition} cy={yPosition} r={4} color="hsla(0, 0, 100%, 0.25)"
 			/>
-		</View>
+		</>
 	);
 };
 
