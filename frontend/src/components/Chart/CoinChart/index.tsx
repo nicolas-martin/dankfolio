@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react"; // Removed useEffect
 import { CartesianChart, useChartPressState, Area, Line, } from "victory-native";
 import { View } from "react-native";
 import { format } from "date-fns";
@@ -12,6 +12,8 @@ import { Circle, Line as SkiaLine, Text as SkiaText } from "@shopify/react-nativ
 import { createStyles } from "./styles";
 import inter from "@assets/fonts/inter-medium.ttf";
 import { logger } from '@/utils/logger';
+// Removed import of usePriceHistoryCacheStore
+// Removed PriceHistoryType enum and TIMEFRAME_CONFIG
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
@@ -39,16 +41,21 @@ const ActiveValueIndicator = ({ xPosition, yPosition, bottom, top, lineColor, in
 };
 
 export default function CoinChart({
-	data,
-	loading,
+	data,      // Reverted to 'data'
+	loading,   // Reverted to 'loading'
 	onHover,
-}: CoinChartProps) {
+}: CoinChartProps) { // Reverted props type
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	const isMounted = React.useRef(true);
+	const isMounted = React.useRef(true); 
 	const animations = React.useRef<SharedValue<any>[]>([]);
 	const fontSize = 12;
 	const font = useFont(inter, fontSize);
+
+	// Removed usePriceHistoryCacheStore hook
+	// Removed useState for chartData and isLoading, will use props directly or derived from props
+
+	// Removed caching useEffect
 
 	useFocusEffect(
 		React.useCallback(() => {
@@ -104,19 +111,20 @@ export default function CoinChart({
 		};
 	}, [isPressActive]);
 
-	const chartData: PricePoint[] = React.useMemo(() => data.map(point => {
+	const processedChartData: PricePoint[] = useMemo(() => (data || []).map(point => { // Uses prop 'data'
 		const timestamp = new Date(point.timestamp).getTime();
-		const value = typeof point.value === 'string' ? parseFloat(point.value) : point.value;
+		// Ensure point.value is treated as a number, handling potential string values
+		const numericValue = typeof point.value === 'string' ? parseFloat(point.value) : point.value;
 		return {
 			timestamp,
-			price: value,
-			value,
+			price: numericValue, // Use numericValue
+			value: numericValue, // Use numericValue
 			x: timestamp,
-			y: value
+			y: numericValue      // Use numericValue
 		};
 	}), [data]);
 
-	if (loading || !data.length) {
+	if (loading || !processedChartData.length) { // Uses prop 'loading'
 		return (
 			<View style={styles.loadingContainer}>
 				<Text testID="loading-text" accessibilityLabel="loading chart">Loading Chart...</Text>
@@ -135,7 +143,7 @@ export default function CoinChart({
 			testID="coin-chart-container"
 		>
 			<CartesianChart
-				data={chartData}
+				data={processedChartData} // Still uses processedChartData, which is now derived from props.data
 				xKey="x"
 				yKeys={["y"]}
 				domainPadding={{ top: 25 }}

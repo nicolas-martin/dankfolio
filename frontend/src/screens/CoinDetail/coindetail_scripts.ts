@@ -1,6 +1,7 @@
 import { Coin } from '@/types';
 import { PriceData } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
+import usePriceHistoryCacheStore from '@/store/priceHistoryCache'; // Import the cache store
 import { TimeframeOption } from './coindetail_types';
 import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb';
 import { useCoinStore } from '@/store/coins';
@@ -66,11 +67,32 @@ export const fetchPriceHistory = async (
 		if (!coin) {
 			logger.error('No coin provided for price history', { functionName: 'fetchPriceHistory' });
 			setPriceHistory([]);
+			if (isInitialLoad) setLoading(false); // Ensure loading is stopped if returning early
 			return;
 		}
 
+		const cacheKey = `${coin.mintAddress}-${selectedTimeframeValue}`;
+		const cachedEntry = usePriceHistoryCacheStore.getState().getCache(cacheKey);
+
+		if (cachedEntry) {
+			logger.info(`Using cached price history for ${cacheKey}`, { functionName: 'fetchPriceHistory' });
+			setPriceHistory(cachedEntry.data as PriceData[]); // Assuming data is PriceData[]
+			setLoading(false); // Stop loading as we found data in cache
+			return;
+		}
+
+		// Cache miss, proceed to fetch
+		logger.info(`Cache miss for ${cacheKey}, fetching new price history.`, { functionName: 'fetchPriceHistory' });
+		// If not initial load, we might want to set loading true here if not already set by isInitialLoad
+		// However, the original logic sets loading only on isInitialLoad at the top.
+		// For a fetch operation, it's typical to set loading to true.
+		if (!isInitialLoad) { // If it's a refresh, not an initial load, also set loading
+			setLoading(true);
+		}
+
+
 		const config = TIMEFRAME_CONFIG[selectedTimeframeValue] || TIMEFRAME_CONFIG["DEFAULT"];
-		const { durationMs, roundingMinutes } = config;
+		const { durationMs, roundingMinutes } = config; // roundingMinutes is used for cache expiry calculation
 
 		const currentTime = new Date();
 		let dateTo = new Date(currentTime);
@@ -108,9 +130,15 @@ export const fetchPriceHistory = async (
 				.map(item => ({
 					timestamp: new Date(item.unixTime * 1000).toISOString(),
 					value: item.value,
-					unixTime: item.unixTime
+					unixTime: item.unixTime // Keep unixTime if needed by PriceData, or remove if not
 				}));
 			setPriceHistory(mapped);
+
+			// Cache the newly fetched data
+			const cacheExpiryMs = Date.now() + roundingMinutes * 60 * 1000;
+			usePriceHistoryCacheStore.getState().setCache(cacheKey, mapped, cacheExpiryMs);
+			logger.info(`Cached new price history for ${cacheKey} with expiry ${new Date(cacheExpiryMs).toISOString()}`, { functionName: 'fetchPriceHistory' });
+
 		} else {
 			setPriceHistory([]);
 		}
@@ -118,6 +146,10 @@ export const fetchPriceHistory = async (
 		logger.exception(error, { functionName: 'fetchPriceHistory', params: { coinMintAddress: coin?.mintAddress, timeframe: selectedTimeframeValue } });
 		setPriceHistory([]);
 	} finally {
+		// setLoading(false) is called regardless of success or failure,
+		// or if data came from cache (handled earlier) or fetch.
+		// If cache hit, setLoading(false) was already called.
+		// If cache miss, it's called here.
 		setLoading(false);
 	}
 };
