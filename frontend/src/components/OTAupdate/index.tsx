@@ -18,12 +18,10 @@ export const OTAUpdater = () => {
 	};
 
 	return (
-		<View style={styles.container}>
-			<Pressable onPress={handleCheckForUpdate} disabled={checking} style={styles.link}>
-				<Text style={styles.linkText} variant="bodySmall">
-					{checking ? 'Checking for updates…' : 'Check for updates'}
-				</Text>
-			</Pressable>
-		</View>
+		<Pressable onPress={handleCheckForUpdate} disabled={checking} style={styles.link}>
+			<Text style={styles.linkText} variant="bodySmall">
+				{checking ? 'Checking for updates…' : 'Check for updates'}
+			</Text>
+		</Pressable>
 	);
 };

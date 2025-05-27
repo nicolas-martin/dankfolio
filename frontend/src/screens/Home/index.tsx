@@ -66,10 +66,10 @@ const HomeScreen = () => {
 	}, [fetchTrendingAndPortfolio, showToast]);
 
 	const handlePressCoinCard = useCallback((coin: Coin) => {
-		logger.breadcrumb({ 
-			category: 'ui', 
-			message: 'Pressed CoinCard on HomeScreen', 
-			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } 
+		logger.breadcrumb({
+			category: 'ui',
+			message: 'Pressed CoinCard on HomeScreen',
+			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress }
 		});
 		handleCoinPressCallback(coin);
 	}, [handleCoinPressCallback]);
@@ -128,6 +128,11 @@ const HomeScreen = () => {
 					renderItem={({ item }) => (
 						<CoinCard coin={item} onPress={() => handlePressCoinCard(item)} />
 					)}
+					ListFooterComponent={() => (
+						<View >
+							<OTAUpdater />
+						</View>
+					)}
 					contentContainerStyle={styles.coinsList}
 					showsVerticalScrollIndicator={false}
 					refreshControl={
@@ -147,7 +152,6 @@ const HomeScreen = () => {
 
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">
-			<OTAUpdater />
 			{wallet ? renderCoinsList() : renderNoWalletState()}
 		</SafeAreaView>
 	);
