@@ -111,18 +111,21 @@ export default function CoinChart({
 		};
 	}, [isPressActive]);
 
-	const processedChartData: PricePoint[] = useMemo(() => (data || []).map(point => { // Uses prop 'data'
-		const timestamp = new Date(point.timestamp).getTime();
-		// Ensure point.value is treated as a number, handling potential string values
-		const numericValue = typeof point.value === 'string' ? parseFloat(point.value) : point.value;
-		return {
-			timestamp,
-			price: numericValue, // Use numericValue
-			value: numericValue, // Use numericValue
-			x: timestamp,
-			y: numericValue      // Use numericValue
-		};
-	}), [data]);
+	const processedChartData: PricePoint[] = useMemo(() => {
+		return (data || []).map(point => {
+			const timestamp = new Date(point.timestamp).getTime();
+			// Ensure point.value is treated as a number, handling potential string values
+			const numericValue = typeof point.value === 'string' ? parseFloat(point.value) : point.value;
+			
+			return {
+				timestamp,
+				price: numericValue, // Use numericValue
+				value: numericValue, // Use numericValue
+				x: timestamp,
+				y: numericValue      // Use numericValue
+			};
+		});
+	}, [data]);
 
 	if (loading || !processedChartData.length) { // Uses prop 'loading'
 		return (

@@ -132,6 +132,7 @@ export const fetchPriceHistory = async (
 					value: item.value,
 					unixTime: item.unixTime // Keep unixTime if needed by PriceData, or remove if not
 				}));
+				
 			setPriceHistory(mapped);
 
 			// Cache the newly fetched data
