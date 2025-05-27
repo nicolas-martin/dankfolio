@@ -12,7 +12,8 @@ import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 
 export const DEFAULT_AMOUNT = "0.0001";
-export const QUOTE_DEBOUNCE_MS = 1000
+export const QUOTE_DEBOUNCE_MS = 1000;
+export const PRICE_REFRESH_INTERVAL_MS = 10000; // 10 seconds
 
 // Function to get prices for multiple tokens in a single API call
 // NOTE: Should we use the store instead?

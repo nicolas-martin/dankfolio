@@ -28,9 +28,8 @@ const sampleCoin: Coin = {
   name: 'Sample Coin',
   symbol: 'SMPL',
   iconUrl: 'http://example.com/icon.png',
-  currentPrice: 10,
-  priceChange24h: 1,
-  marketCap: 1000000,
+  price: 10,
+  change24h: 1,
   // Add other required fields for Coin type if any
   description: '',
   website: '',
@@ -38,6 +37,7 @@ const sampleCoin: Coin = {
   telegram: '',
   dailyVolume: 0,
   tags: [],
+  decimals: 9,
 
 };
 
