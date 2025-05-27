@@ -8,7 +8,6 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	birdeyeclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye/mocks" // Renamed alias
-	// "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter" // Removed unused import
 	jupiterclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks" // Renamed alias
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/stretchr/testify/assert"
