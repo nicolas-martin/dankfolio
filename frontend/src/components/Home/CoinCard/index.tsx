@@ -1,31 +1,65 @@
-import React from 'react';
-import { View, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react'; // Added useState
+import { View, ActivityIndicator, TouchableOpacity } from 'react-native'; // Removed Image
+import { Image as ExpoImage } from 'expo-image'; // Added ExpoImage
 import { Text, useTheme } from 'react-native-paper';
 import { formatTokenBalance, formatNumber, formatPrice } from '../../../utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
 import { createStyles } from './coincard_styles';
-import { useProxiedImage } from '@/hooks/useProxiedImage';
+import { useCachedImage } from '@/hooks/useCachedImage'; // Changed to useCachedImage
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	const { imageUri, isLoading } = useProxiedImage(coin.iconUrl);
+	// Updated hook usage
+	const { imageUri: cachedImageUri, isLoading: hookIsLoading, error: hookError } = useCachedImage(coin.iconUrl);
+	// Added local state for ExpoImage loading and error
+	const [isLoadingImage, setIsLoadingImage] = useState(true);
+	const [imageError, setImageError] = useState<string | null>(null);
 
 	const renderCoinIcon = () => {
-		if (isLoading || !imageUri) {
+		const finalImageUri = cachedImageUri; // Use cachedImageUri which includes fallback
+
+		// Updated loading condition
+		if (hookIsLoading || isLoadingImage || !finalImageUri) {
+			// Using styles.logo for size consistency, and centering the ActivityIndicator
+			// If styles.coinIcon was specifically for the container, this might need adjustment
+			// For now, assuming styles.logo defines dimensions and we add centering.
 			return (
-				<View style={styles.coinIcon}>
+				<View style={[styles.logo, { justifyContent: 'center', alignItems: 'center' }]}>
 					<ActivityIndicator size="small" color={theme.colors.primary} />
 				</View>
 			);
 		}
 
+		// Safeguard if finalImageUri is null (should be handled by useCachedImage providing a default)
+		if (!finalImageUri) {
+			return (
+				<View style={[styles.logo, { justifyContent: 'center', alignItems: 'center' }]}>
+					<ActivityIndicator size="small" color={theme.colors.primary} />
+				</View>
+			);
+		}
+
+		// Replaced React Native Image with ExpoImage and added props
 		return (
-			<Image
-				key={imageUri}
-				source={{ uri: imageUri }}
+			<ExpoImage
+				source={{ uri: finalImageUri }}
 				style={styles.logo}
+				cachePolicy="disk"
+				transition={100}
+				onLoadStart={() => {
+					setIsLoadingImage(true);
+					setImageError(null);
+				}}
+				onLoadEnd={() => setIsLoadingImage(false)}
+				onError={(event) => {
+					setIsLoadingImage(false);
+					// Ensure event.error is a string or provide fallback text
+					const errorMessage = typeof event.error === 'string' ? event.error : 'Failed to load image on CoinCard';
+					setImageError(errorMessage);
+					console.error('ExpoImage Error (CoinCard):', errorMessage, 'URI:', finalImageUri);
+				}}
 			/>
 		);
 	};
@@ -100,3 +134,4 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 };
 
 export default CoinCard;
+
