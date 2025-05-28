@@ -113,9 +113,19 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginRight: 12,
 	},
 	tokenSymbol: {
-		fontSize: 18,
+		fontSize: 16,
 		fontWeight: '600',
 		color: theme.colors.onSurface,
+		marginBottom: 2,
+	},
+
+	tokenDetails: {
+		flex: 1,
+	},
+
+	tokenName: {
+		fontSize: 12,
+		color: theme.colors.onSurfaceVariant,
 	},
 
 	// Amount Section

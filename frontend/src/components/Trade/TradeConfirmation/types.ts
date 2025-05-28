@@ -6,8 +6,8 @@ interface TradeConfirmationProps {
 	onConfirm: () => void;
 	fromAmount: string;
 	toAmount: string;
-	fromCoin: Coin;
-	toCoin: Coin;
+	fromToken: Coin;
+	toToken: Coin;
 	fees: {
 		gasFee: string;
 		priceImpactPct: string;
