@@ -4,10 +4,11 @@ import { ImageStyle } from 'react-native';
 export interface CachedImageProps extends Omit<ImageProps, 'source' | 'style'> {
 	uri?: string;
 	size?: number;
-	style?: ImageStyle;
-	fallbackUri?: string;
-	showLoadingIndicator?: boolean;
 	borderRadius?: number;
-	cachePolicy?: 'none' | 'disk' | 'memory' | 'memory-disk';
-	priority?: 'low' | 'normal' | 'high';
+	fallbackText?: string;
+	showLoadingIndicator?: boolean;
+	style?: ImageStyle;
+	testID?: string;
+	blurhash?: string;
+	placeholder?: ImageProps['placeholder'];
 } 

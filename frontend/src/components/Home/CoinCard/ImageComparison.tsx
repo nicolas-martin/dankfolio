@@ -23,7 +23,7 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 					uri={uri}
 					size={size}
 					borderRadius={size / 2}
-					fallbackUri={DEFAULT_TOKEN_IMAGE}
+					blurhash={blurhash}
 				/>
 			</View>
 			
