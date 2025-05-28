@@ -5,6 +5,7 @@ import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
 import { Coin } from '@/types';
 import { useProxiedImage } from '@/hooks/useProxiedImage';
+import { formatNumber, formatPrice } from '@/utils/numberFormat';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,
@@ -20,11 +21,6 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	// const { showToast } = useToast(); // Kept in case of future use
-
-	const calculateValue = (amount: string, coin?: Coin): string => {
-		if (!coin || !amount || isNaN(parseFloat(amount)) || coin.price == null) return '$0.00';
-		return `$${(parseFloat(amount) * coin.price).toFixed(4)}`;
-	};
 
 	const CoinIcon: React.FC<{ coin: Coin }> = ({ coin }) => {
 		const { imageUri, isLoading: imageLoading } = useProxiedImage(coin.iconUrl);
@@ -59,7 +55,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				<View style={styles.amountContainer}>
 					<Text style={styles.amount}>{amount}</Text>
 					<Text style={styles.amountValue}>
-						{calculateValue(amount, coin)}
+						{coin && coin.price != null && amount && !isNaN(parseFloat(amount))
+							? formatNumber(parseFloat(amount) * coin.price, true, 4)
+							: '$0.00'}
 					</Text>
 				</View>
 			</View>
@@ -88,7 +86,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			<View style={styles.feeSection} testID="fee-section">
 				<View style={styles.feeRow}>
 					<Text style={styles.feeLabel}>Network Fee</Text>
-					<Text style={styles.feeValue}>${fees.totalFee}</Text>
+					<Text style={styles.feeValue}>{formatPrice(Number(fees.totalFee))}</Text>
 				</View>
 			</View>
 		);
@@ -160,3 +158,4 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 };
 
 export default TradeConfirmation;
+

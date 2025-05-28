@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native'; // ActivityIndicator might become unused here
+import { View, ActivityIndicator } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
 import { useToast } from '@components/Common/Toast';
-import { formatPrice, formatValueChange } from '@/utils/numberFormat';
-import { copyToClipboard, formatAddress } from './coindetails_scripts';
+import { formatPrice, formatValueChange, formatAddress } from '@/utils/numberFormat';
+import { copyToClipboard } from './coindetails_scripts';
 import { createStyles } from './coindetails_styles';
-// import { useProxiedImage } from '@/hooks/useProxiedImage'; // Removed
+import { useProxiedImage } from '@/hooks/useProxiedImage';
 import { TokenImage } from '@/components/Common/TokenImage';
 import Odometer from '@components/Odometer';
 
@@ -17,7 +17,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
 
-	// const { imageUri, isLoading } = useProxiedImage(iconUrl); // Removed
+	const { imageUri, isLoading } = useProxiedImage(iconUrl);
 
 	if (isNaN(periodChange)) return null;
 
@@ -29,13 +29,14 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 		<View style={styles.container}>
 			{/* Header with coin info */}
 			<View style={styles.headerRow}>
-				{iconUrl ? (
+				{isLoading ? (
+					<View style={[styles.icon, { justifyContent: 'center', alignItems: 'center' }]}>
+						<ActivityIndicator size="small" />
+					</View>
+				) : imageUri ? (
 					<TokenImage uri={iconUrl} size={40} />
 				) : (
-					// Render a placeholder if no iconUrl is provided.
-					// TokenImage will handle its own loading indicator if iconUrl is valid.
-					// Assuming styles.icon might not have dimensions, explicitly setting them.
-					<View style={[styles.icon, { width: 40, height: 40 }]} />
+					<View style={styles.icon} />
 				)}
 				{name && (
 					<Text style={styles.nameText}>
@@ -81,13 +82,14 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 
 			{/* Timestamp for hovered point */}
 			{/* {hoveredPoint && (
-				<Text style={styles.timestampText}>
-					{format(new Date(hoveredPoint.timestamp), "EEEE MMM d 'at' h:mm a")}
-				</Text>
-			)} */}
+                <Text style={styles.timestampText}>
+                    {format(new Date(hoveredPoint.timestamp), "EEEE MMM d 'at' h:mm a")}
+                </Text>
+            )} */}
 		</View>
 	);
 };
 
 export default PriceDisplay;
+
 

@@ -8,7 +8,6 @@ import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { createStyles } from './styles';
 import { handleAmountInputChange, calculateUsdValue, findPortfolioToken } from './scripts';
-import { useProxiedImage } from '@/hooks/useProxiedImage';
 
 const DefaultTokenIcon = () => {
 	const theme = useTheme();

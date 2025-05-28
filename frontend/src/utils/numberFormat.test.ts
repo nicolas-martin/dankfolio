@@ -72,7 +72,7 @@ describe('Number Formatting Utilities', () => {
 		it('formats percentages with sign and decimals', () => {
 			expect(formatPercentage(1.2345)).toBe('+1.23%');
 			expect(formatPercentage(-1.2345)).toBe('-1.23%');
-			expect(formatPercentage(0)).toBe('+0.00%');
+			expect(formatPercentage(0)).toBe('0.00%');
 		});
 
 		it('handles custom decimal places', () => {

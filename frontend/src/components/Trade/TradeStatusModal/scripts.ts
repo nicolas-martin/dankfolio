@@ -2,7 +2,6 @@ import { PollingStatus } from './types';
 
 // Constants
 export const CONFIRMATION_THRESHOLD = 1;
-export const HASH_DISPLAY_LENGTH = 8;
 
 // Status text mapping
 export const getStatusText = (currentStatus: PollingStatus): string => {
@@ -70,14 +69,6 @@ export const isInProgressStatus = (status: PollingStatus): boolean => {
 	return status === 'pending' || status === 'polling' || status === 'confirmed';
 };
 
-// Format transaction hash for display
-export const formatTxHash = (txHash: string): string => {
-	if (!txHash || txHash.length < HASH_DISPLAY_LENGTH * 2) {
-		return txHash;
-	}
-	return `${txHash.substring(0, HASH_DISPLAY_LENGTH)}...${txHash.substring(txHash.length - HASH_DISPLAY_LENGTH)}`;
-};
-
 // Get confirmation progress percentage
 export const getConfirmationProgress = (confirmations: number, maxConfirmations: number = 32): number => {
 	return Math.min((confirmations / maxConfirmations) * 100, 100);
@@ -87,3 +78,4 @@ export const getConfirmationProgress = (confirmations: number, maxConfirmations:
 export const formatConfirmationsText = (confirmations: number): string => {
 	return `${confirmations} confirmation${confirmations !== 1 ? 's' : ''}`;
 }; 
+
