@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"log"      // Import standard log for pre-slog setup errors
-	"log/slog" // Import slog
+	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,18 +30,18 @@ import (
 )
 
 type Config struct {
-	SolanaRPCEndpoint string
-	BirdEyeEndpoint   string
-	BirdEyeAPIKey     string
-	CoinGeckoAPIKey   string
-	GRPCPort          int
-	DBURL             string
-	CacheExpiry       time.Duration
-	JupiterApiKey     string
-	JupiterApiUrl     string
-	Env               string
-	JWTSecret         string
-	TokenExpiry       time.Duration
+	SolanaRPCEndpoint     string
+	BirdEyeEndpoint       string
+	BirdEyeAPIKey         string
+	CoinGeckoAPIKey       string
+	GRPCPort              int
+	DBURL                 string
+	CacheExpiry           time.Duration
+	JupiterApiKey         string
+	JupiterApiUrl         string
+	Env                   string
+	JWTSecret             string
+	TokenExpiry           time.Duration
 	NewCoinsFetchInterval time.Duration
 }
 
@@ -77,19 +77,27 @@ func loadConfig() (*Config, error) {
 		}
 	}
 
+	newCoinsIntervalMinutesStr := os.Getenv("NEW_COINS_FETCH_INTERVAL_MINUTES")
+	newCoinsIntervalMinutes, err := strconv.Atoi(newCoinsIntervalMinutesStr)
+	if err != nil {
+		log.Fatalf("invalid NEW_COINS_FETCH_INTERVAL_MINUTES value: %v", err)
+	}
+	newCoinsFetchInterval := time.Duration(newCoinsIntervalMinutes) * time.Minute
+
 	config := &Config{
-		SolanaRPCEndpoint: os.Getenv("SOLANA_RPC_ENDPOINT"),
-		BirdEyeEndpoint:   os.Getenv("BIRDEYE_ENDPOINT"),
-		BirdEyeAPIKey:     os.Getenv("BIRDEYE_API_KEY"),
-		CoinGeckoAPIKey:   os.Getenv("COINGECKO_API_KEY"),
-		DBURL:             os.Getenv("DB_URL"),
-		GRPCPort:          9000, // Default value
-		CacheExpiry:       cacheExpiry,
-		JupiterApiKey:     os.Getenv("JUPITER_API_KEY"),
-		JupiterApiUrl:     os.Getenv("JUPITER_API_URL"),
-		Env:               os.Getenv("APP_ENV"),
-		JWTSecret:         os.Getenv("JWT_SECRET"),
-		TokenExpiry:       tokenExpiry,
+		SolanaRPCEndpoint:     os.Getenv("SOLANA_RPC_ENDPOINT"),
+		BirdEyeEndpoint:       os.Getenv("BIRDEYE_ENDPOINT"),
+		BirdEyeAPIKey:         os.Getenv("BIRDEYE_API_KEY"),
+		CoinGeckoAPIKey:       os.Getenv("COINGECKO_API_KEY"),
+		DBURL:                 os.Getenv("DB_URL"),
+		GRPCPort:              9000, // Default value
+		CacheExpiry:           cacheExpiry,
+		JupiterApiKey:         os.Getenv("JUPITER_API_KEY"),
+		JupiterApiUrl:         os.Getenv("JUPITER_API_URL"),
+		Env:                   os.Getenv("APP_ENV"),
+		JWTSecret:             os.Getenv("JWT_SECRET"),
+		TokenExpiry:           tokenExpiry,
+		NewCoinsFetchInterval: newCoinsFetchInterval,
 	}
 
 	// Validate required fields
@@ -121,27 +129,13 @@ func loadConfig() (*Config, error) {
 		log.Fatalf("missing required environment variables: %v", missingVars)
 	}
 
-	// Parse new coins fetch interval
-	newCoinsIntervalMinutesStr := os.Getenv("NEW_COINS_FETCH_INTERVAL_MINUTES")
-	newCoinsIntervalMinutes, err := strconv.Atoi(newCoinsIntervalMinutesStr)
-	if err != nil || newCoinsIntervalMinutes <= 0 {
-		// Use standard log here as slog might not be initialized yet
-		log.Printf("Warning: Invalid or missing NEW_COINS_FETCH_INTERVAL_MINUTES, defaulting to 5 minutes. Error: %v", err)
-		newCoinsIntervalMinutes = 5 // Default to 5 minutes
-	}
-	config.NewCoinsFetchInterval = time.Duration(newCoinsIntervalMinutes) * time.Minute
-	// Slog will be configured after this function returns, so this log might not appear as expected
-	// or could use standard log.Printf if immediate feedback before slog setup is critical.
-	// For now, we'll let main log it after slog is set up.
-
 	return config, nil
 }
 
 func main() {
 	logLevel := slog.LevelDebug
-	var handler slog.Handler // Handler will be set after config is loaded
+	var handler slog.Handler
 
-	// Load and validate configuration
 	config, err := loadConfig()
 	if err != nil {
 		// Use standard log here as slog might not be initialized if config loading fails early
@@ -155,17 +149,15 @@ func main() {
 		handler = logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
 	}
 
-	// Create color handler and set it as default
 	slogger := slog.New(handler)
 	slog.SetDefault(slogger)
 
 	slog.Info("Configuration loaded successfully",
 		slog.String("appEnv", config.Env),
 		slog.Int("port", config.GRPCPort),
-		slog.Duration("newCoinsFetchInterval", config.NewCoinsFetchInterval), // Log it here after slog is configured
+		slog.Duration("newCoinsFetchInterval", config.NewCoinsFetchInterval),
 	)
 
-	// Initialize Firebase Admin SDK
 	ctx := context.Background()
 	firebaseApp, err := firebase.NewApp(ctx, nil)
 	if err != nil {
@@ -182,24 +174,18 @@ func main() {
 	}
 	slog.Info("🔒 Firebase App Check client initialized successfully")
 
-	// Initialize HTTP client
 	httpClient := &http.Client{
 		Timeout: time.Second * 10,
 	}
 
-	// Initialize Jupiter client
 	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey)
 
-	// Initialize BirdEye client
 	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
 
-	// Initialize Solana client
 	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
 
-	// Initialize offchain client
 	offchainClient := offchain.NewClient(httpClient)
 
-	// Initialize store with configured cache expiry
 	store, err := postgres.NewStore(config.DBURL, true, logLevel) // Pass logLevel
 	if err != nil {
 		slog.Error("Failed to connect to database", slog.Any("error", err))
@@ -215,25 +201,22 @@ func main() {
 	}
 	authService, err := auth.NewService(authServiceConfig)
 	if err != nil {
-		panic(err)
+		slog.Error("Failed to initialize auth service", slog.Any("error", err))
+		os.Exit(1)
 	}
 
-	// Initialize coin service
-	slog.Info("Initializing coin service...")
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:        config.BirdEyeEndpoint,
 		BirdEyeAPIKey:         config.BirdEyeAPIKey,
 		CoinGeckoAPIKey:       config.CoinGeckoAPIKey,
 		SolanaRPCEndpoint:     config.SolanaRPCEndpoint,
-		NewCoinsFetchInterval: config.NewCoinsFetchInterval, // Assign the interval here
+		NewCoinsFetchInterval: config.NewCoinsFetchInterval,
 	}
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 	slog.Info("Coin service initialized.")
 
-	// Initialize price service
 	priceService := price.NewService(birdeyeClient, jupiterClient)
 
-	// Initialize trade service with all dependencies
 	tradeService := trade.NewService(
 		solanaClient,
 		coinService,
@@ -242,14 +225,11 @@ func main() {
 		store,
 	)
 
-	// Initialize wallet service
 	walletService := wallet.New(solanaClient.GetRpcConnection(), store)
 
-	// Initialize Image Service / Utility Service
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
 	utilitySvc := grpcapi.NewService(imageFetcher)
 
-	// Initialize gRPC server with auth service
 	grpcServer := grpcapi.NewServer(
 		coinService,
 		walletService,
