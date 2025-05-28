@@ -58,10 +58,11 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				onDismiss={onClose}
 				contentContainerStyle={styles.container}
 			>
+				<Text style={styles.title}>Confirm Trade</Text>
 				{/* Trade Display */}
 				<View style={styles.tradeContainer}>
 					{/* From Amount */}
-					<View style={styles.tradeRow}>
+					<View style={styles.tradeRow} testID="from-token-details">
 						<View style={styles.tokenInfo}>
 							<TokenIcon token={fromToken} />
 							<View style={styles.tokenDetails}>
@@ -70,9 +71,11 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 							</View>
 						</View>
 						<View style={styles.amountInfo}>
-							<Text style={styles.amount}>{formatNumber(Number(fromAmount), false, 6)}</Text>
+							<Text style={styles.amount}>
+								{isNaN(Number(fromAmount)) ? '0' : fromAmount}
+							</Text>
 							<Text style={styles.amountUsd}>
-								{formatPrice(Number(fromAmount) * (fromToken.price || 0))}
+								{formatPrice(isNaN(Number(fromAmount)) ? 0 : Number(fromAmount) * (fromToken.price || 0))}
 							</Text>
 						</View>
 					</View>
@@ -81,7 +84,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 					<View style={styles.divider} />
 
 					{/* To Amount */}
-					<View style={styles.tradeRow}>
+					<View style={styles.tradeRow} testID="to-token-details">
 						<View style={styles.tokenInfo}>
 							<TokenIcon token={toToken} />
 							<View style={styles.tokenDetails}>
@@ -90,9 +93,11 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 							</View>
 						</View>
 						<View style={styles.amountInfo}>
-							<Text style={styles.amount}>{formatNumber(Number(toAmount), false, 6)}</Text>
+							<Text style={styles.amount}>
+								{isNaN(Number(toAmount)) ? '0' : toAmount}
+							</Text>
 							<Text style={styles.amountUsd}>
-								{formatPrice(Number(toAmount) * (toToken.price || 0))}
+								{formatPrice(isNaN(Number(toAmount)) ? 0 : Number(toAmount) * (toToken.price || 0))}
 							</Text>
 						</View>
 					</View>
