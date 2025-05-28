@@ -24,6 +24,7 @@ const (
 	tokenInfoEndpoint = "/tokens/v1/token"
 	tokenListEndpoint = "/tokens/v1/all"
 	swapEndpoint      = "/swap/v1/swap"
+	newTokensEndpoint = "/v1/new"
 )
 
 // Client handles interactions with the Jupiter API
@@ -181,6 +182,19 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 	}
 
 	return &CoinListResponse{Coins: tokens}, nil
+}
+
+// GetNewCoins fetches all new tokens from Jupiter API
+func (c *Client) GetNewCoins(ctx context.Context) (*CoinListResponse, error) {
+	url := fmt.Sprintf("%s%s", c.baseURL, newTokensEndpoint) // Inline URL formatting
+	log.Printf("🔄 Fetching new tokens from Jupiter: %s", url)
+
+	var coinListResp CoinListResponse
+	if err := c.GetRequest(ctx, url, &coinListResp); err != nil { // Use GetRequest
+		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
+	}
+
+	return &coinListResp, nil
 }
 
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter
