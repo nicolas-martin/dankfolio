@@ -7,6 +7,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		padding: 20,
 		margin: 16,
 		borderRadius: 20,
+		width: 360,
 		maxWidth: 400,
 		alignSelf: 'center',
 		elevation: 8,
@@ -97,11 +98,13 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		justifyContent: 'space-between',
 		alignItems: 'center',
 		marginBottom: 12,
+		minHeight: 20,
 	},
 	progressLabel: {
 		fontSize: 13,
 		fontWeight: '600',
 		color: theme.colors.onSurfaceVariant,
+		marginRight: 16,
 	},
 	confirmationsText: {
 		fontSize: 13,

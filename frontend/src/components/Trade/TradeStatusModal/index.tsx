@@ -243,7 +243,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				{/* Header */}
 				<View style={styles.header}>
 					<Text style={styles.title}>Transaction Status</Text>
-					<Text style={styles.subtitle}>Track your transaction progress</Text>
 				</View>
 
 				{/* Status Section */}

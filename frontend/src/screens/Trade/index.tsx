@@ -554,7 +554,6 @@ const Trade: React.FC = () => {
 					{/* Header */}
 					<View style={styles.header}>
 						<Text style={styles.title}>Trade</Text>
-						<Text style={styles.subtitle}>Swap tokens instantly</Text>
 					</View>
 
 					{/* Trade Cards with Floating Swap Button */}
