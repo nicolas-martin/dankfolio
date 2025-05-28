@@ -6,8 +6,7 @@ import { useToast } from '@components/Common/Toast';
 import { formatPrice, formatValueChange, formatAddress } from '@/utils/numberFormat';
 import { copyToClipboard } from './coindetails_scripts';
 import { createStyles } from './coindetails_styles';
-import { useProxiedImage } from '@/hooks/useProxiedImage';
-import { TokenImage } from '@/components/Common/TokenImage';
+import { CachedImage } from '@/components/Common/CachedImage';
 import Odometer from '@components/Odometer';
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
@@ -16,8 +15,6 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
-
-	const { imageUri, isLoading } = useProxiedImage(iconUrl);
 
 	if (isNaN(periodChange)) return null;
 
@@ -29,15 +26,13 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 		<View style={styles.container}>
 			{/* Header with coin info */}
 			<View style={styles.headerRow}>
-				{isLoading ? (
-					<View style={[styles.icon, { justifyContent: 'center', alignItems: 'center' }]}>
-						<ActivityIndicator size="small" />
-					</View>
-				) : imageUri ? (
-					<TokenImage uri={iconUrl} size={40} />
-				) : (
-					<View style={styles.icon} />
-				)}
+				<CachedImage
+					uri={iconUrl}
+					size={40}
+					borderRadius={20}
+					showLoadingIndicator={true}
+					style={styles.icon}
+				/>
 				{name && (
 					<Text style={styles.nameText}>
 						{name}
@@ -57,7 +52,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					style={{ margin: 0, padding: 0, marginLeft: 8 }}
 				/>
 			</View>
-
+			
 			{/* Price */}
 			<Odometer
 				value={formattedPrice}

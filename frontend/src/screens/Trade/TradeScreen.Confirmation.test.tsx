@@ -280,7 +280,10 @@ describe('TradeScreen Confirmation Behavior', () => {
 		// WEN: 13636.36 * $0.00011 = $1.5000
 		const expectedToValue = `$${(parseFloat(mockToAmount) * MOCK_WEN_PRICE).toFixed(4)}`;
 		expect(await within(getByTestId('to-coin-details')).findByText(expectedToValue)).toBeTruthy();
-		expect(await within(getByTestId('fee-section')).findByText(`$${mockFees.totalFee}`)).toBeTruthy();
+		// Use formatPrice to get the expected format for the fee
+		const { formatPrice } = require('@/utils/numberFormat');
+		const expectedFeeText = formatPrice(Number(mockFees.totalFee));
+		expect(await within(getByTestId('fee-section')).findByText(expectedFeeText)).toBeTruthy();
 
 		// 5. Test cancel flow
 		await act(async () => {

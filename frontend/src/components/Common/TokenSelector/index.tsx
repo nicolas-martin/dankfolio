@@ -1,13 +1,14 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Modal as RNModal, View, Image, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
-import { Text, useTheme, Card } from 'react-native-paper';
+import { View, TouchableOpacity, FlatList, Modal as RNModal, TextInput, ActivityIndicator, Image } from 'react-native';
+import { Card, Text, useTheme } from 'react-native-paper';
 import { ChevronDownIcon, CoinsIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
+import { createStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
-import { createStyles } from './styles';
-import { handleAmountInputChange, calculateUsdValue, findPortfolioToken } from './scripts';
+import { calculateUsdValue, findPortfolioToken, handleAmountInputChange } from './scripts';
+import { CachedImage } from '@/components/Common/CachedImage';
 
 const DefaultTokenIcon = () => {
 	const theme = useTheme();
@@ -50,19 +51,16 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		});
 	}, [onSelectToken, onDismiss]);
 
-	// Inline component for rendering the icon using the hook
+	// Inline component for rendering the icon using CachedImage
 	const RenderIcon: React.FC<{ iconUrl: string | undefined }> = React.memo(({ iconUrl }) => {
-		const { imageUri, isLoading } = useProxiedImage(iconUrl);
 		return (
-			<View style={[styles.tokenIcon, { justifyContent: 'center', alignItems: 'center' }]}>
-				{isLoading ? (
-					<ActivityIndicator size="small" />
-				) : imageUri ? (
-					<Image source={{ uri: imageUri }} style={styles.tokenIcon} />
-				) : (
-					<DefaultTokenIcon />
-				)}
-			</View>
+			<CachedImage
+				uri={iconUrl}
+				size={24}
+				borderRadius={12}
+				showLoadingIndicator={true}
+				style={styles.tokenIcon}
+			/>
 		);
 	});
 
@@ -143,8 +141,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const [modalVisible, setModalVisible] = useState(false);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 
-	const { imageUri: selectedTokenImageUri, isLoading: isSelectedTokenImageLoading } = useProxiedImage(selectedToken?.iconUrl);
-
 	const calculatedValue = useMemo(() => {
 		return calculateUsdValue(selectedToken, amountValue);
 	}, [selectedToken, amountValue]);
@@ -182,16 +178,13 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						<View style={styles.tokenInfo}>
 							{selectedToken ? (
 								<>
-									{isSelectedTokenImageLoading ? (
-										<View style={[styles.tokenIcon, { justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="small" /></View>
-									) : selectedTokenImageUri ? (
-										<Image
-											source={{ uri: selectedTokenImageUri }}
-											style={styles.tokenIcon}
-										/>
-									) : (
-										<View style={[styles.tokenIcon, { justifyContent: 'center', alignItems: 'center' }]}><DefaultTokenIcon /></View>
-									)}
+									<CachedImage
+										uri={selectedToken.iconUrl}
+										size={24}
+										borderRadius={12}
+										showLoadingIndicator={true}
+										style={styles.tokenIcon}
+									/>
 									<Text style={styles.tokenSymbol}>
 										{selectedToken.symbol}
 									</Text>
@@ -246,7 +239,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 					testID="token-search-modal"
 				/>
 			)}
-
 		</>
 	);
 };
