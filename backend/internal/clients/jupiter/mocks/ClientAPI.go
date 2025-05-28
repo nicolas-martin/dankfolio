@@ -265,6 +265,62 @@ func (_c *MockClientAPI_GetCoinPrices_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
+// GetNewCoins provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetNewCoins(ctx context.Context) (*jupiter.CoinListResponse, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetNewCoins")
+	}
+
+	var r0 *jupiter.CoinListResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (*jupiter.CoinListResponse, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) *jupiter.CoinListResponse); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*jupiter.CoinListResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClientAPI_GetNewCoins_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNewCoins'
+type MockClientAPI_GetNewCoins_Call struct {
+	*mock.Call
+}
+
+// GetNewCoins is a helper method to define mock.On call
+//   - ctx
+func (_e *MockClientAPI_Expecter) GetNewCoins(ctx interface{}) *MockClientAPI_GetNewCoins_Call {
+	return &MockClientAPI_GetNewCoins_Call{Call: _e.mock.On("GetNewCoins", ctx)}
+}
+
+func (_c *MockClientAPI_GetNewCoins_Call) Run(run func(ctx context.Context)) *MockClientAPI_GetNewCoins_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_GetNewCoins_Call) Return(coinListResponse *jupiter.CoinListResponse, err error) *MockClientAPI_GetNewCoins_Call {
+	_c.Call.Return(coinListResponse, err)
+	return _c
+}
+
+func (_c *MockClientAPI_GetNewCoins_Call) RunAndReturn(run func(ctx context.Context) (*jupiter.CoinListResponse, error)) *MockClientAPI_GetNewCoins_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetQuote provides a mock function for the type MockClientAPI
 func (_mock *MockClientAPI) GetQuote(ctx context.Context, params jupiter.QuoteParams) (*jupiter.QuoteResponse, error) {
 	ret := _mock.Called(ctx, params)

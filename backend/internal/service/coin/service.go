@@ -34,10 +34,8 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 		os.Exit(1)
 	}
 
-	// Create Solana client
 	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
 
-	// Create offchain client
 	offchainClient := offchain.NewClient(httpClient)
 
 	service := &Service{
@@ -47,19 +45,15 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 		offchainClient: offchainClient,
 		store:          store,
 	}
-	// Initialize context and cancel for the fetcher goroutine
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 
-	// Perform initial data load or refresh, with a timeout
 	ctx, cancel := context.WithTimeout(context.Background(), initialLoadTimeout)
 	defer cancel()
 
 	if err := service.loadOrRefreshData(ctx); err != nil {
-		// Log as warning, not fatal. Service might still work partially with cached/dynamic data.
 		slog.Warn("Initial data load/refresh failed", slog.Any("error", err))
 	}
 
-	// Start the new token fetcher if an interval is configured
 	if service.config.NewCoinsFetchInterval > 0 {
 		go service.runNewTokenFetcher(service.fetcherCtx)
 	} else {
@@ -74,15 +68,7 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 func (s *Service) runNewTokenFetcher(ctx context.Context) {
 	slog.Info("Starting new token fetcher", slog.Duration("interval", s.config.NewCoinsFetchInterval))
 
-	// Perform an initial fetch immediately
-	slog.Info("Performing initial fetch of new tokens...")
-	if err := s.FetchAndStoreNewTokens(ctx); err != nil {
-		slog.Error("Failed to fetch and store new tokens during initial run", slog.Any("error", err))
-	} else {
-		slog.Info("Successfully fetched and stored new tokens during initial run.")
-	}
-
-	// Then, start the ticker for periodic fetching
+	// start the ticker for periodic fetching
 	ticker := time.NewTicker(s.config.NewCoinsFetchInterval)
 	defer ticker.Stop()
 
@@ -292,7 +278,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 
 	var upsertErrors []error
 	for _, v := range resp.Coins {
-		rawCoin := v.ToRawCoin() // Assuming ToRawCoin exists on jupiter.CoinListInfo
+		rawCoin := v.ToRawCoin()
 		err := s.store.RawCoins().Upsert(ctx, rawCoin)
 		if err != nil {
 			slog.Error("Failed to upsert raw coin", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
