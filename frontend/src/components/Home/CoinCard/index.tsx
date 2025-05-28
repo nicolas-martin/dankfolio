@@ -1,31 +1,23 @@
 import React from 'react';
-import { View, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '../../../utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
 import { createStyles } from './coincard_styles';
-import { useProxiedImage } from '@/hooks/useProxiedImage';
+import { CachedImage } from '@/components/Common/CachedImage';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	const { imageUri, isLoading } = useProxiedImage(coin.iconUrl);
-
 	const renderCoinIcon = () => {
-		if (isLoading || !imageUri) {
-			return (
-				<View style={styles.coinIcon}>
-					<ActivityIndicator size="small" color={theme.colors.primary} />
-				</View>
-			);
-		}
-
 		return (
-			<Image
-				key={imageUri}
-				source={{ uri: imageUri }}
+			<CachedImage
+				uri={coin.iconUrl}
+				size={40}
 				style={styles.logo}
+				showLoadingIndicator={true}
+				borderRadius={20}
 			/>
 		);
 	};

@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Image } from 'react-native';
+import { View } from 'react-native';
 import { Modal, Portal, Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
 import { Coin } from '@/types';
-import { useProxiedImage } from '@/hooks/useProxiedImage';
+import { CachedImage } from '@/components/Common/CachedImage';
 import { formatNumber, formatPrice } from '@/utils/numberFormat';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
@@ -23,20 +23,13 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	// const { showToast } = useToast(); // Kept in case of future use
 
 	const CoinIcon: React.FC<{ coin: Coin }> = ({ coin }) => {
-		const { imageUri, isLoading: imageLoading } = useProxiedImage(coin.iconUrl);
-
-		if (imageLoading || !imageUri) {
-			return (
-				<View style={styles.tokenIcon}>
-					<ActivityIndicator size={12} color={theme.colors.onPrimary} />
-				</View>
-			);
-		}
-
 		return (
-			<Image
-				source={{ uri: imageUri }}
-				style={[styles.tokenIcon, { backgroundColor: 'transparent' }]}
+			<CachedImage
+				uri={coin.iconUrl}
+				size={24}
+				style={styles.tokenIcon}
+				showLoadingIndicator={true}
+				borderRadius={12}
 			/>
 		);
 	};

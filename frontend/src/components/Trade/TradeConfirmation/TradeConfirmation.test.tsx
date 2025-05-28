@@ -148,8 +148,10 @@ describe('TradeConfirmation', () => {
 		expect(getByText(mockToCoin.symbol)).toBeTruthy(); // Check symbol
 		expect(getByText(`$${(parseFloat(defaultProps.toAmount) * mockToCoin.price).toFixed(4)}`)).toBeTruthy();
 
-		// Fees section
-		expect(getByText(`$${defaultProps.fees.totalFee}`)).toBeTruthy();
+		// Fees section - use formatPrice to match component formatting
+		const { formatPrice } = require('@/utils/numberFormat');
+		const expectedFeeText = formatPrice(Number(defaultProps.fees.totalFee));
+		expect(getByText(expectedFeeText)).toBeTruthy();
 
 		// Buttons
 		expect(getByText('Cancel')).toBeTruthy();

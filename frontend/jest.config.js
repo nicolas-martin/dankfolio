@@ -11,7 +11,7 @@ module.exports = {
 		'<rootDir>/src/__mocks__/setup.js'
 	],
 	transformIgnorePatterns: [
-		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia|react-native-vector-icons|uuid|expo-updates|expo-modules-core|expo-app-integrity|expo-device|@sentry)/)',
+		'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-reanimated|victory-native|@shopify/react-native-skia|react-native-vector-icons|uuid|expo-updates|expo-modules-core|expo-app-integrity|expo-device|expo-image|@sentry)/)',
 	],
 	moduleNameMapper: {
 		'^@/(.*)$': '<rootDir>/src/$1', // Matches @/anything
@@ -29,6 +29,7 @@ module.exports = {
 		'^@shopify/react-native-skia$': '<rootDir>/src/__mocks__/@shopify/react-native-skia.ts',
 		'^victory-native$': '<rootDir>/src/__mocks__/victory-native.ts',
 		'^expo-haptics$': '<rootDir>/src/__mocks__/expo-haptics.ts',
+		'^expo-image$': '<rootDir>/src/__mocks__/expo-image.ts',
 		'\\.(ttf)$': '<rootDir>/src/__mocks__/file-mock.js',
 		'^expo-updates$': '<rootDir>/src/__mocks__/expo-updates.ts',
 		'^expo-app-integrity$': '<rootDir>/src/__mocks__/expo-app-integrity.ts',
