@@ -24,7 +24,7 @@ const (
 	tokenInfoEndpoint = "/tokens/v1/token"
 	tokenListEndpoint = "/tokens/v1/all"
 	swapEndpoint      = "/swap/v1/swap"
-	newTokensEndpoint = "/v1/new"
+	newTokensEndpoint = "/tokens/v1/new"
 )
 
 // Client handles interactions with the Jupiter API
@@ -110,35 +110,22 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 	}
 
 	fullURL := fmt.Sprintf("%s/swap/v1/quote?%s", c.baseURL, queryParams.Encode())
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
+	// Get raw response first to preserve it
+	var rawResponse json.RawMessage
+	if err := c.GetRequest(ctx, fullURL, &rawResponse); err != nil {
 		return nil, fmt.Errorf("failed to fetch quote: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
+	// Unmarshal to the proper struct
 	var quoteResp QuoteResponse
-	if err := json.Unmarshal(body, &quoteResp); err != nil {
-		log.Printf("🔄 RAW Jupiter Quote Response: %s", body)
+	if err := json.Unmarshal(rawResponse, &quoteResp); err != nil {
+		log.Printf("🔄 RAW Jupiter Quote Response: %s", rawResponse)
 		return nil, fmt.Errorf("failed to unmarshal quote response: %w", err)
 	}
 
 	// Store the raw JSON payload in the struct for later use
-	quoteResp.RawPayload = json.RawMessage(body)
+	quoteResp.RawPayload = rawResponse
 
 	log.Printf("***************🔄 Raw Jupiter quote payload: %s", string(quoteResp.RawPayload))
 
@@ -150,35 +137,16 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 	url := fmt.Sprintf("%s%s", c.baseURL, tokenListEndpoint) // Inline URL formatting
 	log.Printf("🔄 Fetching all tokens from Jupiter: %s", url)
 
-	// Use a custom http.Client with a large timeout for this long-running request
-	customClient := &http.Client{
-		Timeout: 5 * time.Minute,
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	log.Printf("🔄 Fetching all tokens from Jupiter: %s", url)
-
-	resp, err := customClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch token list: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
+	// Store original timeout and set a longer one for this request
+	originalTimeout := c.httpClient.Timeout
+	c.httpClient.Timeout = 5 * time.Minute
+	defer func() {
+		c.httpClient.Timeout = originalTimeout // Restore original timeout
+	}()
 
 	var tokens []CoinListInfo
-	if err := json.Unmarshal(body, &tokens); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal token list: %w", err)
+	if err := c.GetRequest(ctx, url, &tokens); err != nil {
+		return nil, fmt.Errorf("failed to fetch token list: %w", err)
 	}
 
 	return &CoinListResponse{Coins: tokens}, nil
@@ -206,31 +174,9 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 
 	log.Printf("🔄 Fetching new tokens from Jupiter: %s", fullURL)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch new token list: failed to create request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to fetch new token list: status code: %d, body: %s", resp.StatusCode, string(respBody))
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch new token list: failed to read response body: %w", err)
-	}
-
 	var tokens []CoinListInfo
-	if err := json.Unmarshal(respBody, &tokens); err != nil {
-		log.Printf("Failed to unmarshal response from %s: %v, raw body: %s", fullURL, err, string(respBody))
-		return nil, fmt.Errorf("failed to fetch new token list: failed to unmarshal response from %s: %w", fullURL, err)
+	if err := c.GetRequest(ctx, fullURL, &tokens); err != nil {
+		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
 	}
 
 	return &CoinListResponse{Coins: tokens}, nil
