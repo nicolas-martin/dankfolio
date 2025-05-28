@@ -33,28 +33,6 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		);
 	};
 
-	const renderTradeRow = (
-		coin: Coin,
-		amount: string,
-		isFrom: boolean,
-		testID: string
-	) => (
-		<View style={styles.tradeRow} testID={testID}>
-			<View style={styles.tokenSection}>
-				<CoinIcon coin={coin} />
-				<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
-			</View>
-			<View style={styles.amountSection}>
-				<Text style={styles.amount}>{amount}</Text>
-				<Text style={styles.amountValue}>
-					{coin && coin.price != null && amount && !isNaN(parseFloat(amount))
-						? formatNumber(parseFloat(amount) * coin.price, true, 4)
-						: '$0.00'}
-				</Text>
-			</View>
-		</View>
-	);
-
 	if (!fromCoin || !toCoin) {
 		return (
 			<Portal>
@@ -80,9 +58,6 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				onDismiss={onClose}
 				contentContainerStyle={styles.container}
 			>
-				{/* Header */}
-				<Text style={styles.title}>Confirm Trade</Text>
-
 				{/* Trade Display */}
 				<View style={styles.tradeContainer}>
 					{/* From Amount */}
@@ -95,9 +70,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 							</View>
 						</View>
 						<View style={styles.amountInfo}>
-							<Text style={styles.amount}>{formatNumber(Number(fromAmount))}</Text>
+							<Text style={styles.amount}>{formatNumber(Number(fromAmount), false, 6)}</Text>
 							<Text style={styles.amountUsd}>
-								${formatPrice(Number(fromAmount) * (fromCoin.price || 0))}
+								{formatPrice(Number(fromAmount) * (fromCoin.price || 0))}
 							</Text>
 						</View>
 					</View>
@@ -115,9 +90,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 							</View>
 						</View>
 						<View style={styles.amountInfo}>
-							<Text style={styles.amount}>{formatNumber(Number(toAmount))}</Text>
+							<Text style={styles.amount}>{formatNumber(Number(toAmount), false, 6)}</Text>
 							<Text style={styles.amountUsd}>
-								${formatPrice(Number(toAmount) * (toCoin.price || 0))}
+								{formatPrice(Number(toAmount) * (toCoin.price || 0))}
 							</Text>
 						</View>
 					</View>
