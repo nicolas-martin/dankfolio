@@ -13,18 +13,18 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	onConfirm,
 	fromAmount,
 	toAmount,
-	fromCoin,
-	toCoin,
+	fromToken,
+	toToken,
 	fees,
 	isLoading = false,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	const CoinIcon: React.FC<{ coin: Coin }> = ({ coin }) => {
+	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
 		return (
 			<CachedImage
-				uri={coin.iconUrl}
+				uri={token.iconUrl}
 				size={32}
 				style={styles.tokenIcon}
 				showLoadingIndicator={true}
@@ -33,7 +33,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		);
 	};
 
-	if (!fromCoin || !toCoin) {
+	if (!fromToken || !toToken) {
 		return (
 			<Portal>
 				<Modal
@@ -62,17 +62,17 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				<View style={styles.tradeContainer}>
 					{/* From Amount */}
 					<View style={styles.tradeRow}>
-						<View style={styles.coinInfo}>
-							<CoinIcon coin={fromCoin} />
-							<View style={styles.coinDetails}>
-								<Text style={styles.coinSymbol}>{fromCoin.symbol}</Text>
-								<Text style={styles.coinName}>{fromCoin.name}</Text>
+						<View style={styles.tokenInfo}>
+							<TokenIcon token={fromToken} />
+							<View style={styles.tokenDetails}>
+								<Text style={styles.tokenSymbol}>{fromToken.symbol}</Text>
+								<Text style={styles.tokenName}>{fromToken.name}</Text>
 							</View>
 						</View>
 						<View style={styles.amountInfo}>
 							<Text style={styles.amount}>{formatNumber(Number(fromAmount), false, 6)}</Text>
 							<Text style={styles.amountUsd}>
-								{formatPrice(Number(fromAmount) * (fromCoin.price || 0))}
+								{formatPrice(Number(fromAmount) * (fromToken.price || 0))}
 							</Text>
 						</View>
 					</View>
@@ -82,17 +82,17 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 					{/* To Amount */}
 					<View style={styles.tradeRow}>
-						<View style={styles.coinInfo}>
-							<CoinIcon coin={toCoin} />
-							<View style={styles.coinDetails}>
-								<Text style={styles.coinSymbol}>{toCoin.symbol}</Text>
-								<Text style={styles.coinName}>{toCoin.name}</Text>
+						<View style={styles.tokenInfo}>
+							<TokenIcon token={toToken} />
+							<View style={styles.tokenDetails}>
+								<Text style={styles.tokenSymbol}>{toToken.symbol}</Text>
+								<Text style={styles.tokenName}>{toToken.name}</Text>
 							</View>
 						</View>
 						<View style={styles.amountInfo}>
 							<Text style={styles.amount}>{formatNumber(Number(toAmount), false, 6)}</Text>
 							<Text style={styles.amountUsd}>
-								{formatPrice(Number(toAmount) * (toCoin.price || 0))}
+								{formatPrice(Number(toAmount) * (toToken.price || 0))}
 							</Text>
 						</View>
 					</View>

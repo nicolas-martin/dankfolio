@@ -12,12 +12,14 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 
 	const renderCoinIcon = () => {
 		return (
-			<CachedImage
-				uri={coin.iconUrl}
-				size={40}
-				borderRadius={20}
-				testID={`coin-icon-${coin.mintAddress}`}
-			/>
+			<View style={styles.logo}>
+				<CachedImage
+					uri={coin.iconUrl}
+					size={40}
+					borderRadius={20}
+					testID={`coin-icon-${coin.mintAddress}`}
+				/>
+			</View>
 		);
 	};
 

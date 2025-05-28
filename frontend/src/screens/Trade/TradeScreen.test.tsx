@@ -23,6 +23,7 @@ const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
 	useNavigation: jest.fn(() => ({ navigate: mockNavigate })),
 	useRoute: jest.fn(),
+	useFocusEffect: jest.fn((callback) => callback()),
 }));
 
 // Mock Toast

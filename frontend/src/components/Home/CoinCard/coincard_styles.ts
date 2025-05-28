@@ -32,7 +32,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		width: 44,
 		height: 44,
 		borderRadius: 22,
-		marginRight: 16,
+		marginRight: 15,
 		backgroundColor: theme.colors.surfaceVariant,
 		justifyContent: 'center',
 		alignItems: 'center',
@@ -41,7 +41,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		width: 44,
 		height: 44,
 		borderRadius: 22,
-		marginRight: 16,
+		marginRight: 15,
 	},
 	nameSection: {
 		flex: 1,

@@ -330,8 +330,8 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 					setIsConfirmationVisible(false);
 				}}
 				onConfirm={handleConfirmSubmit}
-				fromCoin={selectedToken?.coin}
-				toCoin={selectedToken?.coin}
+				fromToken={selectedToken?.coin}
+				toToken={selectedToken?.coin}
 				fromAmount={amount}
 				toAmount="0"
 				fees={{
