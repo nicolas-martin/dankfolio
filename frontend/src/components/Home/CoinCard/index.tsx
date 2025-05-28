@@ -1,23 +1,62 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
+import { Image } from 'expo-image';
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '../../../utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
 import { createStyles } from './coincard_styles';
-import { CachedImage } from '@/components/Common/CachedImage';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
 	const renderCoinIcon = () => {
+		// Only use the actual coin iconUrl, no fallback
+		if (!coin.iconUrl) {
+			// If no iconUrl, show a simple placeholder
+			return (
+				<View style={[styles.logo, { 
+					width: 40, 
+					height: 40, 
+					borderRadius: 20,
+					backgroundColor: '#f0f0f0',
+					justifyContent: 'center',
+					alignItems: 'center'
+				}]}>
+					<Text style={{ fontSize: 12, color: '#666' }}>
+						{coin.symbol?.charAt(0) || '?'}
+					</Text>
+				</View>
+			);
+		}
+
+		// Convert IPFS URLs to use faster gateways
+		let imageUrl = coin.iconUrl;
+		
+		if (coin.iconUrl.includes('/ipfs/')) {
+			// Extract IPFS hash from any IPFS URL
+			const match = coin.iconUrl.match(/\/ipfs\/([^\/\?]+)/);
+			if (match) {
+				const ipfsHash = match[1];
+				// Use dweb.link as primary gateway (faster than ipfs.io)
+				imageUrl = `https://dweb.link/ipfs/${ipfsHash}`;
+			}
+		}
+		
+		// Debug logging
+		console.log(`🖼️ Loading image for ${coin.symbol}: ${imageUrl}`);
+		
 		return (
-			<CachedImage
-				uri={coin.iconUrl}
-				size={40}
-				style={styles.logo}
-				showLoadingIndicator={true}
-				borderRadius={20}
+			<Image
+				source={{ uri: imageUrl }}
+				style={[styles.logo, { width: 40, height: 40, borderRadius: 20 }]}
+				contentFit="cover"
+				transition={300}
+				cachePolicy="disk"
+				onLoad={() => console.log(`✅ Image loaded for ${coin.symbol}`)}
+				onError={(error) => {
+					console.log(`❌ Image failed for ${coin.symbol}:`, error);
+				}}
 			/>
 		);
 	};
