@@ -46,9 +46,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 	const handleTokenSelect = useCallback((coin: Coin) => {
 		onSelectToken(coin);
-		requestAnimationFrame(() => {
-			onDismiss();
-		});
+		onDismiss();
 	}, [onSelectToken, onDismiss]);
 
 	// Inline component for rendering the icon using CachedImage
