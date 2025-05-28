@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	birdeye "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	birdeye "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 
 	// actual_price_service "github.com/nicolas-martin/dankfolio/backend/internal/service/price" // This alias is no longer needed
-	priceMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/price/mocks"     // Import for generated mocks
+	priceMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/price/mocks" // Import for generated mocks
 )
 
 // Manual MockPriceService struct and its methods are removed as we are using mockery generated mocks.
@@ -25,11 +25,12 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 	mockService := priceMocks.NewMockPriceServiceAPI(t) // Use generated mock
 
 	handler := &priceServiceHandler{
-		priceService: mockService, 
+		priceService: mockService,
 	}
 
 	ctx := context.Background()
-	now := time.Now()
+	// Use fixed timestamps instead of time.Now() to make tests deterministic
+	now := time.Date(2025, 5, 28, 16, 7, 49, 0, time.UTC)
 	oneHourAgo := now.Add(-1 * time.Hour)
 
 	defaultTimeFromPb := timestamppb.New(oneHourAgo)
@@ -185,10 +186,10 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 				TimeTo:      defaultTimeToPb,
 				AddressType: defaultAddressType,
 			},
-			mockSetup:              func() {},
-			expectedResp:           nil,
-			expectedErrCode:        connect.CodeInvalidArgument,
-			expectedMockCall:       false,
+			mockSetup:        func() {},
+			expectedResp:     nil,
+			expectedErrCode:  connect.CodeInvalidArgument,
+			expectedMockCall: false,
 		},
 		{
 			name: "Missing timeFrom",
@@ -199,10 +200,10 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 				TimeTo:      defaultTimeToPb,
 				AddressType: defaultAddressType,
 			},
-			mockSetup:              func() {},
-			expectedResp:           nil,
-			expectedErrCode:        connect.CodeInvalidArgument,
-			expectedMockCall:       false,
+			mockSetup:        func() {},
+			expectedResp:     nil,
+			expectedErrCode:  connect.CodeInvalidArgument,
+			expectedMockCall: false,
 		},
 		{
 			name: "Missing timeTo",
@@ -213,10 +214,10 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 				TimeTo:      nil, // Missing
 				AddressType: defaultAddressType,
 			},
-			mockSetup:              func() {},
-			expectedResp:           nil,
-			expectedErrCode:        connect.CodeInvalidArgument,
-			expectedMockCall:       false,
+			mockSetup:        func() {},
+			expectedResp:     nil,
+			expectedErrCode:  connect.CodeInvalidArgument,
+			expectedMockCall: false,
 		},
 		{
 			name: "Error from price.Service",
@@ -273,7 +274,6 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 				}
 			}
 
-
 			// Assertions on mock calls are handled by t.Cleanup in NewMockPriceServiceAPI if using that pattern
 			// or can be done explicitly if needed:
 			// if tt.expectedMockCall { ... }
@@ -283,12 +283,11 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 	}
 }
 
-
 func TestGetCoinPricesHandler(t *testing.T) {
 
 	mockService := priceMocks.NewMockPriceServiceAPI(t) // Use generated mock
-	handler := &priceServiceHandler{ 
-		priceService: mockService, 
+	handler := &priceServiceHandler{
+		priceService: mockService,
 	}
 	ctx := context.Background()
 
