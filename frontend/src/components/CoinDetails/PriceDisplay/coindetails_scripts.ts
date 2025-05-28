@@ -1,6 +1,5 @@
 import Clipboard from '@react-native-clipboard/clipboard';
 import { NotificationProps } from '@/types';
-export { formatPrice, formatValueChange } from '@/utils/numberFormat';
 export const formatAddress = (address: string): string => {
 	if (!address) return '';
 	return `${address.slice(0, 4)}...${address.slice(-4)}`;

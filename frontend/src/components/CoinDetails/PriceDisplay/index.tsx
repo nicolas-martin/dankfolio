@@ -3,10 +3,12 @@ import { View, Image, ActivityIndicator } from 'react-native';
 import { Text, useTheme, IconButton, Button } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
 import { useToast } from '@components/Common/Toast';
-import { formatValueChange, formatPrice, formatAddress, copyToClipboard } from './coindetails_scripts';
+import { formatPrice, formatValueChange } from '@/utils/numberFormat';
+import { copyToClipboard, formatAddress } from './coindetails_scripts';
 import { createStyles } from './coindetails_styles';
 import { useProxiedImage } from '@/hooks/useProxiedImage';
 import { TokenImage } from '@/components/Common/TokenImage';
+import Odometer from '@components/Odometer';
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	price, periodChange, valueChange, period, iconUrl, name, address, hoveredPoint,
@@ -20,7 +22,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	if (isNaN(periodChange)) return null;
 
 	const isPositive = periodChange >= 0;
-	const formattedPrice = `${formatPrice(price)}`;
+	const formattedPrice = formatPrice(price);
 	const formattedChange = formatValueChange(valueChange, periodChange);
 
 	return (
@@ -57,9 +59,11 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			</View>
 
 			{/* Price */}
-			<Text style={[styles.priceText, { color: theme.colors.onSurface }]}>
-				{formattedPrice}
-			</Text>
+			<Odometer
+				value={formattedPrice}
+				duration={1000}
+				fontStyle={{ fontSize: 32, fontVariant: ['tabular-nums'] }}
+			/>
 
 			{/* Change and period */}
 			<View style={styles.changeRow}>
