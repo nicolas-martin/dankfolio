@@ -10,10 +10,10 @@ import {
 	getStatusType,
 	isFinalStatus,
 	isInProgressStatus,
-	formatTxHash,
 	getConfirmationProgress,
 	formatConfirmationsText,
 } from './scripts';
+import { formatAddress } from '@/utils/numberFormat';
 
 const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	isVisible,
@@ -201,7 +201,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				<View style={styles.hashContainer}>
 					<Text style={styles.hashLabel}>Transaction Hash</Text>
 					<Text style={styles.hashText} selectable>
-						{formatTxHash(txHash)}
+						{formatAddress(txHash, 8, 8)}
 					</Text>
 				</View>
 				<Button
@@ -286,3 +286,4 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 };
 
 export default TradeStatusModal;
+

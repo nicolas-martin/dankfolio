@@ -86,7 +86,7 @@ export const formatPercentage = (
 	includeSign: boolean = true
 ): string => {
 	if (value === null || value === undefined) return 'N/A';
-	const sign = includeSign && value >= 0 ? '+' : '';
+	const sign = includeSign && value > 0 ? '+' : '';
 	return `${sign}${value.toFixed(decimals)}%`;
 };
 
@@ -159,3 +159,5 @@ export const formatAddress = (
 	if (!address) return '';
 	return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 };
+
+

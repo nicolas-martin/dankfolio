@@ -1,65 +1,31 @@
-import React, { useState } from 'react'; // Added useState
-import { View, ActivityIndicator, TouchableOpacity } from 'react-native'; // Removed Image
-import { Image as ExpoImage } from 'expo-image'; // Added ExpoImage
+import React from 'react';
+import { View, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { formatTokenBalance, formatNumber, formatPrice } from '../../../utils/numberFormat';
+import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '../../../utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
 import { createStyles } from './coincard_styles';
-import { useCachedImage } from '@/hooks/useCachedImage'; // Changed to useCachedImage
+import { useProxiedImage } from '@/hooks/useProxiedImage';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	// Updated hook usage
-	const { imageUri: cachedImageUri, isLoading: hookIsLoading, error: hookError } = useCachedImage(coin.iconUrl);
-	// Added local state for ExpoImage loading and error
-	const [isLoadingImage, setIsLoadingImage] = useState(true);
-	const [imageError, setImageError] = useState<string | null>(null);
+	const { imageUri, isLoading } = useProxiedImage(coin.iconUrl);
 
 	const renderCoinIcon = () => {
-		const finalImageUri = cachedImageUri; // Use cachedImageUri which includes fallback
-
-		// Updated loading condition
-		if (hookIsLoading || isLoadingImage || !finalImageUri) {
-			// Using styles.logo for size consistency, and centering the ActivityIndicator
-			// If styles.coinIcon was specifically for the container, this might need adjustment
-			// For now, assuming styles.logo defines dimensions and we add centering.
+		if (isLoading || !imageUri) {
 			return (
-				<View style={[styles.logo, { justifyContent: 'center', alignItems: 'center' }]}>
+				<View style={styles.coinIcon}>
 					<ActivityIndicator size="small" color={theme.colors.primary} />
 				</View>
 			);
 		}
 
-		// Safeguard if finalImageUri is null (should be handled by useCachedImage providing a default)
-		if (!finalImageUri) {
-			return (
-				<View style={[styles.logo, { justifyContent: 'center', alignItems: 'center' }]}>
-					<ActivityIndicator size="small" color={theme.colors.primary} />
-				</View>
-			);
-		}
-
-		// Replaced React Native Image with ExpoImage and added props
 		return (
-			<ExpoImage
-				source={{ uri: finalImageUri }}
+			<Image
+				key={imageUri}
+				source={{ uri: imageUri }}
 				style={styles.logo}
-				cachePolicy="disk"
-				transition={100}
-				onLoadStart={() => {
-					setIsLoadingImage(true);
-					setImageError(null);
-				}}
-				onLoadEnd={() => setIsLoadingImage(false)}
-				onError={(event) => {
-					setIsLoadingImage(false);
-					// Ensure event.error is a string or provide fallback text
-					const errorMessage = typeof event.error === 'string' ? event.error : 'Failed to load image on CoinCard';
-					setImageError(errorMessage);
-					console.error('ExpoImage Error (CoinCard):', errorMessage, 'URI:', finalImageUri);
-				}}
 			/>
 		);
 	};
@@ -67,21 +33,21 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 	const renderPriceChange = () => {
 		if (coin.change24h === undefined) return null;
 
-		const change = coin.change24h;
-		const isPositive = change > 0;
-		const isNegative = change < 0;
+		// const change = coin.change24h; // Original variable, can be kept or removed
+		// const isPositive = coin.change24h > 0; // Original variable, can be kept or removed
+		// const isNegative = coin.change24h < 0; // Original variable, can be kept or removed
 
-		const changeStyle = isPositive
+		const changeStyle = coin.change24h > 0
 			? styles.changePositive
-			: isNegative
+			: coin.change24h < 0
 				? styles.changeNegative
 				: styles.changeNeutral;
 
-		const prefix = isPositive ? '+' : '';
+		// const prefix = isPositive ? '+' : ''; // Removed
 
 		return (
 			<Text style={changeStyle} numberOfLines={1}>
-				{prefix}{change.toFixed(2)}%
+				{formatPercentage(coin.change24h, 2, true)}
 			</Text>
 		);
 	};
