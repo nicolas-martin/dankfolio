@@ -84,9 +84,9 @@ func TestNewService(t *testing.T) {
 			AppCheckClient: nil,
 		}
 		s, err := NewService(cfg)
-		require.NoError(t, err)
-		assert.NotNil(t, s)
-		assert.Nil(t, s.appCheckClient, "App Check client should be nil when not provided")
+		require.Error(t, err, "NewService should return an error when AppCheckClient is nil")
+		assert.Nil(t, s, "Service should be nil when AppCheckClient is nil")
+		assert.Contains(t, err.Error(), "AppCheckClient is required", "Error message should indicate AppCheckClient is required")
 	})
 }
 
@@ -190,16 +190,9 @@ func TestGenerateToken(t *testing.T) {
 			AppCheckClient: nil, // No App Check client
 		}
 		s, err := NewService(cfg)
-		require.NoError(t, err)
-
-		req := &dankfoliov1.GenerateTokenRequest{
-			AppCheckToken: "some-token",
-			Platform:      "test-platform",
-		}
-		resp, err := s.GenerateToken(ctx, req)
-		assert.Error(t, err)
-		assert.Nil(t, resp)
-		assert.True(t, strings.Contains(err.Error(), "internal server error"), "Error message should indicate server configuration error")
+		require.Error(t, err, "NewService should return an error when AppCheckClient is nil")
+		assert.Nil(t, s, "Service should be nil when AppCheckClient is nil")
+		assert.Contains(t, err.Error(), "AppCheckClient is required", "Error message should indicate AppCheckClient is required")
 	})
 }
 

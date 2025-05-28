@@ -266,8 +266,8 @@ func (_c *MockClientAPI_GetCoinPrices_Call) RunAndReturn(run func(ctx context.Co
 }
 
 // GetNewCoins provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) GetNewCoins(ctx context.Context) (*jupiter.CoinListResponse, error) {
-	ret := _mock.Called(ctx)
+func (_mock *MockClientAPI) GetNewCoins(ctx context.Context, params *jupiter.NewCoinsParams) (*jupiter.CoinListResponse, error) {
+	ret := _mock.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNewCoins")
@@ -275,18 +275,18 @@ func (_mock *MockClientAPI) GetNewCoins(ctx context.Context) (*jupiter.CoinListR
 
 	var r0 *jupiter.CoinListResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (*jupiter.CoinListResponse, error)); ok {
-		return returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *jupiter.NewCoinsParams) (*jupiter.CoinListResponse, error)); ok {
+		return returnFunc(ctx, params)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) *jupiter.CoinListResponse); ok {
-		r0 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *jupiter.NewCoinsParams) *jupiter.CoinListResponse); ok {
+		r0 = returnFunc(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*jupiter.CoinListResponse)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *jupiter.NewCoinsParams) error); ok {
+		r1 = returnFunc(ctx, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -300,13 +300,14 @@ type MockClientAPI_GetNewCoins_Call struct {
 
 // GetNewCoins is a helper method to define mock.On call
 //   - ctx
-func (_e *MockClientAPI_Expecter) GetNewCoins(ctx interface{}) *MockClientAPI_GetNewCoins_Call {
-	return &MockClientAPI_GetNewCoins_Call{Call: _e.mock.On("GetNewCoins", ctx)}
+//   - params
+func (_e *MockClientAPI_Expecter) GetNewCoins(ctx interface{}, params interface{}) *MockClientAPI_GetNewCoins_Call {
+	return &MockClientAPI_GetNewCoins_Call{Call: _e.mock.On("GetNewCoins", ctx, params)}
 }
 
-func (_c *MockClientAPI_GetNewCoins_Call) Run(run func(ctx context.Context)) *MockClientAPI_GetNewCoins_Call {
+func (_c *MockClientAPI_GetNewCoins_Call) Run(run func(ctx context.Context, params *jupiter.NewCoinsParams)) *MockClientAPI_GetNewCoins_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(*jupiter.NewCoinsParams))
 	})
 	return _c
 }
@@ -316,7 +317,7 @@ func (_c *MockClientAPI_GetNewCoins_Call) Return(coinListResponse *jupiter.CoinL
 	return _c
 }
 
-func (_c *MockClientAPI_GetNewCoins_Call) RunAndReturn(run func(ctx context.Context) (*jupiter.CoinListResponse, error)) *MockClientAPI_GetNewCoins_Call {
+func (_c *MockClientAPI_GetNewCoins_Call) RunAndReturn(run func(ctx context.Context, params *jupiter.NewCoinsParams) (*jupiter.CoinListResponse, error)) *MockClientAPI_GetNewCoins_Call {
 	_c.Call.Return(run)
 	return _c
 }

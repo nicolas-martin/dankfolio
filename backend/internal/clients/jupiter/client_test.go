@@ -17,7 +17,7 @@ func TestClient_GetNewCoins_Success(t *testing.T) {
 		{Address: "token1", Name: "Token One", Symbol: "ONE", LogoURI: "http://example.com/one.png", Tags: []string{"tag1", "tag2"}, Decimals: 6},
 		{Address: "token2", Name: "Token Two", Symbol: "TWO", LogoURI: "http://example.com/two.png", Tags: []string{"tag3"}, Decimals: 9},
 	}
-	// Note: The /v1/new endpoint returns a direct slice []CoinListInfo, not CoinListResponse
+	// The /v1/new endpoint returns a direct slice []CoinListInfo, not CoinListResponse
 	mockBody, err := json.Marshal(expectedCoins)
 	require.NoError(t, err, "Failed to marshal expectedCoins")
 
@@ -33,7 +33,7 @@ func TestClient_GetNewCoins_Success(t *testing.T) {
 	client := NewClient(httpClient, server.URL, "") // Use server.URL as baseURL
 
 	ctx := context.Background()
-	resp, err := client.GetNewCoins(ctx)
+	resp, err := client.GetNewCoins(ctx, nil)
 
 	require.NoError(t, err, "GetNewCoins should not return an error on success")
 	require.NotNil(t, resp, "Response should not be nil on success")
@@ -62,7 +62,7 @@ func TestClient_GetNewCoins_HTTPError(t *testing.T) {
 	client := NewClient(httpClient, server.URL, "")
 
 	ctx := context.Background()
-	resp, err := client.GetNewCoins(ctx)
+	resp, err := client.GetNewCoins(ctx, nil)
 
 	require.Error(t, err, "GetNewCoins should return an error on HTTP 500")
 	require.Nil(t, resp, "Response should be nil on error")
@@ -84,7 +84,7 @@ func TestClient_GetNewCoins_MalformedJSON(t *testing.T) {
 	client := NewClient(httpClient, server.URL, "")
 
 	ctx := context.Background()
-	resp, err := client.GetNewCoins(ctx)
+	resp, err := client.GetNewCoins(ctx, nil)
 
 	require.Error(t, err, "GetNewCoins should return an error on malformed JSON")
 	require.Nil(t, resp, "Response should be nil on error")
@@ -112,7 +112,7 @@ func TestClient_GetNewCoins_EmptyList(t *testing.T) {
 	client := NewClient(httpClient, server.URL, "")
 
 	ctx := context.Background()
-	resp, err := client.GetNewCoins(ctx)
+	resp, err := client.GetNewCoins(ctx, nil)
 
 	require.NoError(t, err, "GetNewCoins should not return an error for an empty list")
 	require.NotNil(t, resp, "Response should not be nil for an empty list")
@@ -134,7 +134,7 @@ func TestClient_GetNewCoins_NetworkError(t *testing.T) {
 	client := NewClient(httpClient, serverURL, "") // Point to the now-closed server URL
 
 	ctx := context.Background()
-	resp, err := client.GetNewCoins(ctx)
+	resp, err := client.GetNewCoins(ctx, nil)
 
 	require.Error(t, err, "GetNewCoins should return an error on network error")
 	require.Nil(t, resp, "Response should be nil on network error")
@@ -159,11 +159,52 @@ func TestClient_GetNewCoins_ContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel context immediately
 
-	resp, err := client.GetNewCoins(ctx)
+	resp, err := client.GetNewCoins(ctx, nil)
 
 	require.Error(t, err, "GetNewCoins should return an error if context is cancelled")
 	require.Nil(t, resp, "Response should be nil on context cancellation")
 	assert.Contains(t, err.Error(), "failed to fetch new token list", "Error message should indicate fetch failure")
 	// The underlying error from c.GetRequest -> http.NewRequestWithContext or httpClient.Do
 	assert.Contains(t, err.Error(), context.Canceled.Error(), "Error message should indicate context cancellation")
+}
+
+// TestClient_GetNewCoins_WithPagination tests the pagination functionality
+func TestClient_GetNewCoins_WithPagination(t *testing.T) {
+	expectedCoins := []CoinListInfo{
+		{Address: "token1", Name: "Token One", Symbol: "ONE", LogoURI: "http://example.com/one.png", Tags: []string{"tag1", "tag2"}, Decimals: 6},
+		{Address: "token2", Name: "Token Two", Symbol: "TWO", LogoURI: "http://example.com/two.png", Tags: []string{"tag3"}, Decimals: 9},
+	}
+	mockBody, err := json.Marshal(expectedCoins)
+	require.NoError(t, err, "Failed to marshal expectedCoins")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, newTokensEndpoint, r.URL.Path, "Request path should match newTokensEndpoint")
+
+		// Check that query parameters are present
+		query := r.URL.Query()
+		assert.Equal(t, "10", query.Get("limit"), "Limit parameter should be set")
+		assert.Equal(t, "20", query.Get("offset"), "Offset parameter should be set")
+
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write(mockBody)
+		require.NoError(t, err, "Failed to write response body")
+	}))
+	defer server.Close()
+
+	httpClient := server.Client()
+	client := NewClient(httpClient, server.URL, "")
+
+	ctx := context.Background()
+	limit := int(10)
+	offset := int(20)
+	params := &NewCoinsParams{
+		Limit:  &limit,
+		Offset: &offset,
+	}
+
+	resp, err := client.GetNewCoins(ctx, params)
+
+	require.NoError(t, err, "GetNewCoins should not return an error with pagination params")
+	require.NotNil(t, resp, "Response should not be nil")
+	require.Equal(t, len(expectedCoins), len(resp.Coins), "Number of coins should match")
 }

@@ -184,17 +184,56 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 	return &CoinListResponse{Coins: tokens}, nil
 }
 
-// GetNewCoins fetches all new tokens from Jupiter API
-func (c *Client) GetNewCoins(ctx context.Context) (*CoinListResponse, error) {
-	url := fmt.Sprintf("%s%s", c.baseURL, newTokensEndpoint) // Inline URL formatting
-	log.Printf("🔄 Fetching new tokens from Jupiter: %s", url)
+// GetNewCoins fetches all new tokens from Jupiter API with optional pagination
+func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*CoinListResponse, error) {
+	baseURL := fmt.Sprintf("%s%s", c.baseURL, newTokensEndpoint)
 
-	var coinListResp CoinListResponse
-	if err := c.GetRequest(ctx, url, &coinListResp); err != nil { // Use GetRequest
-		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
+	// Add query parameters if provided
+	queryParams := url.Values{}
+	if params != nil {
+		if params.Limit != nil {
+			queryParams.Set("limit", strconv.Itoa(*params.Limit))
+		}
+		if params.Offset != nil {
+			queryParams.Set("offset", strconv.Itoa(*params.Offset))
+		}
 	}
 
-	return &coinListResp, nil
+	fullURL := baseURL
+	if len(queryParams) > 0 {
+		fullURL = baseURL + "?" + queryParams.Encode()
+	}
+
+	log.Printf("🔄 Fetching new tokens from Jupiter: %s", fullURL)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch new token list: failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to fetch new token list: status code: %d, body: %s", resp.StatusCode, string(respBody))
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch new token list: failed to read response body: %w", err)
+	}
+
+	var tokens []CoinListInfo
+	if err := json.Unmarshal(respBody, &tokens); err != nil {
+		log.Printf("Failed to unmarshal response from %s: %v, raw body: %s", fullURL, err, string(respBody))
+		return nil, fmt.Errorf("failed to fetch new token list: failed to unmarshal response from %s: %w", fullURL, err)
+	}
+
+	return &CoinListResponse{Coins: tokens}, nil
 }
 
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter

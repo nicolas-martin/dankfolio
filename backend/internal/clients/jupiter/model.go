@@ -173,3 +173,9 @@ type SwapQuoteRequestBody struct {
 	InputMint       string   `json:"input_mint"`
 	OutputMint      string   `json:"output_mint"`
 }
+
+// NewCoinsParams represents pagination parameters for the GetNewCoins endpoint
+type NewCoinsParams struct {
+	Limit  *int `json:"limit,omitempty"`  // How many records to output in the result
+	Offset *int `json:"offset,omitempty"` // The offset into the result set, used with limit to page through data
+}

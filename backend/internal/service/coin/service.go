@@ -262,8 +262,16 @@ func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, 
 // FetchAndStoreNewTokens fetches new tokens from Jupiter and stores them in the raw_coins table.
 func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	slog.Info("Starting to fetch and store new tokens from Jupiter")
+	// TODO: We could make this configurable or paginate
+	limit := 50
+	offset := 0
 
-	resp, err := s.jupiterClient.GetNewCoins(ctx)
+	params := &jupiter.NewCoinsParams{
+		Limit:  &limit,
+		Offset: &offset,
+	}
+
+	resp, err := s.jupiterClient.GetNewCoins(ctx, params)
 	if err != nil {
 		slog.Error("Failed to get new coins from Jupiter", slog.Any("error", err))
 		return fmt.Errorf("failed to get new coins from Jupiter: %w", err)
