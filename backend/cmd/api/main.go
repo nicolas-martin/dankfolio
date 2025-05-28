@@ -42,6 +42,7 @@ type Config struct {
 	Env               string
 	JWTSecret         string
 	TokenExpiry       time.Duration
+	NewCoinsFetchInterval time.Duration
 }
 
 func loadConfig() (*Config, error) {
@@ -120,6 +121,19 @@ func loadConfig() (*Config, error) {
 		log.Fatalf("missing required environment variables: %v", missingVars)
 	}
 
+	// Parse new coins fetch interval
+	newCoinsIntervalMinutesStr := os.Getenv("NEW_COINS_FETCH_INTERVAL_MINUTES")
+	newCoinsIntervalMinutes, err := strconv.Atoi(newCoinsIntervalMinutesStr)
+	if err != nil || newCoinsIntervalMinutes <= 0 {
+		// Use standard log here as slog might not be initialized yet
+		log.Printf("Warning: Invalid or missing NEW_COINS_FETCH_INTERVAL_MINUTES, defaulting to 5 minutes. Error: %v", err)
+		newCoinsIntervalMinutes = 5 // Default to 5 minutes
+	}
+	config.NewCoinsFetchInterval = time.Duration(newCoinsIntervalMinutes) * time.Minute
+	// Slog will be configured after this function returns, so this log might not appear as expected
+	// or could use standard log.Printf if immediate feedback before slog setup is critical.
+	// For now, we'll let main log it after slog is set up.
+
 	return config, nil
 }
 
@@ -145,7 +159,11 @@ func main() {
 	slogger := slog.New(handler)
 	slog.SetDefault(slogger)
 
-	slog.Info("Configuration loaded successfully", "appEnv", config.Env, "port", config.GRPCPort)
+	slog.Info("Configuration loaded successfully",
+		slog.String("appEnv", config.Env),
+		slog.Int("port", config.GRPCPort),
+		slog.Duration("newCoinsFetchInterval", config.NewCoinsFetchInterval), // Log it here after slog is configured
+	)
 
 	// Initialize Firebase Admin SDK
 	ctx := context.Background()
@@ -201,13 +219,16 @@ func main() {
 	}
 
 	// Initialize coin service
+	slog.Info("Initializing coin service...")
 	coinServiceConfig := &coin.Config{
-		BirdEyeBaseURL:    config.BirdEyeEndpoint,
-		BirdEyeAPIKey:     config.BirdEyeAPIKey,
-		CoinGeckoAPIKey:   config.CoinGeckoAPIKey,
-		SolanaRPCEndpoint: config.SolanaRPCEndpoint,
+		BirdEyeBaseURL:        config.BirdEyeEndpoint,
+		BirdEyeAPIKey:         config.BirdEyeAPIKey,
+		CoinGeckoAPIKey:       config.CoinGeckoAPIKey,
+		SolanaRPCEndpoint:     config.SolanaRPCEndpoint,
+		NewCoinsFetchInterval: config.NewCoinsFetchInterval, // Assign the interval here
 	}
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
+	slog.Info("Coin service initialized.")
 
 	// Initialize price service
 	priceService := price.NewService(birdeyeClient, jupiterClient)
