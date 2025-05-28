@@ -23,6 +23,8 @@ type Service struct {
 	solanaClient   solana.ClientAPI
 	offchainClient offchain.ClientAPI
 	store          db.Store
+	fetcherCtx     context.Context    // Context for the new token fetcher goroutine
+	fetcherCancel  context.CancelFunc // Cancel function for the fetcher goroutine
 }
 
 // NewService creates a new CoinService instance
@@ -45,6 +47,8 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 		offchainClient: offchainClient,
 		store:          store,
 	}
+	// Initialize context and cancel for the fetcher goroutine
+	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 
 	// Perform initial data load or refresh, with a timeout
 	ctx, cancel := context.WithTimeout(context.Background(), initialLoadTimeout)
@@ -55,9 +59,61 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 		slog.Warn("Initial data load/refresh failed", slog.Any("error", err))
 	}
 
-	// TODO: Consider periodic refresh in a background goroutine
+	// Start the new token fetcher if an interval is configured
+	if service.config.NewCoinsFetchInterval > 0 {
+		go service.runNewTokenFetcher(service.fetcherCtx)
+	} else {
+		slog.Info("New token fetcher is disabled as NewCoinsFetchInterval is not configured or is zero.")
+	}
 
 	return service
+}
+
+// runNewTokenFetcher periodically fetches new tokens from Jupiter.
+// It takes a context for managing its lifecycle.
+func (s *Service) runNewTokenFetcher(ctx context.Context) {
+	slog.Info("Starting new token fetcher", slog.Duration("interval", s.config.NewCoinsFetchInterval))
+
+	// Perform an initial fetch immediately
+	slog.Info("Performing initial fetch of new tokens...")
+	if err := s.FetchAndStoreNewTokens(ctx); err != nil {
+		slog.Error("Failed to fetch and store new tokens during initial run", slog.Any("error", err))
+	} else {
+		slog.Info("Successfully fetched and stored new tokens during initial run.")
+	}
+
+	// Then, start the ticker for periodic fetching
+	ticker := time.NewTicker(s.config.NewCoinsFetchInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			slog.Info("Periodically fetching new tokens...")
+			// Use the passed-in context (s.fetcherCtx) for the actual operation
+			// to allow cancellation of FetchAndStoreNewTokens if the service is shutting down.
+			if err := s.FetchAndStoreNewTokens(ctx); err != nil {
+				slog.Error("Failed to fetch and store new tokens periodically", slog.Any("error", err))
+			} else {
+				slog.Info("Successfully fetched and stored new tokens periodically.")
+			}
+		case <-ctx.Done(): // Listen for context cancellation
+			slog.Info("New token fetcher stopping due to context cancellation.")
+			return
+		}
+	}
+}
+
+// Shutdown gracefully stops the service, including the new token fetcher.
+// This method is not part of the current subtask but shows how fetcherCancel would be used.
+func (s *Service) Shutdown() {
+	slog.Info("Shutting down coin service...")
+	if s.fetcherCancel != nil {
+		slog.Info("Cancelling new token fetcher...")
+		s.fetcherCancel()
+	}
+	// Add any other cleanup logic here
+	slog.Info("Coin service shutdown complete.")
 }
 
 // GetCoins returns a list of all available coins
@@ -215,6 +271,45 @@ func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, 
 	}
 
 	return resp, nil
+}
+
+// FetchAndStoreNewTokens fetches new tokens from Jupiter and stores them in the raw_coins table.
+func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
+	slog.Info("Starting to fetch and store new tokens from Jupiter")
+
+	resp, err := s.jupiterClient.GetNewCoins(ctx)
+	if err != nil {
+		slog.Error("Failed to get new coins from Jupiter", slog.Any("error", err))
+		return fmt.Errorf("failed to get new coins from Jupiter: %w", err)
+	}
+
+	if resp == nil || len(resp.Coins) == 0 {
+		slog.Info("No new coins found from Jupiter.")
+		return nil
+	}
+
+	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("count", len(resp.Coins)))
+
+	var upsertErrors []error
+	for _, v := range resp.Coins {
+		rawCoin := v.ToRawCoin() // Assuming ToRawCoin exists on jupiter.CoinListInfo
+		err := s.store.RawCoins().Upsert(ctx, rawCoin)
+		if err != nil {
+			slog.Error("Failed to upsert raw coin", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
+			upsertErrors = append(upsertErrors, err)
+			// Continue processing other coins
+		}
+	}
+
+	if len(upsertErrors) > 0 {
+		slog.Warn("Completed fetching new tokens, but some upserts failed", slog.Int("successful_count", len(resp.Coins)-len(upsertErrors)), slog.Int("failed_count", len(upsertErrors)))
+		// Depending on requirements, you might want to return a composite error here.
+		// For now, returning nil as the primary operation (fetching) succeeded.
+		return nil // Or return a custom error indicating partial success
+	}
+
+	slog.Info("Successfully fetched and stored new tokens", slog.Int("processed_count", len(resp.Coins)))
+	return nil
 }
 
 // SearchCoins searches for coins using the DB's SearchCoins

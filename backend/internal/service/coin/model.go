@@ -23,6 +23,7 @@ type Config struct {
 	BirdEyeAPIKey     string
 	CoinGeckoAPIKey   string // Uncomment when needed
 	SolanaRPCEndpoint string // Add Solana RPC endpoint needed for enrichment client
+	NewCoinsFetchInterval time.Duration
 }
 
 // --- Structs matching the scraper's NEW JSON output (Enriched Data) ---
