@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Image, ActivityIndicator } from 'react-native';
-import { Text, useTheme, IconButton, Button } from 'react-native-paper';
+import { View, ActivityIndicator } from 'react-native';
+import { Text, useTheme, IconButton } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
 import { useToast } from '@components/Common/Toast';
 import { formatPrice, formatValueChange } from '@/utils/numberFormat';

@@ -16,7 +16,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingBottom: 100,
 		paddingTop: 8,
 	},
-	
+
 	// Price Display Card
 	priceCard: {
 		backgroundColor: theme.colors.surface,
@@ -36,7 +36,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 			},
 		}),
 	},
-	
+
 	// Chart Container
 	chartContainer: {
 		backgroundColor: theme.colors.surface,
@@ -56,7 +56,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 			},
 		}),
 	},
-	
+
 	// Timeframe Buttons
 	timeframeCard: {
 		backgroundColor: theme.colors.surface,
@@ -76,7 +76,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 			},
 		}),
 	},
-	
+
 	// Holdings Card
 	holdingsCard: {
 		backgroundColor: theme.colors.surface,
@@ -135,7 +135,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurface,
 		fontWeight: '600',
 	},
-	
+
 	// About Section Card
 	aboutCard: {
 		backgroundColor: theme.colors.surface,
@@ -175,7 +175,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurface,
 		flex: 1,
 	},
-	
+
 	// Trade Button
 	tradeButtonContainer: {
 		position: 'absolute',
@@ -207,7 +207,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderRadius: 12,
 		paddingVertical: 4,
 	},
-	
+
 	// Loading States
 	centered: {
 		flex: 1,
@@ -218,7 +218,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		paddingVertical: 20,
 	},
-	
+
 	// Legacy styles for compatibility
 	priceDisplayContainer: {
 		// This will be replaced by priceCard

@@ -33,10 +33,10 @@ const Odometer: FC<OdometerProps> = ({
 	// init Animated.Values when we know the height
 	useEffect(() => {
 		if (!digitHeight) return;
-		
+
 		// Initialize array with proper length and null values first
 		anims.current = new Array(value.length).fill(null);
-		
+
 		// Then populate with Animated.Values for digits only
 		anims.current = value.split('').map((char, i) =>
 			/\d/.test(char)
@@ -48,7 +48,7 @@ const Odometer: FC<OdometerProps> = ({
 	// animate digits only
 	useEffect(() => {
 		if (!digitHeight || !anims.current.length) return;
-		
+
 		const seq = value
 			.split('')
 			.map((char, i) => {

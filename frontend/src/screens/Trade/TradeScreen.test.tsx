@@ -5,7 +5,7 @@ import TradeScreen from './index';
 import { View, Text } from 'react-native';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { Provider as PaperProvider } from 'react-native-paper';
-import { mockFromCoin, mockToCoin, mockWallet, mockFromPortfolioToken } from '@/__mocks__/testData';
+import { mockFromCoin, mockToCoin, mockFromPortfolioToken } from '@/__mocks__/testData';
 import { mockPortfolioStoreReturn, usePortfolioStore } from '@/__mocks__/store/portfolio';
 import { mockCoinStoreReturn, useCoinStore } from '@/__mocks__/store/coins';
 import { fetchTradeQuote as mockFetchTradeQuote, signTradeTransaction as mockSignTradeTransaction } from '@/__mocks__/services/trade_scripts';
@@ -176,13 +176,13 @@ describe('TradeScreen', () => {
 				}
 				// Simulate SOL not being in cache initially for one of the tests
 				if ((useRoute as jest.Mock).mock.calls.some(call => call[0]?.key === 'TradeScreen-SOL-Not-In-Cache')) {
-					return null; 
+					return null;
 				}
 				return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'cache' };
 			}
 			return null;
 		});
-		
+
 		(useRoute as jest.Mock).mockReturnValue({
 			key: 'TradeScreen-Default', // Keep a default key or change per test
 			name: 'TradeScreen',
@@ -467,7 +467,7 @@ describe('TradeScreen', () => {
 
 		await waitFor(() => {
 			// First for SOL (cache), then for initialToCoin (cache)
-			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2); 
+			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2);
 		});
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, false);
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false);
@@ -480,7 +480,7 @@ describe('TradeScreen', () => {
 			name: 'TradeScreen',
 			params: { initialFromCoin: null, initialToCoin: mockToCoin },
 		});
-		
+
 		// Mock getCoinByID to return null for SOL on the first (cache) call for this test
 		mockCoinStoreReturn.getCoinByID.mockImplementationOnce(async (mintAddress: string, forceRefresh: boolean = false) => {
 			if (mintAddress === SOLANA_ADDRESS && !forceRefresh) return null; // Simulate cache miss for SOL

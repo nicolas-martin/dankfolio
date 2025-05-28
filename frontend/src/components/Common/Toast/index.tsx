@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
+import React, { createContext, useContext, useMemo, useReducer } from 'react';
 import { View } from 'react-native';
 import { Portal, Snackbar, useTheme, Text, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ToastProps, ToastType } from './toast_types';
+import { ToastProps } from './toast_types';
 import { createStyles } from './toast_styles';
 import { getToastBackgroundColor, getToastForegroundColor } from './toast_constants';
 import { getToastIcon } from './toast_icons';

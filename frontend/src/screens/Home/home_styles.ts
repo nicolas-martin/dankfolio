@@ -9,7 +9,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	content: {
 		flex: 1,
 	},
-	
+
 	// Header Section
 	headerContainer: {
 		padding: 20,
@@ -26,7 +26,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurfaceVariant,
 		fontWeight: '400',
 	},
-	
+
 	// Coins Section
 	coinsSection: {
 		flex: 1,
@@ -41,12 +41,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '600',
 		color: theme.colors.onSurface,
 	},
-	
+
 	// Coins List
 	coinsList: {
 		paddingBottom: 100,
 	},
-	
+
 	// Empty States
 	emptyStateContainer: {
 		flex: 1,
@@ -71,7 +71,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		textAlign: 'center',
 		lineHeight: 20,
 	},
-	
+
 	// No Wallet State
 	noWalletContainer: {
 		flex: 1,

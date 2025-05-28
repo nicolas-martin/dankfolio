@@ -136,10 +136,10 @@ const Profile = () => {
 							balance: token.amount
 						}}
 						onPress={() => {
-							logger.breadcrumb({ 
-								category: 'ui', 
-								message: 'Pressed token card on ProfileScreen', 
-								data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress } 
+							logger.breadcrumb({
+								category: 'ui',
+								message: 'Pressed token card on ProfileScreen',
+								data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress }
 							});
 							handleTokenPress(token.coin, navigation.navigate);
 						}}
@@ -192,9 +192,9 @@ const Profile = () => {
 						{renderPortfolioCard()}
 						{renderTokensSection()}
 					</View>
-					
+
 					{/* Debug button - temporary */}
-					<Button 
+					<Button
 						onPress={() => { Sentry.captureException(new Error('First error')) }}
 						style={styles.debugButton}
 					>

@@ -4,8 +4,8 @@ import TradeScreen from './index'; // The component under test
 import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import * as TradeScripts from './trade_scripts';
-import { Coin, Wallet, RawWalletData, Base58PrivateKey } from '@/types';
-import { View, Text, TextInput } from 'react-native';
+import { Coin, RawWalletData, Base58PrivateKey } from '@/types';
+import { View, Text } from 'react-native';
 
 // --- Mock Data (Copied from original file) ---
 // Use consistent mocked prices for predictable test results
@@ -259,7 +259,7 @@ describe('TradeScreen Confirmation Behavior', () => {
 
 		// 3. Open confirmation modal
 		await act(async () => {
-			fireEvent.press(getByTestId('trade-button')); 
+			fireEvent.press(getByTestId('trade-button'));
 			jest.runOnlyPendingTimers();
 		});
 		await waitFor(() => {

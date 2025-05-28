@@ -25,7 +25,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	
+
 	// State to prevent quick flashing between states
 	const [displayStatus, setDisplayStatus] = useState(status);
 	const [displayConfirmations, setDisplayConfirmations] = useState(confirmations);
@@ -51,7 +51,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					useNativeDriver: true,
 				}),
 			]).start();
-			
+
 			setDisplayStatus(status);
 		}
 	}, [status, displayStatus, fadeAnim]);
@@ -80,7 +80,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			} else {
 				progress = getConfirmationProgress(displayConfirmations);
 			}
-			
+
 			Animated.timing(progressAnim, {
 				toValue: progress / 100,
 				duration: displayStatus === 'finalized' ? 500 : 300, // Slightly longer animation for completion
@@ -137,7 +137,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	const renderProgressSection = () => {
 		// Show progress if currently in progress OR if we've shown it before and not failed OR if finalized
 		const shouldShowProgress = isInProgress || (hasShownProgress && displayStatus !== 'failed') || displayStatus === 'finalized';
-		
+
 		if (!shouldShowProgress) return null;
 
 		// For pending state without txHash, show preparing message
@@ -153,10 +153,10 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 		}
 
 		const progress = getConfirmationProgress(displayConfirmations);
-		
+
 		// For finalized transactions, show "Complete" instead of confirmation count
-		const confirmationDisplay = displayStatus === 'finalized' 
-			? 'Complete' 
+		const confirmationDisplay = displayStatus === 'finalized'
+			? 'Complete'
 			: formatConfirmationsText(displayConfirmations);
 
 		return (
@@ -168,16 +168,16 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					</Text>
 				</View>
 				<View style={styles.progressBar}>
-					<Animated.View 
+					<Animated.View
 						style={[
-							styles.progressFill, 
-							{ 
+							styles.progressFill,
+							{
 								width: progressAnim.interpolate({
 									inputRange: [0, 1],
 									outputRange: ['0%', '100%'],
 								})
 							}
-						]} 
+						]}
 					/>
 				</View>
 				{isInProgress && (

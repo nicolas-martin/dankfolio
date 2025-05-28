@@ -304,7 +304,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 	return (
 		<View style={styles.container}>
-			<ScrollView 
+			<ScrollView
 				style={styles.scrollView}
 				contentContainerStyle={styles.content}
 				showsVerticalScrollIndicator={false}

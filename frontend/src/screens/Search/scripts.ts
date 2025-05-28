@@ -87,10 +87,10 @@ export const handleCoinNavigation = async (
 ): Promise<void> => {
 	try {
 		const enrichedCoin = await getEnrichedCoinData(coin, useCoinStore.getState().getCoinByID);
-		logger.breadcrumb({ 
-			category: 'navigation', 
-			message: 'Navigating to CoinDetail from Search', 
-			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } 
+		logger.breadcrumb({
+			category: 'navigation',
+			message: 'Navigating to CoinDetail from Search',
+			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress }
 		});
 		navigation.navigate('CoinDetail', { coin: enrichedCoin });
 	} catch (error) {

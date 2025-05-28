@@ -3,7 +3,7 @@ import { Modal as RNModal, View, Image, TouchableOpacity, TextInput, FlatList, A
 import { Text, useTheme, Card } from 'react-native-paper';
 import { ChevronDownIcon, CoinsIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
-import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
+import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { createStyles } from './styles';

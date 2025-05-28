@@ -1,5 +1,4 @@
 import React, {
-	forwardRef,
 	useMemo,
 	useRef,
 	useEffect,
@@ -11,9 +10,8 @@ import {
 	useChartPressState,
 	Area,
 	useLinePath,
-	useAnimatedPath,
 	type PointsArray,
-} from 'victory-native';  // animated-paths hooks
+} from 'victory-native';
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
@@ -55,10 +53,10 @@ function SpringLine({
 }) {
 	// get raw Skia path from points
 	const { path: skPath } = useLinePath(points, { curveType: 'cardinal' });
-	
+
 	// Create animated progress for path trimming
 	const progress = useSharedValue(1); // Start at 1 to avoid re-animation on interaction
-	
+
 	// Only animate when dataKey changes (new dataset), not on every points change
 	useEffect(() => {
 		if (dataKey) {

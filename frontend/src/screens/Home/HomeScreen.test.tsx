@@ -1,6 +1,5 @@
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { FlatList, RefreshControl } from 'react-native'; // Import components from react-native
+import { RefreshControl } from 'react-native'; // Import components from react-native
 import HomeScreen from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
@@ -166,7 +165,7 @@ describe('HomeScreen', () => {
 		} else {
 			throw new Error("RefreshControl not found for testing 'renders correctly and handles data refresh'");
 		}
-		
+
 		await waitFor(() => {
 			// Verify function calls
 			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
