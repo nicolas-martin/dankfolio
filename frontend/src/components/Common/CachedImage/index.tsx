@@ -56,7 +56,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
 	// Debug logging
 	if (imageUrl) {
-		console.log(`🖼️ Loading image: ${imageUrl}`);
+		// console.log(`🖼️ Loading image: ${imageUrl}`);
 	}
 
 	// Prepare placeholder - prioritize passed placeholder, then blurhash, then default blurhash
@@ -68,12 +68,12 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
 	// Enhanced logging callbacks
 	const handleLoad = (event: any) => {
-		console.log(`✅ Image loaded successfully: ${imageUrl || 'placeholder'}`);
+		// console.log(`✅ Image loaded successfully: ${imageUrl || 'placeholder'}`);
 		onLoad?.(event);
 	};
 
 	const handleError = (error: any) => {
-		console.log(`❌ Image failed to load: ${imageUrl || 'no URL'}`, error);
+		// console.log(`❌ Image failed to load: ${imageUrl || 'no URL'}`, error);
 		onError?.(error);
 	};
 

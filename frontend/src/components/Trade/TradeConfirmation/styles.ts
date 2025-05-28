@@ -4,43 +4,224 @@ import { MD3Theme } from 'react-native-paper';
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
 		backgroundColor: theme.colors.surface,
-		padding: 20,
+		padding: 32,
 		margin: 16,
-		borderRadius: 20,
-		maxWidth: 400,
+		borderRadius: 24,
+		maxWidth: 500,
+		width: '90%',
 		alignSelf: 'center',
 		elevation: 8,
 		shadowColor: '#000',
 		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.15,
-		shadowRadius: 12,
+		shadowOpacity: 0.1,
+		shadowRadius: 16,
 	},
 
-	// Header Section
-	header: {
-		alignItems: 'center',
-		marginBottom: 24,
-	},
+	// Header
 	title: {
-		fontSize: 22,
+		fontSize: 24,
 		fontWeight: '700',
 		color: theme.colors.onSurface,
 		textAlign: 'center',
-		marginBottom: 6,
+		marginBottom: 40,
+	},
+
+	// Trade Container
+	tradeContainer: {
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 20,
+		padding: 24,
+		marginBottom: 32,
+		position: 'relative',
+	},
+
+	// Trade Row
+	tradeRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingVertical: 16,
+	},
+
+	// Coin Info
+	coinInfo: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		flex: 1,
+	},
+
+	coinIcon: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		marginRight: 12,
+	},
+
+	coinDetails: {
+		flex: 1,
+	},
+
+	coinSymbol: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+		marginBottom: 2,
+	},
+
+	coinName: {
+		fontSize: 12,
+		color: theme.colors.onSurfaceVariant,
+	},
+
+	// Amount Info
+	amountInfo: {
+		alignItems: 'flex-end',
+		flex: 1,
+	},
+
+	amount: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+		marginBottom: 2,
+	},
+
+	amountUsd: {
+		fontSize: 12,
+		color: theme.colors.onSurfaceVariant,
+	},
+
+	// Divider
+	divider: {
+		height: 1,
+		backgroundColor: theme.colors.outline,
+		opacity: 0.2,
+		marginVertical: 8,
+	},
+
+	// Token Section
+	tokenSection: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		flex: 1,
+		marginRight: 16,
+	},
+	tokenIcon: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		marginRight: 12,
+	},
+	tokenSymbol: {
+		fontSize: 18,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+	},
+
+	// Amount Section
+	amountSection: {
+		alignItems: 'flex-end',
+		flex: 1,
+	},
+	amountValue: {
+		fontSize: 14,
+		color: theme.colors.onSurfaceVariant,
+	},
+
+	// Swap Icon
+	swapIconContainer: {
+		position: 'absolute',
+		top: '50%',
+		left: '50%',
+		transform: [{ translateX: -16 }, { translateY: -16 }],
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: theme.colors.surface,
+		alignItems: 'center',
+		justifyContent: 'center',
+		elevation: 2,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 1 },
+		shadowOpacity: 0.1,
+		shadowRadius: 2,
+	},
+
+	// Fee Container
+	feeContainer: {
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 16,
+		padding: 20,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 40,
+	},
+	feeLabel: {
+		fontSize: 16,
+		color: theme.colors.onSurfaceVariant,
+	},
+	feeValue: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+	},
+
+	// Action Buttons
+	buttonContainer: {
+		flexDirection: 'row',
+		gap: 16,
+	},
+	cancelButton: {
+		flex: 1,
+		borderRadius: 16,
+		borderColor: theme.colors.outline,
+		paddingVertical: 4,
+	},
+	cancelButtonLabel: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurfaceVariant,
+	},
+	confirmButton: {
+		flex: 1,
+		borderRadius: 16,
+		backgroundColor: theme.colors.primary,
+		paddingVertical: 4,
+	},
+	confirmButtonLabel: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onPrimary,
+	},
+
+	// Loading State
+	loadingContainer: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingVertical: 60,
+	},
+	loadingText: {
+		fontSize: 16,
+		color: theme.colors.onSurface,
+		marginTop: 20,
+		textAlign: 'center',
+	},
+
+	// Legacy styles for backward compatibility (keeping unused ones for tests)
+	header: {
+		alignItems: 'center',
+		marginBottom: 24,
 	},
 	subtitle: {
 		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
 		textAlign: 'center',
 	},
-
-	// Trade Cards Container
 	tradeCardsContainer: {
 		position: 'relative',
 		marginBottom: 20,
 	},
-
-	// Trade Summary Cards
 	tradeCard: {
 		backgroundColor: theme.colors.surfaceVariant,
 		borderRadius: 16,
@@ -67,8 +248,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurfaceVariant,
 		flex: 1,
 	},
-
-	// Amount Display
 	amountRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -79,52 +258,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		flex: 1,
 	},
-	tokenIcon: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		backgroundColor: theme.colors.primary,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginRight: 8,
-	},
-	tokenSymbol: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: theme.colors.onSurface,
-	},
 	amountContainer: {
 		alignItems: 'flex-end',
 	},
-	amount: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: theme.colors.onSurface,
-	},
-	amountValue: {
-		fontSize: 13,
-		color: theme.colors.onSurfaceVariant,
-		marginTop: 2,
-	},
-
-	// Swap Icon Container
-	swapIconContainer: {
-		position: 'absolute',
-		top: '50%',
-		left: '50%',
-		transform: [{ translateX: -20 }, { translateY: -20 }],
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		backgroundColor: theme.colors.surface,
-		borderWidth: 2,
-		borderColor: theme.colors.outline,
-		alignItems: 'center',
-		justifyContent: 'center',
-		zIndex: 1,
-	},
-
-	// Exchange Rate Section
 	exchangeSection: {
 		backgroundColor: theme.colors.surface,
 		borderRadius: 12,
@@ -152,8 +288,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.primary,
 		textAlign: 'center',
 	},
-
-	// Fee Details Section
 	feeSection: {
 		backgroundColor: theme.colors.surfaceVariant,
 		borderRadius: 12,
@@ -172,16 +306,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		marginBottom: 6,
 	},
-	feeLabel: {
-		fontSize: 13,
-		color: theme.colors.onSurfaceVariant,
-	},
-	feeValue: {
-		fontSize: 13,
-		fontWeight: '600',
-		color: theme.colors.onSurface,
-	},
-
 	totalFeeRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -201,34 +325,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '700',
 		color: theme.colors.onSurface,
 	},
-
-	// Action Buttons
-	buttonContainer: {
-		flexDirection: 'row',
-		gap: 12,
-		marginTop: 4,
-	},
-	cancelButton: {
-		flex: 1,
-	},
-	confirmButton: {
-		flex: 1,
-	},
-
-	// Loading State
-	loadingContainer: {
-		alignItems: 'center',
-		justifyContent: 'center',
-		paddingVertical: 32,
-	},
-	loadingText: {
-		fontSize: 15,
-		color: theme.colors.onSurface,
-		marginTop: 12,
-		textAlign: 'center',
-	},
-
-	// Legacy styles for backward compatibility
 	section: {
 		marginBottom: 16,
 	},
@@ -251,11 +347,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 12,
 		marginTop: 2,
-	},
-	divider: {
-		height: 1,
-		backgroundColor: theme.colors.outlineVariant,
-		marginVertical: 16,
 	},
 	button: {
 		flex: 1,

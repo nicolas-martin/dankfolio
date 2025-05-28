@@ -20,70 +20,40 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	// const { showToast } = useToast(); // Kept in case of future use
 
 	const CoinIcon: React.FC<{ coin: Coin }> = ({ coin }) => {
 		return (
 			<CachedImage
 				uri={coin.iconUrl}
-				size={24}
+				size={32}
 				style={styles.tokenIcon}
 				showLoadingIndicator={true}
-				borderRadius={12}
+				borderRadius={16}
 			/>
 		);
 	};
 
-	const renderTradeCard = (
+	const renderTradeRow = (
 		coin: Coin,
 		amount: string,
-		cardTestID: string
+		isFrom: boolean,
+		testID: string
 	) => (
-		<View style={styles.tradeCard} testID={cardTestID}>
-			<View style={styles.amountRow}>
-				<View style={styles.tokenInfo}>
-					<CoinIcon coin={coin} />
-					<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
-				</View>
-				<View style={styles.amountContainer}>
-					<Text style={styles.amount}>{amount}</Text>
-					<Text style={styles.amountValue}>
-						{coin && coin.price != null && amount && !isNaN(parseFloat(amount))
-							? formatNumber(parseFloat(amount) * coin.price, true, 4)
-							: '$0.00'}
-					</Text>
-				</View>
+		<View style={styles.tradeRow} testID={testID}>
+			<View style={styles.tokenSection}>
+				<CoinIcon coin={coin} />
+				<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
+			</View>
+			<View style={styles.amountSection}>
+				<Text style={styles.amount}>{amount}</Text>
+				<Text style={styles.amountValue}>
+					{coin && coin.price != null && amount && !isNaN(parseFloat(amount))
+						? formatNumber(parseFloat(amount) * coin.price, true, 4)
+						: '$0.00'}
+				</Text>
 			</View>
 		</View>
 	);
-
-	const renderTradeCardsWithSwap = () => (
-		<View style={styles.tradeCardsContainer}>
-			{renderTradeCard(fromCoin!, fromAmount, "from-coin-details")}
-
-			{/* Swap Icon */}
-			<View style={styles.swapIconContainer}>
-				<Icon
-					source="swap-vertical"
-					size={20}
-					color={theme.colors.onSurface}
-				/>
-			</View>
-
-			{renderTradeCard(toCoin!, toAmount, "to-coin-details")}
-		</View>
-	);
-
-	const renderFeeSection = () => {
-		return (
-			<View style={styles.feeSection} testID="fee-section">
-				<View style={styles.feeRow}>
-					<Text style={styles.feeLabel}>Network Fee</Text>
-					<Text style={styles.feeValue}>{formatPrice(Number(fees.totalFee))}</Text>
-				</View>
-			</View>
-		);
-	};
 
 	if (!fromCoin || !toCoin) {
 		return (
@@ -93,9 +63,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 					onDismiss={onClose}
 					contentContainerStyle={styles.container}
 				>
-					<View style={styles.header}>
-						<Text style={styles.title}>Confirm Trade</Text>
-					</View>
+					<Text style={styles.title}>Confirm Trade</Text>
 					<View style={styles.loadingContainer}>
 						<ActivityIndicator size="large" color={theme.colors.primary} testID="loading-spinner" />
 						<Text style={styles.loadingText}>Preparing trade...</Text>
@@ -113,15 +81,53 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				contentContainerStyle={styles.container}
 			>
 				{/* Header */}
-				<View style={styles.header}>
-					<Text style={styles.title}>Confirm Trade</Text>
+				<Text style={styles.title}>Confirm Trade</Text>
+
+				{/* Trade Display */}
+				<View style={styles.tradeContainer}>
+					{/* From Amount */}
+					<View style={styles.tradeRow}>
+						<View style={styles.coinInfo}>
+							<CoinIcon coin={fromCoin} />
+							<View style={styles.coinDetails}>
+								<Text style={styles.coinSymbol}>{fromCoin.symbol}</Text>
+								<Text style={styles.coinName}>{fromCoin.name}</Text>
+							</View>
+						</View>
+						<View style={styles.amountInfo}>
+							<Text style={styles.amount}>{formatNumber(Number(fromAmount))}</Text>
+							<Text style={styles.amountUsd}>
+								${formatPrice(Number(fromAmount) * (fromCoin.price || 0))}
+							</Text>
+						</View>
+					</View>
+
+					{/* Divider */}
+					<View style={styles.divider} />
+
+					{/* To Amount */}
+					<View style={styles.tradeRow}>
+						<View style={styles.coinInfo}>
+							<CoinIcon coin={toCoin} />
+							<View style={styles.coinDetails}>
+								<Text style={styles.coinSymbol}>{toCoin.symbol}</Text>
+								<Text style={styles.coinName}>{toCoin.name}</Text>
+							</View>
+						</View>
+						<View style={styles.amountInfo}>
+							<Text style={styles.amount}>{formatNumber(Number(toAmount))}</Text>
+							<Text style={styles.amountUsd}>
+								${formatPrice(Number(toAmount) * (toCoin.price || 0))}
+							</Text>
+						</View>
+					</View>
 				</View>
 
-				{/* Trade Summary */}
-				{renderTradeCardsWithSwap()}
-
-				{/* Fee Details */}
-				{renderFeeSection()}
+				{/* Network Fee */}
+				<View style={styles.feeContainer} testID="fee-section">
+					<Text style={styles.feeLabel}>Network Fee</Text>
+					<Text style={styles.feeValue}>{formatPrice(Number(fees.totalFee))}</Text>
+				</View>
 
 				{/* Action Buttons */}
 				<View style={styles.buttonContainer}>
@@ -129,6 +135,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						mode="outlined"
 						onPress={onClose}
 						style={styles.cancelButton}
+						labelStyle={styles.cancelButtonLabel}
 						disabled={isLoading}
 						testID="cancel-trade-button"
 					>
@@ -138,6 +145,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						mode="contained"
 						onPress={onConfirm}
 						style={styles.confirmButton}
+						labelStyle={styles.confirmButtonLabel}
 						loading={isLoading}
 						disabled={isLoading}
 						testID="confirm-trade-button"
