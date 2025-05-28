@@ -5,7 +5,6 @@ export interface CoinChartProps {
 	loading?: boolean; // Reverted: can be optional, or required depending on original
 	period?: string;
 	onHover?: (point: PricePoint | null) => void;
-	// Removed coinAddress, timeframe, fetchPriceHistory
 }
 
 export interface PricePoint extends Record<string, unknown> {

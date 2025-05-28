@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Pressable } from 'react-native';
+import { useEffect } from 'react';
+import { Pressable } from 'react-native';
 import { Text } from 'react-native-paper';
 import { logger } from '@/utils/logger';
 import { useOTAUpdate } from './scripts';

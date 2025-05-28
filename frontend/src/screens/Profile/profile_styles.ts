@@ -21,7 +21,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingHorizontal: 20,
 		paddingTop: 20,
 	},
-	
+
 	// Header Section
 	headerSection: {
 		marginBottom: 24,
@@ -53,7 +53,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginLeft: 4,
 		marginTop: -2,
 	},
-	
+
 	// Portfolio Value Card
 	portfolioCard: {
 		backgroundColor: theme.colors.surface,
@@ -97,7 +97,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	sendButtonContent: {
 		paddingVertical: 8,
 	},
-	
+
 	// Tokens Section
 	tokensSection: {
 		flex: 1,
@@ -115,7 +115,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '600',
 		color: theme.colors.onSurface,
 	},
-	
+
 	// Empty State
 	emptyStateContainer: {
 		flex: 1,
@@ -141,7 +141,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		textAlign: 'center',
 		lineHeight: 20,
 	},
-	
+
 	// No Wallet State
 	noWalletContainer: {
 		flex: 1,
@@ -180,7 +180,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		textAlign: 'center',
 		lineHeight: 20,
 	},
-	
+
 	// Debug button (temporary)
 	debugButton: {
 		marginTop: 40,

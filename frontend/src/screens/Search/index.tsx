@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { View, TextInput, FlatList, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { SearchScreenProps, SearchState } from './types';
-import { performSearch, DEBOUNCE_DELAY, getEnrichedCoinData, handleCoinNavigation } from './scripts';
+import { performSearch, DEBOUNCE_DELAY, handleCoinNavigation } from './scripts';
 import { Coin } from '@/types';
 import SearchResultItem from '@/components/Common/SearchResultItem';
 import { createStyles } from './styles';
@@ -83,7 +83,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
-			<View style={[styles.container, { backgroundColor: theme.colors.background }]}> 
+			<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
 				<View style={styles.contentPadding}>
 					{/* Header Row */}
 					<View style={styles.headerRow}>

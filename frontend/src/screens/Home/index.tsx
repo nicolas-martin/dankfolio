@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl } from 'react-native';
 import { useTheme, Text, Icon } from 'react-native-paper';
 import CoinCard from '@components/Home/CoinCard';

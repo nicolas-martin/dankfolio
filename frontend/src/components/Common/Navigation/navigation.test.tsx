@@ -5,7 +5,6 @@ import CoinDetail from '@screens/CoinDetail';
 import Home from '@screens/Home';
 import { PaperProvider } from 'react-native-paper';
 import { ToastProvider } from '@components/Common/Toast';
-import { formatPrice } from '@utils/numberFormat';
 import CustomHeader from './CustomHeader';
 import { Coin } from '@/types';
 import { HomeScreenNavigationProp } from '@screens/Home/home_types';

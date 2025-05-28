@@ -1,15 +1,12 @@
-// import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Coin, Wallet } from '@/types';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { logger } from '@/utils/logger';
-
 import { grpcApi } from '@/services/grpcApi';
 import { prepareSwapRequest, signSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
-import { usePortfolioStore } from '@/store/portfolio'; // Import portfolio store for balance refresh
-import type { ToastProps } from '@/components/Common/Toast/toast_types'; // Use ToastProps
+import { usePortfolioStore } from '@/store/portfolio';
+import type { ToastProps } from '@/components/Common/Toast/toast_types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
-import { SOLANA_ADDRESS } from '@/utils/constants';
 
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 1000;

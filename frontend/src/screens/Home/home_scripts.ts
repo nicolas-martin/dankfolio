@@ -1,8 +1,4 @@
-import { Coin, Wallet, Base58PrivateKey } from '@/types/index';
-import { getKeypairFromPrivateKey } from '@services/solana';
-import bs58 from 'bs58';
-import { Buffer } from 'buffer';
-import { useCoinStore } from '@store/coins';
+import { Coin } from '@/types/index';
 import { HomeScreenNavigationProp } from './home_types';
 
 export const SOL_MINT = 'So11111111111111111111111111111111111111112';

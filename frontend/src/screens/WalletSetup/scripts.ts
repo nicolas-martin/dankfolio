@@ -1,13 +1,13 @@
 import * as Keychain from 'react-native-keychain';
 import { Keypair } from '@solana/web3.js';
 import * as bip39 from 'bip39';
-import { Buffer } from 'buffer'; // Import Buffer for hex conversion
-import { grpcApi } from '@/services/grpcApi'; // Import grpcApi
+import { Buffer } from 'buffer';
+import { grpcApi } from '@/services/grpcApi';
 import { usePortfolioStore } from '@store/portfolio';
 import bs58 from 'bs58';
 import { useState } from 'react';
-import { Clipboard } from 'react-native';
-import { WalletSetupStep, WalletSetupState, WalletSetupScreenProps, WalletInfo } from './types';
+import Clipboard from '@react-native-clipboard/clipboard';
+import { WalletSetupStep, WalletSetupScreenProps, WalletInfo } from './types';
 import { logger } from '@/utils/logger';
 
 // Branded type for Base58 private keys to ensure type safety
@@ -152,7 +152,7 @@ export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; wallet
 
 		logger.info('New wallet generated and stored');
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generated successfully', data: { publicKey: keypair.publicKey.toBase58() } });
-		
+
 		return {
 			keypair,
 			walletData: {
@@ -294,7 +294,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Create wallet process started' });
 		setStep('creating');
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
-		
+
 		try {
 			const { keypair, walletData } = await handleGenerateWallet();
 			setWalletInfo({
@@ -303,7 +303,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 				mnemonic: walletData.mnemonic,
 				isLoading: false
 			});
-			
+
 			// Don't automatically navigate - wait for user confirmation
 		} catch (error) {
 			logger.exception(error, { functionName: 'handleCreateWallet', context: 'useWalletSetupLogic' });
@@ -317,7 +317,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		logger.breadcrumb({ category: 'wallet_setup', message: 'Import wallet process started' });
 		setStep('creating');
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
-		
+
 		try {
 			const keypair = await handleImportWallet(recoveryPhrase);
 			props.onWalletSetupComplete(keypair);
@@ -345,7 +345,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 	const confirmWalletSaved = () => {
 		// User confirms they have saved the wallet information
 		logger.breadcrumb({ category: 'wallet_setup', message: 'User confirmed wallet information saved' });
-		
+
 		// Find the keypair from the stored wallet info
 		if (walletInfo.privateKey) {
 			try {

@@ -7,10 +7,8 @@ import { createStyles } from './trade_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
-import { SwapIcon } from '@components/Common/Icons';
 import { RootStackParamList } from '@/types';
 import TokenSelector from '@components/Common/TokenSelector';
-import TradeDetails from '@components/Trade/TradeDetails';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
 
@@ -120,7 +118,7 @@ const Trade: React.FC = () => {
 			logger.log('[Trade] Skipping price refresh - missing coins');
 			return;
 		}
-		
+
 		// Only refresh if we have valid amounts
 		const fromAmountNum = parseFloat(fromAmount || '0');
 		const toAmountNum = parseFloat(toAmount || '0');
@@ -128,7 +126,7 @@ const Trade: React.FC = () => {
 			logger.log('[Trade] Skipping price refresh - no valid amounts entered');
 			return;
 		}
-		
+
 		try {
 			logger.log('[Trade] Fetching fresh coin data for price refresh...');
 			const prices = await getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]);
@@ -149,7 +147,7 @@ const Trade: React.FC = () => {
 	// Setup polling interval when coins or amounts change
 	useEffect(() => {
 		logger.log('[Trade] Setting up coin price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount, toAmount });
-		
+
 		// Clear any existing intervals
 		if (pollingIntervalRef.current) {
 			clearInterval(pollingIntervalRef.current);
@@ -159,19 +157,19 @@ const Trade: React.FC = () => {
 			clearInterval(progressIntervalRef.current);
 			progressIntervalRef.current = null;
 		}
-		
+
 		// Reset progress
 		setRefreshProgress(0);
-		
+
 		// Only setup polling if we have both coins and valid amounts
 		const hasValidAmounts = (parseFloat(fromAmount || '0') > 0) || (parseFloat(toAmount || '0') > 0);
-		
+
 		if (fromCoin && toCoin && hasValidAmounts) {
 			logger.log('[Trade] Starting price polling with valid amounts', { fromAmount, toAmount });
-			
+
 			// Reset progress and start time
 			refreshStartTimeRef.current = Date.now();
-			
+
 			// Setup price refresh interval
 			pollingIntervalRef.current = setInterval(() => {
 				refreshPrices();
@@ -179,7 +177,7 @@ const Trade: React.FC = () => {
 				setRefreshProgress(0);
 				refreshStartTimeRef.current = Date.now();
 			}, PRICE_REFRESH_INTERVAL_MS);
-			
+
 			// Setup progress tracking interval (every 100ms)
 			progressIntervalRef.current = setInterval(() => {
 				const elapsed = Date.now() - refreshStartTimeRef.current;
@@ -187,15 +185,15 @@ const Trade: React.FC = () => {
 				setRefreshProgress(progress);
 			}, 100);
 		} else {
-			logger.log('[Trade] Not starting price polling - missing coins or amounts', { 
-				hasFromCoin: !!fromCoin, 
-				hasToCoin: !!toCoin, 
+			logger.log('[Trade] Not starting price polling - missing coins or amounts', {
+				hasFromCoin: !!fromCoin,
+				hasToCoin: !!toCoin,
 				hasValidAmounts,
 				fromAmount,
-				toAmount 
+				toAmount
 			});
 		}
-		
+
 		return () => {
 			logger.log('[Trade] Cleaning up price polling interval', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
 			if (pollingIntervalRef.current) {
@@ -336,7 +334,7 @@ const Trade: React.FC = () => {
 			showToast({ type: 'error', message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.` });
 			return;
 		}
-		
+
 		logger.info('[Trade] Stopping refresh timers before opening confirmation modal');
 		// Stop refresh timers when opening confirmation modal
 		if (pollingIntervalRef.current) {
@@ -348,7 +346,7 @@ const Trade: React.FC = () => {
 			progressIntervalRef.current = null;
 		}
 		setRefreshProgress(0);
-		
+
 		logger.breadcrumb({ category: 'ui', message: 'Trade confirmation modal opened', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount, toAmount } });
 		setIsConfirmationVisible(true);
 	};
@@ -380,7 +378,7 @@ const Trade: React.FC = () => {
 			return;
 		}
 		logger.info('[Trade] Stopping price polling and progress tracking before trade execution.');
-		
+
 		// Stop all intervals to prevent infinite loops
 		if (pollingIntervalRef.current) {
 			clearInterval(pollingIntervalRef.current);
@@ -392,10 +390,10 @@ const Trade: React.FC = () => {
 			progressIntervalRef.current = null;
 			logger.info('[Trade] Progress tracking stopped.');
 		}
-		
+
 		// Reset progress to prevent UI issues
 		setRefreshProgress(0);
-		
+
 		await executeTrade(fromCoin, toCoin, fromAmount, 1, showToast, setIsLoadingTrade, setIsConfirmationVisible, setPollingStatus, setSubmittedTxHash, setPollingError, setPollingConfirmations, setIsStatusModalVisible, componentStartPolling);
 	};
 
@@ -424,16 +422,16 @@ const Trade: React.FC = () => {
 	const handleCloseConfirmationModal = () => {
 		logger.breadcrumb({ category: 'ui', message: 'Trade confirmation modal closed' });
 		setIsConfirmationVisible(false);
-		
+
 		// Restart refresh timers if we have valid amounts and coins
 		const hasValidAmounts = (parseFloat(fromAmount || '0') > 0) || (parseFloat(toAmount || '0') > 0);
 		if (fromCoin && toCoin && hasValidAmounts) {
 			logger.info('[Trade] Restarting refresh timers after confirmation modal close');
-			
+
 			// Reset progress and start time
 			setRefreshProgress(0);
 			refreshStartTimeRef.current = Date.now();
-			
+
 			// Setup price refresh interval
 			pollingIntervalRef.current = setInterval(() => {
 				refreshPrices();
@@ -441,7 +439,7 @@ const Trade: React.FC = () => {
 				setRefreshProgress(0);
 				refreshStartTimeRef.current = Date.now();
 			}, PRICE_REFRESH_INTERVAL_MS);
-			
+
 			// Setup progress tracking interval (every 100ms)
 			progressIntervalRef.current = setInterval(() => {
 				const elapsed = Date.now() - refreshStartTimeRef.current;
@@ -458,7 +456,7 @@ const Trade: React.FC = () => {
 			</Text>
 		</View>
 	);
-	
+
 	if (!wallet) return (
 		<View style={styles.noWalletContainer}>
 			<Text style={styles.noWalletText}>
@@ -466,7 +464,7 @@ const Trade: React.FC = () => {
 			</Text>
 		</View>
 	);
-	
+
 	if (!fromCoin) return (
 		<View style={styles.noWalletContainer}>
 			<Text style={styles.noWalletText}>
@@ -515,26 +513,26 @@ const Trade: React.FC = () => {
 						</View>
 						<Text style={styles.detailsTitle}>Trade Details</Text>
 					</View>
-					
+
 					<View style={styles.detailRow}>
 						<Text style={styles.detailLabel}>Price Impact</Text>
 						<Text style={styles.detailValue}>
 							{priceImpact.toFixed(2)}%
 						</Text>
 					</View>
-					
+
 					<View style={styles.detailRow}>
 						<Text style={styles.detailLabel}>Network Fee</Text>
 						<Text style={styles.detailValue}>{tradeDetails.totalFee} SOL</Text>
 					</View>
-					
+
 					{tradeDetails.route && (
 						<View style={styles.detailRow}>
 							<Text style={styles.detailLabel}>Route</Text>
 							<Text style={styles.detailValue}>{tradeDetails.route}</Text>
 						</View>
 					)}
-					
+
 					<View style={styles.exchangeRateRow}>
 						<View style={styles.exchangeRateLabel}>
 							<Icon source="swap-horizontal" size={16} color={theme.colors.onSurfaceVariant} />
@@ -573,15 +571,15 @@ const Trade: React.FC = () => {
 
 						{/* Floating Swap Button */}
 						<View style={styles.swapButtonContainer}>
-							<TouchableOpacity 
+							<TouchableOpacity
 								style={styles.swapButton}
 								onPress={handleSwapCoins}
 								disabled={!fromCoin || !toCoin}
 								testID="swap-coins-button" // Added testID
 							>
-								<Icon 
-									source="swap-vertical" 
-									size={20} 
+								<Icon
+									source="swap-vertical"
+									size={20}
 									color={theme.colors.onPrimary}
 								/>
 							</TouchableOpacity>
@@ -603,9 +601,9 @@ const Trade: React.FC = () => {
 						<View style={styles.refreshProgressContainer}>
 							<View style={styles.refreshProgressHeader}>
 								<View style={styles.refreshProgressIcon}>
-									<Icon 
-										source="refresh" 
-										size={16} 
+									<Icon
+										source="refresh"
+										size={16}
 										color={theme.colors.onSurfaceVariant}
 									/>
 								</View>
@@ -613,7 +611,7 @@ const Trade: React.FC = () => {
 									Price Refresh Timer
 								</Text>
 							</View>
-							<ProgressBar 
+							<ProgressBar
 								progress={refreshProgress}
 								color={theme.colors.primary}
 								style={styles.refreshProgressBar}
@@ -650,25 +648,25 @@ const Trade: React.FC = () => {
 
 			{/* Modals */}
 			{fromCoin && toCoin && (
-				<TradeConfirmation 
-					isVisible={isConfirmationVisible} 
-					onClose={handleCloseConfirmationModal} 
-					onConfirm={handleTradeConfirmClick} 
-					fromAmount={fromAmount} 
-					toAmount={toAmount} 
-					toCoin={toCoin} 
-					fromCoin={fromCoin} 
-					fees={tradeDetails} 
-					isLoading={isLoadingTrade} 
+				<TradeConfirmation
+					isVisible={isConfirmationVisible}
+					onClose={handleCloseConfirmationModal}
+					onConfirm={handleTradeConfirmClick}
+					fromAmount={fromAmount}
+					toAmount={toAmount}
+					toCoin={toCoin}
+					fromCoin={fromCoin}
+					fees={tradeDetails}
+					isLoading={isLoadingTrade}
 				/>
 			)}
-			<TradeStatusModal 
-				isVisible={isStatusModalVisible} 
-				onClose={handleCloseStatusModal} 
-				txHash={submittedTxHash} 
-				status={pollingStatus} 
-				confirmations={pollingConfirmations} 
-				error={pollingError} 
+			<TradeStatusModal
+				isVisible={isStatusModalVisible}
+				onClose={handleCloseStatusModal}
+				txHash={submittedTxHash}
+				status={pollingStatus}
+				confirmations={pollingConfirmations}
+				error={pollingError}
 			/>
 		</SafeAreaView>
 	);

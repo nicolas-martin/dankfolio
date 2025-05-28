@@ -119,7 +119,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		backgroundColor: theme.colors.primary,
 		borderRadius: 4,
 	},
-	
+
 	// Animated progress indicator
 	progressIndicator: {
 		flexDirection: 'row',

@@ -1,11 +1,9 @@
-import React from 'react';
-import { render, fireEvent, waitFor, within } from '@testing-library/react-native';
+import { render, fireEvent, within } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import ProfileScreen from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useToast } from '@components/Common/Toast';
 import { mocked } from 'jest-mock';
-import Clipboard from '@react-native-clipboard/clipboard';
 import { ProfileCoin } from './profile_types';
 
 // Mock dependencies

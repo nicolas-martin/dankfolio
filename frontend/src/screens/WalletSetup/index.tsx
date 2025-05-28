@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Button, TextInput, Alert, ActivityIndicator, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, Button, TextInput, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { useTheme, IconButton } from 'react-native-paper';
 import { createStyles } from './styles';
-import { handleGenerateWallet, handleImportWallet, storeCredentials, base64ToBase58PrivateKey } from './scripts';
+import { storeCredentials, base64ToBase58PrivateKey } from './scripts';
 import { WalletSetupScreenProps } from './types';
 import { Keypair } from '@solana/web3.js';
 import { useToast } from '@/components/Common/Toast';
@@ -10,7 +10,7 @@ import { DEBUG_MODE, TEST_PRIVATE_KEY } from '@env';
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
 import { usePortfolioStore } from '@store/portfolio';
-import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_TITLE, IMPORT_WALLET_DESC, TERMS_TEXT, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
+import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, TERMS_TEXT, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
 
 const IS_DEBUG_MODE = DEBUG_MODE === 'true';
@@ -95,35 +95,35 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 							<View style={styles.vase} />
 						</View>
 					</View>
-					
+
 					<View style={styles.welcomeContent}>
 						<Text style={styles.title}>{WELCOME_TITLE}</Text>
 						<Text style={styles.subtitle}>{WELCOME_DESC}</Text>
-						
+
 						<View style={styles.buttonContainer}>
-							<TouchableOpacity 
+							<TouchableOpacity
 								onPress={() => {
 									logger.breadcrumb({ category: 'ui', message: 'Create new wallet button pressed (welcome step)' });
 									goToCreate();
-								}} 
+								}}
 								style={[styles.actionButton, styles.actionButtonYellow]}
 							>
 								<Text style={styles.buttonText}>Create a new wallet</Text>
 							</TouchableOpacity>
-							<TouchableOpacity 
+							<TouchableOpacity
 								onPress={() => {
 									logger.breadcrumb({ category: 'ui', message: 'Import recovery phrase button pressed (welcome step)' });
 									goToImport();
-								}} 
+								}}
 								style={[styles.actionButton, styles.actionButtonLight]}
 							>
 								<Text style={styles.buttonText}>Import a recovery phrase</Text>
 							</TouchableOpacity>
 						</View>
-						
+
 						<Text style={styles.termsText}>{TERMS_TEXT}</Text>
 					</View>
-					
+
 					{IS_DEBUG_MODE && (
 						<View style={styles.debugButtonContainer}>
 							<Button
@@ -141,7 +141,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 			{step === 'create' && (
 				<View style={styles.createContainer}>
 					<View style={styles.headerContainer}>
-						<TouchableOpacity 
+						<TouchableOpacity
 							onPress={() => {
 								logger.breadcrumb({ category: 'ui', message: 'Back button pressed from create step' });
 								goToWelcome();
@@ -153,14 +153,14 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						<Text style={styles.headerTitle}>Create a wallet</Text>
 						<View style={styles.headerSpacer} />
 					</View>
-					
+
 					<View style={styles.createContent}>
 						<Text style={styles.title}>{CREATE_WALLET_TITLE}</Text>
 						<Text style={styles.subtitle}>{CREATE_WALLET_DESC}</Text>
-						
+
 						<View style={styles.createButtonContainer}>
-							<TouchableOpacity 
-								onPress={handleCreateWallet} 
+							<TouchableOpacity
+								onPress={handleCreateWallet}
 								style={[styles.actionButton, styles.actionButtonYellow]}
 							>
 								<Text style={styles.buttonText}>Create a new wallet</Text>
@@ -172,7 +172,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 			{step === 'import' && (
 				<View style={styles.importContainer}>
 					<View style={styles.headerContainer}>
-						<TouchableOpacity 
+						<TouchableOpacity
 							onPress={() => {
 								logger.breadcrumb({ category: 'ui', message: 'Back button pressed from import step' });
 								goToWelcome();
@@ -184,10 +184,10 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						<Text style={styles.headerTitle}>Recovery phrase</Text>
 						<View style={styles.headerSpacer} />
 					</View>
-					
+
 					<View style={styles.importContent}>
 						<Text style={styles.title}>{IMPORT_WALLET_DESC}</Text>
-						
+
 						<TextInput
 							style={styles.importRecoveryInput}
 							placeholder="Enter your 12-word phrase"
@@ -199,13 +199,13 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 							autoCorrect={false}
 							textAlignVertical="top"
 						/>
-						
+
 						<View style={styles.importButtonContainer}>
 							<TouchableOpacity
 								onPress={handleImportWallet}
 								style={[
-									styles.actionButton, 
-									styles.actionButtonYellow, 
+									styles.actionButton,
+									styles.actionButtonYellow,
 									{ opacity: isRecoveryPhraseValid() ? 1 : 0.5 }
 								]}
 								disabled={!isRecoveryPhraseValid()}
@@ -232,7 +232,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 								<View style={styles.iconPlaceholder} />
 								<Text style={styles.title}>{WALLET_CREATED_TITLE}</Text>
 								<Text style={styles.subtitle}>{WALLET_CREATED_DESC}</Text>
-								
+
 								<View style={styles.walletInfoCard}>
 									<View style={styles.walletInfoSection}>
 										<View style={styles.walletInfoHeader}>
@@ -249,7 +249,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 										</View>
 										<Text style={styles.walletInfoValue}>{walletInfo.publicKey}</Text>
 									</View>
-									
+
 									<View style={styles.walletInfoSection}>
 										<View style={styles.walletInfoHeader}>
 											<Text style={styles.walletInfoLabel}>Private Key</Text>
@@ -265,7 +265,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 										</View>
 										<Text style={styles.walletInfoValue}>{walletInfo.privateKey}</Text>
 									</View>
-									
+
 									{walletInfo.mnemonic && (
 										<View style={styles.walletInfoSection}>
 											<View style={styles.walletInfoHeader}>
@@ -286,13 +286,13 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 										</View>
 									)}
 								</View>
-								
+
 								<View style={styles.confirmButtonContainer}>
-									<TouchableOpacity 
+									<TouchableOpacity
 										onPress={() => {
 											logger.breadcrumb({ category: 'ui', message: 'I have saved my wallet information button pressed' });
 											confirmWalletSaved();
-										}} 
+										}}
 										style={[styles.actionButton, styles.actionButtonYellow]}
 									>
 										<Text style={styles.buttonText}>I have saved my wallet information</Text>

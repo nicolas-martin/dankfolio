@@ -67,7 +67,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurfaceVariant,
 		flex: 1,
 	},
-	
+
 	// Amount Display
 	amountRow: {
 		flexDirection: 'row',
@@ -181,7 +181,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '600',
 		color: theme.colors.onSurface,
 	},
-	
+
 	totalFeeRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',

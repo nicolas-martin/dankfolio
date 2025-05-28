@@ -3,7 +3,6 @@ import { View, Image } from 'react-native';
 import { Modal, Portal, Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
-// import { useToast } from '@components/Common/Toast'; // Kept in case of future use for other errors
 import { Coin } from '@/types';
 import { useProxiedImage } from '@/hooks/useProxiedImage';
 

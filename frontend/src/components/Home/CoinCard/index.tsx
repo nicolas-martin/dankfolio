@@ -32,19 +32,19 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress }) => {
 
 	const renderPriceChange = () => {
 		if (coin.change24h === undefined) return null;
-		
+
 		const change = coin.change24h;
 		const isPositive = change > 0;
 		const isNegative = change < 0;
-		
-		const changeStyle = isPositive 
-			? styles.changePositive 
-			: isNegative 
-				? styles.changeNegative 
+
+		const changeStyle = isPositive
+			? styles.changePositive
+			: isNegative
+				? styles.changeNegative
 				: styles.changeNeutral;
-		
+
 		const prefix = isPositive ? '+' : '';
-		
+
 		return (
 			<Text style={changeStyle} numberOfLines={1}>
 				{prefix}{change.toFixed(2)}%
