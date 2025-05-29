@@ -18,6 +18,7 @@ type Coin struct {
 	Decimals    int      `json:"decimals"`
 	Description string   `json:"description"`
 	IconUrl     string   `json:"icon_url"`
+	ResolvedIconUrl string `json:"resolved_icon_url,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
 
 	// Price and Market Data
