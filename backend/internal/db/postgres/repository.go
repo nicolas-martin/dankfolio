@@ -256,14 +256,19 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			Error:               v.Error,
 		}
 	case model.RawCoin:
-		updatedAt, _ := time.Parse(time.RFC3339, v.UpdatedAt)
+		updatedAt, _ := time.Parse(time.RFC3339, v.UpdatedAt) // v.UpdatedAt is string
+		// schema.RawCoin.UpdatedAt is time.Time
+
+		// Directly assign JupiterCreatedAt as it's already *time.Time in model.RawCoin
+		// and schema.RawCoin expects *time.Time for its JupiterCreatedAt field.
 		return &schema.RawCoin{
-			MintAddress: v.MintAddress,
-			Symbol:      v.Symbol,
-			Name:        v.Name,
-			Decimals:    v.Decimals,
-			LogoUrl:     v.LogoUrl,
-			UpdatedAt:   updatedAt,
+			MintAddress:      v.MintAddress,
+			Symbol:           v.Symbol,
+			Name:             v.Name,
+			Decimals:         v.Decimals,
+			LogoUrl:          v.LogoUrl,
+			UpdatedAt:        updatedAt, // Parsed from model's string UpdatedAt
+			JupiterCreatedAt: v.JupiterCreatedAt, // Assign *time.Time directly
 		}
 	case model.Wallet:
 		return &schema.Wallet{
@@ -291,7 +296,7 @@ func getColumnNames(data any) []string {
 	case *schema.Trade:
 		return []string{"user_id", "from_coin_id", "to_coin_id", "type", "amount", "price", "fee", "status", "transaction_hash", "completed_at", "confirmations", "finalized", "error"}
 	case *schema.RawCoin:
-		return []string{"symbol", "name", "decimals", "logo_url", "updated_at"}
+		return []string{"symbol", "name", "decimals", "logo_url", "updated_at", "jupiter_created_at"}
 	case *schema.Wallet:
 		return []string{"public_key", "created_at"}
 	default:

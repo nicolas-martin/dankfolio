@@ -24,25 +24,26 @@ const (
 
 // Coin represents a coin or currency (unified definition)
 type Coin struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MintAddress   string                 `protobuf:"bytes,1,opt,name=mint_address,json=mintAddress,proto3" json:"mint_address,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Symbol        string                 `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	Decimals      int32                  `protobuf:"varint,4,opt,name=decimals,proto3" json:"decimals,omitempty"`
-	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	IconUrl       string                 `protobuf:"bytes,6,opt,name=icon_url,json=iconUrl,proto3" json:"icon_url,omitempty"`
-	Tags          []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
-	Price         float64                `protobuf:"fixed64,8,opt,name=price,proto3" json:"price,omitempty"`
-	DailyVolume   float64                `protobuf:"fixed64,9,opt,name=daily_volume,json=dailyVolume,proto3" json:"daily_volume,omitempty"`
-	Website       *string                `protobuf:"bytes,10,opt,name=website,proto3,oneof" json:"website,omitempty"`
-	Twitter       *string                `protobuf:"bytes,11,opt,name=twitter,proto3,oneof" json:"twitter,omitempty"`
-	Telegram      *string                `protobuf:"bytes,12,opt,name=telegram,proto3,oneof" json:"telegram,omitempty"`
-	CoingeckoId   *string                `protobuf:"bytes,13,opt,name=coingecko_id,json=coingeckoId,proto3,oneof" json:"coingecko_id,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3,oneof" json:"last_updated,omitempty"`
-	IsTrending    bool                   `protobuf:"varint,16,opt,name=is_trending,json=isTrending,proto3" json:"is_trending,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	MintAddress     string                 `protobuf:"bytes,1,opt,name=mint_address,json=mintAddress,proto3" json:"mint_address,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Symbol          string                 `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Decimals        int32                  `protobuf:"varint,4,opt,name=decimals,proto3" json:"decimals,omitempty"`
+	Description     string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	IconUrl         string                 `protobuf:"bytes,6,opt,name=icon_url,json=iconUrl,proto3" json:"icon_url,omitempty"`
+	Tags            []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
+	Price           float64                `protobuf:"fixed64,8,opt,name=price,proto3" json:"price,omitempty"`
+	DailyVolume     float64                `protobuf:"fixed64,9,opt,name=daily_volume,json=dailyVolume,proto3" json:"daily_volume,omitempty"`
+	Website         *string                `protobuf:"bytes,10,opt,name=website,proto3,oneof" json:"website,omitempty"`
+	Twitter         *string                `protobuf:"bytes,11,opt,name=twitter,proto3,oneof" json:"twitter,omitempty"`
+	Telegram        *string                `protobuf:"bytes,12,opt,name=telegram,proto3,oneof" json:"telegram,omitempty"`
+	CoingeckoId     *string                `protobuf:"bytes,13,opt,name=coingecko_id,json=coingeckoId,proto3,oneof" json:"coingecko_id,omitempty"`
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3,oneof" json:"last_updated,omitempty"`
+	IsTrending      bool                   `protobuf:"varint,16,opt,name=is_trending,json=isTrending,proto3" json:"is_trending,omitempty"`
+	JupiterListedAt *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=jupiter_listed_at,json=jupiterListedAt,proto3,oneof" json:"jupiter_listed_at,omitempty"` // New field
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Coin) Reset() {
@@ -185,6 +186,13 @@ func (x *Coin) GetIsTrending() bool {
 		return x.IsTrending
 	}
 	return false
+}
+
+func (x *Coin) GetJupiterListedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.JupiterListedAt
+	}
+	return nil
 }
 
 type GetAvailableCoinsRequest struct {
@@ -635,7 +643,7 @@ var File_dankfolio_v1_coin_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\n" +
-	"\x17dankfolio/v1/coin.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe9\x04\n" +
+	"\x17dankfolio/v1/coin.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xcc\x05\n" +
 	"\x04Coin\x12!\n" +
 	"\fmint_address\x18\x01 \x01(\tR\vmintAddress\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
@@ -655,14 +663,16 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"created_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12B\n" +
 	"\flast_updated\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampH\x04R\vlastUpdated\x88\x01\x01\x12\x1f\n" +
 	"\vis_trending\x18\x10 \x01(\bR\n" +
-	"isTrendingB\n" +
+	"isTrending\x12K\n" +
+	"\x11jupiter_listed_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampH\x05R\x0fjupiterListedAt\x88\x01\x01B\n" +
 	"\n" +
 	"\b_websiteB\n" +
 	"\n" +
 	"\b_twitterB\v\n" +
 	"\t_telegramB\x0f\n" +
 	"\r_coingecko_idB\x0f\n" +
-	"\r_last_updated\"?\n" +
+	"\r_last_updatedB\x14\n" +
+	"\x12_jupiter_listed_at\"?\n" +
 	"\x18GetAvailableCoinsRequest\x12#\n" +
 	"\rtrending_only\x18\x01 \x01(\bR\ftrendingOnly\"E\n" +
 	"\x19GetAvailableCoinsResponse\x12(\n" +
@@ -725,25 +735,26 @@ var file_dankfolio_v1_coin_proto_goTypes = []any{
 var file_dankfolio_v1_coin_proto_depIdxs = []int32{
 	10, // 0: dankfolio.v1.Coin.created_at:type_name -> google.protobuf.Timestamp
 	10, // 1: dankfolio.v1.Coin.last_updated:type_name -> google.protobuf.Timestamp
-	0,  // 2: dankfolio.v1.GetAvailableCoinsResponse.coins:type_name -> dankfolio.v1.Coin
-	0,  // 3: dankfolio.v1.SearchCoinByMintResponse.coin:type_name -> dankfolio.v1.Coin
-	0,  // 4: dankfolio.v1.GetAllCoinsResponse.coins:type_name -> dankfolio.v1.Coin
-	0,  // 5: dankfolio.v1.SearchResponse.coins:type_name -> dankfolio.v1.Coin
-	1,  // 6: dankfolio.v1.CoinService.GetAvailableCoins:input_type -> dankfolio.v1.GetAvailableCoinsRequest
-	3,  // 7: dankfolio.v1.CoinService.GetCoinByID:input_type -> dankfolio.v1.GetCoinByIDRequest
-	4,  // 8: dankfolio.v1.CoinService.SearchCoinByMint:input_type -> dankfolio.v1.SearchCoinByMintRequest
-	6,  // 9: dankfolio.v1.CoinService.GetAllCoins:input_type -> dankfolio.v1.GetAllCoinsRequest
-	8,  // 10: dankfolio.v1.CoinService.Search:input_type -> dankfolio.v1.SearchRequest
-	2,  // 11: dankfolio.v1.CoinService.GetAvailableCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
-	0,  // 12: dankfolio.v1.CoinService.GetCoinByID:output_type -> dankfolio.v1.Coin
-	5,  // 13: dankfolio.v1.CoinService.SearchCoinByMint:output_type -> dankfolio.v1.SearchCoinByMintResponse
-	7,  // 14: dankfolio.v1.CoinService.GetAllCoins:output_type -> dankfolio.v1.GetAllCoinsResponse
-	9,  // 15: dankfolio.v1.CoinService.Search:output_type -> dankfolio.v1.SearchResponse
-	11, // [11:16] is the sub-list for method output_type
-	6,  // [6:11] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	10, // 2: dankfolio.v1.Coin.jupiter_listed_at:type_name -> google.protobuf.Timestamp
+	0,  // 3: dankfolio.v1.GetAvailableCoinsResponse.coins:type_name -> dankfolio.v1.Coin
+	0,  // 4: dankfolio.v1.SearchCoinByMintResponse.coin:type_name -> dankfolio.v1.Coin
+	0,  // 5: dankfolio.v1.GetAllCoinsResponse.coins:type_name -> dankfolio.v1.Coin
+	0,  // 6: dankfolio.v1.SearchResponse.coins:type_name -> dankfolio.v1.Coin
+	1,  // 7: dankfolio.v1.CoinService.GetAvailableCoins:input_type -> dankfolio.v1.GetAvailableCoinsRequest
+	3,  // 8: dankfolio.v1.CoinService.GetCoinByID:input_type -> dankfolio.v1.GetCoinByIDRequest
+	4,  // 9: dankfolio.v1.CoinService.SearchCoinByMint:input_type -> dankfolio.v1.SearchCoinByMintRequest
+	6,  // 10: dankfolio.v1.CoinService.GetAllCoins:input_type -> dankfolio.v1.GetAllCoinsRequest
+	8,  // 11: dankfolio.v1.CoinService.Search:input_type -> dankfolio.v1.SearchRequest
+	2,  // 12: dankfolio.v1.CoinService.GetAvailableCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	0,  // 13: dankfolio.v1.CoinService.GetCoinByID:output_type -> dankfolio.v1.Coin
+	5,  // 14: dankfolio.v1.CoinService.SearchCoinByMint:output_type -> dankfolio.v1.SearchCoinByMintResponse
+	7,  // 15: dankfolio.v1.CoinService.GetAllCoins:output_type -> dankfolio.v1.GetAllCoinsResponse
+	9,  // 16: dankfolio.v1.CoinService.Search:output_type -> dankfolio.v1.SearchResponse
+	12, // [12:17] is the sub-list for method output_type
+	7,  // [7:12] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_dankfolio_v1_coin_proto_init() }

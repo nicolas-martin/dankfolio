@@ -56,6 +56,7 @@ type RawCoin struct {
 	Decimals    int       `gorm:"column:decimals;not null"`
 	LogoUrl     string    `gorm:"column:logo_url"`
 	UpdatedAt   time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP"`
+	JupiterCreatedAt *time.Time `gorm:"column:jupiter_created_at;index"`
 }
 
 // TableName overrides the default table name generation for RawCoin.
