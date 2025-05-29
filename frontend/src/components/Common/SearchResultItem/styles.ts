@@ -52,4 +52,9 @@ export const createStyles = (theme: MD3Theme) =>
 			fontSize: 12,
 			color: theme.colors.onSurfaceVariant,
 		},
+		listedAtText: {
+			fontSize: 12,
+			color: theme.colors.onSurfaceVariant, // Or some other appropriate color
+			marginTop: 2,
+		},
 	}); 

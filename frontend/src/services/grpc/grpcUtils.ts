@@ -24,6 +24,7 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 		coingeckoId: grpcCoin.coingeckoId,
 		createdAt: grpcCoin.createdAt ? new Date(Number(grpcCoin.createdAt.seconds) * 1000) : undefined,
 		lastUpdated: grpcCoin.lastUpdated ? new Date(Number(grpcCoin.lastUpdated.seconds) * 1000) : undefined,
+		jupiterListedAt: grpcCoin.jupiterListedAt ? new Date(Number(grpcCoin.jupiterListedAt.seconds) * 1000) : undefined,
 	};
 }
 

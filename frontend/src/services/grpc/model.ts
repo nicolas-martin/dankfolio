@@ -14,6 +14,7 @@ export interface Coin {
 	coingeckoId?: string;
 	createdAt?: Date;
 	lastUpdated?: Date;
+	jupiterListedAt?: Date; // New field
 }
 
 export interface balance {
@@ -92,13 +93,23 @@ export interface TradeQuoteResponse {
 	outputMint: string;
 }
 
+export type SearchSortByOption =
+	| "name"
+	| "symbol"
+	| "price"
+	| "volume24h"
+	| "marketcap"
+	| "created_at"
+	| "last_updated"
+	| "listed_at";
+
 export interface SearchCoinsRequest {
 	query: string;
 	tags?: string[];
 	minVolume24h?: number;
 	limit?: number;
 	offset?: number;
-	sortBy?: string;
+	sortBy?: SearchSortByOption; // Updated type
 	sortDesc?: boolean;
 }
 
