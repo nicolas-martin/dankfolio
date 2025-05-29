@@ -163,6 +163,7 @@ type RawCoin struct {
 	Decimals    int    `json:"decimals"`
 	LogoUrl     string `json:"logo_url"`
 	UpdatedAt   string `json:"updated_at"`
+	JupiterCreatedAt *time.Time `json:"jupiter_created_at,omitempty"`
 }
 
 // GetID implements the Entity interface
