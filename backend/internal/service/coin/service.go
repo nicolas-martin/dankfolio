@@ -285,24 +285,38 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("count", len(resp.Coins)))
 
 	var upsertErrors []error
+	successfulUpserts := 0
+	failedOperations := 0
+
 	for _, v := range resp.Coins {
 		rawCoin := v.ToRawCoin()
-		err := s.store.RawCoins().Upsert(ctx, rawCoin)
+		// Adjust the call to Upsert to receive rowsAffected and err
+		_, err := s.store.RawCoins().Upsert(ctx, rawCoin) // rowsAffected is not used based on current plan, but captured
 		if err != nil {
 			slog.Error("Failed to upsert raw coin", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
 			upsertErrors = append(upsertErrors, err)
+			failedOperations++
 			// Continue processing other coins
+		} else {
+			successfulUpserts++
 		}
 	}
 
-	if len(upsertErrors) > 0 {
-		slog.Warn("Completed fetching new tokens, but some upserts failed", slog.Int("successful_count", len(resp.Coins)-len(upsertErrors)), slog.Int("failed_count", len(upsertErrors)))
+	if failedOperations > 0 {
+		slog.Warn("Completed processing new tokens, but some operations failed",
+			slog.Int("total_fetched", len(resp.Coins)),
+			slog.Int("successful_upserts", successfulUpserts),
+			slog.Int("failed_operations", failedOperations))
 		// Depending on requirements, you might want to return a composite error here.
-		// For now, returning nil as the primary operation (fetching) succeeded.
+		// For now, returning nil as the primary operation (fetching) succeeded,
+		// and errors are logged.
 		return nil // Or return a custom error indicating partial success
 	}
 
-	slog.Info("Successfully fetched and stored new tokens", slog.Int("processed_count", len(resp.Coins)))
+	slog.Info("Finished processing new tokens from Jupiter",
+		slog.Int("total_fetched", len(resp.Coins)),
+		slog.Int("successful_upserts", successfulUpserts),
+		slog.Int("errors", failedOperations)) // errors will be 0 here due to the check above
 	return nil
 }
 
