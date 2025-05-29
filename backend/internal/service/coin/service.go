@@ -148,7 +148,7 @@ func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, erro
 	}
 
 	// Store the newly enriched coin
-	if err := s.store.Coins().Upsert(ctx, enrichedCoin); err != nil {
+	if _, err := s.store.Coins().Upsert(ctx, enrichedCoin); err != nil {
 		slog.Warn("Failed to store enriched coin", slog.String("coinID", id), slog.Any("error", err))
 	}
 
@@ -230,7 +230,7 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 	// Store all coins
 	slog.Debug("Storing enriched coins", slog.Int("count", len(enrichedCoins.Coins)))
 	for _, coin := range enrichedCoins.Coins {
-		if err := s.store.Coins().Upsert(ctx, &coin); err != nil {
+		if _, err := s.store.Coins().Upsert(ctx, &coin); err != nil {
 			slog.Warn("Failed to store coin during refresh", slog.String("mintAddress", coin.MintAddress), slog.Any("error", err))
 		}
 	}
@@ -250,7 +250,7 @@ func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, 
 	for _, v := range resp.Coins {
 		// Store in raw_coins table
 		rawCoin := v.ToRawCoin()
-		err = s.store.RawCoins().Upsert(ctx, rawCoin)
+		_, err = s.store.RawCoins().Upsert(ctx, rawCoin)
 		if err != nil {
 			return nil, err
 		}
@@ -282,41 +282,45 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		return nil
 	}
 
-	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("count", len(resp.Coins)))
+	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("fetched_count", len(resp.Coins)))
 
-	var upsertErrors []error
-	successfulUpserts := 0
-	failedOperations := 0
 
-	for _, v := range resp.Coins {
-		rawCoin := v.ToRawCoin()
-		// Adjust the call to Upsert to receive rowsAffected and err
-		_, err := s.store.RawCoins().Upsert(ctx, rawCoin) // rowsAffected is not used based on current plan, but captured
-		if err != nil {
-			slog.Error("Failed to upsert raw coin", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
-			upsertErrors = append(upsertErrors, err)
-			failedOperations++
-			// Continue processing other coins
-		} else {
-			successfulUpserts++
+	if len(resp.Coins) == 0 {
+		slog.Info("No new coins to process from Jupiter.")
+		return nil
+	}
+
+	rawCoinsToUpsert := make([]model.RawCoin, 0, len(resp.Coins))
+	for _, v_jupiterCoin := range resp.Coins { // v_jupiterCoin is of type jupiter.Coin
+		rawCoinModelPtr := v_jupiterCoin.ToRawCoin() // This returns *model.RawCoin
+		if rawCoinModelPtr != nil {
+			rawCoinsToUpsert = append(rawCoinsToUpsert, *rawCoinModelPtr)
 		}
 	}
 
-	if failedOperations > 0 {
-		slog.Warn("Completed processing new tokens, but some operations failed",
-			slog.Int("total_fetched", len(resp.Coins)),
-			slog.Int("successful_upserts", successfulUpserts),
-			slog.Int("failed_operations", failedOperations))
-		// Depending on requirements, you might want to return a composite error here.
-		// For now, returning nil as the primary operation (fetching) succeeded,
-		// and errors are logged.
-		return nil // Or return a custom error indicating partial success
+	if len(rawCoinsToUpsert) > 0 {
+		rowsAffected, bulkErr := s.store.RawCoins().BulkUpsert(ctx, &rawCoinsToUpsert)
+		if bulkErr != nil {
+			slog.Error("Failed to bulk upsert raw coins",
+				slog.Int("attempted_count", len(rawCoinsToUpsert)),
+				slog.Any("error", bulkErr))
+			// Log the warning and return an error
+			slog.Warn("Completed bulk processing new tokens, but the operation failed",
+				slog.Int("total_fetched_from_jupiter", len(resp.Coins)),
+				slog.Int("coins_prepared_for_upsert", len(rawCoinsToUpsert)),
+				slog.Any("error", bulkErr))
+			return fmt.Errorf("failed to bulk upsert raw coins: %w", bulkErr)
+		}
+		// Successful bulk upsert
+		slog.Info("Finished bulk processing new tokens from Jupiter",
+			slog.Int("total_fetched_from_jupiter", len(resp.Coins)),
+			slog.Int("coins_prepared_for_upsert", len(rawCoinsToUpsert)),
+			slog.Int("successful_database_operations", int(rowsAffected)))
+	} else {
+		// This case might occur if all v_jupiterCoin.ToRawCoin() returned nil, or if resp.Coins was empty (already handled)
+		slog.Info("No valid raw coins were prepared for upserting after fetching from Jupiter.")
 	}
 
-	slog.Info("Finished processing new tokens from Jupiter",
-		slog.Int("total_fetched", len(resp.Coins)),
-		slog.Int("successful_upserts", successfulUpserts),
-		slog.Int("errors", failedOperations)) // errors will be 0 here due to the check above
 	return nil
 }
 
