@@ -316,11 +316,12 @@ func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {
 	coins := make([]model.Coin, len(rawCoins))
 	for i, rc := range rawCoins {
 		coins[i] = model.Coin{
-			MintAddress: rc.MintAddress,
-			Name:        rc.Name,
-			Symbol:      rc.Symbol,
-			Decimals:    rc.Decimals,
-			IconUrl:     rc.LogoUrl,
+			MintAddress:     rc.MintAddress,
+			Name:            rc.Name,
+			Symbol:          rc.Symbol,
+			Decimals:        rc.Decimals,
+			IconUrl:         rc.LogoUrl,
+			JupiterListedAt: rc.JupiterCreatedAt, // Populate from schema.RawCoin.JupiterCreatedAt
 		}
 	}
 	return coins

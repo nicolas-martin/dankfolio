@@ -33,8 +33,9 @@ type Coin struct {
 	Discord  string `json:"discord,omitempty"`
 
 	// Metadata
-	CreatedAt   string `json:"created_at,omitempty"`
-	LastUpdated string `json:"last_updated,omitempty"`
+	CreatedAt   string `json:"created_at,omitempty"` // System's created_at for enriched record
+	LastUpdated string `json:"last_updated,omitempty"`// System's last_updated for enriched record
+	JupiterListedAt  *time.Time `json:"jupiter_listed_at,omitempty"` // New field: Time listed on Jupiter
 
 	IsTrending bool `json:"is_trending,omitempty"`
 }
