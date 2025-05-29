@@ -41,9 +41,9 @@ type PriorityFeeResponse struct {
 }
 
 type SwapQuoteResponse struct {
-	ID      string                 `json:"id"`
-	Success bool                   `json:"success"`
-	Data    map[string]interface{} `json:"data"`
+	ID      string         `json:"id"`
+	Success bool           `json:"success"`
+	Data    map[string]any `json:"data"`
 }
 
 type SwapTransactionResponse struct {
@@ -136,7 +136,7 @@ func raySwap(client *rpc.Client, wallet *solana.Wallet) error {
 
 	log.Println("Getting swap transactions...")
 	// Get swap transactions
-	swapTxBody := map[string]interface{}{
+	swapTxBody := map[string]any{
 		"computeUnitPriceMicroLamports": fmt.Sprintf("%d", feeData.Data.Default.H),
 		"swapResponse":                  json.RawMessage(swapRespBody),
 		"txVersion":                     TxVersion,

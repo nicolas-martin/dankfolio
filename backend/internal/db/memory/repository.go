@@ -129,34 +129,11 @@ func (r *MemoryRepository[T]) Upsert(ctx context.Context, item *T) (int64, error
 	r.cache.Delete(id)
 	r.listCache.Delete("all")
 	return 1, nil // 1 row affected, no error
+}
 
 // BulkUpsert inserts or updates multiple entities in the memory store.
 func (r *MemoryRepository[T]) BulkUpsert(ctx context.Context, items *[]T) (int64, error) {
-	if items == nil { // Check if the pointer to the slice is nil
-		return 0, fmt.Errorf("cannot bulk upsert nil items slice")
-	}
-	if len(*items) == 0 { // Check if the slice itself is empty
-		return 0, nil // No items to process, no error, 0 rows affected
-	}
-
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	var totalRowsAffected int64 = 0
-	for _, item := range *items { // Here, 'item' is of type T, not *T
-		id := item.GetID() // Call GetID on T
-		r.items[id] = item // Store T directly
-		totalRowsAffected++
-
-		// Invalidate individual item cache
-		r.cache.Delete(id)
-	}
-
-	// Invalidate list cache once after all operations
-	r.listCache.Delete("all")
-
-	return totalRowsAffected, nil
-
+	return 0, fmt.Errorf("BulkUpsert not implemented")
 }
 
 func (r *MemoryRepository[T]) Delete(ctx context.Context, id string) error {
@@ -179,7 +156,7 @@ func (r *MemoryRepository[T]) GetCoin(ctx context.Context, id string) (*T, error
 	return nil, fmt.Errorf("item not found: %s", id)
 }
 
-func (r *MemoryRepository[T]) GetByField(ctx context.Context, field string, value interface{}) (*T, error) {
+func (r *MemoryRepository[T]) GetByField(ctx context.Context, field string, value any) (*T, error) {
 	return nil, fmt.Errorf("GetByField not implemented")
 }
 

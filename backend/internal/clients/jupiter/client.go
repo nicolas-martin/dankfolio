@@ -190,7 +190,7 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 			Name:        newToken.Name,
 			Symbol:      newToken.Symbol,
 			LogoURI:     newToken.LogoURI, // Map logo_uri to logoURI
-			Extensions:  make(map[string]interface{}),
+			Extensions:  make(map[string]any),
 			DailyVolume: 0,          // Not available in new tokens endpoint
 			Tags:        []string{}, // Not available in new tokens endpoint
 			CreatedAt:   time.Now(), // Use current time as fallback
