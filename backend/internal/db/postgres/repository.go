@@ -96,16 +96,17 @@ func (r *Repository[S, M]) Update(ctx context.Context, item *M) error {
 }
 
 // Upsert inserts or updates an entity.
-func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) error {
+func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) (int64, error) {
 	schemaItem := r.fromModel(*item)
 	var s S // Create zero value of S to get the column name
-	if err := r.db.WithContext(ctx).Clauses(clause.OnConflict{
+	result := r.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: s.GetID()}},
 		DoUpdates: clause.AssignmentColumns(getColumnNames(schemaItem)),
-	}).Create(schemaItem).Error; err != nil {
-		return fmt.Errorf("failed to upsert item: %w", err)
+	}).Create(schemaItem)
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to upsert item: %w", result.Error)
 	}
-	return nil
+	return result.RowsAffected, nil
 }
 
 // Delete removes an entity by its ID.
