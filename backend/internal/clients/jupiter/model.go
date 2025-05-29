@@ -179,3 +179,59 @@ type NewCoinsParams struct {
 	Limit  *int `json:"limit,omitempty"`  // How many records to output in the result
 	Offset *int `json:"offset,omitempty"` // The offset into the result set, used with limit to page through data
 }
+
+// NewTokenInfo represents a token from Jupiter's /tokens/v1/new endpoint
+// This endpoint uses different field names than the standard token list
+type NewTokenInfo struct {
+	Mint              string      `json:"mint"`                // Mint address (equivalent to Address)
+	CreatedAt         string      `json:"created_at"`          // Unix timestamp as string
+	MetadataUpdatedAt float64     `json:"metadata_updated_at"` // Unix timestamp as number
+	Name              string      `json:"name"`
+	Symbol            string      `json:"symbol"`
+	Decimals          int         `json:"decimals"`
+	LogoURI           string      `json:"logo_uri"` // Note: logo_uri not logoURI
+	KnownMarkets      []string    `json:"known_markets"`
+	MintAuthority     interface{} `json:"mint_authority"`   // Can be null
+	FreezeAuthority   interface{} `json:"freeze_authority"` // Can be null
+}
+
+// ToRawCoin converts NewTokenInfo to model.RawCoin
+func (t *NewTokenInfo) ToRawCoin() *model.RawCoin {
+	return &model.RawCoin{
+		MintAddress: t.Mint, // Use Mint field instead of Address
+		Name:        t.Name,
+		Symbol:      t.Symbol,
+		Decimals:    t.Decimals,
+		LogoUrl:     t.LogoURI, // Use LogoURI field
+		UpdatedAt:   time.Now().Format(time.RFC3339),
+	}
+}
+
+// ToModelCoin converts NewTokenInfo to model.Coin
+func (t *NewTokenInfo) ToModelCoin() *model.Coin {
+	return &model.Coin{
+		MintAddress: t.Mint, // Use Mint field instead of Address
+		Name:        t.Name,
+		Symbol:      t.Symbol,
+		Decimals:    t.Decimals,
+		Description: "",
+		IconUrl:     t.LogoURI,  // Use LogoURI field
+		Tags:        []string{}, // New tokens don't have tags initially
+		Price:       0,          // Price not available in new tokens endpoint
+		Change24h:   0,
+		MarketCap:   0,
+		Volume24h:   0,
+		Website:     "",
+		Twitter:     "",
+		Telegram:    "",
+		Discord:     "",
+		CreatedAt:   "",
+		LastUpdated: "",
+		IsTrending:  false,
+	}
+}
+
+// NewTokensResponse represents the response from Jupiter's /tokens/v1/new endpoint
+type NewTokensResponse struct {
+	Tokens []NewTokenInfo `json:"tokens"`
+}
