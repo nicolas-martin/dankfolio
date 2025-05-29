@@ -124,6 +124,8 @@ func loadConfig() (*Config, error) {
 	if config.JupiterApiUrl == "" {
 		missingVars = append(missingVars, "JUPITER_API_URL")
 	}
+	// No longer validating IPFSNodeAPIAddress
+	// PreferredGatewayForCIDv0 has a default, so not strictly required to be in missingVars unless empty is invalid.
 
 	if len(missingVars) > 0 {
 		log.Fatalf("missing required environment variables: %v", missingVars)

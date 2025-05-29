@@ -26,29 +26,14 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	testID,
 	...imageProps
 }) => {
-	const [currentGatewayIndex, setCurrentGatewayIndex] = useState(0);
+
 	const [hasError, setHasError] = useState(false);
 
-	// Convert IPFS URLs to use faster gateways and avoid redirects
-	let imageUrl = uri;
-	if (uri && uri.includes('/ipfs/')) {
-		// Extract IPFS hash from any IPFS URL
-		const match = uri.match(/\/ipfs\/([^\/\?]+)/);
-		if (match) {
-			const ipfsHash = match[1];
-			
-			// Check if it's a CIDv0 (starts with Qm and is 46 chars)
-			if (ipfsHash.startsWith('Qm') && ipfsHash.length === 46) {
-				// For CIDv0, we need to convert to CIDv1 base32 for subdomain format
-				// Since we can't easily convert CIDv0 to CIDv1 in JS without libraries,
-				// we'll use the path format with a reliable gateway that handles conversion
-				imageUrl = `${IPFS_GATEWAYS[currentGatewayIndex]}${ipfsHash}`;
-			} else {
-				// Assume it's already CIDv1, use subdomain format
-				imageUrl = `https://${ipfsHash}.ipfs.dweb.link/`;
-			}
-		}
-	}
+	// The 'uri' is now used directly. All IPFS-specific logic is removed.
+	// The parent component is expected to pass coin.resolved_icon_url (if available)
+	// or coin.icon_url. This component no longer resolves IPFS URIs.
+	const imageUrl = uri;
+
 
 	// Debug logging
 	if (imageUrl) {
@@ -66,20 +51,18 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	const handleLoad = (event: any) => {
 		// console.log(`✅ Image loaded successfully: ${imageUrl || 'placeholder'}`);
 		setHasError(false);
-		setCurrentGatewayIndex(0); // Reset for next time
+
+		// No need to reset currentGatewayIndex as it's removed.
+
 		onLoad?.(event);
 	};
 
 	const handleError = (error: any) => {
 		console.log(`❌ Image failed to load: ${imageUrl || 'no URL'}`, error);
-		
-		// Try next gateway if this was an IPFS URL and we have more gateways to try
-		if (uri && uri.includes('/ipfs/') && currentGatewayIndex < IPFS_GATEWAYS.length - 1) {
-			console.log(`🔄 Trying next IPFS gateway (${currentGatewayIndex + 1}/${IPFS_GATEWAYS.length})`);
-			setCurrentGatewayIndex(prev => prev + 1);
-			return; // Don't set hasError yet, try next gateway
-		}
-		
+
+		// IPFS gateway switching logic is removed.
+		// If the resolved_icon_url (or icon_url) fails, it's now simply an error.
+
 		setHasError(true);
 		onError?.(error);
 	};
