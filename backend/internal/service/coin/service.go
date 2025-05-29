@@ -284,6 +284,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 
 	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("fetched_count", len(resp.Coins)))
 
+
 	if len(resp.Coins) == 0 {
 		slog.Info("No new coins to process from Jupiter.")
 		return nil

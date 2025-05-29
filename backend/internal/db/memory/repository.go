@@ -129,7 +129,6 @@ func (r *MemoryRepository[T]) Upsert(ctx context.Context, item *T) (int64, error
 	r.cache.Delete(id)
 	r.listCache.Delete("all")
 	return 1, nil // 1 row affected, no error
-}
 
 // BulkUpsert inserts or updates multiple entities in the memory store.
 func (r *MemoryRepository[T]) BulkUpsert(ctx context.Context, items *[]T) (int64, error) {
@@ -157,6 +156,7 @@ func (r *MemoryRepository[T]) BulkUpsert(ctx context.Context, items *[]T) (int64
 	r.listCache.Delete("all")
 
 	return totalRowsAffected, nil
+
 }
 
 func (r *MemoryRepository[T]) Delete(ctx context.Context, id string) error {
