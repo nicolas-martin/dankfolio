@@ -38,6 +38,61 @@ func (_m *MockRepository[T]) EXPECT() *MockRepository_Expecter[T] {
 	return &MockRepository_Expecter[T]{mock: &_m.Mock}
 }
 
+// BulkUpsert provides a mock function for the type MockRepository
+func (_mock *MockRepository[T]) BulkUpsert(ctx context.Context, items *[]T) (int64, error) {
+	ret := _mock.Called(ctx, items)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkUpsert")
+	}
+
+	var r0 int64
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *[]T) (int64, error)); ok {
+		return returnFunc(ctx, items)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *[]T) int64); ok {
+		r0 = returnFunc(ctx, items)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *[]T) error); ok {
+		r1 = returnFunc(ctx, items)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_BulkUpsert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkUpsert'
+type MockRepository_BulkUpsert_Call[T db.Entity] struct {
+	*mock.Call
+}
+
+// BulkUpsert is a helper method to define mock.On call
+//   - ctx
+//   - items
+func (_e *MockRepository_Expecter[T]) BulkUpsert(ctx interface{}, items interface{}) *MockRepository_BulkUpsert_Call[T] {
+	return &MockRepository_BulkUpsert_Call[T]{Call: _e.mock.On("BulkUpsert", ctx, items)}
+}
+
+func (_c *MockRepository_BulkUpsert_Call[T]) Run(run func(ctx context.Context, items *[]T)) *MockRepository_BulkUpsert_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*[]T))
+	})
+	return _c
+}
+
+func (_c *MockRepository_BulkUpsert_Call[T]) Return(n int64, err error) *MockRepository_BulkUpsert_Call[T] {
+	_c.Call.Return(n, err)
+	return _c
+}
+
+func (_c *MockRepository_BulkUpsert_Call[T]) RunAndReturn(run func(ctx context.Context, items *[]T) (int64, error)) *MockRepository_BulkUpsert_Call[T] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Create provides a mock function for the type MockRepository
 func (_mock *MockRepository[T]) Create(ctx context.Context, item *T) error {
 	ret := _mock.Called(ctx, item)
@@ -356,19 +411,20 @@ func (_mock *MockRepository[T]) Upsert(ctx context.Context, item *T) (int64, err
 	}
 
 	var r0 int64
-	if rf, ok := ret.Get(0).(func(context.Context, *T) int64); ok {
-		r0 = rf(ctx, item)
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *T) (int64, error)); ok {
+		return returnFunc(ctx, item)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *T) int64); ok {
+		r0 = returnFunc(ctx, item)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *T) error); ok {
-		r1 = rf(ctx, item)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *T) error); ok {
+		r1 = returnFunc(ctx, item)
 	} else {
 		r1 = ret.Error(1)
 	}
-
 	return r0, r1
 }
 
@@ -391,8 +447,8 @@ func (_c *MockRepository_Upsert_Call[T]) Run(run func(ctx context.Context, item 
 	return _c
 }
 
-func (_c *MockRepository_Upsert_Call[T]) Return(rowsAffected int64, err error) *MockRepository_Upsert_Call[T] {
-	_c.Call.Return(rowsAffected, err)
+func (_c *MockRepository_Upsert_Call[T]) Return(n int64, err error) *MockRepository_Upsert_Call[T] {
+	_c.Call.Return(n, err)
 	return _c
 }
 
