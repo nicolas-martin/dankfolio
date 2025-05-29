@@ -3,10 +3,7 @@ package coin
 import (
 	"context"
 	"fmt"
-	"log/slog" // Import slog
-	"net/url"
-	"path"
-	"path/filepath"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -100,7 +97,7 @@ func (s *Service) EnrichCoinData(
 		}
 		enrichFromMetadata(&coin, nil) // Ensure default description is set and fallbacks for icon
 		slog.Info("Returning partially enriched coin (Jupiter data only)", slog.String("mintAddress", mintAddress))
-		return &coin, nil              // Return partially enriched coin since we have some Jupiter data
+		return &coin, nil // Return partially enriched coin since we have some Jupiter data
 	}
 
 	// 4. Fetch off-chain metadata using the URI from the on-chain account
@@ -124,7 +121,7 @@ func (s *Service) EnrichCoinData(
 	// coin.ResolvedIconUrl will not be populated by this backend service.
 
 	enrichFromMetadata(&coin, offchainMeta) // Pass original offchainMeta
-	
+
 	// Standardize the IconUrl to produce ResolvedIconUrl
 	// If IconUrl is empty, standardizeIpfsUrl will return empty, so ResolvedIconUrl will be empty.
 	coin.ResolvedIconUrl = s.standardizeIpfsUrl(coin.IconUrl)
@@ -132,14 +129,12 @@ func (s *Service) EnrichCoinData(
 		slog.Debug("Standardized IPFS URL", slog.String("original", coin.IconUrl), slog.String("resolved", coin.ResolvedIconUrl), slog.String("mintAddress", mintAddress))
 	}
 
-
 	// Ensure LastUpdated is set
 	coin.LastUpdated = time.Now().Format(time.RFC3339)
-	
+
 	slog.Info("Coin enrichment process completed", slog.String("mintAddress", mintAddress))
 	return &coin, nil
 }
-
 
 func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 	if iconUrlInput == "" {
@@ -153,16 +148,16 @@ func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 		if len(parts) < 2 || parts[1] == "" {
 			return iconUrlInput // Malformed or nothing after /ipfs/, return original
 		}
-		
+
 		ipfsPathContent := parts[1] // This is <hash_or_cid_or_cid_with_path_and_query>
-		
-		var ipfsResourceIdentifier string 
+
+		var ipfsResourceIdentifier string
 		if queryIdx := strings.Index(ipfsPathContent, "?"); queryIdx != -1 {
 			ipfsResourceIdentifier = ipfsPathContent[:queryIdx]
 		} else {
 			ipfsResourceIdentifier = ipfsPathContent
 		}
-		
+
 		firstPathComponent := strings.SplitN(ipfsResourceIdentifier, "/", 2)[0]
 
 		if strings.HasPrefix(firstPathComponent, "Qm") && len(firstPathComponent) == 46 {
@@ -177,14 +172,14 @@ func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 			subdomainPart := firstPathComponent
 			pathPart := ""
 			if restOfPathIdx := strings.Index(ipfsResourceIdentifier, "/"); restOfPathIdx != -1 {
-				 pathPart = ipfsResourceIdentifier[restOfPathIdx:] 
+				pathPart = ipfsResourceIdentifier[restOfPathIdx:]
 			}
 			return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
 		}
 	} else if strings.HasPrefix(iconUrlInput, "ipfs://") {
 		// Handle raw ipfs:// URIs
 		trimmedCidAndPath := strings.TrimPrefix(iconUrlInput, "ipfs://")
-		
+
 		firstPathComponent := strings.SplitN(trimmedCidAndPath, "/", 2)[0]
 
 		if strings.HasPrefix(firstPathComponent, "Qm") && len(firstPathComponent) == 46 {
@@ -198,7 +193,7 @@ func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 			subdomainPart := firstPathComponent
 			pathPart := ""
 			if restOfPathIdx := strings.Index(trimmedCidAndPath, "/"); restOfPathIdx != -1 {
-				 pathPart = trimmedCidAndPath[restOfPathIdx:]
+				pathPart = trimmedCidAndPath[restOfPathIdx:]
 			}
 			return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
 		}
@@ -207,7 +202,6 @@ func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 	// Not an IPFS gateway URL and not a raw ipfs:// URI, return as is
 	return iconUrlInput
 }
-
 
 // enrichFromMetadata updates coin fields from off-chain metadata (map).
 // Handles missing fields gracefully and provides defaults.
@@ -222,9 +216,9 @@ func enrichFromMetadata(coin *model.Coin, metadata map[string]any) {
 
 	populateDescriptionFromMetadata(coin, metadata)
 	populateWebsiteFromMetadata(coin, metadata)
-	populateIconFromMetadata(coin, metadata)    // Populates coin.IconUrl from non-IPFS sources
+	populateIconFromMetadata(coin, metadata)        // Populates coin.IconUrl from non-IPFS sources
 	populateSocialLinksFromMetadata(coin, metadata) // Handles all social links
-	applyIconFallbacks(coin)                    // Final icon fallbacks for coin.IconUrl
+	applyIconFallbacks(coin)                        // Final icon fallbacks for coin.IconUrl
 }
 
 func populateDescriptionFromMetadata(coin *model.Coin, metadata map[string]any) {
@@ -367,7 +361,6 @@ func applyIconFallbacks(coin *model.Coin) {
 		// This is still a bit complex. The ideal is to verify image existence.
 	}
 
-
 	if coin.IconUrl == "" { // If still empty after specific token-list attempt
 		coin.IconUrl = fmt.Sprintf("https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/%s/logo.png", coin.MintAddress)
 	}
@@ -377,7 +370,6 @@ func applyIconFallbacks(coin *model.Coin) {
 		coin.IconUrl = "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" // Default to SOL icon
 	}
 }
-
 
 // cleanSocialLink ensures a social link points to the correct domain and has https.
 func cleanSocialLink(link string, expectedDomain string) string {
