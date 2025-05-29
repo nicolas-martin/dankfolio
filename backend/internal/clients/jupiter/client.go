@@ -174,12 +174,30 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 
 	log.Printf("🔄 Fetching new tokens from Jupiter: %s", fullURL)
 
-	var tokens []CoinListInfo
-	if err := c.GetRequest(ctx, fullURL, &tokens); err != nil {
+	// Use NewTokenInfo struct for the /tokens/v1/new endpoint
+	var newTokens []NewTokenInfo
+	if err := c.GetRequest(ctx, fullURL, &newTokens); err != nil {
 		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
 	}
 
-	return &CoinListResponse{Coins: tokens}, nil
+	// Convert NewTokenInfo to CoinListInfo for compatibility
+	coins := make([]CoinListInfo, len(newTokens))
+	for i, newToken := range newTokens {
+		coins[i] = CoinListInfo{
+			Address:     newToken.Mint, // Map mint to address
+			ChainID:     101,           // Solana mainnet
+			Decimals:    newToken.Decimals,
+			Name:        newToken.Name,
+			Symbol:      newToken.Symbol,
+			LogoURI:     newToken.LogoURI, // Map logo_uri to logoURI
+			Extensions:  make(map[string]interface{}),
+			DailyVolume: 0,          // Not available in new tokens endpoint
+			Tags:        []string{}, // Not available in new tokens endpoint
+			CreatedAt:   time.Now(), // Use current time as fallback
+		}
+	}
+
+	return &CoinListResponse{Coins: coins}, nil
 }
 
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter
