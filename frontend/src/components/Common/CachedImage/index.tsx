@@ -1,8 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
-import { Text } from 'react-native-paper';
 import { Image } from 'expo-image';
-import { CachedImageProps } from '@/components/Common/CachedImage/types';
+import { CachedImageProps } from './types';
 
 // Default blurhash for token images - a subtle gray blur
 const DEFAULT_TOKEN_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
@@ -21,26 +19,6 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	testID,
 	...imageProps
 }) => {
-	const renderFallback = () => (
-		<View
-			style={[
-				{
-					width: size,
-					height: size,
-					borderRadius,
-					backgroundColor: '#f0f0f0',
-					justifyContent: 'center',
-					alignItems: 'center',
-				},
-				style,
-			]}
-			testID={testID ? `${testID}-fallback` : undefined}
-		>
-			<Text style={{ fontSize: size * 0.3, color: '#666' }}>
-				{fallbackText || '?'}
-			</Text>
-		</View>
-	);
 
 	// Convert IPFS URLs to use faster gateways
 	let imageUrl = uri;

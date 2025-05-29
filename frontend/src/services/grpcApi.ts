@@ -1,7 +1,5 @@
 import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
-import { API, Coin, SearchCoinsRequest, SearchCoinsResponse, SearchCoinByMintResponse, TradePayload, SubmitSwapResponse, SwapQuoteResponse, TradeStatusResponse, PriceHistoryResponse, WalletBalanceResponse, CoinTransferPrepareRequest, CoinTransferPrepareResponse, CoinTransferSubmitRequest, CoinTransferResponse, CreateWalletResponse, GetProxiedImageResponse } from './grpc/model';
-// import { DEBUG_MODE } from '@env'; // DEBUG_MODE is now handled by the logger
-import { logger as log } from '@/utils/logger'; // Import the new logger
+import * as grpcModel from './grpc/model';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import * as grpcUtils from './grpc/grpcUtils';
@@ -13,10 +11,8 @@ function convertToTimestamp(dateStr: string): Timestamp {
 }
 
 // Implementation of the API interface using gRPC
-export const grpcApi: API = {
-	submitSwap: async (payload: TradePayload): Promise<SubmitSwapResponse> => {
-		// validate payload
-
+export const grpcApi: grpcModel.API = {
+	submitSwap: async (payload: grpcModel.TradePayload): Promise<grpcModel.SubmitSwapResponse> => {
 
 		const serviceName = "TradeService";
 		const methodName = "submitSwap";
@@ -45,7 +41,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	getSwapStatus: async (txHash: string): Promise<TradeStatusResponse> => {
+	getSwapStatus: async (txHash: string): Promise<grpcModel.TradeStatusResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'getSwapStatus';
 		try {
@@ -71,7 +67,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	getAvailableCoins: async (trendingOnly?: boolean): Promise<Coin[]> => {
+	getAvailableCoins: async (trendingOnly?: boolean): Promise<grpcModel.Coin[]> => {
 		const serviceName = 'CoinService';
 		const methodName = 'getAvailableCoins';
 		try {
@@ -91,7 +87,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	getSwapQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<SwapQuoteResponse> => {
+	getSwapQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<grpcModel.SwapQuoteResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'getTradeQuote';
 		try {
@@ -120,7 +116,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	getPriceHistory: async (address: string, type: string, timeFrom: string, timeTo: string, addressType: string): Promise<PriceHistoryResponse> => {
+	getPriceHistory: async (address: string, type: string, timeFrom: string, timeTo: string, addressType: string): Promise<grpcModel.PriceHistoryResponse> => {
 		const serviceName = 'PriceService';
 		const methodName = 'getPriceHistory';
 		try {
@@ -173,7 +169,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	getWalletBalance: async (address: string): Promise<WalletBalanceResponse> => {
+	getWalletBalance: async (address: string): Promise<grpcModel.WalletBalanceResponse> => {
 		const serviceName = 'WalletService';
 		const methodName = 'getWalletBalances';
 		if (address === '') {
@@ -198,7 +194,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	getCoinByID: async (mintAddress: string): Promise<Coin> => {
+	getCoinByID: async (mintAddress: string): Promise<grpcModel.Coin> => {
 		const serviceName = 'CoinService';
 		const methodName = 'getCoinByID';
 		try {
@@ -236,7 +232,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	prepareCoinTransfer: async (payload: CoinTransferPrepareRequest): Promise<CoinTransferPrepareResponse> => {
+	prepareCoinTransfer: async (payload: grpcModel.CoinTransferPrepareRequest): Promise<grpcModel.CoinTransferPrepareResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'prepareTransfer';
 		try {
@@ -259,7 +255,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	submitCoinTransfer: async (payload: CoinTransferSubmitRequest): Promise<CoinTransferResponse> => {
+	submitCoinTransfer: async (payload: grpcModel.CoinTransferSubmitRequest): Promise<grpcModel.CoinTransferResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'submitTransfer';
 		try {
@@ -281,7 +277,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	searchCoins: async (params: SearchCoinsRequest): Promise<SearchCoinsResponse> => {
+	searchCoins: async (params: grpcModel.SearchCoinsRequest): Promise<grpcModel.SearchCoinsResponse> => {
 		const serviceName = 'CoinService';
 		const methodName = 'searchCoins';
 		try {
@@ -299,7 +295,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	searchCoinByMint: async (mintAddress: string): Promise<SearchCoinByMintResponse> => {
+	searchCoinByMint: async (mintAddress: string): Promise<grpcModel.SearchCoinByMintResponse> => {
 		const serviceName = 'CoinService';
 		const methodName = 'searchCoinByMint';
 		try {
@@ -324,7 +320,7 @@ export const grpcApi: API = {
 	// Redundant getTransferTransaction was removed.
 	// The functionality is covered by prepareCoinTransfer which correctly uses fromAddress.
 
-	async createWallet(): Promise<CreateWalletResponse> {
+	async createWallet(): Promise<grpcModel.CreateWalletResponse> {
 		const serviceName = 'WalletService';
 		const methodName = 'createWallet';
 
@@ -347,7 +343,7 @@ export const grpcApi: API = {
 		}
 	},
 
-	getProxiedImage: async (imageUrl: string): Promise<GetProxiedImageResponse> => {
+	getProxiedImage: async (imageUrl: string): Promise<grpcModel.GetProxiedImageResponse> => {
 		const serviceName = "UtilityService";
 		const methodName = "getProxiedImage";
 		try {

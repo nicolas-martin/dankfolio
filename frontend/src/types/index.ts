@@ -21,6 +21,7 @@ export interface Coin {
 	lastUpdated?: Date;
 	value?: number;
 	percentage?: number;
+	jupiterListedAt?: Date;
 }
 
 /** Base58 encoded private key string with type safety */
