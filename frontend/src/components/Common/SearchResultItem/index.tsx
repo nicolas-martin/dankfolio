@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { TokenImage } from '@/components/Common/TokenImage';
+import { CachedImage } from '@/components/Common/CachedImage';
 import { SearchResultItemProps } from './types';
 import { truncateAddress } from './scripts';
 import { createStyles } from './styles';
@@ -30,7 +30,12 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 			disabled={!onPress}
 		>
 			<View style={styles.tokenInfo}>
-				<TokenImage uri={coin.iconUrl} size={36} />
+				<CachedImage 
+					uri={coin.iconUrl} 
+					size={36} 
+					borderRadius={18}
+					showLoadingIndicator={true}
+				/>
 				<View style={styles.tokenDetails}>
 					<Text style={styles.tokenName}>{coin.name || 'Unknown'}</Text>
 					<Text style={styles.tokenAddress}>{truncateAddress(coin.mintAddress)}</Text>

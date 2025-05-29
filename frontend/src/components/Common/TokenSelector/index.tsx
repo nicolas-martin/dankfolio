@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, TouchableOpacity, FlatList, Modal as RNModal, TextInput, ActivityIndicator, Image } from 'react-native';
+import { View, TouchableOpacity, FlatList, Modal as RNModal, TextInput, ActivityIndicator } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
 import { ChevronDownIcon, CoinsIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
