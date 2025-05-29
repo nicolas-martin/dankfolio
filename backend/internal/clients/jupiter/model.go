@@ -42,16 +42,16 @@ type QuotedPrice struct {
 
 // CoinInfoResponse represents the response from Jupiter's token info API
 type CoinInfoResponse struct {
-	Address     string                 `json:"address"`
-	ChainID     int                    `json:"chainId"`
-	Decimals    int                    `json:"decimals"`
-	Name        string                 `json:"name"`
-	Symbol      string                 `json:"symbol"`
-	LogoURI     string                 `json:"logoURI"`
-	Extensions  map[string]interface{} `json:"extensions"`
-	DailyVolume float64                `json:"dailyVolume"`
-	Tags        []string               `json:"tags"`
-	CreatedAt   time.Time              `json:"createdAt"`
+	Address     string         `json:"address"`
+	ChainID     int            `json:"chainId"`
+	Decimals    int            `json:"decimals"`
+	Name        string         `json:"name"`
+	Symbol      string         `json:"symbol"`
+	LogoURI     string         `json:"logoURI"`
+	Extensions  map[string]any `json:"extensions"`
+	DailyVolume float64        `json:"dailyVolume"`
+	Tags        []string       `json:"tags"`
+	CreatedAt   time.Time      `json:"createdAt"`
 }
 
 // SwapInfo represents information about a swap in a route
@@ -112,21 +112,21 @@ type CoinListResponse struct {
 
 // CoinListInfo represents detailed token information from Jupiter's token list
 type CoinListInfo struct {
-	Address      string                 `json:"address"`
-	ChainID      int                    `json:"chainId"`
-	Decimals     int                    `json:"decimals"`
-	Name         string                 `json:"name"`
-	Symbol       string                 `json:"symbol"`
-	LogoURI      string                 `json:"logoURI"`
-	Extensions   map[string]interface{} `json:"extensions"`
-	DailyVolume  float64                `json:"dailyVolume"`
-	Tags         []string               `json:"tags"`
-	CreatedAt    time.Time              `json:"createdAt"`
-	CoingeckoID  string                 `json:"coingeckoId,omitempty"`
-	PriceUSD     float64                `json:"priceUsd,omitempty"`
-	MarketCapUSD float64                `json:"marketCapUsd,omitempty"`
-	Volume24h    float64                `json:"volume24h,omitempty"`
-	Change24h    float64                `json:"change24h,omitempty"`
+	Address      string         `json:"address"`
+	ChainID      int            `json:"chainId"`
+	Decimals     int            `json:"decimals"`
+	Name         string         `json:"name"`
+	Symbol       string         `json:"symbol"`
+	LogoURI      string         `json:"logoURI"`
+	Extensions   map[string]any `json:"extensions"`
+	DailyVolume  float64        `json:"dailyVolume"`
+	Tags         []string       `json:"tags"`
+	CreatedAt    time.Time      `json:"createdAt"`
+	CoingeckoID  string         `json:"coingeckoId,omitempty"`
+	PriceUSD     float64        `json:"priceUsd,omitempty"`
+	MarketCapUSD float64        `json:"marketCapUsd,omitempty"`
+	Volume24h    float64        `json:"volume24h,omitempty"`
+	Change24h    float64        `json:"change24h,omitempty"`
 }
 
 // convert to model.Coin
@@ -185,16 +185,16 @@ type NewCoinsParams struct {
 // NewTokenInfo represents a token from Jupiter's /tokens/v1/new endpoint
 // This endpoint uses different field names than the standard token list
 type NewTokenInfo struct {
-	Mint              string      `json:"mint"`                // Mint address (equivalent to Address)
-	CreatedAt         string      `json:"created_at"`          // Unix timestamp as string
-	MetadataUpdatedAt float64     `json:"metadata_updated_at"` // Unix timestamp as number
-	Name              string      `json:"name"`
-	Symbol            string      `json:"symbol"`
-	Decimals          int         `json:"decimals"`
-	LogoURI           string      `json:"logo_uri"` // Note: logo_uri not logoURI
-	KnownMarkets      []string    `json:"known_markets"`
-	MintAuthority     interface{} `json:"mint_authority"`   // Can be null
-	FreezeAuthority   interface{} `json:"freeze_authority"` // Can be null
+	Mint              string   `json:"mint"`                // Mint address (equivalent to Address)
+	CreatedAt         string   `json:"created_at"`          // Unix timestamp as string
+	MetadataUpdatedAt float64  `json:"metadata_updated_at"` // Unix timestamp as number
+	Name              string   `json:"name"`
+	Symbol            string   `json:"symbol"`
+	Decimals          int      `json:"decimals"`
+	LogoURI           string   `json:"logo_uri"` // Note: logo_uri not logoURI
+	KnownMarkets      []string `json:"known_markets"`
+	MintAuthority     any      `json:"mint_authority"`   // Can be null
+	FreezeAuthority   any      `json:"freeze_authority"` // Can be null
 }
 
 // ToRawCoin converts NewTokenInfo to model.RawCoin
