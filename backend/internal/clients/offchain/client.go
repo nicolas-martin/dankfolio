@@ -25,7 +25,7 @@ func NewClient(httpClient *http.Client) ClientAPI {
 }
 
 // FetchMetadata fetches JSON metadata from a URI with fallback support for IPFS and Arweave
-func (c *Client) FetchMetadata(uri string) (map[string]interface{}, error) {
+func (c *Client) FetchMetadata(uri string) (map[string]any, error) {
 	uri = strings.TrimSpace(uri)
 	if uri == "" {
 		log.Printf("❌ FetchMetadata: Empty URI provided")
@@ -105,7 +105,7 @@ func (c *Client) FetchRawData(ctx context.Context, uri string) (data []byte, con
 }
 
 // fetchIPFSMetadata fetches metadata from IPFS with multiple gateway fallbacks
-func (c *Client) fetchIPFSMetadata(uri string) (map[string]interface{}, error) {
+func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
 	cid := strings.TrimPrefix(uri, "ipfs://")
 	if cid == "" {
 		log.Printf("❌ IPFS: Invalid IPFS URI - empty CID")
@@ -141,7 +141,7 @@ func (c *Client) fetchIPFSMetadata(uri string) (map[string]interface{}, error) {
 }
 
 // fetchArweaveMetadata fetches metadata from Arweave with gateway fallback
-func (c *Client) fetchArweaveMetadata(uri string) (map[string]interface{}, error) {
+func (c *Client) fetchArweaveMetadata(uri string) (map[string]any, error) {
 	txID := strings.TrimPrefix(uri, "ar://")
 	if txID == "" {
 		log.Printf("❌ Arweave: Invalid Arweave URI - empty TxID")
@@ -173,7 +173,7 @@ func (c *Client) fetchArweaveMetadata(uri string) (map[string]interface{}, error
 }
 
 // fetchHTTPMetadata fetches JSON metadata from an HTTP(S) URL
-func (c *Client) fetchHTTPMetadata(url string) (map[string]interface{}, error) {
+func (c *Client) fetchHTTPMetadata(url string) (map[string]any, error) {
 	log.Printf("🌐 HTTP: Creating request for URL: %s", url)
 	log.Printf("🔄 HTTP: Setting up request headers...")
 
@@ -200,7 +200,7 @@ func (c *Client) fetchHTTPMetadata(url string) (map[string]interface{}, error) {
 	}
 
 	log.Printf("🔄 HTTP: Decoding JSON response from: %s", url)
-	var metadata map[string]interface{}
+	var metadata map[string]any
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(&metadata); err != nil {
 		log.Printf("❌ HTTP: Failed to decode JSON from %s: %v", url, err)

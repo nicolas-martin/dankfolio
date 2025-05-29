@@ -128,7 +128,7 @@ func TestGenerateToken(t *testing.T) {
 
 		// Parse token and verify claims
 		claims := &AuthClaims{}
-		token, err := jwt.ParseWithClaims(resp.Token, claims, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(resp.Token, claims, func(token *jwt.Token) (any, error) {
 			return s.jwtSecret, nil
 		})
 		require.NoError(t, err)
