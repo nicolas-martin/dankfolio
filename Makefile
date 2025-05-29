@@ -38,7 +38,7 @@ proto:
 	@echo "Generating protobuf files..."
 	@buf generate
 
-frontend-test: proto frontend-lint
+frontend-test: frontend-lint
 	@echo "🧪 Running frontend tests..."
 	cd frontend && yarn test
 
@@ -54,7 +54,7 @@ backend-build: proto ## Check backend Go code compilation
 	@echo "🏗️ Compiling backend code..."
 	cd backend && go build ./...
 
-backend-test: backend-build backend-generate-mocks ## Run backend tests
+backend-test: backend-generate-mocks
 	@echo "🧪 Running backend tests..."
 	cd backend && go test ./... -v
 
