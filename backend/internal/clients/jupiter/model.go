@@ -2,6 +2,8 @@ package jupiter
 
 import (
 	"encoding/json"
+	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -197,13 +199,26 @@ type NewTokenInfo struct {
 
 // ToRawCoin converts NewTokenInfo to model.RawCoin
 func (t *NewTokenInfo) ToRawCoin() *model.RawCoin {
+	var jupiterCreatedAtTime *time.Time
+	if t.CreatedAt != "" {
+		unixTimestamp, err := strconv.ParseInt(t.CreatedAt, 10, 64)
+		if err != nil {
+			slog.Error("Failed to parse Jupiter CreatedAt timestamp", "value", t.CreatedAt, "error", err)
+			// jupiterCreatedAtTime remains nil
+		} else {
+			tm := time.Unix(unixTimestamp, 0)
+			jupiterCreatedAtTime = &tm
+		}
+	}
+
 	return &model.RawCoin{
-		MintAddress: t.Mint, // Use Mint field instead of Address
-		Name:        t.Name,
-		Symbol:      t.Symbol,
-		Decimals:    t.Decimals,
-		LogoUrl:     t.LogoURI, // Use LogoURI field
-		UpdatedAt:   time.Now().Format(time.RFC3339),
+		MintAddress:      t.Mint, // Use Mint field instead of Address
+		Name:             t.Name,
+		Symbol:           t.Symbol,
+		Decimals:         t.Decimals,
+		LogoUrl:          t.LogoURI, // Use LogoURI field
+		UpdatedAt:        time.Now().Format(time.RFC3339),
+		JupiterCreatedAt: jupiterCreatedAtTime,
 	}
 }
 
