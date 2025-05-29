@@ -140,34 +140,44 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 }
 
 func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
-	var createdAt *timestamppb.Timestamp
-	if coin.CreatedAt != "" {
+	var createdAtPb *timestamppb.Timestamp // Renamed for clarity
+	if coin.CreatedAt != "" { // model.Coin.CreatedAt is string
 		if t, err := time.Parse(time.RFC3339, coin.CreatedAt); err == nil {
-			createdAt = timestamppb.New(t)
+			createdAtPb = timestamppb.New(t)
 		}
+		// Consider logging parse error if important
 	}
 
-	var lastUpdated *timestamppb.Timestamp
-	if coin.LastUpdated != "" {
+	var lastUpdatedPb *timestamppb.Timestamp // Renamed for clarity
+	if coin.LastUpdated != "" { // model.Coin.LastUpdated is string
 		if t, err := time.Parse(time.RFC3339, coin.LastUpdated); err == nil {
-			lastUpdated = timestamppb.New(t)
+			lastUpdatedPb = timestamppb.New(t)
 		}
+		// Consider logging parse error
+	}
+
+	var jupiterListedAtPb *timestamppb.Timestamp // New variable for the new field
+	if coin.JupiterListedAt != nil { // model.Coin.JupiterListedAt is *time.Time
+		jupiterListedAtPb = timestamppb.New(*coin.JupiterListedAt) // Dereference before passing to New
 	}
 
 	return &pb.Coin{
-		MintAddress: coin.MintAddress,
-		Symbol:      coin.Symbol,
-		Name:        coin.Name,
-		Decimals:    int32(coin.Decimals),
-		Description: coin.Description,
-		IconUrl:     coin.IconUrl,
-		Tags:        coin.Tags,
-		Price:       coin.Price,
-		DailyVolume: coin.Volume24h,
-		Website:     &coin.Website,
-		Twitter:     &coin.Twitter,
-		Telegram:    &coin.Telegram,
-		CreatedAt:   createdAt,
-		LastUpdated: lastUpdated,
+		MintAddress:       coin.MintAddress,
+		Symbol:            coin.Symbol,
+		Name:              coin.Name,
+		Decimals:          int32(coin.Decimals),
+		Description:       coin.Description,
+		IconUrl:           coin.IconUrl,
+		Tags:              coin.Tags,
+		Price:             coin.Price,
+		DailyVolume:       coin.Volume24h,
+		Website:           &coin.Website,  // Assuming model.Coin.Website is string, and pb.Coin.website is optional string
+		Twitter:           &coin.Twitter,  // Assuming model.Coin.Twitter is string, and pb.Coin.twitter is optional string
+		Telegram:          &coin.Telegram, // Assuming model.Coin.Telegram is string, and pb.Coin.telegram is optional string
+		// CoingeckoId is not mapped as it's not in model.Coin
+		CreatedAt:         createdAtPb,
+		LastUpdated:       lastUpdatedPb,
+		IsTrending:        coin.IsTrending,
+		JupiterListedAt:   jupiterListedAtPb, // Assign the new mapped field
 	}
 }

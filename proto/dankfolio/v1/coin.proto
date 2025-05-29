@@ -39,6 +39,7 @@ message Coin {
   google.protobuf.Timestamp created_at = 14;
   optional google.protobuf.Timestamp last_updated = 15;
   bool is_trending = 16;
+  optional google.protobuf.Timestamp jupiter_listed_at = 17; // New field
 }
 
 message GetAvailableCoinsRequest {
