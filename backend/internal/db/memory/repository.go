@@ -113,9 +113,10 @@ func (r *MemoryRepository[T]) Update(ctx context.Context, item *T) error {
 	return nil
 }
 
-func (r *MemoryRepository[T]) Upsert(ctx context.Context, item *T) error {
+// Upsert inserts or updates an entity in the memory store.
+func (r *MemoryRepository[T]) Upsert(ctx context.Context, item *T) (int64, error) {
 	if item == nil {
-		return fmt.Errorf("cannot upsert nil item")
+		return 0, fmt.Errorf("cannot upsert nil item")
 	}
 
 	r.mu.Lock()
@@ -127,7 +128,35 @@ func (r *MemoryRepository[T]) Upsert(ctx context.Context, item *T) error {
 	// Invalidate caches
 	r.cache.Delete(id)
 	r.listCache.Delete("all")
-	return nil
+	return 1, nil // 1 row affected, no error
+}
+
+// BulkUpsert inserts or updates multiple entities in the memory store.
+func (r *MemoryRepository[T]) BulkUpsert(ctx context.Context, items *[]T) (int64, error) {
+	if items == nil { // Check if the pointer to the slice is nil
+		return 0, fmt.Errorf("cannot bulk upsert nil items slice")
+	}
+	if len(*items) == 0 { // Check if the slice itself is empty
+		return 0, nil // No items to process, no error, 0 rows affected
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var totalRowsAffected int64 = 0
+	for _, item := range *items { // Here, 'item' is of type T, not *T
+		id := item.GetID() // Call GetID on T
+		r.items[id] = item // Store T directly
+		totalRowsAffected++
+
+		// Invalidate individual item cache
+		r.cache.Delete(id)
+	}
+
+	// Invalidate list cache once after all operations
+	r.listCache.Delete("all")
+
+	return totalRowsAffected, nil
 }
 
 func (r *MemoryRepository[T]) Delete(ctx context.Context, id string) error {

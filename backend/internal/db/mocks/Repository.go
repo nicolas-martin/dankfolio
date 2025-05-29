@@ -84,6 +84,60 @@ func (_c *MockRepository_Create_Call[T]) RunAndReturn(run func(ctx context.Conte
 	return _c
 }
 
+// BulkUpsert provides a mock function for the type MockRepository
+func (_mock *MockRepository[T]) BulkUpsert(ctx context.Context, items *[]T) (int64, error) {
+	ret := _mock.Called(ctx, items)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkUpsert")
+	}
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(context.Context, *[]T) int64); ok {
+		r0 = rf(ctx, items)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *[]T) error); ok {
+		r1 = rf(ctx, items)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockRepository_BulkUpsert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkUpsert'
+type MockRepository_BulkUpsert_Call[T db.Entity] struct {
+	*mock.Call
+}
+
+// BulkUpsert is a helper method to define mock.On call
+//   - ctx context.Context
+//   - items *[]T
+func (_e *MockRepository_Expecter[T]) BulkUpsert(ctx interface{}, items interface{}) *MockRepository_BulkUpsert_Call[T] {
+	return &MockRepository_BulkUpsert_Call[T]{Call: _e.mock.On("BulkUpsert", ctx, items)}
+}
+
+func (_c *MockRepository_BulkUpsert_Call[T]) Run(run func(ctx context.Context, items *[]T)) *MockRepository_BulkUpsert_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*[]T))
+	})
+	return _c
+}
+
+func (_c *MockRepository_BulkUpsert_Call[T]) Return(rowsAffected int64, err error) *MockRepository_BulkUpsert_Call[T] {
+	_c.Call.Return(rowsAffected, err)
+	return _c
+}
+
+func (_c *MockRepository_BulkUpsert_Call[T]) RunAndReturn(run func(ctx context.Context, items *[]T) (int64, error)) *MockRepository_BulkUpsert_Call[T] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Delete provides a mock function for the type MockRepository
 func (_mock *MockRepository[T]) Delete(ctx context.Context, id string) error {
 	ret := _mock.Called(ctx, id)
@@ -348,20 +402,28 @@ func (_c *MockRepository_Update_Call[T]) RunAndReturn(run func(ctx context.Conte
 }
 
 // Upsert provides a mock function for the type MockRepository
-func (_mock *MockRepository[T]) Upsert(ctx context.Context, item *T) error {
+func (_mock *MockRepository[T]) Upsert(ctx context.Context, item *T) (int64, error) {
 	ret := _mock.Called(ctx, item)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Upsert")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *T) error); ok {
-		r0 = returnFunc(ctx, item)
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(context.Context, *T) int64); ok {
+		r0 = rf(ctx, item)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(int64)
 	}
-	return r0
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *T) error); ok {
+		r1 = rf(ctx, item)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MockRepository_Upsert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Upsert'
@@ -383,12 +445,12 @@ func (_c *MockRepository_Upsert_Call[T]) Run(run func(ctx context.Context, item 
 	return _c
 }
 
-func (_c *MockRepository_Upsert_Call[T]) Return(err error) *MockRepository_Upsert_Call[T] {
-	_c.Call.Return(err)
+func (_c *MockRepository_Upsert_Call[T]) Return(rowsAffected int64, err error) *MockRepository_Upsert_Call[T] {
+	_c.Call.Return(rowsAffected, err)
 	return _c
 }
 
-func (_c *MockRepository_Upsert_Call[T]) RunAndReturn(run func(ctx context.Context, item *T) error) *MockRepository_Upsert_Call[T] {
+func (_c *MockRepository_Upsert_Call[T]) RunAndReturn(run func(ctx context.Context, item *T) (int64, error)) *MockRepository_Upsert_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }

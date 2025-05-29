@@ -96,16 +96,17 @@ func (r *Repository[S, M]) Update(ctx context.Context, item *M) error {
 }
 
 // Upsert inserts or updates an entity.
-func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) error {
+func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) (int64, error) {
 	schemaItem := r.fromModel(*item)
 	var s S // Create zero value of S to get the column name
-	if err := r.db.WithContext(ctx).Clauses(clause.OnConflict{
+	result := r.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: s.GetID()}},
 		DoUpdates: clause.AssignmentColumns(getColumnNames(schemaItem)),
-	}).Create(schemaItem).Error; err != nil {
-		return fmt.Errorf("failed to upsert item: %w", err)
+	}).Create(schemaItem)
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to upsert item: %w", result.Error)
 	}
-	return nil
+	return result.RowsAffected, nil
 }
 
 // Delete removes an entity by its ID.
@@ -119,6 +120,39 @@ func (r *Repository[S, M]) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("%w: item with id %s not found for deletion", db.ErrNotFound, id)
 	}
 	return nil
+}
+
+// BulkUpsert inserts or updates multiple entities in batches.
+func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, error) {
+	if items == nil || len(*items) == 0 {
+		return 0, nil // Nothing to do
+	}
+
+	// The schemaItems slice should hold actual schema type instances, not pointers,
+	// as CreateInBatches expects a slice of structs.
+	schemaItems := make([]S, len(*items))
+	for i, modelItem := range *items {
+		// r.fromModel returns an interface (any) that holds a pointer to a schema object (e.g., *schema.Coin).
+		// We need to dereference this pointer to store the actual schema object in the slice.
+		schemaItemPtr := r.fromModel(modelItem).(*S) // Assert to *S, which is the type like *schema.Coin
+		schemaItems[i] = *schemaItemPtr             // Dereference to get S, like schema.Coin
+	}
+
+	// Need a zero value of S to get column names and ID field name for the conflict clause.
+	// This works because GetID() and getColumnNames() are designed to work with S or *S.
+	var s S
+	batchSize := len(schemaItems) // Process all items in a single batch as per GORM examples for full slice upsert.
+
+	result := r.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: s.GetID()}},
+		DoUpdates: clause.AssignmentColumns(getColumnNames(&s)), // getColumnNames expects a pointer
+	}).CreateInBatches(schemaItems, batchSize)
+
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to bulk upsert items: %w", result.Error)
+	}
+
+	return result.RowsAffected, nil
 }
 
 // --- Mapping Functions ---

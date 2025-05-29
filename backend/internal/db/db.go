@@ -36,7 +36,8 @@ type Repository[T Entity] interface {
 	List(ctx context.Context) ([]T, error)
 	Create(ctx context.Context, item *T) error
 	Update(ctx context.Context, item *T) error
-	Upsert(ctx context.Context, item *T) error
+	Upsert(ctx context.Context, item *T) (int64, error)
+	BulkUpsert(ctx context.Context, items *[]T) (int64, error)
 	Delete(ctx context.Context, id string) error
 	GetByField(ctx context.Context, field string, value any) (*T, error)
 }
