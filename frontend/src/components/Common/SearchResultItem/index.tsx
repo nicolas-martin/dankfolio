@@ -14,6 +14,15 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
+	// Simple formatter for now
+	const formatJupiterListedAt = (date?: Date): string | null => {
+		if (!date) return null;
+		// Example: "Listed: 3/15/2024" - can be improved later
+		return `Listed: ${date.toLocaleDateString()}`;
+	};
+
+	const listedAtString = formatJupiterListedAt(coin.jupiterListedAt);
+
 	return (
 		<TouchableOpacity
 			style={styles.container}
@@ -25,6 +34,11 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 				<View style={styles.tokenDetails}>
 					<Text style={styles.tokenName}>{coin.name || 'Unknown'}</Text>
 					<Text style={styles.tokenAddress}>{truncateAddress(coin.mintAddress)}</Text>
+					{listedAtString && ( // Only display if the date exists
+						<Text style={styles.listedAtText}>
+							{listedAtString}
+						</Text>
+					)}
 				</View>
 			</View>
 			<View style={styles.symbolColumn}>
