@@ -151,4 +151,23 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	filterButtonTextActive: {
 		color: theme.colors.onPrimary,
 	},
+	sortButtonsContainer: {
+		flexDirection: 'row',
+		justifyContent: 'space-around',
+		paddingVertical: 8,
+		// paddingHorizontal: 16, // Already in contentPadding
+	},
+	sortButton: {
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderRadius: 4,
+		backgroundColor: theme.colors.surfaceVariant, 
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	sortButtonText: {
+		color: theme.colors.onSurfaceVariant, 
+		fontSize: 12,
+		fontWeight: '500',
+	},
 }); 
