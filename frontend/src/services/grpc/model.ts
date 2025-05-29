@@ -14,6 +14,7 @@ export interface Coin {
 	coingeckoId?: string;
 	createdAt?: Date;
 	lastUpdated?: Date;
+	jupiterListedAt?: Date; // New field
 }
 
 export interface balance {
