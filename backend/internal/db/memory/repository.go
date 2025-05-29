@@ -113,9 +113,10 @@ func (r *MemoryRepository[T]) Update(ctx context.Context, item *T) error {
 	return nil
 }
 
-func (r *MemoryRepository[T]) Upsert(ctx context.Context, item *T) error {
+// Upsert inserts or updates an entity in the memory store.
+func (r *MemoryRepository[T]) Upsert(ctx context.Context, item *T) (int64, error) {
 	if item == nil {
-		return fmt.Errorf("cannot upsert nil item")
+		return 0, fmt.Errorf("cannot upsert nil item")
 	}
 
 	r.mu.Lock()
@@ -127,7 +128,7 @@ func (r *MemoryRepository[T]) Upsert(ctx context.Context, item *T) error {
 	// Invalidate caches
 	r.cache.Delete(id)
 	r.listCache.Delete("all")
-	return nil
+	return 1, nil // 1 row affected, no error
 }
 
 func (r *MemoryRepository[T]) Delete(ctx context.Context, id string) error {
