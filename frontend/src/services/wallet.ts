@@ -1,4 +1,4 @@
-import { Wallet, RawWalletData } from '@/types';
+import { RawWalletData } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '@/utils/logger';
 

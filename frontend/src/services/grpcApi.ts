@@ -317,9 +317,6 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	// Redundant getTransferTransaction was removed.
-	// The functionality is covered by prepareCoinTransfer which correctly uses fromAddress.
-
 	async createWallet(): Promise<grpcModel.CreateWalletResponse> {
 		const serviceName = 'WalletService';
 		const methodName = 'createWallet';
