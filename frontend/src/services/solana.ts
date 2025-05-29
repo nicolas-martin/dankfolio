@@ -1,6 +1,6 @@
 import { Keypair, VersionedTransaction, PublicKey, Transaction, Connection } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { RawWalletData, Wallet, Base58PrivateKey } from '@/types';
+import { RawWalletData, Base58PrivateKey } from '@/types';
 import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
 import { grpcApi } from '@/services/grpcApi';
 import { logger as log } from '@/utils/logger';
@@ -40,13 +40,13 @@ export const getKeypairFromPrivateKey = (privateKey: Base58PrivateKey): Keypair 
 	}
 };
 
-export const prepareSwapRequest = async(
+export const prepareSwapRequest = async (
 	fromCoinId: string,
 	toCoinId: string,
 	amount: number,
 	slippage: number
 ): Promise<string> => {
-	try{
+	try {
 		const walletState = usePortfolioStore.getState().wallet;
 		if (!walletState || !walletState.address) {
 			throw new Error('No wallet address found in store');
@@ -85,7 +85,7 @@ export const prepareSwapRequest = async(
 	}
 }
 
-export const signSwapTransaction = async (unsignedTransaction:string): Promise<string> => {
+export const signSwapTransaction = async (unsignedTransaction: string): Promise<string> => {
 	try {
 		const walletState = usePortfolioStore.getState().wallet;
 		if (!walletState || !walletState.address) {
@@ -143,10 +143,10 @@ export const signSwapTransaction = async (unsignedTransaction:string): Promise<s
 };
 
 export const prepareCoinTransfer = async (
-		toAddress: string,
+	toAddress: string,
 	coinMint: string,
 	amount: number
-	): Promise<string> => {
+): Promise<string> => {
 
 	try {
 		const walletState = usePortfolioStore.getState().wallet;
@@ -184,7 +184,7 @@ export const prepareCoinTransfer = async (
 export const signTransferTransaction = async (
 	unsignedTransaction: string,
 ): Promise<string> => {
-	try{
+	try {
 		const walletState = usePortfolioStore.getState().wallet;
 		if (!walletState || !walletState.address) {
 			throw new Error('No wallet address found in store for signing');
