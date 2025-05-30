@@ -46,6 +46,18 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	coinsList: {
 		paddingBottom: 100,
 	},
+	coinsSectionScrollView: {
+		flex: 1,
+	},
+	loadingContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		padding: 20,
+	},
+	coinCardContainerStyle: {
+		marginBottom: 12,
+	},
 
 	// Empty States
 	emptyStateContainer: {

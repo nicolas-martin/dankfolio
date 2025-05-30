@@ -26,6 +26,6 @@ alwaysApply: true
 ## Linting
 - Include 'frontend/' prefix in file paths
 - Fix linting errors with specific rule references
-- Run `yarn lint`, `make run-mobile`, or `yarn check-structure`
+- Run `yarn lint`
 - If stuck in linting loop, re-run command
 - Maximum 3 attempts to fix same linting error before escalation
