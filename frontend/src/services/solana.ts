@@ -69,8 +69,7 @@ export const prepareSwapRequest = async (
 			toCoinId,
 			amount: amount.toString(),
 			slippageBps: (slippage * 100).toString(),
-			userPublicKey: walletAddress,
-			fromAddress: walletAddress
+			userPublicKey: walletAddress
 		};
 		const prepareResponse = await grpcApi.prepareSwap(prepareSwapRequest);
 

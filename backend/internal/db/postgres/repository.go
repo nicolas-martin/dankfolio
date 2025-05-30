@@ -135,7 +135,7 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 		// r.fromModel returns an interface (any) that holds a pointer to a schema object (e.g., *schema.Coin).
 		// We need to dereference this pointer to store the actual schema object in the slice.
 		schemaItemPtr := r.fromModel(modelItem).(*S) // Assert to *S, which is the type like *schema.Coin
-		schemaItems[i] = *schemaItemPtr             // Dereference to get S, like schema.Coin
+		schemaItems[i] = *schemaItemPtr              // Dereference to get S, like schema.Coin
 	}
 
 	// Need a zero value of S to get column names and ID field name for the conflict clause.
@@ -216,7 +216,6 @@ func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions
 	return modelItems, total, nil
 }
 
-
 // --- Mapping Functions ---
 
 // toModel converts a schema type (S) to a model type (M).
@@ -225,25 +224,26 @@ func (r *Repository[S, M]) toModel(s S) any {
 	switch v := any(s).(type) {
 	case schema.Coin:
 		return &model.Coin{
-			ID:          v.ID, // Added
-			MintAddress: v.MintAddress,
-			Name:        v.Name,
-			Symbol:      v.Symbol,
-			Decimals:    v.Decimals,
-			Description: v.Description,
-			IconUrl:     v.IconUrl,
-			Tags:        v.Tags,
-			Price:       v.Price,
-			Change24h:   v.Change24h,
-			MarketCap:   v.MarketCap,
-			Volume24h:   v.Volume24h,
-			Website:     v.Website,
-			Twitter:     v.Twitter,
-			Telegram:    v.Telegram,
-			Discord:     v.Discord,
-			IsTrending:  v.IsTrending,
-			CreatedAt:   v.CreatedAt.Format(time.RFC3339),
-			LastUpdated: v.LastUpdated.Format(time.RFC3339),
+			ID:              v.ID, // Added
+			MintAddress:     v.MintAddress,
+			Name:            v.Name,
+			Symbol:          v.Symbol,
+			Decimals:        v.Decimals,
+			Description:     v.Description,
+			IconUrl:         v.IconUrl,
+			ResolvedIconUrl: v.ResolvedIconUrl,
+			Tags:            v.Tags,
+			Price:           v.Price,
+			Change24h:       v.Change24h,
+			MarketCap:       v.MarketCap,
+			Volume24h:       v.Volume24h,
+			Website:         v.Website,
+			Twitter:         v.Twitter,
+			Telegram:        v.Telegram,
+			Discord:         v.Discord,
+			IsTrending:      v.IsTrending,
+			CreatedAt:       v.CreatedAt.Format(time.RFC3339),
+			LastUpdated:     v.LastUpdated.Format(time.RFC3339),
 		}
 	case schema.Trade:
 		var completedAt *time.Time
@@ -311,23 +311,24 @@ func (r *Repository[S, M]) fromModel(m M) any {
 	case model.Coin:
 		sCoin := &schema.Coin{
 			// ID is not set here if v.ID is 0 (new record), GORM handles auto-increment
-			MintAddress: v.MintAddress,
-			Name:        v.Name,
-			Symbol:      v.Symbol,
-			Decimals:    v.Decimals,
-			Description: v.Description,
-			IconUrl:     v.IconUrl,
-			Tags:        v.Tags,
-			Price:       v.Price,
-			Change24h:   v.Change24h,
-			MarketCap:   v.MarketCap,
-			Volume24h:   v.Volume24h,
-			Website:     v.Website,
-			Twitter:     v.Twitter,
-			Telegram:    v.Telegram,
-			Discord:     v.Discord,
-			IsTrending:  v.IsTrending,
-			LastUpdated: time.Now(),
+			MintAddress:     v.MintAddress,
+			Name:            v.Name,
+			Symbol:          v.Symbol,
+			Decimals:        v.Decimals,
+			Description:     v.Description,
+			IconUrl:         v.IconUrl,
+			ResolvedIconUrl: v.ResolvedIconUrl,
+			Tags:            v.Tags,
+			Price:           v.Price,
+			Change24h:       v.Change24h,
+			MarketCap:       v.MarketCap,
+			Volume24h:       v.Volume24h,
+			Website:         v.Website,
+			Twitter:         v.Twitter,
+			Telegram:        v.Telegram,
+			Discord:         v.Discord,
+			IsTrending:      v.IsTrending,
+			LastUpdated:     time.Now(),
 		}
 		if v.ID != 0 {
 			sCoin.ID = v.ID
@@ -375,7 +376,7 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			Name:             v.Name,
 			Decimals:         v.Decimals,
 			LogoUrl:          v.LogoUrl,
-			UpdatedAt:        updatedAt, // Parsed from model's string UpdatedAt
+			UpdatedAt:        updatedAt,          // Parsed from model's string UpdatedAt
 			JupiterCreatedAt: v.JupiterCreatedAt, // Assign *time.Time directly
 		}
 		if v.ID != 0 {
@@ -401,7 +402,7 @@ func getColumnNames(data any) []string {
 	case *schema.Coin:
 		// Explicitly list columns to update, excluding PK 'id' and 'created_at'
 		return []string{
-			"mint_address", "name", "symbol", "decimals", "description", "icon_url", "tags",
+			"mint_address", "name", "symbol", "decimals", "description", "icon_url", "resolved_icon_url", "tags",
 			"price", "change_24h", "market_cap", "volume_24h", "website",
 			"twitter", "telegram", "discord", "is_trending", "last_updated",
 		}
