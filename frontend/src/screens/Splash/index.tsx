@@ -1,6 +1,7 @@
 import { View, Image } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { LoadingAnimation } from '../../components/Common/Animations';
 import { SplashScreenNavigationProp } from './types';
 import { useLoadingState } from './scripts';
 import { createStyles } from './styles';
@@ -25,6 +26,7 @@ const Splash = () => {
 						? 'Loading trending coins...'
 						: 'Ready to trade!'}
 			</Text>
+			<LoadingAnimation size={150} />
 		</View>
 	);
 };

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme, Text, Icon } from 'react-native-paper';
+import { LoadingAnimation } from '@components/Common/Animations';
 import CoinCard from '@components/Home/CoinCard';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
 import { useNavigation } from '@react-navigation/native';
@@ -136,8 +137,8 @@ const HomeScreen = () => {
 
 				{isLoadingTrending && !hasTrendingCoins && (
 					<View style={styles.loadingContainer}>
-						<ActivityIndicator size="small" color={theme.colors.primary} />
-						<Text style={{ marginLeft: 8, color: theme.colors.onSurfaceVariant }}>Loading trending coins...</Text>
+						<LoadingAnimation size={80} />
+						<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>Loading trending coins...</Text>
 					</View>
 				)}
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Animated } from 'react-native';
 import { Modal, Portal, Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
+import { LoadingAnimation, SuccessAnimation, ErrorAnimation } from '../../Common/Animations';
 import { TradeStatusModalProps } from './types';
 import { createStyles } from './styles';
 import { openSolscanUrl } from '@/utils/url';
@@ -98,13 +99,13 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	const getStatusIcon = () => {
 		switch (statusType) {
 			case 'success':
-				return <Icon source="check-circle" size={28} color="#2E7D32" />;
+				return <SuccessAnimation size={36} loop={false} />;
 			case 'error':
-				return <Icon source="alert-circle" size={28} color={theme.colors.error} />;
-			case 'warning':
+				return <ErrorAnimation size={36} loop={false} />;
+			case 'warning': // Keep existing icon for warning, or replace if a suitable Lottie is available
 				return <Icon source="clock" size={28} color="#F57C00" />;
-			default:
-				return <ActivityIndicator size={28} color={theme.colors.primary} />;
+			default: // Corresponds to loading/processing
+				return <LoadingAnimation size={36} />;
 		}
 	};
 
