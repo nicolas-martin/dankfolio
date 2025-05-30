@@ -28,8 +28,8 @@ service TradeService {
 message Trade {
   string id = 1;
   string user_id = 2;
-  string from_coin_id = 3;
-  string to_coin_id = 4;
+  string from_coin_id = 3; // Note: This will likely be FromCoinMintAddress in backend model
+  string to_coin_id = 4;   // Note: This will likely be ToCoinMintAddress in backend model
   string coin_symbol = 5;
   string type = 6;
   double amount = 7;
@@ -42,12 +42,16 @@ message Trade {
   int32 confirmations = 14;
   bool finalized = 15;
   optional string error = 16;
+  // Fields for new integer PKs, if they need to be exposed to clients.
+  // For now, assuming clients identify coins by mint address (from_coin_id, to_coin_id).
+  // optional uint64 from_coin_pk_id = 17;
+  // optional uint64 to_coin_pk_id = 18;
 }
 
 // GetSwapQuoteRequest is the request for getting a trade quote
 message GetSwapQuoteRequest {
-  string from_coin_id = 1;
-  string to_coin_id = 2;
+  string from_coin_id = 1; // Typically mint address
+  string to_coin_id = 2;   // Typically mint address
   string amount = 3;
   string slippage_bps = 4;
 }
@@ -65,12 +69,12 @@ message GetSwapQuoteResponse {
 
 // PrepareSwapRequest is the request for preparing a swap transaction
 message PrepareSwapRequest {
-  string from_coin_id = 1;
-  string to_coin_id = 2;
+  string from_coin_id = 1; // Typically mint address
+  string to_coin_id = 2;   // Typically mint address
   string amount = 3;
   string slippage_bps = 4;
-  string user_public_key = 5;
-  string from_address = 6;
+  string user_public_key = 5; // This is the wallet address of the user initiating the swap
+  // from_address field was removed as user_public_key serves this purpose.
 }
 
 // PrepareSwapResponse is the response with the unsigned transaction
@@ -80,11 +84,11 @@ message PrepareSwapResponse {
 
 // SubmitSwapRequest is the request for submitting a trade
 message SubmitSwapRequest {
-  string from_coin_id = 1;
-  string to_coin_id = 2;
+  string from_coin_id = 1; // Typically mint address
+  string to_coin_id = 2;   // Typically mint address
   double amount = 3;
   string signed_transaction = 4;
-  string unsigned_transaction = 5; // used to retreive the record in the backend
+  string unsigned_transaction = 5; // used to retrieve the record in the backend
 }
 
 // SubmitSwapResponse is the response after submitting a trade
@@ -103,10 +107,19 @@ message GetTradeRequest {
 
 // ListTradesRequest is the request for listing trades
 message ListTradesRequest {
-  // Empty for now, could add pagination/filtering later
+  int32 limit = 1;
+  int32 offset = 2;
+  string sort_by = 3;           // e.g., "created_at", "amount"
+  bool sort_desc = 4;
+  optional string user_id = 5;  // Filter by user ID (wallet public key)
+  optional string status = 6;   // Filter by trade status (e.g., "completed", "pending")
+  optional string type = 7;     // Filter by trade type (e.g., "swap", "transfer")
+  optional string from_coin_mint_address = 8; // Filter by source coin mint address
+  optional string to_coin_mint_address = 9;   // Filter by destination coin mint address
 }
 
 // ListTradesResponse is the response containing a list of trades
 message ListTradesResponse {
   repeated Trade trades = 1;
+  int32 total_count = 2; // Total number of trades matching the filter criteria (before pagination)
 }

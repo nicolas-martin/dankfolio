@@ -72,15 +72,26 @@ type MockCoinServiceAPI_GetCoinByID_Call struct {
 }
 
 // GetCoinByID is a helper method to define mock.On call
-//   - ctx
-//   - id
+//   - ctx context.Context
+//   - id string
 func (_e *MockCoinServiceAPI_Expecter) GetCoinByID(ctx interface{}, id interface{}) *MockCoinServiceAPI_GetCoinByID_Call {
 	return &MockCoinServiceAPI_GetCoinByID_Call{Call: _e.mock.On("GetCoinByID", ctx, id)}
 }
 
 func (_c *MockCoinServiceAPI_GetCoinByID_Call) Run(run func(ctx context.Context, id string)) *MockCoinServiceAPI_GetCoinByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }

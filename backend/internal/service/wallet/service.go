@@ -18,21 +18,24 @@ import (
 	"github.com/google/uuid"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin" // Added for CoinServiceAPI
 	"github.com/tyler-smith/go-bip39"
 	solanoclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Aliased import
 )
 
 // Service handles wallet-related operations
 type Service struct {
-	rpcClient solanoclient.SolanaRPCClientAPI // Use aliased package for the interface
-	store     db.Store
+	rpcClient   solanoclient.SolanaRPCClientAPI // Use aliased package for the interface
+	store       db.Store
+	coinService coin.CoinServiceAPI // Added CoinService
 }
 
 // New creates a new wallet service
-func New(rpcClient solanoclient.SolanaRPCClientAPI, store db.Store) *Service { // Accept aliased interface
+func New(rpcClient solanoclient.SolanaRPCClientAPI, store db.Store, coinService coin.CoinServiceAPI) *Service { // Accept aliased interface and CoinService
 	return &Service{
-		rpcClient: rpcClient,
-		store:     store,
+		rpcClient:   rpcClient,
+		store:       store,
+		coinService: coinService, // Store injected CoinService
 	}
 }
 
@@ -214,9 +217,9 @@ func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
 }
 
 // PrepareTransfer prepares an unsigned transfer transaction
-func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, coinMint string, amount float64) (string, error) {
-	log.Printf("🔄 Preparing transfer: From=%s To=%s Amount=%.9f CoinMint=%s\n",
-		fromAddress, toAddress, amount, coinMint)
+func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, coinMintAddress string, amount float64) (string, error) {
+	log.Printf("🔄 Preparing transfer: From=%s To=%s Amount=%.9f CoinMintAddress=%s\n",
+		fromAddress, toAddress, amount, coinMintAddress)
 
 	from, err := s.parseAddress(fromAddress, "from")
 	if err != nil {
@@ -228,7 +231,34 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 		return "", err
 	}
 
-	tx, err := s.createTokenTransfer(ctx, from, to, coinMint, amount)
+	// Determine coin PKIDs and final mint addresses for the trade record
+	var fromCoinPKID, toCoinPKID uint64
+	var finalFromCoinMint, finalToCoinMint string
+	var coinSymbol string // To store the symbol for the trade record
+
+	if coinMintAddress == "" || coinMintAddress == model.SolMint { // Native SOL transfer
+		finalFromCoinMint = model.SolMint
+		finalToCoinMint = model.SolMint
+		solCoinModel, serviceErr := s.coinService.GetCoinByMintAddress(ctx, model.SolMint)
+		if serviceErr != nil {
+			return "", fmt.Errorf("failed to get SOL coin details for trade record: %w", serviceErr)
+		}
+		fromCoinPKID = solCoinModel.ID
+		toCoinPKID = solCoinModel.ID
+		coinSymbol = solCoinModel.Symbol
+	} else { // SPL Token transfer
+		finalFromCoinMint = coinMintAddress
+		finalToCoinMint = coinMintAddress
+		coinModel, serviceErr := s.coinService.GetCoinByMintAddress(ctx, coinMintAddress)
+		if serviceErr != nil {
+			return "", fmt.Errorf("coin not found for mint %s for trade record: %w", coinMintAddress, serviceErr)
+		}
+		fromCoinPKID = coinModel.ID
+		toCoinPKID = coinModel.ID
+		coinSymbol = coinModel.Symbol
+	}
+
+	tx, err := s.createTokenTransfer(ctx, from, to, coinMintAddress, amount) // createTokenTransfer still uses original coinMintAddress for SPL mint logic
 	if err != nil {
 		log.Printf("❌ Failed to create transfer transaction: %v\n", err)
 		return "", fmt.Errorf("failed to create transfer transaction: %w", err)
@@ -246,8 +276,11 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	// Create trade record
 	trade := &model.Trade{
 		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		FromCoinID:          coinMint,
-		ToCoinID:            coinMint, // For transfers, both from and to are the same coin
+		FromCoinMintAddress: finalFromCoinMint,
+		FromCoinPKID:        fromCoinPKID,
+		ToCoinMintAddress:   finalToCoinMint,
+		ToCoinPKID:          toCoinPKID,
+		CoinSymbol:          coinSymbol, // Populate CoinSymbol
 		Type:                "transfer",
 		Amount:              amount,
 		Status:              "pending",

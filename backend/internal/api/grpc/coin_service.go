@@ -122,19 +122,36 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		return connect.NewResponse(&pb.SearchResponse{Coins: []*pb.Coin{convertModelCoinToPbCoin(coin)}}), nil
 	}
 
-	coins, err := s.coinService.SearchCoins(ctx, req.Msg.Query, req.Msg.Tags, req.Msg.MinVolume_24H, req.Msg.Limit, req.Msg.Offset, req.Msg.SortBy, req.Msg.SortDesc)
+	// Prepare ListOptions from the request
+	opts := db.ListOptions{}
+	if limit := req.Msg.GetLimit(); limit > 0 {
+		val := int(limit)
+		opts.Limit = &val
+	}
+	if offset := req.Msg.GetOffset(); offset >= 0 { // Allow offset 0
+		val := int(offset)
+		opts.Offset = &val
+	}
+	if sortBy := req.Msg.GetSortBy(); sortBy != "" {
+		opts.SortBy = &sortBy
+	}
+	isDesc := req.Msg.GetSortDesc() // GetSortDesc returns bool directly
+	opts.SortDesc = &isDesc
+
+	// Call the updated service method
+	coins, total, err := s.coinService.SearchCoins(ctx, req.Msg.GetQuery(), req.Msg.GetTags(), req.Msg.GetMinVolume_24H(), opts)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to search coins: %w", err))
 	}
 
 	pbCoins := make([]*pb.Coin, len(coins))
-	for i, coin := range coins {
-		pbCoins[i] = convertModelCoinToPbCoin(&coin)
+	for i, c := range coins { // Iterate over model.Coin directly
+		pbCoins[i] = convertModelCoinToPbCoin(&c) // Pass address of c
 	}
 
 	res := connect.NewResponse(&pb.SearchResponse{
 		Coins:      pbCoins,
-		TotalCount: int32(len(coins)), // TODO: Get actual total count from service
+		TotalCount: total, // Use the total count returned by the service
 	})
 	return res, nil
 }
