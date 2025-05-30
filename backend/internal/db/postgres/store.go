@@ -259,25 +259,26 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 	coins := make([]model.Coin, len(schemaCoins))
 	for i, sc := range schemaCoins {
 		coins[i] = model.Coin{
-			ID:          sc.ID, // Ensure ID is mapped
-			MintAddress: sc.MintAddress,
-			Name:        sc.Name,
-			Symbol:      sc.Symbol,
-			Decimals:    sc.Decimals,
-			Description: sc.Description,
-			IconUrl:     sc.IconUrl,
-			Tags:        sc.Tags,
-			Price:       sc.Price,
-			Change24h:   sc.Change24h,
-			MarketCap:   sc.MarketCap,
-			Volume24h:   sc.Volume24h,
-			Website:     sc.Website,
-			Twitter:     sc.Twitter,
-			Telegram:    sc.Telegram,
-			Discord:     sc.Discord,
-			IsTrending:  sc.IsTrending,
-			CreatedAt:   sc.CreatedAt.Format(time.RFC3339),
-			LastUpdated: sc.LastUpdated.Format(time.RFC3339),
+			ID:              sc.ID, // Ensure ID is mapped
+			MintAddress:     sc.MintAddress,
+			Name:            sc.Name,
+			Symbol:          sc.Symbol,
+			Decimals:        sc.Decimals,
+			Description:     sc.Description,
+			IconUrl:         sc.IconUrl,
+			ResolvedIconUrl: sc.ResolvedIconUrl,
+			Tags:            sc.Tags,
+			Price:           sc.Price,
+			Change24h:       sc.Change24h,
+			MarketCap:       sc.MarketCap,
+			Volume24h:       sc.Volume24h,
+			Website:         sc.Website,
+			Twitter:         sc.Twitter,
+			Telegram:        sc.Telegram,
+			Discord:         sc.Discord,
+			IsTrending:      sc.IsTrending,
+			CreatedAt:       sc.CreatedAt.Format(time.RFC3339),
+			LastUpdated:     sc.LastUpdated.Format(time.RFC3339),
 		}
 	}
 	return coins
