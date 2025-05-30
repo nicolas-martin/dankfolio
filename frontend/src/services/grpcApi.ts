@@ -361,25 +361,23 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	prepareSwap: async ({ fromCoinId, toCoinId, amount, slippageBps, userPublicKey, fromAddress }: {
+	prepareSwap: async ({ fromCoinId, toCoinId, amount, slippageBps, userPublicKey }: {
 		fromCoinId: string;
 		toCoinId: string;
 		amount: string;
 		slippageBps: string;
 		userPublicKey: string;
-		fromAddress: string;
 	}): Promise<{ unsignedTransaction: string }> => {
 		const serviceName = 'TradeService';
 		const methodName = 'prepareSwap';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { fromCoinId, toCoinId, amount, slippageBps, userPublicKey, fromAddress });
+			grpcUtils.logRequest(serviceName, methodName, { fromCoinId, toCoinId, amount, slippageBps, userPublicKey });
 			const response = await tradeClient.prepareSwap({
 				fromCoinId,
 				toCoinId,
 				amount,
 				slippageBps,
-				userPublicKey,
-				fromAddress
+				userPublicKey
 			}, { headers: grpcUtils.getRequestHeaders() });
 			grpcUtils.logResponse(serviceName, methodName, response);
 			return { unsignedTransaction: response.unsignedTransaction };

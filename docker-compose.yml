@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     restart: always
     environment:
       POSTGRES_DB: dankfolio_dev
@@ -12,4 +12,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
 volumes:
+  # Explicit volume definition - ensures proper cleanup
   postgres_data:
+    driver: local

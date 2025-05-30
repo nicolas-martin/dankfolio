@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,11 +18,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 )
 
-type TrendingCoins struct {
-	ScrapeTimestamp string `json:"scrapeTimestamp"`
-	Coins           []Coin `json:"coins"`
-}
-
 type Coin struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
@@ -34,6 +28,22 @@ type Coin struct {
 	Tags        []string `json:"tags"`
 	Price       float64  `json:"price"`
 	CreatedAt   string   `json:"created_at"`
+}
+
+// getCommonTokens returns a hardcoded list of common tokens for testing
+func getCommonTokens() []Coin {
+	return []Coin{
+		{
+			ID:     "So11111111111111111111111111111111111111112",
+			Name:   "Solana",
+			Symbol: "SOL",
+		},
+		{
+			ID:     "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+			Name:   "USD Coin",
+			Symbol: "USDC",
+		},
+	}
 }
 
 // printOnChainMetadata formats and prints on-chain metadata in a table.
@@ -104,16 +114,8 @@ func fetchTokenMetadata(c *client.Client, offchainClient offchain.ClientAPI, min
 }
 
 func main() {
-	// Read trending tokens file
-	data, err := os.ReadFile("../../data/trending_solana_tokens_enriched.json")
-	if err != nil {
-		log.Fatalf("Failed to read trending tokens file: %v", err)
-	}
-
-	var trending TrendingCoins
-	if err := json.Unmarshal(data, &trending); err != nil {
-		log.Fatalf("Failed to parse trending tokens JSON: %v", err)
-	}
+	// Use hardcoded common tokens instead of reading from file
+	coins := getCommonTokens()
 
 	// Create RPC client
 	c := client.NewClient(rpc.MainnetRPCEndpoint)
@@ -126,9 +128,9 @@ func main() {
 	// Create offchain client
 	offchainClient := offchain.NewClient(httpClient)
 
-	log.Printf("📊 Processing %d trending coins from %s", len(trending.Coins), trending.ScrapeTimestamp)
+	log.Printf("📊 Processing %d common tokens", len(coins))
 
-	for _, coin := range trending.Coins {
+	for _, coin := range coins {
 		log.Printf("\n🪙 Processing coins: %s (%s)", coin.Name, coin.Symbol)
 		mint := common.PublicKeyFromString(coin.ID)
 		if err := fetchTokenMetadata(c, offchainClient, mint); err != nil {

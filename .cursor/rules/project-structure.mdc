@@ -23,7 +23,7 @@ ComponentName/
 
 ## Make Commands
 - `make run`: Terminates existing backend and runs a new one
-- `make run-mobile`: Terminates existing instance, starts new one, runs 2 linters
+- `make mobile`: Terminates existing instance, starts new one, runs 2 linters
 
 ## Working Directory Rules
 - Backend operations must be run from `./dankfolio/backend`

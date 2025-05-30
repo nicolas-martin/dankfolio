@@ -12,27 +12,23 @@ import { createStyles } from './NewlyListedCoins.styles'; // We'll create this s
 // Define a navigation prop type, assuming a similar structure to HomeScreenNavigationProp
 // This might need adjustment based on where CoinCard navigates.
 // For now, let's assume it navigates to 'CoinDetail'.
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation'; // Assuming you have RootStackParamList defined
 
 // Allow navigation to Search as well for the "View All" button
-type NewlyListedCoinsNavigationProp = StackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
+type NewlyListedCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
 
 const NewlyListedCoins: React.FC = () => {
 	const theme = useTheme();
-	const styles = createStyles(theme); // Styles will be defined in a separate file
+	const styles = createStyles(theme);
 	const navigation = useNavigation<NewlyListedCoinsNavigationProp>();
 
-	const { newlyListedCoins, isLoadingNewlyListed, fetchNewlyListedCoins } = useCoinStore(state => ({
-		newlyListedCoins: state.newlyListedCoins,
-		isLoadingNewlyListed: state.isLoadingNewlyListed,
-		fetchNewlyListedCoins: state.fetchNewlyListedCoins,
-	}));
+	// Use separate selectors to avoid creating new objects on every render
+	const newlyListedCoins = useCoinStore(state => state.newlyListedCoins);
+	const isLoadingNewlyListed = useCoinStore(state => state.isLoadingNewlyListed);
 
-	useEffect(() => {
-		fetchNewlyListedCoins(10); // Fetch top 10 newly listed coins
-		logger.breadcrumb({ category: 'ui', message: 'NewlyListedCoins component mounted, fetching data' });
-	}, [fetchNewlyListedCoins]);
+	// Note: We don't fetch newly listed coins here because the Home screen already does it
+	// This prevents duplicate API calls and infinite re-render loops
 
 	const handleCoinPress = (coin: Coin) => {
 		logger.breadcrumb({

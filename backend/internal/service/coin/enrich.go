@@ -11,9 +11,10 @@ import (
 )
 
 var defaultCIDv0Gateways = []string{
-	"https://ipfs.io/ipfs/",
-	"https://cloudflare-ipfs.com/ipfs/",
-	"https://gateway.pinata.cloud/ipfs/",
+	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
+	"https://cloudflare-ipfs.com/ipfs/",  // Cloudflare is fast and reliable
+	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
+	"https://ipfs.io/ipfs/",              // Keep as fallback, but not first choice
 }
 
 // EnrichCoinData fetches detailed information for a given mint address using Jupiter,
@@ -173,6 +174,9 @@ func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 			pathPart := ""
 			if restOfPathIdx := strings.Index(ipfsResourceIdentifier, "/"); restOfPathIdx != -1 {
 				pathPart = ipfsResourceIdentifier[restOfPathIdx:]
+			} else {
+				// No path after CID, add trailing slash for CIDv1
+				pathPart = "/"
 			}
 			return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
 		}
@@ -194,6 +198,9 @@ func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 			pathPart := ""
 			if restOfPathIdx := strings.Index(trimmedCidAndPath, "/"); restOfPathIdx != -1 {
 				pathPart = trimmedCidAndPath[restOfPathIdx:]
+			} else {
+				// No path after CID, add trailing slash for CIDv1
+				pathPart = "/"
 			}
 			return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
 		}
@@ -209,8 +216,6 @@ func enrichFromMetadata(coin *model.Coin, metadata map[string]any) {
 	if metadata == nil {
 		// Ensure description has a default if metadata is nil or fetch failed
 		populateDescriptionFromMetadata(coin, nil)
-		// Apply icon fallbacks even if metadata is nil
-		applyIconFallbacks(coin)
 		return
 	}
 
@@ -218,7 +223,6 @@ func enrichFromMetadata(coin *model.Coin, metadata map[string]any) {
 	populateWebsiteFromMetadata(coin, metadata)
 	populateIconFromMetadata(coin, metadata)        // Populates coin.IconUrl from non-IPFS sources
 	populateSocialLinksFromMetadata(coin, metadata) // Handles all social links
-	applyIconFallbacks(coin)                        // Final icon fallbacks for coin.IconUrl
 }
 
 func populateDescriptionFromMetadata(coin *model.Coin, metadata map[string]any) {
@@ -336,38 +340,6 @@ func populateSocialLinksFromMetadata(coin *model.Coin, metadata map[string]any) 
 		if _, ok := val.([]any); ok {
 			coin.Website = ensureHttpHttps(coin.Website)
 		}
-	}
-}
-
-func applyIconFallbacks(coin *model.Coin) {
-	if coin.IconUrl == "" {
-		coin.IconUrl = "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/" + coin.MintAddress + "/logo.png"
-	}
-	if coin.IconUrl == "" || coin.IconUrl == "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/"+coin.MintAddress+"/logo.png" && coin.MintAddress == "So11111111111111111111111111111111111111112" { // Avoid generic SOL icon if specific one failed
-		// Try Trust Wallet as a more general fallback if the token-list one is generic or failed.
-		// This specific check for SOL is to ensure if the token-list SOL icon is actually what we want, we don't overwrite with TrustWallet's if it's the same.
-		// However, this logic is a bit convoluted. A better approach would be to check if the fetched icon is a "default" icon.
-		// For now, if it's SOL and the icon is the token-list one, we might still try TrustWallet if we want a different SOL icon.
-		// This line will effectively be hit if IconUrl is still empty OR if it's SOL and the icon is the default token-list one.
-		// To simplify: if IconUrl is empty after the first fallback, try the next.
-	}
-
-	// Second fallback (TrustWallet) - This will run if the first fallback didn't set an icon OR if we want to override a generic SOL icon.
-	// To ensure this only runs if IconUrl is truly empty after the first attempt:
-	if coin.IconUrl == "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/"+coin.MintAddress+"/logo.png" && coin.MintAddress != "So11111111111111111111111111111111111111112" {
-		// If it's not SOL and the icon is the generic token-list path (meaning it likely resolved to a non-existent image there)
-		// then clear it to try the next fallback. This avoids using a broken link.
-		// For SOL itself, if it used this path, it's the correct default from token-list.
-		// This is still a bit complex. The ideal is to verify image existence.
-	}
-
-	if coin.IconUrl == "" { // If still empty after specific token-list attempt
-		coin.IconUrl = fmt.Sprintf("https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/%s/logo.png", coin.MintAddress)
-	}
-
-	// Final, most generic fallback (e.g. Solana's own logo for SOL if all else fails for it)
-	if coin.IconUrl == "" {
-		coin.IconUrl = "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" // Default to SOL icon
 	}
 }
 

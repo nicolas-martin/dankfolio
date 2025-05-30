@@ -3,7 +3,7 @@ import { MD3Theme } from 'react-native-paper';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
-		paddingVertical: theme.spacing?.md || 16, // Default if not in theme
+		paddingVertical: 16,
 		// backgroundColor: theme.colors.surface, // Optional: if you want a card-like bg
 		// borderRadius: theme.roundness * 2, // Optional
 		// marginHorizontal: theme.spacing?.sm || 8, // Optional
@@ -13,46 +13,47 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginLeft: theme.spacing?.md || 16,
-        marginRight: theme.spacing?.md || 16, // Add right margin for the button
-        marginBottom: theme.spacing?.sm || 8,
+        marginLeft: 16,
+        marginRight: 16,
+        marginBottom: 8,
     },
-	title: { // Remove marginLeft and marginBottom from here as it's now in titleContainer
+	title: {
 		fontSize: 18,
 		fontWeight: 'bold',
 		color: theme.colors.onSurface,
 	},
 	viewAllButton: {
         fontSize: 14,
-        color: theme.colors.primary, // Use theme's primary color
+        color: theme.colors.primary,
         fontWeight: '500',
     },
 	listContentContainer: {
-		paddingLeft: theme.spacing?.md || 16,
-		paddingRight: theme.spacing?.xs || 4, // Space for the last card not to be cut off
+		paddingLeft: 16,
+		paddingRight: 4,
 	},
 	cardWrapper: {
-		marginRight: theme.spacing?.sm || 8, // Spacing between cards
-		width: 150, // Example fixed width for horizontal cards, adjust as needed
+		marginRight: 8,
+		width: 150,
 		// If CoinCard doesn't have its own width, you might need to set it here
 	},
 	loadingContainer: {
 		flexDirection: 'column', // Changed from 'row'
 		alignItems: 'center',
 		justifyContent: 'center',
-		padding: theme.spacing?.md || 16,
-		minHeight: 100, // Give some space for loading indicator
+		padding: 16,
+		minHeight: 100,
 	},
 	loadingText: {
 		marginTop: theme.spacing?.sm || 8, // Changed from marginLeft
+
 		color: theme.colors.onSurfaceVariant,
 	},
 	emptyText: {
 		textAlign: 'center',
 		color: theme.colors.onSurfaceVariant,
-		paddingHorizontal: theme.spacing?.md || 16, // Ensure it's centered if titleContainer takes full width
-        paddingVertical: theme.spacing?.md || 16,
-		minHeight: 100, // Give some space
+		paddingHorizontal: 16,
+        paddingVertical: 16,
+		minHeight: 100,
 	},
 });
 

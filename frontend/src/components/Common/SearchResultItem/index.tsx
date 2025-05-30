@@ -31,7 +31,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 		>
 			<View style={styles.tokenInfo}>
 				<CachedImage 
-					uri={coin.iconUrl} 
+					uri={coin.resolvedIconUrl || coin.iconUrl} 
 					size={36} 
 					borderRadius={18}
 					showLoadingIndicator={true}
