@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -206,55 +205,23 @@ func loadAddressToSymbol() map[string]string {
 	addressToSymbolOnce.Do(func() {
 		addressToSymbolCache = map[string]string{}
 		wd, _ := os.Getwd()
-		trendingPath := filepath.Join(wd, "data", "trending_solana_tokens_enriched.json")
 		priceHistoryPath := filepath.Join(wd, "data", "price_history")
-		log.Printf("[DEBUG] Opening %s...", trendingPath)
-		file, err := os.Open(trendingPath)
-		var symbolToAddress map[string]string
-		if err == nil {
-			defer file.Close()
-			log.Printf("[DEBUG] Successfully opened trending_solana_tokens_enriched.json")
-			var enriched struct {
-				Coins []struct {
-					ID     string `json:"id"`
-					Symbol string `json:"symbol"`
-				} `json:"tokens"`
-			}
-			if err := json.NewDecoder(file).Decode(&enriched); err == nil {
-				log.Printf("[DEBUG] Successfully parsed trending_solana_tokens_enriched.json, found %d tokens", len(enriched.Coins))
-				symbolToAddress = make(map[string]string)
-				for _, t := range enriched.Coins {
-					if t.ID != "" && t.Symbol != "" {
-						symbolToAddress[t.ID] = t.Symbol
-					}
-				}
-			} else {
-				log.Printf("[DEBUG] Failed to parse trending_solana_tokens_enriched.json: %v", err)
-			}
-		} else {
-			log.Printf("[DEBUG] Failed to open trending_solana_tokens_enriched.json: %v", err)
-		}
+
+		// Add hardcoded mappings for common tokens
+		addressToSymbolCache["So11111111111111111111111111111111111111112"] = "sol"
+		addressToSymbolCache["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] = "usdc"
+
 		log.Printf("[DEBUG] Reading %s directory...", priceHistoryPath)
 		entries, err := os.ReadDir(priceHistoryPath)
 		if err == nil {
 			log.Printf("[DEBUG] Found %d symbol directories in price_history", len(entries))
-			for _, entry := range entries {
-				if entry.IsDir() {
-					dirSymbol := strings.ToLower(entry.Name())
-					for address, symbol := range symbolToAddress {
-						if strings.ToLower(symbol) == dirSymbol {
-							addressToSymbolCache[address] = dirSymbol
-							log.Printf("[DEBUG] Added mapping: %s -> %s", address, dirSymbol)
-						}
-					}
-				}
-			}
+			// For now, we only have the hardcoded mappings above
+			// In the future, we could add more mappings based on directory names
+			// or maintain a separate mapping file if needed
 		} else {
 			log.Printf("[DEBUG] Failed to read price_history directory: %v", err)
 		}
 		log.Printf("addressToSymbolCache: %+v", addressToSymbolCache)
-		addressToSymbolCache["So11111111111111111111111111111111111111112"] = "sol"
-		addressToSymbolCache["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] = "usdc"
 	})
 	return addressToSymbolCache
 }

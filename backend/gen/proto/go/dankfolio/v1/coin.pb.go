@@ -31,17 +31,18 @@ type Coin struct {
 	Decimals        int32                  `protobuf:"varint,4,opt,name=decimals,proto3" json:"decimals,omitempty"`
 	Description     string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	IconUrl         string                 `protobuf:"bytes,6,opt,name=icon_url,json=iconUrl,proto3" json:"icon_url,omitempty"`
-	Tags            []string               `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
-	Price           float64                `protobuf:"fixed64,8,opt,name=price,proto3" json:"price,omitempty"`
-	DailyVolume     float64                `protobuf:"fixed64,9,opt,name=daily_volume,json=dailyVolume,proto3" json:"daily_volume,omitempty"`
-	Website         *string                `protobuf:"bytes,10,opt,name=website,proto3,oneof" json:"website,omitempty"`
-	Twitter         *string                `protobuf:"bytes,11,opt,name=twitter,proto3,oneof" json:"twitter,omitempty"`
-	Telegram        *string                `protobuf:"bytes,12,opt,name=telegram,proto3,oneof" json:"telegram,omitempty"`
-	CoingeckoId     *string                `protobuf:"bytes,13,opt,name=coingecko_id,json=coingeckoId,proto3,oneof" json:"coingecko_id,omitempty"`
-	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3,oneof" json:"last_updated,omitempty"`
-	IsTrending      bool                   `protobuf:"varint,16,opt,name=is_trending,json=isTrending,proto3" json:"is_trending,omitempty"`
-	JupiterListedAt *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=jupiter_listed_at,json=jupiterListedAt,proto3,oneof" json:"jupiter_listed_at,omitempty"` // New field
+	ResolvedIconUrl *string                `protobuf:"bytes,7,opt,name=resolved_icon_url,json=resolvedIconUrl,proto3,oneof" json:"resolved_icon_url,omitempty"` // Optimized IPFS URL
+	Tags            []string               `protobuf:"bytes,8,rep,name=tags,proto3" json:"tags,omitempty"`
+	Price           float64                `protobuf:"fixed64,9,opt,name=price,proto3" json:"price,omitempty"`
+	DailyVolume     float64                `protobuf:"fixed64,10,opt,name=daily_volume,json=dailyVolume,proto3" json:"daily_volume,omitempty"`
+	Website         *string                `protobuf:"bytes,11,opt,name=website,proto3,oneof" json:"website,omitempty"`
+	Twitter         *string                `protobuf:"bytes,12,opt,name=twitter,proto3,oneof" json:"twitter,omitempty"`
+	Telegram        *string                `protobuf:"bytes,13,opt,name=telegram,proto3,oneof" json:"telegram,omitempty"`
+	CoingeckoId     *string                `protobuf:"bytes,14,opt,name=coingecko_id,json=coingeckoId,proto3,oneof" json:"coingecko_id,omitempty"`
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=last_updated,json=lastUpdated,proto3,oneof" json:"last_updated,omitempty"`
+	IsTrending      bool                   `protobuf:"varint,17,opt,name=is_trending,json=isTrending,proto3" json:"is_trending,omitempty"`
+	JupiterListedAt *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=jupiter_listed_at,json=jupiterListedAt,proto3,oneof" json:"jupiter_listed_at,omitempty"` // New field
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -114,6 +115,13 @@ func (x *Coin) GetDescription() string {
 func (x *Coin) GetIconUrl() string {
 	if x != nil {
 		return x.IconUrl
+	}
+	return ""
+}
+
+func (x *Coin) GetResolvedIconUrl() string {
+	if x != nil && x.ResolvedIconUrl != nil {
+		return *x.ResolvedIconUrl
 	}
 	return ""
 }
@@ -502,7 +510,7 @@ type SearchRequest struct {
 	MinVolume_24H float64                `protobuf:"fixed64,3,opt,name=min_volume_24h,json=minVolume24h,proto3" json:"min_volume_24h,omitempty"` // Minimum 24h volume
 	Limit         int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`                                      // Maximum number of results (default: 20)
 	Offset        int32                  `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`                                    // Offset for pagination
-	SortBy        string                 `protobuf:"bytes,6,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"`                       // Sort field (price_usd, volume_24h, market_cap_usd)
+	SortBy        string                 `protobuf:"bytes,6,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"`                       // Sort field (price_usd, volume_24h, market_cap_usd, jupiter_listed_at)
 	SortDesc      bool                   `protobuf:"varint,7,opt,name=sort_desc,json=sortDesc,proto3" json:"sort_desc,omitempty"`                // Sort direction (default: true)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -643,28 +651,30 @@ var File_dankfolio_v1_coin_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\n" +
-	"\x17dankfolio/v1/coin.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xcc\x05\n" +
+	"\x17dankfolio/v1/coin.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x93\x06\n" +
 	"\x04Coin\x12!\n" +
 	"\fmint_address\x18\x01 \x01(\tR\vmintAddress\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
 	"\x06symbol\x18\x03 \x01(\tR\x06symbol\x12\x1a\n" +
 	"\bdecimals\x18\x04 \x01(\x05R\bdecimals\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x19\n" +
-	"\bicon_url\x18\x06 \x01(\tR\aiconUrl\x12\x12\n" +
-	"\x04tags\x18\a \x03(\tR\x04tags\x12\x14\n" +
-	"\x05price\x18\b \x01(\x01R\x05price\x12!\n" +
-	"\fdaily_volume\x18\t \x01(\x01R\vdailyVolume\x12\x1d\n" +
-	"\awebsite\x18\n" +
-	" \x01(\tH\x00R\awebsite\x88\x01\x01\x12\x1d\n" +
-	"\atwitter\x18\v \x01(\tH\x01R\atwitter\x88\x01\x01\x12\x1f\n" +
-	"\btelegram\x18\f \x01(\tH\x02R\btelegram\x88\x01\x01\x12&\n" +
-	"\fcoingecko_id\x18\r \x01(\tH\x03R\vcoingeckoId\x88\x01\x01\x129\n" +
+	"\bicon_url\x18\x06 \x01(\tR\aiconUrl\x12/\n" +
+	"\x11resolved_icon_url\x18\a \x01(\tH\x00R\x0fresolvedIconUrl\x88\x01\x01\x12\x12\n" +
+	"\x04tags\x18\b \x03(\tR\x04tags\x12\x14\n" +
+	"\x05price\x18\t \x01(\x01R\x05price\x12!\n" +
+	"\fdaily_volume\x18\n" +
+	" \x01(\x01R\vdailyVolume\x12\x1d\n" +
+	"\awebsite\x18\v \x01(\tH\x01R\awebsite\x88\x01\x01\x12\x1d\n" +
+	"\atwitter\x18\f \x01(\tH\x02R\atwitter\x88\x01\x01\x12\x1f\n" +
+	"\btelegram\x18\r \x01(\tH\x03R\btelegram\x88\x01\x01\x12&\n" +
+	"\fcoingecko_id\x18\x0e \x01(\tH\x04R\vcoingeckoId\x88\x01\x01\x129\n" +
 	"\n" +
-	"created_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12B\n" +
-	"\flast_updated\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampH\x04R\vlastUpdated\x88\x01\x01\x12\x1f\n" +
-	"\vis_trending\x18\x10 \x01(\bR\n" +
+	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12B\n" +
+	"\flast_updated\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampH\x05R\vlastUpdated\x88\x01\x01\x12\x1f\n" +
+	"\vis_trending\x18\x11 \x01(\bR\n" +
 	"isTrending\x12K\n" +
-	"\x11jupiter_listed_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampH\x05R\x0fjupiterListedAt\x88\x01\x01B\n" +
+	"\x11jupiter_listed_at\x18\x12 \x01(\v2\x1a.google.protobuf.TimestampH\x06R\x0fjupiterListedAt\x88\x01\x01B\x14\n" +
+	"\x12_resolved_icon_urlB\n" +
 	"\n" +
 	"\b_websiteB\n" +
 	"\n" +

@@ -15,6 +15,7 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 		decimals: grpcCoin.decimals,
 		description: grpcCoin.description,
 		iconUrl: grpcCoin.iconUrl,
+		resolvedIconUrl: grpcCoin.resolvedIconUrl,
 		tags: grpcCoin.tags, // Assuming tags is string[] in both
 		price: grpcCoin.price,
 		dailyVolume: grpcCoin.dailyVolume,

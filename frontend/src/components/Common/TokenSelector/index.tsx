@@ -70,7 +70,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				onPress={() => handleTokenSelect(coin)}
 			>
 				{/* Use the inline RenderIcon component */}
-				<RenderIcon iconUrl={coin.iconUrl} />
+				<RenderIcon iconUrl={coin.resolvedIconUrl || coin.iconUrl} />
 				<View style={styles.tokenDetails}>
 					<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
 					<Text style={styles.tokenName}>{coin.name}</Text>

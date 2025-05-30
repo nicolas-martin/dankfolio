@@ -180,18 +180,19 @@ func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 	}
 
 	return &pb.Coin{
-		MintAddress: coin.MintAddress,
-		Symbol:      coin.Symbol,
-		Name:        coin.Name,
-		Decimals:    int32(coin.Decimals),
-		Description: coin.Description,
-		IconUrl:     coin.IconUrl,
-		Tags:        coin.Tags,
-		Price:       coin.Price,
-		DailyVolume: coin.Volume24h,
-		Website:     &coin.Website,  // Assuming model.Coin.Website is string, and pb.Coin.website is optional string
-		Twitter:     &coin.Twitter,  // Assuming model.Coin.Twitter is string, and pb.Coin.twitter is optional string
-		Telegram:    &coin.Telegram, // Assuming model.Coin.Telegram is string, and pb.Coin.telegram is optional string
+		MintAddress:     coin.MintAddress,
+		Symbol:          coin.Symbol,
+		Name:            coin.Name,
+		Decimals:        int32(coin.Decimals),
+		Description:     coin.Description,
+		IconUrl:         coin.IconUrl,
+		ResolvedIconUrl: &coin.ResolvedIconUrl,
+		Tags:            coin.Tags,
+		Price:           coin.Price,
+		DailyVolume:     coin.Volume24h,
+		Website:         &coin.Website,  // Assuming model.Coin.Website is string, and pb.Coin.website is optional string
+		Twitter:         &coin.Twitter,  // Assuming model.Coin.Twitter is string, and pb.Coin.twitter is optional string
+		Telegram:        &coin.Telegram, // Assuming model.Coin.Telegram is string, and pb.Coin.telegram is optional string
 		// CoingeckoId is not mapped as it's not in model.Coin
 		CreatedAt:       createdAtPb,
 		LastUpdated:     lastUpdatedPb,

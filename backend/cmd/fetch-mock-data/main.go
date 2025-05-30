@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -41,35 +40,12 @@ type TrendingToken struct {
 
 var timeframes = []string{"15m", "1H", "4H", "1D", "1W"}
 
-func loadTrendingTokens(wd string) ([]TrendingToken, error) {
-	// Load trending tokens from enriched JSON file
-	path := filepath.Join("..", "..", "data", "trending_solana_tokens_enriched.json")
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open trending tokens file: %w", err)
+func getCommonTokens() []TrendingToken {
+	// Return a hardcoded list of common tokens for price history generation
+	return []TrendingToken{
+		{Symbol: "sol", Mint: "So11111111111111111111111111111111111111112", Volume: 0},
+		{Symbol: "usdc", Mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", Volume: 0},
 	}
-	defer file.Close()
-
-	var enriched struct {
-		Tokens []struct {
-			Symbol      string  `json:"symbol"`
-			Mint        string  `json:"id"`
-			DailyVolume float64 `json:"daily_volume"`
-		} `json:"tokens"`
-	}
-	if err := json.NewDecoder(file).Decode(&enriched); err != nil {
-		return nil, fmt.Errorf("failed to decode trending tokens: %w", err)
-	}
-
-	tokens := make([]TrendingToken, 0, len(enriched.Tokens))
-	for _, t := range enriched.Tokens {
-		tokens = append(tokens, TrendingToken{
-			Symbol: strings.ToLower(t.Symbol),
-			Mint:   t.Mint,
-			Volume: t.DailyVolume,
-		})
-	}
-	return tokens, nil
 }
 
 func fetchAndStorePriceHistory(apiKey string) error {
@@ -79,11 +55,8 @@ func fetchAndStorePriceHistory(apiKey string) error {
 		return fmt.Errorf("failed to get working directory: %w", err)
 	}
 
-	// Load trending tokens
-	tokens, err := loadTrendingTokens(wd)
-	if err != nil {
-		return fmt.Errorf("failed to load trending tokens: %w", err)
-	}
+	// Use hardcoded common tokens
+	tokens := getCommonTokens()
 
 	// Initialize clients
 	httpClient := &http.Client{
@@ -96,13 +69,6 @@ func fetchAndStorePriceHistory(apiKey string) error {
 	priceService := price.NewService(birdeyeClient, jupiterClient)
 
 	now := time.Now().Unix()
-
-	// Add SOL and USDC to the beginning of the list
-	defaultTokens := []TrendingToken{
-		{Symbol: "sol", Mint: "So11111111111111111111111111111111111111112", Volume: 0},
-		{Symbol: "usdc", Mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", Volume: 0},
-	}
-	tokens = append(defaultTokens, tokens...)
 
 	log.Printf("🔄 Found %d tokens to fetch price history for", len(tokens))
 
