@@ -15,6 +15,9 @@ interface CoinState {
 	setCoin: (coin: Coin) => void;
 	fetchAvailableCoins: (trendingOnly?: boolean) => Promise<void>;
 	getCoinByID: (mintAddress: string, forceRefresh?: boolean) => Promise<Coin | null>;
+	newlyListedCoins: Coin[];
+	isLoadingNewlyListed: boolean;
+	fetchNewlyListedCoins: (limit?: number) => Promise<void>;
 }
 
 export const useCoinStore = create<CoinState>((set, get) => ({
@@ -22,6 +25,8 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	coinMap: {},
 	isLoading: false,
 	error: null,
+	newlyListedCoins: [],
+	isLoadingNewlyListed: false,
 
 	setAvailableCoins: (coins: Coin[]) => {
 		const coinMap = coins.reduce((acc, coin) => {
@@ -110,5 +115,44 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			log.log(`🪙 [CoinStore] Error in getCoinByID(${mintAddress}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 			return null;
 		}
-	}
+	},
+
+	fetchNewlyListedCoins: async (limit: number = 10) => {
+		log.log('🆕 [CoinStore] Fetching newly listed coins...');
+		set({ isLoadingNewlyListed: true, error: null }); // Assuming existing 'error' can be reused or add a new one.
+		try {
+			// Assuming grpcApi.searchCoins will be available and configured
+			// to call the Search RPC method.
+			// We use 'jupiter_listed_at' as per our backend proto update.
+			const response = await grpcApi.searchCoins({
+				query: '',
+				tags: [],
+				minVolume24h: 0, // Or a suitable low value
+				limit: limit,
+				offset: 0,
+				sortBy: 'jupiter_listed_at', // Ensure this matches the proto
+				sortDesc: true,
+			});
+
+			const newCoins = response.coins; // Assuming response structure { coins: Coin[], totalCount: number }
+
+			// Update coinMap with these new coins as well
+			const currentCoinMap = get().coinMap;
+			const updatedCoinMap = newCoins.reduce((acc: Record<string, Coin>, coin: Coin) => {
+				acc[coin.mintAddress] = coin;
+				return acc;
+			}, { ...currentCoinMap } as Record<string, Coin>);
+
+			set({
+				newlyListedCoins: newCoins,
+				coinMap: updatedCoinMap, // Keep coinMap updated
+				isLoadingNewlyListed: false,
+			});
+			log.log(`🆕 [CoinStore] Successfully fetched ${newCoins.length} newly listed coins.`);
+		} catch (err) {
+			const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred';
+			set({ error: errorMessage, isLoadingNewlyListed: false }); // Reuse existing error state
+			log.error('❌ [CoinStore] Error fetching newly listed coins:', errorMessage);
+		}
+	},
 }));

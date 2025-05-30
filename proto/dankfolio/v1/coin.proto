@@ -76,7 +76,7 @@ message SearchRequest {
   double min_volume_24h = 3;      // Minimum 24h volume
   int32 limit = 4;                // Maximum number of results (default: 20)
   int32 offset = 5;               // Offset for pagination
-  string sort_by = 6;             // Sort field (price_usd, volume_24h, market_cap_usd)
+  string sort_by = 6;             // Sort field (price_usd, volume_24h, market_cap_usd, jupiter_listed_at)
   bool sort_desc = 7;            // Sort direction (default: true)
 }
 

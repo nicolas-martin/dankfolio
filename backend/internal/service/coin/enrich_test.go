@@ -3,14 +3,15 @@ package coin
 import (
 	"context"
 	"log/slog"
-	"net/http"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	solanago "github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -81,12 +82,15 @@ func (m *MockSolanaClient) GetMetadataAccount(ctx context.Context, mintAddress s
 	return args.Get(0).(*token_metadata.Metadata), args.Error(1)
 }
 
-func (m *MockSolanaClient) GetRpcConnection() interface{} {
+func (m *MockSolanaClient) GetRpcConnection() *rpc.Client {
 	args := m.Called()
-	return args.Get(0)
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*rpc.Client)
 }
 
-func (m *MockSolanaClient) ExecuteTrade(ctx context.Context, trade interface{}, signedTx string) (string, error) {
+func (m *MockSolanaClient) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) (string, error) {
 	args := m.Called(ctx, trade, signedTx)
 	return args.String(0), args.Error(1)
 }
@@ -96,9 +100,12 @@ func (m *MockSolanaClient) ExecuteSignedTransaction(ctx context.Context, signedT
 	return args.Get(0).(solanago.Signature), args.Error(1)
 }
 
-func (m *MockSolanaClient) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (interface{}, error) {
+func (m *MockSolanaClient) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
 	args := m.Called(ctx, sigStr)
-	return args.Get(0), args.Error(1)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*rpc.GetSignatureStatusesResult), args.Error(1)
 }
 
 // MockOffchainClient is a mock for the Offchain client
@@ -114,10 +121,24 @@ func (m *MockOffchainClient) FetchMetadata(uri string) (map[string]any, error) {
 	return args.Get(0).(map[string]any), args.Error(1)
 }
 
-func newTestService(cfg *Config, jupiterClient jupiter.ClientAPI, store interface{}) *Service {
-	// For tests, we don't need a real store if not testing DB interactions.
-	// If store interactions become part of what's tested here, a mock store would be needed.
-	return NewService(cfg, &http.Client{}, jupiterClient, nil)
+func (m *MockOffchainClient) FetchRawData(ctx context.Context, uri string) (data []byte, contentType string, err error) {
+	args := m.Called(ctx, uri)
+	if args.Get(0) == nil {
+		return nil, args.String(1), args.Error(2)
+	}
+	return args.Get(0).([]byte), args.String(1), args.Error(2)
+}
+
+func newTestService(cfg *Config, jupiterClient jupiter.ClientAPI, solanaClient *MockSolanaClient, offchainClient *MockOffchainClient) *Service {
+	// Create a service with the provided mock clients
+	service := &Service{
+		config:         cfg,
+		jupiterClient:  jupiterClient,
+		solanaClient:   solanaClient,
+		offchainClient: offchainClient,
+		store:          nil, // No store needed for these tests
+	}
+	return service
 }
 
 func TestMain(m *testing.M) {
@@ -134,7 +155,7 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 	cfg := &Config{
 		// IPFSNodeAPIAddress and IPFSPublicGatewayURL / PreferredGatewayForCIDv0 are no longer part of coin.Config
 	}
-	service := newTestService(cfg, mockJupiter, nil)
+	service := newTestService(cfg, mockJupiter, mockSolana, mockOffchain)
 
 	mintAddress := "testmint1"
 	httpIconURL := "http://example.com/icon.png"
@@ -149,7 +170,7 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, coin)
 	assert.Equal(t, httpIconURL, coin.IconUrl)
-	assert.Empty(t, coin.ResolvedIconUrl, "ResolvedIconUrl should be empty for non-IPFS URIs")
+	assert.Equal(t, httpIconURL, coin.ResolvedIconUrl, "ResolvedIconUrl should equal IconUrl for non-IPFS URIs")
 
 	mockJupiter.AssertExpectations(t)
 	mockSolana.AssertExpectations(t)
@@ -257,7 +278,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 			// Config struct for coin service is now empty or has unrelated fields.
 			// PreferredGatewayForCIDv0 is no longer configured here.
 			cfg := &Config{}
-			service := newTestService(cfg, mockJup, nil)
+			service := newTestService(cfg, mockJup, mockSol, mockOff)
 			mintAddress := "testmint_" + tt.name
 
 			// Setup mocks

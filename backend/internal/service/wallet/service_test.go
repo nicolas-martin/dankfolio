@@ -213,13 +213,41 @@ func TestPrepareTransfer(t *testing.T) {
 	fromPubKey, _ := solana.PublicKeyFromBase58(fromAddress)
 	splMintKey, _ := solana.PublicKeyFromBase58(splTokenMint)
 
+	// Mock SOL coin for SOL transfers
+	mockSOLCoin := &model.Coin{
+		ID:          1,
+		MintAddress: model.SolMint,
+		Symbol:      "SOL",
+		Name:        "Solana",
+		Decimals:    9,
+	}
+
+	// Mock SPL token coin for SPL transfers
+	mockSPLCoin := &model.Coin{
+		ID:          2,
+		MintAddress: splTokenMint,
+		Symbol:      "USDC",
+		Name:        "USD Coin",
+		Decimals:    6,
+	}
+
 	t.Run("Success SOL Transfer", func(t *testing.T) {
-		service, mockRPCClient, mockStore, _, mockTradeRepo, _ := setupWalletService(t)
+		service, mockRPCClient, mockStore, _, mockTradeRepo, mockCoinService := setupWalletService(t)
 		mockStore.On("Trades").Return(mockTradeRepo).Once()
+
+		// Mock GetCoinByMintAddress for SOL
+		mockCoinService.On("GetCoinByMintAddress", ctx, model.SolMint).Return(mockSOLCoin, nil).Once()
 
 		mockRPCClient.On("GetLatestBlockhash", ctx, rpc.CommitmentConfirmed).Return(latestBlockhashResult, nil).Once()
 		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
-			return trade.Type == "transfer" && trade.FromCoinMintAddress == "" && trade.Status == "pending" && trade.Amount == amount
+			return trade.Type == "transfer" &&
+				trade.FromCoinMintAddress == model.SolMint &&
+				trade.ToCoinMintAddress == model.SolMint &&
+				trade.FromCoinPKID == mockSOLCoin.ID &&
+				trade.ToCoinPKID == mockSOLCoin.ID &&
+				trade.CoinSymbol == mockSOLCoin.Symbol &&
+				trade.Status == "pending" &&
+				trade.Amount == amount
 		})).Return(nil).Once()
 
 		unsignedTx, err := service.PrepareTransfer(ctx, fromAddress, toAddress, coinMintSOL, amount)
@@ -232,8 +260,11 @@ func TestPrepareTransfer(t *testing.T) {
 	})
 
 	t.Run("Success SPL Token Transfer - ATA for receiver exists", func(t *testing.T) {
-		service, mockRPCClient, mockStore, _, mockTradeRepo, _ := setupWalletService(t)
+		service, mockRPCClient, mockStore, _, mockTradeRepo, mockCoinService := setupWalletService(t)
 		mockStore.On("Trades").Return(mockTradeRepo).Once()
+
+		// Mock GetCoinByMintAddress for SPL token
+		mockCoinService.On("GetCoinByMintAddress", ctx, splTokenMint).Return(mockSPLCoin, nil).Once()
 
 		fromAta, _, _ := solana.FindAssociatedTokenAddress(fromPubKey, splMintKey)
 		mockRPCClient.On("GetAccountInfo", ctx, fromAta).Return(&rpc.GetAccountInfoResult{Value: &rpc.Account{Owner: solana.TokenProgramID}}, nil).Once()
@@ -248,7 +279,13 @@ func TestPrepareTransfer(t *testing.T) {
 
 		mockRPCClient.On("GetLatestBlockhash", ctx, rpc.CommitmentConfirmed).Return(latestBlockhashResult, nil).Once()
 		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
-			return trade.Type == "transfer" && trade.FromCoinMintAddress == splTokenMint && trade.Status == "pending"
+			return trade.Type == "transfer" &&
+				trade.FromCoinMintAddress == splTokenMint &&
+				trade.ToCoinMintAddress == splTokenMint &&
+				trade.FromCoinPKID == mockSPLCoin.ID &&
+				trade.ToCoinPKID == mockSPLCoin.ID &&
+				trade.CoinSymbol == mockSPLCoin.Symbol &&
+				trade.Status == "pending"
 		})).Return(nil).Once()
 
 		unsignedTx, err := service.PrepareTransfer(ctx, fromAddress, toAddress, splTokenMint, amount)
@@ -256,6 +293,7 @@ func TestPrepareTransfer(t *testing.T) {
 		assert.NotEmpty(t, unsignedTx)
 		mockRPCClient.AssertExpectations(t)
 		mockTradeRepo.AssertExpectations(t)
+		mockCoinService.AssertExpectations(t)
 	})
 
 	// TODO: Implement these tests
