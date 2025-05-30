@@ -159,16 +159,16 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]M, int64, error) {
 	var schemaItems []S
 	var total int64
-	
+
 	// Base query for the specific schema type S
 	query := r.db.WithContext(ctx).Model(new(S))
-	
+
 	// Apply filters for counting
 	countQuery := query
 	for _, filter := range opts.Filters {
 		op := filter.Operator
 		if op == "" {
-			op = db.FilterOpEqual 
+			op = db.FilterOpEqual
 		}
 		countQuery = countQuery.Where(fmt.Sprintf("%s %s ?", filter.Field, string(op)), filter.Value)
 	}
@@ -177,7 +177,7 @@ func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions
 	}
 
 	// Apply filters, sorting, pagination for fetching items
-	itemQuery := query 
+	itemQuery := query
 	for _, filter := range opts.Filters {
 		op := filter.Operator
 		if op == "" {

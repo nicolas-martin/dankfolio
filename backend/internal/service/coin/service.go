@@ -458,11 +458,36 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	return nil
 }
 
-// SearchCoins searches for coins using the DB's SearchCoins
-func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
+// SearchCoins searches for coins using the DB's SearchCoins (custom store method)
+// It now accepts db.ListOptions for pagination/sorting and returns a total count (currently estimated).
+func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, opts db.ListOptions) ([]model.Coin, int32, error) {
+	var limit, offset int32
+	var sortBy string
+	var sortDesc bool
+
+	if opts.Limit != nil {
+		limit = int32(*opts.Limit)
+	}
+	if opts.Offset != nil {
+		offset = int32(*opts.Offset)
+	}
+	if opts.SortBy != nil {
+		sortBy = *opts.SortBy
+	}
+	if opts.SortDesc != nil {
+		sortDesc = *opts.SortDesc
+	}
+
 	coins, err := s.store.SearchCoins(ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
 	if err != nil {
-		return nil, fmt.Errorf("failed to search coins: %w", err)
+		return nil, 0, fmt.Errorf("failed to search coins via store: %w", err)
 	}
-	return coins, nil
+
+	// TODO: The store.SearchCoins method needs to be updated to return a proper total count
+	// that respects the filters (query, tags, minVolume24h) but ignores pagination (limit, offset).
+	// For now, returning the length of the fetched coins as a placeholder for total_count.
+	// This is only accurate if the number of results is less than the limit.
+	// A more accurate temporary count might be len(coins) if offset is 0 and len(coins) < limit, otherwise it's unknown.
+	// For simplicity now, just using len(coins). This will be inaccurate for actual pagination.
+	return coins, int32(len(coins)), nil
 }

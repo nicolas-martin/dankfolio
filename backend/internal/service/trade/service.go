@@ -164,7 +164,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		// For simplicity, assuming FromCoinMintAddress can be used to derive a symbol or it's not critical for debug mode.
 		// Ideally, you'd fetch coin details even in debug mode if CoinSymbol is vital.
 		fromCoin, _ := s.coinService.GetCoinByMintAddress(ctx, req.FromCoinMintAddress) // Best effort for symbol, use GetCoinByMintAddress
-		
+
 		trade := &model.Trade{
 			ID:                  fmt.Sprintf("trade_simulated_%d", time.Now().UnixNano()),
 			FromCoinMintAddress: req.FromCoinMintAddress,

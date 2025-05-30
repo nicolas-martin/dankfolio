@@ -25,9 +25,9 @@ var (
 )
 
 // Helper function for creating pointers, useful for ListOptions
-func Pint(i int) *int       { return &i }
+func Pint(i int) *int       { v := int(i); return &v } // Changed to return *int for db.ListOptions
 func Pbool(b bool) *bool   { return &b }
-func Pstring(s string) *string { return &s }
+func Pstring(s string) *string { if s == "" { return nil }; return &s }
 
 
 func setupService(t *testing.T) (
@@ -40,7 +40,7 @@ func setupService(t *testing.T) (
 	*dbDataStoreMocks.MockRepository[model.Trade],
 ) {
 	mockSolanaClient := solanaClientMocks.NewMockClientAPI(t)
-	mockCoinService := coinServiceMocks.NewMockCoinServiceAPI(t) // This is CoinServiceAPI
+	mockCoinService := coinServiceMocks.NewMockCoinServiceAPI(t)
 	mockPriceService := priceServiceMocks.NewMockPriceServiceAPI(t)
 	mockJupiterClient := jupiterclientmocks.NewMockClientAPI(t)
 	mockStore := dbDataStoreMocks.NewMockStore(t)
@@ -101,9 +101,8 @@ func TestGetSwapQuote(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		service, _, mockCoinService, mockPriceService, mockJupiterClient, _, _ := setupService(t)
 
-		// Ensure mockFromCoin and mockToCoin have IDs as they are used in PrepareSwap
 		mockFromCoinWithID := &model.Coin{ID: 1, MintAddress: fromCoinMintAddress, Symbol: "FROM", Decimals: 6, Name: "From Coin"}
-		mockToCoinWithID := &model.Coin{ID: 2, MintAddress: toCoinMintAddress, Symbol: "TO", Decimals: 9, Name: "To Coin"}
+		mockToCoinWithID := &model.Coin{ID: 2, MintAddress: toCoinMintAddress, Symbol: "TO", Decimals: 9, Name: "To Coin", Price: 0} // Price set to 0 for fee test case
 
 		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(mockFromCoinWithID, nil).Once()
 		mockCoinService.On("GetCoinByMintAddress", ctx, toCoinMintAddress).Return(mockToCoinWithID, nil).Once()
@@ -113,7 +112,7 @@ func TestGetSwapQuote(t *testing.T) {
 			InputMint:      fromCoinMintAddress,
 			OutputMint:     toCoinMintAddress,
 			InAmount:       inputAmount,
-			OutAmount:      "2000000000", // 2 * 10^9 (mockToCoin.Decimals)
+			OutAmount:      "2000000000",
 			RoutePlan:      []jupiter.RoutePlan{{SwapInfo: jupiter.SwapInfo{Label: "FROM -> TO", FeeMint: "feeCoinID", FeeAmount: "1000"}}},
 			PriceImpactPct: "0.1",
 			RawPayload:     rawQuotePayload,
@@ -121,7 +120,6 @@ func TestGetSwapQuote(t *testing.T) {
 		mockJupiterClient.On("GetQuote", ctx, mock.MatchedBy(func(params jupiter.QuoteParams) bool {
 			return params.InputMint == fromCoinMintAddress && params.OutputMint == toCoinMintAddress
 		})).Return(mockJupiterQuote, nil).Once()
-		// Assuming feeCoinID has 6 decimals for fee calculation example
 		mockPriceService.On("GetCoinPrices", ctx, []string{"feeCoinID"}).Return(map[string]float64{"feeCoinID": 0.5}, nil).Once()
 
 
@@ -129,22 +127,10 @@ func TestGetSwapQuote(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, quote)
-		assert.Equal(t, "2.000000", quote.EstimatedAmount) // 2000000000 / 10^9
-		// Fee: 1000 (fee amount) * 0.5 (price in USD) = 500.
-		// Original code: totalFeeInUSD / math.Pow10(9) -> 500 / 10^9 = 0.000000500
-		// Updated code (fee in output coin currency or scaled USD): totalFeeInUSD / toCoin.Price (if available) or scaled USD
-		// If toCoin.Price is, for example, 25 USD, then 500 USD / 25 USD/TO = 20 TO tokens.
-		// If toCoin.Price is 0, it uses scaled USD: 500 / 10^6 = 0.000500
-		// This assertion depends on the fee calculation logic in GetSwapQuote's implementation for totalFeeInCoinCurrency
-		// For now, let's assume the test matched the original simple scaled USD logic or was updated accordingly.
-		// Given the current service code, if toCoin.Price is not >0, it divides by 10^6.
-		// Let's ensure mockToCoin has a Price for predictable fee calculation in TO currency.
-		// mockToCoinWithID.Price = 25.0 // Example price in USD
-		// Then fee in TO would be (1000 * 0.5) / 25.0 = 20. Truncated to 9 decimals: "20.000000000"
-		// If mockToCoin.Price is 0 (default for struct), then 500 / 10^6 = 0.0005. Truncated: "0.000500000"
-		assert.Equal(t, "0.000500000", quote.Fee) 
-		assert.Equal(t, "0.100000", quote.PriceImpact) // truncateDecimals(0.1, 6)
-		assert.Equal(t, string(rawQuotePayload), string(quote.Raw)) 
+		assert.Equal(t, "2.000000", quote.EstimatedAmount)
+		assert.Equal(t, "0.000500000", quote.Fee)
+		assert.Equal(t, "0.100000", quote.PriceImpact)
+		assert.Equal(t, string(rawQuotePayload), string(quote.Raw))
 		mockCoinService.AssertExpectations(t)
 		mockJupiterClient.AssertExpectations(t)
 		mockPriceService.AssertExpectations(t)
@@ -176,14 +162,13 @@ func TestPrepareSwap(t *testing.T) {
 	ctx := context.Background()
 	fromCoinMintAddress := "fromCoinMint"
 	toCoinMintAddress := "toCoinMint"
-	inputAmountStr := "1000000" 
+	inputAmountStr := "1000000"
 	slippageBps := "50"
-	fromAddress := "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" 
+	fromAddress := "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 	testUserPubKey, _ := solanago.PublicKeyFromBase58(fromAddress)
 
-	// Ensure mock coins have IDs
 	mockFromCoinWithID := &model.Coin{ID: 1, MintAddress: fromCoinMintAddress, Symbol: "FROM", Decimals: 6, Name: "From Coin"}
-	mockToCoinWithID := &model.Coin{ID: 2, MintAddress: toCoinMintAddress, Symbol: "TO", Decimals: 9, Name: "To Coin"}
+	mockToCoinWithID := &model.Coin{ID: 2, MintAddress: toCoinMintAddress, Symbol: "TO", Decimals: 9, Name: "To Coin", Price: 0}
 
 
 	t.Run("Success", func(t *testing.T) {
@@ -192,7 +177,7 @@ func TestPrepareSwap(t *testing.T) {
 
 		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(mockFromCoinWithID, nil).Once()
 		mockCoinService.On("GetCoinByMintAddress", ctx, toCoinMintAddress).Return(mockToCoinWithID, nil).Once()
-		
+
 		rawQuotePayload := json.RawMessage(`{"raw": "payload"}`)
 		mockJupiterClient.On("GetQuote", ctx, mock.AnythingOfType("jupiter.QuoteParams")).Return(&jupiter.QuoteResponse{
 			InputMint:      fromCoinMintAddress,
@@ -204,15 +189,15 @@ func TestPrepareSwap(t *testing.T) {
 			RawPayload:     rawQuotePayload,
 		}, nil).Once()
 		mockPriceService.On("GetCoinPrices", ctx, []string{"feeCoinID"}).Return(map[string]float64{"feeCoinID": 0.5}, nil).Once()
-		
+
 		expectedUnsignedTx := "unsigned_transaction_string"
 		mockJupiterClient.On("CreateSwapTransaction", ctx, mock.IsType([]byte{}), testUserPubKey).Return(expectedUnsignedTx, nil).Once()
-		
+
 		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
 			return trade.FromCoinMintAddress == fromCoinMintAddress &&
 				trade.ToCoinMintAddress == toCoinMintAddress &&
-				trade.FromCoinPKID == mockFromCoinWithID.ID && // Check PKID
-				trade.ToCoinPKID == mockToCoinWithID.ID &&   // Check PKID
+				trade.FromCoinPKID == mockFromCoinWithID.ID &&
+				trade.ToCoinPKID == mockToCoinWithID.ID &&
 				trade.UserID == fromAddress &&
 				trade.CoinSymbol == mockFromCoinWithID.Symbol &&
 				trade.Type == "swap" &&
@@ -247,8 +232,8 @@ func TestExecuteTrade(t *testing.T) {
 	expectedTxHash := "final_transaction_hash"
 
 	tradeRequest := model.TradeRequest{
-		FromCoinMintAddress: mockFromCoin.MintAddress, // Use updated field name
-		ToCoinMintAddress:   mockToCoin.MintAddress,   // Use updated field name
+		FromCoinMintAddress: mockFromCoin.MintAddress,
+		ToCoinMintAddress:   mockToCoin.MintAddress,
 		Amount:              1.0,
 		UnsignedTransaction: unsignedTx,
 		SignedTransaction:   signedTx,
@@ -257,7 +242,7 @@ func TestExecuteTrade(t *testing.T) {
 	existingTrade := &model.Trade{
 		ID:                  "trade123",
 		UnsignedTransaction: unsignedTx,
-		FromCoinMintAddress: mockFromCoin.MintAddress, // Ensure existing trade also uses new fields
+		FromCoinMintAddress: mockFromCoin.MintAddress,
 		ToCoinMintAddress:   mockToCoin.MintAddress,
 		FromCoinPKID:        mockFromCoin.ID,
 		ToCoinPKID:          mockToCoin.ID,
@@ -266,7 +251,7 @@ func TestExecuteTrade(t *testing.T) {
 
 	t.Run("Success - No Debug", func(t *testing.T) {
 		service, mockSolanaClient, _, _, _, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Times(2) 
+		mockStore.On("Trades").Return(mockTradeRepo).Times(2)
 
 		mockTradeRepo.On("GetByField", ctx, "unsigned_transaction", unsignedTx).Return(existingTrade, nil).Once()
 		mockSolanaClient.On("ExecuteTrade", ctx, existingTrade, signedTx).Return(expectedTxHash, nil).Once()
@@ -283,7 +268,7 @@ func TestExecuteTrade(t *testing.T) {
 
 	t.Run("Success - Debug Mode", func(t *testing.T) {
 		service, _, mockCoinService, _, _, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Once() 
+		mockStore.On("Trades").Return(mockTradeRepo).Once()
 		debugCtx := context.WithValue(ctx, model.DebugModeKey, true)
 
 		mockCoinService.On("GetCoinByMintAddress", debugCtx, tradeRequest.FromCoinMintAddress).Return(mockFromCoin, nil).Maybe()

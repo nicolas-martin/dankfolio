@@ -3,13 +3,13 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"log/slog" 
+	"log/slog"
 	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger" 
+	gormlogger "gorm.io/gorm/logger"
 
 	"github.com/lib/pq"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
@@ -46,9 +46,9 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level) (*Stor
 
 	var gormLogLevel gormlogger.LogLevel
 	if appLogLevel <= slog.LevelDebug {
-		gormLogLevel = gormlogger.Info 
+		gormLogLevel = gormlogger.Info
 	} else {
-		gormLogLevel = gormlogger.Warn 
+		gormLogLevel = gormlogger.Warn
 	}
 	gormConfig.Logger = gormlogger.Default.LogMode(gormLogLevel)
 
@@ -67,12 +67,12 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level) (*Stor
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	if enableAutoMigrate { 
+	if enableAutoMigrate {
 		if err := dbConn.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}); err != nil {
 			return nil, fmt.Errorf("failed to auto-migrate schema: %w", err)
 		}
 	}
-	
+
 	// Use NewStoreWithDB to initialize the repositories
 	return NewStoreWithDB(dbConn), nil
 }
@@ -121,7 +121,7 @@ func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 	if err := s.db.WithContext(ctx).Where("is_trending = ?", true).Order("last_updated DESC").Find(&schemaCoins).Error; err != nil {
 		return nil, fmt.Errorf("failed to list trending coins: %w", err)
 	}
-	
+
 	modelCoins := make([]model.Coin, len(schemaCoins))
 	// The Coins() method returns the repository which has the toModel method.
 	// However, toModel is not exported. For custom queries like this in the store layer,
@@ -141,8 +141,8 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 			searchQuery := "%" + strings.ToLower(query) + "%"
 			rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(mint_address) LIKE ?", searchQuery, searchQuery, searchQuery)
 		}
-		
-		dbSortColumn := "jupiter_created_at" 
+
+		dbSortColumn := "jupiter_created_at"
 		order := "DESC"
 		if !sortDesc {
 			order = "ASC"
@@ -178,7 +178,7 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 	}
 
 	if sortBy != "" {
-		dbColumn := mapSortBy(sortBy) 
+		dbColumn := mapSortBy(sortBy)
 		order := "ASC"
 		if sortDesc {
 			order = "DESC"
@@ -199,17 +199,17 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 		return nil, fmt.Errorf("failed to search enriched coins: %w", err)
 	}
 	enriched := mapSchemaCoinsToModel(schemaCoins)
-	
+
 	var rawCoins []schema.RawCoin
 	rawTx := s.db.WithContext(ctx).Model(&schema.RawCoin{})
 	if query != "" {
 		searchQuery := "%" + strings.ToLower(query) + "%"
 		rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(mint_address) LIKE ?", searchQuery, searchQuery, searchQuery)
 	}
-	if limit > 0 { 
+	if limit > 0 {
 		rawTx = rawTx.Limit(int(limit))
 	}
-	if offset > 0 { 
+	if offset > 0 {
 		rawTx = rawTx.Offset(int(offset))
 	}
 
@@ -245,12 +245,12 @@ func mapSortBy(sortBy string) string {
 		return "volume_24h"
 	case "marketcap":
 		return "market_cap"
-	case "created_at": 
+	case "created_at":
 		return "created_at"
 	case "last_updated":
 		return "last_updated"
-	case "listed_at": 
-		return "jupiter_created_at" 
+	case "listed_at":
+		return "jupiter_created_at"
 	default:
 		return "created_at"
 	}
@@ -294,7 +294,7 @@ func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {
 			Symbol:          rc.Symbol,
 			Decimals:        rc.Decimals,
 			IconUrl:         rc.LogoUrl,
-			JupiterListedAt: rc.JupiterCreatedAt, 
+			JupiterListedAt: rc.JupiterCreatedAt,
 		}
 	}
 	return coins
