@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/coin.proto.
  */
 export const file_dankfolio_v1_coin: GenFile = /*@__PURE__*/
-  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIpkECgRDb2luEhQKDG1pbnRfYWRkcmVzcxgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBnN5bWJvbBgDIAEoCRIQCghkZWNpbWFscxgEIAEoBRITCgtkZXNjcmlwdGlvbhgFIAEoCRIQCghpY29uX3VybBgGIAEoCRIMCgR0YWdzGAcgAygJEg0KBXByaWNlGAggASgBEhQKDGRhaWx5X3ZvbHVtZRgJIAEoARIUCgd3ZWJzaXRlGAogASgJSACIAQESFAoHdHdpdHRlchgLIAEoCUgBiAEBEhUKCHRlbGVncmFtGAwgASgJSAKIAQESGQoMY29pbmdlY2tvX2lkGA0gASgJSAOIAQESLgoKY3JlYXRlZF9hdBgOIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMbGFzdF91cGRhdGVkGA8gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgEiAEBEhMKC2lzX3RyZW5kaW5nGBAgASgIEjoKEWp1cGl0ZXJfbGlzdGVkX2F0GBEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgFiAEBQgoKCF93ZWJzaXRlQgoKCF90d2l0dGVyQgsKCV90ZWxlZ3JhbUIPCg1fY29pbmdlY2tvX2lkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjEKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBIVCg10cmVuZGluZ19vbmx5GAEgASgIIj4KGUdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiIqChJHZXRDb2luQnlJRFJlcXVlc3QSFAoMbWludF9hZGRyZXNzGAEgASgJIi8KF1NlYXJjaENvaW5CeU1pbnRSZXF1ZXN0EhQKDG1pbnRfYWRkcmVzcxgBIAEoCSI8ChhTZWFyY2hDb2luQnlNaW50UmVzcG9uc2USIAoEY29pbhgBIAEoCzISLmRhbmtmb2xpby52MS5Db2luIhQKEkdldEFsbENvaW5zUmVxdWVzdCI4ChNHZXRBbGxDb2luc1Jlc3BvbnNlEiEKBWNvaW5zGAEgAygLMhIuZGFua2ZvbGlvLnYxLkNvaW4ihwEKDVNlYXJjaFJlcXVlc3QSDQoFcXVlcnkYASABKAkSDAoEdGFncxgCIAMoCRIWCg5taW5fdm9sdW1lXzI0aBgDIAEoARINCgVsaW1pdBgEIAEoBRIOCgZvZmZzZXQYBSABKAUSDwoHc29ydF9ieRgGIAEoCRIRCglzb3J0X2Rlc2MYByABKAgiSAoOU2VhcmNoUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbhITCgt0b3RhbF9jb3VudBgCIAEoBTK0AwoLQ29pblNlcnZpY2USZAoRR2V0QXZhaWxhYmxlQ29pbnMSJi5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USQwoLR2V0Q29pbkJ5SUQSIC5kYW5rZm9saW8udjEuR2V0Q29pbkJ5SURSZXF1ZXN0GhIuZGFua2ZvbGlvLnYxLkNvaW4SYQoQU2VhcmNoQ29pbkJ5TWludBIlLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlNaW50UmVxdWVzdBomLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlNaW50UmVzcG9uc2USUgoLR2V0QWxsQ29pbnMSIC5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLkdldEFsbENvaW5zUmVzcG9uc2USQwoGU2VhcmNoEhsuZGFua2ZvbGlvLnYxLlNlYXJjaFJlcXVlc3QaHC5kYW5rZm9saW8udjEuU2VhcmNoUmVzcG9uc2VCtQEKEGNvbS5kYW5rZm9saW8udjFCCUNvaW5Qcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIs8ECgRDb2luEhQKDG1pbnRfYWRkcmVzcxgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBnN5bWJvbBgDIAEoCRIQCghkZWNpbWFscxgEIAEoBRITCgtkZXNjcmlwdGlvbhgFIAEoCRIQCghpY29uX3VybBgGIAEoCRIeChFyZXNvbHZlZF9pY29uX3VybBgHIAEoCUgAiAEBEgwKBHRhZ3MYCCADKAkSDQoFcHJpY2UYCSABKAESFAoMZGFpbHlfdm9sdW1lGAogASgBEhQKB3dlYnNpdGUYCyABKAlIAYgBARIUCgd0d2l0dGVyGAwgASgJSAKIAQESFQoIdGVsZWdyYW0YDSABKAlIA4gBARIZCgxjb2luZ2Vja29faWQYDiABKAlIBIgBARIuCgpjcmVhdGVkX2F0GA8gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1CgxsYXN0X3VwZGF0ZWQYECABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wSAWIAQESEwoLaXNfdHJlbmRpbmcYESABKAgSOgoRanVwaXRlcl9saXN0ZWRfYXQYEiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wSAaIAQFCFAoSX3Jlc29sdmVkX2ljb25fdXJsQgoKCF93ZWJzaXRlQgoKCF90d2l0dGVyQgsKCV90ZWxlZ3JhbUIPCg1fY29pbmdlY2tvX2lkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjEKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBIVCg10cmVuZGluZ19vbmx5GAEgASgIIj4KGUdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiIqChJHZXRDb2luQnlJRFJlcXVlc3QSFAoMbWludF9hZGRyZXNzGAEgASgJIi8KF1NlYXJjaENvaW5CeU1pbnRSZXF1ZXN0EhQKDG1pbnRfYWRkcmVzcxgBIAEoCSI8ChhTZWFyY2hDb2luQnlNaW50UmVzcG9uc2USIAoEY29pbhgBIAEoCzISLmRhbmtmb2xpby52MS5Db2luIhQKEkdldEFsbENvaW5zUmVxdWVzdCI4ChNHZXRBbGxDb2luc1Jlc3BvbnNlEiEKBWNvaW5zGAEgAygLMhIuZGFua2ZvbGlvLnYxLkNvaW4ihwEKDVNlYXJjaFJlcXVlc3QSDQoFcXVlcnkYASABKAkSDAoEdGFncxgCIAMoCRIWCg5taW5fdm9sdW1lXzI0aBgDIAEoARINCgVsaW1pdBgEIAEoBRIOCgZvZmZzZXQYBSABKAUSDwoHc29ydF9ieRgGIAEoCRIRCglzb3J0X2Rlc2MYByABKAgiSAoOU2VhcmNoUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbhITCgt0b3RhbF9jb3VudBgCIAEoBTK0AwoLQ29pblNlcnZpY2USZAoRR2V0QXZhaWxhYmxlQ29pbnMSJi5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USQwoLR2V0Q29pbkJ5SUQSIC5kYW5rZm9saW8udjEuR2V0Q29pbkJ5SURSZXF1ZXN0GhIuZGFua2ZvbGlvLnYxLkNvaW4SYQoQU2VhcmNoQ29pbkJ5TWludBIlLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlNaW50UmVxdWVzdBomLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlNaW50UmVzcG9uc2USUgoLR2V0QWxsQ29pbnMSIC5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLkdldEFsbENvaW5zUmVzcG9uc2USQwoGU2VhcmNoEhsuZGFua2ZvbGlvLnYxLlNlYXJjaFJlcXVlc3QaHC5kYW5rZm9saW8udjEuU2VhcmNoUmVzcG9uc2VCtQEKEGNvbS5kYW5rZm9saW8udjFCCUNvaW5Qcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * Coin represents a coin or currency (unified definition)
@@ -51,59 +51,66 @@ export type Coin = Message<"dankfolio.v1.Coin"> & {
   iconUrl: string;
 
   /**
-   * @generated from field: repeated string tags = 7;
+   * Optimized IPFS URL
+   *
+   * @generated from field: optional string resolved_icon_url = 7;
+   */
+  resolvedIconUrl?: string;
+
+  /**
+   * @generated from field: repeated string tags = 8;
    */
   tags: string[];
 
   /**
-   * @generated from field: double price = 8;
+   * @generated from field: double price = 9;
    */
   price: number;
 
   /**
-   * @generated from field: double daily_volume = 9;
+   * @generated from field: double daily_volume = 10;
    */
   dailyVolume: number;
 
   /**
-   * @generated from field: optional string website = 10;
+   * @generated from field: optional string website = 11;
    */
   website?: string;
 
   /**
-   * @generated from field: optional string twitter = 11;
+   * @generated from field: optional string twitter = 12;
    */
   twitter?: string;
 
   /**
-   * @generated from field: optional string telegram = 12;
+   * @generated from field: optional string telegram = 13;
    */
   telegram?: string;
 
   /**
-   * @generated from field: optional string coingecko_id = 13;
+   * @generated from field: optional string coingecko_id = 14;
    */
   coingeckoId?: string;
 
   /**
-   * @generated from field: google.protobuf.Timestamp created_at = 14;
+   * @generated from field: google.protobuf.Timestamp created_at = 15;
    */
   createdAt?: Timestamp;
 
   /**
-   * @generated from field: optional google.protobuf.Timestamp last_updated = 15;
+   * @generated from field: optional google.protobuf.Timestamp last_updated = 16;
    */
   lastUpdated?: Timestamp;
 
   /**
-   * @generated from field: bool is_trending = 16;
+   * @generated from field: bool is_trending = 17;
    */
   isTrending: boolean;
 
   /**
    * New field
    *
-   * @generated from field: optional google.protobuf.Timestamp jupiter_listed_at = 17;
+   * @generated from field: optional google.protobuf.Timestamp jupiter_listed_at = 18;
    */
   jupiterListedAt?: Timestamp;
 };
@@ -274,7 +281,7 @@ export type SearchRequest = Message<"dankfolio.v1.SearchRequest"> & {
   offset: number;
 
   /**
-   * Sort field (price_usd, volume_24h, market_cap_usd)
+   * Sort field (price_usd, volume_24h, market_cap_usd, jupiter_listed_at)
    *
    * @generated from field: string sort_by = 6;
    */

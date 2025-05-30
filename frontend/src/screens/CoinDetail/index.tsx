@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, ScrollView, SafeAreaView } from 'react-native';
-import { ActivityIndicator, Text, useTheme, Button, SegmentedButtons, Icon } from 'react-native-paper';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { View, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl } from 'react-native';
+import { Text, useTheme, Button, SegmentedButtons, Icon } from 'react-native-paper';
+import { useRoute, useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import CoinChart from '@components/Chart/CoinChart';
 import { PricePoint } from '@components/Chart/CoinChart/types';
 import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
-import { PriceData } from '@/types';
+import { PriceData, Coin } from '@/types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
@@ -101,7 +101,7 @@ const CoinDetail: React.FC = () => {
 					periodChange={displayData.periodChange}
 					valueChange={displayData.valueChange}
 					period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
-					iconUrl={initialCoin.iconUrl}
+					iconUrl={initialCoin.resolvedIconUrl || initialCoin.iconUrl}
 					name={initialCoin.name}
 					address={initialCoin.mintAddress}
 					hoveredPoint={hoverPoint}

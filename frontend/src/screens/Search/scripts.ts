@@ -51,7 +51,7 @@ export const performSearch = async (
 };
 
 export const getTokenLogoURI = (token: Coin): string => {
-	return token.iconUrl || '';
+	return token.resolvedIconUrl || token.iconUrl || '';
 };
 
 export const formatTokenBalance = (balance: number, decimals: number): string => {

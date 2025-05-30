@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
@@ -21,18 +19,6 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile)
 	log.Println("--- Starting Solana Token Scraping and Enrichment ---")
 
-	// Get absolute path for data file
-	absPath, err := filepath.Abs("../../data/trending_solana_tokens_enriched.json")
-	if err != nil {
-		log.Fatalf("Failed to get absolute path: %v", err)
-	}
-
-	// Ensure data directory exists
-	dataDir := filepath.Dir(absPath)
-	if err := os.MkdirAll(dataDir, 0o755); err != nil {
-		log.Fatalf("Failed to create data directory: %v", err)
-	}
-
 	// Create a context with a timeout for the test
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
@@ -46,18 +32,16 @@ func main() {
 		DefaultCacheExpiry: 5 * time.Minute,
 	})
 
-	// Create service with config for output file
+	// Create service with config
 	config := &coin.Config{
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
 	s := coin.NewService(config, httpClient, jupiterClient, store)
 
-	log.Printf("Using data file path: %s", absPath)
 	log.Printf("HTTP Client timeout: %v", httpClient.Timeout)
 	log.Printf("Test timeout: %v", testTimeout)
 
-	// Call the full pipeline
-	// NOTE: This is called by the coin service on start.
+	// Call the full pipeline to test scraping and enrichment
 	enrichedCoins, err := s.ScrapeAndEnrichToFile(ctx)
 	if err != nil {
 		log.Fatalf("Scraping and enrichment failed: %v", err)

@@ -8,6 +8,7 @@ export interface Coin {
 	decimals: number;
 	description: string;
 	iconUrl: string;
+	resolvedIconUrl?: string;
 	tags: string[];
 	price: number;
 	balance?: number;

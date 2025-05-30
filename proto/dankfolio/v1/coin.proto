@@ -29,17 +29,18 @@ message Coin {
   int32 decimals = 4;
   string description = 5;
   string icon_url = 6;
-  repeated string tags = 7;
-  double price = 8;
-  double daily_volume = 9;
-  optional string website = 10;
-  optional string twitter = 11;
-  optional string telegram = 12;
-  optional string coingecko_id = 13;
-  google.protobuf.Timestamp created_at = 14;
-  optional google.protobuf.Timestamp last_updated = 15;
-  bool is_trending = 16;
-  optional google.protobuf.Timestamp jupiter_listed_at = 17; // New field
+  optional string resolved_icon_url = 7; // Optimized IPFS URL
+  repeated string tags = 8;
+  double price = 9;
+  double daily_volume = 10;
+  optional string website = 11;
+  optional string twitter = 12;
+  optional string telegram = 13;
+  optional string coingecko_id = 14;
+  google.protobuf.Timestamp created_at = 15;
+  optional google.protobuf.Timestamp last_updated = 16;
+  bool is_trending = 17;
+  optional google.protobuf.Timestamp jupiter_listed_at = 18; // New field
 }
 
 message GetAvailableCoinsRequest {
