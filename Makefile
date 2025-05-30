@@ -1,4 +1,4 @@
-.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build backend-generate-mocks frontend-lint proto db-migrate-up psql
+.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build backend-generate-mocks frontend-lint proto db-migrate-up psql db-reset
 
 # Variables
 BACKEND_DIR := backend
@@ -23,7 +23,7 @@ backend-kill:
 	@echo "🛑 Stopping backend server..."
 	@lsof -ti :9000 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
 
-run-mobile: mobile-kill
+mobile: mobile-kill
 	@echo "📱 Starting mobile frontend..."
 	@cd $(MOBILE_DIR) && yarn start
 
@@ -110,14 +110,39 @@ db-migrate-up:
 	)
 	@echo "==> Database migrations applied."
 
+# Database cleanup - ensures complete volume removal
+db-reset:
+	@echo "🗑️  Resetting database (removing all data)..."
+	@docker-compose down -v
+	@echo "🧹 Cleaning up any orphaned volumes..."
+	@docker volume prune -f
+	@echo "🚀 Starting fresh database..."
+	@docker-compose up -d db
+	@echo "⏳ Waiting for database to initialize..."
+	@sleep 10
+	@echo "✅ Database reset complete!"
+
 # Run psql with environment variables from backend/.env
 psql:
 	@echo "🔗 Connecting to Postgres with psql using DB_URL from .env..."
+	@echo "🔍 Debug: Checking for .env file in backend directory..."
 	@( \
 		cd backend && \
+		pwd && \
+		echo "📁 Current directory: $$(pwd)" && \
+		if [ -f .env ]; then \
+			echo "✅ Found .env file at: $$(pwd)/.env"; \
+			echo "📄 .env file contents:"; \
+			cat .env; \
+		else \
+			echo "❌ No .env file found at: $$(pwd)/.env"; \
+			echo "📂 Files in current directory:"; \
+			ls -la; \
+		fi && \
 		set -a && \
 		[ -f .env ] && . .env; \
 		set +a && \
+		echo "🔗 DB_URL being used: $$DB_URL" && \
 		psql "$$DB_URL" \
 	)
 
@@ -136,4 +161,5 @@ help:
 	@echo "  \033[33mmake backend-test\033[0m  - Run backend tests (includes build and mock generation)"
 	@echo "  \033[33mmake backend-generate-mocks\033[0m - Generate backend mocks"
 	@echo "  \033[33mmake db-migrate-up\033[0m - Apply database migrations"
+	@echo "  \033[33mmake db-reset\033[0m    - Reset the database"
 	@echo "  \033[33mmake psql\033[0m          - Connect to Postgres using DB_URL from .env"
