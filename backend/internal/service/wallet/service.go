@@ -239,7 +239,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	if coinMintAddress == "" || coinMintAddress == model.SolMint { // Native SOL transfer
 		finalFromCoinMint = model.SolMint
 		finalToCoinMint = model.SolMint
-		solCoinModel, serviceErr := s.coinService.GetCoinByID(ctx, model.SolMint)
+		solCoinModel, serviceErr := s.coinService.GetCoinByMintAddress(ctx, model.SolMint)
 		if serviceErr != nil {
 			return "", fmt.Errorf("failed to get SOL coin details for trade record: %w", serviceErr)
 		}
