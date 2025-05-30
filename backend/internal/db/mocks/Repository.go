@@ -422,6 +422,80 @@ func (_c *MockRepository_List_Call[T]) RunAndReturn(run func(ctx context.Context
 	return _c
 }
 
+// ListWithOpts provides a mock function for the type MockRepository
+func (_mock *MockRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]T, int64, error) {
+	ret := _mock.Called(ctx, opts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListWithOpts")
+	}
+
+	var r0 []T
+	var r1 int64
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, db.ListOptions) ([]T, int64, error)); ok {
+		return returnFunc(ctx, opts)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, db.ListOptions) []T); ok {
+		r0 = returnFunc(ctx, opts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]T)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, db.ListOptions) int64); ok {
+		r1 = returnFunc(ctx, opts)
+	} else {
+		r1 = ret.Get(1).(int64)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, db.ListOptions) error); ok {
+		r2 = returnFunc(ctx, opts)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockRepository_ListWithOpts_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListWithOpts'
+type MockRepository_ListWithOpts_Call[T db.Entity] struct {
+	*mock.Call
+}
+
+// ListWithOpts is a helper method to define mock.On call
+//   - ctx context.Context
+//   - opts db.ListOptions
+func (_e *MockRepository_Expecter[T]) ListWithOpts(ctx interface{}, opts interface{}) *MockRepository_ListWithOpts_Call[T] {
+	return &MockRepository_ListWithOpts_Call[T]{Call: _e.mock.On("ListWithOpts", ctx, opts)}
+}
+
+func (_c *MockRepository_ListWithOpts_Call[T]) Run(run func(ctx context.Context, opts db.ListOptions)) *MockRepository_ListWithOpts_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 db.ListOptions
+		if args[1] != nil {
+			arg1 = args[1].(db.ListOptions)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_ListWithOpts_Call[T]) Return(vs []T, n int64, err error) *MockRepository_ListWithOpts_Call[T] {
+	_c.Call.Return(vs, n, err)
+	return _c
+}
+
+func (_c *MockRepository_ListWithOpts_Call[T]) RunAndReturn(run func(ctx context.Context, opts db.ListOptions) ([]T, int64, error)) *MockRepository_ListWithOpts_Call[T] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function for the type MockRepository
 func (_mock *MockRepository[T]) Update(ctx context.Context, item *T) error {
 	ret := _mock.Called(ctx, item)

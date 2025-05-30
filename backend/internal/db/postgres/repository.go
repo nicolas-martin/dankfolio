@@ -155,6 +155,68 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 	return result.RowsAffected, nil
 }
 
+// ListWithOpts retrieves a paginated, sorted, and filtered list of entities.
+func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]M, int64, error) {
+	var schemaItems []S
+	var total int64
+	
+	// Base query for the specific schema type S
+	query := r.db.WithContext(ctx).Model(new(S))
+	
+	// Apply filters for counting
+	countQuery := query
+	for _, filter := range opts.Filters {
+		op := filter.Operator
+		if op == "" {
+			op = db.FilterOpEqual 
+		}
+		countQuery = countQuery.Where(fmt.Sprintf("%s %s ?", filter.Field, string(op)), filter.Value)
+	}
+	if err := countQuery.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count items: %w", err)
+	}
+
+	// Apply filters, sorting, pagination for fetching items
+	itemQuery := query 
+	for _, filter := range opts.Filters {
+		op := filter.Operator
+		if op == "" {
+			op = db.FilterOpEqual
+		}
+		itemQuery = itemQuery.Where(fmt.Sprintf("%s %s ?", filter.Field, string(op)), filter.Value)
+	}
+
+	if opts.SortBy != nil && *opts.SortBy != "" {
+		orderStr := *opts.SortBy
+		if opts.SortDesc != nil && *opts.SortDesc {
+			orderStr += " DESC"
+		} else {
+			orderStr += " ASC"
+		}
+		itemQuery = itemQuery.Order(orderStr)
+	}
+
+	if opts.Limit != nil && *opts.Limit > 0 {
+		itemQuery = itemQuery.Limit(*opts.Limit)
+	}
+	if opts.Offset != nil && *opts.Offset >= 0 {
+		itemQuery = itemQuery.Offset(*opts.Offset)
+	}
+
+	if err := itemQuery.Find(&schemaItems).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to list items with options: %w", err)
+	}
+
+	modelItems := make([]M, len(schemaItems))
+	for i, item := range schemaItems {
+		modelItem := r.toModel(item)
+		modelItems[i] = *modelItem.(*M)
+	}
+
+	return modelItems, total, nil
+}
+
+
 // --- Mapping Functions ---
 
 // toModel converts a schema type (S) to a model type (M).

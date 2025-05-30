@@ -388,3 +388,60 @@ func (_c *MockStore_Wallet_Call) RunAndReturn(run func() db.Repository[model.Wal
 	_c.Call.Return(run)
 	return _c
 }
+
+// WithTransaction provides a mock function for the type MockStore
+func (_mock *MockStore) WithTransaction(ctx context.Context, fn func(s db.Store) error) error {
+	ret := _mock.Called(ctx, fn)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithTransaction")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, func(s db.Store) error) error); ok {
+		r0 = returnFunc(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockStore_WithTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithTransaction'
+type MockStore_WithTransaction_Call struct {
+	*mock.Call
+}
+
+// WithTransaction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - fn func(s db.Store) error
+func (_e *MockStore_Expecter) WithTransaction(ctx interface{}, fn interface{}) *MockStore_WithTransaction_Call {
+	return &MockStore_WithTransaction_Call{Call: _e.mock.On("WithTransaction", ctx, fn)}
+}
+
+func (_c *MockStore_WithTransaction_Call) Run(run func(ctx context.Context, fn func(s db.Store) error)) *MockStore_WithTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 func(s db.Store) error
+		if args[1] != nil {
+			arg1 = args[1].(func(s db.Store) error)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStore_WithTransaction_Call) Return(err error) *MockStore_WithTransaction_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockStore_WithTransaction_Call) RunAndReturn(run func(ctx context.Context, fn func(s db.Store) error) error) *MockStore_WithTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}

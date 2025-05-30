@@ -46,19 +46,14 @@ func (s *Service) GetTrade(ctx context.Context, id string) (*model.Trade, error)
 	return s.store.Trades().Get(ctx, id)
 }
 
-// ListTrades returns all trades
-func (s *Service) ListTrades(ctx context.Context) ([]*model.Trade, error) {
-	trades, err := s.store.Trades().List(ctx)
+// ListTrades returns a list of trades, with options for pagination, sorting, and filtering.
+func (s *Service) ListTrades(ctx context.Context, opts db.ListOptions) ([]model.Trade, int64, error) {
+	trades, total, err := s.store.Trades().ListWithOpts(ctx, opts)
 	if err != nil {
-		return nil, err
+		return nil, 0, fmt.Errorf("failed to list trades with options: %w", err)
 	}
-
-	// Convert []model.Trade to []*model.Trade to match interface
-	tradePtrs := make([]*model.Trade, len(trades))
-	for i := range trades {
-		tradePtrs[i] = &trades[i]
-	}
-	return tradePtrs, nil
+	// The method now returns []model.Trade and total count, consistent with ListWithOpts.
+	return trades, total, nil
 }
 
 // CreateTrade creates a new trade
@@ -86,11 +81,11 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinMintAddress, toCoinMi
 	log.Printf("✅ from address parsed: %s", fromPubKey)
 
 	// Fetch coin models to get their PKIDs
-	fromCoinModel, err := s.coinService.GetCoinByID(ctx, fromCoinMintAddress)
+	fromCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, fromCoinMintAddress)
 	if err != nil {
 		return "", fmt.Errorf("failed to get fromCoin details for %s: %w", fromCoinMintAddress, err)
 	}
-	toCoinModel, err := s.coinService.GetCoinByID(ctx, toCoinMintAddress)
+	toCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, toCoinMintAddress)
 	if err != nil {
 		return "", fmt.Errorf("failed to get toCoin details for %s: %w", toCoinMintAddress, err)
 	}
@@ -168,7 +163,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		// Ensure CoinSymbol is populated, e.g., from FromCoinMintAddress if applicable
 		// For simplicity, assuming FromCoinMintAddress can be used to derive a symbol or it's not critical for debug mode.
 		// Ideally, you'd fetch coin details even in debug mode if CoinSymbol is vital.
-		fromCoin, _ := s.coinService.GetCoinByID(ctx, req.FromCoinMintAddress) // Best effort for symbol
+		fromCoin, _ := s.coinService.GetCoinByMintAddress(ctx, req.FromCoinMintAddress) // Best effort for symbol, use GetCoinByMintAddress
 		
 		trade := &model.Trade{
 			ID:                  fmt.Sprintf("trade_simulated_%d", time.Now().UnixNano()),
@@ -233,12 +228,12 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 // GetSwapQuote gets a quote for a potential trade
 func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinMintAddress string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
 	// Parse addresses
-	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinMintAddress)
+	fromCoin, err := s.coinService.GetCoinByMintAddress(ctx, fromCoinMintAddress) // Use new method
 	if err != nil {
 		return nil, fmt.Errorf("failed to get from coin %s: %w", fromCoinMintAddress, err)
 	}
 
-	toCoin, err := s.coinService.GetCoinByID(ctx, toCoinMintAddress)
+	toCoin, err := s.coinService.GetCoinByMintAddress(ctx, toCoinMintAddress) // Use new method
 	if err != nil {
 		return nil, fmt.Errorf("failed to get to coin %s: %w", toCoinMintAddress, err)
 	}

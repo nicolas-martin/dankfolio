@@ -2,11 +2,13 @@ package coin
 
 import (
 	"context"
+	"errors" // Added for errors.Is
 	"fmt"
 	"log/slog" // Import slog
 	"net/http"
 	"os" // Import os for Exit
-	"sort"
+	// "sort" // sort.Slice in GetCoins is removed, GetTrendingCoins still uses it.
+	"sort"    // Keep for GetTrendingCoins
 	"strconv" // Added for GetCoinByID
 	"time"
 
@@ -133,46 +135,54 @@ func (s *Service) GetTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 	return trendingCoins, nil
 }
 
-// GetCoinByID returns a coin by its ID (which can be a numeric PK or a mint address string)
+// GetCoinByID returns a coin strictly by its numeric primary key (ID).
 func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, error) {
-	var coin *model.Coin
-	var err error
+	// Attempt to parse idStr as a uint64.
+	if _, parseErr := strconv.ParseUint(idStr, 10, 64); parseErr != nil {
+		// If parsing fails, idStr is not a valid numeric ID format.
+		slog.Info("GetCoinByID received non-numeric ID", slog.String("idStr", idStr), slog.Any("error", parseErr))
+		return nil, fmt.Errorf("invalid coin ID format: %s is not a valid numeric ID", idStr)
+	}
 
-	// Try parsing idStr as uint64 (numeric PK)
-	if _, parseErr := strconv.ParseUint(idStr, 10, 64); parseErr == nil {
-		// If parsing is successful, try fetching by numeric ID.
-		// The repository's Get method expects a string, GORM handles it.
-		coin, err = s.store.Coins().Get(ctx, idStr)
-		if err == nil {
-			return coin, nil
+	// If parsing is successful, call s.store.Coins().Get(ctx, idStr)
+	// The repository's Get method takes a string; GORM handles conversion for uint64 PK.
+	coin, err := s.store.Coins().Get(ctx, idStr)
+	if err != nil {
+		// If the coin is not found or any other DB error occurs, return the error.
+		if errors.Is(err, db.ErrNotFound) { // Make sure to import "errors"
+			slog.Info("Coin not found by numeric ID", slog.String("idStr", idStr))
+			// Return db.ErrNotFound directly or a wrapped error, depending on desired API contract.
+			// For consistency with other Get methods, returning a wrapped error might be better.
+			return nil, fmt.Errorf("coin with ID %s not found: %w", idStr, db.ErrNotFound)
 		}
-		// If not found by numeric ID, it might be an old mint address that happens to be numeric,
-		// or the numeric ID truly doesn't exist. We can proceed to try GetByField if appropriate,
-		// or decide that numeric IDs must be exact. For now, if Get by numeric ID fails,
-		// we fall through to enrichment logic if 'idStr' is also a valid mint address.
-		slog.Debug("Coin not found by numeric ID, or ID is ambiguous", slog.String("numericID", idStr), slog.Any("error", err))
-		// If not found by ID, we still might want to try dynamic enrichment if idStr could be a mint address.
+		slog.Error("Failed to get coin by numeric ID", slog.String("idStr", idStr), slog.Any("error", err))
+		return nil, fmt.Errorf("failed to get coin by ID %s: %w", idStr, err)
 	}
 
-	// If not found by numeric PK (or if idStr wasn't numeric), try by mint_address field.
-	// This also covers the case where a numeric idStr might have been a mint address.
-	if coin == nil { // coin is nil if not found by numeric ID or if idStr wasn't numeric
-		coin, err = s.store.Coins().GetByField(ctx, "mint_address", idStr)
-		if err == nil {
-			return coin, nil
-		}
+	return coin, nil
+}
+
+// GetCoinByMintAddress returns a coin by its mint address.
+// If not found in the store, it attempts to fetch, enrich, and cache it.
+func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string) (*model.Coin, error) {
+	// Try fetching from the store first
+	coin, err := s.store.Coins().GetByField(ctx, "mint_address", mintAddress)
+	if err == nil {
+		// Found in store
+		return coin, nil
 	}
 
-	// If not found by either PK or mint_address, attempt dynamic enrichment using idStr as mintAddress.
-	// This assumes idStr is a mintAddress if it wasn't a successfully found numeric PK.
-	slog.Info("Coin not found in store by ID or mint_address, attempting dynamic enrichment", slog.String("identifier", idStr))
-	enrichedCoin, enrichErr := s.fetchAndCacheCoin(ctx, idStr) // idStr here is assumed to be mintAddress for enrichment
-	if enrichErr != nil {
-		return nil, fmt.Errorf("coin %s not found and dynamic enrichment failed: %w", idStr, enrichErr)
+	// If not found, proceed to dynamic enrichment
+	if errors.Is(err, db.ErrNotFound) {
+		slog.Info("Coin not found by mint_address, attempting dynamic enrichment", slog.String("mintAddress", mintAddress))
+		// fetchAndCacheCoin handles enrichment and storing the coin.
+		// It returns the enriched coin and any error encountered during that process.
+		return s.fetchAndCacheCoin(ctx, mintAddress)
 	}
 
-	// fetchAndCacheCoin now handles its own storage (Create or Update)
-	return enrichedCoin, nil
+	// For other types of errors (not db.ErrNotFound), return the error
+	slog.Error("Error fetching coin by mint_address from store", slog.String("mintAddress", mintAddress), slog.Any("error", err))
+	return nil, fmt.Errorf("error fetching coin by mint address %s from store: %w", mintAddress, err)
 }
 
 // fetchAndCacheCoin handles caching and calls the core EnrichCoinData function.
@@ -213,93 +223,101 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 // loadOrRefreshData checks if the trending data file is fresh. If not, it triggers
 // a scrape and enrichment process before loading the data into the service.
 func (s *Service) loadOrRefreshData(ctx context.Context) error {
-	// get the trending by asc order
-	c, err := s.store.ListTrendingCoins(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get latest trending coin: %w", err)
-	}
-
-	// 2025-05-14 20:35:42.431158+00
-	needsRefresh := true
-	if len(c) != 0 {
-		updatedTime, err := time.Parse(time.RFC3339, c[0].LastUpdated)
+	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
+		// get the trending by asc order
+		c, err := txStore.ListTrendingCoins(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to parse last updated time: %w", err)
+			return fmt.Errorf("failed to get latest trending coin: %w", err)
 		}
 
-		age := time.Since(updatedTime)
-		needsRefresh = age > TrendingDataTTL
-		slog.Info("Trending data status", slog.Duration("age", age), slog.Bool("needsRefresh", needsRefresh))
-	}
-
-	// if we don't need to refresh, we can just use what's in the DB
-	if !needsRefresh {
-		slog.Info("Trending data is fresh, no refresh needed.")
-		return nil
-	}
-
-	slog.Info("Trending data is too old or missing, triggering scrape and enrichment...")
-	enrichedCoins, err := s.ScrapeAndEnrichToFile(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to scrape and enrich coins: %w", err)
-	}
-
-	// Update all previous coins to not trending
-	existingCoins, err := s.store.Coins().List(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to list coins for updating trending status: %w", err)
-	}
-
-	if len(existingCoins) > 0 {
-		slog.Debug("Updating trending status for existing coins", slog.Int("count", len(existingCoins)))
-		// BulkUpsert expects *[]model.Coin, so we prepare a slice of model.Coin values
-		coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
-		currentTime := time.Now().Format(time.RFC3339)
-		for _, coin := range existingCoins { // Iterate by value to get copies
-			if coin.IsTrending { // Only update if it's currently trending
-				coin.IsTrending = false
-				coin.LastUpdated = currentTime
-				coinsToUpdate = append(coinsToUpdate, coin)
+		needsRefresh := true
+		if len(c) != 0 {
+			updatedTime, err := time.Parse(time.RFC3339, c[0].LastUpdated)
+			if err != nil {
+				return fmt.Errorf("failed to parse last updated time: %w", err)
 			}
+			age := time.Since(updatedTime)
+			needsRefresh = age > TrendingDataTTL
+			slog.Info("Trending data status", slog.Duration("age", age), slog.Bool("needsRefresh", needsRefresh))
 		}
 
-		if len(coinsToUpdate) > 0 {
-			slog.Debug("Bulk updating existing coins to set IsTrending to false", slog.Int("count", len(coinsToUpdate)))
-			if _, err := s.store.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil { // Pass address of the slice
-				slog.Error("Failed to bulk update trending status for coins", slog.Any("error", err))
-				// Depending on desired error handling, you might want to return here
-				// return fmt.Errorf("failed to bulk update trending status: %w", err)
-			}
+		if !needsRefresh {
+			slog.Info("Trending data is fresh, no refresh needed.")
+			return nil
 		}
-	}
 
-	// Store all newly enriched coins
-	// enrichedCoins.Coins is already []model.Coin, so we just need to pass its address if it's not empty.
-	// Store all newly enriched coins using Create or Update logic per coin
-	if len(enrichedCoins.Coins) > 0 {
-		slog.Debug("Storing/updating enriched coins one by one", slog.Int("count", len(enrichedCoins.Coins)))
-		for _, coin := range enrichedCoins.Coins {
-			// Need to pass a pointer to coin for Create/Update methods
-			currentCoin := coin
-			existingCoin, getErr := s.store.Coins().GetByField(ctx, "mint_address", currentCoin.MintAddress)
-			if getErr == nil && existingCoin != nil { // Found
-				currentCoin.ID = existingCoin.ID // Preserve existing PK ID
-				if errUpdate := s.store.Coins().Update(ctx, &currentCoin); errUpdate != nil {
-					slog.Warn("Failed to update coin during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errUpdate))
+		slog.Info("Trending data is too old or missing, triggering scrape and enrichment...")
+		// ScrapeAndEnrichToFile might make external API calls, which ideally shouldn't be part of the DB transaction.
+		// However, its result (enrichedCoins) is used in subsequent DB operations.
+		// For this refactor, we'll keep it inside for simplicity, but in a more advanced setup,
+		// data fetching could be done outside the transaction, and only DB writes inside.
+		enrichedCoins, err := s.ScrapeAndEnrichToFile(ctx) // s.ScrapeAndEnrichToFile still uses s.jupiterClient etc.
+		if err != nil {
+			return fmt.Errorf("failed to scrape and enrich coins: %w", err)
+		}
+
+		existingCoins, err := txStore.Coins().List(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to list coins for updating trending status: %w", err)
+		}
+
+		if len(existingCoins) > 0 {
+			slog.Debug("Updating trending status for existing coins", slog.Int("count", len(existingCoins)))
+			coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
+			currentTime := time.Now().Format(time.RFC3339)
+			for _, coin := range existingCoins {
+				if coin.IsTrending {
+					coin.IsTrending = false
+					coin.LastUpdated = currentTime
+					coinsToUpdate = append(coinsToUpdate, coin)
 				}
-			} else { // Not found or other error
-				if errCreate := s.store.Coins().Create(ctx, &currentCoin); errCreate != nil {
-					slog.Warn("Failed to create coin during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errCreate))
+			}
+			if len(coinsToUpdate) > 0 {
+				slog.Debug("Bulk updating existing coins to set IsTrending to false", slog.Int("count", len(coinsToUpdate)))
+				if _, err := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil {
+					// Log error but don't necessarily fail the whole transaction for this non-critical part.
+					// Depending on requirements, could return err here.
+					slog.Error("Failed to bulk update trending status for coins", slog.Any("error", err))
 				}
 			}
 		}
-	}
 
-	slog.Info("Coin store refresh complete",
-		slog.Time("scrapeTimestamp", enrichedCoins.ScrapeTimestamp),
-		slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
+		if len(enrichedCoins.Coins) > 0 {
+			slog.Debug("Storing/updating enriched coins from file", slog.Int("count", len(enrichedCoins.Coins)))
+			var storeErrors []string
+			for _, coinFromFile := range enrichedCoins.Coins {
+				currentCoin := coinFromFile
+				existingCoin, getErr := txStore.Coins().GetByField(ctx, "mint_address", currentCoin.MintAddress)
+				if getErr == nil && existingCoin != nil {
+					currentCoin.ID = existingCoin.ID
+					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
+						slog.Warn("Failed to update coin during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errUpdate))
+						storeErrors = append(storeErrors, errUpdate.Error())
+					}
+				} else if errors.Is(getErr, db.ErrNotFound) {
+					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
+						slog.Warn("Failed to create coin during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errCreate))
+						storeErrors = append(storeErrors, errCreate.Error())
+					}
+				} else if getErr != nil {
+					slog.Warn("Error checking coin before upsert during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", getErr))
+					storeErrors = append(storeErrors, getErr.Error())
+				}
+			}
+			if len(storeErrors) > 0 {
+				slog.Error("Encountered errors during storing enriched coins in transaction", slog.Int("error_count", len(storeErrors)))
+				// Decide if these errors should roll back the transaction.
+				// For now, we are logging but the transaction will commit unless a fatal error is returned from here.
+				// To ensure rollback on these, return an error:
+				// return fmt.Errorf("failed to store all enriched coins: %s", strings.Join(storeErrors, "; "))
+			}
+		}
 
-	return nil
+		slog.Info("Coin store refresh transaction part complete",
+			slog.Time("scrapeTimestamp", enrichedCoins.ScrapeTimestamp),
+			slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
+		return nil // Commit transaction
+	})
 }
 
 func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, error) {
