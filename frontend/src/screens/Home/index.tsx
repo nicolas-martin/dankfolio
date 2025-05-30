@@ -24,6 +24,8 @@ const HomeScreen = () => {
 	const fetchAvailableCoins = useCoinStore(state => state.fetchAvailableCoins);
 	const fetchNewCoins = useCoinStore(state => state.fetchNewCoins);
 	const isLoadingTrending = useCoinStore(state => state.isLoading);
+	const lastFetchedNewCoinsAt = useCoinStore(state => state.lastFetchedNewCoinsAt); // Added
+	const setLastFetchedNewCoinsAt = useCoinStore(state => state.setLastFetchedNewCoinsAt); // Added
 
 	const { showToast } = useToast();
 	const theme = useTheme();
@@ -36,16 +38,37 @@ const HomeScreen = () => {
 
 	// Shared logic for fetching trending coins and portfolio
 	const fetchTrendingAndPortfolio = useCallback(async () => {
-		logger.log('[HomeScreen] Fetching trending, newly listed, and portfolio...');
-		await Promise.all([
+		logger.log('[HomeScreen] Fetching trending and portfolio...');
+		const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+		// Fetch trending coins and portfolio balance in parallel
+		const trendingAndPortfolioPromise = Promise.all([
 			fetchAvailableCoins(true), // For trending coins
-			fetchNewCoins(),   // For newly listed coins
+			wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 		]);
-		if (wallet) {
-			await fetchPortfolioBalance(wallet.address);
+
+		// Handle fetching new coins separately with time check
+		let newCoinsFetched = false;
+		try {
+			if (Date.now() - lastFetchedNewCoinsAt > FIVE_MINUTES_MS) {
+				logger.log('[HomeScreen] Interval passed, fetching new coins...');
+				await fetchNewCoins();
+				setLastFetchedNewCoinsAt(Date.now());
+				newCoinsFetched = true;
+				logger.log('[HomeScreen] New coins fetched and timestamp updated.');
+			} else {
+				logger.log('[HomeScreen] Interval not passed, skipping new coins fetch.');
+			}
+		} catch (error) {
+			logger.error('[HomeScreen] Error fetching new coins:', error);
+			// Do not update timestamp if fetchNewCoins fails
 		}
-		logger.log('[HomeScreen] Fetched all data for home screen.');
-	}, [wallet]); // Only depend on wallet, not the fetch functions
+
+		await trendingAndPortfolioPromise; // Wait for trending and portfolio to complete
+
+		logger.log(`[HomeScreen] Fetched data for home screen. New coins fetched: ${newCoinsFetched}`);
+	}, [wallet, fetchAvailableCoins, fetchNewCoins, lastFetchedNewCoinsAt, setLastFetchedNewCoinsAt, fetchPortfolioBalance]);
+
 
 	// Fetch trending coins and portfolio on mount
 	useEffect(() => {

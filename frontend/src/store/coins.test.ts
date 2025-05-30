@@ -8,9 +8,11 @@ import { Coin } from '@/types';
 jest.mock('@/services/grpcApi');
 
 // Mock Coin Data
-const mockSolCoin: Coin = { mintAddress: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
-const mockWenCoin: Coin = { mintAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI', symbol: 'WEN', name: 'Wen', price: 0.0001, decimals: 5, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
-const mockOtherCoin: Coin = { mintAddress: 'otherCoinId', symbol: 'OTH', name: 'Other', price: 10, decimals: 6, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
+const mockSolCoin: Coin = { mintAddress: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: 'Solana', iconUrl: 'sol.png', tags: ['platform'], dailyVolume: 1000000, createdAt: new Date() };
+const mockWenCoin: Coin = { mintAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI', symbol: 'WEN', name: 'Wen', price: 0.0001, decimals: 5, description: 'Wen WEN', iconUrl: 'wen.png', tags: ['meme'], dailyVolume: 50000, createdAt: new Date() };
+const mockOtherCoin: Coin = { mintAddress: 'otherCoinId', symbol: 'OTH', name: 'Other', price: 10, decimals: 6, description: 'Other coin', iconUrl: 'other.png', tags: [], dailyVolume: 10000, createdAt: new Date() };
+const mockNewlyListedCoin: Coin = { mintAddress: 'newCoinMint', symbol: 'NEW', name: 'New Coin', price: 1, decimals: 6, description: 'A new coin', iconUrl: 'new.png', tags: ['new'], dailyVolume: 500, createdAt: new Date() };
+
 
 describe('Zustand Coin Store', () => {
 	let consoleLogSpy: jest.SpyInstance;
@@ -66,9 +68,17 @@ describe('Zustand Coin Store', () => {
 			expect(state.coinMap[mockOtherCoin.mintAddress]).toEqual(mockOtherCoin);
 			expect(Object.keys(state.coinMap).length).toBe(3);
 		});
+
+		it('updates lastFetchedNewCoinsAt correctly', () => {
+			const timestamp = Date.now();
+			act(() => {
+				useCoinStore.getState().setLastFetchedNewCoinsAt(timestamp);
+			});
+			expect(useCoinStore.getState().lastFetchedNewCoinsAt).toBe(timestamp);
+		});
 	});
 
-	describe('API Integration', () => {
+	describe('API Integration and Actions', () => {
 		it('handles fetchAvailableCoins operations correctly', async () => {
 			// Test loading state
 			const fetchPromise = act(async () => {
@@ -132,5 +142,76 @@ describe('Zustand Coin Store', () => {
 			expect(coin).toBeNull();
 			expect(useCoinStore.getState().error).toBe('Coin Not Found');
 		});
+
+		// Removed describe('enrichCoin', ...) block
+
+		describe('fetchNewCoins filtering logic', () => {
+			const existingCoinInMap: Coin = { ...mockSolCoin, description: 'Full SOL', dailyVolume: 12345 }; // Already enhanced
+			const existingAvailableCoin: Coin = { ...mockWenCoin, description: 'Full WEN' }; // Already in available
+
+			beforeEach(() => {
+				act(() => {
+					// Setup: one coin in coinMap (simulating enhanced), one in availableCoins
+					useCoinStore.getState().setCoin(existingCoinInMap); // Adds to coinMap and availableCoins if setAvailableCoins was used, let's ensure it's in coinMap
+					useCoinStore.getState().availableCoins = [existingAvailableCoin, existingCoinInMap];
+					// Ensure coinMap also has the availableCoin if it's supposed to be "enhanced"
+					useCoinStore.getState().coinMap = {
+						[existingCoinInMap.mintAddress]: existingCoinInMap,
+						[existingAvailableCoin.mintAddress]: existingAvailableCoin
+					};
+					useCoinStore.getState().newlyListedCoins = [];
+				});
+			});
+
+			it('filters out coins already in coinMap or availableCoins from newlyListedCoins', async () => {
+				// Fetched data includes:
+				// 1. A truly new coin
+				// 2. A coin that's already in coinMap (mockSolCoin with potentially different, lesser details)
+				// 3. A coin that's already in availableCoins (mockWenCoin with potentially different, lesser details)
+				const fetchedNewSimpleSol = { ...mockSolCoin, price: mockSolCoin.price + 10 }; // Same mint, different data
+				const fetchedNewSimpleWen = { ...mockWenCoin, price: mockWenCoin.price + 0.0001 }; // Same mint, different data
+
+				(grpcApi.searchCoins as jest.Mock).mockResolvedValue({
+					coins: [mockNewlyListedCoin, fetchedNewSimpleSol, fetchedNewSimpleWen],
+					totalCount: 3,
+				});
+
+				await act(async () => {
+					await useCoinStore.getState().fetchNewCoins();
+				});
+
+				const state = useCoinStore.getState();
+
+				// Check newlyListedCoins
+				expect(state.newlyListedCoins.length).toBe(1);
+				expect(state.newlyListedCoins).toContainEqual(mockNewlyListedCoin);
+				expect(state.newlyListedCoins).not.toContainEqual(expect.objectContaining({ mintAddress: existingCoinInMap.mintAddress }));
+				expect(state.newlyListedCoins).not.toContainEqual(expect.objectContaining({ mintAddress: existingAvailableCoin.mintAddress }));
+
+
+				// Check coinMap: should not overwrite existing more detailed coins with simpler fetched versions
+				expect(state.coinMap[existingCoinInMap.mintAddress]).toEqual(existingCoinInMap); // Should remain the original enhanced version
+				expect(state.coinMap[existingAvailableCoin.mintAddress]).toEqual(existingAvailableCoin); // Should remain the original
+				expect(state.coinMap[mockNewlyListedCoin.mintAddress]).toEqual(mockNewlyListedCoin); // New coin added
+			});
+
+			it('adds new coins to coinMap if they are not already present', async () => {
+				(grpcApi.searchCoins as jest.Mock).mockResolvedValue({
+					coins: [mockNewlyListedCoin],
+					totalCount: 1,
+				});
+				// Initial state: coinMap has existingCoinInMap and existingAvailableCoin
+				// newlyListedCoins is empty
+
+				await act(async () => {
+					await useCoinStore.getState().fetchNewCoins();
+				});
+
+				const state = useCoinStore.getState();
+				expect(state.newlyListedCoins).toContainEqual(mockNewlyListedCoin);
+				expect(state.coinMap[mockNewlyListedCoin.mintAddress]).toEqual(mockNewlyListedCoin);
+				expect(state.coinMap[existingCoinInMap.mintAddress]).toEqual(existingCoinInMap); // Ensure existing ones are still there
+			});
+		});
 	});
-}); 
+});
