@@ -3,7 +3,6 @@ package coin
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -32,7 +31,6 @@ func setupCoinServiceTest(t *testing.T) (
 	cfg := &Config{
 		NewCoinsFetchInterval: 0, // Disable auto-fetcher for most tests
 		SolanaRPCEndpoint:     "dummy-rpc-endpoint",
-		OffchainDataSources:   []string{"test_source"}, // For EnrichCoinData
 	}
 	mockJupiterClient := jupiterMocks.NewMockClientAPI(t)
 	mockOffchainClient := offchainMocks.NewMockClientAPI(t)
@@ -53,7 +51,6 @@ func setupCoinServiceTest(t *testing.T) (
 	// Mock dependencies for ScrapeAndEnrichToFile if called during NewService -> loadOrRefreshData (needs refresh)
 	mockJupiterClient.On("GetStrictList", mock.Anything).Return([]jupiter.CoinMetadata{}, nil).Maybe()
 
-
 	// Mock WithTransaction to execute the passed function with the same mockStore
 	// This allows testing the logic within the transaction block.
 	mockStore.On("WithTransaction", mock.Anything, mock.AnythingOfType("func(db.Store) error")).
@@ -61,7 +58,6 @@ func setupCoinServiceTest(t *testing.T) (
 			fn := args.Get(1).(func(db.Store) error)
 			fn(mockStore) // Execute the function with the main mockStore acting as txStore
 		}).Return(nil).Maybe()
-
 
 	service := NewService(cfg, nil, mockJupiterClient, mockStore)
 	service.offchainClient = mockOffchainClient // Set mock offchain client on service
@@ -135,7 +131,7 @@ func TestGetCoinByMintAddress_NotFound_EnrichmentSuccess_Create(t *testing.T) {
 	// Expected enriched coin data
 	enrichedCoin := &model.Coin{MintAddress: mintAddress, Name: "Enriched Coin", Symbol: "ENR", Decimals: 6}
 
-	mockStore.On("Coins").Return(mockCoinRepo).Times(3) // GetByField in GetCoinByMintAddress, GetByField in fetchAndCacheCoin, Create in fetchAndCacheCoin
+	mockStore.On("Coins").Return(mockCoinRepo).Times(3)                                                 // GetByField in GetCoinByMintAddress, GetByField in fetchAndCacheCoin, Create in fetchAndCacheCoin
 	mockCoinRepo.On("GetByField", ctx, "mint_address", mintAddress).Return(nil, db.ErrNotFound).Twice() // First for GetCoinByMintAddress, second for fetchAndCacheCoin's check
 
 	// Mocking for EnrichCoinData (assuming it's called by fetchAndCacheCoin)
@@ -157,7 +153,6 @@ func TestGetCoinByMintAddress_NotFound_EnrichmentSuccess_Create(t *testing.T) {
 	mockCoinRepo.AssertExpectations(t)
 }
 
-
 func TestGetCoins_Success(t *testing.T) {
 	ctx := context.Background()
 	service, _, _, _, mockStore, mockCoinRepo, _ := setupCoinServiceTest(t)
@@ -178,59 +173,58 @@ func TestGetCoins_Success(t *testing.T) {
 }
 
 func TestLoadOrRefreshData_RefreshLogic(t *testing.T) {
-    ctx := context.Background()
-    // Use a fresh set of mocks for each sub-test of loadOrRefreshData if state is an issue
-    // For this combined test, ensure mocks are specific enough or reset if needed.
-    service, cfg, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, _ := setupCoinServiceTest(t)
-    cfg.NewCoinsFetchInterval = 0 // Ensure NewService doesn't start goroutine that might interfere
+	ctx := context.Background()
+	// Use a fresh set of mocks for each sub-test of loadOrRefreshData if state is an issue
+	// For this combined test, ensure mocks are specific enough or reset if needed.
+	service, cfg, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, _ := setupCoinServiceTest(t)
+	cfg.NewCoinsFetchInterval = 0 // Ensure NewService doesn't start goroutine that might interfere
 
-    // --- Setup for loadOrRefreshData needing refresh ---
-    oldCoinTime := time.Now().Add(-2 * TrendingDataTTL).Format(time.RFC3339)
-    // This is the ListTrendingCoins call inside WithTransaction
-    mockStore.On("ListTrendingCoins", ctx).Return([]model.Coin{{MintAddress: "old", LastUpdated: oldCoinTime}}, nil).Once()
+	// --- Setup for loadOrRefreshData needing refresh ---
+	oldCoinTime := time.Now().Add(-2 * TrendingDataTTL).Format(time.RFC3339)
+	// This is the ListTrendingCoins call inside WithTransaction
+	mockStore.On("ListTrendingCoins", ctx).Return([]model.Coin{{MintAddress: "old", LastUpdated: oldCoinTime}}, nil).Once()
 
-    strictListCoins := []jupiter.CoinMetadata{
-        {Address: "newMint1", Name: "New Coin 1", Symbol: "NC1"},
-        {Address: "existingMintToUpdate", Name: "Existing To Update", Symbol: "ETU"},
-    }
-    // These are called by service.ScrapeAndEnrichToFile, which is outside the direct txStore path but part of the overall method
-    mockJupiterClient.On("GetStrictList", ctx).Return(strictListCoins, nil).Once() // This will be called by ScrapeAndEnrichToFile
-    mockOffchainClient.On("GetCoinData", ctx, "newMint1").Return(&model.OffchainCoinData{Name: "New Coin 1 Enriched"}, nil).Once()
-    mockOffchainClient.On("GetCoinData", ctx, "existingMintToUpdate").Return(&model.OffchainCoinData{Name: "Existing Updated Enriched"}, nil).Once()
+	strictListCoins := []jupiter.CoinMetadata{
+		{Address: "newMint1", Name: "New Coin 1", Symbol: "NC1"},
+		{Address: "existingMintToUpdate", Name: "Existing To Update", Symbol: "ETU"},
+	}
+	// These are called by service.ScrapeAndEnrichToFile, which is outside the direct txStore path but part of the overall method
+	mockJupiterClient.On("GetStrictList", ctx).Return(strictListCoins, nil).Once() // This will be called by ScrapeAndEnrichToFile
+	mockOffchainClient.On("GetCoinData", ctx, "newMint1").Return(&model.OffchainCoinData{Name: "New Coin 1 Enriched"}, nil).Once()
+	mockOffchainClient.On("GetCoinData", ctx, "existingMintToUpdate").Return(&model.OffchainCoinData{Name: "Existing Updated Enriched"}, nil).Once()
 
-    dbExistingCoins := []model.Coin{
-        {ID: 1, MintAddress: "dbCoin1", IsTrending: true},
-        {ID: 2, MintAddress: "existingMintToUpdate", IsTrending: true},
-    }
-    // These are calls on txStore
-    mockCoinRepo.On("List", ctx).Return(dbExistingCoins, nil).Once()
-    mockCoinRepo.On("BulkUpsert", ctx, mock.MatchedBy(func(items *[]model.Coin) bool {
-        return len(*items) == 2 && !(*items)[0].IsTrending && !(*items)[1].IsTrending
-    })).Return(int64(2), nil).Once()
+	dbExistingCoins := []model.Coin{
+		{ID: 1, MintAddress: "dbCoin1", IsTrending: true},
+		{ID: 2, MintAddress: "existingMintToUpdate", IsTrending: true},
+	}
+	// These are calls on txStore
+	mockCoinRepo.On("List", ctx).Return(dbExistingCoins, nil).Once()
+	mockCoinRepo.On("BulkUpsert", ctx, mock.MatchedBy(func(items *[]model.Coin) bool {
+		return len(*items) == 2 && !(*items)[0].IsTrending && !(*items)[1].IsTrending
+	})).Return(int64(2), nil).Once()
 
-    // Mocks for the loop part (GetByField, Create/Update on txStore.Coins())
-    // For "newMint1" (Create)
-    mockCoinRepo.On("GetByField", ctx, "mint_address", "newMint1").Return(nil, db.ErrNotFound).Once()
-    mockCoinRepo.On("Create", ctx, mock.MatchedBy(func(c *model.Coin) bool { return c.MintAddress == "newMint1" })).Return(nil).Once()
-    // For "existingMintToUpdate" (Update)
-    mockCoinRepo.On("GetByField", ctx, "mint_address", "existingMintToUpdate").Return(&model.Coin{ID: 2, MintAddress: "existingMintToUpdate"}, nil).Once()
-    mockCoinRepo.On("Update", ctx, mock.MatchedBy(func(c *model.Coin) bool { return c.MintAddress == "existingMintToUpdate" && c.ID == 2 })).Return(nil).Once()
+	// Mocks for the loop part (GetByField, Create/Update on txStore.Coins())
+	// For "newMint1" (Create)
+	mockCoinRepo.On("GetByField", ctx, "mint_address", "newMint1").Return(nil, db.ErrNotFound).Once()
+	mockCoinRepo.On("Create", ctx, mock.MatchedBy(func(c *model.Coin) bool { return c.MintAddress == "newMint1" })).Return(nil).Once()
+	// For "existingMintToUpdate" (Update)
+	mockCoinRepo.On("GetByField", ctx, "mint_address", "existingMintToUpdate").Return(&model.Coin{ID: 2, MintAddress: "existingMintToUpdate"}, nil).Once()
+	mockCoinRepo.On("Update", ctx, mock.MatchedBy(func(c *model.Coin) bool { return c.MintAddress == "existingMintToUpdate" && c.ID == 2 })).Return(nil).Once()
 
-    // The WithTransaction mock setup in setupCoinServiceTest will handle executing the inner function.
-    // We are asserting against the mockStore which also acts as txStore in this setup.
-    err := service.loadOrRefreshData(ctx) // This call will use the WithTransaction mock
+	// The WithTransaction mock setup in setupCoinServiceTest will handle executing the inner function.
+	// We are asserting against the mockStore which also acts as txStore in this setup.
+	err := service.loadOrRefreshData(ctx) // This call will use the WithTransaction mock
 
-    assert.NoError(t, err)
-    mockStore.AssertExpectations(t) // Verifies ListTrendingCoins on txStore
-    mockCoinRepo.AssertExpectations(t) // Verifies List, BulkUpsert, GetByField, Create, Update on txStore.Coins()
-    mockJupiterClient.AssertExpectations(t) // Verifies GetStrictList for ScrapeAndEnrichToFile
-    mockOffchainClient.AssertExpectations(t) // Verifies GetCoinData for ScrapeAndEnrichToFile
+	assert.NoError(t, err)
+	mockStore.AssertExpectations(t)          // Verifies ListTrendingCoins on txStore
+	mockCoinRepo.AssertExpectations(t)       // Verifies List, BulkUpsert, GetByField, Create, Update on txStore.Coins()
+	mockJupiterClient.AssertExpectations(t)  // Verifies GetStrictList for ScrapeAndEnrichToFile
+	mockOffchainClient.AssertExpectations(t) // Verifies GetCoinData for ScrapeAndEnrichToFile
 }
 
-
 // Helper functions for pointers
-func Pint(i int) *int       { return &i }
-func Pbool(b bool) *bool   { return &b }
+func Pint(i int) *int          { return &i }
+func Pbool(b bool) *bool       { return &b }
 func Pstring(s string) *string { return &s }
 
 // Add other tests like TestFetchAndStoreNewTokens_SuccessLoop, TestGetAllTokens_SuccessLoop, etc.
@@ -248,4 +242,3 @@ func Pstring(s string) *string { return &s }
 // Due to the length constraint and complexity, fully rewriting all tests here is not feasible.
 // The key patterns for adapting tests to GetByField/Create/Update loops and WithTransaction are shown.
 // The original test suite was quite extensive and those individual scenarios (API errors, DB errors for each step)
-// would need to be methodically updated.

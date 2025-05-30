@@ -2,18 +2,15 @@ package coin
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
-	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
-	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -110,13 +107,13 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 // TestEnrichCoinData_StandardizeURL tests the standardizeIpfsUrl logic via EnrichCoinData
 func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 	tests := []struct {
-		name                       string
-		inputIconUrl               string
+		name         string
+		inputIconUrl string
 		// preferredGatewayForCIDv0 string, // This field is removed
-		expectedResolvedIconUrl    string
-		mockOffchainError          error
-		mockJupiterLogoURI         string // To simulate Jupiter providing an icon URL
-		initialIconUrl             string // To simulate an icon URL already present on the coin
+		expectedResolvedIconUrl string
+		mockOffchainError       error
+		mockJupiterLogoURI      string // To simulate Jupiter providing an icon URL
+		initialIconUrl          string // To simulate an icon URL already present on the coin
 	}{
 		// Scenario 1: Non-IPFS URL
 		{
@@ -193,8 +190,8 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 		// Test initialIconUrl passed to EnrichCoinData
 		{
 			name:                    "InitialIconUrl is IPFS CIDv0",
-			initialIconUrl:          "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Passed to EnrichCoinData
-			inputIconUrl:            "", // No metadata or jupiter icon
+			initialIconUrl:          "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X",               // Passed to EnrichCoinData
+			inputIconUrl:            "",                                                                    // No metadata or jupiter icon
 			expectedResolvedIconUrl: "https://ipfs.io/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
 		},
 	}
@@ -238,7 +235,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 				// If initialIconUrl is set, it will be used. If Jupiter is set, it will be used.
 				// This setup prioritizes: Jupiter > Initial > Offchain for coin.IconUrl before standardization.
 				// So, if testing offchain's inputIconUrl, ensure Jupiter and Initial are blank.
-				 offchainReturn["image"] = tt.inputIconUrl
+				offchainReturn["image"] = tt.inputIconUrl
 			}
 
 			if tt.mockOffchainError != nil {
@@ -246,14 +243,13 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 			} else {
 				mockOff.On("FetchMetadata", "http://example.com/metadata.json").Return(offchainReturn, nil)
 			}
-			
+
 			initialIconForEnrich := tt.initialIconUrl
 			if initialIconForEnrich == "" && tt.inputIconUrl != "" && tt.mockJupiterLogoURI == "" {
 				// If we want to test offchain metadata as the primary source of inputIconUrl for standardization,
 				// and there's no Jupiter/Initial override, then initialIconURL for EnrichCoinData should be empty.
 				// The tt.inputIconUrl will be injected via offchainReturn["image"].
 			}
-
 
 			coin, err := service.EnrichCoinData(context.Background(), mintAddress, "Test Coin", initialIconForEnrich, 0)
 

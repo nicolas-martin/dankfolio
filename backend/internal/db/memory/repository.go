@@ -31,6 +31,10 @@ func NewRepository[T db.Entity](cachePrefix string, config Config) *MemoryReposi
 	}
 }
 
+func (r *MemoryRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]T, int64, error) {
+	return nil, 0, fmt.Errorf("ListWithOpts not implemented")
+}
+
 func (r *MemoryRepository[T]) Get(ctx context.Context, id string) (*T, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
