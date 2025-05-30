@@ -5,6 +5,7 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useToast } from '@components/Common/Toast';
 import { mocked } from 'jest-mock';
 import { ProfileCoin } from './profile_types';
+import { Coin } from '@/types';
 
 // Mock dependencies
 jest.mock('@store/portfolio', () => ({
@@ -87,15 +88,19 @@ const mockProfileTokens: ProfileCoin[] = [
 		value: 5000,
 		coin: {
 			mintAddress: "So11111111111111111111111111111111111111112",
-			name: "Wrapped SOL",
+			name: "Solana",
 			symbol: "SOL",
 			decimals: 9,
-			description: "Wrapped SOL (SOL) is a Solana token.",
-			iconUrl: "https://example.com/sol.png",
-			tags: ["verified"],
-			price: 126.675682,
-			dailyVolume: 651534477.88,
-			createdAt: new Date("2023-01-01T00:00:00Z")
+			description: "Solana blockchain",
+			resolvedIconUrl: "https://example.com/sol.png",
+			tags: ["layer-1"],
+			price: 100,
+			dailyVolume: 1000000,
+			createdAt: new Date(),
+			change24h: 5.5,
+			website: 'https://solana.com',
+			twitter: 'https://twitter.com/solana',
+			telegram: '',
 		}
 	},
 	{
@@ -105,15 +110,19 @@ const mockProfileTokens: ProfileCoin[] = [
 		value: 100,
 		coin: {
 			mintAddress: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump",
-			name: "PWEASE",
-			symbol: "pwease",
+			name: "Pwease",
+			symbol: "PWEASE",
 			decimals: 6,
-			description: "PWEASE (pwease) is a Solana token.",
-			iconUrl: "https://example.com/pwease.png",
-			tags: ["verified"],
-			price: 0.023736,
-			dailyVolume: 9370569.94,
-			createdAt: new Date("2023-01-01T00:00:00Z")
+			description: "Pwease token",
+			resolvedIconUrl: "https://example.com/pwease.png",
+			tags: ["meme"],
+			price: 0.5,
+			dailyVolume: 500000,
+			createdAt: new Date(),
+			change24h: -2.3,
+			website: 'https://pwease.com',
+			twitter: 'https://twitter.com/pwease',
+			telegram: '',
 		}
 	}
 ];

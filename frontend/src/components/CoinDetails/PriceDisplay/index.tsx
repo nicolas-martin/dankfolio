@@ -10,7 +10,7 @@ import { CachedImage } from '@/components/Common/CachedImage';
 import Odometer from '@components/Odometer';
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
-	price, periodChange, valueChange, period, iconUrl, name, address, hoveredPoint,
+	price, periodChange, valueChange, period, resolvedIconUrl, name, address, hoveredPoint,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -27,7 +27,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			{/* Header with coin info */}
 			<View style={styles.headerRow}>
 				<CachedImage
-					uri={iconUrl}
+					uri={resolvedIconUrl}
 					size={40}
 					borderRadius={20}
 					showLoadingIndicator={true}

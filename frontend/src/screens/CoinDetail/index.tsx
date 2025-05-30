@@ -101,7 +101,7 @@ const CoinDetail: React.FC = () => {
 					periodChange={displayData.periodChange}
 					valueChange={displayData.valueChange}
 					period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
-					iconUrl={initialCoin.resolvedIconUrl || initialCoin.iconUrl}
+					resolvedIconUrl={initialCoin.resolvedIconUrl}
 					name={initialCoin.name}
 					address={initialCoin.mintAddress}
 					hoveredPoint={hoverPoint}

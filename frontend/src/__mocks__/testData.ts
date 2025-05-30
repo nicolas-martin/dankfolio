@@ -1,36 +1,38 @@
 import { Coin, Wallet, RawWalletData, Base58PrivateKey } from '@/types';
 import { PortfolioToken } from '@/store/portfolio';
 
-export const mockFromCoin: Coin = {
-	mintAddress: "So11111111111111111111111111111111111111112",
-	name: "Solana",
-	symbol: "SOL",
-	iconUrl: "sol_icon_url",
+export const mockSolCoin: Coin = {
+	mintAddress: 'So11111111111111111111111111111111111111112',
+	symbol: 'SOL',
+	name: 'Solana',
+	resolvedIconUrl: "sol_icon_url",
 	decimals: 9,
-	price: 150.0,
-	description: "Solana Blockchain",
-	website: "https://solana.com",
-	twitter: "https://twitter.com/solana",
-	telegram: "",
-	dailyVolume: 5e9,
-	tags: ["layer-1"],
-	createdAt: new Date("2024-01-01T00:00:00Z"),
+	price: 100,
+	change24h: 5.5,
+	dailyVolume: 1000000,
+	description: 'Solana blockchain',
+	website: 'https://solana.com',
+	twitter: 'https://twitter.com/solana',
+	telegram: '',
+	tags: ['layer-1'],
+	createdAt: new Date(),
 };
 
-export const mockToCoin: Coin = {
-	mintAddress: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
-	name: "WEN",
-	symbol: "WEN",
-	iconUrl: "wen_icon_url",
+export const mockWenCoin: Coin = {
+	mintAddress: 'WENWENvqqNya429ubCdR81ZmD69brwQaaBYY6p3LCpk',
+	symbol: 'WEN',
+	name: 'Wen Token',
+	resolvedIconUrl: "wen_icon_url",
 	decimals: 5,
-	price: 0.00011,
-	description: "WEN",
-	website: "https://wen-foundation.org",
-	twitter: "https://twitter.com/wenwencoin",
-	telegram: "https://t.me/wenwencoinsol",
-	dailyVolume: 123456.78,
-	tags: ["meme", "community"],
-	createdAt: new Date("2024-01-01T00:00:00Z")
+	price: 0.001,
+	change24h: -2.3,
+	dailyVolume: 500000,
+	description: 'Wen token',
+	website: 'https://wen.com',
+	twitter: 'https://twitter.com/wen',
+	telegram: '',
+	tags: ['meme'],
+	createdAt: new Date(),
 };
 
 export const mockWallet: RawWalletData = {
@@ -40,9 +42,9 @@ export const mockWallet: RawWalletData = {
 };
 
 export const mockFromPortfolioToken: PortfolioToken = {
-	mintAddress: mockFromCoin.mintAddress,
+	mintAddress: mockSolCoin.mintAddress,
 	amount: 10,
-	price: mockFromCoin.price,
-	value: 10 * mockFromCoin.price,
-	coin: mockFromCoin,
+	price: mockSolCoin.price,
+	value: 10 * mockSolCoin.price,
+	coin: mockSolCoin,
 }; 

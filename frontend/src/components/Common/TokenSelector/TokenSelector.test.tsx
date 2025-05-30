@@ -22,7 +22,7 @@ const mockCoin: Coin = {
 	mintAddress: 'So11111111111111111111111111111111111111112',
 	symbol: 'SOL',
 	name: 'Solana',
-	iconUrl: 'https://example.com/sol.png',
+	resolvedIconUrl: 'https://example.com/sol.png',
 	decimals: 9,
 	price: 100,
 	change24h: 5.5,

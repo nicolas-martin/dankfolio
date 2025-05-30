@@ -5,8 +5,8 @@ export interface PriceDisplayProps {
 	periodChange: number;
 	valueChange: number;
 	period: string;
-	iconUrl: string;
-	name: string;
+	resolvedIconUrl?: string;
+	name?: string;
 	address: string;
 	hoveredPoint?: PricePoint | null;
 }
