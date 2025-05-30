@@ -131,7 +131,6 @@ export interface PrepareSwapRequest {
 	amount: string;
 	slippageBps: string;
 	userPublicKey: string;
-	fromAddress: string;
 }
 
 export interface API {
