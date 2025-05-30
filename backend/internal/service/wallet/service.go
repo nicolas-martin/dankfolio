@@ -249,7 +249,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	} else { // SPL Token transfer
 		finalFromCoinMint = coinMintAddress
 		finalToCoinMint = coinMintAddress
-		coinModel, serviceErr := s.coinService.GetCoinByID(ctx, coinMintAddress)
+		coinModel, serviceErr := s.coinService.GetCoinByMintAddress(ctx, coinMintAddress)
 		if serviceErr != nil {
 			return "", fmt.Errorf("coin not found for mint %s for trade record: %w", coinMintAddress, serviceErr)
 		}
