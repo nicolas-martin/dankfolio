@@ -38,23 +38,23 @@ func (_m *MockClientAPI) EXPECT() *MockClientAPI_Expecter {
 }
 
 // FetchMetadata provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) FetchMetadata(uri string) (map[string]interface{}, error) {
+func (_mock *MockClientAPI) FetchMetadata(uri string) (map[string]any, error) {
 	ret := _mock.Called(uri)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FetchMetadata")
 	}
 
-	var r0 map[string]interface{}
+	var r0 map[string]any
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string) (map[string]interface{}, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(string) (map[string]any, error)); ok {
 		return returnFunc(uri)
 	}
-	if returnFunc, ok := ret.Get(0).(func(string) map[string]interface{}); ok {
+	if returnFunc, ok := ret.Get(0).(func(string) map[string]any); ok {
 		r0 = returnFunc(uri)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
+			r0 = ret.Get(0).(map[string]any)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
@@ -71,24 +71,30 @@ type MockClientAPI_FetchMetadata_Call struct {
 }
 
 // FetchMetadata is a helper method to define mock.On call
-//   - uri
+//   - uri string
 func (_e *MockClientAPI_Expecter) FetchMetadata(uri interface{}) *MockClientAPI_FetchMetadata_Call {
 	return &MockClientAPI_FetchMetadata_Call{Call: _e.mock.On("FetchMetadata", uri)}
 }
 
 func (_c *MockClientAPI_FetchMetadata_Call) Run(run func(uri string)) *MockClientAPI_FetchMetadata_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
 
-func (_c *MockClientAPI_FetchMetadata_Call) Return(stringToIfaceVal map[string]interface{}, err error) *MockClientAPI_FetchMetadata_Call {
-	_c.Call.Return(stringToIfaceVal, err)
+func (_c *MockClientAPI_FetchMetadata_Call) Return(stringToV map[string]any, err error) *MockClientAPI_FetchMetadata_Call {
+	_c.Call.Return(stringToV, err)
 	return _c
 }
 
-func (_c *MockClientAPI_FetchMetadata_Call) RunAndReturn(run func(uri string) (map[string]interface{}, error)) *MockClientAPI_FetchMetadata_Call {
+func (_c *MockClientAPI_FetchMetadata_Call) RunAndReturn(run func(uri string) (map[string]any, error)) *MockClientAPI_FetchMetadata_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -133,15 +139,26 @@ type MockClientAPI_FetchRawData_Call struct {
 }
 
 // FetchRawData is a helper method to define mock.On call
-//   - ctx
-//   - uri
+//   - ctx context.Context
+//   - uri string
 func (_e *MockClientAPI_Expecter) FetchRawData(ctx interface{}, uri interface{}) *MockClientAPI_FetchRawData_Call {
 	return &MockClientAPI_FetchRawData_Call{Call: _e.mock.On("FetchRawData", ctx, uri)}
 }
 
 func (_c *MockClientAPI_FetchRawData_Call) Run(run func(ctx context.Context, uri string)) *MockClientAPI_FetchRawData_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }

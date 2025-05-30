@@ -73,15 +73,26 @@ type MockSolanaRPCClientAPI_GetAccountInfo_Call struct {
 }
 
 // GetAccountInfo is a helper method to define mock.On call
-//   - ctx
-//   - account
+//   - ctx context.Context
+//   - account solana.PublicKey
 func (_e *MockSolanaRPCClientAPI_Expecter) GetAccountInfo(ctx interface{}, account interface{}) *MockSolanaRPCClientAPI_GetAccountInfo_Call {
 	return &MockSolanaRPCClientAPI_GetAccountInfo_Call{Call: _e.mock.On("GetAccountInfo", ctx, account)}
 }
 
 func (_c *MockSolanaRPCClientAPI_GetAccountInfo_Call) Run(run func(ctx context.Context, account solana.PublicKey)) *MockSolanaRPCClientAPI_GetAccountInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(solana.PublicKey))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 solana.PublicKey
+		if args[1] != nil {
+			arg1 = args[1].(solana.PublicKey)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -130,16 +141,32 @@ type MockSolanaRPCClientAPI_GetBalance_Call struct {
 }
 
 // GetBalance is a helper method to define mock.On call
-//   - ctx
-//   - account
-//   - commitment
+//   - ctx context.Context
+//   - account solana.PublicKey
+//   - commitment rpc.CommitmentType
 func (_e *MockSolanaRPCClientAPI_Expecter) GetBalance(ctx interface{}, account interface{}, commitment interface{}) *MockSolanaRPCClientAPI_GetBalance_Call {
 	return &MockSolanaRPCClientAPI_GetBalance_Call{Call: _e.mock.On("GetBalance", ctx, account, commitment)}
 }
 
 func (_c *MockSolanaRPCClientAPI_GetBalance_Call) Run(run func(ctx context.Context, account solana.PublicKey, commitment rpc.CommitmentType)) *MockSolanaRPCClientAPI_GetBalance_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(solana.PublicKey), args[2].(rpc.CommitmentType))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 solana.PublicKey
+		if args[1] != nil {
+			arg1 = args[1].(solana.PublicKey)
+		}
+		var arg2 rpc.CommitmentType
+		if args[2] != nil {
+			arg2 = args[2].(rpc.CommitmentType)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -188,15 +215,26 @@ type MockSolanaRPCClientAPI_GetLatestBlockhash_Call struct {
 }
 
 // GetLatestBlockhash is a helper method to define mock.On call
-//   - ctx
-//   - commitment
+//   - ctx context.Context
+//   - commitment rpc.CommitmentType
 func (_e *MockSolanaRPCClientAPI_Expecter) GetLatestBlockhash(ctx interface{}, commitment interface{}) *MockSolanaRPCClientAPI_GetLatestBlockhash_Call {
 	return &MockSolanaRPCClientAPI_GetLatestBlockhash_Call{Call: _e.mock.On("GetLatestBlockhash", ctx, commitment)}
 }
 
 func (_c *MockSolanaRPCClientAPI_GetLatestBlockhash_Call) Run(run func(ctx context.Context, commitment rpc.CommitmentType)) *MockSolanaRPCClientAPI_GetLatestBlockhash_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(rpc.CommitmentType))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 rpc.CommitmentType
+		if args[1] != nil {
+			arg1 = args[1].(rpc.CommitmentType)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -245,17 +283,38 @@ type MockSolanaRPCClientAPI_GetTokenAccountsByOwner_Call struct {
 }
 
 // GetTokenAccountsByOwner is a helper method to define mock.On call
-//   - ctx
-//   - owner
-//   - mint
-//   - opts
+//   - ctx context.Context
+//   - owner solana.PublicKey
+//   - mint *rpc.GetTokenAccountsConfig
+//   - opts *rpc.GetTokenAccountsOpts
 func (_e *MockSolanaRPCClientAPI_Expecter) GetTokenAccountsByOwner(ctx interface{}, owner interface{}, mint interface{}, opts interface{}) *MockSolanaRPCClientAPI_GetTokenAccountsByOwner_Call {
 	return &MockSolanaRPCClientAPI_GetTokenAccountsByOwner_Call{Call: _e.mock.On("GetTokenAccountsByOwner", ctx, owner, mint, opts)}
 }
 
 func (_c *MockSolanaRPCClientAPI_GetTokenAccountsByOwner_Call) Run(run func(ctx context.Context, owner solana.PublicKey, mint *rpc.GetTokenAccountsConfig, opts *rpc.GetTokenAccountsOpts)) *MockSolanaRPCClientAPI_GetTokenAccountsByOwner_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(solana.PublicKey), args[2].(*rpc.GetTokenAccountsConfig), args[3].(*rpc.GetTokenAccountsOpts))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 solana.PublicKey
+		if args[1] != nil {
+			arg1 = args[1].(solana.PublicKey)
+		}
+		var arg2 *rpc.GetTokenAccountsConfig
+		if args[2] != nil {
+			arg2 = args[2].(*rpc.GetTokenAccountsConfig)
+		}
+		var arg3 *rpc.GetTokenAccountsOpts
+		if args[3] != nil {
+			arg3 = args[3].(*rpc.GetTokenAccountsOpts)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
 	})
 	return _c
 }
@@ -304,16 +363,32 @@ type MockSolanaRPCClientAPI_SendTransactionWithOpts_Call struct {
 }
 
 // SendTransactionWithOpts is a helper method to define mock.On call
-//   - ctx
-//   - tx
-//   - opts
+//   - ctx context.Context
+//   - tx *solana.Transaction
+//   - opts rpc.TransactionOpts
 func (_e *MockSolanaRPCClientAPI_Expecter) SendTransactionWithOpts(ctx interface{}, tx interface{}, opts interface{}) *MockSolanaRPCClientAPI_SendTransactionWithOpts_Call {
 	return &MockSolanaRPCClientAPI_SendTransactionWithOpts_Call{Call: _e.mock.On("SendTransactionWithOpts", ctx, tx, opts)}
 }
 
 func (_c *MockSolanaRPCClientAPI_SendTransactionWithOpts_Call) Run(run func(ctx context.Context, tx *solana.Transaction, opts rpc.TransactionOpts)) *MockSolanaRPCClientAPI_SendTransactionWithOpts_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*solana.Transaction), args[2].(rpc.TransactionOpts))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *solana.Transaction
+		if args[1] != nil {
+			arg1 = args[1].(*solana.Transaction)
+		}
+		var arg2 rpc.TransactionOpts
+		if args[2] != nil {
+			arg2 = args[2].(rpc.TransactionOpts)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }

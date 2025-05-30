@@ -163,6 +163,7 @@ func (r *Repository[S, M]) toModel(s S) any {
 	switch v := any(s).(type) {
 	case schema.Coin:
 		return &model.Coin{
+			ID:          v.ID, // Added
 			MintAddress: v.MintAddress,
 			Name:        v.Name,
 			Symbol:      v.Symbol,
@@ -203,8 +204,10 @@ func (r *Repository[S, M]) toModel(s S) any {
 		return &model.Trade{
 			ID:                  v.ID,
 			UserID:              v.UserID,
-			FromCoinID:          v.FromCoinID,
-			ToCoinID:            v.ToCoinID,
+			FromCoinMintAddress: v.FromCoinMintAddress, // Changed
+			FromCoinPKID:        v.FromCoinPKID,        // Added
+			ToCoinMintAddress:   v.ToCoinMintAddress,   // Changed
+			ToCoinPKID:          v.ToCoinPKID,          // Added
 			Type:                v.Type,
 			Amount:              v.Amount,
 			Price:               v.Price,
@@ -220,6 +223,7 @@ func (r *Repository[S, M]) toModel(s S) any {
 		}
 	case schema.RawCoin:
 		return &model.RawCoin{
+			ID:          v.ID, // Added
 			MintAddress: v.MintAddress,
 			Symbol:      v.Symbol,
 			Name:        v.Name,
@@ -243,7 +247,8 @@ func (r *Repository[S, M]) toModel(s S) any {
 func (r *Repository[S, M]) fromModel(m M) any {
 	switch v := any(m).(type) {
 	case model.Coin:
-		return &schema.Coin{
+		sCoin := &schema.Coin{
+			// ID is not set here if v.ID is 0 (new record), GORM handles auto-increment
 			MintAddress: v.MintAddress,
 			Name:        v.Name,
 			Symbol:      v.Symbol,
@@ -262,6 +267,10 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			IsTrending:  v.IsTrending,
 			LastUpdated: time.Now(),
 		}
+		if v.ID != 0 {
+			sCoin.ID = v.ID
+		}
+		return sCoin
 	case model.Trade:
 		var txHash *string
 		if v.TransactionHash != "" {
@@ -274,8 +283,10 @@ func (r *Repository[S, M]) fromModel(m M) any {
 		return &schema.Trade{
 			ID:                  v.ID,
 			UserID:              v.UserID,
-			FromCoinID:          v.FromCoinID,
-			ToCoinID:            v.ToCoinID,
+			FromCoinMintAddress: v.FromCoinMintAddress, // Changed
+			FromCoinPKID:        v.FromCoinPKID,        // Added
+			ToCoinMintAddress:   v.ToCoinMintAddress,   // Changed
+			ToCoinPKID:          v.ToCoinPKID,          // Added
 			Type:                v.Type,
 			Amount:              v.Amount,
 			Price:               v.Price,
@@ -295,7 +306,8 @@ func (r *Repository[S, M]) fromModel(m M) any {
 
 		// Directly assign JupiterCreatedAt as it's already *time.Time in model.RawCoin
 		// and schema.RawCoin expects *time.Time for its JupiterCreatedAt field.
-		return &schema.RawCoin{
+		sRawCoin := &schema.RawCoin{
+			// ID is not set here if v.ID is 0 (new record)
 			MintAddress:      v.MintAddress,
 			Symbol:           v.Symbol,
 			Name:             v.Name,
@@ -304,6 +316,10 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			UpdatedAt:        updatedAt, // Parsed from model's string UpdatedAt
 			JupiterCreatedAt: v.JupiterCreatedAt, // Assign *time.Time directly
 		}
+		if v.ID != 0 {
+			sRawCoin.ID = v.ID
+		}
+		return sRawCoin
 	case model.Wallet:
 		return &schema.Wallet{
 			ID:        v.ID,
@@ -321,18 +337,25 @@ func (r *Repository[S, M]) fromModel(m M) any {
 func getColumnNames(data any) []string {
 	switch data.(type) {
 	case *schema.Coin:
-		// Explicitly list columns to update, excluding primary key and created_at
+		// Explicitly list columns to update, excluding PK 'id' and 'created_at'
 		return []string{
-			"name", "symbol", "decimals", "description", "icon_url", "tags",
+			"mint_address", "name", "symbol", "decimals", "description", "icon_url", "tags",
 			"price", "change_24h", "market_cap", "volume_24h", "website",
 			"twitter", "telegram", "discord", "is_trending", "last_updated",
 		}
 	case *schema.Trade:
-		return []string{"user_id", "from_coin_id", "to_coin_id", "type", "amount", "price", "fee", "status", "transaction_hash", "completed_at", "confirmations", "finalized", "error"}
+		// Explicitly list columns to update, excluding PK 'id'
+		return []string{
+			"user_id", "from_coin_mint_address", "from_coin_pk_id", "to_coin_mint_address", "to_coin_pk_id",
+			"type", "amount", "price", "fee", "status", "transaction_hash", "unsigned_transaction",
+			"completed_at", "confirmations", "finalized", "error", // CreatedAt is usually set on create
+		}
 	case *schema.RawCoin:
-		return []string{"symbol", "name", "decimals", "logo_url", "updated_at", "jupiter_created_at"}
+		// Explicitly list columns to update, excluding PK 'id'
+		return []string{"mint_address", "symbol", "name", "decimals", "logo_url", "updated_at", "jupiter_created_at"}
 	case *schema.Wallet:
-		return []string{"public_key", "created_at"}
+		// Explicitly list columns to update, excluding PK 'id'
+		return []string{"public_key"} // CreatedAt is usually set on create
 	default:
 		return []string{} // Should not happen with current generic constraints
 	}

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os" // Import os for Exit
 	"sort"
+	"strconv" // Added for GetCoinByID
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
@@ -132,35 +133,53 @@ func (s *Service) GetTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 	return trendingCoins, nil
 }
 
-// GetCoinByID returns a coin by its ID
-func (s *Service) GetCoinByID(ctx context.Context, id string) (*model.Coin, error) {
-	// Try to get from store
-	coin, err := s.store.Coins().Get(ctx, id)
-	if err == nil {
-		return coin, nil
+// GetCoinByID returns a coin by its ID (which can be a numeric PK or a mint address string)
+func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, error) {
+	var coin *model.Coin
+	var err error
+
+	// Try parsing idStr as uint64 (numeric PK)
+	if _, parseErr := strconv.ParseUint(idStr, 10, 64); parseErr == nil {
+		// If parsing is successful, try fetching by numeric ID.
+		// The repository's Get method expects a string, GORM handles it.
+		coin, err = s.store.Coins().Get(ctx, idStr)
+		if err == nil {
+			return coin, nil
+		}
+		// If not found by numeric ID, it might be an old mint address that happens to be numeric,
+		// or the numeric ID truly doesn't exist. We can proceed to try GetByField if appropriate,
+		// or decide that numeric IDs must be exact. For now, if Get by numeric ID fails,
+		// we fall through to enrichment logic if 'idStr' is also a valid mint address.
+		slog.Debug("Coin not found by numeric ID, or ID is ambiguous", slog.String("numericID", idStr), slog.Any("error", err))
+		// If not found by ID, we still might want to try dynamic enrichment if idStr could be a mint address.
 	}
 
-	// If not found, attempt dynamic enrichment
-	slog.Info("Coin not found in store, attempting dynamic enrichment", slog.String("coinID", id))
-	enrichedCoin, err := s.fetchAndCacheCoin(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("coin %s not found and dynamic enrichment failed: %w", id, err)
+	// If not found by numeric PK (or if idStr wasn't numeric), try by mint_address field.
+	// This also covers the case where a numeric idStr might have been a mint address.
+	if coin == nil { // coin is nil if not found by numeric ID or if idStr wasn't numeric
+		coin, err = s.store.Coins().GetByField(ctx, "mint_address", idStr)
+		if err == nil {
+			return coin, nil
+		}
 	}
 
-	// Store the newly enriched coin
-	if _, err := s.store.Coins().Upsert(ctx, enrichedCoin); err != nil {
-		slog.Warn("Failed to store enriched coin", slog.String("coinID", id), slog.Any("error", err))
+	// If not found by either PK or mint_address, attempt dynamic enrichment using idStr as mintAddress.
+	// This assumes idStr is a mintAddress if it wasn't a successfully found numeric PK.
+	slog.Info("Coin not found in store by ID or mint_address, attempting dynamic enrichment", slog.String("identifier", idStr))
+	enrichedCoin, enrichErr := s.fetchAndCacheCoin(ctx, idStr) // idStr here is assumed to be mintAddress for enrichment
+	if enrichErr != nil {
+		return nil, fmt.Errorf("coin %s not found and dynamic enrichment failed: %w", idStr, enrichErr)
 	}
 
+	// fetchAndCacheCoin now handles its own storage (Create or Update)
 	return enrichedCoin, nil
 }
 
 // fetchAndCacheCoin handles caching and calls the core EnrichCoinData function.
-// This is used for dynamically enriching tokens not found in the initial file load.
-// Renamed from enrichCoin
+// It now also handles storing the coin (Create or Update).
 func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*model.Coin, error) {
 	slog.Debug("Starting dynamic coin enrichment", slog.String("mintAddress", mintAddress))
-	enrichedCoin, err := s.EnrichCoinData(
+	enrichedCoin, err := s.EnrichCoinData( // This is model.Coin
 		ctx,
 		mintAddress,
 		"", // No initial name
@@ -172,8 +191,23 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 		return nil, fmt.Errorf("failed to enrich coin %s: %w", mintAddress, err)
 	}
 
-	slog.Debug("Dynamic coin enrichment successful", slog.String("mintAddress", mintAddress))
-	return enrichedCoin, nil
+	// Store the newly enriched coin using Create or Update logic
+	existingCoin, getErr := s.store.Coins().GetByField(ctx, "mint_address", enrichedCoin.MintAddress)
+	if getErr == nil && existingCoin != nil { // Found existing
+		enrichedCoin.ID = existingCoin.ID // Preserve existing PK ID
+		if dbErr := s.store.Coins().Update(ctx, enrichedCoin); dbErr != nil {
+			slog.Warn("Failed to update enriched coin in store", slog.String("mintAddress", enrichedCoin.MintAddress), slog.Any("error", dbErr))
+			// Continue, but log the error. The enriched coin is still returned.
+		}
+	} else { // Not found or other error getting it, so create new
+		if dbErr := s.store.Coins().Create(ctx, enrichedCoin); dbErr != nil {
+			slog.Warn("Failed to create enriched coin in store", slog.String("mintAddress", enrichedCoin.MintAddress), slog.Any("error", dbErr))
+			// Continue, but log the error. The enriched coin is still returned.
+		}
+	}
+
+	slog.Debug("Dynamic coin enrichment and storage attempt complete", slog.String("mintAddress", mintAddress))
+	return enrichedCoin, nil // Return the enriched coin regardless of storage success (as per original logic)
 }
 
 // loadOrRefreshData checks if the trending data file is fresh. If not, it triggers
@@ -210,50 +244,117 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		return fmt.Errorf("failed to scrape and enrich coins: %w", err)
 	}
 
-	// update all previous coins to not trending
-	coins, err := s.store.Coins().List(ctx)
+	// Update all previous coins to not trending
+	existingCoins, err := s.store.Coins().List(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list coins for updating trending status: %w", err)
 	}
-	// update the coins to not trending
-	slog.Debug("Updating trending status for existing coins", slog.Int("count", len(coins)))
-	for _, c := range coins {
-		c.IsTrending = false
-		c.LastUpdated = time.Now().Format(time.RFC3339)
-		err := s.store.Coins().Update(ctx, &c)
-		if err != nil {
-			// Not returning error here to allow other coins to be updated
-			slog.Error("Failed to update trending status for coin", slog.String("mintAddress", c.MintAddress), slog.Any("error", err))
+
+	if len(existingCoins) > 0 {
+		slog.Debug("Updating trending status for existing coins", slog.Int("count", len(existingCoins)))
+		// BulkUpsert expects *[]model.Coin, so we prepare a slice of model.Coin values
+		coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
+		currentTime := time.Now().Format(time.RFC3339)
+		for _, coin := range existingCoins { // Iterate by value to get copies
+			if coin.IsTrending { // Only update if it's currently trending
+				coin.IsTrending = false
+				coin.LastUpdated = currentTime
+				coinsToUpdate = append(coinsToUpdate, coin)
+			}
+		}
+
+		if len(coinsToUpdate) > 0 {
+			slog.Debug("Bulk updating existing coins to set IsTrending to false", slog.Int("count", len(coinsToUpdate)))
+			if _, err := s.store.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil { // Pass address of the slice
+				slog.Error("Failed to bulk update trending status for coins", slog.Any("error", err))
+				// Depending on desired error handling, you might want to return here
+				// return fmt.Errorf("failed to bulk update trending status: %w", err)
+			}
 		}
 	}
 
-	// Store all coins
-	slog.Debug("Storing enriched coins", slog.Int("count", len(enrichedCoins.Coins)))
-	for _, coin := range enrichedCoins.Coins {
-		if _, err := s.store.Coins().Upsert(ctx, &coin); err != nil {
-			slog.Warn("Failed to store coin during refresh", slog.String("mintAddress", coin.MintAddress), slog.Any("error", err))
+	// Store all newly enriched coins
+	// enrichedCoins.Coins is already []model.Coin, so we just need to pass its address if it's not empty.
+	// Store all newly enriched coins using Create or Update logic per coin
+	if len(enrichedCoins.Coins) > 0 {
+		slog.Debug("Storing/updating enriched coins one by one", slog.Int("count", len(enrichedCoins.Coins)))
+		for _, coin := range enrichedCoins.Coins {
+			// Need to pass a pointer to coin for Create/Update methods
+			currentCoin := coin
+			existingCoin, getErr := s.store.Coins().GetByField(ctx, "mint_address", currentCoin.MintAddress)
+			if getErr == nil && existingCoin != nil { // Found
+				currentCoin.ID = existingCoin.ID // Preserve existing PK ID
+				if errUpdate := s.store.Coins().Update(ctx, &currentCoin); errUpdate != nil {
+					slog.Warn("Failed to update coin during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errUpdate))
+				}
+			} else { // Not found or other error
+				if errCreate := s.store.Coins().Create(ctx, &currentCoin); errCreate != nil {
+					slog.Warn("Failed to create coin during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errCreate))
+				}
+			}
 		}
 	}
 
-	slog.Info("Coin store refresh complete from file",
+	slog.Info("Coin store refresh complete",
 		slog.Time("scrapeTimestamp", enrichedCoins.ScrapeTimestamp),
-		slog.Int("coinsLoaded", len(enrichedCoins.Coins)))
+		slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
 
 	return nil
 }
 
 func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, error) {
+	slog.Info("Starting to fetch all tokens from Jupiter")
 	resp, err := s.jupiterClient.GetAllCoins(ctx)
 	if err != nil {
-		return nil, err
+		slog.Error("Failed to get all coins from Jupiter", slog.Any("error", err))
+		return nil, fmt.Errorf("failed to get all coins from Jupiter: %w", err)
 	}
-	for _, v := range resp.Coins {
-		// Store in raw_coins table
-		rawCoin := v.ToRawCoin()
-		_, err = s.store.RawCoins().Upsert(ctx, rawCoin)
-		if err != nil {
-			return nil, err
+
+	if resp == nil || len(resp.Coins) == 0 {
+		slog.Info("No coins found from Jupiter.")
+		return resp, nil // Return original response even if empty, plus no error
+	}
+
+	slog.Info("Successfully fetched all coins from Jupiter", slog.Int("fetched_count", len(resp.Coins)))
+
+	rawCoinsToUpsert := make([]model.RawCoin, 0, len(resp.Coins))
+	for _, jupiterCoin := range resp.Coins {
+		rawCoinModelPtr := jupiterCoin.ToRawCoin() // This returns *model.RawCoin
+		if rawCoinModelPtr != nil {
+			rawCoinsToUpsert = append(rawCoinsToUpsert, *rawCoinModelPtr)
 		}
+	}
+
+	if len(rawCoinsToUpsert) > 0 {
+		slog.Debug("Storing/updating raw coins one by one for GetAllTokens", slog.Int("count", len(rawCoinsToUpsert)))
+		var successfulDbOps int
+		for _, rawCoin := range rawCoinsToUpsert {
+			currentRawCoin := rawCoin // Create a new variable for the loop to take its address
+			existingRawCoin, getErr := s.store.RawCoins().GetByField(ctx, "mint_address", currentRawCoin.MintAddress)
+			var opErr error
+			if getErr == nil && existingRawCoin != nil { // Found
+				currentRawCoin.ID = existingRawCoin.ID // Preserve existing PK ID
+				opErr = s.store.RawCoins().Update(ctx, &currentRawCoin)
+				if opErr != nil {
+					slog.Warn("Failed to update raw_coin in GetAllTokens", slog.String("mintAddress", currentRawCoin.MintAddress), slog.Any("error", opErr))
+				}
+			} else { // Not found or other error
+				opErr = s.store.RawCoins().Create(ctx, &currentRawCoin)
+				if opErr != nil {
+					slog.Warn("Failed to create raw_coin in GetAllTokens", slog.String("mintAddress", currentRawCoin.MintAddress), slog.Any("error", opErr))
+				}
+			}
+			if opErr == nil {
+				successfulDbOps++
+			}
+		}
+		slog.Info("Finished processing raw coins in GetAllTokens",
+			slog.Int("total_fetched_from_jupiter", len(resp.Coins)),
+			slog.Int("coins_prepared_for_upsert", len(rawCoinsToUpsert)),
+			slog.Int("successful_database_operations", successfulDbOps))
+		// Note: This does not return an error to the caller if individual DB ops fail, consistent with some interpretations of original BulkUpsert behavior (logging and continuing)
+	} else {
+		slog.Info("No valid raw coins were prepared for upserting after fetching from Jupiter in GetAllTokens.")
 	}
 
 	return resp, nil
@@ -299,26 +400,41 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	}
 
 	if len(rawCoinsToUpsert) > 0 {
-		rowsAffected, bulkErr := s.store.RawCoins().BulkUpsert(ctx, &rawCoinsToUpsert)
-		if bulkErr != nil {
-			slog.Error("Failed to bulk upsert raw coins",
-				slog.Int("attempted_count", len(rawCoinsToUpsert)),
-				slog.Any("error", bulkErr))
-			// Log the warning and return an error
-			slog.Warn("Completed bulk processing new tokens, but the operation failed",
-				slog.Int("total_fetched_from_jupiter", len(resp.Coins)),
-				slog.Int("coins_prepared_for_upsert", len(rawCoinsToUpsert)),
-				slog.Any("error", bulkErr))
-			return fmt.Errorf("failed to bulk upsert raw coins: %w", bulkErr)
+		slog.Debug("Storing/updating raw coins one by one for FetchAndStoreNewTokens", slog.Int("count", len(rawCoinsToUpsert)))
+		var dbErrors []string
+		var successfulDbOps int
+		for _, rawCoin := range rawCoinsToUpsert {
+			currentRawCoin := rawCoin // Create a new variable for the loop to take its address
+			existingRawCoin, getErr := s.store.RawCoins().GetByField(ctx, "mint_address", currentRawCoin.MintAddress)
+			var opErr error
+			if getErr == nil && existingRawCoin != nil { // Found
+				currentRawCoin.ID = existingRawCoin.ID // Preserve existing PK ID
+				opErr = s.store.RawCoins().Update(ctx, &currentRawCoin)
+				if opErr != nil {
+					slog.Warn("Failed to update raw_coin in FetchAndStoreNewTokens", slog.String("mintAddress", currentRawCoin.MintAddress), slog.Any("error", opErr))
+					dbErrors = append(dbErrors, opErr.Error())
+				}
+			} else { // Not found or other error
+				opErr = s.store.RawCoins().Create(ctx, &currentRawCoin)
+				if opErr != nil {
+					slog.Warn("Failed to create raw_coin in FetchAndStoreNewTokens", slog.String("mintAddress", currentRawCoin.MintAddress), slog.Any("error", opErr))
+					dbErrors = append(dbErrors, opErr.Error())
+				}
+			}
+			if opErr == nil {
+				successfulDbOps++
+			}
 		}
-		// Successful bulk upsert
-		slog.Info("Finished bulk processing new tokens from Jupiter",
+		slog.Info("Finished processing new tokens from Jupiter in FetchAndStoreNewTokens",
 			slog.Int("total_fetched_from_jupiter", len(resp.Coins)),
 			slog.Int("coins_prepared_for_upsert", len(rawCoinsToUpsert)),
-			slog.Int("successful_database_operations", int(rowsAffected)))
+			slog.Int("successful_database_operations", successfulDbOps))
+		if len(dbErrors) > 0 {
+			// Return an error if any DB operation failed, to inform the caller.
+			return fmt.Errorf("encountered %d errors during raw coin db operations: %s", len(dbErrors), dbErrors[0])
+		}
 	} else {
-		// This case might occur if all v_jupiterCoin.ToRawCoin() returned nil, or if resp.Coins was empty (already handled)
-		slog.Info("No valid raw coins were prepared for upserting after fetching from Jupiter.")
+		slog.Info("No valid raw coins were prepared for upserting after fetching from Jupiter in FetchAndStoreNewTokens.")
 	}
 
 	return nil

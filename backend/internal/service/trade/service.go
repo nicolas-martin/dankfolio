@@ -77,7 +77,7 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 }
 
 // PrepareSwap prepares an unsigned swap transaction and creates a trade record
-func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAmount, slippageBps, fromAddress string) (string, error) {
+func (s *Service) PrepareSwap(ctx context.Context, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBps, fromAddress string) (string, error) {
 	// Parse and validate fromAddress (public key)
 	fromPubKey, err := solanago.PublicKeyFromBase58(fromAddress)
 	if err != nil {
@@ -85,8 +85,18 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAm
 	}
 	log.Printf("✅ from address parsed: %s", fromPubKey)
 
+	// Fetch coin models to get their PKIDs
+	fromCoinModel, err := s.coinService.GetCoinByID(ctx, fromCoinMintAddress)
+	if err != nil {
+		return "", fmt.Errorf("failed to get fromCoin details for %s: %w", fromCoinMintAddress, err)
+	}
+	toCoinModel, err := s.coinService.GetCoinByID(ctx, toCoinMintAddress)
+	if err != nil {
+		return "", fmt.Errorf("failed to get toCoin details for %s: %w", toCoinMintAddress, err)
+	}
+
 	// 1. Use the TradeService's GetSwapQuote for all conversion and logic
-	tradeQuote, err := s.GetSwapQuote(ctx, fromCoinID, toCoinID, inputAmount, slippageBps)
+	tradeQuote, err := s.GetSwapQuote(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBps)
 	if err != nil {
 		return "", fmt.Errorf("failed to get trade quote: %w", err)
 	}
@@ -114,8 +124,11 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinID, toCoinID, inputAm
 	trade := &model.Trade{
 		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
 		UserID:              fromPubKey.String(), // Set the user_id to the wallet address
-		FromCoinID:          fromCoinID,
-		ToCoinID:            toCoinID,
+		FromCoinMintAddress: fromCoinMintAddress,
+		FromCoinPKID:        fromCoinModel.ID,
+		ToCoinMintAddress:   toCoinMintAddress,
+		ToCoinPKID:          toCoinModel.ID,
+		CoinSymbol:          fromCoinModel.Symbol, // Or determine based on context
 		Type:                "swap",
 		Amount:              amount,
 		Price:               price,
@@ -152,13 +165,19 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		debugTxHash := solanago.SignatureFromBytes(debugTxHashBytes).String()
 
 		// Create simulated trade
+		// Ensure CoinSymbol is populated, e.g., from FromCoinMintAddress if applicable
+		// For simplicity, assuming FromCoinMintAddress can be used to derive a symbol or it's not critical for debug mode.
+		// Ideally, you'd fetch coin details even in debug mode if CoinSymbol is vital.
+		fromCoin, _ := s.coinService.GetCoinByID(ctx, req.FromCoinMintAddress) // Best effort for symbol
+		
 		trade := &model.Trade{
-			ID:              fmt.Sprintf("trade_simulated_%d", time.Now().UnixNano()),
-			FromCoinID:      req.FromCoinID,
-			ToCoinID:        req.ToCoinID,
-			Type:            "swap",
-			Amount:          req.Amount,
-			Fee:             CalculateTradeFee(req.Amount, 1.0),
+			ID:                  fmt.Sprintf("trade_simulated_%d", time.Now().UnixNano()),
+			FromCoinMintAddress: req.FromCoinMintAddress,
+			ToCoinMintAddress:   req.ToCoinMintAddress,
+			CoinSymbol:          fromCoin.Symbol, // Populate if available
+			Type:                "swap",
+			Amount:              req.Amount,
+			Fee:                 CalculateTradeFee(req.Amount, 1.0), // Placeholder for fee calculation
 			Status:          "completed",
 			CreatedAt:       now,
 			CompletedAt:     &now,
@@ -212,16 +231,16 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 }
 
 // GetSwapQuote gets a quote for a potential trade
-func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
+func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinMintAddress string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
 	// Parse addresses
-	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinID)
+	fromCoin, err := s.coinService.GetCoinByID(ctx, fromCoinMintAddress)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get from coin: %w", err)
+		return nil, fmt.Errorf("failed to get from coin %s: %w", fromCoinMintAddress, err)
 	}
 
-	toCoin, err := s.coinService.GetCoinByID(ctx, toCoinID)
+	toCoin, err := s.coinService.GetCoinByID(ctx, toCoinMintAddress)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get to coin: %w", err)
+		return nil, fmt.Errorf("failed to get to coin %s: %w", toCoinMintAddress, err)
 	}
 
 	slippageBpsInt, err := strconv.Atoi(slippageBsp)
@@ -231,9 +250,9 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinID, toCoinID string,
 
 	// Get quote from Jupiter with enhanced parameters
 	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
-		InputMint:   fromCoinID,
-		OutputMint:  toCoinID,
-		Amount:      inputAmount, // Amount is already in raw units (lamports for SOL)
+		InputMint:   fromCoinMintAddress, // Use mint address
+		OutputMint:  toCoinMintAddress,   // Use mint address
+		Amount:      inputAmount,         // Amount is already in raw units (lamports for SOL)
 		SlippageBps: slippageBpsInt,
 		SwapMode:    "ExactIn",
 		// NOTE: Allow indirect routes for better prices
