@@ -12,6 +12,7 @@ const (
 
 // Coin represents a token or coin in the system (unified model)
 type Coin struct {
+	ID          uint64   `json:"id,omitempty"`
 	MintAddress string   `json:"mint_address"`
 	Name        string   `json:"name"`
 	Symbol      string   `json:"symbol"`
@@ -50,9 +51,11 @@ func (c Coin) GetID() string {
 type Trade struct {
 	ID                  string     `json:"id"`
 	UserID              string     `json:"user_id"`
-	FromCoinID          string     `json:"from_coin_id"`
-	ToCoinID            string     `json:"to_coin_id"`
-	CoinSymbol          string     `json:"coin_symbol"`
+	FromCoinMintAddress string     `json:"from_coin_mint_address"`
+	FromCoinPKID        uint64     `json:"from_coin_pk_id,omitempty"`
+	ToCoinMintAddress   string     `json:"to_coin_mint_address"`
+	ToCoinPKID          uint64     `json:"to_coin_pk_id,omitempty"`
+	CoinSymbol          string     `json:"coin_symbol"` // This might be redundant if From/ToCoin provides symbol, or useful for primary display
 	Type                string     `json:"type"`
 	Amount              float64    `json:"amount"`
 	Price               float64    `json:"price"`
@@ -74,8 +77,8 @@ func (t Trade) GetID() string {
 
 // TradeRequest represents a request to execute a trade
 type TradeRequest struct {
-	FromCoinID          string  `json:"from_coin_id"`
-	ToCoinID            string  `json:"to_coin_id"`
+	FromCoinMintAddress string  `json:"from_coin_mint_address"` // Changed from FromCoinID
+	ToCoinMintAddress   string  `json:"to_coin_mint_address"`   // Changed from ToCoinID
 	Amount              float64 `json:"amount"`
 	SignedTransaction   string  `json:"signed_transaction"`
 	UnsignedTransaction string  `json:"unsigned_transaction"`
@@ -159,6 +162,7 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 
 // RawCoin represents a raw token from Jupiter without enrichment
 type RawCoin struct {
+	ID          uint64 `json:"id,omitempty"`
 	MintAddress string `json:"mint_address"`
 	Symbol      string `json:"symbol"`
 	Name        string `json:"name"`

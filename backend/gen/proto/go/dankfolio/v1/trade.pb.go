@@ -27,8 +27,8 @@ type Trade struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	UserId          string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	FromCoinId      string                 `protobuf:"bytes,3,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"`
-	ToCoinId        string                 `protobuf:"bytes,4,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`
+	FromCoinId      string                 `protobuf:"bytes,3,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"` // Note: This will likely be FromCoinMintAddress in backend model
+	ToCoinId        string                 `protobuf:"bytes,4,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`       // Note: This will likely be ToCoinMintAddress in backend model
 	CoinSymbol      string                 `protobuf:"bytes,5,opt,name=coin_symbol,json=coinSymbol,proto3" json:"coin_symbol,omitempty"`
 	Type            string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
 	Amount          float64                `protobuf:"fixed64,7,opt,name=amount,proto3" json:"amount,omitempty"`
@@ -190,8 +190,8 @@ func (x *Trade) GetError() string {
 // GetSwapQuoteRequest is the request for getting a trade quote
 type GetSwapQuoteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FromCoinId    string                 `protobuf:"bytes,1,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"`
-	ToCoinId      string                 `protobuf:"bytes,2,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`
+	FromCoinId    string                 `protobuf:"bytes,1,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"` // Typically mint address
+	ToCoinId      string                 `protobuf:"bytes,2,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`       // Typically mint address
 	Amount        string                 `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	SlippageBps   string                 `protobuf:"bytes,4,opt,name=slippage_bps,json=slippageBps,proto3" json:"slippage_bps,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -352,12 +352,11 @@ func (x *GetSwapQuoteResponse) GetOutputMint() string {
 // PrepareSwapRequest is the request for preparing a swap transaction
 type PrepareSwapRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FromCoinId    string                 `protobuf:"bytes,1,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"`
-	ToCoinId      string                 `protobuf:"bytes,2,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`
+	FromCoinId    string                 `protobuf:"bytes,1,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"` // Typically mint address
+	ToCoinId      string                 `protobuf:"bytes,2,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`       // Typically mint address
 	Amount        string                 `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	SlippageBps   string                 `protobuf:"bytes,4,opt,name=slippage_bps,json=slippageBps,proto3" json:"slippage_bps,omitempty"`
-	UserPublicKey string                 `protobuf:"bytes,5,opt,name=user_public_key,json=userPublicKey,proto3" json:"user_public_key,omitempty"`
-	FromAddress   string                 `protobuf:"bytes,6,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`
+	UserPublicKey string                 `protobuf:"bytes,5,opt,name=user_public_key,json=userPublicKey,proto3" json:"user_public_key,omitempty"` // This is the wallet address of the user initiating the swap
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -427,13 +426,6 @@ func (x *PrepareSwapRequest) GetUserPublicKey() string {
 	return ""
 }
 
-func (x *PrepareSwapRequest) GetFromAddress() string {
-	if x != nil {
-		return x.FromAddress
-	}
-	return ""
-}
-
 // PrepareSwapResponse is the response with the unsigned transaction
 type PrepareSwapResponse struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
@@ -482,11 +474,11 @@ func (x *PrepareSwapResponse) GetUnsignedTransaction() string {
 // SubmitSwapRequest is the request for submitting a trade
 type SubmitSwapRequest struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
-	FromCoinId          string                 `protobuf:"bytes,1,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"`
-	ToCoinId            string                 `protobuf:"bytes,2,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`
+	FromCoinId          string                 `protobuf:"bytes,1,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"` // Typically mint address
+	ToCoinId            string                 `protobuf:"bytes,2,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`       // Typically mint address
 	Amount              float64                `protobuf:"fixed64,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	SignedTransaction   string                 `protobuf:"bytes,4,opt,name=signed_transaction,json=signedTransaction,proto3" json:"signed_transaction,omitempty"`
-	UnsignedTransaction string                 `protobuf:"bytes,5,opt,name=unsigned_transaction,json=unsignedTransaction,proto3" json:"unsigned_transaction,omitempty"` // used to retreive the record in the backend
+	UnsignedTransaction string                 `protobuf:"bytes,5,opt,name=unsigned_transaction,json=unsignedTransaction,proto3" json:"unsigned_transaction,omitempty"` // used to retrieve the record in the backend
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -694,9 +686,18 @@ func (*GetTradeRequest_TransactionHash) isGetTradeRequest_Identifier() {}
 
 // ListTradesRequest is the request for listing trades
 type ListTradesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Limit               int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset              int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	SortBy              string                 `protobuf:"bytes,3,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"` // e.g., "created_at", "amount"
+	SortDesc            bool                   `protobuf:"varint,4,opt,name=sort_desc,json=sortDesc,proto3" json:"sort_desc,omitempty"`
+	UserId              *string                `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`                                            // Filter by user ID (wallet public key)
+	Status              *string                `protobuf:"bytes,6,opt,name=status,proto3,oneof" json:"status,omitempty"`                                                          // Filter by trade status (e.g., "completed", "pending")
+	Type                *string                `protobuf:"bytes,7,opt,name=type,proto3,oneof" json:"type,omitempty"`                                                              // Filter by trade type (e.g., "swap", "transfer")
+	FromCoinMintAddress *string                `protobuf:"bytes,8,opt,name=from_coin_mint_address,json=fromCoinMintAddress,proto3,oneof" json:"from_coin_mint_address,omitempty"` // Filter by source coin mint address
+	ToCoinMintAddress   *string                `protobuf:"bytes,9,opt,name=to_coin_mint_address,json=toCoinMintAddress,proto3,oneof" json:"to_coin_mint_address,omitempty"`       // Filter by destination coin mint address
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ListTradesRequest) Reset() {
@@ -729,10 +730,74 @@ func (*ListTradesRequest) Descriptor() ([]byte, []int) {
 	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{8}
 }
 
+func (x *ListTradesRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListTradesRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *ListTradesRequest) GetSortBy() string {
+	if x != nil {
+		return x.SortBy
+	}
+	return ""
+}
+
+func (x *ListTradesRequest) GetSortDesc() bool {
+	if x != nil {
+		return x.SortDesc
+	}
+	return false
+}
+
+func (x *ListTradesRequest) GetUserId() string {
+	if x != nil && x.UserId != nil {
+		return *x.UserId
+	}
+	return ""
+}
+
+func (x *ListTradesRequest) GetStatus() string {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return ""
+}
+
+func (x *ListTradesRequest) GetType() string {
+	if x != nil && x.Type != nil {
+		return *x.Type
+	}
+	return ""
+}
+
+func (x *ListTradesRequest) GetFromCoinMintAddress() string {
+	if x != nil && x.FromCoinMintAddress != nil {
+		return *x.FromCoinMintAddress
+	}
+	return ""
+}
+
+func (x *ListTradesRequest) GetToCoinMintAddress() string {
+	if x != nil && x.ToCoinMintAddress != nil {
+		return *x.ToCoinMintAddress
+	}
+	return ""
+}
+
 // ListTradesResponse is the response containing a list of trades
 type ListTradesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Trades        []*Trade               `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
+	TotalCount    int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"` // Total number of trades matching the filter criteria (before pagination)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -772,6 +837,13 @@ func (x *ListTradesResponse) GetTrades() []*Trade {
 		return x.Trades
 	}
 	return nil
+}
+
+func (x *ListTradesResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
 }
 
 var File_dankfolio_v1_trade_proto protoreflect.FileDescriptor
@@ -820,7 +892,7 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\n" +
 	"input_mint\x18\x06 \x01(\tR\tinputMint\x12\x1f\n" +
 	"\voutput_mint\x18\a \x01(\tR\n" +
-	"outputMint\"\xda\x01\n" +
+	"outputMint\"\xb7\x01\n" +
 	"\x12PrepareSwapRequest\x12 \n" +
 	"\ffrom_coin_id\x18\x01 \x01(\tR\n" +
 	"fromCoinId\x12\x1c\n" +
@@ -828,8 +900,7 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"to_coin_id\x18\x02 \x01(\tR\btoCoinId\x12\x16\n" +
 	"\x06amount\x18\x03 \x01(\tR\x06amount\x12!\n" +
 	"\fslippage_bps\x18\x04 \x01(\tR\vslippageBps\x12&\n" +
-	"\x0fuser_public_key\x18\x05 \x01(\tR\ruserPublicKey\x12!\n" +
-	"\ffrom_address\x18\x06 \x01(\tR\vfromAddress\"H\n" +
+	"\x0fuser_public_key\x18\x05 \x01(\tR\ruserPublicKey\"H\n" +
 	"\x13PrepareSwapResponse\x121\n" +
 	"\x14unsigned_transaction\x18\x01 \x01(\tR\x13unsignedTransaction\"\xcd\x01\n" +
 	"\x11SubmitSwapRequest\x12 \n" +
@@ -847,10 +918,27 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tH\x00R\x02id\x12+\n" +
 	"\x10transaction_hash\x18\x02 \x01(\tH\x00R\x0ftransactionHashB\f\n" +
 	"\n" +
-	"identifier\"\x13\n" +
-	"\x11ListTradesRequest\"A\n" +
+	"identifier\"\x8f\x03\n" +
+	"\x11ListTradesRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12\x17\n" +
+	"\asort_by\x18\x03 \x01(\tR\x06sortBy\x12\x1b\n" +
+	"\tsort_desc\x18\x04 \x01(\bR\bsortDesc\x12\x1c\n" +
+	"\auser_id\x18\x05 \x01(\tH\x00R\x06userId\x88\x01\x01\x12\x1b\n" +
+	"\x06status\x18\x06 \x01(\tH\x01R\x06status\x88\x01\x01\x12\x17\n" +
+	"\x04type\x18\a \x01(\tH\x02R\x04type\x88\x01\x01\x128\n" +
+	"\x16from_coin_mint_address\x18\b \x01(\tH\x03R\x13fromCoinMintAddress\x88\x01\x01\x124\n" +
+	"\x14to_coin_mint_address\x18\t \x01(\tH\x04R\x11toCoinMintAddress\x88\x01\x01B\n" +
+	"\n" +
+	"\b_user_idB\t\n" +
+	"\a_statusB\a\n" +
+	"\x05_typeB\x19\n" +
+	"\x17_from_coin_mint_addressB\x17\n" +
+	"\x15_to_coin_mint_address\"b\n" +
 	"\x12ListTradesResponse\x12+\n" +
-	"\x06trades\x18\x01 \x03(\v2\x13.dankfolio.v1.TradeR\x06trades2\x9b\x03\n" +
+	"\x06trades\x18\x01 \x03(\v2\x13.dankfolio.v1.TradeR\x06trades\x12\x1f\n" +
+	"\vtotal_count\x18\x02 \x01(\x05R\n" +
+	"totalCount2\x9b\x03\n" +
 	"\fTradeService\x12U\n" +
 	"\fGetSwapQuote\x12!.dankfolio.v1.GetSwapQuoteRequest\x1a\".dankfolio.v1.GetSwapQuoteResponse\x12R\n" +
 	"\vPrepareSwap\x12 .dankfolio.v1.PrepareSwapRequest\x1a!.dankfolio.v1.PrepareSwapResponse\x12O\n" +
@@ -919,6 +1007,7 @@ func file_dankfolio_v1_trade_proto_init() {
 		(*GetTradeRequest_Id)(nil),
 		(*GetTradeRequest_TransactionHash)(nil),
 	}
+	file_dankfolio_v1_trade_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

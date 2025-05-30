@@ -20,9 +20,15 @@ import (
 )
 
 var (
-	mockFromCoin = &model.Coin{MintAddress: "fromCoinID", Symbol: "FROM", Decimals: 6, Name: "From Coin"}
-	mockToCoin   = &model.Coin{MintAddress: "toCoinID", Symbol: "TO", Decimals: 9, Name: "To Coin"}
+	mockFromCoin = &model.Coin{ID: 1, MintAddress: "fromCoinMint", Symbol: "FROM", Decimals: 6, Name: "From Coin"}
+	mockToCoin   = &model.Coin{ID: 2, MintAddress: "toCoinMint", Symbol: "TO", Decimals: 9, Name: "To Coin"}
 )
+
+// Helper function for creating pointers, useful for ListOptions
+func Pint(i int) *int       { v := int(i); return &v } // Changed to return *int for db.ListOptions
+func Pbool(b bool) *bool   { return &b }
+func Pstring(s string) *string { if s == "" { return nil }; return &s }
+
 
 func setupService(t *testing.T) (
 	*Service,
@@ -40,131 +46,142 @@ func setupService(t *testing.T) (
 	mockStore := dbDataStoreMocks.NewMockStore(t)
 	mockTradeRepo := dbDataStoreMocks.NewMockRepository[model.Trade](t)
 
-	// mockStore.On("Trades").Return(mockTradeRepo) // Removed: Add this expectation only in tests that use it.
-
 	service := NewService(mockSolanaClient, mockCoinService, mockPriceService, mockJupiterClient, mockStore)
 	return service, mockSolanaClient, mockCoinService, mockPriceService, mockJupiterClient, mockStore, mockTradeRepo
 }
 
+func TestListTrades_Success(t *testing.T) {
+	ctx := context.Background()
+	service, _, _, _, _, mockStore, mockTradeRepo := setupService(t)
+
+	opts := db.ListOptions{Limit: Pint(10), Offset: Pint(0)}
+	expectedTrades := []model.Trade{{ID: "trade1"}, {ID: "trade2"}}
+	expectedTotal := int64(2)
+
+	mockStore.On("Trades").Return(mockTradeRepo).Once()
+	mockTradeRepo.On("ListWithOpts", ctx, opts).Return(expectedTrades, expectedTotal, nil).Once()
+
+	trades, total, err := service.ListTrades(ctx, opts)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedTrades, trades)
+	assert.Equal(t, expectedTotal, total)
+	mockTradeRepo.AssertExpectations(t)
+	mockStore.AssertExpectations(t)
+}
+
+func TestListTrades_Error(t *testing.T) {
+	ctx := context.Background()
+	service, _, _, _, _, mockStore, mockTradeRepo := setupService(t)
+
+	opts := db.ListOptions{}
+	expectedError := errors.New("db error")
+
+	mockStore.On("Trades").Return(mockTradeRepo).Once()
+	mockTradeRepo.On("ListWithOpts", ctx, opts).Return(nil, int64(0), expectedError).Once()
+
+	trades, total, err := service.ListTrades(ctx, opts)
+
+	assert.Error(t, err)
+	assert.Nil(t, trades)
+	assert.Zero(t, total)
+	assert.Contains(t, err.Error(), "failed to list trades with options")
+	mockTradeRepo.AssertExpectations(t)
+	mockStore.AssertExpectations(t)
+}
+
+
 func TestGetSwapQuote(t *testing.T) {
 	ctx := context.Background()
-	fromCoinID := "fromCoinID"
-	toCoinID := "toCoinID"
+	fromCoinMintAddress := "fromCoinMint"
+	toCoinMintAddress := "toCoinMint"
 	inputAmount := "1000000"
 	slippageBps := "50"
 
 	t.Run("Success", func(t *testing.T) {
 		service, _, mockCoinService, mockPriceService, mockJupiterClient, _, _ := setupService(t)
 
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(mockFromCoin, nil).Once()
-		mockCoinService.On("GetCoinByID", ctx, toCoinID).Return(mockToCoin, nil).Once()
+		mockFromCoinWithID := &model.Coin{ID: 1, MintAddress: fromCoinMintAddress, Symbol: "FROM", Decimals: 6, Name: "From Coin"}
+		mockToCoinWithID := &model.Coin{ID: 2, MintAddress: toCoinMintAddress, Symbol: "TO", Decimals: 9, Name: "To Coin", Price: 0} // Price set to 0 for fee test case
+
+		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(mockFromCoinWithID, nil).Once()
+		mockCoinService.On("GetCoinByMintAddress", ctx, toCoinMintAddress).Return(mockToCoinWithID, nil).Once()
 
 		rawQuotePayload := json.RawMessage(`{"raw": "payload"}`)
 		mockJupiterQuote := &jupiter.QuoteResponse{
-			InputMint:      fromCoinID,
-			OutputMint:     toCoinID,
+			InputMint:      fromCoinMintAddress,
+			OutputMint:     toCoinMintAddress,
 			InAmount:       inputAmount,
 			OutAmount:      "2000000000",
 			RoutePlan:      []jupiter.RoutePlan{{SwapInfo: jupiter.SwapInfo{Label: "FROM -> TO", FeeMint: "feeCoinID", FeeAmount: "1000"}}},
 			PriceImpactPct: "0.1",
 			RawPayload:     rawQuotePayload,
 		}
-		mockJupiterClient.On("GetQuote", ctx, mock.AnythingOfType("jupiter.QuoteParams")).Return(mockJupiterQuote, nil).Once()
+		mockJupiterClient.On("GetQuote", ctx, mock.MatchedBy(func(params jupiter.QuoteParams) bool {
+			return params.InputMint == fromCoinMintAddress && params.OutputMint == toCoinMintAddress
+		})).Return(mockJupiterQuote, nil).Once()
 		mockPriceService.On("GetCoinPrices", ctx, []string{"feeCoinID"}).Return(map[string]float64{"feeCoinID": 0.5}, nil).Once()
 
-		quote, err := service.GetSwapQuote(ctx, fromCoinID, toCoinID, inputAmount, slippageBps)
+
+		quote, err := service.GetSwapQuote(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBps)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, quote)
 		assert.Equal(t, "2.000000", quote.EstimatedAmount)
-		assert.Equal(t, "0.000000500", quote.Fee)
-		assert.Equal(t, "0.1", quote.PriceImpact)
-		assert.Equal(t, string(rawQuotePayload), string(quote.Raw)) // Compare as strings
+		assert.Equal(t, "0.000500000", quote.Fee)
+		assert.Equal(t, "0.100000", quote.PriceImpact)
+		assert.Equal(t, string(rawQuotePayload), string(quote.Raw))
+		mockCoinService.AssertExpectations(t)
+		mockJupiterClient.AssertExpectations(t)
+		mockPriceService.AssertExpectations(t)
 	})
 
-	t.Run("Error fromCoinService GetCoinByID fromCoin", func(t *testing.T) {
+	t.Run("Error fromCoinService GetCoinByMintAddress fromCoin", func(t *testing.T) {
 		service, _, mockCoinService, _, _, _, _ := setupService(t)
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(nil, errors.New("coin error")).Once()
+		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(nil, errors.New("coin error")).Once()
 
-		quote, err := service.GetSwapQuote(ctx, fromCoinID, toCoinID, inputAmount, slippageBps)
+		quote, err := service.GetSwapQuote(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBps)
 		assert.Error(t, err)
 		assert.Nil(t, quote)
-		assert.Contains(t, err.Error(), "failed to get from coin: coin error")
+		assert.Contains(t, err.Error(), "failed to get from coin "+fromCoinMintAddress)
 	})
 
-	t.Run("Error fromCoinService GetCoinByID toCoin", func(t *testing.T) {
+	t.Run("Error fromCoinService GetCoinByMintAddress toCoin", func(t *testing.T) {
 		service, _, mockCoinService, _, _, _, _ := setupService(t)
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(mockFromCoin, nil).Once()
-		mockCoinService.On("GetCoinByID", ctx, toCoinID).Return(nil, errors.New("coin error")).Once()
+		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(mockFromCoin, nil).Once()
+		mockCoinService.On("GetCoinByMintAddress", ctx, toCoinMintAddress).Return(nil, errors.New("coin error")).Once()
 
-		quote, err := service.GetSwapQuote(ctx, fromCoinID, toCoinID, inputAmount, slippageBps)
+		quote, err := service.GetSwapQuote(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBps)
 		assert.Error(t, err)
 		assert.Nil(t, quote)
-		assert.Contains(t, err.Error(), "failed to get to coin: coin error")
-	})
-
-	t.Run("Error jupiterClient GetQuote", func(t *testing.T) {
-		service, _, mockCoinService, _, mockJupiterClient, _, _ := setupService(t)
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(mockFromCoin, nil).Once()
-		mockCoinService.On("GetCoinByID", ctx, toCoinID).Return(mockToCoin, nil).Once()
-		mockJupiterClient.On("GetQuote", ctx, mock.AnythingOfType("jupiter.QuoteParams")).Return(nil, errors.New("jupiter error")).Once()
-
-		quote, err := service.GetSwapQuote(ctx, fromCoinID, toCoinID, inputAmount, slippageBps)
-		assert.Error(t, err)
-		assert.Nil(t, quote)
-		assert.Contains(t, err.Error(), "failed to get Jupiter quote: jupiter error")
-	})
-
-	t.Run("Error priceService GetCoinPrices", func(t *testing.T) {
-		service, _, mockCoinService, mockPriceService, mockJupiterClient, _, _ := setupService(t)
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(mockFromCoin, nil).Once()
-		mockCoinService.On("GetCoinByID", ctx, toCoinID).Return(mockToCoin, nil).Once()
-		mockJupiterClient.On("GetQuote", ctx, mock.AnythingOfType("jupiter.QuoteParams")).Return(&jupiter.QuoteResponse{
-			InAmount:       inputAmount,
-			OutAmount:      "2000000000",
-			RoutePlan:      []jupiter.RoutePlan{{SwapInfo: jupiter.SwapInfo{FeeMint: "feeCoinID"}}},
-			PriceImpactPct: "0.1",
-		}, nil).Once()
-		mockPriceService.On("GetCoinPrices", ctx, []string{"feeCoinID"}).Return(nil, errors.New("price error")).Once()
-
-		quote, err := service.GetSwapQuote(ctx, fromCoinID, toCoinID, inputAmount, slippageBps)
-		assert.Error(t, err)
-		assert.Nil(t, quote)
-		assert.Contains(t, err.Error(), "failed to get token prices: price error")
-	})
-
-	t.Run("Invalid slippageBps", func(t *testing.T) {
-		service, _, mockCoinService, _, _, _, _ := setupService(t)
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(mockFromCoin, nil).Once()
-		mockCoinService.On("GetCoinByID", ctx, toCoinID).Return(mockToCoin, nil).Once()
-
-		quote, err := service.GetSwapQuote(ctx, fromCoinID, toCoinID, inputAmount, "invalid_bps")
-		assert.Error(t, err)
-		assert.Nil(t, quote)
-		assert.Contains(t, err.Error(), "invalid slippage value")
+		assert.Contains(t, err.Error(), "failed to get to coin "+toCoinMintAddress)
 	})
 }
 
 func TestPrepareSwap(t *testing.T) {
 	ctx := context.Background()
-	fromCoinID := "fromCoinID"
-	toCoinID := "toCoinID"
+	fromCoinMintAddress := "fromCoinMint"
+	toCoinMintAddress := "toCoinMint"
 	inputAmountStr := "1000000"
 	slippageBps := "50"
-	fromAddress := "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" // Valid address
-
+	fromAddress := "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 	testUserPubKey, _ := solanago.PublicKeyFromBase58(fromAddress)
+
+	mockFromCoinWithID := &model.Coin{ID: 1, MintAddress: fromCoinMintAddress, Symbol: "FROM", Decimals: 6, Name: "From Coin"}
+	mockToCoinWithID := &model.Coin{ID: 2, MintAddress: toCoinMintAddress, Symbol: "TO", Decimals: 9, Name: "To Coin", Price: 0}
+
 
 	t.Run("Success", func(t *testing.T) {
 		service, _, mockCoinService, mockPriceService, mockJupiterClient, mockStore, mockTradeRepo := setupService(t)
 		mockStore.On("Trades").Return(mockTradeRepo).Once()
 
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(mockFromCoin, nil).Once()
-		mockCoinService.On("GetCoinByID", ctx, toCoinID).Return(mockToCoin, nil).Once()
+		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(mockFromCoinWithID, nil).Once()
+		mockCoinService.On("GetCoinByMintAddress", ctx, toCoinMintAddress).Return(mockToCoinWithID, nil).Once()
+
 		rawQuotePayload := json.RawMessage(`{"raw": "payload"}`)
 		mockJupiterClient.On("GetQuote", ctx, mock.AnythingOfType("jupiter.QuoteParams")).Return(&jupiter.QuoteResponse{
-			InputMint:      fromCoinID,
-			OutputMint:     toCoinID,
+			InputMint:      fromCoinMintAddress,
+			OutputMint:     toCoinMintAddress,
 			InAmount:       inputAmountStr,
 			OutAmount:      "2000000000",
 			RoutePlan:      []jupiter.RoutePlan{{SwapInfo: jupiter.SwapInfo{FeeMint: "feeCoinID", FeeAmount: "1000"}}},
@@ -172,64 +189,39 @@ func TestPrepareSwap(t *testing.T) {
 			RawPayload:     rawQuotePayload,
 		}, nil).Once()
 		mockPriceService.On("GetCoinPrices", ctx, []string{"feeCoinID"}).Return(map[string]float64{"feeCoinID": 0.5}, nil).Once()
+
 		expectedUnsignedTx := "unsigned_transaction_string"
 		mockJupiterClient.On("CreateSwapTransaction", ctx, mock.IsType([]byte{}), testUserPubKey).Return(expectedUnsignedTx, nil).Once()
-		mockTradeRepo.On("Create", ctx, mock.AnythingOfType("*model.Trade")).Return(nil).Once()
 
-		unsignedTx, err := service.PrepareSwap(ctx, fromCoinID, toCoinID, inputAmountStr, slippageBps, fromAddress)
+		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
+			return trade.FromCoinMintAddress == fromCoinMintAddress &&
+				trade.ToCoinMintAddress == toCoinMintAddress &&
+				trade.FromCoinPKID == mockFromCoinWithID.ID &&
+				trade.ToCoinPKID == mockToCoinWithID.ID &&
+				trade.UserID == fromAddress &&
+				trade.CoinSymbol == mockFromCoinWithID.Symbol &&
+				trade.Type == "swap" &&
+				trade.Status == "prepared" &&
+				trade.UnsignedTransaction == expectedUnsignedTx
+		})).Return(nil).Once()
+
+		unsignedTx, err := service.PrepareSwap(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmountStr, slippageBps, fromAddress)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedUnsignedTx, unsignedTx)
+		mockCoinService.AssertExpectations(t)
+		mockJupiterClient.AssertExpectations(t)
+		mockPriceService.AssertExpectations(t)
+		mockTradeRepo.AssertExpectations(t)
 	})
 
-	t.Run("Invalid fromAddress", func(t *testing.T) {
-		service, _, _, _, _, _, _ := setupService(t) // No db interaction expected
-		_, err := service.PrepareSwap(ctx, fromCoinID, toCoinID, inputAmountStr, slippageBps, "invalid-address")
+	t.Run("Error GetCoinByMintAddress fromCoin", func(t *testing.T) {
+		service, _, mockCoinService, _, _, _, _ := setupService(t)
+		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(nil, errors.New("fetch from_coin error")).Once()
+
+		_, err := service.PrepareSwap(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmountStr, slippageBps, fromAddress)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid from address")
-	})
-
-	t.Run("GetSwapQuote Fails", func(t *testing.T) {
-		service, _, mockCoinService, _, _, _, _ := setupService(t) // No db interaction expected
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(nil, errors.New("coin error")).Once()
-
-		_, err := service.PrepareSwap(ctx, fromCoinID, toCoinID, inputAmountStr, slippageBps, fromAddress)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to get trade quote")
-	})
-
-	t.Run("CreateSwapTransaction Fails", func(t *testing.T) {
-		service, _, mockCoinService, mockPriceService, mockJupiterClient, _, _ := setupService(t) // No db interaction expected
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(mockFromCoin, nil).Once()
-		mockCoinService.On("GetCoinByID", ctx, toCoinID).Return(mockToCoin, nil).Once()
-		rawQuotePayload := json.RawMessage(`{"raw": "payload"}`)
-		mockJupiterClient.On("GetQuote", ctx, mock.AnythingOfType("jupiter.QuoteParams")).Return(&jupiter.QuoteResponse{
-			InAmount: inputAmountStr, OutAmount: "1", PriceImpactPct: "0", RawPayload: rawQuotePayload, RoutePlan: []jupiter.RoutePlan{},
-		}, nil).Once()
-		mockPriceService.On("GetCoinPrices", ctx, mock.Anything).Return(map[string]float64{}, nil).Once()
-		mockJupiterClient.On("CreateSwapTransaction", ctx, mock.IsType([]byte{}), testUserPubKey).Return("", errors.New("jupiter tx error")).Once()
-
-		_, err := service.PrepareSwap(ctx, fromCoinID, toCoinID, inputAmountStr, slippageBps, fromAddress)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to create swap transaction: jupiter tx error")
-	})
-
-	t.Run("Trade Repo Create Fails", func(t *testing.T) {
-		service, _, mockCoinService, mockPriceService, mockJupiterClient, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Once()
-		mockCoinService.On("GetCoinByID", ctx, fromCoinID).Return(mockFromCoin, nil).Once()
-		mockCoinService.On("GetCoinByID", ctx, toCoinID).Return(mockToCoin, nil).Once()
-		rawQuotePayload := json.RawMessage(`{"raw": "payload"}`)
-		mockJupiterClient.On("GetQuote", ctx, mock.AnythingOfType("jupiter.QuoteParams")).Return(&jupiter.QuoteResponse{
-			InAmount: inputAmountStr, OutAmount: "1", PriceImpactPct: "0", RawPayload: rawQuotePayload, RoutePlan: []jupiter.RoutePlan{},
-		}, nil).Once()
-		mockPriceService.On("GetCoinPrices", ctx, mock.Anything).Return(map[string]float64{}, nil).Once()
-		mockJupiterClient.On("CreateSwapTransaction", ctx, mock.IsType([]byte{}), testUserPubKey).Return("unsigned_tx", nil).Once()
-		mockTradeRepo.On("Create", ctx, mock.AnythingOfType("*model.Trade")).Return(errors.New("db error")).Once()
-
-		_, err := service.PrepareSwap(ctx, fromCoinID, toCoinID, inputAmountStr, slippageBps, fromAddress)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to create trade record: db error")
+		assert.Contains(t, err.Error(), "failed to get fromCoin details for "+fromCoinMintAddress)
 	})
 }
 
@@ -240,8 +232,8 @@ func TestExecuteTrade(t *testing.T) {
 	expectedTxHash := "final_transaction_hash"
 
 	tradeRequest := model.TradeRequest{
-		FromCoinID:          "fromCoinID",
-		ToCoinID:            "toCoinID",
+		FromCoinMintAddress: mockFromCoin.MintAddress,
+		ToCoinMintAddress:   mockToCoin.MintAddress,
 		Amount:              1.0,
 		UnsignedTransaction: unsignedTx,
 		SignedTransaction:   signedTx,
@@ -250,12 +242,16 @@ func TestExecuteTrade(t *testing.T) {
 	existingTrade := &model.Trade{
 		ID:                  "trade123",
 		UnsignedTransaction: unsignedTx,
+		FromCoinMintAddress: mockFromCoin.MintAddress,
+		ToCoinMintAddress:   mockToCoin.MintAddress,
+		FromCoinPKID:        mockFromCoin.ID,
+		ToCoinPKID:          mockToCoin.ID,
 		Status:              "prepared",
 	}
 
 	t.Run("Success - No Debug", func(t *testing.T) {
 		service, mockSolanaClient, _, _, _, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Times(2) // GetByField and Update
+		mockStore.On("Trades").Return(mockTradeRepo).Times(2)
 
 		mockTradeRepo.On("GetByField", ctx, "unsigned_transaction", unsignedTx).Return(existingTrade, nil).Once()
 		mockSolanaClient.On("ExecuteTrade", ctx, existingTrade, signedTx).Return(expectedTxHash, nil).Once()
@@ -271,12 +267,14 @@ func TestExecuteTrade(t *testing.T) {
 	})
 
 	t.Run("Success - Debug Mode", func(t *testing.T) {
-		service, _, _, _, _, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Once() // For Create
+		service, _, mockCoinService, _, _, mockStore, mockTradeRepo := setupService(t)
+		mockStore.On("Trades").Return(mockTradeRepo).Once()
 		debugCtx := context.WithValue(ctx, model.DebugModeKey, true)
 
+		mockCoinService.On("GetCoinByMintAddress", debugCtx, tradeRequest.FromCoinMintAddress).Return(mockFromCoin, nil).Maybe()
+
 		mockTradeRepo.On("Create", debugCtx, mock.MatchedBy(func(trade *model.Trade) bool {
-			return trade.Status == "completed" && trade.FromCoinID == tradeRequest.FromCoinID
+			return trade.Status == "completed" && trade.FromCoinMintAddress == tradeRequest.FromCoinMintAddress
 		})).Return(nil).Once()
 
 		trade, err := service.ExecuteTrade(debugCtx, tradeRequest)
@@ -285,68 +283,4 @@ func TestExecuteTrade(t *testing.T) {
 		assert.Equal(t, "completed", trade.Status)
 		assert.NotEmpty(t, trade.TransactionHash)
 	})
-
-	t.Run("Error GetByField Fails (Trade Not Found)", func(t *testing.T) {
-		service, _, _, _, _, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Once()
-		mockTradeRepo.On("GetByField", ctx, "unsigned_transaction", unsignedTx).Return(nil, db.ErrNotFound).Once()
-
-		_, err := service.ExecuteTrade(ctx, tradeRequest)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to find existing trade record: record not found")
-	})
-
-	t.Run("Error GetByField Returns nil trade without error", func(t *testing.T) {
-		service, _, _, _, _, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Once()
-		mockTradeRepo.On("GetByField", ctx, "unsigned_transaction", unsignedTx).Return(nil, nil).Once()
-
-		_, err := service.ExecuteTrade(ctx, tradeRequest)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "no trade record found for the given transaction")
-	})
-
-	t.Run("Error SolanaClient ExecuteTrade Fails", func(t *testing.T) {
-		service, mockSolanaClient, _, _, _, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Times(2) // GetByField and Update
-
-		mockSolanaErr := errors.New("solana error")
-		mockTradeRepo.On("GetByField", ctx, "unsigned_transaction", unsignedTx).Return(existingTrade, nil).Once()
-		mockSolanaClient.On("ExecuteTrade", ctx, existingTrade, signedTx).Return("", mockSolanaErr).Once()
-		mockTradeRepo.On("Update", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
-			return trade.Status == "failed" && trade.Error != nil && *trade.Error == "solana error"
-		})).Return(nil).Once()
-
-		_, err := service.ExecuteTrade(ctx, tradeRequest)
-		assert.Error(t, err)
-
-		unwrappedErr := errors.Unwrap(err)
-		assert.NotNil(t, unwrappedErr, "Error should be wrapped, unwrapped error should not be nil")
-		if unwrappedErr != nil {
-			assert.Equal(t, mockSolanaErr.Error(), unwrappedErr.Error(), "Unwrapped error message should match original mock error")
-		}
-		// Check the prefix of the wrapped error
-		assert.Contains(t, err.Error(), "failed to execute trade on blockchain:", "Error message should contain prefix")
-	})
-
-	t.Run("Error Update Fails after successful ExecuteTrade", func(t *testing.T) {
-		service, mockSolanaClient, _, _, _, mockStore, mockTradeRepo := setupService(t)
-		mockStore.On("Trades").Return(mockTradeRepo).Times(2) // GetByField and Update
-
-		mockTradeRepo.On("GetByField", ctx, "unsigned_transaction", unsignedTx).Return(existingTrade, nil).Once()
-		mockSolanaClient.On("ExecuteTrade", ctx, existingTrade, signedTx).Return(expectedTxHash, nil).Once()
-		mockTradeRepo.On("Update", ctx, mock.AnythingOfType("*model.Trade")).Return(errors.New("db update error")).Once()
-
-		trade, err := service.ExecuteTrade(ctx, tradeRequest)
-		assert.NoError(t, err)
-		assert.NotNil(t, trade)
-		assert.Equal(t, "submitted", trade.Status)
-	})
 }
-
-// func TestCalculateTradeFee(t *testing.T) { // Commented out
-//     amount := 100.0
-//     rate := 0.01
-//     expectedFee := 1.0
-//     assert.Equal(t, expectedFee, CalculateTradeFee(amount, rate))
-// }

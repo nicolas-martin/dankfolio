@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/trade.proto.
  */
 export const file_dankfolio_v1_trade: GenFile = /*@__PURE__*/
-  fileDesc("ChhkYW5rZm9saW8vdjEvdHJhZGUucHJvdG8SDGRhbmtmb2xpby52MSKHAwoFVHJhZGUSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIUCgxmcm9tX2NvaW5faWQYAyABKAkSEgoKdG9fY29pbl9pZBgEIAEoCRITCgtjb2luX3N5bWJvbBgFIAEoCRIMCgR0eXBlGAYgASgJEg4KBmFtb3VudBgHIAEoARINCgVwcmljZRgIIAEoARILCgNmZWUYCSABKAESDgoGc3RhdHVzGAogASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMY29tcGxldGVkX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgAiAEBEhUKDWNvbmZpcm1hdGlvbnMYDiABKAUSEQoJZmluYWxpemVkGA8gASgIEhIKBWVycm9yGBAgASgJSAGIAQFCDwoNX2NvbXBsZXRlZF9hdEIICgZfZXJyb3IiZQoTR2V0U3dhcFF1b3RlUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJIqcBChRHZXRTd2FwUXVvdGVSZXNwb25zZRIYChBlc3RpbWF0ZWRfYW1vdW50GAEgASgJEhUKDWV4Y2hhbmdlX3JhdGUYAiABKAkSCwoDZmVlGAMgASgJEhQKDHByaWNlX2ltcGFjdBgEIAEoCRISCgpyb3V0ZV9wbGFuGAUgAygJEhIKCmlucHV0X21pbnQYBiABKAkSEwoLb3V0cHV0X21pbnQYByABKAkikwEKElByZXBhcmVTd2FwUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJEhcKD3VzZXJfcHVibGljX2tleRgFIAEoCRIUCgxmcm9tX2FkZHJlc3MYBiABKAkiMwoTUHJlcGFyZVN3YXBSZXNwb25zZRIcChR1bnNpZ25lZF90cmFuc2FjdGlvbhgBIAEoCSKHAQoRU3VibWl0U3dhcFJlcXVlc3QSFAoMZnJvbV9jb2luX2lkGAEgASgJEhIKCnRvX2NvaW5faWQYAiABKAkSDgoGYW1vdW50GAMgASgBEhoKEnNpZ25lZF90cmFuc2FjdGlvbhgEIAEoCRIcChR1bnNpZ25lZF90cmFuc2FjdGlvbhgFIAEoCSJAChJTdWJtaXRTd2FwUmVzcG9uc2USEAoIdHJhZGVfaWQYASABKAkSGAoQdHJhbnNhY3Rpb25faGFzaBgCIAEoCSJJCg9HZXRUcmFkZVJlcXVlc3QSDAoCaWQYASABKAlIABIaChB0cmFuc2FjdGlvbl9oYXNoGAIgASgJSABCDAoKaWRlbnRpZmllciITChFMaXN0VHJhZGVzUmVxdWVzdCI5ChJMaXN0VHJhZGVzUmVzcG9uc2USIwoGdHJhZGVzGAEgAygLMhMuZGFua2ZvbGlvLnYxLlRyYWRlMpsDCgxUcmFkZVNlcnZpY2USVQoMR2V0U3dhcFF1b3RlEiEuZGFua2ZvbGlvLnYxLkdldFN3YXBRdW90ZVJlcXVlc3QaIi5kYW5rZm9saW8udjEuR2V0U3dhcFF1b3RlUmVzcG9uc2USUgoLUHJlcGFyZVN3YXASIC5kYW5rZm9saW8udjEuUHJlcGFyZVN3YXBSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLlByZXBhcmVTd2FwUmVzcG9uc2USTwoKU3VibWl0U3dhcBIfLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVxdWVzdBogLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVzcG9uc2USPgoIR2V0VHJhZGUSHS5kYW5rZm9saW8udjEuR2V0VHJhZGVSZXF1ZXN0GhMuZGFua2ZvbGlvLnYxLlRyYWRlEk8KCkxpc3RUcmFkZXMSHy5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1JlcXVlc3QaIC5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1Jlc3BvbnNlQrYBChBjb20uZGFua2ZvbGlvLnYxQgpUcmFkZVByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChhkYW5rZm9saW8vdjEvdHJhZGUucHJvdG8SDGRhbmtmb2xpby52MSKHAwoFVHJhZGUSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIUCgxmcm9tX2NvaW5faWQYAyABKAkSEgoKdG9fY29pbl9pZBgEIAEoCRITCgtjb2luX3N5bWJvbBgFIAEoCRIMCgR0eXBlGAYgASgJEg4KBmFtb3VudBgHIAEoARINCgVwcmljZRgIIAEoARILCgNmZWUYCSABKAESDgoGc3RhdHVzGAogASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMY29tcGxldGVkX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgAiAEBEhUKDWNvbmZpcm1hdGlvbnMYDiABKAUSEQoJZmluYWxpemVkGA8gASgIEhIKBWVycm9yGBAgASgJSAGIAQFCDwoNX2NvbXBsZXRlZF9hdEIICgZfZXJyb3IiZQoTR2V0U3dhcFF1b3RlUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJIqcBChRHZXRTd2FwUXVvdGVSZXNwb25zZRIYChBlc3RpbWF0ZWRfYW1vdW50GAEgASgJEhUKDWV4Y2hhbmdlX3JhdGUYAiABKAkSCwoDZmVlGAMgASgJEhQKDHByaWNlX2ltcGFjdBgEIAEoCRISCgpyb3V0ZV9wbGFuGAUgAygJEhIKCmlucHV0X21pbnQYBiABKAkSEwoLb3V0cHV0X21pbnQYByABKAkifQoSUHJlcGFyZVN3YXBSZXF1ZXN0EhQKDGZyb21fY29pbl9pZBgBIAEoCRISCgp0b19jb2luX2lkGAIgASgJEg4KBmFtb3VudBgDIAEoCRIUCgxzbGlwcGFnZV9icHMYBCABKAkSFwoPdXNlcl9wdWJsaWNfa2V5GAUgASgJIjMKE1ByZXBhcmVTd2FwUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkihwEKEVN1Ym1pdFN3YXBSZXF1ZXN0EhQKDGZyb21fY29pbl9pZBgBIAEoCRISCgp0b19jb2luX2lkGAIgASgJEg4KBmFtb3VudBgDIAEoARIaChJzaWduZWRfdHJhbnNhY3Rpb24YBCABKAkSHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YBSABKAkiQAoSU3VibWl0U3dhcFJlc3BvbnNlEhAKCHRyYWRlX2lkGAEgASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYAiABKAkiSQoPR2V0VHJhZGVSZXF1ZXN0EgwKAmlkGAEgASgJSAASGgoQdHJhbnNhY3Rpb25faGFzaBgCIAEoCUgAQgwKCmlkZW50aWZpZXIisAIKEUxpc3RUcmFkZXNSZXF1ZXN0Eg0KBWxpbWl0GAEgASgFEg4KBm9mZnNldBgCIAEoBRIPCgdzb3J0X2J5GAMgASgJEhEKCXNvcnRfZGVzYxgEIAEoCBIUCgd1c2VyX2lkGAUgASgJSACIAQESEwoGc3RhdHVzGAYgASgJSAGIAQESEQoEdHlwZRgHIAEoCUgCiAEBEiMKFmZyb21fY29pbl9taW50X2FkZHJlc3MYCCABKAlIA4gBARIhChR0b19jb2luX21pbnRfYWRkcmVzcxgJIAEoCUgEiAEBQgoKCF91c2VyX2lkQgkKB19zdGF0dXNCBwoFX3R5cGVCGQoXX2Zyb21fY29pbl9taW50X2FkZHJlc3NCFwoVX3RvX2NvaW5fbWludF9hZGRyZXNzIk4KEkxpc3RUcmFkZXNSZXNwb25zZRIjCgZ0cmFkZXMYASADKAsyEy5kYW5rZm9saW8udjEuVHJhZGUSEwoLdG90YWxfY291bnQYAiABKAUymwMKDFRyYWRlU2VydmljZRJVCgxHZXRTd2FwUXVvdGUSIS5kYW5rZm9saW8udjEuR2V0U3dhcFF1b3RlUmVxdWVzdBoiLmRhbmtmb2xpby52MS5HZXRTd2FwUXVvdGVSZXNwb25zZRJSCgtQcmVwYXJlU3dhcBIgLmRhbmtmb2xpby52MS5QcmVwYXJlU3dhcFJlcXVlc3QaIS5kYW5rZm9saW8udjEuUHJlcGFyZVN3YXBSZXNwb25zZRJPCgpTdWJtaXRTd2FwEh8uZGFua2ZvbGlvLnYxLlN1Ym1pdFN3YXBSZXF1ZXN0GiAuZGFua2ZvbGlvLnYxLlN1Ym1pdFN3YXBSZXNwb25zZRI+CghHZXRUcmFkZRIdLmRhbmtmb2xpby52MS5HZXRUcmFkZVJlcXVlc3QaEy5kYW5rZm9saW8udjEuVHJhZGUSTwoKTGlzdFRyYWRlcxIfLmRhbmtmb2xpby52MS5MaXN0VHJhZGVzUmVxdWVzdBogLmRhbmtmb2xpby52MS5MaXN0VHJhZGVzUmVzcG9uc2VCtgEKEGNvbS5kYW5rZm9saW8udjFCClRyYWRlUHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * Trade represents a meme trading transaction
@@ -31,11 +31,15 @@ export type Trade = Message<"dankfolio.v1.Trade"> & {
   userId: string;
 
   /**
+   * Note: This will likely be FromCoinMintAddress in backend model
+   *
    * @generated from field: string from_coin_id = 3;
    */
   fromCoinId: string;
 
   /**
+   * Note: This will likely be ToCoinMintAddress in backend model
+   *
    * @generated from field: string to_coin_id = 4;
    */
   toCoinId: string;
@@ -96,6 +100,11 @@ export type Trade = Message<"dankfolio.v1.Trade"> & {
   finalized: boolean;
 
   /**
+   * Fields for new integer PKs, if they need to be exposed to clients.
+   * For now, assuming clients identify coins by mint address (from_coin_id, to_coin_id).
+   * optional uint64 from_coin_pk_id = 17;
+   * optional uint64 to_coin_pk_id = 18;
+   *
    * @generated from field: optional string error = 16;
    */
   error?: string;
@@ -115,11 +124,15 @@ export const TradeSchema: GenMessage<Trade> = /*@__PURE__*/
  */
 export type GetSwapQuoteRequest = Message<"dankfolio.v1.GetSwapQuoteRequest"> & {
   /**
+   * Typically mint address
+   *
    * @generated from field: string from_coin_id = 1;
    */
   fromCoinId: string;
 
   /**
+   * Typically mint address
+   *
    * @generated from field: string to_coin_id = 2;
    */
   toCoinId: string;
@@ -198,11 +211,15 @@ export const GetSwapQuoteResponseSchema: GenMessage<GetSwapQuoteResponse> = /*@_
  */
 export type PrepareSwapRequest = Message<"dankfolio.v1.PrepareSwapRequest"> & {
   /**
+   * Typically mint address
+   *
    * @generated from field: string from_coin_id = 1;
    */
   fromCoinId: string;
 
   /**
+   * Typically mint address
+   *
    * @generated from field: string to_coin_id = 2;
    */
   toCoinId: string;
@@ -218,14 +235,11 @@ export type PrepareSwapRequest = Message<"dankfolio.v1.PrepareSwapRequest"> & {
   slippageBps: string;
 
   /**
+   * This is the wallet address of the user initiating the swap
+   *
    * @generated from field: string user_public_key = 5;
    */
   userPublicKey: string;
-
-  /**
-   * @generated from field: string from_address = 6;
-   */
-  fromAddress: string;
 };
 
 /**
@@ -261,11 +275,15 @@ export const PrepareSwapResponseSchema: GenMessage<PrepareSwapResponse> = /*@__P
  */
 export type SubmitSwapRequest = Message<"dankfolio.v1.SubmitSwapRequest"> & {
   /**
+   * Typically mint address
+   *
    * @generated from field: string from_coin_id = 1;
    */
   fromCoinId: string;
 
   /**
+   * Typically mint address
+   *
    * @generated from field: string to_coin_id = 2;
    */
   toCoinId: string;
@@ -281,7 +299,7 @@ export type SubmitSwapRequest = Message<"dankfolio.v1.SubmitSwapRequest"> & {
   signedTransaction: string;
 
   /**
-   * used to retreive the record in the backend
+   * used to retrieve the record in the backend
    *
    * @generated from field: string unsigned_transaction = 5;
    */
@@ -353,11 +371,65 @@ export const GetTradeRequestSchema: GenMessage<GetTradeRequest> = /*@__PURE__*/
 /**
  * ListTradesRequest is the request for listing trades
  *
- * Empty for now, could add pagination/filtering later
- *
  * @generated from message dankfolio.v1.ListTradesRequest
  */
 export type ListTradesRequest = Message<"dankfolio.v1.ListTradesRequest"> & {
+  /**
+   * @generated from field: int32 limit = 1;
+   */
+  limit: number;
+
+  /**
+   * @generated from field: int32 offset = 2;
+   */
+  offset: number;
+
+  /**
+   * e.g., "created_at", "amount"
+   *
+   * @generated from field: string sort_by = 3;
+   */
+  sortBy: string;
+
+  /**
+   * @generated from field: bool sort_desc = 4;
+   */
+  sortDesc: boolean;
+
+  /**
+   * Filter by user ID (wallet public key)
+   *
+   * @generated from field: optional string user_id = 5;
+   */
+  userId?: string;
+
+  /**
+   * Filter by trade status (e.g., "completed", "pending")
+   *
+   * @generated from field: optional string status = 6;
+   */
+  status?: string;
+
+  /**
+   * Filter by trade type (e.g., "swap", "transfer")
+   *
+   * @generated from field: optional string type = 7;
+   */
+  type?: string;
+
+  /**
+   * Filter by source coin mint address
+   *
+   * @generated from field: optional string from_coin_mint_address = 8;
+   */
+  fromCoinMintAddress?: string;
+
+  /**
+   * Filter by destination coin mint address
+   *
+   * @generated from field: optional string to_coin_mint_address = 9;
+   */
+  toCoinMintAddress?: string;
 };
 
 /**
@@ -377,6 +449,13 @@ export type ListTradesResponse = Message<"dankfolio.v1.ListTradesResponse"> & {
    * @generated from field: repeated dankfolio.v1.Trade trades = 1;
    */
   trades: Trade[];
+
+  /**
+   * Total number of trades matching the filter criteria (before pagination)
+   *
+   * @generated from field: int32 total_count = 2;
+   */
+  totalCount: number;
 };
 
 /**

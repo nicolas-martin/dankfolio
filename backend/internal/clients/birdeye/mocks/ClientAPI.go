@@ -72,15 +72,26 @@ type MockClientAPI_GetPriceHistory_Call struct {
 }
 
 // GetPriceHistory is a helper method to define mock.On call
-//   - ctx
-//   - params
+//   - ctx context.Context
+//   - params birdeye.PriceHistoryParams
 func (_e *MockClientAPI_Expecter) GetPriceHistory(ctx interface{}, params interface{}) *MockClientAPI_GetPriceHistory_Call {
 	return &MockClientAPI_GetPriceHistory_Call{Call: _e.mock.On("GetPriceHistory", ctx, params)}
 }
 
 func (_c *MockClientAPI_GetPriceHistory_Call) Run(run func(ctx context.Context, params birdeye.PriceHistoryParams)) *MockClientAPI_GetPriceHistory_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(birdeye.PriceHistoryParams))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 birdeye.PriceHistoryParams
+		if args[1] != nil {
+			arg1 = args[1].(birdeye.PriceHistoryParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
