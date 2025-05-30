@@ -6,12 +6,16 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
@@ -37,8 +41,24 @@ func main() {
 	// Initialize memory store
 	store := memory.NewWithConfig(memory.Config{})
 
+	// Initialize HTTP client and Jupiter client using environment variables
+	httpClient := &http.Client{
+		Timeout: time.Second * 10,
+	}
+	jupiterClient := jupiter.NewClient(httpClient, os.Getenv("JUPITER_API_URL"), os.Getenv("JUPITER_API_KEY"))
+
+	// Initialize coin service using environment variables like main API
+	coinServiceConfig := &coin.Config{
+		BirdEyeBaseURL:        os.Getenv("BIRDEYE_ENDPOINT"),
+		BirdEyeAPIKey:         os.Getenv("BIRDEYE_API_KEY"),
+		CoinGeckoAPIKey:       os.Getenv("COINGECKO_API_KEY"),
+		SolanaRPCEndpoint:     *rpcEndpoint,
+		NewCoinsFetchInterval: time.Hour, // Default for this utility
+	}
+	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
+
 	// Initialize the wallet service
-	walletService := wallet.New(client, store)
+	walletService := wallet.New(client, store, coinService)
 
 	// Read and parse the wallet file
 	keyBytes, err := os.ReadFile(*walletPath)

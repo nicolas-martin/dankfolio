@@ -2,18 +2,15 @@ package coin
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
-	"time"
 
+	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	solanago "github.com/gagliardetto/solana-go"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
-	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -23,12 +20,12 @@ type MockJupiterClient struct {
 	mock.Mock
 }
 
-func (m *MockJupiterClient) GetCoinInfo(ctx context.Context, mintAddress string) (*jupiter.TokenInfo, error) {
+func (m *MockJupiterClient) GetCoinInfo(ctx context.Context, mintAddress string) (*jupiter.CoinListInfo, error) {
 	args := m.Called(ctx, mintAddress)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*jupiter.TokenInfo), args.Error(1)
+	return args.Get(0).(*jupiter.CoinListInfo), args.Error(1)
 }
 
 func (m *MockJupiterClient) GetCoinPrices(ctx context.Context, mintAddresses []string) (map[string]float64, error) {
@@ -39,17 +36,69 @@ func (m *MockJupiterClient) GetCoinPrices(ctx context.Context, mintAddresses []s
 	return args.Get(0).(map[string]float64), args.Error(1)
 }
 
+func (m *MockJupiterClient) GetQuote(ctx context.Context, params jupiter.QuoteParams) (*jupiter.QuoteResponse, error) {
+	args := m.Called(ctx, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*jupiter.QuoteResponse), args.Error(1)
+}
+
+func (m *MockJupiterClient) GetAllCoins(ctx context.Context) (*jupiter.CoinListResponse, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*jupiter.CoinListResponse), args.Error(1)
+}
+
+func (m *MockJupiterClient) GetNewCoins(ctx context.Context, params *jupiter.NewCoinsParams) (*jupiter.CoinListResponse, error) {
+	args := m.Called(ctx, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*jupiter.CoinListResponse), args.Error(1)
+}
+
+func (m *MockJupiterClient) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey) (string, error) {
+	args := m.Called(ctx, quoteResp, userPublicKey)
+	if args.Get(0) == nil {
+		return "", args.Error(1)
+	}
+	return args.Get(0).(string), args.Error(1)
+}
+
 // MockSolanaClient is a mock for the Solana client
 type MockSolanaClient struct {
 	mock.Mock
 }
 
-func (m *MockSolanaClient) GetMetadataAccount(ctx context.Context, mintAddress string) (*solana.TokenMetadata, error) {
+func (m *MockSolanaClient) GetMetadataAccount(ctx context.Context, mintAddress string) (*token_metadata.Metadata, error) {
 	args := m.Called(ctx, mintAddress)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*solana.TokenMetadata), args.Error(1)
+	return args.Get(0).(*token_metadata.Metadata), args.Error(1)
+}
+
+func (m *MockSolanaClient) GetRpcConnection() interface{} {
+	args := m.Called()
+	return args.Get(0)
+}
+
+func (m *MockSolanaClient) ExecuteTrade(ctx context.Context, trade interface{}, signedTx string) (string, error) {
+	args := m.Called(ctx, trade, signedTx)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockSolanaClient) ExecuteSignedTransaction(ctx context.Context, signedTx string) (solanago.Signature, error) {
+	args := m.Called(ctx, signedTx)
+	return args.Get(0).(solanago.Signature), args.Error(1)
+}
+
+func (m *MockSolanaClient) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (interface{}, error) {
+	args := m.Called(ctx, sigStr)
+	return args.Get(0), args.Error(1)
 }
 
 // MockOffchainClient is a mock for the Offchain client
@@ -65,10 +114,10 @@ func (m *MockOffchainClient) FetchMetadata(uri string) (map[string]any, error) {
 	return args.Get(0).(map[string]any), args.Error(1)
 }
 
-func newTestService(cfg *Config, jupiterClient jupiter.Client, solanaClient solana.Client, offchainClient offchain.Client) *Service {
+func newTestService(cfg *Config, jupiterClient jupiter.ClientAPI, store interface{}) *Service {
 	// For tests, we don't need a real store if not testing DB interactions.
 	// If store interactions become part of what's tested here, a mock store would be needed.
-	return NewService(cfg, &http.Client{}, jupiterClient, nil, solanaClient, offchainClient)
+	return NewService(cfg, &http.Client{}, jupiterClient, nil)
 }
 
 func TestMain(m *testing.M) {
@@ -85,14 +134,14 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 	cfg := &Config{
 		// IPFSNodeAPIAddress and IPFSPublicGatewayURL / PreferredGatewayForCIDv0 are no longer part of coin.Config
 	}
-	service := newTestService(cfg, mockJupiter, mockSolana, mockOffchain)
+	service := newTestService(cfg, mockJupiter, nil)
 
 	mintAddress := "testmint1"
 	httpIconURL := "http://example.com/icon.png"
 
-	mockJupiter.On("GetCoinInfo", mock.Anything, mintAddress).Return(&jupiter.TokenInfo{Name: "Test Coin", Symbol: "TST"}, nil)
+	mockJupiter.On("GetCoinInfo", mock.Anything, mintAddress).Return(&jupiter.CoinListInfo{Name: "Test Coin", Symbol: "TST"}, nil)
 	mockJupiter.On("GetCoinPrices", mock.Anything, []string{mintAddress}).Return(map[string]float64{mintAddress: 1.0}, nil)
-	mockSolana.On("GetMetadataAccount", mock.Anything, mintAddress).Return(&solana.TokenMetadata{Data: solana.MetadataData{Uri: "http://example.com/metadata.json"}}, nil)
+	mockSolana.On("GetMetadataAccount", mock.Anything, mintAddress).Return(&token_metadata.Metadata{Data: token_metadata.Data{Uri: "http://example.com/metadata.json"}}, nil)
 	mockOffchain.On("FetchMetadata", "http://example.com/metadata.json").Return(map[string]any{"image": httpIconURL}, nil)
 
 	coin, err := service.EnrichCoinData(context.Background(), mintAddress, "", "", 0)
@@ -110,13 +159,13 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 // TestEnrichCoinData_StandardizeURL tests the standardizeIpfsUrl logic via EnrichCoinData
 func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 	tests := []struct {
-		name                       string
-		inputIconUrl               string
+		name         string
+		inputIconUrl string
 		// preferredGatewayForCIDv0 string, // This field is removed
-		expectedResolvedIconUrl    string
-		mockOffchainError          error
-		mockJupiterLogoURI         string // To simulate Jupiter providing an icon URL
-		initialIconUrl             string // To simulate an icon URL already present on the coin
+		expectedResolvedIconUrl string
+		mockOffchainError       error
+		mockJupiterLogoURI      string // To simulate Jupiter providing an icon URL
+		initialIconUrl          string // To simulate an icon URL already present on the coin
 	}{
 		// Scenario 1: Non-IPFS URL
 		{
@@ -193,8 +242,8 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 		// Test initialIconUrl passed to EnrichCoinData
 		{
 			name:                    "InitialIconUrl is IPFS CIDv0",
-			initialIconUrl:          "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Passed to EnrichCoinData
-			inputIconUrl:            "", // No metadata or jupiter icon
+			initialIconUrl:          "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X",               // Passed to EnrichCoinData
+			inputIconUrl:            "",                                                                    // No metadata or jupiter icon
 			expectedResolvedIconUrl: "https://ipfs.io/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
 		},
 	}
@@ -208,12 +257,12 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 			// Config struct for coin service is now empty or has unrelated fields.
 			// PreferredGatewayForCIDv0 is no longer configured here.
 			cfg := &Config{}
-			service := newTestService(cfg, mockJup, mockSol, mockOff)
+			service := newTestService(cfg, mockJup, nil)
 			mintAddress := "testmint_" + tt.name
 
 			// Setup mocks
 			// Jupiter GetCoinInfo (used for IconUrl if LogoURI is present)
-			jupiterTokenInfo := &jupiter.TokenInfo{Name: "Test Coin", Symbol: "TST"}
+			jupiterTokenInfo := &jupiter.CoinListInfo{Name: "Test Coin", Symbol: "TST"}
 			if tt.mockJupiterLogoURI != "" {
 				jupiterTokenInfo.LogoURI = tt.mockJupiterLogoURI
 			}
@@ -222,7 +271,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 
 			// Solana GetMetadataAccount (always needed to proceed to offchain)
 			mockSol.On("GetMetadataAccount", mock.Anything, mintAddress).Return(
-				&solana.TokenMetadata{Data: solana.MetadataData{Uri: "http://example.com/metadata.json"}}, nil,
+				&token_metadata.Metadata{Data: token_metadata.Data{Uri: "http://example.com/metadata.json"}}, nil,
 			)
 
 			// Offchain FetchMetadata (used for IconUrl if Jupiter doesn't provide one and tt.inputIconUrl is set)
@@ -238,7 +287,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 				// If initialIconUrl is set, it will be used. If Jupiter is set, it will be used.
 				// This setup prioritizes: Jupiter > Initial > Offchain for coin.IconUrl before standardization.
 				// So, if testing offchain's inputIconUrl, ensure Jupiter and Initial are blank.
-				 offchainReturn["image"] = tt.inputIconUrl
+				offchainReturn["image"] = tt.inputIconUrl
 			}
 
 			if tt.mockOffchainError != nil {
@@ -246,14 +295,13 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 			} else {
 				mockOff.On("FetchMetadata", "http://example.com/metadata.json").Return(offchainReturn, nil)
 			}
-			
+
 			initialIconForEnrich := tt.initialIconUrl
 			if initialIconForEnrich == "" && tt.inputIconUrl != "" && tt.mockJupiterLogoURI == "" {
 				// If we want to test offchain metadata as the primary source of inputIconUrl for standardization,
 				// and there's no Jupiter/Initial override, then initialIconURL for EnrichCoinData should be empty.
 				// The tt.inputIconUrl will be injected via offchainReturn["image"].
 			}
-
 
 			coin, err := service.EnrichCoinData(context.Background(), mintAddress, "Test Coin", initialIconForEnrich, 0)
 

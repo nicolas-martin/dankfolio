@@ -72,26 +72,15 @@ type MockPriceServiceAPI_GetCoinPrices_Call struct {
 }
 
 // GetCoinPrices is a helper method to define mock.On call
-//   - ctx context.Context
-//   - tokenAddresses []string
+//   - ctx
+//   - tokenAddresses
 func (_e *MockPriceServiceAPI_Expecter) GetCoinPrices(ctx interface{}, tokenAddresses interface{}) *MockPriceServiceAPI_GetCoinPrices_Call {
 	return &MockPriceServiceAPI_GetCoinPrices_Call{Call: _e.mock.On("GetCoinPrices", ctx, tokenAddresses)}
 }
 
 func (_c *MockPriceServiceAPI_GetCoinPrices_Call) Run(run func(ctx context.Context, tokenAddresses []string)) *MockPriceServiceAPI_GetCoinPrices_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 []string
-		if args[1] != nil {
-			arg1 = args[1].([]string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(args[0].(context.Context), args[1].([]string))
 	})
 	return _c
 }
@@ -140,50 +129,19 @@ type MockPriceServiceAPI_GetPriceHistory_Call struct {
 }
 
 // GetPriceHistory is a helper method to define mock.On call
-//   - ctx context.Context
-//   - address string
-//   - historyType string
-//   - timeFromStr string
-//   - timeToStr string
-//   - addressType string
+//   - ctx
+//   - address
+//   - historyType
+//   - timeFromStr
+//   - timeToStr
+//   - addressType
 func (_e *MockPriceServiceAPI_Expecter) GetPriceHistory(ctx interface{}, address interface{}, historyType interface{}, timeFromStr interface{}, timeToStr interface{}, addressType interface{}) *MockPriceServiceAPI_GetPriceHistory_Call {
 	return &MockPriceServiceAPI_GetPriceHistory_Call{Call: _e.mock.On("GetPriceHistory", ctx, address, historyType, timeFromStr, timeToStr, addressType)}
 }
 
 func (_c *MockPriceServiceAPI_GetPriceHistory_Call) Run(run func(ctx context.Context, address string, historyType string, timeFromStr string, timeToStr string, addressType string)) *MockPriceServiceAPI_GetPriceHistory_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		var arg3 string
-		if args[3] != nil {
-			arg3 = args[3].(string)
-		}
-		var arg4 string
-		if args[4] != nil {
-			arg4 = args[4].(string)
-		}
-		var arg5 string
-		if args[5] != nil {
-			arg5 = args[5].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-			arg3,
-			arg4,
-			arg5,
-		)
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string))
 	})
 	return _c
 }

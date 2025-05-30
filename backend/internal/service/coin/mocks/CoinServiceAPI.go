@@ -72,26 +72,15 @@ type MockCoinServiceAPI_GetCoinByID_Call struct {
 }
 
 // GetCoinByID is a helper method to define mock.On call
-//   - ctx context.Context
-//   - id string
+//   - ctx
+//   - id
 func (_e *MockCoinServiceAPI_Expecter) GetCoinByID(ctx interface{}, id interface{}) *MockCoinServiceAPI_GetCoinByID_Call {
 	return &MockCoinServiceAPI_GetCoinByID_Call{Call: _e.mock.On("GetCoinByID", ctx, id)}
 }
 
 func (_c *MockCoinServiceAPI_GetCoinByID_Call) Run(run func(ctx context.Context, id string)) *MockCoinServiceAPI_GetCoinByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -102,6 +91,63 @@ func (_c *MockCoinServiceAPI_GetCoinByID_Call) Return(coin *model.Coin, err erro
 }
 
 func (_c *MockCoinServiceAPI_GetCoinByID_Call) RunAndReturn(run func(ctx context.Context, id string) (*model.Coin, error)) *MockCoinServiceAPI_GetCoinByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetCoinByMintAddress provides a mock function for the type MockCoinServiceAPI
+func (_mock *MockCoinServiceAPI) GetCoinByMintAddress(ctx context.Context, mintAddress string) (*model.Coin, error) {
+	ret := _mock.Called(ctx, mintAddress)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCoinByMintAddress")
+	}
+
+	var r0 *model.Coin
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*model.Coin, error)); ok {
+		return returnFunc(ctx, mintAddress)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *model.Coin); ok {
+		r0 = returnFunc(ctx, mintAddress)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Coin)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, mintAddress)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockCoinServiceAPI_GetCoinByMintAddress_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCoinByMintAddress'
+type MockCoinServiceAPI_GetCoinByMintAddress_Call struct {
+	*mock.Call
+}
+
+// GetCoinByMintAddress is a helper method to define mock.On call
+//   - ctx
+//   - mintAddress
+func (_e *MockCoinServiceAPI_Expecter) GetCoinByMintAddress(ctx interface{}, mintAddress interface{}) *MockCoinServiceAPI_GetCoinByMintAddress_Call {
+	return &MockCoinServiceAPI_GetCoinByMintAddress_Call{Call: _e.mock.On("GetCoinByMintAddress", ctx, mintAddress)}
+}
+
+func (_c *MockCoinServiceAPI_GetCoinByMintAddress_Call) Run(run func(ctx context.Context, mintAddress string)) *MockCoinServiceAPI_GetCoinByMintAddress_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockCoinServiceAPI_GetCoinByMintAddress_Call) Return(coin *model.Coin, err error) *MockCoinServiceAPI_GetCoinByMintAddress_Call {
+	_c.Call.Return(coin, err)
+	return _c
+}
+
+func (_c *MockCoinServiceAPI_GetCoinByMintAddress_Call) RunAndReturn(run func(ctx context.Context, mintAddress string) (*model.Coin, error)) *MockCoinServiceAPI_GetCoinByMintAddress_Call {
 	_c.Call.Return(run)
 	return _c
 }

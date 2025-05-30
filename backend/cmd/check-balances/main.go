@@ -5,12 +5,16 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 	"github.com/olekukonko/tablewriter"
 )
@@ -64,8 +68,24 @@ func main() {
 	// Initialize memory store
 	store := memory.NewWithConfig(memory.Config{})
 
-	// Initialize the coin service with Jupiter client
-	walletService := wallet.New(client, store)
+	// Initialize HTTP client and Jupiter client using environment variables
+	httpClient := &http.Client{
+		Timeout: time.Second * 10,
+	}
+	jupiterClient := jupiter.NewClient(httpClient, os.Getenv("JUPITER_API_URL"), os.Getenv("JUPITER_API_KEY"))
+
+	// Initialize coin service using environment variables like main API
+	coinServiceConfig := &coin.Config{
+		BirdEyeBaseURL:        os.Getenv("BIRDEYE_ENDPOINT"),
+		BirdEyeAPIKey:         os.Getenv("BIRDEYE_API_KEY"),
+		CoinGeckoAPIKey:       os.Getenv("COINGECKO_API_KEY"),
+		SolanaRPCEndpoint:     *rpcEndpoint,
+		NewCoinsFetchInterval: time.Hour, // Default for this utility
+	}
+	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
+
+	// Initialize the wallet service
+	walletService := wallet.New(client, store, coinService)
 
 	// Define wallet path
 	walletKeyPath := *walletPath

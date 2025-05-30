@@ -58,6 +58,10 @@ func NewWithConfig(config Config) *Store {
 	return store
 }
 
+func (s *Store) WithTransaction(ctx context.Context, fn func(txStore db.Store) error) error {
+	return nil
+}
+
 func (s *Store) Wallet() db.Repository[model.Wallet] {
 	return s.wallet
 }

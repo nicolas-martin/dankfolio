@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	// "github.com/nicolas-martin/dankfolio/backend/internal/service/price" // Original import, aliased below
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -15,12 +14,10 @@ import (
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	birdeye "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 
-	// actual_price_service "github.com/nicolas-martin/dankfolio/backend/internal/service/price" // This alias is no longer needed
 	priceMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/price/mocks" // Import for generated mocks
 )
 
 // Manual MockPriceService struct and its methods are removed as we are using mockery generated mocks.
-
 func TestGetPriceHistoryHandler(t *testing.T) {
 	mockService := priceMocks.NewMockPriceServiceAPI(t) // Use generated mock
 
@@ -278,13 +275,11 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			// or can be done explicitly if needed:
 			// if tt.expectedMockCall { ... }
 			// mockService.AssertExpectations(t) // This might be redundant if NewMockPriceServiceAPI(t) is used correctly
-
 		})
 	}
 }
 
 func TestGetCoinPricesHandler(t *testing.T) {
-
 	mockService := priceMocks.NewMockPriceServiceAPI(t) // Use generated mock
 	handler := &priceServiceHandler{
 		priceService: mockService,
