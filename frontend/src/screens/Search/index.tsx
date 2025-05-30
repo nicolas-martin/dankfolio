@@ -29,17 +29,17 @@ const initialState: SearchState = {
 const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 	const route = useRoute<RouteProp<RootStackParamList, 'Search'>>();
 	const defaultFiltersFromRoute = route.params?.defaultSortBy ? {
-        query: '',
-        tags: [],
-        minVolume24h: 0,
-        sortBy: route.params.defaultSortBy as SearchSortByOption, // Cast if necessary, ensure type safety
-        sortDesc: route.params.defaultSortDesc !== undefined ? route.params.defaultSortDesc : true,
-    } : initialState.filters;
+		query: '',
+		tags: [],
+		minVolume24h: 0,
+		sortBy: route.params.defaultSortBy as SearchSortByOption, // Cast if necessary, ensure type safety
+		sortDesc: route.params.defaultSortDesc !== undefined ? route.params.defaultSortDesc : true,
+	} : initialState.filters;
 
 	const [state, setState] = useState<SearchState>({
-        ...initialState,
-        filters: defaultFiltersFromRoute,
-    });
+		...initialState,
+		filters: defaultFiltersFromRoute,
+	});
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const toast = useToast();
@@ -68,7 +68,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 			// Fetch if query exists, or if sorting by listed_at (even with empty query),
 			// or if sort order changed for a non-empty query.
 			// This logic ensures that changing sort order always attempts a refetch if relevant.
-			if (state.filters.query || state.filters.sortBy === 'listed_at' || (state.filters.query === '' && state.results.length > 0 )) {
+			if (state.filters.query || state.filters.sortBy === 'listed_at' || (state.filters.query === '' && state.results.length > 0)) {
 				// The condition `(state.filters.query === '' && state.results.length > 0)` is to handle clearing query
 				// when a sort like 'listed_at' might want to show results for empty query.
 				// More robust: if a sort change happens, and query is empty, and 'listed_at' is chosen, fetch.
@@ -77,12 +77,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 					handleSearch(state.filters.query);
 				} else {
 					// If query is empty and not sorting by 'listed_at', clear results
-					 setState(prev => ({ ...prev, results: [] }));
+					setState(prev => ({ ...prev, results: [] }));
 				}
 			} else if (!state.filters.query && state.results.length > 0 && state.filters.sortBy !== 'listed_at') {
-                 // If query is cleared, and we are not on a default-view sort like listed_at, clear results
-                 setState(prev => ({ ...prev, results: [] }));
-            }
+				// If query is cleared, and we are not on a default-view sort like listed_at, clear results
+				setState(prev => ({ ...prev, results: [] }));
+			}
 		}, DEBOUNCE_DELAY);
 
 		return () => clearTimeout(timeoutId);

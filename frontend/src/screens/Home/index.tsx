@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme, Text, Icon } from 'react-native-paper';
 import CoinCard from '@components/Home/CoinCard';
-import NewlyListedCoins from '@components/Home/NewlyListedCoins';
+import NewCoins from '@components/Home/NewCoins/NewCoins';
 import { useNavigation } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
@@ -17,13 +17,13 @@ import { logger } from '@/utils/logger';
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
-	
+
 	// Use separate selectors to avoid creating new objects on every render
 	const availableCoins = useCoinStore(state => state.availableCoins);
 	const fetchAvailableCoins = useCoinStore(state => state.fetchAvailableCoins);
-	const fetchNewlyListedCoins = useCoinStore(state => state.fetchNewlyListedCoins);
+	const fetchNewCoins = useCoinStore(state => state.fetchNewCoins);
 	const isLoadingTrending = useCoinStore(state => state.isLoading);
-	
+
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -38,7 +38,7 @@ const HomeScreen = () => {
 		logger.log('[HomeScreen] Fetching trending, newly listed, and portfolio...');
 		await Promise.all([
 			fetchAvailableCoins(true), // For trending coins
-			fetchNewlyListedCoins(),   // For newly listed coins
+			fetchNewCoins(),   // For newly listed coins
 		]);
 		if (wallet) {
 			await fetchPortfolioBalance(wallet.address);
@@ -84,18 +84,6 @@ const HomeScreen = () => {
 		handleCoinPressCallback(coin);
 	}, [handleCoinPressCallback]);
 
-	const renderEmptyState = () => (
-		<View style={styles.emptyStateContainer}>
-			<View style={styles.emptyStateIcon}>
-				<Icon source="chart-line" size={48} color={theme.colors.onSurfaceVariant} />
-			</View>
-			<Text style={styles.emptyStateTitle}>No Coins Available</Text>
-			<Text style={styles.emptyStateText}>
-				We couldn't find any coins to display right now. Try refreshing to load the latest trending coins.
-			</Text>
-		</View>
-	);
-
 	const renderNoWalletState = () => (
 		<FlatList
 			data={[]}
@@ -140,7 +128,7 @@ const HomeScreen = () => {
 					/>
 				}
 			>
-				<NewlyListedCoins />
+				<NewCoins />
 
 				<View style={styles.sectionHeader}>
 					<Text style={styles.sectionTitle}>Trending Coins</Text>
