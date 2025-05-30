@@ -54,20 +54,20 @@ test_endpoint "POST" "dankfolio.v1.CoinService/GetAvailableCoins" "{}" "Get all 
 
 # Test 2: Get coin by ID (SOL)
 print_header "Test 2: Get SOL coin by ID"
-test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"id\": \"So11111111111111111111111111111111111111112\" }" "Get SOL coin by ID"
+test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"mint_address\": \"So11111111111111111111111111111111111111112\" }" "Get SOL coin by ID"
 
 # Test 3: Get coin by ID (USDC)
 print_header "Test 3: Get USDC coin by ID"
-test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"id\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\" }" "Get USDC coin by ID"
+test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"mint_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\" }" "Get USDC coin by ID"
 
 # Test 4: Get non-existent coin (should return 404)
 print_header "Test 4: Get non-existent coin (should return 404)"
-test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"id\": \"xyz123\" }" "Get non-existent coin"
+test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"mint_address\": \"xyz123\" }" "Get non-existent coin"
 
 # Test 5: Test Jupiter API integration with popular meme coins
 print_header "Test 5: Test Jupiter API integration with a popular Solana meme coin"
 print_header "Fetching JUP token data:"
-test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"id\": \"JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN\" }" "Get JUP token data"
+test_endpoint "POST" "dankfolio.v1.CoinService/GetCoinByID" "{ \"mint_address\": \"JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN\" }" "Get JUP token data"
 
 # Test 6: Fetch a different token directly from Jupiter API for comparison
 print_header "Test 6: Raw Jupiter API response for comparison:"
