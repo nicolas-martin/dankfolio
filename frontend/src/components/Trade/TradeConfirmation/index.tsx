@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Modal, Portal, Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
+import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
 import { Coin } from '@/types';
@@ -43,7 +44,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				>
 					<Text style={styles.title}>Confirm Trade</Text>
 					<View style={styles.loadingContainer}>
-						<ActivityIndicator size="large" color={theme.colors.primary} testID="loading-spinner" />
+						<LoadingAnimation size={100} />
 						<Text style={styles.loadingText}>Preparing trade...</Text>
 					</View>
 				</Modal>
