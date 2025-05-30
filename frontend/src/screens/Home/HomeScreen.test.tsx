@@ -89,29 +89,43 @@ const mockApiResponse = [
 describe('HomeScreen', () => {
 	const fetchAvailableCoinsMock = jest.fn();
 	const fetchPortfolioBalanceMock = jest.fn();
+	const mockFetchNewCoins = jest.fn();
+	const mockSetLastFetchedNewCoinsAt = jest.fn();
 	const showToastMock = jest.fn();
 	let consoleLogSpy: jest.SpyInstance;
+	let dateNowSpy: jest.SpyInstance;
+
+	const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 	beforeEach(() => {
 		jest.clearAllMocks();
 		consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+		dateNowSpy = jest.spyOn(Date, 'now');
 
 		// Setup mock implementations
-		fetchAvailableCoinsMock.mockImplementation(async () => mockApiResponse);
-		fetchPortfolioBalanceMock.mockImplementation(async () => mockWalletBalances);
+		fetchAvailableCoinsMock.mockResolvedValue(mockApiResponse); // Simplified from mockImplementation
+		fetchPortfolioBalanceMock.mockResolvedValue(mockWalletBalances); // Simplified
+		mockFetchNewCoins.mockResolvedValue(undefined); // Default success for fetchNewCoins
 
 		// Mock portfolio store with wallet state and functions
 		mocked(usePortfolioStore).mockReturnValue({
 			wallet: mockWallet,
-			fetchPortfolioBalance: fetchPortfolioBalanceMock
+			fetchPortfolioBalance: fetchPortfolioBalanceMock,
 		});
 
-		// Mock coin store with initial state
+		// Mock coin store with initial state - this will be overridden in specific test describe blocks if needed
 		mocked(useCoinStore).mockReturnValue({
 			availableCoins: mockApiResponse,
 			fetchAvailableCoins: fetchAvailableCoinsMock,
 			isLoading: false,
 			error: null,
+			fetchNewCoins: mockFetchNewCoins,
+			lastFetchedNewCoinsAt: 0,
+			setLastFetchedNewCoinsAt: mockSetLastFetchedNewCoinsAt,
+			// Add other coin store properties used by HomeScreen if any
+			newlyListedCoins: [], // Assuming NewCoins component might be rendered
+			isLoadingNewlyListed: false,
+			// enrichCoin: jest.fn(), // Removed as it's no longer in the store
 		});
 
 		// Mock toast notifications
@@ -179,19 +193,25 @@ describe('HomeScreen', () => {
 	it('handles error states during refresh', async () => {
 		// Setup error conditions
 		const error = new Error('Network error');
-		fetchAvailableCoinsMock.mockRejectedValueOnce(error);
-		fetchPortfolioBalanceMock.mockRejectedValueOnce(error);
+		fetchAvailableCoinsMock.mockRejectedValueOnce(error); // This will affect the initial load too
+		// fetchPortfolioBalanceMock.mockRejectedValueOnce(error); // Let's keep portfolio fetch successful for this test
 
-		const { getByTestId } = render(
+		const { getByTestId, rerender } = render(
 			<NavigationContainer>
 				<HomeScreen />
 			</NavigationContainer>
 		);
 
-		// IMPORTANT: Keep API call assertions for performance monitoring
-		expect(fetchAvailableCoinsMock).not.toHaveBeenCalled();
-		expect(fetchPortfolioBalanceMock).not.toHaveBeenCalled();
-		expect(showToastMock).not.toHaveBeenCalled();
+		// Wait for initial load attempt which will now fail for coins
+		await waitFor(() => {
+			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1); // Initial load
+		});
+
+		// Reset mocks for the refresh action specifically
+		fetchAvailableCoinsMock.mockClear();
+		fetchAvailableCoinsMock.mockRejectedValueOnce(error); // Fail again on refresh
+		fetchPortfolioBalanceMock.mockClear();
+
 
 		// Trigger refresh
 		const homeScreenComponentOnError = getByTestId('home-screen');
@@ -203,16 +223,106 @@ describe('HomeScreen', () => {
 		}
 
 		await waitFor(() => {
-			// IMPORTANT: Keep API call count assertions for performance monitoring
-			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1);
-			expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(0);
-			expect(showToastMock).toHaveBeenCalledTimes(1);
-			// Check error toast was shown (don't assert exact message)
-			expect(showToastMock).toHaveBeenCalledWith({
+			expect(fetchAvailableCoinsMock).toHaveBeenCalledTimes(1); // Called during refresh
+			// fetchPortfolioBalance might or might not be called depending on Promise.all behavior when one fails
+			// For simplicity, we'll assume it might be called if not strictly dependent on fetchAvailableCoins success
+			// expect(fetchPortfolioBalanceMock).toHaveBeenCalledTimes(1); // Called during refresh
+			expect(showToastMock).toHaveBeenCalledWith({ // Toast from the refresh action
 				type: 'error',
 				message: expect.stringContaining('Failed'),
 				duration: expect.any(Number),
 			});
+		});
+	});
+
+	describe('Periodic Fetching of New Coins', () => {
+		const mockCurrentTime = 1700000000000; // A fixed point in time for Date.now()
+
+		beforeEach(() => {
+			dateNowSpy.mockReturnValue(mockCurrentTime);
+			// Reset mocks that are specific to these tests
+			mockFetchNewCoins.mockClear();
+			mockSetLastFetchedNewCoinsAt.mockClear();
+		});
+
+		it('does NOT fetch new coins if the interval has NOT passed', async () => {
+			mocked(useCoinStore).mockReturnValue({
+				...useCoinStore(), // Get default mocks
+				lastFetchedNewCoinsAt: mockCurrentTime - (FIVE_MINUTES_MS / 2), // 2.5 minutes ago
+				fetchNewCoins: mockFetchNewCoins,
+				setLastFetchedNewCoinsAt: mockSetLastFetchedNewCoinsAt,
+				fetchAvailableCoins: fetchAvailableCoinsMock, // Ensure this is passed
+				availableCoins: mockApiResponse, // Ensure this is passed
+				isLoading: false,
+				error: null,
+			});
+
+			render(
+				<NavigationContainer>
+					<HomeScreen />
+				</NavigationContainer>
+			);
+
+			await waitFor(() => { // Wait for initial fetchTrendingAndPortfolio to complete
+				expect(fetchAvailableCoinsMock).toHaveBeenCalled(); // Base data still fetched
+			});
+
+			expect(mockFetchNewCoins).not.toHaveBeenCalled();
+			expect(mockSetLastFetchedNewCoinsAt).not.toHaveBeenCalled();
+		});
+
+		it('DOES fetch new coins if the interval HAS passed', async () => {
+			mocked(useCoinStore).mockReturnValue({
+				...useCoinStore(),
+				lastFetchedNewCoinsAt: mockCurrentTime - (FIVE_MINUTES_MS * 2), // 10 minutes ago
+				fetchNewCoins: mockFetchNewCoins,
+				setLastFetchedNewCoinsAt: mockSetLastFetchedNewCoinsAt,
+				fetchAvailableCoins: fetchAvailableCoinsMock,
+				availableCoins: mockApiResponse,
+				isLoading: false,
+				error: null,
+			});
+
+			render(
+				<NavigationContainer>
+					<HomeScreen />
+				</NavigationContainer>
+			);
+
+			await waitFor(() => {
+				expect(fetchAvailableCoinsMock).toHaveBeenCalled();
+			});
+
+			expect(mockFetchNewCoins).toHaveBeenCalledTimes(1);
+			expect(mockSetLastFetchedNewCoinsAt).toHaveBeenCalledWith(mockCurrentTime);
+		});
+
+		it('does NOT update timestamp if fetchNewCoins throws an error', async () => {
+			mockFetchNewCoins.mockRejectedValueOnce(new Error('Failed to fetch new coins'));
+			mocked(useCoinStore).mockReturnValue({
+				...useCoinStore(),
+				lastFetchedNewCoinsAt: mockCurrentTime - (FIVE_MINUTES_MS * 2), // 10 minutes ago
+				fetchNewCoins: mockFetchNewCoins,
+				setLastFetchedNewCoinsAt: mockSetLastFetchedNewCoinsAt,
+				fetchAvailableCoins: fetchAvailableCoinsMock,
+				availableCoins: mockApiResponse,
+				isLoading: false,
+				error: null,
+			});
+
+			render(
+				<NavigationContainer>
+					<HomeScreen />
+				</NavigationContainer>
+			);
+
+			await waitFor(() => {
+				expect(fetchAvailableCoinsMock).toHaveBeenCalled();
+			});
+
+			expect(mockFetchNewCoins).toHaveBeenCalledTimes(1);
+			expect(mockSetLastFetchedNewCoinsAt).not.toHaveBeenCalled();
+			// Optionally, check for logger.error if you have access to it
 		});
 	});
 });

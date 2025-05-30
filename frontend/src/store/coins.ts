@@ -18,6 +18,9 @@ interface CoinState {
 	newlyListedCoins: Coin[];
 	isLoadingNewlyListed: boolean;
 	fetchNewCoins: (limit?: number) => Promise<void>;
+	// enrichCoin was here
+	lastFetchedNewCoinsAt: number;
+	setLastFetchedNewCoinsAt: (timestamp: number) => void;
 }
 
 export const useCoinStore = create<CoinState>((set, get) => ({
@@ -27,6 +30,11 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	error: null,
 	newlyListedCoins: [],
 	isLoadingNewlyListed: false,
+	lastFetchedNewCoinsAt: 0,
+
+	setLastFetchedNewCoinsAt: (timestamp: number) => set({ lastFetchedNewCoinsAt: timestamp }),
+
+	// enrichCoin implementation was here
 
 	setAvailableCoins: (coins: Coin[]) => {
 		const coinMap = coins.reduce((acc, coin) => {
@@ -134,21 +142,33 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				sortDesc: true,
 			});
 
-			const newCoins = response.coins; // Assuming response structure { coins: Coin[], totalCount: number }
+			const fetchedCoins = response.coins; // Assuming response structure { coins: Coin[], totalCount: number }
 
-			// Update coinMap with these new coins as well
-			const currentCoinMap = get().coinMap;
-			const updatedCoinMap = newCoins.reduce((acc: Record<string, Coin>, coin: Coin) => {
-				acc[coin.mintAddress] = coin;
+			const state = get();
+			// Filter out coins that are already in the main coinMap
+			const newCoinsToConsider = fetchedCoins.filter(fc => !state.coinMap[fc.mintAddress]);
+
+			// Update coinMap with these new coins as well, but only if they are not already there
+			// (though filtered above, this is a safeguard for coinMap update logic)
+			const currentCoinMap = state.coinMap;
+			const updatedCoinMap = newCoinsToConsider.reduce((acc: Record<string, Coin>, newCoin: Coin) => {
+				if (!acc[newCoin.mintAddress]) { // Ensure not to overwrite existing enhanced coins in map
+					acc[newCoin.mintAddress] = newCoin;
+				}
 				return acc;
 			}, { ...currentCoinMap } as Record<string, Coin>);
 
+			// Filter for newlyListedCoins: must not be in availableCoins
+			const trulyNewCoins = newCoinsToConsider.filter(nc =>
+				!state.availableCoins.some(ac => ac.mintAddress === nc.mintAddress)
+			);
+
 			set({
-				newlyListedCoins: newCoins,
-				coinMap: updatedCoinMap, // Keep coinMap updated
+				newlyListedCoins: trulyNewCoins,
+				coinMap: updatedCoinMap,
 				isLoadingNewlyListed: false,
 			});
-			log.log(`🆕 [CoinStore] Successfully fetched ${newCoins.length} newly listed coins.`);
+			log.log(`🆕 [CoinStore] Successfully fetched ${fetchedCoins.length} coins, ${trulyNewCoins.length} are truly new.`);
 		} catch (err) {
 			const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred';
 			set({ error: errorMessage, isLoadingNewlyListed: false }); // Reuse existing error state
