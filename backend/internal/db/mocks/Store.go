@@ -119,20 +119,14 @@ type MockStore_ListTrendingCoins_Call struct {
 }
 
 // ListTrendingCoins is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx
 func (_e *MockStore_Expecter) ListTrendingCoins(ctx interface{}) *MockStore_ListTrendingCoins_Call {
 	return &MockStore_ListTrendingCoins_Call{Call: _e.mock.On("ListTrendingCoins", ctx)}
 }
 
 func (_c *MockStore_ListTrendingCoins_Call) Run(run func(ctx context.Context)) *MockStore_ListTrendingCoins_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -227,62 +221,21 @@ type MockStore_SearchCoins_Call struct {
 }
 
 // SearchCoins is a helper method to define mock.On call
-//   - ctx context.Context
-//   - query string
-//   - tags []string
-//   - minVolume24h float64
-//   - limit int32
-//   - offset int32
-//   - sortBy string
-//   - sortDesc bool
+//   - ctx
+//   - query
+//   - tags
+//   - minVolume24h
+//   - limit
+//   - offset
+//   - sortBy
+//   - sortDesc
 func (_e *MockStore_Expecter) SearchCoins(ctx interface{}, query interface{}, tags interface{}, minVolume24h interface{}, limit interface{}, offset interface{}, sortBy interface{}, sortDesc interface{}) *MockStore_SearchCoins_Call {
 	return &MockStore_SearchCoins_Call{Call: _e.mock.On("SearchCoins", ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)}
 }
 
 func (_c *MockStore_SearchCoins_Call) Run(run func(ctx context.Context, query string, tags []string, minVolume24h float64, limit int32, offset int32, sortBy string, sortDesc bool)) *MockStore_SearchCoins_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 []string
-		if args[2] != nil {
-			arg2 = args[2].([]string)
-		}
-		var arg3 float64
-		if args[3] != nil {
-			arg3 = args[3].(float64)
-		}
-		var arg4 int32
-		if args[4] != nil {
-			arg4 = args[4].(int32)
-		}
-		var arg5 int32
-		if args[5] != nil {
-			arg5 = args[5].(int32)
-		}
-		var arg6 string
-		if args[6] != nil {
-			arg6 = args[6].(string)
-		}
-		var arg7 bool
-		if args[7] != nil {
-			arg7 = args[7].(bool)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-			arg3,
-			arg4,
-			arg5,
-			arg6,
-			arg7,
-		)
+		run(args[0].(context.Context), args[1].(string), args[2].([]string), args[3].(float64), args[4].(int32), args[5].(int32), args[6].(string), args[7].(bool))
 	})
 	return _c
 }
@@ -412,26 +365,15 @@ type MockStore_WithTransaction_Call struct {
 }
 
 // WithTransaction is a helper method to define mock.On call
-//   - ctx context.Context
-//   - fn func(s db.Store) error
+//   - ctx
+//   - fn
 func (_e *MockStore_Expecter) WithTransaction(ctx interface{}, fn interface{}) *MockStore_WithTransaction_Call {
 	return &MockStore_WithTransaction_Call{Call: _e.mock.On("WithTransaction", ctx, fn)}
 }
 
 func (_c *MockStore_WithTransaction_Call) Run(run func(ctx context.Context, fn func(s db.Store) error)) *MockStore_WithTransaction_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 func(s db.Store) error
-		if args[1] != nil {
-			arg1 = args[1].(func(s db.Store) error)
-		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(args[0].(context.Context), args[1].(func(s db.Store) error))
 	})
 	return _c
 }

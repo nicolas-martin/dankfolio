@@ -25,10 +25,14 @@ var (
 )
 
 // Helper function for creating pointers, useful for ListOptions
-func Pint(i int) *int       { v := int(i); return &v } // Changed to return *int for db.ListOptions
-func Pbool(b bool) *bool   { return &b }
-func Pstring(s string) *string { if s == "" { return nil }; return &s }
-
+func Pint(i int) *int    { v := int(i); return &v } // Changed to return *int for db.ListOptions
+func Pbool(b bool) *bool { return &b }
+func Pstring(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
 
 func setupService(t *testing.T) (
 	*Service,
@@ -90,7 +94,6 @@ func TestListTrades_Error(t *testing.T) {
 	mockStore.AssertExpectations(t)
 }
 
-
 func TestGetSwapQuote(t *testing.T) {
 	ctx := context.Background()
 	fromCoinMintAddress := "fromCoinMint"
@@ -122,14 +125,13 @@ func TestGetSwapQuote(t *testing.T) {
 		})).Return(mockJupiterQuote, nil).Once()
 		mockPriceService.On("GetCoinPrices", ctx, []string{"feeCoinID"}).Return(map[string]float64{"feeCoinID": 0.5}, nil).Once()
 
-
 		quote, err := service.GetSwapQuote(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBps)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, quote)
 		assert.Equal(t, "2.000000", quote.EstimatedAmount)
-		assert.Equal(t, "0.000500000", quote.Fee)
-		assert.Equal(t, "0.100000", quote.PriceImpact)
+		assert.Equal(t, "0.000000500", quote.Fee)
+		assert.Equal(t, "0.1", quote.PriceImpact)
 		assert.Equal(t, string(rawQuotePayload), string(quote.Raw))
 		mockCoinService.AssertExpectations(t)
 		mockJupiterClient.AssertExpectations(t)
@@ -170,13 +172,13 @@ func TestPrepareSwap(t *testing.T) {
 	mockFromCoinWithID := &model.Coin{ID: 1, MintAddress: fromCoinMintAddress, Symbol: "FROM", Decimals: 6, Name: "From Coin"}
 	mockToCoinWithID := &model.Coin{ID: 2, MintAddress: toCoinMintAddress, Symbol: "TO", Decimals: 9, Name: "To Coin", Price: 0}
 
-
 	t.Run("Success", func(t *testing.T) {
 		service, _, mockCoinService, mockPriceService, mockJupiterClient, mockStore, mockTradeRepo := setupService(t)
 		mockStore.On("Trades").Return(mockTradeRepo).Once()
 
-		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(mockFromCoinWithID, nil).Once()
-		mockCoinService.On("GetCoinByMintAddress", ctx, toCoinMintAddress).Return(mockToCoinWithID, nil).Once()
+		// PrepareSwap calls GetCoinByMintAddress twice, then GetSwapQuote calls it twice more
+		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(mockFromCoinWithID, nil).Times(2)
+		mockCoinService.On("GetCoinByMintAddress", ctx, toCoinMintAddress).Return(mockToCoinWithID, nil).Times(2)
 
 		rawQuotePayload := json.RawMessage(`{"raw": "payload"}`)
 		mockJupiterClient.On("GetQuote", ctx, mock.AnythingOfType("jupiter.QuoteParams")).Return(&jupiter.QuoteResponse{

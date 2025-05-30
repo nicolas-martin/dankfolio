@@ -13,13 +13,13 @@ import (
 )
 
 func TestClient_GetNewCoins_Success(t *testing.T) {
-	expectedCoins := []CoinListInfo{
-		{Address: "token1", Name: "Token One", Symbol: "ONE", LogoURI: "http://example.com/one.png", Tags: []string{"tag1", "tag2"}, Decimals: 6},
-		{Address: "token2", Name: "Token Two", Symbol: "TWO", LogoURI: "http://example.com/two.png", Tags: []string{"tag3"}, Decimals: 9},
+	expectedNewTokens := []NewTokenInfo{
+		{Mint: "token1", Name: "Token One", Symbol: "ONE", LogoURI: "http://example.com/one.png", Decimals: 6},
+		{Mint: "token2", Name: "Token Two", Symbol: "TWO", LogoURI: "http://example.com/two.png", Decimals: 9},
 	}
-	// The /v1/new endpoint returns a direct slice []CoinListInfo, not CoinListResponse
-	mockBody, err := json.Marshal(expectedCoins)
-	require.NoError(t, err, "Failed to marshal expectedCoins")
+	// The /v1/new endpoint returns a direct slice []NewTokenInfo
+	mockBody, err := json.Marshal(expectedNewTokens)
+	require.NoError(t, err, "Failed to marshal expectedNewTokens")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, newTokensEndpoint, r.URL.Path, "Request path should match newTokensEndpoint")
@@ -37,15 +37,16 @@ func TestClient_GetNewCoins_Success(t *testing.T) {
 
 	require.NoError(t, err, "GetNewCoins should not return an error on success")
 	require.NotNil(t, resp, "Response should not be nil on success")
-	require.Equal(t, len(expectedCoins), len(resp.Coins), "Number of coins should match")
+	require.Equal(t, len(expectedNewTokens), len(resp.Coins), "Number of coins should match")
 
-	for i, expected := range expectedCoins {
-		assert.Equal(t, expected.Address, resp.Coins[i].Address, "Coin address should match")
-		assert.Equal(t, expected.Name, resp.Coins[i].Name, "Coin name should match")
-		assert.Equal(t, expected.Symbol, resp.Coins[i].Symbol, "Coin symbol should match")
-		assert.Equal(t, expected.LogoURI, resp.Coins[i].LogoURI, "Coin LogoURI should match")
-		assert.Equal(t, expected.Tags, resp.Coins[i].Tags, "Coin Tags should match")
-		assert.Equal(t, expected.Decimals, resp.Coins[i].Decimals, "Coin Decimals should match")
+	for i, expectedNewToken := range expectedNewTokens {
+		// Test the converted values
+		assert.Equal(t, expectedNewToken.Mint, resp.Coins[i].Address, "Coin address should match mint")
+		assert.Equal(t, expectedNewToken.Name, resp.Coins[i].Name, "Coin name should match")
+		assert.Equal(t, expectedNewToken.Symbol, resp.Coins[i].Symbol, "Coin symbol should match")
+		assert.Equal(t, expectedNewToken.LogoURI, resp.Coins[i].LogoURI, "Coin LogoURI should match")
+		assert.Equal(t, []string{}, resp.Coins[i].Tags, "Coin Tags should be empty for new tokens")
+		assert.Equal(t, expectedNewToken.Decimals, resp.Coins[i].Decimals, "Coin Decimals should match")
 	}
 }
 
@@ -95,10 +96,10 @@ func TestClient_GetNewCoins_MalformedJSON(t *testing.T) {
 }
 
 func TestClient_GetNewCoins_EmptyList(t *testing.T) {
-	// Note: The /v1/new endpoint returns a direct slice []CoinListInfo, not CoinListResponse
-	var expectedCoins []CoinListInfo // Empty slice
-	mockBody, err := json.Marshal(expectedCoins)
-	require.NoError(t, err, "Failed to marshal empty expectedCoins")
+	// Note: The /v1/new endpoint returns a direct slice []NewTokenInfo
+	var expectedNewTokens []NewTokenInfo // Empty slice
+	mockBody, err := json.Marshal(expectedNewTokens)
+	require.NoError(t, err, "Failed to marshal empty expectedNewTokens")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, newTokensEndpoint, r.URL.Path, "Request path should match newTokensEndpoint")
@@ -170,12 +171,12 @@ func TestClient_GetNewCoins_ContextCancelled(t *testing.T) {
 
 // TestClient_GetNewCoins_WithPagination tests the pagination functionality
 func TestClient_GetNewCoins_WithPagination(t *testing.T) {
-	expectedCoins := []CoinListInfo{
-		{Address: "token1", Name: "Token One", Symbol: "ONE", LogoURI: "http://example.com/one.png", Tags: []string{"tag1", "tag2"}, Decimals: 6},
-		{Address: "token2", Name: "Token Two", Symbol: "TWO", LogoURI: "http://example.com/two.png", Tags: []string{"tag3"}, Decimals: 9},
+	expectedNewTokens := []NewTokenInfo{
+		{Mint: "token1", Name: "Token One", Symbol: "ONE", LogoURI: "http://example.com/one.png", Decimals: 6},
+		{Mint: "token2", Name: "Token Two", Symbol: "TWO", LogoURI: "http://example.com/two.png", Decimals: 9},
 	}
-	mockBody, err := json.Marshal(expectedCoins)
-	require.NoError(t, err, "Failed to marshal expectedCoins")
+	mockBody, err := json.Marshal(expectedNewTokens)
+	require.NoError(t, err, "Failed to marshal expectedNewTokens")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, newTokensEndpoint, r.URL.Path, "Request path should match newTokensEndpoint")
@@ -206,5 +207,5 @@ func TestClient_GetNewCoins_WithPagination(t *testing.T) {
 
 	require.NoError(t, err, "GetNewCoins should not return an error with pagination params")
 	require.NotNil(t, resp, "Response should not be nil")
-	require.Equal(t, len(expectedCoins), len(resp.Coins), "Number of coins should match")
+	require.Equal(t, len(expectedNewTokens), len(resp.Coins), "Number of coins should match")
 }

@@ -227,7 +227,7 @@ func main() {
 		store,
 	)
 
-	walletService := wallet.New(solanaClient.GetRpcConnection(), store)
+	walletService := wallet.New(solanaClient.GetRpcConnection(), store, coinService)
 
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
 	utilitySvc := grpcapi.NewService(imageFetcher)

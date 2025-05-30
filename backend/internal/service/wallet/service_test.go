@@ -13,6 +13,7 @@ import (
 	solanaClientMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
 	dbMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	coinMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/coin/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/tyler-smith/go-bip39"
@@ -25,22 +26,24 @@ func setupWalletService(t *testing.T) (
 	*dbMocks.MockStore,
 	*dbMocks.MockRepository[model.Wallet],
 	*dbMocks.MockRepository[model.Trade],
+	*coinMocks.MockCoinServiceAPI,
 ) {
 	mockRPCClient := solanaClientMocks.NewSolanaRPCClientAPI(t)
 	mockStore := dbMocks.NewMockStore(t)
 	mockWalletRepo := dbMocks.NewMockRepository[model.Wallet](t)
 	mockTradeRepo := dbMocks.NewMockRepository[model.Trade](t)
+	mockCoinService := coinMocks.NewMockCoinServiceAPI(t)
 
-	service := New(mockRPCClient, mockStore)
+	service := New(mockRPCClient, mockStore, mockCoinService)
 
-	return service, mockRPCClient, mockStore, mockWalletRepo, mockTradeRepo
+	return service, mockRPCClient, mockStore, mockWalletRepo, mockTradeRepo, mockCoinService
 }
 
 func TestCreateWallet(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Success", func(t *testing.T) {
-		service, _, mockStore, mockWalletRepo, _ := setupWalletService(t)
+		service, _, mockStore, mockWalletRepo, _, _ := setupWalletService(t)
 
 		mockStore.On("Wallet").Return(mockWalletRepo).Once()
 		mockWalletRepo.On("Create", ctx, mock.AnythingOfType("*model.Wallet")).Return(nil).Once()
@@ -66,7 +69,7 @@ func TestCreateWallet(t *testing.T) {
 	})
 
 	t.Run("Store Create Fails", func(t *testing.T) {
-		service, _, mockStore, mockWalletRepo, _ := setupWalletService(t)
+		service, _, mockStore, mockWalletRepo, _, _ := setupWalletService(t)
 
 		mockStore.On("Wallet").Return(mockWalletRepo).Once()
 		mockWalletRepo.On("Create", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("db error")).Once()
@@ -85,7 +88,7 @@ func TestGetWalletBalances(t *testing.T) {
 	testPubKey, _ := solana.PublicKeyFromBase58(testAddress)
 
 	t.Run("Success with SOL and token balances", func(t *testing.T) {
-		service, mockRPCClient, _, _, _ := setupWalletService(t)
+		service, mockRPCClient, _, _, _, _ := setupWalletService(t)
 
 		mockRPCClient.On("GetBalance", ctx, testPubKey, rpc.CommitmentConfirmed).Return(&rpc.GetBalanceResult{Value: 2 * solana.LAMPORTS_PER_SOL}, nil).Once()
 
@@ -143,7 +146,7 @@ func TestGetWalletBalances(t *testing.T) {
 	})
 
 	t.Run("Success with only token balances (SOL is zero)", func(t *testing.T) {
-		service, mockRPCClient, _, _, _ := setupWalletService(t)
+		service, mockRPCClient, _, _, _, _ := setupWalletService(t)
 
 		mockRPCClient.On("GetBalance", ctx, testPubKey, rpc.CommitmentConfirmed).Return(&rpc.GetBalanceResult{Value: 0}, nil).Once()
 		tokenAccountsResult := &rpc.GetTokenAccountsResult{
@@ -172,14 +175,14 @@ func TestGetWalletBalances(t *testing.T) {
 	})
 
 	t.Run("Error invalid address", func(t *testing.T) {
-		service, _, _, _, _ := setupWalletService(t)
+		service, _, _, _, _, _ := setupWalletService(t)
 		_, err := service.GetWalletBalances(ctx, "invalidAddress")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid address")
 	})
 
 	t.Run("Error GetBalance fails", func(t *testing.T) {
-		service, mockRPCClient, _, _, _ := setupWalletService(t)
+		service, mockRPCClient, _, _, _, _ := setupWalletService(t)
 		mockRPCClient.On("GetBalance", ctx, testPubKey, rpc.CommitmentConfirmed).Return(nil, errors.New("rpc getbalance error")).Once()
 
 		_, err := service.GetWalletBalances(ctx, testAddress)
@@ -188,7 +191,7 @@ func TestGetWalletBalances(t *testing.T) {
 	})
 
 	t.Run("Error GetTokenAccountsByOwner fails", func(t *testing.T) {
-		service, mockRPCClient, _, _, _ := setupWalletService(t)
+		service, mockRPCClient, _, _, _, _ := setupWalletService(t)
 		mockRPCClient.On("GetBalance", ctx, testPubKey, rpc.CommitmentConfirmed).Return(&rpc.GetBalanceResult{Value: 1000}, nil).Once()
 		mockRPCClient.On("GetTokenAccountsByOwner", ctx, testPubKey, mock.Anything, mock.Anything).Return(nil, errors.New("rpc gettokens error")).Once()
 
@@ -211,12 +214,12 @@ func TestPrepareTransfer(t *testing.T) {
 	splMintKey, _ := solana.PublicKeyFromBase58(splTokenMint)
 
 	t.Run("Success SOL Transfer", func(t *testing.T) {
-		service, mockRPCClient, mockStore, _, mockTradeRepo := setupWalletService(t)
+		service, mockRPCClient, mockStore, _, mockTradeRepo, _ := setupWalletService(t)
 		mockStore.On("Trades").Return(mockTradeRepo).Once()
 
 		mockRPCClient.On("GetLatestBlockhash", ctx, rpc.CommitmentConfirmed).Return(latestBlockhashResult, nil).Once()
 		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
-			return trade.Type == "transfer" && trade.FromCoinID == "" && trade.Status == "pending" && trade.Amount == amount
+			return trade.Type == "transfer" && trade.FromCoinMintAddress == "" && trade.Status == "pending" && trade.Amount == amount
 		})).Return(nil).Once()
 
 		unsignedTx, err := service.PrepareTransfer(ctx, fromAddress, toAddress, coinMintSOL, amount)
@@ -229,7 +232,7 @@ func TestPrepareTransfer(t *testing.T) {
 	})
 
 	t.Run("Success SPL Token Transfer - ATA for receiver exists", func(t *testing.T) {
-		service, mockRPCClient, mockStore, _, mockTradeRepo := setupWalletService(t)
+		service, mockRPCClient, mockStore, _, mockTradeRepo, _ := setupWalletService(t)
 		mockStore.On("Trades").Return(mockTradeRepo).Once()
 
 		fromAta, _, _ := solana.FindAssociatedTokenAddress(fromPubKey, splMintKey)
@@ -245,13 +248,28 @@ func TestPrepareTransfer(t *testing.T) {
 
 		mockRPCClient.On("GetLatestBlockhash", ctx, rpc.CommitmentConfirmed).Return(latestBlockhashResult, nil).Once()
 		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
-			return trade.Type == "transfer" && trade.FromCoinID == splTokenMint && trade.Status == "pending"
+			return trade.Type == "transfer" && trade.FromCoinMintAddress == splTokenMint && trade.Status == "pending"
 		})).Return(nil).Once()
 
 		unsignedTx, err := service.PrepareTransfer(ctx, fromAddress, toAddress, splTokenMint, amount)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, unsignedTx)
+		mockRPCClient.AssertExpectations(t)
+		mockTradeRepo.AssertExpectations(t)
 	})
+
+	// TODO: Implement these tests
+	// t.Run("Success SPL Token Transfer - ATA for receiver does not exist", func(t *testing.T) {
+	// 	service, mockRPCClient, mockStore, _, mockTradeRepo, _ := setupWalletService(t)
+	// 	// Implementation for this case is not provided in the original file or the test function
+	// 	// This case should be implemented if needed
+	// })
+
+	// t.Run("Error GetLatestBlockhash fails", func(t *testing.T) {
+	// 	service, mockRPCClient, _, _, _, _ := setupWalletService(t)
+	// 	// Implementation for this case is not provided in the original file or the test function
+	// 	// This case should be implemented if needed
+	// })
 }
 
 func TestSubmitTransfer(t *testing.T) {
@@ -274,7 +292,7 @@ func TestSubmitTransfer(t *testing.T) {
 	existingTrade := &model.Trade{ID: "trade123", UnsignedTransaction: unsignedTxForLookup}
 
 	t.Run("Success", func(t *testing.T) {
-		service, mockRPCClient, mockStore, _, mockTradeRepo := setupWalletService(t)
+		service, mockRPCClient, mockStore, _, mockTradeRepo, _ := setupWalletService(t)
 		mockStore.On("Trades").Return(mockTradeRepo).Times(2)
 
 		mockRPCClient.On("SendTransactionWithOpts", ctx, mock.AnythingOfType("*solana.Transaction"), mock.AnythingOfType("rpc.TransactionOpts")).Return(expectedTxSig, nil).Once()

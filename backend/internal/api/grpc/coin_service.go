@@ -10,6 +10,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -158,7 +159,7 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 
 func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 	var createdAtPb *timestamppb.Timestamp // Renamed for clarity
-	if coin.CreatedAt != "" { // model.Coin.CreatedAt is string
+	if coin.CreatedAt != "" {              // model.Coin.CreatedAt is string
 		if t, err := time.Parse(time.RFC3339, coin.CreatedAt); err == nil {
 			createdAtPb = timestamppb.New(t)
 		}
@@ -166,7 +167,7 @@ func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 	}
 
 	var lastUpdatedPb *timestamppb.Timestamp // Renamed for clarity
-	if coin.LastUpdated != "" { // model.Coin.LastUpdated is string
+	if coin.LastUpdated != "" {              // model.Coin.LastUpdated is string
 		if t, err := time.Parse(time.RFC3339, coin.LastUpdated); err == nil {
 			lastUpdatedPb = timestamppb.New(t)
 		}
@@ -174,27 +175,27 @@ func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 	}
 
 	var jupiterListedAtPb *timestamppb.Timestamp // New variable for the new field
-	if coin.JupiterListedAt != nil { // model.Coin.JupiterListedAt is *time.Time
+	if coin.JupiterListedAt != nil {             // model.Coin.JupiterListedAt is *time.Time
 		jupiterListedAtPb = timestamppb.New(*coin.JupiterListedAt) // Dereference before passing to New
 	}
 
 	return &pb.Coin{
-		MintAddress:       coin.MintAddress,
-		Symbol:            coin.Symbol,
-		Name:              coin.Name,
-		Decimals:          int32(coin.Decimals),
-		Description:       coin.Description,
-		IconUrl:           coin.IconUrl,
-		Tags:              coin.Tags,
-		Price:             coin.Price,
-		DailyVolume:       coin.Volume24h,
-		Website:           &coin.Website,  // Assuming model.Coin.Website is string, and pb.Coin.website is optional string
-		Twitter:           &coin.Twitter,  // Assuming model.Coin.Twitter is string, and pb.Coin.twitter is optional string
-		Telegram:          &coin.Telegram, // Assuming model.Coin.Telegram is string, and pb.Coin.telegram is optional string
+		MintAddress: coin.MintAddress,
+		Symbol:      coin.Symbol,
+		Name:        coin.Name,
+		Decimals:    int32(coin.Decimals),
+		Description: coin.Description,
+		IconUrl:     coin.IconUrl,
+		Tags:        coin.Tags,
+		Price:       coin.Price,
+		DailyVolume: coin.Volume24h,
+		Website:     &coin.Website,  // Assuming model.Coin.Website is string, and pb.Coin.website is optional string
+		Twitter:     &coin.Twitter,  // Assuming model.Coin.Twitter is string, and pb.Coin.twitter is optional string
+		Telegram:    &coin.Telegram, // Assuming model.Coin.Telegram is string, and pb.Coin.telegram is optional string
 		// CoingeckoId is not mapped as it's not in model.Coin
-		CreatedAt:         createdAtPb,
-		LastUpdated:       lastUpdatedPb,
-		IsTrending:        coin.IsTrending,
-		JupiterListedAt:   jupiterListedAtPb, // Assign the new mapped field
+		CreatedAt:       createdAtPb,
+		LastUpdated:     lastUpdatedPb,
+		IsTrending:      coin.IsTrending,
+		JupiterListedAt: jupiterListedAtPb, // Assign the new mapped field
 	}
 }

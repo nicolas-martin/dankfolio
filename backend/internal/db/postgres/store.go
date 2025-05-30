@@ -96,7 +96,6 @@ func (s *Store) WithTransaction(ctx context.Context, fn func(txStore db.Store) e
 	})
 }
 
-
 func (s *Store) Wallet() db.Repository[model.Wallet] {
 	return s.walletRepo
 }
@@ -122,7 +121,7 @@ func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 		return nil, fmt.Errorf("failed to list trending coins: %w", err)
 	}
 
-	modelCoins := make([]model.Coin, len(schemaCoins))
+	// modelCoins := make([]model.Coin, len(schemaCoins))
 	// The Coins() method returns the repository which has the toModel method.
 	// However, toModel is not exported. For custom queries like this in the store layer,
 	// direct mapping or using a temporary repository instance with the same DB handle is needed.

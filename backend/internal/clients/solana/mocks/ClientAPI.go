@@ -75,26 +75,15 @@ type MockClientAPI_ExecuteSignedTransaction_Call struct {
 }
 
 // ExecuteSignedTransaction is a helper method to define mock.On call
-//   - ctx context.Context
-//   - signedTx string
+//   - ctx
+//   - signedTx
 func (_e *MockClientAPI_Expecter) ExecuteSignedTransaction(ctx interface{}, signedTx interface{}) *MockClientAPI_ExecuteSignedTransaction_Call {
 	return &MockClientAPI_ExecuteSignedTransaction_Call{Call: _e.mock.On("ExecuteSignedTransaction", ctx, signedTx)}
 }
 
 func (_c *MockClientAPI_ExecuteSignedTransaction_Call) Run(run func(ctx context.Context, signedTx string)) *MockClientAPI_ExecuteSignedTransaction_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -141,32 +130,16 @@ type MockClientAPI_ExecuteTrade_Call struct {
 }
 
 // ExecuteTrade is a helper method to define mock.On call
-//   - ctx context.Context
-//   - trade *model.Trade
-//   - signedTx string
+//   - ctx
+//   - trade
+//   - signedTx
 func (_e *MockClientAPI_Expecter) ExecuteTrade(ctx interface{}, trade interface{}, signedTx interface{}) *MockClientAPI_ExecuteTrade_Call {
 	return &MockClientAPI_ExecuteTrade_Call{Call: _e.mock.On("ExecuteTrade", ctx, trade, signedTx)}
 }
 
 func (_c *MockClientAPI_ExecuteTrade_Call) Run(run func(ctx context.Context, trade *model.Trade, signedTx string)) *MockClientAPI_ExecuteTrade_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 *model.Trade
-		if args[1] != nil {
-			arg1 = args[1].(*model.Trade)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
+		run(args[0].(context.Context), args[1].(*model.Trade), args[2].(string))
 	})
 	return _c
 }
@@ -215,26 +188,15 @@ type MockClientAPI_GetMetadataAccount_Call struct {
 }
 
 // GetMetadataAccount is a helper method to define mock.On call
-//   - ctx context.Context
-//   - mint string
+//   - ctx
+//   - mint
 func (_e *MockClientAPI_Expecter) GetMetadataAccount(ctx interface{}, mint interface{}) *MockClientAPI_GetMetadataAccount_Call {
 	return &MockClientAPI_GetMetadataAccount_Call{Call: _e.mock.On("GetMetadataAccount", ctx, mint)}
 }
 
 func (_c *MockClientAPI_GetMetadataAccount_Call) Run(run func(ctx context.Context, mint string)) *MockClientAPI_GetMetadataAccount_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -329,26 +291,15 @@ type MockClientAPI_GetTransactionConfirmationStatus_Call struct {
 }
 
 // GetTransactionConfirmationStatus is a helper method to define mock.On call
-//   - ctx context.Context
-//   - sigStr string
+//   - ctx
+//   - sigStr
 func (_e *MockClientAPI_Expecter) GetTransactionConfirmationStatus(ctx interface{}, sigStr interface{}) *MockClientAPI_GetTransactionConfirmationStatus_Call {
 	return &MockClientAPI_GetTransactionConfirmationStatus_Call{Call: _e.mock.On("GetTransactionConfirmationStatus", ctx, sigStr)}
 }
 
 func (_c *MockClientAPI_GetTransactionConfirmationStatus_Call) Run(run func(ctx context.Context, sigStr string)) *MockClientAPI_GetTransactionConfirmationStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
