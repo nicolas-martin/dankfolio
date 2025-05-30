@@ -167,7 +167,10 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 			}
 			if trade.Finalized != (txStatus.ConfirmationStatus == "finalized") {
 				trade.Finalized = txStatus.ConfirmationStatus == "finalized"
-				if trade.Finalized { now := time.Now(); trade.CompletedAt = &now }
+				if trade.Finalized {
+					now := time.Now()
+					trade.CompletedAt = &now
+				}
 				statusChanged = true
 			}
 			if txStatus.Err != nil {
