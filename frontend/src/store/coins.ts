@@ -17,7 +17,7 @@ interface CoinState {
 	getCoinByID: (mintAddress: string, forceRefresh?: boolean) => Promise<Coin | null>;
 	newlyListedCoins: Coin[];
 	isLoadingNewlyListed: boolean;
-	fetchNewlyListedCoins: (limit?: number) => Promise<void>;
+	fetchNewCoins: (limit?: number) => Promise<void>;
 }
 
 export const useCoinStore = create<CoinState>((set, get) => ({
@@ -117,7 +117,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		}
 	},
 
-	fetchNewlyListedCoins: async (limit: number = 10) => {
+	fetchNewCoins: async (limit: number = 10) => {
 		log.log('🆕 [CoinStore] Fetching newly listed coins...');
 		set({ isLoadingNewlyListed: true, error: null }); // Assuming existing 'error' can be reused or add a new one.
 		try {

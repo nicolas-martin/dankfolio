@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -6,7 +6,7 @@ import { useCoinStore } from '@store/coins';
 import CoinCard from '@components/Home/CoinCard'; // Assuming CoinCard can be used or adapted
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
-import { createStyles } from './NewlyListedCoins.styles'; // We'll create this styles file next
+import { createStyles } from './NewCoins.styles'; // We'll create this styles file next
 
 // Define a navigation prop type, assuming a similar structure to HomeScreenNavigationProp
 // This might need adjustment based on where CoinCard navigates.
@@ -15,12 +15,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation'; // Assuming you have RootStackParamList defined
 
 // Allow navigation to Search as well for the "View All" button
-type NewlyListedCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
+type NewCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
 
-const NewlyListedCoins: React.FC = () => {
+const NewCoins: React.FC = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	const navigation = useNavigation<NewlyListedCoinsNavigationProp>();
+	const navigation = useNavigation<NewCoinsNavigationProp>();
 
 	// Use separate selectors to avoid creating new objects on every render
 	const newlyListedCoins = useCoinStore(state => state.newlyListedCoins);
@@ -32,7 +32,7 @@ const NewlyListedCoins: React.FC = () => {
 	const handleCoinPress = (coin: Coin) => {
 		logger.breadcrumb({
 			category: 'navigation',
-			message: 'Pressed coin from NewlyListedCoins',
+			message: 'Pressed coin from NewCoins',
 			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress },
 		});
 		navigation.navigate('CoinDetail', { coin });
@@ -53,7 +53,7 @@ const NewlyListedCoins: React.FC = () => {
 				<View style={styles.titleContainer}>
 					<Text style={styles.title}>New Listings</Text>
 					<TouchableOpacity onPress={() => {
-						logger.log('[NewlyListedCoins] Navigate to Search with newly listed sort');
+						logger.log('[NewCoins] Navigate to Search with newly listed sort');
 						navigation.navigate('Search', {
 							defaultSortBy: 'jupiter_listed_at', // Matches backend expectation
 							defaultSortDesc: true
@@ -72,7 +72,7 @@ const NewlyListedCoins: React.FC = () => {
 			<View style={styles.titleContainer}>
 				<Text style={styles.title}>New Listings</Text>
 				<TouchableOpacity onPress={() => {
-					logger.log('[NewlyListedCoins] Navigate to Search with newly listed sort');
+					logger.log('[NewCoins] Navigate to Search with newly listed sort');
 					navigation.navigate('Search', {
 						defaultSortBy: 'jupiter_listed_at', // Matches backend expectation
 						defaultSortDesc: true
@@ -103,4 +103,4 @@ const NewlyListedCoins: React.FC = () => {
 	);
 };
 
-export default NewlyListedCoins;
+export default NewCoins;
