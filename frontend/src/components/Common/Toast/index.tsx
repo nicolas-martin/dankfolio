@@ -2,10 +2,11 @@ import React, { createContext, useContext, useMemo, useReducer } from 'react';
 import { View } from 'react-native';
 import { Portal, Snackbar, useTheme, Text, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ToastProps } from './toast_types';
+import { ToastProps, ToastType } from './toast_types'; // Added ToastType
 import { createStyles } from './toast_styles';
 import { getToastBackgroundColor, getToastForegroundColor } from './toast_constants';
-import { getToastIcon } from './toast_icons';
+import { getToastIcon as getOriginalToastIconComponent } from './toast_icons'; // Renamed import
+import { SuccessAnimation, ErrorAnimation } from '../Animations'; // Added Lottie components
 
 const ToastContext = createContext<{
 	showToast: (options: ToastProps) => void;
@@ -91,7 +92,20 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 	const toastType = state.type || 'info';
 	const toastForegroundColor = getToastForegroundColor(toastType, theme);
-	const ToastIcon = getToastIcon(toastType);
+
+	let IconToRender;
+	// Ensure toastType is valid for getOriginalToastIconComponent by casting, as state.type can be undefined initially.
+	const OriginalIcon = getOriginalToastIconComponent(toastType as ToastType);
+
+	if (toastType === 'success') {
+		IconToRender = <SuccessAnimation size={28} loop={false} autoPlay={true} style={styles.statusIcon} />;
+	} else if (toastType === 'error') {
+		IconToRender = <ErrorAnimation size={28} loop={false} autoPlay={true} style={styles.statusIcon} />;
+	} else if (OriginalIcon) {
+		// Ensure OriginalIcon is a valid component before rendering
+		IconToRender = <OriginalIcon size={20} color={toastForegroundColor} style={styles.statusIcon} />;
+	}
+	// else IconToRender will be undefined, and nothing will be rendered for the icon if type is invalid and not success/error.
 
 	return (
 		<ToastContext.Provider value={toast}>
@@ -105,18 +119,15 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 						top: insets.top,
 					}}
 					style={{
-						backgroundColor: getToastBackgroundColor(toastType, theme),
+						// Cast toastType because state.type can be undefined initially, but getToastBackgroundColor expects a valid ToastType.
+						backgroundColor: getToastBackgroundColor(toastType as ToastType, theme),
 						borderRadius: 8,
 						marginHorizontal: insets.left + 10,
 					}}
 				>
 					<View style={styles.content}>
 						<View style={styles.messageContainer}>
-							<ToastIcon
-								size={20}
-								color={toastForegroundColor}
-								style={styles.statusIcon}
-							/>
+							{IconToRender}
 							<Text style={[styles.message, { color: theme.colors.onSurfaceVariant }]}>
 								{state.message}
 							</Text>

@@ -37,14 +37,14 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		// If CoinCard doesn't have its own width, you might need to set it here
 	},
 	loadingContainer: {
-		flexDirection: 'row',
+		flexDirection: 'column', // Changed from 'row'
 		alignItems: 'center',
 		justifyContent: 'center',
 		padding: theme.spacing?.md || 16,
 		minHeight: 100, // Give some space for loading indicator
 	},
 	loadingText: {
-		marginLeft: theme.spacing?.sm || 8,
+		marginTop: theme.spacing?.sm || 8, // Changed from marginLeft
 		color: theme.colors.onSurfaceVariant,
 	},
 	emptyText: {

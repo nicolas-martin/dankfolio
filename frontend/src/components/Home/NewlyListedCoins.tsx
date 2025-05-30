@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { LoadingAnimation } from '../../Common/Animations';
 import { useCoinStore } from '@store/coins';
 import CoinCard from '@components/Home/CoinCard'; // Assuming CoinCard can be used or adapted
 import { Coin } from '@/types';
@@ -45,7 +46,7 @@ const NewlyListedCoins: React.FC = () => {
 	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (
 			<View style={styles.loadingContainer}>
-				<ActivityIndicator size="small" color={theme.colors.primary} />
+				<LoadingAnimation size={60} />
 				<Text style={styles.loadingText}>Loading new listings...</Text>
 			</View>
 		);
