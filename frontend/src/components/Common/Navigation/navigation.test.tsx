@@ -13,18 +13,20 @@ const Stack = createNativeStackNavigator();
 
 // Test data
 const mockCoin: Coin = {
-	mintAddress: 'bitcoin',
-	name: 'Bitcoin',
+	mintAddress: 'BTC123',
 	symbol: 'BTC',
-	iconUrl: 'https://example.com/btc-from-nav.png',
+	name: 'Bitcoin',
+	resolvedIconUrl: 'https://example.com/btc-from-nav.png',
+	decimals: 8,
 	price: 50000,
-	description: 'Digital gold',
+	change24h: 2.5,
+	dailyVolume: 1000000000,
+	description: 'Bitcoin',
 	website: 'https://bitcoin.org',
 	twitter: 'https://twitter.com/bitcoin',
-	telegram: 'https://t.me/bitcoin',
-	dailyVolume: 1000000,
+	telegram: '',
 	tags: ['cryptocurrency'],
-	decimals: 8
+	createdAt: new Date(),
 };
 
 // Mock home scripts

@@ -15,7 +15,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
         return (
             <View style={isHorizontal ? styles.horizontalLogoContainer : styles.logo}>
                 <CachedImage
-                    uri={coin.resolvedIconUrl || coin.iconUrl}
+                    uri={coin.resolvedIconUrl}
                     size={size}
                     borderRadius={borderRadius}
                     testID={`coin-icon-${coin.mintAddress}`}

@@ -12,35 +12,37 @@ import { View, Text } from 'react-native';
 const MOCK_SOL_PRICE = 150.0;
 const MOCK_WEN_PRICE = 0.00011;
 
-const mockFromToken: Coin = {
-	mintAddress: "So11111111111111111111111111111111111111112",
-	name: "Solana",
-	symbol: "SOL",
-	iconUrl: "sol_icon_url",
+const mockFromCoin: Coin = {
+	mintAddress: 'So11111111111111111111111111111111111111112',
+	symbol: 'SOL',
+	name: 'Solana',
+	resolvedIconUrl: "sol_icon_url",
 	decimals: 9,
-	price: MOCK_SOL_PRICE,
-	description: "Solana Blockchain",
-	website: "https://solana.com",
-	twitter: "https://twitter.com/solana",
-	telegram: "",
-	dailyVolume: 5e9,
-	tags: ["layer-1"],
-	createdAt: new Date()
+	price: 100,
+	change24h: 5.5,
+	dailyVolume: 1000000,
+	description: 'Solana blockchain',
+	website: 'https://solana.com',
+	twitter: 'https://twitter.com/solana',
+	telegram: '',
+	tags: ['layer-1'],
+	createdAt: new Date(),
 };
-const mockToToken: Coin = {
-	mintAddress: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
-	name: "WEN",
-	symbol: "WEN",
-	iconUrl: "wen_icon_url",
+const mockToCoin: Coin = {
+	mintAddress: 'WENWENvqqNya429ubCdR81ZmD69brwQaaBYY6p3LCpk',
+	symbol: 'WEN',
+	name: 'Wen Token',
+	resolvedIconUrl: "wen_icon_url",
 	decimals: 5,
-	price: MOCK_WEN_PRICE,
-	description: "WEN",
-	website: "https://wen-foundation.org",
-	twitter: "https://twitter.com/wenwencoin",
-	telegram: "https://t.me/wenwencoinsol",
-	dailyVolume: 123456.78,
-	tags: ["meme", "community"],
-	createdAt: new Date()
+	price: 0.001,
+	change24h: -2.3,
+	dailyVolume: 500000,
+	description: 'Wen token',
+	website: 'https://wen.com',
+	twitter: 'https://twitter.com/wen',
+	telegram: '',
+	tags: ['meme'],
+	createdAt: new Date(),
 };
 const mockWallet: RawWalletData = {
 	address: 'TestWalletAddress12345',
@@ -48,11 +50,11 @@ const mockWallet: RawWalletData = {
 	mnemonic: 'test mnemonic phrase',
 };
 const mockFromPortfolioToken: PortfolioToken = {
-	mintAddress: mockFromToken.mintAddress,
+	mintAddress: mockFromCoin.mintAddress,
 	amount: 10,
-	price: mockFromToken.price,
-	value: 10 * mockFromToken.price,
-	coin: mockFromToken,
+	price: mockFromCoin.price,
+	value: 10 * mockFromCoin.price,
+	coin: mockFromCoin,
 };
 
 // --- Mock Return Values (Copied) ---
@@ -66,10 +68,10 @@ const mockPortfolioStoreReturn = {
 	fetchPortfolioBalance: jest.fn(),
 };
 const mockTokenStoreReturn = {
-	availableCoins: [mockFromToken, mockToToken] as Coin[],
+	availableCoins: [mockFromCoin, mockToCoin] as Coin[],
 	coinMap: {
-		[mockFromToken.mintAddress]: mockFromToken,
-		[mockToToken.mintAddress]: mockToToken,
+		[mockFromCoin.mintAddress]: mockFromCoin,
+		[mockToCoin.mintAddress]: mockToCoin,
 	} as Record<string, Coin>,
 	isLoading: false,
 	error: null,
@@ -90,8 +92,8 @@ jest.mock('@store/coins');
 const mockNavigate = jest.fn();
 const mockRoute = {
 	params: {
-		initialFromCoin: mockFromToken,
-		initialToCoin: mockToToken,
+		initialFromCoin: mockFromCoin,
+		initialToCoin: mockToCoin,
 	},
 };
 jest.mock('@react-navigation/native', () => {
@@ -171,20 +173,20 @@ describe('TradeScreen Confirmation Behavior', () => {
 		Object.values(mockTokenStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 		// Mock consistent prices for predictable test results
 		mockTokenStoreReturn.getCoinByID.mockImplementation(async (id, forceRefresh) => {
-			if (id === mockFromToken.mintAddress) return { ...mockFromToken, price: MOCK_SOL_PRICE };
-			if (id === mockToToken.mintAddress) return { ...mockToToken, price: MOCK_WEN_PRICE };
+			if (id === mockFromCoin.mintAddress) return { ...mockFromCoin, price: MOCK_SOL_PRICE };
+			if (id === mockToCoin.mintAddress) return { ...mockToCoin, price: MOCK_WEN_PRICE };
 			return null;
 		});
 		// Mock getCoinPrices API call to return consistent prices
 		(TradeScripts.getCoinPrices as jest.Mock).mockResolvedValue({
-			[mockFromToken.mintAddress]: MOCK_SOL_PRICE,
-			[mockToToken.mintAddress]: MOCK_WEN_PRICE,
+			[mockFromCoin.mintAddress]: MOCK_SOL_PRICE,
+			[mockToCoin.mintAddress]: MOCK_WEN_PRICE,
 		});
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
 		mocked(useCoinStore).mockReturnValue(mockTokenStoreReturn);
 		// Use tokens with mocked prices for initial route params
-		mockRoute.params.initialFromCoin = { ...mockFromToken, price: MOCK_SOL_PRICE };
-		mockRoute.params.initialToCoin = { ...mockToToken, price: MOCK_WEN_PRICE };
+		mockRoute.params.initialFromCoin = { ...mockFromCoin, price: MOCK_SOL_PRICE };
+		mockRoute.params.initialToCoin = { ...mockToCoin, price: MOCK_WEN_PRICE };
 	});
 
 	afterEach(() => {
@@ -308,11 +310,11 @@ describe('TradeScreen Confirmation Behavior', () => {
 		await waitFor(() => expect(TradeScripts.executeTrade).toHaveBeenCalledTimes(1));
 		expect(TradeScripts.executeTrade).toHaveBeenCalledWith(
 			expect.objectContaining({
-				mintAddress: mockFromToken.mintAddress,
+				mintAddress: mockFromCoin.mintAddress,
 				symbol: 'SOL'
 			}),
 			expect.objectContaining({
-				mintAddress: mockToToken.mintAddress,
+				mintAddress: mockToCoin.mintAddress,
 				symbol: 'WEN'
 			}),
 			mockFromAmount,

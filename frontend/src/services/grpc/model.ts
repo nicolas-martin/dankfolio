@@ -4,7 +4,7 @@ export interface Coin {
 	symbol: string;
 	decimals: number;
 	description: string;
-	iconUrl: string;
+	resolvedIconUrl?: string;
 	tags: string[];
 	price: number;
 	dailyVolume: number;

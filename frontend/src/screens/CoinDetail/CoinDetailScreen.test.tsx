@@ -18,46 +18,48 @@ const mockPortfolioStoreReturn = {
 	fetchPortfolioBalance: jest.fn(),
 };
 
-const mockSolCoin: Coin = {
-	mintAddress: "So11111111111111111111111111111111111111112",
-	name: "Solana",
-	symbol: "SOL",
+const mockCoin: Coin = {
+	mintAddress: 'So11111111111111111111111111111111111111112',
+	symbol: 'SOL',
+	name: 'Solana',
+	resolvedIconUrl: "https://example.com/sol.png",
 	decimals: 9,
-	description: "Solana is a high-performance blockchain platform",
-	iconUrl: "https://example.com/sol.png",
-	tags: ["Layer 1"],
-	price: 100.0,
+	price: 100,
+	change24h: 5.5,
 	dailyVolume: 1000000,
-	website: "https://solana.com",
-	twitter: "https://twitter.com/solana",
-	telegram: "https://t.me/solana",
-	coingeckoId: "solana"
+	description: 'Solana blockchain',
+	website: 'https://solana.com',
+	twitter: 'https://twitter.com/solana',
+	telegram: '',
+	tags: ['layer-1'],
+	createdAt: new Date(),
 };
 
-const mockInitialCoin: Coin = {
-	mintAddress: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI",
-	name: "Test Coin",
-	symbol: "TEST",
-	decimals: 9,
-	description: "A test coin",
-	iconUrl: "https://example.com/test.png",
-	tags: ["DeFi"],
-	price: 150.0,
+const mockCoin2: Coin = {
+	mintAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI',
+	symbol: 'TEST',
+	name: 'Test Token',
+	resolvedIconUrl: "https://example.com/test.png",
+	decimals: 6,
+	price: 0.5,
+	change24h: -2.3,
 	dailyVolume: 500000,
-	website: "https://test.com",
-	twitter: "https://twitter.com/test",
-	telegram: "https://t.me/test",
-	coingeckoId: "test"
+	description: 'Test token',
+	website: 'https://test.com',
+	twitter: 'https://twitter.com/test',
+	telegram: '',
+	tags: ['test'],
+	createdAt: new Date(),
 };
 
 const mockCoinStoreReturn = {
 	coins: {
-		[mockSolCoin.mintAddress]: mockSolCoin,
-		[mockInitialCoin.mintAddress]: mockInitialCoin
+		[mockCoin.mintAddress]: mockCoin,
+		[mockCoin2.mintAddress]: mockCoin2
 	},
 	getCoinByID: jest.fn((mintAddress: string) => {
-		if (mintAddress === mockSolCoin.mintAddress) return mockSolCoin;
-		if (mintAddress === mockInitialCoin.mintAddress) return mockInitialCoin;
+		if (mintAddress === mockCoin.mintAddress) return mockCoin;
+		if (mintAddress === mockCoin2.mintAddress) return mockCoin2;
 		return null;
 	}),
 	availableCoins: [] as Coin[],
@@ -103,7 +105,7 @@ jest.mock('@store/coins');
 
 const mockNavigate = jest.fn();
 const mockRoute = {
-	params: { coin: mockInitialCoin },
+	params: { coin: mockCoin2 },
 };
 jest.mock('@react-navigation/native', () => {
 	const actualNav = jest.requireActual('@react-navigation/native');
@@ -282,14 +284,14 @@ describe('CoinDetail Screen', () => {
 
 		mockCoinStoreReturn.getCoinByID.mockImplementation(mockGetCoinByID);
 		mockGetCoinByID.mockImplementation(async (id) => {
-			if (id === mockSolCoin.mintAddress) return mockSolCoin;
-			if (id === mockInitialCoin.mintAddress) return mockInitialCoin;
+			if (id === mockCoin.mintAddress) return mockCoin;
+			if (id === mockCoin2.mintAddress) return mockCoin2;
 			return null;
 		});
 
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
-		mockRoute.params.coin = mockInitialCoin;
+		mockRoute.params.coin = mockCoin2;
 	});
 
 	afterEach(() => {
@@ -305,7 +307,7 @@ describe('CoinDetail Screen', () => {
 				"4H", // Default timeframe
 				expect.any(Function), // setLoading
 				expect.any(Function), // setPriceHistory
-				mockInitialCoin,
+				mockCoin2,
 				true // isInitialLoad
 			);
 		});
@@ -324,10 +326,10 @@ describe('CoinDetail Screen', () => {
 
 	it('handles portfolio integration and trading correctly', async () => {
 		const mockHolding = {
-			mintAddress: mockInitialCoin.mintAddress,
+			mintAddress: mockCoin2.mintAddress,
 			amount: 100, 
 			value: 15000, 
-			coin: mockInitialCoin, 
+			coin: mockCoin2, 
 			price: 150.0
 		};
 		mockPortfolioStoreReturn.tokens = [mockHolding];
@@ -344,7 +346,7 @@ describe('CoinDetail Screen', () => {
 		const valueText = await findByText(new RegExp(`\\$.*${mockHolding.value}.*`));
 		expect(valueText).toBeTruthy();
 		
-		const amountText = await findByText(new RegExp(`.*${mockHolding.amount}.*${mockInitialCoin.symbol}`));
+		const amountText = await findByText(new RegExp(`.*${mockHolding.amount}.*${mockCoin2.symbol}`));
 		expect(amountText).toBeTruthy();
 
 		const tradeButton = getByTestId('trade-button');
@@ -352,7 +354,7 @@ describe('CoinDetail Screen', () => {
 
 		await waitFor(() => {
 			expect(mockedHandleTradeNavigation).toHaveBeenCalledWith(
-				mockInitialCoin, null, mockShowToast, mockNavigate
+				mockCoin2, null, mockShowToast, mockNavigate
 			);
 		});
 	});
@@ -373,7 +375,7 @@ describe('CoinDetail Screen', () => {
 				// IMPORTANT: Keep API call assertion for performance monitoring
 				await waitFor(() => {
 					expect(mockedFetchPriceHistory).toHaveBeenCalledWith(
-						"4H", expect.any(Function), expect.any(Function), mockInitialCoin, true
+						"4H", expect.any(Function), expect.any(Function), mockCoin2, true
 					);
 				});
 
@@ -389,7 +391,7 @@ describe('CoinDetail Screen', () => {
 						timeframe.value, // The value of the pressed button
 						expect.any(Function), // setLoading
 						expect.any(Function), // setPriceHistory
-						mockInitialCoin,
+						mockCoin2,
 						true // isInitialLoad is true because priceHistory gets reset or is empty when timeframe changes
 					);
 				});
