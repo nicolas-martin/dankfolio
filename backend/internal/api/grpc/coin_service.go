@@ -65,7 +65,7 @@ func (s *coinServiceHandler) GetCoinByID(
 	ctx context.Context,
 	req *connect.Request[pb.GetCoinByIDRequest],
 ) (*connect.Response[pb.Coin], error) {
-	coin, err := s.coinService.GetCoinByID(ctx, req.Msg.MintAddress)
+	coin, err := s.coinService.GetCoinByMintAddress(ctx, req.Msg.MintAddress)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin: %w", err))
 	}
@@ -79,7 +79,7 @@ func (s *coinServiceHandler) SearchCoinByMint(
 	ctx context.Context,
 	req *connect.Request[pb.SearchCoinByMintRequest],
 ) (*connect.Response[pb.SearchCoinByMintResponse], error) {
-	coin, err := s.coinService.GetCoinByID(ctx, req.Msg.MintAddress)
+	coin, err := s.coinService.GetCoinByMintAddress(ctx, req.Msg.MintAddress)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", req.Msg.MintAddress, err))
 	}
@@ -116,7 +116,7 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 	// validate if the req.Msg.Query is a valid mint address
 	solanaAddress, err := solana.PublicKeyFromBase58(req.Msg.Query)
 	if err == nil {
-		coin, err := s.coinService.GetCoinByID(ctx, solanaAddress.String())
+		coin, err := s.coinService.GetCoinByMintAddress(ctx, solanaAddress.String())
 		if err != nil {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", solanaAddress.String(), err))
 		}
