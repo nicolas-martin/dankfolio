@@ -17,17 +17,13 @@ import { logger } from '@/utils/logger';
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
-	const {
-        availableCoins,
-        fetchAvailableCoins,
-        fetchNewlyListedCoins,
-        isLoading: isLoadingTrending // isLoading from coinStore is for availableCoins (trending)
-    } = useCoinStore(state => ({
-        availableCoins: state.availableCoins,
-        fetchAvailableCoins: state.fetchAvailableCoins,
-        fetchNewlyListedCoins: state.fetchNewlyListedCoins,
-        isLoading: state.isLoading,
-    }));
+	
+	// Use separate selectors to avoid creating new objects on every render
+	const availableCoins = useCoinStore(state => state.availableCoins);
+	const fetchAvailableCoins = useCoinStore(state => state.fetchAvailableCoins);
+	const fetchNewlyListedCoins = useCoinStore(state => state.fetchNewlyListedCoins);
+	const isLoadingTrending = useCoinStore(state => state.isLoading);
+	
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -48,7 +44,7 @@ const HomeScreen = () => {
 			await fetchPortfolioBalance(wallet.address);
 		}
 		logger.log('[HomeScreen] Fetched all data for home screen.');
-	}, [fetchAvailableCoins, fetchNewlyListedCoins, fetchPortfolioBalance, wallet]);
+	}, [wallet]); // Only depend on wallet, not the fetch functions
 
 	// Fetch trending coins and portfolio on mount
 	useEffect(() => {
@@ -87,8 +83,6 @@ const HomeScreen = () => {
 		});
 		handleCoinPressCallback(coin);
 	}, [handleCoinPressCallback]);
-
-
 
 	const renderEmptyState = () => (
 		<View style={styles.emptyStateContainer}>
