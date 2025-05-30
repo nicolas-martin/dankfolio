@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, SafeAreaView, FlatList, RefreshControl } from 'react-native';
+import { View, SafeAreaView, FlatList, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme, Text, Icon } from 'react-native-paper';
 import CoinCard from '@components/Home/CoinCard';
+import NewlyListedCoins from '@components/Home/NewlyListedCoins';
 import { useNavigation } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
@@ -16,7 +17,17 @@ import { logger } from '@/utils/logger';
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
-	const { availableCoins, fetchAvailableCoins } = useCoinStore();
+	const {
+        availableCoins,
+        fetchAvailableCoins,
+        fetchNewlyListedCoins,
+        isLoading: isLoadingTrending // isLoading from coinStore is for availableCoins (trending)
+    } = useCoinStore(state => ({
+        availableCoins: state.availableCoins,
+        fetchAvailableCoins: state.fetchAvailableCoins,
+        fetchNewlyListedCoins: state.fetchNewlyListedCoins,
+        isLoading: state.isLoading,
+    }));
 	const { showToast } = useToast();
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -28,18 +39,21 @@ const HomeScreen = () => {
 
 	// Shared logic for fetching trending coins and portfolio
 	const fetchTrendingAndPortfolio = useCallback(async () => {
-		await fetchAvailableCoins(true);
+		logger.log('[HomeScreen] Fetching trending, newly listed, and portfolio...');
+		await Promise.all([
+			fetchAvailableCoins(true), // For trending coins
+			fetchNewlyListedCoins(),   // For newly listed coins
+		]);
 		if (wallet) {
 			await fetchPortfolioBalance(wallet.address);
 		}
-	}, [fetchAvailableCoins, fetchPortfolioBalance, wallet]);
+		logger.log('[HomeScreen] Fetched all data for home screen.');
+	}, [fetchAvailableCoins, fetchNewlyListedCoins, fetchPortfolioBalance, wallet]);
 
-	// Fetch trending coins and portfolio on mount if not already loaded
+	// Fetch trending coins and portfolio on mount
 	useEffect(() => {
-		if (availableCoins.length === 0) {
-			fetchTrendingAndPortfolio();
-		}
-	}, [availableCoins.length, fetchTrendingAndPortfolio]);
+		fetchTrendingAndPortfolio();
+	}, [fetchTrendingAndPortfolio]);
 
 	const handleCoinPressCallback = useCallback((coin: Coin) => {
 		handleCoinPress(coin, navigation);
@@ -116,39 +130,61 @@ const HomeScreen = () => {
 		/>
 	);
 
-	const renderCoinsList = () => (
-		<View style={styles.coinsSection}>
-			<View style={styles.sectionHeader}>
-				<Text style={styles.sectionTitle}>Trending Coins</Text>
-			</View>
-			{availableCoins.length > 0 ? (
-				<FlatList
-					data={availableCoins}
-					keyExtractor={(item) => item.mintAddress || item.symbol}
-					renderItem={({ item }) => (
-						<CoinCard coin={item} onPress={() => handlePressCoinCard(item)} />
-					)}
-					ListFooterComponent={() => (
-						<View >
-							<OTAUpdater />
-						</View>
-					)}
-					contentContainerStyle={styles.coinsList}
-					showsVerticalScrollIndicator={false}
-					refreshControl={
-						<RefreshControl
-							refreshing={isRefreshing}
-							onRefresh={onRefresh}
-							colors={[theme.colors.primary]}
-							tintColor={theme.colors.primary}
-						/>
-					}
-				/>
-			) : (
-				renderEmptyState()
-			)}
-		</View>
-	);
+	const renderCoinsList = () => {
+		const hasTrendingCoins = availableCoins.length > 0;
+
+		return (
+			<ScrollView
+				style={styles.coinsSectionScrollView}
+				showsVerticalScrollIndicator={false}
+				refreshControl={
+					<RefreshControl
+						refreshing={isRefreshing}
+						onRefresh={onRefresh}
+						colors={[theme.colors.primary]}
+						tintColor={theme.colors.primary}
+					/>
+				}
+			>
+				<NewlyListedCoins />
+
+				<View style={styles.sectionHeader}>
+					<Text style={styles.sectionTitle}>Trending Coins</Text>
+				</View>
+
+				{isLoadingTrending && !hasTrendingCoins && (
+					<View style={styles.loadingContainer}>
+						<ActivityIndicator size="small" color={theme.colors.primary} />
+						<Text style={{ marginLeft: 8, color: theme.colors.onSurfaceVariant }}>Loading trending coins...</Text>
+					</View>
+				)}
+
+				{!isLoadingTrending && !hasTrendingCoins && !isRefreshing && ( // Added !isRefreshing
+					<View style={styles.emptyStateContainer}>
+						<Icon source="chart-line" size={36} color={theme.colors.onSurfaceVariant} />
+						<Text style={styles.emptyStateTitle}>No Trending Coins</Text>
+						<Text style={styles.emptyStateText}>
+							There are no trending coins to display right now.
+						</Text>
+					</View>
+				)}
+
+				{hasTrendingCoins && (
+					<FlatList
+						data={availableCoins}
+						keyExtractor={(item) => item.mintAddress || item.symbol}
+						renderItem={({ item }) => (
+							<View style={styles.coinCardContainerStyle}>
+								<CoinCard coin={item} onPress={() => handlePressCoinCard(item)} />
+							</View>
+						)}
+						ListFooterComponent={<OTAUpdater />}
+						scrollEnabled={false}
+					/>
+				)}
+			</ScrollView>
+		);
+	};
 
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">

@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, TextInput, FlatList, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
+import { useRoute, RouteProp } from '@react-navigation/native'; // Import useRoute and RouteProp
+import { RootStackParamList } from '@/types/navigation'; // Assuming RootStackParamList is here
 import { SearchScreenProps, SearchState } from './types';
 import { SearchSortByOption } from '@/services/grpc/model'; // Import the type
 import { performSearch, DEBOUNCE_DELAY, handleCoinNavigation } from './scripts';
@@ -25,7 +27,19 @@ const initialState: SearchState = {
 };
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
-	const [state, setState] = useState<SearchState>(initialState);
+	const route = useRoute<RouteProp<RootStackParamList, 'Search'>>();
+	const defaultFiltersFromRoute = route.params?.defaultSortBy ? {
+        query: '',
+        tags: [],
+        minVolume24h: 0,
+        sortBy: route.params.defaultSortBy as SearchSortByOption, // Cast if necessary, ensure type safety
+        sortDesc: route.params.defaultSortDesc !== undefined ? route.params.defaultSortDesc : true,
+    } : initialState.filters;
+
+	const [state, setState] = useState<SearchState>({
+        ...initialState,
+        filters: defaultFiltersFromRoute,
+    });
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const toast = useToast();
