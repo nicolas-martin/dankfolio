@@ -163,26 +163,91 @@ func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, e
 }
 
 // GetCoinByMintAddress returns a coin by its mint address.
-// If not found in the store, it attempts to fetch, enrich, and cache it.
+// It first checks the 'coins' table. If not found, it checks 'raw_coins'
+// and enriches from there. If not in 'raw_coins' either, it enriches from scratch.
 func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string) (*model.Coin, error) {
-	// Try fetching from the store first
+	// Try fetching from the 'coins' table first (enriched coins)
 	coin, err := s.store.Coins().GetByField(ctx, "mint_address", mintAddress)
 	if err == nil {
-		// Found in store
+		// Found in 'coins' table, assume it's complete and return
+		slog.Debug("Coin found in 'coins' table", slog.String("mintAddress", mintAddress))
 		return coin, nil
 	}
 
-	// If not found, proceed to dynamic enrichment
+	// If not found in 'coins' table, check the specific error
 	if errors.Is(err, db.ErrNotFound) {
-		slog.Info("Coin not found by mint_address, attempting dynamic enrichment", slog.String("mintAddress", mintAddress))
-		// fetchAndCacheCoin handles enrichment and storing the coin.
-		// It returns the enriched coin and any error encountered during that process.
-		return s.fetchAndCacheCoin(ctx, mintAddress)
+		slog.Info("Coin not found in 'coins' table, checking 'raw_coins' table.", slog.String("mintAddress", mintAddress))
+
+		// Try fetching from 'raw_coins' table
+		rawCoin, rawErr := s.store.RawCoins().GetByField(ctx, "mint_address", mintAddress)
+		if rawErr == nil {
+			// Found in 'raw_coins', enrich it, save to 'coins', and return
+			slog.Info("Coin found in 'raw_coins' table, proceeding with enrichment.", slog.String("mintAddress", mintAddress))
+			// This function 'enrichRawCoinAndSave' will be implemented in the next step.
+			// It's responsible for calling EnrichCoinData with rawCoin's details and saving to 'coins'.
+			return s.enrichRawCoinAndSave(ctx, rawCoin)
+		}
+
+		// If not found in 'raw_coins' table, check the specific error for raw_coins lookup
+		if errors.Is(rawErr, db.ErrNotFound) {
+			slog.Info("Coin not found in 'raw_coins' table either. Enriching from scratch.", slog.String("mintAddress", mintAddress))
+			// Not in 'coins' or 'raw_coins', so fetch from scratch (e.g., external APIs)
+			return s.fetchAndCacheCoin(ctx, mintAddress)
+		}
+
+		// An error other than 'not found' occurred when querying 'raw_coins'
+		slog.Error("Error fetching coin from 'raw_coins' table", slog.String("mintAddress", mintAddress), slog.Any("error", rawErr))
+		return nil, fmt.Errorf("error fetching coin from raw_coins %s: %w", mintAddress, rawErr)
+
 	}
 
-	// For other types of errors (not db.ErrNotFound), return the error
-	slog.Error("Error fetching coin by mint_address from store", slog.String("mintAddress", mintAddress), slog.Any("error", err))
-	return nil, fmt.Errorf("error fetching coin by mint address %s from store: %w", mintAddress, err)
+	// An error other than 'not found' occurred when querying 'coins'
+	slog.Error("Error fetching coin from 'coins' table", slog.String("mintAddress", mintAddress), slog.Any("error", err))
+	return nil, fmt.Errorf("error fetching coin %s from 'coins': %w", mintAddress, err)
+}
+
+// enrichRawCoinAndSave enriches a raw coin's data and saves it to the 'coins' table.
+func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCoin) (*model.Coin, error) {
+	slog.Info("Starting enrichment from raw_coin data", slog.String("mintAddress", rawCoin.MintAddress), slog.String("rawCoinSymbol", rawCoin.Symbol))
+
+	enrichedCoin, err := s.EnrichCoinData(
+		ctx,
+		rawCoin.MintAddress,
+		rawCoin.Name,
+		rawCoin.LogoUrl, // Pass rawCoin.LogoUrl as the initialIconURL
+		0.0,             // Pass 0.0 for initialVolume, EnrichCoinData will fetch it
+	)
+
+	if err != nil {
+		slog.Error("Enrichment from raw_coin failed", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
+		return nil, fmt.Errorf("failed to enrich raw_coin %s: %w", rawCoin.MintAddress, err)
+	}
+
+	// Save the enrichedCoin to the 'coins' table
+	existingCoin, getErr := s.store.Coins().GetByField(ctx, "mint_address", enrichedCoin.MintAddress)
+	if getErr == nil && existingCoin != nil { // Found existing, so update
+		enrichedCoin.ID = existingCoin.ID // Preserve existing PK ID
+		if dbErr := s.store.Coins().Update(ctx, enrichedCoin); dbErr != nil {
+			slog.Warn("Failed to update enriched coin (from raw) in store", slog.String("mintAddress", enrichedCoin.MintAddress), slog.Any("error", dbErr))
+			// Log and continue, returning the enrichedCoin as the enrichment itself was successful.
+		} else {
+			slog.Info("Successfully updated coin in 'coins' table from raw_coin enrichment", slog.String("mintAddress", enrichedCoin.MintAddress))
+		}
+	} else if errors.Is(getErr, db.ErrNotFound) { // Not found, so create
+		if dbErr := s.store.Coins().Create(ctx, enrichedCoin); dbErr != nil {
+			slog.Warn("Failed to create enriched coin (from raw) in store", slog.String("mintAddress", enrichedCoin.MintAddress), slog.Any("error", dbErr))
+			// Log and continue, returning the enrichedCoin.
+		} else {
+			slog.Info("Successfully created coin in 'coins' table from raw_coin enrichment", slog.String("mintAddress", enrichedCoin.MintAddress))
+		}
+	} else if getErr != nil {
+		// Another error occurred trying to get the coin before saving
+		slog.Error("Error checking for existing coin before saving enriched (from raw) coin", slog.String("mintAddress", enrichedCoin.MintAddress), slog.Any("error", getErr))
+		return nil, fmt.Errorf("error checking existing coin %s before save: %w", enrichedCoin.MintAddress, getErr)
+	}
+
+	slog.Info("Successfully enriched and saved coin from raw_coin data", slog.String("mintAddress", enrichedCoin.MintAddress))
+	return enrichedCoin, nil
 }
 
 // fetchAndCacheCoin handles caching and calls the core EnrichCoinData function.
