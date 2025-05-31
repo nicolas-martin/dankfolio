@@ -213,12 +213,12 @@ func (s *Service) populateAddressToSymbolCache(ctx context.Context) {
 		// Fetch from s.store.Coins()
 		coins, err := s.store.Coins().List(ctx)
 		if err != nil {
-			log.Printf("[ERROR] Failed to list coins from store: %v", err)
+			slog.Error("Failed to list coins from store", "error", err)
 		} else {
 			for _, coin := range coins {
 				if coin.MintAddress != "" && coin.Symbol != "" {
 					addressToSymbolCache[coin.MintAddress] = coin.Symbol
-					log.Printf("[DEBUG] Added to cache from coins: %s -> %s", coin.MintAddress, coin.Symbol)
+					slog.Debug("Added to cache from coins", "mintAddress", coin.MintAddress, "symbol", coin.Symbol)
 				}
 			}
 		}
