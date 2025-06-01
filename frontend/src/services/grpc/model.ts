@@ -101,7 +101,7 @@ export type SearchSortByOption =
 	| "marketcap"
 	| "created_at"
 	| "last_updated"
-	| "listed_at";
+	| "jupiter_listed_at";
 
 export interface SearchCoinsRequest {
 	query: string;

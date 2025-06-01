@@ -35,8 +35,8 @@ const mockWalletData: RawWalletData = { // Changed type to RawWalletData
 	privateKey: 'privKey' as Base58PrivateKey,
 	mnemonic: 'mnemonic'
 };
-const mockSolCoin: Coin = { mintAddress: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
-const mockUsdcCoin: Coin = { mintAddress: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', iconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
+const mockSolCoin: Coin = { mintAddress: 'solana', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: '', resolvedIconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
+const mockUsdcCoin: Coin = { mintAddress: 'usd-coin', symbol: 'USDC', name: 'USD Coin', price: 1, decimals: 6, description: '', resolvedIconUrl: '', tags: [], dailyVolume: 0, createdAt: new Date() };
 
 const mockApiBalanceResponseSuccess = {
 	balances: [
@@ -75,15 +75,25 @@ describe('Zustand Portfolio Store', () => {
 		mockGetCoinByID.mockClear();
 		mockSetCoin.mockClear();
 		coinMap = { solana: mockSolCoin };
-		jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockImplementation(() => ({
-			getCoinByID: mockGetCoinByID,
-			setCoin: mockSetCoin,
-			get coinMap() { return coinMap; },
+
+		const baseMockCoinState = {
 			availableCoins: [],
 			isLoading: false,
 			error: null,
 			setAvailableCoins: jest.fn(),
 			fetchAvailableCoins: jest.fn(),
+			newlyListedCoins: [],
+			isLoadingNewlyListed: false,
+			fetchNewCoins: jest.fn().mockResolvedValue(undefined),
+			lastFetchedNewCoinsAt: 0,
+			setLastFetchedNewCoinsAt: jest.fn(),
+		};
+
+		jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockImplementation(() => ({
+			...baseMockCoinState,
+			getCoinByID: mockGetCoinByID,
+			setCoin: mockSetCoin,
+			get coinMap() { return coinMap; },
 		}));
 		consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 	});
@@ -107,12 +117,26 @@ describe('Zustand Portfolio Store', () => {
 			coinMap = { solana: mockSolCoin };
 			mockGetCoinByID.mockClear();
 			mockSetCoin.mockClear();
-			const coinStore = require('./coins').useCoinStore;
-			(coinStore.getState as jest.Mock).mockReturnValue({
+			// This specific test requires a fresh coinMap setup
+			coinMap = { solana: mockSolCoin };
+			// Ensure the mock for this test includes all necessary fields
+			const currentTestMockState = {
+				availableCoins: [],
+				isLoading: false,
+				error: null,
+				setAvailableCoins: jest.fn(),
+				fetchAvailableCoins: jest.fn(),
+				newlyListedCoins: [],
+				isLoadingNewlyListed: false,
+				fetchNewCoins: jest.fn().mockResolvedValue(undefined),
+				lastFetchedNewCoinsAt: 0,
+				setLastFetchedNewCoinsAt: jest.fn(),
 				getCoinByID: mockGetCoinByID,
 				setCoin: mockSetCoin,
 				get coinMap() { return coinMap; },
-			});
+			};
+			jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockReturnValue(currentTestMockState);
+
 
 			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
 			mockGetCoinByID.mockImplementation(async (id) => {
@@ -162,20 +186,25 @@ describe('Zustand Portfolio Store', () => {
 		});
 
 		it('handles error if any coin cannot be fetched', async () => {
-			coinMap = { solana: mockSolCoin };
+			coinMap = { solana: mockSolCoin }; // Reset coinMap for this test
 			mockGetCoinByID.mockClear();
 			mockSetCoin.mockClear();
-			const coinStore = require('./coins').useCoinStore;
-			(coinStore.getState as jest.Mock).mockReturnValue({
-				getCoinByID: mockGetCoinByID,
-				setCoin: mockSetCoin,
+			const currentTestMockState = {
 				availableCoins: [],
 				isLoading: false,
 				error: null,
 				setAvailableCoins: jest.fn(),
 				fetchAvailableCoins: jest.fn(),
+				newlyListedCoins: [],
+				isLoadingNewlyListed: false,
+				fetchNewCoins: jest.fn().mockResolvedValue(undefined),
+				lastFetchedNewCoinsAt: 0,
+				setLastFetchedNewCoinsAt: jest.fn(),
+				getCoinByID: mockGetCoinByID,
+				setCoin: mockSetCoin,
 				get coinMap() { return coinMap; },
-			});
+			};
+			jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockReturnValue(currentTestMockState);
 
 			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseWithUnknown);
 			mockGetCoinByID.mockImplementation(async (id) => {
@@ -236,20 +265,25 @@ describe('Zustand Portfolio Store', () => {
 		});
 
 		it('handles all coins missing (partial coin fetch failure)', async () => {
-			coinMap = {};
+			coinMap = {}; // Reset coinMap for this test
 			mockGetCoinByID.mockClear();
 			mockSetCoin.mockClear();
-			const coinStore = require('./coins').useCoinStore;
-			(coinStore.getState as jest.Mock).mockReturnValue({
-				getCoinByID: mockGetCoinByID,
-				setCoin: mockSetCoin,
+			const currentTestMockState = {
 				availableCoins: [],
 				isLoading: false,
 				error: null,
 				setAvailableCoins: jest.fn(),
 				fetchAvailableCoins: jest.fn(),
+				newlyListedCoins: [],
+				isLoadingNewlyListed: false,
+				fetchNewCoins: jest.fn().mockResolvedValue(undefined),
+				lastFetchedNewCoinsAt: 0,
+				setLastFetchedNewCoinsAt: jest.fn(),
+				getCoinByID: mockGetCoinByID,
+				setCoin: mockSetCoin,
 				get coinMap() { return coinMap; },
-			});
+			};
+			jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockReturnValue(currentTestMockState);
 
 			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
 			mockAllCoinsMissing();
@@ -272,20 +306,25 @@ describe('Zustand Portfolio Store', () => {
 		});
 
 		it('handles all coins missing (complete coin fetch failure)', async () => {
-			coinMap = {};
+			coinMap = {}; // Reset coinMap for this test
 			mockGetCoinByID.mockClear();
 			mockSetCoin.mockClear();
-			const coinStore = require('./coins').useCoinStore;
-			(coinStore.getState as jest.Mock).mockReturnValue({
-				getCoinByID: mockGetCoinByID,
-				setCoin: mockSetCoin,
+			const currentTestMockState = {
 				availableCoins: [],
 				isLoading: false,
 				error: null,
 				setAvailableCoins: jest.fn(),
 				fetchAvailableCoins: jest.fn(),
+				newlyListedCoins: [],
+				isLoadingNewlyListed: false,
+				fetchNewCoins: jest.fn().mockResolvedValue(undefined),
+				lastFetchedNewCoinsAt: 0,
+				setLastFetchedNewCoinsAt: jest.fn(),
+				getCoinByID: mockGetCoinByID,
+				setCoin: mockSetCoin,
 				get coinMap() { return coinMap; },
-			});
+			};
+			jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockReturnValue(currentTestMockState);
 
 			(grpcApi.getWalletBalance as jest.Mock).mockResolvedValue(mockApiBalanceResponseSuccess);
 			mockAllCoinsMissing();
