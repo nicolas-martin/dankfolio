@@ -1,11 +1,11 @@
-import { mockFromCoin, mockToCoin } from '../testData';
+import { mockSolCoin, mockWenCoin } from '../testData';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 
 export const mockCoinStoreReturn = {
-	availableCoins: [mockFromCoin, mockToCoin],
+	availableCoins: [mockSolCoin, mockWenCoin],
 	coinMap: {
-		[mockFromCoin.mintAddress]: mockFromCoin,
-		[mockToCoin.mintAddress]: mockToCoin,
+		[mockSolCoin.mintAddress]: mockSolCoin,
+		[mockWenCoin.mintAddress]: mockWenCoin,
 	},
 	isLoading: false,
 	error: null,
@@ -13,9 +13,9 @@ export const mockCoinStoreReturn = {
 	setCoin: jest.fn(),
 	fetchAvailableCoins: jest.fn(),
 	getCoinByID: jest.fn().mockImplementation(async (mintAddress: string) => {
-		if (mintAddress === mockFromCoin.mintAddress) return mockFromCoin;
-		if (mintAddress === mockToCoin.mintAddress) return mockToCoin;
-		if (mintAddress === SOLANA_ADDRESS) return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL' };
+		if (mintAddress === mockSolCoin.mintAddress) return mockSolCoin;
+		if (mintAddress === mockWenCoin.mintAddress) return mockWenCoin;
+		if (mintAddress === SOLANA_ADDRESS) return { ...mockSolCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL' };
 		return null;
 	}),
 };

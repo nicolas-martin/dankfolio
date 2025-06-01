@@ -123,12 +123,14 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		lineHeight: 20,
 		marginBottom: 24,
 	},
-	// Loading Container for Trending Coins
-	loadingContainer: {
-		alignItems: 'center',
-		justifyContent: 'center',
-		paddingVertical: 20, // Or adjust as needed
-	},
+	// The duplicate loadingContainer style definition has been removed.
+	// The first definition of loadingContainer is kept:
+	// loadingContainer: {
+	//  flexDirection: 'row',
+	//  alignItems: 'center',
+	//  justifyContent: 'center',
+	//  padding: 20,
+	// },
 	connectButton: {
 		backgroundColor: theme.colors.primary,
 		borderRadius: 12,

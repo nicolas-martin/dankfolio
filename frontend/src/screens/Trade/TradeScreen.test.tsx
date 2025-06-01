@@ -5,7 +5,7 @@ import TradeScreen from './index';
 import { View, Text } from 'react-native';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { Provider as PaperProvider } from 'react-native-paper';
-import { mockFromCoin, mockToCoin, mockFromPortfolioToken } from '@/__mocks__/testData';
+import { mockSolCoin, mockWenCoin, mockFromPortfolioToken } from '@/__mocks__/testData';
 import { mockPortfolioStoreReturn, usePortfolioStore } from '@/__mocks__/store/portfolio';
 import { mockCoinStoreReturn, useCoinStore } from '@/__mocks__/store/coins';
 import { fetchTradeQuote as mockFetchTradeQuote, signTradeTransaction as mockSignTradeTransaction } from '@/__mocks__/services/trade_scripts';
@@ -150,8 +150,8 @@ describe('TradeScreen', () => {
 
 		// Setup getCoinPrices mock
 		(TradeScripts.getCoinPrices as jest.Mock).mockResolvedValue({
-			[mockFromCoin.mintAddress]: mockFromCoin.price,
-			[mockToCoin.mintAddress]: mockToCoin.price,
+			[mockSolCoin.mintAddress]: mockSolCoin.price,
+			[mockWenCoin.mintAddress]: mockWenCoin.price,
 		});
 
 		// Silence console methods
@@ -169,17 +169,17 @@ describe('TradeScreen', () => {
 		// Default mock for getCoinByID
 		mockCoinStoreReturn.getCoinByID.mockImplementation(async (mintAddress: string, forceRefresh: boolean = false) => {
 			// console.log(`Mock getCoinByID called with: ${mintAddress}, forceRefresh: ${forceRefresh}`);
-			if (mintAddress === mockFromCoin.mintAddress) return { ...mockFromCoin, source: forceRefresh ? 'api' : 'cache' };
-			if (mintAddress === mockToCoin.mintAddress) return { ...mockToCoin, source: forceRefresh ? 'api' : 'cache' };
+			if (mintAddress === mockSolCoin.mintAddress) return { ...mockSolCoin, source: forceRefresh ? 'api' : 'cache' };
+			if (mintAddress === mockWenCoin.mintAddress) return { ...mockWenCoin, source: forceRefresh ? 'api' : 'cache' };
 			if (mintAddress === SOLANA_ADDRESS) {
 				if (forceRefresh) {
-					return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'api' };
+					return { ...mockSolCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'api' };
 				}
 				// Simulate SOL not being in cache initially for one of the tests
 				if ((useRoute as jest.Mock).mock.calls.some(call => call[0]?.key === 'TradeScreen-SOL-Not-In-Cache')) {
 					return null;
 				}
-				return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'cache' };
+				return { ...mockSolCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'cache' };
 			}
 			return null;
 		});
@@ -188,8 +188,8 @@ describe('TradeScreen', () => {
 			key: 'TradeScreen-Default', // Keep a default key or change per test
 			name: 'TradeScreen',
 			params: {
-				initialFromCoin: mockFromCoin,
-				initialToCoin: mockToCoin,
+				initialFromCoin: mockSolCoin,
+				initialToCoin: mockWenCoin,
 			},
 		});
 	});
@@ -198,7 +198,7 @@ describe('TradeScreen', () => {
 		(useRoute as jest.Mock).mockReturnValue({
 			key: 'TradeScreen-With-Initial-Coins',
 			name: 'TradeScreen',
-			params: { initialFromCoin: mockFromCoin, initialToCoin: mockToCoin },
+			params: { initialFromCoin: mockSolCoin, initialToCoin: mockWenCoin },
 		});
 		renderWithProvider(<TradeScreen />);
 
@@ -208,8 +208,8 @@ describe('TradeScreen', () => {
 		});
 
 		// Verify correct coin fetching (should try cache first)
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockFromCoin.mintAddress, false);
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockSolCoin.mintAddress, false);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockWenCoin.mintAddress, false);
 
 		// Verify store actions that should NOT be called on mount
 		expect(mockPortfolioStoreReturn.fetchPortfolioBalance).not.toHaveBeenCalled();
@@ -309,7 +309,7 @@ describe('TradeScreen', () => {
 			async (amount, fromC, toC, setIsQuoteLoading, setToAmount, setTradeDetails) => {
 				act(() => {
 					// Just set some reasonable values, don't assert exact ones
-					setToAmount(fromC.mintAddress === mockFromCoin.mintAddress ? '1350000' : '1');
+					setToAmount(fromC.mintAddress === mockSolCoin.mintAddress ? '1350000' : '1');
 					setTradeDetails({ exchangeRate: '1350000', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
 				});
 			}
@@ -393,8 +393,8 @@ describe('TradeScreen', () => {
 		// Verify trade execution with expected parameters structure
 		await waitFor(() => {
 			expect(TradeScripts.executeTrade).toHaveBeenCalledWith(
-				expect.objectContaining({ mintAddress: mockFromCoin.mintAddress }),
-				expect.objectContaining({ mintAddress: mockToCoin.mintAddress }),
+				expect.objectContaining({ mintAddress: mockSolCoin.mintAddress }),
+				expect.objectContaining({ mintAddress: mockWenCoin.mintAddress }),
 				mockFromAmount,
 				1,  // slippage
 				mockShowToast,
@@ -420,7 +420,7 @@ describe('TradeScreen', () => {
 		const lowBalanceToken: PortfolioToken = {
 			...mockFromPortfolioToken,
 			amount: 5,
-			value: 5 * mockFromCoin.price,
+			value: 5 * mockSolCoin.price,
 		};
 		mocked(usePortfolioStore).mockReturnValue({
 			...mockPortfolioStoreReturn,
@@ -469,7 +469,7 @@ describe('TradeScreen', () => {
 		(useRoute as jest.Mock).mockReturnValue({
 			key: 'TradeScreen-SOL-In-Cache',
 			name: 'TradeScreen',
-			params: { initialFromCoin: null, initialToCoin: mockToCoin },
+			params: { initialFromCoin: null, initialToCoin: mockWenCoin },
 		});
 
 		renderWithProvider(<TradeScreen />);
@@ -480,7 +480,7 @@ describe('TradeScreen', () => {
 			expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledTimes(2);
 		});
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, false);
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false);
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockWenCoin.mintAddress, false);
 	});
 
 	it('handles SOL as default fromCoin (from API) when not in cache', async () => {
@@ -488,15 +488,15 @@ describe('TradeScreen', () => {
 		(useRoute as jest.Mock).mockReturnValue({
 			key: 'TradeScreen-SOL-Not-In-Cache', // Key to trigger specific mock behavior
 			name: 'TradeScreen',
-			params: { initialFromCoin: null, initialToCoin: mockToCoin },
+			params: { initialFromCoin: null, initialToCoin: mockWenCoin },
 		});
 
 		// Mock getCoinByID to return null for SOL on the first (cache) call for this test
 		mockCoinStoreReturn.getCoinByID.mockImplementationOnce(async (mintAddress: string, forceRefresh: boolean = false) => {
 			if (mintAddress === SOLANA_ADDRESS && !forceRefresh) return null; // Simulate cache miss for SOL
-			return { ...mockFromCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'api' }; // API hit for SOL
+			return { ...mockSolCoin, mintAddress: SOLANA_ADDRESS, name: 'Solana', symbol: 'SOL', source: 'api' }; // API hit for SOL
 		}).mockImplementationOnce(async (mintAddress: string, forceRefresh: boolean = false) => {
-			if (mintAddress === mockToCoin.mintAddress) return { ...mockToCoin, source: forceRefresh ? 'api' : 'cache' }; // For initialToCoin
+			if (mintAddress === mockWenCoin.mintAddress) return { ...mockWenCoin, source: forceRefresh ? 'api' : 'cache' }; // For initialToCoin
 			return null;
 		});
 
@@ -509,6 +509,6 @@ describe('TradeScreen', () => {
 		});
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, false); // First attempt for SOL (cache)
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, true);  // Second attempt for SOL (API)
-		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockToCoin.mintAddress, false); // For initialToCoin
+		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockWenCoin.mintAddress, false); // For initialToCoin
 	});
 });

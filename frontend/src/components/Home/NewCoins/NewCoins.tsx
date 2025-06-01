@@ -47,12 +47,12 @@ const NewCoins: React.FC = () => {
 			} else {
 				// Log failure to fetch details
 				logger.warn('[NewCoins] Failed to fetch coin details with getCoinByID, not navigating', { coinSymbol: coin.symbol, coinMint: coin.mintAddress });
-				showToast('error', 'Failed to load coin details. Please try again.');
+				showToast({ type: 'error', message: 'Failed to load coin details. Please try again.' });
 			}
 		} catch (error) {
 			// Log error during getCoinByID process
 			logger.error(`[NewCoins] Error during getCoinByID for ${coin.symbol}:`, { error, coinMint: coin.mintAddress });
-			showToast('error', 'An error occurred. Please try again.');
+			showToast({ type: 'error', message: 'An error occurred. Please try again.' });
 		}
 	};
 
