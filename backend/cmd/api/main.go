@@ -43,6 +43,8 @@ type Config struct {
 	JWTSecret             string
 	TokenExpiry           time.Duration
 	NewCoinsFetchInterval time.Duration
+	PlatformFeeBps            int
+	PlatformFeeAccountAddress string
 }
 
 func loadConfig() (*Config, error) {
@@ -84,6 +86,18 @@ func loadConfig() (*Config, error) {
 	}
 	newCoinsFetchInterval := time.Duration(newCoinsIntervalMinutes) * time.Minute
 
+	platformFeeBpsStr := os.Getenv("PLATFORM_FEE_BPS")
+	platformFeeBps := 0 // Default to 0
+	if platformFeeBpsStr != "" {
+		parsedBps, err := strconv.Atoi(platformFeeBpsStr)
+		if err != nil {
+			log.Printf("Warning: Invalid PLATFORM_FEE_BPS value: %v. Defaulting to 0.", err)
+		} else {
+			platformFeeBps = parsedBps
+		}
+	}
+	platformFeeAccountAddress := os.Getenv("PLATFORM_FEE_ACCOUNT_ADDRESS")
+
 	config := &Config{
 		SolanaRPCEndpoint:     os.Getenv("SOLANA_RPC_ENDPOINT"),
 		BirdEyeEndpoint:       os.Getenv("BIRDEYE_ENDPOINT"),
@@ -98,6 +112,8 @@ func loadConfig() (*Config, error) {
 		JWTSecret:             os.Getenv("JWT_SECRET"),
 		TokenExpiry:           tokenExpiry,
 		NewCoinsFetchInterval: newCoinsFetchInterval,
+		PlatformFeeBps:            platformFeeBps,
+		PlatformFeeAccountAddress: platformFeeAccountAddress,
 	}
 
 	// Validate required fields
@@ -129,6 +145,16 @@ func loadConfig() (*Config, error) {
 
 	if len(missingVars) > 0 {
 		log.Fatalf("missing required environment variables: %v", missingVars)
+	}
+
+	// PLATFORM_FEE_BPS represents a basis point value for platform fees and must be non-negative.
+	if config.PlatformFeeBps < 0 {
+		log.Fatalf("PLATFORM_FEE_BPS cannot be negative.")
+	}
+	// If PLATFORM_FEE_BPS is greater than 0, PLATFORM_FEE_ACCOUNT_ADDRESS must be set
+	// because a non-zero platform fee requires an account to receive the fee.
+	if config.PlatformFeeBps > 0 && config.PlatformFeeAccountAddress == "" {
+		log.Fatalf("PLATFORM_FEE_ACCOUNT_ADDRESS must be set if PLATFORM_FEE_BPS is greater than 0.")
 	}
 
 	return config, nil

@@ -60,6 +60,9 @@ type Trade struct {
 	Amount              float64    `json:"amount"`
 	Price               float64    `json:"price"`
 	Fee                 float64    `json:"fee"`
+	PlatformFeeAmount      float64    `json:"platform_fee_amount,omitempty"`
+	PlatformFeePercent     float64    `json:"platform_fee_percent,omitempty"`
+	PlatformFeeDestination string     `json:"platform_fee_destination,omitempty"`
 	Status              string     `json:"status"`
 	TransactionHash     string     `json:"transaction_hash"`
 	UnsignedTransaction string     `json:"unsigned_transaction,omitempty"`
