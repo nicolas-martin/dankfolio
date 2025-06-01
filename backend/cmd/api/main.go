@@ -217,7 +217,7 @@ func main() {
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 	slog.Info("Coin service initialized.")
 
-	priceService := price.NewService(birdeyeClient, jupiterClient)
+	priceService := price.NewService(birdeyeClient, jupiterClient, store)
 
 	tradeService := trade.NewService(
 		solanaClient,
