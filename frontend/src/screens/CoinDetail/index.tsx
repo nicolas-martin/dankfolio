@@ -18,6 +18,7 @@ import {
 import { createStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { logger } from '@/utils/logger';
+import { grpcApi } from '@/services/grpcApi'; // Will be removed if not used after changes
 import { useCoinStore } from '@store/coins'; // Import useCoinStore
 
 const CoinDetail: React.FC = () => {
@@ -333,46 +334,6 @@ const CoinDetail: React.FC = () => {
 				</View>
 			</SafeAreaView>
 		) : null // Should be caught by earlier checks, but as a final fallback.
-	);
-					contentContainerStyle={styles.scrollViewContent}
-					bounces={false}
-					showsVerticalScrollIndicator={false}
-					refreshControl={
-						<RefreshControl
-							refreshing={loading}
-							onRefresh={onRefresh}
-							tintColor={theme.colors.primary}
-						/>
-					}
-				>
-					{renderPriceCard()}
-					{renderChartCard()}
-					{renderTimeframeCard()}
-					{renderHoldingsCard()}
-					{renderAboutCard()}
-				</ScrollView>
-
-				{displayCoin && (
-					<View style={styles.tradeButtonContainer}>
-						<Button
-							mode="contained"
-							onPress={async () => {
-								await handleTradeNavigation(
-									displayCoin,
-									null,
-									showToast,
-									navigation.navigate
-								);
-							}}
-							style={styles.tradeButton}
-							testID="trade-button"
-						>
-							Trade {displayCoin.symbol}
-						</Button>
-					</View>
-				)}
-			</View>
-		</SafeAreaView>
 	);
 };
 

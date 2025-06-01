@@ -65,18 +65,12 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 	};
 
 	const renderDateSection = () => {
-		if (!metadata.createdAt) return null;
-
-		const dateToFormat = typeof metadata.createdAt === 'string'
-			? new Date(metadata.createdAt)
-			: metadata.createdAt;
-
-		// Check if dateToFormat is a valid Date object
-		if (!(dateToFormat instanceof Date) || isNaN(dateToFormat.getTime())) {
-			return null; // Or render some fallback if the date is invalid
+		if (!metadata.createdAt) { // metadata.createdAt is expected to be Date | undefined
+			return null;
 		}
 
-		const formattedDate = dateToFormat.toLocaleDateString(undefined, {
+		// At this point, metadata.createdAt is assumed to be a Date object.
+		const formattedDate = metadata.createdAt.toLocaleDateString(undefined, {
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric',
