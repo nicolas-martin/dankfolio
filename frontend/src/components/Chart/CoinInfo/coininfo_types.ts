@@ -9,6 +9,7 @@ export interface CoinMetadata {
 	decimals?: number;
 	tags?: string[];
 	symbol?: string;
+	createdAt?: Date; // Add this line
 }
 
 export interface CoinInfoProps {
