@@ -85,9 +85,9 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 }
 
 // PrepareSwap prepares an unsigned swap transaction and creates a trade record
-func (s *Service) PrepareSwap(ctx context.Context, params PrepareSwapRequestData) (string, error) {
+func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapRequestData) (string, error) {
 	// Parse and validate fromAddress (public key)
-	fromPubKey, err := solanago.PublicKeyFromBase58(params.FromAddress)
+	fromPubKey, err := solanago.PublicKeyFromBase58(params.UserWalletAddress)
 	if err != nil {
 		return "", fmt.Errorf("invalid from address: %w", err)
 	}
@@ -104,7 +104,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params PrepareSwapRequestData
 	}
 
 	// 1. Use the TradeService's GetSwapQuote for all conversion and logic
-	tradeQuote, err := s.GetSwapQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, params.InputAmount, params.SlippageBps)
+	tradeQuote, err := s.GetSwapQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, params.Amount, params.SlippageBps)
 	if err != nil {
 		return "", fmt.Errorf("failed to get trade quote: %w", err)
 	}
@@ -123,7 +123,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params PrepareSwapRequestData
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fee: %w", err)
 	}
-	amount, err := strconv.ParseFloat(params.InputAmount, 64)
+	amount, err := strconv.ParseFloat(params.Amount, 64)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse input amount: %w", err)
 	}

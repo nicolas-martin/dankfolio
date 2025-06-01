@@ -61,8 +61,8 @@ func (m *MockJupiterClient) GetNewCoins(ctx context.Context, params *jupiter.New
 	return args.Get(0).(*jupiter.CoinListResponse), args.Error(1)
 }
 
-func (m *MockJupiterClient) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey) (string, error) {
-	args := m.Called(ctx, quoteResp, userPublicKey)
+func (m *MockJupiterClient) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey, destinationTokenAccount string) (string, error) {
+	args := m.Called(ctx, quoteResp, userPublicKey, destinationTokenAccount)
 	if args.Get(0) == nil {
 		return "", args.Error(1)
 	}
@@ -198,7 +198,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 		{
 			name:                    "IPFS Gateway URL with CIDv0",
 			inputIconUrl:            "https://othergateway.com/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X",
-			expectedResolvedIconUrl: "https://ipfs.io/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
+			expectedResolvedIconUrl: "https://gateway.pinata.cloud/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
 		},
 		// Scenario 3: IPFS Gateway URL with CIDv1
 		{
@@ -210,7 +210,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 		{
 			name:                    "IPFS Gateway URL with CIDv0 and Sub-path",
 			inputIconUrl:            "https://othergateway.com/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X/images/logo.png",
-			expectedResolvedIconUrl: "https://ipfs.io/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X/images/logo.png", // Uses hardcoded default
+			expectedResolvedIconUrl: "https://gateway.pinata.cloud/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X/images/logo.png", // Uses hardcoded default
 		},
 		// Scenario 5: IPFS Gateway URL with CIDv1 and Sub-path
 		{
@@ -222,7 +222,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 		{
 			name:                    "Raw ipfs://CIDv0 URI",
 			inputIconUrl:            "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X",
-			expectedResolvedIconUrl: "https://ipfs.io/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
+			expectedResolvedIconUrl: "https://gateway.pinata.cloud/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
 		},
 		// Scenario 7: Raw ipfs://CIDv1 URI
 		{
@@ -234,7 +234,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 		{
 			name:                    "Raw ipfs://CIDv0 URI with Sub-path",
 			inputIconUrl:            "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X/images/logo.png",
-			expectedResolvedIconUrl: "https://ipfs.io/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X/images/logo.png", // Uses hardcoded default
+			expectedResolvedIconUrl: "https://gateway.pinata.cloud/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X/images/logo.png", // Uses hardcoded default
 		},
 		// Scenario 9: Raw ipfs://CIDv1 URI with Sub-path
 		{
@@ -258,14 +258,14 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 			name:                    "Jupiter provides IPFS CIDv0 IconUrl",
 			inputIconUrl:            "http://someother.com/image.png", // from offchainMeta (but Jupiter will override)
 			mockJupiterLogoURI:      "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X",
-			expectedResolvedIconUrl: "https://ipfs.io/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
+			expectedResolvedIconUrl: "https://gateway.pinata.cloud/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
 		},
 		// Test initialIconUrl passed to EnrichCoinData
 		{
 			name:                    "InitialIconUrl is IPFS CIDv0",
 			initialIconUrl:          "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X",               // Passed to EnrichCoinData
 			inputIconUrl:            "",                                                                    // No metadata or jupiter icon
-			expectedResolvedIconUrl: "https://ipfs.io/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
+			expectedResolvedIconUrl: "https://gateway.pinata.cloud/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
 		},
 	}
 

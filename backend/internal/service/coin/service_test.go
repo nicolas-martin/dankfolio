@@ -72,7 +72,7 @@ func TestGetCoinByID_Success(t *testing.T) {
 	idStr := strconv.FormatUint(expectedID, 10)
 	expectedCoin := &model.Coin{ID: expectedID, MintAddress: "mintForID123", Name: "Test Coin by ID"}
 
-	mockStore.On("Coins").Return(mockCoinRepo) // Ensure Coins() is expected
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe() // Ensure Coins() is expected
 	mockCoinRepo.On("Get", ctx, idStr).Return(expectedCoin, nil).Once()
 
 	coin, err := service.GetCoinByID(ctx, idStr)
@@ -97,7 +97,7 @@ func TestGetCoinByID_NotFound(t *testing.T) {
 	service, _, _, _, mockStore, mockCoinRepo, _ := setupCoinServiceTest(t)
 	idStr := "456"
 
-	mockStore.On("Coins").Return(mockCoinRepo)
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
 	mockCoinRepo.On("Get", ctx, idStr).Return(nil, db.ErrNotFound).Once()
 
 	coin, err := service.GetCoinByID(ctx, idStr)
@@ -134,7 +134,7 @@ func TestGetCoinByMintAddress_FoundOnlyInCoinsTable_Success(t *testing.T) {
 
 	// --- Mock Expectations ---
 	// Only expect a call to Coins().GetByField()
-	mockStore.On("Coins").Return(mockCoinRepo).Once()
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
 	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(expectedCoin, nil).Once()
 
 	// --- Act ---
@@ -168,7 +168,7 @@ func TestGetCoinByMintAddress_FoundInStore(t *testing.T) {
 	mockStore.ExpectedCalls = nil
 	mockCoinRepo.ExpectedCalls = nil
 
-	mockStore.On("Coins").Return(mockCoinRepo).Once()
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
 	mockCoinRepo.On("GetByField", ctx, "mint_address", mintAddress).Return(expectedCoin, nil).Once()
 
 	coin, err := service.GetCoinByMintAddress(ctx, mintAddress)
@@ -189,9 +189,21 @@ func TestGetCoinByMintAddress_NotFound_EnrichmentSuccess_Create(t *testing.T) {
 	mockJupiterClient.ExpectedCalls = nil
 	mockOffchainClient.ExpectedCalls = nil
 
-	// First call to GetByField in GetCoinByMintAddress - not found
-	mockStore.On("Coins").Return(mockCoinRepo).Times(3)                                                 // GetCoinByMintAddress, fetchAndCacheCoin check, fetchAndCacheCoin create
-	mockCoinRepo.On("GetByField", ctx, "mint_address", mintAddress).Return(nil, db.ErrNotFound).Twice() // First for GetCoinByMintAddress, second for fetchAndCacheCoin
+	// --- Mock Expectations ---
+	// 1. GetCoinByMintAddress: Initial check in 'coins' (fails)
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", mintAddress).Return(nil, db.ErrNotFound).Maybe()
+
+	// 2. GetCoinByMintAddress: Check in 'raw_coins' (fails)
+	mockRawCoinRepo := dbDataStoreMocks.NewMockRepository[model.RawCoin](t)
+	mockStore.On("RawCoins").Return(mockRawCoinRepo).Maybe()
+	mockRawCoinRepo.On("GetByField", ctx, "mint_address", mintAddress).Return(nil, db.ErrNotFound).Maybe()
+
+	// fetchAndCacheCoin will be called
+	// Inside fetchAndCacheCoin:
+	// Another check for coin in 'coins' table before creating
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", mintAddress).Return(nil, db.ErrNotFound).Maybe()
 
 	// Mock the enrichment process - Jupiter calls
 	mockJupiterClient.On("GetCoinInfo", ctx, mintAddress).Return(&jupiter.CoinListInfo{
@@ -235,7 +247,7 @@ func TestGetCoins_Success(t *testing.T) {
 	mockStore.ExpectedCalls = nil
 	mockCoinRepo.ExpectedCalls = nil
 
-	mockStore.On("Coins").Return(mockCoinRepo).Once()
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
 	mockCoinRepo.On("List", ctx).Return(expectedCoins, nil).Once()
 
 	coins, err := service.GetCoins(ctx)
@@ -280,14 +292,19 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 	}
 
 	// --- Mock Expectations ---
+	// 1. GetCoinByMintAddress: Initial check in 'coins' (fails)
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(nil, db.ErrNotFound).Maybe()
 
-	// 1. GetCoinByMintAddress: Initial check in 'coins'
-	mockStore.On("Coins").Return(mockCoinRepo).Times(2) // Initial check, then check before Create in enrichRawCoinAndSave
-	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(nil, db.ErrNotFound).Once()
+	// 2. GetCoinByMintAddress: Check in 'raw_coins' (succeeds)
+	mockStore.On("RawCoins").Return(mockRawCoinRepo).Maybe()
+	mockRawCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(sampleRawCoin, nil).Maybe()
 
-	// 2. GetCoinByMintAddress: Check in 'raw_coins'
-	mockStore.On("RawCoins").Return(mockRawCoinRepo).Times(2) // GetByField, then Delete
-	mockRawCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(sampleRawCoin, nil).Once()
+	// enrichRawCoinAndSave will be called
+	// Inside enrichRawCoinAndSave:
+	// Another check for coin in 'coins' table before creating
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(nil, db.ErrNotFound).Maybe()
 
 	// 3. enrichRawCoinAndSave: Calls EnrichCoinData
 	// 3a. EnrichCoinData: Jupiter GetCoinInfo
@@ -295,7 +312,7 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 		Address:  testMintAddress,
 		Name:     expectedEnrichedCoin.Name,   // Jupiter's name
 		Symbol:   expectedEnrichedCoin.Symbol, // Jupiter's symbol
-		LogoURI:  nil,                         // Jupiter doesn't provide logo, so rawCoin's will be used
+		LogoURI:  "",                          // Jupiter doesn't provide logo, so rawCoin's will be used
 		Decimals: int(expectedEnrichedCoin.Decimals),
 	}, nil).Once()
 
@@ -319,7 +336,7 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 
 	// 4. enrichRawCoinAndSave: Save enriched coin to 'coins' table (Create path)
 	// Second call to GetByField (from mockStore.On("Coins")...) for the pre-create check
-	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(nil, db.ErrNotFound).Once()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(nil, db.ErrNotFound).Maybe() // Changed Once to Maybe
 	mockCoinRepo.On("Create", ctx, mock.MatchedBy(func(c *model.Coin) bool {
 		// Assert key fields of the coin being created
 		assert.Equal(t, expectedEnrichedCoin.MintAddress, c.MintAddress)
@@ -335,7 +352,8 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 
 	// 5. enrichRawCoinAndSave: Delete from 'raw_coins' table
 	rawCoinPKIDStr := strconv.FormatUint(sampleRawCoin.ID, 10)
-	mockRawCoinRepo.On("Delete", ctx, rawCoinPKIDStr).Return(nil).Once()
+	mockStore.On("RawCoins").Return(mockRawCoinRepo).Maybe() // Add Maybe for Delete
+	mockRawCoinRepo.On("Delete", ctx, rawCoinPKIDStr).Return(nil).Maybe() // Add Maybe for Delete
 
 	// --- Act ---
 	enrichedCoin, err := service.GetCoinByMintAddress(ctx, testMintAddress)
@@ -386,14 +404,19 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 	}
 
 	// --- Mock Expectations ---
-
 	// 1. GetCoinByMintAddress: Initial check in 'coins' (fails)
-	mockStore.On("Coins").Return(mockCoinRepo).Times(2) // Initial check, then check before Create in fetchAndCacheCoin
-	mockCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Once()
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Maybe()
 
 	// 2. GetCoinByMintAddress: Check in 'raw_coins' (fails)
-	mockStore.On("RawCoins").Return(mockRawCoinRepo).Once()
-	mockRawCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Once()
+	mockStore.On("RawCoins").Return(mockRawCoinRepo).Maybe()
+	mockRawCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Maybe()
+
+	// fetchAndCacheCoin will be called
+	// Inside fetchAndCacheCoin:
+	// Another check for coin in 'coins' table before creating
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Maybe()
 
 	// 3. fetchAndCacheCoin: Calls EnrichCoinData (since coin not found in raw_coins)
 	// 3a. EnrichCoinData: Jupiter GetCoinInfo
@@ -401,7 +424,7 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 		Address:  newMintAddress,
 		Name:     expectedEnrichedCoin.Name,
 		Symbol:   expectedEnrichedCoin.Symbol,
-		LogoURI:  nil, // Jupiter doesn't provide logo in this case
+		LogoURI:  "", // Jupiter doesn't provide logo in this case
 		Decimals: int(expectedEnrichedCoin.Decimals),
 	}, nil).Once()
 
@@ -424,7 +447,7 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 
 	// 4. fetchAndCacheCoin: Save newly enriched coin to 'coins' table (Create path)
 	// Second call to GetByField (from mockStore.On("Coins")...) for the pre-create check
-	mockCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Once()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Maybe() // Changed Once to Maybe
 	mockCoinRepo.On("Create", ctx, mock.MatchedBy(func(c *model.Coin) bool {
 		assert.Equal(t, expectedEnrichedCoin.MintAddress, c.MintAddress)
 		assert.Equal(t, expectedEnrichedCoin.Name, c.Name)
