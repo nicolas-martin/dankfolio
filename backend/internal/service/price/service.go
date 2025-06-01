@@ -14,6 +14,7 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -21,6 +22,7 @@ import (
 type Service struct {
 	birdeyeClient birdeye.ClientAPI // Use the interface
 	jupiterClient jupiter.ClientAPI
+	store         db.Store
 }
 
 var (
@@ -29,11 +31,14 @@ var (
 )
 
 // NewService creates a new price service
-func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI) *Service { // Accept the interface
-	return &Service{
+func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI, store db.Store) *Service { // Accept the interface
+	s := &Service{
 		birdeyeClient: birdeyeClient,
 		jupiterClient: jupiterClient,
+		store:         store,
 	}
+	s.populateAddressToSymbolCache(context.Background())
+	return s
 }
 
 // GetPriceHistory retrieves price history for a given token
@@ -120,9 +125,9 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 }
 
 func (s *Service) loadMockPriceHistory(address string, historyType string) (*birdeye.PriceHistory, error) {
-	addressToSymbol := loadAddressToSymbol()
+	// addressToSymbol := loadAddressToSymbol() // Removed
 	log.Printf("Looking up address: %s", address)
-	symbol, exists := addressToSymbol[address]
+	symbol, exists := addressToSymbolCache[address] // Use global cache
 	if !exists {
 		log.Printf("Address not found in addressToSymbolCache: %s", address)
 		return s.generateRandomPriceHistory(address)
@@ -201,27 +206,50 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 	}, nil
 }
 
-func loadAddressToSymbol() map[string]string {
+func (s *Service) populateAddressToSymbolCache(ctx context.Context) {
 	addressToSymbolOnce.Do(func() {
-		addressToSymbolCache = map[string]string{}
-		wd, _ := os.Getwd()
-		priceHistoryPath := filepath.Join(wd, "data", "price_history")
+		addressToSymbolCache = make(map[string]string)
 
-		// Add hardcoded mappings for common tokens
-		addressToSymbolCache["So11111111111111111111111111111111111111112"] = "sol"
-		addressToSymbolCache["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] = "usdc"
-
-		log.Printf("[DEBUG] Reading %s directory...", priceHistoryPath)
-		entries, err := os.ReadDir(priceHistoryPath)
-		if err == nil {
-			log.Printf("[DEBUG] Found %d symbol directories in price_history", len(entries))
-			// For now, we only have the hardcoded mappings above
-			// In the future, we could add more mappings based on directory names
-			// or maintain a separate mapping file if needed
+		// Fetch from s.store.Coins()
+		coins, err := s.store.Coins().List(ctx)
+		if err != nil {
+			log.Printf("[ERROR] Failed to list coins from store: %v", err)
 		} else {
-			log.Printf("[DEBUG] Failed to read price_history directory: %v", err)
+			for _, coin := range coins {
+				if coin.MintAddress != "" && coin.Symbol != "" {
+					addressToSymbolCache[coin.MintAddress] = coin.Symbol
+					log.Printf("[DEBUG] Added to cache from coins: %s -> %s", coin.MintAddress, coin.Symbol)
+				}
+			}
 		}
-		log.Printf("addressToSymbolCache: %+v", addressToSymbolCache)
+
+		// Fetch from s.store.RawCoins()
+		rawCoins, err := s.store.RawCoins().List(ctx)
+		if err != nil {
+			log.Printf("[ERROR] Failed to list raw coins from store: %v", err)
+		} else {
+			for _, rawCoin := range rawCoins {
+				if rawCoin.MintAddress != "" && rawCoin.Symbol != "" {
+					if _, exists := addressToSymbolCache[rawCoin.MintAddress]; !exists {
+						addressToSymbolCache[rawCoin.MintAddress] = rawCoin.Symbol
+						log.Printf("[DEBUG] Added to cache from raw coins: %s -> %s", rawCoin.MintAddress, rawCoin.Symbol)
+					}
+				}
+			}
+		}
+
+		// Define and iterate through criticalTokens
+		criticalTokens := map[string]string{
+			"So11111111111111111111111111111111111111112": "SOL",
+			"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "USDC",
+		}
+		for address, symbol := range criticalTokens {
+			if _, exists := addressToSymbolCache[address]; !exists {
+				addressToSymbolCache[address] = symbol
+				log.Printf("[DEBUG] Added to cache from critical tokens: %s -> %s", address, symbol)
+			}
+		}
+
+		log.Printf("[INFO] addressToSymbolCache populated with %d entries", len(addressToSymbolCache))
 	})
-	return addressToSymbolCache
 }

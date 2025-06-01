@@ -17,6 +17,9 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	dbDataStoreMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+
+	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	solanaclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
 )
 
 func setupCoinServiceTest(t *testing.T) (
@@ -102,6 +105,57 @@ func TestGetCoinByID_NotFound(t *testing.T) {
 	assert.True(t, errors.Is(err, db.ErrNotFound))
 	assert.Nil(t, coin)
 	mockCoinRepo.AssertExpectations(t)
+}
+
+// TestGetCoinByMintAddress_FoundOnlyInCoinsTable_Success tests the scenario where the coin
+// is found directly in the 'coins' table and returned immediately.
+func TestGetCoinByMintAddress_FoundOnlyInCoinsTable_Success(t *testing.T) {
+	service, _, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, mockRawCoinRepo := setupCoinServiceTest(t)
+	// solana client mock, though not used in this specific path, good to be aware of if service setup changes
+	mockSolanaClient := solanaclientmocks.NewMockClientAPI(t)
+	service.solanaClient = mockSolanaClient
+
+	ctx := context.Background()
+	testMintAddress := "existingCoinMint"
+	expectedCoin := &model.Coin{
+		ID:              1,
+		MintAddress:     testMintAddress,
+		Name:            "Existing Coin",
+		Symbol:          "EXT",
+		Description:     "This is a complete coin.",
+		IconUrl:         "some_url",
+		ResolvedIconUrl: "some_resolved_url",
+		Price:           2.50,
+		Decimals:        6,
+		LastUpdated:     time.Now().Format(time.RFC3339), // Ensure all fields are present
+		Volume24h:       10000.0,
+		IsTrending:      true,
+	}
+
+	// --- Mock Expectations ---
+	// Only expect a call to Coins().GetByField()
+	mockStore.On("Coins").Return(mockCoinRepo).Once()
+	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(expectedCoin, nil).Once()
+
+	// --- Act ---
+	coin, err := service.GetCoinByMintAddress(ctx, testMintAddress)
+
+	// --- Assert ---
+	assert.NoError(t, err)
+	assert.NotNil(t, coin)
+	assert.Equal(t, expectedCoin, coin) // Direct comparison of the returned object
+
+	// Verify that only the expected mocks were called
+	mockStore.AssertExpectations(t)
+	mockCoinRepo.AssertExpectations(t)
+
+	// Explicitly assert that other mocks were not called
+	mockRawCoinRepo.AssertNotCalled(t, "GetByField", mock.Anything, mock.Anything, mock.Anything)
+	mockJupiterClient.AssertNotCalled(t, "GetCoinInfo", mock.Anything, mock.Anything)
+	mockJupiterClient.AssertNotCalled(t, "GetCoinPrices", mock.Anything, mock.Anything)
+	mockSolanaClient.AssertNotCalled(t, "GetMetadataAccount", mock.Anything, mock.Anything)
+	mockOffchainClient.AssertNotCalled(t, "FetchMetadata", mock.Anything)
+	mockCoinRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything) // Ensure no attempt to create/update
 }
 
 func TestGetCoinByMintAddress_FoundInStore(t *testing.T) {
@@ -190,6 +244,222 @@ func TestGetCoins_Success(t *testing.T) {
 	assert.Equal(t, expectedCoins, coins)
 	mockStore.AssertExpectations(t)
 	mockCoinRepo.AssertExpectations(t)
+}
+
+func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *testing.T) {
+	service, _, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, mockRawCoinRepo := setupCoinServiceTest(t)
+
+	// Override solanaClient with a mock
+	mockSolanaClient := solanaclientmocks.NewMockClientAPI(t)
+	service.solanaClient = mockSolanaClient
+
+	ctx := context.Background()
+	testMintAddress := "rawCoinMint"
+	rawCoinID := uint64(1)
+	rawLogoURL := "ipfs://somerawhash"
+
+	sampleRawCoin := &model.RawCoin{
+		ID:          rawCoinID,
+		MintAddress: testMintAddress,
+		Name:        "Raw Name",
+		Symbol:      "RWS",
+		LogoUrl:     rawLogoURL,
+		Decimals:    9,
+	}
+
+	expectedEnrichedCoin := &model.Coin{
+		MintAddress:     testMintAddress,
+		Name:            "Jupiter Name", // Assuming Jupiter provides this
+		Symbol:          "JUP_RWS",      // Assuming Jupiter provides this
+		Description:     "Enriched Description from Offchain",
+		IconUrl:         rawLogoURL, // From rawCoin.LogoUrl as initialIconURL
+		ResolvedIconUrl: service.standardizeIpfsUrl(rawLogoURL),
+		Price:           1.23,
+		Decimals:        9, // From rawCoin, potentially overridden by Jupiter
+		// ID will be assigned by GORM, so we don't assert its specific value on creation
+	}
+
+	// --- Mock Expectations ---
+
+	// 1. GetCoinByMintAddress: Initial check in 'coins'
+	mockStore.On("Coins").Return(mockCoinRepo).Times(2) // Initial check, then check before Create in enrichRawCoinAndSave
+	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(nil, db.ErrNotFound).Once()
+
+	// 2. GetCoinByMintAddress: Check in 'raw_coins'
+	mockStore.On("RawCoins").Return(mockRawCoinRepo).Times(2) // GetByField, then Delete
+	mockRawCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(sampleRawCoin, nil).Once()
+
+	// 3. enrichRawCoinAndSave: Calls EnrichCoinData
+	// 3a. EnrichCoinData: Jupiter GetCoinInfo
+	mockJupiterClient.On("GetCoinInfo", ctx, testMintAddress).Return(&jupiter.CoinListInfo{
+		Address:  testMintAddress,
+		Name:     expectedEnrichedCoin.Name,   // Jupiter's name
+		Symbol:   expectedEnrichedCoin.Symbol, // Jupiter's symbol
+		LogoURI:  nil,                         // Jupiter doesn't provide logo, so rawCoin's will be used
+		Decimals: int(expectedEnrichedCoin.Decimals),
+	}, nil).Once()
+
+	// 3b. EnrichCoinData: Jupiter GetCoinPrices
+	mockJupiterClient.On("GetCoinPrices", ctx, []string{testMintAddress}).Return(map[string]float64{
+		testMintAddress: expectedEnrichedCoin.Price,
+	}, nil).Once()
+
+	// 3c. EnrichCoinData: Solana GetMetadataAccount
+	mockSolanaClient.On("GetMetadataAccount", ctx, testMintAddress).Return(&token_metadata.Metadata{
+		Data: token_metadata.Data{Uri: "solana_uri_for_offchain_meta"},
+	}, nil).Once()
+
+	// 3d. EnrichCoinData: Offchain FetchMetadata
+	// initialIconURL (rawLogoURL) is present, so offchainMeta["image"] won't be used for IconUrl.
+	// However, Description is still fetched.
+	mockOffchainClient.On("FetchMetadata", "solana_uri_for_offchain_meta").Return(map[string]any{
+		"description": expectedEnrichedCoin.Description,
+		"image":       "some_other_image_from_offchain", // This won't be used for IconUrl as rawLogoURL is preferred
+	}, nil).Once()
+
+	// 4. enrichRawCoinAndSave: Save enriched coin to 'coins' table (Create path)
+	// Second call to GetByField (from mockStore.On("Coins")...) for the pre-create check
+	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(nil, db.ErrNotFound).Once()
+	mockCoinRepo.On("Create", ctx, mock.MatchedBy(func(c *model.Coin) bool {
+		// Assert key fields of the coin being created
+		assert.Equal(t, expectedEnrichedCoin.MintAddress, c.MintAddress)
+		assert.Equal(t, expectedEnrichedCoin.Name, c.Name)
+		assert.Equal(t, expectedEnrichedCoin.Symbol, c.Symbol)
+		assert.Equal(t, expectedEnrichedCoin.Description, c.Description)
+		assert.Equal(t, expectedEnrichedCoin.IconUrl, c.IconUrl)
+		assert.Equal(t, expectedEnrichedCoin.ResolvedIconUrl, c.ResolvedIconUrl)
+		assert.Equal(t, expectedEnrichedCoin.Price, c.Price)
+		assert.Equal(t, expectedEnrichedCoin.Decimals, c.Decimals)
+		return true
+	})).Return(nil).Once()
+
+	// 5. enrichRawCoinAndSave: Delete from 'raw_coins' table
+	rawCoinPKIDStr := strconv.FormatUint(sampleRawCoin.ID, 10)
+	mockRawCoinRepo.On("Delete", ctx, rawCoinPKIDStr).Return(nil).Once()
+
+	// --- Act ---
+	enrichedCoin, err := service.GetCoinByMintAddress(ctx, testMintAddress)
+
+	// --- Assert ---
+	assert.NoError(t, err)
+	assert.NotNil(t, enrichedCoin)
+
+	// Assertions on the returned coin (ID is not asserted as it's DB-generated)
+	assert.Equal(t, expectedEnrichedCoin.MintAddress, enrichedCoin.MintAddress)
+	assert.Equal(t, expectedEnrichedCoin.Name, enrichedCoin.Name)
+	assert.Equal(t, expectedEnrichedCoin.Symbol, enrichedCoin.Symbol)
+	assert.Equal(t, expectedEnrichedCoin.Description, enrichedCoin.Description)
+	assert.Equal(t, expectedEnrichedCoin.IconUrl, enrichedCoin.IconUrl)
+	assert.Equal(t, expectedEnrichedCoin.ResolvedIconUrl, enrichedCoin.ResolvedIconUrl)
+	assert.Equal(t, expectedEnrichedCoin.Price, enrichedCoin.Price)
+	assert.Equal(t, expectedEnrichedCoin.Decimals, enrichedCoin.Decimals)
+
+	mockStore.AssertExpectations(t)
+	mockCoinRepo.AssertExpectations(t)
+	mockRawCoinRepo.AssertExpectations(t)
+	mockJupiterClient.AssertExpectations(t)
+	mockSolanaClient.AssertExpectations(t)
+	mockOffchainClient.AssertExpectations(t)
+}
+
+func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testing.T) {
+	service, _, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, mockRawCoinRepo := setupCoinServiceTest(t)
+
+	// Override solanaClient with a mock
+	mockSolanaClient := solanaclientmocks.NewMockClientAPI(t)
+	service.solanaClient = mockSolanaClient
+
+	ctx := context.Background()
+	newMintAddress := "newCoinMint"
+	newCoinIconURL := "ipfs://newIconHash" // Using IPFS to test standardization
+
+	expectedEnrichedCoin := &model.Coin{
+		MintAddress:     newMintAddress,
+		Name:            "Brand New Coin From Jupiter",
+		Symbol:          "NEWJUP",
+		Description:     "Newly Discovered Description From Offchain",
+		IconUrl:         newCoinIconURL, // This will be from offchain meta as initialIconURL is "" for fetchAndCacheCoin
+		ResolvedIconUrl: service.standardizeIpfsUrl(newCoinIconURL),
+		Price:           3.14,
+		Decimals:        8, // From Jupiter
+		// ID will be assigned by GORM
+	}
+
+	// --- Mock Expectations ---
+
+	// 1. GetCoinByMintAddress: Initial check in 'coins' (fails)
+	mockStore.On("Coins").Return(mockCoinRepo).Times(2) // Initial check, then check before Create in fetchAndCacheCoin
+	mockCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Once()
+
+	// 2. GetCoinByMintAddress: Check in 'raw_coins' (fails)
+	mockStore.On("RawCoins").Return(mockRawCoinRepo).Once()
+	mockRawCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Once()
+
+	// 3. fetchAndCacheCoin: Calls EnrichCoinData (since coin not found in raw_coins)
+	// 3a. EnrichCoinData: Jupiter GetCoinInfo
+	mockJupiterClient.On("GetCoinInfo", ctx, newMintAddress).Return(&jupiter.CoinListInfo{
+		Address:  newMintAddress,
+		Name:     expectedEnrichedCoin.Name,
+		Symbol:   expectedEnrichedCoin.Symbol,
+		LogoURI:  nil, // Jupiter doesn't provide logo in this case
+		Decimals: int(expectedEnrichedCoin.Decimals),
+	}, nil).Once()
+
+	// 3b. EnrichCoinData: Jupiter GetCoinPrices
+	mockJupiterClient.On("GetCoinPrices", ctx, []string{newMintAddress}).Return(map[string]float64{
+		newMintAddress: expectedEnrichedCoin.Price,
+	}, nil).Once()
+
+	// 3c. EnrichCoinData: Solana GetMetadataAccount
+	mockSolanaClient.On("GetMetadataAccount", ctx, newMintAddress).Return(&token_metadata.Metadata{
+		Data: token_metadata.Data{Uri: "some_new_uri_for_offchain"},
+	}, nil).Once()
+
+	// 3d. EnrichCoinData: Offchain FetchMetadata
+	// initialIconURL is "" in fetchAndCacheCoin, so offchainMeta["image"] will be used for IconUrl.
+	mockOffchainClient.On("FetchMetadata", "some_new_uri_for_offchain").Return(map[string]any{
+		"description": expectedEnrichedCoin.Description,
+		"image":       newCoinIconURL, // This is where the IconUrl comes from
+	}, nil).Once()
+
+	// 4. fetchAndCacheCoin: Save newly enriched coin to 'coins' table (Create path)
+	// Second call to GetByField (from mockStore.On("Coins")...) for the pre-create check
+	mockCoinRepo.On("GetByField", ctx, "mint_address", newMintAddress).Return(nil, db.ErrNotFound).Once()
+	mockCoinRepo.On("Create", ctx, mock.MatchedBy(func(c *model.Coin) bool {
+		assert.Equal(t, expectedEnrichedCoin.MintAddress, c.MintAddress)
+		assert.Equal(t, expectedEnrichedCoin.Name, c.Name)
+		assert.Equal(t, expectedEnrichedCoin.Symbol, c.Symbol)
+		assert.Equal(t, expectedEnrichedCoin.Description, c.Description)
+		assert.Equal(t, expectedEnrichedCoin.IconUrl, c.IconUrl)
+		assert.Equal(t, expectedEnrichedCoin.ResolvedIconUrl, c.ResolvedIconUrl)
+		assert.Equal(t, expectedEnrichedCoin.Price, c.Price)
+		assert.Equal(t, expectedEnrichedCoin.Decimals, c.Decimals)
+		return true
+	})).Return(nil).Once()
+
+	// --- Act ---
+	enrichedCoin, err := service.GetCoinByMintAddress(ctx, newMintAddress)
+
+	// --- Assert ---
+	assert.NoError(t, err)
+	assert.NotNil(t, enrichedCoin)
+
+	assert.Equal(t, expectedEnrichedCoin.MintAddress, enrichedCoin.MintAddress)
+	assert.Equal(t, expectedEnrichedCoin.Name, enrichedCoin.Name)
+	assert.Equal(t, expectedEnrichedCoin.Symbol, enrichedCoin.Symbol)
+	assert.Equal(t, expectedEnrichedCoin.Description, enrichedCoin.Description)
+	assert.Equal(t, expectedEnrichedCoin.IconUrl, enrichedCoin.IconUrl)
+	assert.Equal(t, expectedEnrichedCoin.ResolvedIconUrl, enrichedCoin.ResolvedIconUrl)
+	assert.Equal(t, expectedEnrichedCoin.Price, enrichedCoin.Price)
+	assert.Equal(t, expectedEnrichedCoin.Decimals, enrichedCoin.Decimals)
+
+	mockStore.AssertExpectations(t)
+	mockCoinRepo.AssertExpectations(t)
+	mockRawCoinRepo.AssertExpectations(t) // GetByField called
+	mockRawCoinRepo.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything) // Delete should NOT be called
+	mockJupiterClient.AssertExpectations(t)
+	mockSolanaClient.AssertExpectations(t)
+	mockOffchainClient.AssertExpectations(t)
 }
 
 func TestLoadOrRefreshData_NoRefreshNeeded(t *testing.T) {
