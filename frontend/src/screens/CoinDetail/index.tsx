@@ -8,6 +8,7 @@ import { PricePoint } from '@components/Chart/CoinChart/types';
 import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
 import { PriceData, Coin } from '@/types';
+import LottieView from 'lottie-react-native'; // Import LottieView
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
@@ -17,13 +18,20 @@ import {
 import { createStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { logger } from '@/utils/logger';
+import { grpcApi } from '@/services/grpcApi'; // Will be removed if not used after changes
+import { useCoinStore } from '@store/coins'; // Import useCoinStore
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
-	const { coin: initialCoin } = route.params;
+	const { mintAddress, coin: initialCoinFromParams } = route.params; // Get mintAddress and initialCoin
+	const prevDisplayCoinRef = React.useRef<Coin | null | undefined>(null); // Ref for price history effect
+
+	const coinFromStore = useCoinStore(state => state.coinMap[mintAddress]);
+	const displayCoin = coinFromStore || initialCoinFromParams;
+
 	const [selectedTimeframe, setSelectedTimeframe] = useState("4H");
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(true); // For price history and potentially refresh
 	const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
 	const { showToast } = useToast();
@@ -31,13 +39,20 @@ const CoinDetail: React.FC = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
+	// useEffect for initial logging (can remain as is or be combined if preferred)
 	useEffect(() => {
 		logger.breadcrumb({
 			category: 'navigation',
 			message: 'Viewed CoinDetailScreen',
-			data: { coinSymbol: initialCoin?.symbol, coinMintAddress: initialCoin?.mintAddress },
+			data: { coinSymbol: displayCoin?.symbol, coinMintAddress: mintAddress },
 		});
-	}, [initialCoin]);
+	}, [displayCoin?.symbol, mintAddress]);
+
+	useEffect(() => {
+		if (mintAddress) {
+			useCoinStore.getState().getCoinByID(mintAddress);
+		}
+	}, [mintAddress]);
 
 	const parseValue = (val: string | number | undefined): number => {
 		if (val === undefined) return 0;
@@ -49,12 +64,17 @@ const CoinDetail: React.FC = () => {
 	}, []);
 
 	useEffect(() => {
-		if (!initialCoin) return;
+		if (!displayCoin) {
+			// If displayCoin is not available, perhaps clear price history or set loading
+			setPriceHistory([]); // Clear history if no coin
+			return;
+		}
 
-		// Only pass true for isInitialLoad on first mount
-		const isInitialLoad = !priceHistory.length;
-		fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, initialCoin, isInitialLoad);
-	}, [selectedTimeframe, initialCoin]);
+		const isInitialLoad = !priceHistory.length || (prevDisplayCoinRef.current?.mintAddress !== displayCoin.mintAddress);
+		fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, displayCoin, isInitialLoad);
+		prevDisplayCoinRef.current = displayCoin;
+	}, [selectedTimeframe, displayCoin]);
+
 
 	const displayData = useMemo(() => {
 		const lastDataPoint = priceHistory.length > 0 ? priceHistory[priceHistory.length - 1] : null;
@@ -80,19 +100,42 @@ const CoinDetail: React.FC = () => {
 	}, [priceHistory, hoverPoint, parseValue]);
 
 	const portfolioToken = useMemo(() => {
-		return tokens.find(token => token.mintAddress === initialCoin.mintAddress);
-	}, [tokens, initialCoin.mintAddress]);
+		if (!displayCoin?.mintAddress) return null;
+		return tokens.find(token => token.mintAddress === displayCoin.mintAddress);
+	}, [tokens, displayCoin?.mintAddress]);
 
-	if (loading && !initialCoin) {
+	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description);
+
+	if (isLoadingDetails) {
 		return (
-			<View style={[styles.container, styles.centered]}>
-				<ActivityIndicator size="large" color={theme.colors.primary} />
-			</View>
+			<SafeAreaView style={styles.container}>
+				<View style={[styles.container, styles.centered]}>
+					<LottieView
+						source={require('@/assets/lottie/loading_spinner.json')}
+						autoPlay
+						loop
+						style={{ width: 200, height: 200 }}
+					/>
+				</View>
+			</SafeAreaView>
 		);
 	}
 
+	if (!displayCoin && !isLoadingDetails) { // Not loading but still no coin (error or empty state)
+		return (
+			<SafeAreaView style={styles.container}>
+				<View style={[styles.container, styles.centered]}>
+					<Text>Coin data not available.</Text>
+				</View>
+			</SafeAreaView>
+		);
+	}
+
+	// If code reaches here, displayCoin is available and !isLoadingDetails
+	// The existing `loading` state is for the price chart specifically.
+
 	const renderPriceCard = () => {
-		if (!initialCoin || priceHistory.length < 2) return null;
+		if (!displayCoin || priceHistory.length < 2) return null;
 
 		return (
 			<View style={styles.priceCard}>
@@ -101,9 +144,9 @@ const CoinDetail: React.FC = () => {
 					periodChange={displayData.periodChange}
 					valueChange={displayData.valueChange}
 					period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
-					resolvedIconUrl={initialCoin.resolvedIconUrl}
-					name={initialCoin.name}
-					address={initialCoin.mintAddress}
+					resolvedIconUrl={displayCoin.resolvedIconUrl}
+					name={displayCoin.name}
+					address={displayCoin.mintAddress} // Use displayCoin.mintAddress
 					hoveredPoint={hoverPoint}
 				/>
 			</View>
@@ -116,7 +159,7 @@ const CoinDetail: React.FC = () => {
 				<View style={{ marginHorizontal: 16 }}>
 					<CoinChart
 						data={priceHistory}
-						loading={loading}
+						loading={loading} // This is for price history loading
 						onHover={handleChartHover}
 					/>
 				</View>
@@ -133,7 +176,7 @@ const CoinDetail: React.FC = () => {
 						logger.breadcrumb({
 							category: 'ui',
 							message: 'Selected timeframe on CoinDetailScreen',
-							data: { timeframe: value, coinSymbol: initialCoin?.symbol },
+					data: { timeframe: value, coinSymbol: displayCoin?.symbol },
 						});
 						setSelectedTimeframe(value);
 					}}
@@ -168,7 +211,7 @@ const CoinDetail: React.FC = () => {
 					<View style={styles.holdingsRow}>
 						<Text style={styles.holdingsLabel}>Token Amount</Text>
 						<Text style={styles.holdingsValue}>
-							{portfolioToken.amount.toFixed(4)} {initialCoin?.symbol}
+							{portfolioToken.amount.toFixed(4)} {displayCoin?.symbol}
 						</Text>
 					</View>
 				</View>
@@ -177,7 +220,7 @@ const CoinDetail: React.FC = () => {
 	};
 
 	const renderAboutCard = () => {
-		if (!initialCoin) {
+		if (!displayCoin) { // Display based on displayCoin
 			return (
 				<View style={styles.aboutCard}>
 					<View style={styles.loadingContainer}>
@@ -193,61 +236,104 @@ const CoinDetail: React.FC = () => {
 					<View style={styles.aboutIcon}>
 						<Icon source="information-outline" size={16} color={theme.colors.onSecondaryContainer} />
 					</View>
-					<Text style={styles.aboutTitle}>About {initialCoin.name}</Text>
+					<Text style={styles.aboutTitle}>About {displayCoin.name}</Text>
 				</View>
 				<CoinInfo
 					metadata={{
-						name: initialCoin.name,
-						description: initialCoin.description,
-						website: initialCoin.website,
-						twitter: initialCoin.twitter,
-						telegram: initialCoin.telegram,
-						dailyVolume: initialCoin.dailyVolume,
-						tags: initialCoin.tags || [],
-						symbol: initialCoin.symbol
+						name: displayCoin.name,
+						description: displayCoin.description,
+						website: displayCoin.website,
+						twitter: displayCoin.twitter,
+						telegram: displayCoin.telegram,
+						dailyVolume: displayCoin.dailyVolume,
+						tags: displayCoin.tags || [],
+						symbol: displayCoin.symbol,
+						createdAt: displayCoin.createdAt // Add this line
 					}}
 				/>
 			</View>
 		);
 	};
 
-	return (
-		<SafeAreaView style={styles.container} testID="coin-detail-screen">
-			<View style={styles.content}>
-				<ScrollView
-					style={styles.scrollView}
-					contentContainerStyle={styles.scrollViewContent}
-					bounces={false}
-					showsVerticalScrollIndicator={false}
-				>
-					{renderPriceCard()}
-					{renderChartCard()}
-					{renderTimeframeCard()}
-					{renderHoldingsCard()}
-					{renderAboutCard()}
-				</ScrollView>
+	const onRefresh = useCallback(async () => {
+		if (mintAddress) {
+			// We use the general 'loading' state for RefreshControl indication here.
+			// Alternatively, a new state like 'isRefreshing' could be introduced
+			// if we want to differentiate Lottie loader from pull-to-refresh loader.
+			// For now, existing `loading` state will make the chart loader appear during refresh.
+			setLoading(true);
+			try {
+				await useCoinStore.getState().getCoinByID(mintAddress, true);
+				// Price history will refresh via useEffect on displayCoin if it changed
+			} catch (error) {
+				logger.error("Error during refresh:", error);
+				showToast({ type: 'error', message: 'Failed to refresh data.' });
+			} finally {
+				// setLoading(false) will be handled by fetchPriceHistory's finally block
+				// if we want to tie it to chart loading. Or set it here if refresh is considered done.
+				// For simplicity, let's assume fetchPriceHistory will manage setLoading.
+				// If getCoinByID is very fast and displayCoin doesn't change, chart might not reload.
+				// Consider if an explicit setLoading(false) is needed here if no chart refresh occurs.
+				// For now, let's keep it simple: the chart's loading state will reflect if it reloads.
+				// If displayCoin updates, the chart loading will trigger.
+				// If displayCoin doesn't update (already fresh), then setLoading(false) should happen.
+				// To ensure spinner stops if nothing else reloads:
+				if (!displayCoin || prevDisplayCoinRef.current?.mintAddress === displayCoin.mintAddress) {
+					setLoading(false);
+				}
+			}
+		} else {
+			setLoading(false); // Ensure loading stops if there's no mintAddress
+		}
+	}, [mintAddress, showToast, displayCoin]);
 
-				{initialCoin && (
-					<View style={styles.tradeButtonContainer}>
-						<Button
-							mode="contained"
-							onPress={async () => {
-								await handleTradeNavigation(
-									initialCoin,
-									null,
-									showToast,
-									navigation.navigate
-								);
-							}}
-							style={styles.tradeButton}
-							testID="trade-button"
-						>
-							Trade {initialCoin.symbol}
-						</Button>
-					</View>
-				)}
-			</View>
-		</SafeAreaView>
+	return (
+		// Ensure displayCoin is checked here again before rendering main content
+		displayCoin ? (
+			<SafeAreaView style={styles.container} testID="coin-detail-screen">
+				<View style={styles.content}>
+					<ScrollView
+						style={styles.scrollView}
+						contentContainerStyle={styles.scrollViewContent}
+						bounces={false}
+						showsVerticalScrollIndicator={false}
+						refreshControl={
+							<RefreshControl
+								refreshing={loading} // This 'loading' is for the price chart
+								onRefresh={onRefresh}
+								tintColor={theme.colors.primary}
+							/>
+						}
+					>
+						{renderPriceCard()}
+						{renderChartCard()}
+						{renderTimeframeCard()}
+						{renderHoldingsCard()}
+						{renderAboutCard()}
+					</ScrollView>
+
+					{displayCoin && (
+						<View style={styles.tradeButtonContainer}>
+							<Button
+								mode="contained"
+								onPress={async () => {
+									await handleTradeNavigation(
+										displayCoin,
+										null,
+										showToast,
+										navigation.navigate
+									);
+								}}
+								style={styles.tradeButton}
+								testID="trade-button"
+							>
+								Trade {displayCoin.symbol}
+							</Button>
+						</View>
+					)}
+				</View>
+			</SafeAreaView>
+		) : null // Should be caught by earlier checks, but as a final fallback.
 	);
 };
 

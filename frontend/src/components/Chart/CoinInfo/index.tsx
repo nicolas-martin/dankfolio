@@ -48,6 +48,47 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
+	const renderDescriptionSection = () => {
+		if (!metadata.description) return null;
+
+		return (
+			<View style={styles.descriptionSection}>
+				<View style={styles.descriptionHeader}>
+					<View style={styles.descriptionIcon}>
+						<PaperIcon source="text-long" size={16} color={theme.colors.onSurfaceVariant} />
+					</View>
+					<Text style={styles.descriptionTitle}>Description</Text>
+				</View>
+				<Text style={styles.descriptionText}>{metadata.description}</Text>
+			</View>
+		);
+	};
+
+	const renderDateSection = () => {
+		if (!metadata.createdAt) { // metadata.createdAt is expected to be Date | undefined
+			return null;
+		}
+
+		// At this point, metadata.createdAt is assumed to be a Date object.
+		const formattedDate = metadata.createdAt.toLocaleDateString(undefined, {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+		});
+
+		return (
+			<View style={styles.dateSection}>
+				<View style={styles.dateHeader}>
+					<View style={styles.dateIcon}>
+						<PaperIcon source="calendar-month" size={16} color={theme.colors.onSurfaceVariant} />
+					</View>
+					<Text style={styles.dateTitle}>Date Added</Text>
+				</View>
+				<Text style={styles.dateValue}>{formattedDate}</Text>
+			</View>
+		);
+	};
+
 	const renderVolumeSection = () => {
 		if (metadata.dailyVolume === undefined) return null;
 
@@ -164,8 +205,10 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 	return (
 		<View style={styles.container}>
 			{renderVolumeSection()}
+			{renderDescriptionSection()}
 			{renderTagsSection()}
 			{renderLinksSection()}
+			{renderDateSection()}
 		</View>
 	);
 };
