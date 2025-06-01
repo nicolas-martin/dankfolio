@@ -1,5 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Coin } from '@/types';
+import { SearchSortByOption } from '@/services/grpc/model';
 
 export type SearchScreenProps = NativeStackScreenProps<RootStackParamList, 'Search'>;
 
@@ -9,7 +10,7 @@ export interface SearchFilters {
 	minVolume24h?: number;
 	limit?: number;
 	offset?: number;
-	sortBy?: string;
+	sortBy?: SearchSortByOption;
 	sortDesc?: boolean;
 }
 

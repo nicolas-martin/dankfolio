@@ -68,19 +68,19 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 			// Fetch if query exists, or if sorting by listed_at (even with empty query),
 			// or if sort order changed for a non-empty query.
 			// This logic ensures that changing sort order always attempts a refetch if relevant.
-			if (state.filters.query || state.filters.sortBy === 'listed_at' || (state.filters.query === '' && state.results.length > 0)) {
+			if (state.filters.query || state.filters.sortBy === 'jupiter_listed_at' || (state.filters.query === '' && state.results.length > 0)) {
 				// The condition `(state.filters.query === '' && state.results.length > 0)` is to handle clearing query
-				// when a sort like 'listed_at' might want to show results for empty query.
-				// More robust: if a sort change happens, and query is empty, and 'listed_at' is chosen, fetch.
-				// If query is cleared, and not 'listed_at', then clear results.
-				if (state.filters.query || state.filters.sortBy === 'listed_at') {
+				// when a sort like 'jupiter_listed_at' might want to show results for empty query.
+				// More robust: if a sort change happens, and query is empty, and 'jupiter_listed_at' is chosen, fetch.
+				// If query is cleared, and not 'jupiter_listed_at', then clear results.
+				if (state.filters.query || state.filters.sortBy === 'jupiter_listed_at') {
 					handleSearch(state.filters.query);
 				} else {
-					// If query is empty and not sorting by 'listed_at', clear results
+					// If query is empty and not sorting by 'jupiter_listed_at', clear results
 					setState(prev => ({ ...prev, results: [] }));
 				}
-			} else if (!state.filters.query && state.results.length > 0 && state.filters.sortBy !== 'listed_at') {
-				// If query is cleared, and we are not on a default-view sort like listed_at, clear results
+			} else if (!state.filters.query && state.results.length > 0) { // state.filters.sortBy !== 'jupiter_listed_at' is implied here
+				// If query is cleared, and we are not on a default-view sort like jupiter_listed_at, clear results
 				setState(prev => ({ ...prev, results: [] }));
 			}
 		}, DEBOUNCE_DELAY);
@@ -155,7 +155,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
 						<TouchableOpacity onPress={() => setSortOrder('volume24h', true)} style={styles.sortButton}>
 							<Text style={styles.sortButtonText}>Sort by Volume</Text>
 						</TouchableOpacity>
-						<TouchableOpacity onPress={() => setSortOrder('listed_at', true)} style={styles.sortButton}>
+						<TouchableOpacity onPress={() => setSortOrder('jupiter_listed_at', true)} style={styles.sortButton}>
 							<Text style={styles.sortButtonText}>Sort by Newly Listed</Text>
 						</TouchableOpacity>
 					</View>

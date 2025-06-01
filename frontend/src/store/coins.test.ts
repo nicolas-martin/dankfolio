@@ -8,10 +8,10 @@ import { Coin } from '@/types';
 jest.mock('@/services/grpcApi');
 
 // Mock Coin Data
-const mockSolCoin: Coin = { mintAddress: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: 'Solana', iconUrl: 'sol.png', tags: ['platform'], dailyVolume: 1000000, createdAt: new Date() };
-const mockWenCoin: Coin = { mintAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI', symbol: 'WEN', name: 'Wen', price: 0.0001, decimals: 5, description: 'Wen WEN', iconUrl: 'wen.png', tags: ['meme'], dailyVolume: 50000, createdAt: new Date() };
-const mockOtherCoin: Coin = { mintAddress: 'otherCoinId', symbol: 'OTH', name: 'Other', price: 10, decimals: 6, description: 'Other coin', iconUrl: 'other.png', tags: [], dailyVolume: 10000, createdAt: new Date() };
-const mockNewlyListedCoin: Coin = { mintAddress: 'newCoinMint', symbol: 'NEW', name: 'New Coin', price: 1, decimals: 6, description: 'A new coin', iconUrl: 'new.png', tags: ['new'], dailyVolume: 500, createdAt: new Date() };
+const mockSolCoin: Coin = { mintAddress: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Solana', price: 150, decimals: 9, description: 'Solana', resolvedIconUrl: 'sol.png', tags: ['platform'], dailyVolume: 1000000, createdAt: new Date() };
+const mockWenCoin: Coin = { mintAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7xiH5HwMJI', symbol: 'WEN', name: 'Wen', price: 0.0001, decimals: 5, description: 'Wen WEN', resolvedIconUrl: 'wen.png', tags: ['meme'], dailyVolume: 50000, createdAt: new Date() };
+const mockOtherCoin: Coin = { mintAddress: 'otherCoinId', symbol: 'OTH', name: 'Other', price: 10, decimals: 6, description: 'Other coin', resolvedIconUrl: 'other.png', tags: [], dailyVolume: 10000, createdAt: new Date() };
+const mockNewlyListedCoin: Coin = { mintAddress: 'newCoinMint', symbol: 'NEW', name: 'New Coin', price: 1, decimals: 6, description: 'A new coin', resolvedIconUrl: 'new.png', tags: ['new'], dailyVolume: 500, createdAt: new Date() };
 
 
 describe('Zustand Coin Store', () => {

@@ -17,7 +17,9 @@ jest.mock('@/utils/logger', () => ({
 }));
 
 // Mock dependencies
-jest.mock('@store/coins');
+jest.mock('@/store/coins', () => ({
+	useCoinStore: jest.fn(),
+}));
 jest.mock('@react-navigation/native');
 jest.mock('@components/Common/Toast');
 
@@ -32,7 +34,7 @@ const mockNewlyListedCoin: Coin = {
 	price: 1.1,
 	decimals: 6,
 	description: 'Desc for NEW1',
-	iconUrl: 'new1.png',
+	resolvedIconUrl: 'new1.png',
 	tags: ['new'],
 	dailyVolume: 1000,
 	createdAt: new Date(),
@@ -54,10 +56,22 @@ describe('NewCoins Component', () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
 
-		(useCoinStore as jest.Mock).mockReturnValue({
-			newlyListedCoins: [mockNewlyListedCoin], // Default mock with one coin
+		// Ensure useCoinStore is correctly typed for mockReturnValue
+		(useCoinStore as unknown as jest.Mock).mockReturnValue({
+			newlyListedCoins: [mockNewlyListedCoin],
 			isLoadingNewlyListed: false,
-			getCoinByID: mockGetCoinByID, // Updated from enrichCoin
+			error: null,
+			getCoinByID: mockGetCoinByID,
+			fetchNewCoins: jest.fn().mockResolvedValue(undefined), // Mock an async action
+			lastFetchedNewCoinsAt: 0,
+			// Add other state properties used by NewCoins if any, with default mock values
+			availableCoins: [],
+			coinMap: {},
+			isLoading: false,
+			setAvailableCoins: jest.fn(),
+			setCoin: jest.fn(),
+			fetchAvailableCoins: jest.fn().mockResolvedValue(undefined),
+			setLastFetchedNewCoinsAt: jest.fn(),
 		});
 
 		(useNavigation as jest.Mock).mockReturnValue({
@@ -138,11 +152,22 @@ describe('NewCoins Component', () => {
 			const timeAgoString = '5 minutes ago';
 			(formatTimeAgo as jest.Mock).mockReturnValue(timeAgoString);
 			const coinWithTime = { ...mockNewlyListedCoin, jupiterListedAt: new Date() };
-			(useCoinStore as jest.Mock).mockReturnValue({
+			const fullMockState = {
 				newlyListedCoins: [coinWithTime],
 				isLoadingNewlyListed: false,
+				error: null,
 				getCoinByID: mockGetCoinByID,
-			});
+				fetchNewCoins: jest.fn().mockResolvedValue(undefined),
+				lastFetchedNewCoinsAt: 0,
+				availableCoins: [],
+				coinMap: {},
+				isLoading: false,
+				setAvailableCoins: jest.fn(),
+				setCoin: jest.fn(),
+				fetchAvailableCoins: jest.fn().mockResolvedValue(undefined),
+				setLastFetchedNewCoinsAt: jest.fn(),
+			};
+			(useCoinStore as unknown as jest.Mock).mockReturnValue(fullMockState);
 
 			const { getByText } = render(<NewCoins />);
 			expect(formatTimeAgo).toHaveBeenCalledWith(coinWithTime.jupiterListedAt);
@@ -152,11 +177,22 @@ describe('NewCoins Component', () => {
 		it('does not render time ago text if formatTimeAgo returns empty string', () => {
 			(formatTimeAgo as jest.Mock).mockReturnValue('');
 			const coinWithoutTime = { ...mockNewlyListedCoin, jupiterListedAt: undefined };
-			(useCoinStore as jest.Mock).mockReturnValue({
+			const fullMockState = {
 				newlyListedCoins: [coinWithoutTime],
 				isLoadingNewlyListed: false,
+				error: null,
 				getCoinByID: mockGetCoinByID,
-			});
+				fetchNewCoins: jest.fn().mockResolvedValue(undefined),
+				lastFetchedNewCoinsAt: 0,
+				availableCoins: [],
+				coinMap: {},
+				isLoading: false,
+				setAvailableCoins: jest.fn(),
+				setCoin: jest.fn(),
+				fetchAvailableCoins: jest.fn().mockResolvedValue(undefined),
+				setLastFetchedNewCoinsAt: jest.fn(),
+			};
+			(useCoinStore as unknown as jest.Mock).mockReturnValue(fullMockState);
 
 			const { queryByText } = render(<NewCoins />);
 			// Assuming the text is identifiable or we check for absence if it's the only text possible
@@ -183,20 +219,40 @@ describe('NewCoins Component', () => {
 	});
 
 	it('shows loading animation when loading and no coins', () => {
-		(useCoinStore as jest.Mock).mockReturnValue({
+		(useCoinStore as unknown as jest.Mock).mockReturnValue({
 			newlyListedCoins: [],
 			isLoadingNewlyListed: true,
-			getCoinByID: mockGetCoinByID, // ensure all mocks pass this
+			error: null,
+			getCoinByID: jest.fn(() => Promise.resolve(null)),
+			fetchNewCoins: jest.fn(() => Promise.resolve()),
+			lastFetchedNewCoinsAt: 0,
+			availableCoins: [],
+			coinMap: {},
+			isLoading: false,
+			setAvailableCoins: jest.fn(),
+			setCoin: jest.fn(),
+			fetchAvailableCoins: jest.fn(() => Promise.resolve()),
+			setLastFetchedNewCoinsAt: jest.fn(),
 		});
 		const { getByText } = render(<NewCoins />);
 		expect(getByText('Loading new listings...')).toBeTruthy();
 	});
 
 	it('shows empty message when not loading and no coins', () => {
-		(useCoinStore as jest.Mock).mockReturnValue({
+		(useCoinStore as unknown as jest.Mock).mockReturnValue({
 			newlyListedCoins: [],
 			isLoadingNewlyListed: false,
-			getCoinByID: mockGetCoinByID, // ensure all mocks pass this
+			error: null,
+			getCoinByID: mockGetCoinByID, // from outer scope
+			fetchNewCoins: jest.fn().mockResolvedValue(undefined),
+			lastFetchedNewCoinsAt: 0,
+			availableCoins: [],
+			coinMap: {},
+			isLoading: false,
+			setAvailableCoins: jest.fn(),
+			setCoin: jest.fn(),
+			fetchAvailableCoins: jest.fn().mockResolvedValue(undefined),
+			setLastFetchedNewCoinsAt: jest.fn(),
 		});
 		const { getByText } = render(<NewCoins />);
 		expect(getByText('No new listings found at the moment.')).toBeTruthy();

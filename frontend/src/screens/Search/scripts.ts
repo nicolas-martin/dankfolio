@@ -13,7 +13,7 @@ export const DEFAULT_FILTERS: SearchFilters = {
 	query: '',
 	tags: [],
 	minVolume24h: 0,
-	sortBy: 'volume',
+	sortBy: 'volume24h',
 	sortDesc: true
 };
 

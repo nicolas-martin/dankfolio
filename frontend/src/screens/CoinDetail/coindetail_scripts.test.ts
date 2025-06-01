@@ -35,7 +35,7 @@ const sampleCoin: Coin = {
 	mintAddress: 'sampleMintAddress',
 	name: 'Sample Coin',
 	symbol: 'SMPL',
-	iconUrl: 'http://example.com/icon.png',
+	resolvedIconUrl: 'http://example.com/icon.png',
 	price: 10,
 	change24h: 1,
 	// Add other required fields for Coin type if any

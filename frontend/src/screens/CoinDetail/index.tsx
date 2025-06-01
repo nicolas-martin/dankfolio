@@ -24,10 +24,11 @@ import { useCoinStore } from '@store/coins'; // Import useCoinStore
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
-	const { mintAddress, coin: initialCoinFromParams } = route.params; // Get mintAddress and initialCoin
+	const { coin: initialCoinFromParams } = route.params; // Get initialCoin
+	const mintAddress = initialCoinFromParams?.mintAddress; // Get mintAddress from the coin
 	const prevDisplayCoinRef = React.useRef<Coin | null | undefined>(null); // Ref for price history effect
 
-	const coinFromStore = useCoinStore(state => state.coinMap[mintAddress]);
+	const coinFromStore = useCoinStore(state => mintAddress ? state.coinMap[mintAddress] : undefined);
 	const displayCoin = coinFromStore || initialCoinFromParams;
 
 	const [selectedTimeframe, setSelectedTimeframe] = useState("4H");
