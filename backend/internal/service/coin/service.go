@@ -246,6 +246,24 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 		return nil, fmt.Errorf("error checking existing coin %s before save: %w", enrichedCoin.MintAddress, getErr)
 	}
 
+	// After successful save to 'coins' table, delete from 'raw_coins'
+	rawCoinPKIDStr := strconv.FormatUint(rawCoin.ID, 10)
+	slog.Debug("Attempting to delete processed coin from 'raw_coins' table",
+		slog.String("mintAddress", rawCoin.MintAddress),
+		slog.String("rawCoinID", rawCoinPKIDStr))
+
+	if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStr); delErr != nil {
+		// Log the error but don't let it overshadow the successful enrichment.
+		slog.Warn("Failed to delete coin from 'raw_coins' table after successful enrichment",
+			slog.String("mintAddress", rawCoin.MintAddress),
+			slog.String("rawCoinID", rawCoinPKIDStr),
+			slog.Any("error", delErr))
+	} else {
+		slog.Info("Successfully deleted coin from 'raw_coins' table after enrichment",
+			slog.String("mintAddress", rawCoin.MintAddress),
+			slog.String("rawCoinID", rawCoinPKIDStr))
+	}
+
 	slog.Info("Successfully enriched and saved coin from raw_coin data", slog.String("mintAddress", enrichedCoin.MintAddress))
 	return enrichedCoin, nil
 }
