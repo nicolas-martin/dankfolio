@@ -18,7 +18,6 @@ import {
 import { createStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { logger } from '@/utils/logger';
-import { grpcApi } from '@/services/grpcApi'; // Will be removed if not used after changes
 import { useCoinStore } from '@store/coins'; // Import useCoinStore
 
 const CoinDetail: React.FC = () => {
