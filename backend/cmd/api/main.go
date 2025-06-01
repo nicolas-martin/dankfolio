@@ -147,9 +147,12 @@ func loadConfig() (*Config, error) {
 		log.Fatalf("missing required environment variables: %v", missingVars)
 	}
 
+	// PLATFORM_FEE_BPS represents a basis point value for platform fees and must be non-negative.
 	if config.PlatformFeeBps < 0 {
 		log.Fatalf("PLATFORM_FEE_BPS cannot be negative.")
 	}
+	// If PLATFORM_FEE_BPS is greater than 0, PLATFORM_FEE_ACCOUNT_ADDRESS must be set
+	// because a non-zero platform fee requires an account to receive the fee.
 	if config.PlatformFeeBps > 0 && config.PlatformFeeAccountAddress == "" {
 		log.Fatalf("PLATFORM_FEE_ACCOUNT_ADDRESS must be set if PLATFORM_FEE_BPS is greater than 0.")
 	}
