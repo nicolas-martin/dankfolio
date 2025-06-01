@@ -42,6 +42,9 @@ message Trade {
   int32 confirmations = 14;
   bool finalized = 15;
   optional string error = 16;
+  optional double platform_fee_amount = 19;
+  optional double platform_fee_percent = 20;
+  optional string platform_fee_destination = 21;
   // Fields for new integer PKs, if they need to be exposed to clients.
   // For now, assuming clients identify coins by mint address (from_coin_id, to_coin_id).
   // optional uint64 from_coin_pk_id = 17;

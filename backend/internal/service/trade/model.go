@@ -1,5 +1,14 @@
 package trade
 
+// PrepareSwapRequestData holds the parameters for a PrepareSwap operation.
+type PrepareSwapRequestData struct {
+	FromCoinMintAddress string
+	ToCoinMintAddress   string
+	InputAmount         string
+	SlippageBps         string
+	FromAddress         string // User's wallet public key
+}
+
 // TradeQuote represents a quote for a trade
 type TradeQuote struct {
 	EstimatedAmount string   `json:"estimatedAmount"`

@@ -24,25 +24,28 @@ const (
 
 // Trade represents a meme trading transaction
 type Trade struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	UserId          string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	FromCoinId      string                 `protobuf:"bytes,3,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"` // Note: This will likely be FromCoinMintAddress in backend model
-	ToCoinId        string                 `protobuf:"bytes,4,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`       // Note: This will likely be ToCoinMintAddress in backend model
-	CoinSymbol      string                 `protobuf:"bytes,5,opt,name=coin_symbol,json=coinSymbol,proto3" json:"coin_symbol,omitempty"`
-	Type            string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
-	Amount          float64                `protobuf:"fixed64,7,opt,name=amount,proto3" json:"amount,omitempty"`
-	Price           float64                `protobuf:"fixed64,8,opt,name=price,proto3" json:"price,omitempty"`
-	Fee             float64                `protobuf:"fixed64,9,opt,name=fee,proto3" json:"fee,omitempty"`
-	Status          string                 `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
-	TransactionHash string                 `protobuf:"bytes,11,opt,name=transaction_hash,json=transactionHash,proto3" json:"transaction_hash,omitempty"`
-	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	CompletedAt     *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=completed_at,json=completedAt,proto3,oneof" json:"completed_at,omitempty"`
-	Confirmations   int32                  `protobuf:"varint,14,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
-	Finalized       bool                   `protobuf:"varint,15,opt,name=finalized,proto3" json:"finalized,omitempty"`
-	Error           *string                `protobuf:"bytes,16,opt,name=error,proto3,oneof" json:"error,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Id                     string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId                 string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	FromCoinId             string                 `protobuf:"bytes,3,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"` // Note: This will likely be FromCoinMintAddress in backend model
+	ToCoinId               string                 `protobuf:"bytes,4,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`       // Note: This will likely be ToCoinMintAddress in backend model
+	CoinSymbol             string                 `protobuf:"bytes,5,opt,name=coin_symbol,json=coinSymbol,proto3" json:"coin_symbol,omitempty"`
+	Type                   string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	Amount                 float64                `protobuf:"fixed64,7,opt,name=amount,proto3" json:"amount,omitempty"`
+	Price                  float64                `protobuf:"fixed64,8,opt,name=price,proto3" json:"price,omitempty"`
+	Fee                    float64                `protobuf:"fixed64,9,opt,name=fee,proto3" json:"fee,omitempty"`
+	Status                 string                 `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
+	TransactionHash        string                 `protobuf:"bytes,11,opt,name=transaction_hash,json=transactionHash,proto3" json:"transaction_hash,omitempty"`
+	CreatedAt              *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CompletedAt            *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=completed_at,json=completedAt,proto3,oneof" json:"completed_at,omitempty"`
+	Confirmations          int32                  `protobuf:"varint,14,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
+	Finalized              bool                   `protobuf:"varint,15,opt,name=finalized,proto3" json:"finalized,omitempty"`
+	Error                  *string                `protobuf:"bytes,16,opt,name=error,proto3,oneof" json:"error,omitempty"`
+	PlatformFeeAmount      *float64               `protobuf:"fixed64,19,opt,name=platform_fee_amount,json=platformFeeAmount,proto3,oneof" json:"platform_fee_amount,omitempty"`
+	PlatformFeePercent     *float64               `protobuf:"fixed64,20,opt,name=platform_fee_percent,json=platformFeePercent,proto3,oneof" json:"platform_fee_percent,omitempty"`
+	PlatformFeeDestination *string                `protobuf:"bytes,21,opt,name=platform_fee_destination,json=platformFeeDestination,proto3,oneof" json:"platform_fee_destination,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Trade) Reset() {
@@ -183,6 +186,27 @@ func (x *Trade) GetFinalized() bool {
 func (x *Trade) GetError() string {
 	if x != nil && x.Error != nil {
 		return *x.Error
+	}
+	return ""
+}
+
+func (x *Trade) GetPlatformFeeAmount() float64 {
+	if x != nil && x.PlatformFeeAmount != nil {
+		return *x.PlatformFeeAmount
+	}
+	return 0
+}
+
+func (x *Trade) GetPlatformFeePercent() float64 {
+	if x != nil && x.PlatformFeePercent != nil {
+		return *x.PlatformFeePercent
+	}
+	return 0
+}
+
+func (x *Trade) GetPlatformFeeDestination() string {
+	if x != nil && x.PlatformFeeDestination != nil {
+		return *x.PlatformFeeDestination
 	}
 	return ""
 }
@@ -850,7 +874,7 @@ var File_dankfolio_v1_trade_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\n" +
-	"\x18dankfolio/v1/trade.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa1\x04\n" +
+	"\x18dankfolio/v1/trade.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9a\x06\n" +
 	"\x05Trade\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12 \n" +
@@ -872,9 +896,15 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\fcompleted_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampH\x00R\vcompletedAt\x88\x01\x01\x12$\n" +
 	"\rconfirmations\x18\x0e \x01(\x05R\rconfirmations\x12\x1c\n" +
 	"\tfinalized\x18\x0f \x01(\bR\tfinalized\x12\x19\n" +
-	"\x05error\x18\x10 \x01(\tH\x01R\x05error\x88\x01\x01B\x0f\n" +
+	"\x05error\x18\x10 \x01(\tH\x01R\x05error\x88\x01\x01\x123\n" +
+	"\x13platform_fee_amount\x18\x13 \x01(\x01H\x02R\x11platformFeeAmount\x88\x01\x01\x125\n" +
+	"\x14platform_fee_percent\x18\x14 \x01(\x01H\x03R\x12platformFeePercent\x88\x01\x01\x12=\n" +
+	"\x18platform_fee_destination\x18\x15 \x01(\tH\x04R\x16platformFeeDestination\x88\x01\x01B\x0f\n" +
 	"\r_completed_atB\b\n" +
-	"\x06_error\"\x90\x01\n" +
+	"\x06_errorB\x16\n" +
+	"\x14_platform_fee_amountB\x17\n" +
+	"\x15_platform_fee_percentB\x1b\n" +
+	"\x19_platform_fee_destination\"\x90\x01\n" +
 	"\x13GetSwapQuoteRequest\x12 \n" +
 	"\ffrom_coin_id\x18\x01 \x01(\tR\n" +
 	"fromCoinId\x12\x1c\n" +
