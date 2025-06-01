@@ -201,7 +201,7 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 }
 
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter
-func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey) (string, error) {
+func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey, feeAccount string) (string, error) {
 	// 🪵 LOG: Print the raw quoteResp for debugging
 	log.Printf("[JUPITER] quoteResp (raw): %s", string(quoteResp))
 
@@ -223,6 +223,10 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 				"priorityLevel": "veryHigh",
 			},
 		},
+	}
+
+	if feeAccount != "" {
+		swapReqBody["feeAccount"] = feeAccount
 	}
 
 	url := fmt.Sprintf("%s%s", c.baseURL, swapEndpoint) // Inline URL formatting

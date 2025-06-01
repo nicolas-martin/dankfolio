@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -28,16 +29,28 @@ type Service struct {
 	priceService  price.PriceServiceAPI   // Use PriceServiceAPI interface from price package
 	jupiterClient jupiter.ClientAPI
 	store         db.Store
+	platformFeeBps            int    // Platform fee in basis points
+	platformFeeAccountAddress string // Solana address for collecting platform fees
 }
 
 // NewService creates a new TradeService instance
-func NewService(sc solana.ClientAPI, cs coin.CoinServiceAPI, ps price.PriceServiceAPI, jc jupiter.ClientAPI, store db.Store) *Service {
+func NewService(
+	sc solana.ClientAPI,
+	cs coin.CoinServiceAPI,
+	ps price.PriceServiceAPI,
+	jc jupiter.ClientAPI,
+	store db.Store,
+	configuredPlatformFeeBps int, // New parameter
+	configuredPlatformFeeAccountAddress string, // New parameter
+) *Service {
 	return &Service{
 		solanaClient:  sc,
 		coinService:   cs,
 		priceService:  ps,
 		jupiterClient: jc,
 		store:         store,
+		platformFeeBps:            configuredPlatformFeeBps, // Store configured value
+		platformFeeAccountAddress: configuredPlatformFeeAccountAddress, // Store configured value
 	}
 }
 
@@ -72,31 +85,31 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 }
 
 // PrepareSwap prepares an unsigned swap transaction and creates a trade record
-func (s *Service) PrepareSwap(ctx context.Context, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBps, fromAddress string) (string, error) {
+func (s *Service) PrepareSwap(ctx context.Context, params PrepareSwapRequestData) (string, error) {
 	// Parse and validate fromAddress (public key)
-	fromPubKey, err := solanago.PublicKeyFromBase58(fromAddress)
+	fromPubKey, err := solanago.PublicKeyFromBase58(params.FromAddress)
 	if err != nil {
 		return "", fmt.Errorf("invalid from address: %w", err)
 	}
 	log.Printf("✅ from address parsed: %s", fromPubKey)
 
 	// Fetch coin models to get their PKIDs
-	fromCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, fromCoinMintAddress)
+	fromCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, params.FromCoinMintAddress)
 	if err != nil {
-		return "", fmt.Errorf("failed to get fromCoin details for %s: %w", fromCoinMintAddress, err)
+		return "", fmt.Errorf("failed to get fromCoin details for %s: %w", params.FromCoinMintAddress, err)
 	}
-	toCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, toCoinMintAddress)
+	toCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, params.ToCoinMintAddress)
 	if err != nil {
-		return "", fmt.Errorf("failed to get toCoin details for %s: %w", toCoinMintAddress, err)
+		return "", fmt.Errorf("failed to get toCoin details for %s: %w", params.ToCoinMintAddress, err)
 	}
 
 	// 1. Use the TradeService's GetSwapQuote for all conversion and logic
-	tradeQuote, err := s.GetSwapQuote(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmount, slippageBps)
+	tradeQuote, err := s.GetSwapQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, params.InputAmount, params.SlippageBps)
 	if err != nil {
 		return "", fmt.Errorf("failed to get trade quote: %w", err)
 	}
 
-	unsignedTx, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey)
+	unsignedTx, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, s.platformFeeAccountAddress)
 	if err != nil {
 		return "", fmt.Errorf("failed to create swap transaction: %w", err)
 	}
@@ -110,7 +123,7 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinMintAddress, toCoinMi
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fee: %w", err)
 	}
-	amount, err := strconv.ParseFloat(inputAmount, 64)
+	amount, err := strconv.ParseFloat(params.InputAmount, 64)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse input amount: %w", err)
 	}
@@ -119,9 +132,9 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinMintAddress, toCoinMi
 	trade := &model.Trade{
 		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
 		UserID:              fromPubKey.String(), // Set the user_id to the wallet address
-		FromCoinMintAddress: fromCoinMintAddress,
+		FromCoinMintAddress: params.FromCoinMintAddress,
 		FromCoinPKID:        fromCoinModel.ID,
-		ToCoinMintAddress:   toCoinMintAddress,
+		ToCoinMintAddress:   params.ToCoinMintAddress,
 		ToCoinPKID:          toCoinModel.ID,
 		CoinSymbol:          fromCoinModel.Symbol, // Or determine based on context
 		Type:                "swap",
@@ -134,6 +147,41 @@ func (s *Service) PrepareSwap(ctx context.Context, fromCoinMintAddress, toCoinMi
 		Confirmations:       0,
 		Finalized:           false,
 	}
+
+	// Populate platform fee details
+	var actualPlatformFeeBpsFromQuote int = 0
+	if tradeQuote.Raw != nil {
+		var tempQuoteResp jupiter.QuoteResponse
+		if errUnmarshal := json.Unmarshal(tradeQuote.Raw, &tempQuoteResp); errUnmarshal == nil {
+			if tempQuoteResp.PlatformFee != nil {
+				actualPlatformFeeBpsFromQuote = tempQuoteResp.PlatformFee.FeeBps
+				if tempQuoteResp.PlatformFee.Amount != "" {
+					platformFeeAmount, pErr := strconv.ParseFloat(tempQuoteResp.PlatformFee.Amount, 64)
+					if pErr == nil {
+						trade.PlatformFeeAmount = platformFeeAmount
+					} else {
+						log.Printf("WARN: Failed to parse platform_fee_amount from quote: %v", pErr)
+					}
+				}
+			}
+		} else {
+			log.Printf("WARN: Failed to unmarshal tradeQuote.Raw in PrepareSwap for PlatformFee details: %v", errUnmarshal)
+		}
+	}
+
+	// Set PlatformFeePercent based on what was in the quote, or fallback to input if quote didn't specify
+	if actualPlatformFeeBpsFromQuote > 0 {
+		trade.PlatformFeePercent = float64(actualPlatformFeeBpsFromQuote) / 100.0
+	} else if s.platformFeeBps > 0 { // Use service's configured platformFeeBps
+		trade.PlatformFeePercent = float64(s.platformFeeBps) / 100.0
+		log.Printf("WARN: PlatformFee.FeeBps not present in Jupiter's quote response. Using configured FeeBps (%d) for PlatformFeePercent.", s.platformFeeBps)
+		// PlatformFeeAmount would be zero or unset if not in quote.PlatformFee.Amount
+	}
+
+	if s.platformFeeAccountAddress != "" { // Use service's configured address
+		trade.PlatformFeeDestination = s.platformFeeAccountAddress
+	}
+
 	if err := s.store.Trades().Create(ctx, trade); err != nil {
 		return "", fmt.Errorf("failed to create trade record: %w", err)
 	}
@@ -245,11 +293,12 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 
 	// Get quote from Jupiter with enhanced parameters
 	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
-		InputMint:   fromCoinMintAddress, // Use mint address
-		OutputMint:  toCoinMintAddress,   // Use mint address
-		Amount:      inputAmount,         // Amount is already in raw units (lamports for SOL)
-		SlippageBps: slippageBpsInt,
-		SwapMode:    "ExactIn",
+		InputMint:        fromCoinMintAddress, // Use mint address
+		OutputMint:       toCoinMintAddress,   // Use mint address
+		Amount:           inputAmount,         // Amount is already in raw units (lamports for SOL)
+		SlippageBps:      slippageBpsInt,
+		FeeBps:           s.platformFeeBps, // Use configured platform fee BPS
+		SwapMode:         "ExactIn",
 		// NOTE: Allow indirect routes for better prices
 		// NOTE: Indirect routes will have different feeMints
 		// I'm not sure how the indirect route will affect the transaction submission
