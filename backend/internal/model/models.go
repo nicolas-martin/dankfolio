@@ -87,6 +87,15 @@ type TradeRequest struct {
 	UnsignedTransaction string  `json:"unsigned_transaction"`
 }
 
+// PrepareSwapRequestData represents the data required to prepare a swap transaction
+type PrepareSwapRequestData struct {
+	FromCoinMintAddress string `json:"from_coin_mint_address"`
+	ToCoinMintAddress   string `json:"to_coin_mint_address"`
+	Amount              string `json:"amount"` // Amount in smallest unit (e.g. lamports for SOL)
+	SlippageBps         string `json:"slippage_bps"`
+	UserWalletAddress   string `json:"user_wallet_address"`
+}
+
 // FilterAndSortCoins filters and sorts a list of coins based on search criteria
 func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) []Coin {
 	// Filter coins based on query and tags

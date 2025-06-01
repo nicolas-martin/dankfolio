@@ -36,7 +36,7 @@ func main() {
 	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "")
 
 	// Initialize price service with clients
-	s := price.NewService(birdeyeClient, jupiterClient)
+	s := price.NewService(birdeyeClient, jupiterClient, nil)
 
 	mintAdd := "6pKHwNCpzgZuC9o5FzvCZkYSUGfQddhUYtMyDbEVpump"
 	from := time.Now().Add(-24 * time.Hour).Unix() // 24 hours ago

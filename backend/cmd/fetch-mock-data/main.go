@@ -66,7 +66,7 @@ func fetchAndStorePriceHistory(apiKey string) error {
 	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "")
 
 	// Initialize price service with clients
-	priceService := price.NewService(birdeyeClient, jupiterClient)
+	priceService := price.NewService(birdeyeClient, jupiterClient, nil)
 
 	now := time.Now().Unix()
 

@@ -80,12 +80,12 @@ func (s *tradeServiceHandler) PrepareSwap(ctx context.Context, req *connect.Requ
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and amount are required"))
 	}
 
-	params := trade.PrepareSwapRequestData{
+	params := model.PrepareSwapRequestData{
 		FromCoinMintAddress: req.Msg.FromCoinId,
 		ToCoinMintAddress:   req.Msg.ToCoinId,
-		InputAmount:         req.Msg.Amount,
+		Amount:              req.Msg.Amount,
 		SlippageBps:         req.Msg.SlippageBps,
-		FromAddress:         req.Msg.UserPublicKey,
+		UserWalletAddress:   req.Msg.UserPublicKey,
 	}
 
 	unsignedTx, err := s.tradeService.PrepareSwap(ctx, params)
