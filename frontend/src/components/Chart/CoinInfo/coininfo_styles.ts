@@ -38,6 +38,37 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurface,
 	},
 
+	// Description Section
+	descriptionSection: {
+		paddingBottom: 16,
+		borderBottomWidth: 1,
+		borderBottomColor: theme.colors.outlineVariant,
+	},
+	descriptionHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 12,
+		gap: 8,
+	},
+	descriptionIcon: {
+		width: 24,
+		height: 24,
+		borderRadius: 12,
+		backgroundColor: theme.colors.surfaceVariant, // Generic background
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	descriptionTitle: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+	},
+	descriptionText: {
+		fontSize: 14,
+		color: theme.colors.onSurfaceVariant,
+		lineHeight: 20,
+	},
+
 	// Tags Section
 	tagsSection: {
 		paddingBottom: 16,
@@ -75,7 +106,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 
 	// Links Section
 	linksSection: {
-		// No bottom border for last section
+		paddingBottom: 16,
+		borderBottomWidth: 1, // Ensure this is present if Date section follows
+		borderBottomColor: theme.colors.outlineVariant,
 	},
 	linksHeader: {
 		flexDirection: 'row',
@@ -136,6 +169,35 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		height: 1,
 		backgroundColor: theme.colors.outline,
 		marginHorizontal: 16,
+	},
+
+	// Date Section
+	dateSection: {
+		// No bottom border as it's the last section now
+	},
+	dateHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 12,
+		gap: 8,
+	},
+	dateIcon: {
+		width: 24,
+		height: 24,
+		borderRadius: 12,
+		backgroundColor: theme.colors.surfaceVariant, // Generic background
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	dateTitle: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+	},
+	dateValue: {
+		fontSize: 14,
+		fontWeight: 'normal',
+		color: theme.colors.onSurfaceVariant,
 	},
 
 	// Legacy styles for compatibility (kept minimal)

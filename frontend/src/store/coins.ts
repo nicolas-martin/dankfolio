@@ -94,18 +94,23 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		log.log(`[CoinStore] getCoinByID called for ${mintAddress} (forceRefresh: ${forceRefresh})`); // Changed to debug
 		log.log(`🪙 [CoinStore] Before getCoinByID(${mintAddress}, forceRefresh=${forceRefresh}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 		const state = get();
-		if (!forceRefresh && state.coinMap[mintAddress]) {
-			log.log("💰 [CoinStore] Found coin in state (cache hit):", {
+		const cachedCoin = state.coinMap[mintAddress];
+
+		if (!forceRefresh && cachedCoin && cachedCoin.description) { // Check for description
+			log.log("💰 [CoinStore] Found complete coin in state (cache hit):", {
 				mintAddress,
-				symbol: state.coinMap[mintAddress].symbol,
-				price: state.coinMap[mintAddress].price,
-				decimals: state.coinMap[mintAddress].decimals
+				symbol: cachedCoin.symbol,
+				price: cachedCoin.price,
+				decimals: cachedCoin.decimals,
+				hasDescription: !!cachedCoin.description
 			});
 			log.log(`🪙 [CoinStore] Cache hit getCoinByID(${mintAddress}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
-			return state.coinMap[mintAddress];
+			return cachedCoin;
 		}
 
-		log.log(`[CoinStore] Fetching coin ${mintAddress} from API...`); // Changed to debug
+		// If forceRefresh is true, or coin is not in map, or coin is in map but lacks description,
+		// then proceed to fetch from API.
+		log.log(`[CoinStore] Fetching coin ${mintAddress} from API (Reason: forceRefresh=${forceRefresh}, cacheMiss=${!cachedCoin}, incomplete=${!!cachedCoin && !cachedCoin.description}).`);
 		try {
 			const coin = await grpcApi.getCoinByID(mintAddress);
 			log.log("💰 [CoinStore] Fetched coin from API:", {
