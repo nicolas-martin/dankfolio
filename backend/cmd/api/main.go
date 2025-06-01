@@ -251,6 +251,8 @@ func main() {
 		priceService,
 		jupiterClient,
 		store,
+		0,
+		"",
 	)
 
 	walletService := wallet.New(solanaClient.GetRpcConnection(), store, coinService)

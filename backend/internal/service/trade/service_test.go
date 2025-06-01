@@ -50,7 +50,7 @@ func setupService(t *testing.T) (
 	mockStore := dbDataStoreMocks.NewMockStore(t)
 	mockTradeRepo := dbDataStoreMocks.NewMockRepository[model.Trade](t)
 
-	service := NewService(mockSolanaClient, mockCoinService, mockPriceService, mockJupiterClient, mockStore)
+	service := NewService(mockSolanaClient, mockCoinService, mockPriceService, mockJupiterClient, mockStore, 0, "")
 	return service, mockSolanaClient, mockCoinService, mockPriceService, mockJupiterClient, mockStore, mockTradeRepo
 }
 
@@ -193,7 +193,8 @@ func TestPrepareSwap(t *testing.T) {
 		mockPriceService.On("GetCoinPrices", ctx, []string{"feeCoinID"}).Return(map[string]float64{"feeCoinID": 0.5}, nil).Once()
 
 		expectedUnsignedTx := "unsigned_transaction_string"
-		mockJupiterClient.On("CreateSwapTransaction", ctx, mock.IsType([]byte{}), testUserPubKey).Return(expectedUnsignedTx, nil).Once()
+		// Add platformFeeAccountAddress (empty string for this test) to the mock call
+		mockJupiterClient.On("CreateSwapTransaction", ctx, mock.IsType([]byte{}), testUserPubKey, "").Return(expectedUnsignedTx, nil).Once()
 
 		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
 			return trade.FromCoinMintAddress == fromCoinMintAddress &&
@@ -207,7 +208,14 @@ func TestPrepareSwap(t *testing.T) {
 				trade.UnsignedTransaction == expectedUnsignedTx
 		})).Return(nil).Once()
 
-		unsignedTx, err := service.PrepareSwap(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmountStr, slippageBps, fromAddress)
+		reqData := model.PrepareSwapRequestData{
+			FromCoinMintAddress: fromCoinMintAddress,
+			ToCoinMintAddress:   toCoinMintAddress,
+			Amount:              inputAmountStr,
+			SlippageBps:         slippageBps,
+			UserWalletAddress:   fromAddress,
+		}
+		unsignedTx, err := service.PrepareSwap(ctx, reqData)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedUnsignedTx, unsignedTx)
@@ -221,7 +229,14 @@ func TestPrepareSwap(t *testing.T) {
 		service, _, mockCoinService, _, _, _, _ := setupService(t)
 		mockCoinService.On("GetCoinByMintAddress", ctx, fromCoinMintAddress).Return(nil, errors.New("fetch from_coin error")).Once()
 
-		_, err := service.PrepareSwap(ctx, fromCoinMintAddress, toCoinMintAddress, inputAmountStr, slippageBps, fromAddress)
+		reqData := model.PrepareSwapRequestData{
+			FromCoinMintAddress: fromCoinMintAddress,
+			ToCoinMintAddress:   toCoinMintAddress,
+			Amount:              inputAmountStr,
+			SlippageBps:         slippageBps,
+			UserWalletAddress:   fromAddress,
+		}
+		_, err := service.PrepareSwap(ctx, reqData)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get fromCoin details for "+fromCoinMintAddress)
 	})
