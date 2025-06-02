@@ -612,17 +612,10 @@ func generateHTMLTestPage(results []ValidationResult) error {
             </div>
             
             <div class="image-container">
-                {{if $result.IsValid}}
-                    <img src="{{$result.OriginalURI}}" 
+                    <img src="{{$result.StandardizedURL}}" 
                          alt="Image {{add $index 1}}" 
                          onload="this.parentElement.style.border='2px solid #28a745'"
-                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>{{$result.Status}}</div>'; this.parentElement.style.border='2px solid #dc3545'">
-                {{else}}
-                    <div class="image-placeholder">
-                        {{if eq $result.Status "redirect_attempted"}}🔄{{else}}❌{{end}} 
-                        Cannot load<br>{{$result.Status}}
-                    </div>
-                {{end}}
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>{{$result.StandardizedURL}}</div>'; this.parentElement.style.border='2px solid #dc3545'">
             </div>
             
             <div class="url-info">
