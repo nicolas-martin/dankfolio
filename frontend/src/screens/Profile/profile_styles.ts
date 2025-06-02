@@ -186,4 +186,103 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginTop: 40,
 		marginHorizontal: 20,
 	},
+
+	// Transactions Section
+	transactionsSection: {
+		// Consistent with tokensSection margin, or specific if needed
+		marginTop: 24,
+		// If sections have background/borders, add them here, e.g.:
+		// backgroundColor: theme.colors.surface,
+		// borderRadius: 12,
+		// padding: 16, // If card-like
+	},
+	transactionsHeader: { // Similar to tokensHeader
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 16, // Spacing before the list starts
+		// paddingHorizontal: 16, // If transactionsSection is card-like
+	},
+	transactionsTitle: { // Similar to tokensTitle
+		fontSize: 20,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+		marginLeft: 12, // Space from icon
+	},
+	transactionsListContainer: {
+		// If transactions are in a card, this might have a border or different bg
+		// For now, assumes items are directly under header
+	},
+	transactionItem: { // For react-native-paper List.Item style prop
+		paddingVertical: 10, // Reduced padding
+		paddingHorizontal: 0, // List.Item has its own padding, adjust as needed
+		borderBottomWidth: StyleSheet.hairlineWidth, // Thinner border
+		borderBottomColor: theme.colors.outlineVariant,
+		// backgroundColor: theme.colors.surface, // if items have distinct background
+		// borderRadius: 8, // if items are card-like
+		// marginBottom: 8, // if items are card-like and need spacing
+	},
+	transactionIconContainer: { // Holds the icon (Swap, Transfer)
+		width: 40,
+		height: 40,
+		borderRadius: 20, // Circular background for icon
+		backgroundColor: theme.colors.surfaceVariant, // A subtle background
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginRight: 12, // Space between icon and text
+	},
+	// transactionDetails: not directly used by List.Item, but concepts apply to content within
+	transactionInfoContainer: { // Replaces transactionTexts, used for title/subtitle block in List.Item
+		flex: 1, // Take remaining space
+		justifyContent: 'center',
+	},
+	transactionTitleText: { // For the main description "Swap X for Y"
+		fontSize: 15, // Slightly smaller
+		fontWeight: '500', // Medium weight
+		color: theme.colors.onSurface,
+		marginBottom: 3, // Space to subtitle
+	},
+	transactionSubtitleText: { // For the line with Date and Status
+		fontSize: 13,
+		color: theme.colors.onSurfaceVariant, // Muted color
+		flexDirection: 'row', // To allow status text to be part of it
+		alignItems: 'center',
+	},
+	transactionDate: { // Style for the date part of subtitle (if styled differently) - now part of transactionSubtitleText
+		// fontSize: 13, (already in subtitle)
+		// color: theme.colors.onSurfaceVariant, (already in subtitle)
+	},
+	transactionStatusTextPending: {
+		fontSize: 13,
+		color: theme.colors.warning, // Example: Orange/Yellow for pending
+		fontWeight: 'bold',
+		marginLeft: 4,
+	},
+	transactionStatusTextCompleted: {
+		fontSize: 13,
+		color: theme.colors.success, // Example: Green for completed
+		fontWeight: 'bold',
+		marginLeft: 4,
+	},
+	transactionStatusTextFailed: {
+		fontSize: 13,
+		color: theme.colors.error, // Example: Red for failed
+		fontWeight: 'bold',
+		marginLeft: 4,
+	},
+	// transactionAmountStatus: not directly used by List.Item's right prop if it's simple text
+	// statusDot: Can be used within transactionSubtitleText if preferred over colored text
+	loadingIndicator: {
+		marginVertical: 30, // More space for loading indicator
+	},
+	viewAllButton: { // For "View All Transactions"
+		marginTop: 12,
+		alignSelf: 'center', // Center the button
+	},
+	// Ensure empty state for transactions is consistent with other empty states
+	transactionEmptyStateContainer: { // Can reuse emptyStateContainer or make specific
+		...this.emptyStateContainer, // Inherit base empty state styles
+		paddingVertical: 40, // Adjust padding if needed
+	},
+	// Removed transactionDescription, transactionDate as they are now transactionTitleText and part of transactionSubtitleText
+	// Removed transactionDetails and transactionTexts as List.Item handles its internal layout
 });

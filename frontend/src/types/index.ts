@@ -92,3 +92,4 @@ export interface PriceData {
 
 // Re-export all types from other files
 export * from './trade';
+export * from './transactions';

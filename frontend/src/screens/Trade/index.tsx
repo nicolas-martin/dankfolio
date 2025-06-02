@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text, useTheme, Button, Icon, ProgressBar } from 'react-native-paper';
 import { useRoute, useNavigation, RouteProp, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './trade_styles';
 import { usePortfolioStore } from '@store/portfolio';
+import { useTransactionsStore } from '@/store/transactions'; // Added
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { RootStackParamList } from '@/types';
@@ -402,11 +404,18 @@ const Trade: React.FC = () => {
 		logger.info('[Trade] Cleaning up trade screen and resetting state after status modal close.');
 		setIsStatusModalVisible(false);
 		componentStopPolling();
+
+		if (pollingStatus === 'finalized' && wallet?.address) {
+			logger.info('[Trade] Refreshing portfolio and transactions after successful trade.');
+			usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
+			useTransactionsStore.getState().fetchRecentTransactions(wallet.address);
+		}
+
 		setFromAmount('');
 		setToAmount('');
 		setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
 		navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
-	}, [navigation, componentStopPolling, submittedTxHash, pollingStatus]);
+	}, [navigation, componentStopPolling, submittedTxHash, pollingStatus, wallet]); // Added wallet to dependencies
 
 	const handleSwapCoins = () => {
 		logger.breadcrumb({ category: 'trade', message: 'Pressed swap tokens button', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });

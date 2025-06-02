@@ -1,5 +1,6 @@
 import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
 import * as grpcModel from './grpc/model';
+import { Trade } from '../gen/dankfolio/v1/trade_pb';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import * as grpcUtils from './grpc/grpcUtils';
@@ -384,5 +385,56 @@ export const grpcApi: grpcModel.API = {
 		} catch (error) {
 			return grpcUtils.handleGrpcError(error, serviceName, methodName);
 		}
-	}
+	},
+
+	listTrades: async ({
+		userId,
+		limit = 10,
+		offset = 0,
+		sortBy = "created_at",
+		sortDesc = true,
+	}: {
+		userId: string;
+		limit?: number;
+		offset?: number;
+		sortBy?: string;
+		sortDesc?: boolean;
+	}): Promise<{ transactions: grpcModel.Transaction[]; totalCount: number }> => {
+		const serviceName = "TradeService";
+		const methodName = "listTrades";
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { userId, limit, offset, sortBy, sortDesc });
+
+			const response = await tradeClient.listTrades(
+				{
+					userId,
+					limit,
+					offset,
+					sortBy,
+					sortDesc,
+				},
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			const transactions = response.trades.map((trade: Trade) => ({
+				id: trade.id,
+				type: trade.type, // TODO: Map enum to string if necessary
+				fromCoinSymbol: trade.fromCoinId, // Placeholder
+				toCoinSymbol: trade.toCoinId, // Placeholder
+				amount: trade.amount,
+				status: trade.status, // TODO: Map enum to string if necessary
+				date: trade.createdAt?.toDate().toISOString() ?? "",
+				transactionHash: trade.transactionHash,
+			}));
+
+			return {
+				transactions,
+				totalCount: response.totalCount,
+			};
+		} catch (error) {
+			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		}
+	},
 };
