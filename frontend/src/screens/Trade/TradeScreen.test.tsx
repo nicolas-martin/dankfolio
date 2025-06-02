@@ -17,6 +17,9 @@ import * as TradeScripts from '../../__mocks__/screens/Trade/trade_scripts';
 // Mock Stores
 jest.mock('@store/portfolio');
 jest.mock('@store/coins');
+jest.mock('@store/transactions', () => ({ // Added
+	useTransactionsStore: jest.fn(),
+}));
 
 // Mock Navigation
 const mockNavigate = jest.fn();
@@ -159,16 +162,26 @@ describe('TradeScreen', () => {
 		jest.spyOn(console, 'error').mockImplementation(() => { });
 		jest.spyOn(console, 'warn').mockImplementation(() => { });
 
+		// Reset and setup store mocks
 		mockPortfolioStoreReturn.tokens = [mockFromPortfolioToken];
+		mockPortfolioStoreReturn.wallet = { address: 'test-wallet-address' }; // Ensure wallet is set for refresh calls
 		Object.values(mockPortfolioStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
+
+		const mockTransactionsStore = {
+			fetchRecentTransactions: jest.fn(),
+			// Add other state/functions if needed by the component, though not directly for this test
+		};
+		mocked(useTransactionsStore).mockReturnValue(mockTransactionsStore as any);
+
+
 		Object.values(mockCoinStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
 
 		mocked(usePortfolioStore).mockReturnValue(mockPortfolioStoreReturn);
 		mocked(useCoinStore).mockReturnValue(mockCoinStoreReturn);
 
+
 		// Default mock for getCoinByID
 		mockCoinStoreReturn.getCoinByID.mockImplementation(async (mintAddress: string, forceRefresh: boolean = false) => {
-			// console.log(`Mock getCoinByID called with: ${mintAddress}, forceRefresh: ${forceRefresh}`);
 			if (mintAddress === mockSolCoin.mintAddress) return { ...mockSolCoin, source: forceRefresh ? 'api' : 'cache' };
 			if (mintAddress === mockWenCoin.mintAddress) return { ...mockWenCoin, source: forceRefresh ? 'api' : 'cache' };
 			if (mintAddress === SOLANA_ADDRESS) {
@@ -194,6 +207,7 @@ describe('TradeScreen', () => {
 		});
 	});
 
+	// Keep this test
 	it('initializes correctly with initialFromCoin and initialToCoin, prioritizing cache', async () => {
 		(useRoute as jest.Mock).mockReturnValue({
 			key: 'TradeScreen-With-Initial-Coins',
@@ -510,5 +524,119 @@ describe('TradeScreen', () => {
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, false); // First attempt for SOL (cache)
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(SOLANA_ADDRESS, true);  // Second attempt for SOL (API)
 		expect(mockCoinStoreReturn.getCoinByID).toHaveBeenCalledWith(mockWenCoin.mintAddress, false); // For initialToCoin
+	});
+
+	describe('handleCloseStatusModal', () => {
+		const setupAndOpenStatusModal = async (getByTestId: any, fromAmount: string = '1') => {
+			// Set amount and trigger quote
+			const fromInput = getByTestId('token-selector-input-from');
+			fireEvent.changeText(fromInput, fromAmount);
+			await waitFor(() => expect(TradeScripts.fetchTradeQuote).toHaveBeenCalledTimes(1));
+
+			// Wait for loading to complete and open confirmation modal
+			await waitFor(() => {
+				const tradeButton = getByTestId('trade-button');
+				expect(tradeButton.props.accessibilityState.disabled).toBe(false);
+			});
+
+			// Trigger trade execution
+			fireEvent.press(getByTestId('trade-button'));
+
+			// Wait for confirmation modal to appear and confirm
+			const confirmationModal = await waitFor(() => getByTestId('mock-TradeConfirmation'));
+			await act(async () => { await confirmationModal.props.onConfirm(); });
+
+			// Wait for status modal to appear
+			const statusModal = await waitFor(() => getByTestId('mock-TradeStatusModal'));
+			expect(statusModal.props.isVisible).toBe(true);
+			return statusModal;
+		};
+
+		it('should refresh portfolio and transactions on successful trade (status finalized)', async () => {
+			const { getByTestId } = renderWithProvider(<TradeScreen />);
+			const statusModal = await setupAndOpenStatusModal(getByTestId);
+
+			// Simulate closing the modal after a finalized transaction
+			// We need to update the pollingStatus that handleCloseStatusModal reads.
+			// This is tricky because pollingStatus is internal state.
+			// The easiest way is to ensure executeTrade sets it to 'finalized' if the mock allows,
+			// or we assume that by the time onClose is called, it would be 'finalized'.
+			// For this test, we'll directly call onClose and assume the status was set.
+			// A more robust test might involve deeper component state mocking or integration.
+
+			// To simulate pollingStatus being 'finalized', we can mock executeTrade or pollTradeStatus
+			// to eventually call setPollingStatus('finalized')
+			// For now, let's ensure our store mocks are ready for the assertions.
+
+			// Set pollingStatus to 'finalized' directly in the component's state via a prop to the modal
+			// if the modal could influence it, or ensure our mock of `pollTradeStatus` sets it.
+			// Since we are calling onClose directly, we need to make sure the conditions inside it are met.
+			// The `pollingStatus` is read from the component's state.
+			// The `executeTrade` mock in `trade_scripts.ts` calls `setPollingStatus('finalized')`
+
+			// We need to ensure that executeTrade has completed and set the status to 'finalized'
+			// The mock for executeTrade in __mocks__/screens/Trade/trade_scripts.ts
+			// already sets pollingStatus to 'finalized' via the passed setPollingStatus.
+			await act(async () => {
+				statusModal.props.onClose(); // Call the onClose handler
+			});
+
+			expect(usePortfolioStore.getState().fetchPortfolioBalance).toHaveBeenCalledWith('test-wallet-address');
+			expect(useTransactionsStore().fetchRecentTransactions).toHaveBeenCalledWith('test-wallet-address');
+		});
+
+		it('should NOT refresh portfolio and transactions if status is not finalized', async () => {
+			// Mock executeTrade to result in a non-finalized status for this test case
+			(TradeScripts.executeTrade as jest.Mock).mockImplementation(
+				async (fromC, toC, fromAmt, slip, showTst, setLoad, setConfVis, setPollStat, setTxHash, setPollErr, setPollConf, setStatVis, startPollFn) => {
+					setLoad(true);
+					setConfVis(false);
+					setTxHash('mock_tx_hash_pending');
+					setPollStat('pending'); // Simulate a pending status
+					setStatVis(true);
+					showTst({ type: 'info', message: 'Trade submitted (pending)' });
+					// startPollFn('mock_tx_hash_pending'); // Don't necessarily start polling for this test
+				}
+			);
+
+			const { getByTestId } = renderWithProvider(<TradeScreen />);
+			const statusModal = await setupAndOpenStatusModal(getByTestId);
+
+			await act(async () => {
+				statusModal.props.onClose();
+			});
+
+			expect(usePortfolioStore.getState().fetchPortfolioBalance).not.toHaveBeenCalled();
+			expect(useTransactionsStore().fetchRecentTransactions).not.toHaveBeenCalled();
+		});
+
+		it('should NOT refresh if wallet address is missing', async () => {
+			mocked(usePortfolioStore).mockReturnValue({
+				...mockPortfolioStoreReturn,
+				wallet: null, // No wallet
+			});
+
+			// executeTrade should still set status to finalized for this test path
+			 (TradeScripts.executeTrade as jest.Mock).mockImplementation(
+				async (fromC, toC, fromAmt, slip, showTst, setLoad, setConfVis, setPollStat, setTxHash, setPollErr, setPollConf, setStatVis, startPollFn) => {
+					setLoad(true);
+					setConfVis(false);
+					setTxHash('mock_tx_hash_final_no_wallet');
+					setPollStat('finalized');
+					setStatVis(true);
+					showTst({ type: 'success', message: 'Trade successful' });
+				}
+			);
+
+			const { getByTestId } = renderWithProvider(<TradeScreen />);
+			const statusModal = await setupAndOpenStatusModal(getByTestId);
+
+			await act(async () => {
+				statusModal.props.onClose();
+			});
+
+			expect(usePortfolioStore.getState().fetchPortfolioBalance).not.toHaveBeenCalled();
+			expect(useTransactionsStore().fetchRecentTransactions).not.toHaveBeenCalled();
+		});
 	});
 });

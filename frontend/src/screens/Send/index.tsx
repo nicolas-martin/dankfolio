@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
+import { useTransactionsStore } from '@/store/transactions'; // Added
 import TokenSelector from 'components/Common/TokenSelector';
 import { useToast } from '@components/Common/Toast';
 import { SendTokensScreenProps } from './types';
@@ -187,10 +188,26 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const handleCloseStatusModal = () => {
 		logger.breadcrumb({ category: 'ui', message: 'Send status modal closed', data: { txHash: submittedTxHash, finalStatus: pollingStatus } });
 		setIsStatusModalVisible(false);
-		setPollingStatus('pending');
+		componentStopPolling(); // Explicitly stop polling to prevent orphaned timers.
+
+		if (pollingStatus === 'finalized' && wallet?.address) {
+			logger.info('[Send] Refreshing portfolio and transactions after successful send.');
+			usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
+			useTransactionsStore.getState().fetchRecentTransactions(wallet.address);
+		}
+
+		setPollingStatus('pending'); // Reset status for next time
 		setPollingConfirmations(0);
 		setPollingError(null);
 		setSubmittedTxHash(null);
+		// Reset form fields
+		setAmount('');
+		setRecipientAddress('');
+		// Potentially reset selectedToken to default if desired
+		// if (tokens.length > 0) {
+		// 	const solToken = getDefaultSolanaToken(tokens);
+		// 	if (solToken) setSelectedToken(solToken);
+		// }
 		navigation.goBack();
 	};
 

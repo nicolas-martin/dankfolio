@@ -12,6 +12,7 @@ import Navigation from '@components/Common/Navigation';
 import { theme as appTheme } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
+import { useTransactionsStore } from '@store/transactions'; // Added
 import { retrieveWalletFromStorage } from '@screens/WalletSetup/scripts';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
@@ -86,7 +87,13 @@ const App: React.FC = () => {
 
 	const handleWalletSetupComplete = async (newKeypair: Keypair) => {
 		logger.breadcrumb({ message: 'App: Wallet setup complete, navigating to main app', category: 'app_lifecycle' });
-		await setWallet(newKeypair.publicKey.toBase58());
+		const newPublicKey = newKeypair.publicKey.toBase58();
+		await setWallet(newPublicKey);
+
+		logger.info("App: Fetching initial transactions and balance after new wallet setup.", { newPublicKey });
+		useTransactionsStore.getState().fetchRecentTransactions(newPublicKey);
+		usePortfolioStore.getState().fetchPortfolioBalance(newPublicKey);
+
 		setNeedsWalletSetup(false);
 	};
 
@@ -129,6 +136,11 @@ const App: React.FC = () => {
 					logger.breadcrumb({ message: 'App: Existing wallet found', category: 'app_lifecycle' });
 					Sentry.setUser({ id: publicKey }); // Set user context on initial load
 					await setWallet(publicKey);
+
+					logger.info("App: Fetching initial transactions and balance for existing wallet.", { publicKey });
+					useTransactionsStore.getState().fetchRecentTransactions(publicKey);
+					usePortfolioStore.getState().fetchPortfolioBalance(publicKey);
+
 					setNeedsWalletSetup(false);
 				} else {
 					logger.info("No existing wallet found, showing setup screen.");
