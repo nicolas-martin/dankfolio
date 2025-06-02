@@ -49,7 +49,8 @@ const mockGrpcApi: API = {
 	getProxiedImage: jest.fn().mockResolvedValue({ imageData: 'mockImageData' }),
 	searchCoins: jest.fn().mockResolvedValue([{ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' }]),
 	searchCoinByMint: jest.fn().mockResolvedValue({ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' }),
-	prepareSwap: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockUnsignedSwapTx' }) // Added missing prepareSwap
+	prepareSwap: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockUnsignedSwapTx' }), // Added missing prepareSwap
+	listTrades: jest.fn().mockResolvedValue({ transactions: [], totalCount: 0 }) // Added missing listTrades
 };
 
 jest.mock('@/services/grpcApi', () => ({
