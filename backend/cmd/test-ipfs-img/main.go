@@ -133,9 +133,10 @@ func StandardizeIPFSURL(iconUrlInput string) string {
 func main() {
 	urisToProcess := os.Args[1:]
 	if len(urisToProcess) == 0 {
-		log.Println("No URIs provided via command line, using predefined list.")
 		urisToProcess = predefinedURIs
 	}
+
+	fmt.Printf("🔍 Testing %d URIs...\n\n", len(urisToProcess))
 
 	var wg sync.WaitGroup
 	uriChan := make(chan string, len(urisToProcess))
@@ -171,62 +172,50 @@ func main() {
 	if err := generateHTMLTestPage(results); err != nil {
 		log.Printf("Error generating HTML test page: %v", err)
 	} else {
-		fmt.Println("\n🌐 HTML test page generated: ipfs-image-test.html")
+		fmt.Println("\n🌐 HTML test page generated: cmd/test-ipfs-img/ipfs-image-test.html")
 		fmt.Println("   Open this file in a browser to visually test image loading")
 	}
-
-	log.Println("Processing complete.")
 }
 
 func worker(wg *sync.WaitGroup, id int, uriChan <-chan string, resultsChan chan<- ValidationResult) {
 	defer wg.Done()
-	log.Printf("Worker %d started", id)
-
-	// Note: offchainClient itself has specific redirect handling for VerifyDirectImageAccess
 
 	for uri := range uriChan {
-		log.Printf("Worker %d: Processing URI: %s", id, uri)
-
 		standardizedURL := StandardizeIPFSURL(uri)
 		var statusForStandardization string
 
-		if standardizedURL == "" && uri != "" { // URI was not empty but standardization resulted in empty (e.g. bad ipfs:// or ar://)
+		if standardizedURL == "" && uri != "" {
 			statusForStandardization = "standardization_failed_empty_url"
-			log.Printf("Worker %d: Standardization for %s resulted in empty URL.", id, uri)
 		} else if standardizedURL != uri {
-			log.Printf("Worker %d: Standardized URI %s to %s", id, uri, standardizedURL)
-		} else {
-			// No change or not applicable for standardization (e.g. HTTP URL)
-			// No specific log here unless we want to be more verbose
+			// Standardization occurred
 		}
 
 		if statusForStandardization != "" {
-			resultsChan <- ValidationResult{
+			result := ValidationResult{
 				OriginalURI:     uri,
-				StandardizedURL: standardizedURL, // Will be empty
+				StandardizedURL: standardizedURL,
 				IsValid:         false,
 				Status:          statusForStandardization,
 				Error:           "Standardization resulted in an empty or invalid URL",
 			}
+			fmt.Printf("❌ %s -> %s\n", truncateString(uri, 60), statusForStandardization)
+			resultsChan <- result
 			continue
 		}
 
-		// If standardization produced an empty URL from a non-empty input, it's an issue.
-		// However, if the original URI was already empty, StandardizeIPFSURL returns empty, which is fine.
-		// We must ensure VerifyDirectImageAccess is not called with an empty URL if the original was not empty.
-		if standardizedURL == "" { // This check is after the statusForStandardization block.
-			// This means original uri must have been empty.
-			resultsChan <- ValidationResult{
-				OriginalURI:     uri, // will be ""
+		if standardizedURL == "" {
+			result := ValidationResult{
+				OriginalURI:     uri,
 				StandardizedURL: "",
 				IsValid:         false,
 				Status:          "empty_original_uri",
 				Error:           "Original URI was empty",
 			}
+			fmt.Printf("❌ %s -> empty URI\n", truncateString(uri, 60))
+			resultsChan <- result
 			continue
 		}
 
-		log.Printf("Worker %d: Verifying direct access for %s (Original: %s)", id, standardizedURL, uri)
 		isValid, reasonOrURL, err := VerifyDirectImageAccess(context.Background(), standardizedURL)
 
 		result := ValidationResult{
@@ -237,18 +226,17 @@ func worker(wg *sync.WaitGroup, id int, uriChan <-chan string, resultsChan chan<
 		}
 		if err != nil {
 			result.Error = err.Error()
-			log.Printf("Worker %d: Verification for %s (orig: %s) failed. Valid: %t, Reason: %s, Error: %s", id, standardizedURL, uri, isValid, reasonOrURL, err.Error())
-		} else {
-			if isValid {
-				result.Status = "valid_image"
-				log.Printf("Worker %d: Verification for %s (orig: %s) successful. Valid: %t, Status: %s", id, standardizedURL, uri, isValid, result.Status)
-			} else {
-				log.Printf("Worker %d: Verification for %s (orig: %s) returned not valid. Reason: %s", id, standardizedURL, uri, reasonOrURL)
-			}
 		}
+
+		// Print simple result line
+		if isValid {
+			fmt.Printf("✅ %s -> Valid\n", truncateString(uri, 60))
+		} else {
+			fmt.Printf("❌ %s -> %s\n", truncateString(uri, 60), formatStatus(reasonOrURL))
+		}
+
 		resultsChan <- result
 	}
-	log.Printf("Worker %d finished", id)
 }
 
 func printResultsTable(results []ValidationResult) {
@@ -349,31 +337,21 @@ func printSummary(results []ValidationResult) {
 
 	total := len(results)
 	valid := 0
-	statusCounts := make(map[string]int)
 
 	for _, result := range results {
 		if result.IsValid {
 			valid++
 		}
-		statusCounts[result.Status]++
 	}
 
 	fmt.Printf("Total URIs processed: %d\n", total)
 	fmt.Printf("Valid images: %d (%.1f%%)\n", valid, float64(valid)/float64(total)*100)
 	fmt.Printf("Invalid images: %d (%.1f%%)\n", total-valid, float64(total-valid)/float64(total)*100)
-
-	fmt.Println("\nStatus breakdown:")
-	for status, count := range statusCounts {
-		percentage := float64(count) / float64(total) * 100
-		fmt.Printf("  %s: %d (%.1f%%)\n", formatStatus(status), count, percentage)
-	}
 }
 
 // VerifyDirectImageAccess checks if a URL points directly to an image without redirects
 // and has a common image content type.
 func VerifyDirectImageAccess(ctx context.Context, urlStr string) (bool, string, error) {
-	log.Printf("🛡️ VerifyDirectImageAccess: Validating URL for direct image access: %s", urlStr)
-
 	// Create a new HTTP client configured to not follow redirects
 	noRedirectClient := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -384,7 +362,6 @@ func VerifyDirectImageAccess(ctx context.Context, urlStr string) (bool, string, 
 
 	req, err := http.NewRequestWithContext(ctx, "HEAD", urlStr, nil)
 	if err != nil {
-		log.Printf("❌ VerifyDirectImageAccess: Failed to create request for %s: %v", urlStr, err)
 		return false, "request_creation_failed", fmt.Errorf("failed to create request for %s: %w", urlStr, err)
 	}
 	// Set a generic User-Agent. Consider making this configurable or more specific.
@@ -396,7 +373,6 @@ func VerifyDirectImageAccess(ctx context.Context, urlStr string) (bool, string, 
 		// Check if the error is due to the redirect policy
 		// url.Error is part of "net/url"
 		if urlErr, ok := err.(*url.Error); ok && urlErr.Err == http.ErrUseLastResponse {
-			log.Printf("⚠️ VerifyDirectImageAccess: Redirect attempted for %s", urlStr)
 			location := ""
 			// Ensure resp and resp.Header are not nil before trying to access Location.
 			// This is important because the error might occur before a response is fully received.
@@ -409,12 +385,8 @@ func VerifyDirectImageAccess(ctx context.Context, urlStr string) (bool, string, 
 					resp.Body.Close()
 				}
 			}
-			if location != "" {
-				log.Printf("Redirect location: %s", location)
-			}
 			return false, "redirect_attempted", fmt.Errorf("redirect attempted for %s (Location: %s)", urlStr, location)
 		}
-		log.Printf("❌ VerifyDirectImageAccess: HTTP request failed for %s: %v", urlStr, err)
 		return false, "network_error", fmt.Errorf("http request failed for %s: %w", urlStr, err)
 	}
 	defer resp.Body.Close()
@@ -426,13 +398,11 @@ func VerifyDirectImageAccess(ctx context.Context, urlStr string) (bool, string, 
 	// (e.g. if the redirect is malformed or server closes connection weirdly after 3xx).
 	if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
 		location := resp.Header.Get("Location")
-		log.Printf("⚠️ VerifyDirectImageAccess: Redirect status code %d received for %s (Location: %s)", resp.StatusCode, urlStr, location)
 		// Using "redirect_attempted" for consistency with the error path.
 		return false, "redirect_attempted", fmt.Errorf("redirect status code %d for %s (Location: %s)", resp.StatusCode, urlStr, location)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("❌ VerifyDirectImageAccess: Non-200 status for %s: %d", urlStr, resp.StatusCode)
 		return false, "non_200_status", fmt.Errorf("non-200 status for %s: %d", urlStr, resp.StatusCode)
 	}
 
@@ -449,11 +419,9 @@ func VerifyDirectImageAccess(ctx context.Context, urlStr string) (bool, string, 
 	}
 
 	if !allowedContentTypes[normalizedContentType] {
-		log.Printf("❌ VerifyDirectImageAccess: Non-image content type for %s: %s (Normalized: %s)", urlStr, contentType, normalizedContentType)
 		return false, "non_image_content_type", fmt.Errorf("non-image content type for %s: %s", urlStr, contentType)
 	}
 
-	log.Printf("✅ VerifyDirectImageAccess: Successfully validated direct image access for %s (Content-Type: %s)", urlStr, contentType)
 	return true, urlStr, nil
 }
 
