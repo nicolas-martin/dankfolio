@@ -188,9 +188,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const handleCloseStatusModal = () => {
 		logger.breadcrumb({ category: 'ui', message: 'Send status modal closed', data: { txHash: submittedTxHash, finalStatus: pollingStatus } });
 		setIsStatusModalVisible(false);
-		// componentStopPolling(); // Call stopPolling if it's defined and needed here. It seems to be missing.
-								// Assuming stopPolling is implicitly handled or not strictly needed before goBack for Send.
-								// If it is needed, it should be called: componentStopPolling();
+		componentStopPolling(); // Explicitly stop polling to prevent orphaned timers.
 
 		if (pollingStatus === 'finalized' && wallet?.address) {
 			logger.info('[Send] Refreshing portfolio and transactions after successful send.');
