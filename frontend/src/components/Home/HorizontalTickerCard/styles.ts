@@ -38,7 +38,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
         textAlign: 'center',
         marginTop: 4,
     },
-    changePositive: { color: '#2E7D32' }, // Consider theme colors
-    changeNegative: { color: '#D32F2F' }, // Consider theme colors
+    changePositive: { color: theme.colors.success }, // Updated to use theme color token
+    changeNegative: { color: theme.colors.error }, // Updated to use theme color token
     changeNeutral: { color: theme.colors.onSurfaceVariant }
 });
