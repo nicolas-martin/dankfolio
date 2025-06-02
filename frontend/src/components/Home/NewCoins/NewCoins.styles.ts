@@ -32,14 +32,14 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
         paddingRight: 4,
     },
     cardWrapper: {
-        marginRight: 8, // theme.spacing.sm
-        width: 150, // Ensure this width accommodates CoinCard and the text below
+        marginRight: 8,
+        width: 140, // Adjusted width
         alignItems: 'center', // Center the timeAgoText below the card
     },
     timeAgoText: {
-        fontSize: 12,
+        fontSize: 11, // Adjusted font size
         color: theme.colors.onSurfaceVariant,
-        marginTop: 4, // theme.spacing.xs
+        marginTop: 3, // Adjusted margin
         textAlign: 'center',
     },
     loadingContainer: {
