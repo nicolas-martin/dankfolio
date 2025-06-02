@@ -180,9 +180,17 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
 	}
 
-	// Convert NewTokenInfo to CoinListInfo for compatibility
+	// Convert NewTokenInfo to CoinListInfo for compatibility, preserving the CreatedAt timestamp
 	coins := make([]CoinListInfo, len(newTokens))
 	for i, newToken := range newTokens {
+		// Parse the CreatedAt timestamp from the Jupiter API response
+		var createdAtTime time.Time
+		if newToken.CreatedAt != "" {
+			unixTimestamp, err := strconv.ParseInt(newToken.CreatedAt, 10, 64)
+			log.Printf("⚠️ Failed to parse Jupiter CreatedAt timestamp for %s: %v", newToken.Mint, err)
+			createdAtTime = time.Unix(unixTimestamp, 0)
+		}
+
 		coins[i] = CoinListInfo{
 			Address:     newToken.Mint, // Map mint to address
 			ChainID:     101,           // Solana mainnet
@@ -191,9 +199,9 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 			Symbol:      newToken.Symbol,
 			LogoURI:     newToken.LogoURI, // Map logo_uri to logoURI
 			Extensions:  make(map[string]any),
-			DailyVolume: 0,          // Not available in new tokens endpoint
-			Tags:        []string{}, // Not available in new tokens endpoint
-			CreatedAt:   time.Now(), // Use current time as fallback
+			DailyVolume: 0,             // Not available in new tokens endpoint
+			Tags:        []string{},    // Not available in new tokens endpoint
+			CreatedAt:   createdAtTime, // Use the properly parsed timestamp
 		}
 	}
 

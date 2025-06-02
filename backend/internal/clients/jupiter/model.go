@@ -155,13 +155,19 @@ func (t *CoinListInfo) ToModelCoin() *model.Coin {
 
 // ToRawCoin converts CoinListInfo to model.RawCoin
 func (t *CoinListInfo) ToRawCoin() *model.RawCoin {
+	var jupiterCreatedAtTime *time.Time
+	if !t.CreatedAt.IsZero() {
+		jupiterCreatedAtTime = &t.CreatedAt
+	}
+
 	return &model.RawCoin{
-		MintAddress: t.Address,
-		Name:        t.Name,
-		Symbol:      t.Symbol,
-		Decimals:    t.Decimals,
-		LogoUrl:     t.LogoURI,
-		UpdatedAt:   time.Now().Format(time.RFC3339),
+		MintAddress:      t.Address,
+		Name:             t.Name,
+		Symbol:           t.Symbol,
+		Decimals:         t.Decimals,
+		LogoUrl:          t.LogoURI,
+		UpdatedAt:        time.Now().Format(time.RFC3339),
+		JupiterCreatedAt: jupiterCreatedAtTime,
 	}
 }
 

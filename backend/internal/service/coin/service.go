@@ -217,7 +217,6 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 		rawCoin.LogoUrl, // Pass rawCoin.LogoUrl as the initialIconURL
 		0.0,             // Pass 0.0 for initialVolume, EnrichCoinData will fetch it
 	)
-
 	if err != nil {
 		slog.Error("Enrichment from raw_coin failed", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
 		return nil, fmt.Errorf("failed to enrich raw_coin %s: %w", rawCoin.MintAddress, err)
@@ -485,7 +484,6 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	}
 
 	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("fetched_count", len(resp.Coins)))
-
 
 	if len(resp.Coins) == 0 {
 		slog.Info("No new coins to process from Jupiter.")
