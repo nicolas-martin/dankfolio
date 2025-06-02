@@ -133,6 +133,30 @@ export interface PrepareSwapRequest {
 	userPublicKey: string;
 }
 
+export interface Transaction {
+	id: string;
+	type: 'SWAP' | 'TRANSFER' | 'UNKNOWN';
+	fromCoinSymbol: string;
+	toCoinSymbol: string;
+	amount: number;
+	status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN';
+	date: string;
+	transactionHash: string;
+}
+
+export interface ListTradesRequest {
+	userId: string;
+	limit?: number;
+	offset?: number;
+	sortBy?: string;
+	sortDesc?: boolean;
+}
+
+export interface ListTradesResponse {
+	transactions: Transaction[];
+	totalCount: number;
+}
+
 export interface API {
 	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
 	getCoinByID: (mintAddress: string) => Promise<Coin>;
@@ -149,6 +173,7 @@ export interface API {
 	createWallet: () => Promise<CreateWalletResponse>;
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
 	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string }>;
+	listTrades: (params: ListTradesRequest) => Promise<ListTradesResponse>;
 }
 
 export interface GetProxiedImageResponse {

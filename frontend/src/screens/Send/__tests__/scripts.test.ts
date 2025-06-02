@@ -46,17 +46,20 @@ describe('validateForm', () => {
 		// Initialize with a valid selected token
 		mockSelectedToken = {
 			mintAddress: 'solanaMintAddress',
-			address: 'tokenAccountAddress',
 			amount: 100, // User has 100 tokens
-			decimals: 9,
+			price: 100,
+			value: 10000,
 			coin: { // Basic coin object
 				mintAddress: 'solanaMintAddress',
 				name: 'Solana',
 				symbol: 'SOL',
-				logoURI: 'solana_logo_uri',
-				pythSymbol: 'Crypto.SOL/USD',
+				resolvedIconUrl: 'solana_logo_uri',
 				coingeckoId: 'solana',
 				decimals: 9,
+				description: 'Solana blockchain',
+				tags: ['layer-1'],
+				price: 100,
+				dailyVolume: 1000000,
 			}
 		};
 	});
@@ -150,6 +153,7 @@ describe('validateForm', () => {
 
 	// Scenario: Existing validations - Invalid amount (<=0)
 	test('should return error for invalid amount (zero)', async () => {
+		mockedValidateSolanaAddress.mockResolvedValue(true); // Address validation should pass
 		mockFormData.amount = '0';
 		const result = await validateForm(mockFormData, mockSelectedToken);
 		expect(result).toEqual({
@@ -162,6 +166,7 @@ describe('validateForm', () => {
 	});
 
 	test('should return error for invalid amount (negative)', async () => {
+		mockedValidateSolanaAddress.mockResolvedValue(true); // Address validation should pass
 		mockFormData.amount = '-1';
 		const result = await validateForm(mockFormData, mockSelectedToken);
 		expect(result).toEqual({
@@ -173,6 +178,7 @@ describe('validateForm', () => {
 
 	// Scenario: Existing validations - Missing token selection
 	test('should return error if no token is selected', async () => {
+		mockedValidateSolanaAddress.mockResolvedValue(true); // Address validation should pass
 		mockFormData.selectedTokenMint = '';
 		const result = await validateForm(mockFormData, mockSelectedToken);
 		expect(result).toEqual({

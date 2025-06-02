@@ -393,13 +393,7 @@ export const grpcApi: grpcModel.API = {
 		offset = 0,
 		sortBy = "created_at",
 		sortDesc = true,
-	}: {
-		userId: string;
-		limit?: number;
-		offset?: number;
-		sortBy?: string;
-		sortDesc?: boolean;
-	}): Promise<{ transactions: grpcModel.Transaction[]; totalCount: number }> => {
+	}: grpcModel.ListTradesRequest): Promise<grpcModel.ListTradesResponse> => {
 		const serviceName = "TradeService";
 		const methodName = "listTrades";
 		try {
@@ -418,16 +412,27 @@ export const grpcApi: grpcModel.API = {
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
-			const transactions = response.trades.map((trade: Trade) => ({
-				id: trade.id,
-				type: tradeTypeMapping[trade.type] || "UNKNOWN", // Map enum to string
-				fromCoinSymbol: trade.fromCoinId, // Placeholder
-				toCoinSymbol: trade.toCoinId, // Placeholder
-				amount: trade.amount,
-				status: tradeStatusMapping[trade.status] || "UNKNOWN", // Map enum to string
-				date: trade.createdAt?.toDate().toISOString() ?? "",
-				transactionHash: trade.transactionHash,
-			}));
+			const transactions: grpcModel.Transaction[] = response.trades.map((trade: Trade) => {
+				const type: 'SWAP' | 'TRANSFER' | 'UNKNOWN' = 
+					trade.type === 'SWAP' ? 'SWAP' :
+					trade.type === 'TRANSFER' ? 'TRANSFER' : 'UNKNOWN';
+				
+				const status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN' = 
+					trade.status === 'PENDING' ? 'PENDING' :
+					trade.status === 'COMPLETED' ? 'COMPLETED' :
+					trade.status === 'FAILED' ? 'FAILED' : 'UNKNOWN';
+
+				return {
+					id: trade.id,
+					type,
+					fromCoinSymbol: trade.fromCoinId, // Placeholder
+					toCoinSymbol: trade.toCoinId, // Placeholder
+					amount: trade.amount,
+					status,
+					date: trade.createdAt ? new Date(Number(trade.createdAt.seconds) * 1000).toISOString() : "",
+					transactionHash: trade.transactionHash,
+				};
+			});
 
 			return {
 				transactions,

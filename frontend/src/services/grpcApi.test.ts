@@ -1,150 +1,148 @@
 import { grpcApi } from './grpcApi';
 import { tradeClient } from './grpc/apiClient';
-import { Trade, ListTradesResponse as GrpcListTradesResponse } from '../gen/dankfolio/v1/trade_pb';
-import { Timestamp } from '@bufbuild/protobuf/wkt';
 import * as grpcUtils from './grpc/grpcUtils';
 
 // Mock the tradeClient
 jest.mock('./grpc/apiClient', () => ({
-  ...jest.requireActual('./grpc/apiClient'), // Import and retain other client exports
-  tradeClient: {
-    listTrades: jest.fn(),
-  },
+	...jest.requireActual('./grpc/apiClient'), // Import and retain other client exports
+	tradeClient: {
+		listTrades: jest.fn(),
+	},
 }));
 
 // Mock grpcUtils to spy on handleGrpcError and prevent logging during tests
 jest.mock('./grpc/grpcUtils', () => ({
-  ...jest.requireActual('./grpc/grpcUtils'),
-  handleGrpcError: jest.fn((error, serviceName, methodName) => {
-    // In a real test, you might want to throw a specific error or return a value
-    console.error(`Mocked handleGrpcError called for ${serviceName}.${methodName}:`, error.message);
-    throw error; // Re-throw by default to simulate error propagation
-  }),
-  logRequest: jest.fn(),
-  logResponse: jest.fn(),
-  getRequestHeaders: jest.fn().mockReturnValue(new Headers()),
+	...jest.requireActual('./grpc/grpcUtils'),
+	handleGrpcError: jest.fn((error, serviceName, methodName) => {
+		// In a real test, you might want to throw a specific error or return a value
+		console.error(`Mocked handleGrpcError called for ${serviceName}.${methodName}:`, error.message);
+		throw error; // Re-throw by default to simulate error propagation
+	}),
+	logRequest: jest.fn(),
+	logResponse: jest.fn(),
+	getRequestHeaders: jest.fn().mockReturnValue(new Headers()),
 }));
 
 describe('grpcApi.listTrades', () => {
-  const mockUserId = 'test-user-123';
+	const mockUserId = 'test-user-123';
 
-  beforeEach(() => {
-    // Clear mock call history before each test
-    (tradeClient.listTrades as jest.Mock).mockClear();
-    (grpcUtils.handleGrpcError as jest.Mock).mockClear();
-  });
+	beforeEach(() => {
+		// Clear mock call history before each test
+		(tradeClient.listTrades as jest.Mock).mockClear();
+		(grpcUtils.handleGrpcError as jest.Mock).mockClear();
+	});
 
-  it('should call tradeClient.listTrades with correct default parameters', async () => {
-    (tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-      new GrpcListTradesResponse({ trades: [], totalCount: 0 })
-    );
+	it('should call tradeClient.listTrades with correct default parameters', async () => {
+		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
+			new GrpcListTradesResponse({ trades: [], totalCount: 0 })
+		);
 
-    await grpcApi.listTrades({ userId: mockUserId });
+		await grpcApi.listTrades({ userId: mockUserId });
 
-    expect(tradeClient.listTrades).toHaveBeenCalledWith(
-      {
-        userId: mockUserId,
-        limit: 10, // default
-        offset: 0, // default
-        sortBy: 'created_at', // default
-        sortDesc: true, // default
-      },
-      { headers: expect.any(Headers) }
-    );
-  });
+		expect(tradeClient.listTrades).toHaveBeenCalledWith(
+			{
+				userId: mockUserId,
+				limit: 10, // default
+				offset: 0, // default
+				sortBy: 'created_at', // default
+				sortDesc: true, // default
+			},
+			{ headers: expect.any(Headers) }
+		);
+	});
 
-  it('should call tradeClient.listTrades with provided parameters', async () => {
-    (tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-      new GrpcListTradesResponse({ trades: [], totalCount: 0 })
-    );
+	it('should call tradeClient.listTrades with provided parameters', async () => {
+		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
+			new GrpcListTradesResponse({ trades: [], totalCount: 0 })
+		);
 
-    const params = {
-      userId: mockUserId,
-      limit: 20,
-      offset: 5,
-      sortBy: 'amount',
-      sortDesc: false,
-    };
-    await grpcApi.listTrades(params);
+		const params = {
+			userId: mockUserId,
+			limit: 20,
+			offset: 5,
+			sortBy: 'amount',
+			sortDesc: false,
+		};
+		await grpcApi.listTrades(params);
 
-    expect(tradeClient.listTrades).toHaveBeenCalledWith(
-      {
-        userId: mockUserId,
-        limit: 20,
-        offset: 5,
-        sortBy: 'amount',
-        sortDesc: false,
-      },
-      { headers: expect.any(Headers) }
-    );
-  });
+		expect(tradeClient.listTrades).toHaveBeenCalledWith(
+			{
+				userId: mockUserId,
+				limit: 20,
+				offset: 5,
+				sortBy: 'amount',
+				sortDesc: false,
+			},
+			{ headers: expect.any(Headers) }
+		);
+	});
 
-  it('should map gRPC response to frontend Transaction structure', async () => {
-    const mockDate = new Date();
-    const mockTimestamp = Timestamp.fromDate(mockDate);
+	it('should map gRPC response to frontend Transaction structure', async () => {
+		const mockDate = new Date();
+		const mockTimestamp = Timestamp.fromDate(mockDate);
 
-    const mockGrpcTrades = [
-      new Trade({
-        id: 'trade1',
-        userId: mockUserId,
-        fromCoinId: 'BTC',
-        toCoinId: 'ETH',
-        amount: '1.5',
-        type: 1, // Assuming 1 maps to a certain type, e.g., SWAP
-        status: 2, // Assuming 2 maps to a certain status, e.g., COMPLETED
-        transactionHash: 'txHash123',
-        createdAt: mockTimestamp,
-      }),
-    ];
-    (tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-      new GrpcListTradesResponse({ trades: mockGrpcTrades, totalCount: 1 })
-    );
+		const mockGrpcTrades = [
+			new Trade({
+				id: 'trade1',
+				userId: mockUserId,
+				fromCoinId: 'BTC',
+				toCoinId: 'ETH',
+				amount: '1.5',
+				type: 1, // Assuming 1 maps to a certain type, e.g., SWAP
+				status: 2, // Assuming 2 maps to a certain status, e.g., COMPLETED
+				transactionHash: 'txHash123',
+				createdAt: mockTimestamp,
+			}),
+		];
+		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
+			new GrpcListTradesResponse({ trades: mockGrpcTrades, totalCount: 1 })
+		);
 
-    const result = await grpcApi.listTrades({ userId: mockUserId });
+		const result = await grpcApi.listTrades({ userId: mockUserId });
 
-    expect(result.transactions).toHaveLength(1);
-    expect(result.totalCount).toBe(1);
-    expect(result.transactions[0]).toEqual({
-      id: 'trade1',
-      type: 1, // Raw enum value, as per current implementation
-      fromCoinSymbol: 'BTC', // Placeholder
-      toCoinSymbol: 'ETH', // Placeholder
-      amount: '1.5',
-      status: 2, // Raw enum value
-      date: mockDate.toISOString(),
-      transactionHash: 'txHash123',
-    });
-  });
+		expect(result.transactions).toHaveLength(1);
+		expect(result.totalCount).toBe(1);
+		expect(result.transactions[0]).toEqual({
+			id: 'trade1',
+			type: 1, // Raw enum value, as per current implementation
+			fromCoinSymbol: 'BTC', // Placeholder
+			toCoinSymbol: 'ETH', // Placeholder
+			amount: '1.5',
+			status: 2, // Raw enum value
+			date: mockDate.toISOString(),
+			transactionHash: 'txHash123',
+		});
+	});
 
-  it('should handle empty trades response', async () => {
-    (tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-      new GrpcListTradesResponse({ trades: [], totalCount: 0 })
-    );
-    const result = await grpcApi.listTrades({ userId: mockUserId });
-    expect(result.transactions).toEqual([]);
-    expect(result.totalCount).toBe(0);
-  });
+	it('should handle empty trades response', async () => {
+		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
+			new GrpcListTradesResponse({ trades: [], totalCount: 0 })
+		);
+		const result = await grpcApi.listTrades({ userId: mockUserId });
+		expect(result.transactions).toEqual([]);
+		expect(result.totalCount).toBe(0);
+	});
 
-  it('should handle date conversion for trades without createdAt', async () => {
-    const mockGrpcTrades = [
-      new Trade({
-        id: 'trade2',
-        // No createdAt timestamp
-      }),
-    ];
-    (tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-      new GrpcListTradesResponse({ trades: mockGrpcTrades, totalCount: 1 })
-    );
+	it('should handle date conversion for trades without createdAt', async () => {
+		const mockGrpcTrades = [
+			new Trade({
+				id: 'trade2',
+				// No createdAt timestamp
+			}),
+		];
+		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
+			new GrpcListTradesResponse({ trades: mockGrpcTrades, totalCount: 1 })
+		);
 
-    const result = await grpcApi.listTrades({ userId: mockUserId });
-    expect(result.transactions[0].date).toBe(""); // As per current implementation
-  });
+		const result = await grpcApi.listTrades({ userId: mockUserId });
+		expect(result.transactions[0].date).toBe(""); // As per current implementation
+	});
 
-  it('should call grpcUtils.handleGrpcError on failure', async () => {
-    const mockError = new Error('gRPC call failed');
-    (tradeClient.listTrades as jest.Mock).mockRejectedValueOnce(mockError);
+	it('should call grpcUtils.handleGrpcError on failure', async () => {
+		const mockError = new Error('gRPC call failed');
+		(tradeClient.listTrades as jest.Mock).mockRejectedValueOnce(mockError);
 
-    await expect(grpcApi.listTrades({ userId: mockUserId })).rejects.toThrow('gRPC call failed');
-    expect(grpcUtils.handleGrpcError).toHaveBeenCalledWith(mockError, 'TradeService', 'listTrades');
-  });
+		await expect(grpcApi.listTrades({ userId: mockUserId })).rejects.toThrow('gRPC call failed');
+		expect(grpcUtils.handleGrpcError).toHaveBeenCalledWith(mockError, 'TradeService', 'listTrades');
+	});
 });
