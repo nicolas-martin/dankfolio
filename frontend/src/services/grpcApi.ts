@@ -420,11 +420,11 @@ export const grpcApi: grpcModel.API = {
 
 			const transactions = response.trades.map((trade: Trade) => ({
 				id: trade.id,
-				type: trade.type, // TODO: Map enum to string if necessary
+				type: tradeTypeMapping[trade.type] || "UNKNOWN", // Map enum to string
 				fromCoinSymbol: trade.fromCoinId, // Placeholder
 				toCoinSymbol: trade.toCoinId, // Placeholder
 				amount: trade.amount,
-				status: trade.status, // TODO: Map enum to string if necessary
+				status: tradeStatusMapping[trade.status] || "UNKNOWN", // Map enum to string
 				date: trade.createdAt?.toDate().toISOString() ?? "",
 				transactionHash: trade.transactionHash,
 			}));
