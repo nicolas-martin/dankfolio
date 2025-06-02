@@ -5,6 +5,13 @@ import (
 	"strings"
 )
 
+var defaultCIDv0Gateways = []string{
+	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
+	"https://cloudflare-ipfs.com/ipfs/",  // Cloudflare is fast and reliable
+	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
+	"https://ipfs.io/ipfs/",              // Keep as fallback, but not first choice
+}
+
 func StandardizeIpfsUrl(iconUrlInput string) string {
 	if iconUrlInput == "" {
 		return ""
