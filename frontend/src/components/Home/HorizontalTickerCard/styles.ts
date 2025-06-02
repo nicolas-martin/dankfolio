@@ -21,10 +21,10 @@ export const styles = StyleSheet.create({
         marginBottom: theme.spacing.xs,
         textAlign: 'center',
     },
-    price: {
-        fontSize: theme.typography.fontSize.lg,
-        fontFamily: theme.typography.fontFamily.bold,
-        color: theme.colors.text,
+    timeAgo: {
+        fontSize: theme.typography.fontSize.sm,
+        fontFamily: theme.typography.fontFamily.medium,
+        color: theme.colors.textSecondary,
         marginBottom: theme.spacing.xs,
         textAlign: 'center',
     },

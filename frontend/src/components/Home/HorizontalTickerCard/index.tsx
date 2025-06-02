@@ -2,12 +2,14 @@ import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { useTheme, Text } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
-import { formatPrice, formatPercentage } from '@/utils/numberFormat'; // Ensure this path is correct
+import { formatPercentage } from '@/utils/numberFormat'; // Remove formatPrice import
+import { formatTimeAgo } from '@/utils/timeFormat'; // Add formatTimeAgo import
 import { HorizontalTickerCardProps } from './types';
 import { styles } from './styles';
 
 const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress }) => {
     const theme = useTheme();
+    const timeAgo = formatTimeAgo(coin.jupiterListedAt);
 
     return (
         <TouchableOpacity
@@ -27,8 +29,8 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
             <Text style={styles.symbol} numberOfLines={1}>
                 {coin.symbol}
             </Text>
-            <Text style={styles.price} numberOfLines={1}>
-                {formatPrice(Number(coin.price))}
+            <Text style={styles.timeAgo} numberOfLines={1}>
+                {timeAgo}
             </Text>
             {coin.change24h !== undefined && (
                 <Text style={[

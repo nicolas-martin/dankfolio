@@ -1,7 +1,15 @@
-import React, { useRef, useEffect } from 'react';
-import { View, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useRef, useEffect, useMemo, useCallback } from 'react';
+import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import Animated, { 
+	useSharedValue, 
+	useAnimatedRef, 
+	useDerivedValue, 
+	useFrameCallback,
+	cancelAnimation
+} from 'react-native-reanimated';
+import { scrollTo } from 'react-native-reanimated';
 import { LoadingAnimation } from '../../Common/Animations';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast'; // Import useToast
@@ -24,11 +32,11 @@ const NewCoins: React.FC = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const navigation = useNavigation<NewCoinsNavigationProp>();
-	const flatListRef = useRef<FlatList<Coin>>(null);
+	const animatedRef = useAnimatedRef<Animated.FlatList<Coin>>();
 
 	// Constants for scrolling behavior
-	const SCROLL_INTERVAL = 3000; // milliseconds
-	const SCROLL_AMOUNT_PIXELS = 148; // cardWrapper width (140) + marginRight (8)
+	const SCROLL_SPEED = 30; // pixels per second (reduced for smoother movement)
+	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
 
 	// Use separate selectors to avoid creating new objects on every render
 	const newlyListedCoins = useCoinStore(state => state.newlyListedCoins);
@@ -36,34 +44,66 @@ const NewCoins: React.FC = () => {
 	const getCoinByID = useCoinStore(state => state.getCoinByID); // Changed from enrichCoin
 	const { showToast } = useToast(); // Get showToast
 
-	useEffect(() => {
-		// Ensure newlyListedCoins is available from useCoinStore and is used in the effect's dependency array
-		if (!newlyListedCoins || newlyListedCoins.length === 0) {
-			return; // Don't scroll if no coins or not loaded yet
+	// Shared values for smooth scrolling
+	const scrollX = useSharedValue(0);
+	const isScrolling = useSharedValue(false);
+	const isPaused = useSharedValue(false);
+
+	// Create duplicated data for infinite scrolling
+	const scrollData = useMemo(() => {
+		if (!newlyListedCoins || newlyListedCoins.length === 0) return [];
+		// Duplicate the array to create seamless infinite scroll
+		return [...newlyListedCoins, ...newlyListedCoins];
+	}, [newlyListedCoins]);
+
+	// Smooth continuous scrolling animation using useFrameCallback
+	useFrameCallback((frameInfo) => {
+		if (!isScrolling.value || isPaused.value || !newlyListedCoins || newlyListedCoins.length === 0) {
+			return;
 		}
 
-		let currentOffset = 0;
-		const timer = setInterval(() => {
-			if (flatListRef.current) {
-				currentOffset += SCROLL_AMOUNT_PIXELS;
+		const deltaTime = frameInfo.timeSincePreviousFrame || 16; // fallback to ~60fps
+		const pixelsToMove = (SCROLL_SPEED * deltaTime) / 1000; // convert to pixels per frame
+		
+		scrollX.value += pixelsToMove;
 
-				// Calculate total width of the content
-				// newlyListedCoins.length gives the number of items
-				const totalContentWidth = newlyListedCoins.length * SCROLL_AMOUNT_PIXELS;
+		// Reset when we've scrolled through one complete set
+		const singleSetWidth = newlyListedCoins.length * CARD_WIDTH;
+		if (scrollX.value >= singleSetWidth) {
+			scrollX.value = 0;
+		}
+	});
 
-				if (currentOffset >= totalContentWidth) {
-					currentOffset = 0; // Reset to loop
-					// Jump to start without animation for a clean loop
-					flatListRef.current.scrollToOffset({ offset: currentOffset, animated: false });
-				} else {
-					flatListRef.current.scrollToOffset({ offset: currentOffset, animated: true });
-				}
-			}
-		}, SCROLL_INTERVAL);
+	// Apply scroll position to FlatList
+	useDerivedValue(() => {
+		if (scrollData.length > 0) {
+			scrollTo(animatedRef, scrollX.value, 0, false); // Use false for instant positioning
+		}
+	});
 
-		return () => clearInterval(timer); // Cleanup on unmount
+	// Start/stop scrolling when coins are loaded/unloaded
+	useEffect(() => {
+		if (newlyListedCoins && newlyListedCoins.length > 0) {
+			isScrolling.value = true;
+		} else {
+			isScrolling.value = false;
+		}
 
-	}, [newlyListedCoins, SCROLL_AMOUNT_PIXELS, SCROLL_INTERVAL]);
+		return () => {
+			// Clean up animation on unmount
+			isScrolling.value = false;
+			scrollX.value = 0;
+		};
+	}, [newlyListedCoins]);
+
+	// Pause scrolling on touch start, resume on touch end
+	const handleTouchStart = useCallback(() => {
+		isPaused.value = true;
+	}, []);
+
+	const handleTouchEnd = useCallback(() => {
+		isPaused.value = false;
+	}, []);
 
 	// Note: We don't fetch newly listed coins here because the Home screen already does it
 	// This prevents duplicate API calls and infinite re-render loops
@@ -89,6 +129,16 @@ const NewCoins: React.FC = () => {
 			showToast({ type: 'error', message: 'An error occurred. Please try again.' });
 		}
 	};
+
+	const renderItem = useCallback(({ item, index }: { item: Coin; index: number }) => {
+		const timeAgo = formatTimeAgo(item.jupiterListedAt);
+		return (
+			<View style={styles.cardWrapper}>
+				<HorizontalTickerCard coin={item} onPress={handleCoinPress} />
+				{timeAgo && <Text style={styles.timeAgoText}>{timeAgo}</Text>}
+			</View>
+		);
+	}, [styles.cardWrapper, styles.timeAgoText, handleCoinPress]);
 
 	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (
@@ -133,22 +183,17 @@ const NewCoins: React.FC = () => {
 					<Text style={styles.viewAllButton}>View All</Text>
 				</TouchableOpacity>
 			</View>
-			<FlatList
-				ref={flatListRef}
-				data={newlyListedCoins}
-				renderItem={({ item }) => {
-					const timeAgo = formatTimeAgo(item.jupiterListedAt);
-					return (
-						<View style={styles.cardWrapper}>
-							<HorizontalTickerCard coin={item} onPress={handleCoinPress} />
-							{timeAgo && <Text style={styles.timeAgoText}>{timeAgo}</Text>}
-						</View>
-					);
-				}}
-				keyExtractor={item => item.mintAddress}
+			<Animated.FlatList
+				ref={animatedRef}
+				data={scrollData}
+				renderItem={renderItem}
+				keyExtractor={(item, index) => `${item.mintAddress}-${index}`}
 				horizontal
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={styles.listContentContainer}
+				scrollEnabled={false} // Disable manual scrolling to let animation control it
+				onTouchStart={handleTouchStart}
+				onTouchEnd={handleTouchEnd}
 				ListEmptyComponent={
 					isLoadingNewlyListed ? null : ( // Don't show empty text if still loading initially
 						<Text style={styles.emptyText}>No new listings available.</Text>
