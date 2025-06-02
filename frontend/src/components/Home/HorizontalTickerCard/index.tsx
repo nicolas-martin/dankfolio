@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { View, TouchableOpacity } from 'react-native';
+import { useTheme, Text } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
 import { formatPrice, formatPercentage } from '@/utils/numberFormat'; // Ensure this path is correct
 import { HorizontalTickerCardProps } from './types';
