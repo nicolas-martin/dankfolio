@@ -298,4 +298,72 @@ export const createStyles = (theme: MD3Theme) =>
 			color: theme.colors.onSurfaceVariant,
 			marginTop: 4,
 		},
+
+		// Verification Modal Styles
+		centeredView: {
+			flex: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
+			backgroundColor: 'rgba(0,0,0,0.5)', // Semi-transparent background
+		},
+		modalView: {
+			margin: 20,
+			backgroundColor: theme.colors.surface,
+			borderRadius: 20,
+			padding: 25, // Adjusted padding
+			alignItems: 'center',
+			shadowColor: '#000',
+			shadowOffset: {
+				width: 0,
+				height: 2,
+			},
+			shadowOpacity: 0.25,
+			shadowRadius: 4,
+			elevation: 5,
+			width: '85%', // Max width for the modal
+		},
+		modalText: {
+			marginBottom: 20, // Increased margin
+			textAlign: 'center',
+			fontSize: 16,
+			color: theme.colors.onSurface,
+			lineHeight: 24,
+		},
+		verificationModalButton: {
+			borderRadius: 12, // Consistent with other buttons
+			paddingVertical: 12, // Adjusted padding
+			paddingHorizontal: 20, // Adjusted padding
+			elevation: 2,
+			marginVertical: 8, // Increased margin
+			width: '100%', // Full width within modal content
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		verificationModalButtonLink: {
+			backgroundColor: theme.colors.primary, // Use theme color
+		},
+		verificationModalButtonProceed: {
+			backgroundColor: theme.colors.tertiary, // Example: theme.colors.success or a green shade
+		},
+		verificationModalButtonClose: {
+			backgroundColor: theme.colors.error, // Use theme color
+		},
+		verificationModalButtonText: {
+			color: theme.colors.onError, // Ensure contrast, or use theme.colors.onPrimary for link
+			fontSize: 16,
+			fontWeight: '600', // Consistent with other button texts
+			textAlign: 'center',
+		},
+		verificationModalLinkButtonText: {
+			color: theme.colors.onPrimary, // Specific for link button if background is primary
+			fontSize: 16,
+			fontWeight: '600',
+			textAlign: 'center',
+		},
+		verificationModalProceedButtonText: {
+			color: theme.colors.onTertiary, // Specific for proceed button
+			fontSize: 16,
+			fontWeight: '600',
+			textAlign: 'center',
+		}
 	}); 
