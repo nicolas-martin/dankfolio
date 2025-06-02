@@ -3,9 +3,22 @@ import { formatTimeAgo } from './timeFormat';
 describe('formatTimeAgo', () => {
   const now = new Date();
 
-  it('should return "just now" for times less than a minute ago', () => {
-    const date = new Date(now.getTime() - 30 * 1000); // 30 seconds ago
+  it('should return "just now" for times less than 10 seconds ago', () => {
+    const date = new Date(now.getTime() - 5 * 1000); // 5 seconds ago
     expect(formatTimeAgo(date)).toBe('just now');
+  });
+
+  it('should return "X seconds ago" for times between 10-59 seconds ago', () => {
+    const date30 = new Date(now.getTime() - 30 * 1000); // 30 seconds ago
+    expect(formatTimeAgo(date30)).toBe('30 seconds ago');
+    
+    const date15 = new Date(now.getTime() - 15 * 1000); // 15 seconds ago
+    expect(formatTimeAgo(date15)).toBe('15 seconds ago');
+  });
+
+  it('should handle singular second correctly', () => {
+    const date = new Date(now.getTime() - 11 * 1000); // 11 seconds ago (rounded to 11)
+    expect(formatTimeAgo(date)).toBe('11 seconds ago');
   });
 
   it('should return "1 minute ago" for 1 minute ago', () => {
