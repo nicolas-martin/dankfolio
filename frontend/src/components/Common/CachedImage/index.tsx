@@ -5,13 +5,6 @@ import { CachedImageProps } from './types';
 // Default blurhash for token images - a subtle gray blur
 const DEFAULT_TOKEN_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 
-// IPFS gateways that don't redirect (in order of preference)
-const IPFS_GATEWAYS = [
-	'https://ipfs.io/ipfs/',
-	'https://cloudflare-ipfs.com/ipfs/',
-	'https://gateway.pinata.cloud/ipfs/',
-];
-
 export const CachedImage: React.FC<CachedImageProps> = ({
 	uri,
 	size = 40,

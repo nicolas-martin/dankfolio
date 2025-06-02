@@ -14,6 +14,7 @@ import (
 	"time"
 
 	solanago "github.com/gagliardetto/solana-go"
+	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
 const (
@@ -187,6 +188,7 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 		if len(newToken.LogoURI) == 0 {
 			continue
 		}
+		stdLogoURI := util.StandardizeIpfsUrl(newToken.LogoURI)
 
 		// Parse the CreatedAt timestamp from the Jupiter API response
 		var createdAtTime time.Time
@@ -203,17 +205,16 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 			createdAtTime = time.Now() // Use current time as fallback since field is now mandatory
 		}
 		coins[i] = &NewTokenInfo{
-			Mint:              newToken.Mint, // Use Mint field instead of Address
+			Mint:              newToken.Mint,
 			Name:              newToken.Name,
 			Symbol:            newToken.Symbol,
 			Decimals:          newToken.Decimals,
-			LogoURI:           newToken.LogoURI, // Use LogoURI field
+			LogoURI:           stdLogoURI,
 			KnownMarkets:      newToken.KnownMarkets,
-			MintAuthority:     newToken.MintAuthority,             // Can be null
-			FreezeAuthority:   newToken.FreezeAuthority,           // Can be null
-			CreatedAt:         createdAtTime.Format(time.RFC3339), // Use the properly parsed timestamp
-			MetadataUpdatedAt: newToken.MetadataUpdatedAt,         // Use the raw float value
-			// Note: MetadataUpdatedAt is a float, not a timestamp, so we keep it as is
+			MintAuthority:     newToken.MintAuthority,
+			FreezeAuthority:   newToken.FreezeAuthority,
+			CreatedAt:         createdAtTime.Format(time.RFC3339),
+			MetadataUpdatedAt: newToken.MetadataUpdatedAt,
 		}
 	}
 
