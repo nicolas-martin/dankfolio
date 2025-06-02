@@ -1,44 +1,45 @@
 import { StyleSheet } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
+import { theme } from '@utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
-    card: {
+export const styles = StyleSheet.create({
+    container: {
         backgroundColor: theme.colors.surface,
-        borderRadius: 12,
-        padding: 8, // Adjusted padding
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%', // Will take width from parent wrapper in FlatList
-        height: 100, // Target height
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+        marginHorizontal: theme.spacing.sm,
+        minWidth: 120,
+        ...theme.shadows.sm,
     },
     logoContainer: {
-        marginBottom: 6, // Adjusted margin
+        marginBottom: 6,
+        alignItems: 'center',
     },
     symbol: {
-        color: theme.colors.onSurface,
-        fontSize: 13, // Adjusted font size
-        fontWeight: '600',
+        fontSize: theme.typography.fontSize.sm,
+        fontFamily: theme.typography.fontFamily.semiBold,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.xs,
         textAlign: 'center',
     },
     price: {
-        color: theme.colors.onSurface,
-        fontSize: 12, // Adjusted font size
-        fontWeight: '500',
+        fontSize: theme.typography.fontSize.lg,
+        fontFamily: theme.typography.fontFamily.bold,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.xs,
         textAlign: 'center',
-        marginTop: 2,
     },
     change: {
-        fontSize: 10, // Adjusted font size
-        fontWeight: '500',
+        fontSize: theme.typography.fontSize.sm,
+        fontFamily: theme.typography.fontFamily.medium,
         textAlign: 'center',
-        marginTop: 4,
     },
-    changePositive: { color: theme.colors.success }, // Updated to use theme color token
-    changeNegative: { color: theme.colors.error }, // Updated to use theme color token
-    changeNeutral: { color: theme.colors.onSurfaceVariant }
+    changePositive: {
+        color: theme.colors.success,
+    },
+    changeNegative: {
+        color: theme.colors.error,
+    },
+    changeNeutral: {
+        color: theme.colors.textSecondary,
+    },
 });

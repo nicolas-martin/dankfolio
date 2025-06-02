@@ -16,10 +16,7 @@ import {
 	WalletIcon,
 	CoinsIcon,
 	SendIcon,
-	HistoryIcon, // Assuming HistoryIcon exists or is similar to ListIcon
 	SwapIcon,
-	ArrowUpIcon, // For transfers if needed
-	ArrowDownIcon // For transfers if needed
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 
@@ -184,6 +181,97 @@ const Profile = () => {
 		</View>
 	);
 
+	const renderTransactionsSection = () => {
+		if (!transactionsHasFetched && !isTransactionsLoading) {
+			return null;
+		}
+
+		const getStatusStyle = (status: Transaction['status']) => {
+			switch (status.toUpperCase()) {
+				case 'PENDING':
+					return styles.transactionStatusTextPending;
+				case 'COMPLETED':
+					return styles.transactionStatusTextCompleted;
+				case 'FAILED':
+					return styles.transactionStatusTextFailed;
+				default:
+					return { color: theme.colors.onSurfaceVariant, marginLeft: 4, fontSize: 13, fontWeight: 'bold' as const }; // Default style
+			}
+		};
+
+		return (
+			<View style={styles.transactionsSection}>
+				<View style={styles.transactionsHeader}>
+					<Icon source="history" size={24} color={theme.colors.onSurface} />
+					<Text style={styles.transactionsTitle}>Recent Transactions</Text>
+				</View>
+
+				{isTransactionsLoading && !transactions.length ? (
+					<ActivityIndicator animating={true} color={theme.colors.primary} style={styles.loadingIndicator} size="large" />
+				) : transactionsError ? (
+					<View style={styles.transactionEmptyStateContainer}> {/* Use specific empty state style */}
+						<Icon source="alert-circle-outline" size={48} color={theme.colors.error} />
+						<Text style={styles.emptyStateTitle}>Error Loading Transactions</Text>
+						<Text style={styles.emptyStateText}>{transactionsError}</Text>
+					</View>
+				) : transactions.length === 0 && transactionsHasFetched ? (
+					<View style={styles.transactionEmptyStateContainer}> {/* Use specific empty state style */}
+						<Icon source="format-list-bulleted" size={48} color={theme.colors.onSurfaceVariant} />
+						<Text style={styles.emptyStateTitle}>No Transactions Yet</Text>
+						<Text style={styles.emptyStateText}>Your transaction history will appear here once you start trading or transferring tokens.</Text>
+					</View>
+				) : (
+					<View style={styles.transactionsListContainer}>
+						{transactions.slice(0, 5).map((tx) => (
+							<List.Item
+								key={tx.id}
+								title={
+									<Text style={styles.transactionTitleText}>
+										{tx.type === 'SWAP'
+											? `Swap ${tx.fromCoinSymbol} for ${tx.toCoinSymbol}`
+											: `Transfer ${tx.amount > 0 ? tx.fromCoinSymbol : tx.toCoinSymbol}`}
+									</Text>
+								}
+								description={(props) => ( // Use function for description to allow complex content
+									<Text {...props} style={styles.transactionSubtitleText}>
+										{formatDate(tx.date)} -
+										<Text style={getStatusStyle(tx.status)}> {tx.status.toUpperCase()}</Text>
+									</Text>
+								)}
+								left={() => (
+									<View style={styles.transactionIconContainer}>
+										<TransactionTypeIcon type={tx.type} theme={theme} />
+									</View>
+								)}
+								// right prop can be used for amount or other details if needed
+								// right={() => (
+								// 	<Text style={{ alignSelf: 'center', color: theme.colors.primary }}>
+								// 		{/* {tx.amount.toFixed(2)} {tx.type === 'SWAP' ? tx.fromCoinSymbol : ''} */}
+								// 	</Text>
+								// )}
+								style={styles.transactionItem}
+								onPress={() => {
+									logger.info('Transaction item pressed', { txId: tx.id, hash: tx.transactionHash });
+									// TODO: Navigate to transaction detail screen if available
+								}}
+							/>
+						))}
+						{transactions.length > 5 && (
+							<Button
+								mode="text"
+								onPress={() => { /* TODO: Navigate to full transaction history screen */ }}
+								style={styles.viewAllButton} // Apply style to View All button
+								labelStyle={{ color: theme.colors.primary }} // Ensure text color matches theme
+							>
+								View All Transactions
+							</Button>
+						)}
+					</View>
+				)}
+			</View>
+		);
+	};
+
 	if (!wallet) {
 		return (
 			<SafeAreaView style={styles.safeArea}>
@@ -251,113 +339,10 @@ const TransactionTypeIcon = ({ type, theme }: { type: Transaction['type'], theme
 			return <SwapIcon size={20} color={iconColor} />;
 		case 'TRANSFER':
 			// Could differentiate between send/receive if data available
-			return <ArrowUpIcon size={20} color={iconColor} />;
+			return <Icon source="arrow-up" size={20} color={iconColor} />;
 		default:
 			return <Icon source="help-circle-outline" size={20} color={iconColor} />;
 	}
 };
-
-const Profile = () => {
-	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
-	const {
-		transactions,
-		isLoading: isTransactionsLoading,
-		error: transactionsError,
-		hasFetched: transactionsHasFetched
-	} = useTransactionsStore(); // Use the hook to subscribe to state changes
-
-	const theme = useTheme(); // Ensure theme is available
-	const styles = createStyles(theme); // And styles too
-
-	const renderTransactionsSection = () => {
-		if (!transactionsHasFetched && !isTransactionsLoading) {
-			return null;
-		}
-
-		const getStatusStyle = (status: Transaction['status']) => {
-			switch (status.toUpperCase()) {
-				case 'PENDING':
-					return styles.transactionStatusTextPending;
-				case 'COMPLETED':
-					return styles.transactionStatusTextCompleted;
-				case 'FAILED':
-					return styles.transactionStatusTextFailed;
-				default:
-					return { color: theme.colors.onSurfaceVariant, marginLeft: 4, fontSize: 13, fontWeight: 'bold' }; // Default style
-			}
-		};
-	return (
-		<View style={styles.transactionsSection}>
-			<View style={styles.transactionsHeader}>
-				<HistoryIcon size={24} color={theme.colors.onSurface} />
-				<Text style={styles.transactionsTitle}>Recent Transactions</Text>
-			</View>
-
-			{isTransactionsLoading && !transactions.length ? (
-				<ActivityIndicator animating={true} color={theme.colors.primary} style={styles.loadingIndicator} size="large" />
-			) : transactionsError ? (
-				<View style={styles.transactionEmptyStateContainer}> {/* Use specific empty state style */}
-					<Icon source="alert-circle-outline" size={48} color={theme.colors.error} />
-					<Text style={styles.emptyStateTitle}>Error Loading Transactions</Text>
-					<Text style={styles.emptyStateText}>{transactionsError}</Text>
-				</View>
-			) : transactions.length === 0 && transactionsHasFetched ? (
-				<View style={styles.transactionEmptyStateContainer}> {/* Use specific empty state style */}
-					<Icon source="format-list-bulleted" size={48} color={theme.colors.onSurfaceVariant} />
-					<Text style={styles.emptyStateTitle}>No Transactions Yet</Text>
-					<Text style={styles.emptyStateText}>Your transaction history will appear here once you start trading or transferring tokens.</Text>
-				</View>
-			) : (
-				<View style={styles.transactionsListContainer}>
-					{transactions.slice(0, 5).map((tx) => (
-						<List.Item
-							key={tx.id}
-							title={
-								<Text style={styles.transactionTitleText}>
-									{tx.type === 'SWAP'
-										? `Swap ${tx.fromCoinSymbol} for ${tx.toCoinSymbol}`
-										: `Transfer ${tx.amount > 0 ? tx.fromCoinSymbol : tx.toCoinSymbol}`}
-								</Text>
-							}
-							description={(props) => ( // Use function for description to allow complex content
-								<Text {...props} style={styles.transactionSubtitleText}>
-									{formatDate(tx.date)} -
-									<Text style={getStatusStyle(tx.status)}> {tx.status.toUpperCase()}</Text>
-								</Text>
-							)}
-							left={() => (
-								<View style={styles.transactionIconContainer}>
-									<TransactionTypeIcon type={tx.type} theme={theme} />
-								</View>
-							)}
-							// right prop can be used for amount or other details if needed
-							// right={() => (
-							// 	<Text style={{ alignSelf: 'center', color: theme.colors.primary }}>
-							// 		{/* {tx.amount.toFixed(2)} {tx.type === 'SWAP' ? tx.fromCoinSymbol : ''} */}
-							// 	</Text>
-							// )}
-							style={styles.transactionItem}
-							onPress={() => {
-								logger.info('Transaction item pressed', { txId: tx.id, hash: tx.transactionHash });
-								// TODO: Navigate to transaction detail screen if available
-							}}
-						/>
-					))}
-					{transactions.length > 5 && (
-						<Button
-							mode="text"
-							onPress={() => { /* TODO: Navigate to full transaction history screen */ }}
-							style={styles.viewAllButton} // Apply style to View All button
-							labelStyle={{ color: theme.colors.primary }} // Ensure text color matches theme
-						>
-							View All Transactions
-						</Button>
-					)}
-				</View>
-			)}
-		</View>
-	);
-};
-
 
 export default Profile;

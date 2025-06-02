@@ -13,6 +13,7 @@ export const theme = {
 		surface: '#F5F5F5',
 		error: '#B00020',
 		warning: '#FFA000',
+		success: '#4CAF50',
 		onPrimary: '#FFFFFF',
 		onSecondary: '#000000',
 		onBackground: '#000000',
