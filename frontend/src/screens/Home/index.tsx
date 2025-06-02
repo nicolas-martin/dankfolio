@@ -14,6 +14,7 @@ import { createStyles } from './home_styles';
 import { Coin } from '@/types';
 import { OTAUpdater } from '@components/OTAupdate';
 import { logger } from '@/utils/logger';
+import { REFRESH_INTERVALS } from '@/utils/constants';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -24,8 +25,6 @@ const HomeScreen = () => {
 	const fetchAvailableCoins = useCoinStore(state => state.fetchAvailableCoins);
 	const fetchNewCoins = useCoinStore(state => state.fetchNewCoins);
 	const isLoadingTrending = useCoinStore(state => state.isLoading);
-	const lastFetchedNewCoinsAt = useCoinStore(state => state.lastFetchedNewCoinsAt); // Added
-	const setLastFetchedNewCoinsAt = useCoinStore(state => state.setLastFetchedNewCoinsAt); // Added
 
 	const { showToast } = useToast();
 	const theme = useTheme();
@@ -39,7 +38,6 @@ const HomeScreen = () => {
 	// Shared logic for fetching trending coins and portfolio
 	const fetchTrendingAndPortfolio = useCallback(async () => {
 		logger.log('[HomeScreen] Fetching trending and portfolio...');
-		const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 		// Fetch trending coins and portfolio balance in parallel
 		const trendingAndPortfolioPromise = Promise.all([
@@ -47,27 +45,23 @@ const HomeScreen = () => {
 			wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 		]);
 
-		// Handle fetching new coins separately with time check
+		// Handle fetching new coins - cache will handle interval checking automatically
 		let newCoinsFetched = false;
+		
+		logger.log('[HomeScreen] Fetching new coins (cache will handle timing)...');
+
 		try {
-			if (Date.now() - lastFetchedNewCoinsAt > FIVE_MINUTES_MS) {
-				logger.log('[HomeScreen] Interval passed, fetching new coins...');
-				await fetchNewCoins();
-				setLastFetchedNewCoinsAt(Date.now());
-				newCoinsFetched = true;
-				logger.log('[HomeScreen] New coins fetched and timestamp updated.');
-			} else {
-				logger.log('[HomeScreen] Interval not passed, skipping new coins fetch.');
-			}
+			await fetchNewCoins(); // Cache will determine if fetch is needed or use cached data
+			newCoinsFetched = true;
+			logger.log('[HomeScreen] ✅ New coins fetch completed (may have used cache).');
 		} catch (error) {
-			logger.error('[HomeScreen] Error fetching new coins:', error);
-			// Do not update timestamp if fetchNewCoins fails
+			logger.error('[HomeScreen] ❌ Error fetching new coins:', error);
 		}
 
 		await trendingAndPortfolioPromise; // Wait for trending and portfolio to complete
 
-		logger.log(`[HomeScreen] Fetched data for home screen. New coins fetched: ${newCoinsFetched}`);
-	}, [wallet, fetchAvailableCoins, fetchNewCoins, lastFetchedNewCoinsAt, setLastFetchedNewCoinsAt, fetchPortfolioBalance]);
+		logger.log(`[HomeScreen] 🏠 Completed home screen data fetch. New coins processed: ${newCoinsFetched}`);
+	}, [wallet, fetchAvailableCoins, fetchNewCoins, fetchPortfolioBalance]);
 
 
 	// Fetch trending coins and portfolio on mount
@@ -82,13 +76,21 @@ const HomeScreen = () => {
 	const onRefresh = useCallback(async () => {
 		setIsRefreshing(true);
 		try {
-			await fetchTrendingAndPortfolio();
+			// Force refresh new coins on manual refresh
+			logger.log('[HomeScreen] 🔄 Manual refresh triggered - forcing new coins refresh');
+			await Promise.all([
+				fetchAvailableCoins(true), // For trending coins
+				fetchNewCoins(10, true), // Force refresh new coins (bypasses cache)
+				wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
+			]);
+			
 			showToast({
 				type: 'success',
 				message: 'Coins refreshed successfully!',
 				duration: 3000
 			});
 		} catch (error) {
+			logger.error('[HomeScreen] ❌ Error during manual refresh:', error);
 			showToast({
 				type: 'error',
 				message: 'Failed to refresh coins',
@@ -97,7 +99,7 @@ const HomeScreen = () => {
 		} finally {
 			setIsRefreshing(false);
 		}
-	}, [fetchTrendingAndPortfolio, showToast]);
+	}, [fetchAvailableCoins, fetchNewCoins, fetchPortfolioBalance, wallet, showToast]);
 
 	const handlePressCoinCard = useCallback((coin: Coin) => {
 		logger.breadcrumb({

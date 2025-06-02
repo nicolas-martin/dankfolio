@@ -1,13 +1,12 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import Animated, { 
-	useSharedValue, 
-	useAnimatedRef, 
-	useDerivedValue, 
+import Animated, {
+	useSharedValue,
+	useAnimatedRef,
+	useDerivedValue,
 	useFrameCallback,
-	cancelAnimation,
 	useAnimatedScrollHandler,
 	runOnJS
 } from 'react-native-reanimated';
@@ -99,7 +98,7 @@ const NewCoins: React.FC = () => {
 
 		const deltaTime = frameInfo.timeSincePreviousFrame || 16; // fallback to ~60fps
 		const pixelsToMove = (SCROLL_SPEED * deltaTime) / 1000; // convert to pixels per frame
-		
+
 		scrollX.value += pixelsToMove;
 
 		// Reset when we've scrolled through one complete set
