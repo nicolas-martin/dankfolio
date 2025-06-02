@@ -18,7 +18,6 @@ import { useToast } from '@components/Common/Toast'; // Import useToast
 import HorizontalTickerCard from '@components/Home/HorizontalTickerCard';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
-import { formatTimeAgo } from '@/utils/timeFormat'; // Import the new utility
 import { createStyles } from './NewCoins.styles';
 
 // Define a navigation prop type, assuming a similar structure to HomeScreenNavigationProp
@@ -172,14 +171,12 @@ const NewCoins: React.FC = () => {
 	};
 
 	const renderItem = useCallback(({ item, index }: { item: Coin; index: number }) => {
-		const timeAgo = formatTimeAgo(item.jupiterListedAt);
 		return (
 			<View style={styles.cardWrapper}>
 				<HorizontalTickerCard coin={item} onPress={handleCoinPress} />
-				{timeAgo && <Text style={styles.timeAgoText}>{timeAgo}</Text>}
 			</View>
 		);
-	}, [styles.cardWrapper, styles.timeAgoText, handleCoinPress]);
+	}, [styles.cardWrapper, handleCoinPress]);
 
 	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (
