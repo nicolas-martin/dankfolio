@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { LoadingAnimation } from '../../Common/Animations';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast'; // Import useToast
-import CoinCard from '@components/Home/CoinCard'; // Assuming CoinCard can be used or adapted
+import HorizontalTickerCard from '@components/Home/HorizontalTickerCard';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
 import { formatTimeAgo } from '@/utils/timeFormat'; // Import the new utility
@@ -24,12 +24,46 @@ const NewCoins: React.FC = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const navigation = useNavigation<NewCoinsNavigationProp>();
+	const flatListRef = useRef<FlatList<Coin>>(null);
+
+	// Constants for scrolling behavior
+	const SCROLL_INTERVAL = 3000; // milliseconds
+	const SCROLL_AMOUNT_PIXELS = 148; // cardWrapper width (140) + marginRight (8)
 
 	// Use separate selectors to avoid creating new objects on every render
 	const newlyListedCoins = useCoinStore(state => state.newlyListedCoins);
 	const isLoadingNewlyListed = useCoinStore(state => state.isLoadingNewlyListed);
 	const getCoinByID = useCoinStore(state => state.getCoinByID); // Changed from enrichCoin
 	const { showToast } = useToast(); // Get showToast
+
+	useEffect(() => {
+		// Ensure newlyListedCoins is available from useCoinStore and is used in the effect's dependency array
+		if (!newlyListedCoins || newlyListedCoins.length === 0) {
+			return; // Don't scroll if no coins or not loaded yet
+		}
+
+		let currentOffset = 0;
+		const timer = setInterval(() => {
+			if (flatListRef.current) {
+				currentOffset += SCROLL_AMOUNT_PIXELS;
+
+				// Calculate total width of the content
+				// newlyListedCoins.length gives the number of items
+				const totalContentWidth = newlyListedCoins.length * SCROLL_AMOUNT_PIXELS;
+
+				if (currentOffset >= totalContentWidth) {
+					currentOffset = 0; // Reset to loop
+					// Jump to start without animation for a clean loop
+					flatListRef.current.scrollToOffset({ offset: currentOffset, animated: false });
+				} else {
+					flatListRef.current.scrollToOffset({ offset: currentOffset, animated: true });
+				}
+			}
+		}, SCROLL_INTERVAL);
+
+		return () => clearInterval(timer); // Cleanup on unmount
+
+	}, [newlyListedCoins, SCROLL_AMOUNT_PIXELS, SCROLL_INTERVAL]);
 
 	// Note: We don't fetch newly listed coins here because the Home screen already does it
 	// This prevents duplicate API calls and infinite re-render loops
@@ -100,14 +134,15 @@ const NewCoins: React.FC = () => {
 				</TouchableOpacity>
 			</View>
 			<FlatList
+				ref={flatListRef}
 				data={newlyListedCoins}
 				renderItem={({ item }) => {
 					const timeAgo = formatTimeAgo(item.jupiterListedAt);
 					return (
-						<TouchableOpacity onPress={() => handleCoinPress(item)} style={styles.cardWrapper}>
-							<CoinCard coin={item} onPress={() => handleCoinPress(item)} isHorizontal={true} />
+						<View style={styles.cardWrapper}>
+							<HorizontalTickerCard coin={item} onPress={handleCoinPress} />
 							{timeAgo && <Text style={styles.timeAgoText}>{timeAgo}</Text>}
-						</TouchableOpacity>
+						</View>
 					);
 				}}
 				keyExtractor={item => item.mintAddress}
