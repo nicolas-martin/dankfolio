@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { Coin } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
 import { logger as log } from '@/utils/logger';
-import { SOLANA_ADDRESS } from '@/utils/constants';
+import { SOLANA_ADDRESS, REFRESH_INTERVALS } from '@/utils/constants';
+import useNewCoinsCacheStore from './newCoinsCache';
 
 interface CoinState {
 	availableCoins: Coin[];
@@ -17,7 +18,8 @@ interface CoinState {
 	getCoinByID: (mintAddress: string, forceRefresh?: boolean) => Promise<Coin | null>;
 	newlyListedCoins: Coin[];
 	isLoadingNewlyListed: boolean;
-	fetchNewCoins: (limit?: number) => Promise<void>;
+	fetchNewCoins: (limit?: number, forceRefresh?: boolean) => Promise<void>;
+	clearNewCoinsCache: () => void;
 	// enrichCoin was here
 	lastFetchedNewCoinsAt: number;
 	setLastFetchedNewCoinsAt: (timestamp: number) => void;
@@ -130,26 +132,52 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		}
 	},
 
-	fetchNewCoins: async (limit: number = 10) => {
-		log.log('🆕 [CoinStore] Fetching newly listed coins...');
+	fetchNewCoins: async (limit: number = 10, forceRefresh: boolean = false) => {
+		const state = get();
+		
+		// Check cache first (unless force refresh is requested)
+		if (!forceRefresh) {
+			const cachedData = useNewCoinsCacheStore.getState().getCache();
+			if (cachedData) {
+				log.log('🆕 [CoinStore] Using cached new coins data', {
+					cachedCoinsCount: cachedData.data.length,
+					cacheExpiry: new Date(cachedData.expiry).toISOString(),
+					lastFetched: new Date(cachedData.lastFetched).toISOString()
+				});
+				
+				// Update store with cached data
+				set({
+					newlyListedCoins: cachedData.data,
+					isLoadingNewlyListed: false,
+				});
+				return;
+			}
+		}
+
+		log.log('🆕 [CoinStore] Cache miss or force refresh - fetching newly listed coins via GRPC search...', {
+			limit,
+			forceRefresh,
+			cacheExpired: useNewCoinsCacheStore.getState().isExpired()
+		});
+		
 		set({ isLoadingNewlyListed: true, error: null });
 		try {
-			// Assuming grpcApi.searchCoins will be available and configured
-			// to call the Search RPC method.
-			// We use 'jupiter_listed_at' as per our backend proto update.
+			// Use grpcApi.searchCoins to call the Search RPC method
+			// Sort by 'jupiter_listed_at' to get the newest coins first
 			const response = await grpcApi.searchCoins({
 				query: '',
 				tags: [],
-				minVolume24h: 0, // Or a suitable low value
+				minVolume24h: 0, // Include all coins regardless of volume
 				limit: limit,
 				offset: 0,
-				sortBy: 'jupiter_listed_at', // Ensure this matches the proto
-				sortDesc: true,
+				sortBy: 'jupiter_listed_at', // Sort by Jupiter listing date
+				sortDesc: true, // Newest first
 			});
 
 			// Log the raw gRPC response
 			log.log('🔍 [CoinStore] Raw gRPC response for newly listed coins:', {
 				totalCoins: response.coins.length,
+				requestParams: { limit, sortBy: 'jupiter_listed_at', sortDesc: true },
 				coins: response.coins.map(coin => ({
 					symbol: coin.symbol,
 					mintAddress: coin.mintAddress,
@@ -159,7 +187,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				}))
 			});
 
-			const fetchedCoins = response.coins; // Assuming response structure { coins: Coin[], totalCount: number }
+			const fetchedCoins = response.coins;
 
 			// Check for duplicates in the backend response and log them clearly
 			const mintAddresses = fetchedCoins.map(coin => coin.mintAddress);
@@ -187,7 +215,6 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				log.log('✅ [CoinStore] No duplicates detected in backend response');
 			}
 
-			const state = get();
 			// Filter out coins that are already in the main coinMap
 			const newCoinsToConsider = fetchedCoins.filter(fc => !state.coinMap[fc.mintAddress]);
 
@@ -196,16 +223,6 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				afterFilteringCount: newCoinsToConsider.length,
 				filteredOutCount: fetchedCoins.length - newCoinsToConsider.length
 			});
-
-			// Update coinMap with these new coins as well, but only if they are not already there
-			// (though filtered above, this is a safeguard for coinMap update logic)
-			const currentCoinMap = state.coinMap;
-			const updatedCoinMap = newCoinsToConsider.reduce((acc: Record<string, Coin>, newCoin: Coin) => {
-				if (!acc[newCoin.mintAddress]) { // Ensure not to overwrite existing enhanced coins in map
-					acc[newCoin.mintAddress] = newCoin;
-				}
-				return acc;
-			}, { ...currentCoinMap } as Record<string, Coin>);
 
 			// Filter for newlyListedCoins: must not be in availableCoins
 			const trulyNewCoins = newCoinsToConsider.filter(nc =>
@@ -223,16 +240,46 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				}))
 			});
 
+			log.log('🔄 [CoinStore] Data separation strategy:', {
+				message: 'New coins kept separate from coinMap to prevent conflicts',
+				newCoinsInNewlyListed: trulyNewCoins.length,
+				existingCoinsInCoinMap: Object.keys(state.coinMap).length,
+				note: 'getCoinByID will fetch detailed data when user interacts with coins'
+			});
+
+			// Cache the newly fetched data with expiry time
+			const cacheExpiryMs = Date.now() + REFRESH_INTERVALS.NEW_COINS;
+			useNewCoinsCacheStore.getState().setCache(trulyNewCoins, cacheExpiryMs);
+			
+			log.log('💾 [CoinStore] Cached new coins data', {
+				cachedCoinsCount: trulyNewCoins.length,
+				cacheExpiry: new Date(cacheExpiryMs).toISOString()
+			});
+
 			set({
 				newlyListedCoins: trulyNewCoins,
-				coinMap: updatedCoinMap,
+				// DON'T update coinMap here - keep new coins separate
 				isLoadingNewlyListed: false,
 			});
-			log.log(`🆕 [CoinStore] Successfully fetched ${fetchedCoins.length} coins, ${trulyNewCoins.length} are truly new.`);
+			
+			// Update the last fetched timestamp on successful fetch
+			state.setLastFetchedNewCoinsAt(Date.now());
+			
+			log.log(`🆕 [CoinStore] ✅ Successfully fetched ${fetchedCoins.length} coins via GRPC, ${trulyNewCoins.length} are truly new and cached separately from coinMap.`);
 		} catch (err) {
 			const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred';
-			set({ error: errorMessage, isLoadingNewlyListed: false }); // Reuse existing error state
-			log.error('❌ [CoinStore] Error fetching newly listed coins:', errorMessage);
+			set({ error: errorMessage, isLoadingNewlyListed: false });
+			log.error('❌ [CoinStore] Error fetching newly listed coins via GRPC:', errorMessage);
 		}
+	},
+
+	clearNewCoinsCache: () => {
+		useNewCoinsCacheStore.getState().clearCache();
+		set({
+			newlyListedCoins: [],
+			isLoadingNewlyListed: false,
+		});
+		set({ lastFetchedNewCoinsAt: 0 });
+		log.log('🆕 [CoinStore] New coins cache cleared');
 	},
 }));
