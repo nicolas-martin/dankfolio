@@ -38,6 +38,14 @@ var predefinedURIs = []string{
 	"https://ipfs.io/ipfs/QmaGqTXDBUBLMU9xGpT4xzYArJmqFFTo3LAU6wZLepWcWe",
 	"https://ipfs.io/ipfs/QmVfhGnJmuUoJ8wdnEfRP1RaCg8GQ9WJgotiXVj5ARNGFd",
 	"https://ipfs.io/ipfs/QmZk1xtQSZXqPHMD1qAEDTAhY3QhKafDuKCn2BgyZXHYpA",
+	"https://ipfs.io/ipfs/QmczX2TmPngyi5Hy4Gz2phisMyBQVfAUJCS1puY97dvXED",
+	"https://ipfs.io/ipfs/QmY787YLWZzoiNC9vx5qb5obKw5HijtuJ9fhstV3pVvxSG",
+	"https://ipfs.io/ipfs/QmY787YLWZzoiNC9vx5qb5obKw5HijtuJ9fhstV3pVvxSG",
+	"https://ipfs.io/ipfs/QmWNY6apA6BAi4mgVxK8zjaYJtdViySTv6yqSnzgvNsehx",
+	"https://ipfs.io/ipfs/QmUsa5qVRMHDvjv4hBbLPrqgo9Jn4KVeHmaR5SmJPzNkby",
+	"https://ipfs.io/ipfs/bafkreidvyyo4i7p6piapnr6qxavrfcpiruhhhnmx7ffbeatuadbwesgglu",
+	"https://ipfs.io/ipfs/QmQtNZWGwYa92wED71HEooSN4EnNnd8doTgTNMDnaDQpnS",
+	"https://ipfs.io/ipfs/QmacJhQXh8QncW9sfo9dQZzqjsaM8ATu2HfsTofEBkvTtv",
 }
 
 // Copied and adapted from backend/internal/service/coin/enrich.go
