@@ -257,34 +257,35 @@ const TransactionTypeIcon = ({ type, theme }: { type: Transaction['type'], theme
 	}
 };
 
-const renderTransactionsSection = () => {
+const Profile = () => {
+	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const {
 		transactions,
 		isLoading: isTransactionsLoading,
 		error: transactionsError,
 		hasFetched: transactionsHasFetched
-	} = useTransactionsStore.getState(); // Use getState here to avoid re-render issues in this separate func
+	} = useTransactionsStore(); // Use the hook to subscribe to state changes
 
-	const theme = useTheme(); // If styles are used inside, ensure theme is available
+	const theme = useTheme(); // Ensure theme is available
 	const styles = createStyles(theme); // And styles too
 
-	if (!transactionsHasFetched && !isTransactionsLoading) {
-		return null;
-	}
-
-	const getStatusStyle = (status: Transaction['status']) => {
-		switch (status.toUpperCase()) {
-			case 'PENDING':
-				return styles.transactionStatusTextPending;
-			case 'COMPLETED':
-				return styles.transactionStatusTextCompleted;
-			case 'FAILED':
-				return styles.transactionStatusTextFailed;
-			default:
-				return { color: theme.colors.onSurfaceVariant, marginLeft: 4, fontSize: 13, fontWeight: 'bold' }; // Default style
+	const renderTransactionsSection = () => {
+		if (!transactionsHasFetched && !isTransactionsLoading) {
+			return null;
 		}
-	};
 
+		const getStatusStyle = (status: Transaction['status']) => {
+			switch (status.toUpperCase()) {
+				case 'PENDING':
+					return styles.transactionStatusTextPending;
+				case 'COMPLETED':
+					return styles.transactionStatusTextCompleted;
+				case 'FAILED':
+					return styles.transactionStatusTextFailed;
+				default:
+					return { color: theme.colors.onSurfaceVariant, marginLeft: 4, fontSize: 13, fontWeight: 'bold' }; // Default style
+			}
+		};
 	return (
 		<View style={styles.transactionsSection}>
 			<View style={styles.transactionsHeader}>
