@@ -30,7 +30,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
 	// Debug logging
 	if (imageUrl) {
-		// console.log(`🖼️ Loading image: ${imageUrl}`);
+		console.log(`[${new Date().toISOString()}] 🖼️ Loading image: ${imageUrl}`);
 	}
 
 	// Prepare placeholder - prioritize passed placeholder, then blurhash, then default blurhash
@@ -42,7 +42,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
 	// Enhanced logging callbacks
 	const handleLoad = (event: any) => {
-		// console.log(`✅ Image loaded successfully: ${imageUrl || 'placeholder'}`);
+		console.log(`[${new Date().toISOString()}] ✅ Image loaded successfully: ${imageUrl || 'placeholder'}`);
 		setHasError(false);
 
 		// No need to reset currentGatewayIndex as it's removed.
@@ -51,7 +51,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	};
 
 	const handleError = (error: any) => {
-		console.log(`❌ Image failed to load: ${imageUrl || 'no URL'}`, error);
+		console.log(`[${new Date().toISOString()}] ❌ Image failed to load: ${imageUrl || 'no URL'}`, { message: error?.message, code: error?.code, domain: error?.domain, fullError: error });
 
 		// IPFS gateway switching logic is removed.
 		// If the resolved_icon_url (or icon_url) fails, it's now simply an error.
