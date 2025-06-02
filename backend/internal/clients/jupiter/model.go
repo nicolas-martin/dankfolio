@@ -155,9 +155,9 @@ func (t *CoinListInfo) ToModelCoin() *model.Coin {
 
 // ToRawCoin converts CoinListInfo to model.RawCoin
 func (t *CoinListInfo) ToRawCoin() *model.RawCoin {
-	var jupiterCreatedAtTime *time.Time
+	var jupiterCreatedAtTime time.Time
 	if !t.CreatedAt.IsZero() {
-		jupiterCreatedAtTime = &t.CreatedAt
+		jupiterCreatedAtTime = t.CreatedAt
 	}
 
 	return &model.RawCoin{
@@ -205,7 +205,7 @@ type NewTokenInfo struct {
 
 // ToRawCoin converts NewTokenInfo to model.RawCoin
 func (t *NewTokenInfo) ToRawCoin() *model.RawCoin {
-	var jupiterCreatedAtTime *time.Time
+	var jupiterCreatedAtTime time.Time
 	if t.CreatedAt != "" {
 		unixTimestamp, err := strconv.ParseInt(t.CreatedAt, 10, 64)
 		if err != nil {
@@ -213,7 +213,7 @@ func (t *NewTokenInfo) ToRawCoin() *model.RawCoin {
 			// jupiterCreatedAtTime remains nil
 		} else {
 			tm := time.Unix(unixTimestamp, 0)
-			jupiterCreatedAtTime = &tm
+			jupiterCreatedAtTime = tm
 		}
 	}
 

@@ -161,6 +161,32 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 
 			const fetchedCoins = response.coins; // Assuming response structure { coins: Coin[], totalCount: number }
 
+			// Check for duplicates in the backend response and log them clearly
+			const mintAddresses = fetchedCoins.map(coin => coin.mintAddress);
+			const uniqueMintAddresses = new Set(mintAddresses);
+			
+			if (mintAddresses.length !== uniqueMintAddresses.size) {
+				const duplicates = mintAddresses.filter((address, index) => 
+					mintAddresses.indexOf(address) !== index
+				);
+				const uniqueDuplicates = [...new Set(duplicates)];
+				
+				log.error('🚨 [CoinStore] DUPLICATE COINS DETECTED IN BACKEND RESPONSE!', {
+					totalCoins: fetchedCoins.length,
+					uniqueCoins: uniqueMintAddresses.size,
+					duplicateCount: mintAddresses.length - uniqueMintAddresses.size,
+					duplicateMintAddresses: uniqueDuplicates,
+					duplicateCoins: fetchedCoins.filter(coin => uniqueDuplicates.includes(coin.mintAddress))
+						.map(coin => ({
+							symbol: coin.symbol,
+							mintAddress: coin.mintAddress,
+							name: coin.name
+						}))
+				});
+			} else {
+				log.log('✅ [CoinStore] No duplicates detected in backend response');
+			}
+
 			const state = get();
 			// Filter out coins that are already in the main coinMap
 			const newCoinsToConsider = fetchedCoins.filter(fc => !state.coinMap[fc.mintAddress]);
