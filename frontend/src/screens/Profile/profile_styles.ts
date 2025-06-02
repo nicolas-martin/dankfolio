@@ -280,7 +280,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	// Ensure empty state for transactions is consistent with other empty states
 	transactionEmptyStateContainer: { // Can reuse emptyStateContainer or make specific
-		...this.emptyStateContainer, // Inherit base empty state styles
+		...emptyStateContainer, // Inherit base empty state styles
 		paddingVertical: 40, // Adjust padding if needed
 	},
 	// Removed transactionDescription, transactionDate as they are now transactionTitleText and part of transactionSubtitleText
