@@ -234,8 +234,9 @@ const Profile = () => {
 								}
 								description={(props) => ( // Use function for description to allow complex content
 									<Text {...props} style={styles.transactionSubtitleText}>
-										{formatDate(tx.date)} -
-										<Text style={getStatusStyle(tx.status)}> {tx.status.toUpperCase()}</Text>
+										<Text>{formatDate(tx.date)}</Text>
+										<Text> - </Text>
+										<Text style={getStatusStyle(tx.status)}>{tx.status.toUpperCase()}</Text>
 									</Text>
 								)}
 								left={() => (
