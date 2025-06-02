@@ -8,6 +8,9 @@ export const styles = StyleSheet.create({
         padding: theme.spacing.md,
         marginHorizontal: theme.spacing.sm,
         minWidth: 130,
+        minHeight: 120,
+        justifyContent: 'center',
+        alignItems: 'center',
         ...theme.shadows.sm,
     },
     logoContainer: {
