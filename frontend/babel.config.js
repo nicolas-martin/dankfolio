@@ -19,7 +19,14 @@ module.exports = function (api) {
 			['module-resolver', {
 				root: ['./'],
 				alias: {
-					'@assets': './assets'
+					'@': './src',
+					'@assets': './assets',
+					'@components': './src/components',
+					'@screens': './src/screens',
+					'@store': './src/store',
+					'@services': './src/services',
+					'@utils': './src/utils',
+					'@types': './src/types'
 				}
 			}]
 		]

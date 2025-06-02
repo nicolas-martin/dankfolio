@@ -2,8 +2,6 @@ import React from 'react';
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
 
-import successAnimationSource from '../../../../assets/lottie/success_tick.json';
-
 interface SuccessAnimationProps {
 	autoPlay?: boolean;
 	loop?: boolean;
@@ -21,7 +19,7 @@ const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 }) => {
 	return (
 		<LottieView
-			source={successAnimationSource}
+			source={require('@assets/lottie/success_tick.json')}
 			autoPlay={autoPlay}
 			loop={loop}
 			style={[{ width: size, height: size }, style]}
