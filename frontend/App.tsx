@@ -62,15 +62,27 @@ const paperTheme = {
 		secondaryContainer: appTheme.colors.secondaryVariant,
 		background: appTheme.colors.background,
 		surface: appTheme.colors.surface,
+		surfaceVariant: appTheme.colors.surface, // Using surface as fallback for surfaceVariant
 		error: appTheme.colors.error,
 		onPrimary: appTheme.colors.onPrimary,
 		onSecondary: appTheme.colors.onSecondary,
 		onBackground: appTheme.colors.onBackground,
 		onSurface: appTheme.colors.onSurface,
+		onSurfaceVariant: appTheme.colors.onSurfaceVariant,
 		onError: appTheme.colors.onError,
 		outline: appTheme.colors.outline,
 		outlineVariant: appTheme.colors.outlineVariant,
 		warning: appTheme.colors.warning,
+		success: appTheme.colors.success,
+		// Additional colors that might be missing
+		tertiary: appTheme.colors.secondary, // Using secondary as fallback
+		tertiaryContainer: appTheme.colors.secondaryVariant,
+		onTertiary: appTheme.colors.onSecondary,
+		onTertiaryContainer: appTheme.colors.onSecondary,
+		errorContainer: appTheme.colors.error,
+		onErrorContainer: appTheme.colors.onError,
+		onPrimaryContainer: appTheme.colors.onPrimary,
+		onSecondaryContainer: appTheme.colors.onSecondary,
 	},
 };
 

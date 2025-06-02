@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { theme as customTheme } from '@utils/theme';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	safeArea: {
@@ -253,19 +254,19 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	transactionStatusTextPending: {
 		fontSize: 13,
-		color: theme.colors.warning, // Example: Orange/Yellow for pending
+		color: customTheme.colors.warning, // Orange color for pending
 		fontWeight: 'bold',
 		marginLeft: 4,
 	},
 	transactionStatusTextCompleted: {
 		fontSize: 13,
-		color: theme.colors.success, // Example: Green for completed
+		color: customTheme.colors.success, // Green color for completed
 		fontWeight: 'bold',
 		marginLeft: 4,
 	},
 	transactionStatusTextFailed: {
 		fontSize: 13,
-		color: theme.colors.error, // Example: Red for failed
+		color: theme.colors.error, // Red for failed
 		fontWeight: 'bold',
 		marginLeft: 4,
 	},
@@ -279,10 +280,23 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignSelf: 'center', // Center the button
 	},
 	// Ensure empty state for transactions is consistent with other empty states
-	transactionEmptyStateContainer: { // Can reuse emptyStateContainer or make specific
-		...emptyStateContainer, // Inherit base empty state styles
-		paddingVertical: 40, // Adjust padding if needed
+	transactionEmptyStateContainer: { // Specific empty state for transactions
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		paddingVertical: 40,
+		paddingHorizontal: 40,
 	},
 	// Removed transactionDescription, transactionDate as they are now transactionTitleText and part of transactionSubtitleText
 	// Removed transactionDetails and transactionTexts as List.Item handles its internal layout
+	pendingText: {
+		color: customTheme.colors.warning, // Orange color for pending
+		fontSize: 12,
+		fontWeight: '500',
+	},
+	completedText: {
+		color: customTheme.colors.success, // Green color for completed
+		fontSize: 12,
+		fontWeight: '500',
+	},
 });

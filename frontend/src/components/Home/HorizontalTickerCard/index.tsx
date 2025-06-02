@@ -4,15 +4,14 @@ import { useTheme, Text } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
 import { formatPrice, formatPercentage } from '@/utils/numberFormat'; // Ensure this path is correct
 import { HorizontalTickerCardProps } from './types';
-import { createStyles } from './styles';
+import { styles } from './styles';
 
 const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress }) => {
     const theme = useTheme();
-    const styles = createStyles(theme);
 
     return (
         <TouchableOpacity
-            style={styles.card}
+            style={styles.container}
             onPress={() => onPress(coin)}
             testID={`horizontal-ticker-card-${coin.mintAddress}`}
             activeOpacity={0.7}

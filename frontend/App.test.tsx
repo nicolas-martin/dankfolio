@@ -50,8 +50,19 @@ jest.mock('@store/transactions', () => ({
   useTransactionsStore: jest.fn(),
 }));
 
-jest.mock('@components/Common/Navigation', () => () => <View testID="mock-navigation" />);
-jest.mock('@screens/WalletSetup', () => (props: any) => <View testID="mock-wallet-setup-screen" {...props} />);
+jest.mock('@components/Common/Navigation', () => {
+  return function MockNavigation() {
+    const React = require('react');
+    return React.createElement('View', { testID: 'mock-navigation' });
+  };
+});
+
+jest.mock('@screens/WalletSetup', () => {
+  return function MockWalletSetup(props: any) {
+    const React = require('react');
+    return React.createElement('View', { testID: 'mock-wallet-setup-screen', ...props });
+  };
+});
 
 // Mock logger
 jest.mock('@/utils/logger', () => ({
@@ -85,9 +96,9 @@ describe('App.tsx', () => {
       fetchPortfolioBalance: mockFetchPortfolioBalance,
       // other portfolio state/methods
     };
-    (usePortfolioStore as jest.Mock).mockReturnValue(mockPortfolioStoreState);
+    (usePortfolioStore as unknown as jest.Mock).mockReturnValue(mockPortfolioStoreState);
 
-    (useTransactionsStore as jest.Mock).mockReturnValue({
+    (useTransactionsStore as unknown as jest.Mock).mockReturnValue({
       fetchRecentTransactions: mockFetchRecentTransactions,
       // other transactions state/methods
     });

@@ -229,13 +229,6 @@ describe('Profile Screen', () => {
 	});
 
 	it('renders basic profile structure and token display correctly', () => {
-		const { getAllByTestId, getByTestId } = render(
-			<NavigationContainer>
-				<ProfileScreen />
-			</NavigationContainer>
-		);
-
-		// Verify store hooks are called correctly
 		const { getAllByTestId, getByTestId, getByText } = render(
 			<NavigationContainer>
 				<ProfileScreen />
