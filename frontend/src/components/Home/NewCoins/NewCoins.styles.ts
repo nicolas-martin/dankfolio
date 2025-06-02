@@ -34,13 +34,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
     cardWrapper: {
         marginRight: 8,
         width: 140, // Adjusted width
-        alignItems: 'center', // Center the timeAgoText below the card
-    },
-    timeAgoText: {
-        fontSize: 11, // Adjusted font size
-        color: theme.colors.onSurfaceVariant,
-        marginTop: 3, // Adjusted margin
-        textAlign: 'center',
     },
     loadingContainer: {
         flexDirection: 'row',
