@@ -16,6 +16,8 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 			onPress={() => onPress(coin)}
 			testID={`horizontal-ticker-card-${coin.mintAddress}`}
 			activeOpacity={0.7}
+			delayPressIn={100}
+			delayPressOut={100}
 		>
 			<View style={styles.logoContainer}>
 				<CachedImage

@@ -207,7 +207,11 @@ const NewCoins: React.FC = () => {
 	}
 
 	return (
-		<View style={styles.container}>
+		<View 
+			style={styles.container}
+			onTouchStart={handleTouchStart}
+			onTouchEnd={handleTouchEnd}
+		>
 			<View style={styles.titleContainer}>
 				<Text style={styles.title}>New Listings</Text>
 				<TouchableOpacity onPress={() => {
@@ -230,9 +234,10 @@ const NewCoins: React.FC = () => {
 				contentContainerStyle={styles.listContentContainer}
 				scrollEnabled={true} // Enable manual scrolling
 				onScroll={scrollHandler}
-				scrollEventThrottle={16}
-				onTouchStart={handleTouchStart}
-				onTouchEnd={handleTouchEnd}
+				scrollEventThrottle={1}
+				decelerationRate="fast"
+				snapToInterval={CARD_WIDTH}
+				snapToAlignment="start"
 				ListEmptyComponent={
 					isLoadingNewlyListed ? null : ( // Don't show empty text if still loading initially
 						<Text style={styles.emptyText}>No new listings available.</Text>
