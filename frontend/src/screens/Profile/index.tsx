@@ -232,24 +232,16 @@ const Profile = () => {
 											: `Transfer ${tx.amount > 0 ? tx.fromCoinSymbol : tx.toCoinSymbol}`}
 									</Text>
 								}
-								description={(props) => ( // Use function for description to allow complex content
-									<Text {...props} style={styles.transactionSubtitleText}>
-										<Text>{formatDate(tx.date)}</Text>
-										<Text> - </Text>
-										<Text style={getStatusStyle(tx.status)}>{tx.status.toUpperCase()}</Text>
+								description={
+									<Text style={styles.transactionSubtitleText}>
+										{formatDate(tx.date)} - <Text style={getStatusStyle(tx.status)}>{tx.status.toUpperCase()}</Text>
 									</Text>
-								)}
+								}
 								left={() => (
 									<View style={styles.transactionIconContainer}>
 										<TransactionTypeIcon type={tx.type} theme={theme} />
 									</View>
 								)}
-								// right prop can be used for amount or other details if needed
-								// right={() => (
-								// 	<Text style={{ alignSelf: 'center', color: theme.colors.primary }}>
-								// 		{/* {tx.amount.toFixed(2)} {tx.type === 'SWAP' ? tx.fromCoinSymbol : ''} */}
-								// 	</Text>
-								// )}
 								style={styles.transactionItem}
 								onPress={() => {
 									logger.info('Transaction item pressed', { txId: tx.id, hash: tx.transactionHash });
