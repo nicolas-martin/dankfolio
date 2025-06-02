@@ -12,15 +12,15 @@ const (
 
 // Coin represents a token or coin in the system (unified model)
 type Coin struct {
-	ID          uint64   `json:"id,omitempty"`
-	MintAddress string   `json:"mint_address"`
-	Name        string   `json:"name"`
-	Symbol      string   `json:"symbol"`
-	Decimals    int      `json:"decimals"`
-	Description string   `json:"description"`
-	IconUrl     string   `json:"icon_url"`
-	ResolvedIconUrl string `json:"resolved_icon_url,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
+	ID              uint64   `json:"id,omitempty"`
+	MintAddress     string   `json:"mint_address"`
+	Name            string   `json:"name"`
+	Symbol          string   `json:"symbol"`
+	Decimals        int      `json:"decimals"`
+	Description     string   `json:"description"`
+	IconUrl         string   `json:"icon_url"`
+	ResolvedIconUrl string   `json:"resolved_icon_url,omitempty"`
+	Tags            []string `json:"tags,omitempty"`
 
 	// Price and Market Data
 	Price     float64 `json:"price"`
@@ -35,9 +35,9 @@ type Coin struct {
 	Discord  string `json:"discord,omitempty"`
 
 	// Metadata
-	CreatedAt   string `json:"created_at,omitempty"` // System's created_at for enriched record
-	LastUpdated string `json:"last_updated,omitempty"`// System's last_updated for enriched record
-	JupiterListedAt  *time.Time `json:"jupiter_listed_at,omitempty"` // New field: Time listed on Jupiter
+	CreatedAt       string     `json:"created_at,omitempty"`        // System's created_at for enriched record
+	LastUpdated     string     `json:"last_updated,omitempty"`      // System's last_updated for enriched record
+	JupiterListedAt *time.Time `json:"jupiter_listed_at,omitempty"` // New field: Time listed on Jupiter
 
 	IsTrending bool `json:"is_trending,omitempty"`
 }
@@ -49,28 +49,28 @@ func (c Coin) GetID() string {
 
 // Trade represents a cryptocurrency trade
 type Trade struct {
-	ID                  string     `json:"id"`
-	UserID              string     `json:"user_id"`
-	FromCoinMintAddress string     `json:"from_coin_mint_address"`
-	FromCoinPKID        uint64     `json:"from_coin_pk_id,omitempty"`
-	ToCoinMintAddress   string     `json:"to_coin_mint_address"`
-	ToCoinPKID          uint64     `json:"to_coin_pk_id,omitempty"`
-	CoinSymbol          string     `json:"coin_symbol"` // This might be redundant if From/ToCoin provides symbol, or useful for primary display
-	Type                string     `json:"type"`
-	Amount              float64    `json:"amount"`
-	Price               float64    `json:"price"`
-	Fee                 float64    `json:"fee"`
+	ID                     string     `json:"id"`
+	UserID                 string     `json:"user_id"`
+	FromCoinMintAddress    string     `json:"from_coin_mint_address"`
+	FromCoinPKID           uint64     `json:"from_coin_pk_id,omitempty"`
+	ToCoinMintAddress      string     `json:"to_coin_mint_address"`
+	ToCoinPKID             uint64     `json:"to_coin_pk_id,omitempty"`
+	CoinSymbol             string     `json:"coin_symbol"` // This might be redundant if From/ToCoin provides symbol, or useful for primary display
+	Type                   string     `json:"type"`
+	Amount                 float64    `json:"amount"`
+	Price                  float64    `json:"price"`
+	Fee                    float64    `json:"fee"`
 	PlatformFeeAmount      float64    `json:"platform_fee_amount,omitempty"`
 	PlatformFeePercent     float64    `json:"platform_fee_percent,omitempty"`
 	PlatformFeeDestination string     `json:"platform_fee_destination,omitempty"`
-	Status              string     `json:"status"`
-	TransactionHash     string     `json:"transaction_hash"`
-	UnsignedTransaction string     `json:"unsigned_transaction,omitempty"`
-	CreatedAt           time.Time  `json:"created_at"`
-	CompletedAt         *time.Time `json:"completed_at,omitempty"`
-	Confirmations       int32      `json:"confirmations"`
-	Finalized           bool       `json:"finalized"`
-	Error               *string    `json:"error,omitempty"`
+	Status                 string     `json:"status"`
+	TransactionHash        string     `json:"transaction_hash"`
+	UnsignedTransaction    string     `json:"unsigned_transaction,omitempty"`
+	CreatedAt              time.Time  `json:"created_at"`
+	CompletedAt            *time.Time `json:"completed_at,omitempty"`
+	Confirmations          int32      `json:"confirmations"`
+	Finalized              bool       `json:"finalized"`
+	Error                  *string    `json:"error,omitempty"`
 }
 
 // GetID implements the Entity interface
@@ -174,14 +174,14 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 
 // RawCoin represents a raw token from Jupiter without enrichment
 type RawCoin struct {
-	ID          uint64 `json:"id,omitempty"`
-	MintAddress string `json:"mint_address"`
-	Symbol      string `json:"symbol"`
-	Name        string `json:"name"`
-	Decimals    int    `json:"decimals"`
-	LogoUrl     string `json:"logo_url"`
-	UpdatedAt   string `json:"updated_at"`
-	JupiterCreatedAt *time.Time `json:"jupiter_created_at,omitempty"`
+	ID               uint64    `json:"id,omitempty"`
+	MintAddress      string    `json:"mint_address"`
+	Symbol           string    `json:"symbol"`
+	Name             string    `json:"name"`
+	Decimals         int       `json:"decimals"`
+	LogoUrl          string    `json:"logo_url"`
+	UpdatedAt        string    `json:"updated_at"`
+	JupiterCreatedAt time.Time `json:"jupiter_created_at"`
 }
 
 // GetID implements the Entity interface

@@ -132,7 +132,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 
 	fetchNewCoins: async (limit: number = 10) => {
 		log.log('🆕 [CoinStore] Fetching newly listed coins...');
-		set({ isLoadingNewlyListed: true, error: null }); // Assuming existing 'error' can be reused or add a new one.
+		set({ isLoadingNewlyListed: true, error: null });
 		try {
 			// Assuming grpcApi.searchCoins will be available and configured
 			// to call the Search RPC method.
@@ -147,11 +147,29 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				sortDesc: true,
 			});
 
+			// Log the raw gRPC response
+			log.log('🔍 [CoinStore] Raw gRPC response for newly listed coins:', {
+				totalCoins: response.coins.length,
+				coins: response.coins.map(coin => ({
+					symbol: coin.symbol,
+					mintAddress: coin.mintAddress,
+					jupiterListedAt: coin.jupiterListedAt,
+					price: coin.price,
+					dailyVolume: coin.dailyVolume
+				}))
+			});
+
 			const fetchedCoins = response.coins; // Assuming response structure { coins: Coin[], totalCount: number }
 
 			const state = get();
 			// Filter out coins that are already in the main coinMap
 			const newCoinsToConsider = fetchedCoins.filter(fc => !state.coinMap[fc.mintAddress]);
+
+			log.log('🔍 [CoinStore] After filtering against coinMap:', {
+				originalCount: fetchedCoins.length,
+				afterFilteringCount: newCoinsToConsider.length,
+				filteredOutCount: fetchedCoins.length - newCoinsToConsider.length
+			});
 
 			// Update coinMap with these new coins as well, but only if they are not already there
 			// (though filtered above, this is a safeguard for coinMap update logic)
@@ -167,6 +185,17 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			const trulyNewCoins = newCoinsToConsider.filter(nc =>
 				!state.availableCoins.some(ac => ac.mintAddress === nc.mintAddress)
 			);
+
+			log.log('🔍 [CoinStore] After filtering against availableCoins:', {
+				newCoinsToConsiderCount: newCoinsToConsider.length,
+				trulyNewCoinsCount: trulyNewCoins.length,
+				availableCoinsCount: state.availableCoins.length,
+				trulyNewCoins: trulyNewCoins.map(coin => ({
+					symbol: coin.symbol,
+					mintAddress: coin.mintAddress,
+					jupiterListedAt: coin.jupiterListedAt
+				}))
+			});
 
 			set({
 				newlyListedCoins: trulyNewCoins,

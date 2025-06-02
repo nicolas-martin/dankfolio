@@ -4,6 +4,7 @@ import { Trade } from '../gen/dankfolio/v1/trade_pb';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import * as grpcUtils from './grpc/grpcUtils';
 import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils'; // Import the new mapper
+import { logger } from '../utils/logger';
 
 
 // Implementation of the API interface using gRPC
@@ -282,6 +283,25 @@ export const grpcApi: grpcModel.API = {
 			const response = await coinClient.search(params);
 
 			grpcUtils.logResponse(serviceName, methodName, response);
+
+			// Add detailed logging for newly listed coins search
+			if (params.sortBy === 'jupiter_listed_at') {
+				logger.log('🔍 [grpcApi] Raw gRPC response for newly listed coins search:', {
+					totalCoins: response.coins.length,
+					searchParams: params,
+					rawCoins: response.coins.map(coin => ({
+						symbol: coin.symbol,
+						mintAddress: coin.mintAddress,
+						jupiterListedAt: coin.jupiterListedAt ? {
+							seconds: coin.jupiterListedAt.seconds,
+							nanos: coin.jupiterListedAt.nanos,
+							asDate: new Date(Number(coin.jupiterListedAt.seconds) * 1000)
+						} : null,
+						price: coin.price,
+						dailyVolume: coin.dailyVolume
+					}))
+				});
+			}
 
 			return {
 				coins: response.coins.map(mapGrpcCoinToFrontendCoin)

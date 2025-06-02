@@ -7,12 +7,13 @@ export const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.md,
         marginHorizontal: theme.spacing.sm,
-        minWidth: 120,
+        minWidth: 130,
         ...theme.shadows.sm,
     },
     logoContainer: {
-        marginBottom: 6,
+        marginBottom: 10,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     symbol: {
         fontSize: theme.typography.fontSize.sm,

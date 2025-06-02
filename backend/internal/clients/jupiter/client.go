@@ -187,8 +187,16 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 		var createdAtTime time.Time
 		if newToken.CreatedAt != "" {
 			unixTimestamp, err := strconv.ParseInt(newToken.CreatedAt, 10, 64)
-			log.Printf("⚠️ Failed to parse Jupiter CreatedAt timestamp for %s: %v", newToken.Mint, err)
-			createdAtTime = time.Unix(unixTimestamp, 0)
+			if err != nil {
+				log.Printf("⚠️ Failed to parse Jupiter CreatedAt timestamp for %s: %v, using current time as fallback", newToken.Mint, err)
+				createdAtTime = time.Now() // Use current time as fallback since field is now mandatory
+			} else {
+				createdAtTime = time.Unix(unixTimestamp, 0)
+				log.Printf("✅ Successfully parsed Jupiter CreatedAt timestamp for %s: %s", newToken.Mint, createdAtTime.Format(time.RFC3339))
+			}
+		} else {
+			log.Printf("⚠️ No CreatedAt timestamp provided by Jupiter for %s, using current time as fallback", newToken.Mint)
+			createdAtTime = time.Now() // Use current time as fallback since field is now mandatory
 		}
 
 		coins[i] = CoinListInfo{
