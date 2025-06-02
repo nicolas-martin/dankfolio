@@ -1,6 +1,9 @@
 import { grpcApi } from './grpcApi';
 import { tradeClient } from './grpc/apiClient';
 import * as grpcUtils from './grpc/grpcUtils';
+import { Trade, ListTradesResponse, TradeSchema, ListTradesResponseSchema } from '../gen/dankfolio/v1/trade_pb';
+import { timestampFromDate } from '@bufbuild/protobuf/wkt';
+import { create } from '@bufbuild/protobuf';
 
 // Mock the tradeClient
 jest.mock('./grpc/apiClient', () => ({
@@ -29,12 +32,12 @@ describe('grpcApi.listTrades', () => {
 	beforeEach(() => {
 		// Clear mock call history before each test
 		(tradeClient.listTrades as jest.Mock).mockClear();
-		(grpcUtils.handleGrpcError as jest.Mock).mockClear();
+		(grpcUtils.handleGrpcError as unknown as jest.Mock).mockClear();
 	});
 
 	it('should call tradeClient.listTrades with correct default parameters', async () => {
 		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-			new GrpcListTradesResponse({ trades: [], totalCount: 0 })
+			create(ListTradesResponseSchema, { trades: [], totalCount: 0 })
 		);
 
 		await grpcApi.listTrades({ userId: mockUserId });
@@ -53,7 +56,7 @@ describe('grpcApi.listTrades', () => {
 
 	it('should call tradeClient.listTrades with provided parameters', async () => {
 		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-			new GrpcListTradesResponse({ trades: [], totalCount: 0 })
+			create(ListTradesResponseSchema, { trades: [], totalCount: 0 })
 		);
 
 		const params = {
@@ -79,23 +82,23 @@ describe('grpcApi.listTrades', () => {
 
 	it('should map gRPC response to frontend Transaction structure', async () => {
 		const mockDate = new Date();
-		const mockTimestamp = Timestamp.fromDate(mockDate);
+		const mockTimestamp = timestampFromDate(mockDate);
 
 		const mockGrpcTrades = [
-			new Trade({
+			create(TradeSchema, {
 				id: 'trade1',
 				userId: mockUserId,
 				fromCoinId: 'BTC',
 				toCoinId: 'ETH',
-				amount: '1.5',
-				type: 1, // Assuming 1 maps to a certain type, e.g., SWAP
-				status: 2, // Assuming 2 maps to a certain status, e.g., COMPLETED
+				amount: 1.5,
+				type: 'SWAP', // Using string instead of enum
+				status: 'COMPLETED', // Using string instead of enum
 				transactionHash: 'txHash123',
 				createdAt: mockTimestamp,
 			}),
 		];
 		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-			new GrpcListTradesResponse({ trades: mockGrpcTrades, totalCount: 1 })
+			create(ListTradesResponseSchema, { trades: mockGrpcTrades, totalCount: 1 })
 		);
 
 		const result = await grpcApi.listTrades({ userId: mockUserId });
@@ -104,19 +107,19 @@ describe('grpcApi.listTrades', () => {
 		expect(result.totalCount).toBe(1);
 		expect(result.transactions[0]).toEqual({
 			id: 'trade1',
-			type: 1, // Raw enum value, as per current implementation
+			type: 'SWAP', // Raw enum value, as per current implementation
 			fromCoinSymbol: 'BTC', // Placeholder
 			toCoinSymbol: 'ETH', // Placeholder
-			amount: '1.5',
-			status: 2, // Raw enum value
-			date: mockDate.toISOString(),
+			amount: 1.5, // Should be number, not string
+			status: 'COMPLETED', // Raw enum value
+			date: new Date(Number(mockTimestamp.seconds) * 1000).toISOString(),
 			transactionHash: 'txHash123',
 		});
 	});
 
 	it('should handle empty trades response', async () => {
 		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-			new GrpcListTradesResponse({ trades: [], totalCount: 0 })
+			create(ListTradesResponseSchema, { trades: [], totalCount: 0 })
 		);
 		const result = await grpcApi.listTrades({ userId: mockUserId });
 		expect(result.transactions).toEqual([]);
@@ -125,13 +128,13 @@ describe('grpcApi.listTrades', () => {
 
 	it('should handle date conversion for trades without createdAt', async () => {
 		const mockGrpcTrades = [
-			new Trade({
+			create(TradeSchema, {
 				id: 'trade2',
 				// No createdAt timestamp
 			}),
 		];
 		(tradeClient.listTrades as jest.Mock).mockResolvedValueOnce(
-			new GrpcListTradesResponse({ trades: mockGrpcTrades, totalCount: 1 })
+			create(ListTradesResponseSchema, { trades: mockGrpcTrades, totalCount: 1 })
 		);
 
 		const result = await grpcApi.listTrades({ userId: mockUserId });
