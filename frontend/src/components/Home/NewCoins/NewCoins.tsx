@@ -56,7 +56,7 @@ const NewCoins: React.FC = () => {
 	const scrollData = useMemo(() => {
 		if (!newlyListedCoins || newlyListedCoins.length === 0) return [];
 		// Duplicate the array to create seamless infinite scroll
-		return [...newlyListedCoins, ...newlyListedCoins];
+		return newlyListedCoins;
 	}, [newlyListedCoins]);
 
 	// Handle manual scroll timeout
