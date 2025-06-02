@@ -2,8 +2,6 @@ import React from 'react';
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
 
-import arrowsAnimationSource from '../../../../assets/lottie/trading_arrows.json';
-
 interface ArrowsAnimationProps {
 	autoPlay?: boolean;
 	loop?: boolean;
@@ -22,7 +20,7 @@ const ArrowsAnimation: React.FC<ArrowsAnimationProps> = ({
 }) => {
 	return (
 		<LottieView
-			source={arrowsAnimationSource}
+			source={require('@assets/lottie/trading_arrows.json')}
 			autoPlay={autoPlay}
 			loop={loop}
 			style={[{ width: size, height: size }, style]}

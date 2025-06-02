@@ -8,7 +8,7 @@ import { PricePoint } from '@components/Chart/CoinChart/types';
 import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
 import { PriceData, Coin } from '@/types';
-import LottieView from 'lottie-react-native'; // Import LottieView
+import LottieView from 'lottie-react-native';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
@@ -18,8 +18,7 @@ import {
 import { createStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { logger } from '@/utils/logger';
-import { grpcApi } from '@/services/grpcApi'; // Will be removed if not used after changes
-import { useCoinStore } from '@store/coins'; // Import useCoinStore
+import { useCoinStore } from '@store/coins';
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -112,7 +111,7 @@ const CoinDetail: React.FC = () => {
 			<SafeAreaView style={styles.container}>
 				<View style={[styles.container, styles.centered]}>
 					<LottieView
-						source={require('@/assets/lottie/loading_spinner.json')}
+						source={require('@assets/lottie/loading_spinner.json')}
 						autoPlay
 						loop
 						style={{ width: 200, height: 200 }}
@@ -177,7 +176,7 @@ const CoinDetail: React.FC = () => {
 						logger.breadcrumb({
 							category: 'ui',
 							message: 'Selected timeframe on CoinDetailScreen',
-					data: { timeframe: value, coinSymbol: displayCoin?.symbol },
+							data: { timeframe: value, coinSymbol: displayCoin?.symbol },
 						});
 						setSelectedTimeframe(value);
 					}}

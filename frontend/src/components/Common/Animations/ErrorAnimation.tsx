@@ -2,8 +2,6 @@ import React from 'react';
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
 
-import errorAnimationSource from '../../../../assets/lottie/error_cross.json';
-
 interface ErrorAnimationProps {
 	autoPlay?: boolean;
 	loop?: boolean;
@@ -21,7 +19,7 @@ const ErrorAnimation: React.FC<ErrorAnimationProps> = ({
 }) => {
 	return (
 		<LottieView
-			source={errorAnimationSource}
+			source={require('@assets/lottie/error_cross.json')}
 			autoPlay={autoPlay}
 			loop={loop}
 			style={[{ width: size, height: size }, style]}
