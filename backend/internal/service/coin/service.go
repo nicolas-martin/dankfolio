@@ -478,14 +478,26 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		slog.Error("Failed to get new coins from Jupiter", slog.Any("error", err))
 		return fmt.Errorf("failed to get new coins from Jupiter: %w", err)
 	}
+
+	if len(resp) == 0 {
+		slog.Info("No new coins found from Jupiter.")
+		return nil
+	}
+
 	// convert to CoinListInfo
 	coins := make([]*jupiter.CoinListInfo, 0, len(resp))
-	for i, newToken := range resp {
+	for _, newToken := range resp {
+		// Add nil check to prevent panic
+		if newToken == nil {
+			slog.Warn("Skipping nil token in response from Jupiter")
+			continue
+		}
+
 		dt, err := time.Parse(time.RFC3339, newToken.CreatedAt)
 		if err != nil {
 			slog.Warn("Failed to parse CreatedAt for new token", slog.String("mint", newToken.Mint), slog.Any("error", err))
 		}
-		coins[i] = &jupiter.CoinListInfo{
+		coin := &jupiter.CoinListInfo{
 			Address:     newToken.Mint, // Map mint to address
 			ChainID:     101,           // Solana mainnet
 			Decimals:    newToken.Decimals,
@@ -497,19 +509,15 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			Tags:        []string{},
 			CreatedAt:   dt, // Use parsed time
 		}
+		coins = append(coins, coin)
 	}
 
-	if resp == nil || len(coins) == 0 {
-		slog.Info("No new coins found from Jupiter.")
+	if len(coins) == 0 {
+		slog.Info("No valid coins to process from Jupiter.")
 		return nil
 	}
 
 	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("fetched_count", len(coins)))
-
-	if len(coins) == 0 {
-		slog.Info("No new coins to process from Jupiter.")
-		return nil
-	}
 
 	rawCoinsToUpsert := make([]model.RawCoin, 0, len(coins))
 	for _, v_jupiterCoin := range coins { // v_jupiterCoin is of type jupiter.Coin
