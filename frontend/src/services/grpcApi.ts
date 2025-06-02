@@ -2,14 +2,9 @@ import { coinClient, priceClient, tradeClient, utilityClient, walletClient } fro
 import * as grpcModel from './grpc/model';
 import { Trade } from '../gen/dankfolio/v1/trade_pb';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
-import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import * as grpcUtils from './grpc/grpcUtils';
 import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils'; // Import the new mapper
 
-// Helper to convert timestamp strings to Timestamp objects
-function convertToTimestamp(dateStr: string): Timestamp {
-	return timestampFromDate(new Date(dateStr));
-}
 
 // Implementation of the API interface using gRPC
 export const grpcApi: grpcModel.API = {
@@ -124,8 +119,8 @@ export const grpcApi: grpcModel.API = {
 			grpcUtils.logRequest(serviceName, methodName, { address, type, timeFrom, timeTo, addressType });
 
 			// Convert timeFrom and timeTo to timestamps without fallbacks
-			const fromTimestamp = convertToTimestamp(timeFrom);
-			const toTimestamp = convertToTimestamp(timeTo);
+			const fromTimestamp = grpcUtils.convertToTimestamp(timeFrom);
+			const toTimestamp = grpcUtils.convertToTimestamp(timeTo);
 			const typeMap: { [key: string]: GetPriceHistoryRequest_PriceHistoryType; } = {
 				"ONE_MINUTE": GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE,
 				"THREE_MINUTE": GetPriceHistoryRequest_PriceHistoryType.THREE_MINUTE,
@@ -413,14 +408,14 @@ export const grpcApi: grpcModel.API = {
 			grpcUtils.logResponse(serviceName, methodName, response);
 
 			const transactions: grpcModel.Transaction[] = response.trades.map((trade: Trade) => {
-				const type: 'SWAP' | 'TRANSFER' | 'UNKNOWN' = 
+				const type: 'SWAP' | 'TRANSFER' | 'UNKNOWN' =
 					trade.type === 'SWAP' ? 'SWAP' :
-					trade.type === 'TRANSFER' ? 'TRANSFER' : 'UNKNOWN';
-				
-				const status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN' = 
+						trade.type === 'TRANSFER' ? 'TRANSFER' : 'UNKNOWN';
+
+				const status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN' =
 					trade.status === 'PENDING' ? 'PENDING' :
-					trade.status === 'COMPLETED' ? 'COMPLETED' :
-					trade.status === 'FAILED' ? 'FAILED' : 'UNKNOWN';
+						trade.status === 'COMPLETED' ? 'COMPLETED' :
+							trade.status === 'FAILED' ? 'FAILED' : 'UNKNOWN';
 
 				return {
 					id: trade.id,

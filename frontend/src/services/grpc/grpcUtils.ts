@@ -3,6 +3,7 @@ import { logger as log } from '@/utils/logger'; // Import the new logger
 import { Coin as FrontendCoin } from '@/types';
 import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
 import { DEBUG_MODE } from '@env';
+import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 
 const IS_DEBUG_MODE = DEBUG_MODE === 'true';
 
@@ -92,4 +93,8 @@ export const handleGrpcError = (error: unknown, serviceName: string, methodName:
 		throw new Error(`${error.code}: ${error.message}`);
 	}
 	throw error;
-}; 
+};
+// Helper to convert timestamp strings to Timestamp objects
+export const convertToTimestamp = (dateStr: string): Timestamp => {
+	return timestampFromDate(new Date(dateStr));
+}

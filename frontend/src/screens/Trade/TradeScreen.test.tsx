@@ -13,13 +13,17 @@ import { useRoute } from '@react-navigation/native';
 import type { PortfolioToken } from '@/store/portfolio';
 import { grpcApi } from '@/services/grpcApi';
 import * as TradeScripts from '../../__mocks__/screens/Trade/trade_scripts';
+import { RawWalletData, Base58PrivateKey } from '@/types';
 
 // Mock Stores
 jest.mock('@store/portfolio');
 jest.mock('@store/coins');
-jest.mock('@store/transactions', () => ({ // Added
+jest.mock('@store/transactions', () => ({
 	useTransactionsStore: jest.fn(),
 }));
+
+// Get the mocked useTransactionsStore
+const { useTransactionsStore } = require('@store/transactions');
 
 // Mock Navigation
 const mockNavigate = jest.fn();
