@@ -4,7 +4,7 @@ import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import CoinCard from '@components/Home/CoinCard';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
 import { usePortfolioStore } from '@store/portfolio';
@@ -44,29 +44,35 @@ const HomeScreen = () => {
 			wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 		]);
 
-		// Handle fetching new coins - cache will handle interval checking automatically
-		let newCoinsFetched = false;
+		await trendingAndPortfolioPromise; // Wait for trending and portfolio to complete
 
+		logger.log('[HomeScreen] 🏠 Completed home screen data fetch.');
+	}, [wallet, fetchAvailableCoins, fetchPortfolioBalance]);
+
+	// Separate function for fetching new coins
+	const fetchNewCoinsData = useCallback(async () => {
 		logger.log('[HomeScreen] Fetching new coins (cache will handle timing)...');
 
 		try {
 			await fetchNewCoins(); // Cache will determine if fetch is needed or use cached data
-			newCoinsFetched = true;
 			logger.log('[HomeScreen] ✅ New coins fetch completed (may have used cache).');
 		} catch (error) {
 			logger.error('[HomeScreen] ❌ Error fetching new coins:', error);
 		}
-
-		await trendingAndPortfolioPromise; // Wait for trending and portfolio to complete
-
-		logger.log(`[HomeScreen] 🏠 Completed home screen data fetch. New coins processed: ${newCoinsFetched}`);
-	}, [wallet, fetchAvailableCoins, fetchNewCoins, fetchPortfolioBalance]);
-
+	}, [fetchNewCoins]);
 
 	// Fetch trending coins and portfolio on mount
 	useEffect(() => {
 		fetchTrendingAndPortfolio();
 	}, [fetchTrendingAndPortfolio]);
+
+	// Fetch new coins every time the screen comes into focus
+	// This ensures we check the cache and fetch if needed on every navigation to Home
+	useFocusEffect(
+		useCallback(() => {
+			fetchNewCoinsData();
+		}, [fetchNewCoinsData])
+	);
 
 	const handleCoinPressCallback = useCallback((coin: Coin) => {
 		handleCoinPress(coin, navigation);
