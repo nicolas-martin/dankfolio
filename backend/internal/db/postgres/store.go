@@ -3,13 +3,15 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log"
 	"log/slog"
+	"os"
 	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
+	"gorm.io/gorm/logger"
 
 	"github.com/lib/pq"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
@@ -42,22 +44,23 @@ func NewStoreWithDB(database *gorm.DB) *Store {
 
 // NewStore creates a new PostgreSQL store instance and connects to the database.
 func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level) (*Store, error) {
-	gormConfig := &gorm.Config{}
-
-	var gormLogLevel gormlogger.LogLevel
-	if appLogLevel <= slog.LevelDebug {
-		gormLogLevel = gormlogger.Info
-	} else {
-		gormLogLevel = gormlogger.Warn
-	}
-	gormConfig.Logger = gormlogger.Default.LogMode(gormLogLevel)
-
-	dbConn, err := gorm.Open(postgres.Open(dsn), gormConfig)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				SlowThreshold:             time.Second, // Slow SQL threshold
+				LogLevel:                  logger.Info, // Log level
+				IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+				ParameterizedQueries:      true,        // Don't include params in the SQL log
+				Colorful:                  true,
+			},
+		),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	sqlDB, err := dbConn.DB()
+	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
@@ -68,13 +71,14 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level) (*Stor
 	}
 
 	if enableAutoMigrate {
-		if err := dbConn.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}); err != nil {
-			return nil, fmt.Errorf("failed to auto-migrate schema: %w", err)
+		// Auto-migrate the schema
+		if err := db.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}); err != nil {
+			return nil, fmt.Errorf("failed to auto-migrate: %w", err)
 		}
 	}
 
 	// Use NewStoreWithDB to initialize the repositories
-	return NewStoreWithDB(dbConn), nil
+	return NewStoreWithDB(db), nil
 }
 
 // Close closes the database connection.
@@ -131,8 +135,8 @@ func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 }
 
 func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
-	if strings.ToLower(sortBy) == "listed_at" {
-		slog.Debug("SearchCoins: Sorting by 'listed_at', querying raw_coins directly.")
+	if strings.ToLower(sortBy) == "listed_at" || strings.ToLower(sortBy) == "jupiter_listed_at" {
+		slog.Debug("SearchCoins: Sorting by 'listed_at' or 'jupiter_listed_at', querying raw_coins directly.")
 		var rawCoins []schema.RawCoin
 		rawTx := s.db.WithContext(ctx).Model(&schema.RawCoin{})
 
@@ -146,7 +150,7 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 		if !sortDesc {
 			order = "ASC"
 		}
-		rawTx = rawTx.Order(fmt.Sprintf("%s %s", dbSortColumn, order))
+		rawTx = rawTx.Order(fmt.Sprintf("%s %s NULLS LAST", dbSortColumn, order))
 
 		if limit > 0 {
 			rawTx = rawTx.Limit(int(limit))
@@ -248,7 +252,7 @@ func mapSortBy(sortBy string) string {
 		return "created_at"
 	case "last_updated":
 		return "last_updated"
-	case "listed_at":
+	case "listed_at", "jupiter_listed_at":
 		return "jupiter_created_at"
 	default:
 		return "created_at"
@@ -279,6 +283,7 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 			IsTrending:      sc.IsTrending,
 			CreatedAt:       sc.CreatedAt.Format(time.RFC3339),
 			LastUpdated:     sc.LastUpdated.Format(time.RFC3339),
+			JupiterListedAt: sc.JupiterCreatedAt,
 		}
 	}
 	return coins
@@ -294,7 +299,7 @@ func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {
 			Symbol:          rc.Symbol,
 			Decimals:        rc.Decimals,
 			IconUrl:         rc.LogoUrl,
-			JupiterListedAt: rc.JupiterCreatedAt,
+			JupiterListedAt: &rc.JupiterCreatedAt,
 		}
 	}
 	return coins

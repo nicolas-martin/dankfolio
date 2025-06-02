@@ -21,8 +21,8 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
             <View style={styles.logoContainer}>
                 <CachedImage
                     uri={coin.resolvedIconUrl}
-                    size={32} // Adjust size as needed
-                    borderRadius={16} // Half of size
+                    size={48} // Increased from 32 to make more prominent
+                    borderRadius={24} // Half of size
                     testID={`coin-icon-${coin.mintAddress}`}
                 />
             </View>

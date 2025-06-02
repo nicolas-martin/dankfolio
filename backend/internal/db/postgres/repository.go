@@ -244,6 +244,7 @@ func (r *Repository[S, M]) toModel(s S) any {
 			IsTrending:      v.IsTrending,
 			CreatedAt:       v.CreatedAt.Format(time.RFC3339),
 			LastUpdated:     v.LastUpdated.Format(time.RFC3339),
+			JupiterListedAt: v.JupiterCreatedAt, // Map JupiterCreatedAt to JupiterListedAt
 		}
 	case schema.Trade:
 		var completedAt *time.Time
@@ -285,13 +286,14 @@ func (r *Repository[S, M]) toModel(s S) any {
 		}
 	case schema.RawCoin:
 		return &model.RawCoin{
-			ID:          v.ID, // Added
-			MintAddress: v.MintAddress,
-			Symbol:      v.Symbol,
-			Name:        v.Name,
-			Decimals:    v.Decimals,
-			LogoUrl:     v.LogoUrl,
-			UpdatedAt:   v.UpdatedAt.Format(time.RFC3339),
+			ID:               v.ID, // Added
+			MintAddress:      v.MintAddress,
+			Symbol:           v.Symbol,
+			Name:             v.Name,
+			Decimals:         v.Decimals,
+			LogoUrl:          v.LogoUrl,
+			UpdatedAt:        v.UpdatedAt.Format(time.RFC3339),
+			JupiterCreatedAt: v.JupiterCreatedAt, // Map JupiterCreatedAt field
 		}
 	case schema.Wallet:
 		return &model.Wallet{
@@ -311,24 +313,25 @@ func (r *Repository[S, M]) fromModel(m M) any {
 	case model.Coin:
 		sCoin := &schema.Coin{
 			// ID is not set here if v.ID is 0 (new record), GORM handles auto-increment
-			MintAddress:     v.MintAddress,
-			Name:            v.Name,
-			Symbol:          v.Symbol,
-			Decimals:        v.Decimals,
-			Description:     v.Description,
-			IconUrl:         v.IconUrl,
-			ResolvedIconUrl: v.ResolvedIconUrl,
-			Tags:            v.Tags,
-			Price:           v.Price,
-			Change24h:       v.Change24h,
-			MarketCap:       v.MarketCap,
-			Volume24h:       v.Volume24h,
-			Website:         v.Website,
-			Twitter:         v.Twitter,
-			Telegram:        v.Telegram,
-			Discord:         v.Discord,
-			IsTrending:      v.IsTrending,
-			LastUpdated:     time.Now(),
+			MintAddress:      v.MintAddress,
+			Name:             v.Name,
+			Symbol:           v.Symbol,
+			Decimals:         v.Decimals,
+			Description:      v.Description,
+			IconUrl:          v.IconUrl,
+			ResolvedIconUrl:  v.ResolvedIconUrl,
+			Tags:             v.Tags,
+			Price:            v.Price,
+			Change24h:        v.Change24h,
+			MarketCap:        v.MarketCap,
+			Volume24h:        v.Volume24h,
+			Website:          v.Website,
+			Twitter:          v.Twitter,
+			Telegram:         v.Telegram,
+			Discord:          v.Discord,
+			IsTrending:       v.IsTrending,
+			LastUpdated:      time.Now(),
+			JupiterCreatedAt: v.JupiterListedAt, // Map JupiterListedAt to JupiterCreatedAt
 		}
 		if v.ID != 0 {
 			sCoin.ID = v.ID
@@ -404,7 +407,7 @@ func getColumnNames(data any) []string {
 		return []string{
 			"mint_address", "name", "symbol", "decimals", "description", "icon_url", "resolved_icon_url", "tags",
 			"price", "change_24h", "market_cap", "volume_24h", "website",
-			"twitter", "telegram", "discord", "is_trending", "last_updated",
+			"twitter", "telegram", "discord", "is_trending", "last_updated", "jupiter_created_at",
 		}
 	case *schema.Trade:
 		// Explicitly list columns to update, excluding PK 'id'

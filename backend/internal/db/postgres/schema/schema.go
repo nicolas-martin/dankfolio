@@ -18,26 +18,27 @@ func (w Wallet) GetID() string {
 
 // Coin represents the structure of the 'coins' table in the database.
 type Coin struct {
-	ID              uint64         `gorm:"primaryKey;autoIncrement;not null"`
-	MintAddress     string         `gorm:"column:mint_address;not null;uniqueIndex:idx_coins_mint_address"`
-	Name            string         `gorm:"column:name;not null"`
-	Symbol          string         `gorm:"column:symbol;not null;index:idx_coins_symbol"`
-	Decimals        int            `gorm:"column:decimals;not null"`
-	Description     string         `gorm:"column:description"`
-	IconUrl         string         `gorm:"column:icon_url"`
-	ResolvedIconUrl string         `gorm:"column:resolved_icon_url"`
-	Tags            pq.StringArray `gorm:"column:tags;type:text[];index:idx_coins_tags,type:gin"`
-	Price           float64        `gorm:"column:price;default:0.0"`
-	Change24h       float64        `gorm:"column:change_24h;default:0.0"`
-	MarketCap       float64        `gorm:"column:market_cap;default:0.0"`
-	Volume24h       float64        `gorm:"column:volume_24h;default:0.0"`
-	Website         string         `gorm:"column:website"`
-	Twitter         string         `gorm:"column:twitter"`
-	Telegram        string         `gorm:"column:telegram"`
-	Discord         string         `gorm:"column:discord"`
-	IsTrending      bool           `gorm:"column:is_trending;default:false"`
-	CreatedAt       time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
-	LastUpdated     time.Time      `gorm:"column:last_updated;default:CURRENT_TIMESTAMP"`
+	ID               uint64         `gorm:"primaryKey;autoIncrement;not null"`
+	MintAddress      string         `gorm:"column:mint_address;not null;uniqueIndex:idx_coins_mint_address"`
+	Name             string         `gorm:"column:name;not null"`
+	Symbol           string         `gorm:"column:symbol;not null;index:idx_coins_symbol"`
+	Decimals         int            `gorm:"column:decimals;not null"`
+	Description      string         `gorm:"column:description"`
+	IconUrl          string         `gorm:"column:icon_url"`
+	ResolvedIconUrl  string         `gorm:"column:resolved_icon_url"`
+	Tags             pq.StringArray `gorm:"column:tags;type:text[];index:idx_coins_tags,type:gin"`
+	Price            float64        `gorm:"column:price;default:0.0"`
+	Change24h        float64        `gorm:"column:change_24h;default:0.0"`
+	MarketCap        float64        `gorm:"column:market_cap;default:0.0"`
+	Volume24h        float64        `gorm:"column:volume_24h;default:0.0"`
+	Website          string         `gorm:"column:website"`
+	Twitter          string         `gorm:"column:twitter"`
+	Telegram         string         `gorm:"column:telegram"`
+	Discord          string         `gorm:"column:discord"`
+	IsTrending       bool           `gorm:"column:is_trending;default:false"`
+	CreatedAt        time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
+	LastUpdated      time.Time      `gorm:"column:last_updated;default:CURRENT_TIMESTAMP"`
+	JupiterCreatedAt *time.Time     `gorm:"column:jupiter_created_at;index"`
 }
 
 // TableName overrides the default table name generation.
@@ -69,14 +70,14 @@ func (c Coin) GetID() string {
 
 // RawCoin represents the structure of the 'raw_coins' table for raw Jupiter tokens.
 type RawCoin struct {
-	ID               uint64     `gorm:"primaryKey;autoIncrement;not null"`
-	MintAddress      string     `gorm:"column:mint_address;not null;uniqueIndex:idx_raw_coins_mint_address"`
-	Symbol           string     `gorm:"column:symbol;not null"`
-	Name             string     `gorm:"column:name;not null"`
-	Decimals         int        `gorm:"column:decimals;not null"`
-	LogoUrl          string     `gorm:"column:logo_url"`
-	UpdatedAt        time.Time  `gorm:"column:updated_at;default:CURRENT_TIMESTAMP"`
-	JupiterCreatedAt *time.Time `gorm:"column:jupiter_created_at;index"`
+	ID               uint64    `gorm:"primaryKey;autoIncrement;not null"`
+	MintAddress      string    `gorm:"column:mint_address;not null;uniqueIndex:idx_raw_coins_mint_address"`
+	Symbol           string    `gorm:"column:symbol;not null"`
+	Name             string    `gorm:"column:name;not null"`
+	Decimals         int       `gorm:"column:decimals;not null"`
+	LogoUrl          string    `gorm:"column:logo_url"`
+	UpdatedAt        time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP"`
+	JupiterCreatedAt time.Time `gorm:"column:jupiter_created_at;not null;index"`
 }
 
 // TableName overrides the default table name generation for RawCoin.
