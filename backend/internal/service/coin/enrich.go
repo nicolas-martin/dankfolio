@@ -12,9 +12,16 @@ import (
 
 var defaultCIDv0Gateways = []string{
 	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
-	"https://cloudflare-ipfs.com/ipfs/",  // Cloudflare is fast and reliable
+	"https://ipfs.io/ipfs/",              // Promoted fallback
 	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
-	"https://ipfs.io/ipfs/",              // Keep as fallback, but not first choice
+	// "https://cloudflare-ipfs.com/ipfs/",  // Cloudflare has DNS issues from sandbox
+}
+
+var defaultCIDv1Gateways = []string{
+	"https://gateway.pinata.cloud/ipfs/", // Usually reliable
+	"https://ipfs.io/ipfs/",              // Fallback, but known to be slow/problematic sometimes
+	// "https://cloudflare-ipfs.com/ipfs/", // Keep commented out or at end due to DNS issues
+	// "https://dweb.link/ipfs/",           // Keep commented out or at end due to timeout issues
 }
 
 // EnrichCoinData fetches detailed information for a given mint address using Jupiter,
@@ -123,11 +130,71 @@ func (s *Service) EnrichCoinData(
 
 	enrichFromMetadata(&coin, offchainMeta) // Pass original offchainMeta
 
-	// Standardize the IconUrl to produce ResolvedIconUrl
-	// If IconUrl is empty, standardizeIpfsUrl will return empty, so ResolvedIconUrl will be empty.
-	coin.ResolvedIconUrl = s.standardizeIpfsUrl(coin.IconUrl)
-	if coin.ResolvedIconUrl != coin.IconUrl && coin.ResolvedIconUrl != "" {
-		slog.Debug("Standardized IPFS URL", slog.String("original", coin.IconUrl), slog.String("resolved", coin.ResolvedIconUrl), slog.String("mintAddress", mintAddress))
+	slog.Debug("Starting icon validation process", slog.String("mintAddress", mintAddress), slog.String("initialIconUrl", coin.IconUrl))
+
+	if coin.IconUrl == "" {
+		slog.Debug("Icon URL is empty, skipping validation.", slog.String("mintAddress", mintAddress))
+		coin.ResolvedIconUrl = ""
+	} else {
+		candidateResolvedUrl := s.standardizeIpfsUrl(coin.IconUrl)
+
+		if candidateResolvedUrl == "" {
+			slog.Warn("Standardizing IconUrl resulted in an empty string.", slog.String("mintAddress", mintAddress), slog.String("originalIconUrl", coin.IconUrl))
+			coin.IconUrl = "" // Clear original as well if standardization fails
+			coin.ResolvedIconUrl = ""
+		} else {
+			slog.Debug("Standardized IconUrl for validation", slog.String("mintAddress", mintAddress), slog.String("original", coin.IconUrl), slog.String("standardized", candidateResolvedUrl))
+
+			isValid, reasonOrURL, validationErr := s.offchainClient.VerifyDirectImageAccess(ctx, candidateResolvedUrl)
+
+			// Define isIPFS based on the candidateResolvedUrl (which is standardized) or original coin.IconUrl
+			isIPFS := strings.HasPrefix(candidateResolvedUrl, "https://gateway.pinata.cloud/ipfs/") ||
+				strings.HasPrefix(candidateResolvedUrl, "https://ipfs.io/ipfs/") ||
+				strings.HasPrefix(candidateResolvedUrl, "https://cloudflare-ipfs.com/ipfs/") || // Keep for completeness even if not primary
+				strings.HasPrefix(candidateResolvedUrl, "https://dweb.link/ipfs/") || // Keep for completeness
+				strings.HasPrefix(coin.IconUrl, "ipfs://") // Check original scheme as well
+
+			if isValid {
+				slog.Info("Icon successfully validated", slog.String("mintAddress", mintAddress), slog.String("resolvedIconUrl", reasonOrURL))
+				coin.ResolvedIconUrl = reasonOrURL // reasonOrURL is the validated URL if isValid is true
+			} else {
+				slog.Warn("Icon validation failed",
+					slog.String("mintAddress", mintAddress),
+					slog.String("urlAttempted", candidateResolvedUrl),
+					slog.String("reason", reasonOrURL),
+					slog.Any("error", validationErr))
+
+				// Default to discarding the icon by emptying ResolvedIconUrl
+				resolvedIconUrlToSet := ""
+				originalIconUrlToSet := coin.IconUrl // By default, keep original IconUrl unless specific discard logic clears it
+
+				// Nuanced handling for IPFS URLs:
+				// If it's an IPFS URL and the failure reason suggests a gateway/network issue or redirect,
+				// we might still use the standardized URL. Otherwise, discard it.
+				isGatewayIssue := false
+				if validationErr != nil { // Ensure validationErr is not nil before trying to access its contents
+					errStr := validationErr.Error()
+					isGatewayIssue = reasonOrURL == "network_error" ||
+						(reasonOrURL == "non_200_status" && (strings.Contains(errStr, "429") || strings.Contains(errStr, "504") || strings.Contains(errStr, "502") || strings.Contains(errStr, "timeout")))
+				}
+				isRedirect := reasonOrURL == "redirect_attempted"
+
+				if isIPFS && (isGatewayIssue || isRedirect) {
+					slog.Warn("IPFS icon validation failed due to gateway issue or redirect, but using standardized URL as fallback.",
+						slog.String("mintAddress", mintAddress),
+						slog.String("resolvedIconUrlToUse", candidateResolvedUrl),
+						slog.String("reason", reasonOrURL))
+					resolvedIconUrlToSet = candidateResolvedUrl // Trust the standardized URL
+				} else {
+					// For non-IPFS URLs, or IPFS URLs with definitive content errors (e.g. not an image, 404 for the content itself)
+					slog.Warn("Discarding icon due to validation failure.", slog.String("mintAddress", mintAddress), slog.String("url", candidateResolvedUrl), slog.String("reason", reasonOrURL))
+					originalIconUrlToSet = "" // Also clear the original potentially problematic URL
+					// resolvedIconUrlToSet remains "" (empty)
+				}
+				coin.ResolvedIconUrl = resolvedIconUrlToSet
+				coin.IconUrl = originalIconUrlToSet // Update IconUrl only if we decide to discard it
+			}
+		}
 	}
 
 	// Ensure LastUpdated is set
@@ -167,22 +234,23 @@ func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 				slog.Error("No default CIDv0 gateways configured.", "url", iconUrlInput)
 				return iconUrlInput // return original if no gateways are available
 			}
-			return defaultCIDv0Gateways[0] + ipfsResourceIdentifier
+			return defaultCIDv0Gateways[0] + ipfsResourceIdentifier // ipfsResourceIdentifier already includes path and query
 		} else {
-			// Assume it's CIDv1 or other. Use subdomain format with the first path component (potential CID).
-			subdomainPart := firstPathComponent
-			pathPart := ""
-			if restOfPathIdx := strings.Index(ipfsResourceIdentifier, "/"); restOfPathIdx != -1 {
-				pathPart = ipfsResourceIdentifier[restOfPathIdx:]
-			} else {
-				// No path after CID, add trailing slash for CIDv1
-				pathPart = "/"
+			// It's CIDv1 or other (non-CIDv0). Use the first default CIDv1 gateway.
+			if len(defaultCIDv1Gateways) == 0 {
+				slog.Error("No default CIDv1 gateways configured for HTTP gateway URL.", "url", iconUrlInput)
+				return iconUrlInput // return original if no gateways are available
 			}
-			return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
+			// ipfsResourceIdentifier here is <CIDv1_or_other><optional_path_and_query>
+			return defaultCIDv1Gateways[0] + ipfsResourceIdentifier
 		}
 	} else if strings.HasPrefix(iconUrlInput, "ipfs://") {
 		// Handle raw ipfs:// URIs
 		trimmedCidAndPath := strings.TrimPrefix(iconUrlInput, "ipfs://")
+		if trimmedCidAndPath == "" {
+			slog.Warn("Empty content after ipfs:// scheme", "url", iconUrlInput)
+			return "" // Or return iconUrlInput if preferred for empty path
+		}
 
 		firstPathComponent := strings.SplitN(trimmedCidAndPath, "/", 2)[0]
 
@@ -192,17 +260,15 @@ func (s *Service) standardizeIpfsUrl(iconUrlInput string) string {
 				slog.Error("No default CIDv0 gateways configured for raw CIDv0 URI.", "url", iconUrlInput)
 				return iconUrlInput // return original if no gateways are available
 			}
-			return defaultCIDv0Gateways[0] + trimmedCidAndPath
+			return defaultCIDv0Gateways[0] + trimmedCidAndPath // trimmedCidAndPath includes full path and query
 		} else {
-			subdomainPart := firstPathComponent
-			pathPart := ""
-			if restOfPathIdx := strings.Index(trimmedCidAndPath, "/"); restOfPathIdx != -1 {
-				pathPart = trimmedCidAndPath[restOfPathIdx:]
-			} else {
-				// No path after CID, add trailing slash for CIDv1
-				pathPart = "/"
+			// It's CIDv1 or other (non-CIDv0). Use the first default CIDv1 gateway.
+			if len(defaultCIDv1Gateways) == 0 {
+				slog.Error("No default CIDv1 gateways configured for raw CIDv1 URI.", "url", iconUrlInput)
+				return iconUrlInput // return original if no gateways are available
 			}
-			return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
+			// trimmedCidAndPath is <CIDv1_or_other><optional_path_and_query>
+			return defaultCIDv1Gateways[0] + trimmedCidAndPath
 		}
 	}
 

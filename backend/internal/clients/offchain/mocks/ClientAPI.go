@@ -83,6 +83,70 @@ func (_c *MockClientAPI_FetchMetadata_Call) Run(run func(uri string)) *MockClien
 	return _c
 }
 
+// VerifyDirectImageAccess provides a mock function with given fields: ctx, url
+func (_m *MockClientAPI) VerifyDirectImageAccess(ctx context.Context, url string) (bool, string, error) {
+	ret := _m.Called(ctx, url)
+
+	if len(ret) == 0 {
+		panic("no return value specified for VerifyDirectImageAccess")
+	}
+
+	var r0 bool
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, string, error)); ok {
+		return rf(ctx, url)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, url)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) string); ok {
+		r1 = rf(ctx, url)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, url)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// MockClientAPI_VerifyDirectImageAccess_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'VerifyDirectImageAccess'
+type MockClientAPI_VerifyDirectImageAccess_Call struct {
+	*mock.Call
+}
+
+// VerifyDirectImageAccess is a helper method to define mock.On call
+//   - ctx context.Context
+//   - url string
+func (_e *MockClientAPI_Expecter) VerifyDirectImageAccess(ctx interface{}, url interface{}) *MockClientAPI_VerifyDirectImageAccess_Call {
+	return &MockClientAPI_VerifyDirectImageAccess_Call{Call: _e.mock.On("VerifyDirectImageAccess", ctx, url)}
+}
+
+func (_c *MockClientAPI_VerifyDirectImageAccess_Call) Run(run func(ctx context.Context, url string)) *MockClientAPI_VerifyDirectImageAccess_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_VerifyDirectImageAccess_Call) Return(isValid bool, reasonOrURL string, err error) *MockClientAPI_VerifyDirectImageAccess_Call {
+	_c.Call.Return(isValid, reasonOrURL, err)
+	return _c
+}
+
+func (_c *MockClientAPI_VerifyDirectImageAccess_Call) RunAndReturn(run func(ctx context.Context, url string) (bool, string, error)) *MockClientAPI_VerifyDirectImageAccess_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 func (_c *MockClientAPI_FetchMetadata_Call) Return(stringToV map[string]any, err error) *MockClientAPI_FetchMetadata_Call {
 	_c.Call.Return(stringToV, err)
 	return _c

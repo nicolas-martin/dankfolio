@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Validation Test Results</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .container { display: flex; flex-wrap: wrap; }
+        .icon-card { border: 1px solid #ccc; margin: 10px; padding: 10px; width: 250px; text-align: center; }
+        .icon-card img { max-width: 100px; max-height: 100px; display: block; margin: 0 auto 10px auto; border:1px solid black; }
+        .icon-card p { font-size: 0.8em; word-wrap: break-word; }
+        .status-valid { color: green; }
+        .status-invalid { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Icon Validation Test Results</h1>
+    <div class="container">
+        <div class="icon-card">
+            <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Original: https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" title="Original: https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png Standardized: https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" />
+            <p><b>Original:</b> https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png</p>
+            <p><b>Standardized:</b> https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png</p>
+            <p><b>Status:</b> <span class="status-valid">valid_image</span></p>
+        </div>
+        <!-- Other images would go here if validated -->
+    </div>
+    <p>Note: Only icons that were successfully validated as direct images (IsValid: true, Status: valid_image) are displayed above. See console output for full details on all URLs.</p>
+    <h2>Full Console Output:</h2>
+    <pre>
+--- Validation Results ---
+Original:     ipfs://QmXg8qh9z9zZ7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7
+Standardized: https://QmXg8qh9z9zZ7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7.ipfs.dweb.link/
+Valid:        false
+Status:       non_200_status
+Error:        non-200 status for https://QmXg8qh9z9zZ7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7Z7.ipfs.dweb.link/: 422
+---
+Original:     ipfs://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A
+Standardized: https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/
+Valid:        false
+Status:       network_error
+Error:        http request failed for https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/: Head "https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+---
+Original:     https://gateway.pinata.cloud/ipfs/bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A
+Standardized: https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/
+Valid:        false
+Status:       network_error
+Error:        http request failed for https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/: Head "https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+---
+Original:     https://cloudflare-ipfs.com/ipfs/bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A
+Standardized: https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/
+Valid:        false
+Status:       network_error
+Error:        http request failed for https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/: Head "https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+---
+Original:     https://ipfs.io/ipfs/bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A
+Standardized: https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/
+Valid:        false
+Status:       network_error
+Error:        http request failed for https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/: Head "https://bafkreiem4tayXh6S4c2v52KBVvLNB2pS7XGE22xOUW2W5vJAlr6336CE5A.ipfs.dweb.link/": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+---
+Original:     https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png
+Standardized: https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png
+Valid:        true
+Status:       valid_image
+---
+Original:     http://deelay.me/5000/https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png
+Standardized: http://deelay.me/5000/https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png
+Valid:        false
+Status:       non_200_status
+Error:        non-200 status for http://deelay.me/5000/https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png: 403
+---
+Original:     https://www.google.com
+Standardized: https://www.google.com
+Valid:        false
+Status:       non_image_content_type
+Error:        non-image content type for https://www.google.com: text/html; charset=ISO-8859-1
+---
+Original:     https://httpstat.us/301
+Standardized: https://httpstat.us/301
+Valid:        false
+Status:       redirect_attempted
+Error:        redirect status code 301 for https://httpstat.us/301 (Location: https://httpstat.us/)
+---
+Original:     https://httpstat.us/404
+Standardized: https://httpstat.us/404
+Valid:        false
+Status:       non_200_status
+Error:        non-200 status for https://httpstat.us/404: 404
+---
+Original:     https://arweave.net/LfgfW9kaJb9tS7n2mS2XSlkS2MaQ5xV2zYfM0gG0g_A
+Standardized: https://arweave.net/LfgfW9kaJb9tS7n2mS2XSlkS2MaQ5xV2zYfM0gG0g_A
+Valid:        false
+Status:       redirect_attempted
+Error:        redirect status code 302 for https://arweave.net/LfgfW9kaJb9tS7n2mS2XSlkS2MaQ5xV2zYfM0gG0g_A (Location: https://fx4b6w6zdis363klxh3jslmxjjmrfwggsdtrk5wnq7gneanuqpya.arweave.net/LfgfW9kaJb9tS7n2mS2XSlkS2MaQ5xV2zYfM0gG0g_A)
+---
+Original:     https://jigsaw.w3.org/HTTP/300/301.html
+Standardized: https://jigsaw.w3.org/HTTP/300/301.html
+Valid:        false
+Status:       redirect_attempted
+Error:        redirect status code 301 for https://jigsaw.w3.org/HTTP/300/301.html (Location: http://jigsaw.w3.org/HTTP/300/Overview.html)
+---
+Original:     https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/examples/SPDXJSONExample-v2.3.spdx.json
+Standardized: https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/examples/SPDXJSONExample-v2.3.spdx.json
+Valid:        false
+Status:       non_200_status
+Error:        non-200 status for https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/examples/SPDXJSONExample-v2.3.spdx.json: 404
+---
+Original:     https://bafybeigagd5nmnn2iys2xwvq74k4hfnmqqwge5t4vqPCn2NtiOd7bq7x3e.ipfs.dweb.link/metadata.json
+Standardized: https://bafybeigagd5nmnn2iys2xwvq74k4hfnmqqwge5t4vqPCn2NtiOd7bq7x3e.ipfs.dweb.link/metadata.json
+Valid:        false
+Status:       network_error
+Error:        http request failed for https://bafybeigagd5nmnn2iys2xwvq74k4hfnmqqwge5t4vqPCn2NtiOd7bq7x3e.ipfs.dweb.link/metadata.json: Head "https://bafybeigagd5nmnn2iys2xwvq74k4hfnmqqwge5t4vqPCn2NtiOd7bq7x3e.ipfs.dweb.link/metadata.json": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+---
+Original:     ipfs://bafkreihdwdcefgh4mbymxsyysqcecdnpqcomivgpw7u7xckftbrcnzxom4
+Standardized: https://bafkreihdwdcefgh4mbymxsyysqcecdnpqcomivgpw7u7xckftbrcnzxom4.ipfs.dweb.link/
+Valid:        false
+Status:       network_error
+Error:        http request failed for https://bafkreihdwdcefgh4mbymxsyysqcecdnpqcomivgpw7u7xckftbrcnzxom4.ipfs.dweb.link/: Head "https://bafkreihdwdcefgh4mbymxsyysqcecdnpqcomivgpw7u7xckftbrcnzxom4.ipfs.dweb.link/": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+---
+    </pre>
+</body>
+</html>

@@ -334,6 +334,10 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 		"image":       "some_other_image_from_offchain", // This won't be used for IconUrl as rawLogoURL is preferred
 	}, nil).Once()
 
+	// 3e. EnrichCoinData: VerifyDirectImageAccess for the icon
+	standardizedRawLogoURL := service.standardizeIpfsUrl(rawLogoURL) // same logic as in EnrichCoinData
+	mockOffchainClient.On("VerifyDirectImageAccess", ctx, standardizedRawLogoURL).Return(true, standardizedRawLogoURL, nil).Once()
+
 	// 4. enrichRawCoinAndSave: Save enriched coin to 'coins' table (Create path)
 	// Second call to GetByField (from mockStore.On("Coins")...) for the pre-create check
 	mockCoinRepo.On("GetByField", ctx, "mint_address", testMintAddress).Return(nil, db.ErrNotFound).Maybe() // Changed Once to Maybe
@@ -444,6 +448,10 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 		"description": expectedEnrichedCoin.Description,
 		"image":       newCoinIconURL, // This is where the IconUrl comes from
 	}, nil).Once()
+
+	// 3e. EnrichCoinData: VerifyDirectImageAccess for the newCoinIconURL
+	standardizedNewCoinIconURL := service.standardizeIpfsUrl(newCoinIconURL)
+	mockOffchainClient.On("VerifyDirectImageAccess", ctx, standardizedNewCoinIconURL).Return(true, standardizedNewCoinIconURL, nil).Once()
 
 	// 4. fetchAndCacheCoin: Save newly enriched coin to 'coins' table (Create path)
 	// Second call to GetByField (from mockStore.On("Coins")...) for the pre-create check

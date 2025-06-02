@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url" // Added for url.Error type checking
 	"strings"
 )
 
@@ -319,4 +320,92 @@ func getArweaveGateways() []string {
 	return []string{
 		"https://arweave.net/",
 	}
+}
+
+// VerifyDirectImageAccess checks if a URL points directly to an image without redirects
+// and has a common image content type.
+func (c *Client) VerifyDirectImageAccess(ctx context.Context, urlStr string) (bool, string, error) {
+	log.Printf("🛡️ VerifyDirectImageAccess: Validating URL for direct image access: %s", urlStr)
+
+	// Create a new HTTP client configured to not follow redirects
+	noRedirectClient := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse // Important: Prevents following redirects
+		},
+		Timeout: c.httpClient.Timeout, // Use the same timeout as the main client
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "HEAD", urlStr, nil)
+	if err != nil {
+		log.Printf("❌ VerifyDirectImageAccess: Failed to create request for %s: %v", urlStr, err)
+		return false, "request_creation_failed", fmt.Errorf("failed to create request for %s: %w", urlStr, err)
+	}
+	// Set a generic User-Agent. Consider making this configurable or more specific.
+	req.Header.Set("User-Agent", "DankfolioImageValidator/1.0")
+
+	resp, err := noRedirectClient.Do(req)
+	// This error handling block needs to be before resp.Body.Close()
+	if err != nil {
+		// Check if the error is due to the redirect policy
+		// url.Error is part of "net/url"
+		if urlErr, ok := err.(*url.Error); ok && urlErr.Err == http.ErrUseLastResponse {
+			log.Printf("⚠️ VerifyDirectImageAccess: Redirect attempted for %s", urlStr)
+			location := ""
+			// Ensure resp and resp.Header are not nil before trying to access Location.
+			// This is important because the error might occur before a response is fully received.
+			if resp != nil && resp.Header != nil {
+				location = resp.Header.Get("Location")
+				// It's good practice to close the body if a response was received, even in error cases.
+				// However, in the case of ErrUseLastResponse, the body might not be fully formed or relevant.
+				// For safety and consistency, ensure it's closed if resp is not nil.
+				if resp.Body != nil {
+					resp.Body.Close()
+				}
+			}
+			if location != "" {
+				log.Printf("Redirect location: %s", location)
+			}
+			return false, "redirect_attempted", fmt.Errorf("redirect attempted for %s (Location: %s)", urlStr, location)
+		}
+		log.Printf("❌ VerifyDirectImageAccess: HTTP request failed for %s: %v", urlStr, err)
+		return false, "network_error", fmt.Errorf("http request failed for %s: %w", urlStr, err)
+	}
+	defer resp.Body.Close()
+
+	// Check for explicit redirect status codes first.
+	// With CheckRedirect: ErrUseLastResponse, any redirect attempt should ideally result in an error caught above.
+	// However, this explicit check handles cases where a server might send a 3xx status
+	// without the Go http client necessarily wrapping the error as http.ErrUseLastResponse
+	// (e.g. if the redirect is malformed or server closes connection weirdly after 3xx).
+	if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
+		location := resp.Header.Get("Location")
+		log.Printf("⚠️ VerifyDirectImageAccess: Redirect status code %d received for %s (Location: %s)", resp.StatusCode, urlStr, location)
+		// Using "redirect_attempted" for consistency with the error path.
+		return false, "redirect_attempted", fmt.Errorf("redirect status code %d for %s (Location: %s)", resp.StatusCode, urlStr, location)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("❌ VerifyDirectImageAccess: Non-200 status for %s: %d", urlStr, resp.StatusCode)
+		return false, "non_200_status", fmt.Errorf("non-200 status for %s: %d", urlStr, resp.StatusCode)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	// Normalize content type by taking the part before any semicolon (e.g., charset) and converting to lower case.
+	normalizedContentType := strings.ToLower(strings.Split(contentType, ";")[0])
+
+	allowedContentTypes := map[string]bool{
+		"image/png":     true,
+		"image/jpeg":    true,
+		"image/gif":     true,
+		"image/webp":    true,
+		"image/svg+xml": true,
+	}
+
+	if !allowedContentTypes[normalizedContentType] {
+		log.Printf("❌ VerifyDirectImageAccess: Non-image content type for %s: %s (Normalized: %s)", urlStr, contentType, normalizedContentType)
+		return false, "non_image_content_type", fmt.Errorf("non-image content type for %s: %s", urlStr, contentType)
+	}
+
+	log.Printf("✅ VerifyDirectImageAccess: Successfully validated direct image access for %s (Content-Type: %s)", urlStr, contentType)
+	return true, urlStr, nil
 }
