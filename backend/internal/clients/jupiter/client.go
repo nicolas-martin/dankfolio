@@ -197,7 +197,6 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 				createdAtTime = time.Now() // Use current time as fallback since field is now mandatory
 			} else {
 				createdAtTime = time.Unix(unixTimestamp, 0)
-				log.Printf("✅ Successfully parsed Jupiter CreatedAt timestamp for %s: %s", newToken.Mint, createdAtTime.Format(time.RFC3339))
 			}
 		} else {
 			log.Printf("⚠️ No CreatedAt timestamp provided by Jupiter for %s, using current time as fallback", newToken.Mint)
@@ -210,10 +209,10 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 			Decimals:          newToken.Decimals,
 			LogoURI:           newToken.LogoURI, // Use LogoURI field
 			KnownMarkets:      newToken.KnownMarkets,
-			MintAuthority:     newToken.MintAuthority,     // Can be null
-			FreezeAuthority:   newToken.FreezeAuthority,   // Can be null
-			CreatedAt:         createdAtTime.String(),     // Use the properly parsed timestamp
-			MetadataUpdatedAt: newToken.MetadataUpdatedAt, // Use the raw float value
+			MintAuthority:     newToken.MintAuthority,             // Can be null
+			FreezeAuthority:   newToken.FreezeAuthority,           // Can be null
+			CreatedAt:         createdAtTime.Format(time.RFC3339), // Use the properly parsed timestamp
+			MetadataUpdatedAt: newToken.MetadataUpdatedAt,         // Use the raw float value
 			// Note: MetadataUpdatedAt is a float, not a timestamp, so we keep it as is
 		}
 	}

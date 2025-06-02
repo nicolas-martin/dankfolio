@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, SafeAreaView, FlatList, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
+import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
 import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import CoinCard from '@components/Home/CoinCard';
@@ -14,7 +14,6 @@ import { createStyles } from './home_styles';
 import { Coin } from '@/types';
 import { OTAUpdater } from '@components/OTAupdate';
 import { logger } from '@/utils/logger';
-import { REFRESH_INTERVALS } from '@/utils/constants';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -47,7 +46,7 @@ const HomeScreen = () => {
 
 		// Handle fetching new coins - cache will handle interval checking automatically
 		let newCoinsFetched = false;
-		
+
 		logger.log('[HomeScreen] Fetching new coins (cache will handle timing)...');
 
 		try {
@@ -83,7 +82,7 @@ const HomeScreen = () => {
 				fetchNewCoins(10, true), // Force refresh new coins (bypasses cache)
 				wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 			]);
-			
+
 			showToast({
 				type: 'success',
 				message: 'Coins refreshed successfully!',
