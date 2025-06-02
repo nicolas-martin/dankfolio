@@ -31,6 +31,8 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
                 onPress={() => onPress(coin)}
                 testID={`coin-card-horizontal-${coin.mintAddress}`}
                 activeOpacity={0.7}
+                delayPressIn={100}
+                delayPressOut={100}
             >
                 {renderCoinIcon(32, 16)}
                 <Text style={styles.horizontalSymbol} numberOfLines={1}>
