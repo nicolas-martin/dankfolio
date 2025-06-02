@@ -19,32 +19,51 @@ export const handleTokenSelect = (
 export const validateForm = async (
 	formData: TokenTransferFormData,
 	selectedToken?: PortfolioToken
-): Promise<string | null> => {
+): Promise<{ isValid: boolean; code?: string; message: string } | null> => {
 	if (!formData.toAddress) {
-		return 'Recipient address is required';
+		return { isValid: false, message: 'Recipient address is required' };
 	}
 
-	const isValidAddress = await validateSolanaAddress(formData.toAddress);
-	if (!isValidAddress) {
-		return 'Invalid Solana address';
+	const isValidSolanaAddress = await validateSolanaAddress(formData.toAddress);
+	if (!isValidSolanaAddress) {
+		return { isValid: false, message: 'Invalid Solana address' };
 	}
 
 	if (!formData.amount || parseFloat(formData.amount) <= 0) {
-		return 'Please enter a valid amount';
+		return { isValid: false, message: 'Please enter a valid amount' };
 	}
 
 	if (!formData.selectedTokenMint) {
-		return 'Please select a token';
+		return { isValid: false, message: 'Please select a token' };
 	}
 
 	if (selectedToken) {
 		const amount = parseFloat(formData.amount);
 		if (amount > selectedToken.amount) {
-			return `Insufficient balance. Maximum available: ${formatTokenBalance(selectedToken.amount)} ${selectedToken.coin.symbol}`;
+			return { isValid: false, message: `Insufficient balance. Maximum available: ${formatTokenBalance(selectedToken.amount)} ${selectedToken.coin.symbol}` };
 		}
 	}
 
-	return null;
+	try {
+		const response = await fetch(`https://public-api.solscan.io/account/${formData.toAddress}`);
+
+		if (response.ok) { // status in the range 200-299
+			// Solscan might return 200 even for not found, but with an empty object or specific field.
+			// However, the prompt implies 200 means found, and 404 means not found.
+			// Assuming Solscan API strictly uses 200 for found and 404 for not found.
+			return { isValid: true, code: "ADDRESS_EXISTS_ON_SOLSCAN", message: "Address found on Solscan. Please verify this is the correct address before proceeding." };
+		} else if (response.status === 404) {
+			return { isValid: false, message: 'Invalid Solana address or address not found on Solscan' };
+		} else {
+			// For other non-successful status codes (e.g., 500, 400, 401, 403)
+			logger.error('Error verifying address with Solscan - Non-OK response:', { status: response.status, statusText: response.statusText });
+			return { isValid: false, message: 'Error verifying address with Solscan. Please try again.' };
+		}
+	} catch (error) {
+		// This catches network errors (e.g., DNS resolution failure, server unreachable)
+		logger.error('Error verifying address with Solscan - Network or fetch error:', error);
+		return { isValid: false, message: 'Error verifying address with Solscan. Please try again.' };
+	}
 };
 
 export const handleTokenTransfer = async (formData: TokenTransferFormData): Promise<string> => {
