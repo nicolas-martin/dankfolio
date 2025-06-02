@@ -15,7 +15,7 @@ type ClientAPI interface {
 	GetCoinPrices(ctx context.Context, addresses []string) (map[string]float64, error)
 
 	// GetNewCoins fetches new tokens from Jupiter API with optional pagination
-	GetNewCoins(ctx context.Context, params *NewCoinsParams) (*CoinListResponse, error)
+	GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*NewTokenInfo, error)
 
 	// GetQuote fetches a swap quote from Jupiter API
 	GetQuote(ctx context.Context, params QuoteParams) (*QuoteResponse, error)

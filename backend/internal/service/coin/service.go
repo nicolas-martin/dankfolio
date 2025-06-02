@@ -7,6 +7,7 @@ import (
 	"log/slog" // Import slog
 	"net/http"
 	"os" // Import os for Exit
+
 	// "sort" // sort.Slice in GetCoins is removed, GetTrendingCoins still uses it.
 	"sort"    // Keep for GetTrendingCoins
 	"strconv" // Added for GetCoinByID
@@ -477,21 +478,41 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		slog.Error("Failed to get new coins from Jupiter", slog.Any("error", err))
 		return fmt.Errorf("failed to get new coins from Jupiter: %w", err)
 	}
+	// convert to CoinListInfo
+	coins := make([]*jupiter.CoinListInfo, 0, len(resp))
+	for i, newToken := range resp {
+		dt, err := time.Parse(time.RFC3339, newToken.CreatedAt)
+		if err != nil {
+			slog.Warn("Failed to parse CreatedAt for new token", slog.String("mint", newToken.Mint), slog.Any("error", err))
+		}
+		coins[i] = &jupiter.CoinListInfo{
+			Address:     newToken.Mint, // Map mint to address
+			ChainID:     101,           // Solana mainnet
+			Decimals:    newToken.Decimals,
+			Name:        newToken.Name,
+			Symbol:      newToken.Symbol,
+			LogoURI:     newToken.LogoURI, // Map logo_uri to logoURI
+			Extensions:  make(map[string]any),
+			DailyVolume: 0,
+			Tags:        []string{},
+			CreatedAt:   dt, // Use parsed time
+		}
+	}
 
-	if resp == nil || len(resp.Coins) == 0 {
+	if resp == nil || len(coins) == 0 {
 		slog.Info("No new coins found from Jupiter.")
 		return nil
 	}
 
-	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("fetched_count", len(resp.Coins)))
+	slog.Info("Successfully fetched new coins from Jupiter", slog.Int("fetched_count", len(coins)))
 
-	if len(resp.Coins) == 0 {
+	if len(coins) == 0 {
 		slog.Info("No new coins to process from Jupiter.")
 		return nil
 	}
 
-	rawCoinsToUpsert := make([]model.RawCoin, 0, len(resp.Coins))
-	for _, v_jupiterCoin := range resp.Coins { // v_jupiterCoin is of type jupiter.Coin
+	rawCoinsToUpsert := make([]model.RawCoin, 0, len(coins))
+	for _, v_jupiterCoin := range coins { // v_jupiterCoin is of type jupiter.Coin
 		rawCoinModelPtr := v_jupiterCoin.ToRawCoin() // This returns *model.RawCoin
 		if rawCoinModelPtr != nil {
 			rawCoinsToUpsert = append(rawCoinsToUpsert, *rawCoinModelPtr)
@@ -525,7 +546,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			}
 		}
 		slog.Info("Finished processing new tokens from Jupiter in FetchAndStoreNewTokens",
-			slog.Int("total_fetched_from_jupiter", len(resp.Coins)),
+			slog.Int("total_fetched_from_jupiter", len(coins)),
 			slog.Int("coins_prepared_for_upsert", len(rawCoinsToUpsert)),
 			slog.Int("successful_database_operations", successfulDbOps))
 		if len(dbErrors) > 0 {

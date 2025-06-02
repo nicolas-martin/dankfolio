@@ -153,7 +153,7 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 }
 
 // GetNewCoins fetches all new tokens from Jupiter API with optional pagination
-func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*CoinListResponse, error) {
+func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*NewTokenInfo, error) {
 	baseURL := fmt.Sprintf("%s%s", c.baseURL, newTokensEndpoint)
 
 	// Add query parameters if provided
@@ -175,14 +175,19 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 	log.Printf("🔄 Fetching new tokens from Jupiter: %s", fullURL)
 
 	// Use NewTokenInfo struct for the /tokens/v1/new endpoint
-	var newTokens []NewTokenInfo
-	if err := c.GetRequest(ctx, fullURL, &newTokens); err != nil {
+	var newTokenResp []NewTokenInfo
+	if err := c.GetRequest(ctx, fullURL, &newTokenResp); err != nil {
 		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
 	}
 
 	// Convert NewTokenInfo to CoinListInfo for compatibility, preserving the CreatedAt timestamp
-	coins := make([]CoinListInfo, len(newTokens))
-	for i, newToken := range newTokens {
+	coins := make([]*NewTokenInfo, len(newTokenResp))
+	for i, newToken := range newTokenResp {
+		// Skip empty logo URIs to avoid unnecessary entries
+		if len(newToken.LogoURI) == 0 {
+			continue
+		}
+
 		// Parse the CreatedAt timestamp from the Jupiter API response
 		var createdAtTime time.Time
 		if newToken.CreatedAt != "" {
@@ -198,22 +203,22 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) (*Coin
 			log.Printf("⚠️ No CreatedAt timestamp provided by Jupiter for %s, using current time as fallback", newToken.Mint)
 			createdAtTime = time.Now() // Use current time as fallback since field is now mandatory
 		}
-
-		coins[i] = CoinListInfo{
-			Address:     newToken.Mint, // Map mint to address
-			ChainID:     101,           // Solana mainnet
-			Decimals:    newToken.Decimals,
-			Name:        newToken.Name,
-			Symbol:      newToken.Symbol,
-			LogoURI:     newToken.LogoURI, // Map logo_uri to logoURI
-			Extensions:  make(map[string]any),
-			DailyVolume: 0,             // Not available in new tokens endpoint
-			Tags:        []string{},    // Not available in new tokens endpoint
-			CreatedAt:   createdAtTime, // Use the properly parsed timestamp
+		coins[i] = &NewTokenInfo{
+			Mint:              newToken.Mint, // Use Mint field instead of Address
+			Name:              newToken.Name,
+			Symbol:            newToken.Symbol,
+			Decimals:          newToken.Decimals,
+			LogoURI:           newToken.LogoURI, // Use LogoURI field
+			KnownMarkets:      newToken.KnownMarkets,
+			MintAuthority:     newToken.MintAuthority,     // Can be null
+			FreezeAuthority:   newToken.FreezeAuthority,   // Can be null
+			CreatedAt:         createdAtTime.String(),     // Use the properly parsed timestamp
+			MetadataUpdatedAt: newToken.MetadataUpdatedAt, // Use the raw float value
+			// Note: MetadataUpdatedAt is a float, not a timestamp, so we keep it as is
 		}
 	}
 
-	return &CoinListResponse{Coins: coins}, nil
+	return coins, nil
 }
 
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter
