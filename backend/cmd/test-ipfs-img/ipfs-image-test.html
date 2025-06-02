@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPFS Image Validation Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .summary {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .summary-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .image-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .image-card:hover {
+            transform: translateY(-2px);
+        }
+        .image-container {
+            width: 100%;
+            height: 200px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .image-placeholder {
+            color: #6c757d;
+            font-size: 14px;
+            text-align: center;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .status-valid { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-redirect { background: #fff3cd; color: #856404; }
+        .url-info {
+            font-size: 12px;
+            color: #6c757d;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+        .error-info {
+            font-size: 11px;
+            color: #dc3545;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .loading-indicator {
+            display: none;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 IPFS Image Validation Test</h1>
+        <p>Visual test of image URL accessibility</p>
+        <p>Generated: 2025-06-02 16:30:36</p>
+    </div>
+
+    <div class="summary">
+        <h2>📊 Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-number">10</div>
+                <div>Total URLs</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" style="color: #28a745;">8</div>
+                <div>Valid Images</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" style="color: #dc3545;">2</div>
+                <div>Invalid Images</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number">80.0%</div>
+                <div>Success Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="image-grid">
+        
+        <div class="image-card">
+            <div class="status-badge status-redirect">
+                🔄 Redirect
+            </div>
+            
+            <div class="image-container">
+                
+                    <div class="image-placeholder">
+                        🔄 
+                        Cannot load<br>redirect_attempted
+                    </div>
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://arweave.net/DsmUYUnjErfEwSvbYdbTqoALLXz84ZgaaRlQWiWSx4o
+            </div>
+            
+            
+            
+            
+            <div class="error-info">
+                <strong>Error:</strong> redirect status code 302 for https://arweave.net/DsmUYUnjErfEwSvbYdbTqoALLXz84ZgaaRlQWiWSx4o (Location: https://b3eziykj4mjlprgbfpnwdvwtvkaawll47tqzqgtjdfifujmsy6fa.arweave.net/DsmUYUnjErfEwSvbYdbTqoALLXz84ZgaaRlQWiWSx4o)
+            </div>
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-redirect">
+                🔄 Redirect
+            </div>
+            
+            <div class="image-container">
+                
+                    <div class="image-placeholder">
+                        🔄 
+                        Cannot load<br>redirect_attempted
+                    </div>
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://arweave.net/tRswKJzsF-X44AjZsdVDCvHWWkhT1uncNWdf1I7cyJs
+            </div>
+            
+            
+            
+            
+            <div class="error-info">
+                <strong>Error:</strong> redirect status code 302 for https://arweave.net/tRswKJzsF-X44AjZsdVDCvHWWkhT1uncNWdf1I7cyJs (Location: https://wuntake45ql6l6habdm3dvkdbly5mwsikplotxbvm5p5jdw4zcnq.arweave.net/tRswKJzsF-X44AjZsdVDCvHWWkhT1uncNWdf1I7cyJs)
+            </div>
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-valid">
+                ✅ Valid
+            </div>
+            
+            <div class="image-container">
+                
+                    <img src="https://image-cdn.solana.fm/images/?imageUrl=https://cf-ipfs.com/ipfs/QmPrYKyQxrdkNYkHf1pGTvqgAhGENR3F7u1Q3uDgV9Whby" 
+                         alt="Image 3" 
+                         onload="this.parentElement.style.border='2px solid #28a745'"
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>valid_image</div>'; this.parentElement.style.border='2px solid #dc3545'">
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://image-cdn.solana.fm/images/?imageUrl=https://cf-ipfs.com/ipfs/QmPrYKyQxrdkNYkHf1pGTvqgAhGENR3F7u1Q3uDgV9Whby
+            </div>
+            
+            
+            <div class="url-info">
+                <strong>Standardized:</strong><br>
+                https://gateway.pinata.cloud/ipfs/QmPrYKyQxrdkNYkHf1pGTvqgAhGENR3F7u1Q3uDgV9Whby
+            </div>
+            
+            
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-valid">
+                ✅ Valid
+            </div>
+            
+            <div class="image-container">
+                
+                    <img src="https://ipfs.io/ipfs/QmTDQ5aj96UCKay6MWmE9R6mAx26Cj4FboSXuT3bfe2Lbi" 
+                         alt="Image 4" 
+                         onload="this.parentElement.style.border='2px solid #28a745'"
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>valid_image</div>'; this.parentElement.style.border='2px solid #dc3545'">
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://ipfs.io/ipfs/QmTDQ5aj96UCKay6MWmE9R6mAx26Cj4FboSXuT3bfe2Lbi
+            </div>
+            
+            
+            <div class="url-info">
+                <strong>Standardized:</strong><br>
+                https://gateway.pinata.cloud/ipfs/QmTDQ5aj96UCKay6MWmE9R6mAx26Cj4FboSXuT3bfe2Lbi
+            </div>
+            
+            
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-valid">
+                ✅ Valid
+            </div>
+            
+            <div class="image-container">
+                
+                    <img src="https://ipfs.io/ipfs/QmWnpBV7ws8nmUpzVRszT9Zf5eZCeVhDKLh1vjw2ek5sJm" 
+                         alt="Image 5" 
+                         onload="this.parentElement.style.border='2px solid #28a745'"
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>valid_image</div>'; this.parentElement.style.border='2px solid #dc3545'">
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://ipfs.io/ipfs/QmWnpBV7ws8nmUpzVRszT9Zf5eZCeVhDKLh1vjw2ek5sJm
+            </div>
+            
+            
+            <div class="url-info">
+                <strong>Standardized:</strong><br>
+                https://gateway.pinata.cloud/ipfs/QmWnpBV7ws8nmUpzVRszT9Zf5eZCeVhDKLh1vjw2ek5sJm
+            </div>
+            
+            
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-valid">
+                ✅ Valid
+            </div>
+            
+            <div class="image-container">
+                
+                    <img src="https://ipfs.io/ipfs/QmdnAHMWTbxfRkwdf1QweP8rJL1SCe2XbjFTFzCCjw5oAD" 
+                         alt="Image 6" 
+                         onload="this.parentElement.style.border='2px solid #28a745'"
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>valid_image</div>'; this.parentElement.style.border='2px solid #dc3545'">
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://ipfs.io/ipfs/QmdnAHMWTbxfRkwdf1QweP8rJL1SCe2XbjFTFzCCjw5oAD
+            </div>
+            
+            
+            <div class="url-info">
+                <strong>Standardized:</strong><br>
+                https://gateway.pinata.cloud/ipfs/QmdnAHMWTbxfRkwdf1QweP8rJL1SCe2XbjFTFzCCjw5oAD
+            </div>
+            
+            
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-valid">
+                ✅ Valid
+            </div>
+            
+            <div class="image-container">
+                
+                    <img src="https://ipfs.io/ipfs/QmaGqTXDBUBLMU9xGpT4xzYArJmqFFTo3LAU6wZLepWcWe" 
+                         alt="Image 7" 
+                         onload="this.parentElement.style.border='2px solid #28a745'"
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>valid_image</div>'; this.parentElement.style.border='2px solid #dc3545'">
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://ipfs.io/ipfs/QmaGqTXDBUBLMU9xGpT4xzYArJmqFFTo3LAU6wZLepWcWe
+            </div>
+            
+            
+            <div class="url-info">
+                <strong>Standardized:</strong><br>
+                https://gateway.pinata.cloud/ipfs/QmaGqTXDBUBLMU9xGpT4xzYArJmqFFTo3LAU6wZLepWcWe
+            </div>
+            
+            
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-valid">
+                ✅ Valid
+            </div>
+            
+            <div class="image-container">
+                
+                    <img src="https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link" 
+                         alt="Image 8" 
+                         onload="this.parentElement.style.border='2px solid #28a745'"
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>valid_image</div>'; this.parentElement.style.border='2px solid #dc3545'">
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://bafkreibk3covs5ltyqxa272uodhculbr6kea6betidfwy3ajsav2vjzyum.ipfs.nftstorage.link
+            </div>
+            
+            
+            
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-valid">
+                ✅ Valid
+            </div>
+            
+            <div class="image-container">
+                
+                    <img src="https://ipfs.io/ipfs/QmVfhGnJmuUoJ8wdnEfRP1RaCg8GQ9WJgotiXVj5ARNGFd" 
+                         alt="Image 9" 
+                         onload="this.parentElement.style.border='2px solid #28a745'"
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>valid_image</div>'; this.parentElement.style.border='2px solid #dc3545'">
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://ipfs.io/ipfs/QmVfhGnJmuUoJ8wdnEfRP1RaCg8GQ9WJgotiXVj5ARNGFd
+            </div>
+            
+            
+            <div class="url-info">
+                <strong>Standardized:</strong><br>
+                https://gateway.pinata.cloud/ipfs/QmVfhGnJmuUoJ8wdnEfRP1RaCg8GQ9WJgotiXVj5ARNGFd
+            </div>
+            
+            
+            
+        </div>
+        
+        <div class="image-card">
+            <div class="status-badge status-valid">
+                ✅ Valid
+            </div>
+            
+            <div class="image-container">
+                
+                    <img src="https://ipfs.io/ipfs/QmZk1xtQSZXqPHMD1qAEDTAhY3QhKafDuKCn2BgyZXHYpA" 
+                         alt="Image 10" 
+                         onload="this.parentElement.style.border='2px solid #28a745'"
+                         onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'>❌ Failed to load<br>valid_image</div>'; this.parentElement.style.border='2px solid #dc3545'">
+                
+            </div>
+            
+            <div class="url-info">
+                <strong>Original:</strong><br>
+                https://ipfs.io/ipfs/QmZk1xtQSZXqPHMD1qAEDTAhY3QhKafDuKCn2BgyZXHYpA
+            </div>
+            
+            
+            <div class="url-info">
+                <strong>Standardized:</strong><br>
+                https://gateway.pinata.cloud/ipfs/QmZk1xtQSZXqPHMD1qAEDTAhY3QhKafDuKCn2BgyZXHYpA
+            </div>
+            
+            
+            
+        </div>
+        
+    </div>
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('img');
+            images.forEach(img => {
+                const container = img.parentElement;
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading-indicator';
+                loadingDiv.innerHTML = '⏳ Loading...';
+                loadingDiv.style.display = 'block';
+                container.appendChild(loadingDiv);
+                
+                img.onload = function() {
+                    loadingDiv.style.display = 'none';
+                };
+                
+                img.onerror = function() {
+                    loadingDiv.style.display = 'none';
+                };
+            });
+        });
+    </script>
+</body>
+</html>
