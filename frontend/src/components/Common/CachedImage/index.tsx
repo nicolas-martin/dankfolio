@@ -28,11 +28,6 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	const imageUrl = uri;
 
 
-	// Debug logging
-	if (imageUrl) {
-		console.log(`[${new Date().toISOString()}] 🖼️ Loading image: ${imageUrl}`);
-	}
-
 	// Prepare placeholder - prioritize passed placeholder, then blurhash, then default blurhash
 	let imagePlaceholder = placeholder;
 	if (!imagePlaceholder) {
@@ -42,10 +37,10 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
 	// Enhanced logging callbacks
 	const handleLoad = (event: any) => {
-		console.log(`[${new Date().toISOString()}] ✅ Image loaded successfully: ${imageUrl || 'placeholder'}`);
+		// console.log(`[${new Date().toISOString()}] ✅ Image loaded successfully: ${imageUrl || 'placeholder'}`);
 		setHasError(false);
 
-		// No need to reset currentGatewayIndex as it's removed.
+		// // No need to reset currentGatewayIndex as it's removed.
 
 		onLoad?.(event);
 	};

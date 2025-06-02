@@ -11,13 +11,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
-var defaultCIDv0Gateways = []string{
-	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
-	"https://cloudflare-ipfs.com/ipfs/",  // Cloudflare is fast and reliable
-	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
-	"https://ipfs.io/ipfs/",              // Keep as fallback, but not first choice
-}
-
 // EnrichCoinData fetches detailed information for a given mint address using Jupiter,
 // Solana metadata, and off-chain sources. It populates and returns a model.Coin.
 // It takes initial basic info (name, icon, volume) which might come from a preliminary scrape,
