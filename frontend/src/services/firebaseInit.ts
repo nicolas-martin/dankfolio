@@ -9,7 +9,9 @@ import {
   FIREBASE_PROJECT_ID,
   FIREBASE_STORAGE_BUCKET,
   FIREBASE_MESSAGING_SENDER_ID,
-  FIREBASE_APP_ID
+  FIREBASE_APP_ID,
+  FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
+  FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
 } from '@env';
 
 // Environment-aware Firebase configuration
@@ -30,6 +32,22 @@ const getFirebaseConfig = () => {
   };
 };
 
+// Environment-aware App Check configuration
+const getAppCheckConfig = () => {
+  const config: any = {
+    android: {
+      provider: __DEV__ ? 'debug' : 'playIntegrity',
+      debugToken: __DEV__ && FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID ? FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID : undefined,
+    },
+    apple: {
+      provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback',
+      debugToken: __DEV__ && FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS ? FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS : undefined,
+    },
+  };
+
+  return config;
+};
+
 let firebaseApp: FirebaseApp | null = null;
 let appCheckInstance: any = null;
 
@@ -45,20 +63,7 @@ export async function initializeFirebaseServices(): Promise<void> {
       // Create and configure the React Native Firebase App Check provider
       const rnfbProvider = new ReactNativeFirebaseAppCheckProvider();
       
-      rnfbProvider.configure({
-        android: {
-          provider: __DEV__ ? 'debug' : 'playIntegrity',
-          debugToken: __DEV__ ? 'your-debug-token-here' : undefined,
-        },
-        apple: {
-          provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback',
-          debugToken: __DEV__ ? 'your-debug-token-here' : undefined,
-        },
-        web: {
-          provider: 'reCaptchaV3',
-          siteKey: 'unknown',
-        },
-      });
+      rnfbProvider.configure(getAppCheckConfig());
 
       appCheckInstance = initializeAppCheck(getApp(), {
         provider: rnfbProvider,
