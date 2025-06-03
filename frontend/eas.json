@@ -32,6 +32,7 @@
       "channel": "production",
       "env": {
         "SENTRY_AUTH_TOKEN": "$SENTRY_AUTH_TOKEN",
+        "SENTRY_ALLOW_FAILURE": "true",
         "FIREBASE_API_KEY": "$FIREBASE_API_KEY_PROD",
         "FIREBASE_AUTH_DOMAIN": "$FIREBASE_AUTH_DOMAIN_PROD",
         "FIREBASE_PROJECT_ID": "$FIREBASE_PROJECT_ID_PROD",

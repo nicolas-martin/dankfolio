@@ -1,11 +1,8 @@
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import axios from 'axios';
+const dotenv = require('dotenv');
+const { join } = require('path');
+const axios = require('axios');
 
-// Load environment variables
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Load environment variables - use __dirname (CommonJS)
 dotenv.config({ path: join(__dirname, '../../.env') });
 
 // Use a default API URL if environment variable is not set

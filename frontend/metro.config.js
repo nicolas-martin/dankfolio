@@ -18,5 +18,10 @@ const config = getSentryExpoConfig(__dirname, {
 config.resolver.sourceExts.push('mjs');
 config.resolver.unstable_enablePackageExports = true;
 
+// Exclude scripts directory from bundling
+config.resolver.blockList = [
+	/scripts\/.*/,
+];
+
 // Wrap the config
 module.exports = wrapWithReanimatedMetroConfig(config);
