@@ -2,8 +2,8 @@
 set -e
 echo "🚀 Running ci_post_xcodebuild.sh"
 
-# Disable Sentry auto-upload to prevent build failures (official React Native method)
-export SENTRY_DISABLE_AUTO_UPLOAD=true
+# Allow Sentry upload failures without breaking the build
+# export SENTRY_ALLOW_FAILURE=true
 
 # cd out of ios/ci_scripts into main project directory
 cd ../../

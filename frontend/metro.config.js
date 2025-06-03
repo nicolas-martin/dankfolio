@@ -1,10 +1,13 @@
 const { wrapWithReanimatedMetroConfig } = require('react-native-reanimated/metro-config');
-const {
-	getSentryExpoConfig
-} = require("@sentry/react-native/metro");
+const { getDefaultConfig } = require('expo/metro-config');
+// Temporarily disabled Sentry Metro integration to prevent auto-upload build failures
+// const {
+// 	getSentryExpoConfig
+// } = require("@sentry/react-native/metro");
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getSentryExpoConfig(__dirname, {
+// Temporarily using standard Expo config instead of Sentry config
+const config = getDefaultConfig(__dirname, {
 	// Enable Hermes as the default JavaScript engine
 	isCSSEnabled: true
 });
