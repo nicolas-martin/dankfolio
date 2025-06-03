@@ -1,0 +1,26 @@
+{
+  "name": "Integrity",
+  "version": "0.3.0",
+  "summary": "App Attest and App Integrity APIs",
+  "description": "App Attest and App Integrity APIs",
+  "license": "MIT",
+  "authors": "Jeff Reynolds <jefferydreynolds@gmail.com> (https://github.com/jeffDevelops)",
+  "homepage": "https://github.com/jeffDevelops/expo-app-integrity#readme",
+  "platforms": {
+    "ios": "14.0"
+  },
+  "swift_versions": "5.4",
+  "source": {
+    "git": "https://github.com/jeffDevelops/integrity"
+  },
+  "static_framework": true,
+  "dependencies": {
+    "ExpoModulesCore": []
+  },
+  "pod_target_xcconfig": {
+    "DEFINES_MODULE": "YES",
+    "SWIFT_COMPILATION_MODE": "wholemodule"
+  },
+  "source_files": "**/*.{h,m,swift}",
+  "swift_version": "5.4"
+}
