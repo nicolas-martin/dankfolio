@@ -1,6 +1,6 @@
 import { authService } from './authService';
 import useAuthStore from '@/store/auth';
-import { authClient } from '@/services/grpc/apiClient';
+import { authClient } from '@/services/grpc/authClient';
 import { logger } from '@/utils/logger';
 import { getAppCheckInstance } from '@/services/firebaseInit';
 import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check';
@@ -9,7 +9,7 @@ import { GenerateTokenResponseSchema } from "@/gen/dankfolio/v1/auth_pb";
 
 // Mock dependencies
 jest.mock('@/store/auth');
-jest.mock('@/services/grpc/apiClient');
+jest.mock('@/services/grpc/authClient');
 jest.mock('@/utils/logger');
 jest.mock('@/services/firebaseInit');
 jest.mock('firebase/app-check');

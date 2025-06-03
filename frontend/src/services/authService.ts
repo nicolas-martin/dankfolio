@@ -1,9 +1,9 @@
 import useAuthStore from '@/store/auth';
-import { authClient } from '@/services/grpc/apiClient';
+import { authClient } from '@/services/grpc/authClient';
 import { logger as log } from '@/utils/logger';
 import { APP_ENV } from '@env';
 import { getAppCheckInstance } from '@/services/firebaseInit';
-import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check';
+import { getToken as getAppCheckTokenFirebase } from '@react-native-firebase/app-check';
 
 export interface TokenResponse {
 	token: string;
