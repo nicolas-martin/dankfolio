@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"backend/internal/util"
 )
 
 // Client handles interactions with external metadata sources
@@ -32,21 +34,20 @@ func (c *Client) FetchMetadata(uri string) (map[string]any, error) {
 		return nil, fmt.Errorf("cannot fetch metadata from empty URI")
 	}
 
-	log.Printf("🔍 FetchMetadata: Processing URI: %s", uri)
-	log.Printf("🔄 FetchMetadata: Starting metadata fetch process...")
+	log.Printf("🔍 FetchMetadata: Initial URI: %s", uri)
+	standardizedURI := util.StandardizeIpfsUrl(uri)
+	log.Printf("ℹ️ FetchMetadata: Original URI: %s, Standardized URI: %s", uri, standardizedURI)
 
-	// Check if it's an HTTP URI containing an IPFS path
-	if strings.HasPrefix(uri, "http") && strings.Contains(uri, "/ipfs/") {
-		parts := strings.Split(uri, "/ipfs/")
-		if len(parts) >= 2 {
-			ipfsURI := "ipfs://" + parts[1]
-			log.Printf("🔄 FetchMetadata: Converting HTTP IPFS URI to native IPFS: %s -> %s", uri, ipfsURI)
-			return c.fetchIPFSMetadata(ipfsURI)
-		}
+	// If Standardization resulted in a new HTTP URL, it's likely an IPFS gateway URL.
+	if standardizedURI != uri && strings.HasPrefix(standardizedURI, "http") {
+		log.Printf("🔄 FetchMetadata: URI standardized to IPFS gateway: %s. Proceeding with HTTP fetch.", standardizedURI)
+		return c.fetchHTTPMetadata(standardizedURI)
 	}
 
+	// Fallback to scheme-based dispatch if not handled by standardization above
+	log.Printf("🔄 FetchMetadata: Proceeding with scheme-based dispatch for URI: %s", uri)
 	if strings.HasPrefix(uri, "ipfs://") {
-		log.Printf("📦 FetchMetadata: Detected IPFS URI, attempting IPFS gateways for: %s", uri)
+		log.Printf("📦 FetchMetadata: Detected IPFS URI (post-standardization attempt), using fetchIPFSMetadata for: %s", uri)
 		return c.fetchIPFSMetadata(uri)
 	}
 
@@ -72,21 +73,20 @@ func (c *Client) FetchRawData(ctx context.Context, uri string) (data []byte, con
 		return nil, "", fmt.Errorf("cannot fetch raw data from empty URI")
 	}
 
-	log.Printf("🔍 FetchRawData: Processing URI: %s", uri)
-	log.Printf("🔄 FetchRawData: Starting raw data fetch process...")
+	log.Printf("🔍 FetchRawData: Initial URI: %s", uri)
+	standardizedURI := util.StandardizeIpfsUrl(uri)
+	log.Printf("ℹ️ FetchRawData: Original URI: %s, Standardized URI: %s", uri, standardizedURI)
 
-	// Check if it's an HTTP URI containing an IPFS path
-	if strings.HasPrefix(uri, "http") && strings.Contains(uri, "/ipfs/") {
-		parts := strings.Split(uri, "/ipfs/")
-		if len(parts) >= 2 {
-			ipfsURI := "ipfs://" + parts[1]
-			log.Printf("🔄 FetchRawData: Converting HTTP IPFS URI to native IPFS: %s -> %s", uri, ipfsURI)
-			return c.fetchIPFSRaw(ctx, ipfsURI)
-		}
+	// If Standardization resulted in a new HTTP URL, it's likely an IPFS gateway URL.
+	if standardizedURI != uri && strings.HasPrefix(standardizedURI, "http") {
+		log.Printf("🔄 FetchRawData: URI standardized to IPFS gateway: %s. Proceeding with HTTP fetch.", standardizedURI)
+		return c.fetchHTTPRaw(ctx, standardizedURI)
 	}
 
+	// Fallback to scheme-based dispatch if not handled by standardization above
+	log.Printf("🔄 FetchRawData: Proceeding with scheme-based dispatch for URI: %s", uri)
 	if strings.HasPrefix(uri, "ipfs://") {
-		log.Printf("📦 FetchRawData: Detected IPFS URI, attempting IPFS gateways for: %s", uri)
+		log.Printf("📦 FetchRawData: Detected IPFS URI (post-standardization attempt), using fetchIPFSRaw for: %s", uri)
 		return c.fetchIPFSRaw(ctx, uri)
 	}
 
@@ -104,40 +104,25 @@ func (c *Client) FetchRawData(ctx context.Context, uri string) (data []byte, con
 	return nil, "", fmt.Errorf("unsupported URI scheme: %s", uri)
 }
 
-// fetchIPFSMetadata fetches metadata from IPFS with multiple gateway fallbacks
+// fetchIPFSMetadata fetches metadata from IPFS using a standardized gateway URL
 func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
-	cid := strings.TrimPrefix(uri, "ipfs://")
-	if cid == "" {
-		log.Printf("❌ IPFS: Invalid IPFS URI - empty CID")
-		return nil, fmt.Errorf("invalid ipfs URI: empty CID")
+	log.Printf("📦 IPFS: Standardizing IPFS URI: %s", uri)
+	standardizedURL := util.StandardizeIpfsUrl(uri)
+
+	if standardizedURL == "" || strings.HasPrefix(standardizedURL, "ipfs://") {
+		log.Printf("❌ IPFS: Failed to standardize IPFS URI to a fetchable gateway URL: %s", uri)
+		return nil, fmt.Errorf("failed to standardize IPFS URI to a fetchable gateway URL: %s", uri)
 	}
 
-	log.Printf("📦 IPFS: Extracted CID: %s", cid)
-	log.Printf("🔄 IPFS: Starting gateway fallback sequence...")
-
-	gateways := []string{
-		"https://ipfs.io/ipfs/",
-		"https://dweb.link/ipfs/",
-		"https://cloudflare-ipfs.com/ipfs/",
-		"https://gateway.pinata.cloud/ipfs/",
-		"https://storry.tv/ipfs/",
+	log.Printf("📦 IPFS: Attempting to fetch metadata from standardized IPFS URL: %s", standardizedURL)
+	metadata, err := c.fetchHTTPMetadata(standardizedURL)
+	if err != nil {
+		log.Printf("❌ IPFS: Failed to fetch metadata from %s: %v", standardizedURL, err)
+		return nil, fmt.Errorf("failed to fetch IPFS metadata from %s after standardization: %w", standardizedURL, err)
 	}
 
-	var lastErr error
-	for i, gw := range gateways {
-		fullURL := gw + cid
-		log.Printf("📦 IPFS: Attempting gateway %d/%d: %s", i+1, len(gateways), fullURL)
-		metadata, err := c.fetchHTTPMetadata(fullURL)
-		if err == nil {
-			log.Printf("✅ IPFS: Successfully fetched metadata from gateway %d/%d: %s", i+1, len(gateways), gw)
-			return metadata, nil
-		}
-		lastErr = err
-		log.Printf("❌ IPFS: Gateway %d/%d failed (%s): %v", i+1, len(gateways), gw, err)
-	}
-
-	log.Printf("❌ IPFS: All gateways failed for CID: %s", cid)
-	return nil, fmt.Errorf("all IPFS gateways failed for %s: %w", uri, lastErr)
+	log.Printf("✅ IPFS: Successfully fetched metadata from standardized URL: %s", standardizedURL)
+	return metadata, nil
 }
 
 // fetchArweaveMetadata fetches metadata from Arweave with gateway fallback
@@ -252,29 +237,25 @@ func (c *Client) fetchHTTPRaw(ctx context.Context, url string) (data []byte, con
 	return data, contentType, nil
 }
 
-// fetchIPFSRaw fetches raw data from IPFS
+// fetchIPFSRaw fetches raw data from IPFS using a standardized gateway URL
 func (c *Client) fetchIPFSRaw(ctx context.Context, uri string) ([]byte, string, error) {
-	cid := strings.TrimPrefix(uri, "ipfs://")
-	if cid == "" {
-		return nil, "", fmt.Errorf("invalid ipfs URI: empty CID")
+	log.Printf("📦 IPFS Raw: Standardizing IPFS URI: %s", uri)
+	standardizedURL := util.StandardizeIpfsUrl(uri)
+
+	if standardizedURL == "" || strings.HasPrefix(standardizedURL, "ipfs://") {
+		log.Printf("❌ IPFS Raw: Failed to standardize IPFS URI to a fetchable gateway URL: %s", uri)
+		return nil, "", fmt.Errorf("failed to standardize IPFS URI to a fetchable gateway URL: %s", uri)
 	}
 
-	gateways := getIPFSGateways()
-	log.Printf("📦 IPFS Raw: Extracted CID: %s. Trying %d gateways...", cid, len(gateways))
-
-	var lastErr error
-	for i, gw := range gateways {
-		fullURL := gw + cid
-		log.Printf("📦 IPFS Raw: Attempt %d/%d: %s", i+1, len(gateways), fullURL)
-		data, contentType, err := c.fetchHTTPRaw(ctx, fullURL)
-		if err == nil {
-			log.Printf("✅ IPFS Raw: Success from gateway %d/%d: %s", i+1, len(gateways), gw)
-			return data, contentType, nil
-		}
-		lastErr = err
-		log.Printf("❌ IPFS Raw: Gateway %d/%d failed (%s): %v", i+1, len(gateways), gw, err)
+	log.Printf("📦 IPFS Raw: Attempting to fetch raw data from standardized IPFS URL: %s", standardizedURL)
+	data, contentType, err := c.fetchHTTPRaw(ctx, standardizedURL)
+	if err != nil {
+		log.Printf("❌ IPFS Raw: Failed to fetch raw data from %s: %v", standardizedURL, err)
+		return nil, "", fmt.Errorf("failed to fetch IPFS raw data from %s after standardization: %w", standardizedURL, err)
 	}
-	return nil, "", fmt.Errorf("all IPFS gateways failed for raw data %s: %w", uri, lastErr)
+
+	log.Printf("✅ IPFS Raw: Successfully fetched raw data from standardized URL: %s", standardizedURL)
+	return data, contentType, nil
 }
 
 // fetchArweaveRaw fetches raw data from Arweave
@@ -302,17 +283,6 @@ func (c *Client) fetchArweaveRaw(ctx context.Context, uri string) ([]byte, strin
 }
 
 // --- Helpers ---
-
-func getIPFSGateways() []string {
-	// Can be made configurable later
-	return []string{
-		"https://gateway.pinata.cloud/ipfs/", // Prioritize Pinata based on previous success
-		"https://ipfs.io/ipfs/",
-		"https://dweb.link/ipfs/",
-		"https://cloudflare-ipfs.com/ipfs/",
-		"https://storry.tv/ipfs/",
-	}
-}
 
 func getArweaveGateways() []string {
 	// Can be made configurable later
