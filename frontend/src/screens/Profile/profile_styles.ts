@@ -188,6 +188,18 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginHorizontal: 20,
 	},
 
+	// Debug section (development only)
+	debugSection: {
+		marginTop: 20,
+		marginHorizontal: 20,
+		paddingVertical: 16,
+		paddingHorizontal: 16,
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: theme.colors.outline,
+	},
+
 	// Transactions Section
 	transactionsSection: {
 		// Consistent with tokensSection margin, or specific if needed
