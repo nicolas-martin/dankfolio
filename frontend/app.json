@@ -13,15 +13,6 @@
           "launchMode": "most-recent"
         }
       ],
-      [
-        "@sentry/react-native/expo",
-        {
-          "url": "https://sentry.io/",
-          "project": "dankfolio",
-          "organization": "corsair",
-          "enableAutoUpload": false
-        }
-      ],
       "expo-secure-store",
       "expo-build-properties",
       "@react-native-firebase/app-check",
