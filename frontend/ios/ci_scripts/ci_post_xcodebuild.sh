@@ -2,8 +2,9 @@
 set -e
 echo "🚀 Running ci_post_xcodebuild.sh"
 
-# Allow Sentry upload failures without breaking the build
-# export SENTRY_ALLOW_FAILURE=true
+# Double protection against Sentry build failures
+export SENTRY_ALLOW_FAILURE=true
+export SENTRY_DISABLE_AUTO_UPLOAD=true
 
 # cd out of ios/ci_scripts into main project directory
 cd ../../
