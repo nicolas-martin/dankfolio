@@ -8,14 +8,21 @@ set -e
 
 echo "🚀 Starting Xcode Cloud post-clone script..."
 
-# Navigate to the iOS directory
-cd $CI_WORKSPACE/frontend/ios
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+echo "📍 Script directory: $SCRIPT_DIR"
+
+# Navigate to the iOS directory (one level up from ci_scripts)
+IOS_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$IOS_DIR"
 
 echo "📍 Current directory: $(pwd)"
 
 # Check if Podfile exists
 if [ ! -f "Podfile" ]; then
     echo "❌ Error: Podfile not found in $(pwd)"
+    echo "📋 Directory contents:"
+    ls -la
     exit 1
 fi
 
@@ -34,4 +41,4 @@ echo "✅ CocoaPods dependencies installed successfully!"
 echo "📋 Pods directory contents:"
 ls -la Pods/ | head -10
 
-echo "🎉 Xcode Cloud post-clone script completed!" 
+echo "🎉 ci_post_clone.sh completed successfully!" 
