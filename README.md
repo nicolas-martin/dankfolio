@@ -1,21 +1,10 @@
 # 🎮 Dankfolio
 
-## TODO:
-- [ ] Make wallet creation fully frontend and only send public key to the backend
-- [ ] There's a bug where in the profile when we have 0 coin we still see SOL
-- [ ] Optimize the graph fetching by fetching ALL points at once and then filter/aggregate by time.
-
-- Problem:
-May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Step 1: Navigating to https://www.birdeye.so/?chain=solana
-May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Warning: Initial data load/refresh failed: failed to scrape and enrich coins: failed during basic token scraping: initial navigation failed: exec: "google-chrome": executable file not found in $PATH
-May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Starting gRPC server on port 9000
-May 18 22:33:44 localhost dankfolio[39280]: 2025/05/18 22:33:44 Starting Connect RPC server on :9000
-
-- Solution:
-Use a direct page instead 🤦‍♂️
-
-### NOTE
-In order for the raw_coins to be populated which is required for the search functionality. We currently have to trigger the jupiter call to /tokens/v1/all which is currently done manually by triggering. We should also think about using the `new` endpoint periodically which is not implemented currently.
+## JWT SECRET
+```bash
+→ openssl rand -hex 32
+31b6e992701acc729eed45f137c117e8530fd8b74a70da7b27d2ba85a203dacd
+```
 
 ```bash
 → grpcurl -plaintext \
