@@ -19,6 +19,7 @@ import {
 	SwapIcon,
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
+import { AppCheckTester } from '@/services/appCheckTest';
 
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -297,12 +298,26 @@ const Profile = () => {
 					</View>
 
 					{/* Debug button - temporary */}
-					{/* <Button
-						onPress={() => { Sentry.captureException(new Error('First error')) }}
-						style={styles.debugButton}
-					>
-						Send test sentry error
-					</Button> */}
+					{__DEV__ && (
+						<Button
+							onPress={async () => {
+								try {
+									logger.info('🧪 Testing App Check...');
+									const success = await AppCheckTester.testAppCheckToken();
+									const tokenInfo = await AppCheckTester.getTokenInfo();
+									logger.info('App Check Test Results:', { success, tokenInfo });
+									
+									// You can also test Sentry if needed
+									// Sentry.captureException(new Error('Test error'));
+								} catch (error) {
+									logger.error('App Check test failed:', error);
+								}
+							}}
+							style={styles.debugButton}
+						>
+							Test App Check
+						</Button>
+					)}
 				</ScrollView>
 			</View>
 		</SafeAreaView>
