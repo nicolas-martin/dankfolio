@@ -14,4 +14,9 @@ declare module '@env' {
 	export const FIREBASE_STORAGE_BUCKET: string;
 	export const FIREBASE_MESSAGING_SENDER_ID: string;
 	export const FIREBASE_APP_ID: string;
+	
+	// Firebase App Check Configuration
+	export const FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID: string;
+	export const FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS: string;
+	export const FIREBASE_RECAPTCHA_SITE_KEY: string;
 } 
