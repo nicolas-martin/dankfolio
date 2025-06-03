@@ -1,0 +1,6 @@
+module Pods_dankfoliomobile {
+  umbrella header "Pods-dankfoliomobile-umbrella.h"
+
+  export *
+  module * { export * }
+}
