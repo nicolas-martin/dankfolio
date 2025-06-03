@@ -18,6 +18,14 @@ cd "$IOS_DIR"
 
 echo "📍 Current directory: $(pwd)"
 
+# Install Node.js using Homebrew (required for Expo Podfile)
+echo "🔧 Installing Node.js..."
+if ! command -v node &> /dev/null; then
+    brew install node
+else
+    echo "✅ Node.js already installed: $(node --version)"
+fi
+
 # Check if Podfile exists
 if [ ! -f "Podfile" ]; then
     echo "❌ Error: Podfile not found in $(pwd)"
