@@ -10,6 +10,7 @@ import { useTransactionsStore } from '@/store/transactions';
 import { Transaction } from '@/types';
 import { createStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';
+import { OTAUpdater } from '@components/OTAupdate';
 import * as Sentry from '@sentry/react-native';
 import {
 	ProfileIcon,
@@ -20,6 +21,8 @@ import {
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import { AppCheckTester } from '@/services/appCheckTest';
+import { FirebaseTest } from '@/components/FirebaseTest';
+import { APP_ENV } from '@env';
 
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -283,7 +286,7 @@ const Profile = () => {
 					contentContainerStyle={styles.scrollContent}
 					refreshControl={
 						<RefreshControl
-						refreshing={isRefreshing || isPortfolioLoading || isTransactionsLoading}
+							refreshing={isRefreshing || isPortfolioLoading || isTransactionsLoading}
 							onRefresh={handleRefresh}
 							colors={[theme.colors.primary]}
 							tintColor={theme.colors.primary}
@@ -297,26 +300,30 @@ const Profile = () => {
 						{renderTransactionsSection()}
 					</View>
 
-					{/* Debug button - temporary */}
-					{__DEV__ && (
-						<Button
-							onPress={async () => {
-								try {
-									logger.info('🧪 Testing App Check...');
-									const success = await AppCheckTester.testAppCheckToken();
-									const tokenInfo = await AppCheckTester.getTokenInfo();
-									logger.info('App Check Test Results:', { success, tokenInfo });
-									
-									// You can also test Sentry if needed
-									// Sentry.captureException(new Error('Test error'));
-								} catch (error) {
-									logger.error('App Check test failed:', error);
-								}
-							}}
-							style={styles.debugButton}
-						>
-							Test App Check
-						</Button>
+					{/* Debug section - development only */}
+					{APP_ENV === 'development' && (
+						<View style={styles.debugSection}>
+						<OTAUpdater />
+							<FirebaseTest />
+							<Button
+								onPress={async () => {
+									try {
+										logger.info('🧪 Testing App Check...');
+										const success = await AppCheckTester.testAppCheckToken();
+										const tokenInfo = await AppCheckTester.getTokenInfo();
+										logger.info('App Check Test Results:', { success, tokenInfo });
+										
+										// You can also test Sentry if needed
+										// Sentry.captureException(new Error('Test error'));
+									} catch (error) {
+										logger.error('App Check test failed:', error);
+									}
+								}}
+								style={styles.debugButton}
+							>
+								Test App Check
+							</Button>
+						</View>
 					)}
 				</ScrollView>
 			</View>

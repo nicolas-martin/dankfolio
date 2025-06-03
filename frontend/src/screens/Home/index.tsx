@@ -12,7 +12,6 @@ import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './home_styles';
 import { Coin } from '@/types';
-import { OTAUpdater } from '@components/OTAupdate';
 import { logger } from '@/utils/logger';
 
 const HomeScreen = () => {
@@ -191,7 +190,6 @@ const HomeScreen = () => {
 								<CoinCard coin={item} onPress={() => handlePressCoinCard(item)} />
 							</View>
 						)}
-						ListFooterComponent={<OTAUpdater />}
 						scrollEnabled={false}
 					/>
 				)}
