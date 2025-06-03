@@ -9,11 +9,11 @@ export SENTRY_DISABLE_AUTO_UPLOAD=true
 # cd out of ios/ci_scripts into main project directory
 cd ../../
 
-# Install specific Node.js version compatible with React Native 0.76.9
-# Using Node 18.x which is the recommended LTS for RN 0.76.x
-echo "📦 Installing Node.js 18.x..."
-brew install node@18
-brew link --force node@18
+# Install Node.js 20.x LTS (compatible with React Native 0.76.9)
+# RN 0.76 requires Node 18.18+ - using Node 20 LTS for stability
+echo "📦 Installing Node.js 20.x LTS..."
+brew install node@20
+brew link --force node@20
 
 # Verify Node version
 echo "📋 Node version: $(node --version)"
