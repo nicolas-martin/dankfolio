@@ -2,14 +2,16 @@
 set -e
 echo "🚀 Running ci_post_clone.sh"
 
+# Disable Sentry auto-upload to prevent build failures
+export SENTRY_DISABLE_AUTO_UPLOAD=true
+
 # cd out of ios/ci_scripts into main project directory
 cd ../../
 
 # install node and cocoapods
 brew install node cocoapods
 
-# install node modules with legacy peer deps to resolve expo dependency conflicts
-npm install --legacy-peer-deps
+npm install
 
 # xcode cloud sets `CI` env var to 'TRUE':
 # This causes a crash: Error: GetEnv.NoBoolean: TRUE is not a boolean.
