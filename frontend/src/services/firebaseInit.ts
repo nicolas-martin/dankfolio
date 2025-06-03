@@ -1,35 +1,10 @@
-import { getApp, initializeApp as initializeRNFBApp } from '@react-native-firebase/app';
+import { getApp } from '@react-native-firebase/app';
 import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
-import { Platform } from 'react-native';
 import {
-  FIREBASE_API_KEY,
-  FIREBASE_AUTH_DOMAIN,
-  FIREBASE_PROJECT_ID,
-  FIREBASE_STORAGE_BUCKET,
-  FIREBASE_MESSAGING_SENDER_ID,
-  FIREBASE_APP_ID,
   FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
   FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
 } from '@env';
-
-// Environment-aware Firebase configuration
-const getFirebaseConfig = () => {
-  // Validate that all required Firebase environment variables are present
-  if (!FIREBASE_API_KEY || !FIREBASE_AUTH_DOMAIN || !FIREBASE_PROJECT_ID || 
-      !FIREBASE_STORAGE_BUCKET || !FIREBASE_MESSAGING_SENDER_ID || !FIREBASE_APP_ID) {
-    throw new Error('Missing required Firebase environment variables. Please check your .env file.');
-  }
-
-  return {
-    apiKey: FIREBASE_API_KEY,
-    authDomain: FIREBASE_AUTH_DOMAIN,
-    projectId: FIREBASE_PROJECT_ID,
-    storageBucket: FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-    appId: FIREBASE_APP_ID,
-  };
-};
 
 // Environment-aware App Check configuration
 const getAppCheckConfig = () => {
@@ -47,20 +22,16 @@ const getAppCheckConfig = () => {
   return config;
 };
 
-let firebaseApp: any = null;
 let appCheckInstance: any = null;
 
 export async function initializeFirebaseServices(): Promise<void> {
   try {
-    // For React Native Firebase, the app is automatically initialized via native configuration
-    // We just need to get the default app instance
-    if (!firebaseApp) {
-      firebaseApp = getApp(); // Get the default app that was configured natively
-      logger.info('🔥 Firebase app initialized successfully.');
-    }
+    // Get the default Firebase app that's automatically initialized from GoogleService-Info.plist
+    const firebaseApp = getApp();
+    logger.info('🔥 Firebase app loaded from native configuration (GoogleService-Info.plist)');
 
-    // Initialize App Check with React Native Firebase provider
-    if (firebaseApp && !appCheckInstance) {
+    // Initialize App Check
+    if (!appCheckInstance) {
       // Create and configure the React Native Firebase App Check provider
       const rnfbProvider = new ReactNativeFirebaseAppCheckProvider();
       
@@ -71,21 +42,22 @@ export async function initializeFirebaseServices(): Promise<void> {
         isTokenAutoRefreshEnabled: true,
       });
       
-      logger.info('🔒 Firebase App Check initialized with React Native Firebase provider');
+      logger.info('🔒 Firebase App Check initialized successfully (App Check only)');
     }
   } catch (error) {
-    logger.error('❌ Failed to initialize Firebase services:', error);
-    // Depending on how critical Firebase is at startup, you might re-throw or handle differently
+    logger.error('❌ Failed to initialize Firebase App Check:', error);
+    
+    // If we're in development and Firebase isn't configured, that's okay
+    if (__DEV__) {
+      logger.warn('⚠️  Firebase App Check initialization failed in development mode. This is expected if GoogleService-Info.plist is not properly configured.');
+      return; // Don't throw in development
+    }
+    
     throw error;
   }
 }
 
-// Optional: Function to get the App Check instance if needed elsewhere
+// Function to get the App Check instance
 export function getAppCheckInstance(): any {
   return appCheckInstance;
-}
-
-// Optional: Function to get the Firebase App instance
-export function getFirebaseApp(): any {
-  return firebaseApp;
 }
