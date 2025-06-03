@@ -18,7 +18,8 @@
         {
           "url": "https://sentry.io/",
           "project": "dankfolio",
-          "organization": "corsair"
+          "organization": "corsair",
+          "enableAutoUpload": false
         }
       ],
       "expo-secure-store",
