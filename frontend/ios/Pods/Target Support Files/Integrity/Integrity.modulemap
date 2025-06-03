@@ -1,6 +1,0 @@
-module Integrity {
-  umbrella header "Integrity-umbrella.h"
-
-  export *
-  module * { export * }
-}

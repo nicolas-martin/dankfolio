@@ -27,4 +27,4 @@ DerivedData
 *.jsbundle
 
 # CocoaPods
-# /Pods/
+/Pods/
