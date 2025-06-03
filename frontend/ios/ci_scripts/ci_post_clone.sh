@@ -33,6 +33,18 @@ else
     echo "✅ Node.js already installed: $(node --version)"
 fi
 
+# Navigate to frontend directory to install npm dependencies
+FRONTEND_DIR="$(dirname "$IOS_DIR")"
+echo "📍 Frontend directory: $FRONTEND_DIR"
+cd "$FRONTEND_DIR"
+
+# Install npm dependencies (required for Expo Podfile to resolve expo/package.json)
+echo "📦 Installing npm dependencies..."
+npm install
+
+# Go back to iOS directory for CocoaPods
+cd "$IOS_DIR"
+
 # Check if Podfile exists
 if [ ! -f "Podfile" ]; then
     echo "❌ Error: Podfile not found in $(pwd)"
