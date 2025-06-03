@@ -8,8 +8,8 @@ cd ../../
 # install node and cocoapods
 brew install node cocoapods
 
-# install node modules with legacy peer deps to resolve expo dependency conflicts
-npm install --legacy-peer-deps
+# install node modules
+npm install
 
 # xcode cloud sets `CI` env var to 'TRUE':
 # This causes a crash: Error: GetEnv.NoBoolean: TRUE is not a boolean.
