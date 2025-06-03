@@ -8,6 +8,13 @@ set -e
 
 echo "🚀 Starting Xcode Cloud post-clone script..."
 
+# Debug: Show Xcode Cloud environment variables
+echo "🔍 Xcode Cloud Environment Debug:"
+echo "CI_WORKSPACE: $CI_WORKSPACE"
+echo "PWD: $(pwd)"
+echo "HOME: $HOME"
+echo "USER: $USER"
+
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "📍 Script directory: $SCRIPT_DIR"
