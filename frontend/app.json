@@ -34,7 +34,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.dankfoliomobile",
+      "bundleIdentifier": "com.nicolasmartin.dankfolio",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -44,7 +44,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.dankfoliomobile"
+      "package": "com.nicolasmartin.dankfolio"
     },
     "web": {
       "favicon": "./assets/favicon.png"
