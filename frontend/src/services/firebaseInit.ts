@@ -1,5 +1,4 @@
-import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getApp } from '@react-native-firebase/app';
+import { getApp, initializeApp as initializeRNFBApp } from '@react-native-firebase/app';
 import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
 import { Platform } from 'react-native';
@@ -48,13 +47,15 @@ const getAppCheckConfig = () => {
   return config;
 };
 
-let firebaseApp: FirebaseApp | null = null;
+let firebaseApp: any = null;
 let appCheckInstance: any = null;
 
 export async function initializeFirebaseServices(): Promise<void> {
   try {
+    // For React Native Firebase, the app is automatically initialized via native configuration
+    // We just need to get the default app instance
     if (!firebaseApp) {
-      firebaseApp = initializeApp(getFirebaseConfig());
+      firebaseApp = getApp(); // Get the default app that was configured natively
       logger.info('🔥 Firebase app initialized successfully.');
     }
 
@@ -65,7 +66,7 @@ export async function initializeFirebaseServices(): Promise<void> {
       
       rnfbProvider.configure(getAppCheckConfig());
 
-      appCheckInstance = initializeAppCheck(getApp(), {
+      appCheckInstance = initializeAppCheck(firebaseApp, {
         provider: rnfbProvider,
         isTokenAutoRefreshEnabled: true,
       });
@@ -85,6 +86,6 @@ export function getAppCheckInstance(): any {
 }
 
 // Optional: Function to get the Firebase App instance
-export function getFirebaseApp(): FirebaseApp | null {
+export function getFirebaseApp(): any {
   return firebaseApp;
 }

@@ -6,7 +6,6 @@ import { TradeService } from "@/gen/dankfolio/v1/trade_pb";
 import { CoinService } from "@/gen/dankfolio/v1/coin_pb";
 import { PriceService } from "@/gen/dankfolio/v1/price_pb";
 import { UtilityService } from "@/gen/dankfolio/v1/utility_pb";
-import { AuthService } from "@/gen/dankfolio/v1/auth_pb";
 import { authService } from "../authService";
 import { logger as log } from '@/utils/logger';
 import type { Interceptor } from "@connectrpc/connect";
@@ -36,17 +35,11 @@ const transport = createConnectTransport({
 	interceptors: [authInterceptor],
 });
 
-// Separate transport for auth requests (no auth interceptor to prevent circular dependency)
-const authTransport = createConnectTransport({
-	baseUrl: REACT_APP_API_URL,
-});
-
 const walletClient = createClient(WalletService, transport);
 const tradeClient = createClient(TradeService, transport);
 const coinClient = createClient(CoinService, transport);
-const authClient = createClient(AuthService, authTransport); // Use authTransport without interceptor
 const priceClient = createClient(PriceService, transport);
 const utilityClient = createClient(UtilityService, transport);
 
-export { walletClient, tradeClient, coinClient, priceClient, utilityClient, authClient };
+export { walletClient, tradeClient, coinClient, priceClient, utilityClient };
 
