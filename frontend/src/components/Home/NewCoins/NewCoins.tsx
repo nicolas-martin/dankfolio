@@ -1,16 +1,9 @@
-import React, { useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import Animated, {
-	useSharedValue,
-	useAnimatedRef,
-	useDerivedValue,
-	useFrameCallback,
-	useAnimatedScrollHandler,
-	runOnJS
 } from 'react-native-reanimated';
-import { scrollTo } from 'react-native-reanimated';
 import { LoadingAnimation } from '../../Common/Animations';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast'; // Import useToast
@@ -32,25 +25,14 @@ const NewCoins: React.FC = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const navigation = useNavigation<NewCoinsNavigationProp>();
-	const animatedRef = useAnimatedRef<Animated.FlatList<Coin>>();
 
-	// Constants for scrolling behavior
-	const SCROLL_SPEED = 30; // pixels per second (reduced for smoother movement)
 	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
-	const AUTO_SCROLL_RESUME_DELAY = 2000; // Resume auto-scroll after 2 seconds of no manual interaction
 
 	// Use separate selectors to avoid creating new objects on every render
 	const newlyListedCoins = useCoinStore(state => state.newlyListedCoins);
 	const isLoadingNewlyListed = useCoinStore(state => state.isLoadingNewlyListed);
 	const getCoinByID = useCoinStore(state => state.getCoinByID); // Changed from enrichCoin
 	const { showToast } = useToast(); // Get showToast
-
-	// Shared values for smooth scrolling
-	const scrollX = useSharedValue(0);
-	const isScrolling = useSharedValue(false);
-	const isPaused = useSharedValue(false);
-	const isManualScrolling = useSharedValue(false);
-	const manualScrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
 	// Create duplicated data for infinite scrolling
 	const scrollData = useMemo(() => {
@@ -59,93 +41,6 @@ const NewCoins: React.FC = () => {
 		return newlyListedCoins;
 	}, [newlyListedCoins]);
 
-	// Handle manual scroll timeout
-	const resetManualScrollTimeout = useCallback(() => {
-		if (manualScrollTimeout.current) {
-			clearTimeout(manualScrollTimeout.current);
-		}
-		manualScrollTimeout.current = setTimeout(() => {
-			isManualScrolling.value = false;
-			isPaused.value = false;
-		}, AUTO_SCROLL_RESUME_DELAY);
-	}, []);
-
-	// Animated scroll handler for manual scrolling
-	const scrollHandler = useAnimatedScrollHandler({
-		onScroll: (event) => {
-			if (isManualScrolling.value) {
-				scrollX.value = event.contentOffset.x;
-			}
-		},
-		onBeginDrag: () => {
-			isManualScrolling.value = true;
-			isPaused.value = true;
-			runOnJS(resetManualScrollTimeout)();
-		},
-		onEndDrag: () => {
-			runOnJS(resetManualScrollTimeout)();
-		},
-		onMomentumEnd: () => {
-			runOnJS(resetManualScrollTimeout)();
-		},
-	});
-
-	// Smooth continuous scrolling animation using useFrameCallback
-	useFrameCallback((frameInfo) => {
-		if (!isScrolling.value || isPaused.value || isManualScrolling.value || !newlyListedCoins || newlyListedCoins.length === 0) {
-			return;
-		}
-
-		const deltaTime = frameInfo.timeSincePreviousFrame || 16; // fallback to ~60fps
-		const pixelsToMove = (SCROLL_SPEED * deltaTime) / 1000; // convert to pixels per frame
-
-		scrollX.value += pixelsToMove;
-
-		// Reset when we've scrolled through one complete set
-		const singleSetWidth = newlyListedCoins.length * CARD_WIDTH;
-		if (scrollX.value >= singleSetWidth) {
-			scrollX.value = 0;
-		}
-	});
-
-	// Apply scroll position to FlatList (only when not manually scrolling)
-	useDerivedValue(() => {
-		if (scrollData.length > 0 && !isManualScrolling.value) {
-			scrollTo(animatedRef, scrollX.value, 0, false); // Use false for instant positioning
-		}
-	});
-
-	// Start/stop scrolling when coins are loaded/unloaded
-	useEffect(() => {
-		if (newlyListedCoins && newlyListedCoins.length > 0) {
-			isScrolling.value = true;
-		} else {
-			isScrolling.value = false;
-		}
-
-		return () => {
-			// Clean up animation on unmount
-			isScrolling.value = false;
-			scrollX.value = 0;
-			if (manualScrollTimeout.current) {
-				clearTimeout(manualScrollTimeout.current);
-			}
-		};
-	}, [newlyListedCoins]);
-
-	// Pause scrolling on touch start, resume on touch end
-	const handleTouchStart = useCallback(() => {
-		isPaused.value = true;
-	}, []);
-
-	const handleTouchEnd = useCallback(() => {
-		if (!isManualScrolling.value) {
-			isPaused.value = false;
-		}
-	}, []);
-
-	// Note: We don't fetch newly listed coins here because the Home screen already does it
-	// This prevents duplicate API calls and infinite re-render loops
 
 	const handleCoinPress = async (coin: Coin) => {
 		try {
@@ -207,10 +102,8 @@ const NewCoins: React.FC = () => {
 	}
 
 	return (
-		<View 
+		<View
 			style={styles.container}
-			onTouchStart={handleTouchStart}
-			onTouchEnd={handleTouchEnd}
 		>
 			<View style={styles.titleContainer}>
 				<Text style={styles.title}>New Listings</Text>
@@ -225,7 +118,6 @@ const NewCoins: React.FC = () => {
 				</TouchableOpacity>
 			</View>
 			<Animated.FlatList
-				ref={animatedRef}
 				data={scrollData}
 				renderItem={renderItem}
 				keyExtractor={(item, index) => `${item.mintAddress}-${index}`}
@@ -233,7 +125,6 @@ const NewCoins: React.FC = () => {
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={styles.listContentContainer}
 				scrollEnabled={true} // Enable manual scrolling
-				onScroll={scrollHandler}
 				scrollEventThrottle={1}
 				decelerationRate="fast"
 				snapToInterval={CARD_WIDTH}
