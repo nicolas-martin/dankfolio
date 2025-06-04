@@ -20,7 +20,7 @@ export interface OdometerProps {
 
 const Odometer: FC<OdometerProps> = ({
 	value,
-	duration = 800,
+	duration = 600,
 	fontStyle,
 }) => {
 	const prev = usePrevious(value) ?? value.replace(/\d/g, '0');
@@ -57,7 +57,8 @@ const Odometer: FC<OdometerProps> = ({
 					toValue: -digitHeight * parseInt(char, 10),
 					duration,
 					useNativeDriver: true,
-					easing: Easing.elastic(1),
+					easing: Easing.linear,
+					// easing: Easing.elastic(1),
 				});
 			})
 			.filter((a): a is Animated.CompositeAnimation => a !== null);

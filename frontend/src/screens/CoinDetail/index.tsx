@@ -56,7 +56,8 @@ const CoinDetail: React.FC = () => {
 
 	const parseValue = (val: string | number | undefined): number => {
 		if (val === undefined) return 0;
-		return typeof val === 'string' ? parseFloat(val) : val;
+		const parsed = typeof val === 'string' ? parseFloat(val) : val;
+		return isNaN(parsed) ? 0 : parsed;
 	};
 
 	const handleChartHover = useCallback((point: PricePoint | null) => {
@@ -82,7 +83,12 @@ const CoinDetail: React.FC = () => {
 
 		const lastValue = parseValue(lastDataPoint?.value);
 		const firstValue = parseValue(firstDataPoint?.value);
-		const currentPrice = hoverPoint?.y ?? lastValue;
+		let currentPrice = hoverPoint?.y ?? lastValue;
+		
+		// Ensure currentPrice is never NaN
+		if (isNaN(currentPrice)) {
+			currentPrice = 0;
+		}
 
 		let periodChange = 0;
 		let valueChange = 0;
@@ -90,6 +96,10 @@ const CoinDetail: React.FC = () => {
 		if (firstDataPoint && firstValue !== 0) {
 			periodChange = ((currentPrice - firstValue) / firstValue) * 100;
 			valueChange = currentPrice - firstValue;
+			
+			// Ensure calculated values are not NaN
+			if (isNaN(periodChange)) periodChange = 0;
+			if (isNaN(valueChange)) valueChange = 0;
 		}
 
 		return {
