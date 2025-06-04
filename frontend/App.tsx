@@ -21,7 +21,6 @@ import { logger } from '@/utils/logger';
 import Constants from 'expo-constants';
 import { authService } from '@/services/authService';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
-import { FirebaseTest } from '@/components/FirebaseTest';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -201,7 +200,6 @@ const App: React.FC = () => {
 			<StatusBar style="light" />
 			<SafeAreaProvider>
 				<GestureHandlerRootView style={{ flex: 1 }}>
-					<FirebaseTest />
 					<ToastProvider>
 						<View style={styles.container}>
 							<StatusBar style="auto" />
