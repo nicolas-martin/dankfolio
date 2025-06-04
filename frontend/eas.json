@@ -1,12 +1,14 @@
 {
   "cli": {
     "version": ">= 16.3.3",
-    "appVersionSource": "remote"
+    "appVersionSource": "remote",
+    "requireCommit": false
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "autoIncrement": true,
       "ios": {
         "simulator": true,
         "buildConfiguration": "Debug"
@@ -26,6 +28,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "autoIncrement": true,
       "channel": "preview",
       "env": {
         "SENTRY_ALLOW_FAILURE": "true",
@@ -53,6 +56,7 @@
     "simulator-release": {
       "extends": "production",
       "distribution": "internal",
+      "autoIncrement": true,
       "ios": {
         "simulator": true,
         "buildConfiguration": "Release"
