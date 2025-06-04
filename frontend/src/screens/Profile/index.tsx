@@ -199,7 +199,7 @@ const Profile = () => {
 				case 'FAILED':
 					return styles.transactionStatusTextFailed;
 				default:
-					return { color: theme.colors.onSurfaceVariant, marginLeft: 4, fontSize: 13, fontWeight: 'bold' as const }; // Default style
+					return styles.transactionStatusTextDefault;
 			}
 		};
 
@@ -237,9 +237,11 @@ const Profile = () => {
 									</Text>
 								}
 								description={
-									<Text style={styles.transactionSubtitleText}>
-										{formatDate(tx.date)} - <Text style={getStatusStyle(tx.status)}>{tx.status.toUpperCase()}</Text>
-									</Text>
+									<View>
+										<Text style={styles.transactionSubtitleText}>
+											{formatDate(tx.date)} - <Text style={getStatusStyle(tx.status)}>{tx.status.toUpperCase()}</Text>
+										</Text>
+									</View>
 								}
 								left={() => (
 									<View style={styles.transactionIconContainer}>
@@ -297,13 +299,13 @@ const Profile = () => {
 						{renderHeader()}
 						{renderPortfolioCard()}
 						{renderTokensSection()}
-						{renderTransactionsSection()}
+						{/* {renderTransactionsSection()} */}
 					</View>
 
 					{/* Debug section - development only */}
 					{APP_ENV === 'development' && (
 						<View style={styles.debugSection}>
-						<OTAUpdater />
+							<OTAUpdater />
 							<FirebaseTest />
 							<Button
 								onPress={async () => {
@@ -312,7 +314,7 @@ const Profile = () => {
 										const success = await AppCheckTester.testAppCheckToken();
 										const tokenInfo = await AppCheckTester.getTokenInfo();
 										logger.info('App Check Test Results:', { success, tokenInfo });
-										
+
 										// You can also test Sentry if needed
 										// Sentry.captureException(new Error('Test error'));
 									} catch (error) {

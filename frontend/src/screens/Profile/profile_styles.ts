@@ -257,7 +257,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	transactionSubtitleText: { // For the line with Date and Status
 		fontSize: 13,
 		color: theme.colors.onSurfaceVariant, // Muted color
-		flexDirection: 'row', // To allow status text to be part of it
 		alignItems: 'center',
 	},
 	transactionDate: { // Style for the date part of subtitle (if styled differently) - now part of transactionSubtitleText
@@ -279,6 +278,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	transactionStatusTextFailed: {
 		fontSize: 13,
 		color: theme.colors.error, // Red for failed
+		fontWeight: 'bold',
+		marginLeft: 4,
+	},
+	transactionStatusTextDefault: {
+		fontSize: 13,
+		color: theme.colors.onSurfaceVariant,
 		fontWeight: 'bold',
 		marginLeft: 4,
 	},
