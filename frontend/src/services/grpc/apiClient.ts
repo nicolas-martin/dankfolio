@@ -10,8 +10,13 @@ import { authService } from "../authService";
 import { logger as log } from '@/utils/logger';
 import type { Interceptor } from "@connectrpc/connect";
 
+// Log the environment variable for debugging
+log.log('🔧 REACT_APP_API_URL from environment:', REACT_APP_API_URL);
+
 if (!REACT_APP_API_URL) {
-	throw new Error('REACT_APP_API_URL environment variable is required');
+	const errorMsg = 'REACT_APP_API_URL environment variable is required but not set. Please check your .env configuration.';
+	log.error('❌ Environment Error:', errorMsg);
+	throw new Error(errorMsg);
 }
 
 // Authentication interceptor to add bearer tokens to all requests
