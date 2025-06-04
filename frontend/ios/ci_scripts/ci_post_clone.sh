@@ -35,8 +35,9 @@ npm install
 # Xcode Cloud sets `CI` env var to 'TRUE' (uppercase string)
 # This causes: Error: GetEnv.NoBoolean: TRUE is not a boolean.
 # The getenv package expects lowercase boolean strings ('true'/'false')
-echo "🔧 Fixing CI environment variable for getenv compatibility..."
-export CI="true"
+# echo "🔧 Fixing CI environment variable for getenv compatibility..."
+# BUG: not working
+# export CI="true"
 
 echo "🔧 Running expo prebuild..."
 npx expo prebuild
