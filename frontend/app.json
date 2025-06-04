@@ -42,6 +42,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.nicolasmartin.dankfolio",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
