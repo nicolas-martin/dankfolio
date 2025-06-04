@@ -20,6 +20,14 @@ import { logger } from '@/utils/logger';
 import Constants from 'expo-constants';
 import { authService } from '@/services/authService';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the splash screen visible while we fetch resources
+try {
+	SplashScreen.preventAutoHideAsync();
+} catch (error) {
+	logger.warn('Failed to prevent splash screen auto hide:', error);
+}
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -184,8 +192,16 @@ const App: React.FC = () => {
 	}, [wallet?.address]);
 
 	const onLayoutRootView = useCallback(async () => {
-		// Splash screen removed - app will show immediately when ready
-	}, [appIsReady]);
+		if (appIsReady && needsWalletSetup !== null) {
+			// Hide the splash screen once the app is ready
+			try {
+				await SplashScreen.hideAsync();
+				logger.info('Splash screen hidden successfully');
+			} catch (error) {
+				logger.warn('Failed to hide splash screen:', error);
+			}
+		}
+	}, [appIsReady, needsWalletSetup]);
 
 	if (!appIsReady || needsWalletSetup === null) {
 		return null;
