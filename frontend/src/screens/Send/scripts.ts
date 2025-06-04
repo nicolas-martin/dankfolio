@@ -6,7 +6,7 @@ import { validateSolanaAddress } from '@/services/solana';
 import { prepareCoinTransfer, signTransferTransaction } from '@/services/solana';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { ToastProps } from '@components/Common/Toast/toast_types';
-import { usePortfolioStore } from '@/store/portfolio';
+import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import { logger } from '@/utils/logger';
 
 export const handleTokenSelect = (
@@ -68,8 +68,35 @@ export const validateForm = async (
 
 export const handleTokenTransfer = async (formData: TokenTransferFormData): Promise<string> => {
 	try {
-		const unsignedTransaction = await prepareCoinTransfer(formData.toAddress, formData.selectedTokenMint, parseFloat(formData.amount));
-		const signedTransaction = await signTransferTransaction(unsignedTransaction);
+		const walletAddress = usePortfolioStore.getState().wallet?.address;
+		if (!walletAddress) {
+			logger.error('[handleTokenTransfer] No wallet address found in store.');
+			throw new Error('Wallet not connected. Please connect your wallet.');
+		}
+
+		const unsignedTransaction = await prepareCoinTransfer(
+			formData.toAddress,
+			formData.selectedTokenMint,
+			parseFloat(formData.amount),
+			walletAddress // userPublicKey
+		);
+
+		const keys = await getActiveWalletKeys();
+		if (!keys || !keys.privateKey || !keys.publicKey) {
+			logger.error('[handleTokenTransfer] Failed to get active wallet keys or keys are incomplete.');
+			throw new Error('Failed to retrieve wallet keys for signing.');
+		}
+
+		if (keys.publicKey !== walletAddress) {
+			logger.error('[handleTokenTransfer] Mismatch between store public key and keychain public key.');
+			throw new Error('Wallet key mismatch. Please try reconnecting your wallet.');
+		}
+
+		const signedTransaction = await signTransferTransaction(
+			unsignedTransaction,
+			keys.publicKey,
+			keys.privateKey
+		);
 
 		const submitResponse = await grpcApi.submitCoinTransfer({
 			signedTransaction,

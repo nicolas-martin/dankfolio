@@ -4,7 +4,7 @@ import { logger } from '@/utils/logger';
 import { grpcApi } from '@/services/grpcApi';
 import { prepareSwapRequest, signSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
-import { usePortfolioStore } from '@/store/portfolio';
+import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import type { ToastProps } from '@/components/Common/Toast/toast_types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { REFRESH_INTERVALS } from '@/utils/constants';
@@ -219,15 +219,45 @@ export const executeTrade = async (
 		// Convert amount to raw units (lamports)
 		const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
 
-		// Build and sign the transaction
+		// Get userPublicKey for prepareSwapRequest
+		const walletAddress = usePortfolioStore.getState().wallet?.address;
+		if (!walletAddress) {
+			logger.error('[executeTrade] No wallet address found in store.');
+			setIsLoadingTrade(false);
+			showToast({ type: 'error', message: 'Wallet not connected. Please connect your wallet.' });
+			setIsStatusModalVisible(false); // Hide status modal as trade can't proceed
+			return;
+		}
+
+		// Build the transaction
 		const unsignedTx = await prepareSwapRequest(
 			fromCoin.mintAddress,
 			toCoin.mintAddress,
 			rawAmount,
-			slippage
+			slippage,
+			walletAddress // userPublicKey
 		);
 
-		const signedTx = await signSwapTransaction(unsignedTx);
+		// Get keys for signing
+		const keys = await getActiveWalletKeys();
+		if (!keys || !keys.privateKey || !keys.publicKey) {
+			logger.error('[executeTrade] Failed to get active wallet keys or keys are incomplete.');
+			setIsLoadingTrade(false);
+			showToast({ type: 'error', message: 'Failed to retrieve wallet keys for signing.' });
+			setIsStatusModalVisible(false); // Hide status modal
+			return;
+		}
+
+		// Verify public key from store matches the one from keychain (optional, but good practice)
+		if (keys.publicKey !== walletAddress) {
+			logger.error('[executeTrade] Mismatch between store public key and keychain public key.');
+			setIsLoadingTrade(false);
+			showToast({ type: 'error', message: 'Wallet key mismatch. Please try reconnecting your wallet.' });
+			setIsStatusModalVisible(false); // Hide status modal
+			return;
+		}
+
+		const signedTx = await signSwapTransaction(unsignedTx, keys.publicKey, keys.privateKey);
 
 		logger.info('Transaction signed.', { fromCoin: fromCoin.symbol, toCoin: toCoin.symbol, fromAmount });
 
