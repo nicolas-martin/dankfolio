@@ -26,6 +26,7 @@ const Odometer: FC<OdometerProps> = ({
 	const prev = usePrevious(value) ?? value.replace(/\d/g, '0');
 	const [digitHeight, setDigitHeight] = useState(0);
 	const anims = useRef<(Animated.Value | null)[]>([]);
+	const toValuesRef = useRef<number[]>([]);
 
 	// pad previous to match length
 	const prevPadded = prev.padStart(value.length, '0');
@@ -49,12 +50,18 @@ const Odometer: FC<OdometerProps> = ({
 	useEffect(() => {
 		if (!digitHeight || !anims.current.length) return;
 
+		const currentToValues: number[] = [];
 		const seq = value
 			.split('')
 			.map((char, i) => {
-				if (!/\d/.test(char) || !anims.current[i]) return null;
+				if (!/\d/.test(char) || !anims.current[i]) {
+					currentToValues[i] = NaN; // Or some other placeholder for non-digits
+					return null;
+				}
+				const toValue = -digitHeight * parseInt(char, 10);
+				currentToValues[i] = toValue;
 				return Animated.timing(anims.current[i]!, {
-					toValue: -digitHeight * parseInt(char, 10),
+					toValue,
 					duration,
 					useNativeDriver: true,
 					easing: Easing.elastic(1),
@@ -62,8 +69,18 @@ const Odometer: FC<OdometerProps> = ({
 			})
 			.filter((a): a is Animated.CompositeAnimation => a !== null);
 
+		toValuesRef.current = currentToValues;
+
 		if (seq.length > 0) {
-			Animated.parallel(seq).start();
+			Animated.parallel(seq).start(({ finished }) => {
+				if (!finished) {
+					anims.current.forEach((anim, i) => {
+						if (anim && toValuesRef.current[i] !== undefined && !isNaN(toValuesRef.current[i])) {
+							anim.setValue(toValuesRef.current[i]);
+						}
+					});
+				}
+			});
 		}
 	}, [digitHeight, value, duration]);
 
