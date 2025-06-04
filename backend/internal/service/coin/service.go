@@ -17,6 +17,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory" // Added for TypedCache
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -29,6 +30,7 @@ type Service struct {
 	store          db.Store
 	fetcherCtx     context.Context    // Context for the new token fetcher goroutine
 	fetcherCancel  context.CancelFunc // Cancel function for the fetcher goroutine
+	addressToSymbolCache *memory.TypedCache[string] // Cache for address to symbol mapping
 }
 
 // NewService creates a new CoinService instance
@@ -48,6 +50,7 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 		solanaClient:   solanaClient,
 		offchainClient: offchainClient,
 		store:          store,
+		addressToSymbolCache: memory.NewTypedCache[string]("addressToSymbol:", 5000), // Added maxSize parameter
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 
@@ -600,4 +603,10 @@ func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, 
 	// A more accurate temporary count might be len(coins) if offset is 0 and len(coins) < limit, otherwise it's unknown.
 	// For simplicity now, just using len(coins). This will be inaccurate for actual pagination.
 	return coins, int32(len(coins)), nil
+}
+
+// GetAddressToSymbolCacheForTesting returns the addressToSymbolCache for testing purposes.
+// NOTE: This method should only be used in tests.
+func (s *Service) GetAddressToSymbolCacheForTesting() *memory.TypedCache[string] {
+	return s.addressToSymbolCache
 }
