@@ -5,6 +5,10 @@
 → openssl rand -hex 32
 31b6e992701acc729eed45f137c117e8530fd8b74a70da7b27d2ba85a203dacd
 ```
+## On start crash logs
+``` bash
+xcrun simctl spawn booted log stream --predicate 'process == "Expo Go" OR process CONTAINS "dankfolio"' --style compactct
+```
 
 ```bash
 → grpcurl -plaintext \
