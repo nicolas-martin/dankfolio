@@ -28,7 +28,7 @@
     "@react-navigation/native": "7.0.0",
     "@react-navigation/native-stack": "7.0.0",
     "@sentry/react-native": "~6.14.0",
-    "@shopify/react-native-skia": "2.0.0-next.4",
+    "@shopify/react-native-skia": "^2.0.2",
     "@solana/web3.js": "^1.98.0",
     "@types/bip39": "^3.0.4",
     "@types/react-native-vector-icons": "^6.4.18",
@@ -91,9 +91,6 @@
     "react-test-renderer": "19.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
-  },
-  "resolutions": {
-    "use-latest-callback": "^0.2.3"
   },
   "expo": {
     "doctor": {
