@@ -9,8 +9,8 @@ export SENTRY_DISABLE_AUTO_UPLOAD=true
 # cd out of ios/ci_scripts into main project directory
 cd ../../
 
-# Install Node.js 20.x LTS (compatible with React Native 0.76.9)
-# RN 0.76 requires Node 18.18+ - using Node 20 LTS for stability
+# Install Node.js 20.x LTS (compatible with React Native 0.79 and Expo SDK 53)
+# Expo SDK 53 requires Node 20+ (Node 18 reached EOL on April 30, 2025)
 echo "📦 Installing Node.js 20.x LTS..."
 brew install node@20
 brew link --force node@20
