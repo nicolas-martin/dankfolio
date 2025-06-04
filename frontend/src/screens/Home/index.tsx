@@ -192,6 +192,18 @@ const HomeScreen = () => {
 							</View>
 						)}
 						scrollEnabled={false}
+						// Performance optimizations to prevent UI blocking
+						maxToRenderPerBatch={5}
+						updateCellsBatchingPeriod={50}
+						initialNumToRender={10}
+						windowSize={10}
+						getItemLayout={(data, index) => ({
+							length: 80, // Approximate height of each CoinCard
+							offset: 80 * index,
+							index,
+						})}
+						// Optimize re-renders
+						keyboardShouldPersistTaps="handled"
 					/>
 				)}
 			</ScrollView>

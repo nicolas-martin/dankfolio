@@ -238,6 +238,16 @@ const NewCoins: React.FC = () => {
 				decelerationRate="fast"
 				snapToInterval={CARD_WIDTH}
 				snapToAlignment="start"
+				// Performance optimizations to prevent UI blocking
+				maxToRenderPerBatch={3}
+				updateCellsBatchingPeriod={50}
+				initialNumToRender={5}
+				windowSize={5}
+				getItemLayout={(data, index) => ({
+					length: CARD_WIDTH,
+					offset: CARD_WIDTH * index,
+					index,
+				})}
 				ListEmptyComponent={
 					isLoadingNewlyListed ? null : ( // Don't show empty text if still loading initially
 						<Text style={styles.emptyText}>No new listings available.</Text>
