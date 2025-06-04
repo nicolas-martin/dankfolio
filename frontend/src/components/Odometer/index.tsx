@@ -16,12 +16,18 @@ export interface OdometerProps {
 	duration?: number;
 	/** digit style */
 	fontStyle?: StyleProp<TextStyle>;
+	/** Enable staggered animation (default: true) */
+	staggered?: boolean;
+	/** Stagger delay between digits in ms (default: 50) */
+	staggerDelay?: number;
 }
 
 const Odometer: FC<OdometerProps> = ({
 	value,
 	duration = 600,
 	fontStyle,
+	staggered = true,
+	staggerDelay = 50,
 }) => {
 	const prev = usePrevious(value) ?? value.replace(/\d/g, '0');
 	const [digitHeight, setDigitHeight] = useState(0);
@@ -49,24 +55,41 @@ const Odometer: FC<OdometerProps> = ({
 	useEffect(() => {
 		if (!digitHeight || !anims.current.length) return;
 
-		const seq = value
+		const animations = value
 			.split('')
 			.map((char, i) => {
 				if (!/\d/.test(char) || !anims.current[i]) return null;
-				return Animated.timing(anims.current[i]!, {
-					toValue: -digitHeight * parseInt(char, 10),
-					duration,
-					useNativeDriver: true,
-					easing: Easing.linear,
-					// easing: Easing.elastic(1),
-				});
+				
+				const targetValue = -digitHeight * parseInt(char, 10);
+				const prevChar = prevPadded[i] || '0';
+				const prevValue = -digitHeight * parseInt(prevChar, 10);
+				
+				// Skip animation if the digit hasn't changed
+				if (Math.abs(targetValue - prevValue) < 1) return null;
+				
+				// Calculate stagger delay - rightmost digits animate first
+				const digitIndex = value.length - 1 - i;
+				const delay = staggered ? digitIndex * staggerDelay : 0;
+				
+				return Animated.sequence([
+					// Add delay for staggered effect
+					Animated.delay(delay),
+					// Main animation with improved easing
+					Animated.timing(anims.current[i]!, {
+						toValue: targetValue,
+						duration: duration - delay, // Adjust duration to account for delay
+						useNativeDriver: true,
+						easing: Easing.bezier(0.25, 0.46, 0.45, 0.94), // easeOutQuart for smooth deceleration
+					})
+				]);
 			})
 			.filter((a): a is Animated.CompositeAnimation => a !== null);
 
-		if (seq.length > 0) {
-			Animated.parallel(seq).start();
+		if (animations.length > 0) {
+			// Use parallel to run all animations simultaneously (with their individual delays)
+			Animated.parallel(animations).start();
 		}
-	}, [digitHeight, value, duration]);
+	}, [digitHeight, value, duration, staggered, staggerDelay, prevPadded]);
 
 	// measure one digit's height
 	const onLayout = useCallback((e: LayoutChangeEvent) => {

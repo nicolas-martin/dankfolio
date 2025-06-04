@@ -56,7 +56,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			{/* Price */}
 			<Odometer
 				value={formattedPrice}
-				duration={1000}
+				duration={400}
 				fontStyle={{ fontSize: 32, fontVariant: ['tabular-nums'] }}
 			/>
 
