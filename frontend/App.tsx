@@ -93,7 +93,12 @@ const App: React.FC = () => {
 
 		logger.info("App: Fetching initial transactions and balance after new wallet setup.", { newPublicKey });
 		// useTransactionsStore.getState().fetchRecentTransactions(newPublicKey);
-		usePortfolioStore.getState().fetchPortfolioBalance(newPublicKey);
+		try {
+			await usePortfolioStore.getState().fetchPortfolioBalance(newPublicKey);
+		} catch (error) {
+			logger.warn('Failed to fetch portfolio balance after wallet setup:', error);
+			// Don't block wallet setup completion - user can retry later
+		}
 
 		setNeedsWalletSetup(false);
 	};
@@ -140,7 +145,12 @@ const App: React.FC = () => {
 
 					logger.info("App: Fetching initial transactions and balance for existing wallet.", { publicKey });
 					// useTransactionsStore.getState().fetchRecentTransactions(publicKey);
-					usePortfolioStore.getState().fetchPortfolioBalance(publicKey);
+					try {
+						await usePortfolioStore.getState().fetchPortfolioBalance(publicKey);
+					} catch (error) {
+						logger.warn('Failed to fetch portfolio balance during app startup:', error);
+						// Don't block app startup - user can retry later
+					}
 
 					setNeedsWalletSetup(false);
 				} else {

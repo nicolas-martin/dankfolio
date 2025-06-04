@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { LoadingState } from './types';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
+import { logger } from '@/utils/logger';
 
 export const useLoadingState = (navigation: any) => {
 	const [loadingState, setLoadingState] = useState<LoadingState>({
@@ -14,45 +15,86 @@ export const useLoadingState = (navigation: any) => {
 
 	useEffect(() => {
 		const loadData = async () => {
+			let portfolioSuccess = false;
+			let trendingSuccess = false;
+
 			try {
-				// Check if data is already loaded
-				if (availableCoins.length > 0) {
-					setLoadingState(prev => ({
-						...prev,
-						trendingLoaded: true
-					}));
-				} else {
-					await fetchAvailableCoins();
-					setLoadingState(prev => ({
-						...prev,
-						trendingLoaded: true
-					}));
-				}
-
-				// Load portfolio data if needed
-				if (wallet?.address) {
-					await fetchPortfolioBalance(wallet.address);
-					setLoadingState(prev => ({
-						...prev,
-						portfolioLoaded: true
-					}));
-				} else {
-					setLoadingState(prev => ({
-						...prev,
-						portfolioLoaded: true
-					}));
-				}
-
-				// Navigate to Home screen
-				navigation.replace('Home');
+				// Load trending coins with timeout
+				const trendingPromise = availableCoins.length > 0 
+					? Promise.resolve() 
+					: fetchAvailableCoins();
+				
+				await Promise.race([
+					trendingPromise,
+					new Promise((_, reject) => setTimeout(() => reject(new Error('Trending coins timeout')), 10000))
+				]);
+				
+				trendingSuccess = true;
+				setLoadingState(prev => ({
+					...prev,
+					trendingLoaded: true
+				}));
 			} catch (error) {
-				console.error('Error loading initial data:', error);
-				// After error, still navigate to home since initial load was attempted
+				logger.error('Error loading trending coins:', error);
+				// Still mark as loaded to prevent getting stuck
+				setLoadingState(prev => ({
+					...prev,
+					trendingLoaded: true
+				}));
+				trendingSuccess = false;
+			}
+
+			// Load portfolio data with timeout and error handling
+			try {
+				if (wallet?.address) {
+					await Promise.race([
+						fetchPortfolioBalance(wallet.address),
+						new Promise((_, reject) => setTimeout(() => reject(new Error('Portfolio fetch timeout')), 15000))
+					]);
+					portfolioSuccess = true;
+				}
+			} catch (error) {
+				logger.error('Error loading portfolio balance:', error);
+				// Don't throw - just log and continue
+				portfolioSuccess = false;
+			} finally {
+				// Always mark portfolio as loaded to prevent getting stuck
+				setLoadingState(prev => ({
+					...prev,
+					portfolioLoaded: true
+				}));
+			}
+
+			// Always navigate to Home after attempting to load data
+			try {
 				navigation.replace('Home');
+			} catch (navError) {
+				logger.error('Navigation error:', navError);
 			}
 		};
 
-		loadData();
+		// Add a safety timeout to ensure we never get stuck on splash screen
+		const safetyTimeout = setTimeout(() => {
+			logger.warn('Safety timeout triggered - forcing navigation to Home');
+			setLoadingState({
+				portfolioLoaded: true,
+				trendingLoaded: true
+			});
+			try {
+				navigation.replace('Home');
+			} catch (navError) {
+				logger.error('Safety navigation error:', navError);
+			}
+		}, 20000); // 20 second safety timeout
+
+		loadData().finally(() => {
+			clearTimeout(safetyTimeout);
+		});
+
+		// Cleanup function
+		return () => {
+			clearTimeout(safetyTimeout);
+		};
 	}, [fetchPortfolioBalance, fetchAvailableCoins, navigation, wallet, availableCoins]);
 
 	return loadingState;

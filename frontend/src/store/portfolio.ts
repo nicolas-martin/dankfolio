@@ -94,68 +94,100 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			log.warn('⚠️ [PortfolioStore] fetchPortfolioBalance called with empty address');
 			throw new Error('Address is empty');
 		}
-		try {
-			set({ isLoading: true, error: null });
-			log.log('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
-			const balance = await grpcApi.getWalletBalance(address);
-			log.log('✅ [PortfolioStore] Received balance data:', balance);
 
-			const coinStore = useCoinStore.getState();
-			let coinMap = coinStore.coinMap;
+		const MAX_RETRIES = 3;
+		const RETRY_DELAYS = [1000, 3000, 5000]; // 1s, 3s, 5s
 
-			const balanceIds = balance.balances.map((b: { id: string }) => b.id);
-			log.log('📊 [PortfolioStore] Balance IDs:', balanceIds);
+		for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+			try {
+				set({ isLoading: true, error: null });
+				log.log('⏳ [PortfolioStore] Calling grpcApi.getWalletBalance...');
+				const balance = await grpcApi.getWalletBalance(address);
+				log.log('✅ [PortfolioStore] Received balance data:', balance);
 
-			const missingIds = balanceIds.filter((id: string) => !coinMap[id]);
-			log.log('🔍 [PortfolioStore] Missing coin IDs in CoinStore cache:', missingIds);
+				const coinStore = useCoinStore.getState();
+				let coinMap = coinStore.coinMap;
 
-			const missingCoinIds: string[] = [];
-			const fetchPromises = missingIds.map(async (id: string) => {
-				log.log(`⏳ [PortfolioStore] Attempting to fetch missing coin details for ${id}`);
-				try {
-					const coin = await coinStore.getCoinByID(id);
-					if (!coin) {
+				const balanceIds = balance.balances.map((b: { id: string }) => b.id);
+				log.log('📊 [PortfolioStore] Balance IDs:', balanceIds);
+
+				const missingIds = balanceIds.filter((id: string) => !coinMap[id]);
+				log.log('🔍 [PortfolioStore] Missing coin IDs in CoinStore cache:', missingIds);
+
+				const missingCoinIds: string[] = [];
+				const fetchPromises = missingIds.map(async (id: string) => {
+					log.log(`⏳ [PortfolioStore] Attempting to fetch missing coin details for ${id}`);
+					try {
+						const coin = await coinStore.getCoinByID(id);
+						if (!coin) {
+							missingCoinIds.push(id);
+						}
+					} catch (err) {
+						log.warn(`⚠️ [PortfolioStore] Error fetching coin details for id: ${id}`, err);
 						missingCoinIds.push(id);
 					}
-				} catch (err) {
-					log.warn(`⚠️ [PortfolioStore] Error fetching coin details for id: ${id}`, err);
-					missingCoinIds.push(id);
+				});
+
+				await Promise.all(fetchPromises);
+
+				// Re-read coinMap after fetching missing coins
+				coinMap = useCoinStore.getState().coinMap;
+
+				const tokens = balance.balances.map((balance: { id: string; amount: number }) => {
+					const coin = coinMap[balance.id];
+					if (!coin) {
+						log.warn(`⚠️ [PortfolioStore] Skipping token for balance ID ${balance.id} because coin data is missing.`);
+						return null;
+					}
+					return {
+						mintAddress: balance.id,
+						amount: balance.amount,
+						price: coin.price,
+						value: balance.amount * coin.price,
+						coin: coin
+					} as PortfolioToken;
+				});
+
+				log.log('📈 [PortfolioStore] Processed tokens before filtering:', tokens.length);
+				const filteredTokens = tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null);
+				log.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
+
+				set({
+					tokens: filteredTokens,
+					isLoading: false,
+					error: missingCoinIds.length > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
+				});
+				log.info('✅ [PortfolioStore] fetchPortfolioBalance finished.');
+				return; // Success - exit retry loop
+			} catch (error) {
+				const errorMessage = (error as Error).message;
+				const isRateLimited = errorMessage.includes('429') || errorMessage.includes('Too many requests');
+				const isNetworkError = errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('connection');
+				
+				log.error(`❌ [PortfolioStore] Failed to fetch portfolio balance (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+
+				// If this is the last attempt or it's not a retryable error, fail
+				if (attempt === MAX_RETRIES || (!isRateLimited && !isNetworkError)) {
+					let userFriendlyError = errorMessage;
+					if (isRateLimited) {
+						userFriendlyError = 'Service temporarily unavailable due to high demand. Please try again later.';
+					} else if (isNetworkError) {
+						userFriendlyError = 'Network connection issue. Please check your internet connection.';
+					}
+					
+					set({ 
+						error: userFriendlyError, 
+						isLoading: false, 
+						tokens: [] 
+					});
+					throw error;
 				}
-			});
 
-			await Promise.all(fetchPromises);
-
-			// Re-read coinMap after fetching missing coins
-			coinMap = useCoinStore.getState().coinMap;
-
-			const tokens = balance.balances.map((balance: { id: string; amount: number }) => {
-				const coin = coinMap[balance.id];
-				if (!coin) {
-					log.warn(`⚠️ [PortfolioStore] Skipping token for balance ID ${balance.id} because coin data is missing.`);
-					return null;
-				}
-				return {
-					mintAddress: balance.id,
-					amount: balance.amount,
-					price: coin.price,
-					value: balance.amount * coin.price,
-					coin: coin
-				} as PortfolioToken;
-			});
-
-			log.log('📈 [PortfolioStore] Processed tokens before filtering:', tokens.length);
-			const filteredTokens = tokens.filter((token: PortfolioToken | null): token is PortfolioToken => token !== null);
-			log.log('📊 [PortfolioStore] Filtered tokens (displayed in portfolio):', filteredTokens.map(t => ({ symbol: t.coin.symbol, mintAddress: t.mintAddress, value: t.value })));
-
-			set({
-				tokens: filteredTokens,
-				isLoading: false,
-				error: missingCoinIds.length > 0 ? `Some coins could not be loaded: [${missingCoinIds.join(', ')}]` : null
-			});
-			log.info('✅ [PortfolioStore] fetchPortfolioBalance finished.');
-		} catch (error) {
-			log.error("❌ [PortfolioStore] Failed to fetch portfolio balance:", error);
-			set({ error: (error as Error).message, isLoading: false, tokens: [] });
+				// Wait before retrying
+				const delay = RETRY_DELAYS[attempt];
+				log.info(`⏳ [PortfolioStore] Retrying in ${delay}ms...`);
+				await new Promise(resolve => setTimeout(resolve, delay));
+			}
 		}
 	},
 }));
