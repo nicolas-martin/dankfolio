@@ -93,6 +93,7 @@ describe('Zustand Portfolio Store', () => {
 			...baseMockCoinState,
 			getCoinByID: mockGetCoinByID,
 			setCoin: mockSetCoin,
+			clearNewCoinsCache: jest.fn(),
 			get coinMap() { return coinMap; },
 		}));
 		consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
@@ -133,6 +134,7 @@ describe('Zustand Portfolio Store', () => {
 				setLastFetchedNewCoinsAt: jest.fn(),
 				getCoinByID: mockGetCoinByID,
 				setCoin: mockSetCoin,
+				clearNewCoinsCache: jest.fn(),
 				get coinMap() { return coinMap; },
 			};
 			jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockReturnValue(currentTestMockState);
@@ -202,6 +204,7 @@ describe('Zustand Portfolio Store', () => {
 				setLastFetchedNewCoinsAt: jest.fn(),
 				getCoinByID: mockGetCoinByID,
 				setCoin: mockSetCoin,
+				clearNewCoinsCache: jest.fn(),
 				get coinMap() { return coinMap; },
 			};
 			jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockReturnValue(currentTestMockState);
@@ -281,6 +284,7 @@ describe('Zustand Portfolio Store', () => {
 				setLastFetchedNewCoinsAt: jest.fn(),
 				getCoinByID: mockGetCoinByID,
 				setCoin: mockSetCoin,
+				clearNewCoinsCache: jest.fn(),
 				get coinMap() { return coinMap; },
 			};
 			jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockReturnValue(currentTestMockState);
@@ -322,6 +326,7 @@ describe('Zustand Portfolio Store', () => {
 				setLastFetchedNewCoinsAt: jest.fn(),
 				getCoinByID: mockGetCoinByID,
 				setCoin: mockSetCoin,
+				clearNewCoinsCache: jest.fn(),
 				get coinMap() { return coinMap; },
 			};
 			jest.spyOn(coinStoreModule.useCoinStore, 'getState').mockReturnValue(currentTestMockState);
