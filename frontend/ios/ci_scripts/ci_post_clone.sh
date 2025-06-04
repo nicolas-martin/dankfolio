@@ -37,7 +37,7 @@ npm install
 # The getenv package expects lowercase boolean strings ('true'/'false')
 # echo "🔧 Fixing CI environment variable for getenv compatibility..."
 # BUG: not working
-# export CI="true"
+export CI="true"
 
 echo "🔧 Running expo prebuild..."
 npx expo prebuild
