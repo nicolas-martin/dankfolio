@@ -1,7 +1,6 @@
 import 'react-native-gesture-handler';
 import './src/utils/polyfills';
 import React, { useEffect, useCallback, useState } from 'react';
-import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
@@ -12,7 +11,7 @@ import Navigation from '@components/Common/Navigation';
 import { theme as appTheme } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
-import { useTransactionsStore } from '@store/transactions'; // Added
+// import { useTransactionsStore } from '@store/transactions';
 import { retrieveWalletFromStorage } from '@screens/WalletSetup/scripts';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
@@ -41,15 +40,6 @@ Sentry.init({
 // Disable Reanimated strict mode warnings
 configureReanimatedLogger({
 	strict: false,
-});
-
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
-
-// Configure splash screen animation
-SplashScreen.setOptions({
-	duration: 1000,
-	fade: true,
 });
 
 const paperTheme = {
@@ -91,7 +81,6 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 });
-
 const App: React.FC = () => {
 	const [appIsReady, setAppIsReady] = useState(false);
 	const [needsWalletSetup, setNeedsWalletSetup] = useState<boolean | null>(null);
@@ -103,7 +92,7 @@ const App: React.FC = () => {
 		await setWallet(newPublicKey);
 
 		logger.info("App: Fetching initial transactions and balance after new wallet setup.", { newPublicKey });
-		useTransactionsStore.getState().fetchRecentTransactions(newPublicKey);
+		// useTransactionsStore.getState().fetchRecentTransactions(newPublicKey);
 		usePortfolioStore.getState().fetchPortfolioBalance(newPublicKey);
 
 		setNeedsWalletSetup(false);
@@ -150,7 +139,7 @@ const App: React.FC = () => {
 					await setWallet(publicKey);
 
 					logger.info("App: Fetching initial transactions and balance for existing wallet.", { publicKey });
-					useTransactionsStore.getState().fetchRecentTransactions(publicKey);
+					// useTransactionsStore.getState().fetchRecentTransactions(publicKey);
 					usePortfolioStore.getState().fetchPortfolioBalance(publicKey);
 
 					setNeedsWalletSetup(false);
@@ -185,10 +174,7 @@ const App: React.FC = () => {
 	}, [wallet?.address]);
 
 	const onLayoutRootView = useCallback(async () => {
-		if (appIsReady) {
-			logger.breadcrumb({ message: 'App: Layout ready, hiding splash screen', category: 'app_lifecycle' });
-			await SplashScreen.hideAsync();
-		}
+		// Splash screen removed - app will show immediately when ready
 	}, [appIsReady]);
 
 	if (!appIsReady || needsWalletSetup === null) {
@@ -199,7 +185,7 @@ const App: React.FC = () => {
 		<PaperProvider theme={paperTheme}>
 			<StatusBar style="light" />
 			<SafeAreaProvider>
-				<GestureHandlerRootView style={{ flex: 1 }}>
+				<GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
 					<ToastProvider>
 						<View style={styles.container}>
 							<StatusBar style="auto" />
