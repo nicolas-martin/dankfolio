@@ -22,6 +22,42 @@ import { authService } from '@/services/authService';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
 import * as SplashScreen from 'expo-splash-screen';
 
+// DEBUG: Log all environment variables at app startup
+console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
+console.log('🔍 process.env.NODE_ENV:', process.env.NODE_ENV);
+console.log('🔍 __DEV__:', __DEV__);
+
+// Try to import and log all env variables
+try {
+	const { 
+		REACT_APP_API_URL, 
+		REACT_APP_SOLANA_RPC_ENDPOINT, 
+		APP_ENV, 
+		DEBUG_MODE,
+		FIREBASE_API_KEY,
+		FIREBASE_AUTH_DOMAIN,
+		FIREBASE_PROJECT_ID,
+		FIREBASE_STORAGE_BUCKET,
+		FIREBASE_MESSAGING_SENDER_ID,
+		FIREBASE_APP_ID
+	} = require('@env');
+	
+	console.log('🔍 REACT_APP_API_URL:', REACT_APP_API_URL);
+	console.log('🔍 REACT_APP_SOLANA_RPC_ENDPOINT:', REACT_APP_SOLANA_RPC_ENDPOINT);
+	console.log('🔍 APP_ENV:', APP_ENV);
+	console.log('🔍 DEBUG_MODE:', DEBUG_MODE);
+	console.log('🔍 FIREBASE_API_KEY:', FIREBASE_API_KEY);
+	console.log('🔍 FIREBASE_AUTH_DOMAIN:', FIREBASE_AUTH_DOMAIN);
+	console.log('🔍 FIREBASE_PROJECT_ID:', FIREBASE_PROJECT_ID);
+	console.log('🔍 FIREBASE_STORAGE_BUCKET:', FIREBASE_STORAGE_BUCKET);
+	console.log('🔍 FIREBASE_MESSAGING_SENDER_ID:', FIREBASE_MESSAGING_SENDER_ID);
+	console.log('🔍 FIREBASE_APP_ID:', FIREBASE_APP_ID);
+} catch (error) {
+	console.log('🔍 Error importing @env:', error);
+}
+
+console.log('🔍 === END ENVIRONMENT VARIABLES DEBUG ===');
+
 // Keep the splash screen visible while we fetch resources
 try {
 	SplashScreen.preventAutoHideAsync();

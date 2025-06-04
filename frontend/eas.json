@@ -65,7 +65,11 @@
         "simulator": true,
         "buildConfiguration": "Release"
       },
-      "channel": "simulator-release"
+      "channel": "simulator-release",
+      "env": {
+        "REACT_APP_API_URL": "$REACT_APP_API_URL",
+        "REACT_APP_SOLANA_RPC_ENDPOINT": "$REACT_APP_SOLANA_RPC_ENDPOINT"
+      }
     }
   },
   "submit": {

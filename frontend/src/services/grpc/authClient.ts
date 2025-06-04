@@ -5,6 +5,13 @@ import { AuthService } from "@/gen/dankfolio/v1/auth_pb";
 import { logger as log } from '@/utils/logger';
 
 // Log the environment variable for debugging
+console.log('🔧 === AUTH CLIENT ENV DEBUG ===');
+console.log('🔧 REACT_APP_API_URL type:', typeof REACT_APP_API_URL);
+console.log('🔧 REACT_APP_API_URL value:', REACT_APP_API_URL);
+console.log('🔧 REACT_APP_API_URL length:', REACT_APP_API_URL?.length);
+console.log('🔧 REACT_APP_API_URL JSON:', JSON.stringify(REACT_APP_API_URL));
+console.log('🔧 === END AUTH CLIENT ENV DEBUG ===');
+
 log.log('🔧 REACT_APP_API_URL from environment (auth):', REACT_APP_API_URL);
 
 if (!REACT_APP_API_URL) {
