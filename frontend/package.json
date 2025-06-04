@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.tsx",
   "scripts": {
-    "start": "npx expo start -i",
+    "start": "npx expo run:ios",
+    "start:expo-go": "npx expo start -i",
+    "start:dev-client": "npx expo start --dev-client",
     "android": "npx expo run:android",
     "ios": "npx expo run:ios",
     "web": "npx expo start --web",

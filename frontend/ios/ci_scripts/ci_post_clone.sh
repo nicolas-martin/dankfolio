@@ -31,14 +31,6 @@ brew install cocoapods
 echo "📦 Installing npm dependencies..."
 npm install
 
-# Fix for Xcode Cloud CI environment variable issue:
-# Xcode Cloud sets `CI` env var to 'TRUE' (uppercase string)
-# This causes: Error: GetEnv.NoBoolean: TRUE is not a boolean.
-# The getenv package expects lowercase boolean strings ('true'/'false')
-# echo "🔧 Fixing CI environment variable for getenv compatibility..."
-# BUG: not working even with expo 53.0.9 (!?)
-# export CI="true"
-
 echo "🔧 Running expo prebuild..."
 npx expo prebuild
 
