@@ -28,7 +28,10 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
         return (
             <TouchableOpacity
                 style={styles.horizontalCard} // Use new style for horizontal card
-                onPress={() => onPress(coin)}
+                onPress={() => {
+                    console.log('[CoinCard LOG] Horizontal card pressed:', coin.symbol, coin.mintAddress);
+                    onPress(coin);
+                }}
                 testID={`coin-card-horizontal-${coin.mintAddress}`}
                 activeOpacity={0.7}
                 delayPressIn={100}
@@ -74,7 +77,10 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
     return (
         <TouchableOpacity
             style={styles.card}
-            onPress={() => onPress(coin)}
+            onPress={() => {
+                console.log('[CoinCard LOG] Vertical card pressed:', coin.symbol, coin.mintAddress);
+                onPress(coin);
+            }}
             testID={`coin-card-${coin.mintAddress}`}
             activeOpacity={0.7}
         >
