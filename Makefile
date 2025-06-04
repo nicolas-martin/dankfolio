@@ -28,8 +28,8 @@ mobile: mobile-kill
 	@cd $(MOBILE_DIR) && yarn start
 
 run-mobile: mobile-kill
-	@echo "📱 Starting mobile frontend..."
-	@cd $(MOBILE_DIR) && yarn start
+	@echo "📱 Starting mobile frontend with development build..."
+	@cd $(MOBILE_DIR) && npx expo run:ios
 
 mobile-kill:
 	@echo "📴 Stopping mobile frontend..."
