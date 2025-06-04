@@ -4928,9 +4928,9 @@ expo-updates@~0.28.13:
     ignore "^5.3.1"
     resolve-from "^5.0.0"
 
-expo@^53.0.0:
+expo@53.0.9:
   version "53.0.9"
-  resolved "https://registry.npmjs.org/expo/-/expo-53.0.9.tgz"
+  resolved "https://registry.yarnpkg.com/expo/-/expo-53.0.9.tgz#0eb3b75a3669ec86d691d2e4ce33159d3e56ddf2"
   integrity sha512-UFG68aVOpccg3s++S3pbtI3YCQCnlu/TFvhnQ5vaD3vhOox1Uk/f2O2T95jmwA/EvKvetqGj34lys3DNXvPqgQ==
   dependencies:
     "@babel/runtime" "^7.20.0"
