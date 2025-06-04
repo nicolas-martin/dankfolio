@@ -15,8 +15,7 @@
       ],
       "expo-secure-store",
       "expo-build-properties",
-      "@react-native-firebase/app-check",
-      "./plugins/withGoogleUtilitiesModularHeaders.js"
+      "@react-native-firebase/app-check"
     ],
     "updates": {
       "enabled": true,
