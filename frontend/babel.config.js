@@ -16,6 +16,7 @@ module.exports = function (api) {
 			}],
 			['@emotion'],
 			'react-native-reanimated/plugin',
+			'babel-plugin-transform-import-meta',
 			['module-resolver', {
 				root: ['./'],
 				alias: {

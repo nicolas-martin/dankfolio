@@ -20,6 +20,7 @@ const config = getDefaultConfig(__dirname, {
 // Add any custom configuration here
 config.resolver.sourceExts.push('mjs');
 config.resolver.unstable_enablePackageExports = true;
+config.resolver.unstable_conditionNames = ['browser', 'require', 'import', 'node'];
 
 // Exclude scripts directory from bundling
 config.resolver.blockList = [
