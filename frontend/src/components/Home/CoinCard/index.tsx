@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
@@ -11,6 +11,21 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
     // Pass isHorizontal to createStyles so it can adapt styles
     const styles = createStyles(theme, isHorizontal);
 
+    // Memoize the press handler to prevent unnecessary re-renders
+    const handlePress = useCallback(() => {
+        console.log(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.mintAddress);
+        onPress(coin);
+    }, [coin, onPress, isHorizontal]);
+
+    // Memoize the image load/error handlers
+    const handleImageLoad = useCallback(() => {
+        console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onLoad fired.`);
+    }, [coin.symbol]);
+
+    const handleImageError = useCallback(() => {
+        console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onError fired.`);
+    }, [coin.symbol]);
+
     const renderCoinIcon = (size = 40, borderRadius = 20) => { // Allow size override
         console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: About to render CachedImage. URI: ${coin.resolvedIconUrl}`);
         return (
@@ -20,8 +35,8 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
                     size={size}
                     borderRadius={borderRadius}
                     testID={`coin-icon-${coin.mintAddress}`}
-                    onLoad={() => console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onLoad fired.`)}
-                    onError={() => console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onError fired.`)}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
                 />
             </View>
         );
@@ -31,10 +46,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
         return (
             <TouchableOpacity
                 style={styles.horizontalCard} // Use new style for horizontal card
-                onPress={() => {
-                    console.log('[CoinCard LOG] Horizontal card pressed:', coin.symbol, coin.mintAddress);
-                    onPress(coin);
-                }}
+                onPress={handlePress}
                 testID={`coin-card-horizontal-${coin.mintAddress}`}
                 activeOpacity={0.7}
                 delayPressIn={100}
@@ -80,10 +92,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
     return (
         <TouchableOpacity
             style={styles.card}
-            onPress={() => {
-                console.log('[CoinCard LOG] Vertical card pressed:', coin.symbol, coin.mintAddress);
-                onPress(coin);
-            }}
+            onPress={handlePress}
             testID={`coin-card-${coin.mintAddress}`}
             activeOpacity={0.7}
         >
@@ -127,4 +136,19 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
     );
 };
 
-export default CoinCard;
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(CoinCard, (prevProps, nextProps) => {
+    // Custom comparison function to optimize re-renders
+    return (
+        prevProps.coin.mintAddress === nextProps.coin.mintAddress &&
+        prevProps.coin.price === nextProps.coin.price &&
+        prevProps.coin.change24h === nextProps.coin.change24h &&
+        prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
+        prevProps.coin.symbol === nextProps.coin.symbol &&
+        prevProps.coin.name === nextProps.coin.name &&
+        prevProps.coin.balance === nextProps.coin.balance &&
+        prevProps.coin.value === nextProps.coin.value &&
+        prevProps.coin.dailyVolume === nextProps.coin.dailyVolume &&
+        prevProps.isHorizontal === nextProps.isHorizontal
+    );
+});

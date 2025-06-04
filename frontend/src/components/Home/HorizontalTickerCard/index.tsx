@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
@@ -10,10 +10,15 @@ import { styles } from './styles';
 const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress }) => {
 	const timeAgo = formatTimeAgo(coin.jupiterListedAt);
 
+	// Memoize the press handler to prevent unnecessary re-renders
+	const handlePress = useCallback(() => {
+		onPress(coin);
+	}, [coin, onPress]);
+
 	return (
 		<TouchableOpacity
 			style={styles.container}
-			onPress={() => onPress(coin)}
+			onPress={handlePress}
 			testID={`horizontal-ticker-card-${coin.mintAddress}`}
 			activeOpacity={0.7}
 			delayPressIn={50}
@@ -48,4 +53,13 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 	);
 };
 
-export default HorizontalTickerCard;
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(HorizontalTickerCard, (prevProps, nextProps) => {
+	return (
+		prevProps.coin.mintAddress === nextProps.coin.mintAddress &&
+		prevProps.coin.symbol === nextProps.coin.symbol &&
+		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
+		prevProps.coin.change24h === nextProps.coin.change24h &&
+		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt
+	);
+});
