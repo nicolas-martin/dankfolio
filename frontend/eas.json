@@ -68,6 +68,7 @@
         "buildConfiguration": "Release"
       },
       "channel": "simulator-release",
+      "prebuildCommand": "node scripts/load-env-for-simulator.js"
     }
   },
   "submit": {
