@@ -23,7 +23,9 @@
         "FIREBASE_PROJECT_ID": "$FIREBASE_PROJECT_ID_DEV",
         "FIREBASE_STORAGE_BUCKET": "$FIREBASE_STORAGE_BUCKET_DEV",
         "FIREBASE_MESSAGING_SENDER_ID": "$FIREBASE_MESSAGING_SENDER_ID_DEV",
-        "FIREBASE_APP_ID": "$FIREBASE_APP_ID_DEV"
+        "FIREBASE_APP_ID": "$FIREBASE_APP_ID_DEV",
+        "REACT_APP_API_URL": "$REACT_APP_API_URL",
+        "REACT_APP_SOLANA_RPC_ENDPOINT": "$REACT_APP_SOLANA_RPC_ENDPOINT"
       }
     },
     "preview": {
@@ -32,7 +34,9 @@
       "channel": "preview",
       "env": {
         "SENTRY_ALLOW_FAILURE": "true",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "REACT_APP_API_URL": "$REACT_APP_API_URL",
+        "REACT_APP_SOLANA_RPC_ENDPOINT": "$REACT_APP_SOLANA_RPC_ENDPOINT"
       }
     },
     "production": {

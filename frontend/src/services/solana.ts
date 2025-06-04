@@ -13,9 +13,15 @@ global.Buffer = Buffer;
 
 const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
 
+// Log the environment variable for debugging
+log.log('🔧 REACT_APP_SOLANA_RPC_ENDPOINT from environment:', REACT_APP_SOLANA_RPC_ENDPOINT);
+
 if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
-	throw new Error('REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required');
+	const errorMsg = 'REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required but not set. Please check your .env configuration.';
+	log.error('❌ Environment Error:', errorMsg);
+	throw new Error(errorMsg);
 }
+
 
 const SOLANA_RPC_ENDPOINT: string = REACT_APP_SOLANA_RPC_ENDPOINT;
 
