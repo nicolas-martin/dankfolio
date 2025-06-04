@@ -106,6 +106,7 @@ const HomeScreen = () => {
 	}, [fetchAvailableCoins, fetchNewCoins, fetchPortfolioBalance, wallet, showToast]);
 
 	const handlePressCoinCard = useCallback((coin: Coin) => {
+		console.log('[HomeScreen LOG] handlePressCoinCard called for:', coin.symbol, coin.mintAddress);
 		logger.breadcrumb({
 			category: 'ui',
 			message: 'Pressed CoinCard on HomeScreen',
