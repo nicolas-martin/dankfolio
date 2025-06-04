@@ -8,7 +8,6 @@
     "start:dev-client": "npx expo start --dev-client",
     "android": "npx expo run:android",
     "ios": "npx expo run:ios",
-    "web": "npx expo start --web",
     "tsc:watch": "tsc --watch",
     "lint": "tsc --noEmit",
     "check-structure": "ts-node scripts/check-component-structure.ts",
