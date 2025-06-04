@@ -32,17 +32,39 @@ try {
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
 
+	// Environment configuration
+	environment: __DEV__ ? 'development' : 'production',
+	release: Constants.expoConfig?.version || '1.0.0',
+	debug: __DEV__,
+
+	// Performance monitoring
+	tracesSampleRate: __DEV__ ? 1.0 : 0.1, // 100% in dev, 10% in production
+	
 	// Adds more context data to events (IP address, cookies, user, etc.)
 	// For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
 	sendDefaultPii: true,
 
 	// Configure Session Replay
-	replaysSessionSampleRate: 0.1,
+	replaysSessionSampleRate: __DEV__ ? 1.0 : 0.1, // 100% in dev, 10% in production
 	replaysOnErrorSampleRate: 1,
-	integrations: [Sentry.mobileReplayIntegration()],
+	integrations: [
+		Sentry.mobileReplayIntegration(),
+		// Add performance monitoring
+		Sentry.reactNativeTracingIntegration(),
+	],
 
-	// uncomment the line below to enable Spotlight (https://spotlightjs.com)
-	// spotlight: __DEV__,
+	// Enable Spotlight for development debugging
+	spotlight: __DEV__,
+
+	// Filtering sensitive data
+	beforeSend(event) {
+		// Filter out sensitive information in production
+		if (!__DEV__ && event.user?.id && typeof event.user.id === 'string') {
+			// Keep only first 8 characters of wallet address for privacy
+			event.user.id = event.user.id.substring(0, 8) + '...';
+		}
+		return event;
+	},
 });
 
 // Disable Reanimated strict mode warnings
