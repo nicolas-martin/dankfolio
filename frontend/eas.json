@@ -44,6 +44,8 @@
       "autoIncrement": true,
       "channel": "production",
       "env": {
+        "APP_ENV": "production",
+        "DEBUG_MODE": "false",
         "SENTRY_AUTH_TOKEN": "$SENTRY_AUTH_TOKEN",
         "SENTRY_ALLOW_FAILURE": "true",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
@@ -66,10 +68,6 @@
         "buildConfiguration": "Release"
       },
       "channel": "simulator-release",
-      "env": {
-        "REACT_APP_API_URL": "$REACT_APP_API_URL",
-        "REACT_APP_SOLANA_RPC_ENDPOINT": "$REACT_APP_SOLANA_RPC_ENDPOINT"
-      }
     }
   },
   "submit": {
