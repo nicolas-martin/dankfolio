@@ -7,7 +7,7 @@
 ```
 ## On start crash logs
 ``` bash
-xcrun simctl spawn booted log stream --predicate 'process == "Expo Go" OR process CONTAINS "dankfolio"' --style compactct
+xcrun simctl spawn booted log stream --predicate 'process == "Expo Go" OR process CONTAINS "dankfolio"' --style compact
 ```
 
 ```bash
