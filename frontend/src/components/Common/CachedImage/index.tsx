@@ -21,11 +21,12 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 }) => {
 
 	const [hasError, setHasError] = useState(false);
+	const [imageUriToLoad, setImageUriToLoad] = useState<string | null>(null);
+	const [didAttemptLoad, setDidAttemptLoad] = useState(false);
 
 	// The 'uri' is now used directly. All IPFS-specific logic is removed.
 	// The parent component is expected to pass coin.resolved_icon_url (if available)
 	// or coin.icon_url. This component no longer resolves IPFS URIs.
-	const imageUrl = uri;
 
 
 	// Prepare placeholder - prioritize passed placeholder, then blurhash, then default blurhash
@@ -35,9 +36,28 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 		imagePlaceholder = { blurhash: hashToUse };
 	}
 
+	useEffect(() => {
+		// Only attempt to load if a URI is provided and we haven't tried yet,
+		// or if the URI has changed.
+		if (uri && (!didAttemptLoad || uri !== imageUriToLoad)) {
+			// Reset error state if URI changes
+			if (uri !== imageUriToLoad) {
+				setHasError(false);
+			}
+			setDidAttemptLoad(true);
+			setImageUriToLoad(uri);
+			// console.log(`[${new Date().toISOString()}] ⏳ Attempting to load image: ${uri}`);
+		} else if (!uri) {
+			// If URI is cleared, reset states
+			setImageUriToLoad(null);
+			setDidAttemptLoad(false);
+			setHasError(false);
+		}
+	}, [uri, didAttemptLoad, imageUriToLoad]); // Added imageUriToLoad to dependencies
+
 	// Enhanced logging callbacks
 	const handleLoad = (event: any) => {
-		// console.log(`[${new Date().toISOString()}] ✅ Image loaded successfully: ${imageUrl || 'placeholder'}`);
+		// console.log(`[${new Date().toISOString()}] ✅ Image loaded successfully: ${imageUriToLoad || 'placeholder'}`);
 		setHasError(false);
 
 		// // No need to reset currentGatewayIndex as it's removed.
@@ -46,7 +66,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	};
 
 	const handleError = (error: any) => {
-		console.log(`[${new Date().toISOString()}] ❌ Image failed to load: ${imageUrl || 'no URL'}`, { message: error?.message, code: error?.code, domain: error?.domain, fullError: error });
+		// console.log(`[${new Date().toISOString()}] ❌ Image failed to load: ${imageUriToLoad || 'no URL'}`, { message: error?.message, code: error?.code, domain: error?.domain, fullError: error });
 
 		// IPFS gateway switching logic is removed.
 		// If the resolved_icon_url (or icon_url) fails, it's now simply an error.
@@ -57,7 +77,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
 	return (
 		<Image
-			source={imageUrl ? { uri: imageUrl } : undefined}
+			source={imageUriToLoad ? { uri: imageUriToLoad } : undefined}
 			style={[
 				{
 					width: size,

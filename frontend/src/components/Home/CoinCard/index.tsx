@@ -12,6 +12,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
     const styles = createStyles(theme, isHorizontal);
 
     const renderCoinIcon = (size = 40, borderRadius = 20) => { // Allow size override
+        console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: About to render CachedImage. URI: ${coin.resolvedIconUrl}`);
         return (
             <View style={isHorizontal ? styles.horizontalLogoContainer : styles.logo}>
                 <CachedImage
@@ -19,6 +20,8 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
                     size={size}
                     borderRadius={borderRadius}
                     testID={`coin-icon-${coin.mintAddress}`}
+                    onLoad={() => console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onLoad fired.`)}
+                    onError={() => console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onError fired.`)}
                 />
             </View>
         );
@@ -28,7 +31,10 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
         return (
             <TouchableOpacity
                 style={styles.horizontalCard} // Use new style for horizontal card
-                onPress={() => onPress(coin)}
+                onPress={() => {
+                    console.log('[CoinCard LOG] Horizontal card pressed:', coin.symbol, coin.mintAddress);
+                    onPress(coin);
+                }}
                 testID={`coin-card-horizontal-${coin.mintAddress}`}
                 activeOpacity={0.7}
                 delayPressIn={100}
@@ -74,7 +80,10 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
     return (
         <TouchableOpacity
             style={styles.card}
-            onPress={() => onPress(coin)}
+            onPress={() => {
+                console.log('[CoinCard LOG] Vertical card pressed:', coin.symbol, coin.mintAddress);
+                onPress(coin);
+            }}
             testID={`coin-card-${coin.mintAddress}`}
             activeOpacity={0.7}
         >
