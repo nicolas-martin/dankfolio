@@ -3,7 +3,7 @@ import './src/utils/polyfills';
 import React, { useEffect, useCallback, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { configureReanimatedLogger } from 'react-native-reanimated';
@@ -161,7 +161,7 @@ const App: React.FC = () => {
 				}
 			} catch (e) {
 				logger.warn('Error during app preparation', { error: e?.message }); // Using warn as it sets a UI state
-				logger.breadcrumb({ message: 'App: Error during preparation', category: 'app_lifecycle', data: { error: e?.message } });
+				logger.breadcrumb({ message: 'App:image.png Error during preparation', category: 'app_lifecycle', data: { error: e?.message } });
 				setNeedsWalletSetup(true);
 			} finally {
 				logger.breadcrumb({ message: 'App: Ready', category: 'app_lifecycle' });

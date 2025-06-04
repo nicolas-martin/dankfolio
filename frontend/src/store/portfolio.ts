@@ -160,3 +160,38 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 	},
 }));
 
+export const getActiveWalletKeys = async (): Promise<{ publicKey: string; privateKey: Base58PrivateKey } | null> => {
+	const currentWallet = usePortfolioStore.getState().wallet;
+	if (!currentWallet || !currentWallet.address) {
+		log.warn('[getActiveWalletKeys] No active wallet address in store.');
+		return null;
+	}
+	const walletAddress = currentWallet.address;
+
+	try {
+		const credentials = await Keychain.getGenericPassword({ service: KEYCHAIN_SERVICE });
+		if (!credentials) {
+			log.error('[getActiveWalletKeys] No credentials found in keychain.');
+			return null;
+		}
+		const parsedCredentials = JSON.parse(credentials.password) as Partial<RawWalletData>;
+		if (!parsedCredentials.privateKey) {
+			log.error('[getActiveWalletKeys] Private key not found in stored credentials.');
+			return null;
+		}
+
+		// Omit getKeypairFromPrivateKey verification for now to prevent new cycle with solana.ts
+		// If solana.ts's getKeypairFromPrivateKey is moved to a common util, this check can be added:
+		// import { getKeypairFromPrivateKey } from '@/utils/solanaUtils'; // Example if moved
+		// const keypair = getKeypairFromPrivateKey(parsedCredentials.privateKey as Base58PrivateKey);
+		// if (keypair.publicKey.toString() !== walletAddress) {
+		//   log.error('[getActiveWalletKeys] Keychain public key does not match stored wallet address.');
+		//   return null;
+		// }
+
+		return { publicKey: walletAddress, privateKey: parsedCredentials.privateKey as Base58PrivateKey };
+	} catch (error) {
+		log.error('[getActiveWalletKeys] Error retrieving/parsing credentials:', error);
+		return null;
+	}
+};
