@@ -160,29 +160,22 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 			const isRateLimited = errorMessage.includes('429') || errorMessage.includes('Too many requests');
 			const isNetworkError = errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('connection');
 
-			log.error(`❌ [PortfolioStore] Failed to fetch portfolio balance (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+			log.error(`❌ [PortfolioStore] Failed to fetch portfolio balance):`, error);
 
 			// If this is the last attempt or it's not a retryable error, fail
-			if (attempt === MAX_RETRIES || (!isRateLimited && !isNetworkError)) {
-				let userFriendlyError = errorMessage;
-				if (isRateLimited) {
-					userFriendlyError = 'Service temporarily unavailable due to high demand. Please try again later.';
-				} else if (isNetworkError) {
-					userFriendlyError = 'Network connection issue. Please check your internet connection.';
-				}
-
-				set({
-					error: userFriendlyError,
-					isLoading: false,
-					tokens: []
-				});
-				throw error;
+			let userFriendlyError = errorMessage;
+			if (isRateLimited) {
+				userFriendlyError = 'Service temporarily unavailable due to high demand. Please try again later.';
+			} else if (isNetworkError) {
+				userFriendlyError = 'Network connection issue. Please check your internet connection.';
 			}
 
-			// Wait before retrying
-			const delay = RETRY_DELAYS[attempt];
-			log.info(`⏳ [PortfolioStore] Retrying in ${delay}ms...`);
-			await new Promise(resolve => setTimeout(resolve, delay));
+			set({
+				error: userFriendlyError,
+				isLoading: false,
+				tokens: []
+			});
+			throw error;
 		}
 	},
 }));
