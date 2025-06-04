@@ -39,7 +39,7 @@
     "bip39": "^3.1.0",
     "bs58": "^6.0.0",
     "date-fns": "4.1.0",
-    "expo": "53.0.9",
+    "expo": "^53.0.9",
     "expo-build-properties": "~0.14.6",
     "expo-crypto": "~14.1.4",
     "expo-dev-client": "^5.1.8",
@@ -51,6 +51,7 @@
     "expo-status-bar": "~2.2.3",
     "expo-updates": "~0.28.13",
     "firebase": "^11.8.1",
+    "getenv": "2.0.0",
     "lodash": "^4.17.21",
     "loglevel": "^1.9.2",
     "lottie-react-native": "7.2.2",
@@ -96,6 +97,9 @@
   },
   "overrides": {
     "@shopify/react-native-skia": "2.0.0-next.4"
+  },
+  "resolutions": {
+    "getenv": "2.0.0"
   },
   "expo": {
     "doctor": {

@@ -32,7 +32,7 @@ echo "📦 Installing npm dependencies..."
 npm install
 
 echo "🔧 Running expo prebuild..."
-unset CI
+export CI=true
 npx expo prebuild
 
 echo "✅ ci_post_clone.sh completed successfully!" 
