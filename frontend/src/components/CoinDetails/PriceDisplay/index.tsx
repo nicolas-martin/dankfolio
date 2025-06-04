@@ -16,7 +16,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
 
-	if (isNaN(periodChange)) return null;
+	if (isNaN(periodChange) || isNaN(price) || isNaN(valueChange)) return null;
 
 	const isPositive = periodChange >= 0;
 	const formattedPrice = formatPrice(price);

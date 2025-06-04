@@ -58,7 +58,7 @@ export const formatPrice = (
 	price: number | null | undefined,
 	includeDollarSign: boolean = true
 ): string => {
-	if (price === null || price === undefined) return 'N/A';
+	if (price === null || price === undefined || isNaN(price)) return 'N/A';
 
 	const prefix = includeDollarSign ? '$' : '';
 
