@@ -5,7 +5,6 @@ import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
 import { grpcApi } from '@/services/grpcApi';
 import { logger as log } from '@/utils/logger';
 import * as Keychain from 'react-native-keychain';
-import { usePortfolioStore } from '@/store/portfolio';
 import 'react-native-get-random-values';
 import { Buffer } from 'buffer';
 
@@ -44,23 +43,20 @@ export const prepareSwapRequest = async (
 	fromCoinId: string,
 	toCoinId: string,
 	amount: number,
-	slippage: number
+	slippage: number,
+	userPublicKey: string
 ): Promise<string> => {
 	try {
-		const walletState = usePortfolioStore.getState().wallet;
-		if (!walletState || !walletState.address) {
-			throw new Error('No wallet address found in store');
+		if (!userPublicKey) {
+			throw new Error('No userPublicKey provided for prepareSwapRequest');
 		}
-		const walletAddress = walletState.address;
 
 		log.log('Building swap transaction with:', {
 			fromCoinId,
 			toCoinId,
 			amount,
 			slippage,
-			// walletType: typeof walletState, // Should be 'object' or 'null'
-			// walletKeys: walletState ? Object.keys(walletState) : [], // Should be ['address'] or []
-			addressLength: walletAddress?.length
+			userPublicKeyLength: userPublicKey.length
 		});
 
 		// Prepare the swap transaction using our gRPC API
@@ -69,7 +65,7 @@ export const prepareSwapRequest = async (
 			toCoinId,
 			amount: amount.toString(),
 			slippageBps: (slippage * 100).toString(),
-			userPublicKey: walletAddress
+			userPublicKey: userPublicKey
 		};
 		const prepareResponse = await grpcApi.prepareSwap(prepareSwapRequest);
 
@@ -84,39 +80,23 @@ export const prepareSwapRequest = async (
 	}
 }
 
-export const signSwapTransaction = async (unsignedTransaction: string): Promise<string> => {
+export const signSwapTransaction = async (
+	unsignedTransaction: string,
+	userPublicKey: string,
+	privateKey: Base58PrivateKey
+): Promise<string> => {
 	try {
-		const walletState = usePortfolioStore.getState().wallet;
-		if (!walletState || !walletState.address) {
-			throw new Error('No wallet address found in store for signing');
+		if (!userPublicKey) {
+			throw new Error('No userPublicKey provided for signSwapTransaction');
 		}
-		const walletAddress = walletState.address;
-
-		const credentials = await Keychain.getGenericPassword({ service: KEYCHAIN_SERVICE });
-		if (!credentials) {
-			throw new Error('No credentials found in keychain for signing');
-		}
-
-		let privateKey: Base58PrivateKey;
-		try {
-			const parsedCredentials = JSON.parse(credentials.password) as Partial<RawWalletData>;
-			if (!parsedCredentials.privateKey) {
-				throw new Error('Private key not found in stored credentials');
-			}
-			privateKey = parsedCredentials.privateKey as Base58PrivateKey;
-		} catch (parseError) {
-			log.error('❌ Error parsing credentials from keychain:', parseError);
-			throw new Error('Invalid credentials format in keychain');
+		if (!privateKey) {
+			throw new Error('No privateKey provided for signSwapTransaction');
 		}
 
 		const keypair = getKeypairFromPrivateKey(privateKey);
-		// console.log('🔑 Generated keypair:', { // Sensitive data removed
-		// 	publicKey: keypair.publicKey.toString(),
-		// 	addressMatch: keypair.publicKey.toString() === walletAddress
-		// });
 
-		if (keypair.publicKey.toString() !== walletAddress) {
-			throw new Error('Keychain private key does not match wallet address in store.');
+		if (keypair.publicKey.toString() !== userPublicKey) {
+			throw new Error('Derived public key does not match userPublicKey for signSwapTransaction.');
 		}
 
 		// Decode and deserialize the transaction
@@ -144,26 +124,25 @@ export const signSwapTransaction = async (unsignedTransaction: string): Promise<
 export const prepareCoinTransfer = async (
 	toAddress: string,
 	coinMint: string,
-	amount: number
+	amount: number,
+	userPublicKey: string
 ): Promise<string> => {
 
 	try {
-		const walletState = usePortfolioStore.getState().wallet;
-		if (!walletState || !walletState.address) {
-			throw new Error('No wallet address found in store');
+		if (!userPublicKey) {
+			throw new Error('No userPublicKey provided for prepareCoinTransfer');
 		}
-		const walletAddress = walletState.address;
 
 		log.log('Building transfer transaction:', {
 			toAddress,
 			coinMint: coinMint || 'SOL',
 			amount,
-			fromAddress: walletAddress
+			fromAddress: userPublicKey
 		});
 
 		// Prepare the transfer transaction using our gRPC API
 		const prepareResponse = await grpcApi.prepareCoinTransfer({
-			fromAddress: walletAddress,
+			fromAddress: userPublicKey,
 			toAddress,
 			coinMint,
 			amount
@@ -182,36 +161,21 @@ export const prepareCoinTransfer = async (
 
 export const signTransferTransaction = async (
 	unsignedTransaction: string,
+	userPublicKey: string,
+	privateKey: Base58PrivateKey
 ): Promise<string> => {
 	try {
-		const walletState = usePortfolioStore.getState().wallet;
-		if (!walletState || !walletState.address) {
-			throw new Error('No wallet address found in store for signing');
+		if (!userPublicKey) {
+			throw new Error('No userPublicKey provided for signTransferTransaction');
 		}
-		const walletAddress = walletState.address;
-
-		const credentials = await Keychain.getGenericPassword({ service: KEYCHAIN_SERVICE });
-		if (!credentials) {
-			throw new Error('No credentials found in keychain for signing');
-		}
-
-		let privateKey: Base58PrivateKey;
-		try {
-			const parsedCredentials = JSON.parse(credentials.password) as Partial<RawWalletData>;
-			if (!parsedCredentials.privateKey) {
-				throw new Error('Private key not found in stored credentials');
-			}
-			privateKey = parsedCredentials.privateKey as Base58PrivateKey;
-		} catch (parseError) {
-			log.error('❌ Error parsing credentials from keychain:', parseError);
-			throw new Error('Invalid credentials format in keychain');
+		if (!privateKey) {
+			throw new Error('No privateKey provided for signTransferTransaction');
 		}
 
 		const keypair = getKeypairFromPrivateKey(privateKey);
-		// console.log('🔑 Using keypair with public key:', keypair.publicKey.toString()); // Sensitive data removed
 
-		if (keypair.publicKey.toString() !== walletAddress) {
-			throw new Error('Keychain private key does not match wallet address in store.');
+		if (keypair.publicKey.toString() !== userPublicKey) {
+			throw new Error('Derived public key does not match userPublicKey for signTransferTransaction.');
 		}
 
 		// Decode and deserialize the transaction

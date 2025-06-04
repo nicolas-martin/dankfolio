@@ -27,6 +27,10 @@ mobile: mobile-kill
 	@echo "📱 Starting mobile frontend..."
 	@cd $(MOBILE_DIR) && yarn start
 
+run-mobile: mobile-kill
+	@echo "📱 Starting mobile frontend..."
+	@cd $(MOBILE_DIR) && yarn start
+
 mobile-kill:
 	@echo "📴 Stopping mobile frontend..."
 	@pkill -f "expo start" || echo "✅ No Expo process running"
