@@ -2,8 +2,8 @@ import React, { useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
-import { formatPercentage } from '@/utils/numberFormat'; // Remove formatPrice import
-import { formatTimeAgo } from '@/utils/timeFormat'; // Add formatTimeAgo import
+import { formatPercentage } from '@/utils/numberFormat';
+import { formatTimeAgo } from '@/utils/timeFormat';
 import { HorizontalTickerCardProps } from './types';
 import { styles } from './styles';
 
@@ -20,9 +20,6 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 			style={styles.container}
 			onPress={handlePress}
 			testID={`horizontal-ticker-card-${coin.mintAddress}`}
-			activeOpacity={0.7}
-			delayPressIn={50}
-			delayPressOut={50}
 			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 		>
 			<View style={styles.logoContainer}>
