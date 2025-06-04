@@ -1,9 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Image } from 'expo-image';
 import { CachedImageProps } from './types';
+import { performanceMonitor } from '@/utils/performanceMonitor';
 
 // Default blurhash for token images - a subtle gray blur
 const DEFAULT_TOKEN_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+
+// Global queue to manage image loading and prevent UI blocking
+class ImageLoadQueue {
+	private queue: Array<() => void> = [];
+	private isProcessing = false;
+	private readonly maxConcurrent = 3; // Limit concurrent image loads
+	private currentLoading = 0;
+
+	add(loadFn: () => void) {
+		this.queue.push(loadFn);
+		this.process();
+	}
+
+	private async process() {
+		if (this.isProcessing || this.currentLoading >= this.maxConcurrent) return;
+		
+		this.isProcessing = true;
+		
+		while (this.queue.length > 0 && this.currentLoading < this.maxConcurrent) {
+			const loadFn = this.queue.shift();
+			if (loadFn) {
+				this.currentLoading++;
+				// Use setTimeout to prevent blocking the main thread
+				setTimeout(() => {
+					loadFn();
+					this.currentLoading--;
+					this.process(); // Process next in queue
+				}, 16); // ~60fps frame time
+			}
+		}
+		
+		this.isProcessing = false;
+	}
+}
+
+const imageLoadQueue = new ImageLoadQueue();
 
 export const CachedImage: React.FC<CachedImageProps> = ({
 	uri,
@@ -23,11 +60,23 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	const [hasError, setHasError] = useState(false);
 	const [imageUriToLoad, setImageUriToLoad] = useState<string | null>(null);
 	const [didAttemptLoad, setDidAttemptLoad] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const mountedRef = useRef(true);
+	const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	// Cleanup on unmount
+	useEffect(() => {
+		return () => {
+			mountedRef.current = false;
+			if (loadTimeoutRef.current) {
+				clearTimeout(loadTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	// The 'uri' is now used directly. All IPFS-specific logic is removed.
 	// The parent component is expected to pass coin.resolved_icon_url (if available)
 	// or coin.icon_url. This component no longer resolves IPFS URIs.
-
 
 	// Prepare placeholder - prioritize passed placeholder, then blurhash, then default blurhash
 	let imagePlaceholder = placeholder;
@@ -36,6 +85,19 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 		imagePlaceholder = { blurhash: hashToUse };
 	}
 
+	// Debounced state update function to prevent rapid state changes
+	const debouncedSetImageUri = useCallback((newUri: string | null) => {
+		if (loadTimeoutRef.current) {
+			clearTimeout(loadTimeoutRef.current);
+		}
+		
+		loadTimeoutRef.current = setTimeout(() => {
+			if (mountedRef.current) {
+				setImageUriToLoad(newUri);
+			}
+		}, 50); // 50ms debounce
+	}, []);
+
 	useEffect(() => {
 		// Only attempt to load if a URI is provided and we haven't tried yet,
 		// or if the URI has changed.
@@ -43,37 +105,63 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 			// Reset error state if URI changes
 			if (uri !== imageUriToLoad) {
 				setHasError(false);
+				setIsLoading(true);
 			}
-			setDidAttemptLoad(true);
-			setImageUriToLoad(uri);
-			// console.log(`[${new Date().toISOString()}] ⏳ Attempting to load image: ${uri}`);
+			
+			// Queue the image load to prevent UI blocking
+			imageLoadQueue.add(() => {
+				if (mountedRef.current) {
+					setDidAttemptLoad(true);
+					debouncedSetImageUri(uri);
+					// Track performance
+					performanceMonitor.startImageLoad(uri);
+				}
+			});
+			
+			// console.log(`[${new Date().toISOString()}] ⏳ Queued image load: ${uri}`);
 		} else if (!uri) {
 			// If URI is cleared, reset states
 			setImageUriToLoad(null);
 			setDidAttemptLoad(false);
 			setHasError(false);
+			setIsLoading(false);
 		}
-	}, [uri, didAttemptLoad, imageUriToLoad]); // Added imageUriToLoad to dependencies
+	}, [uri, didAttemptLoad, imageUriToLoad, debouncedSetImageUri]);
 
-	// Enhanced logging callbacks
-	const handleLoad = (event: any) => {
-		// console.log(`[${new Date().toISOString()}] ✅ Image loaded successfully: ${imageUriToLoad || 'placeholder'}`);
-		setHasError(false);
+	// Enhanced logging callbacks with better performance
+	const handleLoad = useCallback((event: any) => {
+		if (!mountedRef.current) return;
+		
+		// Use requestAnimationFrame to ensure smooth UI updates
+		requestAnimationFrame(() => {
+			if (mountedRef.current) {
+				setHasError(false);
+				setIsLoading(false);
+				// Track performance
+				if (imageUriToLoad) {
+					performanceMonitor.endImageLoad(imageUriToLoad, true);
+				}
+				onLoad?.(event);
+			}
+		});
+	}, [onLoad, imageUriToLoad]);
 
-		// // No need to reset currentGatewayIndex as it's removed.
-
-		onLoad?.(event);
-	};
-
-	const handleError = (error: any) => {
-		// console.log(`[${new Date().toISOString()}] ❌ Image failed to load: ${imageUriToLoad || 'no URL'}`, { message: error?.message, code: error?.code, domain: error?.domain, fullError: error });
-
-		// IPFS gateway switching logic is removed.
-		// If the resolved_icon_url (or icon_url) fails, it's now simply an error.
-
-		setHasError(true);
-		onError?.(error);
-	};
+	const handleError = useCallback((error: any) => {
+		if (!mountedRef.current) return;
+		
+		// Use requestAnimationFrame to ensure smooth UI updates
+		requestAnimationFrame(() => {
+			if (mountedRef.current) {
+				setHasError(true);
+				setIsLoading(false);
+				// Track performance
+				if (imageUriToLoad) {
+					performanceMonitor.endImageLoad(imageUriToLoad, false);
+				}
+				onError?.(error);
+			}
+		});
+	}, [onError, imageUriToLoad]);
 
 	return (
 		<Image
@@ -87,12 +175,13 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 				style,
 			]}
 			contentFit="cover"
-			transition={300}
+			transition={isLoading ? 0 : 300} // Disable transition while loading to improve performance
 			cachePolicy="disk"
 			placeholder={imagePlaceholder}
 			onLoad={handleLoad}
 			onError={handleError}
 			testID={testID}
+			priority="low" // Set low priority to prevent blocking critical renders
 			{...imageProps}
 		/>
 	);
