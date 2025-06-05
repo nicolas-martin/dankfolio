@@ -3,17 +3,19 @@ import appCheck from '@react-native-firebase/app-check';
 import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
 import {
+	APP_ENV, // <<< Import APP_ENV
 	FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
 	FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
 } from '@env';
 
-const isDevelopment = __DEV__
+const isDevelopmentOrSimulator = __DEV__ || APP_ENV === 'local' || APP_ENV === 'production-simulator'; // <<< Modified condition
 
 // Environment-aware App Check configuration
 const getAppCheckConfig = () => {
 	logger.info('🔧 Getting App Check config...');
-	logger.info(`🔧 Is dev mode: ${isDevelopment ? 'true' : 'false'}`);
-	if (isDevelopment) {
+	logger.info(`🔧 Is dev mode or simulator: ${isDevelopmentOrSimulator ? 'true' : 'false'}`); // <<< Modified log
+	logger.info(`🔧 APP_ENV: ${APP_ENV}`); // <<< Added log for APP_ENV
+	if (isDevelopmentOrSimulator) { // <<< Modified condition
 		if (FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID === "") {
 			logger.exception("missing dev firebase token for android")
 		}
@@ -24,12 +26,12 @@ const getAppCheckConfig = () => {
 
 	const config: any = {
 		android: {
-			provider: isDevelopment ? 'debug' : 'playIntegrity',
-			debugToken: isDevelopment && FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID ? FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID : undefined,
+			provider: isDevelopmentOrSimulator ? 'debug' : 'playIntegrity', // <<< Modified condition
+			debugToken: isDevelopmentOrSimulator && FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID ? FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID : undefined, // <<< Modified condition
 		},
 		apple: {
-			provider: isDevelopment ? 'debug' : 'appAttestWithDeviceCheckFallback',
-			debugToken: isDevelopment && FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS ? FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS : undefined,
+			provider: isDevelopmentOrSimulator ? 'debug' : 'appAttestWithDeviceCheckFallback', // <<< Modified condition
+			debugToken: isDevelopmentOrSimulator && FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS ? FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS : undefined, // <<< Modified condition
 		},
 	};
 
