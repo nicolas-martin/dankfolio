@@ -1,5 +1,6 @@
 import { PriceData } from '@/types';
 import { PricePoint } from './types';
+import { withRepeat, withTiming, Easing } from 'react-native-reanimated';
 
 export const prepareChartData = (data: PriceData[]): PricePoint[] => {
 	return data.map(point => {
@@ -22,4 +23,22 @@ export const formatPrice = (price: number): string => {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 6,
 	}).format(price);
+}; 
+
+export const determineChartColor = (data: PricePoint[]): 'green' | 'red' => {
+	if (!data || data.length < 2) return 'green';
+	const firstValue = data[0].value;
+	const lastValue = data[data.length - 1].value;
+	return lastValue >= firstValue ? 'green' : 'red';
+};
+
+export const createPulsateAnimation = (animatedValue: any) => {
+	return withRepeat(
+		withTiming(1.2, { 
+			duration: 1500,
+			easing: Easing.inOut(Easing.ease)
+		}),
+		-1, // Infinite repetitions
+		true // Reverse
+	);
 }; 

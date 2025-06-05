@@ -22,4 +22,19 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		pointerEvents: 'none',
 	},
+	dottedLine: {
+		borderStyle: 'dotted',
+		borderWidth: 1,
+		borderColor: theme.colors.outlineVariant,
+	},
+	gainGradient: {
+		start: { x: 0, y: 0 },
+		end: { x: 0, y: 1 },
+		colors: [theme.colors.primary, 'transparent'],
+	},
+	lossGradient: {
+		start: { x: 0, y: 0 },
+		end: { x: 0, y: 1 },
+		colors: [theme.colors.error, 'transparent'],
+	},
 });

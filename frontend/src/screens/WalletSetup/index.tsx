@@ -13,7 +13,7 @@ import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, 
 import { logger } from '@/utils/logger';
 import { env } from '@utils/env';
 
-const IS_DEBUG_MODE = env.debugMode;
+const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
 
 const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const theme = useTheme();
@@ -124,7 +124,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						<Text style={styles.termsText}>{TERMS_TEXT}</Text>
 					</View>
 
-					{IS_DEBUG_MODE && (
+					{isDevelopmentOrSimulator && (
 						<View style={styles.debugButtonContainer}>
 							<Button
 								title="Load Debug Wallet (TEST_PRIVATE_KEY)"
