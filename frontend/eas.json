@@ -30,6 +30,9 @@
       "extends": "production",
       "distribution": "internal",
       "autoIncrement": true,
+      "env": {
+        "APP_ENV": "production-simulator"
+      },
       "ios": {
         "simulator": true,
         "buildConfiguration": "Release"

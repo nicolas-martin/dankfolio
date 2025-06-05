@@ -4,7 +4,9 @@ import { Button, Card, Text, Chip } from 'react-native-paper';
 import appCheck from '@react-native-firebase/app-check';
 import { logger as log } from '@/utils/logger';
 import { grpcApi } from '@/services/grpcApi';
+import { APP_ENV } from '@env';
 
+const isDevelopmentOrSimulator = __DEV__ || APP_ENV === 'local' || APP_ENV === 'production-simulator';
 export const AuthTest: React.FC = () => {
 	const [appCheckToken, setAppCheckToken] = useState<string | null>(null);
 	const [testResult, setTestResult] = useState<string | null>(null);
@@ -12,7 +14,7 @@ export const AuthTest: React.FC = () => {
 
 	const checkAppCheckStatus = async () => {
 		try {
-			if (__DEV__) {
+			if (isDevelopmentOrSimulator) {
 				const appCheckToken = { token: "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" }
 				setAppCheckToken(appCheckToken.token || null);
 			} else {
@@ -31,7 +33,7 @@ export const AuthTest: React.FC = () => {
 	const refreshAppCheckToken = async () => {
 		setLoading(true);
 		try {
-			if (__DEV__) {
+			if (isDevelopmentOrSimulator) {
 				const tokenResult = { token: "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" }
 				setAppCheckToken(tokenResult?.token || null);
 			} else {
