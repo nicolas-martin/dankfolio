@@ -25,10 +25,10 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client, env string) *authn.Midd
 			appCheckToken := req.Header.Get("X-Firebase-AppCheck")
 			if appCheckToken == "" {
 				slog.Warn("Missing App Check token in request", "remote_addr", req.RemoteAddr, "method", req.Method, "path", req.URL.Path)
-				return nil, authn.Errorf("missing X-Firebase-AppCheck header")
+				return nil, authn.Errorf("missing auth header")
 			}
 			if appCheckToken != "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" {
-				return nil, authn.Errorf("invalid X-Firebase-AppCheck header for environment")
+				return nil, authn.Errorf("invalid auth header for environment")
 			}
 
 			slog.Info("Bypassing App Check verification due to environment setting", "env", env)
@@ -42,7 +42,7 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client, env string) *authn.Midd
 		appCheckToken := req.Header.Get("X-Firebase-AppCheck")
 		if appCheckToken == "" {
 			slog.Warn("Missing App Check token in request", "remote_addr", req.RemoteAddr, "method", req.Method, "path", req.URL.Path)
-			return nil, authn.Errorf("missing X-Firebase-AppCheck header")
+			return nil, authn.Errorf("missing auth header")
 		}
 
 		// Log token details before verification (only headers and audience for security)

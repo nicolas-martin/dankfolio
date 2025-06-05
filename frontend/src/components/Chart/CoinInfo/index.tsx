@@ -96,7 +96,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 			<View style={styles.volumeSection}>
 				<View style={styles.volumeHeader}>
 					<View style={styles.volumeIcon}>
-						<PaperIcon source="trending-up" size={16} color="#1976D2" />
+						<PaperIcon source="trending-up" size={16} color={theme.colors.onTertiaryContainer} />
 					</View>
 					<Text style={styles.volumeTitle}>24h Volume</Text>
 				</View>
@@ -114,7 +114,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 			<View style={styles.tagsSection}>
 				<View style={styles.tagsHeader}>
 					<View style={styles.tagsIcon}>
-						<PaperIcon source="tag-multiple" size={16} color="#7B1FA2" />
+						<PaperIcon source="tag-multiple" size={16} color={theme.colors.onSecondaryContainer} />
 					</View>
 					<Text style={styles.tagsTitle}>Tags</Text>
 				</View>
@@ -142,7 +142,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 			<View style={styles.linksSection}>
 				<View style={styles.linksHeader}>
 					<View style={styles.linksIcon}>
-						<PaperIcon source="link-variant" size={16} color="#388E3C" />
+						<PaperIcon source="link-variant" size={16} color={theme.colors.onTertiaryContainer} />
 					</View>
 					<Text style={styles.linksTitle}>Links</Text>
 				</View>
