@@ -36,8 +36,7 @@
         }
       ],
       "@react-native-firebase/app-check",
-      "@react-native-firebase/app",
-      "./plugins/with-fixed-firebase-auth"
+      "@react-native-firebase/app"
     ],
     "newArchEnabled": false,
     "assetBundlePatterns": [
