@@ -1,5 +1,5 @@
 import { getApp } from '@react-native-firebase/app';
-import appCheck, { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
+import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
 import {
 	FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
@@ -7,7 +7,6 @@ import {
 } from '@env';
 
 const isDevelopment = __DEV__
-// const isDevelopment = false
 
 // Environment-aware App Check configuration
 const getAppCheckConfig = () => {
@@ -21,7 +20,6 @@ const getAppCheckConfig = () => {
 			logger.exception("missing dev firebase token for ios")
 		}
 	}
-
 
 	const config: any = {
 		android: {
@@ -39,8 +37,6 @@ const getAppCheckConfig = () => {
 
 	return config;
 };
-
-let initialized = false;
 
 export async function initializeFirebaseServices(): Promise<void> {
 	logger.info('🔥 initializeFirebaseServices called');
@@ -63,9 +59,6 @@ export async function initializeFirebaseServices(): Promise<void> {
 			isTokenAutoRefreshEnabled: true,
 		});
 
-		// Don't verify by getting a token at initialization - let it happen on demand
-		logger.info('✅ Firebase App Check initialized successfully for production');
-		initialized = true;
 	} catch (error) {
 		logger.error('❌ Failed to initialize Firebase App Check in production:', error);
 		logger.error('🚨 This will cause authentication failures in production!');
@@ -75,40 +68,4 @@ export async function initializeFirebaseServices(): Promise<void> {
 		// In production, we should fail hard if App Check can't be initialized
 		throw new Error(`Production Firebase App Check initialization failed: ${error.message}`);
 	}
-}
-
-// Note: This function is now mainly used for compatibility with existing code
-// In new code, prefer using appCheck() directly
-export function getAppCheckInstance() {
-	logger.info(`🔧 getAppCheckInstance called, __DEV__=${__DEV__}, initialized=${initialized}`);
-
-	if (isDevelopment) {
-		logger.info('⚠️ App Check not available in development mode');
-		return null;
-	}
-
-	if (!initialized) {
-		logger.error('🚨 Firebase App Check not initialized! Call initializeFirebaseServices() first');
-		return null;
-	}
-
-	try {
-		const instance = appCheck();
-		logger.info('✅ Retrieved App Check instance successfully');
-		return instance;
-	} catch (error) {
-		logger.error('❌ Error getting App Check instance:', error);
-		return null;
-	}
-}
-
-// Function to check if we're ready for production
-export function isProductionReady(): boolean {
-	logger.info(`🔧 isProductionReady called, __DEV__=${__DEV__}, initialized=${initialized}`);
-
-	if (isDevelopment) {
-		return true; // Development doesn't need App Check
-	}
-
-	return initialized;
 }

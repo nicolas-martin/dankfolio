@@ -4,8 +4,6 @@ import { Trade } from '../gen/dankfolio/v1/trade_pb';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import * as grpcUtils from './grpc/grpcUtils';
 import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils'; // Import the new mapper
-import { logger } from '../utils/logger';
-
 
 // Implementation of the API interface using gRPC
 export const grpcApi: grpcModel.API = {
