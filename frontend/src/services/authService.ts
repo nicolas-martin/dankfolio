@@ -2,8 +2,7 @@ import useAuthStore from '@/store/auth';
 import { authClient } from '@/services/grpc/authClient';
 import { logger as log } from '@/utils/logger';
 import { APP_ENV } from '@env';
-import { getAppCheckInstance } from '@/services/firebaseInit';
-import { getToken as getAppCheckTokenFirebase } from '@react-native-firebase/app-check';
+import appCheck from '@react-native-firebase/app-check';
 
 export interface TokenResponse {
 	token: string;
@@ -143,15 +142,15 @@ class AuthService {
 		try {
 			log.info('🔐 Requesting new application token using App Check...');
 
-			const appCheck = getAppCheckInstance();
-			if (!appCheck) {
-				log.error('❌ Firebase App Check instance not available. Cannot refresh token.');
-				throw new Error('App Check not initialized');
-			}
-
 			let appCheckTokenValue: string;
 			try {
-				const appCheckTokenResult = await getAppCheckTokenFirebase(appCheck, /* forceRefresh= */ false);
+				// Use the appCheck module directly for simplicity
+				const appCheckTokenResult = await appCheck().getToken(true);
+				
+				if (!appCheckTokenResult || !appCheckTokenResult.token) {
+					throw new Error('App Check token is empty or undefined');
+				}
+				
 				appCheckTokenValue = appCheckTokenResult.token;
 				log.info('🔥 Firebase App Check token retrieved successfully.');
 			} catch (error) {
