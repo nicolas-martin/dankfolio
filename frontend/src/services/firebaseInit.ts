@@ -35,7 +35,6 @@ let initialized = false;
 
 export async function initializeFirebaseServices(): Promise<void> {
 	logger.info('🔥 initializeFirebaseServices called');
-	logger.info(`🔥 __DEV__ = ${__DEV__}`);
 
 	// Skip Firebase App Check initialization in development mode
 	// Use __DEV__ as the reliable check for development mode
@@ -63,7 +62,7 @@ export async function initializeFirebaseServices(): Promise<void> {
 		logger.info('🔧 Calling initializeAppCheck...');
 		initializeAppCheck(firebaseApp, {
 			provider: rnfbProvider,
-			isTokenAutoRefreshEnabled: false, // Change to false to prevent automatic token refresh
+			isTokenAutoRefreshEnabled: true,
 		});
 
 		// Don't verify by getting a token at initialization - let it happen on demand
