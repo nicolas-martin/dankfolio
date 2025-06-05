@@ -18,31 +18,20 @@
       "env": {
         "SENTRY_ALLOW_FAILURE": "true",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "REACT_APP_API_URL": "$REACT_APP_API_URL",
-        "REACT_APP_SOLANA_RPC_ENDPOINT": "$REACT_APP_SOLANA_RPC_ENDPOINT",
         "FIREBASE_APP_CHECK_DEBUG_TOKEN": "733374C9-7ECA-4D3D-B366-6FA6C8AB672C"
       }
     },
     "production": {
       "environment": "production",
       "autoIncrement": true,
-      "channel": "production",
-      "env": {
-        "APP_ENV": "production",
-        "DEBUG_MODE": "false",
-        "SENTRY_AUTH_TOKEN": "$SENTRY_AUTH_TOKEN",
-        "SENTRY_ALLOW_FAILURE": "true",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
-        "REACT_APP_SOLANA_RPC_ENDPOINT": "$REACT_APP_SOLANA_RPC_ENDPOINT",
-        "REACT_APP_API_URL": "$REACT_APP_API_URL"
-      }
+      "channel": "production"
     },
     "simulator-release": {
       "extends": "production",
       "distribution": "internal",
       "autoIncrement": true,
       "ios": {
-        "simulator": false,
+        "simulator": true,
         "buildConfiguration": "Release"
       },
       "channel": "simulator-release"
