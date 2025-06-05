@@ -44,12 +44,12 @@ import './src/utils/polyfills';
 import React, { useEffect, useCallback, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
-import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { configureReanimatedLogger } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Navigation from '@components/Common/Navigation';
-import { theme as appTheme } from '@utils/theme';
+import { themes, ThemeType, extendedThemeProperties } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
 // import { useTransactionsStore } from '@store/transactions';
@@ -59,6 +59,7 @@ import { Keypair } from '@solana/web3.js';
 import { logger } from '@/utils/logger';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
 import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // DEBUG: Log all environment variables at app startup
 console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
@@ -79,49 +80,26 @@ configureReanimatedLogger({
 	strict: false,
 });
 
-const paperTheme = {
-	...MD3LightTheme,
-	colors: {
-		...MD3LightTheme.colors,
-		primary: appTheme.colors.primary,
-		primaryContainer: appTheme.colors.primaryVariant,
-		secondary: appTheme.colors.secondary,
-		secondaryContainer: appTheme.colors.secondaryVariant,
-		background: appTheme.colors.background,
-		surface: appTheme.colors.surface,
-		surfaceVariant: appTheme.colors.surface, // Using surface as fallback for surfaceVariant
-		error: appTheme.colors.error,
-		onPrimary: appTheme.colors.onPrimary,
-		onSecondary: appTheme.colors.onSecondary,
-		onBackground: appTheme.colors.onBackground,
-		onSurface: appTheme.colors.onSurface,
-		onSurfaceVariant: appTheme.colors.onSurfaceVariant,
-		onError: appTheme.colors.onError,
-		outline: appTheme.colors.outline,
-		outlineVariant: appTheme.colors.outlineVariant,
-		warning: appTheme.colors.warning,
-		success: appTheme.colors.success,
-		// Additional colors that might be missing
-		tertiary: appTheme.colors.secondary, // Using secondary as fallback
-		tertiaryContainer: appTheme.colors.secondaryVariant,
-		onTertiary: appTheme.colors.onSecondary,
-		onTertiaryContainer: appTheme.colors.onSecondary,
-		errorContainer: appTheme.colors.error,
-		onErrorContainer: appTheme.colors.onError,
-		onPrimaryContainer: appTheme.colors.onPrimary,
-		onSecondaryContainer: appTheme.colors.onSecondary,
-	},
-};
+const THEME_STORAGE_KEY = 'app_theme_preference';
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 	},
 });
+
 const App: React.FC = () => {
 	const [appIsReady, setAppIsReady] = useState(false);
 	const [needsWalletSetup, setNeedsWalletSetup] = useState<boolean | null>(null);
 	const { setWallet, wallet } = usePortfolioStore();
+	const [themeType, setThemeType] = useState<ThemeType>('light');
+
+	// Function to toggle between themes
+	const toggleTheme = useCallback(async () => {
+		const newTheme = themeType === 'light' ? 'neon' : 'light';
+		setThemeType(newTheme);
+		await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
+	}, [themeType]);
 
 	const handleWalletSetupComplete = async (newKeypair: Keypair) => {
 		logger.breadcrumb({ message: 'App: Wallet setup complete, navigating to main app', category: 'app_lifecycle' });
@@ -150,6 +128,16 @@ const App: React.FC = () => {
 		});
 
 		async function prepare() {
+			// Load theme preference
+			try {
+				const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY) as ThemeType | null;
+				if (savedTheme && (savedTheme === 'light' || savedTheme === 'neon')) {
+					setThemeType(savedTheme);
+				}
+			} catch (error) {
+				logger.warn('Failed to load theme preference:', error);
+			}
+			
 			// Existing logger.breadcrumb call for starting authentication
 			logger.breadcrumb({ message: 'App: Preparing - Initializing Firebase', category: 'app_lifecycle' });
 			try {
@@ -226,9 +214,16 @@ const App: React.FC = () => {
 		return null;
 	}
 
+	// Get the current theme
+	const currentTheme = themes[themeType];
+	const currentExtendedTheme = extendedThemeProperties[themeType];
+
+	// Set status bar style based on theme
+	const statusBarStyle = themeType === 'light' ? 'dark' : 'light';
+
 	return (
-		<PaperProvider theme={paperTheme}>
-			<StatusBar style="light" />
+		<PaperProvider theme={currentTheme}>
+			<StatusBar style={statusBarStyle} />
 			<SafeAreaProvider>
 				<GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
 					<ToastProvider>
@@ -243,7 +238,7 @@ const App: React.FC = () => {
 									/>)
 							) : (
 								(logger.breadcrumb({ message: 'App: Navigating to MainTabs', category: 'navigation' }),
-									<Navigation />)
+									<Navigation themeType={themeType} toggleTheme={toggleTheme} />)
 							)}
 						</View>
 					</ToastProvider>
