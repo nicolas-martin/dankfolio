@@ -4,43 +4,42 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"connectrpc.com/authn"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/auth"
+	"firebase.google.com/go/v4/appcheck"
 )
 
-// AuthMiddleware creates authentication middleware using connectrpc/authn
-func AuthMiddleware(authService *auth.Service) *authn.Middleware {
+// AppCheckAuthenticatedUser represents a user authenticated via Firebase App Check
+type AppCheckAuthenticatedUser struct {
+	AppID   string
+	Subject string
+}
+
+// AppCheckMiddleware creates authentication middleware using Firebase App Check directly
+func AppCheckMiddleware(appCheckClient *appcheck.Client) *authn.Middleware {
 	return authn.NewMiddleware(func(ctx context.Context, req *http.Request) (any, error) {
-		// Extract the Authorization header
-		authHeader := req.Header.Get("Authorization")
-		if authHeader == "" {
-			return nil, authn.Errorf("missing authorization header")
+		// Extract the Firebase App Check token from the X-Firebase-AppCheck header
+		appCheckToken := req.Header.Get("X-Firebase-AppCheck")
+		if appCheckToken == "" {
+			return nil, authn.Errorf("missing X-Firebase-AppCheck header")
 		}
 
-		// Check for Bearer token format
-		const bearerPrefix = "Bearer "
-		if !strings.HasPrefix(authHeader, bearerPrefix) {
-			return nil, authn.Errorf("invalid authorization header format")
-		}
-
-		// Extract the token
-		tokenString := strings.TrimPrefix(authHeader, bearerPrefix)
-		if tokenString == "" {
-			return nil, authn.Errorf("empty bearer token")
-		}
-
-		// Validate the token using our auth service
-		user, err := authService.ValidateToken(tokenString)
+		// Verify the App Check token directly with Firebase
+		appCheckTokenInfo, err := appCheckClient.VerifyToken(appCheckToken)
 		if err != nil {
-			slog.Warn("Authentication failed", "error", err, "remote_addr", req.RemoteAddr)
-			return nil, authn.Errorf("invalid token: %v", err)
+			slog.Warn("App Check authentication failed", "error", err, "remote_addr", req.RemoteAddr)
+			return nil, authn.Errorf("invalid App Check token: %v", err)
 		}
 
-		slog.Debug("Request authenticated",
-			"device_id", user.DeviceID,
-			"platform", user.Platform,
+		// Create an authenticated user from the App Check token info
+		user := &AppCheckAuthenticatedUser{
+			AppID:   appCheckTokenInfo.AppID,
+			Subject: appCheckTokenInfo.Subject,
+		}
+
+		slog.Debug("Request authenticated via App Check",
+			"subject", user.Subject,
+			"app_id", user.AppID,
 			"remote_addr", req.RemoteAddr,
 			"method", req.Method,
 			"path", req.URL.Path)

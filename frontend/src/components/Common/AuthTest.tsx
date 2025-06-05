@@ -1,38 +1,36 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button, Card, Text, Chip } from 'react-native-paper';
-import { authService } from '@/services/authService';
+import appCheck from '@react-native-firebase/app-check';
 import { logger as log } from '@/utils/logger';
 import { grpcApi } from '@/services/grpcApi';
 
 export const AuthTest: React.FC = () => {
-	const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-	const [token, setToken] = useState<string | null>(null);
+	const [appCheckToken, setAppCheckToken] = useState<string | null>(null);
 	const [testResult, setTestResult] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 
-	const checkAuthStatus = async () => {
+	const checkAppCheckStatus = async () => {
 		try {
-			const authenticated = await authService.isAuthenticated();
-			const currentToken = await authService.getAuthToken();
-			setIsAuthenticated(authenticated);
-			setToken(currentToken);
-			log.info('🔐 Auth status checked', { authenticated, hasToken: !!currentToken });
+			const tokenResult = await appCheck().getToken(false);
+			const hasToken = !!tokenResult?.token;
+			
+			setAppCheckToken(tokenResult?.token || null);
+			log.info('🔐 App Check status checked', { hasToken });
 		} catch (error) {
-			log.error('❌ Failed to check auth status:', error);
-			setIsAuthenticated(false);
-			setToken(null);
+			log.error('❌ Failed to check App Check status:', error);
+			setAppCheckToken(null);
 		}
 	};
 
-	const refreshToken = async () => {
+	const refreshAppCheckToken = async () => {
 		setLoading(true);
 		try {
-			await authService.refreshToken();
-			await checkAuthStatus();
-			log.info('🔐 Token refreshed successfully');
+			const tokenResult = await appCheck().getToken(true); // Force refresh
+			setAppCheckToken(tokenResult?.token || null);
+			log.info('🔐 App Check token refreshed successfully');
 		} catch (error) {
-			log.error('❌ Failed to refresh token:', error);
+			log.error('❌ Failed to refresh App Check token:', error);
 		} finally {
 			setLoading(false);
 		}
@@ -54,46 +52,32 @@ export const AuthTest: React.FC = () => {
 		}
 	};
 
-	const clearAuth = async () => {
-		setLoading(true);
-		try {
-			await authService.clearAuth();
-			await checkAuthStatus();
-			setTestResult(null);
-			log.info('🔐 Authentication cleared');
-		} catch (error) {
-			log.error('❌ Failed to clear auth:', error);
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	React.useEffect(() => {
-		checkAuthStatus();
+		checkAppCheckStatus();
 	}, []);
 
 	return (
 		<Card style={styles.card}>
 			<Card.Content>
 				<Text variant="titleMedium" style={styles.title}>
-					🔐 Authentication Test
+					🔐 Firebase App Check Test
 				</Text>
 
 				<View style={styles.statusContainer}>
 					<Text variant="bodyMedium">Status:</Text>
 					<Chip
-						icon={isAuthenticated ? "check" : "close"}
-						style={[styles.chip, { backgroundColor: isAuthenticated ? '#4CAF50' : '#f44336' }]}
+						icon={appCheckToken ? "check" : "close"}
+						style={[styles.chip, { backgroundColor: appCheckToken ? '#4CAF50' : '#f44336' }]}
 					>
-						{isAuthenticated ? 'Authenticated' : 'Not Authenticated'}
+						{appCheckToken ? 'Valid App Check Token' : 'No App Check Token'}
 					</Chip>
 				</View>
 
-				{token && (
+				{appCheckToken && (
 					<View style={styles.tokenContainer}>
-						<Text variant="bodySmall" style={styles.tokenLabel}>Token (first 50 chars):</Text>
+						<Text variant="bodySmall" style={styles.tokenLabel}>App Check Token (first 50 chars):</Text>
 						<Text variant="bodySmall" style={styles.tokenText}>
-							{token.substring(0, 50)}...
+							{appCheckToken.substring(0, 50)}...
 						</Text>
 					</View>
 				)}
@@ -109,7 +93,7 @@ export const AuthTest: React.FC = () => {
 				<View style={styles.buttonContainer}>
 					<Button
 						mode="outlined"
-						onPress={checkAuthStatus}
+						onPress={checkAppCheckStatus}
 						style={styles.button}
 						disabled={loading}
 					>
@@ -118,7 +102,7 @@ export const AuthTest: React.FC = () => {
 
 					<Button
 						mode="contained"
-						onPress={refreshToken}
+						onPress={refreshAppCheckToken}
 						style={styles.button}
 						loading={loading}
 						disabled={loading}
@@ -133,18 +117,9 @@ export const AuthTest: React.FC = () => {
 						onPress={testApiCall}
 						style={styles.button}
 						loading={loading}
-						disabled={loading || !isAuthenticated}
+						disabled={loading || !appCheckToken}
 					>
 						Test API Call
-					</Button>
-
-					<Button
-						mode="outlined"
-						onPress={clearAuth}
-						style={styles.button}
-						disabled={loading}
-					>
-						Clear Auth
 					</Button>
 				</View>
 			</Card.Content>
