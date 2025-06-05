@@ -2,8 +2,11 @@ package middleware
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"connectrpc.com/authn"
 	"firebase.google.com/go/v4/appcheck"
@@ -21,13 +24,53 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client) *authn.Middleware {
 		// Extract the Firebase App Check token from the X-Firebase-AppCheck header
 		appCheckToken := req.Header.Get("X-Firebase-AppCheck")
 		if appCheckToken == "" {
+			slog.Warn("Missing App Check token in request", "remote_addr", req.RemoteAddr)
 			return nil, authn.Errorf("missing X-Firebase-AppCheck header")
 		}
 
+		// Log token details before verification (only headers and audience for security)
+		parts := strings.Split(appCheckToken, ".")
+		if len(parts) == 3 {
+			// Log header for debugging
+			headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
+			if err == nil {
+				slog.Debug("App Check token header", "header", string(headerBytes))
+			} else {
+				slog.Warn("Failed to decode App Check token header", "error", err)
+			}
+
+			// Get audience and issuer from payload for debugging
+			if payloadBytes, payloadErr := base64.RawURLEncoding.DecodeString(parts[1]); payloadErr == nil {
+				var payloadMap map[string]interface{}
+				if jsonErr := json.Unmarshal(payloadBytes, &payloadMap); jsonErr == nil {
+					if aud, ok := payloadMap["aud"]; ok {
+						slog.Info("App Check token audience", "aud", aud)
+					}
+					if iss, ok := payloadMap["iss"]; ok {
+						slog.Debug("App Check token issuer", "iss", iss)
+					}
+					if sub, ok := payloadMap["sub"]; ok {
+						slog.Debug("App Check token subject", "sub", sub)
+					}
+				} else {
+					slog.Warn("Failed to parse App Check token payload", "error", jsonErr)
+				}
+			} else {
+				slog.Warn("Failed to decode App Check token payload", "error", payloadErr)
+			}
+		} else {
+			slog.Warn("Invalid App Check token format, expected 3 parts", "parts_count", len(parts))
+		}
+
 		// Verify the App Check token directly with Firebase
+		slog.Info("Verifying App Check token", "remote_addr", req.RemoteAddr, "path", req.URL.Path)
 		appCheckTokenInfo, err := appCheckClient.VerifyToken(appCheckToken)
 		if err != nil {
-			slog.Warn("App Check authentication failed", "error", err, "remote_addr", req.RemoteAddr)
+			slog.Error("App Check authentication failed",
+				"error", err,
+				"error_type", err.Error(),
+				"remote_addr", req.RemoteAddr,
+				"path", req.URL.Path)
 			return nil, authn.Errorf("invalid App Check token: %v", err)
 		}
 
@@ -37,7 +80,7 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client) *authn.Middleware {
 			Subject: appCheckTokenInfo.Subject,
 		}
 
-		slog.Debug("Request authenticated via App Check",
+		slog.Info("Request authenticated via App Check",
 			"subject", user.Subject,
 			"app_id", user.AppID,
 			"remote_addr", req.RemoteAddr,

@@ -13,21 +13,21 @@ const isDevelopment = false
 const getAppCheckConfig = () => {
 	logger.info('🔧 Getting App Check config...');
 	logger.info(`🔧 Is dev mode: ${isDevelopment ? 'true' : 'false'}`);
-	
+
 	const config: any = {
 		android: {
-			provider: __DEV__ ? 'debug' : 'playIntegrity',
-			debugToken: __DEV__ && FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID ? FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID : undefined,
+			provider: isDevelopment ? 'debug' : 'playIntegrity',
+			debugToken: isDevelopment && FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID ? FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID : undefined,
 		},
 		apple: {
-			provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback',
-			debugToken: __DEV__ && FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS ? FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS : undefined,
+			provider: isDevelopment ? 'debug' : 'appAttestWithDeviceCheckFallback',
+			debugToken: isDevelopment && FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS ? FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS : undefined,
 		},
 	};
 
 	logger.info(`🔧 Using provider for iOS: ${config.apple.provider}`);
 	logger.info(`🔧 Using provider for Android: ${config.android.provider}`);
-	
+
 	return config;
 };
 
@@ -36,7 +36,7 @@ let initialized = false;
 export async function initializeFirebaseServices(): Promise<void> {
 	logger.info('🔥 initializeFirebaseServices called');
 	logger.info(`🔥 __DEV__ = ${__DEV__}`);
-	
+
 	// Skip Firebase App Check initialization in development mode
 	// Use __DEV__ as the reliable check for development mode
 	if (isDevelopment) {
@@ -84,7 +84,7 @@ export async function initializeFirebaseServices(): Promise<void> {
 // In new code, prefer using appCheck() directly
 export function getAppCheckInstance() {
 	logger.info(`🔧 getAppCheckInstance called, __DEV__=${__DEV__}, initialized=${initialized}`);
-	
+
 	if (isDevelopment) {
 		logger.info('⚠️ App Check not available in development mode');
 		return null;
@@ -108,7 +108,7 @@ export function getAppCheckInstance() {
 // Function to check if we're ready for production
 export function isProductionReady(): boolean {
 	logger.info(`🔧 isProductionReady called, __DEV__=${__DEV__}, initialized=${initialized}`);
-	
+
 	if (isDevelopment) {
 		return true; // Development doesn't need App Check
 	}
