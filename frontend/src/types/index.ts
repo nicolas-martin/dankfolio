@@ -1,5 +1,6 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Keypair } from '@solana/web3.js';
+import { ThemeType } from '@utils/theme';
 
 export interface Coin {
 	mintAddress: string;
@@ -38,12 +39,22 @@ export interface Wallet {
 	address: string;
 }
 
+export interface ThemeProps {
+	themeType: ThemeType;
+	toggleTheme: () => Promise<void>;
+}
+
 export type RootStackParamList = {
-	Home: undefined;
+	Home: {
+		themeType?: ThemeType;
+		toggleTheme?: () => Promise<void>;
+	};
 	Trade: {
 		initialFromCoin?: Coin | null;
 		initialToCoin?: Coin | null;
 		selectedToken?: Coin;
+		themeType?: ThemeType;
+		toggleTheme?: () => Promise<void>;
 	};
 	Profile: undefined;
 	Search: undefined;
@@ -51,12 +62,15 @@ export type RootStackParamList = {
 	CoinDetail: {
 		coin?: Coin;
 		solCoin?: Coin;
+		themeType?: ThemeType;
+		toggleTheme?: () => Promise<void>;
 	};
 	CoinSelect: {
 		onSelect: (coin: Coin) => void;
 		excludeCoinId?: string;
 		currentCoinId?: string;
 	};
+	MainTabs: undefined;
 	[key: string]: undefined | object;
 }
 

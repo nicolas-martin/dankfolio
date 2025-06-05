@@ -1,11 +1,11 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createMaterialBottomTabNavigator } from 'react-native-paper/react-navigation';
-import { RootStackParamList } from '@/types';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { RootStackParamList, ThemeProps } from '@/types';
 import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
 import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
-import { useTheme } from 'react-native-paper';
+import { useTheme, BottomNavigation } from 'react-native-paper';
 import { Platform } from 'react-native';
 
 // Import screens
@@ -17,94 +17,136 @@ import Trade from '@screens/Trade';
 import Send from '@screens/Send';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const Tab = createMaterialBottomTabNavigator();
+const Tab = createBottomTabNavigator();
 
-const TabNavigator = () => {
+const TabNavigator = ({ themeType, toggleTheme }: ThemeProps) => {
 	const theme = useTheme();
 
 	return (
 		<Tab.Navigator
 			initialRouteName="Home"
-			shifting={false}
-			activeColor={theme.colors.primary}
-			inactiveColor={theme.colors.onSurfaceVariant}
-			barStyle={{
-				backgroundColor: theme.colors.surface,
-				borderTopWidth: 0,
-				elevation: 8,
-				height: Platform.select({
-					ios: 88,
-					android: 80,
-				}),
-				...Platform.select({
-					ios: {
-						shadowColor: '#000',
-						shadowOffset: { width: 0, height: -2 },
-						shadowOpacity: 0.1,
-						shadowRadius: 8,
-					},
-					android: {
-						elevation: 8,
-					},
-				}),
-			}}
-			labeled={true}
-			theme={theme}
+			screenOptions={{ headerShown: false }}
+			tabBar={({ navigation, state, descriptors, insets }) => (
+				<BottomNavigation.Bar
+					navigationState={state}
+					shifting={false}
+					activeColor={theme.colors.primary}
+					inactiveColor={theme.colors.onSurfaceVariant}
+					onTabPress={({ route }) => {
+						const event = navigation.emit({
+							type: 'tabPress',
+							target: route.key,
+							canPreventDefault: true,
+						});
+
+						if (!event.defaultPrevented) {
+							navigation.navigate(route.name);
+						}
+					}}
+					renderIcon={({ route, focused, color }) => {
+						const iconSize = focused ? 26 : 22;
+						switch (route.name) {
+							case 'Home':
+								return <HomeIcon color={color} size={iconSize} />;
+							case 'Search':
+								return <SearchIcon color={color} size={iconSize} />;
+							case 'Profile':
+								return <ProfileIcon color={color} size={iconSize} />;
+							default:
+								return null;
+						}
+					}}
+					getLabelText={({ route }) => {
+						switch (route.name) {
+							case 'Home':
+								return 'Home';
+							case 'Search':
+								return 'Explore';
+							case 'Profile':
+								return 'Portfolio';
+							default:
+								return route.name;
+						}
+					}}
+					style={{
+						backgroundColor: theme.colors.surface,
+						borderTopWidth: 0,
+						height: Platform.select({
+							ios: 88,
+							android: 80,
+						}),
+						...Platform.select({
+							ios: {
+								shadowColor: '#000',
+								shadowOffset: { width: 0, height: -2 },
+								shadowOpacity: 0.1,
+								shadowRadius: 8,
+							},
+							android: {
+								elevation: 8,
+							},
+						}),
+					}}
+				/>
+			)}
 		>
 			<Tab.Screen
 				name="Home"
 				component={Home}
-				options={{
-					tabBarLabel: 'Home',
-					tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-						<HomeIcon color={color} size={focused ? 26 : 22} />
-					),
-				}}
+				initialParams={{ themeType, toggleTheme }}
 			/>
 			<Tab.Screen
 				name="Search"
 				component={Search}
-				options={{
-					tabBarLabel: 'Explore',
-					tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-						<SearchIcon color={color} size={focused ? 26 : 22} />
-					),
-				}}
 			/>
 			<Tab.Screen
 				name="Profile"
 				component={Profile}
-				options={{
-					tabBarLabel: 'Portfolio',
-					tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-						<ProfileIcon color={color} size={focused ? 26 : 22} />
-					),
-				}}
 			/>
 		</Tab.Navigator>
 	);
 };
 
-const Navigation = () => {
+const Navigation = ({ themeType, toggleTheme }: ThemeProps) => {
 	return (
 		<NavigationContainer onStateChange={navigationMiddleware}>
 			<Stack.Navigator
 				initialRouteName="MainTabs"
 				screenOptions={{
-					header: () => <CustomHeader />,
 					headerShown: true,
-					// contentStyle: { backgroundColor: '#1A1A2E' },
 					animation: 'slide_from_right',
 				}}
 			>
 				<Stack.Screen
 					name="MainTabs"
-					component={TabNavigator}
-					options={{ headerShown: false }}
+					options={{ 
+						headerShown: false 
+					}}
+				>
+					{() => <TabNavigator themeType={themeType} toggleTheme={toggleTheme} />}
+				</Stack.Screen>
+				<Stack.Screen 
+					name="CoinDetail" 
+					component={CoinDetail} 
+					initialParams={{ themeType, toggleTheme }}
+					options={{
+						header: (props) => <CustomHeader themeType={themeType} toggleTheme={toggleTheme} />
+					}}
 				/>
-				<Stack.Screen name="CoinDetail" component={CoinDetail} />
-				<Stack.Screen name="Trade" component={Trade} />
-				<Stack.Screen name="SendTokens" component={Send} />
+				<Stack.Screen 
+					name="Trade" 
+					component={Trade}
+					options={{
+						header: (props) => <CustomHeader themeType={themeType} toggleTheme={toggleTheme} />
+					}}
+				/>
+				<Stack.Screen 
+					name="SendTokens" 
+					component={Send}
+					options={{
+						header: (props) => <CustomHeader themeType={themeType} toggleTheme={toggleTheme} />
+					}}
+				/>
 			</Stack.Navigator>
 		</NavigationContainer>
 	);
