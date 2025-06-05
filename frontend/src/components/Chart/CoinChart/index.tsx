@@ -172,7 +172,7 @@ export default function CoinChart({
 			const xVal = chartPress.x.value.value;
 			const yVal = chartPress.y.y.value.value;
 			if (typeof xVal === 'number' && typeof yVal === 'number') {
-				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+				runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
 				runOnJS(onHover)({
 					timestamp: xVal,
 					price: yVal,
