@@ -145,7 +145,8 @@ class AuthService {
 			let appCheckTokenValue: string;
 			try {
 				// Use the modern Firebase API format to avoid deprecation warnings
-				const appCheckTokenResult = await appCheck().getToken();
+				// Pass false to prevent forcing a token refresh, which might trigger rate limiting
+				const appCheckTokenResult = await appCheck().getToken(false);
 				
 				if (!appCheckTokenResult || !appCheckTokenResult.token) {
 					throw new Error('App Check token is empty or undefined');
