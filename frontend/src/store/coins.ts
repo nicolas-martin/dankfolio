@@ -162,6 +162,17 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 
 		set({ isLoadingNewlyListed: true, error: null });
 		try {
+			// Add debug log before the API call
+			log.log('🔍 [CoinStore] Preparing search request with params:', {
+				query: '',
+				tags: [],
+				minVolume24h: 0,
+				limit: limit,
+				offset: 0,
+				sortBy: 'jupiter_listed_at',
+				sortDesc: true,
+			});
+
 			// Use grpcApi.searchCoins to call the Search RPC method
 			// Sort by 'jupiter_listed_at' to get the newest coins first
 			const response = await grpcApi.searchCoins({
@@ -174,6 +185,24 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				sortDesc: true, // Newest first
 			});
 
+			// Add debug log for the raw response structure
+			log.log('🔍 [CoinStore] Raw response structure check:', {
+				responseType: typeof response,
+				hasCoinsProperty: response && 'coins' in response,
+				coinsArrayLength: response?.coins?.length || 0,
+				firstCoinKeys: response?.coins?.[0] ? Object.keys(response.coins[0]) : []
+			});
+
+			// Safely log coin data without BigInt serialization issues
+			log.log('🔍 [CoinStore] Coin data sample (first coin):', response?.coins?.[0] ? {
+				symbol: response.coins[0].symbol,
+				mintAddress: response.coins[0].mintAddress,
+				jupiterListedAt: response.coins[0].jupiterListedAt ? 
+					response.coins[0].jupiterListedAt.toISOString() : 'undefined',
+				price: response.coins[0].price,
+				dailyVolume: response.coins[0].dailyVolume
+			} : 'No coins returned');
+
 			// Log the raw gRPC response
 			log.log('🔍 [CoinStore] Raw gRPC response for newly listed coins:', {
 				totalCoins: response.coins.length,
@@ -181,7 +210,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				coins: response.coins.map(coin => ({
 					symbol: coin.symbol,
 					mintAddress: coin.mintAddress,
-					jupiterListedAt: coin.jupiterListedAt,
+					jupiterListedAt: coin.jupiterListedAt ? coin.jupiterListedAt.toISOString() : null,
 					price: coin.price,
 					dailyVolume: coin.dailyVolume
 				}))
@@ -215,49 +244,23 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				log.log('✅ [CoinStore] No duplicates detected in backend response');
 			}
 
-			// Filter out coins that are already in the main coinMap
-			const newCoinsToConsider = fetchedCoins.filter(fc => !state.coinMap[fc.mintAddress]);
-
-			log.log('🔍 [CoinStore] After filtering against coinMap:', {
-				originalCount: fetchedCoins.length,
-				afterFilteringCount: newCoinsToConsider.length,
-				filteredOutCount: fetchedCoins.length - newCoinsToConsider.length
-			});
-
-			// Filter for newlyListedCoins: must not be in availableCoins
-			const trulyNewCoins = newCoinsToConsider.filter(nc =>
-				!state.availableCoins.some(ac => ac.mintAddress === nc.mintAddress)
-			);
-
-			log.log('🔍 [CoinStore] After filtering against availableCoins:', {
-				newCoinsToConsiderCount: newCoinsToConsider.length,
-				trulyNewCoinsCount: trulyNewCoins.length,
-				availableCoinsCount: state.availableCoins.length,
-				trulyNewCoins: trulyNewCoins.map(coin => ({
-					symbol: coin.symbol,
-					mintAddress: coin.mintAddress,
-					jupiterListedAt: coin.jupiterListedAt
-				}))
-			});
-
-			log.log('🔄 [CoinStore] Data separation strategy:', {
-				message: 'New coins kept separate from coinMap to prevent conflicts',
-				newCoinsInNewlyListed: trulyNewCoins.length,
-				existingCoinsInCoinMap: Object.keys(state.coinMap).length,
-				note: 'getCoinByID will fetch detailed data when user interacts with coins'
+			// Modified: Don't filter out coins that are in coinMap - we want to show newly listed coins
+			// regardless of whether they're in the coinMap. Only filter out duplicates.
+			log.log('🔍 [CoinStore] Using fetched coins directly without filtering against coinMap', {
+				fetchedCoinsCount: fetchedCoins.length
 			});
 
 			// Cache the newly fetched data with expiry time
 			const cacheExpiryMs = Date.now() + REFRESH_INTERVALS.NEW_COINS;
-			useNewCoinsCacheStore.getState().setCache(trulyNewCoins, cacheExpiryMs);
+			useNewCoinsCacheStore.getState().setCache(fetchedCoins, cacheExpiryMs);
 
 			log.log('💾 [CoinStore] Cached new coins data', {
-				cachedCoinsCount: trulyNewCoins.length,
+				cachedCoinsCount: fetchedCoins.length,
 				cacheExpiry: new Date(cacheExpiryMs).toISOString()
 			});
 
 			set({
-				newlyListedCoins: trulyNewCoins,
+				newlyListedCoins: fetchedCoins,
 				// DON'T update coinMap here - keep new coins separate
 				isLoadingNewlyListed: false,
 			});
@@ -265,11 +268,20 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			// Update the last fetched timestamp on successful fetch
 			state.setLastFetchedNewCoinsAt(Date.now());
 
-			log.log(`🆕 [CoinStore] ✅ Successfully fetched ${fetchedCoins.length} coins via GRPC, ${trulyNewCoins.length} are truly new and cached separately from coinMap.`);
+			log.log(`🆕 [CoinStore] ✅ Successfully fetched ${fetchedCoins.length} coins via GRPC, using all fetched coins for display.`);
 		} catch (err) {
 			const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred';
 			set({ error: errorMessage, isLoadingNewlyListed: false });
 			log.error('❌ [CoinStore] Error fetching newly listed coins via GRPC:', errorMessage);
+			
+			// Add detailed error logging
+			if (err instanceof Error) {
+				log.error('❌ [CoinStore] Error details:', {
+					name: err.name,
+					message: err.message,
+					stack: err.stack
+				});
+			}
 		}
 	},
 
