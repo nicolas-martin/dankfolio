@@ -1,12 +1,13 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { RootStackParamList, ThemeProps } from '@/types';
+import { RootStackParamList } from '@/types';
 import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
 import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
 import { useTheme, BottomNavigation } from 'react-native-paper';
 import { Platform } from 'react-native';
+import { useThemeStore } from '@/store/theme';
 
 // Import screens
 import Home from '@screens/Home';
@@ -19,8 +20,9 @@ import Send from '@screens/Send';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-const TabNavigator = ({ themeType, toggleTheme }: ThemeProps) => {
+const TabNavigator = () => {
 	const theme = useTheme();
+	const { themeType, toggleTheme } = useThemeStore();
 
 	return (
 		<Tab.Navigator
@@ -93,7 +95,6 @@ const TabNavigator = ({ themeType, toggleTheme }: ThemeProps) => {
 			<Tab.Screen
 				name="Home"
 				component={Home}
-				initialParams={{ themeType, toggleTheme }}
 			/>
 			<Tab.Screen
 				name="Search"
@@ -107,7 +108,9 @@ const TabNavigator = ({ themeType, toggleTheme }: ThemeProps) => {
 	);
 };
 
-const Navigation = ({ themeType, toggleTheme }: ThemeProps) => {
+const Navigation = () => {
+	const { themeType, toggleTheme } = useThemeStore();
+	
 	return (
 		<NavigationContainer onStateChange={navigationMiddleware}>
 			<Stack.Navigator
@@ -123,28 +126,27 @@ const Navigation = ({ themeType, toggleTheme }: ThemeProps) => {
 						headerShown: false 
 					}}
 				>
-					{() => <TabNavigator themeType={themeType} toggleTheme={toggleTheme} />}
+					{() => <TabNavigator />}
 				</Stack.Screen>
 				<Stack.Screen 
 					name="CoinDetail" 
-					component={CoinDetail} 
-					initialParams={{ themeType, toggleTheme }}
+					component={CoinDetail}
 					options={{
-						header: (props) => <CustomHeader themeType={themeType} toggleTheme={toggleTheme} />
+						header: (props) => <CustomHeader />
 					}}
 				/>
 				<Stack.Screen 
 					name="Trade" 
 					component={Trade}
 					options={{
-						header: (props) => <CustomHeader themeType={themeType} toggleTheme={toggleTheme} />
+						header: (props) => <CustomHeader />
 					}}
 				/>
 				<Stack.Screen 
 					name="SendTokens" 
 					component={Send}
 					options={{
-						header: (props) => <CustomHeader themeType={themeType} toggleTheme={toggleTheme} />
+						header: (props) => <CustomHeader />
 					}}
 				/>
 			</Stack.Navigator>

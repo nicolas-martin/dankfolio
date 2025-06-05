@@ -7,7 +7,6 @@ import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } f
 import { CoinDetailScreenNavigationProp } from '@screens/CoinDetail/coindetail_types';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
-import { Transaction, ThemeProps } from '@/types';
 import { createStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';
 import {
@@ -15,11 +14,10 @@ import {
 	WalletIcon,
 	CoinsIcon,
 	SendIcon,
-	SwapIcon,
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import { APP_ENV } from '@env';
-import { ThemeType } from '@utils/theme';
+import { useThemeStore } from '@/store/theme';
 import { RootStackParamList } from '@/types/navigation';
 
 type ProfileScreenRouteParams = RootStackParamList['Profile'];
@@ -39,21 +37,9 @@ const Profile = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	// Get theme props from route params
-	const routeParams = route.params as ProfileScreenRouteParams || {};
-	const themeType = routeParams.themeType || 'light';
-	const toggleTheme = routeParams.toggleTheme;
-
-	// Track current theme state for the switch
-	const [isDarkTheme, setIsDarkTheme] = useState(themeType === 'neon');
-
-	// Handle theme toggle
-	const handleToggleTheme = async () => {
-		if (toggleTheme) {
-			setIsDarkTheme(!isDarkTheme);
-			await toggleTheme();
-		}
-	};
+	// Use the theme store for theme management
+	const { themeType, toggleTheme, isLoading: isThemeLoading } = useThemeStore();
+	const isDarkTheme = themeType === 'neon';
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed ProfileScreen' });
@@ -128,8 +114,9 @@ const Profile = () => {
 			</View>
 			<Switch
 				value={isDarkTheme}
-				onValueChange={handleToggleTheme}
+				onValueChange={toggleTheme}
 				color={theme.colors.primary}
+				disabled={isThemeLoading}
 			/>
 		</View>
 	);
@@ -243,9 +230,9 @@ const Profile = () => {
 				>
 					<View style={styles.contentPadding}>
 						{renderHeader()}
-						{renderThemeToggle()}
 						{renderPortfolioCard()}
 						{renderTokensSection()}
+						{renderThemeToggle()}
 						{/* {renderTransactionsSection()} */}
 					</View>
 
