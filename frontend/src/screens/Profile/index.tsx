@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react'; // Ensure React is imported for JSX
+import { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Text, useTheme, IconButton, Button, Icon, List, MD3Theme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -11,7 +11,6 @@ import { Transaction } from '@/types';
 import { createStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';
 import { OTAUpdater } from '@components/OTAupdate';
-import * as Sentry from '@sentry/react-native';
 import {
 	ProfileIcon,
 	WalletIcon,
@@ -20,7 +19,6 @@ import {
 	SwapIcon,
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
-import { AppCheckTester } from '@/services/appCheckTest';
 import { FirebaseTest } from '@/components/FirebaseTest';
 import { APP_ENV } from '@env';
 
@@ -185,92 +183,6 @@ const Profile = () => {
 		</View>
 	);
 
-	const renderTransactionsSection = () => {
-		if (!transactionsHasFetched && !isTransactionsLoading) {
-			return null;
-		}
-
-		const getStatusStyle = (status: Transaction['status']) => {
-			switch (status.toUpperCase()) {
-				case 'PENDING':
-					return styles.transactionStatusTextPending;
-				case 'COMPLETED':
-					return styles.transactionStatusTextCompleted;
-				case 'FAILED':
-					return styles.transactionStatusTextFailed;
-				default:
-					return styles.transactionStatusTextDefault;
-			}
-		};
-
-		return (
-			<View style={styles.transactionsSection}>
-				<View style={styles.transactionsHeader}>
-					<Icon source="history" size={24} color={theme.colors.onSurface} />
-					<Text style={styles.transactionsTitle}>Recent Transactions</Text>
-				</View>
-
-				{isTransactionsLoading && !transactions.length ? (
-					<ActivityIndicator animating={true} color={theme.colors.primary} style={styles.loadingIndicator} size="large" />
-				) : transactionsError ? (
-					<View style={styles.transactionEmptyStateContainer}> {/* Use specific empty state style */}
-						<Icon source="alert-circle-outline" size={48} color={theme.colors.error} />
-						<Text style={styles.emptyStateTitle}>Error Loading Transactions</Text>
-						<Text style={styles.emptyStateText}>{transactionsError}</Text>
-					</View>
-				) : transactions.length === 0 && transactionsHasFetched ? (
-					<View style={styles.transactionEmptyStateContainer}> {/* Use specific empty state style */}
-						<Icon source="format-list-bulleted" size={48} color={theme.colors.onSurfaceVariant} />
-						<Text style={styles.emptyStateTitle}>No Transactions Yet</Text>
-						<Text style={styles.emptyStateText}>Your transaction history will appear here once you start trading or transferring tokens.</Text>
-					</View>
-				) : (
-					<View style={styles.transactionsListContainer}>
-						{transactions.slice(0, 5).map((tx) => (
-							<List.Item
-								key={tx.id}
-								title={
-									<Text style={styles.transactionTitleText}>
-										{tx.type === 'SWAP'
-											? `Swap ${tx.fromCoinSymbol} for ${tx.toCoinSymbol}`
-											: `Transfer ${tx.amount > 0 ? tx.fromCoinSymbol : tx.toCoinSymbol}`}
-									</Text>
-								}
-								description={
-									<View>
-										<Text style={styles.transactionSubtitleText}>
-											{formatDate(tx.date)} - <Text style={getStatusStyle(tx.status)}>{tx.status.toUpperCase()}</Text>
-										</Text>
-									</View>
-								}
-								left={() => (
-									<View style={styles.transactionIconContainer}>
-										<TransactionTypeIcon type={tx.type} theme={theme} />
-									</View>
-								)}
-								style={styles.transactionItem}
-								onPress={() => {
-									logger.info('Transaction item pressed', { txId: tx.id, hash: tx.transactionHash });
-									// TODO: Navigate to transaction detail screen if available
-								}}
-							/>
-						))}
-						{transactions.length > 5 && (
-							<Button
-								mode="text"
-								onPress={() => { /* TODO: Navigate to full transaction history screen */ }}
-								style={styles.viewAllButton} // Apply style to View All button
-								labelStyle={{ color: theme.colors.primary }} // Ensure text color matches theme
-							>
-								View All Transactions
-							</Button>
-						)}
-					</View>
-				)}
-			</View>
-		);
-	};
-
 	if (!wallet) {
 		return (
 			<SafeAreaView style={styles.safeArea}>
@@ -306,20 +218,9 @@ const Profile = () => {
 					{APP_ENV === 'development' && (
 						<View style={styles.debugSection}>
 							<OTAUpdater />
-							<FirebaseTest />
 							<Button
 								onPress={async () => {
-									try {
-										logger.info('🧪 Testing App Check...');
-										const success = await AppCheckTester.testAppCheckToken();
-										const tokenInfo = await AppCheckTester.getTokenInfo();
-										logger.info('App Check Test Results:', { success, tokenInfo });
-
-										// You can also test Sentry if needed
-										// Sentry.captureException(new Error('Test error'));
-									} catch (error) {
-										logger.error('App Check test failed:', error);
-									}
+									// Sentry.captureException(new Error('Test error'));
 								}}
 								style={styles.debugButton}
 							>

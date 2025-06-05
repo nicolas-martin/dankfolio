@@ -97,7 +97,7 @@ export const handleGrpcError = (error: unknown, serviceName: string, methodName:
 				code: error.code,
 				details: 'This is an authentication error. Check if your Firebase App Check token is valid.'
 			});
-			
+
 			// No special handling needed for App Check tokens as they're obtained on each request
 		}
 		throw new Error(`${error.code}: ${error.message}`);
