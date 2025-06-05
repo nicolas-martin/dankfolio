@@ -60,19 +60,6 @@ export async function initializeFirebaseServices(): Promise<void> {
 			isTokenAutoRefreshEnabled: true,
 		});
 
-
-		if (__DEV__) {
-			try {
-				const { token } = await appCheck().getToken(true);
-
-				if (token.length > 0) {
-					logger.info('✅ Firebase App Check initialized successfully');
-				}
-			} catch (error) {
-				logger.exception('failed to get token')
-			}
-		}
-
 	} catch (error) {
 		logger.error('❌ Failed to initialize Firebase App Check in production:', error);
 		logger.error('🚨 This will cause authentication failures in production!');

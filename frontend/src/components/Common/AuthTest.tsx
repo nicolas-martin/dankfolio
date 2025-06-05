@@ -12,11 +12,16 @@ export const AuthTest: React.FC = () => {
 
 	const checkAppCheckStatus = async () => {
 		try {
-			const tokenResult = await appCheck().getToken(false);
-			const hasToken = !!tokenResult?.token;
-			
-			setAppCheckToken(tokenResult?.token || null);
-			log.info('🔐 App Check status checked', { hasToken });
+			if (__DEV__) {
+				const appCheckToken = { token: "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" }
+				setAppCheckToken(appCheckToken.token || null);
+			} else {
+				const tokenResult = await appCheck().getToken(false);
+				const hasToken = !!tokenResult?.token;
+
+				setAppCheckToken(tokenResult?.token || null);
+				log.info('🔐 App Check status checked', { hasToken });
+			}
 		} catch (error) {
 			log.error('❌ Failed to check App Check status:', error);
 			setAppCheckToken(null);
@@ -26,9 +31,14 @@ export const AuthTest: React.FC = () => {
 	const refreshAppCheckToken = async () => {
 		setLoading(true);
 		try {
-			const tokenResult = await appCheck().getToken(true); // Force refresh
-			setAppCheckToken(tokenResult?.token || null);
-			log.info('🔐 App Check token refreshed successfully');
+			if (__DEV__) {
+				const tokenResult = { token: "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" }
+				setAppCheckToken(tokenResult?.token || null);
+			} else {
+				const tokenResult = await appCheck().getToken(true); // Force refresh
+				setAppCheckToken(tokenResult?.token || null);
+				log.info('🔐 App Check token refreshed successfully');
+			}
 		} catch (error) {
 			log.error('❌ Failed to refresh App Check token:', error);
 		} finally {

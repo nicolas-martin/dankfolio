@@ -247,6 +247,7 @@ func main() {
 		priceService,
 		utilitySvc,
 		appCheckClient,
+		config.Env,
 	)
 
 	slog.Debug("Debug message")
