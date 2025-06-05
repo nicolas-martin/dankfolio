@@ -13,7 +13,8 @@ export class AppCheckTester {
       logger.info('🧪 Testing Firebase App Check token generation...');
       
       // Try to get an App Check token - using modern API
-      const tokenResult = await appCheck().getToken();
+      // Pass false to prevent forcing a token refresh
+      const tokenResult = await appCheck().getToken(false);
       
       if (tokenResult && tokenResult.token && tokenResult.token.length > 0) {
         logger.info('✅ App Check token generated successfully', {
@@ -65,8 +66,8 @@ export class AppCheckTester {
    */
   static async getTokenInfo(): Promise<any> {
     try {
-      // Using modern API
-      const tokenResult = await appCheck().getToken();
+      // Using modern API - don't force refresh
+      const tokenResult = await appCheck().getToken(false);
       
       return {
         hasToken: !!tokenResult?.token,
