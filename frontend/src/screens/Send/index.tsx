@@ -71,13 +71,8 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			return;
 		}
 
-		if (tokens.length === 0) {
-			showToast({
-				type: 'error',
-				message: 'No tokens in portfolio'
-			});
-			return;
-		}
+		// Remove the toast notification for empty portfolio
+		// The visual indicator in the UI will be sufficient
 	}, [wallet, tokens, showToast]);
 
 	// Cleanup polling on unmount
@@ -243,7 +238,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const renderNoTokenState = () => (
 		<View style={styles.noWalletContainer}>
 			<View style={styles.noWalletCard}>
-				<Icon source="coins" size={48} color={theme.colors.onSurfaceVariant} />
+				<Icon source="currency-usd-off" size={64} color={theme.colors.primary} />
 				<Text style={styles.noWalletTitle}>No Tokens</Text>
 				<Text style={styles.noWalletSubtitle}>Add tokens to portfolio</Text>
 			</View>
@@ -334,7 +329,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		return renderNoWalletState();
 	}
 
-	if (!selectedToken) {
+	if (tokens.length === 0 || !selectedToken) {
 		return renderNoTokenState();
 	}
 
