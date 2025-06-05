@@ -59,7 +59,11 @@ class PerformanceMonitor {
     }
 
     logMetrics(): void {
-        console.log('[PerformanceMonitor] Current metrics:', this.metrics);
+        const formattedMetrics = {
+            ...this.metrics,
+            averageLoadTime: `${this.metrics.averageLoadTime.toFixed(2)}ms`
+        };
+        console.log('[PerformanceMonitor] Current metrics:', formattedMetrics);
     }
 
     reset(): void {
