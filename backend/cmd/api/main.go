@@ -166,7 +166,6 @@ func main() {
 		slog.Int("port", config.GRPCPort),
 		slog.Duration("newCoinsFetchInterval", config.NewCoinsFetchInterval),
 		slog.String("solanaRPCEndpoint", config.SolanaRPCEndpoint),
-		slog.String("dbURL", config.DBURL),
 		slog.Int("platformFeeBps", config.PlatformFeeBps),
 		slog.String("platformFeeAccountAddress", config.PlatformFeeAccountAddress),
 	)
