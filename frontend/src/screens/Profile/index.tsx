@@ -10,7 +10,6 @@ import { useTransactionsStore } from '@/store/transactions';
 import { Transaction } from '@/types';
 import { createStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';
-import { OTAUpdater } from '@components/OTAupdate';
 import {
 	ProfileIcon,
 	WalletIcon,
@@ -217,7 +216,6 @@ const Profile = () => {
 					{/* Debug section - development only */}
 					{APP_ENV === 'development' && (
 						<View style={styles.debugSection}>
-							<OTAUpdater />
 							<Button
 								onPress={async () => {
 									// Sentry.captureException(new Error('Test error'));
