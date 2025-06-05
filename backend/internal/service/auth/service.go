@@ -66,10 +66,20 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 		return nil, fmt.Errorf("AppCheckToken is required")
 	}
 
+	// Log token details before verification (only headers for security)
+	parts := strings.Split(req.AppCheckToken, ".")
+	if len(parts) == 3 {
+		// Only decode the header for safety, don't log the full token
+		headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
+		if err == nil {
+			slog.Debug("Verifying AppCheck token header", "header", string(headerBytes))
+		}
+	}
+
 	// Verify the App Check token
 	appCheckTokenInfo, err := s.appCheckClient.VerifyToken(req.AppCheckToken)
 	if err != nil {
-		slog.Warn("Firebase App Check token verification failed", "error", err)
+		slog.Error("Firebase App Check token verification failed", "error", err)
 		return nil, fmt.Errorf("invalid AppCheck token: %w", err)
 	}
 
@@ -87,7 +97,7 @@ func (s *Service) GenerateToken(ctx context.Context, req *dankfoliov1.GenerateTo
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.tokenExpiry)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
-			Issuer:    "dankfolio-app", // Consistent issuer for app JWTs
+			Issuer:    "dankfolio", // Consistent issuer for app JWTs
 			Subject:   deviceIDFromAppCheck,
 		},
 	}
