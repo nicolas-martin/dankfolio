@@ -86,15 +86,6 @@ const NewCoins: React.FC = () => {
 			<View style={styles.container}>
 				<View style={styles.titleContainer}>
 					<Text style={styles.title}>New Listings</Text>
-					<TouchableOpacity onPress={() => {
-						logger.log('[NewCoins] Navigate to Search with newly listed sort');
-						navigation.navigate('Search', {
-							defaultSortBy: 'jupiter_listed_at', // Matches backend expectation
-							defaultSortDesc: true
-						});
-					}}>
-						<Text style={styles.viewAllButton}>View All</Text>
-					</TouchableOpacity>
 				</View>
 				<Text style={styles.emptyText}>No new listings found at the moment.</Text>
 			</View>
@@ -107,15 +98,17 @@ const NewCoins: React.FC = () => {
 		>
 			<View style={styles.titleContainer}>
 				<Text style={styles.title}>New Listings</Text>
-				<TouchableOpacity onPress={() => {
-					logger.log('[NewCoins] Navigate to Search with newly listed sort');
-					navigation.navigate('Search', {
-						defaultSortBy: 'jupiter_listed_at', // Matches backend expectation
-						defaultSortDesc: true
-					});
-				}}>
-					<Text style={styles.viewAllButton}>View All</Text>
-				</TouchableOpacity>
+				{false && (
+					<TouchableOpacity onPress={() => {
+						logger.log('[NewCoins] Navigate to Search with newly listed sort');
+						navigation.navigate('Search', {
+							defaultSortBy: 'jupiter_listed_at', // Matches backend expectation
+							defaultSortDesc: true
+						});
+					}}>
+						<Text style={styles.viewAllButton}>View All</Text>
+					</TouchableOpacity>
+				)}
 			</View>
 			<Animated.FlatList
 				data={scrollData}
