@@ -13,6 +13,15 @@ const isDevelopment = __DEV__
 const getAppCheckConfig = () => {
 	logger.info('🔧 Getting App Check config...');
 	logger.info(`🔧 Is dev mode: ${isDevelopment ? 'true' : 'false'}`);
+	if (isDevelopment) {
+		if (FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID === "") {
+			logger.exception("missing dev firebase token for android")
+		}
+		if (FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS === "") {
+			logger.exception("missing dev firebase token for ios")
+		}
+	}
+
 
 	const config: any = {
 		android: {
@@ -36,18 +45,7 @@ let initialized = false;
 export async function initializeFirebaseServices(): Promise<void> {
 	logger.info('🔥 initializeFirebaseServices called');
 
-	// Skip Firebase App Check initialization in development mode
-	// Use __DEV__ as the reliable check for development mode
-	if (isDevelopment) {
-		logger.info('🔥 Skipping Firebase App Check initialization in development mode (backend bypasses App Check)');
-		logger.info('📝 Production will require proper Firebase App Check setup');
-		initialized = true;
-		return;
-	}
-
 	try {
-		logger.info('🔥 Initializing Firebase App Check for production...');
-
 		// Get the default Firebase app that's automatically initialized from GoogleService-Info.plist
 		const firebaseApp = getApp();
 		logger.info('✅ Firebase app loaded from native configuration (GoogleService-Info.plist)');
