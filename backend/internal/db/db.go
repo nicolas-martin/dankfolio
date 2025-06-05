@@ -66,7 +66,7 @@ const (
 type FilterOption struct {
 	Field    string         // Database column name (e.g., "name", "volume_24h")
 	Operator FilterOperator // Operator (e.g., FilterOpEqual, FilterOpGreaterThan)
-	Value    interface{}    // Value to compare against
+	Value    any            // Value to compare against
 }
 
 // ListOptions provides options for listing entities with pagination, sorting, and filtering.

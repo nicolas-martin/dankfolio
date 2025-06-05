@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	sloggorm "github.com/imdatngo/slog-gorm/v2"
 	"github.com/lib/pq"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema"
@@ -43,9 +44,11 @@ func NewStoreWithDB(database *gorm.DB) *Store {
 }
 
 // NewStore creates a new PostgreSQL store instance and connects to the database.
-func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level) (*Store, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.New(
+func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env string) (*Store, error) {
+	var glogger logger.Interface
+
+	if env == "development" {
+		glogger = logger.New(
 			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 			logger.Config{
 				SlowThreshold:             time.Second, // Slow SQL threshold
@@ -54,7 +57,13 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level) (*Stor
 				ParameterizedQueries:      true,        // Don't include params in the SQL log
 				Colorful:                  true,
 			},
-		),
+		)
+	} else {
+		glogger = sloggorm.New()
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: glogger,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
