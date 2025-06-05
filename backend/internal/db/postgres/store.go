@@ -42,13 +42,17 @@ func NewStoreWithDB(database *gorm.DB) *Store {
 
 // NewStore creates a new PostgreSQL store instance and connects to the database.
 func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env string) (*Store, error) {
-	var glogger logger.Interface
+	gc := &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent), // Default to silent logger
+	}
 
-	glogger = logger.Default
+	if env == "development" {
+		gc = &gorm.Config{
+			Logger: logger.Default,
+		}
+	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: glogger,
-	})
+	db, err := gorm.Open(postgres.Open(dsn), gc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

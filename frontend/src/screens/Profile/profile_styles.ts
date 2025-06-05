@@ -55,6 +55,35 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginTop: -2,
 	},
 
+	// Theme Toggle Section
+	themeToggleContainer: {
+		backgroundColor: theme.colors.surface,
+		borderRadius: 20,
+		padding: 20,
+		marginBottom: 24,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		shadowColor: '#000',
+		shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.1,
+		shadowRadius: 8,
+		elevation: 4,
+	},
+	themeToggleHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+	},
+	themeToggleTitle: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: theme.colors.onSurface,
+		marginLeft: 12,
+	},
+
 	// Portfolio Value Card
 	portfolioCard: {
 		backgroundColor: theme.colors.surface,

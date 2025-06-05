@@ -22,7 +22,7 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
 	}, [coin.symbol]);
 
 	const handleImageError = useCallback(() => {
-		logger.error(`[CoinCard LOG] renderCoinIcon error for ${coin.symbol}: ${coin.resolvedIconUrl}`);
+		logger.warn(`[CoinCard LOG] renderCoinIcon error for ${coin.symbol}: ${coin.resolvedIconUrl}`);
 	}, [coin.symbol]);
 
 	const renderCoinIcon = (size = 40, borderRadius = 20) => {

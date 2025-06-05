@@ -1,30 +1,34 @@
 import React, { useMemo, useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
-import Animated, {
-} from 'react-native-reanimated';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import Animated from 'react-native-reanimated';
 import { LoadingAnimation } from '../../Common/Animations';
 import { useCoinStore } from '@store/coins';
-import { useToast } from '@components/Common/Toast'; // Import useToast
+import { useToast } from '@components/Common/Toast';
 import HorizontalTickerCard from '@components/Home/HorizontalTickerCard';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
 import { createStyles } from './NewCoins.styles';
-
-// Define a navigation prop type, assuming a similar structure to HomeScreenNavigationProp
-// This might need adjustment based on where CoinCard navigates.
-// For now, let's assume it navigates to 'CoinDetail'.
+import { ThemeType } from '@utils/theme';
+import { RootStackParamList } from '@/types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/types/navigation'; // Assuming you have RootStackParamList defined
 
 // Allow navigation to Search as well for the "View All" button
 type NewCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
 
-const NewCoins: React.FC = () => {
+interface NewCoinsProps {
+	themeType?: ThemeType;
+}
+
+const NewCoins: React.FC<NewCoinsProps> = ({ themeType = 'light' }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const navigation = useNavigation<NewCoinsNavigationProp>();
+	const route = useRoute();
+
+	// Use the provided theme type or default to light
+	const currentThemeType = themeType || 'light';
 
 	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
 
@@ -51,7 +55,10 @@ const NewCoins: React.FC = () => {
 					message: 'Pressed coin from NewCoins, fetched details and navigating', // Updated message
 					data: { coinSymbol: coinDetails.symbol, coinMint: coinDetails.mintAddress },
 				});
-				navigation.navigate('CoinDetail', { coin: coinDetails });
+				navigation.navigate('CoinDetail', { 
+					coin: coinDetails,
+					themeType: currentThemeType 
+				});
 			} else {
 				// Log failure to fetch details
 				logger.warn('[NewCoins] Failed to fetch coin details with getCoinByID, not navigating', { coinSymbol: coin.symbol, coinMint: coin.mintAddress });
@@ -67,10 +74,14 @@ const NewCoins: React.FC = () => {
 	const renderItem = useCallback(({ item, index }: { item: Coin; index: number }) => {
 		return (
 			<View style={styles.cardWrapper}>
-				<HorizontalTickerCard coin={item} onPress={handleCoinPress} />
+				<HorizontalTickerCard 
+					coin={item} 
+					onPress={handleCoinPress} 
+					themeType={currentThemeType} 
+				/>
 			</View>
 		);
-	}, [styles.cardWrapper, handleCoinPress]);
+	}, [styles.cardWrapper, handleCoinPress, currentThemeType]);
 
 	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (
