@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"math"
 	"math/rand"
 	"os"
@@ -47,7 +47,7 @@ func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI
 // We need to adapt this here.
 func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFromStr, timeToStr, addressType string) (*birdeye.PriceHistory, error) {
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		log.Print("x-debug-mode: true")
+		slog.Info("x-debug-mode: true")
 		// The loadMockPriceHistory needs to be adapted if its signature or logic depends on specific string formats for time
 		// For now, assuming loadMockPriceHistory can work with address and historyType, or will be updated.
 		return s.loadMockPriceHistory(address, historyType)
@@ -108,7 +108,7 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 		// mockBirdeyeClient.On("GetCoinPrices", ctx, coinAddresses).Return(expectedPrices, nil).Once()
 		// This requires birdeye.ClientAPI to have GetCoinPrices.
 		// Let's assume for now that GetCoinPrices in debug mode should return random prices as implemented.
-		log.Print("x-debug-mode: true for GetCoinPrices, returning random prices")
+		slog.Info("x-debug-mode: true for GetCoinPrices, returning random prices")
 		mockPrices := make(map[string]float64)
 		for _, addr := range tokenAddresses {
 			mockPrices[addr] = 1.0 + rand.Float64() // Random price between 1.0 and 2.0
@@ -126,10 +126,10 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 
 func (s *Service) loadMockPriceHistory(address string, historyType string) (*birdeye.PriceHistory, error) {
 	// addressToSymbol := loadAddressToSymbol() // Removed
-	log.Printf("Looking up address: %s", address)
+	slog.Info("Looking up address", "address", address)
 	symbol, exists := addressToSymbolCache[address] // Use global cache
 	if !exists {
-		log.Printf("Address not found in addressToSymbolCache: %s", address)
+		slog.Info("Address not found in addressToSymbolCache", "address", address)
 		return s.generateRandomPriceHistory(address)
 	}
 
@@ -140,14 +140,14 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*bir
 
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Printf("failed to open mock data file %s: %s", filename, err)
+		slog.Info("Failed to open mock data file", "filename", filename, "error", err)
 		return s.generateRandomPriceHistory(address)
 	}
 	defer file.Close()
 
 	var priceHistory birdeye.PriceHistory
 	if err := json.NewDecoder(file).Decode(&priceHistory); err != nil {
-		log.Printf("failed to decode mock data: %s", err)
+		slog.Info("Failed to decode mock data", "error", err)
 		return s.generateRandomPriceHistory(address)
 	}
 
@@ -155,7 +155,7 @@ func (s *Service) loadMockPriceHistory(address string, historyType string) (*bir
 }
 
 func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHistory, error) {
-	log.Printf("🎲 Generating random price history for unknown token: %s", address)
+	slog.Info("🎲 Generating random price history for unknown token", "address", address)
 	// Default to 100 points for smoother chart
 	numPoints := 100
 	volatility := 0.03                // Base volatility for normal movements
@@ -195,8 +195,10 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 		})
 	}
 
-	log.Printf("🎲 Generated %d random price points for %s with base price %.6f",
-		len(items), address, basePrice)
+	slog.Info("🎲 Generated random price points",
+		"count", len(items),
+		"address", address,
+		"basePrice", basePrice)
 
 	return &birdeye.PriceHistory{
 		Data: birdeye.PriceHistoryData{
@@ -213,12 +215,12 @@ func (s *Service) populateAddressToSymbolCache(ctx context.Context) {
 		// Fetch from s.store.Coins()
 		coins, err := s.store.Coins().List(ctx)
 		if err != nil {
-			log.Printf("[ERROR] Failed to list coins from store: %v", err)
+			slog.Error("Failed to list coins from store", "error", err)
 		} else {
 			for _, coin := range coins {
 				if coin.MintAddress != "" && coin.Symbol != "" {
 					addressToSymbolCache[coin.MintAddress] = coin.Symbol
-					log.Printf("[DEBUG] Added to cache from coins: %s -> %s", coin.MintAddress, coin.Symbol)
+					slog.Debug("Added to cache from coins", "mintAddress", coin.MintAddress, "symbol", coin.Symbol)
 				}
 			}
 		}
@@ -226,13 +228,13 @@ func (s *Service) populateAddressToSymbolCache(ctx context.Context) {
 		// Fetch from s.store.RawCoins()
 		rawCoins, err := s.store.RawCoins().List(ctx)
 		if err != nil {
-			log.Printf("[ERROR] Failed to list raw coins from store: %v", err)
+			slog.Error("Failed to list raw coins from store", "error", err)
 		} else {
 			for _, rawCoin := range rawCoins {
 				if rawCoin.MintAddress != "" && rawCoin.Symbol != "" {
 					if _, exists := addressToSymbolCache[rawCoin.MintAddress]; !exists {
 						addressToSymbolCache[rawCoin.MintAddress] = rawCoin.Symbol
-						log.Printf("[DEBUG] Added to cache from raw coins: %s -> %s", rawCoin.MintAddress, rawCoin.Symbol)
+						slog.Debug("Added to cache from raw coins", "mintAddress", rawCoin.MintAddress, "symbol", rawCoin.Symbol)
 					}
 				}
 			}
@@ -240,16 +242,16 @@ func (s *Service) populateAddressToSymbolCache(ctx context.Context) {
 
 		// Define and iterate through criticalTokens
 		criticalTokens := map[string]string{
-			"So11111111111111111111111111111111111111112": "SOL",
+			"So11111111111111111111111111111111111111112":  "SOL",
 			"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "USDC",
 		}
 		for address, symbol := range criticalTokens {
 			if _, exists := addressToSymbolCache[address]; !exists {
 				addressToSymbolCache[address] = symbol
-				log.Printf("[DEBUG] Added to cache from critical tokens: %s -> %s", address, symbol)
+				slog.Debug("Added to cache from critical tokens", "address", address, "symbol", symbol)
 			}
 		}
 
-		log.Printf("[INFO] addressToSymbolCache populated with %d entries", len(addressToSymbolCache))
+		slog.Info("addressToSymbolCache populated", "entryCount", len(addressToSymbolCache))
 	})
 }
