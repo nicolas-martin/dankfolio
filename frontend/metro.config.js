@@ -3,9 +3,6 @@ const {
 	getSentryExpoConfig
 } = require("@sentry/react-native/metro");
 
-const withFixedFirebaseAuth = require('./plugins/with-fixed-firebase-auth');
-
-
 /** @type {import('expo/metro-config').MetroConfig} */
 // Temporarily using standard Expo config instead of Sentry config
 // const config = getDefaultConfig(__dirname, {
@@ -32,6 +29,3 @@ config.resolver.blockList = [
 
 // Wrap the config
 module.exports = wrapWithReanimatedMetroConfig(config);
-
-// Note: The Firebase plugin is meant for app.config.js, not metro.config.js
-// It's been removed from here as it's causing errors
