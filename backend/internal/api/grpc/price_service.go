@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"maps"
 
 	"connectrpc.com/connect"
@@ -87,6 +88,13 @@ func (s *priceServiceHandler) GetPriceHistory(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time_to is required"))
 	}
 
+	slog.Debug("Fetching price history",
+		"address", req.Msg.Address,
+		"type", historyTypeString,
+		"from", req.Msg.TimeFrom.AsTime(),
+		"to", req.Msg.TimeTo.AsTime(),
+		"address_type", addressType)
+
 	// Get price history from service
 	priceHistory, err := s.priceService.GetPriceHistory(
 		ctx,
@@ -97,6 +105,9 @@ func (s *priceServiceHandler) GetPriceHistory(
 		addressType,
 	)
 	if err != nil {
+		slog.Error("Failed to get price history",
+			"address", req.Msg.Address,
+			"error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get price history: %w", err))
 	}
 
@@ -108,6 +119,10 @@ func (s *priceServiceHandler) GetPriceHistory(
 			Value:    item.Value,
 		}
 	}
+
+	slog.Debug("Price history fetched successfully",
+		"address", req.Msg.Address,
+		"items_count", len(pbItems))
 
 	res := connect.NewResponse(&pb.GetPriceHistoryResponse{
 		Data: &pb.PriceHistoryData{
@@ -128,10 +143,14 @@ func (s *priceServiceHandler) GetCoinPrices(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no coin IDs provided"))
 	}
 
+	slog.Debug("Getting prices for multiple coins", "count", len(coinIDs))
 	prices, err := s.priceService.GetCoinPrices(ctx, coinIDs)
 	if err != nil {
+		slog.Error("Failed to get coin prices", "error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get coin prices: %w", err))
 	}
+
+	slog.Debug("Retrieved prices for coins", "count", len(prices))
 
 	// Convert map to proto response
 	priceMap := make(map[string]float64)

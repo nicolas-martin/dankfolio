@@ -43,14 +43,21 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client) *authn.Middleware {
 			if payloadBytes, payloadErr := base64.RawURLEncoding.DecodeString(parts[1]); payloadErr == nil {
 				var payloadMap map[string]any
 				if jsonErr := json.Unmarshal(payloadBytes, &payloadMap); jsonErr == nil {
+					// Collect available token fields for logging
+					fields := []any{"App Check token fields"}
 					if aud, ok := payloadMap["aud"]; ok {
-						slog.Info("App Check token audience", "aud", aud)
+						fields = append(fields, "aud", aud)
 					}
 					if iss, ok := payloadMap["iss"]; ok {
-						slog.Debug("App Check token issuer", "iss", iss)
+						fields = append(fields, "iss", iss)
 					}
 					if sub, ok := payloadMap["sub"]; ok {
-						slog.Debug("App Check token subject", "sub", sub)
+						fields = append(fields, "sub", sub)
+					}
+
+					// Log non-empty fields
+					if len(fields) > 1 {
+						slog.Info(fields[0].(string), fields[1:]...)
 					}
 				} else {
 					slog.Warn("Failed to parse App Check token payload", "error", jsonErr)
@@ -80,7 +87,7 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client) *authn.Middleware {
 			Subject: appCheckTokenInfo.Subject,
 		}
 
-		slog.Info("Request authenticated via App Check",
+		slog.Debug("Request authenticated via App Check",
 			"subject", user.Subject,
 			"app_id", user.AppID,
 			"remote_addr", req.RemoteAddr,

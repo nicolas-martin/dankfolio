@@ -142,7 +142,7 @@ func loadConfig() (*Config, error) {
 }
 
 func main() {
-	logLevel := slog.LevelDebug
+	logLevel := slog.LevelInfo
 	var handler slog.Handler
 
 	config, err := loadConfig()
@@ -152,7 +152,7 @@ func main() {
 	}
 
 	if config.Env != "development" {
-		logLevel = slog.LevelInfo
+		logLevel = slog.LevelDebug
 		handler = slog.NewJSONHandler(os.Stdout, nil)
 	} else {
 		handler = logger.NewColorHandler(logLevel, os.Stdout, os.Stderr)
@@ -165,6 +165,10 @@ func main() {
 		slog.String("appEnv", config.Env),
 		slog.Int("port", config.GRPCPort),
 		slog.Duration("newCoinsFetchInterval", config.NewCoinsFetchInterval),
+		slog.String("solanaRPCEndpoint", config.SolanaRPCEndpoint),
+		slog.String("dbURL", config.DBURL),
+		slog.Int("platformFeeBps", config.PlatformFeeBps),
+		slog.String("platformFeeAccountAddress", config.PlatformFeeAccountAddress),
 	)
 
 	ctx := context.Background()

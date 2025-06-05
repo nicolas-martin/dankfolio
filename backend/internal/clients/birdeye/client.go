@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -74,8 +74,9 @@ func (c *Client) GetPriceHistory(ctx context.Context, params PriceHistoryParams)
 	req.Header.Set("X-API-KEY", c.apiKey)
 	req.Header.Set("x-chain", "solana")
 
-	log.Printf("BirdEye Request URL: %s", req.URL.String())
-	log.Printf("BirdEye Request Headers: %v", req.Header)
+	slog.Debug("BirdEye request details",
+		"url", req.URL.String(),
+		"headers", fmt.Sprintf("%v", req.Header))
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

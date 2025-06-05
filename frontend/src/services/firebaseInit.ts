@@ -6,8 +6,8 @@ import {
 	FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
 } from '@env';
 
-// const isDevelopment = __DEV__
-const isDevelopment = false
+const isDevelopment = __DEV__
+// const isDevelopment = false
 
 // Environment-aware App Check configuration
 const getAppCheckConfig = () => {

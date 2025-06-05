@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -66,7 +66,7 @@ func (c *Client) GetCoinPrices(ctx context.Context, tokenAddresses []string) (ma
 	addressList := strings.Join(tokenAddresses, ",")
 	url := fmt.Sprintf("%s%s?ids=%s", c.baseURL, priceEndpoint, url.QueryEscape(addressList)) // Inline URL formatting
 
-	log.Printf("🔄 Fetching token prices from Jupiter: %s", url)
+	slog.Debug("Fetching token prices from Jupiter", "url", url)
 
 	var result PriceResponse
 	if err := c.GetRequest(ctx, url, &result); err != nil { // Use GetRequest
@@ -77,11 +77,11 @@ func (c *Client) GetCoinPrices(ctx context.Context, tokenAddresses []string) (ma
 	for addr, data := range result.Data {
 		price, err := strconv.ParseFloat(data.Price, 64)
 		if err != nil {
-			log.Printf("WARN: Failed to parse price for %s: %v", addr, err)
+			slog.Warn("Failed to parse price", "address", addr, "error", err)
 			continue
 		}
 		prices[addr] = price
-		log.Printf("💰 Coin price from Jupiter: %s = %f", addr, price)
+		slog.Debug("Coin price from Jupiter", "address", addr, "price", price)
 	}
 
 	return prices, nil
@@ -121,14 +121,14 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 	// Unmarshal to the proper struct
 	var quoteResp QuoteResponse
 	if err := json.Unmarshal(rawResponse, &quoteResp); err != nil {
-		log.Printf("🔄 RAW Jupiter Quote Response: %s", rawResponse)
+		slog.Error("Failed to unmarshal quote response", "raw_response", string(rawResponse))
 		return nil, fmt.Errorf("failed to unmarshal quote response: %w", err)
 	}
 
 	// Store the raw JSON payload in the struct for later use
 	quoteResp.RawPayload = rawResponse
 
-	log.Printf("***************🔄 Raw Jupiter quote payload: %s", string(quoteResp.RawPayload))
+	slog.Debug("Raw Jupiter quote payload", "payload", string(quoteResp.RawPayload))
 
 	return &quoteResp, nil
 }
@@ -136,7 +136,7 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 // GetAllCoins fetches all tokens from Jupiter API
 func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 	url := fmt.Sprintf("%s%s", c.baseURL, tokenListEndpoint) // Inline URL formatting
-	log.Printf("🔄 Fetching all tokens from Jupiter: %s", url)
+	slog.Debug("Fetching all tokens from Jupiter", "url", url)
 
 	// Store original timeout and set a longer one for this request
 	originalTimeout := c.httpClient.Timeout
@@ -173,7 +173,7 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 		fullURL = baseURL + "?" + queryParams.Encode()
 	}
 
-	log.Printf("🔄 Fetching new tokens from Jupiter: %s", fullURL)
+	slog.Debug("Fetching new tokens from Jupiter", "url", fullURL)
 
 	// Use NewTokenInfo struct for the /tokens/v1/new endpoint
 	var newTokenResp []NewTokenInfo
@@ -195,13 +195,18 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 		if newToken.CreatedAt != "" {
 			unixTimestamp, err := strconv.ParseInt(newToken.CreatedAt, 10, 64)
 			if err != nil {
-				log.Printf("⚠️ Failed to parse Jupiter CreatedAt timestamp for %s: %v, using current time as fallback", newToken.Mint, err)
+				slog.Warn("Failed to parse Jupiter CreatedAt timestamp",
+					"mint", newToken.Mint,
+					"error", err,
+					"fallback", "using current time")
 				createdAtTime = time.Now() // Use current time as fallback since field is now mandatory
 			} else {
 				createdAtTime = time.Unix(unixTimestamp, 0)
 			}
 		} else {
-			log.Printf("⚠️ No CreatedAt timestamp provided by Jupiter for %s, using current time as fallback", newToken.Mint)
+			slog.Warn("No CreatedAt timestamp provided by Jupiter",
+				"mint", newToken.Mint,
+				"fallback", "using current time")
 			createdAtTime = time.Now() // Use current time as fallback since field is now mandatory
 		}
 		coins[i] = &NewTokenInfo{
@@ -223,8 +228,8 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter
 func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey, feeAccount string) (string, error) {
-	// 🪵 LOG: Print the raw quoteResp for debugging
-	log.Printf("[JUPITER] quoteResp (raw): %s", string(quoteResp))
+	// Log the raw quoteResp for debugging
+	slog.Debug("Jupiter quote response (raw)", "payload", string(quoteResp))
 
 	// Unmarshal quoteResp to a map so it is sent as a JSON object, not a string
 	var quoteObj map[string]any
@@ -252,9 +257,8 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 
 	url := fmt.Sprintf("%s%s", c.baseURL, swapEndpoint) // Inline URL formatting
 
-	// 🪵 LOG: Print the full outgoing payload for debugging
-	// Note: PostRequest handles marshaling, so we log the map before marshaling
-	log.Printf("[JUPITER] Outgoing swap payload (map), url %s: %+v", url, swapReqBody)
+	// Log the full outgoing payload for debugging
+	slog.Debug("Outgoing swap payload", "url", url, "payload", fmt.Sprintf("%+v", swapReqBody))
 
 	var swapResp struct {
 		SwapTransaction string `json:"swapTransaction"`
@@ -304,7 +308,10 @@ func (c *Client) GetRequest(ctx context.Context, url string, target any) error {
 
 	if target != nil { // Only attempt unmarshalling if target is provided
 		if err := json.Unmarshal(respBody, target); err != nil {
-			log.Printf("Failed to unmarshal response from %s: %v, raw body: %s", url, err, string(respBody)) // Log raw body on unmarshal error
+			slog.Error("Failed to unmarshal response",
+				"url", url,
+				"error", err,
+				"raw_body", string(respBody)) // Log raw body on unmarshal error
 			return fmt.Errorf("failed to unmarshal response from %s: %w", url, err)
 		}
 	}
@@ -350,7 +357,10 @@ func (c *Client) PostRequest(ctx context.Context, url string, requestBody any, t
 
 	if target != nil { // Only attempt unmarshalling if target is provided
 		if err := json.Unmarshal(respBody, target); err != nil {
-			log.Printf("Failed to unmarshal response from %s: %v, raw body: %s", url, err, string(respBody)) // Log raw body on unmarshal error
+			slog.Error("Failed to unmarshal response",
+				"url", url,
+				"error", err,
+				"raw_body", string(respBody)) // Log raw body on unmarshal error
 			return fmt.Errorf("failed to unmarshal response from %s: %w", url, err)
 		}
 	}
