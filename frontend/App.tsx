@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
+import { env } from './src/utils/env'; // Import our new environment utility
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -43,7 +44,7 @@ import 'react-native-gesture-handler';
 import './src/utils/polyfills';
 import React, { useEffect, useCallback, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { configureReanimatedLogger } from 'react-native-reanimated';
@@ -65,7 +66,11 @@ import { useThemeStore } from '@/store/theme';
 console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
 console.log('🔍 process.env.NODE_ENV:', process.env.NODE_ENV);
 console.log('🔍 __DEV__:', __DEV__);
-
+console.log('🔍 Environment via Expo Constants:', env);
+console.log('🔍 APP_ENV:', env.appEnv);
+console.log('🔍 API_URL:', env.apiUrl);
+console.log('🔍 SOLANA_RPC_ENDPOINT:', env.solanaRpcEndpoint);
+console.log('🔍 DEBUG_MODE:', env.debugMode);
 console.log('🔍 === END ENVIRONMENT VARIABLES DEBUG ===');
 
 // Keep the splash screen visible while we fetch resources

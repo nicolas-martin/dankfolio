@@ -4,9 +4,9 @@ import { Button, Card, Text, Chip } from 'react-native-paper';
 import appCheck from '@react-native-firebase/app-check';
 import { logger as log } from '@/utils/logger';
 import { grpcApi } from '@/services/grpcApi';
-import { APP_ENV } from '@env';
+import { env } from '@utils/env';
 
-const isDevelopmentOrSimulator = __DEV__ || APP_ENV === 'local' || APP_ENV === 'production-simulator';
+const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
 export const AuthTest: React.FC = () => {
 	const [appCheckToken, setAppCheckToken] = useState<string | null>(null);
 	const [testResult, setTestResult] = useState<string | null>(null);

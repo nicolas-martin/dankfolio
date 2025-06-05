@@ -2,11 +2,11 @@ import { ConnectError } from '@connectrpc/connect';
 import { logger as log } from '@/utils/logger'; // Import the new logger
 import { Coin as FrontendCoin } from '@/types';
 import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
-import { DEBUG_MODE } from '@env';
+import { env } from '@utils/env';
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 
 
-const IS_DEBUG_MODE = DEBUG_MODE === 'true';
+const IS_DEBUG_MODE = env.debugMode;
 
 
 // Helper to map gRPC model.Coin to FrontendCoin

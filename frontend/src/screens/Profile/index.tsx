@@ -16,7 +16,7 @@ import {
 	SendIcon,
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
-import { APP_ENV } from '@env';
+import { env } from '@utils/env';
 import { useThemeStore } from '@/store/theme';
 import { RootStackParamList } from '@/types/navigation';
 
@@ -237,7 +237,7 @@ const Profile = () => {
 					</View>
 
 					{/* Debug section - development only */}
-					{APP_ENV === 'development' && (
+					{env.appEnv === 'development' && (
 						<Text >
 							Test
 						</Text>

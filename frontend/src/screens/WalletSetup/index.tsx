@@ -6,14 +6,14 @@ import { storeCredentials, base64ToBase58PrivateKey } from './scripts';
 import { WalletSetupScreenProps } from './types';
 import { Keypair } from '@solana/web3.js';
 import { useToast } from '@/components/Common/Toast';
-import { DEBUG_MODE, TEST_PRIVATE_KEY } from '@env';
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
 import { usePortfolioStore } from '@store/portfolio';
 import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, TERMS_TEXT, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
+import { env } from '@utils/env';
 
-const IS_DEBUG_MODE = DEBUG_MODE === 'true';
+const IS_DEBUG_MODE = env.debugMode;
 
 const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const theme = useTheme();
@@ -43,12 +43,12 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const loadDebugWallet = async () => {
 		try {
 			logger.log('Attempting to load debug wallet...');
-			if (!TEST_PRIVATE_KEY) {
+			if (!env.testPrivateKey) {
 				throw new Error('TEST_PRIVATE_KEY not found in environment');
 			}
 
 			logger.log('Decoded TEST_PRIVATE_KEY as Base64');
-			const base58PrivateKey = base64ToBase58PrivateKey(TEST_PRIVATE_KEY);
+			const base58PrivateKey = base64ToBase58PrivateKey(env.testPrivateKey);
 
 			// Store the credentials
 			await storeCredentials(base58PrivateKey, 'TEST_MNEMONIC'); // Empty mnemonic for debug wallet

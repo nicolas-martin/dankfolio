@@ -1,4 +1,3 @@
-import { REACT_APP_API_URL } from '@env';
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { createClient } from "@connectrpc/connect";
 import { WalletService } from "@/gen/dankfolio/v1/wallet_pb";
@@ -9,14 +8,14 @@ import { UtilityService } from "@/gen/dankfolio/v1/utility_pb";
 import { logger as log } from '@/utils/logger';
 import type { Interceptor } from "@connectrpc/connect";
 import appCheck from '@react-native-firebase/app-check';
-import { APP_ENV } from '@env';
+import { env } from '@utils/env';
 
 // Log the environment variable for debugging
-log.log('🔧 REACT_APP_API_URL from environment:', REACT_APP_API_URL);
-const isDevelopmentOrSimulator = __DEV__ || APP_ENV === 'local' || APP_ENV === 'production-simulator';
+log.log('🔧 API_URL from environment:', env.apiUrl);
+const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
 
-if (!REACT_APP_API_URL) {
-	const errorMsg = 'REACT_APP_API_URL environment variable is required but not set. Please check your .env configuration.';
+if (!env.apiUrl) {
+	const errorMsg = 'API_URL environment variable is required but not set. Please check your environment configuration.';
 	log.error('❌ Environment Error:', errorMsg);
 	throw new Error(errorMsg);
 }
@@ -81,7 +80,7 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 
 // Main transport with auth interceptor for authenticated requests
 const transport = createConnectTransport({
-	baseUrl: REACT_APP_API_URL,
+	baseUrl: env.apiUrl,
 	interceptors: [authInterceptor],
 });
 
