@@ -19,12 +19,14 @@ type AppCheckAuthenticatedUser struct {
 }
 
 // AppCheckMiddleware creates authentication middleware using Firebase App Check directly
-func AppCheckMiddleware(appCheckClient *appcheck.Client) *authn.Middleware {
+func AppCheckMiddleware(appCheckClient *appcheck.Client, env string) *authn.Middleware {
 	return authn.NewMiddleware(func(ctx context.Context, req *http.Request) (any, error) {
-		return &AppCheckAuthenticatedUser{
-			AppID:   "test",
-			Subject: "test-subject",
-		}, nil
+		if env == "development" {
+			return &AppCheckAuthenticatedUser{
+				AppID:   "test",
+				Subject: "test-subject",
+			}, nil
+		}
 		// Extract the Firebase App Check token from the X-Firebase-AppCheck header
 		appCheckToken := req.Header.Get("X-Firebase-AppCheck")
 		if appCheckToken == "" {
