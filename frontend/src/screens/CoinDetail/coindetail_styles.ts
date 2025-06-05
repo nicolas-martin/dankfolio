@@ -206,6 +206,11 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	tradeButton: {
 		borderRadius: 12,
 		paddingVertical: 4,
+		shadowColor: '#00FF9F',
+		shadowOffset: { width: 0, height: 0 },
+		shadowOpacity: 0.8,
+		shadowRadius: 8,
+		elevation: 10,
 	},
 
 	// Loading States
