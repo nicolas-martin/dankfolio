@@ -23,7 +23,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		width: 24,
 		height: 24,
 		borderRadius: 12,
-		backgroundColor: '#E3F2FD',
+		backgroundColor: theme.colors.tertiaryContainer,
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
@@ -85,7 +85,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		width: 24,
 		height: 24,
 		borderRadius: 12,
-		backgroundColor: '#F3E5F5',
+		backgroundColor: theme.colors.secondaryContainer,
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
@@ -120,7 +120,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		width: 24,
 		height: 24,
 		borderRadius: 12,
-		backgroundColor: '#E8F5E8',
+		backgroundColor: theme.colors.tertiaryContainer,
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
@@ -205,10 +205,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontSize: 18,
 		fontWeight: 'bold',
 		marginBottom: 8,
+		color: theme.colors.onSurface,
 	},
 	sectionDescription: {
 		fontSize: 16,
 		marginBottom: 16,
+		color: theme.colors.onSurfaceVariant,
 	},
 	detailRow: {
 		flexDirection: 'row',
@@ -217,12 +219,15 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	detailLabel: {
 		fontSize: 16,
+		color: theme.colors.onSurfaceVariant,
 	},
 	detailValue: {
 		fontSize: 16,
+		color: theme.colors.onSurface,
 	},
 	tagsLabel: {
 		marginBottom: 8,
+		color: theme.colors.onSurfaceVariant,
 	},
 	tagsInnerContainer: {
 		flexDirection: 'row',
@@ -231,5 +236,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	tagText: {
 		fontSize: 14,
+		color: theme.colors.onSurface,
 	},
 });

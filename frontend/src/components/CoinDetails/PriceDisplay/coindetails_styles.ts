@@ -19,6 +19,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginLeft: 12,
 		fontSize: 20,
 		fontWeight: '600',
+		color: theme.colors.onSurface,
 	},
 	addressRow: {
 		flexDirection: 'row',
@@ -35,6 +36,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontSize: 32,
 		fontWeight: '700',
 		letterSpacing: -0.5,
+		color: theme.colors.onSurface,
 	},
 	changeRow: {
 		flexDirection: 'row',
@@ -46,10 +48,10 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '600',
 	},
 	changePositive: {
-		color: '#2E7D32',
+		color: theme.colors.tertiary,
 	},
 	changeNegative: {
-		color: '#D32F2F',
+		color: theme.colors.error,
 	},
 	periodText: {
 		fontSize: 14,
