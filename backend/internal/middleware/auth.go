@@ -21,10 +21,12 @@ type AppCheckAuthenticatedUser struct {
 // AppCheckMiddleware creates authentication middleware using Firebase App Check directly
 func AppCheckMiddleware(appCheckClient *appcheck.Client, env string) *authn.Middleware {
 	return authn.NewMiddleware(func(ctx context.Context, req *http.Request) (any, error) {
-		if env == "development" {
+		// Bypass App Check for development, local, and production-simulator environments
+		if env == "development" || env == "local" || env == "production-simulator" { // <<< Updated condition
+			slog.Info("Bypassing App Check verification due to environment setting", "env", env) // Optional: Add a log
 			return &AppCheckAuthenticatedUser{
-				AppID:   "test",
-				Subject: "test-subject",
+				AppID:   "test-" + env, // Optional: Make dummy AppID environment-specific for clarity
+				Subject: "test-subject-" + env, // Optional: Make dummy Subject environment-specific for clarity
 			}, nil
 		}
 		// Extract the Firebase App Check token from the X-Firebase-AppCheck header
