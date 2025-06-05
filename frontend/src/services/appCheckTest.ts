@@ -1,5 +1,4 @@
-import { getToken as getAppCheckTokenFirebase } from '@react-native-firebase/app-check';
-import { getAppCheckInstance } from './firebaseInit';
+import appCheck from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
 
 /**
@@ -13,14 +12,8 @@ export class AppCheckTester {
     try {
       logger.info('🧪 Testing Firebase App Check token generation...');
       
-      const appCheck = getAppCheckInstance();
-      if (!appCheck) {
-        logger.error('❌ App Check instance not available');
-        return false;
-      }
-
-      // Try to get an App Check token
-      const tokenResult = await getAppCheckTokenFirebase(appCheck, false);
+      // Try to get an App Check token - using modern API
+      const tokenResult = await appCheck().getToken();
       
       if (tokenResult && tokenResult.token && tokenResult.token.length > 0) {
         logger.info('✅ App Check token generated successfully', {
@@ -72,12 +65,8 @@ export class AppCheckTester {
    */
   static async getTokenInfo(): Promise<any> {
     try {
-      const appCheck = getAppCheckInstance();
-      if (!appCheck) {
-        return { error: 'App Check not initialized' };
-      }
-
-      const tokenResult = await getAppCheckTokenFirebase(appCheck, false);
+      // Using modern API
+      const tokenResult = await appCheck().getToken();
       
       return {
         hasToken: !!tokenResult?.token,
