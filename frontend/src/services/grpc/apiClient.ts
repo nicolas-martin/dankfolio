@@ -9,9 +9,11 @@ import { UtilityService } from "@/gen/dankfolio/v1/utility_pb";
 import { logger as log } from '@/utils/logger';
 import type { Interceptor } from "@connectrpc/connect";
 import appCheck from '@react-native-firebase/app-check';
+import { APP_ENV } from '@env';
 
 // Log the environment variable for debugging
 log.log('🔧 REACT_APP_API_URL from environment:', REACT_APP_API_URL);
+const isDevelopmentOrSimulator = __DEV__ || APP_ENV === 'local' || APP_ENV === 'production-simulator';
 
 if (!REACT_APP_API_URL) {
 	const errorMsg = 'REACT_APP_API_URL environment variable is required but not set. Please check your .env configuration.';
@@ -23,7 +25,7 @@ if (!REACT_APP_API_URL) {
 const authInterceptor: Interceptor = (next) => async (req) => {
 	try {
 		// Instead of getting JWT token, get the Firebase App Check token directly
-		if (__DEV__) {
+		if (isDevelopmentOrSimulator) {
 			const appCheckToken = { token: "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" }
 			req.header.set('X-Firebase-AppCheck', appCheckToken.token);
 			// skip validation
