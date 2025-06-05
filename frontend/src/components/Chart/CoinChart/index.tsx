@@ -28,7 +28,7 @@ import {
 	Text as SkiaText,
 	useFont as useSkiaFont,
 } from '@shopify/react-native-skia';
-import { useTheme, Text } from 'react-native-paper';
+import { useTheme, Text, ActivityIndicator } from 'react-native-paper';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
@@ -240,7 +240,7 @@ export default function CoinChart({
 	if (loading || !processedChartData.length) {
 		return (
 			<View style={styles.loadingContainer}>
-				<Text testID="loading-text">Loading Chart…</Text>
+				<ActivityIndicator animating={true} size="large" testID="loading-indicator" />
 			</View>
 		);
 	}
@@ -332,4 +332,5 @@ export default function CoinChart({
 		</ChartWrapper>
 	);
 }
+
 
