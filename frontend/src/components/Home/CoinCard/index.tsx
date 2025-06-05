@@ -9,10 +9,8 @@ import { logger } from '@/utils/logger';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
 	const theme = useTheme();
-	// Pass isHorizontal to createStyles so it can adapt styles
 	const styles = createStyles(theme, isHorizontal);
 
-	// Memoize the press handler to prevent unnecessary re-renders
 	const handlePress = useCallback(() => {
 		logger.info(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.mintAddress);
 		onPress(coin);
