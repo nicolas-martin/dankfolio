@@ -17,7 +17,18 @@ function logToConsole(level: LogLevel, ...args: any[]) {
 }
 
 function captureSentry(level: LogLevel, args: any[]) {
-	const msg = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+	const msg = args.map(a => {
+		if (typeof a === 'string') {
+			return a;
+		}
+		// Use JSON.stringify with a replacer for BigInt
+		return JSON.stringify(a, (key, value) => {
+			if (typeof value === 'bigint') {
+				return value.toString(); // Convert BigInt to string
+			}
+			return value; // Return other values unchanged
+		});
+	}).join(' ');
 
 	if (level === 'error') {
 		Sentry.captureMessage(msg, 'error');
@@ -76,4 +87,5 @@ export const logger = {
 		}
 	},
 };
+
 

@@ -284,25 +284,6 @@ export const grpcApi: grpcModel.API = {
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Add detailed logging for newly listed coins search
-			if (params.sortBy === 'jupiter_listed_at') {
-				logger.log('🔍 [grpcApi] Raw gRPC response for newly listed coins search:', {
-					totalCoins: response.coins.length,
-					searchParams: params,
-					rawCoins: response.coins.map(coin => ({
-						symbol: coin.symbol,
-						mintAddress: coin.mintAddress,
-						jupiterListedAt: coin.jupiterListedAt ? {
-							seconds: coin.jupiterListedAt.seconds,
-							nanos: coin.jupiterListedAt.nanos,
-							asDate: new Date(Number(coin.jupiterListedAt.seconds) * 1000)
-						} : null,
-						price: coin.price,
-						dailyVolume: coin.dailyVolume
-					}))
-				});
-			}
-
 			return {
 				coins: response.coins.map(mapGrpcCoinToFrontendCoin)
 			};

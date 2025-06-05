@@ -43,9 +43,27 @@ export const getRequestHeaders = () => {
 
 // Helper function to safely serialize objects with BigInt values
 const safeStringify = (obj: any, indent = 2): string => {
-	return JSON.stringify(obj, (_, value) =>
-		typeof value === 'bigint' ? value.toString() + 'n' : value
-		, indent);
+	try {
+		return JSON.stringify(obj, (key, value) => {
+			// Handle BigInt values
+			if (typeof value === 'bigint') {
+				return value.toString() + 'n';
+			}
+			
+			// Handle objects that might contain BigInt values
+			if (value && typeof value === 'object' && value.seconds && typeof value.seconds === 'bigint') {
+				return {
+					...value,
+					seconds: value.seconds.toString() + 'n'
+				};
+			}
+			
+			return value;
+		}, indent);
+	} catch (error) {
+		log.error('❌ Error in safeStringify:', error);
+		return `[Error serializing object: ${(error as Error).message}]`;
+	}
 };
 
 export const logRequest = (serviceName: string, methodName: string, params: any): void => {
@@ -116,9 +134,17 @@ export function timestampToDate(timestamp: Timestamp | undefined): Date | undefi
 
 	try {
 		// Handle BigInt if present
-		const seconds = typeof timestamp.seconds === 'bigint'
-			? Number(timestamp.seconds)
-			: Number(timestamp.seconds);
+		let seconds: number;
+		
+		if (typeof timestamp.seconds === 'bigint') {
+			// Convert BigInt to string first, then to Number to avoid precision issues
+			seconds = Number(timestamp.seconds.toString());
+		} else if (timestamp.seconds === undefined || timestamp.seconds === null) {
+			log.warn('⚠️ Timestamp seconds is undefined or null');
+			return undefined;
+		} else {
+			seconds = Number(timestamp.seconds);
+		}
 
 		const nanos = timestamp.nanos || 0;
 		const milliseconds = seconds * 1000 + nanos / 1000000;
@@ -126,6 +152,12 @@ export function timestampToDate(timestamp: Timestamp | undefined): Date | undefi
 		return new Date(milliseconds);
 	} catch (error) {
 		log.error('❌ Error converting timestamp:', error);
+		log.error('❌ Problematic timestamp value:', {
+			secondsType: timestamp.seconds ? typeof timestamp.seconds : 'undefined',
+			secondsValue: timestamp.seconds ? 
+				(typeof timestamp.seconds === 'bigint' ? timestamp.seconds.toString() : timestamp.seconds) : 'undefined',
+			nanosValue: timestamp.nanos
+		});
 		return undefined;
 	}
 }
