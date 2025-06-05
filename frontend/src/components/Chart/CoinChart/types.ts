@@ -1,4 +1,5 @@
 import { PriceData } from '@/types';
+import { SharedValue } from 'react-native-reanimated';
 
 export interface CoinChartProps {
 	data: PriceData[]; // Reverted: no longer optional
@@ -20,4 +21,18 @@ export interface ChartBounds {
 	right: number;
 	top: number;
 	bottom: number;
+}
+
+export interface AreaProps {
+	points: any;
+	y0: number;
+	color: string;
+	opacity?: number;
+	gradientColors?: string[];
+}
+
+export interface PulsatingDotProps {
+	position: { x: number, y: number };
+	radius: SharedValue<number>;
+	color: string;
 } 
