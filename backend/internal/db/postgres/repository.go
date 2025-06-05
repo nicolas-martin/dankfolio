@@ -143,8 +143,8 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 	var s S
 	var conflictColumns []clause.Column
 
-	switch any(s).(type) {
-	case schema.Coin:
+	switch any(&s).(type) {
+	case *schema.Coin:
 		conflictColumns = []clause.Column{{Name: "mint_address"}}
 	default:
 		conflictColumns = []clause.Column{{Name: s.GetID()}}
