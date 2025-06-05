@@ -201,7 +201,7 @@ func main() {
 
 	offchainClient := offchain.NewClient(httpClient)
 
-	store, err := postgres.NewStore(config.DBURL, true, logLevel) // Pass logLevel
+	store, err := postgres.NewStore(config.DBURL, true, logLevel, config.Env) // Pass logLevel
 	if err != nil {
 		slog.Error("Failed to connect to database", slog.Any("error", err))
 		os.Exit(1)

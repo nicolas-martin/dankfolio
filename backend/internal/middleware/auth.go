@@ -24,7 +24,7 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client) *authn.Middleware {
 		// Extract the Firebase App Check token from the X-Firebase-AppCheck header
 		appCheckToken := req.Header.Get("X-Firebase-AppCheck")
 		if appCheckToken == "" {
-			slog.Warn("Missing App Check token in request", "remote_addr", req.RemoteAddr)
+			slog.Warn("Missing App Check token in request", "remote_addr", req.RemoteAddr, "req.method", req.Method, "req.path", req.URL.Path)
 			return nil, authn.Errorf("missing X-Firebase-AppCheck header")
 		}
 
@@ -41,7 +41,7 @@ func AppCheckMiddleware(appCheckClient *appcheck.Client) *authn.Middleware {
 
 			// Get audience and issuer from payload for debugging
 			if payloadBytes, payloadErr := base64.RawURLEncoding.DecodeString(parts[1]); payloadErr == nil {
-				var payloadMap map[string]interface{}
+				var payloadMap map[string]any
 				if jsonErr := json.Unmarshal(payloadBytes, &payloadMap); jsonErr == nil {
 					if aud, ok := payloadMap["aud"]; ok {
 						slog.Info("App Check token audience", "aud", aud)
