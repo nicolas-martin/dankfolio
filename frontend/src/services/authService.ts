@@ -1,7 +1,6 @@
 import useAuthStore from '@/store/auth';
 import { authClient } from '@/services/grpc/authClient';
 import { logger as log } from '@/utils/logger';
-import { APP_ENV } from '@env';
 import appCheck from '@react-native-firebase/app-check';
 
 export interface TokenResponse {
@@ -16,7 +15,7 @@ interface AuthToken {
 }
 
 class AuthService {
-	private readonly isDevelopment = APP_ENV === 'development'
+	private readonly isDevelopment = __DEV__
 	private isRefreshing = false; // Flag to prevent concurrent refresh attempts
 	private refreshPromise: Promise<void> | null = null; // Store the current refresh promise
 

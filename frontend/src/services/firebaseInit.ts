@@ -1,7 +1,6 @@
 import { getApp } from '@react-native-firebase/app';
 import appCheck, { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
-import { APP_ENV } from '@env';
 import {
 	FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
 	FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
@@ -20,39 +19,15 @@ const getAppCheckConfig = () => {
 		},
 	};
 
-	// Log the actual config that will be used
-	logger.info('🔧 AppCheck config - android provider:', config.android.provider);
-	logger.info('🔧 AppCheck config - android debugToken present:', !!config.android.debugToken);
-	logger.info('🔧 AppCheck config - apple provider:', config.apple.provider);
-	logger.info('🔧 AppCheck config - apple debugToken present:', !!config.apple.debugToken);
-
 	return config;
 };
 
 let initialized = false;
 
 export async function initializeFirebaseServices(): Promise<void> {
-	// Dump all environment variables related to Firebase App Check
-	logger.info('🔍 === FIREBASE APP CHECK DEBUG ===');
-	try {
-		const {
-			FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
-			FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
-			APP_ENV,
-			// Add any other environment variables you want to log
-		} = require('@env');
-		
-		logger.info('🔍 APP_ENV:', APP_ENV);
-		logger.info('🔍 FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID:', FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID);
-		logger.info('🔍 FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS:', FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS);
-		logger.info('🔍 __DEV__:', __DEV__);
-	} catch (error) {
-		logger.error('🔍 Error importing env variables:', error);
-	}
-	logger.info('🔍 === END FIREBASE APP CHECK DEBUG ===');
-
 	// Skip Firebase App Check initialization in development mode
-	if (APP_ENV === 'development') {
+	// Use __DEV__ as the reliable check for development mode
+	if (__DEV__) {
 		logger.info('🔥 Skipping Firebase App Check initialization in development mode (backend bypasses App Check)');
 		logger.info('📝 Production will require proper Firebase App Check setup');
 		initialized = true;
@@ -93,7 +68,7 @@ export async function initializeFirebaseServices(): Promise<void> {
 // Note: This function is now mainly used for compatibility with existing code
 // In new code, prefer using appCheck() directly
 export function getAppCheckInstance() {
-	if (APP_ENV === 'development') {
+	if (__DEV__) {
 		logger.info('⚠️ App Check not available in development mode');
 		return null;
 	}
@@ -108,7 +83,7 @@ export function getAppCheckInstance() {
 
 // Function to check if we're ready for production
 export function isProductionReady(): boolean {
-	if (APP_ENV === 'development') {
+	if (__DEV__) {
 		return true; // Development doesn't need App Check
 	}
 
