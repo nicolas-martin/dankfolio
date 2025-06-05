@@ -4,7 +4,7 @@ import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import CoinCard from '@components/Home/CoinCard';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
 import { usePortfolioStore } from '@store/portfolio';
@@ -13,10 +13,19 @@ import { useToast } from '@components/Common/Toast';
 import { createStyles } from './home_styles';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
+import { ThemeType } from '@utils/theme';
+import { RootStackParamList } from '@/types/navigation';
+
+type HomeScreenRouteParams = RootStackParamList['Home'];
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
+	const route = useRoute();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
+	
+	// Get theme type from route params, defaulting to 'light' if not provided
+	const routeParams = route.params as HomeScreenRouteParams || {};
+	const themeType = routeParams.themeType || 'light';
 
 	// Use separate selectors to avoid creating new objects on every render
 	const availableCoins = useCoinStore(state => state.availableCoins);
@@ -159,7 +168,7 @@ const HomeScreen = () => {
 					/>
 				}
 			>
-				<NewCoins />
+				<NewCoins themeType={themeType} />
 
 				<View style={styles.sectionHeader}>
 					<Text style={styles.sectionTitle}>Trending Coins</Text>

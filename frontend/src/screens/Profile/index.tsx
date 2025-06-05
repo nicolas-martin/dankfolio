@@ -1,13 +1,13 @@
 import { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView, ActivityIndicator } from 'react-native';
-import { Text, useTheme, IconButton, Button, Icon, List, MD3Theme } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { Text, useTheme, IconButton, Button, Icon, List, MD3Theme, Switch } from 'react-native-paper';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
 import { CoinDetailScreenNavigationProp } from '@screens/CoinDetail/coindetail_types';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
-import { Transaction } from '@/types';
+import { Transaction, ThemeProps } from '@/types';
 import { createStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';
 import {
@@ -19,9 +19,14 @@ import {
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 import { APP_ENV } from '@env';
+import { ThemeType } from '@utils/theme';
+import { RootStackParamList } from '@/types/navigation';
+
+type ProfileScreenRouteParams = RootStackParamList['Profile'];
 
 const Profile = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
+	const route = useRoute();
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
 	const {
@@ -33,6 +38,22 @@ const Profile = () => {
 	} = useTransactionsStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
+
+	// Get theme props from route params
+	const routeParams = route.params as ProfileScreenRouteParams || {};
+	const themeType = routeParams.themeType || 'light';
+	const toggleTheme = routeParams.toggleTheme;
+
+	// Track current theme state for the switch
+	const [isDarkTheme, setIsDarkTheme] = useState(themeType === 'neon');
+
+	// Handle theme toggle
+	const handleToggleTheme = async () => {
+		if (toggleTheme) {
+			setIsDarkTheme(!isDarkTheme);
+			await toggleTheme();
+		}
+	};
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed ProfileScreen' });
@@ -96,6 +117,20 @@ const Profile = () => {
 					/>
 				</View>
 			)}
+		</View>
+	);
+
+	const renderThemeToggle = () => (
+		<View style={styles.themeToggleContainer}>
+			<View style={styles.themeToggleHeader}>
+				<Icon source={isDarkTheme ? "weather-night" : "white-balance-sunny"} size={24} color={theme.colors.onSurface} />
+				<Text style={styles.themeToggleTitle}>{isDarkTheme ? 'Neon Mode' : 'Light Mode'}</Text>
+			</View>
+			<Switch
+				value={isDarkTheme}
+				onValueChange={handleToggleTheme}
+				color={theme.colors.primary}
+			/>
 		</View>
 	);
 
@@ -208,6 +243,7 @@ const Profile = () => {
 				>
 					<View style={styles.contentPadding}>
 						{renderHeader()}
+						{renderThemeToggle()}
 						{renderPortfolioCard()}
 						{renderTokensSection()}
 						{/* {renderTransactionsSection()} */}

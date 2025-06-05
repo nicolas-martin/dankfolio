@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text, useTheme, Button, SegmentedButtons, Icon } from 'react-native-paper';
-import { useRoute, useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import CoinChart from '@components/Chart/CoinChart';
 import { PricePoint } from '@components/Chart/CoinChart/types';
@@ -84,7 +84,7 @@ const CoinDetail: React.FC = () => {
 		const lastValue = parseValue(lastDataPoint?.value);
 		const firstValue = parseValue(firstDataPoint?.value);
 		let currentPrice = hoverPoint?.y ?? lastValue;
-		
+
 		// Ensure currentPrice is never NaN
 		if (isNaN(currentPrice)) {
 			currentPrice = 0;
@@ -96,7 +96,7 @@ const CoinDetail: React.FC = () => {
 		if (firstDataPoint && firstValue !== 0) {
 			periodChange = ((currentPrice - firstValue) / firstValue) * 100;
 			valueChange = currentPrice - firstValue;
-			
+
 			// Ensure calculated values are not NaN
 			if (isNaN(periodChange)) periodChange = 0;
 			if (isNaN(valueChange)) valueChange = 0;

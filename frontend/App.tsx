@@ -92,7 +92,7 @@ const App: React.FC = () => {
 	const [appIsReady, setAppIsReady] = useState(false);
 	const [needsWalletSetup, setNeedsWalletSetup] = useState<boolean | null>(null);
 	const { setWallet, wallet } = usePortfolioStore();
-	const [themeType, setThemeType] = useState<ThemeType>('light');
+	const [themeType, setThemeType] = useState<ThemeType>('neon');
 
 	// Function to toggle between themes
 	const toggleTheme = useCallback(async () => {
@@ -137,7 +137,7 @@ const App: React.FC = () => {
 			} catch (error) {
 				logger.warn('Failed to load theme preference:', error);
 			}
-			
+
 			// Existing logger.breadcrumb call for starting authentication
 			logger.breadcrumb({ message: 'App: Preparing - Initializing Firebase', category: 'app_lifecycle' });
 			try {

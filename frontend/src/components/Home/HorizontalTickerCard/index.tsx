@@ -1,13 +1,20 @@
 import React, { useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
 import { formatPercentage } from '@/utils/numberFormat';
 import { formatTimeAgo } from '@/utils/timeFormat';
 import { HorizontalTickerCardProps } from './types';
-import { styles } from './styles';
+import { createStyles } from './styles';
+import { ThemeType } from '@utils/theme';
 
-const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress }) => {
+interface Props extends HorizontalTickerCardProps {
+	themeType?: ThemeType;
+}
+
+const HorizontalTickerCard: React.FC<Props> = ({ coin, onPress, themeType = 'light' }) => {
+	const theme = useTheme();
+	const styles = createStyles(theme, themeType);
 	const timeAgo = formatTimeAgo(coin.jupiterListedAt);
 
 	// Memoize the press handler to prevent unnecessary re-renders
@@ -57,6 +64,7 @@ export default React.memo(HorizontalTickerCard, (prevProps, nextProps) => {
 		prevProps.coin.symbol === nextProps.coin.symbol &&
 		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
 		prevProps.coin.change24h === nextProps.coin.change24h &&
-		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt
+		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt &&
+		prevProps.themeType === nextProps.themeType
 	);
 });
