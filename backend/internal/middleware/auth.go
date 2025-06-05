@@ -21,19 +21,23 @@ type AppCheckAuthenticatedUser struct {
 // AppCheckMiddleware creates authentication middleware using Firebase App Check directly
 func AppCheckMiddleware(appCheckClient *appcheck.Client, env string) *authn.Middleware {
 	return authn.NewMiddleware(func(ctx context.Context, req *http.Request) (any, error) {
-		// Bypass App Check for development, local, and production-simulator environments
-		if env == "development" || env == "local" || env == "production-simulator" { // <<< Updated condition
+		if env == "development" || env == "local" || env == "production-simulator" {
 			appCheckToken := req.Header.Get("X-Firebase-AppCheck")
+			if appCheckToken == "" {
+				slog.Warn("Missing App Check token in request", "remote_addr", req.RemoteAddr, "method", req.Method, "path", req.URL.Path)
+				return nil, authn.Errorf("missing X-Firebase-AppCheck header")
+			}
 			if appCheckToken != "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" {
 				return nil, authn.Errorf("invalid X-Firebase-AppCheck header for environment")
 			}
 
-			slog.Info("Bypassing App Check verification due to environment setting", "env", env) // Optional: Add a log
+			slog.Info("Bypassing App Check verification due to environment setting", "env", env)
 			return &AppCheckAuthenticatedUser{
-				AppID:   "test-" + env,         // Optional: Make dummy AppID environment-specific for clarity
-				Subject: "test-subject-" + env, // Optional: Make dummy Subject environment-specific for clarity
+				AppID:   "test-" + env,
+				Subject: "test-subject-" + env,
 			}, nil
 		}
+
 		// Extract the Firebase App Check token from the X-Firebase-AppCheck header
 		appCheckToken := req.Header.Get("X-Firebase-AppCheck")
 		if appCheckToken == "" {
