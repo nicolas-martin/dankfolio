@@ -1,34 +1,9 @@
-import React, {
-	useMemo,
-	useRef,
-	useEffect,
-	ReactNode,
-} from 'react';
+import React, { useMemo, useRef, useEffect, ReactNode, } from 'react';
 import { View } from 'react-native';
-import {
-	CartesianChart,
-	useChartPressState,
-	Area,
-	useLinePath,
-	type PointsArray,
-} from 'victory-native';
-import Animated, {
-	useSharedValue,
-	useAnimatedStyle,
-	useDerivedValue,
-	runOnJS,
-	cancelAnimation,
-	withSpring,
-	SharedValue,
-} from 'react-native-reanimated';
-import {
-	Path,
-	Circle as SkiaCircle,
-	Line as SkiaLine,
-	Text as SkiaText,
-	useFont as useSkiaFont,
-} from '@shopify/react-native-skia';
-import { useTheme, Text, ActivityIndicator } from 'react-native-paper';
+import { CartesianChart, useChartPressState, Area, useLinePath, type PointsArray, } from 'victory-native';
+import Animated, { useSharedValue, useAnimatedStyle, useDerivedValue, runOnJS, cancelAnimation, withSpring, SharedValue, } from 'react-native-reanimated';
+import { Path, Circle as SkiaCircle, Line as SkiaLine, Text as SkiaText, useFont as useSkiaFont, } from '@shopify/react-native-skia';
+import { useTheme, ActivityIndicator } from 'react-native-paper';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
@@ -60,7 +35,7 @@ function SpringLine({
 	// Only animate when dataKey changes (new dataset), not on every points change
 	useEffect(() => {
 		if (dataKey) {
-			console.log('🎯 SpringLine: Animating new dataset', dataKey);
+			logger.info('🎯 SpringLine: Animating new dataset', dataKey);
 			progress.value = 0;
 			progress.value = withSpring(1, {
 				stiffness: 100,
@@ -197,6 +172,7 @@ export default function CoinChart({
 			const xVal = chartPress.x.value.value;
 			const yVal = chartPress.y.y.value.value;
 			if (typeof xVal === 'number' && typeof yVal === 'number') {
+				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 				runOnJS(onHover)({
 					timestamp: xVal,
 					price: yVal,
@@ -209,19 +185,6 @@ export default function CoinChart({
 		[isPressActive, chartPress, onHover]
 	);
 
-	// haptic feedback
-	useEffect(() => {
-		let alive = true;
-		if (isPressActive && alive) {
-			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(e =>
-				logger.warn('Haptics failed', { error: e?.message })
-			);
-		}
-		return () => {
-			alive = false;
-		};
-	}, [isPressActive]);
-
 	// preprocess data
 	const processedChartData: PricePoint[] = useMemo(
 		() => {
@@ -231,7 +194,7 @@ export default function CoinChart({
 					typeof pt.value === 'string' ? parseFloat(pt.value) : pt.value;
 				return { timestamp: t, price: v, value: v, x: t, y: v };
 			});
-			console.log('📊 Chart data processed:', processed.length, 'points');
+			logger.info('📊 Chart data processed:', processed.length, 'points');
 			return processed;
 		},
 		[data]
@@ -332,5 +295,3 @@ export default function CoinChart({
 		</ChartWrapper>
 	);
 }
-
-
