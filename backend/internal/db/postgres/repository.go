@@ -141,10 +141,19 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 	// Need a zero value of S to get column names and ID field name for the conflict clause.
 	// This works because GetID() and getColumnNames() are designed to work with S or *S.
 	var s S
+	var conflictColumns []clause.Column
+
+	switch any(s).(type) {
+	case schema.Coin:
+		conflictColumns = []clause.Column{{Name: "mint_address"}}
+	default:
+		conflictColumns = []clause.Column{{Name: s.GetID()}}
+	}
+
 	batchSize := len(schemaItems) // Process all items in a single batch as per GORM examples for full slice upsert.
 
 	result := r.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: s.GetID()}},
+		Columns:   conflictColumns,
 		DoUpdates: clause.AssignmentColumns(getColumnNames(&s)), // getColumnNames expects a pointer
 	}).CreateInBatches(schemaItems, batchSize)
 
