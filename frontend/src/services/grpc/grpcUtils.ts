@@ -5,7 +5,9 @@ import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
 import { DEBUG_MODE } from '@env';
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 
+
 const IS_DEBUG_MODE = DEBUG_MODE === 'true';
+
 
 // Helper to map gRPC model.Coin to FrontendCoin
 export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
@@ -23,9 +25,9 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 		twitter: grpcCoin.twitter,
 		telegram: grpcCoin.telegram,
 		coingeckoId: grpcCoin.coingeckoId,
-		createdAt: grpcCoin.createdAt ? new Date(Number(grpcCoin.createdAt.seconds) * 1000) : undefined,
-		lastUpdated: grpcCoin.lastUpdated ? new Date(Number(grpcCoin.lastUpdated.seconds) * 1000) : undefined,
-		jupiterListedAt: grpcCoin.jupiterListedAt ? new Date(Number(grpcCoin.jupiterListedAt.seconds) * 1000) : undefined,
+		createdAt: timestampToDate(grpcCoin.createdAt),
+		lastUpdated: timestampToDate(grpcCoin.lastUpdated),
+		jupiterListedAt: timestampToDate(grpcCoin.jupiterListedAt),
 	};
 }
 
@@ -107,4 +109,23 @@ export const handleGrpcError = (error: unknown, serviceName: string, methodName:
 // Helper to convert timestamp strings to Timestamp objects
 export const convertToTimestamp = (dateStr: string): Timestamp => {
 	return timestampFromDate(new Date(dateStr));
+}
+
+export function timestampToDate(timestamp: Timestamp | undefined): Date | undefined {
+	if (!timestamp) return undefined;
+
+	try {
+		// Handle BigInt if present
+		const seconds = typeof timestamp.seconds === 'bigint'
+			? Number(timestamp.seconds)
+			: Number(timestamp.seconds);
+
+		const nanos = timestamp.nanos || 0;
+		const milliseconds = seconds * 1000 + nanos / 1000000;
+
+		return new Date(milliseconds);
+	} catch (error) {
+		log.error('❌ Error converting timestamp:', error);
+		return undefined;
+	}
 }

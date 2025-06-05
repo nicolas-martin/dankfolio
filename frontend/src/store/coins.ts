@@ -134,7 +134,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 
 	fetchNewCoins: async (limit: number = 10, forceRefresh: boolean = false) => {
 		const state = get();
-		
+
 		// Check cache first (unless force refresh is requested)
 		if (!forceRefresh) {
 			const cachedData = useNewCoinsCacheStore.getState().getCache();
@@ -144,7 +144,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 					cacheExpiry: new Date(cachedData.expiry).toISOString(),
 					lastFetched: new Date(cachedData.lastFetched).toISOString()
 				});
-				
+
 				// Update store with cached data
 				set({
 					newlyListedCoins: cachedData.data,
@@ -159,7 +159,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			forceRefresh,
 			cacheExpired: useNewCoinsCacheStore.getState().isExpired()
 		});
-		
+
 		set({ isLoadingNewlyListed: true, error: null });
 		try {
 			// Use grpcApi.searchCoins to call the Search RPC method
@@ -192,13 +192,13 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			// Check for duplicates in the backend response and log them clearly
 			const mintAddresses = fetchedCoins.map(coin => coin.mintAddress);
 			const uniqueMintAddresses = new Set(mintAddresses);
-			
+
 			if (mintAddresses.length !== uniqueMintAddresses.size) {
-				const duplicates = mintAddresses.filter((address, index) => 
+				const duplicates = mintAddresses.filter((address, index) =>
 					mintAddresses.indexOf(address) !== index
 				);
 				const uniqueDuplicates = [...new Set(duplicates)];
-				
+
 				log.error('🚨 [CoinStore] DUPLICATE COINS DETECTED IN BACKEND RESPONSE!', {
 					totalCoins: fetchedCoins.length,
 					uniqueCoins: uniqueMintAddresses.size,
@@ -250,7 +250,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			// Cache the newly fetched data with expiry time
 			const cacheExpiryMs = Date.now() + REFRESH_INTERVALS.NEW_COINS;
 			useNewCoinsCacheStore.getState().setCache(trulyNewCoins, cacheExpiryMs);
-			
+
 			log.log('💾 [CoinStore] Cached new coins data', {
 				cachedCoinsCount: trulyNewCoins.length,
 				cacheExpiry: new Date(cacheExpiryMs).toISOString()
@@ -261,10 +261,10 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				// DON'T update coinMap here - keep new coins separate
 				isLoadingNewlyListed: false,
 			});
-			
+
 			// Update the last fetched timestamp on successful fetch
 			state.setLastFetchedNewCoinsAt(Date.now());
-			
+
 			log.log(`🆕 [CoinStore] ✅ Successfully fetched ${fetchedCoins.length} coins via GRPC, ${trulyNewCoins.length} are truly new and cached separately from coinMap.`);
 		} catch (err) {
 			const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred';

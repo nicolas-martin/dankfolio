@@ -489,7 +489,6 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	for _, newToken := range resp {
 		// Add nil check to prevent panic
 		if newToken == nil {
-			slog.Warn("Skipping nil token in response from Jupiter")
 			continue
 		}
 
