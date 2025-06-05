@@ -169,9 +169,10 @@ func main() {
 
 	ctx := context.Background()
 	// Initialize Firebase with explicit project ID to match App Check token audience
-	// The token has audience: "projects/7513481592181"
+	// The token has audiences: ["projects/7513481592181", "projects/dankfolio"]
+	// We need to configure Firebase to accept either format
 	firebaseConfig := &firebase.Config{
-		ProjectID: "7513481592181", // Use numeric project ID exactly as seen in the token's audience
+		ProjectID: "dankfolio", // Use string project ID as seen in one of the token's audiences
 	}
 	firebaseApp, err := firebase.NewApp(ctx, firebaseConfig)
 	if err != nil {
