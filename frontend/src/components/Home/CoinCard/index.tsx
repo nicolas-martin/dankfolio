@@ -5,6 +5,7 @@ import { CachedImage } from '@/components/Common/CachedImage';
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '../../../utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
 import { createStyles } from './coincard_styles';
+import { logger } from '@/utils/logger';
 
 const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
     const theme = useTheme();
@@ -13,21 +14,21 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
 
     // Memoize the press handler to prevent unnecessary re-renders
     const handlePress = useCallback(() => {
-        console.log(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.mintAddress);
+        logger.info(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.mintAddress);
         onPress(coin);
     }, [coin, onPress, isHorizontal]);
 
     // Memoize the image load/error handlers
     const handleImageLoad = useCallback(() => {
-        console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onLoad fired.`);
+        logger.info(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onLoad fired.`);
     }, [coin.symbol]);
 
     const handleImageError = useCallback(() => {
-        console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onError fired.`);
+        logger.error(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: CachedImage onError fired.`);
     }, [coin.symbol]);
 
     const renderCoinIcon = (size = 40, borderRadius = 20) => { // Allow size override
-        console.log(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: About to render CachedImage. URI: ${coin.resolvedIconUrl}`);
+        logger.info(`[CoinCard LOG] renderCoinIcon for ${coin.symbol}: About to render CachedImage. URI: ${coin.resolvedIconUrl}`);
         return (
             <View style={isHorizontal ? styles.horizontalLogoContainer : styles.logo}>
                 <CachedImage

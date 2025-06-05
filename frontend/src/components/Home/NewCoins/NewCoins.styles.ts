@@ -3,11 +3,8 @@ import { MD3Theme } from 'react-native-paper';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
     container: {
-        paddingVertical: 16,
-        // backgroundColor: theme.colors.surface, // Optional: if you want a card-like bg
-        // borderRadius: theme.roundness * 2, // Optional
-        // marginHorizontal: theme.spacing?.sm || 8, // Optional
-        // marginBottom: theme.spacing?.md || 16, // Optional
+        paddingTop: 16,
+        paddingBottom: 24,
     },
     titleContainer: {
         flexDirection: 'row',
@@ -18,8 +15,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
         marginBottom: 8,
     },
     title: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 20,
+        fontWeight: '600',
         color: theme.colors.onSurface,
     },
     viewAllButton: {
