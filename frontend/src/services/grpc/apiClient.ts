@@ -24,7 +24,11 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 	try {
 		// Instead of getting JWT token, get the Firebase App Check token directly
 		const appCheckToken = await appCheck().getToken(false);
-		// const appCheckToken = {token:"0FD7F5EB-8676-4D7E-A930-25A1D1B71045"}
+		if (__DEV__) {
+			const appCheckToken = { token: "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" }
+			req.header.set('X-Firebase-AppCheck', appCheckToken.token);
+
+		}
 
 		log.info('🔐 Retrieved Firebase App Check token:', appCheckToken);
 		log.info('🔐 Retrieved Firebase App Check token:', appCheckToken);
