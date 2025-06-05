@@ -35,17 +35,17 @@
     "bip39": "^3.1.0",
     "bs58": "^6.0.0",
     "date-fns": "4.1.0",
-    "expo": "^53.0.9",
+    "expo": "53.0.10",
     "expo-build-properties": "~0.14.6",
     "expo-crypto": "~14.1.4",
     "expo-dev-client": "^5.2.0",
     "expo-device": "~7.1.4",
     "expo-haptics": "~14.1.4",
-    "expo-image": "~2.1.7",
+    "expo-image": "~2.2.0",
     "expo-secure-store": "~14.2.3",
-    "expo-splash-screen": "~0.30.8",
+    "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",
-    "expo-updates": "~0.28.13",
+    "expo-updates": "~0.28.14",
     "firebase": "^11.8.1",
     "getenv": "2.0.0",
     "lodash": "^4.17.21",
@@ -54,7 +54,7 @@
     "metro": "^0.82.4",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "react-native": "0.79.2",
+    "react-native": "0.79.3",
     "react-native-device-info": "^14.0.4",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.24.0",
@@ -86,7 +86,7 @@
     "chalk": "^5.3.0",
     "dotenv": "^16.5.0",
     "jest": "^29.7.0",
-    "jest-expo": "~53.0.5",
+    "jest-expo": "~53.0.6",
     "node-fetch": "^3.3.2",
     "react-test-renderer": "19.0.0",
     "ts-node": "^10.9.2",
@@ -94,9 +94,6 @@
   },
   "overrides": {
     "@shopify/react-native-skia": "2.0.0-next.4"
-  },
-  "resolutions": {
-    "getenv": "2.0.0"
   },
   "expo": {
     "doctor": {
