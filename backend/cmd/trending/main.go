@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 )
 
 // BirdeyeResponse represents the response from Birdeye API
@@ -59,9 +61,14 @@ type FetchBirdeyeTrendingTokensParams struct {
 }
 
 func init() {
+	// Initialize logger
+	handler := logger.NewColorHandler(slog.LevelInfo, os.Stdout, os.Stderr)
+	slogger := slog.New(handler)
+	slog.SetDefault(slogger)
+
 	// Load .env file from the project root
 	if err := godotenv.Load("../../.env"); err != nil {
-		fmt.Printf("Warning: Error loading .env file: %v\n", err)
+		slog.Warn("Error loading .env file", slog.Any("error", err))
 	}
 }
 
@@ -114,9 +121,9 @@ func FetchBirdeyeTrendingTokens(params *FetchBirdeyeTrendingTokensParams) ([]Bir
 	if err != nil {
 		return nil, fmt.Errorf("error reading response: %v", err)
 	}
-	fmt.Println("--------------------------------")
-	fmt.Println(string(body))
-	fmt.Println("--------------------------------")
+	slog.Debug("--------------------------------")
+	slog.Debug("Response body", "body", string(body))
+	slog.Debug("--------------------------------")
 
 	var response BirdeyeResponse
 	if err := json.Unmarshal(body, &response); err != nil {
@@ -166,13 +173,17 @@ func GetTrendingTokens() ([]TrendingToken, error) {
 func main() {
 	trendingTokens, err := GetTrendingTokens()
 	if err != nil {
-		fmt.Println("Error:", err)
+		slog.Error("Failed to get trending tokens", slog.Any("error", err))
 		return
 	}
 
-	fmt.Println("Top 10 Trending Tokens by 24h Volume:")
+	slog.Info("Top 10 Trending Tokens by 24h Volume")
 	for i, token := range trendingTokens {
-		fmt.Printf("%d. %s (Mint: %s) - Volume: %.2f\n", i+1, token.Symbol, token.Mint, token.Volume)
+		slog.Info("Trending token",
+			"rank", i+1,
+			"symbol", token.Symbol,
+			"mint", token.Mint,
+			"volume", token.Volume)
 	}
 
 	// Write to file for trim-mainnet to use
@@ -180,20 +191,20 @@ func main() {
 
 	// Create parent directory if it doesn't exist
 	if err = os.MkdirAll(filepath.Dir(outputFile), 0o755); err != nil {
-		fmt.Println("Error creating directory:", err)
+		slog.Error("Error creating directory", slog.Any("error", err))
 		return
 	}
 
 	file, err := json.MarshalIndent(trendingTokens, "", "  ")
 	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
+		slog.Error("Error marshalling JSON", slog.Any("error", err))
 		return
 	}
 
 	if err := os.WriteFile(outputFile, file, 0o644); err != nil {
-		fmt.Println("Error writing file:", err)
+		slog.Error("Error writing file", slog.Any("error", err))
 		return
 	}
 
-	fmt.Printf("\nTrending tokens written to %s\n", outputFile)
+	slog.Info("Trending tokens written to file", "file", outputFile)
 }

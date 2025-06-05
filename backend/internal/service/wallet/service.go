@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -16,11 +16,11 @@ import (
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/google/uuid"
+	solanoclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Aliased import
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin" // Added for CoinServiceAPI
 	"github.com/tyler-smith/go-bip39"
-	solanoclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Aliased import
 )
 
 // Service handles wallet-related operations
@@ -43,10 +43,10 @@ func New(rpcClient solanoclient.SolanaRPCClientAPI, store db.Store, coinService 
 func (s *Service) parseAddress(address, label string) (solana.PublicKey, error) {
 	pubKey, err := solana.PublicKeyFromBase58(address)
 	if err != nil {
-		log.Printf("❌ Invalid %s address: %v\n", label, err)
+		slog.Error("Invalid address", "label", label, "error", err)
 		return solana.PublicKey{}, fmt.Errorf("invalid %s address: %w", label, err)
 	}
-	log.Printf("✅ %s address parsed: %s\n", label, pubKey)
+	slog.Debug("Address parsed", "label", label, "address", pubKey.String())
 	return pubKey, nil
 }
 
@@ -64,7 +64,7 @@ func (s *Service) getOrCreateATA(ctx context.Context, payer, owner, mint solana.
 
 	var instructions []solana.Instruction
 	if info == nil || info.Value == nil || info.Value.Owner.Equals(solana.SystemProgramID) {
-		log.Printf("Creating token account: %s\n", ata)
+		slog.Debug("Creating token account", "address", ata.String())
 		createATAIx, err := associatedtokenaccount.NewCreateInstruction(
 			payer,
 			owner,
@@ -93,7 +93,7 @@ func (s *Service) getTokenAccount(ctx context.Context, mint, owner solana.Public
 
 	var instructions []solana.Instruction
 	if info == nil || info.Value == nil || info.Value.Owner.Equals(solana.SystemProgramID) {
-		log.Printf("Creating token account: %s\n", ata)
+		slog.Debug("Creating token account", "address", ata.String())
 		createATAIx, err := associatedtokenaccount.NewCreateInstruction(
 			owner,
 			owner,
@@ -142,7 +142,7 @@ func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
-	log.Printf("✅ Recent blockhash: %s\n", recent.Value.Blockhash)
+	slog.Debug("Recent blockhash obtained", "blockhash", recent.Value.Blockhash)
 
 	tx, err := solana.NewTransaction(
 		instructions,
@@ -158,29 +158,32 @@ func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, 
 
 // CreateWallet generates a new Solana wallet
 func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
-	log.Println("Generating new Solana wallet...")
+	slog.Info("Generating new Solana wallet...")
 
 	// 1. Generate a new mnemonic phrase (12 words - 128 bits)
 	entropy, err := bip39.NewEntropy(128)
 	if err != nil {
-		log.Fatalf("FATAL: Failed to generate entropy: %v", err)
+		slog.Error("Failed to generate entropy", "error", err)
+		return nil, fmt.Errorf("failed to generate entropy: %w", err)
 	}
 	mnemonic, err := bip39.NewMnemonic(entropy)
 	if err != nil {
-		log.Fatalf("FATAL: Failed to generate mnemonic: %v", err)
+		slog.Error("Failed to generate mnemonic", "error", err)
+		return nil, fmt.Errorf("failed to generate mnemonic: %w", err)
 	}
-	log.Printf(" - Generated Mnemonic (SAVE THIS SECURELY!): %s\n", mnemonic)
+	slog.Debug("Generated mnemonic (SAVE THIS SECURELY!)", "mnemonic", mnemonic)
 
 	// 2. Generate the seed from the mnemonic
 	seed := bip39.NewSeed(mnemonic, "") // Standard empty passphrase
 
 	// 3. Create the standard library ed25519 private key (64 bytes) from the first 32 bytes of the seed.
 	if len(seed) < 32 {
-		log.Fatalf("FATAL: Generated seed is too short: %d bytes, expected at least 32", len(seed))
+		slog.Error("Generated seed is too short", "length", len(seed), "expected", 32)
+		return nil, fmt.Errorf("generated seed is too short: %d bytes, expected at least 32", len(seed))
 	}
 	// This function returns the 64-byte key: 32-byte private scalar (derived from seed) + 32-byte public key
 	stdLibPrivateKey := ed25519.NewKeyFromSeed(seed[:32])
-	log.Println(" - Derived Ed25519 key material from seed.")
+	slog.Debug("Derived Ed25519 key material from seed")
 
 	// 4. Cast the standard library key (which is []byte) to solana.PrivateKey type.
 	// The solana-go library uses this 64-byte format internally.
@@ -188,7 +191,7 @@ func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
 
 	// 5. Get the corresponding Solana public key using the method from solana.PrivateKey
 	publicKey := solanaPrivateKey.PublicKey()
-	log.Printf(" - Derived Public Key: %s\n", publicKey.String())
+	slog.Debug("Derived public key", "public_key", publicKey.String())
 
 	// 6. Save the Solana Private Key (as JSON byte array - full 64 bytes)
 	// This format is directly usable by `solana-keygen verify` and other tools expecting the keypair file.
@@ -218,8 +221,11 @@ func (s *Service) CreateWallet(ctx context.Context) (*WalletInfo, error) {
 
 // PrepareTransfer prepares an unsigned transfer transaction
 func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, coinMintAddress string, amount float64) (string, error) {
-	log.Printf("🔄 Preparing transfer: From=%s To=%s Amount=%.9f CoinMintAddress=%s\n",
-		fromAddress, toAddress, amount, coinMintAddress)
+	slog.Info("Preparing transfer",
+		"from", fromAddress,
+		"to", toAddress,
+		"amount", amount,
+		"coinMintAddress", coinMintAddress)
 
 	from, err := s.parseAddress(fromAddress, "from")
 	if err != nil {
@@ -260,7 +266,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 
 	tx, err := s.createTokenTransfer(ctx, from, to, coinMintAddress, amount) // createTokenTransfer still uses original coinMintAddress for SPL mint logic
 	if err != nil {
-		log.Printf("❌ Failed to create transfer transaction: %v\n", err)
+		slog.Error("Failed to create transfer transaction", "error", err)
 		return "", fmt.Errorf("failed to create transfer transaction: %w", err)
 	}
 
@@ -289,7 +295,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	}
 
 	if err := s.store.Trades().Create(ctx, trade); err != nil {
-		log.Printf("Warning: Failed to create trade record: %v", err)
+		slog.Warn("Failed to create trade record", "error", err)
 	}
 
 	return unsignedTx, nil
@@ -299,9 +305,9 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.PublicKey, tokenMint string, amount float64) (*solana.Transaction, error) {
 	// Handle native SOL transfer
 	if tokenMint == "" {
-		log.Printf("🪙 Creating SOL transfer transaction\n")
+		slog.Debug("Creating SOL transfer transaction")
 		lamports := uint64(amount * float64(solana.LAMPORTS_PER_SOL))
-		log.Printf("💰 Amount in lamports: %d\n", lamports)
+		slog.Debug("Amount in lamports", "lamports", lamports)
 
 		transferIx := system.NewTransferInstruction(
 			lamports,
@@ -359,11 +365,11 @@ func (s *Service) createTokenTransfer(ctx context.Context, from, to solana.Publi
 	}
 
 	// Log transaction details for debugging
-	log.Printf("📝 Transaction details:")
-	log.Printf("  - Required signatures: %d", tx.Message.Header.NumRequiredSignatures)
-	log.Printf("  - Read-only signers: %d", tx.Message.Header.NumReadonlySignedAccounts)
-	log.Printf("  - Read-only non-signers: %d", tx.Message.Header.NumReadonlyUnsignedAccounts)
-	log.Printf("  - Fee payer: %s", tx.Message.AccountKeys[0].String())
+	slog.Debug("Transaction details",
+		"required_signatures", tx.Message.Header.NumRequiredSignatures,
+		"readonly_signers", tx.Message.Header.NumReadonlySignedAccounts,
+		"readonly_non_signers", tx.Message.Header.NumReadonlyUnsignedAccounts,
+		"fee_payer", tx.Message.AccountKeys[0].String())
 
 	return tx, nil
 }
@@ -396,7 +402,7 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 	// Find the trade record by unsigned transaction
 	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", req.UnsignedTransaction)
 	if err != nil {
-		log.Printf("Warning: Failed to find trade record: %v", err)
+		slog.Warn("Failed to find trade record", "error", err)
 		return sig.String(), nil
 	}
 
@@ -408,7 +414,7 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 	trade.Finalized = true
 
 	if err := s.store.Trades().Update(ctx, trade); err != nil {
-		log.Printf("Warning: Failed to update trade record: %v", err)
+		slog.Warn("Failed to update trade record", "error", err)
 	}
 
 	return sig.String(), nil

@@ -3,7 +3,7 @@ package coin
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,7 +34,7 @@ type scrapedTokenInfo struct {
 
 // ScrapeAndEnrichToFile orchestrates the scraping and enrichment process.
 func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutput, error) {
-	log.Println("Starting Solana trending token scrape and enrichment process...")
+	slog.Info("Starting Solana trending token scrape and enrichment process...")
 
 	// Step 1: Scrape basic info using Chromedp
 	scrapedTokens, err := s.scrapeBasicTokenInfo(ctx)
@@ -44,7 +44,7 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutpu
 	if len(scrapedTokens) == 0 {
 		return nil, fmt.Errorf("no tokens were successfully scraped from the modal, cannot proceed")
 	}
-	log.Printf("Successfully scraped basic info for %d tokens.", len(scrapedTokens))
+	slog.Info("Successfully scraped basic info for tokens", "count", len(scrapedTokens))
 
 	// Step 2: Enrich the scraped tokens concurrently
 	enrichedCoins, err := s.enrichScrapedTokens(ctx, scrapedTokens)
@@ -54,7 +54,7 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutpu
 	if len(enrichedCoins) == 0 {
 		return nil, fmt.Errorf("enrichment process completed, but no tokens were successfully enriched (or survived errors)")
 	}
-	log.Printf("Enrichment process complete. Successfully processed (fully or partially): %d tokens.", len(enrichedCoins))
+	slog.Info("Enrichment process complete", "successful_tokens", len(enrichedCoins))
 
 	// Step 3: Prepare and save the final output
 	finalOutput := &EnrichedFileOutput{
@@ -63,17 +63,24 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutpu
 	}
 
 	// Log summary before saving
-	log.Printf("--- Saving Enriched Solana Tokens Data ---")
-	log.Printf("Timestamp: %s", finalOutput.ScrapeTimestamp.Format(time.RFC3339))
-	log.Printf("Total Coins to Save: %d", len(finalOutput.Coins))
+	slog.Info("--- Saving Enriched Solana Tokens Data ---")
+	slog.Info("Preparing to save enriched data",
+		"timestamp", finalOutput.ScrapeTimestamp.Format(time.RFC3339),
+		"total_coins", len(finalOutput.Coins))
+
 	// Optionally log details of first few tokens
 	for i, t := range finalOutput.Coins {
 		if i >= 3 {
-			log.Println("...")
+			slog.Info("...")
 			break
 		}
-		log.Printf("  Mint: %s, Name: %s, Symbol: %s, Price: %.6f, Volume: %.2f",
-			t.MintAddress, t.Name, t.Symbol, t.Price, t.Volume24h)
+		slog.Info("Token details",
+			"index", i,
+			"mint", t.MintAddress,
+			"name", t.Name,
+			"symbol", t.Symbol,
+			"price", t.Price,
+			"volume_24h", t.Volume24h)
 	}
 
 	return finalOutput, nil
@@ -140,7 +147,7 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 			chromedp.AttributeValue(sel(2, "a"), "href", &href, nil, chromedp.ByQuery, chromedp.FromNode(row)),
 			chromedp.AttributeValue(sel(2, "div.relative > div:nth-child(2) img"), "src", &iconURL, nil, chromedp.ByQuery, chromedp.FromNode(row)),
 		); err != nil {
-			log.Printf("name/icon extract failed: %v", err)
+			slog.Error("Name/icon extraction failed", "error", err)
 			continue
 		}
 		name := strings.TrimSpace(nameRaw)
@@ -155,7 +162,7 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		if err := chromedp.Run(rowCtx,
 			chromedp.Text(sel(4, "div div"), &priceRaw, chromedp.ByQuery, chromedp.FromNode(row)),
 		); err != nil {
-			log.Printf("price extract failed: %v", err)
+			slog.Error("Price extraction failed", "error", err)
 		}
 		price := strings.TrimSpace(priceRaw)
 
@@ -163,7 +170,7 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		if err := chromedp.Run(rowCtx,
 			chromedp.Text(sel(5, "span"), &changeRaw, chromedp.ByQuery, chromedp.FromNode(row)),
 		); err != nil {
-			log.Printf("change extract failed: %v", err)
+			slog.Error("Change extraction failed", "error", err)
 		}
 		change := strings.TrimSuffix(strings.TrimSpace(changeRaw), "%")
 
@@ -171,7 +178,7 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		if err := chromedp.Run(rowCtx,
 			chromedp.Text(sel(6, "div.text-right.min-w-28 > div"), &volumeRaw, chromedp.ByQuery, chromedp.FromNode(row)),
 		); err != nil {
-			log.Printf("volume extract failed: %v", err)
+			slog.Error("Volume extraction failed", "error", err)
 		}
 		volume := strings.TrimPrefix(strings.TrimSpace(volumeRaw), "$")
 
@@ -179,7 +186,7 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 		if err := chromedp.Run(rowCtx,
 			chromedp.Text(sel(7, "div"), &capRaw, chromedp.ByQuery, chromedp.FromNode(row)),
 		); err != nil {
-			log.Printf("market cap extract failed: %v", err)
+			slog.Error("Market cap extraction failed", "error", err)
 		}
 		marketCap := strings.TrimPrefix(strings.TrimSpace(capRaw), "$")
 		iconURL = strings.TrimSpace(iconURL)
@@ -193,7 +200,14 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 			MarketCap:   marketCap,
 			IconURL:     iconURL,
 		})
-		log.Printf("mint: %s, name: %s, price: %s, change: %s, volume: %s, market cap: %s, iconURL: %s", mint, name, price, change, volume, marketCap, iconURL)
+		slog.Debug("Scraped token info",
+			"mint", mint,
+			"name", name,
+			"price", price,
+			"change", change,
+			"volume", volume,
+			"market_cap", marketCap,
+			"icon_url", iconURL)
 	}
 
 	return result, nil
@@ -201,7 +215,9 @@ func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo,
 
 // enrichScrapedTokens takes basic scraped info and enriches it using external APIs concurrently.
 func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scrapedTokenInfo) ([]model.Coin, error) {
-	log.Printf("Executing enrichScrapedTokens for %d tokens (Concurrency: %d)...", len(tokensToEnrich), scrapeMaxConcurrentEnrich)
+	slog.Info("Executing token enrichment",
+		"token_count", len(tokensToEnrich),
+		"concurrency", scrapeMaxConcurrentEnrich)
 
 	enrichedCoins := make([]model.Coin, 0, len(tokensToEnrich))
 	var wg sync.WaitGroup
@@ -228,11 +244,15 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 			enrichTaskCtx, enrichTaskCancel := context.WithTimeout(enrichCtx, 45*time.Second) // Timeout for one token
 			defer enrichTaskCancel()
 
-			log.Printf("Enriching: %s (%s)", token.Name, token.MintAddress)
+			slog.Debug("Enriching token", "name", token.Name, "mint_address", token.MintAddress)
 
 			initialVolume, err := parseVolume(token.Volume24h)
 			if err != nil {
-				log.Printf("WARN: enrichScrapedTokens: Failed to parse volume '%s' for %s (%s): %v. Using 0.", token.Volume24h, token.Name, token.MintAddress, err)
+				slog.Warn("Failed to parse volume",
+					"volume_str", token.Volume24h,
+					"name", token.Name,
+					"mint_address", token.MintAddress,
+					"error", err)
 				initialVolume = 0
 			}
 
@@ -244,8 +264,11 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 				initialVolume,
 			)
 			if err != nil {
-				errMessage := fmt.Sprintf("ERROR: enrichScrapedTokens: Failed EnrichCoinData for %s (%s): %v", token.Name, token.MintAddress, err)
-				log.Println(errMessage)
+				errMessage := fmt.Sprintf("Failed EnrichCoinData for %s (%s): %v", token.Name, token.MintAddress, err)
+				slog.Error("Enrichment failed",
+					"name", token.Name,
+					"mint_address", token.MintAddress,
+					"error", err)
 				// Record the error
 				errMu.Lock()
 				encounteredErrors = append(encounteredErrors, fmt.Errorf("%s", errMessage)) // Append formatted error
@@ -254,11 +277,13 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 				if enriched == nil {
 					return // Skip if enrichment critically failed
 				}
-				log.Printf("WARN: enrichScrapedTokens: Adding partially enriched data for %s despite error.", token.Name)
+				slog.Warn("Adding partially enriched data despite error", "name", token.Name)
 			}
 
 			if enriched == nil {
-				log.Printf("ERROR: enrichScrapedTokens: EnrichCoinData returned nil for %s (%s) without explicit error. Skipping.", token.Name, token.MintAddress)
+				slog.Error("EnrichCoinData returned nil without explicit error",
+					"name", token.Name,
+					"mint_address", token.MintAddress)
 				return
 			}
 
@@ -267,7 +292,7 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 			enriched.IsTrending = true
 			enrichedCoins = append(enrichedCoins, *enriched)
 			mu.Unlock()
-			log.Printf("Successfully processed enrichment for: %s (%s)", enriched.Name, enriched.MintAddress)
+			slog.Info("Successfully processed enrichment", "name", enriched.Name, "mint_address", enriched.MintAddress)
 		}(scrapedToken)
 	}
 
@@ -278,12 +303,15 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 	if len(encounteredErrors) > 0 {
 		// Log that errors occurred, but don't return an error here.
 		// We want to proceed to save the partially enriched data.
-		log.Printf("Enrichment finished with %d errors. Proceeding with successfully enriched tokens.", len(encounteredErrors))
+		slog.Warn("Enrichment finished with errors, proceeding with successful tokens",
+			"error_count", len(encounteredErrors))
 		// return enrichedCoins, fmt.Errorf("enrichment failed for one or more tokens (first error: %w)", encounteredErrors[0])
 	}
 
 	// This logging might be redundant now, consider removing or adjusting
-	log.Printf("Successfully enriched %d tokens. Encountered %d errors.", len(enrichedCoins), len(encounteredErrors))
+	slog.Info("Enrichment summary",
+		"successful_tokens", len(enrichedCoins),
+		"error_count", len(encounteredErrors))
 
 	// This block seems like a leftover from previous attempts, ensure it's fully commented or removed if the above check handles it.
 	// if len(encounteredErrors) > 0 {

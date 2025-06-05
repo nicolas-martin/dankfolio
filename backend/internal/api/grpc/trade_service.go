@@ -3,7 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"connectrpc.com/connect"
@@ -30,22 +30,29 @@ func newTradeServiceHandler(tradeService *trade.Service) *tradeServiceHandler {
 
 // Helper function for creating pointers for ListOptions
 func pint32(i int32) *int { v := int(i); return &v }
-func pbool(b bool) *bool   { return &b }
-func pstring(s string) *string { if s == "" { return nil }; return &s }
-
+func pbool(b bool) *bool  { return &b }
+func pstring(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
 
 // GetSwapQuote fetches a trade quote
 func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Request[pb.GetSwapQuoteRequest]) (*connect.Response[pb.GetSwapQuoteResponse], error) {
-	log.Printf("Received GetSwapQuote request: from_coin_id=%s, to_coin_id=%s, amount=%s", req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount)
+	slog.Debug("Received GetSwapQuote request",
+		"from_coin_id", req.Msg.FromCoinId,
+		"to_coin_id", req.Msg.ToCoinId,
+		"amount", req.Msg.Amount)
 
 	if req.Msg.FromCoinId == "" || req.Msg.ToCoinId == "" || req.Msg.Amount == "" {
-		log.Printf("Invalid request: missing required fields")
+		slog.Warn("Invalid GetSwapQuote request", "error", "missing required fields", "from_coin_id", req.Msg.FromCoinId, "to_coin_id", req.Msg.ToCoinId, "amount", req.Msg.Amount)
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("from_coin_id, to_coin_id, and amount are required"))
 	}
 
 	requestCtx := ctx
 	if req.Header().Get("x-debug-mode") == "true" {
-		log.Printf("Debug mode enabled")
+		slog.Debug("Debug mode enabled for GetSwapQuote")
 		requestCtx = context.WithValue(ctx, model.DebugModeKey, true)
 	}
 
@@ -56,11 +63,15 @@ func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Req
 
 	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps)
 	if err != nil {
-		log.Printf("Error fetching trade quote: %v", err)
+		slog.Error("Failed to fetch trade quote", "error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))
 	}
 
-	log.Printf("Trade quote response: estimated_amount=%s, exchange_rate=%s, fee=%s, price_impact=%s", quote.EstimatedAmount, quote.ExchangeRate, quote.Fee, quote.PriceImpact)
+	slog.Debug("Trade quote generated successfully",
+		"estimated_amount", quote.EstimatedAmount,
+		"exchange_rate", quote.ExchangeRate,
+		"fee", quote.Fee,
+		"price_impact", quote.PriceImpact)
 
 	res := connect.NewResponse(&pb.GetSwapQuoteResponse{
 		EstimatedAmount: quote.EstimatedAmount,
@@ -138,13 +149,13 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 
 	switch identifier := req.Msg.Identifier.(type) {
 	case *pb.GetTradeRequest_Id:
-		log.Printf("Received GetTrade request with ID: %s", identifier.Id)
+		slog.Debug("Received GetTrade request with ID", "id", identifier.Id)
 		if identifier.Id == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("trade ID is required"))
 		}
 		trade, err = s.tradeService.GetTrade(ctx, identifier.Id)
 	case *pb.GetTradeRequest_TransactionHash:
-		log.Printf("Received GetTrade request with TransactionHash: %s", identifier.TransactionHash)
+		slog.Debug("Received GetTrade request with TransactionHash", "tx_hash", identifier.TransactionHash)
 		if identifier.TransactionHash == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transaction hash is required"))
 		}
@@ -183,14 +194,21 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 			}
 			if txStatus.Err != nil {
 				errStr := fmt.Sprintf("%v", txStatus.Err)
-				if errStr != "<nil>" { trade.Error = &errStr; trade.Status = "failed"; statusChanged = true }
+				if errStr != "<nil>" {
+					trade.Error = &errStr
+					trade.Status = "failed"
+					statusChanged = true
+				}
 			}
 			if statusChanged {
 				if errUpdate := s.tradeService.UpdateTrade(ctx, trade); errUpdate != nil {
-					log.Printf("Warning: Failed to update trade status: %v", errUpdate)
+					slog.Warn("Failed to update trade status", "tx_hash", identifier.TransactionHash, "error", errUpdate)
 				} else {
-					log.Printf("✅ Updated trade status: %s -> %s (Confirmations: %d, Finalized: %v)",
-						identifier.TransactionHash, trade.Status, trade.Confirmations, trade.Finalized)
+					slog.Info("Updated trade status",
+						"tx_hash", identifier.TransactionHash,
+						"status", trade.Status,
+						"confirmations", trade.Confirmations,
+						"finalized", trade.Finalized)
 				}
 			}
 		}

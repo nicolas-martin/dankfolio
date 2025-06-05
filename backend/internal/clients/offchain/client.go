@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -28,39 +28,39 @@ func NewClient(httpClient *http.Client) ClientAPI {
 func (c *Client) FetchMetadata(uri string) (map[string]any, error) {
 	uri = strings.TrimSpace(uri)
 	if uri == "" {
-		log.Printf("❌ FetchMetadata: Empty URI provided")
+		slog.Error("❌ FetchMetadata: Empty URI provided")
 		return nil, fmt.Errorf("cannot fetch metadata from empty URI")
 	}
 
-	log.Printf("🔍 FetchMetadata: Processing URI: %s", uri)
-	log.Printf("🔄 FetchMetadata: Starting metadata fetch process...")
+	slog.Debug("🔍 FetchMetadata: Processing URI", "uri", uri)
+	slog.Debug("🔄 FetchMetadata: Starting metadata fetch process...")
 
 	// Check if it's an HTTP URI containing an IPFS path
 	if strings.HasPrefix(uri, "http") && strings.Contains(uri, "/ipfs/") {
 		parts := strings.Split(uri, "/ipfs/")
 		if len(parts) >= 2 {
 			ipfsURI := "ipfs://" + parts[1]
-			log.Printf("🔄 FetchMetadata: Converting HTTP IPFS URI to native IPFS: %s -> %s", uri, ipfsURI)
+			slog.Debug("🔄 FetchMetadata: Converting HTTP IPFS URI to native IPFS", "original", uri, "ipfs", ipfsURI)
 			return c.fetchIPFSMetadata(ipfsURI)
 		}
 	}
 
 	if strings.HasPrefix(uri, "ipfs://") {
-		log.Printf("📦 FetchMetadata: Detected IPFS URI, attempting IPFS gateways for: %s", uri)
+		slog.Debug("📦 FetchMetadata: Detected IPFS URI, attempting IPFS gateways", "uri", uri)
 		return c.fetchIPFSMetadata(uri)
 	}
 
 	if strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://") {
-		log.Printf("🌐 FetchMetadata: Detected HTTP(S) URI, fetching directly from: %s", uri)
+		slog.Debug("🌐 FetchMetadata: Detected HTTP(S) URI, fetching directly", "uri", uri)
 		return c.fetchHTTPMetadata(uri)
 	}
 
 	if strings.HasPrefix(uri, "ar://") {
-		log.Printf("📜 FetchMetadata: Detected Arweave URI, attempting Arweave gateways for: %s", uri)
+		slog.Debug("📜 FetchMetadata: Detected Arweave URI, attempting Arweave gateways", "uri", uri)
 		return c.fetchArweaveMetadata(uri)
 	}
 
-	log.Printf("❌ FetchMetadata: Unsupported URI scheme: %s", uri)
+	slog.Error("❌ FetchMetadata: Unsupported URI scheme", "uri", uri)
 	return nil, fmt.Errorf("unsupported URI scheme: %s", uri)
 }
 
@@ -68,39 +68,39 @@ func (c *Client) FetchMetadata(uri string) (map[string]any, error) {
 func (c *Client) FetchRawData(ctx context.Context, uri string) (data []byte, contentType string, err error) {
 	uri = strings.TrimSpace(uri)
 	if uri == "" {
-		log.Printf("❌ FetchRawData: Empty URI provided")
+		slog.Error("❌ FetchRawData: Empty URI provided")
 		return nil, "", fmt.Errorf("cannot fetch raw data from empty URI")
 	}
 
-	log.Printf("🔍 FetchRawData: Processing URI: %s", uri)
-	log.Printf("🔄 FetchRawData: Starting raw data fetch process...")
+	slog.Debug("🔍 FetchRawData: Processing URI", "uri", uri)
+	slog.Debug("🔄 FetchRawData: Starting raw data fetch process...")
 
 	// Check if it's an HTTP URI containing an IPFS path
 	if strings.HasPrefix(uri, "http") && strings.Contains(uri, "/ipfs/") {
 		parts := strings.Split(uri, "/ipfs/")
 		if len(parts) >= 2 {
 			ipfsURI := "ipfs://" + parts[1]
-			log.Printf("🔄 FetchRawData: Converting HTTP IPFS URI to native IPFS: %s -> %s", uri, ipfsURI)
+			slog.Debug("🔄 FetchRawData: Converting HTTP IPFS URI to native IPFS", "original", uri, "ipfs", ipfsURI)
 			return c.fetchIPFSRaw(ctx, ipfsURI)
 		}
 	}
 
 	if strings.HasPrefix(uri, "ipfs://") {
-		log.Printf("📦 FetchRawData: Detected IPFS URI, attempting IPFS gateways for: %s", uri)
+		slog.Debug("📦 FetchRawData: Detected IPFS URI, attempting IPFS gateways", "uri", uri)
 		return c.fetchIPFSRaw(ctx, uri)
 	}
 
 	if strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://") {
-		log.Printf("🌐 FetchRawData: Detected HTTP(S) URI, fetching directly from: %s", uri)
+		slog.Debug("🌐 FetchRawData: Detected HTTP(S) URI, fetching directly", "uri", uri)
 		return c.fetchHTTPRaw(ctx, uri)
 	}
 
 	if strings.HasPrefix(uri, "ar://") {
-		log.Printf("📜 FetchRawData: Detected Arweave URI, attempting Arweave gateways for: %s", uri)
+		slog.Debug("📜 FetchRawData: Detected Arweave URI, attempting Arweave gateways", "uri", uri)
 		return c.fetchArweaveRaw(ctx, uri)
 	}
 
-	log.Printf("❌ FetchRawData: Unsupported URI scheme: %s", uri)
+	slog.Error("❌ FetchRawData: Unsupported URI scheme", "uri", uri)
 	return nil, "", fmt.Errorf("unsupported URI scheme: %s", uri)
 }
 
@@ -108,12 +108,12 @@ func (c *Client) FetchRawData(ctx context.Context, uri string) (data []byte, con
 func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
 	cid := strings.TrimPrefix(uri, "ipfs://")
 	if cid == "" {
-		log.Printf("❌ IPFS: Invalid IPFS URI - empty CID")
+		slog.Error("❌ IPFS: Invalid IPFS URI - empty CID")
 		return nil, fmt.Errorf("invalid ipfs URI: empty CID")
 	}
 
-	log.Printf("📦 IPFS: Extracted CID: %s", cid)
-	log.Printf("🔄 IPFS: Starting gateway fallback sequence...")
+	slog.Debug("📦 IPFS: Extracted CID", "cid", cid)
+	slog.Debug("🔄 IPFS: Starting gateway fallback sequence...")
 
 	gateways := []string{
 		"https://ipfs.io/ipfs/",
@@ -126,17 +126,17 @@ func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
 	var lastErr error
 	for i, gw := range gateways {
 		fullURL := gw + cid
-		log.Printf("📦 IPFS: Attempting gateway %d/%d: %s", i+1, len(gateways), fullURL)
+		slog.Debug("📦 IPFS: Attempting gateway", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw, "url", fullURL)
 		metadata, err := c.fetchHTTPMetadata(fullURL)
 		if err == nil {
-			log.Printf("✅ IPFS: Successfully fetched metadata from gateway %d/%d: %s", i+1, len(gateways), gw)
+			slog.Debug("✅ IPFS: Successfully fetched metadata from gateway", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw)
 			return metadata, nil
 		}
 		lastErr = err
-		log.Printf("❌ IPFS: Gateway %d/%d failed (%s): %v", i+1, len(gateways), gw, err)
+		slog.Debug("❌ IPFS: Gateway failed", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw, "error", err)
 	}
 
-	log.Printf("❌ IPFS: All gateways failed for CID: %s", cid)
+	slog.Error("❌ IPFS: All gateways failed", "cid", cid)
 	return nil, fmt.Errorf("all IPFS gateways failed for %s: %w", uri, lastErr)
 }
 
@@ -144,12 +144,12 @@ func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
 func (c *Client) fetchArweaveMetadata(uri string) (map[string]any, error) {
 	txID := strings.TrimPrefix(uri, "ar://")
 	if txID == "" {
-		log.Printf("❌ Arweave: Invalid Arweave URI - empty TxID")
+		slog.Error("❌ Arweave: Invalid Arweave URI - empty TxID")
 		return nil, fmt.Errorf("invalid arweave URI: empty TxID")
 	}
 
-	log.Printf("📜 Arweave: Extracted TxID: %s", txID)
-	log.Printf("🔄 Arweave: Starting gateway fallback sequence...")
+	slog.Debug("📜 Arweave: Extracted TxID", "txID", txID)
+	slog.Debug("🔄 Arweave: Starting gateway fallback sequence...")
 
 	gateways := []string{
 		"https://arweave.net/",
@@ -158,97 +158,102 @@ func (c *Client) fetchArweaveMetadata(uri string) (map[string]any, error) {
 	var lastErr error
 	for i, gw := range gateways {
 		fullURL := gw + txID
-		log.Printf("📜 Arweave: Attempting gateway %d/%d: %s", i+1, len(gateways), fullURL)
+		slog.Debug("📜 Arweave: Attempting gateway", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw, "url", fullURL)
 		metadata, err := c.fetchHTTPMetadata(fullURL)
 		if err == nil {
-			log.Printf("✅ Arweave: Successfully fetched metadata from gateway %d/%d: %s", i+1, len(gateways), gw)
+			slog.Debug("✅ Arweave: Successfully fetched metadata from gateway", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw)
 			return metadata, nil
 		}
 		lastErr = err
-		log.Printf("❌ Arweave: Gateway %d/%d failed (%s): %v", i+1, len(gateways), gw, err)
+		slog.Debug("❌ Arweave: Gateway failed", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw, "error", err)
 	}
 
-	log.Printf("❌ Arweave: All gateways failed for TxID: %s", txID)
+	slog.Error("❌ Arweave: All gateways failed", "txID", txID)
 	return nil, fmt.Errorf("all Arweave gateways failed for %s: %w", uri, lastErr)
 }
 
 // fetchHTTPMetadata fetches JSON metadata from an HTTP(S) URL
 func (c *Client) fetchHTTPMetadata(url string) (map[string]any, error) {
-	log.Printf("🌐 HTTP: Creating request for URL: %s", url)
-	log.Printf("🔄 HTTP: Setting up request headers...")
+	slog.Debug("🌐 HTTP: Creating request", "url", url)
+	slog.Debug("🔄 HTTP: Setting up request headers...")
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Printf("❌ HTTP: Failed to create request for %s: %v", url, err)
+		slog.Error("❌ HTTP: Failed to create request", "url", url, "error", err)
 		return nil, fmt.Errorf("failed to create request for %s: %w", url, err)
 	}
 
 	req.Header.Set("User-Agent", "DankfolioEnrichmentBot/1.0")
 
-	log.Printf("🌐 HTTP: Sending GET request to: %s", url)
+	slog.Debug("🌐 HTTP: Sending GET request", "url", url)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		log.Printf("❌ HTTP: Request failed for %s: %v", url, err)
+		slog.Error("❌ HTTP: Request failed", "url", url, "error", err)
 		return nil, fmt.Errorf("http get failed for %s: %w", url, err)
 	}
 	defer resp.Body.Close()
 
-	log.Printf("📥 HTTP: Received response with status code: %d", resp.StatusCode)
+	slog.Debug("📥 HTTP: Received response", "status_code", resp.StatusCode, "url", url)
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("❌ HTTP: Failed with status code %d for %s", resp.StatusCode, url)
+		slog.Error("❌ HTTP: Failed with status code", "status_code", resp.StatusCode, "url", url)
 		return nil, fmt.Errorf("http status %d for %s", resp.StatusCode, url)
 	}
 
-	log.Printf("🔄 HTTP: Decoding JSON response from: %s", url)
+	slog.Debug("🔄 HTTP: Decoding JSON response", "url", url)
 	var metadata map[string]any
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(&metadata); err != nil {
-		log.Printf("❌ HTTP: Failed to decode JSON from %s: %v", url, err)
+		slog.Error("❌ HTTP: Failed to decode JSON", "url", url, "error", err)
 		return nil, fmt.Errorf("failed to decode JSON from %s: %w", url, err)
 	}
 
 	if len(metadata) == 0 {
-		log.Printf("❌ HTTP: Empty metadata received from %s", url)
+		slog.Error("❌ HTTP: Empty metadata received", "url", url)
 		return nil, fmt.Errorf("empty metadata received from %s", url)
 	}
 
-	log.Printf("✅ HTTP: Successfully decoded JSON metadata (%d fields) from: %s", len(metadata), url)
+	slog.Debug("✅ HTTP: Successfully decoded JSON metadata", "field_count", len(metadata), "url", url)
 	return metadata, nil
 }
 
 // fetchHTTPRaw fetches raw data and content type from an HTTP(S) URL
 func (c *Client) fetchHTTPRaw(ctx context.Context, url string) (data []byte, contentType string, err error) {
-	log.Printf("🌐 HTTP Raw: Requesting: %s", url)
+	slog.Debug("🌐 HTTP Raw: Requesting", "url", url)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
+		slog.Error("❌ HTTP Raw: Failed to create request", "url", url, "error", err)
 		return nil, "", fmt.Errorf("failed to create request for %s: %w", url, err)
 	}
 	req.Header.Set("User-Agent", "DankfolioImageProxy/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		slog.Error("❌ HTTP Raw: Request failed", "url", url, "error", err)
 		return nil, "", fmt.Errorf("http get failed for %s: %w", url, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		slog.Error("❌ HTTP Raw: Failed with status code", "status_code", resp.StatusCode, "url", url)
 		return nil, "", fmt.Errorf("http status %d for %s", resp.StatusCode, url)
 	}
 
 	contentType = resp.Header.Get("Content-Type")
 	if contentType == "" {
 		contentType = "application/octet-stream"
-		log.Printf("⚠️ HTTP Raw: Content-Type missing for %s, using fallback %s", url, contentType)
+		slog.Warn("⚠️ HTTP Raw: Content-Type missing, using fallback", "url", url, "fallback_type", contentType)
 	}
 
 	data, err = io.ReadAll(resp.Body)
 	if err != nil {
+		slog.Error("❌ HTTP Raw: Failed to read response body", "url", url, "error", err)
 		return nil, "", fmt.Errorf("failed to read response body from %s: %w", url, err)
 	}
 	if len(data) == 0 {
+		slog.Error("❌ HTTP Raw: Empty response body received", "url", url)
 		return nil, "", fmt.Errorf("empty response body received from %s", url)
 	}
-	log.Printf("✅ HTTP Raw: Success fetching %d bytes (%s) from: %s", len(data), contentType, url)
+	slog.Debug("✅ HTTP Raw: Success fetching", "bytes", len(data), "content_type", contentType, "url", url)
 	return data, contentType, nil
 }
 
@@ -260,19 +265,19 @@ func (c *Client) fetchIPFSRaw(ctx context.Context, uri string) ([]byte, string, 
 	}
 
 	gateways := getIPFSGateways()
-	log.Printf("📦 IPFS Raw: Extracted CID: %s. Trying %d gateways...", cid, len(gateways))
+	slog.Debug("📦 IPFS Raw: Extracted CID", "cid", cid, "gateways", gateways)
 
 	var lastErr error
 	for i, gw := range gateways {
 		fullURL := gw + cid
-		log.Printf("📦 IPFS Raw: Attempt %d/%d: %s", i+1, len(gateways), fullURL)
+		slog.Debug("📦 IPFS Raw: Attempt", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw, "url", fullURL)
 		data, contentType, err := c.fetchHTTPRaw(ctx, fullURL)
 		if err == nil {
-			log.Printf("✅ IPFS Raw: Success from gateway %d/%d: %s", i+1, len(gateways), gw)
+			slog.Debug("✅ IPFS Raw: Success from gateway", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw)
 			return data, contentType, nil
 		}
 		lastErr = err
-		log.Printf("❌ IPFS Raw: Gateway %d/%d failed (%s): %v", i+1, len(gateways), gw, err)
+		slog.Debug("❌ IPFS Raw: Gateway failed", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw, "error", err)
 	}
 	return nil, "", fmt.Errorf("all IPFS gateways failed for raw data %s: %w", uri, lastErr)
 }
@@ -284,19 +289,19 @@ func (c *Client) fetchArweaveRaw(ctx context.Context, uri string) ([]byte, strin
 		return nil, "", fmt.Errorf("invalid arweave URI: empty TxID")
 	}
 	gateways := getArweaveGateways()
-	log.Printf("📜 Arweave Raw: Extracted TxID: %s. Trying %d gateways...", txID, len(gateways))
+	slog.Debug("📜 Arweave Raw: Extracted TxID", "txID", txID, "gateways", gateways)
 
 	var lastErr error
 	for i, gw := range gateways {
 		fullURL := gw + txID
-		log.Printf("📜 Arweave Raw: Attempt %d/%d: %s", i+1, len(gateways), fullURL)
+		slog.Debug("📜 Arweave Raw: Attempt", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw, "url", fullURL)
 		data, contentType, err := c.fetchHTTPRaw(ctx, fullURL)
 		if err == nil {
-			log.Printf("✅ Arweave Raw: Success from gateway %d/%d: %s", i+1, len(gateways), gw)
+			slog.Debug("✅ Arweave Raw: Success from gateway", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw)
 			return data, contentType, nil
 		}
 		lastErr = err
-		log.Printf("❌ Arweave Raw: Gateway %d/%d failed (%s): %v", i+1, len(gateways), gw, err)
+		slog.Debug("❌ Arweave Raw: Gateway failed", "index", fmt.Sprintf("%d/%d", i+1, len(gateways)), "gateway", gw, "error", err)
 	}
 	return nil, "", fmt.Errorf("all Arweave gateways failed for raw data %s: %w", uri, lastErr)
 }

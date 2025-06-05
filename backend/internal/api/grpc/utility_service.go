@@ -3,7 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"connectrpc.com/connect"
@@ -55,36 +55,39 @@ func (s *Service) GetProxiedImage(ctx context.Context, req *connect.Request[dank
 	imageURL := req.Msg.GetImageUrl()
 
 	if imageURL == "" {
-		log.Printf("❌ GetProxiedImage: Empty image_url received")
+		slog.Error("GetProxiedImage received empty image_url")
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("image_url cannot be empty"))
 	}
 
-	log.Printf("🔄 GetProxiedImage: Processing request for URL: %s", imageURL)
+	slog.Debug("Processing GetProxiedImage request", "url", imageURL)
 
 	// 1. Check cache
 	if cached, found := s.cache.Get(imageURL); found {
 		if cachedData, ok := cached.(*CachedImageData); ok {
-			log.Printf("✅ GetProxiedImage: Cache hit for URL: %s", imageURL)
+			slog.Debug("Cache hit for GetProxiedImage", "url", imageURL)
 			resp := &dankfoliov1.GetProxiedImageResponse{
 				ImageData:   cachedData.Data,
 				ContentType: cachedData.ContentType,
 			}
 			return connect.NewResponse(resp), nil
 		} else {
-			log.Printf("⚠️ GetProxiedImage: Cache item for %s had unexpected type: %T", imageURL, cached)
+			slog.Warn("Cache item had unexpected type", "url", imageURL, "type", fmt.Sprintf("%T", cached))
 		}
 	}
 
-	log.Printf("🔍 GetProxiedImage: Cache miss for URL: %s. Fetching from source...", imageURL)
+	slog.Debug("Cache miss for GetProxiedImage, fetching from source", "url", imageURL)
 
 	// 2. Fetch from source using the injected fetcher
 	data, contentType, err := s.fetcher.FetchRawData(ctx, imageURL)
 	if err != nil {
-		log.Printf("❌ GetProxiedImage: Failed to fetch raw data for %s: %v", imageURL, err)
+		slog.Error("Failed to fetch image data", "url", imageURL, "error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to fetch image from %s: %w", imageURL, err))
 	}
 
-	log.Printf("💾 GetProxiedImage: Successfully fetched %d bytes (%s) for %s. Storing in cache...", len(data), contentType, imageURL)
+	slog.Debug("Successfully fetched image data",
+		"url", imageURL,
+		"bytes", len(data),
+		"content_type", contentType)
 
 	// 3. Store in cache
 	cacheItem := &CachedImageData{

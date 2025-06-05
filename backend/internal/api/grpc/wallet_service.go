@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
@@ -32,8 +33,10 @@ func (s *walletServiceHandler) GetWalletBalances(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("wallet address is required"))
 	}
 
+	slog.Debug("Getting wallet balances", "address", req.Msg.Address)
 	balances, err := s.walletService.GetWalletBalances(ctx, req.Msg.Address)
 	if err != nil {
+		slog.Error("Failed to get wallet balances", "address", req.Msg.Address, "error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get wallet balance: %w", err))
 	}
 
@@ -47,11 +50,14 @@ func (s *walletServiceHandler) CreateWallet(
 	ctx context.Context,
 	req *connect.Request[pb.CreateWalletRequest],
 ) (*connect.Response[pb.CreateWalletResponse], error) {
+	slog.Debug("Creating new wallet")
 	wallet, err := s.walletService.CreateWallet(ctx)
 	if err != nil {
+		slog.Error("Failed to create wallet", "error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to create wallet: %w", err))
 	}
 
+	slog.Info("New wallet created successfully", "public_key", wallet.PublicKey)
 	return connect.NewResponse(&pb.CreateWalletResponse{
 		PublicKey: wallet.PublicKey,
 		SecretKey: wallet.SecretKey,
@@ -71,11 +77,22 @@ func (s *walletServiceHandler) PrepareTransfer(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("amount must be greater than 0"))
 	}
 
+	slog.Debug("Preparing transfer transaction",
+		"from", req.Msg.FromAddress,
+		"to", req.Msg.ToAddress,
+		"coin_mint", req.Msg.CoinMint,
+		"amount", req.Msg.Amount)
+
 	unsignedTx, err := s.walletService.PrepareTransfer(ctx, req.Msg.FromAddress, req.Msg.ToAddress, req.Msg.CoinMint, req.Msg.Amount)
 	if err != nil {
+		slog.Error("Failed to prepare transfer",
+			"from", req.Msg.FromAddress,
+			"to", req.Msg.ToAddress,
+			"error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare transfer: %w", err))
 	}
 
+	slog.Debug("Transfer transaction prepared successfully")
 	res := connect.NewResponse(&pb.PrepareTransferResponse{
 		UnsignedTransaction: unsignedTx,
 	})
@@ -96,11 +113,14 @@ func (s *walletServiceHandler) SubmitTransfer(
 		UnsignedTransaction: req.Msg.UnsignedTransaction,
 	}
 
+	slog.Debug("Submitting transfer transaction")
 	txHash, err := s.walletService.SubmitTransfer(ctx, transferRequest)
 	if err != nil {
+		slog.Error("Failed to submit transfer", "error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to submit transfer: %w", err))
 	}
 
+	slog.Info("Transfer submitted successfully", "tx_hash", txHash)
 	res := connect.NewResponse(&pb.SubmitTransferResponse{
 		TransactionHash: txHash,
 	})
