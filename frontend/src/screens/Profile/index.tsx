@@ -18,7 +18,6 @@ import {
 	SwapIcon,
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
-import { FirebaseTest } from '@/components/FirebaseTest';
 import { APP_ENV } from '@env';
 
 const Profile = () => {
@@ -118,8 +117,9 @@ const Profile = () => {
 					logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
 					navigation.navigate('SendTokens');
 				}}
-				style={styles.sendButton}
+				style={[styles.sendButton, tokens.length === 0 && styles.sendButtonDisabled]}
 				contentStyle={styles.sendButtonContent}
+				disabled={tokens.length === 0}
 			>
 				Send Tokens
 			</Button>
@@ -215,50 +215,14 @@ const Profile = () => {
 
 					{/* Debug section - development only */}
 					{APP_ENV === 'development' && (
-						<View style={styles.debugSection}>
-							<Button
-								onPress={async () => {
-									// Sentry.captureException(new Error('Test error'));
-								}}
-								style={styles.debugButton}
-							>
-								Test App Check
-							</Button>
-						</View>
+						<Text >
+							Test
+						</Text>
 					)}
 				</ScrollView>
 			</View>
 		</SafeAreaView>
 	);
-};
-
-// Helper function to format date (can be moved to a utility file later)
-const formatDate = (dateString: string) => {
-	if (!dateString) return 'N/A';
-	try {
-		return new Date(dateString).toLocaleDateString(undefined, {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
-		});
-	} catch (e) {
-		return dateString; // fallback to original string if parsing fails
-	}
-};
-
-const TransactionTypeIcon = ({ type, theme }: { type: Transaction['type'], theme: any }) => {
-	const iconColor = theme.colors.onSurfaceVariant;
-	switch (type) {
-		case 'SWAP':
-			return <SwapIcon size={20} color={iconColor} />;
-		case 'TRANSFER':
-			// Could differentiate between send/receive if data available
-			return <Icon source="arrow-up" size={20} color={iconColor} />;
-		default:
-			return <Icon source="help-circle-outline" size={20} color={iconColor} />;
-	}
 };
 
 export default Profile;
