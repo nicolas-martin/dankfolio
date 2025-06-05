@@ -45,7 +45,6 @@
     "expo-secure-store": "~14.2.3",
     "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",
-    "expo-updates": "~0.28.14",
     "firebase": "^11.8.1",
     "getenv": "2.0.0",
     "lodash": "^4.17.21",

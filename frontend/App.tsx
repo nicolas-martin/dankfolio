@@ -65,23 +65,6 @@ console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
 console.log('🔍 process.env.NODE_ENV:', process.env.NODE_ENV);
 console.log('🔍 __DEV__:', __DEV__);
 
-// Try to import and log all env variables
-try {
-	const {
-		REACT_APP_API_URL,
-		REACT_APP_SOLANA_RPC_ENDPOINT,
-		APP_ENV,
-		DEBUG_MODE,
-	} = require('@env');
-
-	console.log('🔍 REACT_APP_API_URL:', REACT_APP_API_URL);
-	console.log('🔍 REACT_APP_SOLANA_RPC_ENDPOINT:', REACT_APP_SOLANA_RPC_ENDPOINT);
-	console.log('🔍 APP_ENV:', APP_ENV);
-	console.log('🔍 DEBUG_MODE:', DEBUG_MODE);
-} catch (error) {
-	console.log('🔍 Error importing @env:', error);
-}
-
 console.log('🔍 === END ENVIRONMENT VARIABLES DEBUG ===');
 
 // Keep the splash screen visible while we fetch resources
