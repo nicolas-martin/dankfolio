@@ -59,7 +59,7 @@ import { Keypair } from '@solana/web3.js';
 import { logger } from '@/utils/logger';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
 import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useThemeStore } from '@/store/theme';
 
 // DEBUG: Log all environment variables at app startup
 console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
@@ -80,8 +80,6 @@ configureReanimatedLogger({
 	strict: false,
 });
 
-const THEME_STORAGE_KEY = 'app_theme_preference';
-
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
@@ -92,14 +90,9 @@ const App: React.FC = () => {
 	const [appIsReady, setAppIsReady] = useState(false);
 	const [needsWalletSetup, setNeedsWalletSetup] = useState<boolean | null>(null);
 	const { setWallet, wallet } = usePortfolioStore();
-	const [themeType, setThemeType] = useState<ThemeType>('neon');
-
-	// Function to toggle between themes
-	const toggleTheme = useCallback(async () => {
-		const newTheme = themeType === 'light' ? 'neon' : 'light';
-		setThemeType(newTheme);
-		await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
-	}, [themeType]);
+	
+	// Use the theme store instead of local state
+	const { themeType } = useThemeStore();
 
 	const handleWalletSetupComplete = async (newKeypair: Keypair) => {
 		logger.breadcrumb({ message: 'App: Wallet setup complete, navigating to main app', category: 'app_lifecycle' });
@@ -128,15 +121,7 @@ const App: React.FC = () => {
 		});
 
 		async function prepare() {
-			// Load theme preference
-			try {
-				const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY) as ThemeType | null;
-				if (savedTheme && (savedTheme === 'light' || savedTheme === 'neon')) {
-					setThemeType(savedTheme);
-				}
-			} catch (error) {
-				logger.warn('Failed to load theme preference:', error);
-			}
+			// Theme is now handled by the theme store
 
 			// Existing logger.breadcrumb call for starting authentication
 			logger.breadcrumb({ message: 'App: Preparing - Initializing Firebase', category: 'app_lifecycle' });
@@ -238,7 +223,7 @@ const App: React.FC = () => {
 									/>)
 							) : (
 								(logger.breadcrumb({ message: 'App: Navigating to MainTabs', category: 'navigation' }),
-									<Navigation themeType={themeType} toggleTheme={toggleTheme} />)
+									<Navigation />)
 							)}
 						</View>
 					</ToastProvider>
