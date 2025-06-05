@@ -36,6 +36,7 @@ export interface ProfileScreenStyles {
 	portfolioSubtext: any;
 	sendButton: any;
 	sendButtonContent: any;
+	sendButtonDisabled: any;
 	tokensSection: any;
 	tokensHeader: any;
 	tokensIcon: any;

@@ -93,7 +93,7 @@ const Navigation = () => {
 				screenOptions={{
 					header: () => <CustomHeader />,
 					headerShown: true,
-					contentStyle: { backgroundColor: '#1A1A2E' },
+					// contentStyle: { backgroundColor: '#1A1A2E' },
 					animation: 'slide_from_right',
 				}}
 			>

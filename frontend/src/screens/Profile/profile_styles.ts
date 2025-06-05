@@ -98,6 +98,10 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	sendButtonContent: {
 		paddingVertical: 8,
 	},
+	sendButtonDisabled: {
+		backgroundColor: theme.colors.primary,
+		opacity: 0.5,
+	},
 
 	// Tokens Section
 	tokensSection: {
