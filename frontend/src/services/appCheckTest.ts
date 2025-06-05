@@ -37,24 +37,37 @@ export class AppCheckTester {
    */
   static async testAuthenticationFlow(): Promise<boolean> {
     try {
-      logger.info('🧪 Testing complete authentication flow...');
+      logger.info('🧪 Testing Firebase App Check authentication flow...');
       
-      // Step 1: Get App Check token
+      // Get App Check token
       const appCheckSuccess = await this.testAppCheckToken();
       if (!appCheckSuccess) {
         logger.error('❌ App Check token test failed');
         return false;
       }
-
-      // Step 2: Test backend authentication (if available)
-      // This would call your authService.refreshToken() method
+      
       logger.info('✅ App Check token test passed');
       
-      // You can extend this to test the full flow:
-      // const authService = new AuthService();
-      // await authService.refreshToken();
-      
-      return true;
+      // Make an authenticated API call to test the token is working with the backend
+      try {
+        // This will use the App Check token via the interceptor
+        const response = await fetch('/api/test-auth', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API response not OK: ${response.status}`);
+        }
+        
+        logger.info('✅ Successfully made authenticated API call with App Check token');
+        return true;
+      } catch (apiError) {
+        logger.error('❌ API call with App Check token failed', { error: apiError });
+        return false;
+      }
     } catch (error) {
       logger.error('❌ Authentication flow test failed', { error });
       return false;

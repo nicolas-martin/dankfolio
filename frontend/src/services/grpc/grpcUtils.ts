@@ -95,19 +95,10 @@ export const handleGrpcError = (error: unknown, serviceName: string, methodName:
 			log.error(`❌ gRPC ${serviceName}.${methodName} Authentication Error:`, {
 				message: error.message,
 				code: error.code,
-				details: 'This is an authentication error. Check if your token is valid and properly configured.'
+				details: 'This is an authentication error. Check if your Firebase App Check token is valid.'
 			});
-			// Clear the auth token if it's invalid to force a refresh on next request
-			// This is a temporary fix - we should properly handle token refresh in the authService
-			const errorMessage = error.message.toLowerCase();
-			if (errorMessage.includes('invalid token') || 
-				errorMessage.includes('token is unverifiable') ||
-				errorMessage.includes('signing method') ||
-				errorMessage.includes('unauthenticated')) {
-				// Import would create circular dependency, so we log a message instead
-				log.warn('🔐 Authentication error detected. Token may need to be refreshed on next request.');
-				// We can't directly call authService here due to circular dependency
-			}
+			
+			// No special handling needed for App Check tokens as they're obtained on each request
 		}
 		throw new Error(`${error.code}: ${error.message}`);
 	}

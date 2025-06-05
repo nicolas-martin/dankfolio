@@ -7,7 +7,6 @@ import { retrieveWalletFromStorage } from '@screens/WalletSetup/scripts';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Sentry from '@sentry/react-native';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
-import { authService } from '@/services/authService';
 import { Keypair } from '@solana/web3.js';
 import { logger } from '@/utils/logger';
 
@@ -29,13 +28,6 @@ jest.mock('@sentry/react-native', () => ({
 
 jest.mock('@/services/firebaseInit', () => ({
   initializeFirebaseServices: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock('@/services/authService', () => ({
-  authService: {
-    initialize: jest.fn().mockResolvedValue(undefined),
-    // Add other methods if App.tsx uses them
-  },
 }));
 
 jest.mock('@screens/WalletSetup/scripts', () => ({

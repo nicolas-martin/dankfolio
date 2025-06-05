@@ -6,9 +6,9 @@ import { TradeService } from "@/gen/dankfolio/v1/trade_pb";
 import { CoinService } from "@/gen/dankfolio/v1/coin_pb";
 import { PriceService } from "@/gen/dankfolio/v1/price_pb";
 import { UtilityService } from "@/gen/dankfolio/v1/utility_pb";
-import { authService } from "../authService";
 import { logger as log } from '@/utils/logger';
 import type { Interceptor } from "@connectrpc/connect";
+import appCheck from '@react-native-firebase/app-check';
 
 // Log the environment variable for debugging
 log.log('🔧 REACT_APP_API_URL from environment:', REACT_APP_API_URL);
@@ -22,16 +22,18 @@ if (!REACT_APP_API_URL) {
 // Authentication interceptor to add bearer tokens to all requests
 const authInterceptor: Interceptor = (next) => async (req) => {
 	try {
-		const token = await authService.getAuthToken();
-		if (token) {
+		// Instead of getting JWT token, get the Firebase App Check token directly
+		const appCheckToken = await appCheck().getToken(false);
+		
+		if (appCheckToken && appCheckToken.token) {
 			// Don't log the token itself, just that we're adding it
-			log.info(`🔐 Adding auth token to request: ${req.url}`);
-			req.header.set('Authorization', `Bearer ${token}`);
+			log.info(`🔐 Adding Firebase App Check token to request: ${req.url}`);
+			req.header.set('X-Firebase-AppCheck', appCheckToken.token);
 		} else {
-			log.warn(`🔐 No auth token available for request to: ${req.url}`);
+			log.warn(`🔐 No Firebase App Check token available for request to: ${req.url}`);
 		}
 	} catch (error) {
-		log.error('❌ Failed to get auth token for request:', error);
+		log.error('❌ Failed to get Firebase App Check token for request:', error);
 	}
 	return next(req);
 };

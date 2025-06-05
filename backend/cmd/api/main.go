@@ -22,7 +22,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/auth"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
@@ -40,8 +39,6 @@ type Config struct {
 	JupiterApiKey             string
 	JupiterApiUrl             string
 	Env                       string
-	JWTSecret                 string
-	TokenExpiry               time.Duration
 	NewCoinsFetchInterval     time.Duration
 	PlatformFeeBps            int
 	PlatformFeeAccountAddress string
@@ -65,17 +62,6 @@ func loadConfig() (*Config, error) {
 			log.Printf("Warning: Invalid CACHE_EXPIRY_SECONDS value: %v, using default. Slog not yet initialized.", err)
 		} else {
 			cacheExpiry = time.Duration(expirySecs) * time.Second
-		}
-	}
-
-	// Parse token expiry duration (default to 24 hours)
-	tokenExpiry := 24 * time.Hour
-	if expiryStr := os.Getenv("JWT_TOKEN_EXPIRY_HOURS"); expiryStr != "" {
-		expiryHours, err := strconv.Atoi(expiryStr)
-		if err != nil {
-			log.Printf("Warning: Invalid JWT_TOKEN_EXPIRY_HOURS value: %v, using default 24 hours.", err)
-		} else {
-			tokenExpiry = time.Duration(expiryHours) * time.Hour
 		}
 	}
 
@@ -109,8 +95,6 @@ func loadConfig() (*Config, error) {
 		JupiterApiKey:             os.Getenv("JUPITER_API_KEY"),
 		JupiterApiUrl:             os.Getenv("JUPITER_API_URL"),
 		Env:                       os.Getenv("APP_ENV"),
-		JWTSecret:                 os.Getenv("JWT_SECRET"),
-		TokenExpiry:               tokenExpiry,
 		NewCoinsFetchInterval:     newCoinsFetchInterval,
 		PlatformFeeBps:            platformFeeBps,
 		PlatformFeeAccountAddress: platformFeeAccountAddress,
@@ -119,9 +103,6 @@ func loadConfig() (*Config, error) {
 	// Validate required fields
 	var missingVars []string
 
-	if config.JWTSecret == "" {
-		missingVars = append(missingVars, "JWT_SECRET")
-	}
 	if config.Env == "" {
 		missingVars = append(missingVars, "APP_ENV")
 	}
@@ -188,9 +169,9 @@ func main() {
 
 	ctx := context.Background()
 	// Initialize Firebase with explicit project ID to match App Check token audience
-	// The token has two audiences: "projects/7513481592181" and "projects/dankfolio"
+	// The token has audience: "projects/7513481592181"
 	firebaseConfig := &firebase.Config{
-		ProjectID: "dankfolio", // Match the project ID in the App Check token audience
+		ProjectID: "7513481592181", // Use numeric project ID exactly as seen in the token's audience
 	}
 	firebaseApp, err := firebase.NewApp(ctx, firebaseConfig)
 	if err != nil {
@@ -225,18 +206,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Initialize auth service with App Check client
-	authServiceConfig := &auth.Config{
-		JWTSecret:      config.JWTSecret,
-		TokenExpiry:    config.TokenExpiry,
-		AppCheckClient: appCheckClient,
-		Env:            config.Env, // Pass AppEnv to auth service config
-	}
-	authService, err := auth.NewService(authServiceConfig)
-	if err != nil {
-		slog.Error("Failed to initialize auth service", slog.Any("error", err))
-		os.Exit(1)
-	}
+	// We don't need the auth service anymore as we're using App Check directly
 
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:        config.BirdEyeEndpoint,
@@ -271,7 +241,7 @@ func main() {
 		tradeService,
 		priceService,
 		utilitySvc,
-		authService,
+		appCheckClient,
 	)
 
 	slog.Debug("Debug message")

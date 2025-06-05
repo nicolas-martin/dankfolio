@@ -18,7 +18,6 @@ import { Keypair } from '@solana/web3.js';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
 import Constants from 'expo-constants';
-import { authService } from '@/services/authService';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -187,16 +186,6 @@ const App: React.FC = () => {
 			} catch (e) {
 				logger.error('❌ Failed to initialize Firebase services', { error: e?.message });
 				// Decide if this error should block app startup or be handled gracefully
-			}
-
-			logger.breadcrumb({ message: 'App: Preparing - Initializing authentication', category: 'app_lifecycle' });
-			try {
-				// Initialize authentication service first
-				await authService.initialize();
-				logger.info("Authentication service initialized successfully");
-			} catch (e) {
-				logger.error('Failed to initialize authentication service', { error: e?.message });
-				// Don't block app startup if auth fails - the auth service will retry on demand
 			}
 
 			logger.breadcrumb({ message: 'App: Preparing - Checking wallet storage', category: 'app_lifecycle' });
