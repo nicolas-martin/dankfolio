@@ -3,7 +3,7 @@ import useAuthStore from '@/store/auth';
 import { authClient } from '@/services/grpc/authClient';
 import { logger } from '@/utils/logger';
 import { getAppCheckInstance } from '@/services/firebaseInit';
-import { getToken as getAppCheckTokenFirebase } from 'firebase/app-check';
+import { getToken as getAppCheckTokenFirebase } from '@react-native-firebase/app-check';
 import { create } from "@bufbuild/protobuf";
 import { GenerateTokenResponseSchema } from "@/gen/dankfolio/v1/auth_pb";
 
@@ -12,7 +12,7 @@ jest.mock('@/store/auth');
 jest.mock('@/services/grpc/authClient');
 jest.mock('@/utils/logger');
 jest.mock('@/services/firebaseInit');
-jest.mock('firebase/app-check');
+jest.mock('@react-native-firebase/app-check');
 
 const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
 const mockAuthClient = authClient as jest.Mocked<typeof authClient>;

@@ -144,8 +144,8 @@ class AuthService {
 
 			let appCheckTokenValue: string;
 			try {
-				// Use the appCheck module directly for simplicity
-				const appCheckTokenResult = await appCheck().getToken(true);
+				// Use the modern Firebase API format to avoid deprecation warnings
+				const appCheckTokenResult = await appCheck().getToken();
 				
 				if (!appCheckTokenResult || !appCheckTokenResult.token) {
 					throw new Error('App Check token is empty or undefined');

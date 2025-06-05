@@ -45,7 +45,7 @@ export async function initializeFirebaseServices(): Promise<void> {
     const rnfbProvider = new ReactNativeFirebaseAppCheckProvider();
     rnfbProvider.configure(getAppCheckConfig());
     
-    // Initialize App Check using initializeAppCheck
+    // Initialize App Check using the modern API
     initializeAppCheck(firebaseApp, {
       provider: rnfbProvider,
       isTokenAutoRefreshEnabled: true,
@@ -62,7 +62,8 @@ export async function initializeFirebaseServices(): Promise<void> {
   }
 }
 
-// Function to get the App Check instance
+// Note: This function is now mainly used for compatibility with existing code
+// In new code, prefer using appCheck() directly
 export function getAppCheckInstance() {
   if (APP_ENV === 'development') {
     logger.info('⚠️ App Check not available in development mode');
