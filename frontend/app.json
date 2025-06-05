@@ -39,7 +39,7 @@
       "@react-native-firebase/app-check"
     ],
     "updates": {
-      "enabled": true,
+      "enabled": false,
       "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/efd2922e-0415-49a7-bae1-fd28bc35805d"
     },
