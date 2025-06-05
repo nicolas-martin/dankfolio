@@ -24,9 +24,11 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 	try {
 		const token = await authService.getAuthToken();
 		if (token) {
+			// Don't log the token itself, just that we're adding it
+			log.info(`🔐 Adding auth token to request: ${req.url}`);
 			req.header.set('Authorization', `Bearer ${token}`);
 		} else {
-			log.warn('🔐 No auth token available for request');
+			log.warn(`🔐 No auth token available for request to: ${req.url}`);
 		}
 	} catch (error) {
 		log.error('❌ Failed to get auth token for request:', error);

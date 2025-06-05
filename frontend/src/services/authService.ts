@@ -80,22 +80,23 @@ class AuthService {
 		log.warn(`🔐 Generating development token for deviceId (mock AppCheck subject): ${deviceId}, platform: ${platform}`);
 
 		// Use base64 encoding and manually convert to base64url format (React Native compatible)
-		const headerJson = JSON.stringify({ alg: 'DEV', typ: 'JWT' });
+		// IMPORTANT: Change algorithm from 'DEV' to 'HS256' to match backend expectation
+		const headerJson = JSON.stringify({ alg: 'HS256', typ: 'JWT' });
 		const payloadJson = JSON.stringify({
-			// sub: tokenRequest.deviceId, // Old way
-			sub: deviceId, // New: using passed mock deviceId (AppCheck subject)
+			sub: deviceId,
 			device_id: deviceId, // Mirroring the 'device_id' claim the backend now creates from subject
 			platform: platform,
 			iat: Math.floor(Date.now() / 1000),
 			exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
-			dev: true,
-			iss: "dankfolio-app-dev" // Mock issuer
+			iss: "dankfolio-app" // Match the issuer used by backend
 		});
 
 		// Convert base64 to base64url format (replace + with -, / with _, remove padding =)
 		const header = Buffer.from(headerJson).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 		const payload = Buffer.from(payloadJson).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-		const signature = 'dev-signature';
+		
+		// Use a dev signature that simulates HS256
+		const signature = 'dev-hs256-signature';
 
 		return {
 			token: `${header}.${payload}.${signature}`,
@@ -145,8 +146,8 @@ class AuthService {
 			let appCheckTokenValue: string;
 			try {
 				// Use the modern Firebase API format to avoid deprecation warnings
-				// Pass false to prevent forcing a token refresh, which might trigger rate limiting
-				const appCheckTokenResult = await appCheck().getToken(false);
+				// Force refresh to ensure we get a fresh token
+				const appCheckTokenResult = await appCheck().getToken(true);
 				
 				if (!appCheckTokenResult || !appCheckTokenResult.token) {
 					throw new Error('App Check token is empty or undefined');
@@ -154,6 +155,22 @@ class AuthService {
 				
 				appCheckTokenValue = appCheckTokenResult.token;
 				log.info('🔥 Firebase App Check token retrieved successfully.');
+				
+				// Log detailed token info for debugging
+				try {
+					const tokenParts = appCheckTokenValue.split('.');
+					if (tokenParts.length === 3) {
+						// Only log the header to see the signing method
+						const headerBase64 = tokenParts[0];
+						const headerJson = Buffer.from(headerBase64, 'base64').toString('utf8');
+						log.info('🔥 AppCheck token header:', headerJson);
+					} else {
+						log.warn('🔥 AppCheck token is not in expected JWT format');
+					}
+				} catch (parseError) {
+					log.warn('🔥 Could not parse AppCheck token for logging:', parseError);
+				}
+
 			} catch (error) {
 				log.error('❌ Failed to retrieve Firebase App Check token:', error);
 				if (this.isDevelopment) {
@@ -171,26 +188,42 @@ class AuthService {
 			let tokenResponse: TokenResponse;
 			try {
 				log.info('🔐 Calling backend GenerateToken with App Check token.', { platform });
+				
+				// Make the gRPC call to get the application token
 				const grpcResponse = await authClient.generateToken({
 					appCheckToken: appCheckTokenValue,
 					platform: platform,
 				});
+				
+				if (!grpcResponse || !grpcResponse.token) {
+					throw new Error('Backend returned empty token response');
+				}
+				
 				tokenResponse = {
 					token: grpcResponse.token,
 					expiresIn: grpcResponse.expiresIn,
 				};
+				
 				log.info('🔐 Application token received from gRPC backend.');
+				
+				// Log detailed token info for debugging
+				try {
+					const tokenParts = tokenResponse.token.split('.');
+					if (tokenParts.length === 3) {
+						// Only log the header to see the signing method
+						const headerBase64 = tokenParts[0];
+						const headerJson = Buffer.from(headerBase64, 'base64').toString('utf8');
+						log.info('🔐 Application token header:', headerJson);
+					} else {
+						log.warn('🔐 Application token is not in expected JWT format');
+					}
+				} catch (parseError) {
+					log.warn('🔐 Could not parse application token for logging:', parseError);
+				}
+				
 			} catch (grpcError) {
 				log.error('❌ Failed to fetch application token via gRPC (after App Check):', grpcError);
-				// The dev fallback here is less likely to be useful if App Check token was obtained
-				// but backend call failed. This indicates a backend issue.
-				// Consider if a different dev fallback is needed here or just rethrow.
-				if (this.isDevelopment) {
-					log.warn('🔐 gRPC call failed in development (after App Check). This might indicate backend issue or mismatched dev JWT.');
-					// Optionally, could use generateDevelopmentToken again, but it might mask backend problems.
-					// For now, let's let it throw to indicate backend communication failure.
-				}
-				throw grpcError; // Re-throw to signal failure
+				throw grpcError;
 			}
 
 			const expiresAt = new Date();

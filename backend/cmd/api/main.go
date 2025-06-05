@@ -30,19 +30,19 @@ import (
 )
 
 type Config struct {
-	SolanaRPCEndpoint     string
-	BirdEyeEndpoint       string
-	BirdEyeAPIKey         string
-	CoinGeckoAPIKey       string
-	GRPCPort              int
-	DBURL                 string
-	CacheExpiry           time.Duration
-	JupiterApiKey         string
-	JupiterApiUrl         string
-	Env                   string
-	JWTSecret             string
-	TokenExpiry           time.Duration
-	NewCoinsFetchInterval time.Duration
+	SolanaRPCEndpoint         string
+	BirdEyeEndpoint           string
+	BirdEyeAPIKey             string
+	CoinGeckoAPIKey           string
+	GRPCPort                  int
+	DBURL                     string
+	CacheExpiry               time.Duration
+	JupiterApiKey             string
+	JupiterApiUrl             string
+	Env                       string
+	JWTSecret                 string
+	TokenExpiry               time.Duration
+	NewCoinsFetchInterval     time.Duration
 	PlatformFeeBps            int
 	PlatformFeeAccountAddress string
 }
@@ -99,19 +99,19 @@ func loadConfig() (*Config, error) {
 	platformFeeAccountAddress := os.Getenv("PLATFORM_FEE_ACCOUNT_ADDRESS")
 
 	config := &Config{
-		SolanaRPCEndpoint:     os.Getenv("SOLANA_RPC_ENDPOINT"),
-		BirdEyeEndpoint:       os.Getenv("BIRDEYE_ENDPOINT"),
-		BirdEyeAPIKey:         os.Getenv("BIRDEYE_API_KEY"),
-		CoinGeckoAPIKey:       os.Getenv("COINGECKO_API_KEY"),
-		DBURL:                 os.Getenv("DB_URL"),
-		GRPCPort:              9000, // Default value
-		CacheExpiry:           cacheExpiry,
-		JupiterApiKey:         os.Getenv("JUPITER_API_KEY"),
-		JupiterApiUrl:         os.Getenv("JUPITER_API_URL"),
-		Env:                   os.Getenv("APP_ENV"),
-		JWTSecret:             os.Getenv("JWT_SECRET"),
-		TokenExpiry:           tokenExpiry,
-		NewCoinsFetchInterval: newCoinsFetchInterval,
+		SolanaRPCEndpoint:         os.Getenv("SOLANA_RPC_ENDPOINT"),
+		BirdEyeEndpoint:           os.Getenv("BIRDEYE_ENDPOINT"),
+		BirdEyeAPIKey:             os.Getenv("BIRDEYE_API_KEY"),
+		CoinGeckoAPIKey:           os.Getenv("COINGECKO_API_KEY"),
+		DBURL:                     os.Getenv("DB_URL"),
+		GRPCPort:                  9000, // Default value
+		CacheExpiry:               cacheExpiry,
+		JupiterApiKey:             os.Getenv("JUPITER_API_KEY"),
+		JupiterApiUrl:             os.Getenv("JUPITER_API_URL"),
+		Env:                       os.Getenv("APP_ENV"),
+		JWTSecret:                 os.Getenv("JWT_SECRET"),
+		TokenExpiry:               tokenExpiry,
+		NewCoinsFetchInterval:     newCoinsFetchInterval,
 		PlatformFeeBps:            platformFeeBps,
 		PlatformFeeAccountAddress: platformFeeAccountAddress,
 	}
@@ -187,12 +187,17 @@ func main() {
 	)
 
 	ctx := context.Background()
-	firebaseApp, err := firebase.NewApp(ctx, nil)
+	// Initialize Firebase with explicit project ID to match App Check token audience
+	// The token has two audiences: "projects/7513481592181" and "projects/dankfolio"
+	firebaseConfig := &firebase.Config{
+		ProjectID: "dankfolio", // Match the project ID in the App Check token audience
+	}
+	firebaseApp, err := firebase.NewApp(ctx, firebaseConfig)
 	if err != nil {
 		slog.Error("Failed to initialize Firebase Admin SDK", slog.Any("error", err))
 		os.Exit(1)
 	}
-	slog.Info("🔥 Firebase Admin SDK initialized successfully")
+	slog.Info("🔥 Firebase Admin SDK initialized successfully", "projectID", firebaseConfig.ProjectID)
 
 	// Initialize Firebase App Check client
 	appCheckClient, err := firebaseApp.AppCheck(ctx)
