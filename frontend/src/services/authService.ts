@@ -15,7 +15,8 @@ interface AuthToken {
 }
 
 class AuthService {
-	private readonly isDevelopment = __DEV__
+	// private readonly isDevelopment = __DEV__
+	private readonly isDevelopment = false
 	private isRefreshing = false; // Flag to prevent concurrent refresh attempts
 	private refreshPromise: Promise<void> | null = null; // Store the current refresh promise
 
