@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
 import { LoadingAnimation } from '../../Common/Animations';
 import { useCoinStore } from '@store/coins';
@@ -10,26 +10,16 @@ import HorizontalTickerCard from '@components/Home/HorizontalTickerCard';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
 import { createStyles } from './NewCoins.styles';
-import { ThemeType } from '@utils/theme';
 import { RootStackParamList } from '@/types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 // Allow navigation to Search as well for the "View All" button
 type NewCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
 
-interface NewCoinsProps {
-	themeType?: ThemeType;
-}
-
-const NewCoins: React.FC<NewCoinsProps> = ({ themeType = 'light' }) => {
+const NewCoins: React.FC = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const navigation = useNavigation<NewCoinsNavigationProp>();
-	const route = useRoute();
-
-	// Use the provided theme type or default to light
-	const currentThemeType = themeType || 'light';
-
 	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
 
 	// Use separate selectors to avoid creating new objects on every render
@@ -56,8 +46,7 @@ const NewCoins: React.FC<NewCoinsProps> = ({ themeType = 'light' }) => {
 					data: { coinSymbol: coinDetails.symbol, coinMint: coinDetails.mintAddress },
 				});
 				navigation.navigate('CoinDetail', { 
-					coin: coinDetails,
-					themeType: currentThemeType 
+					coin: coinDetails
 				});
 			} else {
 				// Log failure to fetch details
@@ -76,12 +65,11 @@ const NewCoins: React.FC<NewCoinsProps> = ({ themeType = 'light' }) => {
 			<View style={styles.cardWrapper}>
 				<HorizontalTickerCard 
 					coin={item} 
-					onPress={handleCoinPress} 
-					themeType={currentThemeType} 
+					onPress={handleCoinPress}
 				/>
 			</View>
 		);
-	}, [styles.cardWrapper, handleCoinPress, currentThemeType]);
+	}, [styles.cardWrapper, handleCoinPress]);
 
 	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (

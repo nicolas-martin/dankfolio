@@ -6,15 +6,10 @@ import { formatPercentage } from '@/utils/numberFormat';
 import { formatTimeAgo } from '@/utils/timeFormat';
 import { HorizontalTickerCardProps } from './types';
 import { createStyles } from './styles';
-import { ThemeType } from '@utils/theme';
 
-interface Props extends HorizontalTickerCardProps {
-	themeType?: ThemeType;
-}
-
-const HorizontalTickerCard: React.FC<Props> = ({ coin, onPress, themeType = 'light' }) => {
+const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress }) => {
 	const theme = useTheme();
-	const styles = createStyles(theme, themeType);
+	const styles = createStyles(theme);
 	const timeAgo = formatTimeAgo(coin.jupiterListedAt);
 
 	// Memoize the press handler to prevent unnecessary re-renders
@@ -64,7 +59,6 @@ export default React.memo(HorizontalTickerCard, (prevProps, nextProps) => {
 		prevProps.coin.symbol === nextProps.coin.symbol &&
 		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
 		prevProps.coin.change24h === nextProps.coin.change24h &&
-		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt &&
-		prevProps.themeType === nextProps.themeType
+		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt
 	);
 });
