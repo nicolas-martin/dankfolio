@@ -2,36 +2,32 @@ import { getApp } from '@react-native-firebase/app';
 import appCheck from '@react-native-firebase/app-check';
 import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
-import {
-	APP_ENV, // <<< Import APP_ENV
-	FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
-	FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
-} from '@env';
+import { env } from '@utils/env';
 
-const isDevelopmentOrSimulator = __DEV__ || APP_ENV === 'local' || APP_ENV === 'production-simulator'; // <<< Modified condition
+const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
 
 // Environment-aware App Check configuration
 const getAppCheckConfig = () => {
 	logger.info('🔧 Getting App Check config...');
-	logger.info(`🔧 Is dev mode or simulator: ${isDevelopmentOrSimulator ? 'true' : 'false'}`); // <<< Modified log
-	logger.info(`🔧 APP_ENV: ${APP_ENV}`); // <<< Added log for APP_ENV
-	if (isDevelopmentOrSimulator) { // <<< Modified condition
-		if (FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID === "") {
-			logger.exception("missing dev firebase token for android")
+	logger.info(`🔧 Is dev mode or simulator: ${isDevelopmentOrSimulator ? 'true' : 'false'}`);
+	logger.info(`🔧 APP_ENV: ${env.appEnv}`);
+	if (isDevelopmentOrSimulator) {
+		if (!env.firebaseAppCheckDebugTokenAndroid) {
+			logger.exception("missing dev firebase token for android");
 		}
-		if (FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS === "") {
-			logger.exception("missing dev firebase token for ios")
+		if (!env.firebaseAppCheckDebugTokenIos) {
+			logger.exception("missing dev firebase token for ios");
 		}
 	}
 
 	const config: any = {
 		android: {
-			provider: isDevelopmentOrSimulator ? 'debug' : 'playIntegrity', // <<< Modified condition
-			debugToken: isDevelopmentOrSimulator && FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID ? FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID : undefined, // <<< Modified condition
+			provider: isDevelopmentOrSimulator ? 'debug' : 'playIntegrity',
+			debugToken: isDevelopmentOrSimulator ? env.firebaseAppCheckDebugTokenAndroid : undefined,
 		},
 		apple: {
-			provider: isDevelopmentOrSimulator ? 'debug' : 'appAttestWithDeviceCheckFallback', // <<< Modified condition
-			debugToken: isDevelopmentOrSimulator && FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS ? FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS : undefined, // <<< Modified condition
+			provider: isDevelopmentOrSimulator ? 'debug' : 'appAttestWithDeviceCheckFallback',
+			debugToken: isDevelopmentOrSimulator ? env.firebaseAppCheckDebugTokenIos : undefined,
 		},
 	};
 

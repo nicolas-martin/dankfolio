@@ -1,7 +1,7 @@
 import { Keypair, VersionedTransaction, PublicKey, Transaction, Connection } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { RawWalletData, Base58PrivateKey } from '@/types';
-import { REACT_APP_SOLANA_RPC_ENDPOINT } from '@env';
+import { env } from '@utils/env';
 import { grpcApi } from '@/services/grpcApi';
 import { logger as log } from '@/utils/logger';
 import * as Keychain from 'react-native-keychain';
@@ -14,16 +14,16 @@ global.Buffer = Buffer;
 const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
 
 // Log the environment variable for debugging
-log.log('🔧 REACT_APP_SOLANA_RPC_ENDPOINT from environment:', REACT_APP_SOLANA_RPC_ENDPOINT);
+log.log('🔧 SOLANA_RPC_ENDPOINT from environment:', env.solanaRpcEndpoint);
 
-if (!REACT_APP_SOLANA_RPC_ENDPOINT) {
-	const errorMsg = 'REACT_APP_SOLANA_RPC_ENDPOINT environment variable is required but not set. Please check your .env configuration.';
+if (!env.solanaRpcEndpoint) {
+	const errorMsg = 'SOLANA_RPC_ENDPOINT environment variable is required but not set. Please check your environment configuration.';
 	log.error('❌ Environment Error:', errorMsg);
 	throw new Error(errorMsg);
 }
 
 
-const SOLANA_RPC_ENDPOINT: string = REACT_APP_SOLANA_RPC_ENDPOINT;
+const SOLANA_RPC_ENDPOINT: string = env.solanaRpcEndpoint;
 
 const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
 

@@ -8,14 +8,6 @@ module.exports = function (api) {
 			'@babel/preset-typescript'
 		],
 		plugins: [
-			['module:react-native-dotenv', {
-				moduleName: '@env',
-				path: '.env',
-				blacklist: null,
-				whitelist: null,
-				safe: true,
-				allowUndefined: true
-			}],
 			['@emotion'],
 			'react-native-reanimated/plugin',
 			'babel-plugin-transform-import-meta',
