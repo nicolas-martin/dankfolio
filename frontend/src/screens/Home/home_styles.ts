@@ -35,6 +35,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	sectionHeader: {
 		marginBottom: 16,
+		paddingHorizontal: 16,
 	},
 	sectionTitle: {
 		fontSize: 20,
@@ -57,6 +58,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	coinCardContainerStyle: {
 		marginBottom: 12,
+		paddingHorizontal: 16,
 	},
 
 	// Empty States
@@ -123,14 +125,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		lineHeight: 20,
 		marginBottom: 24,
 	},
-	// The duplicate loadingContainer style definition has been removed.
-	// The first definition of loadingContainer is kept:
-	// loadingContainer: {
-	//  flexDirection: 'row',
-	//  alignItems: 'center',
-	//  justifyContent: 'center',
-	//  padding: 20,
-	// },
 	connectButton: {
 		backgroundColor: theme.colors.primary,
 		borderRadius: 12,
