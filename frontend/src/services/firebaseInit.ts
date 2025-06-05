@@ -1,5 +1,5 @@
 import { getApp } from '@react-native-firebase/app';
-import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
+import appCheck, { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
 import { APP_ENV } from '@env';
 import {
@@ -23,19 +23,16 @@ const getAppCheckConfig = () => {
   return config;
 };
 
-let appCheckInstance: any = null;
-let initializationAttempted = false;
+let initialized = false;
 
 export async function initializeFirebaseServices(): Promise<void> {
   // Skip Firebase App Check initialization in development mode
   if (APP_ENV === 'development') {
     logger.info('🔥 Skipping Firebase App Check initialization in development mode (backend bypasses App Check)');
     logger.info('📝 Production will require proper Firebase App Check setup');
+    initialized = true;
     return;
   }
-
-  // Mark that we've attempted initialization
-  initializationAttempted = true;
 
   try {
     logger.info('🔥 Initializing Firebase App Check for production...');
@@ -44,20 +41,18 @@ export async function initializeFirebaseServices(): Promise<void> {
     const firebaseApp = getApp();
     logger.info('✅ Firebase app loaded from native configuration (GoogleService-Info.plist)');
 
-    // Initialize App Check
-    if (!appCheckInstance) {
-      // Create and configure the React Native Firebase App Check provider
-      const rnfbProvider = new ReactNativeFirebaseAppCheckProvider();
-      
-      rnfbProvider.configure(getAppCheckConfig());
-
-      appCheckInstance = initializeAppCheck(firebaseApp, {
-        provider: rnfbProvider,
-        isTokenAutoRefreshEnabled: true,
-      });
-      
-      logger.info('✅ Firebase App Check initialized successfully for production');
-    }
+    // Create and configure the React Native Firebase App Check provider
+    const rnfbProvider = new ReactNativeFirebaseAppCheckProvider();
+    rnfbProvider.configure(getAppCheckConfig());
+    
+    // Initialize App Check using initializeAppCheck
+    initializeAppCheck(firebaseApp, {
+      provider: rnfbProvider,
+      isTokenAutoRefreshEnabled: true,
+    });
+    
+    logger.info('✅ Firebase App Check initialized successfully for production');
+    initialized = true;
   } catch (error) {
     logger.error('❌ Failed to initialize Firebase App Check in production:', error);
     logger.error('🚨 This will cause authentication failures in production!');
@@ -68,22 +63,18 @@ export async function initializeFirebaseServices(): Promise<void> {
 }
 
 // Function to get the App Check instance
-export function getAppCheckInstance(): any {
+export function getAppCheckInstance() {
   if (APP_ENV === 'development') {
-    logger.info('⚠️  App Check not available in development mode');
+    logger.info('⚠️ App Check not available in development mode');
     return null;
   }
   
-  if (!initializationAttempted) {
+  if (!initialized) {
     logger.error('🚨 Firebase App Check not initialized! Call initializeFirebaseServices() first');
     return null;
   }
   
-  if (!appCheckInstance) {
-    logger.error('🚨 Firebase App Check instance not available - initialization may have failed');
-  }
-  
-  return appCheckInstance;
+  return appCheck();
 }
 
 // Function to check if we're ready for production
@@ -92,5 +83,5 @@ export function isProductionReady(): boolean {
     return true; // Development doesn't need App Check
   }
   
-  return initializationAttempted && appCheckInstance !== null;
+  return initialized;
 }
