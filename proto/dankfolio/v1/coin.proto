@@ -53,10 +53,12 @@ message GetAvailableCoinsResponse {
 
 message GetCoinByIDRequest {
   string mint_address = 1;
+  optional string symbol = 2; // Client should provide this if known
 }
 
 message SearchCoinByMintRequest {
   string mint_address = 1;
+  optional string symbol = 2; // Client should provide this if known
 }
 
 message SearchCoinByMintResponse {

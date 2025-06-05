@@ -21,8 +21,12 @@ func (s *Service) EnrichCoinData(
 	initialName string,
 	initialIconURL string,
 	initialVolume float64,
+	clientProvidedSymbol *string, // New parameter
 ) (*model.Coin, error) {
 	slog.Info("Starting coin enrichment process", slog.String("mintAddress", mintAddress))
+	if clientProvidedSymbol != nil && *clientProvidedSymbol != "" {
+		slog.Debug("EnrichCoinData received client-provided symbol", slog.String("mintAddress", mintAddress), slog.String("clientSymbol", *clientProvidedSymbol))
+	}
 
 	// Initialize coin with basic info or defaults
 	coin := model.Coin{
@@ -126,6 +130,12 @@ func (s *Service) EnrichCoinData(
 
 	// Ensure LastUpdated is set
 	coin.LastUpdated = time.Now().Format(time.RFC3339)
+
+	// If after all enrichment, coin.Symbol is still empty, and client provided one, use it.
+	if coin.Symbol == "" && clientProvidedSymbol != nil && *clientProvidedSymbol != "" {
+		slog.Debug("Using client-provided symbol as fallback", slog.String("mintAddress", mintAddress), slog.String("clientSymbol", *clientProvidedSymbol))
+		coin.Symbol = *clientProvidedSymbol
+	}
 
 	slog.Info("Coin enrichment process completed", slog.String("mintAddress", mintAddress))
 	return &coin, nil

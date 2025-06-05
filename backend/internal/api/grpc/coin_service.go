@@ -65,7 +65,8 @@ func (s *coinServiceHandler) GetCoinByID(
 	ctx context.Context,
 	req *connect.Request[pb.GetCoinByIDRequest],
 ) (*connect.Response[pb.Coin], error) {
-	coin, err := s.coinService.GetCoinByMintAddress(ctx, req.Msg.MintAddress)
+	// Pass mintAddress and the optional symbol to the service layer
+	coin, err := s.coinService.GetCoinByMintAddress(ctx, req.Msg.GetMintAddress(), req.Msg.Symbol)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin: %w", err))
 	}
@@ -79,9 +80,10 @@ func (s *coinServiceHandler) SearchCoinByMint(
 	ctx context.Context,
 	req *connect.Request[pb.SearchCoinByMintRequest],
 ) (*connect.Response[pb.SearchCoinByMintResponse], error) {
-	coin, err := s.coinService.GetCoinByMintAddress(ctx, req.Msg.MintAddress)
+	// Pass mintAddress and the optional symbol to the service layer
+	coin, err := s.coinService.GetCoinByMintAddress(ctx, req.Msg.GetMintAddress(), req.Msg.Symbol)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", req.Msg.MintAddress, err))
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", req.Msg.GetMintAddress(), err))
 	}
 
 	res := connect.NewResponse(&pb.SearchCoinByMintResponse{
@@ -116,7 +118,12 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 	// validate if the req.Msg.Query is a valid mint address
 	solanaAddress, err := solana.PublicKeyFromBase58(req.Msg.Query)
 	if err == nil {
-		coin, err := s.coinService.GetCoinByMintAddress(ctx, solanaAddress.String())
+		// For Search, if query is a mint address, we don't have a client-provided symbol for *this specific path*.
+		// The GetCoinByMintAddress service method expects an optional symbol. We pass nil here.
+		// If SearchCoinByMintRequest had a symbol, it would be req.Msg.GetSymbol(), but SearchRequest does not.
+		// This specific call within Search remains unchanged in terms of symbol passing.
+		// The primary modification is for GetCoinByID and SearchCoinByMint direct handlers.
+		coin, err := s.coinService.GetCoinByMintAddress(ctx, solanaAddress.String(), nil)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", solanaAddress.String(), err))
 		}

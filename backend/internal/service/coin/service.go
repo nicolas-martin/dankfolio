@@ -17,7 +17,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
-	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory" // Added for TypedCache
+	// "github.com/nicolas-martin/dankfolio/backend/internal/db/memory" // TypedCache removed
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -30,7 +30,7 @@ type Service struct {
 	store          db.Store
 	fetcherCtx     context.Context    // Context for the new token fetcher goroutine
 	fetcherCancel  context.CancelFunc // Cancel function for the fetcher goroutine
-	addressToSymbolCache *memory.TypedCache[string] // Cache for address to symbol mapping
+	// addressToSymbolCache *memory.TypedCache[string] // Cache for address to symbol mapping
 }
 
 // NewService creates a new CoinService instance
@@ -50,7 +50,7 @@ func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.C
 		solanaClient:   solanaClient,
 		offchainClient: offchainClient,
 		store:          store,
-		addressToSymbolCache: memory.NewTypedCache[string]("addressToSymbol:", 5000), // Added maxSize parameter
+		// addressToSymbolCache: memory.NewTypedCache[string]("addressToSymbol:", 5000), // TypedCache removed
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 
@@ -169,11 +169,33 @@ func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, e
 // GetCoinByMintAddress returns a coin by its mint address.
 // It first checks the 'coins' table. If not found, it checks 'raw_coins'
 // and enriches from there. If not in 'raw_coins' either, it enriches from scratch.
-func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string) (*model.Coin, error) {
+// clientProvidedSymbol is an optional symbol provided by the client.
+func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string, clientProvidedSymbol *string) (*model.Coin, error) {
+	// TODO: In subtask 4, use clientProvidedSymbol if available to potentially optimize.
+	// For now, the symbol is logged if present, but the main logic path remains the same.
+	if clientProvidedSymbol != nil && *clientProvidedSymbol != "" {
+		slog.DebugContext(ctx, "GetCoinByMintAddress called with client-provided symbol",
+			slog.String("mintAddress", mintAddress),
+			slog.String("clientSymbol", *clientProvidedSymbol))
+	}
+
 	// Try fetching from the 'coins' table first (enriched coins)
 	coin, err := s.store.Coins().GetByField(ctx, "mint_address", mintAddress)
 	if err == nil {
-		// Found in 'coins' table, assume it's complete and return
+		// Coin found in 'coins' table.
+		// Check if its symbol is empty and if client provided one.
+		if coin.Symbol == "" && clientProvidedSymbol != nil && *clientProvidedSymbol != "" {
+			slog.InfoContext(ctx, "Coin found in DB with empty symbol, client provided symbol. Updating.",
+				slog.String("mintAddress", mintAddress),
+				slog.String("clientSymbol", *clientProvidedSymbol))
+			coin.Symbol = *clientProvidedSymbol
+			coin.LastUpdated = time.Now().Format(time.RFC3339) // Update LastUpdated timestamp
+			if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
+				// Log error but proceed with the coin as found; symbol update is best-effort.
+				slog.WarnContext(ctx, "Failed to update coin symbol in DB",
+					slog.String("mintAddress", mintAddress), slog.Any("error", updateErr))
+			}
+		}
 		slog.Debug("Coin found in 'coins' table", slog.String("mintAddress", mintAddress))
 		return coin, nil
 	}
@@ -187,16 +209,14 @@ func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string) 
 		if rawErr == nil {
 			// Found in 'raw_coins', enrich it, save to 'coins', and return
 			slog.Info("Coin found in 'raw_coins' table, proceeding with enrichment.", slog.String("mintAddress", mintAddress))
-			// This function 'enrichRawCoinAndSave' will be implemented in the next step.
-			// It's responsible for calling EnrichCoinData with rawCoin's details and saving to 'coins'.
-			return s.enrichRawCoinAndSave(ctx, rawCoin)
+			return s.enrichRawCoinAndSave(ctx, rawCoin, clientProvidedSymbol)
 		}
 
 		// If not found in 'raw_coins' table, check the specific error for raw_coins lookup
 		if errors.Is(rawErr, db.ErrNotFound) {
 			slog.Info("Coin not found in 'raw_coins' table either. Enriching from scratch.", slog.String("mintAddress", mintAddress))
 			// Not in 'coins' or 'raw_coins', so fetch from scratch (e.g., external APIs)
-			return s.fetchAndCacheCoin(ctx, mintAddress)
+			return s.fetchAndEnrichCoinAndSave(ctx, mintAddress, clientProvidedSymbol)
 		}
 
 		// An error other than 'not found' occurred when querying 'raw_coins'
@@ -211,15 +231,19 @@ func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string) 
 }
 
 // enrichRawCoinAndSave enriches a raw coin's data and saves it to the 'coins' table.
-func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCoin) (*model.Coin, error) {
+// It now accepts clientProvidedSymbol to pass to EnrichCoinData.
+func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCoin, clientProvidedSymbol *string) (*model.Coin, error) {
 	slog.Info("Starting enrichment from raw_coin data", slog.String("mintAddress", rawCoin.MintAddress), slog.String("rawCoinSymbol", rawCoin.Symbol))
 
+	// Prefer rawCoin.Symbol if available, otherwise pass clientProvidedSymbol to EnrichCoinData
+	// EnrichCoinData itself will handle the final fallback logic.
 	enrichedCoin, err := s.EnrichCoinData(
 		ctx,
 		rawCoin.MintAddress,
 		rawCoin.Name,
 		rawCoin.LogoUrl, // Pass rawCoin.LogoUrl as the initialIconURL
 		0.0,             // Pass 0.0 for initialVolume, EnrichCoinData will fetch it
+		clientProvidedSymbol,
 	)
 	if err != nil {
 		slog.Error("Enrichment from raw_coin failed", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
@@ -271,16 +295,17 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 	return enrichedCoin, nil
 }
 
-// fetchAndCacheCoin handles caching and calls the core EnrichCoinData function.
-// It now also handles storing the coin (Create or Update).
-func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*model.Coin, error) {
-	slog.Debug("Starting dynamic coin enrichment", slog.String("mintAddress", mintAddress))
-	enrichedCoin, err := s.EnrichCoinData( // This is model.Coin
+// fetchAndEnrichCoinAndSave fetches coin data from scratch, enriches, and saves it.
+// It accepts clientProvidedSymbol to pass to EnrichCoinData.
+func (s *Service) fetchAndEnrichCoinAndSave(ctx context.Context, mintAddress string, clientProvidedSymbol *string) (*model.Coin, error) {
+	slog.Debug("Starting dynamic coin enrichment (fetchAndEnrichCoinAndSave)", slog.String("mintAddress", mintAddress))
+	enrichedCoin, err := s.EnrichCoinData(
 		ctx,
 		mintAddress,
 		"", // No initial name
 		"", // No initial icon
 		0,  // No initial volume
+		clientProvidedSymbol,
 	)
 	if err != nil {
 		slog.Error("Dynamic coin enrichment failed", slog.String("mintAddress", mintAddress), slog.Any("error", err))
@@ -605,8 +630,16 @@ func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, 
 	return coins, int32(len(coins)), nil
 }
 
-// GetAddressToSymbolCacheForTesting returns the addressToSymbolCache for testing purposes.
+// SetSolanaClientForTesting allows injecting a mock Solana client for testing.
 // NOTE: This method should only be used in tests.
-func (s *Service) GetAddressToSymbolCacheForTesting() *memory.TypedCache[string] {
-	return s.addressToSymbolCache
+func (s *Service) SetSolanaClientForTesting(client solana.ClientAPI) {
+	s.solanaClient = client
 }
+
+// SetOffchainClientForTesting allows injecting a mock Offchain client for testing.
+// NOTE: This method should only be used in tests.
+func (s *Service) SetOffchainClientForTesting(client offchain.ClientAPI) {
+	s.offchainClient = client
+}
+
+// GetAddressToSymbolCacheForTesting was removed as the cache itself is removed.
