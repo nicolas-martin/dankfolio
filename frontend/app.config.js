@@ -76,13 +76,14 @@ module.exports = ({ config }) => ({
   },
   extra: {
     // Environment variables will be available here
-    apiUrl: process.env.REACT_APP_API_URL,
-    solanaRpcEndpoint: process.env.REACT_APP_SOLANA_RPC_ENDPOINT,
-    debugMode: process.env.DEBUG_MODE,
-    appEnv: process.env.APP_ENV,
-    firebaseAppCheckDebugTokenAndroid: process.env.FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
-    firebaseAppCheckDebugTokenIos: process.env.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
-    testPrivateKey: process.env.TEST_PRIVATE_KEY,
+    APP_ENV: process.env.APP_ENV,
+    DEBUG_MODE: process.env.DEBUG_MODE,
+    REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+    REACT_APP_SOLANA_RPC_ENDPOINT: process.env.REACT_APP_SOLANA_RPC_ENDPOINT,
+    SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID: process.env.FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
+    FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS: process.env.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
+    TEST_PRIVATE_KEY: process.env.TEST_PRIVATE_KEY,
     eas: {
       projectId: "efd2922e-0415-49a7-bae1-fd28bc35805d"
     }
