@@ -16,11 +16,52 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
 
-	if (isNaN(periodChange) || isNaN(price) || isNaN(valueChange)) return null;
+	// Early return with a placeholder if any required values are invalid
+	if (isNaN(price) || price === null || price === undefined) {
+		// Return a static display instead of null to prevent layout shifts
+		return (
+			<View style={styles.container}>
+				{/* Header with coin info */}
+				<View style={styles.headerRow}>
+					<CachedImage
+						uri={resolvedIconUrl}
+						size={40}
+						borderRadius={20}
+						showLoadingIndicator={true}
+						style={styles.icon}
+					/>
+					{name && (
+						<Text style={styles.nameText}>
+							{name}
+						</Text>
+					)}
+				</View>
 
-	const isPositive = periodChange >= 0;
+				{/* Address row */}
+				<View style={styles.addressRow}>
+					<Text style={styles.addressText}>
+						{formatAddress(address, 8, 4)}
+					</Text>
+					<IconButton
+						icon="content-copy"
+						size={16}
+						onPress={() => copyToClipboard(address, 'Address', showToast)}
+						style={{ margin: 0, padding: 0, marginLeft: 8 }}
+					/>
+				</View>
+				
+				{/* Price placeholder */}
+				<Text style={{ fontSize: 32 }}>$---.--</Text>
+			</View>
+		);
+	}
+
+	// Calculate derived values only after validation
+	const isPositive = !isNaN(periodChange) && periodChange >= 0;
 	const formattedPrice = formatPrice(price);
-	const formattedChange = formatValueChange(valueChange, periodChange);
+	const formattedChange = !isNaN(periodChange) && !isNaN(valueChange) 
+		? formatValueChange(valueChange, periodChange)
+		: '---';
 
 	return (
 		<View style={styles.container}>

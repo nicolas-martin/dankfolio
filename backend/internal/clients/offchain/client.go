@@ -117,7 +117,9 @@ func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
 	slog.Debug("📦 IPFS: Extracted CID", "cid", cid)
 	slog.Debug("🔄 IPFS: Starting gateway fallback sequence...")
 
+
 	gateways := util.DefaultCIDv0Gateways
+
 
 	var lastErr error
 	for i, gw := range gateways {
@@ -306,7 +308,9 @@ func (c *Client) fetchArweaveRaw(ctx context.Context, uri string) ([]byte, strin
 
 func getIPFSGateways() []string {
 	// Can be made configurable later
+
 	return util.DefaultCIDv0Gateways
+
 }
 
 func getArweaveGateways() []string {
