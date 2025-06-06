@@ -2,15 +2,12 @@ package coin
 
 import (
 	"context"
-	"errors" // Added for errors.Is
+	"errors"
 	"fmt"
-	"log/slog" // Import slog
+	"log/slog"
 	"net/http"
-	"os" // Import os for Exit
-
-	// "sort" // sort.Slice in GetCoins is removed, GetTrendingCoins still uses it.
-	"sort"    // Keep for GetTrendingCoins
-	"strconv" // Added for GetCoinByID
+	"sort"
+	"strconv"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
@@ -32,14 +29,7 @@ type Service struct {
 }
 
 // NewService creates a new CoinService instance
-func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store) *Service {
-	if config.SolanaRPCEndpoint == "" {
-		slog.Error("SolanaRPCEndpoint is required")
-		os.Exit(1)
-	}
-
-	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
-
+func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store, solanaClient solana.ClientAPI) *Service {
 	offchainClient := offchain.NewClient(httpClient)
 
 	service := &Service{

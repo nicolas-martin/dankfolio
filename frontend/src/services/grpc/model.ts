@@ -165,7 +165,7 @@ export interface API {
 	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;
 	getSwapQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<SwapQuoteResponse>;
 	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;
-	getPriceHistory: (address: string, type: string | number, timeFrom: string, timeTo: string, addressType: string) => Promise<PriceHistoryResponse>;
+	getPriceHistory: (address: string, type: string, time: string, addressType: string) => Promise<PriceHistoryResponse>;
 	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
 	getCoinPrices: (coinIds: string[]) => Promise<Record<string, number>>;
 	prepareCoinTransfer: (payload: CoinTransferPrepareRequest) => Promise<CoinTransferPrepareResponse>;

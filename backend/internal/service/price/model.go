@@ -38,25 +38,25 @@ var TimeframeConfigMap = map[pb.GetPriceHistoryRequest_PriceHistoryType]BackendT
 	pb.GetPriceHistoryRequest_ONE_HOUR: {
 		BirdeyeType:         "1H",
 		DefaultViewDuration: 1 * time.Hour,
-		RoundingMinutes:     1 * time.Minute,
+		Rounding:            1 * time.Minute,
 		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_HOUR)],
 	},
 	pb.GetPriceHistoryRequest_FOUR_HOUR: {
 		BirdeyeType:         "4H",
 		DefaultViewDuration: 4 * time.Hour,
-		RoundingMinutes:     5 * time.Minute,
+		Rounding:            5 * time.Minute,
 		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_FOUR_HOUR)],
 	},
 	pb.GetPriceHistoryRequest_ONE_DAY: {
 		BirdeyeType:         "1D",
 		DefaultViewDuration: 24 * time.Hour,
-		RoundingMinutes:     10 * time.Minute,
+		Rounding:            10 * time.Minute,
 		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_DAY)],
 	},
 	pb.GetPriceHistoryRequest_ONE_WEEK: {
 		BirdeyeType:         "1W",
 		DefaultViewDuration: 7 * 24 * time.Hour,
-		RoundingMinutes:     60 * time.Minute,
+		Rounding:            60 * time.Minute,
 		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_WEEK)],
 	},
 }
