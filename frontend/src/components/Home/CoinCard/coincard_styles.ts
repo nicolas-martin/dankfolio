@@ -6,22 +6,22 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean) => StyleSh
     card: {
         backgroundColor: theme.colors.surface,
         borderRadius: 16,
+        elevation: 2,
         marginBottom: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.08,
         shadowRadius: 4,
-        elevation: 2,
     },
     content: {
-        padding: 16,
-        flexDirection: 'row',
         alignItems: 'center',
+        flexDirection: 'row',
         justifyContent: 'space-between',
+        padding: 16,
     },
     leftSection: {
-        flexDirection: 'row',
         alignItems: 'center',
+        flexDirection: 'row',
         flex: 1,
         minWidth: 0,
         paddingRight: 12,
@@ -52,10 +52,10 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean) => StyleSh
     },
     name: {
         color: theme.colors.onSurfaceVariant,
+        flexShrink: 1,
         fontSize: 13,
         fontWeight: '400',
         letterSpacing: 0.1,
-        flexShrink: 1,
     },
     rightSection: {
         alignItems: 'flex-end',
@@ -130,8 +130,8 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean) => StyleSh
     horizontalChange: {
         fontSize: 11,
         fontWeight: '500',
-        textAlign: 'center',
         marginTop: 4,
+        textAlign: 'center',
     },
     changePositiveSmall: { color: '#2E7D32' },
     changeNegativeSmall: { color: '#D32F2F' },

@@ -7,7 +7,7 @@ export const setMockAppEnv = (env: string) => {
   (module.exports as any).APP_ENV = env;
 };
 
-export let APP_ENV = mockAppEnv;
+export const APP_ENV = mockAppEnv;
 
 // For dynamic access in tests
 export const getMockAppEnv = () => mockAppEnv; 

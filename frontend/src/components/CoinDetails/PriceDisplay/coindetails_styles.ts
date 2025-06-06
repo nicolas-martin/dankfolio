@@ -3,39 +3,24 @@ import { MD3Theme } from 'react-native-paper';
 import { TREND_COLORS } from '@/components/Chart/CoinChart/scripts';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
-	container: {
-		padding: 16,
-	},
-	headerRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 8,
-	},
-	icon: {
-		marginRight: 12,
-	},
-	nameText: {
-		fontSize: 18,
-		fontWeight: '600',
-		color: theme.colors.onSurface,
-	},
 	addressRow: {
-		flexDirection: 'row',
 		alignItems: 'center',
+		flexDirection: 'row',
 		marginBottom: 16,
 	},
 	addressText: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
 	},
-	priceText: {
-		fontSize: 32,
-		fontWeight: 'bold',
-		color: theme.colors.onSurface,
+	changeNegative: {
+		color: TREND_COLORS.negative,
+	},
+	changePositive: {
+		color: TREND_COLORS.positive,
 	},
 	changeRow: {
-		flexDirection: 'row',
 		alignItems: 'center',
+		flexDirection: 'row',
 		marginTop: 8,
 	},
 	changeText: {
@@ -43,18 +28,33 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '600',
 		marginRight: 8,
 	},
-	changePositive: {
-		color: TREND_COLORS.positive,
+	container: {
+		padding: 16,
 	},
-	changeNegative: {
-		color: TREND_COLORS.negative,
+	headerRow: {
+		alignItems: 'center',
+		flexDirection: 'row',
+		marginBottom: 8,
+	},
+	icon: {
+		marginRight: 12,
+	},
+	nameText: {
+		color: theme.colors.onSurface,
+		fontSize: 18,
+		fontWeight: '600',
 	},
 	periodText: {
 		fontSize: 14,
 	},
+	priceText: {
+		color: theme.colors.onSurface,
+		fontSize: 32,
+		fontWeight: 'bold',
+	},
 	timestampText: {
-		fontSize: 12,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 12,
 		marginTop: 8,
 	},
 });

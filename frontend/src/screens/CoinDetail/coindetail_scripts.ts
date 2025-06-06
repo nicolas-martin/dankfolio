@@ -95,8 +95,8 @@ export const fetchPriceHistory = async (
 		const { durationMs, roundingMinutes } = config; // roundingMinutes is used for cache expiry calculation
 
 		const currentTime = new Date();
-		let dateTo = new Date(currentTime);
-		let dateFrom = new Date(currentTime.getTime() - durationMs);
+		const dateTo = new Date(currentTime);
+		const dateFrom = new Date(currentTime.getTime() - durationMs);
 
 		const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
 		const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);

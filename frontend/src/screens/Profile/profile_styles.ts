@@ -4,15 +4,15 @@ import { theme as customTheme } from '@utils/theme';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	safeArea: {
-		flex: 1,
 		backgroundColor: theme.colors.background,
+		flex: 1,
 	},
 	container: {
 		flex: 1,
 	},
 	centered: {
-		justifyContent: 'center',
 		alignItems: 'center',
+		justifyContent: 'center',
 	},
 	scrollContent: {
 		flexGrow: 1,
@@ -28,26 +28,26 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginBottom: 24,
 	},
 	profileHeader: {
-		flexDirection: 'row',
 		alignItems: 'center',
+		flexDirection: 'row',
 		marginBottom: 8,
 	},
 	profileIcon: {
 		marginRight: 12,
 	},
 	profileTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 24,
 		fontWeight: '700',
-		color: theme.colors.onSurface,
 	},
 	walletAddressContainer: {
-		flexDirection: 'row',
 		alignItems: 'center',
+		flexDirection: 'row',
 		marginTop: 4,
 	},
 	walletAddress: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
 		fontWeight: '400',
 	},
 	copyButton: {
@@ -57,13 +57,14 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 
 	// Theme Toggle Section
 	themeToggleContainer: {
+		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
 		borderRadius: 20,
-		padding: 20,
-		marginBottom: 24,
+		elevation: 4,
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		alignItems: 'center',
+		marginBottom: 24,
+		padding: 20,
 		shadowColor: '#000',
 		shadowOffset: {
 			width: 0,
@@ -71,16 +72,15 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		},
 		shadowOpacity: 0.1,
 		shadowRadius: 8,
-		elevation: 4,
 	},
 	themeToggleHeader: {
-		flexDirection: 'row',
 		alignItems: 'center',
+		flexDirection: 'row',
 	},
 	themeToggleTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 		marginLeft: 12,
 	},
 
@@ -88,8 +88,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	portfolioCard: {
 		backgroundColor: theme.colors.surface,
 		borderRadius: 20,
-		padding: 24,
+		elevation: 4,
 		marginBottom: 24,
+		padding: 24,
 		shadowColor: '#000',
 		shadowOffset: {
 			width: 0,
@@ -97,26 +98,25 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		},
 		shadowOpacity: 0.1,
 		shadowRadius: 8,
-		elevation: 4,
 	},
 	portfolioHeader: {
 		marginBottom: 16,
 	},
 	portfolioTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 		marginBottom: 4,
 	},
 	portfolioValue: {
+		color: theme.colors.onSurface,
 		fontSize: 32,
 		fontWeight: '700',
-		color: theme.colors.onSurface,
 		marginBottom: 8,
 	},
 	portfolioSubtext: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
 		marginBottom: 20,
 	},
 	sendButton: {
@@ -137,57 +137,58 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		flex: 1,
 	},
 	tokensHeader: {
-		flexDirection: 'row',
 		alignItems: 'center',
+		flexDirection: 'row',
 		marginBottom: 16,
 	},
 	tokensIcon: {
 		marginRight: 12,
 	},
 	tokensTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 20,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 	},
 
 	// Empty State
 	emptyStateContainer: {
+		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		alignItems: 'center',
-		paddingVertical: 60,
 		paddingHorizontal: 40,
+		paddingVertical: 60,
 	},
 	emptyStateIcon: {
 		marginBottom: 16,
 		opacity: 0.6,
 	},
 	emptyStateTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 18,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 		marginBottom: 8,
 		textAlign: 'center',
 	},
 	emptyStateText: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
-		textAlign: 'center',
+		fontSize: 14,
 		lineHeight: 20,
+		textAlign: 'center',
 	},
 
 	// No Wallet State
 	noWalletContainer: {
+		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		alignItems: 'center',
 		paddingHorizontal: 40,
 	},
 	noWalletCard: {
+		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
 		borderRadius: 20,
+		elevation: 4,
 		padding: 32,
-		alignItems: 'center',
 		shadowColor: '#000',
 		shadowOffset: {
 			width: 0,
@@ -195,42 +196,41 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		},
 		shadowOpacity: 0.1,
 		shadowRadius: 8,
-		elevation: 4,
 	},
 	noWalletIcon: {
 		marginBottom: 20,
 		opacity: 0.7,
 	},
 	noWalletTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 20,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 		marginBottom: 8,
 		textAlign: 'center',
 	},
 	noWalletText: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
-		textAlign: 'center',
+		fontSize: 14,
 		lineHeight: 20,
+		textAlign: 'center',
 	},
 
 	// Debug button (temporary)
 	debugButton: {
-		marginTop: 40,
 		marginHorizontal: 20,
+		marginTop: 40,
 	},
 
 	// Debug section (development only)
 	debugSection: {
-		marginTop: 20,
-		marginHorizontal: 20,
-		paddingVertical: 16,
-		paddingHorizontal: 16,
 		backgroundColor: theme.colors.surfaceVariant,
+		borderColor: theme.colors.outline,
 		borderRadius: 12,
 		borderWidth: 1,
-		borderColor: theme.colors.outline,
+		marginHorizontal: 20,
+		marginTop: 20,
+		paddingHorizontal: 16,
+		paddingVertical: 16,
 	},
 
 	// Transactions Section
@@ -315,8 +315,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginLeft: 4,
 	},
 	transactionStatusTextDefault: {
-		fontSize: 13,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 13,
 		fontWeight: 'bold',
 		marginLeft: 4,
 	},
