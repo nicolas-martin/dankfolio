@@ -54,100 +54,97 @@ export function roundDateDown(dateToRound: Date, granularityMinutes: number): Da
 
 
 export const fetchPriceHistory = async (
-	selectedTimeframeValue: string, // e.g., "1H", "4H"
-	setLoading: (loading: boolean) => void,
-	setPriceHistory: (history: PriceData[]) => void,
-	coin: Coin | null,
-	isInitialLoad: boolean = false
-) => {
+
+	coin: Coin,
+	timeframeValue: string, // e.g., "1H", "4H"
+	// priceHistoryType is effectively config.granularity from the old TIMEFRAME_CONFIG
+	// This is passed by the caller which should use TIMEFRAME_CONFIG to get it.
+	priceHistoryType: GetPriceHistoryRequest_PriceHistoryType
+): Promise<{ data: PriceData[] | null; error: Error | null }> => {
+	if (!coin || !coin.mintAddress) {
+		const error = new Error('No coin or mint address provided for price history');
+		logger.error(error.message, { functionName: 'fetchPriceHistory' });
+		return { data: null, error };
+	}
+
+
+	let cacheKeySuffix = timeframeValue;
+	if (timeframeValue === "4H") {
+		cacheKeySuffix = "FOUR_HOUR"; // Align with HomeScreen for 4-hour data
+	}
+	const cacheKey = `${coin.mintAddress}_${cacheKeySuffix}`;
+	const cachedEntry = usePriceHistoryCacheStore.getState().getCache(cacheKey);
+
+
+	if (cachedEntry) {
+		logger.debug(`[CoinDetailScreen] Using cached price history for ${cacheKey}`);
+		return { data: cachedEntry.data as PriceData[], error: null };
+	}
+
+	logger.debug(`[CoinDetailScreen] Cache miss for ${cacheKey}. Fetching...`);
+
+	const timeframeConfig = TIMEFRAME_CONFIG[timeframeValue] || TIMEFRAME_CONFIG["DEFAULT"];
+	const { durationMs, roundingMinutes } = timeframeConfig;
+
+	const currentTime = new Date();
+	const dateTo = new Date(currentTime);
+	const dateFrom = new Date(currentTime.getTime() - durationMs);
+
+
+	// Rounding is still useful for defining the query window consistently
+	const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
+	const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
+
+	const timeToISO = roundedTimeTo.toISOString();
+	const timeFromISO = roundedTimeFrom.toISOString();
+
+	// Find the string key for the enum value, assuming grpcApi still needs the string key
+	const typeMap = GetPriceHistoryRequest_PriceHistoryType;
+	const grpcTypeKey = Object.keys(typeMap).find(key => typeMap[key as keyof typeof typeMap] === priceHistoryType);
+
+	if (!grpcTypeKey) {
+		const error = new Error(`Invalid priceHistoryType: ${priceHistoryType} for timeframe: ${timeframeValue}`);
+		logger.error(error.message, { functionName: 'fetchPriceHistory' });
+		return { data: null, error };
+	}
+
 	try {
-		if (isInitialLoad) {
-			setLoading(true);
-		}
-		if (!coin) {
-			logger.error('No coin provided for price history', { functionName: 'fetchPriceHistory' });
-			setPriceHistory([]);
-			if (isInitialLoad) setLoading(false); // Ensure loading is stopped if returning early
-			return;
-		}
-
-		// REMOVED: cacheKey and cache check logic
-		// const cacheKey = `${coin.mintAddress}-${selectedTimeframeValue}`;
-		// const cachedEntry = usePriceHistoryCacheStore.getState().getCache(cacheKey);
-		// if (cachedEntry) { ... return; }
-
-		logger.info(`Fetching new price history for ${coin.mintAddress}-${selectedTimeframeValue}.`, { functionName: 'fetchPriceHistory' });
-		// If not initial load, we might want to set loading true here if not already set by isInitialLoad
-		// However, the original logic sets loading only on isInitialLoad at the top.
-		// For a fetch operation, it's typical to set loading to true.
-		if (!isInitialLoad) { // If it's a refresh, not an initial load, also set loading
-			setLoading(true);
-		}
-
-
-		const config = TIMEFRAME_CONFIG[selectedTimeframeValue] || TIMEFRAME_CONFIG["DEFAULT"];
-		const { durationMs, roundingMinutes } = config; // roundingMinutes is NOT used here anymore for cache expiry
-
-		const currentTime = new Date();
-		let dateTo = new Date(currentTime); // This is essentially 'now'
-		let dateFrom = new Date(currentTime.getTime() - durationMs); // Start of the window
-
-		// REMOVE:
-		// const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
-		// const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
-
-		// USE non-rounded times for the request to backend:
-		const timeToISO = dateTo.toISOString();
-		const timeFromISO = dateFrom.toISOString();
-
-
-		// Find the key in typeMap (grpcApi.ts) that corresponds to the enum value
-		const typeMap = GetPriceHistoryRequest_PriceHistoryType;
-		const grpcTypeKey = Object.keys(typeMap).find(key => typeMap[key as keyof typeof typeMap] === config.granularity);
-
-
-		if (!grpcTypeKey) {
-			logger.error(`Invalid granularity type for timeframe: ${selectedTimeframeValue}`, { functionName: 'fetchPriceHistory' });
-			setPriceHistory([]);
-			setLoading(false);
-			return;
-		}
-
 		const response = await grpcApi.getPriceHistory(
 			coin.mintAddress,
 			grpcTypeKey, // Pass the string key e.g. "ONE_MINUTE"
 			timeFromISO,
 			timeToISO,
-			"token"
+			"token" // Assuming "token" is still the correct scope/type here
 		);
+
 		if (response?.data?.items) {
 			const mapped: PriceData[] = response.data.items
 				.filter(item => item.value !== null && item.unixTime !== null)
 				.map(item => ({
 					timestamp: new Date(item.unixTime * 1000).toISOString(),
 					value: item.value,
-					unixTime: item.unixTime // Keep unixTime if needed by PriceData, or remove if not
+					unixTime: item.unixTime,
 				}));
 
-			setPriceHistory(mapped);
 
-			// REMOVED: setCache call
-			// const cacheExpiryMs = Date.now() + roundingMinutes * 60 * 1000;
-			// usePriceHistoryCacheStore.getState().setCache(cacheKey, mapped, cacheExpiryMs);
-			// logger.info(`Cached new price history for ${cacheKey} ...`);
+			// Cache the newly fetched data
+			// cacheExpiry is TTL in seconds for the store, not absolute timestamp
+			const cacheExpirySeconds = roundingMinutes * 60;
+			usePriceHistoryCacheStore.getState().setCache(cacheKey, mapped, cacheExpirySeconds);
+			logger.debug(`[CoinDetailScreen] Cached new price history for ${cacheKey} with expiry ${cacheExpirySeconds}s`);
+			return { data: mapped, error: null };
 
 		} else {
-			setPriceHistory([]);
+			// Consider response.error or other fields if items are missing
+			logger.warn(`[CoinDetailScreen] No items in price history response for ${cacheKey}`, { response });
+			return { data: [], error: null }; // Return empty data if no items, not an error
 		}
 	} catch (error) {
-		logger.exception(error, { functionName: 'fetchPriceHistory', params: { coinMintAddress: coin?.mintAddress, timeframe: selectedTimeframeValue } });
-		setPriceHistory([]);
-	} finally {
-		// setLoading(false) is called regardless of success or failure,
-		// or if data came from cache (handled earlier) or fetch.
-		// If cache hit, setLoading(false) was already called.
-		// If cache miss, it's called here.
-		setLoading(false);
+		logger.exception(error as Error, {
+			functionName: 'fetchPriceHistory',
+			params: { coinMintAddress: coin.mintAddress, timeframe: timeframeValue }
+		});
+		return { data: null, error: error as Error };
 	}
 };
 
