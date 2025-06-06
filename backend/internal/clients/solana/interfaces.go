@@ -14,9 +14,6 @@ type ClientAPI interface {
 	// GetMetadataAccount retrieves the metadata account for a token
 	GetMetadataAccount(ctx context.Context, mint string) (*token_metadata.Metadata, error)
 
-	// GetRpcConnection returns the underlying RPC connection for direct usage
-	GetRpcConnection() *rpc.Client
-
 	// ExecuteTrade executes a pre-signed transaction
 	ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) (string, error)
 

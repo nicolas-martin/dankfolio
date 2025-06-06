@@ -214,12 +214,12 @@ func main() {
 		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
 	}
 	solClient := rpc.NewWithHeaders(config.SolanaRPCEndpoint, header)
-	baseClient := &http.Client{
-		Transport: &headerTransport{APIKey: config.SolanaRPCAPIKey},
-	}
-	blotorpcClient := bloctoRPC.New(bloctoRPC.WithEndpoint(config.SolanaRPCEndpoint), bloctoRPC.WithHTTPClient(baseClient))
+	// baseClient := &http.Client{
+	// 	Transport: &headerTransport{APIKey: config.SolanaRPCAPIKey},
+	// }
+	// blotorpcClient := bloctoRPC.New(bloctoRPC.WithEndpoint(config.SolanaRPCEndpoint), bloctoRPC.WithHTTPClient(baseClient))
 
-	solanaClient := solana.NewClient(solClient, blotorpcClient)
+	solanaClient := solana.NewClient(solClient)
 
 	offchainClient := offchain.NewClient(httpClient)
 
