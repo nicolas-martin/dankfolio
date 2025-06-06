@@ -2,6 +2,7 @@ package price
 
 import (
 	"context"
+	"log/slog" // Added import
 	"time"
 
 	"github.com/dgraph-io/ristretto" // For NewCache
@@ -19,7 +20,8 @@ type PriceHistoryCache interface {
 
 // GoCacheAdapter implements PriceHistoryCache using eko/gocache.
 type GoCacheAdapter struct {
-	cacheManager cache.CacheInterface[*birdeye.PriceHistory]
+	cacheManager   cache.CacheInterface[*birdeye.PriceHistory]
+	ristrettoCache *ristretto.Cache // ADD THIS LINE
 }
 
 // NewGoCacheAdapter creates a new GoCacheAdapter with a Ristretto store.
@@ -38,23 +40,51 @@ func NewGoCacheAdapter() (*GoCacheAdapter, error) {
 	cacheManager := cache.New[*birdeye.PriceHistory](cacheStore)
 
 	return &GoCacheAdapter{
-		cacheManager: cacheManager,
+		cacheManager:   cacheManager,
+		ristrettoCache: ristrettoCache, // ADD THIS ASSIGNMENT
 	}, nil
 }
 
 // Get retrieves an item from the cache.
 func (a *GoCacheAdapter) Get(key string) (*birdeye.PriceHistory, bool) {
-	// Context can be background or TODO for cache operations not tied to a specific request context
+	startTime := time.Now()
+
 	cachedValue, err := a.cacheManager.Get(context.Background(), key)
+
+	duration := time.Since(startTime)
+	numItems := a.ristrettoCache.Metrics.NumKeys()
+
+	// Remove the old logArgs slice approach
+
 	if err != nil {
-		// gocache returns an error if key is not found or on other issues
+		// Cache miss due to error or not found
+		slog.Info("Cache access",
+			slog.String("key", key),
+			slog.Duration("duration", duration),
+			slog.Uint64("cache_items", numItems),
+			slog.String("outcome", "miss"),
+			slog.String("error", err.Error()), // Error specific to this path
+		)
 		return nil, false
-	}
-	// Ensure cachedValue is not nil, although Get should ideally not return (nil, nil)
-	if cachedValue == nil {
+	} else if cachedValue == nil {
+		// Cache miss (nil value returned without error)
+		slog.Info("Cache access",
+			slog.String("key", key),
+			slog.Duration("duration", duration),
+			slog.Uint64("cache_items", numItems),
+			slog.String("outcome", "miss (nil value)"), // More specific outcome
+		)
 		return nil, false
+	} else {
+		// Cache hit
+		slog.Info("Cache access",
+			slog.String("key", key),
+			slog.Duration("duration", duration),
+			slog.Uint64("cache_items", numItems),
+			slog.String("outcome", "hit"),
+		)
+		return cachedValue, true
 	}
-	return cachedValue, true
 }
 
 // Set adds an item to the cache with an expiration duration.
