@@ -6,8 +6,10 @@ import {
 	useCallback,
 } from 'react';
 import type { LayoutChangeEvent, StyleProp, TextStyle } from 'react-native';
-import { View, Text, Animated, StyleSheet, Easing } from 'react-native';
+import { View, Text, Animated, Easing } from 'react-native';
 import { usePrevious } from './usePrevious';
+import { useTheme } from 'react-native-paper';
+import { createStyles } from './styles';
 
 export interface OdometerProps {
 	/** e.g. "0.00001234" */
@@ -29,6 +31,8 @@ const Odometer: FC<OdometerProps> = ({
 	staggered = true,
 	staggerDelay = 50,
 }) => {
+	const theme = useTheme();
+	const styles = createStyles(theme);
 	const prev = usePrevious(value) ?? value.replace(/\d/g, '0');
 	const [digitHeight, setDigitHeight] = useState(0);
 	const anims = useRef<(Animated.Value | null)[]>([]);
@@ -59,18 +63,18 @@ const Odometer: FC<OdometerProps> = ({
 			.split('')
 			.map((char, i) => {
 				if (!/\d/.test(char) || !anims.current[i]) return null;
-				
+
 				const targetValue = -digitHeight * parseInt(char, 10);
 				const prevChar = prevPadded[i] || '0';
 				const prevValue = -digitHeight * parseInt(prevChar, 10);
-				
+
 				// Skip animation if the digit hasn't changed
 				if (Math.abs(targetValue - prevValue) < 1) return null;
-				
+
 				// Calculate stagger delay - rightmost digits animate first
 				const digitIndex = value.length - 1 - i;
 				const delay = staggered ? digitIndex * staggerDelay : 0;
-				
+
 				return Animated.sequence([
 					// Add delay for staggered effect
 					Animated.delay(delay),
@@ -104,12 +108,15 @@ const Odometer: FC<OdometerProps> = ({
 						/\d/.test(char) && anims.current[i] ? (
 							<View
 								key={i}
-								style={{ height: digitHeight, overflow: 'hidden' }}
+								style={[styles.digitContainer, { height: digitHeight }]}
 							>
 								<Animated.View
-									style={{
-										transform: [{ translateY: anims.current[i]! }],
-									}}
+									style={[
+										styles.digitColumn,
+										{
+											transform: [{ translateY: anims.current[i]! }],
+										}
+									]}
 								>
 									{Array(10)
 										.fill(0)
@@ -126,7 +133,7 @@ const Odometer: FC<OdometerProps> = ({
 						) : (
 							<Text
 								key={i}
-								style={[fontStyle, { height: digitHeight }]}
+								style={[fontStyle, styles.separator, { height: digitHeight }]}
 							>
 								{char}
 							</Text>
@@ -145,10 +152,6 @@ const Odometer: FC<OdometerProps> = ({
 	);
 };
 
-const styles = StyleSheet.create({
-	row: { flexDirection: 'row' },
-	hidden: { position: 'absolute', opacity: 0 },
-});
 
 export default Odometer;
 

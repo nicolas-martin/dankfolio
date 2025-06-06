@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, ReactNode, } from 'react';
+import React, { useMemo, useRef, useEffect, ReactNode, useState } from 'react';
 import { View } from 'react-native';
 import { CartesianChart, useChartPressState, Area, useLinePath, type PointsArray, } from 'victory-native';
 import Animated, { 
@@ -9,7 +9,8 @@ import Animated, {
 	cancelAnimation, 
 	withSpring, 
 	SharedValue,
-	withRepeat
+	withRepeat,
+	useAnimatedReaction
 } from 'react-native-reanimated';
 import { 
 	Path, 
@@ -26,7 +27,7 @@ import inter from '@assets/fonts/inter-medium.ttf';
 import { createStyles } from './styles';
 import type { CoinChartProps, PricePoint, PulsatingDotProps } from './types';
 import { logger } from '@/utils/logger';
-import { determineChartColor, createPulsateAnimation } from './scripts';
+import { determineChartColor, createPulsateAnimation, CHART_COLORS } from './scripts';
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
@@ -51,7 +52,6 @@ function SpringLine({
 	// Only animate when dataKey changes (new dataset), not on every points change
 	useEffect(() => {
 		if (dataKey) {
-			logger.info('🎯 SpringLine: Animating new dataset', dataKey);
 			progress.value = 0;
 			progress.value = withSpring(1, {
 				stiffness: 100,
@@ -100,19 +100,23 @@ function ChartWrapper({
 			scale.value = withSpring(1, {
 				stiffness: 100,
 				damping: 15,
+				mass: 0.8, // Lighter mass for faster response
 			});
 			opacity.value = withSpring(1, {
 				stiffness: 120,
 				damping: 20,
+				mass: 0.8, // Lighter mass for faster response
 			});
 		} else {
 			scale.value = withSpring(0.9, {
 				stiffness: 120,
 				damping: 15,
+				mass: 0.8, // Lighter mass for faster response
 			});
 			opacity.value = withSpring(0.7, {
 				stiffness: 120,
 				damping: 15,
+				mass: 0.8, // Lighter mass for faster response
 			});
 		}
 	}, [active]);
@@ -141,11 +145,12 @@ function ActiveValueIndicator({
 	lineColor: string;
 	indicatorColor: string;
 }) {
+	// Use direct property access to avoid lag in vertical line position
 	return (
 		<>
 			<SkiaLine
-				p1={{ x: xPosition.value, y: bottom }}
-				p2={{ x: xPosition.value, y: top + 30 }}
+				p1={{ x: xPosition.value, y: top }}
+				p2={{ x: xPosition.value, y: bottom }}
 				color={lineColor}
 				strokeWidth={1}
 			/>
@@ -172,23 +177,15 @@ function HorizontalDottedLine({
 	y: number;
 	color: string;
 }) {
-	// Create individual line segments for the dotted effect
-	const segments = 15;
-	const dashLength = (endX - startX) / (segments * 2);
-	
+	// For better performance, draw a single line
 	return (
-		<>
-			{Array.from({ length: segments }).map((_, i) => (
-				<SkiaLine
-					key={`dash-${i}`}
-					p1={{ x: startX + i * dashLength * 2, y }}
-					p2={{ x: startX + i * dashLength * 2 + dashLength, y }}
-					color={color}
-					strokeWidth={1}
-					style="stroke"
-				/>
-			))}
-		</>
+		<SkiaLine
+			p1={{ x: startX, y }}
+			p2={{ x: endX, y }}
+			color={color}
+			strokeWidth={1}
+			style="stroke"
+		/>
 	);
 }
 
@@ -204,6 +201,40 @@ export default function CoinChart({
 	const animations = useRef<SharedValue<any>[]>([]);
 	const font = useSkiaFont(inter, 12);
 	const pulseRadius = useSharedValue(4);
+	
+	// Reduce pulsate animation complexity for better performance
+	const setupPulseAnimation = () => {
+		pulseRadius.value = 4;
+		// Use a simpler animation with fewer keyframes
+		const animation = withRepeat(
+			withSpring(5.5, {
+				damping: 6,
+				stiffness: 80,
+				mass: 0.5, // Lighter mass for faster animation
+				overshootClamping: true, // Prevent overshoot for smoother animation
+			}),
+			-1,
+			true
+		);
+		pulseRadius.value = animation;
+		animations.current.push(pulseRadius);
+	};
+	
+	// Store last point position for more stable animations
+	const lastPointPos = useSharedValue({ x: 0, y: 0 });
+	// Store current press position for immediate response
+	const currentPressPos = useSharedValue({ x: 0, y: 0 });
+	const [chartKey, setChartKey] = useState<string>("");
+	
+	// Throttled haptic feedback for better performance
+	const lastHapticTime = useRef(0);
+	const throttledHaptic = () => {
+		const now = Date.now();
+		if (now - lastHapticTime.current > 150) { // Only trigger every 150ms
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+			lastHapticTime.current = now;
+		}
+	};
 
 	useFocusEffect(
 		React.useCallback(
@@ -213,24 +244,42 @@ export default function CoinChart({
 	);
 	
 	useEffect(() => {
-		// Set up pulsating animation
-		pulseRadius.value = 4;
-		const animation = createPulsateAnimation(pulseRadius);
-		pulseRadius.value = animation;
+		// Create a unique key for the chart when data changes
+		if (data && data.length > 0) {
+			setChartKey(`chart-${data.length}-${data[0]?.timestamp}`);
+		}
 		
-		// Add to animations ref for cleanup
-		animations.current.push(pulseRadius);
+		// Set up pulsating animation
+		setupPulseAnimation();
 		
 		return () => {
 			isMounted.current = false;
 			animations.current.forEach(a => cancelAnimation(a));
 		};
-	}, []);
+	}, [data]);
 
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);
+		
+	// Update current press position for immediate access
+	// Optimize to run on UI thread only
+	useAnimatedReaction(
+		() => {
+			if (isPressActive) {
+				return {
+					x: chartPress.x.position.value,
+					y: chartPress.y.y.position.value
+				};
+			}
+			return currentPressPos.value;
+		},
+		(nextValue) => {
+			currentPressPos.value = nextValue;
+		},
+		[isPressActive]
+	);
 
-	// fire onHover back to JS
+	// fire onHover back to JS - optimized to reduce workload
 	useDerivedValue(
 		() => {
 			if (!onHover) return;
@@ -241,7 +290,8 @@ export default function CoinChart({
 			const xVal = chartPress.x.value.value;
 			const yVal = chartPress.y.y.value.value;
 			if (typeof xVal === 'number' && typeof yVal === 'number') {
-				runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+				// Use throttled haptic to prevent overloading
+				runOnJS(throttledHaptic)();
 				runOnJS(onHover)({
 					timestamp: xVal,
 					price: yVal,
@@ -254,16 +304,26 @@ export default function CoinChart({
 		[isPressActive, chartPress, onHover]
 	);
 
-	// preprocess data
+	// preprocess data - optimize by memoizing and reducing calculations
 	const processedChartData: PricePoint[] = useMemo(
 		() => {
-			const processed = (data || []).map(pt => {
+			if (!data || data.length === 0) return [];
+			// Limit points for better performance if needed
+			const targetLength = 150;
+			let dataToProcess = data;
+			
+			// If we have too many points, sample them to reduce workload
+			if (data.length > targetLength) {
+				const skipFactor = Math.ceil(data.length / targetLength);
+				dataToProcess = data.filter((_, i) => i % skipFactor === 0 || i === data.length - 1);
+			}
+			
+			const processed = dataToProcess.map(pt => {
 				const t = new Date(pt.timestamp).getTime();
-				const v =
-					typeof pt.value === 'string' ? parseFloat(pt.value) : pt.value;
+				const v = typeof pt.value === 'string' ? parseFloat(pt.value) : pt.value;
 				return { timestamp: t, price: v, value: v, x: t, y: v };
 			});
-			logger.info('📊 Chart data processed:', processed.length, 'points');
+			
 			return processed;
 		},
 		[data]
@@ -274,9 +334,10 @@ export default function CoinChart({
 		return determineChartColor(processedChartData);
 	}, [processedChartData]);
 	
-	// Define chart line and area colors based on gain/loss
-	const lineColor = chartColor === 'green' ? theme.colors.primary : theme.colors.error;
-	const areaColor = chartColor === 'green' ? `${theme.colors.primary}40` : `${theme.colors.error}40`;
+	// Define chart line and area colors based on screenshot
+	const colors = CHART_COLORS[chartColor];
+	// Get the area color from the colors object
+	const areaColor = colors.area;
 
 	if (loading || !processedChartData.length) {
 		return (
@@ -287,45 +348,44 @@ export default function CoinChart({
 	}
 
 	const activeX = chartPress.x.value.value;
-	
-	// Get the last data point for the pulsating indicator
-	const lastPoint = processedChartData[processedChartData.length - 1];
 
 	return (
 		<ChartWrapper active={!loading}>
 			<View style={styles.chartContainer} testID="coin-chart-container">
 				<CartesianChart
-					key={`chart-${processedChartData.length}-${processedChartData[0]?.timestamp}`}
+					key={chartKey}
 					data={processedChartData}
 					xKey="x"
 					yKeys={['y']}
 					domainPadding={{ top: 25 }}
-					padding={0}
+					padding={{ left: 0, right: 0, top: 0, bottom: 20 }}
 					chartPressState={[chartPress]}
 					axisOptions={{
 						font,
-						tickCount: { x: 4, y: 3 }, // Show minimal ticks as requested
+						tickCount: { x: 3, y: 3 }, // Show minimal ticks as requested
 						labelPosition: { x: 'outset', y: 'inset' },
 						axisSide: { x: 'bottom', y: 'left' },
-						formatXLabel: v => format(new Date(v), 'MMM'), // Simple month format
-						formatYLabel: v => v.toFixed(6), // Format Y-axis labels
+						formatXLabel: v => format(new Date(v), "MMM d"),
+						formatYLabel: v => v.toLocaleString('en-US', {
+							minimumFractionDigits: 6,
+							maximumFractionDigits: 6
+						}),
 						lineColor: {
 							grid: {
-								x: theme.colors.outlineVariant,
-								y: theme.colors.outlineVariant,
+								x: 'rgba(255,255,255,0.1)',
+								y: 'rgba(255,255,255,0.1)',
 							},
-							frame: theme.colors.outlineVariant,
+							frame: 'rgba(255,255,255,0.1)',
 						},
-						labelColor: theme.colors.onSurfaceVariant,
+						labelColor: 'rgba(255,255,255,0.7)',
 					}}
 					renderOutside={({ chartBounds }) => {
 						if (!isPressActive || typeof activeX !== 'number' || !font)
 							return null;
-						const label = format(
-							new Date(activeX),
-							"EEE MMM d 'at' h:mm a"
-						);
-						const rawX = chartPress.x.position.value;
+							
+						// Optimize label generation to be lighter
+						const label = format(new Date(activeX), "MMM d");
+						const rawX = currentPressPos.value.x;
 						const w = font.measureText(label).width;
 						const half = w / 2;
 						const xPos = Math.min(
@@ -335,31 +395,44 @@ export default function CoinChart({
 
 						return (
 							<>
-								<ActiveValueIndicator
-									xPosition={chartPress.x.position}
-									yPosition={chartPress.y.y.position}
-									bottom={chartBounds.bottom}
-									top={chartBounds.top}
-									lineColor={theme.colors.outlineVariant}
-									indicatorColor={lineColor}
+								<SkiaLine
+									p1={{ x: rawX, y: chartBounds.top }}
+									p2={{ x: rawX, y: chartBounds.bottom }}
+									color="rgba(255,255,255,0.3)"
+									strokeWidth={1}
+								/>
+								<SkiaCircle 
+									cx={rawX} 
+									cy={currentPressPos.value.y} 
+									r={6} 
+									color={colors.line} 
+								/>
+								<SkiaCircle
+									cx={rawX}
+									cy={currentPressPos.value.y}
+									r={4}
+									color="hsla(0, 0, 100%, 0.25)"
 								/>
 								<SkiaText
 									x={xPos}
 									y={chartBounds.top + 20}
 									text={label}
 									font={font}
-									color={theme.colors.onSurfaceVariant}
+									color="rgba(255,255,255,0.8)"
 								/>
 							</>
 						);
 					}}
 				>
 					{({ points, chartBounds }) => {
-						// Calculate last point position for the pulsating dot and dotted line
-						const lastPointPos = {
-							x: points.y[points.y.length - 1]?.x || 0,
-							y: points.y[points.y.length - 1]?.y || 0
-						};
+						// Update last point position for the pulsating dot and dotted line
+						if (points.y.length > 0) {
+							const point = points.y[points.y.length - 1];
+							lastPointPos.value = {
+								x: point?.x || 0,
+								y: point?.y || 0
+							};
+						}
 						
 						return (
 							<>
@@ -368,30 +441,31 @@ export default function CoinChart({
 									points={points.y}
 									y0={chartBounds.bottom}
 									color={areaColor}
+									opacity={0.8}
 								/>
 								
 								{/* Chart Line */}
 								<SpringLine
-									key={`line-${processedChartData.length}-${processedChartData[0]?.timestamp}`}
+									key={`line-${chartKey}`}
 									points={points.y}
 									strokeWidth={2}
-									color={lineColor}
-									dataKey={`${processedChartData.length}-${processedChartData[0]?.timestamp}`}
+									color={colors.line}
+									dataKey={chartKey}
 								/>
 								
 								{/* Horizontal dotted line from last point */}
 								<HorizontalDottedLine
 									startX={chartBounds.left}
-									endX={lastPointPos.x}
-									y={lastPointPos.y}
-									color={theme.colors.outlineVariant}
+									endX={lastPointPos.value.x}
+									y={lastPointPos.value.y}
+									color="rgba(255,255,255,0.3)"
 								/>
 								
 								{/* Pulsating dot on last data point */}
 								<PulsatingDot
-									position={lastPointPos}
+									position={lastPointPos.value}
 									radius={pulseRadius}
-									color={lineColor}
+									color={colors.line}
 								/>
 							</>
 						);

@@ -4,11 +4,16 @@ import { MD3Theme } from 'react-native-paper';
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	chartContainer: {
 		height: 250,
+		backgroundColor: '#14171A', // Dark background color to match screenshot
+		borderRadius: 8,
+		overflow: 'hidden',
 	},
 	loadingContainer: {
 		height: 250,
 		justifyContent: 'center',
 		alignItems: 'center',
+		backgroundColor: '#14171A',
+		borderRadius: 8,
 	},
 	hoverTimeText: {
 		position: 'absolute',
