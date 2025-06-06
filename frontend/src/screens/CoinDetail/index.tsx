@@ -9,11 +9,9 @@ import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
 import { PriceData, Coin } from '@/types';
 import LottieView from 'lottie-react-native';
-// Added
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
-	TIMEFRAME_CONFIG, // Added
 	fetchPriceHistory,
 	handleTradeNavigation,
 } from './coindetail_scripts';
@@ -25,15 +23,15 @@ import { useCoinStore } from '@store/coins';
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
-	const { coin: initialCoinFromParams } = route.params; // Get initialCoin
-	const mintAddress = initialCoinFromParams?.mintAddress; // Get mintAddress from the coin
-	const prevDisplayCoinRef = React.useRef<Coin | null | undefined>(null); // Ref for price history effect
+	const { coin: initialCoinFromParams, solCoin } = route.params || {};
+	const mintAddress = initialCoinFromParams?.mintAddress;
+	const prevDisplayCoinRef = React.useRef<Coin | null | undefined>(null);
 
 	const coinFromStore = useCoinStore(state => mintAddress ? state.coinMap[mintAddress] : undefined);
 	const displayCoin = coinFromStore || initialCoinFromParams;
 
 	const [selectedTimeframe, setSelectedTimeframe] = useState("4H");
-	const [loading, setLoading] = useState(true); // For price history and potentially refresh
+	const [loading, setLoading] = useState(true);
 	const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
 	const { showToast } = useToast();
@@ -73,19 +71,11 @@ const CoinDetail: React.FC = () => {
 			return;
 		}
 
-		const timeframeConfigEntry = TIMEFRAME_CONFIG[selectedTimeframe] || TIMEFRAME_CONFIG["DEFAULT"];
-		if (!timeframeConfigEntry) {
-			logger.error(`[CoinDetail] No timeframe config found for ${selectedTimeframe}`);
-			setLoading(false);
-			return;
-		}
-		const priceHistoryType = timeframeConfigEntry.granularity;
-
 		const loadData = async () => {
 			setLoading(true);
 			try {
 				// Ensure displayCoin is not null before passing
-				const result = await fetchPriceHistory(displayCoin!, selectedTimeframe, priceHistoryType);
+				const result = await fetchPriceHistory(displayCoin!, selectedTimeframe);
 				if (result.data !== null) {
 					setPriceHistory(result.data);
 				} else if (result.error) {

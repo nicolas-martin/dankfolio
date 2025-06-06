@@ -33,7 +33,10 @@ const Odometer: FC<OdometerProps> = ({
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	const prev = usePrevious(value) ?? value.replace(/\d/g, '0');
+	
+	// Sanitize input value to ensure it only contains valid characters
+	const sanitizedValue = (value || "0").replace(/[^0-9.$,]/g, "0");
+	const prev = usePrevious(sanitizedValue) ?? sanitizedValue.replace(/\d/g, '0');
 	const [digitHeight, setDigitHeight] = useState(0);
 	const anims = useRef<(Animated.Value | null)[]>([]);
 
@@ -46,41 +49,51 @@ const Odometer: FC<OdometerProps> = ({
 	const combinedFontStyle = [themeTextStyle, fontStyle];
 
 	// pad previous to match length
-	const prevPadded = prev.padStart(value.length, '0');
+	const prevPadded = prev.padStart(sanitizedValue.length, '0');
 
 	// init Animated.Values when we know the height
 	useEffect(() => {
 		if (!digitHeight) return;
 
 		// Initialize array with proper length and null values first
-		anims.current = new Array(value.length).fill(null);
+		anims.current = new Array(sanitizedValue.length).fill(null);
 
 		// Then populate with Animated.Values for digits only
-		anims.current = value.split('').map((char, i) =>
-			/\d/.test(char)
-				? new Animated.Value(-digitHeight * parseInt(prevPadded[i], 10))
-				: null
-		);
-	}, [digitHeight, prevPadded, value]);
+		anims.current = sanitizedValue.split('').map((char, i) => {
+			if (!/\d/.test(char)) return null;
+			
+			// Safely parse the digit, defaulting to 0 if invalid
+			const digit = parseInt(prevPadded[i], 10);
+			const safeDigit = isNaN(digit) ? 0 : digit;
+			return new Animated.Value(-digitHeight * safeDigit);
+		});
+	}, [digitHeight, prevPadded, sanitizedValue]);
 
 	// animate digits only
 	useEffect(() => {
 		if (!digitHeight || !anims.current.length) return;
 
-		const animations = value
+		const animations = sanitizedValue
 			.split('')
 			.map((char, i) => {
 				if (!/\d/.test(char) || !anims.current[i]) return null;
 
-				const targetValue = -digitHeight * parseInt(char, 10);
+				// Safely parse the current digit, defaulting to 0 if invalid
+				const currentDigit = parseInt(char, 10);
+				const safeCurrentDigit = isNaN(currentDigit) ? 0 : currentDigit;
+				const targetValue = -digitHeight * safeCurrentDigit;
+				
+				// Safely parse the previous digit, defaulting to 0 if invalid
 				const prevChar = prevPadded[i] || '0';
-				const prevValue = -digitHeight * parseInt(prevChar, 10);
+				const prevDigit = parseInt(prevChar, 10);
+				const safePrevDigit = isNaN(prevDigit) ? 0 : prevDigit;
+				const prevValue = -digitHeight * safePrevDigit;
 
 				// Skip animation if the digit hasn't changed
 				if (Math.abs(targetValue - prevValue) < 1) return null;
 
 				// Calculate stagger delay - rightmost digits animate first
-				const digitIndex = value.length - 1 - i;
+				const digitIndex = sanitizedValue.length - 1 - i;
 				const delay = staggered ? digitIndex * staggerDelay : 0;
 
 				return Animated.sequence([
@@ -101,7 +114,7 @@ const Odometer: FC<OdometerProps> = ({
 			// Use parallel to run all animations simultaneously (with their individual delays)
 			Animated.parallel(animations).start();
 		}
-	}, [digitHeight, value, duration, staggered, staggerDelay, prevPadded]);
+	}, [digitHeight, sanitizedValue, duration, staggered, staggerDelay, prevPadded]);
 
 	// measure one digit's height
 	const onLayout = useCallback((e: LayoutChangeEvent) => {
@@ -112,7 +125,7 @@ const Odometer: FC<OdometerProps> = ({
 		<>
 			{digitHeight > 0 && (
 				<View style={[styles.row, { height: digitHeight }]}>
-					{value.split('').map((char, i) =>
+					{sanitizedValue.split('').map((char, i) =>
 						/\d/.test(char) && anims.current[i] ? (
 							<View
 								key={i}
