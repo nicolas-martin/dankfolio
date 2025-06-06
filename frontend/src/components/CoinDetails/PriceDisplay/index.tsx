@@ -43,7 +43,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			{/* Address row */}
 			<View style={styles.addressRow}>
 				<Text style={styles.addressText}>
-					{formatAddress(address)}
+					{formatAddress(address, 8, 4)}
 				</Text>
 				<IconButton
 					icon="content-copy"
