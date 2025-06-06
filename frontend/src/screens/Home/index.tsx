@@ -6,7 +6,6 @@ import { LoadingAnimation } from '@components/Common/Animations';
 import { fetchPriceHistory, TIMEFRAME_CONFIG } from '@/screens/CoinDetail/coindetail_scripts';
 // Keep this import if TIMEFRAME_CONFIG uses it, or if directly needed.
 // For now, assuming TIMEFRAME_CONFIG provides the correctly typed enum.
-import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb'; // Matching coindetail_scripts
 import CoinCard from '@components/Home/CoinCard';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
