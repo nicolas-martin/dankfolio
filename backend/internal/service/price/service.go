@@ -18,6 +18,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 )
 
 // Service handles price-related operations
@@ -30,20 +31,9 @@ type Service struct {
 
 // TimeframeConfigEntry defines the configuration for a specific timeframe.
 type TimeframeConfigEntry struct {
-	Granularity     string // e.g., "ONE_MINUTE", "FIVE_MINUTE" (matching birdeye client expectations)
+	BirdeyeType     string // e.g., "1m", "5m", "1H" for Birdeye API
 	DurationMs      int64
 	RoundingMinutes int
-}
-
-// TIMEFRAME_CONFIG maps timeframe keys (e.g., "1H", "4H") to their configurations.
-var TIMEFRAME_CONFIG = map[string]TimeframeConfigEntry{
-	"1H":      {Granularity: "ONE_MINUTE", DurationMs: 1 * 60 * 60 * 1000, RoundingMinutes: 1},
-	"4H":      {Granularity: "ONE_MINUTE", DurationMs: 4 * 60 * 60 * 1000, RoundingMinutes: 1},
-	"1D":      {Granularity: "FIVE_MINUTE", DurationMs: 24 * 60 * 60 * 1000, RoundingMinutes: 5},
-	"1W":      {Granularity: "ONE_HOUR", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 60},
-	"1M":      {Granularity: "FOUR_HOUR", DurationMs: 30 * 24 * 60 * 60 * 1000, RoundingMinutes: 240}, // Approx 30 days
-	"1Y":      {Granularity: "ONE_DAY", DurationMs: 365 * 24 * 60 * 60 * 1000, RoundingMinutes: 1440},
-	"DEFAULT": {Granularity: "ONE_MINUTE", DurationMs: 4 * 60 * 60 * 1000, RoundingMinutes: 1}, // Default to 4H-like configuration
 }
 
 // roundDateDown rounds the given time down to the specified granularity in minutes.
@@ -85,18 +75,47 @@ func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI
 }
 
 // GetPriceHistory retrieves price history for a given token.
-// historyType is assumed to be a key from TIMEFRAME_CONFIG (e.g., "1H", "4H").
-func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFromStr, timeToStr, addressType string) (*birdeye.PriceHistory, error) {
-	config, ok := TIMEFRAME_CONFIG[historyType]
-	if !ok {
-		slog.Warn("Invalid historyType, falling back to DEFAULT", "requestedHistoryType", historyType)
-		config = TIMEFRAME_CONFIG["DEFAULT"]
-		historyType = "DEFAULT" // Update historyType to reflect the key used for caching
-	}
-	slog.Info("Using timeframe configuration", "key", historyType, "config", config)
+func (s *Service) GetPriceHistory(ctx context.Context, address string, historyType pb.GetPriceHistoryRequest_PriceHistoryType, timeFromStr, timeToStr, addressType string) (*birdeye.PriceHistory, error) {
+	var configEntry TimeframeConfigEntry
 
-	// Cache key now uses the resolved historyType (e.g. "1H", "DEFAULT")
-	cacheKey := fmt.Sprintf("%s-%s", address, historyType)
+	switch historyType {
+	case pb.GetPriceHistoryRequest_ONE_MINUTE:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "1m", DurationMs: 1 * 60 * 60 * 1000, RoundingMinutes: 1}
+	case pb.GetPriceHistoryRequest_THREE_MINUTE:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "3m", DurationMs: 3 * 60 * 60 * 1000, RoundingMinutes: 3}
+	case pb.GetPriceHistoryRequest_FIVE_MINUTE:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "5m", DurationMs: 5 * 60 * 60 * 1000, RoundingMinutes: 5}
+	case pb.GetPriceHistoryRequest_FIFTEEN_MINUTE:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "15m", DurationMs: 12 * 60 * 60 * 1000, RoundingMinutes: 15}
+	case pb.GetPriceHistoryRequest_THIRTY_MINUTE:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "30m", DurationMs: 24 * 60 * 60 * 1000, RoundingMinutes: 30}
+	case pb.GetPriceHistoryRequest_ONE_HOUR:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "1H", DurationMs: 1 * 24 * 60 * 60 * 1000, RoundingMinutes: 60}
+	case pb.GetPriceHistoryRequest_TWO_HOUR:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "2H", DurationMs: 2 * 24 * 60 * 60 * 1000, RoundingMinutes: 120}
+	case pb.GetPriceHistoryRequest_FOUR_HOUR: // This is the default chosen by gRPC handler for UNSPECIFIED
+		configEntry = TimeframeConfigEntry{BirdeyeType: "4H", DurationMs: 4 * 24 * 60 * 60 * 1000, RoundingMinutes: 240}
+	case pb.GetPriceHistoryRequest_SIX_HOUR:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "6H", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 360}
+	case pb.GetPriceHistoryRequest_EIGHT_HOUR:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "8H", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 480}
+	case pb.GetPriceHistoryRequest_TWELVE_HOUR:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "12H", DurationMs: 14 * 24 * 60 * 60 * 1000, RoundingMinutes: 720}
+	case pb.GetPriceHistoryRequest_ONE_DAY:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "1D", DurationMs: 30 * 24 * 60 * 60 * 1000, RoundingMinutes: 1440}
+	case pb.GetPriceHistoryRequest_THREE_DAY:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "3D", DurationMs: 90 * 24 * 60 * 60 * 1000, RoundingMinutes: 3 * 1440}
+	case pb.GetPriceHistoryRequest_ONE_WEEK:
+		configEntry = TimeframeConfigEntry{BirdeyeType: "1W", DurationMs: 365 * 24 * 60 * 60 * 1000, RoundingMinutes: 7 * 1440}
+	default:
+		slog.Error("Unsupported historyType enum value received in price.Service", "enumValue", int(historyType))
+		return nil, fmt.Errorf("unsupported history type: %v", historyType.String())
+	}
+
+	slog.Info("Using timeframe configuration", "keyEnum", historyType.String(), "birdeyeType", configEntry.BirdeyeType, "config", configEntry)
+
+	// Cache key now uses the string representation of the enum
+	cacheKey := fmt.Sprintf("%s-%s", address, historyType.String())
 
 	if cachedData, found := s.cache.Get(cacheKey); found {
 		slog.Info("Cache hit for price history", "key", cacheKey)
@@ -106,17 +125,13 @@ func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, tim
 
 	// Debug mode handling
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		slog.InfoContext(ctx, "x-debug-mode: true. Generating random price history.", "address", address, "historyType", historyType)
-		// ONLY call generateRandomPriceHistory now
-		// The historyTypeKey argument for generateRandomPriceHistory is now just 'historyType' (e.g. "1H")
-		randomHistory, err := s.generateRandomPriceHistory(address, historyType)
+		slog.InfoContext(ctx, "x-debug-mode: true. Generating random price history.", "address", address, "historyTypeEnum", historyType.String(), "birdeyeType", configEntry.BirdeyeType)
+		randomHistory, err := s.generateRandomPriceHistory(address, configEntry.BirdeyeType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate random price history: %w", err)
 		}
 
-		// Cache the randomly generated history as well
-		// config variable is already available from above
-		cacheDuration := time.Duration(config.RoundingMinutes) * time.Minute
+		cacheDuration := time.Duration(configEntry.RoundingMinutes) * time.Minute
 		s.cache.Set(cacheKey, randomHistory, cacheDuration)
 		slog.InfoContext(ctx, "Cached random price history in debug mode", "key", cacheKey, "duration", cacheDuration)
 		return randomHistory, nil
@@ -132,27 +147,26 @@ func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, tim
 		return nil, fmt.Errorf("failed to parse time_to: %w", err)
 	}
 
-	roundedTimeFrom := roundDateDown(parsedTimeFrom, config.RoundingMinutes)
-	roundedTimeTo := roundDateDown(parsedTimeTo, config.RoundingMinutes)
-	slog.Info("Time parameters", "originalFrom", parsedTimeFrom, "roundedFrom", roundedTimeFrom, "originalTo", parsedTimeTo, "roundedTo", roundedTimeTo, "roundingMinutes", config.RoundingMinutes)
+	roundedTimeFrom := roundDateDown(parsedTimeFrom, configEntry.RoundingMinutes)
+	roundedTimeTo := roundDateDown(parsedTimeTo, configEntry.RoundingMinutes)
+	slog.Info("Time parameters", "originalFrom", parsedTimeFrom, "roundedFrom", roundedTimeFrom, "originalTo", parsedTimeTo, "roundedTo", roundedTimeTo, "roundingMinutes", configEntry.RoundingMinutes)
 
 	params := birdeye.PriceHistoryParams{
 		Address:     address,
 		AddressType: addressType,
-		HistoryType: config.Granularity, // Use Granularity from TIMEFRAME_CONFIG for Birdeye API
+		HistoryType: configEntry.BirdeyeType,
 		TimeFrom:    roundedTimeFrom,
 		TimeTo:      roundedTimeTo,
 	}
 
 	result, err := s.birdeyeClient.GetPriceHistory(ctx, params)
 	if err != nil {
-		// Ensure the error from birdeyeClient is wrapped, as it was in the original code
 		return nil, fmt.Errorf("failed to fetch price history from birdeye: %w", err)
 	}
 
-	if result != nil { // Check if result is not nil before setting cache
-		slog.Info("Storing fetched data in cache", "key", cacheKey, "expiration", time.Duration(config.RoundingMinutes)*time.Minute)
-		s.cache.Set(cacheKey, result, time.Duration(config.RoundingMinutes)*time.Minute)
+	if result != nil {
+		slog.Info("Storing fetched data in cache", "key", cacheKey, "expiration", time.Duration(configEntry.RoundingMinutes)*time.Minute)
+		s.cache.Set(cacheKey, result, time.Duration(configEntry.RoundingMinutes)*time.Minute)
 	}
 	return result, nil
 }
