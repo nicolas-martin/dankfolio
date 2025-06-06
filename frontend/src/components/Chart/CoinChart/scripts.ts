@@ -234,19 +234,6 @@ export const createHorizontalDottedLinePoints = (
 	}));
 };
 
-// Helper for throttled haptic feedback
-export const createThrottledHaptic = () => {
-	let lastHapticTime = 0;
-	
-	return (triggerHaptic: Function) => {
-		const now = Date.now();
-		if (now - lastHapticTime > 150) { // Only trigger every 150ms
-			triggerHaptic();
-			lastHapticTime = now;
-		}
-	};
-};
-
 // Helper for spring animation
 export const useSpring = (initialValue: number) => {
 	const sharedValue = useMemo(() => useSharedValue(initialValue), [initialValue]);

@@ -36,8 +36,7 @@ import {
 	createChartKey,
 	useGradientArea,
 	useSpringLine,
-	createHorizontalDottedLinePoints,
-	createThrottledHaptic
+	createHorizontalDottedLinePoints
 } from './scripts';
 
 const initChartPressState = { x: 0, y: { y: 0 } };
@@ -274,7 +273,7 @@ export default function CoinChart({
 			const yVal = chartPress.y.y.value.value;
 			if (typeof xVal === 'number' && typeof yVal === 'number') {
 				// Use throttled haptic to prevent overloading
-				runOnJS(throttledHaptic)(triggerHaptic);
+				runOnJS(triggerHaptic)();
 				runOnJS(onHover)({
 					timestamp: xVal,
 					price: yVal,
