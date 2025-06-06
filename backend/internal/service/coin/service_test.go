@@ -59,7 +59,7 @@ func setupCoinServiceTest(t *testing.T) (
 		{MintAddress: "existing", LastUpdated: time.Now().Format(time.RFC3339)}, // Fresh data to skip refresh
 	}, nil).Maybe()
 
-	service := NewService(cfg, &http.Client{}, mockJupiterClient, mockStore)
+	service := NewService(cfg, &http.Client{}, mockJupiterClient, mockStore, nil)
 	service.offchainClient = mockOffchainClient // Set mock offchain client on service
 
 	return service, cfg, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, mockRawCoinRepo
@@ -285,7 +285,7 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 		Name:            "Jupiter Name", // Assuming Jupiter provides this
 		Symbol:          "JUP_RWS",      // Assuming Jupiter provides this
 		Description:     "Enriched Description from Offchain",
-		IconUrl:         rawLogoURL, // From rawCoin.LogoUrl as initialIconURL
+		IconUrl:         rawLogoURL,                          // From rawCoin.LogoUrl as initialIconURL
 		ResolvedIconUrl: util.StandardizeIpfsUrl(rawLogoURL), // Changed to util.StandardizeIpfsUrl
 		Price:           1.23,
 		Decimals:        9, // From rawCoin, potentially overridden by Jupiter
@@ -397,7 +397,7 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 		Name:            "Brand New Coin From Jupiter",
 		Symbol:          "NEWJUP",
 		Description:     "Newly Discovered Description From Offchain",
-		IconUrl:         newCoinIconURL, // This will be from offchain meta as initialIconURL is "" for fetchAndCacheCoin
+		IconUrl:         newCoinIconURL,                          // This will be from offchain meta as initialIconURL is "" for fetchAndCacheCoin
 		ResolvedIconUrl: util.StandardizeIpfsUrl(newCoinIconURL), // Changed to util.StandardizeIpfsUrl
 		Price:           3.14,
 		Decimals:        8, // From Jupiter

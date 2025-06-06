@@ -211,52 +211,6 @@ func (_c *MockClientAPI_GetMetadataAccount_Call) RunAndReturn(run func(ctx conte
 	return _c
 }
 
-// GetRpcConnection provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) GetRpcConnection() *rpc.Client {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetRpcConnection")
-	}
-
-	var r0 *rpc.Client
-	if returnFunc, ok := ret.Get(0).(func() *rpc.Client); ok {
-		r0 = returnFunc()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*rpc.Client)
-		}
-	}
-	return r0
-}
-
-// MockClientAPI_GetRpcConnection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRpcConnection'
-type MockClientAPI_GetRpcConnection_Call struct {
-	*mock.Call
-}
-
-// GetRpcConnection is a helper method to define mock.On call
-func (_e *MockClientAPI_Expecter) GetRpcConnection() *MockClientAPI_GetRpcConnection_Call {
-	return &MockClientAPI_GetRpcConnection_Call{Call: _e.mock.On("GetRpcConnection")}
-}
-
-func (_c *MockClientAPI_GetRpcConnection_Call) Run(run func()) *MockClientAPI_GetRpcConnection_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *MockClientAPI_GetRpcConnection_Call) Return(client *rpc.Client) *MockClientAPI_GetRpcConnection_Call {
-	_c.Call.Return(client)
-	return _c
-}
-
-func (_c *MockClientAPI_GetRpcConnection_Call) RunAndReturn(run func() *rpc.Client) *MockClientAPI_GetRpcConnection_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetTransactionConfirmationStatus provides a mock function for the type MockClientAPI
 func (_mock *MockClientAPI) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
 	ret := _mock.Called(ctx, sigStr)
