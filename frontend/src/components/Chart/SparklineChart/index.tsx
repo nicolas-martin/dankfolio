@@ -10,9 +10,10 @@ import {
   vec,
 } from '@shopify/react-native-skia';
 import { useTheme } from 'react-native-paper';
+import { PriceData } from '@/types'; // Added PriceData import
 
 interface SparklineChartProps {
-  data: Array<{ unixTime: number; value: number }>;
+  data: PriceData[]; // Changed to PriceData[]
   width: number;
   height: number;
   isLoading?: boolean;
@@ -49,11 +50,43 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
     lineSegments,
     areaSegments,
     baselinePaint,
-    baselineYPoint, // Renamed baselineY to avoid conflict in return object
+    baselineYPoint,
   } = useMemo(() => {
-    const startPrice = data[0].value;
+    // 1. Data Processing and Validation
+    const processedData = data
+      .map(item => {
+        let timeValue: number;
+        if (typeof item.unixTime === 'number' && !isNaN(item.unixTime)) {
+          timeValue = item.unixTime * 1000; // Assuming unixTime is in seconds
+        } else if (item.timestamp) {
+          timeValue = new Date(item.timestamp).getTime();
+        } else {
+          timeValue = NaN; // Mark as invalid if no time source
+        }
+
+        const numericValue = typeof item.value === 'string' ? parseFloat(item.value) : Number(item.value);
+
+        if (isNaN(timeValue) || isNaN(numericValue)) {
+          return { time: 0, value: 0, valid: false };
+        }
+        return { time: timeValue, value: numericValue, valid: true };
+      })
+      .filter(p => p.valid);
+
+    // If, after processing, data is insufficient, return empty structures
+    if (processedData.length < 2) {
+      return {
+        lineSegments: [],
+        areaSegments: [],
+        baselinePaint: Skia.Paint(), // Default paint
+        baselineYPoint: height / 2,
+      };
+    }
+
+    // 2. Calculations based on processedData
+    const startPrice = processedData[0].value;
     let maxDeviation = 0;
-    for (const point of data) {
+    for (const point of processedData) {
       const deviation = Math.abs(point.value - startPrice);
       if (deviation > maxDeviation) {
         maxDeviation = deviation;
@@ -67,7 +100,16 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
     const chartHeight = height - 2 * yPadding;
     const currentBaselineY = height / 2;
 
-    const getX = (index: number) => (index / (data.length - 1)) * width;
+    const timeValues = processedData.map(p => p.time);
+    const minTime = Math.min(...timeValues);
+    const maxTime = Math.max(...timeValues);
+    const timeRange = maxTime - minTime;
+
+    const getX = (time: number) => {
+      if (timeRange === 0) return width / 2; // All points at the same time, center them
+      return ((time - minTime) / timeRange) * width;
+    };
+
     const getY = (value: number) => {
       const valueRelativeToDeviation = value - (startPrice - maxDeviation);
       let normalizedY = valueRelativeToDeviation / (2 * maxDeviation);
@@ -104,13 +146,14 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
       gradientEnd: ReturnType<typeof vec>;
     }> = [];
 
-    for (let i = 0; i < data.length - 1; i++) {
-      const p1 = data[i];
-      const p2 = data[i + 1];
+    for (let i = 0; i < processedData.length - 1; i++) {
+      const p1 = processedData[i];
+      const p2 = processedData[i + 1];
 
-      const x1 = getX(i);
+      // Use point's time for X, point's value for Y
+      const x1 = getX(p1.time);
       const y1 = getY(p1.value);
-      const x2 = getX(i + 1);
+      const x2 = getX(p2.time);
       const y2 = getY(p2.value);
 
       const p1IsAboveOrOnBaseline = p1.value >= startPrice;

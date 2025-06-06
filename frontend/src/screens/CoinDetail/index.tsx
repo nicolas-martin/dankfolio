@@ -322,13 +322,13 @@ const CoinDetail: React.FC = () => {
 			// if the effect doesn't run. This can be tricky.
 			// A simple approach: if data fetching effect is not re-triggered, stop loading.
 			// This timeout is a pragmatic way to ensure it stops if the effect doesn't.
-			setLoading(false); // Ensure loading stops after data-fetch completion
+			setTimeout(() => setLoading(false), 1000);
 
 
 		} else {
 			setLoading(false); // Ensure loading stops if there's no mintAddress
 		}
-	}, [mintAddress, showToast, displayCoin]); // Added displayCoin to ensure updates when it changes.
+	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
 
 	return (
 		// Ensure displayCoin is checked here again before rendering main content
