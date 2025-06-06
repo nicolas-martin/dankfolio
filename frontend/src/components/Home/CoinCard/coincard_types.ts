@@ -1,4 +1,4 @@
-import { Coin } from '@/types';
+import { Coin, PriceData } from '@/types';
 
 export interface CoinCardProps {
 	coin: Coin;
@@ -6,4 +6,6 @@ export interface CoinCardProps {
 	balance?: number; // Assuming balance is optional as per original
 	value?: number;   // Assuming value is optional
 	isHorizontal?: boolean; // New prop
+	priceHistory?: PriceData[];
+	isPriceHistoryLoading?: boolean;
 }

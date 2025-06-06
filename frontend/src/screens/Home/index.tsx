@@ -2,6 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
 import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
+// Imports for refactored fetchPriceHistory
+import { fetchPriceHistory, TIMEFRAME_CONFIG } from '@/screens/CoinDetail/coindetail_scripts';
+// Keep this import if TIMEFRAME_CONFIG uses it, or if directly needed.
+// For now, assuming TIMEFRAME_CONFIG provides the correctly typed enum.
+import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb'; // Matching coindetail_scripts
 import CoinCard from '@components/Home/CoinCard';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -11,22 +16,24 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './home_styles';
-import { Coin } from '@/types';
+import { Coin, PriceData } from '@/types'; // Added PriceData
 import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
-	
-	// Get theme type from the theme store
-	const { themeType } = useThemeStore();
+	const { themeType } = useThemeStore(); // Get theme type from the theme store
 
-	// Use separate selectors to avoid creating new objects on every render
+	// Coin and loading states
 	const availableCoins = useCoinStore(state => state.availableCoins);
 	const fetchAvailableCoins = useCoinStore(state => state.fetchAvailableCoins);
 	const fetchNewCoins = useCoinStore(state => state.fetchNewCoins);
 	const isLoadingTrending = useCoinStore(state => state.isLoading);
+
+	// Price history states
+	const [priceHistories, setPriceHistories] = useState<Record<string, PriceData[]>>({});
+	const [isLoadingPriceHistories, setIsLoadingPriceHistories] = useState<Record<string, boolean>>({});
 
 	const { showToast } = useToast();
 	const theme = useTheme();
@@ -36,6 +43,59 @@ const HomeScreen = () => {
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed HomeScreen' });
 	}, []);
+
+
+	// Effect to fetch price histories when availableCoins change
+	useEffect(() => {
+		if (!availableCoins || availableCoins.length === 0) {
+			// Clear existing histories if availableCoins becomes empty
+			setPriceHistories({});
+			setIsLoadingPriceHistories({});
+			return;
+		}
+
+		const topCoins = availableCoins.slice(0, 10);
+		const fourHourTimeframeKey = "4H"; // Key used in TIMEFRAME_CONFIG
+		const fourHourConfig = TIMEFRAME_CONFIG[fourHourTimeframeKey];
+
+		if (!fourHourConfig) {
+			logger.error("[HomeScreen] 4H timeframe configuration is missing in TIMEFRAME_CONFIG.");
+			return;
+		}
+		const fourHourPriceHistoryType = fourHourConfig.granularity;
+
+
+		topCoins.forEach(coin => {
+			if (!coin || !coin.mintAddress) {
+				return;
+			}
+
+			// Set loading state for this specific coin
+			setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
+
+			fetchPriceHistory(coin, fourHourTimeframeKey, fourHourPriceHistoryType)
+				.then(result => {
+					if (result.data) {
+						setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data }));
+					}
+					if (result.error) {
+						logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
+						// Optionally clear history for this coin on error or leave stale
+						// setPriceHistories(prev => {
+						//   const newState = { ...prev };
+						//   delete newState[coin.mintAddress!];
+						//   return newState;
+						// });
+					}
+				})
+				.catch(error => { // Catch unexpected errors from fetchPriceHistory promise itself
+					logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
+				})
+				.finally(() => {
+					setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
+				});
+		});
+	}, [availableCoins]);
 
 	// Shared logic for fetching trending coins and portfolio
 	const fetchTrendingAndPortfolio = useCallback(async () => {
@@ -190,11 +250,7 @@ const HomeScreen = () => {
 					<FlatList
 						data={availableCoins}
 						keyExtractor={(item) => item.mintAddress || item.symbol}
-						renderItem={({ item }) => (
-							<View style={styles.coinCardContainerStyle}>
-								<CoinCard coin={item} onPress={() => handlePressCoinCard(item)} />
-							</View>
-						)}
+						renderItem={renderTrendingCoinItem} // Changed to use renderTrendingCoinItem
 						scrollEnabled={false}
 						// Performance optimizations to prevent UI blocking
 						maxToRenderPerBatch={5}
@@ -202,8 +258,8 @@ const HomeScreen = () => {
 						initialNumToRender={10}
 						windowSize={10}
 						getItemLayout={(data, index) => ({
-							length: 80, // Approximate height of each CoinCard
-							offset: 80 * index,
+							length: 130, // Adjusted approximate height of each CoinCard with sparkline + margin
+							offset: 130 * index, // Adjusted offset
 							index,
 						})}
 						// Optimize re-renders
@@ -213,6 +269,23 @@ const HomeScreen = () => {
 			</ScrollView>
 		);
 	};
+
+	// Extracted renderItem function for trending coins FlatList
+	const renderTrendingCoinItem = useCallback(({ item }: { item: Coin }) => {
+		const history = priceHistories[item.mintAddress!];
+		const isLoadingHistory = isLoadingPriceHistories[item.mintAddress!];
+
+		return (
+			<View style={styles.coinCardContainerStyle}>
+				<CoinCard
+					coin={item}
+					onPress={() => handlePressCoinCard(item)}
+					priceHistory={history}
+					isPriceHistoryLoading={isLoadingHistory}
+				/>
+			</View>
+		);
+	}, [priceHistories, isLoadingPriceHistories, handlePressCoinCard, styles.coinCardContainerStyle]);
 
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">

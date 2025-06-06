@@ -1,7 +1,14 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 
-export const createStyles = (theme: MD3Theme, isHorizontal?: boolean) => StyleSheet.create({
+// Calculate default cardWidth here if not passed, or expect it to be passed
+// For placeholder, it might be better to pass it if it's dynamically calculated in the component
+// const defaultCardWidth = Dimensions.get('window').width * 0.45;
+
+export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?: number) => {
+	const actualCardWidth = cardWidth || Dimensions.get('window').width * 0.45; // Fallback if not provided
+
+	return StyleSheet.create({
     // Original styles
     card: {
         backgroundColor: theme.colors.surface,
@@ -135,5 +142,20 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean) => StyleSh
     },
     changePositiveSmall: { color: '#2E7D32' },
     changeNegativeSmall: { color: '#D32F2F' },
-    changeNeutralSmall: { color: theme.colors.onSurfaceVariant }
-});
+    changeNeutralSmall: { color: theme.colors.onSurfaceVariant },
+
+    // Styles for Sparkline (conditionally applied in component)
+    sparklineContainer: {
+        marginTop: 8,
+        alignItems: 'center',
+        // backgroundColor: 'lightblue', // For debugging layout
+        paddingBottom: 8, // Ensure some padding if card has bottom padding elsewhere or for visual balance
+    },
+    sparklinePlaceholder: {
+        width: actualCardWidth * 0.8, // Use actualCardWidth
+        height: 30,
+        backgroundColor: theme.colors.surfaceDisabled,
+        borderRadius: 4,
+    },
+	});
+};

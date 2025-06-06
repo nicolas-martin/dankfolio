@@ -1,13 +1,22 @@
 import React, { useCallback } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Dimensions } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
+import SparklineChart from '@/components/Chart/SparklineChart'; // Added import
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '@/utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
 import { createStyles } from './coincard_styles';
 import { logger } from '@/utils/logger';
 
-const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
+const cardWidth = Dimensions.get('window').width * 0.45; // Example: 45% of screen width for vertical cards
+
+const CoinCard: React.FC<CoinCardProps> = ({
+	coin,
+	onPress,
+	isHorizontal,
+	priceHistory,
+	isPriceHistoryLoading,
+}) => {
 	const theme = useTheme();
 	const styles = createStyles(theme, isHorizontal);
 
@@ -131,6 +140,21 @@ const CoinCard: React.FC<CoinCardProps> = ({ coin, onPress, isHorizontal }) => {
 					)}
 				</View>
 			</View>
+			{!isHorizontal && (
+				<View style={styles.sparklineContainer}>
+					{isPriceHistoryLoading ? (
+						<View style={styles.sparklinePlaceholder} />
+					) : priceHistory && priceHistory.length > 1 ? (
+						<SparklineChart
+							data={priceHistory}
+							width={cardWidth * 0.8} // e.g. 80% of card content width
+							height={30} // Fixed height for sparkline
+						/>
+					) : (
+						<View style={styles.sparklinePlaceholder} /> // Show placeholder if no data or not enough data
+					)}
+				</View>
+			)}
 		</TouchableOpacity>
 	);
 };
@@ -148,6 +172,8 @@ export default React.memo(CoinCard, (prevProps, nextProps) => {
 		prevProps.coin.balance === nextProps.coin.balance &&
 		prevProps.coin.value === nextProps.coin.value &&
 		prevProps.coin.dailyVolume === nextProps.coin.dailyVolume &&
-		prevProps.isHorizontal === nextProps.isHorizontal
+		prevProps.isHorizontal === nextProps.isHorizontal &&
+		prevProps.priceHistory === nextProps.priceHistory && // Added prop
+		prevProps.isPriceHistoryLoading === nextProps.isPriceHistoryLoading // Added prop
 	);
 });
