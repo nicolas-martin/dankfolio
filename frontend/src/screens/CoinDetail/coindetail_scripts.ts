@@ -89,14 +89,16 @@ export const fetchPriceHistory = async (
 		const { durationMs, roundingMinutes } = config; // roundingMinutes is NOT used here anymore for cache expiry
 
 		const currentTime = new Date();
-		let dateTo = new Date(currentTime);
-		let dateFrom = new Date(currentTime.getTime() - durationMs);
+		let dateTo = new Date(currentTime); // This is essentially 'now'
+		let dateFrom = new Date(currentTime.getTime() - durationMs); // Start of the window
 
-		const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
-		const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
+		// REMOVE:
+		// const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
+		// const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
 
-		const timeToISO = roundedTimeTo.toISOString();
-		const timeFromISO = roundedTimeFrom.toISOString();
+		// USE non-rounded times for the request to backend:
+		const timeToISO = dateTo.toISOString();
+		const timeFromISO = dateFrom.toISOString();
 
 
 		// Find the key in typeMap (grpcApi.ts) that corresponds to the enum value
