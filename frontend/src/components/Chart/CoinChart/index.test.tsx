@@ -96,6 +96,7 @@ const defaultProps = {
 	data: [],
 	loading: true,
 	onHover: jest.fn(),
+	period: "4H",
 };
 
 const sampleData1: PricePoint[] = [ // This can still be used for providing data to the 'data' prop
@@ -122,13 +123,13 @@ describe('CoinChart Basic Rendering', () => { // Renamed describe block
 
 	it('should render loading state when loading is true', () => {
 		render(<CoinChart {...defaultProps} loading={true} data={[]} />);
-		expect(screen.getByTestId('loading-text')).toBeTruthy();
+		expect(screen.getByTestId('loading-indicator')).toBeTruthy();
 	});
 
 	it('should render loading state when data is empty (even if loading is false)', () => {
 		// This behavior (showing loading when data is empty) was part of the original component logic
 		render(<CoinChart {...defaultProps} loading={false} data={[]} />);
-		expect(screen.getByTestId('loading-text')).toBeTruthy();
+		expect(screen.getByTestId('loading-indicator')).toBeTruthy();
 	});
 
 });
