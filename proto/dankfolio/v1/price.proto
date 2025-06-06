@@ -36,9 +36,8 @@ message GetPriceHistoryRequest {
     ONE_WEEK = 14;
   }
   PriceHistoryType type = 2;
-  google.protobuf.Timestamp time_from = 3;
-  google.protobuf.Timestamp time_to = 4;
-  string address_type = 5;
+  google.protobuf.Timestamp time = 3;
+  string address_type = 4;
 }
 
 // GetPriceHistoryResponse represents the response containing price history data

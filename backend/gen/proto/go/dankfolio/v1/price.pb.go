@@ -112,9 +112,8 @@ type GetPriceHistoryRequest struct {
 	state         protoimpl.MessageState                  `protogen:"open.v1"`
 	Address       string                                  `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Type          GetPriceHistoryRequest_PriceHistoryType `protobuf:"varint,2,opt,name=type,proto3,enum=dankfolio.v1.GetPriceHistoryRequest_PriceHistoryType" json:"type,omitempty"`
-	TimeFrom      *timestamppb.Timestamp                  `protobuf:"bytes,3,opt,name=time_from,json=timeFrom,proto3" json:"time_from,omitempty"`
-	TimeTo        *timestamppb.Timestamp                  `protobuf:"bytes,4,opt,name=time_to,json=timeTo,proto3" json:"time_to,omitempty"`
-	AddressType   string                                  `protobuf:"bytes,5,opt,name=address_type,json=addressType,proto3" json:"address_type,omitempty"`
+	Time          *timestamppb.Timestamp                  `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
+	AddressType   string                                  `protobuf:"bytes,4,opt,name=address_type,json=addressType,proto3" json:"address_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,16 +162,9 @@ func (x *GetPriceHistoryRequest) GetType() GetPriceHistoryRequest_PriceHistoryTy
 	return GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED
 }
 
-func (x *GetPriceHistoryRequest) GetTimeFrom() *timestamppb.Timestamp {
+func (x *GetPriceHistoryRequest) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.TimeFrom
-	}
-	return nil
-}
-
-func (x *GetPriceHistoryRequest) GetTimeTo() *timestamppb.Timestamp {
-	if x != nil {
-		return x.TimeTo
+		return x.Time
 	}
 	return nil
 }
@@ -429,13 +421,12 @@ var File_dankfolio_v1_price_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_price_proto_rawDesc = "" +
 	"\n" +
-	"\x18dankfolio/v1/price.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa5\x04\n" +
+	"\x18dankfolio/v1/price.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe7\x03\n" +
 	"\x16GetPriceHistoryRequest\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12I\n" +
-	"\x04type\x18\x02 \x01(\x0e25.dankfolio.v1.GetPriceHistoryRequest.PriceHistoryTypeR\x04type\x127\n" +
-	"\ttime_from\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\btimeFrom\x123\n" +
-	"\atime_to\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06timeTo\x12!\n" +
-	"\faddress_type\x18\x05 \x01(\tR\vaddressType\"\x94\x02\n" +
+	"\x04type\x18\x02 \x01(\x0e25.dankfolio.v1.GetPriceHistoryRequest.PriceHistoryTypeR\x04type\x12.\n" +
+	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12!\n" +
+	"\faddress_type\x18\x04 \x01(\tR\vaddressType\"\x94\x02\n" +
 	"\x10PriceHistoryType\x12\"\n" +
 	"\x1ePRICE_HISTORY_TYPE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -503,20 +494,19 @@ var file_dankfolio_v1_price_proto_goTypes = []any{
 }
 var file_dankfolio_v1_price_proto_depIdxs = []int32{
 	0, // 0: dankfolio.v1.GetPriceHistoryRequest.type:type_name -> dankfolio.v1.GetPriceHistoryRequest.PriceHistoryType
-	8, // 1: dankfolio.v1.GetPriceHistoryRequest.time_from:type_name -> google.protobuf.Timestamp
-	8, // 2: dankfolio.v1.GetPriceHistoryRequest.time_to:type_name -> google.protobuf.Timestamp
-	3, // 3: dankfolio.v1.GetPriceHistoryResponse.data:type_name -> dankfolio.v1.PriceHistoryData
-	4, // 4: dankfolio.v1.PriceHistoryData.items:type_name -> dankfolio.v1.PriceHistoryItem
-	7, // 5: dankfolio.v1.GetCoinPricesResponse.prices:type_name -> dankfolio.v1.GetCoinPricesResponse.PricesEntry
-	1, // 6: dankfolio.v1.PriceService.GetPriceHistory:input_type -> dankfolio.v1.GetPriceHistoryRequest
-	5, // 7: dankfolio.v1.PriceService.GetCoinPrices:input_type -> dankfolio.v1.GetCoinPricesRequest
-	2, // 8: dankfolio.v1.PriceService.GetPriceHistory:output_type -> dankfolio.v1.GetPriceHistoryResponse
-	6, // 9: dankfolio.v1.PriceService.GetCoinPrices:output_type -> dankfolio.v1.GetCoinPricesResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	8, // 1: dankfolio.v1.GetPriceHistoryRequest.time:type_name -> google.protobuf.Timestamp
+	3, // 2: dankfolio.v1.GetPriceHistoryResponse.data:type_name -> dankfolio.v1.PriceHistoryData
+	4, // 3: dankfolio.v1.PriceHistoryData.items:type_name -> dankfolio.v1.PriceHistoryItem
+	7, // 4: dankfolio.v1.GetCoinPricesResponse.prices:type_name -> dankfolio.v1.GetCoinPricesResponse.PricesEntry
+	1, // 5: dankfolio.v1.PriceService.GetPriceHistory:input_type -> dankfolio.v1.GetPriceHistoryRequest
+	5, // 6: dankfolio.v1.PriceService.GetCoinPrices:input_type -> dankfolio.v1.GetCoinPricesRequest
+	2, // 7: dankfolio.v1.PriceService.GetPriceHistory:output_type -> dankfolio.v1.GetPriceHistoryResponse
+	6, // 8: dankfolio.v1.PriceService.GetCoinPrices:output_type -> dankfolio.v1.GetCoinPricesResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_dankfolio_v1_price_proto_init() }
