@@ -2,9 +2,10 @@ import { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Text, useTheme, IconButton, Button, Icon, List, MD3Theme, Switch } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack'; // Added
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
-import { CoinDetailScreenNavigationProp } from '@screens/CoinDetail/coindetail_types';
+// import { CoinDetailScreenNavigationProp } from '@screens/CoinDetail/coindetail_types'; // Removed
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { createStyles } from './profile_styles';
@@ -23,7 +24,7 @@ import { RootStackParamList } from '@/types/navigation';
 type ProfileScreenRouteParams = RootStackParamList['Profile'];
 
 const Profile = () => {
-	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
+	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>(); // Changed here
 	const route = useRoute();
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
@@ -82,10 +83,20 @@ const Profile = () => {
 	const renderHeader = () => (
 		<View style={styles.headerSection}>
 			<View style={styles.profileHeader}>
-				<View style={styles.profileIcon}>
+				<View style={styles.profileIconContainer}>
 					<ProfileIcon size={28} color={theme.colors.onSurface} />
+					<Text style={styles.profileTitle}>Portfolio</Text>
 				</View>
-				<Text style={styles.profileTitle}>Portfolio</Text>
+				<IconButton
+					icon="cog-outline"
+					size={24}
+					iconColor={theme.colors.onSurface}
+					onPress={() => {
+						logger.breadcrumb({ category: 'navigation', message: 'Navigating to SettingsScreen from Profile' });
+						navigation.navigate('Settings');
+					}}
+					style={styles.settingsButton}
+				/>
 			</View>
 			{wallet && (
 				<View style={styles.walletAddressContainer}>
@@ -106,20 +117,7 @@ const Profile = () => {
 		</View>
 	);
 
-	const renderThemeToggle = () => (
-		<View style={styles.themeToggleContainer}>
-			<View style={styles.themeToggleHeader}>
-				<Icon source={isDarkTheme ? "weather-night" : "white-balance-sunny"} size={24} color={theme.colors.onSurface} />
-				<Text style={styles.themeToggleTitle}>{isDarkTheme ? 'Neon Mode' : 'Light Mode'}</Text>
-			</View>
-			<Switch
-				value={isDarkTheme}
-				onValueChange={toggleTheme}
-				color={theme.colors.primary}
-				disabled={isThemeLoading}
-			/>
-		</View>
-	);
+// Removed commented-out renderThemeToggle function and related JSX for code cleanliness.
 
 	const renderPortfolioCard = () => (
 		<View style={styles.portfolioCard}>
@@ -232,7 +230,8 @@ const Profile = () => {
 						{renderHeader()}
 						{renderPortfolioCard()}
 						{renderTokensSection()}
-						{renderThemeToggle()}
+						{/* {renderThemeToggle()} */}
+						{/* Commenting out renderThemeToggle as it's moved to Settings screen */}
 						{/* {renderTransactionsSection()} */}
 					</View>
 
