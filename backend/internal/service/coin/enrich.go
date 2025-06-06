@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
-	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
 // EnrichCoinData fetches detailed information for a given mint address using Jupiter,
@@ -117,12 +116,13 @@ func (s *Service) EnrichCoinData(
 
 	enrichFromMetadata(&coin, offchainMeta) // Pass original offchainMeta
 
-	// Standardize the IconUrl to produce ResolvedIconUrl
-	// If IconUrl is empty, standardizeIpfsUrl will return empty, so ResolvedIconUrl will be empty.
-	coin.ResolvedIconUrl = util.StandardizeIpfsUrl(coin.IconUrl)
-	if coin.ResolvedIconUrl != coin.IconUrl && coin.ResolvedIconUrl != "" {
-		slog.Debug("Standardized IPFS URL", slog.String("original", coin.IconUrl), slog.String("resolved", coin.ResolvedIconUrl), slog.String("mintAddress", mintAddress))
-	}
+	// NOTE: Try without resolving IPFS URLs in this service.
+	// We removed cloudflare
+	coin.ResolvedIconUrl = coin.IconUrl
+	// coin.ResolvedIconUrl = util.StandardizeIpfsUrl(coin.IconUrl)
+	// if coin.ResolvedIconUrl != coin.IconUrl && coin.ResolvedIconUrl != "" {
+	// 	slog.Debug("Standardized IPFS URL", slog.String("original", coin.IconUrl), slog.String("resolved", coin.ResolvedIconUrl), slog.String("mintAddress", mintAddress))
+	// }
 
 	// Ensure LastUpdated is set
 	coin.LastUpdated = time.Now().Format(time.RFC3339)

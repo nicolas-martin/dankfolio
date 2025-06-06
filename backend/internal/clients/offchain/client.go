@@ -117,9 +117,7 @@ func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
 	slog.Debug("📦 IPFS: Extracted CID", "cid", cid)
 	slog.Debug("🔄 IPFS: Starting gateway fallback sequence...")
 
-
 	gateways := util.DefaultCIDv0Gateways
-
 
 	var lastErr error
 	for i, gw := range gateways {
@@ -180,8 +178,6 @@ func (c *Client) fetchHTTPMetadata(url string) (map[string]any, error) {
 		slog.Error("❌ HTTP: Failed to create request", "url", url, "error", err)
 		return nil, fmt.Errorf("failed to create request for %s: %w", url, err)
 	}
-
-	req.Header.Set("User-Agent", "DankfolioEnrichmentBot/1.0")
 
 	slog.Debug("🌐 HTTP: Sending GET request", "url", url)
 	resp, err := c.httpClient.Do(req)
@@ -310,7 +306,6 @@ func getIPFSGateways() []string {
 	// Can be made configurable later
 
 	return util.DefaultCIDv0Gateways
-
 }
 
 func getArweaveGateways() []string {
