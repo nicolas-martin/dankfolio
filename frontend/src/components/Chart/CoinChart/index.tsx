@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useEffect, ReactNode, useState } from 'react';
+import React, { useRef, useEffect, ReactNode, useState } from 'react';
 import { View } from 'react-native';
-import { CartesianChart, useChartPressState, Area, useLinePath, type PointsArray, } from 'victory-native';
+import { CartesianChart, useChartPressState, useLinePath, type PointsArray } from 'victory-native';
 import Animated, { 
 	useSharedValue, 
 	useAnimatedStyle, 
@@ -9,7 +9,6 @@ import Animated, {
 	cancelAnimation, 
 	withSpring, 
 	SharedValue,
-	withRepeat,
 	useAnimatedReaction
 } from 'react-native-reanimated';
 import { 
@@ -25,102 +24,27 @@ import {
 import { useTheme, ActivityIndicator } from 'react-native-paper';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
-import { format } from 'date-fns';
 import inter from '@assets/fonts/inter-medium.ttf';
-import { createStyles } from './styles';
+import { createStyles, CHART_CONSTANTS } from './styles';
 import type { CoinChartProps, PricePoint, PulsatingDotProps, AreaProps } from './types';
-import { logger } from '@/utils/logger';
-import { determineChartColor, createPulsateAnimation, CHART_COLORS } from './scripts';
+import { 
+	determineChartColor, 
+	CHART_COLORS, 
+	createPulsateAnimation, 
+	getTimeFormat, 
+	prepareChartData,
+	createChartKey,
+	useGradientArea,
+	useSpringLine,
+	createHorizontalDottedLinePoints,
+	createThrottledHaptic
+} from './scripts';
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
-// ─── Time Format Utilities ─────────────────────────────────────────────────
-const getTimeFormat = (period?: string) => {
-	switch (period) {
-		case '1H':
-		case '4H':
-			return {
-				axis: (v: number) => format(new Date(v), 'HH:mm'),
-				tooltip: (v: number) => format(new Date(v), "HH:mm 'on' MMM d"),
-				tickCount: 4
-			};
-		case '1D':
-			return {
-				axis: (v: number) => format(new Date(v), 'HH:mm'),
-				tooltip: (v: number) => format(new Date(v), "HH:mm 'on' MMM d"),
-				tickCount: 4
-			};
-		case '1W':
-			return {
-				axis: (v: number) => format(new Date(v), 'EEE'),
-				tooltip: (v: number) => format(new Date(v), "HH:mm 'on' EEE, MMM d"),
-				tickCount: 4
-			};
-		case '1M':
-			return {
-				axis: (v: number) => format(new Date(v), 'MMM d'),
-				tooltip: (v: number) => format(new Date(v), "MMM d"),
-				tickCount: 4
-			};
-		case 'ALL':
-		case '1Y':
-			return {
-				axis: (v: number) => format(new Date(v), 'MMM'),
-				tooltip: (v: number) => format(new Date(v), "MMM yyyy"),
-				tickCount: 4
-			};
-		default:
-			return {
-				axis: (v: number) => format(new Date(v), 'MMM d'),
-				tooltip: (v: number) => format(new Date(v), "MMM d, yyyy"),
-				tickCount: 4
-			};
-	}
-};
-
 // ─── GradientArea ────────────────────────────────────────────────────────────
 function GradientArea({ points, y0, color, opacity = 0.8, gradientColors }: AreaProps) {
-	// Extract base color for gradient
-	const baseColor = color.startsWith('rgba') 
-		? color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+).*/, 'rgb($1, $2, $3)') 
-		: color;
-	
-	// Create default gradient colors if not provided
-	const colors = gradientColors || [
-		baseColor,         // Solid color at top
-		`${baseColor}80`,  // 50% opacity in middle
-		`${baseColor}10`   // 10% opacity at bottom
-	];
-	
-	// Get the line path from victory-native's useLinePath
-	const { path: linePath } = useLinePath(points, { curveType: 'cardinal' });
-	
-	// Create the area path with Skia
-	const areaPath = useMemo(() => {
-		if (!points || points.length === 0 || !linePath) return null;
-		
-		// Get the first and last points
-		const lastPoint = points[points.length - 1];
-		const firstPoint = points[0];
-		
-		// Create a new path for the area
-		const Skia = require('@shopify/react-native-skia').Skia;
-		const path = Skia.Path.Make();
-		
-		// Add the line path
-		path.addPath(linePath);
-		
-		// Add line to bottom right
-		path.lineTo(lastPoint.x, y0);
-		
-		// Add line to bottom left
-		path.lineTo(firstPoint.x, y0);
-		
-		// Close the path
-		path.close();
-		
-		return path;
-	}, [points, y0, linePath]);
+	const { areaPath, colors } = useGradientArea({ points, y0, color, opacity, gradientColors });
 	
 	if (!areaPath) return null;
 	
@@ -142,7 +66,7 @@ function GradientArea({ points, y0, color, opacity = 0.8, gradientColors }: Area
 // ─── SpringLine ─────────────────────────────────────────────────────────────
 function SpringLine({
 	points,
-	strokeWidth = 2,
+	strokeWidth = CHART_CONSTANTS.line.width.main,
 	color,
 	dataKey,
 }: {
@@ -151,22 +75,7 @@ function SpringLine({
 	color?: string;
 	dataKey?: string;
 }) {
-	// get raw Skia path from points
-	const { path: skPath } = useLinePath(points, { curveType: 'cardinal' });
-
-	// Create animated progress for path trimming
-	const progress = useSharedValue(1); // Start at 1 to avoid re-animation on interaction
-
-	// Only animate when dataKey changes (new dataset), not on every points change
-	useEffect(() => {
-		if (dataKey) {
-			progress.value = 0;
-			progress.value = withSpring(1, {
-				stiffness: 100,
-				damping: 20,
-			});
-		}
-	}, [dataKey]);
+	const { skPath, progress } = useSpringLine(points, dataKey);
 
 	return (
 		<Path
@@ -186,7 +95,7 @@ function PulsatingDot({ position, radius, color }: PulsatingDotProps) {
 		<SkiaCircle 
 			cx={position.x} 
 			cy={position.y} 
-			r={radius} 
+			r={radius}
 			color={color}
 		/>
 	);
@@ -206,25 +115,25 @@ function ChartWrapper({
 	useEffect(() => {
 		if (active) {
 			scale.value = withSpring(1, {
-				stiffness: 100,
-				damping: 15,
-				mass: 0.8, // Lighter mass for faster response
+				stiffness: CHART_CONSTANTS.animation.stiffness.normal,
+				damping: CHART_CONSTANTS.animation.damping.normal,
+				mass: CHART_CONSTANTS.animation.mass.light,
 			});
 			opacity.value = withSpring(1, {
-				stiffness: 120,
-				damping: 20,
-				mass: 0.8, // Lighter mass for faster response
+				stiffness: CHART_CONSTANTS.animation.stiffness.responsive,
+				damping: CHART_CONSTANTS.animation.damping.responsive,
+				mass: CHART_CONSTANTS.animation.mass.light,
 			});
 		} else {
 			scale.value = withSpring(0.9, {
-				stiffness: 120,
-				damping: 15,
-				mass: 0.8, // Lighter mass for faster response
+				stiffness: CHART_CONSTANTS.animation.stiffness.responsive,
+				damping: CHART_CONSTANTS.animation.damping.normal,
+				mass: CHART_CONSTANTS.animation.mass.light,
 			});
 			opacity.value = withSpring(0.7, {
-				stiffness: 120,
-				damping: 15,
-				mass: 0.8, // Lighter mass for faster response
+				stiffness: CHART_CONSTANTS.animation.stiffness.responsive,
+				damping: CHART_CONSTANTS.animation.damping.normal,
+				mass: CHART_CONSTANTS.animation.mass.light,
 			});
 		}
 	}, [active]);
@@ -235,42 +144,6 @@ function ChartWrapper({
 	}));
 
 	return <Animated.View style={style}>{children}</Animated.View>;
-}
-
-// ─── ActiveValueIndicator ──────────────────────────────────────────────────
-function ActiveValueIndicator({
-	xPosition,
-	yPosition,
-	bottom,
-	top,
-	lineColor,
-	indicatorColor,
-}: {
-	xPosition: SharedValue<number>;
-	yPosition: SharedValue<number>;
-	bottom: number;
-	top: number;
-	lineColor: string;
-	indicatorColor: string;
-}) {
-	// Use direct property access to avoid lag in vertical line position
-	return (
-		<>
-			<SkiaLine
-				p1={{ x: xPosition.value, y: top }}
-				p2={{ x: xPosition.value, y: bottom }}
-				color={lineColor}
-				strokeWidth={1}
-			/>
-			<SkiaCircle cx={xPosition} cy={yPosition} r={6} color={indicatorColor} />
-			<SkiaCircle
-				cx={xPosition}
-				cy={yPosition}
-				r={4}
-				color="hsla(0, 0, 100%, 0.25)"
-			/>
-		</>
-	);
 }
 
 // ─── HorizontalDottedLine ─────────────────────────────────────────────────
@@ -285,22 +158,21 @@ function HorizontalDottedLine({
 	y: number;
 	color: string;
 }) {
-	// Create a dotted line by drawing multiple segments
-	// This produces a true dotted appearance without relying on dash patterns
-	const lineWidth = endX - startX;
-	const dotSpacing = 6; // Total space between dots (dot + gap)
-	const dotSize = 3;    // Size of each dot
-	
-	// Calculate number of dots that will fit
-	const numDots = Math.floor(lineWidth / dotSpacing);
+	// Get points from helper function
+	const dotPoints = createHorizontalDottedLinePoints(
+		startX, 
+		endX, 
+		y, 
+		CHART_CONSTANTS.dotSpacing
+	);
 	
 	return (
 		<Group>
-			{Array.from({ length: numDots }).map((_, i) => (
+			{dotPoints.map((point, i) => (
 				<SkiaLine
 					key={`dot-${i}`}
-					p1={{ x: startX + i * dotSpacing, y }}
-					p2={{ x: startX + i * dotSpacing + dotSize, y }}
+					p1={point.start}
+					p2={point.end}
 					color={color}
 					strokeWidth={1}
 					style="stroke"
@@ -322,26 +194,20 @@ export default function CoinChart({
 	const isMounted = useRef(true);
 	const animations = useRef<SharedValue<any>[]>([]);
 	const font = useSkiaFont(inter, 12);
-	const pulseRadius = useSharedValue(8);
+	const pulseRadius = useSharedValue(CHART_CONSTANTS.dotSize.pulse.min);
 	
 	// Get time formatting based on period
-	const timeFormat = useMemo(() => getTimeFormat(period), [period]);
+	const timeFormat = React.useMemo(() => getTimeFormat(period), [period]);
 	
 	// Reduce pulsate animation complexity for better performance
 	const setupPulseAnimation = () => {
-		pulseRadius.value = 4;
-		// Use a simpler animation with fewer keyframes
-		const animation = withRepeat(
-			withSpring(5.5, {
-				damping: 6,
-				stiffness: 80,
-				mass: 5.5, // Lighter mass for faster animation
-				overshootClamping: true, // Prevent overshoot for smoother animation
-			}),
-			-1,
-			true
-		);
+		// Start with min radius
+		pulseRadius.value = CHART_CONSTANTS.dotSize.pulse.min;
+		// Create animation but don't assign directly to pulseRadius.value
+		const animation = createPulsateAnimation(pulseRadius);
+		// Apply the animation
 		pulseRadius.value = animation;
+		// Track for cleanup
 		animations.current.push(pulseRadius);
 	};
 	
@@ -352,14 +218,8 @@ export default function CoinChart({
 	const [chartKey, setChartKey] = useState<string>("");
 	
 	// Throttled haptic feedback for better performance
-	const lastHapticTime = useRef(0);
-	const throttledHaptic = () => {
-		const now = Date.now();
-		if (now - lastHapticTime.current > 150) { // Only trigger every 150ms
-			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-			lastHapticTime.current = now;
-		}
-	};
+	const throttledHaptic = createThrottledHaptic();
+	const triggerHaptic = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
 	useFocusEffect(
 		React.useCallback(
@@ -370,9 +230,7 @@ export default function CoinChart({
 	
 	useEffect(() => {
 		// Create a unique key for the chart when data changes
-		if (data && data.length > 0) {
-			setChartKey(`chart-${data.length}-${data[0]?.timestamp}-${period}`);
-		}
+		setChartKey(createChartKey(data, period));
 		
 		// Set up pulsating animation
 		setupPulseAnimation();
@@ -416,7 +274,7 @@ export default function CoinChart({
 			const yVal = chartPress.y.y.value.value;
 			if (typeof xVal === 'number' && typeof yVal === 'number') {
 				// Use throttled haptic to prevent overloading
-				runOnJS(throttledHaptic)();
+				runOnJS(throttledHaptic)(triggerHaptic);
 				runOnJS(onHover)({
 					timestamp: xVal,
 					price: yVal,
@@ -430,32 +288,13 @@ export default function CoinChart({
 	);
 
 	// preprocess data - optimize by memoizing and reducing calculations
-	const processedChartData: PricePoint[] = useMemo(
-		() => {
-			if (!data || data.length === 0) return [];
-			// Limit points for better performance if needed
-			const targetLength = 150;
-			let dataToProcess = data;
-			
-			// If we have too many points, sample them to reduce workload
-			if (data.length > targetLength) {
-				const skipFactor = Math.ceil(data.length / targetLength);
-				dataToProcess = data.filter((_, i) => i % skipFactor === 0 || i === data.length - 1);
-			}
-			
-			const processed = dataToProcess.map(pt => {
-				const t = new Date(pt.timestamp).getTime();
-				const v = typeof pt.value === 'string' ? parseFloat(pt.value) : pt.value;
-				return { timestamp: t, price: v, value: v, x: t, y: v };
-			});
-			
-			return processed;
-		},
+	const processedChartData: PricePoint[] = React.useMemo(
+		() => prepareChartData(data),
 		[data]
 	);
 	
 	// Determine chart color based on price trend
-	const chartColor = useMemo(() => {
+	const chartColor = React.useMemo(() => {
 		return determineChartColor(processedChartData);
 	}, [processedChartData]);
 	
@@ -531,13 +370,13 @@ export default function CoinChart({
 								<SkiaCircle 
 									cx={rawX} 
 									cy={currentPressPos.value.y} 
-									r={6} 
+									r={CHART_CONSTANTS.dotSize.outer} 
 									color={colors.line} 
 								/>
 								<SkiaCircle
 									cx={rawX}
 									cy={currentPressPos.value.y}
-									r={4}
+									r={CHART_CONSTANTS.dotSize.inner}
 									color="hsla(0, 0, 100%, 0.25)"
 								/>
 								<SkiaText
@@ -575,7 +414,7 @@ export default function CoinChart({
 								<SpringLine
 									key={`line-${chartKey}`}
 									points={points.y}
-									strokeWidth={2}
+									strokeWidth={CHART_CONSTANTS.line.width.main}
 									color={colors.line}
 									dataKey={chartKey}
 								/>

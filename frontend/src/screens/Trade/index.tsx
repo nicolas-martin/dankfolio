@@ -559,10 +559,6 @@ const Trade: React.FC = () => {
 		<SafeAreaView style={styles.container}>
 			<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 				<View style={styles.content}>
-					{/* Header */}
-					<View style={styles.header}>
-						<Text style={styles.title}>Trade</Text>
-					</View>
 
 					{/* Trade Cards with Floating Swap Button */}
 					<View style={styles.tradeContainer}>
