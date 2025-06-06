@@ -352,7 +352,7 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 
 	// 5. enrichRawCoinAndSave: Delete from 'raw_coins' table
 	rawCoinPKIDStr := strconv.FormatUint(sampleRawCoin.ID, 10)
-	mockStore.On("RawCoins").Return(mockRawCoinRepo).Maybe() // Add Maybe for Delete
+	mockStore.On("RawCoins").Return(mockRawCoinRepo).Maybe()              // Add Maybe for Delete
 	mockRawCoinRepo.On("Delete", ctx, rawCoinPKIDStr).Return(nil).Maybe() // Add Maybe for Delete
 
 	// --- Act ---
@@ -478,7 +478,7 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 
 	mockStore.AssertExpectations(t)
 	mockCoinRepo.AssertExpectations(t)
-	mockRawCoinRepo.AssertExpectations(t) // GetByField called
+	mockRawCoinRepo.AssertExpectations(t)                                      // GetByField called
 	mockRawCoinRepo.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything) // Delete should NOT be called
 	mockJupiterClient.AssertExpectations(t)
 	mockSolanaClient.AssertExpectations(t)
