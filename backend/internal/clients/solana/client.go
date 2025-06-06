@@ -10,59 +10,47 @@ import (
 	"sync"
 	"time"
 
-	bloctoClient "github.com/blocto/solana-go-sdk/client"
-	bloctoCommon "github.com/blocto/solana-go-sdk/common"
-	bloctoToken "github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
-	bloctoRPC "github.com/blocto/solana-go-sdk/rpc"
+	"github.com/blocto/solana-go-sdk/common"
+
+	tm "github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	"github.com/gagliardetto/solana-go"
+
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
-// Client handles interactions with the Solana RPC
 type Client struct {
-	bloctoClient *bloctoClient.Client
-	rpcConn      *rpc.Client
+	rpcConn *rpc.Client
 }
 
-var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
+var _ ClientAPI = (*Client)(nil)
 
-// TODO: GET RID OF BLOCTO CLIENT
-func NewClient(solClient *rpc.Client, btRPC bloctoRPC.RpcClient) ClientAPI {
-	bc := &bloctoClient.Client{RpcClient: btRPC}
+func NewClient(solClient *rpc.Client) ClientAPI {
 	return &Client{
-		bloctoClient: bc,
-		rpcConn:      solClient,
+		rpcConn: solClient,
 	}
 }
 
 // GetMetadataAccount retrieves the metadata account for a token
-func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*bloctoToken.Metadata, error) {
-	mintPubkey := bloctoCommon.PublicKeyFromString(mint)
-	metadataAccountPDA, err := bloctoToken.GetTokenMetaPubkey(mintPubkey)
+func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*tm.Metadata, error) {
+	mintPubkey := common.PublicKeyFromString(mint)
+	metadataAccount, err := tm.GetTokenMetaPubkey(mintPubkey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to derive metadata account PDA for %s: %w", mint, err)
 	}
 
-	accountInfo, err := c.bloctoClient.GetAccountInfo(ctx, metadataAccountPDA.ToBase58())
+	key, _ := solana.PublicKeyFromBase58(metadataAccount.ToBase58())
+	accountInfo, err := c.rpcConn.GetAccountInfo(ctx, key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get account info for metadata PDA %s (mint: %s): %w", metadataAccountPDA.ToBase58(), mint, err)
-	}
-	if len(accountInfo.Data) == 0 {
-		return nil, fmt.Errorf("metadata account %s for mint %s has no data", metadataAccountPDA.ToBase58(), mint)
+		return nil, fmt.Errorf("failed to get account info for metadata PDA %s (mint: %s): %w", metadataAccount.ToBase58(), mint, err)
 	}
 
-	metadata, err := bloctoToken.MetadataDeserialize(accountInfo.Data)
+	metadata, err := tm.MetadataDeserialize(accountInfo.Value.Data.GetBinary())
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse metadata for %s: %w", mint, err)
 	}
 
 	return &metadata, nil
-}
-
-// GetRpcConnection returns the underlying RPC connection for direct usage
-func (c *Client) GetRpcConnection() *rpc.Client {
-	return c.rpcConn
 }
 
 // ExecuteTrade executes a pre-signed transaction from the frontend
