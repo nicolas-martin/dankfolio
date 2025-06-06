@@ -96,7 +96,7 @@ func (s *Service) EnrichCoinData(
 
 	// 4. Fetch off-chain metadata using the URI from the on-chain account
 	uri := strings.TrimSpace(metadataAccount.Data.Uri)
-	slog.Debug("Fetching off-chain metadata", slog.String("mintAddress", mintAddress), slog.String("uri", uri))
+	slog.Info("Fetching off-chain metadata", slog.String("mintAddress", mintAddress), slog.String("uri", uri))
 	if uri == "" {
 		slog.Warn("No URI found in on-chain metadata", slog.String("mintAddress", mintAddress), slog.Any("metadataData", metadataAccount.Data))
 		enrichFromMetadata(&coin, nil) // Still call to set default description and icon fallbacks if needed
@@ -115,6 +115,7 @@ func (s *Service) EnrichCoinData(
 	// coin.ResolvedIconUrl will not be populated by this backend service.
 
 	enrichFromMetadata(&coin, offchainMeta) // Pass original offchainMeta
+	slog.Info("Coin metadata enriched from off-chain data", slog.Any("coin", coin))
 
 	// NOTE: Try without resolving IPFS URLs in this service.
 	// We removed cloudflare

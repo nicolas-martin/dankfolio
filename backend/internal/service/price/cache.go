@@ -2,26 +2,18 @@ package price
 
 import (
 	"context"
-	"log/slog" // Added import
+	"log/slog"
 	"time"
 
-	"github.com/dgraph-io/ristretto" // For NewCache
+	"github.com/dgraph-io/ristretto"
 	"github.com/eko/gocache/v3/cache"
-	"github.com/eko/gocache/v3/store" // Generic store package
+	"github.com/eko/gocache/v3/store"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 )
 
-// PriceHistoryCache defines the interface for a price history cache.
-// This interface remains the same for now.
-type PriceHistoryCache interface {
-	Get(key string) (*birdeye.PriceHistory, bool)
-	Set(key string, data *birdeye.PriceHistory, expiration time.Duration)
-}
-
-// GoCacheAdapter implements PriceHistoryCache using eko/gocache.
 type GoCacheAdapter struct {
 	cacheManager   cache.CacheInterface[*birdeye.PriceHistory]
-	ristrettoCache *ristretto.Cache // ADD THIS LINE
+	ristrettoCache *ristretto.Cache
 }
 
 // NewGoCacheAdapter creates a new GoCacheAdapter with a Ristretto store.
@@ -41,7 +33,7 @@ func NewGoCacheAdapter() (*GoCacheAdapter, error) {
 
 	return &GoCacheAdapter{
 		cacheManager:   cacheManager,
-		ristrettoCache: ristrettoCache, // ADD THIS ASSIGNMENT
+		ristrettoCache: ristrettoCache,
 	}, nil
 }
 
@@ -54,34 +46,36 @@ func (a *GoCacheAdapter) Get(key string) (*birdeye.PriceHistory, bool) {
 	duration := time.Since(startTime)
 	metrics := a.ristrettoCache.Metrics.String()
 
-	// Remove the old logArgs slice approach
-
 	if err != nil {
-		// Cache miss due to error or not found
 		slog.Info("Cache access",
 			slog.String("key", key),
+			slog.String("outcome", "miss"),
 			slog.Duration("duration", duration),
 			slog.Any("metrics", metrics),
-			slog.String("outcome", "miss"),
-			slog.String("error", err.Error()), // Error specific to this path
+			slog.String("error", err.Error()),
 		)
 		return nil, false
 	} else if cachedValue == nil {
-		// Cache miss (nil value returned without error)
 		slog.Info("Cache access",
 			slog.String("key", key),
+			slog.String("outcome", "miss (nil value)"),
 			slog.Duration("duration", duration),
 			slog.Any("metrics", metrics),
-			slog.String("outcome", "miss (nil value)"), // More specific outcome
 		)
 		return nil, false
 	} else {
+		ttl, b := a.ristrettoCache.GetTTL(key)
+		if !b {
+			slog.Error("something really weird happend, it's not there anymnore", slog.String("key", key))
+		}
+
 		// Cache hit
 		slog.Info("Cache access",
 			slog.String("key", key),
+			slog.String("outcome", "hit"),
 			slog.Duration("duration", duration),
 			slog.Any("metrics", metrics),
-			slog.String("outcome", "hit"),
+			slog.Duration("remainingTTL", ttl),
 		)
 		return cachedValue, true
 	}
@@ -92,11 +86,6 @@ func (a *GoCacheAdapter) Set(key string, data *birdeye.PriceHistory, expiration 
 	// Context can be background or TODO for cache operations
 	err := a.cacheManager.Set(context.Background(), key, data, store.WithExpiration(expiration))
 	if err != nil {
-		// Log the error, as Set failing might be an issue.
-		// For now, we don't propagate the error to the caller to keep interface simple.
-		// Consider logging framework here, e.g., slog.Error("Failed to set cache item", "key", key, "error", err)
+		slog.Error("Failed to set cache item", slog.String("key", key), slog.String("error", err.Error()))
 	}
 }
-
-// Note: The cleanup routine is now handled internally by Ristretto/gocache,
-// so the manual startCleanupRoutine and cleanupExpired methods are removed.
