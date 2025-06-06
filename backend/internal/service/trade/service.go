@@ -24,11 +24,11 @@ import (
 
 // Service handles trade-related operations
 type Service struct {
-	solanaClient  solana.ClientAPI
-	coinService   coin.CoinServiceAPI     // Use CoinServiceAPI interface from coin package
-	priceService  price.PriceServiceAPI   // Use PriceServiceAPI interface from price package
-	jupiterClient jupiter.ClientAPI
-	store         db.Store
+	solanaClient              solana.ClientAPI
+	coinService               coin.CoinServiceAPI   // Use CoinServiceAPI interface from coin package
+	priceService              price.PriceServiceAPI // Use PriceServiceAPI interface from price package
+	jupiterClient             jupiter.ClientAPI
+	store                     db.Store
 	platformFeeBps            int    // Platform fee in basis points
 	platformFeeAccountAddress string // Solana address for collecting platform fees
 }
@@ -44,12 +44,12 @@ func NewService(
 	configuredPlatformFeeAccountAddress string, // New parameter
 ) *Service {
 	return &Service{
-		solanaClient:  sc,
-		coinService:   cs,
-		priceService:  ps,
-		jupiterClient: jc,
-		store:         store,
-		platformFeeBps:            configuredPlatformFeeBps, // Store configured value
+		solanaClient:              sc,
+		coinService:               cs,
+		priceService:              ps,
+		jupiterClient:             jc,
+		store:                     store,
+		platformFeeBps:            configuredPlatformFeeBps,            // Store configured value
 		platformFeeAccountAddress: configuredPlatformFeeAccountAddress, // Store configured value
 	}
 }
@@ -221,10 +221,10 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 			Type:                "swap",
 			Amount:              req.Amount,
 			Fee:                 CalculateTradeFee(req.Amount, 1.0), // Placeholder for fee calculation
-			Status:          "completed",
-			CreatedAt:       now,
-			CompletedAt:     &now,
-			TransactionHash: debugTxHash,
+			Status:              "completed",
+			CreatedAt:           now,
+			CompletedAt:         &now,
+			TransactionHash:     debugTxHash,
 		}
 
 		err := s.store.Trades().Create(ctx, trade)
@@ -293,12 +293,12 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 
 	// Get quote from Jupiter with enhanced parameters
 	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
-		InputMint:        fromCoinMintAddress, // Use mint address
-		OutputMint:       toCoinMintAddress,   // Use mint address
-		Amount:           inputAmount,         // Amount is already in raw units (lamports for SOL)
-		SlippageBps:      slippageBpsInt,
-		FeeBps:           s.platformFeeBps, // Use configured platform fee BPS
-		SwapMode:         "ExactIn",
+		InputMint:   fromCoinMintAddress, // Use mint address
+		OutputMint:  toCoinMintAddress,   // Use mint address
+		Amount:      inputAmount,         // Amount is already in raw units (lamports for SOL)
+		SlippageBps: slippageBpsInt,
+		FeeBps:      s.platformFeeBps, // Use configured platform fee BPS
+		SwapMode:    "ExactIn",
 		// NOTE: Allow indirect routes for better prices
 		// NOTE: Indirect routes will have different feeMints
 		// I'm not sure how the indirect route will affect the transaction submission
