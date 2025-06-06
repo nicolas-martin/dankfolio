@@ -9,9 +9,11 @@ import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
 import { PriceData, Coin } from '@/types';
 import LottieView from 'lottie-react-native';
+import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb'; // Added
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
+	TIMEFRAME_CONFIG, // Added
 	fetchPriceHistory,
 	handleTradeNavigation,
 } from './coindetail_scripts';
@@ -65,16 +67,44 @@ const CoinDetail: React.FC = () => {
 	}, []);
 
 	useEffect(() => {
-		if (!displayCoin) {
-			// If displayCoin is not available, perhaps clear price history or set loading
-			setPriceHistory([]); // Clear history if no coin
+		if (!displayCoin || !displayCoin.mintAddress) {
+			setPriceHistory([]);
+			setLoading(false); // Ensure loading is stopped if no coin
 			return;
 		}
 
-		const isInitialLoad = !priceHistory.length || (prevDisplayCoinRef.current?.mintAddress !== displayCoin.mintAddress);
-		fetchPriceHistory(selectedTimeframe, setLoading, setPriceHistory, displayCoin, isInitialLoad);
-		prevDisplayCoinRef.current = displayCoin;
-	}, [selectedTimeframe, displayCoin]);
+		const timeframeConfigEntry = TIMEFRAME_CONFIG[selectedTimeframe] || TIMEFRAME_CONFIG["DEFAULT"];
+		if (!timeframeConfigEntry) {
+			logger.error(`[CoinDetail] No timeframe config found for ${selectedTimeframe}`);
+			setLoading(false);
+			return;
+		}
+		const priceHistoryType = timeframeConfigEntry.granularity;
+
+		const loadData = async () => {
+			setLoading(true);
+			try {
+				// Ensure displayCoin is not null before passing
+				const result = await fetchPriceHistory(displayCoin!, selectedTimeframe, priceHistoryType);
+				if (result.data !== null) {
+					setPriceHistory(result.data);
+				} else if (result.error) {
+					logger.error('[CoinDetail] Error fetching price history:', result.error);
+					showToast({ type: 'error', message: 'Failed to load chart data.' });
+					setPriceHistory([]); // Clear data on error
+				}
+			} catch (error) { // Catch errors from fetchPriceHistory if it throws unexpectedly
+				logger.error('[CoinDetail] Unexpected error in fetchPriceHistory call:', error);
+				showToast({ type: 'error', message: 'Failed to load chart data.' });
+				setPriceHistory([]);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		loadData();
+		// prevDisplayCoinRef.current = displayCoin; // This ref was for isInitialLoad logic, may not be needed in the same way
+	}, [selectedTimeframe, displayCoin, showToast]); // Added showToast
 
 
 	const displayData = useMemo(() => {
@@ -275,28 +305,30 @@ const CoinDetail: React.FC = () => {
 			setLoading(true);
 			try {
 				await useCoinStore.getState().getCoinByID(mintAddress, true);
-				// Price history will refresh via useEffect on displayCoin if it changed
+				// Price history will refresh via the useEffect dependency on 'displayCoin' changing.
+				// If getCoinByID doesn't result in a change to 'displayCoin' object reference,
+				// the effect won't re-run. This might be desired if data is identical.
+				// However, if a forced chart refresh is needed even if coin data is same,
+				// we might need a manual trigger for loadData() here.
 			} catch (error) {
 				logger.error("Error during refresh:", error);
 				showToast({ type: 'error', message: 'Failed to refresh data.' });
-			} finally {
-				// setLoading(false) will be handled by fetchPriceHistory's finally block
-				// if we want to tie it to chart loading. Or set it here if refresh is considered done.
-				// For simplicity, let's assume fetchPriceHistory will manage setLoading.
-				// If getCoinByID is very fast and displayCoin doesn't change, chart might not reload.
-				// Consider if an explicit setLoading(false) is needed here if no chart refresh occurs.
-				// For now, let's keep it simple: the chart's loading state will reflect if it reloads.
-				// If displayCoin updates, the chart loading will trigger.
-				// If displayCoin doesn't update (already fresh), then setLoading(false) should happen.
-				// To ensure spinner stops if nothing else reloads:
-				if (!displayCoin || prevDisplayCoinRef.current?.mintAddress === displayCoin.mintAddress) {
-					setLoading(false);
-				}
+				// Ensure loading is false if refresh fails before history fetch can
+				setLoading(false);
 			}
+			// setLoading(false) is now primarily handled by the data fetching useEffect's finally block.
+			// If the displayCoin data doesn't change after getCoinByID, the effect might not run.
+			// To ensure the RefreshControl spinner stops, we might need to explicitly stop it
+			// if the effect doesn't run. This can be tricky.
+			// A simple approach: if data fetching effect is not re-triggered, stop loading.
+			// This timeout is a pragmatic way to ensure it stops if the effect doesn't.
+			setTimeout(() => setLoading(false), 1000);
+
+
 		} else {
 			setLoading(false); // Ensure loading stops if there's no mintAddress
 		}
-	}, [mintAddress, showToast, displayCoin]);
+	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
 
 	return (
 		// Ensure displayCoin is checked here again before rendering main content
