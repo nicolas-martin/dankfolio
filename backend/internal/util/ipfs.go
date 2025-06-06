@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-
 var DefaultCIDv0Gateways = []string{
 	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
 	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
@@ -114,11 +113,11 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 		} else {
 			// For now, use defaultCIDv0Gateways for CIDv1 as well
 			// This is because we want to use our paid Pinata gateway for all CIDs
-			if len(defaultCIDv0Gateways) == 0 {
+			if len(DefaultCIDv0Gateways) == 0 {
 				slog.Error("No default gateways configured for CIDv1.", "url", iconUrlInput)
 				return iconUrlInput
 			}
-			return defaultCIDv0Gateways[0] + ipfsResourceIdentifier
+			return DefaultCIDv0Gateways[0] + ipfsResourceIdentifier
 
 			// Original behavior using subdomain format commented out to avoid linter errors:
 			// Use the commented code below if you want to revert to subdomain format
@@ -155,11 +154,11 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 		} else {
 			// For now, use defaultCIDv0Gateways for CIDv1 as well
 			// This is because we want to use our paid Pinata gateway for all CIDs
-			if len(defaultCIDv0Gateways) == 0 {
+			if len(DefaultCIDv0Gateways) == 0 {
 				slog.Error("No default gateways configured for CIDv1.", "url", iconUrlInput)
 				return iconUrlInput
 			}
-			return defaultCIDv0Gateways[0] + trimmedCidAndPath
+			return DefaultCIDv0Gateways[0] + trimmedCidAndPath
 
 			// Original behavior using subdomain format commented out to avoid linter errors:
 			// Use the commented code below if you want to revert to subdomain format
@@ -185,13 +184,13 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 // GetNextGateway returns the next gateway in the list if TryNextGatewayOnFailure is true
 // Returns empty string if there are no more gateways or if TryNextGatewayOnFailure is false
 func GetNextGateway(currentGateway string) string {
-	if !TryNextGatewayOnFailure || len(defaultCIDv0Gateways) <= 1 {
+	if !TryNextGatewayOnFailure || len(DefaultCIDv0Gateways) <= 1 {
 		return ""
 	}
 
-	for i, gateway := range defaultCIDv0Gateways {
-		if gateway == currentGateway && i < len(defaultCIDv0Gateways)-1 {
-			return defaultCIDv0Gateways[i+1]
+	for i, gateway := range DefaultCIDv0Gateways {
+		if gateway == currentGateway && i < len(DefaultCIDv0Gateways)-1 {
+			return DefaultCIDv0Gateways[i+1]
 		}
 	}
 
