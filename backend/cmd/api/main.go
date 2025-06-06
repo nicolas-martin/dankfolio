@@ -222,7 +222,15 @@ func main() {
 	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
 	slog.Info("Coin service initialized.")
 
-	priceService := price.NewService(birdeyeClient, jupiterClient, store)
+	// Initialize Price Service Cache
+	priceCache, err := price.NewGoCacheAdapter()
+	if err != nil {
+		slog.Error("Failed to create price cache adapter", slog.Any("error", err))
+		os.Exit(1) // Or handle more gracefully depending on application requirements
+	}
+	slog.Info("Price cache adapter initialized successfully.")
+
+	priceService := price.NewService(birdeyeClient, jupiterClient, store, priceCache)
 
 	tradeService := trade.NewService(
 		solanaClient,

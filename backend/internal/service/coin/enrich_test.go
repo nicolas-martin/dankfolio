@@ -263,8 +263,8 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 		// Test initialIconUrl passed to EnrichCoinData
 		{
 			name:                    "InitialIconUrl is IPFS CIDv0",
-			initialIconUrl:          "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X",               // Passed to EnrichCoinData
-			inputIconUrl:            "",                                                                    // No metadata or jupiter icon
+			initialIconUrl:          "ipfs://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X",                            // Passed to EnrichCoinData
+			inputIconUrl:            "",                                                                                 // No metadata or jupiter icon
 			expectedResolvedIconUrl: "https://gateway.pinata.cloud/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X", // Uses hardcoded default
 		},
 	}

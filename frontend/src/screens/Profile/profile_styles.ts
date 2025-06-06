@@ -29,16 +29,26 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	profileHeader: {
 		flexDirection: 'row',
+		justifyContent: 'space-between', // To push title and button apart
 		alignItems: 'center',
 		marginBottom: 8,
 	},
-	profileIcon: {
-		marginRight: 12,
+	profileIconContainer: { // New style
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginRight: 12, // Added margin to separate from potential elements on its right if header wasn't space-between
 	},
+	// profileIcon: { // This style is no longer used as ProfileIcon is directly in profileIconContainer and spacing is handled by profileTitle's marginLeft.
+	// 	// marginRight: 12,
+	// },
 	profileTitle: {
 		fontSize: 24,
 		fontWeight: '700',
 		color: theme.colors.onSurface,
+		marginLeft: 12, // Added to space title from icon inside profileIconContainer
+	},
+	settingsButton: { // New style
+		marginRight: -8, // Adjust as needed for visual alignment
 	},
 	walletAddressContainer: {
 		flexDirection: 'row',

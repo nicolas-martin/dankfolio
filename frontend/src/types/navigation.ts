@@ -17,6 +17,7 @@ export type RootStackParamList = {
 	};
 	WalletSetup: undefined;
 	SendTokens: undefined;
+	Settings: undefined; // <-- Add this line
 	// Add other routes here as needed
 };
 

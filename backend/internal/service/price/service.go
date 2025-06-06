@@ -2,14 +2,16 @@ package price
 
 import (
 	"context"
-	"encoding/json"
+	// "encoding/json" // Removed
 	"fmt"
 	"log/slog"
 	"math"
 	"math/rand"
-	"os"
-	"path/filepath"
-	"sync"
+	// "os" // Removed
+
+	// "os" // Will be removed by goimports if not used
+	// "path/filepath" // Will be removed by goimports if not used
+	// "sync" // Will be removed by goimports if not used
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
@@ -23,71 +25,136 @@ type Service struct {
 	birdeyeClient birdeye.ClientAPI // Use the interface
 	jupiterClient jupiter.ClientAPI
 	store         db.Store
+	cache         PriceHistoryCache // Added cache
 }
 
-var (
-	addressToSymbolCache map[string]string
-	addressToSymbolOnce  sync.Once
-)
+// TimeframeConfigEntry defines the configuration for a specific timeframe.
+type TimeframeConfigEntry struct {
+	Granularity     string // e.g., "ONE_MINUTE", "FIVE_MINUTE" (matching birdeye client expectations)
+	DurationMs      int64
+	RoundingMinutes int
+}
+
+// TIMEFRAME_CONFIG maps timeframe keys (e.g., "1H", "4H") to their configurations.
+var TIMEFRAME_CONFIG = map[string]TimeframeConfigEntry{
+	"1H":      {Granularity: "ONE_MINUTE", DurationMs: 1 * 60 * 60 * 1000, RoundingMinutes: 1},
+	"4H":      {Granularity: "ONE_MINUTE", DurationMs: 4 * 60 * 60 * 1000, RoundingMinutes: 1},
+	"1D":      {Granularity: "FIVE_MINUTE", DurationMs: 24 * 60 * 60 * 1000, RoundingMinutes: 5},
+	"1W":      {Granularity: "ONE_HOUR", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 60},
+	"1M":      {Granularity: "FOUR_HOUR", DurationMs: 30 * 24 * 60 * 60 * 1000, RoundingMinutes: 240}, // Approx 30 days
+	"1Y":      {Granularity: "ONE_DAY", DurationMs: 365 * 24 * 60 * 60 * 1000, RoundingMinutes: 1440},
+	"DEFAULT": {Granularity: "ONE_MINUTE", DurationMs: 4 * 60 * 60 * 1000, RoundingMinutes: 1}, // Default to 4H-like configuration
+}
+
+// roundDateDown rounds the given time down to the specified granularity in minutes.
+func roundDateDown(dateToRound time.Time, granularityMinutes int) time.Time {
+	if granularityMinutes == 0 {
+		slog.Warn("roundDateDown called with zero granularityMinutes, returning original time", "dateToRound", dateToRound)
+		return dateToRound
+	}
+	// Ensure granularityMs is not zero to prevent panic with division by zero
+	if granularityMinutes <= 0 {
+		granularityMinutes = 1 // Default to 1 minute if invalid
+	}
+
+	// Truncate to the minute first to remove seconds and nanoseconds before rounding
+	truncatedDate := dateToRound.Truncate(time.Minute)
+
+	// Calculate minutes since epoch for the truncated date
+	totalMinutes := truncatedDate.Unix() / 60
+
+	// Calculate the rounded minutes
+	roundedTotalMinutes := (totalMinutes / int64(granularityMinutes)) * int64(granularityMinutes)
+
+	// Convert rounded minutes back to a time.Time object
+	roundedTime := time.Unix(roundedTotalMinutes*60, 0).In(dateToRound.Location()) // Preserve original location (e.g. UTC)
+
+	return roundedTime
+}
 
 // NewService creates a new price service
-func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI, store db.Store) *Service { // Accept the interface
+func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI, store db.Store, cache PriceHistoryCache) *Service { // Added cache parameter
 	s := &Service{
 		birdeyeClient: birdeyeClient,
 		jupiterClient: jupiterClient,
 		store:         store,
+		cache:         cache, // Assign cache
 	}
-	s.populateAddressToSymbolCache(context.Background())
+	// s.populateAddressToSymbolCache(context.Background()) // Removed
 	return s
 }
 
-// GetPriceHistory retrieves price history for a given token
-// The method signature in the service was (ctx, address, historyType, timeFrom, timeTo, addressType string)
-// The interface for birdeyeClient.GetPriceHistory is (ctx, params PriceHistoryParams)
-// We need to adapt this here.
+// GetPriceHistory retrieves price history for a given token.
+// historyType is assumed to be a key from TIMEFRAME_CONFIG (e.g., "1H", "4H").
 func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFromStr, timeToStr, addressType string) (*birdeye.PriceHistory, error) {
+	config, ok := TIMEFRAME_CONFIG[historyType]
+	if !ok {
+		slog.Warn("Invalid historyType, falling back to DEFAULT", "requestedHistoryType", historyType)
+		config = TIMEFRAME_CONFIG["DEFAULT"]
+		historyType = "DEFAULT" // Update historyType to reflect the key used for caching
+	}
+	slog.Info("Using timeframe configuration", "key", historyType, "config", config)
+
+	// Cache key now uses the resolved historyType (e.g. "1H", "DEFAULT")
+	cacheKey := fmt.Sprintf("%s-%s", address, historyType)
+
+	if cachedData, found := s.cache.Get(cacheKey); found {
+		slog.Info("Cache hit for price history", "key", cacheKey)
+		return cachedData, nil
+	}
+	slog.Info("Cache miss for price history", "key", cacheKey)
+
+	// Debug mode handling
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		slog.Info("x-debug-mode: true")
-		// The loadMockPriceHistory needs to be adapted if its signature or logic depends on specific string formats for time
-		// For now, assuming loadMockPriceHistory can work with address and historyType, or will be updated.
-		return s.loadMockPriceHistory(address, historyType)
+		slog.InfoContext(ctx, "x-debug-mode: true. Generating random price history.", "address", address, "historyType", historyType)
+		// ONLY call generateRandomPriceHistory now
+		// The historyTypeKey argument for generateRandomPriceHistory is now just 'historyType' (e.g. "1H")
+		randomHistory, err := s.generateRandomPriceHistory(address, historyType)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate random price history: %w", err)
+		}
+
+		// Cache the randomly generated history as well
+		// config variable is already available from above
+		cacheDuration := time.Duration(config.RoundingMinutes) * time.Minute
+		s.cache.Set(cacheKey, randomHistory, cacheDuration)
+		slog.InfoContext(ctx, "Cached random price history in debug mode", "key", cacheKey, "duration", cacheDuration)
+		return randomHistory, nil
 	}
 
-	timeFrom, err := time.Parse(time.RFC3339, timeFromStr)
+	// Parse and round times
+	parsedTimeFrom, err := time.Parse(time.RFC3339, timeFromStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time_from: %w", err)
 	}
-	timeTo, err := time.Parse(time.RFC3339, timeToStr)
+	parsedTimeTo, err := time.Parse(time.RFC3339, timeToStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time_to: %w", err)
 	}
 
+	roundedTimeFrom := roundDateDown(parsedTimeFrom, config.RoundingMinutes)
+	roundedTimeTo := roundDateDown(parsedTimeTo, config.RoundingMinutes)
+	slog.Info("Time parameters", "originalFrom", parsedTimeFrom, "roundedFrom", roundedTimeFrom, "originalTo", parsedTimeTo, "roundedTo", roundedTimeTo, "roundingMinutes", config.RoundingMinutes)
+
 	params := birdeye.PriceHistoryParams{
 		Address:     address,
-		AddressType: addressType, // This was missing from the PriceHistoryParams in client.go, needs to be added or handled
-		HistoryType: historyType, // This was also missing
-		TimeFrom:    timeFrom,
-		TimeTo:      timeTo,
+		AddressType: addressType,
+		HistoryType: config.Granularity, // Use Granularity from TIMEFRAME_CONFIG for Birdeye API
+		TimeFrom:    roundedTimeFrom,
+		TimeTo:      roundedTimeTo,
 	}
-	// The birdeye.PriceHistoryParams in client.go only has Address, AddressType, HistoryType, TimeFrom, TimeTo.
-	// The GetPriceHistory in birdeye client.go takes PriceHistoryParams.
-	// The GetPriceHistory in birdeye client_test.go (if exists) or our new test will mock based on this.
-	// The actual call s.birdeyeClient.GetPriceHistory should match the interface.
 
-	// We need to ensure birdeye.PriceHistoryParams includes all necessary fields used by the client implementation.
-	// Let's assume for now the interface ClientAPI and its implementation GetPriceHistory
-	// correctly use a PriceHistoryParams struct that includes Address, AddressType, HistoryType, TimeFrom, TimeTo.
-	// The previous read of `birdeye/client.go` showed:
-	// type PriceHistoryParams struct {
-	// 	Address     string
-	// 	AddressType string
-	// 	HistoryType string
-	// 	TimeFrom    time.Time
-	// 	TimeTo      time.Time
-	// }
-	// This matches what we are setting in `params`.
+	result, err := s.birdeyeClient.GetPriceHistory(ctx, params)
+	if err != nil {
+		// Ensure the error from birdeyeClient is wrapped, as it was in the original code
+		return nil, fmt.Errorf("failed to fetch price history from birdeye: %w", err)
+	}
 
-	return s.birdeyeClient.GetPriceHistory(ctx, params)
+	if result != nil { // Check if result is not nil before setting cache
+		slog.Info("Storing fetched data in cache", "key", cacheKey, "expiration", time.Duration(config.RoundingMinutes)*time.Minute)
+		s.cache.Set(cacheKey, result, time.Duration(config.RoundingMinutes)*time.Minute)
+	}
+	return result, nil
 }
 
 // GetCoinPrices returns current prices for multiple tokens
@@ -124,38 +191,10 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 	return prices, nil
 }
 
-func (s *Service) loadMockPriceHistory(address string, historyType string) (*birdeye.PriceHistory, error) {
-	// addressToSymbol := loadAddressToSymbol() // Removed
-	slog.Info("Looking up address", "address", address)
-	symbol, exists := addressToSymbolCache[address] // Use global cache
-	if !exists {
-		slog.Info("Address not found in addressToSymbolCache", "address", address)
-		return s.generateRandomPriceHistory(address)
-	}
+// loadMockPriceHistory function removed
 
-	// Construct the path to the mock data file
-	wd, _ := os.Getwd()
-	filename := filepath.Join(wd, "data", "price_history", symbol, fmt.Sprintf("%s.json", historyType))
-	fmt.Printf("📂 Looking for mock data file: %s\n", filename)
-
-	file, err := os.Open(filename)
-	if err != nil {
-		slog.Info("Failed to open mock data file", "filename", filename, "error", err)
-		return s.generateRandomPriceHistory(address)
-	}
-	defer file.Close()
-
-	var priceHistory birdeye.PriceHistory
-	if err := json.NewDecoder(file).Decode(&priceHistory); err != nil {
-		slog.Info("Failed to decode mock data", "error", err)
-		return s.generateRandomPriceHistory(address)
-	}
-
-	return &priceHistory, nil
-}
-
-func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHistory, error) {
-	slog.Info("🎲 Generating random price history for unknown token", "address", address)
+func (s *Service) generateRandomPriceHistory(address string, historyTypeKey string) (*birdeye.PriceHistory, error) { // historyTypeKey is "1H", "4H", etc.
+	slog.Info("🎲 Generating random price history", "address", address, "historyTypeKey", historyTypeKey)
 	// Default to 100 points for smoother chart
 	numPoints := 100
 	volatility := 0.03                // Base volatility for normal movements
@@ -208,50 +247,4 @@ func (s *Service) generateRandomPriceHistory(address string) (*birdeye.PriceHist
 	}, nil
 }
 
-func (s *Service) populateAddressToSymbolCache(ctx context.Context) {
-	addressToSymbolOnce.Do(func() {
-		addressToSymbolCache = make(map[string]string)
-
-		// Fetch from s.store.Coins()
-		coins, err := s.store.Coins().List(ctx)
-		if err != nil {
-			slog.Error("Failed to list coins from store", "error", err)
-		} else {
-			for _, coin := range coins {
-				if coin.MintAddress != "" && coin.Symbol != "" {
-					addressToSymbolCache[coin.MintAddress] = coin.Symbol
-					slog.Debug("Added to cache from coins", "mintAddress", coin.MintAddress, "symbol", coin.Symbol)
-				}
-			}
-		}
-
-		// Fetch from s.store.RawCoins()
-		rawCoins, err := s.store.RawCoins().List(ctx)
-		if err != nil {
-			slog.Error("Failed to list raw coins from store", "error", err)
-		} else {
-			for _, rawCoin := range rawCoins {
-				if rawCoin.MintAddress != "" && rawCoin.Symbol != "" {
-					if _, exists := addressToSymbolCache[rawCoin.MintAddress]; !exists {
-						addressToSymbolCache[rawCoin.MintAddress] = rawCoin.Symbol
-						slog.Debug("Added to cache from raw coins", "mintAddress", rawCoin.MintAddress, "symbol", rawCoin.Symbol)
-					}
-				}
-			}
-		}
-
-		// Define and iterate through criticalTokens
-		criticalTokens := map[string]string{
-			"So11111111111111111111111111111111111111112":  "SOL",
-			"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "USDC",
-		}
-		for address, symbol := range criticalTokens {
-			if _, exists := addressToSymbolCache[address]; !exists {
-				addressToSymbolCache[address] = symbol
-				slog.Debug("Added to cache from critical tokens", "address", address, "symbol", symbol)
-			}
-		}
-
-		slog.Info("addressToSymbolCache populated", "entryCount", len(addressToSymbolCache))
-	})
-}
+// populateAddressToSymbolCache function removed
