@@ -117,21 +117,7 @@ const Profile = () => {
 		</View>
 	);
 
-	// const renderThemeToggle = () => (
-	// 	<View style={styles.themeToggleContainer}>
-	// 		<View style={styles.themeToggleHeader}>
-	// 			<Icon source={isDarkTheme ? "weather-night" : "white-balance-sunny"} size={24} color={theme.colors.onSurface} />
-	// 			<Text style={styles.themeToggleTitle}>{isDarkTheme ? 'Neon Mode' : 'Light Mode'}</Text>
-	// 		</View>
-	// 		<Switch
-	// 			value={isDarkTheme}
-	// 			onValueChange={toggleTheme}
-	// 			color={theme.colors.primary}
-	// 			disabled={isThemeLoading}
-	// 		/>
-	// 	</View>
-	// );
-	// Commenting out renderThemeToggle as it's moved to Settings screen
+// Removed commented-out renderThemeToggle function and related JSX for code cleanliness.
 
 	const renderPortfolioCard = () => (
 		<View style={styles.portfolioCard}>
