@@ -322,7 +322,7 @@ const CoinDetail: React.FC = () => {
 			// if the effect doesn't run. This can be tricky.
 			// A simple approach: if data fetching effect is not re-triggered, stop loading.
 			// This timeout is a pragmatic way to ensure it stops if the effect doesn't.
-			setTimeout(() => setLoading(false), 1000);
+			setLoading(false); // Ensure loading stops after data-fetch completion
 
 
 		} else {
