@@ -1,7 +1,6 @@
 import { Coin } from '@/types';
 import { PriceData } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
-// import usePriceHistoryCacheStore from '@/store/priceHistoryCache'; // Removed import
 import { TimeframeOption } from './coindetail_types';
 import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb';
 import { useCoinStore } from '@/store/coins';
@@ -67,22 +66,6 @@ export const fetchPriceHistory = async (
 		return { data: null, error };
 	}
 
-
-	let cacheKeySuffix = timeframeValue;
-	if (timeframeValue === "4H") {
-		cacheKeySuffix = "FOUR_HOUR"; // Align with HomeScreen for 4-hour data
-	}
-	const cacheKey = `${coin.mintAddress}_${cacheKeySuffix}`;
-	const cachedEntry = usePriceHistoryCacheStore.getState().getCache(cacheKey);
-
-
-	if (cachedEntry) {
-		logger.debug(`[CoinDetailScreen] Using cached price history for ${cacheKey}`);
-		return { data: cachedEntry.data as PriceData[], error: null };
-	}
-
-	logger.debug(`[CoinDetailScreen] Cache miss for ${cacheKey}. Fetching...`);
-
 	const timeframeConfig = TIMEFRAME_CONFIG[timeframeValue] || TIMEFRAME_CONFIG["DEFAULT"];
 	const { durationMs, roundingMinutes } = timeframeConfig;
 
@@ -129,14 +112,9 @@ export const fetchPriceHistory = async (
 
 			// Cache the newly fetched data
 			// cacheExpiry is TTL in seconds for the store, not absolute timestamp
-			const cacheExpirySeconds = roundingMinutes * 60;
-			usePriceHistoryCacheStore.getState().setCache(cacheKey, mapped, cacheExpirySeconds);
-			logger.debug(`[CoinDetailScreen] Cached new price history for ${cacheKey} with expiry ${cacheExpirySeconds}s`);
 			return { data: mapped, error: null };
 
 		} else {
-			// Consider response.error or other fields if items are missing
-			logger.warn(`[CoinDetailScreen] No items in price history response for ${cacheKey}`, { response });
 			return { data: [], error: null }; // Return empty data if no items, not an error
 		}
 	} catch (error) {

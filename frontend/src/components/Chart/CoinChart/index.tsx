@@ -1,21 +1,21 @@
 import React, { useRef, useEffect, ReactNode, useState } from 'react';
 import { View } from 'react-native';
 import { CartesianChart, useChartPressState, type PointsArray } from 'victory-native';
-import Animated, { 
-	useSharedValue, 
-	useAnimatedStyle, 
-	useDerivedValue, 
-	runOnJS, 
-	cancelAnimation, 
-	withSpring, 
+import Animated, {
+	useSharedValue,
+	useAnimatedStyle,
+	useDerivedValue,
+	runOnJS,
+	cancelAnimation,
+	withSpring,
 	SharedValue,
 	useAnimatedReaction
 } from 'react-native-reanimated';
-import { 
-	Path, 
-	Circle as SkiaCircle, 
-	Line as SkiaLine, 
-	Text as SkiaText, 
+import {
+	Path,
+	Circle as SkiaCircle,
+	Line as SkiaLine,
+	Text as SkiaText,
 	useFont as useSkiaFont,
 	Group,
 	LinearGradient,
@@ -27,11 +27,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import inter from '@assets/fonts/inter-medium.ttf';
 import { createStyles, CHART_CONSTANTS } from './styles';
 import type { CoinChartProps, PricePoint, PulsatingDotProps, AreaProps } from './types';
-import { 
-	determineChartColor, 
-	CHART_COLORS, 
-	createPulsateAnimation, 
-	getTimeFormat, 
+import {
+	determineChartColor,
+	CHART_COLORS,
+	createPulsateAnimation,
+	getTimeFormat,
 	prepareChartData,
 	createChartKey,
 	useGradientArea,
@@ -44,9 +44,9 @@ const initChartPressState = { x: 0, y: { y: 0 } };
 // ─── GradientArea ────────────────────────────────────────────────────────────
 function GradientArea({ points, y0, color, opacity = 0.8, gradientColors }: AreaProps) {
 	const { areaPath, colors } = useGradientArea({ points, y0, color, opacity, gradientColors });
-	
+
 	if (!areaPath) return null;
-	
+
 	return (
 		<Path
 			path={areaPath}
@@ -91,9 +91,9 @@ function SpringLine({
 // ─── PulsatingDot ─────────────────────────────────────────────────────────
 function PulsatingDot({ position, radius, color }: PulsatingDotProps) {
 	return (
-		<SkiaCircle 
-			cx={position.x} 
-			cy={position.y} 
+		<SkiaCircle
+			cx={position.x}
+			cy={position.y}
 			r={radius}
 			color={color}
 		/>
@@ -159,12 +159,12 @@ function HorizontalDottedLine({
 }) {
 	// Get points from helper function
 	const dotPoints = createHorizontalDottedLinePoints(
-		startX, 
-		endX, 
-		y, 
+		startX,
+		endX,
+		y,
 		CHART_CONSTANTS.dotSpacing
 	);
-	
+
 	return (
 		<Group>
 			{dotPoints.map((point, i) => (
@@ -194,10 +194,10 @@ export default function CoinChart({
 	const animations = useRef<SharedValue<any>[]>([]);
 	const font = useSkiaFont(inter, 12);
 	const pulseRadius = useSharedValue(CHART_CONSTANTS.dotSize.pulse.min);
-	
+
 	// Get time formatting based on period
 	const timeFormat = React.useMemo(() => getTimeFormat(period), [period]);
-	
+
 	// Reduce pulsate animation complexity for better performance
 	const setupPulseAnimation = () => {
 		// Start with min radius
@@ -209,15 +209,14 @@ export default function CoinChart({
 		// Track for cleanup
 		animations.current.push(pulseRadius);
 	};
-	
+
 	// Store last point position for more stable animations
 	const lastPointPos = useSharedValue({ x: 0, y: 0 });
 	// Store current press position for immediate response
 	const currentPressPos = useSharedValue({ x: 0, y: 0 });
 	const [chartKey, setChartKey] = useState<string>("");
-	
+
 	// Throttled haptic feedback for better performance
-	const throttledHaptic = createThrottledHaptic();
 	const triggerHaptic = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
 	useFocusEffect(
@@ -226,14 +225,14 @@ export default function CoinChart({
 			[]
 		)
 	);
-	
+
 	useEffect(() => {
 		// Create a unique key for the chart when data changes
 		setChartKey(createChartKey(data, period));
-		
+
 		// Set up pulsating animation
 		setupPulseAnimation();
-		
+
 		return () => {
 			isMounted.current = false;
 			animations.current.forEach(a => cancelAnimation(a));
@@ -242,7 +241,7 @@ export default function CoinChart({
 
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);
-		
+
 	// Update current press position for immediate access
 	// Optimize to run on UI thread only
 	useAnimatedReaction(
@@ -291,12 +290,12 @@ export default function CoinChart({
 		() => prepareChartData(data),
 		[data]
 	);
-	
+
 	// Determine chart color based on price trend
 	const chartColor = React.useMemo(() => {
 		return determineChartColor(processedChartData);
 	}, [processedChartData]);
-	
+
 	// Define chart line and area colors based on screenshot
 	const colors = CHART_COLORS[chartColor];
 	// Get the area color from the colors object
@@ -347,7 +346,7 @@ export default function CoinChart({
 					renderOutside={({ chartBounds }) => {
 						if (!isPressActive || typeof activeX !== 'number' || !font)
 							return null;
-							
+
 						// Use period-specific tooltip format
 						const label = timeFormat.tooltip(activeX);
 						const rawX = currentPressPos.value.x;
@@ -366,11 +365,11 @@ export default function CoinChart({
 									color="rgba(255,255,255,0.3)"
 									strokeWidth={1}
 								/>
-								<SkiaCircle 
-									cx={rawX} 
-									cy={currentPressPos.value.y} 
-									r={CHART_CONSTANTS.dotSize.outer} 
-									color={colors.line} 
+								<SkiaCircle
+									cx={rawX}
+									cy={currentPressPos.value.y}
+									r={CHART_CONSTANTS.dotSize.outer}
+									color={colors.line}
 								/>
 								<SkiaCircle
 									cx={rawX}
@@ -398,7 +397,7 @@ export default function CoinChart({
 								y: point?.y || 0
 							};
 						}
-						
+
 						return (
 							<>
 								{/* Area with colored fill based on price trend */}
@@ -408,7 +407,7 @@ export default function CoinChart({
 									color={areaColor}
 									gradientColors={gradientColors}
 								/>
-								
+
 								{/* Chart Line */}
 								<SpringLine
 									key={`line-${chartKey}`}
@@ -417,7 +416,7 @@ export default function CoinChart({
 									color={colors.line}
 									dataKey={chartKey}
 								/>
-								
+
 								{/* Horizontal dotted line from last point */}
 								<HorizontalDottedLine
 									startX={chartBounds.left}
@@ -425,7 +424,7 @@ export default function CoinChart({
 									y={lastPointPos.value.y}
 									color="rgba(255,255,255,0.3)"
 								/>
-								
+
 								{/* Pulsating dot on last data point */}
 								<PulsatingDot
 									position={lastPointPos.value}
