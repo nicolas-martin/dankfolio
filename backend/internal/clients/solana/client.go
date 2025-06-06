@@ -10,9 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blocto/solana-go-sdk/client"
-	"github.com/blocto/solana-go-sdk/common"
-	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	bloctoClient "github.com/blocto/solana-go-sdk/client"
+	bloctoCommon "github.com/blocto/solana-go-sdk/common"
+	bloctoToken "github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	bloctoRPC "github.com/blocto/solana-go-sdk/rpc"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -20,29 +21,30 @@ import (
 
 // Client handles interactions with the Solana RPC
 type Client struct {
-	rpcClient *client.Client
-	rpcConn   *rpc.Client
+	bloctoClient *bloctoClient.Client
+	rpcConn      *rpc.Client
 }
 
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
-// NewClient creates a new instance of Client
-func NewClient(endpoint string) ClientAPI {
+// TODO: GET RID OF BLOCTO CLIENT
+func NewClient(solClient *rpc.Client, btRPC bloctoRPC.RpcClient) ClientAPI {
+	bc := &bloctoClient.Client{RpcClient: btRPC}
 	return &Client{
-		rpcClient: client.NewClient(endpoint),
-		rpcConn:   rpc.New(endpoint),
+		bloctoClient: bc,
+		rpcConn:      solClient,
 	}
 }
 
 // GetMetadataAccount retrieves the metadata account for a token
-func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*token_metadata.Metadata, error) {
-	mintPubkey := common.PublicKeyFromString(mint)
-	metadataAccountPDA, err := token_metadata.GetTokenMetaPubkey(mintPubkey)
+func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*bloctoToken.Metadata, error) {
+	mintPubkey := bloctoCommon.PublicKeyFromString(mint)
+	metadataAccountPDA, err := bloctoToken.GetTokenMetaPubkey(mintPubkey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to derive metadata account PDA for %s: %w", mint, err)
 	}
 
-	accountInfo, err := c.rpcClient.GetAccountInfo(ctx, metadataAccountPDA.ToBase58())
+	accountInfo, err := c.bloctoClient.GetAccountInfo(ctx, metadataAccountPDA.ToBase58())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account info for metadata PDA %s (mint: %s): %w", metadataAccountPDA.ToBase58(), mint, err)
 	}
@@ -50,7 +52,7 @@ func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*token_me
 		return nil, fmt.Errorf("metadata account %s for mint %s has no data", metadataAccountPDA.ToBase58(), mint)
 	}
 
-	metadata, err := token_metadata.MetadataDeserialize(accountInfo.Data)
+	metadata, err := bloctoToken.MetadataDeserialize(accountInfo.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse metadata for %s: %w", mint, err)
 	}

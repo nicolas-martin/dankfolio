@@ -27,6 +27,7 @@ var (
 // Helper function for creating pointers, useful for ListOptions
 func Pint(i int) *int    { v := int(i); return &v } // Changed to return *int for db.ListOptions
 func Pbool(b bool) *bool { return &b }
+
 func Pstring(s string) *string {
 	if s == "" {
 		return nil

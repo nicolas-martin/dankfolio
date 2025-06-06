@@ -3,21 +3,13 @@ package price
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
-	"fmt"
-	// "testing" // Duplicate removed
-	// "time"    // Duplicate removed
-
+	solanago "github.com/gagliardetto/solana-go" // Added for PublicKey type
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter" // Added for NewTokenInfo type
-	// Using existing mocks for old tests if they are compatible or will update them.
-	// For new tests, we'll use the specific mocks defined in the plan.
-	// birdeyeclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye/mocks" // Unused
-	// jupiterclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks" // Replaced by local MockJupiterClient
-	// "github.com/nicolas-martin/dankfolio/backend/internal/db" // Unused import
-	solanago "github.com/gagliardetto/solana-go" // Added for PublicKey type
 	dbmocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -286,7 +278,6 @@ func TestGetCoinPrices(t *testing.T) {
 			_, ok := prices[addr]
 			assert.True(t, ok, "price for %s should be in the map", addr)
 		}
-
 	})
 
 	t.Run("Jupiter Error - No Debug", func(t *testing.T) {

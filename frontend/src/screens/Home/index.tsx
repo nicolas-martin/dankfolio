@@ -3,7 +3,7 @@ import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-
 import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 // Imports for refactored fetchPriceHistory
-import { fetchPriceHistory, TIMEFRAME_CONFIG } from '@/screens/CoinDetail/coindetail_scripts';
+import { fetchPriceHistory, TIMEFRAMES } from '@/screens/CoinDetail/coindetail_scripts';
 // Keep this import if TIMEFRAME_CONFIG uses it, or if directly needed.
 // For now, assuming TIMEFRAME_CONFIG provides the correctly typed enum.
 // Matching coindetail_scripts
@@ -56,14 +56,7 @@ const HomeScreen = () => {
 		}
 
 		const topCoins = availableCoins.slice(0, 10);
-		const fourHourTimeframeKey = "4H"; // Key used in TIMEFRAME_CONFIG
-		const fourHourConfig = TIMEFRAME_CONFIG[fourHourTimeframeKey];
-
-		if (!fourHourConfig) {
-			logger.error("[HomeScreen] 4H timeframe configuration is missing in TIMEFRAME_CONFIG.");
-			return;
-		}
-		const fourHourPriceHistoryType = fourHourConfig.granularity;
+		const fourHourTimeframeKey: string = "4H"; // Key used in TIMEFRAME_CONFIG
 
 		if (PRICE_HISTORY_FETCH_MODE === 'sequential') {
 			const processCoinsSequentially = async () => {
@@ -73,9 +66,11 @@ const HomeScreen = () => {
 					}
 					setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
 					try {
-						const result = await fetchPriceHistory(coin, fourHourTimeframeKey, fourHourPriceHistoryType);
-						if (result.data) {
+						const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
+						if (result.data !== null) {
 							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data }));
+						} else {
+							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: [] }));
 						}
 						if (result.error) {
 							logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
@@ -95,10 +90,12 @@ const HomeScreen = () => {
 					return;
 				}
 				setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
-				fetchPriceHistory(coin, fourHourTimeframeKey, fourHourPriceHistoryType)
+				fetchPriceHistory(coin, fourHourTimeframeKey)
 					.then(result => {
-						if (result.data) {
+						if (result.data !== null) {
 							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data }));
+						} else {
+							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: [] }));
 						}
 						if (result.error) {
 							logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);

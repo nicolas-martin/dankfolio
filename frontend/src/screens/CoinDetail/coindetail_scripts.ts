@@ -2,7 +2,6 @@ import { Coin } from '@/types';
 import { PriceData } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
 import { TimeframeOption } from './coindetail_types';
-import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb';
 import { useCoinStore } from '@/store/coins';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { logger } from '@/utils/logger';
@@ -22,43 +21,9 @@ export const TIMEFRAMES: TimeframeOption[] = [
 	{ label: "1M", value: "1M" },
 ];
 
-export const TIMEFRAME_CONFIG: Record<string, { granularity: GetPriceHistoryRequest_PriceHistoryType, durationMs: number, roundingMinutes: number }> = {
-	"1H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 1 * 60 * 60 * 1000, roundingMinutes: 1 },
-	"4H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000, roundingMinutes: 5 },
-	"1D": { granularity: GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE, durationMs: 24 * 60 * 60 * 1000, roundingMinutes: 10 },
-	"1W": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_HOUR, durationMs: 7 * 24 * 60 * 60 * 1000, roundingMinutes: 60 },
-	"1M": { granularity: GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR, durationMs: 30 * 24 * 60 * 60 * 1000, roundingMinutes: 240 }, // 4 hours
-	"1Y": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_DAY, durationMs: 365 * 24 * 60 * 60 * 1000, roundingMinutes: 1440 }, // 1 day
-	// Default for any other case, though UI should restrict to above
-	"DEFAULT": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000, roundingMinutes: 1 },
-};
-
-// Helper function to round date down to the nearest interval
-export function roundDateDown(dateToRound: Date, granularityMinutes: number): Date {
-	const msInMinute = 60 * 1000;
-	const dateInMs = dateToRound.getTime();
-
-	const roundedMs = Math.floor(dateInMs / (granularityMinutes * msInMinute)) * (granularityMinutes * msInMinute);
-
-	const roundedDate = new Date(roundedMs);
-
-	// Zero out seconds and milliseconds, as Math.floor might not perfectly align if granularityMinutes is large
-	// For smaller granularities like 1 or 5 minutes, this is more of a safeguard.
-	// For larger granularities like 60 minutes (1 hour) or 240 minutes (4 hours),
-	// the Math.floor on minutes (or hours derived from minutes) effectively handles this.
-	roundedDate.setSeconds(0, 0);
-
-	return roundedDate;
-}
-
-
 export const fetchPriceHistory = async (
-
 	coin: Coin,
 	timeframeValue: string, // e.g., "1H", "4H"
-	// priceHistoryType is effectively config.granularity from the old TIMEFRAME_CONFIG
-	// This is passed by the caller which should use TIMEFRAME_CONFIG to get it.
-	priceHistoryType: GetPriceHistoryRequest_PriceHistoryType
 ): Promise<{ data: PriceData[] | null; error: Error | null }> => {
 	if (!coin || !coin.mintAddress) {
 		const error = new Error('No coin or mint address provided for price history');
@@ -66,38 +31,14 @@ export const fetchPriceHistory = async (
 		return { data: null, error };
 	}
 
-	const timeframeConfig = TIMEFRAME_CONFIG[timeframeValue] || TIMEFRAME_CONFIG["DEFAULT"];
-	const { durationMs, roundingMinutes } = timeframeConfig;
-
 	const currentTime = new Date();
-	const dateTo = new Date(currentTime);
-	const dateFrom = new Date(currentTime.getTime() - durationMs);
-
-
-	// Rounding is still useful for defining the query window consistently
-	const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
-	const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
-
-	const timeToISO = roundedTimeTo.toISOString();
-	const timeFromISO = roundedTimeFrom.toISOString();
-
-	// Find the string key for the enum value, assuming grpcApi still needs the string key
-	const typeMap = GetPriceHistoryRequest_PriceHistoryType;
-	const grpcTypeKey = Object.keys(typeMap).find(key => typeMap[key as keyof typeof typeMap] === priceHistoryType);
-
-	if (!grpcTypeKey) {
-		const error = new Error(`Invalid priceHistoryType: ${priceHistoryType} for timeframe: ${timeframeValue}`);
-		logger.error(error.message, { functionName: 'fetchPriceHistory' });
-		return { data: null, error };
-	}
 
 	try {
 		const response = await grpcApi.getPriceHistory(
 			coin.mintAddress,
-			grpcTypeKey, // Pass the string key e.g. "ONE_MINUTE"
-			timeFromISO,
-			timeToISO,
-			"token" // Assuming "token" is still the correct scope/type here
+			timeframeValue,
+			currentTime.toISOString(), // Current time in seconds
+			"token"
 		);
 
 		if (response?.data?.items) {
@@ -143,7 +84,7 @@ export const handleTradeNavigation = async (
 	if (!selectedFromCoin) {
 		try {
 			selectedFromCoin = await useCoinStore.getState().getCoinByID(SOLANA_ADDRESS);
-		} catch (error: unknown) {
+		} catch (error: Error) {
 			logger.warn('Failed to get SOL coin during trade navigation.', { error: error.message, functionName: 'handleTradeNavigation' });
 		}
 	}

@@ -16,7 +16,7 @@ import (
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/google/uuid"
-	solanoclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Aliased import
+	solanaClient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Aliased import
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin" // Added for CoinServiceAPI
@@ -25,13 +25,13 @@ import (
 
 // Service handles wallet-related operations
 type Service struct {
-	rpcClient   solanoclient.SolanaRPCClientAPI // Use aliased package for the interface
+	rpcClient   solanaClient.SolanaRPCClientAPI // Use aliased package for the interface
 	store       db.Store
 	coinService coin.CoinServiceAPI // Added CoinService
 }
 
 // New creates a new wallet service
-func New(rpcClient solanoclient.SolanaRPCClientAPI, store db.Store, coinService coin.CoinServiceAPI) *Service { // Accept aliased interface and CoinService
+func New(rpcClient solanaClient.SolanaRPCClientAPI, store db.Store, coinService coin.CoinServiceAPI) *Service { // Accept aliased interface and CoinService
 	return &Service{
 		rpcClient:   rpcClient,
 		store:       store,

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
@@ -36,16 +37,17 @@ func main() {
 	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "")
 
 	// Initialize price service with clients
-	s := price.NewService(birdeyeClient, jupiterClient, nil)
+	s := price.NewService(birdeyeClient, jupiterClient, nil, nil)
 
 	mintAdd := "6pKHwNCpzgZuC9o5FzvCZkYSUGfQddhUYtMyDbEVpump"
 	from := time.Now().Add(-24 * time.Hour).Unix() // 24 hours ago
-	to := time.Now().Unix()
-	addType := "token"
-	histType := "30m"
-
-	// func (s *Service) GetPriceHistory(ctx context.Context, address string, historyType string, timeFrom, timeTo int64, addressType string) (*model.PriceHistoryResponse, error) {
-	resp, err := s.GetPriceHistory(context.Background(), mintAdd, histType, fmt.Sprintf("%d", from), fmt.Sprintf("%d", to), addType)
+	c := price.BackendTimeframeConfig{
+		BirdeyeType:         "1H",
+		DefaultViewDuration: 1 * time.Hour,
+		Rounding:            1 * time.Minute,
+		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_HOUR)],
+	}
+	resp, err := s.GetPriceHistory(context.Background(), mintAdd, c, fmt.Sprintf("%d", from), "token")
 	if err != nil {
 		fmt.Println(err)
 		return

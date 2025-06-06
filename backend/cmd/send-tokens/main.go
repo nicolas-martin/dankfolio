@@ -55,7 +55,7 @@ func main() {
 		SolanaRPCEndpoint:     *rpcEndpoint,
 		NewCoinsFetchInterval: time.Hour, // Default for this utility
 	}
-	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
+	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store, nil)
 
 	// Initialize the wallet service
 	walletService := wallet.New(client, store, coinService)

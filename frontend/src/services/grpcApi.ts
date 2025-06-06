@@ -113,30 +113,28 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	getPriceHistory: async (address: string, type: string, timeFrom: string, timeTo: string, addressType: string): Promise<grpcModel.PriceHistoryResponse> => {
+	getPriceHistory: async (address: string, type: string, timeStr: string, addressType: string): Promise<grpcModel.PriceHistoryResponse> => {
 		const serviceName = 'PriceService';
 		const methodName = 'getPriceHistory';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { address, type, timeFrom, timeTo, addressType });
+			grpcUtils.logRequest(serviceName, methodName, { address, type, timeStr, addressType });
 
-			// Convert timeFrom and timeTo to timestamps without fallbacks
-			const fromTimestamp = grpcUtils.convertToTimestamp(timeFrom);
-			const toTimestamp = grpcUtils.convertToTimestamp(timeTo);
+			const timetimestamp = grpcUtils.convertToTimestamp(timeStr);
 			const typeMap: { [key: string]: GetPriceHistoryRequest_PriceHistoryType; } = {
-				"ONE_MINUTE": GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE,
-				"THREE_MINUTE": GetPriceHistoryRequest_PriceHistoryType.THREE_MINUTE,
-				"FIVE_MINUTE": GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE,
-				"FIFTEEN_MINUTE": GetPriceHistoryRequest_PriceHistoryType.FIFTEEN_MINUTE,
-				"THIRTY_MINUTE": GetPriceHistoryRequest_PriceHistoryType.THIRTY_MINUTE,
-				"ONE_HOUR": GetPriceHistoryRequest_PriceHistoryType.ONE_HOUR,
-				"TWO_HOUR": GetPriceHistoryRequest_PriceHistoryType.TWO_HOUR,
-				"FOUR_HOUR": GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR,
-				"SIX_HOUR": GetPriceHistoryRequest_PriceHistoryType.SIX_HOUR,
-				"EIGHT_HOUR": GetPriceHistoryRequest_PriceHistoryType.EIGHT_HOUR,
-				"TWELVE_HOUR": GetPriceHistoryRequest_PriceHistoryType.TWELVE_HOUR,
-				"ONE_DAY": GetPriceHistoryRequest_PriceHistoryType.ONE_DAY,
-				"THREE_DAY": GetPriceHistoryRequest_PriceHistoryType.THREE_DAY,
-				"ONE_WEEK": GetPriceHistoryRequest_PriceHistoryType.ONE_WEEK,
+				"1m": GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE,
+				"3m": GetPriceHistoryRequest_PriceHistoryType.THREE_MINUTE,
+				"5m": GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE,
+				"15m": GetPriceHistoryRequest_PriceHistoryType.FIFTEEN_MINUTE,
+				"30m": GetPriceHistoryRequest_PriceHistoryType.THIRTY_MINUTE,
+				"1H": GetPriceHistoryRequest_PriceHistoryType.ONE_HOUR,
+				"2H": GetPriceHistoryRequest_PriceHistoryType.TWO_HOUR,
+				"4H": GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR,
+				"6H": GetPriceHistoryRequest_PriceHistoryType.SIX_HOUR,
+				"8H": GetPriceHistoryRequest_PriceHistoryType.EIGHT_HOUR,
+				"12H": GetPriceHistoryRequest_PriceHistoryType.TWELVE_HOUR,
+				"1D": GetPriceHistoryRequest_PriceHistoryType.ONE_DAY,
+				"3D": GetPriceHistoryRequest_PriceHistoryType.THREE_DAY,
+				"1W": GetPriceHistoryRequest_PriceHistoryType.ONE_WEEK,
 			};
 
 			const priceHistoryType = typeMap[type] ?? GetPriceHistoryRequest_PriceHistoryType.PRICE_HISTORY_TYPE_UNSPECIFIED;
@@ -144,8 +142,7 @@ export const grpcApi: grpcModel.API = {
 			const response = await priceClient.getPriceHistory({
 				address: address,
 				type: priceHistoryType,
-				timeFrom: fromTimestamp,
-				timeTo: toTimestamp,
+				time: timetimestamp,
 				addressType: addressType
 			}, { headers: grpcUtils.getRequestHeaders() });
 

@@ -36,7 +36,7 @@ func main() {
 	config := &coin.Config{
 		SolanaRPCEndpoint: "https://api.mainnet-beta.solana.com",
 	}
-	s := coin.NewService(config, httpClient, jupiterClient, store)
+	s := coin.NewService(config, httpClient, jupiterClient, store, nil)
 
 	log.Printf("HTTP Client timeout: %v", httpClient.Timeout)
 	log.Printf("Test timeout: %v", testTimeout)

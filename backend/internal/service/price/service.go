@@ -18,7 +18,7 @@ import (
 type BackendTimeframeConfig struct {
 	BirdeyeType         string        // e.g., "1m", "5m", "1H" for Birdeye API
 	DefaultViewDuration time.Duration // Default duration window for this granularity, derived from frontend config
-	RoundingMinutes     time.Duration // Rounding granularity in minutes, from frontend config
+	Rounding            time.Duration // Rounding granularity in minutes, from frontend config
 	HistoryType         string        // The type of history to fetch, e.g., "1H", "4H", "1D"
 }
 
@@ -30,18 +30,14 @@ type Service struct {
 }
 
 func roundDateDown(dateToRound time.Time, granularityMinutes time.Duration) time.Time {
-	if granularityMinutes == 0 {
+	if granularityMinutes <= 0 {
 		slog.Warn("roundDateDown called with zero granularityMinutes, returning original time", "dateToRound", dateToRound)
 		return dateToRound
 	}
-	if granularityMinutes <= 0 {
-		granularityMinutes = 1
-	}
+
 	truncatedDate := dateToRound.Truncate(time.Minute)
-	totalMinutes := truncatedDate.Unix() / 60
-	roundedTotalMinutes := (totalMinutes / int64(granularityMinutes)) * int64(granularityMinutes)
-	roundedTime := time.Unix(roundedTotalMinutes*60, 0).In(dateToRound.Location())
-	return roundedTime
+
+	return truncatedDate
 }
 
 func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI, store db.Store, cache PriceHistoryCache) *Service {
@@ -54,7 +50,7 @@ func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI
 	return s
 }
 
-func (s *Service) GetPriceHistory(ctx context.Context, address string, config BackendTimeframeConfig, time, addressType string) (*birdeye.PriceHistory, error) {
+func (s *Service) GetPriceHistory(ctx context.Context, address string, config BackendTimeframeConfig, timeStr, addressType string) (*birdeye.PriceHistory, error) {
 	cacheKey := fmt.Sprintf("%s-%s", address, config.HistoryType)
 
 	if cachedData, found := s.cache.Get(cacheKey); found {
@@ -70,27 +66,23 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, config Ba
 			return nil, fmt.Errorf("failed to generate random price history: %w", err)
 		}
 
-		cacheDuration := time.Duration(config.RoundingMinutes) * time.Minute
-		s.cache.Set(cacheKey, randomHistory, cacheDuration)
-		slog.InfoContext(ctx, "Cached random price history in debug mode", "key", cacheKey, "duration", cacheDuration)
+		s.cache.Set(cacheKey, randomHistory, config.Rounding)
+		slog.InfoContext(ctx, "Cached random price history in debug mode", "key", cacheKey, "duration", config.Rounding)
 		return randomHistory, nil
 	}
 
 	// Parse and round times
-	parsedTimeFrom, err := time.Parse(time.RFC3339, timeFromStr)
+	parsedTime, err := time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		slog.Error("Failed to parse time_from string", "timeFromStr", timeFromStr, "error", err)
+		slog.Error("Failed to parse time_from string", "timeFromStr", timeStr, "error", err)
 		return nil, fmt.Errorf("failed to parse time_from: %w", err)
 	}
-	parsedTimeTo, err := time.Parse(time.RFC3339, timeToStr)
-	if err != nil {
-		slog.Error("Failed to parse time_to string", "timeToStr", timeToStr, "error", err)
-		return nil, fmt.Errorf("failed to parse time_to: %w", err)
-	}
+	timeFrom := parsedTime.Add(-config.DefaultViewDuration)
+	timeTo := parsedTime
 
-	roundedTimeFrom := roundDateDown(parsedTimeFrom, config.RoundingMinutes)
-	roundedTimeTo := roundDateDown(parsedTimeTo, config.RoundingMinutes)
-	slog.Info("Time parameters", "originalFrom", parsedTimeFrom, "roundedFrom", roundedTimeFrom, "originalTo", parsedTimeTo, "roundedTo", roundedTimeTo, "roundingMinutes", config.RoundingMinutes)
+	roundedTimeFrom := roundDateDown(timeFrom, config.Rounding)
+	roundedTimeTo := roundDateDown(timeTo, config.Rounding)
+	slog.Info("Time parameters", "inputTime", parsedTime, "originalTimeFrom", timeFrom, "roundedTimeFrom", roundedTimeFrom, "originalTimeTo", timeTo, "roundedTimeTo", roundedTimeTo)
 
 	params := birdeye.PriceHistoryParams{
 		Address:     address,
@@ -108,7 +100,7 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, config Ba
 	}
 
 	if result != nil {
-		cacheDuration := time.Duration(config.RoundingMinutes) * time.Minute
+		cacheDuration := time.Duration(config.Rounding) * time.Minute
 		slog.Info("Storing fetched data in cache", "key", cacheKey, "expiration", cacheDuration)
 		s.cache.Set(cacheKey, result, cacheDuration)
 	}

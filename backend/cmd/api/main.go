@@ -15,6 +15,8 @@ import (
 	"github.com/joho/godotenv"
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
+	bloctoRPC "github.com/blocto/solana-go-sdk/rpc"
+	"github.com/gagliardetto/solana-go/rpc"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
@@ -30,6 +32,7 @@ import (
 
 type Config struct {
 	SolanaRPCEndpoint         string
+	SolanaRPCAPIKey           string
 	BirdEyeEndpoint           string
 	BirdEyeAPIKey             string
 	CoinGeckoAPIKey           string
@@ -86,6 +89,7 @@ func loadConfig() (*Config, error) {
 
 	config := &Config{
 		SolanaRPCEndpoint:         os.Getenv("SOLANA_RPC_ENDPOINT"),
+		SolanaRPCAPIKey:           os.Getenv("SOLANA_RPC_API_KEY"),
 		BirdEyeEndpoint:           os.Getenv("BIRDEYE_ENDPOINT"),
 		BirdEyeAPIKey:             os.Getenv("BIRDEYE_API_KEY"),
 		CoinGeckoAPIKey:           os.Getenv("COINGECKO_API_KEY"),
@@ -107,8 +111,14 @@ func loadConfig() (*Config, error) {
 		missingVars = append(missingVars, "APP_ENV")
 	}
 	if config.SolanaRPCEndpoint == "" {
-		missingVars = append(missingVars, "SOLANA_RPC_ENDPOINT")
+		log.Print("Warning: SOLANA_RPC_ENDPOINT is not set, using default value.")
+		config.SolanaRPCEndpoint = "https://api.mainnet-beta.solana.com"
 	}
+
+	if config.SolanaRPCEndpoint != "" && config.SolanaRPCAPIKey == "" {
+		missingVars = append(missingVars, "SolanaRPCAPIKey")
+	}
+
 	if config.BirdEyeEndpoint == "" {
 		missingVars = append(missingVars, "BIRDEYE_ENDPOINT")
 	}
@@ -200,7 +210,16 @@ func main() {
 
 	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
 
-	solanaClient := solana.NewClient(config.SolanaRPCEndpoint)
+	header := map[string]string{
+		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
+	}
+	solClient := rpc.NewWithHeaders(config.SolanaRPCEndpoint, header)
+	baseClient := &http.Client{
+		Transport: &headerTransport{APIKey: config.SolanaRPCAPIKey},
+	}
+	blotorpcClient := bloctoRPC.New(bloctoRPC.WithEndpoint(config.SolanaRPCEndpoint), bloctoRPC.WithHTTPClient(baseClient))
+
+	solanaClient := solana.NewClient(solClient, blotorpcClient)
 
 	offchainClient := offchain.NewClient(httpClient)
 
@@ -219,7 +238,7 @@ func main() {
 		SolanaRPCEndpoint:     config.SolanaRPCEndpoint,
 		NewCoinsFetchInterval: config.NewCoinsFetchInterval,
 	}
-	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store)
+	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store, solanaClient)
 	slog.Info("Coin service initialized.")
 
 	// Initialize Price Service Cache
@@ -242,7 +261,7 @@ func main() {
 		"",
 	)
 
-	walletService := wallet.New(solanaClient.GetRpcConnection(), store, coinService)
+	walletService := wallet.New(solClient, store, coinService)
 
 	imageFetcher := imageservice.NewOffchainFetcher(offchainClient)
 	utilitySvc := grpcapi.NewService(imageFetcher)
@@ -284,4 +303,22 @@ func main() {
 	grpcServer.Stop()
 
 	slog.Info("Servers exited properly")
+}
+
+type headerTransport struct {
+	Base   http.RoundTripper
+	APIKey string
+}
+
+func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("Authorization", "Bearer "+t.APIKey)
+	return t.transport().RoundTrip(req)
+}
+
+func (t *headerTransport) transport() http.RoundTripper {
+	if t.Base != nil {
+		return t.Base
+	}
+	return http.DefaultTransport
 }
