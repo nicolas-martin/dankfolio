@@ -26,7 +26,7 @@ func main() {
 		dsn = "postgres://user:password@localhost:5432/dankfolio_dev?sslmode=disable"
 	}
 
-	store, err := postgres.NewStore(dsn, false, slog.LevelDebug)
+	store, err := postgres.NewStore(dsn, false, slog.LevelDebug, "development")
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -44,7 +44,7 @@ func main() {
 	fmt.Printf("Found %d coins\n", len(coins))
 	for i, coin := range coins {
 		jupiterListedAt := "nil"
-		if coin.JupiterListedAt != nil {
+		if coin.JupiterListedAt != nil && !coin.JupiterListedAt.IsZero() {
 			jupiterListedAt = coin.JupiterListedAt.Format("2006-01-02 15:04:05")
 		}
 		fmt.Printf("%d. %s (%s) - JupiterListedAt: %s\n", i+1, coin.Symbol, coin.MintAddress, jupiterListedAt)
@@ -63,7 +63,7 @@ func main() {
 	fmt.Printf("Found %d raw coins\n", len(rawCoins))
 	for i, coin := range rawCoins {
 		jupiterCreatedAt := "nil"
-		if coin.JupiterCreatedAt != nil {
+		if !coin.JupiterCreatedAt.IsZero() {
 			jupiterCreatedAt = coin.JupiterCreatedAt.Format("2006-01-02 15:04:05")
 		}
 		fmt.Printf("%d. %s (%s) - JupiterCreatedAt: %s\n", i+1, coin.Symbol, coin.MintAddress, jupiterCreatedAt)
@@ -76,7 +76,7 @@ func main() {
 		mappedCoins := mapRawCoinsToModel(rawCoins[:1])
 		if len(mappedCoins) > 0 {
 			fmt.Printf("Model raw coin mapped - JupiterListedAt: %v\n", mappedCoins[0].JupiterListedAt)
-			if mappedCoins[0].JupiterListedAt != nil {
+			if mappedCoins[0].JupiterListedAt != nil && !mappedCoins[0].JupiterListedAt.IsZero() {
 				fmt.Printf("Model raw coin mapped - JupiterListedAt formatted: %s\n", mappedCoins[0].JupiterListedAt.Format("2006-01-02 15:04:05"))
 			}
 		}
@@ -92,19 +92,19 @@ func main() {
 					fmt.Printf("MATCH FOUND: %s (%s)\n", rawCoin.Symbol, rawCoin.MintAddress)
 
 					rawJupiter := "nil"
-					if rawCoin.JupiterCreatedAt != nil {
+					if !rawCoin.JupiterCreatedAt.IsZero() {
 						rawJupiter = rawCoin.JupiterCreatedAt.Format("2006-01-02 15:04:05")
 					}
 
 					searchJupiter := "nil"
-					if searchCoin.JupiterListedAt != nil {
+					if searchCoin.JupiterListedAt != nil && !searchCoin.JupiterListedAt.IsZero() {
 						searchJupiter = searchCoin.JupiterListedAt.Format("2006-01-02 15:04:05")
 					}
 
 					fmt.Printf("  Raw coin JupiterCreatedAt: %s\n", rawJupiter)
 					fmt.Printf("  Search coin JupiterListedAt: %s\n", searchJupiter)
-					fmt.Printf("  Raw coin pointer: %p\n", rawCoin.JupiterCreatedAt)
-					fmt.Printf("  Search coin pointer: %p\n", searchCoin.JupiterListedAt)
+					fmt.Printf("  Raw coin JupiterCreatedAt (value): %v\n", rawCoin.JupiterCreatedAt) // Changed format to %v
+					fmt.Printf("  Search coin JupiterListedAt (value): %v\n", searchCoin.JupiterListedAt) // Changed format to %v, and also pointer if it was intended
 					break
 				}
 			}
@@ -147,7 +147,7 @@ func main() {
 	fmt.Printf("Found %d sorted raw coins\n", len(sortedRawCoins))
 	for i, coin := range sortedRawCoins {
 		jupiterCreatedAt := "nil"
-		if coin.JupiterCreatedAt != nil {
+		if !coin.JupiterCreatedAt.IsZero() {
 			jupiterCreatedAt = coin.JupiterCreatedAt.Format("2006-01-02 15:04:05")
 		}
 		fmt.Printf("%d. %s (%s) - JupiterCreatedAt: %s\n", i+1, coin.Symbol, coin.MintAddress, jupiterCreatedAt)

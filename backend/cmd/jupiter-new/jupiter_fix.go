@@ -92,14 +92,14 @@ func main() {
 	if err != nil {
 		log.Printf("❌ GetNewCoins failed: %v", err)
 	} else {
-		log.Printf("✅ GetNewCoins succeeded! Got %d coins", len(newCoins.Coins))
-		if len(newCoins.Coins) > 0 {
-			log.Printf("   First coin: %s (%s)", newCoins.Coins[0].Name, newCoins.Coins[0].Symbol)
+		log.Printf("✅ GetNewCoins succeeded! Got %d coins", len(newCoins))
+		if len(newCoins) > 0 {
+			log.Printf("   First coin: %s (%s)", newCoins[0].Name, newCoins[0].Symbol)
 
 			// Debug: Print the first coin's details
-			firstCoin := newCoins.Coins[0]
+			firstCoin := newCoins[0]
 			log.Printf("   🔍 First coin details:")
-			log.Printf("      Address: '%s'", firstCoin.Address)
+			log.Printf("      Address: '%s'", firstCoin.Mint) // Changed Address to Mint
 			log.Printf("      Name: '%s'", firstCoin.Name)
 			log.Printf("      Symbol: '%s'", firstCoin.Symbol)
 			log.Printf("      Decimals: %d", firstCoin.Decimals)

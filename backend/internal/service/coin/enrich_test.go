@@ -53,12 +53,13 @@ func (m *MockJupiterClient) GetAllCoins(ctx context.Context) (*jupiter.CoinListR
 	return args.Get(0).(*jupiter.CoinListResponse), args.Error(1)
 }
 
-func (m *MockJupiterClient) GetNewCoins(ctx context.Context, params *jupiter.NewCoinsParams) (*jupiter.CoinListResponse, error) {
+func (m *MockJupiterClient) GetNewCoins(ctx context.Context, params *jupiter.NewCoinsParams) ([]*jupiter.NewTokenInfo, error) {
 	args := m.Called(ctx, params)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*jupiter.CoinListResponse), args.Error(1)
+	// Ensure the type assertion matches the new return type
+	return args.Get(0).([]*jupiter.NewTokenInfo), args.Error(1)
 }
 
 func (m *MockJupiterClient) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey, destinationTokenAccount string) (string, error) {
