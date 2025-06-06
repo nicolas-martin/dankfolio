@@ -35,10 +35,24 @@ export const determineChartColor = (data: PricePoint[]): 'green' | 'red' => {
 export const createPulsateAnimation = (animatedValue: any) => {
 	return withRepeat(
 		withTiming(1.2, { 
-			duration: 1500,
+			duration: 1000,
 			easing: Easing.inOut(Easing.ease)
 		}),
 		-1, // Infinite repetitions
 		true // Reverse
 	);
+};
+
+// Updated chart colors with simpler format
+export const CHART_COLORS = {
+    green: {
+        line: '#0BA360',
+        area: 'rgba(11, 163, 96, 0.5)',
+        indicator: '#0BA360'
+    },
+    red: {
+        line: '#E04E4A',
+        area: 'rgba(224, 78, 74, 0.5)',
+        indicator: '#E04E4A'
+    }
 }; 
