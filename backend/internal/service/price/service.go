@@ -43,7 +43,27 @@ var TIMEFRAME_CONFIG = map[string]TimeframeConfigEntry{
 	"1W":      {Granularity: "ONE_HOUR", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 60},
 	"1M":      {Granularity: "FOUR_HOUR", DurationMs: 30 * 24 * 60 * 60 * 1000, RoundingMinutes: 240}, // Approx 30 days
 	"1Y":      {Granularity: "ONE_DAY", DurationMs: 365 * 24 * 60 * 60 * 1000, RoundingMinutes: 1440},
-	"DEFAULT": {Granularity: "ONE_MINUTE", DurationMs: 4 * 60 * 60 * 1000, RoundingMinutes: 1}, // Default to 4H-like configuration
+	// Short term
+	"1m":  {Granularity: "1m", DurationMs: 1 * 60 * 60 * 1000, RoundingMinutes: 1},    // 1-hour window, 1-min granularity
+	"3m":  {Granularity: "3m", DurationMs: 3 * 60 * 60 * 1000, RoundingMinutes: 3},    // 3-hour window, 3-min granularity
+	"5m":  {Granularity: "5m", DurationMs: 5 * 60 * 60 * 1000, RoundingMinutes: 5},    // 5-hour window, 5-min granularity
+	"15m": {Granularity: "15m", DurationMs: 12 * 60 * 60 * 1000, RoundingMinutes: 15},  // 12-hour window, 15-min granularity
+	"30m": {Granularity: "30m", DurationMs: 24 * 60 * 60 * 1000, RoundingMinutes: 30},  // 1-day window, 30-min granularity
+
+	// Hourly
+	"1H":  {Granularity: "1H", DurationMs: 1 * 24 * 60 * 60 * 1000, RoundingMinutes: 60},   // 1-day window, 1-hour granularity
+	"2H":  {Granularity: "2H", DurationMs: 2 * 24 * 60 * 60 * 1000, RoundingMinutes: 120},  // 2-day window, 2-hour granularity
+	"4H":  {Granularity: "4H", DurationMs: 4 * 24 * 60 * 60 * 1000, RoundingMinutes: 240},  // 4-day window, 4-hour granularity
+	"6H":  {Granularity: "6H", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 360},  // 1-week window, 6-hour granularity
+	"8H":  {Granularity: "8H", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 480},  // 1-week window, 8-hour granularity (approx)
+	"12H": {Granularity: "12H", DurationMs: 14 * 24 * 60 * 60 * 1000, RoundingMinutes: 720}, // 2-week window, 12-hour granularity
+
+	// Daily/Weekly
+	"1D":  {Granularity: "1D", DurationMs: 30 * 24 * 60 * 60 * 1000, RoundingMinutes: 1440}, // 1-month window, 1-day granularity
+	"3D":  {Granularity: "3D", DurationMs: 90 * 24 * 60 * 60 * 1000, RoundingMinutes: 3 * 1440},// 3-month window, 3-day granularity
+	"1W":  {Granularity: "1W", DurationMs: 365 * 24 * 60 * 60 * 1000, RoundingMinutes: 7 * 1440},// 1-year window, 1-week granularity
+
+	"DEFAULT": {Granularity: "15m", DurationMs: 12 * 60 * 60 * 1000, RoundingMinutes: 15}, // Matches "15m" entry
 }
 
 // roundDateDown rounds the given time down to the specified granularity in minutes.
