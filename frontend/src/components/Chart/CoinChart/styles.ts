@@ -4,7 +4,7 @@ import { MD3Theme } from 'react-native-paper';
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	chartContainer: {
 		height: 250,
-		backgroundColor: '#14171A', // Dark background color to match screenshot
+		backgroundColor: '#1C2127', // Slightly lighter TradingView dark theme background
 		borderRadius: 8,
 		overflow: 'hidden',
 	},
@@ -12,7 +12,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		height: 250,
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: '#14171A',
+		backgroundColor: '#1C2127', // Match chartContainer background
 		borderRadius: 8,
 	},
 	hoverTimeText: {
