@@ -31,7 +31,6 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 	oneHourAgo := now.Add(-1 * time.Hour)
 
 	defaultTimeFromPb := timestamppb.New(oneHourAgo)
-	defaultTimeToPb := timestamppb.New(now)
 
 	// Expected string format for time arguments to the service
 	expectedTimeFromStr := oneHourAgo.Format("2006-01-02T15:04:05Z")
@@ -67,8 +66,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			req: &pb.GetPriceHistoryRequest{
 				Address:     defaultAddress,
 				Type:        pb.GetPriceHistoryRequest_ONE_MINUTE,
-				TimeFrom:    defaultTimeFromPb,
-				TimeTo:      defaultTimeToPb,
+				Time:        defaultTimeFromPb,
 				AddressType: defaultAddressType,
 			},
 			mockSetup: func() {
@@ -95,8 +93,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			req: &pb.GetPriceHistoryRequest{
 				Address:     defaultAddress,
 				Type:        pb.GetPriceHistoryRequest_FIVE_MINUTE,
-				TimeFrom:    defaultTimeFromPb,
-				TimeTo:      defaultTimeToPb,
+				Time:        defaultTimeFromPb,
 				AddressType: defaultAddressType,
 			},
 			mockSetup: func() {
@@ -123,8 +120,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			req: &pb.GetPriceHistoryRequest{
 				Address:     defaultAddress,
 				Type:        pb.GetPriceHistoryRequest_FOUR_HOUR,
-				TimeFrom:    defaultTimeFromPb,
-				TimeTo:      defaultTimeToPb,
+				Time:        defaultTimeFromPb,
 				AddressType: defaultAddressType,
 			},
 			mockSetup: func() {
@@ -151,8 +147,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			req: &pb.GetPriceHistoryRequest{
 				Address:     defaultAddress,
 				Type:        pb.GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED,
-				TimeFrom:    defaultTimeFromPb,
-				TimeTo:      defaultTimeToPb,
+				Time:        defaultTimeFromPb,
 				AddressType: defaultAddressType,
 			},
 			mockSetup: func() {
@@ -179,8 +174,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			req: &pb.GetPriceHistoryRequest{
 				Address:     "", // Missing
 				Type:        pb.GetPriceHistoryRequest_ONE_MINUTE,
-				TimeFrom:    defaultTimeFromPb,
-				TimeTo:      defaultTimeToPb,
+				Time:        defaultTimeFromPb,
 				AddressType: defaultAddressType,
 			},
 			mockSetup:        func() {},
@@ -193,8 +187,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			req: &pb.GetPriceHistoryRequest{
 				Address:     defaultAddress,
 				Type:        pb.GetPriceHistoryRequest_ONE_MINUTE,
-				TimeFrom:    nil, // Missing
-				TimeTo:      defaultTimeToPb,
+				Time:        nil, // Missing
 				AddressType: defaultAddressType,
 			},
 			mockSetup:        func() {},
@@ -207,8 +200,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			req: &pb.GetPriceHistoryRequest{
 				Address:     defaultAddress,
 				Type:        pb.GetPriceHistoryRequest_ONE_MINUTE,
-				TimeFrom:    defaultTimeFromPb,
-				TimeTo:      nil, // Missing
+				Time:        defaultTimeFromPb,
 				AddressType: defaultAddressType,
 			},
 			mockSetup:        func() {},
@@ -221,8 +213,7 @@ func TestGetPriceHistoryHandler(t *testing.T) {
 			req: &pb.GetPriceHistoryRequest{
 				Address:     defaultAddress,
 				Type:        pb.GetPriceHistoryRequest_ONE_MINUTE,
-				TimeFrom:    defaultTimeFromPb,
-				TimeTo:      defaultTimeToPb,
+				Time:        defaultTimeFromPb,
 				AddressType: defaultAddressType,
 			},
 			mockSetup: func() {

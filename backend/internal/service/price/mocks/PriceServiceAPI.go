@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -96,8 +97,8 @@ func (_c *MockPriceServiceAPI_GetCoinPrices_Call) RunAndReturn(run func(ctx cont
 }
 
 // GetPriceHistory provides a mock function for the type MockPriceServiceAPI
-func (_mock *MockPriceServiceAPI) GetPriceHistory(ctx context.Context, address string, historyType string, timeFromStr string, timeToStr string, addressType string) (*birdeye.PriceHistory, error) {
-	ret := _mock.Called(ctx, address, historyType, timeFromStr, timeToStr, addressType)
+func (_mock *MockPriceServiceAPI) GetPriceHistory(ctx context.Context, address string, config price.BackendTimeframeConfig, time string, addressType string) (*birdeye.PriceHistory, error) {
+	ret := _mock.Called(ctx, address, config, time, addressType)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPriceHistory")
@@ -105,18 +106,18 @@ func (_mock *MockPriceServiceAPI) GetPriceHistory(ctx context.Context, address s
 
 	var r0 *birdeye.PriceHistory
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) (*birdeye.PriceHistory, error)); ok {
-		return returnFunc(ctx, address, historyType, timeFromStr, timeToStr, addressType)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, price.BackendTimeframeConfig, string, string) (*birdeye.PriceHistory, error)); ok {
+		return returnFunc(ctx, address, config, time, addressType)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) *birdeye.PriceHistory); ok {
-		r0 = returnFunc(ctx, address, historyType, timeFromStr, timeToStr, addressType)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, price.BackendTimeframeConfig, string, string) *birdeye.PriceHistory); ok {
+		r0 = returnFunc(ctx, address, config, time, addressType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*birdeye.PriceHistory)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, string, string, string) error); ok {
-		r1 = returnFunc(ctx, address, historyType, timeFromStr, timeToStr, addressType)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, price.BackendTimeframeConfig, string, string) error); ok {
+		r1 = returnFunc(ctx, address, config, time, addressType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -131,17 +132,16 @@ type MockPriceServiceAPI_GetPriceHistory_Call struct {
 // GetPriceHistory is a helper method to define mock.On call
 //   - ctx
 //   - address
-//   - historyType
-//   - timeFromStr
-//   - timeToStr
+//   - config
+//   - time
 //   - addressType
-func (_e *MockPriceServiceAPI_Expecter) GetPriceHistory(ctx interface{}, address interface{}, historyType interface{}, timeFromStr interface{}, timeToStr interface{}, addressType interface{}) *MockPriceServiceAPI_GetPriceHistory_Call {
-	return &MockPriceServiceAPI_GetPriceHistory_Call{Call: _e.mock.On("GetPriceHistory", ctx, address, historyType, timeFromStr, timeToStr, addressType)}
+func (_e *MockPriceServiceAPI_Expecter) GetPriceHistory(ctx interface{}, address interface{}, config interface{}, time interface{}, addressType interface{}) *MockPriceServiceAPI_GetPriceHistory_Call {
+	return &MockPriceServiceAPI_GetPriceHistory_Call{Call: _e.mock.On("GetPriceHistory", ctx, address, config, time, addressType)}
 }
 
-func (_c *MockPriceServiceAPI_GetPriceHistory_Call) Run(run func(ctx context.Context, address string, historyType string, timeFromStr string, timeToStr string, addressType string)) *MockPriceServiceAPI_GetPriceHistory_Call {
+func (_c *MockPriceServiceAPI_GetPriceHistory_Call) Run(run func(ctx context.Context, address string, config price.BackendTimeframeConfig, time string, addressType string)) *MockPriceServiceAPI_GetPriceHistory_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(price.BackendTimeframeConfig), args[3].(string), args[4].(string))
 	})
 	return _c
 }
@@ -151,7 +151,7 @@ func (_c *MockPriceServiceAPI_GetPriceHistory_Call) Return(priceHistory *birdeye
 	return _c
 }
 
-func (_c *MockPriceServiceAPI_GetPriceHistory_Call) RunAndReturn(run func(ctx context.Context, address string, historyType string, timeFromStr string, timeToStr string, addressType string) (*birdeye.PriceHistory, error)) *MockPriceServiceAPI_GetPriceHistory_Call {
+func (_c *MockPriceServiceAPI_GetPriceHistory_Call) RunAndReturn(run func(ctx context.Context, address string, config price.BackendTimeframeConfig, time string, addressType string) (*birdeye.PriceHistory, error)) *MockPriceServiceAPI_GetPriceHistory_Call {
 	_c.Call.Return(run)
 	return _c
 }
