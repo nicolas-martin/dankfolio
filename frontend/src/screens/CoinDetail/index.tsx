@@ -328,7 +328,7 @@ const CoinDetail: React.FC = () => {
 		} else {
 			setLoading(false); // Ensure loading stops if there's no mintAddress
 		}
-	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
+	}, [mintAddress, showToast, displayCoin]); // Added displayCoin to ensure updates when it changes.
 
 	return (
 		// Ensure displayCoin is checked here again before rendering main content
