@@ -45,22 +45,19 @@ func (s *priceServiceHandler) GetPriceHistory(
 		historyType = pb.GetPriceHistoryRequest_FOUR_HOUR // Defaulting in handler
 	}
 
-	// The switch block converting enum to string (historyTypeString) is removed.
-	// We will pass the historyType enum directly to the service.
-
-	if req.Msg.TimeFrom == nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time_from is required"))
+	config, ok := price.TimeframeConfigMap[historyType]
+	if !ok {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unsupported history type: %s", historyType.String()))
 	}
 
-	if req.Msg.TimeTo == nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time_to is required"))
+	if req.Msg.Time == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time is required"))
 	}
 
 	slog.Debug("Fetching price history",
 		"address", req.Msg.Address,
-		"typeEnum", historyType.String(), // Log the string representation of the enum
-		"from", req.Msg.TimeFrom.AsTime(),
-		"to", req.Msg.TimeTo.AsTime(),
+		"config", config,
+		"time", req.Msg.Time.AsTime(),
 		"address_type", addressType)
 
 	// Get price history from service
@@ -68,9 +65,8 @@ func (s *priceServiceHandler) GetPriceHistory(
 	priceHistory, err := s.priceService.GetPriceHistory(
 		ctx,
 		req.Msg.Address,
-		historyType, // Pass the enum value
-		req.Msg.TimeFrom.AsTime().Format("2006-01-02T15:04:05Z"),
-		req.Msg.TimeTo.AsTime().Format("2006-01-02T15:04:05Z"),
+		config,
+		req.Msg.Time.AsTime().Format("2006-01-02T15:04:05Z"),
 		addressType,
 	)
 	if err != nil {

@@ -132,9 +132,19 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
     };
 
     const currentBaselinePaint = Skia.Paint();
-    currentBaselinePaint.setStrokeWidth(1);
+    currentBaselinePaint.setStrokeWidth(0.5);
     currentBaselinePaint.setColor(Skia.Color(theme.colors.onSurfaceVariant));
     
+    // Create a dotted/dashed line effect
+    try {
+      // Try to create a dashed line effect
+      const dashEffect = Skia.PathEffect.MakeDash([3, 3], 0);
+      currentBaselinePaint.setPathEffect(dashEffect);
+    } catch (e) {
+      // Silently handle error if API isn't available
+      console.log('DashPathEffect not supported in this version of Skia');
+    }
+
     // Using direct color values
     const greenOpaque = Skia.Color('#00FF004D');
     const greenTransparent = Skia.Color('#00FF0000');
@@ -241,7 +251,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
             path={segment.path}
             color={segment.color}
             style="stroke"
-            strokeWidth={2}
+            strokeWidth={1}
           />
         ))}
         {/* Render Baseline Last */}
