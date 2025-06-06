@@ -19,6 +19,7 @@ import { createStyles } from './home_styles';
 import { Coin, PriceData } from '@/types'; // Added PriceData
 import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
+import { PRICE_HISTORY_FETCH_MODE, PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -64,37 +65,53 @@ const HomeScreen = () => {
 		}
 		const fourHourPriceHistoryType = fourHourConfig.granularity;
 
-
-		topCoins.forEach(coin => {
-			if (!coin || !coin.mintAddress) {
-				return;
-			}
-
-			// Set loading state for this specific coin
-			setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
-
-			fetchPriceHistory(coin, fourHourTimeframeKey, fourHourPriceHistoryType)
-				.then(result => {
-					if (result.data) {
-						setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data }));
+		if (PRICE_HISTORY_FETCH_MODE === 'sequential') {
+			const processCoinsSequentially = async () => {
+				for (const coin of topCoins) {
+					if (!coin || !coin.mintAddress) {
+						continue;
 					}
-					if (result.error) {
-						logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
-						// Optionally clear history for this coin on error or leave stale
-						// setPriceHistories(prev => {
-						//   const newState = { ...prev };
-						//   delete newState[coin.mintAddress!];
-						//   return newState;
-						// });
+					setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
+					try {
+						const result = await fetchPriceHistory(coin, fourHourTimeframeKey, fourHourPriceHistoryType);
+						if (result.data) {
+							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data }));
+						}
+						if (result.error) {
+							logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
+						}
+					} catch (error) {
+						logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
+					} finally {
+						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
 					}
-				})
-				.catch(error => { // Catch unexpected errors from fetchPriceHistory promise itself
-					logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
-				})
-				.finally(() => {
-					setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
-				});
-		});
+					await new Promise(resolve => setTimeout(resolve, PRICE_HISTORY_FETCH_DELAY_MS));
+				}
+			};
+			processCoinsSequentially();
+		} else { // Parallel fetching
+			topCoins.forEach(coin => {
+				if (!coin || !coin.mintAddress) {
+					return;
+				}
+				setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
+				fetchPriceHistory(coin, fourHourTimeframeKey, fourHourPriceHistoryType)
+					.then(result => {
+						if (result.data) {
+							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data }));
+						}
+						if (result.error) {
+							logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
+						}
+					})
+					.catch(error => {
+						logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
+					})
+					.finally(() => {
+						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
+					});
+			});
+		}
 	}, [availableCoins]);
 
 	// Shared logic for fetching trending coins and portfolio
