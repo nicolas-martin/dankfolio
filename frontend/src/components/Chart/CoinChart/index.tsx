@@ -31,6 +31,50 @@ import { determineChartColor, createPulsateAnimation, CHART_COLORS } from './scr
 
 const initChartPressState = { x: 0, y: { y: 0 } };
 
+// ─── Time Format Utilities ─────────────────────────────────────────────────
+const getTimeFormat = (period?: string) => {
+	switch (period) {
+		case '1H':
+		case '4H':
+			return {
+				axis: (v: number) => format(new Date(v), 'HH:mm'),
+				tooltip: (v: number) => format(new Date(v), "HH:mm 'on' MMM d"),
+				tickCount: 4
+			};
+		case '1D':
+			return {
+				axis: (v: number) => format(new Date(v), 'HH:mm'),
+				tooltip: (v: number) => format(new Date(v), "HH:mm 'on' MMM d"),
+				tickCount: 4
+			};
+		case '1W':
+			return {
+				axis: (v: number) => format(new Date(v), 'EEE'),
+				tooltip: (v: number) => format(new Date(v), "HH:mm 'on' EEE, MMM d"),
+				tickCount: 4
+			};
+		case '1M':
+			return {
+				axis: (v: number) => format(new Date(v), 'MMM d'),
+				tooltip: (v: number) => format(new Date(v), "MMM d"),
+				tickCount: 4
+			};
+		case 'ALL':
+		case '1Y':
+			return {
+				axis: (v: number) => format(new Date(v), 'MMM'),
+				tooltip: (v: number) => format(new Date(v), "MMM yyyy"),
+				tickCount: 4
+			};
+		default:
+			return {
+				axis: (v: number) => format(new Date(v), 'MMM d'),
+				tooltip: (v: number) => format(new Date(v), "MMM d, yyyy"),
+				tickCount: 4
+			};
+	}
+};
+
 // ─── SpringLine ─────────────────────────────────────────────────────────────
 function SpringLine({
 	points,
@@ -194,13 +238,17 @@ export default function CoinChart({
 	data,
 	loading,
 	onHover,
+	period,
 }: CoinChartProps) {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const isMounted = useRef(true);
 	const animations = useRef<SharedValue<any>[]>([]);
 	const font = useSkiaFont(inter, 12);
-	const pulseRadius = useSharedValue(4);
+	const pulseRadius = useSharedValue(8);
+	
+	// Get time formatting based on period
+	const timeFormat = useMemo(() => getTimeFormat(period), [period]);
 	
 	// Reduce pulsate animation complexity for better performance
 	const setupPulseAnimation = () => {
@@ -210,7 +258,7 @@ export default function CoinChart({
 			withSpring(5.5, {
 				damping: 6,
 				stiffness: 80,
-				mass: 0.5, // Lighter mass for faster animation
+				mass: 5.5, // Lighter mass for faster animation
 				overshootClamping: true, // Prevent overshoot for smoother animation
 			}),
 			-1,
@@ -246,7 +294,7 @@ export default function CoinChart({
 	useEffect(() => {
 		// Create a unique key for the chart when data changes
 		if (data && data.length > 0) {
-			setChartKey(`chart-${data.length}-${data[0]?.timestamp}`);
+			setChartKey(`chart-${data.length}-${data[0]?.timestamp}-${period}`);
 		}
 		
 		// Set up pulsating animation
@@ -256,7 +304,7 @@ export default function CoinChart({
 			isMounted.current = false;
 			animations.current.forEach(a => cancelAnimation(a));
 		};
-	}, [data]);
+	}, [data, period]);
 
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);
@@ -362,10 +410,10 @@ export default function CoinChart({
 					chartPressState={[chartPress]}
 					axisOptions={{
 						font,
-						tickCount: { x: 3, y: 3 }, // Show minimal ticks as requested
+						tickCount: { x: timeFormat.tickCount, y: 3 }, // Use period-specific tick count
 						labelPosition: { x: 'outset', y: 'inset' },
 						axisSide: { x: 'bottom', y: 'left' },
-						formatXLabel: v => format(new Date(v), "MMM d"),
+						formatXLabel: timeFormat.axis, // Use period-specific format
 						formatYLabel: v => v.toLocaleString('en-US', {
 							minimumFractionDigits: 6,
 							maximumFractionDigits: 6
@@ -383,8 +431,8 @@ export default function CoinChart({
 						if (!isPressActive || typeof activeX !== 'number' || !font)
 							return null;
 							
-						// Optimize label generation to be lighter
-						const label = format(new Date(activeX), "MMM d");
+						// Use period-specific tooltip format
+						const label = timeFormat.tooltip(activeX);
 						const rawX = currentPressPos.value.x;
 						const w = font.measureText(label).width;
 						const half = w / 2;

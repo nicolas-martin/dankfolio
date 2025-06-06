@@ -171,6 +171,7 @@ const CoinDetail: React.FC = () => {
 						data={priceHistory}
 						loading={loading} // This is for price history loading
 						onHover={handleChartHover}
+						period={selectedTimeframe}
 					/>
 				</View>
 			</View>
