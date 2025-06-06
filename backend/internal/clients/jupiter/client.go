@@ -153,6 +153,27 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 	return &CoinListResponse{Coins: tokens}, nil
 }
 
+// GetSPLTokenPrice fetches the price for a single SPL token using the existing GetCoinPrices method.
+func (c *Client) GetSPLTokenPrice(ctx context.Context, tokenAddress string) (float64, error) {
+	if tokenAddress == "" {
+		return 0, fmt.Errorf("token address cannot be empty")
+	}
+
+	prices, err := c.GetCoinPrices(ctx, []string{tokenAddress})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get price for token %s: %w", tokenAddress, err)
+	}
+
+	price, ok := prices[tokenAddress]
+	if !ok {
+		// This case might indicate the token address is valid but has no price data,
+		// or the address itself is not recognized by the API.
+		return 0, fmt.Errorf("price not found for token %s", tokenAddress)
+	}
+
+	return price, nil
+}
+
 // GetNewCoins fetches all new tokens from Jupiter API with optional pagination
 func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*NewTokenInfo, error) {
 	baseURL := fmt.Sprintf("%s%s", c.baseURL, newTokensEndpoint)

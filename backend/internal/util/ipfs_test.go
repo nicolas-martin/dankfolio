@@ -47,6 +47,11 @@ func TestStandardizeIpfsUrl(t *testing.T) {
 			input:    "https://QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X.ipfs.dweb.link/image.png",
 			expected: "https://gateway.pinata.cloud/ipfs/QmXcYpjW47fJHRb81TjWhL1T8u4g5DR8TrG8jXjS2u3u4X/image.png",
 		},
+		{
+			name:     "CIDv1 subdomain URL (already standard dweb.link)",
+			input:    "https://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi.ipfs.dweb.link/image.png",
+			expected: "https://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi.ipfs.dweb.link/image.png",
+		},
 
 		// Traditional IPFS gateway URLs
 		{
