@@ -42,7 +42,7 @@ func (s *priceServiceHandler) GetPriceHistory(
 
 	historyType := req.Msg.Type
 	if historyType == pb.GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED {
-		historyType = pb.GetPriceHistoryRequest_FIFTEEN_MINUTE // Defaulting in handler
+		historyType = pb.GetPriceHistoryRequest_FOUR_HOUR // Defaulting in handler
 	}
 
 	// The switch block converting enum to string (historyTypeString) is removed.

@@ -52,7 +52,7 @@ var TIMEFRAME_CONFIG = map[pb.GetPriceHistoryRequest_PriceHistoryType]TimeframeC
 	pb.GetPriceHistoryRequest_ONE_DAY:         {BirdeyeType: "1D", DurationMs: 30 * 24 * 60 * 60 * 1000, RoundingMinutes: 1440},
 	pb.GetPriceHistoryRequest_THREE_DAY:       {BirdeyeType: "3D", DurationMs: 90 * 24 * 60 * 60 * 1000, RoundingMinutes: 3 * 1440},
 	pb.GetPriceHistoryRequest_ONE_WEEK:        {BirdeyeType: "1W", DurationMs: 365 * 24 * 60 * 60 * 1000, RoundingMinutes: 7 * 1440},
-	pb.GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED: {BirdeyeType: "15m", DurationMs: 12 * 60 * 60 * 1000, RoundingMinutes: 15},
+	pb.GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED: {BirdeyeType: "4H", DurationMs: 4 * 24 * 60 * 60 * 1000, RoundingMinutes: 240},
 }
 
 // roundDateDown rounds the given time down to the specified granularity in minutes.
@@ -98,9 +98,9 @@ func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI
 func (s *Service) GetPriceHistory(ctx context.Context, address string, historyType pb.GetPriceHistoryRequest_PriceHistoryType, timeFromStr, timeToStr, addressType string) (*birdeye.PriceHistory, error) {
 	config, ok := TIMEFRAME_CONFIG[historyType]
 	if !ok {
-		slog.Warn("Invalid historyType enum value, falling back to FIFTEEN_MINUTE", "requestedHistoryTypeEnumValue", int(historyType))
-		config = TIMEFRAME_CONFIG[pb.GetPriceHistoryRequest_FIFTEEN_MINUTE]
-		// historyType = pb.GetPriceHistoryRequest_FIFTEEN_MINUTE // Not strictly needed to update historyType itself unless used for cache key as enum
+		slog.Warn("Invalid historyType enum value, falling back to FOUR_HOUR", "requestedHistoryTypeEnumValue", int(historyType))
+		config = TIMEFRAME_CONFIG[pb.GetPriceHistoryRequest_FOUR_HOUR]
+		historyType = pb.GetPriceHistoryRequest_FOUR_HOUR // Update historyType for cache key consistency
 	}
 	slog.Info("Using timeframe configuration", "keyEnum", historyType, "keyBirdeyeType", config.BirdeyeType, "config", config)
 
