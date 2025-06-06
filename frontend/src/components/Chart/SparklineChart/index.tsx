@@ -47,13 +47,28 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
     );
   }
 
-  if (!data || data.length < 2) {
+  if (!data || data.length === 0) {
     return (
       <View style={[styles.container, styles.center, { width, height }]}>
         <Text>No data</Text>
       </View>
     );
   }
+
+  // If there's only one data point, duplicate it to create a horizontal line
+  const effectiveData = useMemo(() => {
+    if (data.length === 1) {
+      const point = data[0];
+      // Create a duplicate point with a slight time offset to create a horizontal line
+      const duplicatePoint = {
+        ...point,
+        unixTime: (point.unixTime || 0) + 3600, // Add 1 hour offset
+        timestamp: point.timestamp, // Keep the same timestamp for simplicity
+      };
+      return [point, duplicatePoint];
+    }
+    return data;
+  }, [data]);
 
   const theme = useTheme();
 
@@ -65,7 +80,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
     baselineYPoint,
   } = useMemo(() => {
     // 1. Data Processing and Validation
-    const processedData = data
+    const processedData = effectiveData
       .map(item => {
         let timeValue: number;
         if (typeof item.unixTime === 'number' && !isNaN(item.unixTime)) {
@@ -229,7 +244,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
       }
     }
     return { lineSegments: localLineSegments, areaSegments: localAreaSegments, baselinePaint: currentBaselinePaint, baselineYPoint: currentBaselineY };
-  }, [data, width, height, theme]);
+  }, [effectiveData, width, height, theme]);
 
   return (
     <View style={[styles.container, { width, height }]}>

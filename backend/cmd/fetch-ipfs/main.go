@@ -14,6 +14,7 @@ import (
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	"github.com/blocto/solana-go-sdk/rpc"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 )
@@ -50,7 +51,7 @@ func getCommonTokens() []Coin {
 func printOnChainMetadata(data map[string]any, caption string) {
 	max := 80
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Field", "Value"})
+	table.Header([]string{"Key", "Value"})
 
 	for k, v := range data {
 		strVal := fmt.Sprintf("%s", v)
@@ -64,7 +65,6 @@ func printOnChainMetadata(data map[string]any, caption string) {
 		row := []string{k, strVal}
 		table.Append(row)
 	}
-	table.SetCaption(true, caption)
 	table.Render()
 }
 
