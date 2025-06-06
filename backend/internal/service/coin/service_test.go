@@ -17,6 +17,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	dbDataStoreMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Added import for util
 
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	solanaclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
@@ -285,7 +286,7 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 		Symbol:          "JUP_RWS",      // Assuming Jupiter provides this
 		Description:     "Enriched Description from Offchain",
 		IconUrl:         rawLogoURL, // From rawCoin.LogoUrl as initialIconURL
-		ResolvedIconUrl: service.standardizeIpfsUrl(rawLogoURL),
+		ResolvedIconUrl: util.StandardizeIpfsUrl(rawLogoURL), // Changed to util.StandardizeIpfsUrl
 		Price:           1.23,
 		Decimals:        9, // From rawCoin, potentially overridden by Jupiter
 		// ID will be assigned by GORM, so we don't assert its specific value on creation
@@ -397,7 +398,7 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 		Symbol:          "NEWJUP",
 		Description:     "Newly Discovered Description From Offchain",
 		IconUrl:         newCoinIconURL, // This will be from offchain meta as initialIconURL is "" for fetchAndCacheCoin
-		ResolvedIconUrl: service.standardizeIpfsUrl(newCoinIconURL),
+		ResolvedIconUrl: util.StandardizeIpfsUrl(newCoinIconURL), // Changed to util.StandardizeIpfsUrl
 		Price:           3.14,
 		Decimals:        8, // From Jupiter
 		// ID will be assigned by GORM

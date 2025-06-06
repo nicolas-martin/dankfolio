@@ -70,12 +70,8 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 						}
 						return defaultCIDv0Gateways[0] + cid + "/" + pathPart
 					} else {
-						// It's CIDv1 or other, convert to path-based format using preferred gateway
-						if len(defaultCIDv0Gateways) == 0 {
-							slog.Error("No default gateways configured for CIDv1 subdomain URL.", "url", iconUrlInput)
-							return iconUrlInput
-						}
-						return defaultCIDv0Gateways[0] + cid + "/" + pathPart
+						// It's a CIDv1 in subdomain format on dweb.link. It's already standard.
+						return iconUrlInput
 					}
 				}
 			}

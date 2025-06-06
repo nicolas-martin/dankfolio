@@ -38,19 +38,19 @@ func main() {
 		return
 	}
 
-	log.Printf("✅ GetNewCoins succeeded! Got %d coins", len(newCoins.Coins))
+	log.Printf("✅ GetNewCoins succeeded! Got %d coins", len(newCoins))
 
 	// Test conversion to RawCoin for each token
 	validTokens := 0
 	emptyTokens := 0
 
-	for i, coin := range newCoins.Coins {
+	for i, coin := range newCoins {
 		rawCoin := coin.ToRawCoin()
 
 		log.Printf("🪙 Token %d:", i+1)
 		log.Printf("   Name: %s", coin.Name)
 		log.Printf("   Symbol: %s", coin.Symbol)
-		log.Printf("   Address: %s", coin.Address)
+		log.Printf("   Address: %s", coin.Mint) // Changed Address to Mint
 		log.Printf("   RawCoin MintAddress: %s", rawCoin.MintAddress)
 
 		if rawCoin.MintAddress != "" {
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	log.Printf("📊 Summary:")
-	log.Printf("   Total tokens: %d", len(newCoins.Coins))
+	log.Printf("   Total tokens: %d", len(newCoins))
 	log.Printf("   Valid mint addresses: %d", validTokens)
 	log.Printf("   Empty mint addresses: %d", emptyTokens)
 
