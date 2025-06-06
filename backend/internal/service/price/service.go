@@ -99,7 +99,8 @@ func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, tim
 	cacheKey := fmt.Sprintf("%s-%s", address, historyType)
 
 	if cachedData, found := s.cache.Get(cacheKey); found {
-		slog.Info("Cache hit for price history", "key", cacheKey)
+		metrics := s.cache.GetMetrics()
+		slog.Info("Cache hit for price history", "key", cacheKey, "cache_items", metrics.NumItems, "history_type", historyType)
 		return cachedData, nil
 	}
 	slog.Info("Cache miss for price history", "key", cacheKey)

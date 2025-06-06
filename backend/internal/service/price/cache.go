@@ -10,16 +10,23 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 )
 
+// CacheMetrics defines the structure for cache metrics.
+type CacheMetrics struct {
+	NumItems uint64
+}
+
 // PriceHistoryCache defines the interface for a price history cache.
 // This interface remains the same for now.
 type PriceHistoryCache interface {
 	Get(key string) (*birdeye.PriceHistory, bool)
 	Set(key string, data *birdeye.PriceHistory, expiration time.Duration)
+	GetMetrics() CacheMetrics
 }
 
 // GoCacheAdapter implements PriceHistoryCache using eko/gocache.
 type GoCacheAdapter struct {
-	cacheManager cache.CacheInterface[*birdeye.PriceHistory]
+	cacheManager   cache.CacheInterface[*birdeye.PriceHistory]
+	ristrettoCache *ristretto.Cache // Added field
 }
 
 // NewGoCacheAdapter creates a new GoCacheAdapter with a Ristretto store.
@@ -38,7 +45,8 @@ func NewGoCacheAdapter() (*GoCacheAdapter, error) {
 	cacheManager := cache.New[*birdeye.PriceHistory](cacheStore)
 
 	return &GoCacheAdapter{
-		cacheManager: cacheManager,
+		cacheManager:   cacheManager,
+		ristrettoCache: ristrettoCache, // Store the ristretto.Cache instance
 	}, nil
 }
 
@@ -66,6 +74,12 @@ func (a *GoCacheAdapter) Set(key string, data *birdeye.PriceHistory, expiration 
 		// For now, we don't propagate the error to the caller to keep interface simple.
 		// Consider logging framework here, e.g., slog.Error("Failed to set cache item", "key", key, "error", err)
 	}
+}
+
+// GetMetrics returns the metrics for the cache.
+func (a *GoCacheAdapter) GetMetrics() CacheMetrics {
+	numberOfKeys := a.ristrettoCache.Metrics.NumKeys()
+	return CacheMetrics{NumItems: numberOfKeys}
 }
 
 // Note: The cleanup routine is now handled internally by Ristretto/gocache,
