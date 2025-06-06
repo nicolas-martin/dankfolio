@@ -1,7 +1,7 @@
 import { Coin } from '@/types';
 import { PriceData } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
-import usePriceHistoryCacheStore from '@/store/priceHistoryCache'; // Import the cache store
+// import usePriceHistoryCacheStore from '@/store/priceHistoryCache'; // Removed import
 import { TimeframeOption } from './coindetail_types';
 import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb';
 import { useCoinStore } from '@/store/coins';
@@ -71,18 +71,12 @@ export const fetchPriceHistory = async (
 			return;
 		}
 
-		const cacheKey = `${coin.mintAddress}-${selectedTimeframeValue}`;
-		const cachedEntry = usePriceHistoryCacheStore.getState().getCache(cacheKey);
+		// REMOVED: cacheKey and cache check logic
+		// const cacheKey = `${coin.mintAddress}-${selectedTimeframeValue}`;
+		// const cachedEntry = usePriceHistoryCacheStore.getState().getCache(cacheKey);
+		// if (cachedEntry) { ... return; }
 
-		if (cachedEntry) {
-			logger.info(`Using cached price history for ${cacheKey}`, { functionName: 'fetchPriceHistory' });
-			setPriceHistory(cachedEntry.data as PriceData[]); // Assuming data is PriceData[]
-			setLoading(false); // Stop loading as we found data in cache
-			return;
-		}
-
-		// Cache miss, proceed to fetch
-		logger.info(`Cache miss for ${cacheKey}, fetching new price history.`, { functionName: 'fetchPriceHistory' });
+		logger.info(`Fetching new price history for ${coin.mintAddress}-${selectedTimeframeValue}.`, { functionName: 'fetchPriceHistory' });
 		// If not initial load, we might want to set loading true here if not already set by isInitialLoad
 		// However, the original logic sets loading only on isInitialLoad at the top.
 		// For a fetch operation, it's typical to set loading to true.
@@ -92,17 +86,19 @@ export const fetchPriceHistory = async (
 
 
 		const config = TIMEFRAME_CONFIG[selectedTimeframeValue] || TIMEFRAME_CONFIG["DEFAULT"];
-		const { durationMs, roundingMinutes } = config; // roundingMinutes is used for cache expiry calculation
+		const { durationMs, roundingMinutes } = config; // roundingMinutes is NOT used here anymore for cache expiry
 
 		const currentTime = new Date();
-		let dateTo = new Date(currentTime);
-		let dateFrom = new Date(currentTime.getTime() - durationMs);
+		let dateTo = new Date(currentTime); // This is essentially 'now'
+		let dateFrom = new Date(currentTime.getTime() - durationMs); // Start of the window
 
-		const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
-		const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
+		// REMOVE:
+		// const roundedTimeTo = roundDateDown(dateTo, roundingMinutes);
+		// const roundedTimeFrom = roundDateDown(dateFrom, roundingMinutes);
 
-		const timeToISO = roundedTimeTo.toISOString();
-		const timeFromISO = roundedTimeFrom.toISOString();
+		// USE non-rounded times for the request to backend:
+		const timeToISO = dateTo.toISOString();
+		const timeFromISO = dateFrom.toISOString();
 
 
 		// Find the key in typeMap (grpcApi.ts) that corresponds to the enum value
@@ -135,10 +131,10 @@ export const fetchPriceHistory = async (
 
 			setPriceHistory(mapped);
 
-			// Cache the newly fetched data
-			const cacheExpiryMs = Date.now() + roundingMinutes * 60 * 1000;
-			usePriceHistoryCacheStore.getState().setCache(cacheKey, mapped, cacheExpiryMs);
-			logger.info(`Cached new price history for ${cacheKey} with expiry ${new Date(cacheExpiryMs).toISOString()}`, { functionName: 'fetchPriceHistory' });
+			// REMOVED: setCache call
+			// const cacheExpiryMs = Date.now() + roundingMinutes * 60 * 1000;
+			// usePriceHistoryCacheStore.getState().setCache(cacheKey, mapped, cacheExpiryMs);
+			// logger.info(`Cached new price history for ${cacheKey} ...`);
 
 		} else {
 			setPriceHistory([]);
