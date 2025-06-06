@@ -10,13 +10,13 @@ const levelMap: Record<LogLevel, SeverityLevel> = {
 	error: 'error',
 };
 
-function logToConsole(level: LogLevel, ...args: any[]) {
+function logToConsole(level: LogLevel, ...args: unknown[]) {
 	if (__DEV__) {
 		console[level](...args);
 	}
 }
 
-function captureSentry(level: LogLevel, args: any[]) {
+function captureSentry(level: LogLevel, args: unknown[]) {
 	const msg = args.map(a => {
 		if (typeof a === 'string') {
 			return a;
@@ -42,27 +42,27 @@ function captureSentry(level: LogLevel, args: any[]) {
 }
 
 export const logger = {
-	log: (...args: any[]) => {
+	log: (...args: unknown[]) => {
 		logToConsole('log', ...args);
 		if (!__DEV__) captureSentry('log', args);
 	},
 
-	info: (...args: any[]) => {
+	info: (...args: unknown[]) => {
 		logToConsole('info', ...args);
 		if (!__DEV__) captureSentry('info', args);
 	},
 
-	warn: (...args: any[]) => {
+	warn: (...args: unknown[]) => {
 		logToConsole('warn', ...args);
 		if (!__DEV__) captureSentry('warn', args);
 	},
 
-	error: (...args: any[]) => {
+	error: (...args: unknown[]) => {
 		logToConsole('error', ...args);
 		if (!__DEV__) captureSentry('error', args);
 	},
 
-	exception: (error: unknown, context?: Record<string, any>) => {
+	exception: (error: unknown, context?: Record<string, unknown>) => {
 		if (__DEV__) {
 			console.error(error);
 			if (context) console.info('context:', context);
@@ -75,7 +75,7 @@ export const logger = {
 	},
 
 	breadcrumb: (
-		messageOrOptions: { message: string; category?: string; level?: LogLevel; data?: Record<string, any> },
+		messageOrOptions: { message: string; category?: string; level?: LogLevel; data?: Record<string, unknown> },
 	) => {
 		if (!__DEV__) {
 			Sentry.addBreadcrumb({

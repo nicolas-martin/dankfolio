@@ -17,61 +17,61 @@ export interface ProfileCoin {
 }
 
 export interface ProfileScreenStyles {
-	safeArea: any;
-	container: any;
-	centered: any;
-	scrollContent: any;
-	contentPadding: any;
-	headerSection: any;
-	profileHeader: any;
-	profileIcon: any;
-	profileTitle: any;
-	walletAddressContainer: any;
-	walletAddress: any;
-	copyButton: any;
-	portfolioCard: any;
-	portfolioHeader: any;
-	portfolioTitle: any;
-	portfolioValue: any;
-	portfolioSubtext: any;
-	sendButton: any;
-	sendButtonContent: any;
-	sendButtonDisabled: any;
-	tokensSection: any;
-	tokensHeader: any;
-	tokensIcon: any;
-	tokensTitle: any;
-	emptyStateContainer: any;
-	emptyStateIcon: any;
-	emptyStateTitle: any;
-	emptyStateText: any;
-	noWalletContainer: any;
-	noWalletCard: any;
-	noWalletIcon: any;
-	noWalletTitle: any;
-	noWalletText: any;
-	debugButton: any;
+	safeArea: unknown;
+	container: unknown;
+	centered: unknown;
+	scrollContent: unknown;
+	contentPadding: unknown;
+	headerSection: unknown;
+	profileHeader: unknown;
+	profileIcon: unknown;
+	profileTitle: unknown;
+	walletAddressContainer: unknown;
+	walletAddress: unknown;
+	copyButton: unknown;
+	portfolioCard: unknown;
+	portfolioHeader: unknown;
+	portfolioTitle: unknown;
+	portfolioValue: unknown;
+	portfolioSubtext: unknown;
+	sendButton: unknown;
+	sendButtonContent: unknown;
+	sendButtonDisabled: unknown;
+	tokensSection: unknown;
+	tokensHeader: unknown;
+	tokensIcon: unknown;
+	tokensTitle: unknown;
+	emptyStateContainer: unknown;
+	emptyStateIcon: unknown;
+	emptyStateTitle: unknown;
+	emptyStateText: unknown;
+	noWalletContainer: unknown;
+	noWalletCard: unknown;
+	noWalletIcon: unknown;
+	noWalletTitle: unknown;
+	noWalletText: unknown;
+	debugButton: unknown;
 	// New styles for transactions
-	transactionsSection: any;
-	transactionsHeader: any;
-	transactionsTitle: any;
-	transactionItem: any;
-	transactionDetails: any;
-	transactionTexts: any;
-	transactionDescription: any;
-	transactionDate: any;
-	transactionAmountStatus: any;
-	statusDot: any;
-	transactionIconContainer: any;
-	loadingIndicator: any;
+	transactionsSection: unknown;
+	transactionsHeader: unknown;
+	transactionsTitle: unknown;
+	transactionItem: unknown;
+	transactionDetails: unknown;
+	transactionTexts: unknown;
+	transactionDescription: unknown;
+	transactionDate: unknown;
+	transactionAmountStatus: unknown;
+	statusDot: unknown;
+	transactionIconContainer: unknown;
+	loadingIndicator: unknown;
 	// Enhanced styles
-	transactionStatusTextPending: any;
-	transactionStatusTextCompleted: any;
-	transactionStatusTextFailed: any;
-	transactionInfoContainer: any; // Renaming transactionTexts for clarity
-	transactionTitleText: any; // For "Swap X to Y"
-	transactionSubtitleText: any; // For date and status line
-	viewAllButton: any;
-	transactionsListContainer: any; // Container for the List.Item elements
-	transactionEmptyStateContainer: any; // Specific for transactions empty state
+	transactionStatusTextPending: unknown;
+	transactionStatusTextCompleted: unknown;
+	transactionStatusTextFailed: unknown;
+	transactionInfoContainer: unknown; // Renaming transactionTexts for clarity
+	transactionTitleText: unknown; // For "Swap X to Y"
+	transactionSubtitleText: unknown; // For date and status line
+	viewAllButton: unknown;
+	transactionsListContainer: unknown; // Container for the List.Item elements
+	transactionEmptyStateContainer: unknown; // Specific for transactions empty state
 }

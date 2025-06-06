@@ -42,7 +42,7 @@ jest.mock('@components/Common/Toast', () => ({
 }));
 
 // Mock Child Components
-const createMockComponent = (name: string) => (props: any) => {
+const createMockComponent = (name: string) => (props: unknown) => {
 	if (name === 'TradeDetails') {
 		return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 	}
@@ -82,7 +82,7 @@ jest.mock('react-native-paper', () => {
 	const Pressable = require('react-native').Pressable;
 	const Text = require('react-native').Text;
 
-	const MockButton = (props: any) => (
+	const MockButton = (props: unknown) => (
 		<Pressable
 			onPress={props.onPress}
 			disabled={props.disabled}
@@ -104,7 +104,7 @@ jest.mock('react-native-paper', () => {
 		Button: MockButton,
 		Text: actualPaper.Text,
 		useTheme: () => mockTheme,
-		Modal: ({ children }: any) => <>{children}</>, // Mock Modal to avoid timer leaks
+		Modal: ({ children }: unknown) => <>{children}</>, // Mock Modal to avoid timer leaks
 		// Add other components used by TradeScreen if needed
 	};
 });
@@ -174,7 +174,7 @@ describe('TradeScreen', () => {
 			fetchRecentTransactions: jest.fn(),
 			// Add other state/functions if needed by the component, though not directly for this test
 		};
-		mocked(useTransactionsStore).mockReturnValue(mockTransactionsStore as any);
+		mocked(useTransactionsStore).mockReturnValue(mockTransactionsStore as unknown);
 
 
 		Object.values(mockCoinStoreReturn).forEach(mockFn => jest.isMockFunction(mockFn) && mockFn.mockClear());
@@ -530,7 +530,7 @@ describe('TradeScreen', () => {
 	});
 
 	describe('handleCloseStatusModal', () => {
-		const setupAndOpenStatusModal = async (getByTestId: any, fromAmount: string = '1') => {
+		const setupAndOpenStatusModal = async (getByTestId: unknown, fromAmount: string = '1') => {
 			// Set amount and trigger quote
 			const fromInput = getByTestId('token-selector-input-from');
 			fireEvent.changeText(fromInput, fromAmount);

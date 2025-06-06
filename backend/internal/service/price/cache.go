@@ -52,7 +52,7 @@ func (a *GoCacheAdapter) Get(key string) (*birdeye.PriceHistory, bool) {
 	cachedValue, err := a.cacheManager.Get(context.Background(), key)
 
 	duration := time.Since(startTime)
-	numItems := a.ristrettoCache.Metrics.NumKeys()
+	metrics := a.ristrettoCache.Metrics.String()
 
 	// Remove the old logArgs slice approach
 
@@ -61,7 +61,7 @@ func (a *GoCacheAdapter) Get(key string) (*birdeye.PriceHistory, bool) {
 		slog.Info("Cache access",
 			slog.String("key", key),
 			slog.Duration("duration", duration),
-			slog.Uint64("cache_items", numItems),
+			slog.Any("metrics", metrics),
 			slog.String("outcome", "miss"),
 			slog.String("error", err.Error()), // Error specific to this path
 		)
@@ -71,7 +71,7 @@ func (a *GoCacheAdapter) Get(key string) (*birdeye.PriceHistory, bool) {
 		slog.Info("Cache access",
 			slog.String("key", key),
 			slog.Duration("duration", duration),
-			slog.Uint64("cache_items", numItems),
+			slog.Any("metrics", metrics),
 			slog.String("outcome", "miss (nil value)"), // More specific outcome
 		)
 		return nil, false
@@ -80,7 +80,7 @@ func (a *GoCacheAdapter) Get(key string) (*birdeye.PriceHistory, bool) {
 		slog.Info("Cache access",
 			slog.String("key", key),
 			slog.Duration("duration", duration),
-			slog.Uint64("cache_items", numItems),
+			slog.Any("metrics", metrics),
 			slog.String("outcome", "hit"),
 		)
 		return cachedValue, true

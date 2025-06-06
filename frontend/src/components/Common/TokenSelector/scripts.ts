@@ -46,7 +46,7 @@ export const calculateUsdValue = (token?: Coin, amount?: string): string => {
  * @param portfolioTokens The list of tokens in the portfolio.
  * @returns The matching portfolio token or undefined if not found.
  */
-export const findPortfolioToken = (selectedToken?: Coin, portfolioTokens: any[] = []): any => {
+export const findPortfolioToken = (selectedToken?: Coin, portfolioTokens: unknown[] = []): unknown => {
 	if (!selectedToken) {
 		return undefined;
 	}

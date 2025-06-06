@@ -8,6 +8,7 @@ import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import type { ToastProps } from '@/components/Common/Toast/toast_types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { REFRESH_INTERVALS } from '@/utils/constants';
+import { MutableRefObject } from 'react';
 
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 1000;
@@ -75,7 +76,7 @@ export const fetchTradeQuote = async (
 			totalFee: response.fee,
 			route: response.routePlan.join(' → ')
 		});
-	} catch (error: any) {
+	} catch (error: unknown) {
 		logger.exception(error, { functionName: 'fetchTradeQuote', params: { amount, fromCoinSc: fromCoin.symbol, toCoinSc: toCoin.symbol } });
 		// Only reset trade details, but keep the amount values
 		setTradeDetails({
@@ -109,7 +110,7 @@ export const handleSwapCoins = (
 };
 
 export const stopPolling = (
-	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>,
+	pollingIntervalRef: MutableRefObject<ReturnType<typeof setTimeout> | null>,
 	setIsLoadingTrade: (loading: boolean) => void
 ) => {
 	if (pollingIntervalRef.current) {
@@ -160,10 +161,12 @@ export const pollTradeStatus = async (
 			logger.info(`Current status: ${statusResult.status}, continuing poll...`, { txHash, status: statusResult.status });
 			setPollingStatus('polling');
 		}
-	} catch (error: any) {
+	} catch (error) {
 		logger.exception(error, { functionName: 'pollTradeStatus', params: { txHash } });
 		setPollingStatus('failed');
-		setPollingError(error?.message || 'Failed to fetch transaction status');
+		// Safely extract the error message with proper type handling
+		const errorMessage = error instanceof Error ? error.message : 'Failed to fetch transaction status';
+		setPollingError(errorMessage);
 		stopPollingFn();
 	}
 };
@@ -172,7 +175,7 @@ export const startPolling = (
 	txHash: string,
 	pollFn: () => Promise<void>, // Function that executes one poll
 	stopPollingFn: () => void, // Function to stop polling
-	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>
+	pollingIntervalRef: MutableRefObject<ReturnType<typeof setTimeout> | null>
 ) => {
 	// Clear any existing interval
 	if (pollingIntervalRef.current) {
@@ -277,14 +280,16 @@ export const executeTrade = async (
 		} else {
 			throw new Error('No transaction hash received');
 		}
-	} catch (error: any) {
+	} catch (error) {
 		logger.exception(error, { functionName: 'executeTrade', params: { fromCoinSc: fromCoin.symbol, toCoinSc: toCoin.symbol, fromAmount, slippage } });
 		setPollingStatus('failed');
-		setPollingError(error?.message || 'Failed to execute trade');
+		// Safely extract the error message with proper type handling
+		const errorMessage = error instanceof Error ? error.message : 'Failed to execute trade';
+		setPollingError(errorMessage);
 		setIsLoadingTrade(false);
 		showToast({
 			type: 'error',
-			message: error?.message || 'Failed to execute trade'
+			message: errorMessage
 		});
 	}
 };

@@ -3,11 +3,11 @@ import * as Updates from 'expo-updates';
 import { Alert } from 'react-native';
 import { logger } from '@/utils/logger';
 
-function isNonDefaultRuntimeVersion(version: any) {
+function isNonDefaultRuntimeVersion(version: unknown) {
 	return version && version !== '1' && version !== 1;
 }
 
-function isNonEmptyManifest(manifest: any) {
+function isNonEmptyManifest(manifest: unknown) {
 	return manifest && typeof manifest === 'object' && Object.keys(manifest).length > 0;
 }
 

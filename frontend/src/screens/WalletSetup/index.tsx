@@ -60,7 +60,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 			logger.log('Created keypair from debug wallet');
 			await setWallet(keypair.publicKey.toBase58());
 			props.onWalletSetupComplete(keypair);
-		} catch (error: any) {
+		} catch (error: unknown) {
 			logger.error('Load Debug Wallet Error', { errorMessage: error.message });
 			showToast({ message: `Error loading debug wallet: ${error.message}`, type: 'error' });
 		}

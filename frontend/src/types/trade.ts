@@ -1,5 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from './index';
+import React from 'react';
 
 export type TradeScreenProps = NativeStackScreenProps<RootStackParamList, 'Trade'>;
 
@@ -18,7 +19,7 @@ export interface AmountInputProps {
 	value: string;
 	onChangeText: (text: string) => void;
 	onFocus?: () => void;
-	inputRef?: React.RefObject<any>;
+	inputRef?: React.RefObject<unknown>;
 }
 
 export interface NotificationState {

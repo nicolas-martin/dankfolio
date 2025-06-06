@@ -191,7 +191,7 @@ export default function CoinChart({
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const isMounted = useRef(true);
-	const animations = useRef<SharedValue<any>[]>([]);
+	const animations = useRef<SharedValue<unknown>[]>([]);
 	const font = useSkiaFont(inter, 12);
 	const pulseRadius = useSharedValue(CHART_CONSTANTS.dotSize.pulse.min);
 

@@ -130,7 +130,7 @@ export const handleTradeNavigation = async (
 	toCoin: Coin | null,
 	fromCoin: Coin | null,
 	showToast: (params: ToastParams) => void,
-	navigate: (screen: string, params: any) => void
+	navigate: (screen: string, params: unknown) => void
 ) => {
 	if (!toCoin) {
 		showToast({
@@ -143,7 +143,7 @@ export const handleTradeNavigation = async (
 	if (!selectedFromCoin) {
 		try {
 			selectedFromCoin = await useCoinStore.getState().getCoinByID(SOLANA_ADDRESS);
-		} catch (error: any) {
+		} catch (error: unknown) {
 			logger.warn('Failed to get SOL coin during trade navigation.', { error: error.message, functionName: 'handleTradeNavigation' });
 		}
 	}

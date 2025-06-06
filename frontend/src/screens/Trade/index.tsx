@@ -138,7 +138,7 @@ const Trade: React.FC = () => {
 			} else {
 				logger.warn('[Trade] getCoinPrices returned no prices.');
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			logger.error('[Trade] Failed to refresh coin prices', { errorMessage: error?.message, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		}
 	};
@@ -284,7 +284,7 @@ const Trade: React.FC = () => {
 			logger.log('[Trade] Quote fetch timeout triggered (fromAmountChange)', { amount });
 			try {
 				await fetchTradeQuote(amount, fromCoin, toCoin, setIsQuoteLoading, setToAmount, setTradeDetails);
-			} catch (error: any) {
+			} catch (error: unknown) {
 				logger.error('[Trade] Error fetching trade quote (fromAmountChange)', { errorMessage: error?.message, amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 				showToast({ type: 'error', message: error?.message || 'Failed to fetch trade quote' });
 			}
@@ -315,7 +315,7 @@ const Trade: React.FC = () => {
 			logger.log('[Trade] Quote fetch timeout triggered (toAmountChange)', { amount });
 			try {
 				await fetchTradeQuote(amount, toCoin, fromCoin, setIsQuoteLoading, setFromAmount, setTradeDetails);
-			} catch (error: any) {
+			} catch (error: unknown) {
 				logger.error('[Trade] Error fetching trade quote (toAmountChange)', { errorMessage: error?.message, amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 				showToast({ type: 'error', message: error?.message || 'Failed to fetch trade quote' });
 			}

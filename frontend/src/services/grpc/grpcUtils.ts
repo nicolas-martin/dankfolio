@@ -5,9 +5,7 @@ import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
 import { env } from '@utils/env';
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 
-
 const IS_DEBUG_MODE = env.debugMode;
-
 
 // Helper to map gRPC model.Coin to FrontendCoin
 export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
@@ -32,9 +30,10 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 }
 
 export const getRequestHeaders = () => {
-	const headers = new Headers();
+	// Use Record<string, string> instead of Headers for better compatibility
+	const headers: Record<string, string> = {};
 	if (IS_DEBUG_MODE) {
-		headers.set("x-debug-mode", "true");
+		headers["x-debug-mode"] = "true";
 	}
 	// Note: Authentication headers are now automatically added via Connect interceptors
 	// See apiClient.ts for the authInterceptor implementation
@@ -42,7 +41,7 @@ export const getRequestHeaders = () => {
 };
 
 // Helper function to safely serialize objects with BigInt values
-const safeStringify = (obj: any, indent = 2): string => {
+const safeStringify = (obj: unknown, indent = 2): string => {
 	try {
 		return JSON.stringify(obj, (key, value) => {
 			// Handle BigInt values
@@ -66,6 +65,7 @@ const safeStringify = (obj: any, indent = 2): string => {
 	}
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const logRequest = (serviceName: string, methodName: string, params: any): void => {
 	if (methodName === 'getProxiedImage') {
 		// don't log proxied image request
@@ -75,6 +75,7 @@ export const logRequest = (serviceName: string, methodName: string, params: any)
 	log.log(`📤 gRPC ${serviceName}.${methodName} Request Details:`, safeStringify(params));
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const logResponse = (serviceName: string, methodName: string, response: any): void => {
 	log.info(`📥 gRPC Response: ${serviceName}.${methodName}`);
 	// Special handling for getProxiedImage response to prevent logging base64 data
@@ -99,7 +100,7 @@ export const logResponse = (serviceName: string, methodName: string, response: a
 	log.log(`📥 gRPC ${serviceName}.${methodName} Response Details:`, safeStringify(response));
 };
 
-export const logError = (serviceName: string, methodName: string, error: any): void => {
+export const logError = (serviceName: string, methodName: string, error: Error): void => {
 	log.error(`❌ gRPC ${serviceName}.${methodName} Error:`, safeStringify({
 		message: error.message || 'Unknown error',
 		code: error.code,
@@ -107,7 +108,7 @@ export const logError = (serviceName: string, methodName: string, error: any): v
 	}));
 };
 
-export const handleGrpcError = (error: unknown, serviceName: string, methodName: string): never => {
+export const handleGrpcError = (error: Error, serviceName: string, methodName: string): never => {
 	logError(serviceName, methodName, error);
 	if (error instanceof ConnectError) {
 		// Add specific handling for authentication errors (code 16 is UNAUTHENTICATED in gRPC)

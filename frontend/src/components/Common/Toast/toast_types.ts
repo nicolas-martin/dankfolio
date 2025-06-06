@@ -14,7 +14,7 @@ export interface ToastProps {
 	actions?: ToastAction[];
 	icon?: string;
 	txHash?: string;
-	data?: any; // Additional data for error logging
+	data?: unknown; // Additional data for error logging
 }
 
 export interface ToastContextProps {

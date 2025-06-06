@@ -1,12 +1,12 @@
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { RefreshControl } from 'react-native'; // Import components from react-native
+import { render, waitFor, act } from '@testing-library/react-native';
+// Import components from react-native
 import HomeScreen from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import { NavigationContainer } from '@react-navigation/native';
 import { mocked } from 'jest-mock';
-import { logger } from '@/utils/logger'; // Import logger
+// Import logger
 
 // Mocks
 jest.mock('@services/solana', () => ({

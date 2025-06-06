@@ -24,11 +24,11 @@ jest.mock('@react-native-clipboard/clipboard', () => ({
 
 // Mock CoinCard component
 jest.mock('@components/Home/CoinCard', () => {
-	const CoinCard = ({ coin, onPress }: any) => {
+	const CoinCard = ({ coin, onPress }: unknown) => {
 		const React = require('react');
 		const View = require('react-native').View;
 		const Text = require('react-native').Text;
-		const MockImage = (props: any) => <View {...props} />;
+		const MockImage = (props: unknown) => <View {...props} />;
 
 		return (
 			<View testID={`coin-card-${coin.mintAddress}`} onPress={onPress}>
@@ -47,37 +47,37 @@ jest.mock('@components/Home/CoinCard', () => {
 
 // Mock Icons
 jest.mock('@components/Common/Icons', () => ({
-	ProfileIcon: (props: any) => {
+	ProfileIcon: (props: unknown) => {
 		const React = require('react');
 		const View = require('react-native').View;
 		return <View testID="mock-profile-icon" {...props} />;
 	},
-	WalletIcon: (props: any) => {
+	WalletIcon: (props: unknown) => {
 		const React = require('react');
 		const View = require('react-native').View;
 		return <View testID="mock-wallet-icon" {...props} />;
 	},
-	CoinsIcon: (props: any) => {
+	CoinsIcon: (props: unknown) => {
 		const React = require('react');
 		const View = require('react-native').View;
 		return <View testID="mock-coins-icon" {...props} />;
 	},
-	SendIcon: (props: any) => {
+	SendIcon: (props: unknown) => {
 		const React = require('react');
 		const View = require('react-native').View;
 		return <View testID="mock-send-icon" {...props} />;
 	},
-	HistoryIcon: (props: any) => { // Added
+	HistoryIcon: (props: unknown) => { // Added
 		const React = require('react');
 		const View = require('react-native').View;
 		return <View testID="mock-history-icon" {...props} />;
 	},
-	SwapIcon: (props: any) => { // Added
+	SwapIcon: (props: unknown) => { // Added
 		const React = require('react');
 		const View = require('react-native').View;
 		return <View testID="mock-swap-icon" {...props} />;
 	},
-	ArrowUpIcon: (props: any) => { // Added for transfers
+	ArrowUpIcon: (props: unknown) => { // Added for transfers
 		const React = require('react');
 		const View = require('react-native').View;
 		return <View testID="mock-arrow-up-icon" {...props} />;
@@ -92,7 +92,7 @@ jest.mock('react-native-paper', () => {
 		...actualPaper,
 		List: {
 			...actualPaper.List,
-			Item: (props: any) => {
+			Item: (props: unknown) => {
 				// Simplified List.Item mock to render title and description for easier querying
 				const View = require('react-native').View;
 				const Text = require('react-native').Text;
@@ -110,11 +110,11 @@ jest.mock('react-native-paper', () => {
 				);
 			}
 		},
-		ActivityIndicator: (props: any) => {
+		ActivityIndicator: (props: unknown) => {
 			const View = require('react-native').View;
 			return <View testID="activity-indicator" {...props} />;
 		},
-		Icon: (props: any) => { // Mock Icon if used directly and not via specific named icons
+		Icon: (props: unknown) => { // Mock Icon if used directly and not via specific named icons
 			const View = require('react-native').View;
 			const Text = require('react-native').Text; // To display source prop for verification
 			return <View testID={`mock-icon-${props.source}`} {...props}><Text>{props.source}</Text></View>;
