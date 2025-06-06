@@ -62,6 +62,7 @@ func main() {
 	// 1. Display formatted data in a table
 	fmt.Println("\n--- Metadata Summary (Table) ---")
 
+	// Main metadata table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Field", "Value"})
 	table.SetBorder(false)
@@ -78,62 +79,123 @@ func main() {
 	table.Append([]string{"Mint", metadata.Mint.ToBase58()})
 	table.Append([]string{"Update Authority", metadata.UpdateAuthority.ToBase58()})
 
-	// Add creators if they exist
-	if metadata.Data.Creators != nil && len(*metadata.Data.Creators) > 0 {
-		creatorInfo := "Creators:\n"
-		for i, creator := range *metadata.Data.Creators {
-			creatorInfo += fmt.Sprintf("  %d. Address: %s\n     Verified: %t\n     Share: %d%%\n",
-				i+1,
-				creator.Address.ToBase58(),
-				creator.Verified,
-				creator.Share)
-		}
-		table.Append([]string{"Creators", creatorInfo})
-	}
-
-	// Add collection if it exists
-	if metadata.Collection != nil {
-		collectionInfo := fmt.Sprintf("Key: %s\nVerified: %t",
-			metadata.Collection.Key.ToBase58(),
-			metadata.Collection.Verified)
-		table.Append([]string{"Collection", collectionInfo})
-	}
-
-	// Add uses if they exist
-	if metadata.Uses != nil {
-		usesInfo := fmt.Sprintf("Method: %v\nRemaining: %d\nTotal: %d",
-			metadata.Uses.UseMethod,
-			metadata.Uses.Remaining,
-			metadata.Uses.Total)
-		table.Append([]string{"Uses", usesInfo})
-	}
+	// Render the main table first
+	table.Render()
 
 	// Add token standard if it exists
 	if metadata.TokenStandard != nil {
-		table.Append([]string{"Token Standard", fmt.Sprintf("%v", *metadata.TokenStandard)})
+		tokenStandardTable := tablewriter.NewWriter(os.Stdout)
+		tokenStandardTable.SetHeader([]string{"Token Standard"})
+		tokenStandardTable.SetBorder(false)
+		tokenStandardTable.SetColumnSeparator(" │ ")
+		tokenStandardTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		tokenStandardTable.SetAlignment(tablewriter.ALIGN_LEFT)
+
+		tokenStandardTable.Append([]string{fmt.Sprintf("%v", *metadata.TokenStandard)})
+
+		fmt.Println("\n--- Token Standard ---")
+		tokenStandardTable.Render()
 	}
 
 	// Add collection details if they exist
 	if metadata.CollectionDetails != nil {
-		detailsInfo := fmt.Sprintf("Type: V%d\nSize: %d",
-			metadata.CollectionDetails.Enum,
-			metadata.CollectionDetails.V1.Size)
-		table.Append([]string{"Collection Details", detailsInfo})
+		collectionDetailsTable := tablewriter.NewWriter(os.Stdout)
+		collectionDetailsTable.SetHeader([]string{"Collection Type", "Size"})
+		collectionDetailsTable.SetBorder(false)
+		collectionDetailsTable.SetColumnSeparator(" │ ")
+		collectionDetailsTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		collectionDetailsTable.SetAlignment(tablewriter.ALIGN_LEFT)
+
+		collectionDetailsTable.Append([]string{
+			fmt.Sprintf("V%d", metadata.CollectionDetails.Enum),
+			fmt.Sprintf("%d", metadata.CollectionDetails.V1.Size),
+		})
+
+		fmt.Println("\n--- Collection Details ---")
+		collectionDetailsTable.Render()
 	}
 
 	// Add programmable config if it exists
 	if metadata.ProgrammableConfig != nil {
+		configTable := tablewriter.NewWriter(os.Stdout)
+		configTable.SetHeader([]string{"Config Type", "RuleSet"})
+		configTable.SetBorder(false)
+		configTable.SetColumnSeparator(" │ ")
+		configTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		configTable.SetAlignment(tablewriter.ALIGN_LEFT)
+
 		ruleSetValue := "None"
 		if metadata.ProgrammableConfig.V1.RuleSet != nil {
 			ruleSetValue = metadata.ProgrammableConfig.V1.RuleSet.ToBase58()
 		}
-		configInfo := fmt.Sprintf("Type: V%d\nRuleSet: %s",
-			metadata.ProgrammableConfig.Enum,
-			ruleSetValue)
-		table.Append([]string{"Programmable Config", configInfo})
+
+		configTable.Append([]string{
+			fmt.Sprintf("V%d", metadata.ProgrammableConfig.Enum),
+			ruleSetValue,
+		})
+
+		fmt.Println("\n--- Programmable Config ---")
+		configTable.Render()
 	}
 
-	table.Render()
+	// Add creators if they exist
+	if metadata.Data.Creators != nil && len(*metadata.Data.Creators) > 0 {
+		creatorTable := tablewriter.NewWriter(os.Stdout)
+		creatorTable.SetHeader([]string{"Creator", "Address", "Verified", "Share"})
+		creatorTable.SetBorder(false)
+		creatorTable.SetColumnSeparator(" │ ")
+		creatorTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		creatorTable.SetAlignment(tablewriter.ALIGN_LEFT)
+
+		for i, creator := range *metadata.Data.Creators {
+			creatorTable.Append([]string{
+				fmt.Sprintf("#%d", i+1),
+				creator.Address.ToBase58(),
+				fmt.Sprintf("%t", creator.Verified),
+				fmt.Sprintf("%d%%", creator.Share),
+			})
+		}
+
+		fmt.Println("\n--- Creators ---")
+		creatorTable.Render()
+	}
+
+	// Add collection if it exists
+	if metadata.Collection != nil {
+		collectionTable := tablewriter.NewWriter(os.Stdout)
+		collectionTable.SetHeader([]string{"Collection Key", "Verified"})
+		collectionTable.SetBorder(false)
+		collectionTable.SetColumnSeparator(" │ ")
+		collectionTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		collectionTable.SetAlignment(tablewriter.ALIGN_LEFT)
+
+		collectionTable.Append([]string{
+			metadata.Collection.Key.ToBase58(),
+			fmt.Sprintf("%t", metadata.Collection.Verified),
+		})
+
+		fmt.Println("\n--- Collection ---")
+		collectionTable.Render()
+	}
+
+	// Add uses if it exists
+	if metadata.Uses != nil {
+		usesTable := tablewriter.NewWriter(os.Stdout)
+		usesTable.SetHeader([]string{"Use Method", "Remaining", "Total"})
+		usesTable.SetBorder(false)
+		usesTable.SetColumnSeparator(" │ ")
+		usesTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		usesTable.SetAlignment(tablewriter.ALIGN_LEFT)
+
+		usesTable.Append([]string{
+			fmt.Sprintf("%v", metadata.Uses.UseMethod),
+			fmt.Sprintf("%d", metadata.Uses.Remaining),
+			fmt.Sprintf("%d", metadata.Uses.Total),
+		})
+
+		fmt.Println("\n--- Uses ---")
+		usesTable.Render()
+	}
 
 	// 2. Display detailed information using spew
 	fmt.Println("\n--- Detailed Metadata Dump ---")
