@@ -5,11 +5,12 @@ import (
 	"strings"
 )
 
-var defaultCIDv0Gateways = []string{
-	"https://moccasin-active-louse-974.mypinata.cloud/ipfs/", // Dedicated Pinata gateway (paid)
-	"https://gateway.pinata.cloud/ipfs/",                     // Pinata public gateway as backup
-	"https://dweb.link/ipfs/",                                // Protocol Labs' newer gateway
-	"https://ipfs.io/ipfs/",                                  // Keep as fallback, but not first choice
+
+var DefaultCIDv0Gateways = []string{
+	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
+	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
+	"https://ipfs.io/ipfs/",              // Keep as fallback, but not first choice
+
 }
 
 // TryNextGatewayOnFailure determines if we should try the next gateway when one fails
@@ -49,18 +50,18 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 						suffix := pathPart[underscoreIdx:]
 
 						// Use preferred gateway for pump.fun URLs
-						if len(defaultCIDv0Gateways) == 0 {
+						if len(DefaultCIDv0Gateways) == 0 {
 							slog.Error("No default gateways configured for pump.fun URL.", "url", iconUrlInput)
 							return iconUrlInput
 						}
-						return defaultCIDv0Gateways[0] + cid + suffix
+						return DefaultCIDv0Gateways[0] + cid + suffix
 					} else {
 						// No underscore found, treat the whole path as CID
-						if len(defaultCIDv0Gateways) == 0 {
+						if len(DefaultCIDv0Gateways) == 0 {
 							slog.Error("No default gateways configured for pump.fun URL.", "url", iconUrlInput)
 							return iconUrlInput
 						}
-						return defaultCIDv0Gateways[0] + pathPart
+						return DefaultCIDv0Gateways[0] + pathPart
 					}
 				} else {
 					// Regular CID.ipfs.dweb.link format
@@ -68,11 +69,11 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 
 					// Check if it's a CIDv0 (starts with Qm and is 46 chars)
 					if strings.HasPrefix(cid, "Qm") && len(cid) == 46 {
-						if len(defaultCIDv0Gateways) == 0 {
+						if len(DefaultCIDv0Gateways) == 0 {
 							slog.Error("No default CIDv0 gateways configured for subdomain URL.", "url", iconUrlInput)
 							return iconUrlInput
 						}
-						return defaultCIDv0Gateways[0] + cid + "/" + pathPart
+						return DefaultCIDv0Gateways[0] + cid + "/" + pathPart
 					} else {
 						// It's a CIDv1 in subdomain format on dweb.link. It's already standard.
 						return iconUrlInput
@@ -105,11 +106,11 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 
 		if strings.HasPrefix(firstPathComponent, "Qm") && len(firstPathComponent) == 46 {
 			// It's CIDv0. Use the first default gateway.
-			if len(defaultCIDv0Gateways) == 0 {
+			if len(DefaultCIDv0Gateways) == 0 {
 				slog.Error("No default CIDv0 gateways configured.", "url", iconUrlInput)
 				return iconUrlInput // return original if no gateways are available
 			}
-			return defaultCIDv0Gateways[0] + ipfsResourceIdentifier
+			return DefaultCIDv0Gateways[0] + ipfsResourceIdentifier
 		} else {
 			// For now, use defaultCIDv0Gateways for CIDv1 as well
 			// This is because we want to use our paid Pinata gateway for all CIDs
@@ -146,11 +147,11 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 
 		if strings.HasPrefix(firstPathComponent, "Qm") && len(firstPathComponent) == 46 {
 			// It's CIDv0. Use the first default gateway.
-			if len(defaultCIDv0Gateways) == 0 {
+			if len(DefaultCIDv0Gateways) == 0 {
 				slog.Error("No default CIDv0 gateways configured for raw CIDv0 URI.", "url", iconUrlInput)
 				return iconUrlInput // return original if no gateways are available
 			}
-			return defaultCIDv0Gateways[0] + trimmedCidAndPath
+			return DefaultCIDv0Gateways[0] + trimmedCidAndPath
 		} else {
 			// For now, use defaultCIDv0Gateways for CIDv1 as well
 			// This is because we want to use our paid Pinata gateway for all CIDs

@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
 // Client handles interactions with external metadata sources
@@ -115,10 +117,9 @@ func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
 	slog.Debug("📦 IPFS: Extracted CID", "cid", cid)
 	slog.Debug("🔄 IPFS: Starting gateway fallback sequence...")
 
-	gateways := []string{
-		"https://ipfs.io/ipfs/",
-		"https://dweb.link/ipfs/",
-	}
+
+	gateways := util.DefaultCIDv0Gateways
+
 
 	var lastErr error
 	for i, gw := range gateways {
@@ -307,12 +308,9 @@ func (c *Client) fetchArweaveRaw(ctx context.Context, uri string) ([]byte, strin
 
 func getIPFSGateways() []string {
 	// Can be made configurable later
-	return []string{
-		"https://gateway.pinata.cloud/ipfs/", // Prioritize Pinata based on previous success
-		"https://ipfs.io/ipfs/",
-		"https://dweb.link/ipfs/",
-		"https://storry.tv/ipfs/",
-	}
+
+	return util.DefaultCIDv0Gateways
+
 }
 
 func getArweaveGateways() []string {
