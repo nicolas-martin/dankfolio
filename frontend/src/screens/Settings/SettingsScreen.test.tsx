@@ -5,8 +5,6 @@ import { ThemeProvider } from 'react-native-paper';
 import { themes } from '@/utils/theme'; // Corrected import
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
-import Constants from 'expo-constants';
-import * as Clipboard from 'expo-clipboard';
 import { ToastProvider, useToast } from '@components/Common/Toast';
 
 // Mock dependencies

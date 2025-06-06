@@ -1,7 +1,7 @@
 import { grpcApi } from './grpcApi';
 import { tradeClient } from './grpc/apiClient';
 import * as grpcUtils from './grpc/grpcUtils';
-import { Trade, ListTradesResponse, TradeSchema, ListTradesResponseSchema } from '../gen/dankfolio/v1/trade_pb';
+import { TradeSchema, ListTradesResponseSchema } from '../gen/dankfolio/v1/trade_pb';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { create } from '@bufbuild/protobuf';
 

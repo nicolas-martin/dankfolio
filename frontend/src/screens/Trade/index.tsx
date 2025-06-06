@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text, useTheme, Button, Icon, ProgressBar } from 'react-native-paper';
-import { useRoute, useNavigation, RouteProp, NavigationProp, useFocusEffect } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './trade_styles';
 import { usePortfolioStore } from '@store/portfolio';

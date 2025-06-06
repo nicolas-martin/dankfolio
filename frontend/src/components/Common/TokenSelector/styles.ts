@@ -4,17 +4,17 @@ import { MD3Theme } from 'react-native-paper';
 export const createStyles = (theme: MD3Theme) =>
 	StyleSheet.create({
 		cardContainer: {
-			width: '100%',
-			borderRadius: 12,
 			backgroundColor: theme.colors.surfaceVariant,
+			borderRadius: 12,
 			borderWidth: 0,
+			width: '100%',
 		},
 		cardContent: {
-			flexDirection: 'row',
 			alignItems: 'flex-start',
-			width: '100%',
-			padding: 8,
+			flexDirection: 'row',
 			margin: 0,
+			padding: 8,
+			width: '100%',
 		},
 		selectorButtonContainer: {
 			flex: 1, // Takes less space than the input container
@@ -24,8 +24,8 @@ export const createStyles = (theme: MD3Theme) =>
 			marginRight: 12, // Space between button and input area
 		},
 		tokenInfo: {
-			flexDirection: 'row',
 			alignItems: 'center',
+			flexDirection: 'row',
 		},
 		selectedTokenDetails: {
 			flex: 1,
@@ -37,25 +37,25 @@ export const createStyles = (theme: MD3Theme) =>
 			marginTop: 2,
 		},
 		tokenIcon: {
-			width: 36,
-			height: 36,
 			borderRadius: 18,
+			height: 36,
 			marginRight: 8,
+			width: 36,
 		},
 		tokenSymbol: {
 			...theme.fonts.titleMedium,
+			color: theme.colors.onSurface,
 			fontSize: 18,
 			fontWeight: '600',
-			color: theme.colors.onSurface,
 		},
 		modalContent: {
+			alignSelf: 'center',
 			backgroundColor: theme.colors.background,
-			padding: 16,
 			borderRadius: 16,
 			height: '60%',
-			width: '90%',
-			alignSelf: 'center',
 			marginVertical: 'auto',
+			padding: 16,
+			width: '90%',
 		},
 		searchContainer: {
 			marginBottom: 16,
@@ -63,21 +63,21 @@ export const createStyles = (theme: MD3Theme) =>
 		searchInput: {
 			backgroundColor: theme.colors.surfaceVariant,
 			borderRadius: 8,
-			paddingHorizontal: 12,
-			paddingVertical: 8,
 			color: theme.colors.onSurface,
 			height: 40,
+			paddingHorizontal: 12,
+			paddingVertical: 8,
 			width: '100%',
 		},
 		tokenList: {
 			flex: 1,
 		},
 		tokenItem: {
-			flexDirection: 'row',
 			alignItems: 'center',
-			padding: 12,
-			borderBottomWidth: 1,
 			borderBottomColor: theme.colors.outlineVariant,
+			borderBottomWidth: 1,
+			flexDirection: 'row',
+			padding: 12,
 		},
 		tokenDetails: {
 			flex: 1,
@@ -104,16 +104,16 @@ export const createStyles = (theme: MD3Theme) =>
 			marginLeft: 8,
 		},
 		amountInput: {
-			height: 48,
-			paddingHorizontal: 0,
-			paddingVertical: 0,
+			backgroundColor: 'transparent',
 			borderRadius: 8,
+			borderWidth: 0,
 			color: theme.colors.onSurface,
 			fontSize: 24,
 			fontWeight: 'bold',
+			height: 48,
+			paddingHorizontal: 0,
+			paddingVertical: 0,
 			textAlign: 'right',
-			backgroundColor: 'transparent',
-			borderWidth: 0,
 			width: '100%',
 		},
 		valueText: {
@@ -124,8 +124,8 @@ export const createStyles = (theme: MD3Theme) =>
 			width: '100%',
 		},
 		modalOverlay: {
-			flex: 1,
 			backgroundColor: 'rgba(0, 0, 0, 0.5)',
+			flex: 1,
 			justifyContent: 'center',
 			padding: 20,
 		},

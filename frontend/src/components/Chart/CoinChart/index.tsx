@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, ReactNode, useState } from 'react';
 import { View } from 'react-native';
-import { CartesianChart, useChartPressState, useLinePath, type PointsArray } from 'victory-native';
+import { CartesianChart, useChartPressState, type PointsArray } from 'victory-native';
 import Animated, { 
 	useSharedValue, 
 	useAnimatedStyle, 

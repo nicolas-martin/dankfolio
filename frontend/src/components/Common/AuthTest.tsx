@@ -140,20 +140,38 @@ export const AuthTest: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+	button: {
+		flex: 1,
+		marginHorizontal: 4,
+	},
+	buttonContainer: {
+		flexDirection: 'row',
+		justifyContent: 'space-around',
+		marginBottom: 8,
+	},
 	card: {
 		margin: 16,
+	},
+	chip: {
+		marginLeft: 8,
+	},
+	resultContainer: {
+		backgroundColor: '#f8f9fa',
+		borderRadius: 8,
+		marginBottom: 12,
+		padding: 12,
+	},
+	resultText: {
+		fontWeight: 'bold',
+	},
+	statusContainer: {
+		alignItems: 'center',
+		flexDirection: 'row',
+		marginBottom: 12,
 	},
 	title: {
 		marginBottom: 16,
 		textAlign: 'center',
-	},
-	statusContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 12,
-	},
-	chip: {
-		marginLeft: 8,
 	},
 	tokenContainer: {
 		marginBottom: 12,
@@ -163,27 +181,9 @@ const styles = StyleSheet.create({
 		marginBottom: 4,
 	},
 	tokenText: {
-		fontFamily: 'monospace',
 		backgroundColor: '#f5f5f5',
-		padding: 8,
 		borderRadius: 4,
-	},
-	resultContainer: {
-		marginBottom: 12,
-		padding: 12,
-		backgroundColor: '#f8f9fa',
-		borderRadius: 8,
-	},
-	resultText: {
-		fontWeight: 'bold',
-	},
-	buttonContainer: {
-		flexDirection: 'row',
-		justifyContent: 'space-around',
-		marginBottom: 8,
-	},
-	button: {
-		flex: 1,
-		marginHorizontal: 4,
+		fontFamily: 'monospace',
+		padding: 8,
 	},
 }); 

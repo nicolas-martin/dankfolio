@@ -9,46 +9,46 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 
 	// Volume Section
 	volumeSection: {
-		paddingBottom: 16,
-		borderBottomWidth: 1,
 		borderBottomColor: theme.colors.outlineVariant,
+		borderBottomWidth: 1,
+		paddingBottom: 16,
 	},
 	volumeHeader: {
-		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 12,
+		flexDirection: 'row',
 		gap: 8,
+		marginBottom: 12,
 	},
 	volumeIcon: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		backgroundColor: theme.colors.tertiaryContainer,
-		justifyContent: 'center',
 		alignItems: 'center',
+		backgroundColor: theme.colors.tertiaryContainer,
+		borderRadius: 12,
+		height: 24,
+		justifyContent: 'center',
+		width: 24,
 	},
 	volumeTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 	},
 	volumeValue: {
+		color: theme.colors.onSurface,
 		fontSize: 24,
 		fontWeight: '700',
-		color: theme.colors.onSurface,
 	},
 
 	// Description Section
 	descriptionSection: {
-		paddingBottom: 16,
-		borderBottomWidth: 1,
 		borderBottomColor: theme.colors.outlineVariant,
+		borderBottomWidth: 1,
+		paddingBottom: 16,
 	},
 	descriptionHeader: {
-		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 12,
+		flexDirection: 'row',
 		gap: 8,
+		marginBottom: 12,
 	},
 	descriptionIcon: {
 		width: 24,
@@ -59,40 +59,40 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 	},
 	descriptionTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 	},
 	descriptionText: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
 		lineHeight: 20,
 	},
 
 	// Tags Section
 	tagsSection: {
-		paddingBottom: 16,
-		borderBottomWidth: 1,
 		borderBottomColor: theme.colors.outlineVariant,
+		borderBottomWidth: 1,
+		paddingBottom: 16,
 	},
 	tagsHeader: {
-		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 12,
+		flexDirection: 'row',
 		gap: 8,
+		marginBottom: 12,
 	},
 	tagsIcon: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		backgroundColor: theme.colors.secondaryContainer,
-		justifyContent: 'center',
 		alignItems: 'center',
+		backgroundColor: theme.colors.secondaryContainer,
+		borderRadius: 12,
+		height: 24,
+		justifyContent: 'center',
+		width: 24,
 	},
 	tagsTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 	},
 	tagsContainer: {
 		flexDirection: 'row',
@@ -111,23 +111,23 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderBottomColor: theme.colors.outlineVariant,
 	},
 	linksHeader: {
-		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 12,
+		flexDirection: 'row',
 		gap: 8,
+		marginBottom: 12,
 	},
 	linksIcon: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		backgroundColor: theme.colors.tertiaryContainer,
-		justifyContent: 'center',
 		alignItems: 'center',
+		backgroundColor: theme.colors.tertiaryContainer,
+		borderRadius: 12,
+		height: 24,
+		justifyContent: 'center',
+		width: 24,
 	},
 	linksTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 	},
 	linksContainer: {
 		backgroundColor: theme.colors.surfaceVariant,
@@ -137,37 +137,37 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 
 	// Link Item styles
 	linkItemContainer: {
-		flexDirection: 'row',
 		alignItems: 'center',
+		backgroundColor: 'transparent',
+		flexDirection: 'row',
 		paddingHorizontal: 16,
 		paddingVertical: 12,
-		backgroundColor: 'transparent',
 	},
 	linkItemIconContainer: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		marginRight: 12,
 		alignItems: 'center',
-		justifyContent: 'center',
 		backgroundColor: theme.colors.surface,
+		borderRadius: 16,
+		height: 32,
+		justifyContent: 'center',
+		marginRight: 12,
+		width: 32,
 	},
 	linkItemTextContainer: {
 		flex: 1,
 	},
 	linkItemLabel: {
-		fontWeight: '600',
-		fontSize: 16,
 		color: theme.colors.onSurface,
+		fontSize: 16,
+		fontWeight: '600',
 		marginBottom: 2,
 	},
 	linkItemValue: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
 	},
 	divider: {
-		height: 1,
 		backgroundColor: theme.colors.outline,
+		height: 1,
 		marginHorizontal: 16,
 	},
 
@@ -176,10 +176,10 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		// No bottom border as it's the last section now
 	},
 	dateHeader: {
-		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 12,
+		flexDirection: 'row',
 		gap: 8,
+		marginBottom: 12,
 	},
 	dateIcon: {
 		width: 24,
@@ -190,27 +190,27 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 	},
 	dateTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 	},
 	dateValue: {
+		color: theme.colors.onSurfaceVariant,
 		fontSize: 14,
 		fontWeight: 'normal',
-		color: theme.colors.onSurfaceVariant,
 	},
 
 	// Legacy styles for compatibility (kept minimal)
 	sectionTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 18,
 		fontWeight: 'bold',
 		marginBottom: 8,
-		color: theme.colors.onSurface,
 	},
 	sectionDescription: {
+		color: theme.colors.onSurfaceVariant,
 		fontSize: 16,
 		marginBottom: 16,
-		color: theme.colors.onSurfaceVariant,
 	},
 	detailRow: {
 		flexDirection: 'row',
@@ -218,16 +218,16 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingVertical: 8,
 	},
 	detailLabel: {
-		fontSize: 16,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 16,
 	},
 	detailValue: {
-		fontSize: 16,
 		color: theme.colors.onSurface,
+		fontSize: 16,
 	},
 	tagsLabel: {
-		marginBottom: 8,
 		color: theme.colors.onSurfaceVariant,
+		marginBottom: 8,
 	},
 	tagsInnerContainer: {
 		flexDirection: 'row',
@@ -235,7 +235,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		gap: 8,
 	},
 	tagText: {
-		fontSize: 14,
 		color: theme.colors.onSurface,
+		fontSize: 14,
 	},
 });

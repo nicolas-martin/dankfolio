@@ -1,5 +1,4 @@
 import { getApp } from '@react-native-firebase/app';
-import appCheck from '@react-native-firebase/app-check';
 import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 import { logger } from '@/utils/logger';
 import { env } from '@utils/env';

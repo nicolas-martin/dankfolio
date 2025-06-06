@@ -253,12 +253,12 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 };
 
 const styles = StyleSheet.create({
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     // Basic styling for the chart container
-  },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
   }
 });
 

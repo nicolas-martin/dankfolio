@@ -1,7 +1,6 @@
 import React from 'react';
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
-import { useTheme } from 'react-native-paper';
 
 // Assuming loading_spinner.json will be downloaded by the user into frontend/assets/lottie/
 

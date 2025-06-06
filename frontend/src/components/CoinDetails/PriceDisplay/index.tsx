@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
 import { useToast } from '@components/Common/Toast';

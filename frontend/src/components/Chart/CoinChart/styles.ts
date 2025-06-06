@@ -11,33 +11,33 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderRadius: 8,
 		overflow: 'hidden',
 	},
+	chartWrapper: {
+		flex: 1,
+		width: '100%',
+	},
+	dottedLine: {
+		borderColor: theme.colors.outlineVariant,
+		borderStyle: 'dotted',
+		borderWidth: 1,
+	},
+	hoverLabel: {
+		alignItems: 'center',
+		pointerEvents: 'none',
+		position: 'absolute',
+		width: 120,
+	},
+	hoverTimeText: {
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 12,
+		position: 'absolute',
+		textAlign: 'center',
+	},
 	loadingContainer: {
 		height: 250,
 		justifyContent: 'center',
 		alignItems: 'center',
 		backgroundColor: '#1C2127', // Match chartContainer background
 		borderRadius: 8,
-	},
-	hoverTimeText: {
-		position: 'absolute',
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-		textAlign: 'center',
-	},
-	hoverLabel: {
-		position: 'absolute',
-		width: 120,
-		alignItems: 'center',
-		pointerEvents: 'none',
-	},
-	dottedLine: {
-		borderStyle: 'dotted',
-		borderWidth: 1,
-		borderColor: theme.colors.outlineVariant,
-	},
-	chartWrapper: {
-		flex: 1,
-		width: '100%',
 	},
 	tooltipText: {
 		color: theme.colors.onSurface,

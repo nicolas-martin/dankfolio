@@ -8,7 +8,6 @@ import { useToast } from '@components/Common/Toast';
 import * as sendScripts from './scripts'; // To mock functions from scripts.ts
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { PortfolioToken } from '@/store/portfolio';
-import { Coin } from '@/types';
 
 // Mock stores
 jest.mock('@store/portfolio');

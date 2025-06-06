@@ -2,7 +2,7 @@ import { validateForm } from '../scripts';
 import { validateSolanaAddress } from '@/services/solana';
 import { TokenTransferFormData } from '../types';
 import { PortfolioToken } from '@store/portfolio';
-import { Coin } from '@/types'; // Assuming Coin might be needed for PortfolioToken
+// Assuming Coin might be needed for PortfolioToken
 
 // Mock dependencies
 // jest.mock('axios'); // No longer using axios

@@ -1,12 +1,12 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Modal, Portal, Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
+import { Modal, Portal, Text, Button, useTheme } from 'react-native-paper';
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
 import { Coin } from '@/types';
 import { CachedImage } from '@/components/Common/CachedImage';
-import { formatNumber, formatPrice } from '@/utils/numberFormat';
+import { formatPrice } from '@/utils/numberFormat';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,

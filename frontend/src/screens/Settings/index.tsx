@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, ScrollView, SafeAreaView, Platform } from 'react-native';
+import { View, ScrollView, SafeAreaView } from 'react-native';
 import { Text, useTheme, List, Switch, Divider, IconButton } from 'react-native-paper';
 import Constants from 'expo-constants';
 import { useThemeStore } from '@/store/theme';

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl, SafeAreaView, ActivityIndicator } from 'react-native';
-import { Text, useTheme, IconButton, Button, Icon, List, MD3Theme, Switch } from 'react-native-paper';
+import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
+import { Text, useTheme, IconButton, Button, Icon } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack'; // Added
 import { useToast } from '@components/Common/Toast';

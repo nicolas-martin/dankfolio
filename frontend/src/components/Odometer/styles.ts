@@ -2,23 +2,23 @@ import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
-  row: {
-    flexDirection: 'row',
+  digitColumn: {
     alignItems: 'center',
     justifyContent: 'flex-start',
-    overflow: 'hidden',
-  },
-  hidden: {
-    position: 'absolute',
-    opacity: 0,
-    left: -9999,
   },
   digitContainer: {
     overflow: 'hidden',
   },
-  digitColumn: {
+  hidden: {
+    left: -9999,
+    opacity: 0,
+    position: 'absolute',
+  },
+  row: {
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'flex-start',
+    overflow: 'hidden',
   },
   separator: {
     alignSelf: 'flex-end',
