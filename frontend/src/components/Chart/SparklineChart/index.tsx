@@ -21,6 +21,18 @@ interface SparklineChartProps {
 
 import { Text } from 'react-native';
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
+  },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
 const SparklineChart: React.FC<SparklineChartProps> = ({
   data,
   width,
@@ -96,7 +108,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
       maxDeviation = 0.001;
     }
 
-    const yPadding = height * 0.1;
+    const yPadding = height * 0.05;
     const chartHeight = height - 2 * yPadding;
     const currentBaselineY = height / 2;
 
@@ -121,22 +133,13 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 
     const currentBaselinePaint = Skia.Paint();
     currentBaselinePaint.setStrokeWidth(1);
-    const baseColorVal = Skia.Color(theme.colors.onSurfaceVariant);
-    currentBaselinePaint.setColor(
-      Skia.Color(
-        Skia.ColorRed(baseColorVal),
-        Skia.ColorGreen(baseColorVal),
-        Skia.ColorBlue(baseColorVal),
-        0.5
-      )
-    );
-    currentBaselinePaint.setStyle(Skia.PaintStyle.Stroke);
-    currentBaselinePaint.setPathEffect(DashPathEffect.Make([4, 4], 0));
-
-    const greenOpaque = Skia.Color('rgba(0, 255, 0, 0.3)');
-    const greenTransparent = Skia.Color('rgba(0, 255, 0, 0)');
-    const redOpaque = Skia.Color('rgba(255, 0, 0, 0.3)');
-    const redTransparent = Skia.Color('rgba(255, 0, 0, 0)');
+    currentBaselinePaint.setColor(Skia.Color(theme.colors.onSurfaceVariant));
+    
+    // Using direct color values
+    const greenOpaque = Skia.Color('#00FF004D');
+    const greenTransparent = Skia.Color('#00FF0000');
+    const redOpaque = Skia.Color('#FF00004D');
+    const redTransparent = Skia.Color('#FF000000');
 
     const localLineSegments: Array<{ path: ReturnType<typeof Skia.Path.Make>; color: string }> = [];
     const localAreaSegments: Array<{
@@ -160,7 +163,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
       const p2IsAboveOrOnBaseline = p2.value >= startPrice;
 
       let currentLineColor = p1IsAboveOrOnBaseline ? 'green' : 'red';
-      let currentGradientColors = p1IsAboveOrOnBaseline
+      let currentGradientColors: [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>] = p1IsAboveOrOnBaseline
         ? [greenOpaque, greenTransparent]
         : [redOpaque, redTransparent];
 
@@ -189,7 +192,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 
           localAreaSegments.push({
             path: areaPath,
-            gradientColors: _gradientColors,
+            gradientColors: [_gradientColors[0], _gradientColors[1]] as [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>],
             gradientStart: vec((_x1 + _x2) / 2, isAbove ? Math.min(_y1, _y2) : Math.max(_y1, _y2)),
             gradientEnd: vec((_x1 + _x2) / 2, currentBaselineY),
           });
@@ -208,8 +211,8 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 
         currentLineColor = p2IsAboveOrOnBaseline ? 'green' : 'red';
         currentGradientColors = p2IsAboveOrOnBaseline
-          ? [greenOpaque, greenTransparent]
-          : [redOpaque, redTransparent];
+          ? [greenOpaque, greenTransparent] as [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>]
+          : [redOpaque, redTransparent] as [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>];
         addSegmentAndArea(intersectX, currentBaselineY, x2, y2, currentLineColor, currentGradientColors);
       } else {
         addSegmentAndArea(x1, y1, x2, y2, currentLineColor, currentGradientColors);
@@ -227,7 +230,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
             <LinearGradient
               start={segment.gradientStart}
               end={segment.gradientEnd}
-              colors={segment.gradientColors}
+              colors={[segment.gradientColors[0], segment.gradientColors[1]]}
             />
           </Path>
         ))}
@@ -251,15 +254,5 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  container: {
-    // Basic styling for the chart container
-  }
-});
 
 export default SparklineChart;

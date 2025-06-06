@@ -8,4 +8,5 @@ export interface CoinCardProps {
 	isHorizontal?: boolean; // New prop
 	priceHistory?: PriceData[];
 	isPriceHistoryLoading?: boolean;
+	showSparkline?: boolean; // Controls whether to show the sparkline chart
 }
