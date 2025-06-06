@@ -18,7 +18,9 @@ import {
 	Line as SkiaLine, 
 	Text as SkiaText, 
 	useFont as useSkiaFont,
-	Group
+	Group,
+	LinearGradient,
+	vec
 } from '@shopify/react-native-skia';
 import { useTheme, ActivityIndicator } from 'react-native-paper';
 import * as Haptics from 'expo-haptics';
@@ -26,7 +28,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import inter from '@assets/fonts/inter-medium.ttf';
 import { createStyles } from './styles';
-import type { CoinChartProps, PricePoint, PulsatingDotProps } from './types';
+import type { CoinChartProps, PricePoint, PulsatingDotProps, AreaProps } from './types';
 import { logger } from '@/utils/logger';
 import { determineChartColor, createPulsateAnimation, CHART_COLORS } from './scripts';
 
@@ -75,6 +77,67 @@ const getTimeFormat = (period?: string) => {
 			};
 	}
 };
+
+// ─── GradientArea ────────────────────────────────────────────────────────────
+function GradientArea({ points, y0, color, opacity = 0.8, gradientColors }: AreaProps) {
+	// Extract base color for gradient
+	const baseColor = color.startsWith('rgba') 
+		? color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+).*/, 'rgb($1, $2, $3)') 
+		: color;
+	
+	// Create default gradient colors if not provided
+	const colors = gradientColors || [
+		baseColor,         // Solid color at top
+		`${baseColor}80`,  // 50% opacity in middle
+		`${baseColor}10`   // 10% opacity at bottom
+	];
+	
+	// Get the line path from victory-native's useLinePath
+	const { path: linePath } = useLinePath(points, { curveType: 'cardinal' });
+	
+	// Create the area path with Skia
+	const areaPath = useMemo(() => {
+		if (!points || points.length === 0 || !linePath) return null;
+		
+		// Get the first and last points
+		const lastPoint = points[points.length - 1];
+		const firstPoint = points[0];
+		
+		// Create a new path for the area
+		const Skia = require('@shopify/react-native-skia').Skia;
+		const path = Skia.Path.Make();
+		
+		// Add the line path
+		path.addPath(linePath);
+		
+		// Add line to bottom right
+		path.lineTo(lastPoint.x, y0);
+		
+		// Add line to bottom left
+		path.lineTo(firstPoint.x, y0);
+		
+		// Close the path
+		path.close();
+		
+		return path;
+	}, [points, y0, linePath]);
+	
+	if (!areaPath) return null;
+	
+	return (
+		<Path
+			path={areaPath}
+			style="fill"
+			opacity={opacity}
+		>
+			<LinearGradient
+				start={vec(0, 0)}
+				end={vec(0, y0)}
+				colors={colors}
+			/>
+		</Path>
+	);
+}
 
 // ─── SpringLine ─────────────────────────────────────────────────────────────
 function SpringLine({
@@ -400,6 +463,8 @@ export default function CoinChart({
 	const colors = CHART_COLORS[chartColor];
 	// Get the area color from the colors object
 	const areaColor = colors.area;
+	// Get the gradient colors
+	const gradientColors = colors.gradient;
 
 	if (loading || !processedChartData.length) {
 		return (
@@ -499,11 +564,11 @@ export default function CoinChart({
 						return (
 							<>
 								{/* Area with colored fill based on price trend */}
-								<Area
+								<GradientArea
 									points={points.y}
 									y0={chartBounds.bottom}
 									color={areaColor}
-									opacity={0.8}
+									gradientColors={gradientColors}
 								/>
 								
 								{/* Chart Line */}
