@@ -427,33 +427,18 @@ func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, 
 	}
 
 	if len(rawCoinsToUpsert) > 0 {
-		slog.Debug("Storing/updating raw coins one by one for GetAllTokens", slog.Int("count", len(rawCoinsToUpsert)))
-		var successfulDbOps int
-		for _, rawCoin := range rawCoinsToUpsert {
-			currentRawCoin := rawCoin // Create a new variable for the loop to take its address
-			existingRawCoin, getErr := s.store.RawCoins().GetByField(ctx, "mint_address", currentRawCoin.MintAddress)
-			var opErr error
-			if getErr == nil && existingRawCoin != nil { // Found
-				currentRawCoin.ID = existingRawCoin.ID // Preserve existing PK ID
-				opErr = s.store.RawCoins().Update(ctx, &currentRawCoin)
-				if opErr != nil {
-					slog.Warn("Failed to update raw_coin in GetAllTokens", slog.String("mintAddress", currentRawCoin.MintAddress), slog.Any("error", opErr))
-				}
-			} else { // Not found or other error
-				opErr = s.store.RawCoins().Create(ctx, &currentRawCoin)
-				if opErr != nil {
-					slog.Warn("Failed to create raw_coin in GetAllTokens", slog.String("mintAddress", currentRawCoin.MintAddress), slog.Any("error", opErr))
-				}
-			}
-			if opErr == nil {
-				successfulDbOps++
-			}
+		slog.Info("Attempting to bulk upsert raw coins in GetAllTokens", slog.Int("count", len(rawCoinsToUpsert)))
+		rowsAffected, err := s.store.RawCoins().BulkUpsert(ctx, &rawCoinsToUpsert)
+		if err != nil {
+			slog.Error("Failed to bulk upsert raw coins in GetAllTokens", slog.Any("error", err), slog.Int("attempted_count", len(rawCoinsToUpsert)))
+			// Decide if this error should be returned to the caller.
+			// The original function did not return errors from individual DB ops.
+			// For now, we'll log and continue, consistent with that.
+		} else {
+			slog.Info("Successfully bulk upserted raw coins in GetAllTokens",
+				slog.Int64("rows_affected", rowsAffected),
+				slog.Int("submitted_count", len(rawCoinsToUpsert)))
 		}
-		slog.Info("Finished processing raw coins in GetAllTokens",
-			slog.Int("total_fetched_from_jupiter", len(resp.Coins)),
-			slog.Int("coins_prepared_for_upsert", len(rawCoinsToUpsert)),
-			slog.Int("successful_database_operations", successfulDbOps))
-		// Note: This does not return an error to the caller if individual DB ops fail, consistent with some interpretations of original BulkUpsert behavior (logging and continuing)
 	} else {
 		slog.Info("No valid raw coins were prepared for upserting after fetching from Jupiter in GetAllTokens.")
 	}
@@ -527,41 +512,17 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	}
 
 	if len(rawCoinsToUpsert) > 0 {
-		slog.Debug("Storing/updating raw coins one by one for FetchAndStoreNewTokens", slog.Int("count", len(rawCoinsToUpsert)))
-		var dbErrors []string
-		var successfulDbOps int
-		for _, rawCoin := range rawCoinsToUpsert {
-			currentRawCoin := rawCoin // Create a new variable for the loop to take its address
-			existingRawCoin, getErr := s.store.RawCoins().GetByField(ctx, "mint_address", currentRawCoin.MintAddress)
-			var opErr error
-			if getErr == nil && existingRawCoin != nil { // Found
-				currentRawCoin.ID = existingRawCoin.ID // Preserve existing PK ID
-				opErr = s.store.RawCoins().Update(ctx, &currentRawCoin)
-				if opErr != nil {
-					slog.Warn("Failed to update raw_coin in FetchAndStoreNewTokens", slog.String("mintAddress", currentRawCoin.MintAddress), slog.Any("error", opErr))
-					dbErrors = append(dbErrors, opErr.Error())
-				}
-			} else { // Not found or other error
-				opErr = s.store.RawCoins().Create(ctx, &currentRawCoin)
-				if opErr != nil {
-					slog.Warn("Failed to create raw_coin in FetchAndStoreNewTokens", slog.String("mintAddress", currentRawCoin.MintAddress), slog.Any("error", opErr))
-					dbErrors = append(dbErrors, opErr.Error())
-				}
-			}
-			if opErr == nil {
-				successfulDbOps++
-			}
+		slog.Info("Attempting to bulk upsert new raw coins in FetchAndStoreNewTokens", slog.Int("count", len(rawCoinsToUpsert)))
+		rowsAffected, err := s.store.RawCoins().BulkUpsert(ctx, &rawCoinsToUpsert)
+		if err != nil {
+			slog.Error("Failed to bulk upsert new raw coins in FetchAndStoreNewTokens", slog.Any("error", err), slog.Int("attempted_count", len(rawCoinsToUpsert)))
+			return fmt.Errorf("failed to bulk upsert new raw coins: %w", err) // Return the error
 		}
-		slog.Info("Finished processing new tokens from Jupiter in FetchAndStoreNewTokens",
-			slog.Int("total_fetched_from_jupiter", len(coins)),
-			slog.Int("coins_prepared_for_upsert", len(rawCoinsToUpsert)),
-			slog.Int("successful_database_operations", successfulDbOps))
-		if len(dbErrors) > 0 {
-			// Return an error if any DB operation failed, to inform the caller.
-			return fmt.Errorf("encountered %d errors during raw coin db operations: %s", len(dbErrors), dbErrors[0])
-		}
+		slog.Info("Successfully bulk upserted new raw coins in FetchAndStoreNewTokens",
+			slog.Int64("rows_affected", rowsAffected),
+			slog.Int("submitted_count", len(rawCoinsToUpsert)))
 	} else {
-		slog.Info("No valid raw coins were prepared for upserting after fetching from Jupiter in FetchAndStoreNewTokens.")
+		slog.Info("No valid new raw coins were prepared for upserting in FetchAndStoreNewTokens.")
 	}
 
 	return nil
