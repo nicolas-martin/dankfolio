@@ -6,11 +6,15 @@ import (
 )
 
 var defaultCIDv0Gateways = []string{
-	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
-	"https://cloudflare-ipfs.com/ipfs/",  // Cloudflare is fast and reliable
-	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
-	"https://ipfs.io/ipfs/",              // Keep as fallback, but not first choice
+	"https://moccasin-active-louse-974.mypinata.cloud/ipfs/", // Dedicated Pinata gateway (paid)
+	"https://gateway.pinata.cloud/ipfs/",                     // Pinata public gateway as backup
+	"https://dweb.link/ipfs/",                                // Protocol Labs' newer gateway
+	"https://ipfs.io/ipfs/",                                  // Keep as fallback, but not first choice
 }
+
+// TryNextGatewayOnFailure determines if we should try the next gateway when one fails
+// Set this to false to disable automatic fallback
+var TryNextGatewayOnFailure = true
 
 func StandardizeIpfsUrl(iconUrlInput string) string {
 	if iconUrlInput == "" {
@@ -107,16 +111,27 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 			}
 			return defaultCIDv0Gateways[0] + ipfsResourceIdentifier
 		} else {
-			// Assume it's CIDv1 or other. Use subdomain format with the first path component (potential CID).
-			subdomainPart := firstPathComponent
-			pathPart := ""
-			if restOfPathIdx := strings.Index(ipfsResourceIdentifier, "/"); restOfPathIdx != -1 {
-				pathPart = ipfsResourceIdentifier[restOfPathIdx:]
-			} else {
-				// No path after CID, add trailing slash for CIDv1
-				pathPart = "/"
+			// For now, use defaultCIDv0Gateways for CIDv1 as well
+			// This is because we want to use our paid Pinata gateway for all CIDs
+			if len(defaultCIDv0Gateways) == 0 {
+				slog.Error("No default gateways configured for CIDv1.", "url", iconUrlInput)
+				return iconUrlInput
 			}
-			return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
+			return defaultCIDv0Gateways[0] + ipfsResourceIdentifier
+
+			// Original behavior using subdomain format commented out to avoid linter errors:
+			// Use the commented code below if you want to revert to subdomain format
+			/*
+				subdomainPart := firstPathComponent
+				pathPart := ""
+				if restOfPathIdx := strings.Index(ipfsResourceIdentifier, "/"); restOfPathIdx != -1 {
+					pathPart = ipfsResourceIdentifier[restOfPathIdx:]
+				} else {
+					// No path after CID, add trailing slash for CIDv1
+					pathPart = "/"
+				}
+				return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
+			*/
 		}
 	} else if strings.HasPrefix(iconUrlInput, "ipfs://") {
 		// Handle raw ipfs:// URIs
@@ -137,19 +152,47 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 			}
 			return defaultCIDv0Gateways[0] + trimmedCidAndPath
 		} else {
-			subdomainPart := firstPathComponent
-			pathPart := ""
-			if restOfPathIdx := strings.Index(trimmedCidAndPath, "/"); restOfPathIdx != -1 {
-				pathPart = trimmedCidAndPath[restOfPathIdx:]
-			} else {
-				// No path after CID, add trailing slash for CIDv1
-				pathPart = "/"
+			// For now, use defaultCIDv0Gateways for CIDv1 as well
+			// This is because we want to use our paid Pinata gateway for all CIDs
+			if len(defaultCIDv0Gateways) == 0 {
+				slog.Error("No default gateways configured for CIDv1.", "url", iconUrlInput)
+				return iconUrlInput
 			}
-			return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
+			return defaultCIDv0Gateways[0] + trimmedCidAndPath
+
+			// Original behavior using subdomain format commented out to avoid linter errors:
+			// Use the commented code below if you want to revert to subdomain format
+			/*
+				subdomainPart := firstPathComponent
+				pathPart := ""
+				if restOfPathIdx := strings.Index(trimmedCidAndPath, "/"); restOfPathIdx != -1 {
+					pathPart = trimmedCidAndPath[restOfPathIdx:]
+				} else {
+					// No path after CID, add trailing slash for CIDv1
+					pathPart = "/"
+				}
+				return "https://" + subdomainPart + ".ipfs.dweb.link" + pathPart
+			*/
 		}
 	}
 
 	// Not an IPFS URL (including dexscreener, etc.), return as is
 	// This handles non-IPFS URLs like https://dd.dexscreener.com/... which should remain unchanged
 	return iconUrlInput
+}
+
+// GetNextGateway returns the next gateway in the list if TryNextGatewayOnFailure is true
+// Returns empty string if there are no more gateways or if TryNextGatewayOnFailure is false
+func GetNextGateway(currentGateway string) string {
+	if !TryNextGatewayOnFailure || len(defaultCIDv0Gateways) <= 1 {
+		return ""
+	}
+
+	for i, gateway := range defaultCIDv0Gateways {
+		if gateway == currentGateway && i < len(defaultCIDv0Gateways)-1 {
+			return defaultCIDv0Gateways[i+1]
+		}
+	}
+
+	return ""
 }

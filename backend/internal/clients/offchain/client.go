@@ -118,9 +118,6 @@ func (c *Client) fetchIPFSMetadata(uri string) (map[string]any, error) {
 	gateways := []string{
 		"https://ipfs.io/ipfs/",
 		"https://dweb.link/ipfs/",
-		"https://cloudflare-ipfs.com/ipfs/",
-		"https://gateway.pinata.cloud/ipfs/",
-		"https://storry.tv/ipfs/",
 	}
 
 	var lastErr error
@@ -314,7 +311,6 @@ func getIPFSGateways() []string {
 		"https://gateway.pinata.cloud/ipfs/", // Prioritize Pinata based on previous success
 		"https://ipfs.io/ipfs/",
 		"https://dweb.link/ipfs/",
-		"https://cloudflare-ipfs.com/ipfs/",
 		"https://storry.tv/ipfs/",
 	}
 }

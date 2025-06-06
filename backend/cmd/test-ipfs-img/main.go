@@ -53,13 +53,11 @@ var defaultCIDv0Gateways = []string{
 	"https://gateway.pinata.cloud/ipfs/",
 	"https://ipfs.io/ipfs/", // Promoted fallback
 	"https://dweb.link/ipfs/",
-	// "https://cloudflare-ipfs.com/ipfs/", // DNS issues from sandbox
 }
 
 var defaultCIDv1Gateways = []string{
 	"https://gateway.pinata.cloud/ipfs/", // Usually reliable
 	"https://ipfs.io/ipfs/",              // Fallback
-	// "https://cloudflare-ipfs.com/ipfs/", // DNS issues from sandbox
 	// "https://dweb.link/ipfs/",           // Timeout issues
 }
 
