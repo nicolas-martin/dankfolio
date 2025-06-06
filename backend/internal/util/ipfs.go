@@ -5,9 +5,8 @@ import (
 	"strings"
 )
 
-var defaultCIDv0Gateways = []string{
+var DefaultCIDv0Gateways = []string{
 	"https://gateway.pinata.cloud/ipfs/", // Pinata is generally more reliable
-	"https://cloudflare-ipfs.com/ipfs/",  // Cloudflare is fast and reliable
 	"https://dweb.link/ipfs/",            // Protocol Labs' newer gateway
 	"https://ipfs.io/ipfs/",              // Keep as fallback, but not first choice
 }
@@ -45,18 +44,18 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 						suffix := pathPart[underscoreIdx:]
 
 						// Use preferred gateway for pump.fun URLs
-						if len(defaultCIDv0Gateways) == 0 {
+						if len(DefaultCIDv0Gateways) == 0 {
 							slog.Error("No default gateways configured for pump.fun URL.", "url", iconUrlInput)
 							return iconUrlInput
 						}
-						return defaultCIDv0Gateways[0] + cid + suffix
+						return DefaultCIDv0Gateways[0] + cid + suffix
 					} else {
 						// No underscore found, treat the whole path as CID
-						if len(defaultCIDv0Gateways) == 0 {
+						if len(DefaultCIDv0Gateways) == 0 {
 							slog.Error("No default gateways configured for pump.fun URL.", "url", iconUrlInput)
 							return iconUrlInput
 						}
-						return defaultCIDv0Gateways[0] + pathPart
+						return DefaultCIDv0Gateways[0] + pathPart
 					}
 				} else {
 					// Regular CID.ipfs.dweb.link format
@@ -64,11 +63,11 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 
 					// Check if it's a CIDv0 (starts with Qm and is 46 chars)
 					if strings.HasPrefix(cid, "Qm") && len(cid) == 46 {
-						if len(defaultCIDv0Gateways) == 0 {
+						if len(DefaultCIDv0Gateways) == 0 {
 							slog.Error("No default CIDv0 gateways configured for subdomain URL.", "url", iconUrlInput)
 							return iconUrlInput
 						}
-						return defaultCIDv0Gateways[0] + cid + "/" + pathPart
+						return DefaultCIDv0Gateways[0] + cid + "/" + pathPart
 					} else {
 						// It's a CIDv1 in subdomain format on dweb.link. It's already standard.
 						return iconUrlInput
@@ -101,11 +100,11 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 
 		if strings.HasPrefix(firstPathComponent, "Qm") && len(firstPathComponent) == 46 {
 			// It's CIDv0. Use the first default gateway.
-			if len(defaultCIDv0Gateways) == 0 {
+			if len(DefaultCIDv0Gateways) == 0 {
 				slog.Error("No default CIDv0 gateways configured.", "url", iconUrlInput)
 				return iconUrlInput // return original if no gateways are available
 			}
-			return defaultCIDv0Gateways[0] + ipfsResourceIdentifier
+			return DefaultCIDv0Gateways[0] + ipfsResourceIdentifier
 		} else {
 			// Assume it's CIDv1 or other. Use subdomain format with the first path component (potential CID).
 			subdomainPart := firstPathComponent
@@ -131,11 +130,11 @@ func StandardizeIpfsUrl(iconUrlInput string) string {
 
 		if strings.HasPrefix(firstPathComponent, "Qm") && len(firstPathComponent) == 46 {
 			// It's CIDv0. Use the first default gateway.
-			if len(defaultCIDv0Gateways) == 0 {
+			if len(DefaultCIDv0Gateways) == 0 {
 				slog.Error("No default CIDv0 gateways configured for raw CIDv0 URI.", "url", iconUrlInput)
 				return iconUrlInput // return original if no gateways are available
 			}
-			return defaultCIDv0Gateways[0] + trimmedCidAndPath
+			return DefaultCIDv0Gateways[0] + trimmedCidAndPath
 		} else {
 			subdomainPart := firstPathComponent
 			pathPart := ""
