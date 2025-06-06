@@ -485,7 +485,7 @@ export default function CoinChart({
 					xKey="x"
 					yKeys={['y']}
 					domainPadding={{ top: 25 }}
-					padding={{ left: 0, right: 0, top: 0, bottom: 20 }}
+					padding={{ left: 0, right: 0, top: 0, bottom: 5 }}
 					chartPressState={[chartPress]}
 					axisOptions={{
 						font,
