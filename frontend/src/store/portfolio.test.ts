@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react-native';
 import { usePortfolioStore } from './portfolio';
-import { RawWalletData, Wallet, Coin, Base58PrivateKey } from '@/types'; // Import RawWalletData
+import { RawWalletData, Coin, Base58PrivateKey } from '@/types'; // Import RawWalletData
 import { grpcApi } from '@/services/grpcApi';
 import * as coinStoreModule from './coins';
 import * as Keychain from 'react-native-keychain';

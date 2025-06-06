@@ -13,7 +13,6 @@ export default [
 
 	{
 		ignores: ['src/gen/**'],
-
 		languageOptions: {
 			parser,
 			parserOptions: {
@@ -65,6 +64,12 @@ export default [
 			react: {
 				version: 'detect',
 			},
+		},
+	},
+	{
+		files: ['**/styles.ts', '**/*_style*.ts'],
+		rules: {
+			'react-native/no-color-literals': 'off',
 		},
 	},
 ];

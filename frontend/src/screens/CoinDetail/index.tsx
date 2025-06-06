@@ -9,7 +9,7 @@ import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
 import { PriceData, Coin } from '@/types';
 import LottieView from 'lottie-react-native';
-import { GetPriceHistoryRequest_PriceHistoryType } from '@/gen/dankfolio/v1/price_pb'; // Added
+// Added
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,

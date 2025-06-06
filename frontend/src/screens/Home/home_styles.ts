@@ -3,8 +3,8 @@ import { MD3Theme } from 'react-native-paper';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
-		flex: 1,
 		backgroundColor: theme.colors.background,
+		flex: 1,
 	},
 	content: {
 		flex: 1,
@@ -16,14 +16,14 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingBottom: 16,
 	},
 	welcomeText: {
+		color: theme.colors.onSurface,
 		fontSize: 28,
 		fontWeight: '700',
-		color: theme.colors.onSurface,
 		marginBottom: 4,
 	},
 	subtitleText: {
-		fontSize: 16,
 		color: theme.colors.onSurfaceVariant,
+		fontSize: 16,
 		fontWeight: '400',
 	},
 
@@ -38,9 +38,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingHorizontal: 16,
 	},
 	sectionTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 20,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 	},
 
 	// Coins List
@@ -51,8 +51,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		flex: 1,
 	},
 	loadingContainer: {
-		flexDirection: 'row',
 		alignItems: 'center',
+		flexDirection: 'row',
 		justifyContent: 'center',
 		padding: 20,
 	},
@@ -63,9 +63,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 
 	// Empty States
 	emptyStateContainer: {
+		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		alignItems: 'center',
 		paddingHorizontal: 40,
 	},
 	emptyStateIcon: {
@@ -73,31 +73,32 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		opacity: 0.6,
 	},
 	emptyStateTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 18,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 		marginBottom: 8,
 		textAlign: 'center',
 	},
 	emptyStateText: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
-		textAlign: 'center',
+		fontSize: 14,
 		lineHeight: 20,
+		textAlign: 'center',
 	},
 
 	// No Wallet State
 	noWalletContainer: {
+		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		alignItems: 'center',
 		paddingHorizontal: 40,
 	},
 	noWalletCard: {
+		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
 		borderRadius: 20,
+		elevation: 4,
 		padding: 32,
-		alignItems: 'center',
 		shadowColor: '#000',
 		shadowOffset: {
 			width: 0,
@@ -105,25 +106,24 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		},
 		shadowOpacity: 0.1,
 		shadowRadius: 8,
-		elevation: 4,
 	},
 	noWalletIcon: {
 		marginBottom: 20,
 		opacity: 0.7,
 	},
 	noWalletTitle: {
+		color: theme.colors.onSurface,
 		fontSize: 20,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 		marginBottom: 8,
 		textAlign: 'center',
 	},
 	noWalletText: {
-		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
-		textAlign: 'center',
+		fontSize: 14,
 		lineHeight: 20,
 		marginBottom: 24,
+		textAlign: 'center',
 	},
 	connectButton: {
 		backgroundColor: theme.colors.primary,

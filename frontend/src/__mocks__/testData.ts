@@ -1,4 +1,4 @@
-import { Coin, Wallet, RawWalletData, Base58PrivateKey } from '@/types';
+import { Coin, RawWalletData, Base58PrivateKey } from '@/types';
 import { PortfolioToken } from '@/store/portfolio';
 
 export const mockSolCoin: Coin = {

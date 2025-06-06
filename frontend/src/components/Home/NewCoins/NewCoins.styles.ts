@@ -2,53 +2,53 @@ import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+    cardWrapper: {
+        marginRight: 8,
+        width: 140, // Adjusted width
+    },
     container: {
-        paddingTop: 16,
         paddingBottom: 24,
+        paddingTop: 16,
     },
-    titleContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginLeft: 16,
-        marginRight: 16,
-        marginBottom: 8,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: theme.colors.onSurface,
-    },
-    viewAllButton: {
-        fontSize: 14,
-        color: theme.colors.primary,
-        fontWeight: '500',
+    emptyText: {
+        color: theme.colors.onSurfaceVariant,
+        minHeight: 100,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        textAlign: 'center',
     },
     listContentContainer: {
         paddingLeft: 16,
         paddingRight: 4,
     },
-    cardWrapper: {
-        marginRight: 8,
-        width: 140, // Adjusted width
-    },
     loadingContainer: {
-        flexDirection: 'row',
         alignItems: 'center',
+        flexDirection: 'row',
         justifyContent: 'center',
-        padding: 16,
         minHeight: 100,
+        padding: 16,
     },
     loadingText: {
+        color: theme.colors.onSurfaceVariant,
         marginLeft: 8,
-        color: theme.colors.onSurfaceVariant,
     },
-    emptyText: {
-        textAlign: 'center',
-        color: theme.colors.onSurfaceVariant,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        minHeight: 100,
+    title: {
+        color: theme.colors.onSurface,
+        fontSize: 20,
+        fontWeight: '600',
+    },
+    titleContainer: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+        marginLeft: 16,
+        marginRight: 16,
+    },
+    viewAllButton: {
+        color: theme.colors.primary,
+        fontSize: 14,
+        fontWeight: '500',
     },
 });
 

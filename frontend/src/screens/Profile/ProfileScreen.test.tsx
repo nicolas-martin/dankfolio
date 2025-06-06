@@ -1,11 +1,10 @@
-import { render, fireEvent, within } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import ProfileScreen from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useToast } from '@components/Common/Toast';
 import { mocked } from 'jest-mock';
 import { ProfileCoin } from './profile_types';
-import { Coin } from '@/types';
 
 // Mock dependencies
 jest.mock('@store/portfolio', () => ({

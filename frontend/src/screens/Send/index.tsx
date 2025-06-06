@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, TouchableOpacity, TextInput, ScrollView, Linking, Modal, Button } from 'react-native';
+import { View, TouchableOpacity, TextInput, ScrollView, Linking, Modal } from 'react-native';
 import { Text, useTheme, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions'; // Added

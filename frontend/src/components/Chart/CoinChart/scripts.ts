@@ -1,10 +1,8 @@
 import { PriceData } from '@/types';
-import { PricePoint, AreaProps, PulsatingDotProps } from './types';
-import { withRepeat, withTiming, Easing, withSpring, SharedValue, useSharedValue } from 'react-native-reanimated';
+import { PricePoint, AreaProps } from './types';
+import { withRepeat, withSpring, SharedValue, useSharedValue } from 'react-native-reanimated';
 import { format } from 'date-fns';
-import { Path, Group, Line as SkiaLine, LinearGradient, vec } from '@shopify/react-native-skia';
 import { useLinePath, type PointsArray } from 'victory-native';
-import { ReactNode } from 'react';
 import { useMemo, useEffect } from 'react';
 import { CHART_CONSTANTS } from './styles';
 

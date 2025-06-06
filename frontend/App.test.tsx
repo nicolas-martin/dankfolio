@@ -5,8 +5,6 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@store/transactions';
 import { retrieveWalletFromStorage } from '@screens/WalletSetup/scripts';
 import * as SplashScreen from 'expo-splash-screen';
-import * as Sentry from '@sentry/react-native';
-import { initializeFirebaseServices } from '@/services/firebaseInit';
 import { Keypair } from '@solana/web3.js';
 import { logger } from '@/utils/logger';
 

@@ -1,10 +1,9 @@
 import { Keypair, VersionedTransaction, PublicKey, Transaction, Connection } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { RawWalletData, Base58PrivateKey } from '@/types';
+import { Base58PrivateKey } from '@/types';
 import { env } from '@utils/env';
 import { grpcApi } from '@/services/grpcApi';
 import { logger as log } from '@/utils/logger';
-import * as Keychain from 'react-native-keychain';
 import 'react-native-get-random-values';
 import { Buffer } from 'buffer';
 

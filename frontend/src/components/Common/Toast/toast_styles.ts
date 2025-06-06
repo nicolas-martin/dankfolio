@@ -4,24 +4,24 @@ import { EdgeInsets } from 'react-native-safe-area-context';
 
 export const createStyles = (theme: MD3Theme, insets: EdgeInsets) => {
 	return StyleSheet.create({
+		closeButton: {
+			marginLeft: 8,
+			padding: 4,
+		},
 		content: {
-			flexDirection: 'row',
 			alignItems: 'center',
+			flexDirection: 'row',
 			justifyContent: 'space-between',
 			paddingRight: 8,
 		},
-		messageContainer: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			flex: 1,
-		},
 		message: {
-			marginLeft: 8,
 			flex: 1,
-		},
-		closeButton: {
-			padding: 4,
 			marginLeft: 8,
+		},
+		messageContainer: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			flex: 1,
 		},
 		statusIcon: {
 			marginRight: 8,

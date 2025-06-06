@@ -1,6 +1,5 @@
 // Hardcoded configuration values instead of loading from env file
 import { getKeypairFromPrivateKey, buildAndSignSwapTransaction } from '../src/services/solana';
-import { tradeClient } from '../src/services/grpc/apiClient';
 import grpcApi from '../src/services/grpcApi';
 
 // Test constants

@@ -2,154 +2,120 @@ import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
-	safeArea: {
-		flex: 1,
-		backgroundColor: theme.colors.background,
+	card: {
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 8,
+		marginBottom: 12,
+		padding: 16,
 	},
 	container: {
-		flex: 1,
 		backgroundColor: theme.colors.background,
+		flex: 1,
 	},
 	contentPadding: {
 		padding: 16,
 	},
-	headerRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 16,
-		gap: 12,
-	},
-	card: {
-		padding: 16,
-		borderRadius: 8,
-		marginBottom: 12,
-		backgroundColor: theme.colors.surfaceVariant,
-	},
-	searchCard: {
-		marginBottom: 16,
-		backgroundColor: theme.colors.surface,
-	},
-	searchInput: {
-		height: 40,
-		backgroundColor: theme.colors.surface,
-		borderRadius: 8,
-		paddingHorizontal: 12,
-		color: theme.colors.onSurface,
-	},
-	flex1: {
-		flex: 1,
-	},
-	listContent: {
-		paddingHorizontal: 16,
-		paddingBottom: 16,
-	},
-	tokenItem: {
-		flexDirection: 'row',
-		padding: 16,
-		alignItems: 'center',
-		borderBottomWidth: 1,
-		borderBottomColor: theme.colors.outlineVariant,
-	},
-	tokenImage: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		marginRight: 12,
-	},
-	tokenInfo: {
-		flex: 1,
-	},
-	tokenDetails: {
-		marginLeft: 12,
-	},
-	tokenNameRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 4,
-	},
-	tokenName: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: theme.colors.onSurface,
-	},
-	tokenSymbol: {
-		fontSize: 14,
-		color: theme.colors.onSurfaceVariant,
-		marginLeft: 8,
-	},
-	tokenMetrics: {
-		flexDirection: 'row',
-		alignItems: 'center',
-	},
-	tokenPrice: {
-		fontSize: 14,
-		color: theme.colors.onSurface,
-		marginRight: 12,
-	},
-	tokenVolume: {
-		fontSize: 12,
-		color: theme.colors.onSurfaceVariant,
-	},
-	priceChangePositive: {
-		fontSize: 14,
-		color: theme.colors.primary,
-		marginLeft: 'auto',
-	},
-	priceChangeNegative: {
-		fontSize: 14,
-		color: theme.colors.error,
-		marginLeft: 'auto',
-	},
-	errorContainer: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-		padding: 16,
-	},
-	errorText: {
-		fontSize: 16,
-		color: theme.colors.error,
-		textAlign: 'center',
-	},
-	loadingContainer: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
 	emptyContainer: {
+		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		alignItems: 'center',
 		padding: 16,
 	},
 	emptyText: {
-		fontSize: 16,
 		color: theme.colors.onSurfaceVariant,
-		textAlign: 'center',
+		fontSize: 16,
 		marginTop: 16,
+		textAlign: 'center',
 	},
-	filtersContainer: {
-		flexDirection: 'row',
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		backgroundColor: theme.colors.surfaceVariant,
+	errorContainer: {
+		alignItems: 'center',
+		flex: 1,
+		justifyContent: 'center',
+		padding: 16,
+	},
+	errorText: {
+		color: theme.colors.error,
+		fontSize: 16,
+		textAlign: 'center',
 	},
 	filterButton: {
+		backgroundColor: theme.colors.surface,
+		borderRadius: 16,
+		marginRight: 8,
 		paddingHorizontal: 12,
 		paddingVertical: 6,
-		borderRadius: 16,
-		backgroundColor: theme.colors.surface,
-		marginRight: 8,
 	},
 	filterButtonActive: {
 		backgroundColor: theme.colors.primary,
 	},
 	filterButtonText: {
-		fontSize: 14,
 		color: theme.colors.onSurface,
+		fontSize: 14,
 	},
 	filterButtonTextActive: {
 		color: theme.colors.onPrimary,
+	},
+	filtersContainer: {
+		backgroundColor: theme.colors.surfaceVariant,
+		flexDirection: 'row',
+		paddingHorizontal: 16,
+		paddingVertical: 8,
+	},
+	flex1: {
+		flex: 1,
+	},
+	headerRow: {
+		alignItems: 'center',
+		flexDirection: 'row',
+		gap: 12,
+		marginBottom: 16,
+	},
+	listContent: {
+		paddingBottom: 16,
+		paddingHorizontal: 16,
+	},
+	loadingContainer: {
+		alignItems: 'center',
+		flex: 1,
+		justifyContent: 'center',
+	},
+	priceChangeNegative: {
+		color: theme.colors.error,
+		fontSize: 14,
+		marginLeft: 'auto',
+	},
+	priceChangePositive: {
+		color: theme.colors.primary,
+		fontSize: 14,
+		marginLeft: 'auto',
+	},
+	safeArea: {
+		backgroundColor: theme.colors.background,
+		flex: 1,
+	},
+	searchCard: {
+		backgroundColor: theme.colors.surface,
+		marginBottom: 16,
+	},
+	searchInput: {
+		backgroundColor: theme.colors.surface,
+		borderRadius: 8,
+		color: theme.colors.onSurface,
+		height: 40,
+		paddingHorizontal: 12,
+	},
+	sortButton: {
+		alignItems: 'center',
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 4,
+		justifyContent: 'center', 
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+	},
+	sortButtonText: {
+		color: theme.colors.onSurfaceVariant, 
+		fontSize: 12,
+		fontWeight: '500',
 	},
 	sortButtonsContainer: {
 		flexDirection: 'row',
@@ -157,17 +123,51 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingVertical: 8,
 		// paddingHorizontal: 16, // Already in contentPadding
 	},
-	sortButton: {
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 4,
-		backgroundColor: theme.colors.surfaceVariant, 
-		alignItems: 'center',
-		justifyContent: 'center',
+	tokenDetails: {
+		marginLeft: 12,
 	},
-	sortButtonText: {
-		color: theme.colors.onSurfaceVariant, 
+	tokenImage: {
+		borderRadius: 20,
+		height: 40,
+		marginRight: 12,
+		width: 40,
+	},
+	tokenInfo: {
+		flex: 1,
+	},
+	tokenItem: {
+		alignItems: 'center',
+		borderBottomColor: theme.colors.outlineVariant,
+		borderBottomWidth: 1,
+		flexDirection: 'row',
+		padding: 16,
+	},
+	tokenMetrics: {
+		alignItems: 'center',
+		flexDirection: 'row',
+	},
+	tokenName: {
+		color: theme.colors.onSurface,
+		fontSize: 16,
+		fontWeight: '600',
+	},
+	tokenNameRow: {
+		alignItems: 'center',
+		flexDirection: 'row',
+		marginBottom: 4,
+	},
+	tokenPrice: {
+		color: theme.colors.onSurface,
+		fontSize: 14,
+		marginRight: 12,
+	},
+	tokenSymbol: {
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
+		marginLeft: 8,
+	},
+	tokenVolume: {
+		color: theme.colors.onSurfaceVariant,
 		fontSize: 12,
-		fontWeight: '500',
 	},
 }); 

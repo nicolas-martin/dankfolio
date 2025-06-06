@@ -3,13 +3,13 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
 	container: {
 		alignItems: 'flex-end',
-		marginTop: 4,
 		marginBottom: 4,
 		marginRight: 8,
+		marginTop: 4,
 	},
 	link: {
-		paddingVertical: 2,
 		paddingHorizontal: 4,
+		paddingVertical: 2,
 	},
 	linkText: {
 		color: '#1976D2', // blue link color
