@@ -48,11 +48,19 @@ export const CHART_COLORS = {
     green: {
         line: '#0BA360',
         area: 'rgba(11, 163, 96, 0.5)',
-        indicator: '#0BA360'
+        indicator: '#0BA360',
+        glow: '#0BA360'
     },
     red: {
         line: '#E04E4A',
         area: 'rgba(224, 78, 74, 0.5)',
-        indicator: '#E04E4A'
+        indicator: '#E04E4A',
+        glow: '#E04E4A'
     }
+}; 
+
+// Export a simpler version of chart colors for use in other components
+export const TREND_COLORS = {
+    positive: '#0BA360', // Green color for positive trends
+    negative: '#E04E4A'  // Red color for negative trends
 }; 

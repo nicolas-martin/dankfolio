@@ -1,65 +1,60 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { TREND_COLORS } from '@/components/Chart/CoinChart/scripts';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
-		// Remove padding since it's now handled by the card
+		padding: 16,
 	},
 	headerRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 12,
+		marginBottom: 8,
 	},
 	icon: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
+		marginRight: 12,
 	},
 	nameText: {
-		marginLeft: 12,
-		fontSize: 20,
+		fontSize: 18,
 		fontWeight: '600',
 		color: theme.colors.onSurface,
 	},
 	addressRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 20,
+		marginBottom: 16,
 	},
 	addressText: {
 		fontSize: 14,
 		color: theme.colors.onSurfaceVariant,
-		fontFamily: 'monospace',
 	},
 	priceText: {
-		marginBottom: 8,
 		fontSize: 32,
-		fontWeight: '700',
-		letterSpacing: -0.5,
+		fontWeight: 'bold',
 		color: theme.colors.onSurface,
 	},
 	changeRow: {
 		flexDirection: 'row',
-		alignItems: 'baseline',
-		gap: 8,
+		alignItems: 'center',
+		marginTop: 8,
 	},
 	changeText: {
 		fontSize: 16,
 		fontWeight: '600',
+		marginRight: 8,
 	},
 	changePositive: {
-		color: theme.colors.tertiary,
+		color: TREND_COLORS.positive,
 	},
 	changeNegative: {
-		color: theme.colors.error,
+		color: TREND_COLORS.negative,
 	},
 	periodText: {
 		fontSize: 14,
-		fontWeight: '500',
 	},
 	timestampText: {
-		marginTop: 8,
 		fontSize: 12,
 		color: theme.colors.onSurfaceVariant,
+		marginTop: 8,
 	},
 });

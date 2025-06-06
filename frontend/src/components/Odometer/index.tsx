@@ -37,6 +37,14 @@ const Odometer: FC<OdometerProps> = ({
 	const [digitHeight, setDigitHeight] = useState(0);
 	const anims = useRef<(Animated.Value | null)[]>([]);
 
+	// Create theme-aware text style
+	const themeTextStyle: TextStyle = {
+		color: theme.colors.onSurface,
+	};
+
+	// Combine theme style with provided fontStyle
+	const combinedFontStyle = [themeTextStyle, fontStyle];
+
 	// pad previous to match length
 	const prevPadded = prev.padStart(value.length, '0');
 
@@ -123,7 +131,7 @@ const Odometer: FC<OdometerProps> = ({
 										.map((_, d) => (
 											<Text
 												key={d}
-												style={[fontStyle, { height: digitHeight }]}
+												style={[combinedFontStyle, { height: digitHeight }]}
 											>
 												{d}
 											</Text>
@@ -133,7 +141,7 @@ const Odometer: FC<OdometerProps> = ({
 						) : (
 							<Text
 								key={i}
-								style={[fontStyle, styles.separator, { height: digitHeight }]}
+								style={[combinedFontStyle, styles.separator, { height: digitHeight }]}
 							>
 								{char}
 							</Text>
@@ -144,7 +152,7 @@ const Odometer: FC<OdometerProps> = ({
 
 			{/* hidden measurer */}
 			<View style={styles.hidden}>
-				<Text onLayout={onLayout} style={fontStyle}>
+				<Text onLayout={onLayout} style={combinedFontStyle}>
 					0
 				</Text>
 			</View>

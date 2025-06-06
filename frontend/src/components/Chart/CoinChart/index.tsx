@@ -17,7 +17,8 @@ import {
 	Circle as SkiaCircle, 
 	Line as SkiaLine, 
 	Text as SkiaText, 
-	useFont as useSkiaFont
+	useFont as useSkiaFont,
+	Group
 } from '@shopify/react-native-skia';
 import { useTheme, ActivityIndicator } from 'react-native-paper';
 import * as Haptics from 'expo-haptics';
@@ -221,15 +222,28 @@ function HorizontalDottedLine({
 	y: number;
 	color: string;
 }) {
-	// For better performance, draw a single line
+	// Create a dotted line by drawing multiple segments
+	// This produces a true dotted appearance without relying on dash patterns
+	const lineWidth = endX - startX;
+	const dotSpacing = 6; // Total space between dots (dot + gap)
+	const dotSize = 3;    // Size of each dot
+	
+	// Calculate number of dots that will fit
+	const numDots = Math.floor(lineWidth / dotSpacing);
+	
 	return (
-		<SkiaLine
-			p1={{ x: startX, y }}
-			p2={{ x: endX, y }}
-			color={color}
-			strokeWidth={1}
-			style="stroke"
-		/>
+		<Group>
+			{Array.from({ length: numDots }).map((_, i) => (
+				<SkiaLine
+					key={`dot-${i}`}
+					p1={{ x: startX + i * dotSpacing, y }}
+					p2={{ x: startX + i * dotSpacing + dotSize, y }}
+					color={color}
+					strokeWidth={1}
+					style="stroke"
+				/>
+			))}
+		</Group>
 	);
 }
 
@@ -425,7 +439,7 @@ export default function CoinChart({
 							},
 							frame: 'rgba(255,255,255,0.1)',
 						},
-						labelColor: 'rgba(255,255,255,0.7)',
+						labelColor: theme.colors.onSurface,
 					}}
 					renderOutside={({ chartBounds }) => {
 						if (!isPressActive || typeof activeX !== 'number' || !font)
@@ -466,7 +480,7 @@ export default function CoinChart({
 									y={chartBounds.top + 20}
 									text={label}
 									font={font}
-									color="rgba(255,255,255,0.8)"
+									color={theme.colors.onSurface}
 								/>
 							</>
 						);
