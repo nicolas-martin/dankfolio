@@ -24,20 +24,20 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        padding: 16,
+        padding: 12,
     },
     leftSection: {
         alignItems: 'center',
         flexDirection: 'row',
-        flex: 1,
+        flex: 0.35,
         minWidth: 0,
-        paddingRight: 12,
+        paddingRight: 8,
     },
     logo: { // For vertical card
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        marginRight: 15,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        marginRight: 10,
     },
     nameSection: {
         flex: 1,
@@ -46,59 +46,60 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
     },
     symbol: {
         color: theme.colors.onSurface,
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
         letterSpacing: 0.2,
-        marginBottom: 2,
+        marginBottom: 1,
     },
     balance: {
         color: theme.colors.onSurfaceVariant,
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '400',
         letterSpacing: 0.1,
     },
     name: {
         color: theme.colors.onSurfaceVariant,
         flexShrink: 1,
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '400',
         letterSpacing: 0.1,
     },
     rightSection: {
         alignItems: 'flex-end',
         justifyContent: 'center',
-        minWidth: 80,
+        flex: 0.25,
+        minWidth: 0,
     },
     price: {
         color: theme.colors.onSurface,
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
         letterSpacing: 0.2,
-        marginBottom: 2,
+        marginBottom: 1,
         textAlign: 'right',
     },
     volume: {
         color: theme.colors.onSurfaceVariant,
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '400',
         letterSpacing: 0.1,
         textAlign: 'right',
     },
     changePositive: {
         color: '#2E7D32', // Consider using theme colors
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '500',
         textAlign: 'right',
     },
     changeNegative: {
         color: '#D32F2F', // Consider using theme colors
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '500',
         textAlign: 'right',
     },
     changeNeutral: {
         color: theme.colors.onSurfaceVariant,
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '400',
         textAlign: 'right',
     },
@@ -144,16 +145,16 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
     changeNegativeSmall: { color: '#D32F2F' },
     changeNeutralSmall: { color: theme.colors.onSurfaceVariant },
 
-    // Styles for Sparkline (conditionally applied in component)
+    // Styles for Sparkline (positioned in the middle)
     sparklineContainer: {
-        marginTop: 8,
+        flex: 0.4,
+        height: 36,
         alignItems: 'center',
-        // backgroundColor: 'lightblue', // For debugging layout
-        paddingBottom: 8, // Ensure some padding if card has bottom padding elsewhere or for visual balance
+        justifyContent: 'center',
     },
     sparklinePlaceholder: {
-        width: actualCardWidth * 0.8, // Use actualCardWidth
-        height: 30,
+        width: actualCardWidth * 0.35,
+        height: 20,
         backgroundColor: theme.colors.surfaceDisabled,
         borderRadius: 4,
     },

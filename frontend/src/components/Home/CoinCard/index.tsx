@@ -16,6 +16,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 	isHorizontal,
 	priceHistory,
 	isPriceHistoryLoading,
+	showSparkline = true, // New prop to control sparkline visibility
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme, isHorizontal);
@@ -34,7 +35,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 		logger.warn(`[CoinCard LOG] renderCoinIcon error for ${coin.symbol}: ${coin.resolvedIconUrl}`);
 	}, [coin.symbol]);
 
-	const renderCoinIcon = (size = 40, borderRadius = 20) => {
+	const renderCoinIcon = (size = 36, borderRadius = 18) => { // Smaller icon size
 		logger.info(`[CoinCard LOG] renderCoinIcon load for ${coin.symbol}: ${coin.resolvedIconUrl}`);
 		return (
 			<View style={isHorizontal ? styles.horizontalLogoContainer : styles.logo}>
@@ -123,6 +124,24 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					</View>
 				</View>
 
+				{/* Sparkline in the middle */}
+				{showSparkline && (
+					<View style={styles.sparklineContainer}>
+						{isPriceHistoryLoading ? (
+							<View style={styles.sparklinePlaceholder} />
+						) : priceHistory && priceHistory.length > 1 ? (
+							<SparklineChart
+								data={priceHistory}
+								width={cardWidth * 0.35} // Appropriate width for middle section
+								height={20} // Proper height for the layout
+								isLoading={isPriceHistoryLoading}
+							/>
+						) : (
+							<View style={styles.sparklinePlaceholder} />
+						)}
+					</View>
+				)}
+
 				<View style={styles.rightSection}>
 					<Text style={styles.price} numberOfLines={1}>
 						{formatPrice(Number(coin.price))}
@@ -140,21 +159,6 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					)}
 				</View>
 			</View>
-			{!isHorizontal && (
-				<View style={styles.sparklineContainer}>
-					{isPriceHistoryLoading ? (
-						<View style={styles.sparklinePlaceholder} />
-					) : priceHistory && priceHistory.length > 1 ? (
-						<SparklineChart
-							data={priceHistory}
-							width={cardWidth * 0.8} // e.g. 80% of card content width
-							height={30} // Fixed height for sparkline
-						/>
-					) : (
-						<View style={styles.sparklinePlaceholder} /> // Show placeholder if no data or not enough data
-					)}
-				</View>
-			)}
 		</TouchableOpacity>
 	);
 };
@@ -174,6 +178,7 @@ export default React.memo(CoinCard, (prevProps, nextProps) => {
 		prevProps.coin.dailyVolume === nextProps.coin.dailyVolume &&
 		prevProps.isHorizontal === nextProps.isHorizontal &&
 		prevProps.priceHistory === nextProps.priceHistory && // Added prop
-		prevProps.isPriceHistoryLoading === nextProps.isPriceHistoryLoading // Added prop
+		prevProps.isPriceHistoryLoading === nextProps.isPriceHistoryLoading && // Added prop
+		prevProps.showSparkline === nextProps.showSparkline // Added prop
 	);
 });
