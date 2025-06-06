@@ -7,13 +7,13 @@ export const getToastForegroundColor = (type: ToastType, theme: MD3Theme) => {
 		case 'success':
 			// Use a success color (assuming it exists in theme)
 			// TODO: Define theme.colors.success if it doesn't exist
-			return (theme.colors as any).success || theme.colors.primary;
+			return (theme.colors as unknown).success || theme.colors.primary;
 		case 'error':
 			return theme.colors.error;
 		case 'warning':
 			// Use warning color (assuming it exists in theme)
 			// TODO: Define theme.colors.warning if it doesn't exist
-			return (theme.colors as any).warning || theme.colors.error;
+			return (theme.colors as unknown).warning || theme.colors.error;
 		case 'info':
 			return theme.colors.primary;
 		default:

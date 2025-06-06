@@ -82,7 +82,7 @@ const mockTokenStoreReturn = {
 };
 
 // --- Mock Component Creator (only for non-TokenSelector components)
-const createMockComponent = (name: string) => (props: any) => {
+const createMockComponent = (name: string) => (props: unknown) => {
 	return <View testID={`mock-${name}`} {...props}><Text>{name}</Text></View>;
 };
 
@@ -135,7 +135,7 @@ jest.mock('react-native-paper', () => {
 	const RN = require('react-native');
 
 	// Define MockButton *inside* the factory
-	const MockButton = (props: any) => (
+	const MockButton = (props: unknown) => (
 		<RN.Pressable onPress={props.onPress} disabled={props.disabled} style={props.style} accessibilityRole="button" testID={props.testID || 'mock-button'}>
 			<RN.Text style={props.labelStyle}>{props.children}</RN.Text>
 		</RN.Pressable>
@@ -146,9 +146,9 @@ jest.mock('react-native-paper', () => {
 		Button: MockButton, // Use the internally defined MockButton
 		Text: actualPaper.Text, // Keep using actual Paper Text unless needed
 		useTheme: () => mockTheme,
-		Portal: (props: any) => <>{props.children}</>,
+		Portal: (props: unknown) => <>{props.children}</>,
 		// Use require('react-native').View for Modal
-		Modal: (props: any) => props.visible ? <RN.View testID="mock-modal-content">{props.children}</RN.View> : null,
+		Modal: (props: unknown) => props.visible ? <RN.View testID="mock-modal-content">{props.children}</RN.View> : null,
 	};
 });
 

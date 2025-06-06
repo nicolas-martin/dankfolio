@@ -23,7 +23,7 @@ jest.mock('./grpc/grpcUtils', () => ({
 	}),
 	logRequest: jest.fn(),
 	logResponse: jest.fn(),
-	getRequestHeaders: jest.fn().mockReturnValue(new Headers()),
+	getRequestHeaders: jest.fn().mockReturnValue({}),
 }));
 
 describe('grpcApi.listTrades', () => {
@@ -50,7 +50,7 @@ describe('grpcApi.listTrades', () => {
 				sortBy: 'created_at', // default
 				sortDesc: true, // default
 			},
-			{ headers: expect.any(Headers) }
+			{ headers: expect.any(Object) }
 		);
 	});
 
@@ -76,7 +76,7 @@ describe('grpcApi.listTrades', () => {
 				sortBy: 'amount',
 				sortDesc: false,
 			},
-			{ headers: expect.any(Headers) }
+			{ headers: expect.any(Object) }
 		);
 	});
 

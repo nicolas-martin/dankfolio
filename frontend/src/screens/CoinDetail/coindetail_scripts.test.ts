@@ -90,13 +90,13 @@ describe('CoinDetail Scripts', () => {
 				return new originalDate(dateString);
 			}
 			return new originalDate(mockNow);
-		}) as any;
+		}) as unknown;
 
 		// Copy static methods from original Date
 		Object.setPrototypeOf(global.Date, originalDate);
 		Object.getOwnPropertyNames(originalDate).forEach(name => {
 			if (name !== 'length' && name !== 'name' && name !== 'prototype') {
-				(global.Date as any)[name] = (originalDate as any)[name];
+				(global.Date as unknown)[name] = (originalDate as unknown)[name];
 			}
 		});
 

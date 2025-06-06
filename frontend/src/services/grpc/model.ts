@@ -72,7 +72,7 @@ export interface TradeStatusResponse {
 	status: string; // e.g., "Pending", "Confirmed", "Finalized"
 	confirmations: number;
 	finalized: boolean;
-	error?: any; // Include error details if the transaction failed
+	error?: unknown; // Include error details if the transaction failed
 }
 
 export interface TradePayload {

@@ -9,6 +9,7 @@ import { logger as log } from '@/utils/logger';
 import type { Interceptor } from "@connectrpc/connect";
 import appCheck from '@react-native-firebase/app-check';
 import { env } from '@utils/env';
+import { Buffer } from 'buffer';
 
 // Log the environment variable for debugging
 log.log('🔧 API_URL from environment:', env.apiUrl);

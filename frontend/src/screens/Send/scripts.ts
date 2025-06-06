@@ -195,7 +195,7 @@ export const pollTransactionStatus = async (
 			logger.info(`Current status: ${statusResult.status}, continuing poll (Send Screen)...`, { txHash, status: statusResult.status });
 			setPollingStatus('polling');
 		}
-	} catch (error: any) {
+	} catch (error: unknown) {
 		logger.exception(error, { functionName: 'pollTransactionStatus', context: 'SendScreen', params: { txHash } });
 		setPollingStatus('failed');
 		setPollingError(error?.message || 'Failed to fetch transaction status');

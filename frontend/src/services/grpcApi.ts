@@ -4,6 +4,7 @@ import { Trade } from '../gen/dankfolio/v1/trade_pb';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import * as grpcUtils from './grpc/grpcUtils';
 import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils'; // Import the new mapper
+import { Buffer } from 'buffer';
 
 // Implementation of the API interface using gRPC
 export const grpcApi: grpcModel.API = {
@@ -17,13 +18,14 @@ export const grpcApi: grpcModel.API = {
 				throw new Error('unsigned and signed transaction cannot be empty');
 			}
 
+			const headers = grpcUtils.getRequestHeaders();
 			const response = await tradeClient.submitSwap({
 				fromCoinId: payload.fromCoinMintAddress,
 				toCoinId: payload.toCoinMintAddress,
 				amount: payload.amount,
 				signedTransaction: payload.signedTransaction,
 				unsignedTransaction: payload.unsignedTransaction
-			}, { headers: grpcUtils.getRequestHeaders() });
+			}, { headers });
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 

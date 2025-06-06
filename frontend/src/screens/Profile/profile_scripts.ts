@@ -3,7 +3,7 @@ import { NotificationProps } from '@/types';
 import { ProfileCoin } from './profile_types';
 import { logger } from '@/utils/logger';
 
-export const handleTokenPress = (token: ProfileCoin['coin'], navigate: (screen: string, params: any) => void) => {
+export const handleTokenPress = (token: ProfileCoin['coin'], navigate: (screen: string, params: unknown) => void) => {
 	logger.breadcrumb({
 		category: 'navigation',
 		message: 'Navigating to CoinDetail from ProfileScreen token press',

@@ -24,7 +24,7 @@ export interface ChartBounds {
 }
 
 export interface AreaProps {
-	points: any;
+	points: unknown;
 	y0: number;
 	color: string;
 	opacity?: number;

@@ -36,7 +36,7 @@ jest.mock('@components/Common/Toast', () => ({
 // Mock child components if necessary (e.g., TokenSelector, TradeConfirmation, TradeStatusModal)
 jest.mock('components/Common/TokenSelector', () => {
 	const RealTokenSelector = jest.requireActual('components/Common/TokenSelector');
-	const MockTokenSelector = (props: any) => {
+	const MockTokenSelector = (props: unknown) => {
 		const View = require('react-native').View;
 		const Text = require('react-native').Text;
 		const TextInput = require('react-native').TextInput;
@@ -56,12 +56,12 @@ jest.mock('components/Common/TokenSelector', () => {
 	return MockTokenSelector;
 });
 
-jest.mock('@components/Trade/TradeConfirmation', () => (props: any) => {
+jest.mock('@components/Trade/TradeConfirmation', () => (props: unknown) => {
 	const View = require('react-native').View;
 	if (!props.isVisible) return null;
 	return <View testID="mock-trade-confirmation" {...props} />;
 });
-jest.mock('@components/Trade/TradeStatusModal', () => (props: any) => {
+jest.mock('@components/Trade/TradeStatusModal', () => (props: unknown) => {
 	const View = require('react-native').View;
 	if (!props.isVisible) return null;
 	return <View testID="mock-trade-status-modal" {...props} />;
@@ -84,7 +84,7 @@ jest.mock('react-native-paper', () => {
     const Text = require('react-native').Text;
     const View = require('react-native').View;
 
-    const MockButton = (props: any) => (
+    const MockButton = (props: unknown) => (
         <Pressable
             onPress={props.onPress}
             disabled={props.disabled}
@@ -95,7 +95,7 @@ jest.mock('react-native-paper', () => {
             {props.children}
         </Pressable>
     );
-    const MockIcon = (props: any) => <View testID={`mock-icon-${props.source}`}><Text>{props.source}</Text></View>;
+    const MockIcon = (props: unknown) => <View testID={`mock-icon-${props.source}`}><Text>{props.source}</Text></View>;
 
     return {
         ...actualPaper,
@@ -136,8 +136,8 @@ const mockSolTokenPortfolio: PortfolioToken = {
 };
 
 describe('SendScreen', () => {
-  let mockPortfolioStoreState: any;
-  let mockTransactionsStoreState: any;
+  let mockPortfolioStoreState: unknown;
+  let mockTransactionsStoreState: unknown;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -170,7 +170,7 @@ describe('SendScreen', () => {
     });
   });
 
-  const renderSendScreen = () => render(<SendScreen navigation={{} as any} route={{} as any} />);
+  const renderSendScreen = () => render(<SendScreen navigation={{} as unknown} route={{} as unknown} />);
 
   it('renders initial state correctly', () => {
     const { getByText, getByTestId } = renderSendScreen();
@@ -179,7 +179,7 @@ describe('SendScreen', () => {
   });
 
   describe('handleCloseStatusModal', () => {
-    const setupAndSubmitTransaction = async (getByTestId: any, getByPlaceholderText: any) => {
+    const setupAndSubmitTransaction = async (getByTestId: unknown, getByPlaceholderText: unknown) => {
       fireEvent.changeText(getByPlaceholderText('Wallet address'), 'recipient-address');
       // Assuming TokenSelector mock allows amount input via a testID or similar
       const amountInput = getByTestId('token-selector-input-amount');

@@ -74,7 +74,7 @@ const mockCoinStoreReturn = {
 const mockGetCoinByID = jest.fn();
 const mockFetchPriceHistory = jest.spyOn(CoinDetailScripts, 'fetchPriceHistory');
 
-const createMockComponent = (name: string) => (props: any) => {
+const createMockComponent = (name: string) => (props: unknown) => {
 	const React = require('react');
 	const { View, Text, TextInput } = require('react-native');
 	if (name === 'CoinSelector') {
@@ -149,19 +149,19 @@ jest.mock('react-native-paper', () => {
 
 	// Basic mock for components used by CoinDetailScreen
 	return {
-		ActivityIndicator: (props: any) => <ReactNative.View testID="mock-activity-indicator" {...props} />,
-		Text: (props: any) => <ReactNative.Text testID="mock-text" {...props}>{props.children}</ReactNative.Text>,
+		ActivityIndicator: (props: unknown) => <ReactNative.View testID="mock-activity-indicator" {...props} />,
+		Text: (props: unknown) => <ReactNative.Text testID="mock-text" {...props}>{props.children}</ReactNative.Text>,
 		useTheme: () => ({ colors: mockThemeColors, roundness: 4, fonts: {} }), // Return a theme object
-		Button: (props: any) => (
+		Button: (props: unknown) => (
 			<ReactNative.Pressable onPress={props.onPress} testID={props.testID || 'mock-rnp-button'} accessibilityRole="button" disabled={props.disabled} style={props.style}>
 				{typeof props.children === 'string' ? <ReactNative.Text style={props.labelStyle}>{props.children}</ReactNative.Text> : props.children}
 			</ReactNative.Pressable>
 		),
-		SegmentedButtons: (props: any) => {
+		SegmentedButtons: (props: unknown) => {
 			// Mock structure for SegmentedButtons, including onValueChange and buttons prop
 			return (
 				<ReactNative.View testID="mock-segmented-buttons">
-					{props.buttons.map((button: any) => (
+					{props.buttons.map((button: unknown) => (
 						<ReactNative.Pressable
 							key={button.value}
 							onPress={() => props.onValueChange(button.value)}
@@ -173,12 +173,12 @@ jest.mock('react-native-paper', () => {
 				</ReactNative.View>
 			);
 		},
-		Icon: (props: any) => <ReactNative.View testID={`mock-icon-${props.source}`} {...props}><ReactNative.Text>{props.source}</ReactNative.Text></ReactNative.View>,
+		Icon: (props: unknown) => <ReactNative.View testID={`mock-icon-${props.source}`} {...props}><ReactNative.Text>{props.source}</ReactNative.Text></ReactNative.View>,
 		// Provide other necessary exports from react-native-paper if they are used directly or by other components
 		// For instance, if PaperProvider is used by tests, or other components are used by CoinDetailScreen
 		// Defaulting to very basic mocks or actual implementations if they don't cause issues
-		Divider: (props: any) => <ReactNative.View testID="mock-divider" style={props.style} />,
-		Chip: (props: any) => <ReactNative.View testID="mock-chip" style={props.style}><ReactNative.Text>{props.children}</ReactNative.Text></ReactNative.View>,
+		Divider: (props: unknown) => <ReactNative.View testID="mock-divider" style={props.style} />,
+		Chip: (props: unknown) => <ReactNative.View testID="mock-chip" style={props.style}><ReactNative.Text>{props.children}</ReactNative.Text></ReactNative.View>,
 		// Ensure all exports from react-native-paper that are used are covered
 		// If some are missing, it could lead to errors.
 		// For now, focusing on those directly used by CoinDetailScreen.
@@ -186,13 +186,13 @@ jest.mock('react-native-paper', () => {
 });
 
 jest.mock('@shopify/react-native-skia', () => ({
-	Canvas: (props: any) => {
+	Canvas: (props: unknown) => {
 		const View = require('react-native').View;
 		return <View {...props} testID="mock-skia-canvas" />;
 	},
 	useFont: jest.fn().mockReturnValue({}),
 	rect: jest.fn().mockReturnValue({}),
-	Path: (props: any) => {
+	Path: (props: unknown) => {
 		const View = require('react-native').View;
 		return <View {...props} testID="mock-skia-path" />;
 	},
@@ -214,7 +214,7 @@ jest.mock('@shopify/react-native-skia', () => ({
 jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
 	const React = require('react');
 	const Text = require('react-native').Text;
-	const createMockIcon = (name: string) => (props: any) => <Text {...props} testID={`icon-${name}`}>{name}</Text>;
+	const createMockIcon = (name: string) => (props: unknown) => <Text {...props} testID={`icon-${name}`}>{name}</Text>;
 	return createMockIcon;
 });
 

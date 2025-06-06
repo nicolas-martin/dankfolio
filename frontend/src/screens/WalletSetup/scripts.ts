@@ -358,7 +358,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		}
 	};
 
-	const copyToClipboard = async (text: string, label: string, showToast: any) => {
+	const copyToClipboard = async (text: string, label: string, showToast: unknown) => {
 		try {
 			await Clipboard.setString(text);
 			logger.breadcrumb({ category: 'wallet_setup', message: `Copied ${label} to clipboard` });

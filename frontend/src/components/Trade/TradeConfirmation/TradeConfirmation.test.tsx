@@ -7,7 +7,7 @@ import { Coin } from '@/types';
 jest.mock('react-native-paper', () => {
 	const actualPaper = jest.requireActual('react-native-paper');
 	const { View, Pressable } = require('react-native');
-	const MockButton = (props: any) => {
+	const MockButton = (props: unknown) => {
 		return (
 			<Pressable
 				onPress={props.onPress}
@@ -33,9 +33,9 @@ jest.mock('react-native-paper', () => {
 			// Add any other theme properties your component might use
 		})),
 		Button: MockButton,
-		Modal: (props: any) => props.visible ? <View testID="mock-modal">{props.children}</View> : null,
-		Portal: (props: any) => <View testID="mock-portal">{props.children}</View>,
-		ActivityIndicator: (props: any) => (props.animating === undefined || props.animating === true) ? <View testID={props.testID} /> : null, // Removed default testID
+		Modal: (props: unknown) => props.visible ? <View testID="mock-modal">{props.children}</View> : null,
+		Portal: (props: unknown) => <View testID="mock-portal">{props.children}</View>,
+		ActivityIndicator: (props: unknown) => (props.animating === undefined || props.animating === true) ? <View testID={props.testID} /> : null, // Removed default testID
 		Text: actualPaper.Text, // Use actual Text or mock if needed for specific styles
 	};
 });

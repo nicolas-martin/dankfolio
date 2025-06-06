@@ -19,7 +19,16 @@ const getAppCheckConfig = () => {
 		}
 	}
 
-	const config: any = {
+	const config: {
+		android: {
+			provider: 'debug' | 'playIntegrity';
+			debugToken?: string;
+		};
+		apple: {
+			provider: 'debug' | 'appAttestWithDeviceCheckFallback';
+			debugToken?: string;
+		};
+	} = {
 		android: {
 			provider: isDevelopmentOrSimulator ? 'debug' : 'playIntegrity',
 			debugToken: isDevelopmentOrSimulator ? env.firebaseAppCheckDebugTokenAndroid : undefined,

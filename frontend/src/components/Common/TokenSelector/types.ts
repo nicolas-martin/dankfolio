@@ -5,7 +5,7 @@ export interface TokenSelectorProps {
 	onSelectToken: (token: Coin) => void;
 	label?: string;
 	/** Optional custom style for container to override default styles */
-	style?: any;
+	style?: unknown;
 	amountValue?: string;
 	onAmountChange?: (amount: string) => void;
 	isAmountEditable?: boolean;

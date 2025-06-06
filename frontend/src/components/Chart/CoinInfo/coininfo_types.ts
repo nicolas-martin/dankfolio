@@ -17,7 +17,7 @@ export interface CoinInfoProps {
 }
 
 export interface LinkItemProps {
-	icon: React.ComponentType<any>;
+	icon: React.ComponentType<unknown>;
 	label: string;
 	value: string;
 	onPress: (url: string) => void;

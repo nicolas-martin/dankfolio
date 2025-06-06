@@ -14,7 +14,7 @@ export const FirebaseTest: React.FC = () => {
         await initializeFirebaseServices();
         setStatus('success');
         logger.info('✅ Firebase test passed!');
-      } catch (err: any) {
+      } catch (err: unknown) {
         logger.error('❌ Firebase test failed:', err);
         setError(err.message || 'Unknown error');
         setStatus('error');

@@ -60,7 +60,7 @@ export const formatTokenBalance = (balance: number, decimals: number): string =>
 };
 
 export const handleSearchPress = (
-	navigation: NavigationProp<any>,
+	navigation: NavigationProp<unknown>,
 	searchQuery: string
 ) => {
 	if (!searchQuery.trim()) return;
@@ -82,7 +82,7 @@ export const getEnrichedCoinData = async (
 
 export const handleCoinNavigation = async (
 	coin: Coin,
-	navigation: NavigationProp<any>,
+	navigation: NavigationProp<unknown>,
 	toast = useToast()
 ): Promise<void> => {
 	try {

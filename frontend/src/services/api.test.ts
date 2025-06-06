@@ -1,5 +1,6 @@
 // frontend/src/services/api.test.ts
 import { API, TradePayload } from './grpc/model';
+import { grpcApi as actualGrpcApi } from '@/services/grpcApi';
 
 // --- Mock grpcApi ---
 const mockResponses = {
@@ -57,8 +58,8 @@ jest.mock('@/services/grpcApi', () => ({
 	grpcApi: mockGrpcApi
 }));
 
-// Import after mock is defined
-const { grpcApi } = require('@/services/grpcApi');
+// Use the mocked grpcApi for our tests
+const { grpcApi } = jest.requireActual('@/services/grpcApi');
 
 describe('API Service', () => {
 

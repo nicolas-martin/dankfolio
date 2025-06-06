@@ -4,7 +4,7 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { logger } from '@/utils/logger';
 
-export const useLoadingState = (navigation: any) => {
+export const useLoadingState = (navigation: unknown) => {
 	const [loadingState, setLoadingState] = useState<LoadingState>({
 		portfolioLoaded: false,
 		trendingLoaded: false,
