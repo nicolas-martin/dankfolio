@@ -15,7 +15,6 @@ import (
 	"github.com/joho/godotenv"
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
-	bloctoRPC "github.com/blocto/solana-go-sdk/rpc"
 	"github.com/gagliardetto/solana-go/rpc"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
@@ -214,10 +213,6 @@ func main() {
 		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
 	}
 	solClient := rpc.NewWithHeaders(config.SolanaRPCEndpoint, header)
-	// baseClient := &http.Client{
-	// 	Transport: &headerTransport{APIKey: config.SolanaRPCAPIKey},
-	// }
-	// blotorpcClient := bloctoRPC.New(bloctoRPC.WithEndpoint(config.SolanaRPCEndpoint), bloctoRPC.WithHTTPClient(baseClient))
 
 	solanaClient := solana.NewClient(solClient)
 
@@ -303,22 +298,4 @@ func main() {
 	grpcServer.Stop()
 
 	slog.Info("Servers exited properly")
-}
-
-type headerTransport struct {
-	Base   http.RoundTripper
-	APIKey string
-}
-
-func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req = req.Clone(req.Context())
-	req.Header.Set("Authorization", "Bearer "+t.APIKey)
-	return t.transport().RoundTrip(req)
-}
-
-func (t *headerTransport) transport() http.RoundTripper {
-	if t.Base != nil {
-		return t.Base
-	}
-	return http.DefaultTransport
 }

@@ -10,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blocto/solana-go-sdk/common"
-
 	tm "github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	"github.com/gagliardetto/solana-go"
 
@@ -33,16 +31,15 @@ func NewClient(solClient *rpc.Client) ClientAPI {
 
 // GetMetadataAccount retrieves the metadata account for a token
 func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*tm.Metadata, error) {
-	mintPubkey := common.PublicKeyFromString(mint)
-	metadataAccount, err := tm.GetTokenMetaPubkey(mintPubkey)
+	mintPubkey := solana.MustPublicKeyFromBase58(mint)
+	metadataPDA, bumpSeed, err := solana.FindTokenMetadataAddress(mintPubkey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to derive metadata account PDA for %s: %w", mint, err)
 	}
 
-	key, _ := solana.PublicKeyFromBase58(metadataAccount.ToBase58())
-	accountInfo, err := c.rpcConn.GetAccountInfo(ctx, key)
+	accountInfo, err := c.rpcConn.GetAccountInfo(ctx, metadataPDA)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get account info for metadata PDA %s (mint: %s): %w", metadataAccount.ToBase58(), mint, err)
+		return nil, fmt.Errorf("failed to get account info for metadata PDA %s (mint: %s, seed %d): %w", metadataPDA, mint, bumpSeed, err)
 	}
 
 	metadata, err := tm.MetadataDeserialize(accountInfo.Value.Data.GetBinary())
