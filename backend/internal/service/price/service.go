@@ -18,6 +18,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 )
 
 // Service handles price-related operations
@@ -30,33 +31,28 @@ type Service struct {
 
 // TimeframeConfigEntry defines the configuration for a specific timeframe.
 type TimeframeConfigEntry struct {
+	BirdeyeType     string // e.g., "1m", "5m", "1H" for Birdeye API
 	DurationMs      int64
 	RoundingMinutes int
 }
 
 // TIMEFRAME_CONFIG maps timeframe keys (e.g., "1H", "4H") to their configurations.
-var TIMEFRAME_CONFIG = map[string]TimeframeConfigEntry{
-	// Short term
-	"1m":  {DurationMs: 1 * 60 * 60 * 1000, RoundingMinutes: 1},    // 1-hour window, 1-min granularity
-	"3m":  {DurationMs: 3 * 60 * 60 * 1000, RoundingMinutes: 3},    // 3-hour window, 3-min granularity
-	"5m":  {DurationMs: 5 * 60 * 60 * 1000, RoundingMinutes: 5},    // 5-hour window, 5-min granularity
-	"15m": {DurationMs: 12 * 60 * 60 * 1000, RoundingMinutes: 15},  // 12-hour window, 15-min granularity
-	"30m": {DurationMs: 24 * 60 * 60 * 1000, RoundingMinutes: 30},  // 1-day window, 30-min granularity
-
-	// Hourly
-	"1H":  {DurationMs: 1 * 24 * 60 * 60 * 1000, RoundingMinutes: 60},   // 1-day window, 1-hour granularity
-	"2H":  {DurationMs: 2 * 24 * 60 * 60 * 1000, RoundingMinutes: 120},  // 2-day window, 2-hour granularity
-	"4H":  {DurationMs: 4 * 24 * 60 * 60 * 1000, RoundingMinutes: 240},  // 4-day window, 4-hour granularity
-	"6H":  {DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 360},  // 1-week window, 6-hour granularity
-	"8H":  {DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 480},  // 1-week window, 8-hour granularity (approx)
-	"12H": {DurationMs: 14 * 24 * 60 * 60 * 1000, RoundingMinutes: 720}, // 2-week window, 12-hour granularity
-
-	// Daily/Weekly
-	"1D":  {DurationMs: 30 * 24 * 60 * 60 * 1000, RoundingMinutes: 1440}, // 1-month window, 1-day granularity
-	"3D":  {DurationMs: 90 * 24 * 60 * 60 * 1000, RoundingMinutes: 3 * 1440},// 3-month window, 3-day granularity
-	"1W":  {DurationMs: 365 * 24 * 60 * 60 * 1000, RoundingMinutes: 7 * 1440},// 1-year window, 1-week granularity
-
-	"DEFAULT": {DurationMs: 12 * 60 * 60 * 1000, RoundingMinutes: 15}, // Matches "15m" entry
+var TIMEFRAME_CONFIG = map[pb.GetPriceHistoryRequest_PriceHistoryType]TimeframeConfigEntry{
+	pb.GetPriceHistoryRequest_ONE_MINUTE:      {BirdeyeType: "1m", DurationMs: 1 * 60 * 60 * 1000, RoundingMinutes: 1},
+	pb.GetPriceHistoryRequest_THREE_MINUTE:    {BirdeyeType: "3m", DurationMs: 3 * 60 * 60 * 1000, RoundingMinutes: 3},
+	pb.GetPriceHistoryRequest_FIVE_MINUTE:     {BirdeyeType: "5m", DurationMs: 5 * 60 * 60 * 1000, RoundingMinutes: 5},
+	pb.GetPriceHistoryRequest_FIFTEEN_MINUTE:  {BirdeyeType: "15m", DurationMs: 12 * 60 * 60 * 1000, RoundingMinutes: 15},
+	pb.GetPriceHistoryRequest_THIRTY_MINUTE:   {BirdeyeType: "30m", DurationMs: 24 * 60 * 60 * 1000, RoundingMinutes: 30},
+	pb.GetPriceHistoryRequest_ONE_HOUR:        {BirdeyeType: "1H", DurationMs: 1 * 24 * 60 * 60 * 1000, RoundingMinutes: 60},
+	pb.GetPriceHistoryRequest_TWO_HOUR:        {BirdeyeType: "2H", DurationMs: 2 * 24 * 60 * 60 * 1000, RoundingMinutes: 120},
+	pb.GetPriceHistoryRequest_FOUR_HOUR:       {BirdeyeType: "4H", DurationMs: 4 * 24 * 60 * 60 * 1000, RoundingMinutes: 240},
+	pb.GetPriceHistoryRequest_SIX_HOUR:        {BirdeyeType: "6H", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 360},
+	pb.GetPriceHistoryRequest_EIGHT_HOUR:      {BirdeyeType: "8H", DurationMs: 7 * 24 * 60 * 60 * 1000, RoundingMinutes: 480},
+	pb.GetPriceHistoryRequest_TWELVE_HOUR:     {BirdeyeType: "12H", DurationMs: 14 * 24 * 60 * 60 * 1000, RoundingMinutes: 720},
+	pb.GetPriceHistoryRequest_ONE_DAY:         {BirdeyeType: "1D", DurationMs: 30 * 24 * 60 * 60 * 1000, RoundingMinutes: 1440},
+	pb.GetPriceHistoryRequest_THREE_DAY:       {BirdeyeType: "3D", DurationMs: 90 * 24 * 60 * 60 * 1000, RoundingMinutes: 3 * 1440},
+	pb.GetPriceHistoryRequest_ONE_WEEK:        {BirdeyeType: "1W", DurationMs: 365 * 24 * 60 * 60 * 1000, RoundingMinutes: 7 * 1440},
+	pb.GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED: {BirdeyeType: "15m", DurationMs: 12 * 60 * 60 * 1000, RoundingMinutes: 15},
 }
 
 // roundDateDown rounds the given time down to the specified granularity in minutes.
@@ -99,17 +95,17 @@ func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI
 
 // GetPriceHistory retrieves price history for a given token.
 // historyType is assumed to be a key from TIMEFRAME_CONFIG (e.g., "1H", "4H").
-func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, timeFromStr, timeToStr, addressType string) (*birdeye.PriceHistory, error) {
+func (s *Service) GetPriceHistory(ctx context.Context, address string, historyType pb.GetPriceHistoryRequest_PriceHistoryType, timeFromStr, timeToStr, addressType string) (*birdeye.PriceHistory, error) {
 	config, ok := TIMEFRAME_CONFIG[historyType]
 	if !ok {
-		slog.Warn("Invalid historyType, falling back to DEFAULT", "requestedHistoryType", historyType)
-		config = TIMEFRAME_CONFIG["DEFAULT"]
-		historyType = "DEFAULT" // Update historyType to reflect the key used for caching
+		slog.Warn("Invalid historyType enum value, falling back to FIFTEEN_MINUTE", "requestedHistoryTypeEnumValue", int(historyType))
+		config = TIMEFRAME_CONFIG[pb.GetPriceHistoryRequest_FIFTEEN_MINUTE]
+		// historyType = pb.GetPriceHistoryRequest_FIFTEEN_MINUTE // Not strictly needed to update historyType itself unless used for cache key as enum
 	}
-	slog.Info("Using timeframe configuration", "key", historyType, "config", config)
+	slog.Info("Using timeframe configuration", "keyEnum", historyType, "keyBirdeyeType", config.BirdeyeType, "config", config)
 
-	// Cache key now uses the resolved historyType (e.g. "1H", "DEFAULT")
-	cacheKey := fmt.Sprintf("%s-%s", address, historyType)
+	// Cache key now uses the string representation of the enum
+	cacheKey := fmt.Sprintf("%s-%s", address, historyType.String())
 
 	if cachedData, found := s.cache.Get(cacheKey); found {
 		slog.Info("Cache hit for price history", "key", cacheKey)
@@ -119,10 +115,10 @@ func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, tim
 
 	// Debug mode handling
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		slog.InfoContext(ctx, "x-debug-mode: true. Generating random price history.", "address", address, "historyType", historyType)
+		slog.InfoContext(ctx, "x-debug-mode: true. Generating random price history.", "address", address, "historyTypeEnum", historyType, "birdeyeType", config.BirdeyeType)
 		// ONLY call generateRandomPriceHistory now
-		// The historyTypeKey argument for generateRandomPriceHistory is now just 'historyType' (e.g. "1H")
-		randomHistory, err := s.generateRandomPriceHistory(address, historyType)
+		// Pass config.BirdeyeType (string) to generateRandomPriceHistory
+		randomHistory, err := s.generateRandomPriceHistory(address, config.BirdeyeType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate random price history: %w", err)
 		}
@@ -152,7 +148,7 @@ func (s *Service) GetPriceHistory(ctx context.Context, address, historyType, tim
 	params := birdeye.PriceHistoryParams{
 		Address:     address,
 		AddressType: addressType,
-		HistoryType: historyType,
+		HistoryType: config.BirdeyeType,
 		TimeFrom:    roundedTimeFrom,
 		TimeTo:      roundedTimeTo,
 	}

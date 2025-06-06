@@ -42,43 +42,11 @@ func (s *priceServiceHandler) GetPriceHistory(
 
 	historyType := req.Msg.Type
 	if historyType == pb.GetPriceHistoryRequest_PRICE_HISTORY_TYPE_UNSPECIFIED {
-		historyType = pb.GetPriceHistoryRequest_FIFTEEN_MINUTE
+		historyType = pb.GetPriceHistoryRequest_FIFTEEN_MINUTE // Defaulting in handler
 	}
 
-	var historyTypeString string
-
-	switch historyType {
-	case pb.GetPriceHistoryRequest_ONE_MINUTE:
-		historyTypeString = "1m"
-	case pb.GetPriceHistoryRequest_THREE_MINUTE:
-		historyTypeString = "3m"
-	case pb.GetPriceHistoryRequest_FIVE_MINUTE:
-		historyTypeString = "5m"
-	case pb.GetPriceHistoryRequest_FIFTEEN_MINUTE:
-		historyTypeString = "15m"
-	case pb.GetPriceHistoryRequest_THIRTY_MINUTE:
-		historyTypeString = "30m"
-	case pb.GetPriceHistoryRequest_ONE_HOUR:
-		historyTypeString = "1H"
-	case pb.GetPriceHistoryRequest_TWO_HOUR:
-		historyTypeString = "2H"
-	case pb.GetPriceHistoryRequest_FOUR_HOUR:
-		historyTypeString = "4H"
-	case pb.GetPriceHistoryRequest_SIX_HOUR:
-		historyTypeString = "6H"
-	case pb.GetPriceHistoryRequest_EIGHT_HOUR:
-		historyTypeString = "8H"
-	case pb.GetPriceHistoryRequest_TWELVE_HOUR:
-		historyTypeString = "12H"
-	case pb.GetPriceHistoryRequest_ONE_DAY:
-		historyTypeString = "1D"
-	case pb.GetPriceHistoryRequest_THREE_DAY:
-		historyTypeString = "3D"
-	case pb.GetPriceHistoryRequest_ONE_WEEK:
-		historyTypeString = "1W"
-	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid history type"))
-	}
+	// The switch block converting enum to string (historyTypeString) is removed.
+	// We will pass the historyType enum directly to the service.
 
 	if req.Msg.TimeFrom == nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time_from is required"))
@@ -90,16 +58,17 @@ func (s *priceServiceHandler) GetPriceHistory(
 
 	slog.Debug("Fetching price history",
 		"address", req.Msg.Address,
-		"type", historyTypeString,
+		"typeEnum", historyType.String(), // Log the string representation of the enum
 		"from", req.Msg.TimeFrom.AsTime(),
 		"to", req.Msg.TimeTo.AsTime(),
 		"address_type", addressType)
 
 	// Get price history from service
+	// Pass the historyType enum (req.Msg.Type or its default) directly to the service method.
 	priceHistory, err := s.priceService.GetPriceHistory(
 		ctx,
 		req.Msg.Address,
-		historyTypeString,
+		historyType, // Pass the enum value
 		req.Msg.TimeFrom.AsTime().Format("2006-01-02T15:04:05Z"),
 		req.Msg.TimeTo.AsTime().Format("2006-01-02T15:04:05Z"),
 		addressType,
