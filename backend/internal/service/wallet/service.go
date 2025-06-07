@@ -319,9 +319,22 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	// Encode transaction as base64
 	unsignedTx := base64.StdEncoding.EncodeToString(txBytes)
 
+	// Calculate network fee
+	// NOTE: GenericClientAPI does not currently have a GetFeeForMessage method.
+	// For Solana, the fee is typically fixed based on the number of signatures (e.g., 5000 lamports for 1-2 signatures).
+	// We will use a default of 5000 lamports for now.
+	// A more accurate calculation would require tx.Message.GetFee(s.chainClient.GetLamportsPerSignature()) if that were available,
+	// or specific logic if fees become more dynamic (e.g. priority fees).
+	defaultFeeLamports := uint64(5000)
+	calculatedFeeSOL := float64(defaultFeeLamports) / float64(solana.LAMPORTS_PER_SOL)
+	slog.Debug("Using default network fee for transfer", "lamports", defaultFeeLamports, "SOL", calculatedFeeSOL)
+
 	// Create trade record
 	trade := &model.Trade{
 		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		Fee:                 calculatedFeeSOL, // Store calculated SOL fee
+		PlatformFeeAmount:   0.0,              // Explicitly 0 for transfers
+		PlatformFeePercent:  0.0,              // Explicitly 0 for transfers
 		FromCoinMintAddress: finalFromCoinMint,
 		FromCoinPKID:        fromCoinPKID,
 		ToCoinMintAddress:   finalToCoinMint,
@@ -422,39 +435,59 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 		return "", fmt.Errorf("failed to decode signed transaction: %w", err)
 	}
 
-	// Parse transaction
-	tx, err := solana.TransactionFromBytes(txBytes)
+	// Parse transaction (optional here if SendRawTransaction takes bytes, but good for validation)
+	_, err = solana.TransactionFromBytes(txBytes)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse transaction: %w", err)
 	}
 
-	// Submit transaction with optimized options
-	maxRetries := uint(3) // This is uint, which is fine for bmodel.TransactionOptions
-	sig, err := s.chainClient.SendRawTransaction(ctx, txBytes, bmodel.TransactionOptions{
+	// Find the trade record by unsigned transaction BEFORE sending
+	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", req.UnsignedTransaction)
+	if err != nil {
+		slog.Error("Critical: Failed to find trade record for unsigned transaction", "unsigned_tx", req.UnsignedTransaction, "error", err)
+		// It's risky to submit a transaction if we can't track its corresponding trade record.
+		// However, the original request implies sending anyway and then attempting to update.
+		// For robustness, we should ideally return an error here if the trade record is essential for tracking.
+		// For now, let's proceed but log a warning that updates might be missed. The polling logic below will handle nil trade.
+		// To align with the new robust error handling, let's make finding the trade critical.
+		return "", fmt.Errorf("failed to find trade record for unsigned_transaction %s: %w", req.UnsignedTransaction, err)
+	}
+	// Ensure trade is not nil if GetByField could technically return (nil, nil)
+	if trade == nil {
+		slog.Error("Critical: Trade record is nil even though GetByField returned no error", "unsigned_tx", req.UnsignedTransaction)
+		return "", fmt.Errorf("trade record is nil for unsigned_transaction %s", req.UnsignedTransaction)
+	}
+
+	// Submit transaction
+	maxRetries := uint(3)
+	sig, sendErr := s.chainClient.SendRawTransaction(ctx, txBytes, bmodel.TransactionOptions{
 		SkipPreflight:       false,
 		PreflightCommitment: "confirmed",
 		MaxRetries:          maxRetries,
 	})
-	if err != nil {
-		return "", fmt.Errorf("failed to submit transaction: %w", err)
+
+	if sendErr != nil {
+		slog.Error("Failed to submit transaction to blockchain", "trade_id", trade.ID, "error", sendErr)
+		trade.Status = "failed"
+		errStr := sendErr.Error()
+		trade.Error = &errStr
+		if updateErr := s.store.Trades().Update(ctx, trade); updateErr != nil {
+			slog.Warn("Failed to update trade status to failed after SendRawTransaction error", "trade_id", trade.ID, "update_error", updateErr)
+		}
+		return "", fmt.Errorf("failed to submit transaction: %w", sendErr) // Return the original sendErr
 	}
 
-	// Find the trade record by unsigned transaction
-	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", req.UnsignedTransaction)
-	if err != nil {
-		slog.Warn("Failed to find trade record", "error", err)
-		return sig.String(), nil
-	}
-
-	// Update the trade record
-	now := time.Now()
-	trade.Status = "finalized"
+	// Transaction submitted successfully, update trade status to "submitted"
+	slog.Info("Transaction submitted to blockchain", "trade_id", trade.ID, "signature", sig.String())
+	trade.Status = "submitted"
 	trade.TransactionHash = sig.String()
-	trade.CompletedAt = &now
-	trade.Finalized = true
+	trade.Error = nil       // Clear any previous error
+	trade.CompletedAt = nil // Not completed yet
+	trade.Finalized = false // Not finalized yet
 
-	if err := s.store.Trades().Update(ctx, trade); err != nil {
-		slog.Warn("Failed to update trade record", "error", err)
+	if updateErr := s.store.Trades().Update(ctx, trade); updateErr != nil {
+		slog.Warn("Failed to update trade status to submitted", "trade_id", trade.ID, "signature", sig.String(), "error", updateErr)
+		// Even if DB update fails, the transaction was sent. Return success.
 	}
 
 	return sig.String(), nil

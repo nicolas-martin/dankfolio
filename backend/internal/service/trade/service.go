@@ -276,15 +276,22 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", originalChainError)
 	}
 
-	// Update trade record with transaction hash and status
+	// Update trade record with transaction hash and status "submitted"
 	trade.Status = "submitted"
 	trade.TransactionHash = string(sig) // sig is bmodel.Signature
-	if err := s.store.Trades().Update(ctx, trade); err != nil {
-		log.Printf("Warning: Failed to update trade status: %v", err)
+	trade.Error = nil                   // Clear any previous error as submission was successful
+	trade.CompletedAt = nil             // Not completed yet
+	trade.Finalized = false             // Not finalized yet
+
+	if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
+		// Log the warning but proceed to return the trade and nil error,
+		// as the transaction was successfully submitted to the chain.
+		log.Printf("Warning: Failed to update trade status to 'submitted': %v. Trade ID: %s, TxHash: %s", errUpdate, trade.ID, trade.TransactionHash)
 	}
 
 	// Log blockchain explorer URL
 	log.Printf("✅ Trade submitted! View on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)
+
 
 	return trade, nil
 }
@@ -441,8 +448,62 @@ func TruncateAndFormatFloat(value float64, decimalPlaces int) string {
 func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
 	trade, err := s.store.Trades().GetByField(ctx, "transaction_hash", txHash)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get trade by transaction hash: %w", err)
+		return nil, fmt.Errorf("failed to get trade by transaction hash %s: %w", txHash, err)
 	}
+	if trade == nil { // Should ideally be covered by GetByField error, but good practice
+		return nil, fmt.Errorf("no trade found with transaction hash %s", txHash)
+	}
+
+	// If trade status is already final, return it as is.
+	if trade.Status == model.TradeStatusCompleted || trade.Status == model.TradeStatusFailed {
+		return trade, nil
+	}
+
+	// If trade status is "submitted" (or other non-final), check on-chain status.
+	// Other non-final statuses like "prepared" or "pending" should not typically have a txHash yet,
+	// but "submitted" is the key status for this check.
+	if trade.Status == model.TradeStatusSubmitted {
+		chainStatus, statusErr := s.chainClient.GetTransactionStatus(ctx, bmodel.Signature(txHash))
+		if statusErr != nil {
+			// If there's an error fetching the status (e.g., network, RPC down),
+			// log it and return the trade as is from the DB. Don't alter its status.
+			log.Printf("Error getting transaction status for txHash %s: %v. Returning trade with current DB status '%s'.", txHash, statusErr, trade.Status)
+			return trade, nil
+		}
+
+		if chainStatus.Confirmed {
+			log.Printf("Transaction %s (trade %s) confirmed on-chain. Updating status to completed.", txHash, trade.ID)
+			trade.Status = model.TradeStatusCompleted
+			now := time.Now()
+			trade.CompletedAt = &now
+			trade.Finalized = true
+			trade.Error = nil // Clear any previous error
+			if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
+				log.Printf("Warning: Failed to update trade %s to completed: %v", trade.ID, errUpdate)
+				// Return the trade with updated fields even if DB update fails, as on-chain it's complete.
+			}
+		} else if chainStatus.Failed || chainStatus.Err != nil {
+			errMsg := "Transaction failed on-chain."
+			if chainStatus.Err != nil {
+				errMsg = fmt.Sprintf("Transaction failed on-chain: %v", chainStatus.Err)
+			}
+			log.Printf("Transaction %s (trade %s) failed on-chain. Error: %s. Updating status to failed.", txHash, trade.ID, errMsg)
+			trade.Status = model.TradeStatusFailed
+			trade.Error = &errMsg
+			now := time.Now()
+			trade.CompletedAt = &now // Record time of failure processing
+			trade.Finalized = true
+			if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
+				log.Printf("Warning: Failed to update trade %s to failed: %v", trade.ID, errUpdate)
+				// Return the trade with updated fields even if DB update fails.
+			}
+		} else {
+			// Transaction is still pending or status is inconclusive.
+			// Do nothing, return the trade as it was from the database.
+			log.Printf("Transaction %s (trade %s) is still pending or status inconclusive on-chain. Current DB status: '%s'.", txHash, trade.ID, trade.Status)
+		}
+	}
+
 	return trade, nil
 }
 
