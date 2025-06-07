@@ -153,8 +153,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			);
 		}
 
-		const progress = getConfirmationProgress(displayConfirmations);
-
 		// For finalized transactions, show "Complete" instead of confirmation count
 		const confirmationDisplay = displayStatus === 'finalized'
 			? 'Complete'
