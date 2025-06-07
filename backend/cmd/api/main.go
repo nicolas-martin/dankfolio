@@ -227,7 +227,7 @@ func main() {
 
 	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
 
-	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey, apiTracker)
+	birdeyeClient := birdeye.NewClient(httpClient, config.BirdEyeEndpoint, config.BirdEyeAPIKey, apiTracker)
 
 	header := map[string]string{
 		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
@@ -253,7 +253,16 @@ func main() {
 		SolanaRPCEndpoint:     config.SolanaRPCEndpoint,
 		NewCoinsFetchInterval: config.NewCoinsFetchInterval,
 	}
-	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store, solanaClient)
+	coinService := coin.NewService(
+		coinServiceConfig,
+		httpClient,
+		jupiterClient,
+		store,
+		solanaClient,    // This is the chainClient
+		birdeyeClient,   // This is the birdeyeClient
+		apiTracker,      // Pass existing apiTracker
+		offchainClient,  // Pass existing offchainClient
+	)
 	slog.Info("Coin service initialized.")
 
 	// Initialize Price Service Cache

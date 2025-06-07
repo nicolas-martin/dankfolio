@@ -50,7 +50,7 @@ func TestGetTrendingTokens_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.URL, testAPIKey, mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
 
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
@@ -79,7 +79,7 @@ func TestGetTrendingTokens_HttpError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.URL, testAPIKey, mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
 	resp, err := client.GetTrendingTokens(context.Background())
@@ -106,7 +106,7 @@ func TestGetTrendingTokens_JsonDecodingError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.URL, testAPIKey, mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
 	resp, err := client.GetTrendingTokens(context.Background())
@@ -155,7 +155,7 @@ func TestGetTrendingTokens_Timeout(t *testing.T) {
 	// This is not possible with the current NewClient structure.
 	// We will proceed with the existing client, understanding this test might be slow or not perfectly precise.
 
-	client := birdeyeclient.NewClient(server.URL, testAPIKey, mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
 	// Create a context with a shorter timeout for this specific call
@@ -197,7 +197,7 @@ func TestGetTrendingTokens_NoApiKey(t *testing.T) {
 	defer server.Close()
 
 	// Create client with an empty API key
-	client := birdeyeclient.NewClient(server.URL, "", mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, "", mockTracker)
 
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
@@ -250,7 +250,7 @@ func TestGetPriceHistory_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.URL, testAPIKey, mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
 	resp, err := client.GetPriceHistory(context.Background(), params)
@@ -286,7 +286,7 @@ func TestGetPriceHistory_HttpError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := birdeyeclient.NewClient(server.URL, testAPIKey, mockTracker)
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
 	resp, err := client.GetPriceHistory(context.Background(), params)

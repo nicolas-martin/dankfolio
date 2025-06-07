@@ -23,15 +23,15 @@ type Config struct {
 	NewCoinsFetchInterval time.Duration
 }
 
-// --- Structs matching the scraper's NEW JSON output (Enriched Data) ---
+// --- Structs for Trending Tokens Output ---
 
-// EnrichedFileOutput matches the top-level structure of the NEW trending_solana_tokens.json
-type EnrichedFileOutput struct {
-	ScrapeTimestamp time.Time    `json:"scrapeTimestamp"`
-	Coins           []model.Coin `json:"coins"` // Contains fully enriched Coin models
+// TrendingTokensOutput matches the top-level structure for the trending tokens data.
+type TrendingTokensOutput struct {
+	FetchTimestamp time.Time    `json:"fetchTimestamp"`
+	Coins          []model.Coin `json:"coins"` // Contains fully enriched Coin models
 }
 
-// --- End scraper JSON structs ---
+// --- End Trending Tokens Output Structs ---
 // TokenInfo represents a token from the Raydium API
 type TokenInfo struct {
 	Symbol   string `json:"symbol"`
