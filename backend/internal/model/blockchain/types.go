@@ -10,6 +10,11 @@ type Address string
 // For simplicity, using string. Could be []byte.
 type Signature string
 
+// String returns the string representation of the signature
+func (s Signature) String() string {
+	return string(s)
+}
+
 // Blockhash represents a generic block hash.
 type Blockhash string
 
@@ -76,6 +81,11 @@ type TransactionStatus struct {
 	Error         string    // Error message if the transaction failed (empty if successful)
 	RawError      any       // Store original error object if needed
 	Signature     Signature // The transaction signature
+
+	// Additional fields for compatibility
+	Confirmed bool  // Whether the transaction is confirmed
+	Failed    bool  // Whether the transaction failed
+	Err       error // Error object if the transaction failed
 }
 
 // TransactionOptions provides generic options for sending transactions.
