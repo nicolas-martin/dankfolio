@@ -1,78 +1,46 @@
+_anchors:
+  common-config: &common-config
+    dir: "{{.InterfaceDir}}/mocks"
+    filename: "{{.InterfaceName}}.go"
+    pkgname: "{{.SrcPackageName}}mocks" # Used SrcPackageName
+    # template-data:
+    #   unroll-variadic: true
+
 packages:
   github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye:
+    config:
+      <<: *common-config
     interfaces:
       ClientAPI: # From client.go
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks" # Used .PackageName instead of .SrcPackageName and lowercased "mocks"
-          # template-data:
-          #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter:
+    config:
+      <<: *common-config
     interfaces:
       ClientAPI:
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks"
-          # template-data:
-          #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain:
+    config:
+      <<: *common-config
     interfaces:
       ClientAPI:
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks"
-          # template-data:
-          #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/clients/solana:
+    config:
+      <<: *common-config
     interfaces:
       ClientAPI: # From interfaces.go
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks"
-          # template-data:
-          #   unroll-variadic: true
       SolanaRPCClientAPI: # From rpc_client_api.go
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks"
-          # template-data:
-          #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/db:
+    config:
+      <<: *common-config
     interfaces:
       Repository:
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks"
-          # template-data:
-          #   unroll-variadic: true
       Store:
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks"
-          # template-data:
-          #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/service/coin:
+    config:
+      <<: *common-config
     interfaces:
       CoinServiceAPI: # From api.go
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks"
-          # template-data:
-          #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/service/price:
+    config:
+      <<: *common-config
     interfaces:
       PriceServiceAPI: # From api.go
-        config:
-          dir: "{{.InterfaceDir}}/mocks"
-          filename: "{{.InterfaceName}}.go"
-          outpkg: "{{.PackageName}}mocks"
-          # template-data:
-          #   unroll-variadic: true
