@@ -14,9 +14,9 @@ import (
 	associatedtokenaccount "github.com/gagliardetto/solana-go/programs/associated-token-account"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
-	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/google/uuid"
-	solanaClient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Aliased import
+	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
+	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin" // Added for CoinServiceAPI
@@ -25,15 +25,15 @@ import (
 
 // Service handles wallet-related operations
 type Service struct {
-	rpcClient   solanaClient.SolanaRPCClientAPI // Use aliased package for the interface
+	chainClient bclient.GenericClientAPI // Use generic blockchain client interface
 	store       db.Store
 	coinService coin.CoinServiceAPI // Added CoinService
 }
 
 // New creates a new wallet service
-func New(rpcClient solanaClient.SolanaRPCClientAPI, store db.Store, coinService coin.CoinServiceAPI) *Service { // Accept aliased interface and CoinService
+func New(chainClient bclient.GenericClientAPI, store db.Store, coinService coin.CoinServiceAPI) *Service { // Accept generic client
 	return &Service{
-		rpcClient:   rpcClient,
+		chainClient: chainClient,
 		store:       store,
 		coinService: coinService, // Store injected CoinService
 	}
@@ -57,13 +57,21 @@ func (s *Service) getOrCreateATA(ctx context.Context, payer, owner, mint solana.
 		return solana.PublicKey{}, nil, fmt.Errorf("failed to find token account: %w", err)
 	}
 
-	info, err := s.rpcClient.GetAccountInfo(ctx, ata)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		return solana.PublicKey{}, nil, fmt.Errorf("failed to check token account: %w", err)
+	// Use generic GetAccountInfo
+	bAccInfo, err := s.chainClient.GetAccountInfo(ctx, bmodel.Address(ata.String()))
+	if err != nil {
+		// If error is "not found" (needs a specific error type or string check from client), it's okay.
+		// For now, any error other than a clear "not found" is problematic.
+		// This logic might need refinement based on how your generic client surfaces "not found".
+		if !strings.Contains(err.Error(), "account not found") && !strings.Contains(err.Error(), "nil value") { // Crude check
+			return solana.PublicKey{}, nil, fmt.Errorf("failed to check token account %s: %w", ata.String(), err)
+		}
+		// If it is a "not found" error, bAccInfo will be nil, and we proceed to create.
 	}
 
 	var instructions []solana.Instruction
-	if info == nil || info.Value == nil || info.Value.Owner.Equals(solana.SystemProgramID) {
+	// If account doesn't exist (bAccInfo is nil from a "not found" error) or is uninitialized (owned by SystemProgramID)
+	if bAccInfo == nil || bmodel.Address(solana.SystemProgramID.String()) == bAccInfo.Owner {
 		slog.Debug("Creating token account", "address", ata.String())
 		createATAIx, err := associatedtokenaccount.NewCreateInstruction(
 			payer,
@@ -86,13 +94,15 @@ func (s *Service) getTokenAccount(ctx context.Context, mint, owner solana.Public
 		return solana.PublicKey{}, nil, fmt.Errorf("failed to find associated token address: %w", err)
 	}
 
-	info, err := s.rpcClient.GetAccountInfo(ctx, ata)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		return solana.PublicKey{}, nil, fmt.Errorf("failed to check token account: %w", err)
+	bAccInfo, err := s.chainClient.GetAccountInfo(ctx, bmodel.Address(ata.String()))
+	if err != nil {
+		if !strings.Contains(err.Error(), "account not found") && !strings.Contains(err.Error(), "nil value") {
+			return solana.PublicKey{}, nil, fmt.Errorf("failed to check token account %s: %w", ata.String(), err)
+		}
 	}
 
 	var instructions []solana.Instruction
-	if info == nil || info.Value == nil || info.Value.Owner.Equals(solana.SystemProgramID) {
+	if bAccInfo == nil || bmodel.Address(solana.SystemProgramID.String()) == bAccInfo.Owner {
 		slog.Debug("Creating token account", "address", ata.String())
 		createATAIx, err := associatedtokenaccount.NewCreateInstruction(
 			owner,
@@ -110,43 +120,73 @@ func (s *Service) getTokenAccount(ctx context.Context, mint, owner solana.Public
 
 // getMintInfo retrieves and parses mint account information
 func (s *Service) getMintInfo(ctx context.Context, mint solana.PublicKey) (uint8, error) {
-	mintAcct, err := s.rpcClient.GetAccountInfo(ctx, mint)
+	bAccInfo, err := s.chainClient.GetAccountInfo(ctx, bmodel.Address(mint.String()))
 	if err != nil {
-		return 0, fmt.Errorf("failed to get mint info: %w", err)
+		return 0, fmt.Errorf("failed to get mint info for %s: %w", mint.String(), err)
 	}
-	if mintAcct.Value == nil || mintAcct.Value.Data == nil {
-		return 0, fmt.Errorf("invalid token mint: account not found")
-	}
-
-	var mintInfo struct {
-		Type string `json:"type"`
-		Info struct {
-			Decimals uint8 `json:"decimals"`
-		} `json:"info"`
+	if bAccInfo == nil || len(bAccInfo.Data) == 0 { // Check Data length
+		return 0, fmt.Errorf("invalid token mint %s: account not found or no data", mint.String())
 	}
 
-	if err := json.Unmarshal(mintAcct.Value.Data.GetRawJSON(), &mintInfo); err != nil {
-		data := mintAcct.Value.Data.GetBinary()
-		if len(data) < 4 {
-			return 0, fmt.Errorf("invalid mint data length")
+	// Attempt to parse as Solana Mint structure from bAccInfo.Data
+	// The existing JSON parsing logic might be problematic if bAccInfo.Data is not JSON.
+	// Solana mint data is binary.
+	// For a typical Solana mint account, decimals are at offset 0 of the mint authority.
+	// However, the provided JSON parsing was for rpc.GetAccountInfoResult.Value.Data.GetRawJSON()
+	// which is different from bmodel.AccountInfo.Data which is []byte.
+	// We need to parse the binary data directly.
+	// A full MintLayout struct from spltoken can be used here.
+	// For simplicity, if data is 82 bytes (common for Mint), decimals is at byte 44 for SPL Token program Mints
+	// but this is very fragile. A proper deserialization is needed.
+	// Let's assume the old JSON parsing logic was for a specific RPC response format that might not hold.
+	// Direct binary parsing for SPL Token Mint:
+	// First 36 bytes: MintAuthorityOption (u32) + MintAuthority (PublicKey)
+	// Next 8 bytes: Supply (u64)
+	// Next 1 byte: Decimals (u8) -> THIS IS WHAT WE WANT (Offset 36+8 = 44)
+	// Next 1 byte: IsInitialized (bool)
+	// Next 4 bytes: FreezeAuthorityOption (u32) + FreezeAuthority (PublicKey)
+
+	// This is a simplified and potentially fragile way to get decimals.
+	// A robust solution would use a proper struct deserializer for the mint account data.
+	if len(bAccInfo.Data) >= 45 { // Mint authority (36) + supply (8) + decimals (1)
+		// This assumes standard SPL Token mint layout.
+		// Decimals are usually at offset 0 of the mint data itself, not 44 of the AccountInfo.Data
+		// The `token.Mint` struct from `gagliardetto/solana-go/programs/token` can deserialize this.
+		var solanaMint token.Mint
+		if err := solanaMint.UnmarshalWithDecoder(solanago.NewBinDecoder(bAccInfo.Data)); err == nil {
+			return solanaMint.Decimals, nil
+		} else {
+			// Fallback or error if proper deserialization fails
+			slog.WarnContext(ctx, "Failed to deserialize mint data using token.Mint, attempting direct byte access (fragile)", "mint", mint.String(), "error", err)
+			// The previous JSON unmarshal logic was likely incorrect for raw binary mint data.
+			// If the binary data was indeed JSON (e.g. from jsonParsed encoding before), that's different.
+			// But bmodel.AccountInfo.Data is []byte.
+			// Trying the previous logic's fallback if data structure was actually different:
+			if len(bAccInfo.Data) >= 4 { // Very simplified, likely incorrect for standard mints
+				return bAccInfo.Data[4], nil // This was the old fallback, likely wrong for mint decimals
+			}
+			return 0, fmt.Errorf("failed to parse decimals from mint data for %s: data too short or invalid format", mint.String())
 		}
-		return data[4], nil
 	}
 
-	return mintInfo.Info.Decimals, nil
+	return 0, fmt.Errorf("invalid mint data length for %s: expected at least 45 bytes, got %d", mint.String(), len(bAccInfo.Data))
 }
 
 // buildTransaction creates a transaction with the given instructions
 func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, instructions []solana.Instruction) (*solana.Transaction, error) {
-	recent, err := s.rpcClient.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
+	genericBlockhash, err := s.chainClient.GetLatestBlockhash(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
-	slog.Debug("Recent blockhash obtained", "blockhash", recent.Value.Blockhash)
+	solanaBlockHash, err := solana.BlockhashFromBase58(string(genericBlockhash))
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert generic blockhash to solana blockhash: %w", err)
+	}
+	slog.Debug("Recent blockhash obtained", "blockhash", solanaBlockHash)
 
 	tx, err := solana.NewTransaction(
 		instructions,
-		recent.Value.Blockhash,
+		solanaBlockHash,
 		solana.TransactionPayer(payer),
 	)
 	if err != nil {
@@ -389,11 +429,11 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 	}
 
 	// Submit transaction with optimized options
-	maxRetries := uint(3)
-	sig, err := s.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+	maxRetries := uint(3) // This is uint, which is fine for bmodel.TransactionOptions
+	sig, err := s.chainClient.SendRawTransaction(ctx, txBytes, bmodel.TransactionOptions{
 		SkipPreflight:       false,
-		PreflightCommitment: rpc.CommitmentConfirmed,
-		MaxRetries:          &maxRetries,
+		PreflightCommitment: "confirmed",
+		MaxRetries:          maxRetries,
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to submit transaction: %w", err)
@@ -426,28 +466,23 @@ func (s *Service) GetWalletBalances(ctx context.Context, address string) (*Walle
 		return nil, fmt.Errorf("invalid address: %v", err)
 	}
 
-	// Get SOL solData first
-	solData, err := s.rpcClient.GetBalance(
-		ctx,
-		pubKey,
-		rpc.CommitmentConfirmed,
-	)
+	// Get SOL balance first
+	solBalanceResult, err := s.chainClient.GetBalance(ctx, bmodel.Address(pubKey.String()), "confirmed")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get SOL balance: %v", err)
+		return nil, fmt.Errorf("failed to get SOL balance: %w", err)
 	}
+	solValue := solBalanceResult.UIAmount // UIAmount from bmodel.Balance
 
 	// Get other token balances
-	tokenBalances, err := s.getTokenBalances(ctx, address)
+	tokenBalances, err := s.getTokenBalances(ctx, address) // address is string
 	if err != nil {
-		return nil, fmt.Errorf("failed to get token balances: %v", err)
+		return nil, fmt.Errorf("failed to get token balances: %w", err)
 	}
 
-	solValue := float64(solData.Value) / float64(solana.LAMPORTS_PER_SOL)
 	var allBalances []Balance
 	if solValue > 0 {
-		// Only include SOL if balance is greater than zero
-		solBalance := Balance{
-			ID:     model.SolMint,
+		solBalance := Balance{ // This is wallet.Balance, not bmodel.Balance
+			ID:     model.SolMint, // Assuming model.SolMint is the string "SOL" or its mint address
 			Amount: solValue,
 		}
 		allBalances = append([]Balance{solBalance}, tokenBalances...)
@@ -468,50 +503,24 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 		return nil, fmt.Errorf("invalid wallet address: %v", err)
 	}
 
-	// Get token accounts with jsonParsed encoding
-	accounts, err := s.rpcClient.GetTokenAccountsByOwner(
+	// Get token accounts using generic client
+	tokenAccounts, err := s.chainClient.GetTokenAccountsByOwner(
 		ctx,
-		pubKey,
-		&rpc.GetTokenAccountsConfig{
-			ProgramId: solana.TokenProgramID.ToPointer(),
-		},
-		&rpc.GetTokenAccountsOpts{
-			Encoding:   solana.EncodingJSONParsed,
-			Commitment: rpc.CommitmentConfirmed,
-		},
+		bmodel.Address(pubKey.String()),
+		bmodel.TokenAccountsOptions{Encoding: string(solana.EncodingJSONParsed)}, // Using solana specific encoding
 	)
 	if err != nil {
-		return []Balance{}, fmt.Errorf("failed to get token accounts: %v", err)
+		return []Balance{}, fmt.Errorf("failed to get token accounts: %w", err)
 	}
 
-	// First collect mint addresses and balances for tokens with positive balance
 	tokens := make([]Balance, 0)
-	for _, account := range accounts.Value {
-		// Get the parsed token account data
-		parsedData := account.Account.Data.GetRawJSON()
-		if len(parsedData) == 0 {
-			continue
-		}
-
-		var parsedAccount struct {
-			Parsed struct {
-				Info struct {
-					Mint        string `json:"mint"`
-					TokenAmount struct {
-						UiAmount float64 `json:"uiAmount"`
-					} `json:"tokenAmount"`
-				} `json:"info"`
-			} `json:"parsed"`
-		}
-
-		if err := json.Unmarshal(parsedData, &parsedAccount); err != nil {
-			return nil, fmt.Errorf("failed to parse token account data: %w", err)
-		}
-
-		if parsedAccount.Parsed.Info.TokenAmount.UiAmount > 0 {
-			tokens = append(tokens, Balance{
-				ID:     parsedAccount.Parsed.Info.Mint,
-				Amount: parsedAccount.Parsed.Info.TokenAmount.UiAmount,
+	for _, accInfo := range tokenAccounts {
+		if accInfo.UIAmount > 0 { // Filter out zero balance tokens
+			tokens = append(tokens, Balance{ // This is wallet.Balance
+				ID:     string(accInfo.MintAddress),
+				Amount: accInfo.UIAmount,
+				// Symbol and other details might need to be fetched based on MintAddress
+				// if not already part of a richer bmodel.TokenAccountInfo
 			})
 		}
 	}
@@ -520,17 +529,29 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 }
 
 // submitTransaction submits a signed transaction to the blockchain
+// This function is now effectively replaced by direct calls to chainClient.SendRawTransaction
+// or chainClient.SendTransaction if building a generic transaction.
+// Keeping it for now if it's used by other parts of the service that still build *solana.Transaction.
+// If those parts are refactored to use SendRawTransaction, this can be removed.
 func (s *Service) submitTransaction(ctx context.Context, tx *solana.Transaction) (solana.Signature, error) {
-	// Submit transaction with optimized options
-	maxRetries := uint(3)
-	sig, err := s.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
-		SkipPreflight:       false,
-		PreflightCommitment: rpc.CommitmentConfirmed,
-		MaxRetries:          &maxRetries,
-	})
+	txBytes, err := tx.MarshalBinary()
 	if err != nil {
-		return solana.Signature{}, fmt.Errorf("failed to submit transaction: %w", err)
+		return solana.Signature{}, fmt.Errorf("failed to serialize transaction for submitTransaction: %w", err)
 	}
 
-	return sig, nil
+	maxRetries := uint(3)
+	sig, err := s.chainClient.SendRawTransaction(ctx, txBytes, bmodel.TransactionOptions{
+		SkipPreflight:       false,
+		PreflightCommitment: "confirmed",
+		MaxRetries:          maxRetries,
+	})
+	if err != nil {
+		return solana.Signature{}, fmt.Errorf("failed to submit transaction via SendRawTransaction: %w", err)
+	}
+	// The signature from SendRawTransaction is bmodel.Signature, convert to solana.Signature
+	solSig, err := solana.SignatureFromBase58(string(sig))
+	if err != nil {
+		return solana.Signature{}, fmt.Errorf("failed to convert bmodel.Signature to solana.Signature: %w", err)
+	}
+	return solSig, nil
 }

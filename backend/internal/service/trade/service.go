@@ -13,9 +13,10 @@ import (
 	"time"
 
 	solanago "github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
+	// "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // To be replaced
+	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
+	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
@@ -24,9 +25,9 @@ import (
 
 // Service handles trade-related operations
 type Service struct {
-	solanaClient              solana.ClientAPI
-	coinService               coin.CoinServiceAPI   // Use CoinServiceAPI interface from coin package
-	priceService              price.PriceServiceAPI // Use PriceServiceAPI interface from price package
+	chainClient               bclient.GenericClientAPI // Changed from solanaClient
+	coinService               coin.CoinServiceAPI      // Use CoinServiceAPI interface from coin package
+	priceService              price.PriceServiceAPI    // Use PriceServiceAPI interface from price package
 	jupiterClient             jupiter.ClientAPI
 	store                     db.Store
 	platformFeeBps            int    // Platform fee in basis points
@@ -35,7 +36,7 @@ type Service struct {
 
 // NewService creates a new TradeService instance
 func NewService(
-	sc solana.ClientAPI,
+	chainClient bclient.GenericClientAPI, // Changed parameter
 	cs coin.CoinServiceAPI,
 	ps price.PriceServiceAPI,
 	jc jupiter.ClientAPI,
@@ -44,7 +45,7 @@ func NewService(
 	configuredPlatformFeeAccountAddress string, // New parameter
 ) *Service {
 	return &Service{
-		solanaClient:              sc,
+		chainClient:               chainClient, // Changed assignment
 		coinService:               cs,
 		priceService:              ps,
 		jupiterClient:             jc,
@@ -245,24 +246,39 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		return nil, fmt.Errorf("no trade record found for the given transaction")
 	}
 
-	// Execute signed transaction on blockchain
-	txHash, err := s.solanaClient.ExecuteTrade(ctx, trade, req.SignedTransaction)
+	// Decode the signed transaction if it's base64 encoded
+	rawTxBytes, err := base64.StdEncoding.DecodeString(req.SignedTransaction)
+	if err != nil {
+		// Handle error: maybe the transaction is not encoded, or encoding is invalid
+		// For now, assume it might not be encoded and use as is, or return error
+		// This depends on how SignedTransaction is consistently formatted.
+		// If it should always be base64, this is an error.
+		// If it could be raw bytes already, then this step is conditional.
+		// Let's assume for now it should be base64 encoded.
+		return nil, fmt.Errorf("failed to decode base64 signed transaction: %w", err)
+	}
+
+	// Execute signed transaction on blockchain using SendRawTransaction
+	opts := bmodel.TransactionOptions{
+		SkipPreflight:       false, // Default, or from config/req
+		PreflightCommitment: "confirmed", // Default, or from config/req
+		// MaxRetries can be set if needed, e.g. 3
+	}
+	sig, err := s.chainClient.SendRawTransaction(ctx, rawTxBytes, opts)
 	if err != nil {
 		trade.Status = "failed"
-		originalSolanaError := err // Store the original error from solanaClient.ExecuteTrade
-		errStr := originalSolanaError.Error()
+		originalChainError := err // Store the original error
+		errStr := originalChainError.Error()
 		trade.Error = &errStr
 		if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
 			log.Printf("Warning: Failed to update failed trade status: %v", errUpdate)
-			// Optionally, you could return a combined error here, e.g., by wrapping errUpdate and originalSolanaError
-			// For now, returning the original operational error is prioritized.
 		}
-		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", originalSolanaError)
+		return nil, fmt.Errorf("failed to execute trade on blockchain: %w", originalChainError)
 	}
 
 	// Update trade record with transaction hash and status
 	trade.Status = "submitted"
-	trade.TransactionHash = txHash
+	trade.TransactionHash = string(sig) // sig is bmodel.Signature
 	if err := s.store.Trades().Update(ctx, trade); err != nil {
 		log.Printf("Warning: Failed to update trade status: %v", err)
 	}
@@ -431,6 +447,6 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 }
 
 // GetTransactionStatus gets the confirmation status of a transaction
-func (s *Service) GetTransactionStatus(ctx context.Context, txHash string) (*rpc.GetSignatureStatusesResult, error) {
-	return s.solanaClient.GetTransactionConfirmationStatus(ctx, txHash)
+func (s *Service) GetTransactionStatus(ctx context.Context, txHash string) (*bmodel.TransactionStatus, error) {
+	return s.chainClient.GetTransactionStatus(ctx, bmodel.Signature(txHash))
 }

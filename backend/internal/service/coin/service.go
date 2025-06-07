@@ -12,7 +12,9 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
+	// "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // To be replaced
+	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
+	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
@@ -21,7 +23,7 @@ import (
 type Service struct {
 	config         *Config
 	jupiterClient  jupiter.ClientAPI
-	solanaClient   solana.ClientAPI
+	chainClient    bclient.GenericClientAPI // Changed from solanaClient
 	offchainClient offchain.ClientAPI
 	store          db.Store
 	fetcherCtx     context.Context    // Context for the new token fetcher goroutine
@@ -29,13 +31,13 @@ type Service struct {
 }
 
 // NewService creates a new CoinService instance
-func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store, solanaClient solana.ClientAPI) *Service {
+func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store, chainClient bclient.GenericClientAPI) *Service { // chainClient
 	offchainClient := offchain.NewClient(httpClient)
 
 	service := &Service{
 		config:         config,
 		jupiterClient:  jupiterClient,
-		solanaClient:   solanaClient,
+		chainClient:    chainClient, // Changed assignment
 		offchainClient: offchainClient,
 		store:          store,
 	}
