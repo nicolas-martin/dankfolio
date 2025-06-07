@@ -6,21 +6,23 @@ import { Coin } from '@/types';
  * @param onAmountChange The function to call with the validated text.
  */
 export const handleAmountInputChange = (text: string, onAmountChange: (value: string) => void) => {
-	// Remove any non-numeric characters except decimal point
-	const cleanedText = text.replace(/[^0-9.]/g, '');
+    // Allow only numbers and dots initially
+    let value = text.replace(/[^0-9.]/g, '');
 
-	// Ensure only one decimal point
-	const parts = cleanedText.split('.');
-	if (parts.length > 2) {
-		return;
-	}
+    const decimalParts = value.split('.');
 
-	// Limit decimal places to 9
-	if (parts[1] && parts[1].length > 9) {
-		return;
-	}
+    if (decimalParts.length > 1) { // If there's at least one dot
+        const integerPart = decimalParts[0];
+        // Join all parts after the first dot, then truncate to 9 decimal places
+        const fractionalPart = decimalParts.slice(1).join('').substring(0, 9);
+        value = integerPart + '.' + fractionalPart;
+    }
+    // If decimalParts.length is 1, it means no dots, or dots were at the beginning/end and got handled by replace or split.
+    // e.g. "123" -> value = "123"
+    // e.g. ".123" -> value = ".123" (decimalParts[0] is "", fractionalPart is "123")
+    // e.g. "123." -> value = "123." (decimalParts[0] is "123", fractionalPart is "")
 
-	onAmountChange(cleanedText);
+    onAmountChange(value);
 };
 
 /**

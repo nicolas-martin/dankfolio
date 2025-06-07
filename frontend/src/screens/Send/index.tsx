@@ -4,6 +4,7 @@ import { Text, useTheme, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions'; // Added
 import TokenSelector from 'components/Common/TokenSelector';
+import AmountPercentageButtons from '@components/Common/AmountPercentageButtons';
 import { useToast } from '@components/Common/Toast';
 import { SendTokensScreenProps } from './types';
 import { PortfolioToken } from '@store/portfolio';
@@ -268,28 +269,13 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 		return (
 			<View style={styles.amountCard}>
-				<View style={styles.percentageContainer}>
-					{[25, 50, 75, 100].map((percent) => (
-						<TouchableOpacity
-							key={percent}
-							style={styles.percentageButton}
-							onPress={() => {
-								const calculatedAmount = (selectedToken.amount * percent) / 100;
-								let amountStr = calculatedAmount.toFixed(9);
-								amountStr = parseFloat(amountStr).toString();
-								if (amountStr.length > 12) {
-									amountStr = amountStr.substring(0, 12);
-									if (amountStr.endsWith('.')) {
-										amountStr = amountStr.substring(0, 11);
-									}
-								}
-								setAmount(amountStr);
-							}}
-						>
-							<Text style={styles.percentageButtonText}>{percent}%</Text>
-						</TouchableOpacity>
-					))}
-				</View>
+                <AmountPercentageButtons
+                    balance={selectedToken.amount}
+                    onSelectAmount={setAmount}
+                    // style={styles.percentageContainer} // Pass any specific container style if needed,
+                                                       // or ensure AmountPercentageButtons' internal style is sufficient.
+                                                       // The new component uses its own useStyles for container.
+                />
 			</View>
 		);
 	};

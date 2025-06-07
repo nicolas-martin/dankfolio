@@ -133,7 +133,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	showOnlyPortfolioTokens = false,
 	testID,
 }) => {
-	const amountPlaceholder = '0.00';
+	const amountPlaceholder = 'Enter amount';
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const [modalVisible, setModalVisible] = useState(false);
