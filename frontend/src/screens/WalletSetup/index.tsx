@@ -61,8 +61,13 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 			await setWallet(keypair.publicKey.toBase58());
 			props.onWalletSetupComplete(keypair);
 		} catch (error: unknown) {
-			logger.error('Load Debug Wallet Error', { errorMessage: error.message });
-			showToast({ message: `Error loading debug wallet: ${error.message}`, type: 'error' });
+			if (error instanceof Error) {
+				logger.error('Load Debug Wallet Error', { errorMessage: error.message });
+				showToast({ message: `Error loading debug wallet: ${error.message}`, type: 'error' });
+			} else {
+				logger.error('An unknown error occurred while loading debug wallet:', error);
+				showToast({ message: `An unknown error occurred while loading debug wallet: ${error}`, type: 'error' });
+			}
 		}
 	};
 

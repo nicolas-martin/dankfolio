@@ -66,13 +66,18 @@ export async function initializeFirebaseServices(): Promise<void> {
 			isTokenAutoRefreshEnabled: true,
 		});
 
-	} catch (error) {
-		logger.error('❌ Failed to initialize Firebase App Check in production:', error);
-		logger.error('🚨 This will cause authentication failures in production!');
-		logger.error(`🚨 Error details: ${error.message || 'No message'}`);
-		logger.error(`🚨 Error stack: ${error.stack || 'No stack'}`);
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			logger.error('❌ Failed to initialize Firebase App Check in production:', error);
+			logger.error('🚨 This will cause authentication failures in production!');
+			logger.error(`🚨 Error details: ${error.message || 'No message'}`);
+			logger.error(`🚨 Error stack: ${error.stack || 'No stack'}`);
 
-		// In production, we should fail hard if App Check can't be initialized
-		throw new Error(`Production Firebase App Check initialization failed: ${error.message}`);
+			// In production, we should fail hard if App Check can't be initialized
+			throw new Error(`Production Firebase App Check initialization failed: ${error.message}`);
+		} else {
+			logger.error("An unknown error occurred:", error);
+			throw new Error(`Production Firebase App Check initialization failed: ${error}`);
+		}
 	}
 }

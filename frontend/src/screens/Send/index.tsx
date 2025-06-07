@@ -159,11 +159,18 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			logger.breadcrumb({ category: 'ui', message: 'Send confirmation modal opened (skipped Solscan or Solscan passed implicitly)', data: { toAddress: recipientAddress, amount, token: selectedToken.coin.symbol } });
 			setIsConfirmationVisible(true);
 
-		} catch (err) {
-			showToast({
-				type: 'error',
-				message: err.message || 'Failed to validate transfer'
-			});
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				showToast({
+					type: 'error',
+					message: error.message || 'Failed to validate transfer'
+				});
+			} else {
+				showToast({
+					type: 'error',
+					message: 'An unknown error occurred during validation'
+				});
+			}
 		}
 	};
 
@@ -191,11 +198,18 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			setIsStatusModalVisible(true);
 			componentStartPolling(txHash);
 
-		} catch (err) {
-			showToast({
-				type: 'error',
-				message: err.message || 'Failed to send tokens'
-			});
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				showToast({
+					type: 'error',
+					message: error.message || 'Failed to send tokens'
+				});
+			} else {
+				showToast({
+					type: 'error',
+					message: 'An unknown error occurred while sending tokens'
+				});
+			}
 			setIsLoading(false);
 		}
 	};
