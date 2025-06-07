@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { View, Text, Button, TextInput, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
-import { useTheme, IconButton } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, TextInput, ActivityIndicator, ScrollView, TouchableOpacity, Image, Linking } from 'react-native';
+import { useTheme, IconButton, Button as PaperButton } from 'react-native-paper';
 import { createStyles } from './styles';
 import { storeCredentials, base64ToBase58PrivateKey } from './scripts';
 import { WalletSetupScreenProps } from './types';
@@ -12,6 +12,11 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, TERMS_TEXT, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
 import { env } from '@utils/env';
+import TermsModal from '@/components/Common/TermsModal';
+
+// Load the onboarding image from the correct location
+// Note: When using require for images, you need the relative path from this file to the assets directory
+const neonBarImage = require('../../../assets/onboarding.jpg');
 
 const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
 
@@ -20,6 +25,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
 	const { setWallet } = usePortfolioStore();
+	const [termsModalVisible, setTermsModalVisible] = useState(false);
 
 	const {
 		step,
@@ -81,29 +87,34 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		));
 	};
 
+	const handleTermsPress = () => {
+		logger.breadcrumb({ category: 'ui', message: 'Terms and conditions link pressed' });
+		setTermsModalVisible(true);
+	};
+
+	const handleAcceptTerms = () => {
+		logger.breadcrumb({ category: 'ui', message: 'Terms and conditions accepted' });
+		showToast({
+			message: "Terms & Conditions accepted",
+			type: 'success'
+		});
+	};
+
 	return (
 		<View style={styles.container}>
 			{step === 'welcome' && (
 				<View style={styles.welcomeContainer}>
-					<View style={styles.illustrationContainer}>
-						<View style={styles.frameContainer}>
-							<View style={styles.geometricShapes}>
-								<View style={styles.shape1} />
-								<View style={styles.shape2} />
-								<View style={styles.shape3} />
-							</View>
-						</View>
-						<View style={styles.plantContainer}>
-							<View style={styles.plant} />
-						</View>
-						<View style={styles.vaseContainer}>
-							<View style={styles.vase} />
-						</View>
+					<View style={styles.neonBarImageContainer}>
+						<Image
+							source={neonBarImage}
+							style={styles.neonBarImage}
+							resizeMode="cover"
+						/>
 					</View>
 
 					<View style={styles.welcomeContent}>
-						<Text style={styles.title}>{WELCOME_TITLE}</Text>
-						<Text style={styles.subtitle}>{WELCOME_DESC}</Text>
+						<Text style={styles.title}>Welcome to DankFolio</Text>
+						<Text style={styles.subtitle}>Your gateway to the meme economy. Trade, hodl, and laugh your way to the moon with the dankest portfolio in crypto.</Text>
 
 						<View style={styles.buttonContainer}>
 							<TouchableOpacity
@@ -120,26 +131,29 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									logger.breadcrumb({ category: 'ui', message: 'Import recovery phrase button pressed (welcome step)' });
 									goToImport();
 								}}
-								style={[styles.actionButton, styles.actionButtonLight]}
+								style={[styles.actionButton, styles.actionButtonYellow]}
 							>
 								<Text style={styles.buttonText}>Import a recovery phrase</Text>
 							</TouchableOpacity>
 						</View>
 
-						<Text style={styles.termsText}>{TERMS_TEXT}</Text>
+						<TouchableOpacity 
+							onPress={handleTermsPress}
+							style={styles.termsContainer}
+						>
+							<Text style={styles.termsText}>By proceeding, you agree to our Terms & Conditions</Text>
+						</TouchableOpacity>
 					</View>
 
 					{isDevelopmentOrSimulator && (
-						<View style={styles.debugButtonContainer}>
-							<Button
-								title="Load Debug Wallet (TEST_PRIVATE_KEY)"
-								onPress={() => {
-									logger.breadcrumb({ category: 'ui', message: 'Debug wallet load pressed' });
-									loadDebugWallet();
-								}}
-								color="lightgray"
-							/>
-						</View>
+						<Text
+							style={styles.debugText}
+							onPress={() => {
+								loadDebugWallet();
+							}}
+						>
+							Load Debug Wallet (TEST_PRIVATE_KEY)
+						</Text>
 					)}
 				</View>
 			)}
@@ -308,6 +322,13 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 					)}
 				</View>
 			)}
+
+			{/* Terms and Conditions Modal */}
+			<TermsModal
+				isVisible={termsModalVisible}
+				onAccept={handleAcceptTerms}
+				onClose={() => setTermsModalVisible(false)}
+			/>
 		</View>
 	);
 };

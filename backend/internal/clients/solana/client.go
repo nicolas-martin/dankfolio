@@ -746,4 +746,5 @@ func (c *Client) GetTokenMetadata(ctx context.Context, mintAddress bmodel.Addres
 		Supply:   supply,
 		OtherData: make(map[string]interface{}), // Initialize if needed
 	}, nil
+
 }

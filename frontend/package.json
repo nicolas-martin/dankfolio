@@ -49,6 +49,7 @@
     "expo-status-bar": "~2.2.3",
     "firebase": "^11.8.1",
     "getenv": "2.0.0",
+    "reanimated-bottom-sheet": "^1.0.0-alpha.22",
     "lodash": "^4.17.21",
     "loglevel": "^1.9.2",
     "lottie-react-native": "7.2.2",

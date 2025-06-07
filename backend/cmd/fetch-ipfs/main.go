@@ -14,7 +14,6 @@ import (
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	"github.com/blocto/solana-go-sdk/rpc"
 	"github.com/olekukonko/tablewriter"
-	"github.com/olekukonko/tablewriter/tw"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 )
