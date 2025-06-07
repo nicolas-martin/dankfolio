@@ -10,15 +10,16 @@ import (
 	"strings"
 	"time"
 
+	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
 	associatedtokenaccount "github.com/gagliardetto/solana-go/programs/associated-token-account"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/google/uuid"
 	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
-	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin" // Added for CoinServiceAPI
 	"github.com/tyler-smith/go-bip39"
 )
@@ -153,7 +154,7 @@ func (s *Service) getMintInfo(ctx context.Context, mint solana.PublicKey) (uint8
 		// Decimals are usually at offset 0 of the mint data itself, not 44 of the AccountInfo.Data
 		// The `token.Mint` struct from `gagliardetto/solana-go/programs/token` can deserialize this.
 		var solanaMint token.Mint
-		if err := solanaMint.UnmarshalWithDecoder(solanago.NewBinDecoder(bAccInfo.Data)); err == nil {
+		if err := solanaMint.UnmarshalWithDecoder(bin.NewBinDecoder(bAccInfo.Data)); err == nil {
 			return solanaMint.Decimals, nil
 		} else {
 			// Fallback or error if proper deserialization fails
@@ -178,7 +179,7 @@ func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
-	solanaBlockHash, err := solana.BlockhashFromBase58(string(genericBlockhash))
+	solanaBlockHash, err := solana.HashFromBase58(string(genericBlockhash))
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert generic blockhash to solana blockhash: %w", err)
 	}
@@ -422,8 +423,8 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 		return "", fmt.Errorf("failed to decode signed transaction: %w", err)
 	}
 
-	// Parse transaction
-	tx, err := solana.TransactionFromBytes(txBytes)
+	// Verify transaction bytes are valid
+	_, err = solana.TransactionFromBytes(txBytes)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse transaction: %w", err)
 	}
@@ -443,13 +444,13 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 	trade, err := s.store.Trades().GetByField(ctx, "unsigned_transaction", req.UnsignedTransaction)
 	if err != nil {
 		slog.Warn("Failed to find trade record", "error", err)
-		return sig.String(), nil
+		return string(sig), nil
 	}
 
 	// Update the trade record
 	now := time.Now()
 	trade.Status = "finalized"
-	trade.TransactionHash = sig.String()
+	trade.TransactionHash = string(sig)
 	trade.CompletedAt = &now
 	trade.Finalized = true
 
@@ -457,7 +458,7 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 		slog.Warn("Failed to update trade record", "error", err)
 	}
 
-	return sig.String(), nil
+	return string(sig), nil
 }
 
 func (s *Service) GetWalletBalances(ctx context.Context, address string) (*WalletBalance, error) {

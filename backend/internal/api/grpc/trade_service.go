@@ -172,33 +172,30 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("trade not found for transaction hash: %s", identifier.TransactionHash))
 		}
 
-		if status != nil && len(status.Value) > 0 && status.Value[0] != nil {
+		if status != nil {
 			statusChanged := false
-			txStatus := status.Value[0]
 
-			if trade.Status != string(txStatus.ConfirmationStatus) {
-				trade.Status = string(txStatus.ConfirmationStatus)
+			if trade.Status != status.Status {
+				trade.Status = status.Status
 				statusChanged = true
 			}
-			if txStatus.Confirmations != nil && trade.Confirmations != int32(*txStatus.Confirmations) {
-				trade.Confirmations = int32(*txStatus.Confirmations)
+			if status.Confirmations != nil && trade.Confirmations != int32(*status.Confirmations) {
+				trade.Confirmations = int32(*status.Confirmations)
 				statusChanged = true
 			}
-			if trade.Finalized != (txStatus.ConfirmationStatus == "finalized") {
-				trade.Finalized = txStatus.ConfirmationStatus == "finalized"
+			if trade.Finalized != (status.Status == "Finalized") {
+				trade.Finalized = status.Status == "Finalized"
 				if trade.Finalized {
 					now := time.Now()
 					trade.CompletedAt = &now
 				}
 				statusChanged = true
 			}
-			if txStatus.Err != nil {
-				errStr := fmt.Sprintf("%v", txStatus.Err)
-				if errStr != "<nil>" {
-					trade.Error = &errStr
-					trade.Status = "failed"
-					statusChanged = true
-				}
+			if status.Error != "" {
+				errStr := status.Error
+				trade.Error = &errStr
+				trade.Status = "failed"
+				statusChanged = true
 			}
 			if statusChanged {
 				if errUpdate := s.tradeService.UpdateTrade(ctx, trade); errUpdate != nil {

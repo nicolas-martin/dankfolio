@@ -3,6 +3,7 @@ package trade
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -14,11 +15,12 @@ import (
 
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+
 	// "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // To be replaced
 	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
-	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 )
@@ -260,7 +262,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 
 	// Execute signed transaction on blockchain using SendRawTransaction
 	opts := bmodel.TransactionOptions{
-		SkipPreflight:       false, // Default, or from config/req
+		SkipPreflight:       false,       // Default, or from config/req
 		PreflightCommitment: "confirmed", // Default, or from config/req
 		// MaxRetries can be set if needed, e.g. 3
 	}
