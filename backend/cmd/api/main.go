@@ -210,13 +210,20 @@ func main() {
 	// Initialize APICallTracker
 	apiTracker := clients.NewAPICallTracker()
 
-	// Start goroutine to log API stats periodically
-	go func() {
+	// Start goroutine to log API stats periodically with context cancellation
+	go func(ctx context.Context) {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
 		for {
-			telemetry.LogAPIStats(apiTracker, slogger) // Use slogger here
-			time.Sleep(5 * time.Minute)
+			select {
+			case <-ctx.Done():
+				slog.Info("Shutting down API stats logging goroutine")
+				return
+			case <-ticker.C:
+				telemetry.LogAPIStats(apiTracker, slogger) // Use slogger here
+			}
 		}
-	}()
+	}(ctx)
 
 	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
 
