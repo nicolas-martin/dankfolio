@@ -64,11 +64,6 @@ const Trade: React.FC = () => {
 	const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const refreshStartTimeRef = useRef<number>(0);
 
-	// Add state for card measurements
-	const [fromCardHeight, setFromCardHeight] = useState(0);
-	const [toCardHeight, setToCardHeight] = useState(0);
-	const [tradeContainerTop, setTradeContainerTop] = useState(0);
-
 	const componentStopPolling = () => {
 		stopPolling(pollingIntervalRef, setIsLoadingTrade);
 	};
@@ -458,13 +453,6 @@ const Trade: React.FC = () => {
 		}
 	};
 
-	// Add effect to force layout recalculation when cards might change height
-	useEffect(() => {
-		// Trigger layout recalculation when tokens or amounts change
-		setFromCardHeight(0); // Reset to force recalculation
-		setToCardHeight(0);
-	}, [fromCoin, toCoin, fromAmount, toAmount]);
-
 	if (!toCoin) return (
 		<View style={styles.noWalletContainer}>
 			<Text style={styles.noWalletText}>
@@ -501,14 +489,6 @@ const Trade: React.FC = () => {
 	) => (
 		<View 
 			style={styles.tradeCard}
-			onLayout={(event) => {
-				const { height } = event.nativeEvent.layout;
-				if (label === 'From') {
-					setFromCardHeight(height);
-				} else if (label === 'To') {
-					setToCardHeight(height);
-				}
-			}}
 		>
 			<Text style={styles.cardLabel}>{label}</Text>
 			<TokenSelector
@@ -587,13 +567,9 @@ const Trade: React.FC = () => {
 			<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 				<View style={styles.content}>
 
-					{/* Trade Cards with Floating Swap Button */}
-					<View 
-						style={styles.tradeContainer}
-						onLayout={(event) => {
-							setTradeContainerTop(event.nativeEvent.layout.y);
-						}}
-					>
+					{/* Trade Cards with Swap Button */}
+					<View style={styles.tradeContainer}>
+						{/* From Card */}
 						{renderTradeCard(
 							'From',
 							fromCoin,
@@ -605,44 +581,34 @@ const Trade: React.FC = () => {
 							fromPortfolioToken?.amount // Pass the balance from portfolio
 						)}
 
-						{/* Floating Swap Button */}
-						<View 
-							style={[
-								styles.swapButtonContainer,
-								{
-									// Only apply custom positioning when we have both heights measured
-									// Otherwise, keep the default '50%' positioning from the style
-									...(fromCardHeight > 0 && toCardHeight > 0 ? {
-										// Calculate the exact middle position between the two cards
-										top: fromCardHeight, // Position at bottom of "From" card
-										marginTop: -24, // Adjust by half the button height (48/2 = 24) to center it on the dividing line
-									} : {})
-								}
-							]}
-						>
-							<TouchableOpacity
-								style={styles.swapButton}
-								onPress={handleSwapCoins}
-								disabled={!fromCoin || !toCoin}
-								testID="swap-coins-button" // Added testID
-							>
-								<Icon
-									source="swap-vertical"
-									size={20}
-									color={theme.colors.onPrimary}
-								/>
-							</TouchableOpacity>
+						{/* To Card with Swap Button */}
+						<View style={{ position: 'relative' }}>
+							{/* Swap Button positioned relative to the To card */}
+							<View style={styles.swapButtonContainer}>
+								<TouchableOpacity
+									style={styles.swapButton}
+									onPress={handleSwapCoins}
+									disabled={!fromCoin || !toCoin}
+									testID="swap-coins-button"
+								>
+									<Icon
+										source="swap-vertical"
+										size={20}
+										color={theme.colors.onPrimary}
+									/>
+								</TouchableOpacity>
+							</View>
+							
+							{renderTradeCard(
+								'To',
+								toCoin,
+								toAmount,
+								handleSelectToToken,
+								handleToAmountChange,
+								false,
+								'to-token-selector'
+							)}
 						</View>
-
-						{renderTradeCard(
-							'To',
-							toCoin,
-							toAmount,
-							handleSelectToToken,
-							handleToAmountChange,
-							false,
-							'to-token-selector'
-						)}
 					</View>
 
 					{/* Refresh Progress Bar */}
