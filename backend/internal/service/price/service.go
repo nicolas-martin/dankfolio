@@ -59,7 +59,6 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, config Ba
 
 	// Debug mode handling
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		slog.InfoContext(ctx, "x-debug-mode: true. Generating random price history.", "address", address, "birdeyeType", config.BirdeyeType)
 
 		randomHistory, err := s.generateRandomPriceHistory(address, config.BirdeyeType) // Pass BirdeyeType from resolved config
 		if err != nil {
@@ -124,7 +123,6 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 }
 
 func (s *Service) generateRandomPriceHistory(address string, historyTypeKey string) (*birdeye.PriceHistory, error) {
-	slog.Info("🎲 Generating random price history", "address", address, "historyTypeKey", historyTypeKey)
 	numPoints := 100
 	volatility := 0.03
 	trendBias := rand.Float64()*2 - 1
@@ -149,10 +147,6 @@ func (s *Service) generateRandomPriceHistory(address string, historyTypeKey stri
 			Value:    currentPrice,
 		})
 	}
-	slog.Info("🎲 Generated random price points",
-		"count", len(items),
-		"address", address,
-		"basePrice", basePrice)
 	return &birdeye.PriceHistory{
 		Data: birdeye.PriceHistoryData{
 			Items: items,
