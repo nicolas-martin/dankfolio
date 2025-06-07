@@ -58,12 +58,17 @@ export const fetchPriceHistory = async (
 		} else {
 			return { data: [], error: null }; // Return empty data if no items, not an error
 		}
-	} catch (error) {
-		logger.exception(error as Error, {
-			functionName: 'fetchPriceHistory',
-			params: { coinMintAddress: coin.mintAddress, timeframe: timeframeValue }
-		});
-		return { data: null, error: error as Error };
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			logger.exception(error, {
+				functionName: 'fetchPriceHistory',
+				params: { coinMintAddress: coin.mintAddress, timeframe: timeframeValue }
+			});
+			return { data: null, error: error };
+		} else {
+			logger.error("An unknown error occurred in fetchPriceHistory:", error);
+			return { data: null, error: new Error(`An unknown error occurred: ${error}`) };
+		}
 	}
 };
 
@@ -84,8 +89,12 @@ export const handleTradeNavigation = async (
 	if (!selectedFromCoin) {
 		try {
 			selectedFromCoin = await useCoinStore.getState().getCoinByID(SOLANA_ADDRESS);
-		} catch (error: Error) {
-			logger.warn('Failed to get SOL coin during trade navigation.', { error: error.message, functionName: 'handleTradeNavigation' });
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				logger.warn('Failed to get SOL coin during trade navigation.', { error: error.message, functionName: 'handleTradeNavigation' });
+			} else {
+				logger.warn('An unknown error occurred while getting SOL coin during trade navigation.', { error, functionName: 'handleTradeNavigation' });
+			}
 		}
 	}
 	if (selectedFromCoin && toCoin.mintAddress === selectedFromCoin.mintAddress) {

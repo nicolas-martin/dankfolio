@@ -63,8 +63,12 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 					if (payload.iss) {
 						log.info('🔐 App Check token issuer:', payload.iss);
 					}
-				} catch (parseError) {
-					log.warn('🔐 Could not parse App Check token:', parseError);
+				} catch (error: unknown) {
+					if (error instanceof Error) {
+						log.warn('🔐 Could not parse App Check token:', error.message);
+					} else {
+						log.warn("An unknown error occurred while parsing App Check token:", error);
+					}
 				}
 			}
 
@@ -73,8 +77,12 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 		} else {
 			log.warn(`🔐 No Firebase App Check token available for request to: ${req.url}`);
 		}
-	} catch (error) {
-		log.error('❌ Failed to get Firebase App Check token for request:', error);
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			log.error('❌ Failed to get Firebase App Check token for request:', error.message);
+		} else {
+			log.error("An unknown error occurred while getting Firebase App Check token:", error);
+		}
 	}
 	return next(req);
 };

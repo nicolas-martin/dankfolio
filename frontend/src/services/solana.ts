@@ -38,9 +38,14 @@ export const getKeypairFromPrivateKey = (privateKey: Base58PrivateKey): Keypair 
 		// 	secretKeyLength: keypair.secretKey.length
 		// });
 		return keypair;
-	} catch (error) {
+	} catch (error: unknown) {
 		// console.error('❌ Error creating keypair:', error); // Sensitive data removed
-		throw error;
+		if (error instanceof Error) {
+			throw error;
+		} else {
+			console.error("An unknown error occurred in getKeypairFromPrivateKey:", error);
+			throw new Error(`An unknown error occurred in getKeypairFromPrivateKey: ${error}`);
+		}
 	}
 };
 
@@ -79,9 +84,14 @@ export const prepareSwapRequest = async (
 		}
 		return prepareResponse.unsignedTransaction;
 	}
-	catch (error) {
-		log.error('❌ Error in prepareSwapRequest:', error);
-		throw error;
+	catch (error: unknown) {
+		if (error instanceof Error) {
+			log.error('❌ Error in prepareSwapRequest:', error.message);
+			throw error;
+		} else {
+			log.error("An unknown error occurred in prepareSwapRequest:", error);
+			throw new Error(`An unknown error occurred in prepareSwapRequest: ${error}`);
+		}
 	}
 }
 
@@ -120,9 +130,14 @@ export const signSwapTransaction = async (
 		log.log('Swap transaction signed and serialized');
 
 		return transactionBase64;
-	} catch (error) {
-		log.error('❌ Error in buildAndSignSwapTransaction:', error);
-		throw error;
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			log.error('❌ Error in buildAndSignSwapTransaction:', error.message);
+			throw error;
+		} else {
+			log.error("An unknown error occurred in signSwapTransaction:", error);
+			throw new Error(`An unknown error occurred in signSwapTransaction: ${error}`);
+		}
 	}
 };
 
@@ -158,9 +173,14 @@ export const prepareCoinTransfer = async (
 		}
 		return prepareResponse.unsignedTransaction;
 	}
-	catch (error) {
-		log.error('❌ Error in prepareCoinTransfer:', error);
-		throw error;
+	catch (error: unknown) {
+		if (error instanceof Error) {
+			log.error('❌ Error in prepareCoinTransfer:', error.message);
+			throw error;
+		} else {
+			log.error("An unknown error occurred in prepareCoinTransfer:", error);
+			throw new Error(`An unknown error occurred in prepareCoinTransfer: ${error}`);
+		}
 	};
 };
 
@@ -206,9 +226,14 @@ export const signTransferTransaction = async (
 		log.log('Transfer transaction signed and serialized');
 
 		return serializedTransaction;
-	} catch (error) {
-		log.error('Failed to build and sign transaction:', error);
-		throw error;
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			log.error('Failed to build and sign transaction:', error.message);
+			throw error;
+		} else {
+			log.error("An unknown error occurred in signTransferTransaction:", error);
+			throw new Error(`An unknown error occurred in signTransferTransaction: ${error}`);
+		}
 	}
 };
 
@@ -216,7 +241,14 @@ export const validateSolanaAddress = async (address: string): Promise<boolean> =
 	try {
 		const publicKey = new PublicKey(address);
 		return PublicKey.isOnCurve(publicKey.toBytes());
-	} catch (error) {
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			// Log or handle the error message if needed
+			// console.error(error.message);
+		} else {
+			// Handle cases where the thrown value is not an Error object
+			// console.error("An unknown error occurred:", error);
+		}
 		return false;
 	}
 };

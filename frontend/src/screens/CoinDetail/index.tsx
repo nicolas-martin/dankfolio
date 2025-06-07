@@ -83,8 +83,12 @@ const CoinDetail: React.FC = () => {
 					showToast({ type: 'error', message: 'Failed to load chart data.' });
 					setPriceHistory([]); // Clear data on error
 				}
-			} catch (error) { // Catch errors from fetchPriceHistory if it throws unexpectedly
-				logger.error('[CoinDetail] Unexpected error in fetchPriceHistory call:', error);
+			} catch (error: unknown) { // Catch errors from fetchPriceHistory if it throws unexpectedly
+				if (error instanceof Error) {
+					logger.error('[CoinDetail] Unexpected error in fetchPriceHistory call:', error.message);
+				} else {
+					logger.error('[CoinDetail] Unexpected error in fetchPriceHistory call:', error);
+				}
 				showToast({ type: 'error', message: 'Failed to load chart data.' });
 				setPriceHistory([]);
 			} finally {
@@ -300,8 +304,12 @@ const CoinDetail: React.FC = () => {
 				// the effect won't re-run. This might be desired if data is identical.
 				// However, if a forced chart refresh is needed even if coin data is same,
 				// we might need a manual trigger for loadData() here.
-			} catch (error) {
-				logger.error("Error during refresh:", error);
+			} catch (error: unknown) {
+				if (error instanceof Error) {
+					logger.error("Error during refresh:", error.message);
+				} else {
+					logger.error("An unknown error occurred during refresh:", error);
+				}
 				showToast({ type: 'error', message: 'Failed to refresh data.' });
 				// Ensure loading is false if refresh fails before history fetch can
 				setLoading(false);

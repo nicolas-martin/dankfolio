@@ -75,15 +75,25 @@ const HomeScreen = () => {
 						if (result.error) {
 							logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
 						}
-					} catch (error) {
-						logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
+					} catch (error: unknown) {
+						if (error instanceof Error) {
+							logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error.message);
+						} else {
+							logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
+						}
 					} finally {
 						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
 					}
 					await new Promise(resolve => setTimeout(resolve, PRICE_HISTORY_FETCH_DELAY_MS));
 				}
 			};
-			processCoinsSequentially();
+			processCoinsSequentially().catch((error: unknown) => {
+				if (error instanceof Error) {
+					logger.error('[HomeScreen] Error in processCoinsSequentially:', error.message);
+				} else {
+					logger.error('[HomeScreen] Unknown error in processCoinsSequentially:', error);
+				}
+			});
 		} else { // Parallel fetching
 			topCoins.forEach(coin => {
 				if (!coin || !coin.mintAddress) {
@@ -101,8 +111,12 @@ const HomeScreen = () => {
 							logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
 						}
 					})
-					.catch(error => {
-						logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
+					.catch((error: unknown) => {
+						if (error instanceof Error) {
+							logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error.message);
+						} else {
+							logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
+						}
 					})
 					.finally(() => {
 						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
@@ -133,8 +147,12 @@ const HomeScreen = () => {
 		try {
 			await fetchNewCoins(); // Cache will determine if fetch is needed or use cached data
 			logger.log('[HomeScreen] ✅ New coins fetch completed (may have used cache).');
-		} catch (error) {
-			logger.error('[HomeScreen] ❌ Error fetching new coins:', error);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				logger.error('[HomeScreen] ❌ Error fetching new coins:', error.message);
+			} else {
+				logger.error('[HomeScreen] ❌ Unknown error fetching new coins:', error);
+			}
 		}
 	}, [fetchNewCoins]);
 
@@ -171,8 +189,12 @@ const HomeScreen = () => {
 				message: 'Coins refreshed successfully!',
 				duration: 3000
 			});
-		} catch (error) {
-			logger.error('[HomeScreen] ❌ Error during manual refresh:', error);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				logger.error('[HomeScreen] ❌ Error during manual refresh:', error.message);
+			} else {
+				logger.error('[HomeScreen] ❌ Unknown error during manual refresh:', error);
+			}
 			showToast({
 				type: 'error',
 				message: 'Failed to refresh coins',

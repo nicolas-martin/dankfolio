@@ -65,22 +65,36 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 					if (keypair.publicKey.toString() !== rawWalletData.address) {
 						throw new Error('Public key mismatch');
 					}
-				} catch (error) {
+				} catch (error: unknown) {
 					// console.error('❌ Invalid private key format'); // Sensitive data removed
-					throw new Error('Invalid private key format');
+					if (error instanceof Error) {
+						throw new Error('Invalid private key format: ' + error.message);
+					} else {
+						throw new Error('Invalid private key format: ' + error);
+					}
 				}
 
 				// Store only non-sensitive data in the state
 				set({ wallet: { address: publicKey } });
 				log.info('✅ Wallet loaded successfully');
-			} catch (error) {
+			} catch (error: unknown) {
 				// log.error('❌ Error parsing credentials:', error); // Sensitive data removed
-				throw new Error('Invalid credentials format in keychain');
+				if (error instanceof Error) {
+					throw new Error('Invalid credentials format in keychain: ' + error.message);
+				} else {
+					throw new Error('Invalid credentials format in keychain: ' + error);
+				}
 			}
-		} catch (error) {
-			// console.error('❌ Error loading wallet:', error); // Sensitive data removed
-			set({ error: error instanceof Error ? error.message : 'Unknown error loading wallet' });
-			throw error;
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				// console.error('❌ Error loading wallet:', error); // Sensitive data removed
+				set({ error: error.message });
+				throw error;
+			} else {
+				// console.error('❌ Error loading wallet:', error); // Sensitive data removed
+				set({ error: 'Unknown error loading wallet' });
+				throw new Error('Unknown error loading wallet: ' + error);
+			}
 		}
 	},
 
@@ -118,8 +132,12 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 					if (!coin) {
 						missingCoinIds.push(id);
 					}
-				} catch (err) {
-					log.warn(`⚠️ [PortfolioStore] Error fetching coin details for id: ${id}`, err);
+				} catch (error: unknown) {
+					if (error instanceof Error) {
+						log.warn(`⚠️ [PortfolioStore] Error fetching coin details for id: ${id}`, error.message);
+					} else {
+						log.warn(`⚠️ [PortfolioStore] An unknown error occurred while fetching coin details for id: ${id}`, error);
+					}
 					missingCoinIds.push(id);
 				}
 			});
@@ -175,7 +193,11 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 				isLoading: false,
 				tokens: []
 			});
-			throw error;
+			if (error instanceof Error) {
+				throw error;
+			} else {
+				throw new Error(String(error));
+			}
 		}
 	},
 }));
@@ -210,8 +232,12 @@ export const getActiveWalletKeys = async (): Promise<{ publicKey: string; privat
 		// }
 
 		return { publicKey: walletAddress, privateKey: parsedCredentials.privateKey as Base58PrivateKey };
-	} catch (error) {
-		log.error('[getActiveWalletKeys] Error retrieving/parsing credentials:', error);
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			log.error('[getActiveWalletKeys] Error retrieving/parsing credentials:', error.message);
+		} else {
+			log.error('[getActiveWalletKeys] An unknown error occurred while retrieving/parsing credentials:', error);
+		}
 		return null;
 	}
 };

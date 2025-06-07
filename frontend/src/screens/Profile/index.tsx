@@ -64,11 +64,18 @@ const Profile = () => {
 		setIsRefreshing(true);
 		try {
 			await fetchPortfolioBalance(wallet.address);
-		} catch (error) {
-			showToast({
-				message: 'Error refreshing portfolio',
-				type: 'error'
-			});
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				showToast({
+					message: `Error refreshing portfolio: ${error.message}`,
+					type: 'error'
+				});
+			} else {
+				showToast({
+					message: 'An unknown error occurred while refreshing portfolio',
+					type: 'error'
+				});
+			}
 		} finally {
 			setIsRefreshing(false);
 		}

@@ -38,14 +38,12 @@ export const useTransactionsStore = create<TransactionsState>((set) => ({
         isLoading: false,
         hasFetched: true,
       });
-    } catch (err) {
-      let errorMessage = 'Failed to fetch recent transactions.';
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === 'string') {
-        errorMessage = err;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        set({ error: error.message, isLoading: false, hasFetched: true });
+      } else {
+        set({ error: 'An unknown error occurred', isLoading: false, hasFetched: true });
       }
-      set({ error: errorMessage, isLoading: false, hasFetched: true });
     }
   },
   clearTransactions: () => {
