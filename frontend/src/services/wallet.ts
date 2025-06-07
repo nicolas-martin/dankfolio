@@ -29,8 +29,12 @@ export const secureStorage = {
 			});
 
 			return true;
-		} catch (error) {
-			logger.exception(error, { functionName: 'secureStorage.saveWallet' });
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				logger.exception(error, { functionName: 'secureStorage.saveWallet' });
+			} else {
+				logger.error("An unknown error occurred in secureStorage.saveWallet:", error);
+			}
 			return false;
 		}
 	},
@@ -53,8 +57,12 @@ export const secureStorage = {
 			});
 
 			return parsed;
-		} catch (error) {
-			logger.exception(error, { functionName: 'secureStorage.getWallet' });
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				logger.exception(error, { functionName: 'secureStorage.getWallet' });
+			} else {
+				logger.error("An unknown error occurred in secureStorage.getWallet:", error);
+			}
 			return null;
 		}
 	},
@@ -71,8 +79,12 @@ export const secureStorage = {
 			});
 
 			return true;
-		} catch (error) {
-			logger.exception(error, { functionName: 'secureStorage.deleteWallet' });
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				logger.exception(error, { functionName: 'secureStorage.deleteWallet' });
+			} else {
+				logger.error("An unknown error occurred in secureStorage.deleteWallet:", error);
+			}
 			return false;
 		}
 	}

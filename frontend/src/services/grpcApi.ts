@@ -33,8 +33,15 @@ export const grpcApi: grpcModel.API = {
 				transactionHash: response.transactionHash,
 				tradeId: response.tradeId
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				// Handle cases where the thrown value is not an Error object
+				console.error("An unknown error occurred:", error);
+				// You might want to throw a generic error or handle it differently
+				throw new Error("An unknown error occurred in submitSwap");
+			}
 		}
 	},
 
@@ -59,8 +66,13 @@ export const grpcApi: grpcModel.API = {
 				finalized: response.finalized,
 				error: response.error
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getSwapStatus");
+			}
 		}
 	},
 
@@ -79,8 +91,13 @@ export const grpcApi: grpcModel.API = {
 
 			// Convert the response to match our frontend model
 			return response.coins.map(mapGrpcCoinToFrontendCoin);
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getAvailableCoins");
+			}
 		}
 	},
 
@@ -108,8 +125,13 @@ export const grpcApi: grpcModel.API = {
 				inputMint: response.inputMint,
 				outputMint: response.outputMint
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getSwapQuote");
+			}
 		}
 	},
 
@@ -158,8 +180,13 @@ export const grpcApi: grpcModel.API = {
 				},
 				success: response.success
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getPriceHistory");
+			}
 		}
 	},
 
@@ -183,8 +210,13 @@ export const grpcApi: grpcModel.API = {
 					amount: balance.amount
 				})) || []
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getWalletBalance");
+			}
 		}
 	},
 
@@ -202,8 +234,13 @@ export const grpcApi: grpcModel.API = {
 			grpcUtils.logResponse(serviceName, methodName, response);
 
 			return mapGrpcCoinToFrontendCoin(response);
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getCoinByID");
+			}
 		}
 	},
 
@@ -221,8 +258,13 @@ export const grpcApi: grpcModel.API = {
 			grpcUtils.logResponse(serviceName, methodName, response);
 
 			return response.prices;
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getCoinPrices");
+			}
 		}
 	},
 
@@ -244,8 +286,13 @@ export const grpcApi: grpcModel.API = {
 			return {
 				unsignedTransaction: response.unsignedTransaction
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in prepareCoinTransfer");
+			}
 		}
 	},
 
@@ -266,8 +313,13 @@ export const grpcApi: grpcModel.API = {
 			return {
 				transactionHash: response.transactionHash
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in submitCoinTransfer");
+			}
 		}
 	},
 
@@ -284,8 +336,13 @@ export const grpcApi: grpcModel.API = {
 			return {
 				coins: response.coins.map(mapGrpcCoinToFrontendCoin)
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in searchCoins");
+			}
 		}
 	},
 
@@ -306,8 +363,13 @@ export const grpcApi: grpcModel.API = {
 			return {
 				coin: mapGrpcCoinToFrontendCoin(response.coin)
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in searchCoinByMint");
+			}
 		}
 	},
 
@@ -329,8 +391,13 @@ export const grpcApi: grpcModel.API = {
 				mnemonic: response.mnemonic
 			}
 
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in createWallet");
+			}
 		}
 	},
 
@@ -350,8 +417,13 @@ export const grpcApi: grpcModel.API = {
 			return {
 				imageData: Buffer.from(response.imageData).toString('base64')
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getProxiedImage");
+			}
 		}
 	},
 
@@ -375,8 +447,13 @@ export const grpcApi: grpcModel.API = {
 			}, { headers: grpcUtils.getRequestHeaders() });
 			grpcUtils.logResponse(serviceName, methodName, response);
 			return { unsignedTransaction: response.unsignedTransaction };
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in prepareSwap");
+			}
 		}
 	},
 
@@ -431,8 +508,13 @@ export const grpcApi: grpcModel.API = {
 				transactions,
 				totalCount: response.totalCount,
 			};
-		} catch (error) {
-			return grpcUtils.handleGrpcError(error, serviceName, methodName);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in listTrades");
+			}
 		}
 	},
 };

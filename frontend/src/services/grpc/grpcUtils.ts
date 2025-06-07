@@ -59,9 +59,14 @@ const safeStringify = (obj: unknown, indent = 2): string => {
 			
 			return value;
 		}, indent);
-	} catch (error) {
-		log.error('❌ Error in safeStringify:', error);
-		return `[Error serializing object: ${(error as Error).message}]`;
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			log.error('❌ Error in safeStringify:', error.message);
+			return `[Error serializing object: ${error.message}]`;
+		} else {
+			log.error('An unknown error occurred in safeStringify:', error);
+			return `[Error serializing object: ${error}]`;
+		}
 	}
 };
 
@@ -151,14 +156,18 @@ export function timestampToDate(timestamp: Timestamp | undefined): Date | undefi
 		const milliseconds = seconds * 1000 + nanos / 1000000;
 
 		return new Date(milliseconds);
-	} catch (error) {
-		log.error('❌ Error converting timestamp:', error);
-		log.error('❌ Problematic timestamp value:', {
-			secondsType: timestamp.seconds ? typeof timestamp.seconds : 'undefined',
-			secondsValue: timestamp.seconds ? 
-				(typeof timestamp.seconds === 'bigint' ? timestamp.seconds.toString() : timestamp.seconds) : 'undefined',
-			nanosValue: timestamp.nanos
-		});
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			log.error('❌ Error converting timestamp:', error.message);
+			log.error('❌ Problematic timestamp value:', {
+				secondsType: timestamp.seconds ? typeof timestamp.seconds : 'undefined',
+				secondsValue: timestamp.seconds ?
+					(typeof timestamp.seconds === 'bigint' ? timestamp.seconds.toString() : timestamp.seconds) : 'undefined',
+				nanosValue: timestamp.nanos
+			});
+		} else {
+			log.error("An unknown error occurred while converting timestamp:", error);
+		}
 		return undefined;
 	}
 }

@@ -85,9 +85,14 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 				hasSol: !!get().coinMap[SOLANA_ADDRESS]
 			});
 			log.log(`🪙 [CoinStore] After fetchAvailableCoins | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
-		} catch (error) {
-			set({ error: (error as Error).message, isLoading: false });
-			log.error(`❌ Error fetching ${trendingOnly ? 'trending' : 'all'} available coins:`, error);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				set({ error: error.message, isLoading: false });
+				log.error(`❌ Error fetching ${trendingOnly ? 'trending' : 'all'} available coins:`, error.message);
+			} else {
+				set({ error: 'An unknown error occurred', isLoading: false });
+				log.error(`❌ An unknown error occurred while fetching ${trendingOnly ? 'trending' : 'all'} available coins:`, error);
+			}
 			log.log(`🪙 [CoinStore] Error in fetchAvailableCoins | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 		}
 	},
@@ -124,9 +129,14 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			state.setCoin(coin);
 			log.log(`🪙 [CoinStore] After API fetch getCoinByID(${mintAddress}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 			return coin;
-		} catch (error) {
-			log.error(`❌ [CoinStore] Error fetching coin ${mintAddress}:`, error);
-			set({ error: (error as Error).message });
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				log.error(`❌ [CoinStore] Error fetching coin ${mintAddress}:`, error.message);
+				set({ error: error.message });
+			} else {
+				log.error(`❌ [CoinStore] An unknown error occurred while fetching coin ${mintAddress}:`, error);
+				set({ error: 'An unknown error occurred' });
+			}
 			log.log(`🪙 [CoinStore] Error in getCoinByID(${mintAddress}) | availableCoins: ${get().availableCoins.length}, coinMap keys: [${Object.keys(get().coinMap).join(', ')}]`);
 			return null;
 		}
@@ -269,18 +279,18 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			state.setLastFetchedNewCoinsAt(Date.now());
 
 			log.log(`🆕 [CoinStore] ✅ Successfully fetched ${fetchedCoins.length} coins via GRPC, using all fetched coins for display.`);
-		} catch (err) {
-			const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred';
-			set({ error: errorMessage, isLoadingNewlyListed: false });
-			log.error('❌ [CoinStore] Error fetching newly listed coins via GRPC:', errorMessage);
-			
-			// Add detailed error logging
-			if (err instanceof Error) {
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				set({ error: error.message, isLoadingNewlyListed: false });
+				log.error('❌ [CoinStore] Error fetching newly listed coins via GRPC:', error.message);
 				log.error('❌ [CoinStore] Error details:', {
-					name: err.name,
-					message: err.message,
-					stack: err.stack
+					name: error.name,
+					message: error.message,
+					stack: error.stack
 				});
+			} else {
+				set({ error: 'An unknown error occurred', isLoadingNewlyListed: false });
+				log.error('❌ [CoinStore] An unknown error occurred while fetching newly listed coins via GRPC:', error);
 			}
 		}
 	},

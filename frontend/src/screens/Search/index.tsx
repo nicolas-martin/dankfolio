@@ -55,12 +55,20 @@ const SearchScreen: React.FC = () => {
 		try {
 			const results = await performSearch(query, state.filters);
 			setState(prev => ({ ...prev, loading: false, results }));
-		} catch (error) {
-			setState(prev => ({
-				...prev,
-				loading: false,
-				error: error instanceof Error ? error.message : 'An error occurred'
-			}));
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				setState(prev => ({
+					...prev,
+					loading: false,
+					error: error.message
+				}));
+			} else {
+				setState(prev => ({
+					...prev,
+					loading: false,
+					error: 'An unknown error occurred'
+				}));
+			}
 		}
 	}, [state.filters]);
 
