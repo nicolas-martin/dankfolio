@@ -9,6 +9,7 @@ pkgname: '{{.SrcPackageName}}mocks'
 recursive: false
 require-template-schema-exists: false
 template: testify
+
 packages:
   github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye:
     interfaces:
@@ -27,6 +28,7 @@ packages:
     interfaces:
       Repository:
       Store:
+      Entity:
   github.com/nicolas-martin/dankfolio/backend/internal/service/coin:
     interfaces:
       CoinServiceAPI:
