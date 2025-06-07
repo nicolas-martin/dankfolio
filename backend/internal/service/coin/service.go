@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
-	// "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // To be replaced
+
 	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
-	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
@@ -32,7 +32,9 @@ type Service struct {
 
 // NewService creates a new CoinService instance
 func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store, chainClient bclient.GenericClientAPI) *Service { // chainClient
-	offchainClient := offchain.NewClient(httpClient)
+	// Create a dummy APICallTracker if none is provided
+	apiTracker := clients.NewAPICallTracker()
+	offchainClient := offchain.NewClient(httpClient, apiTracker)
 
 	service := &Service{
 		config:         config,

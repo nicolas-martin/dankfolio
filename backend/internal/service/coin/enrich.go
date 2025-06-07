@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 )
 
 // EnrichCoinData fetches detailed information for a given mint address using Jupiter,
@@ -96,7 +97,8 @@ func (s *Service) EnrichCoinData(
 
 	// Use decimals and supply from genericMetadata if available and not already set by Jupiter
 	if coin.Decimals == 0 && genericMetadata.Decimals > 0 {
-		coin.Decimals = genericMetadata.Decimals
+		// convert uint8 to int for model.Coin
+		coin.Decimals = int(genericMetadata.Decimals)
 	}
 	// coin.Supply = genericMetadata.Supply // model.Coin doesn't have Supply currently, but could be added
 
@@ -107,7 +109,6 @@ func (s *Service) EnrichCoinData(
 	if coin.Symbol == "" && genericMetadata.Symbol != "" {
 		coin.Symbol = genericMetadata.Symbol
 	}
-
 
 	// 4. Fetch off-chain metadata using the URI from the generic token metadata
 	uri := strings.TrimSpace(genericMetadata.URI)
