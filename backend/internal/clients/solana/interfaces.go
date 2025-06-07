@@ -14,7 +14,6 @@ type ClientAPI interface {
 	GetMetadataAccount(ctx context.Context, mint string) (*token_metadata.Metadata, error)
 	ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) (string, error)
 	ExecuteSignedTransaction(ctx context.Context, signedTx string) (solana.Signature, error)
-	GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*model.SignatureStatusResult, error)
 }
 
 // SolanaRPCClientAPI defines the interface for the Solana RPC client methods used by wallet.Service.

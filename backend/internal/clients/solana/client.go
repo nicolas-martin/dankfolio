@@ -35,8 +35,7 @@ type Client struct {
 
 // Comment out the interface implementation check for now until we can fix all issues
 var (
-	_ ClientAPI = (*Client)(nil)
-	// _ SolanaRPCClientAPI          = (*Client)(nil) // Uncomment after fixing interface mismatch
+	_ ClientAPI                   = (*Client)(nil)
 	_ blockchain.GenericClientAPI = (*Client)(nil)
 )
 
@@ -255,11 +254,6 @@ func (c *Client) GetAccountInfo(ctx context.Context, address bmodel.Address) (*b
 	}, nil
 }
 
-// GetLatestBlockhashConfirmed is part of SolanaRPCClientAPI
-func (c *Client) GetLatestBlockhashConfirmed(ctx context.Context) (*rpc.GetLatestBlockhashResult, error) {
-	return c.rpcConn.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
-}
-
 // GetLatestBlockhash implements blockchain.GenericClientAPI
 func (c *Client) GetLatestBlockhash(ctx context.Context) (bmodel.Blockhash, error) {
 	// Using CommitmentConfirmed as a default for generic API, can be made configurable if needed
@@ -271,59 +265,6 @@ func (c *Client) GetLatestBlockhash(ctx context.Context) (bmodel.Blockhash, erro
 		return "", fmt.Errorf("received nil result for latest blockhash")
 	}
 	return bmodel.Blockhash(result.Value.Blockhash.String()), nil
-}
-
-// SendTransactionWithCustomOpts is part of SolanaRPCClientAPI
-func (c *Client) SendTransactionWithCustomOpts(ctx context.Context, tx *solana.Transaction, opts model.TransactionOptions) (solana.Signature, error) {
-	rpcOpts := rpc.TransactionOpts{
-		SkipPreflight:       opts.SkipPreflight,
-		PreflightCommitment: model.ToRPCCommitment(opts.PreflightCommitment), // Assumes model.ToRPCCommitment is available
-	}
-	if opts.MaxRetries > 0 {
-		maxRetriesCopy := opts.MaxRetries // rpc.TransactionOpts.MaxRetries expects *uint
-		rpcOpts.MaxRetries = &maxRetriesCopy
-	}
-
-	return c.rpcConn.SendTransactionWithOpts(ctx, tx, rpcOpts)
-}
-
-func (c *Client) GetBalanceConfirmed(ctx context.Context, account solana.PublicKey) (*rpc.GetBalanceResult, error) {
-	return c.rpcConn.GetBalance(ctx, account, rpc.CommitmentConfirmed)
-}
-
-func (c *Client) GetTokenAccountsByOwnerConfirmed(ctx context.Context, owner solana.PublicKey, modelOpts model.GetTokenAccountsOptions) (*rpc.GetTokenAccountsResult, error) {
-	rpcConf := &rpc.GetTokenAccountsConfig{}
-	if modelOpts.ProgramID != "" {
-		programIDPubKey, err := solana.PublicKeyFromBase58(modelOpts.ProgramID)
-		if err != nil {
-			return nil, fmt.Errorf("invalid programID ('%s') in GetTokenAccountsByOwnerConfirmed: %w", modelOpts.ProgramID, err)
-		}
-		rpcConf.ProgramId = programIDPubKey.ToPointer()
-	}
-
-	rpcOpts := &rpc.GetTokenAccountsOpts{
-		Commitment: rpc.CommitmentConfirmed,
-	}
-
-	if modelOpts.Encoding != "" {
-		switch modelOpts.Encoding {
-		case string(solana.EncodingBase58):
-			rpcOpts.Encoding = solana.EncodingBase58
-		case string(solana.EncodingBase64):
-			rpcOpts.Encoding = solana.EncodingBase64
-		case string(solana.EncodingBase64Zstd):
-			rpcOpts.Encoding = solana.EncodingBase64Zstd
-		case string(solana.EncodingJSONParsed):
-			rpcOpts.Encoding = solana.EncodingJSONParsed
-		default:
-			slog.WarnContext(ctx, "Unsupported encoding type provided in GetTokenAccountsByOwnerConfirmed, defaulting to jsonParsed", "providedEncoding", modelOpts.Encoding)
-			rpcOpts.Encoding = solana.EncodingJSONParsed
-		}
-	} else {
-		rpcOpts.Encoding = solana.EncodingJSONParsed // Default if empty
-	}
-
-	return c.rpcConn.GetTokenAccountsByOwner(ctx, owner, rpcConf, rpcOpts)
 }
 
 // GetBalance implements blockchain.GenericClientAPI
@@ -413,87 +354,6 @@ var (
 	mockTxStates = make(map[string]*MockTransactionState)
 	mockTxMutex  sync.RWMutex
 )
-
-// This is the generic API implementation
-func (c *Client) GenericGetTokenAccountsByOwner(ctx context.Context, ownerAddress bmodel.Address, opts bmodel.TokenAccountsOptions) ([]*bmodel.TokenAccountInfo, error) {
-	c.tracker.TrackCall("solana", "GetTokenAccountsByOwner")
-	solOwner, err := solana.PublicKeyFromBase58(string(ownerAddress))
-	if err != nil {
-		return nil, fmt.Errorf("invalid owner address '%s': %w", ownerAddress, err)
-	}
-
-	// For Solana, we need the Token Program ID.
-	// The generic opts might need a way to specify this, or we assume it for this client.
-	tokenProgramID := solana.TokenProgramID
-
-	rpcConf := &rpc.GetTokenAccountsConfig{
-		ProgramId: &tokenProgramID,
-	}
-
-	rpcOpts := &rpc.GetTokenAccountsOpts{
-		Commitment: model.ToRPCCommitment("confirmed"), // Defaulting to confirmed
-	}
-
-	if opts.Encoding != "" {
-		// Ensure the encoding string is a valid solana.EncodingType
-		// This might require a validation or mapping function if generic strings are less controlled.
-		rpcOpts.Encoding = solana.EncodingType(opts.Encoding)
-	} else {
-		rpcOpts.Encoding = solana.EncodingJSONParsed // Default
-	}
-
-	result, err := c.rpcConn.GetTokenAccountsByOwner(ctx, solOwner, rpcConf, rpcOpts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get token accounts for %s: %w", ownerAddress, err)
-	}
-
-	var accounts []*bmodel.TokenAccountInfo
-	for _, rpcAcc := range result.Value {
-		var parsedAccount struct {
-			Parsed struct {
-				Info struct {
-					Mint        string `json:"mint"`
-					Owner       string `json:"owner"`
-					TokenAmount struct {
-						Amount         string `json:"amount"`
-						Decimals       uint8  `json:"decimals"`
-						UIAmountString string `json:"uiAmountString"`
-					} `json:"tokenAmount"`
-				} `json:"info"`
-			} `json:"parsed"`
-		}
-
-		if rpcOpts.Encoding == solana.EncodingJSONParsed {
-			rawJsonData := rpcAcc.Account.Data.GetRawJSON()
-			if err := json.Unmarshal(rawJsonData, &parsedAccount); err != nil {
-				slog.WarnContext(ctx, "failed to parse token account data (json)", "address", rpcAcc.Pubkey.String(), "error", err)
-				continue
-			}
-
-			uiAmount, parseErr := strconv.ParseFloat(parsedAccount.Parsed.Info.TokenAmount.UIAmountString, 64)
-			if parseErr != nil {
-				slog.WarnContext(ctx, "failed to parse UIAmountString to float", "address", rpcAcc.Pubkey.String(), "uiAmountString", parsedAccount.Parsed.Info.TokenAmount.UIAmountString, "error", parseErr)
-				// Set uiAmount to 0 or handle as appropriate if parsing fails
-				uiAmount = 0
-			}
-
-			accounts = append(accounts, &bmodel.TokenAccountInfo{
-				Address:     bmodel.Address(rpcAcc.Pubkey.String()),
-				MintAddress: bmodel.Address(parsedAccount.Parsed.Info.Mint),
-				Owner:       bmodel.Address(parsedAccount.Parsed.Info.Owner),
-				Amount:      parsedAccount.Parsed.Info.TokenAmount.Amount,
-				Decimals:    parsedAccount.Parsed.Info.TokenAmount.Decimals,
-				UIAmount:    uiAmount,
-			})
-		} else {
-			slog.WarnContext(ctx, "GetTokenAccountsByOwner non-JSONParsed encoding not fully handled for generic model mapping yet", "encoding", rpcOpts.Encoding)
-			accounts = append(accounts, &bmodel.TokenAccountInfo{
-				Address: bmodel.Address(rpcAcc.Pubkey.String()),
-			})
-		}
-	}
-	return accounts, nil
-}
 
 func (c *Client) GetTokenBalance(ctx context.Context, ownerAddress bmodel.Address, tokenMintAddress bmodel.Address, commitmentStr string) (*bmodel.Balance, error) {
 	solOwner, err := solana.PublicKeyFromBase58(string(ownerAddress))
@@ -715,92 +575,10 @@ func (c *Client) GetLargestAccounts(ctx context.Context, commitment rpc.Commitme
 	return c.rpcConn.GetLargestAccounts(ctx, commitment, filter)
 }
 
-// GetTransactionConfirmationStatus gets the confirmation status of a transaction
-func (c *Client) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*model.SignatureStatusResult, error) {
-	c.tracker.TrackCall("solana", "GetSignatureStatuses")
-
-	solSig, err := solana.SignatureFromBase58(sigStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid signature format: %w", err)
-	}
-
-	rpcResult, err := c.rpcConn.GetSignatureStatuses(ctx, true, solSig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get transaction status: %w", err)
-	}
-
-	// Convert from rpc.GetSignatureStatusesResult to model.SignatureStatusResult
-	result := &model.SignatureStatusResult{}
-	result.Context.Slot = rpcResult.Context.Slot
-
-	if rpcResult.Value != nil {
-		for _, rpcStatus := range rpcResult.Value {
-			if rpcStatus == nil {
-				result.Value = append(result.Value, nil)
-				continue
-			}
-
-			status := &model.SignatureStatus{
-				Slot:          rpcStatus.Slot,
-				Confirmations: rpcStatus.Confirmations,
-				Err:           rpcStatus.Err,
-			}
-
-			switch rpcStatus.ConfirmationStatus {
-			case rpc.ConfirmationStatusProcessed:
-				status.ConfirmationStatus = "processed"
-			case rpc.ConfirmationStatusConfirmed:
-				status.ConfirmationStatus = "confirmed"
-			case rpc.ConfirmationStatusFinalized:
-				status.ConfirmationStatus = "finalized"
-			default:
-				status.ConfirmationStatus = ""
-			}
-
-			result.Value = append(result.Value, status)
-		}
-	}
-
-	return result, nil
-}
-
 // GetSupply retrieves the current supply of SOL
 func (c *Client) GetSupply(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetSupplyResult, error) {
 	c.tracker.TrackCall("solana", "GetSupply")
 	return c.rpcConn.GetSupply(ctx, commitment)
-}
-
-// SolanaGetAccountInfo implements SolanaRPCClientAPI.GetAccountInfo
-func (c *Client) SolanaGetAccountInfo(ctx context.Context, account solana.PublicKey) (*rpc.GetAccountInfoResult, error) {
-	c.tracker.TrackCall("solana", "GetAccountInfo")
-	return c.rpcConn.GetAccountInfo(ctx, account)
-}
-
-// SolanaGetBalance implements SolanaRPCClientAPI.GetBalance
-func (c *Client) SolanaGetBalance(ctx context.Context, account solana.PublicKey, commitment rpc.CommitmentType) (*rpc.GetBalanceResult, error) {
-	c.tracker.TrackCall("solana", "GetBalance")
-	return c.rpcConn.GetBalance(ctx, account, commitment)
-}
-
-// SolanaGetTokenAccountsByOwner implements the SolanaRPCClientAPI interface
-func (c *Client) SolanaGetTokenAccountsByOwner(ctx context.Context, owner solana.PublicKey, mint solana.PublicKey, encoding solana.EncodingType) (*rpc.GetTokenAccountsResult, error) {
-	c.tracker.TrackCall("solana", "GetTokenAccountsByOwner")
-
-	rpcConf := &rpc.GetTokenAccountsConfig{
-		Mint: &mint,
-	}
-
-	rpcOpts := &rpc.GetTokenAccountsOpts{
-		Encoding: encoding,
-	}
-
-	return c.rpcConn.GetTokenAccountsByOwner(ctx, owner, rpcConf, rpcOpts)
-}
-
-// SolanaGetLatestBlockhash implements the SolanaRPCClientAPI interface
-func (c *Client) SolanaGetLatestBlockhash(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetLatestBlockhashResult, error) {
-	c.tracker.TrackCall("solana", "GetLatestBlockhash")
-	return c.rpcConn.GetLatestBlockhash(ctx, commitment)
 }
 
 // GetTokenAccountsByOwner implements the GenericClientAPI interface
@@ -884,8 +662,3 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 	return accounts, nil
 }
 
-// SendTransactionWithOpts implements SolanaRPCClientAPI
-func (c *Client) SendTransactionWithOpts(ctx context.Context, tx *solana.Transaction, opts rpc.TransactionOpts) (solana.Signature, error) {
-	c.tracker.TrackCall("solana", "SendTransaction")
-	return c.rpcConn.SendTransactionWithOpts(ctx, tx, opts)
-}
