@@ -5,42 +5,38 @@ import (
 
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
 	"github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gagliardetto/solana-go/rpc" // Still needed for some underlying types not being abstracted yet
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // ClientAPI defines the interface for Solana blockchain interactions
 type ClientAPI interface {
-	// GetMetadataAccount retrieves the metadata account for a token
 	GetMetadataAccount(ctx context.Context, mint string) (*token_metadata.Metadata, error)
-
-	// ExecuteTrade executes a pre-signed transaction
 	ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) (string, error)
-
-	// ExecuteSignedTransaction submits a signed transaction to the Solana blockchain
 	ExecuteSignedTransaction(ctx context.Context, signedTx string) (solana.Signature, error)
 
-	// GetTransactionConfirmationStatus gets the confirmation status of a transaction
-	GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error)
+	// Changed return type to use model.SignatureStatusResult
+	GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*model.SignatureStatusResult, error)
 
-	// GetProgramAccounts retrieves accounts associated with a program
-	GetProgramAccounts(ctx context.Context, pubkey solana.PublicKey) (*rpc.GetProgramAccountsResult, error)
-
-	// GetLargestAccounts retrieves the largest accounts
-	GetLargestAccounts(ctx context.Context, commitment rpc.CommitmentType, filter rpc.LargestAccountsFilterType) (*rpc.GetLargestAccountsResult, error)
-
-	// GetSupply retrieves the current supply of SOL
-	GetSupply(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetSupplyResult, error)
-
-	// GetTokenAccountsByOwner retrieves token accounts owned by a specific account
-	GetTokenAccountsByOwner(ctx context.Context, owner solana.PublicKey, mint solana.PublicKey, encoding solana.EncodingType) (*rpc.GetTokenAccountsResult, error)
 }
 
 // SolanaRPCClientAPI defines the interface for the Solana RPC client methods used by wallet.Service.
 type SolanaRPCClientAPI interface {
+	// GetAccountInfo's return type might also be abstracted in the future if needed.
 	GetAccountInfo(ctx context.Context, account solana.PublicKey) (*rpc.GetAccountInfoResult, error)
-	GetLatestBlockhash(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetLatestBlockhashResult, error)
-	SendTransactionWithOpts(ctx context.Context, tx *solana.Transaction, opts rpc.TransactionOpts) (solana.Signature, error)
-	GetBalance(ctx context.Context, account solana.PublicKey, commitment rpc.CommitmentType) (*rpc.GetBalanceResult, error)
-	GetTokenAccountsByOwner(ctx context.Context, owner solana.PublicKey, mint *rpc.GetTokenAccountsConfig, opts *rpc.GetTokenAccountsOpts) (*rpc.GetTokenAccountsResult, error) // Corrected return type
+
+	// Commitment is now implicit (e.g., "confirmed" by method name or client default)
+	GetLatestBlockhashConfirmed(ctx context.Context) (*rpc.GetLatestBlockhashResult, error)
+
+	// Uses model.TransactionOptions instead of rpc.TransactionOpts
+	SendTransactionWithCustomOpts(ctx context.Context, tx *solana.Transaction, opts model.TransactionOptions) (solana.Signature, error)
+
+	// Commitment is now implicit
+	GetBalanceConfirmed(ctx context.Context, account solana.PublicKey) (*rpc.GetBalanceResult, error)
+
+	// Uses model.GetTokenAccountsOptions, commitment is implicit
+	// The rpc.GetTokenAccountsConfig contains ProgramId, which we can put into our options.
+	// The rpc.GetTokenAccountsOpts contains Encoding and Commitment. We make commitment implicit
+	// and pass encoding via our options struct.
+	GetTokenAccountsByOwnerConfirmed(ctx context.Context, owner solana.PublicKey, opts model.GetTokenAccountsOptions) (*rpc.GetTokenAccountsResult, error)
 }
