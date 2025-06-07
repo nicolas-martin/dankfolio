@@ -10,6 +10,7 @@ import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import type { RootStackParamList } from '@/types/navigation';
 import TokenSelector from '@components/Common/TokenSelector';
+import AmountPercentageButtons from '@components/Common/AmountPercentageButtons';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
 
@@ -488,7 +489,8 @@ const Trade: React.FC = () => {
 		onSelectToken: (token: Coin) => void,
 		onAmountChange: (amount: string) => void,
 		showOnlyPortfolioTokens: boolean,
-		testID: string
+		testID: string,
+        portfolioBalance?: number // Optional: balance for the percentage buttons
 	) => (
 		<View style={styles.tradeCard}>
 			<Text style={styles.cardLabel}>{label}</Text>
@@ -496,12 +498,23 @@ const Trade: React.FC = () => {
 				selectedToken={coin!}
 				onSelectToken={onSelectToken}
 				label="Select Token"
-				amountValue={amount || '0.00'}
+				amountValue={amount}
 				onAmountChange={onAmountChange}
 				isAmountEditable={true}
 				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
 				testID={testID}
 			/>
+            {label === 'From' && coin && portfolioBalance !== undefined && (
+                <AmountPercentageButtons
+                    balance={portfolioBalance}
+                    onSelectAmount={(selectedAmount) => {
+                        // onAmountChange is handleFromAmountChange for the "From" card
+                        onAmountChange(selectedAmount);
+                    }}
+                    // Add some basic styling for spacing if needed, e.g. style={{ marginTop: 8 }}
+                    // This can be refined in the styles.ts for Trade screen later
+                />
+            )}
 		</View>
 	);
 
@@ -569,7 +582,8 @@ const Trade: React.FC = () => {
 							handleSelectFromToken,
 							handleFromAmountChange,
 							true,
-							'from-token-selector'
+							'from-token-selector',
+							fromPortfolioToken?.amount // Pass the balance from portfolio
 						)}
 
 						{/* Floating Swap Button */}
