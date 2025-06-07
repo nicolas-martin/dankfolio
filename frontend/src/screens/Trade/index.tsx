@@ -8,7 +8,7 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions'; // Added
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
-import { RootStackParamList } from '@/types';
+import type { RootStackParamList } from '@/types/navigation';
 import TokenSelector from '@components/Common/TokenSelector';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
