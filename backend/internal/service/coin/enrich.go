@@ -78,27 +78,42 @@ func (s *Service) EnrichCoinData(
 		jupiterPriceSuccess = false
 	}
 
-	// 3. Get Solana on-chain metadata account
-	slog.Debug("Fetching on-chain metadata account", slog.String("mintAddress", mintAddress))
-	metadataAccount, err := s.solanaClient.GetMetadataAccount(ctx, mintAddress)
+	// 3. Get Generic Token Metadata (which includes on-chain and SPL token info like decimals)
+	slog.Debug("Fetching generic token metadata", slog.String("mintAddress", mintAddress))
+	genericMetadata, err := s.chainClient.GetTokenMetadata(ctx, bmodel.Address(mintAddress))
 	if err != nil {
-		slog.Warn("Error fetching on-chain metadata account, cannot fetch off-chain data", slog.String("mintAddress", mintAddress), slog.Any("error", err))
-		// If we can't get the metadata account, we can't get the URI for off-chain metadata.
+		slog.Warn("Error fetching generic token metadata", slog.String("mintAddress", mintAddress), slog.Any("error", err))
+		// If we can't get any metadata, proceed with what we have (e.g. from Jupiter)
 		// Check if we have any successful data before returning
 		if !jupiterInfoSuccess && !jupiterPriceSuccess {
 			slog.Error("Failed to enrich coin: no data available from any source", slog.String("mintAddress", mintAddress))
 			return nil, fmt.Errorf("failed to enrich coin %s: no data available from any source", mintAddress)
 		}
 		enrichFromMetadata(&coin, nil) // Ensure default description is set and fallbacks for icon
-		slog.Info("Returning partially enriched coin (Jupiter data only)", slog.String("mintAddress", mintAddress))
-		return &coin, nil // Return partially enriched coin since we have some Jupiter data
+		slog.Info("Returning partially enriched coin (Jupiter data, no on-chain token metadata)", slog.String("mintAddress", mintAddress))
+		return &coin, nil // Return partially enriched coin
 	}
 
-	// 4. Fetch off-chain metadata using the URI from the on-chain account
-	uri := strings.TrimSpace(metadataAccount.Data.Uri)
+	// Use decimals and supply from genericMetadata if available and not already set by Jupiter
+	if coin.Decimals == 0 && genericMetadata.Decimals > 0 {
+		coin.Decimals = genericMetadata.Decimals
+	}
+	// coin.Supply = genericMetadata.Supply // model.Coin doesn't have Supply currently, but could be added
+
+	// Override name/symbol from genericMetadata if they were empty after Jupiter
+	if coin.Name == "" && genericMetadata.Name != "" {
+		coin.Name = genericMetadata.Name
+	}
+	if coin.Symbol == "" && genericMetadata.Symbol != "" {
+		coin.Symbol = genericMetadata.Symbol
+	}
+
+
+	// 4. Fetch off-chain metadata using the URI from the generic token metadata
+	uri := strings.TrimSpace(genericMetadata.URI)
 	slog.Info("Fetching off-chain metadata", slog.String("mintAddress", mintAddress), slog.String("uri", uri))
 	if uri == "" {
-		slog.Warn("No URI found in on-chain metadata", slog.String("mintAddress", mintAddress), slog.Any("metadataData", metadataAccount.Data))
+		slog.Warn("No URI found in generic token metadata", slog.String("mintAddress", mintAddress))
 		enrichFromMetadata(&coin, nil) // Still call to set default description and icon fallbacks if needed
 		return &coin, nil
 	}
