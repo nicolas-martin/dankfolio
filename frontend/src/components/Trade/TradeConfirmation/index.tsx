@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View } from 'react-native';
-import { Modal, Portal, Text, Button, useTheme } from 'react-native-paper';
+import { Text, Button, useTheme } from 'react-native-paper';
+import BottomSheet from 'reanimated-bottom-sheet';
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
@@ -21,6 +22,15 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
+	const sheetRef = useRef<BottomSheet>(null);
+
+	useEffect(() => {
+		if (isVisible) {
+			sheetRef.current?.snapTo(0);
+		} else {
+			sheetRef.current?.snapTo(2); // Assuming 0 is open, 2 is closed
+		}
+	}, [isVisible]);
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
 		return (
@@ -34,32 +44,21 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		);
 	};
 
-	if (!fromToken || !toToken) {
-		return (
-			<Portal>
-				<Modal
-					visible={isVisible}
-					onDismiss={onClose}
-					contentContainerStyle={styles.container}
-				>
+	const renderContent = () => {
+		if (!fromToken || !toToken) {
+			return (
+				<View style={styles.contentContainer}>
 					<Text style={styles.title}>Confirm Trade</Text>
 					<View style={styles.loadingContainer}>
 						<LoadingAnimation size={100} />
 						<Text style={styles.loadingText}>Preparing trade...</Text>
 					</View>
-				</Modal>
-			</Portal>
-		);
-	}
+				</View>
+			);
+		}
 
-	return (
-		<Portal>
-			<Modal
-				visible={isVisible}
-				onDismiss={onClose}
-				contentContainerStyle={styles.container}
-			>
-				<Text style={styles.title}>Confirm Trade</Text>
+		return (
+			<View style={styles.contentContainer}>
 				{/* Trade Display */}
 				<View style={styles.tradeContainer}>
 					{/* From Amount */}
@@ -114,7 +113,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				<View style={styles.buttonContainer}>
 					<Button
 						mode="outlined"
-						onPress={onClose}
+						onPress={onClose} // This will now snap the sheet closed via useEffect
 						style={styles.cancelButton}
 						labelStyle={styles.cancelButtonLabel}
 						disabled={isLoading}
@@ -134,8 +133,29 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						{isLoading ? 'Processing...' : 'Confirm'}
 					</Button>
 				</View>
-			</Modal>
-		</Portal>
+			</View>
+		);
+	};
+
+	const renderHeader = () => (
+		<View style={styles.headerContainer}>
+			<View style={styles.handleBar} />
+			<Text style={styles.title}>Confirm Trade</Text>
+		</View>
+	);
+
+	return (
+		<BottomSheet
+			ref={sheetRef}
+			snapPoints={['80%', '50%', 0]}
+			initialSnap={2} // Start closed
+			borderRadius={24}
+			renderContent={renderContent}
+			renderHeader={renderHeader}
+			onCloseEnd={onClose}
+			enabledGestureInteraction={!isLoading}
+			enabledContentGestureInteraction={!isLoading}
+		/>
 	);
 };
 
