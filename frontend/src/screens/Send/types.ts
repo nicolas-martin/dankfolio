@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/types/index';
+import type { RootStackParamList } from '@/types/navigation';
 
 export type SendTokensScreenProps = NativeStackScreenProps<RootStackParamList, 'SendTokens'>;
 

@@ -1,6 +1,7 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { Coin, RootStackParamList } from '@/types/index';
+import { Coin } from '@/types/index';
+import type { RootStackParamList } from '@/types/navigation';
 
 export type CoinDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail'>;
 

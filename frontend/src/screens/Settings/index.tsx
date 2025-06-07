@@ -5,11 +5,12 @@ import Constants from 'expo-constants';
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
 import { createStyles } from './settings_styles';
+import type { SettingsScreenProps } from './settings_types'; // ADDED
 import { logger } from '@/utils/logger';
 import { useToast } from '@components/Common/Toast';
 import { copyToClipboard as copyUtil, formatAddress } from '@/screens/Profile/profile_scripts'; // Assuming this can be reused
 
-const SettingsScreen = () => {
+const SettingsScreen = ({ navigation }: SettingsScreenProps) => { // MODIFIED
   const theme = useTheme();
   const styles = createStyles(theme);
   const { showToast } = useToast();
@@ -21,7 +22,11 @@ const SettingsScreen = () => {
 
   useEffect(() => {
     logger.breadcrumb({ category: 'navigation', message: 'Viewed SettingsScreen' });
-  }, []);
+    // Example of using navigation prop if needed later:
+    // if (navigation.isFocused()) {
+    //   logger.info('Settings screen is focused');
+    // }
+  }, [navigation]); // Added navigation to dependency array if it's used in useEffect
 
   const appVersion = Constants.expoConfig?.version || 'N/A';
   // For demonstration, using a placeholder for private key.

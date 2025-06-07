@@ -1,5 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Coin } from '@/types';
+import { Coin } from '@/types';
+import type { RootStackParamList } from '@/types/navigation';
 import { SearchSortByOption } from '@/services/grpc/model';
 
 export type SearchScreenProps = NativeStackScreenProps<RootStackParamList, 'Search'>;
