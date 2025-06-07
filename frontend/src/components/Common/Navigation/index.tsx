@@ -16,6 +16,7 @@ import Search from '@screens/Search';
 import CoinDetail from '@screens/CoinDetail';
 import Trade from '@screens/Trade';
 import Send from '@screens/Send';
+import Settings from '@screens/Settings';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -145,6 +146,13 @@ const Navigation = () => {
 				<Stack.Screen 
 					name="SendTokens" 
 					component={Send}
+					options={{
+						header: (props) => <CustomHeader />
+					}}
+				/>
+				<Stack.Screen 
+					name="Settings" 
+					component={Settings}
 					options={{
 						header: (props) => <CustomHeader />
 					}}

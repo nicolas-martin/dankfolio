@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { Text, useTheme, IconButton, Button, Icon } from 'react-native-paper';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
 import { usePortfolioStore } from '@store/portfolio';
@@ -101,7 +101,6 @@ const Profile = () => {
 						icon="content-copy"
 						size={16}
 						onPress={() => {
-							logger.breadcrumb({ category: 'ui', message: 'Copied wallet address to clipboard from ProfileScreen' });
 							copyToClipboard(wallet.address, 'Wallet', showToast);
 						}}
 						style={styles.copyButton}
@@ -110,8 +109,6 @@ const Profile = () => {
 			)}
 		</View>
 	);
-
-	// Removed commented-out renderThemeToggle function and related JSX for code cleanliness.
 
 	const renderPortfolioCard = () => (
 		<View style={styles.portfolioCard}>
