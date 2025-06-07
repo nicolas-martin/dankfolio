@@ -1,5 +1,6 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Keypair } from '@solana/web3.js';
+import type { RootStackParamList } from './navigation';
 
 export interface Coin {
 	mintAddress: string;
@@ -36,29 +37,6 @@ export interface RawWalletData {
 
 export interface Wallet {
 	address: string;
-}
-
-export type RootStackParamList = {
-	Home: undefined;
-	Trade: {
-		initialFromCoin?: Coin | null;
-		initialToCoin?: Coin | null;
-		selectedToken?: Coin;
-	};
-	Profile: undefined;
-	Search: undefined;
-	SendTokens: undefined;
-	CoinDetail: {
-		coin?: Coin;
-		solCoin?: Coin;
-	};
-	CoinSelect: {
-		onSelect: (coin: Coin) => void;
-		excludeCoinId?: string;
-		currentCoinId?: string;
-	};
-	MainTabs: undefined;
-	[key: string]: undefined | object;
 }
 
 export interface NotificationProps {
