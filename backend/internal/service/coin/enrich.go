@@ -15,68 +15,89 @@ import (
 // Solana metadata, and off-chain sources. It populates and returns a model.Coin.
 // It takes initial basic info (name, icon, volume) which might come from a preliminary scrape,
 // and overwrites/enriches it.
+// It now accepts pre-fetched data from Birdeye/scraping passed as individual fields.
 func (s *Service) EnrichCoinData(
 	ctx context.Context,
 	mintAddress string,
 	initialName string,
+	initialSymbol string,
 	initialIconURL string,
+	initialPrice float64,
 	initialVolume float64,
+	initialMarketCap float64, // Will be used when model.Coin supports it
+	initialTags []string,
 ) (*model.Coin, error) {
-	slog.Info("Starting coin enrichment process", slog.String("mintAddress", mintAddress))
+	slog.Info("Starting coin enrichment process", slog.String("mintAddress", mintAddress), slog.String("source", "Birdeye+Jupiter+Chain"))
 
-	// Initialize coin with basic info or defaults
+	// Initialize coin with basic info from parameters
 	coin := model.Coin{
 		MintAddress: mintAddress,
 		Name:        initialName,
+		Symbol:      initialSymbol,
 		IconUrl:     initialIconURL,
+		Price:       initialPrice,
 		Volume24h:   initialVolume,
+		Tags:        initialTags,
+		MarketCap:   initialMarketCap,
 		CreatedAt:   time.Now().Format(time.RFC3339),
 		LastUpdated: time.Now().Format(time.RFC3339),
 	}
+	slog.Debug("Initialized coin with pre-fetched data", "mintAddress", mintAddress, "name", coin.Name, "symbol", coin.Symbol, "price", coin.Price, "volume", coin.Volume24h)
 
-	// 1. Get Jupiter data for basic info & price (overwrites initial values if found)
-	slog.Debug("Fetching Jupiter token info", slog.String("mintAddress", mintAddress))
-	jupiterInfo, err := s.jupiterClient.GetCoinInfo(ctx, mintAddress)
-	jupiterInfoSuccess := err == nil
-	if err != nil {
-		slog.Warn("Failed to get Jupiter info, continuing enrichment", slog.String("mintAddress", mintAddress), slog.Any("error", err))
-		// Continue enrichment even if Jupiter info fails, maybe metadata has info.
+	// 1. Conditionally Get Jupiter data for basic info (Symbol, Decimals, Name if missing)
+	jupiterInfoSuccess := false
+	if coin.Symbol == "" || coin.Decimals == 0 || coin.Name == "" {
+		slog.Debug("Fetching Jupiter token info for potentially missing fields", slog.String("mintAddress", mintAddress))
+		jupiterInfo, err := s.jupiterClient.GetCoinInfo(ctx, mintAddress)
+		if err != nil {
+			slog.Warn("Failed to get Jupiter info, continuing with Birdeye/scraped data", slog.String("mintAddress", mintAddress), slog.Any("error", err))
+		} else {
+			jupiterInfoSuccess = true
+			slog.Debug("Received Jupiter token info", slog.String("mintAddress", mintAddress), slog.String("name", jupiterInfo.Name), slog.String("symbol", jupiterInfo.Symbol))
+			if coin.Name == "" && jupiterInfo.Name != "" {
+				coin.Name = jupiterInfo.Name
+			}
+			if coin.Symbol == "" && jupiterInfo.Symbol != "" {
+				coin.Symbol = jupiterInfo.Symbol
+			}
+			if coin.Decimals == 0 && jupiterInfo.Decimals > 0 {
+				coin.Decimals = jupiterInfo.Decimals
+			}
+			// IconUrl from Birdeye is preferred. Only use Jupiter if Birdeye's was empty and Jupiter's is not.
+			if coin.IconUrl == "" && jupiterInfo.LogoURI != "" {
+				slog.Debug("Using Jupiter logo as Birdeye logo was empty", slog.String("jupiterIconUrl", jupiterInfo.LogoURI), slog.String("mintAddress", mintAddress))
+				coin.IconUrl = jupiterInfo.LogoURI
+			}
+			// Volume from Birdeye is preferred. Only use Jupiter if Birdeye's was zero/unparsed and Jupiter's is not.
+			if coin.Volume24h == 0 && jupiterInfo.DailyVolume > 0 {
+				coin.Volume24h = jupiterInfo.DailyVolume
+			}
+			// Tags from Birdeye are preferred. Merge or overwrite as per desired logic. Here, append if Birdeye's was empty.
+			if len(coin.Tags) == 0 && len(jupiterInfo.Tags) > 0 {
+				coin.Tags = jupiterInfo.Tags
+			}
+		}
 	} else {
-		slog.Debug("Received Jupiter token info", slog.String("mintAddress", mintAddress), slog.String("name", jupiterInfo.Name), slog.String("symbol", jupiterInfo.Symbol))
-		// Only override values if they are non-empty/non-zero from Jupiter
-		if jupiterInfo.Name != "" {
-			coin.Name = jupiterInfo.Name // Overwrite name
-		}
-		if jupiterInfo.Symbol != "" {
-			coin.Symbol = jupiterInfo.Symbol
-		}
-		if jupiterInfo.Decimals > 0 {
-			coin.Decimals = jupiterInfo.Decimals
-		}
-		if jupiterInfo.LogoURI != "" {
-			slog.Debug("Overwriting icon URL with Jupiter logo", slog.String("oldIconUrl", coin.IconUrl), slog.String("newIconUrl", jupiterInfo.LogoURI), slog.String("mintAddress", mintAddress))
-			coin.IconUrl = jupiterInfo.LogoURI // Overwrite icon
-		}
-		if jupiterInfo.DailyVolume > 0 {
-			coin.Volume24h = jupiterInfo.DailyVolume
-		}
-		if len(jupiterInfo.Tags) > 0 {
-			coin.Tags = jupiterInfo.Tags
-		}
+		slog.Debug("Skipping Jupiter GetCoinInfo as essential fields are present from Birdeye", slog.String("mintAddress", mintAddress))
 	}
 
-	// 2. Get price from Jupiter (even if GetTokenInfo failed, price might work)
-	slog.Debug("Fetching Jupiter price", slog.String("mintAddress", mintAddress))
-	prices, err := s.jupiterClient.GetCoinPrices(ctx, []string{mintAddress})
-	jupiterPriceSuccess := err == nil
-	if err != nil {
-		slog.Warn("Error fetching Jupiter price", slog.String("mintAddress", mintAddress), slog.Any("error", err))
-	} else if price, ok := prices[mintAddress]; ok {
-		coin.Price = price
-		slog.Debug("Received Jupiter price", slog.String("mintAddress", mintAddress), slog.Float64("price", coin.Price))
+	// 2. Conditionally Get price from Jupiter if not available or invalid from Birdeye
+	jupiterPriceSuccess := false
+	if coin.Price == 0 { // Assuming 0 means price wasn't valid or available from Birdeye
+		slog.Debug("Fetching Jupiter price as Birdeye price was zero/invalid", slog.String("mintAddress", mintAddress))
+		prices, err := s.jupiterClient.GetCoinPrices(ctx, []string{mintAddress})
+		if err != nil {
+			slog.Warn("Error fetching Jupiter price", slog.String("mintAddress", mintAddress), slog.Any("error", err))
+		} else if price, ok := prices[mintAddress]; ok && price > 0 {
+			coin.Price = price
+			jupiterPriceSuccess = true
+			slog.Debug("Received Jupiter price", slog.String("mintAddress", mintAddress), slog.Float64("price", coin.Price))
+		} else {
+			slog.Warn("Price data not found or invalid in Jupiter response", slog.String("mintAddress", mintAddress))
+		}
 	} else {
-		slog.Warn("Price data not found in Jupiter response", slog.String("mintAddress", mintAddress))
-		jupiterPriceSuccess = false
+		slog.Debug("Skipping Jupiter GetCoinPrices as price is present from Birdeye", slog.String("mintAddress", mintAddress), slog.Float64("price", coin.Price))
+		jupiterPriceSuccess = true // Consider Birdeye price as a "success" for pricing
 	}
 
 	// 3. Get Generic Token Metadata (which includes on-chain and SPL token info like decimals)

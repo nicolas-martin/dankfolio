@@ -30,14 +30,12 @@ type ClientAPI interface {
 }
 
 // NewClient creates a new instance of the BirdEye client
-func NewClient(baseURL string, apiKey string, tracker clients.APICallTracker) ClientAPI {
+func NewClient(httpClient *http.Client, baseURL string, apiKey string, tracker clients.APICallTracker) ClientAPI {
 	return &Client{
-		httpClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
-		baseURL: baseURL,
-		apiKey:  apiKey,
-		tracker: tracker,
+		httpClient: httpClient, // Use passed-in httpClient
+		baseURL:    baseURL,
+		apiKey:     apiKey,
+		tracker:    tracker,
 	}
 }
 

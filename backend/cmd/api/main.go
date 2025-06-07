@@ -12,7 +12,7 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/joho/godotenv"
-	"github.com/kelseyhightower/envconfig" // Added import
+	"github.com/kelseyhightower/envconfig"
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
 	"github.com/gagliardetto/solana-go/rpc"
@@ -31,72 +31,11 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
 
-type Config struct {
-	SolanaRPCEndpoint         string        `envconfig:"SOLANA_RPC_ENDPOINT" default:"https://api.mainnet-beta.solana.com"`
-	SolanaRPCAPIKey           string        `envconfig:"SOLANA_RPC_API_KEY"` // Not strictly required if using a public RPC, but good to have
-	BirdEyeEndpoint           string        `envconfig:"BIRDEYE_ENDPOINT" required:"true"`
-	BirdEyeAPIKey             string        `envconfig:"BIRDEYE_API_KEY" required:"true"`
-	CoinGeckoAPIKey           string        `envconfig:"COINGECKO_API_KEY"` // Optional
-	GRPCPort                  int           `envconfig:"GRPC_PORT" default:"9000"`
-	DBURL                     string        `envconfig:"DB_URL" required:"true"`
-	CacheExpiry               time.Duration `envconfig:"CACHE_EXPIRY_SECONDS" default:"300s"`    // Default to 5 minutes (300 seconds)
-	JupiterApiKey             string        `envconfig:"JUPITER_API_KEY"`                        // Optional
-	JupiterApiUrl             string        `envconfig:"JUPITER_API_URL" required:"true"`
-	Env                       string        `envconfig:"APP_ENV" required:"true"`
-	NewCoinsFetchInterval     time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL_MINUTES" default:"5m"` // Default to 5 minutes
-	PlatformFeeBps            int           `envconfig:"PLATFORM_FEE_BPS" default:"0"`
-	PlatformFeeAccountAddress string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS"` // Conditionally required, handled in validation
-}
-
-func loadConfig() (*Config, error) {
-	// Load environment variables from .env file in development
-	if os.Getenv("APP_ENV") == "development" {
-		if err := godotenv.Load(); err != nil {
-			log.Fatalf("Error loading .env file: %v", err)
-		}
-	}
-
-	var cfg Config
-	err := envconfig.Process("", &cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	// Custom validations
-	// If SolanaRPCEndpoint is set to something other than the public default, API key is effectively required.
-	// Note: envconfig handles the default for SolanaRPCEndpoint.
-	if cfg.SolanaRPCEndpoint != "https://api.mainnet-beta.solana.com" && cfg.SolanaRPCAPIKey == "" {
-		log.Print("Warning: SOLANA_RPC_API_KEY is not set for a non-default SOLANA_RPC_ENDPOINT.")
-		// Depending on strictness, you might choose to log.Fatalf here
-		// For now, retain original behaviour of logging a warning but allowing it.
-		// If it should be fatal: log.Fatalf("SOLANA_RPC_API_KEY is required for non-default SOLANA_RPC_ENDPOINT")
-	}
-
-
-	// PLATFORM_FEE_BPS represents a basis point value for platform fees and must be non-negative.
-	// envconfig doesn't have a direct "min" or "non-negative" validator, so manual check is fine.
-	if cfg.PlatformFeeBps < 0 {
-		log.Fatalf("PLATFORM_FEE_BPS cannot be negative. Value: %d", cfg.PlatformFeeBps)
-	}
-
-	// If PLATFORM_FEE_BPS is greater than 0, PLATFORM_FEE_ACCOUNT_ADDRESS must be set
-	// because a non-zero platform fee requires an account to receive the fee.
-	if cfg.PlatformFeeBps > 0 && cfg.PlatformFeeAccountAddress == "" {
-		log.Fatalf("PLATFORM_FEE_ACCOUNT_ADDRESS must be set if PLATFORM_FEE_BPS (%d) is greater than 0.", cfg.PlatformFeeBps)
-	}
-
-	return &cfg, nil
-}
-
 func main() {
 	logLevel := slog.LevelInfo
 	var handler slog.Handler
 
-	config, err := loadConfig()
-	if err != nil {
-		// Use standard log here as slog might not be initialized if config loading fails early
-		log.Fatalf("Failed to load configuration: %v", err)
-	}
+	config := loadConfig()
 
 	if config.Env != "development" {
 		logLevel = slog.LevelDebug
@@ -147,6 +86,7 @@ func main() {
 	apiTracker := clients.NewAPICallTracker()
 
 	// Start goroutine to log API stats periodically with context cancellation
+	// TODO: Move the goroutine to a separate inside `LogAPIStats` function
 	go func(ctx context.Context) {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
@@ -163,7 +103,7 @@ func main() {
 
 	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
 
-	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey, apiTracker)
+	birdeyeClient := birdeye.NewClient(httpClient, config.BirdEyeEndpoint, config.BirdEyeAPIKey, apiTracker)
 
 	header := map[string]string{
 		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
@@ -174,13 +114,11 @@ func main() {
 
 	offchainClient := offchain.NewClient(httpClient, apiTracker)
 
-	store, err := postgres.NewStore(config.DBURL, true, logLevel, config.Env) // Pass logLevel
+	store, err := postgres.NewStore(config.DBURL, true, logLevel, config.Env)
 	if err != nil {
 		slog.Error("Failed to connect to database", slog.Any("error", err))
 		os.Exit(1)
 	}
-
-	// We don't need the auth service anymore as we're using App Check directly
 
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:        config.BirdEyeEndpoint,
@@ -189,14 +127,22 @@ func main() {
 		SolanaRPCEndpoint:     config.SolanaRPCEndpoint,
 		NewCoinsFetchInterval: config.NewCoinsFetchInterval,
 	}
-	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store, solanaClient)
+	coinService := coin.NewService(
+		coinServiceConfig,
+		httpClient,
+		jupiterClient,
+		store,
+		solanaClient,    // This is the chainClient
+		birdeyeClient,   // This is the birdeyeClient
+		apiTracker,      // Pass existing apiTracker
+		offchainClient,  // Pass existing offchainClient
+	)
 	slog.Info("Coin service initialized.")
 
-	// Initialize Price Service Cache
 	priceCache, err := price.NewGoCacheAdapter()
 	if err != nil {
 		slog.Error("Failed to create price cache adapter", slog.Any("error", err))
-		os.Exit(1) // Or handle more gracefully depending on application requirements
+		os.Exit(1)
 	}
 	slog.Info("Price cache adapter initialized successfully.")
 
@@ -208,8 +154,8 @@ func main() {
 		priceService,
 		jupiterClient,
 		store,
-		0,
-		"",
+		config.PlatformFeeBps,
+		config.PlatformFeeAccountAddress,
 	)
 
 	walletService := wallet.New(solanaClient, store, coinService)
@@ -244,14 +190,46 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	slog.Info("Shutting down servers...")
 
-	// Stop gRPC server
 	grpcServer.Stop()
 
 	slog.Info("Servers exited properly")
+}
+
+type Config struct {
+	SolanaRPCEndpoint         string        `envconfig:"SOLANA_RPC_ENDPOINT" default:"https://api.mainnet-beta.solana.com"`
+	SolanaRPCAPIKey           string        `envconfig:"SOLANA_RPC_API_KEY" required:"true"`
+	BirdEyeEndpoint           string        `envconfig:"BIRDEYE_ENDPOINT" required:"true"`
+	BirdEyeAPIKey             string        `envconfig:"BIRDEYE_API_KEY" required:"true"`
+	CoinGeckoAPIKey           string        `envconfig:"COINGECKO_API_KEY"`
+	GRPCPort                  int           `envconfig:"GRPC_PORT" default:"9000"`
+	DBURL                     string        `envconfig:"DB_URL" required:"true"`
+	CacheExpiry               time.Duration `envconfig:"CACHE_EXPIRY_SECONDS" default:"5m"`
+	JupiterApiKey             string        `envconfig:"JUPITER_API_KEY"`
+	JupiterApiUrl             string        `envconfig:"JUPITER_API_URL" required:"true"`
+	Env                       string        `envconfig:"APP_ENV" required:"true"`
+	NewCoinsFetchInterval     time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL_MINUTES" default:"5m"` // Default to 5 minutes
+	PlatformFeeBps            int           `envconfig:"PLATFORM_FEE_BPS" default:"0"`
+	PlatformFeeAccountAddress string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS"` // Conditionally required, handled in validation
+}
+
+func loadConfig() *Config {
+	// Load environment variables from .env file in development
+	if os.Getenv("APP_ENV") == "development" {
+		if err := godotenv.Load(); err != nil {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
+	}
+
+	var cfg Config
+	err := envconfig.Process("", &cfg)
+	if err != nil {
+		log.Fatalf("Error processing environment variables: %v", err)
+	}
+
+	return &cfg
 }

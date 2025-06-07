@@ -28,20 +28,28 @@ type Service struct {
 	store          db.Store
 	fetcherCtx     context.Context    // Context for the new token fetcher goroutine
 	fetcherCancel  context.CancelFunc // Cancel function for the fetcher goroutine
+	birdeyeClient  birdeye.ClientAPI
 }
 
 // NewService creates a new CoinService instance
-func NewService(config *Config, httpClient *http.Client, jupiterClient jupiter.ClientAPI, store db.Store, chainClient bclient.GenericClientAPI) *Service { // chainClient
-	// Create a dummy APICallTracker if none is provided
-	apiTracker := clients.NewAPICallTracker()
-	offchainClient := offchain.NewClient(httpClient, apiTracker)
-
+func NewService(
+	config *Config,
+	httpClient *http.Client, // httpClient is still needed for other clients if they don't take it directly yet
+	jupiterClient jupiter.ClientAPI,
+	store db.Store,
+	chainClient bclient.GenericClientAPI,
+	birdeyeClient birdeye.ClientAPI,
+	apiTracker clients.APICallTracker, // Added apiTracker
+	offchainClient offchain.ClientAPI, // Added offchainClient
+) *Service {
 	service := &Service{
 		config:         config,
 		jupiterClient:  jupiterClient,
-		chainClient:    chainClient, // Changed assignment
-		offchainClient: offchainClient,
+		chainClient:    chainClient,
+		offchainClient: offchainClient, // Use passed-in offchainClient
 		store:          store,
+		birdeyeClient:  birdeyeClient,
+		// apiTracker is not a field in Service struct, it's used by offchainClient
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 
@@ -323,14 +331,14 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 			return nil
 		}
 
-		slog.Info("Trending data is too old or missing, triggering scrape and enrichment...")
-		// ScrapeAndEnrichToFile might make external API calls, which ideally shouldn't be part of the DB transaction.
+		slog.Info("Trending data is too old or missing, triggering fetch and enrichment...")
+		// FetchAndEnrichTrendingTokens might make external API calls, which ideally shouldn't be part of the DB transaction.
 		// However, its result (enrichedCoins) is used in subsequent DB operations.
 		// For this refactor, we'll keep it inside for simplicity, but in a more advanced setup,
 		// data fetching could be done outside the transaction, and only DB writes inside.
-		enrichedCoins, err := s.ScrapeAndEnrichToFile(ctx) // s.ScrapeAndEnrichToFile still uses s.jupiterClient etc.
+		enrichedCoins, err := s.FetchAndEnrichTrendingTokens(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to scrape and enrich coins: %w", err)
+			return fmt.Errorf("failed to fetch and enrich trending coins: %w", err)
 		}
 
 		existingCoins, err := txStore.Coins().List(ctx)
@@ -391,7 +399,7 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		}
 
 		slog.Info("Coin store refresh transaction part complete",
-			slog.Time("scrapeTimestamp", enrichedCoins.ScrapeTimestamp),
+			slog.Time("fetchTimestamp", enrichedCoins.FetchTimestamp),
 			slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
 		return nil // Commit transaction
 	})

@@ -25,26 +25,46 @@ const (
 type scrapedTokenInfo struct {
 	MintAddress string `json:"mint_address"`
 	Name        string `json:"name"`
+	Symbol      string `json:"symbol"`
 	Price       string `json:"price"`
 	Change24h   string `json:"change_24h"`
 	Volume24h   string `json:"volume_24h"`
 	MarketCap   string `json:"market_cap"`
 	IconURL     string `json:"icon_url"`
+	Tags        []string `json:"tags"`
 }
 
-// ScrapeAndEnrichToFile orchestrates the scraping and enrichment process.
-func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutput, error) {
-	slog.Info("Starting Solana trending token scrape and enrichment process...")
+// FetchAndEnrichTrendingTokens orchestrates fetching and enrichment of trending tokens.
+func (s *Service) FetchAndEnrichTrendingTokens(ctx context.Context) (*TrendingTokensOutput, error) {
+	slog.Info("Starting trending token fetch and enrichment process...")
 
-	// Step 1: Scrape basic info using Chromedp
-	scrapedTokens, err := s.scrapeBasicTokenInfo(ctx)
+	// Step 1: Get trending tokens from Birdeye
+	birdeyeTokens, err := s.birdeyeClient.GetTrendingTokens(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed during basic token scraping: %w", err)
+		return nil, fmt.Errorf("failed to get trending tokens from Birdeye: %w", err)
 	}
-	if len(scrapedTokens) == 0 {
-		return nil, fmt.Errorf("no tokens were successfully scraped from the modal, cannot proceed")
+	if len(birdeyeTokens) == 0 {
+		return nil, fmt.Errorf("no trending tokens received from Birdeye")
 	}
-	slog.Info("Successfully scraped basic info for tokens", "count", len(scrapedTokens))
+	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens))
+
+	// Adapt birdeye.TokenDetails to []scrapedTokenInfo for now
+	scrapedTokens := make([]scrapedTokenInfo, 0, len(birdeyeTokens))
+	for _, t := range birdeyeTokens {
+		scrapedTokens = append(scrapedTokens, scrapedTokenInfo{
+			MintAddress: t.Address,
+			Name:        t.Name,
+			Symbol:      t.Symbol,
+			Price:       fmt.Sprintf("%f", t.Price),
+			// Change24h is not directly available in birdeye.TokenDetails,
+			// it might need to be calculated or fetched differently if still required.
+			// For now, it will be empty or zero if not set.
+			Volume24h:   fmt.Sprintf("%f", t.Volume24h),
+			MarketCap:   fmt.Sprintf("%f", t.MarketCap),
+			IconURL:     t.LogoURI,
+			Tags:        t.Tags,
+		})
+	}
 
 	// Step 2: Enrich the scraped tokens concurrently
 	enrichedCoins, err := s.enrichScrapedTokens(ctx, scrapedTokens)
@@ -56,16 +76,16 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutpu
 	}
 	slog.Info("Enrichment process complete", "successful_tokens", len(enrichedCoins))
 
-	// Step 3: Prepare and save the final output
-	finalOutput := &EnrichedFileOutput{
-		ScrapeTimestamp: time.Now(),
-		Coins:           enrichedCoins,
+	// Step 3: Prepare the final output
+	finalOutput := &TrendingTokensOutput{
+		FetchTimestamp: time.Now(),
+		Coins:          enrichedCoins,
 	}
 
-	// Log summary before saving
-	slog.Info("--- Saving Enriched Solana Tokens Data ---")
-	slog.Info("Preparing to save enriched data",
-		"timestamp", finalOutput.ScrapeTimestamp.Format(time.RFC3339),
+	// Log summary
+	slog.Info("--- Trending Token Data Prepared ---")
+	slog.Info("Data prepared",
+		"timestamp", finalOutput.FetchTimestamp.Format(time.RFC3339),
 		"total_coins", len(finalOutput.Coins))
 
 	// Optionally log details of first few tokens
@@ -84,133 +104,6 @@ func (s *Service) ScrapeAndEnrichToFile(ctx context.Context) (*EnrichedFileOutpu
 	}
 
 	return finalOutput, nil
-}
-
-// ScrapeBasicTokenInfo handles the browser automation part to get initial token details.
-// Exported for testing.
-func (s *Service) scrapeBasicTokenInfo(ctx context.Context) ([]scrapedTokenInfo, error) {
-	path := chromePath()
-	if path == "" {
-		panic("unsupported OS: no Chrome binary found")
-	}
-
-	allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx,
-		chromedp.DisableGPU,
-		chromedp.Headless,
-		chromedp.NoSandbox,
-		chromedp.ExecPath(path),
-	)
-	defer cancelAlloc()
-
-	taskCtx, cancelTask := chromedp.NewContext(allocCtx)
-	defer cancelTask()
-
-	timeoutCtx, cancel := context.WithTimeout(taskCtx, scrapeDefaultTimeout)
-	defer cancel()
-
-	// 1) Navigate and wait for the table rows
-	if err := chromedp.Run(timeoutCtx,
-		chromedp.Navigate(findGemsURL),
-		chromedp.WaitReady("tbody tr", chromedp.ByQuery),
-	); err != nil {
-		return nil, fmt.Errorf("navigation failed: %w", err)
-	}
-
-	// 2) Collect up to 10 row nodes
-	var rows []*cdp.Node
-	if err := chromedp.Run(timeoutCtx,
-		chromedp.Nodes("tbody tr", &rows, chromedp.ByQueryAll),
-	); err != nil {
-		return nil, fmt.Errorf("listing rows failed: %w", err)
-	}
-	limit := min(len(rows), maxTrendingCount)
-
-	var result []scrapedTokenInfo
-	for _, row := range rows[:limit] {
-		rowCtx, cancelRow := context.WithTimeout(timeoutCtx, 5*time.Second)
-		defer cancelRow()
-
-		// Extract variables
-		var nameRaw, href, iconURL, priceRaw, changeRaw, volumeRaw, capRaw string
-
-		// Helper for selectors scoped to each row
-		sel := func(col int, sub string) string {
-			if sub != "" {
-				return fmt.Sprintf("td:nth-child(%d) %s", col, sub)
-			}
-			return fmt.Sprintf("td:nth-child(%d)", col)
-		}
-
-		// Name & href & correct token icon in column 2
-		if err := chromedp.Run(rowCtx,
-			chromedp.Text(sel(2, "a div.truncate:first-child"), &nameRaw, chromedp.ByQuery, chromedp.FromNode(row)),
-			chromedp.AttributeValue(sel(2, "a"), "href", &href, nil, chromedp.ByQuery, chromedp.FromNode(row)),
-			chromedp.AttributeValue(sel(2, "div.relative > div:nth-child(2) img"), "src", &iconURL, nil, chromedp.ByQuery, chromedp.FromNode(row)),
-		); err != nil {
-			slog.Error("Name/icon extraction failed", "error", err)
-			continue
-		}
-		name := strings.TrimSpace(nameRaw)
-
-		// Mint address from href
-		mint := ""
-		if parts := strings.Split(href, "/token/"); len(parts) > 1 {
-			mint = strings.Split(parts[1], "?")[0]
-		}
-
-		// Price in column 4 nested divs
-		if err := chromedp.Run(rowCtx,
-			chromedp.Text(sel(4, "div div"), &priceRaw, chromedp.ByQuery, chromedp.FromNode(row)),
-		); err != nil {
-			slog.Error("Price extraction failed", "error", err)
-		}
-		price := strings.TrimSpace(priceRaw)
-
-		// Change 24h in column 5 (remove %)
-		if err := chromedp.Run(rowCtx,
-			chromedp.Text(sel(5, "span"), &changeRaw, chromedp.ByQuery, chromedp.FromNode(row)),
-		); err != nil {
-			slog.Error("Change extraction failed", "error", err)
-		}
-		change := strings.TrimSuffix(strings.TrimSpace(changeRaw), "%")
-
-		// Volume in column 6 (first nested div, remove $)
-		if err := chromedp.Run(rowCtx,
-			chromedp.Text(sel(6, "div.text-right.min-w-28 > div"), &volumeRaw, chromedp.ByQuery, chromedp.FromNode(row)),
-		); err != nil {
-			slog.Error("Volume extraction failed", "error", err)
-		}
-		volume := strings.TrimPrefix(strings.TrimSpace(volumeRaw), "$")
-
-		// Market Cap in column 7 (first nested div, remove $)
-		if err := chromedp.Run(rowCtx,
-			chromedp.Text(sel(7, "div"), &capRaw, chromedp.ByQuery, chromedp.FromNode(row)),
-		); err != nil {
-			slog.Error("Market cap extraction failed", "error", err)
-		}
-		marketCap := strings.TrimPrefix(strings.TrimSpace(capRaw), "$")
-		iconURL = strings.TrimSpace(iconURL)
-
-		result = append(result, scrapedTokenInfo{
-			MintAddress: mint,
-			Name:        name,
-			Price:       price,
-			Change24h:   change,
-			Volume24h:   volume,
-			MarketCap:   marketCap,
-			IconURL:     iconURL,
-		})
-		slog.Debug("Scraped token info",
-			"mint", mint,
-			"name", name,
-			"price", price,
-			"change", change,
-			"volume", volume,
-			"market_cap", marketCap,
-			"icon_url", iconURL)
-	}
-
-	return result, nil
 }
 
 // enrichScrapedTokens takes basic scraped info and enriches it using external APIs concurrently.
@@ -246,22 +139,35 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 
 			slog.Debug("Enriching token", "name", token.Name, "mint_address", token.MintAddress)
 
-			initialVolume, err := parseVolume(token.Volume24h)
+			// Parse Price, Volume, MarketCap from strings to float64
+			initialPrice, err := strconv.ParseFloat(strings.ReplaceAll(token.Price, ",", ""), 64)
 			if err != nil {
-				slog.Warn("Failed to parse volume",
-					"volume_str", token.Volume24h,
-					"name", token.Name,
-					"mint_address", token.MintAddress,
-					"error", err)
+				slog.Warn("Failed to parse price string, defaulting to 0", "priceStr", token.Price, "name", token.Name, "mint", token.MintAddress, "error", err)
+				initialPrice = 0
+			}
+
+			initialVolume, err := parseVolume(token.Volume24h) // parseVolume already handles parsing logic
+			if err != nil {
+				slog.Warn("Failed to parse volume string, defaulting to 0", "volumeStr", token.Volume24h, "name", token.Name, "mint", token.MintAddress, "error", err)
 				initialVolume = 0
+			}
+
+			initialMarketCap, err := strconv.ParseFloat(strings.ReplaceAll(token.MarketCap, ",", ""), 64)
+			if err != nil {
+				slog.Warn("Failed to parse market cap string, defaulting to 0", "marketCapStr", token.MarketCap, "name", token.Name, "mint", token.MintAddress, "error", err)
+				initialMarketCap = 0
 			}
 
 			enriched, err := s.EnrichCoinData(
 				enrichTaskCtx, // Use the task-specific context
 				token.MintAddress,
 				token.Name,
+				token.Symbol,
 				token.IconURL,
+				initialPrice,
 				initialVolume,
+				initialMarketCap, // Pass parsed market cap
+				token.Tags,       // Pass tags
 			)
 			if err != nil {
 				errMessage := fmt.Sprintf("Failed EnrichCoinData for %s (%s): %v", token.Name, token.MintAddress, err)
