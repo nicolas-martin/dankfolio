@@ -9,9 +9,9 @@ import { createStyles } from './settings_styles';
 import { SettingsScreenNavigationProp, SettingsScreenRouteProp } from './settings_types';
 import { logger } from '@/utils/logger';
 import { useToast } from '@components/Common/Toast';
-import { copyToClipboard as copyUtil, formatAddress } from '@/screens/Profile/profile_scripts'; // Assuming this can be reused
+import { copyToClipboard as copyUtil } from '@/screens/Profile/profile_scripts';
 
-const SettingsScreen = () => { // MODIFIED
+const Settings = () => {
 	const navigation = useNavigation<SettingsScreenNavigationProp>();
 	const route = useRoute<SettingsScreenRouteProp>();
 	const theme = useTheme();
@@ -23,16 +23,7 @@ const SettingsScreen = () => { // MODIFIED
 
 	const { wallet } = usePortfolioStore();
 
-	useEffect(() => {
-		logger.breadcrumb({ category: 'navigation', message: 'Viewed SettingsScreen' });
-		// Example of using navigation prop if needed later:
-		// if (navigation.isFocused()) {
-		//   logger.info('Settings screen is focused');
-		// }
-	}, [navigation]); // Added navigation to dependency array if it's used in useEffect
-
 	const appVersion = Constants.expoConfig?.version || 'N/A';
-	// For demonstration, using a placeholder for private key.
 	// In a real app, this would come from a secure source and be handled with extreme care.
 	const privateKeyPlaceholder = '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
@@ -51,7 +42,7 @@ const SettingsScreen = () => { // MODIFIED
 					<List.Section title="Account Information" titleStyle={styles.sectionTitle}>
 						<List.Item
 							title="Public Key"
-							description={wallet?.address ? formatAddress(wallet.address) : 'N/A'}
+							description={wallet?.address ? wallet.address : 'N/A'}
 							titleStyle={styles.listItemTitle}
 							descriptionStyle={styles.listItemDescription}
 							left={props => <List.Icon {...props} icon="wallet-outline" />}
@@ -113,4 +104,4 @@ const SettingsScreen = () => { // MODIFIED
 	);
 };
 
-export default SettingsScreen;
+export default Settings;
