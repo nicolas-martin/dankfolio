@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text, useTheme, Button, Icon, ProgressBar } from 'react-native-paper';
-import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './trade_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions'; // Added
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
-import type { RootStackParamList } from '@/types/navigation';
 import TokenSelector from '@components/Common/TokenSelector';
 import AmountPercentageButtons from '@components/Common/AmountPercentageButtons';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
+import { TradeScreenNavigationProp, TradeScreenRouteProp } from './trade_types';
 
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import {
@@ -30,17 +30,15 @@ import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_t
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { logger } from '@/utils/logger';
 
-type TradeScreenNavigationProp = NavigationProp<RootStackParamList>;
-type TradeScreenRouteProp = RouteProp<RootStackParamList, 'Trade'>;
 
 const Trade: React.FC = () => {
 	const navigation = useNavigation<TradeScreenNavigationProp>();
 	const route = useRoute<TradeScreenRouteProp>();
-	const { initialFromCoin = null, initialToCoin = null } = route.params || {};
+	const { inputCoin = null, outputCoin = null } = route.params || {};
 	const { tokens, wallet } = usePortfolioStore();
 	const { getCoinByID } = useCoinStore();
-	const [fromCoin, setFromCoin] = useState<Coin | null>(initialFromCoin);
-	const [toCoin, setToCoin] = useState<Coin | null>(initialToCoin);
+	const [fromCoin, setFromCoin] = useState<Coin | null>(inputCoin);
+	const [toCoin, setToCoin] = useState<Coin | null>(outputCoin || null);
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
 	const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(false);
@@ -81,12 +79,12 @@ const Trade: React.FC = () => {
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed TradeScreen' });
-		logger.log(`[Trade] Initializing with initialFromCoin: ${initialFromCoin?.symbol}, initialToCoin: ${initialToCoin?.symbol}`);
+		logger.log(`[Trade] Initializing with inputCoin: ${inputCoin?.symbol}, outputCoin: ${outputCoin?.symbol}`);
 		const initializeCoins = async () => {
 			// Handle initialFromCoin
-			if (initialFromCoin) {
-				setFromCoin(initialFromCoin);
-				const coinFromMap = await getCoinByID(initialFromCoin.mintAddress, false);
+			if (inputCoin) {
+				setFromCoin(inputCoin);
+				const coinFromMap = await getCoinByID(inputCoin.mintAddress, false);
 				if (coinFromMap) {
 					setFromCoin(coinFromMap);
 				}
@@ -103,16 +101,16 @@ const Trade: React.FC = () => {
 			}
 
 			// Handle initialToCoin
-			if (initialToCoin) {
-				setToCoin(initialToCoin);
-				const coinFromMap = await getCoinByID(initialToCoin.mintAddress, false);
+			if (outputCoin) {
+				setToCoin(outputCoin);
+				const coinFromMap = await getCoinByID(outputCoin.mintAddress, false);
 				if (coinFromMap) {
 					setToCoin(coinFromMap);
 				}
 			}
 		};
 		initializeCoins();
-	}, [initialFromCoin, initialToCoin, getCoinByID]);
+	}, [inputCoin, outputCoin, getCoinByID]);
 
 	const refreshPrices = async () => {
 		logger.log('[Trade] Refreshing coin prices', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
@@ -139,7 +137,7 @@ const Trade: React.FC = () => {
 			} else {
 				logger.warn('[Trade] getCoinPrices returned no prices.');
 			}
-		} catch (error: unknown) {
+		} catch (error: any) {
 			logger.error('[Trade] Failed to refresh coin prices', { errorMessage: error?.message, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 		}
 	};
@@ -285,7 +283,7 @@ const Trade: React.FC = () => {
 			logger.log('[Trade] Quote fetch timeout triggered (fromAmountChange)', { amount });
 			try {
 				await fetchTradeQuote(amount, fromCoin, toCoin, setIsQuoteLoading, setToAmount, setTradeDetails);
-			} catch (error: unknown) {
+			} catch (error: any) {
 				logger.error('[Trade] Error fetching trade quote (fromAmountChange)', { errorMessage: error?.message, amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 				showToast({ type: 'error', message: error?.message || 'Failed to fetch trade quote' });
 			}
@@ -316,7 +314,7 @@ const Trade: React.FC = () => {
 			logger.log('[Trade] Quote fetch timeout triggered (toAmountChange)', { amount });
 			try {
 				await fetchTradeQuote(amount, toCoin, fromCoin, setIsQuoteLoading, setFromAmount, setTradeDetails);
-			} catch (error: unknown) {
+			} catch (error: any) {
 				logger.error('[Trade] Error fetching trade quote (toAmountChange)', { errorMessage: error?.message, amount, fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
 				showToast({ type: 'error', message: error?.message || 'Failed to fetch trade quote' });
 			}
@@ -490,7 +488,7 @@ const Trade: React.FC = () => {
 		onAmountChange: (amount: string) => void,
 		showOnlyPortfolioTokens: boolean,
 		testID: string,
-        portfolioBalance?: number // Optional: balance for the percentage buttons
+		portfolioBalance?: number // Optional: balance for the percentage buttons
 	) => (
 		<View style={styles.tradeCard}>
 			<Text style={styles.cardLabel}>{label}</Text>
@@ -504,17 +502,17 @@ const Trade: React.FC = () => {
 				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
 				testID={testID}
 			/>
-            {label === 'From' && coin && portfolioBalance !== undefined && (
-                <AmountPercentageButtons
-                    balance={portfolioBalance}
-                    onSelectAmount={(selectedAmount) => {
-                        // onAmountChange is handleFromAmountChange for the "From" card
-                        onAmountChange(selectedAmount);
-                    }}
-                    // Add some basic styling for spacing if needed, e.g. style={{ marginTop: 8 }}
-                    // This can be refined in the styles.ts for Trade screen later
-                />
-            )}
+			{label === 'From' && coin && portfolioBalance !== undefined && (
+				<AmountPercentageButtons
+					balance={portfolioBalance}
+					onSelectAmount={(selectedAmount) => {
+						// onAmountChange is handleFromAmountChange for the "From" card
+						onAmountChange(selectedAmount);
+					}}
+				// Add some basic styling for spacing if needed, e.g. style={{ marginTop: 8 }}
+				// This can be refined in the styles.ts for Trade screen later
+				/>
+			)}
 		</View>
 	);
 

@@ -1,9 +1,17 @@
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp } from '@react-navigation/native';
 import { Coin } from '@/types';
 import type { RootStackParamList } from '@/types/navigation';
 import { SearchSortByOption } from '@/services/grpc/model';
 
-export type SearchScreenProps = NativeStackScreenProps<RootStackParamList, 'Search'>;
+export type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Search'>;
+
+export type SearchScreenRouteProp = RouteProp<{
+	Search: {
+		coin?: Coin;
+		solCoin?: Coin;
+	};
+}, 'Search'>;
 
 export interface SearchFilters {
 	query: string;

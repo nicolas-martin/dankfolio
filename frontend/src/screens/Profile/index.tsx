@@ -2,10 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { Text, useTheme, IconButton, Button, Icon } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack'; // Added
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
-// import { CoinDetailScreenNavigationProp } from '@screens/CoinDetail/coindetail_types'; // Removed
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { createStyles } from './profile_styles';
@@ -17,15 +15,11 @@ import {
 	SendIcon,
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
-import { env } from '@utils/env';
 import { useThemeStore } from '@/store/theme';
-import { RootStackParamList } from '@/types/navigation';
-
-type ProfileScreenRouteParams = RootStackParamList['Profile'];
+import type { ProfileScreenNavigationProp } from './profile_types';
 
 const Profile = () => {
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>(); // Changed here
-	const route = useRoute();
+	const navigation = useNavigation<ProfileScreenNavigationProp>();
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
 	const {
@@ -117,7 +111,7 @@ const Profile = () => {
 		</View>
 	);
 
-// Removed commented-out renderThemeToggle function and related JSX for code cleanliness.
+	// Removed commented-out renderThemeToggle function and related JSX for code cleanliness.
 
 	const renderPortfolioCard = () => (
 		<View style={styles.portfolioCard}>
@@ -169,6 +163,7 @@ const Profile = () => {
 				sortedTokens.map((token) => (
 					<CoinCard
 						key={token.mintAddress}
+						showSparkline={false}
 						coin={{
 							...token.coin,
 							value: token.value,
@@ -235,12 +230,6 @@ const Profile = () => {
 						{/* {renderTransactionsSection()} */}
 					</View>
 
-					{/* Debug section - development only */}
-					{env.appEnv === 'development' && (
-						<Text >
-							Test
-						</Text>
-					)}
 				</ScrollView>
 			</View>
 		</SafeAreaView>

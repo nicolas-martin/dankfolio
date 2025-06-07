@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, TextInput, FlatList, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { useRoute, RouteProp } from '@react-navigation/native'; // Import useRoute and RouteProp
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '@/types/navigation'; // Assuming RootStackParamList is here
-import { SearchScreenProps, SearchState } from './types';
+import { SearchScreenRouteProp, SearchScreenNavigationProp, SearchState } from './types';
 import { SearchSortByOption } from '@/services/grpc/model'; // Import the type
 import { performSearch, DEBOUNCE_DELAY, handleCoinNavigation } from './scripts';
 import { Coin } from '@/types';
@@ -26,8 +26,9 @@ const initialState: SearchState = {
 	}
 };
 
-const SearchScreen: React.FC<SearchScreenProps> = ({ navigation }) => {
-	const route = useRoute<RouteProp<RootStackParamList, 'Search'>>();
+const SearchScreen: React.FC = () => {
+	const navigation = useNavigation<SearchScreenNavigationProp>();
+	const route = useRoute<SearchScreenRouteProp>();
 	const defaultFiltersFromRoute = route.params?.defaultSortBy ? {
 		query: '',
 		tags: [],
