@@ -13,7 +13,6 @@ import (
 	"time"
 
 	solanago "github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
@@ -431,6 +430,6 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 }
 
 // GetTransactionStatus gets the confirmation status of a transaction
-func (s *Service) GetTransactionStatus(ctx context.Context, txHash string) (*rpc.GetSignatureStatusesResult, error) {
+func (s *Service) GetTransactionStatus(ctx context.Context, txHash string) (*model.SignatureStatusResult, error) {
 	return s.solanaClient.GetTransactionConfirmationStatus(ctx, txHash)
 }

@@ -138,7 +138,7 @@ func (s *Service) getMintInfo(ctx context.Context, mint solana.PublicKey) (uint8
 
 // buildTransaction creates a transaction with the given instructions
 func (s *Service) buildTransaction(ctx context.Context, payer solana.PublicKey, instructions []solana.Instruction) (*solana.Transaction, error) {
-	recent, err := s.rpcClient.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
+	recent, err := s.rpcClient.GetLatestBlockhashConfirmed(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent blockhash: %w", err)
 	}
@@ -390,10 +390,10 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 
 	// Submit transaction with optimized options
 	maxRetries := uint(3)
-	sig, err := s.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+	sig, err := s.rpcClient.SendTransactionWithCustomOpts(ctx, tx, model.TransactionOptions{
 		SkipPreflight:       false,
-		PreflightCommitment: rpc.CommitmentConfirmed,
-		MaxRetries:          &maxRetries,
+		PreflightCommitment: "confirmed", // String representation
+		MaxRetries:          maxRetries,  // model.TransactionOptions.MaxRetries is uint, not *uint
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to submit transaction: %w", err)
@@ -427,11 +427,7 @@ func (s *Service) GetWalletBalances(ctx context.Context, address string) (*Walle
 	}
 
 	// Get SOL solData first
-	solData, err := s.rpcClient.GetBalance(
-		ctx,
-		pubKey,
-		rpc.CommitmentConfirmed,
-	)
+	solData, err := s.rpcClient.GetBalanceConfirmed(ctx, pubKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get SOL balance: %v", err)
 	}
@@ -469,15 +465,12 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 	}
 
 	// Get token accounts with jsonParsed encoding
-	accounts, err := s.rpcClient.GetTokenAccountsByOwner(
+	accounts, err := s.rpcClient.GetTokenAccountsByOwnerConfirmed(
 		ctx,
 		pubKey,
-		&rpc.GetTokenAccountsConfig{
-			ProgramId: solana.TokenProgramID.ToPointer(),
-		},
-		&rpc.GetTokenAccountsOpts{
-			Encoding:   solana.EncodingJSONParsed,
-			Commitment: rpc.CommitmentConfirmed,
+		model.GetTokenAccountsOptions{
+			ProgramID: solana.TokenProgramID.String(),
+			Encoding:  string(solana.EncodingJSONParsed),
 		},
 	)
 	if err != nil {
@@ -523,10 +516,10 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 func (s *Service) submitTransaction(ctx context.Context, tx *solana.Transaction) (solana.Signature, error) {
 	// Submit transaction with optimized options
 	maxRetries := uint(3)
-	sig, err := s.rpcClient.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
+	sig, err := s.rpcClient.SendTransactionWithCustomOpts(ctx, tx, model.TransactionOptions{
 		SkipPreflight:       false,
-		PreflightCommitment: rpc.CommitmentConfirmed,
-		MaxRetries:          &maxRetries,
+		PreflightCommitment: "confirmed",
+		MaxRetries:          maxRetries,
 	})
 	if err != nil {
 		return solana.Signature{}, fmt.Errorf("failed to submit transaction: %w", err)

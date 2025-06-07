@@ -22,6 +22,7 @@ type Client struct {
 }
 
 var _ ClientAPI = (*Client)(nil)
+var _ SolanaRPCClientAPI = (*Client)(nil) // Added this line
 
 func NewClient(solClient *rpc.Client) ClientAPI {
 	return &Client{
@@ -138,110 +139,194 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 }
 
 // GetTransactionConfirmationStatus gets the confirmation status of a transaction
-func (c *Client) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
-	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		slog.Info("mocking confirmations")
-		return getMockTransactionStatus(sigStr)
-	}
+func (c *Client) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*model.SignatureStatusResult, error) {
+    if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+        slog.InfoContext(ctx, "mocking confirmations for GetTransactionConfirmationStatus")
+        return getMockTransactionStatus(sigStr)
+    }
 
-	slog.Debug("Checking confirmation status", "signature", sigStr)
-	sig, err := solana.SignatureFromBase58(sigStr)
-	if err != nil {
-		slog.Error("Invalid signature format", "error", err)
-		return nil, fmt.Errorf("invalid signature format: %w", err)
-	}
+    slog.DebugContext(ctx, "Checking confirmation status for GetTransactionConfirmationStatus", "signature", sigStr)
+    sig, err := solana.SignatureFromBase58(sigStr)
+    if err != nil {
+        slog.ErrorContext(ctx, "Invalid signature format for GetTransactionConfirmationStatus", "error", err, "signature", sigStr)
+        return nil, fmt.Errorf("invalid signature format: %w", err)
+    }
 
-	// Get signature statuses
-	status, err := c.rpcConn.GetSignatureStatuses(ctx, true, sig)
-	if err != nil {
-		slog.Error("Failed to get transaction status", "signature", sigStr, "error", err)
-		return nil, fmt.Errorf("failed to get transaction status: %w", err)
-	}
+    rpcStatusResult, err := c.rpcConn.GetSignatureStatuses(ctx, true, sig)
+    if err != nil {
+        slog.ErrorContext(ctx, "Failed to get transaction status from RPC for GetTransactionConfirmationStatus", "signature", sigStr, "error", err)
+        return nil, fmt.Errorf("failed to get transaction status: %w", err)
+    }
 
-	if status == nil || len(status.Value) == 0 || status.Value[0] == nil {
-		slog.Debug("Transaction not yet found or processed", "signature", sigStr)
-		return nil, nil
-	}
+    if rpcStatusResult == nil {
+        slog.DebugContext(ctx, "RPC status result is nil, treating as not found", "signature", sigStr)
+        return nil, nil
+    }
 
-	if status.Value[0].Err != nil {
-		slog.Error("Transaction failed", "signature", sigStr, "error", status.Value[0].Err)
-		return status, fmt.Errorf("transaction failed: %v", status.Value[0].Err)
-	}
+    if len(rpcStatusResult.Value) == 0 {
+         slog.DebugContext(ctx, "RPC status result Value is empty, treating as not found", "signature", sigStr)
+         return &model.SignatureStatusResult{
+            Context: struct {Slot uint64 `json:"slot"`}{Slot: rpcStatusResult.Context.Slot},
+            Value:   []*model.SignatureStatus{},
+         }, nil
+    }
 
-	confirmations := uint64(0)
-	if status.Value[0].Confirmations != nil {
-		confirmations = *status.Value[0].Confirmations
-	}
-	slog.Debug("Transaction status retrieved",
-		"signature", sigStr,
-		"status", status.Value[0].ConfirmationStatus,
-		"confirmations", confirmations)
+    if rpcStatusResult.Value[0] == nil {
+        slog.DebugContext(ctx, "Transaction not yet found or processed (nil status value in RPC response)", "signature", sigStr)
+        return &model.SignatureStatusResult{
+            Context: struct {Slot uint64 `json:"slot"`}{Slot: rpcStatusResult.Context.Slot},
+            Value:   []*model.SignatureStatus{},
+        }, nil
+    }
 
-	return status, nil
+    modelStatuses := make([]*model.SignatureStatus, len(rpcStatusResult.Value))
+    for i, rpcStatus := range rpcStatusResult.Value {
+        if rpcStatus == nil {
+            modelStatuses[i] = nil
+            continue
+        }
+        modelStatuses[i] = &model.SignatureStatus{
+            Slot:               rpcStatus.Slot,
+            Confirmations:      rpcStatus.Confirmations,
+            Err:                rpcStatus.Err,
+            ConfirmationStatus: string(rpcStatus.ConfirmationStatus),
+        }
+    }
+
+    modelResult := &model.SignatureStatusResult{
+        Context: struct {
+            Slot uint64 `json:"slot"`
+        }{
+            Slot: rpcStatusResult.Context.Slot,
+        },
+        Value: modelStatuses,
+    }
+
+    if modelResult.Value[0].Err != nil {
+        slog.ErrorContext(ctx, "Transaction failed as per status in GetTransactionConfirmationStatus", "signature", sigStr, "error", modelResult.Value[0].Err)
+        return modelResult, fmt.Errorf("transaction failed: %v", modelResult.Value[0].Err)
+    }
+
+    slog.DebugContext(ctx, "Transaction status retrieved successfully for GetTransactionConfirmationStatus",
+        "signature", sigStr,
+        "status", modelResult.Value[0].ConfirmationStatus,
+        "confirmations", modelResult.Value[0].Confirmations)
+    return modelResult, nil
 }
 
-// Helper function to get mock transaction status for debug mode
-func getMockTransactionStatus(sigStr string) (*rpc.GetSignatureStatusesResult, error) {
-	mockTxMutex.Lock()
-	defer mockTxMutex.Unlock()
+func (c *Client) GetAccountInfo(ctx context.Context, account solana.PublicKey) (*rpc.GetAccountInfoResult, error) {
+    return c.rpcConn.GetAccountInfo(ctx, account)
+}
 
-	state, exists := mockTxStates[sigStr]
-	if !exists {
-		state = &MockTransactionState{
-			FirstSeenAt:   time.Now(),
-			NumChecks:     0,
-			Confirmations: 0,
-			IsFinalized:   false,
-		}
-		mockTxStates[sigStr] = state
-	}
+func (c *Client) GetLatestBlockhashConfirmed(ctx context.Context) (*rpc.GetLatestBlockhashResult, error) {
+    return c.rpcConn.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
+}
 
-	state.NumChecks++
-	elapsed := time.Since(state.FirstSeenAt)
+func (c *Client) SendTransactionWithCustomOpts(ctx context.Context, tx *solana.Transaction, opts model.TransactionOptions) (solana.Signature, error) {
+    rpcOpts := rpc.TransactionOpts{
+        SkipPreflight:       opts.SkipPreflight,
+        PreflightCommitment: model.ToRPCCommitment(opts.PreflightCommitment), // Assumes model.ToRPCCommitment is available
+    }
+    if opts.MaxRetries > 0 {
+        maxRetriesCopy := opts.MaxRetries // rpc.TransactionOpts.MaxRetries expects *uint
+        rpcOpts.MaxRetries = &maxRetriesCopy
+    }
 
-	// Simulate transaction progression
-	switch {
-	case elapsed < 2*time.Second:
-		// Transaction not found yet
-		return nil, nil
-	case elapsed < 4*time.Second:
-		// Transaction found, but not confirmed
-		state.Confirmations = 0
-		return &rpc.GetSignatureStatusesResult{
-			Value: []*rpc.SignatureStatusesResult{{
-				ConfirmationStatus: rpc.ConfirmationStatusProcessed,
-				Confirmations:      &state.Confirmations,
-			}},
-		}, nil
-	case elapsed < 6*time.Second:
-		// Transaction confirmed
-		state.Confirmations = 15
-		return &rpc.GetSignatureStatusesResult{
-			Value: []*rpc.SignatureStatusesResult{{
-				ConfirmationStatus: rpc.ConfirmationStatusConfirmed,
-				Confirmations:      &state.Confirmations,
-			}},
-		}, nil
-	case elapsed < 8*time.Second:
-		// Transaction confirmed
-		state.Confirmations = 31
-		return &rpc.GetSignatureStatusesResult{
-			Value: []*rpc.SignatureStatusesResult{{
-				ConfirmationStatus: rpc.ConfirmationStatusConfirmed,
-				Confirmations:      &state.Confirmations,
-			}},
-		}, nil
-	default:
-		// Transaction finalized
-		state.Confirmations = 40
-		state.IsFinalized = true
-		return &rpc.GetSignatureStatusesResult{
-			Value: []*rpc.SignatureStatusesResult{{
-				ConfirmationStatus: rpc.ConfirmationStatusFinalized,
-				Confirmations:      &state.Confirmations,
-			}},
-		}, nil
-	}
+    return c.rpcConn.SendTransactionWithOpts(ctx, tx, rpcOpts)
+}
+
+func (c *Client) GetBalanceConfirmed(ctx context.Context, account solana.PublicKey) (*rpc.GetBalanceResult, error) {
+    return c.rpcConn.GetBalance(ctx, account, rpc.CommitmentConfirmed)
+}
+
+func (c *Client) GetTokenAccountsByOwnerConfirmed(ctx context.Context, owner solana.PublicKey, modelOpts model.GetTokenAccountsOptions) (*rpc.GetTokenAccountsResult, error) {
+    rpcConf := &rpc.GetTokenAccountsConfig{}
+    if modelOpts.ProgramID != "" {
+        programIDPubKey, err := solana.PublicKeyFromBase58(modelOpts.ProgramID)
+        if err != nil {
+            return nil, fmt.Errorf("invalid programID ('%s') in GetTokenAccountsByOwnerConfirmed: %w", modelOpts.ProgramID, err)
+        }
+        rpcConf.ProgramId = programIDPubKey.ToPointer()
+    }
+
+    rpcOpts := &rpc.GetTokenAccountsOpts{
+        Commitment: rpc.CommitmentConfirmed,
+    }
+
+    if modelOpts.Encoding != "" {
+        switch modelOpts.Encoding {
+        case string(solana.EncodingBase58):
+            rpcOpts.Encoding = solana.EncodingBase58
+        case string(solana.EncodingBase64):
+            rpcOpts.Encoding = solana.EncodingBase64
+        case string(solana.EncodingBase64Zstd):
+            rpcOpts.Encoding = solana.EncodingBase64Zstd
+        case string(solana.EncodingJSONParsed):
+            rpcOpts.Encoding = solana.EncodingJSONParsed
+        default:
+            slog.WarnContext(ctx, "Unsupported encoding type provided in GetTokenAccountsByOwnerConfirmed, defaulting to jsonParsed", "providedEncoding", modelOpts.Encoding)
+            rpcOpts.Encoding = solana.EncodingJSONParsed
+        }
+    } else {
+        rpcOpts.Encoding = solana.EncodingJSONParsed // Default if empty
+    }
+
+    return c.rpcConn.GetTokenAccountsByOwner(ctx, owner, rpcConf, rpcOpts)
+}
+
+// This function should be part of the same file or properly imported/accessible.
+// The mockTxStates and mockTxMutex variables are assumed to be defined globally in this file.
+func getMockTransactionStatus(sigStr string) (*model.SignatureStatusResult, error) {
+    mockTxMutex.Lock()
+    defer mockTxMutex.Unlock()
+
+    state, exists := mockTxStates[sigStr]
+    if !exists {
+        state = &MockTransactionState{
+            FirstSeenAt:   time.Now(),
+            NumChecks:     0,
+            Confirmations: 0,
+            IsFinalized:   false,
+        }
+        mockTxStates[sigStr] = state
+    }
+
+    state.NumChecks++
+    elapsed := time.Since(state.FirstSeenAt)
+
+    var statusValue *model.SignatureStatus
+    var currentRpcStatus rpc.CommitmentType
+    var mockSlot = uint64(12345)
+
+    switch {
+    case elapsed < 2*time.Second:
+        return &model.SignatureStatusResult{ Context: struct{Slot uint64 `json:"slot"`}{Slot: mockSlot + uint64(state.NumChecks)}, Value: []*model.SignatureStatus{} }, nil
+    case elapsed < 4*time.Second:
+        state.Confirmations = 0
+        currentRpcStatus = rpc.ConfirmationStatusProcessed
+    case elapsed < 6*time.Second:
+        state.Confirmations = 15
+        currentRpcStatus = rpc.ConfirmationStatusConfirmed
+    case elapsed < 8*time.Second:
+        state.Confirmations = 31
+        currentRpcStatus = rpc.ConfirmationStatusConfirmed
+    default:
+        state.Confirmations = 40
+        state.IsFinalized = true
+        currentRpcStatus = rpc.ConfirmationStatusFinalized
+    }
+
+    statusValue = &model.SignatureStatus{
+        Slot:               mockSlot + uint64(state.NumChecks),
+        Confirmations:      &state.Confirmations,
+        Err:                nil,
+        ConfirmationStatus: string(currentRpcStatus),
+    }
+
+    return &model.SignatureStatusResult{
+        Context: struct{Slot uint64 `json:"slot"`}{Slot: mockSlot + uint64(state.NumChecks)},
+        Value: []*model.SignatureStatus{statusValue},
+    }, nil
 }
 
 // MockTransactionState tracks the state of mock transactions
