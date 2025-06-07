@@ -1,6 +1,5 @@
-import type { NavigationProp } from '@/types';
+import { RouteProp, NavigationProp } from '@react-navigation/native';
+import type { RootStackParamList } from '@/types/navigation';
 
-// Add any specific types for the Settings screen here
-export interface SettingsScreenProps {
-  navigation: NavigationProp;
-}
+export type SettingsScreenNavigationProp = NavigationProp<RootStackParamList>;
+export type SettingsScreenRouteProp = RouteProp<RootStackParamList, 'Settings'>;
