@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, TouchableOpacity, FlatList, Modal as RNModal, TextInput, ActivityIndicator } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
-import { ChevronDownIcon, CoinsIcon } from '@components/Common/Icons';
+import { ChevronDownIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { createStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
@@ -158,7 +158,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	return (
 		<>
-			<Card elevation={0} style={[styles.cardContainer, style]}>
+			<Card elevation={0} style={[styles.cardContainer]}>
 				<Card.Content style={styles.cardContent}>
 					<TouchableOpacity
 						style={styles.selectorButtonContainer}
@@ -199,20 +199,23 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 									testID="activity-indicator"
 								/>
 							) : (
-								<TextInput
-									style={styles.amountInput}
-									value={amountValue}
-									onChangeText={(text) => onAmountChange && handleAmountInputChange(text, onAmountChange)}
-									placeholder={amountPlaceholder}
-									placeholderTextColor={theme.colors.onTertiaryContainer}
-									keyboardType="decimal-pad"
-									editable={isAmountEditable}
-								/>
+								<>
+									<TextInput
+										style={styles.amountInput}
+										value={amountValue}
+										onChangeText={(text) => onAmountChange && handleAmountInputChange(text, onAmountChange)}
+										placeholder={amountPlaceholder}
+										placeholderTextColor={theme.colors.onTertiaryContainer}
+										keyboardType="decimal-pad"
+										editable={isAmountEditable}
+									/>
+									<Text style={styles.valueText}>
+										{`$${calculatedValue}`}
+									</Text>
+								</>
 							)}
-							<Text style={styles.valueText}>
-								{`$${calculatedValue}`}
-							</Text>
-							{portfolioToken && (
+							{/* note: HIDE FOR NOW */}
+							{false && portfolioToken && (
 								<Text style={styles.valueText}>
 									{portfolioToken.amount}
 								</Text>

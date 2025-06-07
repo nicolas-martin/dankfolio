@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { AmountPercentageButtonsProps } from './types';
@@ -11,9 +11,13 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
   onSelectAmount,
   style,
 }) => {
+  const theme = useTheme();
   const styles = useStyles(); // Hook for styles
+  const [activePercent, setActivePercent] = useState<number | null>(null);
 
   const handlePress = (percent: number) => {
+    setActivePercent(percent);
+    
     if (balance === undefined || balance === null || balance <= 0) {
       onSelectAmount('0'); // Or handle as per original Send screen logic for no balance
       return;
@@ -36,16 +40,32 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      {percentages.map((percent) => (
-        <TouchableOpacity
-          key={percent}
-          style={styles.percentageButton}
-          onPress={() => handlePress(percent)}
-          testID={`amount-percentage-button-${percent}`}
-        >
-          <Text style={styles.percentageButtonText}>{percent}%</Text>
-        </TouchableOpacity>
-      ))}
+      {percentages.map((percent) => {
+        const isActive = activePercent === percent;
+        return (
+          <TouchableOpacity
+            key={percent}
+            style={[
+              styles.percentageButton,
+              isActive && { 
+                backgroundColor: theme.colors.primary,
+                elevation: 2,
+              }
+            ]}
+            onPress={() => handlePress(percent)}
+            testID={`amount-percentage-button-${percent}`}
+          >
+            <Text 
+              style={[
+                styles.percentageButtonText,
+                isActive && { color: theme.colors.onPrimary }
+              ]}
+            >
+              {percent}%
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
