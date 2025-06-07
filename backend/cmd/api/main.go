@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig" // Added import
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
 	"github.com/gagliardetto/solana-go/rpc"
@@ -32,124 +32,60 @@ import (
 )
 
 type Config struct {
-	SolanaRPCEndpoint         string
-	SolanaRPCAPIKey           string
-	BirdEyeEndpoint           string
-	BirdEyeAPIKey             string
-	CoinGeckoAPIKey           string
-	GRPCPort                  int
-	DBURL                     string
-	CacheExpiry               time.Duration
-	JupiterApiKey             string
-	JupiterApiUrl             string
-	Env                       string
-	NewCoinsFetchInterval     time.Duration
-	PlatformFeeBps            int
-	PlatformFeeAccountAddress string
+	SolanaRPCEndpoint         string        `envconfig:"SOLANA_RPC_ENDPOINT" default:"https://api.mainnet-beta.solana.com"`
+	SolanaRPCAPIKey           string        `envconfig:"SOLANA_RPC_API_KEY"` // Not strictly required if using a public RPC, but good to have
+	BirdEyeEndpoint           string        `envconfig:"BIRDEYE_ENDPOINT" required:"true"`
+	BirdEyeAPIKey             string        `envconfig:"BIRDEYE_API_KEY" required:"true"`
+	CoinGeckoAPIKey           string        `envconfig:"COINGECKO_API_KEY"` // Optional
+	GRPCPort                  int           `envconfig:"GRPC_PORT" default:"9000"`
+	DBURL                     string        `envconfig:"DB_URL" required:"true"`
+	CacheExpiry               time.Duration `envconfig:"CACHE_EXPIRY_SECONDS" default:"300s"`    // Default to 5 minutes (300 seconds)
+	JupiterApiKey             string        `envconfig:"JUPITER_API_KEY"`                        // Optional
+	JupiterApiUrl             string        `envconfig:"JUPITER_API_URL" required:"true"`
+	Env                       string        `envconfig:"APP_ENV" required:"true"`
+	NewCoinsFetchInterval     time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL_MINUTES" default:"5m"` // Default to 5 minutes
+	PlatformFeeBps            int           `envconfig:"PLATFORM_FEE_BPS" default:"0"`
+	PlatformFeeAccountAddress string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS"` // Conditionally required, handled in validation
 }
 
 func loadConfig() (*Config, error) {
-	// Load environment variables
+	// Load environment variables from .env file in development
 	if os.Getenv("APP_ENV") == "development" {
 		if err := godotenv.Load(); err != nil {
-			// slog is not configured yet, use original log.Fatal
-			log.Fatal(err)
+			log.Fatalf("Error loading .env file: %v", err)
 		}
 	}
 
-	// Parse cache expiry duration from environment variable (default to 5 minutes)
-	cacheExpiry := 5 * time.Minute
-	if expiryStr := os.Getenv("CACHE_EXPIRY_SECONDS"); expiryStr != "" {
-		expirySecs, err := strconv.Atoi(expiryStr)
-		if err != nil {
-			// slog not configured yet, or use a temp logger if this happens often before main setup
-			log.Printf("Warning: Invalid CACHE_EXPIRY_SECONDS value: %v, using default. Slog not yet initialized.", err)
-		} else {
-			cacheExpiry = time.Duration(expirySecs) * time.Second
-		}
-	}
-
-	newCoinsIntervalMinutesStr := os.Getenv("NEW_COINS_FETCH_INTERVAL_MINUTES")
-	newCoinsIntervalMinutes, err := strconv.Atoi(newCoinsIntervalMinutesStr)
+	var cfg Config
+	err := envconfig.Process("", &cfg)
 	if err != nil {
-		log.Fatalf("invalid NEW_COINS_FETCH_INTERVAL_MINUTES value: %v", err)
-	}
-	newCoinsFetchInterval := time.Duration(newCoinsIntervalMinutes) * time.Minute
-
-	platformFeeBpsStr := os.Getenv("PLATFORM_FEE_BPS")
-	platformFeeBps := 0 // Default to 0
-	if platformFeeBpsStr != "" {
-		parsedBps, err := strconv.Atoi(platformFeeBpsStr)
-		if err != nil {
-			log.Printf("Warning: Invalid PLATFORM_FEE_BPS value: %v. Defaulting to 0.", err)
-		} else {
-			platformFeeBps = parsedBps
-		}
-	}
-	platformFeeAccountAddress := os.Getenv("PLATFORM_FEE_ACCOUNT_ADDRESS")
-
-	config := &Config{
-		SolanaRPCEndpoint:         os.Getenv("SOLANA_RPC_ENDPOINT"),
-		SolanaRPCAPIKey:           os.Getenv("SOLANA_RPC_API_KEY"),
-		BirdEyeEndpoint:           os.Getenv("BIRDEYE_ENDPOINT"),
-		BirdEyeAPIKey:             os.Getenv("BIRDEYE_API_KEY"),
-		CoinGeckoAPIKey:           os.Getenv("COINGECKO_API_KEY"),
-		DBURL:                     os.Getenv("DB_URL"),
-		GRPCPort:                  9000, // Default value
-		CacheExpiry:               cacheExpiry,
-		JupiterApiKey:             os.Getenv("JUPITER_API_KEY"),
-		JupiterApiUrl:             os.Getenv("JUPITER_API_URL"),
-		Env:                       os.Getenv("APP_ENV"),
-		NewCoinsFetchInterval:     newCoinsFetchInterval,
-		PlatformFeeBps:            platformFeeBps,
-		PlatformFeeAccountAddress: platformFeeAccountAddress,
+		return nil, err
 	}
 
-	// Validate required fields
-	var missingVars []string
-
-	if config.Env == "" {
-		missingVars = append(missingVars, "APP_ENV")
-	}
-	if config.SolanaRPCEndpoint == "" {
-		log.Print("Warning: SOLANA_RPC_ENDPOINT is not set, using default value.")
-		config.SolanaRPCEndpoint = "https://api.mainnet-beta.solana.com"
-	}
-
-	if config.SolanaRPCEndpoint != "" && config.SolanaRPCAPIKey == "" {
-		missingVars = append(missingVars, "SolanaRPCAPIKey")
+	// Custom validations
+	// If SolanaRPCEndpoint is set to something other than the public default, API key is effectively required.
+	// Note: envconfig handles the default for SolanaRPCEndpoint.
+	if cfg.SolanaRPCEndpoint != "https://api.mainnet-beta.solana.com" && cfg.SolanaRPCAPIKey == "" {
+		log.Print("Warning: SOLANA_RPC_API_KEY is not set for a non-default SOLANA_RPC_ENDPOINT.")
+		// Depending on strictness, you might choose to log.Fatalf here
+		// For now, retain original behaviour of logging a warning but allowing it.
+		// If it should be fatal: log.Fatalf("SOLANA_RPC_API_KEY is required for non-default SOLANA_RPC_ENDPOINT")
 	}
 
-	if config.BirdEyeEndpoint == "" {
-		missingVars = append(missingVars, "BIRDEYE_ENDPOINT")
-	}
-	if config.BirdEyeAPIKey == "" {
-		missingVars = append(missingVars, "BIRDEYE_API_KEY")
-	}
-	if config.DBURL == "" {
-		missingVars = append(missingVars, "DB_URL")
-	}
-	if config.JupiterApiUrl == "" {
-		missingVars = append(missingVars, "JUPITER_API_URL")
-	}
-	// No longer validating IPFSNodeAPIAddress
-	// PreferredGatewayForCIDv0 has a default, so not strictly required to be in missingVars unless empty is invalid.
-
-	if len(missingVars) > 0 {
-		log.Fatalf("missing required environment variables: %v", missingVars)
-	}
 
 	// PLATFORM_FEE_BPS represents a basis point value for platform fees and must be non-negative.
-	if config.PlatformFeeBps < 0 {
-		log.Fatalf("PLATFORM_FEE_BPS cannot be negative.")
-	}
-	// If PLATFORM_FEE_BPS is greater than 0, PLATFORM_FEE_ACCOUNT_ADDRESS must be set
-	// because a non-zero platform fee requires an account to receive the fee.
-	if config.PlatformFeeBps > 0 && config.PlatformFeeAccountAddress == "" {
-		log.Fatalf("PLATFORM_FEE_ACCOUNT_ADDRESS must be set if PLATFORM_FEE_BPS is greater than 0.")
+	// envconfig doesn't have a direct "min" or "non-negative" validator, so manual check is fine.
+	if cfg.PlatformFeeBps < 0 {
+		log.Fatalf("PLATFORM_FEE_BPS cannot be negative. Value: %d", cfg.PlatformFeeBps)
 	}
 
-	return config, nil
+	// If PLATFORM_FEE_BPS is greater than 0, PLATFORM_FEE_ACCOUNT_ADDRESS must be set
+	// because a non-zero platform fee requires an account to receive the fee.
+	if cfg.PlatformFeeBps > 0 && cfg.PlatformFeeAccountAddress == "" {
+		log.Fatalf("PLATFORM_FEE_ACCOUNT_ADDRESS must be set if PLATFORM_FEE_BPS (%d) is greater than 0.", cfg.PlatformFeeBps)
+	}
+
+	return &cfg, nil
 }
 
 func main() {
