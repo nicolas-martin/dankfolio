@@ -9,6 +9,7 @@ import { useState } from 'react';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { WalletSetupStep, WalletSetupScreenProps, WalletInfo } from './types';
 import { logger } from '@/utils/logger';
+import { ToastProps } from '@/components/Common/Toast/toast_types';
 
 // Branded type for Base58 private keys to ensure type safety
 type Base58PrivateKey = string & { readonly __brand: unique symbol };
@@ -263,13 +264,13 @@ export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 };
 
 // --- Dankfolio WalletSetup Business Logic ---
-export const WELCOME_TITLE = 'Welcome to the future of finance';
-export const WELCOME_DESC = 'Your gateway to the decentralized world. Manage your digital assets with ease and security.';
+export const WELCOME_TITLE = 'Welcome to DankFolio';
+export const WELCOME_DESC = 'Your gateway to the meme economy. Trade, hodl, and laugh your way to the moon with the dankest portfolio in crypto.';
 export const CREATE_WALLET_TITLE = 'Create a new wallet';
 export const CREATE_WALLET_DESC = 'This will be your new wallet. You can use it to store, send, and receive digital assets.';
 export const IMPORT_WALLET_TITLE = 'Recovery phrase';
 export const IMPORT_WALLET_DESC = 'Enter your 12-word recovery phrase';
-export const TERMS_TEXT = 'By proceeding, you agree to our Terms of Service and Privacy Policy.';
+export const TERMS_TEXT = 'By proceeding, you agree to our Terms & Conditions';
 export const DEFAULT_SOL_AMOUNT = 0.000000001;
 export const CREATING_WALLET_TITLE = 'Creating your wallet';
 export const CREATING_WALLET_DESC = 'Please wait while we set up your wallet...';
@@ -358,7 +359,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		}
 	};
 
-	const copyToClipboard = async (text: string, label: string, showToast: unknown) => {
+	const copyToClipboard = async (text: string, label: string, showToast: (options: Partial<ToastProps>) => void) => {
 		try {
 			await Clipboard.setString(text);
 			logger.breadcrumb({ category: 'wallet_setup', message: `Copied ${label} to clipboard` });
