@@ -17,6 +17,7 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
@@ -25,6 +26,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
@@ -205,18 +207,36 @@ func main() {
 		Timeout: time.Second * 10,
 	}
 
-	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey)
+	// Initialize APICallTracker
+	apiTracker := clients.NewAPICallTracker()
 
-	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey)
+	// Start goroutine to log API stats periodically with context cancellation
+	go func(ctx context.Context) {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				slog.Info("Shutting down API stats logging goroutine")
+				return
+			case <-ticker.C:
+				telemetry.LogAPIStats(apiTracker, slogger) // Use slogger here
+			}
+		}
+	}(ctx)
+
+	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
+
+	birdeyeClient := birdeye.NewClient(config.BirdEyeEndpoint, config.BirdEyeAPIKey, apiTracker)
 
 	header := map[string]string{
 		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
 	}
 	solClient := rpc.NewWithHeaders(config.SolanaRPCEndpoint, header)
 
-	solanaClient := solana.NewClient(solClient)
+	solanaClient := solana.NewClient(solClient, apiTracker)
 
-	offchainClient := offchain.NewClient(httpClient)
+	offchainClient := offchain.NewClient(httpClient, apiTracker)
 
 	store, err := postgres.NewStore(config.DBURL, true, logLevel, config.Env) // Pass logLevel
 	if err != nil {
