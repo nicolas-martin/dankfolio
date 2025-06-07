@@ -131,13 +131,16 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									logger.breadcrumb({ category: 'ui', message: 'Import recovery phrase button pressed (welcome step)' });
 									goToImport();
 								}}
-								style={[styles.actionButton, styles.actionButtonLight]}
+								style={[styles.actionButton, styles.actionButtonYellow]}
 							>
 								<Text style={styles.buttonText}>Import a recovery phrase</Text>
 							</TouchableOpacity>
 						</View>
 
-						<TouchableOpacity onPress={handleTermsPress}>
+						<TouchableOpacity 
+							onPress={handleTermsPress}
+							style={styles.termsContainer}
+						>
 							<Text style={styles.termsText}>By proceeding, you agree to our Terms & Conditions</Text>
 						</TouchableOpacity>
 					</View>

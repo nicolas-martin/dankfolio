@@ -257,3 +257,36 @@ var (
 	mockTxStates = make(map[string]*MockTransactionState)
 	mockTxMutex  sync.RWMutex
 )
+
+// GetProgramAccounts retrieves accounts associated with a program
+func (c *Client) GetProgramAccounts(ctx context.Context, pubkey solana.PublicKey) (*rpc.GetProgramAccountsResult, error) {
+	// The mockery error indicated that the underlying rpcConn.GetProgramAccounts returns a value,
+	// but the interface requires a pointer.
+	res, err := c.rpcConn.GetProgramAccounts(ctx, pubkey)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// GetLargestAccounts retrieves the largest accounts
+func (c *Client) GetLargestAccounts(ctx context.Context, commitment rpc.CommitmentType, filter rpc.LargestAccountsFilterType) (*rpc.GetLargestAccountsResult, error) {
+	return c.rpcConn.GetLargestAccounts(ctx, commitment, filter)
+}
+
+// GetSupply retrieves the current supply of SOL
+func (c *Client) GetSupply(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetSupplyResult, error) {
+	return c.rpcConn.GetSupply(ctx, commitment)
+}
+
+// GetTokenAccountsByOwner retrieves token accounts owned by a specific account
+func (c *Client) GetTokenAccountsByOwner(ctx context.Context, owner solana.PublicKey, mint solana.PublicKey, encoding solana.EncodingType) (*rpc.GetTokenAccountsResult, error) {
+	return c.rpcConn.GetTokenAccountsByOwner(ctx, owner,
+		&rpc.GetTokenAccountsConfig{
+			Mint: &mint,
+		},
+		&rpc.GetTokenAccountsOpts{
+			Encoding: encoding,
+		},
+	)
+}

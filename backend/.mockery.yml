@@ -5,7 +5,7 @@ packages:
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks" # Used .PackageName instead of .SrcPackageName and lowercased "mocks"
           # template-data:
           #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter:
@@ -14,7 +14,7 @@ packages:
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain:
@@ -23,7 +23,7 @@ packages:
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/clients/solana:
@@ -32,14 +32,14 @@ packages:
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
       SolanaRPCClientAPI: # From rpc_client_api.go
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/db:
@@ -48,14 +48,14 @@ packages:
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
       Store:
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/service/coin:
@@ -64,7 +64,7 @@ packages:
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
   github.com/nicolas-martin/dankfolio/backend/internal/service/price:
@@ -73,6 +73,6 @@ packages:
         config:
           dir: "{{.InterfaceDir}}/mocks"
           filename: "{{.InterfaceName}}.go"
-          pkgname: "{{.SrcPackageName}}Mocks"
+          outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
