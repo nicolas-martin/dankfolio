@@ -22,6 +22,18 @@ type ClientAPI interface {
 
 	// GetTransactionConfirmationStatus gets the confirmation status of a transaction
 	GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error)
+
+	// GetProgramAccounts retrieves accounts associated with a program
+	GetProgramAccounts(ctx context.Context, pubkey solana.PublicKey) (*rpc.GetProgramAccountsResult, error)
+
+	// GetLargestAccounts retrieves the largest accounts
+	GetLargestAccounts(ctx context.Context, commitment rpc.CommitmentType, filter rpc.LargestAccountsFilterType) (*rpc.GetLargestAccountsResult, error)
+
+	// GetSupply retrieves the current supply of SOL
+	GetSupply(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetSupplyResult, error)
+
+	// GetTokenAccountsByOwner retrieves token accounts owned by a specific account
+	GetTokenAccountsByOwner(ctx context.Context, owner solana.PublicKey, mint solana.PublicKey, encoding solana.EncodingType) (*rpc.GetTokenAccountsResult, error)
 }
 
 // SolanaRPCClientAPI defines the interface for the Solana RPC client methods used by wallet.Service.

@@ -61,6 +61,14 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingHorizontal: 20,
 		textAlign: 'center',
 	},
+	termsContainer: {
+		padding: 10,
+		borderRadius: 8,
+		marginTop: 24,
+		borderBottomWidth: 1,
+		borderBottomColor: theme.colors.primary,
+		backgroundColor: 'transparent',
+	},
 	recoveryInput: {
 		backgroundColor: theme.colors.surface,
 		borderColor: theme.colors.outline,
