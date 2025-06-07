@@ -8,6 +8,12 @@ import (
 
 const (
 	SolMint = "So11111111111111111111111111111111111111112"
+
+	// Trade status constants
+	TradeStatusPending   = "pending"
+	TradeStatusSubmitted = "submitted"
+	TradeStatusCompleted = "completed"
+	TradeStatusFailed    = "failed"
 )
 
 // Coin represents a token or coin in the system (unified model)
