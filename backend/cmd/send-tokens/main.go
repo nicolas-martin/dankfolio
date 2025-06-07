@@ -13,6 +13,7 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
@@ -45,7 +46,10 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: time.Second * 10,
 	}
-	jupiterClient := jupiter.NewClient(httpClient, os.Getenv("JUPITER_API_URL"), os.Getenv("JUPITER_API_KEY"))
+	// Create API tracker
+	apiTracker := clients.NewAPICallTracker()
+
+	jupiterClient := jupiter.NewClient(httpClient, os.Getenv("JUPITER_API_URL"), os.Getenv("JUPITER_API_KEY"), apiTracker)
 
 	// Initialize coin service using environment variables like main API
 	coinServiceConfig := &coin.Config{

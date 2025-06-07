@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 
@@ -217,8 +218,12 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 		ctx,
 		rawCoin.MintAddress,
 		rawCoin.Name,
+		rawCoin.Symbol,
 		rawCoin.LogoUrl, // Pass rawCoin.LogoUrl as the initialIconURL
+		0.0,             // Pass 0.0 for initialPrice, EnrichCoinData will fetch it
 		0.0,             // Pass 0.0 for initialVolume, EnrichCoinData will fetch it
+		0.0,             // Pass 0.0 for initialMarketCap, EnrichCoinData will fetch it
+		[]string{},      // Pass empty tags, EnrichCoinData will fetch them
 	)
 	if err != nil {
 		slog.Error("Enrichment from raw_coin failed", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
@@ -277,9 +282,13 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 	enrichedCoin, err := s.EnrichCoinData( // This is model.Coin
 		ctx,
 		mintAddress,
-		"", // No initial name
-		"", // No initial icon
-		0,  // No initial volume
+		"",         // No initial name
+		"",         // No initial symbol
+		"",         // No initial icon
+		0.0,        // No initial price
+		0.0,        // No initial volume
+		0.0,        // No initial market cap
+		[]string{}, // No initial tags
 	)
 	if err != nil {
 		slog.Error("Dynamic coin enrichment failed", slog.String("mintAddress", mintAddress), slog.Any("error", err))

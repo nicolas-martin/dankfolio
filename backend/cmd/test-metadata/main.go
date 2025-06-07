@@ -10,6 +10,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/olekukonko/tablewriter"
 )
@@ -47,7 +48,10 @@ func main() {
 	}
 
 	// Initialize Solana client
-	solanaClient := solana.NewClient(rpcClient)
+	// Create API tracker
+	apiTracker := clients.NewAPICallTracker()
+
+	solanaClient := solana.NewClient(rpcClient, apiTracker)
 
 	// Fetch metadata
 	fmt.Println("Fetching metadata for mint:", *mintAddress)
