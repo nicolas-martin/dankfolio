@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View } from 'react-native';
 import { Text, Button, useTheme } from 'react-native-paper';
-import BottomSheet from 'reanimated-bottom-sheet';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
