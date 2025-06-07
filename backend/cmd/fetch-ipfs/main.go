@@ -15,6 +15,7 @@ import (
 	"github.com/blocto/solana-go-sdk/rpc"
 	"github.com/olekukonko/tablewriter"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 )
 
@@ -125,7 +126,10 @@ func main() {
 	}
 
 	// Create offchain client
-	offchainClient := offchain.NewClient(httpClient)
+	// Create API tracker
+	apiTracker := clients.NewAPICallTracker()
+
+	offchainClient := offchain.NewClient(httpClient, apiTracker)
 
 	log.Printf("📊 Processing %d common tokens", len(coins))
 

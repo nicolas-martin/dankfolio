@@ -9,28 +9,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/chromedp"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
-// --- Constants moved from cmd/solana-trending-scrape ---
-const (
-	findGemsURL               = "https://birdeye.so/find-gems?chain=solana"
-	scrapeDefaultTimeout      = 30 * time.Second
-	scrapeMaxConcurrentEnrich = 5 // Limit concurrency for enrichment API calls
-	maxTrendingCount          = 10
-)
-
 type scrapedTokenInfo struct {
-	MintAddress string `json:"mint_address"`
-	Name        string `json:"name"`
-	Symbol      string `json:"symbol"`
-	Price       string `json:"price"`
-	Change24h   string `json:"change_24h"`
-	Volume24h   string `json:"volume_24h"`
-	MarketCap   string `json:"market_cap"`
-	IconURL     string `json:"icon_url"`
+	MintAddress string   `json:"mint_address"`
+	Name        string   `json:"name"`
+	Symbol      string   `json:"symbol"`
+	Price       string   `json:"price"`
+	Change24h   string   `json:"change_24h"`
+	Volume24h   string   `json:"volume_24h"`
+	MarketCap   string   `json:"market_cap"`
+	IconURL     string   `json:"icon_url"`
 	Tags        []string `json:"tags"`
 }
 
@@ -43,14 +33,14 @@ func (s *Service) FetchAndEnrichTrendingTokens(ctx context.Context) (*TrendingTo
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trending tokens from Birdeye: %w", err)
 	}
-	if len(birdeyeTokens) == 0 {
+	if len(birdeyeTokens.Data) == 0 {
 		return nil, fmt.Errorf("no trending tokens received from Birdeye")
 	}
-	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens))
+	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens.Data))
 
 	// Adapt birdeye.TokenDetails to []scrapedTokenInfo for now
-	scrapedTokens := make([]scrapedTokenInfo, 0, len(birdeyeTokens))
-	for _, t := range birdeyeTokens {
+	scrapedTokens := make([]scrapedTokenInfo, 0, len(birdeyeTokens.Data))
+	for _, t := range birdeyeTokens.Data {
 		scrapedTokens = append(scrapedTokens, scrapedTokenInfo{
 			MintAddress: t.Address,
 			Name:        t.Name,
@@ -59,10 +49,10 @@ func (s *Service) FetchAndEnrichTrendingTokens(ctx context.Context) (*TrendingTo
 			// Change24h is not directly available in birdeye.TokenDetails,
 			// it might need to be calculated or fetched differently if still required.
 			// For now, it will be empty or zero if not set.
-			Volume24h:   fmt.Sprintf("%f", t.Volume24h),
-			MarketCap:   fmt.Sprintf("%f", t.MarketCap),
-			IconURL:     t.LogoURI,
-			Tags:        t.Tags,
+			Volume24h: fmt.Sprintf("%f", t.Volume24h),
+			MarketCap: fmt.Sprintf("%f", t.MarketCap),
+			IconURL:   t.LogoURI,
+			Tags:      t.Tags,
 		})
 	}
 
@@ -108,6 +98,7 @@ func (s *Service) FetchAndEnrichTrendingTokens(ctx context.Context) (*TrendingTo
 
 // enrichScrapedTokens takes basic scraped info and enriches it using external APIs concurrently.
 func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scrapedTokenInfo) ([]model.Coin, error) {
+	scrapeMaxConcurrentEnrich := 3
 	slog.Info("Executing token enrichment",
 		"token_count", len(tokensToEnrich),
 		"concurrency", scrapeMaxConcurrentEnrich)
@@ -146,7 +137,7 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 				initialPrice = 0
 			}
 
-			initialVolume, err := parseVolume(token.Volume24h) // parseVolume already handles parsing logic
+			initialVolume, err := strconv.ParseFloat(strings.ReplaceAll(token.Volume24h, ",", ""), 64)
 			if err != nil {
 				slog.Warn("Failed to parse volume string, defaulting to 0", "volumeStr", token.Volume24h, "name", token.Name, "mint", token.MintAddress, "error", err)
 				initialVolume = 0
@@ -221,42 +212,10 @@ func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scra
 
 	// This block seems like a leftover from previous attempts, ensure it's fully commented or removed if the above check handles it.
 	// if len(encounteredErrors) > 0 {
-	// 	log.Printf("Enrichment finished with %d errors. Proceeding to save successfully enriched tokens.", len(encounteredErrors))
-	// 	// Don't return the error here, allow saving partial results.
-	// 	// return fmt.Errorf("encountered errors during enrichment process: %w", encounteredErrors[0])
+	//      log.Printf("Enrichment finished with %d errors. Proceeding to save successfully enriched tokens.", len(encounteredErrors))
+	//      // Don't return the error here, allow saving partial results.
+	//      // return fmt.Errorf("encountered errors during enrichment process: %w", encounteredErrors[0])
 	// }
 
 	return enrichedCoins, nil // Return successfully enriched coins and nil error
-}
-
-// parseVolume converts volume strings like "$1.23M", "$500.5K", "$100" to float64
-// Moved from cmd/solana-trending-scrape/main.go
-func parseVolume(volumeStr string) (float64, error) {
-	volumeStr = strings.TrimPrefix(volumeStr, "$")
-	volumeStr = strings.ReplaceAll(volumeStr, ",", "") // Remove commas
-	multiplier := 1.0
-
-	if strings.HasSuffix(volumeStr, "M") {
-		multiplier = 1_000_000
-		volumeStr = strings.TrimSuffix(volumeStr, "M")
-	} else if strings.HasSuffix(volumeStr, "K") {
-		multiplier = 1_000
-		volumeStr = strings.TrimSuffix(volumeStr, "K")
-	} else if strings.HasSuffix(volumeStr, "B") { // Handle billions
-		multiplier = 1_000_000_000
-		volumeStr = strings.TrimSuffix(volumeStr, "B")
-	}
-
-	volumeStr = strings.TrimSpace(volumeStr)
-	if volumeStr == "" || volumeStr == "--" || volumeStr == "-" { // Handle cases where volume isn't available
-		return 0, nil // Return 0 volume, not an error
-	}
-
-	volume, err := strconv.ParseFloat(volumeStr, 64)
-	if err != nil {
-		// Don't log WARN here, let caller decide based on error
-		return 0, fmt.Errorf("failed to parse volume value '%s': %w", volumeStr, err)
-	}
-
-	return volume * multiplier, nil
 }

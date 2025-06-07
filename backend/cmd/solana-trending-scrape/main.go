@@ -7,7 +7,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 )
@@ -27,7 +31,10 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: 60 * time.Second, // Increased HTTP timeout
 	}
-	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "")
+	// Create APICallTracker and OffchainClient
+	apiTracker := clients.NewAPICallTracker()
+
+	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "", apiTracker)
 	store := memory.NewWithConfig(memory.Config{
 		DefaultCacheExpiry: 5 * time.Minute,
 	})
@@ -39,15 +46,13 @@ func main() {
 		// For now, assuming they are not critical for NewService itself, but for operations.
 	}
 
-	// Create APICallTracker and OffchainClient
-	apiTracker := clients.NewAPICallTracker() // Assuming clients.NewAPICallTracker exists
 	offchainClient := offchain.NewClient(httpClient, apiTracker)
 	// Create a placeholder birdeyeClient and solanaClient (chainClient) as NewService expects them
 	// These might need actual configuration if the functions called by FetchAndEnrichTrendingTokens depend on them being fully set up.
 	// For now, using nil or basic init if allowed by their NewClient signatures.
 	// This main.go is a test scraper, so its client setup might not be as complete as api/main.go
 	birdeyeClient := birdeye.NewClient(httpClient, "", "", apiTracker) // Placeholder, pass httpClient
-	solanaClient := solana.NewClient(nil, apiTracker)      // Placeholder for chainClient
+	solanaClient := solana.NewClient(nil, apiTracker)                  // Placeholder for chainClient
 
 	s := coin.NewService(config, httpClient, jupiterClient, store, solanaClient, birdeyeClient, apiTracker, offchainClient)
 
