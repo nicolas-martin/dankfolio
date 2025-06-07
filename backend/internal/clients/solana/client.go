@@ -14,23 +14,28 @@ import (
 	"github.com/gagliardetto/solana-go"
 
 	"github.com/gagliardetto/solana-go/rpc"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 type Client struct {
 	rpcConn *rpc.Client
+	tracker clients.APICallTracker
 }
 
 var _ ClientAPI = (*Client)(nil)
 
-func NewClient(solClient *rpc.Client) ClientAPI {
+func NewClient(solClient *rpc.Client, tracker clients.APICallTracker) ClientAPI {
 	return &Client{
 		rpcConn: solClient,
+		tracker: tracker,
 	}
 }
 
 // GetMetadataAccount retrieves the metadata account for a token
 func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*tm.Metadata, error) {
+	c.tracker.TrackCall("solana", "getAccountInfo") // Assuming GetAccountInfo is the underlying RPC call
 	mintPubkey := solana.MustPublicKeyFromBase58(mint)
 	metadataPDA, bumpSeed, err := solana.FindTokenMetadataAddress(mintPubkey)
 	if err != nil {
@@ -58,6 +63,7 @@ func (c *Client) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx 
 	}
 
 	// Execute the signed transaction
+	// Tracking for ExecuteSignedTransaction is handled within that method
 	sig, err := c.ExecuteSignedTransaction(ctx, signedTx)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute signed transaction: %w", err)
@@ -104,6 +110,7 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 	slog.Debug("Deserialized transaction", "tx", fmt.Sprintf("%+v", tx))
 
 	// Simulate transaction first
+	c.tracker.TrackCall("solana", "simulateTransaction")
 	slog.Debug("Simulating transaction...")
 	simResult, err := c.rpcConn.SimulateTransaction(ctx, tx)
 	if err != nil {
@@ -122,6 +129,7 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 		"logs", simResult.Value.Logs)
 
 	// Send transaction with optimized options
+	c.tracker.TrackCall("solana", "sendTransaction")
 	sig, err := c.rpcConn.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 		SkipPreflight:       false,
 		PreflightCommitment: rpc.CommitmentFinalized,
@@ -152,6 +160,7 @@ func (c *Client) GetTransactionConfirmationStatus(ctx context.Context, sigStr st
 	}
 
 	// Get signature statuses
+	c.tracker.TrackCall("solana", "getSignatureStatuses")
 	status, err := c.rpcConn.GetSignatureStatuses(ctx, true, sig)
 	if err != nil {
 		slog.Error("Failed to get transaction status", "signature", sigStr, "error", err)
@@ -260,6 +269,7 @@ var (
 
 // GetProgramAccounts retrieves accounts associated with a program
 func (c *Client) GetProgramAccounts(ctx context.Context, pubkey solana.PublicKey) (*rpc.GetProgramAccountsResult, error) {
+	c.tracker.TrackCall("solana", "getProgramAccounts")
 	// The mockery error indicated that the underlying rpcConn.GetProgramAccounts returns a value,
 	// but the interface requires a pointer.
 	res, err := c.rpcConn.GetProgramAccounts(ctx, pubkey)
@@ -271,16 +281,19 @@ func (c *Client) GetProgramAccounts(ctx context.Context, pubkey solana.PublicKey
 
 // GetLargestAccounts retrieves the largest accounts
 func (c *Client) GetLargestAccounts(ctx context.Context, commitment rpc.CommitmentType, filter rpc.LargestAccountsFilterType) (*rpc.GetLargestAccountsResult, error) {
+	c.tracker.TrackCall("solana", "getLargestAccounts")
 	return c.rpcConn.GetLargestAccounts(ctx, commitment, filter)
 }
 
 // GetSupply retrieves the current supply of SOL
 func (c *Client) GetSupply(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetSupplyResult, error) {
+	c.tracker.TrackCall("solana", "getSupply")
 	return c.rpcConn.GetSupply(ctx, commitment)
 }
 
 // GetTokenAccountsByOwner retrieves token accounts owned by a specific account
 func (c *Client) GetTokenAccountsByOwner(ctx context.Context, owner solana.PublicKey, mint solana.PublicKey, encoding solana.EncodingType) (*rpc.GetTokenAccountsResult, error) {
+	c.tracker.TrackCall("solana", "getTokenAccountsByOwner")
 	return c.rpcConn.GetTokenAccountsByOwner(ctx, owner,
 		&rpc.GetTokenAccountsConfig{
 			Mint: &mint,

@@ -14,6 +14,8 @@ import (
 	"time"
 
 	solanago "github.com/gagliardetto/solana-go"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
@@ -33,16 +35,18 @@ type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	apiKey     string
+	tracker    clients.APICallTracker
 }
 
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 // NewClient creates a new instance of Client
-func NewClient(httpClient *http.Client, url, key string) ClientAPI {
+func NewClient(httpClient *http.Client, url, key string, tracker clients.APICallTracker) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
 		baseURL:    url,
 		apiKey:     key,
+		tracker:    tracker,
 	}
 }
 
@@ -297,8 +301,23 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 }
 
 // GetRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response
-func (c *Client) GetRequest(ctx context.Context, url string, target any) error {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil) // Method is hardcoded to GET
+func (c *Client) GetRequest(ctx context.Context, requestURL string, target any) error {
+	// Extract endpointName from URL
+	parsedURL, err := url.Parse(requestURL)
+	if err != nil {
+		slog.Error("Failed to parse URL for tracking", "url", requestURL, "error", err)
+		// Fallback or decide how to handle error
+	} else {
+		endpointName := parsedURL.Path
+		if endpointName == "" {
+			endpointName = "/" // Default if path is empty
+		}
+		if c.tracker != nil {
+			c.tracker.TrackCall("jupiter", endpointName)
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil) // Method is hardcoded to GET
 	if err != nil {
 		return fmt.Errorf("failed to create GET request: %w", err)
 	}
@@ -313,27 +332,27 @@ func (c *Client) GetRequest(ctx context.Context, url string, target any) error {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to perform GET request to %s: %w", url, err)
+		return fmt.Errorf("failed to perform GET request to %s: %w", requestURL, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("GET request to %s failed with status code: %d, body: %s", url, resp.StatusCode, string(respBody))
+		return fmt.Errorf("GET request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body from %s: %w", url, err)
+		return fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
 	}
 
 	if target != nil { // Only attempt unmarshalling if target is provided
 		if err := json.Unmarshal(respBody, target); err != nil {
 			slog.Error("Failed to unmarshal response",
-				"url", url,
+				"url", requestURL,
 				"error", err,
 				"raw_body", string(respBody)) // Log raw body on unmarshal error
-			return fmt.Errorf("failed to unmarshal response from %s: %w", url, err)
+			return fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
 		}
 	}
 
@@ -341,14 +360,29 @@ func (c *Client) GetRequest(ctx context.Context, url string, target any) error {
 }
 
 // PostRequest is a helper function to perform an HTTP POST request with a JSON body, check status, and unmarshal response
-func (c *Client) PostRequest(ctx context.Context, url string, requestBody any, target any) error {
+func (c *Client) PostRequest(ctx context.Context, requestURL string, requestBody any, target any) error {
+	// Extract endpointName from URL
+	parsedURL, err := url.Parse(requestURL)
+	if err != nil {
+		slog.Error("Failed to parse URL for tracking", "url", requestURL, "error", err)
+		// Fallback or decide how to handle error
+	} else {
+		endpointName := parsedURL.Path
+		if endpointName == "" {
+			endpointName = "/" // Default if path is empty
+		}
+		if c.tracker != nil {
+			c.tracker.TrackCall("jupiter", endpointName)
+		}
+	}
+
 	// Marshal the request body to JSON
 	bodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes)) // Method is hardcoded to POST
+	req, err := http.NewRequestWithContext(ctx, "POST", requestURL, bytes.NewReader(bodyBytes)) // Method is hardcoded to POST
 	if err != nil {
 		return fmt.Errorf("failed to create POST request: %w", err)
 	}
@@ -362,27 +396,27 @@ func (c *Client) PostRequest(ctx context.Context, url string, requestBody any, t
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to perform POST request to %s: %w", url, err)
+		return fmt.Errorf("failed to perform POST request to %s: %w", requestURL, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("POST request to %s failed with status code: %d, body: %s", url, resp.StatusCode, string(respBody))
+		return fmt.Errorf("POST request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body from %s: %w", url, err)
+		return fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
 	}
 
 	if target != nil { // Only attempt unmarshalling if target is provided
 		if err := json.Unmarshal(respBody, target); err != nil {
 			slog.Error("Failed to unmarshal response",
-				"url", url,
+				"url", requestURL,
 				"error", err,
 				"raw_body", string(respBody)) // Log raw body on unmarshal error
-			return fmt.Errorf("failed to unmarshal response from %s: %w", url, err)
+			return fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
 		}
 	}
 
