@@ -10,11 +10,6 @@ import { Coin } from '@/types';
 import { calculateUsdValue, findPortfolioToken, handleAmountInputChange } from './scripts';
 import { CachedImage } from '@/components/Common/CachedImage';
 
-const DefaultTokenIcon = () => {
-	const theme = useTheme();
-	return <CoinsIcon size={24} color={theme.colors.primary} />;
-};
-
 const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	visible,
 	onDismiss,
@@ -133,7 +128,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	showOnlyPortfolioTokens = false,
 	testID,
 }) => {
-	const amountPlaceholder = 'Enter amount';
+	const amountPlaceholder = '0';
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const [modalVisible, setModalVisible] = useState(false);
@@ -209,7 +204,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 									value={amountValue}
 									onChangeText={(text) => onAmountChange && handleAmountInputChange(text, onAmountChange)}
 									placeholder={amountPlaceholder}
-									placeholderTextColor={theme.colors.onSurfaceVariant}
+									placeholderTextColor={theme.colors.onTertiaryContainer}
 									keyboardType="decimal-pad"
 									editable={isAmountEditable}
 								/>

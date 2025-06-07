@@ -18,8 +18,10 @@ export type RootStackParamList = {
 		defaultSortDesc?: boolean;
 	} | undefined;
 	Trade: {
-		inputCoin?: Coin;
-		outputCoin?: Coin;
+		initialFromCoin?: Coin | null;
+		initialToCoin?: Coin | null;
+		inputCoin?: Coin | null;
+		outputCoin?: Coin | null;
 	};
 
 	CoinSelect: {
