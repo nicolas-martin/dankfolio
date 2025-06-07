@@ -582,7 +582,7 @@ const Trade: React.FC = () => {
 						)}
 
 						{/* To Card with Swap Button */}
-						<View style={{ position: 'relative' }}>
+						<View style={{ position: 'relative', marginTop: -8 }}>
 							{/* Swap Button positioned relative to the To card */}
 							<View style={styles.swapButtonContainer}>
 								<TouchableOpacity
