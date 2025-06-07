@@ -1,4 +1,11 @@
 packages:
+  github.com/nicolas-martin/dankfolio/backend/internal/clients:
+    interfaces:
+      APICallTracker:
+        config:
+          dir: "{{.InterfaceDir}}/mocks"
+          filename: "mock_{{.InterfaceName}}.go"
+          outpkg: "{{.PackageName}}mocks"
   github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye:
     interfaces:
       ClientAPI: # From client.go
@@ -58,6 +65,11 @@ packages:
           outpkg: "{{.PackageName}}mocks"
           # template-data:
           #   unroll-variadic: true
+      Entity:
+        config:
+          dir: "{{.InterfaceDir}}/mocks"
+          filename: "mock_{{.InterfaceName}}.go"
+          outpkg: "{{.PackageName}}mocks"
   github.com/nicolas-martin/dankfolio/backend/internal/service/coin:
     interfaces:
       CoinServiceAPI: # From api.go

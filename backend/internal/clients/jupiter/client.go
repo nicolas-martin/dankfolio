@@ -54,12 +54,12 @@ func NewClient(httpClient *http.Client, url, key string, tracker clients.APICall
 func (c *Client) GetCoinInfo(ctx context.Context, tokenAddress string) (*CoinListInfo, error) {
 	url := fmt.Sprintf("%s%s/%s", c.baseURL, tokenInfoEndpoint, tokenAddress) // Inline URL formatting
 
-	var tokenInfo CoinListInfo
-	if err := c.GetRequest(ctx, url, &tokenInfo); err != nil { // Use GetRequest
+	tokenInfoData, _, err := c.GetRequest[CoinListInfo](ctx, url)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get coin info for %s: %w", tokenAddress, err)
 	}
 
-	return &tokenInfo, nil
+	return &tokenInfoData, nil
 }
 
 // GetCoinPrices fetches prices for one or more tokens from Jupiter API
@@ -72,13 +72,13 @@ func (c *Client) GetCoinPrices(ctx context.Context, tokenAddresses []string) (ma
 
 	slog.Debug("Fetching token prices from Jupiter", "url", url)
 
-	var result PriceResponse
-	if err := c.GetRequest(ctx, url, &result); err != nil { // Use GetRequest
+	resultData, _, err := c.GetRequest[PriceResponse](ctx, url)
+	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token prices: %w", err)
 	}
 
 	prices := make(map[string]float64)
-	for addr, data := range result.Data {
+	for addr, data := range resultData.Data {
 		price, err := strconv.ParseFloat(data.Price, 64)
 		if err != nil {
 			slog.Warn("Failed to parse price", "address", addr, "error", err)
@@ -116,25 +116,17 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 
 	fullURL := fmt.Sprintf("%s/swap/v1/quote?%s", c.baseURL, queryParams.Encode())
 
-	// Get raw response first to preserve it
-	var rawResponse json.RawMessage
-	if err := c.GetRequest(ctx, fullURL, &rawResponse); err != nil {
+	quoteRespData, rawBody, err := c.GetRequest[QuoteResponse](ctx, fullURL)
+	if err != nil {
 		return nil, fmt.Errorf("failed to fetch quote: %w", err)
 	}
 
-	// Unmarshal to the proper struct
-	var quoteResp QuoteResponse
-	if err := json.Unmarshal(rawResponse, &quoteResp); err != nil {
-		slog.Error("Failed to unmarshal quote response", "raw_response", string(rawResponse))
-		return nil, fmt.Errorf("failed to unmarshal quote response: %w", err)
-	}
-
 	// Store the raw JSON payload in the struct for later use
-	quoteResp.RawPayload = rawResponse
+	quoteRespData.RawPayload = rawBody // Assign the raw body
 
-	slog.Debug("Raw Jupiter quote payload", "payload", string(quoteResp.RawPayload))
+	slog.Debug("Raw Jupiter quote payload", "payload", string(quoteRespData.RawPayload))
 
-	return &quoteResp, nil
+	return &quoteRespData, nil
 }
 
 // GetAllCoins fetches all tokens from Jupiter API
@@ -149,12 +141,12 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 		c.httpClient.Timeout = originalTimeout // Restore original timeout
 	}()
 
-	var tokens []CoinListInfo
-	if err := c.GetRequest(ctx, url, &tokens); err != nil {
+	tokensData, _, err := c.GetRequest[[]CoinListInfo](ctx, url)
+	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token list: %w", err)
 	}
 
-	return &CoinListResponse{Coins: tokens}, nil
+	return &CoinListResponse{Coins: tokensData}, nil
 }
 
 // GetSPLTokenPrice fetches the price for a single SPL token using the existing GetCoinPrices method.
@@ -200,15 +192,14 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 
 	slog.Debug("Fetching new tokens from Jupiter", "url", fullURL)
 
-	// Use NewTokenInfo struct for the /tokens/v1/new endpoint
-	var newTokenResp []NewTokenInfo
-	if err := c.GetRequest(ctx, fullURL, &newTokenResp); err != nil {
+	newTokenRespData, _, err := c.GetRequest[[]NewTokenInfo](ctx, fullURL)
+	if err != nil {
 		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
 	}
 
 	// Convert NewTokenInfo to CoinListInfo for compatibility, preserving the CreatedAt timestamp
-	coins := make([]*NewTokenInfo, len(newTokenResp))
-	for i, newToken := range newTokenResp {
+	coins := make([]*NewTokenInfo, len(newTokenRespData))
+	for i, newToken := range newTokenRespData {
 		// Skip empty logo URIs to avoid unnecessary entries
 		if len(newToken.LogoURI) == 0 {
 			continue
@@ -251,6 +242,11 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 	return coins, nil
 }
 
+// JupiterSwapResponse is used to unmarshal the swap transaction response
+type JupiterSwapResponse struct {
+	SwapTransaction string `json:"swapTransaction"`
+}
+
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter
 func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey, feeAccount string) (string, error) {
 	// Log the raw quoteResp for debugging
@@ -285,23 +281,20 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 	// Log the full outgoing payload for debugging
 	slog.Debug("Outgoing swap payload", "url", url, "payload", fmt.Sprintf("%+v", swapReqBody))
 
-	var swapResp struct {
-		SwapTransaction string `json:"swapTransaction"`
-	}
-	// Use PostRequest for the POST call
-	if err := c.PostRequest(ctx, url, swapReqBody, &swapResp); err != nil {
-		// PostRequest includes status code and body in error, no need for extra checks here
+	swapRespData, _, err := c.PostRequest[JupiterSwapResponse](ctx, url, swapReqBody)
+	if err != nil {
 		return "", fmt.Errorf("swap request failed: %w", err)
 	}
 
-	if swapResp.SwapTransaction == "" {
+	if swapRespData.SwapTransaction == "" {
 		return "", fmt.Errorf("no swap transaction received from Jupiter")
 	}
-	return swapResp.SwapTransaction, nil
+	return swapRespData.SwapTransaction, nil
 }
 
 // GetRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response
-func (c *Client) GetRequest(ctx context.Context, requestURL string, target any) error {
+func (c *Client) GetRequest[T any](ctx context.Context, requestURL string) (T, []byte, error) {
+	var zeroT T // Zero value for T to return in error cases
 	// Extract endpointName from URL
 	parsedURL, err := url.Parse(requestURL)
 	if err != nil {
@@ -319,12 +312,12 @@ func (c *Client) GetRequest(ctx context.Context, requestURL string, target any) 
 
 	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil) // Method is hardcoded to GET
 	if err != nil {
-		return fmt.Errorf("failed to create GET request: %w", err)
+		return zeroT, nil, fmt.Errorf("failed to create GET request: %w", err)
 	}
 
 	// Add common headers here if needed in the future
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json") // Jupiter GET requests often accept Content-Type
 	// On free tier, we don't need to add the API key
 	if c.apiKey != "" {
 		req.Header.Set("x-api-key", c.apiKey)
@@ -332,35 +325,36 @@ func (c *Client) GetRequest(ctx context.Context, requestURL string, target any) 
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to perform GET request to %s: %w", requestURL, err)
+		return zeroT, nil, fmt.Errorf("failed to perform GET request to %s: %w", requestURL, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("GET request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body) // Read body once
 	if err != nil {
-		return fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
+		return zeroT, nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
 	}
 
-	if target != nil { // Only attempt unmarshalling if target is provided
-		if err := json.Unmarshal(respBody, target); err != nil {
-			slog.Error("Failed to unmarshal response",
-				"url", requestURL,
-				"error", err,
-				"raw_body", string(respBody)) // Log raw body on unmarshal error
-			return fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
-		}
+	if resp.StatusCode != http.StatusOK {
+		// Return respBody as it might contain useful error info from the API
+		return zeroT, respBody, fmt.Errorf("GET request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
 	}
 
-	return nil
+	var responseObject T
+	if err := json.Unmarshal(respBody, &responseObject); err != nil {
+		slog.Error("Failed to unmarshal response",
+			"url", requestURL,
+			"error", err,
+			"raw_body", string(respBody)) // Log raw body on unmarshal error
+		// Return respBody as it caused the unmarshal error
+		return zeroT, respBody, fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
+	}
+
+	return responseObject, respBody, nil
 }
 
 // PostRequest is a helper function to perform an HTTP POST request with a JSON body, check status, and unmarshal response
-func (c *Client) PostRequest(ctx context.Context, requestURL string, requestBody any, target any) error {
+func (c *Client) PostRequest[T any](ctx context.Context, requestURL string, requestBody any) (T, []byte, error) {
+	var zeroT T // Zero value for T
 	// Extract endpointName from URL
 	parsedURL, err := url.Parse(requestURL)
 	if err != nil {
@@ -379,12 +373,12 @@ func (c *Client) PostRequest(ctx context.Context, requestURL string, requestBody
 	// Marshal the request body to JSON
 	bodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
-		return fmt.Errorf("failed to marshal request body: %w", err)
+		return zeroT, nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", requestURL, bytes.NewReader(bodyBytes)) // Method is hardcoded to POST
 	if err != nil {
-		return fmt.Errorf("failed to create POST request: %w", err)
+		return zeroT, nil, fmt.Errorf("failed to create POST request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -396,29 +390,27 @@ func (c *Client) PostRequest(ctx context.Context, requestURL string, requestBody
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to perform POST request to %s: %w", requestURL, err)
+		return zeroT, nil, fmt.Errorf("failed to perform POST request to %s: %w", requestURL, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("POST request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body) // Read body once
 	if err != nil {
-		return fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
+		return zeroT, nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
 	}
 
-	if target != nil { // Only attempt unmarshalling if target is provided
-		if err := json.Unmarshal(respBody, target); err != nil {
-			slog.Error("Failed to unmarshal response",
-				"url", requestURL,
-				"error", err,
-				"raw_body", string(respBody)) // Log raw body on unmarshal error
-			return fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
-		}
+	if resp.StatusCode != http.StatusOK {
+		return zeroT, respBody, fmt.Errorf("POST request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
 	}
 
-	return nil
+	var responseObject T
+	if err := json.Unmarshal(respBody, &responseObject); err != nil {
+		slog.Error("Failed to unmarshal response",
+			"url", requestURL,
+			"error", err,
+			"raw_body", string(respBody)) // Log raw body on unmarshal error
+		return zeroT, respBody, fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
+	}
+
+	return responseObject, respBody, nil
 }
