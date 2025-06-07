@@ -26,9 +26,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 	useEffect(() => {
 		if (isVisible) {
-			sheetRef.current?.snapTo(0);
+			sheetRef.current?.snapToIndex(0);
 		} else {
-			sheetRef.current?.snapTo(2); // Assuming 0 is open, 2 is closed
+			sheetRef.current?.close();
 		}
 	}, [isVisible]);
 
@@ -46,19 +46,19 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 	const renderContent = () => {
 		if (!fromToken || !toToken) {
-			return (
-				<View style={styles.contentContainer}>
-					<Text style={styles.title}>Confirm Trade</Text>
-					<View style={styles.loadingContainer}>
-						<LoadingAnimation size={100} />
-						<Text style={styles.loadingText}>Preparing trade...</Text>
-					</View>
+					return (
+			<View style={styles.container}>
+				<Text style={styles.title}>Confirm Trade</Text>
+				<View style={styles.loadingContainer}>
+					<LoadingAnimation size={100} />
+					<Text style={styles.loadingText}>Preparing trade...</Text>
 				</View>
-			);
+			</View>
+		);
 		}
 
 		return (
-			<View style={styles.contentContainer}>
+			<View style={styles.container}>
 				{/* Trade Display */}
 				<View style={styles.tradeContainer}>
 					{/* From Amount */}
@@ -137,25 +137,19 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		);
 	};
 
-	const renderHeader = () => (
-		<View style={styles.headerContainer}>
-			<View style={styles.handleBar} />
-			<Text style={styles.title}>Confirm Trade</Text>
-		</View>
-	);
-
 	return (
 		<BottomSheet
 			ref={sheetRef}
-			snapPoints={['80%', '50%', 0]}
-			initialSnap={2} // Start closed
-			borderRadius={24}
-			renderContent={renderContent}
-			renderHeader={renderHeader}
-			onCloseEnd={onClose}
-			enabledGestureInteraction={!isLoading}
-			enabledContentGestureInteraction={!isLoading}
-		/>
+			snapPoints={['80%', '50%']}
+			index={isVisible ? 0 : -1}
+			enablePanDownToClose={true}
+			onClose={onClose}
+			backgroundStyle={{ backgroundColor: theme.colors.surface }}
+		>
+			<BottomSheetView style={{ flex: 1 }}>
+				{renderContent()}
+			</BottomSheetView>
+		</BottomSheet>
 	);
 };
 
