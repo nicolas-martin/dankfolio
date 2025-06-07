@@ -14,6 +14,8 @@ import (
 	"github.com/gagliardetto/solana-go"
 
 	"github.com/gagliardetto/solana-go/rpc"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
@@ -27,15 +29,18 @@ import (
 
 type Client struct {
 	rpcConn *rpc.Client
+	tracker clients.APICallTracker
 }
 
 var _ ClientAPI = (*Client)(nil)
 var _ SolanaRPCClientAPI = (*Client)(nil) // Added this line
 var _ blockchain.GenericClientAPI = (*Client)(nil)
 
-func NewClient(solClient *rpc.Client) blockchain.GenericClientAPI { // Changed return type
+
+func NewClient(solClient *rpc.Client, tracker clients.APICallTracker) GenericClientAPI {
 	return &Client{
 		rpcConn: solClient,
+		tracker: tracker,
 	}
 }
 
@@ -43,6 +48,7 @@ func NewClient(solClient *rpc.Client) blockchain.GenericClientAPI { // Changed r
 // Note: This is part of the original ClientAPI, not GenericClientAPI.
 // It might be removed or adapted if a generic GetTokenMetadata is added to GenericClientAPI.
 func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*tm.Metadata, error) {
+	c.tracker.TrackCall("solana", "getAccountInfo") // Assuming GetAccountInfo is the underlying RPC call
 	mintPubkey := solana.MustPublicKeyFromBase58(mint)
 	metadataPDA, bumpSeed, err := solana.FindTokenMetadataAddress(mintPubkey)
 	if err != nil {
@@ -73,6 +79,7 @@ func (c *Client) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx 
 	}
 
 	// Execute the signed transaction
+	// Tracking for ExecuteSignedTransaction is handled within that method
 	sig, err := c.ExecuteSignedTransaction(ctx, signedTx)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute signed transaction: %w", err)
@@ -119,6 +126,7 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 	slog.Debug("Deserialized transaction", "tx", fmt.Sprintf("%+v", tx))
 
 	// Simulate transaction first
+	c.tracker.TrackCall("solana", "simulateTransaction")
 	slog.Debug("Simulating transaction...")
 	simResult, err := c.rpcConn.SimulateTransaction(ctx, tx)
 	if err != nil {
@@ -137,6 +145,7 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 		"logs", simResult.Value.Logs)
 
 	// Send transaction with optimized options
+	c.tracker.TrackCall("solana", "sendTransaction")
 	sig, err := c.rpcConn.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 		SkipPreflight:       false,
 		PreflightCommitment: rpc.CommitmentFinalized,
@@ -168,7 +177,10 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Sign
 		return nil, fmt.Errorf("invalid signature format: %w", err)
 	}
 
+
+	c.tracker.TrackCall("solana", "GetSignatureStatuses")
 	rpcStatusResult, err := c.rpcConn.GetSignatureStatuses(ctx, true, solSig)
+
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to get transaction status from RPC for GetTransactionStatus", "signature", sigStr, "error", err)
 		return nil, fmt.Errorf("failed to get transaction status: %w", err)
@@ -460,7 +472,9 @@ var (
 	mockTxMutex  sync.RWMutex
 )
 
+
 func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmodel.Address, opts bmodel.TokenAccountsOptions) ([]*bmodel.TokenAccountInfo, error) {
+  c.tracker.TrackCall("solana", "GetTokenAccountsByOwner")
 	solOwner, err := solana.PublicKeyFromBase58(string(ownerAddress))
 	if err != nil {
 		return nil, fmt.Errorf("invalid owner address '%s': %w", ownerAddress, err)

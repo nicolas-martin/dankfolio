@@ -9,20 +9,23 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
 // Client handles interactions with external metadata sources
 type Client struct {
 	httpClient *http.Client
+	tracker    clients.APICallTracker
 }
 
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 // NewClient creates a new instance of Client
-func NewClient(httpClient *http.Client) ClientAPI {
+func NewClient(httpClient *http.Client, tracker clients.APICallTracker) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
+		tracker:    tracker,
 	}
 }
 
@@ -169,85 +172,87 @@ func (c *Client) fetchArweaveMetadata(uri string) (map[string]any, error) {
 }
 
 // fetchHTTPMetadata fetches JSON metadata from an HTTP(S) URL
-func (c *Client) fetchHTTPMetadata(url string) (map[string]any, error) {
-	slog.Debug("🌐 HTTP: Creating request", "url", url)
+func (c *Client) fetchHTTPMetadata(requestURL string) (map[string]any, error) {
+	c.tracker.TrackCall("offchain", "fetchHTTPMetadata")
+	slog.Debug("🌐 HTTP: Creating request", "url", requestURL)
 	slog.Debug("🔄 HTTP: Setting up request headers...")
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
-		slog.Error("❌ HTTP: Failed to create request", "url", url, "error", err)
-		return nil, fmt.Errorf("failed to create request for %s: %w", url, err)
+		slog.Error("❌ HTTP: Failed to create request", "url", requestURL, "error", err)
+		return nil, fmt.Errorf("failed to create request for %s: %w", requestURL, err)
 	}
 
-	slog.Debug("🌐 HTTP: Sending GET request", "url", url)
+	slog.Debug("🌐 HTTP: Sending GET request", "url", requestURL)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		slog.Error("❌ HTTP: Request failed", "url", url, "error", err)
-		return nil, fmt.Errorf("http get failed for %s: %w", url, err)
+		slog.Error("❌ HTTP: Request failed", "url", requestURL, "error", err)
+		return nil, fmt.Errorf("http get failed for %s: %w", requestURL, err)
 	}
 	defer resp.Body.Close()
 
-	slog.Debug("📥 HTTP: Received response", "status_code", resp.StatusCode, "url", url)
+	slog.Debug("📥 HTTP: Received response", "status_code", resp.StatusCode, "url", requestURL)
 	if resp.StatusCode != http.StatusOK {
-		slog.Error("❌ HTTP: Failed with status code", "status_code", resp.StatusCode, "url", url)
-		return nil, fmt.Errorf("http status %d for %s", resp.StatusCode, url)
+		slog.Error("❌ HTTP: Failed with status code", "status_code", resp.StatusCode, "url", requestURL)
+		return nil, fmt.Errorf("http status %d for %s", resp.StatusCode, requestURL)
 	}
 
-	slog.Debug("🔄 HTTP: Decoding JSON response", "url", url)
+	slog.Debug("🔄 HTTP: Decoding JSON response", "url", requestURL)
 	var metadata map[string]any
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(&metadata); err != nil {
-		slog.Error("❌ HTTP: Failed to decode JSON", "url", url, "error", err)
-		return nil, fmt.Errorf("failed to decode JSON from %s: %w", url, err)
+		slog.Error("❌ HTTP: Failed to decode JSON", "url", requestURL, "error", err)
+		return nil, fmt.Errorf("failed to decode JSON from %s: %w", requestURL, err)
 	}
 
 	if len(metadata) == 0 {
-		slog.Error("❌ HTTP: Empty metadata received", "url", url)
-		return nil, fmt.Errorf("empty metadata received from %s", url)
+		slog.Error("❌ HTTP: Empty metadata received", "url", requestURL)
+		return nil, fmt.Errorf("empty metadata received from %s", requestURL)
 	}
 
-	slog.Debug("✅ HTTP: Successfully decoded JSON metadata", "field_count", len(metadata), "url", url)
+	slog.Debug("✅ HTTP: Successfully decoded JSON metadata", "field_count", len(metadata), "url", requestURL)
 	return metadata, nil
 }
 
 // fetchHTTPRaw fetches raw data and content type from an HTTP(S) URL
-func (c *Client) fetchHTTPRaw(ctx context.Context, url string) (data []byte, contentType string, err error) {
-	slog.Debug("🌐 HTTP Raw: Requesting", "url", url)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+func (c *Client) fetchHTTPRaw(ctx context.Context, requestURL string) (data []byte, contentType string, err error) {
+	c.tracker.TrackCall("offchain", "fetchHTTPRaw")
+	slog.Debug("🌐 HTTP Raw: Requesting", "url", requestURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
 	if err != nil {
-		slog.Error("❌ HTTP Raw: Failed to create request", "url", url, "error", err)
-		return nil, "", fmt.Errorf("failed to create request for %s: %w", url, err)
+		slog.Error("❌ HTTP Raw: Failed to create request", "url", requestURL, "error", err)
+		return nil, "", fmt.Errorf("failed to create request for %s: %w", requestURL, err)
 	}
 	req.Header.Set("User-Agent", "DankfolioImageProxy/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		slog.Error("❌ HTTP Raw: Request failed", "url", url, "error", err)
-		return nil, "", fmt.Errorf("http get failed for %s: %w", url, err)
+		slog.Error("❌ HTTP Raw: Request failed", "url", requestURL, "error", err)
+		return nil, "", fmt.Errorf("http get failed for %s: %w", requestURL, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		slog.Error("❌ HTTP Raw: Failed with status code", "status_code", resp.StatusCode, "url", url)
-		return nil, "", fmt.Errorf("http status %d for %s", resp.StatusCode, url)
+		slog.Error("❌ HTTP Raw: Failed with status code", "status_code", resp.StatusCode, "url", requestURL)
+		return nil, "", fmt.Errorf("http status %d for %s", resp.StatusCode, requestURL)
 	}
 
 	contentType = resp.Header.Get("Content-Type")
 	if contentType == "" {
 		contentType = "application/octet-stream"
-		slog.Warn("⚠️ HTTP Raw: Content-Type missing, using fallback", "url", url, "fallback_type", contentType)
+		slog.Warn("⚠️ HTTP Raw: Content-Type missing, using fallback", "url", requestURL, "fallback_type", contentType)
 	}
 
 	data, err = io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("❌ HTTP Raw: Failed to read response body", "url", url, "error", err)
-		return nil, "", fmt.Errorf("failed to read response body from %s: %w", url, err)
+		slog.Error("❌ HTTP Raw: Failed to read response body", "url", requestURL, "error", err)
+		return nil, "", fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
 	}
 	if len(data) == 0 {
-		slog.Error("❌ HTTP Raw: Empty response body received", "url", url)
-		return nil, "", fmt.Errorf("empty response body received from %s", url)
+		slog.Error("❌ HTTP Raw: Empty response body received", "url", requestURL)
+		return nil, "", fmt.Errorf("empty response body received from %s", requestURL)
 	}
-	slog.Debug("✅ HTTP Raw: Success fetching", "bytes", len(data), "content_type", contentType, "url", url)
+	slog.Debug("✅ HTTP Raw: Success fetching", "bytes", len(data), "content_type", contentType, "url", requestURL)
 	return data, contentType, nil
 }
 

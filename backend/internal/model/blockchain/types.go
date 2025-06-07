@@ -1,6 +1,6 @@
 package blockchain
 
-import "context" // Will be needed for interfaces later
+// Will be needed for interfaces later
 
 // Address represents a generic blockchain address.
 // For simplicity, using string. Could be a struct for more complex needs.
@@ -15,10 +15,10 @@ type Blockhash string
 
 // Balance represents a generic asset balance, including decimals/units.
 type Balance struct {
-	Amount       string // Amount as a string to handle large numbers and various decimal precisions
-	Decimals     uint8  // Number of decimal places for the token
-	UIAmount     float64 // User-friendly amount (Amount / 10^Decimals)
-	CurrencySymbol string // e.g., "SOL", "ETH", "USDC" (Optional, might come from coin metadata)
+	Amount         string  // Amount as a string to handle large numbers and various decimal precisions
+	Decimals       uint8   // Number of decimal places for the token
+	UIAmount       float64 // User-friendly amount (Amount / 10^Decimals)
+	CurrencySymbol string  // e.g., "SOL", "ETH", "USDC" (Optional, might come from coin metadata)
 }
 
 // AccountInfo represents generic information about a blockchain account.
@@ -43,9 +43,9 @@ type TokenAccountInfo struct {
 
 // TransactionInstruction represents a single instruction in a transaction.
 type TransactionInstruction struct {
-	ProgramID Address   // The program to execute
+	ProgramID Address       // The program to execute
 	Accounts  []AccountMeta // Accounts involved in the instruction
-	Data      []byte    // Instruction data
+	Data      []byte        // Instruction data
 }
 
 // AccountMeta defines an account involved in an instruction.
@@ -57,10 +57,10 @@ type AccountMeta struct {
 
 // Transaction represents a generic blockchain transaction.
 type Transaction struct {
-	Instructions      []TransactionInstruction
-	FeePayer          Address
-	RecentBlockhash   Blockhash
-	Signatures        []struct { // Generic signature structure if needed for multi-sig, etc.
+	Instructions    []TransactionInstruction
+	FeePayer        Address
+	RecentBlockhash Blockhash
+	Signatures      []struct { // Generic signature structure if needed for multi-sig, etc.
 		PublicKey Address   // Public key of the signer
 		Signature Signature // The actual signature
 	}
@@ -70,11 +70,11 @@ type Transaction struct {
 
 // TransactionStatus represents the status of a transaction.
 type TransactionStatus struct {
-	Slot               uint64
-	Confirmations      *uint64 // Pointer to represent null or when not applicable
-	Status             string  // e.g., "Unknown", "Pending", "Processed", "Confirmed", "Finalized", "Failed"
-	Error              string  // Error message if the transaction failed (empty if successful)
-	RawError           interface{} // Store original error object if needed
+	Slot          uint64
+	Confirmations *uint64     // Pointer to represent null or when not applicable
+	Status        string      // e.g., "Unknown", "Pending", "Processed", "Confirmed", "Finalized", "Failed"
+	Error         string      // Error message if the transaction failed (empty if successful)
+	RawError      interface{} // Store original error object if needed
 }
 
 // TransactionOptions provides generic options for sending transactions.
@@ -102,25 +102,25 @@ type PriceData struct {
 
 // TradeQuote represents a generic quote for a swap.
 type TradeQuote struct {
-    InputToken        Address
-    OutputToken       Address
-    InputAmount       string // Amount as string
-    OutputAmount      string // Amount as string
-    EstimatedOutputAmountUIA float64 // User-friendly output amount
-    FeeAmount         string // Fee amount as string, in terms of a fee token
-    FeeToken          Address
-    PriceImpactPct    float64
-    Route             string // Description of the trade route
-    // Other generic fields like slippage, etc.
-    RawQuote          interface{} // To store chain-specific raw quote if needed for execution
+	InputToken               Address
+	OutputToken              Address
+	InputAmount              string  // Amount as string
+	OutputAmount             string  // Amount as string
+	EstimatedOutputAmountUIA float64 // User-friendly output amount
+	FeeAmount                string  // Fee amount as string, in terms of a fee token
+	FeeToken                 Address
+	PriceImpactPct           float64
+	Route                    string // Description of the trade route
+	// Other generic fields like slippage, etc.
+	RawQuote interface{} // To store chain-specific raw quote if needed for execution
 }
 
 // TokenMetadata represents generic metadata for a token/mint.
 type TokenMetadata struct {
-	Name        string
-	Symbol      string
-	URI         string                 // Link to off-chain JSON metadata often following a standard
-	Decimals    uint8                  // Added, as this is crucial mint info often with metadata
-	Supply      string                 // Total supply as a string
-	OtherData   map[string]interface{} // For any other chain-specific metadata
+	Name      string
+	Symbol    string
+	URI       string                 // Link to off-chain JSON metadata often following a standard
+	Decimals  uint8                  // Added, as this is crucial mint info often with metadata
+	Supply    string                 // Total supply as a string
+	OtherData map[string]interface{} // For any other chain-specific metadata
 }

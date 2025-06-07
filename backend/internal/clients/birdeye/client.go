@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 )
 
 // Client handles interactions with the BirdEye API
@@ -17,6 +19,7 @@ type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	apiKey     string
+	tracker    clients.APICallTracker
 }
 
 // ClientAPI defines the interface for the BirdEye client.
@@ -25,13 +28,14 @@ type ClientAPI interface {
 }
 
 // NewClient creates a new instance of the BirdEye client
-func NewClient(baseURL string, apiKey string) ClientAPI {
+func NewClient(baseURL string, apiKey string, tracker clients.APICallTracker) ClientAPI {
 	return &Client{
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 		baseURL: baseURL,
 		apiKey:  apiKey,
+		tracker: tracker,
 	}
 }
 
@@ -56,6 +60,7 @@ type PriceHistoryItem struct {
 
 // GetPriceHistory retrieves price history for a given token
 func (c *Client) GetPriceHistory(ctx context.Context, params PriceHistoryParams) (*PriceHistory, error) {
+	c.tracker.TrackCall("birdeye", "/history_price")
 	queryParams := url.Values{}
 	queryParams.Add("address", params.Address)
 	queryParams.Add("address_type", params.AddressType)

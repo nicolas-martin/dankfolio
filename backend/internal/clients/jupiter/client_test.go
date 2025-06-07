@@ -29,8 +29,8 @@ func TestClient_GetNewCoins_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := server.Client()                   // Use the test server's client
-	client := NewClient(httpClient, server.URL, "") // Use server.URL as baseURL
+	httpClient := server.Client()                                 // Use the test server's client
+	client := NewClient(httpClient, server.URL, "", nil) // Use server.URL as baseURL, nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -63,7 +63,7 @@ func TestClient_GetNewCoins_HTTPError(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "")
+	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -85,7 +85,7 @@ func TestClient_GetNewCoins_MalformedJSON(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "")
+	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -113,7 +113,7 @@ func TestClient_GetNewCoins_EmptyList(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "")
+	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -134,8 +134,8 @@ func TestClient_GetNewCoins_NetworkError(t *testing.T) {
 	serverURL := server.URL // Store the URL
 	server.Close()          // Close the server
 
-	httpClient := &http.Client{}                   // Use a default http client
-	client := NewClient(httpClient, serverURL, "") // Point to the now-closed server URL
+	httpClient := &http.Client{}                                 // Use a default http client
+	client := NewClient(httpClient, serverURL, "", nil) // Point to the now-closed server URL, nil for tracker
 
 	ctx := context.Background()
 	resp, err := client.GetNewCoins(ctx, nil)
@@ -158,7 +158,7 @@ func TestClient_GetNewCoins_ContextCancelled(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "")
+	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel context immediately
@@ -196,7 +196,7 @@ func TestClient_GetNewCoins_WithPagination(t *testing.T) {
 	defer server.Close()
 
 	httpClient := server.Client()
-	client := NewClient(httpClient, server.URL, "")
+	client := NewClient(httpClient, server.URL, "", nil) // nil for tracker
 
 	ctx := context.Background()
 	limit := int(10)
