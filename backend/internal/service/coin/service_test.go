@@ -20,17 +20,21 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Added import for util
 
 	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+	birdeyeclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye/mocks" // Import Birdeye mocks
 	solanaclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
+	apitrackermocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/mocks" // Assuming APICallTracker mock path
 )
 
 func setupCoinServiceTest(t *testing.T) (
 	*Service,
 	*Config,
 	*jupiterclientmocks.MockClientAPI,
+	*birdeyeclientmocks.MockClientAPI,
 	*offchainClientMocks.MockClientAPI,
 	*dbDataStoreMocks.MockStore,
 	*dbDataStoreMocks.MockRepository[model.Coin],
 	*dbDataStoreMocks.MockRepository[model.RawCoin],
+	*apitrackermocks.MockAPICallTracker, // Return APICallTracker mock
 ) {
 	cfg := &Config{
 		NewCoinsFetchInterval: 0,                                   // Disable automatic fetching for tests
@@ -38,10 +42,13 @@ func setupCoinServiceTest(t *testing.T) (
 	}
 
 	mockJupiterClient := jupiterclientmocks.NewMockClientAPI(t)
+	mockBirdeyeClient := birdeyeclientmocks.NewMockClientAPI(t)
 	mockOffchainClient := offchainClientMocks.NewMockClientAPI(t)
 	mockStore := dbDataStoreMocks.NewMockStore(t)
 	mockCoinRepo := dbDataStoreMocks.NewMockRepository[model.Coin](t)
 	mockRawCoinRepo := dbDataStoreMocks.NewMockRepository[model.RawCoin](t)
+	mockSolanaChainClient := solanaclientmocks.NewMockClientAPI(t)
+	mockAPITracker := apitrackermocks.NewMockAPICallTracker(t) // Create APICallTracker mock
 
 	// Set up default mock behaviors for service initialization
 	mockStore.On("Coins").Return(mockCoinRepo).Maybe()
@@ -59,10 +66,19 @@ func setupCoinServiceTest(t *testing.T) (
 		{MintAddress: "existing", LastUpdated: time.Now().Format(time.RFC3339)}, // Fresh data to skip refresh
 	}, nil).Maybe()
 
-	service := NewService(cfg, &http.Client{}, mockJupiterClient, mockStore, nil)
-	service.offchainClient = mockOffchainClient // Set mock offchain client on service
+	service := NewService(
+		cfg,
+		&http.Client{},
+		mockJupiterClient,
+		mockStore,
+		mockSolanaChainClient,
+		mockBirdeyeClient,
+		mockAPITracker,     // Pass APICallTracker mock
+		mockOffchainClient, // Pass OffchainClient mock
+	)
+	// service.offchainClient = mockOffchainClient // No longer needed, passed in constructor
 
-	return service, cfg, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, mockRawCoinRepo
+	return service, cfg, mockJupiterClient, mockBirdeyeClient, mockOffchainClient, mockStore, mockCoinRepo, mockRawCoinRepo, mockAPITracker
 }
 
 func TestGetCoinByID_Success(t *testing.T) {
@@ -218,13 +234,18 @@ func TestGetCoinByMintAddress_NotFound_EnrichmentSuccess_Create(t *testing.T) {
 	}, nil).Once()
 
 	// Mock the Solana metadata account call
-	// For simplicity, let's make this fail so we don't need to mock FetchMetadata
-	// This will cause EnrichCoinData to return with just Jupiter data
-	// We need to import the solana client types or create a simple mock
+	// service.chainClient is already mockSolanaChainClient from setupCoinServiceTest
+	if mockChainClient, ok := service.chainClient.(*solanaclientmocks.MockClientAPI); ok {
+		mockChainClient.On("GetTokenMetadata", ctx, model.Address(mintAddress)).Return(&bclient.TokenMetadata{URI: "some_uri_for_offchain"}, nil).Once()
+		// Expect OffchainClient to be called as a result
+		mockOffchainClient.On("FetchMetadata", "some_uri_for_offchain").Return(map[string]any{"description": "A good description"}, nil).Once()
+	} else {
+		t.Fatalf("service.chainClient is not of type *solanaclientmocks.MockClientAPI")
+	}
 
 	// Mock for Create in fetchAndCacheCoin
 	mockCoinRepo.On("Create", ctx, mock.MatchedBy(func(c *model.Coin) bool {
-		return c.MintAddress == mintAddress && c.Name == "Enriched Coin" && c.ID == 0 // ID is 0 for new coins
+		return c.MintAddress == mintAddress && c.Name == "Enriched Coin" && c.ID == 0 && c.Description == "A good description"
 	})).Return(nil).Once()
 
 	coin, err := service.GetCoinByMintAddress(ctx, mintAddress)
@@ -233,9 +254,14 @@ func TestGetCoinByMintAddress_NotFound_EnrichmentSuccess_Create(t *testing.T) {
 	assert.NotNil(t, coin)
 	assert.Equal(t, mintAddress, coin.MintAddress)
 	assert.Equal(t, "Enriched Coin", coin.Name)
+	assert.Equal(t, "A good description", coin.Description) // Verify description is set
 	mockStore.AssertExpectations(t)
 	mockCoinRepo.AssertExpectations(t)
 	mockJupiterClient.AssertExpectations(t)
+	if mockChainClient, ok := service.chainClient.(*solanaclientmocks.MockClientAPI); ok {
+		mockChainClient.AssertExpectations(t)
+	}
+	mockOffchainClient.AssertExpectations(t)
 }
 
 func TestGetCoins_Success(t *testing.T) {
@@ -262,10 +288,8 @@ func TestGetCoins_Success(t *testing.T) {
 func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *testing.T) {
 	service, _, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, mockRawCoinRepo := setupCoinServiceTest(t)
 
-	// Override solanaClient with a mock
-	mockSolanaClient := solanaclientmocks.NewMockClientAPI(t)
-	service.solanaClient = mockSolanaClient
-
+	// service.chainClient is already a mock from setupCoinServiceTest.
+	// We can cast it to set expectations if needed, or ensure the setup mock is used.
 	ctx := context.Background()
 	testMintAddress := "rawCoinMint"
 	rawCoinID := uint64(1)
@@ -323,17 +347,20 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 	}, nil).Once()
 
 	// 3c. EnrichCoinData: Solana GetMetadataAccount
-	mockSolanaClient.On("GetMetadataAccount", ctx, testMintAddress).Return(&token_metadata.Metadata{
-		Data: token_metadata.Data{Uri: "solana_uri_for_offchain_meta"},
-	}, nil).Once()
+	if mockChainClient, ok := service.chainClient.(*solanaclientmocks.MockClientAPI); ok {
+		mockChainClient.On("GetTokenMetadata", ctx, model.Address(testMintAddress)).Return(&bclient.TokenMetadata{
+			URI: "solana_uri_for_offchain_meta"}, nil).Once()
+		// 3d. EnrichCoinData: Offchain FetchMetadata
+		// initialIconURL (rawLogoURL) is present, so offchainMeta["image"] won't be used for IconUrl.
+		// However, Description is still fetched.
+		mockOffchainClient.On("FetchMetadata", "solana_uri_for_offchain_meta").Return(map[string]any{
+			"description": expectedEnrichedCoin.Description,
+			"image":       "some_other_image_from_offchain", // This won't be used for IconUrl as rawLogoURL is preferred
+		}, nil).Once()
+	} else {
+		t.Fatalf("service.chainClient is not of type *solanaclientmocks.MockClientAPI")
+	}
 
-	// 3d. EnrichCoinData: Offchain FetchMetadata
-	// initialIconURL (rawLogoURL) is present, so offchainMeta["image"] won't be used for IconUrl.
-	// However, Description is still fetched.
-	mockOffchainClient.On("FetchMetadata", "solana_uri_for_offchain_meta").Return(map[string]any{
-		"description": expectedEnrichedCoin.Description,
-		"image":       "some_other_image_from_offchain", // This won't be used for IconUrl as rawLogoURL is preferred
-	}, nil).Once()
 
 	// 4. enrichRawCoinAndSave: Save enriched coin to 'coins' table (Create path)
 	// Second call to GetByField (from mockStore.On("Coins")...) for the pre-create check
@@ -377,17 +404,16 @@ func TestGetCoinByMintAddress_FoundOnlyInRawCoins_EnrichSaveDeleteSuccess(t *tes
 	mockCoinRepo.AssertExpectations(t)
 	mockRawCoinRepo.AssertExpectations(t)
 	mockJupiterClient.AssertExpectations(t)
-	mockSolanaClient.AssertExpectations(t)
+	if mockChainClient, ok := service.chainClient.(*solanaclientmocks.MockClientAPI); ok {
+		mockChainClient.AssertExpectations(t)
+	}
 	mockOffchainClient.AssertExpectations(t)
 }
 
 func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testing.T) {
 	service, _, mockJupiterClient, mockOffchainClient, mockStore, mockCoinRepo, mockRawCoinRepo := setupCoinServiceTest(t)
 
-	// Override solanaClient with a mock
-	mockSolanaClient := solanaclientmocks.NewMockClientAPI(t)
-	service.solanaClient = mockSolanaClient
-
+	// service.chainClient is already a mock from setupCoinServiceTest.
 	ctx := context.Background()
 	newMintAddress := "newCoinMint"
 	newCoinIconURL := "ipfs://newIconHash" // Using IPFS to test standardization
@@ -435,16 +461,18 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 	}, nil).Once()
 
 	// 3c. EnrichCoinData: Solana GetMetadataAccount
-	mockSolanaClient.On("GetMetadataAccount", ctx, newMintAddress).Return(&token_metadata.Metadata{
-		Data: token_metadata.Data{Uri: "some_new_uri_for_offchain"},
-	}, nil).Once()
-
-	// 3d. EnrichCoinData: Offchain FetchMetadata
-	// initialIconURL is "" in fetchAndCacheCoin, so offchainMeta["image"] will be used for IconUrl.
-	mockOffchainClient.On("FetchMetadata", "some_new_uri_for_offchain").Return(map[string]any{
-		"description": expectedEnrichedCoin.Description,
-		"image":       newCoinIconURL, // This is where the IconUrl comes from
-	}, nil).Once()
+	if mockChainClient, ok := service.chainClient.(*solanaclientmocks.MockClientAPI); ok {
+		mockChainClient.On("GetTokenMetadata", ctx, model.Address(newMintAddress)).Return(&bclient.TokenMetadata{
+			URI: "some_new_uri_for_offchain"}, nil).Once()
+		// 3d. EnrichCoinData: Offchain FetchMetadata
+		// initialIconURL is "" in fetchAndCacheCoin, so offchainMeta["image"] will be used for IconUrl.
+		mockOffchainClient.On("FetchMetadata", "some_new_uri_for_offchain").Return(map[string]any{
+			"description": expectedEnrichedCoin.Description,
+			"image":       newCoinIconURL, // This is where the IconUrl comes from
+		}, nil).Once()
+	} else {
+		t.Fatalf("service.chainClient is not of type *solanaclientmocks.MockClientAPI")
+	}
 
 	// 4. fetchAndCacheCoin: Save newly enriched coin to 'coins' table (Create path)
 	// Second call to GetByField (from mockStore.On("Coins")...) for the pre-create check
@@ -482,7 +510,9 @@ func TestGetCoinByMintAddress_NotFoundAnywhere_EnrichFromScratchSuccess(t *testi
 	mockRawCoinRepo.AssertExpectations(t)                                      // GetByField called
 	mockRawCoinRepo.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything) // Delete should NOT be called
 	mockJupiterClient.AssertExpectations(t)
-	mockSolanaClient.AssertExpectations(t)
+	if mockChainClient, ok := service.chainClient.(*solanaclientmocks.MockClientAPI); ok {
+		mockChainClient.AssertExpectations(t)
+	}
 	mockOffchainClient.AssertExpectations(t)
 }
 
@@ -518,6 +548,90 @@ func TestLoadOrRefreshData_NoRefreshNeeded(t *testing.T) {
 	assert.NoError(t, err)
 	mockStore.AssertExpectations(t) // Verifies ListTrendingCoins on txStore
 }
+
+func TestLoadOrRefreshData_RefreshNeeded_Success(t *testing.T) {
+	ctx := context.Background()
+	service, cfg, mockJupiterClient, mockBirdeyeClient, mockOffchainClient, mockStore, mockCoinRepo, _ := setupCoinServiceTest(t)
+	cfg.NewCoinsFetchInterval = 0 // Ensure NewService doesn't start goroutine
+
+	// --- Setup for loadOrRefreshData REQUIRING refresh ---
+	staleTime := time.Now().Add(-(TrendingDataTTL + time.Hour)).Format(time.RFC3339) // Stale data
+
+	// Mock the WithTransaction call
+	mockStore.On("WithTransaction", ctx, mock.AnythingOfType("func(db.Store) error")).
+		Run(func(args mock.Arguments) {
+			fn := args.Get(1).(func(db.Store) error)
+			// Execute the function, passing the main mockStore to act as the txStore
+			// This allows us to assert calls on mockStore made within the transaction
+			err := fn(mockStore)
+			assert.NoError(t, err) // Check for errors returned by the transactional function
+		}).Return(nil).Once()
+
+	// 1. ListTrendingCoins (inside tx) - return stale data
+	mockStore.On("ListTrendingCoins", ctx).Return([]model.Coin{{MintAddress: "staleCoin", LastUpdated: staleTime}}, nil).Once()
+
+	// 2. FetchAndEnrichTrendingTokens is called
+	// 2a. Birdeye GetTrendingTokens
+	birdeyeToken1 := birdeye.TokenDetails{Address: "bird1", Name: "Birdeye Token 1", Symbol: "BIRD1", Price: 1.1, Volume24h: 1100, MarketCap: 11000, LogoURI: "http://bird1.com/logo.png", Tags: []string{"tagA"}}
+	birdeyeToken2 := birdeye.TokenDetails{Address: "bird2", Name: "Birdeye Token 2", Symbol: "BIRD2", Price: 2.2, Volume24h: 2200, MarketCap: 22000, LogoURI: "http://bird2.com/logo.png", Tags: []string{"tagB"}}
+	mockBirdeyeClient.On("GetTrendingTokens", ctx).Return([]birdeye.TokenDetails{birdeyeToken1, birdeyeToken2}, nil).Once()
+
+	// 2b. EnrichCoinData will be called for each birdeyeToken.
+	// We need to mock the dependencies of EnrichCoinData.
+	// For simplicity, assume Birdeye provides enough data that Jupiter calls within EnrichCoinData are minimal or skipped.
+	// Let's assume EnrichCoinData will try to fetch Solana metadata.
+	mockSolanaClient := solanaclientmocks.NewMockClientAPI(t)
+	service.chainClient = mockSolanaClient // Ensure the service uses this mock
+
+	// Mocking for bird1
+	mockSolanaClient.On("GetTokenMetadata", ctx, model.Address(birdeyeToken1.Address)).Return(&bclient.TokenMetadata{URI: "uri1"}, nil).Maybe()
+	mockOffchainClient.On("FetchMetadata", "uri1").Return(map[string]any{"description": "Desc1"}, nil).Maybe()
+	// Mock Jupiter calls for bird1 (assuming they might be called if some fields are deemed missing by EnrichCoinData)
+	mockJupiterClient.On("GetCoinInfo", ctx, birdeyeToken1.Address).Return(&jupiter.CoinListInfo{Decimals: 6}, nil).Maybe()
+	mockJupiterClient.On("GetCoinPrices", ctx, []string{birdeyeToken1.Address}).Return(map[string]float64{birdeyeToken1.Address: birdeyeToken1.Price}, nil).Maybe()
+
+
+	// Mocking for bird2
+	mockSolanaClient.On("GetTokenMetadata", ctx, model.Address(birdeyeToken2.Address)).Return(&bclient.TokenMetadata{URI: "uri2"}, nil).Maybe()
+	mockOffchainClient.On("FetchMetadata", "uri2").Return(map[string]any{"description": "Desc2"}, nil).Maybe()
+	mockJupiterClient.On("GetCoinInfo", ctx, birdeyeToken2.Address).Return(&jupiter.CoinListInfo{Decimals: 8}, nil).Maybe()
+	mockJupiterClient.On("GetCoinPrices", ctx, []string{birdeyeToken2.Address}).Return(map[string]float64{birdeyeToken2.Address: birdeyeToken2.Price}, nil).Maybe()
+
+
+	// 3. DB operations for updating/storing enriched coins (inside tx)
+	// 3a. List existing coins to update their IsTrending status
+	existingCoinToUntrend := model.Coin{ID: 100, MintAddress: "oldTrend", IsTrending: true}
+	mockStore.On("Coins").Return(mockCoinRepo).Maybe() // Ensure Coins() is expected
+	mockCoinRepo.On("List", ctx).Return([]model.Coin{existingCoinToUntrend}, nil).Once()
+	// 3b. BulkUpsert to set IsTrending=false
+	mockCoinRepo.On("BulkUpsert", ctx, mock.MatchedBy(func(coins *[]model.Coin) bool {
+		return len(*coins) == 1 && (*coins)[0].MintAddress == existingCoinToUntrend.MintAddress && !(*coins)[0].IsTrending
+	})).Return(int64(1), nil).Once()
+
+	// 3c. GetByField and Update/Create for each enriched coin
+	// For bird1
+	mockCoinRepo.On("GetByField", ctx, "mint_address", birdeyeToken1.Address).Return(nil, db.ErrNotFound).Once() // Assume new
+	mockCoinRepo.On("Create", ctx, mock.MatchedBy(func(c *model.Coin) bool {
+		return c.MintAddress == birdeyeToken1.Address && c.Name == birdeyeToken1.Name && c.IsTrending == true
+	})).Return(nil).Once()
+	// For bird2
+	mockCoinRepo.On("GetByField", ctx, "mint_address", birdeyeToken2.Address).Return(&model.Coin{ID: 200, MintAddress: birdeyeToken2.Address}, nil).Once() // Assume existing
+	mockCoinRepo.On("Update", ctx, mock.MatchedBy(func(c *model.Coin) bool {
+		return c.MintAddress == birdeyeToken2.Address && c.Name == birdeyeToken2.Name && c.IsTrending == true && c.ID == 200
+	})).Return(nil).Once()
+
+
+	err := service.loadOrRefreshData(ctx)
+	assert.NoError(t, err)
+
+	mockStore.AssertExpectations(t)
+	mockBirdeyeClient.AssertExpectations(t)
+	mockJupiterClient.AssertExpectations(t)
+	mockOffchainClient.AssertExpectations(t)
+	mockSolanaClient.AssertExpectations(t)
+	mockCoinRepo.AssertExpectations(t)
+}
+
 
 // Helper functions for pointers
 func Pint(i int) *int          { return &i }
