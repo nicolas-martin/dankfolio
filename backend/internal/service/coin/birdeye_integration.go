@@ -16,8 +16,6 @@ import (
 
 // --- Constants moved from cmd/solana-trending-scrape ---
 const (
-	findGemsURL               = "https://birdeye.so/find-gems?chain=solana"
-	scrapeDefaultTimeout      = 30 * time.Second
 	scrapeMaxConcurrentEnrich = 5 // Limit concurrency for enrichment API calls
 	maxTrendingCount          = 10
 )
@@ -34,8 +32,8 @@ type scrapedTokenInfo struct {
 	Tags        []string `json:"tags"`
 }
 
-// FetchAndEnrichTrendingTokens orchestrates fetching and enrichment of trending tokens.
-func (s *Service) FetchAndEnrichTrendingTokens(ctx context.Context) (*TrendingTokensOutput, error) {
+// UpdateTrendingTokensFromBirdeye orchestrates fetching and enrichment of trending tokens.
+func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*TrendingTokensOutput, error) {
 	slog.Info("Starting trending token fetch and enrichment process...")
 
 	// Step 1: Get trending tokens from Birdeye
@@ -67,7 +65,7 @@ func (s *Service) FetchAndEnrichTrendingTokens(ctx context.Context) (*TrendingTo
 	}
 
 	// Step 2: Enrich the scraped tokens concurrently
-	enrichedCoins, err := s.enrichScrapedTokens(ctx, scrapedTokens)
+	enrichedCoins, err := s.processBirdeyeTokens(ctx, scrapedTokens)
 	if err != nil {
 		return nil, fmt.Errorf("encountered errors during enrichment process: %v", err)
 	}
@@ -106,8 +104,8 @@ func (s *Service) FetchAndEnrichTrendingTokens(ctx context.Context) (*TrendingTo
 	return finalOutput, nil
 }
 
-// enrichScrapedTokens takes basic scraped info and enriches it using external APIs concurrently.
-func (s *Service) enrichScrapedTokens(ctx context.Context, tokensToEnrich []scrapedTokenInfo) ([]model.Coin, error) {
+// processBirdeyeTokens takes basic scraped info and enriches it using external APIs concurrently.
+func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []scrapedTokenInfo) ([]model.Coin, error) {
 	slog.Info("Executing token enrichment",
 		"token_count", len(tokensToEnrich),
 		"concurrency", scrapeMaxConcurrentEnrich)

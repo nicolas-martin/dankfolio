@@ -336,7 +336,7 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 		// However, its result (enrichedCoins) is used in subsequent DB operations.
 		// For this refactor, we'll keep it inside for simplicity, but in a more advanced setup,
 		// data fetching could be done outside the transaction, and only DB writes inside.
-		enrichedCoins, err := s.FetchAndEnrichTrendingTokens(ctx)
+		enrichedCoins, err := s.UpdateTrendingTokensFromBirdeye(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to fetch and enrich trending coins: %w", err)
 		}
