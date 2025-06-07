@@ -34,11 +34,11 @@ import { logger } from '@/utils/logger';
 const Trade: React.FC = () => {
 	const navigation = useNavigation<TradeScreenNavigationProp>();
 	const route = useRoute<TradeScreenRouteProp>();
-	const { inputCoin = null, outputCoin = null } = route.params || {};
+	const { inputCoin = null, outputCoin = null, initialFromCoin = null, initialToCoin = null } = route.params || {};
 	const { tokens, wallet } = usePortfolioStore();
 	const { getCoinByID } = useCoinStore();
-	const [fromCoin, setFromCoin] = useState<Coin | null>(inputCoin);
-	const [toCoin, setToCoin] = useState<Coin | null>(outputCoin || null);
+	const [fromCoin, setFromCoin] = useState<Coin | null>(inputCoin || initialFromCoin);
+	const [toCoin, setToCoin] = useState<Coin | null>(outputCoin || initialToCoin || null);
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
 	const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(false);
@@ -79,12 +79,11 @@ const Trade: React.FC = () => {
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed TradeScreen' });
-		logger.log(`[Trade] Initializing with inputCoin: ${inputCoin?.symbol}, outputCoin: ${outputCoin?.symbol}`);
+		logger.log(`[Trade] Initializing with inputCoin: ${(inputCoin || initialFromCoin)?.symbol}, outputCoin: ${(outputCoin || initialToCoin)?.symbol}`);
 		const initializeCoins = async () => {
 			// Handle initialFromCoin
-			if (inputCoin) {
-				setFromCoin(inputCoin);
-				const coinFromMap = await getCoinByID(inputCoin.mintAddress, false);
+			if (fromCoin) {
+				const coinFromMap = await getCoinByID(fromCoin.mintAddress, false);
 				if (coinFromMap) {
 					setFromCoin(coinFromMap);
 				}
@@ -101,16 +100,15 @@ const Trade: React.FC = () => {
 			}
 
 			// Handle initialToCoin
-			if (outputCoin) {
-				setToCoin(outputCoin);
-				const coinFromMap = await getCoinByID(outputCoin.mintAddress, false);
+			if (toCoin) {
+				const coinFromMap = await getCoinByID(toCoin.mintAddress, false);
 				if (coinFromMap) {
 					setToCoin(coinFromMap);
 				}
 			}
 		};
 		initializeCoins();
-	}, [inputCoin, outputCoin, getCoinByID]);
+	}, [inputCoin, outputCoin, initialFromCoin, initialToCoin, getCoinByID, fromCoin, toCoin]);
 
 	const refreshPrices = async () => {
 		logger.log('[Trade] Refreshing coin prices', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromMint: fromCoin?.mintAddress, toMint: toCoin?.mintAddress });
