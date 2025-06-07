@@ -71,10 +71,11 @@ type Transaction struct {
 // TransactionStatus represents the status of a transaction.
 type TransactionStatus struct {
 	Slot          uint64
-	Confirmations *uint64     // Pointer to represent null or when not applicable
-	Status        string      // e.g., "Unknown", "Pending", "Processed", "Confirmed", "Finalized", "Failed"
-	Error         string      // Error message if the transaction failed (empty if successful)
-	RawError      interface{} // Store original error object if needed
+	Confirmations *uint64   // Pointer to represent null or when not applicable
+	Status        string    // e.g., "Unknown", "Pending", "Processed", "Confirmed", "Finalized", "Failed"
+	Error         string    // Error message if the transaction failed (empty if successful)
+	RawError      any       // Store original error object if needed
+	Signature     Signature // The transaction signature
 }
 
 // TransactionOptions provides generic options for sending transactions.

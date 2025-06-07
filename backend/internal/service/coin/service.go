@@ -12,9 +12,8 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
-	// "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // To be replaced
+
 	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
-	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
