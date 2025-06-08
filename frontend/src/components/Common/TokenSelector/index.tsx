@@ -20,6 +20,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	showOnlyPortfolioTokens = false,
 	testID,
 }) => {
+	console.log('TokenSearchModal re-rendered. Search query:', searchQuery);
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
@@ -52,6 +53,10 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		);
 	}, [baseList, debouncedSearchQuery]);
 
+	useEffect(() => {
+		console.log('filteredCoins reference changed');
+	}, [filteredCoins]);
+
 	const handleTokenSelect = useCallback((coin: Coin) => {
 		onSelectToken(coin);
 		onDismiss();
@@ -72,6 +77,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 	// Inline component for rendering the icon using CachedImage
 	const RenderIcon: React.FC<{ iconUrl: string | undefined }> = React.memo(({ iconUrl }) => {
+		console.log('RenderIcon re-rendered. Icon URL:', iconUrl);
 		return (
 			<CachedImage
 				uri={iconUrl}
@@ -90,6 +96,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		onSelect: (coin: Coin) => void;
 		styles: any;
 	}> = React.memo(({ coin, portfolioToken, onSelect, styles }) => {
+		console.log('TokenItem re-rendered. Coin:', coin.symbol, 'Icon URL:', coin.resolvedIconUrl);
 		const handlePress = useCallback(() => {
 			onSelect(coin);
 		}, [coin, onSelect]);
@@ -124,6 +131,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	}, [portfolioTokens]);
 
 	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
+		console.log('renderItem. Coin:', coin.symbol, 'Icon URL:', coin.resolvedIconUrl);
 		const portfolioToken = portfolioTokenMap.get(coin.mintAddress);
 		return (
 			<TokenItem
