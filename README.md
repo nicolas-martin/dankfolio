@@ -2,35 +2,49 @@
 
 ## Environment Setup
 
-This project includes a setup script (`setup.sh`) to help you configure your development environment quickly.
+This project includes scripts to help you configure your development environment quickly: `setup-frontend.sh` and `setup-backend.sh`. You can run them independently based on which part of the project you're working on.
 
-The script will attempt to:
-- Install the correct Node.js version using NVM.
-- Install frontend dependencies using Yarn.
-- Check for Go, buf, and protoc installations and guide you if they are missing.
-- Install backend Go dependencies.
+The `setup-frontend.sh` script will attempt to:
+- Install NVM (Node Version Manager) if it's not already present.
+- Install the correct Node.js version as specified in the `.nvmrc` file.
+- Install Yarn (if it's not already present).
+- Install frontend dependencies using `yarn install` in the `frontend` directory.
+- Create a `frontend/.env` file from `frontend/.env.example` if it doesn't already exist.
+
+The `setup-backend.sh` script will attempt to:
+- Check if Go, buf, and protoc are installed and guide you if they are missing.
+- Install specific versions of Go gRPC plugins (`protoc-gen-go`, `protoc-gen-go-grpc`).
+- Install `mockery` for generating mocks.
+- Install backend Go dependencies using `go mod download` in the `backend` directory.
 - Generate Go code from Protocol Buffer definitions using `buf generate`.
-- Create `.env` files from the example files for both frontend and backend.
+- Run `mockery` to generate necessary mock files within the `backend` directory.
+- Create a `backend/.env` file from `backend/.env.example` if it doesn't already exist.
 
-### Running the Script
+### Running the Scripts
 
-1.  Make sure the script is executable:
+1.  Make sure the scripts are executable:
     ```bash
-    chmod +x setup.sh
+    chmod +x setup-frontend.sh setup-backend.sh
     ```
-2.  Run the script from the root of the project:
+2.  Run the desired script(s) from the root of the project:
+    To set up the frontend:
     ```bash
-    ./setup.sh
+    ./setup-frontend.sh
     ```
-    Alternatively, you can run it with `bash setup.sh`.
+    To set up the backend:
+    ```bash
+    ./setup-backend.sh
+    ```
+    You can run one or both, depending on your needs.
 
-3.  Pay attention to the output of the script. It will guide you if any dependencies are missing or if any manual steps are required (e.g., installing Go, protoc, or buf).
+3.  Pay attention to the output of the scripts. They will guide you if any dependencies are missing or if any manual steps are required.
 
-### After Running the Script
+### After Running the Scripts
 
-- The script will copy `frontend/.env.example` to `frontend/.env` and `backend/.env.example` to `backend/.env` if they don't already exist.
+- The `setup-frontend.sh` script will copy `frontend/.env.example` to `frontend/.env` if it doesn't already exist.
+- The `setup-backend.sh` script will copy `backend/.env.example` to `backend/.env` if it doesn't already exist.
 - **Important**: You will need to manually review and update these `.env` files with your specific configurations (API keys, database credentials, etc.).
-- Follow any additional "Next steps" printed by the script at the end of its execution.
+- Follow any additional "Next steps" printed by the scripts at the end of their execution.
 
 ## JWT SECRET
 ```bash
