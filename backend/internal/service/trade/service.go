@@ -111,6 +111,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	if err != nil {
 		return "", fmt.Errorf("failed to get trade quote: %w", err)
 	}
+	log.Printf("DEBUG: tradeQuote.Raw after GetSwapQuote: %s", string(tradeQuote.Raw))
 
 	unsignedTx, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, s.platformFeeAccountAddress)
 	if err != nil {
@@ -155,6 +156,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	var actualPlatformFeeBpsFromQuote int = 0
 	if tradeQuote.Raw != nil {
 		var tempQuoteResp jupiter.QuoteResponse
+		log.Printf("DEBUG: tradeQuote.Raw before PlatformFee unmarshal: %s", string(tradeQuote.Raw))
 		if errUnmarshal := json.Unmarshal(tradeQuote.Raw, &tempQuoteResp); errUnmarshal == nil {
 			if tempQuoteResp.PlatformFee != nil {
 				actualPlatformFeeBpsFromQuote = tempQuoteResp.PlatformFee.FeeBps
