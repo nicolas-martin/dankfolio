@@ -59,6 +59,8 @@ export const createStyles = (theme: MD3Theme) =>
 		},
 		searchContainer: {
 			marginBottom: 16,
+			paddingHorizontal: 16,
+			paddingTop: 16,
 		},
 		searchInput: {
 			backgroundColor: theme.colors.surfaceVariant,
@@ -77,7 +79,9 @@ export const createStyles = (theme: MD3Theme) =>
 			borderBottomColor: theme.colors.outlineVariant,
 			borderBottomWidth: 1,
 			flexDirection: 'row',
-			padding: 12,
+			height: 72,
+			paddingHorizontal: 12,
+			paddingVertical: 16,
 		},
 		tokenDetails: {
 			flex: 1,
@@ -128,5 +132,25 @@ export const createStyles = (theme: MD3Theme) =>
 			flex: 1,
 			justifyContent: 'center',
 			padding: 20,
+		},
+		blurView: {
+			flex: 1,
+		},
+		tokenListContent: {
+			paddingHorizontal: 16,
+			paddingBottom: 16,
+		},
+		searchBar: {
+			backgroundColor: theme.colors.surfaceVariant,
+			borderRadius: 8,
+			elevation: 2,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 1 },
+			shadowOpacity: 0.1,
+			shadowRadius: 2,
+		},
+		searchBarInput: {
+			color: theme.colors.onSurface,
+			fontSize: 16,
 		},
 	}); 

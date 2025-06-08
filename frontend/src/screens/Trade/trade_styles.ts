@@ -103,16 +103,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 
 	// Trade Details Section
-	detailsContainer: {
+	detailsCard: {
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 16,
 		marginBottom: 24,
-		padding: 20,
 	},
-	detailsHeader: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		marginBottom: 16,
+	detailsContent: {
+		paddingTop: 0, // Remove top padding since Card.Title handles spacing
 	},
 	detailsIcon: {
 		alignItems: 'center',

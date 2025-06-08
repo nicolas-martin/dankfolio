@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
-import { Text, useTheme, Button, Icon } from 'react-native-paper';
+import { Text, useTheme, Button, Icon, Card } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './trade_styles';
@@ -435,15 +435,17 @@ const Trade: React.FC = () => {
 		const priceImpact = parseFloat(tradeDetails.priceImpactPct);
 
 		return (
-			<>
-				<View style={styles.detailsContainer}>
-					<View style={styles.detailsHeader}>
+			<Card style={styles.detailsCard}>
+				<Card.Title
+					title="Trade Details"
+					left={(props) => (
 						<View style={styles.detailsIcon}>
 							<Icon source="information" size={14} color={theme.colors.onPrimary} />
 						</View>
-						<Text style={styles.detailsTitle}>Trade Details</Text>
-					</View>
-
+					)}
+					titleStyle={styles.detailsTitle}
+				/>
+				<Card.Content style={styles.detailsContent}>
 					<View style={styles.detailRow}>
 						<Text style={styles.detailLabel}>Price Impact</Text>
 						<Text style={styles.detailValue}>
@@ -472,8 +474,8 @@ const Trade: React.FC = () => {
 							1 {fromCoin?.symbol} = {(parseFloat(tradeDetails.exchangeRate) || 0).toFixed(6)} {toCoin?.symbol}
 						</Text>
 					</View>
-				</View>
-			</>
+				</Card.Content>
+			</Card>
 		);
 	};
 

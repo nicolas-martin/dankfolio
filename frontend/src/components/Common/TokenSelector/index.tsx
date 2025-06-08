@@ -1,13 +1,15 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, TouchableOpacity, FlatList, Modal as RNModal, TextInput, ActivityIndicator } from 'react-native';
-import { Card, Text, useTheme } from 'react-native-paper';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { View, TouchableOpacity, TextInput, ActivityIndicator, Dimensions } from 'react-native';
+import { Card, Text, useTheme, Searchbar } from 'react-native-paper';
+import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { BlurView } from 'expo-blur';
 import { ChevronDownIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { createStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
-import { calculateUsdValue, findPortfolioToken, handleAmountInputChange } from './scripts';
+import { calculateUsdValue, findPortfolioToken, handleAmountInputChange, useDebounce } from './scripts';
 import { CachedImage } from '@/components/Common/CachedImage';
 
 const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
@@ -20,9 +22,20 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
+	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 	const [searchQuery, setSearchQuery] = useState('');
+	const debouncedSearchQuery = useDebounce(searchQuery, 300);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 	const { availableCoins } = useCoinStore();
+
+	// Handle BottomSheetModal presentation
+	useEffect(() => {
+		if (visible) {
+			bottomSheetModalRef.current?.present();
+		} else {
+			bottomSheetModalRef.current?.dismiss();
+		}
+	}, [visible]);
 
 	const baseList = useMemo(() => {
 		return showOnlyPortfolioTokens
@@ -31,18 +44,31 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	}, [showOnlyPortfolioTokens, portfolioTokens, availableCoins]);
 
 	const filteredCoins = useMemo(() => {
-		if (!searchQuery) return baseList;
+		if (!debouncedSearchQuery) return baseList;
 
 		return baseList.filter(coin =>
-			coin.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			coin.name.toLowerCase().includes(searchQuery.toLowerCase())
+			coin.symbol.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+			coin.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
 		);
-	}, [baseList, searchQuery]);
+	}, [baseList, debouncedSearchQuery]);
 
 	const handleTokenSelect = useCallback((coin: Coin) => {
 		onSelectToken(coin);
 		onDismiss();
 	}, [onSelectToken, onDismiss]);
+
+	// Custom backdrop component with blur
+	const renderBackdrop = useCallback((props: any) => (
+		<BottomSheetBackdrop
+			{...props}
+			disappearsOnIndex={-1}
+			appearsOnIndex={0}
+			opacity={0.8}
+			onPress={onDismiss}
+		>
+			<BlurView intensity={20} style={styles.blurView} />
+		</BottomSheetBackdrop>
+	), [onDismiss, styles.blurView]);
 
 	// Inline component for rendering the icon using CachedImage
 	const RenderIcon: React.FC<{ iconUrl: string | undefined }> = React.memo(({ iconUrl }) => {
@@ -57,14 +83,22 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		);
 	});
 
-	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
-		const portfolioToken = portfolioTokens.find(t => t.mintAddress === coin.mintAddress);
+	// Memoized TokenItem component to prevent unnecessary re-renders
+	const TokenItem: React.FC<{
+		coin: Coin;
+		portfolioToken: any;
+		onSelect: (coin: Coin) => void;
+		styles: any;
+	}> = React.memo(({ coin, portfolioToken, onSelect, styles }) => {
+		const handlePress = useCallback(() => {
+			onSelect(coin);
+		}, [coin, onSelect]);
+
 		return (
 			<TouchableOpacity
 				style={styles.tokenItem}
-				onPress={() => handleTokenSelect(coin)}
+				onPress={handlePress}
 			>
-				{/* Use the inline RenderIcon component */}
 				<RenderIcon iconUrl={coin.resolvedIconUrl} />
 				<View style={styles.tokenDetails}>
 					<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
@@ -78,41 +112,75 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				)}
 			</TouchableOpacity>
 		);
-	}, [handleTokenSelect, styles.tokenItem, styles.tokenIcon, styles.tokenDetails, styles.tokenAddress, styles.tokenBalance, portfolioTokens]);
+	});
+
+	// Create a map for faster portfolio token lookup
+	const portfolioTokenMap = useMemo(() => {
+		const map = new Map();
+		portfolioTokens.forEach((token: any) => {
+			map.set(token.mintAddress, token);
+		});
+		return map;
+	}, [portfolioTokens]);
+
+	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
+		const portfolioToken = portfolioTokenMap.get(coin.mintAddress);
+		return (
+			<TokenItem
+				coin={coin}
+				portfolioToken={portfolioToken}
+				onSelect={handleTokenSelect}
+				styles={styles}
+			/>
+		);
+	}, [handleTokenSelect, styles, portfolioTokenMap]);
 
 	return (
-		<RNModal
-			visible={visible}
-			animationType="fade"
-			transparent
-			onRequestClose={onDismiss}
-			testID={testID}
+		<BottomSheetModal
+			ref={bottomSheetModalRef}
+			snapPoints={['75%']}
+			onDismiss={onDismiss}
+			backgroundStyle={{ backgroundColor: theme.colors.surface }}
+			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}
+			enablePanDownToClose={true}
+			enableDismissOnClose={true}
+			backdropComponent={renderBackdrop}
+			enableDynamicSizing={false}
 		>
-			<TouchableOpacity
-				style={styles.modalOverlay}
-				activeOpacity={1}
-				onPressOut={onDismiss}
-			>
-				<View style={styles.modalContent}>
-					<View style={styles.searchContainer}>
-						<TextInput
-							style={styles.searchInput}
-							placeholder="Search tokens"
-							value={searchQuery}
-							onChangeText={setSearchQuery}
-							placeholderTextColor={theme.colors.onSurfaceVariant}
-						/>
-					</View>
-					<FlatList
-						data={filteredCoins}
-						renderItem={renderItem}
-						keyExtractor={coin => coin.mintAddress}
-						style={styles.tokenList}
-						keyboardShouldPersistTaps="handled"
-					/>
-				</View>
-			</TouchableOpacity>
-		</RNModal>
+			<View style={styles.searchContainer}>
+				<Searchbar
+					placeholder="Search tokens"
+					value={searchQuery}
+					onChangeText={setSearchQuery}
+					style={styles.searchBar}
+					inputStyle={styles.searchBarInput}
+					iconColor={theme.colors.onSurfaceVariant}
+					placeholderTextColor={theme.colors.onSurfaceVariant}
+					autoCapitalize="none"
+					autoCorrect={false}
+					autoFocus={false}
+					blurOnSubmit={false}
+					returnKeyType="search"
+				/>
+			</View>
+			<BottomSheetFlatList
+				data={filteredCoins}
+				renderItem={renderItem}
+				keyExtractor={coin => coin.mintAddress}
+				contentContainerStyle={styles.tokenListContent}
+				keyboardShouldPersistTaps="handled"
+				showsVerticalScrollIndicator={false}
+				removeClippedSubviews={true}
+				maxToRenderPerBatch={10}
+				windowSize={10}
+				initialNumToRender={10}
+				getItemLayout={(data, index) => ({
+					length: 72, // Approximate height of each token item
+					offset: 72 * index,
+					index,
+				})}
+			/>
+		</BottomSheetModal>
 	);
 };
 
@@ -225,16 +293,14 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				</Card.Content>
 			</Card>
 
-			{modalVisible && (
-				<TokenSearchModal
-					visible={modalVisible}
-					onDismiss={handleDismiss}
-					selectedToken={selectedToken}
-					onSelectToken={onSelectToken}
-					showOnlyPortfolioTokens={showOnlyPortfolioTokens}
-					testID="token-search-modal"
-				/>
-			)}
+			<TokenSearchModal
+				visible={modalVisible}
+				onDismiss={handleDismiss}
+				selectedToken={selectedToken}
+				onSelectToken={onSelectToken}
+				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
+				testID="token-search-modal"
+			/>
 		</>
 	);
 };

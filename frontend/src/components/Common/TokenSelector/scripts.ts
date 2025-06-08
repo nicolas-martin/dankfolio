@@ -1,4 +1,27 @@
+import { useEffect, useState } from 'react';
 import { Coin } from '@/types';
+
+/**
+ * Custom hook to debounce a value
+ * @param value The value to debounce
+ * @param delay The delay in milliseconds
+ * @returns The debounced value
+ */
+export const useDebounce = <T>(value: T, delay: number): T => {
+	const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+	useEffect(() => {
+		const handler = setTimeout(() => {
+			setDebouncedValue(value);
+		}, delay);
+
+		return () => {
+			clearTimeout(handler);
+		};
+	}, [value, delay]);
+
+	return debouncedValue;
+};
 
 /**
  * Validates the amount input to allow only digits and a single decimal point.
@@ -48,10 +71,10 @@ export const calculateUsdValue = (token?: Coin, amount?: string): string => {
  * @param portfolioTokens The list of tokens in the portfolio.
  * @returns The matching portfolio token or undefined if not found.
  */
-export const findPortfolioToken = (selectedToken?: Coin, portfolioTokens: unknown[] = []): unknown => {
+export const findPortfolioToken = (selectedToken?: Coin, portfolioTokens: any[] = []): any => {
 	if (!selectedToken) {
 		return undefined;
 	}
 
-	return portfolioTokens.find(token => token.mintAddress === selectedToken.mintAddress);
+	return portfolioTokens.find((token: any) => token.mintAddress === selectedToken.mintAddress);
 }; 

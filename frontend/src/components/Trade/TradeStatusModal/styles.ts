@@ -44,15 +44,15 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	statusIconContainer: {
 		alignItems: 'center',
 		borderRadius: 40,
+		elevation: 4,
 		height: 80,
 		justifyContent: 'center',
 		marginBottom: 20,
-		width: 80,
-		elevation: 4,
 		shadowColor: '#000',
 		shadowOffset: { width: 0, height: 2 },
 		shadowOpacity: 0.1,
 		shadowRadius: 8,
+		width: 80,
 	},
 	statusIconLoading: {
 		backgroundColor: theme.colors.surfaceVariant,
@@ -88,19 +88,19 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 14,
 		lineHeight: 20,
-		textAlign: 'center',
 		opacity: 0.8,
+		textAlign: 'center',
 	},
 
 	// Progress Section - Always visible when in progress
 	progressSection: {
 		backgroundColor: theme.colors.surface,
+		borderColor: theme.colors.outline,
 		borderRadius: 16,
+		borderWidth: 1,
 		marginBottom: 24,
 		padding: 20,
 		width: '100%',
-		borderWidth: 1,
-		borderColor: theme.colors.outline,
 	},
 	progressHeader: {
 		alignItems: 'center',
@@ -191,10 +191,10 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '500',
 	},
 	linkButton: {
+		backgroundColor: 'transparent',
+		borderColor: '#2196F3',
 		borderRadius: 12,
 		borderWidth: 1,
-		borderColor: '#2196F3',
-		backgroundColor: 'transparent',
 		marginHorizontal: 0,
 	},
 
@@ -233,14 +233,14 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		width: '100%',
 	},
 	closeButton: {
+		backgroundColor: '#4CAF50',
 		borderRadius: 16,
 		elevation: 3,
+		paddingVertical: 8,
 		shadowColor: '#000',
 		shadowOffset: { width: 0, height: 2 },
 		shadowOpacity: 0.1,
 		shadowRadius: 4,
-		backgroundColor: '#4CAF50',
-		paddingVertical: 8,
 	},
 
 	// Loading State
