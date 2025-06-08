@@ -152,11 +152,5 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
         height: 36,
         justifyContent: 'center',
     },
-    sparklinePlaceholder: {
-        backgroundColor: theme.colors.surfaceDisabled,
-        borderRadius: 4,
-        height: 20,
-        width: actualCardWidth * 0.35,
-    },
 	});
 };

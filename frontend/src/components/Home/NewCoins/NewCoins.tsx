@@ -4,6 +4,7 @@ import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
 import { LoadingAnimation } from '../../Common/Animations';
+import ShimmerPlaceholder from '../../Common/ShimmerPlaceholder';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import HorizontalTickerCard from '@components/Home/HorizontalTickerCard';
@@ -35,6 +36,44 @@ const NewCoins: React.FC = () => {
 		return newlyListedCoins;
 	}, [newlyListedCoins]);
 
+	// Placeholder component for loading horizontal ticker cards
+	const renderPlaceholderCard = () => (
+		<View style={[styles.cardWrapper, {
+			backgroundColor: theme.colors.surface,
+			borderRadius: 12,
+			padding: 12,
+			elevation: 2,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 1 },
+			shadowOpacity: 0.1,
+			shadowRadius: 2,
+		}]}>
+			<ShimmerPlaceholder
+				width={48}
+				height={48}
+				borderRadius={24}
+				style={{ alignSelf: 'center', marginBottom: 8 }}
+			/>
+			<ShimmerPlaceholder
+				width="70%"
+				height={14}
+				borderRadius={4}
+				style={{ marginBottom: 4, alignSelf: 'center' }}
+			/>
+			<ShimmerPlaceholder
+				width="50%"
+				height={12}
+				borderRadius={4}
+				style={{ marginBottom: 4, alignSelf: 'center' }}
+			/>
+			<ShimmerPlaceholder
+				width="40%"
+				height={12}
+				borderRadius={4}
+				style={{ alignSelf: 'center' }}
+			/>
+		</View>
+	);
 
 	const handleCoinPress = (coin: Coin) => {
 		// Navigate immediately with the basic coin data
@@ -68,9 +107,23 @@ const NewCoins: React.FC = () => {
 
 	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (
-			<View style={styles.loadingContainer}>
-				<LoadingAnimation size={60} />
-				<Text style={styles.loadingText}>Loading new listings...</Text>
+			<View style={styles.container}>
+				<View style={styles.titleContainer}>
+					<ShimmerPlaceholder
+						width={120}
+						height={20}
+						borderRadius={4}
+					/>
+				</View>
+				<Animated.FlatList
+					data={[1, 2, 3, 4]} // Show 4 placeholder cards
+					renderItem={() => renderPlaceholderCard()}
+					keyExtractor={(item, index) => `placeholder-${index}`}
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					contentContainerStyle={styles.listContentContainer}
+					scrollEnabled={false} // Disable scrolling for placeholders
+				/>
 			</View>
 		);
 	}

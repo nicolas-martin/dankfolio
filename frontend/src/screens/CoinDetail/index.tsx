@@ -3,6 +3,7 @@ import { View, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl } fro
 import { Text, useTheme, Button, SegmentedButtons, Icon } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
+import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
 import CoinChart from '@components/Chart/CoinChart';
 import { PricePoint } from '@components/Chart/CoinChart/types';
 import CoinInfo from '@components/Chart/CoinInfo';
@@ -144,42 +145,37 @@ const CoinDetail: React.FC = () => {
 		<View style={styles.priceCard}>
 			<View style={{ padding: 16 }}>
 				<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-					<View style={{ 
-						width: 40, 
-						height: 40, 
-						borderRadius: 20, 
-						backgroundColor: theme.colors.surfaceVariant,
-						marginRight: 12 
-					}} />
+					<ShimmerPlaceholder
+						width={40}
+						height={40}
+						borderRadius={20}
+						style={{ marginRight: 12 }}
+					/>
 					<View style={{ flex: 1 }}>
-						<View style={{ 
-							height: 20, 
-							backgroundColor: theme.colors.surfaceVariant, 
-							borderRadius: 4,
-							marginBottom: 4,
-							width: '60%'
-						}} />
-						<View style={{ 
-							height: 14, 
-							backgroundColor: theme.colors.surfaceVariant, 
-							borderRadius: 4,
-							width: '40%'
-						}} />
+						<ShimmerPlaceholder
+							width="60%"
+							height={20}
+							borderRadius={4}
+							style={{ marginBottom: 4 }}
+						/>
+						<ShimmerPlaceholder
+							width="40%"
+							height={14}
+							borderRadius={4}
+						/>
 					</View>
 				</View>
-				<View style={{ 
-					height: 32, 
-					backgroundColor: theme.colors.surfaceVariant, 
-					borderRadius: 4,
-					marginBottom: 8,
-					width: '50%'
-				}} />
-				<View style={{ 
-					height: 16, 
-					backgroundColor: theme.colors.surfaceVariant, 
-					borderRadius: 4,
-					width: '30%'
-				}} />
+				<ShimmerPlaceholder
+					width="50%"
+					height={32}
+					borderRadius={4}
+					style={{ marginBottom: 8 }}
+				/>
+				<ShimmerPlaceholder
+					width="30%"
+					height={16}
+					borderRadius={4}
+				/>
 			</View>
 		</View>
 	);
@@ -187,12 +183,21 @@ const CoinDetail: React.FC = () => {
 	const renderPlaceholderChartCard = () => (
 		<View style={styles.chartContainer}>
 			<View style={{ marginHorizontal: 16, padding: 16 }}>
+				<ShimmerPlaceholder
+					width="100%"
+					height={200}
+					borderRadius={8}
+				/>
 				<View style={{ 
-					height: 200, 
-					backgroundColor: theme.colors.surfaceVariant, 
-					borderRadius: 8,
+					position: 'absolute',
+					top: 0,
+					left: 0,
+					right: 0,
+					bottom: 0,
 					justifyContent: 'center',
-					alignItems: 'center'
+					alignItems: 'center',
+					marginHorizontal: 16,
+					marginVertical: 16
 				}}>
 					<ActivityIndicator color={theme.colors.primary} size="large" />
 					<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
@@ -209,39 +214,36 @@ const CoinDetail: React.FC = () => {
 				<View style={styles.aboutIcon}>
 					<Icon source="information-outline" size={16} color={theme.colors.onSecondaryContainer} />
 				</View>
-				<View style={{ 
-					height: 20, 
-					backgroundColor: theme.colors.surfaceVariant, 
-					borderRadius: 4,
-					width: 120,
-					marginLeft: 8
-				}} />
+				<ShimmerPlaceholder
+					width={120}
+					height={20}
+					borderRadius={4}
+					style={{ marginLeft: 8 }}
+				/>
 			</View>
 			<View style={{ padding: 16 }}>
-				<View style={{ 
-					height: 16, 
-					backgroundColor: theme.colors.surfaceVariant, 
-					borderRadius: 4,
-					marginBottom: 8,
-					width: '100%'
-				}} />
-				<View style={{ 
-					height: 16, 
-					backgroundColor: theme.colors.surfaceVariant, 
-					borderRadius: 4,
-					marginBottom: 8,
-					width: '80%'
-				}} />
-				<View style={{ 
-					height: 16, 
-					backgroundColor: theme.colors.surfaceVariant, 
-					borderRadius: 4,
-					width: '60%'
-				}} />
+				<ShimmerPlaceholder
+					width="100%"
+					height={16}
+					borderRadius={4}
+					style={{ marginBottom: 8 }}
+				/>
+				<ShimmerPlaceholder
+					width="80%"
+					height={16}
+					borderRadius={4}
+					style={{ marginBottom: 8 }}
+				/>
+				<ShimmerPlaceholder
+					width="60%"
+					height={16}
+					borderRadius={4}
+					style={{ marginBottom: 16 }}
+				/>
 				<View style={{ 
 					justifyContent: 'center',
 					alignItems: 'center',
-					marginTop: 16
+					marginTop: 8
 				}}>
 					<ActivityIndicator color={theme.colors.primary} />
 					<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
