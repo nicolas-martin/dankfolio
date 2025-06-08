@@ -158,7 +158,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	return (
 		<>
-			<Card elevation={0} style={[styles.cardContainer]}>
+			<Card elevation={0} style={styles.cardContainer}>
 				<Card.Content style={styles.cardContent}>
 					<TouchableOpacity
 						style={styles.selectorButtonContainer}

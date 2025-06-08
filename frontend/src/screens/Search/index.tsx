@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { View, TextInput, FlatList, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '@/types/navigation'; // Assuming RootStackParamList is here
+// Assuming RootStackParamList is here
 import { SearchScreenRouteProp, SearchScreenNavigationProp, SearchState } from './types';
 import { SearchSortByOption } from '@/services/grpc/model'; // Import the type
 import { performSearch, DEBOUNCE_DELAY, handleCoinNavigation } from './scripts';
@@ -126,7 +126,7 @@ const SearchScreen: React.FC = () => {
 				coin={item}
 				onPress={(coin) => {
 					logger.breadcrumb({ category: 'ui', message: 'Pressed search result item', data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } });
-					handleCoinNavigation(coin, navigation, toast);
+					handleCoinNavigation(coin, navigation);
 				}}
 				isEnriched={item.price !== undefined && item.dailyVolume !== undefined}
 			/>

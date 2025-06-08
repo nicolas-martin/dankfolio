@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View } from 'react-native';
 import { Text, Button, useTheme } from 'react-native-paper';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
@@ -22,13 +22,13 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	const sheetRef = useRef<BottomSheet>(null);
+	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
 	useEffect(() => {
 		if (isVisible) {
-			sheetRef.current?.snapToIndex(0);
+			bottomSheetModalRef.current?.present();
 		} else {
-			sheetRef.current?.close();
+			bottomSheetModalRef.current?.dismiss();
 		}
 	}, [isVisible]);
 
@@ -46,15 +46,15 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 	const renderContent = () => {
 		if (!fromToken || !toToken) {
-					return (
-			<View style={styles.container}>
-				<Text style={styles.title}>Confirm Trade</Text>
-				<View style={styles.loadingContainer}>
-					<LoadingAnimation size={100} />
-					<Text style={styles.loadingText}>Preparing trade...</Text>
+			return (
+				<View style={styles.container}>
+					<Text style={styles.title}>Confirm Trade</Text>
+					<View style={styles.loadingContainer}>
+						<LoadingAnimation size={100} />
+						<Text style={styles.loadingText}>Preparing trade...</Text>
+					</View>
 				</View>
-			</View>
-		);
+			);
 		}
 
 		return (
@@ -138,18 +138,20 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	};
 
 	return (
-		<BottomSheet
-			ref={sheetRef}
-			snapPoints={['80%', '50%']}
-			index={isVisible ? 0 : -1}
-			enablePanDownToClose={true}
-			onClose={onClose}
+		<BottomSheetModal
+			ref={bottomSheetModalRef}
+			snapPoints={['600']}
+			onDismiss={onClose}
 			backgroundStyle={{ backgroundColor: theme.colors.surface }}
+			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}
+			enablePanDownToClose={true}
+			enableDismissOnClose={true}
+			detached={false}
 		>
 			<BottomSheetView style={{ flex: 1 }}>
 				{renderContent()}
 			</BottomSheetView>
-		</BottomSheet>
+		</BottomSheetModal>
 	);
 };
 

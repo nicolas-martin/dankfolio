@@ -8,7 +8,6 @@ import { PricePoint } from '@components/Chart/CoinChart/types';
 import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
 import { PriceData, Coin } from '@/types';
-import LottieView from 'lottie-react-native';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
@@ -140,20 +139,118 @@ const CoinDetail: React.FC = () => {
 
 	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description);
 
-	if (isLoadingDetails) {
-		return (
-			<SafeAreaView style={styles.container}>
-				<View style={[styles.container, styles.centered]}>
-					<LottieView
-						source={require('@assets/lottie/loading_spinner.json')}
-						autoPlay
-						loop
-						style={{ width: 200, height: 200 }}
-					/>
+	// Placeholder components for loading states
+	const renderPlaceholderPriceCard = () => (
+		<View style={styles.priceCard}>
+			<View style={{ padding: 16 }}>
+				<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+					<View style={{ 
+						width: 40, 
+						height: 40, 
+						borderRadius: 20, 
+						backgroundColor: theme.colors.surfaceVariant,
+						marginRight: 12 
+					}} />
+					<View style={{ flex: 1 }}>
+						<View style={{ 
+							height: 20, 
+							backgroundColor: theme.colors.surfaceVariant, 
+							borderRadius: 4,
+							marginBottom: 4,
+							width: '60%'
+						}} />
+						<View style={{ 
+							height: 14, 
+							backgroundColor: theme.colors.surfaceVariant, 
+							borderRadius: 4,
+							width: '40%'
+						}} />
+					</View>
 				</View>
-			</SafeAreaView>
-		);
-	}
+				<View style={{ 
+					height: 32, 
+					backgroundColor: theme.colors.surfaceVariant, 
+					borderRadius: 4,
+					marginBottom: 8,
+					width: '50%'
+				}} />
+				<View style={{ 
+					height: 16, 
+					backgroundColor: theme.colors.surfaceVariant, 
+					borderRadius: 4,
+					width: '30%'
+				}} />
+			</View>
+		</View>
+	);
+
+	const renderPlaceholderChartCard = () => (
+		<View style={styles.chartContainer}>
+			<View style={{ marginHorizontal: 16, padding: 16 }}>
+				<View style={{ 
+					height: 200, 
+					backgroundColor: theme.colors.surfaceVariant, 
+					borderRadius: 8,
+					justifyContent: 'center',
+					alignItems: 'center'
+				}}>
+					<ActivityIndicator color={theme.colors.primary} size="large" />
+					<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+						Loading chart data...
+					</Text>
+				</View>
+			</View>
+		</View>
+	);
+
+	const renderPlaceholderAboutCard = () => (
+		<View style={styles.aboutCard}>
+			<View style={styles.aboutHeader}>
+				<View style={styles.aboutIcon}>
+					<Icon source="information-outline" size={16} color={theme.colors.onSecondaryContainer} />
+				</View>
+				<View style={{ 
+					height: 20, 
+					backgroundColor: theme.colors.surfaceVariant, 
+					borderRadius: 4,
+					width: 120,
+					marginLeft: 8
+				}} />
+			</View>
+			<View style={{ padding: 16 }}>
+				<View style={{ 
+					height: 16, 
+					backgroundColor: theme.colors.surfaceVariant, 
+					borderRadius: 4,
+					marginBottom: 8,
+					width: '100%'
+				}} />
+				<View style={{ 
+					height: 16, 
+					backgroundColor: theme.colors.surfaceVariant, 
+					borderRadius: 4,
+					marginBottom: 8,
+					width: '80%'
+				}} />
+				<View style={{ 
+					height: 16, 
+					backgroundColor: theme.colors.surfaceVariant, 
+					borderRadius: 4,
+					width: '60%'
+				}} />
+				<View style={{ 
+					justifyContent: 'center',
+					alignItems: 'center',
+					marginTop: 16
+				}}>
+					<ActivityIndicator color={theme.colors.primary} />
+					<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
+						Loading details...
+					</Text>
+				</View>
+			</View>
+		</View>
+	);
 
 	if (!displayCoin && !isLoadingDetails) { // Not loading but still no coin (error or empty state)
 		return (
@@ -329,52 +426,52 @@ const CoinDetail: React.FC = () => {
 	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
 
 	return (
-		// Ensure displayCoin is checked here again before rendering main content
-		displayCoin ? (
-			<SafeAreaView style={styles.container} testID="coin-detail-screen">
-				<View style={styles.content}>
-					<ScrollView
-						style={styles.scrollView}
-						contentContainerStyle={styles.scrollViewContent}
-						bounces={false}
-						showsVerticalScrollIndicator={false}
-						refreshControl={
-							<RefreshControl
-								refreshing={loading} // This 'loading' is for the price chart
-								onRefresh={onRefresh}
-								tintColor={theme.colors.primary}
-							/>
-						}
-					>
-						{renderPriceCard()}
-						{renderChartCard()}
-						{renderTimeframeCard()}
-						{renderHoldingsCard()}
-						{renderAboutCard()}
-					</ScrollView>
+		<SafeAreaView style={styles.container} testID="coin-detail-screen">
+			<View style={styles.content}>
+				<ScrollView
+					style={styles.scrollView}
+					contentContainerStyle={styles.scrollViewContent}
+					bounces={false}
+					showsVerticalScrollIndicator={false}
+					refreshControl={
+						<RefreshControl
+							refreshing={loading} // This 'loading' is for the price chart
+							onRefresh={onRefresh}
+							tintColor={theme.colors.primary}
+						/>
+					}
+				>
+					{/* Show placeholders when loading details, otherwise show real content */}
+					{isLoadingDetails ? renderPlaceholderPriceCard() : renderPriceCard()}
+					{isLoadingDetails ? renderPlaceholderChartCard() : renderChartCard()}
+					{!isLoadingDetails && renderTimeframeCard()}
+					{!isLoadingDetails && renderHoldingsCard()}
+					{isLoadingDetails ? renderPlaceholderAboutCard() : renderAboutCard()}
+				</ScrollView>
 
-					{displayCoin && (
-						<View style={styles.tradeButtonContainer}>
-							<Button
-								mode="contained"
-								onPress={async () => {
-									await handleTradeNavigation(
-										displayCoin,
-										null,
-										showToast,
-										navigation.navigate
-									);
-								}}
-								style={styles.tradeButton}
-								testID="trade-button"
-							>
-								Trade {displayCoin.symbol}
-							</Button>
-						</View>
-					)}
+				{/* Show trade button with placeholder text when loading */}
+				<View style={styles.tradeButtonContainer}>
+					<Button
+						mode="contained"
+						onPress={async () => {
+							if (displayCoin) {
+								await handleTradeNavigation(
+									displayCoin,
+									null,
+									showToast,
+									navigation.navigate
+								);
+							}
+						}}
+						style={styles.tradeButton}
+						testID="trade-button"
+						disabled={isLoadingDetails}
+					>
+						{isLoadingDetails ? 'Loading...' : `Trade ${displayCoin?.symbol || ''}`}
+					</Button>
 				</View>
-			</SafeAreaView>
-		) : null // Should be caught by earlier checks, but as a final fallback.
+			</View>
+		</SafeAreaView>
 	);
 };
 

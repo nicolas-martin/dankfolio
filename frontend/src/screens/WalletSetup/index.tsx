@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, TextInput, ActivityIndicator, ScrollView, TouchableOpacity, Image, Linking } from 'react-native';
-import { useTheme, IconButton, Button as PaperButton } from 'react-native-paper';
+import { View, Text, TextInput, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { useTheme, IconButton } from 'react-native-paper';
 import { createStyles } from './styles';
 import { storeCredentials, base64ToBase58PrivateKey } from './scripts';
 import { WalletSetupScreenProps } from './types';
@@ -9,7 +9,7 @@ import { useToast } from '@/components/Common/Toast';
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
 import { usePortfolioStore } from '@store/portfolio';
-import { useWalletSetupLogic, WELCOME_TITLE, WELCOME_DESC, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, TERMS_TEXT, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
+import { useWalletSetupLogic, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
 import { env } from '@utils/env';
 import TermsModal from '@/components/Common/TermsModal';

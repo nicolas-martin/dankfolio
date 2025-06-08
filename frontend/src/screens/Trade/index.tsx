@@ -22,9 +22,7 @@ import {
 	startPolling,
 	stopPolling,
 	handleSwapCoins as swapCoinsUtil,
-	QUOTE_DEBOUNCE_MS,
-	PRICE_REFRESH_INTERVAL_MS,
-	getCoinPrices
+	QUOTE_DEBOUNCE_MS
 } from './trade_scripts';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { SOLANA_ADDRESS } from '@/utils/constants';

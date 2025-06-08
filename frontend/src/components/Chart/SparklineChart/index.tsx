@@ -5,7 +5,6 @@ import {
   Path,
   Skia,
   Line,
-  DashPathEffect,
   LinearGradient,
   vec,
 } from '@shopify/react-native-skia';
@@ -22,14 +21,14 @@ interface SparklineChartProps {
 import { Text } from 'react-native';
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    overflow: 'hidden',
-  },
   center: {
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  container: {
+    backgroundColor: 'transparent',
+    flex: 1,
+    overflow: 'hidden',
   },
 });
 

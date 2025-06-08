@@ -66,8 +66,8 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
     },
     rightSection: {
         alignItems: 'flex-end',
-        justifyContent: 'center',
         flex: 0.25,
+        justifyContent: 'center',
         minWidth: 0,
     },
     price: {
@@ -147,16 +147,16 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
 
     // Styles for Sparkline (positioned in the middle)
     sparklineContainer: {
+        alignItems: 'center',
         flex: 0.4,
         height: 36,
-        alignItems: 'center',
         justifyContent: 'center',
     },
     sparklinePlaceholder: {
-        width: actualCardWidth * 0.35,
-        height: 20,
         backgroundColor: theme.colors.surfaceDisabled,
         borderRadius: 4,
+        height: 20,
+        width: actualCardWidth * 0.35,
     },
 	});
 };
