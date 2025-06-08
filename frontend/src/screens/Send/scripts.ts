@@ -1,3 +1,4 @@
+import React from 'react';
 import { TokenTransferFormData } from './types';
 import { Wallet, Coin } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
@@ -187,7 +188,7 @@ export const pollTransactionStatus = async (
 			if (wallet) {
 				usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
 			}
-			showToast({ type: 'success', message: 'Transfer finalized successfully!' });
+			// Removed toast notification - status modal already shows finalization
 		} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') {
 			logger.info(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization (Send Screen)...`, { txHash });
 			setPollingStatus('confirmed');
@@ -198,7 +199,7 @@ export const pollTransactionStatus = async (
 	} catch (error: unknown) {
 		logger.exception(error, { functionName: 'pollTransactionStatus', context: 'SendScreen', params: { txHash } });
 		setPollingStatus('failed');
-		setPollingError(error?.message || 'Failed to fetch transaction status');
+		setPollingError(error instanceof Error ? error.message : 'Failed to fetch transaction status');
 		stopPollingFn();
 	}
 };

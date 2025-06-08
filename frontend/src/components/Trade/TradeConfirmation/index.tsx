@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import { View, Dimensions } from 'react-native';
 import { Text, Button, useTheme } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';

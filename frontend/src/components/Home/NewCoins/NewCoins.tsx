@@ -3,7 +3,6 @@ import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
-import { LoadingAnimation } from '../../Common/Animations';
 import ShimmerPlaceholder from '../../Common/ShimmerPlaceholder';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';

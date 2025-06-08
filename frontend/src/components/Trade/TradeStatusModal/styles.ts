@@ -38,88 +38,102 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	// Status Section
 	statusSection: {
 		alignItems: 'center',
-		marginBottom: 20,
+		marginBottom: 32,
+		paddingHorizontal: 20,
 	},
 	statusIconContainer: {
 		alignItems: 'center',
-		borderRadius: 28,
-		height: 56,
+		borderRadius: 40,
+		height: 80,
 		justifyContent: 'center',
-		marginBottom: 12,
-		width: 56,
+		marginBottom: 20,
+		width: 80,
+		elevation: 4,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.1,
+		shadowRadius: 8,
 	},
 	statusIconLoading: {
 		backgroundColor: theme.colors.surfaceVariant,
 	},
 	statusIconSuccess: {
-		backgroundColor: '#E8F5E8',
+		backgroundColor: '#4CAF50',
 	},
 	statusIconError: {
-		backgroundColor: theme.colors.errorContainer,
+		backgroundColor: theme.colors.error,
 	},
 	statusIconWarning: {
-		backgroundColor: '#FFF3E0',
+		backgroundColor: '#FF9800',
 	},
 	statusText: {
-		fontSize: 16,
-		fontWeight: '600',
-		marginBottom: 6,
+		fontSize: 20,
+		fontWeight: '700',
+		marginBottom: 8,
 		textAlign: 'center',
 	},
 	statusTextLoading: {
 		color: theme.colors.onSurface,
 	},
 	statusTextSuccess: {
-		color: '#2E7D32',
+		color: '#4CAF50',
 	},
 	statusTextError: {
 		color: theme.colors.error,
 	},
 	statusTextWarning: {
-		color: '#F57C00',
+		color: '#FF9800',
 	},
 	statusDescription: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 13,
-		lineHeight: 18,
+		fontSize: 14,
+		lineHeight: 20,
 		textAlign: 'center',
+		opacity: 0.8,
 	},
 
 	// Progress Section - Always visible when in progress
 	progressSection: {
-		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 12,
-		marginBottom: 16,
-		padding: 16,
+		backgroundColor: theme.colors.surface,
+		borderRadius: 16,
+		marginBottom: 24,
+		padding: 20,
 		width: '100%',
+		borderWidth: 1,
+		borderColor: theme.colors.outline,
 	},
 	progressHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 12,
+		marginBottom: 16,
 		minHeight: 20,
 	},
 	progressLabel: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 13,
+		color: theme.colors.onSurface,
+		fontSize: 14,
 		fontWeight: '600',
 		marginRight: 16,
 	},
 	confirmationsText: {
-		color: theme.colors.primary,
-		fontSize: 13,
-		fontWeight: '600',
+		// color: '#4CAF50',
+		fontSize: 14,
+		fontWeight: '700',
+		// backgroundColor: '#E8F5E8',
+		paddingHorizontal: 12,
+		paddingVertical: 4,
+		borderRadius: 12,
+		overflow: 'hidden',
 	},
 	progressBar: {
-		backgroundColor: theme.colors.outline,
-		borderRadius: 4,
-		height: 8,
+		backgroundColor: '#E0E0E0',
+		borderRadius: 6,
+		height: 12,
 		overflow: 'hidden',
 	},
 	progressFill: {
-		backgroundColor: theme.colors.primary,
-		borderRadius: 4,
+		backgroundColor: '#4CAF50',
+		borderRadius: 6,
 		height: '100%',
 	},
 
@@ -144,10 +158,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 
 	// Transaction Details
 	transactionSection: {
-		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 12,
-		marginBottom: 16,
-		padding: 14,
+		marginBottom: 24,
 		width: '100%',
 	},
 	transactionHeader: {
@@ -180,7 +191,11 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontWeight: '500',
 	},
 	linkButton: {
-		borderRadius: 8,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: '#2196F3',
+		backgroundColor: 'transparent',
+		marginHorizontal: 0,
 	},
 
 	// Error Section
@@ -214,16 +229,18 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 
 	// Actions
 	actionSection: {
-		marginTop: 4,
+		marginTop: 8,
 		width: '100%',
 	},
 	closeButton: {
-		borderRadius: 12,
-		elevation: 2,
-		shadowColor: theme.colors.primary,
+		borderRadius: 16,
+		elevation: 3,
+		shadowColor: '#000',
 		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.2,
+		shadowOpacity: 0.1,
 		shadowRadius: 4,
+		backgroundColor: '#4CAF50',
+		paddingVertical: 8,
 	},
 
 	// Loading State

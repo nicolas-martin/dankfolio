@@ -153,7 +153,7 @@ export const pollTradeStatus = async (
 			if (wallet) {
 				usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
 			}
-			showToast({ type: 'success', message: 'Trade finalized successfully!' });
+			// Removed toast notification - status modal already shows finalization
 		} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') {
 			logger.info(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization...`, { txHash });
 			setPollingStatus('confirmed');

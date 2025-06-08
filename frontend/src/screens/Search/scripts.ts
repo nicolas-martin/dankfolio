@@ -2,7 +2,6 @@ import { SearchFilters } from './types';
 import { grpcApi } from '@/services/grpcApi';
 import { Coin } from '@/types';
 import { useCoinStore } from '@store/coins';
-import { useToast } from '@/components/Common/Toast';
 import { NavigationProp } from '@react-navigation/native';
 import { formatPrice, formatVolume, formatPercentage } from '@/utils/numberFormat';
 import { logger } from '@/utils/logger';
