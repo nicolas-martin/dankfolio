@@ -1,3 +1,4 @@
+
 .PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build backend-generate-mocks frontend-lint proto db-migrate-up psql db-reset
 
 # Variables
@@ -5,6 +6,7 @@ BACKEND_DIR := backend
 MOBILE_DIR := frontend
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 LOG_FILE := $(ROOT_DIR)/$(BACKEND_DIR)/server.log
+MOCKERY_VERSION := v3.3.2
 
 # prod-build: backend-test
 prod-build:
@@ -51,7 +53,16 @@ frontend-lint:
 	cd frontend && yarn lint
 
 backend-generate-mocks:
-	@echo "Generating mocks..."
+	@echo "🔍 Checking mockery version..."
+	@CURRENT_MOCKERY_VERSION=$$(mockery --version 2>/dev/null); \
+	if [ -z "$$CURRENT_MOCKERY_VERSION" ] || [ "$$CURRENT_MOCKERY_VERSION" != "version $(MOCKERY_VERSION)" ]; then \
+		echo "mockery not found or version mismatch. Required: $(MOCKERY_VERSION). Found: $$CURRENT_MOCKERY_VERSION"; \
+		echo "Installing/Updating mockery to $(MOCKERY_VERSION)..."; \
+		go install github.com/vektra/mockery/v3@$(MOCKERY_VERSION); \
+	else \
+		echo "✅ mockery version $(MOCKERY_VERSION) already installed."; \
+	fi
+	@echo " mocks..."
 	cd backend && mockery
 
 backend-build: proto ## Check backend Go code compilation
@@ -167,3 +178,4 @@ help:
 	@echo "  \033[33mmake db-migrate-up\033[0m - Apply database migrations"
 	@echo "  \033[33mmake db-reset\033[0m    - Reset the database"
 	@echo "  \033[33mmake psql\033[0m          - Connect to Postgres using DB_URL from .env"
+
