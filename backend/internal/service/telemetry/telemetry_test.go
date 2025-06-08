@@ -8,121 +8,123 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-// MockAPICallTracker is a mock implementation of the APICallTracker interface.
-type MockAPICallTracker struct {
-	mock.Mock
+// mockAPICallTracker is a mock implementation of APICallTracker for testing.
+type mockAPICallTracker struct {
+	stats map[string]map[string]int
 }
 
-func (m *MockAPICallTracker) TrackCall(serviceName, endpointName string) {
-	m.Called(serviceName, endpointName)
+func (m *mockAPICallTracker) TrackCall(serviceName, endpointName string) {
+	if m.stats == nil {
+		m.stats = make(map[string]map[string]int)
+	}
+	if _, ok := m.stats[serviceName]; !ok {
+		m.stats[serviceName] = make(map[string]int)
+	}
+	m.stats[serviceName][endpointName]++
 }
 
-func (m *MockAPICallTracker) GetStats() map[string]map[string]int {
-	args := m.Called()
-	return args.Get(0).(map[string]map[string]int)
+func (m *mockAPICallTracker) GetStats() map[string]map[string]int {
+	if m.stats == nil {
+		return make(map[string]map[string]int)
+	}
+	clone := make(map[string]map[string]int)
+	for k, v := range m.stats {
+		clone[k] = v
+	}
+	return clone
 }
 
-// NewMockAPICallTracker creates a new mock APICallTracker
-func NewMockAPICallTracker() *MockAPICallTracker {
-	return &MockAPICallTracker{}
-}
+var _ clients.APICallTracker = (*mockAPICallTracker)(nil)
 
-func TestLogAPIStats_NoStats(t *testing.T) {
-	mockTracker := NewMockAPICallTracker()
-	var logOutput bytes.Buffer
-	logger := slog.New(slog.NewTextHandler(&logOutput, nil))
-
-	mockTracker.On("GetStats").Return(map[string]map[string]int{})
-
-	telemetry.LogAPIStats(mockTracker, logger)
-
-	assert.Contains(t, logOutput.String(), "No API calls tracked yet.")
-	mockTracker.AssertExpectations(t)
-}
-
-func TestLogAPIStats_WithStats(t *testing.T) {
-	mockTracker := NewMockAPICallTracker()
-	var logOutput bytes.Buffer
-	// Using a JSON handler to make parsing attributes easier, though TextHandler with string contains would also work
-	logger := slog.New(slog.NewJSONHandler(&logOutput, nil))
-
-	stats := map[string]map[string]int{
-		"service1": {
-			"endpointA": 10,
-			"endpointB": 5,
+func TestLogAPIStats(t *testing.T) {
+	tests := []struct {
+		name                   string
+		mockStats              map[string]map[string]int
+		expectedLogMsg         string
+		expectedStatSubstrings []string
+		expectStatsAttribute   bool
+	}{
+		{
+			name:                 "No API calls",
+			mockStats:            map[string]map[string]int{},
+			expectedLogMsg:       "No API calls tracked yet.",
+			expectStatsAttribute: false,
 		},
-		"service2": {
-			"endpointX": 20,
+		{
+			name: "With API calls",
+			mockStats: map[string]map[string]int{
+				"solana":   {"GetTokenAccountsByOwner": 4, "AnotherSolEndpoint": 1},
+				"jupiter":  {
+					"/tokens/v1/new":          1,
+					"/tokens/v1/token/ID_ABC": 3, // Raw
+					"/tokens/v1/token/ID_XYZ": 2, // Raw
+					"/other/jupiter/path":     1,
+				},
+				"internal": {"checkStatus": 100, "updateCache": 50},
+			},
+			expectedLogMsg: "API Call Statistics",
+			expectedStatSubstrings: []string{
+				// Sorted alphabetically
+				"service=internal, endpoint=checkStatus, count=100",
+				"service=internal, endpoint=updateCache, count=50",
+				"service=jupiter, endpoint=/other/jupiter/path, count=1",
+				"service=jupiter, endpoint=/tokens/v1/new, count=1",
+				"service=jupiter, endpoint=/tokens/v1/token, count=5", // Aggregated
+				"service=solana, endpoint=AnotherSolEndpoint, count=1",
+				"service=solana, endpoint=GetTokenAccountsByOwner, count=4",
+			},
+			expectStatsAttribute: true,
 		},
 	}
-	mockTracker.On("GetStats").Return(stats)
 
-	telemetry.LogAPIStats(mockTracker, logger)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			handler := slog.NewTextHandler(&buf, nil)
+			logger := slog.New(handler)
 
-	outputStr := logOutput.String()
-	t.Log("Log Output:\n", outputStr) // Print log output for debugging
+			tracker := &mockAPICallTracker{stats: tt.mockStats}
 
-	// Check for the initial "API Call Statistics:" message
-	assert.Contains(t, outputStr, "\"msg\":\"API Call Statistics:\"")
+			telemetry.LogAPIStats(tracker, logger)
 
-	// Check for each stat entry by verifying the presence of key components.
-	// The exact order of JSON fields within a log line isn't guaranteed,
-	// and the order of log lines for different stats isn't guaranteed either if maps are iterated.
-	assert.Contains(t, outputStr, "\"msg\":\"API Usage\"")
-	assert.Contains(t, outputStr, "\"service\":\"service1\"")
-	assert.Contains(t, outputStr, "\"endpoint\":\"endpointA\"")
-	assert.Contains(t, outputStr, "\"count\":10")
+			logOutput := strings.TrimSpace(buf.String())
 
-	assert.Contains(t, outputStr, "\"service\":\"service1\"")
-	assert.Contains(t, outputStr, "\"endpoint\":\"endpointB\"")
-	assert.Contains(t, outputStr, "\"count\":5")
-
-	assert.Contains(t, outputStr, "\"service\":\"service2\"")
-	assert.Contains(t, outputStr, "\"endpoint\":\"endpointX\"")
-	assert.Contains(t, outputStr, "\"count\":20")
-
-	mockTracker.AssertExpectations(t)
-}
-
-// Ensure MockAPICallTracker implements the interface if it's defined in the clients package
-var _ clients.APICallTracker = (*MockAPICallTracker)(nil)
-
-// Helper to create a simple text logger for easier string matching if needed
-func newTestTextLogger(buf *bytes.Buffer) *slog.Logger {
-	return slog.New(slog.NewTextHandler(buf, &slog.HandlerOptions{
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// Remove time for consistent log output in tests
-			if a.Key == slog.TimeKey {
-				return slog.Attr{}
+			if !strings.Contains(logOutput, "msg=\""+tt.expectedLogMsg+"\"") {
+				t.Errorf("Log output does not contain expected message part 'msg=\"%s\"'. Got: %s", tt.expectedLogMsg, logOutput)
 			}
-			return a
-		},
-	}))
-}
 
-func TestLogAPIStats_WithStats_TextLogger(t *testing.T) {
-	mockTracker := NewMockAPICallTracker()
-	var logOutput bytes.Buffer
-	logger := newTestTextLogger(&logOutput) // Using the helper for simpler text matching
+			if tt.expectStatsAttribute {
+				if !strings.Contains(logOutput, "stats=\"") {
+					t.Errorf("Log output does not contain 'stats=\"' attribute key. Got: %s", logOutput)
+					return
+				}
+				parts := strings.SplitN(logOutput, "stats=\"", 2)
+				if len(parts) < 2 {
+					t.Errorf("Could not split log output by 'stats=\"'. Got: %s", logOutput)
+					return
+				}
+				statsValuePart := parts[1]
+				endQuoteIndex := strings.Index(statsValuePart, "\"")
+				if endQuoteIndex == -1 {
+					t.Errorf("Could not find closing quote for 'stats' attribute value. Got: %s", statsValuePart)
+					return
+				}
+				statsValue := statsValuePart[:endQuoteIndex]
 
-	stats := map[string]map[string]int{
-		"serviceA": {
-			"ep1": 1,
-			"ep2": 2,
-		},
+				for _, sub := range tt.expectedStatSubstrings {
+					if !strings.Contains(statsValue, sub) {
+						// Modified Errorf call
+						t.Errorf("Stats value does not contain expected substring. Value: %s, Substring: %s, FullLog: %s", statsValue, sub, logOutput)
+					}
+				}
+
+			} else {
+				if strings.Contains(logOutput, "stats=\"") {
+					t.Errorf("Expected no 'stats' attribute, but it was found. Got: %s", logOutput)
+				}
+			}
+		})
 	}
-	mockTracker.On("GetStats").Return(stats)
-
-	telemetry.LogAPIStats(mockTracker, logger)
-
-	output := logOutput.String()
-	assert.True(t, strings.Contains(output, "msg=\"API Call Statistics:\""), "Missing overall title log")
-	assert.True(t, strings.Contains(output, "msg=\"API Usage\" service=serviceA endpoint=ep1 count=1"), "Missing log for serviceA/ep1")
-	assert.True(t, strings.Contains(output, "msg=\"API Usage\" service=serviceA endpoint=ep2 count=2"), "Missing log for serviceA/ep2")
-
-	mockTracker.AssertExpectations(t)
 }
