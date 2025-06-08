@@ -54,7 +54,7 @@ func NewClient(httpClient *http.Client, url, key string, tracker clients.APICall
 func (c *Client) GetCoinInfo(ctx context.Context, tokenAddress string) (*CoinListInfo, error) {
 	url := fmt.Sprintf("%s%s/%s", c.baseURL, tokenInfoEndpoint, tokenAddress) // Inline URL formatting
 
-	tokenInfoData, err := GetRequest[CoinListInfo](c, ctx, url)
+	tokenInfoData, _, err := GetRequest[CoinListInfo](c, ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get coin info for %s: %w", tokenAddress, err)
 	}
@@ -72,7 +72,7 @@ func (c *Client) GetCoinPrices(ctx context.Context, tokenAddresses []string) (ma
 
 	slog.Debug("Fetching token prices from Jupiter", "url", url)
 
-	resultData, err := GetRequest[PriceResponse](c, ctx, url)
+	resultData, _, err := GetRequest[PriceResponse](c, ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token prices: %w", err)
 	}
@@ -116,13 +116,13 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 
 	fullURL := fmt.Sprintf("%s/swap/v1/quote?%s", c.baseURL, queryParams.Encode())
 
-	quoteRespData, err := GetRequest[QuoteResponse](c, ctx, fullURL)
+	quoteRespData, rawBody, err := GetRequest[QuoteResponse](c, ctx, fullURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch quote: %w", err)
 	}
 
 	// Store the raw JSON payload in the struct for later use
-	quoteRespData.RawPayload = quoteRespData.RawPayload // Assign the raw body
+	quoteRespData.RawPayload = rawBody // Assign the raw body
 
 	slog.Debug("Raw Jupiter quote payload", "payload", string(quoteRespData.RawPayload))
 
@@ -141,7 +141,7 @@ func (c *Client) GetAllCoins(ctx context.Context) (*CoinListResponse, error) {
 		c.httpClient.Timeout = originalTimeout // Restore original timeout
 	}()
 
-	tokensData, err := GetRequest[[]CoinListInfo](c, ctx, url)
+	tokensData, _, err := GetRequest[[]CoinListInfo](c, ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token list: %w", err)
 	}
@@ -192,7 +192,7 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 
 	slog.Debug("Fetching new tokens from Jupiter", "url", fullURL)
 
-	newTokenRespData, err := GetRequest[[]NewTokenInfo](c, ctx, fullURL)
+	newTokenRespData, _, err := GetRequest[[]NewTokenInfo](c, ctx, fullURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch new token list: %w", err)
 	}
@@ -293,7 +293,7 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 }
 
 // GetRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response
-func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, error) {
+func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, []byte, error) {
 	var zeroT T // Zero value for T to return in error cases
 	// Extract endpointName from URL
 	parsedURL, err := url.Parse(requestURL)
@@ -312,7 +312,7 @@ func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, er
 
 	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil) // Method is hardcoded to GET
 	if err != nil {
-		return zeroT, fmt.Errorf("failed to create GET request: %w", err)
+		return zeroT, nil, fmt.Errorf("failed to create GET request: %w", err)
 	}
 
 	// Add common headers here if needed in the future
@@ -325,18 +325,18 @@ func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, er
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return zeroT, fmt.Errorf("failed to perform GET request to %s: %w", requestURL, err)
+		return zeroT, nil, fmt.Errorf("failed to perform GET request to %s: %w", requestURL, err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body) // Read body once
 	if err != nil {
-		return zeroT, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
+		return zeroT, nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		// Return respBody as it might contain useful error info from the API
-		return zeroT, fmt.Errorf("GET request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
+		return zeroT, respBody, fmt.Errorf("GET request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
 	}
 
 	var responseObject T
@@ -346,10 +346,10 @@ func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, er
 			"error", err,
 			"raw_body", string(respBody)) // Log raw body on unmarshal error
 		// Return respBody as it caused the unmarshal error
-		return zeroT, fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
+		return zeroT, respBody, fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
 	}
 
-	return responseObject, nil
+	return responseObject, respBody, nil
 }
 
 // PostRequest is a helper function to perform an HTTP POST request with a JSON body, check status, and unmarshal response
