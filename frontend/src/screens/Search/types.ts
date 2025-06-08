@@ -6,12 +6,7 @@ import { SearchSortByOption } from '@/services/grpc/model';
 
 export type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Search'>;
 
-export type SearchScreenRouteProp = RouteProp<{
-	Search: {
-		coin?: Coin;
-		solCoin?: Coin;
-	};
-}, 'Search'>;
+export type SearchScreenRouteProp = RouteProp<RootStackParamList, 'Search'>;
 
 export interface SearchFilters {
 	query: string;

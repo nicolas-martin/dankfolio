@@ -6,6 +6,7 @@ import { useToast } from '@/components/Common/Toast';
 import { NavigationProp } from '@react-navigation/native';
 import { formatPrice, formatVolume, formatPercentage } from '@/utils/numberFormat';
 import { logger } from '@/utils/logger';
+import { RootStackParamList } from '@/types/navigation';
 
 export const DEBOUNCE_DELAY = 1000; // ms
 
@@ -60,11 +61,11 @@ export const formatTokenBalance = (balance: number, decimals: number): string =>
 };
 
 export const handleSearchPress = (
-	navigation: NavigationProp<unknown>,
+	navigation: NavigationProp<RootStackParamList>,
 	searchQuery: string
 ) => {
 	if (!searchQuery.trim()) return;
-	navigation.navigate('Search', { searchQuery });
+	navigation.navigate('Search', { defaultSortBy: 'volume24h', defaultSortDesc: true });
 };
 
 export const getEnrichedCoinData = async (
@@ -80,27 +81,25 @@ export const getEnrichedCoinData = async (
 	}
 };
 
-export const handleCoinNavigation = async (
+export const handleCoinNavigation = (
 	coin: Coin,
-	navigation: NavigationProp<unknown>,
-	toast = useToast()
-): Promise<void> => {
-	try {
-		const enrichedCoin = await getEnrichedCoinData(coin, useCoinStore.getState().getCoinByID);
-		logger.breadcrumb({
-			category: 'navigation',
-			message: 'Navigating to CoinDetail from Search',
-			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress }
-		});
-		navigation.navigate('CoinDetail', { coin: enrichedCoin });
-	} catch (error) {
-		toast.showToast({
-			type: 'error',
-			message: 'Failed to load coin data',
-			duration: 3000
-		});
-		logger.exception(error, { functionName: 'handleCoinNavigation', params: { coinMint: coin.mintAddress } });
-	}
+	navigation: NavigationProp<RootStackParamList>
+): void => {
+	// Navigate immediately with the basic coin data
+	logger.breadcrumb({
+		category: 'navigation',
+		message: 'Navigating to CoinDetail from Search (immediate navigation)',
+		data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress }
+	});
+	
+	navigation.navigate('CoinDetail', { coin: coin });
+	
+	// Trigger background fetch to update the coin data in the store
+	// The CoinDetail screen will automatically update when this completes
+	getEnrichedCoinData(coin, useCoinStore.getState().getCoinByID).catch(error => {
+		logger.error(`[Search] Background fetch failed for ${coin.symbol}:`, { error, coinMint: coin.mintAddress });
+		// Note: We don't show toast here since user has already navigated away
+	});
 };
 
 // Re-export formatting functions with any necessary customization

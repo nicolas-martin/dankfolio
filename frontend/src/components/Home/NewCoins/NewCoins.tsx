@@ -36,28 +36,23 @@ const NewCoins: React.FC = () => {
 	}, [newlyListedCoins]);
 
 
-	const handleCoinPress = async (coin: Coin) => {
-		try {
-			const coinDetails = await getCoinByID(coin.mintAddress, true); // Changed from enrichCoin
-			if (coinDetails) {
-				logger.breadcrumb({
-					category: 'navigation',
-					message: 'Pressed coin from NewCoins, fetched details and navigating', // Updated message
-					data: { coinSymbol: coinDetails.symbol, coinMint: coinDetails.mintAddress },
-				});
-				navigation.navigate('CoinDetail', { 
-					coin: coinDetails
-				});
-			} else {
-				// Log failure to fetch details
-				logger.warn('[NewCoins] Failed to fetch coin details with getCoinByID, not navigating', { coinSymbol: coin.symbol, coinMint: coin.mintAddress });
-				showToast({ type: 'error', message: 'Failed to load coin details. Please try again.' });
-			}
-		} catch (error) {
-			// Log error during getCoinByID process
-			logger.error(`[NewCoins] Error during getCoinByID for ${coin.symbol}:`, { error, coinMint: coin.mintAddress });
-			showToast({ type: 'error', message: 'An error occurred. Please try again.' });
-		}
+	const handleCoinPress = (coin: Coin) => {
+		// Navigate immediately with the basic coin data
+		logger.breadcrumb({
+			category: 'navigation',
+			message: 'Navigating to CoinDetail from NewCoins (immediate navigation)',
+			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress },
+		});
+		
+		navigation.navigate('CoinDetail', { 
+			coin: coin
+		});
+		
+		// Trigger background fetch to update the coin data in the store
+		// The CoinDetail screen will automatically update when this completes
+		getCoinByID(coin.mintAddress, true).catch(error => {
+			logger.error(`[NewCoins] Background fetch failed for ${coin.symbol}:`, { error, coinMint: coin.mintAddress });
+		});
 	};
 
 	const renderItem = useCallback(({ item, index }: { item: Coin; index: number }) => {

@@ -3,7 +3,7 @@ import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-
 import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 // Imports for refactored fetchPriceHistory
-import { fetchPriceHistory, TIMEFRAMES } from '@/screens/CoinDetail/coindetail_scripts';
+import { fetchPriceHistory } from '@/screens/CoinDetail/coindetail_scripts';
 // Keep this import if TIMEFRAME_CONFIG uses it, or if directly needed.
 // For now, assuming TIMEFRAME_CONFIG provides the correctly typed enum.
 // Matching coindetail_scripts

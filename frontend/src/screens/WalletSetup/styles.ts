@@ -62,12 +62,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		textAlign: 'center',
 	},
 	termsContainer: {
-		padding: 10,
+		backgroundColor: 'transparent',
+		borderBottomColor: theme.colors.primary,
+		borderBottomWidth: 1,
 		borderRadius: 8,
 		marginTop: 24,
-		borderBottomWidth: 1,
-		borderBottomColor: theme.colors.primary,
-		backgroundColor: 'transparent',
+		padding: 10,
 	},
 	recoveryInput: {
 		backgroundColor: theme.colors.surface,
@@ -154,10 +154,10 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		width: 24,
 	},
 	debugText: {
-		color: theme.colors.onSurfaceVariant,
 		alignItems: 'center',
-		marginBottom: 16,
 		backgroundColor: theme.colors.surface,
+		color: theme.colors.onSurfaceVariant,
+		marginBottom: 16,
 		padding: 30,
 		paddingLeft: 60
 	},
@@ -179,12 +179,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	// New image container styles
 	neonBarImageContainer: {
 		height: 300,
-		width: '100%',
 		overflow: 'hidden',
+		width: '100%',
 	},
 	neonBarImage: {
-		width: '100%',
 		height: '100%',
+		width: '100%',
 	},
 	welcomeContent: {
 		alignItems: 'center',
@@ -266,8 +266,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	// Import wallet screen specific styles
 	importContainer: {
-		flex: 1,
 		backgroundColor: theme.colors.background,
+		flex: 1,
 	},
 	importContent: {
 		alignItems: 'center',
@@ -276,11 +276,11 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		paddingTop: 40,
 	},
 	importRecoveryInput: {
+		backgroundColor: theme.colors.surface,
+		borderColor: theme.colors.outline,
 		borderRadius: 12,
 		borderWidth: 1,
-		borderColor: theme.colors.outline,
 		color: theme.colors.onSurface,
-		backgroundColor: theme.colors.surface,
 		flex: 1,
 		fontSize: 16,
 		marginTop: 32,

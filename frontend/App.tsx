@@ -49,6 +49,7 @@ import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { configureReanimatedLogger } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import Navigation from '@components/Common/Navigation';
 import { themes, extendedThemeProperties } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
@@ -217,20 +218,22 @@ const App: React.FC = () => {
 			<SafeAreaProvider>
 				<GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
 					<ToastProvider>
-						<View style={styles.container}>
-							<StatusBar style="auto" />
-							{needsWalletSetup ? (
-								(logger.breadcrumb({ message: 'App: Navigating to WalletSetupScreen', category: 'navigation' }),
-									<WalletSetupScreen
-										onWalletSetupComplete={handleWalletSetupComplete}
-										onCreateWallet={() => { }}
-										onImportWallet={() => { }}
-									/>)
-							) : (
-								(logger.breadcrumb({ message: 'App: Navigating to MainTabs', category: 'navigation' }),
-									<Navigation />)
-							)}
-						</View>
+						<BottomSheetModalProvider>
+							<View style={styles.container}>
+								<StatusBar style="auto" />
+								{needsWalletSetup ? (
+									(logger.breadcrumb({ message: 'App: Navigating to WalletSetupScreen', category: 'navigation' }),
+										<WalletSetupScreen
+											onWalletSetupComplete={handleWalletSetupComplete}
+											onCreateWallet={() => { }}
+											onImportWallet={() => { }}
+										/>)
+								) : (
+									(logger.breadcrumb({ message: 'App: Navigating to MainTabs', category: 'navigation' }),
+										<Navigation />)
+								)}
+							</View>
+						</BottomSheetModalProvider>
 					</ToastProvider>
 				</GestureHandlerRootView>
 			</SafeAreaProvider>

@@ -110,8 +110,6 @@ const TabNavigator = () => {
 };
 
 const Navigation = () => {
-	const { themeType, toggleTheme } = useThemeStore();
-	
 	return (
 		<NavigationContainer onStateChange={navigationMiddleware}>
 			<Stack.Navigator
