@@ -3,6 +3,7 @@ export type PollingStatus = 'polling' | 'confirmed' | 'finalized' | 'failed' | '
 export interface TradeStatusModalProps {
 	isVisible: boolean;
 	onClose: () => void;
+	onTryAgain?: () => void;
 	txHash: string | null;
 	status: PollingStatus;
 	confirmations: number;
