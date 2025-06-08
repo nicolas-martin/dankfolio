@@ -3,7 +3,7 @@ import { View, Animated, Dimensions } from 'react-native';
 import { Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
-import { LoadingAnimation, SuccessAnimation, ErrorAnimation } from '../../Common/Animations';
+import { LoadingAnimation, ErrorAnimation, SuccessAnimation } from '../../Common/Animations';
 import { TradeStatusModalProps } from './types';
 import { createStyles } from './styles';
 import { openSolscanUrl } from '@/utils/url';
@@ -16,7 +16,6 @@ import {
 	getConfirmationProgress,
 	formatConfirmationsText,
 } from './scripts';
-import { formatAddress } from '@/utils/numberFormat';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -114,11 +113,11 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	const getStatusIcon = () => {
 		switch (statusType) {
 			case 'success':
-				return <SuccessAnimation size={36} loop={false} />;
+				return <Icon source="check" size={32} color="#FFFFFF" />;
 			case 'error':
-				return <ErrorAnimation size={36} loop={false} />;
-			case 'warning': // Keep existing icon for warning, or replace if a suitable Lottie is available
-				return <Icon source="clock" size={28} color="#F57C00" />;
+				return <Icon source="close" size={32} color="#FFFFFF" />;
+			case 'warning':
+				return <Icon source="clock" size={32} color="#FFFFFF" />;
 			default: // Corresponds to loading/processing
 				return <LoadingAnimation size={36} />;
 		}
@@ -196,7 +195,9 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				</View>
 				{isInProgress && (
 					<View style={styles.progressIndicator}>
-						<ActivityIndicator size={12} color={theme.colors.primary} />
+						{false && (
+							<ActivityIndicator size={12} color={theme.colors.primary} />
+						)}
 						<Text style={styles.progressText}>
 							{displayStatus === 'polling' ? 'Confirming...' : 'Processing...'}
 						</Text>
@@ -211,18 +212,12 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 		return (
 			<View style={styles.transactionSection}>
-				<Text style={styles.transactionHeader}>Transaction Details</Text>
-				<View style={styles.hashContainer}>
-					<Text style={styles.hashLabel}>Transaction Hash</Text>
-					<Text style={styles.hashText} selectable>
-						{formatAddress(txHash, 8, 8)}
-					</Text>
-				</View>
 				<Button
 					icon="open-in-new"
 					mode="outlined"
 					onPress={() => openSolscanUrl(txHash)}
 					style={styles.linkButton}
+					textColor="#2196F3"
 				>
 					View on Solscan
 				</Button>
@@ -264,7 +259,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	return (
 		<BottomSheetModal
 			ref={bottomSheetModalRef}
-			snapPoints={[SCREEN_HEIGHT * 0.6]}
+			snapPoints={[SCREEN_HEIGHT * 0.75]}
 			onDismiss={isFinal ? onClose : undefined}
 			backgroundStyle={{ backgroundColor: theme.colors.surface }}
 			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, SafeAreaView, FlatList, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
+import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
 import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
