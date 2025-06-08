@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
+import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native'; // Removed TouchableOpacity
 import { Text, useTheme, IconButton, Button, Icon } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
@@ -14,6 +14,7 @@ import {
 	CoinsIcon,
 	SendIcon,
 } from '@components/Common/Icons';
+// Removed ProfilePictureModal import
 import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
 import type { ProfileScreenNavigationProp } from './profile_types';
@@ -35,6 +36,9 @@ const Profile = () => {
 	// Use the theme store for theme management
 	const { themeType, toggleTheme, isLoading: isThemeLoading } = useThemeStore();
 	const isDarkTheme = themeType === 'neon';
+
+	// Removed state for profile picture modal
+	// const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed ProfileScreen' });
@@ -85,6 +89,7 @@ const Profile = () => {
 		<View style={styles.headerSection}>
 			<View style={styles.profileHeader}>
 				<View style={styles.profileIconContainer}>
+					{/* Removed TouchableOpacity wrapper */}
 					<ProfileIcon size={28} color={theme.colors.onSurface} />
 					<Text style={styles.profileTitle}>Portfolio</Text>
 				</View>
@@ -235,6 +240,7 @@ const Profile = () => {
 					</View>
 
 				</ScrollView>
+				{/* Removed ProfilePictureModal instance */}
 			</View>
 		</SafeAreaView>
 	);

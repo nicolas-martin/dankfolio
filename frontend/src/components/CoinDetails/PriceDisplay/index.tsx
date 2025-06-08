@@ -1,5 +1,5 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useState } from 'react'; // Added useState
+import { View, TouchableOpacity } from 'react-native'; // Added TouchableOpacity
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
 import { useToast } from '@components/Common/Toast';
@@ -9,12 +9,15 @@ import { createStyles } from './coindetails_styles';
 import { CachedImage } from '@/components/Common/CachedImage';
 import Odometer from '@components/Odometer';
 
+import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Added ImageZoomModal import
+
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	price, periodChange, valueChange, period, resolvedIconUrl, name, address, hoveredPoint,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
+	const [isZoomModalVisible, setIsZoomModalVisible] = useState(false); // Added state for modal
 
 	// Early return with a placeholder if any required values are invalid
 	if (isNaN(price) || price === null || price === undefined) {
@@ -23,13 +26,15 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			<View style={styles.container}>
 				{/* Header with coin info */}
 				<View style={styles.headerRow}>
-					<CachedImage
-						uri={resolvedIconUrl}
-						size={40}
-						borderRadius={20}
+					<TouchableOpacity onPress={() => setIsZoomModalVisible(true)} activeOpacity={0.8}>
+						<CachedImage
+							uri={resolvedIconUrl}
+							size={40}
+							borderRadius={20}
 						showLoadingIndicator={true}
 						style={styles.icon}
 					/>
+					</TouchableOpacity>
 					{name && (
 						<Text style={styles.nameText}>
 							{name}
@@ -67,13 +72,15 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 		<View style={styles.container}>
 			{/* Header with coin info */}
 			<View style={styles.headerRow}>
-				<CachedImage
-					uri={resolvedIconUrl}
-					size={40}
-					borderRadius={20}
+				<TouchableOpacity onPress={() => setIsZoomModalVisible(true)} activeOpacity={0.8}>
+					<CachedImage
+						uri={resolvedIconUrl}
+						size={40}
+						borderRadius={20}
 					showLoadingIndicator={true}
 					style={styles.icon}
 				/>
+				</TouchableOpacity>
 				{name && (
 					<Text style={styles.nameText}>
 						{name}
@@ -122,6 +129,11 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
                     {format(new Date(hoveredPoint.timestamp), "EEEE MMM d 'at' h:mm a")}
                 </Text>
             )} */}
+			<ImageZoomModal
+				isVisible={isZoomModalVisible}
+				onClose={() => setIsZoomModalVisible(false)}
+				imageUri={resolvedIconUrl}
+			/>
 		</View>
 	);
 };
