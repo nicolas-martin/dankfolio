@@ -24,6 +24,7 @@ type Store struct {
 	tradesRepo   db.Repository[model.Trade]
 	rawCoinsRepo db.Repository[model.RawCoin]
 	walletRepo   db.Repository[model.Wallet]
+	apiStatsRepo db.Repository[model.ApiStat] // Changed to generic repository
 }
 
 var _ db.Store = (*Store)(nil) // Compile-time check for interface implementation
@@ -37,6 +38,7 @@ func NewStoreWithDB(database *gorm.DB) *Store {
 		tradesRepo:   NewRepository[schema.Trade, model.Trade](database),
 		rawCoinsRepo: NewRepository[schema.RawCoin, model.RawCoin](database),
 		walletRepo:   NewRepository[schema.Wallet, model.Wallet](database),
+		apiStatsRepo: NewRepository[model.ApiStat, model.ApiStat](database), // Use generic repo; S=model.ApiStat, M=model.ApiStat
 	}
 }
 
@@ -68,9 +70,9 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env st
 	}
 
 	if enableAutoMigrate {
-		// Auto-migrate the schema
-		if err := db.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}); err != nil {
-			return nil, fmt.Errorf("failed to auto-migrate: %w", err)
+		// Auto-migrate the schema, now including model.ApiStat
+		if err := db.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}, &model.ApiStat{}); err != nil {
+			return nil, fmt.Errorf("failed to auto-migrate schemas: %w", err)
 		}
 	}
 
@@ -111,6 +113,10 @@ func (s *Store) Trades() db.Repository[model.Trade] {
 
 func (s *Store) RawCoins() db.Repository[model.RawCoin] {
 	return s.rawCoinsRepo
+}
+
+func (s *Store) ApiStats() db.Repository[model.ApiStat] { // Changed return type
+	return s.apiStatsRepo
 }
 
 // --- Custom Operations ---
