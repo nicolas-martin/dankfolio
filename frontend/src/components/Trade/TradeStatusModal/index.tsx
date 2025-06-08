@@ -3,7 +3,7 @@ import { View, Animated, Dimensions } from 'react-native';
 import { Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
-import { LoadingAnimation, ErrorAnimation, SuccessAnimation } from '../../Common/Animations';
+import { LoadingAnimation } from '../../Common/Animations';
 import { TradeStatusModalProps } from './types';
 import { createStyles } from './styles';
 import { openSolscanUrl } from '@/utils/url';
