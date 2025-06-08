@@ -73,13 +73,6 @@ backend-test: backend-generate-mocks
 	@echo "🧪 Running backend tests..."
 	cd backend && go test ./... -v
 
-cleanup:
-	DEPCHECK_OUTPUT=depcheck-output.txt
-	@echo "Running depcheck..."
-	@depcheck > $(DEPCHECK_OUTPUT)
-	@echo "Extracting unused dependencies..."
-	@./cleanup.sh < $(DEPCHECK_OUTPUT)
-
 clean-build:
 	@echo "🧹 Starting clean process..."
 	@echo "   - Removing ios/build directory..."
