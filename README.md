@@ -1,5 +1,37 @@
 # 🎮 Dankfolio
 
+## Environment Setup
+
+This project includes a setup script (`setup.sh`) to help you configure your development environment quickly.
+
+The script will attempt to:
+- Install the correct Node.js version using NVM.
+- Install frontend dependencies using Yarn.
+- Check for Go, buf, and protoc installations and guide you if they are missing.
+- Install backend Go dependencies.
+- Generate Go code from Protocol Buffer definitions using `buf generate`.
+- Create `.env` files from the example files for both frontend and backend.
+
+### Running the Script
+
+1.  Make sure the script is executable:
+    ```bash
+    chmod +x setup.sh
+    ```
+2.  Run the script from the root of the project:
+    ```bash
+    ./setup.sh
+    ```
+    Alternatively, you can run it with `bash setup.sh`.
+
+3.  Pay attention to the output of the script. It will guide you if any dependencies are missing or if any manual steps are required (e.g., installing Go, protoc, or buf).
+
+### After Running the Script
+
+- The script will copy `frontend/.env.example` to `frontend/.env` and `backend/.env.example` to `backend/.env` if they don't already exist.
+- **Important**: You will need to manually review and update these `.env` files with your specific configurations (API keys, database credentials, etc.).
+- Follow any additional "Next steps" printed by the script at the end of its execution.
+
 ## JWT SECRET
 ```bash
 → openssl rand -hex 32
