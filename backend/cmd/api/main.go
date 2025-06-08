@@ -83,23 +83,14 @@ func main() {
 	}
 
 	// Initialize APICallTracker
-	apiTracker := clients.NewAPICallTracker()
+	// The store is initialized later, so we need to move APICallTracker initialization after store,
+	// or pass store later. For now, let's defer APICallTracker initialization.
+	// apiTracker := clients.NewAPICallTracker(store, slogger) // Store not yet initialized here
 
 	// Start goroutine to log API stats periodically with context cancellation
 	// TODO: Move the goroutine to a separate inside `LogAPIStats` function
-	go func(ctx context.Context) {
-		ticker := time.NewTicker(5 * time.Minute)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				slog.Info("Shutting down API stats logging goroutine")
-				return
-			case <-ticker.C:
-				telemetry.LogAPIStats(apiTracker, slogger) // Use slogger here
-			}
-		}
-	}(ctx)
+	// This goroutine was moved and updated below, after apiTracker is initialized.
+	// No longer starting it here.
 
 	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
 
@@ -112,13 +103,29 @@ func main() {
 
 	solanaClient := solana.NewClient(solClient, apiTracker)
 
-	offchainClient := offchain.NewClient(httpClient, apiTracker)
+	offchainClient := offchain.NewClient(httpClient, apiTracker) // apiTracker will be initialized before this
 
 	store, err := postgres.NewStore(config.DBURL, true, logLevel, config.Env)
 	if err != nil {
 		slog.Error("Failed to connect to database", slog.Any("error", err))
 		os.Exit(1)
 	}
+	slog.Info("Database store initialized successfully.")
+
+	// Initialize APICallTracker now that store is available
+	apiTracker := clients.NewAPICallTracker(store, slogger)
+	slog.Info("API Call Tracker initialized.")
+
+	// Load today's stats
+	if err := apiTracker.LoadStatsForToday(ctx); err != nil {
+		slog.Error("Failed to load API stats for today on startup", slog.Any("error", err))
+		// Depending on policy, might not be fatal. For now, just log.
+	} else {
+		slog.Info("Successfully loaded API stats for today on startup.")
+	}
+
+	// Start the APICallTracker's own background processing goroutine
+	go apiTracker.Start(ctx) // Use the main application context
 
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:        config.BirdEyeEndpoint,
@@ -192,12 +199,32 @@ func main() {
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	slog.Info("Shutting down servers...")
+	sig := <-quit // Block until a signal is received
+	slog.Info("Received shutdown signal", slog.String("signal", sig.String()))
 
+	slog.Info("Persisting final API stats before shutdown...")
+	// Use a new context for this shutdown operation, as the app context might be canceled elsewhere.
+	// However, the main app `ctx` is `context.Background()`, which doesn't get canceled unless explicitly.
+	// For safety in shutdown, create a short-timeout context if needed, or use existing `ctx`.
+	// Given `ResetStats` has its own internal timeout, using `ctx` should be fine.
+	if err := apiTracker.ResetStats(ctx); err != nil {
+		slog.Error("Failed to persist API stats during shutdown", slog.Any("error", err))
+	} else {
+		slog.Info("Successfully persisted API stats during shutdown.")
+	}
+
+	slog.Info("Stopping gRPC server...")
 	grpcServer.Stop()
+	slog.Info("gRPC server stopped.")
 
-	slog.Info("Servers exited properly")
+	// Add any other cleanup tasks here, e.g., closing DB connection if store had a Close() method.
+	// if err := store.Close(); err != nil {
+	// 	slog.Error("Failed to close database store", slog.Any("error", err))
+	// } else {
+	// 	slog.Info("Database store closed.")
+	// }
+
+	slog.Info("Server shutdown completed.")
 }
 
 type Config struct {
