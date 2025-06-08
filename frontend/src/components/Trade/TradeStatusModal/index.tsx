@@ -36,6 +36,9 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	const [displayStatus, setDisplayStatus] = useState(status);
 	const [displayConfirmations, setDisplayConfirmations] = useState(confirmations);
 	const [hasShownProgress, setHasShownProgress] = useState(false);
+	
+	// Flag to prevent double navigation when closing via button vs onDismiss
+	const [isClosingProgrammatically, setIsClosingProgrammatically] = useState(false);
 
 	// Animated values for smooth transitions
 	const [fadeAnim] = useState(new Animated.Value(1));
@@ -44,6 +47,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	// Handle BottomSheetModal presentation
 	useEffect(() => {
 		if (isVisible) {
+			setIsClosingProgrammatically(false);
 			bottomSheetModalRef.current?.present();
 		} else {
 			bottomSheetModalRef.current?.dismiss();
@@ -249,18 +253,39 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				disappearsOnIndex={-1}
 				appearsOnIndex={0}
 				opacity={0.8}
-				onPress={isFinal ? onClose : undefined} // Only allow tap-to-dismiss when final
+				onPress={isFinal ? () => {
+					setIsClosingProgrammatically(true);
+					onClose();
+				} : undefined} // Only allow tap-to-dismiss when final
 			>
 				<BlurView intensity={20} style={{ flex: 1 }} />
 			</BottomSheetBackdrop>
 		);
 	};
 
+	// Handle button close with programmatic flag
+	const handleButtonClose = () => {
+		setIsClosingProgrammatically(true);
+		if (displayStatus === 'failed') {
+			onTryAgain ? onTryAgain() : onClose();
+		} else {
+			onClose();
+		}
+	};
+
+	// Handle onDismiss - only call onClose if not closing programmatically
+	const handleDismiss = () => {
+		if (!isClosingProgrammatically && isFinal) {
+			onClose();
+		}
+		setIsClosingProgrammatically(false);
+	};
+
 	return (
 		<BottomSheetModal
 			ref={bottomSheetModalRef}
 			snapPoints={[SCREEN_HEIGHT * 0.75]}
-			onDismiss={isFinal ? onClose : undefined}
+			onDismiss={handleDismiss}
 			backgroundStyle={{ backgroundColor: theme.colors.surface }}
 			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}
 			enablePanDownToClose={isFinal}
@@ -300,7 +325,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					<View style={styles.actionSection}>
 						<Button
 							mode="contained"
-							onPress={displayStatus === 'failed' ? (onTryAgain || onClose) : onClose}
+							onPress={handleButtonClose}
 							style={styles.closeButton}
 						>
 							{displayStatus === 'failed' ? 'Try Again' : 'Done'}
