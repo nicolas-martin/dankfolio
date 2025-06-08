@@ -36,7 +36,7 @@ Refer to the `.detoxrc.json` file for detailed configurations. Make sure your em
 
 ### API Mocking with Mock Service Worker (`msw`)
 
-To ensure stable and predictable E2E tests, this project uses Mock Service Worker (`msw`) to mock API responses. This allows us to test UI behavior with consistent data without relying on a live backend.
+To ensure stable and predictable E2E tests, this project uses Mock Service Worker (`msw`) to mock API responses. All API endpoints defined in `frontend/src/services/grpcApi.ts` have been provided with initial basic mock handlers. This allows us to test UI behavior with consistent data without relying on a live backend.
 
 -   **Mock Handlers Location**: API mock handlers are defined in `frontend/e2e/mocks/handlers.ts`.
 -   **How it Works**: `msw` intercepts outgoing requests from the app (during E2E tests run via Detox) and returns mocked responses defined in the handlers. This is managed by a setup file (`frontend/e2e/setup.ts`) that starts/stops the mock server.
