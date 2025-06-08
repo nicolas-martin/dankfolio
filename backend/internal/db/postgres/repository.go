@@ -15,25 +15,40 @@ import (
 )
 
 // Repository implements the generic db.Repository interface using GORM.
+// S is the schema type (used with GORM), M is the model type (used in services).
+// For ApiStat, S and M might be the same (model.ApiStat).
 type Repository[S interface {
-	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet
+	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet | model.ApiStat // Added model.ApiStat for S
 	db.Entity
-}, M model.Coin | model.Trade | model.RawCoin | model.Wallet] struct {
+}, M interface {
+	model.Coin | model.Trade | model.RawCoin | model.Wallet | model.ApiStat // Added model.ApiStat for M
+}] struct {
 	db *gorm.DB
 }
 
 // NewRepository creates a new GORM repository.
 func NewRepository[S interface {
-	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet
+	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet | model.ApiStat
 	db.Entity
-}, M model.Coin | model.Trade | model.RawCoin | model.Wallet](db *gorm.DB) *Repository[S, M] {
+}, M interface {
+	model.Coin | model.Trade | model.RawCoin | model.Wallet | model.ApiStat
+}](db *gorm.DB) *Repository[S, M] {
 	return &Repository[S, M]{db: db}
 }
 
 // Get retrieves an entity by its ID.
 func (r *Repository[S, M]) Get(ctx context.Context, id string) (*M, error) {
 	var schemaItem S
-	if err := r.db.WithContext(ctx).First(&schemaItem, fmt.Sprintf("%s = ?", schemaItem.GetID()), id).Error; err != nil {
+	// Default to "id" as primary key column name.
+	// Specific types like schema.Coin might override GetID() to return a different value
+	// if their PK is not 'id', but the query here assumes the column is named 'id' if GetID() from zero value is not reliable.
+	// For ApiStat (uint ID), schemaItem.GetID() on zero value would be "0".
+	// For string ID types (like Trade), schemaItem.GetID() on zero value would be "".
+	// Hardcoding "id = ?" is safer for types with standard "id" PK.
+	// This assumes that `id` parameter passed to Get is always for a column named "id".
+	// If a type S has a PK column named differently (e.g. "uuid"), this generic Get will fail for it.
+	// The original `fmt.Sprintf("%s = ?", schemaItem.GetID())` was problematic if GetID() returned the value of ID field from zero struct.
+	if err := r.db.WithContext(ctx).First(&schemaItem, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("%w: item with id %s not found", db.ErrNotFound, id)
 		}
@@ -97,12 +112,58 @@ func (r *Repository[S, M]) Update(ctx context.Context, item *M) error {
 
 // Upsert inserts or updates an entity.
 func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) (int64, error) {
-	schemaItem := r.fromModel(*item)
-	var s S // Create zero value of S to get the column name
+	schemaItem := r.fromModel(*item) // schemaItem is *S, e.g. *schema.Coin or *model.ApiStat
+	var s S                          // Zero value of S, e.g. schema.Coin or model.ApiStat
+
+	var conflictColumns []clause.Column
+	var updateColumns []string
+
+	// Determine conflict columns and update columns based on the type of S
+	// This uses type assertion on a pointer to the zero value of S (*sPtr) because getColumnNames expects a pointer.
+	// And for type switching, using the zero value `s` itself is fine.
+	sPtr := new(S) // Pointer to zero value of S, for getColumnNames if schemaItem was nil (not the case here)
+	_ = sPtr       // Avoid unused variable error if not directly used in switch, using schemaItem instead for getColumnNames
+
+	switch any(s).(type) {
+	case model.ApiStat:
+		// For ApiStat, conflict is on (service_name, endpoint_name, date)
+		// GORM tags on model.ApiStat define `uniqueIndex:idx_service_endpoint_date`
+		// We can specify the constraint name or the columns.
+		// It's safer to specify columns if the auto-generated name is not predictable,
+		// or use GORM's built-in unique index handling if `Model(&model.ApiStat{})` is used before Clauses.
+		// However, here we're in a generic repo.
+		conflictColumns = []clause.Column{
+			{Name: "service_name"},
+			{Name: "endpoint_name"},
+			{Name: "date"},
+		}
+		// getColumnNames for *model.ApiStat returns {"count"}
+		updateColumns = getColumnNames(schemaItem) // schemaItem is *model.ApiStat here
+	default:
+		// Default behavior for other types. Assumes PK column name is "id".
+		// This is a simplification. If other types have different PK names (e.g. "uuid", "mint_address for Coin"),
+		// this default case needs to be smarter or those types need specific cases.
+		// schema.Coin and schema.RawCoin have mint_address as their unique ID for upsert logic.
+		// schema.Trade and schema.Wallet have string ID.
+		// model.ApiStat has uint ID, auto-increment.
+		// The GetID() method on the *instance* provides the value for the PK.
+		// The conflict target should be the actual column name.
+		// For types like Coin/RawCoin, their PK for conflict is mint_address, not 'id'.
+		// For Trade/Wallet, their PK is 'id'.
+		// This default case is now specifically for types where the PK column is 'id'.
+		// This means Coin/RawCoin would need their own case here if their PK for conflict is not 'id'
+		// and they are to be Upserted via this generic method using PK conflict.
+		// However, Coin/RawCoin have specific BulkUpsert logic using mint_address.
+		// For single Upsert, if they use 'id' as PK in DB table, this is fine.
+		conflictColumns = []clause.Column{{Name: "id"}} // Default to "id" for PK conflict
+		updateColumns = getColumnNames(schemaItem)   // Get all relevant columns for update
+	}
+
 	result := r.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: s.GetID()}},
-		DoUpdates: clause.AssignmentColumns(getColumnNames(schemaItem)),
+		Columns:   conflictColumns,
+		DoUpdates: clause.AssignmentColumns(updateColumns),
 	}).Create(schemaItem)
+
 	if result.Error != nil {
 		return 0, fmt.Errorf("failed to upsert item: %w", result.Error)
 	}
@@ -112,7 +173,12 @@ func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) (int64, error) {
 // Delete removes an entity by its ID.
 func (r *Repository[S, M]) Delete(ctx context.Context, id string) error {
 	var schemaItem S
-	dbResult := r.db.WithContext(ctx).Where(fmt.Sprintf("%s = ?", schemaItem.GetID()), id).Delete(&schemaItem)
+	// Similar to Get, this assumes the primary key column is named "id".
+	// This might not hold for all types (e.g., schema.Coin uses mint_address as its logical ID).
+	// If the GORM model `S` has a correctly tagged PK field (e.g. `gorm:"primaryKey"`),
+	// GORM's Delete might work correctly even with just `&schemaItem` and Where("id = ?", id).
+	// However, explicit is often better.
+	dbResult := r.db.WithContext(ctx).Where("id = ?", id).Delete(&schemaItem)
 	if dbResult.Error != nil {
 		return fmt.Errorf("failed to delete item with id %s: %w", id, dbResult.Error)
 	}
@@ -148,8 +214,12 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 		conflictColumns = []clause.Column{{Name: "mint_address"}}
 	case schema.RawCoin:
 		conflictColumns = []clause.Column{{Name: "mint_address"}}
+	// model.ApiStat is not expected in BulkUpsert with PK conflict, it has its own unique index.
+	// If it were, its PK is 'id'.
 	default:
-		conflictColumns = []clause.Column{{Name: s.GetID()}}
+		// Defaulting to "id" for other types like Trade, Wallet.
+		// This assumes their primary key for conflict purposes is 'id'.
+		conflictColumns = []clause.Column{{Name: "id"}}
 	}
 
 	batchSize := len(schemaItems) // Process all items in a single batch as per GORM examples for full slice upsert.
@@ -312,6 +382,13 @@ func (r *Repository[S, M]) toModel(s S) any {
 			PublicKey: v.PublicKey,
 			CreatedAt: v.CreatedAt,
 		}
+	// If S can be model.ApiStat, and M is model.ApiStat
+	case model.ApiStat:
+		// When S is model.ApiStat, v is model.ApiStat. We return a pointer to it.
+		// Ensure the return type matches what the caller of toModel expects (any, which will be asserted to *M).
+		// If M is also model.ApiStat, this is direct.
+		copiedStat := v // Create a copy
+		return &copiedStat
 	default:
 		panic(fmt.Sprintf("unsupported type for toModel: %T", s))
 	}
@@ -403,6 +480,13 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			PublicKey: v.PublicKey,
 			CreatedAt: v.CreatedAt,
 		}
+	// If M is model.ApiStat, and S is model.ApiStat
+	case model.ApiStat:
+		// When M is model.ApiStat, v is model.ApiStat. We return a pointer to it.
+		// Ensure the return type matches what the caller of fromModel expects (any, which will be asserted to *S for GORM).
+		// If S is also model.ApiStat, this is direct.
+		copiedStat := v // Create a copy
+		return &copiedStat
 	default:
 		panic(fmt.Sprintf("unsupported type for fromModel: %T", m))
 	}
@@ -433,7 +517,10 @@ func getColumnNames(data any) []string {
 	case *schema.Wallet:
 		// Explicitly list columns to update, excluding PK 'id'
 		return []string{"public_key"} // CreatedAt is usually set on create
+	case *model.ApiStat: // If S is model.ApiStat
+		// Columns for ApiStat to update on conflict. ID is PK. Date, ServiceName, EndpointName are part of conflict key.
+		return []string{"count"}
 	default:
-		return []string{} // Should not happen with current generic constraints
+		panic(fmt.Sprintf("unsupported type for getColumnNames: %T", data))
 	}
 }

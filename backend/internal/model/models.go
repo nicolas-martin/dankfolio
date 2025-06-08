@@ -200,3 +200,18 @@ func (r RawCoin) GetID() string {
 // 	MintAddress string  `json:"mint_address"`
 // 	Amount      float64 `json:"amount"`
 // }
+
+// ApiStat represents API call statistics for a specific endpoint on a given day.
+// GORM tags have been added for auto-migration.
+type ApiStat struct {
+	ID           uint      `json:"id" gorm:"primaryKey;autoIncrement"`                          // Primary key
+	ServiceName  string    `json:"service_name" gorm:"uniqueIndex:idx_service_endpoint_date"` // Name of the service
+	EndpointName string    `json:"endpoint_name" gorm:"uniqueIndex:idx_service_endpoint_date"`// Name of the endpoint
+	Date         time.Time `json:"date" gorm:"type:date;uniqueIndex:idx_service_endpoint_date"` // Date for the count
+	Count        int       `json:"count"`                                                       // Number of API calls
+}
+
+// GetID implements the Entity interface by returning the ID as a string.
+func (a ApiStat) GetID() string {
+	return fmt.Sprintf("%d", a.ID) // Convert uint ID to string
+}
