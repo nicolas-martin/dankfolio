@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
+import { View, SafeAreaView, FlatList, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
+import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
 // Imports for refactored fetchPriceHistory
 import { fetchPriceHistory } from '@/screens/CoinDetail/coindetail_scripts';
 // Keep this import if TIMEFRAME_CONFIG uses it, or if directly needed.
@@ -45,6 +46,136 @@ const HomeScreen = () => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed HomeScreen' });
 	}, []);
 
+	// Placeholder components for loading states
+	const renderPlaceholderCoinCard = () => (
+		<View style={[styles.coinCardContainerStyle, { marginBottom: 12 }]}>
+			<View style={{
+				backgroundColor: theme.colors.surface,
+				borderRadius: 12,
+				padding: 16,
+				flexDirection: 'row',
+				alignItems: 'center',
+				elevation: 2,
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 1 },
+				shadowOpacity: 0.1,
+				shadowRadius: 2,
+			}}>
+				{/* Left section - Icon and name */}
+				<View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+					<ShimmerPlaceholder
+						width={36}
+						height={36}
+						borderRadius={18}
+						style={{ marginRight: 12 }}
+					/>
+					<View style={{ flex: 1 }}>
+						<ShimmerPlaceholder
+							width="60%"
+							height={16}
+							borderRadius={4}
+							style={{ marginBottom: 4 }}
+						/>
+						<ShimmerPlaceholder
+							width="80%"
+							height={12}
+							borderRadius={4}
+						/>
+					</View>
+				</View>
+
+				{/* Middle section - Sparkline placeholder */}
+				<ShimmerPlaceholder
+					width={80}
+					height={20}
+					borderRadius={4}
+					style={{ marginHorizontal: 12 }}
+				/>
+
+				{/* Right section - Price and change */}
+				<View style={{ alignItems: 'flex-end' }}>
+					<ShimmerPlaceholder
+						width={60}
+						height={16}
+						borderRadius={4}
+						style={{ marginBottom: 4 }}
+					/>
+					<ShimmerPlaceholder
+						width={40}
+						height={12}
+						borderRadius={4}
+					/>
+				</View>
+			</View>
+		</View>
+	);
+
+	const renderPlaceholderNewCoinsSection = () => (
+		<View style={{ marginBottom: 24 }}>
+			<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 }}>
+				<ShimmerPlaceholder
+					width={120}
+					height={20}
+					borderRadius={4}
+				/>
+			</View>
+			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+				{[1, 2, 3, 4].map((index) => (
+					<View key={index} style={{
+						width: 140,
+						height: 120,
+						backgroundColor: theme.colors.surface,
+						borderRadius: 12,
+						marginRight: 8,
+						padding: 12,
+						elevation: 2,
+						shadowColor: '#000',
+						shadowOffset: { width: 0, height: 1 },
+						shadowOpacity: 0.1,
+						shadowRadius: 2,
+					}}>
+						<ShimmerPlaceholder
+							width={48}
+							height={48}
+							borderRadius={24}
+							style={{ alignSelf: 'center', marginBottom: 8 }}
+						/>
+						<ShimmerPlaceholder
+							width="70%"
+							height={14}
+							borderRadius={4}
+							style={{ marginBottom: 4, alignSelf: 'center' }}
+						/>
+						<ShimmerPlaceholder
+							width="50%"
+							height={12}
+							borderRadius={4}
+							style={{ marginBottom: 4, alignSelf: 'center' }}
+						/>
+						<ShimmerPlaceholder
+							width="40%"
+							height={12}
+							borderRadius={4}
+							style={{ alignSelf: 'center' }}
+						/>
+					</View>
+				))}
+			</ScrollView>
+		</View>
+	);
+
+	const renderPlaceholderTrendingSection = () => (
+		<View>
+			<View style={styles.sectionHeader}>
+				<Text style={styles.sectionTitle}>Trending Coins</Text>
+			</View>
+			{[1, 2, 3, 4, 5].map((index) => (
+				<View key={`placeholder-trending-${index}`}>
+					{renderPlaceholderCoinCard()}
+				</View>
+			))}
+		</View>
+	);
 
 	// Effect to fetch price histories when availableCoins change
 	useEffect(() => {
@@ -68,7 +199,7 @@ const HomeScreen = () => {
 					try {
 						const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
 						if (result.data !== null) {
-							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data }));
+							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data! }));
 						} else {
 							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: [] }));
 						}
@@ -103,7 +234,7 @@ const HomeScreen = () => {
 				fetchPriceHistory(coin, fourHourTimeframeKey)
 					.then(result => {
 						if (result.data !== null) {
-							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data }));
+							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data! }));
 						} else {
 							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: [] }));
 						}
@@ -137,7 +268,7 @@ const HomeScreen = () => {
 
 		await trendingAndPortfolioPromise; // Wait for trending and portfolio to complete
 
-		logger.log('[HomeScreen] 🏠 Completed home screen data fetch.');
+		logger.log('[HomeScreen] � Completed home screen data fetch.');
 	}, [wallet, fetchAvailableCoins, fetchPortfolioBalance]);
 
 	// Separate function for fetching new coins
@@ -177,7 +308,7 @@ const HomeScreen = () => {
 		setIsRefreshing(true);
 		try {
 			// Force refresh new coins on manual refresh
-			logger.log('[HomeScreen] 🔄 Manual refresh triggered - forcing new coins refresh');
+			logger.log('[HomeScreen] � Manual refresh triggered - forcing new coins refresh');
 			await Promise.all([
 				fetchAvailableCoins(true), // For trending coins
 				fetchNewCoins(10, true), // Force refresh new coins (bypasses cache)
@@ -245,6 +376,14 @@ const HomeScreen = () => {
 
 	const renderCoinsList = () => {
 		const hasTrendingCoins = availableCoins.length > 0;
+		const isInitialLoad = isLoadingTrending && !hasTrendingCoins && !isRefreshing;
+		
+		// Show shimmer placeholders only during the first load (not during pull-to-refresh)
+		// This is true when:
+		// - We're loading trending coins AND
+		// - We don't have any coins yet AND  
+		// - User is NOT doing a pull-to-refresh
+		const isFirstTimeLoading = isLoadingTrending && !hasTrendingCoins && !isRefreshing;
 
 		return (
 			<ScrollView
@@ -259,48 +398,56 @@ const HomeScreen = () => {
 					/>
 				}
 			>
-				<NewCoins />
+				{/* Show placeholder for NewCoins section when initially loading */}
+				{isFirstTimeLoading ? renderPlaceholderNewCoinsSection() : <NewCoins />}
 
-				<View style={styles.sectionHeader}>
-					<Text style={styles.sectionTitle}>Trending Coins</Text>
-				</View>
+				{/* Show placeholder for trending section when initially loading */}
+				{isFirstTimeLoading ? (
+					renderPlaceholderTrendingSection()
+				) : (
+					<>
+						<View style={styles.sectionHeader}>
+							<Text style={styles.sectionTitle}>Trending Coins</Text>
+						</View>
 
-				{isLoadingTrending && !hasTrendingCoins && (
-					<View style={styles.loadingContainer}>
-						<LoadingAnimation size={80} />
-						<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>Loading trending coins...</Text>
-					</View>
-				)}
+						{isLoadingTrending && !hasTrendingCoins && !isFirstTimeLoading && (
+							<View style={styles.loadingContainer}>
+								<LoadingAnimation size={80} />
+								<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>Loading trending coins...</Text>
+							</View>
+						)}
 
-				{!isLoadingTrending && !hasTrendingCoins && !isRefreshing && ( // Added !isRefreshing
-					<View style={styles.emptyStateContainer}>
-						<Icon source="chart-line" size={36} color={theme.colors.onSurfaceVariant} />
-						<Text style={styles.emptyStateTitle}>No Trending Coins</Text>
-						<Text style={styles.emptyStateText}>
-							There are no trending coins to display right now.
-						</Text>
-					</View>
-				)}
+						{!isLoadingTrending && !hasTrendingCoins && !isRefreshing && (
+							<View style={styles.emptyStateContainer}>
+								<Icon source="chart-line" size={36} color={theme.colors.onSurfaceVariant} />
+								<Text style={styles.emptyStateTitle}>No Trending Coins</Text>
+								<Text style={styles.emptyStateText}>
+									There are no trending coins to display right now.
+								</Text>
+							</View>
+						)}
 
-				{hasTrendingCoins && (
-					<FlatList
-						data={availableCoins}
-						keyExtractor={(item) => item.mintAddress || item.symbol}
-						renderItem={renderTrendingCoinItem} // Changed to use renderTrendingCoinItem
-						scrollEnabled={false}
-						// Performance optimizations to prevent UI blocking
-						maxToRenderPerBatch={5}
-						updateCellsBatchingPeriod={50}
-						initialNumToRender={10}
-						windowSize={10}
-						getItemLayout={(data, index) => ({
-							length: 130, // Adjusted approximate height of each CoinCard with sparkline + margin
-							offset: 130 * index, // Adjusted offset
-							index,
-						})}
-						// Optimize re-renders
-						keyboardShouldPersistTaps="handled"
-					/>
+						{hasTrendingCoins && (
+							<FlatList
+								data={availableCoins}
+								keyExtractor={(item) => item.mintAddress || item.symbol}
+								renderItem={renderTrendingCoinItem}
+								scrollEnabled={false}
+								// Performance optimizations to prevent UI blocking
+								maxToRenderPerBatch={5}
+								updateCellsBatchingPeriod={50}
+								initialNumToRender={10}
+								windowSize={10}
+								getItemLayout={(data, index) => ({
+									length: 130, // Adjusted approximate height of each CoinCard with sparkline + margin
+									offset: 130 * index, // Adjusted offset
+									index,
+								})}
+								// Optimize re-renders
+								keyboardShouldPersistTaps="handled"
+							/>
+						)}
+					</>
 				)}
 			</ScrollView>
 		);

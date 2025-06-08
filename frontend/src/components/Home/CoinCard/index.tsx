@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { View, TouchableOpacity, Dimensions } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { CachedImage } from '@/components/Common/CachedImage';
+import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import SparklineChart from '@/components/Chart/SparklineChart'; // Added import
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '@/utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
@@ -128,7 +129,11 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				{showSparkline && (
 					<View style={styles.sparklineContainer}>
 						{isPriceHistoryLoading ? (
-							<View style={styles.sparklinePlaceholder} />
+							<ShimmerPlaceholder
+								width={cardWidth * 0.35}
+								height={20}
+								borderRadius={4}
+							/>
 						) : priceHistory && priceHistory.length > 1 ? (
 							<SparklineChart
 								data={priceHistory}
@@ -137,7 +142,11 @@ const CoinCard: React.FC<CoinCardProps> = ({
 								isLoading={isPriceHistoryLoading}
 							/>
 						) : (
-							<View style={styles.sparklinePlaceholder} />
+							<ShimmerPlaceholder
+								width={cardWidth * 0.35}
+								height={20}
+								borderRadius={4}
+							/>
 						)}
 					</View>
 				)}
