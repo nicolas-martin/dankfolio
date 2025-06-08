@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { View } from 'react-native';
+import { View, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import { Text, Button, useTheme } from 'react-native-paper';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { BlurView } from 'expo-blur';
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
@@ -31,6 +32,19 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			bottomSheetModalRef.current?.dismiss();
 		}
 	}, [isVisible]);
+
+	// Custom backdrop component with blur
+	const renderBackdrop = (props: any) => (
+		<BottomSheetBackdrop
+			{...props}
+			disappearsOnIndex={-1}
+			appearsOnIndex={0}
+			opacity={0.8}
+			onPress={onClose}
+		>
+			<BlurView intensity={20} style={{ flex: 1 }} />
+		</BottomSheetBackdrop>
+	);
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
 		return (
@@ -113,7 +127,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				<View style={styles.buttonContainer}>
 					<Button
 						mode="outlined"
-						onPress={onClose} // This will now snap the sheet closed via useEffect
+						onPress={onClose}
 						style={styles.cancelButton}
 						labelStyle={styles.cancelButtonLabel}
 						disabled={isLoading}
@@ -140,13 +154,13 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	return (
 		<BottomSheetModal
 			ref={bottomSheetModalRef}
-			snapPoints={['600']}
+			snapPoints={[Dimensions.get('window').height * 0.95]}
 			onDismiss={onClose}
 			backgroundStyle={{ backgroundColor: theme.colors.surface }}
 			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}
 			enablePanDownToClose={true}
 			enableDismissOnClose={true}
-			detached={false}
+			backdropComponent={renderBackdrop}
 		>
 			<BottomSheetView style={{ flex: 1 }}>
 				{renderContent()}
