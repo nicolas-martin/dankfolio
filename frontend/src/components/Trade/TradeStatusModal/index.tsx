@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, Animated } from 'react-native';
-import { Modal, Portal, Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Animated, Dimensions } from 'react-native';
+import { Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { BlurView } from 'expo-blur';
 import { LoadingAnimation, SuccessAnimation, ErrorAnimation } from '../../Common/Animations';
 import { TradeStatusModalProps } from './types';
 import { createStyles } from './styles';
@@ -16,9 +18,12 @@ import {
 } from './scripts';
 import { formatAddress } from '@/utils/numberFormat';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	isVisible,
 	onClose,
+	onTryAgain,
 	txHash,
 	status,
 	confirmations,
@@ -26,6 +31,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
+	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
 	// State to prevent quick flashing between states
 	const [displayStatus, setDisplayStatus] = useState(status);
@@ -35,6 +41,15 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	// Animated values for smooth transitions
 	const [fadeAnim] = useState(new Animated.Value(1));
 	const [progressAnim] = useState(new Animated.Value(0));
+
+	// Handle BottomSheetModal presentation
+	useEffect(() => {
+		if (isVisible) {
+			bottomSheetModalRef.current?.present();
+		} else {
+			bottomSheetModalRef.current?.dismiss();
+		}
+	}, [isVisible]);
 
 	// Update display status with smooth transitions
 	useEffect(() => {
@@ -231,14 +246,33 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 		);
 	};
 
-	return (
-		<Portal>
-			<Modal
-				visible={isVisible}
-				onDismiss={isFinal ? onClose : undefined}
-				contentContainerStyle={styles.container}
-				dismissable={isFinal}
+	// Custom backdrop component with blur
+	const renderBackdrop = (props: any) => {
+		return (
+			<BottomSheetBackdrop
+				{...props}
+				disappearsOnIndex={-1}
+				appearsOnIndex={0}
+				opacity={0.8}
+				onPress={isFinal ? onClose : undefined} // Only allow tap-to-dismiss when final
 			>
+				<BlurView intensity={20} style={{ flex: 1 }} />
+			</BottomSheetBackdrop>
+		);
+	};
+
+	return (
+		<BottomSheetModal
+			ref={bottomSheetModalRef}
+			snapPoints={[SCREEN_HEIGHT * 0.6]}
+			onDismiss={isFinal ? onClose : undefined}
+			backgroundStyle={{ backgroundColor: theme.colors.surface }}
+			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}
+			enablePanDownToClose={isFinal}
+			enableDismissOnClose={isFinal}
+			backdropComponent={renderBackdrop}
+		>
+			<BottomSheetView style={{ flex: 1, padding: 20 }}>
 				{/* Header */}
 				<View style={styles.header}>
 					<Text style={styles.title}>Transaction Status</Text>
@@ -271,15 +305,15 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					<View style={styles.actionSection}>
 						<Button
 							mode="contained"
-							onPress={onClose}
+							onPress={displayStatus === 'failed' ? (onTryAgain || onClose) : onClose}
 							style={styles.closeButton}
 						>
 							{displayStatus === 'failed' ? 'Try Again' : 'Done'}
 						</Button>
 					</View>
 				)}
-			</Modal>
-		</Portal>
+			</BottomSheetView>
+		</BottomSheetModal>
 	);
 };
 

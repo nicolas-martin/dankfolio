@@ -328,7 +328,26 @@ const Trade: React.FC = () => {
 		setToAmount('');
 		setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
 		navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
-	}, [navigation, componentStopPolling, submittedTxHash, pollingStatus, wallet]); // Added wallet to dependencies
+	}, [navigation, componentStopPolling, submittedTxHash, pollingStatus, wallet]);
+
+	const handleTryAgain = useCallback(() => {
+		logger.breadcrumb({ category: 'trade', message: 'User clicked Try Again after failed transaction' });
+		logger.info('[Trade] Resetting trade state for retry attempt.');
+		
+		// Close the status modal
+		setIsStatusModalVisible(false);
+		componentStopPolling();
+		
+		// Reset trade state but keep the coin selection and amounts
+		setSubmittedTxHash(null);
+		setPollingStatus('pending');
+		setPollingConfirmations(0);
+		setPollingError(null);
+		setIsLoadingTrade(false);
+		
+		// Show the confirmation modal again to retry
+		setIsConfirmationVisible(true);
+	}, [componentStopPolling]);
 
 	const handleSwapCoins = () => {
 		logger.breadcrumb({ category: 'trade', message: 'Pressed swap tokens button', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
@@ -549,6 +568,7 @@ const Trade: React.FC = () => {
 			<TradeStatusModal
 				isVisible={isStatusModalVisible}
 				onClose={handleCloseStatusModal}
+				onTryAgain={handleTryAgain}
 				txHash={submittedTxHash}
 				status={pollingStatus}
 				confirmations={pollingConfirmations}
