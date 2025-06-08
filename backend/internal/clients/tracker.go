@@ -1,6 +1,8 @@
 package clients
 
-import "sync"
+import (
+	"sync"
+)
 
 // APICallTracker defines the interface for tracking API calls.
 type APICallTracker interface {
