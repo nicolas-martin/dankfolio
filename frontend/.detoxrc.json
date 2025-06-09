@@ -6,7 +6,7 @@
     "ios.debug": {
       "type": "ios.app",
       "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/dankfolio.app",
-      "build": "npx expo run:ios --configuration Debug --device \"iPhone 14\" --no-bundler"
+      "build": "npx expo run:ios --configuration Debug --device \"iPhone 16 Pro Max\" --no-bundler"
     },
     "android.debug": {
       "type": "android.apk",
@@ -18,7 +18,7 @@
     "simulator": {
       "type": "ios.simulator",
       "device": {
-        "type": "iPhone 14"
+        "type": "iPhone 16 Pro Max"
       }
     },
     "emulator": {
