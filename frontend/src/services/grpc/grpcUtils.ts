@@ -5,8 +5,6 @@ import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
 import { env } from '@utils/env';
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 
-const IS_DEBUG_MODE = env.debugMode;
-
 // Helper to map gRPC model.Coin to FrontendCoin
 export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 	return {
@@ -32,7 +30,7 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 export const getRequestHeaders = () => {
 	// Use Record<string, string> instead of Headers for better compatibility
 	const headers: Record<string, string> = {};
-	if (IS_DEBUG_MODE) {
+	if (env.debugMode) {
 		headers["x-debug-mode"] = "true";
 	}
 	// Note: Authentication headers are now automatically added via Connect interceptors
@@ -41,14 +39,14 @@ export const getRequestHeaders = () => {
 };
 
 // Helper function to safely serialize objects with BigInt values
-const safeStringify = (obj: unknown, indent = 2): string => {
+const safeStringify = (obj: unknown, indent = 0): string => {
 	try {
 		return JSON.stringify(obj, (key, value) => {
 			// Handle BigInt values
 			if (typeof value === 'bigint') {
 				return value.toString() + 'n';
 			}
-			
+
 			// Handle objects that might contain BigInt values
 			if (value && typeof value === 'object' && value.seconds && typeof value.seconds === 'bigint') {
 				return {
@@ -56,7 +54,7 @@ const safeStringify = (obj: unknown, indent = 2): string => {
 					seconds: value.seconds.toString() + 'n'
 				};
 			}
-			
+
 			return value;
 		}, indent);
 	} catch (error: unknown) {
@@ -141,7 +139,7 @@ export function timestampToDate(timestamp: Timestamp | undefined): Date | undefi
 	try {
 		// Handle BigInt if present
 		let seconds: number;
-		
+
 		if (typeof timestamp.seconds === 'bigint') {
 			// Convert BigInt to string first, then to Number to avoid precision issues
 			seconds = Number(timestamp.seconds.toString());

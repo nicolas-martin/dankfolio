@@ -3,11 +3,7 @@ import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-
 import { useTheme, Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
-// Imports for refactored fetchPriceHistory
 import { fetchPriceHistory } from '@/screens/CoinDetail/coindetail_scripts';
-// Keep this import if TIMEFRAME_CONFIG uses it, or if directly needed.
-// For now, assuming TIMEFRAME_CONFIG provides the correctly typed enum.
-// Matching coindetail_scripts
 import CoinCard from '@components/Home/CoinCard';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -17,11 +13,11 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
 import { createStyles } from './home_styles';
-import { Coin, PriceData } from '@/types'; // Added PriceData
+import { Coin, PriceData } from '@/types';
 import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
-import { env} from '@/utils/env';
-import { PRICE_HISTORY_FETCH_MODE, PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
+import { env } from '@/utils/env';
+import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -191,19 +187,19 @@ const HomeScreen = () => {
 		const fourHourTimeframeKey: string = "4H"; // Key used in TIMEFRAME_CONFIG
 
 		// 🔍 DEBUG: Log the decision logic
-		const isE2EMode = process.env.E2E_MOCKING_ENABLED === 'true';
 		const debugInfo = {
-			PRICE_HISTORY_FETCH_MODE,
+			'****************************************': '*********************',
 			'env.e2eMockingEnabled': env.e2eMockingEnabled,
 			'process.env.E2E_MOCKING_ENABLED': process.env.E2E_MOCKING_ENABLED,
-			'isE2EMode': isE2EMode,
-			willUseSequential: PRICE_HISTORY_FETCH_MODE === 'sequential' && !isE2EMode,
+			'isE2EMode': env.e2eMockingEnabled,
+			willUseSequential: !env.e2eMockingEnabled && env.appEnv != 'development',
 			topCoinsCount: topCoins.length
 		};
 		console.log('🔍 [HomeScreen] Price history fetch decision:', debugInfo);
 		logger.info('[HomeScreen] Price history fetch decision:', debugInfo);
 
-		if (PRICE_HISTORY_FETCH_MODE === 'sequential' && !isE2EMode) {
+		// we don't want sequential fetching in E2E mode or development
+		if (!env.e2eMockingEnabled && env.appEnv != 'development') {
 			console.log('🐌 [HomeScreen] Using SEQUENTIAL price history fetching');
 			logger.info('[HomeScreen] 🐌 Using SEQUENTIAL price history fetching');
 			const processCoinsSequentially = async () => {
