@@ -1,12 +1,10 @@
 {
-  "testRunner": "jest",
-  "runnerConfig": "e2e/jest.config.js",
   "skipLegacyWorkersInjection": true,
   "apps": {
     "ios.debug": {
       "type": "ios.app",
       "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/dankfolio.app",
-      "build": "npx expo run:ios --configuration Debug --device \"iPhone 16 Pro Max\" --no-bundler"
+      "build": "xcodebuild -workspace ios/dankfolio.xcworkspace -scheme dankfolio -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build"
     }
   },
   "devices": {
@@ -21,6 +19,15 @@
     "ios.sim.debug": {
       "device": "simulator",
       "app": "ios.debug"
+    }
+  },
+  "testRunner": {
+    "args": {
+      "config": "e2e/jest.config.js",
+      "$0": "jest"
+    },
+    "jest": {
+      "setupTimeout": 120000
     }
   }
 }

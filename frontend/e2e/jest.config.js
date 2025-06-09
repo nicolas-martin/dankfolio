@@ -11,9 +11,9 @@ module.exports = {
   testEnvironment: 'detox/runners/jest/testEnvironment',
   verbose: true,
   setupFilesAfterEnv: ['<rootDir>/e2e/setup.ts'],
-  globals: {
-    'ts-jest': {
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: '<rootDir>/e2e/tsconfig.json',
-    },
+    }],
   },
 };
