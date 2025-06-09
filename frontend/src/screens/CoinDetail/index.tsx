@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl } from 'react-native';
-import { Text, useTheme, Button, SegmentedButtons, Icon } from 'react-native-paper';
+import { Text, useTheme, Button, Icon, SegmentedButtons } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
@@ -271,7 +271,7 @@ const CoinDetail: React.FC = () => {
 		if (!displayCoin || priceHistory.length < 2) return null;
 
 		return (
-			<View style={styles.priceCard}>
+			<View style={styles.priceCard} testID="coin-detail-price-card">
 				<PriceDisplay
 					price={displayData.currentPrice}
 					periodChange={displayData.periodChange}
@@ -288,7 +288,7 @@ const CoinDetail: React.FC = () => {
 
 	const renderChartCard = () => {
 		return (
-			<View style={styles.chartContainer}>
+			<View style={styles.chartContainer} testID="coin-detail-chart-card">
 				<View style={{ marginHorizontal: 16 }}>
 					<CoinChart
 						data={priceHistory}
@@ -303,7 +303,7 @@ const CoinDetail: React.FC = () => {
 
 	const renderTimeframeCard = () => {
 		return (
-			<View style={styles.timeframeCard}>
+			<View style={styles.timeframeCard} testID="coin-detail-timeframe-card">
 				<SegmentedButtons
 					value={selectedTimeframe}
 					onValueChange={value => {
@@ -316,9 +316,12 @@ const CoinDetail: React.FC = () => {
 					}}
 					buttons={TIMEFRAMES.map(tf => ({
 						value: tf.value,
-						label: tf.label
+						testID: `coin-detail-timeframe-button-${tf.value}`,
+						label: tf.label,
+						style: { flex: 1 } // Ensure equal distribution
 					}))}
 					density="small"
+					style={{ flexDirection: 'row' }}
 				/>
 			</View>
 		);
@@ -328,23 +331,23 @@ const CoinDetail: React.FC = () => {
 		if (!portfolioToken) return null;
 
 		return (
-			<View style={styles.holdingsCard}>
+			<View style={styles.holdingsCard} testID="coin-detail-holdings-card">
 				<View style={styles.holdingsHeader}>
 					<View style={styles.holdingsIcon}>
 						<Icon source="wallet" size={16} color={theme.colors.onPrimaryContainer} />
 					</View>
-					<Text style={styles.holdingsTitle}>Your Holdings</Text>
+					<Text style={styles.holdingsTitle} testID="coin-detail-holdings-title">Your Holdings</Text>
 				</View>
 				<View style={styles.holdingsContent}>
 					<View style={styles.holdingsRow}>
-						<Text style={styles.holdingsLabel}>Portfolio Value</Text>
-						<Text style={styles.holdingsValue}>
+						<Text style={styles.holdingsLabel} testID="coin-detail-portfolio-value-label">Portfolio Value</Text>
+						<Text style={styles.holdingsValue} testID="coin-detail-portfolio-value">
 							${portfolioToken.value.toFixed(4)}
 						</Text>
 					</View>
 					<View style={styles.holdingsRow}>
-						<Text style={styles.holdingsLabel}>Token Amount</Text>
-						<Text style={styles.holdingsValue}>
+						<Text style={styles.holdingsLabel} testID="coin-detail-token-amount-label">Token Amount</Text>
+						<Text style={styles.holdingsValue} testID="coin-detail-token-amount">
 							{portfolioToken.amount.toFixed(4)} {displayCoin?.symbol}
 						</Text>
 					</View>
@@ -356,7 +359,7 @@ const CoinDetail: React.FC = () => {
 	const renderAboutCard = () => {
 		if (!displayCoin) { // Display based on displayCoin
 			return (
-				<View style={styles.aboutCard}>
+				<View style={styles.aboutCard} testID="coin-detail-about-card-loading">
 					<View style={styles.loadingContainer}>
 						<ActivityIndicator color={theme.colors.primary} />
 					</View>
@@ -365,12 +368,12 @@ const CoinDetail: React.FC = () => {
 		}
 
 		return (
-			<View style={styles.aboutCard}>
+			<View style={styles.aboutCard} testID="coin-detail-about-card">
 				<View style={styles.aboutHeader}>
 					<View style={styles.aboutIcon}>
 						<Icon source="information-outline" size={16} color={theme.colors.onSecondaryContainer} />
 					</View>
-					<Text style={styles.aboutTitle}>About {displayCoin.name}</Text>
+					<Text style={styles.aboutTitle} testID="coin-detail-about-title">About {displayCoin.name}</Text>
 				</View>
 				<CoinInfo
 					metadata={{
@@ -435,6 +438,10 @@ const CoinDetail: React.FC = () => {
 					contentContainerStyle={styles.scrollViewContent}
 					bounces={false}
 					showsVerticalScrollIndicator={false}
+					maintainVisibleContentPosition={{
+						minIndexForVisible: 0,
+						autoscrollToTopThreshold: 10
+					}}
 					refreshControl={
 						<RefreshControl
 							refreshing={loading} // This 'loading' is for the price chart

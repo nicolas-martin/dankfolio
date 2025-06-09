@@ -63,7 +63,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderRadius: 16,
 		marginBottom: 16,
 		marginHorizontal: 16,
-		padding: 16,
+		padding: 12,
 		...Platform.select({
 			ios: {
 				shadowColor: '#000',

@@ -23,7 +23,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	if (isNaN(price) || price === null || price === undefined) {
 		// Return a static display instead of null to prevent layout shifts
 		return (
-			<View style={styles.container}>
+			<View style={styles.container} testID="price-display-container">
 				{/* Header with coin info */}
 				<View style={styles.headerRow}>
 					<TouchableOpacity onPress={() => setIsZoomModalVisible(true)} activeOpacity={0.8}>
@@ -31,12 +31,13 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 							uri={resolvedIconUrl}
 							size={40}
 							borderRadius={20}
-						showLoadingIndicator={true}
-						style={styles.icon}
-					/>
+							showLoadingIndicator={true}
+							style={styles.icon}
+							testID="price-display-coin-icon"
+						/>
 					</TouchableOpacity>
 					{name && (
-						<Text style={styles.nameText}>
+						<Text style={styles.nameText} testID="price-display-coin-name">
 							{name}
 						</Text>
 					)}
@@ -44,7 +45,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 
 				{/* Address row */}
 				<View style={styles.addressRow}>
-					<Text style={styles.addressText}>
+					<Text style={styles.addressText} testID="price-display-coin-address">
 						{formatAddress(address, 8, 4)}
 					</Text>
 					<IconButton
@@ -52,11 +53,12 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 						size={16}
 						onPress={() => copyToClipboard(address, 'Address', showToast)}
 						style={{ margin: 0, padding: 0, marginLeft: 8 }}
+						testID="price-display-copy-address-button"
 					/>
 				</View>
 				
 				{/* Price placeholder */}
-				<Text style={{ fontSize: 32 }}>$---.--</Text>
+				<Text style={{ fontSize: 32 }} testID="price-display-price-placeholder">$---.--</Text>
 			</View>
 		);
 	}
@@ -69,7 +71,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 		: '---';
 
 	return (
-		<View style={styles.container}>
+		<View style={styles.container} testID="price-display-container">
 			{/* Header with coin info */}
 			<View style={styles.headerRow}>
 				<TouchableOpacity onPress={() => setIsZoomModalVisible(true)} activeOpacity={0.8}>
@@ -77,12 +79,13 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 						uri={resolvedIconUrl}
 						size={40}
 						borderRadius={20}
-					showLoadingIndicator={true}
-					style={styles.icon}
-				/>
+						showLoadingIndicator={true}
+						style={styles.icon}
+						testID="price-display-coin-icon"
+					/>
 				</TouchableOpacity>
 				{name && (
-					<Text style={styles.nameText}>
+					<Text style={styles.nameText} testID="price-display-coin-name">
 						{name}
 					</Text>
 				)}
@@ -90,7 +93,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 
 			{/* Address row */}
 			<View style={styles.addressRow}>
-				<Text style={styles.addressText}>
+				<Text style={styles.addressText} testID="price-display-coin-address">
 					{formatAddress(address, 8, 4)}
 				</Text>
 				<IconButton
@@ -98,15 +101,18 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					size={16}
 					onPress={() => copyToClipboard(address, 'Address', showToast)}
 					style={{ margin: 0, padding: 0, marginLeft: 8 }}
+					testID="price-display-copy-address-button"
 				/>
 			</View>
 			
 			{/* Price */}
-			<Odometer
-				value={formattedPrice}
-				duration={400}
-				fontStyle={{ fontSize: 32, fontVariant: ['tabular-nums'] }}
-			/>
+			<View testID="price-display-current-price">
+				<Odometer
+					value={formattedPrice}
+					duration={400}
+					fontStyle={{ fontSize: 32, fontVariant: ['tabular-nums'] }}
+				/>
+			</View>
 
 			{/* Change and period */}
 			<View style={styles.changeRow}>
@@ -115,10 +121,11 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 						styles.changeText,
 						isPositive ? styles.changePositive : styles.changeNegative
 					]}
+					testID="price-display-price-change"
 				>
 					{formattedChange}
 				</Text>
-				<Text style={[styles.periodText, { color: theme.colors.onSurfaceVariant }]}>
+				<Text style={[styles.periodText, { color: theme.colors.onSurfaceVariant }]} testID="price-display-period">
 					{period}
 				</Text>
 			</View>

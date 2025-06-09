@@ -21,4 +21,5 @@ export interface LinkItemProps {
 	label: string;
 	value: string;
 	onPress: (url: string) => void;
+	testID?: string;
 } 
