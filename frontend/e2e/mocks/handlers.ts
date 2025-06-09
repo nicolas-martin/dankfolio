@@ -53,9 +53,26 @@ const existingHandlers = [
     return HttpResponse.json(mockCoins);
   }),
   // Handler for CoinService -> GetCoinByID
-  http.post(`${API_BASE_URL}/dankfolio.v1.CoinService/GetCoinByID`, async () => {
+  http.post(`${API_BASE_URL}/dankfolio.v1.CoinService/GetCoinByID`, async ({ request }) => {
     console.log('[MSW] Intercepted CoinService/GetCoinByID');
-    return HttpResponse.json(mockCoins[0]); // Return Solana by default
+    try {
+      const body = await request.json();
+      // Assuming the request body for GetCoinByID is something like { id: "mintAddress" }
+      // This needs to match the actual request structure from grpcApi.ts's getCoinByID
+      const coinId = body?.id;
+      if (coinId) {
+        const foundCoin = mockCoins.find(coin => coin.mintAddress === coinId);
+        if (foundCoin) {
+          return HttpResponse.json(foundCoin);
+        }
+      }
+      // Return a default or an error if no ID matched or body was not as expected
+      console.warn(`[MSW] GetCoinByID: No matching coin found for ID "${coinId}", returning first mock coin.`);
+      return HttpResponse.json(mockCoins[0]); // Fallback, or consider a 404
+    } catch (error) {
+      console.error('[MSW] GetCoinByID: Error parsing request or finding coin:', error);
+      return HttpResponse.json(mockCoins[0], { status: 500 }); // Fallback on error
+    }
   }),
   http.get('https://api.coingecko.com/api/v3/ping', () => { // Keep if still relevant
     console.log('[MSW] Intercepted CoinGecko Ping');
@@ -80,8 +97,8 @@ const newHandlers = [
   http.post(`${API_BASE_URL}/dankfolio.v1.TradeService/GetTrade`, async () => {
     console.log('[MSW] Intercepted TradeService/GetTrade (for getSwapStatus)');
     return HttpResponse.json({
-      id: `mock_trade_id_gettrade_${Date.now()}`,
-      transactionHash: `mock_tx_hash_gettrade_${Date.now()}`,
+      id: `mock_trade_id_gettrade_fixed`, // Fixed ID
+      transactionHash: `fixed_mock_tx_hash_gettrade_1234567890`, // Fixed hash
       status: 'COMPLETED', // Example: 'STATUS_COMPLETED' or 'COMPLETED' if matching enum string
       confirmations: 10,
       finalized: true,
@@ -198,31 +215,55 @@ const newHandlers = [
   // This mock should return a list of gRPC `Trade` message structures.
   // grpcApi.listTrades then maps these to Transaction[].
   http.post(`${API_BASE_URL}/dankfolio.v1.TradeService/ListTrades`, async () => {
-    console.log('[MSW] Intercepted TradeService/ListTrades');
-    const mockGrpcTrade = {
-      id: `trade_${Date.now()}`,
-      type: 'SWAP',
-      fromCoinId: mockCoins[0].mintAddress,
-      toCoinId: mockCoins[1].mintAddress,
-      amount: '10',
-      status: 'COMPLETED',
-      createdAt: { seconds: Math.floor(Date.now() / 1000), nanos: 0 },
-      transactionHash: `tx_${Date.now()}`,
-      confirmations: 10,
-      finalized: true,
-      error: '',
-      // Fields used by mapGrpcTradeToFrontendTransaction in grpcApi.ts
-      fromCoinSymbol: mockCoins[0].symbol,
-      toCoinSymbol: mockCoins[1].symbol,
-      fromCoinImageUrl: mockCoins[0].imageUrl,
-      toCoinImageUrl: mockCoins[1].imageUrl,
-      fromCoinDecimals: mockCoins[0].decimals,
-      toCoinDecimals: mockCoins[1].decimals,
-      amountTo: "1500.0" // Example amountTo
-    };
+    console.log('[MSW] Intercepted TradeService/ListTrades for ProfileScreen');
+    // Using a structure similar to mockProfileTransactions in ProfileScreen.e2e.ts
+    // Ensure these fields match what mapGrpcTradeToFrontendTransaction expects from a gRPC Trade message.
+    const mockProfileScreenTrades = [
+      {
+        id: 'tx1_profile', // Unique ID for the trade
+        type: 'SWAP', // 'SWAP', 'TRANSFER', etc.
+        fromCoinId: mockCoins[0].mintAddress, // Mint address of the 'from' coin
+        toCoinId: mockCoins[1].mintAddress,   // Mint address of the 'to' coin (empty for transfers out)
+        amount: "10", // Amount of 'from' coin (string)
+        status: 'COMPLETED', // 'PENDING', 'COMPLETED', 'FAILED'
+        createdAt: { seconds: Math.floor(Date.now() / 1000) - 3600, nanos: 0 }, // Timestamp
+        transactionHash: 'hash_profile_1_msw', // Blockchain transaction hash
+        confirmations: 10, // Number of confirmations
+        finalized: true,   // Boolean indicating if the trade is finalized
+        error: '',         // Error message if any
+        // Fields that mapGrpcTradeToFrontendTransaction uses to populate FrontendTransaction
+        fromCoinSymbol: mockCoins[0].symbol,
+        toCoinSymbol: mockCoins[1].symbol,
+        fromCoinImageUrl: mockCoins[0].imageUrl,
+        toCoinImageUrl: mockCoins[1].imageUrl,
+        fromCoinDecimals: mockCoins[0].decimals,
+        toCoinDecimals: mockCoins[1].decimals,
+        amountTo: "1500.0" // Amount of 'to' coin received (string)
+      },
+      {
+        id: 'tx2_profile',
+        type: 'TRANSFER',
+        fromCoinId: mockCoins[1].mintAddress,
+        toCoinId: '', // No 'to' coin for a simple transfer out
+        amount: "100",
+        status: 'PENDING',
+        createdAt: { seconds: Math.floor(Date.now() / 1000) - 7200, nanos: 0 },
+        transactionHash: 'hash_profile_2_msw',
+        confirmations: 1,
+        finalized: false,
+        error: '',
+        fromCoinSymbol: mockCoins[1].symbol,
+        toCoinSymbol: '', // No toCoinSymbol for transfer
+        fromCoinImageUrl: mockCoins[1].imageUrl,
+        toCoinImageUrl: '', // No toCoinImageUrl
+        fromCoinDecimals: mockCoins[1].decimals,
+        toCoinDecimals: 0, // Or appropriate decimals for the context
+        amountTo: "100" // For transfers, amountTo might be same as amount or not applicable
+      },
+    ];
     return HttpResponse.json({ // Matches ListTradesResponse in grpcApi.ts
-      trades: [mockGrpcTrade],
-      totalCount: 1,
+      trades: mockProfileScreenTrades,
+      totalCount: mockProfileScreenTrades.length,
     });
   }),
 ];
