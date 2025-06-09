@@ -16,14 +16,18 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
   const [activePercent, setActivePercent] = useState<number | null>(null);
 
   const handlePress = (percent: number) => {
+    console.log(`[AmountPercentageButtons] Button ${percent}% pressed`);
+    console.log(`[AmountPercentageButtons] Balance:`, balance);
     setActivePercent(percent);
     
     if (balance === undefined || balance === null || balance <= 0) {
+      console.log(`[AmountPercentageButtons] No balance available, setting amount to 0`);
       onSelectAmount('0'); // Or handle as per original Send screen logic for no balance
       return;
     }
 
     const calculatedAmount = (balance * percent) / 100;
+    console.log(`[AmountPercentageButtons] Calculated amount:`, calculatedAmount);
     // Formatting logic adapted from Send/index.tsx (turn 23)
     let amountStr = calculatedAmount.toFixed(9); // Max 9 decimal places
     amountStr = parseFloat(amountStr).toString(); // Removes trailing zeros after decimal
@@ -35,6 +39,7 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
             amountStr = amountStr.substring(0, 11);
         }
     }
+    console.log(`[AmountPercentageButtons] Final amount string:`, amountStr);
     onSelectAmount(amountStr);
   };
 
@@ -51,9 +56,9 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
             ]}
             onPress={() => handlePress(percent)}
             testID={`amount-percentage-button-${percent}`}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
+            accessible={true}
             accessibilityRole="button"
+            accessibilityLabel={`${percent} percent button`}
           >
             <Text 
               style={[
@@ -61,6 +66,7 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
                 isActive && { color: theme.colors.onPrimary }
               ]}
               testID={`amount-percentage-text-${percent}`}
+              accessible={false}
             >
               {percent}%
             </Text>

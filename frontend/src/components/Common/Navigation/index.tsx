@@ -35,6 +35,7 @@ const TabNavigator = () => {
 					shifting={false}
 					activeColor={theme.colors.primary}
 					inactiveColor={theme.colors.onSurfaceVariant}
+					testID="bottom-navigation-bar-outer-layer"
 					onTabPress={({ route }) => {
 						const event = navigation.emit({
 							type: 'tabPress',
