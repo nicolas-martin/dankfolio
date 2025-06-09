@@ -243,6 +243,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						}}
 						disabled={!onSelectToken}
 						testID={testID}
+						accessible={false}
+						importantForAccessibility="no-hide-descendants"
+						accessibilityRole="button"
 					>
 						<View style={styles.tokenInfo}>
 							{selectedToken ? (
@@ -253,13 +256,14 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 										borderRadius={12}
 										showLoadingIndicator={true}
 										style={styles.tokenIcon}
+										testID={`token-selector-icon-${selectedToken.mintAddress}`}
 									/>
-									<Text style={styles.tokenSymbol}>
+									<Text style={styles.tokenSymbol} testID={`token-selector-symbol-${selectedToken.mintAddress}`}>
 										{selectedToken.symbol}
 									</Text>
 								</>
 							) : (
-								<Text style={styles.tokenSymbol}>{label || 'Select Token'}</Text>
+								<Text style={styles.tokenSymbol} testID="token-selector-placeholder">{label || 'Select Token'}</Text>
 							)}
 						</View>
 						<ChevronDownIcon size={20} color={theme.colors.onSurface} />

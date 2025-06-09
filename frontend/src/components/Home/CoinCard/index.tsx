@@ -58,18 +58,30 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				style={styles.horizontalCard} // Use new style for horizontal card
 				onPress={handlePress}
 				testID={`coin-card-horizontal-${coin.mintAddress}`}
-				accessible={true}
-				accessibilityLabel={`${coin.symbol} coin card, price ${formatPrice(Number(coin.price))}`}
+				accessible={false}
+				importantForAccessibility="no-hide-descendants"
 				accessibilityRole="button"
 				activeOpacity={0.7}
 				delayPressIn={100}
 				delayPressOut={100}
 			>
 				{renderCoinIcon(32, 16)}
-				<Text style={styles.horizontalSymbol} numberOfLines={1}>
+				<Text 
+					style={styles.horizontalSymbol} 
+					numberOfLines={1} 
+					testID={`coin-symbol-${coin.mintAddress}`}
+					accessible={true}
+					accessibilityRole="text"
+				>
 					{coin.symbol}
 				</Text>
-				<Text style={styles.horizontalPrice} numberOfLines={1}>
+				<Text 
+					style={styles.horizontalPrice} 
+					numberOfLines={1} 
+					testID={`coin-price-${coin.mintAddress}`}
+					accessible={true}
+					accessibilityRole="text"
+				>
 					{formatPrice(Number(coin.price))}
 				</Text>
 				{/* Optionally, add a small 24h change if space permits */}
@@ -107,8 +119,8 @@ const CoinCard: React.FC<CoinCardProps> = ({
 			style={styles.card}
 			onPress={handlePress}
 			testID={`coin-card-${coin.mintAddress}`}
-			accessible={true}
-			accessibilityLabel={`${coin.symbol} coin card, ${coin.name}, price ${formatPrice(Number(coin.price))}${coin.change24h !== undefined ? `, change ${formatPercentage(coin.change24h, 2, true)}` : ''}`}
+			accessible={false}
+			importantForAccessibility="no-hide-descendants"
 			accessibilityRole="button"
 			activeOpacity={0.7}
 		>
@@ -116,7 +128,13 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				<View style={styles.leftSection}>
 					{renderCoinIcon()}
 					<View style={styles.nameSection}>
-						<Text style={styles.symbol} numberOfLines={1}>
+						<Text 
+							style={styles.symbol} 
+							numberOfLines={1} 
+							testID={`coin-symbol-${coin.mintAddress}`}
+							accessible={true}
+							accessibilityRole="text"
+						>
 							{coin.symbol}
 						</Text>
 						{coin.balance !== undefined ? (
@@ -159,7 +177,13 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				)}
 
 				<View style={styles.rightSection}>
-					<Text style={styles.price} numberOfLines={1}>
+					<Text 
+						style={styles.price} 
+						numberOfLines={1} 
+						testID={`coin-price-${coin.mintAddress}`}
+						accessible={true}
+						accessibilityRole="text"
+					>
 						{formatPrice(Number(coin.price))}
 					</Text>
 					{coin.change24h !== undefined ? (

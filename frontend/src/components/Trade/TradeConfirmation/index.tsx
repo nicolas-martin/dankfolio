@@ -80,15 +80,15 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						<View style={styles.tokenInfo}>
 							<TokenIcon token={fromToken} />
 							<View style={styles.tokenDetails}>
-								<Text style={styles.tokenSymbol}>{fromToken.symbol}</Text>
-								<Text style={styles.tokenName}>{fromToken.name}</Text>
+								<Text style={styles.tokenSymbol} testID={`from-token-symbol-${fromToken.mintAddress}`}>{fromToken.symbol}</Text>
+								<Text style={styles.tokenName} testID={`from-token-name-${fromToken.mintAddress}`}>{fromToken.name}</Text>
 							</View>
 						</View>
 						<View style={styles.amountInfo}>
-							<Text style={styles.amount}>
+							<Text style={styles.amount} testID="from-token-amount">
 								{isNaN(Number(fromAmount)) ? '0' : fromAmount}
 							</Text>
-							<Text style={styles.amountUsd}>
+							<Text style={styles.amountUsd} testID="from-token-amount-usd">
 								{formatPrice(isNaN(Number(fromAmount)) ? 0 : Number(fromAmount) * (fromToken.price || 0))}
 							</Text>
 						</View>
@@ -102,15 +102,15 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						<View style={styles.tokenInfo}>
 							<TokenIcon token={toToken} />
 							<View style={styles.tokenDetails}>
-								<Text style={styles.tokenSymbol}>{toToken.symbol}</Text>
-								<Text style={styles.tokenName}>{toToken.name}</Text>
+								<Text style={styles.tokenSymbol} testID={`to-token-symbol-${toToken.mintAddress}`}>{toToken.symbol}</Text>
+								<Text style={styles.tokenName} testID={`to-token-name-${toToken.mintAddress}`}>{toToken.name}</Text>
 							</View>
 						</View>
 						<View style={styles.amountInfo}>
-							<Text style={styles.amount}>
+							<Text style={styles.amount} testID="to-token-amount">
 								{isNaN(Number(toAmount)) ? '0' : toAmount}
 							</Text>
-							<Text style={styles.amountUsd}>
+							<Text style={styles.amountUsd} testID="to-token-amount-usd">
 								{formatPrice(isNaN(Number(toAmount)) ? 0 : Number(toAmount) * (toToken.price || 0))}
 							</Text>
 						</View>
@@ -119,8 +119,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 				{/* Network Fee */}
 				<View style={styles.feeContainer} testID="fee-section">
-					<Text style={styles.feeLabel}>Network Fee</Text>
-					<Text style={styles.feeValue}>{formatPrice(Number(fees.totalFee))}</Text>
+					<Text style={styles.feeLabel} testID="fee-label">Network Fee</Text>
+					<Text style={styles.feeValue} testID="fee-value">{formatPrice(Number(fees.totalFee))}</Text>
 				</View>
 
 				{/* Action Buttons */}

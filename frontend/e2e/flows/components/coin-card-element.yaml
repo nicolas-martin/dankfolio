@@ -4,15 +4,18 @@ appId: com.nicolasmartin.dankfolio
 # This test assumes we're already on a screen with coin cards visible
 # Pass coinAddress as an environment variable when calling this flow
 
-# Test CoinCard testID functionality (most reliable)
+# Test CoinCard main container (TouchableOpacity)
 - assertVisible:
     id: "coin-card-${COIN_ADDRESS}"
 
+# Test coin symbol text element
 - assertVisible:
     id: "coin-symbol-${COIN_ADDRESS}"
 
+# Test coin price text element
 - assertVisible:
     id: "coin-price-${COIN_ADDRESS}"
 
+# Test sparkline chart component
 - assertVisible:
-    id: "price-chart-${COIN_ADDRESS}"
+    id: "sparkline-${COIN_ADDRESS}"
