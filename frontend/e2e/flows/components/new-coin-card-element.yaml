@@ -1,32 +1,13 @@
 appId: com.nicolasmartin.dankfolio
-env:
-  COIN_ADDRESS: "NewCoin1111111111111111111111111111111"
 ---
-# HorizontalTickerCard Element Test - Core functionality for a single new coin
-# This test assumes we're already on a screen with horizontal ticker cards visible
-# Pass coinAddress as an environment variable when calling this flow
-
-# Get the coin address from environment variable or use default
-- evalScript: |
-    const coinAddress = COIN_ADDRESS || "NewCoin1111111111111111111111111111111";
-    output.coinData = {
-      coinAddress: coinAddress,
-      horizontalTickerCardId: `horizontal-ticker-card-${coinAddress}`,
-      coinIconId: `coin-icon-${coinAddress}`
-    };
-
-# Test HorizontalTickerCard testID functionality (most reliable)
 - assertVisible:
-    id: ${output.coinData.horizontalTickerCardId}
+      id: "horizontal-ticker-card-${COIN_ADDRESS}"
 
-# Test coin icon is visible
 - assertVisible:
-    id: ${output.coinData.coinIconId}
+      id: "horizontal-ticker-symbol-${COIN_ADDRESS}"
 
-# Wait for any animations to complete
-- waitForAnimationToEnd
+- assertVisible:
+      id: "horizontal-ticker-time-${COIN_ADDRESS}"
 
-# Test horizontal ticker card interaction
-- tapOn:
-    id: ${output.coinData.horizontalTickerCardId}
-- back 
+- assertVisible:
+      id: "horizontal-ticker-icon-${COIN_ADDRESS}"

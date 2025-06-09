@@ -6,16 +6,16 @@ appId: com.nicolasmartin.dankfolio
 
 # Test CoinCard main container (TouchableOpacity)
 - assertVisible:
-    id: "coin-card-${COIN_ADDRESS}"
+      id: "coin-card-${COIN_ADDRESS}"
 
 # Test coin symbol text element
 - assertVisible:
-    id: "coin-symbol-${COIN_ADDRESS}"
+      id: "coin-symbol-${COIN_ADDRESS}"
 
 # Test coin price text element
 - assertVisible:
-    id: "coin-price-${COIN_ADDRESS}"
+      id: "coin-price-${COIN_ADDRESS}"
 
 # Test sparkline chart component
 - assertVisible:
-    id: "sparkline-${COIN_ADDRESS}"
+      id: "sparkline-${COIN_ADDRESS}"

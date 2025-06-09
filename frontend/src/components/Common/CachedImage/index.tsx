@@ -181,6 +181,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 			onLoad={handleLoad}
 			onError={handleError}
 			testID={testID}
+			accessible={false}
 			priority="low" // Set low priority to prevent blocking critical renders
 			{...imageProps}
 		/>
