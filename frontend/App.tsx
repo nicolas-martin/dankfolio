@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
-import { env } from './src/utils/env';
-import { enableApiMocking, shouldEnableMocking } from './src/utils/mockApi';
+import { env } from './src/utils/env'; // Import our new environment utility
+import { worker } from './e2e/msw-worker';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -44,8 +44,16 @@ Sentry.init({
 // Conditionally start MSW worker
 // Enable API mocking for E2E testing
 if (shouldEnableMocking()) {
-	console.log('🔧 Enabling API mocking for E2E testing...');
+	console.log('� Enabling API mocking for E2E testing...');
 	enableApiMocking();
+	console.log('[MSW] E2E_MOCKING_ENABLED is true, starting MSW worker...');
+	worker.start({
+		onUnhandledRequest: 'bypass', // Or 'warn' or a custom function
+	}).then(() => {
+		console.log('[MSW] Worker started successfully.');
+	}).catch((error: any) => {
+		console.error('[MSW] Error starting worker:', error);
+	});
 }
 
 import 'react-native-gesture-handler';
@@ -71,16 +79,16 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useThemeStore } from '@/store/theme';
 
 // DEBUG: Log all environment variables at app startup
-console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
-console.log('🔍 process.env.NODE_ENV:', process.env.NODE_ENV);
-console.log('🔍 __DEV__:', __DEV__);
-console.log('🔍 Environment via Expo Constants:', env);
-console.log('🔍 APP_ENV:', env.appEnv);
-console.log('🔍 API_URL:', env.apiUrl);
-console.log('🔍 SOLANA_RPC_ENDPOINT:', env.solanaRpcEndpoint);
-console.log('🔍 DEBUG_MODE:', env.debugMode);
-console.log('🔍 LOAD_DEBUG_WALLET:', env.loadDebugWallet);
-console.log('🔍 === END ENVIRONMENT VARIABLES DEBUG ===');
+console.log('� === ENVIRONMENT VARIABLES DEBUG ===');
+console.log('� process.env.NODE_ENV:', process.env.NODE_ENV);
+console.log('� __DEV__:', __DEV__);
+console.log('� Environment via Expo Constants:', env);
+console.log('� APP_ENV:', env.appEnv);
+console.log('� API_URL:', env.apiUrl);
+console.log('� SOLANA_RPC_ENDPOINT:', env.solanaRpcEndpoint);
+console.log('� DEBUG_MODE:', env.debugMode);
+console.log('� LOAD_DEBUG_WALLET:', env.loadDebugWallet);
+console.log('� === END ENVIRONMENT VARIABLES DEBUG ===');
 
 // Keep the splash screen visible while we fetch resources
 try {
@@ -161,7 +169,7 @@ const App: React.FC = () => {
 			logger.breadcrumb({ message: 'App: Preparing - Initializing Firebase', category: 'app_lifecycle' });
 			try {
 				await initializeFirebaseServices();
-				logger.info("🔥 Firebase services initialized successfully.");
+				logger.info("� Firebase services initialized successfully.");
 			} catch (e) {
 				logger.error('❌ Failed to initialize Firebase services', { error: e?.message });
 				// Decide if this error should block app startup or be handled gracefully
