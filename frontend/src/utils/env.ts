@@ -13,6 +13,7 @@ interface EnvVariables {
 	firebaseAppCheckDebugTokenAndroid: string;// For development only
 	firebaseAppCheckDebugTokenIos: string;// For development only
 	testPrivateKey?: string; // For development only
+	loadDebugWallet?: string
 }
 
 /**
@@ -46,6 +47,7 @@ export const getEnvVariables = (): EnvVariables => {
 		apiUrl: env.apiUrl,
 		solanaRpcEndpoint: env.solanaRpcEndpoint,
 		sentryAuthToken: env.sentryAuthToken,
+		loadDebugWallet: env.loadDebugWallet,
 		firebaseTokensConfigured: !!(env.firebaseAppCheckDebugTokenAndroid && env.firebaseAppCheckDebugTokenIos),
 	});
 	//   }
