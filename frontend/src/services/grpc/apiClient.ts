@@ -13,7 +13,7 @@ import { Buffer } from 'buffer';
 
 // Log the environment variable for debugging
 log.log('🔧 API_URL from environment:', env.apiUrl);
-const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
+const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator' || env.e2eMockingEnabled
 
 if (!env.apiUrl) {
 	const errorMsg = 'API_URL environment variable is required but not set. Please check your environment configuration.';
@@ -84,20 +84,45 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 			log.error("An unknown error occurred while getting Firebase App Check token:", error);
 		}
 	}
+
 	return next(req);
 };
 
-// Main transport with auth interceptor for authenticated requests
-const transport = createConnectTransport({
-	baseUrl: env.apiUrl,
-	interceptors: [authInterceptor],
-});
+// Check if mocking is enabled to decide how to create clients
+const shouldMock = process.env.E2E_MOCKING_ENABLED === 'true' || __DEV__;
 
-const walletClient = createClient(WalletService, transport);
-const tradeClient = createClient(TradeService, transport);
-const coinClient = createClient(CoinService, transport);
-const priceClient = createClient(PriceService, transport);
-const utilityClient = createClient(UtilityService, transport);
+let walletClient, tradeClient, coinClient, priceClient, utilityClient;
+
+if (shouldMock) {
+	log.log('🎭 Creating gRPC clients with custom fetch for mocking');
+
+	// Create transport with custom fetch function for mocking
+	const transport = createConnectTransport({
+		baseUrl: env.apiUrl,
+		interceptors: [authInterceptor],
+		fetch: (...args) => global.fetch(...args), // Dynamically resolve to current global.fetch
+	});
+
+	walletClient = createClient(WalletService, transport);
+	tradeClient = createClient(TradeService, transport);
+	coinClient = createClient(CoinService, transport);
+	priceClient = createClient(PriceService, transport);
+	utilityClient = createClient(UtilityService, transport);
+} else {
+	log.log('🔧 Creating gRPC clients with standard transport');
+
+	// Create standard transport for production
+	const transport = createConnectTransport({
+		baseUrl: env.apiUrl,
+		interceptors: [authInterceptor],
+	});
+
+	walletClient = createClient(WalletService, transport);
+	tradeClient = createClient(TradeService, transport);
+	coinClient = createClient(CoinService, transport);
+	priceClient = createClient(PriceService, transport);
+	utilityClient = createClient(UtilityService, transport);
+}
 
 export { walletClient, tradeClient, coinClient, priceClient, utilityClient };
 

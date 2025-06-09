@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/skipJA/Cointracker/backend/internal/clients" // Adjust import path
-	"github.com/skipJA/Cointracker/backend/internal/db"
-	"github.com/skipJA/Cointracker/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // --- Mock db.Repository[model.ApiStat] ---
@@ -26,30 +26,38 @@ type mockApiStatGenericRepository struct {
 func (m *mockApiStatGenericRepository) Get(ctx context.Context, id string) (*model.ApiStat, error) {
 	return nil, errors.New("mock Get not implemented")
 }
+
 func (m *mockApiStatGenericRepository) List(ctx context.Context) ([]model.ApiStat, error) {
 	return nil, errors.New("mock List not implemented")
 }
+
 func (m *mockApiStatGenericRepository) Create(ctx context.Context, item *model.ApiStat) error {
 	return errors.New("mock Create not implemented")
 }
+
 func (m *mockApiStatGenericRepository) Update(ctx context.Context, item *model.ApiStat) error {
 	return errors.New("mock Update not implemented")
 }
+
 func (m *mockApiStatGenericRepository) Upsert(ctx context.Context, item *model.ApiStat) (int64, error) {
 	if m.UpsertFunc != nil {
 		return m.UpsertFunc(ctx, item)
 	}
 	return 1, nil // Default: success, 1 row affected
 }
+
 func (m *mockApiStatGenericRepository) BulkUpsert(ctx context.Context, items *[]model.ApiStat) (int64, error) {
 	return 0, errors.New("mock BulkUpsert not implemented")
 }
+
 func (m *mockApiStatGenericRepository) Delete(ctx context.Context, id string) error {
 	return errors.New("mock Delete not implemented")
 }
+
 func (m *mockApiStatGenericRepository) GetByField(ctx context.Context, field string, value any) (*model.ApiStat, error) {
 	return nil, errors.New("mock GetByField not implemented")
 }
+
 func (m *mockApiStatGenericRepository) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]model.ApiStat, int64, error) {
 	if m.ListWithOptsFunc != nil {
 		return m.ListWithOptsFunc(ctx, opts)
@@ -61,12 +69,13 @@ type mockStore struct {
 	apiStatsRepo db.Repository[model.ApiStat] // Changed to use generic repository interface
 }
 
-func (m *mockStore) Coins() db.Repository[model.Coin]       { return nil }
-func (m *mockStore) Trades() db.Repository[model.Trade]     { return nil }
-func (m *mockStore) RawCoins() db.Repository[model.RawCoin] { return nil }
-func (m *mockStore) Wallet() db.Repository[model.Wallet]    { return nil }
-func (m *mockStore) ApiStats() db.Repository[model.ApiStat] { return m.apiStatsRepo } // Changed return type
+func (m *mockStore) Coins() db.Repository[model.Coin]                            { return nil }
+func (m *mockStore) Trades() db.Repository[model.Trade]                          { return nil }
+func (m *mockStore) RawCoins() db.Repository[model.RawCoin]                      { return nil }
+func (m *mockStore) Wallet() db.Repository[model.Wallet]                         { return nil }
+func (m *mockStore) ApiStats() db.Repository[model.ApiStat]                      { return m.apiStatsRepo } // Changed return type
 func (m *mockStore) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) { return nil, nil }
+
 func (m *mockStore) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
 	return nil, nil
 }
@@ -97,7 +106,7 @@ func TestAPICallTrackerImpl_Increment_NoNormalization(t *testing.T) {
 		"jupiter": {
 			"/tokens/v1/token/SPECIFIC_ID_1": 2,
 			"/tokens/v1/token/SPECIFIC_ID_2": 1,
-			"/tokens/v1/new":                   1,
+			"/tokens/v1/new":                 1,
 		},
 		"solana": {"/tokens/v1/token/SOME_ID": 1},
 	}
@@ -235,7 +244,6 @@ func TestAPICallTrackerImpl_LoadStatsForToday_DbError(t *testing.T) {
 	}
 }
 
-
 func TestAPICallTrackerImpl_Increment_DbError(t *testing.T) {
 	expectedDbError := errors.New("upsert failed")
 	mockRepo := &mockApiStatGenericRepository{
@@ -370,7 +378,6 @@ func TestAPICallTrackerImpl_LoadStatsForToday_NoRecords_KeepsExistingMemory(t *t
 	tracker := newTestTracker(mockRepo)
 	// Pre-populate memory, this should remain as LoadStatsForToday doesn't clear if DB returns no records.
 	tracker.Increment("memService", "memEp")
-
 
 	err := tracker.LoadStatsForToday(context.Background())
 	if err != nil {
