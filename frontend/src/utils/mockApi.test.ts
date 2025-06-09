@@ -73,5 +73,37 @@ describe('mockApi', () => {
       expect(apiData).toHaveProperty('coins');
       expect(Array.isArray(apiData.coins)).toBe(true);
     });
+
+    it('should return price history mock data', async () => {
+      enableApiMocking();
+      
+      const response = await fetch('http://localhost:9000/dankfolio.v1.PriceService/GetPriceHistory');
+      const data = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(data).toHaveProperty('prices');
+      expect(Array.isArray(data.prices)).toBe(true);
+      expect(data.prices.length).toBeGreaterThan(0);
+      expect(data.prices[0]).toHaveProperty('timestamp');
+      expect(data.prices[0]).toHaveProperty('price');
+      expect(data).toHaveProperty('timeframe');
+      expect(data).toHaveProperty('coinSymbol');
+    });
+
+    it('should generate different random prices for different calls', async () => {
+      enableApiMocking();
+      
+      // Make two calls to the same endpoint
+      const response1 = await fetch('http://localhost:9000/dankfolio.v1.PriceService/GetPriceHistory');
+      const data1 = await response1.json();
+      
+      const response2 = await fetch('http://localhost:9000/dankfolio.v1.PriceService/GetPriceHistory');
+      const data2 = await response2.json();
+      
+      // Prices should be different due to randomness
+      expect(data1.prices[0].price).not.toBe(data2.prices[0].price);
+      expect(data1.prices.length).toBe(data2.prices.length); // Same length
+      expect(data1.prices.length).toBe(24); // 24 data points (4-hour intervals over 4 days)
+    });
   });
 }); 
