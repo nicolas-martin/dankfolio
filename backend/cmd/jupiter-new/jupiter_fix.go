@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker()
+	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
 	// Test with the free API endpoint (lite-api.jup.ag)
 	jupiterClient := jupiter.NewClient(httpClient, "https://lite-api.jup.ag", "", apiTracker)

@@ -26,7 +26,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
+	// "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry" // Removed unused import
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
@@ -85,7 +85,7 @@ func main() {
 	// Initialize APICallTracker
 	// The store is initialized later, so we need to move APICallTracker initialization after store,
 	// or pass store later. For now, let's defer APICallTracker initialization.
-	// apiTracker := clients.NewAPICallTracker(store, slogger) // Store not yet initialized here
+	var apiTracker clients.APICallTracker // Declare apiTracker
 
 	// Start goroutine to log API stats periodically with context cancellation
 	// TODO: Move the goroutine to a separate inside `LogAPIStats` function
@@ -113,7 +113,7 @@ func main() {
 	slog.Info("Database store initialized successfully.")
 
 	// Initialize APICallTracker now that store is available
-	apiTracker := clients.NewAPICallTracker(store, slogger)
+	apiTracker = clients.NewAPICallTracker(store, slogger) // Assign to declared apiTracker
 	slog.Info("API Call Tracker initialized.")
 
 	// Load today's stats

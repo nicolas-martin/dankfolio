@@ -5,12 +5,16 @@ import (
 	"log/slog"
 	"sort" // Added for consistent output
 	"strings"
-
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	// "github.com/nicolas-martin/dankfolio/backend/internal/clients" // Removed to break import cycle
 )
 
+// StatsGetter defines an interface for getting stats, to be implemented by clients.APICallTracker.
+type StatsGetter interface {
+	GetStats() map[string]map[string]int
+}
+
 // LogAPIStats retrieves API call statistics from the tracker and logs them.
-func LogAPIStats(tracker clients.APICallTracker, logger *slog.Logger) {
+func LogAPIStats(tracker StatsGetter, logger *slog.Logger) { // Changed parameter type
 	rawStats := tracker.GetStats()
 
 	if len(rawStats) == 0 {

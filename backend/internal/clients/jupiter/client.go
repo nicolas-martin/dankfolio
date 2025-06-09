@@ -306,7 +306,7 @@ func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, []
 			endpointName = "/" // Default if path is empty
 		}
 		if c.tracker != nil {
-			c.tracker.TrackCall("jupiter", endpointName)
+			c.tracker.Increment("jupiter", endpointName)
 		}
 	}
 
@@ -366,7 +366,7 @@ func PostRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 			endpointName = "/" // Default if path is empty
 		}
 		if c.tracker != nil {
-			c.tracker.TrackCall("jupiter", endpointName)
+			c.tracker.Increment("jupiter", endpointName)
 		}
 	}
 

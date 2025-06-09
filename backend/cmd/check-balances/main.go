@@ -68,7 +68,7 @@ func main() {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Token ID", "Amount"})
+	table.Header([]string{"Token ID", "Amount"}) // Changed SetHeader to Header
 	for _, account := range accounts.Value {
 		parsedData := account.Account.Data.GetRawJSON()
 		if len(parsedData) == 0 {

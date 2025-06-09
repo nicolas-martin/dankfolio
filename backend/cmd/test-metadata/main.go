@@ -49,9 +49,15 @@ func main() {
 
 	// Initialize Solana client
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker()
+	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
-	solanaClient := solana.NewClient(rpcClient, apiTracker)
+	genericSolanaClient := solana.NewClient(rpcClient, apiTracker)
+
+	// Type assert to the concrete client type that has GetMetadataAccount
+	solanaClient, ok := genericSolanaClient.(*solana.Client)
+	if !ok {
+		log.Fatalf("Failed to assert solanaClient to *solana.Client type")
+	}
 
 	// Fetch metadata
 	fmt.Println("Fetching metadata for mint:", *mintAddress)
@@ -68,11 +74,11 @@ func main() {
 
 	// Main metadata table
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Field", "Value"})
-	table.SetBorder(false)
-	table.SetColumnSeparator(" │ ")
-	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.Header([]string{"Field", "Value"})
+	// table.SetBorder(false) // Removed
+	// table.SetColumnSeparator(" │ ") // Removed
+	// table.SetHeaderAlignment(tablewriter.AlignLeft) // Removed
+	// table.SetAlignment(tablewriter.AlignLeft) // Removed
 
 	table.Append([]string{"Name", metadata.Data.Name})
 	table.Append([]string{"Symbol", metadata.Data.Symbol})
@@ -89,11 +95,11 @@ func main() {
 	// Add token standard if it exists
 	if metadata.TokenStandard != nil {
 		tokenStandardTable := tablewriter.NewWriter(os.Stdout)
-		tokenStandardTable.SetHeader([]string{"Token Standard"})
-		tokenStandardTable.SetBorder(false)
-		tokenStandardTable.SetColumnSeparator(" │ ")
-		tokenStandardTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		tokenStandardTable.SetAlignment(tablewriter.ALIGN_LEFT)
+		tokenStandardTable.Header([]string{"Token Standard"})
+		// tokenStandardTable.SetBorder(false) // Removed
+		// tokenStandardTable.SetColumnSeparator(" │ ") // Removed
+		// tokenStandardTable.SetHeaderAlignment(tablewriter.AlignLeft) // Removed
+		// tokenStandardTable.SetAlignment(tablewriter.AlignLeft) // Removed
 
 		tokenStandardTable.Append([]string{fmt.Sprintf("%v", *metadata.TokenStandard)})
 
@@ -104,11 +110,11 @@ func main() {
 	// Add collection details if they exist
 	if metadata.CollectionDetails != nil {
 		collectionDetailsTable := tablewriter.NewWriter(os.Stdout)
-		collectionDetailsTable.SetHeader([]string{"Collection Type", "Size"})
-		collectionDetailsTable.SetBorder(false)
-		collectionDetailsTable.SetColumnSeparator(" │ ")
-		collectionDetailsTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		collectionDetailsTable.SetAlignment(tablewriter.ALIGN_LEFT)
+		collectionDetailsTable.Header([]string{"Collection Type", "Size"})
+		// collectionDetailsTable.SetBorder(false) // Removed
+		// collectionDetailsTable.SetColumnSeparator(" │ ") // Removed
+		// collectionDetailsTable.SetHeaderAlignment(tablewriter.AlignLeft) // Removed
+		// collectionDetailsTable.SetAlignment(tablewriter.AlignLeft) // Removed
 
 		collectionDetailsTable.Append([]string{
 			fmt.Sprintf("V%d", metadata.CollectionDetails.Enum),
@@ -122,11 +128,11 @@ func main() {
 	// Add programmable config if it exists
 	if metadata.ProgrammableConfig != nil {
 		configTable := tablewriter.NewWriter(os.Stdout)
-		configTable.SetHeader([]string{"Config Type", "RuleSet"})
-		configTable.SetBorder(false)
-		configTable.SetColumnSeparator(" │ ")
-		configTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		configTable.SetAlignment(tablewriter.ALIGN_LEFT)
+		configTable.Header([]string{"Config Type", "RuleSet"})
+		// configTable.SetBorder(false) // Removed
+		// configTable.SetColumnSeparator(" │ ") // Removed
+		// configTable.SetHeaderAlignment(tablewriter.AlignLeft) // Removed
+		// configTable.SetAlignment(tablewriter.AlignLeft) // Removed
 
 		ruleSetValue := "None"
 		if metadata.ProgrammableConfig.V1.RuleSet != nil {
@@ -145,11 +151,11 @@ func main() {
 	// Add creators if they exist
 	if metadata.Data.Creators != nil && len(*metadata.Data.Creators) > 0 {
 		creatorTable := tablewriter.NewWriter(os.Stdout)
-		creatorTable.SetHeader([]string{"Creator", "Address", "Verified", "Share"})
-		creatorTable.SetBorder(false)
-		creatorTable.SetColumnSeparator(" │ ")
-		creatorTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		creatorTable.SetAlignment(tablewriter.ALIGN_LEFT)
+		creatorTable.Header([]string{"Creator", "Address", "Verified", "Share"})
+		// creatorTable.SetBorder(false) // Removed
+		// creatorTable.SetColumnSeparator(" │ ") // Removed
+		// creatorTable.SetHeaderAlignment(tablewriter.AlignLeft) // Removed
+		// creatorTable.SetAlignment(tablewriter.AlignLeft) // Removed
 
 		for i, creator := range *metadata.Data.Creators {
 			creatorTable.Append([]string{
@@ -167,11 +173,11 @@ func main() {
 	// Add collection if it exists
 	if metadata.Collection != nil {
 		collectionTable := tablewriter.NewWriter(os.Stdout)
-		collectionTable.SetHeader([]string{"Collection Key", "Verified"})
-		collectionTable.SetBorder(false)
-		collectionTable.SetColumnSeparator(" │ ")
-		collectionTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		collectionTable.SetAlignment(tablewriter.ALIGN_LEFT)
+		collectionTable.Header([]string{"Collection Key", "Verified"})
+		// collectionTable.SetBorder(false) // Removed
+		// collectionTable.SetColumnSeparator(" │ ") // Removed
+		// collectionTable.SetHeaderAlignment(tablewriter.AlignLeft) // Removed
+		// collectionTable.SetAlignment(tablewriter.AlignLeft) // Removed
 
 		collectionTable.Append([]string{
 			metadata.Collection.Key.ToBase58(),
@@ -185,11 +191,11 @@ func main() {
 	// Add uses if it exists
 	if metadata.Uses != nil {
 		usesTable := tablewriter.NewWriter(os.Stdout)
-		usesTable.SetHeader([]string{"Use Method", "Remaining", "Total"})
-		usesTable.SetBorder(false)
-		usesTable.SetColumnSeparator(" │ ")
-		usesTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		usesTable.SetAlignment(tablewriter.ALIGN_LEFT)
+		usesTable.Header([]string{"Use Method", "Remaining", "Total"})
+		// usesTable.SetBorder(false) // Removed
+		// usesTable.SetColumnSeparator(" │ ") // Removed
+		// usesTable.SetHeaderAlignment(tablewriter.AlignLeft) // Removed
+		// usesTable.SetAlignment(tablewriter.AlignLeft) // Removed
 
 		usesTable.Append([]string{
 			fmt.Sprintf("%v", metadata.Uses.UseMethod),

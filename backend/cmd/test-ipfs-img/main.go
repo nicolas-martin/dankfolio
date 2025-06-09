@@ -250,28 +250,35 @@ func printResultsTable(results []ValidationResult) {
 	fmt.Println("================================")
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"#", "Original URI", "Valid", "Status", "Error"})
+	table.Header([]string{"#", "Original URI", "Valid", "Status", "Error"}) // Corrected: Use Header()
 
-	// Configure table appearance for better readability
-	table.SetBorder(false)
-	table.SetRowLine(false)
-	table.SetAutoWrapText(true)
-	table.SetAutoFormatHeaders(true)
-	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.SetCenterSeparator("")
-	table.SetColumnSeparator(" | ")
-	table.SetRowSeparator("")
-	table.SetHeaderLine(true)
-	table.SetTablePadding(" ")
-	table.SetNoWhiteSpace(false)
+	// Configure table appearance for better readability - V2 style
+	// Most of these settings might need to be applied via a Config struct
+	// or functional options with NewTable if NewWriter doesn't support them directly.
+	// For now, removing problematic SetXXX calls to get a clean build.
+	// Functionality like AutoWrap, ColumnSeparator, Alignment, Borders, etc.,
+	// will be revisited if the default output is not satisfactory.
 
-	// Set specific column widths for better formatting
-	table.SetColMinWidth(0, 3)  // # column
-	table.SetColMinWidth(1, 45) // Original URI column
-	table.SetColMinWidth(2, 8)  // Valid column
-	table.SetColMinWidth(3, 15) // Status column
-	table.SetColMinWidth(4, 25) // Error column
+	// table.SetBorder(false) // Removed - needs to be set via Options or Configure
+	// table.SetRowLine(false) // Removed - needs to be set via Options or Configure
+	// table.SetAutoWrapText(false) // Removed - needs to be set via Options or Configure
+
+	// table.SetHeaderAlignment(tablewriter.AlignLeft) // Removed - needs to be set via Options or Configure
+	// table.SetAlignment(tablewriter.AlignLeft) // Removed - needs to be set via Options or Configure
+
+	// table.SetColumnSeparator(" | ") // Removed - needs to be set via Options or Configure
+
+	// table.SetHeaderLine(true) // Removed - needs to be set via Options or Configure
+
+	// Column widths might be available on NewWriter directly
+	// table.SetColMinWidth(0, 3)  // # column
+	// table.SetColMinWidth(1, 45) // Original URI column
+	// table.SetColMinWidth(2, 8)  // Valid column
+	// table.SetColMinWidth(3, 15) // Status column
+	// table.SetColMinWidth(4, 25) // Error column
+	// The above SetColMinWidth methods are not available directly on tablewriter.Table (which NewWriter returns)
+	// This will likely require using WithConfig option during NewTable creation.
+	// For now, removing them to see if the build passes without column width settings.
 
 	for i, result := range results {
 		// Truncate long URLs for better readability

@@ -12,9 +12,10 @@ import (
 	"time"
 
 	"github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/rpc"
+	gagliardettorpc "github.com/gagliardetto/solana-go/rpc" // Alias to avoid collision with local rpc
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	dankfolioSolanaClient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Added alias for our solana client
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
@@ -37,7 +38,7 @@ func main() {
 	}
 
 	// Initialize RPC client
-	client := rpc.New(*rpcEndpoint)
+	client := gagliardettorpc.New(*rpcEndpoint) // Use aliased rpc
 
 	// Initialize memory store
 	store := memory.NewWithConfig(memory.Config{})
@@ -47,9 +48,11 @@ func main() {
 		Timeout: time.Second * 10,
 	}
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker()
+	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
 	jupiterClient := jupiter.NewClient(httpClient, os.Getenv("JUPITER_API_URL"), os.Getenv("JUPITER_API_KEY"), apiTracker)
+	// solanaInfraClient for coinService and walletService
+	solanaInfraClient := dankfolioSolanaClient.NewClient(client, apiTracker) // Use aliased package
 
 	// Initialize coin service using environment variables like main API
 	coinServiceConfig := &coin.Config{
@@ -59,10 +62,11 @@ func main() {
 		SolanaRPCEndpoint:     *rpcEndpoint,
 		NewCoinsFetchInterval: time.Hour, // Default for this utility
 	}
-	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store, nil)
+	// Provide nil for currently unneeded dependencies in this cmd tool
+	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store, solanaInfraClient, nil, apiTracker, nil)
 
 	// Initialize the wallet service
-	walletService := wallet.New(client, store, coinService)
+	walletService := wallet.New(solanaInfraClient, store, coinService)
 
 	// Read and parse the wallet file
 	keyBytes, err := os.ReadFile(*walletPath)
