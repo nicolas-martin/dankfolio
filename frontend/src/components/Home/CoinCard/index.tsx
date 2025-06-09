@@ -58,6 +58,9 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				style={styles.horizontalCard} // Use new style for horizontal card
 				onPress={handlePress}
 				testID={`coin-card-horizontal-${coin.mintAddress}`}
+				accessible={true}
+				accessibilityLabel={`${coin.symbol} coin card, price ${formatPrice(Number(coin.price))}`}
+				accessibilityRole="button"
 				activeOpacity={0.7}
 				delayPressIn={100}
 				delayPressOut={100}
@@ -104,6 +107,9 @@ const CoinCard: React.FC<CoinCardProps> = ({
 			style={styles.card}
 			onPress={handlePress}
 			testID={`coin-card-${coin.mintAddress}`}
+			accessible={true}
+			accessibilityLabel={`${coin.symbol} coin card, ${coin.name}, price ${formatPrice(Number(coin.price))}${coin.change24h !== undefined ? `, change ${formatPercentage(coin.change24h, 2, true)}` : ''}`}
+			accessibilityRole="button"
 			activeOpacity={0.7}
 		>
 			<View style={styles.content}>
@@ -140,6 +146,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 								width={cardWidth * 0.35} // Appropriate width for middle section
 								height={20} // Proper height for the layout
 								isLoading={isPriceHistoryLoading}
+								testID={`sparkline-${coin.mintAddress}`}
 							/>
 						) : (
 							<ShimmerPlaceholder

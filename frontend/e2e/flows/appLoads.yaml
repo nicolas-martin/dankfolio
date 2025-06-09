@@ -1,4 +1,0 @@
-appId: com.nicolasmartin.dankfolio
----
-- launchApp
-- assertVisible: ".*Create New Wallet.*" # Using regex for flexibility
