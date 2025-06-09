@@ -31,6 +31,7 @@ type Store struct {
 	trades   *MemoryRepository[model.Trade]
 	rawCoins *MemoryRepository[model.RawCoin]
 	wallet   *MemoryRepository[model.Wallet]
+	apiStats *MemoryRepository[model.ApiStat] // Added ApiStats repository
 	config   Config
 }
 
@@ -47,6 +48,7 @@ func NewWithConfig(config Config) *Store {
 		coins:    NewRepository[model.Coin](coinCachePrefix, config),
 		trades:   NewRepository[model.Trade](tradeCachePrefix, config),
 		rawCoins: NewRepository[model.RawCoin]("rawcoin:", config),
+		apiStats: NewRepository[model.ApiStat]("apistat:", config), // Initialize ApiStats repository
 		config:   config,
 	}
 
@@ -79,6 +81,11 @@ func (s *Store) Trades() db.Repository[model.Trade] {
 // RawCoins returns the raw coins repository
 func (s *Store) RawCoins() db.Repository[model.RawCoin] {
 	return s.rawCoins
+}
+
+// ApiStats returns the ApiStat repository
+func (s *Store) ApiStats() db.Repository[model.ApiStat] {
+	return s.apiStats
 }
 
 // ListTrendingCoins returns only the trending coins

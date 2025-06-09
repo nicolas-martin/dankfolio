@@ -173,7 +173,7 @@ func (c *Client) fetchArweaveMetadata(uri string) (map[string]any, error) {
 
 // fetchHTTPMetadata fetches JSON metadata from an HTTP(S) URL
 func (c *Client) fetchHTTPMetadata(requestURL string) (map[string]any, error) {
-	c.tracker.TrackCall("offchain", "fetchHTTPMetadata")
+	c.tracker.Increment("offchain", "fetchHTTPMetadata")
 	slog.Debug("🌐 HTTP: Creating request", "url", requestURL)
 	slog.Debug("🔄 HTTP: Setting up request headers...")
 
@@ -216,7 +216,7 @@ func (c *Client) fetchHTTPMetadata(requestURL string) (map[string]any, error) {
 
 // fetchHTTPRaw fetches raw data and content type from an HTTP(S) URL
 func (c *Client) fetchHTTPRaw(ctx context.Context, requestURL string) (data []byte, contentType string, err error) {
-	c.tracker.TrackCall("offchain", "fetchHTTPRaw")
+	c.tracker.Increment("offchain", "fetchHTTPRaw")
 	slog.Debug("🌐 HTTP Raw: Requesting", "url", requestURL)
 	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
 	if err != nil {

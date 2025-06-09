@@ -35,7 +35,7 @@ func main() {
 		Timeout: 10 * time.Second,
 	}
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker()
+	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
 	birdeyeClient := birdeye.NewClient(httpClient, "https://public-api.birdeye.so/defi", apiKey, apiTracker)
 	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "", apiTracker)

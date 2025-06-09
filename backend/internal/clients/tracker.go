@@ -7,6 +7,7 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry" // Added telemetry import
 	"log/slog"
 )
 
@@ -78,7 +79,7 @@ func (t *APICallTrackerImpl) Increment(serviceName, endpointName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // Context for DB operation
 	defer cancel()
 
-	if err := t.dbStore.ApiStats().Upsert(ctx, stat); err != nil {
+	if _, err := t.dbStore.ApiStats().Upsert(ctx, stat); err != nil { // Correctly handle two return values
 		t.logger.Error("Failed to upsert API stat", "error", err, "service", serviceName, "endpoint", endpointName, "new_total_count", newTotalCount)
 		// If DB write fails, the in-memory count is already incremented.
 		// Depending on requirements, we might want to revert or handle this.
@@ -133,11 +134,22 @@ func (t *APICallTrackerImpl) LoadStatsForToday(ctx context.Context) error {
 
 	if len(dbStats) == 0 {
 		t.logger.Info("No API stats found in DB for today", "date", today.Format("2006-01-02"))
-			return nil // Not an error if no stats exist yet
-		}
-		// Not an error if no stats exist yet, so return nil.
-		return nil
+		return nil // Not an error if no stats exist yet
 	}
+	// Not an error if no stats exist yet, so return nil.
+	// This line is now part of the len(dbStats) == 0 block due to the brace removal.
+	// It should be outside or the logic re-evaluated.
+	// Based on the original intent, if len(dbStats) == 0, we log and return nil.
+	// The 'return nil' after the block seems redundant if the block itself returns nil.
+	// Let's assume the first 'return nil' inside the if is sufficient.
+	// The second 'return nil' would be dead code if the 'if' block is taken.
+	// If the 'if' block is NOT taken, then execution continues.
+	// The original code had:
+	// if len(dbStats) == 0 { log; return nil; } // Corrected this line
+	// return nil // This was likely an error, making LoadStatsForToday always return nil if dbStats was not empty.
+
+	// Corrected logic: if empty, log and return nil. Otherwise, proceed.
+	// The 'return nil' that was outside the 'if' block (and causing syntax error) is removed.
 
 	t.mutex.Lock() // Lock to safely update in-memory stats
 	defer t.mutex.Unlock()
