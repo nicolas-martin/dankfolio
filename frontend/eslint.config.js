@@ -5,6 +5,7 @@ import pluginReact from 'eslint-plugin-react';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
 import pluginReactNative from 'eslint-plugin-react-native';
 import pluginUnusedImports from 'eslint-plugin-unused-imports';
+import detox from 'eslint-plugin-detox';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
@@ -34,6 +35,7 @@ export default [
 			'react-hooks': pluginReactHooks,
 			'react-native': pluginReactNative,
 			'unused-imports': pluginUnusedImports,
+			'detox': detox,
 		},
 
 		rules: {
