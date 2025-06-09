@@ -8,5 +8,6 @@ export type TradeScreenParams = {
 	inputCoin?: Coin | null;
 	outputCoin?: Coin | null;
 };
+
 export type TradeScreenNavigationProp = NavigationProp<RootStackParamList>;
 export type TradeScreenRouteProp = RouteProp<RootStackParamList, 'Trade'>;
