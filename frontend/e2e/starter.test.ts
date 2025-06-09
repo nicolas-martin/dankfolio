@@ -9,9 +9,22 @@ describe('App', () => {
     await device.reloadReactNative();
   });
 
-  it('should have welcome screen', async () => {
-    // This is a placeholder testID.
-    // It will need to be updated to a real testID from the app's main screen.
-    await expect(element(by.id('mock-navigation'))).toBeVisible();
+  it('should show development build screen', async () => {
+    // Wait for the development build screen to be visible
+    await expect(element(by.id('DevLauncherMainScreen'))).toBeVisible();
+    
+    // Check that the app title is visible
+    await expect(element(by.text('dankfolio'))).toBeVisible();
+    
+    // Check that development build text is visible
+    await expect(element(by.text('Development Build'))).toBeVisible();
+  });
+
+  it('should have development servers section', async () => {
+    // Check that development servers section is visible
+    await expect(element(by.text('Development servers'))).toBeVisible();
+    
+    // Check that the start server instruction is visible
+    await expect(element(by.text('Start a local development server with:'))).toBeVisible();
   });
 });
