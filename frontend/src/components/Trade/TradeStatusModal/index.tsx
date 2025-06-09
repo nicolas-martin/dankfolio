@@ -180,12 +180,13 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			<View style={styles.progressSection}>
 				<View style={styles.progressHeader}>
 					<Text style={styles.progressLabel}>Network Confirmations</Text>
-					<Text style={styles.confirmationsText}>
+					<Text testID="trade-status-confirmations-text" style={styles.confirmationsText}>
 						{confirmationDisplay}
 					</Text>
 				</View>
 				<View style={styles.progressBar}>
 					<Animated.View
+						testID="trade-status-progress-bar"
 						style={[
 							styles.progressFill,
 							{
@@ -222,6 +223,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					onPress={() => openSolscanUrl(txHash)}
 					style={styles.linkButton}
 					textColor="#2196F3"
+					testID="trade-status-solscan-button"
 				>
 					View on Solscan
 				</Button>
@@ -240,7 +242,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					</View>
 					<Text style={styles.errorTitle}>Error Details</Text>
 				</View>
-				<Text style={styles.errorText}>{error}</Text>
+				<Text testID="trade-status-error-message" style={styles.errorText}>{error}</Text>
 			</View>
 		);
 	};
@@ -283,6 +285,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	return (
 		<BottomSheetModal
+			testID="trade-status-modal"
 			ref={bottomSheetModalRef}
 			snapPoints={[SCREEN_HEIGHT * 0.75]}
 			onDismiss={handleDismiss}
@@ -300,13 +303,13 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 				{/* Status Section */}
 				<Animated.View style={[styles.statusSection, { opacity: fadeAnim }]}>
-					<View style={[styles.statusIconContainer, getStatusIconContainerStyle()]}>
+					<View testID="trade-status-icon" style={[styles.statusIconContainer, getStatusIconContainerStyle()]}>
 						{getStatusIcon()}
 					</View>
-					<Text style={[styles.statusText, getStatusTextStyle()]}>
+					<Text testID="trade-status-text" style={[styles.statusText, getStatusTextStyle()]}>
 						{statusText}
 					</Text>
-					<Text style={styles.statusDescription}>
+					<Text testID="trade-status-description" style={styles.statusDescription}>
 						{statusDescription}
 					</Text>
 				</Animated.View>
@@ -324,6 +327,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				{isFinal && (
 					<View style={styles.actionSection}>
 						<Button
+							testID="trade-status-action-button"
 							mode="contained"
 							onPress={handleButtonClose}
 							style={styles.closeButton}

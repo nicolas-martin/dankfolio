@@ -1,7 +1,4 @@
 appId: com.nicolasmartin.dankfolio
-env:
-    LOAD_DEBUG_WALLET: "true"
-    E2E_MOCKING_ENABLED: "true"
 ---
 - runFlow: ../common/app-setup.yaml
 
@@ -9,27 +6,27 @@ env:
 
 # Test FRESH coin (NewCoin)
 - assertVisible:
-    id: "new-coin-card-NewCoin1111111111111111111111111111111"
+      id: "new-coin-card-NewCoin1111111111111111111111111111111"
 
 - runFlow:
-    file: ../components/new-coin-card-element.yaml
-    env:
-        COIN_ADDRESS: "NewCoin1111111111111111111111111111111"
+      file: ../components/new-coin-card-element.yaml
+      env:
+          COIN_ADDRESS: "NewCoin1111111111111111111111111111111"
 
 # Test ROCKET coin
 - assertVisible:
-    id: "new-coin-card-RocketCoin111111111111111111111111111"
+      id: "new-coin-card-RocketCoin111111111111111111111111111"
 
 - runFlow:
-    file: ../components/new-coin-card-element.yaml
-    env:
-        COIN_ADDRESS: "RocketCoin111111111111111111111111111"
+      file: ../components/new-coin-card-element.yaml
+      env:
+          COIN_ADDRESS: "RocketCoin111111111111111111111111111"
 
 # Test DIAMOND coin
 - assertVisible:
-    id: "new-coin-card-DiamondCoin11111111111111111111111111"
+      id: "new-coin-card-DiamondCoin11111111111111111111111111"
 
 - runFlow:
-    file: ../components/new-coin-card-element.yaml
-    env:
-        COIN_ADDRESS: "DiamondCoin11111111111111111111111111"
+      file: ../components/new-coin-card-element.yaml
+      env:
+          COIN_ADDRESS: "DiamondCoin11111111111111111111111111"

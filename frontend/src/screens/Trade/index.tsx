@@ -350,7 +350,7 @@ const Trade: React.FC = () => {
 		const priceImpact = parseFloat(tradeDetails.priceImpactPct);
 
 		return (
-			<Card style={styles.detailsCard}>
+			<Card style={styles.detailsCard} testID="trade-details-card">
 				<Card.Title
 					title="Trade Details"
 					left={(props) => (
@@ -363,20 +363,20 @@ const Trade: React.FC = () => {
 				<Card.Content style={styles.detailsContent}>
 					<View style={styles.detailRow}>
 						<Text style={styles.detailLabel}>Price Impact</Text>
-						<Text style={styles.detailValue}>
+						<Text testID="trade-details-price-impact" style={styles.detailValue}>
 							{priceImpact.toFixed(2)}%
 						</Text>
 					</View>
 
 					<View style={styles.detailRow}>
 						<Text style={styles.detailLabel}>Network Fee</Text>
-						<Text style={styles.detailValue}>{tradeDetails.totalFee} SOL</Text>
+						<Text testID="trade-details-network-fee" style={styles.detailValue}>{tradeDetails.totalFee} SOL</Text>
 					</View>
 
 					{tradeDetails.route && (
 						<View style={styles.detailRow}>
 							<Text style={styles.detailLabel}>Route</Text>
-							<Text style={styles.detailValue}>{tradeDetails.route}</Text>
+							<Text testID="trade-details-route" style={styles.detailValue}>{tradeDetails.route}</Text>
 						</View>
 					)}
 
@@ -385,7 +385,7 @@ const Trade: React.FC = () => {
 							<Icon source="swap-horizontal" size={16} color={theme.colors.onSurfaceVariant} />
 							<Text style={[styles.detailLabel, { marginLeft: 4 }]}>Exchange Rate</Text>
 						</View>
-						<Text style={styles.exchangeRateValue}>
+						<Text testID="trade-details-exchange-rate" style={styles.exchangeRateValue}>
 							1 {fromCoin?.symbol} = {(parseFloat(tradeDetails.exchangeRate) || 0).toFixed(6)} {toCoin?.symbol}
 						</Text>
 					</View>
@@ -395,7 +395,7 @@ const Trade: React.FC = () => {
 	};
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<SafeAreaView style={styles.container} testID="trade-screen">
 			<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 				<View style={styles.content}>
 
