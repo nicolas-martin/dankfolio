@@ -1,0 +1,42 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# Main Navigation Flow
+# Tests navigation between all main screens
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+
+# Test Trade tab
+- tapOn: "Trade"
+- assertVisible: 
+    text: "Swap"
+    timeout: 5000
+- assertVisible: 
+    text: "From"
+- assertVisible: 
+    text: "To"
+
+# Test Send tab  
+- tapOn: "Send"
+- assertVisible: 
+    text: "Send Crypto"
+    timeout: 5000
+- assertVisible: 
+    text: "Recipient"
+
+# Test Profile tab
+- tapOn: "Profile"
+- assertVisible: 
+    text: "Settings"
+    timeout: 5000
+
+# Return to Portfolio
+- tapOn: "Portfolio"
+- assertVisible: 
+    text: "Total Balance"
+    timeout: 5000 

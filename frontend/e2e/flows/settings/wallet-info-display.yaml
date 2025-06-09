@@ -1,0 +1,85 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# SettingsScreen: Wallet Info Display Test
+# Tests: wallet information display
+# Matches Jest test cases from SettingsScreen.test.tsx
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+
+# Navigate to Settings
+- tapOn: "Profile"
+- tapOn: "Settings"
+- assertVisible:
+    text: "Settings"
+    timeout: 5000
+
+# Test Account Information section
+- assertVisible:
+    text: "Account Information"
+    timeout: 3000
+
+# Test Public Key display
+- assertVisible:
+    text: "Public Key"
+    timeout: 3000
+
+# Test that public key is formatted (truncated)
+- assertVisible:
+    text: "testPublicKeyAdd..."  # Formatted address from mock
+    timeout: 3000
+
+# Test Private Key section
+- assertVisible:
+    text: "Private Key"
+    timeout: 3000
+
+# Test private key placeholder (should be hidden)
+- assertVisible:
+    text: "••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••"
+    timeout: 3000
+
+# Test warning message
+- assertVisible:
+    text: "Warning: Your private key is highly sensitive"
+    timeout: 3000
+
+# Test copy button for public key
+- assertVisible:
+    id: "copy-public-key-button"
+    timeout: 3000
+
+# Test App Information section
+- assertVisible:
+    text: "App Information"
+    timeout: 3000
+
+# Test App Version display
+- assertVisible:
+    text: "App Version"
+    timeout: 3000
+- assertVisible:
+    text: "1.0.0"  # Version from mocked Constants
+    timeout: 3000
+
+# Test all sections are properly rendered
+- scrollDown
+- assertVisible:
+    text: "Appearance"
+    timeout: 3000
+
+# Scroll back up to test wallet info again
+- scrollUp
+- assertVisible:
+    text: "Account Information"
+    timeout: 3000
+
+# Test that wallet address is consistently displayed
+- assertVisible:
+    text: "testPublicKeyAdd..."
+    timeout: 3000 

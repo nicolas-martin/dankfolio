@@ -1,0 +1,69 @@
+appId: com.nicolasmartin.dankfolio
+---
+# Token Selector Component Flow
+# Tests the token selector modal and search functionality
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+
+# Navigate to Trade screen to access token selector
+- tapOn: "Trade"
+- assertVisible: 
+    text: "Swap"
+    timeout: 5000
+
+# Test opening token selector
+- tapOn: 
+    id: "from-token-selector"
+- assertVisible: 
+    text: "Search tokens"
+    timeout: 3000
+
+# Test search functionality
+- tapOn: 
+    id: "search-input"
+- inputText: "SOL"
+- assertVisible: 
+    text: "Solana"
+    timeout: 3000
+
+# Clear search and test showing all tokens
+- clearText
+- assertVisible: 
+    text: "SOL"
+    timeout: 3000
+- assertVisible: 
+    text: "USDC"
+- assertVisible: 
+    text: "ONE"  # Test coin from MSW
+- assertVisible: 
+    text: "TWO"  # Test coin from MSW
+
+# Test token selection
+- tapOn: 
+    text: "SOL"
+- assertVisible: 
+    text: "SOL"
+    timeout: 3000
+
+# Test opening selector again for "To" token
+- tapOn: 
+    id: "to-token-selector"
+- assertVisible: 
+    text: "Search tokens"
+    timeout: 3000
+
+# Test selecting different token
+- tapOn: 
+    text: "USDC"
+- assertVisible: 
+    text: "USDC"
+    timeout: 3000
+
+# Verify both tokens are selected
+- assertVisible: 
+    text: "SOL"
+- assertVisible: 
+    text: "USDC" 

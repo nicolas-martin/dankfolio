@@ -1,0 +1,76 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# TradeScreen: Trade Initialization Test
+# Tests: initializes correctly with initialFromCoin and initialToCoin, prioritizing cache
+# Matches Jest test case from TradeScreen.test.tsx
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+
+# Navigate to Trade screen
+- tapOn: "Trade"
+- assertVisible:
+    text: "Swap"
+    timeout: 5000
+
+# Test default initialization with SOL
+- assertVisible:
+    text: "From"
+    timeout: 3000
+- assertVisible:
+    text: "To"
+    timeout: 3000
+
+# Test that SOL is default from token (cache priority)
+- assertVisible:
+    text: "SOL"
+    timeout: 3000
+
+# Test token selector functionality
+- tapOn:
+    id: "from-token-selector"
+- assertVisible:
+    text: "Search tokens"
+    timeout: 3000
+
+# Test that available tokens are shown
+- assertVisible:
+    text: "SOL"
+    timeout: 3000
+- assertVisible:
+    text: "USDC"
+    timeout: 3000
+
+# Select SOL and verify
+- tapOn:
+    text: "SOL"
+- assertVisible:
+    text: "SOL"
+    timeout: 3000
+
+# Test "To" token selector
+- tapOn:
+    id: "to-token-selector"
+- assertVisible:
+    text: "Search tokens"
+    timeout: 3000
+
+# Select USDC
+- tapOn:
+    text: "USDC"
+- assertVisible:
+    text: "USDC"
+    timeout: 3000
+
+# Verify trade interface is ready
+- assertVisible:
+    text: "Amount"
+    timeout: 3000
+- assertVisible:
+    text: "Swap"
+    timeout: 3000 

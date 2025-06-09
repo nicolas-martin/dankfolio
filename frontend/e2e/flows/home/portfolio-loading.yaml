@@ -1,0 +1,41 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# HomeScreen: Portfolio Loading Test
+# Tests: renders correctly and initial data fetch effects run
+# Matches Jest test case from HomeScreen.test.tsx
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+
+# Test that portfolio data loads
+- assertVisible:
+    text: "Total Balance"
+    timeout: 5000
+
+# Test that coin list loads with mock data
+- assertVisible:
+    text: "ONE"  # Test coin from mock data
+    timeout: 5000
+- assertVisible:
+    text: "TWO"  # Test coin from mock data
+    timeout: 5000
+
+# Test that wallet balance is displayed
+- assertVisible:
+    text: "SOL"  # SOL should be in portfolio
+    timeout: 3000
+
+# Test loading states are handled
+- assertNotVisible:
+    text: "Loading..."
+    timeout: 8000
+
+# Verify new coins section loads
+- assertVisible:
+    text: "New Coins"
+    timeout: 5000 
