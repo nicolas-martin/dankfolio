@@ -9,9 +9,8 @@
     "ios": "npx expo run:ios",
     "tsc:watch": "tsc --watch",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "msw:start": "ts-node frontend/e2e/mocks/run-msw-server.ts"
+    "test:coverage": "jest --coverage"
     "detox:build:ios": "detox build -c ios.sim.debug",
     "detox:test:ios": "detox test -c ios.sim.debug",
     "detox:test:ios:full": "yarn detox:build:ios && yarn detox:test:ios"
