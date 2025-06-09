@@ -97,6 +97,7 @@ const NewCoins: React.FC = () => {
 				<HorizontalTickerCard
 					coin={item}
 					onPress={handleCoinPress}
+					testIdPrefix="new-coin"
 				/>
 			</View>
 		);

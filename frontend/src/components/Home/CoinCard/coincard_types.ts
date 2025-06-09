@@ -9,4 +9,5 @@ export interface CoinCardProps {
 	priceHistory?: PriceData[];
 	isPriceHistoryLoading?: boolean;
 	showSparkline?: boolean; // Controls whether to show the sparkline chart
+	testIdPrefix?: 'trending-coin' | 'coin'; // Controls testID prefix
 }

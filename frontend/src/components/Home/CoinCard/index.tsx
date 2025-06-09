@@ -18,6 +18,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 	priceHistory,
 	isPriceHistoryLoading,
 	showSparkline = true, // New prop to control sparkline visibility
+	testIdPrefix = 'coin', // Default to 'coin' for backward compatibility
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme, isHorizontal);
@@ -44,7 +45,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					uri={coin.resolvedIconUrl}
 					size={size}
 					borderRadius={borderRadius}
-					testID={`coin-icon-${coin.mintAddress}`}
+					testID={`${testIdPrefix}-icon-${coin.mintAddress}`}
 					onLoad={handleImageLoad}
 					onError={handleImageError}
 				/>
@@ -57,7 +58,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 			<TouchableOpacity
 				style={styles.horizontalCard} // Use new style for horizontal card
 				onPress={handlePress}
-				testID={`coin-card-horizontal-${coin.mintAddress}`}
+				testID={`${testIdPrefix}-card-horizontal-${coin.mintAddress}`}
 				accessible={false}
 				importantForAccessibility="no-hide-descendants"
 				accessibilityRole="button"
@@ -69,7 +70,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				<Text 
 					style={styles.horizontalSymbol} 
 					numberOfLines={1} 
-					testID={`coin-symbol-${coin.mintAddress}`}
+					testID={`${testIdPrefix}-symbol-${coin.mintAddress}`}
 					accessible={true}
 					accessibilityRole="text"
 				>
@@ -78,7 +79,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				<Text 
 					style={styles.horizontalPrice} 
 					numberOfLines={1} 
-					testID={`coin-price-${coin.mintAddress}`}
+					testID={`${testIdPrefix}-price-${coin.mintAddress}`}
 					accessible={true}
 					accessibilityRole="text"
 				>
@@ -118,7 +119,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 		<TouchableOpacity
 			style={styles.card}
 			onPress={handlePress}
-			testID={`coin-card-${coin.mintAddress}`}
+			testID={`${testIdPrefix}-card-${coin.mintAddress}`}
 			accessible={false}
 			importantForAccessibility="no-hide-descendants"
 			accessibilityRole="button"
@@ -131,7 +132,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 						<Text 
 							style={styles.symbol} 
 							numberOfLines={1} 
-							testID={`coin-symbol-${coin.mintAddress}`}
+							testID={`${testIdPrefix}-symbol-${coin.mintAddress}`}
 							accessible={true}
 							accessibilityRole="text"
 						>
@@ -164,7 +165,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 								width={cardWidth * 0.35} // Appropriate width for middle section
 								height={20} // Proper height for the layout
 								isLoading={isPriceHistoryLoading}
-								testID={`sparkline-${coin.mintAddress}`}
+								testID={`${testIdPrefix}-sparkline-${coin.mintAddress}`}
 							/>
 						) : (
 							<ShimmerPlaceholder
@@ -180,7 +181,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					<Text 
 						style={styles.price} 
 						numberOfLines={1} 
-						testID={`coin-price-${coin.mintAddress}`}
+						testID={`${testIdPrefix}-price-${coin.mintAddress}`}
 						accessible={true}
 						accessibilityRole="text"
 					>
@@ -219,6 +220,7 @@ export default React.memo(CoinCard, (prevProps, nextProps) => {
 		prevProps.isHorizontal === nextProps.isHorizontal &&
 		prevProps.priceHistory === nextProps.priceHistory && // Added prop
 		prevProps.isPriceHistoryLoading === nextProps.isPriceHistoryLoading && // Added prop
-		prevProps.showSparkline === nextProps.showSparkline // Added prop
+		prevProps.showSparkline === nextProps.showSparkline && // Added prop
+		prevProps.testIdPrefix === nextProps.testIdPrefix // Added prop
 	);
 });

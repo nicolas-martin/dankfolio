@@ -9,7 +9,7 @@ env:
 
 # Test FRESH coin (NewCoin)
 - assertVisible:
-    id: "horizontal-ticker-card-NewCoin1111111111111111111111111111111"
+    id: "new-coin-card-NewCoin1111111111111111111111111111111"
 
 - runFlow:
     file: ../components/new-coin-card-element.yaml
@@ -18,7 +18,7 @@ env:
 
 # Test ROCKET coin
 - assertVisible:
-    id: "horizontal-ticker-card-RocketCoin111111111111111111111111111"
+    id: "new-coin-card-RocketCoin111111111111111111111111111"
 
 - runFlow:
     file: ../components/new-coin-card-element.yaml
@@ -27,7 +27,7 @@ env:
 
 # Test DIAMOND coin
 - assertVisible:
-    id: "horizontal-ticker-card-DiamondCoin11111111111111111111111111"
+    id: "new-coin-card-DiamondCoin11111111111111111111111111"
 
 - runFlow:
     file: ../components/new-coin-card-element.yaml

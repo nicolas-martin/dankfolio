@@ -7,7 +7,7 @@ import { formatTimeAgo } from '@/utils/timeFormat';
 import { HorizontalTickerCardProps } from './types';
 import { createStyles } from './styles';
 
-const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress }) => {
+const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress, testIdPrefix = 'new-coin' }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const timeAgo = formatTimeAgo(coin.jupiterListedAt);
@@ -21,7 +21,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 		<TouchableOpacity
 			style={styles.container}
 			onPress={handlePress}
-			testID={`horizontal-ticker-card-${coin.mintAddress}`}
+			testID={`${testIdPrefix}-card-${coin.mintAddress}`}
 			accessible={false}
 			importantForAccessibility="no-hide-descendants"
 			accessibilityRole="button"
@@ -32,13 +32,13 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 					uri={coin.resolvedIconUrl}
 					size={48}
 					borderRadius={24}
-					testID={`horizontal-ticker-icon-${coin.mintAddress}`}
+					testID={`${testIdPrefix}-icon-${coin.mintAddress}`}
 				/>
 			</View>
-			<Text style={styles.symbol} numberOfLines={1} testID={`horizontal-ticker-symbol-${coin.mintAddress}`}>
+			<Text style={styles.symbol} numberOfLines={1} testID={`${testIdPrefix}-symbol-${coin.mintAddress}`}>
 				{coin.symbol}
 			</Text>
-			<Text style={styles.timeAgo} numberOfLines={1} testID={`horizontal-ticker-time-${coin.mintAddress}`}>
+			<Text style={styles.timeAgo} numberOfLines={1} testID={`${testIdPrefix}-time-${coin.mintAddress}`}>
 				{timeAgo}
 			</Text>
 			{coin.change24h !== undefined && (
@@ -47,7 +47,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 					coin.change24h > 0 ? styles.changePositive :
 						coin.change24h < 0 ? styles.changeNegative :
 							styles.changeNeutral
-				]} numberOfLines={1} testID={`horizontal-ticker-change-${coin.mintAddress}`}>
+				]} numberOfLines={1} testID={`${testIdPrefix}-change-${coin.mintAddress}`}>
 					{formatPercentage(coin.change24h, 1, true)}
 				</Text>
 			)}
@@ -62,6 +62,7 @@ export default React.memo(HorizontalTickerCard, (prevProps, nextProps) => {
 		prevProps.coin.symbol === nextProps.coin.symbol &&
 		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
 		prevProps.coin.change24h === nextProps.coin.change24h &&
-		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt
+		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt &&
+		prevProps.testIdPrefix === nextProps.testIdPrefix
 	);
 });
