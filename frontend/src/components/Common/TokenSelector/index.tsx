@@ -70,6 +70,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			appearsOnIndex={0}
 			opacity={0.8}
 			onPress={onDismiss}
+			testID="token-search-modal-backdrop"
 		>
 			<BlurView intensity={20} style={styles.blurView} />
 		</BottomSheetBackdrop>
@@ -103,6 +104,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 		return (
 			<TouchableOpacity
+				testID={`search-result-${coin.mintAddress}`}
 				style={styles.tokenItem}
 				onPress={handlePress}
 			>
@@ -155,8 +157,9 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			backdropComponent={renderBackdrop}
 			enableDynamicSizing={false}
 		>
-			<View style={styles.searchContainer}>
+			<View style={styles.searchContainer} testID="token-selection-modal-content">
 				<Searchbar
+					testID="token-search-input"
 					placeholder="Search tokens"
 					value={searchQuery}
 					onChangeText={setSearchQuery}
@@ -167,7 +170,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 					autoCapitalize="none"
 					autoCorrect={false}
 					autoFocus={false}
-					blurOnSubmit={false}
+					submitBehavior={'blurAndSubmit'}
 					returnKeyType="search"
 				/>
 			</View>
@@ -243,9 +246,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						}}
 						disabled={!onSelectToken}
 						testID={testID}
-						accessible={false}
-						importantForAccessibility="no-hide-descendants"
+						accessible={true}
 						accessibilityRole="button"
+						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol}` : "Select token"}
 					>
 						<View style={styles.tokenInfo}>
 							{selectedToken ? (
@@ -263,7 +266,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 									</Text>
 								</>
 							) : (
-								<Text style={styles.tokenSymbol} testID="token-selector-placeholder">{label || 'Select Token'}</Text>
+								<Text style={styles.tokenSymbol} testID={`${testID}-placeholder`}>{label || 'Select Token'}</Text>
 							)}
 						</View>
 						<ChevronDownIcon size={20} color={theme.colors.onSurface} />
@@ -281,6 +284,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							) : (
 								<>
 									<TextInput
+										testID={`${testID}-amount-input`}
 										style={styles.amountInput}
 										value={amountValue}
 										onChangeText={(text) => onAmountChange && handleAmountInputChange(text, onAmountChange)}
