@@ -1,123 +1,27 @@
 import * as Keychain from 'react-native-keychain';
 import { Keypair } from '@solana/web3.js';
 import * as bip39 from 'bip39';
-import { Buffer } from 'buffer';
+import { Buffer } from 'buffer'; // Keep Buffer if still used by other functions in this file
 import { grpcApi } from '@/services/grpcApi';
 import { usePortfolioStore } from '@store/portfolio';
+// bs58 might still be used by other functions, if not, it can be removed.
+// For now, assume it might be needed by other functions not touched in this refactor.
 import bs58 from 'bs58';
 import { useState } from 'react';
+// Import newly created/moved utility functions
+import { base64ToBase58PrivateKey, toBase58PrivateKey, Base58PrivateKey } from '@/utils/cryptoUtils';
+import { storeCredentials, retrieveWalletFromStorage, KEYCHAIN_SERVICE } from '@/utils/keychainService'; // Import KEYCHAIN_SERVICE
 import Clipboard from '@react-native-clipboard/clipboard';
 import { WalletSetupStep, WalletSetupScreenProps, WalletInfo } from './types';
 import { logger } from '@/utils/logger';
 import { ToastProps } from '@/components/Common/Toast/toast_types';
 
-// Branded type for Base58 private keys to ensure type safety
-type Base58PrivateKey = string & { readonly __brand: unique symbol };
+// Note: Base58PrivateKey type is now imported from @/utils/cryptoUtils
+// Note: KEYCHAIN_SERVICE constant is now defined in @/utils/keychainService.ts
+//       If it were used by other functions in this file, it would need to be imported or redefined.
+//       For this refactor, assuming it's not needed by remaining functions here.
 
-const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
-const KEYCHAIN_USERNAME_PRIVATE_KEY = 'userPrivateKey';
-const KEYCHAIN_USERNAME_MNEMONIC = 'userMnemonic';
-
-// Helper function to convert Base64 to Base58PrivateKey
-export const base64ToBase58PrivateKey = (base64Key: string): Base58PrivateKey => {
-	// Decode Base64 to bytes
-	const bytes = Buffer.from(base64Key, 'base64');
-	logger.log('Converting Base64 to Base58', {
-		base64Length: base64Key.length,
-		bytesLength: bytes.length,
-		isValidLength: bytes.length === 64  // This will be logged as part of the object
-	});
-
-	if (bytes.length !== 64) {
-		// This error will be caught by the calling function, so no need to log separately here
-		throw new Error(`Invalid private key length: ${bytes.length} bytes. Expected 64 bytes.`);
-	}
-
-	// Convert to Base58
-	const base58Key = bs58.encode(bytes) as Base58PrivateKey;
-	logger.log('Converted to Base58', {
-		base58Length: base58Key.length,
-		base58Preview: base58Key.substring(0, 10) + '...'
-	});
-
-	return base58Key;
-};
-
-// Helper function to convert Buffer to Base58PrivateKey safely
-export const toBase58PrivateKey = (bytes: Uint8Array): Base58PrivateKey => {
-	if (bytes.length !== 64) {
-		throw new Error(`Invalid private key length: ${bytes.length} bytes. Expected 64 bytes.`);
-	}
-	return bs58.encode(bytes) as Base58PrivateKey;
-};
-
-// Helper to store credentials safely
-export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: string): Promise<void> => {
-	logger.breadcrumb({ category: 'wallet_setup', message: 'Storing wallet credentials' });
-	logger.info('Storing wallet credentials...');
-
-	try {
-		// First clear any existing credentials
-		await Keychain.resetGenericPassword({
-			service: KEYCHAIN_SERVICE
-		});
-
-		// Store credentials with a fixed username and JSON string as password
-		const credentials = JSON.stringify({
-			privateKey,
-			mnemonic
-		});
-
-		await Keychain.setGenericPassword('dankfolio_wallet', credentials, {
-			service: KEYCHAIN_SERVICE,
-			accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED
-		});
-
-		// Verify the stored credentials
-		const storedCredentials = await Keychain.getGenericPassword({
-			service: KEYCHAIN_SERVICE
-		});
-
-		if (!storedCredentials) {
-			throw new Error('Failed to verify stored credentials - no data found');
-		}
-
-		try {
-			const parsedCredentials = JSON.parse(storedCredentials.password);
-			const retrievedPrivateKey = parsedCredentials.privateKey;
-			const retrievedMnemonic = parsedCredentials.mnemonic;
-
-			if (!retrievedPrivateKey || retrievedPrivateKey !== privateKey) {
-				throw new Error('Failed to verify stored private key - mismatch in retrieved value');
-			}
-
-			// Verify we can create a valid keypair from the stored key
-			const keypairBytes = Buffer.from(bs58.decode(retrievedPrivateKey));
-			if (keypairBytes.length !== 64) {
-				throw new Error(`Retrieved key has invalid length: ${keypairBytes.length} bytes`);
-			}
-			const keypair = Keypair.fromSecretKey(keypairBytes);
-
-			if (!retrievedMnemonic || retrievedMnemonic !== mnemonic) {
-				throw new Error('Failed to verify stored mnemonic');
-			}
-
-			logger.info('Wallet credentials stored and verified');
-		} catch (error) {
-			logger.exception(error, { functionName: 'storeCredentials', context: 'VerificationStep' });
-			throw error;
-		}
-	} catch (error) {
-		logger.exception(error, { functionName: 'storeCredentials' });
-		// Clean up on failure
-		await Keychain.resetGenericPassword({
-			service: KEYCHAIN_SERVICE
-		});
-		throw error;
-	}
-};
-
-export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; walletData: { publicKey: string; privateKey: string; mnemonic: string } }> => {
+export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; walletData: { publicKey: string; privateKey: Base58PrivateKey; mnemonic: string } }> => {
 	logger.breadcrumb({ category: 'wallet_setup', message: 'Wallet generation started' });
 	try {
 		logger.info("Generating new wallet...");
@@ -138,10 +42,10 @@ export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; wallet
 
 		// Create keypair and convert to Base58
 		const keypair = Keypair.fromSecretKey(keypairBytes);
-		const base58PrivateKey = toBase58PrivateKey(keypairBytes);
+		const base58PrivateKeyOutput = toBase58PrivateKey(keypairBytes);
 
 		// Store securely in Base58 format
-		await storeCredentials(base58PrivateKey, newWalletData.mnemonic);
+		await storeCredentials(base58PrivateKeyOutput, newWalletData.mnemonic);
 
 		// Verify public key matches
 		if (keypair.publicKey.toBase58() !== newWalletData.public_key) {
@@ -158,7 +62,7 @@ export const handleGenerateWallet = async (): Promise<{ keypair: Keypair; wallet
 			keypair,
 			walletData: {
 				publicKey: newWalletData.public_key,
-				privateKey: base58PrivateKey,
+				privateKey: base58PrivateKeyOutput, // Ensure this is the Base58 string
 				mnemonic: newWalletData.mnemonic
 			}
 		};
@@ -181,10 +85,10 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => 
 		const keypair = Keypair.fromSeed(derivedSeed);
 
 		// Convert to Base58 format
-		const base58PrivateKey = toBase58PrivateKey(keypair.secretKey);
+		const base58PrivateKeyOutput = toBase58PrivateKey(keypair.secretKey);
 
 		// Store securely
-		await storeCredentials(base58PrivateKey, mnemonic);
+		await storeCredentials(base58PrivateKeyOutput, mnemonic);
 
 		// Store in portfolio store
 		await usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());
@@ -201,48 +105,20 @@ export const handleImportWallet = async (mnemonic: string): Promise<Keypair> => 
 	}
 };
 
-export const retrieveWalletFromStorage = async (): Promise<string | null> => {
-	try {
-		const credentials = await Keychain.getGenericPassword({
-			service: KEYCHAIN_SERVICE
-		});
-
-		if (!credentials) {
-			logger.info('No wallet found in storage.');
-			return null;
-		}
-
-		try {
-			const parsedCredentials = JSON.parse(credentials.password);
-			const privateKey = parsedCredentials.privateKey;
-
-			// Verify the Base58 private key is valid
-			const keypairBytes = Buffer.from(bs58.decode(privateKey));
-			if (keypairBytes.length !== 64) {
-				throw new Error(`Invalid private key length: ${keypairBytes.length} bytes`);
-			}
-			// Verify the keypair is valid by reconstructing it
-			const keypair = Keypair.fromSecretKey(keypairBytes);
-			logger.info('Wallet retrieved from storage.');
-			return keypair.publicKey.toBase58();
-		} catch (error) {
-			logger.warn('Invalid wallet data in storage, clearing credentials.', { error: error.message });
-			await Keychain.resetGenericPassword({
-				service: KEYCHAIN_SERVICE
-			});
-			return null;
-		}
-	} catch (error) {
-		logger.error('Error accessing storage during wallet retrieval.', { error: error.message });
-		return null;
-	}
-};
-
 // Optional: Function to retrieve mnemonic if needed elsewhere
+// This function was not part of the move, so it remains here.
+// It will need access to KEYCHAIN_SERVICE if it's to function.
+// For now, let's assume it might be used and keep it, but it might need adjustment
+// if KEYCHAIN_SERVICE was only defined locally before.
+// For the purpose of this refactor, we will assume KEYCHAIN_SERVICE needs to be
+// accessible here if this function is to remain functional.
+// We can redefine it here or import it if made available from keychainService.ts
+// const KEYCHAIN_SERVICE_LOCAL = 'com.dankfolio.wallet'; // Remove local definition
+
 export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 	try {
 		const credentials = await Keychain.getGenericPassword({
-			service: KEYCHAIN_SERVICE
+			service: KEYCHAIN_SERVICE // Use imported constant
 		});
 
 		if (!credentials) {
@@ -254,11 +130,11 @@ export const retrieveMnemonicFromStorage = async (): Promise<string | null> => {
 			const parsedCredentials = JSON.parse(credentials.password);
 			return parsedCredentials.mnemonic;
 		} catch (error) {
-			logger.error('Error parsing stored mnemonic.', { error: error.message });
+			logger.error('Error parsing stored mnemonic.', { errorMessage: error.message }); // Use errorMessage for consistency
 			return null;
 		}
 	} catch (error) {
-		logger.error('Error accessing storage during mnemonic retrieval.', { error: error.message });
+		logger.error('Error accessing storage during mnemonic retrieval.', { errorMessage: error.message }); // Use errorMessage
 		return null;
 	}
 };
@@ -297,10 +173,10 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
 
 		try {
-			const { keypair, walletData } = await handleGenerateWallet();
+			const { keypair, walletData } = await handleGenerateWallet(); // This now uses the imported storeCredentials
 			setWalletInfo({
 				publicKey: walletData.publicKey,
-				privateKey: walletData.privateKey,
+				privateKey: walletData.privateKey, // This is Base58PrivateKey from handleGenerateWallet
 				mnemonic: walletData.mnemonic,
 				isLoading: false
 			});
@@ -320,7 +196,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
 
 		try {
-			const keypair = await handleImportWallet(recoveryPhrase);
+			const keypair = await handleImportWallet(recoveryPhrase); // This now uses the imported storeCredentials
 			props.onWalletSetupComplete(keypair);
 		} catch (error) {
 			// The error from handleImportWallet (e.g. invalid mnemonic) is already potentially logged there
