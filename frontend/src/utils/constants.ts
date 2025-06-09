@@ -1,4 +1,4 @@
-export const SOLANA_ADDRESS = 'So11111111111111111111111111111111111111112'; 
+export const SOLANA_ADDRESS = 'So11111111111111111111111111111111111111112';
 
 // Refresh Intervals (in milliseconds)
 export const REFRESH_INTERVALS = {
@@ -7,8 +7,7 @@ export const REFRESH_INTERVALS = {
 	TRADE_PRICES: 10 * 1000, // 10 seconds
 	PORTFOLIO: 30 * 1000, // 30 seconds
 	TRANSACTION_STATUS: 3 * 1000, // 3 seconds
-} as const; 
+} as const;
 
 // Price History Fetch Configuration
-export const PRICE_HISTORY_FETCH_MODE = 'sequential'; // or 'parallel'
 export const PRICE_HISTORY_FETCH_DELAY_MS = 2000;

@@ -13,7 +13,7 @@ import { Buffer } from 'buffer';
 
 // Log the environment variable for debugging
 log.log('🔧 API_URL from environment:', env.apiUrl);
-const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator' || env.e2eMockingEnabled;
+const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'development' || env.appEnv === 'production-simulator' || env.e2eMockingEnabled;
 
 if (!env.apiUrl) {
 	const errorMsg = 'API_URL environment variable is required but not set. Please check your environment configuration.';
