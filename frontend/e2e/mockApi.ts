@@ -1,5 +1,5 @@
 // Simple API mocking for React Native E2E tests
-import { env } from './env';
+import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 
@@ -418,6 +418,33 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
         break;
       }
       
+      case '/dankfolio.v1.priceservice/getcoinprices': {
+        console.log('🎭 Returning mock GetCoinPrices response');
+        // This endpoint returns current prices for multiple coins
+        // We'll generate randomized prices based on the base prices with some variation
+        
+        const mockPrices: { [key: string]: number } = {};
+        
+        // Add some randomization to base prices (±5% variation)
+        ALL_MOCK_COINS.forEach(coin => {
+          const basePrice = coin.price;
+          const variation = (Math.random() - 0.5) * 0.1; // ±5% variation
+          const randomizedPrice = basePrice * (1 + variation);
+          mockPrices[coin.mintAddress] = Math.max(randomizedPrice, basePrice * 0.1); // Don't go below 10% of base price
+        });
+        
+        console.log('🎭 Generated randomized coin prices:', Object.keys(mockPrices).map(mint => ({
+          mint: mint.substring(0, 8) + '...',
+          price: mockPrices[mint]
+        })));
+        
+        // Return the prices in the expected format
+        mockResponse = {
+          prices: mockPrices
+        };
+        break;
+      }
+      
       case '/dankfolio.v1.tradeservice/getswapquote': {
         console.log('🎭 Returning mock GetSwapQuote response');
         const response = create(GetSwapQuoteResponseSchema, {
@@ -441,6 +468,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
           '/dankfolio.v1.coinservice/getcoinbyid',
           '/dankfolio.v1.walletservice/getwalletbalances',
           '/dankfolio.v1.priceservice/getpricehistory',
+          '/dankfolio.v1.priceservice/getcoinprices',
           '/dankfolio.v1.tradeservice/getswapquote'
         ]);
         // For unhandled endpoints, call the original fetch
