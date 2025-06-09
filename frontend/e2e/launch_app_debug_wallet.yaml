@@ -1,7 +1,0 @@
-appId: "com.nicolasmartin.dankfolio" # Replace with actual bundle ID / package name if different
-env:
-  LOAD_DEBUG_WALLET: true # Corresponds to env.loadDebugWallet
----
-- launchApp:
-    clearState: true # Clear app state before each run for consistency
-
