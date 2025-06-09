@@ -3,6 +3,38 @@ import { http, HttpResponse } from 'msw';
 // API_BASE_URL based on user feedback for local environment
 const API_BASE_URL = 'http://localhost:9000';
 
+// --- Test-specific coins for Home Screen E2E tests ---
+const testSpecificCoins = [
+  {
+    mintAddress: "coin1_mint", // Used for testID: coincard-ONE
+    name: "Coin One",
+    symbol: "ONE",
+    imageUrl: "https://example.com/one.png",
+    price: 10,
+    decimals: 9,
+    dailyVolume: 1000,
+    marketCap: 100000,
+    description: 'Test coin one',
+    tags: ['test'],
+    jupiterListedAt: new Date().toISOString(),
+    coingeckoId: 'coin-one',
+  },
+  {
+    mintAddress: "coin2_mint", // Used for testID: coincard-TWO
+    name: "Coin Two",
+    symbol: "TWO",
+    imageUrl: "https://example.com/two.png",
+    price: 20,
+    decimals: 6,
+    dailyVolume: 2000,
+    marketCap: 200000,
+    description: 'Test coin two',
+    tags: ['test'],
+    jupiterListedAt: new Date().toISOString(),
+    coingeckoId: 'coin-two',
+  }
+];
+
 // --- Previously defined mock data and handlers ---
 const mockCoins = [
 	{
@@ -41,6 +73,8 @@ const existingHandlers = [
 		console.log('[MSW] Intercepted WalletService/GetWalletBalances');
 		return HttpResponse.json({
 			balances: [
+        { "id": "coin1_mint", "amount": 100.0 },
+        { "id": "coin2_mint", "amount": 200.0 },
 				{ id: 'So11111111111111111111111111111111111111112', amount: 10.5 },
 				{ id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZPKt', amount: 500.75 },
 			],
@@ -49,7 +83,12 @@ const existingHandlers = [
 	// Handler for CoinService -> GetAvailableCoins
 	http.post(`${API_BASE_URL}/dankfolio.v1.CoinService/GetAvailableCoins`, async () => {
 		console.log('[MSW] Intercepted CoinService/GetAvailableCoins');
-		return HttpResponse.json(mockCoins);
+		// Prioritize testSpecificCoins, then add SOL and USDC if they are not already included by symbol
+		const combinedCoins = [
+			...testSpecificCoins,
+			...mockCoins.filter(mc => !testSpecificCoins.find(tsc => tsc.symbol === mc.symbol)),
+		];
+		return HttpResponse.json(combinedCoins);
 	}),
 	// Handler for CoinService -> GetCoinByID
 	http.post(`${API_BASE_URL}/dankfolio.v1.CoinService/GetCoinByID`, async () => {
