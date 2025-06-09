@@ -18,4 +18,5 @@ env:
       env:
           COIN_ADDRESS: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
 
-- assertVisible: "Trade"
+- assertVisible:
+      id: "trade-button"
