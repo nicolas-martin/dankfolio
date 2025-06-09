@@ -71,6 +71,3 @@ tmp/
 **/tmp
 **/pools_temp.json
 **/token_cache.json
-
-# Maestro test files for frontend
-frontend/e2e/.maestro/

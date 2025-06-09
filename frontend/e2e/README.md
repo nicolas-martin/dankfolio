@@ -39,11 +39,13 @@ Ensure these are set in your environment before building or running the app with
 
 ### Available Flows
 
-*   **`flow.yaml`**: A generic placeholder flow. (Update or remove as needed)
-*   **`home_screen_flow.yaml`**: Tests the main home screen functionality.
-    *   Verifies display of coin cards based on mock data (Coins ONE, TWO, SOL).
-    *   Tests navigation from a coin card to its detail screen.
-    *   **IMPORTANT**: Requires the app to be launched with `LOAD_DEBUG_WALLET="true"` and `TEST_PRIVATE_KEY` set in the app's environment (see "Environment Variable Prerequisites for App" above).
+*   **`flow.yaml`**: A basic example flow (update or remove if this is no longer relevant).
+
+*   **`home_screen_flow.yaml`**:
+    *   Tests the main home screen functionality.
+    *   Verifies the display of coin cards (Coin One, Coin Two, Solana) based on mock server data.
+    *   Tests navigation from a coin card to its detail screen (placeholder assertion).
+    *   **IMPORTANT**: This flow requires the application to be launched with the `LOAD_DEBUG_WALLET` environment variable set to `"true"`, and `TEST_PRIVATE_KEY` also set and accessible to the app. This ensures the debug wallet is pre-loaded, bypassing the manual wallet setup screens. Refer to the main project README or setup guide for instructions on how to set these environment variables for your build/run configuration. (See also "Environment Variable Prerequisites for App" above).
 
 ## Developing Tests
 
