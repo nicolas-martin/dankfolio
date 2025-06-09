@@ -31,7 +31,11 @@ import {
 
 
 import {
-	GetSwapQuoteResponseSchema
+	GetSwapQuoteResponseSchema,
+	PrepareSwapResponseSchema,
+	SubmitSwapResponseSchema,
+	TradeSchema,
+	ListTradesResponseSchema
 } from '@/gen/dankfolio/v1/trade_pb';
 
 // Environment flag to enable/disable mocking
@@ -474,6 +478,88 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 				break;
 			}
 
+			case '/dankfolio.v1.tradeservice/prepareswap': {
+				console.log('🎭 Returning mock PrepareSwap response');
+				const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
+				const response = create(PrepareSwapResponseSchema, {
+					unsignedTransaction: mockTransactionBase64
+				});
+				mockResponse = response;
+				break;
+			}
+
+			case '/dankfolio.v1.tradeservice/submitswap': {
+				console.log('🎭 Returning mock SubmitSwap response');
+				const response = create(SubmitSwapResponseSchema, {
+					tradeId: 'mock_trade_id_e2e_test_67890',
+					transactionHash: 'mock_transaction_hash_abcdef123456'
+				});
+				mockResponse = response;
+				break;
+			}
+
+			case '/dankfolio.v1.tradeservice/getswapstatus': {
+				console.log('🎭 Returning mock GetSwapStatus response');
+				// Since this endpoint doesn't exist in protobuf, return a plain object
+				// that matches TradeStatusResponse interface
+				const response = {
+					transaction_hash: 'mock_transaction_hash_abcdef123456',
+					status: 'Finalized',
+					confirmations: 32,
+					finalized: true
+				};
+				mockResponse = response;
+				break;
+			}
+
+			case '/dankfolio.v1.tradeservice/gettrade': {
+				console.log('🎭 Returning mock GetTrade response');
+				const response = create(TradeSchema, {
+					id: 'mock_trade_id_e2e_test_67890',
+					userId: 'mock_user_id',
+					fromCoinId: 'So11111111111111111111111111111111111111112',
+					toCoinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+					coinSymbol: 'SOL',
+					type: 'swap',
+					amount: 1.25,
+					price: 0.95,
+					fee: 0.0025,
+					status: 'completed',
+					transactionHash: 'mock_transaction_hash_abcdef123456',
+					confirmations: 32,
+					finalized: true
+				});
+				mockResponse = response;
+				break;
+			}
+
+			case '/dankfolio.v1.tradeservice/listtrades': {
+				console.log('🎭 Returning mock ListTrades response');
+				// Create a mock trade that represents our completed swap
+				const mockTrade = create(TradeSchema, {
+					id: 'mock_trade_id_e2e_test_67890',
+					userId: 'mock_user_id',
+					fromCoinId: 'So11111111111111111111111111111111111111112',
+					toCoinId: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+					coinSymbol: 'SOL',
+					type: 'swap',
+					amount: 1.25,
+					price: 0.95,
+					fee: 0.0025,
+					status: 'completed',
+					transactionHash: 'mock_transaction_hash_abcdef123456',
+					confirmations: 32,
+					finalized: true
+				});
+
+				const response = create(ListTradesResponseSchema, {
+					trades: [mockTrade],
+					totalCount: 1
+				});
+				mockResponse = response;
+				break;
+			}
+
 			default:
 				console.log('🎭 Unhandled endpoint, falling back to original fetch:', normalizedPath);
 				console.log('🎭 Available endpoints:', [
@@ -483,7 +569,12 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 					'/dankfolio.v1.walletservice/getwalletbalances',
 					'/dankfolio.v1.priceservice/getpricehistory',
 					'/dankfolio.v1.priceservice/getcoinprices',
-					'/dankfolio.v1.tradeservice/getswapquote'
+					'/dankfolio.v1.tradeservice/getswapquote',
+					'/dankfolio.v1.tradeservice/prepareswap',
+					'/dankfolio.v1.tradeservice/submitswap',
+					'/dankfolio.v1.tradeservice/getswapstatus',
+					'/dankfolio.v1.tradeservice/gettrade',
+					'/dankfolio.v1.tradeservice/listtrades'
 				]);
 				// For unhandled endpoints, call the original fetch
 				return originalFetch(url, options);
