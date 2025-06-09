@@ -34,7 +34,8 @@ export const getEnvVariables = (): EnvVariables => {
 		testPrivateKey: extra.TEST_PRIVATE_KEY as string,
 		sentryAuthToken: extra.SENTRY_AUTH_TOKEN as string,
 		loadDebugWallet: extra.LOAD_DEBUG_WALLET === 'true' ||
-			process.env.E2E_MOCKING_ENABLED === 'true'
+			process.env.E2E_MOCKING_ENABLED === 'true',
+		e2eMockingEnabled: process.env.E2E_MOCKING_ENABLED === 'true'
 	};
 
 	// Override apiUrl for E2E mocking

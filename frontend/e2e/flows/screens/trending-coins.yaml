@@ -1,0 +1,52 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# Trending Coins Section Test
+
+- launchApp
+
+# Navigate to and verify Trending Coins section
+- assertVisible: "Trending Coins"
+
+# Scroll to ensure trending coins are fully visible
+- scrollUntilVisible:
+    element: "Trending Coins"
+    direction: DOWN
+
+# Test that we have multiple coin cards in trending section
+- assertVisible:
+    id: "coin-card-So11111111111111111111111111111111111111112"
+- assertVisible:
+    id: "coin-card-DankCoin1111111111111111111111111111111"
+- assertVisible:
+    id: "coin-card-MoonToken111111111111111111111111111111"
+
+# Test SOL coin card element
+- runFlow: 
+    file: ../components/coin-card-element.yaml
+    params:
+      coinAddress: "So11111111111111111111111111111111111111112"
+
+# Test DANK coin card element  
+- runFlow:
+    file: ../components/coin-card-element.yaml
+    params:
+      coinAddress: "DankCoin1111111111111111111111111111111"
+
+# Test MOON coin card element
+- runFlow:
+    file: ../components/coin-card-element.yaml
+    params:
+      coinAddress: "MoonToken111111111111111111111111111111"
+
+# Test coin card interactions within trending section
+- tapOn:
+    id: "coin-card-So11111111111111111111111111111111111111112"
+- back
+
+# Test another coin card interaction
+- tapOn:
+    id: "coin-card-DankCoin1111111111111111111111111111111"
+- back 

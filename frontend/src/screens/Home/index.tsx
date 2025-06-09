@@ -20,6 +20,7 @@ import { createStyles } from './home_styles';
 import { Coin, PriceData } from '@/types'; // Added PriceData
 import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
+import { env} from '@/utils/env';
 import { PRICE_HISTORY_FETCH_MODE, PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 
 const HomeScreen = () => {
@@ -189,7 +190,22 @@ const HomeScreen = () => {
 		const topCoins = availableCoins.slice(0, 10);
 		const fourHourTimeframeKey: string = "4H"; // Key used in TIMEFRAME_CONFIG
 
-		if (PRICE_HISTORY_FETCH_MODE === 'sequential') {
+		// 🔍 DEBUG: Log the decision logic
+		const isE2EMode = process.env.E2E_MOCKING_ENABLED === 'true';
+		const debugInfo = {
+			PRICE_HISTORY_FETCH_MODE,
+			'env.e2eMockingEnabled': env.e2eMockingEnabled,
+			'process.env.E2E_MOCKING_ENABLED': process.env.E2E_MOCKING_ENABLED,
+			'isE2EMode': isE2EMode,
+			willUseSequential: PRICE_HISTORY_FETCH_MODE === 'sequential' && !isE2EMode,
+			topCoinsCount: topCoins.length
+		};
+		console.log('🔍 [HomeScreen] Price history fetch decision:', debugInfo);
+		logger.info('[HomeScreen] Price history fetch decision:', debugInfo);
+
+		if (PRICE_HISTORY_FETCH_MODE === 'sequential' && !isE2EMode) {
+			console.log('🐌 [HomeScreen] Using SEQUENTIAL price history fetching');
+			logger.info('[HomeScreen] 🐌 Using SEQUENTIAL price history fetching');
 			const processCoinsSequentially = async () => {
 				for (const coin of topCoins) {
 					if (!coin || !coin.mintAddress) {
@@ -226,13 +242,18 @@ const HomeScreen = () => {
 				}
 			});
 		} else { // Parallel fetching
+			logger.info('[HomeScreen] 🚀 Using PARALLEL price history fetching', { coinCount: topCoins.length });
 			topCoins.forEach(coin => {
 				if (!coin || !coin.mintAddress) {
 					return;
 				}
+				const startTime = Date.now();
+				logger.info(`[HomeScreen] 🚀 Starting parallel fetch for ${coin.symbol} (${coin.mintAddress})`);
 				setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
 				fetchPriceHistory(coin, fourHourTimeframeKey)
 					.then(result => {
+						const duration = Date.now() - startTime;
+						logger.info(`[HomeScreen] ✅ Completed parallel fetch for ${coin.symbol} in ${duration}ms`);
 						if (result.data !== null) {
 							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data! }));
 						} else {
@@ -377,7 +398,7 @@ const HomeScreen = () => {
 	const renderCoinsList = () => {
 		const hasTrendingCoins = availableCoins.length > 0;
 		const isInitialLoad = isLoadingTrending && !hasTrendingCoins && !isRefreshing;
-		
+
 		// Show shimmer placeholders only during the first load (not during pull-to-refresh)
 		// This is true when:
 		// - We're loading trending coins AND

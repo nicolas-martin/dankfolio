@@ -85,6 +85,7 @@ module.exports = ({ config }) => ({
     FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS: process.env.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
     TEST_PRIVATE_KEY: process.env.TEST_PRIVATE_KEY,
     LOAD_DEBUG_WALLET: process.env.LOAD_DEBUG_WALLET,
+    E2E_MOCKING_ENABLED: process.env.E2E_MOCKING_ENABLED,
     eas: {
       projectId: "efd2922e-0415-49a7-bae1-fd28bc35805d"
     }
