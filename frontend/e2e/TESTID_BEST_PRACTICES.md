@@ -139,9 +139,14 @@ testID="amount-input"
 - `amount-percentage-text-${percent}` - Percentage text inside button
 
 ### **TokenSelector Component**
-- `token-selector-icon-${mintAddress}` - Token icon (when token selected)
-- `token-selector-symbol-${mintAddress}` - Token symbol (when token selected)
-- `token-selector-placeholder` - Placeholder text (when no token selected)
+- `token-selector-icon-${mintAddress}` - Token icon (when token selected, uses the `mintAddress` of the selected token).
+- `token-selector-symbol-${mintAddress}` - Token symbol (when token selected, uses the `mintAddress` of the selected token).
+- `${props.testID}-placeholder` - Placeholder text (e.g., "Select Token") when no token is selected. `props.testID` is the main `testID` passed to the `TokenSelector` instance (e.g., `from-token-selector-placeholder`).
+- `${props.testID}-amount-input` - Amount input field within the selector. `props.testID` is the main `testID` passed to the `TokenSelector` instance (e.g., `from-token-selector-amount-input`).
+- **Token Search Modal (invoked by TokenSelector):**
+    - `token-search-input` - Search input field within the token selection modal.
+    - `search-result-${coinAddress}` - Pattern for items in the token search results list (e.g., `search-result-So111...`). Uses the `mintAddress` of the coin in the list item.
+    - `token-search-modal-backdrop` - The backdrop of the token search modal, can be tapped to dismiss.
 
 ### **TradeConfirmation Component**
 - `from-token-details` - From token section container
@@ -163,6 +168,59 @@ testID="amount-input"
 ### **Navigation**
 - `home-screen` - Home screen container
 - `coin-detail-screen` - Coin detail screen
+
+### **Trade Screen Components**
+- `trade-screen` - Main container for the trade screen.
+- `trade-details-card` - Card displaying trade details like price impact, fees, etc.
+- `trade-details-price-impact` - Text displaying the price impact percentage.
+- `trade-details-network-fee` - Text displaying the network fee.
+- `trade-details-route` - Text displaying the trade route (e.g., Jupiter).
+- `trade-details-exchange-rate` - Text displaying the exchange rate between the two tokens.
+
+### **TradeStatusModal Component**
+- `trade-status-modal` - The main modal container for displaying trade status.
+- `trade-status-icon` - Icon indicating the current status (e.g., success, pending, error).
+- `trade-status-text` - Text displaying the primary status message (e.g., "Transaction Submitted").
+- `trade-status-description` - Text providing more details about the current status.
+- `trade-status-progress-bar` - The animated view representing the progress of confirmations.
+- `trade-status-confirmations-text` - Text displaying the number of network confirmations.
+- `trade-status-solscan-button` - Button to view the transaction on Solscan.
+- `trade-status-error-message` - Text displaying error details if the trade fails.
+- `trade-status-action-button` - The final action button (e.g., "Done" or "Try Again").
+
+## 🔄 **Reusable Component Test Flows**
+
+This section documents reusable Maestro flows that test specific component interactions. These flows can be called from other E2E tests using `runFlow`.
+
+### **`select-token-in-selector.yaml`**
+- **Purpose**: Tests selecting a token within any `TokenSelector` component instance, including typing a search query and asserting filter behavior.
+- **Key Environment Variables**:
+    - `selectorTestID`: The `testID` of the `TokenSelector` instance.
+    - `coinAddressToSelect`: Mint address of the coin to be selected.
+    - `coinSymbolToSelect`: Symbol of the coin to be selected.
+    - `knownMatchingCoinAddress`: Mint address of a coin expected to be visible after filtering.
+    - `knownMatchingCoinSymbol`: Symbol of a coin expected to be visible after filtering.
+    - `knownNonMatchingCoinAddress`: Mint address of a coin expected NOT to be visible after filtering.
+    - `knownNonMatchingCoinSymbol`: Symbol of a coin expected NOT to be visible after filtering.
+
+### **`cancel-token-selection.yaml`**
+- **Purpose**: Tests cancelling the token selection process from a `TokenSelector` modal by tapping the backdrop. It verifies that the initial selection (or placeholder) remains unchanged.
+- **Key Environment Variables**:
+    - `selectorTestID`: The `testID` of the `TokenSelector` instance.
+    - `initialCoinAddress` (Optional): Mint address of the initially selected coin.
+    - `initialCoinSymbol` (Optional): Symbol of the initially selected coin.
+
+### **`assert-selected-token.yaml`**
+- **Purpose**: Helper flow to assert that a specific token is currently selected and displayed in a `TokenSelector` instance.
+- **Key Environment Variables**:
+    - `selectorTestID`: The `testID` of the `TokenSelector` instance.
+    - `expectedCoinAddress`: Mint address of the token expected to be selected.
+    - `expectedCoinSymbol`: Symbol of the token expected to be selected.
+
+### **`assert-placeholder-visible.yaml`**
+- **Purpose**: Helper flow to assert that the placeholder (indicating no token is selected) is currently visible in a `TokenSelector` instance.
+- **Key Environment Variables**:
+    - `selectorTestID`: The `testID` of the `TokenSelector` instance.
 
 ## 🚀 **Next Steps**
 

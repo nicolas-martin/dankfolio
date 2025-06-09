@@ -1,0 +1,48 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  # PARAMETERS:
+  # selectorTestID: The testID of the TokenSelector component instance (e.g., "from-token-selector")
+  # initialCoinAddress: (Optional) The mint address of the coin initially selected in the selector.
+  #                       If no coin is initially selected, this can be omitted or empty.
+  # initialCoinSymbol: (Optional) The symbol of the initially selected coin.
+---
+# Component Flow: Cancel token selection from TokenSelector
+
+# 1. Store initial state (if a token is already selected)
+#    (This step is conceptual for the test logic; no actual Maestro command here unless we need to read it)
+
+# 2. Tap on the TokenSelector to open the selection modal/list
+- tapOn:
+    id: "${selectorTestID}"
+
+# 3. Assert the token search/list view (modal) is visible
+- assertVisible:
+    id: "token-search-input" # testID for the search input within the modal
+    timeout: 5000
+
+# 4. Simulate dismissing the modal by tapping the backdrop
+- tapOn:
+    id: "token-search-modal-backdrop"
+
+# 5. Assert the token search/list view (modal) is NOT visible anymore
+- assertNotVisible:
+    id: "token-search-input"
+    timeout: 5000
+
+# 6. Assert that the original token selection (if any) in the TokenSelector remains unchanged.
+#    If a token was initially selected, assert it's still visible.
+#    If no token was initially selected, assert the placeholder is still visible.
+- runFlow:
+    when:
+      notEmpty: ${initialCoinAddress} # Run this block only if initialCoinAddress is provided
+    file: assert-selected-token.yaml # A new helper flow to assert this
+    env:
+      selectorTestID: "${selectorTestID}"
+      expectedCoinAddress: "${initialCoinAddress}"
+      expectedCoinSymbol: "${initialCoinSymbol}"
+- runFlow:
+    when:
+      empty: ${initialCoinAddress} # Run this block only if initialCoinAddress is NOT provided
+    file: assert-placeholder-visible.yaml # A new helper flow for this
+    env:
+      selectorTestID: "${selectorTestID}"

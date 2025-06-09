@@ -1,0 +1,45 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  # PARAMETERS:
+  # selectorTestID: The testID of the TokenSelector component instance (e.g., "from-token-selector")
+  # coinAddressToSelect: The mint address of the coin to select
+  # coinSymbolToSelect: The symbol of the coin to select (for assertion and typing)
+  # knownMatchingCoinAddress: Mint address of a coin that SHOULD be visible after filtering (can be same as coinAddressToSelect)
+  # knownMatchingCoinSymbol: Symbol of a coin that SHOULD be visible after filtering
+  # knownNonMatchingCoinAddress: Mint address of a coin that SHOULD NOT be visible after filtering
+  # knownNonMatchingCoinSymbol: Symbol of a coin that SHOULD NOT be visible after filtering
+---
+# Component Flow: Select a token in a TokenSelector with enhanced filter assertion
+
+# 1. Tap on the TokenSelector to open the selection modal/list
+- tapOn:
+    id: "${selectorTestID}"
+
+# 2. Assert the token search/list view is visible
+- assertVisible:
+    id: "token-search-input" # From previous step, should exist
+
+# 3. Type the coin symbol to select into the search input
+- inputText: "${coinSymbolToSelect}"
+- Eigenschaften:
+    id: "token-search-input"
+
+# 4. Assert filtering behavior
+#    - Known matching token IS visible
+- assertVisible:
+    id: "search-result-${knownMatchingCoinAddress}" # e.g., search-result-So111...
+    timeout: 5000 # Allow time for list to re-render
+#    - Known non-matching token IS NOT visible
+- assertNotVisible:
+    id: "search-result-${knownNonMatchingCoinAddress}"
+
+# 5. Tap on the desired token in the search results.
+- tapOn:
+    id: "search-result-${coinAddressToSelect}"
+
+# 6. Assert that the TokenSelector now displays the selected token's symbol
+#    (The bottom sheet should close automatically after selection)
+- assertVisible:
+    id: "${selectorTestID}-token-symbol-${coinAddressToSelect}"
+- assertNotVisible: # Modal should be gone
+    id: "token-search-input"

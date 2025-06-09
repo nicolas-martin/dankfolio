@@ -1,0 +1,141 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+  # Define coin addresses and symbols to be used in the test
+  FROM_COIN_ADDRESS: "So11111111111111111111111111111111111111112" # SOL
+  FROM_COIN_SYMBOL: "SOL"
+  TO_COIN_ADDRESS: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" # USDC
+  TO_COIN_SYMBOL: "USDC"
+  TRADE_AMOUNT_FROM: "0.1"
+---
+# Trade Screen - E2E Tests
+
+- launchApp
+
+# 1. Navigate to the Coin Detail screen for the 'FROM' coin (SOL)
+#    (This assumes a flow similar to how home screen tests tap on a coin card)
+- tapOn:
+    id: "trending-coin-card-${FROM_COIN_ADDRESS}" # Or another way to get to SOL's detail
+- assertVisible:
+    id: "coin-detail-screen" # General testID for coin detail screen
+
+# 2. Tap the 'Trade' button on the Coin Detail screen to navigate to the Trade screen
+- assertVisible:
+    id: "trade-button" # This is the trade button on the Coin Detail Screen
+- tapOn:
+    id: "trade-button"
+- assertVisible:
+    id: "trade-screen" # General testID for the trade screen
+
+# 3. Verify initial state of the Trade Screen (FROM coin should be pre-filled)
+- assertVisible: "From"
+- assertVisible:
+    id: "from-token-selector-token-symbol-${FROM_COIN_ADDRESS}" # From token (SOL) should be pre-selected
+- assertVisible: "To"
+- assertVisible:
+    id: "to-token-selector" # To token selector should be visible
+
+# 4. Select the 'TO' token (USDC) using the component flow
+- runFlow:
+    file: ../components/select-token-in-selector.yaml
+    env:
+      selectorTestID: "to-token-selector"
+      coinAddress: "${TO_COIN_ADDRESS}"
+      coinSymbol: "${TO_COIN_SYMBOL}"
+- assertVisible:
+    id: "to-token-selector-token-symbol-${TO_COIN_ADDRESS}" # Assert USDC is now selected in the 'to' selector
+
+# 5. Input the amount for the 'FROM' token
+- tapOn: # Tap on the amount input field within the 'from' TokenSelector
+    id: "from-token-selector-amount-input" # Assumes testID: ${selectorTestID}-amount-input inside TokenSelector
+- inputText: "${TRADE_AMOUNT_FROM}"
+- Eigenschaften:
+    id: "from-token-selector-amount-input"
+
+# 6. Verify that the 'TO' amount is populated (quote received)
+#    This requires the 'to' TokenSelector's amount input to also have a testID.
+#    Let's assume: ${selectorTestID}-amount-input
+- assertNotVisible: # Check that the TO amount input is not empty after a short delay for quote
+    text: "" # Check if the text property is empty
+    id: "to-token-selector-amount-input"
+    timeout: 10000 # Wait up to 10s for quote
+
+# 7. Verify Trade Details are visible (optional, but good check)
+- assertVisible:
+    id: "trade-details-card"
+    timeout: 5000
+- assertVisible:
+    id: "trade-details-exchange-rate"
+- assertVisible:
+    id: "trade-details-network-fee"
+# - assertVisible:
+# id: "trade-details-price-impact" # This might not always be present if impact is negligible
+
+# 8. Tap the main 'Trade' button to open confirmation
+- assertVisible:
+    id: "trade-button" # This is the main trade button on the Trade screen
+- tapOn:
+    id: "trade-button"
+
+# 9. Trade Confirmation Modal
+#    testIDs for TradeConfirmation are already listed in TESTID_BEST_PRACTICES.md
+- assertVisible:
+    id: "from-token-symbol-${FROM_COIN_ADDRESS}" # Confirm from token
+    timeout: 5000 # Modal might take a moment to appear
+- assertVisible:
+    id: "to-token-symbol-${TO_COIN_ADDRESS}" # Confirm to token
+- assertVisible: # Check from amount (assuming it exists in the confirmation modal)
+    id: "from-token-amount"
+    text: ".*${TRADE_AMOUNT_FROM}.*" # Regex to match the amount
+- assertVisible:
+    id: "confirm-trade-button"
+- tapOn:
+    id: "confirm-trade-button"
+
+# 10. Trade Status Modal
+#     testIDs were added in the previous step
+- assertVisible:
+    id: "trade-status-modal"
+    timeout: 10000 # Modal can take time, especially with real network interaction (even if mocked)
+
+# Check for initial "pending" or "processing" state - one of these should appear first
+- waitForAssertion: # Wait for one of these to be true
+    assertions:
+      - isVisible:
+          id: "trade-status-text"
+          text: ".*Processing.*" # Regex for flexibility
+      - isVisible:
+          id: "trade-status-text"
+          text: ".*Submitting.*"
+      - isVisible:
+          id: "trade-status-text"
+          text: ".*Pending.*"
+    timeout: 15000
+
+# Assert progress bar is visible if status is processing/polling
+- assertVisible:
+    id: "trade-status-progress-bar"
+    optional: true # It might quickly go to success
+
+# Wait for Success status
+- assertVisible:
+    id: "trade-status-text"
+    text: ".*Success.*" # Or "Completed", "Finalized" - adjust based on actual text
+    timeout: 60000 # Allow ample time for mock processing to "complete"
+- assertVisible:
+    id: "trade-status-icon" # General icon, specific state checked by text
+- assertVisible:
+    id: "trade-status-solscan-button"
+    optional: true # Might only appear on success/failure with txHash
+- assertVisible:
+    id: "trade-status-action-button" # "Done" button
+- tapOn:
+    id: "trade-status-action-button"
+
+# 11. Verify modal is closed and user is navigated away (e.g., back to home)
+- assertNotVisible:
+    id: "trade-status-modal"
+- assertVisible: # Assuming navigation back to home screen's main elements
+    id: "home-screen" # testID for the home screen main container
+    timeout: 5000

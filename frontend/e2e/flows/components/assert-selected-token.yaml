@@ -1,0 +1,12 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  # selectorTestID
+  # expectedCoinAddress
+  # expectedCoinSymbol
+---
+# Helper Flow: Assert a specific token is selected in a TokenSelector
+- assertVisible:
+    id: "${selectorTestID}-token-symbol-${expectedCoinAddress}"
+- assertVisible: # Also check the text for the symbol as an extra guard
+    text: "${expectedCoinSymbol}"
+    id: "${selectorTestID}-token-symbol-${expectedCoinAddress}"

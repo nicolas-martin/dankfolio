@@ -1,0 +1,7 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  # selectorTestID
+---
+# Helper Flow: Assert the placeholder is visible in a TokenSelector
+- assertVisible:
+    id: "${selectorTestID}-placeholder" # Assumes testID: ${selectorTestID}-placeholder for the placeholder text element
