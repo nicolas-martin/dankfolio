@@ -12,11 +12,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "android": "expo run:android",
     "detox:build:ios": "detox build -c ios.sim.debug",
-    "detox:test:ios": "detox test -c ios.sim.debug",
-    "detox:build:android": "detox build -c android.emu.debug",
-    "detox:test:android": "detox test -c android.emu.debug"
+    "detox:test:ios": "detox test -c ios.sim.debug"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.5.0",
