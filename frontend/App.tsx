@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { env } from './src/utils/env'; // Import our new environment utility
-import { enableApiMocking, shouldEnableMocking } from './src/utils/mockApi';
+import { enableApiMocking, shouldEnableMocking } from './e2e/mockApi';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
