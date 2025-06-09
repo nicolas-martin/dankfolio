@@ -32,7 +32,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 					uri={coin.resolvedIconUrl}
 					size={48}
 					borderRadius={24}
-					testID={`coin-icon-${coin.mintAddress}`}
+					testID={`horizontal-ticker-icon-${coin.mintAddress}`}
 				/>
 			</View>
 			<Text style={styles.symbol} numberOfLines={1} testID={`horizontal-ticker-symbol-${coin.mintAddress}`}>
