@@ -1,0 +1,16 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# Common App Setup Flow
+# This flow handles the initial app launch and basic setup
+
+- launchApp
+
+# Wait for app to fully load
+- assertVisible: "DankFolio"
+
+# Ensure bottom navigation is loaded (this indicates app is ready)
+- assertVisible:
+    id: "bottom-navigation-bar-outer-layer" 

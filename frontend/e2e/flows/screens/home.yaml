@@ -16,15 +16,20 @@ env:
 - assertVisible: "  Explore Explore"  
 - assertVisible: "  Home Home"
 
-# Test new listings section (using regex for dynamic content)
-- assertVisible: ".*FRESH.*days ago"
-- assertVisible: ".*ROCKET.*days ago"
+# Test new listings section using reusable component tests
+- runFlow: new-listings.yaml
 
-# Test a single coin card element (SOL) for basic functionality
+# Test trending coins section using reusable component tests
+- runFlow: trending-coins.yaml
+
+# Test individual coin card elements for specific coins
 - runFlow:
     file: ../components/coin-card-element.yaml
-    params:
-      coinAddress: "So11111111111111111111111111111111111111112"
+    env:
+      COIN_ADDRESS: "So11111111111111111111111111111111111111112"
 
-# Run comprehensive Trending Coins section tests
-- runFlow: trending-coins.yaml
+# Test individual new coin card elements for specific coins
+- runFlow:
+    file: ../components/new-coin-card-element.yaml
+    env:
+      COIN_ADDRESS: "NewCoin1111111111111111111111111111111"

@@ -2,24 +2,17 @@ appId: com.nicolasmartin.dankfolio
 ---
 # CoinCard Element Test - Core functionality for a single coin
 # This test assumes we're already on a screen with coin cards visible
-# Pass coinAddress as a parameter when calling this flow
-
-# Get the coin address from parameters or default to SOL
-- evalScript: |
-    const coinAddress = maestro.params.coinAddress || "So11111111111111111111111111111111111111112";
-    output.coinAddress = coinAddress;
-    output.coinCardId = `coin-card-${coinAddress}`;
-    output.shimmerSparklineId = `shimmer-sparkline-${coinAddress}`;
+# Pass coinAddress as an environment variable when calling this flow
 
 # Test CoinCard testID functionality (most reliable)
 - assertVisible:
-    id: ${output.coinCardId}
+    id: "coin-card-${COIN_ADDRESS}"
 
-# Test sparkline loading and visibility
-- waitForAnimationToEnd
-- evalScript: |
-    await new Promise(resolve => setTimeout(resolve, 2000));
+- assertVisible:
+    id: "coin-symbol-${COIN_ADDRESS}"
 
-# Verify sparklines have loaded (shimmer placeholders should be gone)
-- assertNotVisible:
-    id: ${output.shimmerSparklineId} 
+- assertVisible:
+    id: "coin-price-${COIN_ADDRESS}"
+
+- assertVisible:
+    id: "price-chart-${COIN_ADDRESS}"

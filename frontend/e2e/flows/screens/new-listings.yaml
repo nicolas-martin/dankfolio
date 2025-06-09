@@ -1,0 +1,45 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# New Listings Section Test
+
+- launchApp
+
+# Navigate to and verify New Listings section
+- assertVisible: "New Listings"
+
+# Scroll to ensure new listings are fully visible
+- scrollUntilVisible:
+    element: "New Listings"
+    direction: DOWN
+
+# Test that we have multiple horizontal ticker cards in new listings section
+- assertVisible:
+    id: "horizontal-ticker-card-NewCoin1111111111111111111111111111111"
+- assertVisible:
+    id: "horizontal-ticker-card-RocketCoin111111111111111111111111111"
+- assertVisible:
+    id: "horizontal-ticker-card-DiamondCoin11111111111111111111111111"
+
+# Test FRESH new coin card element
+- runFlow: 
+    file: ../components/new-coin-card-element.yaml
+    env:
+      COIN_ADDRESS: "NewCoin1111111111111111111111111111111"
+
+# Test ROCKET new coin card element  
+- runFlow:
+    file: ../components/new-coin-card-element.yaml
+    env:
+      COIN_ADDRESS: "RocketCoin111111111111111111111111111"
+
+# Test DIAMOND new coin card element
+- runFlow:
+    file: ../components/new-coin-card-element.yaml
+    env:
+      COIN_ADDRESS: "DiamondCoin11111111111111111111111111"
+
+# Test horizontal scrolling in new listings (simple scroll without direction)
+- scroll
