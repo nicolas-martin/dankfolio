@@ -54,10 +54,10 @@ import Navigation from '@components/Common/Navigation';
 import { themes, extendedThemeProperties } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
-// import { useTransactionsStore } from '@store/transactions';
-import { retrieveWalletFromStorage } from '@screens/WalletSetup/scripts';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
+import { initializeDebugWallet } from '@/utils/debugWallet'; // Import for debug wallet
+import { retrieveWalletFromStorage } from '@/utils/walletStorage'; // Import for wallet retrieval
 import { logger } from '@/utils/logger';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
 import * as SplashScreen from 'expo-splash-screen';
@@ -96,7 +96,7 @@ const App: React.FC = () => {
 	const [appIsReady, setAppIsReady] = useState(false);
 	const [needsWalletSetup, setNeedsWalletSetup] = useState<boolean | null>(null);
 	const { setWallet, wallet } = usePortfolioStore();
-	
+
 	// Use the theme store instead of local state
 	const { themeType } = useThemeStore();
 
@@ -128,6 +128,26 @@ const App: React.FC = () => {
 
 		async function prepare() {
 			// Theme is now handled by the theme store
+
+			if (env.loadDebugWallet) {
+				logger.info("LOAD_DEBUG_WALLET is true. Attempting to initialize debug wallet automatically...");
+				const debugKeypair = await initializeDebugWallet();
+				if (debugKeypair) {
+					logger.info("Debug wallet initialized successfully via App.tsx. Finalizing setup...");
+					await handleWalletSetupComplete(debugKeypair); // Use existing handler
+					// Since handleWalletSetupComplete sets needsWalletSetup(false)
+					// and the prepare function's finally block sets appIsReady(true),
+					// this should correctly transition the app state.
+					// We can return here to skip the normal wallet check.
+					logger.info("Debug wallet setup complete. App will proceed to main content.");
+					// The finally block of prepare() will setAppIsReady(true)
+					return;
+				} else {
+					logger.error("Failed to initialize debug wallet. Proceeding with normal wallet check/setup flow.");
+					// Optionally, inform the user via a toast in dev mode if the debug setup failed.
+					// For now, just logging is fine.
+				}
+			}
 
 			// Existing logger.breadcrumb call for starting authentication
 			logger.breadcrumb({ message: 'App: Preparing - Initializing Firebase', category: 'app_lifecycle' });

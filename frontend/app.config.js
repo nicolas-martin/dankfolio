@@ -84,6 +84,7 @@ module.exports = ({ config }) => ({
     FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID: process.env.FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID,
     FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS: process.env.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS,
     TEST_PRIVATE_KEY: process.env.TEST_PRIVATE_KEY,
+    LOAD_DEBUG_WALLET: process.env.LOAD_DEBUG_WALLET,
     eas: {
       projectId: "efd2922e-0415-49a7-bae1-fd28bc35805d"
     }

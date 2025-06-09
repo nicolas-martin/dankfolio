@@ -13,6 +13,8 @@ interface EnvVariables {
 	firebaseAppCheckDebugTokenAndroid: string;// For development only
 	firebaseAppCheckDebugTokenIos: string;// For development only
 	testPrivateKey?: string; // For development only
+	loadDebugWallet?: boolean; // For development only, to load a debug wallet
+
 }
 
 /**
@@ -31,6 +33,7 @@ export const getEnvVariables = (): EnvVariables => {
 		firebaseAppCheckDebugTokenIos: extra.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS || '',
 		testPrivateKey: extra.TEST_PRIVATE_KEY as string,
 		sentryAuthToken: extra.SENTRY_AUTH_TOKEN as string,
+		loadDebugWallet: extra.LOAD_DEBUG_WALLET === 'true',
 	};
 
 	if (!env.apiUrl || !env.solanaRpcEndpoint || !env.sentryAuthToken) {
@@ -47,6 +50,7 @@ export const getEnvVariables = (): EnvVariables => {
 		solanaRpcEndpoint: env.solanaRpcEndpoint,
 		sentryAuthToken: env.sentryAuthToken,
 		firebaseTokensConfigured: !!(env.firebaseAppCheckDebugTokenAndroid && env.firebaseAppCheckDebugTokenIos),
+		loadDebugWallet: env.loadDebugWallet,
 	});
 	//   }
 
