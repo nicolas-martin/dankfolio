@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { env } from './src/utils/env'; // Import our new environment utility
+import { worker } from './src/msw-worker';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -39,6 +40,21 @@ Sentry.init({
 		return event;
 	},
 });
+
+// Conditionally start MSW worker
+// IMPORTANT: Ensure E2E_MOCKING_ENABLED is set as an environment variable
+// when building/running the app for E2E tests.
+// For example, using cross-env: cross-env E2E_MOCKING_ENABLED=true expo start --dev-client
+if (process.env.E2E_MOCKING_ENABLED === 'true') {
+  console.log('[MSW] E2E_MOCKING_ENABLED is true, starting MSW worker...');
+  worker.start({
+    onUnhandledRequest: 'bypass', // Or 'warn' or a custom function
+  }).then(() => {
+    console.log('[MSW] Worker started successfully.');
+  }).catch((error: any) => {
+    console.error('[MSW] Error starting worker:', error);
+  });
+}
 
 import 'react-native-gesture-handler';
 import './src/utils/polyfills';
