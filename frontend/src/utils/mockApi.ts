@@ -1,218 +1,377 @@
 // Simple API mocking for React Native E2E tests
 import { env } from './env';
+import { Coin } from '@/types';
+import { create } from '@bufbuild/protobuf';
+import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 
-// Mock data matching the test assertions in our Maestro flows
-const mockCoins = [
-  {
-    mintAddress: 'coin1_mint',
-    name: 'Coin One',
-    symbol: 'ONE',
-    imageUrl: 'https://example.com/one.png',
-    resolvedIconUrl: 'https://example.com/one.png',
-    price: 10,
+// Import the exact gRPC types and schemas
+import type { 
+  GetAvailableCoinsResponse,
+  SearchResponse,
+  SearchCoinByMintResponse 
+} from '@/gen/dankfolio/v1/coin_pb';
+import { 
+  GetAvailableCoinsResponseSchema,
+  SearchResponseSchema,
+  SearchCoinByMintResponseSchema,
+  CoinSchema,
+  type Coin as ProtobufCoin
+} from '@/gen/dankfolio/v1/coin_pb';
+import type { 
+  GetWalletBalancesResponse,
+  Balance,
+  WalletBalance 
+} from '@/gen/dankfolio/v1/wallet_pb';
+import { 
+  GetWalletBalancesResponseSchema,
+  BalanceSchema,
+  WalletBalanceSchema 
+} from '@/gen/dankfolio/v1/wallet_pb';
+import type { 
+  GetPriceHistoryResponse,
+  PriceHistoryData,
+  PriceHistoryItem 
+} from '@/gen/dankfolio/v1/price_pb';
+import { 
+  GetPriceHistoryResponseSchema,
+  PriceHistoryDataSchema,
+  PriceHistoryItemSchema 
+} from '@/gen/dankfolio/v1/price_pb';
+import type { 
+  GetSwapQuoteResponse 
+} from '@/gen/dankfolio/v1/trade_pb';
+import { 
+  GetSwapQuoteResponseSchema 
+} from '@/gen/dankfolio/v1/trade_pb';
+
+// Environment flag to enable/disable mocking
+let mockingEnabled = false;
+
+// Mock coin data with realistic meme-themed coins (using protobuf-compatible format)
+const MOCK_COINS: ProtobufCoin[] = [
+  create(CoinSchema, {
+    mintAddress: 'DankCoin1111111111111111111111111111111',
+    name: 'DankCoin',
+    symbol: 'DANK',
     decimals: 9,
-    dailyVolume: 1000,
-    marketCap: 100000,
-    description: 'Test coin one',
-    tags: ['test'],
-    jupiterListedAt: new Date().toISOString(),
-    coingeckoId: 'coin-one',
-    change24h: 5.5,
-    website: 'https://example.com',
-    twitter: 'https://twitter.com/coinone',
-    telegram: '',
-    createdAt: new Date(),
-  },
-  {
-    mintAddress: 'coin2_mint',
-    name: 'Coin Two', 
-    symbol: 'TWO',
-    imageUrl: 'https://example.com/two.png',
-    resolvedIconUrl: 'https://example.com/two.png',
-    price: 20,
+    description: 'The dankest meme coin on Solana',
+    iconUrl: 'https://example.com/dank.png',
+    resolvedIconUrl: 'https://example.com/dank.png',
+    tags: ['meme', 'community'],
+    price: 0.000042,
+    dailyVolume: 1250000,
+    website: 'https://dankcoin.meme',
+    twitter: 'https://twitter.com/dankcoin',
+    coingeckoId: 'dank-coin',
+    createdAt: timestampFromDate(new Date('2024-01-15')),
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: true,
+    jupiterListedAt: timestampFromDate(new Date('2024-01-20')),
+  }),
+  create(CoinSchema, {
+    mintAddress: 'MoonToken111111111111111111111111111111',
+    name: 'Moon Token',
+    symbol: 'MOON',
     decimals: 6,
-    dailyVolume: 2000,
-    marketCap: 200000,
-    description: 'Test coin two',
-    tags: ['test'],
-    jupiterListedAt: new Date().toISOString(),
-    coingeckoId: 'coin-two',
-    change24h: -2.1,
-    website: 'https://example.com',
-    twitter: 'https://twitter.com/cointwo',
-    telegram: '',
-    createdAt: new Date(),
-  },
-  {
+    description: 'To the moon and beyond! 🚀',
+    iconUrl: 'https://example.com/moon.png',
+    resolvedIconUrl: 'https://example.com/moon.png',
+    tags: ['meme', 'moon'],
+    price: 0.00123,
+    dailyVolume: 890000,
+    website: 'https://moontoken.space',
+    twitter: 'https://twitter.com/moontoken',
+    coingeckoId: 'moon-token',
+    createdAt: timestampFromDate(new Date('2024-02-01')),
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: true,
+    jupiterListedAt: timestampFromDate(new Date('2024-02-05')),
+  }),
+  create(CoinSchema, {
+    mintAddress: 'Bonk111111111111111111111111111111111111',
+    name: 'Bonk',
+    symbol: 'BONK',
+    decimals: 5,
+    description: 'The first Solana dog coin for the people, by the people',
+    iconUrl: 'https://example.com/bonk.png',
+    resolvedIconUrl: 'https://example.com/bonk.png',
+    tags: ['meme', 'dog', 'community'],
+    price: 0.0000089,
+    dailyVolume: 2100000,
+    website: 'https://bonkcoin.com',
+    twitter: 'https://twitter.com/bonk_inu',
+    coingeckoId: 'bonk',
+    createdAt: timestampFromDate(new Date('2022-12-25')),
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: false,
+    jupiterListedAt: timestampFromDate(new Date('2023-01-01')),
+  }),
+  create(CoinSchema, {
+    mintAddress: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+    name: 'Jupiter',
+    symbol: 'JUP',
+    decimals: 6,
+    description: 'The key infrastructure for Solana trading',
+    iconUrl: 'https://example.com/jup.png',
+    resolvedIconUrl: 'https://example.com/jup.png',
+    tags: ['defi', 'infrastructure'],
+    price: 0.87,
+    dailyVolume: 15600000,
+    website: 'https://jup.ag',
+    twitter: 'https://twitter.com/JupiterExchange',
+    coingeckoId: 'jupiter-exchange-solana',
+    createdAt: timestampFromDate(new Date('2023-10-19')),
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: false,
+    jupiterListedAt: timestampFromDate(new Date('2023-10-19')),
+  }),
+  create(CoinSchema, {
     mintAddress: 'So11111111111111111111111111111111111111112',
-    name: 'Solana',
+    name: 'Wrapped SOL',
     symbol: 'SOL',
-    imageUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-    resolvedIconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
-    price: 150.0,
     decimals: 9,
-    dailyVolume: 1000000,
-    marketCap: 70000000000,
-    description: 'Solana is a fast, secure, and censorship resistant blockchain.',
-    tags: ['platform', 'native'],
-    jupiterListedAt: new Date('2020-03-23T00:00:00Z').toISOString(),
-    coingeckoId: 'solana',
-    change24h: 8.5,
+    description: 'Wrapped Solana',
+    iconUrl: 'https://example.com/sol.png',
+    resolvedIconUrl: 'https://example.com/sol.png',
+    tags: ['native'],
+    price: 98.45,
+    dailyVolume: 45000000,
     website: 'https://solana.com',
     twitter: 'https://twitter.com/solana',
-    telegram: '',
-    createdAt: new Date('2020-03-23T00:00:00Z'),
-  },
-  {
-    mintAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZPKt',
+    coingeckoId: 'solana',
+    createdAt: timestampFromDate(new Date('2020-03-16')),
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: false,
+    jupiterListedAt: timestampFromDate(new Date('2021-09-09')),
+  }),
+  create(CoinSchema, {
+    mintAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     name: 'USD Coin',
     symbol: 'USDC',
-    imageUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZPKt/logo.png',
-    resolvedIconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZPKt/logo.png',
-    price: 1.0,
     decimals: 6,
-    dailyVolume: 500000000,
-    marketCap: 25000000000,
-    description: 'USD Coin (USDC) is a stablecoin redeemable on a 1:1 basis for US dollars.',
-    tags: ['stablecoin', 'usd'],
-    jupiterListedAt: new Date('2020-09-29T00:00:00Z').toISOString(),
-    coingeckoId: 'usd-coin',
-    change24h: 0.1,
+    description: 'USD Coin',
+    iconUrl: 'https://example.com/usdc.png',
+    resolvedIconUrl: 'https://example.com/usdc.png',
+    tags: ['stablecoin'],
+    price: 1.0,
+    dailyVolume: 125000000,
     website: 'https://centre.io',
     twitter: 'https://twitter.com/centre_io',
-    telegram: '',
-    createdAt: new Date('2020-09-29T00:00:00Z'),
-  },
+    coingeckoId: 'usd-coin',
+    createdAt: timestampFromDate(new Date('2018-09-26')),
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: false,
+    jupiterListedAt: timestampFromDate(new Date('2021-09-09')),
+  }),
 ];
 
-const mockResponses: { [key: string]: any } = {
-  // Wallet balances - matches portfolio assertions
-  'dankfolio.v1.WalletService/GetWalletBalances': {
-    balances: [
-      { mintAddress: 'coin1_mint', amount: '100.0' },
-      { mintAddress: 'coin2_mint', amount: '200.0' },
-      { mintAddress: 'So11111111111111111111111111111111111111112', amount: '10.5' },
-      { mintAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZPKt', amount: '500.75' },
-    ],
-  },
-  
-  // Available coins - matches coin list assertions
-  'dankfolio.v1.CoinService/GetAvailableCoins': {
-    coins: mockCoins,
-  },
-  
-  // Search coins - for newly listed coins
-  'dankfolio.v1.CoinService/Search': {
-    coins: mockCoins,
-    totalCount: mockCoins.length,
-  },
-  
-  // Coin by ID - for individual coin details
-  'dankfolio.v1.CoinService/GetCoinByID': (mintAddress: string) => {
-    const coin = mockCoins.find(coin => coin.mintAddress === mintAddress) || mockCoins[0];
-    return { coin };
-  },
-  
-  // Swap quote - matches trading flow assertions
-  'dankfolio.v1.TradeService/GetSwapQuote': {
-    estimatedAmountOut: '150.5',
-    exchangeRate: '15.05',
-    fee: '0.1',
-    priceImpact: '0.01',
-    routePlan: [{ fromCoinSymbol: 'SOL', toCoinSymbol: 'USDC', protocolName: 'MockSwapProtocol' }],
-    inputMint: mockCoins[2].mintAddress,
-    outputMint: mockCoins[3].mintAddress,
-  },
-  
-  // Submit swap - matches complete trade flow
-  'dankfolio.v1.TradeService/SubmitSwap': {
-    transactionHash: `mock_tx_hash_${Date.now()}`,
-    tradeId: `mock_trade_id_${Date.now()}`,
-  },
+// Mock wallet balances using exact gRPC types
+const MOCK_WALLET_BALANCES: Balance[] = [
+  create(BalanceSchema, { id: 'So11111111111111111111111111111111111111112', amount: 2.5 }), // SOL
+  create(BalanceSchema, { id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', amount: 1000.0 }), // USDC
+  create(BalanceSchema, { id: 'DankCoin1111111111111111111111111111111', amount: 5000000.0 }), // DANK
+  create(BalanceSchema, { id: 'MoonToken111111111111111111111111111111', amount: 250000.0 }), // MOON
+  create(BalanceSchema, { id: 'Bonk111111111111111111111111111111111111', amount: 10000000.0 }), // BONK
+  create(BalanceSchema, { id: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', amount: 150.0 }), // JUP
+];
 
-  // Swap status - for transaction monitoring
-  'dankfolio.v1.TradeService/GetSwapStatus': {
-    status: 'completed',
-    transactionHash: 'mock_tx_hash',
-    timestamp: new Date().toISOString(),
-    fromAmount: '1.0',
-    toAmount: '150.5'
-  },
-
-  // Send transaction
-  'dankfolio.v1.WalletService/SendTransaction': {
-    transactionHash: `mock_send_tx_${Date.now()}`,
-    status: 'pending'
-  },
-
-  // Transaction status
-  'dankfolio.v1.WalletService/GetTransactionStatus': {
-    status: 'finalized',
-    confirmations: 32,
-    timestamp: new Date().toISOString()
+// Generate realistic price history with random walk
+function generatePriceHistory(basePrice: number, isStablecoin = false): PriceHistoryItem[] {
+  const items: PriceHistoryItem[] = [];
+  const now = Date.now();
+  const fourHoursAgo = now - (4 * 60 * 60 * 1000); // 4 hours ago
+  const interval = (4 * 60 * 60 * 1000) / 24; // 24 data points over 4 hours
+  
+  let currentPrice = basePrice;
+  const volatility = isStablecoin ? 0.001 : 0.05; // 0.1% for stablecoins, 5% for others
+  const meanReversion = 0.1; // Tendency to revert to base price
+  
+  for (let i = 0; i < 24; i++) {
+    const timestamp = fourHoursAgo + (i * interval);
+    
+    // Random walk with mean reversion
+    const randomChange = (Math.random() - 0.5) * 2 * volatility;
+    const meanReversionForce = (basePrice - currentPrice) * meanReversion * volatility;
+    const priceChange = randomChange + meanReversionForce;
+    
+    currentPrice = Math.max(currentPrice * (1 + priceChange), basePrice * 0.5); // Prevent going below 50% of base
+    currentPrice = Math.min(currentPrice, basePrice * 2); // Prevent going above 200% of base
+    
+    items.push(create(PriceHistoryItemSchema, {
+      unixTime: BigInt(Math.floor(timestamp / 1000)), // Convert to seconds and BigInt as per protobuf
+      value: currentPrice,
+    }));
   }
-};
+  
+  return items;
+}
 
-// Original fetch function
+// Original fetch function reference
 const originalFetch = global.fetch;
 
-// Mock fetch function
-const mockFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-  const url = typeof input === 'string' ? input : input.toString();
+// Mock fetch implementation
+const mockFetch = async (url: string | URL | Request, options?: RequestInit): Promise<Response> => {
+  const urlString = url.toString();
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:9000'; // Use 9000 as default for E2E
   
-  // Check if this is an API call we should mock
-  if (url.includes(env.apiUrl)) {
-    console.log('[Mock API] Intercepting request to:', url);
+  // Only intercept calls to our API
+  if (!urlString.startsWith(apiUrl)) {
+    return originalFetch(url, options);
+  }
+  
+  // Parse the gRPC service and method from URL
+  const path = urlString.replace(apiUrl, '');
+  
+  console.log('🎭 Mock API intercepting request:', { url: urlString, path, apiUrl });
+  
+  try {
+    let mockResponse: any;
     
-    // Extract the service/method from the URL
-    const urlParts = url.split('/');
-    const serviceMethod = urlParts.slice(-2).join('/'); // e.g., "dankfolio.v1.CoinService/GetAvailableCoins"
-    
-    if (mockResponses[serviceMethod]) {
-      console.log('[Mock API] Returning mock response for:', serviceMethod);
-      
-      const response = mockResponses[serviceMethod];
-      
-      // Handle function responses (like GetCoinByID)
-      if (typeof response === 'function') {
-        // Extract parameters from request body if needed
-        const body = init?.body ? JSON.parse(init.body as string) : {};
-        const result = response(body.mintAddress || body.id);
-        return new Response(JSON.stringify(result), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
+    switch (path) {
+      case '/dankfolio.v1.CoinService/GetAvailableCoins': {
+        console.log('🎭 Returning mock GetAvailableCoins response');
+        const response = create(GetAvailableCoinsResponseSchema, {
+          coins: MOCK_COINS,
         });
+        mockResponse = response;
+        break;
       }
       
-      return new Response(JSON.stringify(response), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      case '/dankfolio.v1.CoinService/Search': {
+        console.log('🎭 Returning mock Search response');
+        // For search, return a subset of coins
+        const response = create(SearchResponseSchema, {
+          coins: MOCK_COINS.slice(0, 3), // Return first 3 coins for search
+          totalCount: 3,
+        });
+        mockResponse = response;
+        break;
+      }
+      
+      case '/dankfolio.v1.CoinService/SearchCoinByMint': {
+        console.log('🎭 Returning mock SearchCoinByMint response');
+        // Return the first coin as a mock result
+        const response = create(SearchCoinByMintResponseSchema, {
+          coin: MOCK_COINS[0],
+        });
+        mockResponse = response;
+        break;
+      }
+      
+      case '/dankfolio.v1.WalletService/GetWalletBalances': {
+        console.log('🎭 Returning mock GetWalletBalances response');
+        const walletBalance = create(WalletBalanceSchema, {
+          balances: MOCK_WALLET_BALANCES,
+        });
+        const response = create(GetWalletBalancesResponseSchema, {
+          walletBalance,
+        });
+        mockResponse = response;
+        break;
+      }
+      
+      case '/dankfolio.v1.PriceService/GetPriceHistory': {
+        console.log('🎭 Returning mock GetPriceHistory response');
+        // Parse request to get the coin address
+        let coinAddress = 'So11111111111111111111111111111111111111112'; // Default to SOL
+        if (options?.body) {
+          try {
+            const requestData = JSON.parse(options.body as string);
+            if (requestData.address) {
+              coinAddress = requestData.address;
+            }
+          } catch (e) {
+            // Ignore parsing errors, use default
+          }
+        }
+        
+        // Find the coin to get its price
+        const coin = MOCK_COINS.find(c => c.mintAddress === coinAddress) || MOCK_COINS[4]; // Default to SOL
+        const isStablecoin = coin.tags.includes('stablecoin');
+        
+        const data = create(PriceHistoryDataSchema, {
+          items: generatePriceHistory(coin.price, isStablecoin),
+        });
+        
+        const response = create(GetPriceHistoryResponseSchema, {
+          data,
+          success: true,
+        });
+        mockResponse = response;
+        break;
+      }
+      
+      case '/dankfolio.v1.TradeService/GetSwapQuote': {
+        console.log('🎭 Returning mock GetSwapQuote response');
+        const response = create(GetSwapQuoteResponseSchema, {
+          estimatedAmount: '0.95',
+          exchangeRate: '0.95',
+          fee: '0.0025',
+          priceImpact: '0.1',
+          routePlan: ['Direct'],
+          inputMint: 'So11111111111111111111111111111111111111112',
+          outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        });
+        mockResponse = response;
+        break;
+      }
+      
+      default:
+        console.log('🎭 Unhandled endpoint, falling back to original fetch:', path);
+        // For unhandled endpoints, call the original fetch
+        return originalFetch(url, options);
     }
+    
+    console.log('🎭 Mock API returning response for:', path);
+    
+    // Create a mock Response object
+    return new Response(JSON.stringify(mockResponse), {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+  } catch (error) {
+    console.error('🎭 Mock API error:', error);
+    // Fall back to original fetch on error
+    return originalFetch(url, options);
   }
-  
-  // Fall back to original fetch for non-mocked requests
-  return originalFetch(input, init);
 };
 
-// Enable/disable mocking
-export const enableApiMocking = () => {
-  console.log('[Mock API] Enabling API mocking for E2E tests');
+// Function to enable API mocking
+export function enableApiMocking(): void {
+  if (mockingEnabled) return;
+  
+  console.log('🎭 Enabling API mocking with gRPC-compatible responses');
+  
+  // Replace global fetch with our mock
   global.fetch = mockFetch;
+  mockingEnabled = true;
   
   // Set global flag for debug wallet
-  if (typeof global !== 'undefined') {
-    (global as any).__E2E_FORCE_DEBUG_WALLET__ = true;
-  }
-  
-  // Also set process.env for immediate effect
-  process.env.E2E_MOCKING_ENABLED = 'true';
-};
+  (global as any).__E2E_MOCKING_ENABLED__ = true;
+}
 
-export const disableApiMocking = () => {
-  console.log('[Mock API] Disabling API mocking');
+// Function to disable API mocking
+export function disableApiMocking(): void {
+  if (!mockingEnabled) return;
+  
+  console.log('🎭 Disabling API mocking');
+  
+  // Restore original fetch
   global.fetch = originalFetch;
-};
+  mockingEnabled = false;
+  
+  // Clear global flag
+  (global as any).__E2E_MOCKING_ENABLED__ = false;
+}
+
+// Check environment and auto-enable if needed
+if (process.env.E2E_MOCKING_ENABLED === 'true') {
+  enableApiMocking();
+}
 
 // Check if mocking should be enabled
 export const shouldEnableMocking = () => {
