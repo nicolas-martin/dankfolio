@@ -5,7 +5,6 @@ import { useNavigation } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
 import ShimmerPlaceholder from '../../Common/ShimmerPlaceholder';
 import { useCoinStore } from '@store/coins';
-import { useToast } from '@components/Common/Toast';
 import HorizontalTickerCard from '@components/Home/HorizontalTickerCard';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';

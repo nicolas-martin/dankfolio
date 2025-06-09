@@ -3,11 +3,28 @@ env:
   LOAD_DEBUG_WALLET: "true"
   E2E_MOCKING_ENABLED: "true"
 ---
+# Home Screen - Main UI Test
+
 - launchApp
+
+# Test main sections are visible
 - assertVisible: "New Listings"
-- assertVisible: "FRESH 191 days ago"
-- assertVisible: "ROCKET 194 days ago"
 - assertVisible: "Trending Coins"
-- assertVisible: "  Portfolio Portfolio"
-- assertVisible: "  Explore Explore"
-- assertVisible: "  Home Home"
+
+# Test navigation elements
+- assertVisible: "  Portfolio Portfolio"
+- assertVisible: "  Explore Explore"  
+- assertVisible: "  Home Home"
+
+# Test new listings section (using regex for dynamic content)
+- assertVisible: ".*FRESH.*days ago"
+- assertVisible: ".*ROCKET.*days ago"
+
+# Test a single coin card element (SOL) for basic functionality
+- runFlow:
+    file: ../components/coin-card-element.yaml
+    params:
+      coinAddress: "So11111111111111111111111111111111111111112"
+
+# Run comprehensive Trending Coins section tests
+- runFlow: trending-coins.yaml
