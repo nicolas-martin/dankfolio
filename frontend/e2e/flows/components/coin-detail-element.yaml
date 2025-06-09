@@ -49,6 +49,7 @@ appId: com.nicolasmartin.dankfolio
 
 - tapOn:
       id: "coin-detail-timeframe-button-1H"
+      waitToSettleTimeoutMs: 50 # ms
 
 - assertVisible:
       id: "coin-detail-holdings-card"
