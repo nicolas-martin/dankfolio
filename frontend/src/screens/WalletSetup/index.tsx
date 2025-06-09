@@ -2,16 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useTheme, IconButton } from 'react-native-paper';
 import { createStyles } from './styles';
-import { storeCredentials, base64ToBase58PrivateKey } from './scripts';
+// storeCredentials and base64ToBase58PrivateKey are no longer used directly here, they are part of initializeDebugWallet
+// import { storeCredentials, base64ToBase58PrivateKey } from './scripts'; // Remove or comment out if not used by other parts
 import { WalletSetupScreenProps } from './types';
 import { Keypair } from '@solana/web3.js';
 import { useToast } from '@/components/Common/Toast';
-import { Buffer } from 'buffer';
-import bs58 from 'bs58';
+// Buffer and bs58 might not be needed directly here anymore if loadDebugWallet is fully refactored
+// import { Buffer } from 'buffer'; // Remove or comment out if not used
+// import bs58 from 'bs58'; // Remove or comment out if not used
 import { usePortfolioStore } from '@store/portfolio';
+// CREATE_WALLET_TITLE etc. are still used by the UI part of this component.
 import { useWalletSetupLogic, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
 import { env } from '@utils/env';
+import { initializeDebugWallet } from '@/utils/debugWallet'; // Import the new function
 import TermsModal from '@/components/Common/TermsModal';
 
 // Load the onboarding image from the correct location
@@ -47,35 +51,14 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	}, [step]);
 
 	const loadDebugWallet = async () => {
-		try {
-			logger.log('Attempting to load debug wallet...');
-			if (!env.testPrivateKey) {
-				throw new Error('TEST_PRIVATE_KEY not found in environment');
-			}
-
-			logger.log('Decoded TEST_PRIVATE_KEY as Base64');
-			const base58PrivateKey = base64ToBase58PrivateKey(env.testPrivateKey);
-
-			// Store the credentials
-			await storeCredentials(base58PrivateKey, 'TEST_MNEMONIC'); // Empty mnemonic for debug wallet
-
-			// Create keypair from Base58 private key
-			const keypairBytes = Buffer.from(bs58.decode(base58PrivateKey));
-			const keypair = Keypair.fromSecretKey(keypairBytes);
-
-			logger.log('Created keypair from debug wallet');
-			await setWallet(keypair.publicKey.toBase58());
-			props.onWalletSetupComplete(keypair);
-		} catch (error: unknown) {
-			if (error instanceof Error) {
-				logger.error('Load Debug Wallet Error', { errorMessage: error.message });
-				showToast({ message: `Error loading debug wallet: ${error.message}`, type: 'error' });
-			} else {
-				logger.error('An unknown error occurred while loading debug wallet:', error);
-				showToast({ message: `An unknown error occurred while loading debug wallet: ${error}`, type: 'error' });
-			}
-		}
-	};
+    const keypair = await initializeDebugWallet();
+    if (keypair) {
+      props.onWalletSetupComplete(keypair);
+      // showToast({ message: 'Debug wallet loaded!', type: 'success' }); // Optional: App.tsx can show toast
+    } else {
+      showToast({ message: 'Failed to load debug wallet.', type: 'error' });
+    }
+  };
 
 	const renderMnemonicWords = (mnemonic: string) => {
 		const words = mnemonic.split(' ');
