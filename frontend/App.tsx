@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { env } from './src/utils/env'; // Import our new environment utility
-import { worker } from './e2e/msw-worker';
+import { enableApiMocking, shouldEnableMocking } from './src/utils/mockApi';
 
 Sentry.init({
 	dsn: 'https://d95e19e8195840a7b2bcd5fb6fed1695@o4509373194960896.ingest.us.sentry.io/4509373200138240',
@@ -46,14 +46,6 @@ Sentry.init({
 if (shouldEnableMocking()) {
 	console.log('� Enabling API mocking for E2E testing...');
 	enableApiMocking();
-	console.log('[MSW] E2E_MOCKING_ENABLED is true, starting MSW worker...');
-	worker.start({
-		onUnhandledRequest: 'bypass', // Or 'warn' or a custom function
-	}).then(() => {
-		console.log('[MSW] Worker started successfully.');
-	}).catch((error: any) => {
-		console.error('[MSW] Error starting worker:', error);
-	});
 }
 
 import 'react-native-gesture-handler';
