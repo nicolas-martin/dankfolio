@@ -50,7 +50,7 @@ func NewClient(solClient *rpc.Client, tracker clients.APICallTracker) blockchain
 // Note: This is part of the original ClientAPI, not GenericClientAPI.
 // It might be removed or adapted if a generic GetTokenMetadata is added to GenericClientAPI.
 func (c *Client) GetMetadataAccount(ctx context.Context, mint string) (*tm.Metadata, error) {
-	c.tracker.TrackCall("solana", "getAccountInfo") // Assuming GetAccountInfo is the underlying RPC call
+	c.tracker.Increment("solana", "getAccountInfo") // Assuming GetAccountInfo is the underlying RPC call
 	mintPubkey := solana.MustPublicKeyFromBase58(mint)
 	metadataPDA, bumpSeed, err := solana.FindTokenMetadataAddress(mintPubkey)
 	if err != nil {
@@ -128,7 +128,7 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 	slog.Debug("Deserialized transaction", "tx", fmt.Sprintf("%+v", tx))
 
 	// Simulate transaction first
-	c.tracker.TrackCall("solana", "simulateTransaction")
+	c.tracker.Increment("solana", "simulateTransaction")
 	slog.Debug("Simulating transaction...")
 	simResult, err := c.rpcConn.SimulateTransaction(ctx, tx)
 	if err != nil {
@@ -147,7 +147,7 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 		"logs", simResult.Value.Logs)
 
 	// Send transaction with optimized options
-	c.tracker.TrackCall("solana", "sendTransaction")
+	c.tracker.Increment("solana", "sendTransaction")
 	sig, err := c.rpcConn.SendTransactionWithOpts(ctx, tx, rpc.TransactionOpts{
 		SkipPreflight:       false,
 		PreflightCommitment: rpc.CommitmentFinalized,
@@ -179,7 +179,7 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Sign
 		return nil, fmt.Errorf("invalid signature format: %w", err)
 	}
 
-	c.tracker.TrackCall("solana", "GetSignatureStatuses")
+	c.tracker.Increment("solana", "GetSignatureStatuses")
 	rpcStatusResult, err := c.rpcConn.GetSignatureStatuses(ctx, true, solSig)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to get transaction status from RPC for GetTransactionStatus", "signature", sigStr, "error", err)
@@ -564,26 +564,26 @@ func (c *Client) GetTokenMetadata(ctx context.Context, mintAddress bmodel.Addres
 
 // GetProgramAccounts retrieves accounts associated with a program
 func (c *Client) GetProgramAccounts(ctx context.Context, pubkey solana.PublicKey) (*rpc.GetProgramAccountsResult, error) {
-	c.tracker.TrackCall("solana", "GetProgramAccounts")
+	c.tracker.Increment("solana", "GetProgramAccounts")
 	result, err := c.rpcConn.GetProgramAccounts(ctx, pubkey)
 	return &result, err
 }
 
 // GetLargestAccounts retrieves the largest accounts
 func (c *Client) GetLargestAccounts(ctx context.Context, commitment rpc.CommitmentType, filter rpc.LargestAccountsFilterType) (*rpc.GetLargestAccountsResult, error) {
-	c.tracker.TrackCall("solana", "GetLargestAccounts")
+	c.tracker.Increment("solana", "GetLargestAccounts")
 	return c.rpcConn.GetLargestAccounts(ctx, commitment, filter)
 }
 
 // GetSupply retrieves the current supply of SOL
 func (c *Client) GetSupply(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetSupplyResult, error) {
-	c.tracker.TrackCall("solana", "GetSupply")
+	c.tracker.Increment("solana", "GetSupply")
 	return c.rpcConn.GetSupply(ctx, commitment)
 }
 
 // GetTokenAccountsByOwner implements the GenericClientAPI interface
 func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmodel.Address, opts bmodel.TokenAccountsOptions) ([]*bmodel.TokenAccountInfo, error) {
-	c.tracker.TrackCall("solana", "GetTokenAccountsByOwner")
+	c.tracker.Increment("solana", "GetTokenAccountsByOwner")
 	solOwner, err := solana.PublicKeyFromBase58(string(ownerAddress))
 	if err != nil {
 		return nil, fmt.Errorf("invalid owner address '%s': %w", ownerAddress, err)

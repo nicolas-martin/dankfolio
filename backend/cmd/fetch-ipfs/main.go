@@ -127,7 +127,7 @@ func main() {
 
 	// Create offchain client
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker()
+	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
 	offchainClient := offchain.NewClient(httpClient, apiTracker)
 

@@ -103,9 +103,9 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 		if endpointName == "" {
 			endpointName = "/" // Default if path is empty
 		}
-		// Ensure c.tracker is not nil before calling TrackCall
+		// Ensure c.tracker is not nil before calling Increment
 		if c.tracker != nil {
-			c.tracker.TrackCall("birdeye", endpointName)
+			c.tracker.Increment("birdeye", endpointName)
 		}
 	}
 
@@ -170,7 +170,7 @@ func postRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 			endpointName = "/" // Default if path is empty
 		}
 		if c.tracker != nil {
-			c.tracker.TrackCall("birdeye", endpointName)
+			c.tracker.Increment("birdeye", endpointName)
 		}
 	}
 

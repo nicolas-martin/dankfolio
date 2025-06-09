@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/skipJA/Cointracker/backend/internal/clients" // Adjust import path
-	"github.com/skipJA/Cointracker/backend/internal/db"
-	"github.com/skipJA/Cointracker/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients" // Adjust import path
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // --- Mock db.Repository[model.ApiStat] ---
