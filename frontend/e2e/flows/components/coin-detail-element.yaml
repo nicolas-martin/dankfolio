@@ -63,6 +63,7 @@ appId: com.nicolasmartin.dankfolio
       element:
           id: "coin-detail-about-card"
       direction: DOWN
+      speed: 100
 
 - assertVisible:
       id: "coin-detail-about-card"
