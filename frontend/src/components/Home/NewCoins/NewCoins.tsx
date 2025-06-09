@@ -26,7 +26,6 @@ const NewCoins: React.FC = () => {
 	const newlyListedCoins = useCoinStore(state => state.newlyListedCoins);
 	const isLoadingNewlyListed = useCoinStore(state => state.isLoadingNewlyListed);
 	const getCoinByID = useCoinStore(state => state.getCoinByID); // Changed from enrichCoin
-	const { showToast } = useToast(); // Get showToast
 
 	// Create duplicated data for infinite scrolling
 	const scrollData = useMemo(() => {
@@ -81,11 +80,11 @@ const NewCoins: React.FC = () => {
 			message: 'Navigating to CoinDetail from NewCoins (immediate navigation)',
 			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress },
 		});
-		
-		navigation.navigate('CoinDetail', { 
+
+		navigation.navigate('CoinDetail', {
 			coin: coin
 		});
-		
+
 		// Trigger background fetch to update the coin data in the store
 		// The CoinDetail screen will automatically update when this completes
 		getCoinByID(coin.mintAddress, true).catch(error => {
@@ -96,8 +95,8 @@ const NewCoins: React.FC = () => {
 	const renderItem = useCallback(({ item, index }: { item: Coin; index: number }) => {
 		return (
 			<View style={styles.cardWrapper}>
-				<HorizontalTickerCard 
-					coin={item} 
+				<HorizontalTickerCard
+					coin={item}
 					onPress={handleCoinPress}
 				/>
 			</View>
