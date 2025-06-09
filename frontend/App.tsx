@@ -145,12 +145,10 @@ const App: React.FC = () => {
 					logger.info("Debug wallet initialized successfully via App.tsx. Finalizing setup...");
 					await handleWalletSetupComplete(debugKeypair); // Use existing handler
 					// Since handleWalletSetupComplete sets needsWalletSetup(false)
-					// and the prepare function's finally block sets appIsReady(true),
-					// this should correctly transition the app state.
-					// We can return here to skip the normal wallet check.
+					// we need to also set appIsReady(true) here since we're returning early
 					logger.info("Debug wallet setup complete. App will proceed to main content.");
-					// The finally block of prepare() will setAppIsReady(true)
-					return;
+					// Don't return early - let the finally block set appIsReady(true)
+					// return;
 				} else {
 					logger.error("Failed to initialize debug wallet. Proceeding with normal wallet check/setup flow.");
 					// Optionally, inform the user via a toast in dev mode if the debug setup failed.

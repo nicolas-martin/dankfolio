@@ -358,9 +358,22 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 				console.log('🎭 Returning mock GetCoinByID response');
 				// Parse request to get the mint address
 				let mintAddress = 'So11111111111111111111111111111111111111112'; // Default to SOL
+				
 				if (options?.body) {
 					try {
-						const requestData = JSON.parse(options.body as string);
+						let requestData;
+						
+						// Handle Connect-Web request body format (Uint8Array)
+						if (options.body instanceof Uint8Array) {
+							const decoder = new TextDecoder();
+							const bodyString = decoder.decode(options.body);
+							requestData = JSON.parse(bodyString);
+						} else if (typeof options.body === 'string') {
+							requestData = JSON.parse(options.body);
+						} else {
+							requestData = options.body;
+						}
+						
 						if (requestData.mintAddress) {
 							mintAddress = requestData.mintAddress;
 						}
@@ -371,6 +384,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 
 				// Find the coin by mint address or return the first one as fallback
 				const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => c.mintAddress === mintAddress) || ALL_MOCK_COINS[0];
+				
 				mockResponse = coin;
 				break;
 			}
