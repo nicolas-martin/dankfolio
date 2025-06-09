@@ -1,13 +1,13 @@
 appId: com.nicolasmartin.dankfolio
 ---
 - assertVisible:
-      id: "horizontal-ticker-card-${COIN_ADDRESS}"
+      id: "new-coin-card-${COIN_ADDRESS}"
 
 - assertVisible:
-      id: "horizontal-ticker-symbol-${COIN_ADDRESS}"
+      id: "new-coin-symbol-${COIN_ADDRESS}"
 
 - assertVisible:
-      id: "horizontal-ticker-time-${COIN_ADDRESS}"
+      id: "new-coin-time-${COIN_ADDRESS}"
 
 - assertVisible:
-      id: "horizontal-ticker-icon-${COIN_ADDRESS}"
+      id: "new-coin-icon-${COIN_ADDRESS}"

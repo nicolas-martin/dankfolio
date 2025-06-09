@@ -480,6 +480,7 @@ const HomeScreen = () => {
 					onPress={() => handlePressCoinCard(item)}
 					priceHistory={history}
 					isPriceHistoryLoading={isLoadingHistory}
+					testIdPrefix="trending-coin"
 				/>
 			</View>
 		);
