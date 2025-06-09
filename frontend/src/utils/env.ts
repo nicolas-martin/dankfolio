@@ -36,6 +36,14 @@ export const getEnvVariables = (): EnvVariables => {
 		loadDebugWallet: extra.LOAD_DEBUG_WALLET === 'true',
 	};
 
+	// Override apiUrl for E2E mocking
+	// This relies on E2E_MOCKING_ENABLED being set as a Babel transform or similar
+	// if it's not directly available as process.env in this context.
+	if (process.env.E2E_MOCKING_ENABLED === 'true') {
+		logger.info('[MSW] E2E_MOCKING_ENABLED is true, setting apiUrl to http://localhost:9000 for MSW.');
+		env.apiUrl = 'http://localhost:9000';
+	}
+
 	if (!env.apiUrl || !env.solanaRpcEndpoint || !env.sentryAuthToken) {
 		logger.exception('Missing required environment variables');
 	}

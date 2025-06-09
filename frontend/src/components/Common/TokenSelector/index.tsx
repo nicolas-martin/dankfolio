@@ -20,11 +20,11 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	showOnlyPortfolioTokens = false,
 	testID,
 }) => {
-	console.log('TokenSearchModal re-rendered. Search query:', searchQuery);
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 	const [searchQuery, setSearchQuery] = useState('');
+	console.log('TokenSearchModal re-rendered. Search query:', searchQuery);
 	const debouncedSearchQuery = useDebounce(searchQuery, 300);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 	const { availableCoins } = useCoinStore();
