@@ -289,6 +289,8 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
     // Handle both Connect-Web style URLs and traditional gRPC URLs
     const normalizedPath = path.replace(/^\/+/, '/').toLowerCase(); // Ensure single leading slash and lowercase
     
+    console.log('🎭 Normalized path for comparison:', normalizedPath);
+    
     switch (normalizedPath) {
       case '/dankfolio.v1.coinservice/getavailablecoins': {
         console.log('🎭 Returning mock GetAvailableCoins response');
@@ -310,28 +312,29 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
         break;
       }
       
-      case '/dankfolio.v1.coinservice/search':
-      case '/dankfolio.v1.coinservice/searchcoins': {
-        console.log('🎭 Returning mock Search response');
-        // Parse request to check sorting parameters
-        let requestData: any = {};
-        if (options?.body) {
-          try {
-            requestData = JSON.parse(options.body as string);
-          } catch (e) {
-            // Ignore parsing errors
-          }
-        }
+      case '/dankfolio.v1.coinservice/search': {
+        console.log('🎭 Returning mock Search response for /search endpoint (capital S = fetchNewCoins)');
+        // This is the fetchNewCoins call - return new coins sorted by jupiter_listed_at desc
+        console.log('🎭 ✅ Returning new coins (fetchNewCoins call detected via URL path)');
+        const coinsToReturn = MOCK_NEW_COINS;
         
-        // If sorting by jupiter_listed_at desc (newest first), return new coins
-        let coinsToReturn: ProtobufCoin[];
-        if (requestData.sortBy === 'jupiter_listed_at' && requestData.sortDesc === true) {
-          console.log('🎭 Returning new coins (sorted by jupiter_listed_at desc)');
-          coinsToReturn = MOCK_NEW_COINS;
-        } else {
-          console.log('🎭 Returning trending coins for general search');
-          coinsToReturn = MOCK_TRENDING_COINS.slice(0, 3);
-        }
+        console.log('🎭 New coins being returned:', coinsToReturn.map(c => ({ symbol: c.symbol, name: c.name, jupiterListedAt: c.jupiterListedAt ? new Date(Number(c.jupiterListedAt.seconds) * 1000).toISOString() : null })));
+        
+        const response = create(SearchResponseSchema, {
+          coins: coinsToReturn,
+          totalCount: coinsToReturn.length,
+        });
+        mockResponse = response;
+        break;
+      }
+      
+      case '/dankfolio.v1.coinservice/searchcoins': {
+        console.log('🎭 Returning mock SearchCoins response for /searchcoins endpoint (general search)');
+        // This is a general search call - return trending coins
+        console.log('🎭 ❌ Returning trending coins for general search');
+        const coinsToReturn = MOCK_TRENDING_COINS.slice(0, 3);
+        
+        console.log('🎭 Trending coins being returned:', coinsToReturn.map(c => ({ symbol: c.symbol, name: c.name })));
         
         const response = create(SearchResponseSchema, {
           coins: coinsToReturn,
