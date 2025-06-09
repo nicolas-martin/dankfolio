@@ -1,15 +1,16 @@
 // Simple API mocking for React Native E2E tests
 import { env } from './env';
-import { Coin } from '@/types';
 import { create } from '@bufbuild/protobuf';
+import { convertToTimestamp } from '@/services/grpc/grpcUtils';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 
+// Type definitions for fetch API (React Native compatibility)
+type FetchInput = string | URL | Request;
+type FetchInit = RequestInit;
+
 // Import the exact gRPC types and schemas
-import type { 
-  GetAvailableCoinsResponse,
-  SearchResponse,
-  SearchCoinByMintResponse 
-} from '@/gen/dankfolio/v1/coin_pb';
+
+
 import { 
   GetAvailableCoinsResponseSchema,
   SearchResponseSchema,
@@ -17,19 +18,15 @@ import {
   CoinSchema,
   type Coin as ProtobufCoin
 } from '@/gen/dankfolio/v1/coin_pb';
-import type { 
-  GetWalletBalancesResponse,
-  Balance,
-  WalletBalance 
+import type {
+  Balance 
 } from '@/gen/dankfolio/v1/wallet_pb';
 import { 
   GetWalletBalancesResponseSchema,
   BalanceSchema,
   WalletBalanceSchema 
 } from '@/gen/dankfolio/v1/wallet_pb';
-import type { 
-  GetPriceHistoryResponse,
-  PriceHistoryData,
+import type {
   PriceHistoryItem 
 } from '@/gen/dankfolio/v1/price_pb';
 import { 
@@ -37,9 +34,8 @@ import {
   PriceHistoryDataSchema,
   PriceHistoryItemSchema 
 } from '@/gen/dankfolio/v1/price_pb';
-import type { 
-  GetSwapQuoteResponse 
-} from '@/gen/dankfolio/v1/trade_pb';
+
+
 import { 
   GetSwapQuoteResponseSchema 
 } from '@/gen/dankfolio/v1/trade_pb';
@@ -55,8 +51,8 @@ const MOCK_COINS: ProtobufCoin[] = [
     symbol: 'DANK',
     decimals: 9,
     description: 'The dankest meme coin on Solana',
-    iconUrl: 'https://example.com/dank.png',
-    resolvedIconUrl: 'https://example.com/dank.png',
+    iconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+    resolvedIconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
     tags: ['meme', 'community'],
     price: 0.000042,
     dailyVolume: 1250000,
@@ -74,8 +70,8 @@ const MOCK_COINS: ProtobufCoin[] = [
     symbol: 'MOON',
     decimals: 6,
     description: 'To the moon and beyond! 🚀',
-    iconUrl: 'https://example.com/moon.png',
-    resolvedIconUrl: 'https://example.com/moon.png',
+    iconUrl: 'https://arweave.net/KSXBz7Rp8OX_5_8cqz8JVqNuDVhOqJD7qJQJ5QJ5QJ5',
+    resolvedIconUrl: 'https://arweave.net/KSXBz7Rp8OX_5_8cqz8JVqNuDVhOqJD7qJQJ5QJ5QJ5',
     tags: ['meme', 'moon'],
     price: 0.00123,
     dailyVolume: 890000,
@@ -93,8 +89,8 @@ const MOCK_COINS: ProtobufCoin[] = [
     symbol: 'BONK',
     decimals: 5,
     description: 'The first Solana dog coin for the people, by the people',
-    iconUrl: 'https://example.com/bonk.png',
-    resolvedIconUrl: 'https://example.com/bonk.png',
+    iconUrl: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I',
+    resolvedIconUrl: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I',
     tags: ['meme', 'dog', 'community'],
     price: 0.0000089,
     dailyVolume: 2100000,
@@ -112,8 +108,8 @@ const MOCK_COINS: ProtobufCoin[] = [
     symbol: 'JUP',
     decimals: 6,
     description: 'The key infrastructure for Solana trading',
-    iconUrl: 'https://example.com/jup.png',
-    resolvedIconUrl: 'https://example.com/jup.png',
+    iconUrl: 'https://static.jup.ag/jup/icon.png',
+    resolvedIconUrl: 'https://static.jup.ag/jup/icon.png',
     tags: ['defi', 'infrastructure'],
     price: 0.87,
     dailyVolume: 15600000,
@@ -131,8 +127,8 @@ const MOCK_COINS: ProtobufCoin[] = [
     symbol: 'SOL',
     decimals: 9,
     description: 'Wrapped Solana',
-    iconUrl: 'https://example.com/sol.png',
-    resolvedIconUrl: 'https://example.com/sol.png',
+    iconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+    resolvedIconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
     tags: ['native'],
     price: 98.45,
     dailyVolume: 45000000,
@@ -150,8 +146,8 @@ const MOCK_COINS: ProtobufCoin[] = [
     symbol: 'USDC',
     decimals: 6,
     description: 'USD Coin',
-    iconUrl: 'https://example.com/usdc.png',
-    resolvedIconUrl: 'https://example.com/usdc.png',
+    iconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
+    resolvedIconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
     tags: ['stablecoin'],
     price: 1.0,
     dailyVolume: 125000000,
@@ -210,7 +206,7 @@ function generatePriceHistory(basePrice: number, isStablecoin = false): PriceHis
 const originalFetch = global.fetch;
 
 // Mock fetch implementation
-const mockFetch = async (url: string | URL | Request, options?: RequestInit): Promise<Response> => {
+const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => {
   const urlString = url.toString();
   const apiUrl = env.apiUrl; // Use the correct environment variable
   
@@ -362,14 +358,33 @@ const mockFetch = async (url: string | URL | Request, options?: RequestInit): Pr
     
     console.log('🎭 Mock API returning response for:', normalizedPath);
     
-    // Create a mock Response object
-    return new Response(JSON.stringify(mockResponse), {
+    // Create a mock Response object with BigInt and Timestamp-safe serialization
+    const responseBody = JSON.stringify(mockResponse, (key, value) => {
+      // Convert BigInt to string for JSON serialization
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      // Convert Timestamp objects to the format expected by protobuf JSON
+      if (value && typeof value === 'object' && value.$typeName === 'google.protobuf.Timestamp') {
+        // Convert to ISO string format that protobuf can parse
+        const seconds = typeof value.seconds === 'bigint' ? Number(value.seconds) : value.seconds;
+        const nanos = value.nanos || 0;
+        const date = new Date(seconds * 1000 + nanos / 1000000);
+        return date.toISOString();
+      }
+      return value;
+    });
+    
+    return {
+      ok: true,
       status: 200,
       statusText: 'OK',
-      headers: {
+      headers: new Headers({
         'Content-Type': 'application/json',
-      },
-    });
+      }),
+      text: async () => responseBody,
+      json: async () => JSON.parse(responseBody),
+    } as any;
     
   } catch (error) {
     console.error('🎭 Mock API error:', error);

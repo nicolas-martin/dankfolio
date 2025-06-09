@@ -9,8 +9,8 @@ import { usePortfolioStore } from '@store/portfolio';
 import bs58 from 'bs58';
 import { useState } from 'react';
 // Import newly created/moved utility functions
-import { base64ToBase58PrivateKey, toBase58PrivateKey, Base58PrivateKey } from '@/utils/cryptoUtils';
-import { storeCredentials, retrieveWalletFromStorage, KEYCHAIN_SERVICE } from '@/utils/keychainService'; // Import KEYCHAIN_SERVICE
+import { toBase58PrivateKey, Base58PrivateKey } from '@/utils/cryptoUtils';
+import { storeCredentials, KEYCHAIN_SERVICE } from '@/utils/keychainService'; // Import KEYCHAIN_SERVICE
 import Clipboard from '@react-native-clipboard/clipboard';
 import { WalletSetupStep, WalletSetupScreenProps, WalletInfo } from './types';
 import { logger } from '@/utils/logger';

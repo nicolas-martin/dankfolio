@@ -5,7 +5,6 @@ import { createStyles } from './styles';
 // storeCredentials and base64ToBase58PrivateKey are no longer used directly here, they are part of initializeDebugWallet
 // import { storeCredentials, base64ToBase58PrivateKey } from './scripts'; // Remove or comment out if not used by other parts
 import { WalletSetupScreenProps } from './types';
-import { Keypair } from '@solana/web3.js';
 import { useToast } from '@/components/Common/Toast';
 // Buffer and bs58 might not be needed directly here anymore if loadDebugWallet is fully refactored
 // import { Buffer } from 'buffer'; // Remove or comment out if not used

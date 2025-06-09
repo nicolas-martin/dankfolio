@@ -13,7 +13,7 @@ import { Buffer } from 'buffer';
 
 // Log the environment variable for debugging
 log.log('🔧 API_URL from environment:', env.apiUrl);
-const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator' || env.e2eMockingEnabled
+const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator' || env.e2eMockingEnabled;
 
 if (!env.apiUrl) {
 	const errorMsg = 'API_URL environment variable is required but not set. Please check your environment configuration.';
@@ -24,19 +24,17 @@ if (!env.apiUrl) {
 // Authentication interceptor to add bearer tokens to all requests
 const authInterceptor: Interceptor = (next) => async (req) => {
 	try {
-		// Instead of getting JWT token, get the Firebase App Check token directly
+		// Bypass Firebase App Check in development/simulator/e2e environments
 		if (isDevelopmentOrSimulator) {
-			const appCheckToken = { token: "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" }
-			req.header.set('X-Firebase-AppCheck', appCheckToken.token);
-			// skip validation
+			log.info('🔐 Using hardcoded Firebase App Check token for development/simulator/e2e environment');
+			const hardcodedToken = "0FD7F5EB-8676-4D7E-A930-25A1D1B71045";
+			req.header.set('X-Firebase-AppCheck', hardcodedToken);
 			return next(req);
 		}
-		const appCheckToken = await appCheck().getToken(false);
 
-		log.info('🔐 Retrieved Firebase App Check token:', appCheckToken);
-		log.info('🔐 Retrieved Firebase App Check token:', appCheckToken);
-		log.info('🔐 Retrieved Firebase App Check token:', appCheckToken);
-		log.info('🔐 Retrieved Firebase App Check token:', appCheckToken);
+		// Production environment - get real Firebase App Check token
+		const appCheckToken = await appCheck().getToken(false);
+		log.info('🔐 Retrieved Firebase App Check token for production');
 
 		if (appCheckToken && appCheckToken.token) {
 			// Log token details for debugging (only show the first part)

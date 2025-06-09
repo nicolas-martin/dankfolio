@@ -137,8 +137,8 @@ export const createStyles = (theme: MD3Theme) =>
 			flex: 1,
 		},
 		tokenListContent: {
-			paddingHorizontal: 16,
 			paddingBottom: 16,
+			paddingHorizontal: 16,
 		},
 		searchBar: {
 			backgroundColor: theme.colors.surfaceVariant,
