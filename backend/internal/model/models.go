@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -205,8 +206,8 @@ func (r RawCoin) GetID() string {
 // GORM tags have been added for auto-migration.
 type ApiStat struct {
 	ID           uint      `json:"id" gorm:"primaryKey;autoIncrement"`                          // Primary key
-	ServiceName  string    `json:"service_name" gorm:"uniqueIndex:idx_service_endpoint_date"` // Name of the service
-	EndpointName string    `json:"endpoint_name" gorm:"uniqueIndex:idx_service_endpoint_date"`// Name of the endpoint
+	ServiceName  string    `json:"service_name" gorm:"uniqueIndex:idx_service_endpoint_date"`   // Name of the service
+	EndpointName string    `json:"endpoint_name" gorm:"uniqueIndex:idx_service_endpoint_date"`  // Name of the endpoint
 	Date         time.Time `json:"date" gorm:"type:date;uniqueIndex:idx_service_endpoint_date"` // Date for the count
 	Count        int       `json:"count"`                                                       // Number of API calls
 }

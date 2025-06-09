@@ -212,10 +212,15 @@ const originalFetch = global.fetch;
 // Mock fetch implementation
 const mockFetch = async (url: string | URL | Request, options?: RequestInit): Promise<Response> => {
   const urlString = url.toString();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:9000'; // Use 9000 as default for E2E
+  const apiUrl = env.apiUrl; // Use the correct environment variable
+  
+  console.log('🎭 Mock fetch called with URL:', urlString);
+  console.log('🎭 Expected API URL:', apiUrl);
+  console.log('🎭 URL starts with API URL?', urlString.startsWith(apiUrl));
   
   // Only intercept calls to our API
   if (!urlString.startsWith(apiUrl)) {
+    console.log('🎭 Not intercepting - URL does not start with API URL');
     return originalFetch(url, options);
   }
   
@@ -227,8 +232,11 @@ const mockFetch = async (url: string | URL | Request, options?: RequestInit): Pr
   try {
     let mockResponse: any;
     
-    switch (path) {
-      case '/dankfolio.v1.CoinService/GetAvailableCoins': {
+    // Handle both Connect-Web style URLs and traditional gRPC URLs
+    const normalizedPath = path.replace(/^\/+/, '/').toLowerCase(); // Ensure single leading slash and lowercase
+    
+    switch (normalizedPath) {
+      case '/dankfolio.v1.coinservice/getavailablecoins': {
         console.log('🎭 Returning mock GetAvailableCoins response');
         const response = create(GetAvailableCoinsResponseSchema, {
           coins: MOCK_COINS,
@@ -237,7 +245,8 @@ const mockFetch = async (url: string | URL | Request, options?: RequestInit): Pr
         break;
       }
       
-      case '/dankfolio.v1.CoinService/Search': {
+      case '/dankfolio.v1.coinservice/search':
+      case '/dankfolio.v1.coinservice/searchcoins': {
         console.log('🎭 Returning mock Search response');
         // For search, return a subset of coins
         const response = create(SearchResponseSchema, {
@@ -248,7 +257,7 @@ const mockFetch = async (url: string | URL | Request, options?: RequestInit): Pr
         break;
       }
       
-      case '/dankfolio.v1.CoinService/SearchCoinByMint': {
+      case '/dankfolio.v1.coinservice/searchcoinbymint': {
         console.log('🎭 Returning mock SearchCoinByMint response');
         // Return the first coin as a mock result
         const response = create(SearchCoinByMintResponseSchema, {
@@ -258,7 +267,28 @@ const mockFetch = async (url: string | URL | Request, options?: RequestInit): Pr
         break;
       }
       
-      case '/dankfolio.v1.WalletService/GetWalletBalances': {
+      case '/dankfolio.v1.coinservice/getcoinbyid': {
+        console.log('🎭 Returning mock GetCoinByID response');
+        // Parse request to get the mint address
+        let mintAddress = 'So11111111111111111111111111111111111111112'; // Default to SOL
+        if (options?.body) {
+          try {
+            const requestData = JSON.parse(options.body as string);
+            if (requestData.mintAddress) {
+              mintAddress = requestData.mintAddress;
+            }
+          } catch (e) {
+            // Ignore parsing errors, use default
+          }
+        }
+        
+        // Find the coin by mint address or return the first one as fallback
+        const coin = MOCK_COINS.find(c => c.mintAddress === mintAddress) || MOCK_COINS[0];
+        mockResponse = coin;
+        break;
+      }
+      
+      case '/dankfolio.v1.walletservice/getwalletbalances': {
         console.log('🎭 Returning mock GetWalletBalances response');
         const walletBalance = create(WalletBalanceSchema, {
           balances: MOCK_WALLET_BALANCES,
@@ -270,7 +300,7 @@ const mockFetch = async (url: string | URL | Request, options?: RequestInit): Pr
         break;
       }
       
-      case '/dankfolio.v1.PriceService/GetPriceHistory': {
+      case '/dankfolio.v1.priceservice/getpricehistory': {
         console.log('🎭 Returning mock GetPriceHistory response');
         // Parse request to get the coin address
         let coinAddress = 'So11111111111111111111111111111111111111112'; // Default to SOL
@@ -301,7 +331,7 @@ const mockFetch = async (url: string | URL | Request, options?: RequestInit): Pr
         break;
       }
       
-      case '/dankfolio.v1.TradeService/GetSwapQuote': {
+      case '/dankfolio.v1.tradeservice/getswapquote': {
         console.log('🎭 Returning mock GetSwapQuote response');
         const response = create(GetSwapQuoteResponseSchema, {
           estimatedAmount: '0.95',
@@ -317,12 +347,20 @@ const mockFetch = async (url: string | URL | Request, options?: RequestInit): Pr
       }
       
       default:
-        console.log('🎭 Unhandled endpoint, falling back to original fetch:', path);
+        console.log('🎭 Unhandled endpoint, falling back to original fetch:', normalizedPath);
+        console.log('🎭 Available endpoints:', [
+          '/dankfolio.v1.coinservice/getavailablecoins',
+          '/dankfolio.v1.coinservice/search', 
+          '/dankfolio.v1.coinservice/getcoinbyid',
+          '/dankfolio.v1.walletservice/getwalletbalances',
+          '/dankfolio.v1.priceservice/getpricehistory',
+          '/dankfolio.v1.tradeservice/getswapquote'
+        ]);
         // For unhandled endpoints, call the original fetch
         return originalFetch(url, options);
     }
     
-    console.log('🎭 Mock API returning response for:', path);
+    console.log('🎭 Mock API returning response for:', normalizedPath);
     
     // Create a mock Response object
     return new Response(JSON.stringify(mockResponse), {

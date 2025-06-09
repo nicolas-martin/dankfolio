@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/skipJA/Cointracker/backend/internal/db"
-	"github.com/skipJA/Cointracker/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"log/slog"
 )
 
@@ -139,7 +139,7 @@ func (t *APICallTrackerImpl) LoadStatsForToday(ctx context.Context) error {
 		return nil
 	}
 
-	t.mutex.Lock()
+	t.mutex.Lock() // Lock to safely update in-memory stats
 	defer t.mutex.Unlock()
 
 	// Clear existing in-memory stats for today or merge carefully.
@@ -280,3 +280,4 @@ func (t *APICallTrackerImpl) Start(ctx context.Context) {
 		}
 	}()
 }
+

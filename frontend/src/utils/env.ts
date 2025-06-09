@@ -14,7 +14,7 @@ interface EnvVariables {
 	firebaseAppCheckDebugTokenIos: string;// For development only
 	testPrivateKey?: string; // For development only
 	loadDebugWallet?: boolean; // For development only, to load a debug wallet
-
+	e2eMockingEnabled?: boolean; // For E2E testing, to enable mocking
 }
 
 /**
