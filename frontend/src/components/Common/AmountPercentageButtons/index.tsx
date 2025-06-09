@@ -47,19 +47,20 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
             key={percent}
             style={[
               styles.percentageButton,
-              isActive && { 
-                backgroundColor: theme.colors.primary,
-                elevation: 2,
-              }
+              isActive && styles.activeButton
             ]}
             onPress={() => handlePress(percent)}
             testID={`amount-percentage-button-${percent}`}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+            accessibilityRole="button"
           >
             <Text 
               style={[
                 styles.percentageButtonText,
                 isActive && { color: theme.colors.onPrimary }
               ]}
+              testID={`amount-percentage-text-${percent}`}
             >
               {percent}%
             </Text>

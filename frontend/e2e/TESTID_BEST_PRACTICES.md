@@ -123,12 +123,42 @@ testID="amount-input"
 ### **CoinCard Component**
 - `coin-card-${mintAddress}` - Main card touchable area
 - `coin-icon-${mintAddress}` - Coin icon image
+- `coin-symbol-${mintAddress}` - Coin symbol text
+- `coin-price-${mintAddress}` - Coin price text
 - `sparkline-${mintAddress}` - Price chart sparkline
 
-### **TokenSelector Component**  
-- `from-token-selector` - From token selector
-- `to-token-selector` - To token selector
-- `amount-input` - Amount input field
+### **HorizontalTickerCard Component**
+- `horizontal-ticker-card-${mintAddress}` - Main card touchable area
+- `coin-icon-${mintAddress}` - Coin icon image
+- `horizontal-ticker-symbol-${mintAddress}` - Coin symbol text
+- `horizontal-ticker-time-${mintAddress}` - Time ago text
+- `horizontal-ticker-change-${mintAddress}` - Price change percentage
+
+### **AmountPercentageButtons Component**
+- `amount-percentage-button-${percent}` - Percentage button (25, 50, 75, 100)
+- `amount-percentage-text-${percent}` - Percentage text inside button
+
+### **TokenSelector Component**
+- `token-selector-icon-${mintAddress}` - Token icon (when token selected)
+- `token-selector-symbol-${mintAddress}` - Token symbol (when token selected)
+- `token-selector-placeholder` - Placeholder text (when no token selected)
+
+### **TradeConfirmation Component**
+- `from-token-details` - From token section container
+- `from-token-symbol-${mintAddress}` - From token symbol
+- `from-token-name-${mintAddress}` - From token name
+- `from-token-amount` - From token amount
+- `from-token-amount-usd` - From token USD value
+- `to-token-details` - To token section container
+- `to-token-symbol-${mintAddress}` - To token symbol
+- `to-token-name-${mintAddress}` - To token name
+- `to-token-amount` - To token amount
+- `to-token-amount-usd` - To token USD value
+- `fee-section` - Fee section container
+- `fee-label` - Fee label text
+- `fee-value` - Fee value text
+- `cancel-trade-button` - Cancel button
+- `confirm-trade-button` - Confirm button
 
 ### **Navigation**
 - `home-screen` - Home screen container

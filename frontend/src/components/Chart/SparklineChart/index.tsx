@@ -248,7 +248,13 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 	}, [effectiveData, width, height, theme]);
 
 	return (
-		<View style={[styles.container, { width, height }]} testID={testID}>
+		<View 
+			style={[styles.container, { width, height }]} 
+			testID={testID}
+			accessible={true}
+			accessibilityRole="image"
+			accessibilityLabel="Price chart"
+		>
 			<Canvas style={{ flex: 1 }}>
 				{/* Render Area Fills First */}
 				{areaSegments.map((segment, index) => (

@@ -22,6 +22,9 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 			style={styles.container}
 			onPress={handlePress}
 			testID={`horizontal-ticker-card-${coin.mintAddress}`}
+			accessible={false}
+			importantForAccessibility="no-hide-descendants"
+			accessibilityRole="button"
 			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 		>
 			<View style={styles.logoContainer}>
@@ -32,10 +35,10 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 					testID={`coin-icon-${coin.mintAddress}`}
 				/>
 			</View>
-			<Text style={styles.symbol} numberOfLines={1}>
+			<Text style={styles.symbol} numberOfLines={1} testID={`horizontal-ticker-symbol-${coin.mintAddress}`}>
 				{coin.symbol}
 			</Text>
-			<Text style={styles.timeAgo} numberOfLines={1}>
+			<Text style={styles.timeAgo} numberOfLines={1} testID={`horizontal-ticker-time-${coin.mintAddress}`}>
 				{timeAgo}
 			</Text>
 			{coin.change24h !== undefined && (
@@ -44,7 +47,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 					coin.change24h > 0 ? styles.changePositive :
 						coin.change24h < 0 ? styles.changeNegative :
 							styles.changeNeutral
-				]} numberOfLines={1}>
+				]} numberOfLines={1} testID={`horizontal-ticker-change-${coin.mintAddress}`}>
 					{formatPercentage(coin.change24h, 1, true)}
 				</Text>
 			)}

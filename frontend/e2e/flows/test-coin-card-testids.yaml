@@ -1,0 +1,31 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# Test CoinCard testIDs - Verify all elements are accessible
+
+# Use common app setup flow
+- runFlow: ./common/app-setup.yaml
+
+# Wait for home screen to load
+- assertVisible: 
+    text: "Trending Coins"
+
+# Test SOL coin card elements
+- runFlow:
+    file: ./components/coin-card-element.yaml
+    env:
+      COIN_ADDRESS: "So11111111111111111111111111111111111111112"
+
+# Test JUP coin card elements  
+- runFlow:
+    file: ./components/coin-card-element.yaml
+    env:
+      COIN_ADDRESS: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+
+# Test BONK coin card elements
+- runFlow:
+    file: ./components/coin-card-element.yaml
+    env:
+      COIN_ADDRESS: "Bonk111111111111111111111111111111111111" 
