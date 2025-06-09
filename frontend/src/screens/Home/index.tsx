@@ -200,8 +200,7 @@ const HomeScreen = () => {
 
 		// we don't want sequential fetching in E2E mode or development
 		if (!env.e2eMockingEnabled && env.appEnv != 'development') {
-			console.log('🐌 [HomeScreen] Using SEQUENTIAL price history fetching');
-			logger.info('[HomeScreen] 🐌 Using SEQUENTIAL price history fetching');
+			logger.info('[HomeScreen] 🐌🐌🐌🐌🐌🐌🐌🐌🐌🐌🐌 Using SEQUENTIAL price history fetching');
 			const processCoinsSequentially = async () => {
 				for (const coin of topCoins) {
 					if (!coin || !coin.mintAddress) {
@@ -238,7 +237,7 @@ const HomeScreen = () => {
 				}
 			});
 		} else { // Parallel fetching
-			logger.info('[HomeScreen] 🚀 Using PARALLEL price history fetching', { coinCount: topCoins.length });
+			logger.info('[HomeScreen] 🚀🚀 🚀 🚀 🚀 🚀  Using PARALLEL price history fetching', { coinCount: topCoins.length });
 			topCoins.forEach(coin => {
 				if (!coin || !coin.mintAddress) {
 					return;
@@ -393,7 +392,6 @@ const HomeScreen = () => {
 
 	const renderCoinsList = () => {
 		const hasTrendingCoins = availableCoins.length > 0;
-		const isInitialLoad = isLoadingTrending && !hasTrendingCoins && !isRefreshing;
 
 		// Show shimmer placeholders only during the first load (not during pull-to-refresh)
 		// This is true when:
