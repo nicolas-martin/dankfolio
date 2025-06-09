@@ -1,0 +1,102 @@
+appId: com.nicolasmartin.dankfolio
+---
+# CoinDetail Element Test - Core functionality for coin detail screen
+# This test assumes we're already on the coin detail screen
+# Pass coinAddress as an environment variable when calling this flow
+
+# Test main screen container
+- assertVisible:
+      id: "coin-detail-screen"
+
+# Test price display section
+- assertVisible:
+      id: "coin-detail-price-card"
+
+- assertVisible:
+      id: "price-display-container"
+
+- assertVisible:
+      id: "price-display-coin-icon"
+
+- assertVisible:
+      id: "price-display-coin-name"
+
+- assertVisible:
+      id: "price-display-coin-address"
+
+- assertVisible:
+      id: "price-display-current-price"
+
+- assertVisible:
+      id: "price-display-price-change"
+
+- assertVisible:
+      id: "price-display-period"
+
+# Test chart section
+- assertVisible:
+      id: "coin-detail-chart-card"
+
+# Test timeframe selection
+- assertVisible:
+      id: "coin-detail-timeframe-card"
+
+- assertVisible:
+      id: "coin-detail-timeframe-button-1H"
+- assertVisible:
+      id: "coin-detail-timeframe-button-4H"
+- assertVisible:
+      id: "coin-detail-timeframe-button-1D"
+- assertVisible:
+      id: "coin-detail-timeframe-button-1W"
+- assertVisible:
+      id: "coin-detail-timeframe-button-1M"
+
+- tapOn:
+      id: "coin-detail-timeframe-button-1H"
+
+- assertVisible:
+      id: "coin-detail-holdings-card"
+      optional: true
+
+- assertVisible:
+      id: "coin-detail-holdings-title"
+      optional: true
+
+# Scroll down to see more content
+- scrollUntilVisible:
+      element:
+          id: "coin-detail-about-card"
+      direction: DOWN
+
+# Test about section (should be visible after scrolling)
+- assertVisible:
+      id: "coin-detail-about-card"
+
+- assertVisible:
+      id: "coin-detail-about-title"
+
+- assertVisible:
+      id: "coin-info-description-section"
+
+- assertVisible:
+      id: "coin-info-description-text"
+
+- assertVisible:
+      id: "coin-info-volume-section"
+      optional: true
+
+- assertVisible:
+      id: "coin-info-volume-value"
+      optional: true
+
+- assertVisible:
+      id: "coin-info-tags-section"
+      optional: true
+
+- assertVisible:
+      id: "coin-info-links-section"
+      optional: true
+
+- assertVisible:
+      id: "trade-button"

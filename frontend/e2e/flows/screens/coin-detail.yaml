@@ -1,0 +1,28 @@
+appId: com.nicolasmartin.dankfolio
+env:
+    LOAD_DEBUG_WALLET: "true"
+    E2E_MOCKING_ENABLED: "true"
+---
+- runFlow: ../common/app-setup.yaml
+
+# Start from home screen
+- assertVisible: "Trending Coins"
+
+# Navigate to a trending coin detail (JUP coin)
+- tapOn:
+      id: "trending-coin-card-JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+
+# Wait for navigation to complete
+- assertVisible:
+      id: "coin-detail-screen"
+
+# Test all coin detail elements using the simple test
+- runFlow:
+      file: ../components/coin-detail-element.yaml
+
+# Test trade button functionality
+- tapOn:
+      id: "trade-button"
+
+# Should navigate to trade screen
+- assertVisible: "Trade"

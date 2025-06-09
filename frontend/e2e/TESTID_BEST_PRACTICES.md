@@ -168,8 +168,70 @@ testID="amount-input"
 
 1. **Expand testID Coverage**: Add testIDs to more components
 2. **Create More Flows**: Build comprehensive test suites using testID
-3. **Document Patterns**: Keep this guide updated with new patterns
-4. **Build Process**: Ensure CI/CD includes testID in builds
+3. **Document Patterns**: Keep this guide updated with new testIDs
+
+### **CoinDetail Screen Components**
+
+#### **Main Screen**
+- `coin-detail-screen` - Main screen container
+
+#### **Price Display Section**
+- `coin-detail-price-card` - Price card container
+- `price-display-container` - Price display component container
+- `price-display-coin-icon` - Coin icon image
+- `price-display-coin-name` - Coin name text
+- `price-display-coin-address` - Coin address text
+- `price-display-current-price` - Current price display
+- `price-display-price-change` - Price change text
+- `price-display-period` - Time period text
+- `price-display-copy-address-button` - Copy address button
+
+#### **Chart Section**
+- `coin-detail-chart-card` - Chart card container
+- `coin-chart-container` - Chart component container
+
+#### **Timeframe Selection**
+- `coin-detail-timeframe-card` - Timeframe card container
+- `coin-detail-timeframe-buttons` - Timeframe selection buttons
+
+#### **Holdings Section** (Optional - only if user has holdings)
+- `coin-detail-holdings-card` - Holdings card container
+- `coin-detail-holdings-title` - Holdings title text
+- `coin-detail-portfolio-value-label` - Portfolio value label
+- `coin-detail-portfolio-value` - Portfolio value amount
+- `coin-detail-token-amount-label` - Token amount label
+- `coin-detail-token-amount` - Token amount text
+
+#### **About Section**
+- `coin-detail-about-card` - About card container
+- `coin-detail-about-title` - About section title
+
+#### **Coin Info Sections** (Optional - may not be present for all coins)
+- `coin-info-description-section` - Description section container
+- `coin-info-description-title` - Description title
+- `coin-info-description-text` - Description text content
+- `coin-info-volume-section` - Volume section container
+- `coin-info-volume-title` - Volume title
+- `coin-info-volume-value` - Volume value
+- `coin-info-tags-section` - Tags section container
+- `coin-info-tags-title` - Tags title
+- `coin-info-tag-${tag}` - Individual tag chip (e.g., `coin-info-tag-defi`)
+- `coin-info-links-section` - Links section container
+- `coin-info-links-title` - Links title
+- `coin-info-website-link` - Website link
+- `coin-info-twitter-link` - Twitter link
+- `coin-info-telegram-link` - Telegram link
+- `coin-info-discord-link` - Discord link
+- `coin-info-date-section` - Date section container
+- `coin-info-date-title` - Date title
+- `coin-info-date-value` - Date value
+
+#### **Trade Button**
+- `trade-button` - Trade button
+
+### **Navigation**
+- `home-screen` - Home screen container
+- `coin-detail-screen` - Coin detail screen
 
 ## 📚 **References**
 
