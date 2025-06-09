@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, TextInput, ActivityIndicator, Dimensions } from 'react-native';
+import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Card, Text, useTheme, Searchbar } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';

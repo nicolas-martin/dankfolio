@@ -102,7 +102,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ // Renamed component
       <AnimatedPressableBackground
         activeOpacity={1}
         onPress={closeAndResetAnimation}
-        style={[styles.touchableBackgroundWrapper]}
+        style={styles.touchableBackgroundWrapper}
       >
         <AnimatedBlurView
           style={[styles.blurViewBackground, backdropAnimatedStyle]}
@@ -136,26 +136,26 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ // Renamed component
 const styles = StyleSheet.create({
   touchableBackgroundWrapper: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   blurViewBackground: {
     ...StyleSheet.absoluteFillObject,
   },
   contentWrapper: {
-    justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
     height: '100%',
+    justifyContent: 'center',
+    width: '100%',
   },
   modalContainer: {
-    width: width * 0.85,
-    maxWidth: 400,
+    alignItems: 'center',
     backgroundColor: 'transparent',
     borderRadius: 20,
-    padding: 15,
-    alignItems: 'center',
     justifyContent: 'center',
+    maxWidth: 400,
+    padding: 15,
+    width: width * 0.85,
   },
   zoomedImage: { // Renamed from profileImage
     width: IMAGE_SIZE, // Using generic IMAGE_SIZE
@@ -166,15 +166,15 @@ const styles = StyleSheet.create({
     marginBottom: 30, // Space before the main close button (was space between image and action buttons)
   },
   placeholderImageContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderColor: 'rgba(255, 255, 255, 0.7)',
+    borderWidth: 3,
+    justifyContent: 'center',
   },
   placeholderText: {
-    fontSize: 18,
     color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 18,
     fontWeight: 'bold',
   },
   // Removed actionButtonsContainer, actionButton, iconPlaceholder, iconText, actionButtonText styles
@@ -187,9 +187,9 @@ const styles = StyleSheet.create({
   },
   mainCloseButtonText: {
     color: 'white',
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-    fontSize: 16,
   },
 });
 

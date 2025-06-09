@@ -108,7 +108,7 @@ export const logResponse = (serviceName: string, methodName: string, response: a
 export const logError = (serviceName: string, methodName: string, error: Error): void => {
 	log.error(`❌ gRPC ${serviceName}.${methodName} Error:`, safeStringify({
 		message: error.message || 'Unknown error',
-		code: error.code,
+		code: (error as any).code,
 		// data: error.metadata ? (typeof error.metadata.toObject === 'function' ? error.metadata.toObject() : error.metadata) : undefined
 	}));
 };

@@ -9,51 +9,40 @@ env:
 - launchApp
 - assertVisible: 
     text: "Portfolio"
-    timeout: 10000
 
 # Test coin list displays correctly
 - assertVisible:
     text: "ONE"
-    timeout: 5000
 - assertVisible:
     text: "Coin One"  # Full name
-    timeout: 3000
 
 - assertVisible:
     text: "TWO"
-    timeout: 3000
 - assertVisible:
     text: "Coin Two"  # Full name
-    timeout: 3000
 
 # Test coin prices are displayed
 - assertVisible:
     text: "$10"  # Price for ONE
-    timeout: 3000
 - assertVisible:
     text: "$20"  # Price for TWO
-    timeout: 3000
 
 # Test coin selection navigation
 - tapOn:
     text: "ONE"
 - assertVisible:
     text: "Coin One"
-    timeout: 5000
 - assertVisible:
     text: "Price"
-    timeout: 3000
 
 # Navigate back to portfolio
 - tapOn:
     id: "back-button"
 - assertVisible:
     text: "Portfolio"
-    timeout: 3000
 
 # Test second coin selection
 - tapOn:
     text: "TWO"
 - assertVisible:
     text: "Coin Two"
-    timeout: 5000 
