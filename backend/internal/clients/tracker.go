@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/skipJA/Cointracker/backend/internal/db"
-	"github.com/skipJA/Cointracker/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"log/slog"
 )
 
