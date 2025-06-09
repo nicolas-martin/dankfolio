@@ -33,7 +33,8 @@ export const getEnvVariables = (): EnvVariables => {
 		firebaseAppCheckDebugTokenIos: extra.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS || '',
 		testPrivateKey: extra.TEST_PRIVATE_KEY as string,
 		sentryAuthToken: extra.SENTRY_AUTH_TOKEN as string,
-		loadDebugWallet: extra.LOAD_DEBUG_WALLET === 'true',
+		loadDebugWallet: extra.LOAD_DEBUG_WALLET === 'true' ||
+			process.env.E2E_MOCKING_ENABLED === 'true'
 	};
 
 	// Override apiUrl for E2E mocking

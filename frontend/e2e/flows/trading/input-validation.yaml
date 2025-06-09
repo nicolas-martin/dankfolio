@@ -1,0 +1,101 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# TradeScreen: Input Validation Test
+# Tests: skips quote fetching for incomplete numbers
+# Matches Jest test case from TradeScreen.test.tsx
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+
+# Navigate to Trade screen
+- tapOn: "Trade"
+- assertVisible:
+    text: "Swap"
+    timeout: 5000
+
+# Set up trade pair
+- tapOn:
+    id: "from-token-selector"
+- tapOn:
+    text: "SOL"
+- tapOn:
+    id: "to-token-selector"
+- tapOn:
+    text: "USDC"
+
+# Test empty input - should not fetch quote
+- tapOn:
+    id: "amount-input"
+- inputText: ""
+- wait: 1000
+
+# Should not show quote information
+- assertNotVisible:
+    text: "150.5"
+    timeout: 2000
+
+# Test incomplete decimal - should not fetch quote
+- tapOn:
+    id: "amount-input"
+- inputText: "."
+- wait: 1000
+
+# Should not show quote
+- assertNotVisible:
+    text: "150.5"
+    timeout: 2000
+
+# Test leading decimal without number
+- clearText
+- inputText: ".5"
+- wait: 1000
+
+# This should be valid and fetch quote
+- assertVisible:
+    text: "75"  # Half of 150.5
+    timeout: 5000
+
+# Test multiple decimals - should be invalid
+- clearText
+- inputText: "1.2.3"
+- wait: 1000
+
+# Should not fetch quote for invalid input
+- assertNotVisible:
+    text: "150.5"
+    timeout: 2000
+
+# Test zero amount
+- clearText
+- inputText: "0"
+- wait: 1000
+
+# Should not fetch quote for zero
+- assertNotVisible:
+    text: "150.5"
+    timeout: 2000
+
+# Test valid input after invalid
+- clearText
+- inputText: "1"
+- wait: 2000
+
+# Should fetch quote for valid input
+- assertVisible:
+    text: "150.5"
+    timeout: 5000
+
+# Test very large number
+- clearText
+- inputText: "999999"
+- wait: 2000
+
+# Should handle large numbers (may show error or quote)
+- assertVisible:
+    text: "Swap"  # Interface should remain functional
+    timeout: 3000 

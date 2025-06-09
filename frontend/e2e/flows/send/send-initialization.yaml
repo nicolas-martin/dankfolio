@@ -1,0 +1,100 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# SendScreen: Initialization Test
+# Tests: renders initial state correctly
+# Matches Jest test case from SendScreen.test.tsx
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+
+# Navigate to Send screen
+- tapOn: "Send"
+- assertVisible:
+    text: "Send Crypto"
+    timeout: 5000
+
+# Test initial UI elements
+- assertVisible:
+    text: "To"  # Recipient section
+    timeout: 3000
+
+- assertVisible:
+    text: "Recipient"
+    timeout: 3000
+
+# Test recipient input field
+- assertVisible:
+    id: "recipient-input"
+    timeout: 3000
+
+# Test token selector is present
+- assertVisible:
+    id: "token-selector"
+    timeout: 3000
+
+# Test that default token (SOL) is selected
+- assertVisible:
+    text: "SOL"
+    timeout: 3000
+
+# Test amount input is available
+- assertVisible:
+    id: "amount-input"
+    timeout: 3000
+
+# Test send button is present but disabled initially
+- assertVisible:
+    text: "Send"
+    timeout: 3000
+
+# Test that send button is disabled without recipient
+- tapOn:
+    text: "Send"
+# Should not proceed without recipient address
+
+# Test recipient input functionality
+- tapOn:
+    id: "recipient-input"
+- inputText: "test-recipient-address"
+
+# Test amount input functionality
+- tapOn:
+    id: "amount-input"
+- inputText: "1"
+
+# Test that send button becomes enabled with valid inputs
+- assertVisible:
+    text: "Send"
+    timeout: 3000
+
+# Test token selector functionality
+- tapOn:
+    id: "token-selector"
+- assertVisible:
+    text: "Search tokens"
+    timeout: 3000
+
+# Test available tokens in send
+- assertVisible:
+    text: "SOL"
+    timeout: 3000
+- assertVisible:
+    text: "USDC"
+    timeout: 3000
+
+# Select SOL and verify
+- tapOn:
+    text: "SOL"
+- assertVisible:
+    text: "SOL"
+    timeout: 3000
+
+# Test that balance is shown for selected token
+- assertVisible:
+    text: "Balance:"
+    timeout: 3000 

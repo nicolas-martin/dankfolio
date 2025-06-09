@@ -1,0 +1,18 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# Authentication Flow - Debug Wallet (bypasses wallet setup)
+# This flow tests the app launch with debug wallet enabled
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+- assertVisible: 
+    text: "Trade"
+- assertVisible: 
+    text: "Send"
+- assertVisible: 
+    text: "Profile" 

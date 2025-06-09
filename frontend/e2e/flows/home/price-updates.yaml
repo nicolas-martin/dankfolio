@@ -1,0 +1,52 @@
+appId: com.nicolasmartin.dankfolio
+env:
+  LOAD_DEBUG_WALLET: "true"
+  E2E_MOCKING_ENABLED: "true"
+---
+# HomeScreen: Price Updates Test
+# Tests: price history fetching (sequential and parallel modes)
+# Matches Jest test cases for price history functionality
+
+- launchApp
+- assertVisible: 
+    text: "Portfolio"
+    timeout: 10000
+
+# Wait for initial coin data to load
+- assertVisible:
+    text: "ONE"
+    timeout: 5000
+
+# Test that price charts start loading
+# Note: In real app, this would show loading indicators
+- wait: 2000  # Allow time for price history fetching to start
+
+# Test that price data eventually loads
+- assertVisible:
+    text: "$10"  # Price for ONE should be visible
+    timeout: 8000
+
+- assertVisible:
+    text: "$20"  # Price for TWO should be visible
+    timeout: 5000
+
+# Test price change indicators (if available)
+- assertVisible:
+    text: "+"  # Positive change indicator
+    timeout: 3000
+
+# Test that all coins have price data loaded
+# This simulates the sequential/parallel fetching completion
+- wait: 3000  # Allow time for all price histories to complete
+
+# Verify no loading states remain
+- assertNotVisible:
+    text: "Loading price..."
+    timeout: 2000
+
+# Test refresh functionality
+- swipeDown  # Pull to refresh
+- wait: 2000
+- assertVisible:
+    text: "Portfolio"
+    timeout: 3000 
