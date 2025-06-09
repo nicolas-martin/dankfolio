@@ -1,16 +1,10 @@
 // Simple API mocking for React Native E2E tests
 import { env } from './env';
 import { create } from '@bufbuild/protobuf';
-import { convertToTimestamp } from '@/services/grpc/grpcUtils';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 
-// Type definitions for fetch API (React Native compatibility)
 type FetchInput = string | URL | Request;
 type FetchInit = RequestInit;
-
-// Import the exact gRPC types and schemas
-
-
 import { 
   GetAvailableCoinsResponseSchema,
   SearchResponseSchema,
@@ -43,8 +37,8 @@ import {
 // Environment flag to enable/disable mocking
 let mockingEnabled = false;
 
-// Mock coin data with realistic meme-themed coins (using protobuf-compatible format)
-const MOCK_COINS: ProtobufCoin[] = [
+// Mock trending coins (complete data)
+const MOCK_TRENDING_COINS: ProtobufCoin[] = [
   create(CoinSchema, {
     mintAddress: 'DankCoin1111111111111111111111111111111',
     name: 'DankCoin',
@@ -161,6 +155,70 @@ const MOCK_COINS: ProtobufCoin[] = [
   }),
 ];
 
+// Mock new coins (less complete data, sorted by jupiter_listed_at desc)
+const MOCK_NEW_COINS: ProtobufCoin[] = [
+  create(CoinSchema, {
+    mintAddress: 'NewCoin1111111111111111111111111111111',
+    name: 'Fresh Meme',
+    symbol: 'FRESH',
+    decimals: 9,
+    description: 'Brand new meme coin just listed',
+    iconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+    resolvedIconUrl: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+    tags: ['meme', 'new'],
+    price: 0.0000001,
+    dailyVolume: 50000,
+    website: '', // Missing data for new coins
+    twitter: '', // Missing data for new coins
+    coingeckoId: '', // Missing data for new coins
+    createdAt: timestampFromDate(new Date('2024-12-01')), // Very recent
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: false,
+    jupiterListedAt: timestampFromDate(new Date('2024-12-01')), // Most recent listing
+  }),
+  create(CoinSchema, {
+    mintAddress: 'RocketCoin111111111111111111111111111',
+    name: 'Rocket Launch',
+    symbol: 'ROCKET',
+    decimals: 6,
+    description: 'New rocket-themed token',
+    iconUrl: 'https://static.jup.ag/jup/icon.png',
+    resolvedIconUrl: 'https://static.jup.ag/jup/icon.png',
+    tags: ['meme', 'space'],
+    price: 0.000005,
+    dailyVolume: 125000,
+    website: '', // Missing data for new coins
+    twitter: 'https://twitter.com/rocketcoin', // Partial data
+    coingeckoId: '', // Missing data for new coins
+    createdAt: timestampFromDate(new Date('2024-11-28')),
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: false,
+    jupiterListedAt: timestampFromDate(new Date('2024-11-28')), // Second most recent
+  }),
+  create(CoinSchema, {
+    mintAddress: 'DiamondCoin11111111111111111111111111',
+    name: 'Diamond Hands',
+    symbol: 'DIAMOND',
+    decimals: 8,
+    description: 'For true diamond hands only',
+    iconUrl: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I',
+    resolvedIconUrl: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I',
+    tags: ['meme', 'diamond'],
+    price: 0.000012,
+    dailyVolume: 75000,
+    website: 'https://diamondcoin.gem', // Some data available
+    twitter: '', // Missing data for new coins
+    coingeckoId: '', // Missing data for new coins
+    createdAt: timestampFromDate(new Date('2024-11-25')),
+    lastUpdated: timestampFromDate(new Date()),
+    isTrending: false,
+    jupiterListedAt: timestampFromDate(new Date('2024-11-25')), // Third most recent
+  }),
+];
+
+// All coins combined for general searches
+const ALL_MOCK_COINS = [...MOCK_TRENDING_COINS, ...MOCK_NEW_COINS];
+
 // Mock wallet balances using exact gRPC types
 const MOCK_WALLET_BALANCES: Balance[] = [
   create(BalanceSchema, { id: 'So11111111111111111111111111111111111111112', amount: 2.5 }), // SOL
@@ -234,8 +292,19 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
     switch (normalizedPath) {
       case '/dankfolio.v1.coinservice/getavailablecoins': {
         console.log('🎭 Returning mock GetAvailableCoins response');
+        // Check if request is for trending only
+        let requestData: any = {};
+        if (options?.body) {
+          try {
+            requestData = JSON.parse(options.body as string);
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        
+        const coinsToReturn = requestData.trendingOnly ? MOCK_TRENDING_COINS : ALL_MOCK_COINS;
         const response = create(GetAvailableCoinsResponseSchema, {
-          coins: MOCK_COINS,
+          coins: coinsToReturn,
         });
         mockResponse = response;
         break;
@@ -244,10 +313,29 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
       case '/dankfolio.v1.coinservice/search':
       case '/dankfolio.v1.coinservice/searchcoins': {
         console.log('🎭 Returning mock Search response');
-        // For search, return a subset of coins
+        // Parse request to check sorting parameters
+        let requestData: any = {};
+        if (options?.body) {
+          try {
+            requestData = JSON.parse(options.body as string);
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        
+        // If sorting by jupiter_listed_at desc (newest first), return new coins
+        let coinsToReturn: ProtobufCoin[];
+        if (requestData.sortBy === 'jupiter_listed_at' && requestData.sortDesc === true) {
+          console.log('🎭 Returning new coins (sorted by jupiter_listed_at desc)');
+          coinsToReturn = MOCK_NEW_COINS;
+        } else {
+          console.log('🎭 Returning trending coins for general search');
+          coinsToReturn = MOCK_TRENDING_COINS.slice(0, 3);
+        }
+        
         const response = create(SearchResponseSchema, {
-          coins: MOCK_COINS.slice(0, 3), // Return first 3 coins for search
-          totalCount: 3,
+          coins: coinsToReturn,
+          totalCount: coinsToReturn.length,
         });
         mockResponse = response;
         break;
@@ -257,7 +345,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
         console.log('🎭 Returning mock SearchCoinByMint response');
         // Return the first coin as a mock result
         const response = create(SearchCoinByMintResponseSchema, {
-          coin: MOCK_COINS[0],
+          coin: ALL_MOCK_COINS[0],
         });
         mockResponse = response;
         break;
@@ -279,7 +367,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
         }
         
         // Find the coin by mint address or return the first one as fallback
-        const coin = MOCK_COINS.find(c => c.mintAddress === mintAddress) || MOCK_COINS[0];
+        const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => c.mintAddress === mintAddress) || ALL_MOCK_COINS[0];
         mockResponse = coin;
         break;
       }
@@ -311,8 +399,8 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
           }
         }
         
-        // Find the coin to get its price
-        const coin = MOCK_COINS.find(c => c.mintAddress === coinAddress) || MOCK_COINS[4]; // Default to SOL
+        // Find the coin to get its price (SOL is at index 4 in MOCK_TRENDING_COINS)
+        const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => c.mintAddress === coinAddress) || MOCK_TRENDING_COINS[4]; // Default to SOL
         const isStablecoin = coin.tags.includes('stablecoin');
         
         const data = create(PriceHistoryDataSchema, {
