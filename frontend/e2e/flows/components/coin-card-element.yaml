@@ -1,9 +1,5 @@
 appId: com.nicolasmartin.dankfolio
 ---
-# CoinCard Element Test - Core functionality for a single coin
-# This test assumes we're already on a screen with coin cards visible
-# Pass coinAddress as an environment variable when calling this flow
-
 # Test CoinCard main container (TouchableOpacity)
 - assertVisible:
       id: "trending-coin-card-${COIN_ADDRESS}"

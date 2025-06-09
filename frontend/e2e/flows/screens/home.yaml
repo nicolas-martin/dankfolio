@@ -1,7 +1,7 @@
 appId: com.nicolasmartin.dankfolio
 env:
-  LOAD_DEBUG_WALLET: "true"
-  E2E_MOCKING_ENABLED: "true"
+    LOAD_DEBUG_WALLET: "true"
+    E2E_MOCKING_ENABLED: "true"
 ---
 # Home Screen - Main UI Test
 
@@ -13,7 +13,7 @@ env:
 
 # Test navigation elements
 - assertVisible: "  Portfolio Portfolio"
-- assertVisible: "  Explore Explore"  
+- assertVisible: "  Explore Explore"
 - assertVisible: "  Home Home"
 
 # Test new listings section using reusable component tests
@@ -24,12 +24,12 @@ env:
 
 # Test individual coin card elements for specific coins
 - runFlow:
-    file: ../components/coin-card-element.yaml
-    env:
-      COIN_ADDRESS: "So11111111111111111111111111111111111111112"
+      file: ../components/coin-card-element.yaml
+      env:
+          COIN_ADDRESS: "So11111111111111111111111111111111111111112"
 
 # Test individual new coin card elements for specific coins
 - runFlow:
-    file: ../components/new-coin-card-element.yaml
-    env:
-      COIN_ADDRESS: "NewCoin1111111111111111111111111111111"
+      file: ../components/new-coin-card-element.yaml
+      env:
+          COIN_ADDRESS: "NewCoin1111111111111111111111111111111"
