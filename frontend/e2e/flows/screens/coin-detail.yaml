@@ -15,5 +15,7 @@ env:
 
 - runFlow:
       file: ../components/coin-detail-element.yaml
+      env:
+          COIN_ADDRESS: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
 
 - assertVisible: "Trade"
