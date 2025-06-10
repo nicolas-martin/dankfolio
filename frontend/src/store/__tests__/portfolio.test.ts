@@ -253,7 +253,9 @@ describe('Zustand Portfolio Store', () => {
 		});
 
 		it('handles API fetch error', async () => {
-			(grpcApi.getWalletBalance as jest.Mock).mockRejectedValue(new Error('Failed to fetch balance'));
+			// Reverted to this form, as spyOn also failed at definition.
+			// This assumes grpcApi.getWalletBalance is already a jest.Mock due to the top-level mock.
+			(grpcApi.getWalletBalance as jest.Mock).mockRejectedValueOnce(new Error('Failed to fetch balance'));
 			await act(async () => {
 				await usePortfolioStore.getState().fetchPortfolioBalance(mockWalletData.address);
 			});

@@ -57,8 +57,9 @@ jest.mock('@/services/grpcApi', () => ({
 	grpcApi: mockGrpcApi
 }));
 
-// Use the mocked grpcApi for our tests
-const { grpcApi } = jest.requireActual('@/services/grpcApi');
+// Tests should use the mockGrpcApi defined above,
+// or rely on the jest.mock to provide the mocked version of grpcApi
+// const { grpcApi } = jest.requireActual('@/services/grpcApi'); // This line was causing tests to use the real API
 
 describe('API Service', () => {
 
@@ -141,20 +142,20 @@ describe('API Service', () => {
 		it('handles token operations successfully', async () => {
 			// Test getAvailableCoins with trending
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: [{ ...mockCoin, tags: ['trending'] }] });
-			const trendingResult = await grpcApi.getAvailableCoins(true);
+			const trendingResult = await mockGrpcApi.getAvailableCoins(true); // Use mockGrpcApi
 			expect(mockGrpcApi.getAvailableCoins).toHaveBeenCalledWith(true);
 			expect(trendingResult[0].tags).toContain('trending');
 
 			// Test getCoinByID
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockCoin });
-			const coinResult = await grpcApi.getCoinByID('mockCoinId');
+			const coinResult = await mockGrpcApi.getCoinByID('mockCoinId'); // Use mockGrpcApi
 			expect(mockGrpcApi.getCoinByID).toHaveBeenCalledWith('mockCoinId');
 			expect(coinResult).toMatchObject(mockCoin);
 
 			// Test getTokenPrices
 			const tokenIds = ['coin1', 'coin2', 'coin3'];
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tokenPrices });
-			const pricesResult = await grpcApi.getCoinPrices(tokenIds);
+			const pricesResult = await mockGrpcApi.getCoinPrices(tokenIds); // Use mockGrpcApi
 			expect(mockGrpcApi.getCoinPrices).toHaveBeenCalledWith(tokenIds);
 			expect(pricesResult).toEqual(mockResponses.tokenPrices);
 		});
@@ -187,19 +188,19 @@ describe('API Service', () => {
 		it('handles trade operations successfully', async () => {
 			// Test submitTrade
 			// mockAxiosInstance.post.mockResolvedValueOnce({ data: mockResponses.submitTrade });
-			const submitResult = await grpcApi.submitSwap(mockTradePayload);
+			const submitResult = await mockGrpcApi.submitSwap(mockTradePayload); // Use mockGrpcApi
 			expect(mockGrpcApi.submitSwap).toHaveBeenCalledWith(mockTradePayload);
 			expect(submitResult).toEqual(mockResponses.submitTrade);
 
 			// Test getTradeQuote
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeQuote });
-			const quoteResult = await grpcApi.getSwapQuote('coin1', 'coin2', '10');
+			const quoteResult = await mockGrpcApi.getSwapQuote('coin1', 'coin2', '10'); // Use mockGrpcApi
 			expect(mockGrpcApi.getSwapQuote).toHaveBeenCalledWith('coin1', 'coin2', '10');
 			expect(quoteResult).toEqual(mockResponses.swapQuote);
 
 			// Test getTradeStatus
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.tradeStatus });
-			const statusResult = await grpcApi.getSwapStatus('txHash456');
+			const statusResult = await mockGrpcApi.getSwapStatus('txHash456'); // Use mockGrpcApi
 			expect(mockGrpcApi.getSwapStatus).toHaveBeenCalledWith('txHash456');
 			expect(statusResult).toMatchObject(mockResponses.tradeStatus);
 		});
@@ -240,13 +241,13 @@ describe('API Service', () => {
 		it('handles wallet and price operations successfully', async () => {
 			// Test getWalletBalance
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.walletBalance });
-			const balanceResult = await grpcApi.getWalletBalance('wallet123');
+			const balanceResult = await mockGrpcApi.getWalletBalance('wallet123'); // Use mockGrpcApi
 			expect(mockGrpcApi.getWalletBalance).toHaveBeenCalledWith('wallet123');
 			expect(balanceResult).toEqual(mockResponses.walletBalance);
 
 			// Test getPriceHistory
 			// mockAxiosInstance.get.mockResolvedValueOnce({ data: mockResponses.priceHistory });
-			const historyResult = await grpcApi.getPriceHistory('addr1', 'daily', 't1', 't2', 'wallet');
+			const historyResult = await mockGrpcApi.getPriceHistory('addr1', 'daily', 't1', 't2', 'wallet'); // Use mockGrpcApi
 			expect(mockGrpcApi.getPriceHistory).toHaveBeenCalledWith('addr1', 'daily', 't1', 't2', 'wallet');
 			expect(historyResult).toMatchObject(mockResponses.priceHistory);
 		});
