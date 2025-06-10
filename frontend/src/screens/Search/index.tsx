@@ -43,7 +43,7 @@ const SearchScreen: React.FC = () => {
 	});
 	const theme = useTheme();
 	const styles = createStyles(theme);
-	const toast = useToast();
+	const _toast = useToast(); // Prefixed toast
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed SearchScreen' });
@@ -96,7 +96,7 @@ const SearchScreen: React.FC = () => {
 
 		return () => clearTimeout(timeoutId);
 		// Watch relevant parts of filters for re-fetching
-	}, [state.filters.query, state.filters.sortBy, state.filters.sortDesc, handleSearch]);
+	}, [state.filters.query, state.filters.sortBy, state.filters.sortDesc, handleSearch, state.results.length]); // Added state.results.length
 
 	const setSortOrder = (sortBy: SearchSortByOption, sortDesc: boolean) => {
 		setState(prev => ({
@@ -138,7 +138,7 @@ const SearchScreen: React.FC = () => {
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
-			<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+			<View style={styles.container}>
 				<View style={styles.contentPadding}>
 					{/* Header Row */}
 					<View style={styles.headerRow}>

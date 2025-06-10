@@ -1,4 +1,5 @@
 import React from 'react';
+import type { NodeJS } from 'node'; // Added NodeJS import for Timeout type
 import { TokenTransferFormData } from './types';
 import { Wallet, Coin } from '@/types';
 import { grpcApi } from '@/services/grpcApi';

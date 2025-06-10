@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme, Icon } from 'react-native-paper';
+import type { NodeJS } from 'node'; // Added NodeJS import for Timeout type
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions'; // Added
 import TokenSelector from 'components/Common/TokenSelector';
@@ -64,7 +65,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				setSelectedToken(solToken);
 			}
 		}
-	}, [tokens]);
+	}, [tokens, selectedToken]); // Added selectedToken to dependency array
 
 	// Error handling effect
 	useEffect(() => {
@@ -82,9 +83,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 	// Cleanup polling on unmount
 	useEffect(() => {
+		const intervalId = pollingIntervalRef.current; // Capture at time of effect
 		return () => {
-			if (pollingIntervalRef.current) {
-				clearInterval(pollingIntervalRef.current);
+			if (intervalId) { // Use captured value
+				clearInterval(intervalId);
 			}
 		};
 	}, []);
