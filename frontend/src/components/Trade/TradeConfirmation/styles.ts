@@ -210,6 +210,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginTop: 20,
 		textAlign: 'center',
 	},
+	recipientAddressLink: {
+		textDecorationLine: 'underline',
+	},
 	row: { // Legacy
 		alignItems: 'center',
 		flexDirection: 'row',
@@ -218,9 +221,6 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	section: { // Legacy
 		marginBottom: 16,
-	},
-	recipientAddressLink: {
-		textDecorationLine: 'underline',
 	},
 	solscanButton: {
 		alignItems: 'center',
