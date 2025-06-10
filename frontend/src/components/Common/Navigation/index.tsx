@@ -5,9 +5,8 @@ import type { RootStackParamList } from '@/types/navigation';
 import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
 import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
-import { useTheme, BottomNavigation, TouchableRipple } from 'react-native-paper';
+import { useTheme, BottomNavigation } from 'react-native-paper';
 import { Platform } from 'react-native';
-import { useThemeStore } from '@/store/theme';
 
 // Import screens
 import Home from '@screens/Home';
@@ -23,13 +22,12 @@ const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
 	const theme = useTheme();
-	const { themeType, toggleTheme } = useThemeStore();
 
 	return (
 		<Tab.Navigator
 			initialRouteName="Home"
 			screenOptions={{ headerShown: false }}
-			tabBar={({ navigation, state, descriptors, insets }) => (
+			tabBar={({ navigation, state }) => (
 				<BottomNavigation.Bar
 					navigationState={state}
 					shifting={false}
@@ -132,28 +130,28 @@ const Navigation = () => {
 					name="CoinDetail"
 					component={CoinDetail}
 					options={{
-						header: (props) => <CustomHeader />
+						header: (_props) => <CustomHeader />
 					}}
 				/>
 				<Stack.Screen
 					name="Trade"
 					component={Trade}
 					options={{
-						header: (props) => <CustomHeader />
+						header: (_props) => <CustomHeader />
 					}}
 				/>
 				<Stack.Screen
 					name="SendTokens"
 					component={Send}
 					options={{
-						header: (props) => <CustomHeader />
+						header: (_props) => <CustomHeader />
 					}}
 				/>
 				<Stack.Screen
 					name="Settings"
 					component={Settings}
 					options={{
-						header: (props) => <CustomHeader />
+						header: (_props) => <CustomHeader />
 					}}
 				/>
 			</Stack.Navigator>

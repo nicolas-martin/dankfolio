@@ -8,11 +8,8 @@ export const copyToClipboard = async (text: string, type: string, showToast: (pr
 			message: `${type} address copied to clipboard`,
 			duration: 2000
 		});
-	} catch (error) {
-		showToast({
-			type: 'error',
-			message: 'Failed to copy to clipboard',
-			duration: 2000
-		});
+	} catch (_error) {
+		// Handle error silently or log if needed
+		return [];
 	}
 };

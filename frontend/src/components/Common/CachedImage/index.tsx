@@ -46,10 +46,8 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	uri,
 	size = 40,
 	borderRadius = 20,
-	fallbackText,
 	blurhash,
 	placeholder,
-	showLoadingIndicator = false,
 	style,
 	onLoad,
 	onError,
@@ -129,7 +127,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	}, [uri, didAttemptLoad, imageUriToLoad, debouncedSetImageUri]);
 
 	// Enhanced logging callbacks with better performance
-	const handleLoad = useCallback((event: unknown) => {
+	const handleLoad = useCallback((event: any) => {
 		if (!mountedRef.current) return;
 		
 		// Use requestAnimationFrame to ensure smooth UI updates
@@ -146,7 +144,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 		});
 	}, [onLoad, imageUriToLoad]);
 
-	const handleError = useCallback((error: unknown) => {
+	const handleError = useCallback((error: any) => {
 		if (!mountedRef.current) return;
 		
 		// Use requestAnimationFrame to ensure smooth UI updates

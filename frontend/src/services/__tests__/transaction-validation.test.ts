@@ -187,7 +187,7 @@ describe('Transaction Validation', () => {
     it('should validate that mock API transaction is used in mockApi.ts', () => {
       // This test documents that the transaction should match what's in mockApi.ts
       // If someone changes the mock API, this test will remind them to update both places
-      const mockApiTransactionComment = 'This is the exact transaction used in mockApi.ts for preparetransfer endpoint';
+      const _mockApiTransactionComment = 'This is the exact transaction used in mockApi.ts for preparetransfer endpoint';
       
       // This is more of a documentation test to ensure consistency
       expect(MOCK_API_TRANSACTION.length).toBeGreaterThan(100); // Reasonable transaction length

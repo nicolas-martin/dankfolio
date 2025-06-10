@@ -303,7 +303,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 				if (options?.body) {
 					try {
 						requestData = JSON.parse(options.body as string);
-					} catch (e) {
+					} catch (_e) {
 						// Ignore parsing errors
 					}
 				}
@@ -381,7 +381,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 						if (requestData.mintAddress) {
 							mintAddress = requestData.mintAddress;
 						}
-					} catch (e) {
+					} catch (_e) {
 						// Ignore parsing errors, use default
 					}
 				}
@@ -416,7 +416,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 						if (requestData.address) {
 							walletAddress = requestData.address;
 						}
-					} catch (e) {
+					} catch (_e) {
 						// Ignore parsing errors, use default
 					}
 				}
@@ -487,7 +487,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 						if (requestData.address) {
 							coinAddress = requestData.address;
 						}
-					} catch (e) {
+					} catch (_e) {
 						// Ignore parsing errors, use default
 					}
 				}

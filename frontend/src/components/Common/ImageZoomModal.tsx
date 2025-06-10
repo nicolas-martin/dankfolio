@@ -24,7 +24,7 @@ interface ImageZoomModalProps { // Renamed props interface
   imageUri: string | null | undefined; // Renamed prop
 }
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const IMAGE_SIZE = width * 0.7; // Generic name for image size
 
 // Create an animated version of BlurView
