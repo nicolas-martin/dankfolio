@@ -198,10 +198,26 @@ func (c *Client) fetchHTTPMetadata(requestURL string) (map[string]any, error) {
 	}
 
 	slog.Debug("🔄 HTTP: Decoding JSON response", "url", requestURL)
+
+	// Read the response body first
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		slog.Error("❌ HTTP: Failed to read response body", "url", requestURL, "error", err)
+		return nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
+	}
+
+	// Check if we received HTML when expecting JSON
+	if util.IsHTMLResponse(respBody) {
+		slog.Error("❌ HTTP: Received HTML instead of JSON metadata", "url", requestURL, "content_type", resp.Header.Get("Content-Type"))
+		return nil, fmt.Errorf("received HTML page instead of JSON metadata from %s - this may indicate an invalid metadata URL", requestURL)
+	}
+
 	var metadata map[string]any
-	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(&metadata); err != nil {
-		slog.Error("❌ HTTP: Failed to decode JSON", "url", requestURL, "error", err)
+	if err := json.Unmarshal(respBody, &metadata); err != nil {
+		// Truncate body for logging if it's very long
+		bodyForLog := util.TruncateForLogging(string(respBody), 500)
+
+		slog.Error("❌ HTTP: Failed to decode JSON", "url", requestURL, "error", err, "body_preview", bodyForLog)
 		return nil, fmt.Errorf("failed to decode JSON from %s: %w", requestURL, err)
 	}
 

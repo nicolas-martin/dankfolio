@@ -15,7 +15,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 
-	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
@@ -24,7 +23,7 @@ import (
 type Service struct {
 	config         *Config
 	jupiterClient  jupiter.ClientAPI
-	chainClient    bclient.GenericClientAPI // Changed from solanaClient
+	chainClient    clients.GenericClientAPI // Changed from solanaClient
 	offchainClient offchain.ClientAPI
 	store          db.Store
 	fetcherCtx     context.Context    // Context for the new token fetcher goroutine
@@ -38,7 +37,7 @@ func NewService(
 	httpClient *http.Client, // httpClient is still needed for other clients if they don't take it directly yet
 	jupiterClient jupiter.ClientAPI,
 	store db.Store,
-	chainClient bclient.GenericClientAPI,
+	chainClient clients.GenericClientAPI,
 	birdeyeClient birdeye.ClientAPI,
 	apiTracker clients.APICallTracker, // Added apiTracker
 	offchainClient offchain.ClientAPI, // Added offchainClient

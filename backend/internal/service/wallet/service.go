@@ -16,12 +16,13 @@ import (
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/google/uuid"
-	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
+	"github.com/tyler-smith/go-bip39"
+
+	bclient "github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin" // Added for CoinServiceAPI
-	"github.com/tyler-smith/go-bip39"
 )
 
 // Service handles wallet-related operations

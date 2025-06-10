@@ -1,4 +1,4 @@
-package blockchain
+package clients
 
 import (
 	"context"
@@ -45,10 +45,10 @@ type GenericClientAPI interface {
 	// GetSwapQuote gets a quote for a token swap.
 	GetSwapQuote(ctx context.Context, fromToken, toToken blockchain.Address, amount string, userAddress blockchain.Address, slippageBps int, platformFeeBps int) (*blockchain.TradeQuote, error)
 
-    // ExecuteSwap executes a swap based on a raw quote or specific parameters.
-    // The exact parameters will depend heavily on how generic swaps are handled.
-    // It might take the RawQuote from blockchain.TradeQuote.
-    ExecuteSwap(ctx context.Context, rawQuote interface{}, userAddress blockchain.Address, signedTxIfNeeded []byte) (blockchain.Signature, error)
+	// ExecuteSwap executes a swap based on a raw quote or specific parameters.
+	// The exact parameters will depend heavily on how generic swaps are handled.
+	// It might take the RawQuote from blockchain.TradeQuote.
+	ExecuteSwap(ctx context.Context, rawQuote any, userAddress blockchain.Address, signedTxIfNeeded []byte) (blockchain.Signature, error)
 
 	// SendRawTransaction submits an already serialized (and likely signed) transaction to the blockchain.
 	SendRawTransaction(ctx context.Context, rawTx []byte, opts blockchain.TransactionOptions) (blockchain.Signature, error)

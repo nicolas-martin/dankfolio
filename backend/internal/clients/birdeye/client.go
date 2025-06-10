@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
 // Client handles interactions with the BirdEye API
@@ -131,8 +132,21 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 	}
 	defer resp.Body.Close()
 
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body) // Read body for error context
+		// Check if response is HTML (common for error pages)
+		if util.IsHTMLResponse(respBody) {
+			slog.Error("BirdEye GET request failed - received HTML error page",
+				"url", requestURL,
+				"status_code", resp.StatusCode,
+				"content_type", resp.Header.Get("Content-Type"))
+			return nil, fmt.Errorf("GET request to %s failed with status code: %d (received HTML error page instead of JSON)", requestURL, resp.StatusCode)
+		}
+
 		slog.Error("BirdEye GET request failed",
 			"url", requestURL,
 			"status_code", resp.StatusCode,
@@ -140,18 +154,24 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 		return nil, fmt.Errorf("GET request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
 	}
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
+	// Check if we received HTML when expecting JSON
+	if util.IsHTMLResponse(respBody) {
+		slog.Error("BirdEye API returned HTML instead of JSON",
+			"url", requestURL,
+			"content_type", resp.Header.Get("Content-Type"))
+		return nil, fmt.Errorf("BirdEye API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
 	}
 
 	var responseObject T
 	if err := json.Unmarshal(respBody, &responseObject); err != nil {
+		// Truncate body for logging if it's very long
+		bodyForLog := util.TruncateForLogging(string(respBody), 500)
+
 		slog.Error("Failed to unmarshal response from BirdEye GET request",
 			"url", requestURL,
 			"error", err,
-			"raw_body", string(respBody)) // Log raw body on unmarshal error
-		return nil, fmt.Errorf("failed to unmarshal response from %s: %w. Body: %s", requestURL, err, string(respBody))
+			"body_preview", bodyForLog)
+		return nil, fmt.Errorf("failed to unmarshal JSON response from %s: %w", requestURL, err)
 	}
 
 	return &responseObject, nil
@@ -204,8 +224,21 @@ func postRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 	}
 	defer resp.Body.Close()
 
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body) // Read body for error context
+		// Check if response is HTML (common for error pages)
+		if util.IsHTMLResponse(respBody) {
+			slog.Error("BirdEye POST request failed - received HTML error page",
+				"url", requestURL,
+				"status_code", resp.StatusCode,
+				"content_type", resp.Header.Get("Content-Type"))
+			return nil, fmt.Errorf("POST request to %s failed with status code: %d (received HTML error page instead of JSON)", requestURL, resp.StatusCode)
+		}
+
 		slog.Error("BirdEye POST request failed",
 			"url", requestURL,
 			"status_code", resp.StatusCode,
@@ -213,18 +246,24 @@ func postRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 		return nil, fmt.Errorf("POST request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
 	}
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
+	// Check if we received HTML when expecting JSON
+	if util.IsHTMLResponse(respBody) {
+		slog.Error("BirdEye API returned HTML instead of JSON",
+			"url", requestURL,
+			"content_type", resp.Header.Get("Content-Type"))
+		return nil, fmt.Errorf("BirdEye API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
 	}
 
 	var responseObject T
 	if err := json.Unmarshal(respBody, &responseObject); err != nil {
+		// Truncate body for logging if it's very long
+		bodyForLog := util.TruncateForLogging(string(respBody), 500)
+
 		slog.Error("Failed to unmarshal response from BirdEye POST request",
 			"url", requestURL,
 			"error", err,
-			"raw_body", string(respBody)) // Log raw body on unmarshal error
-		return nil, fmt.Errorf("failed to unmarshal response from %s: %w. Body: %s", requestURL, err, string(respBody))
+			"body_preview", bodyForLog)
+		return nil, fmt.Errorf("failed to unmarshal JSON response from %s: %w", requestURL, err)
 	}
 
 	return &responseObject, nil

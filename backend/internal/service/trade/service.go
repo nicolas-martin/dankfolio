@@ -14,10 +14,11 @@ import (
 	"time"
 
 	solanago "github.com/gagliardetto/solana-go"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 
 	// "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // To be replaced
-	bclient "github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
+
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
@@ -27,7 +28,7 @@ import (
 
 // Service handles trade-related operations
 type Service struct {
-	chainClient               bclient.GenericClientAPI // Changed from solanaClient
+	chainClient               clients.GenericClientAPI // Changed from solanaClient
 	coinService               coin.CoinServiceAPI      // Use CoinServiceAPI interface from coin package
 	priceService              price.PriceServiceAPI    // Use PriceServiceAPI interface from price package
 	jupiterClient             jupiter.ClientAPI
@@ -38,7 +39,7 @@ type Service struct {
 
 // NewService creates a new TradeService instance
 func NewService(
-	chainClient bclient.GenericClientAPI, // Changed parameter
+	chainClient clients.GenericClientAPI, // Changed parameter
 	cs coin.CoinServiceAPI,
 	ps price.PriceServiceAPI,
 	jc jupiter.ClientAPI,
@@ -295,7 +296,6 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 
 	// Log blockchain explorer URL
 	log.Printf("✅ Trade submitted! View on Solscan: https://solscan.io/tx/%s", trade.TransactionHash)
-
 
 	return trade, nil
 }
