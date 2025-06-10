@@ -23,9 +23,9 @@ import { useCoinStore } from '@store/coins';
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
-	const { coin: initialCoinFromParams, solCoin } = route.params || {};
+	const { coin: initialCoinFromParams, solCoin: _solCoin } = route.params || {}; // Prefixed solCoin
 	const mintAddress = initialCoinFromParams?.mintAddress;
-	const prevDisplayCoinRef = React.useRef<Coin | null | undefined>(null);
+	const _prevDisplayCoinRef = React.useRef<Coin | null | undefined>(null); // Prefixed prevDisplayCoinRef
 
 	const coinFromStore = useCoinStore(state => mintAddress ? state.coinMap[mintAddress] : undefined);
 	const displayCoin = coinFromStore || initialCoinFromParams;
@@ -54,11 +54,11 @@ const CoinDetail: React.FC = () => {
 		}
 	}, [mintAddress]);
 
-	const parseValue = (val: string | number | undefined): number => {
+	const parseValue = useCallback((val: string | number | undefined): number => { // Wrapped in useCallback
 		if (val === undefined) return 0;
 		const parsed = typeof val === 'string' ? parseFloat(val) : val;
 		return isNaN(parsed) ? 0 : parsed;
-	};
+	}, []);
 
 	const handleChartHover = useCallback((point: PricePoint | null) => {
 		setHoverPoint(point);
@@ -143,20 +143,21 @@ const CoinDetail: React.FC = () => {
 	// Placeholder components for loading states
 	const renderPlaceholderPriceCard = () => (
 		<View style={styles.priceCard}>
-			<View style={{ padding: 16 }}>
-				<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+			<View style={styles.placeholderPadding}>
+				<View style={[styles.flexDirectionRow, { alignItems: 'center', marginBottom: 12 }]}>
+					{/* Note: alignItems and marginBottom are kept inline as they are specific to this layout combination */}
 					<ShimmerPlaceholder
 						width={40}
 						height={40}
 						borderRadius={20}
-						style={{ marginRight: 12 }}
+						style={styles.placeholderIconShimmer}
 					/>
-					<View style={{ flex: 1 }}>
+					<View style={styles.flex1}>
 						<ShimmerPlaceholder
 							width="60%"
 							height={20}
 							borderRadius={4}
-							style={{ marginBottom: 4 }}
+							style={styles.marginBottomS}
 						/>
 						<ShimmerPlaceholder
 							width="40%"
@@ -169,7 +170,7 @@ const CoinDetail: React.FC = () => {
 					width="50%"
 					height={32}
 					borderRadius={4}
-					style={{ marginBottom: 8 }}
+					style={styles.marginBottomM}
 				/>
 				<ShimmerPlaceholder
 					width="30%"
@@ -182,25 +183,15 @@ const CoinDetail: React.FC = () => {
 
 	const renderPlaceholderChartCard = () => (
 		<View style={styles.chartContainer}>
-			<View style={{ marginHorizontal: 16, padding: 16 }}>
+			<View style={styles.placeholderChartCardContainer}>
 				<ShimmerPlaceholder
 					width="100%"
 					height={200}
 					borderRadius={8}
 				/>
-				<View style={{ 
-					position: 'absolute',
-					top: 0,
-					left: 0,
-					right: 0,
-					bottom: 0,
-					justifyContent: 'center',
-					alignItems: 'center',
-					marginHorizontal: 16,
-					marginVertical: 16
-				}}>
+				<View style={styles.activityIndicatorOverlay}>
 					<ActivityIndicator color={theme.colors.primary} size="large" />
-					<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+					<Text style={styles.loadingChartText}>
 						Loading chart data...
 					</Text>
 				</View>
@@ -218,35 +209,31 @@ const CoinDetail: React.FC = () => {
 					width={120}
 					height={20}
 					borderRadius={4}
-					style={{ marginLeft: 8 }}
+					style={styles.marginLeftS}
 				/>
 			</View>
-			<View style={{ padding: 16 }}>
+			<View style={styles.placeholderPadding}>
 				<ShimmerPlaceholder
 					width="100%"
 					height={16}
 					borderRadius={4}
-					style={{ marginBottom: 8 }}
+					style={styles.marginBottomM}
 				/>
 				<ShimmerPlaceholder
 					width="80%"
 					height={16}
 					borderRadius={4}
-					style={{ marginBottom: 8 }}
+					style={styles.marginBottomM}
 				/>
 				<ShimmerPlaceholder
 					width="60%"
 					height={16}
 					borderRadius={4}
-					style={{ marginBottom: 16 }}
+					style={styles.marginBottomL}
 				/>
-				<View style={{ 
-					justifyContent: 'center',
-					alignItems: 'center',
-					marginTop: 8
-				}}>
+				<View style={styles.activityIndicatorContainer}>
 					<ActivityIndicator color={theme.colors.primary} />
-					<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
+					<Text style={styles.loadingDetailsText}>
 						Loading details...
 					</Text>
 				</View>
@@ -289,7 +276,7 @@ const CoinDetail: React.FC = () => {
 	const renderChartCard = () => {
 		return (
 			<View style={styles.chartContainer} testID="coin-detail-chart-card">
-				<View style={{ marginHorizontal: 16 }}>
+				<View style={styles.chartCardContent}>
 					<CoinChart
 						data={priceHistory}
 						loading={loading} // This is for price history loading
@@ -318,10 +305,10 @@ const CoinDetail: React.FC = () => {
 						value: tf.value,
 						testID: `coin-detail-timeframe-button-${tf.value}`,
 						label: tf.label,
-						style: { flex: 1 } // Ensure equal distribution
+						style: styles.flex1 // Ensure equal distribution
 					}))}
 					density="small"
-					style={{ flexDirection: 'row' }}
+					style={styles.flexDirectionRow}
 				/>
 			</View>
 		);
@@ -430,6 +417,17 @@ const CoinDetail: React.FC = () => {
 		}
 	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
 
+	const handleTradePress = useCallback(async () => {
+		if (displayCoin) {
+			await handleTradeNavigation(
+				displayCoin,
+				null, // Assuming no specific 'toCoin' for initial navigation
+				showToast,
+				navigation.navigate
+			);
+		}
+	}, [displayCoin, showToast, navigation]);
+
 	return (
 		<SafeAreaView style={styles.container} testID="coin-detail-screen">
 			<View style={styles.content}>
@@ -462,16 +460,7 @@ const CoinDetail: React.FC = () => {
 				<View style={styles.tradeButtonContainer}>
 					<Button
 						mode="contained"
-						onPress={async () => {
-							if (displayCoin) {
-								await handleTradeNavigation(
-									displayCoin,
-									null,
-									showToast,
-									navigation.navigate
-								);
-							}
-						}}
+						onPress={handleTradePress} // Use memoized handler
 						style={styles.tradeButton}
 						testID="trade-button"
 						disabled={isLoadingDetails}

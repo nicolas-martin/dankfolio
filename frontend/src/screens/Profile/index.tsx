@@ -140,7 +140,7 @@ const Profile = () => {
 				accessible={true}
 				testID="send-tokens-button"
 			>
-				Send Tokens
+				<Text>Send Tokens</Text>
 			</Button>
 		</View>
 	);
