@@ -6,7 +6,7 @@ import { CoinService } from "@/gen/dankfolio/v1/coin_pb";
 import { PriceService } from "@/gen/dankfolio/v1/price_pb";
 import { UtilityService } from "@/gen/dankfolio/v1/utility_pb";
 import { logger as log } from '@/utils/logger';
-import type { Interceptor } from "@connectrpc/connect";
+import type { Client, Interceptor } from "@connectrpc/connect";
 import appCheck from '@react-native-firebase/app-check';
 import { env } from '@utils/env';
 import { Buffer } from 'buffer';
@@ -89,7 +89,7 @@ const authInterceptor: Interceptor = (next) => async (req) => {
 // Check if mocking is enabled to decide how to create clients
 const shouldMock = process.env.E2E_MOCKING_ENABLED === 'true' || __DEV__;
 
-let walletClient, tradeClient, coinClient, priceClient, utilityClient;
+let walletClient: Client<typeof WalletService>, tradeClient: Client<typeof TradeService>, coinClient: Client<typeof CoinService>, priceClient: Client<typeof PriceService>, utilityClient: Client<typeof UtilityService>;
 
 if (shouldMock) {
 	log.log('🎭 Creating gRPC clients with custom fetch for mocking');

@@ -1,8 +1,8 @@
 import { act } from '@testing-library/react-native';
-import { usePortfolioStore } from '../portfolio';
+import { usePortfolioStore } from '@/store/portfolio';
 import { RawWalletData, Coin, Base58PrivateKey } from '@/types'; // Import RawWalletData
 import { grpcApi } from '@/services/grpcApi';
-import * as coinStoreModule from '../coins';
+import * as coinStoreModule from '@/store/coins';
 import * as Keychain from 'react-native-keychain';
 
 // Mock solana service
