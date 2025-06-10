@@ -5,7 +5,7 @@ import { Card, Text, useTheme, Searchbar } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet'; // Added BottomSheetBackdropProps
 import { BlurView } from 'expo-blur';
 import { ChevronDownIcon } from '@components/Common/Icons';
-import { TokenSelectorProps, TokenSearchModalProps, TokenListItem } from './types'; // Assuming TokenListItem is defined in types
+import { TokenSelectorProps, TokenSearchModalProps } from './types'; // Assuming TokenListItem is defined in types
 import { createStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
@@ -16,10 +16,10 @@ import { CachedImage } from '@/components/Common/CachedImage';
 const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	visible,
 	onDismiss,
-	selectedToken,
+	_selectedToken,
 	onSelectToken,
 	showOnlyPortfolioTokens = false,
-	_testID, // Prefixed testID
+	_testID,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -71,7 +71,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			appearsOnIndex={0}
 			opacity={0.8}
 			onPress={onDismiss}
-			testID="token-search-modal-backdrop"
+			// testID="token-search-modal-backdrop"
 			// Accessibility properties for testing frameworks
 			accessible={true}
 			accessibilityRole="button"
@@ -143,7 +143,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		return map;
 	}, [portfolioTokens]);
 
-	const renderItem = useCallback(({ item: coin }: { item: TokenListItem }) => { // Use TokenListItem
+	const renderItem = useCallback(({ item: coin }: { item: any }) => { // Use TokenListItem
 		console.log('renderItem. Coin:', coin.symbol, 'Icon URL:', coin.resolvedIconUrl);
 		const portfolioToken = portfolioTokenMap.get(coin.mintAddress);
 		return (
@@ -172,8 +172,8 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			enableDynamicSizing={false}
 			accessible={false}
 		>
-			<View 
-				style={styles.searchContainer} 
+			<View
+				style={styles.searchContainer}
 				testID="token-selection-modal-content"
 				accessible={false}
 				importantForAccessibility="yes"

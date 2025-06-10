@@ -128,7 +128,7 @@ export const pollTradeStatus = async (
 	setPollingStatus: (status: PollingStatus) => void,
 	setPollingError: (error: string | null) => void,
 	stopPollingFn: () => void, // Pass the stopPolling function reference
-	showToast: (params: ToastProps) => void, // Use ToastProps
+	_showToast: (params: ToastProps) => void, // Use ToastProps
 	wallet: Wallet | null // Pass wallet for balance refresh
 ) => {
 	logger.info(`Polling status for ${txHash}...`);
@@ -190,6 +190,45 @@ export const startPolling = (
 	pollingIntervalRef.current = setInterval(pollFn, 3000);
 };
 
+// Validation helper
+const validateTradeParams = (fromCoin: Coin, toCoin: Coin, fromAmount: string, wallet: Wallet | null) => {
+	if (!fromCoin || !toCoin || !fromAmount) {
+		throw new Error('Missing required trade parameters');
+	}
+	if (!wallet?.address) {
+		throw new Error('Wallet not connected. Please connect your wallet.');
+	}
+	return true;
+};
+
+// Transaction preparation helper
+const prepareTradeTransaction = async (fromCoin: Coin, toCoin: Coin, fromAmount: string, slippage: number, walletAddress: string) => {
+	const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
+	const unsignedTx = await prepareSwapRequest(fromCoin.mintAddress, toCoin.mintAddress, rawAmount, slippage, walletAddress);
+	
+	const keys = await getActiveWalletKeys();
+	if (!keys?.privateKey || !keys?.publicKey) {
+		throw new Error('Failed to retrieve wallet keys for signing.');
+	}
+	
+	const signedTx = await signSwapTransaction(unsignedTx, keys.publicKey, keys.privateKey);
+	return { rawAmount, signedTx, unsignedTx };
+};
+
+// Transaction submission helper
+const submitTradeTransaction = async (fromCoin: Coin, toCoin: Coin, rawAmount: number, signedTx: string, unsignedTx: string) => {
+	const tradePayload = {
+		fromCoinMintAddress: fromCoin.mintAddress,
+		toCoinMintAddress: toCoin.mintAddress,
+		amount: rawAmount,
+		signedTransaction: signedTx,
+		unsignedTransaction: unsignedTx,
+	};
+	
+	return await grpcApi.submitSwap(tradePayload);
+};
+
+// Simplified executeTrade function
 export const executeTrade = async (
 	fromCoin: Coin,
 	toCoin: Coin,
@@ -219,39 +258,18 @@ export const executeTrade = async (
 			slippage
 		});
 
-		const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
-		
-		// Get userPublicKey for prepareSwapRequest
-		const walletAddress = usePortfolioStore.getState().wallet?.address;
-		if (!walletAddress) {
-			logger.error('[executeTrade] No wallet address found in store.');
-			setIsLoadingTrade(false);
-			showToast({ type: 'error', message: 'Wallet not connected. Please connect your wallet.' });
-			return;
-		}
+		const wallet = usePortfolioStore.getState().wallet;
+		validateTradeParams(fromCoin, toCoin, fromAmount, wallet);
 
-		const unsignedTx = await prepareSwapRequest(fromCoin.mintAddress, toCoin.mintAddress, rawAmount, slippage, walletAddress);
-		
-		// Get keys for signing
-		const keys = await getActiveWalletKeys();
-		if (!keys || !keys.privateKey || !keys.publicKey) {
-			logger.error('[executeTrade] Failed to get active wallet keys or keys are incomplete.');
-			setIsLoadingTrade(false);
-			showToast({ type: 'error', message: 'Failed to retrieve wallet keys for signing.' });
-			return;
-		}
+		const { rawAmount, signedTx, unsignedTx } = await prepareTradeTransaction(
+			fromCoin, 
+			toCoin, 
+			fromAmount, 
+			slippage, 
+			wallet!.address
+		);
 
-		const signedTx = await signSwapTransaction(unsignedTx, keys.publicKey, keys.privateKey);
-		
-		const tradePayload = {
-			fromCoinMintAddress: fromCoin.mintAddress,
-			toCoinMintAddress: toCoin.mintAddress,
-			amount: rawAmount,
-			signedTransaction: signedTx,
-			unsignedTransaction: unsignedTx,
-		};
-		
-		const result = await grpcApi.submitSwap(tradePayload);
+		const result = await submitTradeTransaction(fromCoin, toCoin, rawAmount, signedTx, unsignedTx);
 
 		logger.info('Trade submitted successfully:', { txHash: result.transactionHash });
 		setSubmittedTxHash(result.transactionHash);
@@ -275,112 +293,57 @@ export const executeTrade = async (
 	}
 };
 
-// Initialize coins logic
-export const initializeCoins = async (
-	inputCoin: Coin | null,
-	outputCoin: Coin | null,
-	initialFromCoin: Coin | null,
-	initialToCoin: Coin | null,
-	fromCoin: Coin | null,
-	getCoinByID: (mintAddress: string, fetchFromApi: boolean) => Promise<Coin | null>,
-	setFromCoin: (coin: Coin | null) => void,
-	setToCoin: (coin: Coin | null) => void
-) => {
-	// Handle initialFromCoin
-	if (inputCoin || initialFromCoin) {
-		const coinToUse = inputCoin || initialFromCoin;
-		const coinFromMap = await getCoinByID(coinToUse!.mintAddress, false);
-		if (coinFromMap) {
-			setFromCoin(coinFromMap);
-		}
-	} else if (!fromCoin) {
-		const solCoin = await getCoinByID(SOLANA_ADDRESS, false);
-		if (solCoin) {
-			setFromCoin(solCoin);
-		} else {
-			const solCoinFromApi = await getCoinByID(SOLANA_ADDRESS, true);
-			if (solCoinFromApi) {
-				setFromCoin(solCoinFromApi);
-			}
-		}
-	}
-
-	// Handle initialToCoin
-	if (outputCoin || initialToCoin) {
-		const coinToUse = outputCoin || initialToCoin;
-		const coinFromMap = await getCoinByID(coinToUse!.mintAddress, false);
-		if (coinFromMap) {
-			setToCoin(coinFromMap);
-		}
-	}
-};
-
-// Handle token selection logic
-export const handleSelectFromToken = (
+// Handle token selection logic (consolidated from/to)
+export const handleSelectToken = (
+	direction: 'from' | 'to',
 	token: Coin,
 	fromCoin: Coin | null,
 	toCoin: Coin | null,
-	fromAmount: string,
 	setFromCoin: (coin: Coin) => void,
-	setFromAmount: (amount: string) => void,
-	setToAmount: (amount: string) => void,
-	handleSwapCoinsUtil: () => void
-) => {
-	logger.breadcrumb({ category: 'trade', message: 'Selected "from" token', data: { tokenSymbol: token.symbol, fromAmount, currentToTokenSymbol: toCoin?.symbol } });
-	logger.log('[Trade] handleSelectFromToken called', { newTokenSymbol: token.symbol, currentFromAmount: fromAmount, currentToTokenSymbol: toCoin?.symbol, isSameAsCurrent: token.mintAddress === fromCoin?.mintAddress });
-	
-	if (token.mintAddress === fromCoin?.mintAddress) {
-		logger.log('[Trade] Skipping "from" token selection - same token already selected');
-		return;
-	}
-	
-	if (token.mintAddress === toCoin?.mintAddress) {
-		logger.log('[Trade] Selected "from" token is the same as current "to" token. Swapping tokens.');
-		handleSwapCoinsUtil();
-	} else {
-		setFromCoin(token);
-		if (fromCoin && token.mintAddress !== fromCoin.mintAddress) {
-			logger.log('[Trade] Clearing amounts due to new "from" token selection');
-			setFromAmount('');
-			setToAmount('');
-		}
-	}
-};
-
-export const handleSelectToToken = (
-	token: Coin,
-	fromCoin: Coin | null,
-	toCoin: Coin | null,
-	toAmount: string,
 	setToCoin: (coin: Coin) => void,
 	setFromAmount: (amount: string) => void,
 	setToAmount: (amount: string) => void,
-	handleSwapCoinsUtil: () => void
+	handleSwapCoins: () => void
 ) => {
-	logger.breadcrumb({ category: 'trade', message: 'Selected "to" token', data: { tokenSymbol: token.symbol, currentToAmount: toAmount, currentFromTokenSymbol: fromCoin?.symbol } });
-	logger.log('[Trade] handleSelectToToken called', { newTokenSymbol: token.symbol, currentToAmount: toAmount, currentFromTokenSymbol: fromCoin?.symbol, isSameAsCurrent: token.mintAddress === toCoin?.mintAddress });
-	
-	if (token.mintAddress === toCoin?.mintAddress) {
-		logger.log('[Trade] Skipping "to" token selection - same token already selected');
+	const isFromDirection = direction === 'from';
+	const currentCoin = isFromDirection ? fromCoin : toCoin;
+	const oppositeCoin = isFromDirection ? toCoin : fromCoin;
+	const setCoin = isFromDirection ? setFromCoin : setToCoin;
+
+	logger.breadcrumb({ 
+		category: 'trade', 
+		message: `Selected "${direction}" token`, 
+		data: { 
+			tokenSymbol: token.symbol, 
+			currentCoinSymbol: currentCoin?.symbol,
+			oppositeCoinSymbol: oppositeCoin?.symbol 
+		} 
+	});
+
+	// Skip if same token already selected
+	if (token.mintAddress === currentCoin?.mintAddress) {
+		logger.log(`[Trade] Skipping "${direction}" token selection - same token already selected`);
 		return;
 	}
-	
-	if (token.mintAddress === fromCoin?.mintAddress) {
-		logger.log('[Trade] Selected "to" token is the same as current "from" token. Swapping tokens.');
-		handleSwapCoinsUtil();
+
+	// Swap if token matches opposite side
+	if (token.mintAddress === oppositeCoin?.mintAddress) {
+		logger.log(`[Trade] Selected "${direction}" token matches opposite side. Swapping tokens.`);
+		handleSwapCoins();
 	} else {
-		setToCoin(token);
-		if (toCoin && token.mintAddress !== toCoin.mintAddress) {
-			logger.log('[Trade] Clearing amounts due to new "to" token selection');
+		setCoin(token);
+		if (currentCoin && token.mintAddress !== currentCoin.mintAddress) {
+			logger.log(`[Trade] Clearing amounts due to new "${direction}" token selection`);
 			setFromAmount('');
 			setToAmount('');
 		}
 	}
 };
 
-// Handle amount changes with debounced quote fetching
-export const createAmountChangeHandler = (
-	isFromAmount: boolean,
+// Handle amount changes with debounced quote fetching (simplified)
+export const handleAmountChange = (
+	direction: 'from' | 'to',
+	amount: string,
 	fromCoin: Coin | null,
 	toCoin: Coin | null,
 	quoteTimeoutRef: MutableRefObject<ReturnType<typeof setTimeout> | null>,
@@ -390,69 +353,56 @@ export const createAmountChangeHandler = (
 	setTradeDetails: (details: TradeDetailsProps) => void,
 	showToast: (params: ToastProps) => void
 ) => {
-	return (amount: string) => {
-		const amountType = isFromAmount ? 'fromAmount' : 'toAmount';
-		const setAmount = isFromAmount ? setFromAmount : setToAmount;
-		const setOtherAmount = isFromAmount ? setToAmount : setFromAmount;
-		
-		logger.log(`[Trade] handle${isFromAmount ? 'From' : 'To'}AmountChange START`, { 
-			amount, 
-			fromCoinSymbol: fromCoin?.symbol, 
-			toCoinSymbol: toCoin?.symbol 
+	const isFromAmount = direction === 'from';
+	const setAmount = isFromAmount ? setFromAmount : setToAmount;
+	const setOtherAmount = isFromAmount ? setToAmount : setFromAmount;
+
+	logger.log(`[Trade] handle${isFromAmount ? 'From' : 'To'}AmountChange`, {
+		amount,
+		fromCoinSymbol: fromCoin?.symbol,
+		toCoinSymbol: toCoin?.symbol
+	});
+
+	setAmount(amount);
+
+	// Skip quote fetch for incomplete input
+	if (!amount || amount === '.' || amount.endsWith('.')) {
+		logger.log(`[Trade] Skipping quote fetch: incomplete number input`, { amount });
+		return;
+	}
+
+	// Skip quote fetch if coins missing
+	if (!fromCoin || !toCoin) {
+		logger.log(`[Trade] Skipping quote fetch: missing coins`);
+		return;
+	}
+
+	// Clear existing timeout and set new one
+	if (quoteTimeoutRef.current) {
+		clearTimeout(quoteTimeoutRef.current);
+	}
+
+	setIsQuoteLoading(true);
+	quoteTimeoutRef.current = setTimeout(async () => {
+		logger.breadcrumb({
+			category: 'trade',
+			message: `Fetching quote for '${direction}' amount change`,
+			data: { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol }
 		});
-		
-		setAmount(amount);
-		logger.log(`[Trade] Setting ${amountType} in state`, { amount });
-		
-		if (!amount || amount === '.' || amount.endsWith('.')) {
-			logger.log(`[Trade] Skipping quote fetch: incomplete number input for ${amountType}`, { amount });
-			return;
-		}
-		
-		if (!fromCoin || !toCoin) {
-			logger.log(`[Trade] Skipping quote fetch: missing fromCoin or toCoin in ${amountType}Change`);
-			return;
-		}
-		
-		logger.log(`[Trade] Preparing to fetch trade quote due to ${amountType} change`, { 
-			amount, 
-			fromCoinSymbol: fromCoin?.symbol, 
-			toCoinSymbol: toCoin?.symbol 
-		});
-		
-		if (quoteTimeoutRef.current) {
-			logger.log(`[Trade] Clearing existing quote fetch timeout (${amountType}Change)`);
-			clearTimeout(quoteTimeoutRef.current);
-		}
-		
-		setIsQuoteLoading(true);
-		quoteTimeoutRef.current = setTimeout(async () => {
-			logger.breadcrumb({ 
-				category: 'trade', 
-				message: `Fetching quote for '${isFromAmount ? 'from' : 'to'}' amount change`, 
-				data: { amount, fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } 
-			});
-			logger.log(`[Trade] Quote fetch timeout triggered (${amountType}Change)`, { amount });
-			
-			try {
-				if (isFromAmount) {
-					await fetchTradeQuote(amount, fromCoin, toCoin, setIsQuoteLoading, setOtherAmount, setTradeDetails);
-				} else {
-					await fetchTradeQuote(amount, toCoin, fromCoin, setIsQuoteLoading, setOtherAmount, setTradeDetails);
-				}
-			} catch (error: unknown) {
-				const errorMessage = error instanceof Error ? error.message : 'Failed to fetch trade quote';
-				logger.error(`[Trade] Error fetching trade quote (${amountType}Change)`, { 
-					errorMessage, 
-					amount, 
-					fromCoinSymbol: fromCoin?.symbol, 
-					toCoinSymbol: toCoin?.symbol 
-				});
-				showToast({ type: 'error', message: errorMessage });
+
+		try {
+			if (isFromAmount) {
+				await fetchTradeQuote(amount, fromCoin, toCoin, setIsQuoteLoading, setOtherAmount, setTradeDetails);
+			} else {
+				await fetchTradeQuote(amount, toCoin, fromCoin, setIsQuoteLoading, setOtherAmount, setTradeDetails);
 			}
-			quoteTimeoutRef.current = null;
-		}, QUOTE_DEBOUNCE_MS);
-	};
+		} catch (error: unknown) {
+			const errorMessage = error instanceof Error ? error.message : 'Failed to fetch trade quote';
+			logger.error(`[Trade] Error fetching trade quote`, { errorMessage, amount });
+			showToast({ type: 'error', message: errorMessage });
+		}
+		quoteTimeoutRef.current = null;
+	}, QUOTE_DEBOUNCE_MS);
 };
 
 // Handle trade submission validation
@@ -466,27 +416,27 @@ export const handleTradeSubmit = (
 	setIsConfirmationVisible: (visible: boolean) => void,
 	showToast: (params: ToastProps) => void
 ) => {
-	logger.breadcrumb({ 
-		category: 'trade', 
-		message: 'Trade button pressed, validating trade', 
-		data: { fromCoin: fromCoin?.symbol, fromAmount, toAmount } 
+	logger.breadcrumb({
+		category: 'trade',
+		message: 'Trade button pressed, validating trade',
+		data: { fromCoin: fromCoin?.symbol, fromAmount, toAmount }
 	});
-	
+
 	if (!fromAmount || !toAmount || !wallet) {
-		showToast({ 
-			type: 'error', 
-			message: !wallet ? 'Please connect your wallet' : 'Please enter valid amounts' 
+		showToast({
+			type: 'error',
+			message: !wallet ? 'Please connect your wallet' : 'Please enter valid amounts'
 		});
 		return false;
 	}
-	
+
 	const numericFromAmount = parseFloat(fromAmount);
 	const availableBalance = fromPortfolioToken?.amount ?? 0;
-	
+
 	if (numericFromAmount > availableBalance) {
-		showToast({ 
-			type: 'error', 
-			message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.` 
+		showToast({
+			type: 'error',
+			message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.`
 		});
 		return false;
 	}
@@ -498,10 +448,10 @@ export const handleTradeSubmit = (
 		pollingIntervalRef.current = null;
 	}
 
-	logger.breadcrumb({ 
-		category: 'ui', 
-		message: 'Trade confirmation modal opened', 
-		data: { fromCoin: fromCoin?.symbol, fromAmount, toAmount } 
+	logger.breadcrumb({
+		category: 'ui',
+		message: 'Trade confirmation modal opened',
+		data: { fromCoin: fromCoin?.symbol, fromAmount, toAmount }
 	});
 	setIsConfirmationVisible(true);
 	return true;
@@ -519,13 +469,13 @@ export const handleCloseStatusModal = (
 	setTradeDetails: (details: TradeDetailsProps) => void,
 	navigation: any
 ) => {
-	logger.breadcrumb({ 
-		category: 'ui', 
-		message: 'Trade status modal closed', 
-		data: { submittedTxHash, pollingStatus } 
+	logger.breadcrumb({
+		category: 'ui',
+		message: 'Trade status modal closed',
+		data: { submittedTxHash, pollingStatus }
 	});
 	logger.info('[Trade] Cleaning up trade screen and resetting state after status modal close.');
-	
+
 	setIsStatusModalVisible(false);
 	componentStopPolling();
 
@@ -554,18 +504,18 @@ export const handleTryAgain = (
 ) => {
 	logger.breadcrumb({ category: 'trade', message: 'User clicked Try Again after failed transaction' });
 	logger.info('[Trade] Resetting trade state for retry attempt.');
-	
+
 	// Close the status modal
 	setIsStatusModalVisible(false);
 	componentStopPolling();
-	
+
 	// Reset trade state but keep the coin selection and amounts
 	setSubmittedTxHash(null);
 	setPollingStatus('pending');
 	setPollingConfirmations(0);
 	setPollingError(null);
 	setIsLoadingTrade(false);
-	
+
 	// Show the confirmation modal again to retry
 	setIsConfirmationVisible(true);
 };

@@ -20,8 +20,6 @@ export type RootStackParamList = {
 	Trade: {
 		initialFromCoin?: Coin | null;
 		initialToCoin?: Coin | null;
-		inputCoin?: Coin | null;
-		outputCoin?: Coin | null;
 	};
 
 	CoinSelect: {
