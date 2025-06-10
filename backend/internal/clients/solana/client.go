@@ -22,7 +22,7 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 	spltoken "github.com/gagliardetto/solana-go/programs/token"
-	"github.com/nicolas-martin/dankfolio/backend/internal/client/blockchain"
+
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
@@ -35,11 +35,11 @@ type Client struct {
 
 // Comment out the interface implementation check for now until we can fix all issues
 var (
-	_ ClientAPI                   = (*Client)(nil)
-	_ blockchain.GenericClientAPI = (*Client)(nil)
+	_ ClientAPI                = (*Client)(nil)
+	_ clients.GenericClientAPI = (*Client)(nil)
 )
 
-func NewClient(solClient *rpc.Client, tracker clients.APICallTracker) blockchain.GenericClientAPI {
+func NewClient(solClient *rpc.Client, tracker clients.APICallTracker) clients.GenericClientAPI {
 	return &Client{
 		rpcConn: solClient,
 		tracker: tracker,
@@ -94,7 +94,7 @@ func (c *Client) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx 
 	return sig.String(), nil
 }
 
-// ExecuteSignedTransaction submits a signed transaction to the Solana blockchain
+// ExecuteSignedTransaction submits a signed transaction to the Solana clients
 func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) (solana.Signature, error) {
 	// In debug mode, generate a unique transaction hash
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
@@ -163,7 +163,7 @@ func (c *Client) ExecuteSignedTransaction(ctx context.Context, signedTx string) 
 	return sig, nil
 }
 
-// GetTransactionStatus implements blockchain.GenericClientAPI
+// GetTransactionStatus implements clients.GenericClientAPI
 // It was adapted from the original GetTransactionConfirmationStatus
 func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Signature) (*bmodel.TransactionStatus, error) {
 	sigStr := string(signature)
@@ -222,7 +222,7 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Sign
 	return txStatus, nil
 }
 
-// GetAccountInfo implements blockchain.GenericClientAPI
+// GetAccountInfo implements clients.GenericClientAPI
 // This is the generic version. The original GetAccountInfo(ctx, solana.PublicKey) is specific to SolanaRPCClientAPI.
 func (c *Client) GetAccountInfo(ctx context.Context, address bmodel.Address) (*bmodel.AccountInfo, error) {
 	solAddress, err := solana.PublicKeyFromBase58(string(address))
@@ -254,7 +254,7 @@ func (c *Client) GetAccountInfo(ctx context.Context, address bmodel.Address) (*b
 	}, nil
 }
 
-// GetLatestBlockhash implements blockchain.GenericClientAPI
+// GetLatestBlockhash implements clients.GenericClientAPI
 func (c *Client) GetLatestBlockhash(ctx context.Context) (bmodel.Blockhash, error) {
 	// Using CommitmentConfirmed as a default for generic API, can be made configurable if needed
 	result, err := c.rpcConn.GetLatestBlockhash(ctx, rpc.CommitmentConfirmed)
@@ -267,7 +267,7 @@ func (c *Client) GetLatestBlockhash(ctx context.Context) (bmodel.Blockhash, erro
 	return bmodel.Blockhash(result.Value.Blockhash.String()), nil
 }
 
-// GetBalance implements blockchain.GenericClientAPI
+// GetBalance implements clients.GenericClientAPI
 func (c *Client) GetBalance(ctx context.Context, address bmodel.Address, commitmentStr string) (*bmodel.Balance, error) {
 	solAddress, err := solana.PublicKeyFromBase58(string(address))
 	if err != nil {
@@ -661,4 +661,3 @@ func (c *Client) GetTokenAccountsByOwner(ctx context.Context, ownerAddress bmode
 	}
 	return accounts, nil
 }
-

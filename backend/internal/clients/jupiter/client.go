@@ -335,18 +335,38 @@ func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, []
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		// Check if response is HTML (common for error pages)
+		if util.IsHTMLResponse(respBody) {
+			slog.Error("Jupiter GET request failed - received HTML error page",
+				"url", requestURL,
+				"status_code", resp.StatusCode,
+				"content_type", resp.Header.Get("Content-Type"))
+			return zeroT, respBody, fmt.Errorf("GET request to %s failed with status code: %d (received HTML error page instead of JSON)", requestURL, resp.StatusCode)
+		}
+
 		// Return respBody as it might contain useful error info from the API
 		return zeroT, respBody, fmt.Errorf("GET request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
 	}
 
+	// Check if we received HTML when expecting JSON
+	if util.IsHTMLResponse(respBody) {
+		slog.Error("Jupiter API returned HTML instead of JSON",
+			"url", requestURL,
+			"content_type", resp.Header.Get("Content-Type"))
+		return zeroT, respBody, fmt.Errorf("Jupiter API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
+	}
+
 	var responseObject T
 	if err := json.Unmarshal(respBody, &responseObject); err != nil {
+		// Truncate body for logging if it's very long
+		bodyForLog := util.TruncateForLogging(string(respBody), 500)
+
 		slog.Error("Failed to unmarshal response",
 			"url", requestURL,
 			"error", err,
-			"raw_body", string(respBody)) // Log raw body on unmarshal error
+			"body_preview", bodyForLog)
 		// Return respBody as it caused the unmarshal error
-		return zeroT, respBody, fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
+		return zeroT, respBody, fmt.Errorf("failed to unmarshal JSON response from %s: %w", requestURL, err)
 	}
 
 	return responseObject, respBody, nil
@@ -400,16 +420,36 @@ func PostRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		// Check if response is HTML (common for error pages)
+		if util.IsHTMLResponse(respBody) {
+			slog.Error("Jupiter POST request failed - received HTML error page",
+				"url", requestURL,
+				"status_code", resp.StatusCode,
+				"content_type", resp.Header.Get("Content-Type"))
+			return zeroT, fmt.Errorf("POST request to %s failed with status code: %d (received HTML error page instead of JSON)", requestURL, resp.StatusCode)
+		}
+
 		return zeroT, fmt.Errorf("POST request to %s failed with status code: %d, body: %s", requestURL, resp.StatusCode, string(respBody))
+	}
+
+	// Check if we received HTML when expecting JSON
+	if util.IsHTMLResponse(respBody) {
+		slog.Error("Jupiter API returned HTML instead of JSON",
+			"url", requestURL,
+			"content_type", resp.Header.Get("Content-Type"))
+		return zeroT, fmt.Errorf("Jupiter API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
 	}
 
 	var responseObject T
 	if err := json.Unmarshal(respBody, &responseObject); err != nil {
+		// Truncate body for logging if it's very long
+		bodyForLog := util.TruncateForLogging(string(respBody), 500)
+
 		slog.Error("Failed to unmarshal response",
 			"url", requestURL,
 			"error", err,
-			"raw_body", string(respBody)) // Log raw body on unmarshal error
-		return zeroT, fmt.Errorf("failed to unmarshal response from %s: %w", requestURL, err)
+			"body_preview", bodyForLog)
+		return zeroT, fmt.Errorf("failed to unmarshal JSON response from %s: %w", requestURL, err)
 	}
 
 	return responseObject, nil

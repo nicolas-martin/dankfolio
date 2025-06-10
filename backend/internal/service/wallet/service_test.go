@@ -5,26 +5,28 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/rpc"
+
 	solanaClientMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
 	dbMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	coinMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/coin/mocks"
-	"time"
 
-	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/tyler-smith/go-bip39"
+
+	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 )
 
 var (
-	testFromAddress = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-	testToAddress   = "So11111111111111111111111111111111111111112" // SOL mint, often used as a dummy "to" for SOL transfers
+	testFromAddress  = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+	testToAddress    = "So11111111111111111111111111111111111111112"  // SOL mint, often used as a dummy "to" for SOL transfers
 	testSPLTokenMint = "Es9vMFrzaCERmJfrF4H2FYQGqPSHhpNgLcbXchH7aG4u" // A known SPL token mint
 
 	mockSOLCoin = &model.Coin{
@@ -289,10 +291,9 @@ func TestPrepareTransfer(t *testing.T) {
 		// However, the service's getMintInfo uses token.Mint.UnmarshalWithDecoder which is more robust.
 		// We need to provide binary data that can be unmarshalled by token.Mint.
 		// A minimal valid mint data (82 bytes) with decimals set:
-		mintData := make([]byte, token.MintLayoutVersion1.Size) // Use MintLayoutVersion1.Size for clarity
+		mintData := make([]byte, token.MintLayoutVersion1.Size)                             // Use MintLayoutVersion1.Size for clarity
 		token.NewMintLayout().Encode(&token.Mint{Decimals: mockSPLCoin.Decimals}, mintData) // Simplest way to get valid binary data
 		mockChainClient.On("GetAccountInfo", ctx, bmodel.Address(splMintKey.String())).Return(&bmodel.AccountInfo{Data: mintData}, nil).Once()
-
 
 		mockChainClient.On("GetLatestBlockhash", ctx).Return(mockBlockHash, nil).Once()
 		mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
@@ -320,7 +321,6 @@ func TestPrepareTransfer(t *testing.T) {
 	// TODO: Add test for SPL Token Transfer - ATA for receiver does not exist (needs GetAccountInfo to return nil/not found for toAta)
 }
 
-
 func TestSubmitTransfer_SuccessLifecycle(t *testing.T) {
 	ctx := context.Background()
 	service, mockChainClient, mockStore, _, mockTradeRepo, mockCoinService := setupWalletService(t)
@@ -336,7 +336,7 @@ func TestSubmitTransfer_SuccessLifecycle(t *testing.T) {
 
 	var preparedTrade *model.Trade
 	mockTradeRepo.On("Create", ctx, mock.MatchedBy(func(trade *model.Trade) bool {
-		preparedTrade = trade // Capture the trade object
+		preparedTrade = trade                           // Capture the trade object
 		trade.UnsignedTransaction = unsignedTxForLookup // Ensure it has the expected unsigned tx
 		trade.ID = "trade_success_lifecycle"            // Give it an ID for matching in SubmitTransfer mocks
 		return trade.Type == "transfer" && trade.Status == "pending" && trade.Fee == expectedFeeSOL
@@ -490,11 +490,10 @@ func TestSubmitTransfer_TradeRecordNotFound(t *testing.T) {
 	// Or, if your GetByField returns (nil, nil) for not found:
 	// mockTradeRepo.On("GetByField", ctx, "unsigned_transaction", unsignedTxForLookup).Return(nil, nil).Once()
 
-
 	sig, err := service.SubmitTransfer(ctx, req)
 
 	assert.Error(t, err)
-	assert.Empty(t, sig) // No signature should be returned
+	assert.Empty(t, sig)                                           // No signature should be returned
 	assert.Contains(t, err.Error(), "failed to find trade record") // Check for the specific error from SubmitTransfer
 
 	// Ensure SendRawTransaction was NOT called
@@ -563,7 +562,7 @@ func TestTransferConfirmationTimesOut_RemainsSubmitted(t *testing.T) {
 	// Assert that the trade captured after the "submitted" update is indeed what we check
 	assert.NotNil(t, capturedSubmittedTrade)
 	assert.Equal(t, "submitted", capturedSubmittedTrade.Status) // Should remain submitted
-	assert.Nil(t, capturedSubmittedTrade.Error)                  // No error from polling timeout itself
+	assert.Nil(t, capturedSubmittedTrade.Error)                 // No error from polling timeout itself
 	assert.False(t, capturedSubmittedTrade.Finalized)
 	assert.Nil(t, capturedSubmittedTrade.CompletedAt)
 
