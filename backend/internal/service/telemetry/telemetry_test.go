@@ -6,39 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
+	telemetryMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry/mocks" // Added for NewTokenInfo type
 )
 
-// mockAPICallTracker is a mock implementation of APICallTracker for testing.
-type mockAPICallTracker struct {
-	stats map[string]map[string]int
-}
-
-func (m *mockAPICallTracker) TrackCall(serviceName, endpointName string) {
-	if m.stats == nil {
-		m.stats = make(map[string]map[string]int)
-	}
-	if _, ok := m.stats[serviceName]; !ok {
-		m.stats[serviceName] = make(map[string]int)
-	}
-	m.stats[serviceName][endpointName]++
-}
-
-func (m *mockAPICallTracker) GetStats() map[string]map[string]int {
-	if m.stats == nil {
-		return make(map[string]map[string]int)
-	}
-	clone := make(map[string]map[string]int)
-	for k, v := range m.stats {
-		clone[k] = v
-	}
-	return clone
-}
-
-var _ clients.APICallTracker = (*mockAPICallTracker)(nil)
-
 func TestLogAPIStats(t *testing.T) {
+	mockAPICallTracker := telemetryMocks.NewMockTelemetryAPI(t)
 	tests := []struct {
 		name                   string
 		mockStats              map[string]map[string]int
@@ -55,8 +28,8 @@ func TestLogAPIStats(t *testing.T) {
 		{
 			name: "With API calls",
 			mockStats: map[string]map[string]int{
-				"solana":   {"GetTokenAccountsByOwner": 4, "AnotherSolEndpoint": 1},
-				"jupiter":  {
+				"solana": {"GetTokenAccountsByOwner": 4, "AnotherSolEndpoint": 1},
+				"jupiter": {
 					"/tokens/v1/new":          1,
 					"/tokens/v1/token/ID_ABC": 3, // Raw
 					"/tokens/v1/token/ID_XYZ": 2, // Raw
@@ -85,7 +58,8 @@ func TestLogAPIStats(t *testing.T) {
 			handler := slog.NewTextHandler(&buf, nil)
 			logger := slog.New(handler)
 
-			tracker := &mockAPICallTracker{stats: tt.mockStats}
+			mockAPICallTracker.On("GetStats").Return(tt.mockStats)
+			tracker := mockAPICallTracker
 
 			telemetry.LogAPIStats(tracker, logger)
 

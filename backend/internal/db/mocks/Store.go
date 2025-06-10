@@ -39,6 +39,52 @@ func (_m *MockStore) EXPECT() *MockStore_Expecter {
 	return &MockStore_Expecter{mock: &_m.Mock}
 }
 
+// ApiStats provides a mock function for the type MockStore
+func (_mock *MockStore) ApiStats() db.Repository[model.ApiStat] {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ApiStats")
+	}
+
+	var r0 db.Repository[model.ApiStat]
+	if returnFunc, ok := ret.Get(0).(func() db.Repository[model.ApiStat]); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Repository[model.ApiStat])
+		}
+	}
+	return r0
+}
+
+// MockStore_ApiStats_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ApiStats'
+type MockStore_ApiStats_Call struct {
+	*mock.Call
+}
+
+// ApiStats is a helper method to define mock.On call
+func (_e *MockStore_Expecter) ApiStats() *MockStore_ApiStats_Call {
+	return &MockStore_ApiStats_Call{Call: _e.mock.On("ApiStats")}
+}
+
+func (_c *MockStore_ApiStats_Call) Run(run func()) *MockStore_ApiStats_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockStore_ApiStats_Call) Return(repository db.Repository[model.ApiStat]) *MockStore_ApiStats_Call {
+	_c.Call.Return(repository)
+	return _c
+}
+
+func (_c *MockStore_ApiStats_Call) RunAndReturn(run func() db.Repository[model.ApiStat]) *MockStore_ApiStats_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Coins provides a mock function for the type MockStore
 func (_mock *MockStore) Coins() db.Repository[model.Coin] {
 	ret := _mock.Called()

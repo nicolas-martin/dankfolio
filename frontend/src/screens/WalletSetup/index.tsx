@@ -51,14 +51,13 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	}, [step]);
 
 	const loadDebugWallet = async () => {
-    const keypair = await initializeDebugWallet();
-    if (keypair) {
-      props.onWalletSetupComplete(keypair);
-      // showToast({ message: 'Debug wallet loaded!', type: 'success' }); // Optional: App.tsx can show toast
-    } else {
-      showToast({ message: 'Failed to load debug wallet.', type: 'error' });
-    }
-  };
+		const keypair = await initializeDebugWallet();
+		if (keypair) {
+			props.onWalletSetupComplete(keypair);
+		} else {
+			showToast({ message: 'Failed to load debug wallet.', type: 'error' });
+		}
+	};
 
 	const renderMnemonicWords = (mnemonic: string) => {
 		const words = mnemonic.split(' ');
@@ -120,7 +119,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 							</TouchableOpacity>
 						</View>
 
-						<TouchableOpacity 
+						<TouchableOpacity
 							onPress={handleTermsPress}
 							style={styles.termsContainer}
 						>

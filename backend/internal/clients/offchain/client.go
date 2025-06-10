@@ -9,20 +9,20 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
 // Client handles interactions with external metadata sources
 type Client struct {
 	httpClient *http.Client
-	tracker    clients.APICallTracker
+	tracker    telemetry.TelemetryAPI
 }
 
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 // NewClient creates a new instance of Client
-func NewClient(httpClient *http.Client, tracker clients.APICallTracker) ClientAPI {
+func NewClient(httpClient *http.Client, tracker telemetry.TelemetryAPI) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
 		tracker:    tracker,
@@ -173,7 +173,7 @@ func (c *Client) fetchArweaveMetadata(uri string) (map[string]any, error) {
 
 // fetchHTTPMetadata fetches JSON metadata from an HTTP(S) URL
 func (c *Client) fetchHTTPMetadata(requestURL string) (map[string]any, error) {
-	c.tracker.Increment("offchain", "fetchHTTPMetadata")
+	c.tracker.TrackCall("offchain", "fetchHTTPMetadata")
 	slog.Debug("🌐 HTTP: Creating request", "url", requestURL)
 	slog.Debug("🔄 HTTP: Setting up request headers...")
 
@@ -232,7 +232,7 @@ func (c *Client) fetchHTTPMetadata(requestURL string) (map[string]any, error) {
 
 // fetchHTTPRaw fetches raw data and content type from an HTTP(S) URL
 func (c *Client) fetchHTTPRaw(ctx context.Context, requestURL string) (data []byte, contentType string, err error) {
-	c.tracker.Increment("offchain", "fetchHTTPRaw")
+	c.tracker.TrackCall("offchain", "fetchHTTPRaw")
 	slog.Debug("🌐 HTTP Raw: Requesting", "url", requestURL)
 	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
 	if err != nil {
