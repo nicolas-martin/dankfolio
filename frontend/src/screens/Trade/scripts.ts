@@ -205,12 +205,12 @@ const validateTradeParams = (fromCoin: Coin, toCoin: Coin, fromAmount: string, w
 const prepareTradeTransaction = async (fromCoin: Coin, toCoin: Coin, fromAmount: string, slippage: number, walletAddress: string) => {
 	const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
 	const unsignedTx = await prepareSwapRequest(fromCoin.mintAddress, toCoin.mintAddress, rawAmount, slippage, walletAddress);
-	
+
 	const keys = await getActiveWalletKeys();
 	if (!keys?.privateKey || !keys?.publicKey) {
 		throw new Error('Failed to retrieve wallet keys for signing.');
 	}
-	
+
 	const signedTx = await signSwapTransaction(unsignedTx, keys.publicKey, keys.privateKey);
 	return { rawAmount, signedTx, unsignedTx };
 };
@@ -224,7 +224,7 @@ const submitTradeTransaction = async (fromCoin: Coin, toCoin: Coin, rawAmount: n
 		signedTransaction: signedTx,
 		unsignedTransaction: unsignedTx,
 	};
-	
+
 	return await grpcApi.submitSwap(tradePayload);
 };
 
@@ -262,10 +262,10 @@ export const executeTrade = async (
 		validateTradeParams(fromCoin, toCoin, fromAmount, wallet);
 
 		const { rawAmount, signedTx, unsignedTx } = await prepareTradeTransaction(
-			fromCoin, 
-			toCoin, 
-			fromAmount, 
-			slippage, 
+			fromCoin,
+			toCoin,
+			fromAmount,
+			slippage,
 			wallet!.address
 		);
 
@@ -310,14 +310,14 @@ export const handleSelectToken = (
 	const oppositeCoin = isFromDirection ? toCoin : fromCoin;
 	const setCoin = isFromDirection ? setFromCoin : setToCoin;
 
-	logger.breadcrumb({ 
-		category: 'trade', 
-		message: `Selected "${direction}" token`, 
-		data: { 
-			tokenSymbol: token.symbol, 
+	logger.breadcrumb({
+		category: 'trade',
+		message: `Selected "${direction}" token`,
+		data: {
+			tokenSymbol: token.symbol,
 			currentCoinSymbol: currentCoin?.symbol,
-			oppositeCoinSymbol: oppositeCoin?.symbol 
-		} 
+			oppositeCoinSymbol: oppositeCoin?.symbol
+		}
 	});
 
 	// Skip if same token already selected

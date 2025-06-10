@@ -4,6 +4,8 @@ env:
     jupMint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
     solSymbol: "SOL"
     solMint: "So11111111111111111111111111111111111111112"
+    dankSymbol: "DankCoin"
+    dankMint: "DankCoin1111111111111111111111111111111"
     usdcSymbol: "USDC"
     usdcMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 ---
@@ -13,86 +15,40 @@ env:
       id: "trending-coin-card-${jupMint}"
 - tapOn:
       id: "trade-button"
-
-# Test 1: Open TokenSelector modal by tapping from-token-selector (SOL is pre-selected)
+- assertVisible:
+      id: from-token-selector-${solMint}
+- assertVisible:
+      id: to-token-selector-${jupMint}
 - tapOn:
-      id: "from-token-selector-${solMint}"
-- assertVisible: "Bottom Sheet"
-- assertVisible:
-      id: "token-search-input"
-
-# Test 2: Search functionality - Filter by symbol "SOL"
+      id: to-token-selector-${jupMint}
 - tapOn:
-      id: "token-search-input"
-- eraseText
-- inputText: "${solSymbol}"
+      id: search-result-${dankMint}
 - assertVisible:
-      id: "search-result-${solMint}"
-
-# Test 3: Clear search and try different search
-- eraseText
-- inputText: "${usdcSymbol}"
+      id: to-token-selector-${dankMint}
 - assertVisible:
-      id: "search-result-${usdcMint}"
-
-# Test 4: Cancel modal by swiping down (test cancel behavior)
-- swipe:
-      start: 50%, 50%
-      end: 50%, 90%
-- assertNotVisible:
-      id: "token-search-input"
-
-# Test 5: Reopen modal and verify it works
+      id: from-token-selector-${solMint}
 - tapOn:
-      id: "from-token-selector-${solMint}"
-- assertVisible: "Bottom Sheet"
+      id: swap-coins-button
 - assertVisible:
-      id: "token-search-input"
-
-# Test 6: Select SOL token for FROM selector
+      id: from-token-selector-${dankMint}
+- assertVisible:
+      id: to-token-selector-${solMint}
 - tapOn:
-      id: "token-search-input"
-- eraseText
-- inputText: "${solSymbol}"
-- assertVisible:
-      id: "search-result-${solMint}"
+      id: from-token-selector-${dankMint}
 - tapOn:
-      id: "search-result-${solMint}"
-
-# Test 7: Verify modal closes after selection
-- assertNotVisible:
-      id: "token-search-input"
-
-# Test 8: Verify selected SOL token is displayed in from selector
-- waitForAnimationToEnd
+      id: search-result-${usdcMint}
+- assertVisible: "Selected token: ${usdcSymbol}"
 - assertVisible:
-      text: "Selected token: SOL"
-
-# Test 9: Test "To" token selector (JUP is pre-selected)
+      id: to-token-selector-${solMint}
 - tapOn:
-      id: "to-token-selector-${jupMint}"
-- assertVisible: "Bottom Sheet"
+      id: swap-coins-button
 - assertVisible:
-      id: "token-search-input"
-
-# Test 10: Select USDC token for "To" selector (different from FROM)
+      id: from-token-selector-${solMint}
+- assertVisible:
+      id: to-token-selector-${usdcMint}
+- assertVisible: "2.5"
 - tapOn:
-      id: "token-search-input"
-- inputText: "${usdcSymbol}"
-- assertVisible:
-      id: "search-result-${usdcMint}"
-- tapOn:
-      id: "search-result-${usdcMint}"
-
-# Test 11: Verify "To" token selection
-- assertNotVisible:
-      id: "token-search-input"
-- waitForAnimationToEnd
-- assertVisible:
-      id: "to-token-selector-${usdcMint}"
-
-# Test 12: Final verification - verify both selectors show different tokens using testIDs
-- assertVisible:
-      id: "from-token-selector-${solMint}"
-- assertVisible:
-      id: "to-token-selector-${usdcMint}"
+      id: amount-percentage-text-50
+- assertVisible: "1.25"
+- assertVisible: "0.95"
+- assertVisible: "100"
