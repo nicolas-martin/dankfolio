@@ -46,6 +46,9 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const pollingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+	// Flag to prevent double navigation when closing status modal
+	const [isNavigating, setIsNavigating] = useState(false);
+
 	// State for Solscan Verification Modal
 	const [verificationInfo, setVerificationInfo] = useState<{
 		message: string;
@@ -264,6 +267,14 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 	const handleCloseStatusModal = () => {
 		logger.breadcrumb({ category: 'ui', message: 'Send status modal closed', data: { txHash: submittedTxHash, finalStatus: pollingStatus } });
+		
+		// Prevent double navigation
+		if (isNavigating) {
+			logger.info('[Send] Navigation already in progress, skipping duplicate navigation');
+			return;
+		}
+		
+		setIsNavigating(true);
 		setIsStatusModalVisible(false);
 		componentStopPolling(); // Explicitly stop polling to prevent orphaned timers.
 
@@ -281,7 +292,13 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		setAmount('');
 		setRecipientAddress('');
 
-		navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
+		// Go back to the previous screen (Profile tab)
+		navigation.goBack();
+		
+		// Reset navigation flag after navigation completes
+		setTimeout(() => {
+			setIsNavigating(false);
+		}, 100);
 	};
 
 	const renderNoWalletState = () => (

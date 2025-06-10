@@ -1,11 +1,7 @@
 import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import {
-	GetAvailableCoinsResponseSchema,
-	SearchResponseSchema,
-	SearchCoinByMintResponseSchema,
-	type Coin as ProtobufCoin,
-	CoinSchema, // Added for GetCoinById
+	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByMintResponseSchema, type Coin as ProtobufCoin, CoinSchema, // Added for GetCoinById
 } from '@/gen/dankfolio/v1/coin_pb';
 import {
 	GetWalletBalancesResponseSchema,
@@ -24,7 +20,7 @@ import {
 	ListTradesResponseSchema,
 } from '@/gen/dankfolio/v1/trade_pb';
 
-import { MOCK_TRENDING_COINS, MOCK_NEW_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES } from './mockData';
+import { MOCK_TRENDING_COINS, MOCK_NEW_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES, CAPTURED_TRANSACTION_DATA } from './mockData';
 import { generatePriceHistory } from './helpers';
 
 type FetchInput = string | URL | Request;
@@ -34,6 +30,7 @@ type FetchInit = RequestInit;
 export const originalFetch = global.fetch;
 
 // Helper function to parse request body
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseRequestBody(options?: FetchInit): any {
 	if (!options?.body) {
 		return {};
@@ -65,7 +62,8 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 	});
 }
 
-async function handleSearch(options?: FetchInit) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleSearch(_options?: FetchInit) {
 	console.log('🎭 Returning mock Search response for /search endpoint (capital S = fetchNewCoins)');
 	console.log('🎭 ✅ Returning new coins (fetchNewCoins call detected via URL path)');
 	const coinsToReturn = MOCK_NEW_COINS;
@@ -76,7 +74,8 @@ async function handleSearch(options?: FetchInit) {
 	});
 }
 
-async function handleSearchCoins(options?: FetchInit) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleSearchCoins(_options?: FetchInit) {
 	console.log('🎭 Returning mock SearchCoins response for /searchcoins endpoint (general search)');
 	console.log('🎭 ❌ Returning trending coins for general search');
 	const coinsToReturn = MOCK_TRENDING_COINS.slice(0, 3);
@@ -87,7 +86,8 @@ async function handleSearchCoins(options?: FetchInit) {
 	});
 }
 
-async function handleSearchCoinByMint(options?: FetchInit) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleSearchCoinByMint(_options?: FetchInit) {
 	console.log('🎭 Returning mock SearchCoinByMint response');
 	return create(SearchCoinByMintResponseSchema, {
 		coin: ALL_MOCK_COINS[0],
@@ -151,7 +151,8 @@ async function handleGetPriceHistory(options?: FetchInit) {
 	return create(GetPriceHistoryResponseSchema, { data, success: true });
 }
 
-async function handleGetCoinPrices(options?: FetchInit) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleGetCoinPrices(_options?: FetchInit) {
 	console.log('🎭 Returning mock GetCoinPrices response');
 	const mockPrices: { [key: string]: number } = {};
 	ALL_MOCK_COINS.forEach(coin => {
@@ -164,7 +165,8 @@ async function handleGetCoinPrices(options?: FetchInit) {
 	return { prices: mockPrices }; // This endpoint returns a plain object
 }
 
-async function handleGetSwapQuote(options?: FetchInit) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleGetSwapQuote(_options?: FetchInit) {
 	console.log('🎭 Returning mock GetSwapQuote response');
 	return create(GetSwapQuoteResponseSchema, {
 		estimatedAmount: '0.95',
@@ -177,6 +179,7 @@ async function handleGetSwapQuote(options?: FetchInit) {
 	});
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handlePrepareSwap(options?: FetchInit) {
 	console.log('🎭 Returning mock PrepareSwap response');
 	const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
@@ -185,12 +188,21 @@ async function handlePrepareSwap(options?: FetchInit) {
 	});
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handlePrepareTransfer(options?: FetchInit) {
 	console.log('🎭 Returning mock PrepareTransfer response (WalletService)');
-	const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDArczbMia1tLmq2poQQFqpk1DjxsqKE8GeC9ryYH1HdwvGGZjAZdDGA7Pr6QQlnw0VJXaPQvvKQVUMtq7m8OiWQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABUpTYB5Tb+LKsJQWZbJuXaPgODJ8XYzMUqv2V0+PYUAAAQIAAAEMANQBAAAAAAAA';
-	return { unsignedTransaction: mockTransactionBase64 }; // This endpoint returns a plain object
+	console.log('🎭 Using captured transaction data from real backend');
+	return { unsignedTransaction: CAPTURED_TRANSACTION_DATA.UNSIGNED_TX }; // This endpoint returns a plain object
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleSubmitTransfer(options?: FetchInit) {
+	console.log('🎭 Returning mock SubmitTransfer response (WalletService)');
+	console.log('🎭 Using captured transaction hash from real backend');
+	return { transactionHash: CAPTURED_TRANSACTION_DATA.MOCK_TX_HASH }; // This endpoint returns a plain object
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleSubmitSwap(options?: FetchInit) {
 	console.log('🎭 Returning mock SubmitSwap response');
 	return create(SubmitSwapResponseSchema, {
@@ -199,6 +211,7 @@ async function handleSubmitSwap(options?: FetchInit) {
 	});
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetSwapStatus(options?: FetchInit) {
 	console.log('🎭 Returning mock GetSwapStatus response');
 	return { // This endpoint returns a plain object
@@ -209,6 +222,7 @@ async function handleGetSwapStatus(options?: FetchInit) {
 	};
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetTrade(options?: FetchInit) {
 	console.log('🎭 Returning mock GetTrade response');
 	return create(TradeSchema, {
@@ -228,6 +242,7 @@ async function handleGetTrade(options?: FetchInit) {
 	});
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleListTrades(options?: FetchInit) {
 	console.log('🎭 Returning mock ListTrades response');
 	const mockTrade = create(TradeSchema, {
@@ -252,6 +267,7 @@ async function handleListTrades(options?: FetchInit) {
 }
 
 // Endpoint Handlers Map
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> } = {
 	'/dankfolio.v1.coinservice/getavailablecoins': handleGetAvailableCoins,
 	'/dankfolio.v1.coinservice/search': handleSearch,
@@ -264,6 +280,7 @@ const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> }
 	'/dankfolio.v1.tradeservice/getswapquote': handleGetSwapQuote,
 	'/dankfolio.v1.tradeservice/prepareswap': handlePrepareSwap,
 	'/dankfolio.v1.walletservice/preparetransfer': handlePrepareTransfer,
+	'/dankfolio.v1.walletservice/submittransfer': handleSubmitTransfer,
 	'/dankfolio.v1.tradeservice/submitswap': handleSubmitSwap,
 	'/dankfolio.v1.tradeservice/getswapstatus': handleGetSwapStatus,
 	'/dankfolio.v1.tradeservice/gettrade': handleGetTrade,
@@ -271,6 +288,7 @@ const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> }
 };
 
 // Mock fetch implementation
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => {
 	const urlString = url.toString();
 	const apiUrl = env.apiUrl;
@@ -289,6 +307,7 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 
 	try {
 		const handler = endpointHandlers[normalizedPath];
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let mockResponse: any;
 
 		if (handler) {
@@ -301,6 +320,7 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 
 		console.log('🎭 Mock API returning response for:', normalizedPath);
 
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const responseBody = JSON.stringify(mockResponse, (key, value) => {
 			if (typeof value === 'bigint') {
 				return value.toString();
@@ -321,19 +341,21 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 			headers: new Headers({ 'Content-Type': 'application/json' }),
 			text: async () => responseBody,
 			json: async () => JSON.parse(responseBody),
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} as any;
 
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (error: any) {
 		console.error('🎭 Mock API error in handler or main mockFetch:', error.message);
 		// Fall back to original fetch on error (e.g. simulated network error)
 		// Check if it's one of our simulated errors, otherwise it could be an issue in the mocking logic itself
 		if (error.message.startsWith('NETWORK_ERROR:') || error.message.startsWith('INVALID_ADDRESS:')) {
-		    // For simulated errors, we want to throw them so the calling code sees the error
-		    // However, the fetch API expects a Response object that's an error, or a thrown TypeError for network issues.
-		    // For simplicity in mock, we'll re-throw, and Connect-Web/gRPC client should handle it.
-		    // Alternatively, construct an error Response: `return new Response(error.message, { status: 500 });`
-		    // But throwing ensures it's treated as a network failure / client-side exception.
-		    throw error;
+			// For simulated errors, we want to throw them so the calling code sees the error
+			// However, the fetch API expects a Response object that's an error, or a thrown TypeError for network issues.
+			// For simplicity in mock, we'll re-throw, and Connect-Web/gRPC client should handle it.
+			// Alternatively, construct an error Response: `return new Response(error.message, { status: 500 });`
+			// But throwing ensures it's treated as a network failure / client-side exception.
+			throw error;
 		}
 		// For other errors within mock logic, it's better to fall back to original fetch if possible
 		console.error('🎭 Error was not a simulated one. Falling back to original fetch for safety.');

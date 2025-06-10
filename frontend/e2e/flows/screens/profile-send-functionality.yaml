@@ -1,9 +1,12 @@
 appId: com.dankfolio.app
 env:
-    testAmount: "0.000000001"
-    testRecipientAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R"
-    solMint: "So11111111111111111111111111111111111111112"
-    largeAmount: "99"
+    # Values from CAPTURED_TRANSACTION_DATA in mockData.ts
+    testAmount: "1.65973075" # Actual amount from captured transaction
+    testRecipientAddress: "6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav" # TO_ADDRESS from captured data
+    solMint: "So11111111111111111111111111111111111111112" # Standard SOL mint
+    capturedTokenMint: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump" # TOKEN_MINT from captured data
+    largeAmount: "99" # For testing insufficient balance
+    smallTestAmount: "0.000000001" # For testing small amounts
 ---
 # Test 1: Setup app
 - runFlow: ../common/app-setup.yaml
@@ -100,6 +103,14 @@ env:
       id: "verification-continue-button"
 - waitForAnimationToEnd
 - tapOn:
-      id: "confirm-trade-button"
+      id: "confirm-send-button"
 - assertNotVisible:
       id: "validation-error-text"
+- assertVisible:
+      id: trade-status-modal
+- tapOn:
+      id: trade-status-action-button
+- waitForAnimationToEnd
+- assertNotVisible:
+      id: trade-status-modal
+# After Done button, should navigate back to Profile screen with single transition
