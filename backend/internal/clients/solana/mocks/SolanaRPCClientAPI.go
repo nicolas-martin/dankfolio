@@ -74,15 +74,26 @@ type MockSolanaRPCClientAPI_GetAccountInfo_Call struct {
 }
 
 // GetAccountInfo is a helper method to define mock.On call
-//   - ctx
-//   - account
+//   - ctx context.Context
+//   - account solana.PublicKey
 func (_e *MockSolanaRPCClientAPI_Expecter) GetAccountInfo(ctx interface{}, account interface{}) *MockSolanaRPCClientAPI_GetAccountInfo_Call {
 	return &MockSolanaRPCClientAPI_GetAccountInfo_Call{Call: _e.mock.On("GetAccountInfo", ctx, account)}
 }
 
 func (_c *MockSolanaRPCClientAPI_GetAccountInfo_Call) Run(run func(ctx context.Context, account solana.PublicKey)) *MockSolanaRPCClientAPI_GetAccountInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(solana.PublicKey))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 solana.PublicKey
+		if args[1] != nil {
+			arg1 = args[1].(solana.PublicKey)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -131,15 +142,26 @@ type MockSolanaRPCClientAPI_GetBalanceConfirmed_Call struct {
 }
 
 // GetBalanceConfirmed is a helper method to define mock.On call
-//   - ctx
-//   - account
+//   - ctx context.Context
+//   - account solana.PublicKey
 func (_e *MockSolanaRPCClientAPI_Expecter) GetBalanceConfirmed(ctx interface{}, account interface{}) *MockSolanaRPCClientAPI_GetBalanceConfirmed_Call {
 	return &MockSolanaRPCClientAPI_GetBalanceConfirmed_Call{Call: _e.mock.On("GetBalanceConfirmed", ctx, account)}
 }
 
 func (_c *MockSolanaRPCClientAPI_GetBalanceConfirmed_Call) Run(run func(ctx context.Context, account solana.PublicKey)) *MockSolanaRPCClientAPI_GetBalanceConfirmed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(solana.PublicKey))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 solana.PublicKey
+		if args[1] != nil {
+			arg1 = args[1].(solana.PublicKey)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -188,14 +210,20 @@ type MockSolanaRPCClientAPI_GetLatestBlockhashConfirmed_Call struct {
 }
 
 // GetLatestBlockhashConfirmed is a helper method to define mock.On call
-//   - ctx
+//   - ctx context.Context
 func (_e *MockSolanaRPCClientAPI_Expecter) GetLatestBlockhashConfirmed(ctx interface{}) *MockSolanaRPCClientAPI_GetLatestBlockhashConfirmed_Call {
 	return &MockSolanaRPCClientAPI_GetLatestBlockhashConfirmed_Call{Call: _e.mock.On("GetLatestBlockhashConfirmed", ctx)}
 }
 
 func (_c *MockSolanaRPCClientAPI_GetLatestBlockhashConfirmed_Call) Run(run func(ctx context.Context)) *MockSolanaRPCClientAPI_GetLatestBlockhashConfirmed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -244,16 +272,32 @@ type MockSolanaRPCClientAPI_GetTokenAccountsByOwnerConfirmed_Call struct {
 }
 
 // GetTokenAccountsByOwnerConfirmed is a helper method to define mock.On call
-//   - ctx
-//   - owner
-//   - opts
+//   - ctx context.Context
+//   - owner solana.PublicKey
+//   - opts model.GetTokenAccountsOptions
 func (_e *MockSolanaRPCClientAPI_Expecter) GetTokenAccountsByOwnerConfirmed(ctx interface{}, owner interface{}, opts interface{}) *MockSolanaRPCClientAPI_GetTokenAccountsByOwnerConfirmed_Call {
 	return &MockSolanaRPCClientAPI_GetTokenAccountsByOwnerConfirmed_Call{Call: _e.mock.On("GetTokenAccountsByOwnerConfirmed", ctx, owner, opts)}
 }
 
 func (_c *MockSolanaRPCClientAPI_GetTokenAccountsByOwnerConfirmed_Call) Run(run func(ctx context.Context, owner solana.PublicKey, opts model.GetTokenAccountsOptions)) *MockSolanaRPCClientAPI_GetTokenAccountsByOwnerConfirmed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(solana.PublicKey), args[2].(model.GetTokenAccountsOptions))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 solana.PublicKey
+		if args[1] != nil {
+			arg1 = args[1].(solana.PublicKey)
+		}
+		var arg2 model.GetTokenAccountsOptions
+		if args[2] != nil {
+			arg2 = args[2].(model.GetTokenAccountsOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -302,16 +346,32 @@ type MockSolanaRPCClientAPI_SendTransactionWithCustomOpts_Call struct {
 }
 
 // SendTransactionWithCustomOpts is a helper method to define mock.On call
-//   - ctx
-//   - tx
-//   - opts
+//   - ctx context.Context
+//   - tx *solana.Transaction
+//   - opts model.TransactionOptions
 func (_e *MockSolanaRPCClientAPI_Expecter) SendTransactionWithCustomOpts(ctx interface{}, tx interface{}, opts interface{}) *MockSolanaRPCClientAPI_SendTransactionWithCustomOpts_Call {
 	return &MockSolanaRPCClientAPI_SendTransactionWithCustomOpts_Call{Call: _e.mock.On("SendTransactionWithCustomOpts", ctx, tx, opts)}
 }
 
 func (_c *MockSolanaRPCClientAPI_SendTransactionWithCustomOpts_Call) Run(run func(ctx context.Context, tx *solana.Transaction, opts model.TransactionOptions)) *MockSolanaRPCClientAPI_SendTransactionWithCustomOpts_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*solana.Transaction), args[2].(model.TransactionOptions))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *solana.Transaction
+		if args[1] != nil {
+			arg1 = args[1].(*solana.Transaction)
+		}
+		var arg2 model.TransactionOptions
+		if args[2] != nil {
+			arg2 = args[2].(model.TransactionOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }

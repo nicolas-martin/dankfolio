@@ -70,15 +70,26 @@ type MockRepository_BulkUpsert_Call[T db.Entity] struct {
 }
 
 // BulkUpsert is a helper method to define mock.On call
-//   - ctx
-//   - items
+//   - ctx context.Context
+//   - items *[]T
 func (_e *MockRepository_Expecter[T]) BulkUpsert(ctx interface{}, items interface{}) *MockRepository_BulkUpsert_Call[T] {
 	return &MockRepository_BulkUpsert_Call[T]{Call: _e.mock.On("BulkUpsert", ctx, items)}
 }
 
 func (_c *MockRepository_BulkUpsert_Call[T]) Run(run func(ctx context.Context, items *[]T)) *MockRepository_BulkUpsert_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*[]T))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *[]T
+		if args[1] != nil {
+			arg1 = args[1].(*[]T)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -116,15 +127,26 @@ type MockRepository_Create_Call[T db.Entity] struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - ctx
-//   - item
+//   - ctx context.Context
+//   - item *T
 func (_e *MockRepository_Expecter[T]) Create(ctx interface{}, item interface{}) *MockRepository_Create_Call[T] {
 	return &MockRepository_Create_Call[T]{Call: _e.mock.On("Create", ctx, item)}
 }
 
 func (_c *MockRepository_Create_Call[T]) Run(run func(ctx context.Context, item *T)) *MockRepository_Create_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*T))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *T
+		if args[1] != nil {
+			arg1 = args[1].(*T)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -162,15 +184,26 @@ type MockRepository_Delete_Call[T db.Entity] struct {
 }
 
 // Delete is a helper method to define mock.On call
-//   - ctx
-//   - id
+//   - ctx context.Context
+//   - id string
 func (_e *MockRepository_Expecter[T]) Delete(ctx interface{}, id interface{}) *MockRepository_Delete_Call[T] {
 	return &MockRepository_Delete_Call[T]{Call: _e.mock.On("Delete", ctx, id)}
 }
 
 func (_c *MockRepository_Delete_Call[T]) Run(run func(ctx context.Context, id string)) *MockRepository_Delete_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -219,15 +252,26 @@ type MockRepository_Get_Call[T db.Entity] struct {
 }
 
 // Get is a helper method to define mock.On call
-//   - ctx
-//   - id
+//   - ctx context.Context
+//   - id string
 func (_e *MockRepository_Expecter[T]) Get(ctx interface{}, id interface{}) *MockRepository_Get_Call[T] {
 	return &MockRepository_Get_Call[T]{Call: _e.mock.On("Get", ctx, id)}
 }
 
 func (_c *MockRepository_Get_Call[T]) Run(run func(ctx context.Context, id string)) *MockRepository_Get_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -276,16 +320,32 @@ type MockRepository_GetByField_Call[T db.Entity] struct {
 }
 
 // GetByField is a helper method to define mock.On call
-//   - ctx
-//   - field
-//   - value
+//   - ctx context.Context
+//   - field string
+//   - value any
 func (_e *MockRepository_Expecter[T]) GetByField(ctx interface{}, field interface{}, value interface{}) *MockRepository_GetByField_Call[T] {
 	return &MockRepository_GetByField_Call[T]{Call: _e.mock.On("GetByField", ctx, field, value)}
 }
 
 func (_c *MockRepository_GetByField_Call[T]) Run(run func(ctx context.Context, field string, value any)) *MockRepository_GetByField_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(any))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 any
+		if args[2] != nil {
+			arg2 = args[2].(any)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -334,14 +394,20 @@ type MockRepository_List_Call[T db.Entity] struct {
 }
 
 // List is a helper method to define mock.On call
-//   - ctx
+//   - ctx context.Context
 func (_e *MockRepository_Expecter[T]) List(ctx interface{}) *MockRepository_List_Call[T] {
 	return &MockRepository_List_Call[T]{Call: _e.mock.On("List", ctx)}
 }
 
 func (_c *MockRepository_List_Call[T]) Run(run func(ctx context.Context)) *MockRepository_List_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -396,15 +462,26 @@ type MockRepository_ListWithOpts_Call[T db.Entity] struct {
 }
 
 // ListWithOpts is a helper method to define mock.On call
-//   - ctx
-//   - opts
+//   - ctx context.Context
+//   - opts db.ListOptions
 func (_e *MockRepository_Expecter[T]) ListWithOpts(ctx interface{}, opts interface{}) *MockRepository_ListWithOpts_Call[T] {
 	return &MockRepository_ListWithOpts_Call[T]{Call: _e.mock.On("ListWithOpts", ctx, opts)}
 }
 
 func (_c *MockRepository_ListWithOpts_Call[T]) Run(run func(ctx context.Context, opts db.ListOptions)) *MockRepository_ListWithOpts_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.ListOptions))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 db.ListOptions
+		if args[1] != nil {
+			arg1 = args[1].(db.ListOptions)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -442,15 +519,26 @@ type MockRepository_Update_Call[T db.Entity] struct {
 }
 
 // Update is a helper method to define mock.On call
-//   - ctx
-//   - item
+//   - ctx context.Context
+//   - item *T
 func (_e *MockRepository_Expecter[T]) Update(ctx interface{}, item interface{}) *MockRepository_Update_Call[T] {
 	return &MockRepository_Update_Call[T]{Call: _e.mock.On("Update", ctx, item)}
 }
 
 func (_c *MockRepository_Update_Call[T]) Run(run func(ctx context.Context, item *T)) *MockRepository_Update_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*T))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *T
+		if args[1] != nil {
+			arg1 = args[1].(*T)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -497,15 +585,26 @@ type MockRepository_Upsert_Call[T db.Entity] struct {
 }
 
 // Upsert is a helper method to define mock.On call
-//   - ctx
-//   - item
+//   - ctx context.Context
+//   - item *T
 func (_e *MockRepository_Expecter[T]) Upsert(ctx interface{}, item interface{}) *MockRepository_Upsert_Call[T] {
 	return &MockRepository_Upsert_Call[T]{Call: _e.mock.On("Upsert", ctx, item)}
 }
 
 func (_c *MockRepository_Upsert_Call[T]) Run(run func(ctx context.Context, item *T)) *MockRepository_Upsert_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*T))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *T
+		if args[1] != nil {
+			arg1 = args[1].(*T)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }

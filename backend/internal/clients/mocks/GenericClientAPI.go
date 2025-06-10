@@ -70,17 +70,38 @@ type MockGenericClientAPI_ExecuteSwap_Call struct {
 }
 
 // ExecuteSwap is a helper method to define mock.On call
-//   - ctx
-//   - rawQuote
-//   - userAddress
-//   - signedTxIfNeeded
+//   - ctx context.Context
+//   - rawQuote any
+//   - userAddress blockchain.Address
+//   - signedTxIfNeeded []byte
 func (_e *MockGenericClientAPI_Expecter) ExecuteSwap(ctx interface{}, rawQuote interface{}, userAddress interface{}, signedTxIfNeeded interface{}) *MockGenericClientAPI_ExecuteSwap_Call {
 	return &MockGenericClientAPI_ExecuteSwap_Call{Call: _e.mock.On("ExecuteSwap", ctx, rawQuote, userAddress, signedTxIfNeeded)}
 }
 
 func (_c *MockGenericClientAPI_ExecuteSwap_Call) Run(run func(ctx context.Context, rawQuote any, userAddress blockchain.Address, signedTxIfNeeded []byte)) *MockGenericClientAPI_ExecuteSwap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(any), args[2].(blockchain.Address), args[3].([]byte))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 any
+		if args[1] != nil {
+			arg1 = args[1].(any)
+		}
+		var arg2 blockchain.Address
+		if args[2] != nil {
+			arg2 = args[2].(blockchain.Address)
+		}
+		var arg3 []byte
+		if args[3] != nil {
+			arg3 = args[3].([]byte)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
 	})
 	return _c
 }
@@ -129,15 +150,26 @@ type MockGenericClientAPI_GetAccountInfo_Call struct {
 }
 
 // GetAccountInfo is a helper method to define mock.On call
-//   - ctx
-//   - address
+//   - ctx context.Context
+//   - address blockchain.Address
 func (_e *MockGenericClientAPI_Expecter) GetAccountInfo(ctx interface{}, address interface{}) *MockGenericClientAPI_GetAccountInfo_Call {
 	return &MockGenericClientAPI_GetAccountInfo_Call{Call: _e.mock.On("GetAccountInfo", ctx, address)}
 }
 
 func (_c *MockGenericClientAPI_GetAccountInfo_Call) Run(run func(ctx context.Context, address blockchain.Address)) *MockGenericClientAPI_GetAccountInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(blockchain.Address))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 blockchain.Address
+		if args[1] != nil {
+			arg1 = args[1].(blockchain.Address)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -186,16 +218,32 @@ type MockGenericClientAPI_GetBalance_Call struct {
 }
 
 // GetBalance is a helper method to define mock.On call
-//   - ctx
-//   - address
-//   - commitment
+//   - ctx context.Context
+//   - address blockchain.Address
+//   - commitment string
 func (_e *MockGenericClientAPI_Expecter) GetBalance(ctx interface{}, address interface{}, commitment interface{}) *MockGenericClientAPI_GetBalance_Call {
 	return &MockGenericClientAPI_GetBalance_Call{Call: _e.mock.On("GetBalance", ctx, address, commitment)}
 }
 
 func (_c *MockGenericClientAPI_GetBalance_Call) Run(run func(ctx context.Context, address blockchain.Address, commitment string)) *MockGenericClientAPI_GetBalance_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(blockchain.Address), args[2].(string))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 blockchain.Address
+		if args[1] != nil {
+			arg1 = args[1].(blockchain.Address)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -242,14 +290,20 @@ type MockGenericClientAPI_GetLatestBlockhash_Call struct {
 }
 
 // GetLatestBlockhash is a helper method to define mock.On call
-//   - ctx
+//   - ctx context.Context
 func (_e *MockGenericClientAPI_Expecter) GetLatestBlockhash(ctx interface{}) *MockGenericClientAPI_GetLatestBlockhash_Call {
 	return &MockGenericClientAPI_GetLatestBlockhash_Call{Call: _e.mock.On("GetLatestBlockhash", ctx)}
 }
 
 func (_c *MockGenericClientAPI_GetLatestBlockhash_Call) Run(run func(ctx context.Context)) *MockGenericClientAPI_GetLatestBlockhash_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -298,20 +352,56 @@ type MockGenericClientAPI_GetSwapQuote_Call struct {
 }
 
 // GetSwapQuote is a helper method to define mock.On call
-//   - ctx
-//   - fromToken
-//   - toToken
-//   - amount
-//   - userAddress
-//   - slippageBps
-//   - platformFeeBps
+//   - ctx context.Context
+//   - fromToken blockchain.Address
+//   - toToken blockchain.Address
+//   - amount string
+//   - userAddress blockchain.Address
+//   - slippageBps int
+//   - platformFeeBps int
 func (_e *MockGenericClientAPI_Expecter) GetSwapQuote(ctx interface{}, fromToken interface{}, toToken interface{}, amount interface{}, userAddress interface{}, slippageBps interface{}, platformFeeBps interface{}) *MockGenericClientAPI_GetSwapQuote_Call {
 	return &MockGenericClientAPI_GetSwapQuote_Call{Call: _e.mock.On("GetSwapQuote", ctx, fromToken, toToken, amount, userAddress, slippageBps, platformFeeBps)}
 }
 
 func (_c *MockGenericClientAPI_GetSwapQuote_Call) Run(run func(ctx context.Context, fromToken blockchain.Address, toToken blockchain.Address, amount string, userAddress blockchain.Address, slippageBps int, platformFeeBps int)) *MockGenericClientAPI_GetSwapQuote_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(blockchain.Address), args[2].(blockchain.Address), args[3].(string), args[4].(blockchain.Address), args[5].(int), args[6].(int))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 blockchain.Address
+		if args[1] != nil {
+			arg1 = args[1].(blockchain.Address)
+		}
+		var arg2 blockchain.Address
+		if args[2] != nil {
+			arg2 = args[2].(blockchain.Address)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 blockchain.Address
+		if args[4] != nil {
+			arg4 = args[4].(blockchain.Address)
+		}
+		var arg5 int
+		if args[5] != nil {
+			arg5 = args[5].(int)
+		}
+		var arg6 int
+		if args[6] != nil {
+			arg6 = args[6].(int)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+			arg5,
+			arg6,
+		)
 	})
 	return _c
 }
@@ -360,16 +450,32 @@ type MockGenericClientAPI_GetTokenAccountsByOwner_Call struct {
 }
 
 // GetTokenAccountsByOwner is a helper method to define mock.On call
-//   - ctx
-//   - ownerAddress
-//   - opts
+//   - ctx context.Context
+//   - ownerAddress blockchain.Address
+//   - opts blockchain.TokenAccountsOptions
 func (_e *MockGenericClientAPI_Expecter) GetTokenAccountsByOwner(ctx interface{}, ownerAddress interface{}, opts interface{}) *MockGenericClientAPI_GetTokenAccountsByOwner_Call {
 	return &MockGenericClientAPI_GetTokenAccountsByOwner_Call{Call: _e.mock.On("GetTokenAccountsByOwner", ctx, ownerAddress, opts)}
 }
 
 func (_c *MockGenericClientAPI_GetTokenAccountsByOwner_Call) Run(run func(ctx context.Context, ownerAddress blockchain.Address, opts blockchain.TokenAccountsOptions)) *MockGenericClientAPI_GetTokenAccountsByOwner_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(blockchain.Address), args[2].(blockchain.TokenAccountsOptions))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 blockchain.Address
+		if args[1] != nil {
+			arg1 = args[1].(blockchain.Address)
+		}
+		var arg2 blockchain.TokenAccountsOptions
+		if args[2] != nil {
+			arg2 = args[2].(blockchain.TokenAccountsOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -418,17 +524,38 @@ type MockGenericClientAPI_GetTokenBalance_Call struct {
 }
 
 // GetTokenBalance is a helper method to define mock.On call
-//   - ctx
-//   - ownerAddress
-//   - tokenMintAddress
-//   - commitment
+//   - ctx context.Context
+//   - ownerAddress blockchain.Address
+//   - tokenMintAddress blockchain.Address
+//   - commitment string
 func (_e *MockGenericClientAPI_Expecter) GetTokenBalance(ctx interface{}, ownerAddress interface{}, tokenMintAddress interface{}, commitment interface{}) *MockGenericClientAPI_GetTokenBalance_Call {
 	return &MockGenericClientAPI_GetTokenBalance_Call{Call: _e.mock.On("GetTokenBalance", ctx, ownerAddress, tokenMintAddress, commitment)}
 }
 
 func (_c *MockGenericClientAPI_GetTokenBalance_Call) Run(run func(ctx context.Context, ownerAddress blockchain.Address, tokenMintAddress blockchain.Address, commitment string)) *MockGenericClientAPI_GetTokenBalance_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(blockchain.Address), args[2].(blockchain.Address), args[3].(string))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 blockchain.Address
+		if args[1] != nil {
+			arg1 = args[1].(blockchain.Address)
+		}
+		var arg2 blockchain.Address
+		if args[2] != nil {
+			arg2 = args[2].(blockchain.Address)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
 	})
 	return _c
 }
@@ -477,15 +604,26 @@ type MockGenericClientAPI_GetTokenMetadata_Call struct {
 }
 
 // GetTokenMetadata is a helper method to define mock.On call
-//   - ctx
-//   - mintAddress
+//   - ctx context.Context
+//   - mintAddress blockchain.Address
 func (_e *MockGenericClientAPI_Expecter) GetTokenMetadata(ctx interface{}, mintAddress interface{}) *MockGenericClientAPI_GetTokenMetadata_Call {
 	return &MockGenericClientAPI_GetTokenMetadata_Call{Call: _e.mock.On("GetTokenMetadata", ctx, mintAddress)}
 }
 
 func (_c *MockGenericClientAPI_GetTokenMetadata_Call) Run(run func(ctx context.Context, mintAddress blockchain.Address)) *MockGenericClientAPI_GetTokenMetadata_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(blockchain.Address))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 blockchain.Address
+		if args[1] != nil {
+			arg1 = args[1].(blockchain.Address)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -534,15 +672,26 @@ type MockGenericClientAPI_GetTransactionStatus_Call struct {
 }
 
 // GetTransactionStatus is a helper method to define mock.On call
-//   - ctx
-//   - signature
+//   - ctx context.Context
+//   - signature blockchain.Signature
 func (_e *MockGenericClientAPI_Expecter) GetTransactionStatus(ctx interface{}, signature interface{}) *MockGenericClientAPI_GetTransactionStatus_Call {
 	return &MockGenericClientAPI_GetTransactionStatus_Call{Call: _e.mock.On("GetTransactionStatus", ctx, signature)}
 }
 
 func (_c *MockGenericClientAPI_GetTransactionStatus_Call) Run(run func(ctx context.Context, signature blockchain.Signature)) *MockGenericClientAPI_GetTransactionStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(blockchain.Signature))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 blockchain.Signature
+		if args[1] != nil {
+			arg1 = args[1].(blockchain.Signature)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -589,16 +738,32 @@ type MockGenericClientAPI_SendRawTransaction_Call struct {
 }
 
 // SendRawTransaction is a helper method to define mock.On call
-//   - ctx
-//   - rawTx
-//   - opts
+//   - ctx context.Context
+//   - rawTx []byte
+//   - opts blockchain.TransactionOptions
 func (_e *MockGenericClientAPI_Expecter) SendRawTransaction(ctx interface{}, rawTx interface{}, opts interface{}) *MockGenericClientAPI_SendRawTransaction_Call {
 	return &MockGenericClientAPI_SendRawTransaction_Call{Call: _e.mock.On("SendRawTransaction", ctx, rawTx, opts)}
 }
 
 func (_c *MockGenericClientAPI_SendRawTransaction_Call) Run(run func(ctx context.Context, rawTx []byte, opts blockchain.TransactionOptions)) *MockGenericClientAPI_SendRawTransaction_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]byte), args[2].(blockchain.TransactionOptions))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []byte
+		if args[1] != nil {
+			arg1 = args[1].([]byte)
+		}
+		var arg2 blockchain.TransactionOptions
+		if args[2] != nil {
+			arg2 = args[2].(blockchain.TransactionOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -645,16 +810,32 @@ type MockGenericClientAPI_SendTransaction_Call struct {
 }
 
 // SendTransaction is a helper method to define mock.On call
-//   - ctx
-//   - tx
-//   - opts
+//   - ctx context.Context
+//   - tx *blockchain.Transaction
+//   - opts blockchain.TransactionOptions
 func (_e *MockGenericClientAPI_Expecter) SendTransaction(ctx interface{}, tx interface{}, opts interface{}) *MockGenericClientAPI_SendTransaction_Call {
 	return &MockGenericClientAPI_SendTransaction_Call{Call: _e.mock.On("SendTransaction", ctx, tx, opts)}
 }
 
 func (_c *MockGenericClientAPI_SendTransaction_Call) Run(run func(ctx context.Context, tx *blockchain.Transaction, opts blockchain.TransactionOptions)) *MockGenericClientAPI_SendTransaction_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*blockchain.Transaction), args[2].(blockchain.TransactionOptions))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *blockchain.Transaction
+		if args[1] != nil {
+			arg1 = args[1].(*blockchain.Transaction)
+		}
+		var arg2 blockchain.TransactionOptions
+		if args[2] != nil {
+			arg2 = args[2].(blockchain.TransactionOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
