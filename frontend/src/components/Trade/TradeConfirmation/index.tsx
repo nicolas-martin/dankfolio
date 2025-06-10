@@ -77,208 +77,153 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		return `${address.slice(0, 6)}...${address.slice(-6)}`;
 	};
 
-	const renderSendContent = () => {
-		if (!fromToken || !recipientAddress) {
-			return (
-				<View style={styles.container}>
-					<Text style={styles.title}>Confirm Send</Text>
-					<View style={styles.loadingContainer}>
-						<LoadingAnimation size={100} />
-						<Text style={styles.loadingText}>Preparing send...</Text>
-					</View>
+	const renderTokenRow = (
+		token: Coin,
+		amount: string,
+		testIdPrefix: string,
+		isRecipient = false
+	) => (
+		<View style={styles.tradeRow} testID={`${testIdPrefix}-token-details`}>
+			<View style={styles.tokenInfo}>
+				{isRecipient ? (
+					<Icon source="account" size={32} color={theme.colors.onSurfaceVariant} />
+				) : (
+					<TokenIcon token={token} />
+				)}
+				<View style={styles.tokenDetails}>
+					{isRecipient ? (
+						<>
+							<Text style={styles.tokenSymbol}>To</Text>
+							<TouchableOpacity onPress={handleSolscanPress} testID="solscan-link">
+								<Text style={[styles.tokenName, styles.recipientAddressLink, { color: theme.colors.primary }]}>
+									{formatAddress(amount)}
+								</Text>
+							</TouchableOpacity>
+						</>
+					) : (
+						<>
+							<Text style={styles.tokenSymbol} testID={`${testIdPrefix}-token-symbol-${token.mintAddress}`}>
+								{token.symbol}
+							</Text>
+							<Text style={styles.tokenName} testID={`${testIdPrefix}-token-name-${token.mintAddress}`}>
+								{token.name}
+							</Text>
+						</>
+					)}
 				</View>
-			);
-		}
+			</View>
+			<View style={styles.amountInfo}>
+				{isRecipient ? (
+					<TouchableOpacity onPress={handleSolscanPress} style={styles.solscanButton} testID="solscan-button">
+						<Icon source="open-in-new" size={16} color={theme.colors.primary} />
+						<Text style={[styles.solscanText, { color: theme.colors.primary }]}>Solscan</Text>
+					</TouchableOpacity>
+				) : (
+					<>
+						<Text style={styles.amount} testID={`${testIdPrefix}-token-amount`}>
+							{isNaN(Number(amount)) ? '0' : amount}
+						</Text>
+						<Text style={styles.amountUsd} testID={`${testIdPrefix}-token-amount-usd`}>
+							{formatPrice(isNaN(Number(amount)) ? 0 : Number(amount) * (token.price || 0))}
+						</Text>
+					</>
+				)}
+			</View>
+		</View>
+	);
+
+	const renderActionButtons = () => {
+		const cancelTestId = `cancel-${operationType}-button`;
+		const confirmTestId = `confirm-${operationType}-button`;
+		const actionLabel = operationType;
 
 		return (
-			<View style={styles.container}>
-				{/* Send Display */}
-				<View style={styles.tradeContainer}>
-					{/* Token Amount */}
-					<View style={styles.tradeRow} testID="send-token-details">
-						<View style={styles.tokenInfo}>
-							<TokenIcon token={fromToken} />
-							<View style={styles.tokenDetails}>
-								<Text style={styles.tokenSymbol} testID={`send-token-symbol-${fromToken.mintAddress}`}>{fromToken.symbol}</Text>
-								<Text style={styles.tokenName} testID={`send-token-name-${fromToken.mintAddress}`}>{fromToken.name}</Text>
-							</View>
-						</View>
-						<View style={styles.amountInfo}>
-							<Text style={styles.amount} testID="send-token-amount">
-								{isNaN(Number(fromAmount)) ? '0' : fromAmount}
-							</Text>
-							<Text style={styles.amountUsd} testID="send-token-amount-usd">
-								{formatPrice(isNaN(Number(fromAmount)) ? 0 : Number(fromAmount) * (fromToken.price || 0))}
-							</Text>
-						</View>
-					</View>
-
-					{/* Divider */}
-					<View style={styles.divider} />
-
-					{/* Recipient Address */}
-					<View style={styles.tradeRow} testID="recipient-details">
-						<View style={styles.tokenInfo}>
-							<Icon source="account" size={32} color={theme.colors.onSurfaceVariant} />
-							<View style={styles.tokenDetails}>
-								<Text style={styles.tokenSymbol}>To</Text>
-								<TouchableOpacity onPress={handleSolscanPress} testID="solscan-link">
-									<Text style={[styles.tokenName, styles.recipientAddressLink, { color: theme.colors.primary }]}>
-										{formatAddress(recipientAddress)}
-									</Text>
-								</TouchableOpacity>
-							</View>
-						</View>
-						<View style={styles.amountInfo}>
-							<TouchableOpacity onPress={handleSolscanPress} style={styles.solscanButton} testID="solscan-button">
-								<Icon source="open-in-new" size={16} color={theme.colors.primary} />
-								<Text style={[styles.solscanText, { color: theme.colors.primary }]}>Solscan</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				</View>
-
-				{/* Network Fee */}
-				<View style={styles.feeContainer} testID="fee-section">
-					<Text style={styles.feeLabel} testID="fee-label">Network Fee</Text>
-					<Text style={styles.feeValue} testID="fee-value">{formatPrice(Number(fees.totalFee))}</Text>
-				</View>
-
-				{/* Action Buttons */}
-				<View style={styles.buttonContainer}>
-					<Button
-						mode="outlined"
-						onPress={onClose}
-						style={styles.cancelButton}
-						labelStyle={styles.cancelButtonLabel}
-						disabled={isLoading}
-						testID="cancel-send-button"
-						accessible={true}
-						accessibilityRole="button"
-						accessibilityLabel="Cancel send"
-					>
-						Cancel
-					</Button>
-					<Button
-						mode="contained"
-						onPress={onConfirm}
-						style={styles.confirmButton}
-						labelStyle={styles.confirmButtonLabel}
-						loading={isLoading}
-						disabled={isLoading}
-						testID="confirm-send-button"
-						accessible={true}
-						accessibilityRole="button"
-						accessibilityLabel={isLoading ? "Processing send" : "Confirm send"}
-					>
-						{isLoading ? 'Processing...' : 'Confirm'}
-					</Button>
-				</View>
+			<View style={styles.buttonContainer}>
+				<Button
+					mode="outlined"
+					onPress={onClose}
+					style={styles.cancelButton}
+					labelStyle={styles.cancelButtonLabel}
+					disabled={isLoading}
+					testID={cancelTestId}
+					accessible={true}
+					accessibilityRole="button"
+					accessibilityLabel={`Cancel ${actionLabel}`}
+				>
+					Cancel
+				</Button>
+				<Button
+					mode="contained"
+					onPress={onConfirm}
+					style={styles.confirmButton}
+					labelStyle={styles.confirmButtonLabel}
+					loading={isLoading}
+					disabled={isLoading}
+					testID={confirmTestId}
+					accessible={true}
+					accessibilityRole="button"
+					accessibilityLabel={isLoading ? `Processing ${actionLabel}` : `Confirm ${actionLabel}`}
+				>
+					{isLoading ? 'Processing...' : 'Confirm'}
+				</Button>
 			</View>
 		);
 	};
 
-	const renderSwapContent = () => {
-		if (!fromToken || !toToken) {
-			return (
-				<View style={styles.container}>
-					<Text style={styles.title}>Confirm Trade</Text>
-					<View style={styles.loadingContainer}>
-						<LoadingAnimation size={100} />
-						<Text style={styles.loadingText}>Preparing trade...</Text>
-					</View>
-				</View>
-			);
-		}
+	const renderLoadingState = () => {
+		const title = operationType === 'send' ? 'Confirm Send' : 'Confirm Trade';
+		const loadingText = operationType === 'send' ? 'Preparing send...' : 'Preparing trade...';
 
 		return (
 			<View style={styles.container}>
-				{/* Trade Display */}
-				<View style={styles.tradeContainer}>
-					{/* From Amount */}
-					<View style={styles.tradeRow} testID="from-token-details">
-						<View style={styles.tokenInfo}>
-							<TokenIcon token={fromToken} />
-							<View style={styles.tokenDetails}>
-								<Text style={styles.tokenSymbol} testID={`from-token-symbol-${fromToken.mintAddress}`}>{fromToken.symbol}</Text>
-								<Text style={styles.tokenName} testID={`from-token-name-${fromToken.mintAddress}`}>{fromToken.name}</Text>
-							</View>
-						</View>
-						<View style={styles.amountInfo}>
-							<Text style={styles.amount} testID="from-token-amount">
-								{isNaN(Number(fromAmount)) ? '0' : fromAmount}
-							</Text>
-							<Text style={styles.amountUsd} testID="from-token-amount-usd">
-								{formatPrice(isNaN(Number(fromAmount)) ? 0 : Number(fromAmount) * (fromToken.price || 0))}
-							</Text>
-						</View>
-					</View>
-
-					{/* Divider */}
-					<View style={styles.divider} />
-
-					{/* To Amount */}
-					<View style={styles.tradeRow} testID="to-token-details">
-						<View style={styles.tokenInfo}>
-							<TokenIcon token={toToken} />
-							<View style={styles.tokenDetails}>
-								<Text style={styles.tokenSymbol} testID={`to-token-symbol-${toToken.mintAddress}`}>{toToken.symbol}</Text>
-								<Text style={styles.tokenName} testID={`to-token-name-${toToken.mintAddress}`}>{toToken.name}</Text>
-							</View>
-						</View>
-						<View style={styles.amountInfo}>
-							<Text style={styles.amount} testID="to-token-amount">
-								{isNaN(Number(toAmount)) ? '0' : toAmount}
-							</Text>
-							<Text style={styles.amountUsd} testID="to-token-amount-usd">
-								{formatPrice(isNaN(Number(toAmount)) ? 0 : Number(toAmount) * (toToken.price || 0))}
-							</Text>
-						</View>
-					</View>
-				</View>
-
-				{/* Network Fee */}
-				<View style={styles.feeContainer} testID="fee-section">
-					<Text style={styles.feeLabel} testID="fee-label">Network Fee</Text>
-					<Text style={styles.feeValue} testID="fee-value">{formatPrice(Number(fees.totalFee))}</Text>
-				</View>
-
-				{/* Action Buttons */}
-				<View style={styles.buttonContainer}>
-					<Button
-						mode="outlined"
-						onPress={onClose}
-						style={styles.cancelButton}
-						labelStyle={styles.cancelButtonLabel}
-						disabled={isLoading}
-						testID="cancel-trade-button"
-						accessible={true}
-						accessibilityRole="button"
-						accessibilityLabel="Cancel trade"
-					>
-						Cancel
-					</Button>
-					<Button
-						mode="contained"
-						onPress={onConfirm}
-						style={styles.confirmButton}
-						labelStyle={styles.confirmButtonLabel}
-						loading={isLoading}
-						disabled={isLoading}
-						testID="confirm-trade-button"
-						accessible={true}
-						accessibilityRole="button"
-						accessibilityLabel={isLoading ? "Processing trade" : "Confirm trade"}
-					>
-						{isLoading ? 'Processing...' : 'Confirm'}
-					</Button>
+				<Text style={styles.title}>{title}</Text>
+				<View style={styles.loadingContainer}>
+					<LoadingAnimation size={100} />
+					<Text style={styles.loadingText}>{loadingText}</Text>
 				</View>
 			</View>
 		);
 	};
 
 	const renderContent = () => {
-		return operationType === 'send' ? renderSendContent() : renderSwapContent();
+		const isSend = operationType === 'send';
+		
+		// Check if we have required data
+		if (isSend && (!fromToken || !recipientAddress)) {
+			return renderLoadingState();
+		}
+		if (!isSend && (!fromToken || !toToken)) {
+			return renderLoadingState();
+		}
+
+		return (
+			<View style={styles.container}>
+				{/* Trade/Send Display */}
+				<View style={styles.tradeContainer}>
+					{/* From Token */}
+					{renderTokenRow(fromToken!, fromAmount, operationType)}
+
+					{/* Divider */}
+					<View style={styles.divider} />
+
+					{/* To Token or Recipient */}
+					{isSend ? (
+						renderTokenRow(fromToken!, recipientAddress!, 'recipient', true)
+					) : (
+						renderTokenRow(toToken!, toAmount, 'to')
+					)}
+				</View>
+
+				{/* Network Fee */}
+				<View style={styles.feeContainer} testID="fee-section">
+					<Text style={styles.feeLabel} testID="fee-label">Network Fee</Text>
+					<Text style={styles.feeValue} testID="fee-value">{formatPrice(Number(fees.totalFee))}</Text>
+				</View>
+
+				{/* Action Buttons */}
+				{renderActionButtons()}
+			</View>
+		);
 	};
 
 	return (

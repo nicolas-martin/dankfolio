@@ -8,20 +8,20 @@ import { BalanceSchema } from '@/gen/dankfolio/v1/wallet_pb';
 export const CAPTURED_TRANSACTION_DATA = {
 	// Unsigned transaction from backend
 	UNSIGNED_TX: 'AAEAAgXpAnf0tR1fLcZsinyAFilsbMA7lFi1Ko2WHOj22jSYAjOS3tvBbPB0zM/8tpNGoZXLjBt3JO3kNL+at5Hes+Z6dDw9sedycSDvhoJUJcfbMjdZ5TnBbqMW1HAaEDru0sWvJnvuaWRtBpVpBH3TC2UKEWEBXmy1D/bGmI9EXGBg3wbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpVs0FngTVDZL7LGBPXEJEsvbTTl++uViGw77cK25FEb8BBAQBAwIACgxqAAAAAAAAAAY=',
-	
+
 	// Signed transaction after user signature
 	SIGNED_TX: 'Adpu4Zemt8N39gj8FH3I6etlIgrOqUe24zbEHlIgKRzjRiwTlDp6k/zc/GA34kYi38fN0cvujIT5coyJcJxRTwQBAAIF6QJ39LUdXy3GbIp8gBYpbGzAO5RYtSqNlhzo9to0mAIzkt7bwWzwdMzP/LaTRqGVy4wbdyTt5DS/mreR3rPmenQ8PbHncnEg74aCVCXH2zI3WeU5wW6jFtRwGhA67tLFryZ77mlkbQaVaQR90wtlChFhAV5stQ/2xpiPRFxgYN8G3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqVbNBZ4E1Q2S+yxgT1xCRLL2005fvrlYhsO+3CtuRRG/AQQEAQMCAAoMagAAAAAAAAAG',
-	
+
 	// Transaction details
 	FROM_ADDRESS: 'GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R',
 	TO_ADDRESS: '6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav',
 	TOKEN_MINT: 'CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump',
 	AMOUNT: 1.65973075,
 	BLOCKHASH: '6qqPJJLFshxUcoXv4V5SepMGFTqvA5nDgXt8MdZQYpNS',
-	
+
 	// Test private key (for testing only - remove in production)
 	TEST_PRIVATE_KEY: '2QmVGmjHSaScaVAvRRdT7cacmo2Rp2p8vB7dbYJhnvAdoy9GKeWrhmZE7JGVgD4wnPaGP65MzYvtvcE1QLH3ZLXj',
-	
+
 	// Mock transaction hash that would be returned after submission
 	MOCK_TX_HASH: '5J8WfVhqKjKxjKjKxjKjKxjKjKxjKjKxjKjKxjKjKxjKjKxjKjKxjKjKxjKjKxjKjKxjKjKx',
 };
