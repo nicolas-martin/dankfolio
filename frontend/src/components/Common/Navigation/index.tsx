@@ -5,7 +5,7 @@ import type { RootStackParamList } from '@/types/navigation';
 import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
 import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
-import { useTheme, BottomNavigation } from 'react-native-paper';
+import { useTheme, BottomNavigation, TouchableRipple } from 'react-native-paper';
 import { Platform } from 'react-native';
 import { useThemeStore } from '@/store/theme';
 
@@ -51,11 +51,11 @@ const TabNavigator = () => {
 						const iconSize = focused ? 26 : 22;
 						switch (route.name) {
 							case 'Home':
-								return <HomeIcon color={color} size={iconSize} />;
+								return <HomeIcon color={color} size={iconSize} testID="bottom-nav-home" />;
 							case 'Search':
-								return <SearchIcon color={color} size={iconSize} />;
+								return <SearchIcon color={color} size={iconSize} testID="bottom-nav-search" />;
 							case 'Profile':
-								return <ProfileIcon color={color} size={iconSize} />;
+								return <ProfileIcon color={color} size={iconSize} testID="bottom-nav-profile" />;
 							default:
 								return null;
 						}
@@ -94,8 +94,8 @@ const TabNavigator = () => {
 				/>
 			)}
 		>
-			<Tab.Screen
-				name="Home"
+			<Tab.Screen 
+				name="Home" 
 				component={Home}
 			/>
 			<Tab.Screen
@@ -122,35 +122,35 @@ const Navigation = () => {
 			>
 				<Stack.Screen
 					name="MainTabs"
-					options={{ 
-						headerShown: false 
+					options={{
+						headerShown: false
 					}}
 				>
 					{() => <TabNavigator />}
 				</Stack.Screen>
-				<Stack.Screen 
-					name="CoinDetail" 
+				<Stack.Screen
+					name="CoinDetail"
 					component={CoinDetail}
 					options={{
 						header: (props) => <CustomHeader />
 					}}
 				/>
-				<Stack.Screen 
-					name="Trade" 
+				<Stack.Screen
+					name="Trade"
 					component={Trade}
 					options={{
 						header: (props) => <CustomHeader />
 					}}
 				/>
-				<Stack.Screen 
-					name="SendTokens" 
+				<Stack.Screen
+					name="SendTokens"
 					component={Send}
 					options={{
 						header: (props) => <CustomHeader />
 					}}
 				/>
-				<Stack.Screen 
-					name="Settings" 
+				<Stack.Screen
+					name="Settings"
 					component={Settings}
 					options={{
 						header: (props) => <CustomHeader />

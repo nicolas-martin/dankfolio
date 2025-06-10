@@ -362,11 +362,11 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 				console.log('🎭 Returning mock GetCoinByID response');
 				// Parse request to get the mint address
 				let mintAddress = 'So11111111111111111111111111111111111111112'; // Default to SOL
-				
+
 				if (options?.body) {
 					try {
 						let requestData;
-						
+
 						// Handle Connect-Web request body format (Uint8Array)
 						if (options.body instanceof Uint8Array) {
 							const decoder = new TextDecoder();
@@ -377,7 +377,7 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 						} else {
 							requestData = options.body;
 						}
-						
+
 						if (requestData.mintAddress) {
 							mintAddress = requestData.mintAddress;
 						}
@@ -388,13 +388,85 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 
 				// Find the coin by mint address or return the first one as fallback
 				const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => c.mintAddress === mintAddress) || ALL_MOCK_COINS[0];
-				
+
 				mockResponse = coin;
 				break;
 			}
 
 			case '/dankfolio.v1.walletservice/getwalletbalances': {
 				console.log('🎭 Returning mock GetWalletBalances response');
+
+				// Parse request to get the wallet address for different test scenarios
+				let walletAddress = '';
+				if (options?.body) {
+					try {
+						let requestData;
+
+						// Handle Connect-Web request body format (Uint8Array)
+						if (options.body instanceof Uint8Array) {
+							const decoder = new TextDecoder();
+							const bodyString = decoder.decode(options.body);
+							requestData = JSON.parse(bodyString);
+						} else if (typeof options.body === 'string') {
+							requestData = JSON.parse(options.body);
+						} else {
+							requestData = options.body;
+						}
+
+						if (requestData.address) {
+							walletAddress = requestData.address;
+						}
+					} catch (e) {
+						// Ignore parsing errors, use default
+					}
+				}
+
+				console.log('🎭 Mock API checking wallet address:', walletAddress);
+
+				// Handle different test scenarios based on address
+				if (walletAddress.includes('NetworkError') || walletAddress.includes('network-error')) {
+					// Simulate network error
+					console.log('🎭 Simulating network error for address:', walletAddress);
+					throw new Error('NETWORK_ERROR: Unable to connect to Solana network');
+				}
+
+				if (walletAddress.includes('InvalidAddress') || walletAddress === 'invalid-address') {
+					// Simulate invalid address error
+					console.log('🎭 Simulating invalid address error for:', walletAddress);
+					throw new Error('INVALID_ADDRESS: Invalid wallet address format');
+				}
+
+				if (walletAddress.includes('Unused') || walletAddress.includes('unused')) {
+					// Simulate unused address (valid but no balance)
+					console.log('🎭 Simulating unused address for:', walletAddress);
+					const walletBalance = create(WalletBalanceSchema, {
+						balances: [], // Empty balances for unused address
+					});
+					const response = create(GetWalletBalancesResponseSchema, {
+						walletBalance,
+					});
+					mockResponse = response;
+					break;
+				}
+
+				if (walletAddress.includes('Active') || walletAddress.includes('GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R')) {
+					// Simulate active address with balance
+					console.log('🎭 Simulating active address with balance for:', walletAddress);
+					const activeBalances = [
+						create(BalanceSchema, { id: 'So11111111111111111111111111111111111111112', amount: 2.5 }), // SOL
+						create(BalanceSchema, { id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', amount: 100.0 }), // USDC
+					];
+					const walletBalance = create(WalletBalanceSchema, {
+						balances: activeBalances,
+					});
+					const response = create(GetWalletBalancesResponseSchema, {
+						walletBalance,
+					});
+					mockResponse = response;
+					break;
+				}
+
+				// Default case - return standard mock balances
 				const walletBalance = create(WalletBalanceSchema, {
 					balances: MOCK_WALLET_BALANCES,
 				});
@@ -488,6 +560,29 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 				break;
 			}
 
+			case '/dankfolio.v1.walletservice/preparetransfer': {
+				console.log('🎭 Returning mock PrepareTransfer response (WalletService)');
+				const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ0JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
+				// Return the correct response structure for PrepareTransferResponse
+				const response = {
+					unsignedTransaction: mockTransactionBase64
+				};
+				mockResponse = response;
+				break;
+			}
+
+			case '/dankfolio.v1.tradeservice/preparetransfer': {
+				console.log('🎭 Returning mock PrepareTransfer response (TradeService)');
+				const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
+				// Return a simple response that matches what the frontend expects
+				const response = {
+					transaction: mockTransactionBase64,
+					message: 'Transfer prepared successfully'
+				};
+				mockResponse = response;
+				break;
+			}
+
 			case '/dankfolio.v1.tradeservice/submitswap': {
 				console.log('🎭 Returning mock SubmitSwap response');
 				const response = create(SubmitSwapResponseSchema, {
@@ -567,10 +662,12 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 					'/dankfolio.v1.coinservice/search',
 					'/dankfolio.v1.coinservice/getcoinbyid',
 					'/dankfolio.v1.walletservice/getwalletbalances',
+					'/dankfolio.v1.walletservice/preparetransfer',
 					'/dankfolio.v1.priceservice/getpricehistory',
 					'/dankfolio.v1.priceservice/getcoinprices',
 					'/dankfolio.v1.tradeservice/getswapquote',
 					'/dankfolio.v1.tradeservice/prepareswap',
+					'/dankfolio.v1.tradeservice/preparetransfer',
 					'/dankfolio.v1.tradeservice/submitswap',
 					'/dankfolio.v1.tradeservice/getswapstatus',
 					'/dankfolio.v1.tradeservice/gettrade',

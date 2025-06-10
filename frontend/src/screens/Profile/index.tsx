@@ -86,12 +86,12 @@ const Profile = () => {
 	};
 
 	const renderHeader = () => (
-		<View style={styles.headerSection}>
-			<View style={styles.profileHeader}>
-				<View style={styles.profileIconContainer}>
+		<View style={styles.headerSection} accessible={false}>
+			<View style={styles.profileHeader} accessible={false}>
+				<View style={styles.profileIconContainer} accessible={false}>
 					{/* Removed TouchableOpacity wrapper */}
 					<ProfileIcon size={28} color={theme.colors.onSurface} />
-					<Text style={styles.profileTitle}>Portfolio</Text>
+					<Text style={styles.profileTitle} accessible={true} testID="portfolio-title">Portfolio</Text>
 				</View>
 				<IconButton
 					icon="cog-outline"
@@ -102,11 +102,13 @@ const Profile = () => {
 						navigation.navigate('Settings');
 					}}
 					style={styles.settingsButton}
+					accessible={true}
+					testID="settings-button"
 				/>
 			</View>
 			{wallet && (
-				<View style={styles.walletAddressContainer}>
-					<Text style={styles.walletAddress}>
+				<View style={styles.walletAddressContainer} accessible={false}>
+					<Text style={styles.walletAddress} accessible={true}>
 						{formatAddress(wallet.address)}
 					</Text>
 					<IconButton
@@ -116,6 +118,8 @@ const Profile = () => {
 							copyToClipboard(wallet.address, 'Wallet', showToast);
 						}}
 						style={styles.copyButton}
+						accessible={true}
+						testID="copy-wallet-button"
 					/>
 				</View>
 			)}
@@ -123,13 +127,13 @@ const Profile = () => {
 	);
 
 	const renderPortfolioCard = () => (
-		<View style={styles.portfolioCard}>
-			<View style={styles.portfolioHeader}>
-				<Text style={styles.portfolioTitle}>Total Portfolio Value</Text>
-				<Text style={styles.portfolioValue}>
+		<View style={styles.portfolioCard} accessible={false}>
+			<View style={styles.portfolioHeader} accessible={false}>
+				<Text style={styles.portfolioTitle} accessible={true}>Total Portfolio Value</Text>
+				<Text style={styles.portfolioValue} accessible={true}>
 					${totalValue.toFixed(2)}
 				</Text>
-				<Text style={styles.portfolioSubtext}>
+				<Text style={styles.portfolioSubtext} accessible={true}>
 					{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
 				</Text>
 			</View>
@@ -143,6 +147,8 @@ const Profile = () => {
 				style={[styles.sendButton, tokens.length === 0 && styles.sendButtonDisabled]}
 				contentStyle={styles.sendButtonContent}
 				disabled={tokens.length === 0}
+				accessible={true}
+				testID="send-tokens-button"
 			>
 				Send Tokens
 			</Button>
@@ -150,21 +156,21 @@ const Profile = () => {
 	);
 
 	const renderTokensSection = () => (
-		<View style={styles.tokensSection}>
-			<View style={styles.tokensHeader}>
+		<View style={styles.tokensSection} accessible={false}>
+			<View style={styles.tokensHeader} accessible={false}>
 				<View style={styles.tokensIcon}>
 					<CoinsIcon size={24} color={theme.colors.onSurface} />
 				</View>
-				<Text style={styles.tokensTitle}>Your Tokens</Text>
+				<Text style={styles.tokensTitle} accessible={true} testID="your-tokens-title">Your Tokens</Text>
 			</View>
 
 			{sortedTokens.length === 0 ? (
-				<View style={styles.emptyStateContainer}>
+				<View style={styles.emptyStateContainer} accessible={false}>
 					<View style={styles.emptyStateIcon}>
 						<Icon source="wallet-outline" size={48} color={theme.colors.onSurfaceVariant} />
 					</View>
-					<Text style={styles.emptyStateTitle}>No Tokens Found</Text>
-					<Text style={styles.emptyStateText}>
+					<Text style={styles.emptyStateTitle} accessible={true}>No Tokens Found</Text>
+					<Text style={styles.emptyStateText} accessible={true}>
 						Your wallet doesn't contain any tokens yet. Start trading to build your portfolio!
 					</Text>
 				</View>
@@ -217,9 +223,10 @@ const Profile = () => {
 	}
 
 	return (
-		<SafeAreaView style={styles.safeArea}>
-			<View style={styles.container}>
+		<SafeAreaView style={styles.safeArea} accessible={false}>
+			<View style={styles.container} accessible={false} testID="profile-screen">
 				<ScrollView
+					accessible={false}
 					contentContainerStyle={styles.scrollContent}
 					refreshControl={
 						<RefreshControl
@@ -230,7 +237,7 @@ const Profile = () => {
 						/>
 					}
 				>
-					<View style={styles.contentPadding}>
+					<View style={styles.contentPadding} accessible={false}>
 						{renderHeader()}
 						{renderPortfolioCard()}
 						{renderTokensSection()}

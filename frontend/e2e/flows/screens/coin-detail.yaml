@@ -1,11 +1,13 @@
 appId: com.nicolasmartin.dankfolio
+env:
+    JUP_ADDRESS: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
 ---
 - runFlow: ../common/app-setup.yaml
 
 - assertVisible: "Trending Coins"
 
 - tapOn:
-      id: "trending-coin-card-JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+      id: "trending-coin-card-${JUP_ADDRESS}"
 
 - assertVisible:
       id: "coin-detail-screen"
@@ -13,7 +15,7 @@ appId: com.nicolasmartin.dankfolio
 - runFlow:
       file: ../components/coin-detail-element.yaml
       env:
-          COIN_ADDRESS: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+          COIN_ADDRESS: "${JUP_ADDRESS}"
 
 - assertVisible:
       id: "trade-button"

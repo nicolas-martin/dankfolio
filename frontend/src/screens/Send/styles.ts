@@ -141,6 +141,25 @@ export const createStyles = (theme: MD3Theme) =>
 			fontWeight: '600',
 		},
 
+		// Error Message
+		errorContainer: {
+			alignItems: 'center',
+			backgroundColor: theme.colors.errorContainer,
+			borderRadius: 12,
+			flexDirection: 'row',
+			gap: 8,
+			marginBottom: 16,
+			marginHorizontal: 16,
+			paddingHorizontal: 16,
+			paddingVertical: 12,
+		},
+		errorText: {
+			color: theme.colors.onErrorContainer,
+			flex: 1,
+			fontSize: 14,
+			fontWeight: '500',
+		},
+
 		// Error States
 		noWalletContainer: {
 			alignItems: 'center',
@@ -255,11 +274,6 @@ export const createStyles = (theme: MD3Theme) =>
 			fontSize: 16,
 			marginBottom: 8,
 		},
-		errorText: {
-			color: theme.colors.error,
-			fontSize: 14,
-			marginTop: 4,
-		},
 		button: {
 			alignItems: 'center',
 			backgroundColor: theme.colors.primary,
@@ -356,14 +370,94 @@ export const createStyles = (theme: MD3Theme) =>
 			fontWeight: '600', // Consistent with other button texts
 			textAlign: 'center',
 		},
-		verificationModalLinkButtonText: {
-			color: theme.colors.onPrimary, // Specific for link button if background is primary
+		verificationModalProceedButtonText: {
+			color: theme.colors.onTertiary,
 			fontSize: 16,
 			fontWeight: '600',
 			textAlign: 'center',
 		},
-		verificationModalProceedButtonText: {
-			color: theme.colors.onTertiary, // Specific for proceed button
+
+		// Verification Card Styles (replaces modal)
+		verificationCard: {
+			backgroundColor: theme.colors.surface,
+			borderRadius: 16,
+			marginBottom: 16,
+			padding: 20,
+			...Platform.select({
+				ios: {
+					shadowColor: '#000',
+					shadowOffset: { width: 0, height: 2 },
+					shadowOpacity: 0.1,
+					shadowRadius: 8,
+				},
+				android: {
+					elevation: 4,
+				},
+			}),
+		},
+		verificationCardSuccess: {
+			borderLeftWidth: 4,
+			borderLeftColor: theme.colors.primary,
+		},
+		verificationCardWarning: {
+			borderLeftWidth: 4,
+			borderLeftColor: theme.colors.tertiary,
+		},
+		verificationCardError: {
+			borderLeftWidth: 4,
+			borderLeftColor: theme.colors.error,
+		},
+		verificationCardInfo: {
+			borderLeftWidth: 4,
+			borderLeftColor: theme.colors.onSurfaceVariant,
+		},
+		verificationHeader: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			gap: 8,
+			marginBottom: 12,
+		},
+		verificationTitle: {
+			color: theme.colors.onSurface,
+			fontSize: 16,
+			fontWeight: '600',
+		},
+		verificationMessage: {
+			color: theme.colors.onSurface,
+			fontSize: 14,
+			lineHeight: 20,
+			marginBottom: 16,
+		},
+		verificationActions: {
+			flexDirection: 'row',
+			gap: 12,
+		},
+		verificationButton: {
+			borderRadius: 12,
+			flex: 1,
+			paddingVertical: 12,
+			paddingHorizontal: 16,
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		verificationButtonCancel: {
+			backgroundColor: theme.colors.surfaceVariant,
+		},
+		verificationButtonContinue: {
+			backgroundColor: theme.colors.primary,
+		},
+		verificationButtonCancelText: {
+			color: theme.colors.onSurfaceVariant,
+			fontSize: 14,
+			fontWeight: '600',
+		},
+		verificationButtonContinueText: {
+			color: theme.colors.onPrimary,
+			fontSize: 14,
+			fontWeight: '600',
+		},
+		verificationModalLinkButtonText: {
+			color: theme.colors.onPrimary, // Specific for link button if background is primary
 			fontSize: 16,
 			fontWeight: '600',
 			textAlign: 'center',

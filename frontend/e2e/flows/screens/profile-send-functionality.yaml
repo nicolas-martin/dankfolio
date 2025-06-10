@@ -1,0 +1,103 @@
+appId: com.dankfolio.app
+env:
+    testAmount: "0.000000001"
+    testRecipientAddress: "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R"
+    solMint: "So11111111111111111111111111111111111111112"
+    largeAmount: "99"
+---
+# Test 1: Setup app
+- runFlow: ../common/app-setup.yaml
+
+# Test 2: Navigate to Profile screen using coordinates (bottom navigation)
+- tapOn:
+      point: "85%,95%"
+- waitForAnimationToEnd
+
+# Test 3: Verify Profile screen is visible
+- assertVisible:
+      id: "profile-screen"
+
+# Test 4: Verify Send button is visible and tap it
+- assertVisible:
+      id: "send-tokens-button"
+- tapOn:
+      id: "send-tokens-button"
+
+# Test 5: Verify Send screen loads
+- assertVisible:
+      text: "To"
+
+# Test 6: Test amount percentage buttons (25%, 50%, 75%, 100%)
+- assertVisible:
+      id: "amount-percentage-button-25"
+- assertVisible:
+      id: "amount-percentage-button-50"
+- assertVisible:
+      id: "amount-percentage-button-75"
+- assertVisible:
+      id: "amount-percentage-button-100"
+
+# Test 7: Test recipient address input
+- tapOn:
+      id: "recipient-address-input"
+- eraseText
+- inputText: "${testRecipientAddress}"
+- hideKeyboard
+
+# Test 8: Test invalid address validation
+- tapOn:
+      id: "recipient-address-input"
+- eraseText
+- inputText: "invalid-address"
+- hideKeyboard
+- waitForAnimationToEnd
+# Tap outside input field to ensure keyboard is dismissed
+- tapOn:
+      point: "50%,30%"
+- waitForAnimationToEnd
+- tapOn:
+      id: "send-button"
+- assertVisible:
+      id: "validation-error-text"
+- assertVisible:
+      text: "Invalid Solana address"
+
+# Test 9: Test insufficient balance validation with extremely large amount
+- tapOn:
+      id: "recipient-address-input"
+- eraseText
+- inputText: "${testRecipientAddress}"
+- hideKeyboard
+- waitForAnimationToEnd
+- tapOn:
+      id: "token-selector-amount-input"
+- eraseText
+- waitForAnimationToEnd
+- inputText: "${largeAmount}"
+- hideKeyboard
+- waitForAnimationToEnd
+# Tap outside input field to ensure keyboard is dismissed
+- tapOn:
+      point: "50%,30%"
+- waitForAnimationToEnd
+- tapOn:
+      id: "send-button"
+- assertVisible:
+      id: "validation-error-text"
+- assertVisible:
+      text: "Insufficient balance.*"
+
+- tapOn:
+      id: "amount-percentage-button-100"
+- assertVisible:
+      id: "send-button"
+- tapOn:
+      id: "send-button"
+- waitForAnimationToEnd
+- assertVisible:
+      id: "verification-continue-button"
+- tapOn:
+      id: "verification-continue-button"
+- waitForAnimationToEnd
+- tapOn:
+      id: "confirm-trade-button"
