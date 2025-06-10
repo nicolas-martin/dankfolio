@@ -7,7 +7,7 @@ interface TradeConfirmationProps {
 	fromAmount: string;
 	toAmount: string;
 	fromToken: Coin;
-	toToken: Coin;
+	toToken?: Coin;
 	fees: {
 		gasFee: string;
 		priceImpactPct: string;
@@ -15,6 +15,8 @@ interface TradeConfirmationProps {
 		route?: string;
 	};
 	isLoading?: boolean;
+	operationType?: 'swap' | 'send';
+	recipientAddress?: string;
 }
 
 export type { TradeConfirmationProps }; 

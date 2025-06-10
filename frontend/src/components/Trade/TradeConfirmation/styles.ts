@@ -219,6 +219,20 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	section: { // Legacy
 		marginBottom: 16,
 	},
+	recipientAddressLink: {
+		textDecorationLine: 'underline',
+	},
+	solscanButton: {
+		alignItems: 'center',
+		flexDirection: 'row',
+		gap: 4,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+	},
+	solscanText: {
+		fontSize: 12,
+		fontWeight: '500',
+	},
 	subValue: { // Legacy
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 12,

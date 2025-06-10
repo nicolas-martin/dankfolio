@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Dimensions } from 'react-native';
-import { Text, Button, useTheme } from 'react-native-paper';
+import { View, Dimensions, TouchableOpacity, Linking } from 'react-native';
+import { Text, Button, useTheme, Icon } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
 import { LoadingAnimation } from '../../Common/Animations';
@@ -20,6 +20,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	toToken,
 	fees,
 	isLoading = false,
+	operationType = 'swap',
+	recipientAddress,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -34,7 +36,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	}, [isVisible]);
 
 	// Custom backdrop component with blur
-	const renderBackdrop = (props: any) => (
+	const renderBackdrop = (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
 		<BottomSheetBackdrop
 			{...props}
 			disappearsOnIndex={-1}
@@ -63,7 +65,120 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		);
 	};
 
-	const renderContent = () => {
+	const handleSolscanPress = () => {
+		if (recipientAddress) {
+			const solscanUrl = `https://solscan.io/account/${recipientAddress}`;
+			Linking.openURL(solscanUrl);
+		}
+	};
+
+	const formatAddress = (address: string) => {
+		if (address.length <= 12) return address;
+		return `${address.slice(0, 6)}...${address.slice(-6)}`;
+	};
+
+	const renderSendContent = () => {
+		if (!fromToken || !recipientAddress) {
+			return (
+				<View style={styles.container}>
+					<Text style={styles.title}>Confirm Send</Text>
+					<View style={styles.loadingContainer}>
+						<LoadingAnimation size={100} />
+						<Text style={styles.loadingText}>Preparing send...</Text>
+					</View>
+				</View>
+			);
+		}
+
+		return (
+			<View style={styles.container}>
+				{/* Send Display */}
+				<View style={styles.tradeContainer}>
+					{/* Token Amount */}
+					<View style={styles.tradeRow} testID="send-token-details">
+						<View style={styles.tokenInfo}>
+							<TokenIcon token={fromToken} />
+							<View style={styles.tokenDetails}>
+								<Text style={styles.tokenSymbol} testID={`send-token-symbol-${fromToken.mintAddress}`}>{fromToken.symbol}</Text>
+								<Text style={styles.tokenName} testID={`send-token-name-${fromToken.mintAddress}`}>{fromToken.name}</Text>
+							</View>
+						</View>
+						<View style={styles.amountInfo}>
+							<Text style={styles.amount} testID="send-token-amount">
+								{isNaN(Number(fromAmount)) ? '0' : fromAmount}
+							</Text>
+							<Text style={styles.amountUsd} testID="send-token-amount-usd">
+								{formatPrice(isNaN(Number(fromAmount)) ? 0 : Number(fromAmount) * (fromToken.price || 0))}
+							</Text>
+						</View>
+					</View>
+
+					{/* Divider */}
+					<View style={styles.divider} />
+
+					{/* Recipient Address */}
+					<View style={styles.tradeRow} testID="recipient-details">
+						<View style={styles.tokenInfo}>
+							<Icon source="account" size={32} color={theme.colors.onSurfaceVariant} />
+							<View style={styles.tokenDetails}>
+								<Text style={styles.tokenSymbol}>To</Text>
+								<TouchableOpacity onPress={handleSolscanPress} testID="solscan-link">
+									<Text style={[styles.tokenName, styles.recipientAddressLink, { color: theme.colors.primary }]}>
+										{formatAddress(recipientAddress)}
+									</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
+						<View style={styles.amountInfo}>
+							<TouchableOpacity onPress={handleSolscanPress} style={styles.solscanButton} testID="solscan-button">
+								<Icon source="open-in-new" size={16} color={theme.colors.primary} />
+								<Text style={[styles.solscanText, { color: theme.colors.primary }]}>Solscan</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+				</View>
+
+				{/* Network Fee */}
+				<View style={styles.feeContainer} testID="fee-section">
+					<Text style={styles.feeLabel} testID="fee-label">Network Fee</Text>
+					<Text style={styles.feeValue} testID="fee-value">{formatPrice(Number(fees.totalFee))}</Text>
+				</View>
+
+				{/* Action Buttons */}
+				<View style={styles.buttonContainer}>
+					<Button
+						mode="outlined"
+						onPress={onClose}
+						style={styles.cancelButton}
+						labelStyle={styles.cancelButtonLabel}
+						disabled={isLoading}
+						testID="cancel-send-button"
+						accessible={true}
+						accessibilityRole="button"
+						accessibilityLabel="Cancel send"
+					>
+						<Text>Cancel</Text>
+					</Button>
+					<Button
+						mode="contained"
+						onPress={onConfirm}
+						style={styles.confirmButton}
+						labelStyle={styles.confirmButtonLabel}
+						loading={isLoading}
+						disabled={isLoading}
+						testID="confirm-send-button"
+						accessible={true}
+						accessibilityRole="button"
+						accessibilityLabel={isLoading ? "Processing send" : "Confirm send"}
+					>
+						{isLoading ? 'Processing...' : 'Confirm'}
+					</Button>
+				</View>
+			</View>
+		);
+	};
+
+	const renderSwapContent = () => {
 		if (!fromToken || !toToken) {
 			return (
 				<View style={styles.container}>
@@ -160,6 +275,10 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				</View>
 			</View>
 		);
+	};
+
+	const renderContent = () => {
+		return operationType === 'send' ? renderSendContent() : renderSwapContent();
 	};
 
 	return (

@@ -112,7 +112,7 @@ const App: React.FC = () => {
 	// Use the theme store instead of local state
 	const { themeType } = useThemeStore();
 
-	const handleWalletSetupComplete = async (newKeypair: Keypair) => {
+	const handleWalletSetupComplete = useCallback(async (newKeypair: Keypair) => {
 		logger.breadcrumb({ message: 'App: Wallet setup complete, navigating to main app', category: 'app_lifecycle' });
 		const newPublicKey = newKeypair.publicKey.toBase58();
 		await setWallet(newPublicKey);
@@ -127,7 +127,7 @@ const App: React.FC = () => {
 		}
 
 		setNeedsWalletSetup(false);
-	};
+	}, [setWallet]);
 
 	useEffect(() => {
 		// This effect runs once on app mount

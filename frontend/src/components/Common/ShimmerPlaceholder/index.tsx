@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, ViewStyle, DimensionValue } from 'react-native';
+import { View, ViewStyle, DimensionValue, StyleSheet } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import Animated, {
 	useSharedValue,
@@ -63,7 +63,7 @@ const ShimmerPlaceholder: React.FC<ShimmerPlaceholderProps> = ({
 	);
 };
 
-const createStyles = (theme: ReturnType<typeof useTheme>, width: DimensionValue, height: number, borderRadius: number) => StyleSheet.create({
+const createStyles = (theme: any, width: DimensionValue, height: number, borderRadius: number) => StyleSheet.create({
 	animatedShimmerOverlay: {
 		backgroundColor: theme.colors.surface,
 		height: '100%',

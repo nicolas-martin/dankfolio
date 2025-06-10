@@ -5,7 +5,6 @@ import { env } from '@/utils/env';
 import { logger } from '@/utils/logger';
 import { storeCredentials } from './keychainService';
 import { base64ToBase58PrivateKey, Base58PrivateKey } from './cryptoUtils';
-import { usePortfolioStore } from '@/store/portfolio';
 
 export async function initializeDebugWallet(): Promise<Keypair | null> {
 	try {
@@ -29,11 +28,10 @@ export async function initializeDebugWallet(): Promise<Keypair | null> {
 
 		logger.log('Created keypair from debug wallet', { publicKey: keypair.publicKey.toBase58() });
 
-		// Set wallet in portfolio store
-		usePortfolioStore.getState().setWallet(keypair.publicKey.toBase58());
-		// We won't call fetchPortfolioBalance here, App.tsx can do that after this resolves.
+		// Don't set wallet in portfolio store here - let the caller handle it
+		// This prevents duplicate setWallet calls when App.tsx calls handleWalletSetupComplete
 
-		logger.info('Debug wallet initialized and set in store successfully.');
+		logger.info('Debug wallet initialized successfully.');
 		return keypair;
 	} catch (error: unknown) {
 		if (error instanceof Error) {
