@@ -1,24 +1,15 @@
 appId: com.nicolasmartin.dankfolio
 ---
-# Component Flow: Select a token in a TokenSelector with enhanced filter assertion
+- assertVisible: "Bottom Sheet"
 
-# 1. Tap on the TokenSelector to open the selection modal/list
 - tapOn:
-      id: "to-token-selector"
-
-# 2. Wait for modal animation to complete
-- waitForAnimationToEnd
-
-# 3. Try to find the search input - it might be in the bottom sheet content
-- assertVisible:
       id: "token-search-input"
-
-# BUG: Can't find the item in the bottom sheet
-- tapOn:
-      point: "50%,69%"
 
 - assertVisible:
       id: "to-token-selector-token-symbol-${coinAddressToSelect}"
+
+- tapOn:
+      id: "search-result-${coinAddressToSelect}"
 
 - assertNotVisible:
       id: "token-search-input"
