@@ -71,6 +71,11 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			opacity={0.8}
 			onPress={onDismiss}
 			testID="token-search-modal-backdrop"
+			// Accessibility properties for testing frameworks
+			accessible={true}
+			accessibilityRole="button"
+			accessibilityLabel="Close token selection modal"
+			accessibilityHint="Tap to close the modal"
 		>
 			<BlurView intensity={20} style={styles.blurView} />
 		</BottomSheetBackdrop>
@@ -107,6 +112,11 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				testID={`search-result-${coin.mintAddress}`}
 				style={styles.tokenItem}
 				onPress={handlePress}
+				accessible={true}
+				accessibilityRole="button"
+				accessibilityLabel={`Select ${coin.symbol} token, ${coin.name}`}
+				accessibilityHint="Double tap to select this token"
+				importantForAccessibility="yes"
 			>
 				<RenderIcon iconUrl={coin.resolvedIconUrl} />
 				<View style={styles.tokenDetails}>
@@ -156,8 +166,14 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			enableDismissOnClose={true}
 			backdropComponent={renderBackdrop}
 			enableDynamicSizing={false}
+			accessible={false}
 		>
-			<View style={styles.searchContainer} testID="token-selection-modal-content">
+			<View 
+				style={styles.searchContainer} 
+				testID="token-selection-modal-content"
+				accessible={false}
+				importantForAccessibility="yes"
+			>
 				<Searchbar
 					testID="token-search-input"
 					placeholder="Search tokens"
@@ -172,6 +188,11 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 					autoFocus={false}
 					submitBehavior={'blurAndSubmit'}
 					returnKeyType="search"
+					accessible={true}
+					accessibilityRole="search"
+					accessibilityLabel="Search for tokens"
+					accessibilityHint="Type to filter available tokens"
+					importantForAccessibility="yes"
 				/>
 			</View>
 			<BottomSheetFlatList
@@ -190,6 +211,8 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 					offset: 72 * index,
 					index,
 				})}
+				accessible={false}
+				importantForAccessibility="yes"
 			/>
 		</BottomSheetModal>
 	);

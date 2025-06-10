@@ -41,6 +41,11 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			appearsOnIndex={0}
 			opacity={0.8}
 			onPress={onClose}
+			// Accessibility properties for testing frameworks
+			accessible={true}
+			accessibilityRole="button"
+			accessibilityLabel="Close trade confirmation modal"
+			accessibilityHint="Tap to close the modal"
 		>
 			<BlurView intensity={20} style={{ flex: 1 }} />
 		</BottomSheetBackdrop>
@@ -132,6 +137,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						labelStyle={styles.cancelButtonLabel}
 						disabled={isLoading}
 						testID="cancel-trade-button"
+						accessible={true}
+						accessibilityRole="button"
+						accessibilityLabel="Cancel trade"
 					>
 						Cancel
 					</Button>
@@ -143,6 +151,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						loading={isLoading}
 						disabled={isLoading}
 						testID="confirm-trade-button"
+						accessible={true}
+						accessibilityRole="button"
+						accessibilityLabel={isLoading ? "Processing trade" : "Confirm trade"}
 					>
 						{isLoading ? 'Processing...' : 'Confirm'}
 					</Button>
@@ -161,8 +172,17 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			enablePanDownToClose={true}
 			enableDismissOnClose={true}
 			backdropComponent={renderBackdrop}
+			// Official Maestro solution for nested components on iOS
+			// Disable accessibility on the outer container to allow inner components to be accessible
+			accessible={false}
 		>
-			<BottomSheetView style={{ flex: 1 }}>
+			<BottomSheetView 
+				style={{ flex: 1 }}
+				// Parent container should be accessible={false}
+				accessible={false}
+				// Android specific - ensure content is accessible
+				importantForAccessibility="yes"
+			>
 				{renderContent()}
 			</BottomSheetView>
 		</BottomSheetModal>

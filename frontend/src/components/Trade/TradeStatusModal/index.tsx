@@ -224,6 +224,9 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					style={styles.linkButton}
 					textColor="#2196F3"
 					testID="trade-status-solscan-button"
+					accessible={true}
+					accessibilityRole="button"
+					accessibilityLabel="View transaction on Solscan"
 				>
 					View on Solscan
 				</Button>
@@ -259,6 +262,11 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					setIsClosingProgrammatically(true);
 					onClose();
 				} : undefined} // Only allow tap-to-dismiss when final
+				// Accessibility properties for testing frameworks
+				accessible={true}
+				accessibilityRole="button"
+				accessibilityLabel="Close trade status modal"
+				accessibilityHint="Tap to close the modal"
 			>
 				<BlurView intensity={20} style={{ flex: 1 }} />
 			</BottomSheetBackdrop>
@@ -285,7 +293,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	return (
 		<BottomSheetModal
-			testID="trade-status-modal"
 			ref={bottomSheetModalRef}
 			snapPoints={[SCREEN_HEIGHT * 0.75]}
 			onDismiss={handleDismiss}
@@ -294,8 +301,18 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			enablePanDownToClose={isFinal}
 			enableDismissOnClose={isFinal}
 			backdropComponent={renderBackdrop}
+			// Official Maestro solution for nested components on iOS
+			// Disable accessibility on the outer container to allow inner components to be accessible
+			accessible={false}
 		>
-			<BottomSheetView style={{ flex: 1, padding: 20 }}>
+			<BottomSheetView 
+				style={{ flex: 1, padding: 20 }}
+				testID="trade-status-modal"
+				// Parent container should be accessible={false}
+				accessible={false}
+				// Android specific - ensure content is accessible
+				importantForAccessibility="yes"
+			>
 				{/* Header */}
 				<View style={styles.header}>
 					<Text style={styles.title}>Transaction Status</Text>
@@ -331,6 +348,10 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 							mode="contained"
 							onPress={handleButtonClose}
 							style={styles.closeButton}
+							// Interactive child element should be accessible={true}
+							accessible={true}
+							accessibilityRole="button"
+							accessibilityLabel={displayStatus === 'failed' ? 'Try again' : 'Close modal'}
 						>
 							{displayStatus === 'failed' ? 'Try Again' : 'Done'}
 						</Button>

@@ -80,7 +80,9 @@ env:
 
 # TAP ON BOTTOM SHEET DONE
 - tapOn:
-      point: 60%,70%
+      point: 60%,90%
+- tapOn:
+      id: "trade-status-action-button"
 
 - waitForAnimationToEnd
 - assertNotVisible: "Bottom sheet backdrop"
