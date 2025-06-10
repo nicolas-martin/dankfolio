@@ -1,4 +1,4 @@
-import { useTransactionsStore } from './transactions';
+import { useTransactionsStore } from '../transactions';
 import { grpcApi } from '@/services/grpcApi';
 import { Transaction } from '@/types'; // Assuming Transaction type is available
 

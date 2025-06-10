@@ -1,4 +1,4 @@
-import { formatTimeAgo } from './timeFormat';
+import { formatTimeAgo } from '../timeFormat';
 
 describe('formatTimeAgo', () => {
   const now = new Date();
