@@ -17,11 +17,11 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
+	tracker "github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
@@ -83,16 +83,19 @@ func main() {
 		Timeout: time.Second * 10,
 	}
 
-	// Initialize APICallTracker
-	// The store is initialized later, so we need to move APICallTracker initialization after store,
-	// or pass store later. For now, let's defer APICallTracker initialization.
-	var apiTracker clients.APICallTracker // Declare apiTracker
+	// Initialize database store first (required for APICallTracker)
+	store, err := postgres.NewStore(config.DBURL, true, logLevel, config.Env)
+	if err != nil {
+		slog.Error("Failed to connect to database", slog.Any("error", err))
+		os.Exit(1)
+	}
+	slog.Info("Database store initialized successfully.")
 
-	// Start goroutine to log API stats periodically with context cancellation
-	// TODO: Move the goroutine to a separate inside `LogAPIStats` function
-	// This goroutine was moved and updated below, after apiTracker is initialized.
-	// No longer starting it here.
+	// Initialize APICallTracker now that store is available
+	apiTracker := tracker.NewAPICallTracker(store, slogger)
+	slog.Info("API Call Tracker initialized.")
 
+	// Now initialize all clients with the properly initialized apiTracker
 	jupiterClient := jupiter.NewClient(httpClient, config.JupiterApiUrl, config.JupiterApiKey, apiTracker)
 
 	birdeyeClient := birdeye.NewClient(httpClient, config.BirdEyeEndpoint, config.BirdEyeAPIKey, apiTracker)
@@ -104,18 +107,7 @@ func main() {
 
 	solanaClient := solana.NewClient(solClient, apiTracker)
 
-	offchainClient := offchain.NewClient(httpClient, apiTracker) // apiTracker will be initialized before this
-
-	store, err := postgres.NewStore(config.DBURL, true, logLevel, config.Env)
-	if err != nil {
-		slog.Error("Failed to connect to database", slog.Any("error", err))
-		os.Exit(1)
-	}
-	slog.Info("Database store initialized successfully.")
-
-	// Initialize APICallTracker now that store is available
-	apiTracker = clients.NewAPICallTracker(store, slogger) // Assign to declared apiTracker
-	slog.Info("API Call Tracker initialized.")
+	offchainClient := offchain.NewClient(httpClient, apiTracker)
 
 	// Load today's stats
 	if err := apiTracker.LoadStatsForToday(ctx); err != nil {

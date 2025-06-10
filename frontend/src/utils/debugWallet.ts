@@ -41,6 +41,6 @@ export async function initializeDebugWallet(): Promise<Keypair | null> {
 		} else {
 			logger.error('An unknown error occurred during initializeDebugWallet', { error });
 		}
-		throw error;
+		return null;
 	}
 }

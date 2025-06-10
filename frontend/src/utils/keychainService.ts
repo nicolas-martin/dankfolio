@@ -1,9 +1,11 @@
 import * as Keychain from 'react-native-keychain';
+import { Platform } from 'react-native';
 import { logger } from '@/utils/logger';
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
 import { Base58PrivateKey } from './cryptoUtils'; // Import the branded type
+import {env} from '@/utils/env'
 
 export const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
 
@@ -24,18 +26,45 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 			mnemonic
 		});
 
+		// Use different accessibility settings for simulator vs device
+		// iOS simulators have issues with WHEN_UNLOCKED, use WHEN_UNLOCKED_THIS_DEVICE_ONLY instead
+		// This is a well-known issue: https://github.com/oblador/react-native-keychain/issues/478
+		const isSimulator = __DEV__ && Platform.OS === 'ios'
+		const accessibilityOption = isSimulator 
+			? Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY 
+			: Keychain.ACCESSIBLE.WHEN_UNLOCKED;
+		
+		logger.info(`Using keychain accessibility: ${isSimulator ? 'WHEN_UNLOCKED_THIS_DEVICE_ONLY (simulator)' : 'WHEN_UNLOCKED (device)'}`);
+
 		await Keychain.setGenericPassword('dankfolio_wallet', credentials, {
 			service: KEYCHAIN_SERVICE,
-			accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED
+			accessible: accessibilityOption
 		});
 
-		// Verify the stored credentials
-		const storedCredentials = await Keychain.getGenericPassword({
-			service: KEYCHAIN_SERVICE
-		});
+		// Verify the stored credentials with retry mechanism
+		let storedCredentials;
+		let retryCount = 0;
+		const maxRetries = 3;
+		
+		while (retryCount < maxRetries) {
+			storedCredentials = await Keychain.getGenericPassword({
+				service: KEYCHAIN_SERVICE
+			});
+			
+			if (storedCredentials) {
+				break;
+			}
+			
+			retryCount++;
+			if (retryCount < maxRetries) {
+				logger.warn(`Keychain verification attempt ${retryCount} failed, retrying...`);
+				// Small delay before retry
+				await new Promise(resolve => setTimeout(resolve, 100));
+			}
+		}
 
 		if (!storedCredentials) {
-			throw new Error('Failed to verify stored credentials - no data found');
+			throw new Error('Failed to verify stored credentials - no data found after retries');
 		}
 
 		try {
