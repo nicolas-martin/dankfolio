@@ -61,8 +61,8 @@ const reducer = (state: ToastProps, action: ToastAction): ToastProps => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [state, dispatch] = useReducer(reducer, defaults);
 	const insets = useSafeAreaInsets();
-	const theme = useTheme();
-	const styles = createStyles(theme, insets);
+	const theme = useTheme(); // theme is still needed for getToastBackgroundColor and icon colors
+	const styles = createStyles(insets); // Pass only insets to createStyles
 
 	const toast = useMemo(
 		() => ({
@@ -118,12 +118,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					wrapperStyle={{
 						top: insets.top,
 					}}
-					style={{
-						// Cast toastType because state.type can be undefined initially, but getToastBackgroundColor expects a valid ToastType.
-						backgroundColor: getToastBackgroundColor(toastType as ToastType, theme),
-						borderRadius: 8,
-						marginHorizontal: insets.left + 10,
-					}}
+					style={[
+						styles.snackbarStyleBase,
+						{ backgroundColor: getToastBackgroundColor(toastType as ToastType, theme) }
+					]}
 				>
 					<View style={styles.content}>
 						<View style={styles.messageContainer}>

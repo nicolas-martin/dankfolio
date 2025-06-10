@@ -5,8 +5,8 @@ import type { RootStackParamList } from '@/types/navigation';
 import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
 import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
-import { useTheme, BottomNavigation } from 'react-native-paper';
-import { Platform } from 'react-native';
+import { useTheme, BottomNavigation, MD3Theme } from 'react-native-paper'; // Added MD3Theme
+import { Platform, StyleSheet } from 'react-native'; // Added StyleSheet
 
 // Import screens
 import Home from '@screens/Home';
@@ -20,8 +20,34 @@ import Settings from '@screens/Settings';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
+const Tab = createBottomTabNavigator();
+
+// Define styles using a function that accepts theme
+const getTabNavigatorStyles = (theme: MD3Theme) => StyleSheet.create({
+	bottomNavBar: {
+		backgroundColor: theme.colors.surface,
+		borderTopWidth: 0,
+		height: Platform.select({
+			ios: 88,
+			android: 80,
+		}),
+		...Platform.select({
+			ios: {
+				shadowColor: theme.colors.shadow, // Use theme color for shadow
+				shadowOffset: { width: 0, height: -2 },
+				shadowOpacity: 0.1,
+				shadowRadius: 8,
+			},
+			android: {
+				elevation: 8,
+			},
+		}),
+	},
+});
+
 const TabNavigator = () => {
 	const theme = useTheme();
+	const styles = getTabNavigatorStyles(theme); // Get styles
 
 	return (
 		<Tab.Navigator
@@ -70,25 +96,7 @@ const TabNavigator = () => {
 								return route.name;
 						}
 					}}
-					style={{
-						backgroundColor: theme.colors.surface,
-						borderTopWidth: 0,
-						height: Platform.select({
-							ios: 88,
-							android: 80,
-						}),
-						...Platform.select({
-							ios: {
-								shadowColor: '#000',
-								shadowOffset: { width: 0, height: -2 },
-								shadowOpacity: 0.1,
-								shadowRadius: 8,
-							},
-							android: {
-								elevation: 8,
-							},
-						}),
-					}}
+					style={styles.bottomNavBar} // Use StyleSheet
 				/>
 			)}
 		>
@@ -130,28 +138,28 @@ const Navigation = () => {
 					name="CoinDetail"
 					component={CoinDetail}
 					options={{
-						header: (_props) => <CustomHeader />
+						header: () => <CustomHeader />
 					}}
 				/>
 				<Stack.Screen
 					name="Trade"
 					component={Trade}
 					options={{
-						header: (_props) => <CustomHeader />
+						header: () => <CustomHeader />
 					}}
 				/>
 				<Stack.Screen
 					name="SendTokens"
 					component={Send}
 					options={{
-						header: (_props) => <CustomHeader />
+						header: () => <CustomHeader />
 					}}
 				/>
 				<Stack.Screen
 					name="Settings"
 					component={Settings}
 					options={{
-						header: (_props) => <CustomHeader />
+						header: () => <CustomHeader />
 					}}
 				/>
 			</Stack.Navigator>
