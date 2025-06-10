@@ -8,7 +8,7 @@ import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import type { ToastProps } from '@/components/Common/Toast/toast_types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
-import { REFRESH_INTERVALS, SOLANA_ADDRESS } from '@/utils/constants';
+import { REFRESH_INTERVALS } from '@/utils/constants';
 import { MutableRefObject } from 'react';
 
 export const DEFAULT_AMOUNT = "0.0001";

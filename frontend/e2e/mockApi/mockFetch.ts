@@ -320,7 +320,7 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 
 		console.log('🎭 Mock API returning response for:', normalizedPath);
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		 
 		const responseBody = JSON.stringify(mockResponse, (key, value) => {
 			if (typeof value === 'bigint') {
 				return value.toString();
