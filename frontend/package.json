@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "index.tsx",
   "scripts": {
-    "start": "npx expo run:ios",
-    "start:dev-client": "npx expo start --dev-client",
+    "start": "npx expo start --clear",
+    "start:ios": "npx expo run:ios",
+    "start:dev-client": "npx expo start --dev-client --clear",
     "device": "npx expo run:ios --configuration Release --device",
     "ios": "npx expo run:ios",
     "tsc:watch": "tsc --watch",
