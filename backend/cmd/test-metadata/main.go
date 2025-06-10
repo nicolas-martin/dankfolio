@@ -10,7 +10,6 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/olekukonko/tablewriter"
 )
@@ -49,9 +48,8 @@ func main() {
 
 	// Initialize Solana client
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
-	genericSolanaClient := solana.NewClient(rpcClient, apiTracker)
+	genericSolanaClient := solana.NewClient(rpcClient, nil)
 
 	// Type assert to the concrete client type that has GetMetadataAccount
 	solanaClient, ok := genericSolanaClient.(*solana.Client)

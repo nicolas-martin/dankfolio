@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 )
 
@@ -21,10 +20,9 @@ func main() {
 	}
 
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
 	// Test with the free API endpoint (lite-api.jup.ag)
-	jupiterClient := jupiter.NewClient(httpClient, "https://lite-api.jup.ag", "", apiTracker)
+	jupiterClient := jupiter.NewClient(httpClient, "https://lite-api.jup.ag", "", nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

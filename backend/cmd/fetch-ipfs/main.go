@@ -15,7 +15,6 @@ import (
 	"github.com/blocto/solana-go-sdk/rpc"
 	"github.com/olekukonko/tablewriter"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 )
 
@@ -127,9 +126,9 @@ func main() {
 
 	// Create offchain client
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
+	// apiTracker := telemetry.TelemetryAPI
 
-	offchainClient := offchain.NewClient(httpClient, apiTracker)
+	offchainClient := offchain.NewClient(httpClient, nil)
 
 	log.Printf("📊 Processing %d common tokens", len(coins))
 

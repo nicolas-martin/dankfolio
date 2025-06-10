@@ -11,7 +11,6 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	solanaClient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	"github.com/olekukonko/tablewriter"
 )
@@ -29,9 +28,8 @@ func main() {
 	}
 	solRPC := rpc.NewWithHeaders(solEndpoint, header)
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
-	_ = solanaClient.NewClient(solRPC, apiTracker)
+	_ = solanaClient.NewClient(solRPC, nil)
 
 	// Contract address from the issue
 	contractAddress := solana.MustPublicKeyFromBase58("GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R")
