@@ -73,15 +73,26 @@ type MockPriceServiceAPI_GetCoinPrices_Call struct {
 }
 
 // GetCoinPrices is a helper method to define mock.On call
-//   - ctx
-//   - tokenAddresses
+//   - ctx context.Context
+//   - tokenAddresses []string
 func (_e *MockPriceServiceAPI_Expecter) GetCoinPrices(ctx interface{}, tokenAddresses interface{}) *MockPriceServiceAPI_GetCoinPrices_Call {
 	return &MockPriceServiceAPI_GetCoinPrices_Call{Call: _e.mock.On("GetCoinPrices", ctx, tokenAddresses)}
 }
 
 func (_c *MockPriceServiceAPI_GetCoinPrices_Call) Run(run func(ctx context.Context, tokenAddresses []string)) *MockPriceServiceAPI_GetCoinPrices_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]string))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []string
+		if args[1] != nil {
+			arg1 = args[1].([]string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -130,18 +141,44 @@ type MockPriceServiceAPI_GetPriceHistory_Call struct {
 }
 
 // GetPriceHistory is a helper method to define mock.On call
-//   - ctx
-//   - address
-//   - config
-//   - time
-//   - addressType
+//   - ctx context.Context
+//   - address string
+//   - config price.BackendTimeframeConfig
+//   - time string
+//   - addressType string
 func (_e *MockPriceServiceAPI_Expecter) GetPriceHistory(ctx interface{}, address interface{}, config interface{}, time interface{}, addressType interface{}) *MockPriceServiceAPI_GetPriceHistory_Call {
 	return &MockPriceServiceAPI_GetPriceHistory_Call{Call: _e.mock.On("GetPriceHistory", ctx, address, config, time, addressType)}
 }
 
 func (_c *MockPriceServiceAPI_GetPriceHistory_Call) Run(run func(ctx context.Context, address string, config price.BackendTimeframeConfig, time string, addressType string)) *MockPriceServiceAPI_GetPriceHistory_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(price.BackendTimeframeConfig), args[3].(string), args[4].(string))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 price.BackendTimeframeConfig
+		if args[2] != nil {
+			arg2 = args[2].(price.BackendTimeframeConfig)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
 	})
 	return _c
 }

@@ -106,14 +106,20 @@ type MockTelemetryAPI_LoadStatsForToday_Call struct {
 }
 
 // LoadStatsForToday is a helper method to define mock.On call
-//   - ctx
+//   - ctx context.Context
 func (_e *MockTelemetryAPI_Expecter) LoadStatsForToday(ctx interface{}) *MockTelemetryAPI_LoadStatsForToday_Call {
 	return &MockTelemetryAPI_LoadStatsForToday_Call{Call: _e.mock.On("LoadStatsForToday", ctx)}
 }
 
 func (_c *MockTelemetryAPI_LoadStatsForToday_Call) Run(run func(ctx context.Context)) *MockTelemetryAPI_LoadStatsForToday_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -151,14 +157,20 @@ type MockTelemetryAPI_ResetStats_Call struct {
 }
 
 // ResetStats is a helper method to define mock.On call
-//   - ctx
+//   - ctx context.Context
 func (_e *MockTelemetryAPI_Expecter) ResetStats(ctx interface{}) *MockTelemetryAPI_ResetStats_Call {
 	return &MockTelemetryAPI_ResetStats_Call{Call: _e.mock.On("ResetStats", ctx)}
 }
 
 func (_c *MockTelemetryAPI_ResetStats_Call) Run(run func(ctx context.Context)) *MockTelemetryAPI_ResetStats_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -185,14 +197,20 @@ type MockTelemetryAPI_Start_Call struct {
 }
 
 // Start is a helper method to define mock.On call
-//   - ctx
+//   - ctx context.Context
 func (_e *MockTelemetryAPI_Expecter) Start(ctx interface{}) *MockTelemetryAPI_Start_Call {
 	return &MockTelemetryAPI_Start_Call{Call: _e.mock.On("Start", ctx)}
 }
 
 func (_c *MockTelemetryAPI_Start_Call) Run(run func(ctx context.Context)) *MockTelemetryAPI_Start_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -219,15 +237,26 @@ type MockTelemetryAPI_TrackCall_Call struct {
 }
 
 // TrackCall is a helper method to define mock.On call
-//   - serviceName
-//   - endpointName
+//   - serviceName string
+//   - endpointName string
 func (_e *MockTelemetryAPI_Expecter) TrackCall(serviceName interface{}, endpointName interface{}) *MockTelemetryAPI_TrackCall_Call {
 	return &MockTelemetryAPI_TrackCall_Call{Call: _e.mock.On("TrackCall", serviceName, endpointName)}
 }
 
 func (_c *MockTelemetryAPI_TrackCall_Call) Run(run func(serviceName string, endpointName string)) *MockTelemetryAPI_TrackCall_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }

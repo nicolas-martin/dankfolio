@@ -26,7 +26,7 @@ backend-kill:
 	@lsof -ti :9000 | xargs kill -9 2>/dev/null || echo "✅ No backend server running"
 
 mobile: mobile-kill
-	@echo "📱 Starting mobile frontend..."
+	@echo "📱 Starting mobile frontend with development build..."
 	@cd $(MOBILE_DIR) && yarn start:ios
 
 run-mobile: mobile-kill
@@ -62,7 +62,9 @@ backend-generate-mocks:
 	else \
 		echo "✅ mockery version $(MOCKERY_VERSION) already installed."; \
 	fi
-	@echo " mocks..."
+	@echo "🧹 Cleaning existing mock folders..."
+	@cd backend && find . -type d -name "*mocks*" -exec rm -rf {} + 2>/dev/null || true
+	@echo "🔧 Generating mocks..."
 	cd backend && mockery
 
 backend-build: proto ## Check backend Go code compilation
@@ -100,35 +102,6 @@ clean-build:
 	@echo "🚀 Attempting to build and run on iOS Simulator..."
 	@cd frontend && npx expo run:ios
 	@echo "✅ Script finished."
-
-# Database Migrations (Backend)
-# Loads variables from backend/.env and applies migrations
-db-migrate-up:
-	@echo "==> Applying database migrations (UP)..."
-	@( \
-		cd backend && \
-		set -a && \
-		[ -f .env ] && . .env; \
-		set +a && \
-		echo "    Using DB_URL: $$DB_URL" && \
-		goose \
-			-dir internal/db/migrations \
-			postgres "$$DB_URL" \
-			up \
-	)
-	@echo "==> Database migrations applied."
-
-# Database cleanup - ensures complete volume removal
-db-reset:
-	@echo "🗑️  Resetting database (removing all data)..."
-	@docker-compose down -v
-	@echo "🧹 Cleaning up any orphaned volumes..."
-	@docker volume prune -f
-	@echo "🚀 Starting fresh database..."
-	@docker-compose up -d db
-	@echo "⏳ Waiting for database to initialize..."
-	@sleep 10
-	@echo "✅ Database reset complete!"
 
 # Run psql with environment variables from backend/.env
 psql:
