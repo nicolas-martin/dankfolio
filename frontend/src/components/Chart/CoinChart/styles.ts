@@ -2,13 +2,13 @@ import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 import { Dimensions } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: _SCREEN_WIDTH } = Dimensions.get('window'); // Prefixed SCREEN_WIDTH
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	chartContainer: {
-		height: 250,
 		backgroundColor: '#1C2127', // Slightly lighter TradingView dark theme background
 		borderRadius: 8,
+		height: 250,
 		overflow: 'hidden',
 	},
 	chartWrapper: {

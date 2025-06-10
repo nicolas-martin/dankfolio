@@ -1,7 +1,8 @@
 // Jest setup file for polyfills and globals
+import { Buffer } from 'buffer';
 
 // Add Buffer polyfill for Node.js compatibility
-global.Buffer = require('buffer').Buffer;
+global.Buffer = Buffer;
 
 // Add base64url support if needed
 if (!Buffer.prototype.toString.toString().includes('base64url')) {

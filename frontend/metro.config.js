@@ -1,7 +1,5 @@
-const { wrapWithReanimatedMetroConfig } = require('react-native-reanimated/metro-config');
-const {
-	getSentryExpoConfig
-} = require("@sentry/react-native/metro");
+import { wrapWithReanimatedMetroConfig } from 'react-native-reanimated/metro-config';
+import { getSentryExpoConfig } from "@sentry/react-native/metro";
 
 /** @type {import('expo/metro-config').MetroConfig} */
 // Temporarily using standard Expo config instead of Sentry config

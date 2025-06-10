@@ -99,6 +99,9 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 	},
+	gestureHandlerRoot: {
+		flex: 1,
+	},
 });
 
 const App: React.FC = () => {
@@ -202,7 +205,7 @@ const App: React.FC = () => {
 		}
 
 		prepare();
-	}, [setWallet]);
+	}, [setWallet, handleWalletSetupComplete]);
 
 	// Effect to update Sentry user context when wallet address changes
 	useEffect(() => {
@@ -242,7 +245,7 @@ const App: React.FC = () => {
 		<PaperProvider theme={currentTheme}>
 			<StatusBar style={statusBarStyle} />
 			<SafeAreaProvider>
-				<GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+				<GestureHandlerRootView style={styles.gestureHandlerRoot} onLayout={onLayoutRootView}>
 					<ToastProvider>
 						<BottomSheetModalProvider>
 							<View style={styles.container}>

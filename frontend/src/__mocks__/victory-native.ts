@@ -22,7 +22,7 @@ type ChartChildren = ReactNode | ((props: RenderProps) => ReactNode);
 interface ChartProps extends Omit<ViewProps, 'children'> {
 	children?: ChartChildren;
 	renderOutside?: (props: { chartBounds: ChartBounds }) => ReactNode;
-	[key: string]: any;
+	[key: string]: unknown; // Allow other props but with unknown type for better safety
 }
 
 const mockChartBounds: ChartBounds = {

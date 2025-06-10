@@ -1,10 +1,9 @@
 // Simple API mocking for React Native E2E tests
+import { URL, Request, RequestInit, Headers, TextDecoder } from 'whatwg-fetch';
 import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 
-type FetchInput = string | URL | Request;
-type FetchInit = RequestInit;
 import {
 	GetAvailableCoinsResponseSchema,
 	SearchResponseSchema,
@@ -267,8 +266,25 @@ function generatePriceHistory(basePrice: number, isStablecoin = false): PriceHis
 // Original fetch function reference
 const originalFetch = global.fetch;
 
+// Define interfaces for request bodies
+interface GetAvailableCoinsRequest {
+	trendingOnly?: boolean;
+}
+
+interface GetCoinByIdRequest {
+	mintAddress?: string;
+}
+
+interface GetWalletBalancesRequest {
+	address?: string;
+}
+
+interface GetPriceHistoryRequest {
+	address?: string;
+}
+
 // Mock fetch implementation
-const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => {
+const mockFetch = async (url: string | URL | Request, options?: RequestInit): Promise<Response> => {
 	const urlString = url.toString();
 	const apiUrl = env.apiUrl; // Use the correct environment variable
 
@@ -299,11 +315,11 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 			case '/dankfolio.v1.coinservice/getavailablecoins': {
 				console.log('🎭 Returning mock GetAvailableCoins response');
 				// Check if request is for trending only
-				let requestData: any = {};
+				let requestData: GetAvailableCoinsRequest = {};
 				if (options?.body) {
 					try {
 						requestData = JSON.parse(options.body as string);
-					} catch (_e) {
+					} catch {
 						// Ignore parsing errors
 					}
 				}
@@ -365,23 +381,25 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 
 				if (options?.body) {
 					try {
-						let requestData;
+						let requestData: GetCoinByIdRequest = {};
 
 						// Handle Connect-Web request body format (Uint8Array)
 						if (options.body instanceof Uint8Array) {
 							const decoder = new TextDecoder();
 							const bodyString = decoder.decode(options.body);
-							requestData = JSON.parse(bodyString);
+							requestData = JSON.parse(bodyString) as GetCoinByIdRequest;
 						} else if (typeof options.body === 'string') {
-							requestData = JSON.parse(options.body);
+							requestData = JSON.parse(options.body) as GetCoinByIdRequest;
 						} else {
-							requestData = options.body;
+							// Assuming it's already an object, but this case might need specific handling
+							// For now, casting, but ideally, ensure body is string or Uint8Array before this point
+							requestData = options.body as GetCoinByIdRequest;
 						}
 
 						if (requestData.mintAddress) {
 							mintAddress = requestData.mintAddress;
 						}
-					} catch (_e) {
+					} catch {
 						// Ignore parsing errors, use default
 					}
 				}
@@ -400,23 +418,23 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 				let walletAddress = '';
 				if (options?.body) {
 					try {
-						let requestData;
+						let requestData: GetWalletBalancesRequest = {};
 
 						// Handle Connect-Web request body format (Uint8Array)
 						if (options.body instanceof Uint8Array) {
 							const decoder = new TextDecoder();
 							const bodyString = decoder.decode(options.body);
-							requestData = JSON.parse(bodyString);
+							requestData = JSON.parse(bodyString) as GetWalletBalancesRequest;
 						} else if (typeof options.body === 'string') {
-							requestData = JSON.parse(options.body);
+							requestData = JSON.parse(options.body) as GetWalletBalancesRequest;
 						} else {
-							requestData = options.body;
+							requestData = options.body as GetWalletBalancesRequest;
 						}
 
 						if (requestData.address) {
 							walletAddress = requestData.address;
 						}
-					} catch (_e) {
+					} catch {
 						// Ignore parsing errors, use default
 					}
 				}
@@ -483,11 +501,11 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 				let coinAddress = 'So11111111111111111111111111111111111111112'; // Default to SOL
 				if (options?.body) {
 					try {
-						const requestData = JSON.parse(options.body as string);
+						const requestData = JSON.parse(options.body as string) as GetPriceHistoryRequest;
 						if (requestData.address) {
 							coinAddress = requestData.address;
 						}
-					} catch (_e) {
+					} catch {
 						// Ignore parsing errors, use default
 					}
 				}
@@ -692,8 +710,8 @@ const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<any> => 
 				'Content-Type': 'application/json',
 			}),
 			text: async () => responseBody,
-			json: async () => JSON.parse(responseBody),
-		} as any;
+			json: async () => JSON.parse(responseBody) as Promise<any>, // JSON can be any type
+		} as Response;
 
 	} catch (error) {
 		console.error('🎭 Mock API error:', error);
