@@ -16,6 +16,7 @@ import {
 	getConfirmationProgress,
 	formatConfirmationsText,
 } from './scripts';
+import { logger } from '@/utils/logger';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
