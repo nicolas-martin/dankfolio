@@ -47,7 +47,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			accessibilityLabel="Close trade confirmation modal"
 			accessibilityHint="Tap to close the modal"
 		>
-			<BlurView intensity={20} style={{ flex: 1 }} />
+			<BlurView intensity={20} style={styles.blurViewStyle} />
 		</BottomSheetBackdrop>
 	);
 
@@ -141,7 +141,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						accessibilityRole="button"
 						accessibilityLabel="Cancel trade"
 					>
-						Cancel
+						<Text>Cancel</Text>
 					</Button>
 					<Button
 						mode="contained"
@@ -167,8 +167,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			ref={bottomSheetModalRef}
 			snapPoints={[Dimensions.get('window').height * 0.95]}
 			onDismiss={onClose}
-			backgroundStyle={{ backgroundColor: theme.colors.surface }}
-			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}
+			backgroundStyle={styles.bottomSheetBackground}
+			handleIndicatorStyle={styles.handleIndicator}
 			enablePanDownToClose={true}
 			enableDismissOnClose={true}
 			backdropComponent={renderBackdrop}
@@ -177,7 +177,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			accessible={false}
 		>
 			<BottomSheetView 
-				style={{ flex: 1 }}
+				style={styles.blurViewStyle}
 				// Parent container should be accessible={false}
 				accessible={false}
 				// Android specific - ensure content is accessible

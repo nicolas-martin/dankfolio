@@ -2,6 +2,115 @@ import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 
 export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+	amount: {
+		color: theme.colors.onSurface,
+		fontSize: 16,
+		fontWeight: '600',
+		marginBottom: 2,
+	},
+	amountContainer: { // Legacy
+		alignItems: 'flex-end',
+	},
+	amountInfo: {
+		alignItems: 'flex-end',
+		flex: 1,
+	},
+	amountRow: { // Legacy
+		alignItems: 'center',
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+	},
+	amountSection: { // Main section's amount (e.g. for 'To' token if different styling)
+		alignItems: 'flex-end',
+		flex: 1,
+	},
+	amountUsd: {
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 12,
+	},
+	amountValue: { // Main section's amount value (e.g. for 'To' token if different styling)
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
+	},
+	blurViewStyle: {
+		flex: 1,
+	},
+	bottomSheetBackground: {
+		backgroundColor: theme.colors.surface,
+	},
+	button: { // Legacy
+		flex: 1,
+	},
+	buttonContainer: {
+		flexDirection: 'row',
+		gap: 16,
+	},
+	cancelButton: {
+		borderColor: theme.colors.outline,
+		borderRadius: 16,
+		flex: 1,
+		paddingVertical: 4,
+	},
+	cancelButtonLabel: {
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 16,
+		fontWeight: '600',
+	},
+	cardHeader: { // Legacy
+		alignItems: 'center',
+		flexDirection: 'row',
+		marginBottom: 12,
+	},
+	cardIcon: { // Legacy
+		alignItems: 'center',
+		backgroundColor: theme.colors.primary,
+		borderRadius: 14,
+		height: 28,
+		justifyContent: 'center',
+		marginRight: 10,
+		width: 28,
+	},
+	cardTitle: { // Legacy
+		color: theme.colors.onSurfaceVariant,
+		flex: 1,
+		fontSize: 14,
+		fontWeight: '600',
+	},
+	coinDetails: { // Main Coin Details (e.g. for 'From' token)
+		flex: 1,
+	},
+	coinIcon: { // Main Coin Icon (e.g. for 'From' token)
+		borderRadius: 20,
+		height: 40,
+		marginRight: 12,
+		width: 40,
+	},
+	coinInfo: { // Main Coin Info container (e.g. for 'From' token)
+		alignItems: 'center',
+		flexDirection: 'row',
+		flex: 1,
+	},
+	coinName: { // Main Coin Name (e.g. for 'From' token)
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 12,
+	},
+	coinSymbol: { // Main Coin Symbol (e.g. for 'From' token)
+		color: theme.colors.onSurface,
+		fontSize: 16,
+		fontWeight: '600',
+		marginBottom: 2,
+	},
+	confirmButton: {
+		backgroundColor: theme.colors.primary,
+		borderRadius: 16,
+		flex: 1,
+		paddingVertical: 4,
+	},
+	confirmButtonLabel: {
+		color: theme.colors.onPrimary,
+		fontSize: 16,
+		fontWeight: '600',
+	},
 	container: {
 		alignSelf: 'center',
 		backgroundColor: theme.colors.surface,
@@ -16,129 +125,110 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		shadowRadius: 16,
 		width: '90%',
 	},
-
-	// Header
-	title: {
-		color: theme.colors.onSurface,
-		fontSize: 24,
-		fontWeight: '700',
-		marginBottom: 40,
-		textAlign: 'center',
-	},
-
-	// Trade Container
-	tradeContainer: {
-		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 20,
-		marginBottom: 32,
-		padding: 24,
-		position: 'relative',
-	},
-
-	// Trade Row
-	tradeRow: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		paddingVertical: 16,
-	},
-
-	// Coin Info
-	coinInfo: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		flex: 1,
-	},
-
-	coinIcon: {
-		borderRadius: 20,
-		height: 40,
-		marginRight: 12,
-		width: 40,
-	},
-
-	coinDetails: {
-		flex: 1,
-	},
-
-	coinSymbol: {
-		color: theme.colors.onSurface,
-		fontSize: 16,
-		fontWeight: '600',
-		marginBottom: 2,
-	},
-
-	coinName: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-	},
-
-	// Amount Info
-	amountInfo: {
-		alignItems: 'flex-end',
-		flex: 1,
-	},
-
-	amount: {
-		color: theme.colors.onSurface,
-		fontSize: 16,
-		fontWeight: '600',
-		marginBottom: 2,
-	},
-
-	amountUsd: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-	},
-
-	// Divider
 	divider: {
 		backgroundColor: theme.colors.outline,
 		height: 1,
 		marginVertical: 8,
 		opacity: 0.2,
 	},
-
-	// Token Section
-	tokenSection: {
+	exchangeHeader: { // Legacy
 		alignItems: 'center',
 		flexDirection: 'row',
-		flex: 1,
-		marginRight: 16,
+		marginBottom: 8,
 	},
-	tokenIcon: {
+	exchangeIcon: { // Legacy
+		marginRight: 6,
+	},
+	exchangeRate: { // Legacy
+		color: theme.colors.primary,
+		fontSize: 14,
+		fontWeight: '600',
+		textAlign: 'center',
+	},
+	exchangeSection: { // Legacy
+		backgroundColor: theme.colors.surface,
+		borderColor: theme.colors.outline,
+		borderRadius: 12,
+		borderWidth: 1,
+		marginBottom: 16,
+		padding: 14,
+	},
+	feeContainer: { // Main Fee Container
+		alignItems: 'center',
+		backgroundColor: theme.colors.surfaceVariant,
 		borderRadius: 16,
-		height: 32,
-		marginRight: 12,
-		width: 32,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		marginBottom: 40,
+		padding: 20,
 	},
-	tokenSymbol: {
+	feeHeader: { // Legacy
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 13,
+		fontWeight: '600',
+		marginBottom: 10,
+	},
+	feeLabel: { // Main Fee Label
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 16,
+	},
+	feeRow: { // Legacy
+		alignItems: 'center',
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		marginBottom: 6,
+	},
+	feeSection: { // Legacy
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 12,
+		marginBottom: 16,
+		padding: 14,
+	},
+	feeValue: { // Main Fee Value
 		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-		marginBottom: 2,
 	},
-
-	tokenDetails: {
-		flex: 1,
+	handleIndicator: {
+		backgroundColor: theme.colors.onSurface,
 	},
-
-	tokenName: {
+	header: { // Legacy
+		alignItems: 'center',
+		marginBottom: 24,
+	},
+	label: { // Legacy
+		color: theme.colors.onSurfaceVariant,
+	},
+	loadingContainer: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingVertical: 60,
+	},
+	loadingText: {
+		color: theme.colors.onSurface,
+		fontSize: 16,
+		marginTop: 20,
+		textAlign: 'center',
+	},
+	row: { // Legacy
+		alignItems: 'center',
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		marginBottom: 8,
+	},
+	section: { // Legacy
+		marginBottom: 16,
+	},
+	subValue: { // Legacy
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 12,
+		marginTop: 2,
 	},
-
-	// Amount Section
-	amountSection: {
-		alignItems: 'flex-end',
-		flex: 1,
-	},
-	amountValue: {
+	subtitle: { // Legacy
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 14,
+		textAlign: 'center',
 	},
-
-	// Swap Icon
 	swapIconContainer: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
@@ -156,167 +246,49 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		transform: [{ translateX: -16 }, { translateY: -16 }],
 		width: 32,
 	},
-
-	// Fee Container
-	feeContainer: {
-		alignItems: 'center',
-		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 16,
-		flexDirection: 'row',
-		justifyContent: 'space-between',
+	title: { // Main Title
+		color: theme.colors.onSurface,
+		fontSize: 24,
+		fontWeight: '700',
 		marginBottom: 40,
-		padding: 20,
+		textAlign: 'center',
 	},
-	feeLabel: {
+	tokenDetails: { // For 'To' token section
+		flex: 1,
+	},
+	tokenIcon: { // For 'To' token section
+		borderRadius: 16,
+		height: 32,
+		marginRight: 12,
+		width: 32,
+	},
+	tokenInfo: { // Legacy, distinct from coinInfo
+		alignItems: 'center',
+		flexDirection: 'row',
+		flex: 1,
+	},
+	tokenName: { // For 'To' token section
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
+		fontSize: 12,
 	},
-	feeValue: {
+	tokenSection: { // Container for 'To' token info + amount
+		alignItems: 'center',
+		flexDirection: 'row',
+		flex: 1,
+		marginRight: 16,
+	},
+	tokenSymbol: { // For 'To' token section
 		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
+		marginBottom: 2,
 	},
-
-	// Action Buttons
-	buttonContainer: {
-		flexDirection: 'row',
-		gap: 16,
-	},
-	cancelButton: {
-		borderColor: theme.colors.outline,
-		borderRadius: 16,
-		flex: 1,
-		paddingVertical: 4,
-	},
-	cancelButtonLabel: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
-		fontWeight: '600',
-	},
-	confirmButton: {
-		backgroundColor: theme.colors.primary,
-		borderRadius: 16,
-		flex: 1,
-		paddingVertical: 4,
-	},
-	confirmButtonLabel: {
-		color: theme.colors.onPrimary,
-		fontSize: 16,
-		fontWeight: '600',
-	},
-
-	// Loading State
-	loadingContainer: {
-		alignItems: 'center',
-		justifyContent: 'center',
-		paddingVertical: 60,
-	},
-	loadingText: {
-		color: theme.colors.onSurface,
-		fontSize: 16,
-		marginTop: 20,
-		textAlign: 'center',
-	},
-
-	// Legacy styles for backward compatibility (keeping unused ones for tests)
-	header: {
-		alignItems: 'center',
-		marginBottom: 24,
-	},
-	subtitle: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		textAlign: 'center',
-	},
-	tradeCardsContainer: {
-		marginBottom: 20,
-		position: 'relative',
-	},
-	tradeCard: {
-		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 16,
-		marginBottom: 8,
-		padding: 20,
-	},
-	cardHeader: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		marginBottom: 12,
-	},
-	cardIcon: {
-		alignItems: 'center',
-		backgroundColor: theme.colors.primary,
-		borderRadius: 14,
-		height: 28,
-		justifyContent: 'center',
-		marginRight: 10,
-		width: 28,
-	},
-	cardTitle: {
-		color: theme.colors.onSurfaceVariant,
-		flex: 1,
-		fontSize: 14,
-		fontWeight: '600',
-	},
-	amountRow: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-	},
-	tokenInfo: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		flex: 1,
-	},
-	amountContainer: {
-		alignItems: 'flex-end',
-	},
-	exchangeSection: {
-		backgroundColor: theme.colors.surface,
-		borderColor: theme.colors.outline,
-		borderRadius: 12,
-		borderWidth: 1,
-		marginBottom: 16,
-		padding: 14,
-	},
-	exchangeHeader: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		marginBottom: 8,
-	},
-	exchangeIcon: {
-		marginRight: 6,
-	},
-	exchangeTitle: {
+	totalFeeLabel: { // Legacy
 		color: theme.colors.onSurface,
 		fontSize: 13,
 		fontWeight: '600',
 	},
-	exchangeRate: {
-		color: theme.colors.primary,
-		fontSize: 14,
-		fontWeight: '600',
-		textAlign: 'center',
-	},
-	feeSection: {
-		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 12,
-		marginBottom: 16,
-		padding: 14,
-	},
-	feeHeader: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 13,
-		fontWeight: '600',
-		marginBottom: 10,
-	},
-	feeRow: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		marginBottom: 6,
-	},
-	totalFeeRow: {
+	totalFeeRow: { // Legacy
 		alignItems: 'center',
 		borderTopColor: theme.colors.outline,
 		borderTopWidth: 1,
@@ -325,40 +297,38 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginTop: 4,
 		paddingTop: 10,
 	},
-	totalFeeLabel: {
-		color: theme.colors.onSurface,
-		fontSize: 13,
-		fontWeight: '600',
-	},
-	totalFeeValue: {
+	totalFeeValue: { // Legacy
 		color: theme.colors.onSurface,
 		fontSize: 14,
 		fontWeight: '700',
 	},
-	section: {
-		marginBottom: 16,
+	tradeCard: { // Legacy
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 16,
+		marginBottom: 8,
+		padding: 20,
 	},
-	row: {
+	tradeCardsContainer: { // Legacy
+		marginBottom: 20,
+		position: 'relative',
+	},
+	tradeContainer: { // Main Trade Container
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 20,
+		marginBottom: 32,
+		padding: 24,
+		position: 'relative',
+	},
+	tradeRow: { // Main Trade Row
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 8,
+		paddingVertical: 16,
 	},
-	label: {
-		color: theme.colors.onSurfaceVariant,
-	},
-	valueContainer: {
-		alignItems: 'flex-end',
-	},
-	value: {
+	value: { // Legacy
 		fontWeight: '600',
 	},
-	subValue: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-		marginTop: 2,
+	valueContainer: { // Legacy
+		alignItems: 'flex-end',
 	},
-	button: {
-		flex: 1,
-	},
-}); 
+});

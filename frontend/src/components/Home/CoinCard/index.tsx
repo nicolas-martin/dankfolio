@@ -31,11 +31,11 @@ const CoinCard: React.FC<CoinCardProps> = ({
 	// Memoize the image load/error handlers
 	const handleImageLoad = useCallback(() => {
 		logger.info(`[CoinCard LOG] renderCoinIcon complete for ${coin.symbol}: ${coin.resolvedIconUrl}`);
-	}, [coin.symbol]);
+	}, [coin.symbol, coin.resolvedIconUrl]);
 
 	const handleImageError = useCallback(() => {
 		logger.warn(`[CoinCard LOG] renderCoinIcon error for ${coin.symbol}: ${coin.resolvedIconUrl}`);
-	}, [coin.symbol]);
+	}, [coin.symbol, coin.resolvedIconUrl]);
 
 	const renderCoinIcon = (size = 36, borderRadius = 18) => { // Smaller icon size
 		logger.info(`[CoinCard LOG] renderCoinIcon load for ${coin.symbol}: ${coin.resolvedIconUrl}`);
