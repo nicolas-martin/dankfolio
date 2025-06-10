@@ -13,19 +13,70 @@ import { Coin } from '@/types';
 import { calculateUsdValue, findPortfolioToken, handleAmountInputChange, useDebounce } from './scripts';
 import { CachedImage } from '@/components/Common/CachedImage';
 
+// Memoized icon component to prevent unnecessary re-renders
+const RenderIcon = React.memo<{ iconUrl: string | undefined; styles: ReturnType<typeof createStyles> }>(({ iconUrl, styles }) => {
+	return (
+		<CachedImage
+			uri={iconUrl}
+			size={24}
+			borderRadius={12}
+			showLoadingIndicator={true}
+			style={styles.tokenIcon}
+		/>
+	);
+});
+RenderIcon.displayName = 'RenderIcon';
+
+// Memoized TokenItem component to prevent unnecessary re-renders
+const TokenItem = React.memo<{
+	coin: Coin;
+	portfolioToken: { amount: number } | undefined;
+	onSelect: (coin: Coin) => void;
+	styles: ReturnType<typeof createStyles>;
+}>(({ coin, portfolioToken, onSelect, styles }) => {
+	const handlePress = useCallback(() => {
+		onSelect(coin);
+	}, [coin, onSelect]);
+
+	return (
+		<TouchableOpacity
+			testID={`search-result-${coin.mintAddress}`}
+			style={styles.tokenItem}
+			onPress={handlePress}
+			accessible={true}
+			accessibilityRole="button"
+			accessibilityLabel={`Select ${coin.symbol} token, ${coin.name}`}
+			accessibilityHint="Double tap to select this token"
+			importantForAccessibility="yes"
+		>
+			<RenderIcon iconUrl={coin.resolvedIconUrl} styles={styles} />
+			<View style={styles.tokenDetails}>
+				<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
+				<Text style={styles.tokenName}>{coin.name}</Text>
+				<Text style={styles.tokenAddress}>
+					{coin.mintAddress.slice(0, 6)}...{coin.mintAddress.slice(-6)}
+				</Text>
+			</View>
+			{portfolioToken && (
+				<Text style={styles.tokenBalance}>{portfolioToken.amount}</Text>
+			)}
+		</TouchableOpacity>
+	);
+});
+TokenItem.displayName = 'TokenItem';
+
 const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	visible,
 	onDismiss,
-	_selectedToken,
+	selectedToken: _selectedToken,
 	onSelectToken,
 	showOnlyPortfolioTokens = false,
-	_testID,
+	testID: _testID,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 	const [searchQuery, setSearchQuery] = useState('');
-	console.log('TokenSearchModal re-rendered. Search query:', searchQuery);
 	const debouncedSearchQuery = useDebounce(searchQuery, 300);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 	const { availableCoins } = useCoinStore();
@@ -39,40 +90,40 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		}
 	}, [visible]);
 
+	// Memoize base list to prevent unnecessary recalculations
 	const baseList = useMemo(() => {
 		return showOnlyPortfolioTokens
 			? portfolioTokens.map(token => token.coin)
 			: availableCoins;
 	}, [showOnlyPortfolioTokens, portfolioTokens, availableCoins]);
 
+	// Optimize filtering to prevent unnecessary reference changes
 	const filteredCoins = useMemo(() => {
-		if (!debouncedSearchQuery) return baseList;
+		if (!debouncedSearchQuery.trim()) {
+			return baseList;
+		}
 
+		const query = debouncedSearchQuery.toLowerCase().trim();
 		return baseList.filter(coin =>
-			coin.symbol.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-			coin.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+			coin.symbol.toLowerCase().includes(query) ||
+			coin.name.toLowerCase().includes(query)
 		);
 	}, [baseList, debouncedSearchQuery]);
 
-	useEffect(() => {
-		console.log('filteredCoins reference changed');
-	}, [filteredCoins]);
-
+	// Memoize token selection handler
 	const handleTokenSelect = useCallback((coin: Coin) => {
 		onSelectToken(coin);
 		onDismiss();
 	}, [onSelectToken, onDismiss]);
 
-	// Custom backdrop component with blur
-	const renderBackdrop = useCallback((props: BottomSheetBackdropProps) => ( // Typed props
+	// Memoize backdrop component
+	const renderBackdrop = useCallback((props: BottomSheetBackdropProps) => (
 		<BottomSheetBackdrop
 			{...props}
 			disappearsOnIndex={-1}
 			appearsOnIndex={0}
 			opacity={0.8}
 			onPress={onDismiss}
-			// testID="token-search-modal-backdrop"
-			// Accessibility properties for testing frameworks
 			accessible={true}
 			accessibilityRole="button"
 			accessibilityLabel="Close token selection modal"
@@ -82,69 +133,17 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		</BottomSheetBackdrop>
 	), [onDismiss, styles.blurView]);
 
-	// Inline component for rendering the icon using CachedImage
-	const RenderIcon: React.FC<{ iconUrl: string | undefined }> = React.memo(({ iconUrl }) => {
-		console.log('RenderIcon re-rendered. Icon URL:', iconUrl);
-		return (
-			<CachedImage
-				uri={iconUrl}
-				size={24}
-				borderRadius={12}
-				showLoadingIndicator={true}
-				style={styles.tokenIcon}
-			/>
-		);
-	});
-
-	// Memoized TokenItem component to prevent unnecessary re-renders
-	const TokenItem: React.FC<{
-		coin: Coin;
-		portfolioToken: { amount: number } | undefined; // More specific type
-		onSelect: (coin: Coin) => void;
-		styles: ReturnType<typeof createStyles>; // Use inferred type from createStyles
-	}> = React.memo(({ coin, portfolioToken, onSelect, styles }) => {
-		console.log('TokenItem re-rendered. Coin:', coin.symbol, 'Icon URL:', coin.resolvedIconUrl);
-		const handlePress = useCallback(() => {
-			onSelect(coin);
-		}, [coin, onSelect]);
-
-		return (
-			<TouchableOpacity
-				testID={`search-result-${coin.mintAddress}`}
-				style={styles.tokenItem}
-				onPress={handlePress}
-				accessible={true}
-				accessibilityRole="button"
-				accessibilityLabel={`Select ${coin.symbol} token, ${coin.name}`}
-				accessibilityHint="Double tap to select this token"
-				importantForAccessibility="yes"
-			>
-				<RenderIcon iconUrl={coin.resolvedIconUrl} />
-				<View style={styles.tokenDetails}>
-					<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
-					<Text style={styles.tokenName}>{coin.name}</Text>
-					<Text style={styles.tokenAddress}>
-						{coin.mintAddress.slice(0, 6)}...{coin.mintAddress.slice(-6)}
-					</Text>
-				</View>
-				{portfolioToken && (
-					<Text style={styles.tokenBalance}>{portfolioToken.amount}</Text>
-				)}
-			</TouchableOpacity>
-		);
-	});
-
-	// Create a map for faster portfolio token lookup
+	// Create a memoized map for faster portfolio token lookup
 	const portfolioTokenMap = useMemo(() => {
-		const map = new Map<string, { mintAddress: string; amount: number; coin: Coin }>(); // Assuming this structure for portfolio tokens
-		portfolioTokens.forEach((token: { mintAddress: string; amount: number; coin: Coin }) => { // Use assumed structure
+		const map = new Map<string, { mintAddress: string; amount: number; coin: Coin }>();
+		portfolioTokens.forEach((token: { mintAddress: string; amount: number; coin: Coin }) => {
 			map.set(token.mintAddress, token);
 		});
 		return map;
 	}, [portfolioTokens]);
 
-	const renderItem = useCallback(({ item: coin }: { item: any }) => { // Use TokenListItem
-		console.log('renderItem. Coin:', coin.symbol, 'Icon URL:', coin.resolvedIconUrl);
+	// Memoize render item function
+	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
 		const portfolioToken = portfolioTokenMap.get(coin.mintAddress);
 		return (
 			<TokenItem
@@ -154,10 +153,15 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				styles={styles}
 			/>
 		);
-	}, [handleTokenSelect, styles, portfolioTokenMap, TokenItem]);
+	}, [handleTokenSelect, styles, portfolioTokenMap]);
 
-	RenderIcon.displayName = 'RenderIcon'; // Added display name
-	TokenItem.displayName = 'TokenItem';   // Added display name
+	// Memoize key extractor
+	const keyExtractor = useCallback((coin: Coin) => coin.mintAddress, []);
+
+	// Memoize search query change handler
+	const handleSearchQueryChange = useCallback((query: string) => {
+		setSearchQuery(query);
+	}, []);
 
 	return (
 		<BottomSheetModal
@@ -182,7 +186,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 					testID="token-search-input"
 					placeholder="Search tokens"
 					value={searchQuery}
-					onChangeText={setSearchQuery}
+					onChangeText={handleSearchQueryChange}
 					style={styles.searchBar}
 					inputStyle={styles.searchBarInput}
 					iconColor={theme.colors.onSurfaceVariant}
@@ -202,7 +206,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			<BottomSheetFlatList
 				data={filteredCoins}
 				renderItem={renderItem}
-				keyExtractor={coin => coin.mintAddress}
+				keyExtractor={keyExtractor}
 				contentContainerStyle={styles.tokenListContent}
 				keyboardShouldPersistTaps="handled"
 				showsVerticalScrollIndicator={false}
@@ -226,7 +230,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	selectedToken,
 	onSelectToken,
 	label,
-	style,
+	style: _style,
 	amountValue,
 	onAmountChange,
 	isAmountEditable = true,
