@@ -1,5 +1,5 @@
 // frontend/src/services/api.test.ts
-import { API, TradePayload } from './grpc/model';
+import { API, TradePayload } from '@/services/grpc/model';
 
 // --- Mock grpcApi ---
 const mockResponses = {
