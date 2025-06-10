@@ -396,20 +396,20 @@ export const createStyles = (theme: MD3Theme) =>
 			}),
 		},
 		verificationCardSuccess: {
-			borderLeftWidth: 4,
 			borderLeftColor: theme.colors.primary,
+			borderLeftWidth: 4,
 		},
 		verificationCardWarning: {
-			borderLeftWidth: 4,
 			borderLeftColor: theme.colors.tertiary,
+			borderLeftWidth: 4,
 		},
 		verificationCardError: {
-			borderLeftWidth: 4,
 			borderLeftColor: theme.colors.error,
+			borderLeftWidth: 4,
 		},
 		verificationCardInfo: {
-			borderLeftWidth: 4,
 			borderLeftColor: theme.colors.onSurfaceVariant,
+			borderLeftWidth: 4,
 		},
 		verificationHeader: {
 			alignItems: 'center',
@@ -433,12 +433,12 @@ export const createStyles = (theme: MD3Theme) =>
 			gap: 12,
 		},
 		verificationButton: {
+			alignItems: 'center',
 			borderRadius: 12,
 			flex: 1,
-			paddingVertical: 12,
-			paddingHorizontal: 16,
-			alignItems: 'center',
 			justifyContent: 'center',
+			paddingHorizontal: 16,
+			paddingVertical: 12,
 		},
 		verificationButtonCancel: {
 			backgroundColor: theme.colors.surfaceVariant,

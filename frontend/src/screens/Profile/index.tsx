@@ -14,9 +14,7 @@ import {
 	CoinsIcon,
 	SendIcon,
 } from '@components/Common/Icons';
-// Removed ProfilePictureModal import
 import { logger } from '@/utils/logger';
-import { useThemeStore } from '@/store/theme';
 import type { ProfileScreenNavigationProp } from './profile_types';
 
 const Profile = () => {
@@ -24,21 +22,13 @@ const Profile = () => {
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
 	const {
-		transactions,
 		isLoading: isTransactionsLoading,
-		error: transactionsError,
 		fetchRecentTransactions,
 		hasFetched: transactionsHasFetched
 	} = useTransactionsStore();
 	const theme = useTheme();
 	const styles = createStyles(theme);
 
-	// Use the theme store for theme management
-	const { themeType, toggleTheme, isLoading: isThemeLoading } = useThemeStore();
-	const isDarkTheme = themeType === 'neon';
-
-	// Removed state for profile picture modal
-	// const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed ProfileScreen' });

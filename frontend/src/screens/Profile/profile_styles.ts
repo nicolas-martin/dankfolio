@@ -8,6 +8,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		flex: 1,
 	},
 	container: {
+		backgroundColor: theme.colors.background,
 		flex: 1,
 	},
 	centered: {
@@ -28,10 +29,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginBottom: 24,
 	},
 	profileHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between', // To push title and button apar
 		alignItems: 'center',
-		marginBottom: 8,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
 	},
 	profileIconContainer: { // New styl
 		flexDirection: 'row',
@@ -250,15 +250,15 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		// padding: 16, // If card-like
 	},
 	transactionsHeader: { // Similar to tokensHeader
-		flexDirection: 'row',
 		alignItems: 'center',
+		flexDirection: 'row',
 		marginBottom: 16, // Spacing before the list starts
 		// paddingHorizontal: 16, // If transactionsSection is card-like
 	},
 	transactionsTitle: { // Similar to tokensTitle
+		color: theme.colors.onSurface,
 		fontSize: 20,
 		fontWeight: '600',
-		color: theme.colors.onSurface,
 		marginLeft: 12, // Space from icon
 	},
 	transactionsListContainer: {
@@ -275,13 +275,13 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		// marginBottom: 8, // if items are card-like and need spacing
 	},
 	transactionIconContainer: { // Holds the icon (Swap, Transfer)
-		width: 40,
-		height: 40,
-		borderRadius: 20, // Circular background for icon
-		backgroundColor: theme.colors.surfaceVariant, // A subtle background
-		justifyContent: 'center',
 		alignItems: 'center',
+		backgroundColor: theme.colors.surfaceVariant, // A subtle background
+		borderRadius: 20, // Circular background for icon
+		height: 40,
+		justifyContent: 'center',
 		marginRight: 12, // Space between icon and text
+		width: 40,
 	},
 	// transactionDetails: not directly used by List.Item, but concepts apply to content within
 	transactionInfoContainer: { // Replaces transactionTexts, used for title/subtitle block in List.Item
@@ -333,16 +333,16 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginVertical: 30, // More space for loading indicator
 	},
 	viewAllButton: { // For "View All Transactions"
-		marginTop: 12,
 		alignSelf: 'center', // Center the button
+		marginTop: 12,
 	},
 	// Ensure empty state for transactions is consistent with other empty states
 	transactionEmptyStateContainer: { // Specific empty state for transactions
+		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		alignItems: 'center',
-		paddingVertical: 40,
 		paddingHorizontal: 40,
+		paddingVertical: 40,
 	},
 	// Removed transactionDescription, transactionDate as they are now transactionTitleText and part of transactionSubtitleText
 	// Removed transactionDetails and transactionTexts as List.Item handles its internal layout

@@ -12,7 +12,7 @@ import Odometer from '@components/Odometer';
 import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Added ImageZoomModal import
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
-	price, periodChange, valueChange, period, resolvedIconUrl, name, address, hoveredPoint,
+	price, periodChange, valueChange, period, resolvedIconUrl, name, address,
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);

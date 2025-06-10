@@ -8,6 +8,15 @@ export const useStyles = () => {
 			backgroundColor: theme.colors.primary,
 			elevation: 2,
 		},
+		button: {
+			alignItems: 'center',
+			borderRadius: 8,
+			flex: 1,
+			justifyContent: 'center',
+			marginHorizontal: 4,
+			paddingHorizontal: 12,
+			paddingVertical: 8,
+		},
 		container: { // Corresponds to 'percentageContainer' in Send screen
 			flexDirection: 'row',
 			justifyContent: 'space-between', // Changed from space-around to space-between

@@ -1,19 +1,15 @@
 import React from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { Text, useTheme, List, Switch, Divider, IconButton } from 'react-native-paper';
 import Constants from 'expo-constants';
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
 import { createStyles } from './settings_styles';
-import { SettingsScreenNavigationProp, SettingsScreenRouteProp } from './settings_types';
 import { logger } from '@/utils/logger';
 import { useToast } from '@components/Common/Toast';
 import { copyToClipboard as copyUtil } from '@/screens/Profile/profile_scripts';
 
-const Settings = () => {
-	const navigation = useNavigation<SettingsScreenNavigationProp>();
-	const route = useRoute<SettingsScreenRouteProp>();
+const Settings: React.FC = () => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const { showToast } = useToast();

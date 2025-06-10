@@ -1,11 +1,10 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
 import { useTheme, Appbar } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
 const CustomHeader: React.FC = () => {
-	const route = useRoute();
 	const navigation = useNavigation();
+	const route = useRoute();
 	const theme = useTheme();
 	// Don't show back button on home screen
 	const showBackButton = route.name !== 'Home';
@@ -17,10 +16,5 @@ const CustomHeader: React.FC = () => {
 		</Appbar.Header>
 	);
 };
-
-const styles = StyleSheet.create({
-	container: {
-	},
-});
 
 export default CustomHeader;

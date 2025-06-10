@@ -6,20 +6,20 @@ import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { create } from '@bufbuild/protobuf';
 
 // Mock the tradeClient
-jest.mock('./grpc/apiClient', () => ({
-	...jest.requireActual('./grpc/apiClient'), // Import and retain other client exports
+jest.mock('@/services/grpc/apiClient', () => ({
+	...jest.requireActual('@/services/grpc/apiClient'), // Import and retain other client exports
 	tradeClient: {
 		listTrades: jest.fn(),
 	},
 }));
 
 // Mock grpcUtils to spy on handleGrpcError and prevent logging during tests
-jest.mock('./grpc/grpcUtils', () => ({
-	...jest.requireActual('./grpc/grpcUtils'),
+jest.mock('@/services/grpc/grpcUtils', () => ({
+	...jest.requireActual('@/services/grpc/grpcUtils'),
 	handleGrpcError: jest.fn((error, serviceName, methodName) => {
 		// In a real test, you might want to throw a specific error or return a value
-		console.error(`Mocked handleGrpcError called for ${serviceName}.${methodName}:`, error.message);
-		throw error; // Re-throw by default to simulate error propagation
+		// For now, we'll just return the error to avoid throwing
+		return error;
 	}),
 	logRequest: jest.fn(),
 	logResponse: jest.fn(),

@@ -1,7 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createOdometerStyles = () => StyleSheet.create({
   digitColumn: {
     alignItems: 'center',
     justifyContent: 'flex-start',
