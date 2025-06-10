@@ -6,43 +6,32 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		gap: 20,
 		paddingTop: 8,
 	},
-
-	// Volume Section
-	volumeSection: {
-		borderBottomColor: theme.colors.outlineVariant,
-		borderBottomWidth: 1,
-		paddingBottom: 16,
-	},
-	volumeHeader: {
+	dateHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
 		gap: 8,
 		marginBottom: 12,
 	},
-	volumeIcon: {
-		alignItems: 'center',
-		backgroundColor: theme.colors.tertiaryContainer,
+	dateIcon: {
+		alignItems: 'center', // Sorted
+		backgroundColor: theme.colors.surfaceVariant, // Generic background
 		borderRadius: 12,
 		height: 24,
 		justifyContent: 'center',
 		width: 24,
 	},
-	volumeTitle: {
+	dateSection: {
+		// No bottom border as it's the last section now
+	},
+	dateTitle: {
 		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
 	},
-	volumeValue: {
-		color: theme.colors.onSurface,
-		fontSize: 24,
-		fontWeight: '700',
-	},
-
-	// Description Section
-	descriptionSection: {
-		borderBottomColor: theme.colors.outlineVariant,
-		borderBottomWidth: 1,
-		paddingBottom: 16,
+	dateValue: {
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 14,
+		fontWeight: 'normal',
 	},
 	descriptionHeader: {
 		alignItems: 'center',
@@ -51,91 +40,46 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginBottom: 12,
 	},
 	descriptionIcon: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
+		alignItems: 'center', // Sorted
 		backgroundColor: theme.colors.surfaceVariant, // Generic background
+		borderRadius: 12,
+		height: 24,
 		justifyContent: 'center',
-		alignItems: 'center',
+		width: 24,
 	},
-	descriptionTitle: {
-		color: theme.colors.onSurface,
-		fontSize: 16,
-		fontWeight: '600',
+	descriptionSection: {
+		borderBottomColor: theme.colors.outlineVariant,
+		borderBottomWidth: 1,
+		paddingBottom: 16,
 	},
 	descriptionText: {
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 14,
 		lineHeight: 20,
 	},
-
-	// Tags Section
-	tagsSection: {
-		borderBottomColor: theme.colors.outlineVariant,
-		borderBottomWidth: 1,
-		paddingBottom: 16,
-	},
-	tagsHeader: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		gap: 8,
-		marginBottom: 12,
-	},
-	tagsIcon: {
-		alignItems: 'center',
-		backgroundColor: theme.colors.secondaryContainer,
-		borderRadius: 12,
-		height: 24,
-		justifyContent: 'center',
-		width: 24,
-	},
-	tagsTitle: {
+	descriptionTitle: {
 		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
 	},
-	tagsContainer: {
+	detailLabel: {
+		color: theme.colors.onSurfaceVariant,
+		fontSize: 16,
+	},
+	detailRow: {
 		flexDirection: 'row',
-		flexWrap: 'wrap',
-		gap: 8,
+		justifyContent: 'space-between',
+		paddingVertical: 8,
 	},
-	tagItem: {
-		backgroundColor: theme.colors.surfaceVariant,
-		borderColor: theme.colors.outline,
-	},
-
-	// Links Section
-	linksSection: {
-		paddingBottom: 16,
-		borderBottomWidth: 1, // Ensure this is present if Date section follows
-		borderBottomColor: theme.colors.outlineVariant,
-	},
-	linksHeader: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		gap: 8,
-		marginBottom: 12,
-	},
-	linksIcon: {
-		alignItems: 'center',
-		backgroundColor: theme.colors.tertiaryContainer,
-		borderRadius: 12,
-		height: 24,
-		justifyContent: 'center',
-		width: 24,
-	},
-	linksTitle: {
+	detailValue: { // Properties already sorted
 		color: theme.colors.onSurface,
 		fontSize: 16,
-		fontWeight: '600',
 	},
-	linksContainer: {
-		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 12,
-		overflow: 'hidden',
+	divider: {
+		backgroundColor: theme.colors.outline,
+		height: 1,
+		marginHorizontal: 16,
 	},
-
-	// Link Item styles
 	linkItemContainer: {
 		alignItems: 'center',
 		backgroundColor: 'transparent',
@@ -152,90 +96,132 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginRight: 12,
 		width: 32,
 	},
-	linkItemTextContainer: {
-		flex: 1,
-	},
 	linkItemLabel: {
 		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
 		marginBottom: 2,
 	},
+	linkItemTextContainer: {
+		flex: 1,
+	},
 	linkItemValue: {
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 14,
 	},
-	divider: {
-		backgroundColor: theme.colors.outline,
-		height: 1,
-		marginHorizontal: 16,
+	linksContainer: {
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius: 12,
+		overflow: 'hidden',
 	},
-
-	// Date Section
-	dateSection: {
-		// No bottom border as it's the last section now
-	},
-	dateHeader: {
+	linksHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
 		gap: 8,
 		marginBottom: 12,
 	},
-	dateIcon: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		backgroundColor: theme.colors.surfaceVariant, // Generic background
-		justifyContent: 'center',
+	linksIcon: { // Properties already sorted
 		alignItems: 'center',
+		backgroundColor: theme.colors.tertiaryContainer,
+		borderRadius: 12,
+		height: 24,
+		justifyContent: 'center',
+		width: 24,
 	},
-	dateTitle: {
+	linksSection: {
+		borderBottomColor: theme.colors.outlineVariant,
+		borderBottomWidth: 1, // Ensure this is present if Date section follows
+		paddingBottom: 16,
+	},
+	linksTitle: {
 		color: theme.colors.onSurface,
 		fontSize: 16,
 		fontWeight: '600',
-	},
-	dateValue: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		fontWeight: 'normal',
-	},
-
-	// Legacy styles for compatibility (kept minimal)
-	sectionTitle: {
-		color: theme.colors.onSurface,
-		fontSize: 18,
-		fontWeight: 'bold',
-		marginBottom: 8,
 	},
 	sectionDescription: {
 		color: theme.colors.onSurfaceVariant,
 		fontSize: 16,
 		marginBottom: 16,
 	},
-	detailRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		paddingVertical: 8,
-	},
-	detailLabel: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
-	},
-	detailValue: {
+	sectionTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
-	},
-	tagsLabel: {
-		color: theme.colors.onSurfaceVariant,
+		fontSize: 18,
+		fontWeight: 'bold',
 		marginBottom: 8,
+	},
+	tagItem: {
+		backgroundColor: theme.colors.surfaceVariant,
+		borderColor: theme.colors.outline,
+	},
+	tagsContainer: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 8,
+	},
+	tagsHeader: {
+		alignItems: 'center',
+		flexDirection: 'row',
+		gap: 8,
+		marginBottom: 12,
+	},
+	tagsIcon: { // Properties already sorted
+		alignItems: 'center',
+		backgroundColor: theme.colors.secondaryContainer,
+		borderRadius: 12,
+		height: 24,
+		justifyContent: 'center',
+		width: 24,
 	},
 	tagsInnerContainer: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		gap: 8,
 	},
+	tagsLabel: {
+		color: theme.colors.onSurfaceVariant,
+		marginBottom: 8,
+	},
+	tagsSection: {
+		borderBottomColor: theme.colors.outlineVariant,
+		borderBottomWidth: 1,
+		paddingBottom: 16,
+	},
+	tagsTitle: {
+		color: theme.colors.onSurface,
+		fontSize: 16,
+		fontWeight: '600',
+	},
 	tagText: {
 		color: theme.colors.onSurface,
 		fontSize: 14,
+	},
+	volumeHeader: {
+		alignItems: 'center',
+		flexDirection: 'row',
+		gap: 8,
+		marginBottom: 12,
+	},
+	volumeIcon: { // Properties already sorted
+		alignItems: 'center',
+		backgroundColor: theme.colors.tertiaryContainer,
+		borderRadius: 12,
+		height: 24,
+		justifyContent: 'center',
+		width: 24,
+	},
+	volumeSection: {
+		borderBottomColor: theme.colors.outlineVariant,
+		borderBottomWidth: 1,
+		paddingBottom: 16,
+	},
+	volumeTitle: {
+		color: theme.colors.onSurface,
+		fontSize: 16,
+		fontWeight: '600',
+	},
+	volumeValue: {
+		color: theme.colors.onSurface,
+		fontSize: 24,
+		fontWeight: '700',
 	},
 });

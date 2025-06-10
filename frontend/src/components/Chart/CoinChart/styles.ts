@@ -33,11 +33,11 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		textAlign: 'center',
 	},
 	loadingContainer: {
-		height: 250,
-		justifyContent: 'center',
 		alignItems: 'center',
 		backgroundColor: '#1C2127', // Match chartContainer background
 		borderRadius: 8,
+		height: 250,
+		justifyContent: 'center',
 	},
 	tooltipText: {
 		color: theme.colors.onSurface,

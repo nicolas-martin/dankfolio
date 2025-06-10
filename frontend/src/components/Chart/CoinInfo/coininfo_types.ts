@@ -1,3 +1,5 @@
+import React from 'react'; // Added React import
+
 export interface CoinMetadata {
 	name: string;
 	description?: string;
