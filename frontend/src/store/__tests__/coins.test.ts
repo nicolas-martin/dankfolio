@@ -1,6 +1,6 @@
 // frontend/src/store/coins.test.ts
 import { act } from '@testing-library/react-native';
-import { useCoinStore } from './coins';
+import { useCoinStore } from '../coins';
 import { grpcApi } from '@/services/grpcApi';
 import { Coin } from '@/types';
 

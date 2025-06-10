@@ -8,7 +8,7 @@ import {
 	formatValueChange,
 	formatAddress,
 	formatPct
-} from './numberFormat';
+} from '../numberFormat';
 
 describe('Number Formatting Utilities', () => {
 	describe('toRawAmount', () => {
