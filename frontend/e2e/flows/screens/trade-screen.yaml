@@ -29,13 +29,6 @@ env:
 - assertVisible:
       id: "to-token-selector"
 
-      # NOTE: USE THIS IN ANOTHER TEST CASE
-# - runFlow:
-#       file: ../components/select-token-in-selector.yaml
-#       env:
-#           coinAddressToSelect: "${TO_COIN_ADDRESS}"
-#           coinSymbolToSelect: "${TO_COIN_SYMBOL}"
-
 - tapOn:
       id: "from-token-selector-amount-input"
 - inputText: "${TRADE_AMOUNT_FROM}"

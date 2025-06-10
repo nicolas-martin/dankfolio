@@ -1,4 +1,8 @@
 appId: com.nicolasmartin.dankfolio
+env:
+    NEW_COIN_ADDRESS: "NewCoin1111111111111111111111111111111"
+    ROCKET_COIN_ADDRESS: "RocketCoin111111111111111111111111111"
+    DIAMOND_COIN_ADDRESS: "DiamondCoin11111111111111111111111111"
 ---
 - runFlow: ../common/app-setup.yaml
 
@@ -6,27 +10,27 @@ appId: com.nicolasmartin.dankfolio
 
 # Test FRESH coin (NewCoin)
 - assertVisible:
-      id: "new-coin-card-NewCoin1111111111111111111111111111111"
+      id: "new-coin-card-${NEW_COIN_ADDRESS}"
 
 - runFlow:
       file: ../components/new-coin-card-element.yaml
       env:
-          COIN_ADDRESS: "NewCoin1111111111111111111111111111111"
+          COIN_ADDRESS: "${NEW_COIN_ADDRESS}"
 
 # Test ROCKET coin
 - assertVisible:
-      id: "new-coin-card-RocketCoin111111111111111111111111111"
+      id: "new-coin-card-${ROCKET_COIN_ADDRESS}"
 
 - runFlow:
       file: ../components/new-coin-card-element.yaml
       env:
-          COIN_ADDRESS: "RocketCoin111111111111111111111111111"
+          COIN_ADDRESS: "${ROCKET_COIN_ADDRESS}"
 
 # Test DIAMOND coin
 - assertVisible:
-      id: "new-coin-card-DiamondCoin11111111111111111111111111"
+      id: "new-coin-card-${DIAMOND_COIN_ADDRESS}"
 
 - runFlow:
       file: ../components/new-coin-card-element.yaml
       env:
-          COIN_ADDRESS: "DiamondCoin11111111111111111111111111"
+          COIN_ADDRESS: "${DIAMOND_COIN_ADDRESS}"

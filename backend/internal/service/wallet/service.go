@@ -495,22 +495,47 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 }
 
 func (s *Service) GetWalletBalances(ctx context.Context, address string) (*WalletBalance, error) {
+	// Validate address format first
 	pubKey, err := solana.PublicKeyFromBase58(address)
 	if err != nil {
-		return nil, fmt.Errorf("invalid address: %v", err)
+		return nil, fmt.Errorf("INVALID_ADDRESS: %v", err)
+	}
+
+	// Check if address is on curve (valid Solana address)
+	if !solana.PublicKey(pubKey).IsOnCurve() {
+		return nil, fmt.Errorf("INVALID_ADDRESS: address is not on curve")
 	}
 
 	// Get SOL balance first
 	solBalanceResult, err := s.chainClient.GetBalance(ctx, bmodel.Address(pubKey.String()), "confirmed")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get SOL balance: %w", err)
+		// Check if it's a network/RPC error vs address not found
+		if strings.Contains(err.Error(), "account not found") || strings.Contains(err.Error(), "nil value") {
+			// Address is valid but has never been used on-chain
+			return &WalletBalance{
+				Balances: []Balance{}, // Empty balance array for unused address
+			}, nil
+		}
+		return nil, fmt.Errorf("NETWORK_ERROR: failed to get SOL balance: %w", err)
 	}
 	solValue := solBalanceResult.UIAmount // UIAmount from bmodel.Balance
 
 	// Get other token balances
 	tokenBalances, err := s.getTokenBalances(ctx, address) // address is string
 	if err != nil {
-		return nil, fmt.Errorf("failed to get token balances: %w", err)
+		// For token balance errors, we can still return SOL balance if we have it
+		slog.Warn("Failed to get token balances, returning SOL balance only", "address", address, "error", err)
+		if solValue > 0 {
+			return &WalletBalance{
+				Balances: []Balance{{
+					ID:     model.SolMint,
+					Amount: solValue,
+				}},
+			}, nil
+		}
+		return &WalletBalance{
+			Balances: []Balance{},
+		}, nil
 	}
 
 	var allBalances []Balance

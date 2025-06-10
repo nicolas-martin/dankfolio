@@ -1,4 +1,8 @@
 appId: com.nicolasmartin.dankfolio
+env:
+    JUP_ADDRESS: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+    SOL_ADDRESS: "So11111111111111111111111111111111111111112"
+    BONK_ADDRESS: "Bonk111111111111111111111111111111111111"
 ---
 - runFlow: ../common/app-setup.yaml
 
@@ -8,23 +12,23 @@ appId: com.nicolasmartin.dankfolio
 - runFlow:
       when:
           visible:
-              id: "coin-card-JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+              id: "coin-card-${JUP_ADDRESS}"
       file: ../components/coin-card-element.yaml
       env:
-          COIN_ADDRESS: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+          COIN_ADDRESS: "${JUP_ADDRESS}"
 
 - runFlow:
       when:
           visible:
-              id: "coin-card-So11111111111111111111111111111111111111112"
+              id: "coin-card-${SOL_ADDRESS}"
       file: ../components/coin-card-element.yaml
       env:
-          COIN_ADDRESS: "So11111111111111111111111111111111111111112"
+          COIN_ADDRESS: "${SOL_ADDRESS}"
 
 - runFlow:
       when:
           visible:
-              id: "coin-card-Bonk111111111111111111111111111111111111"
+            id: "coin-card-${BONK_ADDRESS}"
       file: ../components/coin-card-element.yaml
       env:
-          COIN_ADDRESS: "Bonk111111111111111111111111111111111111"
+          COIN_ADDRESS: "${BONK_ADDRESS}"

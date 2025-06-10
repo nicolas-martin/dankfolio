@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, TouchableOpacity, TextInput, ScrollView, Linking, Modal } from 'react-native';
+import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions'; // Added
@@ -34,6 +34,9 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const [recipientAddress, setRecipientAddress] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 
+	// Error state for validation
+	const [validationError, setValidationError] = useState<string | null>(null);
+
 	// New state variables for confirmation and polling
 	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
 	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
@@ -44,9 +47,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
 	// State for Solscan Verification Modal
-	const [isVerificationModalVisible, setIsVerificationModalVisible] = useState(false);
-	const [verificationMessage, setVerificationMessage] = useState('');
-	const [solscanLink, setSolscanLink] = useState('');
+	const [verificationInfo, setVerificationInfo] = useState<{
+		message: string;
+		code?: string;
+	} | null>(null);
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed SendTokensScreen' });
@@ -119,65 +123,98 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 	const handleSubmit = async () => {
 		try {
+			// Clear any previous validation errors and verification info
+			setValidationError(null);
+			setVerificationInfo(null);
+
 			if (!wallet) {
-				showToast({
-					type: 'error',
-					message: 'No wallet connected'
-				});
+				setValidationError('No wallet connected');
 				return;
 			}
 			if (!selectedToken) {
-				showToast({
-					type: 'error',
-					message: 'No token selected'
-				});
+				setValidationError('No token selected');
 				return;
 			}
 
-			const validationError = await validateForm({
+			const validationResult = await validateForm({
 				toAddress: recipientAddress,
 				amount,
 				selectedTokenMint: selectedToken.mintAddress
 			}, selectedToken);
 
-			if (validationError) {
-				if (validationError.code === "ADDRESS_EXISTS_ON_SOLSCAN") {
-					setVerificationMessage(validationError.message);
-					setSolscanLink(`https://solscan.io/account/${recipientAddress}`);
-					setIsVerificationModalVisible(true);
-					logger.breadcrumb({ category: 'ui', message: 'Solscan verification modal opened', data: { toAddress: recipientAddress } });
-				} else {
-					showToast({
-						type: 'error',
-						message: validationError.message
-					});
-				}
+			if (validationResult && !validationResult.isValid) {
+				// Show validation error
+				setValidationError(validationResult.message);
 				return;
 			}
 
-			// If validationResult is null (all checks passed, no Solscan warning)
-			logger.breadcrumb({ category: 'ui', message: 'Send confirmation modal opened (skipped Solscan or Solscan passed implicitly)', data: { toAddress: recipientAddress, amount, token: selectedToken.coin.symbol } });
+			if (validationResult && validationResult.code === "ADDRESS_HAS_BALANCE") {
+				// Address has balance - show verification info card
+				setVerificationInfo({
+					message: validationResult.balanceInfo || validationResult.message,
+					code: validationResult.code
+				});
+				return;
+			}
+
+			if (validationResult && validationResult.code === "ADDRESS_NO_BALANCE") {
+				// Address is valid but unused - show warning info card
+				setVerificationInfo({
+					message: validationResult.balanceInfo || validationResult.message,
+					code: validationResult.code
+				});
+				return;
+			}
+
+			if (validationResult && validationResult.code === "ADDRESS_BALANCE_CHECK_FAILED") {
+				// Could not check balance - show warning info card
+				setVerificationInfo({
+					message: validationResult.balanceInfo || validationResult.message,
+					code: validationResult.code
+				});
+				return;
+			}
+
+			// If no validation result or validation passed without special codes, proceed directly
+			logger.breadcrumb({ category: 'ui', message: 'User proceeded without address verification', data: { toAddress: recipientAddress, amount, token: selectedToken?.coin.symbol } });
 			setIsConfirmationVisible(true);
 
-		} catch (error: unknown) {
-			if (error instanceof Error) {
-				showToast({
-					type: 'error',
-					message: error.message || 'Failed to validate transfer'
-				});
-			} else {
-				showToast({
-					type: 'error',
-					message: 'An unknown error occurred during validation'
-				});
-			}
+		} catch (error) {
+			logger.exception(error, { functionName: 'handleSubmit' });
+			setValidationError(error instanceof Error ? error.message : 'Validation failed');
 		}
 	};
 
 	const handleConfirmVerificationAndProceed = () => {
-		setIsVerificationModalVisible(false);
-		logger.breadcrumb({ category: 'ui', message: 'User proceeded after Solscan verification', data: { toAddress: recipientAddress, amount, token: selectedToken?.coin.symbol } });
+		setVerificationInfo(null);
+		logger.breadcrumb({ category: 'ui', message: 'User proceeded after address verification', data: { toAddress: recipientAddress, amount, token: selectedToken?.coin.symbol } });
 		setIsConfirmationVisible(true);
+	};
+
+	const handleCancelVerification = () => {
+		setVerificationInfo(null);
+		logger.breadcrumb({ category: 'ui', message: 'User cancelled address verification', data: { toAddress: recipientAddress } });
+	};
+
+	// Clear validation errors when user starts typing
+	const handleAmountChange = (newAmount: string) => {
+		setAmount(newAmount);
+		if (validationError) {
+			setValidationError(null);
+		}
+		if (verificationInfo) {
+			setVerificationInfo(null);
+		}
+	};
+
+	const handleRecipientChange = (newAddress: string) => {
+		setRecipientAddress(newAddress);
+		if (validationError) {
+			setValidationError(null);
+		}
+		if (verificationInfo) {
+			setVerificationInfo(null);
+		}
 	};
 
 	const handleConfirmSubmit = async () => {
@@ -270,9 +307,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 					onSelectToken={onTokenSelect}
 					label=""
 					amountValue={amount}
-					onAmountChange={setAmount}
+					onAmountChange={handleAmountChange}
 					isAmountEditable={true}
 					showOnlyPortfolioTokens={true}
+					testID="token-selector"
 				/>
 			</View>
 		);
@@ -285,10 +323,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			<View style={styles.amountCard}>
                 <AmountPercentageButtons
                     balance={selectedToken.amount}
-                    onSelectAmount={setAmount}
-                    // style={styles.percentageContainer} // Pass any specific container style if needed,
-                                                       // or ensure AmountPercentageButtons' internal style is sufficient.
-                                                       // The new component uses its own useStyles for container.
+                    onSelectAmount={handleAmountChange}
                 />
 			</View>
 		);
@@ -301,9 +336,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				<Text style={styles.recipientTitle}>To</Text>
 			</View>
 			<TextInput
+				testID="recipient-address-input"
 				style={styles.input}
 				value={recipientAddress}
-				onChangeText={(text) => setRecipientAddress(text)}
+				onChangeText={handleRecipientChange}
 				placeholder="Wallet address"
 				placeholderTextColor={theme.colors.onSurfaceVariant}
 				multiline={true}
@@ -312,11 +348,96 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		</View>
 	);
 
+	const renderVerificationCard = () => {
+		if (!verificationInfo) return null;
+
+		const getCardStyle = () => {
+			switch (verificationInfo.code) {
+				case "ADDRESS_HAS_BALANCE":
+					return styles.verificationCardSuccess;
+				case "ADDRESS_NO_BALANCE":
+					return styles.verificationCardWarning;
+				case "ADDRESS_BALANCE_CHECK_FAILED":
+					return styles.verificationCardError;
+				default:
+					return styles.verificationCardInfo;
+			}
+		};
+
+		const getIconName = () => {
+			switch (verificationInfo.code) {
+				case "ADDRESS_HAS_BALANCE":
+					return "check-circle";
+				case "ADDRESS_NO_BALANCE":
+					return "alert-circle";
+				case "ADDRESS_BALANCE_CHECK_FAILED":
+					return "help-circle";
+				default:
+					return "information";
+			}
+		};
+
+		const getIconColor = () => {
+			switch (verificationInfo.code) {
+				case "ADDRESS_HAS_BALANCE":
+					return theme.colors.primary;
+				case "ADDRESS_NO_BALANCE":
+					return theme.colors.tertiary;
+				case "ADDRESS_BALANCE_CHECK_FAILED":
+					return theme.colors.error;
+				default:
+					return theme.colors.onSurfaceVariant;
+			}
+		};
+
+		return (
+			<View style={[styles.verificationCard, getCardStyle()]} testID="verification-info-card">
+				<View style={styles.verificationHeader}>
+					<Icon source={getIconName()} size={20} color={getIconColor()} />
+					<Text style={styles.verificationTitle}>Address Verification</Text>
+				</View>
+				<Text style={styles.verificationMessage} testID="verification-message">
+					{verificationInfo.message}
+				</Text>
+				<View style={styles.verificationActions}>
+					<TouchableOpacity
+						style={[styles.verificationButton, styles.verificationButtonCancel]}
+						onPress={handleCancelVerification}
+						testID="verification-cancel-button"
+					>
+						<Text style={styles.verificationButtonCancelText}>Cancel</Text>
+					</TouchableOpacity>
+					<TouchableOpacity
+						style={[styles.verificationButton, styles.verificationButtonContinue]}
+						onPress={handleConfirmVerificationAndProceed}
+						testID="verification-continue-button"
+					>
+						<Text style={styles.verificationButtonContinueText}>Continue</Text>
+					</TouchableOpacity>
+				</View>
+			</View>
+		);
+	};
+
+	const renderErrorMessage = () => {
+		if (!validationError) return null;
+
+		return (
+			<View style={styles.errorContainer} testID="validation-error-container">
+				<Icon source="alert-circle" size={16} color={theme.colors.error} />
+				<Text style={styles.errorText} testID="validation-error-text">
+					{validationError}
+				</Text>
+			</View>
+		);
+	};
+
 	const renderSendButton = () => (
 		<TouchableOpacity
 			onPress={handleSubmit}
 			disabled={isLoading}
 			style={[styles.sendButton, isLoading && styles.sendButtonDisabled]}
+			testID="send-button"
 		>
 			<Icon source="send" size={20} color={theme.colors.onPrimary} />
 			<Text style={styles.sendButtonText}>
@@ -348,6 +469,12 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 				{/* Recipient Card */}
 				{renderRecipientCard()}
+
+				{/* Verification Info Card */}
+				{renderVerificationCard()}
+
+				{/* Error Message */}
+				{renderErrorMessage()}
 
 				{/* Send Button */}
 				{renderSendButton()}
@@ -382,44 +509,6 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				error={pollingError}
 				txHash={submittedTxHash}
 			/>
-
-			{/* Verification Modal */}
-			<Modal
-				animationType="slide"
-				transparent={true}
-				visible={isVerificationModalVisible}
-				onRequestClose={() => {
-					setIsVerificationModalVisible(false);
-					logger.breadcrumb({ category: 'ui', message: 'Solscan verification modal closed by request' });
-				}}
-			>
-				<View style={styles.centeredView}>
-					<View style={styles.modalView}>
-						<Text style={styles.modalText}>{verificationMessage}</Text>
-						<TouchableOpacity
-							style={[styles.verificationModalButton, styles.verificationModalButtonLink]}
-							onPress={() => Linking.openURL(solscanLink)}
-						>
-							<Text style={styles.verificationModalLinkButtonText}>View on Solscan</Text>
-						</TouchableOpacity>
-						<TouchableOpacity
-							style={[styles.verificationModalButton, styles.verificationModalButtonProceed]}
-							onPress={handleConfirmVerificationAndProceed}
-						>
-							<Text style={styles.verificationModalProceedButtonText}>Proceed</Text>
-						</TouchableOpacity>
-						<TouchableOpacity
-							style={[styles.verificationModalButton, styles.verificationModalButtonClose]}
-							onPress={() => {
-								setIsVerificationModalVisible(false);
-								logger.breadcrumb({ category: 'ui', message: 'Solscan verification modal cancelled by user' });
-							}}
-						>
-							<Text style={styles.verificationModalButtonText}>Cancel</Text>
-						</TouchableOpacity>
-					</View>
-				</View>
-			</Modal>
 		</View>
 	);
 };

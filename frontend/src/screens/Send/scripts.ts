@@ -9,6 +9,7 @@ import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { ToastProps } from '@components/Common/Toast/toast_types';
 import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import { logger } from '@/utils/logger';
+import { formatTokenBalance as formatBalance } from '@/utils/numberFormat';
 
 export const handleTokenSelect = (
 	coin: Coin,
@@ -17,10 +18,18 @@ export const handleTokenSelect = (
 	return tokens.find(t => t.coin.mintAddress === coin.mintAddress);
 };
 
+export interface AddressValidationResult {
+	isValid: boolean;
+	code?: string;
+	message: string;
+	hasBalance?: boolean;
+	balanceInfo?: string;
+}
+
 export const validateForm = async (
 	formData: TokenTransferFormData,
 	selectedToken?: PortfolioToken
-): Promise<{ isValid: boolean; code?: string; message: string } | null> => {
+): Promise<AddressValidationResult | null> => {
 	if (!formData.toAddress) {
 		return { isValid: false, message: 'Recipient address is required' };
 	}
@@ -41,29 +50,65 @@ export const validateForm = async (
 	if (selectedToken) {
 		const amount = parseFloat(formData.amount);
 		if (amount > selectedToken.amount) {
-			return { isValid: false, message: `Insufficient balance. Maximum available: ${formatTokenBalance(selectedToken.amount)} ${selectedToken.coin.symbol}` };
+			return { isValid: false, message: `Insufficient balance. Maximum available: ${formatBalance(selectedToken.amount)} ${selectedToken.coin.symbol}` };
 		}
 	}
 
+	// Check recipient address balance and provide helpful feedback
 	try {
-		const response = await fetch(`https://public-api.solscan.io/account/${formData.toAddress}`);
-
-		if (response.ok) { // status in the range 200-299
-			// Solscan might return 200 even for not found, but with an empty object or specific field.
-			// However, the prompt implies 200 means found, and 404 means not found.
-			// Assuming Solscan API strictly uses 200 for found and 404 for not found.
-			return { isValid: true, code: "ADDRESS_EXISTS_ON_SOLSCAN", message: "Address found on Solscan. Please verify this is the correct address before proceeding." };
-		} else if (response.status === 404) {
-			return { isValid: false, message: 'Invalid Solana address or address not found on Solscan' };
+		const recipientBalance = await grpcApi.getWalletBalance(formData.toAddress);
+		const hasAnyBalance = recipientBalance.balances.length > 0 && recipientBalance.balances.some(b => b.amount > 0);
+		
+		if (hasAnyBalance) {
+			// Address has balance - show confirmation with balance info
+			const totalBalances = recipientBalance.balances.length;
+			return { 
+				isValid: true, 
+				code: "ADDRESS_HAS_BALANCE", 
+				message: `Recipient address is active with ${totalBalances} token${totalBalances > 1 ? 's' : ''}`,
+				hasBalance: true,
+				balanceInfo: `This address has ${totalBalances} token${totalBalances > 1 ? 's' : ''} in their wallet`
+			};
 		} else {
-			// For other non-successful status codes (e.g., 500, 400, 401, 403)
-			logger.error('Error verifying address with Solscan - Non-OK response:', { status: response.status, statusText: response.statusText });
-			return { isValid: false, message: 'Error verifying address with Solscan. Please try again.' };
+			// Address is valid but has no balance - show warning
+			return { 
+				isValid: true, 
+				code: "ADDRESS_NO_BALANCE", 
+				message: "Recipient address is valid but appears to be unused",
+				hasBalance: false,
+				balanceInfo: "This address has no transaction history. Please verify the address is correct."
+			};
 		}
 	} catch (error) {
-		// This catches network errors (e.g., DNS resolution failure, server unreachable)
-		logger.error('Error verifying address with Solscan - Network or fetch error:', error);
-		return { isValid: false, message: 'Error verifying address with Solscan. Please try again.' };
+		// Handle specific error types from the backend
+		if (error instanceof Error) {
+			const errorMessage = error.message.toLowerCase();
+			
+			// Handle invalid address errors
+			if (errorMessage.includes('invalid wallet address') || errorMessage.includes('invalid argument')) {
+				return { isValid: false, message: 'Invalid Solana address format' };
+			}
+			
+			// Handle network errors
+			if (errorMessage.includes('network error') || errorMessage.includes('unavailable')) {
+				logger.warn('[validateForm] Network error checking recipient balance:', error);
+				return { 
+					isValid: true, 
+					code: "ADDRESS_BALANCE_CHECK_FAILED", 
+					message: "Unable to verify recipient address status",
+					balanceInfo: "Network error occurred while checking address. Please verify the address is correct."
+				};
+			}
+		}
+		
+		// For other errors, log and show generic message
+		logger.warn('[validateForm] Failed to check recipient balance:', error);
+		return { 
+			isValid: true, 
+			code: "ADDRESS_BALANCE_CHECK_FAILED", 
+			message: "Unable to verify recipient address status",
+			balanceInfo: "Could not check address status. Please verify the address is correct."
+		};
 	}
 };
 

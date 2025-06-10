@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"connectrpc.com/connect"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
@@ -37,6 +38,17 @@ func (s *walletServiceHandler) GetWalletBalances(
 	balances, err := s.walletService.GetWalletBalances(ctx, req.Msg.Address)
 	if err != nil {
 		slog.Error("Failed to get wallet balances", "address", req.Msg.Address, "error", err)
+
+		// Check for specific error types and return appropriate GRPC codes
+		errorMsg := err.Error()
+		if strings.Contains(errorMsg, "INVALID_ADDRESS:") {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid wallet address: %s", strings.TrimPrefix(errorMsg, "INVALID_ADDRESS: ")))
+		}
+		if strings.Contains(errorMsg, "NETWORK_ERROR:") {
+			return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("network error: %s", strings.TrimPrefix(errorMsg, "NETWORK_ERROR: ")))
+		}
+
+		// Default to internal error for unknown error types
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get wallet balance: %w", err))
 	}
 
