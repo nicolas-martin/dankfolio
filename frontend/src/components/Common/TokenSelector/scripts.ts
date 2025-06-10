@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Coin } from '@/types';
 
+// Define PortfolioToken based on usage elsewhere (e.g., TokenSelector/index.tsx)
+export interface PortfolioToken {
+	mintAddress: string;
+	amount: number;
+	coin: Coin;
+	// Add other relevant fields if necessary
+}
+
 /**
  * Custom hook to debounce a value
  * @param value The value to debounce
@@ -71,10 +79,10 @@ export const calculateUsdValue = (token?: Coin, amount?: string): string => {
  * @param portfolioTokens The list of tokens in the portfolio.
  * @returns The matching portfolio token or undefined if not found.
  */
-export const findPortfolioToken = (selectedToken?: Coin, portfolioTokens: any[] = []): any => {
+export const findPortfolioToken = (selectedToken?: Coin, portfolioTokens: PortfolioToken[] = []): PortfolioToken | undefined => {
 	if (!selectedToken) {
 		return undefined;
 	}
 
-	return portfolioTokens.find((token: any) => token.mintAddress === selectedToken.mintAddress);
+	return portfolioTokens.find((token: PortfolioToken) => token.mintAddress === selectedToken.mintAddress);
 }; 

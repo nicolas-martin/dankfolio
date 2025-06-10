@@ -35,11 +35,11 @@ export const createStyles = (theme: MD3Theme) =>
       paddingBottom: 16,
     },
     sectionTitle: {
+      color: theme.colors.primary, // Or theme.colors.onSurfaceVariant
       fontSize: 16,
       fontWeight: '600',
-      color: theme.colors.primary, // Or theme.colors.onSurfaceVariant
-      marginTop: 8,
       marginBottom: 4,
+      marginTop: 8,
     },
     warningText: {
       color: theme.colors.error,

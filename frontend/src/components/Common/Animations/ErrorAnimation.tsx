@@ -1,6 +1,7 @@
 import React from 'react';
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
+import animationData from '@assets/lottie/error_cross.json'; // Import the JSON file
 
 interface ErrorAnimationProps {
 	autoPlay?: boolean;
@@ -19,7 +20,7 @@ const ErrorAnimation: React.FC<ErrorAnimationProps> = ({
 }) => {
 	return (
 		<LottieView
-			source={require('@assets/lottie/error_cross.json')}
+			source={animationData} // Use the imported data
 			autoPlay={autoPlay}
 			loop={loop}
 			style={[{ width: size, height: size }, style]}

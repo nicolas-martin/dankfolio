@@ -4,7 +4,7 @@ import type { TokenSelectorProps } from '@components/Common/TokenSelector/types'
 
 const TokenSelector: React.FC<TokenSelectorProps> = ({
 	selectedToken,
-	onSelectToken,
+	_onSelectToken,
 	label,
 	style,
 	amountValue,

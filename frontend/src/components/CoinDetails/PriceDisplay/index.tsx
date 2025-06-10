@@ -52,13 +52,13 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 						icon="content-copy"
 						size={16}
 						onPress={() => copyToClipboard(address, 'Address', showToast)}
-						style={{ margin: 0, padding: 0, marginLeft: 8 }}
+						style={styles.copyIconStyle}
 						testID="price-display-copy-address-button"
 					/>
 				</View>
-				
+
 				{/* Price placeholder */}
-				<Text style={{ fontSize: 32 }} testID="price-display-price-placeholder">$---.--</Text>
+				<Text style={styles.pricePlaceholderText} testID="price-display-price-placeholder">$---.--</Text>
 			</View>
 		);
 	}
@@ -66,7 +66,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	// Calculate derived values only after validation
 	const isPositive = !isNaN(periodChange) && periodChange >= 0;
 	const formattedPrice = formatPrice(price);
-	const formattedChange = !isNaN(periodChange) && !isNaN(valueChange) 
+	const formattedChange = !isNaN(periodChange) && !isNaN(valueChange)
 		? formatValueChange(valueChange, periodChange)
 		: '---';
 
@@ -100,17 +100,17 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					icon="content-copy"
 					size={16}
 					onPress={() => copyToClipboard(address, 'Address', showToast)}
-					style={{ margin: 0, padding: 0, marginLeft: 8 }}
+					style={styles.copyIconStyle}
 					testID="price-display-copy-address-button"
 				/>
 			</View>
-			
+
 			{/* Price */}
 			<View testID="price-display-current-price">
 				<Odometer
 					value={formattedPrice}
 					duration={400}
-					fontStyle={{ fontSize: 32, fontVariant: ['tabular-nums'] }}
+					fontStyle={styles.odometerFontStyle}
 				/>
 			</View>
 
@@ -146,5 +146,3 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 };
 
 export default PriceDisplay;
-
-

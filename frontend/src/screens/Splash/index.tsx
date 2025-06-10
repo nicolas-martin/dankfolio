@@ -1,6 +1,7 @@
 import { View, Image } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import logoAsset from '@assets/splashscreen.png'; // Import the image asset
 import { LoadingAnimation } from '../../components/Common/Animations';
 import { SplashScreenNavigationProp } from './types';
 import { useLoadingState } from './scripts';
@@ -15,7 +16,7 @@ const Splash = () => {
 	return (
 		<View style={styles.container}>
 			<Image
-				source={require('@assets/splashscreen.png')}
+				source={logoAsset} // Use the imported asset
 				style={styles.logo}
 				resizeMode="contain"
 			/>

@@ -21,7 +21,7 @@ export const getCoinPrices = async (mintAddresses: string[]): Promise<Record<str
 	try {
 		const prices = await grpcApi.getCoinPrices(mintAddresses);
 		return prices;
-	} catch (error) {
+	} catch (error: unknown) { // Changed to unknown
 		logger.exception(error, { functionName: 'getCoinPrices', params: { mintAddresses } });
 		throw error; // Propagate error to caller
 	}
@@ -162,7 +162,7 @@ export const pollTradeStatus = async (
 			logger.info(`Current status: ${statusResult.status}, continuing poll...`, { txHash, status: statusResult.status });
 			setPollingStatus('polling');
 		}
-	} catch (error) {
+	} catch (error: unknown) { // Changed to unknown
 		logger.exception(error, { functionName: 'pollTradeStatus', params: { txHash } });
 		setPollingStatus('failed');
 		// Safely extract the error message with proper type handling

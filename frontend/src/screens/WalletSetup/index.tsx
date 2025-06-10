@@ -16,10 +16,11 @@ import { logger } from '@/utils/logger';
 import { env } from '@utils/env';
 import { initializeDebugWallet } from '@/utils/debugWallet'; // Import the new function
 import TermsModal from '@/components/Common/TermsModal';
+import neonBarImage from '../../../assets/onboarding.jpg'; // Import the image asset
 
 // Load the onboarding image from the correct location
 // Note: When using require for images, you need the relative path from this file to the assets directory
-const neonBarImage = require('../../../assets/onboarding.jpg');
+// const neonBarImage = require('../../../assets/onboarding.jpg'); // Removed require
 
 const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
 
@@ -27,7 +28,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const { showToast } = useToast();
-	const { setWallet } = usePortfolioStore();
+	const { setWallet: _setWallet } = usePortfolioStore(); // Prefixed unused setWallet
 	const [termsModalVisible, setTermsModalVisible] = useState(false);
 
 	const {

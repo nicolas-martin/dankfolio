@@ -17,7 +17,7 @@ export class Keypair {
 
 // Mock PublicKey class
 export class PublicKey {
-	constructor(value: string) {
+	constructor(_value: string) {
 		// no-op
 	}
 	toString() {

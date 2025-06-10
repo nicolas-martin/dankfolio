@@ -67,9 +67,9 @@ const Trade: React.FC = () => {
 	// const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	// const refreshStartTimeRef = useRef<number>(0);
 
-	const componentStopPolling = () => {
+	const componentStopPolling = useCallback(() => { // Wrapped in useCallback
 		stopPolling(pollingIntervalRef, setIsLoadingTrade);
-	};
+	}, [pollingIntervalRef, setIsLoadingTrade]);
 
 	const componentPollTradeStatus = async (txHash: string) => {
 		await pollTradeStatus(txHash, setPollingConfirmations, setPollingStatus, setPollingError, componentStopPolling, showToast, wallet);
@@ -93,7 +93,7 @@ const Trade: React.FC = () => {
 			setFromCoin,
 			setToCoin
 		);
-	}, [inputCoin, outputCoin, initialFromCoin, initialToCoin, getCoinByID]);
+	}, [inputCoin, outputCoin, initialFromCoin, initialToCoin, getCoinByID, fromCoin]); // Added fromCoin
 
 	// DISABLED: refreshPrices function - was causing excessive callbacks
 	// const refreshPrices = useCallback(async () => { ... }, []);
@@ -102,7 +102,7 @@ const Trade: React.FC = () => {
 
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === fromCoin?.mintAddress), [tokens, fromCoin]);
-	const toPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === toCoin?.mintAddress), [tokens, toCoin]);
+	const _toPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === toCoin?.mintAddress), [tokens, toCoin]); // Prefixed
 
 	// DISABLED: Setup polling interval when coins or amounts change
 	// This was causing excessive callbacks and infinite loops
@@ -172,7 +172,7 @@ const Trade: React.FC = () => {
 			setTradeDetails,
 			showToast
 		),
-		[fromCoin, toCoin]
+		[fromCoin, toCoin, quoteTimeoutRef, setIsQuoteLoading, setFromAmount, setToAmount, setTradeDetails, showToast] // Added dependencies
 	);
 
 	const handleToAmountChange = useCallback(
@@ -187,7 +187,7 @@ const Trade: React.FC = () => {
 			setTradeDetails,
 			showToast
 		),
-		[fromCoin, toCoin]
+		[fromCoin, toCoin, quoteTimeoutRef, setIsQuoteLoading, setFromAmount, setToAmount, setTradeDetails, showToast] // Added dependencies
 	);
 
 	const handleTradeSubmitClick = () => {
@@ -353,7 +353,7 @@ const Trade: React.FC = () => {
 			<Card style={styles.detailsCard} testID="trade-details-card">
 				<Card.Title
 					title="Trade Details"
-					left={(props) => (
+					left={(_props) => ( // Renamed props to _props
 						<View style={styles.detailsIcon}>
 							<Icon source="information" size={14} color={theme.colors.onPrimary} />
 						</View>
@@ -383,7 +383,7 @@ const Trade: React.FC = () => {
 					<View style={styles.exchangeRateRow}>
 						<View style={styles.exchangeRateLabel}>
 							<Icon source="swap-horizontal" size={16} color={theme.colors.onSurfaceVariant} />
-							<Text style={[styles.detailLabel, { marginLeft: 4 }]}>Exchange Rate</Text>
+							<Text style={[styles.detailLabel, styles.exchangeRateLabelText]}>Exchange Rate</Text>
 						</View>
 						<Text testID="trade-details-exchange-rate" style={styles.exchangeRateValue}>
 							1 {fromCoin?.symbol} = {(parseFloat(tradeDetails.exchangeRate) || 0).toFixed(6)} {toCoin?.symbol}
@@ -414,7 +414,7 @@ const Trade: React.FC = () => {
 						)}
 
 						{/* To Card with Swap Button */}
-						<View style={{ position: 'relative', marginTop: -8 }}>
+						<View style={styles.toCardContainerStyle}>
 							{/* Swap Button positioned relative to the To card */}
 							<View style={styles.swapButtonContainer}>
 								<TouchableOpacity

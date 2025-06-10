@@ -103,16 +103,31 @@ export const logResponse = (serviceName: string, methodName: string, response: a
 	log.log(`📥 gRPC ${serviceName}.${methodName} Response Details:`, safeStringify(response));
 };
 
-export const logError = (serviceName: string, methodName: string, error: Error): void => {
+export const logError = (serviceName: string, methodName: string, error: unknown): void => {
+	let message = 'Unknown error';
+	let code: number | string | undefined = undefined;
+
+	if (error instanceof ConnectError) {
+		message = error.message;
+		code = error.code;
+	} else if (error instanceof Error) {
+		message = error.message;
+		// Standard Error objects don't typically have a 'code' property unless it's a custom error.
+		// 'code' might be present if it's a Node.js system error, but that's less common here.
+		// For now, we only extract code from ConnectError.
+	} else if (typeof error === 'string') {
+		message = error;
+	}
+
 	log.error(`❌ gRPC ${serviceName}.${methodName} Error:`, safeStringify({
-		message: error.message || 'Unknown error',
-		code: (error as any).code,
+		message,
+		code,
 		// data: error.metadata ? (typeof error.metadata.toObject === 'function' ? error.metadata.toObject() : error.metadata) : undefined
 	}));
 };
 
-export const handleGrpcError = (error: Error, serviceName: string, methodName: string): never => {
-	logError(serviceName, methodName, error);
+export const handleGrpcError = (error: unknown, serviceName: string, methodName: string): never => { // Changed error type to unknown
+	logError(serviceName, methodName, error); // logError now accepts unknown
 	if (error instanceof ConnectError) {
 		// Add specific handling for authentication errors (code 16 is UNAUTHENTICATED in gRPC)
 		if (error.code === 16) {

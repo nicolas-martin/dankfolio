@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import { execSync } from 'child_process';
 import { FileIssue, formatIssueGroup, formatSummary } from './utils/formatting';
 
 const COMPONENT_DIRS = ['src/components', 'src/screens'];
@@ -348,7 +349,7 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
 		console.log(chalk.yellow('Built find command:'), cmd);
 
 		try {
-			const output = require('child_process').execSync(cmd, {
+			const output = execSync(cmd, {
 				encoding: 'utf8',
 				stdio: ['pipe', 'pipe', 'pipe'],
 				cwd: projectRoot
@@ -399,8 +400,13 @@ function checkFolderStructure(projectType: ProjectType): FolderIssue[] {
 			console.error(chalk.red(`Error checking ${projectType} structure:`), error);
 			if (error instanceof Error) {
 				console.error(chalk.red('Error details:'), error.message);
-				if ('stdout' in error) console.error(chalk.red('stdout:'), (error as any).stdout);
-				if ('stderr' in error) console.error(chalk.red('stderr:'), (error as any).stderr);
+				// Check if stdout and stderr properties exist on the error object
+				if (error && typeof error === 'object' && 'stdout' in error) {
+					console.error(chalk.red('stdout:'), (error as { stdout: string | Buffer }).stdout.toString());
+				}
+				if (error && typeof error === 'object' && 'stderr' in error) {
+					console.error(chalk.red('stderr:'), (error as { stderr: string | Buffer }).stderr.toString());
+				}
 			}
 		}
 	} else {

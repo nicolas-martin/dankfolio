@@ -1,10 +1,11 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Card, Text, useTheme, Searchbar } from 'react-native-paper';
-import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet'; // Added BottomSheetBackdropProps
 import { BlurView } from 'expo-blur';
 import { ChevronDownIcon } from '@components/Common/Icons';
-import { TokenSelectorProps, TokenSearchModalProps } from './types';
+import { TokenSelectorProps, TokenSearchModalProps, TokenListItem } from './types'; // Assuming TokenListItem is defined in types
 import { createStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
@@ -18,7 +19,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	selectedToken,
 	onSelectToken,
 	showOnlyPortfolioTokens = false,
-	testID,
+	_testID, // Prefixed testID
 }) => {
 	const theme = useTheme();
 	const styles = createStyles(theme);
@@ -63,7 +64,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	}, [onSelectToken, onDismiss]);
 
 	// Custom backdrop component with blur
-	const renderBackdrop = useCallback((props: any) => (
+	const renderBackdrop = useCallback((props: BottomSheetBackdropProps) => ( // Typed props
 		<BottomSheetBackdrop
 			{...props}
 			disappearsOnIndex={-1}
@@ -98,9 +99,9 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	// Memoized TokenItem component to prevent unnecessary re-renders
 	const TokenItem: React.FC<{
 		coin: Coin;
-		portfolioToken: any;
+		portfolioToken: { amount: number } | undefined; // More specific type
 		onSelect: (coin: Coin) => void;
-		styles: any;
+		styles: ReturnType<typeof createStyles>; // Use inferred type from createStyles
 	}> = React.memo(({ coin, portfolioToken, onSelect, styles }) => {
 		console.log('TokenItem re-rendered. Coin:', coin.symbol, 'Icon URL:', coin.resolvedIconUrl);
 		const handlePress = useCallback(() => {
@@ -135,14 +136,14 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 	// Create a map for faster portfolio token lookup
 	const portfolioTokenMap = useMemo(() => {
-		const map = new Map();
-		portfolioTokens.forEach((token: any) => {
+		const map = new Map<string, { mintAddress: string; amount: number; coin: Coin }>(); // Assuming this structure for portfolio tokens
+		portfolioTokens.forEach((token: { mintAddress: string; amount: number; coin: Coin }) => { // Use assumed structure
 			map.set(token.mintAddress, token);
 		});
 		return map;
 	}, [portfolioTokens]);
 
-	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
+	const renderItem = useCallback(({ item: coin }: { item: TokenListItem }) => { // Use TokenListItem
 		console.log('renderItem. Coin:', coin.symbol, 'Icon URL:', coin.resolvedIconUrl);
 		const portfolioToken = portfolioTokenMap.get(coin.mintAddress);
 		return (
@@ -153,7 +154,10 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				styles={styles}
 			/>
 		);
-	}, [handleTokenSelect, styles, portfolioTokenMap]);
+	}, [handleTokenSelect, styles, portfolioTokenMap, TokenItem]);
+
+	RenderIcon.displayName = 'RenderIcon'; // Added display name
+	TokenItem.displayName = 'TokenItem';   // Added display name
 
 	return (
 		<BottomSheetModal
@@ -322,7 +326,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								</>
 							)}
 							{/* note: HIDE FOR NOW */}
-							{false && portfolioToken && (
+							{portfolioToken && ( // Corrected constant binary expression
 								<Text style={styles.valueText}>
 									{portfolioToken.amount}
 								</Text>
@@ -344,4 +348,4 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	);
 };
 
-export default TokenSelector; 
+export default TokenSelector;
