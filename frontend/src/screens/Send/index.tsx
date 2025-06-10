@@ -223,16 +223,27 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			setIsLoading(true);
 			setIsConfirmationVisible(false); // Close confirmation modal
 
-			const txHash = await handleTokenTransfer({
-				toAddress: recipientAddress,
-				amount,
-				selectedTokenMint: selectedToken!.mintAddress
-			});
+			logger.info('[Send] Attempting token transfer.');
+			let txHash: string | null = null;
+			try {
+				txHash = await handleTokenTransfer({
+					toAddress: recipientAddress,
+					amount,
+					selectedTokenMint: selectedToken!.mintAddress
+				});
+				logger.info(`[Send] Token transfer successful. TxHash: ${txHash}`);
+			} catch (error) {
+				logger.error('[Send] Token transfer failed.', error);
+				throw error; // Re-throw to be caught by the outer catch block
+			}
 
-			// logger.debug('Transaction submitted:', txHash); // Already logged in handleTokenTransfer if successful
+			logger.info('[Send] Setting submitted tx hash.');
 			setSubmittedTxHash(txHash);
 			logger.breadcrumb({ category: 'ui', message: 'Send status modal opened', data: { txHash } });
+			logger.info('[Send] Setting status modal visible.');
 			setIsStatusModalVisible(true);
+			logger.info('[Send] Status modal set to visible.');
+			logger.info('[Send] Starting polling.');
 			componentStartPolling(txHash);
 
 		} catch (error: unknown) {

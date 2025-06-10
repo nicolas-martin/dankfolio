@@ -28,6 +28,9 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	confirmations,
 	error,
 }) => {
+	// Log props at the beginning of the component
+	logger.info(`[TradeStatusModal] Render with props:`, { isVisible, txHash, status, confirmations, error });
+
 	const theme = useTheme();
 	const styles = createStyles(theme);
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
@@ -46,13 +49,16 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	// Handle BottomSheetModal presentation
 	useEffect(() => {
+		logger.info(`[TradeStatusModal] useEffect for isVisible triggered. isVisible: ${isVisible}, txHash: ${txHash}, bottomSheetModalRef.current: ${bottomSheetModalRef.current}`);
 		if (isVisible) {
 			setIsClosingProgrammatically(false);
+			logger.info(`[TradeStatusModal] useEffect: isVisible is true, attempting to present. txHash: ${txHash}`);
 			bottomSheetModalRef.current?.present();
 		} else {
+			logger.info(`[TradeStatusModal] useEffect: isVisible is false, attempting to dismiss.`);
 			bottomSheetModalRef.current?.dismiss();
 		}
-	}, [isVisible]);
+	}, [isVisible, txHash]); // Added txHash to dependencies for logging completeness
 
 	// Update display status with smooth transitions
 	useEffect(() => {
