@@ -135,7 +135,7 @@ function ChartWrapper({
 				mass: CHART_CONSTANTS.animation.mass.light,
 			});
 		}
-	}, [active, scale, opacity]);
+	}, [active]);
 
 	const style = useAnimatedStyle(() => ({
 		transform: [{ scale: scale.value }],
@@ -232,13 +232,12 @@ export default function CoinChart({
 
 		// Set up pulsating animation
 		setupPulseAnimation();
-		const currentAnimations = animations.current;
 
 		return () => {
 			isMounted.current = false;
-			currentAnimations.forEach(a => cancelAnimation(a));
+			animations.current.forEach(a => cancelAnimation(a));
 		};
-	}, [data, period, setupPulseAnimation]);
+	}, [data, period]);
 
 	const { state: chartPress, isActive: isPressActive } =
 		useChartPressState(initChartPressState);

@@ -96,14 +96,14 @@ const TermsModal: React.FC<TermsModalProps> = ({
             onPress={onClose}
             style={styles.cancelButton}
           >
-            <Text>Decline</Text>
+            Decline
           </Button>
           <Button
             mode="contained"
             onPress={handleAccept}
             style={styles.acceptButton}
           >
-            <Text>Accept</Text>
+            Accept
           </Button>
         </View>
       </Modal>
