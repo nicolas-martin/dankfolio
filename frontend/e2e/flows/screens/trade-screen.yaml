@@ -73,16 +73,13 @@ env:
 
 - waitForAnimationToEnd
 - assertVisible: "Bottom sheet backdrop"
-# HACK: BOTTOM SHEET SUCKS AND NOTHING IS VISIBLE. SO HAVE TO USE COORD
 - tapOn:
-      point: 60%,90%
+      id: "confirm-trade-button"
 - waitForAnimationToEnd
 
-# TAP ON BOTTOM SHEET DONE
+- assertVisible: "Transaction Finalized!"
 - tapOn:
-      point: 60%,90%
-- tapOn:
-      id: "trade-status-action-button"
+      id: trade-status-action-button
 
 - waitForAnimationToEnd
 - assertNotVisible: "Bottom sheet backdrop"
