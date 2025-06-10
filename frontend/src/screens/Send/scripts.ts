@@ -127,6 +127,16 @@ export const handleTokenTransfer = async (formData: TokenTransferFormData): Prom
 			walletAddress // userPublicKey
 		);
 
+		// 🔍 LOG UNSIGNED TRANSACTION FOR TESTING
+		console.log('🔍 UNSIGNED TRANSACTION CAPTURED:');
+		console.log('📋 Transaction Base64:', unsignedTransaction);
+		console.log('📋 Transaction Length:', unsignedTransaction.length);
+		console.log('📋 From Address:', walletAddress);
+		console.log('📋 To Address:', formData.toAddress);
+		console.log('📋 Token Mint:', formData.selectedTokenMint);
+		console.log('📋 Amount:', formData.amount);
+		console.log('📋 Copy this for tests: const CAPTURED_UNSIGNED_TX = \'' + unsignedTransaction + '\';');
+
 		const keys = await getActiveWalletKeys();
 		if (!keys || !keys.privateKey || !keys.publicKey) {
 			logger.error('[handleTokenTransfer] Failed to get active wallet keys or keys are incomplete.');
@@ -143,6 +153,13 @@ export const handleTokenTransfer = async (formData: TokenTransferFormData): Prom
 			keys.publicKey,
 			keys.privateKey
 		);
+
+		// 🔍 LOG SIGNED TRANSACTION FOR TESTING
+		console.log('🔍 SIGNED TRANSACTION CAPTURED:');
+		console.log('📋 Signed Transaction Base64:', signedTransaction);
+		console.log('📋 Signed Transaction Length:', signedTransaction.length);
+		console.log('📋 Public Key Used:', keys.publicKey);
+		console.log('📋 Copy this for tests: const CAPTURED_SIGNED_TX = \'' + signedTransaction + '\';');
 
 		const submitResponse = await grpcApi.submitCoinTransfer({
 			signedTransaction,
