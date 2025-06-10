@@ -28,40 +28,67 @@ jest.mock('@shopify/react-native-skia', () => ({
 			})),
 		},
 	},
-	Path: jest.fn(({ children, ...props }) => {
+import type { ViewProps } from 'react-native'; // Import ViewProps
+import React from 'react'; // Import React for ReactNode
+
+// ... (other imports)
+
+// Mock @shopify/react-native-skia and other UI related modules
+// ... (existing mock setup)
+	Path: jest.fn(({ children, ...props }: { children?: React.ReactNode } & Omit<ViewProps, 'children'>) => {
 		const RNView = jest.requireActual('react-native').View;
 		return <RNView {...props} testID="mock-skia-path">{children}</RNView>;
 	}),
-	Circle: jest.fn((props) => {
+	Circle: jest.fn((props: ViewProps) => { // Assuming Circle props are similar to ViewProps for the mock
 		const RNView = jest.requireActual('react-native').View;
 		return <RNView {...props} testID="mock-skia-circle" />;
 	}),
-	Line: jest.fn((props) => {
+	Line: jest.fn((props: ViewProps) => { // Assuming Line props are similar to ViewProps for the mock
 		const RNView = jest.requireActual('react-native').View;
 		return <RNView {...props} testID="mock-skia-line" />;
 	}),
-	Text: jest.fn((props) => {
+	Text: jest.fn((props: ViewProps) => { // Assuming Text props are similar to ViewProps for the mock
 		const RNView = jest.requireActual('react-native').View;
 		return <RNView {...props} testID="mock-skia-text" />;
 	}),
-	Group: jest.fn(({ children, ...props }) => {
+	Group: jest.fn(({ children, ...props }: { children?: React.ReactNode } & Omit<ViewProps, 'children'>) => {
 		const RNView = jest.requireActual('react-native').View;
 		return <RNView {...props} testID="mock-skia-group">{children}</RNView>;
 	}),
-	LinearGradient: jest.fn(({ children, ...props }) => {
+	LinearGradient: jest.fn(({ children, ...props }: { children?: React.ReactNode } & Omit<ViewProps, 'children'>) => {
 		const RNView = jest.requireActual('react-native').View;
 		return <RNView {...props} testID="mock-linear-gradient">{children}</RNView>;
 	}),
-	vec: jest.fn((x, y) => ({ x, y })),
+	vec: jest.fn((x: number, y: number) => ({ x, y })), // Added types for x and y
 }));
+
+interface MockChartPoint { x: number; y: number; }
+interface MockChartBounds { bottom: number; top: number; left: number; right: number; }
+interface MockChartPressStateItemValue { value: number; }
+interface MockChartPressStateItem { value: MockChartPressStateItemValue; position?: MockChartPressStateItemValue } // position is optional based on usage
+interface MockChartPressState {
+	x: MockChartPressStateItem;
+	y: { y: MockChartPressStateItem }; // Nested 'y' seems specific to this mock's structure
+}
+interface CartesianChartRenderProps {
+	points: { y: MockChartPoint[] }; // Assuming points.y is the structure
+	chartBounds: MockChartBounds;
+}
+interface CartesianChartProps extends Omit<ViewProps, 'children' | 'data'> {
+	data: MockChartPoint[];
+	children?: React.ReactNode | ((opts: CartesianChartRenderProps) => React.ReactNode);
+	renderOutside?: (opts: { chartBounds: MockChartBounds }) => React.ReactNode;
+	chartPressState?: [MockChartPressState]; // Array with one item based on usage
+}
+
 
 // Enhanced victory-native mock with better interaction support
 jest.mock('victory-native', () => {
 	const RNView = jest.requireActual('react-native').View;
 	return {
-		CartesianChart: jest.fn(({ data, children, renderOutside, chartPressState, ...props }) => {
-			const mockChartBounds = { bottom: 250, top: 0, left: 0, right: 300 };
-			const mockPoints = { y: data.map((d: any) => ({ x: d.x, y: d.y })) };
+		CartesianChart: jest.fn(({ data, children, renderOutside, chartPressState, ...props }: CartesianChartProps) => {
+			const mockChartBounds: MockChartBounds = { bottom: 250, top: 0, left: 0, right: 300 };
+			const mockPoints = { y: data.map((d: MockChartPoint) => ({ x: d.x, y: d.y })) };
 			
 			return (
 				<RNView 
@@ -73,16 +100,18 @@ jest.mock('victory-native', () => {
 						// Simulate chart press activation
 						if (chartPressState && chartPressState[0]) {
 							chartPressState[0].x.value.value = 150; // Middle of chart
-							chartPressState[0].y.y.value.value = 125; // Middle height
+							if (chartPressState[0].y && chartPressState[0].y.y) { // Added null check for y.y
+								chartPressState[0].y.y.value.value = 125; // Middle height
+							}
 						}
 					}}
 				>
-					{children && children({ points: mockPoints, chartBounds: mockChartBounds })}
+					{typeof children === 'function' ? children({ points: mockPoints, chartBounds: mockChartBounds }) : children}
 					{renderOutside && renderOutside({ chartBounds: mockChartBounds })}
 				</RNView>
 			);
 		}),
-		useChartPressState: jest.fn((initialState) => ({
+		useChartPressState: jest.fn((_initialState: unknown) => ({ // initialState marked as unused and typed
 			state: {
 				x: { 
 					value: { value: 0 }, 
@@ -97,7 +126,7 @@ jest.mock('victory-native', () => {
 			},
 			isActive: false
 		})),
-		useLinePath: jest.fn(() => ({
+		useLinePath: jest.fn(() => ({ // Return type of useLinePath can be more specific if known
 			path: {
 				addPath: jest.fn(),
 				lineTo: jest.fn(),
@@ -114,17 +143,17 @@ jest.mock('react-native-reanimated', () => {
 	const actualReanimated = jest.requireActual('react-native-reanimated/mock');
 	return {
 		...actualReanimated,
-		useSharedValue: jest.fn((initial) => ({ value: initial })),
-		useDerivedValue: jest.fn((fn) => {
+		useSharedValue: jest.fn((initial: unknown) => ({ value: initial })), // initial can be any type
+		useDerivedValue: jest.fn(<T>(fn: () => T) => { // Made generic
 			const sharedValueMock = { value: fn() };
 			return sharedValueMock;
 		}),
-		useAnimatedReaction: jest.fn((prepare, react) => {
+		useAnimatedReaction: jest.fn(<P>(prepare: () => P, react: (preparedValue: P, previousValue: P | null) => void) => {
 			// Simulate the reaction running
 			const preparedValue = prepare();
-			react(preparedValue);
+			react(preparedValue, null); // Mocking previousValue as null
 		}),
-		runOnJS: jest.fn((fn) => fn),
+		runOnJS: jest.fn(<T extends (...args: any[]) => any>(fn: T): T => fn), // Made generic
 		cancelAnimation: jest.fn(),
 		withSpring: jest.fn((value) => value),
 		withRepeat: jest.fn((animation) => animation),
@@ -417,11 +446,11 @@ describe('CoinChart Data Processing', () => {
 	it('should handle malformed data gracefully', () => {
 		const malformedData = [
 			{ timestamp: 'invalid', price: NaN, value: null, x: undefined, y: 'not-a-number' },
-		] as any;
+		] as any; // 'as any' is intentional here for testing malformed data
 
 		// Should not crash
 		expect(() => {
-			render(<CoinChart {...defaultProps} loading={false} data={malformedData} />);
+			render(<CoinChart {...defaultProps} loading={false} data={malformedData as PricePoint[]} />); // Cast to PricePoint[] to satisfy component props
 		}).not.toThrow();
 	});
 });

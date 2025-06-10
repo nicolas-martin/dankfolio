@@ -13,8 +13,8 @@ export const styles = StyleSheet.create({
 	},
 	linkText: {
 		color: '#1976D2', // blue link color
-		textDecorationLine: 'underline',
 		fontSize: 12,
+		textDecorationLine: 'underline',
 	},
 	statusText: {
 		color: '#888',

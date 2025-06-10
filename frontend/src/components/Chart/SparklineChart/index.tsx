@@ -31,7 +31,13 @@ const styles = StyleSheet.create({
 		flex: 1,
 		overflow: 'hidden',
 	},
+	fullFlex: { // Added for canvas style
+		flex: 1,
+	},
 });
+
+const SPARKLINE_GREEN = '#00FF00';
+const SPARKLINE_RED = '#FF0000';
 
 const SparklineChart: React.FC<SparklineChartProps> = ({
 	data,
@@ -40,40 +46,22 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 	isLoading = false,
 	testID,
 }) => {
-	if (isLoading) {
-		return (
-			<View style={[styles.container, styles.center, { width, height }]}>
-				<Text>Loading...</Text>
-			</View>
-		);
-	}
-
-	if (!data || data.length === 0) {
-		return (
-			<View style={[styles.container, styles.center, { width, height }]}>
-				<Text>No data</Text>
-			</View>
-		);
-	}
-
-	// If there's only one data point, duplicate it to create a horizontal line
+	// Hooks must be called at the top level
+	const theme = useTheme();
 	const effectiveData = useMemo(() => {
+		if (!data) return []; // Handle null or undefined data early
 		if (data.length === 1) {
 			const point = data[0];
-			// Create a duplicate point with a slight time offset to create a horizontal line
 			const duplicatePoint = {
 				...point,
-				unixTime: (point.unixTime || 0) + 3600, // Add 1 hour offset
-				timestamp: point.timestamp, // Keep the same timestamp for simplicity
+				unixTime: (point.unixTime || 0) + 3600,
+				timestamp: point.timestamp,
 			};
 			return [point, duplicatePoint];
 		}
 		return data;
 	}, [data]);
 
-	const theme = useTheme();
-
-	// Memoize all derived data and Skia objects
 	const {
 		lineSegments,
 		areaSegments,
@@ -156,18 +144,18 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 			// Try to create a dashed line effect
 			const dashEffect = Skia.PathEffect.MakeDash([3, 3], 0);
 			currentBaselinePaint.setPathEffect(dashEffect);
-		} catch (e) {
+		} catch (_e) { // Prefixed unused e
 			// Silently handle error if API isn't available
 			console.log('DashPathEffect not supported in this version of Skia');
 		}
 
-		// Using direct color values
-		const greenOpaque = Skia.Color('#00FF004D');
-		const greenTransparent = Skia.Color('#00FF0000');
-		const redOpaque = Skia.Color('#FF00004D');
-		const redTransparent = Skia.Color('#FF000000');
+		// Using defined color constants
+		const greenOpaque = Skia.Color(`${SPARKLINE_GREEN}4D`);
+		const greenTransparent = Skia.Color(`${SPARKLINE_GREEN}00`);
+		const redOpaque = Skia.Color(`${SPARKLINE_RED}4D`);
+		const redTransparent = Skia.Color(`${SPARKLINE_RED}00`);
 
-		const localLineSegments: Array<{ path: ReturnType<typeof Skia.Path.Make>; color: string }> = [];
+		const localLineSegments: Array<{ path: ReturnType<typeof Skia.Path.Make>; color: ReturnType<typeof Skia.Color> }> = []; // color type changed
 		const localAreaSegments: Array<{
 			path: ReturnType<typeof Skia.Path.Make>;
 			gradientColors: [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>];
@@ -188,7 +176,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 			const p1IsAboveOrOnBaseline = p1.value >= startPrice;
 			const p2IsAboveOrOnBaseline = p2.value >= startPrice;
 
-			let currentLineColor = p1IsAboveOrOnBaseline ? 'green' : 'red';
+			let currentLineSkiaColor = p1IsAboveOrOnBaseline ? Skia.Color(SPARKLINE_GREEN) : Skia.Color(SPARKLINE_RED);
 			let currentGradientColors: [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>] = p1IsAboveOrOnBaseline
 				? [greenOpaque, greenTransparent]
 				: [redOpaque, redTransparent];
@@ -196,13 +184,13 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 			const addSegmentAndArea = (
 				_x1: number, _y1: number,
 				_x2: number, _y2: number,
-				_lineColor: string,
+				_lineSkiaColor: ReturnType<typeof Skia.Color>, // Changed parameter name and type
 				_gradientColors: [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>]
 			) => {
 				const linePath = Skia.Path.Make();
 				linePath.moveTo(_x1, _y1);
 				linePath.lineTo(_x2, _y2);
-				localLineSegments.push({ path: linePath, color: _lineColor });
+				localLineSegments.push({ path: linePath, color: _lineSkiaColor });
 
 				if (Math.abs(_y1 - currentBaselineY) > 0.5 || Math.abs(_y2 - currentBaselineY) > 0.5) {
 					const areaPath = Skia.Path.Make();
@@ -233,19 +221,36 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 				}
 				const intersectX = x1 + ratio * (x2 - x1);
 
-				addSegmentAndArea(x1, y1, intersectX, currentBaselineY, currentLineColor, currentGradientColors);
+				addSegmentAndArea(x1, y1, intersectX, currentBaselineY, currentLineSkiaColor, currentGradientColors);
 
-				currentLineColor = p2IsAboveOrOnBaseline ? 'green' : 'red';
+				currentLineSkiaColor = p2IsAboveOrOnBaseline ? Skia.Color(SPARKLINE_GREEN) : Skia.Color(SPARKLINE_RED);
 				currentGradientColors = p2IsAboveOrOnBaseline
 					? [greenOpaque, greenTransparent] as [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>]
 					: [redOpaque, redTransparent] as [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>];
-				addSegmentAndArea(intersectX, currentBaselineY, x2, y2, currentLineColor, currentGradientColors);
+				addSegmentAndArea(intersectX, currentBaselineY, x2, y2, currentLineSkiaColor, currentGradientColors);
 			} else {
-				addSegmentAndArea(x1, y1, x2, y2, currentLineColor, currentGradientColors);
+				addSegmentAndArea(x1, y1, x2, y2, currentLineSkiaColor, currentGradientColors);
 			}
 		}
 		return { lineSegments: localLineSegments, areaSegments: localAreaSegments, baselinePaint: currentBaselinePaint, baselineYPoint: currentBaselineY };
-	}, [effectiveData, width, height, theme]);
+	}, [effectiveData, width, height, theme.colors.onSurfaceVariant]); // Added theme dependency for baselinePaint
+
+	// Early returns after hooks
+	if (isLoading) {
+		return (
+			<View style={[styles.container, styles.center, { width, height }]}>
+				<Text>Loading...</Text>
+			</View>
+		);
+	}
+
+	if (!effectiveData || effectiveData.length < 2) { // effectiveData will have at least 2 points if original data has 1
+		return (
+			<View style={[styles.container, styles.center, { width, height }]}>
+				<Text>No data</Text>
+			</View>
+		);
+	}
 
 	return (
 		<View 
@@ -255,7 +260,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 			accessibilityRole="image"
 			accessibilityLabel="Price chart"
 		>
-			<Canvas style={{ flex: 1 }}>
+			<Canvas style={styles.fullFlex}> {/* Use StyleSheet for flex: 1 */}
 				{/* Render Area Fills First */}
 				{areaSegments.map((segment, index) => (
 					<Path key={`area-${index}`} path={segment.path} style="fill">

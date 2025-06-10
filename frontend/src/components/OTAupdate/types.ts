@@ -1,1 +1,1 @@
-export interface OTAUpdaterProps { } 
+export type OTAUpdaterProps = object;

@@ -21,7 +21,7 @@ export const copyToClipboard = async (text: string, type: string, showToast: (pr
 			message: `${type} address copied to clipboard`,
 			duration: 2000
 		});
-	} catch (error) {
+	} catch (_error) { // Renamed error to _error
 		logger.breadcrumb({ category: 'ui', level: 'error', message: 'Failed to copy to clipboard', data: { type } });
 		showToast({
 			type: 'error',
@@ -51,7 +51,7 @@ export const handleRefresh = async (
 	setIsRefreshing(true);
 	try {
 		await fetchPortfolioBalance(wallet.address);
-	} catch (error) {
+	} catch (_error) { // Renamed error to _error
 		showToast({
 			message: 'Error refreshing portfolio',
 			type: 'error'

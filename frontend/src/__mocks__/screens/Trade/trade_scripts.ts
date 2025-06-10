@@ -12,7 +12,7 @@ export const executeTrade = jest.fn().mockImplementation(
 			setIsConfirmationVisible,
 			setPollingStatus,
 			setSubmittedTxHash,
-			setPollingError,
+			_setPollingError,
 			setPollingConfirmations,
 			setIsStatusModalVisible,
 			startPollingFn

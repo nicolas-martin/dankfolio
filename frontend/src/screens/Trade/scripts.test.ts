@@ -2,7 +2,7 @@ import { grpcApi } from '@/services/grpcApi';
 import { prepareSwapRequest, signSwapTransaction, getActiveWalletKeys } from '@/services/solana';
 import { usePortfolioStore } from '@/store/portfolio';
 import * as logger from '@/utils/logger';
-import { MOCK_API_TRANSACTION } from '@/services/__mocks__/testData'; // Assuming this can be used for trade details
+// Assuming this can be used for trade details
 import { Coin } from '@/types';
 import { fetchTradeQuote, executeTrade } from './scripts'; // The functions to test
 

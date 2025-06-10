@@ -173,7 +173,7 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		setWalletInfo((prev: WalletInfo) => ({ ...prev, isLoading: true }));
 
 		try {
-			const { keypair, walletData } = await handleGenerateWallet(); // This now uses the imported storeCredentials
+			const { keypair: _keypair, walletData } = await handleGenerateWallet(); // Prefixed unused keypair
 			setWalletInfo({
 				publicKey: walletData.publicKey,
 				privateKey: walletData.privateKey, // This is Base58PrivateKey from handleGenerateWallet

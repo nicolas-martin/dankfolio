@@ -32,6 +32,27 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
         color: theme.colors.onSurfaceVariant,
         marginLeft: 8,
     },
+	placeholderCardContainer: {
+		backgroundColor: theme.colors.surface,
+		borderRadius: 12,
+		elevation: 2,
+		padding: 12,
+		shadowColor: theme.colors.shadow,
+		shadowOffset: { width: 0, height: 1 },
+		shadowOpacity: 0.1,
+		shadowRadius: 2,
+	},
+	placeholderIconShimmer: {
+		alignSelf: 'center',
+		marginBottom: 8,
+	},
+	placeholderTextShimmerLine1: {
+		alignSelf: 'center',
+		marginBottom: 4,
+	},
+	placeholderTextShimmerLine2: {
+		alignSelf: 'center',
+	},
     title: {
         color: theme.colors.onSurface,
         fontSize: 20,

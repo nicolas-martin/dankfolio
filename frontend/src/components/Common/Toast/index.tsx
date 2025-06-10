@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { Portal, Snackbar, useTheme, Text, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastProps, ToastType } from './toast_types'; // Added ToastType
-import { createToastStyles } from './toast_styles';
+import { createStyles } from './toast_styles';
 import { getToastBackgroundColor, getToastForegroundColor } from './toast_constants';
 import { getToastIcon as getOriginalToastIconComponent } from './toast_icons'; // Renamed import
 import { SuccessAnimation, ErrorAnimation } from '../Animations'; // Added Lottie components
@@ -61,18 +61,20 @@ const reducer = (state: ToastProps, action: ToastAction): ToastProps => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [state, dispatch] = useReducer(reducer, defaults);
 	const insets = useSafeAreaInsets();
-	const theme = useTheme();
-	const styles = createToastStyles();
+	const theme = useTheme(); // theme is still needed for getToastBackgroundColor and icon colors
+	const styles = createStyles(insets); // Pass only insets to createStyles
 
 	const toast = useMemo(
 		() => ({
 			showToast(options: Partial<ToastProps>) {
 				// Log errors when toast type is 'error'
 				if (options.type === 'error') {
-					const errorData = options.data ? { data: options.data } : {};
+					const errorData = {
+						...(options.data && { data: options.data }),
+					};
 
 					// Detailed error logging for debugging
-					console.error('🚨 Error:', options.message, errorData);
+					console.error('� Error:', options.message, errorData);
 
 					// Format message for user display
 					const userMessage = formatErrorMessage(options.message || '');
@@ -116,12 +118,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					wrapperStyle={{
 						top: insets.top,
 					}}
-					style={{
-						// Cast toastType because state.type can be undefined initially, but getToastBackgroundColor expects a valid ToastType.
-						backgroundColor: getToastBackgroundColor(toastType as ToastType, theme),
-						borderRadius: 8,
-						marginHorizontal: insets.left + 10,
-					}}
+					style={[
+						styles.snackbarStyleBase,
+						{ backgroundColor: getToastBackgroundColor(toastType as ToastType, theme) }
+					]}
 				>
 					<View style={styles.content}>
 						<View style={styles.messageContainer}>

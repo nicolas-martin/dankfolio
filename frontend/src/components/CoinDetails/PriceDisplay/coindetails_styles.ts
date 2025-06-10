@@ -31,6 +31,11 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
 		padding: 16,
 	},
+	copyIconStyle: { // New style
+		margin: 0,
+		marginLeft: 8,
+		padding: 0,
+	},
 	headerRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
@@ -44,8 +49,15 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		fontSize: 18,
 		fontWeight: '600',
 	},
+	odometerFontStyle: { // New style
+		fontSize: 32,
+		fontVariant: ['tabular-nums'],
+	},
 	periodText: {
 		fontSize: 14,
+	},
+	pricePlaceholderText: { // New style
+		fontSize: 32,
 	},
 	priceText: {
 		color: theme.colors.onSurface,

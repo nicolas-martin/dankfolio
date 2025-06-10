@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
@@ -35,44 +35,35 @@ const NewCoins: React.FC = () => {
 
 	// Placeholder component for loading horizontal ticker cards
 	const renderPlaceholderCard = () => (
-		<View style={[styles.cardWrapper, {
-			backgroundColor: theme.colors.surface,
-			borderRadius: 12,
-			padding: 12,
-			elevation: 2,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 1 },
-			shadowOpacity: 0.1,
-			shadowRadius: 2,
-		}]}>
+		<View style={[styles.cardWrapper, styles.placeholderCardContainer]}>
 			<ShimmerPlaceholder
 				width={48}
 				height={48}
 				borderRadius={24}
-				style={{ alignSelf: 'center', marginBottom: 8 }}
+				style={styles.placeholderIconShimmer}
 			/>
 			<ShimmerPlaceholder
 				width="70%"
 				height={14}
 				borderRadius={4}
-				style={{ marginBottom: 4, alignSelf: 'center' }}
+				style={styles.placeholderTextShimmerLine1}
 			/>
 			<ShimmerPlaceholder
 				width="50%"
 				height={12}
 				borderRadius={4}
-				style={{ marginBottom: 4, alignSelf: 'center' }}
+				style={styles.placeholderTextShimmerLine1}
 			/>
 			<ShimmerPlaceholder
 				width="40%"
 				height={12}
 				borderRadius={4}
-				style={{ alignSelf: 'center' }}
+				style={styles.placeholderTextShimmerLine2}
 			/>
 		</View>
 	);
 
-	const handleCoinPress = (coin: Coin) => {
+	const handleCoinPress = useCallback((coin: Coin) => {
 		// Navigate immediately with the basic coin data
 		logger.breadcrumb({
 			category: 'navigation',
@@ -89,19 +80,19 @@ const NewCoins: React.FC = () => {
 		getCoinByID(coin.mintAddress, true).catch(error => {
 			logger.error(`[NewCoins] Background fetch failed for ${coin.symbol}:`, { error, coinMint: coin.mintAddress });
 		});
-	};
+	}, [navigation, getCoinByID]); // Added dependencies for handleCoinPress
 
-	const renderItem = useCallback(({ item, index }: { item: Coin; index: number }) => {
+	const renderItem = useCallback(({ item, _index }: { item: Coin; index: number }) => { // index prefixed
 		return (
 			<View style={styles.cardWrapper}>
 				<HorizontalTickerCard
 					coin={item}
-					onPress={handleCoinPress}
+					onPress={handleCoinPress} // handleCoinPress is now memoized
 					testIdPrefix="new-coin"
 				/>
 			</View>
 		);
-	}, [styles.cardWrapper, handleCoinPress]);
+	}, [styles.cardWrapper, handleCoinPress]); // Added handleCoinPress to dependencies
 
 	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (
@@ -143,17 +134,7 @@ const NewCoins: React.FC = () => {
 		>
 			<View style={styles.titleContainer}>
 				<Text style={styles.title}>New Listings</Text>
-				{false && (
-					<TouchableOpacity onPress={() => {
-						logger.log('[NewCoins] Navigate to Search with newly listed sort');
-						navigation.navigate('Search', {
-							defaultSortBy: 'jupiter_listed_at', // Matches backend expectation
-							defaultSortDesc: true
-						});
-					}}>
-						<Text style={styles.viewAllButton}>View All</Text>
-					</TouchableOpacity>
-				)}
+				{/* "View All" button and associated false && condition removed */}
 			</View>
 			<Animated.FlatList
 				data={scrollData}

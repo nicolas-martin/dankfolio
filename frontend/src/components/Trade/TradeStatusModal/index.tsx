@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Animated, Dimensions } from 'react-native';
 import { Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet'; // Imported BottomSheetBackdropProps
 import { BlurView } from 'expo-blur';
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeStatusModalProps } from './types';
@@ -207,9 +207,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				</View>
 				{isInProgress && (
 					<View style={styles.progressIndicator}>
-						{false && (
-							<ActivityIndicator size={12} color={theme.colors.primary} />
-						)}
+						{/* false && <ActivityIndicator size={12} color={theme.colors.primary} /> Removed */}
 						<Text style={styles.progressText}>
 							{displayStatus === 'polling' ? 'Confirming...' : 'Processing...'}
 						</Text>
@@ -235,7 +233,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					accessibilityRole="button"
 					accessibilityLabel="View transaction on Solscan"
 				>
-					View on Solscan
+					<Text>View on Solscan</Text>
 				</Button>
 			</View>
 		);
@@ -258,7 +256,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	};
 
 	// Custom backdrop component with blur
-	const renderBackdrop = (props: any) => {
+	const renderBackdrop = (props: BottomSheetBackdropProps) => { // Typed props
 		return (
 			<BottomSheetBackdrop
 				{...props}
@@ -268,14 +266,14 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				onPress={isFinal ? () => {
 					setIsClosingProgrammatically(true);
 					onClose();
-				} : undefined} // Only allow tap-to-dismiss when final
+				} : () => {}} // Changed undefined to no-op function
 				// Accessibility properties for testing frameworks
 				accessible={true}
 				accessibilityRole="button"
 				accessibilityLabel="Close trade status modal"
 				accessibilityHint="Tap to close the modal"
 			>
-				<BlurView intensity={20} style={{ flex: 1 }} />
+			<BlurView intensity={20} style={styles.blurViewStyle} />
 			</BottomSheetBackdrop>
 		);
 	};
@@ -303,8 +301,8 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			ref={bottomSheetModalRef}
 			snapPoints={[SCREEN_HEIGHT * 0.75]}
 			onDismiss={handleDismiss}
-			backgroundStyle={{ backgroundColor: theme.colors.surface }}
-			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}
+			backgroundStyle={styles.bottomSheetBackground}
+			handleIndicatorStyle={styles.handleIndicator}
 			enablePanDownToClose={isFinal}
 			enableDismissOnClose={isFinal}
 			backdropComponent={renderBackdrop}
@@ -313,7 +311,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			accessible={false}
 		>
 			<BottomSheetView 
-				style={{ flex: 1, padding: 20 }}
+				style={styles.bottomSheetViewContainer}
 				testID="trade-status-modal"
 				// Parent container should be accessible={false}
 				accessible={false}

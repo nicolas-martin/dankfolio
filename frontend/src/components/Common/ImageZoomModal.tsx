@@ -15,7 +15,7 @@ import Animated, {
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
-import { useEffect, useState } from 'react'; // React import was combined
+import { useEffect, useState, useCallback } from 'react'; // React import was combined, added useCallback
 import { BlurView } from 'expo-blur';
 
 interface ImageZoomModalProps { // Renamed props interface
@@ -26,6 +26,14 @@ interface ImageZoomModalProps { // Renamed props interface
 
 const { width } = Dimensions.get('window');
 const IMAGE_SIZE = width * 0.7; // Generic name for image size
+
+// Color Constants
+const WHITE_OPAQUE = 'white';
+const TRANSPARENT = 'transparent';
+const WHITE_ALPHA_90 = 'rgba(255, 255, 255, 0.9)';
+const WHITE_ALPHA_80 = 'rgba(255, 255, 255, 0.8)';
+const WHITE_ALPHA_70 = 'rgba(255, 255, 255, 0.7)';
+const WHITE_ALPHA_20 = 'rgba(255, 255, 255, 0.2)';
 
 // Create an animated version of BlurView
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -56,7 +64,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ // Renamed component
     };
   });
 
-  const closeAndResetAnimation = () => {
+  const closeAndResetAnimation = useCallback(() => {
     'worklet';
     backdropOpacity.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.ease) });
     contentOpacity.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.ease) });
@@ -66,7 +74,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ // Renamed component
         runOnJS(onClose)();
       }
     });
-  };
+  }, [backdropOpacity, contentOpacity, scale, onClose]);
 
   useEffect(() => {
     if (isVisible) {
@@ -79,13 +87,13 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ // Renamed component
         closeAndResetAnimation();
       }
     }
-  }, [isVisible, modalVisible]);
+  }, [isVisible, modalVisible, closeAndResetAnimation, backdropOpacity, contentOpacity, scale]);
 
   useEffect(() => {
     if (!isVisible && modalVisible) {
       setModalVisible(false);
     }
-  }, [isVisible]);
+  }, [isVisible, modalVisible]);
 
 
   if (!modalVisible && !isVisible) {
@@ -134,13 +142,14 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ // Renamed component
 };
 
 const styles = StyleSheet.create({
-  touchableBackgroundWrapper: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   blurViewBackground: {
-    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center', // Added from expansion, though not typical for absoluteFill
+    bottom: 0,
+    justifyContent: 'center', // Added from expansion
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
   contentWrapper: {
     alignItems: 'center',
@@ -148,48 +157,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
+  mainCloseButton: {
+    backgroundColor: WHITE_ALPHA_20,
+    borderRadius: 25,
+    marginTop: 10,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+  },
+  mainCloseButtonText: {
+    color: WHITE_OPAQUE,
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   modalContainer: {
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: TRANSPARENT,
     borderRadius: 20,
     justifyContent: 'center',
     maxWidth: 400,
     padding: 15,
     width: width * 0.85,
   },
-  zoomedImage: { // Renamed from profileImage
-    width: IMAGE_SIZE, // Using generic IMAGE_SIZE
-    height: IMAGE_SIZE, // Using generic IMAGE_SIZE
-    borderRadius: IMAGE_SIZE / 2, // Circular style kept
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.9)', // White border kept
-    marginBottom: 30, // Space before the main close button (was space between image and action buttons)
-  },
   placeholderImageContainer: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: WHITE_ALPHA_20,
+    borderColor: WHITE_ALPHA_70,
     borderWidth: 3,
     justifyContent: 'center',
   },
   placeholderText: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: WHITE_ALPHA_80,
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // Removed actionButtonsContainer, actionButton, iconPlaceholder, iconText, actionButtonText styles
-  mainCloseButton: {
-    marginTop: 10, // This might need adjustment now that action buttons are gone
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 25,
+  touchableBackgroundWrapper: {
+    alignItems: 'center',
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
-  mainCloseButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  zoomedImage: { // Renamed from profileImage
+    borderColor: WHITE_ALPHA_90, // White border kept
+    borderRadius: IMAGE_SIZE / 2, // Circular style kept
+    borderWidth: 3,
+    height: IMAGE_SIZE, // Using generic IMAGE_SIZE
+    marginBottom: 30, // Space before the main close button (was space between image and action buttons)
+    width: IMAGE_SIZE, // Using generic IMAGE_SIZE
   },
 });
 

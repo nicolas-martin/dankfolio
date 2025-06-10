@@ -1,8 +1,8 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, type ViewProps } from 'react-native';
 
 const mockComponent = (name: string) => {
-	return jest.fn((props: any) => React.createElement(View, { ...props, testID: name }));
+	return jest.fn((props: ViewProps) => React.createElement(View, { ...props, testID: name }));
 };
 
 export { };

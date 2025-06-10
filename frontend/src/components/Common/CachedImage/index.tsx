@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Image } from 'expo-image';
+import { Image, type ImageLoadEventData, type ImageErrorEventData } from 'expo-image'; // Import event types
+import type { NodeJS } from 'node'; // Import NodeJS type for Timeout
 import { CachedImageProps } from './types';
 import { performanceMonitor } from '@/utils/performanceMonitor';
 
@@ -55,7 +56,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	...imageProps
 }) => {
 
-	const [hasError, setHasError] = useState(false);
+	const [_hasError, setHasError] = useState(false); // Renamed hasError
 	const [imageUriToLoad, setImageUriToLoad] = useState<string | null>(null);
 	const [didAttemptLoad, setDidAttemptLoad] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
@@ -127,7 +128,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	}, [uri, didAttemptLoad, imageUriToLoad, debouncedSetImageUri]);
 
 	// Enhanced logging callbacks with better performance
-	const handleLoad = useCallback((event: any) => {
+	const handleLoad = useCallback((event: ImageLoadEventData) => { // Typed event
 		if (!mountedRef.current) return;
 		
 		// Use requestAnimationFrame to ensure smooth UI updates
@@ -144,7 +145,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 		});
 	}, [onLoad, imageUriToLoad]);
 
-	const handleError = useCallback((error: any) => {
+	const handleError = useCallback((error: ImageErrorEventData) => { // Typed error
 		if (!mountedRef.current) return;
 		
 		// Use requestAnimationFrame to ensure smooth UI updates

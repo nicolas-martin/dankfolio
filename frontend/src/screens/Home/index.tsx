@@ -22,7 +22,7 @@ import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
-	const { themeType } = useThemeStore(); // Get theme type from the theme store
+	const { themeType: _themeType } = useThemeStore(); // Prefixed themeType
 
 	// Coin and loading states
 	const availableCoins = useCoinStore(state => state.availableCoins);
@@ -45,33 +45,23 @@ const HomeScreen = () => {
 
 	// Placeholder components for loading states
 	const renderPlaceholderCoinCard = () => (
-		<View style={[styles.coinCardContainerStyle, { marginBottom: 12 }]}>
-			<View style={{
-				backgroundColor: theme.colors.surface,
-				borderRadius: 12,
-				padding: 16,
-				flexDirection: 'row',
-				alignItems: 'center',
-				elevation: 2,
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 1 },
-				shadowOpacity: 0.1,
-				shadowRadius: 2,
-			}}>
+		<View style={[styles.coinCardContainerStyle, styles.placeholderCoinCardContainerMargin]}>
+			<View style={styles.placeholderCoinCardContent}>
 				{/* Left section - Icon and name */}
-				<View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+				<View style={[styles.flex1, { flexDirection: 'row', alignItems: 'center' }]}>
+					{/* Note: flexDirection and alignItems specific to this combination, kept inline for clarity or could be another specific style */}
 					<ShimmerPlaceholder
 						width={36}
 						height={36}
 						borderRadius={18}
-						style={{ marginRight: 12 }}
+						style={styles.placeholderCoinIconShimmer}
 					/>
-					<View style={{ flex: 1 }}>
+					<View style={styles.flex1}>
 						<ShimmerPlaceholder
 							width="60%"
 							height={16}
 							borderRadius={4}
-							style={{ marginBottom: 4 }}
+							style={styles.placeholderTextMarginBottomS}
 						/>
 						<ShimmerPlaceholder
 							width="80%"
@@ -86,16 +76,16 @@ const HomeScreen = () => {
 					width={80}
 					height={20}
 					borderRadius={4}
-					style={{ marginHorizontal: 12 }}
+					style={styles.placeholderSparklineShimmer}
 				/>
 
 				{/* Right section - Price and change */}
-				<View style={{ alignItems: 'flex-end' }}>
+				<View style={styles.alignFlexEnd}>
 					<ShimmerPlaceholder
 						width={60}
 						height={16}
 						borderRadius={4}
-						style={{ marginBottom: 4 }}
+						style={styles.placeholderTextMarginBottomS}
 					/>
 					<ShimmerPlaceholder
 						width={40}
@@ -108,52 +98,40 @@ const HomeScreen = () => {
 	);
 
 	const renderPlaceholderNewCoinsSection = () => (
-		<View style={{ marginBottom: 24 }}>
-			<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 }}>
+		<View style={styles.newCoinsPlaceholderContainer}>
+			<View style={styles.newCoinsPlaceholderTitleContainer}>
 				<ShimmerPlaceholder
 					width={120}
 					height={20}
 					borderRadius={4}
 				/>
 			</View>
-			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.newCoinsPlaceholderScrollContent}>
 				{[1, 2, 3, 4].map((index) => (
-					<View key={index} style={{
-						width: 140,
-						height: 120,
-						backgroundColor: theme.colors.surface,
-						borderRadius: 12,
-						marginRight: 8,
-						padding: 12,
-						elevation: 2,
-						shadowColor: '#000',
-						shadowOffset: { width: 0, height: 1 },
-						shadowOpacity: 0.1,
-						shadowRadius: 2,
-					}}>
+					<View key={index} style={styles.newCoinsPlaceholderCard}>
 						<ShimmerPlaceholder
 							width={48}
 							height={48}
 							borderRadius={24}
-							style={{ alignSelf: 'center', marginBottom: 8 }}
+							style={styles.newCoinsPlaceholderIconShimmer}
 						/>
 						<ShimmerPlaceholder
 							width="70%"
 							height={14}
 							borderRadius={4}
-							style={{ marginBottom: 4, alignSelf: 'center' }}
+							style={styles.newCoinsPlaceholderText1Shimmer}
 						/>
 						<ShimmerPlaceholder
 							width="50%"
 							height={12}
 							borderRadius={4}
-							style={{ marginBottom: 4, alignSelf: 'center' }}
+							style={styles.newCoinsPlaceholderText1Shimmer}
 						/>
 						<ShimmerPlaceholder
 							width="40%"
 							height={12}
 							borderRadius={4}
-							style={{ alignSelf: 'center' }}
+							style={styles.newCoinsPlaceholderText2Shimmer}
 						/>
 					</View>
 				))}
@@ -428,7 +406,7 @@ const HomeScreen = () => {
 						{isLoadingTrending && !hasTrendingCoins && !isFirstTimeLoading && (
 							<View style={styles.loadingContainer}>
 								<LoadingAnimation size={80} />
-								<Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>Loading trending coins...</Text>
+							<Text style={styles.loadingTrendingText}>Loading trending coins...</Text>
 							</View>
 						)}
 

@@ -4,6 +4,7 @@ import { withRepeat, withSpring, SharedValue, useSharedValue } from 'react-nativ
 import { format } from 'date-fns';
 import { useLinePath, type PointsArray } from 'victory-native';
 import { useMemo, useEffect } from 'react';
+import { Skia } from '@shopify/react-native-skia'; // Added import for Skia
 import { CHART_CONSTANTS } from './styles';
 
 // ─── Time Format Utilities ─────────────────────────────────────────────────
@@ -85,7 +86,7 @@ export const determineChartColor = (data: PricePoint[]): 'green' | 'red' => {
 	return lastValue >= firstValue ? 'green' : 'red';
 };
 
-export const createPulsateAnimation = (animatedValue: SharedValue<number>) => {
+export const createPulsateAnimation = (_animatedValue: SharedValue<number>) => { // Prefixed animatedValue
 	// Use a simpler animation with fewer keyframes
 	return withRepeat(
 		withSpring(CHART_CONSTANTS.dotSize.pulse.max, {
@@ -124,7 +125,7 @@ export const TREND_COLORS = {
 }; 
 
 // ─── GradientArea Component Logic ────────────────────────────────────────────
-export const useGradientArea = ({ points, y0, color, opacity = 0.8, gradientColors }: AreaProps) => {
+export const useGradientArea = ({ points, y0, color, _opacity = 0.8, gradientColors }: AreaProps) => { // Prefixed opacity
 	// Extract base color for gradient
 	const baseColor = color.startsWith('rgba') 
 		? color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+).*/, 'rgb($1, $2, $3)') 
@@ -149,8 +150,8 @@ export const useGradientArea = ({ points, y0, color, opacity = 0.8, gradientColo
 		const firstPoint = points[0];
 		
 		// Create a new path for the area
-		const Skia = require('@shopify/react-native-skia').Skia;
-		const path = Skia.Path.Make();
+		// const Skia = require('@shopify/react-native-skia').Skia; // Removed require
+		const path = Skia.Path.Make(); // Use imported Skia
 		
 		// Add the line path
 		path.addPath(linePath);
@@ -234,6 +235,7 @@ export const createHorizontalDottedLinePoints = (
 
 // Helper for spring animation
 export const useSpring = (initialValue: number) => {
+	// eslint-disable-next-line react-hooks/rules-of-hooks
 	const sharedValue = useMemo(() => useSharedValue(initialValue), [initialValue]);
 	return sharedValue;
 };

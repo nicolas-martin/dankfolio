@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useMemo } from 'react'; // Added useMemo
+import { View, Text, StyleSheet } from 'react-native'; // Added StyleSheet
 import { Image } from 'expo-image';
 import { CachedImage } from '@/components/Common/CachedImage';
 
@@ -14,11 +14,12 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 }) => {
 	const DEFAULT_TOKEN_IMAGE = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 	const blurhash = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+	const styles = useMemo(() => createImageComparisonStyles(size), [size]);
 
 	return (
-		<View style={{ flexDirection: 'row', gap: 20, padding: 20 }}>
-			<View style={{ alignItems: 'center' }}>
-				<Text style={{ marginBottom: 10, fontSize: 12 }}>CachedImage</Text>
+		<View style={styles.outerContainer}>
+			<View style={styles.imageContainer}>
+				<Text style={styles.labelText}>CachedImage</Text>
 				<CachedImage
 					uri={uri}
 					size={size}
@@ -27,15 +28,11 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 				/>
 			</View>
 			
-			<View style={{ alignItems: 'center' }}>
-				<Text style={{ marginBottom: 10, fontSize: 12 }}>Expo Image</Text>
+			<View style={styles.imageContainer}>
+				<Text style={styles.labelText}>Expo Image</Text>
 				<Image
 					source={{ uri: uri || DEFAULT_TOKEN_IMAGE }}
-					style={{ 
-						width: size, 
-						height: size, 
-						borderRadius: size / 2 
-					}}
+					style={styles.expoImage}
 					contentFit="cover"
 					transition={300}
 					cachePolicy="disk"
@@ -44,4 +41,24 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 			</View>
 		</View>
 	);
-}; 
+};
+
+const createImageComparisonStyles = (size: number) => StyleSheet.create({
+	expoImage: {
+		borderRadius: size / 2,
+		height: size,
+		width: size,
+	},
+	imageContainer: {
+		alignItems: 'center',
+	},
+	labelText: {
+		fontSize: 12,
+		marginBottom: 10,
+	},
+	outerContainer: {
+		flexDirection: 'row',
+		gap: 20,
+		padding: 20,
+	},
+});

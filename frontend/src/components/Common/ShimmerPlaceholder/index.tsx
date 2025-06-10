@@ -23,6 +23,7 @@ const ShimmerPlaceholder: React.FC<ShimmerPlaceholderProps> = ({
 	style,
 }) => {
 	const theme = useTheme();
+	const styles = React.useMemo(() => createStyles(theme, width, height, borderRadius), [theme, width, height, borderRadius]);
 	const shimmerValue = useSharedValue(0);
 
 	useEffect(() => {
@@ -48,28 +49,33 @@ const ShimmerPlaceholder: React.FC<ShimmerPlaceholderProps> = ({
 	return (
 		<View
 			style={[
-				{
-					width,
-					height,
-					borderRadius,
-					backgroundColor: theme.colors.surfaceVariant,
-					overflow: 'hidden',
-				},
+				styles.shimmerContainer,
 				style,
 			]}
 		>
 			<Animated.View
 				style={[
-					{
-						width: '100%',
-						height: '100%',
-						backgroundColor: theme.colors.surface,
-					},
+					styles.animatedShimmerOverlay,
 					animatedStyle,
 				]}
 			/>
 		</View>
 	);
 };
+
+const createStyles = (theme: ReturnType<typeof useTheme>, width: DimensionValue, height: number, borderRadius: number) => StyleSheet.create({
+	animatedShimmerOverlay: {
+		backgroundColor: theme.colors.surface,
+		height: '100%',
+		width: '100%',
+	},
+	shimmerContainer: {
+		backgroundColor: theme.colors.surfaceVariant,
+		borderRadius,
+		height,
+		overflow: 'hidden',
+		width,
+	},
+});
 
 export default ShimmerPlaceholder; 
