@@ -1,4 +1,4 @@
-appId: com.nicolasmartin.dankfolio
+jppId: com.nicolasmartin.dankfolio
 ---
 - assertVisible:
       id: "new-coin-card-${COIN_ADDRESS}"

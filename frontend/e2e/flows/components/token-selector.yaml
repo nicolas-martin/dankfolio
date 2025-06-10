@@ -16,7 +16,7 @@ env:
 
 # Test 1: Open TokenSelector modal by tapping from-token-selector (SOL is pre-selected)
 - tapOn:
-    id: "from-token-selector-${solMint}"
+      id: "from-token-selector-${solMint}"
 - assertVisible: "Bottom Sheet"
 - assertVisible:
       id: "token-search-input"
@@ -44,7 +44,7 @@ env:
 
 # Test 5: Reopen modal and verify it works
 - tapOn:
-    id: "from-token-selector-${solMint}"
+      id: "from-token-selector-${solMint}"
 - assertVisible: "Bottom Sheet"
 - assertVisible:
       id: "token-search-input"
@@ -61,16 +61,16 @@ env:
 
 # Test 7: Verify modal closes after selection
 - assertNotVisible:
-    id: "token-search-input"
+      id: "token-search-input"
 
 # Test 8: Verify selected SOL token is displayed in from selector
 - waitForAnimationToEnd
 - assertVisible:
-    text: "Selected token: SOL"
+      text: "Selected token: SOL"
 
 # Test 9: Test "To" token selector (JUP is pre-selected)
 - tapOn:
-    id: "to-token-selector-${jupMint}"
+      id: "to-token-selector-${jupMint}"
 - assertVisible: "Bottom Sheet"
 - assertVisible:
       id: "token-search-input"
@@ -86,13 +86,13 @@ env:
 
 # Test 11: Verify "To" token selection
 - assertNotVisible:
-    id: "token-search-input"
+      id: "token-search-input"
 - waitForAnimationToEnd
 - assertVisible:
-    id: "to-token-selector-${usdcMint}"
+      id: "to-token-selector-${usdcMint}"
 
 # Test 12: Final verification - verify both selectors show different tokens using testIDs
 - assertVisible:
-    id: "from-token-selector-${solMint}"
+      id: "from-token-selector-${solMint}"
 - assertVisible:
-    id: "to-token-selector-${usdcMint}"
+      id: "to-token-selector-${usdcMint}"

@@ -21,14 +21,13 @@ import {
 	startPolling,
 	stopPolling,
 	handleSwapCoins as swapCoinsUtil,
-	initializeCoins,
-	handleSelectFromToken as handleSelectFromTokenUtil,
-	handleSelectToToken as handleSelectToTokenUtil,
-	createAmountChangeHandler,
+	handleSelectToken,
+	handleAmountChange,
 	handleTradeSubmit,
 	handleCloseStatusModal as handleCloseStatusModalUtil,
 	handleTryAgain as handleTryAgainUtil
 } from './scripts';
+import { SOLANA_ADDRESS } from '@/utils/constants';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { logger } from '@/utils/logger';
 
@@ -36,11 +35,10 @@ import { logger } from '@/utils/logger';
 const Trade: React.FC = () => {
 	const navigation = useNavigation<TradeScreenNavigationProp>();
 	const route = useRoute<TradeScreenRouteProp>();
-	const { inputCoin = null, outputCoin = null, initialFromCoin = null, initialToCoin = null } = route.params || {};
+	const [fromCoin, setFromCoin] = useState<Coin | null>(route.params.initialFromCoin || null)
+	const [toCoin, setToCoin] = useState<Coin | null>(route.params.initialToCoin || null)
 	const { tokens, wallet } = usePortfolioStore();
 	const { getCoinByID } = useCoinStore();
-	const [fromCoin, setFromCoin] = useState<Coin | null>(inputCoin || initialFromCoin);
-	const [toCoin, setToCoin] = useState<Coin | null>(outputCoin || initialToCoin || null);
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
 	const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(false);
@@ -62,12 +60,8 @@ const Trade: React.FC = () => {
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const pollingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const quoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	// DISABLED: Refresh progress state variables - were causing excessive callbacks
-	// const [refreshProgress, setRefreshProgress] = useState<number>(0);
-	// const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-	// const refreshStartTimeRef = useRef<number>(0);
 
-	const componentStopPolling = useCallback(() => { // Wrapped in useCallback
+	const componentStopPolling = useCallback(() => {
 		stopPolling(pollingIntervalRef, setIsLoadingTrade);
 	}, [pollingIntervalRef, setIsLoadingTrade]);
 
@@ -79,68 +73,45 @@ const Trade: React.FC = () => {
 		startPolling(txHash, () => componentPollTradeStatus(txHash), componentStopPolling, pollingIntervalRef);
 	};
 
+	// Initialize with SOL if no fromCoin provided
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed TradeScreen' });
-		logger.log(`[Trade] Initializing with inputCoin: ${(inputCoin || initialFromCoin)?.symbol}, outputCoin: ${(outputCoin || initialToCoin)?.symbol}`);
-		
-		initializeCoins(
-			inputCoin,
-			outputCoin,
-			initialFromCoin,
-			initialToCoin,
-			fromCoin,
-			getCoinByID,
-			setFromCoin,
-			setToCoin
-		);
-	}, [inputCoin, outputCoin, initialFromCoin, initialToCoin, getCoinByID, fromCoin]); // Added fromCoin
+		logger.log(`[Trade] Initialized with fromCoin: ${fromCoin?.symbol}, toCoin: ${toCoin?.symbol}`);
 
-	// DISABLED: refreshPrices function - was causing excessive callbacks
-	// const refreshPrices = useCallback(async () => { ... }, []);
-
-
+		if (!fromCoin) {
+			getCoinByID(SOLANA_ADDRESS, false).then(solCoin => {
+				if (solCoin) setFromCoin(solCoin);
+			});
+		}
+	}, [fromCoin, getCoinByID]);
 
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === fromCoin?.mintAddress), [tokens, fromCoin]);
-	const _toPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === toCoin?.mintAddress), [tokens, toCoin]); // Prefixed
 
-	// DISABLED: Setup polling interval when coins or amounts change
-	// This was causing excessive callbacks and infinite loops
-	// TODO: Re-implement with better debouncing and cleanup logic
+	// Cleanup intervals on unmount
 	useEffect(() => {
-		logger.log('[Trade] Price polling DISABLED to prevent excessive callbacks');
-		
-		// Clear any existing intervals
-		if (pollingIntervalRef.current) {
-			clearInterval(pollingIntervalRef.current);
-			pollingIntervalRef.current = null;
-		}
-
 		return () => {
-			logger.log('[Trade] Cleaning up any remaining intervals');
+			logger.info('[Trade] Component unmounting - cleaning up all intervals and timeouts');
+			componentStopPolling();
+			if (quoteTimeoutRef.current) {
+				clearTimeout(quoteTimeoutRef.current);
+				quoteTimeoutRef.current = null;
+			}
 			if (pollingIntervalRef.current) {
 				clearInterval(pollingIntervalRef.current);
 				pollingIntervalRef.current = null;
 			}
 		};
-	}, []);
-
-
-
-	useEffect(() => {
-		logger.log('[Trade] Trade screen mounted (second useEffect, consider merging if appropriate)');
-		return () => {
-			logger.log('[Trade] Trade screen unmounted (second useEffect, consider merging if appropriate)');
-		};
-	}, []);
+	}, [componentStopPolling]);
 
 	const handleSelectFromToken = (token: Coin) => {
-		handleSelectFromTokenUtil(
+		handleSelectToken(
+			'from',
 			token,
 			fromCoin,
 			toCoin,
-			fromAmount,
 			setFromCoin,
+			setToCoin,
 			setFromAmount,
 			setToAmount,
 			handleSwapCoins
@@ -148,11 +119,12 @@ const Trade: React.FC = () => {
 	};
 
 	const handleSelectToToken = (token: Coin) => {
-		handleSelectToTokenUtil(
+		handleSelectToken(
+			'to',
 			token,
 			fromCoin,
 			toCoin,
-			toAmount,
+			setFromCoin,
 			setToCoin,
 			setFromAmount,
 			setToAmount,
@@ -161,33 +133,39 @@ const Trade: React.FC = () => {
 	};
 
 	const handleFromAmountChange = useCallback(
-		createAmountChangeHandler(
-			true, // isFromAmount
-			fromCoin,
-			toCoin,
-			quoteTimeoutRef,
-			setIsQuoteLoading,
-			setFromAmount,
-			setToAmount,
-			setTradeDetails,
-			showToast
-		),
-		[fromCoin, toCoin, quoteTimeoutRef, setIsQuoteLoading, setFromAmount, setToAmount, setTradeDetails, showToast] // Added dependencies
+		(amount: string) => {
+			handleAmountChange(
+				'from',
+				amount,
+				fromCoin,
+				toCoin,
+				quoteTimeoutRef,
+				setIsQuoteLoading,
+				setFromAmount,
+				setToAmount,
+				setTradeDetails,
+				showToast
+			);
+		},
+		[fromCoin, toCoin, quoteTimeoutRef, setIsQuoteLoading, setFromAmount, setToAmount, setTradeDetails, showToast]
 	);
 
 	const handleToAmountChange = useCallback(
-		createAmountChangeHandler(
-			false, // isFromAmount
-			fromCoin,
-			toCoin,
-			quoteTimeoutRef,
-			setIsQuoteLoading,
-			setFromAmount,
-			setToAmount,
-			setTradeDetails,
-			showToast
-		),
-		[fromCoin, toCoin, quoteTimeoutRef, setIsQuoteLoading, setFromAmount, setToAmount, setTradeDetails, showToast] // Added dependencies
+		(amount: string) => {
+			handleAmountChange(
+				'to',
+				amount,
+				fromCoin,
+				toCoin,
+				quoteTimeoutRef,
+				setIsQuoteLoading,
+				setFromAmount,
+				setToAmount,
+				setTradeDetails,
+				showToast
+			);
+		},
+		[fromCoin, toCoin, quoteTimeoutRef, setIsQuoteLoading, setFromAmount, setToAmount, setTradeDetails, showToast]
 	);
 
 	const handleTradeSubmitClick = () => {
@@ -202,22 +180,6 @@ const Trade: React.FC = () => {
 			showToast
 		);
 	};
-
-	useEffect(() => {
-		return () => {
-			logger.info('[Trade] Component unmounting - cleaning up all intervals and timeouts');
-			componentStopPolling();
-			if (quoteTimeoutRef.current) {
-				clearTimeout(quoteTimeoutRef.current);
-				quoteTimeoutRef.current = null;
-			}
-			// Clean up price refresh intervals
-			if (pollingIntervalRef.current) {
-				clearInterval(pollingIntervalRef.current);
-				pollingIntervalRef.current = null;
-			}
-		};
-	}, []);
 
 	const handleTradeConfirmClick = async () => {
 		logger.breadcrumb({ category: 'trade', message: 'Trade confirmed by user', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount } });
@@ -278,7 +240,7 @@ const Trade: React.FC = () => {
 	const handleCloseConfirmationModal = () => {
 		logger.breadcrumb({ category: 'ui', message: 'Trade confirmation modal closed' });
 		setIsConfirmationVisible(false);
-		
+
 		// DISABLED: Restart refresh timers - this was causing infinite loops
 		logger.info('[Trade] Confirmation modal closed - refresh timers remain disabled');
 	};
@@ -317,7 +279,7 @@ const Trade: React.FC = () => {
 		testID: string,
 		portfolioBalance?: number // Optional: balance for the percentage buttons
 	) => (
-		<View 
+		<View
 			style={styles.tradeCard}
 		>
 			<Text style={styles.cardLabel}>{label}</Text>
@@ -430,7 +392,7 @@ const Trade: React.FC = () => {
 									/>
 								</TouchableOpacity>
 							</View>
-							
+
 							{renderTradeCard(
 								'To',
 								toCoin,
