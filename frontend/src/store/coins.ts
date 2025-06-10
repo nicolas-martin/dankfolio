@@ -207,7 +207,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			log.log('🔍 [CoinStore] Coin data sample (first coin):', response?.coins?.[0] ? {
 				symbol: response.coins[0].symbol,
 				mintAddress: response.coins[0].mintAddress,
-				jupiterListedAt: response.coins[0].jupiterListedAt ? 
+				jupiterListedAt: response.coins[0].jupiterListedAt ?
 					response.coins[0].jupiterListedAt.toISOString() : 'undefined',
 				price: response.coins[0].price,
 				dailyVolume: response.coins[0].dailyVolume
