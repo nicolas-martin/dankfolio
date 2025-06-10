@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { Portal, Snackbar, useTheme, Text, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastProps, ToastType } from './toast_types'; // Added ToastType
-import { createStyles } from './toast_styles';
+import { createToastStyles } from './toast_styles';
 import { getToastBackgroundColor, getToastForegroundColor } from './toast_constants';
 import { getToastIcon as getOriginalToastIconComponent } from './toast_icons'; // Renamed import
 import { SuccessAnimation, ErrorAnimation } from '../Animations'; // Added Lottie components
@@ -62,16 +62,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const [state, dispatch] = useReducer(reducer, defaults);
 	const insets = useSafeAreaInsets();
 	const theme = useTheme();
-	const styles = createStyles(theme, insets);
+	const styles = createToastStyles();
 
 	const toast = useMemo(
 		() => ({
 			showToast(options: Partial<ToastProps>) {
 				// Log errors when toast type is 'error'
 				if (options.type === 'error') {
-					const errorData = {
-						...(options.data && { data: options.data }),
-					};
+					const errorData = options.data ? { data: options.data } : {};
 
 					// Detailed error logging for debugging
 					console.error('🚨 Error:', options.message, errorData);
