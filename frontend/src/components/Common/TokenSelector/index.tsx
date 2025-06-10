@@ -13,7 +13,7 @@ import { Coin } from '@/types';
 import { calculateUsdValue, findPortfolioToken, handleAmountInputChange } from './scripts';
 import { CachedImage } from '@/components/Common/CachedImage';
 import { logger } from '@/utils/logger';
-import { useHookDebug, useNamedDepsDebug } from '@/utils/debugHooks';
+import { useNamedDepsDebug } from '@/utils/debugHooks';
 
 // Memoized icon component to prevent unnecessary re-renders
 const RenderIcon = React.memo<{ iconUrl: string | undefined; styles: ReturnType<typeof createStyles> }>(({ iconUrl, styles }) => {
@@ -102,10 +102,13 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			: availableCoins;
 	}, [showOnlyPortfolioTokens, portfolioTokens, availableCoins]);
 
-	// Optimize filtering to prevent unnecessary reference changes and limit results
+	// Optimized filtering with stable references to prevent flicker
 	const filteredCoins = useMemo(() => {
+		const maxResults = 100; // Limit for performance
+		
 		if (!searchQuery.trim()) {
-			return baseList.slice(0, 50); // Limit initial results to 50 for performance
+			// Return first 50 coins when no search - stable reference
+			return baseList.slice(0, 50);
 		}
 
 		const query = searchQuery.toLowerCase().trim();
@@ -114,8 +117,8 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			coin.name.toLowerCase().includes(query)
 		);
 		
-		// Limit search results to prevent performance issues with large lists
-		return filtered.slice(0, 100);
+		// Limit search results and ensure stable reference
+		return filtered.slice(0, maxResults);
 	}, [baseList, searchQuery]);
 
 	// Memoize token selection handler
@@ -151,12 +154,16 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	}, [portfolioTokens]);
 
 	// Debug what causes renderItem to recreate
-	useHookDebug([ handleTokenSelect, portfolioTokenMap ], 'renderItem');
+	useNamedDepsDebug({
+		handleTokenSelect,
+		portfolioTokenMap,
+	}, 'renderItem');
 
 	// Memoize render item function (styles is memoized and stable, safe to omit from deps)
 	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
 		logger.info('renderItem', coin);
 		const portfolioToken = portfolioTokenMap.get(coin.mintAddress);
+		
 		return (
 			<TokenItem
 				coin={coin}

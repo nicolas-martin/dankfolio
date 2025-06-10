@@ -26,7 +26,7 @@ class PerformanceMonitor {
         }
     }
 
-    endImageLoad(imageUri: string, success: boolean): void {
+    endImageLoad(imageUri: string, success: boolean): number | null {
         this.metrics.imageLoadsInProgress = Math.max(0, this.metrics.imageLoadsInProgress - 1);
         this.metrics.totalImageLoads++;
         
@@ -51,7 +51,11 @@ class PerformanceMonitor {
             if (loadTime > 2000) {
                 console.warn(`[PerformanceMonitor] Slow image load: ${imageUri} took ${loadTime}ms`);
             }
+            
+            return loadTime;
         }
+        
+        return null;
     }
 
     getMetrics(): PerformanceMetrics {
