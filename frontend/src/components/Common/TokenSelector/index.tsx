@@ -268,7 +268,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							setModalVisible(true);
 						}}
 						disabled={!onSelectToken}
-						testID={testID}
+						testID={selectedToken ? `${testID}-${selectedToken.mintAddress}` : testID}
 						accessible={true}
 						accessibilityRole="button"
 						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol}` : "Select token"}
