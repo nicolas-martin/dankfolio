@@ -233,7 +233,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 					accessibilityRole="button"
 					accessibilityLabel="View transaction on Solscan"
 				>
-					<Text>View on Solscan</Text>
+					View on Solscan
 				</Button>
 			</View>
 		);

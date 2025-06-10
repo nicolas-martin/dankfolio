@@ -9,7 +9,7 @@ import type { LayoutChangeEvent, StyleProp, TextStyle } from 'react-native';
 import { View, Text, Animated, Easing } from 'react-native';
 import { usePrevious } from './usePrevious';
 import { useTheme } from 'react-native-paper';
-import { createStyles } from './styles';
+import { createOdometerStyles } from './styles';
 
 export interface OdometerProps {
 	/** e.g. "0.00001234" */
@@ -32,8 +32,8 @@ const Odometer: FC<OdometerProps> = ({
 	staggerDelay = 50,
 }) => {
 	const theme = useTheme();
-	const styles = createStyles(theme);
-	
+	const styles = createOdometerStyles();
+
 	// Sanitize input value to ensure it only contains valid characters
 	const sanitizedValue = (value || "0").replace(/[^0-9.$,]/g, "0");
 	const prev = usePrevious(sanitizedValue) ?? sanitizedValue.replace(/\d/g, '0');
@@ -61,7 +61,7 @@ const Odometer: FC<OdometerProps> = ({
 		// Then populate with Animated.Values for digits only
 		anims.current = sanitizedValue.split('').map((char, i) => {
 			if (!/\d/.test(char)) return null;
-			
+
 			// Safely parse the digit, defaulting to 0 if invalid
 			const digit = parseInt(prevPadded[i], 10);
 			const safeDigit = isNaN(digit) ? 0 : digit;
@@ -82,7 +82,7 @@ const Odometer: FC<OdometerProps> = ({
 				const currentDigit = parseInt(char, 10);
 				const safeCurrentDigit = isNaN(currentDigit) ? 0 : currentDigit;
 				const targetValue = -digitHeight * safeCurrentDigit;
-				
+
 				// Safely parse the previous digit, defaulting to 0 if invalid
 				const prevChar = prevPadded[i] || '0';
 				const prevDigit = parseInt(prevChar, 10);

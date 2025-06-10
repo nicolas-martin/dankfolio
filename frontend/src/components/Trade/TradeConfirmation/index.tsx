@@ -157,7 +157,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						accessibilityRole="button"
 						accessibilityLabel="Cancel send"
 					>
-						<Text>Cancel</Text>
+						Cancel
 					</Button>
 					<Button
 						mode="contained"
@@ -256,7 +256,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						accessibilityRole="button"
 						accessibilityLabel="Cancel trade"
 					>
-						<Text>Cancel</Text>
+						Cancel
 					</Button>
 					<Button
 						mode="contained"

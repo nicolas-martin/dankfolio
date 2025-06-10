@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+
 import { Image, type ImageLoadEventData, type ImageErrorEventData } from 'expo-image'; // Import event types
-import type { NodeJS } from 'node'; // Import NodeJS type for Timeout
 import { CachedImageProps } from './types';
 import { performanceMonitor } from '@/utils/performanceMonitor';
 
@@ -21,9 +21,9 @@ class ImageLoadQueue {
 
 	private async process() {
 		if (this.isProcessing || this.currentLoading >= this.maxConcurrent) return;
-		
+
 		this.isProcessing = true;
-		
+
 		while (this.queue.length > 0 && this.currentLoading < this.maxConcurrent) {
 			const loadFn = this.queue.shift();
 			if (loadFn) {
@@ -36,7 +36,7 @@ class ImageLoadQueue {
 				}, 16); // ~60fps frame time
 			}
 		}
-		
+
 		this.isProcessing = false;
 	}
 }
@@ -89,7 +89,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 		if (loadTimeoutRef.current) {
 			clearTimeout(loadTimeoutRef.current);
 		}
-		
+
 		loadTimeoutRef.current = setTimeout(() => {
 			if (mountedRef.current) {
 				setImageUriToLoad(newUri);
@@ -98,28 +98,22 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	}, []);
 
 	useEffect(() => {
-		// Only attempt to load if a URI is provided and we haven't tried yet,
-		// or if the URI has changed.
-		if (uri && (!didAttemptLoad || uri !== imageUriToLoad)) {
+		if (uri && uri.trim() !== "" && (!didAttemptLoad || uri !== imageUriToLoad)) { // Check for non-empty string
 			// Reset error state if URI changes
 			if (uri !== imageUriToLoad) {
 				setHasError(false);
 				setIsLoading(true);
 			}
-			
-			// Queue the image load to prevent UI blocking
+
 			imageLoadQueue.add(() => {
 				if (mountedRef.current) {
 					setDidAttemptLoad(true);
 					debouncedSetImageUri(uri);
-					// Track performance
 					performanceMonitor.startImageLoad(uri);
 				}
 			});
-			
-			// console.log(`[${new Date().toISOString()}] ⏳ Queued image load: ${uri}`);
-		} else if (!uri) {
-			// If URI is cleared, reset states
+		} else if (!uri || uri.trim() === "") { // Handle null, undefined, or empty string
+			// If URI is cleared or empty, reset states
 			setImageUriToLoad(null);
 			setDidAttemptLoad(false);
 			setHasError(false);
@@ -130,7 +124,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	// Enhanced logging callbacks with better performance
 	const handleLoad = useCallback((event: ImageLoadEventData) => { // Typed event
 		if (!mountedRef.current) return;
-		
+
 		// Use requestAnimationFrame to ensure smooth UI updates
 		requestAnimationFrame(() => {
 			if (mountedRef.current) {
@@ -147,7 +141,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
 	const handleError = useCallback((error: ImageErrorEventData) => { // Typed error
 		if (!mountedRef.current) return;
-		
+
 		// Use requestAnimationFrame to ensure smooth UI updates
 		requestAnimationFrame(() => {
 			if (mountedRef.current) {
@@ -185,3 +179,4 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 		/>
 	);
 }; 
+
