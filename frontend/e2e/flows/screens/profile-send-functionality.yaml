@@ -101,3 +101,5 @@ env:
 - waitForAnimationToEnd
 - tapOn:
       id: "confirm-trade-button"
+- assertNotVisible:
+      id: "validation-error-text"
