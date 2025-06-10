@@ -5,7 +5,7 @@ module.exports = {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-paper|@gorhom|expo-.*)/)',
+    'node_modules/(?!(react-native|@react-native|react-native-paper|@gorhom|expo-.*|@sentry/react-native|@sentry/core|@react-native-firebase)/)',
   ],
   testMatch: [
     // Only include pure logic tests
@@ -49,5 +49,6 @@ module.exports = {
     '^@store/(.*)$': '<rootDir>/src/store/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
   },
+  setupFilesAfterEnv: ['<rootDir>/src/__mocks__/setup.js'], // Explicitly load setup file
   verbose: true,
-}; 
+};
