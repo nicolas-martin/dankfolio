@@ -26,6 +26,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
+
 	// "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry" // Removed unused import
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
@@ -139,10 +140,10 @@ func main() {
 		httpClient,
 		jupiterClient,
 		store,
-		solanaClient,    // This is the chainClient
-		birdeyeClient,   // This is the birdeyeClient
-		apiTracker,      // Pass existing apiTracker
-		offchainClient,  // Pass existing offchainClient
+		solanaClient,   // This is the chainClient
+		birdeyeClient,  // This is the birdeyeClient
+		apiTracker,     // Pass existing apiTracker
+		offchainClient, // Pass existing offchainClient
 	)
 	slog.Info("Coin service initialized.")
 

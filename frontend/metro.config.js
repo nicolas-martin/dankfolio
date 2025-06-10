@@ -1,5 +1,7 @@
-import { wrapWithReanimatedMetroConfig } from 'react-native-reanimated/metro-config';
-import { getSentryExpoConfig } from "@sentry/react-native/metro";
+// eslint-disable @typescript-eslint/oldrules/consistent-type-imports
+const { wrapWithReanimatedMetroConfig } = require('react-native-reanimated/metro-config');
+// eslint-disable @typescript-eslint/oldrules/consistent-type-imports
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 
 /** @type {import('expo/metro-config').MetroConfig} */
 // Temporarily using standard Expo config instead of Sentry config

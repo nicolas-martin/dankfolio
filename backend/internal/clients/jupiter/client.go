@@ -15,7 +15,7 @@ import (
 
 	solanago "github.com/gagliardetto/solana-go"
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
@@ -35,13 +35,13 @@ type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	apiKey     string
-	tracker    clients.APICallTracker
+	tracker    telemetry.TelemetryAPI
 }
 
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
 // NewClient creates a new instance of Client
-func NewClient(httpClient *http.Client, url, key string, tracker clients.APICallTracker) ClientAPI {
+func NewClient(httpClient *http.Client, url, key string, tracker telemetry.TelemetryAPI) ClientAPI {
 	return &Client{
 		httpClient: httpClient,
 		baseURL:    url,
@@ -306,7 +306,7 @@ func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, []
 			endpointName = "/" // Default if path is empty
 		}
 		if c.tracker != nil {
-			c.tracker.Increment("jupiter", endpointName)
+			c.tracker.TrackCall("jupiter", endpointName)
 		}
 	}
 
@@ -386,7 +386,7 @@ func PostRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 			endpointName = "/" // Default if path is empty
 		}
 		if c.tracker != nil {
-			c.tracker.Increment("jupiter", endpointName)
+			c.tracker.TrackCall("jupiter", endpointName)
 		}
 	}
 

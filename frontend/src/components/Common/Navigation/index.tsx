@@ -20,8 +20,6 @@ import Settings from '@screens/Settings';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-const Tab = createBottomTabNavigator();
-
 // Define styles using a function that accepts theme
 const getTabNavigatorStyles = (theme: MD3Theme) => StyleSheet.create({
 	bottomNavBar: {
@@ -100,8 +98,8 @@ const TabNavigator = () => {
 				/>
 			)}
 		>
-			<Tab.Screen 
-				name="Home" 
+			<Tab.Screen
+				name="Home"
 				component={Home}
 			/>
 			<Tab.Screen

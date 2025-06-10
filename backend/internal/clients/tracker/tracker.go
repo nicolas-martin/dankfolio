@@ -5,37 +5,14 @@ import (
 	"sync"
 	"time"
 
+	"log/slog"
+
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
-	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry" // Added telemetry import
-	"log/slog"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 )
 
-// APICallTracker defines the interface for tracking API calls.
-// Note: The original task asked to modify APICallTracker. We are modifying APICallTrackerImpl
-// and will adjust the interface if necessary, or assume APICallTrackerImpl is the target.
-// For now, the interface remains, and APICallTrackerImpl implements it.
-type APICallTracker interface {
-	// Increment records an API call to a specific service and endpoint,
-	// and persists this increment to the database.
-	Increment(serviceName, endpointName string)
-
-	// GetStats returns a map of service names to a map of endpoint names to call counts from memory.
-	GetStats() map[string]map[string]int
-
-	// LoadStatsForToday loads API call statistics for the current day from the database
-	// into the in-memory tracker.
-	LoadStatsForToday(ctx context.Context) error
-
-	// ResetStats flushes current in-memory statistics to the database for the current day
-	// and clears the in-memory map.
-	ResetStats(ctx context.Context) error
-
-	// Start launches the background goroutine for periodic logging and daily stats reset.
-	Start(ctx context.Context)
-}
-
-// APICallTrackerImpl implements the APICallTracker interface using a thread-safe map
+// APICallTrackerImpl implements the telemetry.TelemetryAPI interface using a thread-safe map
 // and a database store for persistence.
 type APICallTrackerImpl struct {
 	counts  map[string]map[string]int
@@ -45,7 +22,7 @@ type APICallTrackerImpl struct {
 }
 
 // NewAPICallTracker creates a new APICallTrackerImpl.
-func NewAPICallTracker(store db.Store, logger *slog.Logger) APICallTracker {
+func NewAPICallTracker(store db.Store, logger *slog.Logger) telemetry.TelemetryAPI {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -85,6 +62,11 @@ func (t *APICallTrackerImpl) Increment(serviceName, endpointName string) {
 		// Depending on requirements, we might want to revert or handle this.
 		// For now, we log the error and the in-memory count remains.
 	}
+}
+
+// TrackCall implements the telemetry.TelemetryAPI interface by delegating to Increment
+func (t *APICallTrackerImpl) TrackCall(serviceName, endpointName string) {
+	t.Increment(serviceName, endpointName)
 }
 
 // GetStats returns a copy of the current in-memory statistics.
@@ -292,4 +274,3 @@ func (t *APICallTrackerImpl) Start(ctx context.Context) {
 		}
 	}()
 }
-

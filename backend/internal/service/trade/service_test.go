@@ -2,8 +2,12 @@ package trade
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"math"
+	"strconv"
+	"strings"
 	"testing"
 
 	solanago "github.com/gagliardetto/solana-go"
@@ -15,8 +19,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	coinServiceMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/coin/mocks"
 	priceServiceMocks "github.com/nicolas-martin/dankfolio/backend/internal/service/price/mocks"
-	"encoding/base64"
-	"time"
 
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/stretchr/testify/assert"
@@ -51,15 +53,17 @@ func setupService(t *testing.T) (
 	*dbDataStoreMocks.MockStore,
 	*dbDataStoreMocks.MockRepository[model.Trade],
 ) {
-	mockChainClient := solanaClientMocks.NewMockClientAPI(t) // Assuming this mocks bclient.GenericClientAPI
-	mockCoinService := coinServiceMocks.NewMockCoinServiceAPI(t)
-	mockPriceService := priceServiceMocks.NewMockPriceServiceAPI(t)
-	mockJupiterClient := jupiterclientmocks.NewMockClientAPI(t)
-	mockStore := dbDataStoreMocks.NewMockStore(t)
-	mockTradeRepo := dbDataStoreMocks.NewMockRepository[model.Trade](t)
+	solanaMock := solanaClientMocks.NewMockClientAPI(t) // This should implement clients.GenericClientAPI
+	coinServiceMock := coinServiceMocks.NewMockCoinServiceAPI(t)
+	priceServiceMock := priceServiceMocks.NewMockPriceServiceAPI(t)
+	jupiterMock := jupiterclientmocks.NewMockClientAPI(t)
+	storeMock := dbDataStoreMocks.NewMockStore(t)
+	tradeRepoMock := dbDataStoreMocks.NewMockRepository[model.Trade](t)
+	feeBPS := 0
+	add := "mock-address"
 
-	service := NewService(mockChainClient, mockCoinService, mockPriceService, mockJupiterClient, mockStore, defaultPlatformFeeBps, defaultPlatformAddr)
-	return service, mockChainClient, mockCoinService, mockPriceService, mockJupiterClient, mockStore, mockTradeRepo
+	service := NewService(solanaMock, coinServiceMock, priceServiceMock, jupiterMock, storeMock, feeBPS, add)
+	return service, solanaMock, coinServiceMock, priceServiceMock, jupiterMock, storeMock, tradeRepoMock
 }
 
 func TestListTrades_Success(t *testing.T) {
@@ -542,7 +546,7 @@ func TestPrepareSwap_FeePopulation_WithPlatformFees(t *testing.T) {
 
 	// Jupiter provides its own platform fee details
 	jupiterPlatformFeeAmountStr := "10000" // 0.01 FROM (assuming FROM coin has 6 decimals)
-	jupiterPlatformFeeBps := 100            // Jupiter says 1%
+	jupiterPlatformFeeBps := 100           // Jupiter says 1%
 	jupiterPlatformFeeMint := fromCoinMintAddress
 
 	mockStore.On("Trades").Return(mockTradeRepo).Once()
@@ -566,7 +570,7 @@ func TestPrepareSwap_FeePopulation_WithPlatformFees(t *testing.T) {
 		InputMint:      fromCoinMintAddress,
 		OutputMint:     toCoinMintAddress,
 		InAmount:       inputAmountStr,
-		OutAmount:      "1980000000",                                                                          // 1.98 TO coins
+		OutAmount:      "1980000000",                                                                                             // 1.98 TO coins
 		RoutePlan:      []jupiter.RoutePlan{{SwapInfo: jupiter.SwapInfo{FeeMint: solanago.SolMint.String(), FeeAmount: "5000"}}}, // Network fee
 		PriceImpactPct: "0.01",
 		PlatformFee:    &jupiter.PlatformFee{Amount: jupiterPlatformFeeAmountStr, FeeBps: jupiterPlatformFeeBps, FeeMint: jupiterPlatformFeeMint},
@@ -925,7 +929,7 @@ func TestGetTradeByTransactionHash(t *testing.T) {
 		assert.NoError(t, err) // The function itself shouldn't error, just return the trade as is
 		assert.NotNil(t, resultTrade)
 		assert.Equal(t, model.TradeStatusSubmitted, resultTrade.Status) // Status should not change
-		assert.Nil(t, resultTrade.Error) // Original error should be preserved (nil in this case)
+		assert.Nil(t, resultTrade.Error)                                // Original error should be preserved (nil in this case)
 		assert.Nil(t, resultTrade.CompletedAt)
 		assert.False(t, resultTrade.Finalized)
 
@@ -986,7 +990,7 @@ func TestPrepareSwap_FeePopulation_WithoutPlatformFees_UsesServiceConfig(t *test
 		InputMint:      fromCoinMintAddress,
 		OutputMint:     toCoinMintAddress,
 		InAmount:       inputAmountStr,
-		OutAmount:      "1990000000",                                                                          // 1.99 TO coins
+		OutAmount:      "1990000000",                                                                                             // 1.99 TO coins
 		RoutePlan:      []jupiter.RoutePlan{{SwapInfo: jupiter.SwapInfo{FeeMint: solanago.SolMint.String(), FeeAmount: "5000"}}}, // Network fee
 		PriceImpactPct: "0.01",
 		PlatformFee:    nil, // Explicitly nil
@@ -1031,7 +1035,7 @@ func TestPrepareSwap_FeePopulation_WithoutPlatformFees_UsesServiceConfig(t *test
 	// No platform fee from Jupiter in this quote response.
 	// The service's GetSwapQuote calculates totalFeeInUSD based on quote.PlatformFee which is nil here.
 	expectedNetworkFeeUSD := (5000.0 / 1_000_000_000.0) * 100.0 // lamports to SOL, then to USD
-	expectedTradeFee := expectedNetworkFeeUSD / math.Pow10(9)    // As it's stored in GetSwapQuote
+	expectedTradeFee := expectedNetworkFeeUSD / math.Pow10(9)   // As it's stored in GetSwapQuote
 
 	assert.InDelta(t, expectedTradeFee, capturedTrade.Fee, 0.000000000001)
 

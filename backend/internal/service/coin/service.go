@@ -17,6 +17,7 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 )
 
 // Service handles coin-related operations
@@ -29,6 +30,7 @@ type Service struct {
 	fetcherCtx     context.Context    // Context for the new token fetcher goroutine
 	fetcherCancel  context.CancelFunc // Cancel function for the fetcher goroutine
 	birdeyeClient  birdeye.ClientAPI
+	apiTracker     telemetry.TelemetryAPI
 }
 
 // NewService creates a new CoinService instance
@@ -39,7 +41,7 @@ func NewService(
 	store db.Store,
 	chainClient clients.GenericClientAPI,
 	birdeyeClient birdeye.ClientAPI,
-	apiTracker clients.APICallTracker, // Added apiTracker
+	apiTracker telemetry.TelemetryAPI,
 	offchainClient offchain.ClientAPI, // Added offchainClient
 ) *Service {
 	service := &Service{
@@ -49,7 +51,7 @@ func NewService(
 		offchainClient: offchainClient, // Use passed-in offchainClient
 		store:          store,
 		birdeyeClient:  birdeyeClient,
-		// apiTracker is not a field in Service struct, it's used by offchainClient
+		apiTracker:     apiTracker,
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 
