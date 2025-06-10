@@ -236,17 +236,16 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			componentStartPolling(txHash);
 
 		} catch (error: unknown) {
-			if (error instanceof Error) {
-				showToast({
-					type: 'error',
-					message: error.message || 'Failed to send tokens'
-				});
-			} else {
-				showToast({
-					type: 'error',
-					message: 'An unknown error occurred while sending tokens'
-				});
-			}
+			const errorMessage = error instanceof Error ? 
+				(error.message || 'Failed to send tokens') : 
+				'An unknown error occurred while sending tokens';
+			
+			// Show both validation error and toast for better UX
+			setValidationError(errorMessage);
+			showToast({
+				type: 'error',
+				message: errorMessage
+			});
 			setIsLoading(false);
 		}
 	};
