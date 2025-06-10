@@ -9,7 +9,7 @@ import { createStyles } from './coindetails_styles';
 import { CachedImage } from '@/components/Common/CachedImage';
 import Odometer from '@components/Odometer';
 
-import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Added ImageZoomModal import
+import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Updated import path
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	price, periodChange, valueChange, period, resolvedIconUrl, name, address,

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Image, type ImageLoadEventData, type ImageErrorEventData } from 'expo-image';
 import { CachedImageProps } from './types';
+import { logger } from '@/utils/logger';
 
 // Default blurhash for token images
 const DEFAULT_TOKEN_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
@@ -28,14 +29,16 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	// Log cache hit/miss and load time
 	const handleLoad = useCallback((event: ImageLoadEventData) => {
 		const loadTime = loadStartTimeRef.current ? Date.now() - loadStartTimeRef.current : 0;
+
 		const { cacheType } = event;
+		logger.info(`[CachedImage] event: ${JSON.stringify(event)}`);
 		
 		// Simple cache detection
 		const isHit = cacheType !== 'none' || loadTime === 0;
 		const status = isHit ? 'Cache Hit' : 'Cache Miss';
 		const emoji = isHit ? '⚡': '🐢'
 		
-		console.log(`[CachedImage] ${emoji} ${status} | Type: ${cacheType} | Time: ${loadTime}ms | URL: ${uri}`);
+		logger.info(`[CachedImage]!!! ${emoji} ${status} | Type: ${cacheType} | Time: ${loadTime}ms | URL: ${uri}`);
 		
 		setHasError(false);
 		onLoad?.(event);
@@ -44,7 +47,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 	// Log errors with URL
 	const handleError = useCallback((error: ImageErrorEventData) => {
 		const loadTime = loadStartTimeRef.current ? Date.now() - loadStartTimeRef.current : 0;
-		console.log(`[CachedImage] ❌ Error | Time: ${loadTime}ms | URL: ${uri} | Error:`, error);
+		logger.error(`[CachedImage] ❌ Error | Time: ${loadTime}ms | URL: ${uri} | Error:`, error);
 		
 		setHasError(true);
 		onError?.(error);
