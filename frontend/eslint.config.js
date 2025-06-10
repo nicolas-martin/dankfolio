@@ -10,9 +10,17 @@ import globals from 'globals';
 
 export default [
 	js.configs.recommended,
-
+	// Global ignores - must be in separate config object
 	{
-		ignores: ['src/gen/**'],
+		ignores: [
+			'**/gen/**',
+			'**/metro.config.js',
+			// Ignore critical chart components to prevent ESLint changes
+			'src/components/Chart/CoinChart/**',
+			'src/components/Chart/SparklineChart/**',
+		],
+	},
+	{
 		languageOptions: {
 			parser,
 			parserOptions: {
