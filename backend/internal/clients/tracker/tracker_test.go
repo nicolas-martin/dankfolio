@@ -11,81 +11,16 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients" // Adjust import path
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	dbDataStoreMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
-// --- Mock db.Repository[model.ApiStat] ---
-
-type mockApiStatGenericRepository struct {
-	UpsertFunc       func(ctx context.Context, stat *model.ApiStat) (int64, error)
-	ListWithOptsFunc func(ctx context.Context, opts db.ListOptions) ([]model.ApiStat, int64, error)
-	// Add other funcs if other generic repository methods are called by tracker
-}
-
-// Implement db.Repository[model.ApiStat] for mockApiStatGenericRepository
-func (m *mockApiStatGenericRepository) Get(ctx context.Context, id string) (*model.ApiStat, error) {
-	return nil, errors.New("mock Get not implemented")
-}
-
-func (m *mockApiStatGenericRepository) List(ctx context.Context) ([]model.ApiStat, error) {
-	return nil, errors.New("mock List not implemented")
-}
-
-func (m *mockApiStatGenericRepository) Create(ctx context.Context, item *model.ApiStat) error {
-	return errors.New("mock Create not implemented")
-}
-
-func (m *mockApiStatGenericRepository) Update(ctx context.Context, item *model.ApiStat) error {
-	return errors.New("mock Update not implemented")
-}
-
-func (m *mockApiStatGenericRepository) Upsert(ctx context.Context, item *model.ApiStat) (int64, error) {
-	if m.UpsertFunc != nil {
-		return m.UpsertFunc(ctx, item)
-	}
-	return 1, nil // Default: success, 1 row affected
-}
-
-func (m *mockApiStatGenericRepository) BulkUpsert(ctx context.Context, items *[]model.ApiStat) (int64, error) {
-	return 0, errors.New("mock BulkUpsert not implemented")
-}
-
-func (m *mockApiStatGenericRepository) Delete(ctx context.Context, id string) error {
-	return errors.New("mock Delete not implemented")
-}
-
-func (m *mockApiStatGenericRepository) GetByField(ctx context.Context, field string, value any) (*model.ApiStat, error) {
-	return nil, errors.New("mock GetByField not implemented")
-}
-
-func (m *mockApiStatGenericRepository) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]model.ApiStat, int64, error) {
-	if m.ListWithOptsFunc != nil {
-		return m.ListWithOptsFunc(ctx, opts)
-	}
-	return nil, 0, nil // Default: success, no records, total 0
-}
-
-type mockStore struct {
-	apiStatsRepo db.Repository[model.ApiStat] // Changed to use generic repository interface
-}
-
-func (m *mockStore) Coins() db.Repository[model.Coin]                            { return nil }
-func (m *mockStore) Trades() db.Repository[model.Trade]                          { return nil }
-func (m *mockStore) RawCoins() db.Repository[model.RawCoin]                      { return nil }
-func (m *mockStore) Wallet() db.Repository[model.Wallet]                         { return nil }
-func (m *mockStore) ApiStats() db.Repository[model.ApiStat]                      { return m.apiStatsRepo } // Changed return type
-func (m *mockStore) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) { return nil, nil }
-
-func (m *mockStore) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
-	return nil, nil
-}
-func (m *mockStore) WithTransaction(ctx context.Context, fn func(s db.Store) error) error { return nil }
-
 // --- Helper to create tracker with mocks ---
 
-func newTestTracker(mockRepo *mockApiStatGenericRepository) clients.APICallTracker {
+func newTestTracker(mockRepo *dbDataStoreMocks.MockRepository[model.ApiStat],
+) clients.APICallTracker {
 	if mockRepo == nil {
-		mockRepo = &mockApiStatGenericRepository{} // Default mock
+		mockRepo = nil
 	}
 	store := &mockStore{apiStatsRepo: mockRepo}
 	return clients.NewAPICallTracker(store, slog.Default())
@@ -370,11 +305,7 @@ func TestAPICallTrackerImpl_ResetStats_EmptyInMemory(t *testing.T) {
 // The tests below are for the *current* behavior.
 
 func TestAPICallTrackerImpl_LoadStatsForToday_NoRecords_KeepsExistingMemory(t *testing.T) {
-	mockRepo := &mockApiStatGenericRepository{
-		ListWithOptsFunc: func(ctx context.Context, opts db.ListOptions) ([]model.ApiStat, int64, error) {
-			return []model.ApiStat{}, 0, nil // No records for today
-		},
-	}
+	mockRepo := dbDataStoreMocks.NewMockRepository[model.ApiStat](t)
 	tracker := newTestTracker(mockRepo)
 	// Pre-populate memory, this should remain as LoadStatsForToday doesn't clear if DB returns no records.
 	tracker.Increment("memService", "memEp")

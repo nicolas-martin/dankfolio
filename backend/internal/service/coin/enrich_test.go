@@ -8,17 +8,16 @@ import (
 	"strings"
 	"testing"
 
-	token_metadata "github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
-
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	jupitermocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
+	clientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/mocks"
 	offchainmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain/mocks"
-	solanamocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestService(cfg *Config, jupiterClient jupiter.ClientAPI, solanaClient *solanamocks.MockClientAPI, offchainClient *offchainmocks.MockClientAPI) *Service {
+func newTestService(cfg *Config, jupiterClient jupiter.ClientAPI, solanaClient *clientmocks.MockGenericClientAPI, offchainClient *offchainmocks.MockClientAPI) *Service {
 	// Create a service with the provided mock clients
 	service := &Service{
 		config:         cfg,
@@ -38,7 +37,7 @@ func TestMain(m *testing.M) {
 
 func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 	mockJupiter := jupitermocks.NewMockClientAPI(t)
-	mockSolana := solanamocks.NewMockClientAPI(t)
+	mockSolana := clientmocks.NewMockGenericClientAPI(t)
 	mockOffchain := offchainmocks.NewMockClientAPI(t)
 
 	cfg := &Config{}
@@ -60,7 +59,7 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 	// Jupiter GetCoinPrices: Called if initialPrice is 0. Here it's 1.5, so this might not be called.
 	mockJupiter.On("GetCoinPrices", mock.Anything, []string{mintAddress}).Return(map[string]float64{mintAddress: 1.0}, nil).Maybe()
 
-	mockSolana.On("GetMetadataAccount", mock.Anything, mintAddress).Return(&token_metadata.Metadata{Data: token_metadata.Data{Uri: "http://example.com/metadata.json"}}, nil)
+	mockSolana.On("GetTokenMetadata", mock.Anything, blockchain.Address(mintAddress)).Return(&blockchain.TokenMetadata{URI: "http://example.com/metadata.json"}, nil)
 	mockOffchain.On("FetchMetadata", "http://example.com/metadata.json").Return(map[string]any{"image": httpIconURL, "description": "Test Description"}, nil)
 
 	coin, err := service.EnrichCoinData(
@@ -87,9 +86,6 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 	assert.Equal(t, initialTagsFromBirdeye, coin.Tags)
 	// Decimals will be from Jupiter if GetCoinInfo was called and provided them, otherwise from Solana metadata if mocked, else 0.
 	// If GetCoinInfo provided 6, then it should be 6.
-	if strings.Contains(tt.name, "Jupiter Name") { // A bit of a hack to check if GetCoinInfo was expected for name/symbol
-		assert.Equal(t, 6, coin.Decimals)
-	}
 
 	mockJupiter.AssertExpectations(t)
 	mockSolana.AssertExpectations(t)
@@ -117,7 +113,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockJup := jupitermocks.NewMockClientAPI(t)
-			mockSol := solanamocks.NewMockClientAPI(t)
+			mockSol := clientmocks.NewMockGenericClientAPI(t)
 			mockOff := offchainmocks.NewMockClientAPI(t)
 
 			cfg := &Config{}
@@ -134,7 +130,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 			if tt.inputIconUrl != "" { // tt.inputIconUrl represents the icon from offchain metadata's "image" field
 				offchainReturn["image"] = tt.inputIconUrl
 			}
-			mockSol.On("GetMetadataAccount", mock.Anything, mintAddress).Return(&token_metadata.Metadata{Data: token_metadata.Data{Uri: "http://example.com/metadata.json"}}, nil)
+			mockSol.On("GetTokenMetadata", mock.Anything, blockchain.Address(mintAddress)).Return(&blockchain.TokenMetadata{URI: "http://example.com/metadata.json"}, nil)
 			if tt.mockOffchainError != nil {
 				mockOff.On("FetchMetadata", "http://example.com/metadata.json").Return(nil, tt.mockOffchainError)
 			} else {
@@ -299,7 +295,7 @@ func TestEnrichCoinData_WithBirdeyeData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockJup := jupitermocks.NewMockClientAPI(t)
-			mockSol := solanamocks.NewMockClientAPI(t)
+			mockSol := clientmocks.NewMockGenericClientAPI(t)
 			mockOff := offchainmocks.NewMockClientAPI(t)
 
 			cfg := &Config{}
@@ -314,13 +310,13 @@ func TestEnrichCoinData_WithBirdeyeData(t *testing.T) {
 
 			// Mock Solana and Offchain unless specific error is tested for them
 			if tt.solanaMetadataErr != nil {
-				mockSol.On("GetMetadataAccount", mock.Anything, mintAddress).Return(nil, tt.solanaMetadataErr)
+				mockSol.On("GetTokenMetadata", mock.Anything, blockchain.Address(mintAddress)).Return(nil, tt.solanaMetadataErr)
 			} else {
 				uri := defaultSolanaMetadataURI
 				if tt.offchainMetadataErr != nil && tt.offchainMetadata == nil { // if offchain is meant to fail and no specific URI from solana, metadata might be nil
 					uri = "" // Or some indicator that FetchMetadata shouldn't be called / will fail
 				}
-				mockSol.On("GetMetadataAccount", mock.Anything, mintAddress).Return(&token_metadata.Metadata{Data: token_metadata.Data{Uri: uri}}, nil)
+				mockSol.On("GetTokenMetadata", mock.Anything, blockchain.Address(mintAddress)).Return(&blockchain.TokenMetadata{URI: uri}, nil)
 
 				effectiveOffchainMeta := defaultOffchainMetadata
 				if tt.offchainMetadata != nil {
