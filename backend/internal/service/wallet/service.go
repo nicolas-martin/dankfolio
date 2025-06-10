@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -61,19 +62,18 @@ func (s *Service) getOrCreateATA(ctx context.Context, payer, owner, mint solana.
 
 	// Use generic GetAccountInfo
 	bAccInfo, err := s.chainClient.GetAccountInfo(ctx, bmodel.Address(ata.String()))
+	var instructions []solana.Instruction
+
 	if err != nil {
-		// If error is "not found" (needs a specific error type or string check from client), it's okay.
-		// For now, any error other than a clear "not found" is problematic.
-		// This logic might need refinement based on how your generic client surfaces "not found".
-		if !strings.Contains(err.Error(), "account not found") && !strings.Contains(err.Error(), "nil value") { // Crude check
+		if errors.Is(err, bclient.ErrAccountNotFound) { // Ensure bclient or your chosen alias is used
+			slog.Debug("Token account not found by chainClient.GetAccountInfo, planning creation", "address", ata.String(), "error_received", err)
+		} else {
 			return solana.PublicKey{}, nil, fmt.Errorf("failed to check token account %s: %w", ata.String(), err)
 		}
-		// If it is a "not found" error, bAccInfo will be nil, and we proceed to create.
 	}
 
-	var instructions []solana.Instruction
 	// If account doesn't exist (bAccInfo is nil from a "not found" error) or is uninitialized (owned by SystemProgramID)
-	if bAccInfo == nil || bmodel.Address(solana.SystemProgramID.String()) == bAccInfo.Owner {
+	if bAccInfo == nil || (bAccInfo != nil && bmodel.Address(solana.SystemProgramID.String()) == bAccInfo.Owner) {
 		slog.Debug("Creating token account", "address", ata.String())
 		createATAIx, err := associatedtokenaccount.NewCreateInstruction(
 			payer,

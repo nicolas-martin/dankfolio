@@ -2,9 +2,13 @@ package clients
 
 import (
 	"context"
+	"errors"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain" // Import the new models
 )
+
+// ErrAccountNotFound indicates that a requested blockchain account was not found.
+var ErrAccountNotFound = errors.New("account not found")
 
 // GenericClientAPI defines a chain-agnostic interface for blockchain interactions.
 type GenericClientAPI interface {

@@ -17,6 +17,7 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 
+	"errors"
 	"math"    // For Pow10
 	"strconv" // For uint64 to string and float to string
 
@@ -224,25 +225,26 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Sign
 }
 
 // GetAccountInfo implements clients.GenericClientAPI
-// This is the generic version. The original GetAccountInfo(ctx, solana.PublicKey) is specific to SolanaRPCClientAPI.
 func (c *Client) GetAccountInfo(ctx context.Context, address bmodel.Address) (*bmodel.AccountInfo, error) {
 	solAddress, err := solana.PublicKeyFromBase58(string(address))
 	if err != nil {
 		return nil, fmt.Errorf("invalid address '%s': %w", address, err)
 	}
 
-	// Call the rpcConn.GetAccountInfo directly
 	rpcAccountInfo, err := c.rpcConn.GetAccountInfo(ctx, solAddress)
 	if err != nil {
+		if errors.Is(err, rpc.ErrNotFound) {
+			return nil, clients.ErrAccountNotFound
+		}
 		return nil, fmt.Errorf("failed to get account info for %s: %w", address, err)
 	}
 	if rpcAccountInfo == nil || rpcAccountInfo.Value == nil {
-		return nil, fmt.Errorf("account not found or nil value for %s", address)
+		return nil, clients.ErrAccountNotFound
 	}
 
-	ownerPk, err := solana.PublicKeyFromBase58(rpcAccountInfo.Value.Owner.String())
-	if err != nil {
-		return nil, fmt.Errorf("invalid owner address for %s: %w", address, err)
+	ownerPk, ownerErr := solana.PublicKeyFromBase58(rpcAccountInfo.Value.Owner.String()) // Use ownerErr here
+	if ownerErr != nil {
+		return nil, fmt.Errorf("invalid owner address for %s: %w", address, ownerErr) // Wrap ownerErr
 	}
 
 	return &bmodel.AccountInfo{
