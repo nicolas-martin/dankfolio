@@ -15,8 +15,8 @@ export const useLoadingState = (navigation: unknown) => {
 
 	useEffect(() => {
 		const loadData = async () => {
-			let portfolioSuccess = false;
-			let trendingSuccess = false;
+			let _portfolioSuccess = false; // Prefixed
+			let _trendingSuccess = false; // Prefixed
 
 			try {
 				// Load trending coins with timeout
@@ -29,7 +29,7 @@ export const useLoadingState = (navigation: unknown) => {
 					new Promise((_, reject) => setTimeout(() => reject(new Error('Trending coins timeout')), 10000))
 				]);
 				
-				trendingSuccess = true;
+				_trendingSuccess = true;
 				setLoadingState(prev => ({
 					...prev,
 					trendingLoaded: true
@@ -41,7 +41,7 @@ export const useLoadingState = (navigation: unknown) => {
 					...prev,
 					trendingLoaded: true
 				}));
-				trendingSuccess = false;
+				_trendingSuccess = false;
 			}
 
 			// Load portfolio data with timeout and error handling
@@ -51,12 +51,12 @@ export const useLoadingState = (navigation: unknown) => {
 						fetchPortfolioBalance(wallet.address),
 						new Promise((_, reject) => setTimeout(() => reject(new Error('Portfolio fetch timeout')), 15000))
 					]);
-					portfolioSuccess = true;
+					_portfolioSuccess = true;
 				}
 			} catch (error) {
 				logger.error('Error loading portfolio balance:', error);
 				// Don't throw - just log and continue
-				portfolioSuccess = false;
+				_portfolioSuccess = false;
 			} finally {
 				// Always mark portfolio as loaded to prevent getting stuck
 				setLoadingState(prev => ({
