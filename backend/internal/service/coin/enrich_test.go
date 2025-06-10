@@ -8,130 +8,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
-	solanago "github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/rpc"
+	token_metadata "github.com/blocto/solana-go-sdk/program/metaplex/token_metadata"
+
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
-	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	jupitermocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
+	offchainmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain/mocks"
+	solanamocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-// MockJupiterClient is a mock for the Jupiter client
-type MockJupiterClient struct {
-	mock.Mock
-}
-
-func (m *MockJupiterClient) GetCoinInfo(ctx context.Context, mintAddress string) (*jupiter.CoinListInfo, error) {
-	args := m.Called(ctx, mintAddress)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*jupiter.CoinListInfo), args.Error(1)
-}
-
-func (m *MockJupiterClient) GetCoinPrices(ctx context.Context, mintAddresses []string) (map[string]float64, error) {
-	args := m.Called(ctx, mintAddresses)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(map[string]float64), args.Error(1)
-}
-
-func (m *MockJupiterClient) GetQuote(ctx context.Context, params jupiter.QuoteParams) (*jupiter.QuoteResponse, error) {
-	args := m.Called(ctx, params)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*jupiter.QuoteResponse), args.Error(1)
-}
-
-func (m *MockJupiterClient) GetAllCoins(ctx context.Context) (*jupiter.CoinListResponse, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*jupiter.CoinListResponse), args.Error(1)
-}
-
-func (m *MockJupiterClient) GetNewCoins(ctx context.Context, params *jupiter.NewCoinsParams) ([]*jupiter.NewTokenInfo, error) {
-	args := m.Called(ctx, params)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	// Ensure the type assertion matches the new return type
-	return args.Get(0).([]*jupiter.NewTokenInfo), args.Error(1)
-}
-
-func (m *MockJupiterClient) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey, destinationTokenAccount string) (string, error) {
-	args := m.Called(ctx, quoteResp, userPublicKey, destinationTokenAccount)
-	if args.Get(0) == nil {
-		return "", args.Error(1)
-	}
-	return args.Get(0).(string), args.Error(1)
-}
-
-// MockSolanaClient is a mock for the Solana client
-type MockSolanaClient struct {
-	mock.Mock
-}
-
-func (m *MockSolanaClient) GetMetadataAccount(ctx context.Context, mintAddress string) (*token_metadata.Metadata, error) {
-	args := m.Called(ctx, mintAddress)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*token_metadata.Metadata), args.Error(1)
-}
-
-func (m *MockSolanaClient) GetRpcConnection() *rpc.Client {
-	args := m.Called()
-	if args.Get(0) == nil {
-		return nil
-	}
-	return args.Get(0).(*rpc.Client)
-}
-
-func (m *MockSolanaClient) ExecuteTrade(ctx context.Context, trade *model.Trade, signedTx string) (string, error) {
-	args := m.Called(ctx, trade, signedTx)
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockSolanaClient) ExecuteSignedTransaction(ctx context.Context, signedTx string) (solanago.Signature, error) {
-	args := m.Called(ctx, signedTx)
-	return args.Get(0).(solanago.Signature), args.Error(1)
-}
-
-func (m *MockSolanaClient) GetTransactionConfirmationStatus(ctx context.Context, sigStr string) (*rpc.GetSignatureStatusesResult, error) {
-	args := m.Called(ctx, sigStr)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*rpc.GetSignatureStatusesResult), args.Error(1)
-}
-
-// MockOffchainClient is a mock for the Offchain client
-type MockOffchainClient struct {
-	mock.Mock
-}
-
-func (m *MockOffchainClient) FetchMetadata(uri string) (map[string]any, error) {
-	args := m.Called(uri)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(map[string]any), args.Error(1)
-}
-
-func (m *MockOffchainClient) FetchRawData(ctx context.Context, uri string) (data []byte, contentType string, err error) {
-	args := m.Called(ctx, uri)
-	if args.Get(0) == nil {
-		return nil, args.String(1), args.Error(2)
-	}
-	return args.Get(0).([]byte), args.String(1), args.Error(2)
-}
-
-func newTestService(cfg *Config, jupiterClient jupiter.ClientAPI, solanaClient *MockSolanaClient, offchainClient *MockOffchainClient) *Service {
+func newTestService(cfg *Config, jupiterClient jupiter.ClientAPI, solanaClient *solanamocks.MockClientAPI, offchainClient *offchainmocks.MockClientAPI) *Service {
 	// Create a service with the provided mock clients
 	service := &Service{
 		config:         cfg,
@@ -150,9 +37,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
-	mockJupiter := new(MockJupiterClient)
-	mockSolana := new(MockSolanaClient)
-	mockOffchain := new(MockOffchainClient)
+	mockJupiter := jupitermocks.NewMockClientAPI(t)
+	mockSolana := solanamocks.NewMockClientAPI(t)
+	mockOffchain := offchainmocks.NewMockClientAPI(t)
 
 	cfg := &Config{}
 	service := newTestService(cfg, mockJupiter, mockSolana, mockOffchain)
@@ -192,9 +79,9 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 	assert.NotNil(t, coin)
 	assert.Equal(t, httpIconURL, coin.IconUrl) // Icon comes from offchain metadata
 	assert.Equal(t, httpIconURL, coin.ResolvedIconUrl)
-	assert.Equal(t, initialNameFromBirdeye, coin.Name) // Name from Birdeye
+	assert.Equal(t, initialNameFromBirdeye, coin.Name)     // Name from Birdeye
 	assert.Equal(t, initialSymbolFromBirdeye, coin.Symbol) // Symbol from Birdeye
-	assert.Equal(t, initialPriceFromBirdeye, coin.Price) // Price from Birdeye
+	assert.Equal(t, initialPriceFromBirdeye, coin.Price)   // Price from Birdeye
 	assert.Equal(t, initialVolumeFromBirdeye, coin.Volume24h)
 	assert.Equal(t, initialMarketCapFromBirdeye, coin.MarketCap)
 	assert.Equal(t, initialTagsFromBirdeye, coin.Tags)
@@ -203,7 +90,6 @@ func TestEnrichCoinData_NonIPFSIconURI(t *testing.T) {
 	if strings.Contains(tt.name, "Jupiter Name") { // A bit of a hack to check if GetCoinInfo was expected for name/symbol
 		assert.Equal(t, 6, coin.Decimals)
 	}
-
 
 	mockJupiter.AssertExpectations(t)
 	mockSolana.AssertExpectations(t)
@@ -230,9 +116,9 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockJup := new(MockJupiterClient)
-			mockSol := new(MockSolanaClient)
-			mockOff := new(MockOffchainClient)
+			mockJup := jupitermocks.NewMockClientAPI(t)
+			mockSol := solanamocks.NewMockClientAPI(t)
+			mockOff := offchainmocks.NewMockClientAPI(t)
 
 			cfg := &Config{}
 			service := newTestService(cfg, mockJup, mockSol, mockOff)
@@ -260,7 +146,7 @@ func TestEnrichCoinData_StandardizeURL(t *testing.T) {
 			const defaultPrice = 1.0
 			const defaultVolume = 1000.0
 			const defaultMarketCap = 100000.0
-			var defaultTags = []string{"test-tag"}
+			defaultTags := []string{"test-tag"}
 
 			mockJup.On("GetCoinPrices", mock.Anything, []string{mintAddress}).Return(map[string]float64{mintAddress: defaultPrice}, nil).Maybe() // Called if initialPrice is 0
 
@@ -307,14 +193,14 @@ func TestEnrichCoinData_WithBirdeyeData(t *testing.T) {
 	defaultOffchainMetadata := map[string]any{"description": "Offchain description"} // Standard offchain response
 
 	tests := []struct {
-		name                 string
-		initialName          string
-		initialSymbol        string
-		initialIconURL       string
-		initialPrice         float64
-		initialVolume        float64
-		initialMarketCap     float64
-		initialTags          []string
+		name             string
+		initialName      string
+		initialSymbol    string
+		initialIconURL   string
+		initialPrice     float64
+		initialVolume    float64
+		initialMarketCap float64
+		initialTags      []string
 		// initialDecimals is not a direct parameter to EnrichCoinData.
 		// Its effect is tested by whether GetCoinInfo is called when name/symbol are present but decimals might be 0.
 		mockJupiterGetCoinInfoCalled bool
@@ -324,87 +210,87 @@ func TestEnrichCoinData_WithBirdeyeData(t *testing.T) {
 		jupiterPrices                map[string]float64 // Data Jupiter GetCoinPrices returns
 		jupiterGetPricesErr          error
 		// Mocking for Solana/Offchain (can be common for many tests unless specific failure is tested)
-		solanaMetadataErr    error
-		offchainMetadata     map[string]any
-		offchainMetadataErr  error
-		expectedCoinName     string
-		expectedCoinSymbol   string
-		expectedCoinDecimals int
-		expectedCoinIconUrl  string
-		expectedCoinPrice    float64
-		expectedCoinVolume   float64
+		solanaMetadataErr     error
+		offchainMetadata      map[string]any
+		offchainMetadataErr   error
+		expectedCoinName      string
+		expectedCoinSymbol    string
+		expectedCoinDecimals  int
+		expectedCoinIconUrl   string
+		expectedCoinPrice     float64
+		expectedCoinVolume    float64
 		expectedCoinMarketCap float64
-		expectedCoinTags     []string
-		expectedDescription  string
-		expectError          bool
+		expectedCoinTags      []string
+		expectedDescription   string
+		expectError           bool
 	}{
 		{
-			name:                 "All data from Birdeye (initial params), Decimals known",
-			initialName:          "Birdeye Coin", initialSymbol: "BIRD", initialIconURL: "http://birdeye.com/logo.png",
+			name:        "All data from Birdeye (initial params), Decimals known",
+			initialName: "Birdeye Coin", initialSymbol: "BIRD", initialIconURL: "http://birdeye.com/logo.png",
 			initialPrice: 2.5, initialVolume: 20000.0, initialMarketCap: 2000000.0, initialTags: []string{"birdeye-tag"},
 			mockJupiterGetCoinInfoCalled: false, // Not called if name, symbol are present and we assume decimals are also "known" (e.g. pre-filled in coin object if >0)
 			mockJupiterGetPricesCalled:   false, // Not called because price is provided
 			offchainMetadata:             map[string]any{"description": "Birdeye Full Desc"},
-			expectedCoinName: "Birdeye Coin", expectedCoinSymbol: "BIRD", expectedCoinDecimals: 0, // Decimals 0 if GetCoinInfo not called & Solana meta doesn't provide
+			expectedCoinName:             "Birdeye Coin", expectedCoinSymbol: "BIRD", expectedCoinDecimals: 0, // Decimals 0 if GetCoinInfo not called & Solana meta doesn't provide
 			expectedCoinIconUrl: "http://birdeye.com/logo.png", expectedCoinPrice: 2.5, expectedCoinVolume: 20000.0,
 			expectedCoinMarketCap: 2000000.0, expectedCoinTags: []string{"birdeye-tag"}, expectedDescription: "Birdeye Full Desc",
 		},
 		{
-			name:                 "Partial Birdeye - missing price, needs Jupiter price",
-			initialName:          "Partial Price", initialSymbol: "PPR", initialIconURL: "http://partial.png",
+			name:        "Partial Birdeye - missing price, needs Jupiter price",
+			initialName: "Partial Price", initialSymbol: "PPR", initialIconURL: "http://partial.png",
 			initialPrice: 0, initialVolume: 15000.0, initialMarketCap: 1500000.0, initialTags: []string{},
 			mockJupiterGetCoinInfoCalled: false, // Name, symbol provided
 			mockJupiterGetPricesCalled:   true,  // Called because initialPrice is 0
 			jupiterPrices:                map[string]float64{mintAddress: 3.0},
 			offchainMetadata:             defaultOffchainMetadata,
-			expectedCoinName: "Partial Price", expectedCoinSymbol: "PPR", expectedCoinDecimals: 0,
+			expectedCoinName:             "Partial Price", expectedCoinSymbol: "PPR", expectedCoinDecimals: 0,
 			expectedCoinIconUrl: "http://partial.png", expectedCoinPrice: 3.0, expectedCoinVolume: 15000.0,
 			expectedCoinMarketCap: 1500000.0, expectedCoinTags: []string{}, expectedDescription: "Offchain description",
 		},
 		{
-			name:                 "Partial Birdeye - missing symbol, needs Jupiter GetCoinInfo for Symbol & Decimals",
-			initialName:          "Partial Symbol", initialSymbol: "", initialIconURL: "http://partialsymbol.png",
+			name:        "Partial Birdeye - missing symbol, needs Jupiter GetCoinInfo for Symbol & Decimals",
+			initialName: "Partial Symbol", initialSymbol: "", initialIconURL: "http://partialsymbol.png",
 			initialPrice: 5.0, initialVolume: 5000.0, initialMarketCap: 500000.0, initialTags: []string{"tag2"},
-			mockJupiterGetCoinInfoCalled: true, // Called because symbol missing
+			mockJupiterGetCoinInfoCalled: true,                                                                    // Called because symbol missing
 			jupiterCoinInfo:              &jupiter.CoinListInfo{Name: "Jupiter Name", Symbol: "JUP", Decimals: 9}, // Jupiter provides symbol & decimals
-			mockJupiterGetPricesCalled:   false, // Price provided
+			mockJupiterGetPricesCalled:   false,                                                                   // Price provided
 			offchainMetadata:             defaultOffchainMetadata,
-			expectedCoinName: "Partial Symbol", expectedCoinSymbol: "JUP", expectedCoinDecimals: 9, // Symbol & Decimals from Jupiter
+			expectedCoinName:             "Partial Symbol", expectedCoinSymbol: "JUP", expectedCoinDecimals: 9, // Symbol & Decimals from Jupiter
 			expectedCoinIconUrl: "http://partialsymbol.png", expectedCoinPrice: 5.0, expectedCoinVolume: 5000.0,
 			expectedCoinMarketCap: 500000.0, expectedCoinTags: []string{"tag2"}, expectedDescription: "Offchain description",
 		},
 		{
-			name:                 "Jupiter GetCoinInfo provides better Icon and Tags",
-			initialName:          "Birdeye Main", initialSymbol: "BMAIN", initialIconURL: "", initialPrice: 2.5,
+			name:        "Jupiter GetCoinInfo provides better Icon and Tags",
+			initialName: "Birdeye Main", initialSymbol: "BMAIN", initialIconURL: "", initialPrice: 2.5,
 			initialVolume: 20000.0, initialMarketCap: 2000000.0, initialTags: []string{},
 			mockJupiterGetCoinInfoCalled: true, // Called because initial Icon/Tags are empty, and potentially for decimals
 			jupiterCoinInfo:              &jupiter.CoinListInfo{Name: "Jupiter Name", Symbol: "JUPITER", Decimals: 6, LogoURI: "http://jupiter.com/logo.png", Tags: []string{"jupiter-tag"}},
 			mockJupiterGetPricesCalled:   false,
 			offchainMetadata:             defaultOffchainMetadata,
-			expectedCoinName: "Birdeye Main", expectedCoinSymbol: "BMAIN", expectedCoinDecimals: 6, // Name/Symbol from Birdeye preferred
+			expectedCoinName:             "Birdeye Main", expectedCoinSymbol: "BMAIN", expectedCoinDecimals: 6, // Name/Symbol from Birdeye preferred
 			expectedCoinIconUrl: "http://jupiter.com/logo.png", expectedCoinPrice: 2.5, expectedCoinVolume: 20000.0, // Icon from Jupiter
 			expectedCoinMarketCap: 2000000.0, expectedCoinTags: []string{"jupiter-tag"}, expectedDescription: "Offchain description", // Tags from Jupiter
 		},
 		{
-			name: "No Birdeye data, all from Jupiter and chain",
+			name:        "No Birdeye data, all from Jupiter and chain",
 			initialName: "", initialSymbol: "", initialIconURL: "", initialPrice: 0, initialVolume: 0, initialMarketCap: 0, initialTags: []string{},
 			mockJupiterGetCoinInfoCalled: true,
 			jupiterCoinInfo:              &jupiter.CoinListInfo{Name: "Full Jupiter", Symbol: "FJUP", Decimals: 8, LogoURI: "http://jupiter.com/full.png", DailyVolume: 300.0, Tags: []string{"fjup-tag"}},
 			mockJupiterGetPricesCalled:   true,
 			jupiterPrices:                map[string]float64{mintAddress: 10.0},
 			offchainMetadata:             defaultOffchainMetadata,
-			expectedCoinName: "Full Jupiter", expectedCoinSymbol: "FJUP", expectedCoinDecimals: 8,
+			expectedCoinName:             "Full Jupiter", expectedCoinSymbol: "FJUP", expectedCoinDecimals: 8,
 			expectedCoinIconUrl: "http://jupiter.com/full.png", expectedCoinPrice: 10.0, expectedCoinVolume: 300.0,
 			expectedCoinMarketCap: 0, expectedCoinTags: []string{"fjup-tag"}, expectedDescription: "Offchain description", // MarketCap not from Jupiter GetCoinInfo
 		},
 		{
-			name: "Error from Jupiter GetCoinInfo, fallback to minimal",
+			name:        "Error from Jupiter GetCoinInfo, fallback to minimal",
 			initialName: "", initialSymbol: "", initialIconURL: "icon.png", initialPrice: 1, initialVolume: 100, initialMarketCap: 1000, initialTags: []string{},
 			mockJupiterGetCoinInfoCalled: true,
 			jupiterGetCoinInfoErr:        errors.New("jupiter GetCoinInfo failed"),
 			mockJupiterGetPricesCalled:   false, // Price is provided
 			offchainMetadata:             defaultOffchainMetadata,
-			expectedCoinName: "", expectedCoinSymbol: "", expectedCoinDecimals: 0, // Fallback due to error
+			expectedCoinName:             "", expectedCoinSymbol: "", expectedCoinDecimals: 0, // Fallback due to error
 			expectedCoinIconUrl: "icon.png", expectedCoinPrice: 1, expectedCoinVolume: 100,
 			expectedCoinMarketCap: 1000, expectedCoinTags: []string{}, expectedDescription: "Offchain description",
 		},
@@ -412,9 +298,9 @@ func TestEnrichCoinData_WithBirdeyeData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockJup := new(MockJupiterClient)
-			mockSol := new(MockSolanaClient)
-			mockOff := new(MockOffchainClient)
+			mockJup := jupitermocks.NewMockClientAPI(t)
+			mockSol := solanamocks.NewMockClientAPI(t)
+			mockOff := offchainmocks.NewMockClientAPI(t)
 
 			cfg := &Config{}
 			service := newTestService(cfg, mockJup, mockSol, mockOff)
@@ -444,7 +330,6 @@ func TestEnrichCoinData_WithBirdeyeData(t *testing.T) {
 
 			}
 
-
 			coin, err := service.EnrichCoinData(
 				context.Background(),
 				mintAddress,
@@ -454,16 +339,16 @@ func TestEnrichCoinData_WithBirdeyeData(t *testing.T) {
 
 			if tt.expectError { // This field is not used in current table, error is inferred from Jupiter/Solana/Offchain errors
 				assert.Error(t, err)
-			} else if tt.jupiterGetCoinInfoErr != nil && (tt.initialName == "" || tt.initialSymbol == "" ) && tt.jupiterCoinInfo == nil && tt.solanaMetadataErr == nil && tt.offchainMetadataErr != nil {
+			} else if tt.jupiterGetCoinInfoErr != nil && (tt.initialName == "" || tt.initialSymbol == "") && tt.jupiterCoinInfo == nil && tt.solanaMetadataErr == nil && tt.offchainMetadataErr != nil {
 				// If Jupiter fails AND offchain fails, and data was missing, then error.
 				assert.Error(t, err)
 			} else if tt.solanaMetadataErr != nil && tt.jupiterCoinInfo == nil && tt.jupiterPrices == nil {
-                 // If solana meta fails AND we had no prior jupiter data, it's an error.
-                 assert.Error(t, err)
-            } else if tt.offchainMetadataErr != nil && tt.jupiterCoinInfo == nil && tt.jupiterPrices == nil && tt.solanaMetadataErr == nil {
+				// If solana meta fails AND we had no prior jupiter data, it's an error.
+				assert.Error(t, err)
+			} else if tt.offchainMetadataErr != nil && tt.jupiterCoinInfo == nil && tt.jupiterPrices == nil && tt.solanaMetadataErr == nil {
 				// If offchain fails and we had no prior Jupiter data, it's an error.
 				assert.Error(t, err)
-			}else {
+			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, coin)
 				assert.Equal(t, tt.expectedCoinName, coin.Name)
