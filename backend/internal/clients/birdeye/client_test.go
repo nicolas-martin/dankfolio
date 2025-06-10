@@ -11,7 +11,7 @@ import (
 	"time"
 
 	birdeyeclient "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
-	clientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/mocks" // Renamed to avoid conflict
+	telementryMock "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +19,7 @@ const testAPIKey = "test-api-key"
 
 func TestGetTrendingTokens_Success(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := clientmocks.NewMockAPICallTracker(t)
+	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	mockResponse := birdeyeclient.TokenTrendingResponse{
 		Success: true,
@@ -68,7 +68,7 @@ func TestGetTrendingTokens_Success(t *testing.T) {
 
 func TestGetTrendingTokens_HttpError(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := clientmocks.NewMockAPICallTracker(t)
+	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 	errorBody := "{\"error\": \"internal server error\"}"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func TestGetTrendingTokens_HttpError(t *testing.T) {
 
 func TestGetTrendingTokens_JsonDecodingError(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := clientmocks.NewMockAPICallTracker(t)
+	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 	malformedJSON := "{\"success\": true, \"data\": [{\"address\": \"TOKEN_1\"" // Missing closing brackets
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +122,7 @@ func TestGetTrendingTokens_JsonDecodingError(t *testing.T) {
 
 func TestGetTrendingTokens_Timeout(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := clientmocks.NewMockAPICallTracker(t)
+	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(150 * time.Millisecond) // Delay to induce timeout
@@ -179,7 +179,7 @@ func TestGetTrendingTokens_Timeout(t *testing.T) {
 
 func TestGetTrendingTokens_NoApiKey(t *testing.T) {
 	expectedPath := "/defi/token_trending"
-	mockTracker := clientmocks.NewMockAPICallTracker(t)
+	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// X-API-KEY should not be present or be empty
@@ -209,7 +209,7 @@ func TestGetTrendingTokens_NoApiKey(t *testing.T) {
 
 func TestGetPriceHistory_Success(t *testing.T) {
 	expectedPath := "/history_price"
-	mockTracker := clientmocks.NewMockAPICallTracker(t)
+	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 
 	params := birdeyeclient.PriceHistoryParams{
 		Address:     "TEST_ADDRESS",
@@ -267,7 +267,7 @@ func TestGetPriceHistory_Success(t *testing.T) {
 
 func TestGetPriceHistory_HttpError(t *testing.T) {
 	expectedPath := "/history_price"
-	mockTracker := clientmocks.NewMockAPICallTracker(t)
+	mockTracker := telementryMock.NewMockTelemetryAPI(t)
 	errorBody := `{"error": "server blew up"}`
 
 	params := birdeyeclient.PriceHistoryParams{

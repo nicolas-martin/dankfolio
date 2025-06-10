@@ -10,7 +10,6 @@ import (
 
 	"github.com/joho/godotenv"
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
@@ -35,10 +34,9 @@ func main() {
 		Timeout: 10 * time.Second,
 	}
 	// Create API tracker
-	apiTracker := clients.NewAPICallTracker(nil, nil) // Passing nil for db.Store and *slog.Logger
 
-	birdeyeClient := birdeye.NewClient(httpClient, "https://public-api.birdeye.so/defi", apiKey, apiTracker)
-	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "", apiTracker)
+	birdeyeClient := birdeye.NewClient(httpClient, "https://public-api.birdeye.so/defi", apiKey, nil)
+	jupiterClient := jupiter.NewClient(httpClient, "https://api.jup.ag", "", nil)
 
 	// Initialize price service with clients
 	s := price.NewService(birdeyeClient, jupiterClient, nil, nil)
