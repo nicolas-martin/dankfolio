@@ -5,7 +5,6 @@ import { Buffer } from 'buffer';
 import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
 import { Base58PrivateKey } from './cryptoUtils'; // Import the branded type
-import {env} from '@/utils/env'
 
 export const KEYCHAIN_SERVICE = 'com.dankfolio.wallet';
 
@@ -29,12 +28,13 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 		// Use different accessibility settings for simulator vs device
 		// iOS simulators have issues with WHEN_UNLOCKED, use WHEN_UNLOCKED_THIS_DEVICE_ONLY instead
 		// This is a well-known issue: https://github.com/oblador/react-native-keychain/issues/478
-		const isSimulator = __DEV__ && Platform.OS === 'ios'
+		const isSimulator = __DEV__ && Platform.OS === 'ios';
 		const accessibilityOption = isSimulator 
 			? Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY 
 			: Keychain.ACCESSIBLE.WHEN_UNLOCKED;
 		
 		logger.info(`Using keychain accessibility: ${isSimulator ? 'WHEN_UNLOCKED_THIS_DEVICE_ONLY (simulator)' : 'WHEN_UNLOCKED (device)'}`);
+		// Note: This logs once per storeCredentials call
 
 		await Keychain.setGenericPassword('dankfolio_wallet', credentials, {
 			service: KEYCHAIN_SERVICE,

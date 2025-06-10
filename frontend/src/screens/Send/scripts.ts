@@ -1,5 +1,4 @@
 import React from 'react';
-import type { NodeJS } from 'node'; // Added NodeJS import for Timeout type
 import { TokenTransferFormData } from './types';
 import { Wallet, Coin } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
@@ -206,7 +205,7 @@ export const getDefaultSolanaToken = (tokens: PortfolioToken[]): PortfolioToken 
 
 // --- Polling Functions ---
 export const stopPolling = (
-	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>,
+	pollingIntervalRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
 	setIsLoadingTrade: (loading: boolean) => void
 ) => {
 	if (pollingIntervalRef.current) {
@@ -271,7 +270,7 @@ export const startPolling = (
 	txHash: string,
 	pollFn: () => Promise<void>,
 	stopPollingFn: () => void,
-	pollingIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>
+	pollingIntervalRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
 ) => {
 	// Execute first poll immediately
 	pollFn();

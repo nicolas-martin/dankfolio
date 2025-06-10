@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, useTheme, Icon } from 'react-native-paper';
-import type { NodeJS } from 'node'; // Added NodeJS import for Timeout type
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions'; // Added
 import TokenSelector from 'components/Common/TokenSelector';
@@ -45,7 +44,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending');
 	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
 	const [pollingError, setPollingError] = useState<string | null>(null);
-	const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+	const pollingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	// State for Solscan Verification Modal
 	const [verificationInfo, setVerificationInfo] = useState<{
@@ -249,10 +248,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			componentStartPolling(txHash);
 
 		} catch (error: unknown) {
-			const errorMessage = error instanceof Error ? 
-				(error.message || 'Failed to send tokens') : 
+			const errorMessage = error instanceof Error ?
+				(error.message || 'Failed to send tokens') :
 				'An unknown error occurred while sending tokens';
-			
+
 			// Show both validation error and toast for better UX
 			setValidationError(errorMessage);
 			showToast({
@@ -281,12 +280,8 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		// Reset form fields
 		setAmount('');
 		setRecipientAddress('');
-		// Potentially reset selectedToken to default if desired
-		// if (tokens.length > 0) {
-		// 	const solToken = getDefaultSolanaToken(tokens);
-		// 	if (solToken) setSelectedToken(solToken);
-		// }
-		navigation.goBack();
+
+		navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
 	};
 
 	const renderNoWalletState = () => (
@@ -333,10 +328,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 		return (
 			<View style={styles.amountCard}>
-                <AmountPercentageButtons
-                    balance={selectedToken.amount}
-                    onSelectAmount={handleAmountChange}
-                />
+				<AmountPercentageButtons
+					balance={selectedToken.amount}
+					onSelectAmount={handleAmountChange}
+				/>
 			</View>
 		);
 	};
@@ -501,9 +496,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				}}
 				onConfirm={handleConfirmSubmit}
 				fromToken={selectedToken?.coin}
-				toToken={selectedToken?.coin}
 				fromAmount={amount}
 				toAmount="0"
+				operationType="send"
+				recipientAddress={recipientAddress}
 				fees={{
 					priceImpactPct: "0",
 					totalFee: "0",
