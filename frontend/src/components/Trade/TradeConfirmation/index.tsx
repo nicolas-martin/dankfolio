@@ -54,6 +54,9 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	);
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
+		if (!token.resolvedIconUrl) {
+			return <View style={[styles.tokenIcon, { backgroundColor: '#f0f0f0' }]} />;
+		}
 		return (
 			<CachedImage
 				uri={token.resolvedIconUrl}
@@ -102,10 +105,10 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						</>
 					) : (
 						<>
-							<Text style={styles.tokenSymbol} testID={`${testIdPrefix}-token-symbol-${token.mintAddress}`}>
+							<Text style={styles.tokenSymbol} testID={`${testIdPrefix}-token-symbol-${token?.mintAddress?.toLowerCase() || 'unknown'}`}>
 								{token.symbol}
 							</Text>
-							<Text style={styles.tokenName} testID={`${testIdPrefix}-token-name-${token.mintAddress}`}>
+							<Text style={styles.tokenName} testID={`${testIdPrefix}-token-name-${token?.mintAddress?.toLowerCase() || 'unknown'}`}>
 								{token.name}
 							</Text>
 						</>

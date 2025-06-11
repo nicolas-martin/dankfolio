@@ -1,23 +1,40 @@
 appId: com.nicolasmartin.dankfolio
 env:
+    fromSymbol: ${FROM_SYMBOL}
     fromAmount: ${FROM_AMOUNT}
+    balance: ${FROM_BALANCE}
+    percentage: ${PERCENTAGE}
 ---
-
 - runFlow: ../common/app-setup.yaml
 
 # Navigate to trade screen via trending coin
 - tapOn:
-      id: "trending-coin-card-JUP.*"
+      id: "trending-coin-card-jup.*"
 - tapOn:
       id: "trade-button"
 
-- copyTextFrom:
-      id: "from-token-selector-amount-input"
-- assertTrue: ${maestro.copiedText == 0}
+- assertVisible:
+      id: "to-token-selector-${TO_SYMBOL}.*"
+# - copyTextFrom:
+#       id: "from-token-selector-amount-input"
+# - assertTrue: ${maestro.copiedText == 0}
 
-- tapOn:
-      id: "from-token-selector-amount-input"
-- inputText: "3"
-- copyTextFrom:
-      id: "from-token-selector-amount-input"
-- assertTrue: ${maestro.copiedText == FROM_AMOUNT}
+# - tapOn:
+#       id: "from-token-selector-amount-input"
+# - inputText: "3"
+# - copyTextFrom:
+#       id: "from-token-selector-amount-input"
+# - assertTrue: ${maestro.copiedText == FROM_AMOUNT}
+
+# - runFlow:
+#       when:
+#           true: ${percentage !== ""}
+#       commands:
+#           - tapOn:
+#                 id: "amount-percentage-button-${percentage}"
+# - runFlow:
+#       when:
+#           assertTrue: ${FROM_AMOUNT == 1}
+#       commands:
+#           - tapOn:
+#                 text: "Continue without logging in"

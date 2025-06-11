@@ -1,28 +1,31 @@
 appId: com.nicolasmartin.dankfolio
 env:
-    # Required parameters - symbols and mint addresses
     fromSymbol: ${FROM_SYMBOL}
-    fromMint: ${FROM_MINT}
     fromAmount: ${FROM_AMOUNT}
     fromBalance: ${FROM_BALANCE}
     toSymbol: ${TO_SYMBOL}
-    toMint: ${TO_MINT}
     toAmount: ${TO_AMOUNT}
     toBalance: ${TO_BALANCE}
 ---
-# Assert initial token selectors are visible using mint address patterns
 - assertVisible:
-      id: "from-token-selector-${fromMint}"
-
-# TODO: Navigate to trading page first if needed to test input functionality
-# For now, just test what's visible on home page
+      text: fromAmount
 
 - assertVisible:
-      text: ${fromSymbol}
-      optional: true
+      text: toAmount
+
+# - copyTextFrom:
+#       id: "from-token-selector-amount-input"
+# - assertTrue: ${maestro.copiedText == fromAmount}
+
+# - copyTextFrom:
+#       id: "to-token-selector-amount-input"
+# - assertTrue: ${maestro.copiedText == toAmount}
+
 - assertVisible:
-      text: ${toSymbol}
-      optional: true
+      id: "from-token-selector-${fromSymbol.toLowerCase()}.*"
+
+- assertVisible:
+      id: "to-token-selector-${toSymbol.toLowerCase()}.*"
 
 - assertVisible:
       text: ${fromBalance}

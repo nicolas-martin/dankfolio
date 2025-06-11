@@ -21,24 +21,27 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 		<TouchableOpacity
 			style={styles.container}
 			onPress={handlePress}
-			testID={`${testIdPrefix}-card-${coin.mintAddress}`}
-			accessible={false}
-			importantForAccessibility="no-hide-descendants"
+			testID={`${testIdPrefix}-card-${coin.mintAddress.toLowerCase()}`}
+			accessible={true}
 			accessibilityRole="button"
+			accessibilityLabel={`${coin.symbol.toLowerCase()} ticker card`}
+			accessibilityHint="Double tap to view coin details"
 			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 		>
 			<View style={styles.logoContainer}>
-				<CachedImage
-					uri={coin.resolvedIconUrl}
-					size={48}
-					borderRadius={24}
-					testID={`${testIdPrefix}-icon-${coin.mintAddress}`}
-				/>
+				{coin.resolvedIconUrl && (
+					<CachedImage
+						uri={coin.resolvedIconUrl}
+						size={48}
+						borderRadius={24}
+						testID={`${testIdPrefix}-icon-${coin.mintAddress.toLowerCase()}`}
+					/>
+				)}
 			</View>
-			<Text style={styles.symbol} numberOfLines={1} testID={`${testIdPrefix}-symbol-${coin.mintAddress}`}>
+			<Text style={styles.symbol} numberOfLines={1} testID={`${testIdPrefix}-symbol-${coin.mintAddress.toLowerCase()}`}>
 				{coin.symbol}
 			</Text>
-			<Text style={styles.timeAgo} numberOfLines={1} testID={`${testIdPrefix}-time-${coin.mintAddress}`}>
+			<Text style={styles.timeAgo} numberOfLines={1} testID={`${testIdPrefix}-time-${coin.mintAddress.toLowerCase()}`}>
 				{timeAgo}
 			</Text>
 			{coin.change24h !== undefined && (
@@ -47,7 +50,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 					coin.change24h > 0 ? styles.changePositive :
 						coin.change24h < 0 ? styles.changeNegative :
 							styles.changeNeutral
-				]} numberOfLines={1} testID={`${testIdPrefix}-change-${coin.mintAddress}`}>
+				]} numberOfLines={1} testID={`${testIdPrefix}-change-${coin.mintAddress.toLowerCase()}`}>
 					{formatPercentage(coin.change24h, 1, true)}
 				</Text>
 			)}
