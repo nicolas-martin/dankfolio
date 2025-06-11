@@ -13,7 +13,7 @@ env:
       when:
           visible:
               id: "coin-card-${JUP_ADDRESS}"
-      file: ../components/coin-card-element.yaml
+      file: ../components/coin-card.yaml
       env:
           COIN_ADDRESS: "${JUP_ADDRESS}"
 
@@ -21,14 +21,14 @@ env:
       when:
           visible:
               id: "coin-card-${SOL_ADDRESS}"
-      file: ../components/coin-card-element.yaml
+      file: ../components/coin-card.yaml
       env:
           COIN_ADDRESS: "${SOL_ADDRESS}"
 
 - runFlow:
       when:
           visible:
-            id: "coin-card-${BONK_ADDRESS}"
-      file: ../components/coin-card-element.yaml
+              id: "coin-card-${BONK_ADDRESS}"
+      file: ../components/coin-card.yaml
       env:
           COIN_ADDRESS: "${BONK_ADDRESS}"

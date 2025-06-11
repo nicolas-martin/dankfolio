@@ -13,7 +13,7 @@ env:
       id: "new-coin-card-${NEW_COIN_ADDRESS}"
 
 - runFlow:
-      file: ../components/new-coin-card-element.yaml
+      file: ../components/new-coin-card.yaml
       env:
           COIN_ADDRESS: "${NEW_COIN_ADDRESS}"
 
@@ -22,7 +22,7 @@ env:
       id: "new-coin-card-${ROCKET_COIN_ADDRESS}"
 
 - runFlow:
-      file: ../components/new-coin-card-element.yaml
+      file: ../components/new-coin-card.yaml
       env:
           COIN_ADDRESS: "${ROCKET_COIN_ADDRESS}"
 
@@ -31,6 +31,6 @@ env:
       id: "new-coin-card-${DIAMOND_COIN_ADDRESS}"
 
 - runFlow:
-      file: ../components/new-coin-card-element.yaml
+      file: ../components/new-coin-card.yaml
       env:
           COIN_ADDRESS: "${DIAMOND_COIN_ADDRESS}"
