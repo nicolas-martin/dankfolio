@@ -39,7 +39,6 @@ env:
 - assertVisible:
       id: "to-token-selector-amount-input"
 
-# HACK: idk why we have to press here or else the button doesn't work
 - tapOn: FROM
 - tapOn:
       id: "amount-percentage-text-50"
