@@ -6,7 +6,7 @@ import { useToast } from '@components/Common/Toast';
 import { formatPrice, formatValueChange, formatAddress } from '@/utils/numberFormat';
 import { copyToClipboard } from './coindetails_scripts';
 import { createStyles } from './coindetails_styles';
-import { CachedImage } from '@/components/Common/CachedImage';
+import CachedImage from '@/components/Common/CachedImage';
 import Odometer from '@components/Odometer';
 
 import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Updated import path

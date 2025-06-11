@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
-import { useTheme, Text, Icon } from 'react-native-paper';
+import { useTheme, Text, Icon, Button } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
 import { fetchPriceHistory } from '@/screens/CoinDetail/coindetail_scripts';
@@ -18,6 +18,7 @@ import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
 import { env } from '@/utils/env';
 import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
+import { debugCacheStatus, testExpoImageCache, testSourceConsistency } from '@/components/Common/CachedImage/scripts';
 
 const HomeScreen = () => {
 	const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -262,7 +263,7 @@ const HomeScreen = () => {
 
 		await trendingAndPortfolioPromise; // Wait for trending and portfolio to complete
 
-		logger.log('[HomeScreen] � Completed home screen data fetch.');
+		logger.log('[HomeScreen] 🟢 Completed home screen data fetch.');
 	}, [wallet, fetchAvailableCoins, fetchPortfolioBalance]);
 
 	// Separate function for fetching new coins
@@ -302,7 +303,7 @@ const HomeScreen = () => {
 		setIsRefreshing(true);
 		try {
 			// Force refresh new coins on manual refresh
-			logger.log('[HomeScreen] � Manual refresh triggered - forcing new coins refresh');
+			logger.log('[HomeScreen] 🔄 Manual refresh triggered - forcing new coins refresh');
 			await Promise.all([
 				fetchAvailableCoins(true), // For trending coins
 				fetchNewCoins(10, true), // Force refresh new coins (bypasses cache)
@@ -368,6 +369,28 @@ const HomeScreen = () => {
 		/>
 	);
 
+	// Debug cache function - moved outside render function to prevent hooks order issues
+	const handleDebugCache = useCallback(async () => {
+		logger.info('[HomeScreen] 🔧 Starting enhanced cache debug...');
+		
+		const sampleImageUrl = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+		
+		// Test expo-image cache configuration
+		await testExpoImageCache(sampleImageUrl);
+		
+		// Test network caching for a sample image
+		await debugCacheStatus(sampleImageUrl);
+		
+		// Test source object consistency
+		testSourceConsistency(sampleImageUrl);
+		
+		showToast({
+			type: 'info',
+			message: 'Enhanced cache debug completed - check logs',
+			duration: 3000
+		});
+	}, [showToast]);
+
 	const renderCoinsList = () => {
 		const hasTrendingCoins = availableCoins.length > 0;
 
@@ -391,6 +414,20 @@ const HomeScreen = () => {
 					/>
 				}
 			>
+				{/* Debug Cache Button - Only show in development */}
+				{__DEV__ && (
+					<View style={{ padding: 16, alignItems: 'center' }}>
+						<Button 
+							mode="outlined" 
+							onPress={handleDebugCache}
+							icon="bug"
+							compact
+						>
+							Debug Cache
+						</Button>
+					</View>
+				)}
+
 				{/* Show placeholder for NewCoins section when initially loading */}
 				{isFirstTimeLoading ? renderPlaceholderNewCoinsSection() : <NewCoins />}
 

@@ -1,85 +1,61 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { Image, type ImageLoadEventData, type ImageErrorEventData } from 'expo-image';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet } from 'react-native';
+import ExpoCachedImage from 'expo-cached-image';
 import { CachedImageProps } from './types';
-import { logger } from '@/utils/logger';
+import { logCacheResult } from './scripts';
 
-// Default blurhash for token images
-const DEFAULT_TOKEN_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
-
-export const CachedImage: React.FC<CachedImageProps> = ({
+const CachedImage: React.FC<CachedImageProps> = ({
 	uri,
-	size = 40,
-	borderRadius = 20,
-	blurhash,
-	placeholder,
+	size = 50,
 	style,
-	onLoad,
-	onError,
+	placeholder,
 	testID,
-	...imageProps
+	...props
 }) => {
-	const [hasError, setHasError] = useState(false);
-	const loadStartTimeRef = useRef<number | null>(null);
+	const [loadStartTime, setLoadStartTime] = useState<number>(0);
 
-	// Start timing when image begins loading
 	const handleLoadStart = useCallback(() => {
-		loadStartTimeRef.current = Date.now();
+		setLoadStartTime(Date.now());
 	}, []);
 
-	// Log cache hit/miss and load time
-	const handleLoad = useCallback((event: ImageLoadEventData) => {
-		const loadTime = loadStartTimeRef.current ? Date.now() - loadStartTimeRef.current : 0;
+	const handleLoadEnd = useCallback(() => {
+		if (loadStartTime > 0) {
+			const loadTime = Date.now() - loadStartTime;
+			const cacheKey = `${uri}-${size}x${size}`;
+			logCacheResult(loadTime, uri, cacheKey);
+		}
+	}, [loadStartTime, uri, size]);
 
-		const { cacheType } = event;
-		logger.info(`[CachedImage] event: ${JSON.stringify(event)}`);
-		
-		// Simple cache detection
-		const isHit = cacheType !== 'none' || loadTime === 0;
-		const status = isHit ? 'Cache Hit' : 'Cache Miss';
-		const emoji = isHit ? '⚡': '🐢'
-		
-		logger.info(`[CachedImage]!!! ${emoji} ${status} | Type: ${cacheType} | Time: ${loadTime}ms | URL: ${uri}`);
-		
-		setHasError(false);
-		onLoad?.(event);
-	}, [uri, onLoad]);
+	const handleError = useCallback((error?: unknown) => {
+		console.warn('[CachedImage] ❌ Load Error:', uri, error);
+	}, [uri]);
 
-	// Log errors with URL
-	const handleError = useCallback((error: ImageErrorEventData) => {
-		const loadTime = loadStartTimeRef.current ? Date.now() - loadStartTimeRef.current : 0;
-		logger.error(`[CachedImage] ❌ Error | Time: ${loadTime}ms | URL: ${uri} | Error:`, error);
-		
-		setHasError(true);
-		onError?.(error);
-	}, [uri, onError]);
-
-	// Simple placeholder setup
-	const imagePlaceholder = placeholder || { blurhash: blurhash || DEFAULT_TOKEN_BLURHASH };
-
-	if (!uri || hasError) {
-		return (
-			<Image
-				style={[{ width: size, height: size, borderRadius }, style]}
-				placeholder={imagePlaceholder}
-				testID={testID}
-			/>
-		);
+	if (!uri) {
+		return <View style={[placeholderStyles.placeholder, { width: size, height: size }]} />;
 	}
 
 	return (
-		<Image
+		<ExpoCachedImage
 			source={{ uri }}
-			style={[{ width: size, height: size, borderRadius }, style]}
-			contentFit="cover"
-			cachePolicy="memory-disk"
-			placeholder={imagePlaceholder}
+			style={[{ width: size, height: size }, style]}
+			cacheKey={`${uri}-${size}x${size}`}
 			onLoadStart={handleLoadStart}
-			onLoad={handleLoad}
+			onLoadEnd={handleLoadEnd}
 			onError={handleError}
 			testID={testID}
-			priority="normal"
-			{...imageProps}
+			{...props}
 		/>
 	);
-}; 
+};
+
+const PLACEHOLDER_COLOR = '#f0f0f0';
+
+const placeholderStyles = StyleSheet.create({
+	placeholder: {
+		backgroundColor: PLACEHOLDER_COLOR,
+		borderRadius: 8,
+	},
+});
+
+export default CachedImage; 
 

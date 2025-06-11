@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, TouchableOpacity, Dimensions } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { CachedImage } from '@/components/Common/CachedImage';
+import CachedImage from '@/components/Common/CachedImage';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import SparklineChart from '@/components/Chart/SparklineChart'; // Added import
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '@/utils/numberFormat';

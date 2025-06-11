@@ -7,7 +7,7 @@ import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
 import { createStyles } from './styles';
 import { Coin } from '@/types';
-import { CachedImage } from '@/components/Common/CachedImage';
+import CachedImage from '@/components/Common/CachedImage';
 import { formatPrice } from '@/utils/numberFormat';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({

@@ -2,7 +2,7 @@ import { ImageProps } from 'expo-image';
 import { ImageStyle } from 'react-native';
 
 export interface CachedImageProps extends Omit<ImageProps, 'source' | 'style'> {
-	uri?: string;
+	uri: string;
 	size?: number;
 	borderRadius?: number;
 	fallbackText?: string;
@@ -11,4 +11,5 @@ export interface CachedImageProps extends Omit<ImageProps, 'source' | 'style'> {
 	testID?: string;
 	blurhash?: string;
 	placeholder?: ImageProps['placeholder'];
+	expiresIn?: number; // Cache expiration time in seconds
 } 
