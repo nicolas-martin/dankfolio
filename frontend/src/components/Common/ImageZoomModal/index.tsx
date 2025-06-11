@@ -21,42 +21,37 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 	imageUri,
 }) => {
 	const styles = createStyles();
-	const progress = useSharedValue(0);
-	const scale = useSharedValue(0);
+	const animationValue = useSharedValue(0);
 
 	useEffect(() => {
+		let timing = 0;
 		if (isVisible) {
-			progress.value = withTiming(1, {
-				duration: 300,
-				easing: Easing.inOut(Easing.quad),
-			});
-			scale.value = withTiming(1, {
-				duration: 300,
-				easing: Easing.inOut(Easing.quad),
-			});
-		} else {
-			progress.value = withTiming(0, {
-				duration: 300,
-				easing: Easing.inOut(Easing.quad),
-			});
-			scale.value = withTiming(0, { // Or 0.8 for a zoom-out effect
-				duration: 300,
-				easing: Easing.inOut(Easing.quad),
-			});
+			timing = 1;
 		}
-	}, [isVisible, progress, scale]);
+		
+		animationValue.value = withTiming(timing, {
+			duration: 150,
+			easing: Easing.linear,
+		});
+	}, [isVisible, animationValue]);
 
 	const animatedStyle = useAnimatedStyle(() => {
 		return {
-			opacity: progress.value,
-			transform: [{ scale: scale.value }],
+			opacity: animationValue.value,
+			transform: [{ scale: animationValue.value }],
+		};
+	});
+
+	const backgroundStyle = useAnimatedStyle(() => {
+		return {
+			opacity: animationValue.value,
 		};
 	});
 
 	// Return null if not visible and animation is complete to prevent flicker
 	// This logic might need adjustment based on how `Modal` handles visibility and animation state.
 	// For now, we rely on Modal's `visible` prop primarily.
-	if (!isVisible && progress.value === 0) return null;
+	if (!isVisible && animationValue.value === 0) return null;
 
 
 	return (
@@ -66,7 +61,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 			onRequestClose={onClose}
 			// animationType="fade" // Removed
 		>
-			<Animated.View style={[styles.blurContainer, animatedStyle]}>
+			<Animated.View style={[styles.blurContainer, backgroundStyle]}>
 				<BlurView
 					style={styles.blurContainer} // Keep original styles for BlurView if necessary
 					intensity={30}
@@ -82,11 +77,13 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 								activeOpacity={1}
 								onPress={(e) => e.stopPropagation()}
 							>
-								<Image
-									source={{ uri: imageUri || '' }}
-									style={styles.image}
-									resizeMode="cover"
-								/>
+								<Animated.View style={animatedStyle}>
+									<Image
+										source={{ uri: imageUri || '' }}
+										style={styles.image}
+										resizeMode="cover"
+									/>
+								</Animated.View>
 							</TouchableOpacity>
 						</View>
 					</TouchableOpacity>
