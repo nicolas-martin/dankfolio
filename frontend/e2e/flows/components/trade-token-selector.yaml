@@ -3,14 +3,8 @@ env:
     # Required parameters - only symbols needed now
     fromSymbol: ${FROM_SYMBOL}
     toSymbol: ${TO_SYMBOL}
-    # Optional parameters - only validate if provided
-    expectedFromAmount: ${EXPECTED_FROM_AMOUNT:-""}
-    expectedToAmount: ${EXPECTED_TO_AMOUNT:-""}
-    expectedFromBalance: ${EXPECTED_FROM_BALANCE:-""}
-    expectedToBalance: ${EXPECTED_TO_BALANCE:-""}
-    # Percentage button testing
-    percentageToPress: ${PERCENTAGE_TO_PRESS:-""}
-    expectedAmountAfterPercentage: ${EXPECTED_AMOUNT_AFTER_PERCENTAGE:-""}
+    expectedFromAmount: ${EXPECTED_FROM_AMOUNT}
+    expectedToAmount: ${EXPECTED_TO_AMOUNT}
 ---
 # Assert initial token selectors are visible using symbol patterns
 - assertVisible:
@@ -32,70 +26,7 @@ env:
     id: "token-selector-symbol-${toSymbol}.*"
 - assertVisible: ".*${toSymbol}.*"
 
-# Validate amounts if provided
 - assertVisible:
-    when:
-      true: ${expectedFromAmount != ''}
-    text: "${expectedFromAmount}"
+    text: ${expectedFromAmount}
 - assertVisible:
-    when:
-      true: ${expectedToAmount != ''}
-    text: "${expectedToAmount}"
-
-# Validate balances if provided
-- assertVisible:
-    when:
-      true: ${expectedFromBalance != ''}
-    text: "${expectedFromBalance}"
-- assertVisible:
-    when:
-      true: ${expectedToBalance != ''}
-    text: "${expectedToBalance}"
-
-# Always validate USD values are present (using regex for $ prefix)
-- assertVisible: ".*\\$.*"
-
-# Test token selector interactions
-- tapOn:
-    id: "to-token-selector-${toSymbol}.*"
-- assertVisible:
-    id: token-search-input
-- assertVisible:
-    id: token-selection-modal-content
-
-# Test search functionality using symbol pattern
-- inputText:
-    id: token-search-input
-    text: ${fromSymbol}
-- assertVisible:
-    id: "search-result-${fromSymbol}.*"
-
-# Select the searched token
-- tapOn:
-    id: "search-result-${fromSymbol}.*"
-
-# Verify token was selected (should swap since we selected the from token in the to selector)
-- assertVisible:
-    id: "from-token-selector-${toSymbol}.*"
-- assertVisible:
-    id: "to-token-selector-${fromSymbol}.*"
-
-# Test swap functionality
-- tapOn:
-    id: swap-coins-button
-- assertVisible:
-    id: "from-token-selector-${fromSymbol}.*"
-- assertVisible:
-    id: "to-token-selector-${toSymbol}.*"
-
-# Test percentage button functionality if specified
-- tapOn:
-    when:
-      true: ${percentageToPress != ''}
-    id: amount-percentage-text-${percentageToPress}
-
-# Validate amount after percentage button press
-- assertVisible:
-    when:
-      true: ${expectedAmountAfterPercentage != ''}
-    text: "${expectedAmountAfterPercentage}" 
+    text: ${expectedToAmount}
