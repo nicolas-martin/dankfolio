@@ -78,7 +78,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	// Unused props - satisfying linter
 	void __selectedToken;
 	void __testID;
-	
+
 	const theme = useTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
@@ -105,7 +105,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	// Optimized filtering with stable references to prevent flicker
 	const filteredCoins = useMemo(() => {
 		const maxResults = 100; // Limit for performance
-		
+
 		if (!searchQuery.trim()) {
 			// Return first 50 coins when no search - stable reference
 			return baseList.slice(0, 50);
@@ -116,7 +116,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			coin.symbol.toLowerCase().includes(query) ||
 			coin.name.toLowerCase().includes(query)
 		);
-		
+
 		// Limit search results and ensure stable reference
 		return filtered.slice(0, maxResults);
 	}, [baseList, searchQuery]);
@@ -163,7 +163,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
 		logger.info('renderItem', coin);
 		const portfolioToken = portfolioTokenMap.get(coin.mintAddress);
-		
+
 		return (
 			<TokenItem
 				coin={coin}
@@ -172,7 +172,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				styles={styles}
 			/>
 		);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [handleTokenSelect, portfolioTokenMap]);
 
 	// Memoize key extractor
@@ -260,7 +260,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 }) => {
 	// Unused props - satisfying linter
 	void __style;
-	
+
 	const amountPlaceholder = '0';
 	const theme = useTheme();
 	const styles = useMemo(() => createStyles(theme), [theme]);
@@ -305,7 +305,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol}` : "Select token"}
 					>
 						<View style={styles.tokenInfo}>
-							{selectedToken ? (
+							{selectedToken && selectedToken.resolvedIconUrl ? (
 								<>
 									<CachedImage
 										uri={selectedToken.resolvedIconUrl}
@@ -347,8 +347,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 										keyboardType="decimal-pad"
 										editable={isAmountEditable}
 									/>
-									<Text 
-										style={styles.valueText} 
+									<Text
+										style={styles.valueText}
 										{...(testID && { testID: `${testID}-usd-value` })}
 									>
 										{`$${calculatedValue}`}
@@ -357,8 +357,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							)}
 							{/* note: HIDE FOR NOW */}
 							{portfolioToken && ( // Corrected constant binary expression
-								<Text 
-									style={styles.valueText} 
+								<Text
+									style={styles.valueText}
 									{...(testID && { testID: `${testID}-balance` })}
 								>
 									{portfolioToken.amount}

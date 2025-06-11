@@ -1,0 +1,23 @@
+appId: com.nicolasmartin.dankfolio
+env:
+    fromAmount: ${FROM_AMOUNT}
+---
+
+- runFlow: ../common/app-setup.yaml
+
+# Navigate to trade screen via trending coin
+- tapOn:
+      id: "trending-coin-card-JUP.*"
+- tapOn:
+      id: "trade-button"
+
+- copyTextFrom:
+      id: "from-token-selector-amount-input"
+- assertTrue: ${maestro.copiedText == 0}
+
+- tapOn:
+      id: "from-token-selector-amount-input"
+- inputText: "3"
+- copyTextFrom:
+      id: "from-token-selector-amount-input"
+- assertTrue: ${maestro.copiedText == FROM_AMOUNT}

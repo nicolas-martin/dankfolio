@@ -4,6 +4,11 @@ env:
     solSymbol: "SOL"
     dankSymbol: "DANK"
     usdcSymbol: "USDC"
+    # Mint addresses for testIDs
+    solMint: "So11111111111111111111111111111111111111112"
+    jupMint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+    dankMint: "DankCoin1111111111111111111111111111111"
+    usdcMint: "USDCWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 ---
 - runFlow: ../common/app-setup.yaml
 
@@ -15,13 +20,16 @@ env:
 
 # Test 1: Initial SOL -> JUP setup with amount validation
 - runFlow:
-    file: ../components/trade-token-selector.yaml
-    env:
-      FROM_SYMBOL: ${solSymbol}
-      TO_SYMBOL: ${jupSymbol}
-      EXPECTED_FROM_AMOUNT: ""
-      EXPECTED_TO_AMOUNT: ""
-
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${solSymbol}
+          FROM_MINT: ${solMint}
+          FROM_AMOUNT: ""
+          FROM_BALANCE: "2.5"
+          TO_SYMBOL: ${jupSymbol}
+          TO_MINT: ${jupMint}
+          TO_AMOUNT: "0"
+          TO_BALANCE: "0"
 # # Test 2: Change TO token to DANK and validate with amounts
 # - tapOn:
 #       id: "to-token-selector-JUP.*"
