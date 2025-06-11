@@ -16,7 +16,7 @@ import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
 
 // Memoized icon component to prevent unnecessary re-renders
-const RenderIcon = React.memo<{ iconUrl: string | undefined; styles: ReturnType<typeof createStyles> }>(({ iconUrl, styles }) => {
+const RenderIcon = React.memo<{ iconUrl: string; styles: ReturnType<typeof createStyles> }>(({ iconUrl, styles }) => {
 	return (
 		<CachedImage
 			uri={iconUrl}
@@ -40,14 +40,19 @@ const TokenItem = React.memo<{
 		onSelect(coin);
 	}, [coin, onSelect]);
 
+	if (!coin.resolvedIconUrl) {
+		logger.warn('TokenItem: Missing resolvedIconUrl for coin', coin.mintAddress);
+		return
+	}
+
 	return (
 		<TouchableOpacity
-			testID={`search-result-${coin.mintAddress}`}
+			testID={`search-result-${coin.symbol.toLowerCase()}`}
 			style={styles.tokenItem}
 			onPress={handlePress}
 			accessible={true}
 			accessibilityRole="button"
-			accessibilityLabel={`Select ${coin.symbol} token, ${coin.name}`}
+			accessibilityLabel={`Select ${coin.symbol.toLowerCase()} token, ${coin.name.toLowerCase()}`}
 			accessibilityHint="Double tap to select this token"
 			importantForAccessibility="yes"
 		>
@@ -260,6 +265,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 }) => {
 	// Unused props - satisfying linter
 	void __style;
+	testID = testID?.toLowerCase()
 
 	const amountPlaceholder = '0';
 	const theme = useTheme();
@@ -299,10 +305,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							setModalVisible(true);
 						}}
 						disabled={!onSelectToken}
-						testID={selectedToken ? `${testID}-${selectedToken.mintAddress}` : testID}
+						testID={selectedToken ? `${testID}-${selectedToken.mintAddress.toLowerCase()}` : testID}
 						accessible={true}
 						accessibilityRole="button"
-						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol}` : "Select token"}
+						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : "Select token"}
 					>
 						<View style={styles.tokenInfo}>
 							{selectedToken && selectedToken.resolvedIconUrl ? (
@@ -313,9 +319,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 										borderRadius={12}
 										showLoadingIndicator={true}
 										style={styles.tokenIcon}
-										testID={`token-selector-icon-${selectedToken.mintAddress}`}
+										testID={`token-selector-icon-${selectedToken.mintAddress.toLowerCase()}`}
 									/>
-									<Text style={styles.tokenSymbol} testID={`token-selector-symbol-${selectedToken.mintAddress}`}>
+									<Text style={styles.tokenSymbol} testID={`token-selector-symbol-${selectedToken.mintAddress.toLowerCase()}`}>
 										{selectedToken.symbol}
 									</Text>
 								</>

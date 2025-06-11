@@ -1,20 +1,15 @@
 appId: com.nicolasmartin.dankfolio
 env:
-    jupSymbol: "JUP"
-    solSymbol: "SOL"
-    dankSymbol: "DANK"
-    usdcSymbol: "USDC"
-    # Mint addresses for testIDs
-    solMint: "So11111111111111111111111111111111111111112"
-    jupMint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
-    dankMint: "DankCoin1111111111111111111111111111111"
-    usdcMint: "USDCWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    jupSymbol: "jup"
+    solSymbol: "sol"
+    dankSymbol: "dank"
+    usdcSymbol: "usdc"
 ---
 - runFlow: ../common/app-setup.yaml
 
 # Navigate to trade screen via trending coin
 - tapOn:
-      id: "trending-coin-card-JUP.*"
+      id: "trending-coin-card-jup.*"
 - tapOn:
       id: "trade-button"
 
@@ -23,66 +18,75 @@ env:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${solSymbol}
-          FROM_MINT: ${solMint}
-          FROM_AMOUNT: ""
+          FROM_AMOUNT: "1.0"
           FROM_BALANCE: "2.5"
           TO_SYMBOL: ${jupSymbol}
-          TO_MINT: ${jupMint}
           TO_AMOUNT: "0"
           TO_BALANCE: "0"
-# # Test 2: Change TO token to DANK and validate with amounts
-# - tapOn:
-#       id: "to-token-selector-JUP.*"
-# - tapOn:
-#       id: "search-result-DANK.*"
-# - runFlow:
-#     file: ../components/trade-token-selector.yaml
-#     env:
-#       FROM_SYMBOL: ${solSymbol}
-#       TO_SYMBOL: ${dankSymbol}
-#       EXPECTED_FROM_AMOUNT: "1.0"
-#       EXPECTED_TO_AMOUNT: "1000.0"
 
-# # Test 3: Test swap functionality and validate result with amounts
-# - tapOn:
-#       id: swap-coins-button
-# - runFlow:
-#     file: ../components/trade-token-selector.yaml
-#     env:
-#       FROM_SYMBOL: ${dankSymbol}
-#       TO_SYMBOL: ${solSymbol}
-#       EXPECTED_FROM_AMOUNT: "1000.0"
-#       EXPECTED_TO_AMOUNT: "1.0"
+# Test 2: Change TO token to DANK and validate with amounts
+- tapOn:
+      id: "to-token-selector-jup.*"
+- tapOn:
+      id: "search-result-dank.*"
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${solSymbol}
+          FROM_AMOUNT: "1.0"
+          FROM_BALANCE: "2.5"
+          TO_SYMBOL: ${dankSymbol}
+          TO_AMOUNT: "1000.0"
+          TO_BALANCE: "0"
 
-# # Test 4: Change FROM token to USDC and validate with amounts
-# - tapOn:
-#       id: "from-token-selector-DANK.*"
-# - tapOn:
-#       id: "search-result-USDC.*"
-# - runFlow:
-#     file: ../components/trade-token-selector.yaml
-#     env:
-#       FROM_SYMBOL: ${usdcSymbol}
-#       TO_SYMBOL: ${solSymbol}
-#       EXPECTED_FROM_AMOUNT: "100.0"
-#       EXPECTED_TO_AMOUNT: "1.0"
+# Test 3: Test swap functionality and validate result with amounts
+- tapOn:
+      id: "swap-coins-button"
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${dankSymbol}
+          FROM_AMOUNT: "1000.0"
+          FROM_BALANCE: "0"
+          TO_SYMBOL: ${solSymbol}
+          TO_AMOUNT: "1.0"
+          TO_BALANCE: "2.5"
 
-# # Test 5: Final swap back and test with amount validation
-# - tapOn:
-#       id: swap-coins-button
-# - runFlow:
-#     file: ../components/trade-token-selector.yaml
-#     env:
-#       FROM_SYMBOL: ${solSymbol}
-#       TO_SYMBOL: ${usdcSymbol}
-#       EXPECTED_FROM_AMOUNT: "1.0"
-#       EXPECTED_TO_AMOUNT: "100.0"
+# Test 4: Change FROM token to USDC and validate with amounts
+- tapOn:
+      id: "from-token-selector-dank.*"
+- tapOn:
+      id: "search-result-usdc.*"
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${usdcSymbol}
+          FROM_AMOUNT: "100.0"
+          FROM_BALANCE: "500.0"
+          TO_SYMBOL: ${solSymbol}
+          TO_AMOUNT: "1.0"
+          TO_BALANCE: "2.5"
 
-# # Test 6: Comprehensive test with different token pair and amounts
-# - runFlow:
-#     file: ../components/trade-token-selector.yaml
-#     env:
-#       FROM_SYMBOL: ${jupSymbol}
-#       TO_SYMBOL: ${dankSymbol}
-#       EXPECTED_FROM_AMOUNT: "25.0"
-#       EXPECTED_TO_AMOUNT: "500.0"
+# Test 5: Final swap back and test with amount validation
+- tapOn:
+      id: "swap-coins-button"
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${solSymbol}
+          FROM_AMOUNT: "1.0"
+          FROM_BALANCE: "2.5"
+          TO_SYMBOL: ${usdcSymbol}
+          TO_AMOUNT: "100.0"
+          TO_BALANCE: "500.0"
+
+# Test 6: Comprehensive test with different token pair and amounts
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${jupSymbol}
+          FROM_AMOUNT: "25.0"
+          FROM_BALANCE: "100.0"
+          TO_SYMBOL: ${dankSymbol}
+          TO_AMOUNT: "500.0"
+          TO_BALANCE: "0"

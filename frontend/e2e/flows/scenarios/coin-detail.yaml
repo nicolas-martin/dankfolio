@@ -1,6 +1,6 @@
 appId: com.nicolasmartin.dankfolio
 env:
-    JUP_ADDRESS: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
+    JUP_ADDRESS: "jupyiwryjfskupiha7hker8vutaefosybkedznsdvcn"
 ---
 - runFlow: ../common/app-setup.yaml
 
