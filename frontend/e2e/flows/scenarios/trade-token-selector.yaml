@@ -1,54 +1,82 @@
 appId: com.nicolasmartin.dankfolio
 env:
     jupSymbol: "JUP"
-    jupMint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
     solSymbol: "SOL"
-    solMint: "So11111111111111111111111111111111111111112"
-    dankSymbol: "DankCoin"
-    dankMint: "DankCoin1111111111111111111111111111111"
+    dankSymbol: "DANK"
     usdcSymbol: "USDC"
-    usdcMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 ---
 - runFlow: ../common/app-setup.yaml
 
 - tapOn:
-      id: "trending-coin-card-${jupMint}"
+      id: "trending-coin-card-JUP.*"
 - tapOn:
       id: "trade-button"
-- assertVisible:
-      id: from-token-selector-${solMint}
-- assertVisible:
-      id: to-token-selector-${jupMint}
+
+# Test initial SOL -> JUP setup
+- runFlow:
+    file: ../components/trade-token-selector.yaml
+    env:
+      FROM_SYMBOL: ${solSymbol}
+      TO_SYMBOL: ${jupSymbol}
+
+# Test changing TO token to DANK
 - tapOn:
-      id: to-token-selector-${jupMint}
+      id: "to-token-selector-JUP.*"
 - tapOn:
-      id: search-result-${dankMint}
-- assertVisible:
-      id: to-token-selector-${dankMint}
-- assertVisible:
-      id: from-token-selector-${solMint}
-- tapOn:
-      id: swap-coins-button
-- assertVisible:
-      id: from-token-selector-${dankMint}
-- assertVisible:
-      id: to-token-selector-${solMint}
-- tapOn:
-      id: from-token-selector-${dankMint}
-- tapOn:
-      id: search-result-${usdcMint}
-- assertVisible: "Selected token: ${usdcSymbol}"
-- assertVisible:
-      id: to-token-selector-${solMint}
+      id: "search-result-DANK.*"
+
+# Test SOL -> DANK setup
+- runFlow:
+    file: ../components/trade-token-selector.yaml
+    env:
+      FROM_SYMBOL: ${solSymbol}
+      TO_SYMBOL: ${dankSymbol}
+
+# Test swapping tokens
 - tapOn:
       id: swap-coins-button
-- assertVisible:
-      id: from-token-selector-${solMint}
-- assertVisible:
-      id: to-token-selector-${usdcMint}
-- assertVisible: "2.5"
+
+# Test DANK -> SOL setup after swap
+- runFlow:
+    file: ../components/trade-token-selector.yaml
+    env:
+      FROM_SYMBOL: ${dankSymbol}
+      TO_SYMBOL: ${solSymbol}
+
+# Test changing FROM token to USDC
 - tapOn:
-      id: amount-percentage-text-50
-- assertVisible: "1.25"
+      id: "from-token-selector-DANK.*"
+- tapOn:
+      id: "search-result-USDC.*"
+
+# Test USDC -> SOL setup
+- runFlow:
+    file: ../components/trade-token-selector.yaml
+    env:
+      FROM_SYMBOL: ${usdcSymbol}
+      TO_SYMBOL: ${solSymbol}
+
+# Test final swap back to SOL -> USDC
+- tapOn:
+      id: swap-coins-button
+
+# Test SOL -> USDC with amount validation
+- runFlow:
+    file: ../components/trade-token-selector.yaml
+    env:
+      FROM_SYMBOL: ${solSymbol}
+      TO_SYMBOL: ${usdcSymbol}
+      EXPECTED_FROM_AMOUNT: "2.5"
+
+# Test percentage buttons using the parameterized component
+- runFlow:
+    file: ../components/trade-token-selector.yaml
+    env:
+      FROM_SYMBOL: ${solSymbol}
+      TO_SYMBOL: ${usdcSymbol}
+      PERCENTAGE_TO_PRESS: "50"
+      EXPECTED_AMOUNT_AFTER_PERCENTAGE: "1.25"
+
+# Test other values are still visible
 - assertVisible: "0.95"
 - assertVisible: "100"
