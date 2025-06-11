@@ -347,14 +347,20 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 										keyboardType="decimal-pad"
 										editable={isAmountEditable}
 									/>
-									<Text style={styles.valueText}>
+									<Text 
+										style={styles.valueText} 
+										{...(testID && { testID: `${testID}-usd-value` })}
+									>
 										{`$${calculatedValue}`}
 									</Text>
 								</>
 							)}
 							{/* note: HIDE FOR NOW */}
 							{portfolioToken && ( // Corrected constant binary expression
-								<Text style={styles.valueText}>
+								<Text 
+									style={styles.valueText} 
+									{...(testID && { testID: `${testID}-balance` })}
+								>
 									{portfolioToken.amount}
 								</Text>
 							)}

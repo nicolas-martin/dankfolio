@@ -124,7 +124,7 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2021-09-09')),
 	}),
 	create(CoinSchema, {
-		mintAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+		mintAddress: 'USDCWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
 		name: 'USD Coin',
 		symbol: 'USDC',
 		decimals: 6,
