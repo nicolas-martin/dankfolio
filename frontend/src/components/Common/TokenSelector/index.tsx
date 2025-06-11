@@ -11,7 +11,7 @@ import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import { calculateUsdValue, findPortfolioToken, handleAmountInputChange } from './scripts';
-import { CachedImage } from '@/components/Common/CachedImage';
+import CachedImage from '@/components/Common/CachedImage';
 import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
 

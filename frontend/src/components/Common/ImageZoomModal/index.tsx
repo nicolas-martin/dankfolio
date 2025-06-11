@@ -4,14 +4,10 @@ import {
 	View,
 	Image,
 	TouchableOpacity,
-	Dimensions,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { ImageZoomModalProps } from './types';
 import { createStyles } from './styles';
-
-const { width } = Dimensions.get('window');
-const IMAGE_SIZE = width * 0.7;
 
 const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 	isVisible,
@@ -34,13 +30,13 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 				intensity={30}
 				tint="dark"
 			>
-				<TouchableOpacity 
+				<TouchableOpacity
 					style={styles.backdrop}
 					activeOpacity={1}
 					onPress={onClose}
 				>
 					<View style={styles.container}>
-						<TouchableOpacity 
+						<TouchableOpacity
 							activeOpacity={1}
 							onPress={(e) => e.stopPropagation()}
 						>

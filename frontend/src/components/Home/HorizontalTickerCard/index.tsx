@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { CachedImage } from '@/components/Common/CachedImage';
+import CachedImage from '@/components/Common/CachedImage';
 import { formatPercentage } from '@/utils/numberFormat';
 import { formatTimeAgo } from '@/utils/timeFormat';
 import { HorizontalTickerCardProps } from './types';

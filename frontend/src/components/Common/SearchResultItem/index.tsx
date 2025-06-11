@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { CachedImage } from '@/components/Common/CachedImage';
+import CachedImage from '@/components/Common/CachedImage';
 import { SearchResultItemProps } from './types';
 import { truncateAddress } from './scripts';
 import { createStyles } from './styles';

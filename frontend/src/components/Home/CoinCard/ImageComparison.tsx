@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'; // Added useMemo
 import { View, Text, StyleSheet } from 'react-native'; // Added StyleSheet
 import { Image } from 'expo-image';
-import { CachedImage } from '@/components/Common/CachedImage';
+import CachedImage from '@/components/Common/CachedImage';
 
 interface ImageComparisonProps {
 	uri: string;
