@@ -421,6 +421,7 @@ const Trade: React.FC = () => {
 					setPollingConfirmations(0);
 					setPollingError(null);
 					setSubmittedTxHash(null);
+					componentStopPolling();
 					navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
 				}}
 				isVisible={isStatusModalVisible}
