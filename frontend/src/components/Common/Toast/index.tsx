@@ -1,12 +1,10 @@
 import React, { createContext, useContext, useMemo, useReducer } from 'react';
 import { View } from 'react-native';
-import { Portal, Snackbar, useTheme, Text, IconButton } from 'react-native-paper';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ToastProps, ToastType } from './toast_types'; // Added ToastType
-import { createStyles } from './toast_styles';
-import { getToastBackgroundColor, getToastForegroundColor } from './toast_constants';
-import { getToastIcon as getOriginalToastIconComponent } from './toast_icons'; // Renamed import
-import { SuccessAnimation, ErrorAnimation } from '../Animations'; // Added Lottie components
+import { Portal, Snackbar, Text, IconButton } from 'react-native-paper';
+import { ToastProps, ToastType } from './toast_types';
+import { useStyles } from './toast_styles';
+import { getToastIcon as getOriginalToastIconComponent } from './toast_icons';
+import { SuccessAnimation, ErrorAnimation } from '../Animations';
 
 const ToastContext = createContext<{
 	showToast: (options: ToastProps) => void;
@@ -60,18 +58,14 @@ const reducer = (state: ToastProps, action: ToastAction): ToastProps => {
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [state, dispatch] = useReducer(reducer, defaults);
-	const insets = useSafeAreaInsets();
-	const theme = useTheme(); // theme is still needed for getToastBackgroundColor and icon colors
-	const styles = createStyles(insets); // Pass only insets to createStyles
+	const styles = useStyles();
 
 	const toast = useMemo(
 		() => ({
 			showToast(options: Partial<ToastProps>) {
 				// Log errors when toast type is 'error'
 				if (options.type === 'error') {
-					const errorData = {
-						...(options.data && { data: options.data }),
-					};
+					const errorData = options.data ? { data: options.data } : {};
 
 					// Detailed error logging for debugging
 					console.error('� Error:', options.message, errorData);
@@ -91,7 +85,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	);
 
 	const toastType = state.type || 'info';
-	const toastForegroundColor = getToastForegroundColor(toastType, theme);
+	const toastForegroundColor = styles.colors.onSurfaceVariant;
 
 	let IconToRender;
 	// Ensure toastType is valid for getOriginalToastIconComponent by casting, as state.type can be undefined initially.
@@ -116,17 +110,17 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					onDismiss={toast.hideToast}
 					duration={state.duration}
 					wrapperStyle={{
-						top: insets.top,
+						top: styles.wrapper.top,
 					}}
 					style={[
 						styles.snackbarStyleBase,
-						{ backgroundColor: getToastBackgroundColor(toastType as ToastType, theme) }
+						{ backgroundColor: toastType === "error" ? styles.success : styles.error },
 					]}
 				>
 					<View style={styles.content}>
 						<View style={styles.messageContainer}>
 							{IconToRender}
-							<Text style={[styles.message, { color: theme.colors.onSurfaceVariant }]}>
+							<Text style={[styles.message, { color: styles.colors.onSurfaceVariant }]}>
 								{state.message}
 							</Text>
 						</View>
@@ -135,7 +129,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 							size={20}
 							onPress={toast.hideToast}
 							style={styles.closeButton}
-							iconColor={theme.colors.onSurfaceVariant}
+							iconColor={styles.colors.onSurfaceVariant}
 						/>
 					</View>
 				</Snackbar>

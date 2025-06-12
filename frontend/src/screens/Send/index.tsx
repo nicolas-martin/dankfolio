@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { Text, useTheme, Icon } from 'react-native-paper';
+import { Text, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions'; // Added
 import TokenSelector from 'components/Common/TokenSelector';
@@ -17,7 +17,7 @@ import {
 	stopPolling,
 	pollTransactionStatus
 } from './scripts';
-import { createStyles } from './styles';
+import { useStyle } from './styles';
 import { Coin } from '@/types';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
@@ -25,8 +25,7 @@ import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { logger } from '@/utils/logger';
 
 const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyle();
 	const { wallet, tokens } = usePortfolioStore();
 	const { showToast } = useToast();
 	const [selectedToken, setSelectedToken] = useState<PortfolioToken | undefined>(undefined);
@@ -304,7 +303,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const renderNoWalletState = () => (
 		<View style={styles.noWalletContainer}>
 			<View style={styles.noWalletCard}>
-				<Icon source="wallet-outline" size={48} color={theme.colors.onSurfaceVariant} />
+				<Icon source="wallet-outline" size={48} color={styles.colors.onSurfaceVariant} />
 				<Text style={styles.noWalletTitle}>No Wallet</Text>
 				<Text style={styles.noWalletSubtitle}>Connect wallet to continue</Text>
 			</View>
@@ -314,7 +313,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const renderNoTokenState = () => (
 		<View style={styles.noWalletContainer}>
 			<View style={styles.noWalletCard}>
-				<Icon source="currency-usd-off" size={64} color={theme.colors.primary} />
+				<Icon source="currency-usd-off" size={64} color={styles.colors.primary} />
 				<Text style={styles.noWalletTitle}>No Tokens</Text>
 				<Text style={styles.noWalletSubtitle}>Add tokens to portfolio</Text>
 			</View>
@@ -356,7 +355,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const renderRecipientCard = () => (
 		<View style={styles.recipientCard}>
 			<View style={styles.recipientHeader}>
-				<Icon source="account" size={20} color={theme.colors.onTertiaryContainer} />
+				<Icon source="account" size={20} color={styles.colors.onTertiaryContainer} />
 				<Text style={styles.recipientTitle}>To</Text>
 			</View>
 			<TextInput
@@ -365,7 +364,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				value={recipientAddress}
 				onChangeText={handleRecipientChange}
 				placeholder="Wallet address"
-				placeholderTextColor={theme.colors.onSurfaceVariant}
+				placeholderTextColor={styles.colors.onSurfaceVariant}
 				multiline={true}
 				numberOfLines={2}
 			/>
@@ -404,13 +403,13 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		const getIconColor = () => {
 			switch (verificationInfo.code) {
 				case "ADDRESS_HAS_BALANCE":
-					return theme.colors.primary;
+					return styles.colors.primary;
 				case "ADDRESS_NO_BALANCE":
-					return theme.colors.tertiary;
+					return styles.colors.tertiary;
 				case "ADDRESS_BALANCE_CHECK_FAILED":
-					return theme.colors.error;
+					return styles.colors.error;
 				default:
-					return theme.colors.onSurfaceVariant;
+					return styles.colors.onSurfaceVariant;
 			}
 		};
 
@@ -448,7 +447,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 		return (
 			<View style={styles.errorContainer} testID="validation-error-container">
-				<Icon source="alert-circle" size={16} color={theme.colors.error} />
+				<Icon source="alert-circle" size={16} color={styles.colors.error} />
 				<Text style={styles.errorText} testID="validation-error-text">
 					{validationError}
 				</Text>
@@ -463,7 +462,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			style={[styles.sendButton, isLoading && styles.sendButtonDisabled]}
 			testID="send-button"
 		>
-			<Icon source="send" size={20} color={theme.colors.onPrimary} />
+			<Icon source="send" size={20} color={styles.colors.onPrimary} />
 			<Text style={styles.sendButtonText}>
 				{isLoading ? 'Sending...' : 'Send'}
 			</Text>

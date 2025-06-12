@@ -13,14 +13,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { ImageZoomModalProps } from './types';
-import { createStyles } from './styles';
+import { useStyles } from './styles';
 
 const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 	isVisible,
 	onClose,
 	imageUri,
 }) => {
-	const styles = createStyles();
+	const styles = useStyles();
 	const animationValue = useSharedValue(0);
 
 	useEffect(() => {
@@ -28,7 +28,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 		if (isVisible) {
 			timing = 1;
 		}
-		
+
 		animationValue.value = withTiming(timing, {
 			duration: 150,
 			easing: Easing.linear,
@@ -59,7 +59,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 			transparent={true}
 			visible={isVisible} // Keep this to control modal presence
 			onRequestClose={onClose}
-			// animationType="fade" // Removed
+		// animationType="fade" // Removed
 		>
 			<Animated.View style={[styles.blurContainer, backgroundStyle]}>
 				<BlurView
@@ -69,8 +69,8 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 				>
 					<TouchableOpacity
 						style={styles.backdrop}
-					activeOpacity={1}
-					onPress={onClose}
+						activeOpacity={1}
+						onPress={onClose}
 					>
 						<View style={styles.container}>
 							<TouchableOpacity

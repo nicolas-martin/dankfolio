@@ -21,11 +21,11 @@ import {
 	LinearGradient,
 	vec
 } from '@shopify/react-native-skia';
-import { useTheme, ActivityIndicator } from 'react-native-paper';
+import { ActivityIndicator } from 'react-native-paper';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import inter from '@assets/fonts/inter-medium.ttf';
-import { createStyles, CHART_CONSTANTS } from './styles';
+import { useStyles, CHART_CONSTANTS } from './styles';
 import type { CoinChartProps, PricePoint, PulsatingDotProps, AreaProps } from './types';
 import {
 	determineChartColor,
@@ -188,8 +188,7 @@ export default function CoinChart({
 	onHover,
 	period,
 }: CoinChartProps) {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const isMounted = useRef(true);
 	const animations = useRef<SharedValue<unknown>[]>([]);
 	const font = useSkiaFont(inter, 12);
@@ -341,7 +340,7 @@ export default function CoinChart({
 							},
 							frame: 'rgba(255,255,255,0.1)',
 						},
-						labelColor: theme.colors.onSurface,
+						labelColor: styles.colors.onSurface,
 					}}
 					renderOutside={({ chartBounds }) => {
 						if (!isPressActive || typeof activeX !== 'number' || !font)
@@ -382,7 +381,7 @@ export default function CoinChart({
 									y={chartBounds.top + 20}
 									text={label}
 									font={font}
-									color={theme.colors.onSurface}
+									color={styles.colors.onSurface}
 								/>
 							</>
 						);

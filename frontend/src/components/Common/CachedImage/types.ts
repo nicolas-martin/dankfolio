@@ -11,5 +11,5 @@ export interface CachedImageProps extends Omit<ImageProps, 'source' | 'style'> {
 	testID?: string;
 	blurhash?: string;
 	placeholder?: ImageProps['placeholder'];
-	expiresIn?: number; // Cache expiration time in seconds
+	expiresIn?: number;
 } 

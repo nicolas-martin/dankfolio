@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl } from 'react-native';
-import { Text, useTheme, Button, Icon, SegmentedButtons } from 'react-native-paper';
+import { Text, Button, Icon, SegmentedButtons } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
@@ -8,14 +8,14 @@ import CoinChart from '@components/Chart/CoinChart';
 import { PricePoint } from '@components/Chart/CoinChart/types';
 import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
-import { PriceData, Coin } from '@/types';
+import { PriceData } from '@/types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
 	fetchPriceHistory,
 	handleTradeNavigation,
 } from './coindetail_scripts';
-import { createStyles } from './coindetail_styles';
+import { useStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { logger } from '@/utils/logger';
 import { useCoinStore } from '@store/coins';
@@ -25,7 +25,6 @@ const CoinDetail: React.FC = () => {
 	const route = useRoute<CoinDetailScreenRouteProp>();
 	const { coin: initialCoinFromParams, solCoin: _solCoin } = route.params || {}; // Prefixed solCoin
 	const mintAddress = initialCoinFromParams?.mintAddress;
-	const _prevDisplayCoinRef = React.useRef<Coin | null | undefined>(null); // Prefixed prevDisplayCoinRef
 
 	const coinFromStore = useCoinStore(state => mintAddress ? state.coinMap[mintAddress] : undefined);
 	const displayCoin = coinFromStore || initialCoinFromParams;
@@ -36,8 +35,7 @@ const CoinDetail: React.FC = () => {
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
 	const { showToast } = useToast();
 	const { tokens } = usePortfolioStore();
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 
 	// useEffect for initial logging (can remain as is or be combined if preferred)
 	useEffect(() => {
@@ -190,7 +188,7 @@ const CoinDetail: React.FC = () => {
 					borderRadius={8}
 				/>
 				<View style={styles.activityIndicatorOverlay}>
-					<ActivityIndicator color={theme.colors.primary} size="large" />
+					<ActivityIndicator color={styles.colors.primary} size="large" />
 					<Text style={styles.loadingChartText}>
 						Loading chart data...
 					</Text>
@@ -203,7 +201,7 @@ const CoinDetail: React.FC = () => {
 		<View style={styles.aboutCard}>
 			<View style={styles.aboutHeader}>
 				<View style={styles.aboutIcon}>
-					<Icon source="information-outline" size={16} color={theme.colors.onSecondaryContainer} />
+					<Icon source="information-outline" size={16} color={styles.colors.onSecondaryContainer} />
 				</View>
 				<ShimmerPlaceholder
 					width={120}
@@ -232,7 +230,7 @@ const CoinDetail: React.FC = () => {
 					style={styles.marginBottomL}
 				/>
 				<View style={styles.activityIndicatorContainer}>
-					<ActivityIndicator color={theme.colors.primary} />
+					<ActivityIndicator color={styles.colors.primary} />
 					<Text style={styles.loadingDetailsText}>
 						Loading details...
 					</Text>
@@ -255,7 +253,7 @@ const CoinDetail: React.FC = () => {
 	// The existing `loading` state is for the price chart specifically.
 
 	const renderPriceCard = () => {
-		if (!displayCoin || priceHistory.length < 2) return null;
+		if (!displayCoin || priceHistory.length < 2 || !displayCoin.resolvedIconUrl) return null;
 
 		return (
 			<View style={styles.priceCard} testID="coin-detail-price-card">
@@ -267,7 +265,6 @@ const CoinDetail: React.FC = () => {
 					resolvedIconUrl={displayCoin.resolvedIconUrl}
 					name={displayCoin.name}
 					address={displayCoin.mintAddress} // Use displayCoin.mintAddress
-					hoveredPoint={hoverPoint}
 				/>
 			</View>
 		);
@@ -321,7 +318,7 @@ const CoinDetail: React.FC = () => {
 			<View style={styles.holdingsCard} testID="coin-detail-holdings-card">
 				<View style={styles.holdingsHeader}>
 					<View style={styles.holdingsIcon}>
-						<Icon source="wallet" size={16} color={theme.colors.onPrimaryContainer} />
+						<Icon source="wallet" size={16} color={styles.colors.onPrimaryContainer} />
 					</View>
 					<Text style={styles.holdingsTitle} testID="coin-detail-holdings-title">Your Holdings</Text>
 				</View>
@@ -348,7 +345,7 @@ const CoinDetail: React.FC = () => {
 			return (
 				<View style={styles.aboutCard} testID="coin-detail-about-card-loading">
 					<View style={styles.loadingContainer}>
-						<ActivityIndicator color={theme.colors.primary} />
+						<ActivityIndicator color={styles.colors.primary} />
 					</View>
 				</View>
 			);
@@ -358,7 +355,7 @@ const CoinDetail: React.FC = () => {
 			<View style={styles.aboutCard} testID="coin-detail-about-card">
 				<View style={styles.aboutHeader}>
 					<View style={styles.aboutIcon}>
-						<Icon source="information-outline" size={16} color={theme.colors.onSecondaryContainer} />
+						<Icon source="information-outline" size={16} color={styles.colors.onSecondaryContainer} />
 					</View>
 					<Text style={styles.aboutTitle} testID="coin-detail-about-title">About {displayCoin.name}</Text>
 				</View>
@@ -444,7 +441,7 @@ const CoinDetail: React.FC = () => {
 						<RefreshControl
 							refreshing={loading} // This 'loading' is for the price chart
 							onRefresh={onRefresh}
-							tintColor={theme.colors.primary}
+							tintColor={styles.colors.primary}
 						/>
 					}
 				>

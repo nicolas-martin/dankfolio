@@ -1,9 +1,11 @@
 import { StyleSheet } from 'react-native';
-import { useTheme } from 'react-native-paper'; // Assuming it might be used
+import { useTheme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
 export const useStyles = () => {
-	const theme = useTheme(); // Or use provided theme if passed as prop
-	return StyleSheet.create({
+	const theme = useTheme() as AppTheme;
+	const colors = theme.colors;
+	const styles = StyleSheet.create({
 		activeButton: {
 			backgroundColor: theme.colors.primary,
 			elevation: 2,
@@ -17,12 +19,12 @@ export const useStyles = () => {
 			paddingHorizontal: theme.spacing.md,
 			paddingVertical: theme.spacing.sm,
 		},
-		container: { // Corresponds to 'percentageContainer' in Send screen
+		container: {
 			flexDirection: 'row',
-			justifyContent: 'space-between', // Changed from space-around to space-between
-			paddingVertical: theme.spacing.lg, // Increased from 8 to 16
-			paddingHorizontal: theme.spacing.sm, // Added horizontal padding
-			marginTop: theme.spacing.sm, // Added top margin
+			justifyContent: 'space-between',
+			marginTop: theme.spacing.sm,
+			paddingHorizontal: theme.spacing.sm,
+			paddingVertical: theme.spacing.lg,
 		},
 		percentageButton: {
 			alignItems: 'center',
@@ -41,4 +43,9 @@ export const useStyles = () => {
 			fontWeight: '600',
 		},
 	});
+	return {
+		...styles,
+		colors,
+		theme
+	};
 };

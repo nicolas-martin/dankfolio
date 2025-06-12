@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, TextInput, FlatList, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 // Assuming RootStackParamList is here
 import { SearchScreenRouteProp, SearchScreenNavigationProp, SearchState } from './types';
@@ -8,8 +8,7 @@ import { SearchSortByOption } from '@/services/grpc/model'; // Import the type
 import { performSearch, DEBOUNCE_DELAY, handleCoinNavigation } from './scripts';
 import { Coin } from '@/types';
 import SearchResultItem from '@/components/Common/SearchResultItem';
-import { createStyles } from './styles';
-import { useToast } from '@/components/Common/Toast';
+import { useStyles } from './styles';
 import { SearchIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
 
@@ -41,9 +40,8 @@ const SearchScreen: React.FC = () => {
 		...initialState,
 		filters: defaultFiltersFromRoute,
 	});
-	const theme = useTheme();
-	const styles = createStyles(theme);
-	const _toast = useToast(); // Prefixed toast
+	const styles = useStyles();
+	// const _toast = useToast(); // Prefixed toast
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed SearchScreen' });
@@ -142,8 +140,8 @@ const SearchScreen: React.FC = () => {
 				<View style={styles.contentPadding}>
 					{/* Header Row */}
 					<View style={styles.headerRow}>
-						<SearchIcon size={32} color={theme.colors.onSurface} />
-						<Text variant="headlineSmall" style={{ color: theme.colors.onSurface, marginLeft: 12 }}>
+						<SearchIcon size={32} color={styles.colors.onSurface} />
+						<Text variant="headlineSmall" style={{ color: styles.colors.onSurface, marginLeft: 12 }}>
 							Search
 						</Text>
 					</View>
@@ -156,7 +154,7 @@ const SearchScreen: React.FC = () => {
 							onChangeText={handleQueryChange}
 							autoCapitalize="none"
 							autoCorrect={false}
-							placeholderTextColor={theme.colors.onSurfaceVariant}
+							placeholderTextColor={styles.colors.onSurfaceVariant}
 						/>
 					</View>
 					{/* Sort Buttons */}
@@ -173,7 +171,7 @@ const SearchScreen: React.FC = () => {
 				<View style={styles.flex1}>
 					{state.loading && (
 						<View style={styles.loadingContainer}>
-							<ActivityIndicator size="large" color={theme.colors.primary} />
+							<ActivityIndicator size="large" color={styles.colors.primary} />
 						</View>
 					)}
 					{showError && (
@@ -183,7 +181,7 @@ const SearchScreen: React.FC = () => {
 					)}
 					{showEmpty && (
 						<View style={styles.emptyContainer}>
-							<SearchIcon size={48} color={theme.colors.onSurfaceVariant} />
+							<SearchIcon size={48} color={styles.colors.onSurfaceVariant} />
 							<Text style={styles.emptyText}>No tokens found</Text>
 						</View>
 					)}

@@ -1,50 +1,56 @@
 import { StyleSheet } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
-import { Dimensions } from 'react-native';
 import { AppTheme } from '@/utils/theme';
+import { useTheme } from 'react-native-paper';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-export const createStyles = (theme: AppTheme) => StyleSheet.create({
-	chartContainer: {
-		height: 250,
-		backgroundColor: '#1C2127', // Slightly lighter TradingView dark theme background
-		borderRadius: theme.spacing.sm,
-		overflow: 'hidden',
-	},
-	chartWrapper: {
-		flex: 1,
-		width: '100%',
-	},
-	dottedLine: {
-		borderColor: theme.colors.outlineVariant,
-		borderStyle: 'dotted',
-		borderWidth: 1,
-	},
-	hoverLabel: {
-		alignItems: 'center',
-		pointerEvents: 'none',
-		position: 'absolute',
-		width: 120,
-	},
-	hoverTimeText: {
-		color: theme.colors.onSurfaceVariant,
-		fontSize: theme.typography.fontSize.xs,
-		position: 'absolute',
-		textAlign: 'center',
-	},
-	loadingContainer: {
-		height: 250,
-		justifyContent: 'center',
-		alignItems: 'center',
-		backgroundColor: '#1C2127', // Match chartContainer background
-		borderRadius: theme.spacing.sm,
-	},
-	tooltipText: {
-		color: theme.colors.onSurface,
-		fontSize: theme.typography.fontSize.xs,
-	},
-});
+export const useStyles = () => {
+	const theme = useTheme() as AppTheme;
+	const colors = theme.colors;
+	const styles = StyleSheet.create({
+		chartContainer: {
+			height: 250,
+			backgroundColor: '#1C2127', // Slightly lighter TradingView dark theme background
+			borderRadius: theme.spacing.sm,
+			overflow: 'hidden',
+		},
+		chartWrapper: {
+			flex: 1,
+			width: '100%',
+		},
+		dottedLine: {
+			borderColor: theme.colors.outlineVariant,
+			borderStyle: 'dotted',
+			borderWidth: 1,
+		},
+		hoverLabel: {
+			alignItems: 'center',
+			pointerEvents: 'none',
+			position: 'absolute',
+			width: 120,
+		},
+		hoverTimeText: {
+			color: theme.colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.xs,
+			position: 'absolute',
+			textAlign: 'center',
+		},
+		loadingContainer: {
+			height: 250,
+			justifyContent: 'center',
+			alignItems: 'center',
+			backgroundColor: '#1C2127',
+			borderRadius: theme.spacing.sm,
+		},
+		tooltipText: {
+			color: theme.colors.onSurface,
+			fontSize: theme.typography.fontSize.xs,
+		},
+	})
+	return {
+		...styles,
+		colors,
+		theme
+	}
+};
 
 // Constants for styling
 export const CHART_CONSTANTS = {
@@ -77,5 +83,5 @@ export const CHART_CONSTANTS = {
 		}
 	},
 	dotSpacing: 6,
-	hapticThrottle: 150, // ms
+	hapticThrottle: 150,
 };

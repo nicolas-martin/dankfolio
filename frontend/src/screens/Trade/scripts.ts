@@ -9,7 +9,7 @@ import { useTransactionsStore } from '@/store/transactions';
 import type { ToastProps } from '@/components/Common/Toast/toast_types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { REFRESH_INTERVALS } from '@/utils/constants';
-import { MutableRefObject } from 'react';
+import { RefObject } from 'react';
 
 export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 1000;
@@ -111,7 +111,7 @@ export const handleSwapCoins = (
 };
 
 export const stopPolling = (
-	pollingIntervalRef: MutableRefObject<ReturnType<typeof setTimeout> | null>,
+	pollingIntervalRef: RefObject<ReturnType<typeof setTimeout> | null>,
 	setIsLoadingTrade: (loading: boolean) => void
 ) => {
 	if (pollingIntervalRef.current) {
@@ -173,10 +173,10 @@ export const pollTradeStatus = async (
 };
 
 export const startPolling = (
-	txHash: string,
+	_txHash: string,
 	pollFn: () => Promise<void>, // Function that executes one poll
-	stopPollingFn: () => void, // Function to stop polling
-	pollingIntervalRef: MutableRefObject<ReturnType<typeof setTimeout> | null>
+	_stopPollingFn: () => void, // Function to stop polling
+	pollingIntervalRef: RefObject<ReturnType<typeof setTimeout> | null>
 ) => {
 	// Clear any existing interval
 	if (pollingIntervalRef.current) {
@@ -346,7 +346,7 @@ export const handleAmountChange = (
 	amount: string,
 	fromCoin: Coin | null,
 	toCoin: Coin | null,
-	quoteTimeoutRef: MutableRefObject<ReturnType<typeof setTimeout> | null>,
+	quoteTimeoutRef: RefObject<ReturnType<typeof setTimeout> | null>,
 	setIsQuoteLoading: (loading: boolean) => void,
 	setFromAmount: (amount: string) => void,
 	setToAmount: (amount: string) => void,
@@ -412,7 +412,7 @@ export const handleTradeSubmit = (
 	wallet: Wallet | null,
 	fromCoin: Coin | null,
 	fromPortfolioToken: { amount: number } | undefined,
-	pollingIntervalRef: MutableRefObject<ReturnType<typeof setTimeout> | null>,
+	pollingIntervalRef: RefObject<ReturnType<typeof setTimeout> | null>,
 	setIsConfirmationVisible: (visible: boolean) => void,
 	showToast: (params: ToastProps) => void
 ) => {

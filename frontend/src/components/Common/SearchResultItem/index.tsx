@@ -1,18 +1,16 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { useTheme } from 'react-native-paper';
 import CachedImage from '@/components/Common/CachedImage';
 import { SearchResultItemProps } from './types';
 import { truncateAddress } from './scripts';
-import { createStyles } from './styles';
+import { useStyles } from './styles';
 
 const SearchResultItem: React.FC<SearchResultItemProps> = ({
 	coin,
 	onPress,
 	isEnriched = true,
 }) => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 
 	// Simple formatter for now
 	const formatJupiterListedAt = (date?: Date): string | null => {
@@ -30,9 +28,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 			disabled={!onPress}
 		>
 			<View style={styles.tokenInfo}>
-				<CachedImage 
-					uri={coin.resolvedIconUrl} 
-					size={36} 
+				<CachedImage
+					uri={coin.resolvedIconUrl}
+					size={36}
 					borderRadius={18}
 					showLoadingIndicator={true}
 				/>

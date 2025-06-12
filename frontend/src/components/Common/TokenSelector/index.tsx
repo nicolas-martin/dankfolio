@@ -1,12 +1,12 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { Card, Text, useTheme, Searchbar } from 'react-native-paper';
+import { Card, Text, Searchbar } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet'; // Added BottomSheetBackdropProps
 import { BlurView } from 'expo-blur';
 import { ChevronDownIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types'; // Assuming TokenListItem is defined in types
-import { createStyles } from './styles';
+import { useStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
@@ -16,7 +16,7 @@ import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
 
 // Memoized icon component to prevent unnecessary re-renders
-const RenderIcon = React.memo<{ iconUrl: string; styles: ReturnType<typeof createStyles> }>(({ iconUrl, styles }) => {
+const RenderIcon = React.memo<{ iconUrl: string; styles: ReturnType<typeof useStyles> }>(({ iconUrl, styles }) => {
 	return (
 		<CachedImage
 			uri={iconUrl}
@@ -34,7 +34,7 @@ const TokenItem = React.memo<{
 	coin: Coin;
 	portfolioToken: { amount: number } | undefined;
 	onSelect: (coin: Coin) => void;
-	styles: ReturnType<typeof createStyles>;
+	styles: ReturnType<typeof useStyles>;
 }>(({ coin, portfolioToken, onSelect, styles }) => {
 	const handlePress = useCallback(() => {
 		onSelect(coin);
@@ -84,8 +84,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	void __selectedToken;
 	void __testID;
 
-	const theme = useTheme();
-	const styles = useMemo(() => createStyles(theme), [theme]);
+	const styles = useStyles();
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 	const [searchQuery, setSearchQuery] = useState('');
 	const { tokens: portfolioTokens } = usePortfolioStore();
@@ -193,8 +192,8 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 			ref={bottomSheetModalRef}
 			snapPoints={['75%']}
 			onDismiss={onDismiss}
-			backgroundStyle={{ backgroundColor: theme.colors.surface }}
-			handleIndicatorStyle={{ backgroundColor: theme.colors.onSurface }}
+			backgroundStyle={{ backgroundColor: styles.colors.surface }}
+			handleIndicatorStyle={{ backgroundColor: styles.colors.onSurface }}
 			enablePanDownToClose={true}
 			enableDismissOnClose={true}
 			backdropComponent={renderBackdrop}
@@ -214,8 +213,8 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 					onChangeText={handleSearchQueryChange}
 					style={styles.searchBar}
 					inputStyle={styles.searchBarInput}
-					iconColor={theme.colors.onSurfaceVariant}
-					placeholderTextColor={theme.colors.onSurfaceVariant}
+					iconColor={styles.colors.onSurfaceVariant}
+					placeholderTextColor={styles.colors.onSurfaceVariant}
 					autoCapitalize="none"
 					autoCorrect={false}
 					autoFocus={false}
@@ -268,8 +267,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	testID = testID?.toLowerCase()
 
 	const amountPlaceholder = '0';
-	const theme = useTheme();
-	const styles = useMemo(() => createStyles(theme), [theme]);
+	const styles = useStyles();
 	const [modalVisible, setModalVisible] = useState(false);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 
@@ -329,7 +327,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								<Text style={styles.tokenSymbol} testID={`${testID}-placeholder`}>{label || 'Select Token'}</Text>
 							)}
 						</View>
-						<ChevronDownIcon size={20} color={theme.colors.onSurface} />
+						<ChevronDownIcon size={20} color={styles.colors.onSurface} />
 					</TouchableOpacity>
 
 					{onAmountChange && (
@@ -337,7 +335,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							{isAmountLoading ? (
 								<ActivityIndicator
 									size="small"
-									color={theme.colors.primary}
+									color={styles.colors.primary}
 									style={{ height: styles.amountInput.height }}
 									testID="activity-indicator"
 								/>
@@ -349,7 +347,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 										value={amountValue}
 										onChangeText={(text) => onAmountChange && handleAmountInputChange(text, onAmountChange)}
 										placeholder={amountPlaceholder}
-										placeholderTextColor={theme.colors.onTertiaryContainer}
+										placeholderTextColor={styles.colors.onTertiaryContainer}
 										keyboardType="decimal-pad"
 										editable={isAmountEditable}
 									/>

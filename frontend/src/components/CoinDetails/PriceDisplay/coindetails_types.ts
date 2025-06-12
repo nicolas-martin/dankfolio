@@ -4,7 +4,7 @@ export interface PriceDisplayProps {
 	periodChange: number;
 	valueChange: number;
 	period: string;
-	resolvedIconUrl?: string;
+	resolvedIconUrl: string;
 	name?: string;
 	address: string;
 }

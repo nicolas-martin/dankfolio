@@ -1,17 +1,16 @@
 import React from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, useTheme, List, Switch, Divider, IconButton } from 'react-native-paper';
+import { Text, List, Switch, Divider, IconButton } from 'react-native-paper';
 import Constants from 'expo-constants';
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
-import { createStyles } from './settings_styles';
+import { useStyles } from './settings_styles';
 import { logger } from '@/utils/logger';
 import { useToast } from '@components/Common/Toast';
 import { copyToClipboard as copyUtil } from '@/screens/Profile/profile_scripts';
 
 const Settings: React.FC = () => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const { showToast } = useToast();
 
 	const { themeType, toggleTheme, isLoading: isThemeLoading } = useThemeStore();
@@ -89,7 +88,7 @@ const Settings: React.FC = () => {
 									value={isDarkTheme}
 									onValueChange={toggleTheme}
 									disabled={isThemeLoading}
-									color={theme.colors.primary}
+									color={styles.colors.primary}
 								/>
 							)}
 						/>

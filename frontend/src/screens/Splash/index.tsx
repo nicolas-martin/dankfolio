@@ -1,16 +1,17 @@
 import { View, Image } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+// ignore
+// eslint-disable-next-line import/no-unresolved
 import logoAsset from '@assets/splashscreen.png'; // Import the image asset
 import { LoadingAnimation } from '../../components/Common/Animations';
 import { SplashScreenNavigationProp } from './types';
 import { useLoadingState } from './scripts';
-import { createStyles } from './styles';
+import { useStyle } from './styles';
 
 const Splash = () => {
 	const navigation = useNavigation<SplashScreenNavigationProp>();
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyle();
 	const loadingState = useLoadingState(navigation);
 
 	return (

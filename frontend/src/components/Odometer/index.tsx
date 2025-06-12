@@ -8,8 +8,7 @@ import {
 import type { LayoutChangeEvent, StyleProp, TextStyle } from 'react-native';
 import { View, Text, Animated, Easing } from 'react-native';
 import { usePrevious } from './usePrevious';
-import { useTheme } from 'react-native-paper';
-import { createOdometerStyles } from './styles';
+import { useStyles } from './styles';
 
 export interface OdometerProps {
 	/** e.g. "0.00001234" */
@@ -31,8 +30,7 @@ const Odometer: FC<OdometerProps> = ({
 	staggered = true,
 	staggerDelay = 50,
 }) => {
-	const theme = useTheme();
-	const styles = createOdometerStyles();
+	const styles = useStyles();
 
 	// Sanitize input value to ensure it only contains valid characters
 	const sanitizedValue = (value || "0").replace(/[^0-9.$,]/g, "0");
@@ -42,7 +40,7 @@ const Odometer: FC<OdometerProps> = ({
 
 	// Create theme-aware text style
 	const themeTextStyle: TextStyle = {
-		color: theme.colors.onSurface,
+		color: styles.colors.onSurface,
 	};
 
 	// Combine theme style with provided fontStyle

@@ -1,12 +1,12 @@
 import { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native'; // Removed TouchableOpacity
-import { Text, useTheme, IconButton, Button, Icon } from 'react-native-paper';
+import { Text, IconButton, Button, Icon } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
-import { createStyles } from './profile_styles';
+import { useStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';
 import {
 	ProfileIcon,
@@ -26,8 +26,7 @@ const Profile = () => {
 		fetchRecentTransactions,
 		hasFetched: transactionsHasFetched
 	} = useTransactionsStore();
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 
 
 	useEffect(() => {
@@ -80,13 +79,13 @@ const Profile = () => {
 			<View style={styles.profileHeader} accessible={false}>
 				<View style={styles.profileIconContainer} accessible={false}>
 					{/* Removed TouchableOpacity wrapper */}
-					<ProfileIcon size={28} color={theme.colors.onSurface} />
+					<ProfileIcon size={28} color={styles.colors.onSurface} />
 					<Text style={styles.profileTitle} accessible={true} testID="portfolio-title">Portfolio</Text>
 				</View>
 				<IconButton
 					icon="cog-outline"
 					size={24}
-					iconColor={theme.colors.onSurface}
+					iconColor={styles.colors.onSurface}
 					onPress={() => {
 						logger.breadcrumb({ category: 'navigation', message: 'Navigating to SettingsScreen from Profile' });
 						navigation.navigate('Settings');
@@ -129,7 +128,7 @@ const Profile = () => {
 			</View>
 			<Button
 				mode="contained"
-				icon={() => <SendIcon size={20} color={theme.colors.onPrimary} />}
+				icon={() => <SendIcon size={20} color={styles.colors.onPrimary} />}
 				onPress={() => {
 					logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
 					navigation.navigate('SendTokens');
@@ -149,7 +148,7 @@ const Profile = () => {
 		<View style={styles.tokensSection} accessible={false}>
 			<View style={styles.tokensHeader} accessible={false}>
 				<View style={styles.tokensIcon}>
-					<CoinsIcon size={24} color={theme.colors.onSurface} />
+					<CoinsIcon size={24} color={styles.colors.onSurface} />
 				</View>
 				<Text style={styles.tokensTitle} accessible={true} testID="your-tokens-title">Your Tokens</Text>
 			</View>
@@ -157,7 +156,7 @@ const Profile = () => {
 			{sortedTokens.length === 0 ? (
 				<View style={styles.emptyStateContainer} accessible={false}>
 					<View style={styles.emptyStateIcon}>
-						<Icon source="wallet-outline" size={48} color={theme.colors.onSurfaceVariant} />
+						<Icon source="wallet-outline" size={48} color={styles.colors.onSurfaceVariant} />
 					</View>
 					<Text style={styles.emptyStateTitle} accessible={true}>No Tokens Found</Text>
 					<Text style={styles.emptyStateText} accessible={true}>
@@ -192,7 +191,7 @@ const Profile = () => {
 		<View style={styles.noWalletContainer}>
 			<View style={styles.noWalletCard}>
 				<View style={styles.noWalletIcon}>
-					<WalletIcon size={48} color={theme.colors.primary} />
+					<WalletIcon size={48} color={styles.colors.primary} />
 				</View>
 				<Text style={styles.noWalletTitle}>No Wallet Connected</Text>
 				<Text style={styles.noWalletText}>
@@ -222,8 +221,8 @@ const Profile = () => {
 						<RefreshControl
 							refreshing={isRefreshing || isPortfolioLoading || isTransactionsLoading}
 							onRefresh={handleRefresh}
-							colors={[theme.colors.primary]}
-							tintColor={theme.colors.primary}
+							colors={[styles.colors.primary]}
+							tintColor={styles.colors.primary}
 						/>
 					}
 				>

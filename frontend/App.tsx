@@ -232,8 +232,11 @@ const App: React.FC = () => {
 	// Get the current theme and merge with extended properties
 	const paperTheme = {
 		...themes[themeType],
+		colors: {
+			...themes[themeType].colors,
+		},
 		...extendedThemeProperties[themeType],
-	} as AppTheme;
+	} as unknown as AppTheme;
 
 	// Set status bar style based on theme
 	const statusBarStyle = themeType === 'light' ? 'dark' : 'light';
