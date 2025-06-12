@@ -2,10 +2,10 @@ package clients
 
 import (
 	"context"
+	"log/slog"
+	"maps"
 	"sync"
 	"time"
-
-	"log/slog"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -77,9 +77,7 @@ func (t *APICallTrackerImpl) GetStats() map[string]map[string]int {
 	statsCopy := make(map[string]map[string]int)
 	for serviceName, endpointMap := range t.counts {
 		statsCopy[serviceName] = make(map[string]int)
-		for endpointName, count := range endpointMap {
-			statsCopy[serviceName][endpointName] = count
-		}
+		maps.Copy(statsCopy[serviceName], endpointMap)
 	}
 	return statsCopy
 }

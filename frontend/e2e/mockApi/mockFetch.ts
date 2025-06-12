@@ -125,7 +125,7 @@ async function handleGetWalletBalances(options?: FetchInit) {
 		const walletBalance = create(WalletBalanceSchema, { balances: [] });
 		return create(GetWalletBalancesResponseSchema, { walletBalance });
 	}
-	if (walletAddress.includes('Active') || walletAddress.includes('GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R')) {
+	if (walletAddress.includes('Active')) {
 		console.log('🎭 Simulating active address with balance for:', walletAddress);
 		const activeBalances = [
 			create(BalanceSchema, { id: 'So11111111111111111111111111111111111111112', amount: 2.5 }),
@@ -320,7 +320,7 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 
 		console.log('🎭 Mock API returning response for:', normalizedPath);
 
-		 
+
 		const responseBody = JSON.stringify(mockResponse, (key, value) => {
 			if (typeof value === 'bigint') {
 				return value.toString();

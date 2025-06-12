@@ -44,38 +44,45 @@ func (a *GoCacheAdapter) Get(key string) (*birdeye.PriceHistory, bool) {
 	cachedValue, err := a.cacheManager.Get(context.Background(), key)
 
 	duration := time.Since(startTime)
-	metrics := a.ristrettoCache.Metrics.String()
+	metrics := a.ristrettoCache.Metrics
 
 	if err != nil {
-		slog.Info("Cache access",
+		slog.Info("🔍 Cache access - MISS (error)",
 			slog.String("key", key),
 			slog.String("outcome", "miss"),
-			slog.Duration("duration", duration),
-			slog.Any("metrics", metrics),
+			slog.Duration("accessDuration", duration),
+			slog.Uint64("hits", metrics.Hits()),
+			slog.Uint64("misses", metrics.Misses()),
+			slog.Float64("hitRatio", metrics.Ratio()),
 			slog.String("error", err.Error()),
 		)
 		return nil, false
 	} else if cachedValue == nil {
-		slog.Info("Cache access",
+		slog.Info("🔍 Cache access - MISS (nil value)",
 			slog.String("key", key),
-			slog.String("outcome", "miss (nil value)"),
-			slog.Duration("duration", duration),
-			slog.Any("metrics", metrics),
+			slog.String("outcome", "miss"),
+			slog.Duration("accessDuration", duration),
+			slog.Uint64("hits", metrics.Hits()),
+			slog.Uint64("misses", metrics.Misses()),
+			slog.Float64("hitRatio", metrics.Ratio()),
 		)
 		return nil, false
 	} else {
-		ttl, b := a.ristrettoCache.GetTTL(key)
-		if !b {
-			slog.Error("something really weird happend, it's not there anymnore", slog.String("key", key))
+		ttl, ttlExists := a.ristrettoCache.GetTTL(key)
+		if !ttlExists {
+			slog.Error("⚠️ Cache inconsistency detected - item exists but no TTL found", slog.String("key", key))
 		}
 
-		// Cache hit
-		slog.Info("Cache access",
+		// Cache hit with enhanced metrics
+		slog.Info("⚡ Cache access - HIT",
 			slog.String("key", key),
 			slog.String("outcome", "hit"),
-			slog.Duration("duration", duration),
-			slog.Any("metrics", metrics),
+			slog.Duration("accessDuration", duration),
 			slog.Duration("remainingTTL", ttl),
+			slog.Uint64("hits", metrics.Hits()),
+			slog.Uint64("misses", metrics.Misses()),
+			slog.Float64("hitRatio", metrics.Ratio()),
+			slog.Int("dataPoints", len(cachedValue.Data.Items)),
 		)
 		return cachedValue, true
 	}
@@ -83,9 +90,31 @@ func (a *GoCacheAdapter) Get(key string) (*birdeye.PriceHistory, bool) {
 
 // Set adds an item to the cache with an expiration duration.
 func (a *GoCacheAdapter) Set(key string, data *birdeye.PriceHistory, expiration time.Duration) {
+	startTime := time.Now()
+
 	// Context can be background or TODO for cache operations
 	err := a.cacheManager.Set(context.Background(), key, data, store.WithExpiration(expiration))
+
+	duration := time.Since(startTime)
+	metrics := a.ristrettoCache.Metrics
+
 	if err != nil {
-		slog.Error("Failed to set cache item", slog.String("key", key), slog.String("error", err.Error()))
+		slog.Error("❌ Failed to store item in cache",
+			slog.String("key", key),
+			slog.Duration("expiration", expiration),
+			slog.Duration("storeDuration", duration),
+			slog.Int("dataPoints", len(data.Data.Items)),
+			slog.String("error", err.Error()),
+		)
+	} else {
+		slog.Info("💾 Successfully stored item in cache",
+			slog.String("key", key),
+			slog.Duration("expiration", expiration),
+			slog.Duration("storeDuration", duration),
+			slog.Int("dataPoints", len(data.Data.Items)),
+			slog.Uint64("totalHits", metrics.Hits()),
+			slog.Uint64("totalMisses", metrics.Misses()),
+			slog.Float64("hitRatio", metrics.Ratio()),
+		)
 	}
 }
