@@ -1,7 +1,7 @@
 import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import {
-	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByMintResponseSchema, type Coin as ProtobufCoin, CoinSchema, // Added for GetCoinById
+	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByMintResponseSchema, type Coin as ProtobufCoin, CoinSchema,
 } from '@/gen/dankfolio/v1/coin_pb';
 import {
 	GetWalletBalancesResponseSchema,
@@ -54,7 +54,6 @@ function parseRequestBody(options?: FetchInit): any {
 
 // Handler Functions
 async function handleGetAvailableCoins(options?: FetchInit) {
-	console.log('🎭 Returning mock GetAvailableCoins response');
 	const requestData = parseRequestBody(options);
 	const coinsToReturn = requestData.trendingOnly ? MOCK_TRENDING_COINS : ALL_MOCK_COINS;
 	return create(GetAvailableCoinsResponseSchema, {
@@ -64,10 +63,7 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleSearch(_options?: FetchInit) {
-	console.log('🎭 Returning mock Search response for /search endpoint (capital S = fetchNewCoins)');
-	console.log('🎭 ✅ Returning new coins (fetchNewCoins call detected via URL path)');
 	const coinsToReturn = MOCK_NEW_COINS;
-	console.log('🎭 New coins being returned:', coinsToReturn.map(c => ({ symbol: c.symbol, name: c.name, jupiterListedAt: c.jupiterListedAt ? new Date(Number(c.jupiterListedAt.seconds) * 1000).toISOString() : null })));
 	return create(SearchResponseSchema, {
 		coins: coinsToReturn,
 		totalCount: coinsToReturn.length,
@@ -76,10 +72,7 @@ async function handleSearch(_options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleSearchCoins(_options?: FetchInit) {
-	console.log('🎭 Returning mock SearchCoins response for /searchcoins endpoint (general search)');
-	console.log('🎭 ❌ Returning trending coins for general search');
 	const coinsToReturn = MOCK_TRENDING_COINS.slice(0, 3);
-	console.log('🎭 Trending coins being returned:', coinsToReturn.map(c => ({ symbol: c.symbol, name: c.name })));
 	return create(SearchResponseSchema, {
 		coins: coinsToReturn,
 		totalCount: coinsToReturn.length,
@@ -88,45 +81,47 @@ async function handleSearchCoins(_options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleSearchCoinByMint(_options?: FetchInit) {
-	console.log('🎭 Returning mock SearchCoinByMint response');
 	return create(SearchCoinByMintResponseSchema, {
 		coin: ALL_MOCK_COINS[0],
 	});
 }
 
 async function handleGetCoinById(options?: FetchInit) {
-	console.log('🎭 Returning mock GetCoinByID response');
 	const requestData = parseRequestBody(options);
-	const mintAddress = requestData.mintAddress || 'So11111111111111111111111111111111111111112'; // Default to SOL
-	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => c.mintAddress === mintAddress) || ALL_MOCK_COINS[0];
-	// Ensure the response is wrapped in CoinSchema if the original was just `coin`
-	// The original code returned `mockResponse = coin;` which might not be a schema instance.
-	// Assuming the service expects a Coin message:
+	const mintAddress = requestData.mintAddress;
+	
+	if (!mintAddress) {
+		// Return gRPC-style error for invalid request
+		throw new Error('INVALID_ARGUMENT: mintAddress is required');
+	}
+	
+	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+		c.mintAddress.toLowerCase() === mintAddress.toLowerCase()
+	);
+	
+	if (!coin) {
+		// Return gRPC-style error for not found
+		throw new Error(`NOT_FOUND: No coin found with mint address ${mintAddress}`);
+	}
+	
 	return create(CoinSchema, coin);
 }
 
 async function handleGetWalletBalances(options?: FetchInit) {
-	console.log('🎭 Returning mock GetWalletBalances response');
 	const requestData = parseRequestBody(options);
 	const walletAddress = requestData.address || '';
 
-	console.log('🎭 Mock API checking wallet address:', walletAddress);
-
 	if (walletAddress.includes('NetworkError') || walletAddress.includes('network-error')) {
-		console.log('🎭 Simulating network error for address:', walletAddress);
 		throw new Error('NETWORK_ERROR: Unable to connect to Solana network');
 	}
 	if (walletAddress.includes('InvalidAddress') || walletAddress === 'invalid-address') {
-		console.log('🎭 Simulating invalid address error for:', walletAddress);
 		throw new Error('INVALID_ADDRESS: Invalid wallet address format');
 	}
 	if (walletAddress.includes('Unused') || walletAddress.includes('unused')) {
-		console.log('🎭 Simulating unused address for:', walletAddress);
 		const walletBalance = create(WalletBalanceSchema, { balances: [] });
 		return create(GetWalletBalancesResponseSchema, { walletBalance });
 	}
 	if (walletAddress.includes('Active')) {
-		console.log('🎭 Simulating active address with balance for:', walletAddress);
 		const activeBalances = [
 			create(BalanceSchema, { id: 'So11111111111111111111111111111111111111112', amount: 2.5 }),
 			create(BalanceSchema, { id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', amount: 100.0 }),
@@ -140,10 +135,23 @@ async function handleGetWalletBalances(options?: FetchInit) {
 }
 
 async function handleGetPriceHistory(options?: FetchInit) {
-	console.log('🎭 Returning mock GetPriceHistory response');
 	const requestData = parseRequestBody(options);
-	const coinAddress = requestData.address || 'So11111111111111111111111111111111111111112';
-	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => c.mintAddress === coinAddress) || MOCK_TRENDING_COINS[4];
+	const coinAddress = requestData.address;
+	
+	if (!coinAddress) {
+		// Return gRPC-style error for invalid request
+		throw new Error('INVALID_ARGUMENT: address is required');
+	}
+	
+	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+		c.mintAddress.toLowerCase() === coinAddress.toLowerCase()
+	);
+	
+	if (!coin) {
+		// Return gRPC-style error for not found
+		throw new Error(`NOT_FOUND: No coin found with mint address ${coinAddress}`);
+	}
+	
 	const isStablecoin = coin.tags.includes('stablecoin');
 	const data = create(PriceHistoryDataSchema, {
 		items: generatePriceHistory(coin.price, isStablecoin),
@@ -153,7 +161,6 @@ async function handleGetPriceHistory(options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetCoinPrices(_options?: FetchInit) {
-	console.log('🎭 Returning mock GetCoinPrices response');
 	const mockPrices: { [key: string]: number } = {};
 	ALL_MOCK_COINS.forEach(coin => {
 		const basePrice = coin.price;
@@ -161,13 +168,11 @@ async function handleGetCoinPrices(_options?: FetchInit) {
 		const randomizedPrice = basePrice * (1 + variation);
 		mockPrices[coin.mintAddress] = Math.max(randomizedPrice, basePrice * 0.1);
 	});
-	console.log('🎭 Generated randomized coin prices:', Object.keys(mockPrices).map(mint => ({ mint: mint.substring(0, 8) + '...', price: mockPrices[mint] })));
 	return { prices: mockPrices }; // This endpoint returns a plain object
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetSwapQuote(_options?: FetchInit) {
-	console.log('🎭 Returning mock GetSwapQuote response');
 	return create(GetSwapQuoteResponseSchema, {
 		estimatedAmount: '0.95',
 		exchangeRate: '0.95',
@@ -181,7 +186,6 @@ async function handleGetSwapQuote(_options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handlePrepareSwap(options?: FetchInit) {
-	console.log('🎭 Returning mock PrepareSwap response');
 	const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
 	return create(PrepareSwapResponseSchema, {
 		unsignedTransaction: mockTransactionBase64,
@@ -190,21 +194,16 @@ async function handlePrepareSwap(options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handlePrepareTransfer(options?: FetchInit) {
-	console.log('🎭 Returning mock PrepareTransfer response (WalletService)');
-	console.log('🎭 Using captured transaction data from real backend');
 	return { unsignedTransaction: CAPTURED_TRANSACTION_DATA.UNSIGNED_TX }; // This endpoint returns a plain object
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleSubmitTransfer(options?: FetchInit) {
-	console.log('🎭 Returning mock SubmitTransfer response (WalletService)');
-	console.log('🎭 Using captured transaction hash from real backend');
 	return { transactionHash: CAPTURED_TRANSACTION_DATA.MOCK_TX_HASH }; // This endpoint returns a plain object
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleSubmitSwap(options?: FetchInit) {
-	console.log('🎭 Returning mock SubmitSwap response');
 	return create(SubmitSwapResponseSchema, {
 		tradeId: 'mock_trade_id_e2e_test_67890',
 		transactionHash: 'mock_transaction_hash_abcdef123456',
@@ -213,7 +212,6 @@ async function handleSubmitSwap(options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetSwapStatus(options?: FetchInit) {
-	console.log('🎭 Returning mock GetSwapStatus response');
 	return { // This endpoint returns a plain object
 		transaction_hash: 'mock_transaction_hash_abcdef123456',
 		status: 'Finalized',
@@ -224,7 +222,6 @@ async function handleGetSwapStatus(options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetTrade(options?: FetchInit) {
-	console.log('🎭 Returning mock GetTrade response');
 	return create(TradeSchema, {
 		id: 'mock_trade_id_e2e_test_67890',
 		userId: 'mock_user_id',
@@ -244,7 +241,6 @@ async function handleGetTrade(options?: FetchInit) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleListTrades(options?: FetchInit) {
-	console.log('🎭 Returning mock ListTrades response');
 	const mockTrade = create(TradeSchema, {
 		id: 'mock_trade_id_e2e_test_67890',
 		userId: 'mock_user_id',
@@ -293,7 +289,6 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 	const urlString = url.toString();
 	const apiUrl = env.apiUrl;
 
-	console.log('🎭 Mock fetch called with URL:', urlString);
 	// Only intercept calls to our API
 	if (!urlString.startsWith(apiUrl)) {
 		console.log('🎭 Not intercepting - URL does not start with API URL');
@@ -302,8 +297,6 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 
 	const path = urlString.replace(apiUrl, '');
 	const normalizedPath = path.replace(/^\/+/, '/').toLowerCase();
-
-	console.log('🎭 Mock API intercepting request:', { url: urlString, path, apiUrl, normalizedPath });
 
 	try {
 		const handler = endpointHandlers[normalizedPath];
@@ -317,8 +310,6 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 			console.log('🎭 Available endpoint handlers:', Object.keys(endpointHandlers));
 			return originalFetch(url, options);
 		}
-
-		console.log('🎭 Mock API returning response for:', normalizedPath);
 
 
 		const responseBody = JSON.stringify(mockResponse, (key, value) => {
