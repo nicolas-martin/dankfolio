@@ -5,7 +5,6 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { useStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
-// Added
 import { useCoinStore } from '@store/coins';
 import { Coin } from '@/types';
 import TokenSelector from '@components/Common/TokenSelector';
