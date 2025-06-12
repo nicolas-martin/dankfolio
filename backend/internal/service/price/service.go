@@ -50,24 +50,22 @@ func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI
 	return s
 }
 
-func (s *Service) GetPriceHistory(ctx context.Context, address string, config BackendTimeframeConfig, timeStr, addressType string) (*birdeye.PriceHistory, error) {
-	cacheKey := fmt.Sprintf("%s-%s", address, config.HistoryType)
+func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrameConfig BackendTimeframeConfig, timeStr, addressType string) (*birdeye.PriceHistory, error) {
+	cacheKey := fmt.Sprintf("%s-%s", address, timeFrameConfig.HistoryType)
 
-	if cachedData, found := s.cache.Get(cacheKey); found {
-		return cachedData, nil
-	}
-
-	// Debug mode handling
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		slog.Info("generating random price history")
 
-		randomHistory, err := s.generateRandomPriceHistory(address, config.BirdeyeType) // Pass BirdeyeType from resolved config
+		randomHistory, err := s.generateRandomPriceHistory(address, timeFrameConfig.BirdeyeType) // Pass BirdeyeType from resolved config
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate random price history: %w", err)
 		}
-
-		s.cache.Set(cacheKey, randomHistory, config.Rounding)
-		slog.InfoContext(ctx, "Cached random price history in debug mode", "key", cacheKey, "duration", config.Rounding)
 		return randomHistory, nil
+	}
+
+	// Enhanced cache hit logging with price history context
+	if cachedData, found := s.cache.Get(cacheKey); found {
+		return cachedData, nil
 	}
 
 	// Parse and round times
@@ -76,17 +74,17 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, config Ba
 		slog.Error("Failed to parse time_from string", "timeFromStr", timeStr, "error", err)
 		return nil, fmt.Errorf("failed to parse time_from: %w", err)
 	}
-	timeFrom := parsedTime.Add(-config.DefaultViewDuration)
+	timeFrom := parsedTime.Add(-timeFrameConfig.DefaultViewDuration)
 	timeTo := parsedTime
 
-	roundedTimeFrom := roundDateDown(timeFrom, config.Rounding)
-	roundedTimeTo := roundDateDown(timeTo, config.Rounding)
+	roundedTimeFrom := roundDateDown(timeFrom, timeFrameConfig.Rounding)
+	roundedTimeTo := roundDateDown(timeTo, timeFrameConfig.Rounding)
 	slog.Info("Time parameters", "inputTime", parsedTime, "originalTimeFrom", timeFrom, "roundedTimeFrom", roundedTimeFrom, "originalTimeTo", timeTo, "roundedTimeTo", roundedTimeTo)
 
 	params := birdeye.PriceHistoryParams{
 		Address:     address,
 		AddressType: addressType,
-		HistoryType: config.BirdeyeType, // Use BirdeyeType from resolved config
+		HistoryType: timeFrameConfig.BirdeyeType, // Use BirdeyeType from resolved config
 		TimeFrom:    roundedTimeFrom,
 		TimeTo:      roundedTimeTo,
 	}
@@ -98,11 +96,8 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, config Ba
 		return nil, fmt.Errorf("failed to fetch price history from birdeye: %w", err)
 	}
 
-	if result != nil {
-		cacheDuration := time.Duration(config.Rounding) * time.Minute
-		slog.Info("Storing fetched data in cache", "key", cacheKey, "expiration", cacheDuration)
-		s.cache.Set(cacheKey, result, cacheDuration)
-	}
+	s.cache.Set(cacheKey, result, timeFrameConfig.Rounding)
+
 	return result, nil
 }
 
