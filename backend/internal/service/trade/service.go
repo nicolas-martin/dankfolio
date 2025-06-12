@@ -227,10 +227,12 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 			Type:                "swap",
 			Amount:              req.Amount,
 			Fee:                 CalculateTradeFee(req.Amount, 1.0), // Placeholder for fee calculation
-			Status:              "completed",
+			Status:              "Finalized",                        // Changed from "completed" to match database status
+			UnsignedTransaction: req.UnsignedTransaction,            // Fix: Include unsigned transaction for data integrity
+			TransactionHash:     debugTxHash,
 			CreatedAt:           now,
 			CompletedAt:         &now,
-			TransactionHash:     debugTxHash,
+			Finalized:           true, // Mark as finalized since it's completed
 		}
 
 		err := s.store.Trades().Create(ctx, trade)
@@ -459,7 +461,7 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 	}
 
 	// If trade status is already final, return it as is.
-	if trade.Status == model.TradeStatusCompleted || trade.Status == model.TradeStatusFailed {
+	if trade.Status == model.TradeStatusFinalized || trade.Status == model.TradeStatusFailed {
 		return trade, nil
 	}
 
@@ -472,39 +474,90 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 			// If there's an error fetching the status (e.g., network, RPC down),
 			// log it and return the trade as is from the DB. Don't alter its status.
 			log.Printf("Error getting transaction status for txHash %s: %v. Returning trade with current DB status '%s'.", txHash, statusErr, trade.Status)
+			strErr := statusErr.Error()
+			trade.Error = &strErr
 			return trade, nil
 		}
 
-		if chainStatus.Confirmed {
-			log.Printf("Transaction %s (trade %s) confirmed on-chain. Updating status to completed.", txHash, trade.ID)
-			trade.Status = model.TradeStatusCompleted
-			now := time.Now()
-			trade.CompletedAt = &now
-			trade.Finalized = true
-			trade.Error = nil // Clear any previous error
-			if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
-				log.Printf("Warning: Failed to update trade %s to completed: %v", trade.ID, errUpdate)
-				// Return the trade with updated fields even if DB update fails, as on-chain it's complete.
-			}
-		} else if chainStatus.Failed || chainStatus.Err != nil {
+		// Update trade based on detailed blockchain status
+		statusChanged := false
+		now := time.Now()
+
+		// Update confirmations if available (do this for ALL statuses)
+		if chainStatus.Confirmations != nil && trade.Confirmations != int32(*chainStatus.Confirmations) {
+			trade.Confirmations = int32(*chainStatus.Confirmations)
+			statusChanged = true
+			log.Printf("Updated confirmations for trade %s: %d", trade.ID, trade.Confirmations)
+		}
+		if chainStatus.Status != trade.Status {
+			log.Printf("Updating trade %s status from '%s' to '%s' based on blockchain status.", trade.ID, trade.Status, chainStatus.Status)
+			trade.Status = chainStatus.Status // Update status based on blockchain
+			statusChanged = true
+		}
+
+		// Handle different blockchain statuses
+		switch chainStatus.Status {
+		case "Failed":
+			// Set error details and completion info for failed transactions
 			errMsg := "Transaction failed on-chain."
-			if chainStatus.Err != nil {
+			if chainStatus.Error != "" {
+				errMsg = fmt.Sprintf("Transaction failed on-chain: %s", chainStatus.Error)
+			} else if chainStatus.Err != nil {
 				errMsg = fmt.Sprintf("Transaction failed on-chain: %v", chainStatus.Err)
 			}
-			log.Printf("Transaction %s (trade %s) failed on-chain. Error: %s. Updating status to failed.", txHash, trade.ID, errMsg)
-			trade.Status = model.TradeStatusFailed
-			trade.Error = &errMsg
-			now := time.Now()
-			trade.CompletedAt = &now // Record time of failure processing
-			trade.Finalized = true
-			if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
-				log.Printf("Warning: Failed to update trade %s to failed: %v", trade.ID, errUpdate)
-				// Return the trade with updated fields even if DB update fails.
+			if trade.Error == nil || *trade.Error != errMsg {
+				log.Printf("Transaction %s (trade %s) failed on-chain. Error: %s", txHash, trade.ID, errMsg)
+				trade.Error = &errMsg
+				trade.CompletedAt = &now
+				trade.Finalized = true
+				statusChanged = true
 			}
-		} else {
-			// Transaction is still pending or status is inconclusive.
-			// Do nothing, return the trade as it was from the database.
-			log.Printf("Transaction %s (trade %s) is still pending or status inconclusive on-chain. Current DB status: '%s'.", txHash, trade.ID, trade.Status)
+
+		case "Finalized":
+			// Set completion info for finalized transactions
+			if trade.CompletedAt == nil || !trade.Finalized {
+				log.Printf("Transaction %s (trade %s) finalized on-chain.", txHash, trade.ID)
+				trade.CompletedAt = &now
+				trade.Finalized = true
+				trade.Error = nil // Clear any previous error
+				statusChanged = true
+			}
+
+		case "Confirmed":
+			// For highly confirmed transactions, set completion info
+			if chainStatus.Confirmations != nil && *chainStatus.Confirmations >= 31 {
+				if trade.CompletedAt == nil {
+					log.Printf("Transaction %s (trade %s) highly confirmed (%d confirmations).", txHash, trade.ID, *chainStatus.Confirmations)
+					trade.CompletedAt = &now
+					trade.Finalized = false // Not technically finalized yet, but practically complete
+					trade.Error = nil
+					statusChanged = true
+				}
+			} else {
+				log.Printf("Transaction %s (trade %s) confirmed on-chain with %d confirmations (waiting for finalization).", txHash, trade.ID, trade.Confirmations)
+			}
+
+		case "Processed":
+			// Transaction is processed but not yet confirmed - just log progress
+			log.Printf("Transaction %s (trade %s) processed on-chain with %d confirmations.", txHash, trade.ID, trade.Confirmations)
+
+		case "Unknown", "Pending":
+			// Transaction status is unknown or still pending - log for monitoring
+			log.Printf("Transaction %s (trade %s) status is %s on-chain with %d confirmations.", txHash, trade.ID, chainStatus.Status, trade.Confirmations)
+
+		default:
+			// Unexpected status - log for monitoring
+			log.Printf("Transaction %s (trade %s) has unexpected status '%s' on-chain with %d confirmations.", txHash, trade.ID, chainStatus.Status, trade.Confirmations)
+		}
+
+		// Update database if any changes were made
+		if statusChanged {
+			if errUpdate := s.store.Trades().Update(ctx, trade); errUpdate != nil {
+				log.Printf("Warning: Failed to update trade %s: %v", trade.ID, errUpdate)
+			} else {
+				log.Printf("Successfully updated trade %s: status=%s, confirmations=%d, finalized=%t",
+					trade.ID, trade.Status, trade.Confirmations, trade.Finalized)
+			}
 		}
 	}
 
