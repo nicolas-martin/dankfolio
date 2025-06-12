@@ -1,26 +1,27 @@
 import { StyleSheet } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
-import { theme as customTheme } from '@utils/theme';
+import { MD3Theme } from 'react-native-paper'; // Keep for type check if needed, AppTheme is primary
+// import { theme as customTheme } from '@utils/theme'; // Will use theme from AppTheme
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	centered: {
 		alignItems: 'center',
 		justifyContent: 'center',
 	},
 	completedText: {
-		color: customTheme.colors.success, // Green color for completed
-		fontSize: 12,
+		color: theme.colors.success, // Green color for completed
+		fontSize: theme.typography.fontSize.xs,
 		fontWeight: '500',
 	},
 	connectButton: {
 		backgroundColor: theme.colors.primary,
-		borderRadius: 12,
-		paddingHorizontal: 24,
-		paddingVertical: 12,
+		borderRadius: theme.borderRadius.md,
+		paddingHorizontal: theme.spacing['2xl'],
+		paddingVertical: theme.spacing.md,
 	},
 	connectButtonText: {
 		color: theme.colors.onPrimary,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 	},
 	container: {
@@ -28,133 +29,127 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		flex: 1,
 	},
 	contentPadding: {
-		paddingHorizontal: 20,
-		paddingTop: 20,
+		paddingHorizontal: theme.spacing.xl,
+		paddingTop: theme.spacing.xl,
 	},
 	copyButton: {
-		marginLeft: 4,
-		marginTop: -2,
+		marginLeft: theme.spacing.xs,
+		marginTop: -2, // No exact match
 	},
 	debugButton: {
-		marginHorizontal: 20,
-		marginTop: 40,
+		marginHorizontal: theme.spacing.xl,
+		marginTop: theme.spacing['4xl'],
 	},
 	debugSection: {
 		backgroundColor: theme.colors.surfaceVariant,
 		borderColor: theme.colors.outline,
-		borderRadius: 12,
+		borderRadius: theme.borderRadius.md,
 		borderWidth: 1,
-		marginHorizontal: 20,
-		marginTop: 20,
-		paddingHorizontal: 16,
-		paddingVertical: 16,
+		marginHorizontal: theme.spacing.xl,
+		marginTop: theme.spacing.xl,
+		paddingHorizontal: theme.spacing.lg,
+		paddingVertical: theme.spacing.lg,
 	},
 	emptyStateContainer: {
 		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		paddingHorizontal: 40,
-		paddingVertical: 60,
+		paddingHorizontal: theme.spacing['4xl'],
+		paddingVertical: 60, // No exact match
 	},
 	emptyStateIcon: {
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 		opacity: 0.6,
 	},
 	emptyStateText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		lineHeight: 20,
+		fontSize: theme.typography.fontSize.sm,
+		lineHeight: theme.typography.fontSize.xl,
 		textAlign: 'center',
 	},
 	emptyStateTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 18,
+		fontSize: theme.typography.fontSize.lg,
 		fontWeight: '600',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 		textAlign: 'center',
 	},
 	headerSection: {
-		marginBottom: 24,
+		marginBottom: theme.spacing['2xl'],
 	},
 	loadingIndicator: {
-		marginVertical: 30, // More space for loading indicator
+		marginVertical: 30, // No exact match
 	},
 	noWalletCard: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: 20,
-		elevation: 4,
-		padding: 32,
-		shadowColor: '#000',
-		shadowOffset: {
-			width: 0,
-			height: 2,
-		},
-		shadowOpacity: 0.1,
-		shadowRadius: 8,
+		borderRadius: theme.spacing.xl,
+		elevation: 4, // No exact match
+		padding: theme.spacing['3xl'],
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: theme.shadows.md.shadowOffset,
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: theme.spacing.sm,
 	},
 	noWalletContainer: {
 		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		paddingHorizontal: 40,
+		paddingHorizontal: theme.spacing['4xl'],
 	},
 	noWalletIcon: {
-		marginBottom: 20,
+		marginBottom: theme.spacing.xl,
 		opacity: 0.7,
 	},
 	noWalletText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		lineHeight: 20,
-		marginBottom: 24,
+		fontSize: theme.typography.fontSize.sm,
+		lineHeight: theme.typography.fontSize.xl,
+		marginBottom: theme.spacing['2xl'],
 		textAlign: 'center',
 	},
 	noWalletTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 20,
+		fontSize: theme.typography.fontSize.xl,
 		fontWeight: '600',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 		textAlign: 'center',
 	},
 	pendingText: {
-		color: customTheme.colors.warning, // Orange color for pending
-		fontSize: 12,
+		color: theme.colors.warning, // Orange color for pending
+		fontSize: theme.typography.fontSize.xs,
 		fontWeight: '500',
 	},
 	portfolioCard: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 20,
-		elevation: 4,
-		marginBottom: 24,
-		padding: 24,
-		shadowColor: '#000',
-		shadowOffset: {
-			width: 0,
-			height: 2,
-		},
-		shadowOpacity: 0.1,
-		shadowRadius: 8,
+		borderRadius: theme.spacing.xl,
+		elevation: 4, // No exact match
+		marginBottom: theme.spacing['2xl'],
+		padding: theme.spacing['2xl'],
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: theme.shadows.md.shadowOffset,
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: theme.spacing.sm,
 	},
 	portfolioHeader: {
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	portfolioSubtext: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		marginBottom: 20,
+		fontSize: theme.typography.fontSize.sm,
+		marginBottom: theme.spacing.xl,
 	},
 	portfolioTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
-		marginBottom: 4,
+		marginBottom: theme.spacing.xs,
 	},
 	portfolioValue: {
 		color: theme.colors.onSurface,
-		fontSize: 32,
+		fontSize: 32, // No exact match
 		fontWeight: '700',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 	},
 	profileHeader: { // Properties are already sorted
 		alignItems: 'center',
@@ -164,13 +159,13 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	profileIconContainer: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginRight: 12,
+		marginRight: theme.spacing.md,
 	},
 	profileTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 24,
+		fontSize: theme.typography.fontSize['2xl'],
 		fontWeight: '700',
-		marginLeft: 12,
+		marginLeft: theme.spacing.md,
 	},
 	safeArea: {
 		backgroundColor: theme.colors.background,
@@ -178,39 +173,36 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	scrollContent: {
 		flexGrow: 1,
-		paddingBottom: 100,
+		paddingBottom: 100, // No exact match
 	},
 	sendButton: {
 		backgroundColor: theme.colors.primary,
-		borderRadius: 12,
-		paddingVertical: 4,
+		borderRadius: theme.borderRadius.md,
+		paddingVertical: theme.spacing.xs,
 	},
 	sendButtonContent: {
-		paddingVertical: 8,
+		paddingVertical: theme.spacing.sm,
 	},
 	sendButtonDisabled: {
 		backgroundColor: theme.colors.primary,
 		opacity: 0.5,
 	},
 	settingsButton: {
-		marginRight: -8,
+		marginRight: -8, // No exact match
 	},
 	themeToggleContainer: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: 20,
-		elevation: 4,
+		borderRadius: theme.spacing.xl,
+		elevation: 4, // No exact match
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 24,
-		padding: 20,
-		shadowColor: '#000',
-		shadowOffset: {
-			width: 0,
-			height: 2,
-		},
-		shadowOpacity: 0.1,
-		shadowRadius: 8,
+		marginBottom: theme.spacing['2xl'],
+		padding: theme.spacing.xl,
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: theme.shadows.md.shadowOffset,
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: theme.spacing.sm,
 	},
 	themeToggleHeader: {
 		alignItems: 'center',
@@ -218,24 +210,24 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	themeToggleTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
-		marginLeft: 12,
+		marginLeft: theme.spacing.md,
 	},
 	tokensHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	tokensIcon: {
-		marginRight: 12,
+		marginRight: theme.spacing.md,
 	},
 	tokensSection: {
 		flex: 1,
 	},
 	tokensTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 20,
+		fontSize: theme.typography.fontSize.xl,
 		fontWeight: '600',
 	},
 	transactionDate: { // Style for the date part of subtitle (if styled differently) - now part of transactionSubtitleText
@@ -246,17 +238,17 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		paddingHorizontal: 40,
-		paddingVertical: 40,
+		paddingHorizontal: theme.spacing['4xl'],
+		paddingVertical: theme.spacing['4xl'],
 	},
 	transactionIconContainer: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 20,
-		height: 40,
+		borderRadius: theme.spacing.xl,
+		height: theme.spacing['4xl'],
 		justifyContent: 'center',
-		marginRight: 12,
-		width: 40,
+		marginRight: theme.spacing.md,
+		width: theme.spacing['4xl'],
 	},
 	transactionInfoContainer: {
 		flex: 1,
@@ -265,68 +257,68 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	transactionItem: {
 		borderBottomColor: theme.colors.outlineVariant,
 		borderBottomWidth: StyleSheet.hairlineWidth,
-		paddingHorizontal: 0,
-		paddingVertical: 10,
+		paddingHorizontal: 0, // No exact match for 0 if it's not a spacing unit
+		paddingVertical: 10, // No exact match
 	},
 	transactionStatusTextCompleted: {
-		color: customTheme.colors.success, // Green color for completed
-		fontSize: 13,
+		color: theme.colors.success, // Green color for completed
+		fontSize: 13, // No exact match
 		fontWeight: 'bold',
-		marginLeft: 4,
+		marginLeft: theme.spacing.xs,
 	},
 	transactionStatusTextDefault: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 13,
+		fontSize: 13, // No exact match
 		fontWeight: 'bold',
-		marginLeft: 4,
+		marginLeft: theme.spacing.xs,
 	},
 	transactionStatusTextFailed: {
 		color: theme.colors.error, // Red for failed
-		fontSize: 13,
+		fontSize: 13, // No exact match
 		fontWeight: 'bold',
-		marginLeft: 4,
+		marginLeft: theme.spacing.xs,
 	},
 	transactionStatusTextPending: {
-		color: customTheme.colors.warning, // Orange color for pending
-		fontSize: 13,
+		color: theme.colors.warning, // Orange color for pending
+		fontSize: 13, // No exact match
 		fontWeight: 'bold',
-		marginLeft: 4,
+		marginLeft: theme.spacing.xs,
 	},
 	transactionSubtitleText: {
 		alignItems: 'center',
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 13,
+		fontSize: 13, // No exact match
 	},
 	transactionTitleText: {
 		color: theme.colors.onSurface,
-		fontSize: 15,
+		fontSize: 15, // No exact match
 		fontWeight: '500',
-		marginBottom: 3,
+		marginBottom: 3, // No exact match
 	},
 	transactionsHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	transactionsListContainer: {
 		// If transactions are in a card, this might have a border or different bg
 		// For now, assumes items are directly under header
 	},
 	transactionsSection: {
-		marginTop: 24,
+		marginTop: theme.spacing['2xl'],
 	},
 	viewAllButton: {
 		alignSelf: 'center',
-		marginTop: 12,
+		marginTop: theme.spacing.md,
 	},
 	walletAddress: { // Properties are already sorted
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '400',
 	},
 	walletAddressContainer: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginTop: 4,
+		marginTop: theme.spacing.xs,
 	},
 });

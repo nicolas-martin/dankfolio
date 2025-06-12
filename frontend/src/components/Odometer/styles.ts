@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
+import { AppTheme } from '@/utils/theme';
 
-export const createOdometerStyles = () => StyleSheet.create({
+export const createOdometerStyles = (theme: AppTheme) => StyleSheet.create({
   digitColumn: {
     alignItems: 'center',
     justifyContent: 'flex-start',

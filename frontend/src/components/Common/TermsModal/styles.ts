@@ -1,60 +1,61 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
   acceptButton: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: theme.spacing.sm,
   },
   actionSection: {
     borderTopColor: theme.colors.outline,
     borderTopWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    padding: 16,
+    padding: theme.spacing.lg,
   },
   cancelButton: {
     flex: 1,
-    marginRight: 8,
+    marginRight: theme.spacing.sm,
   },
   container: {
     alignSelf: 'center',
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    margin: 20,
+    borderRadius: theme.borderRadius.lg,
+    margin: theme.spacing.xl,
     maxHeight: '80%',
     width: '90%',
   },
   contentScroll: {
     maxHeight: '70%',
-    padding: 20,
+    padding: theme.spacing.xl,
   },
   header: {
     borderBottomColor: theme.colors.outline,
     borderBottomWidth: 1,
-    padding: 20,
+    padding: theme.spacing.xl,
   },
   paragraph: {
     color: theme.colors.onSurfaceVariant,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
+    fontSize: theme.typography.fontSize.sm,
+    lineHeight: theme.typography.fontSize.xl,
+    marginBottom: theme.spacing.md,
   },
   sectionTitle: {
     color: theme.colors.onSurface,
-    fontSize: 16,
+    fontSize: theme.typography.fontSize.base,
     fontWeight: 'bold',
-    marginBottom: 8,
-    marginTop: 16,
+    marginBottom: theme.spacing.sm,
+    marginTop: theme.spacing.lg,
   },
   spacer: {
-    height: 20,
+    height: theme.spacing.xl,
   },
   subtitle: {
     color: theme.colors.onSurface,
-    fontSize: 16,
+    fontSize: theme.typography.fontSize.base,
     fontWeight: '500',
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
   },
   title: {
     color: theme.colors.onSurface,

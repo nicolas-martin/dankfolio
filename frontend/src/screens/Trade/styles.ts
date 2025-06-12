@@ -1,17 +1,18 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	actionContainer: {
-		padding: 20,
+		padding: theme.spacing.xl,
 		paddingTop: 0,
 	},
 	cardLabel: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '600',
 		letterSpacing: 0.5,
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 		textTransform: 'uppercase',
 	},
 	container: {
@@ -19,26 +20,26 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		flex: 1,
 	},
 	content: {
-		padding: 20,
+		padding: theme.spacing.xl,
 	},
 	detailLabel: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 	},
 	detailRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 12,
+		marginBottom: theme.spacing.md,
 	},
 	detailValue: {
 		color: theme.colors.onSurface,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '600',
 	},
 	detailsCard: {
 		backgroundColor: theme.colors.surfaceVariant,
-		marginBottom: 24,
+		marginBottom: theme.spacing['2xl'],
 	},
 	detailsContent: {
 		paddingTop: 0,
@@ -46,41 +47,41 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	detailsIcon: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.primary,
-		borderRadius: 12,
-		height: 24,
+		borderRadius: theme.borderRadius.md,
+		height: theme.spacing['2xl'],
 		justifyContent: 'center',
-		marginRight: 8,
-		width: 24,
+		marginRight: theme.spacing.sm,
+		width: theme.spacing['2xl'],
 	},
 	detailsTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 	},
 	errorContainer: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.errorContainer,
-		borderRadius: 12,
+		borderRadius: theme.borderRadius.md,
 		flexDirection: 'row',
-		marginBottom: 20,
-		padding: 16,
+		marginBottom: theme.spacing.xl,
+		padding: theme.spacing.lg,
 	},
 	errorIcon: {
-		marginRight: 12,
+		marginRight: theme.spacing.md,
 	},
 	errorText: {
 		color: theme.colors.onErrorContainer,
 		flex: 1,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 	},
 	exchangeRateLabel: {
 		alignItems: 'center',
 		color: theme.colors.onSurfaceVariant,
 		flexDirection: 'row',
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 	},
 	exchangeRateLabelText: {
-		marginLeft: 4,
+		marginLeft: theme.spacing.xs,
 	},
 	exchangeRateRow: {
 		alignItems: 'center',
@@ -88,28 +89,28 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderTopWidth: 1,
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginTop: 4,
-		paddingTop: 12,
+		marginTop: theme.spacing.xs,
+		paddingTop: theme.spacing.md,
 	},
 	exchangeRateValue: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '700',
 	},
 	header: { // Header Section
 		alignItems: 'center',
-		marginBottom: 32,
+		marginBottom: theme.spacing['3xl'],
 	},
 	loadingContainer: {
 		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		padding: 20,
+		padding: theme.spacing.xl,
 	},
 	loadingText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
-		marginTop: 16,
+		fontSize: theme.typography.fontSize.base,
+		marginTop: theme.spacing.lg,
 		textAlign: 'center',
 	},
 	noWalletContainer: {
@@ -117,41 +118,41 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		backgroundColor: theme.colors.background,
 		flex: 1,
 		justifyContent: 'center',
-		padding: 20,
+		padding: theme.spacing.xl,
 	},
 	noWalletText: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
-		marginBottom: 20,
+		fontSize: theme.typography.fontSize.base,
+		marginBottom: theme.spacing.xl,
 		textAlign: 'center',
 	},
 	refreshProgressBar: {
-		borderRadius: 3,
-		height: 6,
+		borderRadius: 3, // No exact match
+		height: 6, // No exact match
 	},
 	refreshProgressContainer: {
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 12,
-		marginBottom: 20,
-		padding: 16,
+		borderRadius: theme.borderRadius.md,
+		marginBottom: theme.spacing.xl,
+		padding: theme.spacing.lg,
 	},
 	refreshProgressHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 12,
+		marginBottom: theme.spacing.md,
 	},
 	refreshProgressIcon: {
-		marginRight: 8,
+		marginRight: theme.spacing.sm,
 	},
 	refreshProgressLabel: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-		marginTop: 8,
+		fontSize: theme.typography.fontSize.xs,
+		marginTop: theme.spacing.sm,
 		textAlign: 'center',
 	},
 	refreshProgressText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '500',
 	},
 	scrollView: {
@@ -159,78 +160,78 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	subtitle: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		textAlign: 'center',
 	},
 	swapButton: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.primary,
-		borderRadius: 22,
-		height: 44,
+		borderRadius: 22, // No exact match
+		height: 44, // No exact match
 		justifyContent: 'center',
-		width: 44,
+		width: 44, // No exact match
 	},
 	swapButtonContainer: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.background,
 		borderColor: theme.colors.background,
-		borderRadius: 28,
-		borderWidth: 2,
-		elevation: 8,
-		height: 56,
+		borderRadius: 28, // No exact match
+		borderWidth: 2, // No exact match
+		elevation: 8, // No exact match
+		height: 56, // No exact match
 		justifyContent: 'center',
 		left: '50%',
 		position: 'absolute',
 		shadowColor: theme.colors.primary,
 		shadowOffset: { width: 0, height: 0 },
-		shadowOpacity: 0.3,
-		shadowRadius: 8,
-		top: -28,
-		transform: [{ translateX: -28 }],
-		width: 56,
-		zIndex: 10,
+		shadowOpacity: 0.3, // No exact match
+		shadowRadius: theme.spacing.sm,
+		top: -28, // No exact match
+		transform: [{ translateX: -28 }], // No exact match
+		width: 56, // No exact match
+		zIndex: 10, // No exact match
 	},
 	title: { // Effective definition (was duplicate, using the latter one)
 		color: theme.colors.onSurface,
-		fontSize: 28,
+		fontSize: 28, // No exact match
 		fontWeight: '700',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 		textAlign: 'center',
 	},
 	toCardContainerStyle: {
-		marginTop: -8,
+		marginTop: -8, // No exact match
 		position: 'relative',
 	},
 	tradeButton: {
-		borderRadius: 16,
-		elevation: 2,
-		paddingVertical: 4,
-		shadowColor: '#00FF9F',
+		borderRadius: theme.borderRadius.lg,
+		elevation: 2, // No exact match
+		paddingVertical: theme.spacing.xs,
+		shadowColor: '#00FF9F', // Specific color
 		shadowOffset: { width: 0, height: 0 },
-		shadowOpacity: 0.8,
-		shadowRadius: 8,
+		shadowOpacity: 0.8, // No exact match
+		shadowRadius: theme.spacing.sm,
 	},
 	tradeButtonContent: {
-		paddingVertical: 12,
+		paddingVertical: theme.spacing.md,
 	},
 	tradeButtonLabel: {
-		fontSize: 18,
+		fontSize: theme.typography.fontSize.lg,
 		fontWeight: '700',
 	},
 	tradeCard: {
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 20,
-		elevation: 2,
-		marginBottom: 20,
-		padding: 20,
+		borderRadius: theme.spacing.xl,
+		elevation: 2, // No exact match
+		marginBottom: theme.spacing.xl,
+		padding: theme.spacing.xl,
 		position: 'relative',
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 8,
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: theme.shadows.md.shadowOffset,
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: theme.spacing.sm,
 	},
 	tradeContainer: { // Trade Cards Container
-		marginBottom: 24,
+		marginBottom: theme.spacing['2xl'],
 		position: 'relative',
 	},
 });

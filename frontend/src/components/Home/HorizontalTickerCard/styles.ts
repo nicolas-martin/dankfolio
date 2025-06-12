@@ -1,14 +1,17 @@
 import { StyleSheet } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
-import { extendedThemeProperties } from '@utils/theme';
+import { AppTheme } from '@/utils/theme'; // Import AppTheme
 
-export const createStyles = (theme: MD3Theme, themeType: 'light' | 'neon' = 'light') => {
-    const extendedTheme = extendedThemeProperties[themeType];
+// MD3Theme and extendedThemeProperties are no longer needed directly here if AppTheme is comprehensive
+// import { MD3Theme } from 'react-native-paper';
+// import { extendedThemeProperties } from '@utils/theme';
+
+export const createStyles = (theme: AppTheme) => {
+    // const extendedTheme = extendedThemeProperties[themeType]; // No longer needed
 
     return StyleSheet.create({
         change: {
-            fontFamily: extendedTheme.typography.fontFamily.medium,
-            fontSize: extendedTheme.typography.fontSize.sm,
+            fontFamily: theme.typography.fontFamily.medium,
+            fontSize: theme.typography.fontSize.sm,
             textAlign: 'center',
         },
         changeNegative: {
@@ -18,36 +21,36 @@ export const createStyles = (theme: MD3Theme, themeType: 'light' | 'neon' = 'lig
             color: theme.colors.onSurfaceVariant,
         },
         changePositive: {
-            color: extendedTheme.success,
+            color: theme.success, // AppTheme should have 'success' directly
         },
         container: {
             alignItems: 'center',
             backgroundColor: theme.colors.surface,
-            borderRadius: extendedTheme.borderRadius.md,
+            borderRadius: theme.borderRadius.md,
             justifyContent: 'center',
-            marginHorizontal: extendedTheme.spacing.sm,
+            marginHorizontal: theme.spacing.sm,
             minHeight: 120,
             minWidth: 130,
-            padding: extendedTheme.spacing.md,
-            ...extendedTheme.shadows.sm,
+            padding: theme.spacing.md,
+            ...theme.shadows.sm, // AppTheme has shadows
         },
         logoContainer: {
             alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: 10,
+            marginBottom: 10, // No exact match in theme.spacing (sm=8, md=12)
         },
         symbol: {
             color: theme.colors.onSurface,
-            fontFamily: extendedTheme.typography.fontFamily.semiBold,
-            fontSize: extendedTheme.typography.fontSize.sm,
-            marginBottom: extendedTheme.spacing.xs,
+            fontFamily: theme.typography.fontFamily.semiBold,
+            fontSize: theme.typography.fontSize.sm,
+            marginBottom: theme.spacing.xs,
             textAlign: 'center',
         },
         timeAgo: {
             color: theme.colors.onSurfaceVariant,
-            fontFamily: extendedTheme.typography.fontFamily.medium,
-            fontSize: extendedTheme.typography.fontSize.sm,
-            marginBottom: extendedTheme.spacing.xs,
+            fontFamily: theme.typography.fontFamily.medium,
+            fontSize: theme.typography.fontSize.sm,
+            marginBottom: theme.spacing.xs,
             textAlign: 'center',
         },
     });

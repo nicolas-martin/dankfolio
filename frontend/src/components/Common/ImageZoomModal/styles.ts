@@ -1,12 +1,13 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { AppTheme } from '@/utils/theme';
 
 const { width } = Dimensions.get('window');
 const IMAGE_SIZE = width * 0.7;
 
-export const createStyles = () => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
   backdrop: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Specific opacity, leaving as is. theme.colors.backdrop is 0.5 opacity.
     flex: 1,
     justifyContent: 'center',
   },

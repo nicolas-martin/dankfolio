@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../utils/theme';
+import { AppTheme } from '@/utils/theme'; // Import AppTheme
 
-export const styles = StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	container: {
 		backgroundColor: theme.colors.background,
 		borderRadius: theme.borderRadius.md,

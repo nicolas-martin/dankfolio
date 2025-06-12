@@ -1,14 +1,15 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 import { Dimensions } from 'react-native';
+import { AppTheme } from '@/utils/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	chartContainer: {
 		height: 250,
 		backgroundColor: '#1C2127', // Slightly lighter TradingView dark theme background
-		borderRadius: 8,
+		borderRadius: theme.spacing.sm,
 		overflow: 'hidden',
 	},
 	chartWrapper: {
@@ -28,7 +29,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	hoverTimeText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
+		fontSize: theme.typography.fontSize.xs,
 		position: 'absolute',
 		textAlign: 'center',
 	},
@@ -37,11 +38,11 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		backgroundColor: '#1C2127', // Match chartContainer background
-		borderRadius: 8,
+		borderRadius: theme.spacing.sm,
 	},
 	tooltipText: {
 		color: theme.colors.onSurface,
-		fontSize: 12,
+		fontSize: theme.typography.fontSize.xs,
 	},
 });
 

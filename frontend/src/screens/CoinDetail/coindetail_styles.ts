@@ -1,57 +1,58 @@
 import { StyleSheet, Platform } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	aboutCard: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 16,
-		marginBottom: 16,
-		marginHorizontal: 16,
-		padding: 20,
+		borderRadius: theme.borderRadius.lg,
+		marginBottom: theme.spacing.lg,
+		marginHorizontal: theme.spacing.lg,
+		padding: theme.spacing.xl,
 		...Platform.select({
 			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.md.shadowOffset,
+				shadowOpacity: 0.1, // No exact match
+				shadowRadius: theme.spacing.sm,
 			},
 			android: {
-				elevation: 4,
+				elevation: 4, // No exact match
 			},
 		}),
 	},
 	aboutHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	aboutIcon: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.secondaryContainer,
-		borderRadius: 12,
-		height: 24,
+		borderRadius: theme.borderRadius.md,
+		height: theme.spacing['2xl'],
 		justifyContent: 'center',
-		marginRight: 12,
-		width: 24,
+		marginRight: theme.spacing.md,
+		width: theme.spacing['2xl'],
 	},
 	aboutTitle: {
 		color: theme.colors.onSurface,
 		flex: 1,
-		fontSize: 18,
+		fontSize: theme.typography.fontSize.lg,
 		fontWeight: '600',
 	},
 	activityIndicatorContainer: { // New
 		alignItems: 'center',
 		justifyContent: 'center',
-		marginTop: 8,
+		marginTop: theme.spacing.sm,
 	},
 	activityIndicatorOverlay: { // New
 		alignItems: 'center',
 		bottom: 0,
 		justifyContent: 'center',
 		left: 0,
-		marginHorizontal: 16,
-		marginVertical: 16,
+		marginHorizontal: theme.spacing.lg,
+		marginVertical: theme.spacing.lg,
 		position: 'absolute',
 		right: 0,
 		top: 0,
@@ -62,23 +63,23 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		justifyContent: 'center',
 	},
 	chartCardContent: { // New
-		marginHorizontal: 16,
+		marginHorizontal: theme.spacing.lg,
 	},
 	chartContainer: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 16,
-		marginBottom: 16,
-		marginHorizontal: 16,
-		paddingVertical: 16,
+		borderRadius: theme.borderRadius.lg,
+		marginBottom: theme.spacing.lg,
+		marginHorizontal: theme.spacing.lg,
+		paddingVertical: theme.spacing.lg,
 		...Platform.select({
 			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.md.shadowOffset,
+				shadowOpacity: 0.1, // No exact match
+				shadowRadius: theme.spacing.sm,
 			},
 			android: {
-				elevation: 4,
+				elevation: 4, // No exact match
 			},
 		}),
 	},
@@ -100,19 +101,19 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	holdingsCard: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 16,
-		marginBottom: 16,
-		marginHorizontal: 16,
-		padding: 20,
+		borderRadius: theme.borderRadius.lg,
+		marginBottom: theme.spacing.lg,
+		marginHorizontal: theme.spacing.lg,
+		padding: theme.spacing.xl,
 		...Platform.select({
 			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.md.shadowOffset,
+				shadowOpacity: 0.1, // No exact match
+				shadowRadius: theme.spacing.sm,
 			},
 			android: {
-				elevation: 4,
+				elevation: 4, // No exact match
 			},
 		}),
 	},
@@ -120,94 +121,94 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		// This will be replaced by holdingsCard
 	},
 	holdingsContent: {
-		gap: 12,
+		gap: theme.spacing.md,
 	},
 	holdingsHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	holdingsIcon: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.primaryContainer,
-		borderRadius: 12,
-		height: 24,
+		borderRadius: theme.borderRadius.md,
+		height: theme.spacing['2xl'],
 		justifyContent: 'center',
-		marginRight: 12,
-		width: 24,
+		marginRight: theme.spacing.md,
+		width: theme.spacing['2xl'],
 	},
 	holdingsLabel: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 15,
+		fontSize: 15, // No exact match
 		fontWeight: '500',
 	},
 	holdingsRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		paddingVertical: 4,
+		paddingVertical: theme.spacing.xs,
 	},
 	holdingsTitle: {
 		color: theme.colors.onSurface,
 		flex: 1,
-		fontSize: 18,
+		fontSize: theme.typography.fontSize.lg,
 		fontWeight: '600',
 	},
 	holdingsValue: {
 		color: theme.colors.onSurface,
-		fontSize: 15,
+		fontSize: 15, // No exact match
 		fontWeight: '600',
 	},
 	loadingChartText: { // New
 		color: theme.colors.onSurfaceVariant,
-		marginTop: 8,
+		marginTop: theme.spacing.sm,
 	},
 	loadingContainer: {
 		alignItems: 'center',
-		paddingVertical: 20,
+		paddingVertical: theme.spacing.xl,
 	},
 	loadingDetailsText: { // New
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-		marginTop: 8,
+		fontSize: theme.typography.fontSize.xs,
+		marginTop: theme.spacing.sm,
 	},
 	marginBottomL: { // New
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	marginBottomM: { // New
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 	},
 	marginBottomS: { // New
-		marginBottom: 4,
+		marginBottom: theme.spacing.xs,
 	},
 	marginLeftS: { // New
-		marginLeft: 8,
+		marginLeft: theme.spacing.sm,
 	},
 	placeholderChartCardContainer: { // New
-		marginHorizontal: 16,
-		padding: 16,
+		marginHorizontal: theme.spacing.lg,
+		padding: theme.spacing.lg,
 	},
 	placeholderIconShimmer: { // New
-		marginRight: 12,
+		marginRight: theme.spacing.md,
 	},
 	placeholderPadding: { // New
-		padding: 16,
+		padding: theme.spacing.lg,
 	},
 	priceCard: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 16,
-		marginBottom: 16,
-		marginHorizontal: 16,
-		padding: 20,
+		borderRadius: theme.borderRadius.lg,
+		marginBottom: theme.spacing.lg,
+		marginHorizontal: theme.spacing.lg,
+		padding: theme.spacing.xl,
 		...Platform.select({
 			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.md.shadowOffset,
+				shadowOpacity: 0.1, // No exact match
+				shadowRadius: theme.spacing.sm,
 			},
 			android: {
-				elevation: 4,
+				elevation: 4, // No exact match
 			},
 		}),
 	},
@@ -218,38 +219,38 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		flex: 1,
 	},
 	scrollViewContent: {
-		paddingBottom: 100,
-		paddingTop: 8,
+		paddingBottom: 100, // No exact match
+		paddingTop: theme.spacing.sm,
 	},
 	timeframeButtonsContainer: { // Legacy
 		// This will be replaced by timeframeCard
 	},
 	timeframeCard: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 16,
-		marginBottom: 16,
-		marginHorizontal: 16,
-		padding: 12,
+		borderRadius: theme.borderRadius.lg,
+		marginBottom: theme.spacing.lg,
+		marginHorizontal: theme.spacing.lg,
+		padding: theme.spacing.md,
 		...Platform.select({
 			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.md.shadowOffset,
+				shadowOpacity: 0.1, // No exact match
+				shadowRadius: theme.spacing.sm,
 			},
 			android: {
-				elevation: 4,
+				elevation: 4, // No exact match
 			},
 		}),
 	},
 	tradeButton: {
-		borderRadius: 12,
-		elevation: 10,
-		paddingVertical: 4,
-		shadowColor: '#00FF9F',
+		borderRadius: theme.borderRadius.md,
+		elevation: 10, // No exact match
+		paddingVertical: theme.spacing.xs,
+		shadowColor: '#00FF9F', // Specific color
 		shadowOffset: { width: 0, height: 0 },
-		shadowOpacity: 0.8,
-		shadowRadius: 8,
+		shadowOpacity: 0.8, // No exact match
+		shadowRadius: theme.spacing.sm,
 	},
 	tradeButtonContainer: {
 		backgroundColor: theme.colors.surface,
@@ -258,22 +259,22 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		bottom: 0,
 		left: 0,
 		paddingBottom: Platform.select({
-			ios: 34, // Account for home indicator
-			android: 16,
+			ios: 34, // No exact match
+			android: theme.spacing.lg, // 16 is theme.spacing.lg
 		}),
-		paddingHorizontal: 16,
-		paddingTop: 16,
+		paddingHorizontal: theme.spacing.lg,
+		paddingTop: theme.spacing.lg,
 		position: 'absolute',
 		right: 0,
 		...Platform.select({
 			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: -2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: { width: 0, height: -2 }, // No exact match
+				shadowOpacity: 0.1, // No exact match
+				shadowRadius: theme.spacing.sm,
 			},
 			android: {
-				elevation: 8,
+				elevation: 8, // No exact match
 			},
 		}),
 	},

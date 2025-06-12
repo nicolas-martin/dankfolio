@@ -1,51 +1,52 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) =>
+export const createStyles = (theme: AppTheme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      paddingHorizontal: 16,
+      paddingHorizontal: theme.spacing.lg,
     },
     divider: {
       backgroundColor: theme.colors.surfaceVariant,
-      marginVertical: 4,
+      marginVertical: theme.spacing.xs,
     },
     headerTitle: {
       color: theme.colors.onBackground,
-      fontSize: 28,
+      fontSize: 28, // No exact match
       fontWeight: 'bold',
-      marginBottom: 24,
-      marginTop: 24,
+      marginBottom: theme.spacing['2xl'],
+      marginTop: theme.spacing['2xl'],
       textAlign: 'left',
     },
     listItemDescription: {
       color: theme.colors.onSurfaceVariant,
-      fontSize: 14,
+      fontSize: theme.typography.fontSize.sm,
     },
     listItemTitle: {
       color: theme.colors.onSurface,
-      fontSize: 16,
+      fontSize: theme.typography.fontSize.base,
     },
     safeArea: {
       backgroundColor: theme.colors.background,
       flex: 1,
     },
     scrollContent: {
-      paddingBottom: 16,
+      paddingBottom: theme.spacing.lg,
     },
     sectionTitle: {
       color: theme.colors.primary, // Or theme.colors.onSurfaceVariant
-      fontSize: 16,
+      fontSize: theme.typography.fontSize.base,
       fontWeight: '600',
-      marginBottom: 4,
-      marginTop: 8,
+      marginBottom: theme.spacing.xs,
+      marginTop: theme.spacing.sm,
     },
     warningText: {
       color: theme.colors.error,
-      fontSize: 12,
+      fontSize: theme.typography.fontSize.xs,
       fontStyle: 'italic',
-      marginBottom: 8,
-      marginHorizontal: 16,
+      marginBottom: theme.spacing.sm,
+      marginHorizontal: theme.spacing.lg,
     },
   });
