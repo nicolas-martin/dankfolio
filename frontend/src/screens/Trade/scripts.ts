@@ -5,7 +5,6 @@ import { grpcApi } from '@/services/grpcApi';
 import { prepareSwapRequest, signSwapTransaction } from '@/services/solana';
 import { toRawAmount } from '../../utils/numberFormat';
 import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
-import { useTransactionsStore } from '@/store/transactions';
 import type { ToastProps } from '@/components/Common/Toast/toast_types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { REFRESH_INTERVALS } from '@/utils/constants';
@@ -127,9 +126,7 @@ export const pollTradeStatus = async (
 	setPollingConfirmations: (confirmations: number) => void,
 	setPollingStatus: (status: PollingStatus) => void,
 	setPollingError: (error: string | null) => void,
-	stopPollingFn: () => void, // Pass the stopPolling function reference
-	_showToast: (params: ToastProps) => void, // Use ToastProps
-	wallet: Wallet | null // Pass wallet for balance refresh
+	stopPollingFn: () => void,
 ) => {
 	logger.info(`Polling status for ${txHash}...`);
 	try {
@@ -151,9 +148,6 @@ export const pollTradeStatus = async (
 			logger.info('Transaction finalized!', { txHash });
 			setPollingStatus('finalized');
 			stopPollingFn();
-			if (wallet) {
-				usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
-			}
 			// Removed toast notification - status modal already shows finalization
 		} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') {
 			logger.info(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization...`, { txHash });
@@ -455,67 +449,4 @@ export const handleTradeSubmit = (
 	});
 	setIsConfirmationVisible(true);
 	return true;
-};
-
-// Handle status modal close with cleanup
-export const handleCloseStatusModal = (
-	pollingStatus: PollingStatus,
-	wallet: Wallet | null,
-	submittedTxHash: string | null,
-	setIsStatusModalVisible: (visible: boolean) => void,
-	componentStopPolling: () => void,
-	setFromAmount: (amount: string) => void,
-	setToAmount: (amount: string) => void,
-	setTradeDetails: (details: TradeDetailsProps) => void,
-	navigation: any
-) => {
-	logger.breadcrumb({
-		category: 'ui',
-		message: 'Trade status modal closed',
-		data: { submittedTxHash, pollingStatus }
-	});
-	logger.info('[Trade] Cleaning up trade screen and resetting state after status modal close.');
-
-	setIsStatusModalVisible(false);
-	componentStopPolling();
-
-	if (pollingStatus === 'finalized' && wallet?.address) {
-		logger.info('[Trade] Refreshing portfolio and transactions after successful trade.');
-		usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
-		useTransactionsStore.getState().fetchRecentTransactions(wallet.address);
-	}
-
-	setFromAmount('');
-	setToAmount('');
-	setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0' });
-	navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
-};
-
-// Handle try again logic
-export const handleTryAgain = (
-	setIsStatusModalVisible: (visible: boolean) => void,
-	componentStopPolling: () => void,
-	setSubmittedTxHash: (txHash: string | null) => void,
-	setPollingStatus: (status: PollingStatus) => void,
-	setPollingConfirmations: (confirmations: number) => void,
-	setPollingError: (error: string | null) => void,
-	setIsLoadingTrade: (loading: boolean) => void,
-	setIsConfirmationVisible: (visible: boolean) => void
-) => {
-	logger.breadcrumb({ category: 'trade', message: 'User clicked Try Again after failed transaction' });
-	logger.info('[Trade] Resetting trade state for retry attempt.');
-
-	// Close the status modal
-	setIsStatusModalVisible(false);
-	componentStopPolling();
-
-	// Reset trade state but keep the coin selection and amounts
-	setSubmittedTxHash(null);
-	setPollingStatus('pending');
-	setPollingConfirmations(0);
-	setPollingError(null);
-	setIsLoadingTrade(false);
-
-	// Show the confirmation modal again to retry
-	setIsConfirmationVisible(true);
 };

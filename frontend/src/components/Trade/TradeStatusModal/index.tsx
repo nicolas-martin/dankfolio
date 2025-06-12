@@ -23,7 +23,6 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	isVisible,
 	onClose,
-	onTryAgain,
 	txHash,
 	status,
 	confirmations,
@@ -40,9 +39,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	const [displayConfirmations, setDisplayConfirmations] = useState(confirmations);
 	const [hasShownProgress, setHasShownProgress] = useState(false);
 
-	// Flag to prevent double navigation when closing via button vs onDismiss
-	const [isClosingProgrammatically, setIsClosingProgrammatically] = useState(false);
-
 	// Animated values for smooth transitions
 	const [fadeAnim] = useState(new Animated.Value(1));
 	const [progressAnim] = useState(new Animated.Value(0));
@@ -51,7 +47,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	useEffect(() => {
 		logger.info(`[TradeStatusModal] useEffect for isVisible triggered. isVisible: ${isVisible}, txHash: ${txHash}, bottomSheetModalRef.current: ${bottomSheetModalRef.current}`);
 		if (isVisible) {
-			setIsClosingProgrammatically(false);
 			logger.info(`[TradeStatusModal] useEffect: isVisible is true, attempting to present. txHash: ${txHash}`);
 			bottomSheetModalRef.current?.present();
 		} else {
@@ -263,7 +258,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				appearsOnIndex={0}
 				opacity={0.8}
 				onPress={isFinal ? () => {
-					setIsClosingProgrammatically(true);
 					onClose();
 				} : () => { }} // Changed undefined to no-op function
 				// Accessibility properties for testing frameworks
@@ -279,27 +273,14 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	// Handle button close with programmatic flag
 	const handleButtonClose = () => {
-		setIsClosingProgrammatically(true);
-		if (displayStatus === 'failed') {
-			onTryAgain ? onTryAgain() : onClose();
-		} else {
 			onClose();
-		}
 	};
 
-	// Handle onDismiss - only call onClose if not closing programmatically
-	const handleDismiss = () => {
-		if (!isClosingProgrammatically && isFinal) {
-			onClose();
-		}
-		setIsClosingProgrammatically(false);
-	};
 
 	return (
 		<BottomSheetModal
 			ref={bottomSheetModalRef}
 			snapPoints={[SCREEN_HEIGHT * 0.75]}
-			onDismiss={handleDismiss}
 			backgroundStyle={styles.bottomSheetBackground}
 			handleIndicatorStyle={styles.handleIndicator}
 			enablePanDownToClose={isFinal}
