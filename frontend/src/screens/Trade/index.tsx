@@ -24,8 +24,6 @@ import {
 	handleSelectToken,
 	handleAmountChange,
 	handleTradeSubmit,
-	handleCloseStatusModal as handleCloseStatusModalUtil,
-	handleTryAgain as handleTryAgainUtil
 } from './scripts';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
@@ -65,7 +63,7 @@ const Trade: React.FC = () => {
 	}, [pollingIntervalRef, setIsLoadingTrade]);
 
 	const componentPollTradeStatus = async (txHash: string) => {
-		await pollTradeStatus(txHash, setPollingConfirmations, setPollingStatus, setPollingError, componentStopPolling, showToast, wallet);
+		await pollTradeStatus(txHash, setPollingConfirmations, setPollingStatus, setPollingError, componentStopPolling);
 	};
 
 	const componentStartPolling = (txHash: string) => {
@@ -197,33 +195,6 @@ const Trade: React.FC = () => {
 
 		await executeTrade(fromCoin, toCoin, fromAmount, 1, showToast, setIsLoadingTrade, setIsConfirmationVisible, setPollingStatus, setSubmittedTxHash, setPollingError, setPollingConfirmations, setIsStatusModalVisible, componentStartPolling);
 	};
-
-	const handleCloseStatusModal = useCallback(() => {
-		handleCloseStatusModalUtil(
-			pollingStatus,
-			wallet,
-			submittedTxHash,
-			setIsStatusModalVisible,
-			componentStopPolling,
-			setFromAmount,
-			setToAmount,
-			setTradeDetails,
-			navigation
-		);
-	}, [navigation, componentStopPolling, submittedTxHash, pollingStatus, wallet]);
-
-	const handleTryAgain = useCallback(() => {
-		handleTryAgainUtil(
-			setIsStatusModalVisible,
-			componentStopPolling,
-			setSubmittedTxHash,
-			setPollingStatus,
-			setPollingConfirmations,
-			setPollingError,
-			setIsLoadingTrade,
-			setIsConfirmationVisible
-		);
-	}, [componentStopPolling]);
 
 	const handleSwapCoins = () => {
 		logger.breadcrumb({ category: 'trade', message: 'Pressed swap tokens button', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
@@ -444,9 +415,15 @@ const Trade: React.FC = () => {
 				/>
 			)}
 			<TradeStatusModal
+				onClose={() => {
+					setIsStatusModalVisible(false);
+					setPollingStatus('pending');
+					setPollingConfirmations(0);
+					setPollingError(null);
+					setSubmittedTxHash(null);
+					navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
+				}}
 				isVisible={isStatusModalVisible}
-				onClose={handleCloseStatusModal}
-				onTryAgain={handleTryAgain}
 				txHash={submittedTxHash}
 				status={pollingStatus}
 				confirmations={pollingConfirmations}

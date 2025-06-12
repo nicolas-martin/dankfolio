@@ -8,7 +8,6 @@ import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
 import { useTheme, BottomNavigation, MD3Theme } from 'react-native-paper'; // Added MD3Theme
 import { Platform, StyleSheet } from 'react-native'; // Added StyleSheet
 
-// Import screens
 import Home from '@screens/Home';
 import Profile from '@screens/Profile';
 import Search from '@screens/Search';
@@ -31,7 +30,7 @@ const getTabNavigatorStyles = (theme: MD3Theme) => StyleSheet.create({
 		}),
 		...Platform.select({
 			ios: {
-				shadowColor: theme.colors.shadow, // Use theme color for shadow
+				shadowColor: theme.colors.shadow,
 				shadowOffset: { width: 0, height: -2 },
 				shadowOpacity: 0.1,
 				shadowRadius: 8,
@@ -45,7 +44,7 @@ const getTabNavigatorStyles = (theme: MD3Theme) => StyleSheet.create({
 
 const TabNavigator = () => {
 	const theme = useTheme();
-	const styles = getTabNavigatorStyles(theme); // Get styles
+	const styles = getTabNavigatorStyles(theme);
 
 	return (
 		<Tab.Navigator

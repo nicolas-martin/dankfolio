@@ -1,5 +1,5 @@
-import { Coin } from '@/types'; // Assuming Coin type is in @/types
-import { SearchSortByOption } from '@/services/grpc/model'; // Import if not already there
+import { Coin } from '@/types';
+import { SearchSortByOption } from '@/services/grpc/model';
 
 export type RootStackParamList = {
 	Home: undefined;
@@ -8,7 +8,6 @@ export type RootStackParamList = {
 	SendTokens: undefined;
 	Settings: undefined;
 
-	// Merged/Prioritized from navigation.ts
 	CoinDetail: {
 		coin: Coin;
 		solCoin?: Coin;
@@ -30,7 +29,6 @@ export type RootStackParamList = {
 	MainTabs: undefined;
 };
 
-// You might have other navigator-specific param lists, e.g., for a BottomTabNavigator
 export type HomeStackParamList = {
 	HomeScreen: undefined;
 	CoinDetailScreen: {
