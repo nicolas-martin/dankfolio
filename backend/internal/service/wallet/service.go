@@ -587,31 +587,3 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 
 	return tokens, nil
 }
-
-// submitTransaction submits a signed transaction to the blockchain
-// This function is now effectively replaced by direct calls to chainClient.SendRawTransaction
-// or chainClient.SendTransaction if building a generic transaction.
-// Keeping it for now if it's used by other parts of the service that still build *solana.Transaction.
-// If those parts are refactored to use SendRawTransaction, this can be removed.
-func (s *Service) submitTransaction(ctx context.Context, tx *solana.Transaction) (solana.Signature, error) {
-	txBytes, err := tx.MarshalBinary()
-	if err != nil {
-		return solana.Signature{}, fmt.Errorf("failed to serialize transaction for submitTransaction: %w", err)
-	}
-
-	maxRetries := uint(3)
-	sig, err := s.chainClient.SendRawTransaction(ctx, txBytes, bmodel.TransactionOptions{
-		SkipPreflight:       false,
-		PreflightCommitment: "confirmed",
-		MaxRetries:          maxRetries,
-	})
-	if err != nil {
-		return solana.Signature{}, fmt.Errorf("failed to submit transaction via SendRawTransaction: %w", err)
-	}
-	// The signature from SendRawTransaction is bmodel.Signature, convert to solana.Signature
-	solSig, err := solana.SignatureFromBase58(string(sig))
-	if err != nil {
-		return solana.Signature{}, fmt.Errorf("failed to convert bmodel.Signature to solana.Signature: %w", err)
-	}
-	return solSig, nil
-}

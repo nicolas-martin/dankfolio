@@ -174,34 +174,110 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 
 		if status != nil {
 			statusChanged := false
+			now := time.Now()
 
-			if trade.Status != status.Status {
-				trade.Status = status.Status
-				statusChanged = true
-			}
+			// Always update confirmations first (for all statuses)
 			if status.Confirmations != nil && trade.Confirmations != int32(*status.Confirmations) {
 				trade.Confirmations = int32(*status.Confirmations)
 				statusChanged = true
+				slog.Debug("Updated confirmations for trade", "trade_id", trade.ID, "confirmations", trade.Confirmations)
 			}
-			if trade.Finalized != (status.Status == "Finalized") {
-				trade.Finalized = status.Status == "Finalized"
-				if trade.Finalized {
-					now := time.Now()
-					trade.CompletedAt = &now
-				}
+
+			// Update status if it changed
+			if status.Status != trade.Status {
+				slog.Debug("Updating trade status based on blockchain", "trade_id", trade.ID, "old_status", trade.Status, "new_status", status.Status)
+				trade.Status = status.Status
 				statusChanged = true
 			}
-			if status.Error != "" {
+
+			// Handle different blockchain statuses for additional fields
+			switch status.Status {
+			case "Failed":
+				// Set error details and completion info for failed transactions
+				errMsg := "Transaction failed on-chain."
+				if status.Error != "" {
+					errMsg = fmt.Sprintf("Transaction failed on-chain: %s", status.Error)
+				}
+				if trade.Error == nil || *trade.Error != errMsg {
+					trade.Error = &errMsg
+					trade.CompletedAt = &now
+					trade.Finalized = true
+					statusChanged = true
+					slog.Info("Trade failed on-chain", "trade_id", trade.ID, "error", errMsg)
+				}
+
+			case "Finalized":
+				// Set completion info for finalized transactions
+				if trade.CompletedAt == nil || !trade.Finalized {
+					trade.CompletedAt = &now
+					trade.Finalized = true
+					trade.Error = nil // Clear any previous error
+					statusChanged = true
+					slog.Info("Trade finalized on-chain", "trade_id", trade.ID)
+				}
+
+			case "Confirmed":
+				// For highly confirmed transactions, set completion info
+				if status.Confirmations != nil && *status.Confirmations >= 31 {
+					if trade.CompletedAt == nil {
+						trade.CompletedAt = &now
+						trade.Finalized = false // Not technically finalized yet
+						trade.Error = nil
+						statusChanged = true
+						slog.Info("Trade highly confirmed", "trade_id", trade.ID, "confirmations", *status.Confirmations)
+					}
+				} else {
+					confirmations := 0
+					if status.Confirmations != nil {
+						confirmations = int(*status.Confirmations)
+					}
+					slog.Debug("Trade confirmed with lower confirmation count", "trade_id", trade.ID, "confirmations", confirmations)
+				}
+
+			case "Processed":
+				// Transaction processed but not confirmed - log progress
+				confirmations := 0
+				if status.Confirmations != nil {
+					confirmations = int(*status.Confirmations)
+				}
+				slog.Debug("Trade processed on-chain", "trade_id", trade.ID, "confirmations", confirmations)
+
+			case "Unknown", "Pending":
+				// Transaction status unknown or pending - log for monitoring
+				confirmations := 0
+				if status.Confirmations != nil {
+					confirmations = int(*status.Confirmations)
+				}
+				slog.Debug("Trade status pending/unknown", "trade_id", trade.ID, "status", status.Status, "confirmations", confirmations)
+
+			default:
+				// Unexpected status - log for monitoring
+				confirmations := 0
+				if status.Confirmations != nil {
+					confirmations = int(*status.Confirmations)
+				}
+				slog.Warn("Trade has unexpected blockchain status", "trade_id", trade.ID, "status", status.Status, "confirmations", confirmations)
+			}
+
+			// Handle explicit error from status
+			if status.Error != "" && trade.Error == nil {
 				errStr := status.Error
 				trade.Error = &errStr
-				trade.Status = "failed"
+				if trade.Status != model.TradeStatusFailed {
+					trade.Status = model.TradeStatusFailed
+					trade.CompletedAt = &now
+					trade.Finalized = true
+				}
 				statusChanged = true
+				slog.Info("Trade error detected", "trade_id", trade.ID, "error", errStr)
 			}
+
+			// Save changes if any updates were made
 			if statusChanged {
 				if errUpdate := s.tradeService.UpdateTrade(ctx, trade); errUpdate != nil {
 					slog.Warn("Failed to update trade status", "tx_hash", identifier.TransactionHash, "error", errUpdate)
 				} else {
-					slog.Info("Updated trade status",
+					slog.Info("Successfully updated trade via gRPC",
 						"tx_hash", identifier.TransactionHash,
 						"status", trade.Status,
 						"confirmations", trade.Confirmations,
