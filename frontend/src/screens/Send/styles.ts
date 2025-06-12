@@ -1,73 +1,73 @@
 import { StyleSheet, Platform } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme'; // Changed MD3Theme to AppTheme
 
-export const createStyles = (theme: MD3Theme) =>
+export const createStyles = (theme: AppTheme) => // Changed MD3Theme to AppTheme
 	StyleSheet.create({
 		amountCard: {
 			backgroundColor: theme.colors.surface,
-			borderRadius: 16,
-			marginBottom: 12,
-			padding: 16,
+			borderRadius: theme.borderRadius.lg, // 16
+			marginBottom: theme.spacing.md, // 12
+			padding: theme.spacing.lg, // 16
 			...Platform.select({
 				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 2 },
-					shadowOpacity: 0.1,
-					shadowRadius: 8,
+					shadowColor: theme.shadows.sm.shadowColor,
+					shadowOffset: theme.shadows.md.shadowOffset, // {0,2}
+					shadowOpacity: 0.1, // No exact match
+					shadowRadius: theme.spacing.sm, // 8
 				},
 				android: {
-					elevation: 4,
+					elevation: 4, // No exact match
 				},
 			}),
 		},
 		amountContainer: { // Legacy
 			alignItems: 'center',
 			flexDirection: 'row',
-			gap: 8,
+			gap: theme.spacing.sm, // 8
 		},
 		amountHeader: { // Legacy
 			alignItems: 'center',
 			flexDirection: 'row',
-			marginBottom: 16,
+			marginBottom: theme.spacing.lg, // 16
 		},
 		amountIcon: { // Legacy
 			alignItems: 'center',
 			backgroundColor: theme.colors.secondaryContainer,
-			borderRadius: 12,
-			height: 24,
+			borderRadius: theme.borderRadius.md, // 12
+			height: theme.spacing['2xl'], // 24
 			justifyContent: 'center',
-			marginRight: 12,
-			width: 24,
+			marginRight: theme.spacing.md, // 12
+			width: theme.spacing['2xl'], // 24
 		},
 		amountTitle: { // Legacy
 			color: theme.colors.onSurface,
 			flex: 1,
-			fontSize: 18,
+			fontSize: theme.typography.fontSize.lg, // 18
 			fontWeight: '600',
 		},
 		balanceText: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 12,
-			marginTop: 4,
+			fontSize: theme.typography.fontSize.xs, // 12
+			marginTop: theme.spacing.xs, // 4
 		},
 		button: { // Legacy
 			alignItems: 'center',
 			backgroundColor: theme.colors.primary,
-			borderRadius: 8,
+			borderRadius: theme.spacing.sm, // 8
 			opacity: 1,
-			padding: 16,
+			padding: theme.spacing.lg, // 16
 		},
 		buttonDisabled: { // Legacy
 			opacity: 0.5,
 		},
 		buttonText: { // Legacy
 			color: theme.colors.onPrimary,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			fontWeight: 'bold',
 		},
 		centeredView: { // For Verification Modal
 			alignItems: 'center',
-			backgroundColor: 'rgba(0,0,0,0.5)',
+			backgroundColor: theme.colors.backdrop, // 'rgba(0,0,0,0.5)'
 			flex: 1,
 			justifyContent: 'center',
 		},
@@ -76,102 +76,99 @@ export const createStyles = (theme: MD3Theme) =>
 			flex: 1,
 		},
 		content: {
-			paddingBottom: 100,
-			paddingHorizontal: 16,
-			paddingTop: 16,
+			paddingBottom: 100, // No exact match
+			paddingHorizontal: theme.spacing.lg, // 16
+			paddingTop: theme.spacing.lg, // 16
 		},
 		contentPadding: { // Legacy
-			padding: 20,
+			padding: theme.spacing.xl, // 20
 		},
 		errorContainer: {
 			alignItems: 'center',
 			backgroundColor: theme.colors.errorContainer,
-			borderRadius: 12,
+			borderRadius: theme.borderRadius.md, // 12
 			flexDirection: 'row',
-			gap: 8,
-			marginBottom: 16,
-			marginHorizontal: 16,
-			paddingHorizontal: 16,
-			paddingVertical: 12,
+			gap: theme.spacing.sm, // 8
+			marginBottom: theme.spacing.lg, // 16
+			marginHorizontal: theme.spacing.lg, // 16
+			paddingHorizontal: theme.spacing.lg, // 16
+			paddingVertical: theme.spacing.md, // 12
 		},
 		errorText: {
 			color: theme.colors.onErrorContainer,
 			flex: 1,
-			fontSize: 14,
+			fontSize: theme.typography.fontSize.sm, // 14
 			fontWeight: '500',
 		},
 		header: { // Legacy
 			alignItems: 'center',
-			marginBottom: 32,
+			marginBottom: theme.spacing['3xl'], // 32
 		},
 		input: {
 			backgroundColor: theme.colors.surfaceVariant,
-			borderRadius: 12,
+			borderRadius: theme.borderRadius.md, // 12
 			color: theme.colors.onSurface,
 			fontFamily: 'monospace',
-			fontSize: 16,
-			padding: 16,
+			fontSize: theme.typography.fontSize.base, // 16
+			padding: theme.spacing.lg, // 16
 		},
 		inputContainer: { // Legacy
-			marginBottom: 20,
+			marginBottom: theme.spacing.xl, // 20
 		},
 		label: { // Legacy
 			color: theme.colors.onSurface,
-			fontSize: 16,
-			marginBottom: 8,
+			fontSize: theme.typography.fontSize.base, // 16
+			marginBottom: theme.spacing.sm, // 8
 		},
 		maxButton: { // Properties are already sorted
 			backgroundColor: theme.colors.primaryContainer,
-			borderRadius: 8,
+			borderRadius: theme.spacing.sm, // 8
 			justifyContent: 'center',
-			paddingHorizontal: 12,
-			paddingVertical: 8,
+			paddingHorizontal: theme.spacing.md, // 12
+			paddingVertical: theme.spacing.sm, // 8
 		},
 		maxButtonText: {
 			color: theme.colors.onPrimaryContainer,
-			fontSize: 14,
+			fontSize: theme.typography.fontSize.sm, // 14
 			fontWeight: '600',
 		},
 		modalText: { // For Verification Modal
-			marginBottom: 20,
+			marginBottom: theme.spacing.xl, // 20
 			textAlign: 'center',
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			color: theme.colors.onSurface,
-			lineHeight: 24,
+			lineHeight: theme.typography.fontSize['2xl'], // 24
 		},
 		modalView: { // For Verification Modal
-			margin: 20,
+			margin: theme.spacing.xl, // 20
 			backgroundColor: theme.colors.surface,
-			borderRadius: 20,
-			padding: 25,
+			borderRadius: theme.spacing.xl, // 20
+			padding: 25, // No exact match
 			alignItems: 'center',
-			shadowColor: '#000',
-			shadowOffset: {
-				width: 0,
-				height: 2,
-			},
-			shadowOpacity: 0.25,
-			shadowRadius: 4,
-			elevation: 5,
+			shadowColor: theme.shadows.sm.shadowColor,
+			shadowOffset: theme.shadows.md.shadowOffset, // {0,2}
+			shadowOpacity: theme.shadows.md.shadowOpacity, // 0.25
+			shadowRadius: theme.spacing.xs, // 4
+			elevation: theme.shadows.md.elevation, // 5
 			width: '85%',
 		},
 		noWalletCard: {
 			alignItems: 'center',
 			backgroundColor: theme.colors.surface,
-			borderRadius: 20,
-			elevation: 4,
-			maxWidth: 320,
-			padding: 32,
+			borderRadius: theme.spacing.xl, // 20
+			elevation: 4, // No exact match
+			maxWidth: 320, // No exact match
+			padding: theme.spacing['3xl'], // 32
 			width: '90%',
 			...Platform.select({
 				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 4 },
-					shadowOpacity: 0.15,
-					shadowRadius: 12,
+					shadowColor: theme.shadows.sm.shadowColor,
+					shadowOffset: { width: 0, height: 4 }, // No exact match
+					shadowOpacity: 0.15, // No exact match
+					shadowRadius: theme.spacing.md, // 12
 				},
 				android: {
-					elevation: 6,
+					elevation: 6, // No exact match
 				},
 			}),
 		},
@@ -179,77 +176,77 @@ export const createStyles = (theme: MD3Theme) =>
 			alignItems: 'center',
 			flex: 1,
 			justifyContent: 'center',
-			padding: 20,
+			padding: theme.spacing.xl, // 20
 		},
 		noWalletIcon: {
-			marginBottom: 20,
+			marginBottom: theme.spacing.xl, // 20
 			opacity: 0.7,
 		},
 		noWalletSubtitle: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			textAlign: 'center',
 		},
 		noWalletTitle: {
 			color: theme.colors.onSurface,
-			fontSize: 22,
+			fontSize: 22, // No exact match
 			fontWeight: '700',
-			marginBottom: 8,
-			marginTop: 16,
+			marginBottom: theme.spacing.sm, // 8
+			marginTop: theme.spacing.lg, // 16
 			textAlign: 'center',
 		},
 		percentageButton: {
 			alignItems: 'center',
 			backgroundColor: theme.colors.surfaceVariant,
-			borderRadius: 8,
+			borderRadius: theme.spacing.sm, // 8
 			flex: 1,
-			paddingHorizontal: 12,
-			paddingVertical: 10,
+			paddingHorizontal: theme.spacing.md, // 12
+			paddingVertical: 10, // No exact match
 		},
 		percentageButtonText: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 14,
+			fontSize: theme.typography.fontSize.sm, // 14
 			fontWeight: '600',
 		},
 		percentageContainer: {
 			flexDirection: 'row',
-			gap: 8,
+			gap: theme.spacing.sm, // 8
 		},
 		recipientCard: {
 			backgroundColor: theme.colors.surface,
-			borderRadius: 16,
-			marginBottom: 20,
-			padding: 20,
+			borderRadius: theme.borderRadius.lg, // 16
+			marginBottom: theme.spacing.xl, // 20
+			padding: theme.spacing.xl, // 20
 			...Platform.select({
 				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 2 },
-					shadowOpacity: 0.1,
-					shadowRadius: 8,
+					shadowColor: theme.shadows.sm.shadowColor,
+					shadowOffset: theme.shadows.md.shadowOffset, // {0,2}
+					shadowOpacity: 0.1, // No exact match
+					shadowRadius: theme.spacing.sm, // 8
 				},
 				android: {
-					elevation: 4,
+					elevation: 4, // No exact match
 				},
 			}),
 		},
 		recipientHeader: {
 			alignItems: 'center',
 			flexDirection: 'row',
-			gap: 8,
-			marginBottom: 12,
+			gap: theme.spacing.sm, // 8
+			marginBottom: theme.spacing.md, // 12
 		},
 		recipientIcon: { // Legacy
 			alignItems: 'center',
 			backgroundColor: theme.colors.tertiaryContainer,
-			borderRadius: 12,
-			height: 24,
+			borderRadius: theme.borderRadius.md, // 12
+			height: theme.spacing['2xl'], // 24
 			justifyContent: 'center',
-			marginRight: 12,
-			width: 24,
+			marginRight: theme.spacing.md, // 12
+			width: theme.spacing['2xl'], // 24
 		},
 		recipientTitle: {
 			color: theme.colors.onSurface,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			fontWeight: '600',
 		},
 		scrollView: {
@@ -258,22 +255,22 @@ export const createStyles = (theme: MD3Theme) =>
 		sendButton: { // Properties are already sorted
 			alignItems: 'center',
 			backgroundColor: theme.colors.primary,
-			borderRadius: 12,
+			borderRadius: theme.borderRadius.md, // 12
 			flexDirection: 'row',
-			gap: 8,
+			gap: theme.spacing.sm, // 8
 			justifyContent: 'center',
-			marginHorizontal: 16,
-			paddingHorizontal: 24,
-			paddingVertical: 16,
+			marginHorizontal: theme.spacing.lg, // 16
+			paddingHorizontal: theme.spacing['2xl'], // 24
+			paddingVertical: theme.spacing.lg, // 16
 			...Platform.select({
 				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 2 },
-					shadowOpacity: 0.15,
-					shadowRadius: 8,
+					shadowColor: theme.shadows.sm.shadowColor,
+					shadowOffset: theme.shadows.md.shadowOffset, // {0,2}
+					shadowOpacity: 0.15, // No exact match
+					shadowRadius: theme.spacing.sm, // 8
 				},
 				android: {
-					elevation: 6,
+					elevation: 6, // No exact match
 				},
 			}),
 		},
@@ -282,76 +279,76 @@ export const createStyles = (theme: MD3Theme) =>
 		},
 		sendButtonText: {
 			color: theme.colors.onPrimary,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			fontWeight: '600',
 		},
 		subtitle: { // Legacy
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			textAlign: 'center',
 		},
 		title: { // Legacy
 			color: theme.colors.onSurface,
-			fontSize: 28,
+			fontSize: 28, // No exact match
 			fontWeight: '700',
-			marginBottom: 8,
+			marginBottom: theme.spacing.sm, // 8
 			textAlign: 'center',
 		},
 		tokenCard: {
 			backgroundColor: theme.colors.surface,
-			borderRadius: 16,
-			marginBottom: 12,
-			padding: 20,
+			borderRadius: theme.borderRadius.lg, // 16
+			marginBottom: theme.spacing.md, // 12
+			padding: theme.spacing.xl, // 20
 			...Platform.select({
 				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 2 },
-					shadowOpacity: 0.1,
-					shadowRadius: 8,
+					shadowColor: theme.shadows.sm.shadowColor,
+					shadowOffset: theme.shadows.md.shadowOffset, // {0,2}
+					shadowOpacity: 0.1, // No exact match
+					shadowRadius: theme.spacing.sm, // 8
 				},
 				android: {
-					elevation: 4,
+					elevation: 4, // No exact match
 				},
 			}),
 		},
 		tokenCardHeader: { // Legacy
 			alignItems: 'center',
 			flexDirection: 'row',
-			marginBottom: 16,
+			marginBottom: theme.spacing.lg, // 16
 		},
 		tokenCardIcon: { // Legacy
 			alignItems: 'center',
 			backgroundColor: theme.colors.primaryContainer,
-			borderRadius: 12,
-			height: 24,
+			borderRadius: theme.borderRadius.md, // 12
+			height: theme.spacing['2xl'], // 24
 			justifyContent: 'center',
-			marginRight: 12,
-			width: 24,
+			marginRight: theme.spacing.md, // 12
+			width: theme.spacing['2xl'], // 24
 		},
 		tokenCardTitle: { // Legacy
 			color: theme.colors.onSurface,
 			flex: 1,
-			fontSize: 18,
+			fontSize: theme.typography.fontSize.lg, // 18
 			fontWeight: '600',
 		},
 		verificationActions: {
 			flexDirection: 'row',
-			gap: 12,
+			gap: theme.spacing.md, // 12
 		},
 		verificationButton: {
 			alignItems: 'center',
-			borderRadius: 12,
+			borderRadius: theme.borderRadius.md, // 12
 			flex: 1,
 			justifyContent: 'center',
-			paddingHorizontal: 16,
-			paddingVertical: 12,
+			paddingHorizontal: theme.spacing.lg, // 16
+			paddingVertical: theme.spacing.md, // 12
 		},
 		verificationButtonCancel: {
 			backgroundColor: theme.colors.surfaceVariant,
 		},
 		verificationButtonCancelText: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 14,
+			fontSize: theme.typography.fontSize.sm, // 14
 			fontWeight: '600',
 		},
 		verificationButtonContinue: {
@@ -359,60 +356,60 @@ export const createStyles = (theme: MD3Theme) =>
 		},
 		verificationButtonContinueText: {
 			color: theme.colors.onPrimary,
-			fontSize: 14,
+			fontSize: theme.typography.fontSize.sm, // 14
 			fontWeight: '600',
 		},
 		verificationCard: {
 			backgroundColor: theme.colors.surface,
-			borderRadius: 16,
-			marginBottom: 16,
-			padding: 20,
+			borderRadius: theme.borderRadius.lg, // 16
+			marginBottom: theme.spacing.lg, // 16
+			padding: theme.spacing.xl, // 20
 			...Platform.select({
 				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 2 },
-					shadowOpacity: 0.1,
-					shadowRadius: 8,
+					shadowColor: theme.shadows.sm.shadowColor,
+					shadowOffset: theme.shadows.md.shadowOffset, // {0,2}
+					shadowOpacity: 0.1, // No exact match
+					shadowRadius: theme.spacing.sm, // 8
 				},
 				android: {
-					elevation: 4,
+					elevation: 4, // No exact match
 				},
 			}),
 		},
 		verificationCardError: {
 			borderLeftColor: theme.colors.error,
-			borderLeftWidth: 4,
+			borderLeftWidth: theme.spacing.xs, // 4
 		},
 		verificationCardInfo: {
 			borderLeftColor: theme.colors.onSurfaceVariant,
-			borderLeftWidth: 4,
+			borderLeftWidth: theme.spacing.xs, // 4
 		},
 		verificationCardSuccess: {
 			borderLeftColor: theme.colors.primary,
-			borderLeftWidth: 4,
+			borderLeftWidth: theme.spacing.xs, // 4
 		},
 		verificationCardWarning: {
 			borderLeftColor: theme.colors.tertiary,
-			borderLeftWidth: 4,
+			borderLeftWidth: theme.spacing.xs, // 4
 		},
 		verificationHeader: {
 			alignItems: 'center',
 			flexDirection: 'row',
-			gap: 8,
-			marginBottom: 12,
+			gap: theme.spacing.sm, // 8
+			marginBottom: theme.spacing.md, // 12
 		},
 		verificationMessage: {
 			color: theme.colors.onSurface,
-			fontSize: 14,
-			lineHeight: 20,
-			marginBottom: 16,
+			fontSize: theme.typography.fontSize.sm, // 14
+			lineHeight: theme.typography.fontSize.xl, // 20
+			marginBottom: theme.spacing.lg, // 16
 		},
 		verificationModalButton: { // For Verification Modal (old)
-			borderRadius: 12,
-			paddingVertical: 12,
-			paddingHorizontal: 20,
-			elevation: 2,
-			marginVertical: 8,
+			borderRadius: theme.borderRadius.md, // 12
+			paddingVertical: theme.spacing.md, // 12
+			paddingHorizontal: theme.spacing.xl, // 20
+			elevation: 2, // No exact match
+			marginVertical: theme.spacing.sm, // 8
 			width: '100%',
 			alignItems: 'center',
 			justifyContent: 'center',
@@ -428,25 +425,25 @@ export const createStyles = (theme: MD3Theme) =>
 		},
 		verificationModalButtonText: { // For Verification Modal (old)
 			color: theme.colors.onError,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			fontWeight: '600',
 			textAlign: 'center',
 		},
 		verificationModalLinkButtonText: { // For Verification Modal (old)
 			color: theme.colors.onPrimary,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			fontWeight: '600',
 			textAlign: 'center',
 		},
 		verificationModalProceedButtonText: { // For Verification Modal (old)
 			color: theme.colors.onTertiary,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			fontWeight: '600',
 			textAlign: 'center',
 		},
 		verificationTitle: {
 			color: theme.colors.onSurface,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base, // 16
 			fontWeight: '600',
 		},
 	});

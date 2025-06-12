@@ -1,7 +1,8 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) =>
+export const createStyles = (theme: AppTheme) =>
 	StyleSheet.create({
 		container: {
 			alignItems: 'center',
@@ -11,12 +12,12 @@ export const createStyles = (theme: MD3Theme) =>
 		},
 		loadingText: {
 			color: theme.colors.primary,
-			fontSize: 18,
-			marginTop: 10,
+			fontSize: theme.typography.fontSize.lg,
+			marginTop: 10, // No exact match
 		},
 		logo: {
-			height: 200,
-			marginBottom: 20,
-			width: 200,
+			height: 200, // No exact match
+			marginBottom: theme.spacing.xl,
+			width: 200, // No exact match
 		},
 	}); 

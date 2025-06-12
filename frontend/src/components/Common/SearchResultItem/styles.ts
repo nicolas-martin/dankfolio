@@ -1,16 +1,17 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) =>
+export const createStyles = (theme: AppTheme) =>
 	StyleSheet.create({
 		container: {
 			alignItems: 'center',
 			flexDirection: 'row',
-			paddingHorizontal: 16,
-			paddingVertical: 8,
+			paddingHorizontal: theme.spacing.lg,
+			paddingVertical: theme.spacing.sm,
 		},
 		listedAtText: {
-			fontSize: 12,
+			fontSize: theme.typography.fontSize.xs,
 			color: theme.colors.onSurfaceVariant, // Or some other appropriate color
 			marginTop: 2,
 		},
@@ -19,18 +20,18 @@ export const createStyles = (theme: MD3Theme) =>
 			flexDirection: 'column',
 		},
 		symbolColumn: {
-			marginLeft: 16,
+			marginLeft: theme.spacing.lg,
 			width: 100,
 		},
 		tokenAddress: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 12,
+			fontSize: theme.typography.fontSize.xs,
 			marginTop: 2,
 			opacity: 0.7,
 		},
 		tokenDetails: {
 			flex: 1,
-			marginLeft: 12,
+			marginLeft: theme.spacing.md,
 		},
 		tokenInfo: {
 			alignItems: 'center',
@@ -39,22 +40,22 @@ export const createStyles = (theme: MD3Theme) =>
 		},
 		tokenName: {
 			color: theme.colors.onSurface,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base,
 			fontWeight: '600',
 		},
 		tokenSymbol: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 14,
+			fontSize: theme.typography.fontSize.sm,
 		},
 		unenrichedBadge: {
 			backgroundColor: theme.colors.surfaceVariant,
-			borderRadius: 4,
-			marginLeft: 8,
-			paddingHorizontal: 8,
-			paddingVertical: 4,
+			borderRadius: theme.spacing.xs,
+			marginLeft: theme.spacing.sm,
+			paddingHorizontal: theme.spacing.sm,
+			paddingVertical: theme.spacing.xs,
 		},
 		unenrichedText: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 12,
+			fontSize: theme.typography.fontSize.xs,
 		},
 	}); 

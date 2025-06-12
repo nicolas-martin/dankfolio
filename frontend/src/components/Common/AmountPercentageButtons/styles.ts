@@ -10,34 +10,34 @@ export const useStyles = () => {
 		},
 		button: {
 			alignItems: 'center',
-			borderRadius: 8,
+			borderRadius: theme.spacing.sm,
 			flex: 1,
 			justifyContent: 'center',
-			marginHorizontal: 4,
-			paddingHorizontal: 12,
-			paddingVertical: 8,
+			marginHorizontal: theme.spacing.xs,
+			paddingHorizontal: theme.spacing.md,
+			paddingVertical: theme.spacing.sm,
 		},
 		container: { // Corresponds to 'percentageContainer' in Send screen
 			flexDirection: 'row',
 			justifyContent: 'space-between', // Changed from space-around to space-between
-			paddingVertical: 16, // Increased from 8 to 16
-			paddingHorizontal: 8, // Added horizontal padding
-			marginTop: 8, // Added top margin
+			paddingVertical: theme.spacing.lg, // Increased from 8 to 16
+			paddingHorizontal: theme.spacing.sm, // Added horizontal padding
+			marginTop: theme.spacing.sm, // Added top margin
 		},
 		percentageButton: {
 			alignItems: 'center',
 			backgroundColor: theme.colors.surfaceVariant,
-			borderRadius: 8,
+			borderRadius: theme.spacing.sm,
 			elevation: 1,
 			flex: 1,
 			justifyContent: 'center',
-			marginHorizontal: 4,
-			paddingHorizontal: 12,
-			paddingVertical: 8,
+			marginHorizontal: theme.spacing.xs,
+			paddingHorizontal: theme.spacing.md,
+			paddingVertical: theme.spacing.sm,
 		},
 		percentageButtonText: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 14,
+			fontSize: theme.typography.fontSize.sm,
 			fontWeight: '600',
 		},
 	});

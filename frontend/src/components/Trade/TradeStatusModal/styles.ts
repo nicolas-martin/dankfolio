@@ -1,14 +1,15 @@
 import { StyleSheet } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
+import { MD3Theme } from 'react-native-paper'; // Keep for type safety if some parts of AppTheme don't overlap
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	actionSection: {
-		marginTop: 8,
+		marginTop: theme.spacing.sm,
 		width: '100%',
 	},
 	amount: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 		marginBottom: 2,
 	},
@@ -44,30 +45,30 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	bottomSheetViewContainer: {
 		flex: 1,
-		padding: 20,
+		padding: theme.spacing.xl,
 	},
 	button: { // Legacy
 		flex: 1,
 	},
 	buttonContainer: {
 		flexDirection: 'row',
-		gap: 16,
+		gap: theme.spacing.lg,
 	},
 	cancelButton: {
 		borderColor: theme.colors.outline,
-		borderRadius: 16,
+		borderRadius: theme.borderRadius.lg,
 		flex: 1,
-		paddingVertical: 4,
+		paddingVertical: theme.spacing.xs,
 	},
 	cancelButtonLabel: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 	},
 	cardHeader: { // Legacy
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 12,
+		marginBottom: theme.spacing.md,
 	},
 	cardIcon: { // Legacy
 		alignItems: 'center',
@@ -81,27 +82,27 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	cardTitle: { // Legacy
 		color: theme.colors.onSurfaceVariant,
 		flex: 1,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '600',
 	},
 	closeButton: { // Properties are already sorted
-		backgroundColor: '#4CAF50',
-		borderRadius: 16,
+		backgroundColor: '#4CAF50', // Consider theme.colors.success if appropriate
+		borderRadius: theme.borderRadius.lg,
 		elevation: 3,
-		paddingVertical: 8,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
+		paddingVertical: theme.spacing.sm,
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: theme.shadows.md.shadowOffset, // {0,2} is md
 		shadowOpacity: 0.1,
-		shadowRadius: 4,
+		shadowRadius: theme.spacing.xs,
 	},
 	coinDetails: {
 		flex: 1,
 	},
 	coinIcon: {
-		borderRadius: 20,
-		height: 40,
-		marginRight: 12,
-		width: 40,
+		borderRadius: theme.spacing.xl,
+		height: theme.spacing['4xl'],
+		marginRight: theme.spacing.md,
+		width: theme.spacing['4xl'],
 	},
 	coinInfo: {
 		alignItems: 'center',
@@ -114,74 +115,74 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	coinSymbol: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 		marginBottom: 2,
 	},
 	confirmButton: {
 		backgroundColor: theme.colors.primary,
-		borderRadius: 16,
+		borderRadius: theme.borderRadius.lg,
 		flex: 1,
-		paddingVertical: 4,
+		paddingVertical: theme.spacing.xs,
 	},
 	confirmButtonLabel: {
 		color: theme.colors.onPrimary,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 	},
 	confirmationsText: {
 		// color: '#4CAF50',
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '700',
 		// backgroundColor: '#E8F5E8',
-		paddingHorizontal: 12,
-		paddingVertical: 4,
-		borderRadius: 12,
+		paddingHorizontal: theme.spacing.md,
+		paddingVertical: theme.spacing.xs,
+		borderRadius: theme.borderRadius.md,
 		overflow: 'hidden',
 	},
 	container: {
 		alignSelf: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: 20, // Corrected from 24 to 20 to match modalContainer in another file if intended for consistency, or keep 24 if specific. Assuming 20 for now.
+		borderRadius: theme.spacing.xl, // 20 is theme.spacing.xl
 		elevation: 8,
-		margin: 16,
-		maxWidth: 400, // Example: Changed from 500
-		padding: 20, // Example: Changed from 32
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.15, // Example: Changed from 0.1
-		shadowRadius: 12, // Example: Changed from 16
-		width: 360, // Example: Changed from '90%'
+		margin: theme.spacing.lg, // 16 is theme.spacing.lg
+		maxWidth: 400,
+		padding: theme.spacing.xl, // 20 is theme.spacing.xl
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: { width: 0, height: 4 }, // No exact match
+		shadowOpacity: 0.15,
+		shadowRadius: theme.spacing.md, // 12 is theme.spacing.md
+		width: 360,
 	},
 	divider: {
 		backgroundColor: theme.colors.outline,
 		height: 1,
-		marginVertical: 8,
+		marginVertical: theme.spacing.sm,
 		opacity: 0.2,
 	},
 	errorHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 	},
 	errorIcon: {
-		marginRight: 8,
+		marginRight: theme.spacing.sm,
 	},
 	errorSection: {
 		backgroundColor: theme.colors.errorContainer,
-		borderRadius: 12,
-		marginBottom: 16,
-		padding: 14,
+		borderRadius: theme.borderRadius.md,
+		marginBottom: theme.spacing.lg,
+		padding: 14, // No exact match
 		width: '100%',
 	},
 	errorText: {
 		color: theme.colors.onErrorContainer,
-		fontSize: 13,
-		lineHeight: 18,
+		fontSize: 13, // No exact match
+		lineHeight: theme.typography.fontSize.lg, // 18 is theme.typography.fontSize.lg
 	},
 	errorTitle: {
 		color: theme.colors.onErrorContainer,
-		fontSize: 13,
+		fontSize: 13, // No exact match
 		fontWeight: '600',
 		letterSpacing: 0.5,
 		textTransform: 'uppercase',
@@ -189,59 +190,59 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	exchangeHeader: { // Legacy
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 	},
 	exchangeIcon: { // Legacy
-		marginRight: 6,
+		marginRight: 6, // No exact match
 	},
 	exchangeRate: { // Legacy
 		color: theme.colors.primary,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '600',
 		textAlign: 'center',
 	},
 	exchangeSection: { // Legacy
 		backgroundColor: theme.colors.surface,
 		borderColor: theme.colors.outline,
-		borderRadius: 12,
+		borderRadius: theme.borderRadius.md,
 		borderWidth: 1,
-		marginBottom: 16,
-		padding: 14,
+		marginBottom: theme.spacing.lg,
+		padding: 14, // No exact match
 	},
 	feeContainer: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 16,
+		borderRadius: theme.borderRadius.lg,
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 40,
-		padding: 20,
+		marginBottom: theme.spacing['4xl'],
+		padding: theme.spacing.xl,
 	},
 	feeHeader: { // Legacy
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 13,
+		fontSize: 13, // No exact match
 		fontWeight: '600',
-		marginBottom: 10,
+		marginBottom: 10, // No exact match
 	},
 	feeLabel: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 	},
 	feeRow: { // Legacy
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 6,
+		marginBottom: 6, // No exact match
 	},
 	feeSection: { // Legacy
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 12,
-		marginBottom: 16,
-		padding: 14,
+		borderRadius: theme.borderRadius.md,
+		marginBottom: theme.spacing.lg,
+		padding: 14, // No exact match
 	},
 	feeValue: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 	},
 	handleIndicator: {
@@ -250,134 +251,134 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	hashContainer: {
 		backgroundColor: theme.colors.surface,
 		borderColor: theme.colors.outline,
-		borderRadius: 8,
+		borderRadius: theme.spacing.sm,
 		borderWidth: 1,
-		marginBottom: 10,
-		padding: 10,
+		marginBottom: 10, // No exact match
+		padding: 10, // No exact match
 	},
 	hashLabel: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 11,
+		fontSize: 11, // No exact match
 		letterSpacing: 0.5,
-		marginBottom: 4,
+		marginBottom: theme.spacing.xs,
 		textTransform: 'uppercase',
 	},
 	hashText: {
 		color: theme.colors.onSurface,
 		fontFamily: 'monospace',
-		fontSize: 13,
+		fontSize: 13, // No exact match
 		fontWeight: '500',
 	},
 	header: {
 		alignItems: 'center',
-		marginBottom: 24,
+		marginBottom: theme.spacing['2xl'],
 	},
 	label: { // Legacy
 		color: theme.colors.onSurfaceVariant,
 	},
 	linkButton: {
 		backgroundColor: 'transparent',
-		borderColor: '#2196F3', // Consider theme color
-		borderRadius: 12,
+		borderColor: theme.colors.primary,
+		borderRadius: theme.borderRadius.md,
 		borderWidth: 1,
 		marginHorizontal: 0,
 	},
 	loadingContainer: { // Main loading state for modal content
 		alignItems: 'center',
 		justifyContent: 'center',
-		paddingVertical: 60, // Adjusted from legacy
+		paddingVertical: 60, // No exact match
 	},
 	loadingDescription: { // Legacy
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 13,
-		marginTop: 6,
+		fontSize: 13, // No exact match
+		marginTop: 6, // No exact match
 		opacity: 0.8,
 		textAlign: 'center',
 	},
 	loadingText: { // Main loading text
 		color: theme.colors.onSurface,
-		fontSize: 16, // Adjusted from legacy
-		marginTop: 20, // Adjusted from legacy
+		fontSize: theme.typography.fontSize.base,
+		marginTop: theme.spacing.xl,
 		textAlign: 'center',
 	},
 	progressBar: {
-		backgroundColor: '#E0E0E0', // Consider theme color
-		borderRadius: 6,
-		height: 12,
+		backgroundColor: theme.colors.outline,
+		borderRadius: theme.borderRadius.sm,
+		height: theme.spacing.md,
 		overflow: 'hidden',
 	},
 	progressDot: { // Legacy, but might be used by progressIndicator if that's generic
 		backgroundColor: theme.colors.primary,
-		borderRadius: 3,
-		height: 6,
-		marginRight: 4,
-		width: 6,
+		borderRadius: 3, // No exact match
+		height: 6, // No exact match
+		marginRight: theme.spacing.xs,
+		width: 6, // No exact match
 	},
 	progressFill: {
-		backgroundColor: '#4CAF50', // Consider theme color (e.g. theme.colors.primary)
-		borderRadius: 6,
+		backgroundColor: theme.colors.primary,
+		borderRadius: theme.borderRadius.sm,
 		height: '100%',
 	},
 	progressHeader: {
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 16,
-		minHeight: 20,
+		marginBottom: theme.spacing.lg,
+		minHeight: theme.spacing.xl,
 	},
 	progressIndicator: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginTop: 8,
+		marginTop: theme.spacing.sm,
 	},
 	progressLabel: {
 		color: theme.colors.onSurface,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '600',
-		marginRight: 16,
+		marginRight: theme.spacing.lg,
 	},
 	progressSection: {
 		backgroundColor: theme.colors.surface,
 		borderColor: theme.colors.outline,
-		borderRadius: 16,
+		borderRadius: theme.borderRadius.lg,
 		borderWidth: 1,
-		marginBottom: 24,
-		padding: 20,
+		marginBottom: theme.spacing['2xl'],
+		padding: theme.spacing.xl,
 		width: '100%',
 	},
 	progressText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-		marginLeft: 4,
+		fontSize: theme.typography.fontSize.xs,
+		marginLeft: theme.spacing.xs,
 	},
 	row: { // Legacy
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 	},
 	section: { // Legacy
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	statusDescription: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		lineHeight: 20,
+		fontSize: theme.typography.fontSize.sm,
+		lineHeight: theme.typography.fontSize.xl,
 		opacity: 0.8,
 		textAlign: 'center',
 	},
 	statusIconContainer: {
 		alignItems: 'center',
-		borderRadius: 40,
-		elevation: 4,
-		height: 80,
+		borderRadius: theme.spacing['4xl'],
+		elevation: 4, // No exact match
+		height: 80, // No exact match
 		justifyContent: 'center',
-		marginBottom: 20,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 8,
-		width: 80,
+		marginBottom: theme.spacing.xl,
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: theme.shadows.md.shadowOffset, // {0,2} is md
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: theme.spacing.sm,
+		width: 80, // No exact match
 	},
 	statusIconError: {
 		backgroundColor: theme.colors.error,
@@ -386,20 +387,20 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		backgroundColor: theme.colors.surfaceVariant,
 	},
 	statusIconSuccess: {
-		backgroundColor: '#4CAF50', // Consider theme.colors.primary or a success color from theme
+		backgroundColor: theme.colors.success,
 	},
 	statusIconWarning: {
-		backgroundColor: '#FF9800', // Consider a warning color from theme
+		backgroundColor: theme.colors.warning,
 	},
 	statusSection: {
 		alignItems: 'center',
-		marginBottom: 32,
-		paddingHorizontal: 20,
+		marginBottom: theme.spacing['3xl'],
+		paddingHorizontal: theme.spacing.xl,
 	},
 	statusText: {
-		fontSize: 20,
+		fontSize: theme.typography.fontSize.xl,
 		fontWeight: '700',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 		textAlign: 'center',
 	},
 	statusTextError: {
@@ -409,53 +410,53 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurface,
 	},
 	statusTextSuccess: {
-		color: '#4CAF50', // Consider theme.colors.primary or a success color
+		color: theme.colors.success,
 	},
 	statusTextWarning: {
-		color: '#FF9800', // Consider a warning color
+		color: theme.colors.warning,
 	},
 	subValue: { // Legacy
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-		marginTop: 2,
+		fontSize: theme.typography.fontSize.xs,
+		marginTop: 2, // No exact match
 	},
 	subtitle: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		textAlign: 'center',
 	},
 	swapIconContainer: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: 16,
-		elevation: 2,
-		height: 32,
+		borderRadius: theme.borderRadius.lg,
+		elevation: 2, // No exact match
+		height: theme.spacing['3xl'],
 		justifyContent: 'center',
 		left: '50%',
 		position: 'absolute',
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2,
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: theme.shadows.sm.shadowOffset,
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: 2, // No exact match
 		top: '50%',
-		transform: [{ translateX: -16 }, { translateY: -16 }],
-		width: 32,
+		transform: [{ translateX: -theme.spacing.lg }, { translateY: -theme.spacing.lg }],
+		width: theme.spacing['3xl'],
 	},
 	title: {
 		color: theme.colors.onSurface,
-		fontSize: 22, // Example: Changed from 24
+		fontSize: 22,
 		fontWeight: '700',
-		marginBottom: 24, // Example: Changed from 40
+		marginBottom: theme.spacing['2xl'],
 		textAlign: 'center',
 	},
 	tokenDetails: { // From "Token Section" context, distinct from "Coin Details"
 		flex: 1,
 	},
 	tokenIcon: { // From "Token Section" context
-		borderRadius: 16,
-		height: 32,
-		marginRight: 12,
-		width: 32,
+		borderRadius: theme.borderRadius.lg,
+		height: theme.spacing['3xl'],
+		marginRight: theme.spacing.md,
+		width: theme.spacing['3xl'],
 	},
 	tokenInfo: { // Legacy, distinct from coinInfo
 		alignItems: 'center',
@@ -470,17 +471,17 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		flexDirection: 'row',
 		flex: 1,
-		marginRight: 16,
+		marginRight: theme.spacing.lg,
 	},
 	tokenSymbol: { // From "Token Section" context
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
-		marginBottom: 2,
+		marginBottom: 2, // No exact match
 	},
 	totalFeeLabel: { // Legacy
 		color: theme.colors.onSurface,
-		fontSize: 13,
+		fontSize: 13, // No exact match
 		fontWeight: '600',
 	},
 	totalFeeRow: { // Legacy
@@ -489,47 +490,47 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderTopWidth: 1,
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginTop: 4,
-		paddingTop: 10,
+		marginTop: theme.spacing.xs,
+		paddingTop: 10, // No exact match
 	},
 	totalFeeValue: { // Legacy
 		color: theme.colors.onSurface,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		fontWeight: '700',
 	},
 	tradeCard: { // Legacy
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 16,
-		marginBottom: 8,
-		padding: 20,
+		borderRadius: theme.borderRadius.lg,
+		marginBottom: theme.spacing.sm,
+		padding: theme.spacing.xl,
 	},
 	tradeCardsContainer: { // Legacy
-		marginBottom: 20,
+		marginBottom: theme.spacing.xl,
 		position: 'relative',
 	},
 	tradeContainer: {
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 20,
-		marginBottom: 32,
-		padding: 24,
+		borderRadius: theme.spacing.xl,
+		marginBottom: theme.spacing['3xl'],
+		padding: theme.spacing['2xl'],
 		position: 'relative',
 	},
 	tradeRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		paddingVertical: 16,
+		paddingVertical: theme.spacing.lg,
 	},
 	transactionHeader: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 13,
+		fontSize: 13, // No exact match
 		fontWeight: '600',
 		letterSpacing: 0.5,
-		marginBottom: 10,
+		marginBottom: 10, // No exact match
 		textTransform: 'uppercase',
 	},
 	transactionSection: {
-		marginBottom: 24,
+		marginBottom: theme.spacing['2xl'],
 		width: '100%',
 	},
 	value: { // Legacy

@@ -1,12 +1,13 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	amount: {
 		color: theme.colors.onSurface,
 		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
-		marginBottom: theme.spacing.xs,
+		marginBottom: 2,
 	},
 	amountContainer: { // Legacy
 		alignItems: 'flex-end',
@@ -64,11 +65,11 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	cardIcon: { // Legacy
 		alignItems: 'center',
 		backgroundColor: theme.colors.primary,
-		borderRadius: theme.borderRadius.md,
-		height: theme.spacing['3xl'],
+		borderRadius: 14,
+		height: 28,
 		justifyContent: 'center',
-		marginRight: theme.spacing.md,
-		width: theme.spacing['3xl'],
+		marginRight: 10,
+		width: 28,
 	},
 	cardTitle: { // Legacy
 		color: theme.colors.onSurfaceVariant,
@@ -98,7 +99,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		color: theme.colors.onSurface,
 		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
-		marginBottom: theme.spacing.xs,
+		marginBottom: 2,
 	},
 	confirmButton: {
 		backgroundColor: theme.colors.primary,
@@ -114,15 +115,15 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	container: {
 		alignSelf: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: theme.spacing['2xl'],
+		borderRadius: theme.spacing['2xl'], // 24 is theme.spacing['2xl']
 		elevation: 8,
-		margin: theme.spacing.lg,
+		margin: theme.spacing.lg, // 16 is theme.spacing.lg
 		maxWidth: 500,
-		padding: theme.spacing['3xl'],
+		padding: theme.spacing['3xl'], // 32 is theme.spacing['3xl']
 		shadowColor: theme.colors.onBackground,
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.1,
-		shadowRadius: 16,
+		shadowOffset: { width: 0, height: 4 }, // No exact match for {0, 4}
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: theme.spacing.lg, // 16 is theme.spacing.lg
 		width: '90%',
 	},
 	divider: {
@@ -137,7 +138,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		marginBottom: theme.spacing.sm,
 	},
 	exchangeIcon: { // Legacy
-		marginRight: theme.spacing.sm,
+		marginRight: 6,
 	},
 	exchangeRate: { // Legacy
 		color: theme.colors.primary,
@@ -148,10 +149,10 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	exchangeSection: { // Legacy
 		backgroundColor: theme.colors.surface,
 		borderColor: theme.colors.outline,
-		borderRadius: theme.borderRadius.md,
+		borderRadius: theme.borderRadius.md, // 12 is theme.borderRadius.md
 		borderWidth: 1,
-		marginBottom: theme.spacing.lg,
-		padding: theme.spacing.lg,
+		marginBottom: theme.spacing.lg, // 16 is theme.spacing.lg
+		padding: 14, // No exact match for 14
 	},
 	feeContainer: { // Main Fee Container
 		alignItems: 'center',
@@ -164,9 +165,9 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	feeHeader: { // Legacy
 		color: theme.colors.onSurfaceVariant,
-		fontSize: theme.typography.fontSize.xs,
+		fontSize: 13, // No exact match for 13
 		fontWeight: '600',
-		marginBottom: theme.spacing.md,
+		marginBottom: 10, // No exact match for 10
 	},
 	feeLabel: { // Main Fee Label
 		color: theme.colors.onSurfaceVariant,
@@ -176,13 +177,13 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: theme.spacing.sm,
+		marginBottom: 6, // No exact match for 6
 	},
 	feeSection: { // Legacy
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: theme.borderRadius.md,
-		marginBottom: theme.spacing.lg,
-		padding: theme.spacing.lg,
+		borderRadius: theme.borderRadius.md, // 12 is theme.borderRadius.md
+		marginBottom: theme.spacing.lg, // 16 is theme.spacing.lg
+		padding: 14, // No exact match for 14
 	},
 	feeValue: { // Main Fee Value
 		color: theme.colors.onSurface,
@@ -202,7 +203,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	loadingContainer: {
 		alignItems: 'center',
 		justifyContent: 'center',
-		paddingVertical: theme.spacing['4xl'], // Was 60, 4xl is 40. Closest available.
+		paddingVertical: 60, // No exact match for 60
 	},
 	loadingText: {
 		color: theme.colors.onSurface,
@@ -235,8 +236,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	subValue: { // Legacy
 		color: theme.colors.onSurfaceVariant,
-		fontSize: theme.typography.fontSize.xs,
-		marginTop: theme.spacing.xs,
+		fontSize: theme.typography.fontSize.xs, // 12 is theme.typography.fontSize.xs
+		marginTop: 2, // No exact match for 2
 	},
 	subtitle: { // Legacy
 		color: theme.colors.onSurfaceVariant,
@@ -246,19 +247,19 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	swapIconContainer: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: theme.borderRadius.lg,
-		elevation: 2, // Left as is, MD3Theme.elevation.levelX are colors.
-		height: theme.spacing['3xl'],
+		borderRadius: theme.borderRadius.lg, // 16 is theme.borderRadius.lg
+		elevation: 2, // No exact match
+		height: theme.spacing['3xl'], // 32 is theme.spacing['3xl']
 		justifyContent: 'center',
 		left: '50%',
 		position: 'absolute',
 		shadowColor: theme.colors.onBackground,
-		shadowOffset: { width: 0, height: 1 }, // Left as is
-		shadowOpacity: 0.1, // Left as is
-		shadowRadius: 2, // Left as is
+		shadowOffset: theme.shadows.sm.shadowOffset, // {0,1} is theme.shadows.sm.shadowOffset
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: 2, // No exact match
 		top: '50%',
-		transform: [{ translateX: -theme.spacing.lg }, { translateY: -theme.spacing.lg }],
-		width: theme.spacing['3xl'],
+		transform: [{ translateX: -theme.spacing.lg }, { translateY: -theme.spacing.lg }], // -16 is -theme.spacing.lg
+		width: theme.spacing['3xl'], // 32 is theme.spacing['3xl']
 	},
 	title: { // Main Title
 		color: theme.colors.onSurface,
@@ -293,13 +294,13 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	tokenSymbol: { // For 'To' token section
 		color: theme.colors.onSurface,
-		fontSize: theme.typography.fontSize.base,
+		fontSize: theme.typography.fontSize.base, // 16 is theme.typography.fontSize.base
 		fontWeight: '600',
-		marginBottom: theme.spacing.xs,
+		marginBottom: 2, // No exact match for 2
 	},
 	totalFeeLabel: { // Legacy
 		color: theme.colors.onSurface,
-		fontSize: theme.typography.fontSize.xs,
+		fontSize: 13, // No exact match for 13
 		fontWeight: '600',
 	},
 	totalFeeRow: { // Legacy
@@ -308,8 +309,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderTopWidth: 1,
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginTop: theme.spacing.xs,
-		paddingTop: theme.spacing.md,
+		marginTop: theme.spacing.xs, // 4 is theme.spacing.xs
+		paddingTop: 10, // No exact match for 10
 	},
 	totalFeeValue: { // Legacy
 		color: theme.colors.onSurface,

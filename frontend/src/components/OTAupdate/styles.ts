@@ -1,23 +1,24 @@
 import { StyleSheet } from 'react-native';
+import { AppTheme } from '@/utils/theme';
 
-export const styles = StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	container: {
 		alignItems: 'flex-end',
-		marginBottom: 4,
-		marginRight: 8,
-		marginTop: 4,
+		marginBottom: theme.spacing.xs,
+		marginRight: theme.spacing.sm,
+		marginTop: theme.spacing.xs,
 	},
 	link: {
-		paddingHorizontal: 4,
+		paddingHorizontal: theme.spacing.xs,
 		paddingVertical: 2,
 	},
 	linkText: {
-		color: '#1976D2', // blue link color
-		fontSize: 12,
+		color: theme.colors.primary, // blue link color
+		fontSize: theme.typography.fontSize.xs,
 		textDecorationLine: 'underline',
 	},
 	statusText: {
-		color: '#888',
+		color: theme.colors.onSurfaceVariant, // Was #888
 		fontSize: 10,
 		marginTop: 2,
 	},

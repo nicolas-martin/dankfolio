@@ -58,7 +58,7 @@ import { configureReanimatedLogger } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import Navigation from '@components/Common/Navigation';
-import { themes } from '@utils/theme';
+import { themes, extendedThemeProperties, AppTheme } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
 import WalletSetupScreen from '@screens/WalletSetup';
@@ -229,14 +229,17 @@ const App: React.FC = () => {
 		return null;
 	}
 
-	// Get the current theme
-	const currentTheme = themes[themeType];
+	// Get the current theme and merge with extended properties
+	const paperTheme = {
+		...themes[themeType],
+		...extendedThemeProperties[themeType],
+	} as AppTheme;
 
 	// Set status bar style based on theme
 	const statusBarStyle = themeType === 'light' ? 'dark' : 'light';
 
 	return (
-		<PaperProvider theme={currentTheme}>
+		<PaperProvider theme={paperTheme}>
 			<StatusBar style={statusBarStyle} />
 			<SafeAreaProvider>
 				<GestureHandlerRootView style={styles.gestureHandlerRoot} onLayout={onLayoutRootView}>

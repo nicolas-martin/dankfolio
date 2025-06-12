@@ -1,9 +1,10 @@
 import { StyleSheet } from 'react-native';
+import { AppTheme } from '@/utils/theme';
 
-export const createDonutStyles = () => StyleSheet.create({
+export const createDonutStyles = (theme: AppTheme) => StyleSheet.create({
 	chartContainer: {
-		height: 400,
-		padding: 25,
+		height: 400, // No exact match
+		padding: 25, // No exact match
 		position: "relative",
 	},
 	container: {

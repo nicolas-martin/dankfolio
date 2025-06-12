@@ -1,34 +1,35 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	alignFlexEnd: { // New
 		alignItems: 'flex-end',
 	},
 	coinCardContainerStyle: {
-		marginBottom: 12,
-		paddingHorizontal: 16,
+		marginBottom: theme.spacing.md,
+		paddingHorizontal: theme.spacing.lg,
 	},
 	coinsList: {
-		paddingBottom: 100,
+		paddingBottom: 100, // No exact match
 	},
 	coinsSection: {
 		flex: 1,
-		paddingHorizontal: 20,
-		paddingTop: 20,
+		paddingHorizontal: theme.spacing.xl,
+		paddingTop: theme.spacing.xl,
 	},
 	coinsSectionScrollView: {
 		flex: 1,
 	},
 	connectButton: {
 		backgroundColor: theme.colors.primary,
-		borderRadius: 12,
-		paddingHorizontal: 24,
-		paddingVertical: 12,
+		borderRadius: theme.borderRadius.md,
+		paddingHorizontal: theme.spacing['2xl'],
+		paddingVertical: theme.spacing.md,
 	},
 	connectButtonText: {
 		color: theme.colors.onPrimary,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 	},
 	container: {
@@ -42,68 +43,68 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		paddingHorizontal: 40,
+		paddingHorizontal: theme.spacing['4xl'],
 	},
 	emptyStateIcon: {
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 		opacity: 0.6,
 	},
 	emptyStateText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		lineHeight: 20,
+		fontSize: theme.typography.fontSize.sm,
+		lineHeight: theme.typography.fontSize.xl,
 		textAlign: 'center',
 	},
 	emptyStateTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 18,
+		fontSize: theme.typography.fontSize.lg,
 		fontWeight: '600',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 		textAlign: 'center',
 	},
 	flex1: { // New
 		flex: 1,
 	},
 	headerContainer: {
-		padding: 20,
-		paddingBottom: 16,
+		padding: theme.spacing.xl,
+		paddingBottom: theme.spacing.lg,
 	},
 	loadingContainer: {
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'center',
-		padding: 20,
+		padding: theme.spacing.xl,
 	},
 	loadingTrendingText: { // New
 		color: theme.colors.onSurfaceVariant,
-		marginTop: 8,
+		marginTop: theme.spacing.sm,
 	},
 	newCoinsPlaceholderCard: { // New
 		backgroundColor: theme.colors.surface,
-		borderRadius: 12,
-		elevation: 2,
-		height: 120,
-		marginRight: 8,
-		padding: 12,
+		borderRadius: theme.borderRadius.md,
+		elevation: 2, // No exact match
+		height: 120, // No exact match
+		marginRight: theme.spacing.sm,
+		padding: theme.spacing.md,
 		shadowColor: theme.colors.shadow,
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2,
-		width: 140,
+		shadowOffset: theme.shadows.sm.shadowOffset,
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: 2, // No exact match
+		width: 140, // No exact match
 	},
 	newCoinsPlaceholderContainer: { // New
-		marginBottom: 24,
+		marginBottom: theme.spacing['2xl'],
 	},
 	newCoinsPlaceholderIconShimmer: { // New
 		alignSelf: 'center',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 	},
 	newCoinsPlaceholderScrollContent: { // New
-		paddingHorizontal: 16,
+		paddingHorizontal: theme.spacing.lg,
 	},
 	newCoinsPlaceholderText1Shimmer: { // New
 		alignSelf: 'center',
-		marginBottom: 4,
+		marginBottom: theme.spacing.xs,
 	},
 	newCoinsPlaceholderText2Shimmer: { // New
 		alignSelf: 'center',
@@ -112,89 +113,86 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		alignItems: 'center',
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 16,
-		paddingHorizontal: 16,
+		marginBottom: theme.spacing.lg,
+		paddingHorizontal: theme.spacing.lg,
 	},
 	noWalletCard: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: 20,
-		elevation: 4,
-		padding: 32,
-		shadowColor: '#000',
-		shadowOffset: {
-			width: 0,
-			height: 2,
-		},
-		shadowOpacity: 0.1,
-		shadowRadius: 8,
+		borderRadius: theme.spacing.xl,
+		elevation: 4, // No exact match
+		padding: theme.spacing['3xl'],
+		shadowColor: theme.shadows.sm.shadowColor,
+		shadowOffset: theme.shadows.md.shadowOffset,
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: theme.spacing.sm,
 	},
 	noWalletContainer: {
 		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		paddingHorizontal: 40,
+		paddingHorizontal: theme.spacing['4xl'],
 	},
 	noWalletIcon: {
-		marginBottom: 20,
+		marginBottom: theme.spacing.xl,
 		opacity: 0.7,
 	},
 	noWalletText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		lineHeight: 20,
-		marginBottom: 24,
+		fontSize: theme.typography.fontSize.sm,
+		lineHeight: theme.typography.fontSize.xl,
+		marginBottom: theme.spacing['2xl'],
 		textAlign: 'center',
 	},
 	noWalletTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 20,
+		fontSize: theme.typography.fontSize.xl,
 		fontWeight: '600',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 		textAlign: 'center',
 	},
 	placeholderCoinCardContainerMargin: { // New
-		marginBottom: 12,
+		marginBottom: theme.spacing.md,
 	},
 	placeholderCoinCardContent: { // New
 		alignItems: 'center',
 		backgroundColor: theme.colors.surface,
-		borderRadius: 12,
-		elevation: 2,
+		borderRadius: theme.borderRadius.md,
+		elevation: 2, // No exact match
 		flexDirection: 'row',
-		padding: 16,
+		padding: theme.spacing.lg,
 		shadowColor: theme.colors.shadow,
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2,
+		shadowOffset: theme.shadows.sm.shadowOffset,
+		shadowOpacity: 0.1, // No exact match
+		shadowRadius: 2, // No exact match
 	},
 	placeholderCoinIconShimmer: { // New
-		marginRight: 12,
+		marginRight: theme.spacing.md,
 	},
 	placeholderSparklineShimmer: { // New
-		marginHorizontal: 12,
+		marginHorizontal: theme.spacing.md,
 	},
 	placeholderTextMarginBottomS: { // New
-		marginBottom: 4,
+		marginBottom: theme.spacing.xs,
 	},
 	sectionHeader: {
-		marginBottom: 16,
-		paddingHorizontal: 16,
+		marginBottom: theme.spacing.lg,
+		paddingHorizontal: theme.spacing.lg,
 	},
 	sectionTitle: {
 		color: theme.colors.onSurface,
-		fontSize: 20,
+		fontSize: theme.typography.fontSize.xl,
 		fontWeight: '600',
 	},
 	subtitleText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '400',
 	},
 	welcomeText: {
 		color: theme.colors.onSurface,
-		fontSize: 28,
+		fontSize: 28, // No exact match
 		fontWeight: '700',
-		marginBottom: 4,
+		marginBottom: theme.spacing.xs,
 	},
 });

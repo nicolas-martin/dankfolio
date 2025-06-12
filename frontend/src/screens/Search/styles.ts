@@ -1,56 +1,57 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	card: {
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 8,
-		marginBottom: 12,
-		padding: 16,
+		borderRadius: theme.spacing.sm,
+		marginBottom: theme.spacing.md,
+		padding: theme.spacing.lg,
 	},
 	container: {
 		backgroundColor: theme.colors.background,
 		flex: 1,
 	},
 	contentPadding: {
-		padding: 16,
+		padding: theme.spacing.lg,
 	},
 	emptyContainer: {
 		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		padding: 16,
+		padding: theme.spacing.lg,
 	},
 	emptyText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 16,
-		marginTop: 16,
+		fontSize: theme.typography.fontSize.base,
+		marginTop: theme.spacing.lg,
 		textAlign: 'center',
 	},
 	errorContainer: {
 		alignItems: 'center',
 		flex: 1,
 		justifyContent: 'center',
-		padding: 16,
+		padding: theme.spacing.lg,
 	},
 	errorText: {
 		color: theme.colors.error,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		textAlign: 'center',
 	},
 	filterButton: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 16,
-		marginRight: 8,
-		paddingHorizontal: 12,
-		paddingVertical: 6,
+		borderRadius: theme.borderRadius.lg,
+		marginRight: theme.spacing.sm,
+		paddingHorizontal: theme.spacing.md,
+		paddingVertical: 6, // No exact match
 	},
 	filterButtonActive: {
 		backgroundColor: theme.colors.primary,
 	},
 	filterButtonText: {
 		color: theme.colors.onSurface,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 	},
 	filterButtonTextActive: {
 		color: theme.colors.onPrimary,
@@ -58,8 +59,8 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	filtersContainer: {
 		backgroundColor: theme.colors.surfaceVariant,
 		flexDirection: 'row',
-		paddingHorizontal: 16,
-		paddingVertical: 8,
+		paddingHorizontal: theme.spacing.lg,
+		paddingVertical: theme.spacing.sm,
 	},
 	flex1: {
 		flex: 1,
@@ -67,12 +68,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	headerRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		gap: 12,
-		marginBottom: 16,
+		gap: theme.spacing.md,
+		marginBottom: theme.spacing.lg,
 	},
 	listContent: {
-		paddingBottom: 16,
-		paddingHorizontal: 16,
+		paddingBottom: theme.spacing.lg,
+		paddingHorizontal: theme.spacing.lg,
 	},
 	loadingContainer: {
 		alignItems: 'center',
@@ -81,12 +82,12 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	priceChangeNegative: {
 		color: theme.colors.error,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		marginLeft: 'auto',
 	},
 	priceChangePositive: {
 		color: theme.colors.primary,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 		marginLeft: 'auto',
 	},
 	safeArea: {
@@ -95,42 +96,42 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	searchCard: {
 		backgroundColor: theme.colors.surface,
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	searchInput: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 8,
+		borderRadius: theme.spacing.sm,
 		color: theme.colors.onSurface,
-		height: 40,
-		paddingHorizontal: 12,
+		height: theme.spacing['4xl'],
+		paddingHorizontal: theme.spacing.md,
 	},
 	sortButton: {
 		alignItems: 'center',
 		backgroundColor: theme.colors.surfaceVariant,
-		borderRadius: 4,
+		borderRadius: theme.spacing.xs,
 		justifyContent: 'center', 
-		paddingHorizontal: 12,
-		paddingVertical: 8,
+		paddingHorizontal: theme.spacing.md,
+		paddingVertical: theme.spacing.sm,
 	},
 	sortButtonText: {
 		color: theme.colors.onSurfaceVariant, 
-		fontSize: 12,
+		fontSize: theme.typography.fontSize.xs,
 		fontWeight: '500',
 	},
 	sortButtonsContainer: {
 		flexDirection: 'row',
 		justifyContent: 'space-around',
-		paddingVertical: 8,
+		paddingVertical: theme.spacing.sm,
 		// paddingHorizontal: 16, // Already in contentPadding
 	},
 	tokenDetails: {
-		marginLeft: 12,
+		marginLeft: theme.spacing.md,
 	},
 	tokenImage: {
-		borderRadius: 20,
-		height: 40,
-		marginRight: 12,
-		width: 40,
+		borderRadius: theme.spacing.xl,
+		height: theme.spacing['4xl'],
+		marginRight: theme.spacing.md,
+		width: theme.spacing['4xl'],
 	},
 	tokenInfo: {
 		flex: 1,
@@ -140,7 +141,7 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 		borderBottomColor: theme.colors.outlineVariant,
 		borderBottomWidth: 1,
 		flexDirection: 'row',
-		padding: 16,
+		padding: theme.spacing.lg,
 	},
 	tokenMetrics: {
 		alignItems: 'center',
@@ -148,26 +149,26 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	},
 	tokenName: {
 		color: theme.colors.onSurface,
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
 	},
 	tokenNameRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 4,
+		marginBottom: theme.spacing.xs,
 	},
 	tokenPrice: {
 		color: theme.colors.onSurface,
-		fontSize: 14,
-		marginRight: 12,
+		fontSize: theme.typography.fontSize.sm,
+		marginRight: theme.spacing.md,
 	},
 	tokenSymbol: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
-		marginLeft: 8,
+		fontSize: theme.typography.fontSize.sm,
+		marginLeft: theme.spacing.sm,
 	},
 	tokenVolume: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
+		fontSize: theme.typography.fontSize.xs,
 	},
 }); 
