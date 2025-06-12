@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 
-	"errors"
 	"math"    // For Pow10
 	"strconv" // For uint64 to string and float to string
 
@@ -467,7 +467,7 @@ func (c *Client) GetSwapQuote(ctx context.Context, fromToken, toToken bmodel.Add
 	return nil, fmt.Errorf("GetSwapQuote is not implemented by the direct Solana RPC client; use a specific aggregator client (e.g., Jupiter)")
 }
 
-func (c *Client) ExecuteSwap(ctx context.Context, rawQuote interface{}, userAddress bmodel.Address, signedTxIfNeeded []byte) (bmodel.Signature, error) {
+func (c *Client) ExecuteSwap(ctx context.Context, rawQuote any, userAddress bmodel.Address, signedTxIfNeeded []byte) (bmodel.Signature, error) {
 	return "", fmt.Errorf("ExecuteSwap is not implemented by the direct Solana RPC client; use a specific aggregator client (e.g., Jupiter)")
 }
 
