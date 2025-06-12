@@ -11,6 +11,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 	isEnriched = true,
 }) => {
 	const styles = useStyles();
+	if (!coin || !coin.resolvedIconUrl) {
+		return null; // Early return if coin data is not available
+	}
 
 	// Simple formatter for now
 	const formatJupiterListedAt = (date?: Date): string | null => {
@@ -35,7 +38,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 					showLoadingIndicator={true}
 				/>
 				<View style={styles.tokenDetails}>
-					<Text style={styles.tokenName}>{coin.name || 'Unknown'}</Text>
+					<Text style={styles.tokenName}>{coin.name}</Text>
 					<Text style={styles.tokenAddress}>{truncateAddress(coin.mintAddress)}</Text>
 					{listedAtString && ( // Only display if the date exists
 						<Text style={styles.listedAtText}>

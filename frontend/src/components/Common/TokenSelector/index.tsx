@@ -303,7 +303,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							setModalVisible(true);
 						}}
 						disabled={!onSelectToken}
-						testID={selectedToken ? `${testID}-${selectedToken.mintAddress.toLowerCase()}` : testID}
+						testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : testID}
 						accessible={true}
 						accessibilityRole="button"
 						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : "Select token"}
@@ -317,9 +317,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 										borderRadius={12}
 										showLoadingIndicator={true}
 										style={styles.tokenIcon}
-										testID={`token-selector-icon-${selectedToken.mintAddress.toLowerCase()}`}
+										testID={`token-selector-icon-${selectedToken.symbol.toLowerCase()}`}
 									/>
-									<Text style={styles.tokenSymbol} testID={`token-selector-symbol-${selectedToken.mintAddress.toLowerCase()}`}>
+									<Text style={styles.tokenSymbol} testID={`token-selector-symbol-${selectedToken.symbol.toLowerCase()}`}>
 										{selectedToken.symbol}
 									</Text>
 								</>

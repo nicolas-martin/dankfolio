@@ -45,7 +45,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 						uri={coin.resolvedIconUrl}
 						size={size}
 						borderRadius={borderRadius}
-						testID={`${testIdPrefix}-icon-${coin.mintAddress.toLowerCase()}`}
+						testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
 						onLoad={handleImageLoad}
 						onError={handleImageError}
 					/>
@@ -59,7 +59,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 			<TouchableOpacity
 				style={styles.horizontalCard}
 				onPress={handlePress}
-				testID={`${testIdPrefix}-card-horizontal-${coin.mintAddress.toLowerCase()}`}
+				testID={`${testIdPrefix}-card-horizontal-${coin.symbol.toLowerCase()}`}
 				accessible={false}
 				importantForAccessibility="no-hide-descendants"
 				accessibilityRole="button"
@@ -68,19 +68,19 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				delayPressOut={100}
 			>
 				{renderCoinIcon(32, 16)}
-				<Text 
-					style={styles.horizontalSymbol} 
-					numberOfLines={1} 
-					testID={`${testIdPrefix}-symbol-${coin.mintAddress.toLowerCase()}`}
+							<Text
+				style={styles.horizontalSymbol}
+				numberOfLines={1}
+				testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}
 					accessible={true}
 					accessibilityRole="text"
 				>
 					{coin.symbol}
 				</Text>
-				<Text 
-					style={styles.horizontalPrice} 
-					numberOfLines={1} 
-					testID={`${testIdPrefix}-price-${coin.mintAddress.toLowerCase()}`}
+							<Text
+				style={styles.horizontalPrice}
+				numberOfLines={1}
+				testID={`${testIdPrefix}-price-${coin.symbol.toLowerCase()}`}
 					accessible={true}
 					accessibilityRole="text"
 				>
@@ -120,7 +120,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 		<TouchableOpacity
 			style={styles.card}
 			onPress={handlePress}
-			testID={`${testIdPrefix}-card-${coin.mintAddress.toLowerCase()}`}
+			testID={`${testIdPrefix}-card-${coin.symbol.toLowerCase()}`}
 			accessible={false}
 			importantForAccessibility="no-hide-descendants"
 			accessibilityRole="button"
@@ -130,10 +130,10 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				<View style={styles.leftSection}>
 					{renderCoinIcon()}
 					<View style={styles.nameSection}>
-						<Text 
-							style={styles.symbol} 
-							numberOfLines={1} 
-							testID={`${testIdPrefix}-symbol-${coin.mintAddress.toLowerCase()}`}
+										<Text
+					style={styles.symbol}
+					numberOfLines={1}
+					testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}
 							accessible={true}
 							accessibilityRole="text"
 						>
@@ -166,7 +166,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 								width={cardWidth * 0.35} // Appropriate width for middle section
 								height={20} // Proper height for the layout
 								isLoading={isPriceHistoryLoading}
-								testID={`${testIdPrefix}-sparkline-${coin.mintAddress.toLowerCase()}`}
+								testID={`${testIdPrefix}-sparkline-${coin.symbol.toLowerCase()}`}
 							/>
 						) : (
 							<ShimmerPlaceholder
@@ -179,10 +179,10 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				)}
 
 				<View style={styles.rightSection}>
-					<Text 
-						style={styles.price} 
-						numberOfLines={1} 
-						testID={`${testIdPrefix}-price-${coin.mintAddress.toLowerCase()}`}
+									<Text
+					style={styles.price}
+					numberOfLines={1}
+					testID={`${testIdPrefix}-price-${coin.symbol.toLowerCase()}`}
 						accessible={true}
 						accessibilityRole="text"
 					>

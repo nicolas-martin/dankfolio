@@ -256,7 +256,7 @@ const CoinDetail: React.FC = () => {
 		if (!displayCoin || priceHistory.length < 2 || !displayCoin.resolvedIconUrl) return null;
 
 		return (
-			<View style={styles.priceCard} testID="coin-detail-price-card">
+			<View style={styles.priceCard} testID={`coin-detail-price-card-${displayCoin?.symbol?.toLowerCase()}`}>
 				<PriceDisplay
 					price={displayData.currentPrice}
 					periodChange={displayData.periodChange}
@@ -272,7 +272,7 @@ const CoinDetail: React.FC = () => {
 
 	const renderChartCard = () => {
 		return (
-			<View style={styles.chartContainer} testID="coin-detail-chart-card">
+			<View style={styles.chartContainer} testID={`coin-detail-chart-card-${displayCoin?.symbol?.toLowerCase()}`}>
 				<View style={styles.chartCardContent}>
 					<CoinChart
 						data={priceHistory}
@@ -424,7 +424,7 @@ const CoinDetail: React.FC = () => {
 	}, [displayCoin, showToast, navigation]);
 
 	return (
-		<SafeAreaView style={styles.container} testID="coin-detail-screen">
+		<SafeAreaView style={styles.container} testID={`coin-detail-screen-${displayCoin?.symbol?.toLowerCase()}`}>
 			<View style={styles.content}>
 				<ScrollView
 					style={styles.scrollView}
@@ -457,7 +457,7 @@ const CoinDetail: React.FC = () => {
 						mode="contained"
 						onPress={handleTradePress} // Use memoized handler
 						style={styles.tradeButton}
-						testID="trade-button"
+						testID={`trade-button-${displayCoin?.symbol?.toLowerCase()}`}
 						disabled={isLoadingDetails}
 					>
 						{isLoadingDetails ? 'Loading...' : `Trade ${displayCoin?.symbol || ''}`}

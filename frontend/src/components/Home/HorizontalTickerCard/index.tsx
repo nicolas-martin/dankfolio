@@ -20,7 +20,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 		<TouchableOpacity
 			style={styles.container}
 			onPress={handlePress}
-			testID={`${testIdPrefix}-card-${coin.mintAddress.toLowerCase()}`}
+			testID={`${testIdPrefix}-card-${coin.symbol.toLowerCase()}`}
 			accessible={true}
 			accessibilityRole="button"
 			accessibilityLabel={`${coin.symbol.toLowerCase()} ticker card`}
@@ -33,14 +33,14 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 						uri={coin.resolvedIconUrl}
 						size={48}
 						borderRadius={24}
-						testID={`${testIdPrefix}-icon-${coin.mintAddress.toLowerCase()}`}
+						testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
 					/>
 				)}
 			</View>
-			<Text style={styles.symbol} numberOfLines={1} testID={`${testIdPrefix}-symbol-${coin.mintAddress.toLowerCase()}`}>
+			<Text style={styles.symbol} numberOfLines={1} testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}>
 				{coin.symbol}
 			</Text>
-			<Text style={styles.timeAgo} numberOfLines={1} testID={`${testIdPrefix}-time-${coin.mintAddress.toLowerCase()}`}>
+			<Text style={styles.timeAgo} numberOfLines={1} testID={`${testIdPrefix}-time-${coin.symbol.toLowerCase()}`}>
 				{timeAgo}
 			</Text>
 			{coin.change24h !== undefined && (
@@ -49,7 +49,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 					coin.change24h > 0 ? styles.changePositive :
 						coin.change24h < 0 ? styles.changeNegative :
 							styles.changeNeutral
-				]} numberOfLines={1} testID={`${testIdPrefix}-change-${coin.mintAddress.toLowerCase()}`}>
+				]} numberOfLines={1} testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}>
 					{formatPercentage(coin.change24h, 1, true)}
 				</Text>
 			)}

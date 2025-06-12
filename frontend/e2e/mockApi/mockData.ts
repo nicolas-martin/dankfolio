@@ -105,7 +105,7 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2023-10-19')),
 	}),
 	create(CoinSchema, {
-		mintAddress: 'sol11111111111111111111111111111111111111112',
+		mintAddress: 'so11111111111111111111111111111111111111112',
 		name: 'Wrapped SOL',
 		symbol: 'SOL',
 		decimals: 9,
