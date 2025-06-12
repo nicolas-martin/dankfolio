@@ -1,8 +1,12 @@
-import { StyleSheet, Platform } from 'react-native';
-import { AppTheme } from '@/utils/theme'; // Changed MD3Theme to AppTheme
+import { Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { AppTheme } from '@/utils/theme';
+import { useTheme } from 'react-native-paper';
 
-export const createStyles = (theme: AppTheme) => // Changed MD3Theme to AppTheme
-	StyleSheet.create({
+export const useStyle = () => {
+	const theme = useTheme() as AppTheme;
+	const colors = theme.colors;
+	const styles = StyleSheet.create({
 		amountCard: {
 			backgroundColor: theme.colors.surface,
 			borderRadius: theme.borderRadius.lg, // 16
@@ -133,23 +137,23 @@ export const createStyles = (theme: AppTheme) => // Changed MD3Theme to AppTheme
 			fontWeight: '600',
 		},
 		modalText: { // For Verification Modal
+			color: theme.colors.onSurface,
+			fontSize: theme.typography.fontSize.base, // 16
+			lineHeight: theme.typography.fontSize['2xl'], // 24
 			marginBottom: theme.spacing.xl, // 20
 			textAlign: 'center',
-			fontSize: theme.typography.fontSize.base, // 16
-			color: theme.colors.onSurface,
-			lineHeight: theme.typography.fontSize['2xl'], // 24
 		},
 		modalView: { // For Verification Modal
-			margin: theme.spacing.xl, // 20
+			alignItems: 'center',
 			backgroundColor: theme.colors.surface,
 			borderRadius: theme.spacing.xl, // 20
+			elevation: theme.shadows.md.elevation, // 5
+			margin: theme.spacing.xl, // 20
 			padding: 25, // No exact match
-			alignItems: 'center',
 			shadowColor: theme.shadows.sm.shadowColor,
 			shadowOffset: theme.shadows.md.shadowOffset, // {0,2}
 			shadowOpacity: theme.shadows.md.shadowOpacity, // 0.25
 			shadowRadius: theme.spacing.xs, // 4
-			elevation: theme.shadows.md.elevation, // 5
 			width: '85%',
 		},
 		noWalletCard: {
@@ -405,14 +409,14 @@ export const createStyles = (theme: AppTheme) => // Changed MD3Theme to AppTheme
 			marginBottom: theme.spacing.lg, // 16
 		},
 		verificationModalButton: { // For Verification Modal (old)
-			borderRadius: theme.borderRadius.md, // 12
-			paddingVertical: theme.spacing.md, // 12
-			paddingHorizontal: theme.spacing.xl, // 20
-			elevation: 2, // No exact match
-			marginVertical: theme.spacing.sm, // 8
-			width: '100%',
 			alignItems: 'center',
+			borderRadius: theme.borderRadius.md, // 12
+			elevation: 2, // No exact match
 			justifyContent: 'center',
+			marginVertical: theme.spacing.sm, // 8
+			paddingHorizontal: theme.spacing.xl, // 20
+			paddingVertical: theme.spacing.md, // 12
+			width: '100%',
 		},
 		verificationModalButtonClose: { // For Verification Modal (old)
 			backgroundColor: theme.colors.error,
@@ -446,4 +450,10 @@ export const createStyles = (theme: AppTheme) => // Changed MD3Theme to AppTheme
 			fontSize: theme.typography.fontSize.base, // 16
 			fontWeight: '600',
 		},
-	});
+	})
+	return {
+		...styles,
+		colors,
+		theme,
+	};
+};

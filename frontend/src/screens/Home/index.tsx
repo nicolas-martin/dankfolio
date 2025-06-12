@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
-import { useTheme, Text, Icon, Button } from 'react-native-paper';
+import { Text, Icon, Button } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
 import { fetchPriceHistory } from '@/screens/CoinDetail/coindetail_scripts';
@@ -12,15 +12,16 @@ import { HomeScreenNavigationProp } from './home_types';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
 import { useToast } from '@components/Common/Toast';
-import { createStyles } from './home_styles';
+import { useStyles } from './home_styles';
 import { Coin, PriceData } from '@/types';
 import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
 import { env } from '@/utils/env';
 import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
-import { debugCacheStatus, testExpoImageCache, testSourceConsistency } from '@/components/Common/CachedImage/scripts';
+import { debugCacheStatus, testExpoImageCache } from '@/components/Common/CachedImage/scripts';
 
 const HomeScreen = () => {
+	const styles = useStyles();
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
 	const { themeType: _themeType } = useThemeStore(); // Prefixed themeType
@@ -36,8 +37,6 @@ const HomeScreen = () => {
 	const [isLoadingPriceHistories, setIsLoadingPriceHistories] = useState<Record<string, boolean>>({});
 
 	const { showToast } = useToast();
-	const theme = useTheme();
-	const styles = createStyles(theme);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	useEffect(() => {
@@ -349,7 +348,7 @@ const HomeScreen = () => {
 				<View style={styles.noWalletContainer}>
 					<View style={styles.noWalletCard}>
 						<View style={styles.noWalletIcon}>
-							<Icon source="wallet" size={48} color={theme.colors.primary} />
+							<Icon source="wallet" size={48} color={styles.colors.primary} />
 						</View>
 						<Text style={styles.noWalletTitle}>Connect Your Wallet</Text>
 						<Text style={styles.noWalletText}>
@@ -362,8 +361,8 @@ const HomeScreen = () => {
 				<RefreshControl
 					refreshing={isRefreshing}
 					onRefresh={onRefresh}
-					colors={[theme.colors.primary]}
-					tintColor={theme.colors.primary}
+					colors={[styles.colors.primary]}
+					tintColor={styles.colors.primary}
 				/>
 			}
 		/>
@@ -372,18 +371,15 @@ const HomeScreen = () => {
 	// Debug cache function - moved outside render function to prevent hooks order issues
 	const handleDebugCache = useCallback(async () => {
 		logger.info('[HomeScreen] 🔧 Starting enhanced cache debug...');
-		
+
 		const sampleImageUrl = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
-		
+
 		// Test expo-image cache configuration
 		await testExpoImageCache(sampleImageUrl);
-		
+
 		// Test network caching for a sample image
 		await debugCacheStatus(sampleImageUrl);
-		
-		// Test source object consistency
-		testSourceConsistency(sampleImageUrl);
-		
+
 		showToast({
 			type: 'info',
 			message: 'Enhanced cache debug completed - check logs',
@@ -409,16 +405,16 @@ const HomeScreen = () => {
 					<RefreshControl
 						refreshing={isRefreshing}
 						onRefresh={onRefresh}
-						colors={[theme.colors.primary]}
-						tintColor={theme.colors.primary}
+						colors={[styles.colors.primary]}
+						tintColor={styles.colors.primary}
 					/>
 				}
 			>
 				{/* Debug Cache Button - Only show in development */}
 				{__DEV__ && (
 					<View style={{ padding: 16, alignItems: 'center' }}>
-						<Button 
-							mode="outlined" 
+						<Button
+							mode="outlined"
 							onPress={handleDebugCache}
 							icon="bug"
 							compact
@@ -443,13 +439,13 @@ const HomeScreen = () => {
 						{isLoadingTrending && !hasTrendingCoins && !isFirstTimeLoading && (
 							<View style={styles.loadingContainer}>
 								<LoadingAnimation size={80} />
-							<Text style={styles.loadingTrendingText}>Loading trending coins...</Text>
+								<Text style={styles.loadingTrendingText}>Loading trending coins...</Text>
 							</View>
 						)}
 
 						{!isLoadingTrending && !hasTrendingCoins && !isRefreshing && (
 							<View style={styles.emptyStateContainer}>
-								<Icon source="chart-line" size={36} color={theme.colors.onSurfaceVariant} />
+								<Icon source="chart-line" size={36} color={styles.colors.onSurfaceVariant} />
 								<Text style={styles.emptyStateTitle}>No Trending Coins</Text>
 								<Text style={styles.emptyStateText}>
 									There are no trending coins to display right now.
@@ -468,7 +464,7 @@ const HomeScreen = () => {
 								updateCellsBatchingPeriod={50}
 								initialNumToRender={10}
 								windowSize={10}
-								getItemLayout={(data, index) => ({
+								getItemLayout={(_, index) => ({
 									length: 130, // Adjusted approximate height of each CoinCard with sparkline + margin
 									offset: 130 * index, // Adjusted offset
 									index,

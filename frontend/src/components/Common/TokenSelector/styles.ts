@@ -1,9 +1,11 @@
 import { StyleSheet } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
 import { AppTheme } from '@/utils/theme';
+import { useTheme } from 'react-native-paper';
 
-export const createStyles = (theme: AppTheme) =>
-	StyleSheet.create({
+export const useStyles = () => {
+	const theme = useTheme() as AppTheme;
+	const colors = theme.colors;
+	const styles = StyleSheet.create({
 		amountInput: {
 			backgroundColor: 'transparent',
 			borderRadius: theme.spacing.sm,
@@ -99,12 +101,12 @@ export const createStyles = (theme: AppTheme) =>
 		},
 		tokenDetails: { // This is the one from previous line 84
 			flex: 1,
-		marginLeft: theme.spacing.md,
+			marginLeft: theme.spacing.md,
 		},
 		tokenIcon: {
 			borderRadius: 18,
 			height: 36,
-		marginRight: theme.spacing.sm,
+			marginRight: theme.spacing.sm,
 			width: 36,
 		},
 		tokenInfo: {
@@ -117,15 +119,15 @@ export const createStyles = (theme: AppTheme) =>
 			borderBottomWidth: 1,
 			flexDirection: 'row',
 			height: 72,
-		paddingHorizontal: theme.spacing.md,
-		paddingVertical: theme.spacing.lg,
+			paddingHorizontal: theme.spacing.md,
+			paddingVertical: theme.spacing.lg,
 		},
 		tokenList: {
 			flex: 1,
 		},
 		tokenListContent: {
-		paddingBottom: theme.spacing.lg,
-		paddingHorizontal: theme.spacing.lg,
+			paddingBottom: theme.spacing.lg,
+			paddingHorizontal: theme.spacing.lg,
 		},
 		tokenName: {
 			...theme.fonts.bodySmall,
@@ -134,14 +136,20 @@ export const createStyles = (theme: AppTheme) =>
 		tokenSymbol: {
 			...theme.fonts.titleMedium,
 			color: theme.colors.onSurface,
-		fontSize: theme.typography.fontSize.lg,
+			fontSize: theme.typography.fontSize.lg,
 			fontWeight: '600',
 		},
 		valueText: {
 			color: theme.colors.onSurfaceVariant,
-		fontSize: theme.typography.fontSize.sm,
+			fontSize: theme.typography.fontSize.sm,
 			marginTop: 2,
 			textAlign: 'right',
 			width: '100%',
 		},
-	}); 
+	})
+	return {
+		...styles,
+		colors,
+		theme
+	};
+};

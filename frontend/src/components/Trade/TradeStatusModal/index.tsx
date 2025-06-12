@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Animated, Dimensions } from 'react-native';
-import { Text, Button, useTheme, ActivityIndicator, Icon } from 'react-native-paper';
+import { Text, Button, ActivityIndicator, Icon } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet'; // Imported BottomSheetBackdropProps
 import { BlurView } from 'expo-blur';
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeStatusModalProps } from './types';
-import { createStyles } from './styles';
+import { useStyles } from './styles';
 import { openSolscanUrl } from '@/utils/url';
 import {
 	getStatusText,
@@ -32,15 +32,14 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	// Log props at the beginning of the component
 	logger.info(`[TradeStatusModal] Render with props:`, { isVisible, txHash, status, confirmations, error });
 
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
 	// State to prevent quick flashing between states
 	const [displayStatus, setDisplayStatus] = useState(status);
 	const [displayConfirmations, setDisplayConfirmations] = useState(confirmations);
 	const [hasShownProgress, setHasShownProgress] = useState(false);
-	
+
 	// Flag to prevent double navigation when closing via button vs onDismiss
 	const [isClosingProgrammatically, setIsClosingProgrammatically] = useState(false);
 
@@ -171,7 +170,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			return (
 				<View style={styles.progressSection}>
 					<View style={styles.progressIndicator}>
-						<ActivityIndicator size={12} color={theme.colors.primary} />
+						<ActivityIndicator size={12} color={styles.colors.primary} />
 						<Text style={styles.progressText}>Preparing transaction...</Text>
 					</View>
 				</View>
@@ -246,7 +245,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			<View style={styles.errorSection}>
 				<View style={styles.errorHeader}>
 					<View style={styles.errorIcon}>
-						<Icon source="alert" size={16} color={theme.colors.onErrorContainer} />
+						<Icon source="alert" size={16} color={styles.colors.onErrorContainer} />
 					</View>
 					<Text style={styles.errorTitle}>Error Details</Text>
 				</View>
@@ -266,14 +265,14 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				onPress={isFinal ? () => {
 					setIsClosingProgrammatically(true);
 					onClose();
-				} : () => {}} // Changed undefined to no-op function
+				} : () => { }} // Changed undefined to no-op function
 				// Accessibility properties for testing frameworks
 				accessible={true}
 				accessibilityRole="button"
 				accessibilityLabel="Close trade status modal"
 				accessibilityHint="Tap to close the modal"
 			>
-			<BlurView intensity={20} style={styles.blurViewStyle} />
+				<BlurView intensity={20} style={styles.blurViewStyle} />
 			</BottomSheetBackdrop>
 		);
 	};
@@ -310,7 +309,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			// Disable accessibility on the outer container to allow inner components to be accessible
 			accessible={false}
 		>
-			<BottomSheetView 
+			<BottomSheetView
 				style={styles.bottomSheetViewContainer}
 				testID="trade-status-modal"
 				// Parent container should be accessible={false}

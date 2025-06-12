@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { TradeDetailsProps } from './tradedetails_types';
-import { styles } from './tradedetails_styles';
+import { useStyles } from './tradedetails_styles';
 import { formatExchangeRate, formatPriceImpactPct } from './tradedetails_scripts';
 
 const TradeDetails: React.FC<TradeDetailsProps> = ({
@@ -11,6 +11,8 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 	priceImpactPct: priceImpactPct,
 	route,
 }) => {
+	const styles = useStyles();
+
 	return (
 		<View style={styles.container}>
 			<Text variant="bodyMedium" style={styles.exchangeRate}>{formatExchangeRate(exchangeRate)}</Text>

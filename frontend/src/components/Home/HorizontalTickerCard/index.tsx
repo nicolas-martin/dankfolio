@@ -1,15 +1,14 @@
 import React, { useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import CachedImage from '@/components/Common/CachedImage';
 import { formatPercentage } from '@/utils/numberFormat';
 import { formatTimeAgo } from '@/utils/timeFormat';
 import { HorizontalTickerCardProps } from './types';
-import { createStyles } from './styles';
+import { useStyles } from './styles';
 
 const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress, testIdPrefix = 'new-coin' }) => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const timeAgo = formatTimeAgo(coin.jupiterListedAt);
 
 	// Memoize the press handler to prevent unnecessary re-renders

@@ -1,11 +1,11 @@
 import React, { useState } from 'react'; // Added useState
 import { View, TouchableOpacity } from 'react-native'; // Added TouchableOpacity
-import { Text, useTheme, IconButton } from 'react-native-paper';
+import { Text, IconButton } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
 import { useToast } from '@components/Common/Toast';
 import { formatPrice, formatValueChange, formatAddress } from '@/utils/numberFormat';
 import { copyToClipboard } from './coindetails_scripts';
-import { createStyles } from './coindetails_styles';
+import { useStyles } from './coindetails_styles';
 import CachedImage from '@/components/Common/CachedImage';
 import Odometer from '@components/Odometer';
 
@@ -14,8 +14,7 @@ import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Updated impo
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	price, periodChange, valueChange, period, resolvedIconUrl, name, address,
 }) => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const { showToast } = useToast();
 	const [isZoomModalVisible, setIsZoomModalVisible] = useState(false); // Added state for modal
 
@@ -125,17 +124,11 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				>
 					{formattedChange}
 				</Text>
-				<Text style={[styles.periodText, { color: theme.colors.onSurfaceVariant }]} testID="price-display-period">
+				<Text style={[styles.periodText, { color: styles.colors.onSurfaceVariant }]} testID="price-display-period">
 					{period}
 				</Text>
 			</View>
 
-			{/* Timestamp for hovered point */}
-			{/* {hoveredPoint && (
-                <Text style={styles.timestampText}>
-                    {format(new Date(hoveredPoint.timestamp), "EEEE MMM d 'at' h:mm a")}
-                </Text>
-            )} */}
 			<ImageZoomModal
 				isVisible={isZoomModalVisible}
 				onClose={() => setIsZoomModalVisible(false)}

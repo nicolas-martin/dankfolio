@@ -1,9 +1,11 @@
 import { StyleSheet } from 'react-native';
-import { MD3Theme } from 'react-native-paper';
 import { AppTheme } from '@/utils/theme';
+import { useTheme } from 'react-native-paper';
 
-export const createStyles = (theme: AppTheme) =>
-	StyleSheet.create({
+export const useStyle = () => {
+	const theme = useTheme() as AppTheme;
+	const colors = theme.colors;
+	const styles = StyleSheet.create({
 		container: {
 			alignItems: 'center',
 			backgroundColor: theme.colors.background,
@@ -20,4 +22,10 @@ export const createStyles = (theme: AppTheme) =>
 			marginBottom: theme.spacing.xl,
 			width: 200, // No exact match
 		},
-	}); 
+	})
+	return {
+		...styles,
+		colors,
+		theme
+	};
+};

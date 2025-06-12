@@ -248,8 +248,8 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 	}, [effectiveData, width, height, theme]);
 
 	return (
-		<View 
-			style={[styles.container, { width, height }]} 
+		<View
+			style={[styles.container, { width, height }]}
 			testID={testID}
 			accessible={true}
 			accessibilityRole="image"

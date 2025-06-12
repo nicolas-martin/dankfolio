@@ -1,11 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Dimensions, TouchableOpacity, Linking } from 'react-native';
-import { Text, Button, useTheme, Icon } from 'react-native-paper';
+import { Text, Button, Icon } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
-import { createStyles } from './styles';
+import { useStyles } from './styles';
 import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
 import { formatPrice } from '@/utils/numberFormat';
@@ -23,8 +23,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	operationType = 'swap',
 	recipientAddress,
 }) => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
 	useEffect(() => {
@@ -89,7 +88,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		<View style={styles.tradeRow} testID={`${testIdPrefix}-token-details`}>
 			<View style={styles.tokenInfo}>
 				{isRecipient ? (
-					<Icon source="account" size={32} color={theme.colors.onSurfaceVariant} />
+					<Icon source="account" size={32} color={styles.colors.onSurfaceVariant} />
 				) : (
 					<TokenIcon token={token} />
 				)}
@@ -98,7 +97,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						<>
 							<Text style={styles.tokenSymbol}>To</Text>
 							<TouchableOpacity onPress={handleSolscanPress} testID="solscan-link">
-								<Text style={[styles.tokenName, styles.recipientAddressLink, { color: theme.colors.primary }]}>
+								<Text style={[styles.tokenName, styles.recipientAddressLink, { color: styles.colors.primary }]}>
 									{formatAddress(amount)}
 								</Text>
 							</TouchableOpacity>
@@ -118,8 +117,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			<View style={styles.amountInfo}>
 				{isRecipient ? (
 					<TouchableOpacity onPress={handleSolscanPress} style={styles.solscanButton} testID="solscan-button">
-						<Icon source="open-in-new" size={16} color={theme.colors.primary} />
-						<Text style={[styles.solscanText, { color: theme.colors.primary }]}>Solscan</Text>
+						<Icon source="open-in-new" size={16} color={styles.colors.primary} />
+						<Text style={[styles.solscanText, { color: styles.colors.primary }]}>Solscan</Text>
 					</TouchableOpacity>
 				) : (
 					<>
@@ -190,7 +189,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 
 	const renderContent = () => {
 		const isSend = operationType === 'send';
-		
+
 		// Check if we have required data
 		if (isSend && (!fromToken || !recipientAddress)) {
 			return renderLoadingState();
@@ -243,7 +242,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			// Disable accessibility on the outer container to allow inner components to be accessible
 			accessible={false}
 		>
-			<BottomSheetView 
+			<BottomSheetView
 				style={styles.blurViewStyle}
 				// Parent container should be accessible={false}
 				accessible={false}

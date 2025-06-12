@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
-import { Text, useTheme, Button, Icon, Card } from 'react-native-paper';
+import { Text, Button, Icon, Card } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
-import { createStyles } from './styles';
+import { useStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
 // Added
 import { useCoinStore } from '@store/coins';
@@ -49,8 +49,7 @@ const Trade: React.FC = () => {
 		totalFee: '0'
 	});
 	const { showToast } = useToast();
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
 	const [isLoadingTrade, setIsLoadingTrade] = useState<boolean>(false);
 	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
@@ -317,7 +316,7 @@ const Trade: React.FC = () => {
 					title="Trade Details"
 					left={(_props) => ( // Renamed props to _props
 						<View style={styles.detailsIcon}>
-							<Icon source="information" size={14} color={theme.colors.onPrimary} />
+							<Icon source="information" size={14} color={styles.colors.onPrimary} />
 						</View>
 					)}
 					titleStyle={styles.detailsTitle}
@@ -344,7 +343,7 @@ const Trade: React.FC = () => {
 
 					<View style={styles.exchangeRateRow}>
 						<View style={styles.exchangeRateLabel}>
-							<Icon source="swap-horizontal" size={16} color={theme.colors.onSurfaceVariant} />
+							<Icon source="swap-horizontal" size={16} color={styles.colors.onSurfaceVariant} />
 							<Text style={[styles.detailLabel, styles.exchangeRateLabelText]}>Exchange Rate</Text>
 						</View>
 						<Text testID="trade-details-exchange-rate" style={styles.exchangeRateValue}>
@@ -388,7 +387,7 @@ const Trade: React.FC = () => {
 									<Icon
 										source="swap-vertical"
 										size={20}
-										color={theme.colors.onPrimary}
+										color={styles.colors.onPrimary}
 									/>
 								</TouchableOpacity>
 							</View>

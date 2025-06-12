@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react';
 import { View, TouchableOpacity, Dimensions } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import CachedImage from '@/components/Common/CachedImage';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import SparklineChart from '@/components/Chart/SparklineChart'; // Added import
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '@/utils/numberFormat';
 import { CoinCardProps } from './coincard_types';
-import { createStyles } from './coincard_styles';
+import { useStyles } from './coincard_styles';
 import { logger } from '@/utils/logger';
 
 const cardWidth = Dimensions.get('window').width * 0.45; // Example: 45% of screen width for vertical cards
@@ -20,8 +20,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 	showSparkline = true, // New prop to control sparkline visibility
 	testIdPrefix = 'coin', // Default to 'coin' for backward compatibility
 }) => {
-	const theme = useTheme();
-	const styles = createStyles(theme, isHorizontal);
+	const styles = useStyles();
 
 	const handlePress = useCallback(() => {
 		logger.info(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.mintAddress);

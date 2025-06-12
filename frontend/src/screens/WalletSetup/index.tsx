@@ -1,32 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useTheme, IconButton } from 'react-native-paper';
-import { createStyles } from './styles';
-// storeCredentials and base64ToBase58PrivateKey are no longer used directly here, they are part of initializeDebugWallet
-// import { storeCredentials, base64ToBase58PrivateKey } from './scripts'; // Remove or comment out if not used by other parts
+import { IconButton } from 'react-native-paper';
 import { WalletSetupScreenProps } from './types';
 import { useToast } from '@/components/Common/Toast';
-// Buffer and bs58 might not be needed directly here anymore if loadDebugWallet is fully refactored
-// import { Buffer } from 'buffer'; // Remove or comment out if not used
-// import bs58 from 'bs58'; // Remove or comment out if not used
 import { usePortfolioStore } from '@store/portfolio';
-// CREATE_WALLET_TITLE etc. are still used by the UI part of this component.
 import { useWalletSetupLogic, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
 import { env } from '@utils/env';
-import { initializeDebugWallet } from '@/utils/debugWallet'; // Import the new function
+import { initializeDebugWallet } from '@/utils/debugWallet';
 import TermsModal from '@/components/Common/TermsModal';
-import neonBarImage from '../../../assets/onboarding.jpg'; // Import the image asset
-
-// Load the onboarding image from the correct location
-// Note: When using require for images, you need the relative path from this file to the assets directory
-// const neonBarImage = require('../../../assets/onboarding.jpg'); // Removed require
+// disable import lint error
+// eslint-disable-next-line import/no-unresolved
+import neonBarImage from '../../../assets/onboarding.jpg';
+import { useStyles } from './styles';
 
 const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
 
 const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const { showToast } = useToast();
 	const { setWallet: _setWallet } = usePortfolioStore(); // Prefixed unused setWallet
 	const [termsModalVisible, setTermsModalVisible] = useState(false);

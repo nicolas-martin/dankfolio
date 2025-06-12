@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
 import ShimmerPlaceholder from '../../Common/ShimmerPlaceholder';
@@ -8,7 +8,7 @@ import { useCoinStore } from '@store/coins';
 import HorizontalTickerCard from '@components/Home/HorizontalTickerCard';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
-import { createStyles } from './NewCoins.styles';
+import { useStyles } from './NewCoins.styles';
 import { RootStackParamList } from '@/types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -16,15 +16,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type NewCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
 
 const NewCoins: React.FC = () => {
-	const theme = useTheme();
-	const styles = createStyles(theme);
+	const styles = useStyles();
 	const navigation = useNavigation<NewCoinsNavigationProp>();
 	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
 
 	// Use separate selectors to avoid creating new objects on every render
 	const newlyListedCoins = useCoinStore(state => state.newlyListedCoins);
 	const isLoadingNewlyListed = useCoinStore(state => state.isLoadingNewlyListed);
-	const getCoinByID = useCoinStore(state => state.getCoinByID); // Changed from enrichCoin
+	const getCoinByID = useCoinStore(state => state.getCoinByID);
 
 	// Create duplicated data for infinite scrolling
 	const scrollData = useMemo(() => {
@@ -82,17 +81,17 @@ const NewCoins: React.FC = () => {
 		});
 	}, [navigation, getCoinByID]); // Added dependencies for handleCoinPress
 
-	const renderItem = useCallback(({ item, _index }: { item: Coin; index: number }) => { // index prefixed
+	const renderItem = useCallback(({ item }: { item: Coin; index: number }) => {
 		return (
 			<View style={styles.cardWrapper}>
 				<HorizontalTickerCard
 					coin={item}
-					onPress={handleCoinPress} // handleCoinPress is now memoized
+					onPress={handleCoinPress}
 					testIdPrefix="new-coin"
 				/>
 			</View>
 		);
-	}, [styles.cardWrapper, handleCoinPress]); // Added handleCoinPress to dependencies
+	}, [styles.cardWrapper, handleCoinPress]);
 
 	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (
@@ -105,9 +104,9 @@ const NewCoins: React.FC = () => {
 					/>
 				</View>
 				<Animated.FlatList
-					data={[1, 2, 3, 4]} // Show 4 placeholder cards
+					data={[1, 2, 3, 4]}
 					renderItem={() => renderPlaceholderCard()}
-					keyExtractor={(item, index) => `placeholder-${index}`}
+					keyExtractor={(_item, index) => `placeholder-${index}`}
 					horizontal
 					showsHorizontalScrollIndicator={false}
 					contentContainerStyle={styles.listContentContainer}
@@ -143,23 +142,22 @@ const NewCoins: React.FC = () => {
 				horizontal
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={styles.listContentContainer}
-				scrollEnabled={true} // Enable manual scrolling
+				scrollEnabled={true}
 				scrollEventThrottle={1}
 				decelerationRate="fast"
 				snapToInterval={CARD_WIDTH}
 				snapToAlignment="start"
-				// Performance optimizations to prevent UI blocking
 				maxToRenderPerBatch={3}
 				updateCellsBatchingPeriod={50}
 				initialNumToRender={5}
 				windowSize={5}
-				getItemLayout={(data, index) => ({
+				getItemLayout={(_, index) => ({
 					length: CARD_WIDTH,
 					offset: CARD_WIDTH * index,
 					index,
 				})}
 				ListEmptyComponent={
-					isLoadingNewlyListed ? null : ( // Don't show empty text if still loading initially
+					isLoadingNewlyListed ? null : (
 						<Text style={styles.emptyText}>No new listings available.</Text>
 					)
 				}
