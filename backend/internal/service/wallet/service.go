@@ -333,20 +333,28 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 
 	// Create trade record
 	trade := &model.Trade{
-		ID:                  fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		Fee:                 calculatedFeeSOL, // Store calculated SOL fee
-		PlatformFeeAmount:   0.0,              // Explicitly 0 for transfers
-		PlatformFeePercent:  0.0,              // Explicitly 0 for transfers
-		FromCoinMintAddress: finalFromCoinMint,
-		FromCoinPKID:        fromCoinPKID,
-		ToCoinMintAddress:   finalToCoinMint,
-		ToCoinPKID:          toCoinPKID,
-		CoinSymbol:          coinSymbol, // Populate CoinSymbol
-		Type:                "transfer",
-		Amount:              amount,
-		Status:              "pending",
-		UnsignedTransaction: unsignedTx,
-		CreatedAt:           time.Now(),
+		Fee:                    calculatedFeeSOL, // Store calculated SOL fee
+		TotalFeeAmount:         calculatedFeeSOL,
+		TotalFeeMint:           model.SolMint,
+		PlatformFeeAmount:      0.0, // Explicitly 0 for transfers
+		PlatformFeePercent:     0.0, // Explicitly 0 for transfers
+		PlatformFeeMint:        "",
+		PlatformFeeDestination: "",
+		RouteFeeAmount:         0.0,
+		RouteFeeMints:          nil,
+		RouteFeeDetails:        "",
+		PriceImpactPercent:     0.0,
+		FromCoinMintAddress:    finalFromCoinMint,
+		FromCoinPKID:           fromCoinPKID,
+		ToCoinMintAddress:      finalToCoinMint,
+		ToCoinPKID:             toCoinPKID,
+		CoinSymbol:             coinSymbol, // Populate CoinSymbol
+		Type:                   "transfer",
+		Amount:                 amount,
+		Price:                  0.0,
+		Status:                 "pending",
+		UnsignedTransaction:    unsignedTx,
+		CreatedAt:              time.Now(),
 	}
 
 	if err := s.store.Trades().Create(ctx, trade); err != nil {
@@ -472,7 +480,7 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 		slog.Error("Failed to submit transaction to blockchain", "trade_id", trade.ID, "error", sendErr)
 		trade.Status = "failed"
 		errStr := sendErr.Error()
-		trade.Error = &errStr
+		trade.Error = errStr
 		if updateErr := s.store.Trades().Update(ctx, trade); updateErr != nil {
 			slog.Warn("Failed to update trade status to failed after SendRawTransaction error", "trade_id", trade.ID, "update_error", updateErr)
 		}
@@ -483,9 +491,9 @@ func (s *Service) SubmitTransfer(ctx context.Context, req *TransferRequest) (str
 	slog.Info("Transaction submitted to blockchain", "trade_id", trade.ID, "signature", sig.String())
 	trade.Status = "submitted"
 	trade.TransactionHash = string(sig)
-	trade.Error = nil       // Clear any previous error
-	trade.CompletedAt = nil // Not completed yet
-	trade.Finalized = false // Not finalized yet
+	trade.Error = ""                // Clear any previous error
+	trade.CompletedAt = time.Time{} // Not completed yet
+	trade.Finalized = false         // Not finalized yet
 
 	if updateErr := s.store.Trades().Update(ctx, trade); updateErr != nil {
 		slog.Warn("Failed to update trade status to submitted", "trade_id", trade.ID, "signature", sig.String(), "error", updateErr)

@@ -466,8 +466,8 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 	offset := 0
 
 	params := &jupiter.NewCoinsParams{
-		Limit:  &limit,
-		Offset: &offset,
+		Limit:  limit,
+		Offset: offset,
 	}
 
 	resp, err := s.jupiterClient.GetNewCoins(ctx, params)

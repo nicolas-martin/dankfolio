@@ -30,8 +30,8 @@ func main() {
 	limit := 10
 	offset := 0
 	params := &jupiter.NewCoinsParams{
-		Limit:  &limit,
-		Offset: &offset,
+		Limit:  limit,
+		Offset: offset,
 	}
 
 	newCoins, err := jupiterClient.GetNewCoins(ctx, params)
