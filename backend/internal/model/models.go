@@ -60,33 +60,49 @@ func (c Coin) GetID() string {
 
 // Trade represents a cryptocurrency trade
 type Trade struct {
-	ID                     string     `json:"id"`
-	UserID                 string     `json:"user_id"`
-	FromCoinMintAddress    string     `json:"from_coin_mint_address"`
-	FromCoinPKID           uint64     `json:"from_coin_pk_id,omitempty"`
-	ToCoinMintAddress      string     `json:"to_coin_mint_address"`
-	ToCoinPKID             uint64     `json:"to_coin_pk_id,omitempty"`
-	CoinSymbol             string     `json:"coin_symbol"` // This might be redundant if From/ToCoin provides symbol, or useful for primary display
-	Type                   string     `json:"type"`
-	Amount                 float64    `json:"amount"`
-	Price                  float64    `json:"price"`
-	Fee                    float64    `json:"fee"`
-	PlatformFeeAmount      float64    `json:"platform_fee_amount,omitempty"`
-	PlatformFeePercent     float64    `json:"platform_fee_percent,omitempty"`
-	PlatformFeeDestination string     `json:"platform_fee_destination,omitempty"`
-	Status                 string     `json:"status"`
-	TransactionHash        string     `json:"transaction_hash"`
-	UnsignedTransaction    string     `json:"unsigned_transaction,omitempty"`
-	CreatedAt              time.Time  `json:"created_at"`
-	CompletedAt            *time.Time `json:"completed_at,omitempty"`
-	Confirmations          int32      `json:"confirmations"`
-	Finalized              bool       `json:"finalized"`
-	Error                  *string    `json:"error,omitempty"`
+	ID                  uint    `json:"id"`
+	UserID              string  `json:"user_id"`
+	FromCoinMintAddress string  `json:"from_coin_mint_address"`
+	FromCoinPKID        uint64  `json:"from_coin_pk_id,omitempty"`
+	ToCoinMintAddress   string  `json:"to_coin_mint_address"`
+	ToCoinPKID          uint64  `json:"to_coin_pk_id,omitempty"`
+	CoinSymbol          string  `json:"coin_symbol"` // This might be redundant if From/ToCoin provides symbol, or useful for primary display
+	Type                string  `json:"type"`
+	Amount              float64 `json:"amount"`
+	Price               float64 `json:"price"`
+
+	// Fee Information
+	Fee            float64 `json:"fee"`                        // Total fee in USD
+	TotalFeeAmount float64 `json:"total_fee_amount,omitempty"` // Total fee amount in native units
+	TotalFeeMint   string  `json:"total_fee_mint,omitempty"`   // Mint address of the token used for total fees
+
+	// Platform Fee Information
+	PlatformFeeAmount      float64 `json:"platform_fee_amount,omitempty"`      // Platform fee amount in native units
+	PlatformFeePercent     float64 `json:"platform_fee_percent,omitempty"`     // Platform fee percentage (e.g., 0.2 for 0.2%)
+	PlatformFeeMint        string  `json:"platform_fee_mint,omitempty"`        // Mint address of the token used for platform fees
+	PlatformFeeDestination string  `json:"platform_fee_destination,omitempty"` // Account receiving platform fees
+
+	// Route Fee Information (from Jupiter route plan)
+	RouteFeeAmount  float64  `json:"route_fee_amount,omitempty"`  // Total route fees in native units
+	RouteFeeMints   []string `json:"route_fee_mints,omitempty"`   // List of mints used for route fees
+	RouteFeeDetails string   `json:"route_fee_details,omitempty"` // JSON string of detailed route fee breakdown
+
+	// Price Impact
+	PriceImpactPercent float64 `json:"price_impact_percent,omitempty"` // Price impact as percentage
+
+	Status              string    `json:"status"`
+	TransactionHash     string    `json:"transaction_hash"`
+	UnsignedTransaction string    `json:"unsigned_transaction,omitempty"`
+	CreatedAt           time.Time `json:"created_at"`
+	CompletedAt         time.Time `json:"completed_at,omitempty"`
+	Confirmations       int32     `json:"confirmations"`
+	Finalized           bool      `json:"finalized"`
+	Error               string    `json:"error,omitempty"`
 }
 
 // GetID implements the Entity interface
 func (t Trade) GetID() string {
-	return t.ID
+	return fmt.Sprintf("%d", t.ID)
 }
 
 // TradeRequest represents a request to execute a trade

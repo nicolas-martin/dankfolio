@@ -184,8 +184,8 @@ type SwapQuoteRequestBody struct {
 
 // NewCoinsParams represents pagination parameters for the GetNewCoins endpoint
 type NewCoinsParams struct {
-	Limit  *int `json:"limit,omitempty"`  // How many records to output in the result
-	Offset *int `json:"offset,omitempty"` // The offset into the result set, used with limit to page through data
+	Limit  int `json:"limit,omitempty"`  // How many records to output in the result
+	Offset int `json:"offset,omitempty"` // The offset into the result set, used with limit to page through data
 }
 
 // NewTokenInfo represents a token from Jupiter's /tokens/v1/new endpoint

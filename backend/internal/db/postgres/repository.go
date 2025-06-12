@@ -156,7 +156,7 @@ func (r *Repository[S, M]) Upsert(ctx context.Context, item *M) (int64, error) {
 		// However, Coin/RawCoin have specific BulkUpsert logic using mint_address.
 		// For single Upsert, if they use 'id' as PK in DB table, this is fine.
 		conflictColumns = []clause.Column{{Name: "id"}} // Default to "id" for PK conflict
-		updateColumns = getColumnNames(schemaItem)   // Get all relevant columns for update
+		updateColumns = getColumnNames(schemaItem)      // Get all relevant columns for update
 	}
 
 	result := r.db.WithContext(ctx).Clauses(clause.OnConflict{
@@ -328,42 +328,36 @@ func (r *Repository[S, M]) toModel(s S) any {
 			JupiterListedAt: v.JupiterCreatedAt, // Map JupiterCreatedAt to JupiterListedAt
 		}
 	case schema.Trade:
-		var completedAt *time.Time
-		if v.CompletedAt != nil {
-			completedAt = v.CompletedAt
-		}
-		var errorStr *string
-		if v.Error != nil {
-			errorStr = v.Error
-		}
-		var txHash string
-		if v.TransactionHash != nil {
-			txHash = *v.TransactionHash
-		}
-		var unsignedTx string
-		if v.UnsignedTransaction != nil {
-			unsignedTx = *v.UnsignedTransaction
-		}
-
 		return &model.Trade{
-			ID:                  v.ID,
-			UserID:              v.UserID,
-			FromCoinMintAddress: v.FromCoinMintAddress, // Changed
-			FromCoinPKID:        v.FromCoinPKID,        // Added
-			ToCoinMintAddress:   v.ToCoinMintAddress,   // Changed
-			ToCoinPKID:          v.ToCoinPKID,          // Added
-			Type:                v.Type,
-			Amount:              v.Amount,
-			Price:               v.Price,
-			Fee:                 v.Fee,
-			Status:              v.Status,
-			TransactionHash:     txHash,
-			UnsignedTransaction: unsignedTx,
-			CreatedAt:           v.CreatedAt,
-			CompletedAt:         completedAt,
-			Confirmations:       v.Confirmations,
-			Finalized:           v.Finalized,
-			Error:               errorStr,
+			ID:                     v.ID,
+			UserID:                 v.UserID,
+			FromCoinMintAddress:    v.FromCoinMintAddress,
+			FromCoinPKID:           v.FromCoinPKID,
+			ToCoinMintAddress:      v.ToCoinMintAddress,
+			ToCoinPKID:             v.ToCoinPKID,
+			CoinSymbol:             v.CoinSymbol,
+			Type:                   v.Type,
+			Amount:                 v.Amount,
+			Price:                  v.Price,
+			Fee:                    v.Fee,
+			TotalFeeAmount:         v.TotalFeeAmount,
+			TotalFeeMint:           v.TotalFeeMint,
+			PlatformFeeAmount:      v.PlatformFeeAmount,
+			PlatformFeePercent:     v.PlatformFeePercent,
+			PlatformFeeMint:        v.PlatformFeeMint,
+			PlatformFeeDestination: v.PlatformFeeDestination,
+			RouteFeeAmount:         v.RouteFeeAmount,
+			RouteFeeMints:          v.RouteFeeMints,
+			RouteFeeDetails:        v.RouteFeeDetails,
+			PriceImpactPercent:     v.PriceImpactPercent,
+			Status:                 v.Status,
+			TransactionHash:        v.TransactionHash,
+			UnsignedTransaction:    v.UnsignedTransaction,
+			CreatedAt:              v.CreatedAt,
+			CompletedAt:            v.CompletedAt,
+			Confirmations:          v.Confirmations,
+			Finalized:              v.Finalized,
+			Error:                  v.Error,
 		}
 	case schema.RawCoin:
 		return &model.RawCoin{
@@ -426,33 +420,36 @@ func (r *Repository[S, M]) fromModel(m M) any {
 		}
 		return sCoin
 	case model.Trade:
-		var txHash *string
-		if v.TransactionHash != "" {
-			txHash = &v.TransactionHash
-		}
-		var unsignedTx *string
-		if v.UnsignedTransaction != "" {
-			unsignedTx = &v.UnsignedTransaction
-		}
 		return &schema.Trade{
-			ID:                  v.ID,
-			UserID:              v.UserID,
-			FromCoinMintAddress: v.FromCoinMintAddress, // Changed
-			FromCoinPKID:        v.FromCoinPKID,        // Added
-			ToCoinMintAddress:   v.ToCoinMintAddress,   // Changed
-			ToCoinPKID:          v.ToCoinPKID,          // Added
-			Type:                v.Type,
-			Amount:              v.Amount,
-			Price:               v.Price,
-			Fee:                 v.Fee,
-			Status:              v.Status,
-			TransactionHash:     txHash,
-			UnsignedTransaction: unsignedTx,
-			CreatedAt:           v.CreatedAt,
-			CompletedAt:         v.CompletedAt,
-			Confirmations:       v.Confirmations,
-			Finalized:           v.Finalized,
-			Error:               v.Error,
+			ID:                     v.ID,
+			UserID:                 v.UserID,
+			FromCoinMintAddress:    v.FromCoinMintAddress,
+			FromCoinPKID:           v.FromCoinPKID,
+			ToCoinMintAddress:      v.ToCoinMintAddress,
+			ToCoinPKID:             v.ToCoinPKID,
+			CoinSymbol:             v.CoinSymbol,
+			Type:                   v.Type,
+			Amount:                 v.Amount,
+			Price:                  v.Price,
+			Fee:                    v.Fee,
+			TotalFeeAmount:         v.TotalFeeAmount,
+			TotalFeeMint:           v.TotalFeeMint,
+			PlatformFeeAmount:      v.PlatformFeeAmount,
+			PlatformFeePercent:     v.PlatformFeePercent,
+			PlatformFeeMint:        v.PlatformFeeMint,
+			PlatformFeeDestination: v.PlatformFeeDestination,
+			RouteFeeAmount:         v.RouteFeeAmount,
+			RouteFeeMints:          v.RouteFeeMints,
+			RouteFeeDetails:        v.RouteFeeDetails,
+			PriceImpactPercent:     v.PriceImpactPercent,
+			Status:                 v.Status,
+			TransactionHash:        v.TransactionHash,
+			UnsignedTransaction:    v.UnsignedTransaction,
+			CreatedAt:              v.CreatedAt,
+			CompletedAt:            v.CompletedAt,
+			Confirmations:          v.Confirmations,
+			Finalized:              v.Finalized,
+			Error:                  v.Error,
 		}
 	case model.RawCoin:
 		updatedAt, _ := time.Parse(time.RFC3339, v.UpdatedAt) // v.UpdatedAt is string
@@ -507,8 +504,11 @@ func getColumnNames(data any) []string {
 	case *schema.Trade:
 		// Explicitly list columns to update, excluding PK 'id'
 		return []string{
-			"user_id", "from_coin_mint_address", "from_coin_pk_id", "to_coin_mint_address", "to_coin_pk_id",
-			"type", "amount", "price", "fee", "status", "transaction_hash", "unsigned_transaction",
+			"user_id", "from_coin_mint_address", "from_coin_pk_id", "to_coin_mint_address", "to_coin_pk_id", "coin_symbol",
+			"type", "amount", "price", "fee", "total_fee_amount", "total_fee_mint",
+			"platform_fee_amount", "platform_fee_percent", "platform_fee_mint", "platform_fee_destination",
+			"route_fee_amount", "route_fee_mints", "route_fee_details", "price_impact_percent",
+			"status", "transaction_hash", "unsigned_transaction",
 			"completed_at", "confirmations", "finalized", "error", // CreatedAt is usually set on create
 		}
 	case *schema.RawCoin:

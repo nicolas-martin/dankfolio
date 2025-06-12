@@ -198,9 +198,9 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 				if status.Error != "" {
 					errMsg = fmt.Sprintf("Transaction failed on-chain: %s", status.Error)
 				}
-				if trade.Error == nil || *trade.Error != errMsg {
-					trade.Error = &errMsg
-					trade.CompletedAt = &now
+				if trade.Error != errMsg {
+					trade.Error = errMsg
+					trade.CompletedAt = now
 					trade.Finalized = true
 					statusChanged = true
 					slog.Info("Trade failed on-chain", "trade_id", trade.ID, "error", errMsg)
@@ -208,10 +208,10 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 
 			case "Finalized":
 				// Set completion info for finalized transactions
-				if trade.CompletedAt == nil || !trade.Finalized {
-					trade.CompletedAt = &now
+				if trade.CompletedAt.IsZero() || !trade.Finalized {
+					trade.CompletedAt = now
 					trade.Finalized = true
-					trade.Error = nil // Clear any previous error
+					trade.Error = "" // Clear any previous error
 					statusChanged = true
 					slog.Info("Trade finalized on-chain", "trade_id", trade.ID)
 				}
@@ -219,10 +219,10 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 			case "Confirmed":
 				// For highly confirmed transactions, set completion info
 				if status.Confirmations != nil && *status.Confirmations >= 31 {
-					if trade.CompletedAt == nil {
-						trade.CompletedAt = &now
+					if trade.CompletedAt.IsZero() {
+						trade.CompletedAt = now
 						trade.Finalized = false // Not technically finalized yet
-						trade.Error = nil
+						trade.Error = ""
 						statusChanged = true
 						slog.Info("Trade highly confirmed", "trade_id", trade.ID, "confirmations", *status.Confirmations)
 					}
@@ -260,16 +260,15 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 			}
 
 			// Handle explicit error from status
-			if status.Error != "" && trade.Error == nil {
-				errStr := status.Error
-				trade.Error = &errStr
+			if status.Error != "" && trade.Error == "" {
+				trade.Error = status.Error
 				if trade.Status != model.TradeStatusFailed {
 					trade.Status = model.TradeStatusFailed
-					trade.CompletedAt = &now
+					trade.CompletedAt = now
 					trade.Finalized = true
 				}
 				statusChanged = true
-				slog.Info("Trade error detected", "trade_id", trade.ID, "error", errStr)
+				slog.Info("Trade error detected", "trade_id", trade.ID, "error", status.Error)
 			}
 
 			// Save changes if any updates were made
@@ -363,17 +362,16 @@ func convertModelToProtoTrade(trade *model.Trade) *pb.Trade {
 		Finalized:       trade.Finalized,
 	}
 
-	if trade.Error != nil {
-		errStr := *trade.Error
-		pbTrade.Error = &errStr
+	if trade.Error != "" {
+		pbTrade.Error = &trade.Error
 	}
 
 	if !trade.CreatedAt.IsZero() {
 		pbTrade.CreatedAt = timestamppb.New(trade.CreatedAt)
 	}
 
-	if trade.CompletedAt != nil && !(*trade.CompletedAt).IsZero() {
-		pbTrade.CompletedAt = timestamppb.New(*trade.CompletedAt)
+	if !trade.CompletedAt.IsZero() {
+		pbTrade.CompletedAt = timestamppb.New(trade.CompletedAt)
 	}
 
 	return pbTrade

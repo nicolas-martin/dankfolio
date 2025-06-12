@@ -92,24 +92,44 @@ func (r RawCoin) GetID() string {
 
 // Trade represents the structure of the 'trades' table in the database.
 type Trade struct {
-	ID                  string     `gorm:"primaryKey;column:id"`
-	UserID              string     `gorm:"column:user_id;not null;index:idx_trades_user_id"`
-	FromCoinMintAddress string     `gorm:"column:from_coin_mint_address;type:text;index:idx_trades_from_mint"`
-	FromCoinPKID        uint64     `gorm:"column:from_coin_pk_id;index:idx_trades_from_coin_pk_id"`
-	ToCoinMintAddress   string     `gorm:"column:to_coin_mint_address;type:text;index:idx_trades_to_mint"`
-	ToCoinPKID          uint64     `gorm:"column:to_coin_pk_id;index:idx_trades_to_coin_pk_id"`
-	Type                string     `gorm:"column:type;not null"`                           // e.g., "buy", "sell", "swap"
-	Amount              float64    `gorm:"column:amount;not null"`                         // Amount of 'FromCoin' for sells/swaps, 'ToCoin' for buys
-	Price               float64    `gorm:"column:price;not null"`                          // Price per unit of 'ToCoin' in terms of 'FromCoin' or quote currency
-	Fee                 float64    `gorm:"column:fee;default:0.0"`                         // Fee amount in quote currency or native token
-	Status              string     `gorm:"column:status;not null;index:idx_trades_status"` // e.g., "pending", "completed", "failed"
-	TransactionHash     *string    `gorm:"column:transaction_hash;unique"`
-	UnsignedTransaction *string    `gorm:"column:unsigned_transaction"` // For Solana, this could be base64 encoded transaction
-	CreatedAt           time.Time  `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_trades_created_at"`
-	CompletedAt         *time.Time `gorm:"column:completed_at"`
-	Confirmations       int32      `gorm:"column:confirmations;default:0"`
-	Finalized           bool       `gorm:"column:finalized;default:false"`
-	Error               *string    `gorm:"column:error"`
+	ID                  uint    `gorm:"primaryKey;autoIncrement;column:id"`
+	UserID              string  `gorm:"column:user_id;not null;index:idx_trades_user_id"`
+	FromCoinMintAddress string  `gorm:"column:from_coin_mint_address;type:text;index:idx_trades_from_mint"`
+	FromCoinPKID        uint64  `gorm:"column:from_coin_pk_id;index:idx_trades_from_coin_pk_id"`
+	ToCoinMintAddress   string  `gorm:"column:to_coin_mint_address;type:text;index:idx_trades_to_mint"`
+	ToCoinPKID          uint64  `gorm:"column:to_coin_pk_id;index:idx_trades_to_coin_pk_id"`
+	CoinSymbol          string  `gorm:"column:coin_symbol"`     // Primary coin symbol for display
+	Type                string  `gorm:"column:type;not null"`   // e.g., "buy", "sell", "swap"
+	Amount              float64 `gorm:"column:amount;not null"` // Amount of 'FromCoin' for sells/swaps, 'ToCoin' for buys
+	Price               float64 `gorm:"column:price;not null"`  // Price per unit of 'ToCoin' in terms of 'FromCoin' or quote currency
+
+	// Fee Information
+	Fee            float64 `gorm:"column:fee;default:0.0"`              // Total fee in USD
+	TotalFeeAmount float64 `gorm:"column:total_fee_amount;default:0.0"` // Total fee amount in native units
+	TotalFeeMint   string  `gorm:"column:total_fee_mint"`               // Mint address of the token used for total fees
+
+	// Platform Fee Information
+	PlatformFeeAmount      float64 `gorm:"column:platform_fee_amount;default:0.0"`  // Platform fee amount in native units
+	PlatformFeePercent     float64 `gorm:"column:platform_fee_percent;default:0.0"` // Platform fee percentage (e.g., 0.2 for 0.2%)
+	PlatformFeeMint        string  `gorm:"column:platform_fee_mint"`                // Mint address of the token used for platform fees
+	PlatformFeeDestination string  `gorm:"column:platform_fee_destination"`         // Account receiving platform fees
+
+	// Route Fee Information (from Jupiter route plan)
+	RouteFeeAmount  float64        `gorm:"column:route_fee_amount;default:0.0"` // Total route fees in native units
+	RouteFeeMints   pq.StringArray `gorm:"column:route_fee_mints;type:text[]"`  // List of mints used for route fees
+	RouteFeeDetails string         `gorm:"column:route_fee_details;type:text"`  // JSON string of detailed route fee breakdown
+
+	// Price Impact
+	PriceImpactPercent float64 `gorm:"column:price_impact_percent;default:0.0"` // Price impact as percentage
+
+	Status              string    `gorm:"column:status;not null;index:idx_trades_status"` // e.g., "pending", "completed", "failed"
+	TransactionHash     string    `gorm:"column:transaction_hash;unique"`
+	UnsignedTransaction string    `gorm:"column:unsigned_transaction"` // For Solana, this could be base64 encoded transaction
+	CreatedAt           time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_trades_created_at"`
+	CompletedAt         time.Time `gorm:"column:completed_at"`
+	Confirmations       int32     `gorm:"column:confirmations;default:0"`
+	Finalized           bool      `gorm:"column:finalized;default:false"`
+	Error               string    `gorm:"column:error"`
 }
 
 // GetID returns the primary key column name for Trade

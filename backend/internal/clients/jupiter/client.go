@@ -177,11 +177,11 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 	// Add query parameters if provided
 	queryParams := url.Values{}
 	if params != nil {
-		if params.Limit != nil {
-			queryParams.Set("limit", strconv.Itoa(*params.Limit))
+		if params.Limit > 0 {
+			queryParams.Set("limit", strconv.Itoa(params.Limit))
 		}
-		if params.Offset != nil {
-			queryParams.Set("offset", strconv.Itoa(*params.Offset))
+		if params.Offset > 0 {
+			queryParams.Set("offset", strconv.Itoa(params.Offset))
 		}
 	}
 
@@ -258,7 +258,7 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 		return "", fmt.Errorf("failed to unmarshal quoteResp: %w", err)
 	}
 
-	swapReqBody := map[string]any{ // Renamed for clarity as this is the request body
+	swapReqBody := map[string]any{
 		"quoteResponse":           quoteObj, // Pass as object, not []byte
 		"userPublicKey":           userPublicKey.String(),
 		"wrapUnwrapSOL":           true,
@@ -437,7 +437,7 @@ func PostRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 		slog.Error("Jupiter API returned HTML instead of JSON",
 			"url", requestURL,
 			"content_type", resp.Header.Get("Content-Type"))
-		return zeroT, fmt.Errorf("Jupiter API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
+		return zeroT, fmt.Errorf("jupiter API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
 	}
 
 	var responseObject T
