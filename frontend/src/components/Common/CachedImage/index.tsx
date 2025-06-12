@@ -10,7 +10,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	style,
 	placeholder,
 	testID,
-	...props
+	tintColor,
 }) => {
 	const [loadStartTime, setLoadStartTime] = useState<number>(0);
 
@@ -26,7 +26,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 		}
 	}, [loadStartTime, uri, size]);
 
-	const handleError = useCallback((error?: unknown) => {
+	const handleError = useCallback((error: any) => {
 		console.warn('[CachedImage] ❌ Load Error:', uri, error);
 	}, [uri]);
 
@@ -43,7 +43,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 			onLoadEnd={handleLoadEnd}
 			onError={handleError}
 			testID={testID}
-			{...props}
+			tintColor={tintColor || undefined}
 		/>
 	);
 };

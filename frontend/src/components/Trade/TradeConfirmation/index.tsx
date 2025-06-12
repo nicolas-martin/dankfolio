@@ -104,10 +104,10 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						</>
 					) : (
 						<>
-							<Text style={styles.tokenSymbol} testID={`${testIdPrefix}-token-symbol-${token?.mintAddress?.toLowerCase() || 'unknown'}`}>
+							<Text style={styles.tokenSymbol} testID={`${testIdPrefix}-token-symbol-${token?.symbol?.toLowerCase() || 'unknown'}`}>
 								{token.symbol}
 							</Text>
-							<Text style={styles.tokenName} testID={`${testIdPrefix}-token-name-${token?.mintAddress?.toLowerCase() || 'unknown'}`}>
+							<Text style={styles.tokenName} testID={`${testIdPrefix}-token-name-${token?.symbol?.toLowerCase() || 'unknown'}`}>
 								{token.name}
 							</Text>
 						</>
