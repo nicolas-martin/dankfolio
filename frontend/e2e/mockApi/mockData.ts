@@ -29,7 +29,7 @@ export const CAPTURED_TRANSACTION_DATA = {
 // Mock trending coins (complete data)
 export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 	create(CoinSchema, {
-		mintAddress: 'DankCoin1111111111111111111111111111111',
+		mintAddress: 'dankcoin1111111111111111111111111111111',
 		name: 'DankCoin',
 		symbol: 'DANK',
 		decimals: 9,
@@ -48,7 +48,7 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2024-01-20')),
 	}),
 	create(CoinSchema, {
-		mintAddress: 'MoonToken111111111111111111111111111111',
+		mintAddress: 'moontoken111111111111111111111111111111',
 		name: 'Safe Moon',
 		symbol: 'MOON',
 		decimals: 6,
@@ -67,7 +67,7 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2024-02-05')),
 	}),
 	create(CoinSchema, {
-		mintAddress: 'Bonk111111111111111111111111111111111111',
+		mintAddress: 'bonk111111111111111111111111111111111111',
 		name: 'Bonk',
 		symbol: 'BONK',
 		decimals: 5,
@@ -86,7 +86,7 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2023-01-01')),
 	}),
 	create(CoinSchema, {
-		mintAddress: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+		mintAddress: 'jupyiwryjfskupiha7hker8vutaefosybkedznsdvcn',
 		name: 'Jupiter',
 		symbol: 'JUP',
 		decimals: 6,
@@ -105,7 +105,7 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2023-10-19')),
 	}),
 	create(CoinSchema, {
-		mintAddress: 'So11111111111111111111111111111111111111112',
+		mintAddress: 'sol11111111111111111111111111111111111111112',
 		name: 'Wrapped SOL',
 		symbol: 'SOL',
 		decimals: 9,
@@ -124,7 +124,7 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2021-09-09')),
 	}),
 	create(CoinSchema, {
-		mintAddress: 'USDCWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+		mintAddress: 'usdcwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v',
 		name: 'USD Coin',
 		symbol: 'USDC',
 		decimals: 6,
@@ -147,7 +147,7 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 // Mock new coins (less complete data, sorted by jupiter_listed_at desc)
 export const MOCK_NEW_COINS: ProtobufCoin[] = [
 	create(CoinSchema, {
-		mintAddress: 'NewCoin1111111111111111111111111111111',
+		mintAddress: 'newcoin1111111111111111111111111111111',
 		name: 'Fresh Meme',
 		symbol: 'FRESH',
 		decimals: 9,
@@ -166,7 +166,7 @@ export const MOCK_NEW_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2024-12-01')), // Most recent listing
 	}),
 	create(CoinSchema, {
-		mintAddress: 'RocketCoin111111111111111111111111111',
+		mintAddress: 'rocketcoin111111111111111111111111111',
 		name: 'Rocket Launch',
 		symbol: 'ROCKET',
 		decimals: 6,
@@ -185,7 +185,7 @@ export const MOCK_NEW_COINS: ProtobufCoin[] = [
 		jupiterListedAt: timestampFromDate(new Date('2024-11-28')), // Second most recent
 	}),
 	create(CoinSchema, {
-		mintAddress: 'DiamondCoin11111111111111111111111111',
+		mintAddress: 'diamondcoin11111111111111111111111111',
 		name: 'Diamond Hands',
 		symbol: 'DIAMOND',
 		decimals: 8,
@@ -210,10 +210,10 @@ export const ALL_MOCK_COINS = [...MOCK_TRENDING_COINS, ...MOCK_NEW_COINS];
 
 // Mock wallet balances using exact gRPC types
 export const MOCK_WALLET_BALANCES: Balance[] = [
-	create(BalanceSchema, { id: 'So11111111111111111111111111111111111111112', amount: 2.5 }), // SOL
-	create(BalanceSchema, { id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', amount: 1000.0 }), // USDC
-	create(BalanceSchema, { id: 'DankCoin1111111111111111111111111111111', amount: 5000000.0 }), // DANK
-	create(BalanceSchema, { id: 'MoonToken111111111111111111111111111111', amount: 250000.0 }), // MOON
-	create(BalanceSchema, { id: 'Bonk111111111111111111111111111111111111', amount: 10000000.0 }), // BONK
-	create(BalanceSchema, { id: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', amount: 150.0 }), // JUP
+	create(BalanceSchema, { id: 'so11111111111111111111111111111111111111112', amount: 2.5 }), // SOL
+	create(BalanceSchema, { id: 'epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v', amount: 1000.0 }), // USDC
+	create(BalanceSchema, { id: 'dankcoin1111111111111111111111111111111', amount: 5000000.0 }), // DANK
+	create(BalanceSchema, { id: 'moontoken111111111111111111111111111111', amount: 250000.0 }), // MOON
+	create(BalanceSchema, { id: 'bonk111111111111111111111111111111111111', amount: 10000000.0 }), // BONK
+	create(BalanceSchema, { id: 'jupyiwryjfskupiha7hker8vutaefosybkedznsdvcn', amount: 150.0 }), // JUP
 ];

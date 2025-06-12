@@ -73,47 +73,17 @@ export const fetchPriceHistory = async (
 };
 
 export const handleTradeNavigation = async (
-	toCoin: Coin | null,
-	fromCoin: Coin | null,
-	showToast: (params: ToastParams) => void,
+	toCoin: Coin,
 	navigate: (screen: string, params: unknown) => void
 ) => {
-	if (!toCoin) {
-		showToast({
-			type: 'error',
-			message: 'Please select a coin to trade'
-		});
-		return;
-	}
-	let selectedFromCoin = fromCoin;
-	if (!selectedFromCoin) {
-		try {
-			selectedFromCoin = await useCoinStore.getState().getCoinByID(SOLANA_ADDRESS);
-		} catch (error: unknown) {
-			if (error instanceof Error) {
-				logger.warn('Failed to get SOL coin during trade navigation.', { error: error.message, functionName: 'handleTradeNavigation' });
-			} else {
-				logger.warn('An unknown error occurred while getting SOL coin during trade navigation.', { error, functionName: 'handleTradeNavigation' });
-			}
-		}
-	}
-	if (selectedFromCoin && toCoin.mintAddress === selectedFromCoin.mintAddress) {
-		showToast({
-			type: 'error',
-			message: 'Cannot trade a coin for itself'
-		});
-		return;
-	}
 	logger.breadcrumb({
 		category: 'navigation',
 		message: 'Navigating to TradeScreen from CoinDetail',
 		data: {
-			fromCoin: selectedFromCoin?.symbol || 'N/A',
 			toCoin: toCoin.symbol
 		},
 	});
 	navigate('Trade', {
-		initialFromCoin: selectedFromCoin,
 		initialToCoin: toCoin
 	});
 };

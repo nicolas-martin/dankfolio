@@ -10,7 +10,6 @@ export type RootStackParamList = {
 
 	CoinDetail: {
 		coin: Coin;
-		solCoin?: Coin;
 	};
 	Search: {
 		defaultSortBy?: SearchSortByOption | string;
@@ -18,7 +17,7 @@ export type RootStackParamList = {
 	} | undefined;
 	Trade: {
 		initialFromCoin?: Coin | null;
-		initialToCoin?: Coin | null;
+		initialToCoin: Coin | null;
 	};
 
 	CoinSelect: {

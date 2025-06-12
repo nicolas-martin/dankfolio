@@ -8,7 +8,7 @@ import CoinChart from '@components/Chart/CoinChart';
 import { PricePoint } from '@components/Chart/CoinChart/types';
 import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
-import { PriceData } from '@/types';
+import { PriceData, Coin } from '@/types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import {
 	TIMEFRAMES,
@@ -23,11 +23,17 @@ import { useCoinStore } from '@store/coins';
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
-	const { coin: initialCoinFromParams, solCoin: _solCoin } = route.params || {}; // Prefixed solCoin
-	const mintAddress = initialCoinFromParams?.mintAddress;
+	const { coin: initialCoinFromParams } = route.params;
+	const mintAddress = initialCoinFromParams.mintAddress;
+	const [displayCoin, setDisplayCoin] = useState<Coin | null>(initialCoinFromParams);
 
-	const coinFromStore = useCoinStore(state => mintAddress ? state.coinMap[mintAddress] : undefined);
-	const displayCoin = coinFromStore || initialCoinFromParams;
+	useEffect(() => {
+		const loadCoin = async () => {
+			const coin = await useCoinStore.getState().getCoinByID(mintAddress);
+			setDisplayCoin(coin || initialCoinFromParams);
+		};
+		loadCoin();
+	}, [mintAddress, initialCoinFromParams]);
 
 	const [selectedTimeframe, setSelectedTimeframe] = useState("4H");
 	const [loading, setLoading] = useState(true);
@@ -42,15 +48,9 @@ const CoinDetail: React.FC = () => {
 		logger.breadcrumb({
 			category: 'navigation',
 			message: 'Viewed CoinDetailScreen',
-			data: { coinSymbol: displayCoin?.symbol, coinMintAddress: mintAddress },
+			data: { coinSymbol: initialCoinFromParams.symbol, coinMintAddress: mintAddress },
 		});
-	}, [displayCoin?.symbol, mintAddress]);
-
-	useEffect(() => {
-		if (mintAddress) {
-			useCoinStore.getState().getCoinByID(mintAddress);
-		}
-	}, [mintAddress]);
+	}, [initialCoinFromParams.symbol, mintAddress]);
 
 	const parseValue = useCallback((val: string | number | undefined): number => { // Wrapped in useCallback
 		if (val === undefined) return 0;
@@ -418,8 +418,6 @@ const CoinDetail: React.FC = () => {
 		if (displayCoin) {
 			await handleTradeNavigation(
 				displayCoin,
-				null, // Assuming no specific 'toCoin' for initial navigation
-				showToast,
 				navigation.navigate
 			);
 		}

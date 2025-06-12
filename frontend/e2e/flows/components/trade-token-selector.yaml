@@ -8,24 +8,18 @@ env:
     toBalance: ${TO_BALANCE}
 ---
 - assertVisible:
-      text: fromAmount
+      id: "from-token-selector-${fromSymbol}.*"
 
 - assertVisible:
-      text: toAmount
+      id: "to-token-selector-${toSymbol}.*"
 
-# - copyTextFrom:
-#       id: "from-token-selector-amount-input"
-# - assertTrue: ${maestro.copiedText == fromAmount}
+- copyTextFrom:
+      id: "from-token-selector-amount-input"
+- assertTrue: ${maestro.copiedText == FROM_AMOUNT}
 
-# - copyTextFrom:
-#       id: "to-token-selector-amount-input"
-# - assertTrue: ${maestro.copiedText == toAmount}
-
-- assertVisible:
-      id: "from-token-selector-${fromSymbol.toLowerCase()}.*"
-
-- assertVisible:
-      id: "to-token-selector-${toSymbol.toLowerCase()}.*"
+- copyTextFrom:
+      id: "to-token-selector-amount-input"
+- assertTrue: ${maestro.copiedText == TO_AMOUNT}
 
 - assertVisible:
       text: ${fromBalance}
