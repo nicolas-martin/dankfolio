@@ -89,21 +89,21 @@ async function handleSearchCoinByMint(_options?: FetchInit) {
 async function handleGetCoinById(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const mintAddress = requestData.mintAddress;
-	
+
 	if (!mintAddress) {
 		// Return gRPC-style error for invalid request
 		throw new Error('INVALID_ARGUMENT: mintAddress is required');
 	}
-	
-	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+
+	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
 		c.mintAddress.toLowerCase() === mintAddress.toLowerCase()
 	);
-	
+
 	if (!coin) {
 		// Return gRPC-style error for not found
 		throw new Error(`NOT_FOUND: No coin found with mint address ${mintAddress}`);
 	}
-	
+
 	return create(CoinSchema, coin);
 }
 
@@ -137,21 +137,21 @@ async function handleGetWalletBalances(options?: FetchInit) {
 async function handleGetPriceHistory(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const coinAddress = requestData.address;
-	
+
 	if (!coinAddress) {
 		// Return gRPC-style error for invalid request
 		throw new Error('INVALID_ARGUMENT: address is required');
 	}
-	
-	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+
+	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
 		c.mintAddress.toLowerCase() === coinAddress.toLowerCase()
 	);
-	
+
 	if (!coin) {
 		// Return gRPC-style error for not found
 		throw new Error(`NOT_FOUND: No coin found with mint address ${coinAddress}`);
 	}
-	
+
 	const isStablecoin = coin.tags.includes('stablecoin');
 	const data = create(PriceHistoryDataSchema, {
 		items: generatePriceHistory(coin.price, isStablecoin),
