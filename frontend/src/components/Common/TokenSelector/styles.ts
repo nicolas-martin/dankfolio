@@ -1,14 +1,15 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) =>
+export const createStyles = (theme: AppTheme) =>
 	StyleSheet.create({
 		amountInput: {
 			backgroundColor: 'transparent',
-			borderRadius: 8,
+			borderRadius: theme.spacing.sm,
 			borderWidth: 0,
 			color: theme.colors.onSurface,
-			fontSize: 24,
+			fontSize: theme.typography.fontSize['2xl'],
 			fontWeight: 'bold',
 			height: 48,
 			paddingHorizontal: 0,
@@ -21,7 +22,7 @@ export const createStyles = (theme: MD3Theme) =>
 		},
 		cardContainer: {
 			backgroundColor: theme.colors.surfaceVariant,
-			borderRadius: 12,
+			borderRadius: theme.borderRadius.md,
 			borderWidth: 0,
 			width: '100%',
 		},
@@ -29,57 +30,57 @@ export const createStyles = (theme: MD3Theme) =>
 			alignItems: 'flex-start',
 			flexDirection: 'row',
 			margin: 0,
-			padding: 8,
+			padding: theme.spacing.sm,
 			width: '100%',
 		},
 		inputContainer: {
 			alignItems: 'flex-end',
 			flex: 2, // Takes more space than the selector button part
-			marginLeft: 8,
+			marginLeft: theme.spacing.sm,
 		},
 		modalContent: {
 			alignSelf: 'center',
 			backgroundColor: theme.colors.background,
-			borderRadius: 16,
+			borderRadius: theme.borderRadius.lg,
 			height: '60%',
 			marginVertical: 'auto',
-			padding: 16,
+			padding: theme.spacing.lg,
 			width: '90%',
 		},
 		modalOverlay: {
-			backgroundColor: 'rgba(0, 0, 0, 0.5)',
+			backgroundColor: theme.colors.backdrop,
 			flex: 1,
 			justifyContent: 'center',
-			padding: 20,
+			padding: theme.spacing.xl,
 		},
 		searchBar: {
 			backgroundColor: theme.colors.surfaceVariant,
-			borderRadius: 8,
+			borderRadius: theme.spacing.sm,
 			elevation: 2,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 1 },
+			shadowColor: theme.shadows.sm.shadowColor,
+			shadowOffset: theme.shadows.sm.shadowOffset,
 			shadowOpacity: 0.1,
 			shadowRadius: 2,
 		},
 		searchBarInput: {
 			color: theme.colors.onSurface,
-			fontSize: 16,
+			fontSize: theme.typography.fontSize.base,
 		},
 		searchContainer: {
-			marginBottom: 16,
-			paddingHorizontal: 16,
-			paddingTop: 16,
+			marginBottom: theme.spacing.lg,
+			paddingHorizontal: theme.spacing.lg,
+			paddingTop: theme.spacing.lg,
 		},
 		selectedTokenDetails: {
 			flex: 1,
-			marginLeft: 12,
+			marginLeft: theme.spacing.md,
 		},
 		selectorButtonContainer: {
 			alignItems: 'center', // Sorted
 			flex: 1, // Takes less space than the input container
 			flexDirection: 'row',
 			justifyContent: 'space-between',
-			marginRight: 12, // Space between button and input area
+			marginRight: theme.spacing.md, // Space between button and input area
 		},
 		tokenAddress: {
 			...theme.fonts.bodySmall,
@@ -98,12 +99,12 @@ export const createStyles = (theme: MD3Theme) =>
 		},
 		tokenDetails: { // This is the one from previous line 84
 			flex: 1,
-			marginLeft: 12,
+		marginLeft: theme.spacing.md,
 		},
 		tokenIcon: {
 			borderRadius: 18,
 			height: 36,
-			marginRight: 8,
+		marginRight: theme.spacing.sm,
 			width: 36,
 		},
 		tokenInfo: {
@@ -116,15 +117,15 @@ export const createStyles = (theme: MD3Theme) =>
 			borderBottomWidth: 1,
 			flexDirection: 'row',
 			height: 72,
-			paddingHorizontal: 12,
-			paddingVertical: 16,
+		paddingHorizontal: theme.spacing.md,
+		paddingVertical: theme.spacing.lg,
 		},
 		tokenList: {
 			flex: 1,
 		},
 		tokenListContent: {
-			paddingBottom: 16,
-			paddingHorizontal: 16,
+		paddingBottom: theme.spacing.lg,
+		paddingHorizontal: theme.spacing.lg,
 		},
 		tokenName: {
 			...theme.fonts.bodySmall,
@@ -133,12 +134,12 @@ export const createStyles = (theme: MD3Theme) =>
 		tokenSymbol: {
 			...theme.fonts.titleMedium,
 			color: theme.colors.onSurface,
-			fontSize: 18,
+		fontSize: theme.typography.fontSize.lg,
 			fontWeight: '600',
 		},
 		valueText: {
 			color: theme.colors.onSurfaceVariant,
-			fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 			marginTop: 2,
 			textAlign: 'right',
 			width: '100%',

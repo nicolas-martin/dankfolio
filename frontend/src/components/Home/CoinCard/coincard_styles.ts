@@ -1,47 +1,48 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
 // Calculate default cardWidth here if not passed, or expect it to be passed
 // For placeholder, it might be better to pass it if it's dynamically calculated in the component
 // const defaultCardWidth = Dimensions.get('window').width * 0.45;
 
-export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?: number) => {
+export const createStyles = (theme: AppTheme, isHorizontal?: boolean, cardWidth?: number) => {
 	const _actualCardWidth = cardWidth || Dimensions.get('window').width * 0.45; // Fallback if not provided, prefixed
 
 	return StyleSheet.create({
     balance: {
         color: theme.colors.onSurfaceVariant,
-        fontSize: 12,
+        fontSize: theme.typography.fontSize.xs,
         fontWeight: '400',
         letterSpacing: 0.1,
     },
     card: {
         backgroundColor: theme.colors.surface,
-        borderRadius: 16,
+        borderRadius: theme.borderRadius.lg,
         elevation: 2,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        marginBottom: theme.spacing.md,
+        shadowColor: theme.shadows.sm.shadowColor,
+        shadowOffset: theme.shadows.sm.shadowOffset,
         shadowOpacity: 0.08,
-        shadowRadius: 4,
+        shadowRadius: theme.spacing.xs,
     },
     changeNegative: {
         color: '#D32F2F', // Consider using theme colors
-        fontSize: 12,
+        fontSize: theme.typography.fontSize.xs,
         fontWeight: '500',
         textAlign: 'right',
     },
     changeNegativeSmall: { color: '#D32F2F' },
     changeNeutral: {
         color: theme.colors.onSurfaceVariant,
-        fontSize: 12,
+        fontSize: theme.typography.fontSize.xs,
         fontWeight: '400',
         textAlign: 'right',
     },
     changeNeutralSmall: { color: theme.colors.onSurfaceVariant },
     changePositive: {
         color: '#2E7D32', // Consider using theme colors
-        fontSize: 12,
+        fontSize: theme.typography.fontSize.xs,
         fontWeight: '500',
         textAlign: 'right',
     },
@@ -50,18 +51,18 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        padding: 12,
+        padding: theme.spacing.md,
     },
     horizontalCard: {
         alignItems: 'center', // Center content vertically in the card
         backgroundColor: theme.colors.surface, // Or surfaceVariant for differentiation
-        borderRadius: 12, // Slightly smaller rounding
+        borderRadius: theme.borderRadius.md, // Slightly smaller rounding
         elevation: 1,
         height: 120, // Example height, adjust as needed
         justifyContent: 'center', // Center content horizontally
         padding: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowColor: theme.shadows.sm.shadowColor,
+        shadowOffset: theme.shadows.sm.shadowOffset,
         shadowOpacity: 0.05,
         shadowRadius: 2,
         width: '100%', // Take full width of cardWrapper (e.g., 150px)
@@ -69,11 +70,11 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
     horizontalChange: {
         fontSize: 11,
         fontWeight: '500',
-        marginTop: 4,
+        marginTop: theme.spacing.xs,
         textAlign: 'center',
     },
     horizontalLogoContainer: {
-        marginBottom: 8,
+        marginBottom: theme.spacing.sm,
     },
     horizontalPrice: {
         color: theme.colors.onSurface,
@@ -84,7 +85,7 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
     },
     horizontalSymbol: {
         color: theme.colors.onSurface,
-        fontSize: 14, // Smaller font
+        fontSize: theme.typography.fontSize.sm, // Smaller font
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -93,7 +94,7 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
         flex: 0.35,
         flexDirection: 'row',
         minWidth: 0,
-        paddingRight: 8,
+        paddingRight: theme.spacing.sm,
     },
     logo: { // For vertical card - properties sorted
         borderRadius: 18,
@@ -104,7 +105,7 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
     name: {
         color: theme.colors.onSurfaceVariant,
         flexShrink: 1,
-        fontSize: 12,
+        fontSize: theme.typography.fontSize.xs,
         fontWeight: '400',
         letterSpacing: 0.1,
     },
@@ -142,7 +143,7 @@ export const createStyles = (theme: MD3Theme, isHorizontal?: boolean, cardWidth?
     },
     volume: {
         color: theme.colors.onSurfaceVariant,
-        fontSize: 12,
+        fontSize: theme.typography.fontSize.xs,
         fontWeight: '400',
         letterSpacing: 0.1,
         textAlign: 'right',

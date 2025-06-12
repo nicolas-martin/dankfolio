@@ -1,74 +1,75 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
     cardWrapper: {
-        marginRight: 8,
+        marginRight: theme.spacing.sm,
         width: 140, // Adjusted width
     },
     container: {
-        paddingBottom: 24,
-        paddingTop: 16,
+        paddingBottom: theme.spacing['2xl'],
+        paddingTop: theme.spacing.lg,
     },
     emptyText: {
         color: theme.colors.onSurfaceVariant,
         minHeight: 100,
-        paddingHorizontal: 16,
-        paddingVertical: 16,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.lg,
         textAlign: 'center',
     },
     listContentContainer: {
-        paddingLeft: 16,
-        paddingRight: 4,
+        paddingLeft: theme.spacing.lg,
+        paddingRight: theme.spacing.xs,
     },
     loadingContainer: {
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
         minHeight: 100,
-        padding: 16,
+        padding: theme.spacing.lg,
     },
     loadingText: {
         color: theme.colors.onSurfaceVariant,
-        marginLeft: 8,
+        marginLeft: theme.spacing.sm,
     },
 	placeholderCardContainer: {
 		backgroundColor: theme.colors.surface,
-		borderRadius: 12,
+		borderRadius: theme.borderRadius.md,
 		elevation: 2,
-		padding: 12,
-		shadowColor: theme.colors.shadow,
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2,
+		padding: theme.spacing.md,
+		shadowColor: theme.colors.shadow, // Assuming AppTheme provides theme.colors.shadow
+		shadowOffset: theme.shadows.sm.shadowOffset, // Using from AppTheme.shadows
+		shadowOpacity: 0.1, // No exact match in theme.shadows
+		shadowRadius: 2, // No exact match in theme.shadows
 	},
 	placeholderIconShimmer: {
 		alignSelf: 'center',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 	},
 	placeholderTextShimmerLine1: {
 		alignSelf: 'center',
-		marginBottom: 4,
+		marginBottom: theme.spacing.xs,
 	},
 	placeholderTextShimmerLine2: {
 		alignSelf: 'center',
 	},
     title: {
         color: theme.colors.onSurface,
-        fontSize: 20,
+        fontSize: theme.typography.fontSize.xl,
         fontWeight: '600',
     },
     titleContainer: {
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 8,
-        marginLeft: 16,
-        marginRight: 16,
+        marginBottom: theme.spacing.sm,
+        marginLeft: theme.spacing.lg,
+        marginRight: theme.spacing.lg,
     },
     viewAllButton: {
         color: theme.colors.primary,
-        fontSize: 14,
+        fontSize: theme.typography.fontSize.sm,
         fontWeight: '500',
     },
 });

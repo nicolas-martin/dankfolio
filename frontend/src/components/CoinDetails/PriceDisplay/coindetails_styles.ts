@@ -1,16 +1,17 @@
 import { StyleSheet } from 'react-native';
 import { MD3Theme } from 'react-native-paper';
 import { TREND_COLORS } from '@/components/Chart/CoinChart/scripts';
+import { AppTheme } from '@/utils/theme';
 
-export const createStyles = (theme: MD3Theme) => StyleSheet.create({
+export const createStyles = (theme: AppTheme) => StyleSheet.create({
 	addressRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 16,
+		marginBottom: theme.spacing.lg,
 	},
 	addressText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 	},
 	changeNegative: {
 		color: TREND_COLORS.negative,
@@ -21,52 +22,52 @@ export const createStyles = (theme: MD3Theme) => StyleSheet.create({
 	changeRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginTop: 8,
+		marginTop: theme.spacing.sm,
 	},
 	changeText: {
-		fontSize: 16,
+		fontSize: theme.typography.fontSize.base,
 		fontWeight: '600',
-		marginRight: 8,
+		marginRight: theme.spacing.sm,
 	},
 	container: {
-		padding: 16,
+		padding: theme.spacing.lg,
 	},
 	copyIconStyle: { // New style
 		margin: 0,
-		marginLeft: 8,
+		marginLeft: theme.spacing.sm,
 		padding: 0,
 	},
 	headerRow: {
 		alignItems: 'center',
 		flexDirection: 'row',
-		marginBottom: 8,
+		marginBottom: theme.spacing.sm,
 	},
 	icon: {
-		marginRight: 12,
+		marginRight: theme.spacing.md,
 	},
 	nameText: {
 		color: theme.colors.onSurface,
-		fontSize: 18,
+		fontSize: theme.typography.fontSize.lg,
 		fontWeight: '600',
 	},
 	odometerFontStyle: { // New style
-		fontSize: 32,
+		fontSize: theme.typography.fontSize['3xl'], // 30 is closest to 32
 		fontVariant: ['tabular-nums'],
 	},
 	periodText: {
-		fontSize: 14,
+		fontSize: theme.typography.fontSize.sm,
 	},
 	pricePlaceholderText: { // New style
-		fontSize: 32,
+		fontSize: theme.typography.fontSize['3xl'], // 30 is closest to 32
 	},
 	priceText: {
 		color: theme.colors.onSurface,
-		fontSize: 32,
+		fontSize: theme.typography.fontSize['3xl'], // 30 is closest to 32
 		fontWeight: 'bold',
 	},
 	timestampText: {
 		color: theme.colors.onSurfaceVariant,
-		fontSize: 12,
-		marginTop: 8,
+		fontSize: theme.typography.fontSize.xs,
+		marginTop: theme.spacing.sm,
 	},
 });

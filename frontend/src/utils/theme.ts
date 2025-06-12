@@ -189,3 +189,6 @@ export const themes = {
 	light: lightPaperTheme,
 	neon: neonCryptoTheme,
 };
+
+// At the end of the file, or after extendedThemeProperties definition
+export type AppTheme = MD3Theme & typeof extendedThemeProperties['light'];
