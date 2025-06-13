@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
 	"math"
 	"strconv"
@@ -465,28 +464,6 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 
 	// Log detailed quote information
 	slog.Info("Jupiter Quote Details", "input", fmt.Sprintf("%v %s", initialAmount, fromCoin.Symbol), "output", fmt.Sprintf("%v %s", estimatedAmountInCoin, toCoin.Symbol), "price_impact", quote.PriceImpactPct, "route", routeSummary, "total_fee", totalFeeInUSD)
-		"Input: %v %s\n"+
-		"Output: %v %s\n"+
-		"Price Impact: %v%%\n"+
-		"Route: %v\n"+
-		"Total Fee: %v USD\n",
-		initialAmount, fromCoin.Symbol,
-		estimatedAmountInCoin, toCoin.Symbol,
-		quote.PriceImpactPct,
-		routeSummary,
-		totalFeeInUSD,
-	)
-		"Input: %v %s\n"+
-		"Output: %v %s\n"+
-		"Price Impact: %v%%\n"+
-		"Route: %v\n"+
-		"Total Fee: %v USD\n",
-		initialAmount, fromCoin.Symbol,
-		estimatedAmountInCoin, toCoin.Symbol,
-		quote.PriceImpactPct,
-		routeSummary,
-		totalFeeInUSD,
-	)
 
 	return &TradeQuote{
 		EstimatedAmount: TruncateAndFormatFloat(estimatedAmountInCoin, 6),
