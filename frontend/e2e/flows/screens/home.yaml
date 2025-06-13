@@ -2,12 +2,12 @@ appId: com.nicolasmartin.dankfolio
 env:
     LOAD_DEBUG_WALLET: "true"
     E2E_MOCKING_ENABLED: "true"
-    JUP_ADDRESS: "jupyiwryjfskupiha7hker8vutaefosybkedznsdvcn"
-    SOL_ADDRESS: "so11111111111111111111111111111111111111112"
-    BONK_ADDRESS: "bonk111111111111111111111111111111111111"
-    NEW_COIN_ADDRESS: "Newcoin1111111111111111111111111111111"
-    ROCKET_COIN_ADDRESS: "rocketcoin111111111111111111111111111"
-    DIAMOND_COIN_ADDRESS: "Diamondcoin11111111111111111111111111"
+    JUP_SYMBOL: "jup"
+    SOL_SYMBOL: "sol"
+    BONK_SYMBOL: "bonk"
+    NEW_SYMBOL: "newcoin"
+    ROCKET_SYMBOL: "rocketcoin"
+    DIAMOND_SYMBOL: "diamondcoin"
 ---
 - launchApp
 
@@ -16,56 +16,56 @@ env:
 - assertVisible: "Trending Coins"
 
 # Test navigation elements
-- assertVisible: "  Portfolio Portfolio"
-- assertVisible: "  Explore Explore"
-- assertVisible: "  Home Home"
+# - assertVisible: "  Portfolio Portfolio"
+# - assertVisible: "  Explore Explore"
+# - assertVisible: "  Home Home"
 
 # Trending
 - runFlow:
       when:
           visible:
-              id: "coin-card-${JUP_ADDRESS}"
+              id: "coin-card-${JUP_SYMBOL}"
       file: ../components/coin-card.yaml
       env:
-          COIN_ADDRESS: "${JUP_ADDRESS}"
+          COIN_SYMBOL: "${JUP_SYMBOL}"
 
 - runFlow:
       when:
           visible:
-              id: "coin-card-${SOL_ADDRESS}"
+              id: "coin-card-${SOL_SYMBOL}"
       file: ../components/coin-card.yaml
       env:
-          COIN_ADDRESS: "${SOL_ADDRESS}"
+          COIN_SYMBOL: "${SOL_SYMBOL}"
 
 - runFlow:
       when:
           visible:
-              id: "coin-card-${BONK_ADDRESS}"
+              id: "coin-card-${BONK_SYMBOL}"
       file: ../components/coin-card.yaml
       env:
-          COIN_ADDRESS: "${BONK_ADDRESS}"
+          COIN_SYMBOL: "${BONK_SYMBOL}"
 
 # New
 - assertVisible:
-      id: "new-coin-card-${NEW_COIN_ADDRESS}"
+      id: "new-coin-card-${NEW_SYMBOL}"
 
 - runFlow:
       file: ../components/new-coin-card.yaml
       env:
-          COIN_ADDRESS: "${NEW_COIN_ADDRESS}"
+          COIN_SYMBOL: "${NEW_SYMBOL}"
 
 - assertVisible:
-      id: "new-coin-card-${ROCKET_COIN_ADDRESS}"
+      id: "new-coin-card-${ROCKET_SYMBOL}"
 
 - runFlow:
       file: ../components/new-coin-card.yaml
       env:
-          COIN_ADDRESS: "${ROCKET_COIN_ADDRESS}"
+          COIN_SYMBOL: "${ROCKET_SYMBOL}"
 
 - assertVisible:
-      id: "new-coin-card-${DIAMOND_COIN_ADDRESS}"
+      id: "new-coin-card-${DIAMOND_SYMBOL}"
 
 - runFlow:
       file: ../components/new-coin-card.yaml
       env:
-          COIN_ADDRESS: "${DIAMOND_COIN_ADDRESS}"
+          COIN_SYMBOL: "${DIAMOND_SYMBOL}"

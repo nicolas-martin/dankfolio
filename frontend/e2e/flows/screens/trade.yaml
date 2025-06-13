@@ -1,15 +1,13 @@
 appId: com.nicolasmartin.dankfolio
 env:
-    FROM_COIN_ADDRESS: "So11111111111111111111111111111111111111112" # SOL
     FROM_COIN_SYMBOL: "SOL"
-    TO_COIN_ADDRESS: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" # USDC
     TO_COIN_SYMBOL: "USDC"
     TRADE_AMOUNT_FROM: "0.1"
 ---
 - runFlow: ../common/app-setup.yaml
 
 - tapOn:
-      id: "trending-coin-card-${TO_COIN_ADDRESS}"
+      id: "trending-coin-card-${TO_COIN_SYMBOL}"
 - assertVisible:
       id: "coin-detail-screen"
 
