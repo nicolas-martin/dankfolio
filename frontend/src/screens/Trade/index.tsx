@@ -264,11 +264,11 @@ const Trade: React.FC = () => {
 			/>
 			{label === 'From' && coin && portfolioBalance !== undefined && (
 				<AmountPercentageButtons
+					key={`${coin.mintAddress}-${toCoin?.mintAddress || 'none'}`}
 					balance={portfolioBalance}
 					onSelectAmount={(selectedAmount) => {
 						onAmountChange(selectedAmount);
 					}}
-					tokenKey={coin.mintAddress}
 				/>
 			)}
 		</View>
