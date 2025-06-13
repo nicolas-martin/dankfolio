@@ -7,6 +7,7 @@ import { logCacheResult } from './scripts';
 const CachedImage: React.FC<CachedImageProps> = ({
 	uri,
 	size = 50,
+	borderRadius,
 	style,
 	placeholder,
 	testID,
@@ -30,14 +31,35 @@ const CachedImage: React.FC<CachedImageProps> = ({
 		console.warn('[CachedImage] ❌ Load Error:', uri, error);
 	}, [uri]);
 
+	// Default to circular if no borderRadius is provided
+	const finalBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
+
 	if (!uri) {
-		return <View style={[placeholderStyles.placeholder, { width: size, height: size }]} />;
+		return (
+			<View 
+				style={[
+					placeholderStyles.placeholder, 
+					{ 
+						width: size, 
+						height: size, 
+						borderRadius: finalBorderRadius 
+					}
+				]} 
+			/>
+		);
 	}
 
 	return (
 		<ExpoCachedImage
 			source={{ uri }}
-			style={[{ width: size, height: size }, style]}
+			style={[
+				{ 
+					width: size, 
+					height: size, 
+					borderRadius: finalBorderRadius 
+				}, 
+				style
+			]}
 			cacheKey={`${uri}-${size}x${size}`}
 			onLoadStart={handleLoadStart}
 			onLoadEnd={handleLoadEnd}
@@ -53,7 +75,6 @@ const PLACEHOLDER_COLOR = '#f0f0f0';
 const placeholderStyles = StyleSheet.create({
 	placeholder: {
 		backgroundColor: PLACEHOLDER_COLOR,
-		borderRadius: 8,
 	},
 });
 

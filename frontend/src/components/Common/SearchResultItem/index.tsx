@@ -34,7 +34,6 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 				<CachedImage
 					uri={coin.resolvedIconUrl}
 					size={36}
-					borderRadius={18}
 					showLoadingIndicator={true}
 				/>
 				<View style={styles.tokenDetails}>

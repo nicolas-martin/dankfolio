@@ -21,7 +21,6 @@ const RenderIcon = React.memo<{ iconUrl: string; styles: ReturnType<typeof useSt
 		<CachedImage
 			uri={iconUrl}
 			size={24}
-			borderRadius={12}
 			showLoadingIndicator={true}
 			style={styles.tokenIcon}
 		/>
@@ -315,7 +314,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 										key={selectedToken.mintAddress}
 										uri={selectedToken.resolvedIconUrl}
 										size={24}
-										borderRadius={12}
 										showLoadingIndicator={true}
 										style={styles.tokenIcon}
 										testID={`token-selector-icon-${selectedToken.symbol.toLowerCase()}`}

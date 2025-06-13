@@ -36,7 +36,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 		logger.warn(`[CoinCard LOG] renderCoinIcon error for ${coin.symbol}: ${coin.resolvedIconUrl}`);
 	}, [coin.symbol, coin.resolvedIconUrl]);
 
-	const renderCoinIcon = (size = 36, borderRadius = 18) => { // Smaller icon size
+	const renderCoinIcon = (size = 36) => { // Smaller icon size
 		logger.info(`[CoinCard LOG] renderCoinIcon load for ${coin.symbol}: ${coin.resolvedIconUrl}`);
 		return (
 			<View style={isHorizontal ? styles.horizontalLogoContainer : styles.logo}>
@@ -44,7 +44,6 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					<CachedImage
 						uri={coin.resolvedIconUrl}
 						size={size}
-						borderRadius={borderRadius}
 						testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
 						onLoad={handleImageLoad}
 						onError={handleImageError}
@@ -67,7 +66,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				delayPressIn={100}
 				delayPressOut={100}
 			>
-				{renderCoinIcon(32, 16)}
+				{renderCoinIcon(32)}
 							<Text
 				style={styles.horizontalSymbol}
 				numberOfLines={1}

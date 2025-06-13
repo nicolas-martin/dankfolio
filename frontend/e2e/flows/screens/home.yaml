@@ -5,9 +5,9 @@ env:
     JUP_SYMBOL: "jup"
     SOL_SYMBOL: "sol"
     BONK_SYMBOL: "bonk"
-    NEW_SYMBOL: "newcoin"
-    ROCKET_SYMBOL: "rocketcoin"
-    DIAMOND_SYMBOL: "diamondcoin"
+    FRESH_SYMBOL: "fresh"
+    ROCKET_SYMBOL: "rocket"
+    DIAMOND_SYMBOL: "diamond"
 ---
 - launchApp
 
@@ -21,38 +21,35 @@ env:
 # - assertVisible: "  Home Home"
 
 # Trending
+- assertVisible:
+      id: "trending-coin-card-${JUP_SYMBOL}"
 - runFlow:
-      when:
-          visible:
-              id: "coin-card-${JUP_SYMBOL}"
       file: ../components/coin-card.yaml
       env:
           COIN_SYMBOL: "${JUP_SYMBOL}"
 
+- assertVisible:
+      id: "trending-coin-card-${SOL_SYMBOL}"
 - runFlow:
-      when:
-          visible:
-              id: "coin-card-${SOL_SYMBOL}"
       file: ../components/coin-card.yaml
       env:
           COIN_SYMBOL: "${SOL_SYMBOL}"
 
+- assertVisible:
+      id: "trending-coin-card-${BONK_SYMBOL}"
 - runFlow:
-      when:
-          visible:
-              id: "coin-card-${BONK_SYMBOL}"
       file: ../components/coin-card.yaml
       env:
           COIN_SYMBOL: "${BONK_SYMBOL}"
 
 # New
 - assertVisible:
-      id: "new-coin-card-${NEW_SYMBOL}"
+      id: "new-coin-card-${FRESH_SYMBOL}"
 
 - runFlow:
       file: ../components/new-coin-card.yaml
       env:
-          COIN_SYMBOL: "${NEW_SYMBOL}"
+          COIN_SYMBOL: "${FRESH_SYMBOL}"
 
 - assertVisible:
       id: "new-coin-card-${ROCKET_SYMBOL}"
