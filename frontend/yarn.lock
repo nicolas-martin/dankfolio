@@ -1105,22 +1105,6 @@
     dotenv-expand "~11.0.6"
     getenv "^1.0.0"
 
-"@expo/fingerprint@0.12.4":
-  version "0.12.4"
-  resolved "https://registry.npmjs.org/@expo/fingerprint/-/fingerprint-0.12.4.tgz"
-  integrity sha512-HOJVvjiQYVHIouCOfFf4JRrQvBDIV/12GVG2iwbw1iGwmpQVkPgEXa9lN0f2yuS4J3QXHs73wr9jvuCjMmJlfw==
-  dependencies:
-    "@expo/spawn-async" "^1.7.2"
-    arg "^5.0.2"
-    chalk "^4.1.2"
-    debug "^4.3.4"
-    find-up "^5.0.0"
-    getenv "^1.0.0"
-    minimatch "^9.0.0"
-    p-limit "^3.1.0"
-    resolve-from "^5.0.0"
-    semver "^7.6.0"
-
 "@expo/fingerprint@0.13.0":
   version "0.13.0"
   resolved "https://registry.yarnpkg.com/@expo/fingerprint/-/fingerprint-0.13.0.tgz#5f5600122940ac381ed697743c10bdbddf6c55c1"
@@ -5740,10 +5724,10 @@ expo-constants@~17.1.5, expo-constants@~17.1.6:
     "@expo/config" "~11.0.9"
     "@expo/env" "~1.0.5"
 
-expo-crypto@~14.1.4:
-  version "14.1.4"
-  resolved "https://registry.npmjs.org/expo-crypto/-/expo-crypto-14.1.4.tgz"
-  integrity sha512-RmKhB3FgvKE5aNFBw4+hifOkyE0tywsDQVksdHA3jFRzcU9toFiJAz6nhPsBKDf5JlzJiIXhbNMtydoWtuuE7w==
+expo-crypto@~14.1.5:
+  version "14.1.5"
+  resolved "https://registry.yarnpkg.com/expo-crypto/-/expo-crypto-14.1.5.tgz#1c29ddd4657d96af6358a9ecdc85a0c344c9ae0c"
+  integrity sha512-ZXJoUMoUeiMNEoSD4itItFFz3cKrit6YJ/BR0hjuwNC+NczbV9rorvhvmeJmrU9O2cFQHhJQQR1fjQnt45Vu4Q==
   dependencies:
     base64-js "^1.3.0"
 
@@ -5804,10 +5788,10 @@ expo-haptics@~14.1.4:
   resolved "https://registry.npmjs.org/expo-haptics/-/expo-haptics-14.1.4.tgz"
   integrity sha512-QZdE3NMX74rTuIl82I+n12XGwpDWKb8zfs5EpwsnGi/D/n7O2Jd4tO5ivH+muEG/OCJOMq5aeaVDqqaQOhTkcA==
 
-expo-image@~2.2.0:
-  version "2.2.0"
-  resolved "https://registry.npmjs.org/expo-image/-/expo-image-2.2.0.tgz"
-  integrity sha512-ushj+R0s07hBZeuYziW3ejj/vlgzNtI/uEaYS5zIQdGz6bXQHLp7l7H6NTx7dKBeHE8ESc8mE5yTgf0YZEHITw==
+expo-image@~2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/expo-image/-/expo-image-2.3.0.tgz#8533273acdae43d730b28cb78b6d3564d334c291"
+  integrity sha512-muL8OSbgCskQJsyqenKPNULWXwRm5BY2ruS6WMo/EzFyI3iXI/0mXgb2J/NXUa8xCEYxSyoGkGZFyCBvGY1ofA==
 
 expo-json-utils@~0.15.0:
   version "0.15.0"
@@ -5831,19 +5815,6 @@ expo-manifests@~0.16.5:
   dependencies:
     "@expo/config" "~11.0.10"
     expo-json-utils "~0.15.0"
-
-expo-modules-autolinking@2.1.10:
-  version "2.1.10"
-  resolved "https://registry.npmjs.org/expo-modules-autolinking/-/expo-modules-autolinking-2.1.10.tgz"
-  integrity sha512-k93fzoszrYTKbZ51DSVnewYIGUV6Gi22Su8qySXPFJEfvtDs2NUUNRHBZNKgLHvwc6xPzVC5j7JYbrpXNuY44A==
-  dependencies:
-    "@expo/spawn-async" "^1.7.2"
-    chalk "^4.1.0"
-    commander "^7.2.0"
-    find-up "^5.0.0"
-    glob "^10.4.2"
-    require-from-string "^2.0.2"
-    resolve-from "^5.0.0"
 
 expo-modules-autolinking@2.1.11:
   version "2.1.11"
@@ -5890,30 +5861,7 @@ expo-updates-interface@~1.1.0:
   resolved "https://registry.npmjs.org/expo-updates-interface/-/expo-updates-interface-1.1.0.tgz"
   integrity sha512-DeB+fRe0hUDPZhpJ4X4bFMAItatFBUPjw/TVSbJsaf3Exeami+2qbbJhWkcTMoYHOB73nOIcaYcWXYJnCJXO0w==
 
-expo@53.0.10:
-  version "53.0.10"
-  resolved "https://registry.npmjs.org/expo/-/expo-53.0.10.tgz"
-  integrity sha512-rN3HcQOeum4i+4Fq1+wBuTWbUjHZqTE7YgGGioOtY2WnhYt+4OSrTlxjRjp13AtkLuKSKkh34gkdFMlUepKlXA==
-  dependencies:
-    "@babel/runtime" "^7.20.0"
-    "@expo/cli" "0.24.14"
-    "@expo/config" "~11.0.10"
-    "@expo/config-plugins" "~10.0.2"
-    "@expo/fingerprint" "0.12.4"
-    "@expo/metro-config" "0.20.14"
-    "@expo/vector-icons" "^14.0.0"
-    babel-preset-expo "~13.2.0"
-    expo-asset "~11.1.5"
-    expo-constants "~17.1.6"
-    expo-file-system "~18.1.10"
-    expo-font "~13.3.1"
-    expo-keep-awake "~14.1.4"
-    expo-modules-autolinking "2.1.10"
-    expo-modules-core "2.4.0"
-    react-native-edge-to-edge "1.6.0"
-    whatwg-url-without-unicode "8.0.0-3"
-
-expo@~53.0.11:
+expo@53.0.11, expo@~53.0.11:
   version "53.0.11"
   resolved "https://registry.yarnpkg.com/expo/-/expo-53.0.11.tgz#66053862520ce2a6700d13346ebaf8210a68f24b"
   integrity sha512-+QtvU+6VPd7/o4vmtwuRE/Li2rAiJtD25I6BOnoQSxphaWWaD0PdRQnIV3VQ0HESuJYRuKJ3DkAHNJ3jI6xwzA==
@@ -7254,10 +7202,10 @@ jest-environment-node@^29.7.0:
     jest-mock "^29.7.0"
     jest-util "^29.7.0"
 
-jest-expo@~53.0.6:
-  version "53.0.6"
-  resolved "https://registry.npmjs.org/jest-expo/-/jest-expo-53.0.6.tgz"
-  integrity sha512-xl5DSQE3OZIfKITg9rqUJutPbCtIzB58iV6L4aiuPSxBIsrnCXo7wAmxHcq23FJoTcyjhQo3IE49gTlv5zs+Xw==
+jest-expo@~53.0.7:
+  version "53.0.7"
+  resolved "https://registry.yarnpkg.com/jest-expo/-/jest-expo-53.0.7.tgz#ab1c288940dcdf470c25b7b18e2ed99f03d26bc6"
+  integrity sha512-Uiu3ES0sWbsxpifQuBzXMI1/N9JygfJfwEby/Qw/OPndIQ1YeeIQqkbP52xn6UhdSM4qYQiteX3EjY8TfrZIoA==
   dependencies:
     "@expo/config" "~11.0.10"
     "@expo/json-file" "^9.1.4"
