@@ -85,19 +85,22 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	);
 
 	const toastType = state.type || 'info';
-	const toastForegroundColor = styles.colors.onSurfaceVariant;
+	const toastForegroundColor = toastType === 'error' ? styles.colors.onError :
+		toastType === 'success' ? styles.colors.onPrimary :
+		toastType === 'warning' ? styles.colors.onError :
+		styles.colors.onSurface;
 
 	let IconToRender;
 	// Ensure toastType is valid for getOriginalToastIconComponent by casting, as state.type can be undefined initially.
 	const OriginalIcon = getOriginalToastIconComponent(toastType as ToastType);
 
 	if (toastType === 'success') {
-		IconToRender = <SuccessAnimation size={28} loop={false} autoPlay={true} style={styles.statusIcon} />;
+		IconToRender = <SuccessAnimation size={28} loop={false} autoPlay={true} style={[styles.statusIcon, { backgroundColor: 'transparent' }]} />;
 	} else if (toastType === 'error') {
-		IconToRender = <ErrorAnimation size={28} loop={false} autoPlay={true} style={styles.statusIcon} />;
+		IconToRender = <ErrorAnimation size={28} loop={false} autoPlay={true} style={[styles.statusIcon, { backgroundColor: 'transparent' }]} />;
 	} else if (OriginalIcon) {
 		// Ensure OriginalIcon is a valid component before rendering
-		IconToRender = <OriginalIcon size={20} color={toastForegroundColor} style={styles.statusIcon} />;
+		IconToRender = <OriginalIcon size={20} color={toastForegroundColor} style={[styles.statusIcon, { backgroundColor: 'transparent' }]} />;
 	}
 	// else IconToRender will be undefined, and nothing will be rendered for the icon if type is invalid and not success/error.
 
@@ -114,13 +117,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					}}
 					style={[
 						styles.snackbarStyleBase,
-						{ backgroundColor: toastType === "error" ? styles.success : styles.error },
+						toastType === "error" ? styles.error : 
+						toastType === "success" ? styles.success :
+						toastType === "warning" ? styles.warning :
+						styles.info,
 					]}
 				>
 					<View style={styles.content}>
 						<View style={styles.messageContainer}>
 							{IconToRender}
-							<Text style={[styles.message, { color: styles.colors.onSurfaceVariant }]}>
+							<Text style={[styles.message, { color: toastForegroundColor }]}>
 								{state.message}
 							</Text>
 						</View>
@@ -129,7 +135,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 							size={20}
 							onPress={toast.hideToast}
 							style={styles.closeButton}
-							iconColor={styles.colors.onSurfaceVariant}
+							iconColor={toastForegroundColor}
 						/>
 					</View>
 				</Snackbar>
