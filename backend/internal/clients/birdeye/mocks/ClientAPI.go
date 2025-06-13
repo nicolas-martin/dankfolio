@@ -107,8 +107,8 @@ func (_c *MockClientAPI_GetPriceHistory_Call) RunAndReturn(run func(ctx context.
 }
 
 // GetTrendingTokens provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) GetTrendingTokens(ctx context.Context) (*birdeye.TokenTrendingResponse, error) {
-	ret := _mock.Called(ctx)
+func (_mock *MockClientAPI) GetTrendingTokens(ctx context.Context, params birdeye.TrendingTokensParams) (*birdeye.TokenTrendingResponse, error) {
+	ret := _mock.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTrendingTokens")
@@ -116,18 +116,18 @@ func (_mock *MockClientAPI) GetTrendingTokens(ctx context.Context) (*birdeye.Tok
 
 	var r0 *birdeye.TokenTrendingResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (*birdeye.TokenTrendingResponse, error)); ok {
-		return returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, birdeye.TrendingTokensParams) (*birdeye.TokenTrendingResponse, error)); ok {
+		return returnFunc(ctx, params)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) *birdeye.TokenTrendingResponse); ok {
-		r0 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, birdeye.TrendingTokensParams) *birdeye.TokenTrendingResponse); ok {
+		r0 = returnFunc(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*birdeye.TokenTrendingResponse)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, birdeye.TrendingTokensParams) error); ok {
+		r1 = returnFunc(ctx, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -141,18 +141,24 @@ type MockClientAPI_GetTrendingTokens_Call struct {
 
 // GetTrendingTokens is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockClientAPI_Expecter) GetTrendingTokens(ctx interface{}) *MockClientAPI_GetTrendingTokens_Call {
-	return &MockClientAPI_GetTrendingTokens_Call{Call: _e.mock.On("GetTrendingTokens", ctx)}
+//   - params birdeye.TrendingTokensParams
+func (_e *MockClientAPI_Expecter) GetTrendingTokens(ctx interface{}, params interface{}) *MockClientAPI_GetTrendingTokens_Call {
+	return &MockClientAPI_GetTrendingTokens_Call{Call: _e.mock.On("GetTrendingTokens", ctx, params)}
 }
 
-func (_c *MockClientAPI_GetTrendingTokens_Call) Run(run func(ctx context.Context)) *MockClientAPI_GetTrendingTokens_Call {
+func (_c *MockClientAPI_GetTrendingTokens_Call) Run(run func(ctx context.Context, params birdeye.TrendingTokensParams)) *MockClientAPI_GetTrendingTokens_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
+		var arg1 birdeye.TrendingTokensParams
+		if args[1] != nil {
+			arg1 = args[1].(birdeye.TrendingTokensParams)
+		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -163,7 +169,7 @@ func (_c *MockClientAPI_GetTrendingTokens_Call) Return(tokenTrendingResponse *bi
 	return _c
 }
 
-func (_c *MockClientAPI_GetTrendingTokens_Call) RunAndReturn(run func(ctx context.Context) (*birdeye.TokenTrendingResponse, error)) *MockClientAPI_GetTrendingTokens_Call {
+func (_c *MockClientAPI_GetTrendingTokens_Call) RunAndReturn(run func(ctx context.Context, params birdeye.TrendingTokensParams) (*birdeye.TokenTrendingResponse, error)) *MockClientAPI_GetTrendingTokens_Call {
 	_c.Call.Return(run)
 	return _c
 }

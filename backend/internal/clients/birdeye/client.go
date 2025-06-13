@@ -60,9 +60,31 @@ func (c *Client) GetPriceHistory(ctx context.Context, params PriceHistoryParams)
 }
 
 // GetTrendingTokens retrieves the list of trending tokens from the BirdEye API.
-func (c *Client) GetTrendingTokens(ctx context.Context) (*TokenTrendingResponse, error) {
-	fullURL := fmt.Sprintf("%s/%s", c.baseURL, trendingTokensEndpoint)
-	slog.Debug("Fetching trending tokens from BirdEye", "url", fullURL) // Keep this specific log for the public method
+func (c *Client) GetTrendingTokens(ctx context.Context, params TrendingTokensParams) (*TokenTrendingResponse, error) {
+	queryParams := url.Values{}
+
+	// Add query parameters if provided
+	if params.SortBy != "" {
+		queryParams.Add("sort_by", params.SortBy)
+	}
+	if params.SortType != "" {
+		queryParams.Add("sort_type", params.SortType)
+	}
+	if params.Offset > 0 {
+		queryParams.Add("offset", strconv.Itoa(params.Offset))
+	}
+	if params.Limit > 0 {
+		queryParams.Add("limit", strconv.Itoa(params.Limit))
+	}
+
+	var fullURL string
+	if len(queryParams) > 0 {
+		fullURL = fmt.Sprintf("%s/%s?%s", c.baseURL, trendingTokensEndpoint, queryParams.Encode())
+	} else {
+		fullURL = fmt.Sprintf("%s/%s", c.baseURL, trendingTokensEndpoint)
+	}
+
+	slog.Debug("Fetching trending tokens from BirdEye", "url", fullURL)
 
 	trendingTokensResponse, err := getRequest[TokenTrendingResponse](c, ctx, fullURL)
 	if err != nil {
@@ -82,7 +104,7 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 	} else {
 		endpointName := parsedURL.Path
 		if endpointName == "" {
-			endpointName = "/" // Default if path is empty
+			endpointName = "/"
 		}
 		// Ensure c.tracker is not nil before calling TrackCall
 		if c.tracker != nil {

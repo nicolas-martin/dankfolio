@@ -59,3 +59,12 @@ type TokenDetails struct {
 	Price24hChangePercent  float64  `json:"price24hChangePercent"`
 	Tags                   []string `json:"tags,omitempty"`
 }
+
+// TrendingTokensParams contains parameters for the GetTrendingTokens request
+// Based on BirdEye API documentation: https://docs.birdeye.so/reference/get-defi-token_trending
+type TrendingTokensParams struct {
+	SortBy   string // Sort criteria (e.g., "v24hUSD", "mc", "price24hChangePercent", "volume24hChangePercent")
+	SortType string // Sort order: "desc" or "asc"
+	Offset   int    // Pagination offset (starting point in the token list)
+	Limit    int    // Number of results to return (max 50)
+}

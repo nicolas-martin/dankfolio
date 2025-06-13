@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
@@ -30,7 +31,7 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 
 	// Step 1: Get trending tokens from Birdeye
 	fetchTime := time.Now() // Capture fetch attempt time
-	birdeyeTokens, err := s.birdeyeClient.GetTrendingTokens(ctx)
+	birdeyeTokens, err := s.birdeyeClient.GetTrendingTokens(ctx, birdeye.TrendingTokensParams{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trending tokens from Birdeye: %w", err)
 	}
