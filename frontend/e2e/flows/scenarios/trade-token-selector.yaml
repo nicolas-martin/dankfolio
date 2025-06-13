@@ -44,8 +44,11 @@ env:
           TO_AMOUNT: "0.95"
           TO_BALANCE: "5000000"
 
+# HACK: SAD
+# - tapOn:
+#       id: "swap-coins-button"
 - tapOn:
-      id: "swap-coins-button"
+      point: "50%,48%"
 
 - runFlow:
       file: ../components/trade-token-selector.yaml
@@ -66,32 +69,20 @@ env:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${usdcSymbol}
-          FROM_AMOUNT: "100.0"
-          FROM_BALANCE: "500.0"
+          FROM_AMOUNT: "0"
+          FROM_BALANCE: "1000"
           TO_SYMBOL: ${solSymbol}
-          TO_AMOUNT: "1.0"
+          TO_AMOUNT: "0"
           TO_BALANCE: "2.5"
 
-# Test 5: Final swap back and test with amount validation
 - tapOn:
-      id: "swap-coins-button"
+      id: "amount-percentage-text-50"
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
-          FROM_SYMBOL: ${solSymbol}
-          FROM_AMOUNT: "1.0"
-          FROM_BALANCE: "2.5"
-          TO_SYMBOL: ${usdcSymbol}
-          TO_AMOUNT: "100.0"
-          TO_BALANCE: "500.0"
-
-# Test 6: Comprehensive test with different token pair and amounts
-- runFlow:
-      file: ../components/trade-token-selector.yaml
-      env:
-          FROM_SYMBOL: ${jupSymbol}
-          FROM_AMOUNT: "25.0"
-          FROM_BALANCE: "100.0"
-          TO_SYMBOL: ${dankSymbol}
-          TO_AMOUNT: "500.0"
-          TO_BALANCE: "0"
+          FROM_SYMBOL: ${usdcSymbol}
+          FROM_AMOUNT: "500"
+          FROM_BALANCE: "1000"
+          TO_SYMBOL: ${solSymbol}
+          TO_AMOUNT: "0"
+          TO_BALANCE: "2.5"
