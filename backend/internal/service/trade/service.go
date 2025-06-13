@@ -24,6 +24,7 @@ import (
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
+	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import the new util package
 )
 
 // Service handles trade-related operations
@@ -60,6 +61,10 @@ func NewService(
 
 // GetTrade retrieves a trade by its ID
 func (s *Service) GetTrade(ctx context.Context, id string) (*model.Trade, error) {
+	// TODO: If trade IDs have a known format (e.g., UUID), add validation.
+	if id == "" {
+		return nil, fmt.Errorf("trade id cannot be empty")
+	}
 	return s.store.Trades().Get(ctx, id)
 }
 
@@ -90,10 +95,36 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 
 // PrepareSwap prepares an unsigned swap transaction and creates a trade record
 func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapRequestData) (string, error) {
+	if !util.IsValidSolanaAddress(params.UserWalletAddress) {
+		return "", fmt.Errorf("invalid user_wallet_address: %s", params.UserWalletAddress)
+	}
+	if !util.IsValidSolanaAddress(params.FromCoinMintAddress) {
+		return "", fmt.Errorf("invalid from_coin_mint_address: %s", params.FromCoinMintAddress)
+	}
+	if !util.IsValidSolanaAddress(params.ToCoinMintAddress) {
+		return "", fmt.Errorf("invalid to_coin_mint_address: %s", params.ToCoinMintAddress)
+	}
+
+	amountFloat, err := strconv.ParseFloat(params.Amount, 64)
+	if err != nil {
+		return "", fmt.Errorf("invalid amount: %w", err)
+	}
+	if amountFloat <= 0 {
+		return "", fmt.Errorf("amount must be positive: %s", params.Amount)
+	}
+
+	slippageBpsInt, err := strconv.Atoi(params.SlippageBps) // Atoi implies base 10
+	if err != nil {
+		return "", fmt.Errorf("invalid slippage_bps: %w", err)
+	}
+	if slippageBpsInt < 0 || slippageBpsInt > 5000 { // 5000 bps = 50%
+		return "", fmt.Errorf("slippage_bps out of range (0-5000): %d", slippageBpsInt)
+	}
+
 	// Parse and validate fromAddress (public key)
 	fromPubKey, err := solanago.PublicKeyFromBase58(params.UserWalletAddress)
 	if err != nil {
-		return "", fmt.Errorf("invalid from address: %w", err)
+		return "", fmt.Errorf("invalid from address: %w", err) // Should be caught by IsValidSolanaAddress, but good to keep for specific parsing error
 	}
 	// Fetch coin models to get their PKIDs
 	fromCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, params.FromCoinMintAddress)
@@ -256,6 +287,18 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*model.Trade, error) {
 	// Check for debug header in context
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
+		if !util.IsValidSolanaAddress(req.FromCoinMintAddress) {
+			return nil, fmt.Errorf("invalid from_coin_mint_address for debug path: %s", req.FromCoinMintAddress)
+		}
+		if !util.IsValidSolanaAddress(req.ToCoinMintAddress) {
+			return nil, fmt.Errorf("invalid to_coin_mint_address for debug path: %s", req.ToCoinMintAddress)
+		}
+		if req.Amount <= 0 { // Assuming req.Amount is float64
+			return nil, fmt.Errorf("amount must be positive for debug path: %f", req.Amount)
+		}
+		// SignedTransaction can be empty in debug mode as it's simulated
+		// UnsignedTransaction can be empty in debug mode as it's simulated
+
 		// Simulate processing delay
 		time.Sleep(2 * time.Second)
 
@@ -309,6 +352,13 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		return nil, fmt.Errorf("no trade record found for the given transaction")
 	}
 
+	if req.UnsignedTransaction == "" {
+		return nil, fmt.Errorf("unsigned_transaction cannot be empty")
+	}
+	if req.SignedTransaction == "" {
+		return nil, fmt.Errorf("signed_transaction cannot be empty")
+	}
+
 	// Decode the signed transaction if it's base64 encoded
 	rawTxBytes, err := base64.StdEncoding.DecodeString(req.SignedTransaction)
 	if err != nil {
@@ -360,6 +410,29 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 
 // GetSwapQuote gets a quote for a potential trade
 func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinMintAddress string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
+	if !util.IsValidSolanaAddress(fromCoinMintAddress) {
+		return nil, fmt.Errorf("invalid from_coin_mint_address: %s", fromCoinMintAddress)
+	}
+	if !util.IsValidSolanaAddress(toCoinMintAddress) {
+		return nil, fmt.Errorf("invalid to_coin_mint_address: %s", toCoinMintAddress)
+	}
+
+	amountFloat, err := strconv.ParseFloat(inputAmount, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid input_amount: %w", err)
+	}
+	if amountFloat <= 0 {
+		return nil, fmt.Errorf("input_amount must be positive: %s", inputAmount)
+	}
+
+	slippageBpsInt, err := strconv.Atoi(slippageBsp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid slippage_bsp: %w", err)
+	}
+	if slippageBpsInt < 0 || slippageBpsInt > 5000 { // 5000 bps = 50%
+		return nil, fmt.Errorf("slippage_bsp out of range (0-5000): %d", slippageBpsInt)
+	}
+
 	// Parse addresses
 	fromCoin, err := s.coinService.GetCoinByMintAddress(ctx, fromCoinMintAddress) // Use new method
 	if err != nil {
@@ -369,11 +442,6 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 	toCoin, err := s.coinService.GetCoinByMintAddress(ctx, toCoinMintAddress) // Use new method
 	if err != nil {
 		return nil, fmt.Errorf("failed to get to coin %s: %w", toCoinMintAddress, err)
-	}
-
-	slippageBpsInt, err := strconv.Atoi(slippageBsp)
-	if err != nil {
-		return nil, fmt.Errorf("invalid slippage value: %w", err)
 	}
 
 	// Get quote from Jupiter with enhanced parameters
@@ -497,6 +565,22 @@ func TruncateAndFormatFloat(value float64, decimalPlaces int) string {
 
 // GetTradeByTransactionHash retrieves a trade by its transaction hash
 func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) (*model.Trade, error) {
+	if txHash == "" {
+		return nil, fmt.Errorf("transaction hash cannot be empty")
+	}
+	// Basic check for Solana transaction hash format (Base58 encoded signature)
+	// Typically 64 to 88 characters for Base58 encoded signatures.
+	if len(txHash) < 64 || len(txHash) > 88 { // Max length for Ed25519 signature in base58 is 88
+		return nil, fmt.Errorf("invalid transaction hash length: %s", txHash)
+	}
+	// Re-using IsValidSolanaAddress's regex logic, but this is a simplification.
+	// A dedicated regex for tx signatures (which are just base58 strings of a certain length) would be `^[1-9A-HJ-NP-Za-km-z]{64,88}$`
+	// For simplicity, we can use a modified check or assume IsValidSolanaAddress is "good enough" if lengths were similar.
+	// However, txhash is not a Solana account address. So a direct check is better.
+	if !util.IsValidBase58(txHash) { // Assuming IsValidBase58 is a new function in util for general base58 check
+		return nil, fmt.Errorf("transaction hash contains invalid characters: %s", txHash)
+	}
+
 	trade, err := s.store.Trades().GetByField(ctx, "transaction_hash", txHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trade by transaction hash %s: %w", txHash, err)
