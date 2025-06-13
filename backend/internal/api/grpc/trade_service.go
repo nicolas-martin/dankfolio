@@ -136,7 +136,7 @@ func (s *tradeServiceHandler) SubmitSwap(ctx context.Context, req *connect.Reque
 	}
 
 	res := connect.NewResponse(&pb.SubmitSwapResponse{
-		TradeId:         trade.ID,
+		TradeId:         fmt.Sprintf("%d", trade.ID),
 		TransactionHash: trade.TransactionHash,
 	})
 	return res, nil
@@ -347,10 +347,10 @@ func convertModelToProtoTrade(trade *model.Trade) *pb.Trade {
 		return nil
 	}
 	pbTrade := &pb.Trade{
-		Id:              trade.ID,
+		Id:              fmt.Sprintf("%d", trade.ID),
 		UserId:          trade.UserID,
-		FromCoinId:      trade.FromCoinMintAddress, // Map FromCoinMintAddress to pb.FromCoinId
-		ToCoinId:        trade.ToCoinMintAddress,   // Map ToCoinMintAddress to pb.ToCoinId
+		FromCoinId:      trade.FromCoinMintAddress,
+		ToCoinId:        trade.ToCoinMintAddress,
 		CoinSymbol:      trade.CoinSymbol,
 		Type:            trade.Type,
 		Amount:          trade.Amount,
