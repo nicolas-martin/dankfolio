@@ -450,7 +450,6 @@ const CoinDetail: React.FC = () => {
 				<ScrollView
 					style={styles.scrollView}
 					contentContainerStyle={styles.scrollViewContent}
-					bounces={false}
 					showsVerticalScrollIndicator={false}
 					keyboardShouldPersistTaps="handled"
 					refreshControl={
