@@ -37,6 +37,7 @@ const CoinDetail: React.FC = () => {
 
 	const [selectedTimeframe, setSelectedTimeframe] = useState("4H");
 	const [loading, setLoading] = useState(true);
+	const [isTimeframeLoading, setIsTimeframeLoading] = useState(false);
 	const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
 	const { showToast } = useToast();
@@ -70,7 +71,14 @@ const CoinDetail: React.FC = () => {
 		}
 
 		const loadData = async () => {
-			setLoading(true);
+			// Use different loading states: loading for initial load, isTimeframeLoading for timeframe changes
+			const isInitialLoad = priceHistory.length === 0;
+			if (isInitialLoad) {
+				setLoading(true);
+			} else {
+				setIsTimeframeLoading(true);
+			}
+			
 			try {
 				// Ensure displayCoin is not null before passing
 				const result = await fetchPriceHistory(displayCoin!, selectedTimeframe);
@@ -95,13 +103,17 @@ const CoinDetail: React.FC = () => {
 				showToast({ type: 'error', message: 'Failed to load chart data.' });
 				setPriceHistory([]);
 			} finally {
-				setLoading(false);
+				if (isInitialLoad) {
+					setLoading(false);
+				} else {
+					setIsTimeframeLoading(false);
+				}
 			}
 		};
 
 		loadData();
 		// prevDisplayCoinRef.current = displayCoin; // This ref was for isInitialLoad logic, may not be needed in the same way
-	}, [selectedTimeframe, displayCoin, showToast]); // Added showToast
+	}, [selectedTimeframe, displayCoin, showToast, priceHistory.length]); // Added priceHistory.length for isInitialLoad check
 
 
 	const displayData = useMemo(() => {
@@ -280,6 +292,7 @@ const CoinDetail: React.FC = () => {
 			priceHistoryLength: priceHistory.length,
 			priceHistory: priceHistory,
 			loading: loading,
+			isTimeframeLoading: isTimeframeLoading,
 			selectedTimeframe: selectedTimeframe
 		});
 
@@ -288,7 +301,7 @@ const CoinDetail: React.FC = () => {
 				<View style={styles.chartCardContent}>
 					<CoinChart
 						data={priceHistory}
-						loading={loading} // This is for price history loading
+						loading={loading} // Only show loading for initial load, not timeframe changes
 						onHover={handleChartHover}
 						period={selectedTimeframe}
 					/>
@@ -317,7 +330,7 @@ const CoinDetail: React.FC = () => {
 						style: styles.timeframeButton
 					}))}
 					density="small"
-					style={styles.timeframeButtonsRow}
+					style={[styles.timeframeButtonsRow, isTimeframeLoading && styles.timeframeButtonsRowLoading]}
 				/>
 			</View>
 		);
@@ -443,10 +456,7 @@ const CoinDetail: React.FC = () => {
 					contentContainerStyle={styles.scrollViewContent}
 					bounces={false}
 					showsVerticalScrollIndicator={false}
-					maintainVisibleContentPosition={{
-						minIndexForVisible: 0,
-						autoscrollToTopThreshold: 10
-					}}
+					keyboardShouldPersistTaps="handled"
 					refreshControl={
 						<RefreshControl
 							refreshing={loading} // This 'loading' is for the price chart
