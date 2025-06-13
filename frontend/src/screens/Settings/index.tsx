@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, List, Switch, Divider, IconButton } from 'react-native-paper';
+import { Text, List, Switch, Divider } from 'react-native-paper';
 import Constants from 'expo-constants';
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
@@ -41,15 +41,8 @@ const Settings: React.FC = () => {
 								wallet?.address ? (
 									<CopyToClipboard 
 										text={wallet.address}
-										onCopy={() => handleCopySuccess('Public Key')}
 										testID="copy-public-key-button"
-									>
-										<IconButton
-											{...props}
-											icon="content-copy"
-											size={20}
-										/>
-									</CopyToClipboard>
+									/>
 								) : null
 							}
 						/>

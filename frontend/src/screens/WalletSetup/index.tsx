@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { IconButton } from 'react-native-paper';
 import { WalletSetupScreenProps } from './types';
 import { useToast } from '@/components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
@@ -229,18 +228,12 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									<View style={styles.walletInfoSection}>
 										<View style={styles.walletInfoHeader}>
 											<Text style={styles.walletInfoLabel}>Public Key</Text>
-											<CopyToClipboard 
+																						<CopyToClipboard 
 												text={walletInfo.publicKey}
 												onCopy={() => {
 													logger.breadcrumb({ category: 'ui', message: 'Copied public key to clipboard from wallet creation' });
 												}}
-											>
-												<IconButton
-													icon="content-copy"
-													size={16}
-													style={styles.copyButton}
-												/>
-											</CopyToClipboard>
+											/>
 										</View>
 										<Text style={styles.walletInfoValue}>{walletInfo.publicKey}</Text>
 									</View>
@@ -248,18 +241,9 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									<View style={styles.walletInfoSection}>
 										<View style={styles.walletInfoHeader}>
 											<Text style={styles.walletInfoLabel}>Private Key</Text>
-											<CopyToClipboard 
+											<CopyToClipboard
 												text={walletInfo.privateKey}
-												onCopy={() => {
-													logger.breadcrumb({ category: 'ui', message: 'Copied private key to clipboard from wallet creation' });
-												}}
-											>
-												<IconButton
-													icon="content-copy"
-													size={16}
-													style={styles.copyButton}
-												/>
-											</CopyToClipboard>
+											/>
 										</View>
 										<Text style={styles.walletInfoValue}>{walletInfo.privateKey}</Text>
 									</View>
@@ -268,18 +252,9 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 										<View style={styles.walletInfoSection}>
 											<View style={styles.walletInfoHeader}>
 												<Text style={styles.walletInfoLabel}>Recovery Phrase</Text>
-												<CopyToClipboard 
+												<CopyToClipboard
 													text={walletInfo.mnemonic}
-													onCopy={() => {
-														logger.breadcrumb({ category: 'ui', message: 'Copied recovery phrase to clipboard from wallet creation' });
-													}}
-												>
-													<IconButton
-														icon="content-copy"
-														size={16}
-														style={styles.copyButton}
-													/>
-												</CopyToClipboard>
+												/>
 											</View>
 											<View style={styles.mnemonicGrid}>
 												{renderMnemonicWords(walletInfo.mnemonic)}

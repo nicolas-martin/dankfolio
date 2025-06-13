@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native'; // Removed TouchableOpacity
-import { Text, IconButton, Button, Icon } from 'react-native-paper';
+import { Text, Button, Icon, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { handleTokenPress, formatAddress, sortTokensByValue } from './profile_scripts';
@@ -101,14 +101,10 @@ const Profile = () => {
 					<Text style={styles.walletAddress} accessible={true}>
 						{formatAddress(wallet.address)}
 					</Text>
-					<CopyToClipboard text={wallet.address} testID="copy-wallet-button">
-						<IconButton
-							icon="content-copy"
-							size={16}
-							style={styles.copyButton}
-							accessible={true}
-						/>
-					</CopyToClipboard>
+					<CopyToClipboard 
+						text={wallet.address} 
+						testID="copy-wallet-button"
+					/>
 				</View>
 			)}
 		</View>

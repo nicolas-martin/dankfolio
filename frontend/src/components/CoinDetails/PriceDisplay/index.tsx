@@ -1,6 +1,6 @@
 import React, { useState } from 'react'; // Added useState
 import { View, TouchableOpacity } from 'react-native'; // Added TouchableOpacity
-import { Text, IconButton } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
 import { formatPrice, formatValueChange, formatAddress } from '@/utils/numberFormat';
 import { useStyles } from './coindetails_styles';
@@ -45,13 +45,10 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					<Text style={styles.addressText} testID="price-display-coin-address">
 						{formatAddress(address, 8, 4)}
 					</Text>
-					<CopyToClipboard text={address} testID="price-display-copy-address-button">
-						<IconButton
-							icon="content-copy"
-							size={16}
-							style={styles.copyIconStyle}
-						/>
-					</CopyToClipboard>
+					<CopyToClipboard 
+						text={address} 
+						testID="price-display-copy-address-button"
+					/>
 				</View>
 
 				{/* Price placeholder */}
@@ -93,13 +90,10 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				<Text style={styles.addressText} testID="price-display-coin-address">
 					{formatAddress(address, 8, 4)}
 				</Text>
-				<CopyToClipboard text={address} testID="price-display-copy-address-button">
-					<IconButton
-						icon="content-copy"
-						size={16}
-						style={styles.copyIconStyle}
-					/>
-				</CopyToClipboard>
+				<CopyToClipboard 
+					text={address} 
+					testID="price-display-copy-address-button"
+				/>
 			</View>
 
 			{/* Price */}
