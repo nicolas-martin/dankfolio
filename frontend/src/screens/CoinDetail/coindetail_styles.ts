@@ -241,6 +241,9 @@ export const useStyles = () => {
 			justifyContent: 'space-evenly',
 			width: '100%',
 		},
+		timeframeButtonsRowLoading: {
+			opacity: 0.7,
+		},
 		timeframeCard: {
 			backgroundColor: theme.colors.surface,
 			borderRadius: theme.borderRadius.lg,
