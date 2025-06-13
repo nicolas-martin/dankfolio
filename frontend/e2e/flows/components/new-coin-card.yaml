@@ -1,13 +1,13 @@
 appId: com.nicolasmartin.dankfolio
 ---
 - assertVisible:
-      id: "new-coin-card-${COIN_ADDRESS}"
+      id: "new-coin-card-${COIN_SYMBOL}"
 
 - assertVisible:
-      id: "new-coin-symbol-${COIN_ADDRESS}"
+      id: "new-coin-symbol-${COIN_SYMBOL}"
 
 - assertVisible:
-      id: "new-coin-time-${COIN_ADDRESS}"
+      id: "new-coin-time-${COIN_SYMBOL}"
 
 - assertVisible:
-      id: "new-coin-icon-${COIN_ADDRESS}"
+      id: "new-coin-icon-${COIN_SYMBOL}"
