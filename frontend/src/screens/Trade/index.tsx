@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
-import { Text, Button, Icon, Card } from 'react-native-paper';
+import { View, ScrollView, SafeAreaView } from 'react-native';
+import { Text, Button, IconButton, Icon, Card } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { useStyles } from './styles';
@@ -199,7 +199,7 @@ const Trade: React.FC = () => {
 
 	const handleSwapCoins = () => {
 		logger.breadcrumb({ category: 'trade', message: 'Pressed swap tokens button', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
-		
+
 		swapCoinsUtil(
 			{ fromCoin, toCoin, fromAmount, toAmount },
 			{ setFromCoin, setToCoin, setFromAmount, setToAmount }
@@ -348,18 +348,16 @@ const Trade: React.FC = () => {
 						<View style={styles.toCardContainerStyle}>
 							{/* Swap Button positioned relative to the To card */}
 							<View style={styles.swapButtonContainer}>
-								<TouchableOpacity
-									style={styles.swapButton}
+								<IconButton
+									icon="swap-vertical"
+									size={20}
+									iconColor={styles.colors.onPrimary}
+									containerColor={styles.colors.primary}
 									onPress={handleSwapCoins}
 									disabled={!fromCoin || !toCoin}
 									testID="swap-coins-button"
-								>
-									<Icon
-										source="swap-vertical"
-										size={20}
-										color={styles.colors.onPrimary}
-									/>
-								</TouchableOpacity>
+									style={styles.swapButton}
+								/>
 							</View>
 
 							{renderTradeCard(

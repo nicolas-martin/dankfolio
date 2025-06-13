@@ -33,7 +33,7 @@ env:
 - tapOn:
       id: "from-token-selector-amount-input"
 - inputText: "1"
-
+- waitForAnimationToEnd
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
