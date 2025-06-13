@@ -38,7 +38,7 @@ type Store interface {
 // Repository defines generic CRUD operations
 type Repository[T Entity] interface {
 	Get(ctx context.Context, id string) (*T, error)
-	List(ctx context.Context) ([]T, error)
+	List(ctx context.Context, opts ListOptions) ([]T, int64, error) // Changed to accept ListOptions and return total count
 	Create(ctx context.Context, item *T) error
 	Update(ctx context.Context, item *T) error
 	Upsert(ctx context.Context, item *T) (int64, error)
