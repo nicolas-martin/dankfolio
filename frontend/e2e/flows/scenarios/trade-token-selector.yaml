@@ -34,6 +34,7 @@ env:
       id: "from-token-selector-amount-input"
 - inputText: "1"
 - waitForAnimationToEnd
+
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
@@ -41,7 +42,7 @@ env:
           FROM_AMOUNT: "1"
           FROM_BALANCE: "2.5"
           TO_SYMBOL: ${dankSymbol}
-          TO_AMOUNT: "0.95"
+          TO_AMOUNT: "2332327.380952"
           TO_BALANCE: "5000000"
 
 # HACK: SAD
@@ -54,7 +55,7 @@ env:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${dankSymbol}
-          FROM_AMOUNT: "0.95"
+          FROM_AMOUNT: "2332327.380952"
           FROM_BALANCE: "5000000"
           TO_SYMBOL: ${solSymbol}
           TO_AMOUNT: "1"
@@ -77,6 +78,8 @@ env:
 
 - tapOn:
       id: "amount-percentage-text-50"
+- waitForAnimationToEnd
+
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
@@ -84,5 +87,5 @@ env:
           FROM_AMOUNT: "500"
           FROM_BALANCE: "1000"
           TO_SYMBOL: ${solSymbol}
-          TO_AMOUNT: "0"
+          TO_AMOUNT: "5.053327"
           TO_BALANCE: "2.5"
