@@ -1,8 +1,7 @@
 import { View, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-// ignore
-// eslint-disable-next-line import/no-unresolved
+// @ts-ignore
 import logoAsset from '@assets/splashscreen.png'; // Import the image asset
 import { LoadingAnimation } from '../../components/Common/Animations';
 import { SplashScreenNavigationProp } from './types';

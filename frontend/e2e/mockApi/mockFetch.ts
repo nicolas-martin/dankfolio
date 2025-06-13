@@ -61,7 +61,7 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 	});
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handleSearch(_options?: FetchInit) {
 	const coinsToReturn = MOCK_NEW_COINS;
 	return create(SearchResponseSchema, {
@@ -70,7 +70,7 @@ async function handleSearch(_options?: FetchInit) {
 	});
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handleSearchCoins(_options?: FetchInit) {
 	const coinsToReturn = MOCK_TRENDING_COINS.slice(0, 3);
 	return create(SearchResponseSchema, {
@@ -79,7 +79,7 @@ async function handleSearchCoins(_options?: FetchInit) {
 	});
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handleSearchCoinByMint(_options?: FetchInit) {
 	return create(SearchCoinByMintResponseSchema, {
 		coin: ALL_MOCK_COINS[0],
@@ -233,7 +233,7 @@ async function handleGetSwapQuote(options?: FetchInit) {
 	});
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handlePrepareSwap(options?: FetchInit) {
 	const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
 	return create(PrepareSwapResponseSchema, {
@@ -241,17 +241,17 @@ async function handlePrepareSwap(options?: FetchInit) {
 	});
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handlePrepareTransfer(options?: FetchInit) {
 	return { unsignedTransaction: CAPTURED_TRANSACTION_DATA.UNSIGNED_TX }; // This endpoint returns a plain object
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handleSubmitTransfer(options?: FetchInit) {
 	return { transactionHash: CAPTURED_TRANSACTION_DATA.MOCK_TX_HASH }; // This endpoint returns a plain object
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handleSubmitSwap(options?: FetchInit) {
 	return create(SubmitSwapResponseSchema, {
 		tradeId: 'mock_trade_id_e2e_test_67890',
@@ -259,7 +259,7 @@ async function handleSubmitSwap(options?: FetchInit) {
 	});
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handleGetSwapStatus(options?: FetchInit) {
 	return { // This endpoint returns a plain object
 		transaction_hash: 'mock_transaction_hash_abcdef123456',
@@ -269,7 +269,7 @@ async function handleGetSwapStatus(options?: FetchInit) {
 	};
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handleGetTrade(options?: FetchInit) {
 	return create(TradeSchema, {
 		id: 'mock_trade_id_e2e_test_67890',
@@ -288,7 +288,7 @@ async function handleGetTrade(options?: FetchInit) {
 	});
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 async function handleListTrades(options?: FetchInit) {
 	const mockTrade = create(TradeSchema, {
 		id: 'mock_trade_id_e2e_test_67890',

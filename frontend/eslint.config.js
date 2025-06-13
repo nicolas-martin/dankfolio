@@ -55,9 +55,10 @@ export default [
 			...pluginReactHooks.configs.recommended.rules,
 			...pluginReactNative.configs.all.rules,
 			...prettier.rules,
-			'react-perf/jsx-no-new-function-as-prop': 'warn',
+			// 'react-perf/jsx-no-new-function-as-prop': 'warn',
 			'react-perf/jsx-no-new-object-as-prop': 'warn',
 			'react-perf/jsx-no-new-array-as-prop': 'warn',
+
 			// optional: stylistic or advanced
 			// 'react-perf/jsx-no-jsx-as-prop': 'warn',
 			// 'react-perf/jsx-no-useless-fragment': 'warn',
@@ -68,6 +69,7 @@ export default [
 			// Auto-fix unused imports
 			'unused-imports/no-unused-imports': 'error',
 
+			'@typescript-eslint/no-unused-vars': 'off',
 			// Auto-fix unused vars (removes them instead of just warning)
 			'unused-imports/no-unused-vars': [
 				'warn',
