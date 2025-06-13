@@ -40,6 +40,7 @@ const (
 	GetPriceHistoryRequest_ONE_DAY                        GetPriceHistoryRequest_PriceHistoryType = 12
 	GetPriceHistoryRequest_THREE_DAY                      GetPriceHistoryRequest_PriceHistoryType = 13
 	GetPriceHistoryRequest_ONE_WEEK                       GetPriceHistoryRequest_PriceHistoryType = 14
+	GetPriceHistoryRequest_ONE_MONTH                      GetPriceHistoryRequest_PriceHistoryType = 15
 )
 
 // Enum value maps for GetPriceHistoryRequest_PriceHistoryType.
@@ -60,6 +61,7 @@ var (
 		12: "ONE_DAY",
 		13: "THREE_DAY",
 		14: "ONE_WEEK",
+		15: "ONE_MONTH",
 	}
 	GetPriceHistoryRequest_PriceHistoryType_value = map[string]int32{
 		"PRICE_HISTORY_TYPE_UNSPECIFIED": 0,
@@ -77,6 +79,7 @@ var (
 		"ONE_DAY":                        12,
 		"THREE_DAY":                      13,
 		"ONE_WEEK":                       14,
+		"ONE_MONTH":                      15,
 	}
 )
 
@@ -421,12 +424,12 @@ var File_dankfolio_v1_price_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_price_proto_rawDesc = "" +
 	"\n" +
-	"\x18dankfolio/v1/price.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe7\x03\n" +
+	"\x18dankfolio/v1/price.proto\x12\fdankfolio.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf6\x03\n" +
 	"\x16GetPriceHistoryRequest\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12I\n" +
 	"\x04type\x18\x02 \x01(\x0e25.dankfolio.v1.GetPriceHistoryRequest.PriceHistoryTypeR\x04type\x12.\n" +
 	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12!\n" +
-	"\faddress_type\x18\x04 \x01(\tR\vaddressType\"\x94\x02\n" +
+	"\faddress_type\x18\x04 \x01(\tR\vaddressType\"\xa3\x02\n" +
 	"\x10PriceHistoryType\x12\"\n" +
 	"\x1ePRICE_HISTORY_TYPE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -445,7 +448,8 @@ const file_dankfolio_v1_price_proto_rawDesc = "" +
 	"\vTWELVE_HOUR\x10\v\x12\v\n" +
 	"\aONE_DAY\x10\f\x12\r\n" +
 	"\tTHREE_DAY\x10\r\x12\f\n" +
-	"\bONE_WEEK\x10\x0e\"g\n" +
+	"\bONE_WEEK\x10\x0e\x12\r\n" +
+	"\tONE_MONTH\x10\x0f\"g\n" +
 	"\x17GetPriceHistoryResponse\x122\n" +
 	"\x04data\x18\x01 \x01(\v2\x1e.dankfolio.v1.PriceHistoryDataR\x04data\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\"H\n" +
