@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
@@ -249,32 +248,4 @@ func postRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 	}
 
 	return &responseObject, nil
-}
-
-// PriceHistoryParams contains parameters for the GetPriceHistory request
-type PriceHistoryParams struct {
-	Address     string    // Token address
-	AddressType string    // Address type
-	HistoryType string    // History type (e.g., "1H", "1D", etc.)
-	TimeFrom    time.Time // Start time
-	TimeTo      time.Time // End time
-}
-
-// TokenTrendingResponse corresponds to the top-level JSON object from /defi/token_trending
-type TokenTrendingResponse struct {
-	Data    []TokenDetails `json:"data"`
-	Success bool           `json:"success"`
-}
-
-// TokenDetails corresponds to each object in the "data" array
-type TokenDetails struct {
-	Address   string   `json:"address"`
-	Name      string   `json:"name"`
-	Symbol    string   `json:"symbol"`
-	Price     float64  `json:"price"`
-	Volume24h float64  `json:"volume_24h"`
-	MarketCap float64  `json:"market_cap"`
-	LogoURI   string   `json:"logoURI"`
-	Tags      []string `json:"tags"`
-	CreatedAt string   `json:"created_at"`
 }
