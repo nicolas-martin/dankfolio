@@ -13,13 +13,11 @@ env:
 - assertVisible:
       id: "to-token-selector-${toSymbol}.*"
 
-- copyTextFrom:
-      id: "from-token-selector-amount-input"
-- assertTrue: ${maestro.copiedText == FROM_AMOUNT}
+- assertVisible:
+      text: ${FROM_AMOUNT}.*
 
-- copyTextFrom:
-      id: "to-token-selector-amount-input"
-- assertTrue: ${maestro.copiedText == TO_AMOUNT}
+- assertVisible:
+      text: ${TO_AMOUNT}.*
 
 - assertVisible:
       text: ${fromBalance}

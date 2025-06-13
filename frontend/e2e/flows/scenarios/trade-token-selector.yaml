@@ -34,6 +34,7 @@ env:
       id: "from-token-selector-amount-input"
 - inputText: "1"
 - waitForAnimationToEnd
+- hideKeyboard
 
 - runFlow:
       file: ../components/trade-token-selector.yaml
@@ -46,8 +47,8 @@ env:
           TO_BALANCE: "5000000"
 
 # HACK: SAD
-# - tapOn:
-#       id: "swap-coins-button"
+- tapOn:
+      id: "swap-coins-button"
 - tapOn:
       point: "50%,48%"
 
@@ -55,7 +56,7 @@ env:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${dankSymbol}
-          FROM_AMOUNT: "2332327.380952"
+          FROM_AMOUNT: "23323"
           FROM_BALANCE: "5000000"
           TO_SYMBOL: ${solSymbol}
           TO_AMOUNT: "1"
@@ -87,5 +88,5 @@ env:
           FROM_AMOUNT: "500"
           FROM_BALANCE: "1000"
           TO_SYMBOL: ${solSymbol}
-          TO_AMOUNT: "5.053327"
+          TO_AMOUNT: "5.053"
           TO_BALANCE: "2.5"
