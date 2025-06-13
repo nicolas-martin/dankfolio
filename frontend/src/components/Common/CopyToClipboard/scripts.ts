@@ -3,7 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import { logger } from '@/utils/logger';
 import { CopyState } from './types';
 
-export const COPY_FEEDBACK_DURATION = 1500;
+export const COPY_FEEDBACK_DURATION = 1000; // 1 second
 
 export const useCopyToClipboard = () => {
 	const [copyState, setCopyState] = useState<CopyState>({
