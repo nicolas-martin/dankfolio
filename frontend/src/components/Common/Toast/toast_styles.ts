@@ -22,6 +22,9 @@ export const useStyles = () => {
 		error: {
 			backgroundColor: theme.colors.error,
 		},
+		info: {
+			backgroundColor: theme.colors.surfaceVariant,
+		},
 		message: {
 			flex: 1,
 			marginLeft: theme.spacing.sm,
@@ -34,12 +37,24 @@ export const useStyles = () => {
 		snackbarStyleBase: {
 			borderRadius: theme.spacing.sm,
 			marginHorizontal: insets.left + 10,
+			elevation: 4,
+			shadowColor: '#000',
+			shadowOffset: {
+				width: 0,
+				height: 2,
+			},
+			shadowOpacity: 0.25,
+			shadowRadius: 3.84,
 		},
 		statusIcon: {
 			marginRight: theme.spacing.sm,
+			backgroundColor: 'transparent',
 		},
 		success: {
 			backgroundColor: theme.success,
+		},
+		warning: {
+			backgroundColor: theme.warning,
 		},
 		wrapper: {
 			top: insets.top,
