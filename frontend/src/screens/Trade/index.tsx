@@ -104,12 +104,13 @@ const Trade: React.FC = () => {
 		handleSelectToken(
 			'from',
 			token,
-			fromCoin,
-			toCoin,
-			setFromCoin,
-			setToCoin,
-			setFromAmount,
-			setToAmount,
+			fromCoin,        // current token for 'from' direction
+			toCoin,          // other token (to compare against)
+			setFromCoin,     // setter for 'from' direction
+			() => {
+				setFromAmount('');
+				setToAmount('');
+			},
 			handleSwapCoins
 		);
 	};
@@ -118,12 +119,13 @@ const Trade: React.FC = () => {
 		handleSelectToken(
 			'to',
 			token,
-			fromCoin,
-			toCoin,
-			setFromCoin,
-			setToCoin,
-			setFromAmount,
-			setToAmount,
+			toCoin,          // current token for 'to' direction  
+			fromCoin,        // other token (to compare against)
+			setToCoin,       // setter for 'to' direction
+			() => {
+				setFromAmount('');
+				setToAmount('');
+			},
 			handleSwapCoins
 		);
 	};
@@ -197,13 +199,11 @@ const Trade: React.FC = () => {
 
 	const handleSwapCoins = () => {
 		logger.breadcrumb({ category: 'trade', message: 'Pressed swap tokens button', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol } });
-		logger.log('[Trade] handleSwapCoins START', { fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol, fromAmount, toAmount });
-		if (!fromCoin || !toCoin) {
-			logger.warn('[Trade] Cannot swap with null coins', { fromCoinSymbol: fromCoin?.symbol, toCoinSymbol: toCoin?.symbol });
-			return;
-		}
-		swapCoinsUtil(fromCoin, toCoin, setFromCoin, setToCoin, fromAmount, setFromAmount, toAmount, setToAmount);
-		logger.log('[Trade] Swap completed successfully via utility');
+		
+		swapCoinsUtil(
+			{ fromCoin, toCoin, fromAmount, toAmount },
+			{ setFromCoin, setToCoin, setFromAmount, setToAmount }
+		);
 	};
 
 	const handleCloseConfirmationModal = () => {

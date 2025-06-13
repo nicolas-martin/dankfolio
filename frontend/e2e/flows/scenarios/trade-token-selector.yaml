@@ -46,14 +46,15 @@ env:
 
 - tapOn:
       id: "swap-coins-button"
+
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${dankSymbol}
-          FROM_AMOUNT: "1000.0"
+          FROM_AMOUNT: "0.95"
           FROM_BALANCE: "5000000"
           TO_SYMBOL: ${solSymbol}
-          TO_AMOUNT: "1.0"
+          TO_AMOUNT: "1"
           TO_BALANCE: "2.5"
 
 # Test 4: Change FROM token to USDC and validate with amounts
