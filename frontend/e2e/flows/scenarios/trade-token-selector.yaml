@@ -11,14 +11,14 @@ env:
 - tapOn:
       id: "trending-coin-card-jup.*"
 - tapOn:
-      id: "trade-button"
+      id: "trade-button.*"
 
 # Test 1: Initial SOL -> JUP setup with amount validation
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${solSymbol}
-          FROM_AMOUNT: "1.0"
+          FROM_AMOUNT: "0"
           FROM_BALANCE: "2.5"
           TO_SYMBOL: ${jupSymbol}
           TO_AMOUNT: "0"
@@ -29,17 +29,21 @@ env:
       id: "to-token-selector-jup.*"
 - tapOn:
       id: "search-result-dank.*"
+
+- tapOn:
+      id: "from-token-selector-amount-input"
+- inputText: "1"
+
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${solSymbol}
-          FROM_AMOUNT: "1.0"
+          FROM_AMOUNT: "1"
           FROM_BALANCE: "2.5"
           TO_SYMBOL: ${dankSymbol}
-          TO_AMOUNT: "1000.0"
-          TO_BALANCE: "0"
+          TO_AMOUNT: "0.95"
+          TO_BALANCE: "5000000"
 
-# Test 3: Test swap functionality and validate result with amounts
 - tapOn:
       id: "swap-coins-button"
 - runFlow:
@@ -47,7 +51,7 @@ env:
       env:
           FROM_SYMBOL: ${dankSymbol}
           FROM_AMOUNT: "1000.0"
-          FROM_BALANCE: "0"
+          FROM_BALANCE: "5000000"
           TO_SYMBOL: ${solSymbol}
           TO_AMOUNT: "1.0"
           TO_BALANCE: "2.5"
