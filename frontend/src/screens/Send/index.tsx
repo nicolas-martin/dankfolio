@@ -347,6 +347,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				<AmountPercentageButtons
 					balance={selectedToken.amount}
 					onSelectAmount={handleAmountChange}
+					tokenKey={selectedToken.coin.mintAddress}
 				/>
 			</View>
 		);

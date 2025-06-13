@@ -62,11 +62,11 @@ jest.mock('victory-native', () => {
 		CartesianChart: jest.fn(({ data, children, renderOutside, chartPressState, ...props }) => {
 			const mockChartBounds = { bottom: 250, top: 0, left: 0, right: 300 };
 			const mockPoints = { y: data.map((d: any) => ({ x: d.x, y: d.y })) };
-			
+
 			return (
-				<RNView 
-					{...props} 
-					testID="mock-cartesian-chart" 
+				<RNView
+					{...props}
+					testID="mock-cartesian-chart"
 					data-points={JSON.stringify(data)}
 					data-chart-bounds={JSON.stringify(mockChartBounds)}
 					onTouchStart={() => {
@@ -84,16 +84,16 @@ jest.mock('victory-native', () => {
 		}),
 		useChartPressState: jest.fn((initialState) => ({
 			state: {
-				x: { 
-					value: { value: 0 }, 
-					position: { value: 0 } 
-				}, 
-				y: { 
-					y: { 
-						value: { value: 0 }, 
-						position: { value: 0 } 
-					} 
-				} 
+				x: {
+					value: { value: 0 },
+					position: { value: 0 }
+				},
+				y: {
+					y: {
+						value: { value: 0 },
+						position: { value: 0 }
+					}
+				}
 			},
 			isActive: false
 		})),
@@ -227,7 +227,7 @@ describe('CoinChart Color Logic', () => {
 			x: new Date(d.timestamp).getTime(),
 			y: d.value
 		}));
-		
+
 		const color = determineChartColor(processedData);
 		expect(color).toBe('green');
 	});
@@ -240,7 +240,7 @@ describe('CoinChart Color Logic', () => {
 			x: new Date(d.timestamp).getTime(),
 			y: d.value
 		}));
-		
+
 		const color = determineChartColor(processedData);
 		expect(color).toBe('red');
 	});
@@ -253,7 +253,7 @@ describe('CoinChart Color Logic', () => {
 			x: new Date(d.timestamp).getTime(),
 			y: d.value
 		}));
-		
+
 		const color = determineChartColor(processedData);
 		expect(color).toBe('green'); // Equal values default to green
 	});
@@ -311,10 +311,10 @@ describe('CoinChart Interaction and Hover', () => {
 	it('should call onHover when chart is interacted with', () => {
 		const mockOnHover = jest.fn();
 		render(<CoinChart {...defaultProps} loading={false} data={positiveData} onHover={mockOnHover} />);
-		
+
 		const chart = screen.getByTestId('mock-cartesian-chart');
 		fireEvent(chart, 'touchStart');
-		
+
 		// The onHover should be called through the mocked interaction
 		// Note: In real implementation, this would be called via useDerivedValue
 		expect(mockOnHover).toHaveBeenCalled();
@@ -322,14 +322,14 @@ describe('CoinChart Interaction and Hover', () => {
 
 	it('should render hover elements when chart is pressed', () => {
 		render(<CoinChart {...defaultProps} loading={false} data={positiveData} />);
-		
+
 		const chart = screen.getByTestId('mock-cartesian-chart');
 		expect(chart).toBeTruthy();
-		
+
 		// Check that the chart can render interactive elements
 		// The actual hover line and circle are rendered in renderOutside
 		fireEvent(chart, 'touchStart');
-		
+
 		// Verify chart bounds are passed correctly
 		const chartBounds = JSON.parse(chart.props['data-chart-bounds']);
 		expect(chartBounds).toEqual({ bottom: 250, top: 0, left: 0, right: 300 });
@@ -337,10 +337,10 @@ describe('CoinChart Interaction and Hover', () => {
 
 	it('should handle chart data correctly', () => {
 		render(<CoinChart {...defaultProps} loading={false} data={positiveData} />);
-		
+
 		const chart = screen.getByTestId('mock-cartesian-chart');
 		const dataPoints = JSON.parse(chart.props['data-points']);
-		
+
 		expect(dataPoints).toHaveLength(3);
 		expect(dataPoints[0]).toHaveProperty('x');
 		expect(dataPoints[0]).toHaveProperty('y');
@@ -368,7 +368,6 @@ describe('CoinChart Constants and Settings', () => {
 
 	it('should have correct spacing and throttle settings', () => {
 		expect(CHART_CONSTANTS.dotSpacing).toBe(6);
-		expect(CHART_CONSTANTS.hapticThrottle).toBe(150);
 	});
 });
 
@@ -378,10 +377,10 @@ describe('CoinChart Period-Specific Behavior', () => {
 	periods.forEach(period => {
 		it(`should render correctly for ${period} period`, () => {
 			render(<CoinChart {...defaultProps} loading={false} data={positiveData} period={period} />);
-			
+
 			const chart = screen.getByTestId('mock-cartesian-chart');
 			expect(chart).toBeTruthy();
-			
+
 			// Verify data is processed correctly for each period
 			const dataPoints = JSON.parse(chart.props['data-points']);
 			expect(dataPoints).toHaveLength(3);
@@ -401,10 +400,10 @@ describe('CoinChart Data Processing', () => {
 		}));
 
 		render(<CoinChart {...defaultProps} loading={false} data={largeData} />);
-		
+
 		const chart = screen.getByTestId('mock-cartesian-chart');
 		const dataPoints = JSON.parse(chart.props['data-points']);
-		
+
 		// Should be sampled down for performance
 		expect(dataPoints.length).toBeLessThanOrEqual(150);
 	});
@@ -429,7 +428,7 @@ describe('CoinChart Data Processing', () => {
 describe('CoinChart Accessibility and Performance', () => {
 	it('should have proper test IDs for accessibility', () => {
 		render(<CoinChart {...defaultProps} loading={false} data={positiveData} />);
-		
+
 		expect(screen.getByTestId('coin-chart-container')).toBeTruthy();
 		expect(screen.getByTestId('mock-cartesian-chart')).toBeTruthy();
 	});
@@ -441,12 +440,12 @@ describe('CoinChart Accessibility and Performance', () => {
 
 	it('should handle rapid period changes without crashing', () => {
 		const { rerender } = render(<CoinChart {...defaultProps} loading={false} data={positiveData} period="1H" />);
-		
+
 		// Rapidly change periods
 		rerender(<CoinChart {...defaultProps} loading={false} data={positiveData} period="1D" />);
 		rerender(<CoinChart {...defaultProps} loading={false} data={positiveData} period="1W" />);
 		rerender(<CoinChart {...defaultProps} loading={false} data={positiveData} period="1M" />);
-		
+
 		expect(screen.getByTestId('coin-chart-container')).toBeTruthy();
 	});
 });

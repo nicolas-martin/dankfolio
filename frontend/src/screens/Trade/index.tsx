@@ -268,6 +268,7 @@ const Trade: React.FC = () => {
 					onSelectAmount={(selectedAmount) => {
 						onAmountChange(selectedAmount);
 					}}
+					tokenKey={coin.mintAddress}
 				/>
 			)}
 		</View>
