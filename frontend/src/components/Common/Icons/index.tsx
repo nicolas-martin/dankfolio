@@ -44,6 +44,7 @@ export const DeleteIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase n
 export const EditIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="edit" {...props} />;
 export const CloseIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="x" {...props} />;
 export const CheckIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="check" {...props} />;
+export const CopyIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="copy" {...props} />;
 export const SearchIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="search" {...props} />;
 export const SwapIcon: React.FC<IconBaseProps> = (props) => <AntDesignIconBase name="swap" {...props} />;
 export const SendIcon: React.FC<IconBaseProps> = (props) => <FeatherIconBase name="send" {...props} />;

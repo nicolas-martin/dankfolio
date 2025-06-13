@@ -18,7 +18,6 @@ env:
 
 - assertVisible:
       text: ${TO_AMOUNT}.*
-
 - assertVisible:
       text: ${fromBalance}
       optional: true
