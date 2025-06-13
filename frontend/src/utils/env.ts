@@ -49,20 +49,7 @@ export const getEnvVariables = (): EnvVariables => {
 		logger.exception('Missing required environment variables');
 	}
 
-	// Log environment in dev mode
-	// TODO: Remove this 
-	//   if (__DEV__) {
-	logger.info('Environment variables loaded:', {
-		appEnv: env.appEnv,
-		debugMode: env.debugMode,
-		apiUrl: env.apiUrl,
-		solanaRpcEndpoint: env.solanaRpcEndpoint,
-		sentryAuthToken: env.sentryAuthToken,
-		// firebaseTokensConfigured: !!(env.firebaseAppCheckDebugTokenAndroid && env.firebaseAppCheckDebugTokenIos),
-		loadDebugWallet: env.loadDebugWallet,
-		e2eMockingEnabled: env.e2eMockingEnabled
-	});
-	//   }
+
 
 	return env;
 };

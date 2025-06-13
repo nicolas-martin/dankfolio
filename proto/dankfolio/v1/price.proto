@@ -34,6 +34,7 @@ message GetPriceHistoryRequest {
     ONE_DAY = 12;
     THREE_DAY = 13;
     ONE_WEEK = 14;
+	ONE_MONTH = 15;
   }
   PriceHistoryType type = 2;
   google.protobuf.Timestamp time = 3;
