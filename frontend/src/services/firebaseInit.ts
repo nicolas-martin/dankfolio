@@ -10,14 +10,11 @@ const getAppCheckConfig = () => {
 	logger.info('🔧 Getting App Check config...');
 	logger.info(`🔧 Is dev mode or simulator: ${isDevelopmentOrSimulator ? 'true' : 'false'}`);
 	logger.info(`🔧 APP_ENV: ${env.appEnv}`);
-	// if (isDevelopmentOrSimulator) {
-	// 	if (!env.firebaseAppCheckDebugTokenAndroid) {
-	// 		logger.exception("missing dev firebase token for android");
-	// 	}
-	// 	if (!env.firebaseAppCheckDebugTokenIos) {
-	// 		logger.exception("missing dev firebase token for ios");
-	// 	}
-	// }
+	if (isDevelopmentOrSimulator) {
+		if (!env.devAppCheckToken) {
+			logger.warn("🔧 DEV_APP_CHECK_TOKEN is not set. App Check will likely fail in debug/simulator mode without it.");
+		}
+	}
 
 	const config: {
 		android: {
@@ -31,11 +28,11 @@ const getAppCheckConfig = () => {
 	} = {
 		android: {
 			provider: isDevelopmentOrSimulator ? 'debug' : 'playIntegrity',
-			// debugToken: isDevelopmentOrSimulator ? env.firebaseAppCheckDebugTokenAndroid : undefined,
+			debugToken: isDevelopmentOrSimulator ? env.devAppCheckToken : undefined,
 		},
 		apple: {
 			provider: isDevelopmentOrSimulator ? 'debug' : 'appAttestWithDeviceCheckFallback',
-			// debugToken: isDevelopmentOrSimulator ? env.firebaseAppCheckDebugTokenIos : undefined,
+			debugToken: isDevelopmentOrSimulator ? env.devAppCheckToken : undefined,
 		},
 	};
 

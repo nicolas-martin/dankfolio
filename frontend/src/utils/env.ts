@@ -10,6 +10,7 @@ interface EnvVariables {
 	debugMode: boolean;
 	appEnv: string;
 	sentryAuthToken: string;
+	devAppCheckToken?: string; // For development/simulator only
 	// firebaseAppCheckDebugTokenAndroid: string;// For development only
 	// firebaseAppCheckDebugTokenIos: string;// For development only
 	testPrivateKey?: string; // For development only
@@ -29,6 +30,7 @@ export const getEnvVariables = (): EnvVariables => {
 		solanaRpcEndpoint: extra.REACT_APP_SOLANA_RPC_ENDPOINT as string,
 		debugMode: extra.DEBUG_MODE === 'true',
 		appEnv: extra.APP_ENV as string,
+		devAppCheckToken: extra.DEV_APP_CHECK_TOKEN as string | undefined,
 		// firebaseAppCheckDebugTokenAndroid: extra.FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID || '',
 		// firebaseAppCheckDebugTokenIos: extra.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS || '',
 		testPrivateKey: extra.TEST_PRIVATE_KEY as string,
