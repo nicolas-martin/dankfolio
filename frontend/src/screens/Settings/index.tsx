@@ -5,7 +5,6 @@ import Constants from 'expo-constants';
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './settings_styles';
-import { logger } from '@/utils/logger';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
 
 const Settings: React.FC = () => {

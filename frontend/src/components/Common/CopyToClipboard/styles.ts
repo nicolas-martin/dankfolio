@@ -7,11 +7,11 @@ export const useStyles = () => {
 	const colors = theme.colors;
 	const styles = StyleSheet.create({
 		defaultIconButton: {
-			padding: 8,
-			borderRadius: 8,
-			backgroundColor: 'transparent',
-			justifyContent: 'center',
 			alignItems: 'center',
+			backgroundColor: 'transparent',
+			borderRadius: 8,
+			justifyContent: 'center',
+			padding: 8,
 		},
 	});
 	return {
