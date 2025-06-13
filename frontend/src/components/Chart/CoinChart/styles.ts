@@ -8,7 +8,7 @@ export const useStyles = () => {
 	const styles = StyleSheet.create({
 		chartContainer: {
 			height: 250,
-			backgroundColor: '#1C2127', // Slightly lighter TradingView dark theme background
+			backgroundColor: theme.colors.surface,
 			borderRadius: theme.spacing.sm,
 			overflow: 'hidden',
 		},
@@ -37,7 +37,7 @@ export const useStyles = () => {
 			height: 250,
 			justifyContent: 'center',
 			alignItems: 'center',
-			backgroundColor: '#1C2127',
+			backgroundColor: theme.colors.surface,
 			borderRadius: theme.spacing.sm,
 		},
 		tooltipText: {
@@ -45,12 +45,28 @@ export const useStyles = () => {
 			fontSize: theme.typography.fontSize.xs,
 		},
 	})
+
+	// Chart UI colors with transparency preserved using theme colors
+	const chartUIColors = {
+		grid: {
+			x: `${theme.colors.onSurface}1A`, // 10% opacity (1A in hex)
+			y: `${theme.colors.onSurface}1A`, // 10% opacity
+		},
+		frame: `${theme.colors.onSurface}1A`, // 10% opacity
+		crosshair: `${theme.colors.onSurface}4D`, // 30% opacity (4D in hex)
+		dottedLine: `${theme.colors.onSurface}4D`, // 30% opacity
+		innerDot: `${theme.colors.onSurface}40`, // 25% opacity (40 in hex)
+	};
+
 	return {
 		...styles,
 		colors,
-		theme
+		theme,
+		chartUIColors
 	}
 };
+
+
 
 // Constants for styling
 export const CHART_CONSTANTS = {
@@ -83,5 +99,4 @@ export const CHART_CONSTANTS = {
 		}
 	},
 	dotSpacing: 6,
-	hapticThrottle: 150,
 };
