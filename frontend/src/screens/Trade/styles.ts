@@ -1,19 +1,20 @@
 import { StyleSheet } from 'react-native';
 import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
+import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-	const colors = theme.colors;
-
-	const styles = StyleSheet.create({
-		actionContainer: {
-			padding: theme.spacing.xl,
-			paddingTop: 0,
-		},
-		cardLabel: {
-			color: theme.colors.onSurfaceVariant,
-			fontSize: theme.typography.fontSize.sm,
+	return useMemo(() => {
+		const colors = theme.colors; // Ensure colors is defined inside useMemo
+		const styles = StyleSheet.create({
+			actionContainer: {
+				padding: theme.spacing.xl,
+				paddingTop: 0,
+			},
+			cardLabel: {
+				color: colors.onSurfaceVariant, // Use local colors variable
+				fontSize: theme.typography.fontSize.sm,
 			fontWeight: '600',
 			letterSpacing: 0.5,
 			marginBottom: theme.spacing.lg,
@@ -239,7 +240,8 @@ export const useStyles = () => {
 
 	return {
 		...styles,
-		colors,
+		colors: theme.colors, // Return original theme.colors for consistency
 		theme
 	};
+	}, [theme]);
 };

@@ -11,3 +11,16 @@ export const REFRESH_INTERVALS = {
 
 // Price History Fetch Configuration
 export const PRICE_HISTORY_FETCH_DELAY_MS = 2000;
+
+// Timeframes for charts and data fetching
+// (TimeframeOption type would ideally also be here or in a shared types file if not already)
+export const TIMEFRAMES = [
+	{ label: "1H", value: "1H" },
+	{ label: "4H", value: "4H" },
+	{ label: "1D", value: "1D" },
+	{ label: "1W", value: "1W" },
+	{ label: "1M", value: "1M" },
+];
+// For this step, assuming TimeframeOption type is appropriately handled/imported by consumers.
+// If TimeframeOption is defined in './coindetail_types', components using TIMEFRAMES
+// might need to import TimeframeOption from there or it should also be centralized.

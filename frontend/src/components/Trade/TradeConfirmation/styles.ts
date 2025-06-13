@@ -1,14 +1,16 @@
 import { StyleSheet } from 'react-native';
 import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
+import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-	const colors = theme.colors;
-	const styles = StyleSheet.create({
-		amount: {
-			color: theme.colors.onSurface,
-			fontSize: theme.typography.fontSize.base,
+	return useMemo(() => {
+		const colors = theme.colors; // Ensure colors is defined inside useMemo
+		const styles = StyleSheet.create({
+			amount: {
+				color: colors.onSurface, // Use local colors variable
+				fontSize: theme.typography.fontSize.base,
 			fontWeight: '600',
 			marginBottom: 2,
 		},
@@ -349,10 +351,11 @@ export const useStyles = () => {
 		valueContainer: {
 			alignItems: 'flex-end',
 		},
-	})
+	});
 	return {
 		...styles,
-		colors,
+		colors: theme.colors, // Return original theme.colors for consistency
 		theme
 	};
+	}, [theme]);
 };
