@@ -10,8 +10,8 @@ interface EnvVariables {
 	debugMode: boolean;
 	appEnv: string;
 	sentryAuthToken: string;
-	firebaseAppCheckDebugTokenAndroid: string;// For development only
-	firebaseAppCheckDebugTokenIos: string;// For development only
+	// firebaseAppCheckDebugTokenAndroid: string;// For development only
+	// firebaseAppCheckDebugTokenIos: string;// For development only
 	testPrivateKey?: string; // For development only
 	loadDebugWallet?: boolean; // For development only, to load a debug wallet
 	e2eMockingEnabled?: boolean; // For E2E testing, to enable mocking
@@ -29,8 +29,8 @@ export const getEnvVariables = (): EnvVariables => {
 		solanaRpcEndpoint: extra.REACT_APP_SOLANA_RPC_ENDPOINT as string,
 		debugMode: extra.DEBUG_MODE === 'true',
 		appEnv: extra.APP_ENV as string,
-		firebaseAppCheckDebugTokenAndroid: extra.FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID || '',
-		firebaseAppCheckDebugTokenIos: extra.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS || '',
+		// firebaseAppCheckDebugTokenAndroid: extra.FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID || '',
+		// firebaseAppCheckDebugTokenIos: extra.FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS || '',
 		testPrivateKey: extra.TEST_PRIVATE_KEY as string,
 		sentryAuthToken: extra.SENTRY_AUTH_TOKEN as string,
 		loadDebugWallet: extra.LOAD_DEBUG_WALLET === 'true' || extra.E2E_MOCKING_ENABLED === 'true',
@@ -54,11 +54,11 @@ export const getEnvVariables = (): EnvVariables => {
 	//   if (__DEV__) {
 	logger.info('Environment variables loaded:', {
 		appEnv: env.appEnv,
-		debugMode: extra.DEBUG_MODE === 'true',
+		debugMode: env.debugMode,
 		apiUrl: env.apiUrl,
 		solanaRpcEndpoint: env.solanaRpcEndpoint,
 		sentryAuthToken: env.sentryAuthToken,
-		firebaseTokensConfigured: !!(env.firebaseAppCheckDebugTokenAndroid && env.firebaseAppCheckDebugTokenIos),
+		// firebaseTokensConfigured: !!(env.firebaseAppCheckDebugTokenAndroid && env.firebaseAppCheckDebugTokenIos),
 		loadDebugWallet: env.loadDebugWallet,
 		e2eMockingEnabled: env.e2eMockingEnabled
 	});

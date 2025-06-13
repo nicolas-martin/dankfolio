@@ -139,6 +139,14 @@ export const grpcApi: grpcModel.API = {
 		const serviceName = 'PriceService';
 		const methodName = 'getPriceHistory';
 		try {
+			console.log('[grpcApi] 📤 getPriceHistory REQUEST:', {
+				address,
+				type,
+				timeStr,
+				addressType,
+				timestamp: new Date().toISOString()
+			});
+
 			grpcUtils.logRequest(serviceName, methodName, { address, type, timeStr, addressType });
 
 			const timetimestamp = grpcUtils.convertToTimestamp(timeStr);
@@ -161,6 +169,13 @@ export const grpcApi: grpcModel.API = {
 
 			const priceHistoryType = typeMap[type] ?? GetPriceHistoryRequest_PriceHistoryType.PRICE_HISTORY_TYPE_UNSPECIFIED;
 
+			console.log('[grpcApi] 📋 Request details:', {
+				mappedType: priceHistoryType,
+				typeMapEntry: typeMap[type],
+				timestamp: timetimestamp,
+				headers: grpcUtils.getRequestHeaders()
+			});
+
 			const response = await priceClient.getPriceHistory({
 				address: address,
 				type: priceHistoryType,
@@ -168,10 +183,18 @@ export const grpcApi: grpcModel.API = {
 				addressType: addressType
 			}, { headers: grpcUtils.getRequestHeaders() });
 
+			console.log('[grpcApi] 📥 getPriceHistory RAW RESPONSE:', {
+				success: response.success,
+				dataExists: !!response.data,
+				itemsCount: response.data?.items?.length || 0,
+				items: response.data?.items || [],
+				fullResponse: response
+			});
+
 			grpcUtils.logResponse(serviceName, methodName, response);
 
 			// Convert the response to match the expected REST API structure
-			return {
+			const convertedResponse = {
 				data: {
 					items: response.data?.items.map(item => ({
 						unixTime: Number(item.unixTime),
@@ -180,7 +203,23 @@ export const grpcApi: grpcModel.API = {
 				},
 				success: response.success
 			};
+
+			console.log('[grpcApi] 📊 CONVERTED RESPONSE:', {
+				originalItemsCount: response.data?.items?.length || 0,
+				convertedItemsCount: convertedResponse.data.items.length,
+				convertedItems: convertedResponse.data.items,
+				success: convertedResponse.success
+			});
+
+			return convertedResponse;
 		} catch (error: unknown) {
+			console.error('[grpcApi] ❌ getPriceHistory ERROR:', {
+				error,
+				address,
+				type,
+				timeStr,
+				addressType
+			});
 			if (error instanceof Error) {
 				return grpcUtils.handleGrpcError(error, serviceName, methodName);
 			} else {

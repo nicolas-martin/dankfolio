@@ -30,6 +30,7 @@ export const fetchPriceHistory = async (
 	}
 
 	const currentTime = new Date();
+	logger.info(`[fetchPriceHistory] Starting request for ${coin.symbol} (${coin.mintAddress}) with timeframe ${timeframeValue}`);
 
 	try {
 		const response = await grpcApi.getPriceHistory(
@@ -38,6 +39,13 @@ export const fetchPriceHistory = async (
 			currentTime.toISOString(), // Current time in seconds
 			"token"
 		);
+
+		logger.info(`[fetchPriceHistory] Raw gRPC response:`, {
+			success: response?.success,
+			itemCount: response?.data?.items?.length || 0,
+			firstItem: response?.data?.items?.[0],
+			lastItem: response?.data?.items?.[response?.data?.items?.length - 1]
+		});
 
 		if (response?.data?.items) {
 			const mapped: PriceData[] = response.data.items
@@ -48,12 +56,24 @@ export const fetchPriceHistory = async (
 					unixTime: item.unixTime,
 				}));
 
+			logger.info(`[fetchPriceHistory] Mapped data:`, {
+				originalCount: response.data.items.length,
+				filteredCount: mapped.length,
+				firstMapped: mapped[0],
+				lastMapped: mapped[mapped.length - 1],
+				sampleTimestamps: mapped.slice(0, 3).map(item => ({
+					unixTime: item.unixTime,
+					timestamp: item.timestamp,
+					value: item.value
+				}))
+			});
 
 			// Cache the newly fetched data
 			// cacheExpiry is TTL in seconds for the store, not absolute timestamp
 			return { data: mapped, error: null };
 
 		} else {
+			logger.warn(`[fetchPriceHistory] No items in response data`, { response });
 			return { data: [], error: null }; // Return empty data if no items, not an error
 		}
 	} catch (error: unknown) {

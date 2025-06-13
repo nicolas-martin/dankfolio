@@ -286,7 +286,22 @@ export default function CoinChart({
 
 	// preprocess data - optimize by memoizing and reducing calculations
 	const processedChartData: PricePoint[] = React.useMemo(
-		() => prepareChartData(data),
+		() => {
+			console.log('[CoinChart] Processing chart data:', {
+				inputDataLength: data?.length || 0,
+				inputData: data,
+				loading
+			});
+			
+			const processed = prepareChartData(data);
+			
+			console.log('[CoinChart] Chart data processed:', {
+				outputLength: processed.length,
+				outputData: processed
+			});
+			
+			return processed;
+		},
 		[data]
 	);
 

@@ -75,6 +75,11 @@ const CoinDetail: React.FC = () => {
 				// Ensure displayCoin is not null before passing
 				const result = await fetchPriceHistory(displayCoin!, selectedTimeframe);
 				if (result.data !== null) {
+					console.log('[CoinDetail] Setting price history data:', {
+						timeframe: selectedTimeframe,
+						dataLength: result.data.length,
+						data: result.data
+					});
 					setPriceHistory(result.data);
 				} else if (result.error) {
 					logger.error('[CoinDetail] Error fetching price history:', result.error);
@@ -271,6 +276,13 @@ const CoinDetail: React.FC = () => {
 	};
 
 	const renderChartCard = () => {
+		console.log('[CoinDetail] Rendering chart with data:', {
+			priceHistoryLength: priceHistory.length,
+			priceHistory: priceHistory,
+			loading: loading,
+			selectedTimeframe: selectedTimeframe
+		});
+
 		return (
 			<View style={styles.chartContainer} testID={`coin-detail-chart-card-${displayCoin?.symbol?.toLowerCase()}`}>
 				<View style={styles.chartCardContent}>

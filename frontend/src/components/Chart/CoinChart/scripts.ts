@@ -51,7 +51,18 @@ export const getTimeFormat = (period?: string) => {
 };
 
 export const prepareChartData = (data: PriceData[]): PricePoint[] => {
-	if (!data || data.length === 0) return [];
+	console.log('[prepareChartData] Input data:', {
+		length: data?.length || 0,
+		firstItem: data?.[0],
+		lastItem: data?.[data?.length - 1],
+		sampleData: data?.slice(0, 3)
+	});
+
+	if (!data || data.length === 0) {
+		console.log('[prepareChartData] No data provided, returning empty array');
+		return [];
+	}
+	
 	// Limit points for better performance if needed
 	const targetLength = 150;
 	let dataToProcess = data;
@@ -60,13 +71,42 @@ export const prepareChartData = (data: PriceData[]): PricePoint[] => {
 	if (data.length > targetLength) {
 		const skipFactor = Math.ceil(data.length / targetLength);
 		dataToProcess = data.filter((_, i) => i % skipFactor === 0 || i === data.length - 1);
+		console.log('[prepareChartData] Sampled data for performance:', {
+			originalLength: data.length,
+			sampledLength: dataToProcess.length,
+			skipFactor
+		});
 	}
 	
-	return dataToProcess.map(pt => {
+	const processedPoints = dataToProcess.map((pt, index) => {
 		const t = new Date(pt.timestamp).getTime();
 		const v = typeof pt.value === 'string' ? parseFloat(pt.value) : pt.value;
-		return { timestamp: t, price: v, value: v, x: t, y: v };
+		const point = { timestamp: t, price: v, value: v, x: t, y: v };
+		
+		// Log first few points for debugging
+		if (index < 3) {
+			console.log(`[prepareChartData] Point ${index}:`, {
+				original: pt,
+				processed: point,
+				timestampDate: new Date(t).toISOString()
+			});
+		}
+		
+		return point;
 	});
+
+	console.log('[prepareChartData] Final processed data:', {
+		length: processedPoints.length,
+		firstPoint: processedPoints[0],
+		lastPoint: processedPoints[processedPoints.length - 1],
+		timeRange: processedPoints.length > 1 ? {
+			start: new Date(processedPoints[0].x).toISOString(),
+			end: new Date(processedPoints[processedPoints.length - 1].x).toISOString(),
+			durationMs: processedPoints[processedPoints.length - 1].x - processedPoints[0].x
+		} : null
+	});
+
+	return processedPoints;
 };
 
 export const formatPrice = (price: number): string => {

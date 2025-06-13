@@ -35,9 +35,22 @@ func roundDateDown(dateToRound time.Time, granularityMinutes time.Duration) time
 		return dateToRound
 	}
 
-	truncatedDate := dateToRound.Truncate(time.Minute)
+	// Convert granularity to minutes for proper rounding
+	granularityInMinutes := int(granularityMinutes / time.Minute)
+	if granularityInMinutes <= 0 {
+		granularityInMinutes = 1 // Default to 1 minute if invalid
+	}
 
-	return truncatedDate
+	// Truncate to the hour first, then add back the rounded minutes
+	truncatedToHour := dateToRound.Truncate(time.Hour)
+
+	// Get the minutes past the hour
+	minutesPastHour := dateToRound.Minute()
+
+	// Round down to the nearest granularity
+	roundedMinutes := (minutesPastHour / granularityInMinutes) * granularityInMinutes
+
+	return truncatedToHour.Add(time.Duration(roundedMinutes) * time.Minute)
 }
 
 func NewService(birdeyeClient birdeye.ClientAPI, jupiterClient jupiter.ClientAPI, store db.Store, cache PriceHistoryCache) *Service {
@@ -68,18 +81,40 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrame
 		return cachedData, nil
 	}
 
-	// Parse and round times
+	// Parse and calculate time range
 	parsedTime, err := time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		slog.Error("Failed to parse time_from string", "timeFromStr", timeStr, "error", err)
 		return nil, fmt.Errorf("failed to parse time_from: %w", err)
 	}
+
+	// Calculate time range - ensure we have a meaningful time span
 	timeFrom := parsedTime.Add(-timeFrameConfig.DefaultViewDuration)
 	timeTo := parsedTime
 
+	// Round the times to appropriate granularity
 	roundedTimeFrom := roundDateDown(timeFrom, timeFrameConfig.Rounding)
 	roundedTimeTo := roundDateDown(timeTo, timeFrameConfig.Rounding)
-	slog.Info("Time parameters", "inputTime", parsedTime, "originalTimeFrom", timeFrom, "roundedTimeFrom", roundedTimeFrom, "originalTimeTo", timeTo, "roundedTimeTo", roundedTimeTo)
+
+	// Ensure we have at least a minimum time span to get multiple data points
+	minTimeSpan := timeFrameConfig.DefaultViewDuration / 4 // At least 1/4 of the default duration
+	if roundedTimeTo.Sub(roundedTimeFrom) < minTimeSpan {
+		// Adjust the time range to ensure we get multiple data points
+		roundedTimeFrom = roundedTimeTo.Add(-timeFrameConfig.DefaultViewDuration)
+		slog.Info("Adjusted time range to ensure minimum span",
+			"originalFrom", roundedTimeFrom.Add(timeFrameConfig.DefaultViewDuration),
+			"adjustedFrom", roundedTimeFrom,
+			"minTimeSpan", minTimeSpan)
+	}
+
+	slog.Info("Time parameters",
+		"inputTime", parsedTime,
+		"originalTimeFrom", timeFrom,
+		"roundedTimeFrom", roundedTimeFrom,
+		"originalTimeTo", timeTo,
+		"roundedTimeTo", roundedTimeTo,
+		"timeSpan", roundedTimeTo.Sub(roundedTimeFrom),
+		"defaultViewDuration", timeFrameConfig.DefaultViewDuration)
 
 	params := birdeye.PriceHistoryParams{
 		Address:     address,

@@ -51,11 +51,46 @@ func (c *Client) GetPriceHistory(ctx context.Context, params PriceHistoryParams)
 
 	fullURL := fmt.Sprintf("%s/%s?%s", c.baseURL, priceHistoryEndpoint, queryParams.Encode())
 
-	// No specific slog.Debug here, rely on getRequest's logging
+	slog.Info("🚀 [BirdEye] GetPriceHistory REQUEST",
+		"address", params.Address,
+		"addressType", params.AddressType,
+		"historyType", params.HistoryType,
+		"timeFrom", params.TimeFrom.Format("2006-01-02 15:04:05 UTC"),
+		"timeTo", params.TimeTo.Format("2006-01-02 15:04:05 UTC"),
+		"timeFromUnix", params.TimeFrom.Unix(),
+		"timeToUnix", params.TimeTo.Unix(),
+		"fullURL", fullURL)
+
 	priceHistory, err := getRequest[PriceHistory](c, ctx, fullURL)
 	if err != nil {
+		slog.Error("❌ [BirdEye] GetPriceHistory FAILED",
+			"address", params.Address,
+			"error", err)
 		return nil, fmt.Errorf("failed to get price history: %w", err)
 	}
+
+	slog.Info("✅ [BirdEye] GetPriceHistory RESPONSE",
+		"address", params.Address,
+		"success", priceHistory.Success,
+		"itemCount", len(priceHistory.Data.Items),
+		"firstItem", func() interface{} {
+			if len(priceHistory.Data.Items) > 0 {
+				return map[string]interface{}{
+					"unixTime": priceHistory.Data.Items[0].UnixTime,
+					"value":    priceHistory.Data.Items[0].Value,
+				}
+			}
+			return nil
+		}(),
+		"lastItem", func() interface{} {
+			if len(priceHistory.Data.Items) > 0 {
+				return map[string]interface{}{
+					"unixTime": priceHistory.Data.Items[len(priceHistory.Data.Items)-1].UnixTime,
+					"value":    priceHistory.Data.Items[len(priceHistory.Data.Items)-1].Value,
+				}
+			}
+			return nil
+		}())
 
 	return priceHistory, nil
 }
@@ -117,6 +152,13 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body from %s: %w", requestURL, err)
 	}
+
+	slog.Info("📥 [BirdEye] HTTP Response",
+		"url", requestURL,
+		"statusCode", resp.StatusCode,
+		"contentType", resp.Header.Get("Content-Type"),
+		"bodyLength", len(respBody),
+		"bodyPreview", string(respBody))
 
 	if resp.StatusCode != http.StatusOK {
 		// Check if response is HTML (common for error pages)
