@@ -312,6 +312,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 							{selectedToken && selectedToken.resolvedIconUrl ? (
 								<>
 									<CachedImage
+										key={selectedToken.mintAddress}
 										uri={selectedToken.resolvedIconUrl}
 										size={24}
 										borderRadius={12}

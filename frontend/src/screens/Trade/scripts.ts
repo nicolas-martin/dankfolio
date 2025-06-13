@@ -93,16 +93,36 @@ export const fetchTradeQuote = async (
 	}
 };
 
+// Simplified swap logic
 export const handleSwapCoins = (
-	fromCoin: Coin,
-	toCoin: Coin,
-	setFromCoin: (coin: Coin) => void,
-	setToCoin: (coin: Coin) => void,
-	fromAmount: string,
-	setFromAmount: (amount: string) => void,
-	toAmount: string,
-	setToAmount: (amount: string) => void
+	currentState: {
+		fromCoin: Coin | null;
+		toCoin: Coin | null;
+		fromAmount: string;
+		toAmount: string;
+	},
+	setters: {
+		setFromCoin: (coin: Coin) => void;
+		setToCoin: (coin: Coin) => void;
+		setFromAmount: (amount: string) => void;
+		setToAmount: (amount: string) => void;
+	}
 ): void => {
+	const { fromCoin, toCoin, fromAmount, toAmount } = currentState;
+	const { setFromCoin, setToCoin, setFromAmount, setToAmount } = setters;
+
+	// Validate we have both coins
+	if (!fromCoin || !toCoin) {
+		logger.warn('[Trade] Cannot swap with null coins', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
+		return;
+	}
+
+	logger.log('[Trade] Swapping tokens', { 
+		from: `${fromCoin.symbol} (${fromAmount})`, 
+		to: `${toCoin.symbol} (${toAmount})` 
+	});
+
+	// Perform the swap
 	setFromCoin(toCoin);
 	setToCoin(fromCoin);
 	setFromAmount(toAmount);
@@ -287,49 +307,42 @@ export const executeTrade = async (
 	}
 };
 
-// Handle token selection logic (consolidated from/to)
+// Simplified token selection logic - only pass what's needed
 export const handleSelectToken = (
 	direction: 'from' | 'to',
-	token: Coin,
-	fromCoin: Coin | null,
-	toCoin: Coin | null,
-	setFromCoin: (coin: Coin) => void,
-	setToCoin: (coin: Coin) => void,
-	setFromAmount: (amount: string) => void,
-	setToAmount: (amount: string) => void,
-	handleSwapCoins: () => void
+	selectedToken: Coin,
+	currentToken: Coin | null,
+	otherToken: Coin | null,
+	setCurrentToken: (coin: Coin) => void,
+	clearAmounts: () => void,
+	swapCoins: () => void
 ) => {
-	const isFromDirection = direction === 'from';
-	const currentCoin = isFromDirection ? fromCoin : toCoin;
-	const oppositeCoin = isFromDirection ? toCoin : fromCoin;
-	const setCoin = isFromDirection ? setFromCoin : setToCoin;
-
 	logger.breadcrumb({
 		category: 'trade',
 		message: `Selected "${direction}" token`,
 		data: {
-			tokenSymbol: token.symbol,
-			currentCoinSymbol: currentCoin?.symbol,
-			oppositeCoinSymbol: oppositeCoin?.symbol
+			tokenSymbol: selectedToken.symbol,
+			currentTokenSymbol: currentToken?.symbol,
+			otherTokenSymbol: otherToken?.symbol
 		}
 	});
 
-	// Skip if same token already selected
-	if (token.mintAddress === currentCoin?.mintAddress) {
-		logger.log(`[Trade] Skipping "${direction}" token selection - same token already selected`);
+	// More intuitive logic:
+	if (selectedToken.mintAddress === otherToken?.mintAddress) {
+		// User selected token that's on the OTHER side → SWAP
+		logger.log(`[Trade] Selected "${direction}" token is on opposite side. Swapping tokens: ${selectedToken.symbol}`);
+		swapCoins();
+	} else if (selectedToken.mintAddress === currentToken?.mintAddress) {
+		// User selected same token that's already here → DO NOTHING
+		logger.log(`[Trade] Selected "${direction}" token is already selected. No action needed: ${selectedToken.symbol}`);
 		return;
-	}
-
-	// Swap if token matches opposite side
-	if (token.mintAddress === oppositeCoin?.mintAddress) {
-		logger.log(`[Trade] Selected "${direction}" token matches opposite side. Swapping tokens.`);
-		handleSwapCoins();
 	} else {
-		setCoin(token);
-		if (currentCoin && token.mintAddress !== currentCoin.mintAddress) {
+		// User selected a completely new token → SET NEW
+		logger.log(`[Trade] Setting new "${direction}" token: ${selectedToken.symbol}`);
+		setCurrentToken(selectedToken);
+		if (currentToken) {
 			logger.log(`[Trade] Clearing amounts due to new "${direction}" token selection`);
-			setFromAmount('');
-			setToAmount('');
+			clearAmounts();
 		}
 	}
 };
