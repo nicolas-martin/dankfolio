@@ -3,7 +3,8 @@ import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native'; /
 import { Text, IconButton, Button, Icon } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
-import { handleTokenPress, copyToClipboard, formatAddress, sortTokensByValue } from './profile_scripts';
+import { handleTokenPress, formatAddress, sortTokensByValue } from './profile_scripts';
+import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './profile_styles';
@@ -100,16 +101,14 @@ const Profile = () => {
 					<Text style={styles.walletAddress} accessible={true}>
 						{formatAddress(wallet.address)}
 					</Text>
-					<IconButton
-						icon="content-copy"
-						size={16}
-						onPress={() => {
-							copyToClipboard(wallet.address, 'Wallet', showToast);
-						}}
-						style={styles.copyButton}
-						accessible={true}
-						testID="copy-wallet-button"
-					/>
+					<CopyToClipboard text={wallet.address} testID="copy-wallet-button">
+						<IconButton
+							icon="content-copy"
+							size={16}
+							style={styles.copyButton}
+							accessible={true}
+						/>
+					</CopyToClipboard>
 				</View>
 			)}
 		</View>

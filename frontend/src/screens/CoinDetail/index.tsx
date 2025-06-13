@@ -10,11 +10,7 @@ import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
 import { PriceData, Coin } from '@/types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
-import {
-	TIMEFRAMES,
-	fetchPriceHistory,
-	handleTradeNavigation,
-} from './coindetail_scripts';
+import { TIMEFRAMES, fetchPriceHistory, handleTradeNavigation, } from './coindetail_scripts';
 import { useStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
 import { logger } from '@/utils/logger';
@@ -152,7 +148,6 @@ const CoinDetail: React.FC = () => {
 
 	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description);
 
-	// Placeholder components for loading states
 	const renderPlaceholderPriceCard = () => (
 		<View style={styles.priceCard}>
 			<View style={styles.placeholderPadding}>
@@ -252,7 +247,7 @@ const CoinDetail: React.FC = () => {
 		</View>
 	);
 
-	if (!displayCoin && !isLoadingDetails) { // Not loading but still no coin (error or empty state)
+	if (!displayCoin && !isLoadingDetails) {
 		return (
 			<SafeAreaView style={styles.container}>
 				<View style={[styles.container, styles.centered]}>
@@ -261,9 +256,6 @@ const CoinDetail: React.FC = () => {
 			</SafeAreaView>
 		);
 	}
-
-	// If code reaches here, displayCoin is available and !isLoadingDetails
-	// The existing `loading` state is for the price chart specifically.
 
 	const renderPriceCard = () => {
 		if (!displayCoin || priceHistory.length < 2 || !displayCoin.resolvedIconUrl) return null;
@@ -284,14 +276,6 @@ const CoinDetail: React.FC = () => {
 	};
 
 	const renderChartCard = () => {
-		console.log('[CoinDetail] Rendering chart with data:', {
-			priceHistoryLength: priceHistory.length,
-			priceHistory: priceHistory,
-			loading: loading,
-			isTimeframeLoading: isTimeframeLoading,
-			selectedTimeframe: selectedTimeframe
-		});
-
 		return (
 			<View style={styles.chartContainer} testID={`coin-detail-chart-card-${displayCoin?.symbol?.toLowerCase()}`}>
 				<View style={styles.chartCardContent}>
