@@ -10,10 +10,14 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
+)
+
+const (
+	priceHistoryEndpoint   = "defi/history_price"
+	trendingTokensEndpoint = "defi/token_trending"
 )
 
 // Client handles interactions with the BirdEye API
@@ -22,12 +26,6 @@ type Client struct {
 	baseURL    string
 	apiKey     string
 	tracker    telemetry.TelemetryAPI
-}
-
-// ClientAPI defines the interface for the BirdEye client.
-type ClientAPI interface {
-	GetPriceHistory(ctx context.Context, params PriceHistoryParams) (*PriceHistory, error)
-	GetTrendingTokens(ctx context.Context) (*TokenTrendingResponse, error)
 }
 
 // NewClient creates a new instance of the BirdEye client
@@ -42,23 +40,6 @@ func NewClient(httpClient *http.Client, baseURL string, apiKey string, tracker t
 
 var _ ClientAPI = (*Client)(nil) // Ensure Client implements ClientAPI
 
-// PriceHistory represents the response from the price history API
-type PriceHistory struct {
-	Data    PriceHistoryData `json:"data"`
-	Success bool             `json:"success"`
-}
-
-// PriceHistoryData contains the price history items
-type PriceHistoryData struct {
-	Items []PriceHistoryItem `json:"items"`
-}
-
-// PriceHistoryItem represents a single price point
-type PriceHistoryItem struct {
-	UnixTime int64   `json:"unixTime"`
-	Value    float64 `json:"value"`
-}
-
 // GetPriceHistory retrieves price history for a given token
 func (c *Client) GetPriceHistory(ctx context.Context, params PriceHistoryParams) (*PriceHistory, error) {
 	queryParams := url.Values{}
@@ -68,7 +49,7 @@ func (c *Client) GetPriceHistory(ctx context.Context, params PriceHistoryParams)
 	queryParams.Add("time_from", strconv.FormatInt(params.TimeFrom.Unix(), 10))
 	queryParams.Add("time_to", strconv.FormatInt(params.TimeTo.Unix(), 10))
 
-	fullURL := fmt.Sprintf("%s/history_price?%s", c.baseURL, queryParams.Encode())
+	fullURL := fmt.Sprintf("%s/%s?%s", c.baseURL, priceHistoryEndpoint, queryParams.Encode())
 
 	// No specific slog.Debug here, rely on getRequest's logging
 	priceHistory, err := getRequest[PriceHistory](c, ctx, fullURL)
@@ -81,7 +62,7 @@ func (c *Client) GetPriceHistory(ctx context.Context, params PriceHistoryParams)
 
 // GetTrendingTokens retrieves the list of trending tokens from the BirdEye API.
 func (c *Client) GetTrendingTokens(ctx context.Context) (*TokenTrendingResponse, error) {
-	fullURL := fmt.Sprintf("%s/defi/token_trending", c.baseURL)
+	fullURL := fmt.Sprintf("%s/%s", c.baseURL, trendingTokensEndpoint)
 	slog.Debug("Fetching trending tokens from BirdEye", "url", fullURL) // Keep this specific log for the public method
 
 	trendingTokensResponse, err := getRequest[TokenTrendingResponse](c, ctx, fullURL)
@@ -267,32 +248,4 @@ func postRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 	}
 
 	return &responseObject, nil
-}
-
-// PriceHistoryParams contains parameters for the GetPriceHistory request
-type PriceHistoryParams struct {
-	Address     string    // Token address
-	AddressType string    // Address type
-	HistoryType string    // History type (e.g., "1H", "1D", etc.)
-	TimeFrom    time.Time // Start time
-	TimeTo      time.Time // End time
-}
-
-// TokenTrendingResponse corresponds to the top-level JSON object from /defi/token_trending
-type TokenTrendingResponse struct {
-	Data    []TokenDetails `json:"data"`
-	Success bool           `json:"success"`
-}
-
-// TokenDetails corresponds to each object in the "data" array
-type TokenDetails struct {
-	Address   string   `json:"address"`
-	Name      string   `json:"name"`
-	Symbol    string   `json:"symbol"`
-	Price     float64  `json:"price"`
-	Volume24h float64  `json:"volume_24h"`
-	MarketCap float64  `json:"market_cap"`
-	LogoURI   string   `json:"logoURI"`
-	Tags      []string `json:"tags"`
-	CreatedAt string   `json:"created_at"`
 }

@@ -23,17 +23,26 @@ func TestGetTrendingTokens_Success(t *testing.T) {
 
 	mockResponse := birdeyeclient.TokenTrendingResponse{
 		Success: true,
-		Data: []birdeyeclient.TokenDetails{
-			{
-				Address:   "TOKEN_MINT_ADDRESS_1",
-				Name:      "Token One",
-				Symbol:    "ONE",
-				Price:     1.23,
-				Volume24h: 10000.50,
-				MarketCap: 1000000.75,
-				LogoURI:   "https://example.com/logo1.png",
-				Tags:      []string{"trending", "solana"},
-				CreatedAt: "2024-05-01T12:00:00Z",
+		Data: birdeyeclient.TokenTrendingData{
+			UpdateUnixTime: 1749781930,
+			UpdateTime:     "2025-06-13T02:32:10",
+			Tokens: []birdeyeclient.TokenDetails{
+				{
+					Address:                "TOKEN_MINT_ADDRESS_1",
+					Decimals:               6,
+					Liquidity:              6639095.1170144,
+					LogoURI:                "https://example.com/logo1.png",
+					Name:                   "Token One",
+					Symbol:                 "ONE",
+					Volume24hUSD:           10000.50,
+					Volume24hChangePercent: -29.87,
+					FDV:                    130654709.48,
+					MarketCap:              1000000.75,
+					Rank:                   1,
+					Price:                  1.23,
+					Price24hChangePercent:  62.0,
+					Tags:                   []string{"trending", "solana"},
+				},
 			},
 		},
 	}
@@ -59,9 +68,9 @@ func TestGetTrendingTokens_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Equal(t, mockResponse.Success, resp.Success)
-	assert.Len(t, resp.Data, 1)
-	assert.Equal(t, mockResponse.Data[0].Address, resp.Data[0].Address)
-	assert.Equal(t, mockResponse.Data[0].Name, resp.Data[0].Name)
+	assert.Len(t, resp.Data.Tokens, 1)
+	assert.Equal(t, mockResponse.Data.Tokens[0].Address, resp.Data.Tokens[0].Address)
+	assert.Equal(t, mockResponse.Data.Tokens[0].Name, resp.Data.Tokens[0].Name)
 
 	mockTracker.AssertExpectations(t)
 }
