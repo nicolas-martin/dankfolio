@@ -10,11 +10,15 @@ import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
 import { PriceData, Coin } from '@/types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
-import { TIMEFRAMES, fetchPriceHistory, handleTradeNavigation, } from './coindetail_scripts';
+import { handleTradeNavigation } from './coindetail_scripts'; // TIMEFRAMES removed from here
+import { TIMEFRAMES } from '@/utils/constants'; // Import TIMEFRAMES from constants
 import { useStyles } from './coindetail_styles';
 import { usePortfolioStore } from '@store/portfolio';
+import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { logger } from '@/utils/logger';
 import { useCoinStore } from '@store/coins';
+import { grpcApi } from '@/services/grpcApi';
+import InfoState from '@/components/Common/InfoState'; // Import InfoState
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -32,9 +36,9 @@ const CoinDetail: React.FC = () => {
 	}, [mintAddress, initialCoinFromParams]);
 
 	const [selectedTimeframe, setSelectedTimeframe] = useState("4H");
-	const [loading, setLoading] = useState(true);
-	const [isTimeframeLoading, setIsTimeframeLoading] = useState(false);
-	const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);
+	// const [loading, setLoading] = useState(true); // Replaced by hook's isLoading
+	// const [isTimeframeLoading, setIsTimeframeLoading] = useState(false); // Replaced by hook's isLoading
+	// const [priceHistory, setPriceHistory] = useState<PriceData[]>([]); // Replaced by hook's priceHistory
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
 	const { showToast } = useToast();
 	const { tokens } = usePortfolioStore();
@@ -59,60 +63,53 @@ const CoinDetail: React.FC = () => {
 		setHoverPoint(point);
 	}, []);
 
+	// usePriceHistory hook will now directly use grpcApi.getPriceHistory
+	// The hook expects (coinId: string, timeframe: string) => Promise<PriceHistoryPoint[]>
+	// grpcApi.getPriceHistory is (address: string, type: string, timeStr: string, addressType: string)
+	// We need a small adapter here if the hook isn't changed, or change the hook's expected signature.
+	// For now, let's create an adapter for the API call.
+
+	const adaptedFetchPriceHistory = useCallback(async (coinId: string, timeframe: string): Promise<PriceData[]> => {
+		// grpcApi.getPriceHistory expects timeStr (ISO string) and addressType ("token")
+		// The hook simplifies this to just coinId and timeframe.
+		// The actual call to grpcApi.getPriceHistory will need to construct these.
+		// The `usePriceHistory` hook calls this with (coinId, timeframe).
+		// The `grpcApi.getPriceHistory` has been modified to return PriceData[] directly.
+		const currentTime = new Date().toISOString(); // Or handle time more flexibly if needed
+		return grpcApi.getPriceHistory(coinId, timeframe, currentTime, "token");
+	}, []);
+
+
+	const {
+		priceHistory,
+		isLoading: isPriceHistoryLoading,
+		error: priceHistoryError,
+		fetchHistory
+	} = usePriceHistory(
+		mintAddress,
+		selectedTimeframe,
+		adaptedFetchPriceHistory
+	);
+
+	// Effect to show toast on error
 	useEffect(() => {
-		if (!displayCoin || !displayCoin.mintAddress) {
-			setPriceHistory([]);
-			setLoading(false); // Ensure loading is stopped if no coin
-			return;
+		if (priceHistoryError) {
+			showToast({ type: 'error', message: priceHistoryError.message || 'Failed to load chart data.' });
 		}
+	}, [priceHistoryError, showToast]);
 
-		const loadData = async () => {
-			const isInitialLoad = priceHistory.length === 0;
-			if (isInitialLoad) {
-				setLoading(true);
-			} else {
-				setIsTimeframeLoading(true);
-			}
-
-			try {
-				// Ensure displayCoin is not null before passing
-				const result = await fetchPriceHistory(displayCoin!, selectedTimeframe);
-				if (result.data !== null) {
-					console.log('[CoinDetail] Setting price history data:', {
-						timeframe: selectedTimeframe,
-						dataLength: result.data.length,
-						data: result.data
-					});
-					setPriceHistory(result.data);
-				} else if (result.error) {
-					logger.error('[CoinDetail] Error fetching price history:', result.error);
-					showToast({ type: 'error', message: 'Failed to load chart data.' });
-					setPriceHistory([]);
-				}
-			} catch (error: unknown) {
-				if (error instanceof Error) {
-					logger.error('[CoinDetail] Unexpected error in fetchPriceHistory call:', error.message);
-				} else {
-					logger.error('[CoinDetail] Unexpected error in fetchPriceHistory call:', error);
-				}
-				showToast({ type: 'error', message: 'Failed to load chart data.' });
-				setPriceHistory([]);
-			} finally {
-				if (isInitialLoad) {
-					setLoading(false);
-				} else {
-					setIsTimeframeLoading(false);
-				}
-			}
-		};
-
-		loadData();
-	}, [selectedTimeframe, displayCoin, showToast, priceHistory.length]);
+	// Effect to re-fetch when selectedTimeframe or displayCoin (for mintAddress) changes
+	useEffect(() => {
+		if (displayCoin?.mintAddress) {
+			fetchHistory(displayCoin.mintAddress, selectedTimeframe);
+		}
+	}, [selectedTimeframe, displayCoin?.mintAddress, fetchHistory]);
 
 
 	const displayData = useMemo(() => {
-		const lastDataPoint = priceHistory.length > 0 ? priceHistory[priceHistory.length - 1] : null;
-		const firstDataPoint = priceHistory.length > 0 ? priceHistory[0] : null;
+		const currentPriceHistory = priceHistory || []; // Use priceHistory from hook
+		const lastDataPoint = currentPriceHistory.length > 0 ? currentPriceHistory[currentPriceHistory.length - 1] : null;
+		const firstDataPoint = currentPriceHistory.length > 0 ? currentPriceHistory[0] : null;
 
 		const lastValue = parseValue(lastDataPoint?.value);
 		const firstValue = parseValue(firstDataPoint?.value);
@@ -146,7 +143,7 @@ const CoinDetail: React.FC = () => {
 		return tokens.find(token => token.mintAddress === displayCoin.mintAddress);
 	}, [tokens, displayCoin?.mintAddress]);
 
-	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description);
+	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description) || isPriceHistoryLoading; // Combine loading states
 
 	const renderPlaceholderPriceCard = () => (
 		<View style={styles.priceCard}>
@@ -247,12 +244,14 @@ const CoinDetail: React.FC = () => {
 		</View>
 	);
 
-	if (!displayCoin && !isLoadingDetails) {
+	if (!displayCoin && !isLoadingDetails) { // This condition means displayCoin is null AND we are not in any loading state for details.
 		return (
 			<SafeAreaView style={styles.container}>
-				<View style={[styles.container, styles.centered]}>
-					<Text>Coin data not available.</Text>
-				</View>
+				<InfoState
+					title="Data Unavailable"
+					emptyMessage="The requested coin data could not be loaded or does not exist."
+					iconName="alert-circle-outline"
+				/>
 			</SafeAreaView>
 		);
 	}
@@ -280,8 +279,8 @@ const CoinDetail: React.FC = () => {
 			<View style={styles.chartContainer} testID={`coin-detail-chart-card-${displayCoin?.symbol?.toLowerCase()}`}>
 				<View style={styles.chartCardContent}>
 					<CoinChart
-						data={priceHistory}
-						loading={loading} // Only show loading for initial load, not timeframe changes
+						data={priceHistory || []} // Use priceHistory from hook
+						loading={isPriceHistoryLoading && (!priceHistory || priceHistory.length === 0)} // Show loading overlay if history is empty
 						onHover={handleChartHover}
 						period={selectedTimeframe}
 					/>
@@ -310,7 +309,7 @@ const CoinDetail: React.FC = () => {
 						style: styles.timeframeButton
 					}))}
 					density="small"
-					style={[styles.timeframeButtonsRow, isTimeframeLoading && styles.timeframeButtonsRowLoading]}
+					style={[styles.timeframeButtonsRow, isPriceHistoryLoading && styles.timeframeButtonsRowLoading]} // Use isPriceHistoryLoading
 				/>
 			</View>
 		);
@@ -438,7 +437,7 @@ const CoinDetail: React.FC = () => {
 					keyboardShouldPersistTaps="handled"
 					refreshControl={
 						<RefreshControl
-							refreshing={loading} // This 'loading' is for the price chart
+							refreshing={isPriceHistoryLoading} // Use isLoading from hook
 							onRefresh={onRefresh}
 							tintColor={styles.colors.primary}
 						/>

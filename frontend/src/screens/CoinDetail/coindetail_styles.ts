@@ -2,14 +2,16 @@ import { StyleSheet } from 'react-native';
 import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
 import { Platform } from 'react-native';
+import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-	const colors = theme.colors;
-	const styles = StyleSheet.create({
-		aboutCard: {
-			backgroundColor: theme.colors.surface,
-			borderRadius: theme.borderRadius.lg,
+	return useMemo(() => {
+		const colors = theme.colors; // Ensure colors is defined inside useMemo
+		const styles = StyleSheet.create({
+			aboutCard: {
+				backgroundColor: colors.surface, // Use local colors variable
+				borderRadius: theme.borderRadius.lg,
 			marginBottom: theme.spacing.lg,
 			marginHorizontal: theme.spacing.lg,
 			padding: theme.spacing.xl,
@@ -297,10 +299,11 @@ export const useStyles = () => {
 				},
 			}),
 		},
-	})
+	});
 	return {
 		...styles,
-		colors,
+		colors: theme.colors, // Return original theme.colors for consistency
 		theme
 	};
+	}, [theme]);
 };

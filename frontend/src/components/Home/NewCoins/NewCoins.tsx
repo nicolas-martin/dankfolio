@@ -1,4 +1,5 @@
-import React, { useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react'; // React import will be added by the next line
+import React from 'react';
 import { View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -15,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 // Allow navigation to Search as well for the "View All" button
 type NewCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
 
-const NewCoins: React.FC = () => {
+const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or similar if needed, or keep as NewCoins if preferred
 	const styles = useStyles();
 	const navigation = useNavigation<NewCoinsNavigationProp>();
 	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
@@ -166,4 +167,4 @@ const NewCoins: React.FC = () => {
 	);
 };
 
-export default NewCoins;
+export default React.memo(NewCoinsInternal); // Or React.memo(NewCoins)
