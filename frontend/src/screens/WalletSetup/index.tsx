@@ -9,8 +9,7 @@ import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { env } from '@utils/env';
 import { initializeDebugWallet } from '@/utils/debugWallet';
 import TermsModal from '@/components/Common/TermsModal';
-// disable import lint error
-// eslint-disable-next-line import/no-unresolved
+// @ts-ignore
 import neonBarImage from '../../../assets/onboarding.jpg';
 import { useStyles } from './styles';
 
@@ -228,7 +227,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									<View style={styles.walletInfoSection}>
 										<View style={styles.walletInfoHeader}>
 											<Text style={styles.walletInfoLabel}>Public Key</Text>
-																						<CopyToClipboard 
+											<CopyToClipboard
 												text={walletInfo.publicKey}
 												onCopy={() => {
 													logger.breadcrumb({ category: 'ui', message: 'Copied public key to clipboard from wallet creation' });
