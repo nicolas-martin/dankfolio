@@ -309,11 +309,6 @@ const HomeScreen = () => {
 				wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 			]);
 
-			showToast({
-				type: 'success',
-				message: 'Coins refreshed successfully!',
-				duration: 3000
-			});
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				logger.error('[HomeScreen] ❌ Error during manual refresh:', error.message);
