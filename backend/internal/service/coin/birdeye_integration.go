@@ -33,26 +33,24 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trending tokens from Birdeye: %w", err)
 	}
-	if len(birdeyeTokens.Data) == 0 {
+	if len(birdeyeTokens.Data.Tokens) == 0 {
 		return nil, fmt.Errorf("no trending tokens received from Birdeye")
 	}
-	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens.Data))
+	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens.Data.Tokens))
 
 	// Adapt birdeye.TokenDetails to []scrapedTokenInfo for now
-	scrapedTokens := make([]scrapedTokenInfo, 0, len(birdeyeTokens.Data))
-	for _, t := range birdeyeTokens.Data {
+	scrapedTokens := make([]scrapedTokenInfo, 0, len(birdeyeTokens.Data.Tokens))
+	for _, t := range birdeyeTokens.Data.Tokens {
 		scrapedTokens = append(scrapedTokens, scrapedTokenInfo{
 			MintAddress: t.Address,
 			Name:        t.Name,
 			Symbol:      t.Symbol,
 			Price:       fmt.Sprintf("%f", t.Price),
-			// Change24h is not directly available in birdeye.TokenDetails,
-			// it might need to be calculated or fetched differently if still required.
-			// For now, it will be empty or zero if not set.
-			Volume24h: fmt.Sprintf("%f", t.Volume24h),
-			MarketCap: fmt.Sprintf("%f", t.MarketCap),
-			IconURL:   t.LogoURI,
-			Tags:      t.Tags,
+			Change24h:   fmt.Sprintf("%f", t.Price24hChangePercent),
+			Volume24h:   fmt.Sprintf("%f", t.Volume24hUSD),
+			MarketCap:   fmt.Sprintf("%f", t.MarketCap),
+			IconURL:     t.LogoURI,
+			Tags:        t.Tags,
 		})
 	}
 
