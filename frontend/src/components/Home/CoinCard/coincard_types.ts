@@ -2,7 +2,7 @@ import { Coin, PriceData } from '@/types';
 
 export interface CoinCardProps {
 	coin: Coin;
-	onPress: (coin: Coin) => void;
+	onPressCoin?: (coin: Coin) => void; // Changed from onPress to onPressCoin and made optional
 	balance?: number; // Assuming balance is optional as per original
 	value?: number;   // Assuming value is optional
 	isHorizontal?: boolean; // New prop

@@ -1,14 +1,16 @@
 import { StyleSheet } from 'react-native';
 import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
+import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-	const colors = theme.colors;
-	const styles = StyleSheet.create({
-		centered: {
-			alignItems: 'center',
-			justifyContent: 'center',
+	return useMemo(() => {
+		const colors = theme.colors; // Ensure colors is defined inside useMemo
+		const styles = StyleSheet.create({
+			centered: {
+				alignItems: 'center',
+				justifyContent: 'center',
 		},
 		completedText: {
 			color: theme.success,
@@ -323,10 +325,11 @@ export const useStyles = () => {
 			flexDirection: 'row',
 			marginTop: theme.spacing.xs,
 		},
-	})
+	});
 	return {
 		...styles,
-		colors,
+		colors: theme.colors, // Return original theme.colors for consistency
 		theme
 	};
+	}, [theme]);
 };

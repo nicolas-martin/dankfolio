@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import CachedImage from '@/components/Common/CachedImage';
+// import CachedImage from '@/components/Common/CachedImage'; // No longer directly used
 import { SearchResultItemProps } from './types';
-import { truncateAddress } from './scripts';
+import { formatAddress } from '@/utils/numberFormat';
 import { useStyles } from './styles';
+import CoinInfoBlock from '@/components/Common/CoinInfoBlock'; // Import CoinInfoBlock
 
 const SearchResultItem: React.FC<SearchResultItemProps> = ({
 	coin,
@@ -30,24 +31,26 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 			onPress={() => onPress?.(coin)}
 			disabled={!onPress}
 		>
-			<View style={styles.tokenInfo}>
-				<CachedImage
-					uri={coin.resolvedIconUrl}
-					size={36}
-					showLoadingIndicator={true}
-				/>
-				<View style={styles.tokenDetails}>
-					<Text style={styles.tokenName}>{coin.name}</Text>
-					<Text style={styles.tokenAddress}>{truncateAddress(coin.mintAddress)}</Text>
-					{listedAtString && ( // Only display if the date exists
-						<Text style={styles.listedAtText}>
-							{listedAtString}
-						</Text>
-					)}
+			<CoinInfoBlock
+				iconUri={coin.resolvedIconUrl}
+				iconSize={36}
+				primaryText={coin.name}
+				secondaryText={formatAddress(coin.mintAddress, 6, 6)}
+				// Pass styles if CoinInfoBlock's defaults aren't sufficient or if SearchResultItem has specific layout needs for this block
+				// containerStyle={styles.tokenInfoContainer} // Example: if styles.tokenInfo was the container
+				primaryTextStyle={styles.tokenName}
+				secondaryTextStyle={styles.tokenAddress}
+				// textContainerStyle={styles.tokenDetails} // This was the View wrapping texts
+			/>
+			{/* Original listedAtString needs to be placed. Maybe CoinInfoBlock needs a third line or additional slot? */}
+			{/* For now, let's add it separately if CoinInfoBlock doesn't support it. */}
+			{listedAtString && (
+				<View style={styles.tokenDetails}> {/* This might need adjustment based on CoinInfoBlock's layout */}
+			    <Text style={styles.listedAtText}>{listedAtString}</Text>
 				</View>
-			</View>
+			)}
 			<View style={styles.symbolColumn}>
-				<Text style={styles.tokenSymbol}>{coin.symbol || truncateAddress(coin.mintAddress)}</Text>
+				<Text style={styles.tokenSymbol}>{coin.symbol || formatAddress(coin.mintAddress, 6, 6)}</Text>
 			</View>
 			{!isEnriched && (
 				<View style={styles.unenrichedBadge}>
@@ -58,4 +61,4 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 	);
 };
 
-export default SearchResultItem; 
+export default React.memo(SearchResultItem);

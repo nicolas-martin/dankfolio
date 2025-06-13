@@ -8,9 +8,11 @@ import { SearchSortByOption } from '@/services/grpc/model'; // Import the type
 import { performSearch, DEBOUNCE_DELAY, handleCoinNavigation } from './scripts';
 import { Coin } from '@/types';
 import SearchResultItem from '@/components/Common/SearchResultItem';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useStyles } from './styles';
 import { SearchIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
+import InfoState from '@/components/Common/InfoState'; // Import InfoState
 
 const initialState: SearchState = {
 	loading: false,
@@ -68,33 +70,28 @@ const SearchScreen: React.FC = () => {
 				}));
 			}
 		}
-	}, [state.filters]);
+	}, [state.filters]); // Keep existing dependencies for handleSearch itself
 
-	useEffect(() => {
-		const timeoutId = setTimeout(() => {
-			// Fetch if query exists, or if sorting by listed_at (even with empty query),
-			// or if sort order changed for a non-empty query.
-			// This logic ensures that changing sort order always attempts a refetch if relevant.
-			if (state.filters.query || state.filters.sortBy === 'jupiter_listed_at' || (state.filters.query === '' && state.results.length > 0)) {
-				// The condition `(state.filters.query === '' && state.results.length > 0)` is to handle clearing query
-				// when a sort like 'jupiter_listed_at' might want to show results for empty query.
-				// More robust: if a sort change happens, and query is empty, and 'jupiter_listed_at' is chosen, fetch.
-				// If query is cleared, and not 'jupiter_listed_at', then clear results.
-				if (state.filters.query || state.filters.sortBy === 'jupiter_listed_at') {
-					handleSearch(state.filters.query);
-				} else {
-					// If query is empty and not sorting by 'jupiter_listed_at', clear results
-					setState(prev => ({ ...prev, results: [] }));
-				}
-			} else if (!state.filters.query && state.results.length > 0) { // state.filters.sortBy !== 'jupiter_listed_at' is implied here
-				// If query is cleared, and we are not on a default-view sort like jupiter_listed_at, clear results
+	// Debounced function to perform search or clear results
+	const debouncedSearchTrigger = useDebouncedCallback(() => {
+		// Logic from the original useEffect
+		if (state.filters.query || state.filters.sortBy === 'jupiter_listed_at' || (state.filters.query === '' && state.results.length > 0)) {
+			if (state.filters.query || state.filters.sortBy === 'jupiter_listed_at') {
+				handleSearch(state.filters.query);
+			} else {
 				setState(prev => ({ ...prev, results: [] }));
 			}
-		}, DEBOUNCE_DELAY);
+		} else if (!state.filters.query && state.results.length > 0) {
+			setState(prev => ({ ...prev, results: [] }));
+		}
+	}, DEBOUNCE_DELAY);
 
-		return () => clearTimeout(timeoutId);
-		// Watch relevant parts of filters for re-fetching
-	}, [state.filters.query, state.filters.sortBy, state.filters.sortDesc, handleSearch, state.results.length]); // Added state.results.length
+	useEffect(() => {
+		// This effect now calls the debounced function whenever relevant filter criteria change.
+		debouncedSearchTrigger();
+		// The cleanup of the timeout is handled inside useDebouncedCallback.
+	}, [state.filters.query, state.filters.sortBy, state.filters.sortDesc, state.results.length, debouncedSearchTrigger]);
+
 
 	const setSortOrder = (sortBy: SearchSortByOption, sortDesc: boolean) => {
 		setState(prev => ({
@@ -118,21 +115,25 @@ const SearchScreen: React.FC = () => {
 		}));
 	};
 
-	const renderItem = ({ item }: { item: Coin }) => (
+	const handlePressSearchResult = useCallback((coin: Coin) => {
+		logger.breadcrumb({ category: 'ui', message: 'Pressed search result item', data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } });
+		handleCoinNavigation(coin, navigation);
+	}, [navigation]);
+
+	const renderItem = useCallback(({ item }: { item: Coin }) => (
 		<View style={styles.card}>
 			<SearchResultItem
 				coin={item}
-				onPress={(coin) => {
-					logger.breadcrumb({ category: 'ui', message: 'Pressed search result item', data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress } });
-					handleCoinNavigation(coin, navigation);
-				}}
+				onPress={handlePressSearchResult}
 				isEnriched={item.price !== undefined && item.dailyVolume !== undefined}
 			/>
 		</View>
-	);
+	), [styles.card, handlePressSearchResult]);
 
 	const showEmpty = !state.loading && !state.error && state.results.length === 0 && state.filters.query;
 	const showError = !state.loading && !!state.error;
+	const showResults = !state.loading && !showError && !showEmpty && state.results.length > 0;
+
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
@@ -167,30 +168,33 @@ const SearchScreen: React.FC = () => {
 						</TouchableOpacity>
 					</View>
 				</View>
-				{/* Results List */}
+				{/* Results List / Info States */}
 				<View style={styles.flex1}>
-					{state.loading && (
-						<View style={styles.loadingContainer}>
-							<ActivityIndicator size="large" color={styles.colors.primary} />
-						</View>
-					)}
+					{state.loading && <InfoState isLoading={true} />}
 					{showError && (
-						<View style={styles.emptyContainer}>
-							<Text style={styles.emptyText}>Error: {state.error}</Text>
-						</View>
+						<InfoState
+							error={state.error}
+							title="Search Error"
+							iconName="alert-circle-outline"
+						/>
 					)}
 					{showEmpty && (
-						<View style={styles.emptyContainer}>
-							<SearchIcon size={48} color={styles.colors.onSurfaceVariant} />
-							<Text style={styles.emptyText}>No tokens found</Text>
-						</View>
+						<InfoState
+							emptyMessage="No tokens found for your query."
+							title="No Results"
+							iconName="magnify"
+						/>
 					)}
-					{!state.loading && !showError && !showEmpty && (
+					{showResults && (
 						<FlatList
 							data={state.results}
 							renderItem={renderItem}
 							keyExtractor={item => item.mintAddress}
 							contentContainerStyle={styles.listContent}
+							initialNumToRender={10}
+							maxToRenderPerBatch={10}
+							windowSize={21}
+							// getItemLayout might be added later if item height is fixed and known
 						/>
 					)}
 				</View>

@@ -1,14 +1,16 @@
 import { StyleSheet } from 'react-native';
 import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
+import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-	const colors = theme.colors;
-	const styles = StyleSheet.create({
-		card: {
-			backgroundColor: theme.colors.surfaceVariant,
-			borderRadius: theme.spacing.sm,
+	return useMemo(() => {
+		const colors = theme.colors; // Ensure colors is defined inside useMemo if used by StyleSheet.create
+		const styles = StyleSheet.create({
+			card: {
+				backgroundColor: theme.colors.surfaceVariant,
+				borderRadius: theme.spacing.sm,
 			marginBottom: theme.spacing.md,
 			padding: theme.spacing.lg,
 		},
@@ -174,10 +176,11 @@ export const useStyles = () => {
 			color: theme.colors.onSurfaceVariant,
 			fontSize: theme.typography.fontSize.xs,
 		},
-	})
+	});
 	return {
 		...styles,
-		colors,
+		colors: theme.colors, // Return original theme colors directly
 		theme
 	};
+	}, [theme]);
 };

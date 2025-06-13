@@ -1,14 +1,16 @@
 import { StyleSheet } from 'react-native';
 import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
+import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
-	const colors = theme.colors;
-	const styles = StyleSheet.create({
-		cardWrapper: {
-			marginRight: theme.spacing.sm,
-			width: 140,
+	return useMemo(() => {
+		const colors = theme.colors; // Ensure colors is defined inside useMemo
+		const styles = StyleSheet.create({
+			cardWrapper: {
+				marginRight: theme.spacing.sm,
+				width: 140,
 		},
 		container: {
 			paddingBottom: theme.spacing['2xl'],
@@ -75,10 +77,11 @@ export const useStyles = () => {
 			fontSize: theme.typography.fontSize.sm,
 			fontWeight: '500',
 		},
-	})
+	});
 	return {
 		...styles,
-		colors,
+		colors: theme.colors, // Return original theme.colors for consistency
 		theme
 	};
+	}, [theme]);
 }
