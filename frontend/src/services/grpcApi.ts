@@ -169,27 +169,12 @@ export const grpcApi: grpcModel.API = {
 
 			const priceHistoryType = typeMap[type] ?? GetPriceHistoryRequest_PriceHistoryType.PRICE_HISTORY_TYPE_UNSPECIFIED;
 
-			console.log('[grpcApi] 📋 Request details:', {
-				mappedType: priceHistoryType,
-				typeMapEntry: typeMap[type],
-				timestamp: timetimestamp,
-				headers: grpcUtils.getRequestHeaders()
-			});
-
 			const response = await priceClient.getPriceHistory({
 				address: address,
 				type: priceHistoryType,
 				time: timetimestamp,
 				addressType: addressType
 			}, { headers: grpcUtils.getRequestHeaders() });
-
-			console.log('[grpcApi] 📥 getPriceHistory RAW RESPONSE:', {
-				success: response.success,
-				dataExists: !!response.data,
-				itemsCount: response.data?.items?.length || 0,
-				items: response.data?.items || [],
-				fullResponse: response
-			});
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
@@ -204,12 +189,6 @@ export const grpcApi: grpcModel.API = {
 				success: response.success
 			};
 
-			console.log('[grpcApi] 📊 CONVERTED RESPONSE:', {
-				originalItemsCount: response.data?.items?.length || 0,
-				convertedItemsCount: convertedResponse.data.items.length,
-				convertedItems: convertedResponse.data.items,
-				success: convertedResponse.success
-			});
 
 			return convertedResponse;
 		} catch (error: unknown) {

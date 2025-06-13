@@ -5,8 +5,7 @@ import 'dotenv/config';
 const appEnv = process.env.APP_ENV || 'development';
 const isLocal = process.argv.includes('--local');
 
-// Log which environment we're using
-console.log(`📱 Building app with environment: ${appEnv}${isLocal ? ' (local)' : ''}`);
+
 if (isLocal) {
   console.log('📱 Loading environment variables from .env file');
 }

@@ -289,11 +289,6 @@ export const executeTrade = async (
 		setSubmittedTxHash(result.transactionHash);
 		setIsStatusModalVisible(true);
 		startPollingFn(result.transactionHash);
-
-		showToast({
-			type: 'success',
-			message: 'Trade submitted successfully!'
-		});
 	} catch (error: unknown) {
 		logger.exception(error, { functionName: 'executeTrade' });
 		setIsLoadingTrade(false);
