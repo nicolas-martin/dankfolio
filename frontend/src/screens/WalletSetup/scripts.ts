@@ -11,7 +11,7 @@ import { useState } from 'react';
 // Import newly created/moved utility functions
 import { toBase58PrivateKey, Base58PrivateKey } from '@/utils/cryptoUtils';
 import { storeCredentials, KEYCHAIN_SERVICE } from '@/utils/keychainService'; // Import KEYCHAIN_SERVICE
-import Clipboard from '@react-native-clipboard/clipboard';
+// Removed Clipboard import - now using CopyToClipboard component
 import { WalletSetupStep, WalletSetupScreenProps, WalletInfo } from './types';
 import { logger } from '@/utils/logger';
 import { ToastProps } from '@/components/Common/Toast/toast_types';
@@ -235,22 +235,6 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		}
 	};
 
-	const copyToClipboard = async (text: string, label: string, showToast: (options: Partial<ToastProps>) => void) => {
-		try {
-			await Clipboard.setString(text);
-			logger.breadcrumb({ category: 'wallet_setup', message: `Copied ${label} to clipboard` });
-			showToast({
-				message: `${label} copied to clipboard`,
-				type: 'success'
-			});
-		} catch (error) {
-			logger.exception(error, { functionName: 'copyToClipboard', context: 'useWalletSetupLogic' });
-			showToast({
-				message: `Failed to copy ${label}`,
-				type: 'error'
-			});
-		}
-	};
 
 	return {
 		step,
@@ -264,6 +248,5 @@ export function useWalletSetupLogic(props: WalletSetupScreenProps) {
 		isRecoveryPhraseValid,
 		walletInfo,
 		confirmWalletSaved,
-		copyToClipboard
 	};
 } 
