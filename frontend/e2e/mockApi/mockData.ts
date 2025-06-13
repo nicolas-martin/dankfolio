@@ -211,7 +211,7 @@ export const ALL_MOCK_COINS = [...MOCK_TRENDING_COINS, ...MOCK_NEW_COINS];
 // Mock wallet balances using exact gRPC types
 export const MOCK_WALLET_BALANCES: Balance[] = [
 	create(BalanceSchema, { id: 'so11111111111111111111111111111111111111112', amount: 2.5 }), // SOL
-	create(BalanceSchema, { id: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', amount: 1000.0 }), // USDC
+	create(BalanceSchema, { id: 'epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v', amount: 1000.0 }), // USDC
 	create(BalanceSchema, { id: 'dankcoin1111111111111111111111111111111', amount: 5000000.0 }), // DANK
 	create(BalanceSchema, { id: 'moontoken111111111111111111111111111111', amount: 250000.0 }), // MOON
 	create(BalanceSchema, { id: 'bonk111111111111111111111111111111111111', amount: 10000000.0 }), // BONK
