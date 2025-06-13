@@ -159,28 +159,77 @@ async function handleGetPriceHistory(options?: FetchInit) {
 	return create(GetPriceHistoryResponseSchema, { data, success: true });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function handleGetCoinPrices(_options?: FetchInit) {
+async function handleGetCoinPrices(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const coinIds = requestData.coinIds || [];
+	
+	// If no specific coins requested, return prices for all coins
+	const coinsToPrice = coinIds.length > 0 ? coinIds : ALL_MOCK_COINS.map(c => c.mintAddress);
+	
 	const mockPrices: { [key: string]: number } = {};
-	ALL_MOCK_COINS.forEach(coin => {
-		const basePrice = coin.price;
-		const variation = (Math.random() - 0.5) * 0.1; // ±5% variation
-		const randomizedPrice = basePrice * (1 + variation);
-		mockPrices[coin.mintAddress] = Math.max(randomizedPrice, basePrice * 0.1);
+	coinsToPrice.forEach((coinId: string) => {
+		const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+			c.mintAddress.toLowerCase() === coinId.toLowerCase()
+		);
+		if (coin) {
+			// Use base price directly for deterministic behavior
+			mockPrices[coinId] = coin.price;
+		}
 	});
+	
 	return { prices: mockPrices }; // This endpoint returns a plain object
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function handleGetSwapQuote(_options?: FetchInit) {
+async function handleGetSwapQuote(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const { fromCoinId, toCoinId, amount } = requestData;
+
+	if (!fromCoinId || !toCoinId || !amount) {
+		throw new Error('INVALID_ARGUMENT: fromCoinId, toCoinId, and amount are required');
+	}
+
+	// Find the coins to get their base data
+	const fromCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+		c.mintAddress.toLowerCase() === fromCoinId.toLowerCase()
+	);
+	const toCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+		c.mintAddress.toLowerCase() === toCoinId.toLowerCase()
+	);
+
+	if (!fromCoin || !toCoin) {
+		throw new Error('NOT_FOUND: One or both coins not found');
+	}
+
+
+	// Convert raw amount to decimal amount for calculation
+	const rawAmount = parseFloat(amount);
+	const fromDecimals = fromCoin.decimals;
+	const decimalAmount = rawAmount / Math.pow(10, fromDecimals);
+
+	// Calculate estimated output amount based on prices
+	// estimatedAmount = (inputAmount * fromCoinPrice) / toCoinPrice
+	const estimatedDecimalAmount = (decimalAmount * fromCoin.price) / toCoin.price;
+	
+	// Apply some slippage/fees (reduce by 0.5%)
+	const slippageAdjustedAmount = estimatedDecimalAmount * 0.995;
+
+	// Calculate exchange rate (raw output amount / raw input amount)
+	const exchangeRate = (slippageAdjustedAmount * Math.pow(10, toCoin.decimals)) / rawAmount;
+
+	// Calculate fee (0.5% of input amount in decimal)
+	const feeAmount = decimalAmount * 0.005;
+
+	// Calculate price impact (simulate based on amount - larger amounts have higher impact)
+	const priceImpact = Math.min(decimalAmount / 1000 * 0.1, 2.0); // Max 2% impact
+
 	return create(GetSwapQuoteResponseSchema, {
-		estimatedAmount: '0.95',
-		exchangeRate: '0.95',
-		fee: '0.0025',
-		priceImpact: '0.1',
+		estimatedAmount: slippageAdjustedAmount.toFixed(6), // Return as decimal string like backend
+		exchangeRate: exchangeRate.toFixed(6),
+		fee: feeAmount.toFixed(6),
+		priceImpact: priceImpact.toFixed(3),
 		routePlan: ['Direct'],
-		inputMint: 'So11111111111111111111111111111111111111112',
-		outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+		inputMint: fromCoinId,
+		outputMint: toCoinId,
 	});
 }
 
