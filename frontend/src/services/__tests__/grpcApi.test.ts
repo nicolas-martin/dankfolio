@@ -16,7 +16,7 @@ jest.mock('@/services/grpc/apiClient', () => ({
 // Mock grpcUtils to spy on handleGrpcError and prevent logging during tests
 jest.mock('@/services/grpc/grpcUtils', () => ({
 	...jest.requireActual('@/services/grpc/grpcUtils'),
-	handleGrpcError: jest.fn((error, serviceName, methodName) => {
+	handleGrpcError: jest.fn((error) => {
 		// In a real test, you might want to throw a specific error or return a value
 		// For now, we'll just return the error to avoid throwing
 		return error;

@@ -25,7 +25,7 @@ interface PortfolioState {
 	fetchPortfolioBalance: (address: string) => Promise<void>;
 }
 
-export const usePortfolioStore = create<PortfolioState>((set, _get) => ({ // Renamed get to _get
+export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 	wallet: null, // Initialized with null
 	isLoading: false,
 	error: null,

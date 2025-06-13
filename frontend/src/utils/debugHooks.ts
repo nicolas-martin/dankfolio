@@ -8,15 +8,15 @@ import { logger } from './logger';
  * @param depNames Optional array of names for array dependencies
  */
 export const useHookDebug = (
-	deps: React.DependencyList | Record<string, unknown>, 
+	deps: React.DependencyList | Record<string, unknown>,
 	name: string,
 	depNames?: string[]
 ) => {
 	const prevDeps = useRef(deps);
-	
+
 	useEffect(() => {
 		const changes: string[] = [];
-		
+
 		if (Array.isArray(deps)) {
 			// Handle array dependencies
 			const prevDepsArray = prevDeps.current as React.DependencyList;
@@ -36,11 +36,11 @@ export const useHookDebug = (
 				}
 			});
 		}
-		
+
 		if (changes.length > 0) {
 			logger.info(`[${name}] Dependencies changed:`, changes);
 		}
-		
+
 		prevDeps.current = deps;
 	}, Array.isArray(deps) ? [...deps, name] : [...Object.values(deps), name]);
 };
