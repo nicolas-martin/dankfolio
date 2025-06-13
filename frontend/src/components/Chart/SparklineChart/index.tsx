@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'; // Added useMemo
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import {
 	Canvas,
 	Path,
@@ -8,8 +8,9 @@ import {
 	LinearGradient,
 	vec,
 } from '@shopify/react-native-skia';
-import { useTheme } from 'react-native-paper';
 import { PriceData } from '@/types'; // Added PriceData import
+import { useStyles } from './styles'; // Import styles from the local styles file
+import { Text } from 'react-native';
 
 interface SparklineChartProps {
 	data: PriceData[]; // Changed to PriceData[]
@@ -19,20 +20,6 @@ interface SparklineChartProps {
 	testID?: string;
 }
 
-import { Text } from 'react-native';
-
-const styles = StyleSheet.create({
-	center: {
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	container: {
-		backgroundColor: 'transparent',
-		flex: 1,
-		overflow: 'hidden',
-	},
-});
-
 const SparklineChart: React.FC<SparklineChartProps> = ({
 	data,
 	width,
@@ -40,6 +27,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 	isLoading = false,
 	testID,
 }) => {
+	const styles = useStyles();
 	if (isLoading) {
 		return (
 			<View style={[styles.container, styles.center, { width, height }]}>
@@ -71,7 +59,6 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 		return data;
 	}, [data]);
 
-	const theme = useTheme();
 
 	// Memoize all derived data and Skia objects
 	const {
@@ -149,7 +136,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 
 		const currentBaselinePaint = Skia.Paint();
 		currentBaselinePaint.setStrokeWidth(0.5);
-		currentBaselinePaint.setColor(Skia.Color(theme.colors.onSurfaceVariant));
+		currentBaselinePaint.setColor(Skia.Color(styles.colors.onSurfaceVariant));
 
 		// Create a dotted/dashed line effect
 		try {
@@ -161,11 +148,11 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 			console.log('DashPathEffect not supported in this version of Skia');
 		}
 
-		// Using direct color values
-		const greenOpaque = Skia.Color('#00FF004D');
-		const greenTransparent = Skia.Color('#00FF0000');
-		const redOpaque = Skia.Color('#FF00004D');
-		const redTransparent = Skia.Color('#FF000000');
+		// Using theme-based color values
+		const greenOpaque = Skia.Color(styles.sparklineColors.green.opaque);
+		const greenTransparent = Skia.Color(styles.sparklineColors.green.transparent);
+		const redOpaque = Skia.Color(styles.sparklineColors.red.opaque);
+		const redTransparent = Skia.Color(styles.sparklineColors.red.transparent);
 
 		const localLineSegments: Array<{ path: ReturnType<typeof Skia.Path.Make>; color: string }> = [];
 		const localAreaSegments: Array<{
@@ -245,7 +232,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 			}
 		}
 		return { lineSegments: localLineSegments, areaSegments: localAreaSegments, baselinePaint: currentBaselinePaint, baselineYPoint: currentBaselineY };
-	}, [effectiveData, width, height, theme]);
+	}, [effectiveData, width, height, styles.theme]);
 
 	return (
 		<View

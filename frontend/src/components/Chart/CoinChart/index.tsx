@@ -275,20 +275,7 @@ export default function CoinChart({
 	// preprocess data - optimize by memoizing and reducing calculations
 	const processedChartData: PricePoint[] = React.useMemo(
 		() => {
-			console.log('[CoinChart] Processing chart data:', {
-				inputDataLength: data?.length || 0,
-				inputData: data,
-				loading
-			});
-			
-			const processed = prepareChartData(data);
-			
-			console.log('[CoinChart] Chart data processed:', {
-				outputLength: processed.length,
-				outputData: processed
-			});
-			
-			return processed;
+			return prepareChartData(data);;
 		},
 		[data]
 	);
@@ -315,125 +302,125 @@ export default function CoinChart({
 				</View>
 			) : (
 				<View style={styles.chartContainer} testID="coin-chart-container">
-				<CartesianChart
-					key={chartKey}
-					data={processedChartData}
-					xKey="x"
-					yKeys={['y']}
-					domainPadding={{ top: 25 }}
-					padding={{ left: 0, right: 0, top: 0, bottom: 5 }}
-					chartPressState={[chartPress]}
-					axisOptions={{
-						font,
-						tickCount: { x: timeFormat.tickCount, y: 3 }, // Use period-specific tick count
-						labelPosition: { x: 'outset', y: 'inset' },
-						axisSide: { x: 'bottom', y: 'left' },
-						formatXLabel: timeFormat.axis, // Use period-specific format
-						formatYLabel: v => v.toLocaleString('en-US', {
-							minimumFractionDigits: 6,
-							maximumFractionDigits: 6
-						}),
-						lineColor: {
-							grid: {
-								x: 'rgba(255,255,255,0.1)',
-								y: 'rgba(255,255,255,0.1)',
+					<CartesianChart
+						key={chartKey}
+						data={processedChartData}
+						xKey="x"
+						yKeys={['y']}
+						domainPadding={{ top: 25 }}
+						padding={{ left: 0, right: 0, top: 0, bottom: 5 }}
+						chartPressState={[chartPress]}
+						axisOptions={{
+							font,
+							tickCount: { x: timeFormat.tickCount, y: 3 }, // Use period-specific tick count
+							labelPosition: { x: 'outset', y: 'inset' },
+							axisSide: { x: 'bottom', y: 'left' },
+							formatXLabel: timeFormat.axis, // Use period-specific format
+							formatYLabel: v => v.toLocaleString('en-US', {
+								minimumFractionDigits: 6,
+								maximumFractionDigits: 6
+							}),
+							lineColor: {
+								grid: {
+									x: styles.chartUIColors.grid.x,
+									y: styles.chartUIColors.grid.y,
+								},
+								frame: styles.chartUIColors.frame,
 							},
-							frame: 'rgba(255,255,255,0.1)',
-						},
-						labelColor: styles.colors.onSurface,
-					}}
-					renderOutside={({ chartBounds }) => {
-						if (!isPressActive || typeof activeX !== 'number' || !font)
-							return null;
+							labelColor: styles.colors.onSurface,
+						}}
+						renderOutside={({ chartBounds }) => {
+							if (!isPressActive || typeof activeX !== 'number' || !font)
+								return null;
 
-						// Use period-specific tooltip format
-						const label = timeFormat.tooltip(activeX);
-						const rawX = currentPressPos.value.x;
-						const w = font.measureText(label).width;
-						const half = w / 2;
-						const xPos = Math.min(
-							Math.max(rawX - half, chartBounds.left),
-							chartBounds.right - w
-						);
+							// Use period-specific tooltip format
+							const label = timeFormat.tooltip(activeX);
+							const rawX = currentPressPos.value.x;
+							const w = font.measureText(label).width;
+							const half = w / 2;
+							const xPos = Math.min(
+								Math.max(rawX - half, chartBounds.left),
+								chartBounds.right - w
+							);
 
-						return (
-							<>
-								<SkiaLine
-									p1={{ x: rawX, y: chartBounds.top }}
-									p2={{ x: rawX, y: chartBounds.bottom }}
-									color="rgba(255,255,255,0.3)"
-									strokeWidth={1}
-								/>
-								<SkiaCircle
-									cx={rawX}
-									cy={currentPressPos.value.y}
-									r={CHART_CONSTANTS.dotSize.outer}
-									color={colors.line}
-								/>
-								<SkiaCircle
-									cx={rawX}
-									cy={currentPressPos.value.y}
-									r={CHART_CONSTANTS.dotSize.inner}
-									color="hsla(0, 0, 100%, 0.25)"
-								/>
-								<SkiaText
-									x={xPos}
-									y={chartBounds.top + 20}
-									text={label}
-									font={font}
-									color={styles.colors.onSurface}
-								/>
-							</>
-						);
-					}}
-				>
-					{({ points, chartBounds }) => {
-						// Update last point position for the pulsating dot and dotted line
-						if (points.y.length > 0) {
-							const point = points.y[points.y.length - 1];
-							lastPointPos.value = {
-								x: point?.x || 0,
-								y: point?.y || 0
-							};
-						}
+							return (
+								<>
+									<SkiaLine
+										p1={{ x: rawX, y: chartBounds.top }}
+										p2={{ x: rawX, y: chartBounds.bottom }}
+										color={styles.chartUIColors.crosshair}
+										strokeWidth={1}
+									/>
+									<SkiaCircle
+										cx={rawX}
+										cy={currentPressPos.value.y}
+										r={CHART_CONSTANTS.dotSize.outer}
+										color={colors.line}
+									/>
+									<SkiaCircle
+										cx={rawX}
+										cy={currentPressPos.value.y}
+										r={CHART_CONSTANTS.dotSize.inner}
+										color={styles.chartUIColors.innerDot}
+									/>
+									<SkiaText
+										x={xPos}
+										y={chartBounds.top + 20}
+										text={label}
+										font={font}
+										color={styles.colors.onSurface}
+									/>
+								</>
+							);
+						}}
+					>
+						{({ points, chartBounds }) => {
+							// Update last point position for the pulsating dot and dotted line
+							if (points.y.length > 0) {
+								const point = points.y[points.y.length - 1];
+								lastPointPos.value = {
+									x: point?.x || 0,
+									y: point?.y || 0
+								};
+							}
 
-						return (
-							<>
-								{/* Area with colored fill based on price trend */}
-								<GradientArea
-									points={points.y}
-									y0={chartBounds.bottom}
-									color={areaColor}
-									gradientColors={gradientColors}
-								/>
+							return (
+								<>
+									{/* Area with colored fill based on price trend */}
+									<GradientArea
+										points={points.y}
+										y0={chartBounds.bottom}
+										color={areaColor}
+										gradientColors={gradientColors}
+									/>
 
-								{/* Chart Line */}
-								<SpringLine
-									key={`line-${chartKey}`}
-									points={points.y}
-									strokeWidth={CHART_CONSTANTS.line.width.main}
-									color={colors.line}
-									dataKey={chartKey}
-								/>
+									{/* Chart Line */}
+									<SpringLine
+										key={`line-${chartKey}`}
+										points={points.y}
+										strokeWidth={CHART_CONSTANTS.line.width.main}
+										color={colors.line}
+										dataKey={chartKey}
+									/>
 
-								{/* Horizontal dotted line from last point */}
-								<HorizontalDottedLine
-									startX={chartBounds.left}
-									endX={lastPointPos.value.x}
-									y={lastPointPos.value.y}
-									color="rgba(255,255,255,0.3)"
-								/>
+									{/* Horizontal dotted line from last point */}
+									<HorizontalDottedLine
+										startX={chartBounds.left}
+										endX={lastPointPos.value.x}
+										y={lastPointPos.value.y}
+										color={styles.chartUIColors.dottedLine}
+									/>
 
-								{/* Pulsating dot on last data point */}
-								<PulsatingDot
-									position={lastPointPos.value}
-									radius={pulseRadius}
-									color={colors.line}
-								/>
-							</>
-						);
-					}}
-				</CartesianChart>
+									{/* Pulsating dot on last data point */}
+									<PulsatingDot
+										position={lastPointPos.value}
+										radius={pulseRadius}
+										color={colors.line}
+									/>
+								</>
+							);
+						}}
+					</CartesianChart>
 				</View>
 			)}
 		</ChartWrapper>
