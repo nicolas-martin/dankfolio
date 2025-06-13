@@ -108,27 +108,16 @@ function ChartWrapper({
 	active: boolean;
 	children: ReactNode;
 }) {
-	const scale = useSharedValue(0.8);
-	const opacity = useSharedValue(0);
+	const opacity = useSharedValue(active ? 1 : 0.7);
 
 	useEffect(() => {
 		if (active) {
-			scale.value = withSpring(1, {
-				stiffness: CHART_CONSTANTS.animation.stiffness.normal,
-				damping: CHART_CONSTANTS.animation.damping.normal,
-				mass: CHART_CONSTANTS.animation.mass.light,
-			});
 			opacity.value = withSpring(1, {
 				stiffness: CHART_CONSTANTS.animation.stiffness.responsive,
 				damping: CHART_CONSTANTS.animation.damping.responsive,
 				mass: CHART_CONSTANTS.animation.mass.light,
 			});
 		} else {
-			scale.value = withSpring(0.9, {
-				stiffness: CHART_CONSTANTS.animation.stiffness.responsive,
-				damping: CHART_CONSTANTS.animation.damping.normal,
-				mass: CHART_CONSTANTS.animation.mass.light,
-			});
 			opacity.value = withSpring(0.7, {
 				stiffness: CHART_CONSTANTS.animation.stiffness.responsive,
 				damping: CHART_CONSTANTS.animation.damping.normal,
@@ -138,7 +127,6 @@ function ChartWrapper({
 	}, [active]);
 
 	const style = useAnimatedStyle(() => ({
-		transform: [{ scale: scale.value }],
 		opacity: opacity.value,
 	}));
 
@@ -317,19 +305,16 @@ export default function CoinChart({
 	// Get the gradient colors
 	const gradientColors = colors.gradient;
 
-	if (loading || !processedChartData.length) {
-		return (
-			<View style={styles.loadingContainer}>
-				<ActivityIndicator animating={true} size="large" testID="loading-indicator" />
-			</View>
-		);
-	}
-
 	const activeX = chartPress.x.value.value;
 
 	return (
 		<ChartWrapper active={!loading}>
-			<View style={styles.chartContainer} testID="coin-chart-container">
+			{loading || !processedChartData.length ? (
+				<View style={styles.loadingContainer}>
+					<ActivityIndicator animating={true} size="large" testID="loading-indicator" />
+				</View>
+			) : (
+				<View style={styles.chartContainer} testID="coin-chart-container">
 				<CartesianChart
 					key={chartKey}
 					data={processedChartData}
@@ -449,7 +434,8 @@ export default function CoinChart({
 						);
 					}}
 				</CartesianChart>
-			</View>
+				</View>
+			)}
 		</ChartWrapper>
 	);
 }
