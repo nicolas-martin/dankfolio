@@ -270,7 +270,7 @@ func TestLoadOrRefreshData_NoTokensFromBirdeye_ClearsTrending(t *testing.T) {
 	testSpecificMocks.Store.On("ListTrendingCoins", ctx).Return([]model.Coin{initialTrendingCoin}, nil).Once()
 
 	// 3. Mock BirdeyeClient.GetTrendingTokens: Simulate Birdeye returning no tokens.
-	testSpecificMocks.BirdeyeClient.On("GetTrendingTokens", ctx).Return(&birdeye.TokenListResponse{Data: []birdeye.TokenDetails{}}, nil).Once()
+	testSpecificMocks.BirdeyeClient.On("GetTrendingTokens", ctx, mock.AnythingOfType("birdeye.TrendingTokensParams")).Return(&birdeye.TokenTrendingResponse{Data: birdeye.TokenTrendingData{Tokens: []birdeye.TokenDetails{}}}, nil).Once()
 
 	// 4. Mock Store.Coins() to return the CoinRepo, then mock CoinRepo.List.
 	// This is for loadOrRefreshData's step of clearing IsTrending on existing coins.

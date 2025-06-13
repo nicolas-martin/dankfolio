@@ -63,7 +63,7 @@ func TestGetTrendingTokens_Success(t *testing.T) {
 
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
-	resp, err := client.GetTrendingTokens(context.Background())
+	resp, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -91,7 +91,7 @@ func TestGetTrendingTokens_HttpError(t *testing.T) {
 	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
-	resp, err := client.GetTrendingTokens(context.Background())
+	resp, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -118,7 +118,7 @@ func TestGetTrendingTokens_JsonDecodingError(t *testing.T) {
 	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
-	resp, err := client.GetTrendingTokens(context.Background())
+	resp, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -171,7 +171,7 @@ func TestGetTrendingTokens_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond) // Shorter than server delay
 	defer cancel()
 
-	resp, err := client.GetTrendingTokens(ctx)
+	resp, err := client.GetTrendingTokens(ctx, birdeyeclient.TrendingTokensParams{})
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -200,7 +200,7 @@ func TestGetTrendingTokens_NoApiKey(t *testing.T) {
 		assert.Equal(t, expectedPath, r.URL.Path)
 
 		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte(`{"success":true,"data":[]}`))
+		_, err := w.Write([]byte(`{"success":true,"data":{"tokens":[]}}`))
 		assert.NoError(t, err)
 	}))
 	defer server.Close()
@@ -210,9 +210,81 @@ func TestGetTrendingTokens_NoApiKey(t *testing.T) {
 
 	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
 
-	_, err := client.GetTrendingTokens(context.Background())
+	_, err := client.GetTrendingTokens(context.Background(), birdeyeclient.TrendingTokensParams{})
 
 	assert.NoError(t, err)
+	mockTracker.AssertExpectations(t)
+}
+
+func TestGetTrendingTokens_WithParameters(t *testing.T) {
+	expectedPath := "/defi/token_trending"
+	mockTracker := telementryMock.NewMockTelemetryAPI(t)
+
+	mockResponse := birdeyeclient.TokenTrendingResponse{
+		Success: true,
+		Data: birdeyeclient.TokenTrendingData{
+			UpdateUnixTime: 1749781930,
+			UpdateTime:     "2025-06-13T02:32:10",
+			Tokens: []birdeyeclient.TokenDetails{
+				{
+					Address:                "TOKEN_MINT_ADDRESS_1",
+					Decimals:               6,
+					Liquidity:              6639095.1170144,
+					LogoURI:                "https://example.com/logo1.png",
+					Name:                   "Token One",
+					Symbol:                 "ONE",
+					Volume24hUSD:           10000.50,
+					Volume24hChangePercent: -29.87,
+					FDV:                    130654709.48,
+					MarketCap:              1000000.75,
+					Rank:                   1,
+					Price:                  1.23,
+					Price24hChangePercent:  62.0,
+					Tags:                   []string{"trending", "solana"},
+				},
+			},
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, testAPIKey, r.Header.Get("X-API-KEY"))
+		assert.Equal(t, "solana", r.Header.Get("x-chain"))
+		assert.Equal(t, "application/json", r.Header.Get("Accept"))
+		assert.Equal(t, expectedPath, r.URL.Path)
+
+		// Verify query parameters
+		query := r.URL.Query()
+		assert.Equal(t, "v24hUSD", query.Get("sort_by"))
+		assert.Equal(t, "desc", query.Get("sort_type"))
+		assert.Equal(t, "10", query.Get("offset"))
+		assert.Equal(t, "20", query.Get("limit"))
+
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(mockResponse)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := birdeyeclient.NewClient(server.Client(), server.URL, testAPIKey, mockTracker)
+
+	mockTracker.On("TrackCall", "birdeye", expectedPath).Return().Once()
+
+	params := birdeyeclient.TrendingTokensParams{
+		SortBy:   "v24hUSD",
+		SortType: "desc",
+		Offset:   10,
+		Limit:    20,
+	}
+
+	resp, err := client.GetTrendingTokens(context.Background(), params)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, mockResponse.Success, resp.Success)
+	assert.Len(t, resp.Data.Tokens, 1)
+	assert.Equal(t, mockResponse.Data.Tokens[0].Address, resp.Data.Tokens[0].Address)
+	assert.Equal(t, mockResponse.Data.Tokens[0].Name, resp.Data.Tokens[0].Name)
+
 	mockTracker.AssertExpectations(t)
 }
 

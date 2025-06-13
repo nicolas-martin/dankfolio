@@ -71,14 +71,13 @@ const CoinDetail: React.FC = () => {
 		}
 
 		const loadData = async () => {
-			// Use different loading states: loading for initial load, isTimeframeLoading for timeframe changes
 			const isInitialLoad = priceHistory.length === 0;
 			if (isInitialLoad) {
 				setLoading(true);
 			} else {
 				setIsTimeframeLoading(true);
 			}
-			
+
 			try {
 				// Ensure displayCoin is not null before passing
 				const result = await fetchPriceHistory(displayCoin!, selectedTimeframe);
@@ -92,9 +91,9 @@ const CoinDetail: React.FC = () => {
 				} else if (result.error) {
 					logger.error('[CoinDetail] Error fetching price history:', result.error);
 					showToast({ type: 'error', message: 'Failed to load chart data.' });
-					setPriceHistory([]); // Clear data on error
+					setPriceHistory([]);
 				}
-			} catch (error: unknown) { // Catch errors from fetchPriceHistory if it throws unexpectedly
+			} catch (error: unknown) {
 				if (error instanceof Error) {
 					logger.error('[CoinDetail] Unexpected error in fetchPriceHistory call:', error.message);
 				} else {
@@ -112,8 +111,7 @@ const CoinDetail: React.FC = () => {
 		};
 
 		loadData();
-		// prevDisplayCoinRef.current = displayCoin; // This ref was for isInitialLoad logic, may not be needed in the same way
-	}, [selectedTimeframe, displayCoin, showToast, priceHistory.length]); // Added priceHistory.length for isInitialLoad check
+	}, [selectedTimeframe, displayCoin, showToast, priceHistory.length]);
 
 
 	const displayData = useMemo(() => {
@@ -136,7 +134,6 @@ const CoinDetail: React.FC = () => {
 			periodChange = ((currentPrice - firstValue) / firstValue) * 100;
 			valueChange = currentPrice - firstValue;
 
-			// Ensure calculated values are not NaN
 			if (isNaN(periodChange)) periodChange = 0;
 			if (isNaN(valueChange)) valueChange = 0;
 		}
@@ -160,7 +157,6 @@ const CoinDetail: React.FC = () => {
 		<View style={styles.priceCard}>
 			<View style={styles.placeholderPadding}>
 				<View style={[styles.flexDirectionRow, { alignItems: 'center', marginBottom: 12 }]}>
-					{/* Note: alignItems and marginBottom are kept inline as they are specific to this layout combination */}
 					<ShimmerPlaceholder
 						width={40}
 						height={40}
