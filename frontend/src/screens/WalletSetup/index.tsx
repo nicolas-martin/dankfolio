@@ -6,6 +6,7 @@ import { useToast } from '@/components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
 import { useWalletSetupLogic, CREATE_WALLET_TITLE, CREATE_WALLET_DESC, IMPORT_WALLET_DESC, CREATING_WALLET_TITLE, CREATING_WALLET_DESC, WALLET_CREATED_TITLE, WALLET_CREATED_DESC } from './scripts';
 import { logger } from '@/utils/logger';
+import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { env } from '@utils/env';
 import { initializeDebugWallet } from '@/utils/debugWallet';
 import TermsModal from '@/components/Common/TermsModal';
@@ -33,8 +34,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		handleRecoveryPhraseChange,
 		isRecoveryPhraseValid,
 		walletInfo,
-		confirmWalletSaved,
-		copyToClipboard
+		confirmWalletSaved
 	} = useWalletSetupLogic(props);
 
 	useEffect(() => {
@@ -229,15 +229,18 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									<View style={styles.walletInfoSection}>
 										<View style={styles.walletInfoHeader}>
 											<Text style={styles.walletInfoLabel}>Public Key</Text>
-											<IconButton
-												icon="content-copy"
-												size={16}
-												onPress={() => {
+											<CopyToClipboard 
+												text={walletInfo.publicKey}
+												onCopy={() => {
 													logger.breadcrumb({ category: 'ui', message: 'Copied public key to clipboard from wallet creation' });
-													copyToClipboard(walletInfo.publicKey, 'Public Key', showToast);
 												}}
-												style={styles.copyButton}
-											/>
+											>
+												<IconButton
+													icon="content-copy"
+													size={16}
+													style={styles.copyButton}
+												/>
+											</CopyToClipboard>
 										</View>
 										<Text style={styles.walletInfoValue}>{walletInfo.publicKey}</Text>
 									</View>
@@ -245,15 +248,18 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									<View style={styles.walletInfoSection}>
 										<View style={styles.walletInfoHeader}>
 											<Text style={styles.walletInfoLabel}>Private Key</Text>
-											<IconButton
-												icon="content-copy"
-												size={16}
-												onPress={() => {
+											<CopyToClipboard 
+												text={walletInfo.privateKey}
+												onCopy={() => {
 													logger.breadcrumb({ category: 'ui', message: 'Copied private key to clipboard from wallet creation' });
-													copyToClipboard(walletInfo.privateKey, 'Private Key', showToast);
 												}}
-												style={styles.copyButton}
-											/>
+											>
+												<IconButton
+													icon="content-copy"
+													size={16}
+													style={styles.copyButton}
+												/>
+											</CopyToClipboard>
 										</View>
 										<Text style={styles.walletInfoValue}>{walletInfo.privateKey}</Text>
 									</View>
@@ -262,15 +268,18 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 										<View style={styles.walletInfoSection}>
 											<View style={styles.walletInfoHeader}>
 												<Text style={styles.walletInfoLabel}>Recovery Phrase</Text>
-												<IconButton
-													icon="content-copy"
-													size={16}
-													onPress={() => {
+												<CopyToClipboard 
+													text={walletInfo.mnemonic}
+													onCopy={() => {
 														logger.breadcrumb({ category: 'ui', message: 'Copied recovery phrase to clipboard from wallet creation' });
-														copyToClipboard(walletInfo.mnemonic, 'Recovery Phrase', showToast);
 													}}
-													style={styles.copyButton}
-												/>
+												>
+													<IconButton
+														icon="content-copy"
+														size={16}
+														style={styles.copyButton}
+													/>
+												</CopyToClipboard>
 											</View>
 											<View style={styles.mnemonicGrid}>
 												{renderMnemonicWords(walletInfo.mnemonic)}

@@ -2,11 +2,10 @@ import React, { useState } from 'react'; // Added useState
 import { View, TouchableOpacity } from 'react-native'; // Added TouchableOpacity
 import { Text, IconButton } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
-import { useToast } from '@components/Common/Toast';
 import { formatPrice, formatValueChange, formatAddress } from '@/utils/numberFormat';
-import { copyToClipboard } from './coindetails_scripts';
 import { useStyles } from './coindetails_styles';
 import CachedImage from '@/components/Common/CachedImage';
+import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import Odometer from '@components/Odometer';
 
 import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Updated import path
@@ -15,7 +14,6 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	price, periodChange, valueChange, period, resolvedIconUrl, name, address,
 }) => {
 	const styles = useStyles();
-	const { showToast } = useToast();
 	const [isZoomModalVisible, setIsZoomModalVisible] = useState(false); // Added state for modal
 
 	// Early return with a placeholder if any required values are invalid
@@ -47,13 +45,13 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					<Text style={styles.addressText} testID="price-display-coin-address">
 						{formatAddress(address, 8, 4)}
 					</Text>
-					<IconButton
-						icon="content-copy"
-						size={16}
-						onPress={() => copyToClipboard(address, 'Address', showToast)}
-						style={styles.copyIconStyle}
-						testID="price-display-copy-address-button"
-					/>
+					<CopyToClipboard text={address} testID="price-display-copy-address-button">
+						<IconButton
+							icon="content-copy"
+							size={16}
+							style={styles.copyIconStyle}
+						/>
+					</CopyToClipboard>
 				</View>
 
 				{/* Price placeholder */}
@@ -95,13 +93,13 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				<Text style={styles.addressText} testID="price-display-coin-address">
 					{formatAddress(address, 8, 4)}
 				</Text>
-				<IconButton
-					icon="content-copy"
-					size={16}
-					onPress={() => copyToClipboard(address, 'Address', showToast)}
-					style={styles.copyIconStyle}
-					testID="price-display-copy-address-button"
-				/>
+				<CopyToClipboard text={address} testID="price-display-copy-address-button">
+					<IconButton
+						icon="content-copy"
+						size={16}
+						style={styles.copyIconStyle}
+					/>
+				</CopyToClipboard>
 			</View>
 
 			{/* Price */}

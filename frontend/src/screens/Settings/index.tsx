@@ -6,12 +6,10 @@ import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './settings_styles';
 import { logger } from '@/utils/logger';
-import { useToast } from '@components/Common/Toast';
-import { copyToClipboard as copyUtil } from '@/screens/Profile/profile_scripts';
+import CopyToClipboard from '@/components/Common/CopyToClipboard';
 
 const Settings: React.FC = () => {
 	const styles = useStyles();
-	const { showToast } = useToast();
 
 	const { themeType, toggleTheme, isLoading: isThemeLoading } = useThemeStore();
 	const isDarkTheme = themeType === 'neon';
@@ -22,9 +20,7 @@ const Settings: React.FC = () => {
 	// In a real app, this would come from a secure source and be handled with extreme care.
 	const privateKeyPlaceholder = '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
-
-	const handleCopyToClipboard = (text: string, label: string) => {
-		copyUtil(text, label, showToast);
+	const handleCopySuccess = (label: string) => {
 		logger.info(`Copied ${label} to clipboard`);
 	};
 
@@ -43,13 +39,17 @@ const Settings: React.FC = () => {
 							left={props => <List.Icon {...props} icon="wallet-outline" />}
 							right={props =>
 								wallet?.address ? (
-									<IconButton
-										{...props}
-										icon="content-copy"
-										size={20}
-										onPress={() => handleCopyToClipboard(wallet.address, 'Public Key')}
-										testID="copy-public-key-button" // Added testID
-									/>
+									<CopyToClipboard 
+										text={wallet.address}
+										onCopy={() => handleCopySuccess('Public Key')}
+										testID="copy-public-key-button"
+									>
+										<IconButton
+											{...props}
+											icon="content-copy"
+											size={20}
+										/>
+									</CopyToClipboard>
 								) : null
 							}
 						/>
