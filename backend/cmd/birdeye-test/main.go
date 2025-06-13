@@ -45,15 +45,42 @@ func main() {
 		Timeout: 30 * time.Second,
 	}
 
-	// Test parameters
-	address := "So11111111111111111111111111111111111111112" // SOL token
+	// Test parameters - let's test our new time calculation logic
+	address := "So11111111111111111111111111111111111111112" // SOL token - should have lots of data
 	addressType := "token"
-	historyType := "1H"
-	timeFrom := time.Now().Add(-24 * time.Hour)
-	timeTo := time.Now()
+	historyType := "1D"
+
+	// Use the same time calculation logic as our fixed service
+	inputTime := time.Date(2025, 6, 13, 3, 21, 33, 0, time.UTC) // Same as the failing request
+	defaultViewDuration := 24 * time.Hour
+	rounding := 10 * time.Minute
+
+	// Calculate time range like our fixed service
+	timeFrom := inputTime.Add(-defaultViewDuration)
+	timeTo := inputTime
+
+	// Apply our new rounding logic
+	roundedTimeFrom := roundDateDown(timeFrom, rounding)
+	roundedTimeTo := roundDateDown(timeTo, rounding)
+
+	// Apply minimum time span adjustment
+	minTimeSpan := defaultViewDuration / 4
+	if roundedTimeTo.Sub(roundedTimeFrom) < minTimeSpan {
+		roundedTimeFrom = roundedTimeTo.Add(-defaultViewDuration)
+	}
+
+	actualTimeSpan := roundedTimeTo.Sub(roundedTimeFrom)
+
+	log.Printf("🎯 Testing with our FIXED time calculation logic:")
+	log.Printf("   Address: %s", address)
+	log.Printf("   Type: %s", historyType)
+	log.Printf("   Input time: %s", inputTime.Format("2006-01-02 15:04:05 UTC"))
+	log.Printf("   Time From: %s (Unix: %d)", roundedTimeFrom.Format("2006-01-02 15:04:05 UTC"), roundedTimeFrom.Unix())
+	log.Printf("   Time To: %s (Unix: %d)", roundedTimeTo.Format("2006-01-02 15:04:05 UTC"), roundedTimeTo.Unix())
+	log.Printf("   Time Span: %v", actualTimeSpan)
 
 	// Build URL manually first
-	baseURL := endpoint + "/defi"
+	baseURL := endpoint
 	queryParams := url.Values{}
 	queryParams.Add("address", address)
 	queryParams.Add("address_type", addressType)
@@ -161,4 +188,29 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// Helper function for rounding (copied from our service)
+func roundDateDown(dateToRound time.Time, granularityMinutes time.Duration) time.Time {
+	if granularityMinutes <= 0 {
+		log.Printf("⚠️  roundDateDown called with zero granularityMinutes, returning original time")
+		return dateToRound
+	}
+
+	// Convert granularity to minutes for proper rounding
+	granularityInMinutes := int(granularityMinutes / time.Minute)
+	if granularityInMinutes <= 0 {
+		granularityInMinutes = 1 // Default to 1 minute if invalid
+	}
+
+	// Truncate to the hour first, then add back the rounded minutes
+	truncatedToHour := dateToRound.Truncate(time.Hour)
+
+	// Get the minutes past the hour
+	minutesPastHour := dateToRound.Minute()
+
+	// Round down to the nearest granularity
+	roundedMinutes := (minutesPastHour / granularityInMinutes) * granularityInMinutes
+
+	return truncatedToHour.Add(time.Duration(roundedMinutes) * time.Minute)
 }

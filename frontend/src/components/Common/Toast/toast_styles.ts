@@ -36,8 +36,8 @@ export const useStyles = () => {
 		},
 		snackbarStyleBase: {
 			borderRadius: theme.spacing.sm,
-			marginHorizontal: insets.left + 10,
 			elevation: 4,
+			marginHorizontal: insets.left + 10,
 			shadowColor: '#000',
 			shadowOffset: {
 				width: 0,
@@ -47,8 +47,8 @@ export const useStyles = () => {
 			shadowRadius: 3.84,
 		},
 		statusIcon: {
-			marginRight: theme.spacing.sm,
 			backgroundColor: 'transparent',
+			marginRight: theme.spacing.sm,
 		},
 		success: {
 			backgroundColor: theme.success,

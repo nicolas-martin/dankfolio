@@ -13,8 +13,8 @@ import (
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	birdeyeclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye/mocks"
-	clientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/mocks"
 	jupiterclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
+	clientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/mocks"
 	offchainClientMocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	dbDataStoreMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
@@ -115,7 +115,6 @@ func TestGetCoinByIDRefactored_Success(t *testing.T) {
 	setup.Mocks.Store.Mock.ExpectedCalls = removeCall(setup.Mocks.Store.Mock.ExpectedCalls, "Coins")
 	setup.Mocks.Store.On("Coins").Return(setup.Mocks.CoinRepo).Once()
 
-
 	setup.Mocks.CoinRepo.On("Get", ctx, idStr).Return(expectedCoin, nil).Once()
 
 	coin, err := setup.Service.GetCoinByID(ctx, idStr)
@@ -212,15 +211,14 @@ func TestGetCoinsRefactored_Success(t *testing.T) {
 // removeCall is a helper to filter out specific expected calls from a slice of calls.
 // This is useful for overriding Maybe() calls from a shared setup.
 func removeCall(calls []*mock.Call, methodName string) []*mock.Call {
-    var filtered []*mock.Call
-    for _, call := range calls {
-        if call.Method != methodName {
-            filtered = append(filtered, call)
-        }
-    }
-    return filtered
+	var filtered []*mock.Call
+	for _, call := range calls {
+		if call.Method != methodName {
+			filtered = append(filtered, call)
+		}
+	}
+	return filtered
 }
-
 
 func TestLoadOrRefreshData_NoTokensFromBirdeye_ClearsTrending(t *testing.T) {
 	ctx := context.Background()
@@ -249,7 +247,6 @@ func TestLoadOrRefreshData_NoTokensFromBirdeye_ClearsTrending(t *testing.T) {
 		chainClient:    testSpecificMocks.SolanaClient,
 		apiTracker:     testSpecificMocks.TelemetryAPI,
 	}
-
 
 	oldTime := time.Now().Add(-(TrendingDataTTL + time.Hour)) // Ensure it's older than TTL
 	oldTimeStr := oldTime.Format(time.RFC3339)
@@ -283,11 +280,12 @@ func TestLoadOrRefreshData_NoTokensFromBirdeye_ClearsTrending(t *testing.T) {
 	// 5. Mock CoinRepo.BulkUpsert: Expect the initialTrendingCoin to be updated.
 	var capturedCoinsForBulkUpsert []model.Coin
 	testSpecificMocks.CoinRepo.On("BulkUpsert", ctx, mock.MatchedBy(func(coins *[]model.Coin) bool {
-		if coins == nil || len(*coins) != 1 { return false }
+		if coins == nil || len(*coins) != 1 {
+			return false
+		}
 		capturedCoinsForBulkUpsert = *coins // Capture for assertion
 		return (*coins)[0].ID == initialTrendingCoin.ID
 	})).Return(int64(1), nil).Once()
-
 
 	// --- Execute the target logic: Directly call loadOrRefreshData ---
 	err := service.loadOrRefreshData(ctx)
@@ -311,7 +309,6 @@ func TestLoadOrRefreshData_NoTokensFromBirdeye_ClearsTrending(t *testing.T) {
 	testSpecificMocks.CoinRepo.AssertExpectations(t)
 	testSpecificMocks.BirdeyeClient.AssertExpectations(t)
 }
-
 
 // Helper functions for pointers
 func PintRefactored(i int) *int          { return &i }
