@@ -18,6 +18,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
+	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import the new util package
 )
 
 // Service handles coin-related operations
@@ -111,18 +112,23 @@ func (s *Service) Shutdown() {
 }
 
 // GetCoins returns a list of all available coins
-func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
-	coins, err := s.store.Coins().List(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list coins: %w", err)
+func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int64, error) {
+	// If no sort order is specified, default to sorting by Volume24h descending.
+	if opts.SortBy == nil || *opts.SortBy == "" {
+		defaultSortBy := "volume_24h"
+		defaultSortDesc := true
+		opts.SortBy = &defaultSortBy
+		opts.SortDesc = &defaultSortDesc
 	}
 
-	// Sort by volume descending
-	sort.Slice(coins, func(i, j int) bool {
-		return coins[i].Volume24h > coins[j].Volume24h
-	})
+	coins, totalCount, err := s.store.Coins().List(ctx, opts)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list coins: %w", err)
+	}
 
-	return coins, nil
+	// In-memory sorting is removed as it's now handled by the database.
+
+	return coins, totalCount, nil
 }
 
 // GetTrendingCoins returns only the coins loaded from the trending file
@@ -171,6 +177,10 @@ func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, e
 // It first checks the 'coins' table. If not found, it checks 'raw_coins'
 // and enriches from there. If not in 'raw_coins' either, it enriches from scratch.
 func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string) (*model.Coin, error) {
+	if !util.IsValidSolanaAddress(mintAddress) {
+		return nil, fmt.Errorf("invalid mint_address: %s", mintAddress)
+	}
+
 	// Try fetching from the 'coins' table first (enriched coins)
 	coin, err := s.store.Coins().GetByField(ctx, "mint_address", mintAddress)
 	if err == nil {
@@ -547,6 +557,18 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 // SearchCoins searches for coins using the DB's SearchCoins (custom store method)
 // It now accepts db.ListOptions for pagination/sorting and returns a total count (currently estimated).
 func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, opts db.ListOptions) ([]model.Coin, int32, error) {
+	if len(query) > 256 {
+		return nil, 0, fmt.Errorf("query string too long (max 256 chars): %d", len(query))
+	}
+	for i, tag := range tags {
+		if len(tag) > 64 {
+			return nil, 0, fmt.Errorf("tag at index %d too long (max 64 chars): %s", i, tag)
+		}
+	}
+	if minVolume24h < 0 {
+		return nil, 0, fmt.Errorf("min_volume_24h cannot be negative: %f", minVolume24h)
+	}
+
 	var limit, offset int32
 	var sortBy string
 	var sortDesc bool
