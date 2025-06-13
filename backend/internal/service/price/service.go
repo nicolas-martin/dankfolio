@@ -67,9 +67,9 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrame
 	cacheKey := fmt.Sprintf("%s-%s", address, timeFrameConfig.HistoryType)
 
 	if debugMode, ok := ctx.Value(model.DebugModeKey).(bool); ok && debugMode {
-		slog.Info("generating random price history")
+		slog.Info("🎲 generating random price history")
 
-		randomHistory, err := s.generateRandomPriceHistory(address, timeFrameConfig.BirdeyeType) // Pass BirdeyeType from resolved config
+		randomHistory, err := s.generateRandomPriceHistory()
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate random price history: %w", err)
 		}
@@ -107,19 +107,10 @@ func (s *Service) GetPriceHistory(ctx context.Context, address string, timeFrame
 			"minTimeSpan", minTimeSpan)
 	}
 
-	slog.Info("Time parameters",
-		"inputTime", parsedTime,
-		"originalTimeFrom", timeFrom,
-		"roundedTimeFrom", roundedTimeFrom,
-		"originalTimeTo", timeTo,
-		"roundedTimeTo", roundedTimeTo,
-		"timeSpan", roundedTimeTo.Sub(roundedTimeFrom),
-		"defaultViewDuration", timeFrameConfig.DefaultViewDuration)
-
 	params := birdeye.PriceHistoryParams{
 		Address:     address,
 		AddressType: addressType,
-		HistoryType: timeFrameConfig.BirdeyeType, // Use BirdeyeType from resolved config
+		HistoryType: timeFrameConfig.BirdeyeType,
 		TimeFrom:    roundedTimeFrom,
 		TimeTo:      roundedTimeTo,
 	}
@@ -152,7 +143,7 @@ func (s *Service) GetCoinPrices(ctx context.Context, tokenAddresses []string) (m
 	return prices, nil
 }
 
-func (s *Service) generateRandomPriceHistory(address string, historyTypeKey string) (*birdeye.PriceHistory, error) {
+func (s *Service) generateRandomPriceHistory() (*birdeye.PriceHistory, error) {
 	numPoints := 100
 	volatility := 0.03
 	trendBias := rand.Float64()*2 - 1
