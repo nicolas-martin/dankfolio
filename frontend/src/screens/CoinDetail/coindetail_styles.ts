@@ -99,9 +99,11 @@ export const useStyles = () => {
 		},
 		flex1: { // New
 			flex: 1,
+			minWidth: 0, // Prevent overflow
 		},
 		flexDirectionRow: { // New
 			flexDirection: 'row',
+			justifyContent: 'space-between',
 		},
 		holdingsCard: {
 			backgroundColor: theme.colors.surface,
@@ -226,15 +228,25 @@ export const useStyles = () => {
 			paddingBottom: 100, // No exact match
 			paddingTop: theme.spacing.sm,
 		},
+		timeframeButton: {
+			flex: 1,
+			minWidth: 0,
+			paddingHorizontal: theme.spacing.xs,
+		},
 		timeframeButtonsContainer: { // Legacy
 			// This will be replaced by timeframeCard
+		},
+		timeframeButtonsRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-evenly',
+			width: '100%',
 		},
 		timeframeCard: {
 			backgroundColor: theme.colors.surface,
 			borderRadius: theme.borderRadius.lg,
 			marginBottom: theme.spacing.lg,
 			marginHorizontal: theme.spacing.lg,
-			padding: theme.spacing.md,
+			padding: theme.spacing.sm,
 			...Platform.select({
 				ios: {
 					shadowColor: theme.shadows.sm.shadowColor,
