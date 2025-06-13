@@ -406,6 +406,10 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 				// To ensure rollback on these, return an error:
 				// return fmt.Errorf("failed to store all enriched coins: %s", strings.Join(storeErrors, "; "))
 			}
+		} else {
+			slog.Info("No new trending coins to store from this refresh.",
+				slog.Time("fetch_timestamp", enrichedCoins.FetchTimestamp),
+				slog.Int("incoming_enriched_coin_count", len(enrichedCoins.Coins))) // This will be 0
 		}
 
 		slog.Info("Coin store refresh transaction part complete",

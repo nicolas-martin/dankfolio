@@ -29,12 +29,18 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 	slog.Info("Starting trending token fetch and enrichment process...")
 
 	// Step 1: Get trending tokens from Birdeye
+	fetchTime := time.Now() // Capture fetch attempt time
 	birdeyeTokens, err := s.birdeyeClient.GetTrendingTokens(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trending tokens from Birdeye: %w", err)
 	}
+
 	if len(birdeyeTokens.Data) == 0 {
-		return nil, fmt.Errorf("no trending tokens received from Birdeye")
+		slog.Info("No trending tokens received from Birdeye. Proceeding with empty set.")
+		return &TrendingTokensOutput{
+			FetchTimestamp: fetchTime, // Use captured time
+			Coins:          []model.Coin{},
+		}, nil
 	}
 	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens.Data))
 
@@ -57,18 +63,28 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 	}
 
 	// Step 2: Enrich the scraped tokens concurrently
-	enrichedCoins, err := s.processBirdeyeTokens(ctx, scrapedTokens)
+	enrichedCoins, err := s.processBirdeyeTokens(ctx, scrapedTokens) // scrapedTokens will be empty if birdeyeTokens.Data was empty
 	if err != nil {
-		return nil, fmt.Errorf("encountered errors during enrichment process: %v", err)
+		// This path should ideally not be hit if scrapedTokens is empty,
+		// as processBirdeyeTokens should handle empty input gracefully.
+		// If it is hit, it implies an issue in processBirdeyeTokens with empty input
+		// or a genuine error during an attempted enrichment (if scrapedTokens wasn't empty).
+		return nil, fmt.Errorf("error during token enrichment process: %w", err)
 	}
-	if len(enrichedCoins) == 0 {
-		return nil, fmt.Errorf("enrichment process completed, but no tokens were successfully enriched (or survived errors)")
+
+	// If birdeyeTokens.Data was NOT empty, but enrichment resulted in ZERO coins,
+	// this is a case to log carefully.
+	if len(birdeyeTokens.Data) > 0 && len(enrichedCoins) == 0 {
+		slog.Warn("Birdeye provided trending tokens, but none were successfully enriched.")
+		// We will still return an empty set and no error to allow the refresh cycle to complete.
 	}
-	slog.Info("Enrichment process complete", "successful_tokens", len(enrichedCoins))
+	// If birdeyeTokens.Data was empty, then enrichedCoins will also be empty here, which is expected.
+
+	slog.Info("Enrichment process complete", "input_from_birdeye_count", len(birdeyeTokens.Data), "successful_enriched_count", len(enrichedCoins))
 
 	// Step 3: Prepare the final output
 	finalOutput := &TrendingTokensOutput{
-		FetchTimestamp: time.Now(),
+		FetchTimestamp: fetchTime, // Use captured time
 		Coins:          enrichedCoins,
 	}
 
