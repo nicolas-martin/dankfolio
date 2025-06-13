@@ -314,10 +314,10 @@ const CoinDetail: React.FC = () => {
 						value: tf.value,
 						testID: `coin-detail-timeframe-button-${tf.value}`,
 						label: tf.label,
-						style: styles.flex1 // Ensure equal distribution
+						style: styles.timeframeButton
 					}))}
 					density="small"
-					style={styles.flexDirectionRow}
+					style={styles.timeframeButtonsRow}
 				/>
 			</View>
 		);
