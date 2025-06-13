@@ -1,10 +1,11 @@
 import React, { useCallback } from 'react';
 import { View, TouchableOpacity, Dimensions } from 'react-native';
 import { Text } from 'react-native-paper';
-import CachedImage from '@/components/Common/CachedImage';
+// CachedImage might not be directly used if CoinInfoBlock handles its own image
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
-import SparklineChart from '@/components/Chart/SparklineChart'; // Added import
+import SparklineChart from '@/components/Chart/SparklineChart';
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '@/utils/numberFormat';
+import CoinInfoBlock from '@/components/Common/CoinInfoBlock'; // Import CoinInfoBlock
 import { CoinCardProps } from './coincard_types';
 import { useStyles } from './coincard_styles';
 import { logger } from '@/utils/logger';
@@ -13,7 +14,7 @@ const cardWidth = Dimensions.get('window').width * 0.45; // Example: 45% of scre
 
 const CoinCard: React.FC<CoinCardProps> = ({
 	coin,
-	onPress,
+	onPressCoin, // Changed from onPress to onPressCoin
 	isHorizontal,
 	priceHistory,
 	isPriceHistoryLoading,
@@ -23,37 +24,35 @@ const CoinCard: React.FC<CoinCardProps> = ({
 	const styles = useStyles();
 
 	const handlePress = useCallback(() => {
-		logger.info(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.mintAddress);
-		onPress(coin);
-	}, [coin, onPress, isHorizontal]);
+		if (onPressCoin) {
+			logger.info(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.mintAddress);
+			onPressCoin(coin);
+		}
+	}, [coin, onPressCoin, isHorizontal]);
 
-	// Memoize the image load/error handlers
-	const handleImageLoad = useCallback(() => {
-		logger.info(`[CoinCard LOG] renderCoinIcon complete for ${coin.symbol}: ${coin.resolvedIconUrl}`);
-	}, [coin.symbol, coin.resolvedIconUrl]);
+	// Memoize the image load/error handlers (no longer needed if CachedImage is only in CoinInfoBlock)
+	// const handleImageLoad = useCallback(() => { ... });
+	// const handleImageError = useCallback(() => { ... });
 
-	const handleImageError = useCallback(() => {
-		logger.warn(`[CoinCard LOG] renderCoinIcon error for ${coin.symbol}: ${coin.resolvedIconUrl}`);
-	}, [coin.symbol, coin.resolvedIconUrl]);
+	// renderCoinIcon is no longer needed if CoinInfoBlock handles the icon
+	// const renderCoinIcon = (size = 36) => { ... };
 
-	const renderCoinIcon = (size = 36) => { // Smaller icon size
-		logger.info(`[CoinCard LOG] renderCoinIcon load for ${coin.symbol}: ${coin.resolvedIconUrl}`);
-		return (
-			<View style={isHorizontal ? styles.horizontalLogoContainer : styles.logo}>
+	if (isHorizontal) {
+		// Horizontal layout might also use CoinInfoBlock if adaptable, or remain custom.
+		// For this pass, focusing on the vertical layout's leftSection.
+		// Assuming horizontal layout remains as is for now, or could be a separate refactor.
+		const iconForHorizontal = (
+			<View style={styles.horizontalLogoContainer}>
 				{coin.resolvedIconUrl && (
 					<CachedImage
 						uri={coin.resolvedIconUrl}
-						size={size}
+						size={32} // Specific size for horizontal
 						testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
-						onLoad={handleImageLoad}
-						onError={handleImageError}
 					/>
 				)}
 			</View>
 		);
-	};
 
-	if (isHorizontal) {
 		return (
 			<TouchableOpacity
 				style={styles.horizontalCard}
@@ -126,29 +125,18 @@ const CoinCard: React.FC<CoinCardProps> = ({
 			activeOpacity={0.7}
 		>
 			<View style={styles.content}>
-				<View style={styles.leftSection}>
-					{renderCoinIcon()}
-					<View style={styles.nameSection}>
-										<Text
-					style={styles.symbol}
-					numberOfLines={1}
-					testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}
-							accessible={true}
-							accessibilityRole="text"
-						>
-							{coin.symbol}
-						</Text>
-						{coin.balance !== undefined ? (
-							<Text style={styles.balance} numberOfLines={1}>
-								{formatTokenBalance(coin.balance)}
-							</Text>
-						) : (
-							<Text style={styles.name} numberOfLines={1}>
-								{coin.name}
-							</Text>
-						)}
-					</View>
-				</View>
+				<CoinInfoBlock
+					containerStyle={styles.leftSection}
+					iconUri={coin.resolvedIconUrl}
+					iconSize={36} // Default vertical size
+					primaryText={coin.symbol}
+					secondaryText={coin.balance !== undefined ? formatTokenBalance(coin.balance) : coin.name}
+					primaryTextStyle={styles.symbol}
+					secondaryTextStyle={coin.balance !== undefined ? styles.balance : styles.name}
+					// iconStyle={styles.logo} // If specific styling needed for the icon wrapper itself
+					textContainerStyle={styles.nameSection}
+					testIdPrefix={testIdPrefix} // Pass down for testing if CoinInfoBlock supports it
+				/>
 
 				{/* Sparkline in the middle */}
 				{showSparkline && (
@@ -218,9 +206,10 @@ export default React.memo(CoinCard, (prevProps, nextProps) => {
 		prevProps.coin.value === nextProps.coin.value &&
 		prevProps.coin.dailyVolume === nextProps.coin.dailyVolume &&
 		prevProps.isHorizontal === nextProps.isHorizontal &&
-		prevProps.priceHistory === nextProps.priceHistory && // Added prop
-		prevProps.isPriceHistoryLoading === nextProps.isPriceHistoryLoading && // Added prop
-		prevProps.showSparkline === nextProps.showSparkline && // Added prop
-		prevProps.testIdPrefix === nextProps.testIdPrefix // Added prop
+		prevProps.priceHistory === nextProps.priceHistory &&
+		prevProps.isPriceHistoryLoading === nextProps.isPriceHistoryLoading &&
+		prevProps.showSparkline === nextProps.showSparkline &&
+		prevProps.testIdPrefix === nextProps.testIdPrefix &&
+		prevProps.onPressCoin === nextProps.onPressCoin // Added onPressCoin to comparison
 	);
 });

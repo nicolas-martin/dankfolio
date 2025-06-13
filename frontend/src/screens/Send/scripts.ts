@@ -9,7 +9,10 @@ import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { ToastProps } from '@components/Common/Toast/toast_types';
 import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import { logger } from '@/utils/logger';
+// formatBalance import from numberFormat is already present and used as 'formatBalance'
+// No change needed here, just ensure the local formatTokenBalance function is removed later.
 import { formatTokenBalance as formatBalance } from '@/utils/numberFormat';
+
 
 export const handleTokenSelect = (
 	coin: Coin,
@@ -192,96 +195,15 @@ export const handleTokenTransfer = async (formData: TokenTransferFormData): Prom
 	}
 };
 
-export const formatTokenBalance = (balance: number): string => {
-	return balance.toLocaleString(undefined, {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 6
-	});
-};
+// Removed local formatTokenBalance. The import aliasing 'formatTokenBalance as formatBalance'
+// from '@/utils/numberFormat' is already in use by validateForm.
 
 export const getDefaultSolanaToken = (tokens: PortfolioToken[]): PortfolioToken | undefined => {
 	return tokens.find(t => t.coin.symbol === 'SOL');
 };
 
-// --- Polling Functions ---
-export const stopPolling = (
-	pollingIntervalRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
-	setIsLoadingTrade: (loading: boolean) => void
-) => {
-	if (pollingIntervalRef.current) {
-		clearInterval(pollingIntervalRef.current);
-		pollingIntervalRef.current = null;
-		logger.info('Polling stopped.');
-	}
-	setIsLoadingTrade(false);
-};
-
-export const pollTransactionStatus = async (
-	txHash: string,
-	setPollingConfirmations: (confirmations: number) => void,
-	setPollingStatus: (status: PollingStatus) => void,
-	setPollingError: (error: string | null) => void,
-	stopPollingFn: () => void,
-	showToast: (params: ToastProps) => void,
-	wallet: Wallet | null
-) => {
-	logger.info(`Polling status for ${txHash}...`);
-	try {
-		const statusResult = await grpcApi.getSwapStatus(txHash);
-
-		if (!statusResult) {
-			logger.info('Transaction status not found yet, continuing poll...', { txHash });
-			return;
-		}
-
-		setPollingConfirmations(statusResult.confirmations);
-
-		if (statusResult.error) {
-			logger.error('Transaction failed during polling (Send Screen):', { error: statusResult.error, txHash });
-			logger.breadcrumb({ category: 'send_tokens', level: 'error', message: 'Token transfer failed on backend (Send Screen)', data: { txHash, error: statusResult.error } });
-			setPollingStatus('failed');
-			setPollingError(typeof statusResult.error === 'string' ? statusResult.error : JSON.stringify(statusResult.error));
-			stopPollingFn();
-		} else if (statusResult.finalized) {
-			logger.info('Transaction finalized (Send Screen)!', { txHash });
-			logger.breadcrumb({ category: 'send_tokens', message: 'Token transfer finalized (Send Screen)', data: { txHash } });
-			setPollingStatus('finalized');
-			stopPollingFn();
-			if (wallet) {
-				usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
-			}
-			// Removed toast notification - status modal already shows finalization
-		} else if (statusResult.status === 'confirmed' || statusResult.status === 'processed') {
-			logger.info(`Transaction confirmed with ${statusResult.confirmations} confirmations, waiting for finalization (Send Screen)...`, { txHash });
-			setPollingStatus('confirmed');
-		} else {
-			logger.info(`Current status: ${statusResult.status}, continuing poll (Send Screen)...`, { txHash, status: statusResult.status });
-			setPollingStatus('polling');
-		}
-	} catch (error: unknown) {
-		logger.exception(error, { functionName: 'pollTransactionStatus', context: 'SendScreen', params: { txHash } });
-		setPollingStatus('failed');
-		setPollingError(error instanceof Error ? error.message : 'Failed to fetch transaction status');
-		stopPollingFn();
-	}
-};
-
-export const startPolling = (
-	txHash: string,
-	pollFn: () => Promise<void>,
-	stopPollingFn: () => void,
-	pollingIntervalRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
-) => {
-	// Execute first poll immediately
-	pollFn();
-
-	// Set up interval for subsequent polls
-	pollingIntervalRef.current = setInterval(pollFn, 2000);
-
-	// Safety timeout after 5 minutes
-	setTimeout(() => {
-		if (pollingIntervalRef.current) {
-			stopPollingFn();
-		}
-	}, 5 * 60 * 1000);
-}; 
+// --- Polling Functions (stopPolling, pollTransactionStatus, startPolling) ---
+// These functions have been removed as their logic is now encapsulated within
+// the useTransactionPolling hook (frontend/src/hooks/useTransactionPolling.ts).
+// The SendScreen component (frontend/src/screens/Send/index.tsx) now utilizes
+// this hook for managing transaction polling state and lifecycle.

@@ -1,14 +1,15 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Dimensions, TouchableOpacity, Linking } from 'react-native';
+import React from 'react'; // Removed useRef, useEffect
+import { View, TouchableOpacity, Linking } from 'react-native'; // Removed Dimensions
 import { Text, Button, Icon } from 'react-native-paper';
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { BlurView } from 'expo-blur';
+// BottomSheet specific imports will be handled by ManagedBottomSheetModal
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
+import ManagedBottomSheetModal from '@/components/Common/BottomSheet/ManagedBottomSheetModal'; // Import new modal
 import { useStyles } from './styles';
 import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
-import { formatPrice } from '@/utils/numberFormat';
+import { formatPrice, formatAddress as utilFormatAddress } from '@/utils/numberFormat';
+import ModalActionButtons from '@/components/Common/ModalActionButtons'; // Import ModalActionButtons
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,
@@ -24,33 +25,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	recipientAddress,
 }) => {
 	const styles = useStyles();
-	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-
-	useEffect(() => {
-		if (isVisible) {
-			bottomSheetModalRef.current?.present();
-		} else {
-			bottomSheetModalRef.current?.dismiss();
-		}
-	}, [isVisible]);
-
-	// Custom backdrop component with blur
-	const renderBackdrop = (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
-		<BottomSheetBackdrop
-			{...props}
-			disappearsOnIndex={-1}
-			appearsOnIndex={0}
-			opacity={0.8}
-			onPress={onClose}
-			// Accessibility properties for testing frameworks
-			accessible={true}
-			accessibilityRole="button"
-			accessibilityLabel="Close trade confirmation modal"
-			accessibilityHint="Tap to close the modal"
-		>
-			<BlurView intensity={20} style={styles.blurViewStyle} />
-		</BottomSheetBackdrop>
-	);
+	// bottomSheetModalRef and useEffect for visibility are now handled by ManagedBottomSheetModal
+	// renderBackdrop is also handled by ManagedBottomSheetModal by default
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
 		if (!token.resolvedIconUrl) {
@@ -74,10 +50,10 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		}
 	};
 
-	const formatAddress = (address: string) => {
-		if (address.length <= 12) return address;
-		return `${address.slice(0, 6)}...${address.slice(-6)}`;
-	};
+	// const formatAddress = (address: string) => { // Removed local implementation
+	// 	if (address.length <= 12) return address;
+	// 	return `${address.slice(0, 6)}...${address.slice(-6)}`;
+	// };
 
 	const renderTokenRow = (
 		token: Coin,
@@ -98,7 +74,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 							<Text style={styles.tokenSymbol}>To</Text>
 							<TouchableOpacity onPress={handleSolscanPress} testID="solscan-link">
 								<Text style={[styles.tokenName, styles.recipientAddressLink, { color: styles.colors.primary }]}>
-									{formatAddress(amount)}
+									{utilFormatAddress(amount, 6, 6)}
 								</Text>
 							</TouchableOpacity>
 						</>
@@ -134,43 +110,43 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		</View>
 	);
 
-	const renderActionButtons = () => {
-		const cancelTestId = `cancel-${operationType}-button`;
-		const confirmTestId = `confirm-${operationType}-button`;
-		const actionLabel = operationType;
+	// const renderActionButtons = () => { // Replaced by ModalActionButtons
+	// 	const cancelTestId = `cancel-${operationType}-button`;
+	// 	const confirmTestId = `confirm-${operationType}-button`;
+	// 	const actionLabel = operationType;
 
-		return (
-			<View style={styles.buttonContainer}>
-				<Button
-					mode="outlined"
-					onPress={onClose}
-					style={styles.cancelButton}
-					labelStyle={styles.cancelButtonLabel}
-					disabled={isLoading}
-					testID={cancelTestId}
-					accessible={true}
-					accessibilityRole="button"
-					accessibilityLabel={`Cancel ${actionLabel}`}
-				>
-					Cancel
-				</Button>
-				<Button
-					mode="contained"
-					onPress={onConfirm}
-					style={styles.confirmButton}
-					labelStyle={styles.confirmButtonLabel}
-					loading={isLoading}
-					disabled={isLoading}
-					testID={confirmTestId}
-					accessible={true}
-					accessibilityRole="button"
-					accessibilityLabel={isLoading ? `Processing ${actionLabel}` : `Confirm ${actionLabel}`}
-				>
-					{isLoading ? 'Processing...' : 'Confirm'}
-				</Button>
-			</View>
-		);
-	};
+	// 	return (
+	// 		<View style={styles.buttonContainer}>
+	// 			<Button
+	// 				mode="outlined"
+	// 				onPress={onClose}
+	// 				style={styles.cancelButton}
+	// 				labelStyle={styles.cancelButtonLabel}
+	// 				disabled={isLoading}
+	// 				testID={cancelTestId}
+	// 				accessible={true}
+	// 				accessibilityRole="button"
+	// 				accessibilityLabel={`Cancel ${actionLabel}`}
+	// 			>
+	// 				Cancel
+	// 			</Button>
+	// 			<Button
+	// 				mode="contained"
+	// 				onPress={onConfirm}
+	// 				style={styles.confirmButton}
+	// 				labelStyle={styles.confirmButtonLabel}
+	// 				loading={isLoading}
+	// 				disabled={isLoading}
+	// 				testID={confirmTestId}
+	// 				accessible={true}
+	// 				accessibilityRole="button"
+	// 				accessibilityLabel={isLoading ? `Processing ${actionLabel}` : `Confirm ${actionLabel}`}
+	// 			>
+	// 				{isLoading ? 'Processing...' : 'Confirm'}
+	// 			</Button>
+	// 		</View>
+	// 	);
+	// };
 
 	const renderLoadingState = () => {
 		const title = operationType === 'send' ? 'Confirm Send' : 'Confirm Trade';
@@ -223,35 +199,33 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				</View>
 
 				{/* Action Buttons */}
-				{renderActionButtons()}
+				<ModalActionButtons
+					primaryButtonText={isLoading ? 'Processing...' : 'Confirm'}
+					onPrimaryButtonPress={onConfirm}
+					primaryButtonLoading={isLoading}
+					primaryButtonDisabled={isLoading}
+					primaryButtonTestID={`confirm-${operationType}-button`}
+					secondaryButtonText="Cancel"
+					onSecondaryButtonPress={onClose}
+					secondaryButtonDisabled={isLoading}
+					secondaryButtonTestID={`cancel-${operationType}-button`}
+				/>
 			</View>
 		);
 	};
 
+	// Determine snap points, could be dynamic or fixed
+	const snapPoints = React.useMemo(() => ['80%'], []); // Example fixed snap point
+
 	return (
-		<BottomSheetModal
-			ref={bottomSheetModalRef}
-			snapPoints={[Dimensions.get('window').height * 0.95]}
-			onDismiss={onClose}
-			backgroundStyle={styles.bottomSheetBackground}
-			handleIndicatorStyle={styles.handleIndicator}
-			enablePanDownToClose={true}
-			enableDismissOnClose={true}
-			backdropComponent={renderBackdrop}
-			// Official Maestro solution for nested components on iOS
-			// Disable accessibility on the outer container to allow inner components to be accessible
-			accessible={false}
+		<ManagedBottomSheetModal
+			isVisible={isVisible}
+			onClose={onClose}
+			snapPoints={snapPoints}
+			// title={operationType === 'send' ? 'Confirm Send' : 'Confirm Trade'} // Title can be passed to ManagedBottomSheetModal if it supports it
 		>
-			<BottomSheetView
-				style={styles.blurViewStyle}
-				// Parent container should be accessible={false}
-				accessible={false}
-				// Android specific - ensure content is accessible
-				importantForAccessibility="yes"
-			>
-				{renderContent()}
-			</BottomSheetView>
-		</BottomSheetModal>
+			{renderContent()}
+		</ManagedBottomSheetModal>
 	);
 };
 

@@ -1,9 +1,10 @@
 import React, { useCallback } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native'; // Keep View if needed for layout
 import { Text } from 'react-native-paper';
-import CachedImage from '@/components/Common/CachedImage';
+// CachedImage might not be directly used if CoinInfoBlock handles its own image
 import { formatPercentage } from '@/utils/numberFormat';
 import { formatTimeAgo } from '@/utils/timeFormat';
+import CoinInfoBlock from '@/components/Common/CoinInfoBlock'; // Import CoinInfoBlock
 import { HorizontalTickerCardProps } from './types';
 import { useStyles } from './styles';
 
@@ -27,18 +28,21 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 			accessibilityHint="Double tap to view coin details"
 			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 		>
-			<View style={styles.logoContainer}>
-				{coin.resolvedIconUrl && (
-					<CachedImage
-						uri={coin.resolvedIconUrl}
-						size={48}
-						testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
-					/>
-				)}
-			</View>
-			<Text style={styles.symbol} numberOfLines={1} testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}>
+			<CoinInfoBlock
+				iconUri={coin.resolvedIconUrl}
+				iconSize={48}
+				primaryText={coin.symbol}
+				// No secondary text in this specific block, or pass timeAgo if CoinInfoBlock is made more flexible
+				containerStyle={styles.coinInfoContainer} // Add specific styling for this container if needed
+				primaryTextStyle={styles.symbol}
+				iconStyle={styles.logoContainer} // Pass logoContainer style to the icon part of CoinInfoBlock
+				textContainerStyle={styles.symbolTextContainer} // Style for the text part of CoinInfoBlock
+				testIdPrefix={testIdPrefix}
+			/>
+			{/* <Text style={styles.symbol} numberOfLines={1} testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}>
 				{coin.symbol}
-			</Text>
+			</Text> */}
+			{/* This Text for symbol is now part of CoinInfoBlock */}
 			<Text style={styles.timeAgo} numberOfLines={1} testID={`${testIdPrefix}-time-${coin.symbol.toLowerCase()}`}>
 				{timeAgo}
 			</Text>
