@@ -32,7 +32,6 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 					<CachedImage
 						uri={coin.resolvedIconUrl}
 						size={48}
-						borderRadius={24}
 						testID={`${testIdPrefix}-icon-${coin.symbol.toLowerCase()}`}
 					/>
 				)}

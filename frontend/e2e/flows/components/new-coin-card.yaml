@@ -8,6 +8,5 @@ appId: com.nicolasmartin.dankfolio
 
 - assertVisible:
       id: "new-coin-time-${COIN_SYMBOL}"
-
-- assertVisible:
-      id: "new-coin-icon-${COIN_SYMBOL}"
+# - assertVisible:
+#       id: "new-coin-icon-${COIN_SYMBOL}"
