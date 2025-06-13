@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"os"
+	// "os" // No longer needed here directly
 	"strings"
 
 	"connectrpc.com/authn"
@@ -20,10 +20,10 @@ type AppCheckAuthenticatedUser struct {
 }
 
 // AppCheckMiddleware creates authentication middleware using Firebase App Check directly
-func AppCheckMiddleware(appCheckClient *appcheck.Client, env string) *authn.Middleware {
+func AppCheckMiddleware(appCheckClient *appcheck.Client, env string, devAppCheckToken string) *authn.Middleware {
 	return authn.NewMiddleware(func(ctx context.Context, req *http.Request) (any, error) {
 		if env == "development" || env == "local" || env == "production-simulator" {
-			devAppCheckToken := os.Getenv("DEV_APP_CHECK_TOKEN")
+			// devAppCheckToken is now passed as a parameter
 			if devAppCheckToken == "" {
 				slog.Error("DEV_APP_CHECK_TOKEN is not set for development/local/production-simulator environment", "env", env)
 				return nil, authn.Errorf("missing DEV_APP_CHECK_TOKEN configuration for environment: %s", env)
