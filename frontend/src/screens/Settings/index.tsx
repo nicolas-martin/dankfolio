@@ -20,10 +20,6 @@ const Settings: React.FC = () => {
 	// In a real app, this would come from a secure source and be handled with extreme care.
 	const privateKeyPlaceholder = '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
-	const handleCopySuccess = (label: string) => {
-		logger.info(`Copied ${label} to clipboard`);
-	};
-
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<ScrollView contentContainerStyle={styles.scrollContent}>
