@@ -38,6 +38,7 @@ packages:
     github.com/nicolas-martin/dankfolio/backend/internal/service/price:
         interfaces:
             PriceServiceAPI:
+            PriceHistoryCache: # Added this line
     github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry:
         interfaces:
             TelemetryAPI:
