@@ -168,11 +168,8 @@ export const useStyles = () => {
 			textAlign: 'center',
 		},
 		swapButton: {
-			alignItems: 'center',
-			backgroundColor: theme.colors.primary,
 			borderRadius: 22, // No exact match
 			height: 44, // No exact match
-			justifyContent: 'center',
 			width: 44, // No exact match
 		},
 		swapButtonContainer: {

@@ -2,8 +2,6 @@ import { Coin } from '@/types';
 import { PriceData } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
 import { TimeframeOption } from './coindetail_types';
-import { useCoinStore } from '@/store/coins';
-import { SOLANA_ADDRESS } from '@/utils/constants';
 import { logger } from '@/utils/logger';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
