@@ -1,32 +1,27 @@
 appId: com.dankfolio.app
 env:
-    # Values from CAPTURED_TRANSACTION_DATA in mockData.ts
-    testAmount: "1.65973075" # Actual amount from captured transaction
-    testRecipientAddress: "6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav" # TO_ADDRESS from captured data
-    solMint: "So11111111111111111111111111111111111111112" # Standard SOL mint
-    capturedTokenMint: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump" # TOKEN_MINT from captured data
-    largeAmount: "99" # For testing insufficient balance
-    smallTestAmount: "0.000000001" # For testing small amounts
+    testAmount: "1.65973075"
+    testRecipientAddress: "6hbS1d1JRRta3GtJC7XNo16gg3PTb41QJVzy6kWsZnav"
+    solMint: "So11111111111111111111111111111111111111112"
+    capturedTokenMint: "CniPCE4b3s8gSUPhUiyMjXnytrEqUrMfSsnbBjLCpump"
+    largeAmount: "99"
+    smallTestAmount: "0.000000001"
 ---
-# Test 1: Setup app
 - runFlow: ../common/app-setup.yaml
 
-# Test 2: Navigate to Profile screen using coordinates (bottom navigation)
+# HACK: Can't find the navigation items
 - tapOn:
       point: "85%,95%"
 - waitForAnimationToEnd
 
-# Test 3: Verify Profile screen is visible
 - assertVisible:
       id: "profile-screen"
 
-# Test 4: Verify Send button is visible and tap it
 - assertVisible:
       id: "send-tokens-button"
 - tapOn:
       id: "send-tokens-button"
 
-# Test 5: Verify Send screen loads
 - assertVisible:
       text: "To"
 
@@ -40,14 +35,12 @@ env:
 - assertVisible:
       id: "amount-percentage-button-100"
 
-# Test 7: Test recipient address input
 - tapOn:
       id: "recipient-address-input"
 - eraseText
 - inputText: "${testRecipientAddress}"
 - hideKeyboard
 
-# Test 8: Test invalid address validation
 - tapOn:
       id: "recipient-address-input"
 - eraseText
@@ -89,7 +82,6 @@ env:
       id: "validation-error-text"
 - assertVisible:
       text: "Insufficient balance.*"
-
 - tapOn:
       id: "amount-percentage-button-100"
 - assertVisible:
@@ -113,4 +105,3 @@ env:
 - waitForAnimationToEnd
 - assertNotVisible:
       id: trade-status-modal
-# After Done button, should navigate back to Profile screen with single transition

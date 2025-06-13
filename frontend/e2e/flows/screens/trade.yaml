@@ -8,8 +8,6 @@ env:
 ---
 - runFlow: ../common/app-setup.yaml
 
-# 1. Navigate to the Coin Detail screen for the 'FROM' coin (SOL)
-#    (This assumes a flow similar to how home screen tests tap on a coin card)
 - tapOn:
       id: "trending-coin-card-${TO_COIN_ADDRESS}"
 - assertVisible:
