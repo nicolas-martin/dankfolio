@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+
+	// "os" // No longer needed here directly
 	"strings"
 
 	"connectrpc.com/authn"
@@ -19,19 +21,25 @@ type AppCheckAuthenticatedUser struct {
 }
 
 // AppCheckMiddleware creates authentication middleware using Firebase App Check directly
-func AppCheckMiddleware(appCheckClient *appcheck.Client, env string) *authn.Middleware {
+func AppCheckMiddleware(appCheckClient *appcheck.Client, env string, devAppCheckToken string) *authn.Middleware {
 	return authn.NewMiddleware(func(ctx context.Context, req *http.Request) (any, error) {
 		if env == "development" || env == "local" || env == "production-simulator" {
+			if devAppCheckToken == "" {
+				slog.Error("DEV_APP_CHECK_TOKEN is not set for development/local/production-simulator environment", "env", env)
+				return nil, authn.Errorf("missing DEV_APP_CHECK_TOKEN configuration for environment: %s", env)
+			}
+
 			appCheckToken := req.Header.Get("X-Firebase-AppCheck")
 			if appCheckToken == "" {
 				slog.Warn("Missing App Check token in request", "remote_addr", req.RemoteAddr, "method", req.Method, "path", req.URL.Path)
 				return nil, authn.Errorf("missing auth header")
 			}
-			if appCheckToken != "0FD7F5EB-8676-4D7E-A930-25A1D1B71045" {
+			if appCheckToken != devAppCheckToken {
+				slog.Warn("Invalid App Check token for development/local/production-simulator environment", "env", env, "remote_addr", req.RemoteAddr, "method", req.Method, "path", req.URL.Path)
 				return nil, authn.Errorf("invalid auth header for environment")
 			}
 
-			slog.Info("Bypassing App Check verification due to environment setting", "env", env)
+			slog.Info("Bypassing App Check verification due to environment setting (using DEV_APP_CHECK_TOKEN)", "env", env)
 			return &AppCheckAuthenticatedUser{
 				AppID:   "test-" + env,
 				Subject: "test-subject-" + env,

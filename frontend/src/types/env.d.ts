@@ -16,6 +16,5 @@ declare module '@env' {
 	export const FIREBASE_APP_ID: string;
 	
 	// Firebase App Check Configuration
-	export const FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID: string;
-	export const FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS: string;
+	export const DEV_APP_CHECK_TOKEN: string;
 } 
