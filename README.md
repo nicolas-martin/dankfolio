@@ -42,8 +42,10 @@ The `setup-backend.sh` script will attempt to:
 ### After Running the Scripts
 
 - The `setup-frontend.sh` script will copy `frontend/.env.example` to `frontend/.env` if it doesn't already exist.
+  - **`frontend/.env`**: Review this file. Notably, `DEV_APP_CHECK_TOKEN` is now used for Firebase App Check verification in development/simulator environments for both Android and iOS. The previous variables `FIREBASE_APP_CHECK_DEBUG_TOKEN_ANDROID` and `FIREBASE_APP_CHECK_DEBUG_TOKEN_IOS` have been removed and are no longer used.
 - The `setup-backend.sh` script will copy `backend/.env.example` to `backend/.env` if it doesn't already exist.
-- **Important**: You will need to manually review and update these `.env` files with your specific configurations (API keys, database credentials, etc.).
+  - **`backend/.env`**: Review this file. A new `DEV_APP_CHECK_TOKEN` variable has been added. This token is used by the backend for App Check verification when the `APP_ENV` is set to "development", "local", or "production-simulator", bypassing standard Firebase App Check for easier local development and testing.
+- **Important**: You will need to manually review and update these `.env` files with your specific configurations (API keys, database credentials, your actual `DEV_APP_CHECK_TOKEN` value, etc.).
 - Follow any additional "Next steps" printed by the scripts at the end of their execution.
 
 ## JWT SECRET

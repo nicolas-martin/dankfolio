@@ -27,6 +27,7 @@ type Server struct {
 	utilityService *Service
 	appCheckClient *appcheck.Client
 	env            string
+	devAppCheckToken string
 }
 
 // NewServer creates a new Server instance
@@ -38,6 +39,7 @@ func NewServer(
 	utilityService *Service,
 	appCheckClient *appcheck.Client,
 	env string,
+	devAppCheckToken string,
 ) *Server {
 	return &Server{
 		mux:            http.NewServeMux(),
@@ -48,6 +50,7 @@ func NewServer(
 		utilityService: utilityService,
 		appCheckClient: appCheckClient,
 		env:            env,
+		devAppCheckToken: devAppCheckToken,
 	}
 }
 
@@ -58,7 +61,7 @@ func (s *Server) Start(port int) error {
 	debugModeInterceptor := middleware.GRPCDebugModeInterceptor()
 
 	// Create App Check authentication middleware
-	appCheckMiddleware := middleware.AppCheckMiddleware(s.appCheckClient, s.env)
+	appCheckMiddleware := middleware.AppCheckMiddleware(s.appCheckClient, s.env, s.devAppCheckToken)
 
 	// Default interceptors for all handlers
 	defaultInterceptors := connect.WithInterceptors(debugModeInterceptor, logInterceptor)
