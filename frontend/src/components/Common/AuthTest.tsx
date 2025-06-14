@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react'; // useEffect was already there
+import { View } from 'react-native'; // StyleSheet removed
 import { Button, Card, Text, Chip } from 'react-native-paper';
 import appCheck from '@react-native-firebase/app-check';
 import { logger as log } from '@/utils/logger';
 import { grpcApi } from '@/services/grpcApi';
 import { env } from '@utils/env';
+import { useStyles } from './styles'; // Import useStyles
 
 const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'local' || env.appEnv === 'production-simulator';
 export const AuthTest: React.FC = () => {
+  const styles = useStyles(); // Use the hook
 	const [appCheckToken, setAppCheckToken] = useState<string | null>(null);
 	const [testResult, setTestResult] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -68,6 +70,11 @@ export const AuthTest: React.FC = () => {
 		checkAppCheckStatus();
 	}, []);
 
+	const chipStyle = useMemo(() => [
+		styles.chip,
+		appCheckToken ? styles.chipValid : styles.chipInvalid
+	], [styles.chip, styles.chipValid, styles.chipInvalid, appCheckToken]);
+
 	return (
 		<Card style={styles.card}>
 			<Card.Content>
@@ -79,7 +86,7 @@ export const AuthTest: React.FC = () => {
 					<Text variant="bodyMedium">Status:</Text>
 					<Chip
 						icon={appCheckToken ? "check" : "close"}
-						style={[styles.chip, appCheckToken ? styles.chipValid : styles.chipInvalid]}
+						style={chipStyle} // Use the memoized style
 					>
 						<Text>{appCheckToken ? 'Valid App Check Token' : 'No App Check Token'}</Text>
 					</Chip>
@@ -139,57 +146,4 @@ export const AuthTest: React.FC = () => {
 	);
 };
 
-const styles = StyleSheet.create({
-	button: {
-		flex: 1,
-		marginHorizontal: 4,
-	},
-	buttonContainer: {
-		flexDirection: 'row',
-		justifyContent: 'space-around',
-		marginBottom: 8,
-	},
-	card: {
-		margin: 16,
-	},
-	chip: {
-		marginLeft: 8,
-	},
-	chipValid: {
-		backgroundColor: '#4CAF50', // Green for valid token
-	},
-	chipInvalid: {
-		backgroundColor: '#f44336', // Red for invalid token
-	},
-	resultContainer: {
-		backgroundColor: '#f8f9fa',
-		borderRadius: 8,
-		marginBottom: 12,
-		padding: 12,
-	},
-	resultText: {
-		fontWeight: 'bold',
-	},
-	statusContainer: {
-		alignItems: 'center',
-		flexDirection: 'row',
-		marginBottom: 12,
-	},
-	title: {
-		marginBottom: 16,
-		textAlign: 'center',
-	},
-	tokenContainer: {
-		marginBottom: 12,
-	},
-	tokenLabel: {
-		fontWeight: 'bold',
-		marginBottom: 4,
-	},
-	tokenText: {
-		backgroundColor: '#f5f5f5',
-		borderRadius: 4,
-		fontFamily: 'monospace',
-		padding: 8,
-	},
-}); 
+// Removed old StyleSheet.create block

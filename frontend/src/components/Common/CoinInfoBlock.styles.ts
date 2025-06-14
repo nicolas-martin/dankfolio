@@ -31,6 +31,9 @@ export const useStyles = () => {
         justifyContent: 'center',
         marginLeft: theme.spacing.md, // Default spacing if icon is present
       },
+      noIconMargin: { // New style
+        marginLeft: 0,
+      },
     });
   }, [theme]);
 };

@@ -351,6 +351,12 @@ export const useStyles = () => {
 		valueContainer: {
 			alignItems: 'flex-end',
 		},
+		tokenIconPlaceholderBg: { // New style
+			backgroundColor: '#f0f0f0',
+		},
+		primaryColorText: { // New style
+			color: colors.primary,
+		},
 	});
 	return {
 		...styles,

@@ -1,3 +1,4 @@
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -73,7 +74,7 @@ jest.mock('@components/CoinDetails/PriceDisplay', () => {
 jest.mock('@store/coins', () => ({
 	useCoinStore: () => ({
 		availableCoins: [mockCoin],
-		getCoinByID: (id: string) => mockCoin,
+		getCoinByID: (_id: string) => mockCoin,
 		fetchAvailableCoins: jest.fn().mockImplementation(() => Promise.resolve()),
 		isLoading: false,
 		error: null

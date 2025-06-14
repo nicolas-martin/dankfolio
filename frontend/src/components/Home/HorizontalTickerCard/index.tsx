@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react'; // Add useMemo
 import { TouchableOpacity } from 'react-native'; // Keep View if needed for layout
 import { Text } from 'react-native-paper';
 // CachedImage might not be directly used if CoinInfoBlock handles its own image
@@ -7,6 +7,9 @@ import { formatTimeAgo } from '@/utils/timeFormat';
 import CoinInfoBlock from '@/components/Common/CoinInfoBlock'; // Import CoinInfoBlock
 import { HorizontalTickerCardProps } from './types';
 import { useStyles } from './styles';
+
+// Defined outside the component for static objects
+const staticHitSlop = { top: 10, bottom: 10, left: 10, right: 10 };
 
 const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress, testIdPrefix = 'new-coin' }) => {
 	const styles = useStyles();
@@ -17,6 +20,13 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 		onPress(coin);
 	}, [coin, onPress]);
 
+	const changeTextStyle = useMemo(() => [ // Memoized style
+		styles.change,
+		coin.change24h > 0 ? styles.changePositive :
+		coin.change24h < 0 ? styles.changeNegative :
+		styles.changeNeutral
+	], [styles.change, styles.changePositive, styles.changeNegative, styles.changeNeutral, coin.change24h]);
+
 	return (
 		<TouchableOpacity
 			style={styles.container}
@@ -26,7 +36,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 			accessibilityRole="button"
 			accessibilityLabel={`${coin.symbol.toLowerCase()} ticker card`}
 			accessibilityHint="Double tap to view coin details"
-			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+			hitSlop={staticHitSlop} // Use constant object
 		>
 			<CoinInfoBlock
 				iconUri={coin.resolvedIconUrl}
@@ -47,12 +57,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 				{timeAgo}
 			</Text>
 			{coin.change24h !== undefined && (
-				<Text style={[
-					styles.change,
-					coin.change24h > 0 ? styles.changePositive :
-						coin.change24h < 0 ? styles.changeNegative :
-							styles.changeNeutral
-				]} numberOfLines={1} testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}>
+				<Text style={changeTextStyle} numberOfLines={1} testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}>
 					{formatPercentage(coin.change24h, 1, true)}
 				</Text>
 			)}

@@ -29,8 +29,13 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	// renderBackdrop is also handled by ManagedBottomSheetModal by default
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
+		const placeholderIconStyle = useMemo(() => [
+			styles.tokenIcon,
+			styles.tokenIconPlaceholderBg // Use new style from stylesheet
+		], [styles.tokenIcon, styles.tokenIconPlaceholderBg]);
+
 		if (!token.resolvedIconUrl) {
-			return <View style={[styles.tokenIcon, { backgroundColor: '#f0f0f0' }]} />;
+			return <View style={placeholderIconStyle} />; // Applied
 		}
 		return (
 			<CachedImage
@@ -60,9 +65,21 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		amount: string,
 		testIdPrefix: string,
 		isRecipient = false
-	) => (
-		<View style={styles.tradeRow} testID={`${testIdPrefix}-token-details`}>
-			<View style={styles.tokenInfo}>
+	) => {
+		const recipientAddressTextStyle = useMemo(() => [
+			styles.tokenName,
+			styles.recipientAddressLink,
+			styles.primaryColorText // Use new style from stylesheet
+		], [styles.tokenName, styles.recipientAddressLink, styles.primaryColorText]);
+
+		const solscanTextStyle = useMemo(() => [
+			styles.solscanText,
+			styles.primaryColorText // Use new style from stylesheet
+		], [styles.solscanText, styles.primaryColorText]);
+
+		return (
+			<View style={styles.tradeRow} testID={`${testIdPrefix}-token-details`}>
+				<View style={styles.tokenInfo}>
 				{isRecipient ? (
 					<Icon source="account" size={32} color={styles.colors.onSurfaceVariant} />
 				) : (
@@ -73,7 +90,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 						<>
 							<Text style={styles.tokenSymbol}>To</Text>
 							<TouchableOpacity onPress={handleSolscanPress} testID="solscan-link">
-								<Text style={[styles.tokenName, styles.recipientAddressLink, { color: styles.colors.primary }]}>
+								<Text style={recipientAddressTextStyle}>
 									{utilFormatAddress(amount, 6, 6)}
 								</Text>
 							</TouchableOpacity>
@@ -94,7 +111,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				{isRecipient ? (
 					<TouchableOpacity onPress={handleSolscanPress} style={styles.solscanButton} testID="solscan-button">
 						<Icon source="open-in-new" size={16} color={styles.colors.primary} />
-						<Text style={[styles.solscanText, { color: styles.colors.primary }]}>Solscan</Text>
+						<Text style={solscanTextStyle}>Solscan</Text>
 					</TouchableOpacity>
 				) : (
 					<>

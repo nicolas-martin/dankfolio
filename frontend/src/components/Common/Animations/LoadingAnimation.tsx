@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react'; // Add useMemo
 import LottieView from 'lottie-react-native';
 import { ViewStyle, StyleProp } from 'react-native';
 import animationData from '@assets/lottie/loading_spinner.json'; // Import the JSON file
@@ -17,15 +17,19 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 	autoPlay = true,
 	loop = true,
 	style,
-	size = 100, // Default size
+	size = 50, // Default size updated to 50
 	onAnimationFinish,
 }) => {
+	const lottieStyle = useMemo(() => {
+		return [{ width: size, height: size }, style].filter(Boolean);
+	}, [size, style]);
+
 	return (
 		<LottieView
 			source={animationData} // Use the imported data
 			autoPlay={autoPlay}
 			loop={loop}
-			style={[{ width: size, height: size }, style]}
+			style={lottieStyle} // Use memoized style
 			onAnimationFinish={onAnimationFinish}
 		/>
 	);

@@ -11,7 +11,7 @@ export const useCopyToClipboard = () => {
 		isCopied: false,
 		isAnimating: false,
 	});
-	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const copyToClipboard = useCallback(async (text: string, onCopy?: () => void) => {
 		try {

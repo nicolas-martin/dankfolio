@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react'; // Add useMemo
 import { View, TouchableOpacity, Dimensions } from 'react-native';
 import { Text } from 'react-native-paper';
-// CachedImage might not be directly used if CoinInfoBlock handles its own image
+import CachedImage from '../../Common/CachedImage'; // Add or uncomment this line
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import SparklineChart from '@/components/Chart/SparklineChart';
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '@/utils/numberFormat';
@@ -53,6 +53,13 @@ const CoinCard: React.FC<CoinCardProps> = ({
 			</View>
 		);
 
+		const horizontalChangeStyle = useMemo(() => [ // Memoized style
+			styles.horizontalChange,
+			coin.change24h > 0 ? styles.changePositiveSmall :
+			coin.change24h < 0 ? styles.changeNegativeSmall :
+			styles.changeNeutralSmall
+		], [styles.horizontalChange, styles.changePositiveSmall, styles.changeNegativeSmall, styles.changeNeutralSmall, coin.change24h]);
+
 		return (
 			<TouchableOpacity
 				style={styles.horizontalCard}
@@ -65,7 +72,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				delayPressIn={100}
 				delayPressOut={100}
 			>
-				{renderCoinIcon(32)}
+				{iconForHorizontal}
 							<Text
 				style={styles.horizontalSymbol}
 				numberOfLines={1}
@@ -86,12 +93,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				</Text>
 				{/* Optionally, add a small 24h change if space permits */}
 				{coin.change24h !== undefined && (
-					<Text style={[
-						styles.horizontalChange,
-						coin.change24h > 0 ? styles.changePositiveSmall :
-							coin.change24h < 0 ? styles.changeNegativeSmall :
-								styles.changeNeutralSmall
-					]} numberOfLines={1}>
+					<Text style={horizontalChangeStyle} numberOfLines={1}>
 						{formatPercentage(coin.change24h, 1, true)}
 					</Text>
 				)}

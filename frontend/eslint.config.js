@@ -94,5 +94,11 @@ export default [
 			'react-native/no-color-literals': 'off',
 		},
 	},
+	{
+		files: ['**/*.ts', '**/*.tsx'],
+		rules: {
+			'react/prop-types': 'off',
+		},
+	},
 ];
 

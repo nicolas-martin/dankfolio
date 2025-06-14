@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react'; // Add useMemo
 import {
 	Modal,
 	View,
@@ -53,6 +53,14 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 	// For now, we rely on Modal's `visible` prop primarily.
 	if (!isVisible && animationValue.value === 0) return null;
 
+	const animatedViewStyle = useMemo(() => [
+		styles.blurContainer,
+		backgroundStyle
+	], [styles.blurContainer, backgroundStyle]);
+
+	const imageSource = useMemo(() => ({
+		uri: imageUri || ''
+	}), [imageUri]);
 
 	return (
 		<Modal
@@ -61,7 +69,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 			onRequestClose={onClose}
 		// animationType="fade" // Removed
 		>
-			<Animated.View style={[styles.blurContainer, backgroundStyle]}>
+			<Animated.View style={animatedViewStyle}>
 				<BlurView
 					style={styles.blurContainer} // Keep original styles for BlurView if necessary
 					intensity={30}
@@ -79,7 +87,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 							>
 								<Animated.View style={animatedStyle}>
 									<Image
-										source={{ uri: imageUri || '' }}
+										source={imageSource} // Use memoized source
 										style={styles.image}
 										resizeMode="cover"
 									/>

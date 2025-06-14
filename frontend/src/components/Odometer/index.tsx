@@ -4,6 +4,7 @@ import {
 	useRef,
 	useEffect,
 	useCallback,
+	useMemo,
 } from 'react';
 import type { LayoutChangeEvent, StyleProp, TextStyle } from 'react-native';
 import { View, Text, Animated, Easing } from 'react-native';
@@ -38,13 +39,18 @@ const Odometer: FC<OdometerProps> = ({
 	const [digitHeight, setDigitHeight] = useState(0);
 	const anims = useRef<(Animated.Value | null)[]>([]);
 
-	// Create theme-aware text style
-	const themeTextStyle: TextStyle = {
+	const themeTextStyle = useMemo(() => ({
 		color: styles.colors.onSurface,
-	};
+	}), [styles.colors.onSurface]);
 
-	// Combine theme style with provided fontStyle
-	const combinedFontStyle = [themeTextStyle, fontStyle];
+	const memoizedCombinedFontStyle = useMemo(() => [
+		themeTextStyle,
+		fontStyle
+	].filter(Boolean), [themeTextStyle, fontStyle]);
+
+	const heightStyle = useMemo(() => ({
+		height: digitHeight
+	}), [digitHeight]);
 
 	// pad previous to match length
 	const prevPadded = prev.padStart(sanitizedValue.length, '0');
@@ -122,48 +128,68 @@ const Odometer: FC<OdometerProps> = ({
 	return (
 		<>
 			{digitHeight > 0 && (
-				<View style={[styles.row, { height: digitHeight }]}>
-					{sanitizedValue.split('').map((char, i) =>
-						/\d/.test(char) && anims.current[i] ? (
-							<View
-								key={i}
-								style={[styles.digitContainer, { height: digitHeight }]}
-							>
-								<Animated.View
-									style={[
-										styles.digitColumn,
-										{
-											transform: [{ translateY: anims.current[i]! }],
-										}
-									]}
+				<View style={[styles.row, heightStyle]}>
+					{sanitizedValue.split('').map((char, i) => {
+						if (/\d/.test(char) && anims.current[i]) {
+							const digitContainerStyle = useMemo(() => [
+								styles.digitContainer,
+								heightStyle
+							], [styles.digitContainer, heightStyle]);
+
+							const animatedViewFinalStyle = useMemo(() => [
+								styles.digitColumn,
+								{ transform: [{ translateY: anims.current[i]! }] }
+							], [styles.digitColumn, anims.current[i]]);
+
+							return (
+								<View
+									key={i}
+									style={digitContainerStyle}
 								>
-									{Array(10)
-										.fill(0)
-										.map((_, d) => (
-											<Text
-												key={d}
-												style={[combinedFontStyle, { height: digitHeight }]}
-											>
-												{d}
-											</Text>
-										))}
-								</Animated.View>
-							</View>
-						) : (
-							<Text
-								key={i}
-								style={[combinedFontStyle, styles.separator, { height: digitHeight }]}
-							>
-								{char}
-							</Text>
-						)
-					)}
+									<Animated.View
+										style={animatedViewFinalStyle}
+									>
+										{Array(10)
+											.fill(0)
+											.map((_, d) => {
+												const digitTextStyle = useMemo(() => [
+													memoizedCombinedFontStyle,
+													heightStyle
+												], [memoizedCombinedFontStyle, heightStyle]);
+												return (
+													<Text
+														key={d}
+														style={digitTextStyle}
+													>
+														{d}
+													</Text>
+												);
+											})}
+									</Animated.View>
+								</View>
+							);
+						} else {
+							const separatorTextStyle = useMemo(() => [
+								memoizedCombinedFontStyle,
+								styles.separator,
+								heightStyle
+							], [memoizedCombinedFontStyle, styles.separator, heightStyle]);
+							return (
+								<Text
+									key={i}
+									style={separatorTextStyle}
+								>
+									{char}
+								</Text>
+							);
+						}
+					})}
 				</View>
 			)}
 
 			{/* hidden measurer */}
 			<View style={styles.hidden}>
-				<Text onLayout={onLayout} style={combinedFontStyle}>
+				<Text onLayout={onLayout} style={memoizedCombinedFontStyle}>
 					0
 				</Text>
 			</View>

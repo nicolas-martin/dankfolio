@@ -49,10 +49,14 @@ const TabNavigator = () => {
 	const styles = useTabNavigatorStyles();
 	const theme = useTheme(); // Still needed for activeColor, inactiveColor
 
+	const tabScreenOptions = useMemo(() => ({ // Memoized
+		headerShown: false
+	}), []);
+
 	return (
 		<Tab.Navigator
 			initialRouteName="Home"
-			screenOptions={{ headerShown: false }}
+			screenOptions={tabScreenOptions} // Applied
 			tabBar={({ navigation, state }) => (
 				<BottomNavigation.Bar
 					navigationState={state}
@@ -116,7 +120,18 @@ const TabNavigator = () => {
 	);
 };
 
+// Defined outside Navigation component
+const renderCustomHeader = () => <CustomHeader />;
+
 const Navigation = () => {
+	const mainTabsOptions = useMemo(() => ({ // Memoized
+		headerShown: false
+	}), []);
+
+	const customHeaderOptions = useMemo(() => ({ // Memoized
+		header: renderCustomHeader
+	}), []); // renderCustomHeader is stable
+
 	return (
 		<NavigationContainer onStateChange={navigationMiddleware}>
 			<Stack.Navigator
@@ -128,39 +143,29 @@ const Navigation = () => {
 			>
 				<Stack.Screen
 					name="MainTabs"
-					options={{
-						headerShown: false
-					}}
+					options={mainTabsOptions} // Use memoized options
 				>
 					{() => <TabNavigator />}
 				</Stack.Screen>
 				<Stack.Screen
 					name="CoinDetail"
 					component={CoinDetail}
-					options={{
-						header: () => <CustomHeader />
-					}}
+					options={customHeaderOptions} // Use memoized options
 				/>
 				<Stack.Screen
 					name="Trade"
 					component={Trade}
-					options={{
-						header: () => <CustomHeader />
-					}}
+					options={customHeaderOptions} // Use memoized options
 				/>
 				<Stack.Screen
 					name="SendTokens"
 					component={Send}
-					options={{
-						header: () => <CustomHeader />
-					}}
+					options={customHeaderOptions} // Use memoized options
 				/>
 				<Stack.Screen
 					name="Settings"
 					component={Settings}
-					options={{
-						header: () => <CustomHeader />
-					}}
+					options={customHeaderOptions} // Use memoized options
 				/>
 			</Stack.Navigator>
 		</NavigationContainer>
