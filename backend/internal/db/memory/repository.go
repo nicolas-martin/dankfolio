@@ -34,7 +34,7 @@ func NewRepository[T db.Entity](cachePrefix string, config Config) *MemoryReposi
 // ListWithOpts for memory repository.
 // TODO: Implement proper filtering, sorting, and pagination based on opts.
 // Currently, it returns all items and ignores options, similar to the old List behavior.
-func (r *MemoryRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]T, int64, error) {
+func (r *MemoryRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]T, int32, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -44,7 +44,7 @@ func (r *MemoryRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOpti
 	if items, ok := r.listCache.Get(cacheKey); ok {
 		// Assuming total count for "all" is also cached or can be derived.
 		// For simplicity, returning len(items) as total when fetched from cache.
-		return items, int64(len(items)), nil
+		return items, int32(len(items)), nil
 	}
 
 	// If not in cache, get from storage
@@ -55,7 +55,7 @@ func (r *MemoryRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOpti
 
 	// Apply pagination if provided, even if filtering/sorting is not.
 	// This is a basic step towards respecting opts.
-	totalCount := int64(len(items))
+	totalCount := int32(len(items))
 	start := 0
 	end := len(items)
 
@@ -74,7 +74,6 @@ func (r *MemoryRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOpti
 	}
 
 	paginatedItems := items[start:end]
-
 
 	// Cache the paginated result (or all items if pagination not fully implemented for cache)
 	r.listCache.Set(cacheKey, paginatedItems, r.config.DefaultCacheExpiry) // Caching the (potentially) paginated slice
@@ -101,7 +100,7 @@ func (r *MemoryRepository[T]) Get(ctx context.Context, id string) (*T, error) {
 	return &item, nil
 }
 
-func (r *MemoryRepository[T]) List(ctx context.Context, opts db.ListOptions) ([]T, int64, error) {
+func (r *MemoryRepository[T]) List(ctx context.Context, opts db.ListOptions) ([]T, int32, error) {
 	// Now calls ListWithOpts, passing through the options.
 	return r.ListWithOpts(ctx, opts)
 }

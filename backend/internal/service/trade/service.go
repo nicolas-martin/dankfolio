@@ -69,7 +69,7 @@ func (s *Service) GetTrade(ctx context.Context, id string) (*model.Trade, error)
 }
 
 // ListTrades returns a list of trades, with options for pagination, sorting, and filtering.
-func (s *Service) ListTrades(ctx context.Context, opts db.ListOptions) ([]model.Trade, int64, error) {
+func (s *Service) ListTrades(ctx context.Context, opts db.ListOptions) ([]model.Trade, int32, error) {
 	trades, total, err := s.store.Trades().ListWithOpts(ctx, opts)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list trades with options: %w", err)
