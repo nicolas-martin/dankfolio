@@ -3,7 +3,7 @@ import { View, Animated } from 'react-native';
 import { Text, Button, ActivityIndicator, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import { TradeStatusModalProps } from './types';
-import ManagedBottomSheetModal from '@/components/Common/BottomSheet/ManagedBottomSheetModal'; // Import new modal
+import ManagedBottomSheetModal from '@/components/Common/BottomSheet';
 import { useStyles } from './styles';
 import { openSolscanUrl } from '@/utils/url';
 import {

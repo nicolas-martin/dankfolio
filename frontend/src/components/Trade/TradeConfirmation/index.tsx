@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Linking } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@/components/Common/Animations';
 import { TradeConfirmationProps } from './types';
-import ManagedBottomSheetModal from '@/components/Common/BottomSheet/ManagedBottomSheetModal';
+import ManagedBottomSheetModal from '@/components/Common/BottomSheet';
 import { useStyles } from './styles';
 import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
