@@ -185,7 +185,7 @@ const Profile = () => {
 							key={token.mintAddress}
 							showSparkline={false}
 							coin={coinCardCoinProp}
-							onPress={() => {
+							onPressCoin={() => {
 								logger.breadcrumb({
 									category: 'ui',
 									message: 'Pressed token card on ProfileScreen',

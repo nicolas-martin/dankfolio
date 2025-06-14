@@ -30,7 +30,7 @@ import { logger } from '@/utils/logger';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTransactionsStore } from '@/store/transactions';
 import { grpcApi } from '@/services/grpcApi';
-import { useTransactionPolling, PollingStatus as HookPollingStatus } from '@/hooks/useTransactionPolling';
+import { useTransactionPolling, PollingStatus } from '@/hooks/useTransactionPolling';
 import InfoState from '@/components/Common/InfoState'; // Import InfoState
 
 
@@ -133,7 +133,7 @@ const Trade: React.FC = () => {
 			// Determine which amount to set based on direction
 			const setTargetAmount = direction === 'from' ? setToAmount : setFromAmount;
 			try {
-				const quoteData = await grpcApi.getFullSwapQuoteOrchestrated(
+				const quoteData = await grpcApi.getFullSwapQuote(
 					currentAmount,
 					direction === 'from' ? currentFromCoin : currentToCoin, // actual fromCoin for API
 					direction === 'from' ? currentToCoin : currentFromCoin  // actual toCoin for API
@@ -505,7 +505,7 @@ const Trade: React.FC = () => {
 				}}
 				isVisible={isStatusModalVisible}
 				txHash={polledTxHash} // Use txHash from hook
-				status={currentPollingStatus as HookPollingStatus} // Use status from hook
+				status={currentPollingStatus as PollingStatus} // Use status from hook
 				confirmations={currentPollingConfirmations} // Use confirmations from hook
 				error={pollingError} // Still using local pollingError, or switch to currentPollingErrorFromHook
 			/>

@@ -1,4 +1,4 @@
-export type PollingStatus = 'polling' | 'confirmed' | 'finalized' | 'failed' | 'pending';
+export type PollingStatus = 'idle' | 'pending' | 'polling' | 'confirmed' | 'finalized' | 'failed';
 
 export interface TradeStatusModalProps {
 	isVisible: boolean;

@@ -11,7 +11,6 @@ import appCheck from '@react-native-firebase/app-check';
 import { env } from '@utils/env';
 import { Buffer } from 'buffer';
 
-// Log the environment variable for debugging
 log.log('🔧 API_URL from environment:', env.apiUrl);
 const isDevelopmentOrSimulator = __DEV__ || env.appEnv === 'development' || env.appEnv === 'production-simulator' || env.e2eMockingEnabled;
 
