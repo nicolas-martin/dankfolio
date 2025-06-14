@@ -123,21 +123,28 @@ const Odometer: FC<OdometerProps> = ({
 		setDigitHeight(e.nativeEvent.layout.height);
 	}, []);
 
+	// Memoize styles outside of render loop
+	const digitContainerStyle = useMemo(() => [
+		styles.digitContainer,
+		heightStyle
+	], [styles.digitContainer, heightStyle]);
+
+	const separatorTextStyle = useMemo(() => [
+		memoizedCombinedFontStyle,
+		styles.separator,
+		heightStyle
+	], [memoizedCombinedFontStyle, styles.separator, heightStyle]);
+
 	return (
 		<>
 			{digitHeight > 0 && (
 				<View style={rowContainerStyle}>
 					{sanitizedValue.split('').map((char, i) => {
 						if (/\d/.test(char) && anims.current[i]) {
-							const digitContainerStyle = useMemo(() => [
-								styles.digitContainer,
-								heightStyle
-							], [styles.digitContainer, heightStyle]);
-
-							const animatedViewFinalStyle = useMemo(() => [
+							const animatedViewFinalStyle = [
 								styles.digitColumn,
 								{ transform: [{ translateY: anims.current[i]! }] }
-							], [styles.digitColumn, anims.current[i]]);
+							];
 
 							return (
 								<View
@@ -150,10 +157,10 @@ const Odometer: FC<OdometerProps> = ({
 										{Array(10)
 											.fill(0)
 											.map((_, d) => {
-												const digitTextStyle = useMemo(() => [
+												const digitTextStyle = [
 													memoizedCombinedFontStyle,
 													heightStyle
-												], [memoizedCombinedFontStyle, heightStyle]);
+												];
 												return (
 													<Text
 														key={d}
@@ -167,11 +174,6 @@ const Odometer: FC<OdometerProps> = ({
 								</View>
 							);
 						} else {
-							const separatorTextStyle = useMemo(() => [
-								memoizedCombinedFontStyle,
-								styles.separator,
-								heightStyle
-							], [memoizedCombinedFontStyle, styles.separator, heightStyle]);
 							return (
 								<Text
 									key={i}

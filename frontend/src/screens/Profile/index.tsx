@@ -16,7 +16,7 @@ import {
 	SendIcon,
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
-import type { ProfileScreenNavigationProp } from './profile_types';
+import type { ProfileCoin, ProfileScreenNavigationProp } from './profile_types';
 
 const Profile = () => {
 	const navigation = useNavigation<ProfileScreenNavigationProp>();
@@ -39,7 +39,7 @@ const Profile = () => {
 		<SendIcon size={20} color={styles.colors.onPrimary} />
 	), [styles.colors.onPrimary]);
 
-	const createCoinCardProp = useCallback((token: any) => ({
+	const createCoinCardProp = useCallback((token: ProfileCoin) => ({
 		...token.coin,
 		value: token.value,
 		balance: token.amount
@@ -153,7 +153,7 @@ const Profile = () => {
 				accessible={true}
 				testID="send-tokens-button"
 			>
-				Send Tokens
+				<Text>Send Tokens</Text>
 			</Button>
 		</View>
 	);

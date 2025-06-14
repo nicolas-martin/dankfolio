@@ -130,9 +130,9 @@ const Trade: React.FC = () => {
 			}
 
 			setIsQuoteLoading(true);
+			// Determine which amount to set based on direction
+			const setTargetAmount = direction === 'from' ? setToAmount : setFromAmount;
 			try {
-				// Determine which amount to set based on direction
-				const setTargetAmount = direction === 'from' ? setToAmount : setFromAmount;
 				const quoteData = await grpcApi.getFullSwapQuoteOrchestrated(
 					currentAmount,
 					direction === 'from' ? currentFromCoin : currentToCoin, // actual fromCoin for API

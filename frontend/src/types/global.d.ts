@@ -16,6 +16,9 @@ import { AppTheme } from '@/utils/theme';
 
 declare global {
   namespace ReactNativePaper {
-    interface Theme extends AppTheme {}
+    interface Theme extends AppTheme {
+      // Extend the theme with additional properties if needed
+      custom?: Record<string, unknown>;
+    }
   }
 }

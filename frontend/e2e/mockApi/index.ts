@@ -1,8 +1,8 @@
 import { mockFetch, originalFetch } from './mockFetch';
 
 // Define a custom interface for the global object
-interface GlobalWithMockFlag extends NodeJS.Global {
-  __E2E_MOCKING_ENABLED__?: boolean;
+interface GlobalWithMockFlag extends globalThis.Global {
+	__E2E_MOCKING_ENABLED__?: boolean;
 }
 
 // Environment flag to enable/disable mocking

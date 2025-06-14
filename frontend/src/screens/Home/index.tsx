@@ -64,12 +64,6 @@ const HomeScreen = () => {
 		marginBottom: 16
 	}), []);
 
-	const trendingCoinsGetItemLayout = useCallback((data: any, index: number) => ({
-		length: 130, // Adjusted approximate height of each CoinCard with sparkline + margin
-		offset: 130 * index, // Adjusted offset
-		index,
-	}), []);
-
 	const emptyFlatListData = useMemo(() => [], []);
 
 	// Coin and loading states
@@ -395,7 +389,7 @@ const HomeScreen = () => {
 					emptyMessage="Connect your Solana wallet to start trading meme coins and view your portfolio."
 				/>
 			)}
-			contentContainerStyle={styles.centered} // Ensure InfoState is centered
+			contentContainerStyle={styles.center} // Ensure InfoState is centered
 			refreshControl={
 				<RefreshControl
 					refreshing={isRefreshing}

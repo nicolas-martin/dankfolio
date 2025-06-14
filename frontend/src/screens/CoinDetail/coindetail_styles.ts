@@ -193,9 +193,9 @@ export const useStyles = () => {
 				marginLeft: theme.spacing.sm,
 			},
 			placeholderCard: {
+				alignItems: 'center',             // inline part
 				flexDirection: 'row',
 				justifyContent: 'space-between', // from styles.flexDirectionRow
-				alignItems: 'center',             // inline part
 				marginBottom: 12                  // inline part. Consider using theme.spacing if possible
 			},
 			placeholderChartCardContainer: { // New

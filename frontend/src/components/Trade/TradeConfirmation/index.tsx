@@ -29,7 +29,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	// renderBackdrop is also handled by ManagedBottomSheetModal by default
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
-		const placeholderIconStyle = useMemo(() => [
+		const placeholderIconStyle = React.useMemo(() => [
 			styles.tokenIcon,
 			styles.tokenIconPlaceholderBg // Use new style from stylesheet
 		], [styles.tokenIcon, styles.tokenIconPlaceholderBg]);
@@ -66,13 +66,13 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		testIdPrefix: string,
 		isRecipient = false
 	) => {
-		const recipientAddressTextStyle = useMemo(() => [
+		const recipientAddressTextStyle = React.useMemo(() => [
 			styles.tokenName,
 			styles.recipientAddressLink,
 			styles.primaryColorText // Use new style from stylesheet
 		], [styles.tokenName, styles.recipientAddressLink, styles.primaryColorText]);
 
-		const solscanTextStyle = useMemo(() => [
+		const solscanTextStyle = React.useMemo(() => [
 			styles.solscanText,
 			styles.primaryColorText // Use new style from stylesheet
 		], [styles.solscanText, styles.primaryColorText]);
@@ -126,6 +126,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			</View>
 		</View>
 	);
+};
 
 	// const renderActionButtons = () => { // Replaced by ModalActionButtons
 	// 	const cancelTestId = `cancel-${operationType}-button`;

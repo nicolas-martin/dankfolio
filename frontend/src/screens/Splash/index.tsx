@@ -1,7 +1,7 @@
 import { View, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-// @ts-expect-error
+// @ts-expect-error - Asset import requires this directive for PNG files in React Native
 import logoAsset from '@assets/splashscreen.png'; // Import the image asset
 import { LoadingAnimation } from '../../components/Common/Animations';
 import { SplashScreenNavigationProp } from './types';

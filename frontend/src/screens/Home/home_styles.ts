@@ -11,6 +11,10 @@ export const useStyles = () => {
 			alignFlexEnd: {
 				alignItems: 'flex-end',
 			},
+		center: {
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
 		coinCardContainerStyle: {
 			marginBottom: theme.spacing.md,
 			paddingHorizontal: theme.spacing.lg,

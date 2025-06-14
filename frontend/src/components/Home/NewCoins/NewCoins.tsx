@@ -33,11 +33,13 @@ const NewCoinsInternal: React.FC = () => {
 		return newlyListedCoins;
 	}, [newlyListedCoins]);
 
-	// Memoized styles at component level
+	// Memoized styles and data at component level
 	const placeholderCardStyle = useMemo(() => [
 		styles.cardWrapper,
 		styles.placeholderCardContainer
 	], [styles.cardWrapper, styles.placeholderCardContainer]);
+
+	const placeholderData = useMemo(() => [1, 2, 3, 4], []);
 
 	const handleCoinPress = useCallback((coin: Coin) => {
 		// Navigate immediately with the basic coin data
@@ -58,7 +60,7 @@ const NewCoinsInternal: React.FC = () => {
 		});
 	}, [navigation, getCoinByID]);
 
-	const getItemLayout = useCallback((_data: any, index: number) => ({
+	const getItemLayout = useCallback((_data: Coin[] | null, index: number) => ({
 		length: CARD_WIDTH,
 		offset: CARD_WIDTH * index,
 		index,
@@ -119,7 +121,7 @@ const NewCoinsInternal: React.FC = () => {
 					/>
 				</View>
 				<Animated.FlatList
-					data={[1, 2, 3, 4]}
+					data={placeholderData}
 					renderItem={() => renderPlaceholderCard()}
 					keyExtractor={(_item, index) => `placeholder-${index}`}
 					horizontal
