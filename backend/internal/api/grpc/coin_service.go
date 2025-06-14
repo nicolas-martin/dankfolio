@@ -35,37 +35,25 @@ func (s *coinServiceHandler) GetAvailableCoins(
 	req *connect.Request[pb.GetAvailableCoinsRequest],
 ) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
 	var coins []model.Coin
-	var totalCount int64
 	var err error
 
-	slog.Debug("GetAvailableCoins request received", "trending_only", req.Msg.TrendingOnly, "limit", req.Msg.Limit, "offset", req.Msg.Offset, "sort_by", req.Msg.SortBy, "sort_desc", req.Msg.SortDesc)
+	slog.Debug("GetAvailableCoins request received", "trending_only", req.Msg.TrendingOnly)
 
 	if req.Msg.TrendingOnly {
 		// TODO: Consider paginating GetTrendingCoins as well, or confirm it always returns a small, fixed set.
 		// For now, GetTrendingCoins does not support pagination/sorting options passed from the request.
 		coins, err = s.coinService.GetTrendingCoins(ctx)
-		totalCount = int64(len(coins)) // For trending, totalCount is just the number of items returned.
 	} else {
-		// Prepare ListOptions from the request.
+		// Use default ListOptions since GetAvailableCoinsRequest doesn't have pagination/sorting fields
 		listOptions := db.ListOptions{}
-		if req.Msg.Limit > 0 {
-			limit := int(req.Msg.Limit)
-			listOptions.Limit = &limit
-		}
-		if req.Msg.Offset >= 0 { // Offset can be 0
-			offset := int(req.Msg.Offset)
-			listOptions.Offset = &offset
-		}
-		if req.Msg.SortBy != "" {
-			sortBy := req.Msg.SortBy
-			listOptions.SortBy = &sortBy
-			// SortDesc defaults to false (ascending) if not specified or if SortBy is empty.
-			// Only set SortDesc if SortBy is also set.
-			sortDesc := req.Msg.SortDesc
-			listOptions.SortDesc = &sortDesc
-		}
-		// If no sort is specified in the request, coinService.GetCoins will apply a default.
-		coins, totalCount, err = s.coinService.GetCoins(ctx, listOptions)
+		// Apply default pagination and sorting
+		defaultLimit := 50
+		listOptions.Limit = &defaultLimit
+		defaultOffset := 0
+		listOptions.Offset = &defaultOffset
+
+		// If no sort is specified, coinService.GetCoins will apply a default.
+		coins, _, err = s.coinService.GetCoins(ctx, listOptions)
 	}
 
 	if err != nil {
@@ -78,8 +66,7 @@ func (s *coinServiceHandler) GetAvailableCoins(
 	}
 
 	res := connect.NewResponse(&pb.GetAvailableCoinsResponse{
-		Coins:      pbCoins,
-		TotalCount: int32(totalCount), // Convert int64 to int32 for protobuf
+		Coins: pbCoins,
 	})
 	return res, nil
 }
