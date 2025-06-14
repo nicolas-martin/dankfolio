@@ -133,7 +133,7 @@ const Trade: React.FC = () => {
 			// Determine which amount to set based on direction
 			const setTargetAmount = direction === 'from' ? setToAmount : setFromAmount;
 			try {
-				const quoteData = await grpcApi.getFullSwapQuote(
+				const quoteData = await grpcApi.getFullSwapQuoteOrchestrated(
 					currentAmount,
 					direction === 'from' ? currentFromCoin : currentToCoin, // actual fromCoin for API
 					direction === 'from' ? currentToCoin : currentFromCoin  // actual toCoin for API
@@ -346,10 +346,10 @@ const Trade: React.FC = () => {
 				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
 				testID={testID}
 			/>
-			{label === 'From' && coin && portfolioBalance !== undefined && (
+			{label === 'From' && coin && (
 				<AmountPercentageButtons
 					key={`${coin.mintAddress}-${toCoin?.mintAddress || 'none'}`}
-					balance={portfolioBalance}
+					balance={portfolioBalance || 0} // Default to 0 if no balance found
 					onSelectAmount={(selectedAmount) => {
 						onAmountChange(selectedAmount);
 					}}

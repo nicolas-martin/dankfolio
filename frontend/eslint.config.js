@@ -29,6 +29,7 @@ export default [
 			'babel.config.js',
 			'**/gen/**',
 			'**/metro.config.js',
+			'**/metro.config.cjs',
 			'src/components/Chart/CoinChart/**',
 			'src/components/Chart/SparklineChart/**',
 		],
