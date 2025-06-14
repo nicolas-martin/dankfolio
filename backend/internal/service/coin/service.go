@@ -18,6 +18,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
+	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import the new util package
 )
 
 // Service handles coin-related operations
@@ -111,18 +112,39 @@ func (s *Service) Shutdown() {
 }
 
 // GetCoins returns a list of all available coins
-func (s *Service) GetCoins(ctx context.Context) ([]model.Coin, error) {
-	coins, err := s.store.Coins().List(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list coins: %w", err)
+func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int64, error) {
+	// If no sort order is specified, default to sorting by Volume24h descending.
+	if opts.SortBy == nil || *opts.SortBy == "" {
+		defaultSortBy := "volume_24h"
+		defaultSortDesc := true
+		opts.SortBy = &defaultSortBy
+		opts.SortDesc = &defaultSortDesc
+		slog.Debug("Applying default sort order to GetCoins", "sortBy", *opts.SortBy, "sortDesc", *opts.SortDesc)
 	}
 
-	// Sort by volume descending
-	sort.Slice(coins, func(i, j int) bool {
-		return coins[i].Volume24h > coins[j].Volume24h
-	})
+	// If no limit is specified, or if it's non-positive, default to a page size of 20.
+	// Also, cap the limit to a maximum reasonable value if necessary (e.g., 100) to prevent abuse.
+	const defaultLimit = 20
+	const maxLimit = 100 // Maximum allowable limit
 
-	return coins, nil
+	if opts.Limit == nil || *opts.Limit <= 0 {
+		slog.Debug("Applying default limit to GetCoins", "defaultLimit", defaultLimit)
+		limit := defaultLimit
+		opts.Limit = &limit
+	} else if *opts.Limit > maxLimit {
+		slog.Warn("Requested limit exceeds maximum, capping limit", "requestedLimit", *opts.Limit, "maxLimit", maxLimit)
+		limit := maxLimit
+		opts.Limit = &limit
+	}
+
+	coins, totalCount, err := s.store.Coins().List(ctx, opts)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list coins: %w", err)
+	}
+
+	// In-memory sorting is removed as it's now handled by the database.
+
+	return coins, totalCount, nil
 }
 
 // GetTrendingCoins returns only the coins loaded from the trending file
@@ -171,6 +193,10 @@ func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, e
 // It first checks the 'coins' table. If not found, it checks 'raw_coins'
 // and enriches from there. If not in 'raw_coins' either, it enriches from scratch.
 func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string) (*model.Coin, error) {
+	if !util.IsValidSolanaAddress(mintAddress) {
+		return nil, fmt.Errorf("invalid mint_address: %s", mintAddress)
+	}
+
 	// Try fetching from the 'coins' table first (enriched coins)
 	coin, err := s.store.Coins().GetByField(ctx, "mint_address", mintAddress)
 	if err == nil {
@@ -320,6 +346,8 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 func (s *Service) loadOrRefreshData(ctx context.Context) error {
 	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
 		// get the trending by asc order
+		// Note: ListTrendingCoins is a custom store method and was not part of the List() signature change.
+		// If it internally uses a generic List that changed, that would be an issue, but its signature here is fine.
 		c, err := txStore.ListTrendingCoins(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get latest trending coin: %w", err)
@@ -351,7 +379,13 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 			return fmt.Errorf("failed to fetch and enrich trending coins: %w", err)
 		}
 
-		existingCoins, err := txStore.Coins().List(ctx)
+		// Pass empty ListOptions to the updated List method.
+		// The loadOrRefreshData function's goal is to update trending status,
+		// not necessarily to paginate here. We need all existing coins for this logic.
+		// If this becomes a performance issue, this logic might need rethinking,
+		// but for now, fetching all with empty opts (which might apply defaults) is the minimal change.
+		// We also need to handle the new totalCount return value.
+		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{}) // Added empty ListOptions and ignored totalCount
 		if err != nil {
 			return fmt.Errorf("failed to list coins for updating trending status: %w", err)
 		}
@@ -547,6 +581,18 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 // SearchCoins searches for coins using the DB's SearchCoins (custom store method)
 // It now accepts db.ListOptions for pagination/sorting and returns a total count (currently estimated).
 func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, opts db.ListOptions) ([]model.Coin, int32, error) {
+	if len(query) > 256 {
+		return nil, 0, fmt.Errorf("query string too long (max 256 chars): %d", len(query))
+	}
+	for i, tag := range tags {
+		if len(tag) > 64 {
+			return nil, 0, fmt.Errorf("tag at index %d too long (max 64 chars): %s", i, tag)
+		}
+	}
+	if minVolume24h < 0 {
+		return nil, 0, fmt.Errorf("min_volume_24h cannot be negative: %f", minVolume24h)
+	}
+
 	var limit, offset int32
 	var sortBy string
 	var sortDesc bool

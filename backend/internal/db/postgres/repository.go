@@ -74,18 +74,14 @@ func (r *Repository[S, M]) GetByField(ctx context.Context, field string, value a
 }
 
 // List retrieves all entities.
-func (r *Repository[S, M]) List(ctx context.Context) ([]M, error) {
-	var schemaItems []S
-	if err := r.db.WithContext(ctx).Find(&schemaItems).Error; err != nil {
-		return nil, fmt.Errorf("failed to list items: %w", err)
-	}
-
-	modelItems := make([]M, len(schemaItems))
-	for i, item := range schemaItems {
-		modelItem := r.toModel(item)
-		modelItems[i] = *modelItem.(*M) // Type assertion and dereference
-	}
-	return modelItems, nil
+// It now uses ListWithOpts internally, passing through the options.
+// If no specific filters are needed for a simple List call, opts can be empty or have only pagination/sorting.
+func (r *Repository[S, M]) List(ctx context.Context, opts db.ListOptions) ([]M, int64, error) {
+	// This effectively makes List an alias for ListWithOpts.
+	// If List was intended to have some default filters that ListWithOpts doesn't,
+	// those would be applied here before calling ListWithOpts.
+	// For now, assume List is just a paginated/sorted version of "get all" (with optional filters in opts).
+	return r.ListWithOpts(ctx, opts)
 }
 
 // Create inserts a new entity.
