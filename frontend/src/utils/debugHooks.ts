@@ -42,7 +42,7 @@ export const useHookDebug = (
 		}
 
 		prevDeps.current = deps;
-	}, Array.isArray(deps) ? [...deps, name] : [...Object.values(deps), name]);
+	}, Array.isArray(deps) ? [deps, name, depNames] : [deps, name]);
 };
 
 // Legacy functions for backward compatibility

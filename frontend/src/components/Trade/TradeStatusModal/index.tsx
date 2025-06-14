@@ -265,12 +265,12 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	const iconContainerStyleToApply = useMemo(() => [
 		styles.statusIconContainer,
 		getStatusIconContainerStyle()
-	], [styles.statusIconContainer, displayStatus]); // getStatusIconContainerStyle() depends on displayStatus
+	], [styles.statusIconContainer, getStatusIconContainerStyle]); // getStatusIconContainerStyle() depends on displayStatus
 
 	const textStyleToApply = useMemo(() => [
 		styles.statusText,
 		getStatusTextStyle()
-	], [styles.statusText, displayStatus]); // getStatusTextStyle() depends on displayStatus
+	], [styles.statusText, getStatusTextStyle]); // getStatusTextStyle() depends on displayStatus
 
 	return (
 		<ManagedBottomSheetModal

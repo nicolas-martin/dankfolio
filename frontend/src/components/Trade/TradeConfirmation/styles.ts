@@ -219,12 +219,6 @@ export const useStyles = () => {
 		primaryColorText: { // New style
 			color: colors.primary,
 		},
-		primaryColorText: { // New style
-			color: colors.primary,
-		},
-		primaryColorText: { // New style
-			color: colors.primary,
-		},
 		recipientAddressLink: {
 			textDecorationLine: 'underline',
 		},
@@ -290,12 +284,6 @@ export const useStyles = () => {
 			height: theme.spacing['3xl'],
 			marginRight: theme.spacing.md,
 			width: theme.spacing['3xl'],
-		},
-		tokenIconPlaceholderBg: { // New style
-			backgroundColor: '#f0f0f0',
-		},
-		tokenIconPlaceholderBg: { // New style
-			backgroundColor: '#f0f0f0',
 		},
 		tokenIconPlaceholderBg: { // New style
 			backgroundColor: '#f0f0f0',
