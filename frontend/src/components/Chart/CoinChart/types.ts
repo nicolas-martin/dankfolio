@@ -1,5 +1,6 @@
 import { PriceData } from '@/types';
 import { SharedValue } from 'react-native-reanimated';
+import { type PointsArray } from 'victory-native';
 
 export interface CoinChartProps {
 	data: PriceData[]; // Reverted: no longer optional
@@ -24,7 +25,7 @@ export interface ChartBounds {
 }
 
 export interface AreaProps {
-	points: unknown;
+	points: PointsArray;
 	y0: number;
 	color: string;
 	opacity?: number;

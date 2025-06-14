@@ -79,7 +79,7 @@ const CoinDetail: React.FC = () => {
 		// Extract and transform the items array from the response data
 		const items = response.data?.items || [];
 		return items.map(item => ({
-			timestamp: item.unixTime.toString(),
+			timestamp: new Date(item.unixTime * 1000).toISOString(), // Convert Unix timestamp to ISO string
 			value: item.value
 		}));
 	}, []);
