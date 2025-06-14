@@ -160,6 +160,16 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 		if (!shouldShowProgress) return null;
 
+		const progressFillStyle = useMemo(() => [
+			styles.progressFill,
+			{
+				width: progressAnim.interpolate({
+					inputRange: [0, 1],
+					outputRange: ['0%', '100%'],
+				})
+			}
+		], [styles.progressFill, progressAnim]);
+
 		// For pending state without txHash, show preparing message
 		if (displayStatus === 'pending' && !txHash) {
 			return (
@@ -188,15 +198,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				<View style={styles.progressBar}>
 					<Animated.View
 						testID="trade-status-progress-bar"
-						style={[
-							styles.progressFill,
-							{
-								width: progressAnim.interpolate({
-									inputRange: [0, 1],
-									outputRange: ['0%', '100%'],
-								})
-							}
-						]}
+						style={progressFillStyle}
 					/>
 				</View>
 				{isInProgress && (
@@ -261,17 +263,31 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	const snapPoints = useMemo(() => ['75%'], []);
 
+	const memoizedBottomSheetProps = useMemo(() => ({
+		enablePanDownToClose: isFinal,
+	}), [isFinal]);
+
+	const statusSectionStyle = useMemo(() => [
+		styles.statusSection,
+		{ opacity: fadeAnim }
+	], [styles.statusSection, fadeAnim]);
+
+	const iconContainerStyleToApply = useMemo(() => [
+		styles.statusIconContainer,
+		getStatusIconContainerStyle()
+	], [styles.statusIconContainer, displayStatus]); // getStatusIconContainerStyle() depends on displayStatus
+
+	const textStyleToApply = useMemo(() => [
+		styles.statusText,
+		getStatusTextStyle()
+	], [styles.statusText, displayStatus]); // getStatusTextStyle() depends on displayStatus
 
 	return (
 		<ManagedBottomSheetModal
 			isVisible={isVisible}
 			onClose={onClose}
 			snapPoints={snapPoints}
-			// Pass isFinal to enablePanDownToClose, ManagedBottomSheetModal needs to support this
-			bottomSheetModalProps={{
-				enablePanDownToClose: isFinal,
-				// enableDismissOnClose: isFinal, // enablePanDownToClose often covers this
-			}}
+			bottomSheetModalProps={memoizedBottomSheetProps}
 		>
 			{/* Header */}
 			<View style={styles.header}>
@@ -279,11 +295,11 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			</View>
 
 			{/* Status Section */}
-			<Animated.View style={[styles.statusSection, { opacity: fadeAnim }]}>
-				<View testID="trade-status-icon" style={[styles.statusIconContainer, getStatusIconContainerStyle()]}>
+			<Animated.View style={statusSectionStyle}>
+				<View testID="trade-status-icon" style={iconContainerStyleToApply}>
 					{getStatusIcon()}
 				</View>
-				<Text testID="trade-status-text" style={[styles.statusText, getStatusTextStyle()]}>
+				<Text testID="trade-status-text" style={textStyleToApply}>
 					{statusText}
 				</Text>
 				<Text testID="trade-status-description" style={styles.statusDescription}>
