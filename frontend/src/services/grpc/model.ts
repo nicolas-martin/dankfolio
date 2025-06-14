@@ -175,6 +175,7 @@ export interface API {
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
 	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string }>;
 	listTrades: (params: ListTradesRequest) => Promise<ListTradesResponse>;
+	getFullSwapQuoteOrchestrated: (amount: string, fromCoin: Coin, toCoin: Coin) => Promise<FullSwapQuoteDetails>;
 }
 
 export interface GetProxiedImageResponse {
@@ -194,4 +195,13 @@ export interface SwapQuoteResponse {
 export interface SubmitSwapResponse {
 	transactionHash: string;
 	tradeId: string;
+}
+
+export interface FullSwapQuoteDetails {
+	estimatedAmount: string;
+	exchangeRate: string;
+	fee: string;
+	priceImpactPct: string;
+	totalFee: string;
+	route: string;
 }
