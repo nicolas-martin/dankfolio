@@ -1,12 +1,9 @@
-import React from 'react';
 import { TokenTransferFormData } from './types';
-import { Wallet, Coin } from '@/types';
+import { Coin } from '@/types';
 import { grpcApi } from '@/services/grpcApi';
 import { PortfolioToken } from '@store/portfolio';
 import { validateSolanaAddress } from '@/services/solana';
 import { prepareCoinTransfer, signTransferTransaction } from '@/services/solana';
-import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
-import { ToastProps } from '@components/Common/Toast/toast_types';
 import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import { logger } from '@/utils/logger';
 // formatBalance import from numberFormat is already present and used as 'formatBalance'

@@ -8,16 +8,16 @@ export const useStyles = () => {
 
   return useMemo(() => {
     return StyleSheet.create({
+      button: {
+        flex: 1, // Allow buttons to grow if needed, or set specific widths
+        borderRadius: theme.borderRadius.lg, // Standard button border radius
+        paddingVertical: theme.spacing.xs, // Standard button padding
+      },
       buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'flex-end', // Default to right-align, common for dialogs
         paddingTop: theme.spacing.md,
         gap: theme.spacing.md, // Spacing between buttons
-      },
-      button: {
-        flex: 1, // Allow buttons to grow if needed, or set specific widths
-        borderRadius: theme.borderRadius.lg, // Standard button border radius
-        paddingVertical: theme.spacing.xs, // Standard button padding
       },
       primaryButtonLabel: {
         fontSize: theme.typography.fontSize.base,

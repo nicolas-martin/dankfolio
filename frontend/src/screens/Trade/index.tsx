@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
 import { Text, Button, IconButton, Icon, Card } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
@@ -20,7 +20,7 @@ import {
 	// Removed startPolling, stopPolling, pollTransactionStatus
 } from './scripts';
 import { useStyle } from './styles';
-import { Coin, Wallet } from '@/types'; // Added Wallet
+import { Coin } from '@/types'; // Added Wallet
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
 // import { PollingStatus } from '@components/Trade/TradeStatusModal/types';

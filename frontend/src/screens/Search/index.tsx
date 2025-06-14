@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, TextInput, FlatList, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, TextInput, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 // Assuming RootStackParamList is here

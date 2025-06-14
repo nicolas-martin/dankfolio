@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
-import { Text, Icon, Button } from 'react-native-paper';
+import { Text, Button } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
 // fetchPriceHistory import seems unused directly in HomeScreen, consider removing if not needed for other logic

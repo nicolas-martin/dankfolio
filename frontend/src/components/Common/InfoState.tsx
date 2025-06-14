@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { useStyles } from './InfoState.styles';
 import { LoadingAnimation } from './Animations'; // Assuming a Lottie loading animation
