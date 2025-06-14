@@ -20,8 +20,8 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	dbDataStoreMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
-	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import util for IsValidSolanaAddress
 	telemetrymocks "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry/mocks"
+	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import util for IsValidSolanaAddress
 )
 
 type testMocks struct {
@@ -223,7 +223,7 @@ func TestGetCoins_DefaultSorting(t *testing.T) {
 	_, _, err = setup.Service.GetCoins(ctx, db.ListOptions{})
 	assert.NoError(t, err)
 
-	setup.Mocks.Store.AssertExpectations(t) // Ensure Coins() was called
+	setup.Mocks.Store.AssertExpectations(t)    // Ensure Coins() was called
 	setup.Mocks.CoinRepo.AssertExpectations(t) // Ensure List() was called with matching options
 }
 
@@ -322,7 +322,7 @@ func TestGetCoins_ClientSpecifiedOptions(t *testing.T) {
 	// This is to be absolutely certain about the fix for "no new variables on left side of :="
 	var err error
 	var coins []model.Coin
-	var totalCount int64
+	var totalCount int32
 	coins, totalCount, err = setup.Service.GetCoins(ctx, db.ListOptions{
 		SortBy:   &clientSortBy,
 		SortDesc: &clientSortDesc,

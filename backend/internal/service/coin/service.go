@@ -112,7 +112,7 @@ func (s *Service) Shutdown() {
 }
 
 // GetCoins returns a list of all available coins
-func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int64, error) {
+func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
 	// If no sort order is specified, default to sorting by Volume24h descending.
 	if opts.SortBy == nil || *opts.SortBy == "" {
 		defaultSortBy := "volume_24h"

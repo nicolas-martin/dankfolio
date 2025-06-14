@@ -76,7 +76,7 @@ func (r *Repository[S, M]) GetByField(ctx context.Context, field string, value a
 // List retrieves all entities.
 // It now uses ListWithOpts internally, passing through the options.
 // If no specific filters are needed for a simple List call, opts can be empty or have only pagination/sorting.
-func (r *Repository[S, M]) List(ctx context.Context, opts db.ListOptions) ([]M, int64, error) {
+func (r *Repository[S, M]) List(ctx context.Context, opts db.ListOptions) ([]M, int32, error) {
 	// This effectively makes List an alias for ListWithOpts.
 	// If List was intended to have some default filters that ListWithOpts doesn't,
 	// those would be applied here before calling ListWithOpts.
@@ -233,7 +233,7 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 }
 
 // ListWithOpts retrieves a paginated, sorted, and filtered list of entities.
-func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]M, int64, error) {
+func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]M, int32, error) {
 	var schemaItems []S
 	var total int64
 
@@ -290,7 +290,7 @@ func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions
 		modelItems[i] = *modelItem.(*M)
 	}
 
-	return modelItems, total, nil
+	return modelItems, int32(total), nil
 }
 
 // --- Mapping Functions ---

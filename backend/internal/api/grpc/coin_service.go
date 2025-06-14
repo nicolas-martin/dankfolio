@@ -36,6 +36,7 @@ func (s *coinServiceHandler) GetAvailableCoins(
 ) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
 	var coins []model.Coin
 	var err error
+	var totalCount int32
 
 	slog.Debug("GetAvailableCoins request received", "trending_only", req.Msg.TrendingOnly)
 
@@ -64,7 +65,6 @@ func (s *coinServiceHandler) GetAvailableCoins(
 		}
 
 		// If no sort is specified, coinService.GetCoins will apply a default.
-		var totalCount int32
 		coins, totalCount, err = s.coinService.GetCoins(ctx, listOptions)
 	}
 

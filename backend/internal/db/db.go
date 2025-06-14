@@ -38,14 +38,14 @@ type Store interface {
 // Repository defines generic CRUD operations
 type Repository[T Entity] interface {
 	Get(ctx context.Context, id string) (*T, error)
-	List(ctx context.Context, opts ListOptions) ([]T, int64, error) // Changed to accept ListOptions and return total count
+	List(ctx context.Context, opts ListOptions) ([]T, int32, error) // Changed to accept ListOptions and return total count
 	Create(ctx context.Context, item *T) error
 	Update(ctx context.Context, item *T) error
 	Upsert(ctx context.Context, item *T) (int64, error)
 	BulkUpsert(ctx context.Context, items *[]T) (int64, error)
 	Delete(ctx context.Context, id string) error
 	GetByField(ctx context.Context, field string, value any) (*T, error)
-	ListWithOpts(ctx context.Context, opts ListOptions) ([]T, int64, error) // Returns entities and total count
+	ListWithOpts(ctx context.Context, opts ListOptions) ([]T, int32, error) // Returns entities and total count
 }
 
 // FilterOperator defines the type for filter operations.
