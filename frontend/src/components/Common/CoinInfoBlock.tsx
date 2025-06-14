@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react'; // Add useMemo
 import { View } from 'react-native';
 import { Text } from 'react-native-paper'; // Assuming use of react-native-paper Text
 import { useStyles } from './CoinInfoBlock.styles';
@@ -30,23 +30,49 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 }) => {
   const styles = useStyles();
 
+  const viewStyle = useMemo(() => [
+      styles.container,
+      containerStyle
+  ].filter(Boolean), [styles.container, containerStyle]);
+
+  const finalIconStyle = useMemo(() => [
+      styles.icon,
+      iconStyle
+  ].filter(Boolean), [styles.icon, iconStyle]);
+
+  const textContainerViewStyle = useMemo(() => [
+      styles.textContainer,
+      textContainerStyle,
+      !iconUri ? styles.noIconMargin : undefined
+  ].filter(Boolean), [styles.textContainer, textContainerStyle, iconUri, styles.noIconMargin]);
+
+  const finalPrimaryTextStyle = useMemo(() => [
+      styles.primaryText,
+      primaryTextStyle
+  ].filter(Boolean), [styles.primaryText, primaryTextStyle]);
+
+  const finalSecondaryTextStyle = useMemo(() => [
+      styles.secondaryText,
+      secondaryTextStyle
+  ].filter(Boolean), [styles.secondaryText, secondaryTextStyle]);
+
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={viewStyle}>
       {iconUri && (
         <CachedImage
           uri={iconUri}
           size={iconSize}
-          style={[styles.icon, iconStyle]}
+          style={finalIconStyle}
           showLoadingIndicator={true} // Default, can be made a prop
           borderRadius={iconSize / 2} // Default to circular
         />
       )}
-      <View style={[styles.textContainer, textContainerStyle, !iconUri && { marginLeft: 0 }]}>
-        <Text style={[styles.primaryText, primaryTextStyle]} numberOfLines={1} ellipsizeMode="tail">
+      <View style={textContainerViewStyle}>
+        <Text style={finalPrimaryTextStyle} numberOfLines={1} ellipsizeMode="tail">
           {primaryText}
         </Text>
         {secondaryText && (
-          <Text style={[styles.secondaryText, secondaryTextStyle]} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={finalSecondaryTextStyle} numberOfLines={1} ellipsizeMode="tail">
             {secondaryText}
           </Text>
         )}

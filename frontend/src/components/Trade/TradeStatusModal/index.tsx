@@ -42,18 +42,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	const [fadeAnim] = useState(new Animated.Value(1));
 	const [progressAnim] = useState(new Animated.Value(0));
 
-	// Handle BottomSheetModal presentation
-	useEffect(() => {
-		logger.info(`[TradeStatusModal] useEffect for isVisible triggered. isVisible: ${isVisible}, txHash: ${txHash}, bottomSheetModalRef.current: ${bottomSheetModalRef.current}`);
-		if (isVisible) {
-			logger.info(`[TradeStatusModal] useEffect: isVisible is true, attempting to present. txHash: ${txHash}`);
-			bottomSheetModalRef.current?.present();
-		} else {
-			logger.info(`[TradeStatusModal] useEffect: isVisible is false, attempting to dismiss.`);
-			bottomSheetModalRef.current?.dismiss();
-		}
-	}, [isVisible, txHash]); // Added txHash to dependencies for logging completeness
-
 	// Update display status with smooth transitions
 	useEffect(() => {
 		if (status !== displayStatus) {

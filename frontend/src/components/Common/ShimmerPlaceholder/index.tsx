@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react'; // Ensure useMemo is imported
 import { View, ViewStyle, DimensionValue, StyleSheet } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import Animated, {
@@ -46,19 +46,19 @@ const ShimmerPlaceholder: React.FC<ShimmerPlaceholderProps> = ({
 		};
 	});
 
+	const viewStyle = useMemo(() => [
+		styles.shimmerContainer,
+		style
+	].filter(Boolean), [styles.shimmerContainer, style]);
+
+	const animatedViewStyle = useMemo(() => [
+		styles.animatedShimmerOverlay,
+		animatedStyle
+	], [styles.animatedShimmerOverlay, animatedStyle]);
+
 	return (
-		<View
-			style={[
-				styles.shimmerContainer,
-				style,
-			]}
-		>
-			<Animated.View
-				style={[
-					styles.animatedShimmerOverlay,
-					animatedStyle,
-				]}
-			/>
+		<View style={viewStyle}>
+			<Animated.View style={animatedViewStyle} />
 		</View>
 	);
 };

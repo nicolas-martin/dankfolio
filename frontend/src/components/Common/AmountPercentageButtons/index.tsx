@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react'; // Add useMemo
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { AmountPercentageButtonsProps } from './types';
@@ -46,13 +46,21 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
 		<View style={[styles.container, style]}>
 			{percentages.map((percent) => {
 				const isActive = activePercent === percent;
+
+				const buttonStyle = useMemo(() => [
+					styles.percentageButton,
+					isActive ? styles.activeButton : undefined
+				].filter(Boolean), [styles.percentageButton, styles.activeButton, isActive]);
+
+				const textStyle = useMemo(() => [
+					styles.percentageButtonText,
+					isActive ? styles.activeButtonText : undefined
+				].filter(Boolean), [styles.percentageButtonText, styles.activeButtonText, isActive]);
+
 				return (
 					<TouchableOpacity
 						key={percent}
-						style={[
-							styles.percentageButton,
-							isActive && styles.activeButton
-						]}
+						style={buttonStyle} // Use the memoized style
 						onPress={() => handlePress(percent)}
 						testID={`amount-percentage-button-${percent}`}
 						accessible={true}
@@ -60,10 +68,7 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
 						accessibilityLabel={`${percent} percent button`}
 					>
 						<Text
-							style={[
-								styles.percentageButtonText,
-								isActive && { color: styles.colors.onPrimary }
-							]}
+							style={textStyle} // Use the memoized style
 							testID={`amount-percentage-text-${percent}`}
 							accessible={false}
 						>

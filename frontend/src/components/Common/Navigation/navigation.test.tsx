@@ -1,3 +1,4 @@
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';

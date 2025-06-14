@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // Added useState
+import React, { useState, useMemo } from 'react'; // Add useMemo
 import { View, TouchableOpacity } from 'react-native'; // Added TouchableOpacity
 import { Text } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
@@ -64,6 +64,11 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 		? formatValueChange(valueChange, periodChange)
 		: '---';
 
+	const changeTextStyle = useMemo(() => [
+		styles.changeText,
+		isPositive ? styles.changePositive : styles.changeNegative
+	], [styles.changeText, styles.changePositive, styles.changeNegative, isPositive]);
+
 	return (
 		<View style={styles.container} testID="price-display-container">
 			{/* Header with coin info */}
@@ -108,15 +113,12 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			{/* Change and period */}
 			<View style={styles.changeRow}>
 				<Text
-					style={[
-						styles.changeText,
-						isPositive ? styles.changePositive : styles.changeNegative
-					]}
+					style={changeTextStyle} // Use the memoized style
 					testID="price-display-price-change"
 				>
 					{formattedChange}
 				</Text>
-				<Text style={[styles.periodText, { color: styles.colors.onSurfaceVariant }]} testID="price-display-period">
+				<Text style={[styles.periodText, styles.periodTextColor]} testID="price-display-period">
 					{period}
 				</Text>
 			</View>

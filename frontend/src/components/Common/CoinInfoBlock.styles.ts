@@ -16,6 +16,9 @@ export const useStyles = () => {
         // Styles for CachedImage or Icon component can be passed via props if needed
         // marginRight: theme.spacing.md, // Default spacing
       },
+      noIconMargin: { // New style
+        marginLeft: 0,
+      },
       primaryText: {
         color: theme.colors.onSurface,
         fontSize: theme.typography.fontSize.base,

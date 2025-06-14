@@ -60,6 +60,9 @@ export const useStyles = () => {
 		periodText: {
 			fontSize: theme.typography.fontSize.sm,
 		},
+		periodTextColor: { // New style
+			color: colors.onSurfaceVariant,
+		},
 		pricePlaceholderText: { // New style
 			fontSize: theme.typography.fontSize['3xl'],
 		},
