@@ -23,6 +23,7 @@ const Tab = createBottomTabNavigator();
 const useTabNavigatorStyles = () => {
   const theme = useTheme() as MD3Theme; // Ensure MD3Theme is the correct type
   return useMemo(() => StyleSheet.create({
+    // eslint-disable-next-line react-native/no-unused-styles
     bottomNavBar: {
       backgroundColor: theme.colors.surface,
       borderTopWidth: 0,

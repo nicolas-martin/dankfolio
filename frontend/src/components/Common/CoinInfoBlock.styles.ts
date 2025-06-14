@@ -19,6 +19,9 @@ export const useStyles = () => {
       noIconMargin: { // New style
         marginLeft: 0,
       },
+      noIconMargin: { // New style
+        marginLeft: 0,
+      },
       primaryText: {
         color: theme.colors.onSurface,
         fontSize: theme.typography.fontSize.base,
