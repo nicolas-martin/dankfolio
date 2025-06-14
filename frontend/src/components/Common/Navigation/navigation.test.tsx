@@ -73,7 +73,7 @@ jest.mock('@components/CoinDetails/PriceDisplay', () => {
 jest.mock('@store/coins', () => ({
 	useCoinStore: () => ({
 		availableCoins: [mockCoin],
-		getCoinByID: (id: string) => mockCoin,
+		getCoinByID: (_id: string) => mockCoin,
 		fetchAvailableCoins: jest.fn().mockImplementation(() => Promise.resolve()),
 		isLoading: false,
 		error: null

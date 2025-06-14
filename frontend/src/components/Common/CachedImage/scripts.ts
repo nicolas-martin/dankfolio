@@ -46,7 +46,7 @@ export const debugCacheStatus = async (uri: string) => {
 		
 		// Second load (should be cached)
 		const startTime2 = Date.now();
-		const response2 = await fetch(uri, { method: 'HEAD' });
+		const _response2 = await fetch(uri, { method: 'HEAD' });
 		const secondLoadTime = Date.now() - startTime2;
 		
 		logger.info(`[CacheDebug] 🔍 Network Test | URL: ${uri}`);
