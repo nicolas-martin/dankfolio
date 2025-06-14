@@ -206,6 +206,8 @@ func (x *Coin) GetJupiterListedAt() *timestamppb.Timestamp {
 type GetAvailableCoinsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TrendingOnly  bool                   `protobuf:"varint,1,opt,name=trending_only,json=trendingOnly,proto3" json:"trending_only,omitempty"` // Changed from optional to required
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -247,9 +249,24 @@ func (x *GetAvailableCoinsRequest) GetTrendingOnly() bool {
 	return false
 }
 
+func (x *GetAvailableCoinsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *GetAvailableCoinsRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
 type GetAvailableCoinsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Coins         []*Coin                `protobuf:"bytes,1,rep,name=coins,proto3" json:"coins,omitempty"`
+	TotalCount    int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -289,6 +306,13 @@ func (x *GetAvailableCoinsResponse) GetCoins() []*Coin {
 		return x.Coins
 	}
 	return nil
+}
+
+func (x *GetAvailableCoinsResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
 }
 
 type GetCoinByIDRequest struct {
@@ -682,11 +706,15 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\t_telegramB\x0f\n" +
 	"\r_coingecko_idB\x0f\n" +
 	"\r_last_updatedB\x14\n" +
-	"\x12_jupiter_listed_at\"?\n" +
+	"\x12_jupiter_listed_at\"m\n" +
 	"\x18GetAvailableCoinsRequest\x12#\n" +
-	"\rtrending_only\x18\x01 \x01(\bR\ftrendingOnly\"E\n" +
+	"\rtrending_only\x18\x01 \x01(\bR\ftrendingOnly\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\"f\n" +
 	"\x19GetAvailableCoinsResponse\x12(\n" +
-	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\"7\n" +
+	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\x12\x1f\n" +
+	"\vtotal_count\x18\x02 \x01(\x05R\n" +
+	"totalCount\"7\n" +
 	"\x12GetCoinByIDRequest\x12!\n" +
 	"\fmint_address\x18\x01 \x01(\tR\vmintAddress\"<\n" +
 	"\x17SearchCoinByMintRequest\x12!\n" +
