@@ -33,7 +33,13 @@ const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ da
 		// grpcApi.getPriceHistory expects (address: string, type: string, timeStr: string, addressType: string)
 		// 'type' could be the timeframeKey, 'timeStr' the current time, 'addressType' as "token"
 		const currentTime = new Date().toISOString();
-		const data = await grpcApi.getPriceHistory(coin.mintAddress, timeframeKey, currentTime, "token");
+		const response = await grpcApi.getPriceHistory(coin.mintAddress, timeframeKey, currentTime, "token");
+		// Extract and transform the items array from the response data (same as CoinDetail)
+		const items = response.data?.items || [];
+		const data = items.map(item => ({
+			timestamp: new Date(item.unixTime * 1000).toISOString(), // Convert Unix timestamp to ISO string
+			value: item.value
+		}));
 		return { data, error: null };
 	} catch (e: unknown) {
 		logger.error(`[HomeScreen] Error in fetchPriceHistory for ${coin.symbol}:`, e);
