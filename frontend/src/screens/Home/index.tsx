@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
@@ -35,7 +35,7 @@ const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ da
 		const currentTime = new Date().toISOString();
 		const data = await grpcApi.getPriceHistory(coin.mintAddress, timeframeKey, currentTime, "token");
 		return { data, error: null };
-	} catch (e: any) {
+	} catch (e: unknown) {
 		logger.error(`[HomeScreen] Error in fetchPriceHistory for ${coin.symbol}:`, e);
 		return { data: [], error: e instanceof Error ? e : new Error(String(e)) };
 	}
@@ -234,7 +234,7 @@ const HomeScreen = () => {
 						newLoadingStates[coin.mintAddress] = false;
 						// Batching updates within sequential is tricky if we want immediate feedback per coin.
 						// For now, individual updates for loading/history in sequential remain.
-						setPriceHistories(prev => ({...prev, [coin.mintAddress!]: newHistories[coin.mintAddress!]}));
+						setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: newHistories[coin.mintAddress!] }));
 						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
 					}
 					await new Promise(resolve => setTimeout(resolve, PRICE_HISTORY_FETCH_DELAY_MS));
@@ -253,13 +253,14 @@ const HomeScreen = () => {
 			setIsLoadingPriceHistories(prev => ({ ...prev, ...initialLoadingStates }));
 
 			Promise.allSettled(
-				topCoins.map(coin => {
+				topCoins.map(async (coin): Promise<{ mintAddress: string; data: PriceData[]; error: Error | null; } | null> => {
 					if (!coin || !coin.mintAddress) return Promise.resolve(null); // Skip invalid coins
-					return fetchPriceHistory(coin, fourHourTimeframeKey).then(result => ({
+					const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
+					return ({
 						mintAddress: coin.mintAddress!,
 						data: result.data || [],
 						error: result.error
-					}));
+					});
 				})
 			).then(results => {
 				const newHistoriesBatch: Record<string, PriceData[]> = {};
@@ -446,8 +447,9 @@ const HomeScreen = () => {
 							onPress={handleDebugCache}
 							icon="bug"
 							compact
-						>
-							Debug Cache
+						><Text>
+								Debug Cache
+							</Text>
 						</Button>
 					</View>
 				)}

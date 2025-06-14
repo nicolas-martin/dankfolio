@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native'; // Removed TouchableOpacity
+import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { Text, Button, Icon, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
@@ -110,8 +110,8 @@ const Profile = () => {
 					<Text style={styles.walletAddress} accessible={true}>
 						{formatAddress(wallet.address)}
 					</Text>
-					<CopyToClipboard 
-						text={wallet.address} 
+					<CopyToClipboard
+						text={wallet.address}
 						testID="copy-wallet-button"
 					/>
 				</View>
@@ -183,13 +183,14 @@ const Profile = () => {
 							onPress={() => {
 								logger.breadcrumb({
 									category: 'ui',
-								message: 'Pressed token card on ProfileScreen',
-								data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress }
-							});
-							handleTokenPress(token.coin, navigation.navigate);
-						}}
-					/>
-				))
+									message: 'Pressed token card on ProfileScreen',
+									data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress }
+								});
+								handleTokenPress(token.coin, navigation.navigate);
+							}}
+						/>
+					)
+				})
 			)}
 		</View>
 	);

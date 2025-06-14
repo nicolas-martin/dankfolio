@@ -8,9 +8,9 @@ interface ImageComparisonProps {
 	size?: number;
 }
 
-export const ImageComparison: React.FC<ImageComparisonProps> = ({ 
-	uri, 
-	size = 40 
+export const ImageComparison: React.FC<ImageComparisonProps> = ({
+	uri,
+	size = 40
 }) => {
 	const DEFAULT_TOKEN_IMAGE = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
 	const blurhash = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
@@ -27,7 +27,7 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 					blurhash={blurhash}
 				/>
 			</View>
-			
+
 			<View style={styles.imageContainer}>
 				<Text style={styles.labelText}>Expo Image</Text>
 				<Image

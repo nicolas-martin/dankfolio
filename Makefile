@@ -48,7 +48,7 @@ frontend-test: frontend-lint
 	@echo "🧪 Running frontend tests..."
 	cd frontend && yarn test
 
-frontend-lint: 
+lint: 
 	@echo "🔍 Running frontend lint..."
 	cd frontend && yarn lint
 

@@ -1,10 +1,4 @@
-import {
-	FC,
-	useState,
-	useRef,
-	useEffect,
-	useCallback,
-} from 'react';
+import { FC, useState, useRef, useEffect, useCallback, } from 'react';
 import type { LayoutChangeEvent, StyleProp, TextStyle } from 'react-native';
 import { View, Text, Animated, Easing } from 'react-native';
 import { usePrevious } from './usePrevious';

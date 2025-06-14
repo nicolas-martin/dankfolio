@@ -148,12 +148,7 @@ const CoinDetail: React.FC = () => {
 	const renderPlaceholderPriceCard = () => (
 		<View style={styles.priceCard}>
 			<View style={styles.placeholderPadding}>
-				<View style={{
-					flexDirection: 'row',
-					justifyContent: 'space-between', // from styles.flexDirectionRow
-					alignItems: 'center',             // inline part
-					marginBottom: 12                  // inline part. Consider using theme.spacing if possible
-				}}>
+				<View style={styles.placeholderCard}>
 					<ShimmerPlaceholder
 						width={40}
 						height={40}
