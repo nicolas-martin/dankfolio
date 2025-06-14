@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button, Card, Text, Chip } from 'react-native-paper';
 import appCheck from '@react-native-firebase/app-check';
@@ -68,6 +68,11 @@ export const AuthTest: React.FC = () => {
 		checkAppCheckStatus();
 	}, []);
 
+	const chipStyle = useMemo(() => [
+		styles.chip,
+		appCheckToken ? styles.chipValid : styles.chipInvalid
+	], [styles.chip, styles.chipValid, styles.chipInvalid, appCheckToken]);
+
 	return (
 		<Card style={styles.card}>
 			<Card.Content>
@@ -79,7 +84,7 @@ export const AuthTest: React.FC = () => {
 					<Text variant="bodyMedium">Status:</Text>
 					<Chip
 						icon={appCheckToken ? "check" : "close"}
-						style={[styles.chip, appCheckToken ? styles.chipValid : styles.chipInvalid]}
+						style={chipStyle} // Use the memoized style
 					>
 						<Text>{appCheckToken ? 'Valid App Check Token' : 'No App Check Token'}</Text>
 					</Chip>

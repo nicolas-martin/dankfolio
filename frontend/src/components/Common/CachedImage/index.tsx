@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react'; // Add useMemo
 import { View, StyleSheet } from 'react-native';
 import ExpoCachedImage from 'expo-cached-image';
 import { CachedImageProps } from './types';
@@ -34,32 +34,37 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	// Default to circular if no borderRadius is provided
 	const finalBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
 
+	const placeholderStyle = useMemo(() => [
+		placeholderStyles.placeholder,
+		{
+			width: size,
+			height: size,
+			borderRadius: finalBorderRadius
+		}
+	], [size, finalBorderRadius, placeholderStyles.placeholder]);
+
 	if (!uri) {
 		return (
-			<View 
-				style={[
-					placeholderStyles.placeholder, 
-					{ 
-						width: size, 
-						height: size, 
-						borderRadius: finalBorderRadius 
-					}
-				]} 
+			<View
+				style={placeholderStyle} // Use memoized style
 			/>
 		);
 	}
 
+	const imageSource = useMemo(() => ({ uri }), [uri]);
+	const imageStyle = useMemo(() => [
+		{
+			width: size,
+			height: size,
+			borderRadius: finalBorderRadius
+		},
+		style
+	].filter(Boolean), [size, finalBorderRadius, style]);
+
 	return (
 		<ExpoCachedImage
-			source={{ uri }}
-			style={[
-				{ 
-					width: size, 
-					height: size, 
-					borderRadius: finalBorderRadius 
-				}, 
-				style
-			]}
+			source={imageSource} // Use memoized source
+			style={imageStyle} // Use memoized style
 			cacheKey={`${uri}-${size}x${size}`}
 			onLoadStart={handleLoadStart}
 			onLoadEnd={handleLoadEnd}
