@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import {

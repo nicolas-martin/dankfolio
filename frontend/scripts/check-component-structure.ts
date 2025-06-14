@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
@@ -177,7 +178,7 @@ const PATTERN_CONFIGS: PatternConfig[] = [
 			// Style objects defined in component
 			/const\s+styles\s*=\s*{[^}]+}/,
 			// Inline className with template literal
-			/className={\`[^}]+\`}/,
+			/className={[^}]+}/,
 			// Style-related constants
 			/const\s+[A-Z_]+(?:_STYLE|_COLOR|_SIZE|_MARGIN|_PADDING|_WIDTH|_HEIGHT)\s*=\s*{[^}]+}/,
 			// Style imports from wrong locations
