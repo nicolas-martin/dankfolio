@@ -45,10 +45,13 @@ message Coin {
 
 message GetAvailableCoinsRequest {
   bool trending_only = 1; // Changed from optional to required
+  int32 limit = 2;
+  int32 offset = 3;
 }
 
 message GetAvailableCoinsResponse {
   repeated Coin coins = 1;
+  int32 total_count = 2;
 }
 
 message GetCoinByIDRequest {
