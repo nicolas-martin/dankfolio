@@ -20,8 +20,11 @@ export default [
 	// Global ignores - must be in separate config object
 	{
 		ignores: [
+			'jest.config.js',
+			'eslint.config.js',
+			'**/scripts/**',
 			'coverage/**',
-			'app.config.json',
+			'app.config.js',
 			'**.d.ts**',
 			'babel.config.js',
 			'**/gen/**',

@@ -13,9 +13,6 @@ export const useStyles = () => {
 		activeButtonText: { // New style
 			color: colors.onPrimary,
 		},
-		activeButtonText: { // New style
-			color: colors.onPrimary,
-		},
 		button: {
 			alignItems: 'center',
 			borderRadius: theme.spacing.sm,

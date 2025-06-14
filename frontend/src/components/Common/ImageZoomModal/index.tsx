@@ -48,11 +48,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 		};
 	});
 
-	// Return null if not visible and animation is complete to prevent flicker
-	// This logic might need adjustment based on how `Modal` handles visibility and animation state.
-	// For now, we rely on Modal's `visible` prop primarily.
-	if (!isVisible && animationValue.value === 0) return null;
-
+	// All hooks must be at top level before any conditional returns
 	const animatedViewStyle = useMemo(() => [
 		styles.blurContainer,
 		backgroundStyle
@@ -61,6 +57,11 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 	const imageSource = useMemo(() => ({
 		uri: imageUri || ''
 	}), [imageUri]);
+
+	// Return null if not visible and animation is complete to prevent flicker
+	// This logic might need adjustment based on how `Modal` handles visibility and animation state.
+	// For now, we rely on Modal's `visible` prop primarily.
+	if (!isVisible && animationValue.value === 0) return null;
 
 	return (
 		<Modal

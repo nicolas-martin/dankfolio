@@ -62,7 +62,7 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 	});
 }
 
- 
+
 async function handleSearch(_options?: FetchInit) {
 	const coinsToReturn = MOCK_NEW_COINS;
 	return create(SearchResponseSchema, {
@@ -71,7 +71,7 @@ async function handleSearch(_options?: FetchInit) {
 	});
 }
 
- 
+
 async function handleSearchCoins(_options?: FetchInit) {
 	const coinsToReturn = MOCK_TRENDING_COINS.slice(0, 3);
 	return create(SearchResponseSchema, {
@@ -80,7 +80,7 @@ async function handleSearchCoins(_options?: FetchInit) {
 	});
 }
 
- 
+
 async function handleSearchCoinByMint(_options?: FetchInit) {
 	return create(SearchCoinByMintResponseSchema, {
 		coin: ALL_MOCK_COINS[0],
@@ -163,13 +163,13 @@ async function handleGetPriceHistory(options?: FetchInit) {
 async function handleGetCoinPrices(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const coinIds = requestData.coinIds || [];
-	
+
 	// If no specific coins requested, return prices for all coins
 	const coinsToPrice = coinIds.length > 0 ? coinIds : ALL_MOCK_COINS.map(c => c.mintAddress);
-	
+
 	const mockPrices: { [key: string]: number } = {};
 	coinsToPrice.forEach((coinId: string) => {
-		const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+		const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
 			c.mintAddress.toLowerCase() === coinId.toLowerCase()
 		);
 		if (coin) {
@@ -177,7 +177,7 @@ async function handleGetCoinPrices(options?: FetchInit) {
 			mockPrices[coinId] = coin.price;
 		}
 	});
-	
+
 	return { prices: mockPrices }; // This endpoint returns a plain object
 }
 
@@ -190,10 +190,10 @@ async function handleGetSwapQuote(options?: FetchInit) {
 	}
 
 	// Find the coins to get their base data
-	const fromCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+	const fromCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
 		c.mintAddress.toLowerCase() === fromCoinId.toLowerCase()
 	);
-	const toCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) => 
+	const toCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
 		c.mintAddress.toLowerCase() === toCoinId.toLowerCase()
 	);
 
@@ -210,7 +210,7 @@ async function handleGetSwapQuote(options?: FetchInit) {
 	// Calculate estimated output amount based on prices
 	// estimatedAmount = (inputAmount * fromCoinPrice) / toCoinPrice
 	const estimatedDecimalAmount = (decimalAmount * fromCoin.price) / toCoin.price;
-	
+
 	// Apply some slippage/fees (reduce by 0.5%)
 	const slippageAdjustedAmount = estimatedDecimalAmount * 0.995;
 
@@ -234,34 +234,34 @@ async function handleGetSwapQuote(options?: FetchInit) {
 	});
 }
 
- 
-async function handlePrepareSwap(options?: FetchInit) {
+
+async function handlePrepareSwap(_options?: FetchInit) {
 	const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
 	return create(PrepareSwapResponseSchema, {
 		unsignedTransaction: mockTransactionBase64,
 	});
 }
 
- 
-async function handlePrepareTransfer(options?: FetchInit) {
+
+async function handlePrepareTransfer(_options?: FetchInit) {
 	return { unsignedTransaction: CAPTURED_TRANSACTION_DATA.UNSIGNED_TX }; // This endpoint returns a plain object
 }
 
- 
-async function handleSubmitTransfer(options?: FetchInit) {
+
+async function handleSubmitTransfer(_options?: FetchInit) {
 	return { transactionHash: CAPTURED_TRANSACTION_DATA.MOCK_TX_HASH }; // This endpoint returns a plain object
 }
 
- 
-async function handleSubmitSwap(options?: FetchInit) {
+
+async function handleSubmitSwap(_options?: FetchInit) {
 	return create(SubmitSwapResponseSchema, {
 		tradeId: 'mock_trade_id_e2e_test_67890',
 		transactionHash: 'mock_transaction_hash_abcdef123456',
 	});
 }
 
- 
-async function handleGetSwapStatus(options?: FetchInit) {
+
+async function handleGetSwapStatus(_options?: FetchInit) {
 	return { // This endpoint returns a plain object
 		transaction_hash: 'mock_transaction_hash_abcdef123456',
 		status: 'Finalized',
@@ -270,8 +270,8 @@ async function handleGetSwapStatus(options?: FetchInit) {
 	};
 }
 
- 
-async function handleGetTrade(options?: FetchInit) {
+
+async function handleGetTrade(_options?: FetchInit) {
 	return create(TradeSchema, {
 		id: 'mock_trade_id_e2e_test_67890',
 		userId: 'mock_user_id',
@@ -289,8 +289,8 @@ async function handleGetTrade(options?: FetchInit) {
 	});
 }
 
- 
-async function handleListTrades(options?: FetchInit) {
+
+async function handleListTrades(_options?: FetchInit) {
 	const mockTrade = create(TradeSchema, {
 		id: 'mock_trade_id_e2e_test_67890',
 		userId: 'mock_user_id',
@@ -362,7 +362,7 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 		}
 
 
-		const responseBody = JSON.stringify(mockResponse, (key, value) => {
+		const responseBody = JSON.stringify(mockResponse, (_key, value) => {
 			if (typeof value === 'bigint') {
 				return value.toString();
 			}

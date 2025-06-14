@@ -141,21 +141,24 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 		}
 	};
 
+	// All hooks must be at top level before any render functions
+	const progressFillStyle = useMemo(() => [
+		styles.progressFill,
+		{
+			width: progressAnim.interpolate({
+				inputRange: [0, 1],
+				outputRange: ['0%', '100%'],
+			})
+		}
+	], [styles.progressFill, progressAnim]);
+
 	const renderProgressSection = () => {
 		// Show progress if currently in progress OR if we've shown it before and not failed OR if finalized
 		const shouldShowProgress = isInProgress || (hasShownProgress && displayStatus !== 'failed') || displayStatus === 'finalized';
 
 		if (!shouldShowProgress) return null;
 
-		const progressFillStyle = useMemo(() => [
-			styles.progressFill,
-			{
-				width: progressAnim.interpolate({
-					inputRange: [0, 1],
-					outputRange: ['0%', '100%'],
-				})
-			}
-		], [styles.progressFill, progressAnim]);
+
 
 		// For pending state without txHash, show preparing message
 		if (displayStatus === 'pending' && !txHash) {

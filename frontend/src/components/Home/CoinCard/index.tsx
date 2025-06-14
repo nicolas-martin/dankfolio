@@ -30,6 +30,14 @@ const CoinCard: React.FC<CoinCardProps> = ({
 		}
 	}, [coin, onPressCoin, isHorizontal]);
 
+	// All hooks must be at top level before any conditional logic
+	const horizontalChangeStyle = useMemo(() => [ // Memoized style
+		styles.horizontalChange,
+		(coin.change24h ?? 0) > 0 ? styles.changePositiveSmall :
+		(coin.change24h ?? 0) < 0 ? styles.changeNegativeSmall :
+		styles.changeNeutralSmall
+	], [styles.horizontalChange, styles.changePositiveSmall, styles.changeNegativeSmall, styles.changeNeutralSmall, coin.change24h]);
+
 	// Memoize the image load/error handlers (no longer needed if CachedImage is only in CoinInfoBlock)
 	// const handleImageLoad = useCallback(() => { ... });
 	// const handleImageError = useCallback(() => { ... });
@@ -53,12 +61,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 			</View>
 		);
 
-		const horizontalChangeStyle = useMemo(() => [ // Memoized style
-			styles.horizontalChange,
-			coin.change24h > 0 ? styles.changePositiveSmall :
-			coin.change24h < 0 ? styles.changeNegativeSmall :
-			styles.changeNeutralSmall
-		], [styles.horizontalChange, styles.changePositiveSmall, styles.changeNegativeSmall, styles.changeNeutralSmall, coin.change24h]);
+
 
 		return (
 			<TouchableOpacity
@@ -137,7 +140,6 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					secondaryTextStyle={coin.balance !== undefined ? styles.balance : styles.name}
 					// iconStyle={styles.logo} // If specific styling needed for the icon wrapper itself
 					textContainerStyle={styles.nameSection}
-					testIdPrefix={testIdPrefix} // Pass down for testing if CoinInfoBlock supports it
 				/>
 
 				{/* Sparkline in the middle */}

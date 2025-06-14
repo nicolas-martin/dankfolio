@@ -40,13 +40,13 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
 				// containerStyle={styles.tokenInfoContainer} // Example: if styles.tokenInfo was the container
 				primaryTextStyle={styles.tokenName}
 				secondaryTextStyle={styles.tokenAddress}
-				// textContainerStyle={styles.tokenDetails} // This was the View wrapping texts
+			// textContainerStyle={styles.tokenDetails} // This was the View wrapping texts
 			/>{/* No space or newline here if possible */}
 			{/* Original listedAtString needs to be placed. Maybe CoinInfoBlock needs a third line or additional slot? */}
 			{/* For now, let's add it separately if CoinInfoBlock doesn't support it. */}
 			{listedAtString && (
-				<View style={styles.tokenDetails}> {/* This might need adjustment based on CoinInfoBlock's layout */}
-			    <Text style={styles.listedAtText}>{listedAtString}</Text>
+				<View style={styles.tokenDetails}>
+					<Text style={styles.listedAtText}>{listedAtString}</Text>
 				</View>
 			)}{/* No space or newline here if possible */}
 			<View style={styles.symbolColumn}>
