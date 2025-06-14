@@ -1,5 +1,5 @@
 
-.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build backend-generate-mocks frontend-lint proto db-migrate-up psql db-reset
+.PHONY: dev setup run backend-kill test run-mobile mobile-kill help frontend-test backend-build mocks frontend-lint proto db-migrate-up psql db-reset
 
 # Variables
 BACKEND_DIR := backend
@@ -52,10 +52,10 @@ frontend-lint:
 	@echo "🔍 Running frontend lint..."
 	cd frontend && yarn lint
 
-backend-generate-mocks:
+mocks:
 	@echo "🔍 Checking mockery version..."
-	@CURRENT_MOCKERY_VERSION=$$(mockery --version 2>/dev/null); \
-	if [ -z "$$CURRENT_MOCKERY_VERSION" ] || [ "$$CURRENT_MOCKERY_VERSION" != "version $(MOCKERY_VERSION)" ]; then \
+	@CURRENT_MOCKERY_VERSION=$$(mockery version 2>/dev/null); \
+	if [ -z "$$CURRENT_MOCKERY_VERSION" ] || [ "$$CURRENT_MOCKERY_VERSION" != "$(MOCKERY_VERSION)" ]; then \
 		echo "mockery not found or version mismatch. Required: $(MOCKERY_VERSION). Found: $$CURRENT_MOCKERY_VERSION"; \
 		echo "Installing/Updating mockery to $(MOCKERY_VERSION)..."; \
 		go install github.com/vektra/mockery/v3@$(MOCKERY_VERSION); \
@@ -71,7 +71,7 @@ backend-build: proto ## Check backend Go code compilation
 	@echo "🏗️ Compiling backend code..."
 	cd backend && go build ./...
 
-backend-test: backend-generate-mocks
+backend-test: mocks
 	@echo "🧪 Running backend tests..."
 	cd backend && go test ./... -v
 
@@ -140,7 +140,7 @@ help:
 	@echo "  \033[33mmake mobile-kill\033[0m   - Stop the mobile frontend"
 	@echo "  \033[33mmake backend-build\033[0m - Build and check backend Go code compilation"
 	@echo "  \033[33mmake backend-test\033[0m  - Run backend tests (includes build and mock generation)"
-	@echo "  \033[33mmake backend-generate-mocks\033[0m - Generate backend mocks"
+	@echo "  \033[33mmake mocks\033[0m - Generate backend mocks"
 	@echo "  \033[33mmake db-migrate-up\033[0m - Apply database migrations"
 	@echo "  \033[33mmake db-reset\033[0m    - Reset the database"
 	@echo "  \033[33mmake psql\033[0m          - Connect to Postgres using DB_URL from .env"
