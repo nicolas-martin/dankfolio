@@ -74,9 +74,14 @@ const CoinDetail: React.FC = () => {
 		// The hook simplifies this to just coinId and timeframe.
 		// The actual call to grpcApi.getPriceHistory will need to construct these.
 		// The `usePriceHistory` hook calls this with (coinId, timeframe).
-		// The `grpcApi.getPriceHistory` has been modified to return PriceData[] directly.
 		const currentTime = new Date().toISOString(); // Or handle time more flexibly if needed
-		return grpcApi.getPriceHistory(coinId, timeframe, currentTime, "token");
+		const response = await grpcApi.getPriceHistory(coinId, timeframe, currentTime, "token");
+		// Extract and transform the items array from the response data
+		const items = response.data?.items || [];
+		return items.map(item => ({
+			timestamp: item.unixTime.toString(),
+			value: item.value
+		}));
 	}, []);
 
 
@@ -144,6 +149,77 @@ const CoinDetail: React.FC = () => {
 	}, [tokens, displayCoin?.mintAddress]);
 
 	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description) || isPriceHistoryLoading; // Combine loading states
+
+	// All hooks must be at the top level - moved from after render functions
+	const chartData = useMemo(() => priceHistory || [], [priceHistory]);
+
+	const coinInfoMetadata = useMemo(() => ({
+		name: displayCoin?.name || '',
+		description: displayCoin?.description || '',
+		website: displayCoin?.website || '',
+		twitter: displayCoin?.twitter || '',
+		telegram: displayCoin?.telegram || '',
+		dailyVolume: displayCoin?.dailyVolume || 0,
+		tags: displayCoin?.tags || [],
+		symbol: displayCoin?.symbol || '',
+		createdAt: displayCoin?.createdAt || new Date()
+	}), [displayCoin]);
+
+	const timeframeButtonsRowStyle = useMemo(() => [
+		styles.timeframeButtonsRow, 
+		isPriceHistoryLoading && styles.timeframeButtonsRowLoading
+	], [styles.timeframeButtonsRow, styles.timeframeButtonsRowLoading, isPriceHistoryLoading]);
+
+	const timeframeButtonStyle = useMemo(() => ({
+		style: styles.timeframeButton
+	}), [styles.timeframeButton]);
+
+	const onRefresh = useCallback(async () => {
+		if (mintAddress) {
+			// We use the general 'loading' state for RefreshControl indication here.
+			// Alternatively, a new state like 'isRefreshing' could be introduced
+			// if we want to differentiate Lottie loader from pull-to-refresh loader.
+			// For now, existing `loading` state will make the chart loader appear during refresh.
+			// setLoading(true); // setLoading was removed, isPriceHistoryLoading is used for RefreshControl
+			try {
+				await useCoinStore.getState().getCoinByID(mintAddress, true);
+				// Price history will refresh via the useEffect dependency on 'displayCoin' changing.
+				// If getCoinByID doesn't result in a change to 'displayCoin' object reference,
+				// the effect won't re-run. This might be desired if data is identical.
+				// However, if a forced chart refresh is needed even if coin data is same,
+				// we might need a manual trigger for loadData() here.
+			} catch (error: unknown) {
+				if (error instanceof Error) {
+					logger.error("Error during refresh:", error.message);
+				} else {
+					logger.error("An unknown error occurred during refresh:", error);
+				}
+				showToast({ type: 'error', message: 'Failed to refresh data.' });
+				// Ensure loading is false if refresh fails before history fetch can
+				// setLoading(false); // setLoading was removed
+			}
+			// setLoading(false) is now primarily handled by the data fetching useEffect's finally block. // setLoading was removed
+			// If the displayCoin data doesn't change after getCoinByID, the effect might not run.
+			// To ensure the RefreshControl spinner stops, we might need to explicitly stop it
+			// if the effect doesn't run. This can be tricky.
+			// A simple approach: if data fetching effect is not re-triggered, stop loading.
+			// This timeout is a pragmatic way to ensure it stops if the effect doesn't.
+			// setTimeout(() => setLoading(false), 1000); // setLoading was removed
+
+
+		} else {
+			// setLoading(false); // Ensure loading stops if there's no mintAddress // setLoading was removed
+		}
+	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
+
+	const handleTradePress = useCallback(async () => {
+		if (displayCoin) {
+			await handleTradeNavigation(
+				displayCoin,
+				navigation.navigate
+			);
+		}
+	}, [displayCoin, navigation]); // Removed showToast from dependencies
 
 	const renderPlaceholderPriceCard = () => (
 		<View style={styles.priceCard}>
@@ -274,20 +350,6 @@ const CoinDetail: React.FC = () => {
 		);
 	};
 
-	const chartData = useMemo(() => priceHistory || [], [priceHistory]);
-
-	const coinInfoMetadata = useMemo(() => ({
-		name: displayCoin?.name || '',
-		description: displayCoin?.description || '',
-		website: displayCoin?.website || '',
-		twitter: displayCoin?.twitter || '',
-		telegram: displayCoin?.telegram || '',
-		dailyVolume: displayCoin?.dailyVolume || 0,
-		tags: displayCoin?.tags || [],
-		symbol: displayCoin?.symbol || '',
-		createdAt: displayCoin?.createdAt || new Date()
-	}), [displayCoin]);
-
 	const renderChartCard = () => {
 		return (
 			<View style={styles.chartContainer} testID={`coin-detail-chart-card-${displayCoin?.symbol?.toLowerCase()}`}>
@@ -383,62 +445,6 @@ const CoinDetail: React.FC = () => {
 			</View>
 		);
 	};
-
-	const onRefresh = useCallback(async () => {
-		if (mintAddress) {
-			// We use the general 'loading' state for RefreshControl indication here.
-			// Alternatively, a new state like 'isRefreshing' could be introduced
-			// if we want to differentiate Lottie loader from pull-to-refresh loader.
-			// For now, existing `loading` state will make the chart loader appear during refresh.
-			// setLoading(true); // setLoading was removed, isPriceHistoryLoading is used for RefreshControl
-			try {
-				await useCoinStore.getState().getCoinByID(mintAddress, true);
-				// Price history will refresh via the useEffect dependency on 'displayCoin' changing.
-				// If getCoinByID doesn't result in a change to 'displayCoin' object reference,
-				// the effect won't re-run. This might be desired if data is identical.
-				// However, if a forced chart refresh is needed even if coin data is same,
-				// we might need a manual trigger for loadData() here.
-			} catch (error: unknown) {
-				if (error instanceof Error) {
-					logger.error("Error during refresh:", error.message);
-				} else {
-					logger.error("An unknown error occurred during refresh:", error);
-				}
-				showToast({ type: 'error', message: 'Failed to refresh data.' });
-				// Ensure loading is false if refresh fails before history fetch can
-				// setLoading(false); // setLoading was removed
-			}
-			// setLoading(false) is now primarily handled by the data fetching useEffect's finally block. // setLoading was removed
-			// If the displayCoin data doesn't change after getCoinByID, the effect might not run.
-			// To ensure the RefreshControl spinner stops, we might need to explicitly stop it
-			// if the effect doesn't run. This can be tricky.
-			// A simple approach: if data fetching effect is not re-triggered, stop loading.
-			// This timeout is a pragmatic way to ensure it stops if the effect doesn't.
-			// setTimeout(() => setLoading(false), 1000); // setLoading was removed
-
-
-		} else {
-			// setLoading(false); // Ensure loading stops if there's no mintAddress // setLoading was removed
-		}
-	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
-
-	const handleTradePress = useCallback(async () => {
-		if (displayCoin) {
-			await handleTradeNavigation(
-				displayCoin,
-				navigation.navigate
-			);
-		}
-	}, [displayCoin, navigation]); // Removed showToast from dependencies
-
-	const timeframeButtonsRowStyle = useMemo(() => [
-		styles.timeframeButtonsRow, 
-		isPriceHistoryLoading && styles.timeframeButtonsRowLoading
-	], [styles.timeframeButtonsRow, styles.timeframeButtonsRowLoading, isPriceHistoryLoading]);
-
-	const timeframeButtonStyle = useMemo(() => ({
-		style: styles.timeframeButton
-	}), [styles.timeframeButton]);
 
 	return (
 		<SafeAreaView style={styles.container} testID={`coin-detail-screen-${displayCoin?.symbol?.toLowerCase()}`}>
