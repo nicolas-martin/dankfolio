@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 // Allow navigation to Search as well for the "View All" button
 type NewCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
 
-const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or similar if needed, or keep as NewCoins if preferred
+const NewCoinsInternal: React.FC = () => {
 	const styles = useStyles();
 	const navigation = useNavigation<NewCoinsNavigationProp>();
 	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
@@ -33,41 +33,11 @@ const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or sim
 		return newlyListedCoins;
 	}, [newlyListedCoins]);
 
-	// Placeholder component for loading horizontal ticker cards
-	const renderPlaceholderCard = () => {
-		const placeholderCardStyle = useMemo(() => [ // Memoized style array
-			styles.cardWrapper,
-			styles.placeholderCardContainer
-		], [styles.cardWrapper, styles.placeholderCardContainer]);
-
-		return (
-			<View style={placeholderCardStyle}>
-				<ShimmerPlaceholder
-					width={48}
-				height={48}
-				borderRadius={24}
-				style={styles.placeholderIconShimmer}
-			/>
-			<ShimmerPlaceholder
-				width="70%"
-				height={14}
-				borderRadius={4}
-				style={styles.placeholderTextShimmerLine1}
-			/>
-			<ShimmerPlaceholder
-				width="50%"
-				height={12}
-				borderRadius={4}
-				style={styles.placeholderTextShimmerLine1}
-			/>
-			<ShimmerPlaceholder
-				width="40%"
-				height={12}
-				borderRadius={4}
-				style={styles.placeholderTextShimmerLine2}
-			/>
-		</View>
-	);
+	// Memoized styles at component level
+	const placeholderCardStyle = useMemo(() => [
+		styles.cardWrapper,
+		styles.placeholderCardContainer
+	], [styles.cardWrapper, styles.placeholderCardContainer]);
 
 	const handleCoinPress = useCallback((coin: Coin) => {
 		// Navigate immediately with the basic coin data
@@ -86,7 +56,45 @@ const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or sim
 		getCoinByID(coin.mintAddress, true).catch(error => {
 			logger.error(`[NewCoins] Background fetch failed for ${coin.symbol}:`, { error, coinMint: coin.mintAddress });
 		});
-	}, [navigation, getCoinByID]); // Added dependencies for handleCoinPress
+	}, [navigation, getCoinByID]);
+
+	const getItemLayout = useCallback((_data: any, index: number) => ({
+		length: CARD_WIDTH,
+		offset: CARD_WIDTH * index,
+		index,
+	}), [CARD_WIDTH]);
+
+	// Placeholder component for loading horizontal ticker cards
+	const renderPlaceholderCard = () => {
+		return (
+			<View style={placeholderCardStyle}>
+				<ShimmerPlaceholder
+					width={48}
+					height={48}
+					borderRadius={24}
+					style={styles.placeholderIconShimmer}
+				/>
+				<ShimmerPlaceholder
+					width="70%"
+					height={14}
+					borderRadius={4}
+					style={styles.placeholderTextShimmerLine1}
+				/>
+				<ShimmerPlaceholder
+					width="50%"
+					height={12}
+					borderRadius={4}
+					style={styles.placeholderTextShimmerLine1}
+				/>
+				<ShimmerPlaceholder
+					width="40%"
+					height={12}
+					borderRadius={4}
+					style={styles.placeholderTextShimmerLine2}
+				/>
+			</View>
+		);
+	};
 
 	const renderItem = useCallback(({ item }: { item: Coin; index: number }) => {
 		return (
@@ -134,16 +142,8 @@ const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or sim
 		);
 	}
 
-	const getItemLayout = useCallback((_, index: number) => ({ // Memoized function
-		length: CARD_WIDTH,
-		offset: CARD_WIDTH * index,
-		index,
-	}), [CARD_WIDTH]);
-
 	return (
-		<View
-			style={styles.container}
-		>
+		<View style={styles.container}>
 			<View style={styles.titleContainer}>
 				<Text style={styles.title}>New Listings</Text>
 				{/* "View All" button and associated false && condition removed */}
@@ -164,7 +164,7 @@ const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or sim
 				updateCellsBatchingPeriod={50}
 				initialNumToRender={5}
 				windowSize={5}
-				getItemLayout={getItemLayout} // Applied
+				getItemLayout={getItemLayout}
 				ListEmptyComponent={
 					isLoadingNewlyListed ? null : (
 						<Text style={styles.emptyText}>No new listings available.</Text>
@@ -175,4 +175,4 @@ const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or sim
 	);
 };
 
-export default React.memo(NewCoinsInternal); // Or React.memo(NewCoins)
+export default React.memo(NewCoinsInternal);

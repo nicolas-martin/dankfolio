@@ -52,20 +52,21 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
 			{percentages.map((percent) => {
 				const isActive = activePercent === percent;
 
-				const buttonStyle = useMemo(() => [
+				// Create styles directly without useMemo inside the callback
+				const buttonStyle = [
 					styles.percentageButton,
 					isActive ? styles.activeButton : undefined
-				].filter(Boolean), [styles.percentageButton, styles.activeButton, isActive]);
+				].filter(Boolean);
 
-				const textStyle = useMemo(() => [
+				const textStyle = [
 					styles.percentageButtonText,
 					isActive ? styles.activeButtonText : undefined
-				].filter(Boolean), [styles.percentageButtonText, styles.activeButtonText, isActive]);
+				].filter(Boolean);
 
 				return (
 					<TouchableOpacity
 						key={percent}
-						style={buttonStyle} // Use the memoized style
+						style={buttonStyle}
 						onPress={() => handlePress(percent)}
 						testID={`amount-percentage-button-${percent}`}
 						accessible={true}
@@ -73,7 +74,7 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
 						accessibilityLabel={`${percent} percent button`}
 					>
 						<Text
-							style={textStyle} // Use the memoized style
+							style={textStyle}
 							testID={`amount-percentage-text-${percent}`}
 							accessible={false}
 						>

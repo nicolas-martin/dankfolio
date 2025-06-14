@@ -10,7 +10,6 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	size = 50,
 	borderRadius,
 	style, // This is the prop 'style', not from a local StyleSheet
-	placeholder, // placeholder prop is unused
 	testID,
 	tintColor,
 }) => {
@@ -36,6 +35,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	// Default to circular if no borderRadius is provided
 	const finalBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
 
+	// All hooks must be at top level before any conditional returns
 	const placeholderStyleToUse = useMemo(() => [
 		styles.placeholder, // From the hook
 		{
@@ -44,14 +44,6 @@ const CachedImage: React.FC<CachedImageProps> = ({
 			borderRadius: finalBorderRadius
 		}
 	], [styles.placeholder, size, finalBorderRadius]);
-
-	if (!uri) {
-		return (
-			<View
-				style={placeholderStyleToUse} // Apply the memoized style using themed placeholder
-			/>
-		);
-	}
 
 	const imageSource = useMemo(() => ({ uri }), [uri]);
 	const imageStyle = useMemo(() => [
@@ -63,6 +55,14 @@ const CachedImage: React.FC<CachedImageProps> = ({
 		style
 	].filter(Boolean), [size, finalBorderRadius, style]);
 
+	if (!uri) {
+		return (
+			<View
+				style={placeholderStyleToUse} // Apply the memoized style using themed placeholder
+			/>
+		);
+	}
+
 	return (
 		<ExpoCachedImage
 			source={imageSource} // Use memoized source
@@ -73,7 +73,6 @@ const CachedImage: React.FC<CachedImageProps> = ({
 			onError={handleError}
 			testID={testID}
 			tintColor={tintColor || undefined}
-			placeholder={placeholder} // Add this line
 		/>
 	);
 };

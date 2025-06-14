@@ -278,6 +278,12 @@ const Trade: React.FC = () => {
 		logger.info('[Trade] Confirmation modal closed - refresh timers remain disabled');
 	};
 
+	// All hooks must be at top level before any conditional returns
+	const exchangeRateLabelTextStyle = useMemo(() => [
+		styles.detailLabel, 
+		styles.exchangeRateLabelText
+	], [styles.detailLabel, styles.exchangeRateLabelText]);
+
 	if (!wallet) {
 		return (
 			<SafeAreaView style={styles.container}>
@@ -351,11 +357,6 @@ const Trade: React.FC = () => {
 			)}
 		</View>
 	);
-
-	const exchangeRateLabelTextStyle = useMemo(() => [
-		styles.detailLabel, 
-		styles.exchangeRateLabelText
-	], [styles.detailLabel, styles.exchangeRateLabelText]);
 
 	const renderTradeDetails = () => {
 		if (!fromAmount || !toAmount || !tradeDetails.exchangeRate || tradeDetails.exchangeRate === '0') {

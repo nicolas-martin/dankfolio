@@ -16,6 +16,23 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	const styles = useStyles();
 	const [isZoomModalVisible, setIsZoomModalVisible] = useState(false); // Added state for modal
 
+	// Calculate derived values - hooks must be at top level
+	const isPositive = !isNaN(periodChange) && periodChange >= 0;
+	const formattedPrice = formatPrice(price);
+	const formattedChange = !isNaN(periodChange) && !isNaN(valueChange)
+		? formatValueChange(valueChange, periodChange)
+		: '---';
+
+	const changeTextStyle = useMemo(() => [
+		styles.changeText,
+		isPositive ? styles.changePositive : styles.changeNegative
+	], [styles.changeText, styles.changePositive, styles.changeNegative, isPositive]);
+
+	const periodTextStyle = useMemo(() => [
+		styles.periodText, 
+		styles.periodTextColor
+	], [styles.periodText, styles.periodTextColor]);
+
 	// Early return with a placeholder if any required values are invalid
 	if (isNaN(price) || price === null || price === undefined) {
 		// Return a static display instead of null to prevent layout shifts
@@ -56,23 +73,6 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			</View>
 		);
 	}
-
-	// Calculate derived values only after validation
-	const isPositive = !isNaN(periodChange) && periodChange >= 0;
-	const formattedPrice = formatPrice(price);
-	const formattedChange = !isNaN(periodChange) && !isNaN(valueChange)
-		? formatValueChange(valueChange, periodChange)
-		: '---';
-
-	const changeTextStyle = useMemo(() => [
-		styles.changeText,
-		isPositive ? styles.changePositive : styles.changeNegative
-	], [styles.changeText, styles.changePositive, styles.changeNegative, isPositive]);
-
-	const periodTextStyle = useMemo(() => [
-		styles.periodText, 
-		styles.periodTextColor
-	], [styles.periodText, styles.periodTextColor]);
 
 	return (
 		<View style={styles.container} testID="price-display-container">

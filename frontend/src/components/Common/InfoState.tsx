@@ -21,6 +21,17 @@ const InfoState: React.FC<InfoStateProps> = ({
 }) => {
   const styles = useStyles();
 
+  // All hooks must be at top level before any conditional returns
+  const errorTitleStyle = useMemo(() => [
+      styles.title,
+      styles.errorText
+  ], [styles.title, styles.errorText]);
+
+  const errorMessageStyle = useMemo(() => [
+      styles.message,
+      styles.errorText
+  ], [styles.message, styles.errorText]);
+
   if (isLoading) {
     return (
       <View style={styles.container} testID="info-state-loading">
@@ -33,16 +44,6 @@ const InfoState: React.FC<InfoStateProps> = ({
 
   if (error) {
     const errorMessage = typeof error === 'string' ? error : error.message;
-
-    const errorTitleStyle = useMemo(() => [
-        styles.title,
-        styles.errorText
-    ], [styles.title, styles.errorText]);
-
-    const errorMessageStyle = useMemo(() => [
-        styles.message,
-        styles.errorText
-    ], [styles.message, styles.errorText]);
 
     return (
       <View style={styles.container} testID="info-state-error">
