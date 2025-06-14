@@ -12,12 +12,8 @@ import {
 	validateForm,
 	handleTokenTransfer,
 	handleTokenSelect,
-	getDefaultSolanaToken,
-	validateForm,
-	handleTokenTransfer,
-	handleTokenSelect,
 	getDefaultSolanaToken
-	// Removed startPolling, stopPolling, pollTransactionStatus
+	// Removed duplicate imports and startPolling, stopPolling, pollTransactionStatus
 } from './scripts';
 import { useStyle } from './styles';
 import { Coin } from '@/types'; // Added Wallet
@@ -30,11 +26,34 @@ import { grpcApi } from '@/services/grpcApi';
 import VerificationCard from '@/components/Common/Form/VerificationCard'; // Import VerificationCard
 import { VerificationStatus } from '@/components/Common/Form/VerificationCard.styles'; // Import status type
 
+// Static object for TradeConfirmation fees
+const staticTradeConfirmationFees = {
+	priceImpactPct: "0",
+	totalFee: "0",
+	gasFee: "0",
+	route: "Direct Transfer"
+};
+
 const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const styles = useStyle();
 	const { wallet, tokens, fetchPortfolioBalance } = usePortfolioStore(); // Added fetchPortfolioBalance
 	const { fetchRecentTransactions } = useTransactionsStore(); // Added fetchRecentTransactions
 	const { showToast } = useToast();
+
+	// Memoized styles
+	const sendButtonStyle = useMemo(() =>
+		isLoading ? [styles.sendButton, styles.sendButtonDisabled].flat() : styles.sendButton,
+		[isLoading, styles.sendButton, styles.sendButtonDisabled]
+	);
+	const verificationCancelButtonStyle = useMemo(() =>
+		[styles.verificationButton, styles.verificationButtonCancel].flat(),
+		[styles.verificationButton, styles.verificationButtonCancel]
+	);
+	const verificationContinueButtonStyle = useMemo(() =>
+		[styles.verificationButton, styles.verificationButtonContinue].flat(),
+		[styles.verificationButton, styles.verificationButtonContinue]
+	);
+
 	const [selectedToken, setSelectedToken] = useState<PortfolioToken | undefined>(undefined);
 	const [amount, setAmount] = useState('');
 	const [recipientAddress, setRecipientAddress] = useState('');
@@ -50,7 +69,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		error: currentPollingError,
 		confirmations: currentPollingConfirmations,
 		startPolling: startTxPolling,
-		stopPolling: stopTxPolling,
+		// stopPolling: stopTxPolling, // Removed as unused
 		resetPolling: resetTxPolling
 	} = useTransactionPolling(
 		grpcApi.getSwapStatus, // Pass the actual polling function
@@ -388,7 +407,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		<TouchableOpacity
 			onPress={handleSubmit}
 			disabled={isLoading}
-			style={[styles.sendButton, isLoading && styles.sendButtonDisabled]}
+			style={sendButtonStyle}
 			testID="send-button"
 		>
 			<Icon source="send" size={20} color={styles.colors.onPrimary} />
@@ -433,14 +452,14 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 						{/* Buttons for verification card need to be handled separately if VerificationCard doesn't include them */}
 						<View style={styles.verificationActions}>
 							<TouchableOpacity
-								style={[styles.verificationButton, styles.verificationButtonCancel]}
+								style={verificationCancelButtonStyle}
 								onPress={handleCancelVerification}
 								testID="verification-cancel-button"
 							>
 								<Text style={styles.verificationButtonCancelText}>Cancel</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
-								style={[styles.verificationButton, styles.verificationButtonContinue]}
+								style={verificationContinueButtonStyle}
 								onPress={handleConfirmVerificationAndProceed}
 								testID="verification-continue-button"
 							>
@@ -470,12 +489,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				toAmount="0"
 				operationType="send"
 				recipientAddress={recipientAddress}
-				fees={{
-					priceImpactPct: "0",
-					totalFee: "0",
-					gasFee: "0",
-					route: "Direct Transfer"
-				}}
+				fees={staticTradeConfirmationFees}
 			/>
 
 			{/* Status Modal */}

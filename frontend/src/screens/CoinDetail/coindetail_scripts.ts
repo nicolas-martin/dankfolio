@@ -1,13 +1,6 @@
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
 
-type ToastType = 'success' | 'error' | 'info' | 'warning';
-interface ToastParams {
-	type: ToastType;
-	message: string;
-	txHash?: string;
-}
-
 // TIMEFRAMES constant has been moved to frontend/src/utils/constants.ts
 // export const TIMEFRAMES: TimeframeOption[] = [
 // 	{ label: "1H", value: "1H" },

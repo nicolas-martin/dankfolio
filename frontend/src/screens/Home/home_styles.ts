@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
-		const colors = theme.colors; // Ensure colors is defined inside useMemo if used by StyleSheet.create
+		// const colors = theme.colors; // This variable was unused
 		const styles = StyleSheet.create({
 			alignFlexEnd: {
 				alignItems: 'flex-end',

@@ -148,7 +148,12 @@ const CoinDetail: React.FC = () => {
 	const renderPlaceholderPriceCard = () => (
 		<View style={styles.priceCard}>
 			<View style={styles.placeholderPadding}>
-				<View style={[styles.flexDirectionRow, { alignItems: 'center', marginBottom: 12 }]}>
+				<View style={{
+					flexDirection: 'row',
+					justifyContent: 'space-between', // from styles.flexDirectionRow
+					alignItems: 'center',             // inline part
+					marginBottom: 12                  // inline part. Consider using theme.spacing if possible
+				}}>
 					<ShimmerPlaceholder
 						width={40}
 						height={40}
@@ -386,7 +391,7 @@ const CoinDetail: React.FC = () => {
 			// Alternatively, a new state like 'isRefreshing' could be introduced
 			// if we want to differentiate Lottie loader from pull-to-refresh loader.
 			// For now, existing `loading` state will make the chart loader appear during refresh.
-			setLoading(true);
+			// setLoading(true); // setLoading was removed, isPriceHistoryLoading is used for RefreshControl
 			try {
 				await useCoinStore.getState().getCoinByID(mintAddress, true);
 				// Price history will refresh via the useEffect dependency on 'displayCoin' changing.
@@ -402,19 +407,19 @@ const CoinDetail: React.FC = () => {
 				}
 				showToast({ type: 'error', message: 'Failed to refresh data.' });
 				// Ensure loading is false if refresh fails before history fetch can
-				setLoading(false);
+				// setLoading(false); // setLoading was removed
 			}
-			// setLoading(false) is now primarily handled by the data fetching useEffect's finally block.
+			// setLoading(false) is now primarily handled by the data fetching useEffect's finally block. // setLoading was removed
 			// If the displayCoin data doesn't change after getCoinByID, the effect might not run.
 			// To ensure the RefreshControl spinner stops, we might need to explicitly stop it
 			// if the effect doesn't run. This can be tricky.
 			// A simple approach: if data fetching effect is not re-triggered, stop loading.
 			// This timeout is a pragmatic way to ensure it stops if the effect doesn't.
-			setTimeout(() => setLoading(false), 1000);
+			// setTimeout(() => setLoading(false), 1000); // setLoading was removed
 
 
 		} else {
-			setLoading(false); // Ensure loading stops if there's no mintAddress
+			// setLoading(false); // Ensure loading stops if there's no mintAddress // setLoading was removed
 		}
 	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
 
@@ -425,7 +430,7 @@ const CoinDetail: React.FC = () => {
 				navigation.navigate
 			);
 		}
-	}, [displayCoin, showToast, navigation]);
+	}, [displayCoin, navigation]); // Removed showToast from dependencies
 
 	return (
 		<SafeAreaView style={styles.container} testID={`coin-detail-screen-${displayCoin?.symbol?.toLowerCase()}`}>

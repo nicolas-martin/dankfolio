@@ -21,12 +21,46 @@ import { useThemeStore } from '@/store/theme';
 import { env } from '@/utils/env';
 import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 import { debugCacheStatus, testExpoImageCache } from '@/components/Common/CachedImage/scripts';
+import { grpcApi } from '@/services/grpcApi'; // Import grpcApi
+
+// Helper function to wrap grpcApi.getPriceHistory
+const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ data: PriceData[], error: Error | null }> => {
+	if (!coin || !coin.mintAddress) {
+		return { data: [], error: new Error("Invalid coin or mint address") };
+	}
+	try {
+		// Assuming timeframeKey like "4H" needs to be processed or is directly usable by API
+		// grpcApi.getPriceHistory expects (address: string, type: string, timeStr: string, addressType: string)
+		// 'type' could be the timeframeKey, 'timeStr' the current time, 'addressType' as "token"
+		const currentTime = new Date().toISOString();
+		const data = await grpcApi.getPriceHistory(coin.mintAddress, timeframeKey, currentTime, "token");
+		return { data, error: null };
+	} catch (e: any) {
+		logger.error(`[HomeScreen] Error in fetchPriceHistory for ${coin.symbol}:`, e);
+		return { data: [], error: e instanceof Error ? e : new Error(String(e)) };
+	}
+};
 
 const HomeScreen = () => {
 	const styles = useStyles();
 	const navigation = useNavigation<HomeScreenNavigationProp>();
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
 	const { themeType: _themeType } = useThemeStore(); // Prefixed themeType
+
+	// Memoized styles for props
+	const placeholderCoinCardInternalStyle = useMemo(() => ({
+		flex: 1,
+		minWidth: 0, // from styles.flex1
+		flexDirection: 'row',
+		alignItems: 'center'
+	}), []);
+
+	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
+
+	const debugCacheButtonStyle = useMemo(() => ({
+		padding: 16, // Consider using theme.spacing if available directly
+		alignItems: 'center'
+	}), []);
 
 	// Coin and loading states
 	const availableCoins = useCoinStore(state => state.availableCoins);
@@ -50,7 +84,7 @@ const HomeScreen = () => {
 		<View style={[styles.coinCardContainerStyle, styles.placeholderCoinCardContainerMargin]}>
 			<View style={styles.placeholderCoinCardContent}>
 				{/* Left section - Icon and name */}
-				<View style={[styles.flex1, { flexDirection: 'row', alignItems: 'center' }]}>
+				<View style={placeholderCoinCardInternalStyle}>
 					{/* Note: flexDirection and alignItems specific to this combination, kept inline for clarity or could be another specific style */}
 					<ShimmerPlaceholder
 						width={36}
@@ -355,7 +389,7 @@ const HomeScreen = () => {
 				<RefreshControl
 					refreshing={isRefreshing}
 					onRefresh={onRefresh}
-					colors={[styles.colors.primary]}
+					colors={refreshControlColors}
 					tintColor={styles.colors.primary}
 				/>
 			}
@@ -399,14 +433,14 @@ const HomeScreen = () => {
 					<RefreshControl
 						refreshing={isRefreshing}
 						onRefresh={onRefresh}
-						colors={[styles.colors.primary]}
+						colors={refreshControlColors}
 						tintColor={styles.colors.primary}
 					/>
 				}
 			>
 				{/* Debug Cache Button - Only show in development */}
 				{__DEV__ && (
-					<View style={{ padding: 16, alignItems: 'center' }}>
+					<View style={debugCacheButtonStyle}>
 						<Button
 							mode="outlined"
 							onPress={handleDebugCache}
