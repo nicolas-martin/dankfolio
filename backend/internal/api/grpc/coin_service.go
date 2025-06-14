@@ -47,13 +47,25 @@ func (s *coinServiceHandler) GetAvailableCoins(
 		// Use default ListOptions since GetAvailableCoinsRequest doesn't have pagination/sorting fields
 		listOptions := db.ListOptions{}
 		// Apply default pagination and sorting
-		defaultLimit := 50
-		listOptions.Limit = &defaultLimit
-		defaultOffset := 0
-		listOptions.Offset = &defaultOffset
+		defaultLimit := 50 // Default limit
+		limit := req.Msg.GetLimit()
+		if limit > 0 {
+			listOptions.Limit = pint(int(limit))
+		} else {
+			listOptions.Limit = &defaultLimit
+		}
+
+		defaultOffset := 0 // Default offset
+		offset := req.Msg.GetOffset()
+		if offset >= 0 {
+			listOptions.Offset = pint(int(offset))
+		} else {
+			listOptions.Offset = &defaultOffset
+		}
 
 		// If no sort is specified, coinService.GetCoins will apply a default.
-		coins, _, err = s.coinService.GetCoins(ctx, listOptions)
+		var totalCount int32
+		coins, totalCount, err = s.coinService.GetCoins(ctx, listOptions)
 	}
 
 	if err != nil {
@@ -66,7 +78,8 @@ func (s *coinServiceHandler) GetAvailableCoins(
 	}
 
 	res := connect.NewResponse(&pb.GetAvailableCoinsResponse{
-		Coins: pbCoins,
+		Coins:      pbCoins,
+		TotalCount: totalCount,
 	})
 	return res, nil
 }
@@ -166,6 +179,11 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		TotalCount: total, // Use the total count returned by the service
 	})
 	return res, nil
+}
+
+// pint is a helper function to get a pointer to an int.
+func pint(i int) *int {
+	return &i
 }
 
 func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
