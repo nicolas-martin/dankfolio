@@ -6,6 +6,15 @@ import { useTheme } from 'react-native-paper';
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	const colors = theme.colors;
+	
+	const createChangeTextStyle = (isPositive: boolean) => [
+		{
+			fontSize: theme.typography.fontSize.base,
+			fontWeight: '600' as const,
+			marginRight: theme.spacing.sm,
+		},
+		isPositive ? { color: TREND_COLORS.positive } : { color: TREND_COLORS.negative }
+	];
 	const styles = StyleSheet.create({
 		addressRow: {
 			alignItems: 'center',
@@ -57,11 +66,9 @@ export const useStyles = () => {
 			fontSize: theme.typography.fontSize['3xl'],
 			fontVariant: ['tabular-nums'],
 		},
-		periodText: {
-			fontSize: theme.typography.fontSize.sm,
-		},
-		periodTextColor: { // New style
+		periodTextStyle: {
 			color: colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.sm,
 		},
 		pricePlaceholderText: { // New style
 			fontSize: theme.typography.fontSize['3xl'],
@@ -80,6 +87,7 @@ export const useStyles = () => {
 	return {
 		...styles,
 		colors,
-		theme
+		theme,
+		createChangeTextStyle
 	};
 };

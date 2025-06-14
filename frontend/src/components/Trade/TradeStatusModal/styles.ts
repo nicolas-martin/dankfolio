@@ -7,6 +7,58 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
 		// const colors = theme.colors; // Ensure colors is defined inside useMemo - REMOVED
+		
+		const createProgressFillStyle = (progressAnim: any) => ({
+			backgroundColor: theme.colors.primary,
+			borderRadius: theme.borderRadius.sm,
+			height: '100%',
+			width: progressAnim.interpolate({
+				inputRange: [0, 1],
+				outputRange: ['0%', '100%'],
+			})
+		});
+
+		const createStatusSectionStyle = (fadeAnim: any) => [
+			{
+				alignItems: 'center' as const,
+				marginBottom: theme.spacing['3xl'],
+				paddingHorizontal: theme.spacing.xl,
+			},
+			{ opacity: fadeAnim }
+		];
+
+		const createIconContainerStyle = (statusType: string) => [
+			{
+				alignItems: 'center' as const,
+				borderRadius: theme.spacing['4xl'],
+				elevation: 4,
+				height: 80,
+				justifyContent: 'center' as const,
+				marginBottom: theme.spacing.xl,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.md.shadowOffset,
+				shadowOpacity: 0.1,
+				shadowRadius: theme.spacing.sm,
+				width: 80,
+			},
+			statusType === 'success' ? { backgroundColor: theme.success } :
+			statusType === 'error' ? { backgroundColor: theme.colors.error } :
+			statusType === 'warning' ? { backgroundColor: theme.warning } :
+			{ backgroundColor: theme.colors.surfaceVariant }
+		];
+
+		const createTextStyle = (statusType: string) => [
+			{
+				fontSize: theme.typography.fontSize.xl,
+				fontWeight: '700' as const,
+				marginBottom: theme.spacing.sm,
+				textAlign: 'center' as const,
+			},
+			statusType === 'success' ? { color: theme.success } :
+			statusType === 'error' ? { color: theme.colors.error } :
+			statusType === 'warning' ? { color: theme.warning } :
+			{ color: theme.colors.onSurface }
+		];
 		const styles = StyleSheet.create({
 			actionSection: {
 				marginTop: theme.spacing.sm,
@@ -548,7 +600,11 @@ export const useStyles = () => {
 	return {
 		...styles,
 		colors: theme.colors, // Return original theme.colors for consistency
-		theme
+		theme,
+		createProgressFillStyle,
+		createStatusSectionStyle,
+		createIconContainerStyle,
+		createTextStyle
 	};
 	}, [theme]);
 };

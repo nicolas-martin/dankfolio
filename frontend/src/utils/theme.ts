@@ -192,16 +192,16 @@ export const themes = {
 
 // At the end of the file, or after extendedThemeProperties definition
 export type AppTheme = MD3Theme & {
-  warning: string;
-  success: string;
-  text: string;
-  textSecondary: string;
-  typography: typeof theme.typography;
-  spacing: typeof theme.spacing;
-  borderRadius: typeof theme.borderRadius;
-  shadows: typeof theme.shadows;
-  gradients: {
-    primary: readonly string[];
-    glass: readonly string[];
-  };
+	warning: string;
+	success: string;
+	text: string;
+	textSecondary: string;
+	typography: typeof theme.typography;
+	spacing: typeof theme.spacing;
+	borderRadius: typeof theme.borderRadius;
+	shadows: typeof theme.shadows;
+	gradients: {
+		primary: readonly string[];
+		glass: readonly string[];
+	};
 };

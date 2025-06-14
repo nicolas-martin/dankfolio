@@ -46,7 +46,7 @@ const Odometer: FC<OdometerProps> = ({
 	}), [digitHeight]);
 
 	const rowContainerStyle = useMemo(() => [
-		styles.row, 
+		styles.row,
 		heightStyle
 	], [styles.row, heightStyle]);
 

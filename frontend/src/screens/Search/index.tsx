@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, TextInput, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -46,13 +46,7 @@ const SearchScreen: React.FC = () => {
 	const theme = styles.theme; // Extract theme for convenience
 	// const _toast = useToast(); // Prefixed toast
 
-	// Memoized styles
-	const headerTextStyle = useMemo(() => ({
-		color: styles.colors.onSurface,
-		marginLeft: theme.spacing.md // Assuming 12 corresponds to md
-	}), [styles.colors.onSurface, theme.spacing.md]);
 
-	const searchCardStyle = useMemo(() => [styles.card, styles.searchCard], [styles.card, styles.searchCard]);
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed SearchScreen' });
@@ -151,12 +145,12 @@ const SearchScreen: React.FC = () => {
 					{/* Header Row */}
 					<View style={styles.headerRow}>
 						<SearchIcon size={32} color={styles.colors.onSurface} />
-						<Text variant="headlineSmall" style={headerTextStyle}>
+						<Text variant="headlineSmall" style={styles.headerTextStyle}>
 							Search
 						</Text>
 					</View>
 					{/* Search Bar Card */}
-					<View style={searchCardStyle}>
+					<View style={styles.searchCardStyle}>
 						<TextInput
 							style={styles.searchInput}
 							placeholder="Search tokens..."

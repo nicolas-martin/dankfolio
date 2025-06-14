@@ -24,16 +24,7 @@ const Profile = () => {
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
 	const styles = useStyles();
 
-	const sendButtonStyle = useMemo(() => ({
-		style: styles.sendButton
-	}), [styles.sendButton]);
 
-	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
-
-	const noWalletContainerStyle = useMemo(() => [
-		styles.container, 
-		styles.centered
-	], [styles.container, styles.centered]);
 
 	const sendButtonIcon = useCallback(() => (
 		<SendIcon size={20} color={styles.colors.onPrimary} />
@@ -147,7 +138,7 @@ const Profile = () => {
 					logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
 					navigation.navigate('SendTokens');
 				}}
-				{...sendButtonStyle}
+				{...styles.sendButtonStyle}
 				contentStyle={styles.sendButtonContent}
 				disabled={tokens.length === 0}
 				accessible={true}
@@ -217,7 +208,7 @@ const Profile = () => {
 	if (!wallet) {
 		return (
 			<SafeAreaView style={styles.safeArea}>
-				<View style={noWalletContainerStyle}>
+				<View style={styles.noWalletContainerStyle}>
 					{renderNoWalletState()}
 				</View>
 			</SafeAreaView>
@@ -234,7 +225,7 @@ const Profile = () => {
 						<RefreshControl
 							refreshing={isRefreshing || isPortfolioLoading || isTransactionsLoading}
 							onRefresh={handleRefresh}
-							colors={refreshControlColors}
+							colors={styles.refreshControlColors}
 							tintColor={styles.colors.primary}
 						/>
 					}

@@ -8,6 +8,37 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	const colors = theme.colors;
 
+	const createSnackbarWrapperStyle = () => ({
+		top: insets.top,
+	});
+
+	const createSnackbarStyle = (toastType: string) => [
+		{
+			borderRadius: theme.spacing.sm,
+			elevation: 4,
+			marginHorizontal: insets.left + 10,
+			shadowColor: '#000',
+			shadowOffset: {
+				width: 0,
+				height: 2,
+			},
+			shadowOpacity: 0.25,
+			shadowRadius: 3.84,
+		},
+		toastType === "error" ? { backgroundColor: theme.colors.error } :
+		toastType === "success" ? { backgroundColor: theme.success } :
+		toastType === "warning" ? { backgroundColor: theme.warning } :
+		{ backgroundColor: theme.colors.surfaceVariant }
+	];
+
+	const createMessageTextStyle = (toastForegroundColor: string) => [
+		{
+			flex: 1,
+			marginLeft: theme.spacing.sm,
+		},
+		{ color: toastForegroundColor }
+	];
+
 	const styles = StyleSheet.create({
 		closeButton: {
 			marginLeft: theme.spacing.sm,
@@ -64,6 +95,9 @@ export const useStyles = () => {
 	return {
 		...styles,
 		colors,
-		theme
+		theme,
+		createSnackbarWrapperStyle,
+		createSnackbarStyle,
+		createMessageTextStyle
 	};
 };

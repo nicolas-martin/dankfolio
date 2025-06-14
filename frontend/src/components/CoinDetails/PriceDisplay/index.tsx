@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'; // Add useMemo
+import React, { useState } from 'react'; // Add useMemo
 import { View, TouchableOpacity } from 'react-native'; // Added TouchableOpacity
 import { Text } from 'react-native-paper';
 import { PriceDisplayProps } from './coindetails_types';
@@ -22,16 +22,6 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 	const formattedChange = !isNaN(periodChange) && !isNaN(valueChange)
 		? formatValueChange(valueChange, periodChange)
 		: '---';
-
-	const changeTextStyle = useMemo(() => [
-		styles.changeText,
-		isPositive ? styles.changePositive : styles.changeNegative
-	], [styles.changeText, styles.changePositive, styles.changeNegative, isPositive]);
-
-	const periodTextStyle = useMemo(() => [
-		styles.periodText, 
-		styles.periodTextColor
-	], [styles.periodText, styles.periodTextColor]);
 
 	// Early return with a placeholder if any required values are invalid
 	if (isNaN(price) || price === null || price === undefined) {
@@ -62,8 +52,8 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					<Text style={styles.addressText} testID="price-display-coin-address">
 						{formatAddress(address, 8, 4)}
 					</Text>
-					<CopyToClipboard 
-						text={address} 
+					<CopyToClipboard
+						text={address}
 						testID="price-display-copy-address-button"
 					/>
 				</View>
@@ -100,8 +90,8 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				<Text style={styles.addressText} testID="price-display-coin-address">
 					{formatAddress(address, 8, 4)}
 				</Text>
-				<CopyToClipboard 
-					text={address} 
+				<CopyToClipboard
+					text={address}
 					testID="price-display-copy-address-button"
 				/>
 			</View>
@@ -118,12 +108,12 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 			{/* Change and period */}
 			<View style={styles.changeRow}>
 				<Text
-					style={changeTextStyle} // Use the memoized style
+					style={styles.createChangeTextStyle(isPositive)} // Use the function from styles
 					testID="price-display-price-change"
 				>
 					{formattedChange}
 				</Text>
-				<Text style={periodTextStyle} testID="price-display-period">
+				<Text style={styles.periodTextStyle} testID="price-display-period">
 					{period}
 				</Text>
 			</View>

@@ -20,15 +20,15 @@ export const useLoadingState = (navigation: unknown) => {
 
 			try {
 				// Load trending coins with timeout
-				const trendingPromise = availableCoins.length > 0 
-					? Promise.resolve() 
+				const trendingPromise = availableCoins.length > 0
+					? Promise.resolve()
 					: fetchAvailableCoins();
-				
+
 				await Promise.race([
 					trendingPromise,
 					new Promise((_, reject) => setTimeout(() => reject(new Error('Trending coins timeout')), 10000))
 				]);
-				
+
 				_trendingSuccess = true;
 				setLoadingState(prev => ({
 					...prev,

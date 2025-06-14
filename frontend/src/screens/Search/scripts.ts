@@ -90,9 +90,9 @@ export const handleCoinNavigation = (
 		message: 'Navigating to CoinDetail from Search (immediate navigation)',
 		data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress }
 	});
-	
+
 	navigation.navigate('CoinDetail', { coin: coin });
-	
+
 	// Trigger background fetch to update the coin data in the store
 	// The CoinDetail screen will automatically update when this completes
 	getEnrichedCoinData(coin, useCoinStore.getState().getCoinByID).catch(error => {

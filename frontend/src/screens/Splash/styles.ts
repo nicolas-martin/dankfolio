@@ -11,24 +11,24 @@ export const useStyle = () => {
 			container: {
 				alignItems: 'center',
 				backgroundColor: colors.background, // Use local colors variable
-			flex: 1,
-			justifyContent: 'center',
-		},
-		loadingText: {
-			color: theme.colors.primary,
-			fontSize: theme.typography.fontSize.lg,
-			marginTop: 10, // No exact match
-		},
-		logo: {
-			height: 200, // No exact match
-			marginBottom: theme.spacing.xl,
-			width: 200, // No exact match
-		},
-	});
-	return {
-		...styles,
-		colors: theme.colors, // Return original theme.colors for consistency
-		theme
-	};
+				flex: 1,
+				justifyContent: 'center',
+			},
+			loadingText: {
+				color: theme.colors.primary,
+				fontSize: theme.typography.fontSize.lg,
+				marginTop: 10, // No exact match
+			},
+			logo: {
+				height: 200, // No exact match
+				marginBottom: theme.spacing.xl,
+				width: 200, // No exact match
+			},
+		});
+		return {
+			...styles,
+			colors: theme.colors, // Return original theme.colors for consistency
+			theme
+		};
 	}, [theme]);
 };

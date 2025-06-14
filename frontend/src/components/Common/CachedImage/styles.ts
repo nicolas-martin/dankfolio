@@ -5,7 +5,27 @@ import type { AppTheme } from '@/utils/theme';
 export const useStyles = () => {
   const theme = useTheme<AppTheme>();
 
-  return StyleSheet.create({
+  const createPlaceholderStyle = (size: number, borderRadius: number) => [
+    {
+      backgroundColor: theme.colors.surfaceVariant,
+    },
+    {
+      width: size,
+      height: size,
+      borderRadius: borderRadius
+    }
+  ];
+
+  const createImageStyle = (size: number, borderRadius: number, style?: any) => [
+    {
+      width: size,
+      height: size,
+      borderRadius: borderRadius
+    },
+    style
+  ].filter(Boolean);
+
+  const styles = StyleSheet.create({
     placeholder: {
       backgroundColor: theme.colors.surfaceVariant, // Use a themed color
     },
@@ -13,4 +33,10 @@ export const useStyles = () => {
     // and need to be part of the useStyles hook.
     // For now, only 'placeholder' is being moved from the original local StyleSheet.
   });
+
+  return {
+    ...styles,
+    createPlaceholderStyle,
+    createImageStyle
+  };
 };
