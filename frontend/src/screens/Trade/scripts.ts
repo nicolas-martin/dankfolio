@@ -43,9 +43,9 @@ export const handleSwapCoins = (
 		return;
 	}
 
-	logger.log('[Trade] Swapping tokens', { 
-		from: `${fromCoin.symbol} (${fromAmount})`, 
-		to: `${toCoin.symbol} (${toAmount})` 
+	logger.log('[Trade] Swapping tokens', {
+		from: `${fromCoin.symbol} (${fromAmount})`,
+		to: `${toCoin.symbol} (${toAmount})`
 	});
 
 	// Perform the swap

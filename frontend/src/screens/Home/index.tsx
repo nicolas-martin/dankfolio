@@ -53,22 +53,7 @@ const HomeScreen = () => {
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
 	const { themeType: _themeType } = useThemeStore(); // Prefixed themeType
 
-	const placeholderCoinCardInternalStyle = useMemo(() => ({
-		flexDirection: 'row' as const,
-		alignItems: 'center' as const
-	}), []);
 
-	const placeholderCoinCardContainerStyle = useMemo(() => [
-		styles.coinCardContainerStyle, 
-		styles.placeholderCoinCardContainerMargin
-	], [styles.coinCardContainerStyle, styles.placeholderCoinCardContainerMargin]);
-
-	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
-
-	const debugCacheButtonStyle = useMemo(() => ({
-		marginHorizontal: 16,
-		marginBottom: 16
-	}), []);
 
 	const emptyFlatListData = useMemo(() => [], []);
 
@@ -91,10 +76,10 @@ const HomeScreen = () => {
 
 	// Placeholder components for loading states
 	const renderPlaceholderCoinCard = () => (
-		<View style={placeholderCoinCardContainerStyle}>
+		<View style={styles.placeholderCoinCardContainerStyle}>
 			<View style={styles.placeholderCoinCardContent}>
 				{/* Left section - Icon and name */}
-				<View style={placeholderCoinCardInternalStyle}>
+				<View style={styles.placeholderCoinCardInternalStyle}>
 					{/* Note: flexDirection and alignItems specific to this combination, kept inline for clarity or could be another specific style */}
 					<ShimmerPlaceholder
 						width={36}
@@ -400,7 +385,7 @@ const HomeScreen = () => {
 				<RefreshControl
 					refreshing={isRefreshing}
 					onRefresh={onRefresh}
-					colors={refreshControlColors}
+					colors={styles.refreshControlColors}
 					tintColor={styles.colors.primary}
 				/>
 			}
@@ -444,14 +429,14 @@ const HomeScreen = () => {
 					<RefreshControl
 						refreshing={isRefreshing}
 						onRefresh={onRefresh}
-						colors={refreshControlColors}
+						colors={styles.refreshControlColors}
 						tintColor={styles.colors.primary}
 					/>
 				}
 			>
 				{/* Debug Cache Button - Only show in development */}
 				{__DEV__ && (
-					<View style={debugCacheButtonStyle}>
+					<View style={styles.debugCacheButtonStyle}>
 						<Button
 							mode="outlined"
 							onPress={handleDebugCache}

@@ -82,11 +82,11 @@ const Trade: React.FC = () => {
 
 	// useEffect to update local pollingError state if currentPollingErrorFromHook changes
 	useEffect(() => {
-    setPollingError(currentPollingErrorFromHook);
-  }, [currentPollingErrorFromHook]);
+		setPollingError(currentPollingErrorFromHook);
+	}, [currentPollingErrorFromHook]);
 
-  // Use currentPollingConfirmationsFromHook directly if pollingConfirmations state is removed
-  const currentPollingConfirmations = currentPollingConfirmationsFromHook;
+	// Use currentPollingConfirmationsFromHook directly if pollingConfirmations state is removed
+	const currentPollingConfirmations = currentPollingConfirmationsFromHook;
 
 
 	// componentStopPolling, componentPollTradeStatus, componentStartPolling are removed
@@ -256,7 +256,7 @@ const Trade: React.FC = () => {
 			// If it re-throws, catch here
 			logger.error('[Trade] Error during executeTrade or starting polling:', error);
 			setIsLoadingTrade(false);
-			showToast({type: 'error', message: error instanceof Error ? error.message : 'Trade execution failed'});
+			showToast({ type: 'error', message: error instanceof Error ? error.message : 'Trade execution failed' });
 		}
 	};
 
@@ -279,7 +279,7 @@ const Trade: React.FC = () => {
 
 	// All hooks must be at top level before any conditional returns
 	const exchangeRateLabelTextStyle = useMemo(() => [
-		styles.detailLabel, 
+		styles.detailLabel,
 		styles.exchangeRateLabelText
 	], [styles.detailLabel, styles.exchangeRateLabelText]);
 

@@ -4,6 +4,7 @@ import ExpoCachedImage from 'expo-cached-image';
 import { CachedImageProps } from './types';
 import { logCacheResult } from './scripts';
 import { useStyles } from './styles'; // Import useStyles
+import { logger } from '@/utils/logger';
 
 const CachedImage: React.FC<CachedImageProps> = ({
 	uri,
@@ -29,36 +30,19 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	}, [loadStartTime, uri, size]);
 
 	const handleError = useCallback((error: unknown) => {
-		console.warn('[CachedImage] ❌ Load Error:', uri, error);
+		logger.warn('[CachedImage] ❌ Load Error:', uri, error);
 	}, [uri]);
 
 	// Default to circular if no borderRadius is provided
 	const finalBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
 
 	// All hooks must be at top level before any conditional returns
-	const placeholderStyleToUse = useMemo(() => [
-		styles.placeholder, // From the hook
-		{
-			width: size,
-			height: size,
-			borderRadius: finalBorderRadius
-		}
-	], [styles.placeholder, size, finalBorderRadius]);
-
 	const imageSource = useMemo(() => ({ uri }), [uri]);
-	const imageStyle = useMemo(() => [
-		{
-			width: size,
-			height: size,
-			borderRadius: finalBorderRadius
-		},
-		style
-	].filter(Boolean), [size, finalBorderRadius, style]);
 
 	if (!uri) {
 		return (
 			<View
-				style={placeholderStyleToUse} // Apply the memoized style using themed placeholder
+				style={styles.createPlaceholderStyle(size, finalBorderRadius)} // Apply the function from styles
 			/>
 		);
 	}
@@ -66,7 +50,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	return (
 		<ExpoCachedImage
 			source={imageSource} // Use memoized source
-			style={imageStyle} // Use memoized style
+			style={styles.createImageStyle(size, finalBorderRadius, style)} // Use function from styles
 			cacheKey={`${uri}-${size}x${size}`}
 			onLoadStart={handleLoadStart}
 			onLoadEnd={handleLoadEnd}

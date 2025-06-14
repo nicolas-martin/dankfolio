@@ -5,6 +5,17 @@ import { AppTheme } from '@/utils/theme';
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	const colors = theme.colors;
+
+	const createContainerStyle = (style?: object) => [
+		{
+			flexDirection: 'row' as const,
+			justifyContent: 'space-between' as const,
+			marginTop: theme.spacing.sm,
+			paddingHorizontal: theme.spacing.sm,
+			paddingVertical: theme.spacing.lg,
+		}, 
+		style
+	];
 	const styles = StyleSheet.create({
 		activeButton: {
 			backgroundColor: theme.colors.primary,
@@ -49,6 +60,7 @@ export const useStyles = () => {
 	return {
 		...styles,
 		colors,
-		theme
+		theme,
+		createContainerStyle
 	};
 };

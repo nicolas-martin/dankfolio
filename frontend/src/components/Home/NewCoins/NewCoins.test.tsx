@@ -200,11 +200,11 @@ describe('NewCoins Component', () => {
 			// A more robust way would be to wrap the Text in a View with a testID.
 			// For now, we'll assume if formatTimeAgo returns '', the Text component itself is not rendered due to `&&`
 			expect(queryByText('')).toBeNull(); //This might not be specific enough
-            // A better check if the text is not rendered:
-            // Ensure no unexpected text elements appear that would match an empty string if rendered.
-            // Or, if the style.timeAgoText is unique:
-            // const timeAgoElement = queryByTestId('time-ago-text-newCoinMint1'); // If you add testID
-            // expect(timeAgoElement).toBeNull();
+			// A better check if the text is not rendered:
+			// Ensure no unexpected text elements appear that would match an empty string if rendered.
+			// Or, if the style.timeAgoText is unique:
+			// const timeAgoElement = queryByTestId('time-ago-text-newCoinMint1'); // If you add testID
+			// expect(timeAgoElement).toBeNull();
 		});
 	});
 

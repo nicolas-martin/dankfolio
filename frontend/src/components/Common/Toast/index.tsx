@@ -104,22 +104,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	}
 	// else IconToRender will be undefined, and nothing will be rendered for the icon if type is invalid and not success/error.
 
-	const snackbarWrapperStyle = useMemo(() => ({
-		top: styles.wrapper.top,
-	}), [styles.wrapper.top]);
 
-	const snackbarStyle = useMemo(() => [
-		styles.snackbarStyleBase,
-		toastType === "error" ? styles.error :
-		toastType === "success" ? styles.success :
-		toastType === "warning" ? styles.warning :
-		styles.info,
-	], [styles.snackbarStyleBase, styles.error, styles.success, styles.warning, styles.info, toastType]);
-
-	const messageTextStyle = useMemo(() => [
-		styles.message,
-		{ color: toastForegroundColor }
-	], [styles.message, toastForegroundColor]);
 
 	return (
 		<ToastContext.Provider value={toast}>
@@ -129,13 +114,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					visible={state.visible || false}
 					onDismiss={toast.hideToast}
 					duration={state.duration}
-					wrapperStyle={snackbarWrapperStyle} // Applied
-					style={snackbarStyle} // Applied
+					wrapperStyle={styles.createSnackbarWrapperStyle()} // Applied
+					style={styles.createSnackbarStyle(toastType)} // Applied
 				>
 					<View style={styles.content}>
 						<View style={styles.messageContainer}>
 							{IconToRender}
-							<Text style={messageTextStyle}>
+							<Text style={styles.createMessageTextStyle(toastForegroundColor)}>
 								{state.message}
 							</Text>
 						</View>

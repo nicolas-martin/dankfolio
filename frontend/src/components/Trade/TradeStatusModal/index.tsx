@@ -142,15 +142,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	}, [statusType, styles.statusTextSuccess, styles.statusTextError, styles.statusTextWarning, styles.statusTextLoading]);
 
 	// All hooks must be at top level before any render functions
-	const progressFillStyle = useMemo(() => [
-		styles.progressFill,
-		{
-			width: progressAnim.interpolate({
-				inputRange: [0, 1],
-				outputRange: ['0%', '100%'],
-			})
-		}
-	], [styles.progressFill, progressAnim]);
 
 	const renderProgressSection = () => {
 		// Show progress if currently in progress OR if we've shown it before and not failed OR if finalized
@@ -188,7 +179,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				<View style={styles.progressBar}>
 					<Animated.View
 						testID="trade-status-progress-bar"
-						style={progressFillStyle}
+						style={styles.createProgressFillStyle(progressAnim)}
 					/>
 				</View>
 				{isInProgress && (

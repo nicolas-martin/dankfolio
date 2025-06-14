@@ -58,22 +58,22 @@ export const validateForm = async (
 	try {
 		const recipientBalance = await grpcApi.getWalletBalance(formData.toAddress);
 		const hasAnyBalance = recipientBalance.balances.length > 0 && recipientBalance.balances.some(b => b.amount > 0);
-		
+
 		if (hasAnyBalance) {
 			// Address has balance - show confirmation with balance info
 			const totalBalances = recipientBalance.balances.length;
-			return { 
-				isValid: true, 
-				code: "ADDRESS_HAS_BALANCE", 
+			return {
+				isValid: true,
+				code: "ADDRESS_HAS_BALANCE",
 				message: `Recipient address is active with ${totalBalances} token${totalBalances > 1 ? 's' : ''}`,
 				hasBalance: true,
 				balanceInfo: `This address has ${totalBalances} token${totalBalances > 1 ? 's' : ''} in their wallet`
 			};
 		} else {
 			// Address is valid but has no balance - show warning
-			return { 
-				isValid: true, 
-				code: "ADDRESS_NO_BALANCE", 
+			return {
+				isValid: true,
+				code: "ADDRESS_NO_BALANCE",
 				message: "Recipient address is valid but appears to be unused",
 				hasBalance: false,
 				balanceInfo: "This address has no transaction history. Please verify the address is correct."
@@ -83,29 +83,29 @@ export const validateForm = async (
 		// Handle specific error types from the backend
 		if (error instanceof Error) {
 			const errorMessage = error.message.toLowerCase();
-			
+
 			// Handle invalid address errors
 			if (errorMessage.includes('invalid wallet address') || errorMessage.includes('invalid argument')) {
 				return { isValid: false, message: 'Invalid Solana address format' };
 			}
-			
+
 			// Handle network errors
 			if (errorMessage.includes('network error') || errorMessage.includes('unavailable')) {
 				logger.warn('[validateForm] Network error checking recipient balance:', error);
-				return { 
-					isValid: true, 
-					code: "ADDRESS_BALANCE_CHECK_FAILED", 
+				return {
+					isValid: true,
+					code: "ADDRESS_BALANCE_CHECK_FAILED",
 					message: "Unable to verify recipient address status",
 					balanceInfo: "Network error occurred while checking address. Please verify the address is correct."
 				};
 			}
 		}
-		
+
 		// For other errors, log and show generic message
 		logger.warn('[validateForm] Failed to check recipient balance:', error);
-		return { 
-			isValid: true, 
-			code: "ADDRESS_BALANCE_CHECK_FAILED", 
+		return {
+			isValid: true,
+			code: "ADDRESS_BALANCE_CHECK_FAILED",
 			message: "Unable to verify recipient address status",
 			balanceInfo: "Could not check address status. Please verify the address is correct."
 		};

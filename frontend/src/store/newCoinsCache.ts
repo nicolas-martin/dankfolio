@@ -17,7 +17,7 @@ interface NewCoinsCacheStore {
 
 const useNewCoinsCacheStore = create<NewCoinsCacheStore>((set, get) => ({
 	cache: null,
-	
+
 	getCache: () => {
 		const cache = get().cache;
 		if (cache && cache.expiry > Date.now()) {
@@ -25,7 +25,7 @@ const useNewCoinsCacheStore = create<NewCoinsCacheStore>((set, get) => ({
 		}
 		return null;
 	},
-	
+
 	setCache: (data: Coin[], expiry: number) => {
 		set({
 			cache: {
@@ -35,11 +35,11 @@ const useNewCoinsCacheStore = create<NewCoinsCacheStore>((set, get) => ({
 			},
 		});
 	},
-	
+
 	clearCache: () => {
 		set({ cache: null });
 	},
-	
+
 	isExpired: () => {
 		const cache = get().cache;
 		return !cache || cache.expiry <= Date.now();

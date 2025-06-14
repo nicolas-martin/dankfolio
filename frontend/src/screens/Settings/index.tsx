@@ -34,7 +34,7 @@ const Settings: React.FC = () => {
 							left={props => <List.Icon {...props} icon="wallet-outline" />}
 							right={() =>
 								wallet?.address ? (
-									<CopyToClipboard 
+									<CopyToClipboard
 										text={wallet.address}
 										testID="copy-public-key-button"
 									/>

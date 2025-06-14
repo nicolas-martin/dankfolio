@@ -5,10 +5,8 @@ import type { RootStackParamList } from '@/types/navigation';
 import { navigationMiddleware } from './middleware';
 import CustomHeader from './CustomHeader';
 import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
-import { useTheme, BottomNavigation, MD3Theme } from 'react-native-paper'; // Added MD3Theme
-import { Platform, StyleSheet } from 'react-native'; // Added StyleSheet
-import { useMemo } from 'react'; // Added useMemo
-
+import { BottomNavigation } from 'react-native-paper';
+import { useMemo } from 'react';
 import Home from '@screens/Home';
 import Profile from '@screens/Profile';
 import Search from '@screens/Search';
@@ -16,57 +14,29 @@ import CoinDetail from '@screens/CoinDetail';
 import Trade from '@screens/Trade';
 import Send from '@screens/Send';
 import Settings from '@screens/Settings';
+import { useStyles } from './style';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-const useTabNavigatorStyles = () => {
-  const theme = useTheme() as MD3Theme; // Ensure MD3Theme is the correct type
-  
-  const shadowOffset = useMemo(() => ({ width: 0, height: -2 }), []);
-  
-  return useMemo(() => StyleSheet.create({
-    // eslint-disable-next-line react-native/no-unused-styles
-    bottomNavBar: {
-      backgroundColor: theme.colors.surface,
-      borderTopWidth: 0,
-      height: Platform.select({
-        ios: 88,
-        android: 80,
-      }),
-      ...Platform.select({
-        ios: {
-          shadowColor: theme.colors.shadow,
-          shadowOffset: shadowOffset,
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: 8,
-        },
-      }),
-    },
-  }), [theme, shadowOffset]);
-};
 
 const TabNavigator = () => {
-	const styles = useTabNavigatorStyles();
-	const theme = useTheme(); // Still needed for activeColor, inactiveColor
+	const styles = useStyles();
 
-	const tabScreenOptions = useMemo(() => ({ // Memoized
+	const tabScreenOptions = useMemo(() => ({
 		headerShown: false
 	}), []);
 
 	return (
 		<Tab.Navigator
 			initialRouteName="Home"
-			screenOptions={tabScreenOptions} // Applied
+			screenOptions={tabScreenOptions}
 			tabBar={({ navigation, state }) => (
 				<BottomNavigation.Bar
 					navigationState={state}
 					shifting={false}
-					activeColor={theme.colors.primary}
-					inactiveColor={theme.colors.onSurfaceVariant}
+					activeColor={styles.colors.primary}
+					inactiveColor={styles.colors.onSurfaceVariant}
 					testID="bottom-navigation-bar-outer-layer"
 					onTabPress={({ route }) => {
 						const event = navigation.emit({

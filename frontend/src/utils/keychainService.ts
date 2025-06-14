@@ -29,10 +29,10 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 		// iOS simulators have issues with WHEN_UNLOCKED, use WHEN_UNLOCKED_THIS_DEVICE_ONLY instead
 		// This is a well-known issue: https://github.com/oblador/react-native-keychain/issues/478
 		const isSimulator = __DEV__ && Platform.OS === 'ios';
-		const accessibilityOption = isSimulator 
-			? Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY 
+		const accessibilityOption = isSimulator
+			? Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY
 			: Keychain.ACCESSIBLE.WHEN_UNLOCKED;
-		
+
 		logger.info(`Using keychain accessibility: ${isSimulator ? 'WHEN_UNLOCKED_THIS_DEVICE_ONLY (simulator)' : 'WHEN_UNLOCKED (device)'}`);
 		// Note: This logs once per storeCredentials call
 
@@ -45,16 +45,16 @@ export const storeCredentials = async (privateKey: Base58PrivateKey, mnemonic: s
 		let storedCredentials;
 		let retryCount = 0;
 		const maxRetries = 3;
-		
+
 		while (retryCount < maxRetries) {
 			storedCredentials = await Keychain.getGenericPassword({
 				service: KEYCHAIN_SERVICE
 			});
-			
+
 			if (storedCredentials) {
 				break;
 			}
-			
+
 			retryCount++;
 			if (retryCount < maxRetries) {
 				logger.warn(`Keychain verification attempt ${retryCount} failed, retrying...`);
