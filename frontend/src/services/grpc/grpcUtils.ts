@@ -5,7 +5,6 @@ import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
 import { env } from '@utils/env';
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 
-// Helper to map gRPC model.Coin to FrontendCoin
 export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 	return {
 		mintAddress: grpcCoin.mintAddress,
@@ -41,7 +40,7 @@ export const getRequestHeaders = () => {
 // Helper function to safely serialize objects with BigInt values
 const safeStringify = (obj: unknown, indent = 0): string => {
 	try {
-		return JSON.stringify(obj, (key, value) => {
+		return JSON.stringify(obj, (_key, value) => {
 			// Handle BigInt values
 			if (typeof value === 'bigint') {
 				return value.toString() + 'n';

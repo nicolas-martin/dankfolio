@@ -14,7 +14,7 @@ export interface Coin {
 	coingeckoId?: string;
 	createdAt?: Date;
 	lastUpdated?: Date;
-	jupiterListedAt?: Date; // New field
+	jupiterListedAt?: Date;
 }
 
 export interface balance {
@@ -39,7 +39,7 @@ export interface PriceHistoryResponse {
 export interface CoinTransferPrepareRequest {
 	fromAddress: string;
 	toAddress: string;
-	coinMint?: string; // Optional, empty for SOL
+	coinMint?: string;
 	amount: number;
 }
 
@@ -49,7 +49,7 @@ export interface CoinTransferPrepareResponse {
 
 export interface CoinTransferSubmitRequest {
 	signedTransaction: string;
-	unsignedTransaction: string; // used to retreive the record
+	unsignedTransaction: string;
 }
 
 export interface CreateWalletResponse {
@@ -72,7 +72,7 @@ export interface TradeStatusResponse {
 	status: string; // e.g., "Pending", "Confirmed", "Finalized"
 	confirmations: number;
 	finalized: boolean;
-	error?: unknown; // Include error details if the transaction failed
+	error?: unknown;
 }
 
 export interface TradePayload {
@@ -80,7 +80,8 @@ export interface TradePayload {
 	toCoinMintAddress: string;
 	amount: number;
 	signedTransaction: string;
-	unsignedTransaction: string; // used to retreive the record
+	// used to retreive the record
+	unsignedTransaction: string;
 }
 
 export interface TradeQuoteResponse {
@@ -109,7 +110,7 @@ export interface SearchCoinsRequest {
 	minVolume24h?: number;
 	limit?: number;
 	offset?: number;
-	sortBy?: SearchSortByOption; // Updated type
+	sortBy?: SearchSortByOption;
 	sortDesc?: boolean;
 }
 

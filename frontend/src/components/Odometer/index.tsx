@@ -135,16 +135,33 @@ const Odometer: FC<OdometerProps> = ({
 		heightStyle
 	], [memoizedCombinedFontStyle, styles.separator, heightStyle]);
 
+	// Memoize animated view style
+	const animatedViewBaseStyle = useMemo(() => styles.digitColumn, [styles.digitColumn]);
+
+	// Memoize digit text style
+	const digitTextStyle = useMemo(() => [
+		memoizedCombinedFontStyle,
+		heightStyle
+	], [memoizedCombinedFontStyle, heightStyle]);
+
+	// Create a function to get transform style for each animation
+	const getTransformStyle = useCallback((animValue: Animated.Value) => ({
+		transform: [{ translateY: animValue }]
+	}), []);
+
+	// Create a function to get the final animated view style
+	const getAnimatedViewStyle = useCallback((animValue: Animated.Value) => [
+		animatedViewBaseStyle,
+		getTransformStyle(animValue)
+	], [animatedViewBaseStyle, getTransformStyle]);
+
 	return (
 		<>
 			{digitHeight > 0 && (
 				<View style={rowContainerStyle}>
 					{sanitizedValue.split('').map((char, i) => {
 						if (/\d/.test(char) && anims.current[i]) {
-							const animatedViewFinalStyle = [
-								styles.digitColumn,
-								{ transform: [{ translateY: anims.current[i]! }] }
-							];
+							const animatedViewFinalStyle = getAnimatedViewStyle(anims.current[i]!);
 
 							return (
 								<View
@@ -157,10 +174,6 @@ const Odometer: FC<OdometerProps> = ({
 										{Array(10)
 											.fill(0)
 											.map((_, d) => {
-												const digitTextStyle = [
-													memoizedCombinedFontStyle,
-													heightStyle
-												];
 												return (
 													<Text
 														key={d}

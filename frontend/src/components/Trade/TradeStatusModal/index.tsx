@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Animated } from 'react-native';
 import { Text, Button, ActivityIndicator, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
@@ -115,7 +115,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 		}
 	};
 
-	const getStatusIconContainerStyle = () => {
+	const getStatusIconContainerStyle = useCallback(() => {
 		switch (statusType) {
 			case 'success':
 				return styles.statusIconSuccess;
@@ -126,9 +126,9 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			default:
 				return styles.statusIconLoading;
 		}
-	};
+	}, [statusType, styles.statusIconSuccess, styles.statusIconError, styles.statusIconWarning, styles.statusIconLoading]);
 
-	const getStatusTextStyle = () => {
+	const getStatusTextStyle = useCallback(() => {
 		switch (statusType) {
 			case 'success':
 				return styles.statusTextSuccess;
@@ -139,7 +139,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			default:
 				return styles.statusTextLoading;
 		}
-	};
+	}, [statusType, styles.statusTextSuccess, styles.statusTextError, styles.statusTextWarning, styles.statusTextLoading]);
 
 	// All hooks must be at top level before any render functions
 	const progressFillStyle = useMemo(() => [

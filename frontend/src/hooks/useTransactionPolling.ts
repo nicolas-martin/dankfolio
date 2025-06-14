@@ -164,7 +164,7 @@ export const useTransactionPolling = <T>(
 				}
 			}, pollTimeout);
 		}
-	}, [resetPolling, performPoll, pollInterval, pollTimeout, status]); // Added status
+	}, [resetPolling, performPoll, pollInterval, pollTimeout, status, stopPolling]); // Added stopPolling
 
 	useEffect(() => {
 		// Cleanup on unmount

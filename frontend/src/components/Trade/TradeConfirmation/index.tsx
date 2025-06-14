@@ -1,15 +1,14 @@
-import React from 'react'; // Removed useRef, useEffect
-import { View, TouchableOpacity, Linking } from 'react-native'; // Removed Dimensions
+import React, { useMemo } from 'react';
+import { View, TouchableOpacity, Linking } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
-// BottomSheet specific imports will be handled by ManagedBottomSheetModal
-import { LoadingAnimation } from '../../Common/Animations';
+import { LoadingAnimation } from '@/components/Common/Animations';
 import { TradeConfirmationProps } from './types';
-import ManagedBottomSheetModal from '@/components/Common/BottomSheet/ManagedBottomSheetModal'; // Import new modal
+import ManagedBottomSheetModal from '@/components/Common/BottomSheet/ManagedBottomSheetModal';
 import { useStyles } from './styles';
 import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
 import { formatPrice, formatAddress as utilFormatAddress } from '@/utils/numberFormat';
-import ModalActionButtons from '@/components/Common/ModalActionButtons'; // Import ModalActionButtons
+import ModalActionButtons from '@/components/Common/ModalActionButtons';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,
@@ -29,23 +28,23 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	// renderBackdrop is also handled by ManagedBottomSheetModal by default
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
-		const placeholderIconStyle = React.useMemo(() => [
+		const placeholderIconStyle = useMemo(() => [
 			styles.tokenIcon,
-			styles.tokenIconPlaceholderBg // Use new style from stylesheet
-		], [styles.tokenIcon, styles.tokenIconPlaceholderBg]);
+			styles.tokenIconPlaceholderBg
+		], []);
 
-		if (!token.resolvedIconUrl) {
-			return <View style={placeholderIconStyle} />; // Applied
+		if (token.resolvedIconUrl) {
+			return (
+				<CachedImage
+					uri={token.resolvedIconUrl}
+					size={32}
+					style={styles.tokenIcon}
+					showLoadingIndicator={true}
+					borderRadius={16}
+				/>
+			);
 		}
-		return (
-			<CachedImage
-				uri={token.resolvedIconUrl}
-				size={32}
-				style={styles.tokenIcon}
-				showLoadingIndicator={true}
-				borderRadius={16}
-			/>
-		);
+		return <View style={placeholderIconStyle} />;
 	};
 
 	const handleSolscanPress = () => {
@@ -60,23 +59,24 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	// 	return `${address.slice(0, 6)}...${address.slice(-6)}`;
 	// };
 
+	// Static styles outside render functions
+	const recipientAddressTextStyle = [
+		styles.tokenName,
+		styles.recipientAddressLink,
+		styles.primaryColorText
+	];
+
+	const solscanTextStyle = [
+		styles.solscanText,
+		styles.primaryColorText
+	];
+
 	const renderTokenRow = (
 		token: Coin,
 		amount: string,
 		testIdPrefix: string,
 		isRecipient = false
 	) => {
-		const recipientAddressTextStyle = React.useMemo(() => [
-			styles.tokenName,
-			styles.recipientAddressLink,
-			styles.primaryColorText // Use new style from stylesheet
-		], [styles.tokenName, styles.recipientAddressLink, styles.primaryColorText]);
-
-		const solscanTextStyle = React.useMemo(() => [
-			styles.solscanText,
-			styles.primaryColorText // Use new style from stylesheet
-		], [styles.solscanText, styles.primaryColorText]);
-
 		return (
 			<View style={styles.tradeRow} testID={`${testIdPrefix}-token-details`}>
 				<View style={styles.tokenInfo}>
