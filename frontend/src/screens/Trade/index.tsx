@@ -15,23 +15,18 @@ import { TradeScreenNavigationProp, TradeScreenRouteProp } from './types';
 
 import {
 	executeTrade,
-	// pollTradeStatus, // Removed
-	// startPolling, // Removed
-	// stopPolling, // Removed
 	handleSwapCoins as swapCoinsUtil,
 	handleSelectToken,
-	// handleAmountChange, // Logic moved into component
 	handleTradeSubmit,
-	// fetchTradeQuote, // Logic moved into component / grpcApi
 } from './scripts';
-import { SOLANA_ADDRESS } from '@/utils/constants'; // QUOTE_DEBOUNCE_MS defined locally
+import { SOLANA_ADDRESS } from '@/utils/constants';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { logger } from '@/utils/logger';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useTransactionsStore } from '@/store/transactions';
 import { grpcApi } from '@/services/grpcApi';
 import { useTransactionPolling, PollingStatus } from '@/hooks/useTransactionPolling';
-import InfoState from '@/components/Common/InfoState'; // Import InfoState
+import InfoState from '@/components/Common/InfoState';
 
 
 const QUOTE_DEBOUNCE_MS = 1000;
@@ -186,6 +181,8 @@ const Trade: React.FC = () => {
 					setIsQuoteLoading(false);
 					return;
 				}
+				// Set loading immediately when amount changes
+				setIsQuoteLoading(true);
 				debouncedFetchQuote(amount, fromCoin, toCoin, 'from');
 			}
 		},
@@ -202,6 +199,8 @@ const Trade: React.FC = () => {
 					setIsQuoteLoading(false);
 					return;
 				}
+				// Set loading immediately when amount changes
+				setIsQuoteLoading(true);
 				// For "to" amount changes, the API expects the changed amount to be the "fromAmount"
 				// and the original "fromCoin" becomes the "toCoin" for the quote.
 				debouncedFetchQuote(amount, toCoin, fromCoin, 'to');
