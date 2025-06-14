@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, TextInput, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -203,7 +203,7 @@ const SearchScreen: React.FC = () => {
 							initialNumToRender={10}
 							maxToRenderPerBatch={10}
 							windowSize={21}
-							// getItemLayout might be added later if item height is fixed and known
+						// getItemLayout might be added later if item height is fixed and known
 						/>
 					)}
 				</View>

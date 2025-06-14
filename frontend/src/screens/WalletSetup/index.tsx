@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, TextInput, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { WalletSetupScreenProps } from './types';
 import { useToast } from '@/components/Common/Toast';
@@ -9,7 +9,7 @@ import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { env } from '@utils/env';
 import { initializeDebugWallet } from '@/utils/debugWallet';
 import TermsModal from '@/components/Common/TermsModal';
-// @ts-expect-error
+// @ts-expect-error normal import for assets
 import neonBarImage from '../../../assets/onboarding.jpg';
 import { useStyles } from './styles';
 

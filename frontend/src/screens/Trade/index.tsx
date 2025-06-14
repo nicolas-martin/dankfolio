@@ -13,7 +13,6 @@ import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
 import { TradeScreenNavigationProp, TradeScreenRouteProp } from './types';
 
-import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import {
 	executeTrade,
 	// pollTradeStatus, // Removed

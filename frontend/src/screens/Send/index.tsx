@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';

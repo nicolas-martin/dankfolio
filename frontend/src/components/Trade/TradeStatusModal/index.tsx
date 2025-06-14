@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react'; // Added useMemo, useCallback
-import { View, Animated } from 'react-native'; // Removed Dimensions
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, Animated } from 'react-native';
 import { Text, Button, ActivityIndicator, Icon } from 'react-native-paper';
-// BottomSheetModal, BottomSheetView, BottomSheetBackdrop will be handled by ManagedBottomSheetModal
-import { LoadingAnimation } from '../../Common/Animations';
+import { LoadingAnimation } from '@components/Common/Animations';
 import { TradeStatusModalProps } from './types';
 import ManagedBottomSheetModal from '@/components/Common/BottomSheet/ManagedBottomSheetModal'; // Import new modal
 import { useStyles } from './styles';
@@ -258,7 +257,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	// Handle button close with programmatic flag
 	const handleButtonClose = () => {
-			onClose();
+		onClose();
 	};
 
 	const snapPoints = useMemo(() => ['75%'], []);
