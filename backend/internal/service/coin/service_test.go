@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require" // Import require for assertions within test setup/logic
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	birdeyeclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye/mocks"
@@ -19,6 +20,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	dbDataStoreMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import util for IsValidSolanaAddress
 	telemetrymocks "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry/mocks"
 )
 
@@ -159,7 +161,10 @@ func TestGetCoinByIDRefactored_NotFound(t *testing.T) {
 func TestGetCoinByMintAddressRefactored_FoundOnlyInCoinsTable_Success(t *testing.T) {
 	setup := setupCoinServiceTestRefactored(t)
 	ctx := context.Background()
-	testMintAddress := "existingCoinMint"
+	// Use a canonical valid Solana address
+	testMintAddress := "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin" // Serum DEX Program ID, Length 44
+	require.True(t, util.IsValidSolanaAddress(testMintAddress), "Test mint address should be valid")
+
 	expectedCoin := &model.Coin{
 		ID:              1,
 		MintAddress:     testMintAddress,
@@ -190,20 +195,145 @@ func TestGetCoinByMintAddressRefactored_FoundOnlyInCoinsTable_Success(t *testing
 	setup.Mocks.CoinRepo.AssertExpectations(t)
 }
 
-func TestGetCoinsRefactored_Success(t *testing.T) {
+func TestGetCoins_DefaultSorting(t *testing.T) {
 	ctx := context.Background()
 	setup := setupCoinServiceTestRefactored(t)
 
-	expectedCoins := []model.Coin{{ID: 1, MintAddress: "mint1", Name: "Coin 1"}}
+	// Expected defaults
+	expectedSortBy := "volume_24h"
+	expectedSortDesc := true
+	defaultLimit := 20 // GetCoins also applies a default limit
 
 	setup.Mocks.Store.Mock.ExpectedCalls = removeCall(setup.Mocks.Store.Mock.ExpectedCalls, "Coins")
 	setup.Mocks.Store.On("Coins").Return(setup.Mocks.CoinRepo).Once()
-	setup.Mocks.CoinRepo.On("List", ctx).Return(expectedCoins, nil).Once()
 
-	coins, err := setup.Service.GetCoins(ctx)
+	// Use MatchedBy to capture and assert the ListOptions
+	setup.Mocks.CoinRepo.On("List", ctx, mock.MatchedBy(func(opts db.ListOptions) bool {
+		assert.NotNil(t, opts.SortBy, "SortBy should not be nil")
+		assert.Equal(t, expectedSortBy, *opts.SortBy, "SortBy should default correctly")
+		assert.NotNil(t, opts.SortDesc, "SortDesc should not be nil")
+		assert.Equal(t, expectedSortDesc, *opts.SortDesc, "SortDesc should default correctly")
+		assert.NotNil(t, opts.Limit, "Limit should not be nil")
+		assert.Equal(t, defaultLimit, *opts.Limit, "Limit should default correctly when sort is tested")
+		return true
+	})).Return([]model.Coin{}, int64(0), nil).Once()
 
+	// Call GetCoins with empty ListOptions to trigger defaults
+	var err error
+	_, _, err = setup.Service.GetCoins(ctx, db.ListOptions{})
 	assert.NoError(t, err)
-	assert.Equal(t, expectedCoins, coins)
+
+	setup.Mocks.Store.AssertExpectations(t) // Ensure Coins() was called
+	setup.Mocks.CoinRepo.AssertExpectations(t) // Ensure List() was called with matching options
+}
+
+func TestGetCoins_DefaultLimit(t *testing.T) {
+	ctx := context.Background()
+	setup := setupCoinServiceTestRefactored(t)
+
+	// Expected defaults
+	expectedLimit := 20
+	// Default sorting will also be applied
+	expectedSortBy := "volume_24h"
+	expectedSortDesc := true
+
+	setup.Mocks.Store.Mock.ExpectedCalls = removeCall(setup.Mocks.Store.Mock.ExpectedCalls, "Coins")
+	setup.Mocks.Store.On("Coins").Return(setup.Mocks.CoinRepo).Once()
+
+	// Use MatchedBy to capture and assert the ListOptions
+	setup.Mocks.CoinRepo.On("List", ctx, mock.MatchedBy(func(opts db.ListOptions) bool {
+		assert.NotNil(t, opts.Limit, "Limit should not be nil")
+		assert.Equal(t, expectedLimit, *opts.Limit, "Limit should default correctly")
+		// Also check that default sort is applied
+		assert.NotNil(t, opts.SortBy, "SortBy should not be nil when testing default limit")
+		assert.Equal(t, expectedSortBy, *opts.SortBy, "SortBy should default when testing default limit")
+		assert.NotNil(t, opts.SortDesc, "SortDesc should not be nil when testing default limit")
+		assert.Equal(t, expectedSortDesc, *opts.SortDesc, "SortDesc should default when testing default limit")
+		return true
+	})).Return([]model.Coin{}, int64(0), nil).Once()
+
+	// Call GetCoins with empty ListOptions to trigger defaults
+	var err error
+	_, _, err = setup.Service.GetCoins(ctx, db.ListOptions{})
+	assert.NoError(t, err)
+
+	setup.Mocks.Store.AssertExpectations(t)
+	setup.Mocks.CoinRepo.AssertExpectations(t)
+}
+
+func TestGetCoins_MaxLimitCapping(t *testing.T) {
+	ctx := context.Background()
+	setup := setupCoinServiceTestRefactored(t)
+
+	largeLimit := 200
+	expectedCappedLimit := 100
+	// Default sorting will also be applied
+	expectedSortBy := "volume_24h"
+	expectedSortDesc := true
+
+	setup.Mocks.Store.Mock.ExpectedCalls = removeCall(setup.Mocks.Store.Mock.ExpectedCalls, "Coins")
+	setup.Mocks.Store.On("Coins").Return(setup.Mocks.CoinRepo).Once()
+
+	// Use MatchedBy to capture and assert the ListOptions
+	setup.Mocks.CoinRepo.On("List", ctx, mock.MatchedBy(func(opts db.ListOptions) bool {
+		assert.NotNil(t, opts.Limit, "Limit should not be nil")
+		assert.Equal(t, expectedCappedLimit, *opts.Limit, "Limit should be capped correctly")
+		// Also check that default sort is applied
+		assert.NotNil(t, opts.SortBy, "SortBy should not be nil when testing max limit")
+		assert.Equal(t, expectedSortBy, *opts.SortBy, "SortBy should default when testing max limit")
+		assert.NotNil(t, opts.SortDesc, "SortDesc should not be nil when testing max limit")
+		assert.Equal(t, expectedSortDesc, *opts.SortDesc, "SortDesc should default when testing max limit")
+		return true
+	})).Return([]model.Coin{}, int64(0), nil).Once()
+
+	// Call GetCoins with a large limit
+	var err error
+	_, _, err = setup.Service.GetCoins(ctx, db.ListOptions{Limit: &largeLimit})
+	assert.NoError(t, err)
+
+	setup.Mocks.Store.AssertExpectations(t)
+	setup.Mocks.CoinRepo.AssertExpectations(t)
+}
+
+func TestGetCoins_ClientSpecifiedOptions(t *testing.T) {
+	ctx := context.Background()
+	setup := setupCoinServiceTestRefactored(t)
+
+	clientSortBy := "name"
+	clientSortDesc := false
+	clientLimit := 10
+
+	setup.Mocks.Store.Mock.ExpectedCalls = removeCall(setup.Mocks.Store.Mock.ExpectedCalls, "Coins")
+	setup.Mocks.Store.On("Coins").Return(setup.Mocks.CoinRepo).Once()
+
+	// Use MatchedBy to capture and assert the ListOptions
+	setup.Mocks.CoinRepo.On("List", ctx, mock.MatchedBy(func(opts db.ListOptions) bool {
+		assert.NotNil(t, opts.SortBy, "SortBy should not be nil")
+		assert.Equal(t, clientSortBy, *opts.SortBy, "Client-specified SortBy should be used")
+		assert.NotNil(t, opts.SortDesc, "SortDesc should not be nil")
+		assert.Equal(t, clientSortDesc, *opts.SortDesc, "Client-specified SortDesc should be used")
+		assert.NotNil(t, opts.Limit, "Limit should not be nil")
+		assert.Equal(t, clientLimit, *opts.Limit, "Client-specified Limit should be used")
+		return true
+	})).Return([]model.Coin{}, int64(0), nil).Once()
+
+	// Call GetCoins with client-specified options
+	// Ensure 'err' is declared, and then assigned to using '='.
+	// This is to be absolutely certain about the fix for "no new variables on left side of :="
+	var err error
+	var coins []model.Coin
+	var totalCount int64
+	coins, totalCount, err = setup.Service.GetCoins(ctx, db.ListOptions{
+		SortBy:   &clientSortBy,
+		SortDesc: &clientSortDesc,
+		Limit:    &clientLimit,
+	})
+	assert.NoError(t, err)
+	// Add dummy assertions for coins and totalCount to avoid "declared and not used" if they were not used later.
+	// In this test, they are not used, but good practice if they were.
+	_ = coins
+	_ = totalCount
+
 	setup.Mocks.Store.AssertExpectations(t)
 	setup.Mocks.CoinRepo.AssertExpectations(t)
 }
@@ -275,7 +405,8 @@ func TestLoadOrRefreshData_NoTokensFromBirdeye_ClearsTrending(t *testing.T) {
 	// 4. Mock Store.Coins() to return the CoinRepo, then mock CoinRepo.List.
 	// This is for loadOrRefreshData's step of clearing IsTrending on existing coins.
 	testSpecificMocks.Store.On("Coins").Return(testSpecificMocks.CoinRepo) // This will be called multiple times potentially
-	testSpecificMocks.CoinRepo.On("List", ctx).Return([]model.Coin{initialTrendingCoin}, nil).Once()
+	// Updated mock to expect db.ListOptions
+	testSpecificMocks.CoinRepo.On("List", ctx, mock.AnythingOfType("db.ListOptions")).Return([]model.Coin{initialTrendingCoin}, int64(1), nil).Once()
 
 	// 5. Mock CoinRepo.BulkUpsert: Expect the initialTrendingCoin to be updated.
 	var capturedCoinsForBulkUpsert []model.Coin

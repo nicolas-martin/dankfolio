@@ -119,6 +119,24 @@ func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Co
 		defaultSortDesc := true
 		opts.SortBy = &defaultSortBy
 		opts.SortDesc = &defaultSortDesc
+
+		slog.Debug("Applying default sort order to GetCoins", "sortBy", *opts.SortBy, "sortDesc", *opts.SortDesc)
+	}
+
+	// If no limit is specified, or if it's non-positive, default to a page size of 20.
+	// Also, cap the limit to a maximum reasonable value if necessary (e.g., 100) to prevent abuse.
+	const defaultLimit = 20
+	const maxLimit = 100 // Maximum allowable limit
+
+	if opts.Limit == nil || *opts.Limit <= 0 {
+		slog.Debug("Applying default limit to GetCoins", "defaultLimit", defaultLimit)
+		limit := defaultLimit
+		opts.Limit = &limit
+	} else if *opts.Limit > maxLimit {
+		slog.Warn("Requested limit exceeds maximum, capping limit", "requestedLimit", *opts.Limit, "maxLimit", maxLimit)
+		limit := maxLimit
+		opts.Limit = &limit
+
 	}
 
 	coins, totalCount, err := s.store.Coins().List(ctx, opts)
@@ -330,6 +348,8 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 func (s *Service) loadOrRefreshData(ctx context.Context) error {
 	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
 		// get the trending by asc order
+		// Note: ListTrendingCoins is a custom store method and was not part of the List() signature change.
+		// If it internally uses a generic List that changed, that would be an issue, but its signature here is fine.
 		c, err := txStore.ListTrendingCoins(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get latest trending coin: %w", err)
@@ -361,7 +381,13 @@ func (s *Service) loadOrRefreshData(ctx context.Context) error {
 			return fmt.Errorf("failed to fetch and enrich trending coins: %w", err)
 		}
 
-		existingCoins, err := txStore.Coins().List(ctx)
+		// Pass empty ListOptions to the updated List method.
+		// The loadOrRefreshData function's goal is to update trending status,
+		// not necessarily to paginate here. We need all existing coins for this logic.
+		// If this becomes a performance issue, this logic might need rethinking,
+		// but for now, fetching all with empty opts (which might apply defaults) is the minimal change.
+		// We also need to handle the new totalCount return value.
+		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{}) // Added empty ListOptions and ignored totalCount
 		if err != nil {
 			return fmt.Errorf("failed to list coins for updating trending status: %w", err)
 		}
