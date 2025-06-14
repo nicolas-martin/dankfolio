@@ -46,9 +46,10 @@ export const usePriceHistory = (
     try {
       const history = await fetchPriceHistoryApiCall(coinId, timeframe);
       setPriceHistory(history);
-    } catch (e: any) {
-      logger.error('[usePriceHistory] Failed to fetch price history', { error: e.message, coinId, timeframe });
-      setError(e instanceof Error ? e : new Error(e.message || 'An unknown error occurred'));
+    } catch (e) {
+      const errorToSet = e instanceof Error ? e : new Error(String(e?.message || 'An unknown error occurred'));
+      logger.error('[usePriceHistory] Failed to fetch price history', { error: errorToSet.message, coinId, timeframe });
+      setError(errorToSet);
       setPriceHistory([]); // Clear history on error
     } finally {
       setIsLoading(false);
@@ -63,7 +64,7 @@ export const usePriceHistory = (
     // Intentionally not re-fetching if fetchHistory changes due to fetchPriceHistoryApiCall changing,
     // as that should ideally be stable or trigger a conscious re-call of fetchHistory by the consumer.
     // If fetchPriceHistoryApiCall could change and an auto-refetch is desired, it needs more complex handling.
-  }, [initialCoinId, initialTimeframe, fetchPriceHistoryApiCall]); // Only re-run initial fetch if these specific initial params or the function itself change
+  }, [initialCoinId, initialTimeframe, fetchPriceHistoryApiCall, fetchHistory]); // Only re-run initial fetch if these specific initial params or the function itself change
 
   return { priceHistory, isLoading, error, fetchHistory };
 };
