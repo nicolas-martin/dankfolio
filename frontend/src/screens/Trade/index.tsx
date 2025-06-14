@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
 import { Text, Button, IconButton, Icon, Card } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -16,23 +16,31 @@ import { TradeScreenNavigationProp, TradeScreenRouteProp } from './types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import {
 	executeTrade,
-	pollTradeStatus,
-	startPolling,
-	stopPolling,
+	// pollTradeStatus, // Removed
+	// startPolling, // Removed
+	// stopPolling, // Removed
 	handleSwapCoins as swapCoinsUtil,
 	handleSelectToken,
-	handleAmountChange,
+	// handleAmountChange, // Logic moved into component
 	handleTradeSubmit,
+	// fetchTradeQuote, // Logic moved into component / grpcApi
 } from './scripts';
-import { SOLANA_ADDRESS } from '@/utils/constants';
+import { SOLANA_ADDRESS } from '@/utils/constants'; // QUOTE_DEBOUNCE_MS defined locally
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { logger } from '@/utils/logger';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { useTransactionsStore } from '@/store/transactions';
+import { grpcApi } from '@/services/grpcApi';
+import { useTransactionPolling, PollingStatus as HookPollingStatus } from '@/hooks/useTransactionPolling';
+import InfoState from '@/components/Common/InfoState'; // Import InfoState
 
+
+const QUOTE_DEBOUNCE_MS = 1000;
 
 const Trade: React.FC = () => {
 	const navigation = useNavigation<TradeScreenNavigationProp>();
 	const route = useRoute<TradeScreenRouteProp>();
-	const [fromCoin, setFromCoin] = useState<Coin | null>(route.params.initialFromCoin || null)
+	const [fromCoin, setFromCoin] = useState<Coin | null>(route.params.initialFromCoin || null);
 	const [toCoin, setToCoin] = useState<Coin | null>(route.params.initialToCoin || null)
 	const { tokens, wallet } = usePortfolioStore();
 	const { getCoinByID } = useCoinStore();
@@ -54,20 +62,37 @@ const Trade: React.FC = () => {
 	const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending');
 	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
 	const [pollingError, setPollingError] = useState<string | null>(null);
-	const pollingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const quoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// const quoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Will be managed by useDebouncedCallback
 
-	const componentStopPolling = useCallback(() => {
-		stopPolling(pollingIntervalRef, setIsLoadingTrade);
-	}, [pollingIntervalRef, setIsLoadingTrade]);
+	const {
+		txHash: polledTxHash,
+		status: currentPollingStatus,
+		// data: pollingData, // Not explicitly used here
+		error: currentPollingErrorFromHook,
+		confirmations: currentPollingConfirmations,
+		startPolling: startTxPolling,
+		stopPolling: stopTxPollingHook, // Renamed to avoid conflict if any local stopPolling existed
+		resetPolling: resetTxPolling
+	} = useTransactionPolling(
+		grpcApi.getSwapStatus, // Pass the actual polling function
+		undefined, // onSuccess
+		(errorMsg) => showToast({ type: 'error', message: errorMsg || 'Transaction polling failed' }), // onError
+		(finalData) => { // onFinalized
+			if (wallet?.address && finalData && !finalData.error) {
+				logger.info('[Trade] Transaction finalized successfully, refreshing portfolio.');
+				usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
+				useTransactionsStore.getState().fetchRecentTransactions(wallet.address); // Also refresh transactions
+			}
+		}
+	);
 
-	const componentPollTradeStatus = async (txHash: string) => {
-		await pollTradeStatus(txHash, setPollingConfirmations, setPollingStatus, setPollingError, componentStopPolling);
-	};
+	// useEffect to update local pollingError state if currentPollingErrorFromHook changes
+	useEffect(() => {
+    setPollingError(currentPollingErrorFromHook);
+  }, [currentPollingErrorFromHook]);
 
-	const componentStartPolling = (txHash: string) => {
-		startPolling(txHash, () => componentPollTradeStatus(txHash), componentStopPolling, pollingIntervalRef);
-	};
+
+	// componentStopPolling, componentPollTradeStatus, componentStartPolling are removed
 
 	// Initialize with SOL if no fromCoin provided
 	useEffect(() => {
@@ -86,94 +111,112 @@ const Trade: React.FC = () => {
 
 	// Cleanup intervals on unmount
 	useEffect(() => {
+		// Cleanup for quote fetching timeouts is handled by useDebouncedCallback's internal useEffect
+		// Polling cleanup is handled by the useTransactionPolling hook's internal useEffect
 		return () => {
-			logger.info('[Trade] Component unmounting - cleaning up all intervals and timeouts');
-			componentStopPolling();
-			if (quoteTimeoutRef.current) {
-				clearTimeout(quoteTimeoutRef.current);
-				quoteTimeoutRef.current = null;
-			}
-			if (pollingIntervalRef.current) {
-				clearInterval(pollingIntervalRef.current);
-				pollingIntervalRef.current = null;
-			}
+			logger.info('[Trade] Component unmounting');
+			// Any other non-hook related cleanup could go here
 		};
-	}, [componentStopPolling]);
+	}, []);
+
+	// Debounced function for fetching trade quotes
+	const debouncedFetchQuote = useDebouncedCallback(
+		async (currentAmount: string, currentFromCoin: Coin, currentToCoin: Coin, direction: 'from' | 'to') => {
+			if (!currentFromCoin || !currentToCoin || !currentAmount || parseFloat(currentAmount) <= 0) {
+				setIsQuoteLoading(false); // Ensure loading is stopped
+				return;
+			}
+
+			setIsQuoteLoading(true);
+			try {
+				// Determine which amount to set based on direction
+				const setTargetAmount = direction === 'from' ? setToAmount : setFromAmount;
+				const quoteData = await grpcApi.getFullSwapQuoteOrchestrated(
+					currentAmount,
+					direction === 'from' ? currentFromCoin : currentToCoin, // actual fromCoin for API
+					direction === 'from' ? currentToCoin : currentFromCoin  // actual toCoin for API
+				);
+
+				setTargetAmount(quoteData.estimatedAmount);
+				setTradeDetails({
+					exchangeRate: quoteData.exchangeRate,
+					gasFee: quoteData.fee,
+					priceImpactPct: quoteData.priceImpactPct,
+					totalFee: quoteData.totalFee,
+					route: quoteData.route
+				});
+
+			} catch (error) {
+				showToast({ type: 'error', message: error instanceof Error ? error.message : 'Failed to fetch quote' });
+				// Reset relevant states on error
+				setTargetAmount('');
+				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+			} finally {
+				setIsQuoteLoading(false);
+			}
+		},
+		QUOTE_DEBOUNCE_MS
+	);
 
 	const handleSelectFromToken = (token: Coin) => {
 		handleSelectToken(
-			'from',
-			token,
-			fromCoin,        // current token for 'from' direction
-			toCoin,          // other token (to compare against)
-			setFromCoin,     // setter for 'from' direction
-			() => {
-				setFromAmount('');
-				setToAmount('');
-			},
+			'from', token, fromCoin, toCoin, setFromCoin,
+			() => { setFromAmount(''); setToAmount(''); setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' }); },
 			handleSwapCoins
 		);
 	};
 
 	const handleSelectToToken = (token: Coin) => {
 		handleSelectToken(
-			'to',
-			token,
-			toCoin,          // current token for 'to' direction  
-			fromCoin,        // other token (to compare against)
-			setToCoin,       // setter for 'to' direction
-			() => {
-				setFromAmount('');
-				setToAmount('');
-			},
+			'to', token, toCoin, fromCoin, setToCoin,
+			() => { setFromAmount(''); setToAmount(''); setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' }); },
 			handleSwapCoins
 		);
 	};
 
 	const handleFromAmountChange = useCallback(
 		(amount: string) => {
-			handleAmountChange(
-				'from',
-				amount,
-				fromCoin,
-				toCoin,
-				quoteTimeoutRef,
-				setIsQuoteLoading,
-				setFromAmount,
-				setToAmount,
-				setTradeDetails,
-				showToast
-			);
+			setFromAmount(amount);
+			if (fromCoin && toCoin) {
+				if (!amount || amount === '.' || amount.endsWith('.')) {
+					setToAmount('');
+					setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+					setIsQuoteLoading(false);
+					return;
+				}
+				debouncedFetchQuote(amount, fromCoin, toCoin, 'from');
+			}
 		},
-		[fromCoin, toCoin, quoteTimeoutRef, setIsQuoteLoading, setFromAmount, setToAmount, setTradeDetails, showToast]
+		[fromCoin, toCoin, debouncedFetchQuote]
 	);
 
 	const handleToAmountChange = useCallback(
 		(amount: string) => {
-			handleAmountChange(
-				'to',
-				amount,
-				fromCoin,
-				toCoin,
-				quoteTimeoutRef,
-				setIsQuoteLoading,
-				setFromAmount,
-				setToAmount,
-				setTradeDetails,
-				showToast
-			);
+			setToAmount(amount);
+			if (fromCoin && toCoin) {
+				if (!amount || amount === '.' || amount.endsWith('.')) {
+					setFromAmount('');
+					setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+					setIsQuoteLoading(false);
+					return;
+				}
+				// For "to" amount changes, the API expects the changed amount to be the "fromAmount"
+				// and the original "fromCoin" becomes the "toCoin" for the quote.
+				debouncedFetchQuote(amount, toCoin, fromCoin, 'to');
+			}
 		},
-		[fromCoin, toCoin, quoteTimeoutRef, setIsQuoteLoading, setFromAmount, setToAmount, setTradeDetails, showToast]
+		[fromCoin, toCoin, debouncedFetchQuote]
 	);
 
 	const handleTradeSubmitClick = () => {
+		// pollingIntervalRef removed from args as it's managed by the hook now
 		handleTradeSubmit(
 			fromAmount,
 			toAmount,
 			wallet,
 			fromCoin,
 			fromPortfolioToken,
-			pollingIntervalRef,
+			// pollingIntervalRef,
 			setIsConfirmationVisible,
 			showToast
 		);
@@ -187,14 +230,33 @@ const Trade: React.FC = () => {
 		}
 		logger.info('[Trade] Stopping price polling and progress tracking before trade execution.');
 
-		// Stop all intervals to prevent infinite loops
-		if (pollingIntervalRef.current) {
-			clearInterval(pollingIntervalRef.current);
-			pollingIntervalRef.current = null;
-			logger.info('[Trade] Price polling stopped.');
-		}
+		// Stop polling related to price quotes if any was active, before starting trade execution polling
+		// This was previously clearing pollingIntervalRef, which is now managed by the hook for TX polling.
+		// If there was a separate interval for price quotes, that would be cleared here.
+		// For now, assuming quote fetching is timeout-based, not interval.
+		// The main transaction polling is handled by useTransactionPolling.
 
-		await executeTrade(fromCoin, toCoin, fromAmount, 1, showToast, setIsLoadingTrade, setIsConfirmationVisible, setPollingStatus, setSubmittedTxHash, setPollingError, setPollingConfirmations, setIsStatusModalVisible, componentStartPolling);
+		try {
+			setIsLoadingTrade(true); // Indicate trade execution is starting
+			setIsConfirmationVisible(false);
+
+			const txHash = await executeTrade(fromCoin, toCoin, fromAmount, 1, showToast); // Modified executeTrade
+
+			if (txHash) {
+				// setSubmittedTxHash(txHash); // Not needed, txHash set via startTxPolling
+				setIsStatusModalVisible(true);
+				startTxPolling(txHash);
+			} else {
+				// Handle case where executeTrade didn't return a hash (e.g., pre-flight error)
+				setIsLoadingTrade(false);
+			}
+		} catch (error) {
+			// executeTrade should ideally handle its own errors and show toasts
+			// If it re-throws, catch here
+			logger.error('[Trade] Error during executeTrade or starting polling:', error);
+			setIsLoadingTrade(false);
+			showToast({type: 'error', message: error instanceof Error ? error.message : 'Trade execution failed'});
+		}
 	};
 
 	const handleSwapCoins = () => {
@@ -214,29 +276,43 @@ const Trade: React.FC = () => {
 		logger.info('[Trade] Confirmation modal closed - refresh timers remain disabled');
 	};
 
-	if (!toCoin) return (
-		<View style={styles.noWalletContainer}>
-			<Text style={styles.noWalletText}>
-				Invalid trade pair. Please select coins to trade.
-			</Text>
-		</View>
-	);
+	if (!wallet) {
+		return (
+			<SafeAreaView style={styles.container}>
+				<InfoState
+					title="Wallet Not Connected"
+					emptyMessage="Please connect your wallet to trade."
+					iconName="wallet-outline"
+				/>
+			</SafeAreaView>
+		);
+	}
 
-	if (!wallet) return (
-		<View style={styles.noWalletContainer}>
-			<Text style={styles.noWalletText}>
-				Please connect your wallet to trade
-			</Text>
-		</View>
-	);
+	if (!fromCoin && !toCoin) { // Initial state, or both cleared
+		return (
+			<SafeAreaView style={styles.container}>
+				<InfoState
+					title="Select Tokens"
+					emptyMessage="Please select the tokens you'd like to trade."
+					iconName="swap-horizontal-bold"
+				/>
+			</SafeAreaView>
+		);
+	}
 
-	if (!fromCoin) return (
-		<View style={styles.noWalletContainer}>
-			<Text style={styles.noWalletText}>
-				Please select a coin to trade from
-			</Text>
-		</View>
-	);
+	// If one is selected but not the other (e.g. after initial param load for one coin)
+	// This could be a more nuanced message or allow selection. For now, a generic message if one is missing.
+	if (!fromCoin || !toCoin) {
+		return (
+			<SafeAreaView style={styles.container}>
+				<InfoState
+					title="Complete Pair"
+					emptyMessage={!fromCoin ? "Please select the token to trade from." : "Please select the token to trade to."}
+					iconName="help-circle-outline"
+				/>
+			</SafeAreaView>
+		);
+	}
 
 	const renderTradeCard = (
 		label: string,
@@ -415,18 +491,15 @@ const Trade: React.FC = () => {
 			<TradeStatusModal
 				onClose={() => {
 					setIsStatusModalVisible(false);
-					setPollingStatus('pending');
-					setPollingConfirmations(0);
-					setPollingError(null);
-					setSubmittedTxHash(null);
-					componentStopPolling();
+					resetTxPolling(); // Reset hook state
+					// componentStopPolling(); // Replaced by resetTxPolling or hook's internal stop
 					navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
 				}}
 				isVisible={isStatusModalVisible}
-				txHash={submittedTxHash}
-				status={pollingStatus}
-				confirmations={pollingConfirmations}
-				error={pollingError}
+				txHash={polledTxHash} // Use txHash from hook
+				status={currentPollingStatus as HookPollingStatus} // Use status from hook
+				confirmations={currentPollingConfirmations} // Use confirmations from hook
+				error={pollingError} // Still using local pollingError, or switch to currentPollingErrorFromHook
 			/>
 		</SafeAreaView>
 	);

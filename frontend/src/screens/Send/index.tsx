@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
@@ -13,37 +13,61 @@ import {
 	handleTokenTransfer,
 	handleTokenSelect,
 	getDefaultSolanaToken,
-	startPolling,
-	stopPolling,
-	pollTransactionStatus
+	validateForm,
+	handleTokenTransfer,
+	handleTokenSelect,
+	getDefaultSolanaToken
+	// Removed startPolling, stopPolling, pollTransactionStatus
 } from './scripts';
 import { useStyle } from './styles';
-import { Coin } from '@/types';
+import { Coin } from '@/types'; // Added Wallet
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
-import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
+// import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { logger } from '@/utils/logger';
+import { useTransactionPolling, PollingStatus as HookPollingStatus } from '@/hooks/useTransactionPolling';
+import { grpcApi } from '@/services/grpcApi';
+import VerificationCard from '@/components/Common/Form/VerificationCard'; // Import VerificationCard
+import { VerificationStatus } from '@/components/Common/Form/VerificationCard.styles'; // Import status type
 
 const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const styles = useStyle();
-	const { wallet, tokens } = usePortfolioStore();
+	const { wallet, tokens, fetchPortfolioBalance } = usePortfolioStore(); // Added fetchPortfolioBalance
+	const { fetchRecentTransactions } = useTransactionsStore(); // Added fetchRecentTransactions
 	const { showToast } = useToast();
 	const [selectedToken, setSelectedToken] = useState<PortfolioToken | undefined>(undefined);
 	const [amount, setAmount] = useState('');
 	const [recipientAddress, setRecipientAddress] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(false); // General loading for submit, distinct from polling's internal loading
 
 	// Error state for validation
 	const [validationError, setValidationError] = useState<string | null>(null);
 
-	// New state variables for confirmation and polling
+	const {
+		txHash: polledTxHash,
+		status: currentPollingStatus,
+		// data: pollingData, // Not explicitly used here, but available
+		error: currentPollingError,
+		confirmations: currentPollingConfirmations,
+		startPolling: startTxPolling,
+		stopPolling: stopTxPolling,
+		resetPolling: resetTxPolling
+	} = useTransactionPolling(
+		grpcApi.getSwapStatus, // Pass the actual polling function
+		undefined, // onSuccess
+		(errorMsg) => showToast({ type: 'error', message: errorMsg || 'Transaction polling failed' }), // onError
+		(finalData) => { // onFinalized
+			if (wallet?.address && finalData && !finalData.error) { // Assuming finalData contains the structure from getSwapStatus
+				logger.info('[Send] Transaction finalized successfully, refreshing portfolio and transactions.');
+				fetchPortfolioBalance(wallet.address);
+				fetchRecentTransactions(wallet.address);
+			}
+		}
+	);
+
 	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
 	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
-	const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null);
-	const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending');
-	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
-	const [pollingError, setPollingError] = useState<string | null>(null);
-	const pollingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null); // Replaced by polledTxHash from hook
 
 	// Flag to prevent double navigation when closing status modal
 	const [isNavigating, setIsNavigating] = useState(false);
@@ -82,15 +106,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		// The visual indicator in the UI will be sufficient
 	}, [wallet, tokens, showToast]);
 
-	// Cleanup polling on unmount
-	useEffect(() => {
-		const intervalId = pollingIntervalRef.current; // Capture at time of effect
-		return () => {
-			if (intervalId) { // Use captured value
-				clearInterval(intervalId);
-			}
-		};
-	}, []);
+	// Cleanup polling on unmount - handled by useTransactionPolling hook's internal useEffect
 
 	const onTokenSelect = (coin: Coin) => {
 		logger.breadcrumb({ category: 'ui', message: 'Selected token for sending', data: { tokenSymbol: coin.symbol, tokenMint: coin.mintAddress } });
@@ -98,31 +114,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		setSelectedToken(portfolioToken);
 	};
 
-	// Wrapped polling functions for component context
-	const componentStopPolling = () => {
-		stopPolling(pollingIntervalRef, setIsLoading);
-	};
-
-	const componentPollStatus = async (txHash: string) => {
-		await pollTransactionStatus(
-			txHash,
-			setPollingConfirmations,
-			setPollingStatus,
-			setPollingError,
-			componentStopPolling,
-			showToast,
-			wallet
-		);
-	};
-
-	const componentStartPolling = (txHash: string) => {
-		startPolling(
-			txHash,
-			() => componentPollStatus(txHash),
-			componentStopPolling,
-			pollingIntervalRef
-		);
-	};
+	// Polling functions (componentStopPolling, componentPollStatus, componentStartPolling) are now replaced by hook's functions
 
 	const handleSubmit = async () => {
 		try {
@@ -240,16 +232,15 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				throw error; // Re-throw to be caught by the outer catch block
 			}
 
-			logger.info('[Send] Setting submitted tx hash.');
-			setSubmittedTxHash(txHash);
+			logger.info('[Send] Token transfer successful. TxHash obtained:', txHash);
+			// setSubmittedTxHash(txHash); // Not needed, txHash is set via startTxPolling
 			logger.breadcrumb({ category: 'ui', message: 'Send status modal opened', data: { txHash } });
-			logger.info('[Send] Setting status modal visible.');
 			setIsStatusModalVisible(true);
-			logger.info('[Send] Status modal set to visible.');
-			logger.info('[Send] Starting polling.');
-			componentStartPolling(txHash);
-
+			logger.info('[Send] Starting polling via hook.');
+			startTxPolling(txHash);
+			// setIsLoading(false); // isLoading should be managed by the hook or for the submission part only
 		} catch (error: unknown) {
+			setIsLoading(false); // Ensure loading is stopped on submission error
 			const errorMessage = error instanceof Error ?
 				(error.message || 'Failed to send tokens') :
 				'An unknown error occurred while sending tokens';
@@ -265,7 +256,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	};
 
 	const handleCloseStatusModal = () => {
-		logger.breadcrumb({ category: 'ui', message: 'Send status modal closed', data: { txHash: submittedTxHash, finalStatus: pollingStatus } });
+		logger.breadcrumb({ category: 'ui', message: 'Send status modal closed', data: { txHash: polledTxHash, finalStatus: currentPollingStatus } });
 
 		// Prevent double navigation
 		if (isNavigating) {
@@ -275,18 +266,11 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 
 		setIsNavigating(true);
 		setIsStatusModalVisible(false);
-		componentStopPolling(); // Explicitly stop polling to prevent orphaned timers.
+		// stopTxPolling(); // stopPolling is called by resetPolling or internally by the hook on terminal states
+		resetTxPolling(); // Reset all polling states in the hook
 
-		if (pollingStatus === 'finalized' && wallet?.address) {
-			logger.info('[Send] Refreshing portfolio and transactions after successful send.');
-			usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
-			useTransactionsStore.getState().fetchRecentTransactions(wallet.address);
-		}
+		// onFinalized callback in useTransactionPolling handles portfolio/transaction refresh now.
 
-		setPollingStatus('pending'); // Reset status for next time
-		setPollingConfirmations(0);
-		setPollingError(null);
-		setSubmittedTxHash(null);
 		// Reset form fields
 		setAmount('');
 		setRecipientAddress('');
@@ -372,76 +356,20 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		</View>
 	);
 
-	const renderVerificationCard = () => {
-		if (!verificationInfo) return null;
-
-		const getCardStyle = () => {
-			switch (verificationInfo.code) {
-				case "ADDRESS_HAS_BALANCE":
-					return styles.verificationCardSuccess;
-				case "ADDRESS_NO_BALANCE":
-					return styles.verificationCardWarning;
-				case "ADDRESS_BALANCE_CHECK_FAILED":
-					return styles.verificationCardError;
-				default:
-					return styles.verificationCardInfo;
-			}
-		};
-
-		const getIconName = () => {
-			switch (verificationInfo.code) {
-				case "ADDRESS_HAS_BALANCE":
-					return "check-circle";
-				case "ADDRESS_NO_BALANCE":
-					return "alert-circle";
-				case "ADDRESS_BALANCE_CHECK_FAILED":
-					return "help-circle";
-				default:
-					return "information";
-			}
-		};
-
-		const getIconColor = () => {
-			switch (verificationInfo.code) {
-				case "ADDRESS_HAS_BALANCE":
-					return styles.colors.primary;
-				case "ADDRESS_NO_BALANCE":
-					return styles.colors.tertiary;
-				case "ADDRESS_BALANCE_CHECK_FAILED":
-					return styles.colors.error;
-				default:
-					return styles.colors.onSurfaceVariant;
-			}
-		};
-
-		return (
-			<View style={[styles.verificationCard, getCardStyle()]} testID="verification-info-card">
-				<View style={styles.verificationHeader}>
-					<Icon source={getIconName()} size={20} color={getIconColor()} />
-					<Text style={styles.verificationTitle}>Address Verification</Text>
-				</View>
-				<Text style={styles.verificationMessage} testID="verification-message">
-					{verificationInfo.message}
-				</Text>
-				<View style={styles.verificationActions}>
-					<TouchableOpacity
-						style={[styles.verificationButton, styles.verificationButtonCancel]}
-						onPress={handleCancelVerification}
-						testID="verification-cancel-button"
-					>
-						<Text style={styles.verificationButtonCancelText}>Cancel</Text>
-					</TouchableOpacity>
-					<TouchableOpacity
-						style={[styles.verificationButton, styles.verificationButtonContinue]}
-						onPress={handleConfirmVerificationAndProceed}
-						testID="verification-continue-button"
-					>
-						<Text style={styles.verificationButtonContinueText}>Continue</Text>
-					</TouchableOpacity>
-				</View>
-			</View>
-		);
+	const mapVerificationCodeToStatus = (code?: string): VerificationStatus => {
+		switch (code) {
+			case "ADDRESS_HAS_BALANCE":
+				return 'valid'; // Or a custom 'success' status if VerificationCard supports it
+			case "ADDRESS_NO_BALANCE":
+				return 'warning';
+			case "ADDRESS_BALANCE_CHECK_FAILED":
+				return 'error'; // Or 'warning' depending on desired severity display
+			default:
+				return 'idle'; // Or 'info' if VerificationCard has a generic info style
+		}
 	};
+
+	// renderVerificationCard is now replaced by using VerificationCard directly below
 
 	const renderErrorMessage = () => {
 		if (!validationError) return null;
@@ -495,7 +423,32 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 				{renderRecipientCard()}
 
 				{/* Verification Info Card */}
-				{renderVerificationCard()}
+				{verificationInfo && (
+					<View>
+						<VerificationCard
+							status={mapVerificationCodeToStatus(verificationInfo.code)}
+							title="Address Verification"
+							message={verificationInfo.message}
+						/>
+						{/* Buttons for verification card need to be handled separately if VerificationCard doesn't include them */}
+						<View style={styles.verificationActions}>
+							<TouchableOpacity
+								style={[styles.verificationButton, styles.verificationButtonCancel]}
+								onPress={handleCancelVerification}
+								testID="verification-cancel-button"
+							>
+								<Text style={styles.verificationButtonCancelText}>Cancel</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={[styles.verificationButton, styles.verificationButtonContinue]}
+								onPress={handleConfirmVerificationAndProceed}
+								testID="verification-continue-button"
+							>
+								<Text style={styles.verificationButtonContinueText}>Continue</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+				)}
 
 				{/* Error Message */}
 				{renderErrorMessage()}
@@ -529,10 +482,10 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 			<TradeStatusModal
 				isVisible={isStatusModalVisible}
 				onClose={handleCloseStatusModal}
-				status={pollingStatus}
-				confirmations={pollingConfirmations}
-				error={pollingError}
-				txHash={submittedTxHash}
+				status={currentPollingStatus as HookPollingStatus}
+				confirmations={currentPollingConfirmations}
+				error={currentPollingError}
+				txHash={polledTxHash}
 			/>
 		</View>
 	);

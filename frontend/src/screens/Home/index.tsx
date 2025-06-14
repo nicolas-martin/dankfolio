@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
-import { Text, Icon, Button } from 'react-native-paper';
+import { Text, Button } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
-import { fetchPriceHistory } from '@/screens/CoinDetail/coindetail_scripts';
+// fetchPriceHistory import seems unused directly in HomeScreen, consider removing if not needed for other logic
+// import { fetchPriceHistory } from '@/screens/CoinDetail/coindetail_scripts';
 import CoinCard from '@components/Home/CoinCard';
+import InfoState from '@/components/Common/InfoState'; // Import InfoState
 import NewCoins from '@components/Home/NewCoins/NewCoins';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
@@ -178,77 +180,77 @@ const HomeScreen = () => {
 
 		// we don't want sequential fetching in E2E mode or development
 		if (!env.e2eMockingEnabled && env.appEnv != 'development') {
-			logger.info('[HomeScreen] 🐌🐌🐌🐌🐌🐌🐌🐌🐌🐌🐌 Using SEQUENTIAL price history fetching');
+			logger.info('[HomeScreen] 🐌 Using SEQUENTIAL price history fetching');
+			// Sequential fetching (existing logic, could also be batched but less critical due to delays)
 			const processCoinsSequentially = async () => {
+				let newHistories: Record<string, PriceData[]> = {};
+				let newLoadingStates: Record<string, boolean> = {};
 				for (const coin of topCoins) {
-					if (!coin || !coin.mintAddress) {
-						continue;
-					}
-					setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
+					if (!coin || !coin.mintAddress) continue;
+					newLoadingStates[coin.mintAddress] = true;
+					setIsLoadingPriceHistories(prev => ({ ...prev, ...newLoadingStates })); // Update loading state immediately for this coin
 					try {
 						const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
-						if (result.data !== null) {
-							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data! }));
-						} else {
-							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: [] }));
-						}
-						if (result.error) {
-							logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
-						}
-					} catch (error: unknown) {
-						if (error instanceof Error) {
-							logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error.message);
-						} else {
-							logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
-						}
+						newHistories[coin.mintAddress] = result.data || [];
+						if (result.error) logger.error(`[HomeScreen] Error fetching (seq) ${coin.symbol}:`, result.error);
+					} catch (e) {
+						logger.error(`[HomeScreen] Exception fetching (seq) ${coin.symbol}:`, e);
+						newHistories[coin.mintAddress] = [];
 					} finally {
+						newLoadingStates[coin.mintAddress] = false;
+						// Batching updates within sequential is tricky if we want immediate feedback per coin.
+						// For now, individual updates for loading/history in sequential remain.
+						setPriceHistories(prev => ({...prev, [coin.mintAddress!]: newHistories[coin.mintAddress!]}));
 						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
 					}
 					await new Promise(resolve => setTimeout(resolve, PRICE_HISTORY_FETCH_DELAY_MS));
 				}
 			};
-			processCoinsSequentially().catch((error: unknown) => {
-				if (error instanceof Error) {
-					logger.error('[HomeScreen] Error in processCoinsSequentially:', error.message);
-				} else {
-					logger.error('[HomeScreen] Unknown error in processCoinsSequentially:', error);
-				}
-			});
-		} else { // Parallel fetching
-			logger.info('[HomeScreen] 🚀🚀 🚀 🚀 🚀 🚀  Using PARALLEL price history fetching', { coinCount: topCoins.length });
-			topCoins.forEach(coin => {
-				if (!coin || !coin.mintAddress) {
-					return;
-				}
-				const startTime = Date.now();
-				logger.info(`[HomeScreen] 🚀 Starting parallel fetch for ${coin.symbol} (${coin.mintAddress})`);
-				setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: true }));
-				fetchPriceHistory(coin, fourHourTimeframeKey)
-					.then(result => {
-						const duration = Date.now() - startTime;
-						logger.info(`[HomeScreen] ✅ Completed parallel fetch for ${coin.symbol} in ${duration}ms`);
-						if (result.data !== null) {
-							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: result.data! }));
-						} else {
-							setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: [] }));
+			processCoinsSequentially().catch(e => logger.error('[HomeScreen] Error in processCoinsSequentially:', e));
+
+		} else { // Parallel fetching with batched state updates
+			logger.info('[HomeScreen] 🚀 Using PARALLEL price history fetching', { coinCount: topCoins.length });
+
+			// Set initial loading states for all coins to be fetched
+			const initialLoadingStates = topCoins.reduce((acc, coin) => {
+				if (coin?.mintAddress) acc[coin.mintAddress] = true;
+				return acc;
+			}, {} as Record<string, boolean>);
+			setIsLoadingPriceHistories(prev => ({ ...prev, ...initialLoadingStates }));
+
+			Promise.allSettled(
+				topCoins.map(coin => {
+					if (!coin || !coin.mintAddress) return Promise.resolve(null); // Skip invalid coins
+					return fetchPriceHistory(coin, fourHourTimeframeKey).then(result => ({
+						mintAddress: coin.mintAddress!,
+						data: result.data || [],
+						error: result.error
+					}));
+				})
+			).then(results => {
+				const newHistoriesBatch: Record<string, PriceData[]> = {};
+				const newLoadingStatesBatch: Record<string, boolean> = {};
+
+				results.forEach(settledResult => {
+					if (settledResult.status === 'fulfilled' && settledResult.value) {
+						const { mintAddress, data, error } = settledResult.value;
+						newHistoriesBatch[mintAddress] = data;
+						newLoadingStatesBatch[mintAddress] = false;
+						if (error) {
+							logger.error(`[HomeScreen] Error fetching (parallel) ${mintAddress}:`, error);
 						}
-						if (result.error) {
-							logger.error(`[HomeScreen] Error fetching price history for ${coin.symbol} (${coin.mintAddress}):`, result.error);
-						}
-					})
-					.catch((error: unknown) => {
-						if (error instanceof Error) {
-							logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error.message);
-						} else {
-							logger.error(`[HomeScreen] Unexpected error calling fetchPriceHistory for ${coin.symbol} (${coin.mintAddress}):`, error);
-						}
-					})
-					.finally(() => {
-						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
-					});
+					} else if (settledResult.status === 'rejected') {
+						// Handle rejected promises if fetchPriceHistory can throw directly (though it returns {data, error})
+						// This path might not be hit if fetchPriceHistory always resolves.
+						logger.error(`[HomeScreen] Promise rejected for a coin:`, settledResult.reason);
+					}
+				});
+
+				setPriceHistories(prev => ({ ...prev, ...newHistoriesBatch }));
+				setIsLoadingPriceHistories(prev => ({ ...prev, ...newLoadingStatesBatch }));
 			});
 		}
-	}, [availableCoins]);
+	}, [availableCoins]); // Removed showToast from deps as logger is used
 
 	// Shared logic for fetching trending coins and portfolio
 	const fetchTrendingAndPortfolio = useCallback(async () => {
@@ -336,22 +338,19 @@ const HomeScreen = () => {
 	}, [handleCoinPressCallback]);
 
 	const renderNoWalletState = () => (
+		// FlatList wrapper might not be necessary if InfoState handles its own layout well.
+		// However, keeping for RefreshControl for now.
 		<FlatList
 			data={[]}
 			renderItem={() => null}
 			ListEmptyComponent={() => (
-				<View style={styles.noWalletContainer}>
-					<View style={styles.noWalletCard}>
-						<View style={styles.noWalletIcon}>
-							<Icon source="wallet" size={48} color={styles.colors.primary} />
-						</View>
-						<Text style={styles.noWalletTitle}>Connect Your Wallet</Text>
-						<Text style={styles.noWalletText}>
-							Connect your Solana wallet to start trading meme coins and view your portfolio.
-						</Text>
-					</View>
-				</View>
+				<InfoState
+					iconName="wallet-outline" // Changed icon to match previous, or use a new one
+					title="Connect Your Wallet"
+					emptyMessage="Connect your Solana wallet to start trading meme coins and view your portfolio."
+				/>
 			)}
+			contentContainerStyle={styles.centered} // Ensure InfoState is centered
 			refreshControl={
 				<RefreshControl
 					refreshing={isRefreshing}
@@ -439,13 +438,11 @@ const HomeScreen = () => {
 						)}
 
 						{!isLoadingTrending && !hasTrendingCoins && !isRefreshing && (
-							<View style={styles.emptyStateContainer}>
-								<Icon source="chart-line" size={36} color={styles.colors.onSurfaceVariant} />
-								<Text style={styles.emptyStateTitle}>No Trending Coins</Text>
-								<Text style={styles.emptyStateText}>
-									There are no trending coins to display right now.
-								</Text>
-							</View>
+							<InfoState
+								iconName="chart-line"
+								title="No Trending Coins"
+								emptyMessage="There are no trending coins to display right now."
+							/>
 						)}
 
 						{hasTrendingCoins && (
@@ -483,14 +480,20 @@ const HomeScreen = () => {
 			<View style={styles.coinCardContainerStyle}>
 				<CoinCard
 					coin={item}
-					onPress={() => handlePressCoinCard(item)}
+					// Pass handlePressCoinCard directly for the onPressCoin prop (or similar name)
+					// The actual name of the prop in CoinCard will need to match (e.g., onPressCoin)
+					// And CoinCard's internal logic will use this prop and its own coin prop.
+					onPressCoin={handlePressCoinCard} // Pass the memoized callback
 					priceHistory={history}
 					isPriceHistoryLoading={isLoadingHistory}
 					testIdPrefix="trending-coin"
 				/>
 			</View>
 		);
+		// handlePressCoinCard is already a useCallback.
+		// styles.coinCardContainerStyle should be stable due to useStyles memoization.
 	}, [priceHistories, isLoadingPriceHistories, handlePressCoinCard, styles.coinCardContainerStyle]);
+
 
 	return (
 		<SafeAreaView style={styles.container} testID="home-screen">

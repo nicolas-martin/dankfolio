@@ -1,6 +1,8 @@
 import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
 import * as grpcModel from './grpc/model';
 import { Trade } from '../gen/dankfolio/v1/trade_pb';
+import { logger } from '@/utils/logger'; // Added logger import
+import { toRawAmount as commonToRawAmount } from '@/utils/numberFormat'; // Import toRawAmount
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import * as grpcUtils from './grpc/grpcUtils';
 import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils'; // Import the new mapper
@@ -178,19 +180,20 @@ export const grpcApi: grpcModel.API = {
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Convert the response to match the expected REST API structure
-			const convertedResponse = {
-				data: {
-					items: response.data?.items.map(item => ({
+			// Convert the response to match PriceData[] expected by usePriceHistory hook
+			if (response?.data?.items) {
+				const mappedData: grpcModel.PriceData[] = response.data.items
+					.filter(item => item.value !== null && item.unixTime !== null)
+					.map(item => ({
+						timestamp: new Date(Number(item.unixTime) * 1000).toISOString(),
+						value: item.value,
 						unixTime: Number(item.unixTime),
-						value: item.value
-					})) || []
-				},
-				success: response.success
-			};
-
-
-			return convertedResponse;
+					}));
+				return mappedData;
+			} else {
+				// Return empty array if no items, or handle as error if appropriate
+				return [];
+			}
 		} catch (error: unknown) {
 			console.error('[grpcApi] ❌ getPriceHistory ERROR:', {
 				error,
@@ -533,6 +536,56 @@ export const grpcApi: grpcModel.API = {
 				console.error("An unknown error occurred:", error);
 				throw new Error("An unknown error occurred in listTrades");
 			}
+		}
+	},
+
+	// New method to orchestrate fetching full swap quote details
+	getFullSwapQuoteOrchestrated: async (amount: string, fromCoin: grpcModel.Coin, toCoin: grpcModel.Coin): Promise<grpcModel.FullSwapQuoteDetails> => {
+		const serviceName = 'TradeService';
+		const methodName = 'getFullSwapQuoteOrchestrated';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { amount, fromCoinSymbol: fromCoin.symbol, toCoinSymbol: toCoin.symbol });
+
+			if (!fromCoin || !toCoin || !amount || parseFloat(amount) <= 0) {
+				throw new Error("Invalid parameters for getFullSwapQuoteOrchestrated");
+			}
+
+			// 1. Get latest prices for both coins
+			const prices = await grpcApi.getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]); // Use existing grpcApi method
+
+			const updatedFromCoin = { ...fromCoin, price: prices[fromCoin.mintAddress] };
+			const updatedToCoin = { ...toCoin, price: prices[toCoin.mintAddress] };
+
+			// 2. Get swap quote using updated prices
+			const rawAmount = commonToRawAmount(amount, updatedFromCoin.decimals); // Use imported toRawAmount
+
+			const quoteResponse = await grpcApi.getSwapQuote(updatedFromCoin.mintAddress, updatedToCoin.mintAddress, rawAmount);
+
+			// 3. Format and return the combined result
+			const fullQuote: grpcModel.FullSwapQuoteDetails = {
+				estimatedAmount: quoteResponse.estimatedAmount,
+				exchangeRate: quoteResponse.exchangeRate,
+				fee: quoteResponse.fee, // gasFee and totalFee are the same in current fetchTradeQuote
+				priceImpactPct: quoteResponse.priceImpact,
+				totalFee: quoteResponse.fee,
+				route: quoteResponse.routePlan.join(' → '), // Assuming routePlan is string[]
+				// Optionally include updated coin data if useful for the frontend
+				// updatedFromCoin: updatedFromCoin,
+				// updatedToCoin: updatedToCoin,
+			};
+			grpcUtils.logResponse(serviceName, methodName, fullQuote);
+			return fullQuote;
+
+		} catch (error: unknown) {
+			// Log and rethrow, or handle as other grpcApi methods
+			logger.exception(error, { // Assuming logger is available globally or passed/imported
+				functionName: methodName,
+				params: { amount, fromCoinSc: fromCoin.symbol, toCoinSc: toCoin.symbol }
+			});
+			if (error instanceof Error) {
+				throw error; // Rethrow the original error or a new formatted one
+			}
+			throw new Error("An unknown error occurred in getFullSwapQuoteOrchestrated");
 		}
 	},
 };

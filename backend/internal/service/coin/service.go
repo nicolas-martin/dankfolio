@@ -119,6 +119,7 @@ func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Co
 		defaultSortDesc := true
 		opts.SortBy = &defaultSortBy
 		opts.SortDesc = &defaultSortDesc
+
 		slog.Debug("Applying default sort order to GetCoins", "sortBy", *opts.SortBy, "sortDesc", *opts.SortDesc)
 	}
 
@@ -135,6 +136,7 @@ func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Co
 		slog.Warn("Requested limit exceeds maximum, capping limit", "requestedLimit", *opts.Limit, "maxLimit", maxLimit)
 		limit := maxLimit
 		opts.Limit = &limit
+
 	}
 
 	coins, totalCount, err := s.store.Coins().List(ctx, opts)

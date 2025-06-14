@@ -3,9 +3,13 @@ import parser from '@typescript-eslint/parser';
 import pluginTs from '@typescript-eslint/eslint-plugin';
 import pluginReact from 'eslint-plugin-react';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
-import pluginReactNative from 'eslint-plugin-react-native';
 import pluginUnusedImports from 'eslint-plugin-unused-imports';
 import prettier from 'eslint-config-prettier';
+// @ts-expect-error no types available
+import pluginReactNative from 'eslint-plugin-react-native';
+// @ts-expect-error no types available
+import pluginReactPerf from 'eslint-plugin-react-perf';
+// @ts-expect-error no types available
 import globals from 'globals';
 
 export default [
@@ -37,6 +41,7 @@ export default [
 		},
 
 		plugins: {
+			'react-perf': pluginReactPerf,
 			'@typescript-eslint': pluginTs,
 			react: pluginReact,
 			'react-hooks': pluginReactHooks,
@@ -50,12 +55,21 @@ export default [
 			...pluginReactHooks.configs.recommended.rules,
 			...pluginReactNative.configs.all.rules,
 			...prettier.rules,
+			// 'react-perf/jsx-no-new-function-as-prop': 'warn',
+			'react-perf/jsx-no-new-object-as-prop': 'warn',
+			'react-perf/jsx-no-new-array-as-prop': 'warn',
+
+			// optional: stylistic or advanced
+			// 'react-perf/jsx-no-jsx-as-prop': 'warn',
+			// 'react-perf/jsx-no-useless-fragment': 'warn',
+			// 'react-perf/jsx-no-multiline-js': 'warn',
 
 			'react/react-in-jsx-scope': 'off',
 
 			// Auto-fix unused imports
 			'unused-imports/no-unused-imports': 'error',
 
+			'@typescript-eslint/no-unused-vars': 'off',
 			// Auto-fix unused vars (removes them instead of just warning)
 			'unused-imports/no-unused-vars': [
 				'warn',

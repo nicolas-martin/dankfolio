@@ -1,8 +1,9 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { Modal, Portal, Text, Button } from 'react-native-paper';
+import { Modal, Portal, Text } from 'react-native-paper'; // Removed Button
 import { useStyles } from './styles';
 import { TermsModalProps } from './types';
+import ModalActionButtons from '@/components/Common/ModalActionButtons'; // Import ModalActionButtons
 import { logger } from '@/utils/logger';
 
 const TermsModal: React.FC<TermsModalProps> = ({
@@ -89,22 +90,15 @@ const TermsModal: React.FC<TermsModalProps> = ({
 					<View style={styles.spacer} />
 				</ScrollView>
 
-				<View style={styles.actionSection}>
-					<Button
-						mode="outlined"
-						onPress={onClose}
-						style={styles.cancelButton}
-					>
-						Decline
-					</Button>
-					<Button
-						mode="contained"
-						onPress={handleAccept}
-						style={styles.acceptButton}
-					>
-						Accept
-					</Button>
-				</View>
+				<ModalActionButtons
+					primaryButtonText="Accept"
+					onPrimaryButtonPress={handleAccept}
+					primaryButtonTestID="accept-terms-button"
+					secondaryButtonText="Decline"
+					onSecondaryButtonPress={onClose}
+					secondaryButtonTestID="decline-terms-button"
+				/>
+				{/* The styles.actionSection might need to wrap ModalActionButtons or be removed if ModalActionButtons handles padding */}
 			</Modal>
 		</Portal>
 	);

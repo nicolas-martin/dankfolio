@@ -14,7 +14,6 @@ import { storeCredentials, KEYCHAIN_SERVICE } from '@/utils/keychainService'; //
 // Removed Clipboard import - now using CopyToClipboard component
 import { WalletSetupStep, WalletSetupScreenProps, WalletInfo } from './types';
 import { logger } from '@/utils/logger';
-import { ToastProps } from '@/components/Common/Toast/toast_types';
 
 // Note: Base58PrivateKey type is now imported from @/utils/cryptoUtils
 // Note: KEYCHAIN_SERVICE constant is now defined in @/utils/keychainService.ts

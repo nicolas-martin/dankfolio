@@ -50,4 +50,5 @@ func IsValidBase58(str string) bool {
 		return false
 	}
 	return base58Regex.MatchString(str)
+
 }

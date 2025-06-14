@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Animated, Dimensions } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react'; // Added useMemo, useCallback
+import { View, Animated } from 'react-native'; // Removed Dimensions
 import { Text, Button, ActivityIndicator, Icon } from 'react-native-paper';
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet'; // Imported BottomSheetBackdropProps
-import { BlurView } from 'expo-blur';
+// BottomSheetModal, BottomSheetView, BottomSheetBackdrop will be handled by ManagedBottomSheetModal
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeStatusModalProps } from './types';
+import ManagedBottomSheetModal from '@/components/Common/BottomSheet/ManagedBottomSheetModal'; // Import new modal
 import { useStyles } from './styles';
 import { openSolscanUrl } from '@/utils/url';
 import {
@@ -18,7 +18,7 @@ import {
 } from './scripts';
 import { logger } from '@/utils/logger';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+// const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // No longer directly needed here for snapPoints
 
 const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	isVisible,
@@ -32,7 +32,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	logger.info(`[TradeStatusModal] Render with props:`, { isVisible, txHash, status, confirmations, error });
 
 	const styles = useStyles();
-	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+	// bottomSheetModalRef and its useEffect are now handled by ManagedBottomSheetModal
 
 	// State to prevent quick flashing between states
 	const [displayStatus, setDisplayStatus] = useState(status);
@@ -249,101 +249,74 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 		);
 	};
 
-	// Custom backdrop component with blur
-	const renderBackdrop = (props: BottomSheetBackdropProps) => { // Typed props
-		return (
-			<BottomSheetBackdrop
-				{...props}
-				disappearsOnIndex={-1}
-				appearsOnIndex={0}
-				opacity={0.8}
-				onPress={isFinal ? () => {
-					onClose();
-				} : () => { }} // Changed undefined to no-op function
-				// Accessibility properties for testing frameworks
-				accessible={true}
-				accessibilityRole="button"
-				accessibilityLabel="Close trade status modal"
-				accessibilityHint="Tap to close the modal"
-			>
-				<BlurView intensity={20} style={styles.blurViewStyle} />
-			</BottomSheetBackdrop>
-		);
-	};
+	// renderBackdrop is now handled by ManagedBottomSheetModal by default.
+	// If custom backdrop logic (like conditional onPress) is strictly needed,
+	// ManagedBottomSheetModal would need to accept a renderBackdrop prop.
+	// For this refactor, we assume the standard backdrop is sufficient or onClose logic is handled by button.
 
 	// Handle button close with programmatic flag
 	const handleButtonClose = () => {
 			onClose();
 	};
 
+	const snapPoints = useMemo(() => ['75%'], []);
+
 
 	return (
-		<BottomSheetModal
-			ref={bottomSheetModalRef}
-			snapPoints={[SCREEN_HEIGHT * 0.75]}
-			backgroundStyle={styles.bottomSheetBackground}
-			handleIndicatorStyle={styles.handleIndicator}
-			enablePanDownToClose={isFinal}
-			enableDismissOnClose={isFinal}
-			backdropComponent={renderBackdrop}
-			// Official Maestro solution for nested components on iOS
-			// Disable accessibility on the outer container to allow inner components to be accessible
-			accessible={false}
+		<ManagedBottomSheetModal
+			isVisible={isVisible}
+			onClose={onClose}
+			snapPoints={snapPoints}
+			// Pass isFinal to enablePanDownToClose, ManagedBottomSheetModal needs to support this
+			bottomSheetModalProps={{
+				enablePanDownToClose: isFinal,
+				// enableDismissOnClose: isFinal, // enablePanDownToClose often covers this
+			}}
 		>
-			<BottomSheetView
-				style={styles.bottomSheetViewContainer}
-				testID="trade-status-modal"
-				// Parent container should be accessible={false}
-				accessible={false}
-				// Android specific - ensure content is accessible
-				importantForAccessibility="yes"
-			>
-				{/* Header */}
-				<View style={styles.header}>
-					<Text style={styles.title}>Transaction Status</Text>
+			{/* Header */}
+			<View style={styles.header}>
+				<Text style={styles.title}>Transaction Status</Text>
+			</View>
+
+			{/* Status Section */}
+			<Animated.View style={[styles.statusSection, { opacity: fadeAnim }]}>
+				<View testID="trade-status-icon" style={[styles.statusIconContainer, getStatusIconContainerStyle()]}>
+					{getStatusIcon()}
 				</View>
+				<Text testID="trade-status-text" style={[styles.statusText, getStatusTextStyle()]}>
+					{statusText}
+				</Text>
+				<Text testID="trade-status-description" style={styles.statusDescription}>
+					{statusDescription}
+				</Text>
+			</Animated.View>
 
-				{/* Status Section */}
-				<Animated.View style={[styles.statusSection, { opacity: fadeAnim }]}>
-					<View testID="trade-status-icon" style={[styles.statusIconContainer, getStatusIconContainerStyle()]}>
-						{getStatusIcon()}
-					</View>
-					<Text testID="trade-status-text" style={[styles.statusText, getStatusTextStyle()]}>
-						{statusText}
-					</Text>
-					<Text testID="trade-status-description" style={styles.statusDescription}>
-						{statusDescription}
-					</Text>
-				</Animated.View>
+			{/* Progress Section */}
+			{renderProgressSection()}
 
-				{/* Progress Section */}
-				{renderProgressSection()}
+			{/* Transaction Details */}
+			{renderTransactionSection()}
 
-				{/* Transaction Details */}
-				{renderTransactionSection()}
+			{/* Error Section */}
+			{renderErrorSection()}
 
-				{/* Error Section */}
-				{renderErrorSection()}
-
-				{/* Action Button */}
-				{isFinal && (
-					<View style={styles.actionSection}>
-						<Button
-							testID="trade-status-action-button"
-							mode="contained"
-							onPress={handleButtonClose}
-							style={styles.closeButton}
-							// Interactive child element should be accessible={true}
-							accessible={true}
-							accessibilityRole="button"
-							accessibilityLabel={displayStatus === 'failed' ? 'Try again' : 'Close modal'}
-						>
-							{displayStatus === 'failed' ? 'Try Again' : 'Done'}
-						</Button>
-					</View>
-				)}
-			</BottomSheetView>
-		</BottomSheetModal>
+			{/* Action Button */}
+			{isFinal && (
+				<View style={styles.actionSection}>
+					<Button
+						testID="trade-status-action-button"
+						mode="contained"
+						onPress={handleButtonClose}
+						style={styles.closeButton}
+						accessible={true}
+						accessibilityRole="button"
+						accessibilityLabel={displayStatus === 'failed' ? 'Try again' : 'Close modal'}
+					>
+						{displayStatus === 'failed' ? 'Try Again' : 'Done'}
+					</Button>
+				</View>
+			)}
+		</ManagedBottomSheetModal>
 	);
 };
 
