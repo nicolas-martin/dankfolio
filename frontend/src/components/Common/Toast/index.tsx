@@ -95,14 +95,31 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const OriginalIcon = getOriginalToastIconComponent(toastType as ToastType);
 
 	if (toastType === 'success') {
-		IconToRender = <SuccessAnimation size={28} loop={false} autoPlay={true} style={[styles.statusIcon, { backgroundColor: 'transparent' }]} />;
+		IconToRender = <SuccessAnimation size={28} loop={false} autoPlay={true} style={styles.statusIcon} />;
 	} else if (toastType === 'error') {
-		IconToRender = <ErrorAnimation size={28} loop={false} autoPlay={true} style={[styles.statusIcon, { backgroundColor: 'transparent' }]} />;
+		IconToRender = <ErrorAnimation size={28} loop={false} autoPlay={true} style={styles.statusIcon} />;
 	} else if (OriginalIcon) {
 		// Ensure OriginalIcon is a valid component before rendering
-		IconToRender = <OriginalIcon size={20} color={toastForegroundColor} style={[styles.statusIcon, { backgroundColor: 'transparent' }]} />;
+		IconToRender = <OriginalIcon size={20} color={toastForegroundColor} style={styles.statusIcon} />;
 	}
 	// else IconToRender will be undefined, and nothing will be rendered for the icon if type is invalid and not success/error.
+
+	const snackbarWrapperStyle = useMemo(() => ({
+		top: styles.wrapper.top,
+	}), [styles.wrapper.top]);
+
+	const snackbarStyle = useMemo(() => [
+		styles.snackbarStyleBase,
+		toastType === "error" ? styles.error :
+		toastType === "success" ? styles.success :
+		toastType === "warning" ? styles.warning :
+		styles.info,
+	], [styles.snackbarStyleBase, styles.error, styles.success, styles.warning, styles.info, toastType]);
+
+	const messageTextStyle = useMemo(() => [
+		styles.message,
+		{ color: toastForegroundColor }
+	], [styles.message, toastForegroundColor]);
 
 	return (
 		<ToastContext.Provider value={toast}>
@@ -112,21 +129,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					visible={state.visible || false}
 					onDismiss={toast.hideToast}
 					duration={state.duration}
-					wrapperStyle={{
-						top: styles.wrapper.top,
-					}}
-					style={[
-						styles.snackbarStyleBase,
-						toastType === "error" ? styles.error : 
-						toastType === "success" ? styles.success :
-						toastType === "warning" ? styles.warning :
-						styles.info,
-					]}
+					wrapperStyle={snackbarWrapperStyle} // Applied
+					style={snackbarStyle} // Applied
 				>
 					<View style={styles.content}>
 						<View style={styles.messageContainer}>
 							{IconToRender}
-							<Text style={[styles.message, { color: toastForegroundColor }]}>
+							<Text style={messageTextStyle}>
 								{state.message}
 							</Text>
 						</View>

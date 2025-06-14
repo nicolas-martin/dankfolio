@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react'; // Add useMemo
 import { View } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { useStyles } from './InfoState.styles';
@@ -33,13 +33,24 @@ const InfoState: React.FC<InfoStateProps> = ({
 
   if (error) {
     const errorMessage = typeof error === 'string' ? error : error.message;
+
+    const errorTitleStyle = useMemo(() => [
+        styles.title,
+        styles.errorText
+    ], [styles.title, styles.errorText]);
+
+    const errorMessageStyle = useMemo(() => [
+        styles.message,
+        styles.errorText
+    ], [styles.message, styles.errorText]);
+
     return (
       <View style={styles.container} testID="info-state-error">
         <View style={styles.iconContainer}>
           <Icon source={iconName || "alert-circle-outline"} size={48} color={styles.errorText.color} />
         </View>
-        <Text style={[styles.title, styles.errorText]}>{title || 'Error'}</Text>
-        <Text style={[styles.message, styles.errorText]}>{errorMessage}</Text>
+        <Text style={errorTitleStyle}>{title || 'Error'}</Text>
+        <Text style={errorMessageStyle}>{errorMessage}</Text>
       </View>
     );
   }

@@ -38,30 +38,35 @@ const CachedImage: React.FC<CachedImageProps> = ({
 
 	const placeholderStyleToUse = useMemo(() => [
 		styles.placeholder, // From the hook
-			<View 
-				style={[
-					{ 
-						width: size, 
-						height: size, 
-						borderRadius: finalBorderRadius 
-					}
+		{
+			width: size,
+			height: size,
+			borderRadius: finalBorderRadius
+		}
 	], [styles.placeholder, size, finalBorderRadius]);
+
+	if (!uri) {
+		return (
+			<View
 				style={placeholderStyleToUse} // Apply the memoized style using themed placeholder
 			/>
 		);
 	}
 
+	const imageSource = useMemo(() => ({ uri }), [uri]);
+	const imageStyle = useMemo(() => [
+		{
+			width: size,
+			height: size,
+			borderRadius: finalBorderRadius
+		},
+		style
+	].filter(Boolean), [size, finalBorderRadius, style]);
+
 	return (
 		<ExpoCachedImage
-			source={{ uri }}
-			style={[
-				{ 
-					width: size, 
-					height: size, 
-					borderRadius: finalBorderRadius 
-				}, 
-				style
-			]}
+			source={imageSource} // Use memoized source
+			style={imageStyle} // Use memoized style
 			cacheKey={`${uri}-${size}x${size}`}
 			onLoadStart={handleLoadStart}
 			onLoadEnd={handleLoadEnd}

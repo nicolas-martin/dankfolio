@@ -10,6 +10,9 @@ export const useStyles = () => {
 			backgroundColor: theme.colors.primary,
 			elevation: 2,
 		},
+		activeButtonText: { // New style
+			color: colors.onPrimary,
+		},
 		button: {
 			alignItems: 'center',
 			borderRadius: theme.spacing.sm,

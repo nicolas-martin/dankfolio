@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react'; // Add useMemo
 import { View, ActivityIndicator } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { useStyles, VerificationStatus } from './VerificationCard.styles';
@@ -51,6 +51,24 @@ const VerificationCard: React.FC<VerificationCardProps> = ({
   const cardStyle = getStatusStyle();
   const defaultTitle = status.charAt(0).toUpperCase() + status.slice(1);
 
+  const titleTextStyle = useMemo(() => {
+      let statusStyle;
+      if (status === 'valid') statusStyle = styles.textValid;
+      else if (status === 'invalid') statusStyle = styles.textInvalid;
+      else if (status === 'warning') statusStyle = styles.textWarning;
+      else if (status === 'checking') statusStyle = styles.textChecking;
+      return [styles.title, statusStyle].filter(Boolean);
+  }, [status, styles.title, styles.textValid, styles.textInvalid, styles.textWarning, styles.textChecking]);
+
+  const messageTextStyle = useMemo(() => {
+      let statusStyle;
+      if (status === 'valid') statusStyle = styles.textValid;
+      else if (status === 'invalid') statusStyle = styles.textInvalid;
+      else if (status === 'warning') statusStyle = styles.textWarning;
+      else if (status === 'checking') statusStyle = styles.textChecking;
+      return [styles.message, statusStyle].filter(Boolean);
+  }, [status, styles.message, styles.textValid, styles.textInvalid, styles.textWarning, styles.textChecking]);
+
   if (status === 'idle' && !message) {
     return null; // Don't render anything if idle and no message
   }
@@ -65,12 +83,12 @@ const VerificationCard: React.FC<VerificationCardProps> = ({
             <Icon source={iconInfo.name} size={24} color={iconInfo.color} />
           </View>
         ) : null}
-        <Text style={[styles.title, status === 'valid' && styles.textValid, status === 'invalid' && styles.textInvalid, status === 'warning' && styles.textWarning, status === 'checking' && styles.textChecking]}>
+        <Text style={titleTextStyle}>
           {title || defaultTitle}
         </Text>
       </View>
       {message && (
-        <Text style={[styles.message, status === 'valid' && styles.textValid, status === 'invalid' && styles.textInvalid, status === 'warning' && styles.textWarning, status === 'checking' && styles.textChecking]}>
+        <Text style={messageTextStyle}>
           {message}
         </Text>
       )}
