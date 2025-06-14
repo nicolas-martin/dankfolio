@@ -58,10 +58,10 @@ const Trade: React.FC = () => {
 	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
 	const [isLoadingTrade, setIsLoadingTrade] = useState<boolean>(false);
 	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
-	const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null);
-	const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending');
-	const [pollingConfirmations, setPollingConfirmations] = useState<number>(0);
-	const [pollingError, setPollingError] = useState<string | null>(null);
+	// const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null); // Removed as unused (polledTxHash from hook is used)
+	// const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending'); // Removed as unused (currentPollingStatus from hook is used)
+	// const [pollingConfirmations, setPollingConfirmations] = useState<number>(0); // Removed as unused (currentPollingConfirmations from hook is used)
+	const [pollingError, setPollingError] = useState<string | null>(null); // This one IS used by TradeStatusModal
 	// const quoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Will be managed by useDebouncedCallback
 
 	const {
@@ -69,9 +69,9 @@ const Trade: React.FC = () => {
 		status: currentPollingStatus,
 		// data: pollingData, // Not explicitly used here
 		error: currentPollingErrorFromHook,
-		confirmations: currentPollingConfirmations,
+		confirmations: currentPollingConfirmationsFromHook, // Renamed to avoid conflict with local state if it existed
 		startPolling: startTxPolling,
-		stopPolling: stopTxPollingHook, // Renamed to avoid conflict if any local stopPolling existed
+		// stopPolling: stopTxPollingHook, // Removed as unused
 		resetPolling: resetTxPolling
 	} = useTransactionPolling(
 		grpcApi.getSwapStatus, // Pass the actual polling function
@@ -91,6 +91,9 @@ const Trade: React.FC = () => {
     setPollingError(currentPollingErrorFromHook);
   }, [currentPollingErrorFromHook]);
 
+  // Use currentPollingConfirmationsFromHook directly if pollingConfirmations state is removed
+  const currentPollingConfirmations = currentPollingConfirmationsFromHook;
+
 
 	// componentStopPolling, componentPollTradeStatus, componentStartPolling are removed
 
@@ -104,7 +107,7 @@ const Trade: React.FC = () => {
 				if (solCoin) setFromCoin(solCoin);
 			});
 		}
-	}, [fromCoin, getCoinByID]);
+	}, [fromCoin, toCoin, getCoinByID, setFromCoin]); // Added toCoin and setFromCoin
 
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === fromCoin?.mintAddress), [tokens, fromCoin]);
@@ -187,7 +190,7 @@ const Trade: React.FC = () => {
 				debouncedFetchQuote(amount, fromCoin, toCoin, 'from');
 			}
 		},
-		[fromCoin, toCoin, debouncedFetchQuote]
+		[fromCoin, toCoin, debouncedFetchQuote, setToAmount, setTradeDetails, setIsQuoteLoading] // Added setters
 	);
 
 	const handleToAmountChange = useCallback(
@@ -205,7 +208,7 @@ const Trade: React.FC = () => {
 				debouncedFetchQuote(amount, toCoin, fromCoin, 'to');
 			}
 		},
-		[fromCoin, toCoin, debouncedFetchQuote]
+		[fromCoin, toCoin, debouncedFetchQuote, setFromAmount, setToAmount, setTradeDetails, setIsQuoteLoading] // Added setters (setToAmount is already there but good to be explicit)
 	);
 
 	const handleTradeSubmitClick = () => {

@@ -22,6 +22,15 @@ const Profile = () => {
 	const navigation = useNavigation<ProfileScreenNavigationProp>();
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
+	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]); // Added for RefreshControl
+
+	const sendButtonStyle = useMemo(() => {
+		const baseStyle = styles.sendButton;
+		const disabledStyle = styles.sendButtonDisabled;
+		// Ensuring the result is a flat array or a single object
+		return tokens.length === 0 ? [baseStyle, disabledStyle].flat() : baseStyle;
+	}, [tokens.length, styles.sendButton, styles.sendButtonDisabled]);
+
 	const {
 		isLoading: isTransactionsLoading,
 		fetchRecentTransactions,
@@ -115,7 +124,7 @@ const Profile = () => {
 			<View style={styles.portfolioHeader} accessible={false}>
 				<Text style={styles.portfolioTitle} accessible={true}>Total Portfolio Value</Text>
 				<Text style={styles.portfolioValue} accessible={true}>
-					${totalValue.toFixed(2)}
+					{`$${totalValue.toFixed(2)}`}
 				</Text>
 				<Text style={styles.portfolioSubtext} accessible={true}>
 					{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
@@ -128,7 +137,7 @@ const Profile = () => {
 					logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
 					navigation.navigate('SendTokens');
 				}}
-				style={[styles.sendButton, tokens.length === 0 && styles.sendButtonDisabled]}
+				style={sendButtonStyle}
 				contentStyle={styles.sendButtonContent}
 				disabled={tokens.length === 0}
 				accessible={true}
@@ -155,22 +164,25 @@ const Profile = () => {
 					</View>
 					<Text style={styles.emptyStateTitle} accessible={true}>No Tokens Found</Text>
 					<Text style={styles.emptyStateText} accessible={true}>
-						Your wallet doesn't contain any tokens yet. Start trading to build your portfolio!
+						Your wallet doesn&apos;t contain any tokens yet. Start trading to build your portfolio!
 					</Text>
 				</View>
 			) : (
-				sortedTokens.map((token) => (
-					<CoinCard
-						key={token.mintAddress}
-						showSparkline={false}
-						coin={{
-							...token.coin,
-							value: token.value,
-							balance: token.amount
-						}}
-						onPress={() => {
-							logger.breadcrumb({
-								category: 'ui',
+				sortedTokens.map((token) => {
+					// Explicitly create the coin prop object
+					const coinCardCoinProp = {
+						...token.coin,
+						value: token.value,
+						balance: token.amount
+					};
+					return (
+						<CoinCard
+							key={token.mintAddress}
+							showSparkline={false}
+							coin={coinCardCoinProp}
+							onPress={() => {
+								logger.breadcrumb({
+									category: 'ui',
 								message: 'Pressed token card on ProfileScreen',
 								data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress }
 							});
@@ -216,7 +228,7 @@ const Profile = () => {
 						<RefreshControl
 							refreshing={isRefreshing || isPortfolioLoading || isTransactionsLoading}
 							onRefresh={handleRefresh}
-							colors={[styles.colors.primary]}
+							colors={refreshControlColors}
 							tintColor={styles.colors.primary}
 						/>
 					}

@@ -32,7 +32,7 @@ const Settings: React.FC = () => {
 							titleStyle={styles.listItemTitle}
 							descriptionStyle={styles.listItemDescription}
 							left={props => <List.Icon {...props} icon="wallet-outline" />}
-							right={props =>
+							right={() =>
 								wallet?.address ? (
 									<CopyToClipboard 
 										text={wallet.address}

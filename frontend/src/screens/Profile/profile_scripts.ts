@@ -31,7 +31,7 @@ export const handleRefresh = async (
 	setIsRefreshing(true);
 	try {
 		await fetchPortfolioBalance(wallet.address);
-	} catch (_error) { // Renamed error to _error
+	} catch { // _error variable removed as it was unused
 		showToast({
 			message: 'Error refreshing portfolio',
 			type: 'error'
