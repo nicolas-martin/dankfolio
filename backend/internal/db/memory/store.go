@@ -90,7 +90,7 @@ func (s *Store) ApiStats() db.Repository[model.ApiStat] {
 
 // ListTrendingCoins returns only the trending coins
 func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
-	allCoins, err := s.coins.List(ctx)
+	allCoins, _, err := s.coins.List(ctx, db.ListOptions{}) // Added db.ListOptions{}, ignoring totalCount
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
 
 // SearchCoins implements db.Store
 func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
-	coins, err := s.coins.List(ctx)
+	coins, _, err := s.coins.List(ctx, db.ListOptions{}) // Added db.ListOptions{}, ignoring totalCount
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (s *Store) loadCoinCache() error {
 // SaveCoinCache saves the current coins to the cache file
 func (s *Store) SaveCoinCache() error {
 	ctx := context.Background()
-	coins, err := s.coins.List(ctx)
+	coins, _, err := s.coins.List(ctx, db.ListOptions{}) // Added db.ListOptions{}, ignoring totalCount
 	if err != nil {
 		return fmt.Errorf("failed to get coins from memory: %w", err)
 	}
