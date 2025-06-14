@@ -19,21 +19,21 @@ export const useStyles = () => {
     };
 
     return StyleSheet.create({
+      cardChecking: {
+        ...baseCardStyle,
+        borderLeftColor: theme.colors.tertiary, // Or a specific color for checking
+      },
       cardIdle: {
         ...baseCardStyle,
         borderLeftColor: theme.colors.outlineVariant, // Default/idle color
-      },
-      cardValid: {
-        ...baseCardStyle,
-        borderLeftColor: theme.colors.primary, // Or a success color like theme.success
       },
       cardInvalid: {
         ...baseCardStyle,
         borderLeftColor: theme.colors.error,
       },
-      cardChecking: {
+      cardValid: {
         ...baseCardStyle,
-        borderLeftColor: theme.colors.tertiary, // Or a specific color for checking
+        borderLeftColor: theme.colors.primary, // Or a success color like theme.success
       },
       cardWarning: {
         ...baseCardStyle,
@@ -47,21 +47,20 @@ export const useStyles = () => {
       iconContainer: {
         marginRight: theme.spacing.md,
       },
-      title: {
-        color: theme.colors.onSurface,
-        fontSize: theme.typography.fontSize.base,
-        fontWeight: '600',
-      },
       message: {
         color: theme.colors.onSurfaceVariant,
         fontSize: theme.typography.fontSize.sm,
         lineHeight: theme.typography.fontSize.base * 1.4,
       },
-      // Specific text colors if needed, or they can inherit
-      textValid: { color: theme.colors.primary },
-      textInvalid: { color: theme.colors.error },
       textChecking: { color: theme.colors.tertiary },
+      textInvalid: { color: theme.colors.error },
+      textValid: { color: theme.colors.primary },
       textWarning: { color: theme.colors.warning }, // Define if not inheriting well
+      title: {
+        color: theme.colors.onSurface,
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: '600',
+      },
     });
   }, [theme]);
 };
