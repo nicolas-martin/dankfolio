@@ -1,5 +1,4 @@
 import { Coin, Wallet } from '@/types';
-import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { logger } from '@/utils/logger';
 import { grpcApi } from '@/services/grpcApi';
 import { prepareSwapRequest, signSwapTransaction } from '@/services/solana';

@@ -1,6 +1,6 @@
 import React from 'react'; // Removed useRef, useEffect
 import { View, TouchableOpacity, Linking } from 'react-native'; // Removed Dimensions
-import { Text, Button, Icon } from 'react-native-paper';
+import { Text, Icon } from 'react-native-paper';
 // BottomSheet specific imports will be handled by ManagedBottomSheetModal
 import { LoadingAnimation } from '../../Common/Animations';
 import { TradeConfirmationProps } from './types';
