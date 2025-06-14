@@ -72,7 +72,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				delayPressIn={100}
 				delayPressOut={100}
 			>
-				{renderCoinIcon(32)}
+				{iconForHorizontal}
 							<Text
 				style={styles.horizontalSymbol}
 				numberOfLines={1}
