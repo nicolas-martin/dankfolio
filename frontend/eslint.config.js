@@ -11,6 +11,9 @@ import pluginReactNative from 'eslint-plugin-react-native';
 import pluginReactPerf from 'eslint-plugin-react-perf';
 // @ts-expect-error no types available
 import globals from 'globals';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default [
 	js.configs.recommended,
@@ -19,7 +22,6 @@ export default [
 		ignores: [
 			'**/gen/**',
 			'**/metro.config.js',
-			// Ignore critical chart components to prevent ESLint changes
 			'src/components/Chart/CoinChart/**',
 			'src/components/Chart/SparklineChart/**',
 		],
@@ -28,6 +30,8 @@ export default [
 		languageOptions: {
 			parser,
 			parserOptions: {
+				project: './tsconfig.json',
+				tsconfigRootDir: __dirname,
 				sourceType: 'module',
 				ecmaVersion: 'latest',
 				ecmaFeatures: {
