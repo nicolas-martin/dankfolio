@@ -9,7 +9,7 @@ import CopyToClipboard from '@/components/Common/CopyToClipboard';
 import { env } from '@utils/env';
 import { initializeDebugWallet } from '@/utils/debugWallet';
 import TermsModal from '@/components/Common/TermsModal';
-// @ts-ignore
+// @ts-expect-error
 import neonBarImage from '../../../assets/onboarding.jpg';
 import { useStyles } from './styles';
 
@@ -19,6 +19,12 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 	const styles = useStyles();
 	const { showToast } = useToast();
 	const { setWallet: _setWallet } = usePortfolioStore(); // Prefixed unused setWallet
+
+	// Memoized styles
+	const welcomeActionButtonStyle = useMemo(() =>
+		[styles.actionButton, styles.actionButtonYellow].flat(),
+		[styles.actionButton, styles.actionButtonYellow]
+	);
 	const [termsModalVisible, setTermsModalVisible] = useState(false);
 
 	const {
@@ -34,6 +40,12 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		walletInfo,
 		confirmWalletSaved
 	} = useWalletSetupLogic(props);
+
+	const importButtonStyle = useMemo(() => [
+		styles.actionButton,
+		styles.actionButtonYellow,
+		{ opacity: isRecoveryPhraseValid() ? 1 : 0.5 }
+	].flat(), [styles.actionButton, styles.actionButtonYellow, isRecoveryPhraseValid]);
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: `Viewed WalletSetupScreen step: ${step}` });
@@ -93,7 +105,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									logger.breadcrumb({ category: 'ui', message: 'Create new wallet button pressed (welcome step)' });
 									goToCreate();
 								}}
-								style={[styles.actionButton, styles.actionButtonYellow]}
+								style={welcomeActionButtonStyle}
 							>
 								<Text style={styles.buttonText}>Create a new wallet</Text>
 							</TouchableOpacity>
@@ -102,7 +114,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 									logger.breadcrumb({ category: 'ui', message: 'Import recovery phrase button pressed (welcome step)' });
 									goToImport();
 								}}
-								style={[styles.actionButton, styles.actionButtonYellow]}
+								style={welcomeActionButtonStyle}
 							>
 								<Text style={styles.buttonText}>Import a recovery phrase</Text>
 							</TouchableOpacity>
@@ -151,7 +163,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						<View style={styles.createButtonContainer}>
 							<TouchableOpacity
 								onPress={handleCreateWallet}
-								style={[styles.actionButton, styles.actionButtonYellow]}
+								style={welcomeActionButtonStyle}
 							>
 								<Text style={styles.buttonText}>Create a new wallet</Text>
 							</TouchableOpacity>
@@ -193,11 +205,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 						<View style={styles.importButtonContainer}>
 							<TouchableOpacity
 								onPress={handleImportWallet}
-								style={[
-									styles.actionButton,
-									styles.actionButtonYellow,
-									{ opacity: isRecoveryPhraseValid() ? 1 : 0.5 }
-								]}
+								style={importButtonStyle}
 								disabled={!isRecoveryPhraseValid()}
 							>
 								<Text style={styles.buttonText}>Next</Text>
@@ -268,7 +276,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 											logger.breadcrumb({ category: 'ui', message: 'I have saved my wallet information button pressed' });
 											confirmWalletSaved();
 										}}
-										style={[styles.actionButton, styles.actionButtonYellow]}
+										style={welcomeActionButtonStyle}
 									>
 										<Text style={styles.buttonText}>I have saved my wallet information</Text>
 									</TouchableOpacity>
