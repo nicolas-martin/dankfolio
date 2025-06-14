@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { Text, Button, Icon, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -22,22 +22,34 @@ const Profile = () => {
 	const navigation = useNavigation<ProfileScreenNavigationProp>();
 	const { showToast } = useToast();
 	const { wallet, tokens, fetchPortfolioBalance, isLoading: isPortfolioLoading } = usePortfolioStore();
-	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]); // Added for RefreshControl
+	const styles = useStyles();
 
-	const sendButtonStyle = useMemo(() => {
-		const baseStyle = styles.sendButton;
-		const disabledStyle = styles.sendButtonDisabled;
-		// Ensuring the result is a flat array or a single object
-		return tokens.length === 0 ? [baseStyle, disabledStyle].flat() : baseStyle;
-	}, [tokens.length, styles.sendButton, styles.sendButtonDisabled]);
+	const sendButtonStyle = useMemo(() => ({
+		style: styles.sendButton
+	}), [styles.sendButton]);
+
+	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
+
+	const noWalletContainerStyle = useMemo(() => [
+		styles.container, 
+		styles.centered
+	], [styles.container, styles.centered]);
+
+	const sendButtonIcon = useCallback(() => (
+		<SendIcon size={20} color={styles.colors.onPrimary} />
+	), [styles.colors.onPrimary]);
+
+	const createCoinCardProp = useCallback((token: any) => ({
+		...token.coin,
+		value: token.value,
+		balance: token.amount
+	}), []);
 
 	const {
 		isLoading: isTransactionsLoading,
 		fetchRecentTransactions,
 		hasFetched: transactionsHasFetched
 	} = useTransactionsStore();
-	const styles = useStyles();
-
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed ProfileScreen' });
@@ -49,7 +61,6 @@ const Profile = () => {
 			fetchRecentTransactions(wallet.address, 5); // Fetch top 5 recent transactions
 		}
 	}, [wallet?.address, fetchRecentTransactions, transactionsHasFetched]);
-
 
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -88,7 +99,6 @@ const Profile = () => {
 		<View style={styles.headerSection} accessible={false}>
 			<View style={styles.profileHeader} accessible={false}>
 				<View style={styles.profileIconContainer} accessible={false}>
-					{/* Removed TouchableOpacity wrapper */}
 					<ProfileIcon size={28} color={styles.colors.onSurface} />
 					<Text style={styles.profileTitle} accessible={true} testID="portfolio-title">Portfolio</Text>
 				</View>
@@ -132,12 +142,12 @@ const Profile = () => {
 			</View>
 			<Button
 				mode="contained"
-				icon={() => <SendIcon size={20} color={styles.colors.onPrimary} />}
+				icon={sendButtonIcon}
 				onPress={() => {
 					logger.breadcrumb({ category: 'navigation', message: 'Navigating to SendTokensScreen from Profile' });
 					navigation.navigate('SendTokens');
 				}}
-				style={sendButtonStyle}
+				{...sendButtonStyle}
 				contentStyle={styles.sendButtonContent}
 				disabled={tokens.length === 0}
 				accessible={true}
@@ -169,12 +179,7 @@ const Profile = () => {
 				</View>
 			) : (
 				sortedTokens.map((token) => {
-					// Explicitly create the coin prop object
-					const coinCardCoinProp = {
-						...token.coin,
-						value: token.value,
-						balance: token.amount
-					};
+					const coinCardCoinProp = createCoinCardProp(token);
 					return (
 						<CoinCard
 							key={token.mintAddress}
@@ -212,7 +217,7 @@ const Profile = () => {
 	if (!wallet) {
 		return (
 			<SafeAreaView style={styles.safeArea}>
-				<View style={[styles.container, styles.centered]}>
+				<View style={noWalletContainerStyle}>
 					{renderNoWalletState()}
 				</View>
 			</SafeAreaView>
@@ -238,13 +243,8 @@ const Profile = () => {
 						{renderHeader()}
 						{renderPortfolioCard()}
 						{renderTokensSection()}
-						{/* {renderThemeToggle()} */}
-						{/* Commenting out renderThemeToggle as it's moved to Settings screen */}
-						{/* {renderTransactionsSection()} */}
 					</View>
-
 				</ScrollView>
-				{/* Removed ProfilePictureModal instance */}
 			</View>
 		</SafeAreaView>
 	);

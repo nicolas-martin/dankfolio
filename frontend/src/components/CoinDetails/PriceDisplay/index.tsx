@@ -69,6 +69,11 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 		isPositive ? styles.changePositive : styles.changeNegative
 	], [styles.changeText, styles.changePositive, styles.changeNegative, isPositive]);
 
+	const periodTextStyle = useMemo(() => [
+		styles.periodText, 
+		styles.periodTextColor
+	], [styles.periodText, styles.periodTextColor]);
+
 	return (
 		<View style={styles.container} testID="price-display-container">
 			{/* Header with coin info */}
@@ -118,7 +123,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				>
 					{formattedChange}
 				</Text>
-				<Text style={[styles.periodText, styles.periodTextColor]} testID="price-display-period">
+				<Text style={periodTextStyle} testID="price-display-period">
 					{period}
 				</Text>
 			</View>

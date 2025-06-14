@@ -116,6 +116,13 @@ describe('Navigation Flow', () => {
 		jest.clearAllMocks();
 	});
 
+	const screenOptions = {
+		header: () => <CustomHeader />,
+		headerShown: true,
+	};
+
+	const coinDetailInitialParams = { coin: mockCoin };
+
 	const renderTestNavigator = () => {
 		return render(
 			<PaperProvider>
@@ -123,16 +130,13 @@ describe('Navigation Flow', () => {
 					<NavigationContainer>
 						<Stack.Navigator
 							initialRouteName="Home"
-							screenOptions={{
-								header: () => <CustomHeader />,
-								headerShown: true,
-							}}
+							screenOptions={screenOptions}
 						>
 							<Stack.Screen name="Home" component={Home} />
 							<Stack.Screen
 								name="CoinDetail"
 								component={CoinDetail}
-								initialParams={{ coin: mockCoin }}
+								initialParams={coinDetailInitialParams}
 							/>
 						</Stack.Navigator>
 					</NavigationContainer>

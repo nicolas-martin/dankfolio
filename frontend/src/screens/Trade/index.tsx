@@ -352,6 +352,11 @@ const Trade: React.FC = () => {
 		</View>
 	);
 
+	const exchangeRateLabelTextStyle = useMemo(() => [
+		styles.detailLabel, 
+		styles.exchangeRateLabelText
+	], [styles.detailLabel, styles.exchangeRateLabelText]);
+
 	const renderTradeDetails = () => {
 		if (!fromAmount || !toAmount || !tradeDetails.exchangeRate || tradeDetails.exchangeRate === '0') {
 			return null;
@@ -393,7 +398,7 @@ const Trade: React.FC = () => {
 					<View style={styles.exchangeRateRow}>
 						<View style={styles.exchangeRateLabel}>
 							<Icon source="swap-horizontal" size={16} color={styles.colors.onSurfaceVariant} />
-							<Text style={[styles.detailLabel, styles.exchangeRateLabelText]}>Exchange Rate</Text>
+							<Text style={exchangeRateLabelTextStyle}>Exchange Rate</Text>
 						</View>
 						<Text testID="trade-details-exchange-rate" style={styles.exchangeRateValue}>
 							1 {fromCoin?.symbol} = {(parseFloat(tradeDetails.exchangeRate) || 0).toFixed(6)} {toCoin?.symbol}

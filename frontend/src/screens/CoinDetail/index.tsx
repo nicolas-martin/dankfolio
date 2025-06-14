@@ -274,12 +274,26 @@ const CoinDetail: React.FC = () => {
 		);
 	};
 
+	const chartData = useMemo(() => priceHistory || [], [priceHistory]);
+
+	const coinInfoMetadata = useMemo(() => ({
+		name: displayCoin?.name || '',
+		description: displayCoin?.description || '',
+		website: displayCoin?.website || '',
+		twitter: displayCoin?.twitter || '',
+		telegram: displayCoin?.telegram || '',
+		dailyVolume: displayCoin?.dailyVolume || 0,
+		tags: displayCoin?.tags || [],
+		symbol: displayCoin?.symbol || '',
+		createdAt: displayCoin?.createdAt || new Date()
+	}), [displayCoin]);
+
 	const renderChartCard = () => {
 		return (
 			<View style={styles.chartContainer} testID={`coin-detail-chart-card-${displayCoin?.symbol?.toLowerCase()}`}>
 				<View style={styles.chartCardContent}>
 					<CoinChart
-						data={priceHistory || []} // Use priceHistory from hook
+						data={chartData}
 						loading={isPriceHistoryLoading && (!priceHistory || priceHistory.length === 0)} // Show loading overlay if history is empty
 						onHover={handleChartHover}
 						period={selectedTimeframe}
@@ -306,10 +320,10 @@ const CoinDetail: React.FC = () => {
 						value: tf.value,
 						testID: `coin-detail-timeframe-button-${tf.value}`,
 						label: tf.label,
-						style: styles.timeframeButton
+						...timeframeButtonStyle
 					}))}
 					density="small"
-					style={[styles.timeframeButtonsRow, isPriceHistoryLoading && styles.timeframeButtonsRowLoading]} // Use isPriceHistoryLoading
+					style={timeframeButtonsRowStyle}
 				/>
 			</View>
 		);
@@ -364,17 +378,7 @@ const CoinDetail: React.FC = () => {
 					<Text style={styles.aboutTitle} testID="coin-detail-about-title">About {displayCoin.name}</Text>
 				</View>
 				<CoinInfo
-					metadata={{
-						name: displayCoin.name,
-						description: displayCoin.description,
-						website: displayCoin.website,
-						twitter: displayCoin.twitter,
-						telegram: displayCoin.telegram,
-						dailyVolume: displayCoin.dailyVolume,
-						tags: displayCoin.tags || [],
-						symbol: displayCoin.symbol,
-						createdAt: displayCoin.createdAt // Add this line
-					}}
+					metadata={coinInfoMetadata}
 				/>
 			</View>
 		);
@@ -426,6 +430,15 @@ const CoinDetail: React.FC = () => {
 			);
 		}
 	}, [displayCoin, navigation]); // Removed showToast from dependencies
+
+	const timeframeButtonsRowStyle = useMemo(() => [
+		styles.timeframeButtonsRow, 
+		isPriceHistoryLoading && styles.timeframeButtonsRowLoading
+	], [styles.timeframeButtonsRow, styles.timeframeButtonsRowLoading, isPriceHistoryLoading]);
+
+	const timeframeButtonStyle = useMemo(() => ({
+		style: styles.timeframeButton
+	}), [styles.timeframeButton]);
 
 	return (
 		<SafeAreaView style={styles.container} testID={`coin-detail-screen-${displayCoin?.symbol?.toLowerCase()}`}>
