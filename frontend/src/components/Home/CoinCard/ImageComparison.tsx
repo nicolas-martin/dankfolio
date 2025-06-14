@@ -52,18 +52,22 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 };
 
 const createImageComparisonStyles = (size: number) => StyleSheet.create({
+	// eslint-disable-next-line react-native/no-unused-styles
 	expoImage: {
 		borderRadius: size / 2,
 		height: size,
 		width: size,
 	},
+	// eslint-disable-next-line react-native/no-unused-styles
 	imageContainer: {
 		alignItems: 'center',
 	},
+	// eslint-disable-next-line react-native/no-unused-styles
 	labelText: {
 		fontSize: 12,
 		marginBottom: 10,
 	},
+	// eslint-disable-next-line react-native/no-unused-styles
 	outerContainer: {
 		flexDirection: 'row',
 		gap: 20,
