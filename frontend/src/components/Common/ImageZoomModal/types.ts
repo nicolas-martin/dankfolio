@@ -1,5 +1,5 @@
 export interface ImageZoomModalProps {
-  isVisible: boolean;
-  onClose: () => void;
-  imageUri: string | null | undefined;
+	isVisible: boolean;
+	onClose: () => void;
+	imageUri: string | null | undefined;
 } 

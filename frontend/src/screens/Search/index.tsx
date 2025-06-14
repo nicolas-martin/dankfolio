@@ -43,11 +43,7 @@ const SearchScreen: React.FC = () => {
 		filters: defaultFiltersFromRoute,
 	});
 	const styles = useStyles();
-	const theme = styles.theme; // Extract theme for convenience
 	// const _toast = useToast(); // Prefixed toast
-
-
-
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed SearchScreen' });
 	}, []);

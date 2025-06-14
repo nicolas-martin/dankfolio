@@ -14,7 +14,7 @@ import CoinDetail from '@screens/CoinDetail';
 import Trade from '@screens/Trade';
 import Send from '@screens/Send';
 import Settings from '@screens/Settings';
-import { useStyles } from './style';
+import { useStyles } from './navigation.style';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();

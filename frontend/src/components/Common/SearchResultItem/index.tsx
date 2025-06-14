@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SearchResultItemProps } from './types';
 import { formatAddress } from '@/utils/numberFormat';
-import { useStyles } from './styles';
-import CoinInfoBlock from 'components/Common/CoinInfoBlock/CoinInfoBlock';
+import { useStyles } from './SearchResultItem.styles';
+import CoinInfoBlock from '@/components/Common/CoinInfoBlock';
 
 const SearchResultItem: React.FC<SearchResultItemProps> = ({
 	coin,
