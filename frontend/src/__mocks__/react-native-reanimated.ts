@@ -14,7 +14,7 @@ const useDerivedValue = <T>(callback: () => T, _dependencies: unknown[]): Shared
 };
 
 // Make runOnJS generic to preserve the function signature
-const runOnJS = <T extends (...args: any[]) => any>(fn: T): T => fn;
+const runOnJS = <T extends (...args: unknown[]) => unknown>(fn: T): T => fn;
 
 const cancelAnimation = jest.fn();
 

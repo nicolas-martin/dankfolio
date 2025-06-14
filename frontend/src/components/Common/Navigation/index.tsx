@@ -7,6 +7,7 @@ import CustomHeader from './CustomHeader';
 import { HomeIcon, SearchIcon, ProfileIcon } from '@components/Common/Icons';
 import { useTheme, BottomNavigation, MD3Theme } from 'react-native-paper'; // Added MD3Theme
 import { Platform, StyleSheet } from 'react-native'; // Added StyleSheet
+import { useMemo } from 'react'; // Added useMemo
 
 import Home from '@screens/Home';
 import Profile from '@screens/Profile';
@@ -19,31 +20,34 @@ import Settings from '@screens/Settings';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-const getTabNavigatorStyles = (theme: MD3Theme) => StyleSheet.create({
-	bottomNavBar: {
-		backgroundColor: theme.colors.surface,
-		borderTopWidth: 0,
-		height: Platform.select({
-			ios: 88,
-			android: 80,
-		}),
-		...Platform.select({
-			ios: {
-				shadowColor: theme.colors.shadow,
-				shadowOffset: { width: 0, height: -2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8,
-			},
-			android: {
-				elevation: 8,
-			},
-		}),
-	},
-});
+const useTabNavigatorStyles = () => {
+  const theme = useTheme() as MD3Theme; // Ensure MD3Theme is the correct type
+  return useMemo(() => StyleSheet.create({
+    bottomNavBar: {
+      backgroundColor: theme.colors.surface,
+      borderTopWidth: 0,
+      height: Platform.select({
+        ios: 88,
+        android: 80,
+      }),
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.colors.shadow,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 8,
+        },
+      }),
+    },
+  }), [theme]);
+};
 
 const TabNavigator = () => {
-	const theme = useTheme();
-	const styles = getTabNavigatorStyles(theme);
+	const styles = useTabNavigatorStyles();
+	const theme = useTheme(); // Still needed for activeColor, inactiveColor
 
 	return (
 		<Tab.Navigator

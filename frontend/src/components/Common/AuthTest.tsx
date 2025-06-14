@@ -79,9 +79,9 @@ export const AuthTest: React.FC = () => {
 					<Text variant="bodyMedium">Status:</Text>
 					<Chip
 						icon={appCheckToken ? "check" : "close"}
-						style={[styles.chip, { backgroundColor: appCheckToken ? '#4CAF50' : '#f44336' }]}
+						style={[styles.chip, appCheckToken ? styles.chipValid : styles.chipInvalid]}
 					>
-						{appCheckToken ? 'Valid App Check Token' : 'No App Check Token'}
+						<Text>{appCheckToken ? 'Valid App Check Token' : 'No App Check Token'}</Text>
 					</Chip>
 				</View>
 
@@ -109,7 +109,7 @@ export const AuthTest: React.FC = () => {
 						style={styles.button}
 						disabled={loading}
 					>
-						Check Status
+						<Text>Check Status</Text>
 					</Button>
 
 					<Button
@@ -119,7 +119,7 @@ export const AuthTest: React.FC = () => {
 						loading={loading}
 						disabled={loading}
 					>
-						Refresh Token
+						<Text>Refresh Token</Text>
 					</Button>
 				</View>
 
@@ -131,7 +131,7 @@ export const AuthTest: React.FC = () => {
 						loading={loading}
 						disabled={loading || !appCheckToken}
 					>
-						Test API Call
+						<Text>Test API Call</Text>
 					</Button>
 				</View>
 			</Card.Content>
@@ -154,6 +154,12 @@ const styles = StyleSheet.create({
 	},
 	chip: {
 		marginLeft: 8,
+	},
+	chipValid: {
+		backgroundColor: '#4CAF50', // Green for valid token
+	},
+	chipInvalid: {
+		backgroundColor: '#f44336', // Red for invalid token
 	},
 	resultContainer: {
 		backgroundColor: '#f8f9fa',
