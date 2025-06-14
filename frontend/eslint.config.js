@@ -89,6 +89,12 @@ export default [
 		},
 	},
 	{
+		files: ['**/*.ts', '**/*.tsx'],
+		rules: {
+			'react/prop-types': 'off',
+		},
+	},
+	{
 		files: ['**/styles.ts', '**/*_style*.ts'],
 		rules: {
 			'react-native/no-color-literals': 'off',
