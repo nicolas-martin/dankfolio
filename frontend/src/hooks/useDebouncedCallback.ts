@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { type Timeout } from 'node:timers';
 
-export const useDebouncedCallback = <T extends (...args: any[]) => any>(
+export const useDebouncedCallback = <A extends unknown[] = unknown[], R = unknown, T extends (...args: A) => R = (...args: A) => R>(
   callback: T,
   delay: number
 ): ((...args: Parameters<T>) => void) => {
   const callbackRef = useRef(callback);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<Timeout | null>(null);
 
   // Update ref to callback if it changes.
   // This ensures the latest callback is always used.
