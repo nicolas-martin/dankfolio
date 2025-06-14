@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 
 export type VerificationStatus = 'valid' | 'invalid' | 'checking' | 'warning' | 'idle';
 
-
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 

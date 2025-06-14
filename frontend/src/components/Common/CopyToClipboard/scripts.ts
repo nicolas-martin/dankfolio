@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { logger } from '@/utils/logger';
@@ -47,13 +46,13 @@ export const useCopyToClipboard = () => {
 
 		} catch (error) {
 			logger.error('Failed to copy to clipboard:', error);
-			
+
 			// Clear any existing timeout
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
 				timeoutRef.current = null;
 			}
-			
+
 			// Reset state on error
 			setCopyState({ isCopied: false, isAnimating: false });
 		}
