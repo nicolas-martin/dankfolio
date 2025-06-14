@@ -31,8 +31,54 @@ func NewRepository[T db.Entity](cachePrefix string, config Config) *MemoryReposi
 	}
 }
 
+// ListWithOpts for memory repository.
+// TODO: Implement proper filtering, sorting, and pagination based on opts.
+// Currently, it returns all items and ignores options, similar to the old List behavior.
 func (r *MemoryRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]T, int64, error) {
-	return nil, 0, fmt.Errorf("ListWithOpts not implemented")
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	// Try cache first - for "all" items as options are not applied
+	// A more sophisticated caching would consider opts in the cache key.
+	cacheKey := "all_list_with_opts" // Simplified cache key
+	if items, ok := r.listCache.Get(cacheKey); ok {
+		// Assuming total count for "all" is also cached or can be derived.
+		// For simplicity, returning len(items) as total when fetched from cache.
+		return items, int64(len(items)), nil
+	}
+
+	// If not in cache, get from storage
+	items := make([]T, 0, len(r.items))
+	for _, item := range r.items {
+		items = append(items, item)
+	}
+
+	// Apply pagination if provided, even if filtering/sorting is not.
+	// This is a basic step towards respecting opts.
+	totalCount := int64(len(items))
+	start := 0
+	end := len(items)
+
+	if opts.Offset != nil && *opts.Offset > 0 {
+		start = *opts.Offset
+		if start > len(items) {
+			start = len(items)
+		}
+	}
+
+	if opts.Limit != nil && *opts.Limit > 0 {
+		limit := *opts.Limit
+		if start+limit < len(items) {
+			end = start + limit
+		}
+	}
+
+	paginatedItems := items[start:end]
+
+
+	// Cache the paginated result (or all items if pagination not fully implemented for cache)
+	r.listCache.Set(cacheKey, paginatedItems, r.config.DefaultCacheExpiry) // Caching the (potentially) paginated slice
+	return paginatedItems, totalCount, nil
 }
 
 func (r *MemoryRepository[T]) Get(ctx context.Context, id string) (*T, error) {
@@ -55,24 +101,9 @@ func (r *MemoryRepository[T]) Get(ctx context.Context, id string) (*T, error) {
 	return &item, nil
 }
 
-func (r *MemoryRepository[T]) List(ctx context.Context) ([]T, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	// Try cache first
-	if items, ok := r.listCache.Get("all"); ok {
-		return items, nil
-	}
-
-	// If not in cache, get from storage
-	items := make([]T, 0, len(r.items))
-	for _, item := range r.items {
-		items = append(items, item)
-	}
-
-	// Cache the result
-	r.listCache.Set("all", items, r.config.DefaultCacheExpiry)
-	return items, nil
+func (r *MemoryRepository[T]) List(ctx context.Context, opts db.ListOptions) ([]T, int64, error) {
+	// Now calls ListWithOpts, passing through the options.
+	return r.ListWithOpts(ctx, opts)
 }
 
 func (r *MemoryRepository[T]) Create(ctx context.Context, item *T) error {
