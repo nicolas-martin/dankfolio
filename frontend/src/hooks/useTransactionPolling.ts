@@ -1,8 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { type Timeout } from 'node:timers';
 import { logger } from '@/utils/logger'; // Assuming logger path
 
 // Define a more generic PollingStatus to be used by the hook
 export type PollingStatus = 'idle' | 'pending' | 'polling' | 'confirmed' | 'finalized' | 'failed';
+
+// Generic interface for the expected polling result
+interface PollingResponse {
+  finalized?: boolean;
+  error?: string | object; // Error could be string or an object with a message
+  confirmations?: number;
+  status?: string;
+}
 
 export interface TransactionPollingResult<T> {
   status: PollingStatus;
@@ -35,8 +44,8 @@ export const useTransactionPolling = <T>(
   const [error, setError] = useState<string | null>(null);
   const [confirmations, setConfirmations] = useState<number>(0);
 
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<Timeout | null>(null);
+  const timeoutRef = useRef<Timeout | null>(null);
 
   // Store callbacks in refs to avoid them becoming stale in closures
   const onSuccessRef = useRef(onSuccess);
@@ -85,7 +94,7 @@ export const useTransactionPolling = <T>(
       // Assuming T is the response type from pollingFunction, e.g., grpcApi.getSwapStatus
       // Example structure of T (based on Send/scripts.ts):
       // { finalized: boolean, error?: string, confirmations: number, status: string (e.g. "confirmed", "processed") }
-      const result = await pollingFunction(currentTxHash) as any; // Cast to any to access potential fields
+      const result = await pollingFunction(currentTxHash) as PollingResponse;
 
       if (!result) {
         logger.info(`[useTransactionPolling] Transaction status not found for ${currentTxHash}, continuing poll.`);
@@ -97,10 +106,21 @@ export const useTransactionPolling = <T>(
       setConfirmations(result.confirmations || 0);
 
       if (result.error) {
-        const errorMessage = typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
-        logger.error(`[useTransactionPolling] Transaction failed for ${currentTxHash}:`, { error: errorMessage });
-        setError(errorMessage);
-        onErrorRef.current?.(errorMessage);
+        let resultErrorMessage = 'An unknown error occurred during polling.';
+        if (typeof result.error === 'string') {
+          resultErrorMessage = result.error;
+        } else if (typeof result.error === 'object' && result.error !== null && 'message' in result.error && typeof result.error.message === 'string') {
+          resultErrorMessage = result.error.message;
+        } else if (result.error) {
+          try {
+            resultErrorMessage = JSON.stringify(result.error);
+          } catch {
+            // If stringify fails, keep the default message
+          }
+        }
+        logger.error(`[useTransactionPolling] Transaction failed for ${currentTxHash}:`, { error: resultErrorMessage });
+        setError(resultErrorMessage);
+        onErrorRef.current?.(resultErrorMessage);
         stopPolling('failed');
       } else if (result.finalized) {
         logger.info(`[useTransactionPolling] Transaction finalized for ${currentTxHash}.`);
@@ -114,10 +134,11 @@ export const useTransactionPolling = <T>(
         logger.info(`[useTransactionPolling] Current status for ${currentTxHash}: ${result.status}, continuing poll.`);
         setStatus('polling');
       }
-    } catch (e: any) {
-      logger.error(`[useTransactionPolling] Exception during poll for ${currentTxHash}:`, e);
-      setError(e.message || 'Polling failed');
-      onErrorRef.current?.(e.message || 'Polling failed');
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e || 'Polling failed');
+      logger.error(`[useTransactionPolling] Exception during poll for ${currentTxHash}:`, { message: errorMessage });
+      setError(errorMessage);
+      onErrorRef.current?.(errorMessage);
       stopPolling('failed');
     }
   }, [pollingFunction, stopPolling, status]); // Added status to dependencies of performPoll
