@@ -2,13 +2,14 @@ import { StyleSheet } from 'react-native';
 import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
 import { useMemo } from 'react';
+import { Animated } from 'react-native';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
 		// const colors = theme.colors; // Ensure colors is defined inside useMemo - REMOVED
 		
-		const createProgressFillStyle = (progressAnim: any) => ({
+		const createProgressFillStyle = (progressAnim: Animated.Value) => ({
 			backgroundColor: theme.colors.primary,
 			borderRadius: theme.borderRadius.sm,
 			height: '100%',
@@ -18,7 +19,7 @@ export const useStyles = () => {
 			})
 		});
 
-		const createStatusSectionStyle = (fadeAnim: any) => [
+		const createStatusSectionStyle = (fadeAnim: Animated.Value) => [
 			{
 				alignItems: 'center' as const,
 				marginBottom: theme.spacing['3xl'],

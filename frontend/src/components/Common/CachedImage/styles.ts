@@ -16,7 +16,7 @@ export const useStyles = () => {
     }
   ];
 
-  const createImageStyle = (size: number, borderRadius: number, style?: any) => [
+  const createImageStyle = (size: number, borderRadius: number, style?: object) => [
     {
       width: size,
       height: size,
