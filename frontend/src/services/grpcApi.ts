@@ -1,11 +1,11 @@
 import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
 import * as grpcModel from './grpc/model';
 import { Trade } from '../gen/dankfolio/v1/trade_pb';
-import { logger } from '@/utils/logger'; // Added logger import
-import { toRawAmount as commonToRawAmount } from '@/utils/numberFormat'; // Import toRawAmount
+import { logger } from '@/utils/logger';
+import { toRawAmount as commonToRawAmount } from '@/utils/numberFormat';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
 import * as grpcUtils from './grpc/grpcUtils';
-import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils'; // Import the new mapper
+import { mapGrpcCoinToFrontendCoin } from './grpc/grpcUtils';
 import { Buffer } from 'buffer';
 
 // Implementation of the API interface using gRPC
@@ -180,19 +180,25 @@ export const grpcApi: grpcModel.API = {
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Convert the response to match PriceData[] expected by usePriceHistory hook
+			// Convert the response to match PriceHistoryResponse expected by the API interface
 			if (response?.data?.items) {
-				const mappedData: grpcModel.PriceData[] = response.data.items
-					.filter(item => item.value !== null && item.unixTime !== null)
-					.map(item => ({
-						timestamp: new Date(Number(item.unixTime) * 1000).toISOString(),
-						value: item.value,
-						unixTime: Number(item.unixTime),
-					}));
-				return mappedData;
+				return {
+					data: {
+						items: response.data.items
+							.filter(item => item.value !== null && item.unixTime !== null)
+							.map(item => ({
+								unixTime: Number(item.unixTime),
+								value: item.value,
+							}))
+					},
+					success: true
+				};
 			} else {
-				// Return empty array if no items, or handle as error if appropriate
-				return [];
+				// Return empty response if no items
+				return {
+					data: { items: [] },
+					success: false
+				};
 			}
 		} catch (error: unknown) {
 			console.error('[grpcApi] ❌ getPriceHistory ERROR:', {
