@@ -47,20 +47,30 @@ const HomeScreen = () => {
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
 	const { themeType: _themeType } = useThemeStore(); // Prefixed themeType
 
-	// Memoized styles for props
 	const placeholderCoinCardInternalStyle = useMemo(() => ({
-		flex: 1,
-		minWidth: 0, // from styles.flex1
-		flexDirection: 'row',
-		alignItems: 'center'
+		flexDirection: 'row' as const,
+		alignItems: 'center' as const
 	}), []);
+
+	const placeholderCoinCardContainerStyle = useMemo(() => [
+		styles.coinCardContainerStyle, 
+		styles.placeholderCoinCardContainerMargin
+	], [styles.coinCardContainerStyle, styles.placeholderCoinCardContainerMargin]);
 
 	const refreshControlColors = useMemo(() => [styles.colors.primary], [styles.colors.primary]);
 
 	const debugCacheButtonStyle = useMemo(() => ({
-		padding: 16, // Consider using theme.spacing if available directly
-		alignItems: 'center'
+		marginHorizontal: 16,
+		marginBottom: 16
 	}), []);
+
+	const trendingCoinsGetItemLayout = useCallback((data: any, index: number) => ({
+		length: 130, // Adjusted approximate height of each CoinCard with sparkline + margin
+		offset: 130 * index, // Adjusted offset
+		index,
+	}), []);
+
+	const emptyFlatListData = useMemo(() => [], []);
 
 	// Coin and loading states
 	const availableCoins = useCoinStore(state => state.availableCoins);
@@ -81,7 +91,7 @@ const HomeScreen = () => {
 
 	// Placeholder components for loading states
 	const renderPlaceholderCoinCard = () => (
-		<View style={[styles.coinCardContainerStyle, styles.placeholderCoinCardContainerMargin]}>
+		<View style={placeholderCoinCardContainerStyle}>
 			<View style={styles.placeholderCoinCardContent}>
 				{/* Left section - Icon and name */}
 				<View style={placeholderCoinCardInternalStyle}>
@@ -376,7 +386,7 @@ const HomeScreen = () => {
 		// FlatList wrapper might not be necessary if InfoState handles its own layout well.
 		// However, keeping for RefreshControl for now.
 		<FlatList
-			data={[]}
+			data={emptyFlatListData}
 			renderItem={() => null}
 			ListEmptyComponent={() => (
 				<InfoState

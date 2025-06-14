@@ -14,6 +14,11 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
 	const styles = useStyles();
 	const [activePercent, setActivePercent] = useState<number | null>(null);
 
+	const containerStyle = useMemo(() => [
+		styles.container, 
+		style
+	], [styles.container, style]);
+
 	const handlePress = (percent: number) => {
 		console.log(`[AmountPercentageButtons] Button ${percent}% pressed`);
 		console.log(`[AmountPercentageButtons] Balance:`, balance);
@@ -43,7 +48,7 @@ const AmountPercentageButtons: React.FC<AmountPercentageButtonsProps> = ({
 	};
 
 	return (
-		<View style={[styles.container, style]}>
+		<View style={containerStyle}>
 			{percentages.map((percent) => {
 				const isActive = activePercent === percent;
 

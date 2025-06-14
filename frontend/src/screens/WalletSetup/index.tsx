@@ -45,7 +45,7 @@ const WalletSetup: React.FC<WalletSetupScreenProps> = (props) => {
 		styles.actionButton,
 		styles.actionButtonYellow,
 		{ opacity: isRecoveryPhraseValid() ? 1 : 0.5 }
-	].flat(), [styles.actionButton, styles.actionButtonYellow, isRecoveryPhraseValid]);
+	], [styles.actionButton, styles.actionButtonYellow, isRecoveryPhraseValid]);
 
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: `Viewed WalletSetupScreen step: ${step}` });

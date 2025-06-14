@@ -193,10 +193,18 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		backgroundColor: styles.colors.onSurface
 	}), [styles.colors.onSurface]);
 
+	const getItemLayout = useCallback((data: any, index: number) => ({
+		length: 72, // Approximate height of each token item
+		offset: 72 * index,
+		index,
+	}), []);
+
+	const snapPoints = useMemo(() => ['75%'], []);
+
 	return (
 		<BottomSheetModal
 			ref={bottomSheetModalRef}
-			snapPoints={['75%']}
+			snapPoints={snapPoints}
 			onDismiss={onDismiss}
 			backgroundStyle={modalBackgroundStyle}
 			handleIndicatorStyle={modalHandleStyle}
@@ -244,11 +252,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				windowSize={8}
 				initialNumToRender={8}
 				updateCellsBatchingPeriod={50}
-				getItemLayout={(data, index) => ({
-					length: 72, // Approximate height of each token item
-					offset: 72 * index,
-					index,
-				})}
+				getItemLayout={getItemLayout}
 				accessible={false}
 				importantForAccessibility="yes"
 			/>

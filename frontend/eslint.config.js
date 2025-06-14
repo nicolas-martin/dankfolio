@@ -20,6 +20,10 @@ export default [
 	// Global ignores - must be in separate config object
 	{
 		ignores: [
+			'coverage/**',
+			'app.config.json',
+			'**.d.ts**',
+			'babel.config.js',
 			'**/gen/**',
 			'**/metro.config.js',
 			'src/components/Chart/CoinChart/**',

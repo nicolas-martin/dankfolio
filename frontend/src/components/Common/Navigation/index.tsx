@@ -22,6 +22,9 @@ const Tab = createBottomTabNavigator();
 
 const useTabNavigatorStyles = () => {
   const theme = useTheme() as MD3Theme; // Ensure MD3Theme is the correct type
+  
+  const shadowOffset = useMemo(() => ({ width: 0, height: -2 }), []);
+  
   return useMemo(() => StyleSheet.create({
     // eslint-disable-next-line react-native/no-unused-styles
     bottomNavBar: {
@@ -34,7 +37,7 @@ const useTabNavigatorStyles = () => {
       ...Platform.select({
         ios: {
           shadowColor: theme.colors.shadow,
-          shadowOffset: { width: 0, height: -2 },
+          shadowOffset: shadowOffset,
           shadowOpacity: 0.1,
           shadowRadius: 8,
         },
@@ -43,7 +46,7 @@ const useTabNavigatorStyles = () => {
         },
       }),
     },
-  }), [theme]);
+  }), [theme, shadowOffset]);
 };
 
 const TabNavigator = () => {
@@ -133,14 +136,16 @@ const Navigation = () => {
 		header: renderCustomHeader
 	}), []); // renderCustomHeader is stable
 
+	const stackScreenOptions = useMemo(() => ({
+		headerShown: true,
+		animation: 'slide_from_right' as const,
+	}), []);
+
 	return (
 		<NavigationContainer onStateChange={navigationMiddleware}>
 			<Stack.Navigator
 				initialRouteName="MainTabs"
-				screenOptions={{
-					headerShown: true,
-					animation: 'slide_from_right',
-				}}
+				screenOptions={stackScreenOptions}
 			>
 				<Stack.Screen
 					name="MainTabs"

@@ -45,6 +45,11 @@ const Odometer: FC<OdometerProps> = ({
 		height: digitHeight
 	}), [digitHeight]);
 
+	const rowContainerStyle = useMemo(() => [
+		styles.row, 
+		heightStyle
+	], [styles.row, heightStyle]);
+
 	// pad previous to match length
 	const prevPadded = prev.padStart(sanitizedValue.length, '0');
 
@@ -121,7 +126,7 @@ const Odometer: FC<OdometerProps> = ({
 	return (
 		<>
 			{digitHeight > 0 && (
-				<View style={[styles.row, heightStyle]}>
+				<View style={rowContainerStyle}>
 					{sanitizedValue.split('').map((char, i) => {
 						if (/\d/.test(char) && anims.current[i]) {
 							const digitContainerStyle = useMemo(() => [
