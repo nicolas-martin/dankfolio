@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'; // Added useMemo, useCallback
+import React, { useEffect, useState, useMemo } from 'react'; // Added useMemo, useCallback
 import { View, Animated } from 'react-native'; // Removed Dimensions
 import { Text, Button, ActivityIndicator, Icon } from 'react-native-paper';
 // BottomSheetModal, BottomSheetView, BottomSheetBackdrop will be handled by ManagedBottomSheetModal

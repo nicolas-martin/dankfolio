@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, TouchableOpacity } from 'react-native'; // Keep View if needed for layout
+import { TouchableOpacity } from 'react-native'; // Keep View if needed for layout
 import { Text } from 'react-native-paper';
 // CachedImage might not be directly used if CoinInfoBlock handles its own image
 import { formatPercentage } from '@/utils/numberFormat';

@@ -40,21 +40,21 @@ export const useStyles = () => {
         borderLeftColor: theme.colors.warning, // Assuming theme has a warning color
       },
       header: {
-        flexDirection: 'row',
         alignItems: 'center',
+        flexDirection: 'row',
         marginBottom: theme.spacing.md,
       },
       iconContainer: {
         marginRight: theme.spacing.md,
       },
       title: {
+        color: theme.colors.onSurface,
         fontSize: theme.typography.fontSize.base,
         fontWeight: '600',
-        color: theme.colors.onSurface,
       },
       message: {
-        fontSize: theme.typography.fontSize.sm,
         color: theme.colors.onSurfaceVariant,
+        fontSize: theme.typography.fontSize.sm,
         lineHeight: theme.typography.fontSize.base * 1.4,
       },
       // Specific text colors if needed, or they can inherit

@@ -1,7 +1,4 @@
 import { Coin } from '@/types';
-import { PriceData } from '@/types';
-import { grpcApi } from '@/services/grpcApi';
-import { TimeframeOption } from './coindetail_types';
 import { logger } from '@/utils/logger';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';

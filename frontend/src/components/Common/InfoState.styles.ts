@@ -6,29 +6,29 @@ export const useStyles = () => {
   const theme = useTheme() as AppTheme;
   return StyleSheet.create({
     container: {
-      flex: 1,
       alignItems: 'center',
+      flex: 1,
       justifyContent: 'center',
       padding: theme.spacing.lg,
+    },
+    errorText: {
+      color: theme.colors.error,
     },
     iconContainer: {
       marginBottom: theme.spacing.md,
     },
+    message: {
+      color: theme.colors.onSurfaceVariant,
+      fontSize: theme.typography.fontSize.base,
+      lineHeight: theme.typography.fontSize.lg * 1.2,
+      textAlign: 'center',
+    },
     title: {
+      color: theme.colors.onSurface,
       fontSize: theme.typography.fontSize.xl,
       fontWeight: 'bold',
-      color: theme.colors.onSurface,
       marginBottom: theme.spacing.sm,
       textAlign: 'center',
-    },
-    message: {
-      fontSize: theme.typography.fontSize.base,
-      color: theme.colors.onSurfaceVariant,
-      textAlign: 'center',
-      lineHeight: theme.typography.fontSize.lg * 1.2,
-    },
-    errorText: {
-      color: theme.colors.error,
     }
   });
 };
