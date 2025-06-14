@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { logger } from '@/utils/logger';
@@ -71,4 +72,4 @@ export const useCopyToClipboard = () => {
 		copyState,
 		copyToClipboard,
 	};
-}; 
+};

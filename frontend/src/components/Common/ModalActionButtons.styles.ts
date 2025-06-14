@@ -9,15 +9,15 @@ export const useStyles = () => {
   return useMemo(() => {
     return StyleSheet.create({
       button: {
-        flex: 1, // Allow buttons to grow if needed, or set specific widths
         borderRadius: theme.borderRadius.lg, // Standard button border radius
+        flex: 1, // Allow buttons to grow if needed, or set specific widths
         paddingVertical: theme.spacing.xs, // Standard button padding
       },
       buttonContainer: {
         flexDirection: 'row',
+        gap: theme.spacing.md, // Spacing between buttons
         justifyContent: 'flex-end', // Default to right-align, common for dialogs
         paddingTop: theme.spacing.md,
-        gap: theme.spacing.md, // Spacing between buttons
       },
       primaryButtonLabel: {
         fontSize: theme.typography.fontSize.base,

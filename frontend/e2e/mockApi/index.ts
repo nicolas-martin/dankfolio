@@ -1,5 +1,10 @@
 import { mockFetch, originalFetch } from './mockFetch';
 
+// Define a custom interface for the global object
+interface GlobalWithMockFlag extends NodeJS.Global {
+  __E2E_MOCKING_ENABLED__?: boolean;
+}
+
 // Environment flag to enable/disable mocking
 let mockingEnabled = false;
 
@@ -14,7 +19,7 @@ export function enableApiMocking(): void {
 	mockingEnabled = true;
 
 	// Set global flag for debug wallet
-	(global as any).__E2E_MOCKING_ENABLED__ = true;
+	(global as GlobalWithMockFlag).__E2E_MOCKING_ENABLED__ = true;
 }
 
 // Function to disable API mocking
@@ -28,5 +33,5 @@ export function disableApiMocking(): void {
 	mockingEnabled = false;
 
 	// Clear global flag
-	(global as any).__E2E_MOCKING_ENABLED__ = false;
+	(global as GlobalWithMockFlag).__E2E_MOCKING_ENABLED__ = false;
 }

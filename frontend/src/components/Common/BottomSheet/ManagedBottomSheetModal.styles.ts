@@ -20,9 +20,9 @@ export const useStyles = () => {
       },
       handleIndicator: {
         backgroundColor: theme.colors.onSurfaceVariant, // Or a specific handle color
-        width: 40,
-        height: 4,
         borderRadius: 2,
+        height: 4,
+        width: 40,
       },
       headerContainer: {
         alignItems: 'center',
