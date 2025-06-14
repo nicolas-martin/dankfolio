@@ -182,11 +182,16 @@ export const useGradientArea = ({ points, y0, color, opacity = 0.8, gradientColo
 	
 	// Create the area path with Skia
 	const areaPath = useMemo(() => {
-		if (!points || points.length === 0 || !linePath) return null;
+		if (!points || !Array.isArray(points) || points.length === 0 || !linePath) return null;
 		
 		// Get the first and last points
 		const lastPoint = points[points.length - 1];
 		const firstPoint = points[0];
+		
+		// Ensure points have the expected structure
+		if (!lastPoint || !firstPoint || typeof lastPoint.x !== 'number' || typeof firstPoint.x !== 'number') {
+			return null;
+		}
 		
 		// Create a new path for the area
 		const Skia = require('@shopify/react-native-skia').Skia;
