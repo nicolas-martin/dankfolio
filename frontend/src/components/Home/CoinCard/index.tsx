@@ -5,7 +5,7 @@ import CachedImage from '../../Common/CachedImage'; // Add or uncomment this lin
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import SparklineChart from '@/components/Chart/SparklineChart';
 import { formatTokenBalance, formatNumber, formatPrice, formatPercentage } from '@/utils/numberFormat';
-import CoinInfoBlock from '@/components/Common/CoinInfoBlock'; // Import CoinInfoBlock
+import CoinInfoBlock from 'components/Common/CoinInfoBlock/CoinInfoBlock'; // Import CoinInfoBlock
 import { CoinCardProps } from './coincard_types';
 import { useStyles } from './coincard_styles';
 import { logger } from '@/utils/logger';
@@ -34,8 +34,8 @@ const CoinCard: React.FC<CoinCardProps> = ({
 	const horizontalChangeStyle = useMemo(() => [ // Memoized style
 		styles.horizontalChange,
 		(coin.change24h ?? 0) > 0 ? styles.changePositiveSmall :
-		(coin.change24h ?? 0) < 0 ? styles.changeNegativeSmall :
-		styles.changeNeutralSmall
+			(coin.change24h ?? 0) < 0 ? styles.changeNegativeSmall :
+				styles.changeNeutralSmall
 	], [styles.horizontalChange, styles.changePositiveSmall, styles.changeNegativeSmall, styles.changeNeutralSmall, coin.change24h]);
 
 	// Memoize the image load/error handlers (no longer needed if CachedImage is only in CoinInfoBlock)
@@ -76,19 +76,19 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				delayPressOut={100}
 			>
 				{iconForHorizontal}
-							<Text
-				style={styles.horizontalSymbol}
-				numberOfLines={1}
-				testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}
+				<Text
+					style={styles.horizontalSymbol}
+					numberOfLines={1}
+					testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}
 					accessible={true}
 					accessibilityRole="text"
 				>
 					{coin.symbol}
 				</Text>
-							<Text
-				style={styles.horizontalPrice}
-				numberOfLines={1}
-				testID={`${testIdPrefix}-price-${coin.symbol.toLowerCase()}`}
+				<Text
+					style={styles.horizontalPrice}
+					numberOfLines={1}
+					testID={`${testIdPrefix}-price-${coin.symbol.toLowerCase()}`}
 					accessible={true}
 					accessibilityRole="text"
 				>
@@ -170,10 +170,10 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				)}
 
 				<View style={styles.rightSection}>
-									<Text
-					style={styles.price}
-					numberOfLines={1}
-					testID={`${testIdPrefix}-price-${coin.symbol.toLowerCase()}`}
+					<Text
+						style={styles.price}
+						numberOfLines={1}
+						testID={`${testIdPrefix}-price-${coin.symbol.toLowerCase()}`}
 						accessible={true}
 						accessibilityRole="text"
 					>

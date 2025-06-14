@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'; // React import will be added by the next line
+import { useCallback } from 'react';
 import React from 'react';
 import { View } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -27,19 +27,13 @@ const NewCoinsInternal: React.FC = () => {
 	const getCoinByID = useCoinStore(state => state.getCoinByID);
 
 	// Create duplicated data for infinite scrolling
-	const scrollData = useMemo(() => {
+	const scrollData = React.useMemo(() => {
 		if (!newlyListedCoins || newlyListedCoins.length === 0) return [];
 		// Duplicate the array to create seamless infinite scroll
 		return newlyListedCoins;
 	}, [newlyListedCoins]);
 
-	// Memoized styles and data at component level
-	const placeholderCardStyle = useMemo(() => [
-		styles.cardWrapper,
-		styles.placeholderCardContainer
-	], [styles.cardWrapper, styles.placeholderCardContainer]);
-
-	const placeholderData = useMemo(() => [1, 2, 3, 4], []);
+	const placeholderData = React.useMemo(() => [1, 2, 3, 4], []);
 
 	const handleCoinPress = useCallback((coin: Coin) => {
 		// Navigate immediately with the basic coin data
@@ -69,7 +63,7 @@ const NewCoinsInternal: React.FC = () => {
 	// Placeholder component for loading horizontal ticker cards
 	const renderPlaceholderCard = () => {
 		return (
-			<View style={placeholderCardStyle}>
+			<View style={styles.placeholderCard}>
 				<ShimmerPlaceholder
 					width={48}
 					height={48}

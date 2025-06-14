@@ -57,11 +57,9 @@ export const useStyles = () => {
 			fontSize: theme.typography.fontSize['3xl'],
 			fontVariant: ['tabular-nums'],
 		},
-		periodText: {
-			fontSize: theme.typography.fontSize.sm,
-		},
-		periodTextColor: { // New style
+		periodTextStyle: {
 			color: colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.sm,
 		},
 		pricePlaceholderText: { // New style
 			fontSize: theme.typography.fontSize['3xl'],

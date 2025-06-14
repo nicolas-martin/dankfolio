@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 // CachedImage might not be directly used if CoinInfoBlock handles its own image
 import { formatPercentage } from '@/utils/numberFormat';
 import { formatTimeAgo } from '@/utils/timeFormat';
-import CoinInfoBlock from '@/components/Common/CoinInfoBlock'; // Import CoinInfoBlock
+import CoinInfoBlock from 'components/Common/CoinInfoBlock/CoinInfoBlock'; // Import CoinInfoBlock
 import { HorizontalTickerCardProps } from './types';
 import { useStyles } from './styles';
 
@@ -22,9 +22,9 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 
 	const changeTextStyle = useMemo(() => [ // Memoized style
 		styles.change,
-		coin.change24h > 0 ? styles.changePositive :
-		coin.change24h < 0 ? styles.changeNegative :
-		styles.changeNeutral
+		(coin.change24h ?? 0) > 0 ? styles.changePositive :
+			(coin.change24h ?? 0) < 0 ? styles.changeNegative :
+				styles.changeNeutral
 	], [styles.change, styles.changePositive, styles.changeNegative, styles.changeNeutral, coin.change24h]);
 
 	return (

@@ -27,7 +27,7 @@ const LinkItem: React.FC<LinkItemProps> = ({
 		<TouchableOpacity onPress={() => onPress(value)} testID={testID}>
 			<View style={styles.linkItemContainer}>
 				<View style={styles.linkItemIconContainer}>
-					<IconComponent size={20} color={styles.colors.onSurface} />
+					<IconComponent size={'20'} color={styles.colors.onSurface} />
 				</View>
 				<View style={styles.linkItemTextContainer}>
 					<Text style={styles.linkItemLabel}>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, TouchableOpacity, Linking } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@/components/Common/Animations';
@@ -8,7 +8,7 @@ import { useStyles } from './styles';
 import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
 import { formatPrice, formatAddress as utilFormatAddress } from '@/utils/numberFormat';
-import ModalActionButtons from '@/components/Common/ModalActionButtons';
+import ModalActionButtons from 'components/Common/ModalActionButton';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,
@@ -24,14 +24,8 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	recipientAddress,
 }) => {
 	const styles = useStyles();
-	// bottomSheetModalRef and useEffect for visibility are now handled by ManagedBottomSheetModal
-	// renderBackdrop is also handled by ManagedBottomSheetModal by default
 
 	const TokenIcon: React.FC<{ token: Coin }> = ({ token }) => {
-		const placeholderIconStyle = useMemo(() => [
-			styles.tokenIcon,
-			styles.tokenIconPlaceholderBg
-		], []);
 
 		if (token.resolvedIconUrl) {
 			return (
@@ -44,7 +38,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				/>
 			);
 		}
-		return <View style={placeholderIconStyle} />;
+		return <View style={styles.placeholderIconStyle} />;
 	};
 
 	const handleSolscanPress = () => {
@@ -53,23 +47,6 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			Linking.openURL(solscanUrl);
 		}
 	};
-
-	// const formatAddress = (address: string) => { // Removed local implementation
-	// 	if (address.length <= 12) return address;
-	// 	return `${address.slice(0, 6)}...${address.slice(-6)}`;
-	// };
-
-	// Static styles outside render functions
-	const recipientAddressTextStyle = [
-		styles.tokenName,
-		styles.recipientAddressLink,
-		styles.primaryColorText
-	];
-
-	const solscanTextStyle = [
-		styles.solscanText,
-		styles.primaryColorText
-	];
 
 	const renderTokenRow = (
 		token: Coin,
@@ -80,53 +57,53 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		return (
 			<View style={styles.tradeRow} testID={`${testIdPrefix}-token-details`}>
 				<View style={styles.tokenInfo}>
-				{isRecipient ? (
-					<Icon source="account" size={32} color={styles.colors.onSurfaceVariant} />
-				) : (
-					<TokenIcon token={token} />
-				)}
-				<View style={styles.tokenDetails}>
 					{isRecipient ? (
-						<>
-							<Text style={styles.tokenSymbol}>To</Text>
-							<TouchableOpacity onPress={handleSolscanPress} testID="solscan-link">
-								<Text style={recipientAddressTextStyle}>
-									{utilFormatAddress(amount, 6, 6)}
+						<Icon source="account" size={32} color={styles.colors.onSurfaceVariant} />
+					) : (
+						<TokenIcon token={token} />
+					)}
+					<View style={styles.tokenDetails}>
+						{isRecipient ? (
+							<>
+								<Text style={styles.tokenSymbol}>To</Text>
+								<TouchableOpacity onPress={handleSolscanPress} testID="solscan-link">
+									<Text style={styles.recipientAddressTextStyle}>
+										{utilFormatAddress(amount, 6, 6)}
+									</Text>
+								</TouchableOpacity>
+							</>
+						) : (
+							<>
+								<Text style={styles.tokenSymbol} testID={`${testIdPrefix}-token-symbol-${token?.symbol?.toLowerCase() || 'unknown'}`}>
+									{token.symbol}
 								</Text>
-							</TouchableOpacity>
-						</>
+								<Text style={styles.tokenName} testID={`${testIdPrefix}-token-name-${token?.symbol?.toLowerCase() || 'unknown'}`}>
+									{token.name}
+								</Text>
+							</>
+						)}
+					</View>
+				</View>
+				<View style={styles.amountInfo}>
+					{isRecipient ? (
+						<TouchableOpacity onPress={handleSolscanPress} style={styles.solscanButton} testID="solscan-button">
+							<Icon source="open-in-new" size={16} color={styles.colors.primary} />
+							<Text style={styles.solscanText}>Solscan</Text>
+						</TouchableOpacity>
 					) : (
 						<>
-							<Text style={styles.tokenSymbol} testID={`${testIdPrefix}-token-symbol-${token?.symbol?.toLowerCase() || 'unknown'}`}>
-								{token.symbol}
+							<Text style={styles.amount} testID={`${testIdPrefix}-token-amount`}>
+								{isNaN(Number(amount)) ? '0' : amount}
 							</Text>
-							<Text style={styles.tokenName} testID={`${testIdPrefix}-token-name-${token?.symbol?.toLowerCase() || 'unknown'}`}>
-								{token.name}
+							<Text style={styles.amountUsd} testID={`${testIdPrefix}-token-amount-usd`}>
+								{formatPrice(isNaN(Number(amount)) ? 0 : Number(amount) * (token.price || 0))}
 							</Text>
 						</>
 					)}
 				</View>
 			</View>
-			<View style={styles.amountInfo}>
-				{isRecipient ? (
-					<TouchableOpacity onPress={handleSolscanPress} style={styles.solscanButton} testID="solscan-button">
-						<Icon source="open-in-new" size={16} color={styles.colors.primary} />
-						<Text style={solscanTextStyle}>Solscan</Text>
-					</TouchableOpacity>
-				) : (
-					<>
-						<Text style={styles.amount} testID={`${testIdPrefix}-token-amount`}>
-							{isNaN(Number(amount)) ? '0' : amount}
-						</Text>
-						<Text style={styles.amountUsd} testID={`${testIdPrefix}-token-amount-usd`}>
-							{formatPrice(isNaN(Number(amount)) ? 0 : Number(amount) * (token.price || 0))}
-						</Text>
-					</>
-				)}
-			</View>
-		</View>
-	);
-};
+		);
+	};
 
 	// const renderActionButtons = () => { // Replaced by ModalActionButtons
 	// 	const cancelTestId = `cancel-${operationType}-button`;
@@ -240,7 +217,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 			isVisible={isVisible}
 			onClose={onClose}
 			snapPoints={snapPoints}
-			// title={operationType === 'send' ? 'Confirm Send' : 'Confirm Trade'} // Title can be passed to ManagedBottomSheetModal if it supports it
+		// title={operationType === 'send' ? 'Confirm Send' : 'Confirm Trade'} // Title can be passed to ManagedBottomSheetModal if it supports it
 		>
 			{renderContent()}
 		</ManagedBottomSheetModal>

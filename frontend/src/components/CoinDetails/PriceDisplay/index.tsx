@@ -28,11 +28,6 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 		isPositive ? styles.changePositive : styles.changeNegative
 	], [styles.changeText, styles.changePositive, styles.changeNegative, isPositive]);
 
-	const periodTextStyle = useMemo(() => [
-		styles.periodText, 
-		styles.periodTextColor
-	], [styles.periodText, styles.periodTextColor]);
-
 	// Early return with a placeholder if any required values are invalid
 	if (isNaN(price) || price === null || price === undefined) {
 		// Return a static display instead of null to prevent layout shifts
@@ -62,8 +57,8 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 					<Text style={styles.addressText} testID="price-display-coin-address">
 						{formatAddress(address, 8, 4)}
 					</Text>
-					<CopyToClipboard 
-						text={address} 
+					<CopyToClipboard
+						text={address}
 						testID="price-display-copy-address-button"
 					/>
 				</View>
@@ -100,8 +95,8 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				<Text style={styles.addressText} testID="price-display-coin-address">
 					{formatAddress(address, 8, 4)}
 				</Text>
-				<CopyToClipboard 
-					text={address} 
+				<CopyToClipboard
+					text={address}
 					testID="price-display-copy-address-button"
 				/>
 			</View>
@@ -123,7 +118,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 				>
 					{formattedChange}
 				</Text>
-				<Text style={periodTextStyle} testID="price-display-period">
+				<Text style={styles.periodTextStyle} testID="price-display-period">
 					{period}
 				</Text>
 			</View>
