@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
-		const colors = theme.colors; // Ensure colors is defined inside useMemo
+		// const colors = theme.colors; // Ensure colors is defined inside useMemo - REMOVED
 		const styles = StyleSheet.create({
 			change: {
 				fontFamily: theme.typography.fontFamily.medium,

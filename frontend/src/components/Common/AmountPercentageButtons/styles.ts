@@ -42,6 +42,9 @@ export const useStyles = () => {
 			fontSize: theme.typography.fontSize.sm,
 			fontWeight: '600',
 		},
+		activeButtonText: { // New style
+			color: colors.onPrimary,
+		},
 	});
 	return {
 		...styles,

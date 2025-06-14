@@ -84,7 +84,7 @@ describe('NewCoins Component', () => {
 	});
 
 	it('renders correctly with newly listed coins', () => {
-		const { getByText, getByTestId } = render(<NewCoins />); // Assuming CoinCard has a testID or identifiable text
+		const { getByText, _getByTestId } = render(<NewCoins />); // Assuming CoinCard has a testID or identifiable text
 		expect(getByText('New Listings')).toBeTruthy();
 		expect(getByText(mockNewlyListedCoin.symbol)).toBeTruthy(); // Check if coin symbol is rendered by CoinCard
 	});

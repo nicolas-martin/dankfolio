@@ -16,6 +16,14 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 	const blurhash = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 	const styles = useMemo(() => createImageComparisonStyles(size), [size]);
 
+	const imageSource = useMemo(() => ({
+		uri: uri || DEFAULT_TOKEN_IMAGE
+	}), [uri, DEFAULT_TOKEN_IMAGE]);
+
+	const imagePlaceholder = useMemo(() => ({
+		blurhash
+	}), [blurhash]);
+
 	return (
 		<View style={styles.outerContainer}>
 			<View style={styles.imageContainer}>
@@ -31,12 +39,12 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 			<View style={styles.imageContainer}>
 				<Text style={styles.labelText}>Expo Image</Text>
 				<Image
-					source={{ uri: uri || DEFAULT_TOKEN_IMAGE }}
+					source={imageSource} // Use memoized source
 					style={styles.expoImage}
 					contentFit="cover"
 					transition={300}
 					cachePolicy="disk"
-					placeholder={{ blurhash }}
+					placeholder={imagePlaceholder} // Use memoized placeholder
 				/>
 			</View>
 		</View>
@@ -44,18 +52,22 @@ export const ImageComparison: React.FC<ImageComparisonProps> = ({
 };
 
 const createImageComparisonStyles = (size: number) => StyleSheet.create({
+	// eslint-disable-next-line react-native/no-unused-styles
 	expoImage: {
 		borderRadius: size / 2,
 		height: size,
 		width: size,
 	},
+	// eslint-disable-next-line react-native/no-unused-styles
 	imageContainer: {
 		alignItems: 'center',
 	},
+	// eslint-disable-next-line react-native/no-unused-styles
 	labelText: {
 		fontSize: 12,
 		marginBottom: 10,
 	},
+	// eslint-disable-next-line react-native/no-unused-styles
 	outerContainer: {
 		flexDirection: 'row',
 		gap: 20,

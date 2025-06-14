@@ -34,10 +34,16 @@ const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or sim
 	}, [newlyListedCoins]);
 
 	// Placeholder component for loading horizontal ticker cards
-	const renderPlaceholderCard = () => (
-		<View style={[styles.cardWrapper, styles.placeholderCardContainer]}>
-			<ShimmerPlaceholder
-				width={48}
+	const renderPlaceholderCard = () => {
+		const placeholderCardStyle = useMemo(() => [ // Memoized style array
+			styles.cardWrapper,
+			styles.placeholderCardContainer
+		], [styles.cardWrapper, styles.placeholderCardContainer]);
+
+		return (
+			<View style={placeholderCardStyle}>
+				<ShimmerPlaceholder
+					width={48}
 				height={48}
 				borderRadius={24}
 				style={styles.placeholderIconShimmer}
@@ -128,6 +134,12 @@ const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or sim
 		);
 	}
 
+	const getItemLayout = useCallback((_, index: number) => ({ // Memoized function
+		length: CARD_WIDTH,
+		offset: CARD_WIDTH * index,
+		index,
+	}), [CARD_WIDTH]);
+
 	return (
 		<View
 			style={styles.container}
@@ -152,11 +164,7 @@ const NewCoinsInternal: React.FC = () => { // Renamed to NewCoinsInternal or sim
 				updateCellsBatchingPeriod={50}
 				initialNumToRender={5}
 				windowSize={5}
-				getItemLayout={(_, index) => ({
-					length: CARD_WIDTH,
-					offset: CARD_WIDTH * index,
-					index,
-				})}
+				getItemLayout={getItemLayout} // Applied
 				ListEmptyComponent={
 					isLoadingNewlyListed ? null : (
 						<Text style={styles.emptyText}>No new listings available.</Text>

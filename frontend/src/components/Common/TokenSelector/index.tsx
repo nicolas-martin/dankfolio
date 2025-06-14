@@ -185,13 +185,21 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		setSearchQuery(query);
 	}, []);
 
+	const modalBackgroundStyle = useMemo(() => ({
+		backgroundColor: styles.colors.surface
+	}), [styles.colors.surface]);
+
+	const modalHandleStyle = useMemo(() => ({
+		backgroundColor: styles.colors.onSurface
+	}), [styles.colors.onSurface]);
+
 	return (
 		<BottomSheetModal
 			ref={bottomSheetModalRef}
 			snapPoints={['75%']}
 			onDismiss={onDismiss}
-			backgroundStyle={{ backgroundColor: styles.colors.surface }}
-			handleIndicatorStyle={{ backgroundColor: styles.colors.onSurface }}
+			backgroundStyle={modalBackgroundStyle}
+			handleIndicatorStyle={modalHandleStyle}
 			enablePanDownToClose={true}
 			enableDismissOnClose={true}
 			backdropComponent={renderBackdrop}
@@ -291,6 +299,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		setModalVisible(false);
 	}, []);
 
+	const activityIndicatorStyle = useMemo(() => ({
+		height: styles.amountInput.height
+	}), [styles.amountInput.height]);
+
 	return (
 		<>
 			<Card elevation={0} style={styles.cardContainer}>
@@ -334,7 +346,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								<ActivityIndicator
 									size="small"
 									color={styles.colors.primary}
-									style={{ height: styles.amountInput.height }}
+									style={activityIndicatorStyle} // Applied
 									testID="activity-indicator"
 								/>
 							) : (

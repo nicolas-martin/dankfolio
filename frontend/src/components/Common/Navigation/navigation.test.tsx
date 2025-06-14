@@ -1,3 +1,5 @@
+import React from 'react';
+import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -51,29 +53,32 @@ jest.mock('@screens/CoinDetail/coindetail_scripts', () => ({
 
 // Mock Chart components
 jest.mock('@components/Chart/CoinChart', () => {
-	const { View } = require('react-native');
-	return () => <View testID="coin-chart" />;
+	const MockCoinChart = () => <View testID="coin-chart" />;
+	MockCoinChart.displayName = 'MockCoinChart';
+	return MockCoinChart;
 });
 
 jest.mock('@components/Chart/CoinInfo', () => {
-	const { View, Text } = require('react-native');
-	return ({ metadata }: { metadata: { description: string } }) => (
+	const MockCoinInfo = ({ metadata }: { metadata: { description: string } }) => (
 		<View testID="coin-info">
 			<Text>{metadata.description}</Text>
 		</View>
 	);
+	MockCoinInfo.displayName = 'MockCoinInfo';
+	return MockCoinInfo;
 });
 
 jest.mock('@components/CoinDetails/PriceDisplay', () => {
-	const { View } = require('react-native');
-	return () => <View testID="price-display" />;
+	const MockPriceDisplay = () => <View testID="price-display" />;
+	MockPriceDisplay.displayName = 'MockPriceDisplay';
+	return MockPriceDisplay;
 });
 
 // Mock stores with minimal required data
 jest.mock('@store/coins', () => ({
 	useCoinStore: () => ({
 		availableCoins: [mockCoin],
-		getCoinByID: (id: string) => mockCoin,
+		getCoinByID: (_id: string) => mockCoin,
 		fetchAvailableCoins: jest.fn().mockImplementation(() => Promise.resolve()),
 		isLoading: false,
 		error: null

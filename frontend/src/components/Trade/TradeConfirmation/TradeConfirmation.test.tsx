@@ -1,4 +1,5 @@
 import { render, fireEvent } from '@testing-library/react-native';
+import { View, Pressable } from 'react-native';
 import { Provider as PaperProvider, useTheme } from 'react-native-paper';
 import TradeConfirmation from './index';
 import { Coin } from '@/types';
@@ -6,10 +7,10 @@ import { Coin } from '@/types';
 // Mock react-native-paper components and theme
 jest.mock('react-native-paper', () => {
 	const actualPaper = jest.requireActual('react-native-paper');
-	const { View, Pressable } = require('react-native');
-	const MockButton = (props: unknown) => {
+	// View and Pressable are now available from top-level import
+	const MockButton = (props: any) => { // Changed props to any for brevity
 		return (
-			<Pressable
+			<Pressable // This Pressable will come from the top-level import
 				onPress={props.onPress}
 				disabled={props.disabled || props.loading}
 				testID={props.testID}

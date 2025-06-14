@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react'; // Ensure useMemo is imported
 import { View, ViewStyle, DimensionValue, StyleSheet } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import type { AppTheme } from '@/utils/theme'; // Add this line
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
@@ -46,29 +47,31 @@ const ShimmerPlaceholder: React.FC<ShimmerPlaceholderProps> = ({
 		};
 	});
 
+	const viewStyle = useMemo(() => [
+		styles.shimmerContainer,
+		style
+	].filter(Boolean), [styles.shimmerContainer, style]);
+
+	const animatedViewStyle = useMemo(() => [
+		styles.animatedShimmerOverlay,
+		animatedStyle
+	], [styles.animatedShimmerOverlay, animatedStyle]);
+
 	return (
-		<View
-			style={[
-				styles.shimmerContainer,
-				style,
-			]}
-		>
-			<Animated.View
-				style={[
-					styles.animatedShimmerOverlay,
-					animatedStyle,
-				]}
-			/>
+		<View style={viewStyle}>
+			<Animated.View style={animatedViewStyle} />
 		</View>
 	);
 };
 
-const createStyles = (theme: any, width: DimensionValue, height: number, borderRadius: number) => StyleSheet.create({
+const createStyles = (theme: AppTheme, width: DimensionValue, height: number, borderRadius: number) => StyleSheet.create({
+	// eslint-disable-next-line react-native/no-unused-styles
 	animatedShimmerOverlay: {
 		backgroundColor: theme.colors.surface,
 		height: '100%',
 		width: '100%',
 	},
+	// eslint-disable-next-line react-native/no-unused-styles
 	shimmerContainer: {
 		backgroundColor: theme.colors.surfaceVariant,
 		borderRadius,
