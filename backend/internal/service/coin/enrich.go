@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye" // Added for birdeye.TokenDetails
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 )
@@ -15,115 +16,68 @@ import (
 // Solana metadata, and off-chain sources. It populates and returns a model.Coin.
 // It takes initial basic info (name, icon, volume) which might come from a preliminary scrape,
 // and overwrites/enriches it.
-// It now accepts pre-fetched data from Birdeye/scraping passed as individual fields.
+// Solana metadata, and off-chain sources. It populates and returns a model.Coin.
+// It uses initial data from birdeye.TokenDetails and enriches it.
 func (s *Service) EnrichCoinData(
 	ctx context.Context,
-	mintAddress string,
-	initialName string,
-	initialSymbol string,
-	initialIconURL string,
-	initialPrice float64,
-	initialVolume float64,
-	initialMarketCap float64, // Will be used when model.Coin supports it
-	initialTags []string,
+	initialData *birdeye.TokenDetails, // Changed from many params to this one
 ) (*model.Coin, error) {
-	slog.Info("Starting coin enrichment process", slog.String("mintAddress", mintAddress), slog.String("source", "Birdeye+Jupiter+Chain"))
+	if initialData == nil {
+		return nil, fmt.Errorf("initialData cannot be nil")
+	}
 
-	// Initialize coin with basic info from parameters
+	slog.Info("Starting coin enrichment process", slog.String("mintAddress", initialData.Address), slog.String("source", "BirdeyeDetails+Chain+OffChain"))
+
+	// Initialize coin with basic info from initialData
 	coin := model.Coin{
-		MintAddress: mintAddress,
-		Name:        initialName,
-		Symbol:      initialSymbol,
-		IconUrl:     initialIconURL,
-		Price:       initialPrice,
-		Volume24h:   initialVolume,
-		Tags:        initialTags,
-		MarketCap:   initialMarketCap,
+		MintAddress:            initialData.Address,
+		Name:                   initialData.Name,
+		Symbol:                 initialData.Symbol,
+		IconUrl:                initialData.LogoURI,
+		Price:                  initialData.Price,
+		Volume24h:              initialData.Volume24hUSD,
+		MarketCap:              initialData.MarketCap,
+		Tags:                   initialData.Tags,
+		Liquidity:              initialData.Liquidity,
+		Volume24hChangePercent: initialData.Volume24hChangePercent,
+		FDV:                    initialData.FDV,
+		Rank:                   initialData.Rank,
+		Price24hChangePercent:  initialData.Price24hChangePercent,
+		Decimals:               initialData.Decimals,
+		// System timestamps
 		CreatedAt:   time.Now().Format(time.RFC3339),
 		LastUpdated: time.Now().Format(time.RFC3339),
 	}
-	slog.Debug("Initialized coin with pre-fetched data", "mintAddress", mintAddress, "name", coin.Name, "symbol", coin.Symbol, "price", coin.Price, "volume", coin.Volume24h)
+	slog.Debug("Initialized coin with pre-fetched data", "mintAddress", initialData.Address, "name", coin.Name, "symbol", coin.Symbol, "price", coin.Price, "volume", coin.Volume24h)
 
-	// 1. Conditionally Get Jupiter data for basic info (Symbol, Decimals, Name if missing)
-	jupiterInfoSuccess := false
-	if coin.Symbol == "" || coin.Decimals == 0 || coin.Name == "" {
-		slog.Debug("Fetching Jupiter token info for potentially missing fields", slog.String("mintAddress", mintAddress))
-		jupiterInfo, err := s.jupiterClient.GetCoinInfo(ctx, mintAddress)
-		if err != nil {
-			slog.Warn("Failed to get Jupiter info, continuing with Birdeye/scraped data", slog.String("mintAddress", mintAddress), slog.Any("error", err))
-		} else {
-			jupiterInfoSuccess = true
-			slog.Debug("Received Jupiter token info", slog.String("mintAddress", mintAddress), slog.String("name", jupiterInfo.Name), slog.String("symbol", jupiterInfo.Symbol))
-			if coin.Name == "" && jupiterInfo.Name != "" {
-				coin.Name = jupiterInfo.Name
-			}
-			if coin.Symbol == "" && jupiterInfo.Symbol != "" {
-				coin.Symbol = jupiterInfo.Symbol
-			}
-			if coin.Decimals == 0 && jupiterInfo.Decimals > 0 {
-				coin.Decimals = jupiterInfo.Decimals
-			}
-			// IconUrl from Birdeye is preferred. Only use Jupiter if Birdeye's was empty and Jupiter's is not.
-			if coin.IconUrl == "" && jupiterInfo.LogoURI != "" {
-				slog.Debug("Using Jupiter logo as Birdeye logo was empty", slog.String("jupiterIconUrl", jupiterInfo.LogoURI), slog.String("mintAddress", mintAddress))
-				coin.IconUrl = jupiterInfo.LogoURI
-			}
-			// Volume from Birdeye is preferred. Only use Jupiter if Birdeye's was zero/unparsed and Jupiter's is not.
-			if coin.Volume24h == 0 && jupiterInfo.DailyVolume > 0 {
-				coin.Volume24h = jupiterInfo.DailyVolume
-			}
-			// Tags from Birdeye are preferred. Merge or overwrite as per desired logic. Here, append if Birdeye's was empty.
-			if len(coin.Tags) == 0 && len(jupiterInfo.Tags) > 0 {
-				coin.Tags = jupiterInfo.Tags
-			}
-		}
-	} else {
-		slog.Debug("Skipping Jupiter GetCoinInfo as essential fields are present from Birdeye", slog.String("mintAddress", mintAddress))
-	}
-
-	// 2. Conditionally Get price from Jupiter if not available or invalid from Birdeye
-	jupiterPriceSuccess := false
-	if coin.Price == 0 { // Assuming 0 means price wasn't valid or available from Birdeye
-		slog.Debug("Fetching Jupiter price as Birdeye price was zero/invalid", slog.String("mintAddress", mintAddress))
-		prices, err := s.jupiterClient.GetCoinPrices(ctx, []string{mintAddress})
-		if err != nil {
-			slog.Warn("Error fetching Jupiter price", slog.String("mintAddress", mintAddress), slog.Any("error", err))
-		} else if price, ok := prices[mintAddress]; ok && price > 0 {
-			coin.Price = price
-			jupiterPriceSuccess = true
-			slog.Debug("Received Jupiter price", slog.String("mintAddress", mintAddress), slog.Float64("price", coin.Price))
-		} else {
-			slog.Warn("Price data not found or invalid in Jupiter response", slog.String("mintAddress", mintAddress))
-		}
-	} else {
-		slog.Debug("Skipping Jupiter GetCoinPrices as price is present from Birdeye", slog.String("mintAddress", mintAddress), slog.Float64("price", coin.Price))
-		jupiterPriceSuccess = true // Consider Birdeye price as a "success" for pricing
-	}
+	// Jupiter info fetching removed. Relying on initial data and chain metadata.
+	// Jupiter price fetching removed. Relying on initial data.
 
 	// 3. Get Generic Token Metadata (which includes on-chain and SPL token info like decimals)
-	slog.Debug("Fetching generic token metadata", slog.String("mintAddress", mintAddress))
-	genericMetadata, err := s.chainClient.GetTokenMetadata(ctx, bmodel.Address(mintAddress))
+	slog.Debug("Fetching generic token metadata", slog.String("mintAddress", initialData.Address))
+	genericMetadata, err := s.chainClient.GetTokenMetadata(ctx, bmodel.Address(initialData.Address))
 	if err != nil {
-		slog.Warn("Error fetching generic token metadata", slog.String("mintAddress", mintAddress), slog.Any("error", err))
-		// If we can't get any metadata, proceed with what we have (e.g. from Jupiter)
-		// Check if we have any successful data before returning
-		if !jupiterInfoSuccess && !jupiterPriceSuccess {
-			slog.Error("Failed to enrich coin: no data available from any source", slog.String("mintAddress", mintAddress))
-			return nil, fmt.Errorf("failed to enrich coin %s: no data available from any source", mintAddress)
+		slog.Warn("Error fetching generic token metadata", slog.String("mintAddress", initialData.Address), slog.Any("error", err))
+		// If chain metadata fetch fails, check if we have essential info from initial parameters.
+		// If not (e.g., no name/symbol), then it's a critical failure.
+		if coin.Name == "" && coin.Symbol == "" { // Name/Symbol should be populated from initialData now
+			slog.Error("Failed to enrich coin: no name/symbol from initialData and chain metadata fetch failed", slog.String("mintAddress", initialData.Address))
+			return nil, fmt.Errorf("failed to enrich coin %s: essential data missing (Name/Symbol) and chain metadata unavailable", initialData.Address)
 		}
-		enrichFromMetadata(&coin, nil) // Ensure default description is set and fallbacks for icon
-		slog.Info("Returning partially enriched coin (Jupiter data, no on-chain token metadata)", slog.String("mintAddress", mintAddress))
-		return &coin, nil // Return partially enriched coin
+		enrichFromMetadata(&coin, nil) // Ensure default description is set and fallbacks for icon based on available data.
+		slog.Info("Returning partially enriched coin (initial data, no on-chain token metadata due to fetch error)", slog.String("mintAddress", initialData.Address))
+		return &coin, nil // Return partially enriched coin (with initial data)
 	}
 
-	// Use decimals and supply from genericMetadata if available and not already set by Jupiter
+	// Use decimals from genericMetadata if available and not already set by initialData (Birdeye)
+	// model.Coin.Decimals is int, genericMetadata.Decimals is uint8
 	if coin.Decimals == 0 && genericMetadata.Decimals > 0 {
-		// convert uint8 to int for model.Coin
 		coin.Decimals = int(genericMetadata.Decimals)
 	}
 	// coin.Supply = genericMetadata.Supply // model.Coin doesn't have Supply currently, but could be added
 
-	// Override name/symbol from genericMetadata if they were empty after Jupiter
+	// Override name/symbol from genericMetadata if they were empty after using initialData
+	// This is less likely now as Birdeye usually provides Name/Symbol.
 	if coin.Name == "" && genericMetadata.Name != "" {
 		coin.Name = genericMetadata.Name
 	}
@@ -133,19 +87,25 @@ func (s *Service) EnrichCoinData(
 
 	// 4. Fetch off-chain metadata using the URI from the generic token metadata
 	uri := strings.TrimSpace(genericMetadata.URI)
-	slog.Info("Fetching off-chain metadata", slog.String("mintAddress", mintAddress), slog.String("uri", uri))
+	slog.Info("Fetching off-chain metadata", slog.String("mintAddress", initialData.Address), slog.String("uri", uri))
 	if uri == "" {
-		slog.Warn("No URI found in generic token metadata", slog.String("mintAddress", mintAddress))
+		slog.Warn("No URI found in generic token metadata", slog.String("mintAddress", initialData.Address))
 		enrichFromMetadata(&coin, nil) // Still call to set default description and icon fallbacks if needed
 		return &coin, nil
 	}
 
 	offchainMeta, err := s.offchainClient.FetchMetadata(uri)
 	if err != nil {
-		slog.Error("Failed to fetch off-chain metadata", slog.String("mintAddress", mintAddress), slog.String("uri", uri), slog.Any("error", err))
-		// If off-chain fetch fails, still try to apply defaults/fallbacks to Jupiter data.
+		slog.Error("Failed to fetch off-chain metadata", slog.String("mintAddress", initialData.Address), slog.String("uri", uri), slog.Any("error", err))
+		// If off-chain fetch fails, still try to apply defaults/fallbacks to existing coin data.
 		enrichFromMetadata(&coin, nil) // Pass nil metadata
-		return nil, fmt.Errorf("failed to fetch off-chain metadata for %s from %s: %w", mintAddress, uri, err)
+		// It's better to return the partially enriched coin than an error here,
+		// as off-chain metadata is supplementary.
+		slog.Warn("Proceeding with coin data after off-chain metadata fetch failure", slog.String("mintAddress", initialData.Address))
+		// Ensure LastUpdated is set before returning partially enriched coin
+		coin.LastUpdated = time.Now().Format(time.RFC3339)
+		return &coin, nil
+		// return nil, fmt.Errorf("failed to fetch off-chain metadata for %s from %s: %w", initialData.Address, uri, err) // Previous behaviour
 	}
 
 	// IPFS resolution logic has been removed.
@@ -159,13 +119,13 @@ func (s *Service) EnrichCoinData(
 	coin.ResolvedIconUrl = coin.IconUrl
 	// coin.ResolvedIconUrl = util.StandardizeIpfsUrl(coin.IconUrl)
 	// if coin.ResolvedIconUrl != coin.IconUrl && coin.ResolvedIconUrl != "" {
-	// 	slog.Debug("Standardized IPFS URL", slog.String("original", coin.IconUrl), slog.String("resolved", coin.ResolvedIconUrl), slog.String("mintAddress", mintAddress))
+	// 	slog.Debug("Standardized IPFS URL", slog.String("original", coin.IconUrl), slog.String("resolved", coin.ResolvedIconUrl), slog.String("mintAddress", initialData.Address))
 	// }
 
 	// Ensure LastUpdated is set
 	coin.LastUpdated = time.Now().Format(time.RFC3339)
 
-	slog.Info("Coin enrichment process completed", slog.String("mintAddress", mintAddress))
+	slog.Info("Coin enrichment process completed", slog.String("mintAddress", initialData.Address))
 	return &coin, nil
 }
 
@@ -220,7 +180,7 @@ func populateIconFromMetadata(coin *model.Coin, metadata map[string]any) {
 	if metadata == nil {
 		return
 	}
-	// Let Jupiter logo take precedence. Only use metadata image if Jupiter didn't provide one (coin.IconUrl is empty).
+	// Let initialIconURL (passed as parameter) take precedence. Only use metadata image if initialIconURL was empty (coin.IconUrl is empty).
 	if coin.IconUrl == "" {
 		if image, ok := metadata["image"].(string); ok && image != "" {
 			coin.IconUrl = image
