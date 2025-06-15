@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, Button, IconButton, Icon, Card } from 'react-native-paper';
+import { Text, Button, IconButton, Icon, Card } from 'react-native-paper'; // Removed Switch
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { useStyles } from './styles';
@@ -11,6 +11,7 @@ import TokenSelector from '@components/Common/TokenSelector';
 import AmountPercentageButtons from '@components/Common/AmountPercentageButtons';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
+// InputUnit import removed, TradeScreenRouteProp might also not need InputUnit if it was only for state
 import { TradeScreenNavigationProp, TradeScreenRouteProp } from './types';
 
 import {
@@ -40,6 +41,7 @@ const Trade: React.FC = () => {
 	const { getCoinByID } = useCoinStore();
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
+	// inputUnit, usdAmount, and exchangeRate states are removed
 	const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(false);
 	const [tradeDetails, setTradeDetails] = useState<TradeDetailsProps>({
 		exchangeRate: '0',
@@ -57,6 +59,8 @@ const Trade: React.FC = () => {
 	// const [pollingConfirmations, setPollingConfirmations] = useState<number>(0); // Removed as unused (currentPollingConfirmations from hook is used)
 	const [pollingError, setPollingError] = useState<string | null>(null); // This one IS used by TradeStatusModal
 	// const quoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Will be managed by useDebouncedCallback
+
+	// handleUnitToggle is removed
 
 	const {
 		txHash: polledTxHash,
@@ -101,7 +105,9 @@ const Trade: React.FC = () => {
 				if (solCoin) setFromCoin(solCoin);
 			});
 		}
-	}, [fromCoin, toCoin, getCoinByID, setFromCoin]); // Added toCoin and setFromCoin
+	}, []); // Run only on mount to set initial fromCoin if needed.
+
+	// useEffect for fetching USD exchangeRate is removed. TokenSelector handles its own rate.
 
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === fromCoin?.mintAddress), [tokens, fromCoin]);
@@ -172,21 +178,27 @@ const Trade: React.FC = () => {
 	};
 
 	const handleFromAmountChange = useCallback(
+		// This 'amount' is now always the crypto amount, directly from TokenSelector's onAmountChange
 		(amount: string) => {
-			setFromAmount(amount);
+			setFromAmount(amount); // Update the crypto fromAmount state
+
 			if (fromCoin && toCoin) {
-				if (!amount || amount === '.' || amount.endsWith('.')) {
+				if (!amount || amount === '.' || amount.endsWith('.') || parseFloat(amount) <= 0) {
 					setToAmount('');
 					setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
 					setIsQuoteLoading(false);
 					return;
 				}
-				// Set loading immediately when amount changes
 				setIsQuoteLoading(true);
 				debouncedFetchQuote(amount, fromCoin, toCoin, 'from');
+			} else {
+				setIsQuoteLoading(false);
+				setToAmount('');
+				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
 			}
 		},
-		[fromCoin, toCoin, debouncedFetchQuote, setToAmount, setTradeDetails, setIsQuoteLoading] // Added setters
+		// Dependencies no longer include inputUnit, exchangeRate, setUsdAmount
+		[fromCoin, toCoin, debouncedFetchQuote, setFromAmount, setToAmount, setTradeDetails, setIsQuoteLoading]
 	);
 
 	const handleToAmountChange = useCallback(
@@ -335,21 +347,33 @@ const Trade: React.FC = () => {
 			style={styles.tradeCard}
 		>
 			<Text style={styles.cardLabel}>{label}</Text>
+			{/* USD Toggle Switch and related UI removed from here, will be inside TokenSelector for 'From' card */}
 			<TokenSelector
 				selectedToken={coin!}
 				onSelectToken={onSelectToken}
-				label="Select Token"
-				amountValue={amount}
-				onAmountChange={onAmountChange}
+				label="Select Token" // This label might be redundant if TokenSelector has its own internal label/placeholder logic
+				amountValue={amount} // This is always crypto amount for both 'From' and 'To' cards
+				onAmountChange={onAmountChange} // For 'From' card, this is simplified handleFromAmountChange
 				isAmountEditable={true}
 				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
 				testID={testID}
+				// enableUsdToggle is now defaulted to true in TokenSelector, so no need to pass it for 'From' card.
+				// For 'To' card, if we want to explicitly disable it (though default is true), we'd pass enableUsdToggle={false}.
+				// However, since 'To' card should not have this feature, explicitly setting it to false is safer.
+				enableUsdToggle={label === 'From'} // Keep this for explicitness: true for 'From', false for 'To'
+				// textInputProps and helperText for 'From' card are managed by TokenSelector.
+				// For 'To' card, which won't use USD toggle, we can pass basic placeholder/helper.
+				textInputProps={label === 'To' ? { placeholder: `0.0000 ${toCoin?.symbol || 'Crypto'}` } : undefined}
+				helperText={label === 'To' ? (coin ? `Estimated ${coin.symbol} amount` : 'Estimated amount') : undefined}
 			/>
 			{label === 'From' && coin && (
 				<AmountPercentageButtons
+					// key no longer needs inputUnit as it's managed inside TokenSelector
 					key={`${coin.mintAddress}-${toCoin?.mintAddress || 'none'}`}
-					balance={portfolioBalance || 0} // Default to 0 if no balance found
+					balance={portfolioBalance || 0}
 					onSelectAmount={(selectedAmount) => {
+						// AmountPercentageButtons always provide crypto amount.
+						// So, this should directly call onAmountChange which is handleFromAmountChange.
 						onAmountChange(selectedAmount);
 					}}
 				/>
