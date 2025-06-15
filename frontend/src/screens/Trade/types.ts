@@ -9,3 +9,5 @@ export type TradeScreenParams = {
 
 export type TradeScreenNavigationProp = NavigationProp<RootStackParamList>;
 export type TradeScreenRouteProp = RouteProp<RootStackParamList, 'Trade'>;
+
+export type InputUnit = 'CRYPTO' | 'USD';
