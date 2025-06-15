@@ -10,7 +10,59 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry" // For TelemetryAPI if asserting interface compliance
 )
+
+// mockTelemetry is a mock implementation of TelemetryAPI for testing.
+type mockTelemetry struct {
+	serviceName string
+	callName    string
+}
+
+// TrackCall records the serviceName and callName.
+func (m *mockTelemetry) TrackCall(serviceName, callName string) {
+	m.serviceName = serviceName
+	m.callName = callName
+}
+
+// TrackDuration is a no-op for this mock.
+func (m *mockTelemetry) TrackDuration(serviceName, callName string, duration time.Duration) {
+	// Not used in this test
+}
+
+// TrackError is a no-op for this mock.
+func (m *mockTelemetry) TrackError(serviceName, callName string) {
+	// Not used in this test
+}
+
+// GetTracker returns nil for this mock.
+func (m *mockTelemetry) GetTracker() any {
+	return nil // Not used
+}
+
+// GetStats returns nil for this mock as it's not used in these specific tests.
+func (m *mockTelemetry) GetStats() map[string]map[string]int {
+	return nil // Not used in this test
+}
+
+// LoadStatsForToday is a no-op for this mock.
+func (m *mockTelemetry) LoadStatsForToday(ctx context.Context) error {
+	return nil // Not used in this test
+}
+
+// ResetStats is a no-op for this mock.
+func (m *mockTelemetry) ResetStats(ctx context.Context) error {
+	return nil // Not used in this test
+}
+
+// Start is a no-op for this mock.
+func (m *mockTelemetry) Start(ctx context.Context) {
+	// Not used in this test
+}
+
+// Ensure mockTelemetry implements TelemetryAPI.
+var _ telemetry.TelemetryAPI = (*mockTelemetry)(nil)
 
 func TestClient_GetNewCoins_Success(t *testing.T) {
 	expectedNewTokens := []NewTokenInfo{
@@ -212,4 +264,100 @@ func TestClient_GetNewCoins_WithPagination(t *testing.T) {
 	require.NoError(t, err, "GetNewCoins should not return an error with pagination params")
 	require.NotNil(t, resp, "Response should not be nil")
 	require.Equal(t, len(expectedNewTokens), len(resp), "Number of coins should match")
+}
+
+func TestTrackCall_EndpointTruncation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte("{}")) // Minimal valid JSON
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	mockTracker := &mockTelemetry{}
+	// NewClient returns ClientAPI. GetRequest and PostRequest are package-level functions
+	// that expect *Client as their first argument.
+	rawClient := NewClient(server.Client(), server.URL, "", mockTracker)
+
+	// Type assert rawClient to *Client to pass to GetRequest/PostRequest
+	clientInstance, ok := rawClient.(*Client)
+	require.True(t, ok, "Failed to assert ClientAPI to *Client")
+
+	testCases := []struct {
+		name                 string
+		method               string
+		path                 string
+		requestBody          any
+		expectedEndpointName string
+	}{
+		{
+			name:                 "GET token info with truncation",
+			method:               "GET",
+			path:                 "/tokens/v1/token/2KK4YMi24Tqo6tDn8mzYWkNdGjG3ufdXBjmLv7Fapump",
+			expectedEndpointName: "/tokens/v1/token",
+		},
+		{
+			name:                 "POST token info with truncation",
+			method:               "POST",
+			path:                 "/tokens/v1/token/anotherTokenID123",
+			requestBody:          map[string]string{"data": "sample"},
+			expectedEndpointName: "/tokens/v1/token",
+		},
+		{
+			name:                 "GET price endpoint without truncation",
+			method:               "GET",
+			path:                 "/price/v2?ids=SOL",
+			expectedEndpointName: "/price/v2",
+		},
+		{
+			name:                 "POST swap endpoint without truncation",
+			method:               "POST",
+			path:                 "/swap/v1/quote",
+			requestBody:          map[string]string{"inputMint": "SOL"},
+			expectedEndpointName: "/swap/v1/quote",
+		},
+		{
+			name:                 "GET root path",
+			method:               "GET",
+			path:                 "/",
+			expectedEndpointName: "/",
+		},
+		{
+			name:                 "POST to a path that looks like the start of the target but is not exact",
+			method:               "POST",
+			path:                 "/tokens/v1/tok",
+			requestBody:          map[string]string{"data": "test"},
+			expectedEndpointName: "/tokens/v1/tok",
+		},
+		{
+			name:                 "GET a path that contains the target string but not at the start",
+			method:               "GET",
+			path:                 "/info/tokens/v1/token/someID",
+			expectedEndpointName: "/info/tokens/v1/token/someID",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Reset mockTracker fields for each sub-test
+			mockTracker.serviceName = ""
+			mockTracker.callName = ""
+
+			fullURL := server.URL + tc.path
+			var err error
+
+			if tc.method == "GET" {
+				// Use clientInstance which is *Client
+				_, _, err = GetRequest[map[string]interface{}](clientInstance, context.Background(), fullURL)
+			} else if tc.method == "POST" {
+				// Use clientInstance which is *Client
+				_, err = PostRequest[map[string]interface{}](clientInstance, context.Background(), fullURL, tc.requestBody)
+			}
+			require.NoError(t, err, "Request should not fail for path: %s", tc.path)
+
+			assert.Equal(t, "jupiter", mockTracker.serviceName, "Service name should be jupiter for path: %s", tc.path)
+			assert.Equal(t, tc.expectedEndpointName, mockTracker.callName, "Endpoint name mismatch for path: %s", tc.path)
+		})
+	}
 }

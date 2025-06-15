@@ -302,6 +302,9 @@ func GetRequest[T any](c *Client, ctx context.Context, requestURL string) (T, []
 		// Fallback or decide how to handle error
 	} else {
 		endpointName := parsedURL.Path
+		if strings.HasPrefix(endpointName, "/tokens/v1/token/") {
+			endpointName = "/tokens/v1/token"
+		}
 		if endpointName == "" {
 			endpointName = "/" // Default if path is empty
 		}
@@ -382,6 +385,9 @@ func PostRequest[T any](c *Client, ctx context.Context, requestURL string, reque
 		// Fallback or decide how to handle error
 	} else {
 		endpointName := parsedURL.Path
+		if strings.HasPrefix(endpointName, "/tokens/v1/token/") {
+			endpointName = "/tokens/v1/token"
+		}
 		if endpointName == "" {
 			endpointName = "/" // Default if path is empty
 		}
