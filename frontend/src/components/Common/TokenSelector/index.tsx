@@ -1,30 +1,31 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { Card, Text, Searchbar } from 'react-native-paper';
+import { View, TouchableOpacity, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { Card, Text, Searchbar, Switch as PaperSwitch, Icon } from 'react-native-paper'; // Added Icon, PaperSwitch
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
 import { ChevronDownIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { useStyles } from './styles';
 import { usePortfolioStore } from '@store/portfolio';
-import { useCoinStore } from '@store/coins';
-import { Coin } from '@/types';
-import { calculateUsdValue, findPortfolioToken, handleAmountInputChange } from './scripts';
+import { useCoinStore } from '@store/coins'; // Already here, good.
+import type { Coin } from '@/types';
+import type { InputUnit } from '@/screens/Trade/types';
+// calculateUsdValue might be removed if equivalentValueDisplay handles all formatting
+import { findPortfolioToken } from './scripts'; // calculateUsdValue might be removed
 import CachedImage from '@/components/Common/CachedImage';
 import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
+// grpcApi import removed (no longer calling getUsdPrice directly)
 
 // Memoized icon component to prevent unnecessary re-renders
-const RenderIcon = React.memo<{ iconUrl: string; styles: ReturnType<typeof useStyles> }>(({ iconUrl, styles }) => {
-	return (
-		<CachedImage
-			uri={iconUrl}
-			size={24}
-			showLoadingIndicator={true}
-			style={styles.tokenIcon}
-		/>
-	);
-});
+const RenderIcon = React.memo<{ iconUrl: string; styles: ReturnType<typeof useStyles> }>(({ iconUrl, styles }) => (
+	<CachedImage
+		uri={iconUrl}
+		size={24}
+		showLoadingIndicator={true}
+		style={styles.tokenIcon}
+	/>
+));
 RenderIcon.displayName = 'RenderIcon';
 
 // Memoized TokenItem component to prevent unnecessary re-renders
@@ -264,127 +265,236 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	selectedToken,
 	onSelectToken,
 	label,
-	style: __style,
-	amountValue,
-	onAmountChange,
+	style: containerStyle, // Renamed from __style for clarity and applied to Card
+	amountValue, // Crypto amount from parent
+	onAmountChange, // Callback for crypto amount changes to parent
 	isAmountEditable = true,
-	isAmountLoading = false,
+	isAmountLoading = false, // Loading state for crypto amount (e.g., quote fetching)
 	showOnlyPortfolioTokens = false,
 	testID,
+	// New props for USD toggle
+	enableUsdToggle = true, // Default to true as per new requirement
+	// onUsdAmountChange removed from props
+	initialInputUnit = 'CRYPTO',
+	// Props for TextInput
+	textInputProps = {},
+	helperText,
 }) => {
-	// Unused props - satisfying linter
-	void __style;
-	testID = testID?.toLowerCase()
-
-	const amountPlaceholder = '0';
+	testID = testID?.toLowerCase();
 	const styles = useStyles();
 	const [modalVisible, setModalVisible] = useState(false);
 	const { tokens: portfolioTokens } = usePortfolioStore();
 
-	const calculatedValue = useMemo(() => {
-		return calculateUsdValue(selectedToken, amountValue);
-	}, [selectedToken, amountValue]);
+	// Internal state for USD toggle functionality
+	const [currentInputUnit, setCurrentInputUnit] = useState<InputUnit>(initialInputUnit);
+	const [internalUsdAmount, setInternalUsdAmount] = useState<string>('');
+	// exchangeRate state is removed
+
+	// Fetch/update coin data from store when selectedToken changes
+	useEffect(() => {
+		if (enableUsdToggle && selectedToken?.mintAddress) {
+			// Fetch coin data, which includes price, and update the store
+			// The component will react to store changes via useCoinStore selector below
+			useCoinStore.getState().getCoinByID(selectedToken.mintAddress, true)
+				.catch(error => logger.error('[TokenSelector] Failed to fetch coin data for price:', error));
+		}
+		// Reset unit and amounts if selectedToken is cleared
+		if (!selectedToken) {
+			setCurrentInputUnit('CRYPTO');
+			setInternalUsdAmount('');
+			if (onAmountChange) onAmountChange('');
+		}
+	}, [selectedToken, enableUsdToggle, onAmountChange]);
+
+	// Get live coin data (including price) from the store
+	const currentTokenDataFromStore = useCoinStore(state =>
+		enableUsdToggle && selectedToken ? state.coinMap[selectedToken.mintAddress] : undefined
+	);
+	const liveExchangeRate = currentTokenDataFromStore?.price; // This is a number or undefined
+
+	// Effect to update internal USD amount if crypto amountValue (from props) or liveExchangeRate changes
+	useEffect(() => {
+		if (enableUsdToggle && currentInputUnit === 'CRYPTO' && amountValue) {
+			const rate = liveExchangeRate;
+			if (rate && rate > 0) {
+				const crypto = parseFloat(amountValue);
+				if (!isNaN(crypto)) {
+					const newUsdVal = (crypto * rate).toFixed(2);
+					setInternalUsdAmount(newUsdVal);
+				} else {
+					setInternalUsdAmount('');
+				}
+			} else {
+				setInternalUsdAmount(''); // Clear if rate is invalid/zero or not available
+			}
+		} else if (enableUsdToggle && currentInputUnit === 'CRYPTO' && !amountValue) {
+			setInternalUsdAmount('');
+		}
+	}, [amountValue, liveExchangeRate, currentInputUnit, enableUsdToggle]);
+
+
+	const handleUnitToggle = useCallback(() => {
+		setCurrentInputUnit(prevUnit => {
+			const nextUnit = prevUnit === 'CRYPTO' ? 'USD' : 'CRYPTO';
+			if (onAmountChange) onAmountChange('');
+			setInternalUsdAmount('');
+			return nextUnit;
+		});
+	}, [onAmountChange]);
+
+	const handleCryptoAmountChange = useCallback((text: string) => {
+		if (onAmountChange) onAmountChange(text); // Update parent's crypto amount (which is amountValue)
+
+		if (enableUsdToggle) {
+			const rate = liveExchangeRate;
+			if (text && text !== '.' && !text.endsWith('.') && rate && rate > 0) {
+				const crypto = parseFloat(text);
+				if (!isNaN(crypto)) {
+					setInternalUsdAmount((crypto * rate).toFixed(2));
+				} else {
+					setInternalUsdAmount('');
+				}
+			} else {
+				setInternalUsdAmount('');
+			}
+		}
+	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
+
+	const handleUsdAmountChange = useCallback((text: string) => {
+		setInternalUsdAmount(text); // Update internal USD amount
+
+		if (enableUsdToggle) {
+			const rate = liveExchangeRate;
+			if (text && text !== '.' && !text.endsWith('.') && rate && rate > 0) {
+				const usd = parseFloat(text);
+				if (!isNaN(usd)) {
+					const cryptoValue = usd / rate;
+					const precision = selectedToken?.decimals ?? 6;
+					if (onAmountChange) onAmountChange(cryptoValue.toFixed(precision));
+				} else {
+					if (onAmountChange) onAmountChange('');
+				}
+			} else {
+				if (onAmountChange) onAmountChange('');
+			}
+		}
+	}, [onAmountChange, enableUsdToggle, liveExchangeRate, selectedToken?.decimals]);
+
+	const displayAmount = enableUsdToggle && currentInputUnit === 'USD' ? internalUsdAmount : amountValue;
+	const currentAmountHandler = enableUsdToggle && currentInputUnit === 'USD' ? handleUsdAmountChange : handleCryptoAmountChange;
+
+	const placeholder = useMemo(() => (enableUsdToggle && currentInputUnit === 'USD'
+		? textInputProps?.placeholder ?? '$0.00'
+		: textInputProps?.placeholder ?? `0.0000 ${selectedToken?.symbol || ''}`.trim()),
+		[enableUsdToggle, currentInputUnit, textInputProps?.placeholder, selectedToken?.symbol]
+	);
+
+	const displayHelperText = useMemo(() => (enableUsdToggle && currentInputUnit === 'USD'
+		? 'Enter USD amount'
+		: helperText || `Enter ${selectedToken?.symbol || 'token'} amount`), // Use prop helperText if CRYPTO and provided
+		[enableUsdToggle, currentInputUnit, helperText, selectedToken?.symbol]
+	);
+
 
 	const portfolioToken = useMemo(() => {
 		return findPortfolioToken(selectedToken, portfolioTokens);
 	}, [selectedToken, portfolioTokens]);
 
-	const [hasInitialSelection, setHasInitialSelection] = useState(false);
+	const handleDismiss = useCallback(() => setModalVisible(false), []);
+	const activityIndicatorStyle = useMemo(() => ({ height: styles.amountInput.height }), [styles.amountInput.height]);
 
-	useEffect(() => {
-		if (selectedToken && onSelectToken && !portfolioToken && !hasInitialSelection) {
-			console.log('🎯 Initial token selection:', selectedToken.symbol);
-			setHasInitialSelection(true);
-			onSelectToken(selectedToken);
+	const equivalentValueDisplay = useMemo(() => {
+		if (!enableUsdToggle || !selectedToken) return null;
+		const rate = liveExchangeRate;
+
+		if (currentInputUnit === 'CRYPTO' && amountValue && parseFloat(amountValue) > 0) {
+			if (rate && rate > 0) {
+				return `$${(parseFloat(amountValue) * rate).toFixed(2)}`;
+			} else if (rate === undefined) { // Price is loading or not available
+				return '$...';
+			} else { // Rate is 0 or invalid
+                return '$-.--';
+            }
+		} else if (currentInputUnit === 'USD' && internalUsdAmount && parseFloat(internalUsdAmount) > 0) {
+			if (rate && rate > 0) {
+				const cryptoVal = parseFloat(internalUsdAmount) / rate;
+				return `${cryptoVal.toFixed(selectedToken.decimals ?? 6)} ${selectedToken.symbol}`;
+			} else if (rate === undefined) {
+                return `... ${selectedToken.symbol}`;
+            } else { // Rate is 0 or invalid
+                return `--.-- ${selectedToken.symbol}`;
+            }
 		}
-	}, [selectedToken, onSelectToken, portfolioToken, hasInitialSelection]);
+		return null;
+	}, [enableUsdToggle, currentInputUnit, amountValue, internalUsdAmount, liveExchangeRate, selectedToken]);
 
-	const handleDismiss = useCallback(() => {
-		setModalVisible(false);
-	}, []);
-
-	const activityIndicatorStyle = useMemo(() => ({
-		height: styles.amountInput.height
-	}), [styles.amountInput.height]);
 
 	return (
 		<>
-			<Card elevation={0} style={styles.cardContainer}>
+			<Card elevation={0} style={[styles.cardContainer, containerStyle]}>
 				<Card.Content style={styles.cardContent}>
 					<TouchableOpacity
 						style={styles.selectorButtonContainer}
-						onPress={() => {
-							setModalVisible(true);
-						}}
-						disabled={!onSelectToken}
+						onPress={() => setModalVisible(true)}
+						disabled={!onSelectToken} // Assuming onSelectToken implies it's selectable
 						testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : testID}
 						accessible={true}
 						accessibilityRole="button"
-						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : "Select token"}
+						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}
 					>
 						<View style={styles.tokenInfo}>
-							{selectedToken && selectedToken.resolvedIconUrl ? (
+							{selectedToken?.resolvedIconUrl ? (
 								<>
-									<CachedImage
-										key={selectedToken.mintAddress}
-										uri={selectedToken.resolvedIconUrl}
-										size={24}
-										showLoadingIndicator={true}
-										style={styles.tokenIcon}
-										testID={`token-selector-icon-${selectedToken.symbol.toLowerCase()}`}
-									/>
-									<Text style={styles.tokenSymbol} testID={`token-selector-symbol-${selectedToken.symbol.toLowerCase()}`}>
-										{selectedToken.symbol}
-									</Text>
+									<RenderIcon iconUrl={selectedToken.resolvedIconUrl} styles={styles} />
+									<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
 								</>
 							) : (
-								<Text style={styles.tokenSymbol} testID={`${testID}-placeholder`}>{label || 'Select Token'}</Text>
+								<Text style={styles.tokenSymbol} testID={`${testID}-label`}>{label || 'Select Token'}</Text>
 							)}
 						</View>
 						<ChevronDownIcon size={20} color={styles.colors.onSurface} />
 					</TouchableOpacity>
 
-					{onAmountChange && (
+					{onAmountChange && ( // Only show amount input if onAmountChange is provided
 						<View style={styles.inputContainer}>
 							{isAmountLoading ? (
-								<ActivityIndicator
-									size="small"
-									color={styles.colors.primary}
-									style={activityIndicatorStyle} // Applied
-									testID="activity-indicator"
-								/>
+								<ActivityIndicator size="small" color={styles.colors.primary} style={activityIndicatorStyle} testID={`${testID}-loading-indicator`} />
 							) : (
-								<>
-									<TextInput
-										testID={`${testID}-amount-input`}
-										style={styles.amountInput}
-										value={amountValue}
-										onChangeText={(text) => onAmountChange && handleAmountInputChange(text, onAmountChange)}
-										placeholder={amountPlaceholder}
-										placeholderTextColor={styles.colors.onTertiaryContainer}
-										keyboardType="decimal-pad"
-										editable={isAmountEditable}
-									/>
-									<Text
-										style={styles.valueText}
-										{...(testID && { testID: `${testID}-usd-value` })}
-									>
-										{`$${calculatedValue}`}
-									</Text>
-								</>
+								<TextInput
+									testID={`${testID}-amount-input`}
+									style={styles.amountInput}
+									value={displayAmount || ''}
+									onChangeText={currentAmountHandler}
+									placeholder={placeholder}
+									placeholderTextColor={styles.colors.onTertiaryContainer}
+									keyboardType="decimal-pad"
+									editable={isAmountEditable}
+									{...textInputProps} // Spread additional text input props
+								/>
 							)}
-							{/* note: HIDE FOR NOW */}
-							{portfolioToken && ( // Corrected constant binary expression
-								<Text
-									style={styles.valueText}
-									{...(testID && { testID: `${testID}-balance` })}
-								>
-									{portfolioToken.amount}
-								</Text>
+							{/* Display equivalent value and helper text */}
+							{(equivalentValueDisplay || helperText) && (
+								<View style={styles.bottomTextContainer}>
+									{equivalentValueDisplay && <Text style={styles.equivalentValueText} testID={`${testID}-equivalent-value`}>{equivalentValueDisplay}</Text>}
+									{helperText && <Text style={styles.helperText} testID={`${testID}-helper-text`}>{currentInputUnit === 'USD' && enableUsdToggle ? 'Enter USD amount' : helperText}</Text>}
+								</View>
 							)}
 						</View>
 					)}
 				</Card.Content>
+				{enableUsdToggle && selectedToken && (
+					<View style={styles.switchContainer}>
+						{/* Ensure styles.switchContainer has flexDirection: 'row', alignItems: 'center' */}
+						<Icon source="swap-horizontal" size={24} color={styles.colors?.onSurfaceVariant || '#888'} />
+						<Text style={[styles.switchLabel, { marginLeft: 8 }]}>{`Input: ${currentInputUnit === 'CRYPTO' ? selectedToken.symbol : 'USD'}`}</Text>
+						<PaperSwitch
+							value={currentInputUnit === 'USD'}
+							onValueChange={handleUnitToggle}
+							style={{ marginLeft: 'auto' }} // Pushes switch to the right if label takes space
+							testID={`${testID}-unit-switch`}
+						/>
+					</View>
+				)}
 			</Card>
 
 			<TokenSearchModal
