@@ -18,6 +18,10 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import the new util package
+	// pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1" // Removed if not used elsewhere
+	// "google.golang.org/grpc/codes" // Removed if not used elsewhere
+	// "google.golang.org/grpc/status" // Removed if not used elsewhere
+	// "google.golang.org/protobuf/types/known/timestamppb" // Removed if not used elsewhere
 )
 
 // Service handles coin-related operations

@@ -41,6 +41,13 @@ message Coin {
   optional google.protobuf.Timestamp last_updated = 16;
   bool is_trending = 17;
   optional google.protobuf.Timestamp jupiter_listed_at = 18; // New field
+  optional double price_change_percentage_24h = 19;
+  optional double volume_24h_usd = 20;
+  optional double liquidity = 21;
+  optional double volume_24h_change_percent = 22;
+  optional double fdv = 23;
+  optional double market_cap = 24;
+  optional int32 rank = 25;
 }
 
 message GetAvailableCoinsRequest {

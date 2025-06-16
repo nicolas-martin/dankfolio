@@ -443,3 +443,108 @@ func TestLoadOrRefreshData_NoTokensFromBirdeye_ClearsTrending(t *testing.T) {
 func PintRefactored(i int) *int          { return &i }
 func PboolRefactored(b bool) *bool       { return &b }
 func PstringRefactored(s string) *string { return &s }
+
+func TestFechAndStoreTrendingTokens_PopulatesNewFields(t *testing.T) {
+	ctx := context.Background()
+	setup := setupCoinServiceTestRefactored(t)
+
+	mockBirdeyeToken := birdeye.TokenDetails{
+		Address:                "mint1",
+		Name:                   "Test Token 1",
+		Symbol:                 "TEST1",
+		Decimals:               9,
+		Liquidity:              12345.67,
+		Rank:                   10,
+		FDV:                    1000000.0,
+		MarketCap:              900000.0,
+		Volume24hChangePercent: 5.5,
+		Price24hChangePercent:  -2.1,
+		Volume24hUSD:           7890.12, // This will map to model.Coin.Volume24h and model.Coin.Volume24hUSD
+		Price:                  0.5,
+		LogoURI:                "http://example.com/logo.png",
+		LastTradeUnixTime:      time.Now().Unix() - 3600, // 1 hour ago
+	}
+	mockBirdeyeResponse := &birdeye.TokenTrendingResponse{
+		Data: birdeye.TokenTrendingData{
+			Tokens: []birdeye.TokenDetails{mockBirdeyeToken},
+		},
+	}
+
+	// Mock BirdeyeClient.GetTrendingTokens
+	setup.Mocks.BirdeyeClient.On("GetTrendingTokens", ctx, mock.AnythingOfType("birdeye.TrendingTokensParams")).Return(mockBirdeyeResponse, nil).Once()
+
+	// Mock Store.WithTransaction to execute the provided function
+	// This time, we need to control the mocks for the *txStore* inside the transaction
+	txMockStore := dbDataStoreMocks.NewMockStore(t)
+	txMockCoinRepo := dbDataStoreMocks.NewMockRepository[model.Coin](t)
+
+	setup.Mocks.Store.On("WithTransaction", ctx, mock.AnythingOfType("func(db.Store) error")).
+		Run(func(args mock.Arguments) {
+			fn := args.Get(1).(func(db.Store) error)
+			err := fn(txMockStore) // Execute the function passed to WithTransaction with txMockStore
+			assert.NoError(t, err, "Function passed to WithTransaction should not error")
+		}).Return(nil).Once() // Main WithTransaction call returns nil
+
+	// Mocks for calls using txMockStore within FechAndStoreTrendingTokens
+	// 1. Clearing existing trending flags (List and BulkUpsert)
+	//    For simplicity, assume no existing coins to update, or mock it minimally.
+	txMockStore.On("Coins").Return(txMockCoinRepo).Maybe() // .Maybe() as it can be called multiple times.
+	txMockCoinRepo.On("List", ctx, mock.AnythingOfType("db.ListOptions")).Return([]model.Coin{}, int64(0), nil).Once()
+	// No BulkUpsert expected if List returns no coins that were IsTrending=true
+
+	// 2. Processing new trending tokens (GetByField and Create/Update)
+	//    Mock GetByField to return ErrNotFound to trigger a Create call
+	txMockCoinRepo.On("GetByField", ctx, "mint_address", mockBirdeyeToken.Address).Return(nil, db.ErrNotFound).Once()
+
+	// Mock dependencies for EnrichCoinData (called inside UpdateTrendingTokensFromBirdeye, which is called by FechAndStoreTrendingTokens)
+	// These mocks operate on the main setup.Mocks because EnrichCoinData is a method of Service, not directly using txStore for these client calls.
+	setup.Mocks.SolanaClient.On("GetTokenMetadata", ctx, mockBirdeyeToken.Address).Return(&model.TokenMetadata{Name: "Test Token Meta", Symbol: "TTM", URI: "uri1"}, nil).Once()
+	setup.Mocks.OffchainClient.On("FetchMetadata", ctx, "uri1").Return(&model.OffchainMetadata{Name: "Test Token Offchain", Symbol: "TTO", Description: "Desc", Image: "image.png"}, nil).Once()
+	// EnrichCoinData might also call BirdeyeClient.GetTokenDetailsByMintAddress if initial data is sparse.
+	// The provided mockBirdeyeToken is fairly complete, so this might not be called. If it is, it needs mocking.
+	// For this test, let's assume it's not called by making mockBirdeyeToken sufficient.
+	// setup.Mocks.BirdeyeClient.On("GetTokenDetailsByMintAddress", ctx, mockBirdeyeToken.Address).Return(&mockBirdeyeToken, nil).Maybe()
+
+
+	// Capture the argument to Create
+	var capturedCoin model.Coin
+	txMockCoinRepo.On("Create", ctx, mock.MatchedBy(func(coin *model.Coin) bool {
+		capturedCoin = *coin // Capture the coin
+		return coin.MintAddress == mockBirdeyeToken.Address
+	})).Return(nil).Once()
+
+	// Call FechAndStoreTrendingTokens
+	err := setup.Service.FechAndStoreTrendingTokens(ctx)
+	require.NoError(t, err)
+
+	// Assertions on the capturedCoin
+	assert.Equal(t, mockBirdeyeToken.Address, capturedCoin.MintAddress)
+	// Name, Symbol, IconURL, Description should be from Offchain/Solana metadata due to enrichment logic
+	assert.Equal(t, "Test Token Offchain", capturedCoin.Name)
+	assert.Equal(t, "TTO", capturedCoin.Symbol)
+	assert.Equal(t, "Desc", capturedCoin.Description)
+	assert.Equal(t, "image.png", capturedCoin.IconUrl)
+	// Fields from Birdeye that should be directly mapped by EnrichCoinData
+	assert.Equal(t, mockBirdeyeToken.Price, capturedCoin.Price)
+	assert.Equal(t, mockBirdeyeToken.Volume24hUSD, capturedCoin.Volume24h) // model.Coin.Volume24h gets Volume24hUSD
+	assert.Equal(t, mockBirdeyeToken.Liquidity, capturedCoin.Liquidity)
+	assert.Equal(t, mockBirdeyeToken.FDV, capturedCoin.FDV)
+	assert.Equal(t, mockBirdeyeToken.MarketCap, capturedCoin.MarketCap)
+	assert.Equal(t, mockBirdeyeToken.Rank, capturedCoin.Rank)
+	assert.Equal(t, mockBirdeyeToken.Price24hChangePercent, capturedCoin.Price24hChangePercent)
+	assert.Equal(t, mockBirdeyeToken.Volume24hChangePercent, capturedCoin.Volume24hChangePercent)
+	assert.Equal(t, mockBirdeyeToken.Volume24hUSD, capturedCoin.Volume24hUSD) // Explicit new field
+	assert.True(t, capturedCoin.IsTrending) // Should be set to true
+
+	expectedLastUpdated := time.Unix(mockBirdeyeToken.LastTradeUnixTime, 0).Format(time.RFC3339)
+	assert.Equal(t, expectedLastUpdated, capturedCoin.LastUpdated)
+
+
+	// Verify mock calls
+	setup.Mocks.BirdeyeClient.AssertExpectations(t)
+	setup.Mocks.Store.AssertExpectations(t)
+	txMockStore.AssertExpectations(t)
+	txMockCoinRepo.AssertExpectations(t)
+	setup.Mocks.SolanaClient.AssertExpectations(t)
+	setup.Mocks.OffchainClient.AssertExpectations(t)
+}

@@ -3,6 +3,7 @@ package coin
 import (
 	"context"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	// pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1" // Removed if not used by other methods
 )
 
 // CoinServiceAPI defines the interface for coin related operations.

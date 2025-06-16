@@ -12,7 +12,66 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/coin.proto.
  */
 export const file_dankfolio_v1_coin: GenFile = /*@__PURE__*/
-  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIs8ECgRDb2luEhQKDG1pbnRfYWRkcmVzcxgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBnN5bWJvbBgDIAEoCRIQCghkZWNpbWFscxgEIAEoBRITCgtkZXNjcmlwdGlvbhgFIAEoCRIQCghpY29uX3VybBgGIAEoCRIeChFyZXNvbHZlZF9pY29uX3VybBgHIAEoCUgAiAEBEgwKBHRhZ3MYCCADKAkSDQoFcHJpY2UYCSABKAESFAoMZGFpbHlfdm9sdW1lGAogASgBEhQKB3dlYnNpdGUYCyABKAlIAYgBARIUCgd0d2l0dGVyGAwgASgJSAKIAQESFQoIdGVsZWdyYW0YDSABKAlIA4gBARIZCgxjb2luZ2Vja29faWQYDiABKAlIBIgBARIuCgpjcmVhdGVkX2F0GA8gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1CgxsYXN0X3VwZGF0ZWQYECABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wSAWIAQESEwoLaXNfdHJlbmRpbmcYESABKAgSOgoRanVwaXRlcl9saXN0ZWRfYXQYEiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wSAaIAQFCFAoSX3Jlc29sdmVkX2ljb25fdXJsQgoKCF93ZWJzaXRlQgoKCF90d2l0dGVyQgsKCV90ZWxlZ3JhbUIPCg1fY29pbmdlY2tvX2lkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IlAKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBIVCg10cmVuZGluZ19vbmx5GAEgASgIEg0KBWxpbWl0GAIgASgFEg4KBm9mZnNldBgDIAEoBSJTChlHZXRBdmFpbGFibGVDb2luc1Jlc3BvbnNlEiEKBWNvaW5zGAEgAygLMhIuZGFua2ZvbGlvLnYxLkNvaW4SEwoLdG90YWxfY291bnQYAiABKAUiKgoSR2V0Q29pbkJ5SURSZXF1ZXN0EhQKDG1pbnRfYWRkcmVzcxgBIAEoCSIvChdTZWFyY2hDb2luQnlNaW50UmVxdWVzdBIUCgxtaW50X2FkZHJlc3MYASABKAkiPAoYU2VhcmNoQ29pbkJ5TWludFJlc3BvbnNlEiAKBGNvaW4YASABKAsyEi5kYW5rZm9saW8udjEuQ29pbiIUChJHZXRBbGxDb2luc1JlcXVlc3QiOAoTR2V0QWxsQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luIocBCg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEgwKBHRhZ3MYAiADKAkSFgoObWluX3ZvbHVtZV8yNGgYAyABKAESDQoFbGltaXQYBCABKAUSDgoGb2Zmc2V0GAUgASgFEg8KB3NvcnRfYnkYBiABKAkSEQoJc29ydF9kZXNjGAcgASgIIkgKDlNlYXJjaFJlc3BvbnNlEiEKBWNvaW5zGAEgAygLMhIuZGFua2ZvbGlvLnYxLkNvaW4SEwoLdG90YWxfY291bnQYAiABKAUytAMKC0NvaW5TZXJ2aWNlEmQKEUdldEF2YWlsYWJsZUNvaW5zEiYuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBonLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1Jlc3BvbnNlEkMKC0dldENvaW5CeUlEEiAuZGFua2ZvbGlvLnYxLkdldENvaW5CeUlEUmVxdWVzdBoSLmRhbmtmb2xpby52MS5Db2luEmEKEFNlYXJjaENvaW5CeU1pbnQSJS5kYW5rZm9saW8udjEuU2VhcmNoQ29pbkJ5TWludFJlcXVlc3QaJi5kYW5rZm9saW8udjEuU2VhcmNoQ29pbkJ5TWludFJlc3BvbnNlElIKC0dldEFsbENvaW5zEiAuZGFua2ZvbGlvLnYxLkdldEFsbENvaW5zUmVxdWVzdBohLmRhbmtmb2xpby52MS5HZXRBbGxDb2luc1Jlc3BvbnNlEkMKBlNlYXJjaBIbLmRhbmtmb2xpby52MS5TZWFyY2hSZXF1ZXN0GhwuZGFua2ZvbGlvLnYxLlNlYXJjaFJlc3BvbnNlQrUBChBjb20uZGFua2ZvbGlvLnYxQglDb2luUHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIhoKGEdldFRyZW5kaW5nVG9rZW5zUmVxdWVzdCKTAQoVVG9rZW5UcmVuZGluZ1Jlc3BvbnNlEhQKDG1pbnRfYWRkcmVzcxgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBnN5bWJvbBgDIAEoCRINCgVwcmljZRgEIAEoARIjChtwcmljZV9jaGFuZ2VfcGVyY2VudGFnZV8yNGgYBSABKAESEgoKdm9sdW1lXzI0aBgGIAEoASLPBAoEQ29pbhIUCgxtaW50X2FkZHJlc3MYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZzeW1ib2wYAyABKAkSEAoIZGVjaW1hbHMYBCABKAUSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIaWNvbl91cmwYBiABKAkSHgoRcmVzb2x2ZWRfaWNvbl91cmwYByABKAlIAIgBARIMCgR0YWdzGAggAygJEg0KBXByaWNlGAkgASgBEhQKDGRhaWx5X3ZvbHVtZRgKIAEoARIUCgd3ZWJzaXRlGAsgASgJSAGIAQESFAoHdHdpdHRlchgMIAEoCUgCiAEBEhUKCHRlbGVncmFtGA0gASgJSAOIAQESGQoMY29pbmdlY2tvX2lkGA4gASgJSASIAQESLgoKY3JlYXRlZF9hdBgPIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMbGFzdF91cGRhdGVkGBAgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgFiAEBEhMKC2lzX3RyZW5kaW5nGBEgASgIEjoKEWp1cGl0ZXJfbGlzdGVkX2F0GBIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgGiAEBQhQKEl9yZXNvbHZlZF9pY29uX3VybEIKCghfd2Vic2l0ZUIKCghfdHdpdHRlckILCglfdGVsZWdyYW1CDwoNX2NvaW5nZWNrb19pZEIPCg1fbGFzdF91cGRhdGVkQhQKEl9qdXBpdGVyX2xpc3RlZF9hdCJQChhHZXRBdmFpbGFibGVDb2luc1JlcXVlc3QSFQoNdHJlbmRpbmdfb25seRgBIAEoCBINCgVsaW1pdBgCIAEoBRIOCgZvZmZzZXQYAyABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIioKEkdldENvaW5CeUlEUmVxdWVzdBIUCgxtaW50X2FkZHJlc3MYASABKAkiLwoXU2VhcmNoQ29pbkJ5TWludFJlcXVlc3QSFAoMbWludF9hZGRyZXNzGAEgASgJIjwKGFNlYXJjaENvaW5CeU1pbnRSZXNwb25zZRIgCgRjb2luGAEgASgLMhIuZGFua2ZvbGlvLnYxLkNvaW4iFAoSR2V0QWxsQ29pbnNSZXF1ZXN0IjgKE0dldEFsbENvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiKHAQoNU2VhcmNoUmVxdWVzdBINCgVxdWVyeRgBIAEoCRIMCgR0YWdzGAIgAygJEhYKDm1pbl92b2x1bWVfMjRoGAMgASgBEg0KBWxpbWl0GAQgASgFEg4KBm9mZnNldBgFIAEoBRIPCgdzb3J0X2J5GAYgASgJEhEKCXNvcnRfZGVzYxgHIAEoCCJICg5TZWFyY2hSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFMpYECgtDb2luU2VydmljZRJkChFHZXRBdmFpbGFibGVDb2lucxImLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRJDCgtHZXRDb2luQnlJRBIgLmRhbmtmb2xpby52MS5HZXRDb2luQnlJRFJlcXVlc3QaEi5kYW5rZm9saW8udjEuQ29pbhJhChBTZWFyY2hDb2luQnlNaW50EiUuZGFua2ZvbGlvLnYxLlNlYXJjaENvaW5CeU1pbnRSZXF1ZXN0GiYuZGFua2ZvbGlvLnYxLlNlYXJjaENvaW5CeU1pbnRSZXNwb25zZRJSCgtHZXRBbGxDb2lucxIgLmRhbmtmb2xpby52MS5HZXRBbGxDb2luc1JlcXVlc3QaIS5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXNwb25zZRJDCgZTZWFyY2gSGy5kYW5rZm9saW8udjEuU2VhcmNoUmVxdWVzdBocLmRhbmtmb2xpby52MS5TZWFyY2hSZXNwb25zZRJgChFHZXRUcmVuZGluZ1Rva2VucxImLmRhbmtmb2xpby52MS5HZXRUcmVuZGluZ1Rva2Vuc1JlcXVlc3QaIy5kYW5rZm9saW8udjEuVG9rZW5UcmVuZGluZ1Jlc3BvbnNlQrUBChBjb20uZGFua2ZvbGlvLnYxQglDb2luUHJvdG9QAVpFZ2l0aHViLmNvbS9uaWNvbGFzLW1hcnRpbi9kYW5rZm9saW8vYmFja2VuZC9nZW4vcHJvdG8vZ28vZGFua2ZvbGlvL3YxogIDRFhYqgIMRGFua2ZvbGlvLlYxygIMRGFua2ZvbGlvXFYx4gIYRGFua2ZvbGlvXFYxXEdQQk1ldGFkYXRh6gINRGFua2ZvbGlvOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+
+/**
+ * GetTrendingTokensRequest is an empty request message for GetTrendingTokens RPC
+ *
+ * @generated from message dankfolio.v1.GetTrendingTokensRequest
+ */
+export type GetTrendingTokensRequest = Message<"dankfolio.v1.GetTrendingTokensRequest"> & {
+};
+
+/**
+ * Describes the message dankfolio.v1.GetTrendingTokensRequest.
+ * Use `create(GetTrendingTokensRequestSchema)` to create a new message.
+ */
+export const GetTrendingTokensRequestSchema: GenMessage<GetTrendingTokensRequest> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_coin, 0);
+
+/**
+ * TokenTrendingResponse represents a single trending token's data
+ *
+ * @generated from message dankfolio.v1.TokenTrendingResponse
+ */
+export type TokenTrendingResponse = Message<"dankfolio.v1.TokenTrendingResponse"> & {
+  /**
+   * @generated from field: string mint_address = 1;
+   */
+  mintAddress: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string symbol = 3;
+   */
+  symbol: string;
+
+  /**
+   * @generated from field: double price = 4;
+   */
+  price: number;
+
+  /**
+   * @generated from field: double price_change_percentage_24h = 5;
+   */
+  priceChangePercentage24h: number;
+
+  /**
+   * @generated from field: double volume_24h = 6;
+   */
+  volume24h: number;
+};
+
+/**
+ * Describes the message dankfolio.v1.TokenTrendingResponse.
+ * Use `create(TokenTrendingResponseSchema)` to create a new message.
+ */
+export const TokenTrendingResponseSchema: GenMessage<TokenTrendingResponse> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_coin, 1);
 
 /**
  * Coin represents a coin or currency (unified definition)
@@ -120,7 +179,7 @@ export type Coin = Message<"dankfolio.v1.Coin"> & {
  * Use `create(CoinSchema)` to create a new message.
  */
 export const CoinSchema: GenMessage<Coin> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 0);
+  messageDesc(file_dankfolio_v1_coin, 2);
 
 /**
  * @generated from message dankfolio.v1.GetAvailableCoinsRequest
@@ -149,7 +208,7 @@ export type GetAvailableCoinsRequest = Message<"dankfolio.v1.GetAvailableCoinsRe
  * Use `create(GetAvailableCoinsRequestSchema)` to create a new message.
  */
 export const GetAvailableCoinsRequestSchema: GenMessage<GetAvailableCoinsRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 1);
+  messageDesc(file_dankfolio_v1_coin, 3);
 
 /**
  * @generated from message dankfolio.v1.GetAvailableCoinsResponse
@@ -171,7 +230,7 @@ export type GetAvailableCoinsResponse = Message<"dankfolio.v1.GetAvailableCoinsR
  * Use `create(GetAvailableCoinsResponseSchema)` to create a new message.
  */
 export const GetAvailableCoinsResponseSchema: GenMessage<GetAvailableCoinsResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 2);
+  messageDesc(file_dankfolio_v1_coin, 4);
 
 /**
  * @generated from message dankfolio.v1.GetCoinByIDRequest
@@ -188,7 +247,7 @@ export type GetCoinByIDRequest = Message<"dankfolio.v1.GetCoinByIDRequest"> & {
  * Use `create(GetCoinByIDRequestSchema)` to create a new message.
  */
 export const GetCoinByIDRequestSchema: GenMessage<GetCoinByIDRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 3);
+  messageDesc(file_dankfolio_v1_coin, 5);
 
 /**
  * @generated from message dankfolio.v1.SearchCoinByMintRequest
@@ -205,7 +264,7 @@ export type SearchCoinByMintRequest = Message<"dankfolio.v1.SearchCoinByMintRequ
  * Use `create(SearchCoinByMintRequestSchema)` to create a new message.
  */
 export const SearchCoinByMintRequestSchema: GenMessage<SearchCoinByMintRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 4);
+  messageDesc(file_dankfolio_v1_coin, 6);
 
 /**
  * @generated from message dankfolio.v1.SearchCoinByMintResponse
@@ -222,7 +281,7 @@ export type SearchCoinByMintResponse = Message<"dankfolio.v1.SearchCoinByMintRes
  * Use `create(SearchCoinByMintResponseSchema)` to create a new message.
  */
 export const SearchCoinByMintResponseSchema: GenMessage<SearchCoinByMintResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 5);
+  messageDesc(file_dankfolio_v1_coin, 7);
 
 /**
  * Empty request
@@ -237,7 +296,7 @@ export type GetAllCoinsRequest = Message<"dankfolio.v1.GetAllCoinsRequest"> & {
  * Use `create(GetAllCoinsRequestSchema)` to create a new message.
  */
 export const GetAllCoinsRequestSchema: GenMessage<GetAllCoinsRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 6);
+  messageDesc(file_dankfolio_v1_coin, 8);
 
 /**
  * @generated from message dankfolio.v1.GetAllCoinsResponse
@@ -254,7 +313,7 @@ export type GetAllCoinsResponse = Message<"dankfolio.v1.GetAllCoinsResponse"> & 
  * Use `create(GetAllCoinsResponseSchema)` to create a new message.
  */
 export const GetAllCoinsResponseSchema: GenMessage<GetAllCoinsResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 7);
+  messageDesc(file_dankfolio_v1_coin, 9);
 
 /**
  * @generated from message dankfolio.v1.SearchRequest
@@ -315,7 +374,7 @@ export type SearchRequest = Message<"dankfolio.v1.SearchRequest"> & {
  * Use `create(SearchRequestSchema)` to create a new message.
  */
 export const SearchRequestSchema: GenMessage<SearchRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 8);
+  messageDesc(file_dankfolio_v1_coin, 10);
 
 /**
  * @generated from message dankfolio.v1.SearchResponse
@@ -341,7 +400,7 @@ export type SearchResponse = Message<"dankfolio.v1.SearchResponse"> & {
  * Use `create(SearchResponseSchema)` to create a new message.
  */
 export const SearchResponseSchema: GenMessage<SearchResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 9);
+  messageDesc(file_dankfolio_v1_coin, 11);
 
 /**
  * CoinService provides methods for interacting with coin data
@@ -398,6 +457,16 @@ export const CoinService: GenService<{
     methodKind: "unary";
     input: typeof SearchRequestSchema;
     output: typeof SearchResponseSchema;
+  },
+  /**
+   * GetTrendingTokens returns a list of trending tokens
+   *
+   * @generated from rpc dankfolio.v1.CoinService.GetTrendingTokens
+   */
+  getTrendingTokens: {
+    methodKind: "unary";
+    input: typeof GetTrendingTokensRequestSchema;
+    output: typeof TokenTrendingResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dankfolio_v1_coin, 0);
