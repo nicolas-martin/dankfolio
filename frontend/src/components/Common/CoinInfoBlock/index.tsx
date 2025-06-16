@@ -57,6 +57,8 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 					numberOfLines={1} 
 					ellipsizeMode="tail"
 					testID={symbolTestID}
+					accessible={true}
+					accessibilityRole="text"
 				>
 					{primaryText}
 				</Text>
@@ -65,6 +67,8 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 						style={styles.createSecondaryTextStyle(secondaryTextStyle)} 
 						numberOfLines={1} 
 						ellipsizeMode="tail"
+						accessible={true}
+						accessibilityRole="text"
 					>
 						{secondaryText}
 					</Text>

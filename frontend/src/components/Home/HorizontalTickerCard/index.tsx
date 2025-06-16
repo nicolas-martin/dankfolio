@@ -25,10 +25,9 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 			style={styles.container}
 			onPress={handlePress}
 			testID={`${testIdPrefix}-card-${coin.symbol.toLowerCase()}`}
-			accessible={true}
+			accessible={false}
+			importantForAccessibility="no-hide-descendants"
 			accessibilityRole="button"
-			accessibilityLabel={`${coin.symbol.toLowerCase()} ticker card`}
-			accessibilityHint="Double tap to view coin details"
 			hitSlop={staticHitSlop} // Use constant object
 		>
 			<CoinInfoBlock
@@ -44,11 +43,23 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 				{coin.symbol}
 			</Text> */}
 			{/* This Text for symbol is now part of CoinInfoBlock */}
-			<Text style={styles.timeAgo} numberOfLines={1} testID={`${testIdPrefix}-time-${coin.symbol.toLowerCase()}`}>
+			<Text 
+				style={styles.timeAgo} 
+				numberOfLines={1} 
+				testID={`${testIdPrefix}-time-${coin.symbol.toLowerCase()}`}
+				accessible={true}
+				accessibilityRole="text"
+			>
 				{timeAgo}
 			</Text>
 			{coin.change24h !== undefined && (
-				<Text style={styles.changeTextStyle(coin.change24h)} numberOfLines={1} testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}>
+				<Text 
+					style={styles.changeTextStyle(coin.change24h)} 
+					numberOfLines={1} 
+					testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}
+					accessible={true}
+					accessibilityRole="text"
+				>
 					{formatPercentage(coin.change24h, 1, true)}
 				</Text>
 			)}
