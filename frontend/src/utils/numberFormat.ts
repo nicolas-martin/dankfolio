@@ -18,6 +18,34 @@ export const toRawAmount = (amount: string, decimals: number): string => {
 };
 
 /**
+ * Determines the appropriate number of decimal places based on value magnitude
+ * @param value - The numeric value to analyze
+ * @param maxDecimals - Maximum number of decimal places (fallback)
+ * @returns Number of decimal places to use
+ */
+const getDynamicDecimals = (value: number, maxDecimals: number = 6): number => {
+	if (value >= 1000) {
+		// Large numbers (1000+): 2 decimals - e.g., "146,231.50"
+		return 2;
+	} else if (value >= 100) {
+		// Medium-large numbers (100-999): 2 decimals - e.g., "123.45"
+		return 2;
+	} else if (value >= 10) {
+		// Medium numbers (10-99): 4 decimals - e.g., "12.3456"
+		return 4;
+	} else if (value >= 1) {
+		// Small numbers (1-9): 6 decimals - e.g., "1.234567"
+		return 6;
+	} else if (value >= 0.01) {
+		// Very small numbers (0.01-0.99): Use maxDecimals - e.g., "0.123456"
+		return maxDecimals;
+	} else {
+		// Tiny numbers (<0.01): Use maxDecimals for precision - e.g., "0.000123"
+		return maxDecimals;
+	}
+};
+
+/**
  * Formats a number with K/M/B suffixes
  * @param value - The number to format
  * @param includeDollarSign - Whether to include $ prefix
@@ -64,13 +92,20 @@ export const formatPrice = (
 
 	if (price === 0) return `${prefix}0.00`;
 
-	// Dynamic decimal places based on price magnitude
-	if (price < 0.01) return `${prefix}${price.toFixed(8)}`;
-	if (price < 1) return `${prefix}${price.toFixed(6)}`;
-	if (price < 10) return `${prefix}${price.toFixed(4)}`;
-	if (price < 1000) return `${prefix}${price.toFixed(2)}`;
-	if (price < 1000000) return `${prefix}${(price / 1000).toFixed(2)}K`;
-	return `${prefix}${(price / 1000000).toFixed(2)}M`;
+	// Use dynamic decimal places based on price magnitude
+	const decimals = getDynamicDecimals(price, 8);
+	
+	// For very large numbers, use K/M notation
+	if (price >= 1000000) return `${prefix}${(price / 1000000).toFixed(2)}M`;
+	if (price >= 1000 && decimals === 2) {
+		// For large numbers, show with commas and appropriate decimals
+		return `${prefix}${price.toLocaleString(undefined, {
+			minimumFractionDigits: 0,
+			maximumFractionDigits: decimals
+		})}`;
+	}
+	
+	return `${prefix}${price.toFixed(decimals)}`;
 };
 
 /**
@@ -111,18 +146,22 @@ export const formatVolume = (
 };
 
 /**
- * Formats a token balance with appropriate decimals
+ * Formats a token balance with appropriate decimals based on magnitude
  * @param balance - The token balance
- * @param decimals - Number of decimal places
+ * @param maxDecimals - Maximum number of decimal places (fallback)
  * @returns Formatted balance string
  */
 export const formatTokenBalance = (
 	balance: number,
-	decimals: number = 6
+	maxDecimals: number = 6
 ): string => {
 	if (!balance) return '0';
+
+	// Use dynamic decimal places based on balance magnitude
+	const decimals = getDynamicDecimals(balance, maxDecimals);
+
 	return balance.toLocaleString(undefined, {
-		minimumFractionDigits: 2,
+		minimumFractionDigits: balance >= 1000 ? 0 : 2, // No minimum decimals for large numbers
 		maximumFractionDigits: decimals
 	});
 };

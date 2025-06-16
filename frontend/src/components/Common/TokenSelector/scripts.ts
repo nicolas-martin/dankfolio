@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Coin } from '@/types';
+import { formatPrice } from '@/utils/numberFormat';
 
 // Define PortfolioToken based on usage elsewhere (e.g., TokenSelector/index.tsx)
 export interface PortfolioToken {
@@ -60,17 +61,17 @@ export const handleAmountInputChange = (text: string, onAmountChange: (value: st
  * Calculates the USD value based on the selected token and amount.
  * @param token The currently selected token.
  * @param amount The input amount string.
- * @returns The calculated USD value as a string, formatted to two decimal places.
+ * @returns The calculated USD value as a string, formatted properly.
  */
 export const calculateUsdValue = (token?: Coin, amount?: string): string => {
 	if (!token?.price || !amount) {
-		return '0.00';
+		return formatPrice(0, false);
 	}
 
 	// The amount is already in human-readable format (i.e., already divided by decimals)
 	// and the price from the backend is normalized per token unit
 	const value = parseFloat(amount) * token.price;
-	return value.toFixed(4);
+	return formatPrice(value, false);
 };
 
 /**
