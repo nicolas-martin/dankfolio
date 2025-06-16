@@ -15,6 +15,8 @@ interface CoinInfoBlockProps {
 	containerStyle?: object;
 	iconStyle?: object;
 	textContainerStyle?: object;
+	// Add testID prefix support for generating testIDs
+	testIdPrefix?: string;
 }
 
 const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
@@ -27,10 +29,14 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 	containerStyle,
 	iconStyle,
 	textContainerStyle,
+	testIdPrefix,
 }) => {
 	const styles = useStyles();
 
-
+	// Generate testIDs automatically using the symbol (primaryText)
+	const symbolLower = primaryText.toLowerCase();
+	const iconTestID = testIdPrefix ? `${testIdPrefix}-icon-${symbolLower}` : undefined;
+	const symbolTestID = testIdPrefix ? `${testIdPrefix}-symbol-${symbolLower}` : undefined;
 
 	return (
 		<View style={styles.createViewStyle(containerStyle)}>
@@ -41,15 +47,25 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 						size={iconSize}
 						showLoadingIndicator={true} // Default, can be made a prop
 						borderRadius={iconSize / 2} // Default to circular
+						testID={iconTestID}
 					/>
 				</View>
 			)}
 			<View style={styles.createTextContainerStyle(textContainerStyle, iconUri)}>
-				<Text style={styles.createPrimaryTextStyle(primaryTextStyle)} numberOfLines={1} ellipsizeMode="tail">
+				<Text 
+					style={styles.createPrimaryTextStyle(primaryTextStyle)} 
+					numberOfLines={1} 
+					ellipsizeMode="tail"
+					testID={symbolTestID}
+				>
 					{primaryText}
 				</Text>
 				{secondaryText && (
-					<Text style={styles.createSecondaryTextStyle(secondaryTextStyle)} numberOfLines={1} ellipsizeMode="tail">
+					<Text 
+						style={styles.createSecondaryTextStyle(secondaryTextStyle)} 
+						numberOfLines={1} 
+						ellipsizeMode="tail"
+					>
 						{secondaryText}
 					</Text>
 				)}
