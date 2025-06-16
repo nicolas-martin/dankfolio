@@ -51,6 +51,11 @@ type Coin struct {
 	JupiterListedAt *time.Time `json:"jupiter_listed_at,omitempty"` // New field: Time listed on Jupiter
 
 	IsTrending bool `json:"is_trending,omitempty"`
+	Liquidity float64 `json:"liquidity,omitempty"`
+	Volume24hChangePercent float64 `json:"volume_24h_change_percent,omitempty"`
+	FDV float64 `json:"fdv,omitempty"`
+	Rank int `json:"rank,omitempty"`
+	Price24hChangePercent float64 `json:"price_24h_change_percent,omitempty"`
 }
 
 // GetID implements the Entity interface
