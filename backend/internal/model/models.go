@@ -5,6 +5,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	pb "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1" // Added pb import
+	"google.golang.org/protobuf/types/known/timestamppb"         // Added timestamppb import
 )
 
 const (
@@ -50,12 +53,12 @@ type Coin struct {
 	LastUpdated     string     `json:"last_updated,omitempty"`      // System's last_updated for enriched record
 	JupiterListedAt *time.Time `json:"jupiter_listed_at,omitempty"` // New field: Time listed on Jupiter
 
-	IsTrending bool `json:"is_trending,omitempty"`
-	Liquidity float64 `json:"liquidity,omitempty"`
+	IsTrending             bool    `json:"is_trending,omitempty"`
+	Liquidity              float64 `json:"liquidity,omitempty"`
 	Volume24hChangePercent float64 `json:"volume_24h_change_percent,omitempty"`
-	FDV float64 `json:"fdv,omitempty"`
-	Rank int `json:"rank,omitempty"`
-	Price24hChangePercent float64 `json:"price_24h_change_percent,omitempty"`
+	FDV                    float64 `json:"fdv,omitempty"`
+	Rank                   int     `json:"rank,omitempty"`
+	Price24hChangePercent  float64 `json:"price_24h_change_percent,omitempty"`
 }
 
 // GetID implements the Entity interface
@@ -241,3 +244,135 @@ type ApiStat struct {
 func (a ApiStat) GetID() string {
 	return fmt.Sprintf("%d", a.ID) // Convert uint ID to string
 }
+
+// ToProto converts a model.Coin to a pb.Coin
+// Note: This requires the generated pb package to be imported,
+// and the pb.Coin field names must match the generated Go struct.
+// Also, time string to timestamppb.Timestamp conversion needs careful handling.
+func (m *Coin) ToProto() (*pb.Coin, error) {
+	if m == nil {
+		return nil, nil
+	}
+
+	pbCoin := &pb.Coin{
+		MintAddress: m.MintAddress,
+		Name:        m.Name,
+		Symbol:      m.Symbol,
+		Decimals:    int32(m.Decimals),
+		Description: m.Description,
+		IconUrl:     m.IconUrl,
+		Tags:        m.Tags,
+		Price:       m.Price,
+		DailyVolume: m.Volume24h, // Mapping model.Volume24h to pb.DailyVolume
+		IsTrending:  m.IsTrending,
+		// Optional pointer fields are set conditionally below
+	}
+
+	// Handle optional float64/int fields by wrapping with pointers if they are set (non-zero for numbers, non-empty for strings)
+	// This depends on how protoc-gen-go generates optional scalar fields.
+	// If pb.Coin fields are like *float64, *int32:
+	if m.ResolvedIconUrl != "" {
+		pbCoin.ResolvedIconUrl = &m.ResolvedIconUrl
+	} else {
+		pbCoin.ResolvedIconUrl = nil // Explicitly set to nil if empty, though a nil *string is default
+	}
+	if m.Website != "" {
+		pbCoin.Website = &m.Website
+	} else {
+		pbCoin.Website = nil
+	}
+	if m.Twitter != "" {
+		pbCoin.Twitter = &m.Twitter
+	} else {
+		pbCoin.Twitter = nil
+	}
+	if m.Telegram != "" {
+		pbCoin.Telegram = &m.Telegram
+	} else {
+		pbCoin.Telegram = nil
+	}
+
+	// Price24hChangePercent from model.Coin maps to PriceChangePercentage_24H in proto
+	// Assuming pb.Coin.PriceChangePercentage_24H is *float64
+	if m.Price24hChangePercent != 0 { // Check if it's meaningfully set
+		val := m.Price24hChangePercent
+		pbCoin.PriceChangePercentage_24H = &val
+	}
+	// Volume24hUsd from proto maps from model.Volume24h as well (or a specific model field if exists)
+	// Assuming pb.Coin.Volume_24HUsd is *float64
+	if m.Volume24h != 0 { // Re-using Volume24h for this example, adjust if model has specific Volume24hUSD
+		val := m.Volume24h
+		pbCoin.Volume_24HUsd = &val
+	}
+	if m.Liquidity != 0 {
+		val := m.Liquidity
+		pbCoin.Liquidity = &val
+	}
+	// Volume24hChangePercent from model.Coin maps to Volume_24HChangePercent in proto
+	if m.Volume24hChangePercent != 0 {
+		val := m.Volume24hChangePercent
+		pbCoin.Volume_24HChangePercent = &val
+	}
+	if m.FDV != 0 {
+		val := m.FDV
+		pbCoin.Fdv = &val
+	}
+	if m.MarketCap != 0 {
+		val := m.MarketCap
+		pbCoin.MarketCap = &val
+	}
+	if m.Rank != 0 {
+		val := int32(m.Rank)
+		pbCoin.Rank = &val
+	}
+
+	// Time string to timestamppb.Timestamp conversion
+	// CreatedAt (assuming m.CreatedAt is a string like time.RFC3339)
+	if m.CreatedAt != "" {
+		t, err := time.Parse(time.RFC3339, m.CreatedAt)
+		if err == nil {
+			pbCoin.CreatedAt = timestamppb.New(t)
+		} else {
+			// Log error or handle: fmt.Errorf("failed to parse CreatedAt: %w", err)
+			// For now, pbCoin.CreatedAt will remain nil if parsing fails
+		}
+	}
+
+	// LastUpdated (assuming m.LastUpdated is a string like time.RFC3339)
+	if m.LastUpdated != "" {
+		t, err := time.Parse(time.RFC3339, m.LastUpdated)
+		if err == nil {
+			pbCoin.LastUpdated = timestamppb.New(t)
+		} else {
+			// Log error or handle
+		}
+	}
+
+	// JupiterListedAt (*time.Time to timestamppb.Timestamp)
+	if m.JupiterListedAt != nil {
+		pbCoin.JupiterListedAt = timestamppb.New(*m.JupiterListedAt)
+	}
+
+	return pbCoin, nil
+}
+
+// CoinsToProto converts a slice of model.Coin to a slice of pb.Coin
+func CoinsToProto(coins []Coin) ([]*pb.Coin, error) {
+	pbCoins := make([]*pb.Coin, 0, len(coins))
+	for i := range coins {
+		pbCoin, err := coins[i].ToProto()
+		if err != nil {
+			// Handle error for individual conversion, e.g., log it and skip, or return error
+			return nil, fmt.Errorf("error converting coin %s to proto: %w", coins[i].Symbol, err)
+		}
+		if pbCoin != nil {
+			pbCoins = append(pbCoins, pbCoin)
+		}
+	}
+	return pbCoins, nil
+}
+
+// Import aliases for generated pb types and timestamppb
+// These would typically be at the top of the file.
+// import pb "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1"
+// import "google.golang.org/protobuf/types/known/timestamppb"
