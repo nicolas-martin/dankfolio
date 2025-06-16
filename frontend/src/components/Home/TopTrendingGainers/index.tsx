@@ -1,14 +1,13 @@
-import React, { useCallback, useEffect } from 'react';
-import { View, Text, Animated, ListRenderItemInfo } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, Animated, ListRenderItemInfo, TouchableOpacity, ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation';
-import { useCoinStore } from '@/store/coins';
-import HorizontalTickerCard from '@/components/Home/HorizontalTickerCard';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
+import CachedImage from '@/components/Common/CachedImage';
+import { formatPercentage } from '@/utils/numberFormat';
 import { useStyles } from './TopTrendingGainers.styles';
 import { Coin } from '@/types';
-import { logger } from '@/utils/logger';
 
 const CARD_WIDTH = 140;
 const CARD_MARGIN_RIGHT = 8;
@@ -18,31 +17,84 @@ const NUM_PLACEHOLDERS = 5;
 
 type TopTrendingGainersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail'>;
 
-const TopTrendingGainers: React.FC = () => {
+// Props interface for the component
+interface TopTrendingGainersProps {
+	topTrendingGainers: Coin[];
+	isLoading: boolean;
+}
+
+// Simple trending card component
+const TrendingCard: React.FC<{
+	coin: Coin;
+	onPress: (coin: Coin) => void;
+	style?: ViewStyle;
+}> = React.memo(({ coin, onPress, style }) => {
+	const styles = useStyles();
+
+	const handlePress = useCallback(() => {
+		onPress(coin);
+	}, [coin, onPress]);
+
+	// Use change24h from the local Coin type
+	const changeValue = coin.change24h;
+
+	// Determine change color
+	const getChangeColor = (value: number | undefined) => {
+		if (value === undefined) return '#666666';
+		if (value > 0) return '#2E7D32';
+		if (value < 0) return '#D32F2F';
+		return '#666666';
+	};
+
+	return (
+		<TouchableOpacity
+			style={[styles.trendingCard, style]}
+			onPress={handlePress}
+			testID={`trending-coin-card-${coin.symbol.toLowerCase()}`}
+		>
+			{/* Icon */}
+			{coin.resolvedIconUrl && (
+				<CachedImage
+					uri={coin.resolvedIconUrl}
+					size={24}
+					testID={`trending-coin-icon-${coin.symbol.toLowerCase()}`}
+				/>
+			)}
+
+			{/* Symbol - flex to take available space */}
+			<Text
+				style={styles.trendingSymbol}
+				numberOfLines={1}
+				testID={`trending-coin-symbol-${coin.symbol.toLowerCase()}`}
+			>
+				{coin.symbol}
+			</Text>
+
+			{/* Change - fixed width to prevent layout shifts */}
+			{changeValue !== undefined && (
+				<Text
+					style={[
+						styles.trendingChange,
+						{ color: getChangeColor(changeValue) }
+					]}
+					numberOfLines={1}
+					testID={`trending-coin-change-${coin.symbol.toLowerCase()}`}
+				>
+					{formatPercentage(changeValue, 1, true)}
+				</Text>
+			)}
+		</TouchableOpacity>
+	);
+});
+
+TrendingCard.displayName = 'TrendingCard';
+
+const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({ 
+	topTrendingGainers, 
+	isLoading 
+}) => {
 	const styles = useStyles();
 	const navigation = useNavigation<TopTrendingGainersNavigationProp>();
-
-	const {
-		topTrendingGainers,
-		isLoadingTopTrendingGainers,
-		fetchTopTrendingGainers,
-	} = useCoinStore(
-		useCallback(
-			(state) => ({
-				topTrendingGainers: state.topTrendingGainers,
-				isLoadingTopTrendingGainers: state.isLoadingTopTrendingGainers,
-				fetchTopTrendingGainers: state.fetchTopTrendingGainers,
-				lastFetchedTopTrendingGainersAt: state.lastFetchedTopTrendingGainersAt,
-			}),
-			[]
-		)
-	);
-
-	useEffect(() => {
-		logger.log('TopTrendingGainers mounted, fetching data...');
-		// Consider adding logic to refresh data based on lastFetchedTopTrendingGainersAt
-		fetchTopTrendingGainers(10, false); // Fetch 10 items, don't force refresh initially
-	}, [fetchTopTrendingGainers]);
 
 	const handleCoinPress = useCallback(
 		(coin: Coin) => {
@@ -64,22 +116,20 @@ const TopTrendingGainers: React.FC = () => {
 	const renderItem = useCallback(
 		({ item }: ListRenderItemInfo<Coin>) => (
 			<View style={styles.cardWrapper}>
-				<HorizontalTickerCard
+				<TrendingCard
 					coin={item}
-					onPress={() => handleCoinPress(item)}
-					containerStyle={styles.trendingCardStyle} // Apply the new style
-					testIdPrefix="trending-coin" // Explicitly set testIdPrefix
+					onPress={handleCoinPress}
 				/>
 			</View>
 		),
-		[handleCoinPress, styles.cardWrapper, styles.trendingCardStyle]
+		[handleCoinPress, styles.cardWrapper]
 	);
 
 	const renderEmptyComponent = () => (
 		<Text style={styles.emptyText}>No trending gainers in the past 24h.</Text>
 	);
 
-	if (isLoadingTopTrendingGainers && topTrendingGainers.length === 0) {
+	if (isLoading && topTrendingGainers.length === 0) {
 		return (
 			<View style={styles.container}>
 				<ShimmerPlaceholder style={styles.titleShimmer} />
@@ -96,7 +146,7 @@ const TopTrendingGainers: React.FC = () => {
 		);
 	}
 
-	if (!isLoadingTopTrendingGainers && topTrendingGainers.length === 0) {
+	if (!isLoading && topTrendingGainers.length === 0) {
 		return (
 			<View style={styles.container}>
 				<View style={styles.titleContainer}>
@@ -111,7 +161,6 @@ const TopTrendingGainers: React.FC = () => {
 		<View style={styles.container}>
 			<View style={styles.titleContainer}>
 				<Text style={styles.title}>🚀 Top Trending Gainers</Text>
-				{/* Potentially add a "View All" button here if needed */}
 			</View>
 			<Animated.FlatList
 				data={topTrendingGainers}
@@ -122,12 +171,12 @@ const TopTrendingGainers: React.FC = () => {
 				contentContainerStyle={styles.listContentContainer}
 				snapToInterval={SNAP_INTERVAL}
 				snapToAlignment="start"
-				decelerationRate="fast" // Recommended for snapToInterval
-				initialNumToRender={5} // Adjust based on typical screen size
-				maxToRenderPerBatch={5} // Adjust based on typical screen size
-				windowSize={10} // Adjust based on performance
-				ListEmptyComponent={renderEmptyComponent} // Fallback, though outer conditions should handle it
-				scrollEventThrottle={16} // For potential future scroll animations
+				decelerationRate="fast"
+				initialNumToRender={5}
+				maxToRenderPerBatch={5}
+				windowSize={10}
+				ListEmptyComponent={renderEmptyComponent}
+				scrollEventThrottle={16}
 			/>
 		</View>
 	);

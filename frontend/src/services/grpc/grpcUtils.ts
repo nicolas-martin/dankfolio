@@ -16,6 +16,7 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 		tags: grpcCoin.tags, // Assuming tags is string[] in both
 		price: grpcCoin.price,
 		dailyVolume: grpcCoin.dailyVolume,
+		change24h: grpcCoin.priceChangePercentage24h, // Map GRPC priceChangePercentage24h to frontend change24h
 		website: grpcCoin.website,
 		twitter: grpcCoin.twitter,
 		telegram: grpcCoin.telegram,
@@ -23,6 +24,13 @@ export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 		createdAt: timestampToDate(grpcCoin.createdAt),
 		lastUpdated: timestampToDate(grpcCoin.lastUpdated),
 		jupiterListedAt: timestampToDate(grpcCoin.jupiterListedAt),
+		// New fields from proto
+		volume24hUsd: grpcCoin.volume24hUsd,
+		liquidity: grpcCoin.liquidity,
+		volume24hChangePercent: grpcCoin.volume24hChangePercent,
+		fdv: grpcCoin.fdv,
+		marketCap: grpcCoin.marketCap,
+		rank: grpcCoin.rank,
 	};
 }
 
