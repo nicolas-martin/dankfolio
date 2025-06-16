@@ -243,17 +243,16 @@ func (s *Service) GetCoinByMintAddress(ctx context.Context, mintAddress string) 
 func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCoin) (*model.Coin, error) {
 	slog.Info("Starting enrichment from raw_coin data", slog.String("mintAddress", rawCoin.MintAddress), slog.String("rawCoinSymbol", rawCoin.Symbol))
 
-	enrichedCoin, err := s.EnrichCoinData(
-		ctx,
-		rawCoin.MintAddress,
-		rawCoin.Name,
-		rawCoin.Symbol,
-		rawCoin.LogoUrl, // Pass rawCoin.LogoUrl as the initialIconURL
-		0.0,             // Pass 0.0 for initialPrice, EnrichCoinData will fetch it
-		0.0,             // Pass 0.0 for initialVolume, EnrichCoinData will fetch it
-		0.0,             // Pass 0.0 for initialMarketCap, EnrichCoinData will fetch it
-		[]string{},      // Pass empty tags, EnrichCoinData will fetch them
-	)
+	initialData := &birdeye.TokenDetails{
+		Address:  rawCoin.MintAddress,
+		Name:     rawCoin.Name,
+		Symbol:   rawCoin.Symbol,
+		LogoURI:  rawCoin.LogoUrl,
+		Decimals: rawCoin.Decimals,
+		// Other fields like Price, Volume24hUSD, MarketCap, Tags, Liquidity, FDV, Rank, Price24hChangePercent
+		// will be zero-valued by default, and EnrichCoinData should handle fetching them if necessary.
+	}
+	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
 	if err != nil {
 		slog.Error("Enrichment from raw_coin failed", slog.String("mintAddress", rawCoin.MintAddress), slog.Any("error", err))
 		return nil, fmt.Errorf("failed to enrich raw_coin %s: %w", rawCoin.MintAddress, err)
@@ -308,17 +307,11 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 // It now also handles storing the coin (Create or Update).
 func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*model.Coin, error) {
 	slog.Debug("Starting dynamic coin enrichment", slog.String("mintAddress", mintAddress))
-	enrichedCoin, err := s.EnrichCoinData( // This is model.Coin
-		ctx,
-		mintAddress,
-		"",         // No initial name
-		"",         // No initial symbol
-		"",         // No initial icon
-		0.0,        // No initial price
-		0.0,        // No initial volume
-		0.0,        // No initial market cap
-		[]string{}, // No initial tags
-	)
+	initialData := &birdeye.TokenDetails{
+		Address: mintAddress,
+		// All other fields will be zero-valued. EnrichCoinData will handle fetching.
+	}
+	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
 	if err != nil {
 		slog.Error("Dynamic coin enrichment failed", slog.String("mintAddress", mintAddress), slog.Any("error", err))
 		return nil, fmt.Errorf("failed to enrich coin %s: %w", mintAddress, err)

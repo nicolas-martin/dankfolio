@@ -314,6 +314,11 @@ func (r *Repository[S, M]) toModel(s S) any {
 			Change24h:       v.Change24h,
 			MarketCap:       v.MarketCap,
 			Volume24h:       v.Volume24h,
+			Liquidity: v.Liquidity,
+			Volume24hChangePercent: v.Volume24hChangePercent,
+			FDV: v.FDV,
+			Rank: v.Rank,
+			Price24hChangePercent: v.Price24hChangePercent,
 			Website:         v.Website,
 			Twitter:         v.Twitter,
 			Telegram:        v.Telegram,
@@ -403,6 +408,11 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			Change24h:        v.Change24h,
 			MarketCap:        v.MarketCap,
 			Volume24h:        v.Volume24h,
+			Liquidity: v.Liquidity,
+			Volume24hChangePercent: v.Volume24hChangePercent,
+			FDV: v.FDV,
+			Rank: v.Rank,
+			Price24hChangePercent: v.Price24hChangePercent,
 			Website:          v.Website,
 			Twitter:          v.Twitter,
 			Telegram:         v.Telegram,
@@ -495,7 +505,7 @@ func getColumnNames(data any) []string {
 		return []string{
 			"mint_address", "name", "symbol", "decimals", "description", "icon_url", "resolved_icon_url", "tags",
 			"price", "change_24h", "market_cap", "volume_24h", "website",
-			"twitter", "telegram", "discord", "is_trending", "last_updated", "jupiter_created_at",
+			"twitter", "telegram", "discord", "is_trending", "last_updated", "jupiter_created_at", "liquidity", "volume_24h_change_percent", "fdv", "rank", "price_24h_change_percent",
 		}
 	case *schema.Trade:
 		// Explicitly list columns to update, excluding PK 'id'

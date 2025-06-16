@@ -36,6 +36,11 @@ type Coin struct {
 	Telegram         string         `gorm:"column:telegram"`
 	Discord          string         `gorm:"column:discord"`
 	IsTrending       bool           `gorm:"column:is_trending;default:false"`
+	Liquidity float64 `gorm:"column:liquidity;default:0.0"`
+	Volume24hChangePercent float64 `gorm:"column:volume_24h_change_percent;default:0.0"`
+	FDV float64 `gorm:"column:fdv;default:0.0"`
+	Rank int `gorm:"column:rank;default:0"`
+	Price24hChangePercent float64 `gorm:"column:price_24h_change_percent;default:0.0"`
 	CreatedAt        time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
 	LastUpdated      time.Time      `gorm:"column:last_updated;default:CURRENT_TIMESTAMP"`
 	JupiterCreatedAt *time.Time     `gorm:"column:jupiter_created_at;index"`

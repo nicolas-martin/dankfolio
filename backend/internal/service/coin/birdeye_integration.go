@@ -4,26 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
-
-type scrapedTokenInfo struct {
-	MintAddress string   `json:"mint_address"`
-	Name        string   `json:"name"`
-	Symbol      string   `json:"symbol"`
-	Price       string   `json:"price"`
-	Change24h   string   `json:"change_24h"`
-	Volume24h   string   `json:"volume_24h"`
-	MarketCap   string   `json:"market_cap"`
-	IconURL     string   `json:"icon_url"`
-	Tags        []string `json:"tags"`
-}
 
 // UpdateTrendingTokensFromBirdeye orchestrates fetching and enrichment of trending tokens.
 func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*TrendingTokensOutput, error) {
@@ -46,26 +32,10 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 	}
 	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens.Data.Tokens))
 
-	// Adapt birdeye.TokenDetails to []scrapedTokenInfo for now
-	scrapedTokens := make([]scrapedTokenInfo, 0, len(birdeyeTokens.Data.Tokens))
-	for _, t := range birdeyeTokens.Data.Tokens {
-		scrapedTokens = append(scrapedTokens, scrapedTokenInfo{
-			MintAddress: t.Address,
-			Name:        t.Name,
-			Symbol:      t.Symbol,
-			Price:       fmt.Sprintf("%f", t.Price),
-			Change24h:   fmt.Sprintf("%f", t.Price24hChangePercent),
-			Volume24h:   fmt.Sprintf("%f", t.Volume24hUSD),
-			MarketCap:   fmt.Sprintf("%f", t.MarketCap),
-			IconURL:     t.LogoURI,
-			Tags:        t.Tags,
-		})
-	}
-
-	// Step 2: Enrich the scraped tokens concurrently
-	enrichedCoins, err := s.processBirdeyeTokens(ctx, scrapedTokens) // scrapedTokens will be empty if birdeyeTokens.Data was empty
+	// Step 2: Enrich the Birdeye tokens concurrently
+	enrichedCoins, err := s.processBirdeyeTokens(ctx, birdeyeTokens.Data.Tokens) // Pass birdeye.TokenDetails directly
 	if err != nil {
-		// This path should ideally not be hit if scrapedTokens is empty,
+		// This path should ideally not be hit if birdeyeTokens.Data.Tokens is empty,
 		// as processBirdeyeTokens should handle empty input gracefully.
 		// If it is hit, it implies an issue in processBirdeyeTokens with empty input
 		// or a genuine error during an attempted enrichment (if scrapedTokens wasn't empty).
@@ -112,10 +82,10 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 	return finalOutput, nil
 }
 
-// processBirdeyeTokens takes basic scraped info and enriches it using external APIs concurrently.
-func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []scrapedTokenInfo) ([]model.Coin, error) {
+// processBirdeyeTokens takes Birdeye token details and enriches them using external APIs concurrently.
+func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []birdeye.TokenDetails) ([]model.Coin, error) {
 	scrapeMaxConcurrentEnrich := 3
-	slog.Info("Executing token enrichment",
+	slog.Info("Executing token enrichment with Birdeye data",
 		"token_count", len(tokensToEnrich),
 		"concurrency", scrapeMaxConcurrentEnrich)
 
@@ -132,11 +102,11 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []scr
 	enrichCtx, cancelEnrich := context.WithTimeout(ctx, enrichPhaseTimeout)
 	defer cancelEnrich()
 
-	for _, scrapedToken := range tokensToEnrich {
+	for _, birdeyeToken := range tokensToEnrich { // Renamed loop variable for clarity
 		wg.Add(1)
 		sem <- struct{}{} // Acquire semaphore slot
 
-		go func(token scrapedTokenInfo) {
+		go func(token birdeye.TokenDetails) { // Type updated here
 			defer wg.Done()
 			defer func() { <-sem }() // Release semaphore slot
 
@@ -144,43 +114,19 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []scr
 			enrichTaskCtx, enrichTaskCancel := context.WithTimeout(enrichCtx, 45*time.Second) // Timeout for one token
 			defer enrichTaskCancel()
 
-			slog.Debug("Enriching token", "name", token.Name, "mint_address", token.MintAddress)
+			slog.Debug("Enriching token from Birdeye data", "name", token.Name, "mint_address", token.Address) // Use token.Address
 
-			// Parse Price, Volume, MarketCap from strings to float64
-			initialPrice, err := strconv.ParseFloat(strings.ReplaceAll(token.Price, ",", ""), 64)
-			if err != nil {
-				slog.Warn("Failed to parse price string, defaulting to 0", "priceStr", token.Price, "name", token.Name, "mint", token.MintAddress, "error", err)
-				initialPrice = 0
-			}
-
-			initialVolume, err := strconv.ParseFloat(strings.ReplaceAll(token.Volume24h, ",", ""), 64)
-			if err != nil {
-				slog.Warn("Failed to parse volume string, defaulting to 0", "volumeStr", token.Volume24h, "name", token.Name, "mint", token.MintAddress, "error", err)
-				initialVolume = 0
-			}
-
-			initialMarketCap, err := strconv.ParseFloat(strings.ReplaceAll(token.MarketCap, ",", ""), 64)
-			if err != nil {
-				slog.Warn("Failed to parse market cap string, defaulting to 0", "marketCapStr", token.MarketCap, "name", token.Name, "mint", token.MintAddress, "error", err)
-				initialMarketCap = 0
-			}
-
+			// Direct field access for Price, Volume, MarketCap, etc. No parsing needed.
+			// Ensure EnrichCoinData is updated to accept these types and new fields.
 			enriched, err := s.EnrichCoinData(
 				enrichTaskCtx, // Use the task-specific context
-				token.MintAddress,
-				token.Name,
-				token.Symbol,
-				token.IconURL,
-				initialPrice,
-				initialVolume,
-				initialMarketCap, // Pass parsed market cap
-				token.Tags,       // Pass tags
+				&token,        // Pass a pointer to the birdeye.TokenDetails object
 			)
 			if err != nil {
-				errMessage := fmt.Sprintf("Failed EnrichCoinData for %s (%s): %v", token.Name, token.MintAddress, err)
+				errMessage := fmt.Sprintf("Failed EnrichCoinData for %s (%s): %v", token.Name, token.Address, err) // Use token.Address
 				slog.Error("Enrichment failed",
 					"name", token.Name,
-					"mint_address", token.MintAddress,
+					"mint_address", token.Address, // Use token.Address
 					"error", err)
 				// Record the error
 				errMu.Lock()
@@ -190,13 +136,13 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []scr
 				if enriched == nil {
 					return // Skip if enrichment critically failed
 				}
-				slog.Warn("Adding partially enriched data despite error", "name", token.Name)
+				slog.Warn("Adding partially enriched data despite error", "name", token.Name, "mint_address", token.Address) // Use token.Address
 			}
 
 			if enriched == nil {
 				slog.Error("EnrichCoinData returned nil without explicit error",
 					"name", token.Name,
-					"mint_address", token.MintAddress)
+					"mint_address", token.Address) // Use token.Address
 				return
 			}
 
@@ -205,8 +151,8 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []scr
 			enriched.IsTrending = true
 			enrichedCoins = append(enrichedCoins, *enriched)
 			mu.Unlock()
-			slog.Info("Successfully processed enrichment", "name", enriched.Name, "mint_address", enriched.MintAddress)
-		}(scrapedToken)
+			slog.Info("Successfully processed enrichment", "name", enriched.Name, "mint_address", enriched.MintAddress) // This uses enriched.MintAddress, which is correct
+		}(birdeyeToken) // Pass birdeyeToken to the goroutine
 	}
 
 	wg.Wait()
