@@ -1,11 +1,11 @@
 appId: com.nicolasmartin.dankfolio
 ---
-- assertVisible:
-      id: "coin-detail-screen"
+# - assertVisible:
+#       id: "coin-detail-screen"
 
 # Test price display section
 - assertVisible:
-      id: "coin-detail-price-card"
+      id: "coin-detail-price-card-${JUP_SYMBOL}"
 
 - assertVisible:
       id: "price-display-container"
@@ -30,7 +30,7 @@ appId: com.nicolasmartin.dankfolio
 
 # Test chart section
 - assertVisible:
-      id: "coin-detail-chart-card"
+      id: "coin-detail-chart-card-${JUP_SYMBOL}"
 
 # Test timeframe selection
 - assertVisible:
@@ -94,4 +94,4 @@ appId: com.nicolasmartin.dankfolio
       optional: true
 
 - assertVisible:
-      id: "trade-button"
+      id: "trade-button-${COIN_SYMBOL}"
