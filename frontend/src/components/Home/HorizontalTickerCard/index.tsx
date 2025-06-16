@@ -11,7 +11,7 @@ import { useStyles } from './styles';
 // Defined outside the component for static objects
 const staticHitSlop = { top: 10, bottom: 10, left: 10, right: 10 };
 
-const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress, containerStyle, testIdPrefix = 'new-coin' }) => {
+const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPress, testIdPrefix = 'new-coin' }) => {
 	const styles = useStyles();
 	const timeAgo = formatTimeAgo(coin.jupiterListedAt);
 
@@ -22,7 +22,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 
 	return (
 		<TouchableOpacity
-			style={[styles.container, containerStyle]}
+			style={styles.container}
 			onPress={handlePress}
 			testID={`${testIdPrefix}-card-${coin.symbol.toLowerCase()}`}
 			accessible={true}
@@ -63,7 +63,6 @@ export default React.memo(HorizontalTickerCard, (prevProps, nextProps) => {
 		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
 		prevProps.coin.change24h === nextProps.coin.change24h &&
 		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt &&
-		prevProps.testIdPrefix === nextProps.testIdPrefix &&
-		prevProps.containerStyle === nextProps.containerStyle // Add containerStyle to comparison
+		prevProps.testIdPrefix === nextProps.testIdPrefix
 	);
 });

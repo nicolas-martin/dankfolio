@@ -18,7 +18,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import the new util package
-	pb "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1" // Uncommented and aliased
+	// pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1" // Removed if not used elsewhere
 	// "google.golang.org/grpc/codes" // Removed if not used elsewhere
 	// "google.golang.org/grpc/status" // Removed if not used elsewhere
 	// "google.golang.org/protobuf/types/known/timestamppb" // Removed if not used elsewhere
@@ -607,92 +607,4 @@ func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, 
 	// A more accurate temporary count might be len(coins) if offset is 0 and len(coins) < limit, otherwise it's unknown.
 	// For simplicity now, just using len(coins). This will be inaccurate for actual pagination.
 	return coins, int32(len(coins)), nil
-}
-
-// Search implements the gRPC Search RPC method.
-// It maps the protobuf enum CoinSortField to database string values for sorting.
-func (s *Service) Search(ctx context.Context, req *pb.SearchRequest) (*pb.SearchResponse, error) {
-	var dbSortBy string
-	switch req.GetSortBy() {
-	case pb.CoinSortField_COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H:
-		dbSortBy = "price_24h_change_percent"
-	case pb.CoinSortField_COIN_SORT_FIELD_JUPITER_LISTED_AT:
-		dbSortBy = "jupiter_listed_at"
-	case pb.CoinSortField_COIN_SORT_FIELD_VOLUME_24H:
-		dbSortBy = "volume_24h"
-	case pb.CoinSortField_COIN_SORT_FIELD_NAME:
-		dbSortBy = "name"
-	case pb.CoinSortField_COIN_SORT_FIELD_SYMBOL:
-		dbSortBy = "symbol"
-	case pb.CoinSortField_COIN_SORT_FIELD_MARKET_CAP:
-		dbSortBy = "market_cap" // Assumes model.Coin.MarketCap maps to 'market_cap' DB field
-	case pb.CoinSortField_COIN_SORT_FIELD_UNSPECIFIED:
-		dbSortBy = "volume_24h" // Default sort
-	default:
-		slog.Warn("Unknown sort_by field in Search request", "field", req.GetSortBy())
-		dbSortBy = "volume_24h" // Default to a sensible field
-	}
-
-	limit := int(req.GetLimit())
-	offset := int(req.GetOffset())
-	sortDesc := req.GetSortDesc()
-
-	opts := db.ListOptions{
-		Filters:  make(map[string]interface{}), // Initialize filters map
-		Limit:    &limit,
-		Offset:   &offset,
-		SortBy:   &dbSortBy,
-		SortDesc: &sortDesc,
-	}
-
-	// Apply query, tags, and minVolume24h filters from the request to opts.Filters
-	if req.GetQuery() != "" {
-		opts.Filters["query"] = req.GetQuery()
-	}
-	if len(req.GetTags()) > 0 {
-		opts.Filters["tags"] = req.GetTags()
-	}
-	// Note the getter name from protobuf: GetMinVolume_24H()
-	if req.GetMinVolume_24H() > 0 {
-		opts.Filters["min_volume_24h"] = req.GetMinVolume_24H()
-	}
-
-	// Call the internal SearchCoins method
-	// SearchCoins expects []string for tags, but ListOptions uses interface{}
-	// The store.SearchCoins method, called by service.SearchCoins, takes []string for tags.
-	// This means service.SearchCoins needs to correctly pass these filters.
-	// The current service.SearchCoins signature is:
-	// SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, opts db.ListOptions)
-	// So we need to extract query, tags, minVolume24h from req *before* creating opts for SortBy, Limit, Offset.
-
-	query := req.GetQuery()
-	tags := req.GetTags()
-	minVolume24h := req.GetMinVolume_24H()
-
-	// Re-create opts with only pagination/sorting, filters are passed directly to SearchCoins
-	dbOpts := db.ListOptions{
-		Limit:    &limit,
-		Offset:   &offset,
-		SortBy:   &dbSortBy,
-		SortDesc: &sortDesc,
-	}
-
-	modelCoins, totalCount, err := s.SearchCoins(ctx, query, tags, minVolume24h, dbOpts)
-	if err != nil {
-		slog.Error("SearchCoins internal call failed", "error", err)
-		return nil, fmt.Errorf("failed to search coins: %w", err)
-	}
-
-	// Convert model.Coin to pb.Coin using the helper function
-	pbCoins, convErr := model.CoinsToProto(modelCoins) // Use model.CoinsToProto
-	if convErr != nil {
-		slog.Error("Failed to convert modelCoins to pbCoins", "error", convErr)
-		// Depending on policy, you might return an error or an empty/partial list
-		return nil, fmt.Errorf("failed to convert coins for response: %w", convErr)
-	}
-
-	return &pb.SearchResponse{
-		Coins:      pbCoins,
-		TotalCount: totalCount,
-	}, nil
 }

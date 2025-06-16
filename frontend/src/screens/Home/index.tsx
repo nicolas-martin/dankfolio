@@ -8,7 +8,6 @@ import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
 import CoinCard from '@components/Home/CoinCard';
 import InfoState from '@/components/Common/InfoState'; // Import InfoState
 import NewCoins from '@components/Home/NewCoins/NewCoins';
-import TopTrendingGainers from '@/components/Home/TopTrendingGainers'; // Import TopTrendingGainers
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
@@ -452,10 +451,6 @@ const HomeScreen = () => {
 
 				{/* Show placeholder for NewCoins section when initially loading */}
 				{isFirstTimeLoading ? renderPlaceholderNewCoinsSection() : <NewCoins />}
-
-				{/* Add TopTrendingGainers after NewCoins */}
-				{/* Consider adding a placeholder for TopTrendingGainers if isFirstTimeLoading is true */}
-				{!isFirstTimeLoading && <TopTrendingGainers />}
 
 				{/* Show placeholder for trending section when initially loading */}
 				{isFirstTimeLoading ? (

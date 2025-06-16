@@ -4,7 +4,6 @@ import { grpcApi } from '@/services/grpcApi';
 import { logger as log } from '@/utils/logger';
 import { SOLANA_ADDRESS, REFRESH_INTERVALS } from '@/utils/constants';
 import useNewCoinsCacheStore from './newCoinsCache';
-import { useTopTrendingGainersCacheStore } from "./topTrendingGainersCache"; // Import the top trending gainers cache store
 
 interface CoinState {
 	availableCoins: Coin[];
@@ -22,11 +21,6 @@ interface CoinState {
 	clearNewCoinsCache: () => void;
 	lastFetchedNewCoinsAt: number;
 	setLastFetchedNewCoinsAt: (timestamp: number) => void;
-	topTrendingGainers: Coin[];
-	isLoadingTopTrendingGainers: boolean;
-	fetchTopTrendingGainers: (limit?: number, forceRefresh?: boolean) => Promise<void>;
-	lastFetchedTopTrendingGainersAt: number;
-	clearTopTrendingGainersCache: () => void;
 }
 
 export const useCoinStore = create<CoinState>((set, get) => ({
@@ -37,9 +31,6 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	newlyListedCoins: [],
 	isLoadingNewlyListed: false,
 	lastFetchedNewCoinsAt: 0,
-	topTrendingGainers: [],
-	isLoadingTopTrendingGainers: false,
-	lastFetchedTopTrendingGainersAt: 0,
 
 	setLastFetchedNewCoinsAt: (timestamp: number) => set({ lastFetchedNewCoinsAt: timestamp }),
 
@@ -300,68 +291,5 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		});
 		set({ lastFetchedNewCoinsAt: 0 });
 		log.log('🆕 [CoinStore] New coins cache cleared');
-	},
-	fetchTopTrendingGainers: async (limit = 10, forceRefresh = false) => {
-		log.log("Attempting to fetch top trending gainers...");
-		const { lastFetchedTopTrendingGainersAt, topTrendingGainers } = get();
-		const cacheStore = useTopTrendingGainersCacheStore.getState();
-		const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-		if (
-			!forceRefresh &&
-			topTrendingGainers.length > 0 &&
-			Date.now() - lastFetchedTopTrendingGainersAt < CACHE_DURATION
-		) {
-			log.log("Using cached top trending gainers data.");
-			return;
-		}
-
-		if (
-			!forceRefresh &&
-			cacheStore.cachedData.length > 0 &&
-			cacheStore.lastFetched &&
-			Date.now() - cacheStore.lastFetched < CACHE_DURATION
-		) {
-			log.log("Using data from TopTrendingGainersCacheStore.");
-			set({
-				topTrendingGainers: cacheStore.cachedData,
-				lastFetchedTopTrendingGainersAt: cacheStore.lastFetched,
-				isLoadingTopTrendingGainers: false,
-			});
-			return;
-		}
-
-		set({ isLoadingTopTrendingGainers: true });
-		log.log("Fetching top trending gainers from API...");
-
-		try {
-			// @ts-ignore
-			const response = await grpcApi.searchCoins({
-				query: "",
-				tags: [],
-				limit,
-				offset: 0,
-				sortBy: "price_change_percentage_24h",
-				sortDesc: true,
-			});
-			const fetchedCoins = response.coins;
-			log.log("Successfully fetched top trending gainers:", fetchedCoins);
-			set({
-				topTrendingGainers: fetchedCoins,
-				isLoadingTopTrendingGainers: false,
-				lastFetchedTopTrendingGainersAt: Date.now(),
-			});
-			cacheStore.setCache(fetchedCoins); // Update the cache
-		} catch (error) {
-			log.error("Error fetching top trending gainers:", error);
-			// @ts-ignore
-			toastError("Error fetching top trending gainers.");
-			set({ isLoadingTopTrendingGainers: false });
-		}
-	},
-	clearTopTrendingGainersCache: () => {
-		useTopTrendingGainersCacheStore.getState().clearCache();
-		set({ topTrendingGainers: [], lastFetchedTopTrendingGainersAt: 0 });
-		log.log("Top trending gainers cache cleared");
 	},
 }));
