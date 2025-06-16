@@ -208,40 +208,27 @@ func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 		jupiterListedAtPb = timestamppb.New(*coin.JupiterListedAt) // Dereference before passing to New
 	}
 
-	// Prepare Rank as *int32
-	var rankPb *int32
-	if coin.Rank != 0 { // Or just convert directly if 0 is a valid rank to send
-		r := int32(coin.Rank)
-		rankPb = &r
-	} else {
-		// If Rank is 0, and you want to explicitly send it as 0 (because proto `optional int32` field will be a pointer)
-		// r := int32(0)
-		// rankPb = &r
-		// If Rank is 0 and means "not set", rankPb remains nil, which is fine for optional proto field.
-		// Current subtask implies simpler: convert and take address, so 0 will be sent.
-		// Let's stick to the simpler "convert and take address" for all numerics for now as per latest instruction.
-	}
 	r := int32(coin.Rank) // Simplified as per instruction for numeric optionals
 
 	return &pb.Coin{
-		MintAddress:               coin.MintAddress,
-		Symbol:                    coin.Symbol,
-		Name:                      coin.Name,
-		Decimals:                  int32(coin.Decimals),
-		Description:               coin.Description,
-		IconUrl:                   coin.IconUrl,
-		ResolvedIconUrl:           &coin.ResolvedIconUrl,
-		Tags:                      coin.Tags,
-		Price:                     coin.Price,
-		DailyVolume:               coin.Volume24h, // Retained as per instruction
-		Website:                   &coin.Website,
-		Twitter:                   &coin.Twitter,
-		Telegram:                  &coin.Telegram,
+		MintAddress:     coin.MintAddress,
+		Symbol:          coin.Symbol,
+		Name:            coin.Name,
+		Decimals:        int32(coin.Decimals),
+		Description:     coin.Description,
+		IconUrl:         coin.IconUrl,
+		ResolvedIconUrl: &coin.ResolvedIconUrl,
+		Tags:            coin.Tags,
+		Price:           coin.Price,
+		DailyVolume:     coin.Volume24h, // Retained as per instruction
+		Website:         &coin.Website,
+		Twitter:         &coin.Twitter,
+		Telegram:        &coin.Telegram,
 		// CoingeckoId is not in model.Coin
-		CreatedAt:                 createdAtPb,
-		LastUpdated:               lastUpdatedPb,
-		IsTrending:                coin.IsTrending,
-		JupiterListedAt:           jupiterListedAtPb,
+		CreatedAt:       createdAtPb,
+		LastUpdated:     lastUpdatedPb,
+		IsTrending:      coin.IsTrending,
+		JupiterListedAt: jupiterListedAtPb,
 		// New Birdeye fields
 		PriceChangePercentage_24H: &coin.Price24hChangePercent,
 		Volume_24HUsd:             &coin.Volume24h, // model.Coin.Volume24h maps to this new field

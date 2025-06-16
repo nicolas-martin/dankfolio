@@ -7,6 +7,16 @@ import { useMemo } from 'react';
 export const useStyle = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
+		// Memoized style functions
+		const getSendButtonStyle = (isLoading: boolean) => {
+			return isLoading ? [styles.sendButton, styles.sendButtonDisabled].flat() : styles.sendButton;
+		};
+		const getVerificationCancelButtonStyle = () => {
+			return [styles.verificationButton, styles.verificationButtonCancel].flat()
+		};
+		const getVerificationContinueButtonStyle = () => {
+			return [styles.verificationButton, styles.verificationButtonContinue].flat()
+		};
 		const colors = theme.colors; // Ensure colors is defined inside useMemo
 		const styles = StyleSheet.create({
 			amountCard: {
@@ -453,10 +463,14 @@ export const useStyle = () => {
 				fontWeight: '600',
 			},
 		});
+
 		return {
 			...styles,
 			colors: theme.colors, // Return original theme.colors for consistency
 			theme,
+			getSendButtonStyle,
+			getVerificationCancelButtonStyle,
+			getVerificationContinueButtonStyle,
 		};
 	}, [theme]);
 };

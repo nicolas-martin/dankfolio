@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { usePortfolioStore } from '@store/portfolio';
@@ -13,7 +13,6 @@ import {
 	handleTokenTransfer,
 	handleTokenSelect,
 	getDefaultSolanaToken
-	// Removed duplicate imports and startPolling, stopPolling, pollTransactionStatus
 } from './scripts';
 import { useStyle } from './styles';
 import { Coin } from '@/types'; // Added Wallet
@@ -23,8 +22,8 @@ import TradeStatusModal from '@components/Trade/TradeStatusModal';
 import { logger } from '@/utils/logger';
 import { useTransactionPolling, PollingStatus as HookPollingStatus } from '@/hooks/useTransactionPolling';
 import { grpcApi } from '@/services/grpcApi';
-import VerificationCard from '@/components/Common/Form/VerificationCard'; // Import VerificationCard
-import { VerificationStatus } from '@/components/Common/Form/VerificationCard.styles'; // Import status type
+import VerificationCard from '@components/Common/Form';
+import { VerificationStatus } from '@/components/Common/Form/VerificationCard.styles';
 
 // Static object for TradeConfirmation fees
 const staticTradeConfirmationFees = {
@@ -39,20 +38,6 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const { wallet, tokens, fetchPortfolioBalance } = usePortfolioStore(); // Added fetchPortfolioBalance
 	const { fetchRecentTransactions } = useTransactionsStore(); // Added fetchRecentTransactions
 	const { showToast } = useToast();
-
-	// Memoized styles
-	const sendButtonStyle = useMemo(() =>
-		isLoading ? [styles.sendButton, styles.sendButtonDisabled].flat() : styles.sendButton,
-		[isLoading, styles.sendButton, styles.sendButtonDisabled]
-	);
-	const verificationCancelButtonStyle = useMemo(() =>
-		[styles.verificationButton, styles.verificationButtonCancel].flat(),
-		[styles.verificationButton, styles.verificationButtonCancel]
-	);
-	const verificationContinueButtonStyle = useMemo(() =>
-		[styles.verificationButton, styles.verificationButtonContinue].flat(),
-		[styles.verificationButton, styles.verificationButtonContinue]
-	);
 
 	const [selectedToken, setSelectedToken] = useState<PortfolioToken | undefined>(undefined);
 	const [amount, setAmount] = useState('');
@@ -378,13 +363,13 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 	const mapVerificationCodeToStatus = (code?: string): VerificationStatus => {
 		switch (code) {
 			case "ADDRESS_HAS_BALANCE":
-				return 'valid'; // Or a custom 'success' status if VerificationCard supports it
+				return 'valid';
 			case "ADDRESS_NO_BALANCE":
 				return 'warning';
 			case "ADDRESS_BALANCE_CHECK_FAILED":
-				return 'error'; // Or 'warning' depending on desired severity display
+				return 'invalid';
 			default:
-				return 'idle'; // Or 'info' if VerificationCard has a generic info style
+				return 'idle';
 		}
 	};
 
@@ -407,7 +392,7 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 		<TouchableOpacity
 			onPress={handleSubmit}
 			disabled={isLoading}
-			style={sendButtonStyle}
+			style={styles.getSendButtonStyle(isLoading)}
 			testID="send-button"
 		>
 			<Icon source="send" size={20} color={styles.colors.onPrimary} />
@@ -452,14 +437,14 @@ const Send: React.FC<SendTokensScreenProps> = ({ navigation }) => {
 						{/* Buttons for verification card need to be handled separately if VerificationCard doesn't include them */}
 						<View style={styles.verificationActions}>
 							<TouchableOpacity
-								style={verificationCancelButtonStyle}
+								style={styles.getVerificationCancelButtonStyle()}
 								onPress={handleCancelVerification}
 								testID="verification-cancel-button"
 							>
 								<Text style={styles.verificationButtonCancelText}>Cancel</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
-								style={verificationContinueButtonStyle}
+								style={styles.getVerificationContinueButtonStyle()}
 								onPress={handleConfirmVerificationAndProceed}
 								testID="verification-continue-button"
 							>
