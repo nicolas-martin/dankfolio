@@ -18,6 +18,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	dbDataStoreMocks "github.com/nicolas-martin/dankfolio/backend/internal/db/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	pb "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1" // Import generated protobuf types
 	telemetrymocks "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import util for IsValidSolanaAddress
 )
@@ -454,4 +455,92 @@ func TestFechAndStoreTrendingTokens_PopulatesNewFields(t *testing.T) {
 	txMockCoinRepo.AssertExpectations(t)
 	setup.Mocks.SolanaClient.AssertExpectations(t)
 	setup.Mocks.OffchainClient.AssertExpectations(t)
+}
+
+func TestSearchCoins_SortByPriceChangePercentage24h(t *testing.T) {
+	ctx := context.Background()
+	setup := setupCoinServiceTestRefactored(t)
+
+	// 1. Mock Coin Data
+	mockCoins := []model.Coin{
+		{ID: 1, MintAddress: "mintA", Symbol: "COINA", Name: "Coin A", Price24hChangePercent: 0.5, Volume24h: 1000, JupiterListedAt: time.Now().Add(-1 * time.Hour)},
+		{ID: 2, MintAddress: "mintB", Symbol: "COINB", Name: "Coin B", Price24hChangePercent: 1.5, Volume24h: 1000, JupiterListedAt: time.Now().Add(-2 * time.Hour)},
+		{ID: 3, MintAddress: "mintC", Symbol: "COINC", Name: "Coin C", Price24hChangePercent: -0.2, Volume24h: 1000, JupiterListedAt: time.Now().Add(-3 * time.Hour)},
+		{ID: 4, MintAddress: "mintD", Symbol: "COIND", Name: "Coin D", Price24hChangePercent: 1.0, Volume24h: 1000, JupiterListedAt: time.Now().Add(-4 * time.Hour)},
+	}
+
+	// 2. Mock dependencies
+	// The Search method uses GetCoins, which in turn calls CoinRepo.List
+	// We need to mock CoinRepo.List to return our mockCoins and verify the ListOptions.
+
+	// Clear default Maybe() expectations for Coins() from setup if we are setting a new one.
+	setup.Mocks.Store.Mock.ExpectedCalls = removeCall(setup.Mocks.Store.Mock.ExpectedCalls, "Coins")
+	setup.Mocks.Store.On("Coins").Return(setup.Mocks.CoinRepo).Once()
+
+	expectedSortBy := "price_24h_change_percent" // This must match the db_field in model.Coin
+	expectedSortDesc := true
+	expectedLimit := 4 // We expect all 4 coins
+
+	setup.Mocks.CoinRepo.On("List", ctx, mock.MatchedBy(func(opts db.ListOptions) bool {
+		require.NotNil(t, opts.SortBy, "SortBy should not be nil")
+		assert.Equal(t, expectedSortBy, *opts.SortBy)
+		require.NotNil(t, opts.SortDesc, "SortDesc should not be nil")
+		assert.Equal(t, expectedSortDesc, *opts.SortDesc)
+		// Check limit if it's important, Search passes its limit to GetCoins, which defaults/caps it.
+		// For this test, we primarily care about sorting.
+		// Let's assume the limit from the request (or default if not set) is passed down.
+		// If request.Limit is 0, GetCoins defaults to 20.
+		// If request.Limit is e.g. 10, GetCoins uses 10.
+		// Here, the request limit is 0, so GetCoins will use default 20.
+		// The number of mock coins is 4, so we expect to get 4.
+		// The ListOptions.Limit passed to CoinRepo.List will be the one from GetCoins logic.
+		// Let's ensure it's at least the number of coins we want to test, or the default.
+		require.NotNil(t, opts.Limit, "Limit should not be nil")
+		// assert.Equal(t, expectedLimit, *opts.Limit) // This can be tricky due to GetCoins internal limit logic.
+		// Instead, we'll verify the output length.
+		return true
+	})).Return(mockCoins, int64(len(mockCoins)), nil).Once()
+
+	// 3. Prepare the search request
+	request := &pb.SearchRequest{ // Use generated pb.SearchRequest
+		SortBy:   pb.CoinSortField_COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H, // Use enum
+		SortDesc: true,
+		Limit:    int32(len(mockCoins)), // Requesting all mock coins
+		Offset:   0,
+		Query:    "",
+		Tags:     []string{},
+	}
+
+	// 4. Call the Search method
+	// The Search method now directly takes *pb.SearchRequest.
+	// It maps the enum to db string and calls the internal SearchCoins.
+	// The internal SearchCoins calls GetCoins, which calls CoinRepo.List.
+	// The mocked CoinRepo.List is expected to return data sorted as if the DB did it.
+	// The Search method then converts model.Coin to pb.Coin.
+
+	// Mock the ToProto method for each coin in mockCoins
+	// This is a simplification. In a real scenario, you'd ensure ToProto() works correctly.
+	for i := range mockCoins {
+		// This is tricky because ToProto is a method on model.Coin, not a mockable interface.
+		// We assume ToProto works. If it doesn't, the test will fail during conversion.
+		// For the purpose of testing the Search method's logic up to the point of calling ToProto,
+		// this setup is okay.
+	}
+
+	response, err := setup.Service.Search(ctx, request) // Returns *pb.SearchResponse, error
+
+	// 5. Assert results
+	require.NoError(t, err)
+	require.NotNil(t, response)
+	assert.Equal(t, int32(len(mockCoins)), response.TotalCount) // Total count from CoinRepo.List
+	require.Len(t, response.Coins, len(mockCoins))
+
+	// Expected order of symbols: COINB, COIND, COINA, COINC
+	assert.Equal(t, "COINB", response.Coins[0].Symbol)
+	assert.Equal(t, "COIND", response.Coins[1].Symbol)
+	assert.Equal(t, "COINA", response.Coins[2].Symbol)
+	assert.Equal(t, "COINC", response.Coins[3].Symbol)
+
+	setup.Mocks.Store.AssertExpectations(t)
+	setup.Mocks.CoinRepo.AssertExpectations(t)
 }

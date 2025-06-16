@@ -21,6 +21,16 @@ service CoinService {
   rpc Search(SearchRequest) returns (SearchResponse);
 }
 
+enum CoinSortField {
+  COIN_SORT_FIELD_UNSPECIFIED = 0;
+  COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H = 1;
+  COIN_SORT_FIELD_JUPITER_LISTED_AT = 2;
+  COIN_SORT_FIELD_VOLUME_24H = 3;
+  COIN_SORT_FIELD_NAME = 4;
+  COIN_SORT_FIELD_SYMBOL = 5;
+  COIN_SORT_FIELD_MARKET_CAP = 6;
+}
+
 // Coin represents a coin or currency (unified definition)
 message Coin {
   string mint_address = 1;
@@ -87,7 +97,7 @@ message SearchRequest {
   double min_volume_24h = 3;      // Minimum 24h volume
   int32 limit = 4;                // Maximum number of results (default: 20)
   int32 offset = 5;               // Offset for pagination
-  string sort_by = 6;             // Sort field (price_usd, volume_24h, market_cap_usd, jupiter_listed_at)
+  CoinSortField sort_by = 6;      // Sort field
   bool sort_desc = 7;            // Sort direction (default: true)
 }
 
