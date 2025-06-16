@@ -147,6 +147,11 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		return connect.NewResponse(&pb.SearchResponse{Coins: []*pb.Coin{convertModelCoinToPbCoin(coin)}}), nil
 	}
 
+	// Convert protobuf request to internal types
+	query := req.Msg.GetQuery()
+	tags := req.Msg.GetTags()
+	minVolume24h := req.Msg.GetMinVolume_24H()
+
 	// Prepare ListOptions from the request
 	opts := db.ListOptions{}
 	if limit := req.Msg.GetLimit(); limit > 0 {
@@ -157,14 +162,34 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		val := int(offset)
 		opts.Offset = &val
 	}
-	if sortBy := req.Msg.GetSortBy(); sortBy != "" {
-		opts.SortBy = &sortBy
+
+	// Convert protobuf sort field to internal string representation
+	if sortBy := req.Msg.GetSortBy(); sortBy != pb.CoinSortField_COIN_SORT_FIELD_UNSPECIFIED {
+		var sortByStr string
+		switch sortBy {
+		case pb.CoinSortField_COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H:
+			sortByStr = "price_24h_change_percent"
+		case pb.CoinSortField_COIN_SORT_FIELD_JUPITER_LISTED_AT:
+			sortByStr = "jupiter_listed_at"
+		case pb.CoinSortField_COIN_SORT_FIELD_VOLUME_24H:
+			sortByStr = "volume_24h"
+		case pb.CoinSortField_COIN_SORT_FIELD_NAME:
+			sortByStr = "name"
+		case pb.CoinSortField_COIN_SORT_FIELD_SYMBOL:
+			sortByStr = "symbol"
+		case pb.CoinSortField_COIN_SORT_FIELD_MARKET_CAP:
+			sortByStr = "market_cap"
+		default:
+			sortByStr = "volume_24h" // Default sort
+		}
+		opts.SortBy = &sortByStr
 	}
+
 	isDesc := req.Msg.GetSortDesc() // GetSortDesc returns bool directly
 	opts.SortDesc = &isDesc
 
-	// Call the updated service method
-	coins, total, err := s.coinService.SearchCoins(ctx, req.Msg.GetQuery(), req.Msg.GetTags(), req.Msg.GetMinVolume_24H(), opts)
+	// Call the internal service method with converted types
+	coins, total, err := s.coinService.SearchCoins(ctx, query, tags, minVolume24h, opts)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to search coins: %w", err))
 	}
