@@ -7,7 +7,7 @@ alwaysApply: true
 ## Project
 - The only make file is located at the root of the project `./dankfolio`. Make sure your `pwd` is `./dankfolio`
 - The common make operation in the make file is `make run` which terminates any existing backend and runs a new one`
-- The other common make operation in the make file is `make run-mobile` which terminates any existing instance and starts a new one. It also runs 2 linters.
+- When modifying components or screen, you do not need to run `make mobile`. That is only needed for big strutural / dependency changes.
 
 ## Backend
 - Whe performing a backend operation or command, make sure your `pwd` is `./dankfolio/backend`

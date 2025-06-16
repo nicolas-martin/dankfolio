@@ -62,6 +62,11 @@ const HomeScreen = () => {
 	const fetchNewCoins = useCoinStore(state => state.fetchNewCoins);
 	const isLoadingTrending = useCoinStore(state => state.isLoading);
 
+	// TopTrendingGainers store selectors
+	const topTrendingGainers = useCoinStore(state => state.topTrendingGainers);
+	const fetchTopTrendingGainers = useCoinStore(state => state.fetchTopTrendingGainers);
+	const isLoadingTopTrendingGainers = useCoinStore(state => state.isLoadingTopTrendingGainers);
+
 	// Price history states
 	const [priceHistories, setPriceHistories] = useState<Record<string, PriceData[]>>({});
 	const [isLoadingPriceHistories, setIsLoadingPriceHistories] = useState<Record<string, boolean>>({});
@@ -285,16 +290,17 @@ const HomeScreen = () => {
 	const fetchTrendingAndPortfolio = useCallback(async () => {
 		logger.log('[HomeScreen] Fetching trending and portfolio...');
 
-		// Fetch trending coins and portfolio balance in parallel
+		// Fetch trending coins, top trending gainers, and portfolio balance in parallel
 		const trendingAndPortfolioPromise = Promise.all([
 			fetchAvailableCoins(true), // For trending coins
+			fetchTopTrendingGainers(10, false), // For top trending gainers
 			wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 		]);
 
 		await trendingAndPortfolioPromise; // Wait for trending and portfolio to complete
 
 		logger.log('[HomeScreen] 🟢 Completed home screen data fetch.');
-	}, [wallet, fetchAvailableCoins, fetchPortfolioBalance]);
+	}, [wallet, fetchAvailableCoins, fetchTopTrendingGainers, fetchPortfolioBalance]);
 
 	// Separate function for fetching new coins
 	const fetchNewCoinsData = useCallback(async () => {
@@ -336,6 +342,7 @@ const HomeScreen = () => {
 			logger.log('[HomeScreen] 🔄 Manual refresh triggered - forcing new coins refresh');
 			await Promise.all([
 				fetchAvailableCoins(true), // For trending coins
+				fetchTopTrendingGainers(10, true), // Force refresh top trending gainers
 				fetchNewCoins(10, true), // Force refresh new coins (bypasses cache)
 				wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 			]);
@@ -354,7 +361,7 @@ const HomeScreen = () => {
 		} finally {
 			setIsRefreshing(false);
 		}
-	}, [fetchAvailableCoins, fetchNewCoins, fetchPortfolioBalance, wallet, showToast]);
+	}, [fetchAvailableCoins, fetchTopTrendingGainers, fetchNewCoins, fetchPortfolioBalance, wallet, showToast]);
 
 	const handlePressCoinCard = useCallback((coin: Coin) => {
 		console.log('[HomeScreen LOG] handlePressCoinCard called for:', coin.symbol, coin.mintAddress);
@@ -453,7 +460,12 @@ const HomeScreen = () => {
 
 				{/* Add TopTrendingGainers after NewCoins */}
 				{/* Consider adding a placeholder for TopTrendingGainers if isFirstTimeLoading is true */}
-				{!isFirstTimeLoading && <TopTrendingGainers />}
+				{!isFirstTimeLoading && (
+					<TopTrendingGainers 
+						topTrendingGainers={topTrendingGainers}
+						isLoading={isLoadingTopTrendingGainers}
+					/>
+				)}
 
 				{/* Show placeholder for trending section when initially loading */}
 				{isFirstTimeLoading ? (

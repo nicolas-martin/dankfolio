@@ -23,6 +23,13 @@ export interface Coin {
 	value?: number;
 	percentage?: number;
 	jupiterListedAt?: Date;
+	// New fields from proto
+	volume24hUsd?: number;
+	liquidity?: number;
+	volume24hChangePercent?: number;
+	fdv?: number;
+	marketCap?: number;
+	rank?: number;
 }
 
 /** Base58 encoded private key string with type safety */

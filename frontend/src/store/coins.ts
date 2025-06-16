@@ -335,7 +335,6 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		log.log("Fetching top trending gainers from API...");
 
 		try {
-			// @ts-ignore
 			const response = await grpcApi.searchCoins({
 				query: "",
 				tags: [],
