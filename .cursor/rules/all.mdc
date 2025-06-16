@@ -82,7 +82,7 @@ ComponentName/
 - NEVER make styling changes on your own. You always need explicit permission.
 - Avoid making changes that are only rephrasing of a comment.
 
-## Linting `yarn lint`, `make run-mobile` or `yarn check-structure`
+## Linting `yarn lint`
 - We need to include the frontend/ prefix in our file paths.
 - Whenever you make an edit, include the rule that you're fixing.
 - If you get stuck in a loop, try running the command again

@@ -15,7 +15,7 @@ import { findPortfolioToken } from './scripts'; // calculateUsdValue might be re
 import CachedImage from '@/components/Common/CachedImage';
 import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
-import { formatTokenBalance } from '@/utils/numberFormat'; // Added import
+import { formatTokenBalance, formatPrice } from '@/utils/numberFormat'; // Added formatPrice import
 // grpcApi import removed (no longer calling getUsdPrice directly)
 
 // Memoized icon component to prevent unnecessary re-renders
@@ -65,7 +65,7 @@ const TokenItem = React.memo<{
 				</Text>
 			</View>
 			{portfolioToken && (
-				<Text style={styles.tokenBalance}>{portfolioToken.amount}</Text>
+				<Text style={styles.tokenBalance}>{formatTokenBalance(portfolioToken.amount, 4)}</Text>
 			)}
 		</TouchableOpacity>
 	);
@@ -320,7 +320,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 			if (rate && rate > 0) {
 				const crypto = parseFloat(amountValue);
 				if (!isNaN(crypto)) {
-					const newUsdVal = (crypto * rate).toFixed(2);
+					const newUsdVal = formatPrice(crypto * rate, false);
 					setInternalUsdAmount(newUsdVal);
 				} else {
 					setInternalUsdAmount('');
@@ -343,7 +343,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 					// Switching from CRYPTO to USD - convert crypto amount to USD and preserve it
 					const crypto = parseFloat(amountValue);
 					if (!isNaN(crypto)) {
-						const usdValue = (crypto * rate).toFixed(2);
+						const usdValue = formatPrice(crypto * rate, false);
 						setInternalUsdAmount(usdValue);
 						// Don't clear crypto amount - keep it for display as secondary value
 					}
@@ -366,7 +366,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 			if (text && text !== '.' && !text.endsWith('.') && rate && rate > 0) {
 				const crypto = parseFloat(text);
 				if (!isNaN(crypto)) {
-					setInternalUsdAmount((crypto * rate).toFixed(2));
+					setInternalUsdAmount(formatPrice(crypto * rate, false));
 				} else {
 					setInternalUsdAmount('');
 				}
@@ -428,10 +428,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		const rate = liveExchangeRate;
 
 		if (currentInputUnit === 'USD' && internalUsdAmount && parseFloat(internalUsdAmount) > 0) {
-			return `$${parseFloat(internalUsdAmount).toFixed(2)}`;
+			return `$${formatPrice(parseFloat(internalUsdAmount), false)}`;
 		} else if (currentInputUnit === 'CRYPTO' && amountValue && parseFloat(amountValue) > 0) {
 			if (rate && rate > 0) {
-				return `$${(parseFloat(amountValue) * rate).toFixed(2)}`;
+				return `$${formatPrice(parseFloat(amountValue) * rate, false)}`;
 			} else if (rate === undefined) {
 				return '$...';
 			} else {
@@ -471,7 +471,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 						{/* Balance displayed below the selector button */}
 						{selectedToken && _portfolioToken && (
 							<Text style={styles.tokenBalance} testID={`${testID}-balance`}>
-								{_portfolioToken.amount.toFixed(4)}
+								{formatTokenBalance(_portfolioToken.amount, 4)}
 							</Text>
 						)}
 					</View>
