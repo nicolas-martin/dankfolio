@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
+	
 	return useMemo(() => {
 		// const colors = theme.colors; // Ensure colors is defined inside useMemo - REMOVED
 		const changeTextStyle = (change24h: number | undefined) => ({

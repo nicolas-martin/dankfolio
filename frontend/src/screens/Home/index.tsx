@@ -3,12 +3,10 @@ import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-
 import { Text, Button } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
-// fetchPriceHistory import seems unused directly in HomeScreen, consider removing if not needed for other logic
-// import { fetchPriceHistory } from '@/screens/CoinDetail/coindetail_scripts';
 import CoinCard from '@components/Home/CoinCard';
-import InfoState from '@/components/Common/InfoState'; // Import InfoState
+import InfoState from '@/components/Common/InfoState';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
-import TopTrendingGainers from '@/components/Home/TopTrendingGainers'; // Import TopTrendingGainers
+import TopTrendingGainers from 'components/Home/TopTrendingGainers';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { handleCoinPress } from './home_scripts';
 import { HomeScreenNavigationProp } from './home_types';
@@ -22,7 +20,7 @@ import { useThemeStore } from '@/store/theme';
 import { env } from '@/utils/env';
 import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 import { debugCacheStatus, testExpoImageCache } from '@/components/Common/CachedImage/scripts';
-import { grpcApi } from '@/services/grpcApi'; // Import grpcApi
+import { grpcApi } from '@/services/grpcApi';
 
 // Helper function to wrap grpcApi.getPriceHistory
 const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ data: PriceData[], error: Error | null }> => {
