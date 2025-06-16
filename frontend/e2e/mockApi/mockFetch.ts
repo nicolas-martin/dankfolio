@@ -2,7 +2,7 @@
 import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import {
-	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByMintResponseSchema, type Coin as ProtobufCoin, CoinSchema,
+	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByMintResponseSchema, type Coin as ProtobufCoin, CoinSchema, CoinSortField,
 } from '@/gen/dankfolio/v1/coin_pb';
 import {
 	GetWalletBalancesResponseSchema,
@@ -21,7 +21,7 @@ import {
 	ListTradesResponseSchema,
 } from '@/gen/dankfolio/v1/trade_pb';
 
-import { MOCK_TRENDING_COINS, MOCK_NEW_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES, CAPTURED_TRANSACTION_DATA } from './mockData';
+import { MOCK_TRENDING_COINS, MOCK_NEW_COINS, MOCK_TOP_GAINER_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES, CAPTURED_TRANSACTION_DATA } from './mockData';
 import { generatePriceHistory } from './helpers';
 
 type FetchInput = string | URL | Request;
@@ -63,7 +63,17 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 }
 
 
-async function handleSearch(_options?: FetchInit) {
+async function handleSearch(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+
+	if (requestData.sortBy === CoinSortField.PRICE_CHANGE_PERCENTAGE_24H && requestData.sortDesc) {
+		return create(SearchResponseSchema, {
+			coins: MOCK_TOP_GAINER_COINS,
+			totalCount: MOCK_TOP_GAINER_COINS.length,
+		});
+	}
+
+	// Default behavior
 	const coinsToReturn = MOCK_NEW_COINS;
 	return create(SearchResponseSchema, {
 		coins: coinsToReturn,

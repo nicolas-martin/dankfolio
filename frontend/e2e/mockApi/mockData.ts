@@ -205,8 +205,72 @@ export const MOCK_NEW_COINS: ProtobufCoin[] = [
 	}),
 ];
 
+// Mock top gainer coins
+export const MOCK_TOP_GAINER_COINS: ProtobufCoin[] = [
+	create(CoinSchema, {
+		mintAddress: 'gainercoinAlpha111111111111111111111111',
+		name: 'GainerCoin Alpha',
+		symbol: 'GCA',
+		decimals: 9,
+		description: 'Alpha version of the top gainer coin, expected to skyrocket!',
+		iconUrl: 'https://example.com/gainer_alpha.png',
+		resolvedIconUrl: 'https://example.com/gainer_alpha.png',
+		tags: ['gainer', 'alpha', 'moonshot'],
+		price: 1.25,
+		priceChangePercentage24h: 285.5, // Significant positive change
+		dailyVolume: 750000,
+		website: 'https://gainercoinalpha.example.com',
+		twitter: 'https://twitter.com/gainercoinalpha',
+		coingeckoId: 'gainercoin-alpha',
+		createdAt: timestampFromDate(new Date('2024-03-01')),
+		lastUpdated: timestampFromDate(new Date()),
+		isTrending: false,
+		jupiterListedAt: timestampFromDate(new Date('2024-03-05')),
+	}),
+	create(CoinSchema, {
+		mintAddress: 'rocketLaunchCoin1111111111111111111111',
+		name: 'RocketLaunch',
+		symbol: 'RLAUNCH',
+		decimals: 6,
+		description: 'This coin is launching to the moon, literally and figuratively!',
+		iconUrl: 'https://example.com/rocket_launch.png',
+		resolvedIconUrl: 'https://example.com/rocket_launch.png',
+		tags: ['gainer', 'launch', 'rocket'],
+		price: 0.075,
+		priceChangePercentage24h: 150.2, // Significant positive change
+		dailyVolume: 1200000,
+		website: 'https://rocketlaunch.example.com',
+		twitter: 'https://twitter.com/rocketlaunchcoin',
+		coingeckoId: 'rocket-launch',
+		createdAt: timestampFromDate(new Date('2024-02-15')),
+		lastUpdated: timestampFromDate(new Date()),
+		isTrending: false,
+		jupiterListedAt: timestampFromDate(new Date('2024-02-20')),
+	}),
+	create(CoinSchema, {
+		mintAddress: 'bullRunToken1111111111111111111111111',
+		name: 'BullRun Token',
+		symbol: 'BRT',
+		decimals: 8,
+		description: 'A token signifying the start of a massive bull run.',
+		iconUrl: 'https://example.com/bull_run.png',
+		resolvedIconUrl: 'https://example.com/bull_run.png',
+		tags: ['gainer', 'bullish', 'market'],
+		price: 5.60,
+		priceChangePercentage24h: 95.75, // Significant positive change
+		dailyVolume: 2500000,
+		website: 'https://bullruntoken.example.com',
+		twitter: 'https://twitter.com/bullruntoken',
+		coingeckoId: 'bullrun-token',
+		createdAt: timestampFromDate(new Date('2024-01-10')),
+		lastUpdated: timestampFromDate(new Date()),
+		isTrending: false,
+		jupiterListedAt: timestampFromDate(new Date('2024-01-15')),
+	}),
+];
+
 // All coins combined for general searches
-export const ALL_MOCK_COINS = [...MOCK_TRENDING_COINS, ...MOCK_NEW_COINS];
+export const ALL_MOCK_COINS = [...MOCK_TRENDING_COINS, ...MOCK_NEW_COINS, ...MOCK_TOP_GAINER_COINS];
 
 // Mock wallet balances using exact gRPC types
 export const MOCK_WALLET_BALANCES: Balance[] = [
