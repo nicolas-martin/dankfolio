@@ -6,21 +6,13 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
-const (
-	// CacheExpiration is the duration for which cached data is valid
-	CacheExpiration = 5 * time.Minute
-	// TrendingDataTTL is the maximum age for the scraped trending data file
-	TrendingDataTTL    = 24 * time.Hour
-	initialLoadTimeout = 3 * time.Minute // Max time for initial load/scrape
-)
-
 // Config holds the configuration for the coin service
 type Config struct {
 	BirdEyeBaseURL        string
 	BirdEyeAPIKey         string
-	CoinGeckoAPIKey       string // Uncomment when needed
-	SolanaRPCEndpoint     string // Add Solana RPC endpoint needed for enrichment client
+	SolanaRPCEndpoint     string
 	NewCoinsFetchInterval time.Duration
+	TrendingFetchInterval time.Duration
 }
 
 // --- Structs for Trending Tokens Output ---

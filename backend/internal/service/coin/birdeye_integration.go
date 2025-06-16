@@ -17,7 +17,7 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 
 	// Step 1: Get trending tokens from Birdeye
 	fetchTime := time.Now() // Capture fetch attempt time
-	birdeyeTokens, err := s.birdeyeClient.GetTrendingTokens(ctx, birdeye.TrendingTokensParams{})
+	birdeyeTokens, err := s.birdeyeClient.GetTrendingTokens(ctx, birdeye.TrendingTokensParams{Limit: 10})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trending tokens from Birdeye: %w", err)
 	}
@@ -35,10 +35,6 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 	// Step 2: Enrich the Birdeye tokens concurrently
 	enrichedCoins, err := s.processBirdeyeTokens(ctx, birdeyeTokens.Data.Tokens) // Pass birdeye.TokenDetails directly
 	if err != nil {
-		// This path should ideally not be hit if birdeyeTokens.Data.Tokens is empty,
-		// as processBirdeyeTokens should handle empty input gracefully.
-		// If it is hit, it implies an issue in processBirdeyeTokens with empty input
-		// or a genuine error during an attempted enrichment (if scrapedTokens wasn't empty).
 		return nil, fmt.Errorf("error during token enrichment process: %w", err)
 	}
 
@@ -118,17 +114,13 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []bir
 
 			// Direct field access for Price, Volume, MarketCap, etc. No parsing needed.
 			// Ensure EnrichCoinData is updated to accept these types and new fields.
-			enriched, err := s.EnrichCoinData(
-				enrichTaskCtx, // Use the task-specific context
-				&token,        // Pass a pointer to the birdeye.TokenDetails object
-			)
+			enriched, err := s.EnrichCoinData(enrichTaskCtx, &token)
 			if err != nil {
-				errMessage := fmt.Sprintf("Failed EnrichCoinData for %s (%s): %v", token.Name, token.Address, err) // Use token.Address
+				errMessage := fmt.Sprintf("Failed EnrichCoinData for %s (%s): %v", token.Name, token.Address, err)
 				slog.Error("Enrichment failed",
 					"name", token.Name,
-					"mint_address", token.Address, // Use token.Address
+					"mint_address", token.Address,
 					"error", err)
-				// Record the error
 				errMu.Lock()
 				encounteredErrors = append(encounteredErrors, fmt.Errorf("%s", errMessage)) // Append formatted error
 				errMu.Unlock()

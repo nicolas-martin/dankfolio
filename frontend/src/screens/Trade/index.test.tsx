@@ -3,12 +3,10 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import Trade from './index';
 import { usePortfolioStore } from '@store/portfolio';
 import { useCoinStore } from '@store/coins';
-import { useTransactionsStore } from '@/store/transactions';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { grpcApi } from '@/services/grpcApi';
-import { logger } from '@/utils/logger';
-import { useStyles } from './styles'; // Assuming useStyles returns a simple object for testing
+// Assuming useStyles returns a simple object for testing
 
 // --- Mocks ---
 
@@ -122,13 +120,13 @@ jest.mock('@/hooks/useTransactionPolling', () => ({
 // Mock react-native-paper components that are directly used or causing issues
 jest.mock('react-native-paper', () => {
   const RealModule = jest.requireActual('react-native-paper');
+  const { Switch: RNSwitch } = jest.requireActual('react-native');
   const MockedModule = {
     ...RealModule,
     // Mock specific components if they cause trouble or need spies
     // For example, if Switch needs specific handling:
     Switch: jest.fn(({ value, onValueChange }) => {
       // A simple mock, can be enhanced
-      const RNSwitch = require('react-native').Switch;
       return <RNSwitch value={value} onValueChange={onValueChange} />;
     }),
     // Text: (props) => <RNText {...props} />, // If you need to mock Text specifically
@@ -156,8 +154,28 @@ const mockDefaultCoins = {
   }),
 };
 
-const SOL = { mintAddress: 'SOLANA_ADDRESS_MOCK', name: 'Solana', symbol: 'SOL', decimals: 9, price: 150, resolvedIconUrl: '' };
-const USDC = { mintAddress: 'USDC_ADDRESS_MOCK', name: 'USD Coin', symbol: 'USDC', decimals: 6, price: 1, resolvedIconUrl: '' };
+const SOL = { 
+  mintAddress: 'SOLANA_ADDRESS_MOCK', 
+  name: 'Solana', 
+  symbol: 'SOL', 
+  decimals: 9, 
+  price: 150, 
+  resolvedIconUrl: '',
+  description: 'Solana native token',
+  tags: ['native'],
+  dailyVolume: 1000000
+};
+const USDC = { 
+  mintAddress: 'USDC_ADDRESS_MOCK', 
+  name: 'USD Coin', 
+  symbol: 'USDC', 
+  decimals: 6, 
+  price: 1, 
+  resolvedIconUrl: '',
+  description: 'USD Coin stablecoin',
+  tags: ['stablecoin'],
+  dailyVolume: 500000
+};
 
 
 describe('Trade Screen', () => {
@@ -179,7 +197,7 @@ describe('Trade Screen', () => {
     });
   });
 
-  const renderTradeScreen = (initialFromCoin = null, initialToCoin = null) => {
+  const renderTradeScreen = (initialFromCoin: any = null, initialToCoin: any = null) => {
     (useRoute as jest.Mock).mockReturnValue({ params: { initialFromCoin, initialToCoin } });
     return render(<Trade />);
   };

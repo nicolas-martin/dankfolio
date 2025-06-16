@@ -51,7 +51,7 @@ type TokenDetails struct {
 	Name                   string   `json:"name"`
 	Symbol                 string   `json:"symbol"`
 	Volume24hUSD           float64  `json:"volume24hUSD"`
-	Volume24hChangePercent float64  `json:"volume24hChangePercent,omitempty"` // Can be null in JSON
+	Volume24hChangePercent float64  `json:"volume24hChangePercent,omitempty"`
 	FDV                    float64  `json:"fdv"`
 	MarketCap              float64  `json:"marketcap"`
 	Rank                   int      `json:"rank"`

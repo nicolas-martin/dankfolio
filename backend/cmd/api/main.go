@@ -27,7 +27,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 
-	// "github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry" // Removed unused import
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
@@ -133,13 +132,11 @@ func main() {
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:        config.BirdEyeEndpoint,
 		BirdEyeAPIKey:         config.BirdEyeAPIKey,
-		CoinGeckoAPIKey:       config.CoinGeckoAPIKey,
 		SolanaRPCEndpoint:     config.SolanaRPCEndpoint,
 		NewCoinsFetchInterval: config.NewCoinsFetchInterval,
 	}
 	coinService := coin.NewService(
 		coinServiceConfig,
-		httpClient,
 		jupiterClient,
 		store,
 		solanaClient,   // This is the chainClient
@@ -232,20 +229,21 @@ func main() {
 }
 
 type Config struct {
-	SolanaRPCEndpoint         string        `envconfig:"SOLANA_RPC_ENDPOINT" default:"https://api.mainnet-beta.solana.com"`
-	SolanaRPCAPIKey           string        `envconfig:"SOLANA_RPC_API_KEY" required:"true"`
-	BirdEyeEndpoint           string        `envconfig:"BIRDEYE_ENDPOINT" required:"true"`
-	BirdEyeAPIKey             string        `envconfig:"BIRDEYE_API_KEY" required:"true"`
-	CoinGeckoAPIKey           string        `envconfig:"COINGECKO_API_KEY"`
-	GRPCPort                  int           `envconfig:"GRPC_PORT" default:"9000"`
-	DBURL                     string        `envconfig:"DB_URL" required:"true"`
-	CacheExpiry               time.Duration `envconfig:"CACHE_EXPIRY_SECONDS" default:"5m"`
-	JupiterApiKey             string        `envconfig:"JUPITER_API_KEY"`
-	JupiterApiUrl             string        `envconfig:"JUPITER_API_URL" required:"true"`
-	Env                       string        `envconfig:"APP_ENV" required:"true"`
-	NewCoinsFetchInterval     time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL_MINUTES" default:"5m"` // Default to 5 minutes
-	PlatformFeeBps            int           `envconfig:"PLATFORM_FEE_BPS" default:"0"`
-	PlatformFeeAccountAddress string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS"` // Conditionally required, handled in validation
+	SolanaRPCEndpoint          string        `envconfig:"SOLANA_RPC_ENDPOINT" default:"https://api.mainnet-beta.solana.com"`
+	SolanaRPCAPIKey            string        `envconfig:"SOLANA_RPC_API_KEY" required:"true"`
+	BirdEyeEndpoint            string        `envconfig:"BIRDEYE_ENDPOINT" required:"true"`
+	BirdEyeAPIKey              string        `envconfig:"BIRDEYE_API_KEY" required:"true"`
+	CoinGeckoAPIKey            string        `envconfig:"COINGECKO_API_KEY"`
+	GRPCPort                   int           `envconfig:"GRPC_PORT" default:"9000"`
+	DBURL                      string        `envconfig:"DB_URL" required:"true"`
+	CacheExpiry                time.Duration `envconfig:"CACHE_EXPIRY_SECONDS" default:"5m"`
+	JupiterApiKey              string        `envconfig:"JUPITER_API_KEY"`
+	JupiterApiUrl              string        `envconfig:"JUPITER_API_URL" required:"true"`
+	Env                        string        `envconfig:"APP_ENV" required:"true"`
+	NewCoinsFetchInterval      time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL" default:"1h"`       // Default to 1 hour
+	TrendingCoinsFetchInterval time.Duration `envconfig:"TRENDING_COINS_FETCH_INTERVAL" default:"24h"` // Default to 24 hours
+	PlatformFeeBps             int           `envconfig:"PLATFORM_FEE_BPS" default:"0"`
+	PlatformFeeAccountAddress  string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS"` // Conditionally required, handled in validation
 }
 
 func loadConfig() *Config {

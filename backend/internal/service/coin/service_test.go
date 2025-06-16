@@ -3,7 +3,6 @@ package coin
 import (
 	"context"
 	"errors"
-	"net/http"
 	"strconv"
 	"testing"
 	"time"
@@ -88,7 +87,6 @@ func setupCoinServiceTestRefactored(t *testing.T) *testSetup {
 
 	service := NewService(
 		cfg,
-		&http.Client{},
 		mocks.JupiterClient,
 		mocks.Store,
 		mocks.SolanaClient,
