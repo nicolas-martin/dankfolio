@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1" // Added pb import
-	"google.golang.org/protobuf/types/known/timestamppb"         // Added timestamppb import
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
