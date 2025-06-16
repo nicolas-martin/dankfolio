@@ -395,8 +395,8 @@ func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
 		if len(enrichedCoins.Coins) > 0 {
 			slog.Debug("Storing/updating enriched coins from file", slog.Int("count", len(enrichedCoins.Coins)))
 			var storeErrors []string
-			for _, coinFromFile := range enrichedCoins.Coins {
-				currentCoin := coinFromFile
+			for _, coin := range enrichedCoins.Coins {
+				currentCoin := coin
 				existingCoin, getErr := txStore.Coins().GetByField(ctx, "mint_address", currentCoin.MintAddress)
 				if getErr == nil && existingCoin != nil {
 					currentCoin.ID = existingCoin.ID

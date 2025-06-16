@@ -23,46 +23,40 @@ type PriceHistoryItem struct {
 	Value    float64 `json:"value"`
 }
 
-//	export const TIMEFRAME_CONFIG: Record<string, { granularity: GetPriceHistoryRequest_PriceHistoryType, durationMs: number, roundingMinutes: number }> = {
-//		"1H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 1 * 60 * 60 * 1000, roundingMinutes: 1 },
-//		"4H": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000, roundingMinutes: 5 },
-//		"1D": { granularity: GetPriceHistoryRequest_PriceHistoryType.FIVE_MINUTE, durationMs: 24 * 60 * 60 * 1000, roundingMinutes: 10 },
-//		"1W": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_HOUR, durationMs: 7 * 24 * 60 * 60 * 1000, roundingMinutes: 60 },
-//		"1M": { granularity: GetPriceHistoryRequest_PriceHistoryType.FOUR_HOUR, durationMs: 30 * 24 * 60 * 60 * 1000, roundingMinutes: 240 }, // 4 hours
-//		"1Y": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_DAY, durationMs: 365 * 24 * 60 * 60 * 1000, roundingMinutes: 1440 }, // 1 day
-//		// Default for any other case, though UI should restrict to above
-//		"DEFAULT": { granularity: GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE, durationMs: 4 * 60 * 60 * 1000, roundingMinutes: 1 },
-//	};
-
 var TimeframeConfigMap = map[pb.GetPriceHistoryRequest_PriceHistoryType]BackendTimeframeConfig{
 	pb.GetPriceHistoryRequest_ONE_HOUR: {
 		BirdeyeType:         "1m",
 		DefaultViewDuration: 1 * time.Hour,
-		Rounding:            1 * time.Minute,
-		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_HOUR)],
+		Rounding:            2 * time.Minute,
+		// Rounding:            1 * time.Minute,
+		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_HOUR)],
 	},
 	pb.GetPriceHistoryRequest_FOUR_HOUR: {
 		BirdeyeType:         "5m",
 		DefaultViewDuration: 4 * time.Hour,
-		Rounding:            5 * time.Minute,
-		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_FOUR_HOUR)],
+		Rounding:            10 * time.Minute,
+		// Rounding:            5 * time.Minute,
+		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_FOUR_HOUR)],
 	},
 	pb.GetPriceHistoryRequest_ONE_DAY: {
 		BirdeyeType:         "15m",
 		DefaultViewDuration: 24 * time.Hour,
-		Rounding:            10 * time.Minute,
-		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_DAY)],
+		Rounding:            20 * time.Minute,
+		// Rounding:            10 * time.Minute,
+		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_DAY)],
 	},
 	pb.GetPriceHistoryRequest_ONE_WEEK: {
 		BirdeyeType:         "1H",
 		DefaultViewDuration: 7 * 24 * time.Hour,
-		Rounding:            60 * time.Minute,
-		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_WEEK)],
+		Rounding:            120 * time.Minute,
+		// Rounding:            60 * time.Minute,
+		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_WEEK)],
 	},
 	pb.GetPriceHistoryRequest_ONE_MONTH: {
 		BirdeyeType:         "4H",
 		DefaultViewDuration: 30 * 24 * time.Hour,
-		Rounding:            240 * time.Minute, // 4 hours
-		HistoryType:         pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_MONTH)],
+		Rounding:            480 * time.Minute, // 4 hours
+		// Rounding:            240 * time.Minute, // 4 hours
+		HistoryType: pb.GetPriceHistoryRequest_PriceHistoryType_name[int32(pb.GetPriceHistoryRequest_ONE_MONTH)],
 	},
 }

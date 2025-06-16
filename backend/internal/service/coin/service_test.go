@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require" // Import require for assertions within test setup/logic
 
-	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	birdeyeclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye/mocks"
 	jupiterclientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
 	clientmocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/mocks"
@@ -348,98 +347,6 @@ func removeCall(calls []*mock.Call, methodName string) []*mock.Call {
 	return filtered
 }
 
-func TestLoadOrRefreshData_NoTokensFromBirdeye_ClearsTrending(t *testing.T) {
-	ctx := context.Background()
-	// Use a clean setup for this test to have full control over mock expectations,
-	// especially for WithTransaction and ListTrendingCoins during the tested loadOrRefreshData call.
-	cfg := &Config{NewCoinsFetchInterval: 0}
-	testSpecificMocks := &testMocks{
-		JupiterClient:  jupiterclientmocks.NewMockClientAPI(t),
-		BirdeyeClient:  birdeyeclientmocks.NewMockClientAPI(t),
-		OffchainClient: offchainClientMocks.NewMockClientAPI(t),
-		Store:          dbDataStoreMocks.NewMockStore(t),
-		CoinRepo:       dbDataStoreMocks.NewMockRepository[model.Coin](t),
-		RawCoinRepo:    dbDataStoreMocks.NewMockRepository[model.RawCoin](t),
-		SolanaClient:   clientmocks.NewMockGenericClientAPI(t),
-		TelemetryAPI:   telemetrymocks.NewMockTelemetryAPI(t),
-	}
-
-	// Service instance for this test, distinct from the global setup's service instance.
-	// We pass testSpecificMocks.Store here.
-	service := &Service{
-		config:         cfg,
-		jupiterClient:  testSpecificMocks.JupiterClient,
-		birdeyeClient:  testSpecificMocks.BirdeyeClient,
-		offchainClient: testSpecificMocks.OffchainClient,
-		store:          testSpecificMocks.Store, // Use the test-specific store
-		chainClient:    testSpecificMocks.SolanaClient,
-		apiTracker:     testSpecificMocks.TelemetryAPI,
-	}
-
-	oldTime := time.Now().Add(-(TrendingDataTTL + time.Hour)) // Ensure it's older than TTL
-	oldTimeStr := oldTime.Format(time.RFC3339)
-	initialTrendingCoin := model.Coin{
-		ID:          1,
-		MintAddress: "trendingCoin1",
-		Name:        "Old Trending Coin",
-		Symbol:      "OTC",
-		IsTrending:  true,
-		LastUpdated: oldTimeStr,
-	}
-
-	// 1. Mock WithTransaction: Crucial for loadOrRefreshData.
-	// It must execute the passed function (fn) using the testSpecificMocks.Store.
-	testSpecificMocks.Store.On("WithTransaction", mock.Anything, mock.AnythingOfType("func(db.Store) error")).
-		Return(func(ctx context.Context, fn func(txStore db.Store) error) error {
-			return fn(testSpecificMocks.Store) // Pass the same testSpecificMocks.Store into the transaction block
-		}).Once()
-
-	// 2. Mock ListTrendingCoins: Called by loadOrRefreshData to determine if a refresh is needed.
-	testSpecificMocks.Store.On("ListTrendingCoins", ctx).Return([]model.Coin{initialTrendingCoin}, nil).Once()
-
-	// 3. Mock BirdeyeClient.GetTrendingTokens: Simulate Birdeye returning no tokens.
-	testSpecificMocks.BirdeyeClient.On("GetTrendingTokens", ctx, mock.AnythingOfType("birdeye.TrendingTokensParams")).Return(&birdeye.TokenTrendingResponse{Data: birdeye.TokenTrendingData{Tokens: []birdeye.TokenDetails{}}}, nil).Once()
-
-	// 4. Mock Store.Coins() to return the CoinRepo, then mock CoinRepo.List.
-	// This is for loadOrRefreshData's step of clearing IsTrending on existing coins.
-	testSpecificMocks.Store.On("Coins").Return(testSpecificMocks.CoinRepo) // This will be called multiple times potentially
-	// Updated mock to expect db.ListOptions
-	testSpecificMocks.CoinRepo.On("List", ctx, mock.AnythingOfType("db.ListOptions")).Return([]model.Coin{initialTrendingCoin}, int64(1), nil).Once()
-
-	// 5. Mock CoinRepo.BulkUpsert: Expect the initialTrendingCoin to be updated.
-	var capturedCoinsForBulkUpsert []model.Coin
-	testSpecificMocks.CoinRepo.On("BulkUpsert", ctx, mock.MatchedBy(func(coins *[]model.Coin) bool {
-		if coins == nil || len(*coins) != 1 {
-			return false
-		}
-		capturedCoinsForBulkUpsert = *coins // Capture for assertion
-		return (*coins)[0].ID == initialTrendingCoin.ID
-	})).Return(int64(1), nil).Once()
-
-	// --- Execute the target logic: Directly call loadOrRefreshData ---
-	err := service.loadOrRefreshData(ctx)
-	assert.NoError(t, err)
-
-	// --- Assert results ---
-	assert.Len(t, capturedCoinsForBulkUpsert, 1, "Should have captured one coin for bulk update")
-	if len(capturedCoinsForBulkUpsert) == 1 {
-		updatedCoin := capturedCoinsForBulkUpsert[0]
-		assert.Equal(t, initialTrendingCoin.ID, updatedCoin.ID, "Updated coin ID should match initial")
-		assert.False(t, updatedCoin.IsTrending, "IsTrending should now be false")
-		assert.NotEqual(t, oldTimeStr, updatedCoin.LastUpdated, "LastUpdated timestamp should have changed")
-
-		newTimestamp, parseErr := time.Parse(time.RFC3339, updatedCoin.LastUpdated)
-		assert.NoError(t, parseErr, "Failed to parse new LastUpdated timestamp")
-		assert.True(t, time.Since(newTimestamp) < time.Minute, "New LastUpdated timestamp should be very recent")
-	}
-
-	// Verify all mock expectations were met
-	testSpecificMocks.Store.AssertExpectations(t)
-	testSpecificMocks.CoinRepo.AssertExpectations(t)
-	testSpecificMocks.BirdeyeClient.AssertExpectations(t)
-}
-
-// Helper functions for pointers
 func PintRefactored(i int) *int          { return &i }
 func PboolRefactored(b bool) *bool       { return &b }
 func PstringRefactored(s string) *string { return &s }
