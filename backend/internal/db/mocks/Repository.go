@@ -361,7 +361,7 @@ func (_c *MockRepository_GetByField_Call[T]) RunAndReturn(run func(ctx context.C
 }
 
 // List provides a mock function for the type MockRepository
-func (_mock *MockRepository[T]) List(ctx context.Context, opts db.ListOptions) ([]T, int64, error) {
+func (_mock *MockRepository[T]) List(ctx context.Context, opts db.ListOptions) ([]T, int32, error) {
 	ret := _mock.Called(ctx, opts)
 
 	if len(ret) == 0 {
@@ -369,9 +369,9 @@ func (_mock *MockRepository[T]) List(ctx context.Context, opts db.ListOptions) (
 	}
 
 	var r0 []T
-	var r1 int64
+	var r1 int32
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, db.ListOptions) ([]T, int64, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, db.ListOptions) ([]T, int32, error)); ok {
 		return returnFunc(ctx, opts)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, db.ListOptions) []T); ok {
@@ -381,10 +381,10 @@ func (_mock *MockRepository[T]) List(ctx context.Context, opts db.ListOptions) (
 			r0 = ret.Get(0).([]T)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, db.ListOptions) int64); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, db.ListOptions) int32); ok {
 		r1 = returnFunc(ctx, opts)
 	} else {
-		r1 = ret.Get(1).(int64)
+		r1 = ret.Get(1).(int32)
 	}
 	if returnFunc, ok := ret.Get(2).(func(context.Context, db.ListOptions) error); ok {
 		r2 = returnFunc(ctx, opts)
@@ -424,18 +424,18 @@ func (_c *MockRepository_List_Call[T]) Run(run func(ctx context.Context, opts db
 	return _c
 }
 
-func (_c *MockRepository_List_Call[T]) Return(vs []T, n int64, err error) *MockRepository_List_Call[T] {
+func (_c *MockRepository_List_Call[T]) Return(vs []T, n int32, err error) *MockRepository_List_Call[T] {
 	_c.Call.Return(vs, n, err)
 	return _c
 }
 
-func (_c *MockRepository_List_Call[T]) RunAndReturn(run func(ctx context.Context, opts db.ListOptions) ([]T, int64, error)) *MockRepository_List_Call[T] {
+func (_c *MockRepository_List_Call[T]) RunAndReturn(run func(ctx context.Context, opts db.ListOptions) ([]T, int32, error)) *MockRepository_List_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ListWithOpts provides a mock function for the type MockRepository
-func (_mock *MockRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]T, int64, error) {
+func (_mock *MockRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]T, int32, error) {
 	ret := _mock.Called(ctx, opts)
 
 	if len(ret) == 0 {
@@ -443,9 +443,9 @@ func (_mock *MockRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOp
 	}
 
 	var r0 []T
-	var r1 int64
+	var r1 int32
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, db.ListOptions) ([]T, int64, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, db.ListOptions) ([]T, int32, error)); ok {
 		return returnFunc(ctx, opts)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, db.ListOptions) []T); ok {
@@ -455,10 +455,10 @@ func (_mock *MockRepository[T]) ListWithOpts(ctx context.Context, opts db.ListOp
 			r0 = ret.Get(0).([]T)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, db.ListOptions) int64); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, db.ListOptions) int32); ok {
 		r1 = returnFunc(ctx, opts)
 	} else {
-		r1 = ret.Get(1).(int64)
+		r1 = ret.Get(1).(int32)
 	}
 	if returnFunc, ok := ret.Get(2).(func(context.Context, db.ListOptions) error); ok {
 		r2 = returnFunc(ctx, opts)
@@ -498,12 +498,12 @@ func (_c *MockRepository_ListWithOpts_Call[T]) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *MockRepository_ListWithOpts_Call[T]) Return(vs []T, n int64, err error) *MockRepository_ListWithOpts_Call[T] {
+func (_c *MockRepository_ListWithOpts_Call[T]) Return(vs []T, n int32, err error) *MockRepository_ListWithOpts_Call[T] {
 	_c.Call.Return(vs, n, err)
 	return _c
 }
 
-func (_c *MockRepository_ListWithOpts_Call[T]) RunAndReturn(run func(ctx context.Context, opts db.ListOptions) ([]T, int64, error)) *MockRepository_ListWithOpts_Call[T] {
+func (_c *MockRepository_ListWithOpts_Call[T]) RunAndReturn(run func(ctx context.Context, opts db.ListOptions) ([]T, int32, error)) *MockRepository_ListWithOpts_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }
