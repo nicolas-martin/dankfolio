@@ -134,6 +134,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					secondaryTextStyle={coin.balance !== undefined ? styles.balance : styles.name}
 					// iconStyle={styles.logo} // If specific styling needed for the icon wrapper itself
 					textContainerStyle={styles.nameSection}
+					testIdPrefix={testIdPrefix}
 				/>
 
 				{/* Sparkline in the middle */}

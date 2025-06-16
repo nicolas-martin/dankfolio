@@ -15,28 +15,17 @@ env:
 - assertVisible: "New Listings"
 - assertVisible: "Trending Coins"
 
-# Test navigation elements
-# - assertVisible: "  Portfolio Portfolio"
-# - assertVisible: "  Explore Explore"
-# - assertVisible: "  Home Home"
-
 # Trending
-- assertVisible:
-      id: "trending-coin-card-${JUP_SYMBOL}"
 - runFlow:
       file: ../components/coin-card.yaml
       env:
           COIN_SYMBOL: "${JUP_SYMBOL}"
 
-- assertVisible:
-      id: "trending-coin-card-${SOL_SYMBOL}"
 - runFlow:
       file: ../components/coin-card.yaml
       env:
           COIN_SYMBOL: "${SOL_SYMBOL}"
 
-- assertVisible:
-      id: "trending-coin-card-${BONK_SYMBOL}"
 - runFlow:
       file: ../components/coin-card.yaml
       env:

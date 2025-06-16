@@ -38,6 +38,7 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 				// No secondary text in this specific block, or pass timeAgo if CoinInfoBlock is made more flexible
 				primaryTextStyle={styles.symbol}
 				iconStyle={styles.logoContainer} // Pass logoContainer style to the icon part of CoinInfoBlock
+				testIdPrefix={testIdPrefix}
 			/>
 			{/* <Text style={styles.symbol} numberOfLines={1} testID={`${testIdPrefix}-symbol-${coin.symbol.toLowerCase()}`}>
 				{coin.symbol}
