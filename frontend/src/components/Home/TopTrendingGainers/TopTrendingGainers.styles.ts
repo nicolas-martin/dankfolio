@@ -11,6 +11,13 @@ export const useStyles = () => {
 			marginRight: theme.spacing.sm,
 			width: 140,
 		},
+		changeContainer: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			gap: theme.spacing.xs / 2,
+			justifyContent: 'flex-end',
+			minWidth: 50,
+		},
 		container: {
 			paddingBottom: theme.spacing['2xl'],
 			paddingTop: theme.spacing.lg,
@@ -56,16 +63,15 @@ export const useStyles = () => {
 			width: '60%',
 		},
 		title: {
-			color: theme.colors.onBackground,
-			fontFamily: theme.typography.fontFamily.bold,
+			color: theme.colors.onSurface,
 			fontSize: theme.typography.fontSize.xl,
-			marginBottom: theme.spacing.md,
-			paddingHorizontal: theme.spacing.lg,
+			fontWeight: '600',
 		},
 		titleContainer: {
 			alignItems: 'flex-start',
 			flexDirection: 'row',
 			justifyContent: 'space-between',
+			marginBottom: theme.spacing.lg,
 			paddingHorizontal: theme.spacing.lg,
 		},
 		titleShimmer: {
@@ -97,7 +103,6 @@ export const useStyles = () => {
 		trendingChange: {
 			fontFamily: theme.typography.fontFamily.medium,
 			fontSize: theme.typography.fontSize.xs,
-			minWidth: 50,
 			textAlign: 'right',
 		},
 		trendingSymbol: {

@@ -171,7 +171,7 @@ describe('Zustand Coin Store', () => {
 				const fetchedNewSimpleSol = { ...mockSolCoin, price: mockSolCoin.price + 10 }; // Same mint, different data
 				const fetchedNewSimpleWen = { ...mockWenCoin, price: mockWenCoin.price + 0.0001 }; // Same mint, different data
 
-				(grpcApi.searchCoins as jest.Mock).mockResolvedValue({
+				(grpcApi.search as jest.Mock).mockResolvedValue({
 					coins: [mockNewlyListedCoin, fetchedNewSimpleSol, fetchedNewSimpleWen],
 					totalCount: 3,
 				});
@@ -196,7 +196,7 @@ describe('Zustand Coin Store', () => {
 			});
 
 			it('adds new coins to coinMap if they are not already present', async () => {
-				(grpcApi.searchCoins as jest.Mock).mockResolvedValue({
+				(grpcApi.search as jest.Mock).mockResolvedValue({
 					coins: [mockNewlyListedCoin],
 					totalCount: 1,
 				});

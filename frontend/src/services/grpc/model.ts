@@ -98,13 +98,14 @@ export type SearchSortByOption =
 	| "name"
 	| "symbol"
 	| "price"
-	| "volume24h"
-	| "marketcap"
+	| "volume_24h"
+	| "market_cap"
 	| "created_at"
 	| "last_updated"
-	| "jupiter_listed_at";
+	| "jupiter_listed_at"
+	| "price_change_percentage_24h";
 
-export interface SearchCoinsRequest {
+export interface SearchRequest {
 	query: string;
 	tags?: string[];
 	minVolume24h?: number;
@@ -114,8 +115,9 @@ export interface SearchCoinsRequest {
 	sortDesc?: boolean;
 }
 
-export interface SearchCoinsResponse {
+export interface SearchResponse {
 	coins: Coin[];
+	totalCount: number;
 }
 
 export interface SearchCoinByMintRequest {
@@ -161,7 +163,7 @@ export interface ListTradesResponse {
 export interface API {
 	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
 	getCoinByID: (mintAddress: string) => Promise<Coin>;
-	searchCoins: (params: SearchCoinsRequest) => Promise<SearchCoinsResponse>;
+	search: (params: SearchRequest) => Promise<SearchResponse>;
 	searchCoinByMint: (mintAddress: string) => Promise<SearchCoinByMintResponse>;
 	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;
 	getSwapQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<SwapQuoteResponse>;

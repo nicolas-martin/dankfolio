@@ -19,7 +19,7 @@ export const DEFAULT_FILTERS: SearchFilters = {
 
 export const searchTokens = async (filters: SearchFilters): Promise<Coin[]> => {
 	try {
-		const response = await grpcApi.searchCoins(filters);
+		const response = await grpcApi.search(filters);
 		return response.coins;
 	} catch (error) {
 		logger.exception(error, { functionName: 'searchTokens', params: { filters } });
@@ -34,7 +34,7 @@ export const performSearch = async (
 	offset: number = 0
 ): Promise<Coin[]> => {
 	try {
-		const response = await grpcApi.searchCoins({
+		const response = await grpcApi.search({
 			query,
 			tags: filters.tags,
 			minVolume24h: filters.minVolume24h,

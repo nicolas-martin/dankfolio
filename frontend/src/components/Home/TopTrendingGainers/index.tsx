@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import CachedImage from '@/components/Common/CachedImage';
+import { TrendIcon, getTrendColor } from '@/components/Common/Icons';
 import { formatPercentage } from '@/utils/numberFormat';
 import { useStyles } from './TopTrendingGainers.styles';
 import { Coin } from '@/types';
@@ -70,18 +71,27 @@ const TrendingCard: React.FC<{
 				{coin.symbol}
 			</Text>
 
-			{/* Change - fixed width to prevent layout shifts */}
+			{/* Change with icon - fixed width to prevent layout shifts */}
 			{changeValue !== undefined && (
-				<Text
-					style={[
-						styles.trendingChange,
-						{ color: getChangeColor(changeValue) }
-					]}
-					numberOfLines={1}
-					testID={`trending-coin-change-${coin.symbol.toLowerCase()}`}
-				>
-					{formatPercentage(changeValue, 1, true)}
-				</Text>
+				<View style={styles.changeContainer}>
+					{/* Smart Trend Icon */}
+					<TrendIcon
+						value={changeValue}
+						size={12}
+					/>
+
+					{/* Percentage Text */}
+					<Text
+						style={[
+							styles.trendingChange,
+							{ color: getTrendColor(changeValue) }
+						]}
+						numberOfLines={1}
+						testID={`trending-coin-change-${coin.symbol.toLowerCase()}`}
+					>
+						{formatPercentage(changeValue, 1, true)}
+					</Text>
+				</View>
 			)}
 		</TouchableOpacity>
 	);
@@ -89,9 +99,9 @@ const TrendingCard: React.FC<{
 
 TrendingCard.displayName = 'TrendingCard';
 
-const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({ 
-	topTrendingGainers, 
-	isLoading 
+const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
+	topTrendingGainers,
+	isLoading
 }) => {
 	const styles = useStyles();
 	const navigation = useNavigation<TopTrendingGainersNavigationProp>();
@@ -150,7 +160,7 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 		return (
 			<View style={styles.container}>
 				<View style={styles.titleContainer}>
-					<Text style={styles.title}>🚀 Top Trending Gainers</Text>
+					<Text style={styles.title}>Top Gainers</Text>
 				</View>
 				{renderEmptyComponent()}
 			</View>
@@ -160,7 +170,7 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 	return (
 		<View style={styles.container}>
 			<View style={styles.titleContainer}>
-				<Text style={styles.title}>🚀 Top Trending Gainers</Text>
+				<Text style={styles.title}>Trending Gainers</Text>
 			</View>
 			<Animated.FlatList
 				data={topTrendingGainers}

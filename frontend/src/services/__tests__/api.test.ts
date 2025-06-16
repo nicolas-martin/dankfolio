@@ -47,7 +47,7 @@ const mockGrpcApi: API = {
 	createWallet: jest.fn().mockResolvedValue({ address: 'mockAddress', privateKey: 'mockPrivateKey' }),
 	// getTransferTransaction: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockTx' }), // Removed as it's not in API type
 	getProxiedImage: jest.fn().mockResolvedValue({ imageData: 'mockImageData' }),
-	searchCoins: jest.fn().mockResolvedValue([{ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' }]),
+	search: jest.fn().mockResolvedValue([{ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' }]),
 	searchCoinByMint: jest.fn().mockResolvedValue({ id: 'mockCoinId', name: 'Mock Coin', symbol: 'MCK' }),
 	prepareSwap: jest.fn().mockResolvedValue({ unsignedTransaction: 'mockUnsignedSwapTx' }), // Added missing prepareSwap
 	listTrades: jest.fn().mockResolvedValue({ transactions: [], totalCount: 0 }) // Added missing listTrades

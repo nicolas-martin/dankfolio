@@ -351,40 +351,40 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	searchCoins: async (params: grpcModel.SearchCoinsRequest): Promise<grpcModel.SearchCoinsResponse> => {
+	search: async (params: grpcModel.SearchRequest): Promise<grpcModel.SearchResponse> => {
 		const serviceName = 'CoinService';
-		const methodName = 'searchCoins';
+		const methodName = 'search';
 		try {
 			grpcUtils.logRequest(serviceName, methodName, `Original params: ${JSON.stringify(params)}`);
 
-			let sortFieldEnum: CoinSortField = CoinSortField.COIN_SORT_FIELD_UNSPECIFIED;
+			let sortFieldEnum: CoinSortField = CoinSortField.UNSPECIFIED; // Default value
 			// Assuming params.sortBy is a string from grpcModel.SearchCoinsRequest
 			const sortByString = params.sortBy as string | undefined;
 
 			switch (sortByString) {
 				case 'price_change_percentage_24h':
-					sortFieldEnum = CoinSortField.COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H;
+					sortFieldEnum = CoinSortField.PRICE_CHANGE_PERCENTAGE_24H;
 					break;
 				case 'jupiter_listed_at':
-					sortFieldEnum = CoinSortField.COIN_SORT_FIELD_JUPITER_LISTED_AT;
+					sortFieldEnum = CoinSortField.JUPITER_LISTED_AT;
 					break;
 				case 'volume_24h':
-					sortFieldEnum = CoinSortField.COIN_SORT_FIELD_VOLUME_24H;
+					sortFieldEnum = CoinSortField.VOLUME_24H;
 					break;
 				case 'name':
-					sortFieldEnum = CoinSortField.COIN_SORT_FIELD_NAME;
+					sortFieldEnum = CoinSortField.NAME;
 					break;
 				case 'symbol':
-					sortFieldEnum = CoinSortField.COIN_SORT_FIELD_SYMBOL;
+					sortFieldEnum = CoinSortField.SYMBOL;
 					break;
-				case 'market_cap': // Frontend might use 'market_cap'
-					sortFieldEnum = CoinSortField.COIN_SORT_FIELD_MARKET_CAP;
+				case 'market_cap':
+					sortFieldEnum = CoinSortField.MARKET_CAP;
 					break;
 				default:
 					if (sortByString) { // Only warn if it was actually set to something unknown
 						logger.warn(`Unsupported sortBy string: ${sortByString}, defaulting to UNSPECIFIED.`);
 					}
-					sortFieldEnum = CoinSortField.COIN_SORT_FIELD_UNSPECIFIED;
+					sortFieldEnum = CoinSortField.UNSPECIFIED;
 			}
 
 			const grpcRequest = { // Explicitly construct the request for coinClient.search
@@ -399,7 +399,7 @@ export const grpcApi: grpcModel.API = {
 
 			grpcUtils.logRequest(serviceName, methodName, `Mapped gRPC request: ${JSON.stringify(grpcRequest)}`);
 
-			const response = await coinClient.search(grpcRequest); // Removed @ts-ignore
+			const response = await coinClient.search(grpcRequest);
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 

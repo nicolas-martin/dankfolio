@@ -21,7 +21,7 @@ import {
 	ListTradesResponseSchema,
 } from '@/gen/dankfolio/v1/trade_pb';
 
-import { MOCK_TRENDING_COINS, MOCK_NEW_COINS, MOCK_TOP_GAINER_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES, CAPTURED_TRANSACTION_DATA } from './mockData';
+import { MOCK_TRENDING_COINS, MOCK_TOP_GAINER_COINS, MOCK_NEW_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES, CAPTURED_TRANSACTION_DATA } from './mockData';
 import { generatePriceHistory } from './helpers';
 
 type FetchInput = string | URL | Request;
@@ -63,26 +63,39 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 }
 
 
-async function handleSearch(options?: FetchInit) {
+async function handleSearchCoins(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 
-	if (requestData.sortBy === CoinSortField.PRICE_CHANGE_PERCENTAGE_24H && requestData.sortDesc) {
+	// Check if this is a request for top gainers (sorted by price change percentage)
+	// Handle both string and numeric enum values
+	const isTopGainerRequest = (
+		(requestData.sortBy === CoinSortField.PRICE_CHANGE_PERCENTAGE_24H || 
+		 requestData.sortBy === 'COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H') && 
+		requestData.sortDesc
+	);
+	
+	if (isTopGainerRequest) {
 		return create(SearchResponseSchema, {
 			coins: MOCK_TOP_GAINER_COINS,
 			totalCount: MOCK_TOP_GAINER_COINS.length,
 		});
 	}
 
-	// Default behavior
-	const coinsToReturn = MOCK_NEW_COINS;
-	return create(SearchResponseSchema, {
-		coins: coinsToReturn,
-		totalCount: coinsToReturn.length,
-	});
-}
+	// Check if this is a request for new coins (sorted by jupiter_listed_at)
+	// Handle both string and numeric enum values
+	const isNewCoinsRequest = (
+		requestData.sortBy === CoinSortField.JUPITER_LISTED_AT || 
+		requestData.sortBy === 'COIN_SORT_FIELD_JUPITER_LISTED_AT'
+	);
+	
+	if (isNewCoinsRequest) {
+		return create(SearchResponseSchema, {
+			coins: MOCK_NEW_COINS,
+			totalCount: MOCK_NEW_COINS.length,
+		});
+	}
 
-
-async function handleSearchCoins(_options?: FetchInit) {
+	// Default behavior - return trending coins
 	const coinsToReturn = MOCK_TRENDING_COINS.slice(0, 3);
 	return create(SearchResponseSchema, {
 		coins: coinsToReturn,
@@ -326,8 +339,8 @@ async function handleListTrades(_options?: FetchInit) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> } = {
 	'/dankfolio.v1.coinservice/getavailablecoins': handleGetAvailableCoins,
-	'/dankfolio.v1.coinservice/search': handleSearch,
-	'/dankfolio.v1.coinservice/searchcoins': handleSearchCoins,
+	'/dankfolio.v1.coinservice/search': handleSearchCoins, // Proper proto endpoint
+	'/dankfolio.v1.coinservice/searchcoins': handleSearchCoins, // Legacy endpoint for compatibility
 	'/dankfolio.v1.coinservice/searchcoinbymint': handleSearchCoinByMint,
 	'/dankfolio.v1.coinservice/getcoinbyid': handleGetCoinById,
 	'/dankfolio.v1.walletservice/getwalletbalances': handleGetWalletBalances,
