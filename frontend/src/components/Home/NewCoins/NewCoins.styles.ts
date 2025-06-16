@@ -56,16 +56,15 @@ export const useStyles = () => {
 			width: '60%',
 		},
 		title: {
-			color: theme.colors.onBackground,
-			fontFamily: theme.typography.fontFamily.bold,
+			color: theme.colors.onSurface,
 			fontSize: theme.typography.fontSize.xl,
-			marginBottom: theme.spacing.md,
-			paddingHorizontal: theme.spacing.lg,
+			fontWeight: '600',
 		},
 		titleContainer: {
 			alignItems: 'flex-start',
 			flexDirection: 'row',
 			justifyContent: 'space-between',
+			marginBottom: theme.spacing.lg,
 			paddingHorizontal: theme.spacing.lg,
 		},
 		titleShimmer: {

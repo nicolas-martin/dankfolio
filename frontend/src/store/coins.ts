@@ -182,7 +182,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 
 			// Use grpcApi.searchCoins to call the Search RPC method
 			// Sort by 'jupiter_listed_at' to get the newest coins first
-			const response = await grpcApi.searchCoins({
+			const response = await grpcApi.search({
 				query: '',
 				tags: [],
 				minVolume24h: 0, // Include all coins regardless of volume
@@ -335,7 +335,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		log.log("Fetching top trending gainers from API...");
 
 		try {
-			const response = await grpcApi.searchCoins({
+			const response = await grpcApi.search({
 				query: "",
 				tags: [],
 				limit,
@@ -353,9 +353,7 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			cacheStore.setCache(fetchedCoins); // Update the cache
 		} catch (error) {
 			log.error("Error fetching top trending gainers:", error);
-			// @ts-ignore
-			toastError("Error fetching top trending gainers.");
-			set({ isLoadingTopTrendingGainers: false });
+			set({ error: 'Error fetching top trending gainers', isLoadingTopTrendingGainers: false });
 		}
 	},
 	clearTopTrendingGainersCache: () => {
