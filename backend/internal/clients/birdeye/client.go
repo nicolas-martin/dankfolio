@@ -100,13 +100,12 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 	parsedURL, err := url.Parse(requestURL)
 	if err != nil {
 		slog.Error("Failed to parse URL for tracking", "url", requestURL, "error", err)
-		// Fallback or decide how to handle error, for now, we'll proceed without specific endpoint tracking if parse fails
+		return nil, fmt.Errorf("failed to parse URL: %w", err)
 	} else {
 		endpointName := parsedURL.Path
 		if endpointName == "" {
 			endpointName = "/"
 		}
-		// Ensure c.tracker is not nil before calling TrackCall
 		if c.tracker != nil {
 			c.tracker.TrackCall("birdeye", endpointName)
 		}

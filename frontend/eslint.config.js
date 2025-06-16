@@ -16,16 +16,16 @@ import { dirname } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default [
-	js.configs.recommended,
-	// Global ignores - must be in separate config object
 	{
 		ignores: [
+			'**/*.test.*',
+			'**/*.spec.*',
 			'jest.config.js',
 			'eslint.config.js',
 			'**/scripts/**',
 			'coverage/**',
 			'app.config.js',
-			'**.d.ts**',
+			'**/*.d.ts',
 			'babel.config.js',
 			'**/gen/**',
 			'**/metro.config.js',
@@ -33,7 +33,7 @@ export default [
 			'src/components/Chart/CoinChart/**',
 			'src/components/Chart/SparklineChart/**',
 		],
-	},
+	}, js.configs.recommended,
 	{
 		languageOptions: {
 			parser,

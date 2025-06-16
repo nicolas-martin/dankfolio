@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Card, Text, Searchbar, Switch as PaperSwitch, Icon } from 'react-native-paper'; // Added Icon, PaperSwitch
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
@@ -389,14 +389,14 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		[enableUsdToggle, currentInputUnit, textInputProps?.placeholder, selectedToken?.symbol]
 	);
 
-	const displayHelperText = useMemo(() => (enableUsdToggle && currentInputUnit === 'USD'
+	const _displayHelperText = useMemo(() => (enableUsdToggle && currentInputUnit === 'USD'
 		? 'Enter USD amount'
 		: helperText || `Enter ${selectedToken?.symbol || 'token'} amount`), // Use prop helperText if CRYPTO and provided
 		[enableUsdToggle, currentInputUnit, helperText, selectedToken?.symbol]
 	);
 
 
-	const portfolioToken = useMemo(() => {
+	const _portfolioToken = useMemo(() => {
 		return findPortfolioToken(selectedToken, portfolioTokens);
 	}, [selectedToken, portfolioTokens]);
 
@@ -486,11 +486,11 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 					<View style={styles.switchContainer}>
 						{/* Ensure styles.switchContainer has flexDirection: 'row', alignItems: 'center' */}
 						<Icon source="swap-horizontal" size={24} color={styles.colors?.onSurfaceVariant || '#888'} />
-						<Text style={[styles.switchLabel, { marginLeft: 8 }]}>{`Input: ${currentInputUnit === 'CRYPTO' ? selectedToken.symbol : 'USD'}`}</Text>
+						<Text style={styles.switchLabel}>{`Input: ${currentInputUnit === 'CRYPTO' ? selectedToken.symbol : 'USD'}`}</Text>
 						<PaperSwitch
 							value={currentInputUnit === 'USD'}
 							onValueChange={handleUnitToggle}
-							style={{ marginLeft: 'auto' }} // Pushes switch to the right if label takes space
+							style={styles.switchToggle}
 							testID={`${testID}-unit-switch`}
 						/>
 					</View>

@@ -105,7 +105,7 @@ const Trade: React.FC = () => {
 				if (solCoin) setFromCoin(solCoin);
 			});
 		}
-	}, []); // Run only on mount to set initial fromCoin if needed.
+	}, [fromCoin, getCoinByID, toCoin?.symbol]); // Added missing dependencies
 
 	// useEffect for fetching USD exchangeRate is removed. TokenSelector handles its own rate.
 

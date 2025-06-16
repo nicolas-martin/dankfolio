@@ -22,6 +22,10 @@ export const useStyles = () => {
 		blurView: {
 			flex: 1,
 		},
+		bottomTextContainer: {
+			alignItems: 'flex-end',
+			marginTop: theme.spacing.xs,
+		},
 		cardContainer: {
 			backgroundColor: theme.colors.surfaceVariant,
 			borderRadius: theme.borderRadius.md,
@@ -34,6 +38,17 @@ export const useStyles = () => {
 			margin: 0,
 			padding: theme.spacing.sm,
 			width: '100%',
+		},
+		equivalentValueText: {
+			color: theme.colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.sm,
+			textAlign: 'right',
+		},
+		helperText: {
+			color: theme.colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.xs,
+			marginTop: 2,
+			textAlign: 'right',
 		},
 		inputContainer: {
 			alignItems: 'flex-end',
@@ -83,6 +98,20 @@ export const useStyles = () => {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			marginRight: theme.spacing.md, // Space between button and input area
+		},
+		switchContainer: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			paddingHorizontal: theme.spacing.sm,
+			paddingVertical: theme.spacing.xs,
+		},
+		switchLabel: {
+			...theme.fonts.bodyMedium,
+			color: theme.colors.onSurface,
+			marginLeft: theme.spacing.xs,
+		},
+		switchToggle: {
+			marginLeft: 'auto',
 		},
 		tokenAddress: {
 			...theme.fonts.bodySmall,

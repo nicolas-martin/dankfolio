@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"sort"
 	"strconv"
 	"time"
@@ -37,30 +36,28 @@ type Service struct {
 // NewService creates a new CoinService instance
 func NewService(
 	config *Config,
-	httpClient *http.Client, // httpClient is still needed for other clients if they don't take it directly yet
 	jupiterClient jupiter.ClientAPI,
 	store db.Store,
 	chainClient clients.GenericClientAPI,
 	birdeyeClient birdeye.ClientAPI,
 	apiTracker telemetry.TelemetryAPI,
-	offchainClient offchain.ClientAPI, // Added offchainClient
+	offchainClient offchain.ClientAPI,
 ) *Service {
 	service := &Service{
 		config:         config,
 		jupiterClient:  jupiterClient,
 		chainClient:    chainClient,
-		offchainClient: offchainClient, // Use passed-in offchainClient
+		offchainClient: offchainClient,
 		store:          store,
 		birdeyeClient:  birdeyeClient,
 		apiTracker:     apiTracker,
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 
-	ctx, cancel := context.WithTimeout(context.Background(), initialLoadTimeout)
-	defer cancel()
-
-	if err := service.loadOrRefreshData(ctx); err != nil {
-		slog.Warn("Initial data load/refresh failed", slog.Any("error", err))
+	if service.config.TrendingFetchInterval > 0 {
+		go service.runTrendingTokenFetcher(service.fetcherCtx)
+	} else {
+		slog.Info("New token fetcher is disabled as NewCoinsFetchInterval is not configured or is zero.")
 	}
 
 	if service.config.NewCoinsFetchInterval > 0 {
@@ -70,6 +67,30 @@ func NewService(
 	}
 
 	return service
+}
+
+func (s *Service) runTrendingTokenFetcher(ctx context.Context) {
+	slog.Info("Starting trending token fetcher", slog.Duration("interval", s.config.NewCoinsFetchInterval))
+	// start the ticker for periodic fetching
+	ticker := time.NewTicker(s.config.NewCoinsFetchInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			slog.Info("Periodically fetching trending tokens...")
+			// Use the passed-in context (s.fetcherCtx) for the actual operation
+			// to allow cancellation of FetchAndStoreNewTokens if the service is shutting down.
+			if err := s.FechAndStoreTrendingTokens(ctx); err != nil {
+				slog.Error("Failed to fetch and store new tokens periodically", slog.Any("error", err))
+			} else {
+				slog.Info("Successfully fetched and stored new tokens periodically.")
+			}
+		case <-ctx.Done(): // Listen for context cancellation
+			slog.Info("New token fetcher stopping due to context cancellation.")
+			return
+		}
+	}
 }
 
 // runNewTokenFetcher periodically fetches new tokens from Jupiter.
@@ -336,51 +357,16 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 	return enrichedCoin, nil // Return the enriched coin regardless of storage success (as per original logic)
 }
 
-// loadOrRefreshData checks if the trending data file is fresh. If not, it triggers
+// FechAndStoreTrendingTokens checks if the trending data file is fresh. If not, it triggers
 // a scrape and enrichment process before loading the data into the service.
-func (s *Service) loadOrRefreshData(ctx context.Context) error {
+func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
 	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
-		// get the trending by asc order
-		// Note: ListTrendingCoins is a custom store method and was not part of the List() signature change.
-		// If it internally uses a generic List that changed, that would be an issue, but its signature here is fine.
-		c, err := txStore.ListTrendingCoins(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get latest trending coin: %w", err)
-		}
-
-		needsRefresh := true
-		if len(c) != 0 {
-			updatedTime, err := time.Parse(time.RFC3339, c[0].LastUpdated)
-			if err != nil {
-				return fmt.Errorf("failed to parse last updated time: %w", err)
-			}
-			age := time.Since(updatedTime)
-			needsRefresh = age > TrendingDataTTL
-			slog.Info("Trending data status", slog.Duration("age", age), slog.Bool("needsRefresh", needsRefresh))
-		}
-
-		if !needsRefresh {
-			slog.Info("Trending data is fresh, no refresh needed.")
-			return nil
-		}
-
-		slog.Info("Trending data is too old or missing, triggering fetch and enrichment...")
-		// FetchAndEnrichTrendingTokens might make external API calls, which ideally shouldn't be part of the DB transaction.
-		// However, its result (enrichedCoins) is used in subsequent DB operations.
-		// For this refactor, we'll keep it inside for simplicity, but in a more advanced setup,
-		// data fetching could be done outside the transaction, and only DB writes inside.
 		enrichedCoins, err := s.UpdateTrendingTokensFromBirdeye(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to fetch and enrich trending coins: %w", err)
 		}
 
-		// Pass empty ListOptions to the updated List method.
-		// The loadOrRefreshData function's goal is to update trending status,
-		// not necessarily to paginate here. We need all existing coins for this logic.
-		// If this becomes a performance issue, this logic might need rethinking,
-		// but for now, fetching all with empty opts (which might apply defaults) is the minimal change.
-		// We also need to handle the new totalCount return value.
-		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{}) // Added empty ListOptions and ignored totalCount
+		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to list coins for updating trending status: %w", err)
 		}

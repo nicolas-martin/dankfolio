@@ -55,12 +55,11 @@ func main() {
 	coinServiceConfig := &coin.Config{
 		BirdEyeBaseURL:        os.Getenv("BIRDEYE_ENDPOINT"),
 		BirdEyeAPIKey:         os.Getenv("BIRDEYE_API_KEY"),
-		CoinGeckoAPIKey:       os.Getenv("COINGECKO_API_KEY"),
 		SolanaRPCEndpoint:     *rpcEndpoint,
 		NewCoinsFetchInterval: time.Hour, // Default for this utility
 	}
 	// Provide nil for currently unneeded dependencies in this cmd tool
-	coinService := coin.NewService(coinServiceConfig, httpClient, jupiterClient, store, solanaInfraClient, nil, nil, nil)
+	coinService := coin.NewService(coinServiceConfig, jupiterClient, store, solanaInfraClient, nil, nil, nil)
 
 	// Initialize the wallet service
 	walletService := wallet.New(solanaInfraClient, store, coinService)
