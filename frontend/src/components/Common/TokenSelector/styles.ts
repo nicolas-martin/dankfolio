@@ -36,7 +36,7 @@ export const useStyles = () => {
 			alignItems: 'flex-start',
 			flexDirection: 'row',
 			margin: 0,
-			padding: theme.spacing.sm,
+			padding: theme.spacing.xs,
 			width: '100%',
 		},
 		equivalentValueText: {
@@ -55,6 +55,10 @@ export const useStyles = () => {
 			flex: 2, // Takes more space than the selector button part
 			marginLeft: theme.spacing.sm,
 		},
+		leftSection: {
+			flex: 1,
+			marginRight: theme.spacing.xs,
+		},
 		modalContent: {
 			alignSelf: 'center',
 			backgroundColor: theme.colors.background,
@@ -69,6 +73,28 @@ export const useStyles = () => {
 			flex: 1,
 			justifyContent: 'center',
 			padding: theme.spacing.xl,
+		},
+		primaryAmountInput: {
+			backgroundColor: 'transparent',
+			borderRadius: theme.spacing.sm,
+			borderWidth: 0,
+			color: theme.colors.onSurface,
+			flex: 1,
+			fontSize: theme.typography.fontSize.xl,
+			fontWeight: 'bold',
+			paddingHorizontal: 0,
+			paddingVertical: 0,
+			textAlign: 'right',
+		},
+		primaryValueContainer: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			justifyContent: 'flex-end',
+			minHeight: 40,
+		},
+		rightSection: {
+			alignItems: 'flex-end',
+			flex: 2,
 		},
 		searchBar: {
 			backgroundColor: theme.colors.surfaceVariant,
@@ -88,6 +114,12 @@ export const useStyles = () => {
 			paddingHorizontal: theme.spacing.lg,
 			paddingTop: theme.spacing.lg,
 		},
+		secondaryValueText: {
+			color: theme.colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.xs,
+			marginTop: 2,
+			textAlign: 'right',
+		},
 		selectedTokenDetails: {
 			flex: 1,
 			marginLeft: theme.spacing.md,
@@ -98,6 +130,17 @@ export const useStyles = () => {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			marginRight: theme.spacing.md, // Space between button and input area
+		},
+		stackedValuesContainer: {
+			alignItems: 'flex-end',
+			minWidth: 100,
+			width: '100%',
+		},
+		swapButton: {
+			margin: 0,
+			marginLeft: theme.spacing.xs / 2,
+			minWidth: 28,
+			width: 28,
 		},
 		switchContainer: {
 			alignItems: 'center',
@@ -124,9 +167,11 @@ export const useStyles = () => {
 			marginTop: 2,
 		},
 		tokenBalance: {
-			...theme.fonts.bodyMedium,
-			color: theme.colors.onSurface,
-			textAlign: 'right',
+			...theme.fonts.bodySmall,
+			color: theme.colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.xs,
+			marginTop: theme.spacing.xs,
+			paddingLeft: theme.spacing.sm,
 		},
 		tokenDetails: { // This is the one from previous line 84
 			flex: 1,
@@ -135,7 +180,7 @@ export const useStyles = () => {
 		tokenIcon: {
 			borderRadius: 18,
 			height: 36,
-			marginRight: theme.spacing.sm,
+			marginRight: theme.spacing.xs,
 			width: 36,
 		},
 		tokenInfo: {
@@ -162,11 +207,20 @@ export const useStyles = () => {
 			...theme.fonts.bodySmall,
 			color: theme.colors.onSurfaceVariant,
 		},
+		tokenSelectorButton: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			width: '100%',
+		},
 		tokenSymbol: {
 			...theme.fonts.titleMedium,
 			color: theme.colors.onSurface,
 			fontSize: theme.typography.fontSize.lg,
 			fontWeight: '600',
+		},
+		tokenTextContainer: {
+			marginLeft: theme.spacing.xs,
 		},
 		valueText: {
 			color: theme.colors.onSurfaceVariant,

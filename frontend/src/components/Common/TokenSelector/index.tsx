@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { Card, Text, Searchbar, Switch as PaperSwitch, Icon } from 'react-native-paper'; // Added Icon, PaperSwitch
+import { Card, Text, Searchbar, IconButton } from 'react-native-paper'; // Added IconButton
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
 import { ChevronDownIcon } from '@components/Common/Icons';
@@ -15,6 +15,7 @@ import { findPortfolioToken } from './scripts'; // calculateUsdValue might be re
 import CachedImage from '@/components/Common/CachedImage';
 import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
+import { formatTokenBalance } from '@/utils/numberFormat'; // Added import
 // grpcApi import removed (no longer calling getUsdPrice directly)
 
 // Memoized icon component to prevent unnecessary re-renders
@@ -332,15 +333,30 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		}
 	}, [amountValue, liveExchangeRate, currentInputUnit, enableUsdToggle]);
 
-
 	const handleUnitToggle = useCallback(() => {
 		setCurrentInputUnit(prevUnit => {
 			const nextUnit = prevUnit === 'CRYPTO' ? 'USD' : 'CRYPTO';
-			if (onAmountChange) onAmountChange('');
-			setInternalUsdAmount('');
+			const rate = liveExchangeRate;
+
+			if (rate && rate > 0) {
+				if (prevUnit === 'CRYPTO' && amountValue) {
+					// Switching from CRYPTO to USD - convert crypto amount to USD and preserve it
+					const crypto = parseFloat(amountValue);
+					if (!isNaN(crypto)) {
+						const usdValue = (crypto * rate).toFixed(2);
+						setInternalUsdAmount(usdValue);
+						// Don't clear crypto amount - keep it for display as secondary value
+					}
+				} else if (prevUnit === 'USD' && internalUsdAmount) {
+					// Switching from USD to CRYPTO - just preserve the original crypto input
+					// Don't convert, just switch back to showing the original crypto amount
+					// The crypto amount (amountValue) is already preserved from before
+				}
+			}
+
 			return nextUnit;
 		});
-	}, [onAmountChange]);
+	}, [onAmountChange, liveExchangeRate, amountValue, internalUsdAmount]);
 
 	const handleCryptoAmountChange = useCallback((text: string) => {
 		if (onAmountChange) onAmountChange(text); // Update parent's crypto amount (which is amountValue)
@@ -369,8 +385,11 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				const usd = parseFloat(text);
 				if (!isNaN(usd)) {
 					const cryptoValue = usd / rate;
-					const precision = selectedToken?.decimals ?? 6;
-					if (onAmountChange) onAmountChange(cryptoValue.toFixed(precision));
+					// Limit to 6 decimal places maximum for readability
+					const formattedCrypto = cryptoValue.toFixed(6);
+					// Remove trailing zeros
+					const cleanCrypto = parseFloat(formattedCrypto).toString();
+					if (onAmountChange) onAmountChange(cleanCrypto);
 				} else {
 					if (onAmountChange) onAmountChange('');
 				}
@@ -378,7 +397,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				if (onAmountChange) onAmountChange('');
 			}
 		}
-	}, [onAmountChange, enableUsdToggle, liveExchangeRate, selectedToken?.decimals]);
+	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
 
 	const displayAmount = enableUsdToggle && currentInputUnit === 'USD' ? internalUsdAmount : amountValue;
 	const currentAmountHandler = enableUsdToggle && currentInputUnit === 'USD' ? handleUsdAmountChange : handleCryptoAmountChange;
@@ -389,13 +408,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		[enableUsdToggle, currentInputUnit, textInputProps?.placeholder, selectedToken?.symbol]
 	);
 
-	const _displayHelperText = useMemo(() => (enableUsdToggle && currentInputUnit === 'USD'
-		? 'Enter USD amount'
-		: helperText || `Enter ${selectedToken?.symbol || 'token'} amount`), // Use prop helperText if CRYPTO and provided
-		[enableUsdToggle, currentInputUnit, helperText, selectedToken?.symbol]
-	);
-
-
 	const _portfolioToken = useMemo(() => {
 		return findPortfolioToken(selectedToken, portfolioTokens);
 	}, [selectedToken, portfolioTokens]);
@@ -403,98 +415,109 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const handleDismiss = useCallback(() => setModalVisible(false), []);
 	const activityIndicatorStyle = useMemo(() => ({ height: styles.amountInput.height }), [styles.amountInput.height]);
 
-	const equivalentValueDisplay = useMemo(() => {
-		if (!enableUsdToggle || !selectedToken) return null;
+	// Calculate display values for stacked layout
+	const cryptoDisplayValue = useMemo(() => {
+		if (!amountValue || parseFloat(amountValue) === 0) return '';
+		// Use formatTokenBalance utility for consistent formatting
+		const formattedAmount = formatTokenBalance(parseFloat(amountValue), 6);
+		return `${formattedAmount} ${selectedToken?.symbol || ''}`;
+	}, [amountValue, selectedToken]);
+
+	const usdDisplayValue = useMemo(() => {
+		if (!enableUsdToggle || !selectedToken) return '';
 		const rate = liveExchangeRate;
 
-		if (currentInputUnit === 'CRYPTO' && amountValue && parseFloat(amountValue) > 0) {
+		if (currentInputUnit === 'USD' && internalUsdAmount && parseFloat(internalUsdAmount) > 0) {
+			return `$${parseFloat(internalUsdAmount).toFixed(2)}`;
+		} else if (currentInputUnit === 'CRYPTO' && amountValue && parseFloat(amountValue) > 0) {
 			if (rate && rate > 0) {
 				return `$${(parseFloat(amountValue) * rate).toFixed(2)}`;
-			} else if (rate === undefined) { // Price is loading or not available
-				return '$...';
-			} else { // Rate is 0 or invalid
-                return '$-.--';
-            }
-		} else if (currentInputUnit === 'USD' && internalUsdAmount && parseFloat(internalUsdAmount) > 0) {
-			if (rate && rate > 0) {
-				const cryptoVal = parseFloat(internalUsdAmount) / rate;
-				return `${cryptoVal.toFixed(selectedToken.decimals ?? 6)} ${selectedToken.symbol}`;
 			} else if (rate === undefined) {
-                return `... ${selectedToken.symbol}`;
-            } else { // Rate is 0 or invalid
-                return `--.-- ${selectedToken.symbol}`;
-            }
+				return '$...';
+			} else {
+				return '$-.--';
+			}
 		}
-		return null;
+		return '';
 	}, [enableUsdToggle, currentInputUnit, amountValue, internalUsdAmount, liveExchangeRate, selectedToken]);
-
 
 	return (
 		<>
 			<Card elevation={0} style={[styles.cardContainer, containerStyle]}>
 				<Card.Content style={styles.cardContent}>
-					<TouchableOpacity
-						style={styles.selectorButtonContainer}
-						onPress={() => setModalVisible(true)}
-						disabled={!onSelectToken} // Assuming onSelectToken implies it's selectable
-						testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : testID}
-						accessible={true}
-						accessibilityRole="button"
-						accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}
-					>
-						<View style={styles.tokenInfo}>
-							{selectedToken?.resolvedIconUrl ? (
-								<>
-									<RenderIcon iconUrl={selectedToken.resolvedIconUrl} styles={styles} />
-									<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
-								</>
-							) : (
-								<Text style={styles.tokenSymbol} testID={`${testID}-label`}>{label || 'Select Token'}</Text>
-							)}
-						</View>
-						<ChevronDownIcon size={20} color={styles.colors.onSurface} />
-					</TouchableOpacity>
+					<View style={styles.leftSection}>
+						<TouchableOpacity
+							style={styles.tokenSelectorButton}
+							onPress={() => setModalVisible(true)}
+							disabled={!onSelectToken}
+							testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : testID}
+							accessible={true}
+							accessibilityRole="button"
+							accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}
+						>
+							<View style={styles.tokenInfo}>
+								{selectedToken?.resolvedIconUrl ? (
+									<>
+										<RenderIcon iconUrl={selectedToken.resolvedIconUrl} styles={styles} />
+										<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
+									</>
+								) : (
+									<Text style={styles.tokenSymbol} testID={`${testID}-label`}>{label || 'Select Token'}</Text>
+								)}
+							</View>
+							<ChevronDownIcon size={20} color={styles.colors.onSurface} />
+						</TouchableOpacity>
 
-					{onAmountChange && ( // Only show amount input if onAmountChange is provided
-						<View style={styles.inputContainer}>
+						{/* Balance displayed below the selector button */}
+						{selectedToken && _portfolioToken && (
+							<Text style={styles.tokenBalance} testID={`${testID}-balance`}>
+								{_portfolioToken.amount.toFixed(4)}
+							</Text>
+						)}
+					</View>
+
+					{onAmountChange && (
+						<View style={styles.rightSection}>
 							{isAmountLoading ? (
 								<ActivityIndicator size="small" color={styles.colors.primary} style={activityIndicatorStyle} testID={`${testID}-loading-indicator`} />
 							) : (
-								<TextInput
-									testID={`${testID}-amount-input`}
-									style={styles.amountInput}
-									value={displayAmount || ''}
-									onChangeText={currentAmountHandler}
-									placeholder={placeholder}
-									placeholderTextColor={styles.colors.onTertiaryContainer}
-									keyboardType="decimal-pad"
-									editable={isAmountEditable}
-									{...textInputProps} // Spread additional text input props
-								/>
-							)}
-							{/* Display equivalent value and helper text */}
-							{(equivalentValueDisplay || helperText) && (
-								<View style={styles.bottomTextContainer}>
-									{equivalentValueDisplay && <Text style={styles.equivalentValueText} testID={`${testID}-equivalent-value`}>{equivalentValueDisplay}</Text>}
-									{helperText && <Text style={styles.helperText} testID={`${testID}-helper-text`}>{currentInputUnit === 'USD' && enableUsdToggle ? 'Enter USD amount' : helperText}</Text>}
+								<View style={styles.stackedValuesContainer}>
+									{/* Primary value (editable) */}
+									<View style={styles.primaryValueContainer}>
+										<TextInput
+											testID={`${testID}-amount-input`}
+											style={styles.primaryAmountInput}
+											value={displayAmount || ''}
+											onChangeText={currentAmountHandler}
+											placeholder={placeholder}
+											placeholderTextColor={styles.colors.onTertiaryContainer}
+											keyboardType="decimal-pad"
+											editable={isAmountEditable}
+											{...textInputProps}
+										/>
+										{enableUsdToggle && selectedToken && (
+											<IconButton
+												icon="currency-usd"
+												size={16}
+												iconColor={styles.colors.onSurfaceVariant}
+												onPress={handleUnitToggle}
+												style={styles.swapButton}
+												testID={`${testID}-swap-button`}
+											/>
+										)}
+									</View>
+
+									{/* Secondary value (display only) */}
+									{enableUsdToggle && selectedToken && (
+										<Text style={styles.secondaryValueText} testID={`${testID}-secondary-value`}>
+											{currentInputUnit === 'CRYPTO' ? usdDisplayValue : cryptoDisplayValue}
+										</Text>
+									)}
 								</View>
 							)}
 						</View>
 					)}
 				</Card.Content>
-				{enableUsdToggle && selectedToken && (
-					<View style={styles.switchContainer}>
-						{/* Ensure styles.switchContainer has flexDirection: 'row', alignItems: 'center' */}
-						<Icon source="swap-horizontal" size={24} color={styles.colors?.onSurfaceVariant || '#888'} />
-						<Text style={styles.switchLabel}>{`Input: ${currentInputUnit === 'CRYPTO' ? selectedToken.symbol : 'USD'}`}</Text>
-						<PaperSwitch
-							value={currentInputUnit === 'USD'}
-							onValueChange={handleUnitToggle}
-							style={styles.switchToggle}
-							testID={`${testID}-unit-switch`}
-						/>
-					</View>
-				)}
 			</Card>
 
 			<TokenSearchModal
