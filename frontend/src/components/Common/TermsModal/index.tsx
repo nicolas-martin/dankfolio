@@ -1,9 +1,9 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { Modal, Portal, Text } from 'react-native-paper'; // Removed Button
+import { Modal, Portal, Text } from 'react-native-paper';
 import { useStyles } from './styles';
 import { TermsModalProps } from './types';
-import ModalActionButtons from '@/components/Common/ModalActionButtons'; // Import ModalActionButtons
+import ModalActionButtons from '@/components/Common/ModalActionButton';
 import { logger } from '@/utils/logger';
 
 const TermsModal: React.FC<TermsModalProps> = ({
