@@ -5,7 +5,6 @@ import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
-import { useCoinStore } from '@/store/coins';
 import HorizontalTickerCard from '@/components/Home/HorizontalTickerCard';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
@@ -16,15 +15,16 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 // Allow navigation to Search as well for the "View All" button
 type NewCoinsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail' | 'Search'>;
 
-const NewCoinsInternal: React.FC = () => {
+// Props interface for the component
+interface NewCoinsProps {
+	newCoins: Coin[];
+	isLoading: boolean;
+}
+
+const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoading: isLoadingNewlyListed }) => {
 	const styles = useStyles();
 	const navigation = useNavigation<NewCoinsNavigationProp>();
 	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
-
-	// Use separate selectors to avoid creating new objects on every render
-	const newlyListedCoins = useCoinStore(state => state.newlyListedCoins);
-	const isLoadingNewlyListed = useCoinStore(state => state.isLoadingNewlyListed);
-	const getCoinByID = useCoinStore(state => state.getCoinByID);
 
 	// Create duplicated data for infinite scrolling
 	const scrollData = React.useMemo(() => {
@@ -47,12 +47,9 @@ const NewCoinsInternal: React.FC = () => {
 			coin: coin
 		});
 
-		// Trigger background fetch to update the coin data in the store
-		// The CoinDetail screen will automatically update when this completes
-		getCoinByID(coin.mintAddress, true).catch(error => {
-			logger.error(`[NewCoins] Background fetch failed for ${coin.symbol}:`, { error, coinMint: coin.mintAddress });
-		});
-	}, [navigation, getCoinByID]);
+		// Note: Background fetch removed since getCoinByID is not available in new store structure
+		// The CoinDetail screen will handle its own data fetching
+	}, [navigation]);
 
 	const getItemLayout = useCallback((_data: Coin[] | null, index: number) => ({
 		length: CARD_WIDTH,
@@ -171,4 +168,4 @@ const NewCoinsInternal: React.FC = () => {
 	);
 };
 
-export default React.memo(NewCoinsInternal);
+export default React.memo(NewCoins);

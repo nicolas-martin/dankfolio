@@ -51,20 +51,20 @@ const HomeScreen = () => {
 	const { wallet, fetchPortfolioBalance } = usePortfolioStore();
 	const { themeType: _themeType } = useThemeStore(); // Prefixed themeType
 
-
-
 	const emptyFlatListData = useMemo(() => [], []);
 
-	// Coin and loading states
-	const availableCoins = useCoinStore(state => state.availableCoins);
-	const fetchAvailableCoins = useCoinStore(state => state.fetchAvailableCoins);
-	const fetchNewCoins = useCoinStore(state => state.fetchNewCoins);
-	const isLoadingTrending = useCoinStore(state => state.isLoading);
+	// Coin and loading states - Updated to use new coin store structure
+	const trendingCoins = useCoinStore(state => state.trendingCoins);
+	const newCoins = useCoinStore(state => state.newCoins);
+	const topGainersCoins = useCoinStore(state => state.topGainersCoins);
 
-	// TopTrendingGainers store selectors
-	const topTrendingGainers = useCoinStore(state => state.topTrendingGainers);
-	const fetchTopTrendingGainers = useCoinStore(state => state.fetchTopTrendingGainers);
-	const isLoadingTopTrendingGainers = useCoinStore(state => state.isLoadingTopTrendingGainers);
+	const fetchTrendingCoins = useCoinStore(state => state.fetchTrendingCoins);
+	const fetchNewCoins = useCoinStore(state => state.fetchNewCoins);
+	const fetchTopGainersCoins = useCoinStore(state => state.fetchTopGainersCoins);
+
+	const isLoadingTrending = useCoinStore(state => state.trendingCoinsLoading);
+	const isLoadingNewCoins = useCoinStore(state => state.newCoinsLoading);
+	const isLoadingTopGainers = useCoinStore(state => state.topGainersCoinsLoading);
 
 	// Price history states
 	const [priceHistories, setPriceHistories] = useState<Record<string, PriceData[]>>({});
@@ -186,16 +186,16 @@ const HomeScreen = () => {
 		</View>
 	);
 
-	// Effect to fetch price histories when availableCoins change
+	// Effect to fetch price histories when trendingCoins change
 	useEffect(() => {
-		if (!availableCoins || availableCoins.length === 0) {
-			// Clear existing histories if availableCoins becomes empty
+		if (!trendingCoins || trendingCoins.length === 0) {
+			// Clear existing histories if trendingCoins becomes empty
 			setPriceHistories({});
 			setIsLoadingPriceHistories({});
 			return;
 		}
 
-		const topCoins = availableCoins.slice(0, 10);
+		const topCoins = trendingCoins.slice(0, 10);
 		const fourHourTimeframeKey: string = "4H"; // Key used in TIMEFRAME_CONFIG
 
 		// 🔍 DEBUG: Log the decision logic
@@ -283,7 +283,7 @@ const HomeScreen = () => {
 				setIsLoadingPriceHistories(prev => ({ ...prev, ...newLoadingStatesBatch }));
 			});
 		}
-	}, [availableCoins]); // Removed showToast from deps as logger is used
+	}, [trendingCoins]); // Removed showToast from deps as logger is used
 
 	// Shared logic for fetching trending coins and portfolio
 	const fetchTrendingAndPortfolio = useCallback(async () => {
@@ -291,22 +291,22 @@ const HomeScreen = () => {
 
 		// Fetch trending coins, top trending gainers, and portfolio balance in parallel
 		const trendingAndPortfolioPromise = Promise.all([
-			fetchAvailableCoins(true), // For trending coins
-			fetchTopTrendingGainers(10, false), // For top trending gainers
+			fetchTrendingCoins(20, 0), // For trending coins - limit 20, offset 0
+			fetchTopGainersCoins(10, 0), // For top trending gainers - limit 10, offset 0
 			wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 		]);
 
 		await trendingAndPortfolioPromise; // Wait for trending and portfolio to complete
 
 		logger.log('[HomeScreen] 🟢 Completed home screen data fetch.');
-	}, [wallet, fetchAvailableCoins, fetchTopTrendingGainers, fetchPortfolioBalance]);
+	}, [wallet, fetchTrendingCoins, fetchTopGainersCoins, fetchPortfolioBalance]);
 
 	// Separate function for fetching new coins
 	const fetchNewCoinsData = useCallback(async () => {
 		logger.log('[HomeScreen] Fetching new coins (cache will handle timing)...');
 
 		try {
-			await fetchNewCoins(); // Cache will determine if fetch is needed or use cached data
+			await fetchNewCoins(10, 0); // Cache will determine if fetch is needed or use cached data
 			logger.log('[HomeScreen] ✅ New coins fetch completed (may have used cache).');
 		} catch (error: unknown) {
 			if (error instanceof Error) {
@@ -339,10 +339,11 @@ const HomeScreen = () => {
 		try {
 			// Force refresh new coins on manual refresh
 			logger.log('[HomeScreen] 🔄 Manual refresh triggered - forcing new coins refresh');
+			// TODO: Make these configurable
 			await Promise.all([
-				fetchAvailableCoins(true), // For trending coins
-				fetchTopTrendingGainers(10, true), // Force refresh top trending gainers
-				fetchNewCoins(10, true), // Force refresh new coins (bypasses cache)
+				fetchTrendingCoins(10, 0), // For trending coins
+				fetchTopGainersCoins(10, 0), // Force refresh top trending gainers
+				fetchNewCoins(10, 0), // Force refresh new coins (bypasses cache)
 				wallet ? fetchPortfolioBalance(wallet.address) : Promise.resolve(),
 			]);
 
@@ -360,7 +361,7 @@ const HomeScreen = () => {
 		} finally {
 			setIsRefreshing(false);
 		}
-	}, [fetchAvailableCoins, fetchTopTrendingGainers, fetchNewCoins, fetchPortfolioBalance, wallet, showToast]);
+	}, [fetchTrendingCoins, fetchTopGainersCoins, fetchNewCoins, fetchPortfolioBalance, wallet, showToast]);
 
 	const handlePressCoinCard = useCallback((coin: Coin) => {
 		console.log('[HomeScreen LOG] handlePressCoinCard called for:', coin.symbol, coin.mintAddress);
@@ -398,7 +399,7 @@ const HomeScreen = () => {
 	);
 
 	const renderCoinsList = () => {
-		const hasTrendingCoins = availableCoins.length > 0;
+		const hasTrendingCoins = trendingCoins.length > 0;
 
 		// Show shimmer placeholders only during the first load (not during pull-to-refresh)
 		// This is true when:
@@ -424,14 +425,19 @@ const HomeScreen = () => {
 				{/*__DEV__ && ()*\}
 
 				{/* Show placeholder for NewCoins section when initially loading */}
-				{isFirstTimeLoading ? renderPlaceholderNewCoinsSection() : <NewCoins />}
+				{isFirstTimeLoading ? renderPlaceholderNewCoinsSection() : (
+					<NewCoins 
+						newCoins={newCoins}
+						isLoading={isLoadingNewCoins}
+					/>
+				)}
 
 				{/* Add TopTrendingGainers after NewCoins */}
 				{/* Consider adding a placeholder for TopTrendingGainers if isFirstTimeLoading is true */}
 				{!isFirstTimeLoading && (
 					<TopTrendingGainers
-						topTrendingGainers={topTrendingGainers}
-						isLoading={isLoadingTopTrendingGainers}
+						topTrendingGainers={topGainersCoins}
+						isLoading={isLoadingTopGainers}
 					/>
 				)}
 
@@ -461,7 +467,7 @@ const HomeScreen = () => {
 
 						{hasTrendingCoins && (
 							<FlatList
-								data={availableCoins}
+								data={trendingCoins}
 								keyExtractor={(item) => item.mintAddress || item.symbol}
 								renderItem={renderTrendingCoinItem}
 								scrollEnabled={false}
