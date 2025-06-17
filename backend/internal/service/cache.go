@@ -21,7 +21,7 @@ type GenericCache[T any] interface {
 
 // Type aliases for specific cache interfaces to maintain compatibility and ease mocking
 type (
-	CoinCache         = GenericCache[*model.Coin]
+	CoinCache         = GenericCache[[]model.Coin]
 	PriceHistoryCache = GenericCache[*birdeye.PriceHistory]
 )
 
@@ -55,7 +55,7 @@ func NewGoGenericCacheAdapter[T any](logPrefix string) (*GoGenericCacheAdapter[T
 
 // Convenience constructors for specific cache types
 func NewCoinCache() (CoinCache, error) {
-	return NewGoGenericCacheAdapter[*model.Coin]("coin")
+	return NewGoGenericCacheAdapter[[]model.Coin]("coin")
 }
 
 func NewPriceHistoryCache() (PriceHistoryCache, error) {

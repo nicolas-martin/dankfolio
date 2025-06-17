@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sort"
 	"strconv"
 	"time"
 
@@ -55,6 +54,9 @@ func NewService(
 		cache:          coinCache, // <--- ADD THIS LINE
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
+	if service.config.CacheExpire == 0 {
+		slog.Warn("Coin service cache expiration is not set")
+	}
 
 	if service.config != nil {
 		if service.config.TrendingFetchInterval > 0 {
@@ -192,17 +194,6 @@ func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Co
 		return nil, 0, fmt.Errorf("failed to list coins: %w", err)
 	}
 	return coins, totalCount, nil
-}
-
-func (s *Service) GetTrendingCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
-	trendingCoins, totalCount, err := s.store.ListTrendingCoins(ctx, opts)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to list trending coins: %w", err)
-	}
-	sort.Slice(trendingCoins, func(i, j int) bool {
-		return trendingCoins[i].Volume24h > trendingCoins[j].Volume24h
-	})
-	return trendingCoins, totalCount, nil
 }
 
 func (s *Service) GetCoinByID(ctx context.Context, idStr string) (*model.Coin, error) {
@@ -699,6 +690,10 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 		cacheKey = fmt.Sprintf("%s_offset_%d", cacheKey, offset)
 	}
 
+	if cachedCoin, found := s.cache.Get(cacheKey); found {
+		return cachedCoin, int32(len(cachedCoin)), nil
+	}
+
 	listOpts := db.ListOptions{}
 	if limit > 0 {
 		limitInt := int(limit)
@@ -730,6 +725,7 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 		slog.ErrorContext(ctx, "Failed to list newest coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list newest coins: %w", err)
 	}
+	s.cache.Set(cacheKey, modelCoins, s.config.CacheExpire)
 
 	return modelCoins, totalCount, nil
 }
@@ -742,6 +738,10 @@ func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) 
 	}
 	if offset > 0 {
 		cacheKey = fmt.Sprintf("%s_offset_%d", cacheKey, offset)
+	}
+
+	if cachedCoin, found := s.cache.Get(cacheKey); found {
+		return cachedCoin, int32(len(cachedCoin)), nil
 	}
 
 	listOpts := db.ListOptions{}
@@ -775,6 +775,7 @@ func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) 
 		slog.ErrorContext(ctx, "Failed to list trending coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list trending coins: %w", err)
 	}
+	s.cache.Set(cacheKey, modelCoins, s.config.CacheExpire)
 
 	return modelCoins, totalCount, nil
 }
@@ -787,6 +788,10 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 	}
 	if offset > 0 {
 		cacheKey = fmt.Sprintf("%s_offset_%d", cacheKey, offset)
+	}
+
+	if cachedCoin, found := s.cache.Get(cacheKey); found {
+		return cachedCoin, int32(len(cachedCoin)), nil
 	}
 
 	listOpts := db.ListOptions{}
@@ -820,6 +825,8 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 		slog.ErrorContext(ctx, "Failed to list top gainers coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list top gainers coins: %w", err)
 	}
+
+	s.cache.Set(cacheKey, modelCoins, s.config.CacheExpire)
 
 	return modelCoins, totalCount, nil
 }
