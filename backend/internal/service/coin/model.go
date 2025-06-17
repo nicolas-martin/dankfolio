@@ -8,11 +8,12 @@ import (
 
 // Config holds the configuration for the coin service
 type Config struct {
-	BirdEyeBaseURL        string
-	BirdEyeAPIKey         string
-	SolanaRPCEndpoint     string
-	NewCoinsFetchInterval time.Duration
-	TrendingFetchInterval time.Duration
+	BirdEyeBaseURL          string
+	BirdEyeAPIKey           string
+	SolanaRPCEndpoint       string
+	NewCoinsFetchInterval   time.Duration
+	TrendingFetchInterval   time.Duration
+	TopGainersFetchInterval time.Duration
 }
 
 // --- Structs for Trending Tokens Output ---

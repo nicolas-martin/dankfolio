@@ -21,7 +21,6 @@ import { env } from '@/utils/env';
 import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 import { grpcApi } from '@/services/grpcApi';
 
-// Helper function to wrap grpcApi.getPriceHistory
 const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ data: PriceData[], error: Error | null }> => {
 	if (!coin || !coin.mintAddress) {
 		return { data: [], error: new Error("Invalid coin or mint address") };
@@ -426,7 +425,7 @@ const HomeScreen = () => {
 
 				{/* Show placeholder for NewCoins section when initially loading */}
 				{isFirstTimeLoading ? renderPlaceholderNewCoinsSection() : (
-					<NewCoins 
+					<NewCoins
 						newCoins={newCoins}
 						isLoading={isLoadingNewCoins}
 					/>

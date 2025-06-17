@@ -265,6 +265,8 @@ func mapSortBy(sortBy string) string {
 		return "last_updated"
 	case "listed_at", "jupiter_listed_at":
 		return "jupiter_created_at"
+	case "change24h", "price_24h_change_percent":
+		return "change_24h"
 	default:
 		return "created_at"
 	}
@@ -323,24 +325,24 @@ func (s *Store) ListNewestCoins(ctx context.Context, opts db.ListOptions) ([]mod
 func (s *Store) ListTopGainersCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
 	slog.DebugContext(ctx, "PostgresStore: ListTopGainersCoins called", "limit", opts.Limit, "offset", opts.Offset)
 
-	// Define sorting: by "price_24h_change_percent" field, descending.
-	// Assumes "price_24h_change_percent" is the correct DB column name.
-	sortByPriceChange := "price_24h_change_percent" // Ensure this matches DB column
-	sortDescTrue := true
+	// Use SearchCoins to filter by the "top-gainer" tag
+	limit := int32(10) // default limit
+	offset := int32(0)
 
-	opts.SortBy = &sortByPriceChange
-	opts.SortDesc = &sortDescTrue
-
-	// Define filter: price_24h_change_percent > 0
-	// Prepend to existing filters if any, or set if nil.
-	gainerFilter := db.FilterOption{
-		Field:    "price_24h_change_percent", // Ensure this matches DB column
-		Operator: db.FilterOpGreaterThan,
-		Value:    0,
+	if opts.Limit != nil {
+		limit = int32(*opts.Limit)
 	}
-	opts.Filters = append([]db.FilterOption{gainerFilter}, opts.Filters...)
+	if opts.Offset != nil {
+		offset = int32(*opts.Offset)
+	}
 
-	return s.Coins().ListWithOpts(ctx, opts)
+	// Search for coins with the "top-gainer" tag, sorted by price change percentage descending
+	coins, err := s.SearchCoins(ctx, "", []string{"top-gainer"}, 0, limit, offset, "price_24h_change_percent", true)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to search for top gainer coins: %w", err)
+	}
+
+	return coins, int32(len(coins)), nil
 }
 
 func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {
