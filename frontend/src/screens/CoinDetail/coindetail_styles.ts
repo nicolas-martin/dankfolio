@@ -192,6 +192,9 @@ export const useStyles = () => {
 			marginLeftS: { // New
 				marginLeft: theme.spacing.sm,
 			},
+			marketStatsCard: {
+				marginHorizontal: theme.spacing.lg,
+			},
 			placeholderCard: {
 				alignItems: 'center',             // inline part
 				flexDirection: 'row',
