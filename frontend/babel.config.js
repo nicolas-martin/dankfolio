@@ -21,7 +21,8 @@ module.exports = function (api) {
 					'@store': './src/store',
 					'@services': './src/services',
 					'@utils': './src/utils',
-					'@types': './src/types'
+					'@types': './src/types',
+					'@gen': './src/gen',
 				}
 			}]
 		]

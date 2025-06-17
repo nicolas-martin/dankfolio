@@ -121,20 +121,27 @@ func (s *Store) ApiStats() db.Repository[model.ApiStat] { // Changed return type
 
 // --- Custom Operations ---
 
-func (s *Store) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {
-	var schemaCoins []schema.Coin
-	// Use s.db which could be the main DB connection or a transaction
-	if err := s.db.WithContext(ctx).Where("is_trending = ?", true).Order("last_updated DESC").Find(&schemaCoins).Error; err != nil {
-		return nil, fmt.Errorf("failed to list trending coins: %w", err)
+func (s *Store) ListTrendingCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+	slog.DebugContext(ctx, "PostgresStore: ListTrendingCoins called", "limit", opts.Limit, "offset", opts.Offset)
+
+	// Define default sorting: by "volume_24h" field, descending (if not specified in opts).
+	if opts.SortBy == nil || *opts.SortBy == "" {
+		sortByVolume := "volume_24h" // Ensure this matches DB column
+		sortDescTrue := true
+		opts.SortBy = &sortByVolume
+		opts.SortDesc = &sortDescTrue
 	}
 
-	// modelCoins := make([]model.Coin, len(schemaCoins))
-	// The Coins() method returns the repository which has the toModel method.
-	// However, toModel is not exported. For custom queries like this in the store layer,
-	// direct mapping or using a temporary repository instance with the same DB handle is needed.
-	// For simplicity and consistency, using the existing mapping helpers if they were accessible,
-	// or re-mapping here. The current structure uses helper funcs mapSchemaCoinsToModel.
-	return mapSchemaCoinsToModel(schemaCoins), nil
+	// Define filter: "is_trending" = true.
+	// Prepend to existing filters if any, or set if nil.
+	trendingFilter := db.FilterOption{
+		Field:    "is_trending", // Ensure this matches DB column
+		Operator: db.FilterOpEqual,
+		Value:    true,
+	}
+	opts.Filters = append([]db.FilterOption{trendingFilter}, opts.Filters...)
+
+	return s.Coins().ListWithOpts(ctx, opts)
 }
 
 func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
@@ -290,6 +297,49 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 		}
 	}
 	return coins
+}
+
+// --- New Custom Store Methods ---
+
+// ListNewestCoins fetches the most recently created coins.
+func (s *Store) ListNewestCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+	slog.DebugContext(ctx, "PostgresStore: ListNewestCoins called", "limit", opts.Limit, "offset", opts.Offset)
+
+	// Define sorting for newest: by "created_at" field, descending.
+	// Assumes "created_at" is the correct DB column name in the "coins" table.
+	sortByCreatedAt := "created_at" // Ensure this matches your actual DB column name
+	sortDescTrue := true
+
+	opts.SortBy = &sortByCreatedAt
+	opts.SortDesc = &sortDescTrue
+	// opts.Filters = nil // Retain any incoming filters, only enforce sort order for "newest"
+
+	// Call the generic List or ListWithOpts method from the CoinRepository
+	return s.Coins().ListWithOpts(ctx, opts)
+}
+
+// ListTopGainersCoins fetches coins with the highest positive price change in 24h.
+func (s *Store) ListTopGainersCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+	slog.DebugContext(ctx, "PostgresStore: ListTopGainersCoins called", "limit", opts.Limit, "offset", opts.Offset)
+
+	// Define sorting: by "price_24h_change_percent" field, descending.
+	// Assumes "price_24h_change_percent" is the correct DB column name.
+	sortByPriceChange := "price_24h_change_percent" // Ensure this matches DB column
+	sortDescTrue := true
+
+	opts.SortBy = &sortByPriceChange
+	opts.SortDesc = &sortDescTrue
+
+	// Define filter: price_24h_change_percent > 0
+	// Prepend to existing filters if any, or set if nil.
+	gainerFilter := db.FilterOption{
+		Field:    "price_24h_change_percent", // Ensure this matches DB column
+		Operator: db.FilterOpGreaterThan,
+		Value:    0,
+	}
+	opts.Filters = append([]db.FilterOption{gainerFilter}, opts.Filters...)
+
+	return s.Coins().ListWithOpts(ctx, opts)
 }
 
 func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {

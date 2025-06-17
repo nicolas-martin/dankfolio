@@ -8,12 +8,13 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/gagliardetto/solana-go"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	dankfoliov1connect "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1/v1connect"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // coinServiceHandler implements the CoinService API
@@ -38,36 +39,29 @@ func (s *coinServiceHandler) GetAvailableCoins(
 	var err error
 	var totalCount int32
 
-	slog.Debug("GetAvailableCoins request received", "trending_only", req.Msg.TrendingOnly)
+	slog.Debug("GetAvailableCoins request received", "limit", req.Msg.GetLimit(), "offset", req.Msg.GetOffset())
 
-	if req.Msg.TrendingOnly {
-		// TODO: Consider paginating GetTrendingCoins as well, or confirm it always returns a small, fixed set.
-		// For now, GetTrendingCoins does not support pagination/sorting options passed from the request.
-		coins, err = s.coinService.GetTrendingCoins(ctx)
+	// Use default ListOptions since GetAvailableCoinsRequest doesn't have pagination/sorting fields
+	listOptions := db.ListOptions{}
+	// Apply default pagination and sorting
+	defaultLimit := 50 // Default limit
+	limit := req.Msg.GetLimit()
+	if limit > 0 {
+		listOptions.Limit = pint(int(limit))
 	} else {
-		// Use default ListOptions since GetAvailableCoinsRequest doesn't have pagination/sorting fields
-		listOptions := db.ListOptions{}
-		// Apply default pagination and sorting
-		defaultLimit := 50 // Default limit
-		limit := req.Msg.GetLimit()
-		if limit > 0 {
-			listOptions.Limit = pint(int(limit))
-		} else {
-			listOptions.Limit = &defaultLimit
-		}
-
-		defaultOffset := 0 // Default offset
-		offset := req.Msg.GetOffset()
-		if offset >= 0 {
-			listOptions.Offset = pint(int(offset))
-		} else {
-			listOptions.Offset = &defaultOffset
-		}
-
-		// If no sort is specified, coinService.GetCoins will apply a default.
-		coins, totalCount, err = s.coinService.GetCoins(ctx, listOptions)
+		listOptions.Limit = &defaultLimit
 	}
 
+	defaultOffset := 0 // Default offset
+	offset := req.Msg.GetOffset()
+	if offset >= 0 {
+		listOptions.Offset = pint(int(offset))
+	} else {
+		listOptions.Offset = &defaultOffset
+	}
+
+	// If no sort is specified, coinService.GetCoins will apply a default.
+	coins, totalCount, err = s.coinService.GetCoins(ctx, listOptions)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to list coins: %w", err))
 	}
@@ -204,6 +198,117 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		TotalCount: total, // Use the total count returned by the service
 	})
 	return res, nil
+}
+
+// GetNewCoins handles the GetNewCoins RPC call.
+func (s *coinServiceHandler) GetNewCoins(
+	ctx context.Context,
+	req *connect.Request[pb.GetNewCoinsRequest],
+) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+	slog.DebugContext(ctx, "gRPC GetNewCoins request received", "limit", req.Msg.GetLimit(), "offset", req.Msg.GetOffset())
+
+	// Parse and validate protobuf request
+	var limit, offset int32
+	if req.Msg.Limit != nil {
+		limit = *req.Msg.Limit
+	}
+	if req.Msg.Offset != nil {
+		offset = *req.Msg.Offset
+	}
+
+	// Call service with domain types
+	modelCoins, totalCount, err := s.coinService.GetNewCoins(ctx, limit, offset)
+	if err != nil {
+		slog.ErrorContext(ctx, "GetNewCoins service call failed", "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get new coins: %w", err))
+	}
+
+	// Convert domain models to protobuf
+	pbCoins := make([]*pb.Coin, len(modelCoins))
+	for i, coinModel := range modelCoins {
+		pbCoins[i] = convertModelCoinToPbCoin(&coinModel)
+	}
+
+	resp := &pb.GetAvailableCoinsResponse{
+		Coins:      pbCoins,
+		TotalCount: totalCount,
+	}
+
+	return connect.NewResponse(resp), nil
+}
+
+// GetTrendingCoins handles the GetTrendingCoins RPC call.
+func (s *coinServiceHandler) GetTrendingCoins(
+	ctx context.Context,
+	req *connect.Request[pb.GetTrendingCoinsRequest],
+) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+	slog.DebugContext(ctx, "gRPC GetTrendingCoins request received", "limit", req.Msg.GetLimit(), "offset", req.Msg.GetOffset())
+
+	// Parse and validate protobuf request
+	var limit, offset int32
+	if req.Msg.Limit != nil {
+		limit = *req.Msg.Limit
+	}
+	if req.Msg.Offset != nil {
+		offset = *req.Msg.Offset
+	}
+
+	// Call service with domain types
+	modelCoins, totalCount, err := s.coinService.GetTrendingCoinsRPC(ctx, limit, offset)
+	if err != nil {
+		slog.ErrorContext(ctx, "GetTrendingCoins service call failed", "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trending coins: %w", err))
+	}
+
+	// Convert domain models to protobuf
+	pbCoins := make([]*pb.Coin, len(modelCoins))
+	for i, coinModel := range modelCoins {
+		pbCoins[i] = convertModelCoinToPbCoin(&coinModel)
+	}
+
+	resp := &pb.GetAvailableCoinsResponse{
+		Coins:      pbCoins,
+		TotalCount: totalCount,
+	}
+
+	return connect.NewResponse(resp), nil
+}
+
+// GetTopGainersCoins handles the GetTopGainersCoins RPC call.
+func (s *coinServiceHandler) GetTopGainersCoins(
+	ctx context.Context,
+	req *connect.Request[pb.GetTopGainersCoinsRequest],
+) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+	slog.DebugContext(ctx, "gRPC GetTopGainersCoins request received", "limit", req.Msg.GetLimit(), "offset", req.Msg.GetOffset())
+
+	// Parse and validate protobuf request
+	var limit, offset int32
+	if req.Msg.Limit != nil {
+		limit = *req.Msg.Limit
+	}
+	if req.Msg.Offset != nil {
+		offset = *req.Msg.Offset
+	}
+
+	// Call service with domain types
+	modelCoins, totalCount, err := s.coinService.GetTopGainersCoins(ctx, limit, offset)
+	if err != nil {
+		slog.ErrorContext(ctx, "GetTopGainersCoins service call failed", "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get top gainer coins: %w", err))
+	}
+
+	// Convert domain models to protobuf
+	pbCoins := make([]*pb.Coin, len(modelCoins))
+	for i, coinModel := range modelCoins {
+		pbCoins[i] = convertModelCoinToPbCoin(&coinModel)
+	}
+
+	resp := &pb.GetAvailableCoinsResponse{
+		Coins:      pbCoins,
+		TotalCount: totalCount,
+	}
+
+	return connect.NewResponse(resp), nil
 }
 
 // pint is a helper function to get a pointer to an int.

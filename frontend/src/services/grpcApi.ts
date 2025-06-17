@@ -1,6 +1,6 @@
 import { coinClient, priceClient, tradeClient, utilityClient, walletClient } from './grpc/apiClient';
 import * as grpcModel from './grpc/model';
-import { Trade } from '../gen/dankfolio/v1/trade_pb';
+import { Trade } from '@/gen/dankfolio/v1/trade_pb';
 import { logger } from '@/utils/logger';
 import { toRawAmount as commonToRawAmount } from '@/utils/numberFormat';
 import { GetPriceHistoryRequest_PriceHistoryType } from "@/gen/dankfolio/v1/price_pb";
@@ -638,6 +638,91 @@ export const grpcApi: grpcModel.API = {
 				throw error; // Rethrow the original error or a new formatted one
 			}
 			throw new Error("An unknown error occurred in getFullSwapQuoteOrchestrated");
+		}
+	},
+
+	// New RPC methods for specific coin categories
+	getNewCoins: async (limit?: number, offset?: number): Promise<grpcModel.Coin[]> => {
+		const serviceName = 'CoinService';
+		const methodName = 'getNewCoins';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { limit, offset });
+
+			const response = await coinClient.getNewCoins(
+				{ 
+					limit: limit || undefined,
+					offset: offset || undefined 
+				},
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			// Convert the response to match our frontend model
+			return response.coins.map(mapGrpcCoinToFrontendCoin);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getNewCoins");
+			}
+		}
+	},
+
+	getTrendingCoins: async (limit?: number, offset?: number): Promise<grpcModel.Coin[]> => {
+		const serviceName = 'CoinService';
+		const methodName = 'getTrendingCoins';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { limit, offset });
+
+			const response = await coinClient.getTrendingCoins(
+				{ 
+					limit: limit || undefined,
+					offset: offset || undefined 
+				},
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			// Convert the response to match our frontend model
+			return response.coins.map(mapGrpcCoinToFrontendCoin);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getTrendingCoins");
+			}
+		}
+	},
+
+	getTopGainersCoins: async (limit?: number, offset?: number): Promise<grpcModel.Coin[]> => {
+		const serviceName = 'CoinService';
+		const methodName = 'getTopGainersCoins';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { limit, offset });
+
+			const response = await coinClient.getTopGainersCoins(
+				{ 
+					limit: limit || undefined,
+					offset: offset || undefined 
+				},
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
+
+			grpcUtils.logResponse(serviceName, methodName, response);
+
+			// Convert the response to match our frontend model
+			return response.coins.map(mapGrpcCoinToFrontendCoin);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getTopGainersCoins");
+			}
 		}
 	},
 };
