@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View } from 'react-native'; // StyleSheet removed
 import ExpoCachedImage from 'expo-cached-image';
+import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import { CachedImageProps } from './types';
 import { logCacheResult } from './scripts';
 import { useStyles } from './styles'; // Import useStyles
@@ -16,12 +17,17 @@ const CachedImage: React.FC<CachedImageProps> = ({
 }) => {
 	const styles = useStyles(); // Use the hook
 	const [loadStartTime, setLoadStartTime] = useState<number>(0);
+	const [hasError, setHasError] = useState<boolean>(false);
+	const [isLoading, setIsLoading] = useState<boolean>(true);
 
 	const handleLoadStart = useCallback(() => {
 		setLoadStartTime(Date.now());
+		setIsLoading(true);
+		setHasError(false);
 	}, []);
 
 	const handleLoadEnd = useCallback(() => {
+		setIsLoading(false);
 		if (loadStartTime > 0) {
 			const loadTime = Date.now() - loadStartTime;
 			const cacheKey = `${uri}-${size}x${size}`;
@@ -31,6 +37,8 @@ const CachedImage: React.FC<CachedImageProps> = ({
 
 	const handleError = useCallback((error: unknown) => {
 		logger.warn('[CachedImage] ❌ Load Error:', uri, error);
+		setIsLoading(false);
+		setHasError(true);
 	}, [uri]);
 
 	// Default to circular if no borderRadius is provided
@@ -39,25 +47,39 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	// All hooks must be at top level before any conditional returns
 	const imageSource = useMemo(() => ({ uri }), [uri]);
 
-	if (!uri) {
+	if (!uri || hasError) {
 		return (
-			<View
-				style={styles.createPlaceholderStyle(size, finalBorderRadius)} // Apply the function from styles
+			<ShimmerPlaceholder
+				width={size}
+				height={size}
+				borderRadius={finalBorderRadius}
 			/>
 		);
 	}
 
 	return (
-		<ExpoCachedImage
-			source={imageSource} // Use memoized source
-			style={styles.createImageStyle(size, finalBorderRadius, style)} // Use function from styles
-			cacheKey={`${uri}-${size}x${size}`}
-			onLoadStart={handleLoadStart}
-			onLoadEnd={handleLoadEnd}
-			onError={handleError}
-			testID={testID}
-			tintColor={tintColor || undefined}
-		/>
+		<View style={{ width: size, height: size, position: 'relative' }}>
+			{isLoading && (
+				<ShimmerPlaceholder
+					width={size}
+					height={size}
+					borderRadius={finalBorderRadius}
+				/>
+			)}
+			<ExpoCachedImage
+				source={imageSource} // Use memoized source
+				style={[
+					styles.createImageStyle(size, finalBorderRadius, style), // Use function from styles
+					isLoading && { position: 'absolute', opacity: 0 } // Hide image while loading
+				]}
+				cacheKey={`${uri}-${size}x${size}`}
+				onLoadStart={handleLoadStart}
+				onLoadEnd={handleLoadEnd}
+				onError={handleError}
+				testID={testID}
+				tintColor={tintColor || undefined}
+			/>
+		</View>
 	);
 };
 
