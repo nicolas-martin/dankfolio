@@ -58,11 +58,38 @@ export const useStyles = () => {
 		innerDot: `${theme.colors.onSurface}40`, // 25% opacity (40 in hex)
 	};
 
+	// Theme-aware chart colors for trends
+	const chartColors = {
+		green: {
+			line: theme.trend.positive,
+			area: `${theme.trend.positive}80`, // 50% opacity
+			indicator: theme.trend.positive,
+			glow: theme.trend.positive,
+			gradient: [`${theme.trend.positive}90`, `${theme.trend.positive}40`, `${theme.trend.positive}05`]
+		},
+		red: {
+			line: theme.trend.negative,
+			area: `${theme.trend.negative}80`, // 50% opacity
+			indicator: theme.trend.negative,
+			glow: theme.trend.negative,
+			gradient: [`${theme.trend.negative}90`, `${theme.trend.negative}40`, `${theme.trend.negative}05`]
+		}
+	};
+
+	// Simple trend colors for external use
+	const trendColors = {
+		positive: theme.trend.positive,
+		negative: theme.trend.negative,
+		neutral: theme.trend.neutral,
+	};
+
 	return {
 		...styles,
 		colors,
 		theme,
-		chartUIColors
+		chartUIColors,
+		chartColors,
+		trendColors
 	}
 };
 

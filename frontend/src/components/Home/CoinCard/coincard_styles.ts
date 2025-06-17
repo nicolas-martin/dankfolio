@@ -16,8 +16,8 @@ export const useStyles = () => {
 			fontWeight: '500' as const,
 			marginTop: theme.spacing.xs,
 			textAlign: 'center' as const,
-			color: (change24h ?? 0) > 0 ? '#2E7D32' :
-				(change24h ?? 0) < 0 ? '#D32F2F' :
+			color: (change24h ?? 0) > 0 ? theme.trend.positive :
+				(change24h ?? 0) < 0 ? theme.trend.negative :
 					theme.colors.onSurfaceVariant
 		});
 		const styles = StyleSheet.create({
@@ -38,12 +38,12 @@ export const useStyles = () => {
 				shadowRadius: theme.spacing.xs,
 			},
 			changeNegative: {
-				color: '#D32F2F',
+				color: theme.trend.negative,
 				fontSize: theme.typography.fontSize.xs,
 				fontWeight: '500',
 				textAlign: 'right',
 			},
-			changeNegativeSmall: { color: '#D32F2F' },
+			changeNegativeSmall: { color: theme.trend.negative },
 			changeNeutral: {
 				color: theme.colors.onSurfaceVariant,
 				fontSize: theme.typography.fontSize.xs,
@@ -52,12 +52,12 @@ export const useStyles = () => {
 			},
 			changeNeutralSmall: { color: theme.colors.onSurfaceVariant },
 			changePositive: {
-				color: '#2E7D32',
+				color: theme.trend.positive,
 				fontSize: theme.typography.fontSize.xs,
 				fontWeight: '500',
 				textAlign: 'right',
 			},
-			changePositiveSmall: { color: '#2E7D32' },
+			changePositiveSmall: { color: theme.trend.positive },
 			content: {
 				alignItems: 'center',
 				flexDirection: 'row',

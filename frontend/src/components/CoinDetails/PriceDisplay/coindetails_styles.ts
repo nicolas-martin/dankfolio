@@ -1,4 +1,3 @@
-import { TREND_COLORS } from '@/components/Chart/CoinChart/scripts';
 import { StyleSheet } from 'react-native';
 import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
@@ -13,7 +12,7 @@ export const useStyles = () => {
 			fontWeight: '600' as const,
 			marginRight: theme.spacing.sm,
 		},
-		isPositive ? { color: TREND_COLORS.positive } : { color: TREND_COLORS.negative }
+		isPositive ? { color: theme.trend.positive } : { color: theme.trend.negative }
 	];
 	const styles = StyleSheet.create({
 		addressRow: {
@@ -26,10 +25,10 @@ export const useStyles = () => {
 			fontSize: theme.typography.fontSize.sm,
 		},
 		changeNegative: {
-			color: TREND_COLORS.negative,
+			color: theme.trend.negative,
 		},
 		changePositive: {
-			color: TREND_COLORS.positive,
+			color: theme.trend.positive,
 		},
 		changeRow: {
 			alignItems: 'center',
