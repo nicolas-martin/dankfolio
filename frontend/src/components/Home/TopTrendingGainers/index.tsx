@@ -63,7 +63,7 @@ const TrendingCard: React.FC<{
 			{coin.resolvedIconUrl && (
 				<CachedImage
 					uri={coin.resolvedIconUrl}
-					size={24}
+					size={20}
 					testID={`trending-coin-icon-${coin.symbol.toLowerCase()}`}
 				/>
 			)}
@@ -82,13 +82,13 @@ const TrendingCard: React.FC<{
 				<View style={styles.changeContainer}>
 					{changeValue > 0 && (
 						<TrendUpIcon 
-							size={12}
+							size={10}
 							color={getTrendColor(changeValue)}
 						/>
 					)}
 					{changeValue < 0 && (
 						<TrendDownIcon 
-							size={12}
+							size={10}
 							color={getTrendColor(changeValue)}
 						/>
 					)}

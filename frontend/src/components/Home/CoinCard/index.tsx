@@ -98,21 +98,6 @@ const CoinCard: React.FC<CoinCardProps> = ({
 		);
 	}
 
-	// Original vertical layout
-	const renderPriceChange = () => {
-		if (coin.price24hChangePercent === undefined) return null;
-		const changeStyle = coin.price24hChangePercent > 0
-			? styles.changePositive
-			: coin.price24hChangePercent < 0
-				? styles.changeNegative
-				: styles.changeNeutral;
-		return (
-			<Text style={changeStyle} numberOfLines={1}>
-				{formatPercentage(coin.price24hChangePercent, 2, true)}
-			</Text>
-		);
-	};
-
 	return (
 		<TouchableOpacity
 			style={styles.card}
@@ -174,13 +159,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					>
 						{formatPrice(Number(coin.price))}
 					</Text>
-					{coin.price24hChangePercent !== undefined && coin.price24hChangePercent > 0 ? (
-						renderPriceChange()
-					) : coin.value !== undefined ? (
-						<Text style={styles.volume} numberOfLines={1}>
-							Value: {formatPrice(coin.value)}
-						</Text>
-					) : typeof coin.volume24hUSD === 'number' && (
+					{typeof coin.volume24hUSD === 'number' && (
 						<Text style={styles.volume} numberOfLines={1}>
 							Vol: {formatNumber(coin.volume24hUSD, true)}
 						</Text>

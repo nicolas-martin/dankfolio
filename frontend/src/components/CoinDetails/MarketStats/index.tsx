@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
-import { MarketStatsProps } from './types';
 import { useStyles } from './styles';
+import { MarketStatsProps } from './types';
 import { formatNumber, formatPercentage } from '@/utils/numberFormat';
 
 const MarketStats: React.FC<MarketStatsProps> = ({ coin }) => {
@@ -23,7 +23,7 @@ const MarketStats: React.FC<MarketStatsProps> = ({ coin }) => {
 
 		const formattedValue = typeof value === 'number' ? formatNumber(value, true) : value;
 		const hasChange = change !== undefined && change !== null && !isNaN(change);
-		
+
 		// Special case: if value is empty string and we have a change, show only the colored change
 		const isChangeOnly = value === '' && hasChange;
 
