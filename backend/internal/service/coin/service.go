@@ -321,58 +321,79 @@ func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to fetch and enrich trending coins: %w", err)
 		}
+
+		// Clear existing trending status from all coins
 		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to list coins for updating trending status: %w", err)
 		}
+
 		if len(existingCoins) > 0 {
-			slog.DebugContext(ctx, "Updating trending status for existing coins", slog.Int("count", len(existingCoins)))
+			slog.DebugContext(ctx, "Clearing trending status for existing coins", slog.Int("count", len(existingCoins)))
 			coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
 			currentTime := time.Now().Format(time.RFC3339)
 			for _, coin := range existingCoins {
-				if coin.IsTrending {
-					modifiedCoin := coin
-					modifiedCoin.IsTrending = false
-					modifiedCoin.LastUpdated = currentTime
-					coinsToUpdate = append(coinsToUpdate, modifiedCoin)
+				modifiedCoin := coin
+				// Remove "trending" tag if it exists
+				newTags := make([]string, 0, len(coin.Tags))
+				for _, tag := range coin.Tags {
+					if tag != "trending" {
+						newTags = append(newTags, tag)
+					}
 				}
+				modifiedCoin.Tags = newTags
+				// Also clear the legacy IsTrending field for backward compatibility
+				if coin.IsTrending {
+					modifiedCoin.IsTrending = false
+				}
+				modifiedCoin.LastUpdated = currentTime
+				coinsToUpdate = append(coinsToUpdate, modifiedCoin)
 			}
+
 			if len(coinsToUpdate) > 0 {
-				slog.DebugContext(ctx, "Bulk updating existing coins to set IsTrending to false", slog.Int("count", len(coinsToUpdate)))
+				slog.DebugContext(ctx, "Bulk updating existing coins to clear trending status", slog.Int("count", len(coinsToUpdate)))
 				if _, err := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil {
 					slog.ErrorContext(ctx, "Failed to bulk update trending status for coins", slog.Any("error", err))
 				}
 			}
 		}
+
+		// Store/update enriched trending coins
 		if len(enrichedCoins.Coins) > 0 {
-			slog.DebugContext(ctx, "Storing/updating enriched coins from file", slog.Int("count", len(enrichedCoins.Coins)))
+			slog.DebugContext(ctx, "Storing/updating enriched trending coins", slog.Int("count", len(enrichedCoins.Coins)))
 			var storeErrors []string
 			for _, coin := range enrichedCoins.Coins {
 				currentCoin := coin
+				// Add "trending" tag
+				currentCoin.Tags = append(currentCoin.Tags, "trending")
+				// Also set the legacy IsTrending field for backward compatibility
+				currentCoin.IsTrending = true
+
 				existingCoin, getErr := txStore.Coins().GetByField(ctx, "mint_address", currentCoin.MintAddress)
 				if getErr == nil && existingCoin != nil {
 					currentCoin.ID = existingCoin.ID
 					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
-						slog.WarnContext(ctx, "Failed to update coin during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errUpdate))
+						slog.WarnContext(ctx, "Failed to update trending coin", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errUpdate))
 						storeErrors = append(storeErrors, errUpdate.Error())
 					}
 				} else if errors.Is(getErr, db.ErrNotFound) {
 					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
-						slog.WarnContext(ctx, "Failed to create coin during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errCreate))
+						slog.WarnContext(ctx, "Failed to create trending coin", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errCreate))
 						storeErrors = append(storeErrors, errCreate.Error())
 					}
 				} else if getErr != nil {
-					slog.WarnContext(ctx, "Error checking coin before upsert during refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", getErr))
+					slog.WarnContext(ctx, "Error checking coin before upsert during trending refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", getErr))
 					storeErrors = append(storeErrors, getErr.Error())
 				}
 			}
 			if len(storeErrors) > 0 {
-				slog.ErrorContext(ctx, "Encountered errors during storing enriched coins in transaction", slog.Int("error_count", len(storeErrors)))
+				slog.ErrorContext(ctx, "Encountered errors during storing trending coins in transaction", slog.Int("error_count", len(storeErrors)))
 			}
 		} else {
 			slog.InfoContext(ctx, "No new trending coins to store from this refresh.", slog.Time("fetch_timestamp", enrichedCoins.FetchTimestamp), slog.Int("incoming_enriched_coin_count", len(enrichedCoins.Coins)))
 		}
-		slog.InfoContext(ctx, "Coin store refresh transaction part complete", slog.Time("fetchTimestamp", enrichedCoins.FetchTimestamp), slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
+
+		slog.InfoContext(ctx, "Trending coin store refresh transaction complete", slog.Time("fetchTimestamp", enrichedCoins.FetchTimestamp), slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
 		return nil
 	})
 }
@@ -506,66 +527,118 @@ func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, 
 }
 
 func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
-	slog.InfoContext(ctx, "Starting to fetch and store new tokens from Jupiter")
-	limit := 50
-	offset := 0
-	params := &jupiter.NewCoinsParams{Limit: limit, Offset: offset}
-	resp, err := s.jupiterClient.GetNewCoins(ctx, params)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to get new coins from Jupiter", slog.Any("error", err))
-		return fmt.Errorf("failed to get new coins from Jupiter: %w", err)
-	}
-	if len(resp) == 0 {
-		slog.InfoContext(ctx, "No new coins found from Jupiter.")
-		return nil
-	}
-	coins := make([]*jupiter.CoinListInfo, 0, len(resp))
-	for _, newToken := range resp {
-		if newToken == nil {
-			continue
-		}
-		dt, parseErr := time.Parse(time.RFC3339, newToken.CreatedAt)
-		if parseErr != nil {
-			slog.WarnContext(ctx, "Failed to parse CreatedAt for new token", slog.String("mint", newToken.Mint), slog.Any("error", parseErr))
-		}
-		coin := &jupiter.CoinListInfo{
-			Address:     newToken.Mint,
-			ChainID:     101,
-			Decimals:    newToken.Decimals,
-			Name:        newToken.Name,
-			Symbol:      newToken.Symbol,
-			LogoURI:     newToken.LogoURI,
-			Extensions:  make(map[string]any),
-			DailyVolume: 0,
-			Tags:        []string{},
-			CreatedAt:   dt,
-		}
-		coins = append(coins, coin)
-	}
-	if len(coins) == 0 {
-		slog.InfoContext(ctx, "No valid coins to process from Jupiter.")
-		return nil
-	}
-	slog.InfoContext(ctx, "Successfully fetched new coins from Jupiter", slog.Int("fetched_count", len(coins)))
-	rawCoinsToUpsert := make([]model.RawCoin, 0, len(coins))
-	for _, v_jupiterCoin := range coins {
-		rawCoinModelPtr := v_jupiterCoin.ToRawCoin()
-		if rawCoinModelPtr != nil {
-			rawCoinsToUpsert = append(rawCoinsToUpsert, *rawCoinModelPtr)
-		}
-	}
-	if len(rawCoinsToUpsert) > 0 {
-		slog.InfoContext(ctx, "Attempting to bulk upsert new raw coins in FetchAndStoreNewTokens", slog.Int("count", len(rawCoinsToUpsert)))
-		rowsAffected, err := s.store.RawCoins().BulkUpsert(ctx, &rawCoinsToUpsert)
+	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
+		slog.InfoContext(ctx, "Starting to fetch and store new tokens from Jupiter")
+		limit := 50
+		offset := 0
+		params := &jupiter.NewCoinsParams{Limit: limit, Offset: offset}
+		resp, err := s.jupiterClient.GetNewCoins(ctx, params)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to bulk upsert new raw coins in FetchAndStoreNewTokens", slog.Any("error", err), slog.Int("attempted_count", len(rawCoinsToUpsert)))
-			return fmt.Errorf("failed to bulk upsert new raw coins: %w", err)
+			slog.ErrorContext(ctx, "Failed to get new coins from Jupiter", slog.Any("error", err))
+			return fmt.Errorf("failed to get new coins from Jupiter: %w", err)
 		}
-		slog.InfoContext(ctx, "Successfully bulk upserted new raw coins in FetchAndStoreNewTokens", slog.Int64("rows_affected", rowsAffected), slog.Int("submitted_count", len(rawCoinsToUpsert)))
-	} else {
-		slog.InfoContext(ctx, "No valid new raw coins were prepared for upserting in FetchAndStoreNewTokens.")
-	}
-	return nil
+		if len(resp) == 0 {
+			slog.InfoContext(ctx, "No new coins found from Jupiter.")
+			return nil
+		}
+
+		// Convert Jupiter new coins to BirdEye token details for enrichment
+		tokenDetails := make([]birdeye.TokenDetails, 0, len(resp))
+		for _, newToken := range resp {
+			if newToken == nil {
+				continue
+			}
+
+			tokenDetail := birdeye.TokenDetails{
+				Address:  newToken.Mint,
+				Name:     newToken.Name,
+				Symbol:   newToken.Symbol,
+				LogoURI:  newToken.LogoURI,
+				Decimals: newToken.Decimals,
+				// Note: CreatedAt is not part of TokenDetails, it will be handled during enrichment
+			}
+			tokenDetails = append(tokenDetails, tokenDetail)
+		}
+
+		if len(tokenDetails) == 0 {
+			slog.InfoContext(ctx, "No valid tokens to process from Jupiter.")
+			return nil
+		}
+
+		// Enrich the tokens using the existing enrichment process
+		enrichedCoins, err := s.processBirdeyeTokens(ctx, tokenDetails)
+		if err != nil {
+			return fmt.Errorf("failed to enrich new tokens: %w", err)
+		}
+
+		// Clear existing new coins status from all coins
+		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to list coins for updating new coins status: %w", err)
+		}
+
+		if len(existingCoins) > 0 {
+			slog.DebugContext(ctx, "Clearing new coins status for existing coins", slog.Int("count", len(existingCoins)))
+			coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
+			currentTime := time.Now().Format(time.RFC3339)
+			for _, coin := range existingCoins {
+				modifiedCoin := coin
+				// Remove "new-coin" tag if it exists
+				newTags := make([]string, 0, len(coin.Tags))
+				for _, tag := range coin.Tags {
+					if tag != "new-coin" {
+						newTags = append(newTags, tag)
+					}
+				}
+				modifiedCoin.Tags = newTags
+				modifiedCoin.LastUpdated = currentTime
+				coinsToUpdate = append(coinsToUpdate, modifiedCoin)
+			}
+
+			if len(coinsToUpdate) > 0 {
+				slog.DebugContext(ctx, "Bulk updating existing coins to clear new coins status", slog.Int("count", len(coinsToUpdate)))
+				if _, err := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil {
+					slog.ErrorContext(ctx, "Failed to bulk update new coins status for coins", slog.Any("error", err))
+				}
+			}
+		}
+
+		// Store/update enriched new coins
+		if len(enrichedCoins) > 0 {
+			slog.DebugContext(ctx, "Storing/updating enriched new coins", slog.Int("count", len(enrichedCoins)))
+			var storeErrors []string
+			for _, coin := range enrichedCoins {
+				currentCoin := coin
+				// Add "new-coin" tag
+				currentCoin.Tags = append(currentCoin.Tags, "new-coin")
+
+				existingCoin, getErr := txStore.Coins().GetByField(ctx, "mint_address", currentCoin.MintAddress)
+				if getErr == nil && existingCoin != nil {
+					currentCoin.ID = existingCoin.ID
+					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
+						slog.WarnContext(ctx, "Failed to update new coin", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errUpdate))
+						storeErrors = append(storeErrors, errUpdate.Error())
+					}
+				} else if errors.Is(getErr, db.ErrNotFound) {
+					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
+						slog.WarnContext(ctx, "Failed to create new coin", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errCreate))
+						storeErrors = append(storeErrors, errCreate.Error())
+					}
+				} else if getErr != nil {
+					slog.WarnContext(ctx, "Error checking coin before upsert during new coins refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", getErr))
+					storeErrors = append(storeErrors, getErr.Error())
+				}
+			}
+			if len(storeErrors) > 0 {
+				slog.ErrorContext(ctx, "Encountered errors during storing new coins in transaction", slog.Int("error_count", len(storeErrors)))
+			}
+		} else {
+			slog.InfoContext(ctx, "No new coins to store from this refresh.")
+		}
+
+		slog.InfoContext(ctx, "New coins store refresh transaction complete", slog.Int("enrichedCoinsProcessed", len(enrichedCoins)))
+		return nil
+	})
 }
 
 func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, opts db.ListOptions) ([]model.Coin, int32, error) {
@@ -625,10 +698,6 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 		cacheKey = fmt.Sprintf("%s_offset_%d", cacheKey, offset)
 	}
 
-	// For now, we'll cache the domain models instead of protobuf
-	// In a more sophisticated setup, you might have a separate cache layer
-	// that handles both domain models and protobuf conversion
-
 	listOpts := db.ListOptions{}
 	if limit > 0 {
 		limitInt := int(limit)
@@ -637,6 +706,22 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 	if offset > 0 {
 		offsetInt := int(offset)
 		listOpts.Offset = &offsetInt
+	}
+
+	// First, check if we have any existing new coins
+	existingNewCoins, err := s.store.SearchCoins(ctx, "", []string{"new-coin"}, 0, 1, 0, "", false)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to check for existing new coins", "error", err)
+		// Continue with the normal flow even if check fails
+	} else if len(existingNewCoins) == 0 {
+		// No new coins exist, fetch them immediately
+		slog.InfoContext(ctx, "No new coins found in database, fetching immediately...")
+		if fetchErr := s.FetchAndStoreNewTokens(ctx); fetchErr != nil {
+			slog.ErrorContext(ctx, "Failed to fetch new coins immediately", "error", fetchErr)
+			// Don't return error, continue with empty results
+		} else {
+			slog.InfoContext(ctx, "Successfully fetched new coins immediately")
+		}
 	}
 
 	modelCoins, totalCount, err := s.store.ListNewestCoins(ctx, listOpts)
@@ -666,6 +751,22 @@ func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) 
 	if offset > 0 {
 		offsetInt := int(offset)
 		listOpts.Offset = &offsetInt
+	}
+
+	// First, check if we have any existing trending coins
+	existingTrendingCoins, err := s.store.SearchCoins(ctx, "", []string{"trending"}, 0, 1, 0, "", false)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to check for existing trending coins", "error", err)
+		// Continue with the normal flow even if check fails
+	} else if len(existingTrendingCoins) == 0 {
+		// No trending coins exist, fetch them immediately
+		slog.InfoContext(ctx, "No trending coins found in database, fetching immediately...")
+		if fetchErr := s.FechAndStoreTrendingTokens(ctx); fetchErr != nil {
+			slog.ErrorContext(ctx, "Failed to fetch trending coins immediately", "error", fetchErr)
+			// Don't return error, continue with empty results
+		} else {
+			slog.InfoContext(ctx, "Successfully fetched trending coins immediately")
+		}
 	}
 
 	modelCoins, totalCount, err := s.store.ListTrendingCoins(ctx, listOpts)
@@ -718,6 +819,7 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 		slog.ErrorContext(ctx, "Failed to list top gainers coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list top gainers coins: %w", err)
 	}
+	s.cache.Set(cacheKey, modelCoins, defaultCacheTTL)
 
 	return modelCoins, totalCount, nil
 }

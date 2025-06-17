@@ -125,24 +125,35 @@ func (s *Store) ApiStats() db.Repository[model.ApiStat] { // Changed return type
 func (s *Store) ListTrendingCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
 	slog.DebugContext(ctx, "PostgresStore: ListTrendingCoins called", "limit", opts.Limit, "offset", opts.Offset)
 
-	// Define default sorting: by "volume_24h" field, descending (if not specified in opts).
-	if opts.SortBy == nil || *opts.SortBy == "" {
-		sortByVolume := "volume_24h" // Ensure this matches DB column
-		sortDescTrue := true
-		opts.SortBy = &sortByVolume
-		opts.SortDesc = &sortDescTrue
+	// Use SearchCoins to filter by the "trending" tag
+	limit := int32(10) // default limit
+	offset := int32(0)
+
+	if opts.Limit != nil {
+		limit = int32(*opts.Limit)
+	}
+	if opts.Offset != nil {
+		offset = int32(*opts.Offset)
 	}
 
-	// Define filter: "is_trending" = true.
-	// Prepend to existing filters if any, or set if nil.
-	trendingFilter := db.FilterOption{
-		Field:    "is_trending", // Ensure this matches DB column
-		Operator: db.FilterOpEqual,
-		Value:    true,
-	}
-	opts.Filters = append([]db.FilterOption{trendingFilter}, opts.Filters...)
+	// Define default sorting by volume_24h descending
+	sortBy := "volume_24h"
+	sortDesc := true
 
-	return s.Coins().ListWithOpts(ctx, opts)
+	if opts.SortBy != nil && *opts.SortBy != "" {
+		sortBy = *opts.SortBy
+	}
+	if opts.SortDesc != nil {
+		sortDesc = *opts.SortDesc
+	}
+
+	// Search for coins with the "trending" tag
+	coins, err := s.SearchCoins(ctx, "", []string{"trending"}, 0, limit, offset, sortBy, sortDesc)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to search for trending coins: %w", err)
+	}
+
+	return coins, int32(len(coins)), nil
 }
 
 func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
@@ -265,8 +276,8 @@ func mapSortBy(sortBy string) string {
 		return "last_updated"
 	case "listed_at", "jupiter_listed_at":
 		return "jupiter_created_at"
-	case "change24h", "price_24h_change_percent":
-		return "change_24h"
+	case "price_24h_change_percent":
+		return "price_24h_change_percent"
 	default:
 		return "created_at"
 	}
@@ -308,17 +319,35 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 func (s *Store) ListNewestCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
 	slog.DebugContext(ctx, "PostgresStore: ListNewestCoins called", "limit", opts.Limit, "offset", opts.Offset)
 
-	// Define sorting for newest: by "created_at" field, descending.
-	// Assumes "created_at" is the correct DB column name in the "coins" table.
-	sortByCreatedAt := "created_at" // Ensure this matches your actual DB column name
-	sortDescTrue := true
+	// Use SearchCoins to filter by the "new-coin" tag
+	limit := int32(10) // default limit
+	offset := int32(0)
 
-	opts.SortBy = &sortByCreatedAt
-	opts.SortDesc = &sortDescTrue
-	// opts.Filters = nil // Retain any incoming filters, only enforce sort order for "newest"
+	if opts.Limit != nil {
+		limit = int32(*opts.Limit)
+	}
+	if opts.Offset != nil {
+		offset = int32(*opts.Offset)
+	}
 
-	// Call the generic List or ListWithOpts method from the CoinRepository
-	return s.Coins().ListWithOpts(ctx, opts)
+	// Define default sorting by created_at descending (newest first)
+	sortBy := "created_at"
+	sortDesc := true
+
+	if opts.SortBy != nil && *opts.SortBy != "" {
+		sortBy = *opts.SortBy
+	}
+	if opts.SortDesc != nil {
+		sortDesc = *opts.SortDesc
+	}
+
+	// Search for coins with the "new-coin" tag
+	coins, err := s.SearchCoins(ctx, "", []string{"new-coin"}, 0, limit, offset, sortBy, sortDesc)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to search for new coins: %w", err)
+	}
+
+	return coins, int32(len(coins)), nil
 }
 
 // ListTopGainersCoins fetches coins with the highest positive price change in 24h.
