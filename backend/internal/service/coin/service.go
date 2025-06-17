@@ -219,8 +219,9 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 	}
 	coin, err := s.store.Coins().GetByField(ctx, "address", address)
 	if err == nil {
-		slog.DebugContext(ctx, "Coin found in 'coins' table", slog.String("address", address))
-		return coin, nil
+		slog.DebugContext(ctx, "Coin found in 'coins' table, updating price", slog.String("address", address))
+		// Just fetch and update the latest price for cached coins
+		return s.updateCoinPrice(ctx, coin)
 	}
 	if errors.Is(err, db.ErrNotFound) {
 		slog.InfoContext(ctx, "Coin not found in 'coins' table, checking 'raw_coins' table.", slog.String("address", address))
@@ -303,6 +304,37 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 	}
 	slog.DebugContext(ctx, "Dynamic coin enrichment and storage attempt complete", slog.String("mintAddress", mintAddress))
 	return enrichedCoin, nil
+}
+
+// updateCoinPrice updates just the price of a cached coin with fresh data from Jupiter
+func (s *Service) updateCoinPrice(ctx context.Context, coin *model.Coin) (*model.Coin, error) {
+	slog.DebugContext(ctx, "Updating price for cached coin", slog.String("mintAddress", coin.Address), slog.Float64("currentPrice", coin.Price))
+
+	// Fetch current price from Jupiter
+	prices, err := s.jupiterClient.GetCoinPrices(ctx, []string{coin.Address})
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to fetch price from Jupiter, returning cached coin", slog.String("mintAddress", coin.Address), slog.Any("error", err))
+		return coin, nil // Return cached coin if Jupiter fails
+	}
+
+	if price, exists := prices[coin.Address]; exists && price > 0 {
+		// Update the price and timestamp
+		coin.Price = price
+		coin.LastUpdated = time.Now().Format(time.RFC3339)
+		slog.DebugContext(ctx, "Successfully updated price from Jupiter", slog.String("mintAddress", coin.Address), slog.Float64("newPrice", price))
+
+		// Update the coin in the database with the new price
+		if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
+			slog.WarnContext(ctx, "Failed to update coin with new price in database", slog.String("mintAddress", coin.Address), slog.Any("error", updateErr))
+			// Continue anyway, return the coin with updated price even if DB update fails
+		} else {
+			slog.DebugContext(ctx, "Successfully updated coin with new price in database", slog.String("mintAddress", coin.Address))
+		}
+	} else {
+		slog.DebugContext(ctx, "No price found for token in Jupiter response, keeping cached price", slog.String("mintAddress", coin.Address), slog.Float64("cachedPrice", coin.Price))
+	}
+
+	return coin, nil
 }
 
 func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {

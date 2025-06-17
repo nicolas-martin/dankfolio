@@ -68,7 +68,7 @@ const Profile = () => {
 		logger.breadcrumb({ category: 'profile', message: 'Portfolio refresh initiated from ProfileScreen' });
 		setIsRefreshing(true);
 		try {
-			await fetchPortfolioBalance(wallet.address);
+			await fetchPortfolioBalance(wallet.address, true); // Force refresh to get updated prices
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				showToast({
