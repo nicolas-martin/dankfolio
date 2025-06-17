@@ -322,19 +322,20 @@ func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
 			return fmt.Errorf("failed to fetch and enrich trending coins: %w", err)
 		}
 
-		// Clear existing trending status from all coins
-		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{})
+		// Get existing coins with "trending" tag to clear them
+		existingTrendingCoins, err := txStore.SearchCoins(ctx, "", []string{"trending"}, 0, 1000, 0, "", false)
 		if err != nil {
-			return fmt.Errorf("failed to list coins for updating trending status: %w", err)
+			return fmt.Errorf("failed to search for existing trending coins: %w", err)
 		}
 
-		if len(existingCoins) > 0 {
-			slog.DebugContext(ctx, "Clearing trending status for existing coins", slog.Int("count", len(existingCoins)))
-			coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
+		// Clear "trending" tag from existing trending coins
+		if len(existingTrendingCoins) > 0 {
+			slog.DebugContext(ctx, "Clearing trending status for existing trending coins", slog.Int("count", len(existingTrendingCoins)))
+			coinsToUpdate := make([]model.Coin, 0, len(existingTrendingCoins))
 			currentTime := time.Now().Format(time.RFC3339)
-			for _, coin := range existingCoins {
+			for _, coin := range existingTrendingCoins {
 				modifiedCoin := coin
-				// Remove "trending" tag if it exists
+				// Remove "trending" tag
 				newTags := make([]string, 0, len(coin.Tags))
 				for _, tag := range coin.Tags {
 					if tag != "trending" {
@@ -351,7 +352,7 @@ func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
 			}
 
 			if len(coinsToUpdate) > 0 {
-				slog.DebugContext(ctx, "Bulk updating existing coins to clear trending status", slog.Int("count", len(coinsToUpdate)))
+				slog.DebugContext(ctx, "Bulk updating existing trending coins to clear status", slog.Int("count", len(coinsToUpdate)))
 				if _, err := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil {
 					slog.ErrorContext(ctx, "Failed to bulk update trending status for coins", slog.Any("error", err))
 				}
@@ -421,21 +422,20 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 			return fmt.Errorf("failed to enrich top gainers tokens: %w", err)
 		}
 
-		// Clear existing top gainers status from all coins
-		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{})
+		// Get existing coins with "top-gainer" tag to clear them
+		existingTopGainers, err := txStore.SearchCoins(ctx, "", []string{"top-gainer"}, 0, 1000, 0, "", false)
 		if err != nil {
-			return fmt.Errorf("failed to list coins for updating top gainers status: %w", err)
+			return fmt.Errorf("failed to search for existing top gainers: %w", err)
 		}
 
-		if len(existingCoins) > 0 {
-			slog.DebugContext(ctx, "Clearing top gainers status for existing coins", slog.Int("count", len(existingCoins)))
-			coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
+		// Clear "top-gainer" tag from existing top gainers
+		if len(existingTopGainers) > 0 {
+			slog.DebugContext(ctx, "Clearing top gainers status for existing top gainers", slog.Int("count", len(existingTopGainers)))
+			coinsToUpdate := make([]model.Coin, 0, len(existingTopGainers))
 			currentTime := time.Now().Format(time.RFC3339)
-			for _, coin := range existingCoins {
-				// Note: We'll need to add IsTopGainer field to model.Coin
-				// For now, we'll use a tag to mark top gainers
+			for _, coin := range existingTopGainers {
 				modifiedCoin := coin
-				// Remove "top-gainer" tag if it exists
+				// Remove "top-gainer" tag
 				newTags := make([]string, 0, len(coin.Tags))
 				for _, tag := range coin.Tags {
 					if tag != "top-gainer" {
@@ -448,7 +448,7 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 			}
 
 			if len(coinsToUpdate) > 0 {
-				slog.DebugContext(ctx, "Bulk updating existing coins to clear top gainers status", slog.Int("count", len(coinsToUpdate)))
+				slog.DebugContext(ctx, "Bulk updating existing top gainers to clear status", slog.Int("count", len(coinsToUpdate)))
 				if _, err := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil {
 					slog.ErrorContext(ctx, "Failed to bulk update top gainers status for coins", slog.Any("error", err))
 				}
@@ -571,19 +571,20 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			return fmt.Errorf("failed to enrich new tokens: %w", err)
 		}
 
-		// Clear existing new coins status from all coins
-		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{})
+		// Get existing coins with "new-coin" tag to clear them
+		existingNewCoins, err := txStore.SearchCoins(ctx, "", []string{"new-coin"}, 0, 1000, 0, "", false)
 		if err != nil {
-			return fmt.Errorf("failed to list coins for updating new coins status: %w", err)
+			return fmt.Errorf("failed to search for existing new coins: %w", err)
 		}
 
-		if len(existingCoins) > 0 {
-			slog.DebugContext(ctx, "Clearing new coins status for existing coins", slog.Int("count", len(existingCoins)))
-			coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
+		// Clear "new-coin" tag from existing new coins
+		if len(existingNewCoins) > 0 {
+			slog.DebugContext(ctx, "Clearing new coins status for existing new coins", slog.Int("count", len(existingNewCoins)))
+			coinsToUpdate := make([]model.Coin, 0, len(existingNewCoins))
 			currentTime := time.Now().Format(time.RFC3339)
-			for _, coin := range existingCoins {
+			for _, coin := range existingNewCoins {
 				modifiedCoin := coin
-				// Remove "new-coin" tag if it exists
+				// Remove "new-coin" tag
 				newTags := make([]string, 0, len(coin.Tags))
 				for _, tag := range coin.Tags {
 					if tag != "new-coin" {
@@ -596,7 +597,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			}
 
 			if len(coinsToUpdate) > 0 {
-				slog.DebugContext(ctx, "Bulk updating existing coins to clear new coins status", slog.Int("count", len(coinsToUpdate)))
+				slog.DebugContext(ctx, "Bulk updating existing new coins to clear status", slog.Int("count", len(coinsToUpdate)))
 				if _, err := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil {
 					slog.ErrorContext(ctx, "Failed to bulk update new coins status for coins", slog.Any("error", err))
 				}
@@ -819,7 +820,6 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 		slog.ErrorContext(ctx, "Failed to list top gainers coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list top gainers coins: %w", err)
 	}
-	s.cache.Set(cacheKey, modelCoins, defaultCacheTTL)
 
 	return modelCoins, totalCount, nil
 }
