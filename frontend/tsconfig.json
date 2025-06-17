@@ -12,6 +12,9 @@
       "@/*": [
         "src/*"
       ],
+      "@gen": [
+        "src/gen/*"
+      ],
       "@types/*": [
         "src/types/*"
       ],

@@ -19,14 +19,14 @@ import (
 
 // Server represents the API server
 type Server struct {
-	mux            *http.ServeMux
-	coinService    *coin.Service
-	walletService  *wallet.Service
-	tradeService   *trade.Service
-	priceService   *price.Service
-	utilityService *Service
-	appCheckClient *appcheck.Client
-	env            string
+	mux              *http.ServeMux
+	coinService      *coin.Service
+	walletService    *wallet.Service
+	tradeService     *trade.Service
+	priceService     *price.Service
+	utilityService   *Service
+	appCheckClient   *appcheck.Client
+	env              string
 	devAppCheckToken string
 }
 
@@ -42,14 +42,14 @@ func NewServer(
 	devAppCheckToken string,
 ) *Server {
 	return &Server{
-		mux:            http.NewServeMux(),
-		coinService:    coinService,
-		walletService:  walletService,
-		tradeService:   tradeService,
-		priceService:   priceService,
-		utilityService: utilityService,
-		appCheckClient: appCheckClient,
-		env:            env,
+		mux:              http.NewServeMux(),
+		coinService:      coinService,
+		walletService:    walletService,
+		tradeService:     tradeService,
+		priceService:     priceService,
+		utilityService:   utilityService,
+		appCheckClient:   appCheckClient,
+		env:              env,
 		devAppCheckToken: devAppCheckToken,
 	}
 }
