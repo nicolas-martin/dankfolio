@@ -174,7 +174,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					>
 						{formatPrice(Number(coin.price))}
 					</Text>
-					{coin.change24h !== undefined ? (
+					{coin.change24h !== undefined && coin.change24h > 0 ? (
 						renderPriceChange()
 					) : coin.value !== undefined ? (
 						<Text style={styles.volume} numberOfLines={1}>

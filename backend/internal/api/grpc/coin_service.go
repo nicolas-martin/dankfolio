@@ -162,7 +162,7 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		var sortByStr string
 		switch sortBy {
 		case pb.CoinSortField_COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H:
-			sortByStr = "price_24h_change_percent"
+			sortByStr = "priceChangePercentage24h"
 		case pb.CoinSortField_COIN_SORT_FIELD_JUPITER_LISTED_AT:
 			sortByStr = "jupiter_listed_at"
 		case pb.CoinSortField_COIN_SORT_FIELD_VOLUME_24H:

@@ -60,13 +60,19 @@ func NewService(
 		if service.config.TrendingFetchInterval > 0 {
 			go service.runTrendingTokenFetcher(service.fetcherCtx)
 		} else {
-			slog.Info("Trending token fetcher is disabled as TrendingFetchInterval is not configured or is zero.")
+			slog.Warn("Trending token fetcher is disabled as TrendingFetchInterval is not configured or is zero.")
 		}
 
 		if service.config.NewCoinsFetchInterval > 0 {
 			go service.runNewTokenFetcher(service.fetcherCtx)
 		} else {
-			slog.Info("New token fetcher is disabled as NewCoinsFetchInterval is not configured or is zero.")
+			slog.Warn("New token fetcher is disabled as NewCoinsFetchInterval is not configured or is zero.")
+		}
+
+		if service.config.TopGainersFetchInterval > 0 {
+			go service.runTopGainersTokenFetcher(service.fetcherCtx)
+		} else {
+			slog.Warn("Top gainers token fetcher is disabled as TopGainersFetchInterval is not configured or is zero.")
 		}
 	} else {
 		slog.Warn("Coin service config is nil. Fetchers will be disabled.")
@@ -120,6 +126,31 @@ func (s *Service) runNewTokenFetcher(ctx context.Context) {
 			}
 		case <-ctx.Done():
 			slog.InfoContext(ctx, "New token fetcher stopping due to context cancellation.")
+			return
+		}
+	}
+}
+
+func (s *Service) runTopGainersTokenFetcher(ctx context.Context) {
+	if s.config == nil {
+		slog.ErrorContext(ctx, "runTopGainersTokenFetcher: service config is nil")
+		return
+	}
+	slog.InfoContext(ctx, "Starting top gainers token fetcher", slog.Duration("interval", s.config.TopGainersFetchInterval))
+	ticker := time.NewTicker(s.config.TopGainersFetchInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			slog.InfoContext(ctx, "Periodically fetching top gainers tokens...")
+			if err := s.FetchAndStoreTopGainersTokens(ctx); err != nil {
+				slog.ErrorContext(ctx, "Failed to fetch and store top gainers tokens periodically", slog.Any("error", err))
+			} else {
+				slog.InfoContext(ctx, "Successfully fetched and stored top gainers tokens periodically.")
+			}
+		case <-ctx.Done():
+			slog.InfoContext(ctx, "Top gainers token fetcher stopping due to context cancellation.")
 			return
 		}
 	}
@@ -342,6 +373,101 @@ func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
 			slog.InfoContext(ctx, "No new trending coins to store from this refresh.", slog.Time("fetch_timestamp", enrichedCoins.FetchTimestamp), slog.Int("incoming_enriched_coin_count", len(enrichedCoins.Coins)))
 		}
 		slog.InfoContext(ctx, "Coin store refresh transaction part complete", slog.Time("fetchTimestamp", enrichedCoins.FetchTimestamp), slog.Int("enrichedCoinsProcessed", len(enrichedCoins.Coins)))
+		return nil
+	})
+}
+
+func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
+	return s.store.WithTransaction(ctx, func(txStore db.Store) error {
+		// Fetch top gainers from BirdEye using price change percentage sorting
+		birdeyeTokens, err := s.birdeyeClient.GetTrendingTokens(ctx, birdeye.TrendingTokensParams{
+			SortBy:   "price24hChangePercent",
+			SortType: "desc",
+			Limit:    10,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to get top gainers tokens from BirdEye: %w", err)
+		}
+
+		if len(birdeyeTokens.Data.Tokens) == 0 {
+			slog.InfoContext(ctx, "No top gainers tokens received from BirdEye.")
+			return nil
+		}
+
+		// Enrich the tokens using the existing enrichment process
+		enrichedCoins, err := s.processBirdeyeTokens(ctx, birdeyeTokens.Data.Tokens)
+		if err != nil {
+			return fmt.Errorf("failed to enrich top gainers tokens: %w", err)
+		}
+
+		// Clear existing top gainers status from all coins
+		existingCoins, _, err := txStore.Coins().List(ctx, db.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to list coins for updating top gainers status: %w", err)
+		}
+
+		if len(existingCoins) > 0 {
+			slog.DebugContext(ctx, "Clearing top gainers status for existing coins", slog.Int("count", len(existingCoins)))
+			coinsToUpdate := make([]model.Coin, 0, len(existingCoins))
+			currentTime := time.Now().Format(time.RFC3339)
+			for _, coin := range existingCoins {
+				// Note: We'll need to add IsTopGainer field to model.Coin
+				// For now, we'll use a tag to mark top gainers
+				modifiedCoin := coin
+				// Remove "top-gainer" tag if it exists
+				newTags := make([]string, 0, len(coin.Tags))
+				for _, tag := range coin.Tags {
+					if tag != "top-gainer" {
+						newTags = append(newTags, tag)
+					}
+				}
+				modifiedCoin.Tags = newTags
+				modifiedCoin.LastUpdated = currentTime
+				coinsToUpdate = append(coinsToUpdate, modifiedCoin)
+			}
+
+			if len(coinsToUpdate) > 0 {
+				slog.DebugContext(ctx, "Bulk updating existing coins to clear top gainers status", slog.Int("count", len(coinsToUpdate)))
+				if _, err := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil {
+					slog.ErrorContext(ctx, "Failed to bulk update top gainers status for coins", slog.Any("error", err))
+				}
+			}
+		}
+
+		// Store/update enriched top gainers coins
+		if len(enrichedCoins) > 0 {
+			slog.DebugContext(ctx, "Storing/updating enriched top gainers coins", slog.Int("count", len(enrichedCoins)))
+			var storeErrors []string
+			for _, coin := range enrichedCoins {
+				currentCoin := coin
+				// Add "top-gainer" tag
+				currentCoin.Tags = append(currentCoin.Tags, "top-gainer")
+
+				existingCoin, getErr := txStore.Coins().GetByField(ctx, "mint_address", currentCoin.MintAddress)
+				if getErr == nil && existingCoin != nil {
+					currentCoin.ID = existingCoin.ID
+					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
+						slog.WarnContext(ctx, "Failed to update top gainer coin", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errUpdate))
+						storeErrors = append(storeErrors, errUpdate.Error())
+					}
+				} else if errors.Is(getErr, db.ErrNotFound) {
+					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
+						slog.WarnContext(ctx, "Failed to create top gainer coin", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", errCreate))
+						storeErrors = append(storeErrors, errCreate.Error())
+					}
+				} else if getErr != nil {
+					slog.WarnContext(ctx, "Error checking coin before upsert during top gainers refresh", slog.String("mintAddress", currentCoin.MintAddress), slog.Any("error", getErr))
+					storeErrors = append(storeErrors, getErr.Error())
+				}
+			}
+			if len(storeErrors) > 0 {
+				slog.ErrorContext(ctx, "Encountered errors during storing top gainers coins in transaction", slog.Int("error_count", len(storeErrors)))
+			}
+		} else {
+			slog.InfoContext(ctx, "No new top gainers coins to store from this refresh.")
+		}
+
+		slog.InfoContext(ctx, "Top gainers coin store refresh transaction complete", slog.Int("enrichedCoinsProcessed", len(enrichedCoins)))
 		return nil
 	})
 }
@@ -569,6 +695,22 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 	if offset > 0 {
 		offsetInt := int(offset)
 		listOpts.Offset = &offsetInt
+	}
+
+	// First, check if we have any existing top gainers
+	existingTopGainers, err := s.store.SearchCoins(ctx, "", []string{"top-gainer"}, 0, 1, 0, "", false)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to check for existing top gainers", "error", err)
+		// Continue with the normal flow even if check fails
+	} else if len(existingTopGainers) == 0 {
+		// No top gainers exist, fetch them immediately
+		slog.InfoContext(ctx, "No top gainers found in database, fetching immediately...")
+		if fetchErr := s.FetchAndStoreTopGainersTokens(ctx); fetchErr != nil {
+			slog.ErrorContext(ctx, "Failed to fetch top gainers immediately", "error", fetchErr)
+			// Don't return error, continue with empty results
+		} else {
+			slog.InfoContext(ctx, "Successfully fetched top gainers immediately")
+		}
 	}
 
 	modelCoins, totalCount, err := s.store.ListTopGainersCoins(ctx, listOpts)

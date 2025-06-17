@@ -126,10 +126,12 @@ func main() {
 	go apiTracker.Start(ctx) // Use the main application context
 
 	coinServiceConfig := &coin.Config{
-		BirdEyeBaseURL:        config.BirdEyeEndpoint,
-		BirdEyeAPIKey:         config.BirdEyeAPIKey,
-		SolanaRPCEndpoint:     config.SolanaRPCEndpoint,
-		NewCoinsFetchInterval: config.NewCoinsFetchInterval,
+		BirdEyeBaseURL:          config.BirdEyeEndpoint,
+		BirdEyeAPIKey:           config.BirdEyeAPIKey,
+		SolanaRPCEndpoint:       config.SolanaRPCEndpoint,
+		NewCoinsFetchInterval:   config.NewCoinsFetchInterval,
+		TrendingFetchInterval:   config.TrendingCoinsFetchInterval,
+		TopGainersFetchInterval: config.TopGainersFetchInterval,
 	}
 
 	coinCache, err := coin.NewCoinCache()
@@ -247,6 +249,7 @@ type Config struct {
 	Env                        string        `envconfig:"APP_ENV" required:"true"`
 	NewCoinsFetchInterval      time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL" default:"1h"`        // Default to 1 hour
 	TrendingCoinsFetchInterval time.Duration `envconfig:"TRENDING_COINS_FETCH_INTERVAL" default:"24h"`  // Default to 24 hours
+	TopGainersFetchInterval    time.Duration `envconfig:"TOP_GAINERS_FETCH_INTERVAL" default:"5m"`      // Default to 5 minutes
 	PlatformFeeBps             int           `envconfig:"PLATFORM_FEE_BPS" required:"true"`             // Basis points for platform fee, e.g., 100 = 1%
 	PlatformFeeAccountAddress  string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS" required:"true"` // Conditionally required, handled in validation
 	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`

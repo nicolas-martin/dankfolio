@@ -94,7 +94,7 @@ const shouldMock = process.env.E2E_MOCKING_ENABLED === 'true' || __DEV__;
 let walletClient: Client<typeof WalletService>, tradeClient: Client<typeof TradeService>, coinClient: Client<typeof CoinService>, priceClient: Client<typeof PriceService>, utilityClient: Client<typeof UtilityService>;
 
 if (shouldMock) {
-	log.log('🎭 Creating gRPC clients with custom fetch for mocking');
+	logger.log('🎭 Creating gRPC clients with custom fetch for mocking');
 
 	// Create transport with custom fetch function for mocking
 	const transport = createConnectTransport({
@@ -109,7 +109,7 @@ if (shouldMock) {
 	priceClient = createClient(PriceService, transport);
 	utilityClient = createClient(UtilityService, transport);
 } else {
-	log.log('🔧 Creating gRPC clients with standard transport');
+	logger.log('🔧 Creating gRPC clients with standard transport');
 
 	// Create standard transport for production
 	const transport = createConnectTransport({

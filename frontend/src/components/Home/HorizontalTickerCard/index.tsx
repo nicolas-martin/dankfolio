@@ -52,17 +52,6 @@ const HorizontalTickerCard: React.FC<HorizontalTickerCardProps> = ({ coin, onPre
 			>
 				{timeAgo}
 			</Text>
-			{coin.change24h !== undefined && (
-				<Text 
-					style={styles.changeTextStyle(coin.change24h)} 
-					numberOfLines={1} 
-					testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}
-					accessible={true}
-					accessibilityRole="text"
-				>
-					{formatPercentage(coin.change24h, 1, true)}
-				</Text>
-			)}
 		</TouchableOpacity>
 	);
 };
@@ -73,7 +62,6 @@ export default React.memo(HorizontalTickerCard, (prevProps, nextProps) => {
 		prevProps.coin.mintAddress === nextProps.coin.mintAddress &&
 		prevProps.coin.symbol === nextProps.coin.symbol &&
 		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
-		prevProps.coin.change24h === nextProps.coin.change24h &&
 		prevProps.coin.jupiterListedAt === nextProps.coin.jupiterListedAt &&
 		prevProps.testIdPrefix === nextProps.testIdPrefix &&
 		prevProps.containerStyle === nextProps.containerStyle // Add containerStyle to comparison
