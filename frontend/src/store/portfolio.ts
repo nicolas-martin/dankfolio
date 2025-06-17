@@ -22,7 +22,7 @@ interface PortfolioState {
 	tokens: PortfolioToken[];
 	setWallet: (publicKey: string) => Promise<void>;
 	clearWallet: () => void;
-	fetchPortfolioBalance: (address: string) => Promise<void>;
+	fetchPortfolioBalance: (address: string, forceRefresh?: boolean) => Promise<void>;
 }
 
 export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
@@ -102,7 +102,7 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 		set({ wallet: null, tokens: [], error: null });
 	},
 
-	fetchPortfolioBalance: async (address: string) => {
+	fetchPortfolioBalance: async (address: string, forceRefresh?: boolean) => {
 		log.info('🔄 [PortfolioStore] fetchPortfolioBalance called for address:', address);
 		if (address === '') {
 			log.warn('⚠️ [PortfolioStore] fetchPortfolioBalance called with empty address');
@@ -121,30 +121,16 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 			const balanceIds = balance.balances.map((b: { id: string }) => b.id);
 			log.log('📊 [PortfolioStore] Balance IDs:', balanceIds);
 
-			const missingIds = balanceIds.filter((id: string) => !coinMap[id]);
-			log.log('🔍 [PortfolioStore] Missing coin IDs in CoinStore cache:', missingIds);
-
+			// Check for missing coins and fetch them
 			const missingCoinIds: string[] = [];
-			const fetchPromises = missingIds.map(async (id: string) => {
-				log.log(`⏳ [PortfolioStore] Attempting to fetch missing coin details for ${id}`);
-				try {
-					const coin = await coinStore.getCoinByID(id);
-					if (!coin) {
-						missingCoinIds.push(id);
-					}
-				} catch (error: unknown) {
-					if (error instanceof Error) {
-						log.warn(`⚠️ [PortfolioStore] Error fetching coin details for id: ${id}`, error.message);
-					} else {
-						log.warn(`⚠️ [PortfolioStore] An unknown error occurred while fetching coin details for id: ${id}`, error);
-					}
+			for (const id of balanceIds) {
+				const coin = await coinStore.getCoinByID(id, forceRefresh); // Pass forceRefresh parameter
+				if (!coin) {
 					missingCoinIds.push(id);
 				}
-			});
+			}
 
-			await Promise.all(fetchPromises);
-
-			// Re-read coinMap after fetching missing coins
+			// Re-read coinMap after fetching coins (especially if forceRefresh was used)
 			coinMap = useCoinStore.getState().coinMap;
 
 			const tokens = balance.balances.map((balance: { id: string; amount: number }) => {
@@ -153,11 +139,12 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 					log.warn(`⚠️ [PortfolioStore] Skipping token for balance ID ${balance.id} because coin data is missing.`);
 					return null;
 				}
+				const tokenValue = balance.amount * coin.price;
 				return {
 					mintAddress: balance.id,
 					amount: balance.amount,
 					price: coin.price,
-					value: balance.amount * coin.price,
+					value: tokenValue,
 					coin: coin
 				} as PortfolioToken;
 			});

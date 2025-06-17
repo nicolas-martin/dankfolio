@@ -157,7 +157,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 						accessible={true}
 						accessibilityRole="text"
 					>
-						{formatPrice(Number(coin.price))}
+						{coin.value !== undefined ? formatPrice(Number(coin.value)) : formatPrice(Number(coin.price))}
 					</Text>
 					{typeof coin.volume24hUSD === 'number' && (
 						<Text style={styles.volume} numberOfLines={1}>
