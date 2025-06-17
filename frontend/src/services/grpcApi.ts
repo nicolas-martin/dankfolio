@@ -152,7 +152,6 @@ export const grpcApi: grpcModel.API = {
 
 			grpcUtils.logRequest(serviceName, methodName, { address, type, timeStr, addressType });
 
-			const timetimestamp = grpcUtils.convertToTimestamp(timeStr);
 			const typeMap: { [key: string]: GetPriceHistoryRequest_PriceHistoryType; } = {
 				"1m": GetPriceHistoryRequest_PriceHistoryType.ONE_MINUTE,
 				"3m": GetPriceHistoryRequest_PriceHistoryType.THREE_MINUTE,
@@ -175,7 +174,7 @@ export const grpcApi: grpcModel.API = {
 			const response = await priceClient.getPriceHistory({
 				address: address,
 				type: priceHistoryType,
-				time: timetimestamp,
+				time: timeStr,
 				addressType: addressType
 			}, { headers: grpcUtils.getRequestHeaders() });
 
@@ -188,7 +187,7 @@ export const grpcApi: grpcModel.API = {
 						items: response.data.items
 							.filter(item => item.value !== null && item.unixTime !== null)
 							.map(item => ({
-								unixTime: Number(item.unixTime),
+								unixTime: parseInt(item.unixTime, 10) * 1000, // Convert to milliseconds so components can use directly
 								value: item.value,
 							}))
 					},

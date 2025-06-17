@@ -70,9 +70,8 @@ export interface Trade {
 }
 
 export interface PriceData {
-	timestamp: string;
-	value: string | number;
-	unixTime?: number;
+	unixTime: number;
+	value: number;
 }
 
 // Re-export all types from other files

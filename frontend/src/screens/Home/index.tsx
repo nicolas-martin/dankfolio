@@ -31,12 +31,8 @@ const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ da
 		// 'type' could be the timeframeKey, 'timeStr' the current time, 'addressType' as "token"
 		const currentTime = new Date().toISOString();
 		const response = await grpcApi.getPriceHistory(coin.address, timeframeKey, currentTime, "token");
-		// Extract and transform the items array from the response data (same as CoinDetail)
-		const items = response.data?.items || [];
-		const data = items.map(item => ({
-			timestamp: new Date(item.unixTime * 1000).toISOString(), // Convert Unix timestamp to ISO string
-			value: item.value
-		}));
+		// Extract the items array from the response data - no conversion needed since grpcApi handles it
+		const data = response.data?.items || [];
 		return { data, error: null };
 	} catch (e: unknown) {
 		logger.error(`[HomeScreen] Error in fetchPriceHistory for ${coin.symbol}:`, e);
@@ -250,7 +246,7 @@ const HomeScreen = () => {
 			setIsLoadingPriceHistories(prev => ({ ...prev, ...initialLoadingStates }));
 
 			Promise.allSettled(
-				topCoins.map(async (coin): Promise<{ mintAddress: string; data: PriceData[]; error: Error | null; } | null> => {
+				topCoins.map(async (coin): Promise<{ address: string; data: PriceData[]; error: Error | null; } | null> => {
 					if (!coin || !coin.address) return Promise.resolve(null); // Skip invalid coins
 					const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
 					return ({
@@ -265,11 +261,11 @@ const HomeScreen = () => {
 
 				results.forEach(settledResult => {
 					if (settledResult.status === 'fulfilled' && settledResult.value) {
-						const { mintAddress, data, error } = settledResult.value;
-						newHistoriesBatch[mintAddress] = data;
-						newLoadingStatesBatch[mintAddress] = false;
+						const { address, data, error } = settledResult.value;
+						newHistoriesBatch[address] = data;
+						newLoadingStatesBatch[address] = false;
 						if (error) {
-							logger.error(`[HomeScreen] Error fetching (parallel) ${mintAddress}:`, error);
+							logger.error(`[HomeScreen] Error fetching (parallel) ${address}:`, error);
 						}
 					} else if (settledResult.status === 'rejected') {
 						// Handle rejected promises if fetchPriceHistory can throw directly (though it returns {data, error})

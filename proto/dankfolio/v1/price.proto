@@ -37,7 +37,7 @@ message GetPriceHistoryRequest {
 	ONE_MONTH = 15;
   }
   PriceHistoryType type = 2;
-  google.protobuf.Timestamp time = 3;
+  string time = 3;
   string address_type = 4;
 }
 
@@ -54,7 +54,7 @@ message PriceHistoryData {
 
 // PriceHistoryItem represents a single price point with timestamp and value
 message PriceHistoryItem {
-  int64 unix_time = 1;  // Changed from google.protobuf.Timestamp to int64 to represent Unix timestamp directly
+  string unix_time = 1;  // Changed from int64 to string to avoid BigInt serialization issues
   double value = 2;
 }
 

@@ -79,8 +79,9 @@ export const prepareChartData = (data: PriceData[]): PricePoint[] => {
 	}
 	
 	const processedPoints = dataToProcess.map((pt, index) => {
-		const t = new Date(pt.timestamp).getTime();
-		const v = typeof pt.value === 'string' ? parseFloat(pt.value) : pt.value;
+		// Use unixTime directly (already in milliseconds from grpcApi)
+		const t = pt.unixTime;
+		const v = pt.value; // No conversion needed - value is always a number now
 		const point = { timestamp: t, price: v, value: v, x: t, y: v };
 		
 		// Log first few points for debugging
@@ -229,7 +230,10 @@ export const useSpringLine = (
 // Helper to create unique chart key
 export const createChartKey = (data: PricePoint[] | PriceData[], period?: string) => {
 	if (data && data.length > 0) {
-		return `chart-${data.length}-${data[0]?.timestamp}-${period}`;
+		// Check if it's PricePoint (has timestamp) or PriceData (has unixTime)
+		const firstItem = data[0];
+		const timeValue = 'timestamp' in firstItem ? firstItem.timestamp : firstItem.unixTime;
+		return `chart-${data.length}-${timeValue}-${period}`;
 	}
 	return "";
 };
