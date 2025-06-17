@@ -5,14 +5,22 @@ import (
 	"fmt"
 	"testing"
 	"time"
+    "errors" // Added for db.ErrNotFound comparison
 
 	pb "github.com/nicolas-martin/dankfolio/gen/proto/go/dankfolio/v1"
-	"github.com/nicolas-martin/dankfolio/backend/internal/db" // Import for db.Store
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
+	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model" // For model.Coin
+	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+    "google.golang.org/protobuf/types/known/timestamppb" // For constructing pb.Coin with timestamps
 )
 
-// MockCoinCache is a mock type for the CoinCache interface
+// MockCoinCache remains the same
 type MockCoinCache struct {
 	mock.Mock
 }
@@ -29,285 +37,310 @@ func (m *MockCoinCache) Set(key string, data *pb.GetAvailableCoinsResponse, expi
 	m.Called(key, data, expiration)
 }
 
-// MockDBStore is a mock type for the db.Store interface
+// MockDBStore now needs to mock the new methods: ListNewestCoins, ListTopGainersCoins, ListRPCFilteredTrendingCoins
 type MockDBStore struct {
 	mock.Mock
 }
-
-// Implement methods of db.Store that might be called by placeholder functions if any
-// For now, NewService just takes it, and our tested methods don't directly use db.Store
-// So, no specific mocked methods are strictly needed for *these* tests.
-// Add methods here if other CoinService methods were to be tested that use the store.
-func (m *MockDBStore) GetUserByWalletAddress(ctx context.Context, walletAddress string) (*db.User, error) {
-    args := m.Called(ctx, walletAddress)
+func (m *MockDBStore) ListNewestCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+    args := m.Called(ctx, opts)
     if args.Get(0) == nil {
-        return nil, args.Error(1)
+        return nil, 0, args.Error(2)
     }
-    return args.Get(0).(*db.User), args.Error(1)
+    return args.Get(0).([]model.Coin), int32(args.Int(1)), args.Error(2)
 }
-// Add other db.Store methods as needed if service.go placeholders evolve
-// Adding Coins() and RawCoins() as they are often used in service initialization or other methods
-func (m *MockDBStore) Coins() db.Repository[db.Coin] {
-	args := m.Called()
-	if args.Get(0) == nil {
-		// To prevent panic if a test doesn't mock Coins() but it's called by a non-tested path in NewService
-		// Return a new mock repository that does nothing by default
-		return new(MockCoinRepository) // You'd need to define MockCoinRepository if not already defined
-	}
-	return args.Get(0).(db.Repository[db.Coin])
-}
-
-func (m *MockDBStore) RawCoins() db.Repository[db.RawCoin] {
-	args := m.Called()
-	if args.Get(0) == nil {
-		return new(MockRawCoinRepository) // You'd need to define MockRawCoinRepository
-	}
-	return args.Get(0).(db.Repository[db.RawCoin])
-}
-
-func (m *MockDBStore) WithTransaction(ctx context.Context, fn func(txStore db.Store) error) error {
-    args := m.Called(ctx, fn)
-    // Execute the function with the mock store itself, or a specially prepared one for transactions
-    // For simplicity, using the same mock store.
-    err := fn(m)
-    if err != nil { // if fn returns an error, pass it through
-        return err
+func (m *MockDBStore) ListTopGainersCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+    args := m.Called(ctx, opts)
+    if args.Get(0) == nil {
+        return nil, 0, args.Error(2)
     }
-    return args.Error(0) // Return the error configured for WithTransaction mock
+    return args.Get(0).([]model.Coin), int32(args.Int(1)), args.Error(2)
 }
-
-
-// MockCoinRepository is a mock type for db.Repository[db.Coin]
-type MockCoinRepository struct {
-    mock.Mock
+func (m *MockDBStore) ListRPCFilteredTrendingCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+    args := m.Called(ctx, opts)
+    if args.Get(0) == nil {
+        return nil, 0, args.Error(2)
+    }
+    return args.Get(0).([]model.Coin), int32(args.Int(1)), args.Error(2)
 }
+// Implement other db.Store methods if they are called by service methods being tested or helper/setup funcs.
+// For now, these are the critical ones for the new RPCs.
+func (m *MockDBStore) Coins() db.Repository[model.Coin] { panic("not implemented in this mock for these tests") }
+func (m *MockDBStore) Trades() db.Repository[model.Trade] { panic("not implemented") }
+func (m *MockDBStore) RawCoins() db.Repository[model.RawCoin] { panic("not implemented") }
+func (m *MockDBStore) Wallet() db.Repository[model.Wallet] { panic("not implemented") }
+func (m *MockDBStore) ApiStats() db.Repository[model.ApiStat] { panic("not implemented") }
+func (m *MockDBStore) ListTrendingCoins(ctx context.Context) ([]model.Coin, error) {panic("not implemented")}
+func (m *MockDBStore) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {panic("not implemented")}
+func (m *MockDBStore) WithTransaction(ctx context.Context, fn func(db.Store) error) error { return fn(m) }
 
-func (m *MockCoinRepository) Get(ctx context.Context, id string) (*db.Coin, error) { panic("not implemented"); }
-func (m *MockCoinRepository) GetByField(ctx context.Context, field string, value any) (*db.Coin, error) { panic("not implemented"); }
-func (m *MockCoinRepository) List(ctx context.Context, opts db.ListOptions) ([]db.Coin, int64, error) { panic("not implemented"); }
-func (m *MockCoinRepository) Create(ctx context.Context, entity *db.Coin) error { panic("not implemented"); }
-func (m *MockCoinRepository) Update(ctx context.Context, entity *db.Coin) error { panic("not implemented"); }
-func (m *MockCoinRepository) Delete(ctx context.Context, id string) error { panic("not implemented"); }
-func (m *MockCoinRepository) BulkUpsert(ctx context.Context, entities *[]db.Coin) (int64, error) { panic("not implemented"); }
 
-// MockRawCoinRepository is a mock type for db.Repository[db.RawCoin]
-type MockRawCoinRepository struct {
-    mock.Mock
-}
-func (m *MockRawCoinRepository) Get(ctx context.Context, id string) (*db.RawCoin, error) { panic("not implemented"); }
-func (m *MockRawCoinRepository) GetByField(ctx context.Context, field string, value any) (*db.RawCoin, error) { panic("not implemented"); }
-func (m *MockRawCoinRepository) List(ctx context.Context, opts db.ListOptions) ([]db.RawCoin, int64, error) { panic("not implemented"); }
-func (m *MockRawCoinRepository) Create(ctx context.Context, entity *db.RawCoin) error { panic("not implemented"); }
-func (m *MockRawCoinRepository) Update(ctx context.Context, entity *db.RawCoin) error { panic("not implemented"); }
-func (m *MockRawCoinRepository) Delete(ctx context.Context, id string) error { panic("not implemented"); }
-func (m *MockRawCoinRepository) BulkUpsert(ctx context.Context, entities *[]db.RawCoin) (int64, error) { panic("not implemented"); }
+// Mocks for other client interfaces (can be very basic)
+type MockJupiterClient struct { mock.Mock; jupiter.ClientAPI }
+func (m *MockJupiterClient) GetAllCoins(ctx context.Context) (*jupiter.CoinListResponse, error) {panic("not implemented")}
+func (m *MockJupiterClient) GetNewCoins(ctx context.Context, params *jupiter.NewCoinsParams) ([]*jupiter.NewCoin, error) {panic("not implemented")}
+
+// Note: GetCoinPrices was not in the original jupiter.ClientAPI from previous files.
+// If it's a new method, it's fine. If it's a typo for GetPrice, adjust as needed.
+// Assuming GetCoinPrices is a new, valid method for this context.
+func (m *MockJupiterClient) GetCoinPrices(ctx context.Context, tokenAddresses []string) (map[string]float64, error) {panic("not implemented")}
+
+func (m *MockJupiterClient) GetQuote(ctx context.Context, params *jupiter.QuoteParams) (*jupiter.QuoteResponse, error) {panic("not implemented")}
+func (m *MockJupiterClient) GetSwapTransactions(ctx context.Context, params *jupiter.SwapParams) (*jupiter.SwapResponse, error) {panic("not implemented")}
+func (m *MockJupiterClient) GetRouteMap(ctx context.Context) (*jupiter.RouteMap, error) {panic("not implemented")}
+
+
+type MockChainClient struct { mock.Mock; clients.GenericClientAPI }
+// Implement methods for MockChainClient if needed by tests
+func (m *MockChainClient) GetBalance(ctx context.Context, pubkey string) (uint64, error) {panic("not implemented")}
+
+// GetTokenBalance in clients.GenericClientAPI from previous files returned (float64, uint64, error)
+// The mock here returns (float64, error). This needs to match the actual interface.
+// Reverting to (float64, uint64, error) based on likely actual interface.
+func (m *MockChainClient) GetTokenBalance(ctx context.Context, walletAddr string, mintAddr string) (float64, uint64, error) {panic("not implemented")}
+
+// GetTokenDecimals was not in original GenericClientAPI. Assuming it's a new addition or specific need.
+func (m *MockChainClient) GetTokenDecimals(ctx context.Context, mintAddr string) (int, error) {panic("not implemented")}
+func (m *MockChainClient) GetTokenMetadata(ctx context.Context, mintAddr string) (*clients.TokenMetadata, error) {panic("not implemented")}
+
+// SendRawTransaction was not in original GenericClientAPI.
+func (m *MockChainClient) SendRawTransaction(ctx context.Context, rawTx []byte) (string, error) {panic("not implemented")}
+func (m *MockChainClient) GetTransaction(ctx context.Context, txSig string) (*clients.TransactionDetails, error) {panic("not implemented")}
+// GetRecentPerformanceSamples was not in original GenericClientAPI
+func (m *MockChainClient) GetRecentPerformanceSamples(ctx context.Context, lamports uint64, signatures []string) ([]clients.PerformanceSample, error) { panic("not implemented") }
+
+
+type MockOffchainClient struct { mock.Mock; offchain.ClientAPI }
+// FetchCoinMetadata was not in original offchain.ClientAPI
+func (m *MockOffchainClient) FetchCoinMetadata(ctx context.Context, mintAddress string) (*model.Coin, error) {panic("not implemented")}
+func (m *MockOffchainClient) FetchIPFSImage(ctx context.Context, cid string) ([]byte, string, error) {panic("not implemented")}
+
+
+type MockBirdeyeClient struct { mock.Mock; birdeye.ClientAPI }
+func (m *MockBirdeyeClient) GetTokenOverview(ctx context.Context, mintAddress string) (*birdeye.TokenOverviewResponse, error) {panic("not implemented")}
+func (m *MockBirdeyeClient) GetPriceHistory(ctx context.Context, params birdeye.PriceHistoryParams) (*birdeye.PriceHistory, error) {panic("not implemented")}
+// GetTrendingTokens in birdeye.ClientAPI from previous files returned (*birdeye.TokenTrendingResponse, error)
+// The mock here returns ([]birdeye.TrendingToken, error). This needs to match.
+// Reverting to (*birdeye.TokenTrendingResponse, error)
+func (m *MockBirdeyeClient) GetTrendingTokens(ctx context.Context, params birdeye.TrendingTokensParams) (*birdeye.TokenTrendingResponse, error) {panic("not implemented")}
+
+
+type MockTelemetryAPI struct { mock.Mock; telemetry.TelemetryAPI }
+// IncrementBirdeyeCallCount was not in original telemetry.TelemetryAPI
+func (m *MockTelemetryAPI) IncrementBirdeyeCallCount(endpointName string) { /* no-op */ }
+// IncrementJupiterCallCount was not in original telemetry.TelemetryAPI
+func (m *MockTelemetryAPI) IncrementJupiterCallCount(endpointName string) { /* no-op */ }
+// Added missing methods from telemetry.TelemetryAPI to make the mock complete
+func (m *MockTelemetryAPI) IncrementAPICall(clientName string, endpoint string, success bool) { m.Called(clientName, endpoint, success) }
+func (m *MockTelemetryAPI) GetStats() map[string]map[string]telemetry.APICallStats { panic("not implemented") }
+func (m *MockTelemetryAPI) LoadStatsForToday(ctx context.Context) error { panic("not implemented") }
+func (m *MockTelemetryAPI) ResetStats(ctx context.Context) error { panic("not implemented") }
+func (m *MockTelemetryAPI) Start(ctx context.Context) { panic("not implemented") }
+
+
+// Helper to create a pb.Coin from model.Coin for expected responses (simplified)
+// func modelToPbCoinForTest(mc *model.Coin) *pb.Coin { // This helper is not used if model.Coin.ToProto() is used.
+// }
 
 
 func TestService_GetNewCoins(t *testing.T) {
 	mockCache := new(MockCoinCache)
-	mockStore := new(MockDBStore) // Create a mock store
-	// Mock the Coins() and RawCoins() methods for NewService if it calls them.
-    // The simplified NewService in the prompt's service.go doesn't use them directly.
-    // However, if other methods called by tests (even placeholders) might, this is safer.
-    mockStore.On("Coins").Return(new(MockCoinRepository)).Maybe()
-    mockStore.On("RawCoins").Return(new(MockRawCoinRepository)).Maybe()
+	mockDbStore := new(MockDBStore)
 
-	service := NewService(mockStore, mockCache) // Pass mock store
+	service := NewService(
+		&Config{},
+		new(MockJupiterClient),
+		mockDbStore,
+		new(MockChainClient),
+		new(MockBirdeyeClient),
+		new(MockTelemetryAPI),
+		new(MockOffchainClient),
+		mockCache,
+	)
 
 	req := &pb.GetNewCoinsRequest{Limit: 10, Offset: 0}
-	// Construct cache key exactly as in service.go
-	expectedCacheKey := "newCoins"
-	if req.Limit > 0 { expectedCacheKey = fmt.Sprintf("%s_limit_%d", expectedCacheKey, req.Limit) }
-	if req.Offset > 0 { expectedCacheKey = fmt.Sprintf("%s_offset_%d", expectedCacheKey, req.Offset) }
+	expectedCacheKey := "newCoins_limit_10"
+    if req.Offset > 0 { // Adjust key if offset is present, as per service logic
+        expectedCacheKey = fmt.Sprintf("newCoins_limit_%d_offset_%d", req.Limit, req.Offset)
+    }
+
 
 	t.Run("Cache Miss", func(t *testing.T) {
+		// Expected model coins from DB
+		now := time.Now()
+		mockModelCoins := []model.Coin{
+			{MintAddress: "newDbCoin1", Name: "New DB Coin 1", Symbol: "NDB1", CreatedAt: now.Add(-1*time.Hour).Format(time.RFC3339), JupiterListedAt: &now},
+			{MintAddress: "newDbCoin2", Name: "New DB Coin 2", Symbol: "NDB2", CreatedAt: now.Add(-2*time.Hour).Format(time.RFC3339), JupiterListedAt: &now},
+		}
+		mockTotalCount := int32(len(mockModelCoins))
+
+        expectedListOpts := db.ListOptions{}
+        limitInt := int(req.Limit); expectedListOpts.Limit = &limitInt
+        offsetInt := int(req.Offset); expectedListOpts.Offset = &offsetInt
+        sortByCreatedAt := "created_at"; sortDescTrue := true
+        expectedListOpts.SortBy = &sortByCreatedAt; expectedListOpts.SortDesc = &sortDescTrue
+
+		mockDbStore.On("ListNewestCoins", mock.Anything, expectedListOpts).Return(mockModelCoins, mockTotalCount, nil).Once()
 		mockCache.On("Get", expectedCacheKey).Return(nil, false).Once()
 
-		// This is the full placeholder list from service.go
-		placeholderCoins := []*pb.Coin{
-			{MintAddress: "newCoin1", Name: "New Coin Alpha", Symbol: "NCA", Price: 0.5, DailyVolume: 10000},
-			{MintAddress: "newCoin2", Name: "New Coin Beta", Symbol: "NCB", Price: 1.2, DailyVolume: 25000},
+		expectedPbCoins := make([]*pb.Coin, len(mockModelCoins))
+		for i, mc := range mockModelCoins {
+			pbCoin, _ := mc.ToProto()
+            expectedPbCoins[i] = pbCoin
 		}
-		totalOriginalCount := int32(len(placeholderCoins))
-
-		// Apply offset and limit to placeholder data as in service.go
-		var finalExpectedCoins []*pb.Coin
-		start := int32(0)
-		if req.Offset > 0 { start = req.Offset }
-		end := totalOriginalCount
-		if req.Limit > 0 {
-			if start+req.Limit < totalOriginalCount { end = start + req.Limit }
-		}
-		if start < totalOriginalCount { finalExpectedCoins = placeholderCoins[start:end]
-		} else { finalExpectedCoins = []*pb.Coin{} }
-
 		expectedResponse := &pb.GetAvailableCoinsResponse{
-			Coins:      finalExpectedCoins,
-			TotalCount: totalOriginalCount,
+			Coins:      expectedPbCoins,
+			TotalCount: mockTotalCount,
 		}
 
 		mockCache.On("Set", expectedCacheKey, mock.MatchedBy(func(resp *pb.GetAvailableCoinsResponse) bool {
-			return assert.ObjectsAreEqualValues(expectedResponse, resp)
+			return assert.EqualValues(t, expectedResponse.TotalCount, resp.TotalCount) &&
+                   assert.ElementsMatch(t, expectedResponse.Coins, resp.Coins)
 		}), defaultCacheTTL).Return().Once()
 
 		resp, err := service.GetNewCoins(context.Background(), req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
-		assert.Equal(t, expectedResponse.TotalCount, resp.TotalCount)
-		assert.Len(t, resp.Coins, len(expectedResponse.Coins))
-		if len(expectedResponse.Coins) > 0 && len(resp.Coins) > 0 {
-            assert.Equal(t, expectedResponse.Coins[0].MintAddress, resp.Coins[0].MintAddress)
-        }
+		assert.EqualValues(t, expectedResponse.TotalCount, resp.TotalCount)
+        assert.ElementsMatch(t, expectedResponse.Coins, resp.Coins)
+		mockDbStore.AssertExpectations(t)
 		mockCache.AssertExpectations(t)
 	})
 
 	t.Run("Cache Hit", func(t *testing.T) {
-		cachedResp := &pb.GetAvailableCoinsResponse{
-			Coins:      []*pb.Coin{{MintAddress: "cachedNewCoin", Name: "Cached New Coin", Symbol: "CNC"}},
-			TotalCount: 1,
-		}
+        mockDbStore.Mock.ExpectedCalls = nil
+        mockCache.Mock.ExpectedCalls = nil
+
+		cachedPbCoins := []*pb.Coin{{MintAddress: "cachedNewCoin", Name: "Cached New Coin", Symbol: "CNC"}}
+		cachedResp := &pb.GetAvailableCoinsResponse{ Coins: cachedPbCoins, TotalCount: int32(len(cachedPbCoins)) }
 		mockCache.On("Get", expectedCacheKey).Return(cachedResp, true).Once()
 
 		resp, err := service.GetNewCoins(context.Background(), req)
 
 		assert.NoError(t, err)
 		assert.Equal(t, cachedResp, resp)
-		mockCache.AssertExpectations(t) // Verifies Get was called, and Set was not.
+		mockCache.AssertExpectations(t)
+		mockDbStore.AssertNotCalled(t, "ListNewestCoins", mock.Anything, mock.AnythingOfType("db.ListOptions"))
 	})
 }
 
-func TestService_GetTrendingCoins(t *testing.T) {
-	mockCache := new(MockCoinCache)
-	mockStore := new(MockDBStore)
-	mockStore.On("Coins").Return(new(MockCoinRepository)).Maybe()
-    mockStore.On("RawCoins").Return(new(MockRawCoinRepository)).Maybe()
-	service := NewService(mockStore, mockCache)
 
-	req := &pb.GetTrendingCoinsRequest{Limit: 1} // Test with a limit that slices the placeholder
-	expectedCacheKey := "trendingCoins"
-    if req.Limit > 0 { expectedCacheKey = fmt.Sprintf("%s_limit_%d", expectedCacheKey, req.Limit) }
-    if req.Offset > 0 { expectedCacheKey = fmt.Sprintf("%s_offset_%d", expectedCacheKey, req.Offset) }
+func TestService_GetTrendingCoinsRPC(t *testing.T) {
+	mockCache := new(MockCoinCache)
+	mockDbStore := new(MockDBStore)
+	service := NewService(&Config{}, new(MockJupiterClient), mockDbStore, new(MockChainClient), new(MockBirdeyeClient), new(MockTelemetryAPI), new(MockOffchainClient), mockCache)
+
+	req := &pb.GetTrendingCoinsRequest{Limit: 1}
+	expectedCacheKey := "trendingCoins_rpc_limit_1"
+    if req.Offset > 0 {
+         expectedCacheKey = fmt.Sprintf("trendingCoins_rpc_limit_%d_offset_%d", req.Limit, req.Offset)
+    }
 
 
 	t.Run("Cache Miss", func(t *testing.T) {
+		mockModelCoins := []model.Coin{
+			{MintAddress: "trendingDb1", Name: "Trending DB 1", Symbol: "TDB1", IsTrending: true, Volume24h: 200000},
+		}
+		mockTotalCount := int32(5)
+
+        expectedListOpts := db.ListOptions{}
+        limitInt := int(req.Limit); expectedListOpts.Limit = &limitInt
+
+		mockDbStore.On("ListRPCFilteredTrendingCoins", mock.Anything, mock.MatchedBy(func(opts db.ListOptions) bool {
+            // Check that the limit matches and filters/sorts are applied by the service method
+            return *opts.Limit == int(req.Limit)
+        })).Return(mockModelCoins, mockTotalCount, nil).Once()
 		mockCache.On("Get", expectedCacheKey).Return(nil, false).Once()
-		placeholderCoins := []*pb.Coin{
-			{MintAddress: "trendingCoin1", Name: "Trending Coin X", Symbol: "TCX", Price: 10.5, DailyVolume: 1000000, IsTrending: true},
-			{MintAddress: "trendingCoin2", Name: "Trending Coin Y", Symbol: "TCY", Price: 5.2, DailyVolume: 500000, IsTrending: true},
-		}
-        totalOriginalCount := int32(len(placeholderCoins))
 
-        var finalExpectedCoins []*pb.Coin
-        start := int32(0)
-        if req.Offset > 0 { start = req.Offset }
-        end := totalOriginalCount
-        if req.Limit > 0 {
-            if start+req.Limit < totalOriginalCount { end = start + req.Limit }
+		expectedPbCoins := make([]*pb.Coin, len(mockModelCoins))
+        for i, mc := range mockModelCoins {
+            pbCoin, _ := mc.ToProto(); expectedPbCoins[i] = pbCoin
         }
-        if start < totalOriginalCount { finalExpectedCoins = placeholderCoins[start:end]
-        } else { finalExpectedCoins = []*pb.Coin{} }
+		expectedResponse := &pb.GetAvailableCoinsResponse{ Coins: expectedPbCoins, TotalCount: mockTotalCount }
 
-
-		expectedResponse := &pb.GetAvailableCoinsResponse{
-			Coins:      finalExpectedCoins,
-			TotalCount: totalOriginalCount,
-		}
 		mockCache.On("Set", expectedCacheKey, mock.MatchedBy(func(resp *pb.GetAvailableCoinsResponse) bool {
-			return assert.ObjectsAreEqualValues(expectedResponse, resp)
+			return assert.EqualValues(t, expectedResponse.TotalCount, resp.TotalCount) &&
+                   assert.ElementsMatch(t, expectedResponse.Coins, resp.Coins)
 		}), defaultCacheTTL).Return().Once()
 
 		resp, err := service.GetTrendingCoins(context.Background(), req)
 		assert.NoError(t, err)
-		assert.EqualValues(t, expectedResponse, resp)
+		assert.NotNil(t, resp)
+        assert.EqualValues(t, expectedResponse.TotalCount, resp.TotalCount)
+        assert.ElementsMatch(t, expectedResponse.Coins, resp.Coins)
+		mockDbStore.AssertExpectations(t)
 		mockCache.AssertExpectations(t)
 	})
 
 	t.Run("Cache Hit", func(t *testing.T) {
-		cachedResp := &pb.GetAvailableCoinsResponse{
-			Coins:      []*pb.Coin{{MintAddress: "cachedTrending", Name: "Cached Trending", Symbol: "CTC"}},
-			TotalCount: 1,
-		}
+        mockDbStore.Mock.ExpectedCalls = nil
+        mockCache.Mock.ExpectedCalls = nil
+
+		cachedResp := &pb.GetAvailableCoinsResponse{Coins: []*pb.Coin{{MintAddress: "cachedTrendingRPC"}}, TotalCount: 1}
 		mockCache.On("Get", expectedCacheKey).Return(cachedResp, true).Once()
 		resp, err := service.GetTrendingCoins(context.Background(), req)
 		assert.NoError(t, err)
 		assert.Equal(t, cachedResp, resp)
 		mockCache.AssertExpectations(t)
+		mockDbStore.AssertNotCalled(t, "ListRPCFilteredTrendingCoins", mock.Anything, mock.AnythingOfType("db.ListOptions"))
 	})
 }
 
 func TestService_GetTopGainersCoins(t *testing.T) {
 	mockCache := new(MockCoinCache)
-	mockStore := new(MockDBStore)
-	mockStore.On("Coins").Return(new(MockCoinRepository)).Maybe()
-    mockStore.On("RawCoins").Return(new(MockRawCoinRepository)).Maybe()
-	service := NewService(mockStore, mockCache)
+	mockDbStore := new(MockDBStore)
+	service := NewService(&Config{}, new(MockJupiterClient), mockDbStore, new(MockChainClient), new(MockBirdeyeClient), new(MockTelemetryAPI), new(MockOffchainClient), mockCache)
 
-	req := &pb.GetTopGainersCoinsRequest{Limit: 1} // Test with a limit that slices
-	expectedCacheKey := "topGainersCoins"
-    if req.Limit > 0 { expectedCacheKey = fmt.Sprintf("%s_limit_%d", expectedCacheKey, req.Limit) }
-    if req.Offset > 0 { expectedCacheKey = fmt.Sprintf("%s_offset_%d", expectedCacheKey, req.Offset) }
-
-	val1 := 55.5
-	// val2 := 150.0 // Not used if limit is 1
+	req := &pb.GetTopGainersCoinsRequest{Limit: 1}
+	expectedCacheKey := "topGainersCoins_limit_1"
+    if req.Offset > 0 {
+        expectedCacheKey = fmt.Sprintf("topGainersCoins_limit_%d_offset_%d", req.Limit, req.Offset)
+    }
 
 	t.Run("Cache Miss", func(t *testing.T) {
+        mockModelCoins := []model.Coin{
+			{MintAddress: "gainerDb1", Name: "Gainer DB 1", Symbol: "GDB1", Price24hChangePercent: 120.5},
+		}
+		mockTotalCount := int32(3)
+
+        expectedListOpts := db.ListOptions{}
+        limitInt := int(req.Limit); expectedListOpts.Limit = &limitInt
+
+		mockDbStore.On("ListTopGainersCoins", mock.Anything, mock.MatchedBy(func(opts db.ListOptions) bool {
+            return *opts.Limit == int(req.Limit)
+        })).Return(mockModelCoins, mockTotalCount, nil).Once()
 		mockCache.On("Get", expectedCacheKey).Return(nil, false).Once()
-		placeholderCoins := []*pb.Coin{
-			{MintAddress: "gainerCoin1", Name: "Gainer Coin Up", Symbol: "GCU", Price: 2.5, PriceChangePercentage24H: &val1, DailyVolume: 75000},
-			// {MintAddress: "gainerCoin2", Name: "Gainer Coin Sky", Symbol: "GCS", Price: 0.8, PriceChangePercentage24H: &val2, DailyVolume: 120000},
-		}
-		// The service.go code for GetTopGainers has PriceChangePercentage24H: &val1 for the first coin
-		// and &val2 for the second. If limit is 1, only the first is taken.
-		totalOriginalCountFromService := int32(2) // The placeholder list in service.go has 2 items.
 
-		var finalExpectedCoins []*pb.Coin
-        start := int32(0)
-        // The full placeholder list from service.go for GetTopGainersCoins
-        fullPlaceholder := []*pb.Coin{
-            {MintAddress: "gainerCoin1", Name: "Gainer Coin Up", Symbol: "GCU", Price: 2.5, PriceChangePercentage24H: &val1, DailyVolume: 75000},
-            {MintAddress: "gainerCoin2", Name: "Gainer Coin Sky", Symbol: "GCS", Price: 0.8, PriceChangePercentage24H: new(float64), DailyVolume: 120000}, // Placeholder for val2
+		expectedPbCoins := make([]*pb.Coin, len(mockModelCoins))
+        for i, mc := range mockModelCoins {
+            pbCoin, _ := mc.ToProto(); expectedPbCoins[i] = pbCoin
         }
-        // Manually assign the second coin's PriceChangePercentage24H if it's included
-        if len(fullPlaceholder) > 1 {
-            val2FromService := 150.0
-            fullPlaceholder[1].PriceChangePercentage24H = &val2FromService
-        }
-
-
-        if req.Offset > 0 { start = req.Offset }
-        end := totalOriginalCountFromService
-        if req.Limit > 0 {
-           if start+req.Limit < totalOriginalCountFromService { end = start + req.Limit }
-        }
-        if start < totalOriginalCountFromService { finalExpectedCoins = fullPlaceholder[start:end]
-        } else { finalExpectedCoins = []*pb.Coin{} }
-
-
-		expectedResponse := &pb.GetAvailableCoinsResponse{
-			Coins:      finalExpectedCoins,
-			TotalCount: totalOriginalCountFromService,
-		}
+		expectedResponse := &pb.GetAvailableCoinsResponse{ Coins: expectedPbCoins, TotalCount: mockTotalCount }
 
 		mockCache.On("Set", expectedCacheKey, mock.MatchedBy(func(resp *pb.GetAvailableCoinsResponse) bool {
-			return assert.ObjectsAreEqualValues(expectedResponse, resp)
+			return assert.EqualValues(t, expectedResponse.TotalCount, resp.TotalCount) &&
+                   assert.ElementsMatch(t, expectedResponse.Coins, resp.Coins)
 		}), defaultCacheTTL).Return().Once()
 
 		resp, err := service.GetTopGainersCoins(context.Background(), req)
 		assert.NoError(t, err)
-		assert.EqualValues(t, expectedResponse, resp)
+		assert.NotNil(t, resp)
+        assert.EqualValues(t, expectedResponse.TotalCount, resp.TotalCount)
+        assert.ElementsMatch(t, expectedResponse.Coins, resp.Coins)
+		mockDbStore.AssertExpectations(t)
 		mockCache.AssertExpectations(t)
 	})
 
 	t.Run("Cache Hit", func(t *testing.T) {
-		cachedResp := &pb.GetAvailableCoinsResponse{
-			Coins:      []*pb.Coin{{MintAddress: "cachedGainer", Name: "Cached Gainer", Symbol: "CGC"}},
-			TotalCount: 1,
-		}
+        mockDbStore.Mock.ExpectedCalls = nil
+        mockCache.Mock.ExpectedCalls = nil
+
+		cachedResp := &pb.GetAvailableCoinsResponse{Coins: []*pb.Coin{{MintAddress: "cachedGainer"}}, TotalCount: 1}
 		mockCache.On("Get", expectedCacheKey).Return(cachedResp, true).Once()
 		resp, err := service.GetTopGainersCoins(context.Background(), req)
 		assert.NoError(t, err)
 		assert.Equal(t, cachedResp, resp)
 		mockCache.AssertExpectations(t)
+		mockDbStore.AssertNotCalled(t, "ListTopGainersCoins", mock.Anything, mock.AnythingOfType("db.ListOptions"))
 	})
 }

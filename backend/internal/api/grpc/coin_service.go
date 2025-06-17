@@ -206,6 +206,56 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 	return res, nil
 }
 
+// GetNewCoins handles the GetNewCoins RPC call.
+func (s *coinServiceHandler) GetNewCoins(
+	ctx context.Context,
+	req *connect.Request[pb.GetNewCoinsRequest],
+) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+	slog.DebugContext(ctx, "gRPC GetNewCoins request received", "limit", req.Msg.GetLimit(), "offset", req.Msg.GetOffset())
+
+	// The service method now directly returns *pb.GetAvailableCoinsResponse
+	resp, err := s.coinService.GetNewCoins(ctx, req.Msg)
+	if err != nil {
+		// Consider mapping specific service errors to connect error codes
+		slog.ErrorContext(ctx, "GetNewCoins service call failed", "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get new coins: %w", err))
+	}
+
+	return connect.NewResponse(resp), nil
+}
+
+// GetTrendingCoins handles the GetTrendingCoins RPC call.
+func (s *coinServiceHandler) GetTrendingCoins(
+	ctx context.Context,
+	req *connect.Request[pb.GetTrendingCoinsRequest],
+) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+	slog.DebugContext(ctx, "gRPC GetTrendingCoins request received", "limit", req.Msg.GetLimit(), "offset", req.Msg.GetOffset())
+
+	resp, err := s.coinService.GetTrendingCoins(ctx, req.Msg) // Calling the RPC specific service method
+	if err != nil {
+		slog.ErrorContext(ctx, "GetTrendingCoins service call failed", "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trending coins: %w", err))
+	}
+
+	return connect.NewResponse(resp), nil
+}
+
+// GetTopGainersCoins handles the GetTopGainersCoins RPC call.
+func (s *coinServiceHandler) GetTopGainersCoins(
+	ctx context.Context,
+	req *connect.Request[pb.GetTopGainersCoinsRequest],
+) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+	slog.DebugContext(ctx, "gRPC GetTopGainersCoins request received", "limit", req.Msg.GetLimit(), "offset", req.Msg.GetOffset())
+
+	resp, err := s.coinService.GetTopGainersCoins(ctx, req.Msg)
+	if err != nil {
+		slog.ErrorContext(ctx, "GetTopGainersCoins service call failed", "error", err)
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get top gainer coins: %w", err))
+	}
+
+	return connect.NewResponse(resp), nil
+}
+
 // pint is a helper function to get a pointer to an int.
 func pint(i int) *int {
 	return &i

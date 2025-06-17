@@ -155,10 +155,16 @@ func main() {
 	slog.Info("Coin cache adapter initialized successfully.")
 
 	// Update coinService initialization with coinCache
-	// Calling the new simplified NewService(store, cache)
+	// Now calling the full NewService signature from the restored service.go, with coinCache added
 	coinService = coin.NewService(
-		store,     // This is the postgres.NewStore() instance
-		coinCache, // Pass the initialized coinCache
+		coinServiceConfig, // Presumed to be *coin.Config
+		jupiterClient,
+		store,             // This is the postgres.NewStore() instance (db.Store)
+		solanaClient,      // This is the clients.GenericClientAPI for chainClient
+		birdeyeClient,
+		apiTracker,
+		offchainClient,
+		coinCache,         // Pass the initialized coinCache
 	)
 	slog.Info("Coin service initialized.")
 

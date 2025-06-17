@@ -23,19 +23,12 @@ type GoCoinCacheAdapter struct {
 
 func NewGoCoinCacheAdapter() (*GoCoinCacheAdapter, error) {
 	ristrettoCache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e5,
-		MaxCost:     1 << 25,
-		BufferItems: 64,
+		NumCounters: 1e5, MaxCost: 1 << 25, BufferItems: 64,
 	})
-	if err != nil {
-		return nil, err
-	}
+	if err != nil { return nil, err }
 	cacheStore := store.NewRistretto(ristrettoCache)
 	cacheManager := cache.New[*pb.GetAvailableCoinsResponse](cacheStore)
-	return &GoCoinCacheAdapter{
-		cacheManager:   cacheManager,
-		ristrettoCache: ristrettoCache,
-	}, nil
+	return &GoCoinCacheAdapter{cacheManager: cacheManager, ristrettoCache: ristrettoCache}, nil
 }
 
 func (a *GoCoinCacheAdapter) Get(key string) (*pb.GetAvailableCoinsResponse, bool) {
@@ -50,9 +43,5 @@ func (a *GoCoinCacheAdapter) Get(key string) (*pb.GetAvailableCoinsResponse, boo
 
 func (a *GoCoinCacheAdapter) Set(key string, data *pb.GetAvailableCoinsResponse, expiration time.Duration) {
 	err := a.cacheManager.Set(context.Background(), key, data, store.WithExpiration(expiration))
-	if err != nil {
-		slog.Error("Failed to set item in CoinCache", "key", key, "error", err)
-	} else {
-		slog.Info("Successfully set item in CoinCache", "key", key)
-	}
+	if err != nil { slog.Error("Failed to set item in CoinCache", "key", key, "error", err) } else { slog.Info("Successfully set item in CoinCache", "key", key) }
 }

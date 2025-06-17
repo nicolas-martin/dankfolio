@@ -292,6 +292,75 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 	return coins
 }
 
+// --- New Custom Store Methods ---
+
+// ListNewestCoins fetches the most recently created coins.
+func (s *Store) ListNewestCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+    slog.DebugContext(ctx, "PostgresStore: ListNewestCoins called", "limit", opts.Limit, "offset", opts.Offset)
+
+    // Define sorting for newest: by "created_at" field, descending.
+    // Assumes "created_at" is the correct DB column name in the "coins" table.
+    sortByCreatedAt := "created_at" // Ensure this matches your actual DB column name
+    sortDescTrue := true
+
+    opts.SortBy = &sortByCreatedAt
+    opts.SortDesc = &sortDescTrue
+    // opts.Filters = nil // Retain any incoming filters, only enforce sort order for "newest"
+
+    // Call the generic List or ListWithOpts method from the CoinRepository
+    return s.Coins().ListWithOpts(ctx, opts)
+}
+
+// ListTopGainersCoins fetches coins with the highest positive price change in 24h.
+func (s *Store) ListTopGainersCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+    slog.DebugContext(ctx, "PostgresStore: ListTopGainersCoins called", "limit", opts.Limit, "offset", opts.Offset)
+
+    // Define sorting: by "price_24h_change_percent" field, descending.
+    // Assumes "price_24h_change_percent" is the correct DB column name.
+    sortByPriceChange := "price_24h_change_percent" // Ensure this matches DB column
+    sortDescTrue := true
+
+    opts.SortBy = &sortByPriceChange
+    opts.SortDesc = &sortDescTrue
+
+    // Define filter: price_24h_change_percent > 0
+    // Prepend to existing filters if any, or set if nil.
+    gainerFilter := db.FilterOption{
+        Field:    "price_24h_change_percent", // Ensure this matches DB column
+        Operator: db.FilterOpGreaterThan,
+        Value:    0,
+    }
+    opts.Filters = append([]db.FilterOption{gainerFilter}, opts.Filters...)
+
+    return s.Coins().ListWithOpts(ctx, opts)
+}
+
+// ListRPCFilteredTrendingCoins fetches trending coins, allowing for pagination/sorting via ListOptions.
+// This is different from the existing ListTrendingCoins which doesn't take ListOptions.
+func (s *Store) ListRPCFilteredTrendingCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
+    slog.DebugContext(ctx, "PostgresStore: ListRPCFilteredTrendingCoins called", "limit", opts.Limit, "offset", opts.Offset)
+
+    // Define sorting: by "volume_24h" field, descending (default if not in opts).
+    // Assumes "volume_24h" is the correct DB column name.
+    if opts.SortBy == nil || *opts.SortBy == "" {
+        sortByVolume := "volume_24h" // Ensure this matches DB column
+        sortDescTrue := true
+        opts.SortBy = &sortByVolume
+        opts.SortDesc = &sortDescTrue
+    }
+
+    // Define filter: "is_trending" = true.
+    // Prepend to existing filters if any, or set if nil.
+    trendingFilter := db.FilterOption{
+        Field:    "is_trending", // Ensure this matches DB column
+        Operator: db.FilterOpEqual,
+        Value:    true,
+    }
+    opts.Filters = append([]db.FilterOption{trendingFilter}, opts.Filters...)
+
+    return s.Coins().ListWithOpts(ctx, opts)
+}
+
 func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {
 	coins := make([]model.Coin, len(rawCoins))
 	for i, rc := range rawCoins {
