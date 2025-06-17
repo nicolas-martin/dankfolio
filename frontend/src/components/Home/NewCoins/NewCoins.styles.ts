@@ -6,14 +6,27 @@ import { useMemo } from 'react';
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
+		const trend = {
+			positive: theme.trend.positive,
+			negative: theme.trend.negative,
+			neutral: theme.trend.neutral,
+		};
+
 		const styles = StyleSheet.create({
 			cardWrapper: {
-				marginRight: theme.spacing.sm,
-				width: 140,
+				marginRight: theme.spacing.md,
+				width: 80,
+			},
+			changeContainer: {
+				alignItems: 'center',
+				flexDirection: 'row',
+				gap: 2,
+				justifyContent: 'flex-end',
+				minWidth: 35,
 			},
 			container: {
-				paddingBottom: theme.spacing['2xl'],
-				paddingTop: theme.spacing.lg,
+				paddingBottom: theme.spacing.lg,
+				paddingTop: theme.spacing.md,
 			},
 			emptyText: {
 				color: theme.colors.onSurfaceVariant,
@@ -26,11 +39,41 @@ export const useStyles = () => {
 				paddingLeft: theme.spacing.lg,
 				paddingRight: theme.spacing.xs,
 			},
-			placeholderCard: {
+			newCoinCard: {
+				alignItems: 'center',
 				backgroundColor: theme.colors.surface,
-				borderRadius: theme.borderRadius.md,
+				borderRadius: theme.borderRadius.lg,
+				flexDirection: 'row',
+				gap: theme.spacing.xs / 2,
+				justifyContent: 'space-between',
+				minHeight: 44,
+				paddingHorizontal: theme.spacing.sm,
+				paddingVertical: theme.spacing.xs,
+				width: 140,
+			},
+			newCoinChange: {
+				fontFamily: theme.typography.fontFamily.medium,
+				fontSize: 10,
+				textAlign: 'right',
+			},
+			newCoinSymbol: {
+				color: theme.colors.onSurface,
+				flex: 1,
+				fontFamily: theme.typography.fontFamily.semiBold,
+				fontSize: 12,
+				marginLeft: theme.spacing.xs,
+				textAlign: 'left',
+			},
+			placeholderCard: {
+				alignItems: 'center',
+				backgroundColor: theme.colors.surface,
+				borderRadius: theme.borderRadius.lg,
 				elevation: 2,
-				padding: theme.spacing.md,
+				flexDirection: 'row',
+				justifyContent: 'space-between',
+				minHeight: 44,
+				paddingHorizontal: theme.spacing.sm,
+				paddingVertical: theme.spacing.xs,
 				shadowColor: theme.colors.shadow,
 				shadowOffset: theme.shadows.sm.shadowOffset,
 				shadowOpacity: 0.1,
@@ -38,22 +81,24 @@ export const useStyles = () => {
 				width: 140,
 			},
 			placeholderIconShimmer: {
-				alignSelf: 'center',
 				borderRadius: theme.borderRadius.full,
-				height: 40,
-				marginBottom: theme.spacing.sm,
-				width: 40,
+				height: 20,
+				width: 20,
+			},
+			placeholderTextContainer: {
+				flex: 1,
+				marginLeft: theme.spacing.xs,
 			},
 			placeholderTextShimmerLine1: {
 				borderRadius: theme.borderRadius.sm,
-				height: 16,
-				marginBottom: theme.spacing.xs,
-				width: '80%',
+				height: 12,
+				marginBottom: 2,
+				width: '70%',
 			},
 			placeholderTextShimmerLine2: {
 				borderRadius: theme.borderRadius.sm,
-				height: 14,
-				width: '60%',
+				height: 10,
+				width: '50%',
 			},
 			title: {
 				color: theme.colors.onSurface,
@@ -78,8 +123,9 @@ export const useStyles = () => {
 		});
 		return {
 			...styles,
-			colors: theme.colors, // Return original theme.colors for consistency
+			colors: theme.colors,
 			theme,
+			trend: trend,
 		};
 	}, [theme]);
 };

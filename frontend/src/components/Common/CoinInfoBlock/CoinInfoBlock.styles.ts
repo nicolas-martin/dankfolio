@@ -22,14 +22,13 @@ export const useStyles = () => {
 			iconStyle
 		].filter(Boolean);
 
-		const createTextContainerStyle = (textContainerStyle?: object, iconUri?: string) => [
+		const createTextContainerStyle = (textContainerStyle?: object, hasIconSpace?: boolean | string) => [
 			{
 				flexDirection: 'column' as const,
 				justifyContent: 'center' as const,
-				marginLeft: theme.spacing.md, // Default spacing if icon is present
+				marginLeft: hasIconSpace ? theme.spacing.md : 0, // Always use spacing when hasIconSpace is true
 			},
-			textContainerStyle,
-			!iconUri ? { marginLeft: 0 } : undefined
+			textContainerStyle
 		].filter(Boolean);
 
 		const createPrimaryTextStyle = (primaryTextStyle?: object) => [

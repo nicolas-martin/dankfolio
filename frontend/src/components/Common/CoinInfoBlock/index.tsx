@@ -40,8 +40,9 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 
 	return (
 		<View style={styles.createViewStyle(containerStyle)}>
-			{iconUri && (
-				<View style={styles.createIconStyle(iconStyle)}>
+			{/* Always render icon container to maintain consistent spacing */}
+			<View style={[styles.createIconStyle(iconStyle), { width: iconSize, height: iconSize }]}>
+				{iconUri && (
 					<CachedImage
 						uri={iconUri}
 						size={iconSize}
@@ -49,9 +50,9 @@ const CoinInfoBlock: React.FC<CoinInfoBlockProps> = ({
 						borderRadius={iconSize / 2} // Default to circular
 						testID={iconTestID}
 					/>
-				</View>
-			)}
-			<View style={styles.createTextContainerStyle(textContainerStyle, iconUri)}>
+				)}
+			</View>
+			<View style={styles.createTextContainerStyle(textContainerStyle, true)}>
 				<Text 
 					style={styles.createPrimaryTextStyle(primaryTextStyle)} 
 					numberOfLines={1} 
