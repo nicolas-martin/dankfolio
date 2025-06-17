@@ -3,9 +3,15 @@ import { View, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
 import { Text, Button, Icon, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
-import { handleTokenPress, formatAddress, sortTokensByValue } from './profile_scripts';
+import { 
+	handleTokenPress, 
+	formatAddress, 
+	sortTokensByValue, 
+	calculateTotalPortfolioValue,
+	createCoinCardProps 
+} from './profile_scripts';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
-import { usePortfolioStore } from '@store/portfolio';
+import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';
@@ -16,7 +22,8 @@ import {
 	SendIcon,
 } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
-import type { ProfileCoin, ProfileScreenNavigationProp } from './profile_types';
+import type { ProfileScreenNavigationProp } from './profile_types';
+import { formatPrice } from 'utils/numberFormat';
 
 const Profile = () => {
 	const navigation = useNavigation<ProfileScreenNavigationProp>();
@@ -30,11 +37,7 @@ const Profile = () => {
 		<SendIcon size={20} color={styles.colors.onPrimary} />
 	), [styles.colors.onPrimary]);
 
-	const createCoinCardProp = useCallback((token: ProfileCoin) => ({
-		...token.coin,
-		value: token.value,
-		balance: token.amount
-	}), []);
+
 
 	const {
 		isLoading: isTransactionsLoading,
@@ -56,7 +59,7 @@ const Profile = () => {
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	const totalValue = useMemo(() => {
-		return tokens.reduce((sum, token) => sum + token.value, 0);
+		return calculateTotalPortfolioValue(tokens);
 	}, [tokens]);
 
 	const sortedTokens = useMemo(() => {
@@ -125,7 +128,7 @@ const Profile = () => {
 			<View style={styles.portfolioHeader} accessible={false}>
 				<Text style={styles.portfolioTitle} accessible={true}>Total Portfolio Value</Text>
 				<Text style={styles.portfolioValue} accessible={true}>
-					{`$${totalValue.toFixed(2)}`}
+					{formatPrice(totalValue, true)}
 				</Text>
 				<Text style={styles.portfolioSubtext} accessible={true}>
 					{tokens.length} Token{tokens.length !== 1 ? 's' : ''}
@@ -170,7 +173,7 @@ const Profile = () => {
 				</View>
 			) : (
 				sortedTokens.map((token) => {
-					const coinCardCoinProp = createCoinCardProp(token);
+					const coinCardCoinProp = createCoinCardProps(token);
 					return (
 						<CoinCard
 							key={token.mintAddress}
@@ -180,7 +183,7 @@ const Profile = () => {
 								logger.breadcrumb({
 									category: 'ui',
 									message: 'Pressed token card on ProfileScreen',
-									data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.mintAddress }
+									data: { tokenSymbol: token.coin.symbol, tokenMint: token.coin.address }
 								});
 								handleTokenPress(token.coin, navigation.navigate);
 							}}
