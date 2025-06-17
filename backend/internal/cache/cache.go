@@ -1,4 +1,4 @@
-package service
+package cache
 
 import (
 	"context"
@@ -12,12 +12,6 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
-
-// GenericCache provides a generic cache interface for any type T
-type GenericCache[T any] interface {
-	Get(key string) (T, bool)
-	Set(key string, data T, expiration time.Duration)
-}
 
 // Type aliases for specific cache interfaces to maintain compatibility and ease mocking
 type (

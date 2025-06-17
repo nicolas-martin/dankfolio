@@ -25,7 +25,7 @@ type Store struct {
 	tradesRepo   db.Repository[model.Trade]
 	rawCoinsRepo db.Repository[model.RawCoin]
 	walletRepo   db.Repository[model.Wallet]
-	apiStatsRepo db.Repository[model.ApiStat] // Changed to generic repository
+	apiStatsRepo db.Repository[model.ApiStat]
 }
 
 var _ db.Store = (*Store)(nil) // Compile-time check for interface implementation
@@ -45,16 +45,15 @@ func NewStoreWithDB(database *gorm.DB) *Store {
 
 // NewStore creates a new PostgreSQL store instance and connects to the database.
 func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env string) (*Store, error) {
-	// gc := &gorm.Config{
-	// 	Logger: logger.Default.LogMode(logger.Silent), // Default to silent logger
-	// }
+	var gc *gorm.Config
 
-	gc := &gorm.Config{
-		Logger: logger.Default,
-	}
 	if env == "development" {
 		gc = &gorm.Config{
 			Logger: logger.Default,
+		}
+	} else {
+		gc = &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent), // Default to silent logger
 		}
 	}
 

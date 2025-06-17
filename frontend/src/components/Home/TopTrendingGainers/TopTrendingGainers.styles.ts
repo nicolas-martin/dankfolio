@@ -7,10 +7,6 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
 		const styles = StyleSheet.create({
-			cardWrapper: {
-				marginRight: theme.spacing.sm,
-				width: 140,
-			},
 			container: {
 				paddingBottom: theme.spacing['2xl'],
 				paddingTop: theme.spacing.lg,
@@ -21,43 +17,6 @@ export const useStyles = () => {
 				paddingHorizontal: theme.spacing.lg,
 				paddingVertical: theme.spacing.lg,
 				textAlign: 'center',
-			},
-			listContentContainer: {
-				paddingLeft: theme.spacing.lg,
-				paddingRight: theme.spacing.xs,
-			},
-			placeholderCard: {
-				backgroundColor: theme.colors.surface,
-				borderRadius: theme.borderRadius.md,
-				elevation: 2,
-				height: 120,
-				marginRight: theme.spacing.sm,
-				padding: theme.spacing.md,
-				shadowColor: theme.colors.shadow,
-				shadowOffset: theme.shadows.sm.shadowOffset,
-				shadowOpacity: 0.1,
-				shadowRadius: theme.shadows.sm.shadowRadius,
-				width: 140,
-			},
-			placeholderIconShimmer: {
-				alignSelf: 'center',
-				borderRadius: theme.borderRadius.full,
-				height: 48,
-				marginBottom: theme.spacing.sm,
-				width: 48,
-			},
-			placeholderTextShimmerLine1: {
-				alignSelf: 'center',
-				borderRadius: theme.borderRadius.sm,
-				height: 16,
-				marginBottom: theme.spacing.xs,
-				width: '80%',
-			},
-			placeholderTextShimmerLine2: {
-				alignSelf: 'center',
-				borderRadius: theme.borderRadius.sm,
-				height: 14,
-				width: '60%',
 			},
 			title: {
 				color: theme.colors.onSurface,
