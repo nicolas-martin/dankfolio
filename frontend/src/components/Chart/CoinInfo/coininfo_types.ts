@@ -7,11 +7,10 @@ export interface CoinMetadata {
 	twitter?: string;
 	telegram?: string;
 	discord?: string;
-	dailyVolume?: number;
 	decimals?: number;
 	tags?: string[];
 	symbol?: string;
-	createdAt?: Date; // Add this line
+	createdAt?: Date;
 }
 
 export interface CoinInfoProps {
@@ -19,7 +18,7 @@ export interface CoinInfoProps {
 }
 
 export interface LinkItemProps {
-	icon: React.ComponentType<unknown>;
+	icon: React.ComponentType<{ size: number; color: string }>;
 	label: string;
 	value: string;
 	onPress: (url: string) => void;

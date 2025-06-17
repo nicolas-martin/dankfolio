@@ -9,7 +9,6 @@ import {
 	TelegramIconComponent,
 	DiscordIconComponent,
 	LinkIconComponent,
-	formatNumber,
 	handleLinkPress,
 } from './scripts';
 
@@ -27,7 +26,7 @@ const LinkItem: React.FC<LinkItemProps> = ({
 		<TouchableOpacity onPress={() => onPress(value)} testID={testID}>
 			<View style={styles.linkItemContainer}>
 				<View style={styles.linkItemIconContainer}>
-					<IconComponent size={'20'} color={styles.colors.onSurface} />
+					<IconComponent size={20} color={styles.colors.onSurface} />
 				</View>
 				<View style={styles.linkItemTextContainer}>
 					<Text style={styles.linkItemLabel}>
@@ -88,23 +87,7 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 		);
 	};
 
-	const renderVolumeSection = () => {
-		if (metadata.dailyVolume === undefined) return null;
 
-		return (
-			<View style={styles.volumeSection} testID="coin-info-volume-section">
-				<View style={styles.volumeHeader}>
-					<View style={styles.volumeIcon}>
-						<PaperIcon source="trending-up" size={16} color={styles.colors.onTertiaryContainer} />
-					</View>
-					<Text style={styles.volumeTitle} testID="coin-info-volume-title">24h Volume</Text>
-				</View>
-				<Text style={styles.volumeValue} testID="coin-info-volume-value">
-					${formatNumber(metadata.dailyVolume)}
-				</Text>
-			</View>
-		);
-	};
 
 	const renderTagsSection = () => {
 		if (!metadata.tags || metadata.tags.length === 0) return null;
@@ -208,7 +191,6 @@ const CoinInfo: React.FC<CoinInfoProps> = ({ metadata }) => {
 
 	return (
 		<View style={styles.container}>
-			{renderVolumeSection()}
 			{renderDescriptionSection()}
 			{renderTagsSection()}
 			{renderLinksSection()}

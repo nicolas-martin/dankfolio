@@ -8,6 +8,7 @@ import CoinChart from '@components/Chart/CoinChart';
 import { PricePoint } from '@components/Chart/CoinChart/types';
 import CoinInfo from '@components/Chart/CoinInfo';
 import PriceDisplay from '@components/CoinDetails/PriceDisplay';
+import MarketStats from '@components/CoinDetails/MarketStats';
 import { PriceData, Coin } from '@/types';
 import { CoinDetailScreenNavigationProp, CoinDetailScreenRouteProp } from './coindetail_types';
 import { handleTradeNavigation } from './coindetail_scripts'; // TIMEFRAMES removed from here
@@ -24,7 +25,7 @@ const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
 	const route = useRoute<CoinDetailScreenRouteProp>();
 	const { coin: initialCoinFromParams } = route.params;
-	const mintAddress = initialCoinFromParams.mintAddress;
+	const mintAddress = initialCoinFromParams.address;
 	const [displayCoin, setDisplayCoin] = useState<Coin | null>(initialCoinFromParams);
 
 	useEffect(() => {
@@ -70,18 +71,11 @@ const CoinDetail: React.FC = () => {
 	// For now, let's create an adapter for the API call.
 
 	const adaptedFetchPriceHistory = useCallback(async (coinId: string, timeframe: string): Promise<PriceData[]> => {
-		// grpcApi.getPriceHistory expects timeStr (ISO string) and addressType ("token")
-		// The hook simplifies this to just coinId and timeframe.
-		// The actual call to grpcApi.getPriceHistory will need to construct these.
-		// The `usePriceHistory` hook calls this with (coinId, timeframe).
-		const currentTime = new Date().toISOString(); // Or handle time more flexibly if needed
+		// grpcApi.getPriceHistory already returns the correct format with unixTime and value
+		const currentTime = new Date().toISOString();
 		const response = await grpcApi.getPriceHistory(coinId, timeframe, currentTime, "token");
-		// Extract and transform the items array from the response data
-		const items = response.data?.items || [];
-		return items.map(item => ({
-			timestamp: new Date(item.unixTime * 1000).toISOString(), // Convert Unix timestamp to ISO string
-			value: item.value
-		}));
+		// grpcApi already transforms the data to the correct format, just return it
+		return response.data?.items || [];
 	}, []);
 
 
@@ -103,12 +97,12 @@ const CoinDetail: React.FC = () => {
 		}
 	}, [priceHistoryError, showToast]);
 
-	// Effect to re-fetch when selectedTimeframe or displayCoin (for mintAddress) changes
+	// Effect to re-fetch when selectedTimeframe or displayCoin (for address) changes
 	useEffect(() => {
-		if (displayCoin?.mintAddress) {
-			fetchHistory(displayCoin.mintAddress, selectedTimeframe);
+		if (displayCoin?.address) {
+			fetchHistory(displayCoin.address, selectedTimeframe);
 		}
-	}, [selectedTimeframe, displayCoin?.mintAddress, fetchHistory]);
+	}, [selectedTimeframe, displayCoin?.address, fetchHistory]);
 
 
 	const displayData = useMemo(() => {
@@ -144,9 +138,9 @@ const CoinDetail: React.FC = () => {
 	}, [priceHistory, hoverPoint, parseValue]);
 
 	const portfolioToken = useMemo(() => {
-		if (!displayCoin?.mintAddress) return null;
-		return tokens.find(token => token.mintAddress === displayCoin.mintAddress);
-	}, [tokens, displayCoin?.mintAddress]);
+		if (!displayCoin?.address) return null;
+		return tokens.find(token => token.mintAddress === displayCoin.address);
+	}, [tokens, displayCoin?.address]);
 
 	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description) || isPriceHistoryLoading; // Combine loading states
 
@@ -159,10 +153,10 @@ const CoinDetail: React.FC = () => {
 		website: displayCoin?.website || '',
 		twitter: displayCoin?.twitter || '',
 		telegram: displayCoin?.telegram || '',
-		dailyVolume: displayCoin?.dailyVolume || 0,
+		discord: displayCoin?.discord || '',
 		tags: displayCoin?.tags || [],
 		symbol: displayCoin?.symbol || '',
-		createdAt: displayCoin?.createdAt || new Date()
+		createdAt: displayCoin?.createdAt || new Date(),
 	}), [displayCoin]);
 
 	const timeframeButtonsRowStyle = useMemo(() => [
@@ -344,7 +338,7 @@ const CoinDetail: React.FC = () => {
 					period={TIMEFRAMES.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe}
 					resolvedIconUrl={displayCoin.resolvedIconUrl}
 					name={displayCoin.name}
-					address={displayCoin.mintAddress} // Use displayCoin.mintAddress
+					address={displayCoin.address} // Use displayCoin.address
 				/>
 			</View>
 		);
@@ -387,6 +381,16 @@ const CoinDetail: React.FC = () => {
 					density="small"
 					style={timeframeButtonsRowStyle}
 				/>
+			</View>
+		);
+	};
+
+	const renderMarketStatsCard = () => {
+		if (!displayCoin) return null;
+
+		return (
+			<View style={styles.marketStatsCard} testID="coin-detail-market-stats-card">
+				<MarketStats coin={displayCoin} />
 			</View>
 		);
 	};
@@ -466,6 +470,7 @@ const CoinDetail: React.FC = () => {
 					{isLoadingDetails ? renderPlaceholderPriceCard() : renderPriceCard()}
 					{isLoadingDetails ? renderPlaceholderChartCard() : renderChartCard()}
 					{!isLoadingDetails && renderTimeframeCard()}
+					{!isLoadingDetails && renderMarketStatsCard()}
 					{!isLoadingDetails && renderHoldingsCard()}
 					{isLoadingDetails ? renderPlaceholderAboutCard() : renderAboutCard()}
 				</ScrollView>
