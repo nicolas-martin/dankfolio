@@ -178,6 +178,9 @@ export interface API {
 	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string }>;
 	listTrades: (params: ListTradesRequest) => Promise<ListTradesResponse>;
 	getFullSwapQuoteOrchestrated: (amount: string, fromCoin: Coin, toCoin: Coin) => Promise<FullSwapQuoteDetails>;
+	getNewCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
+	getTrendingCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
+	getTopGainersCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 }
 
 export interface GetProxiedImageResponse {

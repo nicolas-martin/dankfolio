@@ -28,8 +28,10 @@ type Store interface {
 	ApiStats() Repository[model.ApiStat] // model.ApiStat will be used as T in Repository[T Entity]
 
 	// Custom operations
-	ListTrendingCoins(ctx context.Context) ([]model.Coin, error)
+	ListTrendingCoins(ctx context.Context, opts ListOptions) ([]model.Coin, int32, error)
 	SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error)
+	ListNewestCoins(ctx context.Context, opts ListOptions) ([]model.Coin, int32, error)
+	ListTopGainersCoins(ctx context.Context, opts ListOptions) ([]model.Coin, int32, error)
 
 	// Transaction management
 	WithTransaction(ctx context.Context, fn func(s Store) error) error

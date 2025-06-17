@@ -788,6 +788,162 @@ func (x *SearchResponse) GetTotalCount() int32 {
 	return 0
 }
 
+type GetNewCoinsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         *int32                 `protobuf:"varint,1,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
+	Offset        *int32                 `protobuf:"varint,2,opt,name=offset,proto3,oneof" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetNewCoinsRequest) Reset() {
+	*x = GetNewCoinsRequest{}
+	mi := &file_dankfolio_v1_coin_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetNewCoinsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNewCoinsRequest) ProtoMessage() {}
+
+func (x *GetNewCoinsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_coin_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNewCoinsRequest.ProtoReflect.Descriptor instead.
+func (*GetNewCoinsRequest) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_coin_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetNewCoinsRequest) GetLimit() int32 {
+	if x != nil && x.Limit != nil {
+		return *x.Limit
+	}
+	return 0
+}
+
+func (x *GetNewCoinsRequest) GetOffset() int32 {
+	if x != nil && x.Offset != nil {
+		return *x.Offset
+	}
+	return 0
+}
+
+type GetTrendingCoinsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         *int32                 `protobuf:"varint,1,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
+	Offset        *int32                 `protobuf:"varint,2,opt,name=offset,proto3,oneof" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTrendingCoinsRequest) Reset() {
+	*x = GetTrendingCoinsRequest{}
+	mi := &file_dankfolio_v1_coin_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTrendingCoinsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTrendingCoinsRequest) ProtoMessage() {}
+
+func (x *GetTrendingCoinsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_coin_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTrendingCoinsRequest.ProtoReflect.Descriptor instead.
+func (*GetTrendingCoinsRequest) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_coin_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GetTrendingCoinsRequest) GetLimit() int32 {
+	if x != nil && x.Limit != nil {
+		return *x.Limit
+	}
+	return 0
+}
+
+func (x *GetTrendingCoinsRequest) GetOffset() int32 {
+	if x != nil && x.Offset != nil {
+		return *x.Offset
+	}
+	return 0
+}
+
+type GetTopGainersCoinsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         *int32                 `protobuf:"varint,1,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
+	Offset        *int32                 `protobuf:"varint,2,opt,name=offset,proto3,oneof" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTopGainersCoinsRequest) Reset() {
+	*x = GetTopGainersCoinsRequest{}
+	mi := &file_dankfolio_v1_coin_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTopGainersCoinsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTopGainersCoinsRequest) ProtoMessage() {}
+
+func (x *GetTopGainersCoinsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_coin_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTopGainersCoinsRequest.ProtoReflect.Descriptor instead.
+func (*GetTopGainersCoinsRequest) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_coin_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetTopGainersCoinsRequest) GetLimit() int32 {
+	if x != nil && x.Limit != nil {
+		return *x.Limit
+	}
+	return 0
+}
+
+func (x *GetTopGainersCoinsRequest) GetOffset() int32 {
+	if x != nil && x.Offset != nil {
+		return *x.Offset
+	}
+	return 0
+}
+
 var File_dankfolio_v1_coin_proto protoreflect.FileDescriptor
 
 const file_dankfolio_v1_coin_proto_rawDesc = "" +
@@ -869,7 +1025,22 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\x0eSearchResponse\x12(\n" +
 	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount*\xfe\x01\n" +
+	"totalCount\"a\n" +
+	"\x12GetNewCoinsRequest\x12\x19\n" +
+	"\x05limit\x18\x01 \x01(\x05H\x00R\x05limit\x88\x01\x01\x12\x1b\n" +
+	"\x06offset\x18\x02 \x01(\x05H\x01R\x06offset\x88\x01\x01B\b\n" +
+	"\x06_limitB\t\n" +
+	"\a_offset\"f\n" +
+	"\x17GetTrendingCoinsRequest\x12\x19\n" +
+	"\x05limit\x18\x01 \x01(\x05H\x00R\x05limit\x88\x01\x01\x12\x1b\n" +
+	"\x06offset\x18\x02 \x01(\x05H\x01R\x06offset\x88\x01\x01B\b\n" +
+	"\x06_limitB\t\n" +
+	"\a_offset\"h\n" +
+	"\x19GetTopGainersCoinsRequest\x12\x19\n" +
+	"\x05limit\x18\x01 \x01(\x05H\x00R\x05limit\x88\x01\x01\x12\x1b\n" +
+	"\x06offset\x18\x02 \x01(\x05H\x01R\x06offset\x88\x01\x01B\b\n" +
+	"\x06_limitB\t\n" +
+	"\a_offset*\xfe\x01\n" +
 	"\rCoinSortField\x12\x1f\n" +
 	"\x1bCOIN_SORT_FIELD_UNSPECIFIED\x10\x00\x12/\n" +
 	"+COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H\x10\x01\x12%\n" +
@@ -877,13 +1048,16 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\x1aCOIN_SORT_FIELD_VOLUME_24H\x10\x03\x12\x18\n" +
 	"\x14COIN_SORT_FIELD_NAME\x10\x04\x12\x1a\n" +
 	"\x16COIN_SORT_FIELD_SYMBOL\x10\x05\x12\x1e\n" +
-	"\x1aCOIN_SORT_FIELD_MARKET_CAP\x10\x062\xb4\x03\n" +
+	"\x1aCOIN_SORT_FIELD_MARKET_CAP\x10\x062\xda\x05\n" +
 	"\vCoinService\x12d\n" +
 	"\x11GetAvailableCoins\x12&.dankfolio.v1.GetAvailableCoinsRequest\x1a'.dankfolio.v1.GetAvailableCoinsResponse\x12C\n" +
 	"\vGetCoinByID\x12 .dankfolio.v1.GetCoinByIDRequest\x1a\x12.dankfolio.v1.Coin\x12a\n" +
 	"\x10SearchCoinByMint\x12%.dankfolio.v1.SearchCoinByMintRequest\x1a&.dankfolio.v1.SearchCoinByMintResponse\x12R\n" +
 	"\vGetAllCoins\x12 .dankfolio.v1.GetAllCoinsRequest\x1a!.dankfolio.v1.GetAllCoinsResponse\x12C\n" +
-	"\x06Search\x12\x1b.dankfolio.v1.SearchRequest\x1a\x1c.dankfolio.v1.SearchResponseB\xb5\x01\n" +
+	"\x06Search\x12\x1b.dankfolio.v1.SearchRequest\x1a\x1c.dankfolio.v1.SearchResponse\x12X\n" +
+	"\vGetNewCoins\x12 .dankfolio.v1.GetNewCoinsRequest\x1a'.dankfolio.v1.GetAvailableCoinsResponse\x12b\n" +
+	"\x10GetTrendingCoins\x12%.dankfolio.v1.GetTrendingCoinsRequest\x1a'.dankfolio.v1.GetAvailableCoinsResponse\x12f\n" +
+	"\x12GetTopGainersCoins\x12'.dankfolio.v1.GetTopGainersCoinsRequest\x1a'.dankfolio.v1.GetAvailableCoinsResponseB\xb5\x01\n" +
 	"\x10com.dankfolio.v1B\tCoinProtoP\x01ZEgithub.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1\xa2\x02\x03DXX\xaa\x02\fDankfolio.V1\xca\x02\fDankfolio\\V1\xe2\x02\x18Dankfolio\\V1\\GPBMetadata\xea\x02\rDankfolio::V1b\x06proto3"
 
 var (
@@ -899,7 +1073,7 @@ func file_dankfolio_v1_coin_proto_rawDescGZIP() []byte {
 }
 
 var file_dankfolio_v1_coin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_dankfolio_v1_coin_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_dankfolio_v1_coin_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_dankfolio_v1_coin_proto_goTypes = []any{
 	(CoinSortField)(0),                // 0: dankfolio.v1.CoinSortField
 	(*Coin)(nil),                      // 1: dankfolio.v1.Coin
@@ -912,12 +1086,15 @@ var file_dankfolio_v1_coin_proto_goTypes = []any{
 	(*GetAllCoinsResponse)(nil),       // 8: dankfolio.v1.GetAllCoinsResponse
 	(*SearchRequest)(nil),             // 9: dankfolio.v1.SearchRequest
 	(*SearchResponse)(nil),            // 10: dankfolio.v1.SearchResponse
-	(*timestamppb.Timestamp)(nil),     // 11: google.protobuf.Timestamp
+	(*GetNewCoinsRequest)(nil),        // 11: dankfolio.v1.GetNewCoinsRequest
+	(*GetTrendingCoinsRequest)(nil),   // 12: dankfolio.v1.GetTrendingCoinsRequest
+	(*GetTopGainersCoinsRequest)(nil), // 13: dankfolio.v1.GetTopGainersCoinsRequest
+	(*timestamppb.Timestamp)(nil),     // 14: google.protobuf.Timestamp
 }
 var file_dankfolio_v1_coin_proto_depIdxs = []int32{
-	11, // 0: dankfolio.v1.Coin.created_at:type_name -> google.protobuf.Timestamp
-	11, // 1: dankfolio.v1.Coin.last_updated:type_name -> google.protobuf.Timestamp
-	11, // 2: dankfolio.v1.Coin.jupiter_listed_at:type_name -> google.protobuf.Timestamp
+	14, // 0: dankfolio.v1.Coin.created_at:type_name -> google.protobuf.Timestamp
+	14, // 1: dankfolio.v1.Coin.last_updated:type_name -> google.protobuf.Timestamp
+	14, // 2: dankfolio.v1.Coin.jupiter_listed_at:type_name -> google.protobuf.Timestamp
 	1,  // 3: dankfolio.v1.GetAvailableCoinsResponse.coins:type_name -> dankfolio.v1.Coin
 	1,  // 4: dankfolio.v1.SearchCoinByMintResponse.coin:type_name -> dankfolio.v1.Coin
 	1,  // 5: dankfolio.v1.GetAllCoinsResponse.coins:type_name -> dankfolio.v1.Coin
@@ -928,13 +1105,19 @@ var file_dankfolio_v1_coin_proto_depIdxs = []int32{
 	5,  // 10: dankfolio.v1.CoinService.SearchCoinByMint:input_type -> dankfolio.v1.SearchCoinByMintRequest
 	7,  // 11: dankfolio.v1.CoinService.GetAllCoins:input_type -> dankfolio.v1.GetAllCoinsRequest
 	9,  // 12: dankfolio.v1.CoinService.Search:input_type -> dankfolio.v1.SearchRequest
-	3,  // 13: dankfolio.v1.CoinService.GetAvailableCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
-	1,  // 14: dankfolio.v1.CoinService.GetCoinByID:output_type -> dankfolio.v1.Coin
-	6,  // 15: dankfolio.v1.CoinService.SearchCoinByMint:output_type -> dankfolio.v1.SearchCoinByMintResponse
-	8,  // 16: dankfolio.v1.CoinService.GetAllCoins:output_type -> dankfolio.v1.GetAllCoinsResponse
-	10, // 17: dankfolio.v1.CoinService.Search:output_type -> dankfolio.v1.SearchResponse
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
+	11, // 13: dankfolio.v1.CoinService.GetNewCoins:input_type -> dankfolio.v1.GetNewCoinsRequest
+	12, // 14: dankfolio.v1.CoinService.GetTrendingCoins:input_type -> dankfolio.v1.GetTrendingCoinsRequest
+	13, // 15: dankfolio.v1.CoinService.GetTopGainersCoins:input_type -> dankfolio.v1.GetTopGainersCoinsRequest
+	3,  // 16: dankfolio.v1.CoinService.GetAvailableCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	1,  // 17: dankfolio.v1.CoinService.GetCoinByID:output_type -> dankfolio.v1.Coin
+	6,  // 18: dankfolio.v1.CoinService.SearchCoinByMint:output_type -> dankfolio.v1.SearchCoinByMintResponse
+	8,  // 19: dankfolio.v1.CoinService.GetAllCoins:output_type -> dankfolio.v1.GetAllCoinsResponse
+	10, // 20: dankfolio.v1.CoinService.Search:output_type -> dankfolio.v1.SearchResponse
+	3,  // 21: dankfolio.v1.CoinService.GetNewCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	3,  // 22: dankfolio.v1.CoinService.GetTrendingCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	3,  // 23: dankfolio.v1.CoinService.GetTopGainersCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
+	16, // [16:24] is the sub-list for method output_type
+	8,  // [8:16] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name
@@ -946,13 +1129,16 @@ func file_dankfolio_v1_coin_proto_init() {
 		return
 	}
 	file_dankfolio_v1_coin_proto_msgTypes[0].OneofWrappers = []any{}
+	file_dankfolio_v1_coin_proto_msgTypes[10].OneofWrappers = []any{}
+	file_dankfolio_v1_coin_proto_msgTypes[11].OneofWrappers = []any{}
+	file_dankfolio_v1_coin_proto_msgTypes[12].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dankfolio_v1_coin_proto_rawDesc), len(file_dankfolio_v1_coin_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
