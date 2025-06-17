@@ -64,7 +64,7 @@ func main() {
 	jupiterClient := jupiter.NewClient(httpClient, jupiterAPIURL, jupiterAPIKey, nil)
 
 	// Create price cache like main app
-	priceCache, err := price.NewGoCacheAdapter()
+	priceCache, err := price.NewPriceHistoryCache()
 	if err != nil {
 		log.Printf("❌ Failed to create price cache: %v", err)
 		return

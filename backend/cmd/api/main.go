@@ -135,6 +135,15 @@ func main() {
 		SolanaRPCEndpoint:     config.SolanaRPCEndpoint,
 		NewCoinsFetchInterval: config.NewCoinsFetchInterval,
 	}
+
+	coinCache, err := coin.NewCoinCache()
+	if err != nil {
+		slog.Error("Failed to create coin cache", slog.Any("error", err))
+		os.Exit(1)
+	}
+	slog.Info("Coin cache initialized successfully.")
+
+	// Initialize coin service with all dependencies including cache
 	coinService := coin.NewService(
 		coinServiceConfig,
 		jupiterClient,
@@ -143,37 +152,16 @@ func main() {
 		birdeyeClient,  // This is the birdeyeClient
 		apiTracker,     // Pass existing apiTracker
 		offchainClient, // Pass existing offchainClient
-		// coinCache will be added here
-	)
-	// slog.Info("Coin service initialized.") // Will be logged after coinCache initialization
-
-	coinCache, err := coin.NewGoCoinCacheAdapter()
-	if err != nil {
-		slog.Error("Failed to create coin cache adapter", slog.Any("error", err))
-		os.Exit(1)
-	}
-	slog.Info("Coin cache adapter initialized successfully.")
-
-	// Update coinService initialization with coinCache
-	// Now calling the full NewService signature from the restored service.go, with coinCache added
-	coinService = coin.NewService(
-		coinServiceConfig, // Presumed to be *coin.Config
-		jupiterClient,
-		store,             // This is the postgres.NewStore() instance (db.Store)
-		solanaClient,      // This is the clients.GenericClientAPI for chainClient
-		birdeyeClient,
-		apiTracker,
-		offchainClient,
-		coinCache,         // Pass the initialized coinCache
+		coinCache,      // Pass the initialized coinCache
 	)
 	slog.Info("Coin service initialized.")
 
-	priceCache, err := price.NewGoCacheAdapter()
+	priceCache, err := price.NewPriceHistoryCache()
 	if err != nil {
-		slog.Error("Failed to create price cache adapter", slog.Any("error", err))
+		slog.Error("Failed to create price cache", slog.Any("error", err))
 		os.Exit(1)
 	}
-	slog.Info("Price cache adapter initialized successfully.")
+	slog.Info("Price cache initialized successfully.")
 
 	priceService := price.NewService(birdeyeClient, jupiterClient, store, priceCache)
 
