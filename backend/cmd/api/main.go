@@ -16,6 +16,7 @@ import (
 	imageservice "github.com/nicolas-martin/dankfolio/backend/internal/service/image"
 
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 	grpcapi "github.com/nicolas-martin/dankfolio/backend/internal/api/grpc"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
@@ -32,7 +33,7 @@ import (
 )
 
 func main() {
-	logLevel := slog.LevelWarn
+	logLevel := slog.LevelInfo
 	var handler slog.Handler
 
 	config := loadConfig()
@@ -88,6 +89,12 @@ func main() {
 		Timeout: time.Second * 10,
 	}
 
+	// Create a separate HTTP client for Solana RPC calls with a longer timeout
+	// since operations like GetTokenAccountsByOwner can be resource-intensive
+	solanaHTTPClient := &http.Client{
+		Timeout: time.Second * 30, // Longer timeout for Solana RPC calls
+	}
+
 	// Initialize database store first (required for APICallTracker)
 	store, err := postgres.NewStore(config.DBURL, true, logLevel, config.Env)
 	if err != nil {
@@ -108,7 +115,12 @@ func main() {
 	header := map[string]string{
 		"Authorization": "Bearer " + config.SolanaRPCAPIKey,
 	}
-	solClient := rpc.NewWithHeaders(config.SolanaRPCEndpoint, header)
+
+	// Create Solana RPC client with custom HTTP client and longer timeout
+	solClient := rpc.NewWithCustomRPCClient(jsonrpc.NewClientWithOpts(config.SolanaRPCEndpoint, &jsonrpc.RPCClientOpts{
+		HTTPClient:    solanaHTTPClient,
+		CustomHeaders: header,
+	}))
 
 	solanaClient := solana.NewClient(solClient, apiTracker)
 

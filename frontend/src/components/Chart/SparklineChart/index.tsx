@@ -52,7 +52,6 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 			const duplicatePoint = {
 				...point,
 				unixTime: (point.unixTime || 0) + 3600, // Add 1 hour offset
-				timestamp: point.timestamp, // Keep the same timestamp for simplicity
 			};
 			return [point, duplicatePoint];
 		}
@@ -70,16 +69,8 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 		// 1. Data Processing and Validation
 		const processedData = effectiveData
 			.map(item => {
-				let timeValue: number;
-				if (typeof item.unixTime === 'number' && !isNaN(item.unixTime)) {
-					timeValue = item.unixTime * 1000; // Assuming unixTime is in seconds
-				} else if (item.timestamp) {
-					timeValue = new Date(item.timestamp).getTime();
-				} else {
-					timeValue = NaN; // Mark as invalid if no time source
-				}
-
-				const numericValue = typeof item.value === 'string' ? parseFloat(item.value) : Number(item.value);
+				const timeValue = item.unixTime; // Already in milliseconds from grpcApi
+				const numericValue = item.value; // No conversion needed - value is always a number now
 
 				if (isNaN(timeValue) || isNaN(numericValue)) {
 					return { time: 0, value: 0, valid: false };

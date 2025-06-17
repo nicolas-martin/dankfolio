@@ -50,14 +50,14 @@ func (s *priceServiceHandler) GetPriceHistory(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unsupported history type: %s", historyType.String()))
 	}
 
-	if req.Msg.Time == nil {
+	if req.Msg.Time == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("time is required"))
 	}
 
 	slog.Debug("Fetching price history",
 		"address", req.Msg.Address,
 		"config", config,
-		"time", req.Msg.Time.AsTime(),
+		"time", req.Msg.Time,
 		"address_type", addressType)
 
 	// Get price history from service
@@ -66,7 +66,7 @@ func (s *priceServiceHandler) GetPriceHistory(
 		ctx,
 		req.Msg.Address,
 		config,
-		req.Msg.Time.AsTime().Format("2006-01-02T15:04:05Z"),
+		req.Msg.Time, // Now it's already a string
 		addressType,
 	)
 	if err != nil {
@@ -80,7 +80,7 @@ func (s *priceServiceHandler) GetPriceHistory(
 	pbItems := make([]*pb.PriceHistoryItem, len(priceHistory.Data.Items))
 	for i, item := range priceHistory.Data.Items {
 		pbItems[i] = &pb.PriceHistoryItem{
-			UnixTime: item.UnixTime,
+			UnixTime: fmt.Sprintf("%d", item.UnixTime), // Convert int64 to string
 			Value:    item.Value,
 		}
 	}

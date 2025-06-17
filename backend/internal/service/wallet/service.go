@@ -571,13 +571,22 @@ func (s *Service) getTokenBalances(ctx context.Context, address string) ([]Balan
 		return nil, fmt.Errorf("invalid wallet address: %v", err)
 	}
 
+	// Create a timeout context specifically for the GetTokenAccountsByOwner call
+	// This operation can be resource-intensive for addresses with many token accounts
+	tokenCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+
 	// Get token accounts using generic client
 	tokenAccounts, err := s.chainClient.GetTokenAccountsByOwner(
-		ctx,
+		tokenCtx,
 		bmodel.Address(pubKey.String()),
 		bmodel.TokenAccountsOptions{Encoding: string(solana.EncodingJSONParsed)}, // Using solana specific encoding
 	)
 	if err != nil {
+		// Check if it's a timeout error and provide a more helpful message
+		if errors.Is(err, context.DeadlineExceeded) || strings.Contains(err.Error(), "context canceled") || strings.Contains(err.Error(), "context deadline exceeded") {
+			return []Balance{}, fmt.Errorf("failed to get token accounts: request timed out after 45 seconds - this address may have too many token accounts")
+		}
 		return []Balance{}, fmt.Errorf("failed to get token accounts: %w", err)
 	}
 
