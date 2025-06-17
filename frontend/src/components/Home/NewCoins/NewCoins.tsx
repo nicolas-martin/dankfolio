@@ -3,9 +3,10 @@ import React from 'react';
 import { View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import Animated from 'react-native-reanimated';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
-import HorizontalTickerCard from '@/components/Home/HorizontalTickerCard';
+import HorizontalScrollContainer from '@/components/Common/HorizontalScrollContainer';
+import NewListingCard from '@/components/Home/NewListingCard';
+import NewListingPlaceholderCard from '@/components/Home/NewListingCard/PlaceholderCard';
 import { Coin } from '@/types';
 import { logger } from '@/utils/logger';
 import { useStyles } from './NewCoins.styles';
@@ -24,16 +25,8 @@ interface NewCoinsProps {
 const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoading: isLoadingNewlyListed }) => {
 	const styles = useStyles();
 	const navigation = useNavigation<NewCoinsNavigationProp>();
-	const CARD_WIDTH = 88; // cardWrapper width (80) + marginRight (8)
-
-	// Create duplicated data for infinite scrolling
-	const scrollData = React.useMemo(() => {
-		if (!newlyListedCoins || newlyListedCoins.length === 0) return [];
-		// Duplicate the array to create seamless infinite scroll
-		return newlyListedCoins;
-	}, [newlyListedCoins]);
-
-	const placeholderData = React.useMemo(() => [1, 2, 3, 4], []);
+	const CARD_WIDTH = 140; // Width of NewListingCard
+	const CARD_MARGIN = 24; // theme.spacing.lg - increased spacing
 
 	const handleCoinPress = useCallback((coin: Coin) => {
 		// Navigate immediately with the basic coin data
@@ -46,66 +39,28 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 		navigation.navigate('CoinDetail', {
 			coin: coin
 		});
-
-		// Note: Background fetch removed since getCoinByID is not available in new store structure
-		// The CoinDetail screen will handle its own data fetching
 	}, [navigation]);
 
-	const getItemLayout = useCallback((_data: Coin[] | null, index: number) => ({
-		length: CARD_WIDTH,
-		offset: CARD_WIDTH * index,
-		index,
-	}), [CARD_WIDTH]);
-
-	// Placeholder component for loading small horizontal cards
-	const renderPlaceholderCard = () => {
+	// Render function for NewListingCard
+	const renderNewListingCard = useCallback((coin: Coin, index: number) => {
 		return (
-			<View style={styles.placeholderCard}>
-				<ShimmerPlaceholder style={styles.placeholderIconShimmer} />
-				<View style={styles.placeholderTextContainer}>
-					<ShimmerPlaceholder style={styles.placeholderTextShimmerLine1} />
-					<ShimmerPlaceholder style={styles.placeholderTextShimmerLine2} />
-				</View>
-			</View>
+			<NewListingCard
+				coin={coin}
+				onPress={handleCoinPress}
+				testIdPrefix="new-listing"
+			/>
 		);
-	};
+	}, [handleCoinPress]);
 
-	const renderItem = useCallback(({ item }: { item: Coin; index: number }) => {
-		return (
-			<View style={styles.cardWrapper}>
-				<HorizontalTickerCard
-					coin={item}
-					onPress={handleCoinPress}
-					testIdPrefix="new-coin"
-					showPriceChange={false}
-					size="small"
-				/>
-			</View>
-		);
-	}, [styles.cardWrapper, handleCoinPress]);
+	// Render function for placeholder
+	const renderPlaceholder = useCallback((index: number) => {
+		return <NewListingPlaceholderCard key={`placeholder-${index}`} />;
+	}, []);
 
-	if (isLoadingNewlyListed && newlyListedCoins.length === 0) {
-		return (
-			<View style={styles.container}>
-				<View style={styles.titleContainer}>
-					<ShimmerPlaceholder
-						width={120}
-						height={20}
-						borderRadius={4}
-					/>
-				</View>
-				<Animated.FlatList
-					data={placeholderData}
-					renderItem={() => renderPlaceholderCard()}
-					keyExtractor={(_item, index) => `placeholder-${index}`}
-					horizontal
-					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={styles.listContentContainer}
-					scrollEnabled={false} // Disable scrolling for placeholders
-				/>
-			</View>
-		);
-	}
+	// Key extractor for coins
+	const keyExtractor = useCallback((coin: Coin, index: number) => {
+		return `${coin.address}-${index}`;
+	}, []);
 
 	if (!isLoadingNewlyListed && newlyListedCoins.length === 0) {
 		return (
@@ -121,31 +76,30 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 	return (
 		<View style={styles.container}>
 			<View style={styles.titleContainer}>
-				<Text style={styles.title}>New Listings</Text>
-				{/* "View All" button and associated false && condition removed */}
+				{isLoadingNewlyListed && newlyListedCoins.length === 0 ? (
+					<ShimmerPlaceholder
+						width={120}
+						height={20}
+						borderRadius={4}
+					/>
+				) : (
+					<Text style={styles.title}>New Listings</Text>
+				)}
 			</View>
-			<Animated.FlatList
-				data={scrollData}
-				renderItem={renderItem}
-				keyExtractor={(item, index) => `${item.address}-${index}`}
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={styles.listContentContainer}
-				scrollEnabled={true}
-				scrollEventThrottle={1}
-				decelerationRate="fast"
-				snapToInterval={CARD_WIDTH}
-				snapToAlignment="start"
-				maxToRenderPerBatch={3}
-				updateCellsBatchingPeriod={50}
-				initialNumToRender={5}
-				windowSize={5}
-				getItemLayout={getItemLayout}
-				ListEmptyComponent={
-					isLoadingNewlyListed ? null : (
-						<Text style={styles.emptyText}>No new listings available.</Text>
-					)
-				}
+			<HorizontalScrollContainer
+				data={newlyListedCoins}
+				renderItem={renderNewListingCard}
+				cardWidth={CARD_WIDTH}
+				cardMargin={CARD_MARGIN}
+				isLoading={isLoadingNewlyListed}
+				placeholderCount={4}
+				renderPlaceholder={renderPlaceholder}
+				contentPadding={{
+					paddingLeft: styles.theme.spacing.lg,
+					paddingRight: styles.theme.spacing.xs,
+				}}
+				testIdPrefix="new-listings"
+				keyExtractor={keyExtractor}
 			/>
 		</View>
 	);

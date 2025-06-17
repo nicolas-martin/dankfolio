@@ -1,11 +1,11 @@
 package price
 
 import (
-	"github.com/nicolas-martin/dankfolio/backend/internal/service"
+	"github.com/nicolas-martin/dankfolio/backend/internal/cache"
 )
 
 // Re-export the common cache interface and constructor for this package
-type PriceHistoryCache = service.PriceHistoryCache
+type PriceHistoryCache = cache.PriceHistoryCache
 
 // NewPriceHistoryCache creates a new price history cache instance
-var NewPriceHistoryCache = service.NewPriceHistoryCache
+var NewPriceHistoryCache = cache.NewPriceHistoryCache
