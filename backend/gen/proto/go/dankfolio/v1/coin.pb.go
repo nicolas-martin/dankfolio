@@ -322,9 +322,8 @@ func (x *Coin) GetRank() int32 {
 
 type GetAvailableCoinsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TrendingOnly  bool                   `protobuf:"varint,1,opt,name=trending_only,json=trendingOnly,proto3" json:"trending_only,omitempty"` // Changed from optional to required
-	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -357,13 +356,6 @@ func (x *GetAvailableCoinsRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetAvailableCoinsRequest.ProtoReflect.Descriptor instead.
 func (*GetAvailableCoinsRequest) Descriptor() ([]byte, []int) {
 	return file_dankfolio_v1_coin_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *GetAvailableCoinsRequest) GetTrendingOnly() bool {
-	if x != nil {
-		return x.TrendingOnly
-	}
-	return false
 }
 
 func (x *GetAvailableCoinsRequest) GetLimit() int32 {
@@ -996,11 +988,10 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\x1a_volume_24h_change_percentB\x06\n" +
 	"\x04_fdvB\r\n" +
 	"\v_market_capB\a\n" +
-	"\x05_rank\"m\n" +
-	"\x18GetAvailableCoinsRequest\x12#\n" +
-	"\rtrending_only\x18\x01 \x01(\bR\ftrendingOnly\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x03 \x01(\x05R\x06offset\"f\n" +
+	"\x05_rank\"H\n" +
+	"\x18GetAvailableCoinsRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\"f\n" +
 	"\x19GetAvailableCoinsResponse\x12(\n" +
 	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
