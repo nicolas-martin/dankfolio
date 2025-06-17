@@ -111,7 +111,12 @@ const Trade: React.FC = () => {
 	// useEffect for fetching USD exchangeRate is removed. TokenSelector handles its own rate.
 
 	// Memoized portfolio tokens
-	const fromPortfolioToken = useMemo(() => tokens.find(token => token.mintAddress === fromCoin?.mintAddress), [tokens, fromCoin]);
+	const fromPortfolioToken = useMemo(() => tokens.find(token => token.coin.address === fromCoin?.address), [tokens, fromCoin]);
+
+	// Memoized objects to prevent JSX object creation
+	const toTextInputProps = useMemo(() => ({ 
+		placeholder: `0.0000 ${toCoin?.symbol || 'Crypto'}` 
+	}), [toCoin?.symbol]);
 
 	// Cleanup intervals on unmount
 	useEffect(() => {
@@ -364,13 +369,13 @@ const Trade: React.FC = () => {
 				enableUsdToggle={label === 'From'} // Keep this for explicitness: true for 'From', false for 'To'
 				// textInputProps and helperText for 'From' card are managed by TokenSelector.
 				// For 'To' card, which won't use USD toggle, we can pass basic placeholder/helper.
-				textInputProps={label === 'To' ? { placeholder: `0.0000 ${toCoin?.symbol || 'Crypto'}` } : undefined}
+				textInputProps={label === 'To' ? toTextInputProps : undefined}
 				helperText={label === 'To' ? (coin ? `Estimated ${coin.symbol} amount` : 'Estimated amount') : undefined}
 			/>
 			{label === 'From' && coin && (
 				<AmountPercentageButtons
 					// key no longer needs inputUnit as it's managed inside TokenSelector
-					key={`${coin.mintAddress}-${toCoin?.mintAddress || 'none'}`}
+					key={`${coin.address}-${toCoin?.address || 'none'}`}
 					balance={portfolioBalance || 0}
 					onSelectAmount={(selectedAmount) => {
 						// AmountPercentageButtons always provide crypto amount.
