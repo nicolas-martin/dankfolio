@@ -9,8 +9,8 @@ import (
 	"github.com/eko/gocache/v3/cache"
 	"github.com/eko/gocache/v3/store"
 
-	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
 // GenericCache provides a generic cache interface for any type T
@@ -20,8 +20,10 @@ type GenericCache[T any] interface {
 }
 
 // Type aliases for specific cache interfaces to maintain compatibility and ease mocking
-type CoinCache = GenericCache[*pb.GetAvailableCoinsResponse]
-type PriceHistoryCache = GenericCache[*birdeye.PriceHistory]
+type (
+	CoinCache         = GenericCache[*model.Coin]
+	PriceHistoryCache = GenericCache[*birdeye.PriceHistory]
+)
 
 // GoGenericCacheAdapter provides a generic cache implementation using Ristretto
 type GoGenericCacheAdapter[T any] struct {
@@ -53,7 +55,7 @@ func NewGoGenericCacheAdapter[T any](logPrefix string) (*GoGenericCacheAdapter[T
 
 // Convenience constructors for specific cache types
 func NewCoinCache() (CoinCache, error) {
-	return NewGoGenericCacheAdapter[*pb.GetAvailableCoinsResponse]("coin")
+	return NewGoGenericCacheAdapter[*model.Coin]("coin")
 }
 
 func NewPriceHistoryCache() (PriceHistoryCache, error) {
