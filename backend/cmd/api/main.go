@@ -143,6 +143,22 @@ func main() {
 		birdeyeClient,  // This is the birdeyeClient
 		apiTracker,     // Pass existing apiTracker
 		offchainClient, // Pass existing offchainClient
+		// coinCache will be added here
+	)
+	// slog.Info("Coin service initialized.") // Will be logged after coinCache initialization
+
+	coinCache, err := coin.NewGoCoinCacheAdapter()
+	if err != nil {
+		slog.Error("Failed to create coin cache adapter", slog.Any("error", err))
+		os.Exit(1)
+	}
+	slog.Info("Coin cache adapter initialized successfully.")
+
+	// Update coinService initialization with coinCache
+	// Calling the new simplified NewService(store, cache)
+	coinService = coin.NewService(
+		store,     // This is the postgres.NewStore() instance
+		coinCache, // Pass the initialized coinCache
 	)
 	slog.Info("Coin service initialized.")
 
