@@ -61,7 +61,7 @@ const TokenItem = React.memo<{
 				<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
 				<Text style={styles.tokenName}>{coin.name}</Text>
 				<Text style={styles.tokenAddress}>
-					{coin.mintAddress.slice(0, 6)}...{coin.mintAddress.slice(-6)}
+					{coin.mintAddress ? `${coin.mintAddress.slice(0, 6)}...${coin.mintAddress.slice(-6)}` : 'N/A'}
 				</Text>
 			</View>
 			{portfolioToken && (
@@ -116,7 +116,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		}
 
 		const query = searchQuery.toLowerCase().trim();
-		const filtered = baseList.filter(coin =>
+		const filtered = baseList.filter((coin: Coin) =>
 			coin.symbol.toLowerCase().includes(query) ||
 			coin.name.toLowerCase().includes(query)
 		);
