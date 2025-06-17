@@ -1,20 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/types/navigation';
-import { Coin } from '@/types';
+import { PortfolioToken } from '@/store/portfolio';
 
 // Profile screen doesn't receive any params
 export type ProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 // For screens that navigate to Profile
 export type ProfileScreenNavigationProp = ProfileScreenProps['navigation'];
-
-export interface ProfileCoin {
-	address: string;        // Was: mintAddress (aligned with BirdEye)
-	amount: number;
-	price: number;
-	value: number;
-	coin: Coin;
-}
 
 export interface ProfileScreenStyles {
 	safeArea: unknown;

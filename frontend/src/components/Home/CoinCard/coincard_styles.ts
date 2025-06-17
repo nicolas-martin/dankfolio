@@ -135,13 +135,13 @@ export const useStyles = () => {
 			},
 			rightSection: {
 				alignItems: 'flex-end',
-				flex: 0.25,
+				flex: 0.35,
 				justifyContent: 'center',
 				minWidth: 0,
 			},
 			sparklineContainer: {
 				alignItems: 'center',
-				flex: 0.4,
+				flex: 0.3,
 				height: 36,
 				justifyContent: 'center',
 			},

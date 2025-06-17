@@ -81,7 +81,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				</Text>
 				<Text
 					style={styles.horizontalPrice}
-					numberOfLines={1}
+					numberOfLines={2}
 					testID={`${testIdPrefix}-price-${coin.symbol.toLowerCase()}`}
 					accessible={true}
 					accessibilityRole="text"
@@ -152,7 +152,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 				<View style={styles.rightSection}>
 					<Text
 						style={styles.price}
-						numberOfLines={1}
+						numberOfLines={2}
 						testID={`${testIdPrefix}-price-${coin.symbol.toLowerCase()}`}
 						accessible={true}
 						accessibilityRole="text"
