@@ -83,7 +83,7 @@ func (s *coinServiceHandler) GetCoinByID(
 	ctx context.Context,
 	req *connect.Request[pb.GetCoinByIDRequest],
 ) (*connect.Response[pb.Coin], error) {
-	coin, err := s.coinService.GetCoinByMintAddress(ctx, req.Msg.MintAddress)
+	coin, err := s.coinService.GetCoinByAddress(ctx, req.Msg.MintAddress)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin: %w", err))
 	}
@@ -97,7 +97,7 @@ func (s *coinServiceHandler) SearchCoinByMint(
 	ctx context.Context,
 	req *connect.Request[pb.SearchCoinByMintRequest],
 ) (*connect.Response[pb.SearchCoinByMintResponse], error) {
-	coin, err := s.coinService.GetCoinByMintAddress(ctx, req.Msg.MintAddress)
+	coin, err := s.coinService.GetCoinByAddress(ctx, req.Msg.MintAddress)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", req.Msg.MintAddress, err))
 	}
@@ -134,7 +134,7 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 	// validate if the req.Msg.Query is a valid mint address
 	solanaAddress, err := solana.PublicKeyFromBase58(req.Msg.Query)
 	if err == nil {
-		coin, err := s.coinService.GetCoinByMintAddress(ctx, solanaAddress.String())
+		coin, err := s.coinService.GetCoinByAddress(ctx, solanaAddress.String())
 		if err != nil {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", solanaAddress.String(), err))
 		}
@@ -172,7 +172,7 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		case pb.CoinSortField_COIN_SORT_FIELD_SYMBOL:
 			sortByStr = "symbol"
 		case pb.CoinSortField_COIN_SORT_FIELD_MARKET_CAP:
-			sortByStr = "market_cap"
+			sortByStr = "marketcap"
 		default:
 			sortByStr = "volume_24h" // Default sort
 		}
@@ -341,31 +341,29 @@ func convertModelCoinToPbCoin(coin *model.Coin) *pb.Coin {
 	r := int32(coin.Rank) // Simplified as per instruction for numeric optionals
 
 	return &pb.Coin{
-		MintAddress:     coin.MintAddress,
+		Address:         coin.Address,
 		Symbol:          coin.Symbol,
 		Name:            coin.Name,
 		Decimals:        int32(coin.Decimals),
 		Description:     coin.Description,
-		IconUrl:         coin.IconUrl,
+		LogoUri:         coin.LogoURI,
 		ResolvedIconUrl: &coin.ResolvedIconUrl,
 		Tags:            coin.Tags,
 		Price:           coin.Price,
-		DailyVolume:     coin.Volume24h, // Retained as per instruction
 		Website:         &coin.Website,
 		Twitter:         &coin.Twitter,
 		Telegram:        &coin.Telegram,
-		// CoingeckoId is not in model.Coin
+		Discord:         &coin.Discord,
 		CreatedAt:       createdAtPb,
 		LastUpdated:     lastUpdatedPb,
-		IsTrending:      coin.IsTrending,
 		JupiterListedAt: jupiterListedAtPb,
-		// New Birdeye fields
-		PriceChangePercentage_24H: &coin.Price24hChangePercent,
-		Volume_24HUsd:             &coin.Volume24h, // model.Coin.Volume24h maps to this new field
-		Liquidity:                 &coin.Liquidity,
-		Volume_24HChangePercent:   &coin.Volume24hChangePercent,
-		Fdv:                       &coin.FDV,
-		MarketCap:                 &coin.MarketCap,
-		Rank:                      &r, // Mapped from coin.Rank (int) to *int32
+		// Birdeye fields
+		Price24HChangePercent:  &coin.Price24hChangePercent,
+		Volume24HUsd:           &coin.Volume24hUSD,
+		Liquidity:              &coin.Liquidity,
+		Volume24HChangePercent: &coin.Volume24hChangePercent,
+		Fdv:                    &coin.FDV,
+		Marketcap:              &coin.Marketcap,
+		Rank:                   &r, // Mapped from coin.Rank (int) to *int32
 	}
 }

@@ -68,11 +68,11 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 		}
 		slog.Info("Token details",
 			"index", i,
-			"mint", t.MintAddress,
+			"address", t.Address,
 			"name", t.Name,
 			"symbol", t.Symbol,
 			"price", t.Price,
-			"volume_24h", t.Volume24h)
+			"volume_24h", t.Volume24hUSD)
 	}
 
 	return finalOutput, nil
@@ -140,10 +140,10 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []bir
 
 			// Add successfully (or partially) enriched coin
 			mu.Lock()
-			enriched.IsTrending = true
+			// IsTrending field has been removed - now using tags system only
 			enrichedCoins = append(enrichedCoins, *enriched)
 			mu.Unlock()
-			slog.Info("Successfully processed enrichment", "name", enriched.Name, "mint_address", enriched.MintAddress) // This uses enriched.MintAddress, which is correct
+			slog.Info("Successfully processed enrichment", "name", enriched.Name, "address", enriched.Address)
 		}(birdeyeToken) // Pass birdeyeToken to the goroutine
 	}
 

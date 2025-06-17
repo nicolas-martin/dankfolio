@@ -60,11 +60,34 @@ type TokenDetails struct {
 	Tags                   []string `json:"tags,omitempty"`
 }
 
+type SortBy string
+
+const (
+	SortByVolume24hUSD SortBy = "volume24hUSD"
+	SortByRank         SortBy = "rank"
+	SortByLiquidity    SortBy = "liquidity"
+)
+
+func (s SortBy) String() string {
+	return string(s)
+}
+
+type SortType string
+
+const (
+	SortTypeDesc SortType = "desc"
+	SortTypeAsc  SortType = "asc"
+)
+
+func (s SortType) String() string {
+	return string(s)
+}
+
 // TrendingTokensParams contains parameters for the GetTrendingTokens request
 // Based on BirdEye API documentation: https://docs.birdeye.so/reference/get-defi-token_trending
 type TrendingTokensParams struct {
-	SortBy   string // Sort criteria (e.g., "v24hUSD", "mc", "price24hChangePercent", "volume24hChangePercent")
-	SortType string // Sort order: "desc" or "asc"
-	Offset   int    // Pagination offset (starting point in the token list)
-	Limit    int    // Number of results to return (max 50)
+	SortBy   SortBy   // Sort criteria (e.g., "v24hUSD", "mc", "price24hChangePercent", "volume24hChangePercent")
+	SortType SortType // Sort order: "desc" or "asc"
+	Offset   int      // Pagination offset (starting point in the token list)
+	Limit    int      // Number of results to return (max 50)
 }

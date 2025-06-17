@@ -53,9 +53,9 @@ func main() {
 		log.Printf("   Name: %s", coin.Name)
 		log.Printf("   Symbol: %s", coin.Symbol)
 		log.Printf("   Address: %s", coin.Mint) // Changed Address to Mint
-		log.Printf("   RawCoin MintAddress: %s", rawCoin.MintAddress)
+		log.Printf("   RawCoin MintAddress: %s", rawCoin.Address)
 
-		if rawCoin.MintAddress != "" {
+		if rawCoin.Address != "" {
 			validTokens++
 			log.Printf("   ✅ Valid mint address!")
 		} else {

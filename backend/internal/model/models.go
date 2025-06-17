@@ -25,22 +25,27 @@ const (
 )
 
 // Coin represents a token or coin in the system (unified model)
+// Field names aligned with BirdEye API for consistency
 type Coin struct {
 	ID              uint64   `json:"id,omitempty"`
-	MintAddress     string   `json:"mint_address"`
+	Address         string   `json:"address"` // Was: MintAddress (BirdEye uses 'address')
 	Name            string   `json:"name"`
 	Symbol          string   `json:"symbol"`
 	Decimals        int      `json:"decimals"`
 	Description     string   `json:"description"`
-	IconUrl         string   `json:"icon_url"`
-	ResolvedIconUrl string   `json:"resolved_icon_url,omitempty"`
+	LogoURI         string   `json:"logoURI"`                     // Was: IconUrl (BirdEye uses logoURI)
+	ResolvedIconUrl string   `json:"resolved_icon_url,omitempty"` // Keep for our internal optimization
 	Tags            []string `json:"tags,omitempty"`
 
-	// Price and Market Data
-	Price     float64 `json:"price"`
-	Change24h float64 `json:"change_24h,omitempty"`
-	MarketCap float64 `json:"market_cap,omitempty"`
-	Volume24h float64 `json:"volume24h,omitempty"`
+	// Price and Market Data (aligned with BirdEye)
+	Price                  float64 `json:"price"`
+	Price24hChangePercent  float64 `json:"price24hChangePercent,omitempty"`  // BirdEye standard
+	Marketcap              float64 `json:"marketcap,omitempty"`              // BirdEye uses lowercase
+	Volume24hUSD           float64 `json:"volume24hUSD,omitempty"`           // BirdEye standard
+	Volume24hChangePercent float64 `json:"volume24hChangePercent,omitempty"` // BirdEye standard
+	Liquidity              float64 `json:"liquidity,omitempty"`
+	FDV                    float64 `json:"fdv,omitempty"` // BirdEye uses uppercase
+	Rank                   int     `json:"rank,omitempty"`
 
 	// Social and External Links
 	Website  string `json:"website,omitempty"`
@@ -51,19 +56,12 @@ type Coin struct {
 	// Metadata
 	CreatedAt       string     `json:"created_at,omitempty"`        // System's created_at for enriched record
 	LastUpdated     string     `json:"last_updated,omitempty"`      // System's last_updated for enriched record
-	JupiterListedAt *time.Time `json:"jupiter_listed_at,omitempty"` // New field: Time listed on Jupiter
-
-	IsTrending             bool    `json:"is_trending,omitempty"`
-	Liquidity              float64 `json:"liquidity,omitempty"`
-	Volume24hChangePercent float64 `json:"volume_24h_change_percent,omitempty"`
-	FDV                    float64 `json:"fdv,omitempty"`
-	Rank                   int     `json:"rank,omitempty"`
-	Price24hChangePercent  float64 `json:"price_24h_change_percent,omitempty"`
+	JupiterListedAt *time.Time `json:"jupiter_listed_at,omitempty"` // Time listed on Jupiter
 }
 
 // GetID implements the Entity interface
 func (c Coin) GetID() string {
-	return c.MintAddress
+	return c.Address
 }
 
 // Trade represents a cryptocurrency trade
@@ -137,7 +135,7 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 	filtered := make([]Coin, 0)
 	for _, coin := range coins {
 		// Skip if volume is below minimum
-		if coin.Volume24h < minVolume24h {
+		if coin.Volume24hUSD < minVolume24h {
 			continue
 		}
 
@@ -147,7 +145,7 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 			query = strings.ToLower(query)
 			if strings.Contains(strings.ToLower(coin.Name), query) ||
 				strings.Contains(strings.ToLower(coin.Symbol), query) ||
-				strings.Contains(strings.ToLower(coin.MintAddress), query) {
+				strings.Contains(strings.ToLower(coin.Address), query) {
 				queryMatch = true
 			}
 			if !queryMatch {
@@ -186,11 +184,11 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 		case "price_usd":
 			less = filtered[i].Price < filtered[j].Price
 		case "market_cap_usd":
-			less = filtered[i].MarketCap < filtered[j].MarketCap
+			less = filtered[i].Marketcap < filtered[j].Marketcap
 		case "volume_24h":
 			fallthrough
 		default:
-			less = filtered[i].Volume24h < filtered[j].Volume24h
+			less = filtered[i].Volume24hUSD < filtered[j].Volume24hUSD
 		}
 		if sortDesc {
 			return !less
@@ -210,7 +208,7 @@ func FilterAndSortCoins(coins []Coin, query string, tags []string, minVolume24h 
 // RawCoin represents a raw token from Jupiter without enrichment
 type RawCoin struct {
 	ID               uint64    `json:"id,omitempty"`
-	MintAddress      string    `json:"mint_address"`
+	Address          string    `json:"address"`
 	Symbol           string    `json:"symbol"`
 	Name             string    `json:"name"`
 	Decimals         int       `json:"decimals"`
@@ -221,7 +219,7 @@ type RawCoin struct {
 
 // GetID implements the Entity interface
 func (r RawCoin) GetID() string {
-	return r.MintAddress
+	return r.Address
 }
 
 // // TokenBalance represents a token balance for a specific mint
@@ -255,16 +253,14 @@ func (m *Coin) ToProto() (*pb.Coin, error) {
 	}
 
 	pbCoin := &pb.Coin{
-		MintAddress: m.MintAddress,
+		Address:     m.Address, // Use new Address field
 		Name:        m.Name,
 		Symbol:      m.Symbol,
 		Decimals:    int32(m.Decimals),
 		Description: m.Description,
-		IconUrl:     m.IconUrl,
+		LogoUri:     m.LogoURI, // Use new LogoUri field
 		Tags:        m.Tags,
 		Price:       m.Price,
-		DailyVolume: m.Volume24h, // Mapping model.Volume24h to pb.DailyVolume
-		IsTrending:  m.IsTrending,
 		// Optional pointer fields are set conditionally below
 	}
 
@@ -292,34 +288,32 @@ func (m *Coin) ToProto() (*pb.Coin, error) {
 		pbCoin.Telegram = nil
 	}
 
-	// Price24hChangePercent from model.Coin maps to PriceChangePercentage_24H in proto
-	// Assuming pb.Coin.PriceChangePercentage_24H is *float64
-	if m.Price24hChangePercent != 0 { // Check if it's meaningfully set
+	// Price24hChangePercent from model.Coin maps to Price24hChangePercent in proto
+	if m.Price24hChangePercent != 0 {
 		val := m.Price24hChangePercent
-		pbCoin.PriceChangePercentage_24H = &val
+		pbCoin.Price24HChangePercent = &val
 	}
-	// Volume24hUsd from proto maps from model.Volume24h as well (or a specific model field if exists)
-	// Assuming pb.Coin.Volume_24HUsd is *float64
-	if m.Volume24h != 0 { // Re-using Volume24h for this example, adjust if model has specific Volume24hUSD
-		val := m.Volume24h
-		pbCoin.Volume_24HUsd = &val
+	// Volume24hUSD from model maps to Volume24hUsd in proto
+	if m.Volume24hUSD != 0 {
+		val := m.Volume24hUSD
+		pbCoin.Volume24HUsd = &val
 	}
 	if m.Liquidity != 0 {
 		val := m.Liquidity
 		pbCoin.Liquidity = &val
 	}
-	// Volume24hChangePercent from model.Coin maps to Volume_24HChangePercent in proto
+	// Volume24hChangePercent from model.Coin maps to Volume24hChangePercent in proto
 	if m.Volume24hChangePercent != 0 {
 		val := m.Volume24hChangePercent
-		pbCoin.Volume_24HChangePercent = &val
+		pbCoin.Volume24HChangePercent = &val
 	}
 	if m.FDV != 0 {
 		val := m.FDV
 		pbCoin.Fdv = &val
 	}
-	if m.MarketCap != 0 {
-		val := m.MarketCap
-		pbCoin.MarketCap = &val
+	if m.Marketcap != 0 {
+		val := m.Marketcap
+		pbCoin.Marketcap = &val
 	}
 	if m.Rank != 0 {
 		val := int32(m.Rank)

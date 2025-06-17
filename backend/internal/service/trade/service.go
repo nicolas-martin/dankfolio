@@ -127,11 +127,11 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		return "", fmt.Errorf("invalid from address: %w", err) // Should be caught by IsValidSolanaAddress, but good to keep for specific parsing error
 	}
 	// Fetch coin models to get their PKIDs
-	fromCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, params.FromCoinMintAddress)
+	fromCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.FromCoinMintAddress)
 	if err != nil {
 		return "", fmt.Errorf("failed to get fromCoin details for %s: %w", params.FromCoinMintAddress, err)
 	}
-	toCoinModel, err := s.coinService.GetCoinByMintAddress(ctx, params.ToCoinMintAddress)
+	toCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.ToCoinMintAddress)
 	if err != nil {
 		return "", fmt.Errorf("failed to get toCoin details for %s: %w", params.ToCoinMintAddress, err)
 	}
@@ -317,7 +317,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 		// Ensure CoinSymbol is populated, e.g., from FromCoinMintAddress if applicable
 		// For simplicity, assuming FromCoinMintAddress can be used to derive a symbol or it's not critical for debug mode.
 		// Ideally, you'd fetch coin details even in debug mode if CoinSymbol is vital.
-		fromCoin, _ := s.coinService.GetCoinByMintAddress(ctx, req.FromCoinMintAddress) // Best effort for symbol, use GetCoinByMintAddress
+		fromCoin, _ := s.coinService.GetCoinByAddress(ctx, req.FromCoinMintAddress) // Best effort for symbol, use GetCoinByMintAddress
 
 		trade := &model.Trade{
 			FromCoinMintAddress: req.FromCoinMintAddress,
@@ -434,12 +434,12 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 	}
 
 	// Parse addresses
-	fromCoin, err := s.coinService.GetCoinByMintAddress(ctx, fromCoinMintAddress) // Use new method
+	fromCoin, err := s.coinService.GetCoinByAddress(ctx, fromCoinMintAddress) // Use new method
 	if err != nil {
 		return nil, fmt.Errorf("failed to get from coin %s: %w", fromCoinMintAddress, err)
 	}
 
-	toCoin, err := s.coinService.GetCoinByMintAddress(ctx, toCoinMintAddress) // Use new method
+	toCoin, err := s.coinService.GetCoinByAddress(ctx, toCoinMintAddress) // Use new method
 	if err != nil {
 		return nil, fmt.Errorf("failed to get to coin %s: %w", toCoinMintAddress, err)
 	}

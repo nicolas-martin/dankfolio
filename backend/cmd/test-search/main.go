@@ -66,7 +66,7 @@ func main() {
 		if !coin.JupiterCreatedAt.IsZero() {
 			jupiterCreatedAt = coin.JupiterCreatedAt.Format("2006-01-02 15:04:05")
 		}
-		fmt.Printf("%d. %s (%s) - JupiterCreatedAt: %s\n", i+1, coin.Symbol, coin.MintAddress, jupiterCreatedAt)
+		fmt.Printf("%d. %s (%s) - JupiterCreatedAt: %s\n", i+1, coin.Symbol, coin.Address, jupiterCreatedAt)
 	}
 
 	// Test 3: Test mapping functions directly with model objects
@@ -88,8 +88,8 @@ func main() {
 		// Find a matching coin by mint address
 		for _, rawCoin := range rawCoins {
 			for _, searchCoin := range coins {
-				if rawCoin.MintAddress == searchCoin.MintAddress {
-					fmt.Printf("MATCH FOUND: %s (%s)\n", rawCoin.Symbol, rawCoin.MintAddress)
+				if rawCoin.Address == searchCoin.MintAddress {
+					fmt.Printf("MATCH FOUND: %s (%s)\n", rawCoin.Symbol, rawCoin.Address)
 
 					rawJupiter := "nil"
 					if !rawCoin.JupiterCreatedAt.IsZero() {
@@ -150,7 +150,7 @@ func main() {
 		if !coin.JupiterCreatedAt.IsZero() {
 			jupiterCreatedAt = coin.JupiterCreatedAt.Format("2006-01-02 15:04:05")
 		}
-		fmt.Printf("%d. %s (%s) - JupiterCreatedAt: %s\n", i+1, coin.Symbol, coin.MintAddress, jupiterCreatedAt)
+		fmt.Printf("%d. %s (%s) - JupiterCreatedAt: %s\n", i+1, coin.Symbol, coin.Address, jupiterCreatedAt)
 	}
 }
 
@@ -161,7 +161,7 @@ func mapRawCoinsToModel(rawCoins []model.RawCoin) []model.Coin {
 		fmt.Printf("DEBUG: Mapping model raw coin %s, JupiterCreatedAt: %v\n", rc.Symbol, rc.JupiterCreatedAt)
 		coins[i] = model.Coin{
 			ID:              rc.ID,
-			MintAddress:     rc.MintAddress,
+			MintAddress:     rc.Address,
 			Name:            rc.Name,
 			Symbol:          rc.Symbol,
 			Decimals:        rc.Decimals,

@@ -30,13 +30,13 @@ func (s *Service) EnrichCoinData(
 
 	// Initialize coin with basic info from initialData
 	coin := model.Coin{
-		MintAddress:            initialData.Address,
+		Address:                initialData.Address,
 		Name:                   initialData.Name,
 		Symbol:                 initialData.Symbol,
-		IconUrl:                initialData.LogoURI,
+		LogoURI:                initialData.LogoURI,
 		Price:                  initialData.Price,
-		Volume24h:              initialData.Volume24hUSD,
-		MarketCap:              initialData.MarketCap,
+		Volume24hUSD:           initialData.Volume24hUSD,
+		Marketcap:              initialData.MarketCap,
 		Tags:                   initialData.Tags,
 		Liquidity:              initialData.Liquidity,
 		Volume24hChangePercent: initialData.Volume24hChangePercent,
@@ -48,7 +48,7 @@ func (s *Service) EnrichCoinData(
 		CreatedAt:   time.Now().Format(time.RFC3339),
 		LastUpdated: time.Now().Format(time.RFC3339),
 	}
-	slog.Debug("Initialized coin with pre-fetched data", "mintAddress", initialData.Address, "name", coin.Name, "symbol", coin.Symbol, "price", coin.Price, "volume", coin.Volume24h)
+	slog.Debug("Initialized coin with pre-fetched data", "mintAddress", initialData.Address, "name", coin.Name, "symbol", coin.Symbol, "price", coin.Price, "volume", coin.Volume24hUSD)
 
 	// Jupiter info fetching removed. Relying on initial data and chain metadata.
 	// Jupiter price fetching removed. Relying on initial data.
@@ -116,7 +116,7 @@ func (s *Service) EnrichCoinData(
 
 	// NOTE: Try without resolving IPFS URLs in this service.
 	// We removed cloudflare
-	coin.ResolvedIconUrl = coin.IconUrl
+	coin.ResolvedIconUrl = coin.LogoURI
 	// coin.ResolvedIconUrl = util.StandardizeIpfsUrl(coin.IconUrl)
 	// if coin.ResolvedIconUrl != coin.IconUrl && coin.ResolvedIconUrl != "" {
 	// 	slog.Debug("Standardized IPFS URL", slog.String("original", coin.IconUrl), slog.String("resolved", coin.ResolvedIconUrl), slog.String("mintAddress", initialData.Address))
@@ -180,12 +180,12 @@ func populateIconFromMetadata(coin *model.Coin, metadata map[string]any) {
 	if metadata == nil {
 		return
 	}
-	// Let initialIconURL (passed as parameter) take precedence. Only use metadata image if initialIconURL was empty (coin.IconUrl is empty).
-	if coin.IconUrl == "" {
+	// Let initialIconURL (passed as parameter) take precedence. Only use metadata image if initialIconURL was empty (coin.LogoURI is empty).
+	if coin.LogoURI == "" {
 		if image, ok := metadata["image"].(string); ok && image != "" {
-			coin.IconUrl = image
+			coin.LogoURI = image
 		} else if logoURI, ok := metadata["logoURI"].(string); ok && logoURI != "" { // Check another common key
-			coin.IconUrl = logoURI
+			coin.LogoURI = logoURI
 		}
 	}
 }
@@ -270,7 +270,7 @@ func cleanSocialLink(link string, expectedDomain string) string {
 	}
 	// If it's just a handle, prepend the base URL
 	if !strings.Contains(link, "/") && !strings.Contains(link, ".") {
-		if expectedDomain == "twitter.com" {
+		if expectedDomain == "twitter.com" || expectedDomain == "x.com" {
 			return "https://twitter.com/" + strings.TrimPrefix(link, "@")
 		}
 		if expectedDomain == "t.me" {

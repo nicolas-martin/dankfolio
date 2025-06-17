@@ -132,24 +132,23 @@ type CoinListInfo struct {
 // convert to model.Coin
 func (t *CoinListInfo) ToModelCoin() *model.Coin {
 	return &model.Coin{
-		MintAddress: t.Address,
-		Name:        t.Name,
-		Symbol:      t.Symbol,
-		Decimals:    t.Decimals,
-		Description: "",
-		IconUrl:     t.LogoURI,
-		Tags:        t.Tags,
-		Price:       t.PriceUSD,
-		Change24h:   t.Change24h,
-		MarketCap:   t.MarketCapUSD,
-		Volume24h:   t.Volume24h,
-		Website:     "",
-		Twitter:     "",
-		Telegram:    "",
-		Discord:     "",
-		CreatedAt:   "",
-		LastUpdated: "",
-		IsTrending:  false,
+		Address:               t.Address,
+		Name:                  t.Name,
+		Symbol:                t.Symbol,
+		Decimals:              t.Decimals,
+		Description:           "",
+		LogoURI:               t.LogoURI,
+		Tags:                  t.Tags,
+		Price:                 t.PriceUSD,
+		Price24hChangePercent: t.Change24h,
+		Marketcap:             t.MarketCapUSD,
+		Volume24hUSD:          t.Volume24h,
+		Website:               "",
+		Twitter:               "",
+		Telegram:              "",
+		Discord:               "",
+		CreatedAt:             "",
+		LastUpdated:           "",
 	}
 }
 
@@ -161,7 +160,7 @@ func (t *CoinListInfo) ToRawCoin() *model.RawCoin {
 	}
 
 	return &model.RawCoin{
-		MintAddress:      t.Address,
+		Address:      t.Address,
 		Name:             t.Name,
 		Symbol:           t.Symbol,
 		Decimals:         t.Decimals,
@@ -218,7 +217,7 @@ func (t *NewTokenInfo) ToRawCoin() *model.RawCoin {
 	}
 
 	return &model.RawCoin{
-		MintAddress:      t.Mint, // Use Mint field instead of Address
+		Address:      t.Mint, // Use Mint field instead of Address
 		Name:             t.Name,
 		Symbol:           t.Symbol,
 		Decimals:         t.Decimals,
@@ -231,24 +230,23 @@ func (t *NewTokenInfo) ToRawCoin() *model.RawCoin {
 // ToModelCoin converts NewTokenInfo to model.Coin
 func (t *NewTokenInfo) ToModelCoin() *model.Coin {
 	return &model.Coin{
-		MintAddress: t.Mint, // Use Mint field instead of Address
-		Name:        t.Name,
-		Symbol:      t.Symbol,
-		Decimals:    t.Decimals,
-		Description: "",
-		IconUrl:     t.LogoURI,  // Use LogoURI field
-		Tags:        []string{}, // New tokens don't have tags initially
-		Price:       0,          // Price not available in new tokens endpoint
-		Change24h:   0,
-		MarketCap:   0,
-		Volume24h:   0,
-		Website:     "",
-		Twitter:     "",
-		Telegram:    "",
-		Discord:     "",
-		CreatedAt:   "",
-		LastUpdated: "",
-		IsTrending:  false,
+		Address:               t.Mint, // Use Mint field instead of Address
+		Name:                  t.Name,
+		Symbol:                t.Symbol,
+		Decimals:              t.Decimals,
+		Description:           "",
+		LogoURI:               t.LogoURI,  // Use LogoURI field
+		Tags:                  []string{}, // New tokens don't have tags initially
+		Price:                 0,          // Price not available in new tokens endpoint
+		Price24hChangePercent: 0,
+		Marketcap:             0,
+		Volume24hUSD:          0,
+		Website:               "",
+		Twitter:               "",
+		Telegram:              "",
+		Discord:               "",
+		CreatedAt:             "",
+		LastUpdated:           "",
 	}
 }
 
