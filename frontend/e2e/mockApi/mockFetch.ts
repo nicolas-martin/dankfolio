@@ -62,6 +62,48 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 	});
 }
 
+// New RPC method handlers
+async function handleGetNewCoins(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const limit = requestData.limit || 20;
+	const offset = requestData.offset || 0;
+	
+	// Return new coins with pagination
+	const paginatedCoins = MOCK_NEW_COINS.slice(offset, offset + limit);
+	
+	return create(GetAvailableCoinsResponseSchema, {
+		coins: paginatedCoins,
+		totalCount: MOCK_NEW_COINS.length,
+	});
+}
+
+async function handleGetTrendingCoins(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const limit = requestData.limit || 20;
+	const offset = requestData.offset || 0;
+	
+	// Return trending coins with pagination
+	const paginatedCoins = MOCK_TRENDING_COINS.slice(offset, offset + limit);
+	
+	return create(GetAvailableCoinsResponseSchema, {
+		coins: paginatedCoins,
+		totalCount: MOCK_TRENDING_COINS.length,
+	});
+}
+
+async function handleGetTopGainersCoins(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const limit = requestData.limit || 20;
+	const offset = requestData.offset || 0;
+	
+	// Return top gainer coins with pagination
+	const paginatedCoins = MOCK_TOP_GAINER_COINS.slice(offset, offset + limit);
+	
+	return create(GetAvailableCoinsResponseSchema, {
+		coins: paginatedCoins,
+		totalCount: MOCK_TOP_GAINER_COINS.length,
+	});
+}
 
 async function handleSearchCoins(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
@@ -339,6 +381,9 @@ async function handleListTrades(_options?: FetchInit) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> } = {
 	'/dankfolio.v1.coinservice/getavailablecoins': handleGetAvailableCoins,
+	'/dankfolio.v1.coinservice/getnewcoins': handleGetNewCoins,
+	'/dankfolio.v1.coinservice/gettrendingcoins': handleGetTrendingCoins,
+	'/dankfolio.v1.coinservice/gettopgainerscoins': handleGetTopGainersCoins,
 	'/dankfolio.v1.coinservice/search': handleSearchCoins, // Proper proto endpoint
 	'/dankfolio.v1.coinservice/searchcoins': handleSearchCoins, // Legacy endpoint for compatibility
 	'/dankfolio.v1.coinservice/searchcoinbymint': handleSearchCoinByMint,
