@@ -5,24 +5,31 @@ import { grpcApi } from '@services/grpcApi';
 import type { Coin } from '@services/grpc/model';
 
 interface CoinState {
+	availableCoins: Coin[];
 	newCoins: Coin[];
 	trendingCoins: Coin[];
 	topGainersCoins: Coin[];
+	coinMap: Record<string, Coin>;
 	newCoinsLoading: boolean;
 	trendingCoinsLoading: boolean;
 	topGainersCoinsLoading: boolean;
 	newCoinsError?: Error;
 	trendingCoinsError?: Error;
 	topGainersCoinsError?: Error;
+	fetchAvailableCoins: (trendingOnly?: boolean) => Promise<void>;
 	fetchNewCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchTrendingCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchTopGainersCoins: (limit?: number, offset?: number) => Promise<void>;
+	getCoinByID: (mintAddress: string, forceRefresh?: boolean) => Promise<Coin | null>;
+	setCoin: (coin: Coin) => void;
 }
 
-export const useCoinStore = create<CoinState>((set) => ({
+export const useCoinStore = create<CoinState>((set, get) => ({
+	availableCoins: [],
 	newCoins: [],
 	trendingCoins: [],
 	topGainersCoins: [],
+	coinMap: {},
 	newCoinsLoading: false,
 	trendingCoinsLoading: false,
 	topGainersCoinsLoading: false,
@@ -30,14 +37,29 @@ export const useCoinStore = create<CoinState>((set) => ({
 	trendingCoinsError: undefined,
 	topGainersCoinsError: undefined,
 
+	fetchAvailableCoins: async (trendingOnly?: boolean) => {
+		try {
+			const coins = await grpcApi.getAvailableCoins(trendingOnly);
+			// Update coinMap with the fetched coins
+			const coinMap = coins.reduce((acc: Record<string, Coin>, coin: Coin) => {
+				acc[coin.mintAddress] = coin;
+				return acc;
+			}, {} as Record<string, Coin>);
+			set({ availableCoins: coins, coinMap });
+		} catch (error: unknown) {
+			console.error('Failed to fetch available coins:', error);
+		}
+	},
+
 	fetchNewCoins: async (limit = 20, offset = 0) => {
 		set({ newCoinsLoading: true, newCoinsError: undefined });
 		try {
 			// Use the new direct grpcApi method
 			const coins = await grpcApi.getNewCoins(limit, offset);
 			set({ newCoins: coins, newCoinsLoading: false });
-		} catch (error: any) {
-			set({ newCoinsError: error, newCoinsLoading: false });
+		} catch (error: unknown) {
+			const errorObj = error instanceof Error ? error : new Error('Failed to fetch new coins');
+			set({ newCoinsError: errorObj, newCoinsLoading: false });
 			console.error('Failed to fetch new coins:', error);
 		}
 	},
@@ -48,8 +70,9 @@ export const useCoinStore = create<CoinState>((set) => ({
 			// Use the new direct grpcApi method
 			const coins = await grpcApi.getTrendingCoins(limit, offset);
 			set({ trendingCoins: coins, trendingCoinsLoading: false });
-		} catch (error: any) {
-			set({ trendingCoinsError: error, trendingCoinsLoading: false });
+		} catch (error: unknown) {
+			const errorObj = error instanceof Error ? error : new Error('Failed to fetch trending coins');
+			set({ trendingCoinsError: errorObj, trendingCoinsLoading: false });
 			console.error('Failed to fetch trending coins:', error);
 		}
 	},
@@ -60,9 +83,44 @@ export const useCoinStore = create<CoinState>((set) => ({
 			// Use the new direct grpcApi method
 			const coins = await grpcApi.getTopGainersCoins(limit, offset);
 			set({ topGainersCoins: coins, topGainersCoinsLoading: false });
-		} catch (error: any) {
-			set({ topGainersCoinsError: error, topGainersCoinsLoading: false });
+		} catch (error: unknown) {
+			const errorObj = error instanceof Error ? error : new Error('Failed to fetch top gainers coins');
+			set({ topGainersCoinsError: errorObj, topGainersCoinsLoading: false });
 			console.error('Failed to fetch top gainers coins:', error);
+		}
+	},
+
+	setCoin: (coin: Coin) => set(state => ({
+		coinMap: { ...state.coinMap, [coin.mintAddress]: coin }
+	})),
+
+	getCoinByID: async (mintAddress: string, forceRefresh: boolean = false) => {
+		console.log(`🔄 [CoinStore] getCoinByID called for ${mintAddress} (forceRefresh: ${forceRefresh})`);
+		const state = get();
+		if (!forceRefresh && state.coinMap[mintAddress]) {
+			console.log("💰 [CoinStore] Found coin in state (cache hit):", {
+				mintAddress,
+				symbol: state.coinMap[mintAddress].symbol,
+				price: state.coinMap[mintAddress].price,
+				decimals: state.coinMap[mintAddress].decimals
+			});
+			return state.coinMap[mintAddress];
+		}
+
+		console.log(`⏳ [CoinStore] Fetching coin ${mintAddress} from API...`);
+		try {
+			const coin = await grpcApi.getCoinByID(mintAddress);
+			console.log("💰 [CoinStore] Fetched coin from API:", {
+				mintAddress,
+				symbol: coin.symbol,
+				price: coin.price,
+				decimals: coin.decimals
+			});
+			get().setCoin(coin);
+			return coin;
+		} catch (error) {
+			console.error(`❌ [CoinStore] Error fetching coin ${mintAddress}:`, error);
+			return null;
 		}
 	},
 }));
