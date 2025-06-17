@@ -57,7 +57,8 @@ const Trade: React.FC = () => {
 	// const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null); // Removed as unused (polledTxHash from hook is used)
 	// const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending'); // Removed as unused (currentPollingStatus from hook is used)
 	// const [pollingConfirmations, setPollingConfirmations] = useState<number>(0); // Removed as unused (currentPollingConfirmations from hook is used)
-	const [pollingError, setPollingError] = useState<string | null>(null); // This one IS used by TradeStatusModal
+	const [pollingError, setPollingError] = useState<string | null>(null);
+	const [isNavigating, setIsNavigating] = useState(false); // This one IS used by TradeStatusModal
 	// const quoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Will be managed by useDebouncedCallback
 
 	// handleUnitToggle is removed
@@ -521,10 +522,24 @@ const Trade: React.FC = () => {
 			)}
 			<TradeStatusModal
 				onClose={() => {
+					logger.breadcrumb({ category: 'ui', message: 'Trade status modal closed', data: { txHash: polledTxHash, finalStatus: currentPollingStatus } });
+
+					// Prevent double navigation
+					if (isNavigating) {
+						logger.info('[Trade] Navigation already in progress, skipping duplicate navigation');
+						return;
+					}
+
+					setIsNavigating(true);
 					setIsStatusModalVisible(false);
 					resetTxPolling(); // Reset hook state
 					// componentStopPolling(); // Replaced by resetTxPolling or hook's internal stop
 					navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
+
+					// Reset navigation flag after navigation completes
+					setTimeout(() => {
+						setIsNavigating(false);
+					}, 100);
 				}}
 				isVisible={isStatusModalVisible}
 				txHash={polledTxHash} // Use txHash from hook

@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/lib/pq"
+
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
