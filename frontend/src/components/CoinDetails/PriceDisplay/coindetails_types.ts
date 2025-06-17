@@ -1,4 +1,3 @@
-
 export interface PriceDisplayProps {
 	price: number;
 	periodChange: number;
@@ -6,5 +5,6 @@ export interface PriceDisplayProps {
 	period: string;
 	resolvedIconUrl: string;
 	name?: string;
+	symbol?: string;
 	address: string;
 }

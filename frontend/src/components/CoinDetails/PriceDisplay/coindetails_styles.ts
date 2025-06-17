@@ -40,6 +40,10 @@ export const useStyles = () => {
 			fontWeight: '600',
 			marginRight: theme.spacing.sm,
 		},
+		coinInfoContainer: {
+			flex: 1,
+			justifyContent: 'center',
+		},
 		container: {
 			padding: theme.spacing.lg,
 		},
@@ -57,9 +61,10 @@ export const useStyles = () => {
 			marginRight: theme.spacing.md,
 		},
 		nameText: {
-			color: theme.colors.onSurface,
-			fontSize: theme.typography.fontSize.lg,
-			fontWeight: '600',
+			color: theme.colors.onSurfaceVariant,
+			fontSize: theme.typography.fontSize.sm,
+			fontWeight: '400',
+			marginTop: 2,
 		},
 		odometerFontStyle: { // New style
 			fontSize: theme.typography.fontSize['3xl'],
@@ -76,6 +81,11 @@ export const useStyles = () => {
 			color: theme.colors.onSurface,
 			fontSize: theme.typography.fontSize['3xl'],
 			fontWeight: 'bold',
+		},
+		symbolText: {
+			color: theme.colors.onSurface,
+			fontSize: theme.typography.fontSize.lg,
+			fontWeight: '600',
 		},
 		timestampText: {
 			color: theme.colors.onSurfaceVariant,

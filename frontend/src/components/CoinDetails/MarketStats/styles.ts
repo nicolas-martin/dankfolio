@@ -85,7 +85,6 @@ export const useStyles = () => {
 			...styles,
 			colors: theme.colors, // Return original theme.colors for consistency
 			theme,
-			trend: trend,
 		};
 	}, [theme]);
 };

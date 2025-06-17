@@ -11,7 +11,7 @@ import Odometer from '@components/Odometer';
 import ImageZoomModal from '@/components/Common/ImageZoomModal'; // Updated import path
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({
-	price, periodChange, valueChange, period, resolvedIconUrl, name, address,
+	price, periodChange, valueChange, period, resolvedIconUrl, name, symbol, address,
 }) => {
 	const styles = useStyles();
 	const [isZoomModalVisible, setIsZoomModalVisible] = useState(false); // Added state for modal
@@ -40,11 +40,18 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 							testID="price-display-coin-icon"
 						/>
 					</TouchableOpacity>
-					{name && (
-						<Text style={styles.nameText} testID="price-display-coin-name">
-							{name}
-						</Text>
-					)}
+					<View style={styles.coinInfoContainer}>
+						{symbol && (
+							<Text style={styles.symbolText} testID="price-display-coin-symbol">
+								{symbol}
+							</Text>
+						)}
+						{name && (
+							<Text style={styles.nameText} testID="price-display-coin-name">
+								{name}
+							</Text>
+						)}
+					</View>
 				</View>
 
 				{/* Address row */}
@@ -78,11 +85,18 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 						testID="price-display-coin-icon"
 					/>
 				</TouchableOpacity>
-				{name && (
-					<Text style={styles.nameText} testID="price-display-coin-name">
-						{name}
-					</Text>
-				)}
+				<View style={styles.coinInfoContainer}>
+					{symbol && (
+						<Text style={styles.symbolText} testID="price-display-coin-symbol">
+							{symbol}
+						</Text>
+					)}
+					{name && (
+						<Text style={styles.nameText} testID="price-display-coin-name">
+							{name}
+						</Text>
+					)}
+				</View>
 			</View>
 
 			{/* Address row */}
