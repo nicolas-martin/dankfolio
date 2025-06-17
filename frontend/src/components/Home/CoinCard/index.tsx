@@ -86,7 +86,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					accessible={true}
 					accessibilityRole="text"
 				>
-					{formatPrice(Number(coin.price))}
+					{coin.value !== undefined ? formatPrice(Number(coin.value)) : formatPrice(Number(coin.price))}
 				</Text>
 				{/* Optionally, add a small 24h change if space permits */}
 						{coin.price24hChangePercent !== undefined && (
@@ -159,7 +159,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					>
 						{coin.value !== undefined ? formatPrice(Number(coin.value)) : formatPrice(Number(coin.price))}
 					</Text>
-					{typeof coin.volume24hUSD === 'number' && (
+					{typeof coin.volume24hUSD === 'number' && coin.value === undefined && (
 						<Text style={styles.volume} numberOfLines={1}>
 							Vol: {formatNumber(coin.volume24hUSD, true)}
 						</Text>
