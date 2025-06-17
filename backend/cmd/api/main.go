@@ -78,13 +78,9 @@ func main() {
 	}
 	slog.Info("🔒 Firebase App Check client initialized successfully")
 
-	// Get DEV_APP_CHECK_TOKEN for development/local environments
-	devAppCheckToken := os.Getenv("DEV_APP_CHECK_TOKEN")
-	if (config.Env == "development" || config.Env == "local" || config.Env == "production-simulator") && devAppCheckToken == "" {
-		slog.Warn("DEV_APP_CHECK_TOKEN is not set. This is required for development/local/production-simulator app check bypass.")
-		// Depending on policy, you might want to exit here if the token is mandatory for these envs.
-		// For now, we'll allow it to proceed, and the middleware will block requests if the token is missing and expected.
-	} else if devAppCheckToken != "" {
+	if (config.Env == "development" || config.Env == "local" || config.Env == "production-simulator") && config.DevAppCheckToken == "" {
+		log.Fatal("DEV_APP_CHECK_TOKEN is not set. This is required for development/local/production-simulator app check bypass.")
+	} else if config.DevAppCheckToken != "" {
 		slog.Info("DEV_APP_CHECK_TOKEN is set.", "env", config.Env)
 	}
 
@@ -188,7 +184,7 @@ func main() {
 		utilitySvc,
 		appCheckClient,
 		config.Env,
-		devAppCheckToken, // Pass the token to the server
+		config.DevAppCheckToken,
 	)
 
 	slog.Debug("Debug message")
@@ -253,6 +249,7 @@ type Config struct {
 	TrendingCoinsFetchInterval time.Duration `envconfig:"TRENDING_COINS_FETCH_INTERVAL" default:"24h"`  // Default to 24 hours
 	PlatformFeeBps             int           `envconfig:"PLATFORM_FEE_BPS" required:"true"`             // Basis points for platform fee, e.g., 100 = 1%
 	PlatformFeeAccountAddress  string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS" required:"true"` // Conditionally required, handled in validation
+	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`
 }
 
 func loadConfig() *Config {
