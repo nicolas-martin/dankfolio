@@ -17,10 +17,6 @@ export const useStyles = () => {
 			flexDirection: 'row' as const,
 			alignItems: 'center' as const
 		};
-		const debugCacheButtonStyle = {
-			marginHorizontal: 16,
-			marginBottom: 16
-		};
 		const refreshControlColors = [theme.colors.primary];
 		// const colors = theme.colors; // This variable was unused
 		const styles = StyleSheet.create({
@@ -62,7 +58,6 @@ export const useStyles = () => {
 			content: {
 				flex: 1,
 			},
-			debugCacheButtonStyle: debugCacheButtonStyle,
 			emptyStateContainer: {
 				alignItems: 'center',
 				flex: 1,
@@ -223,11 +218,11 @@ export const useStyles = () => {
 				marginBottom: theme.spacing.xs,
 			},
 		});
-			return {
-		...styles,
-		colors: theme.colors, // Return original theme colors directly
-		theme,
-		refreshControlColors
-	};
+		return {
+			...styles,
+			colors: theme.colors, // Return original theme colors directly
+			theme,
+			refreshControlColors
+		};
 	}, [theme]);
 };
