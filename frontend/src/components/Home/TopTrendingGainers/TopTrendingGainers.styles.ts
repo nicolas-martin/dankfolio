@@ -6,25 +6,10 @@ import { useMemo } from 'react';
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
-
-		const trend = {
-			positive: theme.trend.positive,
-			negative: theme.trend.negative,
-			neutral: theme.trend.neutral,
-		};
-
-		// StyleSheet.create is already optimized, no need for useMemo
 		const styles = StyleSheet.create({
 			cardWrapper: {
 				marginRight: theme.spacing.sm,
 				width: 140,
-			},
-			changeContainer: {
-				alignItems: 'center',
-				flexDirection: 'row',
-				gap: 2,
-				justifyContent: 'flex-end',
-				minWidth: 35,
 			},
 			container: {
 				paddingBottom: theme.spacing['2xl'],
@@ -45,6 +30,8 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.surface,
 				borderRadius: theme.borderRadius.md,
 				elevation: 2,
+				height: 120,
+				marginRight: theme.spacing.sm,
 				padding: theme.spacing.md,
 				shadowColor: theme.colors.shadow,
 				shadowOffset: theme.shadows.sm.shadowOffset,
@@ -55,17 +42,19 @@ export const useStyles = () => {
 			placeholderIconShimmer: {
 				alignSelf: 'center',
 				borderRadius: theme.borderRadius.full,
-				height: 40,
+				height: 48,
 				marginBottom: theme.spacing.sm,
-				width: 40,
+				width: 48,
 			},
 			placeholderTextShimmerLine1: {
+				alignSelf: 'center',
 				borderRadius: theme.borderRadius.sm,
 				height: 16,
 				marginBottom: theme.spacing.xs,
 				width: '80%',
 			},
 			placeholderTextShimmerLine2: {
+				alignSelf: 'center',
 				borderRadius: theme.borderRadius.sm,
 				height: 14,
 				width: '60%',
@@ -90,43 +79,11 @@ export const useStyles = () => {
 				marginLeft: theme.spacing.lg,
 				width: 200,
 			},
-			trendingCard: {
-				alignItems: 'center',
-				backgroundColor: theme.colors.surface,
-				borderRadius: theme.borderRadius.lg,
-				flexDirection: 'row',
-				gap: theme.spacing.xs / 2,
-				justifyContent: 'space-between',
-				minHeight: 60,
-				paddingHorizontal: theme.spacing.sm,
-				paddingVertical: theme.spacing.sm,
-				width: 140,
-			},
-			trendingCardStyle: {
-				backgroundColor: theme.colors.surface,
-				borderRadius: theme.borderRadius.lg,
-				paddingHorizontal: theme.spacing.sm,
-				paddingVertical: theme.spacing.xs,
-			},
-			trendingChange: {
-				fontFamily: theme.typography.fontFamily.medium,
-				fontSize: 10,
-				textAlign: 'right',
-			},
-			trendingSymbol: {
-				color: theme.colors.onSurface,
-				flex: 1,
-				fontFamily: theme.typography.fontFamily.semiBold,
-				fontSize: 12,
-				marginLeft: theme.spacing.xs,
-				textAlign: 'left',
-			},
 		});
 		return {
 			...styles,
-			colors: theme.colors, // Return original theme.colors for consistency
+			colors: theme.colors,
 			theme,
-			trend: trend,
 		};
 	}, [theme]);
 };

@@ -7,4 +7,6 @@ export interface HorizontalTickerCardProps {
 	onPress: (coin: Coin) => void;
 	testIdPrefix?: 'trending-coin' | 'new-coin'; // Controls testID prefix
 	containerStyle?: StyleProp<ViewStyle>;
+	showPriceChange?: boolean; // New prop to show price change instead of time ago
+	size?: 'small' | 'large'; // New prop to control card size
 }

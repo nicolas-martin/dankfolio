@@ -24,7 +24,7 @@ interface NewCoinsProps {
 const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoading: isLoadingNewlyListed }) => {
 	const styles = useStyles();
 	const navigation = useNavigation<NewCoinsNavigationProp>();
-	const CARD_WIDTH = 148; // cardWrapper width (140) + marginRight (8)
+	const CARD_WIDTH = 88; // cardWrapper width (80) + marginRight (8)
 
 	// Create duplicated data for infinite scrolling
 	const scrollData = React.useMemo(() => {
@@ -40,7 +40,7 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 		logger.breadcrumb({
 			category: 'navigation',
 			message: 'Navigating to CoinDetail from NewCoins (immediate navigation)',
-			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress },
+			data: { coinSymbol: coin.symbol, coinMint: coin.address },
 		});
 
 		navigation.navigate('CoinDetail', {
@@ -57,34 +57,15 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 		index,
 	}), [CARD_WIDTH]);
 
-	// Placeholder component for loading horizontal ticker cards
+	// Placeholder component for loading small horizontal cards
 	const renderPlaceholderCard = () => {
 		return (
 			<View style={styles.placeholderCard}>
-				<ShimmerPlaceholder
-					width={48}
-					height={48}
-					borderRadius={24}
-					style={styles.placeholderIconShimmer}
-				/>
-				<ShimmerPlaceholder
-					width="70%"
-					height={14}
-					borderRadius={4}
-					style={styles.placeholderTextShimmerLine1}
-				/>
-				<ShimmerPlaceholder
-					width="50%"
-					height={12}
-					borderRadius={4}
-					style={styles.placeholderTextShimmerLine1}
-				/>
-				<ShimmerPlaceholder
-					width="40%"
-					height={12}
-					borderRadius={4}
-					style={styles.placeholderTextShimmerLine2}
-				/>
+				<ShimmerPlaceholder style={styles.placeholderIconShimmer} />
+				<View style={styles.placeholderTextContainer}>
+					<ShimmerPlaceholder style={styles.placeholderTextShimmerLine1} />
+					<ShimmerPlaceholder style={styles.placeholderTextShimmerLine2} />
+				</View>
 			</View>
 		);
 	};
@@ -96,6 +77,8 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 					coin={item}
 					onPress={handleCoinPress}
 					testIdPrefix="new-coin"
+					showPriceChange={false}
+					size="small"
 				/>
 			</View>
 		);
@@ -144,7 +127,7 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 			<Animated.FlatList
 				data={scrollData}
 				renderItem={renderItem}
-				keyExtractor={(item, index) => `${item.mintAddress}-${index}`}
+				keyExtractor={(item, index) => `${item.address}-${index}`}
 				horizontal
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={styles.listContentContainer}
