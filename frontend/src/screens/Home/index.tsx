@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
 import CoinCard from '@components/Home/CoinCard';
@@ -19,7 +19,6 @@ import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
 import { env } from '@/utils/env';
 import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
-import { debugCacheStatus, testExpoImageCache } from '@/components/Common/CachedImage/scripts';
 import { grpcApi } from '@/services/grpcApi';
 
 // Helper function to wrap grpcApi.getPriceHistory
@@ -398,25 +397,6 @@ const HomeScreen = () => {
 		/>
 	);
 
-	// Debug cache function - moved outside render function to prevent hooks order issues
-	const handleDebugCache = useCallback(async () => {
-		logger.info('[HomeScreen] 🔧 Starting enhanced cache debug...');
-
-		const sampleImageUrl = 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
-
-		// Test expo-image cache configuration
-		await testExpoImageCache(sampleImageUrl);
-
-		// Test network caching for a sample image
-		await debugCacheStatus(sampleImageUrl);
-
-		showToast({
-			type: 'info',
-			message: 'Enhanced cache debug completed - check logs',
-			duration: 3000
-		});
-	}, [showToast]);
-
 	const renderCoinsList = () => {
 		const hasTrendingCoins = availableCoins.length > 0;
 
@@ -441,19 +421,7 @@ const HomeScreen = () => {
 				}
 			>
 				{/* Debug Cache Button - Only show in development */}
-				{__DEV__ && (
-					<View style={styles.debugCacheButtonStyle}>
-						<Button
-							mode="outlined"
-							onPress={handleDebugCache}
-							icon="bug"
-							compact
-						><Text>
-								Debug Cache
-							</Text>
-						</Button>
-					</View>
-				)}
+				{/*__DEV__ && ()*\}
 
 				{/* Show placeholder for NewCoins section when initially loading */}
 				{isFirstTimeLoading ? renderPlaceholderNewCoinsSection() : <NewCoins />}
@@ -461,7 +429,7 @@ const HomeScreen = () => {
 				{/* Add TopTrendingGainers after NewCoins */}
 				{/* Consider adding a placeholder for TopTrendingGainers if isFirstTimeLoading is true */}
 				{!isFirstTimeLoading && (
-					<TopTrendingGainers 
+					<TopTrendingGainers
 						topTrendingGainers={topTrendingGainers}
 						isLoading={isLoadingTopTrendingGainers}
 					/>
