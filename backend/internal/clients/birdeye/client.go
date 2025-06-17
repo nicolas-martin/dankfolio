@@ -65,10 +65,10 @@ func (c *Client) GetTrendingTokens(ctx context.Context, params TrendingTokensPar
 
 	// Add query parameters if provided
 	if params.SortBy != "" {
-		queryParams.Add("sort_by", params.SortBy)
+		queryParams.Add("sort_by", params.SortBy.String())
 	}
 	if params.SortType != "" {
-		queryParams.Add("sort_type", params.SortType)
+		queryParams.Add("sort_type", params.SortType.String())
 	}
 	if params.Offset > 0 {
 		queryParams.Add("offset", strconv.Itoa(params.Offset))

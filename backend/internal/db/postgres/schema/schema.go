@@ -17,33 +17,32 @@ func (w Wallet) GetID() string {
 }
 
 // Coin represents the structure of the 'coins' table in the database.
+// Field names aligned with BirdEye API for consistency
 type Coin struct {
-	ID               uint64         `gorm:"primaryKey;autoIncrement;not null"`
-	MintAddress      string         `gorm:"column:mint_address;not null;uniqueIndex:idx_coins_mint_address"`
-	Name             string         `gorm:"column:name;not null"`
-	Symbol           string         `gorm:"column:symbol;not null;index:idx_coins_symbol"`
-	Decimals         int            `gorm:"column:decimals;not null"`
-	Description      string         `gorm:"column:description"`
-	IconUrl          string         `gorm:"column:icon_url"`
-	ResolvedIconUrl  string         `gorm:"column:resolved_icon_url"`
-	Tags             pq.StringArray `gorm:"column:tags;type:text[];index:idx_coins_tags,type:gin"`
-	Price            float64        `gorm:"column:price;default:0.0"`
-	Change24h        float64        `gorm:"column:change_24h;default:0.0"`
-	MarketCap        float64        `gorm:"column:market_cap;default:0.0"`
-	Volume24h        float64        `gorm:"column:volume_24h;default:0.0"`
-	Website          string         `gorm:"column:website"`
-	Twitter          string         `gorm:"column:twitter"`
-	Telegram         string         `gorm:"column:telegram"`
-	Discord          string         `gorm:"column:discord"`
-	IsTrending       bool           `gorm:"column:is_trending;default:false"`
-	Liquidity float64 `gorm:"column:liquidity;default:0.0"`
-	Volume24hChangePercent float64 `gorm:"column:volume_24h_change_percent;default:0.0"`
-	FDV float64 `gorm:"column:fdv;default:0.0"`
-	Rank int `gorm:"column:rank;default:0"`
-	Price24hChangePercent float64 `gorm:"column:price_24h_change_percent;default:0.0"`
-	CreatedAt        time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
-	LastUpdated      time.Time      `gorm:"column:last_updated;default:CURRENT_TIMESTAMP"`
-	JupiterCreatedAt *time.Time     `gorm:"column:jupiter_created_at;index"`
+	ID                     uint64         `gorm:"primaryKey;autoIncrement;not null"`
+	Address                string         `gorm:"column:address;not null;uniqueIndex:idx_coins_address"` // Was: MintAddress
+	Name                   string         `gorm:"column:name;not null"`
+	Symbol                 string         `gorm:"column:symbol;not null;index:idx_coins_symbol"`
+	Decimals               int            `gorm:"column:decimals;not null"`
+	Description            string         `gorm:"column:description"`
+	LogoURI                string         `gorm:"column:logo_uri"`          // Was: IconUrl (BirdEye uses logoURI)
+	ResolvedIconUrl        string         `gorm:"column:resolved_icon_url"` // Keep for our internal optimization
+	Tags                   pq.StringArray `gorm:"column:tags;type:text[];index:idx_coins_tags,type:gin"`
+	Price                  float64        `gorm:"column:price;default:0.0"`
+	Price24hChangePercent  float64        `gorm:"column:price_24h_change_percent;default:0.0"` // Keep this one (BirdEye standard)
+	Marketcap              float64        `gorm:"column:marketcap;default:0.0"`                // Was: MarketCap (BirdEye uses lowercase)
+	Volume24hUSD           float64        `gorm:"column:volume_24h_usd;default:0.0"`           // Was: Volume24h (BirdEye uses volume24hUSD)
+	Volume24hChangePercent float64        `gorm:"column:volume_24h_change_percent;default:0.0"`
+	Liquidity              float64        `gorm:"column:liquidity;default:0.0"`
+	FDV                    float64        `gorm:"column:fdv;default:0.0"` // Keep uppercase (BirdEye uses FDV)
+	Rank                   int            `gorm:"column:rank;default:0"`
+	Website                string         `gorm:"column:website"`
+	Twitter                string         `gorm:"column:twitter"`
+	Telegram               string         `gorm:"column:telegram"`
+	Discord                string         `gorm:"column:discord"`
+	CreatedAt              time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
+	LastUpdated            time.Time      `gorm:"column:last_updated;default:CURRENT_TIMESTAMP"`
+	JupiterCreatedAt       *time.Time     `gorm:"column:jupiter_created_at;index"`
 }
 
 // TableName overrides the default table name generation.
@@ -76,7 +75,7 @@ func (c Coin) GetID() string {
 // RawCoin represents the structure of the 'raw_coins' table for raw Jupiter tokens.
 type RawCoin struct {
 	ID               uint64    `gorm:"primaryKey;autoIncrement;not null"`
-	MintAddress      string    `gorm:"column:mint_address;not null;uniqueIndex:idx_raw_coins_mint_address"`
+	Address          string    `gorm:"column:address;not null;uniqueIndex:idx_raw_coins_address"`
 	Symbol           string    `gorm:"column:symbol;not null"`
 	Name             string    `gorm:"column:name;not null"`
 	Decimals         int       `gorm:"column:decimals;not null"`

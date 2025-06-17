@@ -1,17 +1,24 @@
 export interface Coin {
-	mintAddress: string;
+	address: string;                    // Was: mintAddress (aligned with BirdEye)
 	name: string;
 	symbol: string;
 	decimals: number;
 	description: string;
-	resolvedIconUrl?: string;
+	logoURI: string;                    // Was: iconUrl (aligned with BirdEye)
+	resolvedIconUrl?: string;           // Keep for our internal optimization
 	tags: string[];
 	price: number;
-	dailyVolume: number;
+	price24hChangePercent?: number;     // BirdEye standard
+	marketcap?: number;                 // BirdEye uses lowercase
+	volume24hUSD?: number;              // BirdEye standard (was: dailyVolume)
+	volume24hChangePercent?: number;    // BirdEye standard
+	liquidity?: number;
+	fdv?: number;                       // BirdEye uses uppercase
+	rank?: number;
 	website?: string;
 	twitter?: string;
 	telegram?: string;
-	coingeckoId?: string;
+	discord?: string;                   // Add discord field
 	createdAt?: Date;
 	lastUpdated?: Date;
 	jupiterListedAt?: Date;

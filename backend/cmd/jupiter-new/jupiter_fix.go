@@ -110,7 +110,7 @@ func main() {
 			// Convert to RawCoin and check
 			rawCoin := firstCoin.ToRawCoin()
 			log.Printf("   🔍 Converted RawCoin:")
-			log.Printf("      MintAddress: '%s'", rawCoin.MintAddress)
+			log.Printf("      MintAddress: '%s'", rawCoin.Address)
 			log.Printf("      Name: '%s'", rawCoin.Name)
 			log.Printf("      Symbol: '%s'", rawCoin.Symbol)
 		}

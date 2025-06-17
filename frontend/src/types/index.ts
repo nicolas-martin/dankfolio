@@ -3,33 +3,32 @@ import { Keypair } from '@solana/web3.js';
 import type { RootStackParamList } from './navigation';
 
 export interface Coin {
-	mintAddress: string;
+	address: string;                    // Was: mintAddress (aligned with BirdEye)
 	name: string;
 	symbol: string;
 	decimals: number;
 	description: string;
-	resolvedIconUrl?: string;
+	logoURI: string;                    // Was: iconUrl (aligned with BirdEye)
+	resolvedIconUrl?: string;           // Keep for our internal optimization
 	tags: string[];
 	price: number;
-	balance?: number;
-	dailyVolume: number;
-	change24h?: number;
+	balance?: number;                   // Keep for frontend calculations
+	price24hChangePercent?: number;     // BirdEye standard (was: change24h)
+	marketcap?: number;                 // BirdEye uses lowercase (was: marketCap)
+	volume24hUSD?: number;              // BirdEye standard (was: dailyVolume)
+	volume24hChangePercent?: number;    // BirdEye standard
+	liquidity?: number;
+	fdv?: number;                       // BirdEye uses uppercase
+	rank?: number;
 	website?: string;
 	twitter?: string;
 	telegram?: string;
-	coingeckoId?: string;
+	discord?: string;                   // Add discord field
 	createdAt?: Date;
 	lastUpdated?: Date;
-	value?: number;
-	percentage?: number;
+	value?: number;                     // Keep for frontend calculations
+	percentage?: number;                // Keep for frontend calculations
 	jupiterListedAt?: Date;
-	// New fields from proto
-	volume24hUsd?: number;
-	liquidity?: number;
-	volume24hChangePercent?: number;
-	fdv?: number;
-	marketCap?: number;
-	rank?: number;
 }
 
 /** Base58 encoded private key string with type safety */

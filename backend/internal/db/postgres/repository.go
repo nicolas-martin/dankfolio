@@ -207,9 +207,9 @@ func (r *Repository[S, M]) BulkUpsert(ctx context.Context, items *[]M) (int64, e
 
 	switch any(s).(type) {
 	case schema.Coin:
-		conflictColumns = []clause.Column{{Name: "mint_address"}}
+		conflictColumns = []clause.Column{{Name: "address"}}
 	case schema.RawCoin:
-		conflictColumns = []clause.Column{{Name: "mint_address"}}
+		conflictColumns = []clause.Column{{Name: "address"}}
 	// model.ApiStat is not expected in BulkUpsert with PK conflict, it has its own unique index.
 	// If it were, its PK is 'id'.
 	default:
@@ -301,29 +301,27 @@ func (r *Repository[S, M]) toModel(s S) any {
 	switch v := any(s).(type) {
 	case schema.Coin:
 		return &model.Coin{
-			ID:                     v.ID, // Added
-			MintAddress:            v.MintAddress,
+			ID:                     v.ID,
+			Address:                v.Address, // Map Address field
 			Name:                   v.Name,
 			Symbol:                 v.Symbol,
 			Decimals:               v.Decimals,
 			Description:            v.Description,
-			IconUrl:                v.IconUrl,
+			LogoURI:                v.LogoURI, // Map LogoURI field
 			ResolvedIconUrl:        v.ResolvedIconUrl,
 			Tags:                   v.Tags,
 			Price:                  v.Price,
-			Change24h:              v.Change24h,
-			MarketCap:              v.MarketCap,
-			Volume24h:              v.Volume24h,
-			Liquidity:              v.Liquidity,
+			Price24hChangePercent:  v.Price24hChangePercent, // BirdEye standard
+			Marketcap:              v.Marketcap,             // BirdEye lowercase
+			Volume24hUSD:           v.Volume24hUSD,          // BirdEye standard
 			Volume24hChangePercent: v.Volume24hChangePercent,
+			Liquidity:              v.Liquidity,
 			FDV:                    v.FDV,
 			Rank:                   v.Rank,
-			Price24hChangePercent:  v.Price24hChangePercent,
 			Website:                v.Website,
 			Twitter:                v.Twitter,
 			Telegram:               v.Telegram,
 			Discord:                v.Discord,
-			IsTrending:             v.IsTrending,
 			CreatedAt:              v.CreatedAt.Format(time.RFC3339),
 			LastUpdated:            v.LastUpdated.Format(time.RFC3339),
 			JupiterListedAt:        v.JupiterCreatedAt, // Map JupiterCreatedAt to JupiterListedAt
@@ -363,7 +361,7 @@ func (r *Repository[S, M]) toModel(s S) any {
 	case schema.RawCoin:
 		return &model.RawCoin{
 			ID:               v.ID, // Added
-			MintAddress:      v.MintAddress,
+			Address:          v.Address,
 			Symbol:           v.Symbol,
 			Name:             v.Name,
 			Decimals:         v.Decimals,
@@ -396,28 +394,26 @@ func (r *Repository[S, M]) fromModel(m M) any {
 	case model.Coin:
 		sCoin := &schema.Coin{
 			// ID is not set here if v.ID is 0 (new record), GORM handles auto-increment
-			MintAddress:            v.MintAddress,
+			Address:                v.Address, // Map Address field
 			Name:                   v.Name,
 			Symbol:                 v.Symbol,
 			Decimals:               v.Decimals,
 			Description:            v.Description,
-			IconUrl:                v.IconUrl,
+			LogoURI:                v.LogoURI, // Map LogoURI field
 			ResolvedIconUrl:        v.ResolvedIconUrl,
 			Tags:                   v.Tags,
 			Price:                  v.Price,
-			Change24h:              v.Change24h,
-			MarketCap:              v.MarketCap,
-			Volume24h:              v.Volume24h,
-			Liquidity:              v.Liquidity,
+			Price24hChangePercent:  v.Price24hChangePercent, // BirdEye standard
+			Marketcap:              v.Marketcap,             // BirdEye lowercase
+			Volume24hUSD:           v.Volume24hUSD,          // BirdEye standard
 			Volume24hChangePercent: v.Volume24hChangePercent,
+			Liquidity:              v.Liquidity,
 			FDV:                    v.FDV,
 			Rank:                   v.Rank,
-			Price24hChangePercent:  v.Price24hChangePercent,
 			Website:                v.Website,
 			Twitter:                v.Twitter,
 			Telegram:               v.Telegram,
 			Discord:                v.Discord,
-			IsTrending:             v.IsTrending,
 			LastUpdated:            time.Now(),
 			JupiterCreatedAt:       v.JupiterListedAt, // Map JupiterListedAt to JupiterCreatedAt
 		}
@@ -465,7 +461,7 @@ func (r *Repository[S, M]) fromModel(m M) any {
 		// and schema.RawCoin expects *time.Time for its JupiterCreatedAt field.
 		sRawCoin := &schema.RawCoin{
 			// ID is not set here if v.ID is 0 (new record)
-			MintAddress:      v.MintAddress,
+			Address:          v.Address,
 			Symbol:           v.Symbol,
 			Name:             v.Name,
 			Decimals:         v.Decimals,
@@ -503,9 +499,9 @@ func getColumnNames(data any) []string {
 	case *schema.Coin:
 		// Explicitly list columns to update, excluding PK 'id' and 'created_at'
 		return []string{
-			"mint_address", "name", "symbol", "decimals", "description", "icon_url", "resolved_icon_url", "tags",
-			"price", "change_24h", "market_cap", "volume_24h", "website",
-			"twitter", "telegram", "discord", "is_trending", "last_updated", "jupiter_created_at", "liquidity", "volume_24h_change_percent", "fdv", "rank", "price_24h_change_percent",
+			"address", "name", "symbol", "decimals", "description", "logo_uri", "resolved_icon_url", "tags",
+			"price", "price_24h_change_percent", "marketcap", "volume_24h_usd", "volume_24h_change_percent",
+			"liquidity", "fdv", "rank", "website", "twitter", "telegram", "discord", "last_updated", "jupiter_created_at",
 		}
 	case *schema.Trade:
 		// Explicitly list columns to update, excluding PK 'id'

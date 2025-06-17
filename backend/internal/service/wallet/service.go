@@ -287,7 +287,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	if coinMintAddress == "" || coinMintAddress == model.SolMint { // Native SOL transfer
 		finalFromCoinMint = model.SolMint
 		finalToCoinMint = model.SolMint
-		solCoinModel, serviceErr := s.coinService.GetCoinByMintAddress(ctx, model.SolMint)
+		solCoinModel, serviceErr := s.coinService.GetCoinByAddress(ctx, model.SolMint)
 		if serviceErr != nil {
 			return "", fmt.Errorf("failed to get SOL coin details for trade record: %w", serviceErr)
 		}
@@ -297,7 +297,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 	} else { // SPL Token transfer
 		finalFromCoinMint = coinMintAddress
 		finalToCoinMint = coinMintAddress
-		coinModel, serviceErr := s.coinService.GetCoinByMintAddress(ctx, coinMintAddress)
+		coinModel, serviceErr := s.coinService.GetCoinByAddress(ctx, coinMintAddress)
 		if serviceErr != nil {
 			return "", fmt.Errorf("coin not found for mint %s for trade record: %w", coinMintAddress, serviceErr)
 		}

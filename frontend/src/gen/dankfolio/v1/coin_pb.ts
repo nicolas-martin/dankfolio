@@ -12,18 +12,21 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/coin.proto.
  */
 export const file_dankfolio_v1_coin: GenFile = /*@__PURE__*/
-  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIpMHCgRDb2luEhQKDG1pbnRfYWRkcmVzcxgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBnN5bWJvbBgDIAEoCRIQCghkZWNpbWFscxgEIAEoBRITCgtkZXNjcmlwdGlvbhgFIAEoCRIQCghpY29uX3VybBgGIAEoCRIeChFyZXNvbHZlZF9pY29uX3VybBgHIAEoCUgAiAEBEgwKBHRhZ3MYCCADKAkSDQoFcHJpY2UYCSABKAESFAoMZGFpbHlfdm9sdW1lGAogASgBEhQKB3dlYnNpdGUYCyABKAlIAYgBARIUCgd0d2l0dGVyGAwgASgJSAKIAQESFQoIdGVsZWdyYW0YDSABKAlIA4gBARIZCgxjb2luZ2Vja29faWQYDiABKAlIBIgBARIuCgpjcmVhdGVkX2F0GA8gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1CgxsYXN0X3VwZGF0ZWQYECABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wSAWIAQESEwoLaXNfdHJlbmRpbmcYESABKAgSOgoRanVwaXRlcl9saXN0ZWRfYXQYEiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wSAaIAQESKAobcHJpY2VfY2hhbmdlX3BlcmNlbnRhZ2VfMjRoGBMgASgBSAeIAQESGwoOdm9sdW1lXzI0aF91c2QYFCABKAFICIgBARIWCglsaXF1aWRpdHkYFSABKAFICYgBARImChl2b2x1bWVfMjRoX2NoYW5nZV9wZXJjZW50GBYgASgBSAqIAQESEAoDZmR2GBcgASgBSAuIAQESFwoKbWFya2V0X2NhcBgYIAEoAUgMiAEBEhEKBHJhbmsYGSABKAVIDYgBAUIUChJfcmVzb2x2ZWRfaWNvbl91cmxCCgoIX3dlYnNpdGVCCgoIX3R3aXR0ZXJCCwoJX3RlbGVncmFtQg8KDV9jb2luZ2Vja29faWRCDwoNX2xhc3RfdXBkYXRlZEIUChJfanVwaXRlcl9saXN0ZWRfYXRCHgocX3ByaWNlX2NoYW5nZV9wZXJjZW50YWdlXzI0aEIRCg9fdm9sdW1lXzI0aF91c2RCDAoKX2xpcXVpZGl0eUIcChpfdm9sdW1lXzI0aF9jaGFuZ2VfcGVyY2VudEIGCgRfZmR2Qg0KC19tYXJrZXRfY2FwQgcKBV9yYW5rIjkKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIioKEkdldENvaW5CeUlEUmVxdWVzdBIUCgxtaW50X2FkZHJlc3MYASABKAkiLwoXU2VhcmNoQ29pbkJ5TWludFJlcXVlc3QSFAoMbWludF9hZGRyZXNzGAEgASgJIjwKGFNlYXJjaENvaW5CeU1pbnRSZXNwb25zZRIgCgRjb2luGAEgASgLMhIuZGFua2ZvbGlvLnYxLkNvaW4iFAoSR2V0QWxsQ29pbnNSZXF1ZXN0IjgKE0dldEFsbENvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiKkAQoNU2VhcmNoUmVxdWVzdBINCgVxdWVyeRgBIAEoCRIMCgR0YWdzGAIgAygJEhYKDm1pbl92b2x1bWVfMjRoGAMgASgBEg0KBWxpbWl0GAQgASgFEg4KBm9mZnNldBgFIAEoBRIsCgdzb3J0X2J5GAYgASgOMhsuZGFua2ZvbGlvLnYxLkNvaW5Tb3J0RmllbGQSEQoJc29ydF9kZXNjGAcgASgIIkgKDlNlYXJjaFJlc3BvbnNlEiEKBWNvaW5zGAEgAygLMhIuZGFua2ZvbGlvLnYxLkNvaW4SEwoLdG90YWxfY291bnQYAiABKAUiUgoSR2V0TmV3Q29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQiVwoXR2V0VHJlbmRpbmdDb2luc1JlcXVlc3QSEgoFbGltaXQYASABKAVIAIgBARITCgZvZmZzZXQYAiABKAVIAYgBAUIICgZfbGltaXRCCQoHX29mZnNldCJZChlHZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQq/gEKDUNvaW5Tb3J0RmllbGQSHwobQ09JTl9TT1JUX0ZJRUxEX1VOU1BFQ0lGSUVEEAASLworQ09JTl9TT1JUX0ZJRUxEX1BSSUNFX0NIQU5HRV9QRVJDRU5UQUdFXzI0SBABEiUKIUNPSU5fU09SVF9GSUVMRF9KVVBJVEVSX0xJU1RFRF9BVBACEh4KGkNPSU5fU09SVF9GSUVMRF9WT0xVTUVfMjRIEAMSGAoUQ09JTl9TT1JUX0ZJRUxEX05BTUUQBBIaChZDT0lOX1NPUlRfRklFTERfU1lNQk9MEAUSHgoaQ09JTl9TT1JUX0ZJRUxEX01BUktFVF9DQVAQBjLaBQoLQ29pblNlcnZpY2USZAoRR2V0QXZhaWxhYmxlQ29pbnMSJi5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USQwoLR2V0Q29pbkJ5SUQSIC5kYW5rZm9saW8udjEuR2V0Q29pbkJ5SURSZXF1ZXN0GhIuZGFua2ZvbGlvLnYxLkNvaW4SYQoQU2VhcmNoQ29pbkJ5TWludBIlLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlNaW50UmVxdWVzdBomLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlNaW50UmVzcG9uc2USUgoLR2V0QWxsQ29pbnMSIC5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLkdldEFsbENvaW5zUmVzcG9uc2USQwoGU2VhcmNoEhsuZGFua2ZvbGlvLnYxLlNlYXJjaFJlcXVlc3QaHC5kYW5rZm9saW8udjEuU2VhcmNoUmVzcG9uc2USWAoLR2V0TmV3Q29pbnMSIC5kYW5rZm9saW8udjEuR2V0TmV3Q29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USYgoQR2V0VHJlbmRpbmdDb2lucxIlLmRhbmtmb2xpby52MS5HZXRUcmVuZGluZ0NvaW5zUmVxdWVzdBonLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1Jlc3BvbnNlEmYKEkdldFRvcEdhaW5lcnNDb2lucxInLmRhbmtmb2xpby52MS5HZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2VCtQEKEGNvbS5kYW5rZm9saW8udjFCCUNvaW5Qcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIssGCgRDb2luEg8KB2FkZHJlc3MYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZzeW1ib2wYAyABKAkSEAoIZGVjaW1hbHMYBCABKAUSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIbG9nb191cmkYBiABKAkSHgoRcmVzb2x2ZWRfaWNvbl91cmwYByABKAlIAIgBARIMCgR0YWdzGAggAygJEg0KBXByaWNlGAkgASgBEiQKF3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50GAogASgBSAGIAQESFgoJbWFya2V0Y2FwGAsgASgBSAKIAQESGgoNdm9sdW1lMjRoX3VzZBgMIAEoAUgDiAEBEiUKGHZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudBgNIAEoAUgEiAEBEhYKCWxpcXVpZGl0eRgOIAEoAUgFiAEBEhAKA2ZkdhgPIAEoAUgGiAEBEhEKBHJhbmsYECABKAVIB4gBARIUCgd3ZWJzaXRlGBEgASgJSAiIAQESFAoHdHdpdHRlchgSIAEoCUgJiAEBEhUKCHRlbGVncmFtGBMgASgJSAqIAQESFAoHZGlzY29yZBgUIAEoCUgLiAEBEi4KCmNyZWF0ZWRfYXQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjUKDGxhc3RfdXBkYXRlZBgWIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDIgBARI6ChFqdXBpdGVyX2xpc3RlZF9hdBgXIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDYgBAUIUChJfcmVzb2x2ZWRfaWNvbl91cmxCGgoYX3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50QgwKCl9tYXJrZXRjYXBCEAoOX3ZvbHVtZTI0aF91c2RCGwoZX3ZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudEIMCgpfbGlxdWlkaXR5QgYKBF9mZHZCBwoFX3JhbmtCCgoIX3dlYnNpdGVCCgoIX3R3aXR0ZXJCCwoJX3RlbGVncmFtQgoKCF9kaXNjb3JkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjkKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIioKEkdldENvaW5CeUlEUmVxdWVzdBIUCgxtaW50X2FkZHJlc3MYASABKAkiLwoXU2VhcmNoQ29pbkJ5TWludFJlcXVlc3QSFAoMbWludF9hZGRyZXNzGAEgASgJIjwKGFNlYXJjaENvaW5CeU1pbnRSZXNwb25zZRIgCgRjb2luGAEgASgLMhIuZGFua2ZvbGlvLnYxLkNvaW4iFAoSR2V0QWxsQ29pbnNSZXF1ZXN0IjgKE0dldEFsbENvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiKkAQoNU2VhcmNoUmVxdWVzdBINCgVxdWVyeRgBIAEoCRIMCgR0YWdzGAIgAygJEhYKDm1pbl92b2x1bWVfMjRoGAMgASgBEg0KBWxpbWl0GAQgASgFEg4KBm9mZnNldBgFIAEoBRIsCgdzb3J0X2J5GAYgASgOMhsuZGFua2ZvbGlvLnYxLkNvaW5Tb3J0RmllbGQSEQoJc29ydF9kZXNjGAcgASgIIkgKDlNlYXJjaFJlc3BvbnNlEiEKBWNvaW5zGAEgAygLMhIuZGFua2ZvbGlvLnYxLkNvaW4SEwoLdG90YWxfY291bnQYAiABKAUiUgoSR2V0TmV3Q29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQiVwoXR2V0VHJlbmRpbmdDb2luc1JlcXVlc3QSEgoFbGltaXQYASABKAVIAIgBARITCgZvZmZzZXQYAiABKAVIAYgBAUIICgZfbGltaXRCCQoHX29mZnNldCJZChlHZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQq/gEKDUNvaW5Tb3J0RmllbGQSHwobQ09JTl9TT1JUX0ZJRUxEX1VOU1BFQ0lGSUVEEAASLworQ09JTl9TT1JUX0ZJRUxEX1BSSUNFX0NIQU5HRV9QRVJDRU5UQUdFXzI0SBABEiUKIUNPSU5fU09SVF9GSUVMRF9KVVBJVEVSX0xJU1RFRF9BVBACEh4KGkNPSU5fU09SVF9GSUVMRF9WT0xVTUVfMjRIEAMSGAoUQ09JTl9TT1JUX0ZJRUxEX05BTUUQBBIaChZDT0lOX1NPUlRfRklFTERfU1lNQk9MEAUSHgoaQ09JTl9TT1JUX0ZJRUxEX01BUktFVF9DQVAQBjLaBQoLQ29pblNlcnZpY2USZAoRR2V0QXZhaWxhYmxlQ29pbnMSJi5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USQwoLR2V0Q29pbkJ5SUQSIC5kYW5rZm9saW8udjEuR2V0Q29pbkJ5SURSZXF1ZXN0GhIuZGFua2ZvbGlvLnYxLkNvaW4SYQoQU2VhcmNoQ29pbkJ5TWludBIlLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlNaW50UmVxdWVzdBomLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlNaW50UmVzcG9uc2USUgoLR2V0QWxsQ29pbnMSIC5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLkdldEFsbENvaW5zUmVzcG9uc2USQwoGU2VhcmNoEhsuZGFua2ZvbGlvLnYxLlNlYXJjaFJlcXVlc3QaHC5kYW5rZm9saW8udjEuU2VhcmNoUmVzcG9uc2USWAoLR2V0TmV3Q29pbnMSIC5kYW5rZm9saW8udjEuR2V0TmV3Q29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USYgoQR2V0VHJlbmRpbmdDb2lucxIlLmRhbmtmb2xpby52MS5HZXRUcmVuZGluZ0NvaW5zUmVxdWVzdBonLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1Jlc3BvbnNlEmYKEkdldFRvcEdhaW5lcnNDb2lucxInLmRhbmtmb2xpby52MS5HZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2VCtQEKEGNvbS5kYW5rZm9saW8udjFCCUNvaW5Qcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * Coin represents a coin or currency (unified definition)
+ * Field names aligned with BirdEye API for consistency
  *
  * @generated from message dankfolio.v1.Coin
  */
 export type Coin = Message<"dankfolio.v1.Coin"> & {
   /**
-   * @generated from field: string mint_address = 1;
+   * Was: mint_address (BirdEye uses 'address')
+   *
+   * @generated from field: string address = 1;
    */
-  mintAddress: string;
+  address: string;
 
   /**
    * @generated from field: string name = 2;
@@ -46,12 +49,14 @@ export type Coin = Message<"dankfolio.v1.Coin"> & {
   description: string;
 
   /**
-   * @generated from field: string icon_url = 6;
+   * Was: icon_url (BirdEye uses logoURI)
+   *
+   * @generated from field: string logo_uri = 6;
    */
-  iconUrl: string;
+  logoUri: string;
 
   /**
-   * Optimized IPFS URL
+   * Keep for our internal optimization
    *
    * @generated from field: optional string resolved_icon_url = 7;
    */
@@ -68,86 +73,86 @@ export type Coin = Message<"dankfolio.v1.Coin"> & {
   price: number;
 
   /**
-   * @generated from field: double daily_volume = 10;
-   */
-  dailyVolume: number;
-
-  /**
-   * @generated from field: optional string website = 11;
-   */
-  website?: string;
-
-  /**
-   * @generated from field: optional string twitter = 12;
-   */
-  twitter?: string;
-
-  /**
-   * @generated from field: optional string telegram = 13;
-   */
-  telegram?: string;
-
-  /**
-   * @generated from field: optional string coingecko_id = 14;
-   */
-  coingeckoId?: string;
-
-  /**
-   * @generated from field: google.protobuf.Timestamp created_at = 15;
-   */
-  createdAt?: Timestamp;
-
-  /**
-   * @generated from field: optional google.protobuf.Timestamp last_updated = 16;
-   */
-  lastUpdated?: Timestamp;
-
-  /**
-   * @generated from field: bool is_trending = 17;
-   */
-  isTrending: boolean;
-
-  /**
-   * New field
+   * BirdEye standard (was: price_change_percentage_24h)
    *
-   * @generated from field: optional google.protobuf.Timestamp jupiter_listed_at = 18;
+   * @generated from field: optional double price24h_change_percent = 10;
    */
-  jupiterListedAt?: Timestamp;
+  price24hChangePercent?: number;
 
   /**
-   * @generated from field: optional double price_change_percentage_24h = 19;
+   * BirdEye uses lowercase (was: market_cap)
+   *
+   * @generated from field: optional double marketcap = 11;
    */
-  priceChangePercentage24h?: number;
+  marketcap?: number;
 
   /**
-   * @generated from field: optional double volume_24h_usd = 20;
+   * BirdEye standard (was: volume_24h_usd and daily_volume)
+   *
+   * @generated from field: optional double volume24h_usd = 12;
    */
   volume24hUsd?: number;
 
   /**
-   * @generated from field: optional double liquidity = 21;
-   */
-  liquidity?: number;
-
-  /**
-   * @generated from field: optional double volume_24h_change_percent = 22;
+   * BirdEye standard (was: volume_24h_change_percent)
+   *
+   * @generated from field: optional double volume24h_change_percent = 13;
    */
   volume24hChangePercent?: number;
 
   /**
-   * @generated from field: optional double fdv = 23;
+   * @generated from field: optional double liquidity = 14;
+   */
+  liquidity?: number;
+
+  /**
+   * BirdEye uses uppercase
+   *
+   * @generated from field: optional double fdv = 15;
    */
   fdv?: number;
 
   /**
-   * @generated from field: optional double market_cap = 24;
-   */
-  marketCap?: number;
-
-  /**
-   * @generated from field: optional int32 rank = 25;
+   * @generated from field: optional int32 rank = 16;
    */
   rank?: number;
+
+  /**
+   * @generated from field: optional string website = 17;
+   */
+  website?: string;
+
+  /**
+   * @generated from field: optional string twitter = 18;
+   */
+  twitter?: string;
+
+  /**
+   * @generated from field: optional string telegram = 19;
+   */
+  telegram?: string;
+
+  /**
+   * Add discord field
+   *
+   * @generated from field: optional string discord = 20;
+   */
+  discord?: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 21;
+   */
+  createdAt?: Timestamp;
+
+  /**
+   * @generated from field: optional google.protobuf.Timestamp last_updated = 22;
+   */
+  lastUpdated?: Timestamp;
+
+  /**
+   * @generated from field: optional google.protobuf.Timestamp jupiter_listed_at = 23;
+   */
+  jupiterListedAt?: Timestamp;
 };
 
 /**

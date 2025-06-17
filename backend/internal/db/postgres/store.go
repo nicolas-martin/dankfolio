@@ -45,10 +45,13 @@ func NewStoreWithDB(database *gorm.DB) *Store {
 
 // NewStore creates a new PostgreSQL store instance and connects to the database.
 func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env string) (*Store, error) {
-	gc := &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent), // Default to silent logger
-	}
+	// gc := &gorm.Config{
+	// 	Logger: logger.Default.LogMode(logger.Silent), // Default to silent logger
+	// }
 
+	gc := &gorm.Config{
+		Logger: logger.Default,
+	}
 	if env == "development" {
 		gc = &gorm.Config{
 			Logger: logger.Default,
@@ -164,7 +167,7 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 
 		if query != "" {
 			searchQuery := "%" + strings.ToLower(query) + "%"
-			rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(mint_address) LIKE ?", searchQuery, searchQuery, searchQuery)
+			rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(address) LIKE ?", searchQuery, searchQuery, searchQuery)
 		}
 
 		dbSortColumn := "jupiter_created_at"
@@ -193,10 +196,10 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 
 	if query != "" {
 		searchQuery := "%" + strings.ToLower(query) + "%"
-		tx = tx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(mint_address) LIKE ?", searchQuery, searchQuery, searchQuery)
+		tx = tx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(address) LIKE ?", searchQuery, searchQuery, searchQuery)
 	}
 	if len(tags) > 0 {
-		tx = tx.Where("tags && ?", pq.Array(tags))
+		tx = tx.Where("tags @> ?", pq.Array(tags))
 	}
 	if minVolume24h > 0 {
 		tx = tx.Where("volume_24h >= ?", minVolume24h)
@@ -210,7 +213,7 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 		}
 		tx = tx.Order(fmt.Sprintf("%s %s", dbColumn, order))
 	} else {
-		tx = tx.Order("market_cap DESC NULLS LAST, volume_24h DESC NULLS LAST, created_at DESC")
+		tx = tx.Order("marketcap DESC NULLS LAST, volume_24h_usd DESC NULLS LAST, created_at DESC")
 	}
 
 	if limit > 0 {
@@ -225,11 +228,18 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 	}
 	enriched := mapSchemaCoinsToModel(schemaCoins)
 
+	// If filtering by tags, only return enriched coins (raw_coins don't have tags)
+	if len(tags) > 0 {
+		slog.DebugContext(ctx, "SearchCoins: Filtering by tags, returning only enriched coins", "tags", tags, "count", len(enriched))
+		return enriched, nil
+	}
+
+	// Only search raw_coins if no tag filtering is required
 	var rawCoins []schema.RawCoin
 	rawTx := s.db.WithContext(ctx).Model(&schema.RawCoin{})
 	if query != "" {
 		searchQuery := "%" + strings.ToLower(query) + "%"
-		rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(mint_address) LIKE ?", searchQuery, searchQuery, searchQuery)
+		rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(address) LIKE ?", searchQuery, searchQuery, searchQuery)
 	}
 	if limit > 0 {
 		rawTx = rawTx.Limit(int(limit))
@@ -247,11 +257,11 @@ func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, mi
 	result := make([]model.Coin, 0, len(enriched)+len(rawMapped))
 
 	for _, coin := range enriched {
-		coinMap[coin.MintAddress] = coin
+		coinMap[coin.Address] = coin
 		result = append(result, coin)
 	}
 	for _, coin := range rawMapped {
-		if _, exists := coinMap[coin.MintAddress]; !exists {
+		if _, exists := coinMap[coin.Address]; !exists {
 			result = append(result, coin)
 		}
 	}
@@ -267,9 +277,9 @@ func mapSortBy(sortBy string) string {
 	case "price":
 		return "price"
 	case "volume24h":
-		return "volume_24h"
+		return "volume_24h_usd"
 	case "marketcap":
-		return "market_cap"
+		return "marketcap"
 	case "created_at":
 		return "created_at"
 	case "last_updated":
@@ -287,27 +297,30 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 	coins := make([]model.Coin, len(schemaCoins))
 	for i, sc := range schemaCoins {
 		coins[i] = model.Coin{
-			ID:              sc.ID, // Ensure ID is mapped
-			MintAddress:     sc.MintAddress,
-			Name:            sc.Name,
-			Symbol:          sc.Symbol,
-			Decimals:        sc.Decimals,
-			Description:     sc.Description,
-			IconUrl:         sc.IconUrl,
-			ResolvedIconUrl: sc.ResolvedIconUrl,
-			Tags:            sc.Tags,
-			Price:           sc.Price,
-			Change24h:       sc.Change24h,
-			MarketCap:       sc.MarketCap,
-			Volume24h:       sc.Volume24h,
-			Website:         sc.Website,
-			Twitter:         sc.Twitter,
-			Telegram:        sc.Telegram,
-			Discord:         sc.Discord,
-			IsTrending:      sc.IsTrending,
-			CreatedAt:       sc.CreatedAt.Format(time.RFC3339),
-			LastUpdated:     sc.LastUpdated.Format(time.RFC3339),
-			JupiterListedAt: sc.JupiterCreatedAt,
+			ID:                     sc.ID, // Ensure ID is mapped
+			Address:                sc.Address,
+			Name:                   sc.Name,
+			Symbol:                 sc.Symbol,
+			Decimals:               sc.Decimals,
+			Description:            sc.Description,
+			LogoURI:                sc.LogoURI,
+			ResolvedIconUrl:        sc.ResolvedIconUrl,
+			Tags:                   sc.Tags,
+			Price:                  sc.Price,
+			Price24hChangePercent:  sc.Price24hChangePercent,
+			Marketcap:              sc.Marketcap,
+			Volume24hUSD:           sc.Volume24hUSD,
+			Volume24hChangePercent: sc.Volume24hChangePercent,
+			Liquidity:              sc.Liquidity,
+			FDV:                    sc.FDV,
+			Rank:                   sc.Rank,
+			Website:                sc.Website,
+			Twitter:                sc.Twitter,
+			Telegram:               sc.Telegram,
+			Discord:                sc.Discord,
+			CreatedAt:              sc.CreatedAt.Format(time.RFC3339),
+			LastUpdated:            sc.LastUpdated.Format(time.RFC3339),
+			JupiterListedAt:        sc.JupiterCreatedAt,
 		}
 	}
 	return coins
@@ -379,11 +392,11 @@ func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {
 	for i, rc := range rawCoins {
 		coins[i] = model.Coin{
 			ID:              rc.ID, // Ensure ID is mapped
-			MintAddress:     rc.MintAddress,
+			Address:         rc.Address,
 			Name:            rc.Name,
 			Symbol:          rc.Symbol,
 			Decimals:        rc.Decimals,
-			IconUrl:         rc.LogoUrl,
+			LogoURI:         rc.LogoUrl,
 			JupiterListedAt: &rc.JupiterCreatedAt,
 		}
 	}

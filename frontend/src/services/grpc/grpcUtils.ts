@@ -7,30 +7,29 @@ import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
 
 export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 	return {
-		mintAddress: grpcCoin.mintAddress,
+		address: grpcCoin.address,                                     // Map address field
 		name: grpcCoin.name,
 		symbol: grpcCoin.symbol,
 		decimals: grpcCoin.decimals,
 		description: grpcCoin.description,
-		resolvedIconUrl: grpcCoin.resolvedIconUrl || grpcCoin.iconUrl, // Prefer resolvedIconUrl, fallback to iconUrl
-		tags: grpcCoin.tags, // Assuming tags is string[] in both
+		logoURI: grpcCoin.logoUri,                                     // Map logoURI field
+		resolvedIconUrl: grpcCoin.resolvedIconUrl,                     // Keep for optimization
+		tags: grpcCoin.tags,
 		price: grpcCoin.price,
-		dailyVolume: grpcCoin.dailyVolume,
-		change24h: grpcCoin.priceChangePercentage24h, // Map GRPC priceChangePercentage24h to frontend change24h
+		price24hChangePercent: grpcCoin.price24hChangePercent,         // BirdEye standard
+		marketcap: grpcCoin.marketcap,                                 // BirdEye lowercase
+		volume24hUSD: grpcCoin.volume24hUsd,                          // BirdEye standard
+		volume24hChangePercent: grpcCoin.volume24hChangePercent,       // BirdEye standard
+		liquidity: grpcCoin.liquidity,
+		fdv: grpcCoin.fdv,                                            // BirdEye uppercase
+		rank: grpcCoin.rank,
 		website: grpcCoin.website,
 		twitter: grpcCoin.twitter,
 		telegram: grpcCoin.telegram,
-		coingeckoId: grpcCoin.coingeckoId,
+		discord: grpcCoin.discord,                                     // Add discord field
 		createdAt: timestampToDate(grpcCoin.createdAt),
 		lastUpdated: timestampToDate(grpcCoin.lastUpdated),
 		jupiterListedAt: timestampToDate(grpcCoin.jupiterListedAt),
-		// New fields from proto
-		volume24hUsd: grpcCoin.volume24hUsd,
-		liquidity: grpcCoin.liquidity,
-		volume24hChangePercent: grpcCoin.volume24hChangePercent,
-		fdv: grpcCoin.fdv,
-		marketCap: grpcCoin.marketCap,
-		rank: grpcCoin.rank,
 	};
 }
 

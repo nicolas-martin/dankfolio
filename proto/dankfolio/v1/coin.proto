@@ -36,32 +36,31 @@ enum CoinSortField {
 }
 
 // Coin represents a coin or currency (unified definition)
+// Field names aligned with BirdEye API for consistency
 message Coin {
-  string mint_address = 1;
+  string address = 1;                                        // Was: mint_address (BirdEye uses 'address')
   string name = 2;
   string symbol = 3;
   int32 decimals = 4;
   string description = 5;
-  string icon_url = 6;
-  optional string resolved_icon_url = 7; // Optimized IPFS URL
+  string logo_uri = 6;                                       // Was: icon_url (BirdEye uses logoURI)
+  optional string resolved_icon_url = 7;                     // Keep for our internal optimization
   repeated string tags = 8;
   double price = 9;
-  double daily_volume = 10;
-  optional string website = 11;
-  optional string twitter = 12;
-  optional string telegram = 13;
-  optional string coingecko_id = 14;
-  google.protobuf.Timestamp created_at = 15;
-  optional google.protobuf.Timestamp last_updated = 16;
-  bool is_trending = 17;
-  optional google.protobuf.Timestamp jupiter_listed_at = 18; // New field
-  optional double price_change_percentage_24h = 19;
-  optional double volume_24h_usd = 20;
-  optional double liquidity = 21;
-  optional double volume_24h_change_percent = 22;
-  optional double fdv = 23;
-  optional double market_cap = 24;
-  optional int32 rank = 25;
+  optional double price24h_change_percent = 10;              // BirdEye standard (was: price_change_percentage_24h)
+  optional double marketcap = 11;                            // BirdEye uses lowercase (was: market_cap)
+  optional double volume24h_usd = 12;                        // BirdEye standard (was: volume_24h_usd and daily_volume)
+  optional double volume24h_change_percent = 13;             // BirdEye standard (was: volume_24h_change_percent)
+  optional double liquidity = 14;
+  optional double fdv = 15;                                  // BirdEye uses uppercase
+  optional int32 rank = 16;
+  optional string website = 17;
+  optional string twitter = 18;
+  optional string telegram = 19;
+  optional string discord = 20;                              // Add discord field
+  google.protobuf.Timestamp created_at = 21;
+  optional google.protobuf.Timestamp last_updated = 22;
+  optional google.protobuf.Timestamp jupiter_listed_at = 23;
 }
 
 message GetAvailableCoinsRequest {

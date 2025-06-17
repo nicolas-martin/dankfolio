@@ -15,7 +15,6 @@ import (
 	gagliardettorpc "github.com/gagliardetto/solana-go/rpc" // Alias to avoid collision with local rpc
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	dankfolioSolanaClient "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // Added alias for our solana client
-	"github.com/nicolas-martin/dankfolio/backend/internal/db/memory"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
 )
@@ -39,9 +38,6 @@ func main() {
 	// Initialize RPC client
 	client := gagliardettorpc.New(*rpcEndpoint) // Use aliased rpc
 
-	// Initialize memory store
-	store := memory.NewWithConfig(memory.Config{})
-
 	// Initialize HTTP client and Jupiter client using environment variables
 	httpClient := &http.Client{
 		Timeout: time.Second * 10,
@@ -59,10 +55,10 @@ func main() {
 		NewCoinsFetchInterval: time.Hour, // Default for this utility
 	}
 	// Provide nil for currently unneeded dependencies in this cmd tool
-	coinService := coin.NewService(coinServiceConfig, jupiterClient, store, solanaInfraClient, nil, nil, nil)
+	coinService := coin.NewService(coinServiceConfig, jupiterClient, nil, solanaInfraClient, nil, nil, nil, nil)
 
 	// Initialize the wallet service
-	walletService := wallet.New(solanaInfraClient, store, coinService)
+	walletService := wallet.New(solanaInfraClient, nil, coinService)
 
 	// Read and parse the wallet file
 	keyBytes, err := os.ReadFile(*walletPath)

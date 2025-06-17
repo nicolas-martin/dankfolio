@@ -32,7 +32,7 @@ import (
 )
 
 func main() {
-	logLevel := slog.LevelInfo
+	logLevel := slog.LevelWarn
 	var handler slog.Handler
 
 	config := loadConfig()
@@ -132,6 +132,7 @@ func main() {
 		NewCoinsFetchInterval:   config.NewCoinsFetchInterval,
 		TrendingFetchInterval:   config.TrendingCoinsFetchInterval,
 		TopGainersFetchInterval: config.TopGainersFetchInterval,
+		CacheExpiry:             config.CoinServiceCacheExpiry,
 	}
 
 	coinCache, err := coin.NewCoinCache()
@@ -243,16 +244,16 @@ type Config struct {
 	BirdEyeAPIKey              string        `envconfig:"BIRDEYE_API_KEY" required:"true"`
 	GRPCPort                   int           `envconfig:"GRPC_PORT" default:"9000"`
 	DBURL                      string        `envconfig:"DB_URL" required:"true"`
-	CacheExpiry                time.Duration `envconfig:"CACHE_EXPIRY_SECONDS" default:"5m"`
 	JupiterApiKey              string        `envconfig:"JUPITER_API_KEY"`
 	JupiterApiUrl              string        `envconfig:"JUPITER_API_URL" required:"true"`
 	Env                        string        `envconfig:"APP_ENV" required:"true"`
-	NewCoinsFetchInterval      time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL" default:"1h"`        // Default to 1 hour
-	TrendingCoinsFetchInterval time.Duration `envconfig:"TRENDING_COINS_FETCH_INTERVAL" default:"24h"`  // Default to 24 hours
-	TopGainersFetchInterval    time.Duration `envconfig:"TOP_GAINERS_FETCH_INTERVAL" default:"5m"`      // Default to 5 minutes
+	NewCoinsFetchInterval      time.Duration `envconfig:"NEW_COINS_FETCH_INTERVAL" required:"true"`
+	TrendingCoinsFetchInterval time.Duration `envconfig:"TRENDING_COINS_FETCH_INTERVAL" required:"true"`
+	TopGainersFetchInterval    time.Duration `envconfig:"TOP_GAINERS_FETCH_INTERVAL" required:"true"`
 	PlatformFeeBps             int           `envconfig:"PLATFORM_FEE_BPS" required:"true"`             // Basis points for platform fee, e.g., 100 = 1%
 	PlatformFeeAccountAddress  string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS" required:"true"` // Conditionally required, handled in validation
 	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`
+	CoinServiceCacheExpiry     time.Duration `envconfig:"COIN_SERVICE_CACHE_EXPIRY" required:"true"` // Default to 1 hour
 }
 
 func loadConfig() *Config {
