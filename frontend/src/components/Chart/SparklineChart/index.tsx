@@ -175,7 +175,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 			const p1IsAboveOrOnBaseline = p1.value >= startPrice;
 			const p2IsAboveOrOnBaseline = p2.value >= startPrice;
 
-			let currentLineColor = p1IsAboveOrOnBaseline ? 'green' : 'red';
+			let currentLineColor = p1IsAboveOrOnBaseline ? styles.theme.trend.positive : styles.theme.trend.negative;
 			let currentGradientColors: [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>] = p1IsAboveOrOnBaseline
 				? [greenOpaque, greenTransparent]
 				: [redOpaque, redTransparent];
@@ -222,7 +222,7 @@ const SparklineChart: React.FC<SparklineChartProps> = ({
 
 				addSegmentAndArea(x1, y1, intersectX, currentBaselineY, currentLineColor, currentGradientColors);
 
-				currentLineColor = p2IsAboveOrOnBaseline ? 'green' : 'red';
+				currentLineColor = p2IsAboveOrOnBaseline ? styles.theme.trend.positive : styles.theme.trend.negative;
 				currentGradientColors = p2IsAboveOrOnBaseline
 					? [greenOpaque, greenTransparent] as [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>]
 					: [redOpaque, redTransparent] as [ReturnType<typeof Skia.Color>, ReturnType<typeof Skia.Color>];

@@ -139,29 +139,7 @@ export const createPulsateAnimation = (animatedValue: SharedValue<number>) => {
 	);
 };
 
-// Updated chart colors with simpler format
-export const CHART_COLORS = {
-    green: {
-        line: '#0BA360',
-        area: 'rgba(11, 163, 96, 0.5)',
-        indicator: '#0BA360',
-        glow: '#0BA360',
-        gradient: ['#0BA36090', '#0BA36040', '#0BA36005'] // More transparent TradingView style
-    },
-    red: {
-        line: '#E04E4A',
-        area: 'rgba(224, 78, 74, 0.5)',
-        indicator: '#E04E4A',
-        glow: '#E04E4A',
-        gradient: ['#E04E4A90', '#E04E4A40', '#E04E4A05'] // More transparent TradingView style
-    }
-}; 
-
-// Export a simpler version of chart colors for use in other components
-export const TREND_COLORS = {
-    positive: '#0BA360', // Green color for positive trends
-    negative: '#E04E4A'  // Red color for negative trends
-}; 
+ 
 
 // ─── GradientArea Component Logic ────────────────────────────────────────────
 export const useGradientArea = ({ points, y0, color, opacity = 0.8, gradientColors }: AreaProps) => {

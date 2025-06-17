@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import CachedImage from '@/components/Common/CachedImage';
-import { TrendIcon, getTrendColor } from '@/components/Common/Icons';
+import { TrendUpIcon, TrendDownIcon } from '@/components/Common/Icons';
 import { formatPercentage } from '@/utils/numberFormat';
 import { useStyles } from './TopTrendingGainers.styles';
 import { Coin } from '@/types';
@@ -29,8 +29,16 @@ const TrendingCard: React.FC<{
 	coin: Coin;
 	onPress: (coin: Coin) => void;
 	style?: ViewStyle;
-}> = React.memo(({ coin, onPress, style }) => {
+}> = React.memo(({ coin, onPress }) => {
 	const styles = useStyles();
+	const getTrendColor = (
+		value: number | undefined,
+	): string => {
+		if (value === undefined) return styles.trend.neutral;
+		if (value > 0) return styles.trend.positive;
+		if (value < 0) return styles.trend.negative;
+		return styles.trend.neutral;
+	};
 
 	const handlePress = useCallback(() => {
 		onPress(coin);
@@ -39,17 +47,9 @@ const TrendingCard: React.FC<{
 	// Use change24h from the local Coin type
 	const changeValue = coin.change24h;
 
-	// Determine change color
-	const getChangeColor = (value: number | undefined) => {
-		if (value === undefined) return '#666666';
-		if (value > 0) return '#2E7D32';
-		if (value < 0) return '#D32F2F';
-		return '#666666';
-	};
-
 	return (
 		<TouchableOpacity
-			style={[styles.trendingCard, style]}
+			style={styles.trendingCard}
 			onPress={handlePress}
 			testID={`trending-coin-card-${coin.symbol.toLowerCase()}`}
 		>
@@ -74,13 +74,18 @@ const TrendingCard: React.FC<{
 			{/* Change with icon - fixed width to prevent layout shifts */}
 			{changeValue !== undefined && (
 				<View style={styles.changeContainer}>
-					{/* Smart Trend Icon */}
-					<TrendIcon
-						value={changeValue}
-						size={12}
-					/>
-
-					{/* Percentage Text */}
+					{changeValue > 0 && (
+						<TrendUpIcon 
+							size={12}
+							color={getTrendColor(changeValue)}
+						/>
+					)}
+					{changeValue < 0 && (
+						<TrendDownIcon 
+							size={12}
+							color={getTrendColor(changeValue)}
+						/>
+					)}
 					<Text
 						style={[
 							styles.trendingChange,

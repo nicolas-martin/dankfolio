@@ -29,7 +29,6 @@ import { useStyles, CHART_CONSTANTS } from './styles';
 import type { CoinChartProps, PricePoint, PulsatingDotProps, AreaProps } from './types';
 import {
 	determineChartColor,
-	CHART_COLORS,
 	createPulsateAnimation,
 	getTimeFormat,
 	prepareChartData,
@@ -285,8 +284,8 @@ export default function CoinChart({
 		return determineChartColor(processedChartData);
 	}, [processedChartData]);
 
-	// Define chart line and area colors based on screenshot
-	const colors = CHART_COLORS[chartColor];
+	// Define chart line and area colors using theme-aware colors
+	const colors = styles.chartColors[chartColor];
 	// Get the area color from the colors object
 	const areaColor = colors.area;
 	// Get the gradient colors

@@ -4,30 +4,8 @@ import { MD3DarkTheme as DefaultTheme, MD3LightTheme, MD3Theme } from 'react-nat
 export const SCREEN_WIDTH = Dimensions.get('window').width;
 export const SCREEN_HEIGHT = Dimensions.get('window').height;
 
-// Original light theme
-export const theme = {
-	colors: {
-		primary: '#2962FF',
-		primaryVariant: '#0D47A1',
-		secondary: '#FFD600',
-		secondaryVariant: '#FFAB00',
-		background: '#FFFFFF',
-		surface: '#F5F5F5',
-		error: '#B00020',
-		warning: '#FFA000',
-		success: '#4CAF50',
-		onPrimary: '#FFFFFF',
-		onSecondary: '#000000',
-		onBackground: '#000000',
-		onSurface: '#000000',
-		onError: '#FFFFFF',
-		outline: '#BDBDBD',
-		outlineVariant: '#757575',
-		onSurfaceVariant: '#757575',
-		text: '#000000',
-		textSecondary: '#757575',
-	},
-
+// Base theme properties that both themes share
+const baseTheme = {
 	typography: {
 		fontFamily: {
 			regular: 'Inter-Regular',
@@ -87,10 +65,57 @@ export const theme = {
 			elevation: 5,
 		},
 	},
+};
 
-	gradients: {
-		primary: ['#0066FF', '#0044FF'] as const,
-		glass: ['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)'] as const,
+// Light theme colors
+const lightColors = {
+	primary: '#2962FF',
+	primaryVariant: '#0D47A1',
+	secondary: '#FFD600',
+	secondaryVariant: '#FFAB00',
+	background: '#FFFFFF',
+	surface: '#F5F5F5',
+	error: '#B00020',
+	warning: '#FFA000',
+	success: '#4CAF50',
+	text: '#000000',
+	textSecondary: '#757575',
+	trend: {
+		positive: '#2E7D32',
+		negative: '#D32F2F',
+		neutral: '#666666',
+	},
+};
+
+// Create Paper-compatible themes
+export const lightPaperTheme: MD3Theme = {
+	...MD3LightTheme,
+	colors: {
+		...MD3LightTheme.colors,
+		primary: lightColors.primary,
+		primaryContainer: lightColors.primaryVariant,
+		secondary: lightColors.secondary,
+		secondaryContainer: lightColors.secondaryVariant,
+		background: lightColors.background,
+		surface: lightColors.surface,
+		surfaceVariant: lightColors.surface,
+		error: lightColors.error,
+		onPrimary: '#FFFFFF',
+		onSecondary: '#000000',
+		onBackground: '#000000',
+		onSurface: '#000000',
+		onSurfaceVariant: '#757575',
+		onError: '#FFFFFF',
+		outline: '#BDBDBD',
+		outlineVariant: '#757575',
+		tertiary: lightColors.secondary,
+		tertiaryContainer: lightColors.secondaryVariant,
+		onTertiary: '#000000',
+		onTertiaryContainer: '#000000',
+		errorContainer: lightColors.error,
+		onErrorContainer: '#FFFFFF',
+		onPrimaryContainer: '#FFFFFF',
+		onSecondaryContainer: '#000000',
 	},
 };
 
@@ -120,60 +145,37 @@ export const neonCryptoTheme: MD3Theme = {
 	},
 };
 
-// Create Paper-compatible themes
-export const lightPaperTheme: MD3Theme = {
-	...MD3LightTheme,
-	colors: {
-		...MD3LightTheme.colors,
-		primary: theme.colors.primary,
-		primaryContainer: theme.colors.primaryVariant,
-		secondary: theme.colors.secondary,
-		secondaryContainer: theme.colors.secondaryVariant,
-		background: theme.colors.background,
-		surface: theme.colors.surface,
-		surfaceVariant: theme.colors.surface,
-		error: theme.colors.error,
-		onPrimary: theme.colors.onPrimary,
-		onSecondary: theme.colors.onSecondary,
-		onBackground: theme.colors.onBackground,
-		onSurface: theme.colors.onSurface,
-		onSurfaceVariant: theme.colors.onSurfaceVariant,
-		onError: theme.colors.onError,
-		outline: theme.colors.outline,
-		outlineVariant: theme.colors.outlineVariant,
-		tertiary: theme.colors.secondary,
-		tertiaryContainer: theme.colors.secondaryVariant,
-		onTertiary: theme.colors.onSecondary,
-		onTertiaryContainer: theme.colors.onSecondary,
-		errorContainer: theme.colors.error,
-		onErrorContainer: theme.colors.onError,
-		onPrimaryContainer: theme.colors.onPrimary,
-		onSecondaryContainer: theme.colors.onSecondary,
-	},
-};
-
 // Additional properties from our theme that aren't in MD3Theme
 export const extendedThemeProperties = {
 	light: {
-		warning: theme.colors.warning,
-		success: theme.colors.success,
-		text: theme.colors.text,
-		textSecondary: theme.colors.textSecondary,
-		typography: theme.typography,
-		spacing: theme.spacing,
-		borderRadius: theme.borderRadius,
-		shadows: theme.shadows,
-		gradients: theme.gradients,
+		warning: lightColors.warning,
+		success: lightColors.success,
+		text: lightColors.text,
+		textSecondary: lightColors.textSecondary,
+		trend: lightColors.trend,
+		typography: baseTheme.typography,
+		spacing: baseTheme.spacing,
+		borderRadius: baseTheme.borderRadius,
+		shadows: baseTheme.shadows,
+		gradients: {
+			primary: ['#0066FF', '#0044FF'] as const,
+			glass: ['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)'] as const,
+		},
 	},
 	neon: {
 		text: '#E0F7FA',
 		textSecondary: '#A3B1C2',
 		warning: '#FFA000',
 		success: '#4CAF50',
-		typography: theme.typography,
-		spacing: theme.spacing,
-		borderRadius: theme.borderRadius,
-		shadows: theme.shadows,
+		trend: {
+			positive: '#00FF9F',
+			negative: '#FF4081',
+			neutral: '#A3B1C2',
+		},
+		typography: baseTheme.typography,
+		spacing: baseTheme.spacing,
+		borderRadius: baseTheme.borderRadius,
+		shadows: baseTheme.shadows,
 		gradients: {
 			primary: ['#00FF9F', '#8A2BE2'] as const,
 			glass: ['rgba(26, 29, 43, 0.9)', 'rgba(26, 29, 43, 0.7)'] as const,
@@ -196,10 +198,15 @@ export type AppTheme = MD3Theme & {
 	success: string;
 	text: string;
 	textSecondary: string;
-	typography: typeof theme.typography;
-	spacing: typeof theme.spacing;
-	borderRadius: typeof theme.borderRadius;
-	shadows: typeof theme.shadows;
+	trend: {
+		positive: string;
+		negative: string;
+		neutral: string;
+	};
+	typography: typeof baseTheme.typography;
+	spacing: typeof baseTheme.spacing;
+	borderRadius: typeof baseTheme.borderRadius;
+	shadows: typeof baseTheme.shadows;
 	gradients: {
 		primary: readonly string[];
 		glass: readonly string[];
