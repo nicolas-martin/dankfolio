@@ -22,7 +22,7 @@ import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 import { grpcApi } from '@/services/grpcApi';
 
 const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ data: PriceData[], error: Error | null }> => {
-	if (!coin || !coin.mintAddress) {
+	if (!coin || !coin.address) {
 		return { data: [], error: new Error("Invalid coin or mint address") };
 	}
 	try {
@@ -30,7 +30,7 @@ const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ da
 		// grpcApi.getPriceHistory expects (address: string, type: string, timeStr: string, addressType: string)
 		// 'type' could be the timeframeKey, 'timeStr' the current time, 'addressType' as "token"
 		const currentTime = new Date().toISOString();
-		const response = await grpcApi.getPriceHistory(coin.mintAddress, timeframeKey, currentTime, "token");
+		const response = await grpcApi.getPriceHistory(coin.address, timeframeKey, currentTime, "token");
 		// Extract and transform the items array from the response data (same as CoinDetail)
 		const items = response.data?.items || [];
 		const data = items.map(item => ({
@@ -217,22 +217,22 @@ const HomeScreen = () => {
 				let newHistories: Record<string, PriceData[]> = {};
 				let newLoadingStates: Record<string, boolean> = {};
 				for (const coin of topCoins) {
-					if (!coin || !coin.mintAddress) continue;
-					newLoadingStates[coin.mintAddress] = true;
+					if (!coin || !coin.address) continue;
+					newLoadingStates[coin.address] = true;
 					setIsLoadingPriceHistories(prev => ({ ...prev, ...newLoadingStates })); // Update loading state immediately for this coin
 					try {
 						const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
-						newHistories[coin.mintAddress] = result.data || [];
+						newHistories[coin.address] = result.data || [];
 						if (result.error) logger.error(`[HomeScreen] Error fetching (seq) ${coin.symbol}:`, result.error);
 					} catch (e) {
 						logger.error(`[HomeScreen] Exception fetching (seq) ${coin.symbol}:`, e);
-						newHistories[coin.mintAddress] = [];
+						newHistories[coin.address] = [];
 					} finally {
-						newLoadingStates[coin.mintAddress] = false;
+						newLoadingStates[coin.address] = false;
 						// Batching updates within sequential is tricky if we want immediate feedback per coin.
 						// For now, individual updates for loading/history in sequential remain.
-						setPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: newHistories[coin.mintAddress!] }));
-						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.mintAddress!]: false }));
+						setPriceHistories(prev => ({ ...prev, [coin.address!]: newHistories[coin.address!] }));
+						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.address!]: false }));
 					}
 					await new Promise(resolve => setTimeout(resolve, PRICE_HISTORY_FETCH_DELAY_MS));
 				}
@@ -244,17 +244,17 @@ const HomeScreen = () => {
 
 			// Set initial loading states for all coins to be fetched
 			const initialLoadingStates = topCoins.reduce((acc, coin) => {
-				if (coin?.mintAddress) acc[coin.mintAddress] = true;
+				if (coin?.address) acc[coin.address] = true;
 				return acc;
 			}, {} as Record<string, boolean>);
 			setIsLoadingPriceHistories(prev => ({ ...prev, ...initialLoadingStates }));
 
 			Promise.allSettled(
 				topCoins.map(async (coin): Promise<{ mintAddress: string; data: PriceData[]; error: Error | null; } | null> => {
-					if (!coin || !coin.mintAddress) return Promise.resolve(null); // Skip invalid coins
+					if (!coin || !coin.address) return Promise.resolve(null); // Skip invalid coins
 					const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
 					return ({
-						mintAddress: coin.mintAddress!,
+						address: coin.address!,
 						data: result.data || [],
 						error: result.error
 					});
@@ -363,11 +363,11 @@ const HomeScreen = () => {
 	}, [fetchTrendingCoins, fetchTopGainersCoins, fetchNewCoins, fetchPortfolioBalance, wallet, showToast]);
 
 	const handlePressCoinCard = useCallback((coin: Coin) => {
-		console.log('[HomeScreen LOG] handlePressCoinCard called for:', coin.symbol, coin.mintAddress);
+		console.log('[HomeScreen LOG] handlePressCoinCard called for:', coin.symbol, coin.address);
 		logger.breadcrumb({
 			category: 'ui',
 			message: 'Pressed CoinCard on HomeScreen',
-			data: { coinSymbol: coin.symbol, coinMint: coin.mintAddress }
+			data: { coinSymbol: coin.symbol, coinMint: coin.address }
 		});
 		handleCoinPressCallback(coin);
 	}, [handleCoinPressCallback]);
@@ -467,7 +467,7 @@ const HomeScreen = () => {
 						{hasTrendingCoins && (
 							<FlatList
 								data={trendingCoins}
-								keyExtractor={(item) => item.mintAddress || item.symbol}
+								keyExtractor={(item, index) => item.address || item.symbol || `trending-coin-${index}`}
 								renderItem={renderTrendingCoinItem}
 								scrollEnabled={false}
 								// Performance optimizations to prevent UI blocking
@@ -492,8 +492,8 @@ const HomeScreen = () => {
 
 	// Extracted renderItem function for trending coins FlatList
 	const renderTrendingCoinItem = useCallback(({ item }: { item: Coin }) => {
-		const history = priceHistories[item.mintAddress!];
-		const isLoadingHistory = isLoadingPriceHistories[item.mintAddress!];
+		const history = priceHistories[item.address!];
+		const isLoadingHistory = isLoadingPriceHistories[item.address!];
 
 		return (
 			<View style={styles.coinCardContainerStyle}>

@@ -25,7 +25,7 @@ const CoinCard: React.FC<CoinCardProps> = ({
 
 	const handlePress = useCallback(() => {
 		if (onPressCoin) {
-			logger.info(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.mintAddress);
+			logger.info(`[CoinCard LOG] ${isHorizontal ? 'Horizontal' : 'Vertical'} card pressed:`, coin.symbol, coin.address);
 			onPressCoin(coin);
 		}
 	}, [coin, onPressCoin, isHorizontal]);
@@ -89,9 +89,9 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					{formatPrice(Number(coin.price))}
 				</Text>
 				{/* Optionally, add a small 24h change if space permits */}
-				{coin.change24h !== undefined && (
-					<Text style={styles.horizontalChangeStyle(coin.change24h)} numberOfLines={1}>
-						{formatPercentage(coin.change24h, 1, true)}
+						{coin.price24hChangePercent !== undefined && (
+			<Text style={styles.horizontalChangeStyle(coin.price24hChangePercent)} numberOfLines={1}>
+				{formatPercentage(coin.price24hChangePercent, 1, true)}
 					</Text>
 				)}
 			</TouchableOpacity>
@@ -100,15 +100,15 @@ const CoinCard: React.FC<CoinCardProps> = ({
 
 	// Original vertical layout
 	const renderPriceChange = () => {
-		if (coin.change24h === undefined) return null;
-		const changeStyle = coin.change24h > 0
+		if (coin.price24hChangePercent === undefined) return null;
+		const changeStyle = coin.price24hChangePercent > 0
 			? styles.changePositive
-			: coin.change24h < 0
+			: coin.price24hChangePercent < 0
 				? styles.changeNegative
 				: styles.changeNeutral;
 		return (
 			<Text style={changeStyle} numberOfLines={1}>
-				{formatPercentage(coin.change24h, 2, true)}
+				{formatPercentage(coin.price24hChangePercent, 2, true)}
 			</Text>
 		);
 	};
@@ -174,15 +174,15 @@ const CoinCard: React.FC<CoinCardProps> = ({
 					>
 						{formatPrice(Number(coin.price))}
 					</Text>
-					{coin.change24h !== undefined && coin.change24h > 0 ? (
+					{coin.price24hChangePercent !== undefined && coin.price24hChangePercent > 0 ? (
 						renderPriceChange()
 					) : coin.value !== undefined ? (
 						<Text style={styles.volume} numberOfLines={1}>
 							Value: {formatPrice(coin.value)}
 						</Text>
-					) : typeof coin.dailyVolume === 'number' && (
+					) : typeof coin.volume24hUSD === 'number' && (
 						<Text style={styles.volume} numberOfLines={1}>
-							Vol: {formatNumber(coin.dailyVolume, true)}
+							Vol: {formatNumber(coin.volume24hUSD, true)}
 						</Text>
 					)}
 				</View>
@@ -195,15 +195,15 @@ const CoinCard: React.FC<CoinCardProps> = ({
 export default React.memo(CoinCard, (prevProps, nextProps) => {
 	// Custom comparison function to optimize re-renders
 	return (
-		prevProps.coin.mintAddress === nextProps.coin.mintAddress &&
+		prevProps.coin.address === nextProps.coin.address &&
 		prevProps.coin.price === nextProps.coin.price &&
-		prevProps.coin.change24h === nextProps.coin.change24h &&
+		prevProps.coin.price24hChangePercent === nextProps.coin.price24hChangePercent &&
 		prevProps.coin.resolvedIconUrl === nextProps.coin.resolvedIconUrl &&
 		prevProps.coin.symbol === nextProps.coin.symbol &&
 		prevProps.coin.name === nextProps.coin.name &&
 		prevProps.coin.balance === nextProps.coin.balance &&
 		prevProps.coin.value === nextProps.coin.value &&
-		prevProps.coin.dailyVolume === nextProps.coin.dailyVolume &&
+		prevProps.coin.volume24hUSD === nextProps.coin.volume24hUSD &&
 		prevProps.isHorizontal === nextProps.isHorizontal &&
 		prevProps.priceHistory === nextProps.priceHistory &&
 		prevProps.isPriceHistoryLoading === nextProps.isPriceHistoryLoading &&

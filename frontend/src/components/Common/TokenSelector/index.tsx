@@ -6,7 +6,7 @@ import { BlurView } from 'expo-blur';
 import { ChevronDownIcon } from '@components/Common/Icons';
 import { TokenSelectorProps, TokenSearchModalProps } from './types';
 import { useStyles } from './styles';
-import { usePortfolioStore } from '@store/portfolio';
+import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
 import { useCoinStore } from '@store/coins'; // Already here, good.
 import type { Coin } from '@/types';
 import type { InputUnit } from '@/screens/Trade/types';
@@ -41,7 +41,7 @@ const TokenItem = React.memo<{
 	}, [coin, onSelect]);
 
 	if (!coin.resolvedIconUrl) {
-		logger.warn('TokenItem: Missing resolvedIconUrl for coin', coin.mintAddress);
+		logger.warn('TokenItem: Missing resolvedIconUrl for coin', coin.address);
 		return
 	}
 
@@ -61,7 +61,7 @@ const TokenItem = React.memo<{
 				<Text style={styles.tokenSymbol}>{coin.symbol}</Text>
 				<Text style={styles.tokenName}>{coin.name}</Text>
 				<Text style={styles.tokenAddress}>
-					{coin.mintAddress ? `${coin.mintAddress.slice(0, 6)}...${coin.mintAddress.slice(-6)}` : 'N/A'}
+					{coin.address ? `${coin.address.slice(0, 6)}...${coin.address.slice(-6)}` : 'N/A'}
 				</Text>
 			</View>
 			{portfolioToken && (
@@ -150,9 +150,11 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 	// Create a memoized map for faster portfolio token lookup
 	const portfolioTokenMap = useMemo(() => {
-		const map = new Map<string, { mintAddress: string; amount: number; coin: Coin }>();
-		portfolioTokens.forEach((token: { mintAddress: string; amount: number; coin: Coin }) => {
-			map.set(token.mintAddress, token);
+		const map = new Map<string, PortfolioToken>();
+		portfolioTokens.forEach((token: PortfolioToken) => {
+			// Map using the coin's address (which is the new property name) 
+			// but PortfolioToken still uses mintAddress for now
+			map.set(token.coin.address, token);
 		});
 		return map;
 	}, [portfolioTokens]);
@@ -166,7 +168,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	// Memoize render item function (styles is memoized and stable, safe to omit from deps)
 	const renderItem = useCallback(({ item: coin }: { item: Coin }) => {
 		logger.info('renderItem', coin);
-		const portfolioToken = portfolioTokenMap.get(coin.mintAddress);
+		const portfolioToken = portfolioTokenMap.get(coin.address);
 
 		return (
 			<TokenItem
@@ -180,7 +182,7 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 	}, [handleTokenSelect, portfolioTokenMap]);
 
 	// Memoize key extractor
-	const keyExtractor = useCallback((coin: Coin) => coin.mintAddress, []);
+	const keyExtractor = useCallback((coin: Coin) => coin.address, []);
 
 	// Memoize search query change handler with throttling
 	const handleSearchQueryChange = useCallback((query: string) => {
@@ -279,7 +281,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	initialInputUnit = 'CRYPTO',
 	// Props for TextInput
 	textInputProps = {},
-	helperText,
 }) => {
 	testID = testID?.toLowerCase();
 	const styles = useStyles();
@@ -293,10 +294,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	// Fetch/update coin data from store when selectedToken changes
 	useEffect(() => {
-		if (enableUsdToggle && selectedToken?.mintAddress) {
+		if (enableUsdToggle && selectedToken?.address) {
 			// Fetch coin data, which includes price, and update the store
 			// The component will react to store changes via useCoinStore selector below
-			useCoinStore.getState().getCoinByID(selectedToken.mintAddress, true)
+			useCoinStore.getState().getCoinByID(selectedToken.address, true)
 				.catch(error => logger.error('[TokenSelector] Failed to fetch coin data for price:', error));
 		}
 		// Reset unit and amounts if selectedToken is cleared
@@ -309,7 +310,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	// Get live coin data (including price) from the store
 	const currentTokenDataFromStore = useCoinStore(state =>
-		enableUsdToggle && selectedToken ? state.coinMap[selectedToken.mintAddress] : undefined
+		enableUsdToggle && selectedToken ? state.coinMap[selectedToken.address] : undefined
 	);
 	const liveExchangeRate = currentTokenDataFromStore?.price; // This is a number or undefined
 
@@ -356,7 +357,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 			return nextUnit;
 		});
-	}, [onAmountChange, liveExchangeRate, amountValue, internalUsdAmount]);
+	}, [liveExchangeRate, amountValue, internalUsdAmount]);
 
 	const handleCryptoAmountChange = useCallback((text: string) => {
 		if (onAmountChange) onAmountChange(text); // Update parent's crypto amount (which is amountValue)
@@ -414,6 +415,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	const handleDismiss = useCallback(() => setModalVisible(false), []);
 	const activityIndicatorStyle = useMemo(() => ({ height: styles.amountInput.height }), [styles.amountInput.height]);
+	const cardStyle = useMemo(() => [styles.cardContainer, containerStyle], [styles.cardContainer, containerStyle]);
 
 	// Calculate display values for stacked layout
 	const cryptoDisplayValue = useMemo(() => {
@@ -443,7 +445,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	return (
 		<>
-			<Card elevation={0} style={[styles.cardContainer, containerStyle]}>
+			<Card elevation={0} style={cardStyle}>
 				<Card.Content style={styles.cardContent}>
 					<View style={styles.leftSection}>
 						<TouchableOpacity

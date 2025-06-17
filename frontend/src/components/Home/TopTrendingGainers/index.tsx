@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, Animated, ListRenderItemInfo, TouchableOpacity, ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -31,21 +31,27 @@ const TrendingCard: React.FC<{
 	style?: ViewStyle;
 }> = React.memo(({ coin, onPress }) => {
 	const styles = useStyles();
-	const getTrendColor = (
+	const getTrendColor = useCallback((
 		value: number | undefined,
 	): string => {
 		if (value === undefined) return styles.trend.neutral;
 		if (value > 0) return styles.trend.positive;
 		if (value < 0) return styles.trend.negative;
 		return styles.trend.neutral;
-	};
+	}, [styles.trend]);
 
 	const handlePress = useCallback(() => {
 		onPress(coin);
 	}, [coin, onPress]);
 
-	// Use change24h from the local Coin type
-	const changeValue = coin.change24h;
+	// Use price24hChangePercent from the updated Coin type
+	const changeValue = coin.price24hChangePercent;
+
+	// Memoize the change text style to prevent JSX array creation
+	const changeTextStyle = useMemo(() => [
+		styles.trendingChange,
+		{ color: getTrendColor(changeValue) }
+	], [styles.trendingChange, changeValue, getTrendColor]);
 
 	return (
 		<TouchableOpacity
@@ -87,10 +93,7 @@ const TrendingCard: React.FC<{
 						/>
 					)}
 					<Text
-						style={[
-							styles.trendingChange,
-							{ color: getTrendColor(changeValue) }
-						]}
+						style={changeTextStyle}
 						numberOfLines={1}
 						testID={`trending-coin-change-${coin.symbol.toLowerCase()}`}
 					>
@@ -180,7 +183,7 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 			<Animated.FlatList
 				data={topTrendingGainers}
 				renderItem={renderItem}
-				keyExtractor={(item) => item.mintAddress}
+				keyExtractor={(item) => item.address}
 				horizontal
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={styles.listContentContainer}
