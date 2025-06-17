@@ -20,12 +20,12 @@ export const useStyles = () => {
 	// Sparkline chart colors using theme trend colors with transparency preserved
 	const sparklineColors = {
 		green: {
-			opaque: `${theme.trend.positive}4D`, // 30% opacity using theme positive trend color
-			transparent: `${theme.trend.positive}00`, // Fully transparent using theme positive trend color
+			opaque: `${theme.trend.positive}80`, // 50% opacity using theme positive trend color
+			transparent: `${theme.trend.positive}20`, // 12.5% opacity using theme positive trend color
 		},
 		red: {
-			opaque: `${theme.trend.negative}4D`, // 30% opacity using theme negative trend color
-			transparent: `${theme.trend.negative}00`, // Fully transparent using theme negative trend color
+			opaque: `${theme.trend.negative}80`, // 50% opacity using theme negative trend color
+			transparent: `${theme.trend.negative}20`, // 12.5% opacity using theme negative trend color
 		},
 	};
 
