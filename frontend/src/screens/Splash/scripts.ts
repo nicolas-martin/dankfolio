@@ -1,48 +1,28 @@
 import { useEffect, useState } from 'react';
-import { LoadingState } from './types';
+import { LoadingState, SplashScreenNavigationProp } from './types';
 import { usePortfolioStore } from '@store/portfolio';
-import { useCoinStore } from '@store/coins';
 import { logger } from '@/utils/logger';
 
-export const useLoadingState = (navigation: unknown) => {
+export const useLoadingState = (navigation: SplashScreenNavigationProp) => {
 	const [loadingState, setLoadingState] = useState<LoadingState>({
 		portfolioLoaded: false,
 		trendingLoaded: false,
 	});
 
 	const { fetchPortfolioBalance, wallet } = usePortfolioStore();
-	const { fetchAvailableCoins, availableCoins } = useCoinStore();
 
 	useEffect(() => {
 		const loadData = async () => {
 			let _portfolioSuccess = false; // Prefixed
 			let _trendingSuccess = false; // Prefixed
 
-			try {
-				// Load trending coins with timeout
-				const trendingPromise = availableCoins.length > 0
-					? Promise.resolve()
-					: fetchAvailableCoins();
-
-				await Promise.race([
-					trendingPromise,
-					new Promise((_, reject) => setTimeout(() => reject(new Error('Trending coins timeout')), 10000))
-				]);
-
-				_trendingSuccess = true;
-				setLoadingState(prev => ({
-					...prev,
-					trendingLoaded: true
-				}));
-			} catch (error) {
-				logger.error('Error loading trending coins:', error);
-				// Still mark as loaded to prevent getting stuck
-				setLoadingState(prev => ({
-					...prev,
-					trendingLoaded: true
-				}));
-				_trendingSuccess = false;
-			}
+			// Note: Available coins loading moved to App.tsx
+			// This splash screen component is not used in the current navigation flow
+			_trendingSuccess = true;
+			setLoadingState(prev => ({
+				...prev,
+				trendingLoaded: true
+			}));
 
 			// Load portfolio data with timeout and error handling
 			try {
@@ -95,7 +75,7 @@ export const useLoadingState = (navigation: unknown) => {
 		return () => {
 			clearTimeout(safetyTimeout);
 		};
-	}, [fetchPortfolioBalance, fetchAvailableCoins, navigation, wallet, availableCoins]);
+	}, [fetchPortfolioBalance, navigation, wallet]);
 
 	return loadingState;
 }; 

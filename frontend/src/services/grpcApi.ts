@@ -79,15 +79,16 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	getAvailableCoins: async (trendingOnly?: boolean): Promise<grpcModel.Coin[]> => {
+	getAvailableCoins: async (limit?: number, offset?: number): Promise<grpcModel.Coin[]> => {
 		const serviceName = 'CoinService';
 		const methodName = 'getAvailableCoins';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { trendingOnly });
+			grpcUtils.logRequest(serviceName, methodName, { limit, offset });
 
-			const response = await coinClient.getAvailableCoins({},
-				{ headers: grpcUtils.getRequestHeaders() }
-			);
+			const response = await coinClient.getAvailableCoins({
+				limit: limit || 50,
+				offset: offset || 0
+			}, { headers: grpcUtils.getRequestHeaders() });
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 

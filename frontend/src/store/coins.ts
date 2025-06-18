@@ -16,7 +16,7 @@ interface CoinState {
 	newCoinsError?: Error;
 	trendingCoinsError?: Error;
 	topGainersCoinsError?: Error;
-	fetchAvailableCoins: (trendingOnly?: boolean) => Promise<void>;
+	fetchAvailableCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchNewCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchTrendingCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchTopGainersCoins: (limit?: number, offset?: number) => Promise<void>;
@@ -37,9 +37,9 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 	trendingCoinsError: undefined,
 	topGainersCoinsError: undefined,
 
-	fetchAvailableCoins: async (trendingOnly?: boolean) => {
+	fetchAvailableCoins: async (limit?: number, offset?: number) => {
 		try {
-			const coins = await grpcApi.getAvailableCoins(trendingOnly);
+			const coins = await grpcApi.getAvailableCoins(limit, offset);
 			// Update coinMap with the fetched coins
 			const coinMap = coins.reduce((acc: Record<string, Coin>, coin: Coin) => {
 				acc[coin.address] = coin;

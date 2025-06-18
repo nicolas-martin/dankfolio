@@ -101,9 +101,11 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 	// Memoize base list to prevent unnecessary recalculations
 	const baseList = useMemo(() => {
-		return showOnlyPortfolioTokens
+		const list = showOnlyPortfolioTokens
 			? portfolioTokens.map(token => token.coin)
 			: availableCoins;
+		logger.info(`[TokenSearchModal] baseList updated: ${list.length} coins, showOnlyPortfolioTokens: ${showOnlyPortfolioTokens}`);
+		return list;
 	}, [showOnlyPortfolioTokens, portfolioTokens, availableCoins]);
 
 	// Optimized filtering with stable references to prevent flicker
@@ -112,7 +114,9 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 
 		if (!searchQuery.trim()) {
 			// Return first 50 coins when no search - stable reference
-			return baseList.slice(0, 50);
+			const result = baseList.slice(0, 50);
+			logger.info(`[TokenSearchModal] filteredCoins (no search): ${result.length} coins`);
+			return result;
 		}
 
 		const query = searchQuery.toLowerCase().trim();
@@ -122,7 +126,9 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		);
 
 		// Limit search results and ensure stable reference
-		return filtered.slice(0, maxResults);
+		const result = filtered.slice(0, maxResults);
+		logger.info(`[TokenSearchModal] filteredCoins (search: "${query}"): ${result.length} coins`);
+		return result;
 	}, [baseList, searchQuery]);
 
 	// Memoize token selection handler

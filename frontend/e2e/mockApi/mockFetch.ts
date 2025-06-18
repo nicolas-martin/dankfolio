@@ -55,12 +55,21 @@ function parseRequestBody(options?: FetchInit): any {
 
 // Handler Functions
 async function handleGetAvailableCoins(options?: FetchInit) {
+	console.log('🎭 handleGetAvailableCoins called');
 	const requestData = parseRequestBody(options);
-	const coinsToReturn = requestData.trendingOnly ? MOCK_TRENDING_COINS : ALL_MOCK_COINS;
-	return create(GetAvailableCoinsResponseSchema, {
-		coins: coinsToReturn,
-		totalCount: coinsToReturn.length,
+	const limit = requestData.limit || 50;
+	const offset = requestData.offset || 0;
+	
+	// Return all mock coins with pagination
+	const paginatedCoins = ALL_MOCK_COINS.slice(offset, offset + limit);
+	console.log(`🎭 handleGetAvailableCoins returning ${paginatedCoins.length} coins (total: ${ALL_MOCK_COINS.length})`);
+	
+	const response = create(GetAvailableCoinsResponseSchema, {
+		coins: paginatedCoins,
+		totalCount: ALL_MOCK_COINS.length,
 	});
+	console.log('🎭 handleGetAvailableCoins response created successfully');
+	return response;
 }
 
 // New RPC method handlers for specific coin categories
@@ -420,6 +429,9 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 
 	const path = urlString.replace(apiUrl, '');
 	const normalizedPath = path.replace(/^\/+/, '/').toLowerCase();
+
+	// Debug: Log all incoming requests
+	console.log(`🎭 Mock API: Incoming request to ${normalizedPath}`);
 
 	try {
 		const handler = endpointHandlers[normalizedPath];

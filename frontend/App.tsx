@@ -61,6 +61,7 @@ import Navigation from '@components/Common/Navigation';
 import { themes, extendedThemeProperties, AppTheme } from '@utils/theme';
 import { ToastProvider } from '@components/Common/Toast';
 import { usePortfolioStore } from '@store/portfolio';
+import { useCoinStore } from '@store/coins';
 import WalletSetupScreen from '@screens/WalletSetup';
 import { Keypair } from '@solana/web3.js';
 import { initializeDebugWallet } from '@/utils/debugWallet'; // Import for debug wallet
@@ -161,6 +162,16 @@ const App: React.FC = () => {
 			} catch (e) {
 				logger.error('❌ Failed to initialize Firebase services', { error: e?.message });
 				// Decide if this error should block app startup or be handled gracefully
+			}
+
+			// Load available coins for token selectors
+			logger.breadcrumb({ message: 'App: Preparing - Loading available coins', category: 'app_lifecycle' });
+			try {
+				await useCoinStore.getState().fetchAvailableCoins();
+				logger.info("✅ Available coins loaded successfully.");
+			} catch (e) {
+				logger.error('❌ Failed to load available coins', { error: e?.message });
+				// Don't block app startup - token selectors will handle empty state
 			}
 
 			logger.breadcrumb({ message: 'App: Preparing - Checking wallet storage', category: 'app_lifecycle' });
