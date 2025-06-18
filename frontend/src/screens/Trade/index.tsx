@@ -355,6 +355,7 @@ const Trade: React.FC = () => {
 			<Text style={styles.cardLabel}>{label}</Text>
 			{/* USD Toggle Switch and related UI removed from here, will be inside TokenSelector for 'From' card */}
 			<TokenSelector
+				key={`${label}-${coin?.address || 'none'}`} // Add key prop to force re-render on coin change
 				selectedToken={coin!}
 				onSelectToken={onSelectToken}
 				label="Select Token" // This label might be redundant if TokenSelector has its own internal label/placeholder logic
