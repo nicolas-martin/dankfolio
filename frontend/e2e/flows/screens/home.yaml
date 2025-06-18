@@ -8,6 +8,8 @@ env:
     FRESH_SYMBOL: "fresh"
     ROCKET_SYMBOL: "rocket"
     DIAMOND_SYMBOL: "diamond"
+    MEGA_SYMBOL: "mega"
+    PUMP_SYMBOL: "pump"
 ---
 - launchApp
 
@@ -47,3 +49,13 @@ env:
       file: ../components/new-coin-card.yaml
       env:
           COIN_SYMBOL: "${DIAMOND_SYMBOL}"
+
+- runFlow:
+      file: ../components/top-gainer.yaml
+      env:
+          COIN_SYMBOL: "${MEGA_SYMBOL}"
+
+- runFlow:
+      file: ../components/top-gainer.yaml
+      env:
+          COIN_SYMBOL: "${PUMP_SYMBOL}"

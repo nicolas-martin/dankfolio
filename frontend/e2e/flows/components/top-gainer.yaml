@@ -1,0 +1,13 @@
+appId: com.nicolasmartin.dankfolio
+---
+- assertVisible:
+      id: "trending-gainer-card-${COIN_SYMBOL}"
+
+- assertVisible:
+      id: "trending-gainer-symbol-${COIN_SYMBOL}"
+
+- assertVisible:
+      id: "trending-gainer-change-${COIN_SYMBOL}"
+
+- assertVisible:
+      id: "trending-gainer-icon-${COIN_SYMBOL}"
