@@ -55,7 +55,7 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 
 	// Key extractor for coins
 	const keyExtractor = useCallback((coin: Coin, index: number) => {
-		return coin.address;
+		return `top-gainer-${coin.address}`;
 	}, []);
 
 	if (!isLoading && topTrendingGainers.length === 0) {

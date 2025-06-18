@@ -182,6 +182,10 @@ export const MOCK_TRENDING_COINS: ProtobufCoin[] = [
 		...BASE_COINS_DATA.SOL,
 		price24hChangePercent: 8.7, // Moderate positive change
 	}),
+	create(CoinSchema, {
+		...BASE_COINS_DATA.USDC,
+		price24hChangePercent: 0.1, // Stable coin with minimal change
+	}),
 ];
 
 // Mock new coins - recently listed coins sorted by jupiter_listed_at desc
@@ -376,9 +380,9 @@ export const MOCK_TOP_GAINER_COINS: ProtobufCoin[] = [
 	}),
 ];
 
-// All coins combined for general searches - includes base coins plus category-specific coins
+// All coins combined for general searches - only category-specific coins (no base duplicates)
+// BASE_COINS_DATA is just a template - the actual coins are in trending/new/gainer lists
 export const ALL_MOCK_COINS = [
-	...Object.values(BASE_COINS_DATA).map(coinData => create(CoinSchema, coinData)),
 	...MOCK_TRENDING_COINS,
 	...MOCK_NEW_COINS,
 	...MOCK_TOP_GAINER_COINS,

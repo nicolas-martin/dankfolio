@@ -59,7 +59,7 @@ const NewCoins: React.FC<NewCoinsProps> = ({ newCoins: newlyListedCoins, isLoadi
 
 	// Key extractor for coins
 	const keyExtractor = useCallback((coin: Coin, index: number) => {
-		return `${coin.address}-${index}`;
+		return `new-listing-${coin.address}`;
 	}, []);
 
 	if (!isLoadingNewlyListed && newlyListedCoins.length === 0) {
