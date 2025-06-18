@@ -602,6 +602,8 @@ export const grpcApi: grpcModel.API = {
 			}
 
 			// 1. Get latest prices for both coins
+			if (!fromCoin || !fromCoin.address) { throw new Error("Invalid or missing address for fromCoin in getFullSwapQuoteOrchestrated"); }
+			if (!toCoin || !toCoin.address) { throw new Error("Invalid or missing address for toCoin in getFullSwapQuoteOrchestrated"); }
 			const prices = await grpcApi.getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]); // Use existing grpcApi method
 
 			const updatedFromCoin = { ...fromCoin, price: prices[fromCoin.mintAddress] };
