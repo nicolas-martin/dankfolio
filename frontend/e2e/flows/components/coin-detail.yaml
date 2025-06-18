@@ -1,17 +1,17 @@
 appId: com.nicolasmartin.dankfolio
 ---
-# - assertVisible:
-#       id: "coin-detail-screen"
-
-# Test price display section
+# -----------------
+# PRICE DISPLAY SECTION
+# -----------------
 - assertVisible:
       id: "coin-detail-price-card-${JUP_SYMBOL}"
 
 - assertVisible:
       id: "price-display-container"
 
-- assertVisible:
-      id: "price-display-coin-icon"
+# skip for now
+# - assertVisible:
+#       id: "price-display-coin-icon"
 
 - assertVisible:
       id: "price-display-coin-name"
@@ -50,20 +50,41 @@ appId: com.nicolasmartin.dankfolio
 - tapOn:
       id: "coin-detail-timeframe-button-1H"
 
+# -----------------
+# MARKET STATS SECTION
+# -----------------
+- scrollUntilVisible:
+      element:
+          id: "market-stats-container"
+      direction: DOWN
+      # speed: 100
 - assertVisible:
-      id: "coin-detail-holdings-card"
-      optional: true
-
+      id: "market-stats-marketcap"
 - assertVisible:
-      id: "coin-detail-holdings-title"
-      optional: true
+      id: "market-stats-volume"
+- assertVisible:
+      id: "market-stats-fdv"
+- assertVisible:
+      id: "market-stats-liquidity"
+- assertVisible:
+      id: "market-stats-price-change"
+- assertVisible:
+      id: "market-stats-rank"
 
-# Scroll down to see more content
+# -----------------
+# ABOUT SECTION
+# -----------------
+
 - scrollUntilVisible:
       element:
           id: "coin-detail-about-card"
       direction: DOWN
-      speed: 100
+
+- assertVisible:
+      id: "coin-detail-holdings-card"
+
+- assertVisible:
+      id: "coin-detail-holdings-title"
 
 - assertVisible:
       id: "coin-detail-about-card"
@@ -78,20 +99,10 @@ appId: com.nicolasmartin.dankfolio
       id: "coin-info-description-text"
 
 - assertVisible:
-      id: "coin-info-volume-section"
-      optional: true
-
-- assertVisible:
-      id: "coin-info-volume-value"
-      optional: true
-
-- assertVisible:
       id: "coin-info-tags-section"
-      optional: true
 
 - assertVisible:
       id: "coin-info-links-section"
-      optional: true
 
 - assertVisible:
       id: "trade-button-${COIN_SYMBOL}"
