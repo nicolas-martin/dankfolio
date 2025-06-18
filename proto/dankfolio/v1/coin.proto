@@ -11,8 +11,8 @@ service CoinService {
   // GetCoinByID returns a specific coin by ID
   rpc GetCoinByID(GetCoinByIDRequest) returns (Coin);
 
-  // SearchCoinByMint searches for a coin by mint address
-  rpc SearchCoinByMint(SearchCoinByMintRequest) returns (SearchCoinByMintResponse);
+  // SearchCoinByAddress searches for a coin by mint address
+  rpc SearchCoinByAddress(SearchCoinByAddressRequest) returns (SearchCoinByAddressResponse);
 
   // GetAllCoins returns a list of all available coins
   rpc GetAllCoins(GetAllCoinsRequest) returns (GetAllCoinsResponse);
@@ -74,14 +74,14 @@ message GetAvailableCoinsResponse {
 }
 
 message GetCoinByIDRequest {
-  string mint_address = 1;
+  string address = 1;
 }
 
-message SearchCoinByMintRequest {
-  string mint_address = 1;
+message SearchCoinByAddressRequest {
+  string address = 1;
 }
 
-message SearchCoinByMintResponse {
+message SearchCoinByAddressResponse {
   Coin coin = 1;
 }
 

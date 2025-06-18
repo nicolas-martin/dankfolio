@@ -38,9 +38,9 @@ const (
 	CoinServiceGetAvailableCoinsProcedure = "/dankfolio.v1.CoinService/GetAvailableCoins"
 	// CoinServiceGetCoinByIDProcedure is the fully-qualified name of the CoinService's GetCoinByID RPC.
 	CoinServiceGetCoinByIDProcedure = "/dankfolio.v1.CoinService/GetCoinByID"
-	// CoinServiceSearchCoinByMintProcedure is the fully-qualified name of the CoinService's
-	// SearchCoinByMint RPC.
-	CoinServiceSearchCoinByMintProcedure = "/dankfolio.v1.CoinService/SearchCoinByMint"
+	// CoinServiceSearchCoinByAddressProcedure is the fully-qualified name of the CoinService's
+	// SearchCoinByAddress RPC.
+	CoinServiceSearchCoinByAddressProcedure = "/dankfolio.v1.CoinService/SearchCoinByAddress"
 	// CoinServiceGetAllCoinsProcedure is the fully-qualified name of the CoinService's GetAllCoins RPC.
 	CoinServiceGetAllCoinsProcedure = "/dankfolio.v1.CoinService/GetAllCoins"
 	// CoinServiceSearchProcedure is the fully-qualified name of the CoinService's Search RPC.
@@ -61,8 +61,8 @@ type CoinServiceClient interface {
 	GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	// GetCoinByID returns a specific coin by ID
 	GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error)
-	// SearchCoinByMint searches for a coin by mint address
-	SearchCoinByMint(context.Context, *connect.Request[v1.SearchCoinByMintRequest]) (*connect.Response[v1.SearchCoinByMintResponse], error)
+	// SearchCoinByAddress searches for a coin by mint address
+	SearchCoinByAddress(context.Context, *connect.Request[v1.SearchCoinByAddressRequest]) (*connect.Response[v1.SearchCoinByAddressResponse], error)
 	// GetAllCoins returns a list of all available coins
 	GetAllCoins(context.Context, *connect.Request[v1.GetAllCoinsRequest]) (*connect.Response[v1.GetAllCoinsResponse], error)
 	// Search allows searching coins by various criteria
@@ -95,10 +95,10 @@ func NewCoinServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(coinServiceMethods.ByName("GetCoinByID")),
 			connect.WithClientOptions(opts...),
 		),
-		searchCoinByMint: connect.NewClient[v1.SearchCoinByMintRequest, v1.SearchCoinByMintResponse](
+		searchCoinByAddress: connect.NewClient[v1.SearchCoinByAddressRequest, v1.SearchCoinByAddressResponse](
 			httpClient,
-			baseURL+CoinServiceSearchCoinByMintProcedure,
-			connect.WithSchema(coinServiceMethods.ByName("SearchCoinByMint")),
+			baseURL+CoinServiceSearchCoinByAddressProcedure,
+			connect.WithSchema(coinServiceMethods.ByName("SearchCoinByAddress")),
 			connect.WithClientOptions(opts...),
 		),
 		getAllCoins: connect.NewClient[v1.GetAllCoinsRequest, v1.GetAllCoinsResponse](
@@ -136,14 +136,14 @@ func NewCoinServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // coinServiceClient implements CoinServiceClient.
 type coinServiceClient struct {
-	getAvailableCoins  *connect.Client[v1.GetAvailableCoinsRequest, v1.GetAvailableCoinsResponse]
-	getCoinByID        *connect.Client[v1.GetCoinByIDRequest, v1.Coin]
-	searchCoinByMint   *connect.Client[v1.SearchCoinByMintRequest, v1.SearchCoinByMintResponse]
-	getAllCoins        *connect.Client[v1.GetAllCoinsRequest, v1.GetAllCoinsResponse]
-	search             *connect.Client[v1.SearchRequest, v1.SearchResponse]
-	getNewCoins        *connect.Client[v1.GetNewCoinsRequest, v1.GetAvailableCoinsResponse]
-	getTrendingCoins   *connect.Client[v1.GetTrendingCoinsRequest, v1.GetAvailableCoinsResponse]
-	getTopGainersCoins *connect.Client[v1.GetTopGainersCoinsRequest, v1.GetAvailableCoinsResponse]
+	getAvailableCoins   *connect.Client[v1.GetAvailableCoinsRequest, v1.GetAvailableCoinsResponse]
+	getCoinByID         *connect.Client[v1.GetCoinByIDRequest, v1.Coin]
+	searchCoinByAddress *connect.Client[v1.SearchCoinByAddressRequest, v1.SearchCoinByAddressResponse]
+	getAllCoins         *connect.Client[v1.GetAllCoinsRequest, v1.GetAllCoinsResponse]
+	search              *connect.Client[v1.SearchRequest, v1.SearchResponse]
+	getNewCoins         *connect.Client[v1.GetNewCoinsRequest, v1.GetAvailableCoinsResponse]
+	getTrendingCoins    *connect.Client[v1.GetTrendingCoinsRequest, v1.GetAvailableCoinsResponse]
+	getTopGainersCoins  *connect.Client[v1.GetTopGainersCoinsRequest, v1.GetAvailableCoinsResponse]
 }
 
 // GetAvailableCoins calls dankfolio.v1.CoinService.GetAvailableCoins.
@@ -156,9 +156,9 @@ func (c *coinServiceClient) GetCoinByID(ctx context.Context, req *connect.Reques
 	return c.getCoinByID.CallUnary(ctx, req)
 }
 
-// SearchCoinByMint calls dankfolio.v1.CoinService.SearchCoinByMint.
-func (c *coinServiceClient) SearchCoinByMint(ctx context.Context, req *connect.Request[v1.SearchCoinByMintRequest]) (*connect.Response[v1.SearchCoinByMintResponse], error) {
-	return c.searchCoinByMint.CallUnary(ctx, req)
+// SearchCoinByAddress calls dankfolio.v1.CoinService.SearchCoinByAddress.
+func (c *coinServiceClient) SearchCoinByAddress(ctx context.Context, req *connect.Request[v1.SearchCoinByAddressRequest]) (*connect.Response[v1.SearchCoinByAddressResponse], error) {
+	return c.searchCoinByAddress.CallUnary(ctx, req)
 }
 
 // GetAllCoins calls dankfolio.v1.CoinService.GetAllCoins.
@@ -192,8 +192,8 @@ type CoinServiceHandler interface {
 	GetAvailableCoins(context.Context, *connect.Request[v1.GetAvailableCoinsRequest]) (*connect.Response[v1.GetAvailableCoinsResponse], error)
 	// GetCoinByID returns a specific coin by ID
 	GetCoinByID(context.Context, *connect.Request[v1.GetCoinByIDRequest]) (*connect.Response[v1.Coin], error)
-	// SearchCoinByMint searches for a coin by mint address
-	SearchCoinByMint(context.Context, *connect.Request[v1.SearchCoinByMintRequest]) (*connect.Response[v1.SearchCoinByMintResponse], error)
+	// SearchCoinByAddress searches for a coin by mint address
+	SearchCoinByAddress(context.Context, *connect.Request[v1.SearchCoinByAddressRequest]) (*connect.Response[v1.SearchCoinByAddressResponse], error)
 	// GetAllCoins returns a list of all available coins
 	GetAllCoins(context.Context, *connect.Request[v1.GetAllCoinsRequest]) (*connect.Response[v1.GetAllCoinsResponse], error)
 	// Search allows searching coins by various criteria
@@ -222,10 +222,10 @@ func NewCoinServiceHandler(svc CoinServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(coinServiceMethods.ByName("GetCoinByID")),
 		connect.WithHandlerOptions(opts...),
 	)
-	coinServiceSearchCoinByMintHandler := connect.NewUnaryHandler(
-		CoinServiceSearchCoinByMintProcedure,
-		svc.SearchCoinByMint,
-		connect.WithSchema(coinServiceMethods.ByName("SearchCoinByMint")),
+	coinServiceSearchCoinByAddressHandler := connect.NewUnaryHandler(
+		CoinServiceSearchCoinByAddressProcedure,
+		svc.SearchCoinByAddress,
+		connect.WithSchema(coinServiceMethods.ByName("SearchCoinByAddress")),
 		connect.WithHandlerOptions(opts...),
 	)
 	coinServiceGetAllCoinsHandler := connect.NewUnaryHandler(
@@ -264,8 +264,8 @@ func NewCoinServiceHandler(svc CoinServiceHandler, opts ...connect.HandlerOption
 			coinServiceGetAvailableCoinsHandler.ServeHTTP(w, r)
 		case CoinServiceGetCoinByIDProcedure:
 			coinServiceGetCoinByIDHandler.ServeHTTP(w, r)
-		case CoinServiceSearchCoinByMintProcedure:
-			coinServiceSearchCoinByMintHandler.ServeHTTP(w, r)
+		case CoinServiceSearchCoinByAddressProcedure:
+			coinServiceSearchCoinByAddressHandler.ServeHTTP(w, r)
 		case CoinServiceGetAllCoinsProcedure:
 			coinServiceGetAllCoinsHandler.ServeHTTP(w, r)
 		case CoinServiceSearchProcedure:
@@ -293,8 +293,8 @@ func (UnimplementedCoinServiceHandler) GetCoinByID(context.Context, *connect.Req
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.GetCoinByID is not implemented"))
 }
 
-func (UnimplementedCoinServiceHandler) SearchCoinByMint(context.Context, *connect.Request[v1.SearchCoinByMintRequest]) (*connect.Response[v1.SearchCoinByMintResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.SearchCoinByMint is not implemented"))
+func (UnimplementedCoinServiceHandler) SearchCoinByAddress(context.Context, *connect.Request[v1.SearchCoinByAddressRequest]) (*connect.Response[v1.SearchCoinByAddressResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dankfolio.v1.CoinService.SearchCoinByAddress is not implemented"))
 }
 
 func (UnimplementedCoinServiceHandler) GetAllCoins(context.Context, *connect.Request[v1.GetAllCoinsRequest]) (*connect.Response[v1.GetAllCoinsResponse], error) {

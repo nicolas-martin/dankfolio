@@ -127,11 +127,11 @@ export interface SearchResponse {
 	totalCount: number;
 }
 
-export interface SearchCoinByMintRequest {
+export interface SearchCoinByAddressRequest {
 	mintAddress: string;
 }
 
-export interface SearchCoinByMintResponse {
+export interface SearchCoinByAddressResponse {
 	coin?: Coin;
 }
 
@@ -171,7 +171,7 @@ export interface API {
 	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
 	getCoinByID: (mintAddress: string) => Promise<Coin>;
 	search: (params: SearchRequest) => Promise<SearchResponse>;
-	searchCoinByMint: (mintAddress: string) => Promise<SearchCoinByMintResponse>;
+	searchCoinByAddress: (mintAddress: string) => Promise<SearchCoinByAddressResponse>;
 	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;
 	getSwapQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<SwapQuoteResponse>;
 	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;

@@ -270,8 +270,11 @@ func cleanSocialLink(link string, expectedDomain string) string {
 	}
 	// If it's just a handle, prepend the base URL
 	if !strings.Contains(link, "/") && !strings.Contains(link, ".") {
-		if expectedDomain == "twitter.com" || expectedDomain == "x.com" {
+		if expectedDomain == "twitter.com" {
 			return "https://twitter.com/" + strings.TrimPrefix(link, "@")
+		}
+		if expectedDomain == "x.com" {
+			return "https://x.com/" + strings.TrimPrefix(link, "@")
 		}
 		if expectedDomain == "t.me" {
 			return "https://t.me/" + link
