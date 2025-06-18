@@ -25,6 +25,14 @@ export const useStyles = () => {
 			flexShrink: 0,
 			minWidth: '45%', // Ensure minimum space for input
 		},
+		// New: Balance row container (separate from main row)
+		balanceRow: {
+			alignItems: 'flex-start',
+			flexDirection: 'row',
+			justifyContent: 'flex-start',
+			marginTop: theme.spacing.xs,
+			width: '100%',
+		},
 		blurView: {
 			flex: 1,
 		},
@@ -42,29 +50,6 @@ export const useStyles = () => {
 			margin: 0,
 			padding: theme.spacing.md,
 			width: '100%',
-		},
-		// New: Main row container for token selector and amount input
-		mainRow: {
-			alignItems: 'center',
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			minHeight: 44, // Ensure consistent height
-			width: '100%',
-		},
-		// New: Balance row container (separate from main row)
-		balanceRow: {
-			alignItems: 'flex-start',
-			flexDirection: 'row',
-			justifyContent: 'flex-start',
-			marginTop: theme.spacing.xs,
-			width: '100%',
-		},
-		// New: Container for token selector (icon + symbol + dropdown)
-		tokenSelectorContainer: {
-			alignItems: 'center',
-			flexDirection: 'row',
-			flexShrink: 1,
-			maxWidth: '50%', // Prevent it from taking too much space
 		},
 		equivalentValueText: {
 			color: theme.colors.onSurfaceVariant,
@@ -85,6 +70,14 @@ export const useStyles = () => {
 		leftSection: {
 			flex: 1,
 			marginRight: theme.spacing.xs,
+		},
+		// New: Main row container for token selector and amount input
+		mainRow: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			minHeight: 44, // Ensure consistent height
+			width: '100%',
 		},
 		modalContent: {
 			alignSelf: 'center',
@@ -237,6 +230,12 @@ export const useStyles = () => {
 			alignItems: 'center',
 			flexDirection: 'row',
 			flexShrink: 1,
+		},
+		tokenSelectorContainer: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			flexShrink: 1,
+			maxWidth: '50%', // Prevent it from taking too much space
 		},
 		tokenSymbol: {
 			...theme.fonts.titleMedium,

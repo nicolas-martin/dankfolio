@@ -316,7 +316,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	// Effect to update internal USD amount if crypto amountValue (from props) or liveExchangeRate changes
 	useEffect(() => {
-		if (enableUsdToggle && currentInputUnit === 'CRYPTO' && amountValue) {
+		if (enableUsdToggle && amountValue) {
 			const rate = liveExchangeRate;
 			if (rate && rate > 0) {
 				const crypto = parseFloat(amountValue);
@@ -329,10 +329,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 			} else {
 				setInternalUsdAmount(''); // Clear if rate is invalid/zero or not available
 			}
-		} else if (enableUsdToggle && currentInputUnit === 'CRYPTO' && !amountValue) {
+		} else if (enableUsdToggle && !amountValue) {
 			setInternalUsdAmount('');
 		}
-	}, [amountValue, liveExchangeRate, currentInputUnit, enableUsdToggle]);
+	}, [amountValue, liveExchangeRate, enableUsdToggle]);
 
 	const handleUnitToggle = useCallback(() => {
 		setCurrentInputUnit(prevUnit => {
