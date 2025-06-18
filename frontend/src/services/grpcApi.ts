@@ -85,8 +85,7 @@ export const grpcApi: grpcModel.API = {
 		try {
 			grpcUtils.logRequest(serviceName, methodName, { trendingOnly });
 
-			const response = await coinClient.getAvailableCoins(
-				{ trendingOnly },
+			const response = await coinClient.getAvailableCoins({},
 				{ headers: grpcUtils.getRequestHeaders() }
 			);
 
@@ -247,14 +246,14 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	getCoinByID: async (mintAddress: string): Promise<grpcModel.Coin> => {
+	getCoinByID: async (address: string): Promise<grpcModel.Coin> => {
 		const serviceName = 'CoinService';
 		const methodName = 'getCoinByID';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { mintAddress });
+			grpcUtils.logRequest(serviceName, methodName, { address });
 
 			const response = await coinClient.getCoinByID(
-				{ mintAddress },
+				{ address },
 				{ headers: grpcUtils.getRequestHeaders() }
 			);
 
@@ -418,13 +417,13 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	searchCoinByMint: async (mintAddress: string): Promise<grpcModel.SearchCoinByMintResponse> => {
+	searchCoinByAddress: async (address: string): Promise<grpcModel.SearchCoinByAddressResponse> => {
 		const serviceName = 'CoinService';
-		const methodName = 'searchCoinByMint';
+		const methodName = 'searchCoinByAddress';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { mintAddress });
+			grpcUtils.logRequest(serviceName, methodName, { address });
 
-			const response = await coinClient.searchCoinByMint({ mintAddress });
+			const response = await coinClient.searchCoinByAddress({ address });
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
@@ -440,7 +439,7 @@ export const grpcApi: grpcModel.API = {
 				return grpcUtils.handleGrpcError(error, serviceName, methodName);
 			} else {
 				console.error("An unknown error occurred:", error);
-				throw new Error("An unknown error occurred in searchCoinByMint");
+				throw new Error("An unknown error occurred in searchCoinByAddress");
 			}
 		}
 	},
@@ -602,17 +601,20 @@ export const grpcApi: grpcModel.API = {
 			}
 
 			// 1. Get latest prices for both coins
+
 			if (!fromCoin || !fromCoin.address) { throw new Error("Invalid or missing address for fromCoin in getFullSwapQuoteOrchestrated"); }
 			if (!toCoin || !toCoin.address) { throw new Error("Invalid or missing address for toCoin in getFullSwapQuoteOrchestrated"); }
-			const prices = await grpcApi.getCoinPrices([fromCoin.mintAddress, toCoin.mintAddress]); // Use existing grpcApi method
 
-			const updatedFromCoin = { ...fromCoin, price: prices[fromCoin.mintAddress] };
-			const updatedToCoin = { ...toCoin, price: prices[toCoin.mintAddress] };
+			const prices = await grpcApi.getCoinPrices([fromCoin.address, toCoin.address]); // Use existing grpcApi method
+
+
+			const updatedFromCoin = { ...fromCoin, price: prices[fromCoin.address] };
+			const updatedToCoin = { ...toCoin, price: prices[toCoin.address] };
 
 			// 2. Get swap quote using updated prices
 			const rawAmount = commonToRawAmount(amount, updatedFromCoin.decimals); // Use imported toRawAmount
 
-			const quoteResponse = await grpcApi.getSwapQuote(updatedFromCoin.mintAddress, updatedToCoin.mintAddress, rawAmount);
+			const quoteResponse = await grpcApi.getSwapQuote(updatedFromCoin.address, updatedToCoin.address, rawAmount);
 
 			// 3. Format and return the combined result
 			const fullQuote: grpcModel.FullSwapQuoteDetails = {
@@ -650,9 +652,9 @@ export const grpcApi: grpcModel.API = {
 			grpcUtils.logRequest(serviceName, methodName, { limit, offset });
 
 			const response = await coinClient.getNewCoins(
-				{ 
+				{
 					limit: limit || undefined,
-					offset: offset || undefined 
+					offset: offset || undefined
 				},
 				{ headers: grpcUtils.getRequestHeaders() }
 			);
@@ -678,9 +680,9 @@ export const grpcApi: grpcModel.API = {
 			grpcUtils.logRequest(serviceName, methodName, { limit, offset });
 
 			const response = await coinClient.getTrendingCoins(
-				{ 
+				{
 					limit: limit || undefined,
-					offset: offset || undefined 
+					offset: offset || undefined
 				},
 				{ headers: grpcUtils.getRequestHeaders() }
 			);
@@ -706,9 +708,9 @@ export const grpcApi: grpcModel.API = {
 			grpcUtils.logRequest(serviceName, methodName, { limit, offset });
 
 			const response = await coinClient.getTopGainersCoins(
-				{ 
+				{
 					limit: limit || undefined,
-					offset: offset || undefined 
+					offset: offset || undefined
 				},
 				{ headers: grpcUtils.getRequestHeaders() }
 			);

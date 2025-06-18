@@ -710,18 +710,18 @@ func (*GetTradeRequest_TransactionHash) isGetTradeRequest_Identifier() {}
 
 // ListTradesRequest is the request for listing trades
 type ListTradesRequest struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	Limit               int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset              int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
-	SortBy              string                 `protobuf:"bytes,3,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"` // e.g., "created_at", "amount"
-	SortDesc            bool                   `protobuf:"varint,4,opt,name=sort_desc,json=sortDesc,proto3" json:"sort_desc,omitempty"`
-	UserId              *string                `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`                                            // Filter by user ID (wallet public key)
-	Status              *string                `protobuf:"bytes,6,opt,name=status,proto3,oneof" json:"status,omitempty"`                                                          // Filter by trade status (e.g., "completed", "pending")
-	Type                *string                `protobuf:"bytes,7,opt,name=type,proto3,oneof" json:"type,omitempty"`                                                              // Filter by trade type (e.g., "swap", "transfer")
-	FromCoinMintAddress *string                `protobuf:"bytes,8,opt,name=from_coin_mint_address,json=fromCoinMintAddress,proto3,oneof" json:"from_coin_mint_address,omitempty"` // Filter by source coin mint address
-	ToCoinMintAddress   *string                `protobuf:"bytes,9,opt,name=to_coin_mint_address,json=toCoinMintAddress,proto3,oneof" json:"to_coin_mint_address,omitempty"`       // Filter by destination coin mint address
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Limit           int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset          int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	SortBy          string                 `protobuf:"bytes,3,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"` // e.g., "created_at", "amount"
+	SortDesc        bool                   `protobuf:"varint,4,opt,name=sort_desc,json=sortDesc,proto3" json:"sort_desc,omitempty"`
+	UserId          *string                `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`                              // Filter by user ID (wallet public key)
+	Status          *string                `protobuf:"bytes,6,opt,name=status,proto3,oneof" json:"status,omitempty"`                                            // Filter by trade status (e.g., "completed", "pending")
+	Type            *string                `protobuf:"bytes,7,opt,name=type,proto3,oneof" json:"type,omitempty"`                                                // Filter by trade type (e.g., "swap", "transfer")
+	FromCoinAddress *string                `protobuf:"bytes,8,opt,name=from_coin_address,json=fromCoinAddress,proto3,oneof" json:"from_coin_address,omitempty"` // Filter by source coin mint address
+	ToCoinAddress   *string                `protobuf:"bytes,9,opt,name=to_coin_address,json=toCoinAddress,proto3,oneof" json:"to_coin_address,omitempty"`       // Filter by destination coin mint address
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListTradesRequest) Reset() {
@@ -803,16 +803,16 @@ func (x *ListTradesRequest) GetType() string {
 	return ""
 }
 
-func (x *ListTradesRequest) GetFromCoinMintAddress() string {
-	if x != nil && x.FromCoinMintAddress != nil {
-		return *x.FromCoinMintAddress
+func (x *ListTradesRequest) GetFromCoinAddress() string {
+	if x != nil && x.FromCoinAddress != nil {
+		return *x.FromCoinAddress
 	}
 	return ""
 }
 
-func (x *ListTradesRequest) GetToCoinMintAddress() string {
-	if x != nil && x.ToCoinMintAddress != nil {
-		return *x.ToCoinMintAddress
+func (x *ListTradesRequest) GetToCoinAddress() string {
+	if x != nil && x.ToCoinAddress != nil {
+		return *x.ToCoinAddress
 	}
 	return ""
 }
@@ -948,7 +948,7 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tH\x00R\x02id\x12+\n" +
 	"\x10transaction_hash\x18\x02 \x01(\tH\x00R\x0ftransactionHashB\f\n" +
 	"\n" +
-	"identifier\"\x8f\x03\n" +
+	"identifier\"\xf3\x02\n" +
 	"\x11ListTradesRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12\x17\n" +
@@ -956,15 +956,15 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\tsort_desc\x18\x04 \x01(\bR\bsortDesc\x12\x1c\n" +
 	"\auser_id\x18\x05 \x01(\tH\x00R\x06userId\x88\x01\x01\x12\x1b\n" +
 	"\x06status\x18\x06 \x01(\tH\x01R\x06status\x88\x01\x01\x12\x17\n" +
-	"\x04type\x18\a \x01(\tH\x02R\x04type\x88\x01\x01\x128\n" +
-	"\x16from_coin_mint_address\x18\b \x01(\tH\x03R\x13fromCoinMintAddress\x88\x01\x01\x124\n" +
-	"\x14to_coin_mint_address\x18\t \x01(\tH\x04R\x11toCoinMintAddress\x88\x01\x01B\n" +
+	"\x04type\x18\a \x01(\tH\x02R\x04type\x88\x01\x01\x12/\n" +
+	"\x11from_coin_address\x18\b \x01(\tH\x03R\x0ffromCoinAddress\x88\x01\x01\x12+\n" +
+	"\x0fto_coin_address\x18\t \x01(\tH\x04R\rtoCoinAddress\x88\x01\x01B\n" +
 	"\n" +
 	"\b_user_idB\t\n" +
 	"\a_statusB\a\n" +
-	"\x05_typeB\x19\n" +
-	"\x17_from_coin_mint_addressB\x17\n" +
-	"\x15_to_coin_mint_address\"b\n" +
+	"\x05_typeB\x14\n" +
+	"\x12_from_coin_addressB\x12\n" +
+	"\x10_to_coin_address\"b\n" +
 	"\x12ListTradesResponse\x12+\n" +
 	"\x06trades\x18\x01 \x03(\v2\x13.dankfolio.v1.TradeR\x06trades\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
