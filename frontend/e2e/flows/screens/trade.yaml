@@ -1,29 +1,28 @@
 appId: com.nicolasmartin.dankfolio
 env:
-    FROM_COIN_SYMBOL: "SOL"
-    TO_COIN_SYMBOL: "USDC"
+    FROM_SYMBOL: "sol"
+    TO_SYMBOL: "jup"
     TRADE_AMOUNT_FROM: "0.1"
 ---
+# We do have a trade token component but these are more spcific to the trade screen and confirmation logic
 - runFlow: ../common/app-setup.yaml
 
 - tapOn:
-      id: "trending-coin-card-${TO_COIN_SYMBOL}"
-- assertVisible:
-      id: "coin-detail-screen"
+      id: "trending-coin-card-${TO_SYMBOL}"
 
 - assertVisible:
-      id: "trade-button"
+      id: "trade-button-${TO_SYMBOL}"
 - tapOn:
-      id: "trade-button"
+      id: "trade-button-${TO_SYMBOL}"
 - assertVisible:
       id: "trade-screen"
 
 - assertVisible: "FROM"
 - assertVisible:
-      id: "from-token-selector"
+      id: "from-token-selector-${FROM_SYMBOL}"
 - assertVisible: "TO"
 - assertVisible:
-      id: "to-token-selector"
+      id: "to-token-selector-${TO_SYMBOL}"
 
 - tapOn:
       id: "from-token-selector-amount-input"
@@ -60,9 +59,10 @@ env:
       id: "trade-button"
 
 - waitForAnimationToEnd
-- assertVisible: "Bottom sheet backdrop"
+- assertVisible:
+      id: "confirm-swap-button"
 - tapOn:
-      id: "confirm-trade-button"
+      id: "confirm-swap-button"
 - waitForAnimationToEnd
 
 - assertVisible: "Transaction Finalized!"
@@ -70,6 +70,7 @@ env:
       id: trade-status-action-button
 
 - waitForAnimationToEnd
-- assertNotVisible: "Bottom sheet backdrop"
+- assertNotVisible:
+      id: "confirm-swap-button"
 - assertVisible:
       id: "home-screen"
