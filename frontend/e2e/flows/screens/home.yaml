@@ -14,6 +14,7 @@ env:
 # Test main sections are visible
 - assertVisible: "New Listings"
 - assertVisible: "Trending Coins"
+- assertVisible: "Trending Gainers"
 
 # Trending
 - runFlow:
@@ -32,24 +33,15 @@ env:
           COIN_SYMBOL: "${BONK_SYMBOL}"
 
 # New
-- assertVisible:
-      id: "new-coin-card-${FRESH_SYMBOL}"
-
 - runFlow:
       file: ../components/new-coin-card.yaml
       env:
           COIN_SYMBOL: "${FRESH_SYMBOL}"
 
-- assertVisible:
-      id: "new-coin-card-${ROCKET_SYMBOL}"
-
 - runFlow:
       file: ../components/new-coin-card.yaml
       env:
           COIN_SYMBOL: "${ROCKET_SYMBOL}"
-
-- assertVisible:
-      id: "new-coin-card-${DIAMOND_SYMBOL}"
 
 - runFlow:
       file: ../components/new-coin-card.yaml
