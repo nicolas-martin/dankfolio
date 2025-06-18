@@ -11,7 +11,7 @@ import {
 	createCoinCardProps 
 } from './profile_scripts';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
-import { usePortfolioStore, PortfolioToken } from '@store/portfolio';
+import { usePortfolioStore } from '@store/portfolio';
 import { useTransactionsStore } from '@/store/transactions';
 import { useStyles } from './profile_styles';
 import CoinCard from '@/components/Home/CoinCard';

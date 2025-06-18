@@ -405,8 +405,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 	const placeholder = useMemo(() => (enableUsdToggle && currentInputUnit === 'USD'
 		? textInputProps?.placeholder ?? '$0.00'
-		: textInputProps?.placeholder ?? `0.0000 ${selectedToken?.symbol || ''}`.trim()),
-		[enableUsdToggle, currentInputUnit, textInputProps?.placeholder, selectedToken?.symbol]
+		: textInputProps?.placeholder ?? '0.0000'),
+		[enableUsdToggle, currentInputUnit, textInputProps?.placeholder]
 	);
 
 	const _portfolioToken = useMemo(() => {
@@ -420,10 +420,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	// Calculate display values for stacked layout
 	const cryptoDisplayValue = useMemo(() => {
 		if (!amountValue || parseFloat(amountValue) === 0) return '';
-		// Use formatTokenBalance utility for consistent formatting
+		// Use formatTokenBalance utility for consistent formatting - removed symbol
 		const formattedAmount = formatTokenBalance(parseFloat(amountValue), 6);
-		return `${formattedAmount} ${selectedToken?.symbol || ''}`;
-	}, [amountValue, selectedToken]);
+		return formattedAmount; // Removed symbol to save horizontal space
+	}, [amountValue]);
 
 	const usdDisplayValue = useMemo(() => {
 		if (!enableUsdToggle || !selectedToken) return '';
@@ -437,86 +437,93 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 			} else if (rate === undefined) {
 				return '$...';
 			} else {
-				return '$-.--';
+				return '$0.00'; // Show $0.00 instead of hiding
 			}
 		}
-		return '';
+		return '$0.00'; // Always show value estimate, even if $0.00
 	}, [enableUsdToggle, currentInputUnit, amountValue, internalUsdAmount, liveExchangeRate, selectedToken]);
 
 	return (
 		<>
 			<Card elevation={0} style={cardStyle}>
 				<Card.Content style={styles.cardContent}>
-					<View style={styles.leftSection}>
-						<TouchableOpacity
-							style={styles.tokenSelectorButton}
-							onPress={() => setModalVisible(true)}
-							disabled={!onSelectToken}
-							testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : testID}
-							accessible={true}
-							accessibilityRole="button"
-							accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}
-						>
-							<View style={styles.tokenInfo}>
-								{selectedToken?.resolvedIconUrl ? (
-									<>
-										<RenderIcon iconUrl={selectedToken.resolvedIconUrl} styles={styles} />
-										<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
-									</>
+					{/* Main row: Token selector and amount input */}
+					<View style={styles.mainRow}>
+						{/* Token selector section */}
+						<View style={styles.tokenSelectorContainer}>
+							<TouchableOpacity
+								style={styles.tokenSelectorButton}
+								onPress={() => setModalVisible(true)}
+								disabled={!onSelectToken}
+								testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : testID}
+								accessible={true}
+								accessibilityRole="button"
+								accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}
+							>
+								<View style={styles.tokenInfo}>
+									{selectedToken?.resolvedIconUrl ? (
+										<>
+											<RenderIcon iconUrl={selectedToken.resolvedIconUrl} styles={styles} />
+											<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
+										</>
+									) : (
+										<Text style={styles.tokenSymbol} testID={`${testID}-label`}>{label || 'Select Token'}</Text>
+									)}
+								</View>
+							</TouchableOpacity>
+							<ChevronDownIcon size={16} color={styles.colors.onSurface} />
+						</View>
+
+						{/* Amount input section */}
+						{onAmountChange && (
+							<View style={styles.amountInputContainer}>
+								{isAmountLoading ? (
+									<ActivityIndicator size="small" color={styles.colors.primary} style={activityIndicatorStyle} testID={`${testID}-loading-indicator`} />
 								) : (
-									<Text style={styles.tokenSymbol} testID={`${testID}-label`}>{label || 'Select Token'}</Text>
+									<View style={styles.stackedValuesContainer}>
+										{/* Primary value (editable) */}
+										<View style={styles.primaryValueContainer}>
+											<TextInput
+												testID={`${testID}-amount-input`}
+												style={styles.primaryAmountInput}
+												value={displayAmount || ''}
+												onChangeText={currentAmountHandler}
+												placeholder={placeholder}
+												placeholderTextColor={styles.colors.onTertiaryContainer}
+												keyboardType="decimal-pad"
+												editable={isAmountEditable}
+												{...textInputProps}
+											/>
+											{enableUsdToggle && selectedToken && (
+												<IconButton
+													icon="currency-usd"
+													size={16}
+													iconColor={styles.colors.onSurfaceVariant}
+													onPress={handleUnitToggle}
+													style={styles.swapButton}
+													testID={`${testID}-swap-button`}
+												/>
+											)}
+										</View>
+
+										{/* Secondary value (display only) */}
+										{enableUsdToggle && selectedToken && (
+											<Text style={styles.secondaryValueText} testID={`${testID}-secondary-value`}>
+												{currentInputUnit === 'CRYPTO' ? usdDisplayValue : cryptoDisplayValue}
+											</Text>
+										)}
+									</View>
 								)}
 							</View>
-							<ChevronDownIcon size={20} color={styles.colors.onSurface} />
-						</TouchableOpacity>
-
-						{/* Balance displayed below the selector button */}
-						{selectedToken && _portfolioToken && (
-							<Text style={styles.tokenBalance} testID={`${testID}-balance`}>
-								{formatTokenBalance(_portfolioToken.amount, 4)}
-							</Text>
 						)}
 					</View>
 
-					{onAmountChange && (
-						<View style={styles.rightSection}>
-							{isAmountLoading ? (
-								<ActivityIndicator size="small" color={styles.colors.primary} style={activityIndicatorStyle} testID={`${testID}-loading-indicator`} />
-							) : (
-								<View style={styles.stackedValuesContainer}>
-									{/* Primary value (editable) */}
-									<View style={styles.primaryValueContainer}>
-										<TextInput
-											testID={`${testID}-amount-input`}
-											style={styles.primaryAmountInput}
-											value={displayAmount || ''}
-											onChangeText={currentAmountHandler}
-											placeholder={placeholder}
-											placeholderTextColor={styles.colors.onTertiaryContainer}
-											keyboardType="decimal-pad"
-											editable={isAmountEditable}
-											{...textInputProps}
-										/>
-										{enableUsdToggle && selectedToken && (
-											<IconButton
-												icon="currency-usd"
-												size={16}
-												iconColor={styles.colors.onSurfaceVariant}
-												onPress={handleUnitToggle}
-												style={styles.swapButton}
-												testID={`${testID}-swap-button`}
-											/>
-										)}
-									</View>
-
-									{/* Secondary value (display only) */}
-									{enableUsdToggle && selectedToken && (
-										<Text style={styles.secondaryValueText} testID={`${testID}-secondary-value`}>
-											{currentInputUnit === 'CRYPTO' ? usdDisplayValue : cryptoDisplayValue}
-										</Text>
-									)}
-								</View>
-							)}
+					{/* Balance row (separate from main row) */}
+					{selectedToken && _portfolioToken && (
+						<View style={styles.balanceRow}>
+							<Text style={styles.tokenBalance} testID={`${testID}-balance`}>
+								{formatTokenBalance(_portfolioToken.amount, 4)}
+							</Text>
 						</View>
 					)}
 				</Card.Content>

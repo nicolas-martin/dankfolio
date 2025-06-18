@@ -115,8 +115,8 @@ const Trade: React.FC = () => {
 
 	// Memoized objects to prevent JSX object creation
 	const toTextInputProps = useMemo(() => ({ 
-		placeholder: `0.0000 ${toCoin?.symbol || 'Crypto'}` 
-	}), [toCoin?.symbol]);
+		placeholder: '0.0000' 
+	}), []);
 
 	// Cleanup intervals on unmount
 	useEffect(() => {

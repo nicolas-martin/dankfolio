@@ -1,6 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/types/navigation';
-import { PortfolioToken } from '@/store/portfolio';
 
 // Profile screen doesn't receive any params
 export type ProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Profile'>;
