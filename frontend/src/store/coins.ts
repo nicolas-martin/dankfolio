@@ -20,7 +20,7 @@ interface CoinState {
 	fetchNewCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchTrendingCoins: (limit?: number, offset?: number) => Promise<void>;
 	fetchTopGainersCoins: (limit?: number, offset?: number) => Promise<void>;
-	getCoinByID: (mintAddress: string, forceRefresh?: boolean) => Promise<Coin | null>;
+	getCoinByID: (address: string, forceRefresh?: boolean) => Promise<Coin | null>;
 	setCoin: (coin: Coin) => void;
 }
 
@@ -96,18 +96,18 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 		}));
 	},
 
-	getCoinByID: async (mintAddress: string, forceRefresh: boolean = false) => {
+	getCoinByID: async (address: string, forceRefresh: boolean = false) => {
 		const state = get();
-		if (!forceRefresh && state.coinMap[mintAddress]) {
-			return state.coinMap[mintAddress];
+		if (!forceRefresh && state.coinMap[address]) {
+			return state.coinMap[address];
 		}
 
 		try {
-			const coin = await grpcApi.getCoinByID(mintAddress);
+			const coin = await grpcApi.getCoinByID(address);
 			get().setCoin(coin);
 			return coin;
 		} catch (error) {
-			console.error(`❌ [CoinStore] Error fetching coin ${mintAddress}:`, error);
+			console.error(`❌ [CoinStore] Error fetching coin ${address}:`, error);
 			return null;
 		}
 	},
