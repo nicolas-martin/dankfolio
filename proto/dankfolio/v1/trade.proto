@@ -117,8 +117,8 @@ message ListTradesRequest {
   optional string user_id = 5;  // Filter by user ID (wallet public key)
   optional string status = 6;   // Filter by trade status (e.g., "completed", "pending")
   optional string type = 7;     // Filter by trade type (e.g., "swap", "transfer")
-  optional string from_coin_mint_address = 8; // Filter by source coin mint address
-  optional string to_coin_mint_address = 9;   // Filter by destination coin mint address
+  optional string from_coin_address = 8; // Filter by source coin mint address
+  optional string to_coin_address = 9;   // Filter by destination coin mint address
 }
 
 // ListTradesResponse is the response containing a list of trades

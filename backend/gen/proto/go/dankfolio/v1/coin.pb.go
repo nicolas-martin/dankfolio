@@ -411,7 +411,7 @@ func (x *GetAvailableCoinsResponse) GetTotalCount() int32 {
 
 type GetCoinByIDRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MintAddress   string                 `protobuf:"bytes,1,opt,name=mint_address,json=mintAddress,proto3" json:"mint_address,omitempty"`
+	Address       string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -446,34 +446,34 @@ func (*GetCoinByIDRequest) Descriptor() ([]byte, []int) {
 	return file_dankfolio_v1_coin_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetCoinByIDRequest) GetMintAddress() string {
+func (x *GetCoinByIDRequest) GetAddress() string {
 	if x != nil {
-		return x.MintAddress
+		return x.Address
 	}
 	return ""
 }
 
-type SearchCoinByMintRequest struct {
+type SearchCoinByAddressRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MintAddress   string                 `protobuf:"bytes,1,opt,name=mint_address,json=mintAddress,proto3" json:"mint_address,omitempty"`
+	Address       string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchCoinByMintRequest) Reset() {
-	*x = SearchCoinByMintRequest{}
+func (x *SearchCoinByAddressRequest) Reset() {
+	*x = SearchCoinByAddressRequest{}
 	mi := &file_dankfolio_v1_coin_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchCoinByMintRequest) String() string {
+func (x *SearchCoinByAddressRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchCoinByMintRequest) ProtoMessage() {}
+func (*SearchCoinByAddressRequest) ProtoMessage() {}
 
-func (x *SearchCoinByMintRequest) ProtoReflect() protoreflect.Message {
+func (x *SearchCoinByAddressRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_dankfolio_v1_coin_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -485,39 +485,39 @@ func (x *SearchCoinByMintRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchCoinByMintRequest.ProtoReflect.Descriptor instead.
-func (*SearchCoinByMintRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchCoinByAddressRequest.ProtoReflect.Descriptor instead.
+func (*SearchCoinByAddressRequest) Descriptor() ([]byte, []int) {
 	return file_dankfolio_v1_coin_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *SearchCoinByMintRequest) GetMintAddress() string {
+func (x *SearchCoinByAddressRequest) GetAddress() string {
 	if x != nil {
-		return x.MintAddress
+		return x.Address
 	}
 	return ""
 }
 
-type SearchCoinByMintResponse struct {
+type SearchCoinByAddressResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Coin          *Coin                  `protobuf:"bytes,1,opt,name=coin,proto3" json:"coin,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchCoinByMintResponse) Reset() {
-	*x = SearchCoinByMintResponse{}
+func (x *SearchCoinByAddressResponse) Reset() {
+	*x = SearchCoinByAddressResponse{}
 	mi := &file_dankfolio_v1_coin_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchCoinByMintResponse) String() string {
+func (x *SearchCoinByAddressResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchCoinByMintResponse) ProtoMessage() {}
+func (*SearchCoinByAddressResponse) ProtoMessage() {}
 
-func (x *SearchCoinByMintResponse) ProtoReflect() protoreflect.Message {
+func (x *SearchCoinByAddressResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_dankfolio_v1_coin_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -529,12 +529,12 @@ func (x *SearchCoinByMintResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchCoinByMintResponse.ProtoReflect.Descriptor instead.
-func (*SearchCoinByMintResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchCoinByAddressResponse.ProtoReflect.Descriptor instead.
+func (*SearchCoinByAddressResponse) Descriptor() ([]byte, []int) {
 	return file_dankfolio_v1_coin_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *SearchCoinByMintResponse) GetCoin() *Coin {
+func (x *SearchCoinByAddressResponse) GetCoin() *Coin {
 	if x != nil {
 		return x.Coin
 	}
@@ -978,12 +978,12 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\x19GetAvailableCoinsResponse\x12(\n" +
 	"\x05coins\x18\x01 \x03(\v2\x12.dankfolio.v1.CoinR\x05coins\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount\"7\n" +
-	"\x12GetCoinByIDRequest\x12!\n" +
-	"\fmint_address\x18\x01 \x01(\tR\vmintAddress\"<\n" +
-	"\x17SearchCoinByMintRequest\x12!\n" +
-	"\fmint_address\x18\x01 \x01(\tR\vmintAddress\"B\n" +
-	"\x18SearchCoinByMintResponse\x12&\n" +
+	"totalCount\".\n" +
+	"\x12GetCoinByIDRequest\x12\x18\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\"6\n" +
+	"\x1aSearchCoinByAddressRequest\x12\x18\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\"E\n" +
+	"\x1bSearchCoinByAddressResponse\x12&\n" +
 	"\x04coin\x18\x01 \x01(\v2\x12.dankfolio.v1.CoinR\x04coin\"\x14\n" +
 	"\x12GetAllCoinsRequest\"?\n" +
 	"\x13GetAllCoinsResponse\x12(\n" +
@@ -1022,11 +1022,11 @@ const file_dankfolio_v1_coin_proto_rawDesc = "" +
 	"\x1aCOIN_SORT_FIELD_VOLUME_24H\x10\x03\x12\x18\n" +
 	"\x14COIN_SORT_FIELD_NAME\x10\x04\x12\x1a\n" +
 	"\x16COIN_SORT_FIELD_SYMBOL\x10\x05\x12\x1e\n" +
-	"\x1aCOIN_SORT_FIELD_MARKET_CAP\x10\x062\xda\x05\n" +
+	"\x1aCOIN_SORT_FIELD_MARKET_CAP\x10\x062\xe3\x05\n" +
 	"\vCoinService\x12d\n" +
 	"\x11GetAvailableCoins\x12&.dankfolio.v1.GetAvailableCoinsRequest\x1a'.dankfolio.v1.GetAvailableCoinsResponse\x12C\n" +
-	"\vGetCoinByID\x12 .dankfolio.v1.GetCoinByIDRequest\x1a\x12.dankfolio.v1.Coin\x12a\n" +
-	"\x10SearchCoinByMint\x12%.dankfolio.v1.SearchCoinByMintRequest\x1a&.dankfolio.v1.SearchCoinByMintResponse\x12R\n" +
+	"\vGetCoinByID\x12 .dankfolio.v1.GetCoinByIDRequest\x1a\x12.dankfolio.v1.Coin\x12j\n" +
+	"\x13SearchCoinByAddress\x12(.dankfolio.v1.SearchCoinByAddressRequest\x1a).dankfolio.v1.SearchCoinByAddressResponse\x12R\n" +
 	"\vGetAllCoins\x12 .dankfolio.v1.GetAllCoinsRequest\x1a!.dankfolio.v1.GetAllCoinsResponse\x12C\n" +
 	"\x06Search\x12\x1b.dankfolio.v1.SearchRequest\x1a\x1c.dankfolio.v1.SearchResponse\x12X\n" +
 	"\vGetNewCoins\x12 .dankfolio.v1.GetNewCoinsRequest\x1a'.dankfolio.v1.GetAvailableCoinsResponse\x12b\n" +
@@ -1049,34 +1049,34 @@ func file_dankfolio_v1_coin_proto_rawDescGZIP() []byte {
 var file_dankfolio_v1_coin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_dankfolio_v1_coin_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_dankfolio_v1_coin_proto_goTypes = []any{
-	(CoinSortField)(0),                // 0: dankfolio.v1.CoinSortField
-	(*Coin)(nil),                      // 1: dankfolio.v1.Coin
-	(*GetAvailableCoinsRequest)(nil),  // 2: dankfolio.v1.GetAvailableCoinsRequest
-	(*GetAvailableCoinsResponse)(nil), // 3: dankfolio.v1.GetAvailableCoinsResponse
-	(*GetCoinByIDRequest)(nil),        // 4: dankfolio.v1.GetCoinByIDRequest
-	(*SearchCoinByMintRequest)(nil),   // 5: dankfolio.v1.SearchCoinByMintRequest
-	(*SearchCoinByMintResponse)(nil),  // 6: dankfolio.v1.SearchCoinByMintResponse
-	(*GetAllCoinsRequest)(nil),        // 7: dankfolio.v1.GetAllCoinsRequest
-	(*GetAllCoinsResponse)(nil),       // 8: dankfolio.v1.GetAllCoinsResponse
-	(*SearchRequest)(nil),             // 9: dankfolio.v1.SearchRequest
-	(*SearchResponse)(nil),            // 10: dankfolio.v1.SearchResponse
-	(*GetNewCoinsRequest)(nil),        // 11: dankfolio.v1.GetNewCoinsRequest
-	(*GetTrendingCoinsRequest)(nil),   // 12: dankfolio.v1.GetTrendingCoinsRequest
-	(*GetTopGainersCoinsRequest)(nil), // 13: dankfolio.v1.GetTopGainersCoinsRequest
-	(*timestamppb.Timestamp)(nil),     // 14: google.protobuf.Timestamp
+	(CoinSortField)(0),                  // 0: dankfolio.v1.CoinSortField
+	(*Coin)(nil),                        // 1: dankfolio.v1.Coin
+	(*GetAvailableCoinsRequest)(nil),    // 2: dankfolio.v1.GetAvailableCoinsRequest
+	(*GetAvailableCoinsResponse)(nil),   // 3: dankfolio.v1.GetAvailableCoinsResponse
+	(*GetCoinByIDRequest)(nil),          // 4: dankfolio.v1.GetCoinByIDRequest
+	(*SearchCoinByAddressRequest)(nil),  // 5: dankfolio.v1.SearchCoinByAddressRequest
+	(*SearchCoinByAddressResponse)(nil), // 6: dankfolio.v1.SearchCoinByAddressResponse
+	(*GetAllCoinsRequest)(nil),          // 7: dankfolio.v1.GetAllCoinsRequest
+	(*GetAllCoinsResponse)(nil),         // 8: dankfolio.v1.GetAllCoinsResponse
+	(*SearchRequest)(nil),               // 9: dankfolio.v1.SearchRequest
+	(*SearchResponse)(nil),              // 10: dankfolio.v1.SearchResponse
+	(*GetNewCoinsRequest)(nil),          // 11: dankfolio.v1.GetNewCoinsRequest
+	(*GetTrendingCoinsRequest)(nil),     // 12: dankfolio.v1.GetTrendingCoinsRequest
+	(*GetTopGainersCoinsRequest)(nil),   // 13: dankfolio.v1.GetTopGainersCoinsRequest
+	(*timestamppb.Timestamp)(nil),       // 14: google.protobuf.Timestamp
 }
 var file_dankfolio_v1_coin_proto_depIdxs = []int32{
 	14, // 0: dankfolio.v1.Coin.created_at:type_name -> google.protobuf.Timestamp
 	14, // 1: dankfolio.v1.Coin.last_updated:type_name -> google.protobuf.Timestamp
 	14, // 2: dankfolio.v1.Coin.jupiter_listed_at:type_name -> google.protobuf.Timestamp
 	1,  // 3: dankfolio.v1.GetAvailableCoinsResponse.coins:type_name -> dankfolio.v1.Coin
-	1,  // 4: dankfolio.v1.SearchCoinByMintResponse.coin:type_name -> dankfolio.v1.Coin
+	1,  // 4: dankfolio.v1.SearchCoinByAddressResponse.coin:type_name -> dankfolio.v1.Coin
 	1,  // 5: dankfolio.v1.GetAllCoinsResponse.coins:type_name -> dankfolio.v1.Coin
 	0,  // 6: dankfolio.v1.SearchRequest.sort_by:type_name -> dankfolio.v1.CoinSortField
 	1,  // 7: dankfolio.v1.SearchResponse.coins:type_name -> dankfolio.v1.Coin
 	2,  // 8: dankfolio.v1.CoinService.GetAvailableCoins:input_type -> dankfolio.v1.GetAvailableCoinsRequest
 	4,  // 9: dankfolio.v1.CoinService.GetCoinByID:input_type -> dankfolio.v1.GetCoinByIDRequest
-	5,  // 10: dankfolio.v1.CoinService.SearchCoinByMint:input_type -> dankfolio.v1.SearchCoinByMintRequest
+	5,  // 10: dankfolio.v1.CoinService.SearchCoinByAddress:input_type -> dankfolio.v1.SearchCoinByAddressRequest
 	7,  // 11: dankfolio.v1.CoinService.GetAllCoins:input_type -> dankfolio.v1.GetAllCoinsRequest
 	9,  // 12: dankfolio.v1.CoinService.Search:input_type -> dankfolio.v1.SearchRequest
 	11, // 13: dankfolio.v1.CoinService.GetNewCoins:input_type -> dankfolio.v1.GetNewCoinsRequest
@@ -1084,7 +1084,7 @@ var file_dankfolio_v1_coin_proto_depIdxs = []int32{
 	13, // 15: dankfolio.v1.CoinService.GetTopGainersCoins:input_type -> dankfolio.v1.GetTopGainersCoinsRequest
 	3,  // 16: dankfolio.v1.CoinService.GetAvailableCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse
 	1,  // 17: dankfolio.v1.CoinService.GetCoinByID:output_type -> dankfolio.v1.Coin
-	6,  // 18: dankfolio.v1.CoinService.SearchCoinByMint:output_type -> dankfolio.v1.SearchCoinByMintResponse
+	6,  // 18: dankfolio.v1.CoinService.SearchCoinByAddress:output_type -> dankfolio.v1.SearchCoinByAddressResponse
 	8,  // 19: dankfolio.v1.CoinService.GetAllCoins:output_type -> dankfolio.v1.GetAllCoinsResponse
 	10, // 20: dankfolio.v1.CoinService.Search:output_type -> dankfolio.v1.SearchResponse
 	3,  // 21: dankfolio.v1.CoinService.GetNewCoins:output_type -> dankfolio.v1.GetAvailableCoinsResponse

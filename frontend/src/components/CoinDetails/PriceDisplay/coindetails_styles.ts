@@ -58,7 +58,7 @@ export const useStyles = () => {
 			marginBottom: theme.spacing.sm,
 		},
 		icon: {
-			marginRight: theme.spacing.md,
+			marginRight: theme.spacing.lg,
 		},
 		nameText: {
 			color: theme.colors.onSurfaceVariant,
