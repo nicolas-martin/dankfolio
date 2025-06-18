@@ -165,6 +165,11 @@ For bottom sheet modals and nested tappable components on iOS, use this accessib
 - `horizontal-ticker-time-${mintAddress}` - Time ago text
 - `horizontal-ticker-change-${mintAddress}` - Price change percentage
 
+### **NewListingCard Component**
+- `new-listing-card-${symbol.toLowerCase()}` - Main card touchable area
+- `new-listing-icon-${symbol.toLowerCase()}` - Coin icon image
+- `new-listing-symbol-${symbol.toLowerCase()}` - Coin symbol text
+
 ### **AmountPercentageButtons Component**
 - `amount-percentage-button-${percent}` - Percentage button (25, 50, 75, 100)
 - `amount-percentage-text-${percent}` - Percentage text inside button

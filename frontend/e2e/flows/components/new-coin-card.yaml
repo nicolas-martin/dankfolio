@@ -1,7 +1,7 @@
 appId: com.nicolasmartin.dankfolio
 ---
 - assertVisible:
-      id: "new-listing-${COIN_SYMBOL}"
+      id: "new-listing-card-${COIN_SYMBOL}"
 
 - assertVisible:
       id: "new-listing-symbol-${COIN_SYMBOL}"
