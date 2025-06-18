@@ -13,16 +13,24 @@ env:
 - tapOn:
       id: "trade-button.*"
 
-# Test 1: Initial SOL -> JUP setup with amount validation
+# Test 1: Initial SOL -> JUP setup - enter amount first to have visible values
+# SOL price: $98.45, so 0.1 SOL = $9.85 (rounded to $9.85)
+- tapOn:
+      id: "from-token-selector-amount-input"
+- inputText: "0.1"
+- waitForAnimationToEnd
+- hideKeyboard
+
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${solSymbol}
-          FROM_AMOUNT: "0"
+          FROM_AMOUNT: "0.1"
           FROM_BALANCE: "2.5"
+          FROM_USD_VALUE: "$9.85"
           TO_SYMBOL: ${jupSymbol}
-          TO_AMOUNT: "0"
-          TO_BALANCE: "0"
+          TO_AMOUNT: "11.32"
+          TO_BALANCE: "150"
 
 # Test 2: Change TO token to DANK and validate with amounts
 - tapOn:
@@ -30,6 +38,7 @@ env:
 - tapOn:
       id: "search-result-dank.*"
 
+# SOL price: $98.45, so 1 SOL = $98.45
 - tapOn:
       id: "from-token-selector-amount-input"
 - inputText: "1"
@@ -42,8 +51,9 @@ env:
           FROM_SYMBOL: ${solSymbol}
           FROM_AMOUNT: "1"
           FROM_BALANCE: "2.5"
+          FROM_USD_VALUE: "$98.45"
           TO_SYMBOL: ${dankSymbol}
-          TO_AMOUNT: "2332327.380952"
+          TO_AMOUNT: "2344047.62"
           TO_BALANCE: "5000000"
 
 # HACK: SAD
@@ -52,12 +62,14 @@ env:
 - tapOn:
       point: "50%,48%"
 
+# DANK price: $0.000042, so 2344047 DANK ≈ $98.45
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${dankSymbol}
-          FROM_AMOUNT: "23323"
+          FROM_AMOUNT: "2344047"
           FROM_BALANCE: "5000000"
+          FROM_USD_VALUE: "$98.45"
           TO_SYMBOL: ${solSymbol}
           TO_AMOUNT: "1"
           TO_BALANCE: "2.5"
@@ -67,26 +79,38 @@ env:
       id: "from-token-selector-dank.*"
 - tapOn:
       id: "search-result-usdc.*"
+
+# Clear and enter new amount
+# USDC price: $1.0, so 100 USDC = $100.00
+- tapOn:
+      id: "from-token-selector-amount-input"
+- inputText: "100"
+- waitForAnimationToEnd
+- hideKeyboard
+
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${usdcSymbol}
-          FROM_AMOUNT: "0"
+          FROM_AMOUNT: "100"
           FROM_BALANCE: "1000"
+          FROM_USD_VALUE: "$100.00"
           TO_SYMBOL: ${solSymbol}
-          TO_AMOUNT: "0"
+          TO_AMOUNT: "1.015"
           TO_BALANCE: "2.5"
 
 - tapOn:
       id: "amount-percentage-text-50"
 - waitForAnimationToEnd
 
+# USDC price: $1.0, so 500 USDC = $500.00
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${usdcSymbol}
           FROM_AMOUNT: "500"
           FROM_BALANCE: "1000"
+          FROM_USD_VALUE: "$500.00"
           TO_SYMBOL: ${solSymbol}
-          TO_AMOUNT: "5.053"
+          TO_AMOUNT: "5.08"
           TO_BALANCE: "2.5"

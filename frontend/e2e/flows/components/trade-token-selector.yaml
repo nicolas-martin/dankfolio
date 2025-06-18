@@ -3,24 +3,41 @@ env:
     fromSymbol: ${FROM_SYMBOL}
     fromAmount: ${FROM_AMOUNT}
     fromBalance: ${FROM_BALANCE}
+    fromUsdValue: ${FROM_USD_VALUE}
     toSymbol: ${TO_SYMBOL}
     toAmount: ${TO_AMOUNT}
     toBalance: ${TO_BALANCE}
 ---
+# Assert token selectors are visible with correct symbols
 - assertVisible:
-      id: "from-token-selector-${fromSymbol}.*"
+      id: "from-token-selector-${fromSymbol}"
 
 - assertVisible:
-      id: "to-token-selector-${toSymbol}.*"
+      id: "to-token-selector-${toSymbol}"
+
+# Assert amounts are visible
+- assertVisible:
+      text: "${fromAmount}"
 
 - assertVisible:
-      text: ${FROM_AMOUNT}.*
+      text: "${toAmount}"
 
+# Assert balances are visible (optional as they may not always be present)
 - assertVisible:
-      text: ${TO_AMOUNT}.*
-- assertVisible:
-      text: ${fromBalance}
+      text: "${fromBalance}"
       optional: true
+
 - assertVisible:
-      text: ${toBalance}
+      text: "${toBalance}"
       optional: true
+
+# Assert FROM USD value is visible (FROM TokenSelector always has USD functionality)
+- assertVisible:
+      text: "${fromUsdValue}"
+
+# Assert FROM USD toggle functionality is available
+- assertVisible:
+      id: "from-token-selector-swap-button"
+
+- assertVisible:
+      id: "from-token-selector-secondary-value"
