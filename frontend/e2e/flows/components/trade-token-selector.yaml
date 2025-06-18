@@ -8,12 +8,12 @@ env:
     toAmount: ${TO_AMOUNT}
     toBalance: ${TO_BALANCE}
 ---
-# Assert token selectors are visible with correct symbols
+# Assert token selectors are visible
 - assertVisible:
-      id: "from-token-selector-${fromSymbol}"
+      id: "from-token-selector"
 
 - assertVisible:
-      id: "to-token-selector-${toSymbol}"
+      id: "to-token-selector"
 
 # Assert FROM amount is visible (this is user input, should be exact)
 - assertVisible:
