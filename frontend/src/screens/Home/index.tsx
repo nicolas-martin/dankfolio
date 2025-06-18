@@ -463,7 +463,7 @@ const HomeScreen = () => {
 						{hasTrendingCoins && (
 							<FlatList
 								data={trendingCoins}
-								keyExtractor={(item, index) => item.address || item.symbol || `trending-coin-${index}`}
+								keyExtractor={(item, index) => `trending-${item.address || item.symbol || index}`}
 								renderItem={renderTrendingCoinItem}
 								scrollEnabled={false}
 								// Performance optimizations to prevent UI blocking

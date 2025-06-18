@@ -187,8 +187,8 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [handleTokenSelect, portfolioTokenMap]);
 
-	// Memoize key extractor
-	const keyExtractor = useCallback((coin: Coin) => coin.address, []);
+	// Memoize key extractor with modal prefix to ensure uniqueness
+	const keyExtractor = useCallback((coin: Coin) => `token-modal-${coin.address}`, []);
 
 	// Memoize search query change handler with throttling
 	const handleSearchQueryChange = useCallback((query: string) => {
