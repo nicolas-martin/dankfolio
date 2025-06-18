@@ -57,7 +57,6 @@
     "expo-dev-client": "^5.2.0",
     "expo-device": "~7.1.4",
     "expo-haptics": "~14.1.4",
-    "expo-image": "~2.3.0",
     "expo-linear-gradient": "^14.1.5",
     "expo-secure-store": "~14.2.3",
     "expo-splash-screen": "~0.30.9",
