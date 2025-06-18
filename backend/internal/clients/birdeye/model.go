@@ -60,6 +60,30 @@ type TokenDetails struct {
 	Tags                   []string `json:"tags,omitempty"`
 }
 
+// TokenOverview represents the response from the token overview API
+type TokenOverview struct {
+	Data    TokenOverviewData `json:"data"`
+	Success bool              `json:"success"`
+}
+
+// TokenOverviewData contains the token overview information
+type TokenOverviewData struct {
+	Address                string   `json:"address"`
+	Decimals               int      `json:"decimals"`
+	Liquidity              float64  `json:"liquidity"`
+	LogoURI                string   `json:"logoURI"`
+	Name                   string   `json:"name"`
+	Symbol                 string   `json:"symbol"`
+	Volume24hUSD           float64  `json:"v24hUSD"`           // 24h volume in USD
+	Volume24hChangePercent float64  `json:"v24hChangePercent"` // 24h volume change percentage
+	FDV                    float64  `json:"fdv"`
+	MarketCap              float64  `json:"marketCap"`
+	Rank                   int      `json:"rank"`
+	Price                  float64  `json:"price"`
+	Price24hChangePercent  float64  `json:"priceChange24hPercent"` // 24h price change percentage
+	Tags                   []string `json:"tags,omitempty"`
+}
+
 type SortBy string
 
 const (

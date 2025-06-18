@@ -285,7 +285,39 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 
 func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*model.Coin, error) {
 	slog.DebugContext(ctx, "Starting dynamic coin enrichment", slog.String("mintAddress", mintAddress))
-	initialData := &birdeye.TokenDetails{Address: mintAddress}
+
+	// First try to fetch market data from Birdeye
+	var initialData *birdeye.TokenDetails
+	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, mintAddress)
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to fetch token overview from Birdeye, using minimal data", slog.String("mintAddress", mintAddress), slog.Any("error", err))
+		// Fallback to minimal data if Birdeye fails
+		initialData = &birdeye.TokenDetails{Address: mintAddress}
+	} else if tokenOverview.Success && tokenOverview.Data.Address != "" {
+		// Convert TokenOverviewData to TokenDetails
+		initialData = &birdeye.TokenDetails{
+			Address:                tokenOverview.Data.Address,
+			Name:                   tokenOverview.Data.Name,
+			Symbol:                 tokenOverview.Data.Symbol,
+			Decimals:               tokenOverview.Data.Decimals,
+			LogoURI:                tokenOverview.Data.LogoURI,
+			Price:                  tokenOverview.Data.Price,
+			Volume24hUSD:           tokenOverview.Data.Volume24hUSD,
+			Volume24hChangePercent: tokenOverview.Data.Volume24hChangePercent,
+			MarketCap:              tokenOverview.Data.MarketCap,
+			Liquidity:              tokenOverview.Data.Liquidity,
+			FDV:                    tokenOverview.Data.FDV,
+			Rank:                   tokenOverview.Data.Rank,
+			Price24hChangePercent:  tokenOverview.Data.Price24hChangePercent,
+			Tags:                   tokenOverview.Data.Tags,
+		}
+		slog.DebugContext(ctx, "Successfully fetched token overview from Birdeye", slog.String("mintAddress", mintAddress), slog.String("name", initialData.Name), slog.String("symbol", initialData.Symbol), slog.Float64("price", initialData.Price), slog.Float64("marketcap", initialData.MarketCap))
+	} else {
+		slog.WarnContext(ctx, "Birdeye token overview returned unsuccessful or empty data, using minimal data", slog.String("mintAddress", mintAddress))
+		// Fallback to minimal data if response is unsuccessful
+		initialData = &birdeye.TokenDetails{Address: mintAddress}
+	}
+
 	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
 	if err != nil {
 		slog.ErrorContext(ctx, "Dynamic coin enrichment failed", slog.String("mintAddress", mintAddress), slog.Any("error", err))
@@ -306,32 +338,76 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 	return enrichedCoin, nil
 }
 
-// updateCoinPrice updates just the price of a cached coin with fresh data from Jupiter
+// updateCoinPrice updates the price and market stats of a cached coin with fresh data from Birdeye
 func (s *Service) updateCoinPrice(ctx context.Context, coin *model.Coin) (*model.Coin, error) {
-	slog.DebugContext(ctx, "Updating price for cached coin", slog.String("mintAddress", coin.Address), slog.Float64("currentPrice", coin.Price))
+	slog.DebugContext(ctx, "Updating price and market stats for cached coin", slog.String("mintAddress", coin.Address), slog.Float64("currentPrice", coin.Price))
 
-	// Fetch current price from Jupiter
-	prices, err := s.jupiterClient.GetCoinPrices(ctx, []string{coin.Address})
+	// Fetch current price and market data from Birdeye token overview
+	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, coin.Address)
 	if err != nil {
-		slog.WarnContext(ctx, "Failed to fetch price from Jupiter, returning cached coin", slog.String("mintAddress", coin.Address), slog.Any("error", err))
-		return coin, nil // Return cached coin if Jupiter fails
-	}
+		slog.WarnContext(ctx, "Failed to fetch token overview from Birdeye, falling back to Jupiter price", slog.String("mintAddress", coin.Address), slog.Any("error", err))
 
-	if price, exists := prices[coin.Address]; exists && price > 0 {
-		// Update the price and timestamp
-		coin.Price = price
-		coin.LastUpdated = time.Now().Format(time.RFC3339)
-		slog.DebugContext(ctx, "Successfully updated price from Jupiter", slog.String("mintAddress", coin.Address), slog.Float64("newPrice", price))
+		// Fallback to Jupiter for price only if Birdeye fails
+		prices, jupiterErr := s.jupiterClient.GetCoinPrices(ctx, []string{coin.Address})
+		if jupiterErr != nil {
+			slog.WarnContext(ctx, "Both Birdeye and Jupiter failed, returning cached coin", slog.String("mintAddress", coin.Address), slog.Any("birdeyeError", err), slog.Any("jupiterError", jupiterErr))
+			return coin, nil // Return cached coin if both fail
+		}
 
-		// Update the coin in the database with the new price
+		if price, exists := prices[coin.Address]; exists && price > 0 {
+			coin.Price = price
+			coin.LastUpdated = time.Now().Format(time.RFC3339)
+			slog.DebugContext(ctx, "Successfully updated price from Jupiter (fallback)", slog.String("mintAddress", coin.Address), slog.Float64("newPrice", price))
+		}
+
+		// Update in database and return
 		if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
 			slog.WarnContext(ctx, "Failed to update coin with new price in database", slog.String("mintAddress", coin.Address), slog.Any("error", updateErr))
-			// Continue anyway, return the coin with updated price even if DB update fails
-		} else {
-			slog.DebugContext(ctx, "Successfully updated coin with new price in database", slog.String("mintAddress", coin.Address))
 		}
+		return coin, nil
+	}
+
+	// Check if Birdeye response is successful and has data
+	if !tokenOverview.Success || tokenOverview.Data.Address == "" {
+		slog.WarnContext(ctx, "Birdeye token overview returned unsuccessful or empty data, keeping cached data", slog.String("mintAddress", coin.Address))
+		return coin, nil
+	}
+
+	// Update coin with fresh data from Birdeye token overview
+	data := tokenOverview.Data
+	coin.Price = data.Price
+	coin.Price24hChangePercent = data.Price24hChangePercent
+	coin.Marketcap = data.MarketCap
+	coin.Volume24hUSD = data.Volume24hUSD
+	coin.Volume24hChangePercent = data.Volume24hChangePercent
+	coin.Liquidity = data.Liquidity
+	coin.FDV = data.FDV
+	coin.Rank = data.Rank
+	coin.LastUpdated = time.Now().Format(time.RFC3339)
+
+	// Update logo if it's available and we don't have one
+	if data.LogoURI != "" && coin.LogoURI == "" {
+		coin.LogoURI = data.LogoURI
+	}
+
+	// Update tags if available and we don't have any
+	if len(data.Tags) > 0 && len(coin.Tags) == 0 {
+		coin.Tags = data.Tags
+	}
+
+	slog.DebugContext(ctx, "Successfully updated coin with fresh data from Birdeye token overview",
+		slog.String("mintAddress", coin.Address),
+		slog.Float64("newPrice", coin.Price),
+		slog.Float64("marketCap", coin.Marketcap),
+		slog.Float64("volume24h", coin.Volume24hUSD),
+		slog.Float64("liquidity", coin.Liquidity))
+
+	// Update the coin in the database with the new data
+	if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
+		slog.WarnContext(ctx, "Failed to update coin with fresh data in database", slog.String("mintAddress", coin.Address), slog.Any("error", updateErr))
+		// Continue anyway, return the coin with updated data even if DB update fails
 	} else {
-		slog.DebugContext(ctx, "No price found for token in Jupiter response, keeping cached price", slog.String("mintAddress", coin.Address), slog.Float64("cachedPrice", coin.Price))
+		slog.DebugContext(ctx, "Successfully updated coin with fresh data in database", slog.String("mintAddress", coin.Address))
 	}
 
 	return coin, nil
