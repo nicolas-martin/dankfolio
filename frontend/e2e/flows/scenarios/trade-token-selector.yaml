@@ -123,5 +123,43 @@ env:
           FROM_BALANCE: "1,000"
           FROM_USD_VALUE: "500.00"
           TO_SYMBOL: ${solSymbol}
-          TO_AMOUNT: "1.0.1"
+          TO_AMOUNT: "1.01"
+          TO_BALANCE: "2.5"
+
+- tapOn:
+      id: "from-token-selector-usdc.*"
+- waitForAnimationToEnd
+- assertVisible:
+      id: "token-search-input"
+- tapOn:
+      id: "search-result-dank"
+- tapOn:
+      id: "amount-percentage-text-50"
+
+- waitForAnimationToEnd
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${dankSymbol}
+          FROM_AMOUNT: "2500000"
+          FROM_BALANCE: "5,000,000"
+          FROM_USD_VALUE: "105"
+          TO_SYMBOL: ${solSymbol}
+          TO_AMOUNT: "1.06"
+          TO_BALANCE: "2.5"
+
+# swap to usd value
+- tapOn:
+      id: "from-token-selector-amount-input"
+- eraseText
+- inputText: "40"
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${dankSymbol}
+          FROM_AMOUNT: "40"
+          FROM_BALANCE: "5,000,000"
+          FROM_USD_VALUE: "952,380.95"
+          TO_SYMBOL: ${solSymbol}
+          TO_AMOUNT: "0.404"
           TO_BALANCE: "2.5"
