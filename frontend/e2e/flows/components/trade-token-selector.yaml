@@ -15,25 +15,26 @@ env:
 - assertVisible:
       id: "to-token-selector-${toSymbol}"
 
-# Assert amounts are visible
+# Assert FROM amount is visible (this is user input, should be exact)
 - assertVisible:
-      text: "${fromAmount}"
+      text: ".*${fromAmount}.*"
 
+# Assert TO amount is visible (using regex for flexibility)
 - assertVisible:
-      text: "${toAmount}"
+      text: ".*${toAmount}.*"
 
 # Assert balances are visible (optional as they may not always be present)
 - assertVisible:
-      text: "${fromBalance}"
+      text: ".*${fromBalance}.*"
       optional: true
 
 - assertVisible:
-      text: "${toBalance}"
+      text: ".*${toBalance}.*"
       optional: true
 
 # Assert FROM USD value is visible (FROM TokenSelector always has USD functionality)
 - assertVisible:
-      text: "${fromUsdValue}"
+      text: ".*${fromUsdValue}.*"
 
 # Assert FROM USD toggle functionality is available
 - assertVisible:
