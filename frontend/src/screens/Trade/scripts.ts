@@ -145,7 +145,7 @@ const validateTradeParams = (fromCoin: Coin, toCoin: Coin, fromAmount: string, w
 // Transaction preparation helper
 const prepareTradeTransaction = async (fromCoin: Coin, toCoin: Coin, fromAmount: string, slippage: number, walletAddress: string) => {
 	const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
-	const unsignedTx = await prepareSwapRequest(fromCoin.mintAddress, toCoin.mintAddress, rawAmount, slippage, walletAddress);
+	const unsignedTx = await prepareSwapRequest(fromCoin.address, toCoin.address, rawAmount, slippage, walletAddress);
 
 	const keys = await getActiveWalletKeys();
 	if (!keys?.privateKey || !keys?.publicKey) {
@@ -159,8 +159,8 @@ const prepareTradeTransaction = async (fromCoin: Coin, toCoin: Coin, fromAmount:
 // Transaction submission helper
 const submitTradeTransaction = async (fromCoin: Coin, toCoin: Coin, rawAmount: number, signedTx: string, unsignedTx: string) => {
 	const tradePayload = {
-		fromCoinMintAddress: fromCoin.mintAddress,
-		toCoinMintAddress: toCoin.mintAddress,
+		fromCoinMintAddress: fromCoin.address,
+		toCoinMintAddress: toCoin.address,
 		amount: rawAmount,
 		signedTransaction: signedTx,
 		unsignedTransaction: unsignedTx,
@@ -247,11 +247,11 @@ export const handleSelectToken = (
 	});
 
 	// More intuitive logic:
-	if (selectedToken.mintAddress === otherToken?.mintAddress) {
+	if (selectedToken.address === otherToken?.address) {
 		// User selected token that's on the OTHER side → SWAP
 		logger.log(`[Trade] Selected "${direction}" token is on opposite side. Swapping tokens: ${selectedToken.symbol}`);
 		swapCoins();
-	} else if (selectedToken.mintAddress === currentToken?.mintAddress) {
+	} else if (selectedToken.address === currentToken?.address) {
 		// User selected same token that's already here → DO NOTHING
 		logger.log(`[Trade] Selected "${direction}" token is already selected. No action needed: ${selectedToken.symbol}`);
 		return;

@@ -38,23 +38,23 @@ export const useDebounce = <T>(value: T, delay: number): T => {
  * @param onAmountChange The function to call with the validated text.
  */
 export const handleAmountInputChange = (text: string, onAmountChange: (value: string) => void) => {
-    // Allow only numbers and dots initially
-    let value = text.replace(/[^0-9.]/g, '');
+	// Allow only numbers and dots initially
+	let value = text.replace(/[^0-9.]/g, '');
 
-    const decimalParts = value.split('.');
+	const decimalParts = value.split('.');
 
-    if (decimalParts.length > 1) { // If there's at least one dot
-        const integerPart = decimalParts[0];
-        // Join all parts after the first dot, then truncate to 9 decimal places
-        const fractionalPart = decimalParts.slice(1).join('').substring(0, 9);
-        value = integerPart + '.' + fractionalPart;
-    }
-    // If decimalParts.length is 1, it means no dots, or dots were at the beginning/end and got handled by replace or split.
-    // e.g. "123" -> value = "123"
-    // e.g. ".123" -> value = ".123" (decimalParts[0] is "", fractionalPart is "123")
-    // e.g. "123." -> value = "123." (decimalParts[0] is "123", fractionalPart is "")
+	if (decimalParts.length > 1) { // If there's at least one dot
+		const integerPart = decimalParts[0];
+		// Join all parts after the first dot, then truncate to 9 decimal places
+		const fractionalPart = decimalParts.slice(1).join('').substring(0, 9);
+		value = integerPart + '.' + fractionalPart;
+	}
+	// If decimalParts.length is 1, it means no dots, or dots were at the beginning/end and got handled by replace or split.
+	// e.g. "123" -> value = "123"
+	// e.g. ".123" -> value = ".123" (decimalParts[0] is "", fractionalPart is "123")
+	// e.g. "123." -> value = "123." (decimalParts[0] is "123", fractionalPart is "")
 
-    onAmountChange(value);
+	onAmountChange(value);
 };
 
 /**
@@ -85,5 +85,5 @@ export const findPortfolioToken = (selectedToken?: Coin, portfolioTokens: Portfo
 		return undefined;
 	}
 
-	return portfolioTokens.find((token: PortfolioToken) => token.mintAddress === selectedToken.mintAddress);
+	return portfolioTokens.find((token: PortfolioToken) => token.mintAddress === selectedToken.address);
 }; 
