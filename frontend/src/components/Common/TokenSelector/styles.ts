@@ -234,8 +234,8 @@ export const useStyles = () => {
 		tokenSelectorContainer: {
 			alignItems: 'center',
 			flexDirection: 'row',
-			flexShrink: 1,
-			maxWidth: '50%', // Prevent it from taking too much space
+			flex: 1,
+			paddingVertical: theme.spacing.xs, // Add some padding for better touch target
 		},
 		tokenSymbol: {
 			...theme.fonts.titleMedium,

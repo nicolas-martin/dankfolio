@@ -457,30 +457,28 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 				<Card.Content style={styles.cardContent}>
 					{/* Main row: Token selector and amount input */}
 					<View style={styles.mainRow}>
-						{/* Token selector section */}
-						<View style={styles.tokenSelectorContainer}>
-							<TouchableOpacity
-								style={styles.tokenSelectorButton}
-								onPress={() => setModalVisible(true)}
-								disabled={!onSelectToken}
-								testID={testID}
-								accessible={true}
-								accessibilityRole="button"
-								accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}
-							>
-								<View style={styles.tokenInfo}>
-									{selectedToken?.resolvedIconUrl ? (
-										<>
-											<RenderIcon iconUrl={selectedToken.resolvedIconUrl} styles={styles} />
-											<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
-										</>
-									) : (
-										<Text style={styles.tokenSymbol} testID={`${testID}-label`}>{label || 'Select Token'}</Text>
-									)}
-								</View>
-							</TouchableOpacity>
-							<ChevronDownIcon size={16} color={styles.colors.onSurface} />
-						</View>
+														{/* Token selector section */}
+								<TouchableOpacity
+									style={styles.tokenSelectorContainer}
+									onPress={() => setModalVisible(true)}
+									disabled={!onSelectToken}
+									testID={testID}
+									accessible={true}
+									accessibilityRole="button"
+									accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}
+								>
+									<View style={styles.tokenInfo}>
+										{selectedToken?.resolvedIconUrl ? (
+											<>
+												<RenderIcon iconUrl={selectedToken.resolvedIconUrl} styles={styles} />
+												<Text style={styles.tokenSymbol} testID={`${testID}-symbol`}>{selectedToken.symbol}</Text>
+											</>
+										) : (
+											<Text style={styles.tokenSymbol} testID={`${testID}-label`}>{label || 'Select Token'}</Text>
+										)}
+									</View>
+									<ChevronDownIcon size={16} color={styles.colors.onSurface} />
+								</TouchableOpacity>
 
 						{/* Amount input section */}
 						{onAmountChange && (

@@ -35,8 +35,6 @@ env:
 # Test 2: Change TO token to DANK and validate with amounts
 - tapOn:
       id: "to-token-selector"
-- tapOn:
-      text: ".*jup.*"
 # Wait for modal to open
 - waitForAnimationToEnd
 # Assert that the token search modal is visible before interacting with it
