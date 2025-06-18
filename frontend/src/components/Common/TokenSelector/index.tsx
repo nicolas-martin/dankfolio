@@ -321,8 +321,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	const liveExchangeRate = currentTokenDataFromStore?.price; // This is a number or undefined
 
 	// Effect to update internal USD amount if crypto amountValue (from props) or liveExchangeRate changes
+	// BUT only when we're NOT in USD input mode (to avoid overwriting user's USD input)
 	useEffect(() => {
-		if (enableUsdToggle && amountValue) {
+		if (enableUsdToggle && amountValue && currentInputUnit === 'CRYPTO') {
 			const rate = liveExchangeRate;
 			if (rate && rate > 0) {
 				const crypto = parseFloat(amountValue);
@@ -338,7 +339,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		} else if (enableUsdToggle && !amountValue) {
 			setInternalUsdAmount('');
 		}
-	}, [amountValue, liveExchangeRate, enableUsdToggle]);
+	}, [amountValue, liveExchangeRate, enableUsdToggle, currentInputUnit]);
 
 	const handleUnitToggle = useCallback(() => {
 		setCurrentInputUnit(prevUnit => {
@@ -387,26 +388,24 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
 
 	const handleUsdAmountChange = useCallback((text: string) => {
-		// Use validation function to ensure proper input formatting
+		// Use validation function to ensure proper input formatting, just like crypto handler
 		handleAmountInputChange(text, (validatedText: string) => {
-			setInternalUsdAmount(validatedText); // Update internal USD amount
+			setInternalUsdAmount(validatedText); // Update internal USD amount - display exactly what user types
 
-			if (enableUsdToggle) {
+			// Convert USD to crypto for parent component, but don't format it
+			if (enableUsdToggle && onAmountChange) {
 				const rate = liveExchangeRate;
 				if (validatedText && validatedText !== '.' && !validatedText.endsWith('.') && rate && rate > 0) {
 					const usd = parseFloat(validatedText);
 					if (!isNaN(usd)) {
 						const cryptoValue = usd / rate;
-						// Limit to 6 decimal places maximum for readability
-						const formattedCrypto = cryptoValue.toFixed(6);
-						// Remove trailing zeros
-						const cleanCrypto = parseFloat(formattedCrypto).toString();
-						if (onAmountChange) onAmountChange(cleanCrypto);
+						// Pass the converted crypto value to parent (this becomes the new amountValue)
+						onAmountChange(cryptoValue.toString());
 					} else {
-						if (onAmountChange) onAmountChange('');
+						onAmountChange('');
 					}
 				} else {
-					if (onAmountChange) onAmountChange('');
+					onAmountChange('');
 				}
 			}
 		});
