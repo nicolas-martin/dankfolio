@@ -168,7 +168,7 @@ export interface ListTradesResponse {
 }
 
 export interface API {
-	getAvailableCoins: (trendingOnly?: boolean) => Promise<Coin[]>;
+	getAvailableCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getCoinByID: (mintAddress: string) => Promise<Coin>;
 	search: (params: SearchRequest) => Promise<SearchResponse>;
 	searchCoinByAddress: (mintAddress: string) => Promise<SearchCoinByAddressResponse>;

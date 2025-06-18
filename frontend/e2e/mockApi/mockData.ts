@@ -292,7 +292,7 @@ export const MOCK_TOP_GAINER_COINS: ProtobufCoin[] = [
 		resolvedIconUrl: 'https://production-s3-djangomediabucket-j9zlzkkigf3m.s3.amazonaws.com/episodes/images/32932-157aee6d516dc2d9b639f0062e2c420a0b9d3b9c0bc7a2b741e02bf88c22b2b3.jpg',
 		tags: ['gainer', 'moonshot', 'meme'],
 		price: 1.25,
-		price24hChangePercent: 485.7, // Highest gainer
+		price24hChangePercent: -485.7, // Highest gainer
 		marketcap: 125000000,
 		volume24hUsd: 5750000,
 		volume24hChangePercent: 892.3,
