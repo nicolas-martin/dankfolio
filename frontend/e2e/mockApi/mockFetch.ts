@@ -2,7 +2,7 @@
 import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import {
-	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByMintResponseSchema, type Coin as ProtobufCoin, CoinSchema, CoinSortField,
+	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByAddressResponseSchema, type Coin as ProtobufCoin, CoinSchema, CoinSortField,
 } from '@/gen/dankfolio/v1/coin_pb';
 import {
 	GetWalletBalancesResponseSchema,
@@ -59,10 +59,11 @@ async function handleGetAvailableCoins(options?: FetchInit) {
 	const coinsToReturn = requestData.trendingOnly ? MOCK_TRENDING_COINS : ALL_MOCK_COINS;
 	return create(GetAvailableCoinsResponseSchema, {
 		coins: coinsToReturn,
+		totalCount: coinsToReturn.length,
 	});
 }
 
-// New RPC method handlers
+// New RPC method handlers for specific coin categories
 async function handleGetNewCoins(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const limit = requestData.limit || 20;
@@ -145,29 +146,28 @@ async function handleSearchCoins(options?: FetchInit) {
 	});
 }
 
-
 async function handleSearchCoinByMint(_options?: FetchInit) {
-	return create(SearchCoinByMintResponseSchema, {
+	return create(SearchCoinByAddressResponseSchema, {
 		coin: ALL_MOCK_COINS[0],
 	});
 }
 
 async function handleGetCoinById(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
-	const mintAddress = requestData.mintAddress;
+	const address = requestData.address || requestData.mintAddress; // Support both field names
 
-	if (!mintAddress) {
+	if (!address) {
 		// Return gRPC-style error for invalid request
-		throw new Error('INVALID_ARGUMENT: mintAddress is required');
+		throw new Error('INVALID_ARGUMENT: address is required');
 	}
 
 	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
-		c.mintAddress.toLowerCase() === mintAddress.toLowerCase()
+		c.address.toLowerCase() === address.toLowerCase()
 	);
 
 	if (!coin) {
 		// Return gRPC-style error for not found
-		throw new Error(`NOT_FOUND: No coin found with mint address ${mintAddress}`);
+		throw new Error(`NOT_FOUND: No coin found with address ${address}`);
 	}
 
 	return create(CoinSchema, coin);
@@ -210,12 +210,12 @@ async function handleGetPriceHistory(options?: FetchInit) {
 	}
 
 	const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
-		c.mintAddress.toLowerCase() === coinAddress.toLowerCase()
+		c.address.toLowerCase() === coinAddress.toLowerCase()
 	);
 
 	if (!coin) {
 		// Return gRPC-style error for not found
-		throw new Error(`NOT_FOUND: No coin found with mint address ${coinAddress}`);
+		throw new Error(`NOT_FOUND: No coin found with address ${coinAddress}`);
 	}
 
 	const isStablecoin = coin.tags.includes('stablecoin');
@@ -230,12 +230,12 @@ async function handleGetCoinPrices(options?: FetchInit) {
 	const coinIds = requestData.coinIds || [];
 
 	// If no specific coins requested, return prices for all coins
-	const coinsToPrice = coinIds.length > 0 ? coinIds : ALL_MOCK_COINS.map(c => c.mintAddress);
+	const coinsToPrice = coinIds.length > 0 ? coinIds : ALL_MOCK_COINS.map(c => c.address);
 
 	const mockPrices: { [key: string]: number } = {};
 	coinsToPrice.forEach((coinId: string) => {
 		const coin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
-			c.mintAddress.toLowerCase() === coinId.toLowerCase()
+			c.address.toLowerCase() === coinId.toLowerCase()
 		);
 		if (coin) {
 			// Use base price directly for deterministic behavior
@@ -256,16 +256,15 @@ async function handleGetSwapQuote(options?: FetchInit) {
 
 	// Find the coins to get their base data
 	const fromCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
-		c.mintAddress.toLowerCase() === fromCoinId.toLowerCase()
+		c.address.toLowerCase() === fromCoinId.toLowerCase()
 	);
 	const toCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
-		c.mintAddress.toLowerCase() === toCoinId.toLowerCase()
+		c.address.toLowerCase() === toCoinId.toLowerCase()
 	);
 
 	if (!fromCoin || !toCoin) {
 		throw new Error('NOT_FOUND: One or both coins not found');
 	}
-
 
 	// Convert raw amount to decimal amount for calculation
 	const rawAmount = parseFloat(amount);
@@ -299,7 +298,6 @@ async function handleGetSwapQuote(options?: FetchInit) {
 	});
 }
 
-
 async function handlePrepareSwap(_options?: FetchInit) {
 	const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
 	return create(PrepareSwapResponseSchema, {
@@ -307,16 +305,13 @@ async function handlePrepareSwap(_options?: FetchInit) {
 	});
 }
 
-
 async function handlePrepareTransfer(_options?: FetchInit) {
 	return { unsignedTransaction: CAPTURED_TRANSACTION_DATA.UNSIGNED_TX }; // This endpoint returns a plain object
 }
 
-
 async function handleSubmitTransfer(_options?: FetchInit) {
 	return { transactionHash: CAPTURED_TRANSACTION_DATA.MOCK_TX_HASH }; // This endpoint returns a plain object
 }
-
 
 async function handleSubmitSwap(_options?: FetchInit) {
 	return create(SubmitSwapResponseSchema, {
@@ -324,7 +319,6 @@ async function handleSubmitSwap(_options?: FetchInit) {
 		transactionHash: 'mock_transaction_hash_abcdef123456',
 	});
 }
-
 
 async function handleGetSwapStatus(_options?: FetchInit) {
 	return { // This endpoint returns a plain object
@@ -334,7 +328,6 @@ async function handleGetSwapStatus(_options?: FetchInit) {
 		finalized: true,
 	};
 }
-
 
 async function handleGetTrade(_options?: FetchInit) {
 	return create(TradeSchema, {
@@ -353,7 +346,6 @@ async function handleGetTrade(_options?: FetchInit) {
 		finalized: true,
 	});
 }
-
 
 async function handleListTrades(_options?: FetchInit) {
 	const mockTrade = create(TradeSchema, {
@@ -380,21 +372,34 @@ async function handleListTrades(_options?: FetchInit) {
 // Endpoint Handlers Map
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> } = {
+	// Legacy endpoint
 	'/dankfolio.v1.coinservice/getavailablecoins': handleGetAvailableCoins,
+	
+	// New specific RPC endpoints
 	'/dankfolio.v1.coinservice/getnewcoins': handleGetNewCoins,
 	'/dankfolio.v1.coinservice/gettrendingcoins': handleGetTrendingCoins,
 	'/dankfolio.v1.coinservice/gettopgainerscoins': handleGetTopGainersCoins,
+	
+	// Search endpoints
 	'/dankfolio.v1.coinservice/search': handleSearchCoins, // Proper proto endpoint
-	'/dankfolio.v1.coinservice/searchcoins': handleSearchCoins, // Legacy endpoint for compatibility
 	'/dankfolio.v1.coinservice/searchcoinbymint': handleSearchCoinByMint,
+	'/dankfolio.v1.coinservice/searchcoinbyaddress': handleSearchCoinByMint, // Support both mint and address
+	
+	// Coin info endpoints
 	'/dankfolio.v1.coinservice/getcoinbyid': handleGetCoinById,
+	
+	// Wallet endpoints
 	'/dankfolio.v1.walletservice/getwalletbalances': handleGetWalletBalances,
-	'/dankfolio.v1.priceservice/getpricehistory': handleGetPriceHistory,
-	'/dankfolio.v1.priceservice/getcoinprices': handleGetCoinPrices,
-	'/dankfolio.v1.tradeservice/getswapquote': handleGetSwapQuote,
-	'/dankfolio.v1.tradeservice/prepareswap': handlePrepareSwap,
 	'/dankfolio.v1.walletservice/preparetransfer': handlePrepareTransfer,
 	'/dankfolio.v1.walletservice/submittransfer': handleSubmitTransfer,
+	
+	// Price endpoints
+	'/dankfolio.v1.priceservice/getpricehistory': handleGetPriceHistory,
+	'/dankfolio.v1.priceservice/getcoinprices': handleGetCoinPrices,
+	
+	// Trade endpoints
+	'/dankfolio.v1.tradeservice/getswapquote': handleGetSwapQuote,
+	'/dankfolio.v1.tradeservice/prepareswap': handlePrepareSwap,
 	'/dankfolio.v1.tradeservice/submitswap': handleSubmitSwap,
 	'/dankfolio.v1.tradeservice/getswapstatus': handleGetSwapStatus,
 	'/dankfolio.v1.tradeservice/gettrade': handleGetTrade,
@@ -422,13 +427,13 @@ export const mockFetch = async (url: FetchInput, options?: FetchInit): Promise<a
 		let mockResponse: any;
 
 		if (handler) {
+			console.log(`🎭 Mock API: Handling ${normalizedPath}`);
 			mockResponse = await handler(options);
 		} else {
 			console.log('🎭 Unhandled endpoint, falling back to original fetch:', normalizedPath);
 			console.log('🎭 Available endpoint handlers:', Object.keys(endpointHandlers));
 			return originalFetch(url, options);
 		}
-
 
 		const responseBody = JSON.stringify(mockResponse, (_key, value) => {
 			if (typeof value === 'bigint') {
