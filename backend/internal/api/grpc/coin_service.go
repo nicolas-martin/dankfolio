@@ -83,7 +83,7 @@ func (s *coinServiceHandler) GetCoinByID(
 	ctx context.Context,
 	req *connect.Request[pb.GetCoinByIDRequest],
 ) (*connect.Response[pb.Coin], error) {
-	coin, err := s.coinService.GetCoinByAddress(ctx, req.Msg.MintAddress)
+	coin, err := s.coinService.GetCoinByAddress(ctx, req.Msg.Address)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin: %w", err))
 	}
@@ -92,17 +92,17 @@ func (s *coinServiceHandler) GetCoinByID(
 	return res, nil
 }
 
-// SearchCoinByMint searches for a coin by mint address
-func (s *coinServiceHandler) SearchCoinByMint(
+// SearchCoinByAddress searches for a coin by address
+func (s *coinServiceHandler) SearchCoinByAddress(
 	ctx context.Context,
-	req *connect.Request[pb.SearchCoinByMintRequest],
-) (*connect.Response[pb.SearchCoinByMintResponse], error) {
-	coin, err := s.coinService.GetCoinByAddress(ctx, req.Msg.MintAddress)
+	req *connect.Request[pb.SearchCoinByAddressRequest],
+) (*connect.Response[pb.SearchCoinByAddressResponse], error) {
+	coin, err := s.coinService.GetCoinByAddress(ctx, req.Msg.Address)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", req.Msg.MintAddress, err))
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for address %s: %w", req.Msg.Address, err))
 	}
 
-	res := connect.NewResponse(&pb.SearchCoinByMintResponse{
+	res := connect.NewResponse(&pb.SearchCoinByAddressResponse{
 		Coin: convertModelCoinToPbCoin(coin),
 	})
 	return res, nil

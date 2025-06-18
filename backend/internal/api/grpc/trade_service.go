@@ -315,10 +315,10 @@ func (s *tradeServiceHandler) ListTrades(ctx context.Context, req *connect.Reque
 	if tradeType := req.Msg.GetType(); tradeType != "" {
 		opts.Filters = append(opts.Filters, db.FilterOption{Field: "type", Operator: db.FilterOpEqual, Value: tradeType})
 	}
-	if fromCoin := req.Msg.GetFromCoinMintAddress(); fromCoin != "" {
+	if fromCoin := req.Msg.GetFromCoinAddress(); fromCoin != "" {
 		opts.Filters = append(opts.Filters, db.FilterOption{Field: "from_coin_mint_address", Operator: db.FilterOpEqual, Value: fromCoin})
 	}
-	if toCoin := req.Msg.GetToCoinMintAddress(); toCoin != "" {
+	if toCoin := req.Msg.GetToCoinAddress(); toCoin != "" {
 		opts.Filters = append(opts.Filters, db.FilterOption{Field: "to_coin_mint_address", Operator: db.FilterOpEqual, Value: toCoin})
 	}
 
