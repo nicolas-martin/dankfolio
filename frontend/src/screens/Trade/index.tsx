@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, Button, IconButton, Icon, Card } from 'react-native-paper'; // Removed Switch
+import { Text, Button, IconButton, Icon, Card } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { useStyles } from './styles';
@@ -11,7 +11,6 @@ import TokenSelector from '@components/Common/TokenSelector';
 import AmountPercentageButtons from '@components/Common/AmountPercentageButtons';
 import TradeConfirmation from '@components/Trade/TradeConfirmation';
 import TradeStatusModal from '@components/Trade/TradeStatusModal';
-// InputUnit import removed, TradeScreenRouteProp might also not need InputUnit if it was only for state
 import { TradeScreenNavigationProp, TradeScreenRouteProp } from './types';
 
 import {
@@ -41,7 +40,6 @@ const Trade: React.FC = () => {
 	const { getCoinByID } = useCoinStore();
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
-	// inputUnit, usdAmount, and exchangeRate states are removed
 	const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(false);
 	const [tradeDetails, setTradeDetails] = useState<TradeDetailsProps>({
 		exchangeRate: '0',
@@ -54,33 +52,25 @@ const Trade: React.FC = () => {
 	const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
 	const [isLoadingTrade, setIsLoadingTrade] = useState<boolean>(false);
 	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
-	// const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null); // Removed as unused (polledTxHash from hook is used)
-	// const [pollingStatus, setPollingStatus] = useState<PollingStatus>('pending'); // Removed as unused (currentPollingStatus from hook is used)
-	// const [pollingConfirmations, setPollingConfirmations] = useState<number>(0); // Removed as unused (currentPollingConfirmations from hook is used)
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const [isNavigating, setIsNavigating] = useState(false); // This one IS used by TradeStatusModal
-	// const quoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Will be managed by useDebouncedCallback
-
-	// handleUnitToggle is removed
 
 	const {
 		txHash: polledTxHash,
 		status: currentPollingStatus,
-		// data: pollingData, // Not explicitly used here
 		error: currentPollingErrorFromHook,
-		confirmations: currentPollingConfirmationsFromHook, // Renamed to avoid conflict with local state if it existed
+		confirmations: currentPollingConfirmationsFromHook,
 		startPolling: startTxPolling,
-		// stopPolling: stopTxPollingHook, // Removed as unused
 		resetPolling: resetTxPolling
 	} = useTransactionPolling(
-		grpcApi.getSwapStatus, // Pass the actual polling function
+		grpcApi.getSwapStatus,
 		undefined, // onSuccess
-		(errorMsg) => showToast({ type: 'error', message: errorMsg || 'Transaction polling failed' }), // onError
-		(finalData) => { // onFinalized
+		(errorMsg) => showToast({ type: 'error', message: errorMsg || 'Transaction polling failed' }),
+		(finalData) => {
 			if (wallet?.address && finalData && !finalData.error) {
 				logger.info('[Trade] Transaction finalized successfully, refreshing portfolio.');
 				usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
-				useTransactionsStore.getState().fetchRecentTransactions(wallet.address); // Also refresh transactions
+				useTransactionsStore.getState().fetchRecentTransactions(wallet.address);
 			}
 		}
 	);
@@ -93,9 +83,6 @@ const Trade: React.FC = () => {
 	// Use currentPollingConfirmationsFromHook directly if pollingConfirmations state is removed
 	const currentPollingConfirmations = currentPollingConfirmationsFromHook;
 
-
-	// componentStopPolling, componentPollTradeStatus, componentStartPolling are removed
-
 	// Initialize with SOL if no fromCoin provided
 	useEffect(() => {
 		logger.breadcrumb({ category: 'navigation', message: 'Viewed TradeScreen' });
@@ -106,19 +93,16 @@ const Trade: React.FC = () => {
 				if (solCoin) setFromCoin(solCoin);
 			});
 		}
-	}, [fromCoin, getCoinByID, toCoin?.symbol]); // Added missing dependencies
-
-	// useEffect for fetching USD exchangeRate is removed. TokenSelector handles its own rate.
+	}, [fromCoin, getCoinByID, toCoin?.symbol]);
 
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.coin.address === fromCoin?.address), [tokens, fromCoin]);
 
 	// Memoized objects to prevent JSX object creation
-	const toTextInputProps = useMemo(() => ({ 
-		placeholder: '0.0000' 
+	const toTextInputProps = useMemo(() => ({
+		placeholder: '0.0000'
 	}), []);
 
-	// Cleanup intervals on unmount
 	useEffect(() => {
 		// Cleanup for quote fetching timeouts is handled by useDebouncedCallback's internal useEffect
 		// Polling cleanup is handled by the useTransactionPolling hook's internal useEffect
@@ -132,7 +116,7 @@ const Trade: React.FC = () => {
 	const debouncedFetchQuote = useDebouncedCallback(
 		async (currentAmount: string, currentFromCoin: Coin, currentToCoin: Coin, direction: 'from' | 'to') => {
 			if (!currentFromCoin || !currentToCoin || !currentAmount || parseFloat(currentAmount) <= 0) {
-				setIsQuoteLoading(false); // Ensure loading is stopped
+				setIsQuoteLoading(false);
 				return;
 			}
 
@@ -358,29 +342,21 @@ const Trade: React.FC = () => {
 				key={`${label}-${coin?.address || 'none'}`} // Add key prop to force re-render on coin change
 				selectedToken={coin!}
 				onSelectToken={onSelectToken}
-				label="Select Token" // This label might be redundant if TokenSelector has its own internal label/placeholder logic
-				amountValue={amount} // This is always crypto amount for both 'From' and 'To' cards
-				onAmountChange={onAmountChange} // For 'From' card, this is simplified handleFromAmountChange
+				label="Select Token"
+				amountValue={amount}
+				onAmountChange={onAmountChange}
 				isAmountEditable={true}
 				showOnlyPortfolioTokens={showOnlyPortfolioTokens}
 				testID={testID}
-				// enableUsdToggle is now defaulted to true in TokenSelector, so no need to pass it for 'From' card.
-				// For 'To' card, if we want to explicitly disable it (though default is true), we'd pass enableUsdToggle={false}.
-				// However, since 'To' card should not have this feature, explicitly setting it to false is safer.
-				enableUsdToggle={label === 'From'} // Keep this for explicitness: true for 'From', false for 'To'
-				// textInputProps and helperText for 'From' card are managed by TokenSelector.
-				// For 'To' card, which won't use USD toggle, we can pass basic placeholder/helper.
+				enableUsdToggle={label === 'From'}
 				textInputProps={label === 'To' ? toTextInputProps : undefined}
 				helperText={label === 'To' ? (coin ? `Estimated ${coin.symbol} amount` : 'Estimated amount') : undefined}
 			/>
 			{label === 'From' && coin && (
 				<AmountPercentageButtons
-					// key no longer needs inputUnit as it's managed inside TokenSelector
 					key={`${coin.address}-${toCoin?.address || 'none'}`}
 					balance={portfolioBalance || 0}
 					onSelectAmount={(selectedAmount) => {
-						// AmountPercentageButtons always provide crypto amount.
-						// So, this should directly call onAmountChange which is handleFromAmountChange.
 						onAmountChange(selectedAmount);
 					}}
 				/>
@@ -399,7 +375,7 @@ const Trade: React.FC = () => {
 			<Card style={styles.detailsCard} testID="trade-details-card">
 				<Card.Title
 					title="Trade Details"
-					left={(_props) => ( // Renamed props to _props
+					left={(_props) => (
 						<View style={styles.detailsIcon}>
 							<Icon source="information" size={14} color={styles.colors.onPrimary} />
 						</View>
@@ -456,7 +432,7 @@ const Trade: React.FC = () => {
 							handleFromAmountChange,
 							true,
 							'from-token-selector',
-							fromPortfolioToken?.amount // Pass the balance from portfolio
+							fromPortfolioToken?.amount
 						)}
 
 						{/* To Card with Swap Button */}
@@ -487,11 +463,7 @@ const Trade: React.FC = () => {
 						</View>
 					</View>
 
-					{/* DISABLED: Refresh Progress Bar - was causing excessive callbacks */}
-
-					{/* Trade Details */}
 					{renderTradeDetails()}
-
 
 				</View>
 			</ScrollView>
@@ -539,19 +511,17 @@ const Trade: React.FC = () => {
 					setIsNavigating(true);
 					setIsStatusModalVisible(false);
 					resetTxPolling(); // Reset hook state
-					// componentStopPolling(); // Replaced by resetTxPolling or hook's internal stop
 					navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
 
-					// Reset navigation flag after navigation completes
 					setTimeout(() => {
 						setIsNavigating(false);
 					}, 100);
 				}}
 				isVisible={isStatusModalVisible}
-				txHash={polledTxHash} // Use txHash from hook
-				status={currentPollingStatus as PollingStatus} // Use status from hook
-				confirmations={currentPollingConfirmations} // Use confirmations from hook
-				error={pollingError} // Still using local pollingError, or switch to currentPollingErrorFromHook
+				txHash={polledTxHash}
+				status={currentPollingStatus as PollingStatus}
+				confirmations={currentPollingConfirmations}
+				error={pollingError}
 			/>
 		</SafeAreaView>
 	);
