@@ -18,6 +18,7 @@ import (
 const (
 	priceHistoryEndpoint   = "defi/history_price"
 	trendingTokensEndpoint = "defi/token_trending"
+	tokenOverviewEndpoint  = "defi/token_overview"
 )
 
 // Client handles interactions with the BirdEye API
@@ -92,6 +93,26 @@ func (c *Client) GetTrendingTokens(ctx context.Context, params TrendingTokensPar
 	}
 
 	return trendingTokensResponse, nil
+}
+
+// GetTokenOverview retrieves detailed overview information for a specific token from the BirdEye API.
+func (c *Client) GetTokenOverview(ctx context.Context, address string) (*TokenOverview, error) {
+	queryParams := url.Values{}
+	queryParams.Add("address", address)
+
+	// hardcoded to 24h for now
+	queryParams.Add("frames", "24h")
+
+	fullURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenOverviewEndpoint, queryParams.Encode())
+
+	slog.Debug("Fetching token overview from BirdEye", "url", fullURL, "address", address)
+
+	tokenOverviewResponse, err := getRequest[TokenOverview](c, ctx, fullURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token overview for %s: %w", address, err)
+	}
+
+	return tokenOverviewResponse, nil
 }
 
 // getRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response
