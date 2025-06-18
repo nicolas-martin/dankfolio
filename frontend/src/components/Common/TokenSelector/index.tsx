@@ -11,7 +11,7 @@ import { useCoinStore } from '@store/coins'; // Already here, good.
 import type { Coin } from '@/types';
 import type { InputUnit } from '@/screens/Trade/types';
 // calculateUsdValue might be removed if equivalentValueDisplay handles all formatting
-import { findPortfolioToken } from './scripts'; // calculateUsdValue might be removed
+import { findPortfolioToken, handleAmountInputChange } from './scripts'; // calculateUsdValue might be removed
 import CachedImage from '@/components/Common/CachedImage';
 import { logger } from '@/utils/logger';
 import { useNamedDepsDebug } from '@/utils/debugHooks';
@@ -366,44 +366,50 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 	}, [liveExchangeRate, amountValue, internalUsdAmount]);
 
 	const handleCryptoAmountChange = useCallback((text: string) => {
-		if (onAmountChange) onAmountChange(text); // Update parent's crypto amount (which is amountValue)
+		// Use validation function to ensure proper input formatting
+		handleAmountInputChange(text, (validatedText: string) => {
+			if (onAmountChange) onAmountChange(validatedText); // Update parent's crypto amount (which is amountValue)
 
-		if (enableUsdToggle) {
-			const rate = liveExchangeRate;
-			if (text && text !== '.' && !text.endsWith('.') && rate && rate > 0) {
-				const crypto = parseFloat(text);
-				if (!isNaN(crypto)) {
-					setInternalUsdAmount(formatPrice(crypto * rate, false));
+			if (enableUsdToggle) {
+				const rate = liveExchangeRate;
+				if (validatedText && validatedText !== '.' && !validatedText.endsWith('.') && rate && rate > 0) {
+					const crypto = parseFloat(validatedText);
+					if (!isNaN(crypto)) {
+						setInternalUsdAmount(formatPrice(crypto * rate, false));
+					} else {
+						setInternalUsdAmount('');
+					}
 				} else {
 					setInternalUsdAmount('');
 				}
-			} else {
-				setInternalUsdAmount('');
 			}
-		}
+		});
 	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
 
 	const handleUsdAmountChange = useCallback((text: string) => {
-		setInternalUsdAmount(text); // Update internal USD amount
+		// Use validation function to ensure proper input formatting
+		handleAmountInputChange(text, (validatedText: string) => {
+			setInternalUsdAmount(validatedText); // Update internal USD amount
 
-		if (enableUsdToggle) {
-			const rate = liveExchangeRate;
-			if (text && text !== '.' && !text.endsWith('.') && rate && rate > 0) {
-				const usd = parseFloat(text);
-				if (!isNaN(usd)) {
-					const cryptoValue = usd / rate;
-					// Limit to 6 decimal places maximum for readability
-					const formattedCrypto = cryptoValue.toFixed(6);
-					// Remove trailing zeros
-					const cleanCrypto = parseFloat(formattedCrypto).toString();
-					if (onAmountChange) onAmountChange(cleanCrypto);
+			if (enableUsdToggle) {
+				const rate = liveExchangeRate;
+				if (validatedText && validatedText !== '.' && !validatedText.endsWith('.') && rate && rate > 0) {
+					const usd = parseFloat(validatedText);
+					if (!isNaN(usd)) {
+						const cryptoValue = usd / rate;
+						// Limit to 6 decimal places maximum for readability
+						const formattedCrypto = cryptoValue.toFixed(6);
+						// Remove trailing zeros
+						const cleanCrypto = parseFloat(formattedCrypto).toString();
+						if (onAmountChange) onAmountChange(cleanCrypto);
+					} else {
+						if (onAmountChange) onAmountChange('');
+					}
 				} else {
 					if (onAmountChange) onAmountChange('');
 				}
-			} else {
-				if (onAmountChange) onAmountChange('');
 			}
-		}
+		});
 	}, [onAmountChange, enableUsdToggle, liveExchangeRate]);
 
 	const displayAmount = enableUsdToggle && currentInputUnit === 'USD' ? internalUsdAmount : amountValue;
