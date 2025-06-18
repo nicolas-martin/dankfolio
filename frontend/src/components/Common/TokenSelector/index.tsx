@@ -52,7 +52,7 @@ const TokenItem = React.memo<{
 			onPress={handlePress}
 			accessible={true}
 			accessibilityRole="button"
-			accessibilityLabel={`Select ${coin.symbol.toLowerCase()} token, ${coin.name.toLowerCase()}`}
+			accessibilityLabel={`Select ${coin.symbol.toLowerCase()} token`}
 			accessibilityHint="Double tap to select this token"
 			importantForAccessibility="yes"
 		>
@@ -461,7 +461,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								style={styles.tokenSelectorButton}
 								onPress={() => setModalVisible(true)}
 								disabled={!onSelectToken}
-								testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : testID}
+								testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : `${testID}-placeholder`}
 								accessible={true}
 								accessibilityRole="button"
 								accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}

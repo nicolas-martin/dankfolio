@@ -98,10 +98,10 @@ env:
       id: "confirm-send-button"
 - assertNotVisible:
       id: "validation-error-text"
-- assertVisible:
-      id: trade-status-modal
+- assertVisible: "Transaction Status"
 - tapOn:
       id: trade-status-action-button
 - waitForAnimationToEnd
-- assertNotVisible:
-      id: trade-status-modal
+- assertNotVisible: "Transaction Status"
+- assertVisible:
+      id: "home-screen"
