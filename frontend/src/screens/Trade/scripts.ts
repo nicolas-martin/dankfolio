@@ -42,6 +42,7 @@ export const handleSwapCoins = (
 		logger.warn('[Trade] Cannot swap with null coins', { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol });
 		return;
 	}
+	if (!fromCoin.address || !toCoin.address) { logger.warn('[Trade] Cannot swap coins with invalid addresses', { fromCoin, toCoin }); return; }
 
 	logger.log('[Trade] Swapping tokens', {
 		from: `${fromCoin.symbol} (${fromAmount})`,
