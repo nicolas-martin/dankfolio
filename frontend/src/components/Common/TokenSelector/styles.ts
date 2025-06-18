@@ -19,6 +19,12 @@ export const useStyles = () => {
 			textAlign: 'right',
 			width: '100%',
 		},
+		// New: Container for amount input section
+		amountInputContainer: {
+			alignItems: 'flex-end',
+			flexShrink: 0,
+			minWidth: '45%', // Ensure minimum space for input
+		},
 		blurView: {
 			flex: 1,
 		},
@@ -33,11 +39,32 @@ export const useStyles = () => {
 			width: '100%',
 		},
 		cardContent: {
+			margin: 0,
+			padding: theme.spacing.md,
+			width: '100%',
+		},
+		// New: Main row container for token selector and amount input
+		mainRow: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			minHeight: 44, // Ensure consistent height
+			width: '100%',
+		},
+		// New: Balance row container (separate from main row)
+		balanceRow: {
 			alignItems: 'flex-start',
 			flexDirection: 'row',
-			margin: 0,
-			padding: theme.spacing.xs,
+			justifyContent: 'flex-start',
+			marginTop: theme.spacing.xs,
 			width: '100%',
+		},
+		// New: Container for token selector (icon + symbol + dropdown)
+		tokenSelectorContainer: {
+			alignItems: 'center',
+			flexDirection: 'row',
+			flexShrink: 1,
+			maxWidth: '50%', // Prevent it from taking too much space
 		},
 		equivalentValueText: {
 			color: theme.colors.onSurfaceVariant,
@@ -170,8 +197,6 @@ export const useStyles = () => {
 			...theme.fonts.bodySmall,
 			color: theme.colors.onSurfaceVariant,
 			fontSize: theme.typography.fontSize.xs,
-			marginTop: theme.spacing.xs,
-			paddingLeft: theme.spacing.sm,
 		},
 		tokenDetails: { // This is the one from previous line 84
 			flex: 1,
@@ -179,13 +204,14 @@ export const useStyles = () => {
 		},
 		tokenIcon: {
 			borderRadius: 18,
-			height: 36,
-			marginRight: theme.spacing.xs,
-			width: 36,
+			height: 24, // Smaller icon for better fit
+			width: 24,
 		},
 		tokenInfo: {
 			alignItems: 'center',
 			flexDirection: 'row',
+			flexShrink: 1,
+			gap: theme.spacing.sm, // Add gap between icon and symbol
 		},
 		tokenItem: { // Properties already sorted
 			alignItems: 'center',
@@ -210,14 +236,14 @@ export const useStyles = () => {
 		tokenSelectorButton: {
 			alignItems: 'center',
 			flexDirection: 'row',
-			justifyContent: 'space-between',
-			width: '100%',
+			flexShrink: 1,
 		},
 		tokenSymbol: {
 			...theme.fonts.titleMedium,
 			color: theme.colors.onSurface,
-			fontSize: theme.typography.fontSize.lg,
+			fontSize: theme.typography.fontSize.base,
 			fontWeight: '600',
+			marginRight: theme.spacing.xs,
 		},
 		tokenTextContainer: {
 			marginLeft: theme.spacing.xs,
