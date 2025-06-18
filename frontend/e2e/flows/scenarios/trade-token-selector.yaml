@@ -15,26 +15,28 @@ env:
 
 # # Test 1: Initial SOL -> JUP setup - enter amount first to have visible values
 # # SOL price: $98.45, so 0.1 SOL = $9.84
-# - tapOn:
-#       id: "from-token-selector-amount-input"
-# - inputText: "0.1"
-# - waitForAnimationToEnd
-# - hideKeyboard
+- tapOn:
+      id: "from-token-selector-amount-input"
+- inputText: "0.1"
+- waitForAnimationToEnd
+- hideKeyboard
 
-# - runFlow:
-#       file: ../components/trade-token-selector.yaml
-#       env:
-#           FROM_SYMBOL: ${solSymbol}
-#           FROM_AMOUNT: "0.1"
-#           FROM_BALANCE: "2.5"
-#           FROM_USD_VALUE: "9.84"
-#           TO_SYMBOL: ${jupSymbol}
-#           TO_AMOUNT: "11.25"
-#           TO_BALANCE: "150"
+- runFlow:
+      file: ../components/trade-token-selector.yaml
+      env:
+          FROM_SYMBOL: ${solSymbol}
+          FROM_AMOUNT: "0.1"
+          FROM_BALANCE: "2.5"
+          FROM_USD_VALUE: "9.84"
+          TO_SYMBOL: ${jupSymbol}
+          TO_AMOUNT: "11.25"
+          TO_BALANCE: "150"
 
 # Test 2: Change TO token to DANK and validate with amounts
 - tapOn:
-      id: "to-token-selector-jup.*"
+      id: "to-token-selector"
+- tapOn:
+      text: ".*jup.*"
 # Wait for modal to open
 - waitForAnimationToEnd
 # Assert that the token search modal is visible before interacting with it
@@ -82,7 +84,7 @@ env:
 
 # Test 4: Change FROM token to USDC and validate with amounts
 - tapOn:
-      id: "from-token-selector-dank.*"
+      id: "from-token-selector"
 # Wait for modal to open
 - waitForAnimationToEnd
 # Assert that the token search modal is visible before interacting with it
@@ -127,7 +129,7 @@ env:
           TO_BALANCE: "2.5"
 
 - tapOn:
-      id: "from-token-selector-usdc.*"
+      id: "from-token-selector"
 - waitForAnimationToEnd
 - assertVisible:
       id: "token-search-input"
@@ -150,7 +152,10 @@ env:
 
 # swap to usd value
 - tapOn:
+      id: ".*swap-button.*"
+- tapOn:
       id: "from-token-selector-amount-input"
+- waitForAnimationToEnd
 - eraseText
 - inputText: "40"
 - runFlow:

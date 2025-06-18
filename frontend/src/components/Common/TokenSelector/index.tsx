@@ -228,7 +228,6 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				style={styles.searchContainer}
 				testID="token-selection-modal-content"
 				accessible={false}
-				importantForAccessibility="yes"
 			>
 				<Searchbar
 					testID="token-search-input"
@@ -248,7 +247,6 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 					accessibilityRole="search"
 					accessibilityLabel="Search for tokens"
 					accessibilityHint="Type to filter available tokens"
-					importantForAccessibility="yes"
 				/>
 			</View>
 			<BottomSheetFlatList
@@ -264,7 +262,6 @@ const TokenSearchModal: React.FC<TokenSearchModalProps> = ({
 				updateCellsBatchingPeriod={50}
 				getItemLayout={getItemLayout}
 				accessible={false}
-				importantForAccessibility="yes"
 			/>
 		</BottomSheetModal>
 	);
@@ -339,7 +336,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 		} else if (enableUsdToggle && !amountValue) {
 			setInternalUsdAmount('');
 		}
-	}, [amountValue, liveExchangeRate, enableUsdToggle, currentInputUnit]);
+	}, [amountValue, liveExchangeRate, enableUsdToggle]);
 
 	const handleUnitToggle = useCallback(() => {
 		setCurrentInputUnit(prevUnit => {
@@ -466,7 +463,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 								style={styles.tokenSelectorButton}
 								onPress={() => setModalVisible(true)}
 								disabled={!onSelectToken}
-								testID={selectedToken ? `${testID}-${selectedToken.symbol.toLowerCase()}` : `${testID}-placeholder`}
+								testID={testID}
 								accessible={true}
 								accessibilityRole="button"
 								accessibilityLabel={selectedToken ? `Selected token: ${selectedToken.symbol.toLowerCase()}` : (label || "Select token")}

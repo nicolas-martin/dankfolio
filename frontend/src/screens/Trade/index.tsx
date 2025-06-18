@@ -335,6 +335,7 @@ const Trade: React.FC = () => {
 	) => (
 		<View
 			style={styles.tradeCard}
+			accessible={false}
 		>
 			<Text style={styles.cardLabel}>{label}</Text>
 			{/* USD Toggle Switch and related UI removed from here, will be inside TokenSelector for 'From' card */}
@@ -422,7 +423,7 @@ const Trade: React.FC = () => {
 				<View style={styles.content}>
 
 					{/* Trade Cards with Swap Button */}
-					<View style={styles.tradeContainer}>
+					<View style={styles.tradeContainer} accessible={false}>
 						{/* From Card */}
 						{renderTradeCard(
 							'From',
@@ -436,9 +437,9 @@ const Trade: React.FC = () => {
 						)}
 
 						{/* To Card with Swap Button */}
-						<View style={styles.toCardContainerStyle}>
+						<View style={styles.toCardContainerStyle} accessible={false}>
 							{/* Swap Button positioned relative to the To card */}
-							<View style={styles.swapButtonContainer}>
+							<View style={styles.swapButtonContainer} accessible={false}>
 								<IconButton
 									icon="swap-vertical"
 									size={20}
