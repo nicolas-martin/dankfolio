@@ -175,13 +175,14 @@ For bottom sheet modals and nested tappable components on iOS, use this accessib
 - `amount-percentage-text-${percent}` - Percentage text inside button
 
 ### **TokenSelector Component**
-- `token-selector-icon-${mintAddress}` - Token icon (when token selected, uses the `mintAddress` of the selected token).
-- `token-selector-symbol-${mintAddress}` - Token symbol (when token selected, uses the `mintAddress` of the selected token).
+- `${props.testID}-${selectedToken.symbol.toLowerCase()}` - Main selector button when token is selected (e.g., `from-token-selector-sol`, `to-token-selector-jup`).
 - `${props.testID}-placeholder` - Placeholder text (e.g., "Select Token") when no token is selected. `props.testID` is the main `testID` passed to the `TokenSelector` instance (e.g., `from-token-selector-placeholder`).
 - `${props.testID}-amount-input` - Amount input field within the selector. `props.testID` is the main `testID` passed to the `TokenSelector` instance (e.g., `from-token-selector-amount-input`).
+- `${props.testID}-swap-button` - USD/Crypto swap button (only available when `enableUsdToggle=true`).
+- `${props.testID}-secondary-value` - Secondary value display (USD when in crypto mode, crypto when in USD mode).
 - **Token Search Modal (invoked by TokenSelector):**
     - `token-search-input` - Search input field within the token selection modal.
-    - `search-result-${coinAddress}` - Pattern for items in the token search results list (e.g., `search-result-So111...`). Uses the `mintAddress` of the coin in the list item.
+    - `search-result-${symbol.toLowerCase()}` - Pattern for items in the token search results list (e.g., `search-result-sol`, `search-result-jup`, `search-result-dank`). Uses the lowercase `symbol` of the coin in the list item.
     - `token-search-modal-backdrop` - The backdrop of the token search modal, can be tapped to dismiss.
 
 ### **TradeConfirmation Component**
