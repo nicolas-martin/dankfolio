@@ -30,7 +30,7 @@ export const useStyles = () => {
 			alignItems: 'flex-start',
 			flexDirection: 'row',
 			justifyContent: 'flex-start',
-			marginTop: theme.spacing.xs,
+			marginTop: theme.spacing.xs / 2, // Reduced from xs to xs/2
 			width: '100%',
 		},
 		blurView: {
@@ -48,7 +48,7 @@ export const useStyles = () => {
 		},
 		cardContent: {
 			margin: 0,
-			padding: theme.spacing.md,
+			padding: theme.spacing.sm, // Reduced from md to sm
 			width: '100%',
 		},
 		equivalentValueText: {
@@ -76,7 +76,7 @@ export const useStyles = () => {
 			alignItems: 'center',
 			flexDirection: 'row',
 			justifyContent: 'space-between',
-			minHeight: 44, // Ensure consistent height
+			minHeight: 40, // Reduced from 44 to 40
 			width: '100%',
 		},
 		modalContent: {
@@ -110,7 +110,7 @@ export const useStyles = () => {
 			alignItems: 'center',
 			flexDirection: 'row',
 			justifyContent: 'flex-end',
-			minHeight: 40,
+			minHeight: 36, // Reduced from 40 to 36
 		},
 		rightSection: {
 			alignItems: 'flex-end',
@@ -130,9 +130,9 @@ export const useStyles = () => {
 			fontSize: theme.typography.fontSize.base,
 		},
 		searchContainer: {
-			marginBottom: theme.spacing.lg,
-			paddingHorizontal: theme.spacing.lg,
-			paddingTop: theme.spacing.lg,
+			marginBottom: theme.spacing.md, // Reduced from lg to md
+			paddingHorizontal: theme.spacing.md, // Reduced from lg to md
+			paddingTop: theme.spacing.md, // Reduced from lg to md
 		},
 		secondaryValueText: {
 			color: theme.colors.onSurfaceVariant,
@@ -211,16 +211,16 @@ export const useStyles = () => {
 			borderBottomColor: theme.colors.outlineVariant,
 			borderBottomWidth: 1,
 			flexDirection: 'row',
-			height: 72,
+			height: 64, // Reduced from 72 to 64
 			paddingHorizontal: theme.spacing.md,
-			paddingVertical: theme.spacing.lg,
+			paddingVertical: theme.spacing.sm, // Reduced from lg to sm
 		},
 		tokenList: {
 			flex: 1,
 		},
 		tokenListContent: {
-			paddingBottom: theme.spacing.lg,
-			paddingHorizontal: theme.spacing.lg,
+			paddingBottom: theme.spacing.md, // Reduced from lg to md
+			paddingHorizontal: theme.spacing.md, // Reduced from lg to md
 		},
 		tokenName: {
 			...theme.fonts.bodySmall,
