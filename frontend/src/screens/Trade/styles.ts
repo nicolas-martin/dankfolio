@@ -201,7 +201,7 @@ export const useStyles = () => {
 				top: -28, // No exact match
 				transform: [{ translateX: -28 }], // No exact match
 				width: 56, // No exact match
-				zIndex: 10, // No exact match
+				zIndex: 10, // Restored from -1
 			},
 			title: { // Effective definition (was duplicate, using the latter one)
 				color: theme.colors.onSurface,
