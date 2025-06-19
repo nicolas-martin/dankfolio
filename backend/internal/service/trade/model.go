@@ -13,12 +13,27 @@ type PrepareSwapRequestData struct {
 type TradeQuote struct {
 	EstimatedAmount string   `json:"estimatedAmount"`
 	ExchangeRate    string   `json:"exchangeRate"`
-	Fee             string   `json:"fee"`
+	Fee             string   `json:"fee"` // Trading fees in USD (legacy)
 	PriceImpact     string   `json:"priceImpact"`
 	RoutePlan       []string `json:"routePlan"`
 	InputMint       string   `json:"inputMint"`
 	OutputMint      string   `json:"outputMint"`
 	Raw             []byte   `json:"-"` // Full raw quote response for Jupiter swap
+
+	// Enhanced SOL fee breakdown
+	SolFeeBreakdown  *SolFeeBreakdown `json:"solFeeBreakdown,omitempty"`
+	TotalSolRequired string           `json:"totalSolRequired"` // Total SOL needed for transaction
+	TradingFeeSol    string           `json:"tradingFeeSol"`    // Trading fees in SOL
+}
+
+// SolFeeBreakdown provides detailed breakdown of all SOL costs
+type SolFeeBreakdown struct {
+	TradingFee         string `json:"tradingFee"`         // Route + platform fees in SOL
+	TransactionFee     string `json:"transactionFee"`     // Basic transaction cost
+	AccountCreationFee string `json:"accountCreationFee"` // ATA creation costs
+	PriorityFee        string `json:"priorityFee"`        // Transaction prioritization fee
+	Total              string `json:"total"`              // Sum of all SOL fees
+	AccountsToCreate   int    `json:"accountsToCreate"`   // Number of ATAs to create
 }
 
 // TradeFee represents the fee components for a trade

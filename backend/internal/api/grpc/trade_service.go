@@ -70,17 +70,33 @@ func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Req
 	slog.Debug("Trade quote generated successfully",
 		"estimated_amount", quote.EstimatedAmount,
 		"exchange_rate", quote.ExchangeRate,
-		"fee", quote.Fee,
-		"price_impact", quote.PriceImpact)
+		"price_impact", quote.PriceImpact,
+		"total_sol_required", quote.TotalSolRequired,
+		"trading_fee_sol", quote.TradingFeeSol)
+
+	// Convert SolFeeBreakdown to protobuf if available
+	var solFeeBreakdown *pb.SolFeeBreakdown
+	if quote.SolFeeBreakdown != nil {
+		solFeeBreakdown = &pb.SolFeeBreakdown{
+			TradingFee:         quote.SolFeeBreakdown.TradingFee,
+			TransactionFee:     quote.SolFeeBreakdown.TransactionFee,
+			AccountCreationFee: quote.SolFeeBreakdown.AccountCreationFee,
+			PriorityFee:        quote.SolFeeBreakdown.PriorityFee,
+			Total:              quote.SolFeeBreakdown.Total,
+			AccountsToCreate:   int32(quote.SolFeeBreakdown.AccountsToCreate),
+		}
+	}
 
 	res := connect.NewResponse(&pb.GetSwapQuoteResponse{
-		EstimatedAmount: quote.EstimatedAmount,
-		ExchangeRate:    quote.ExchangeRate,
-		Fee:             quote.Fee,
-		PriceImpact:     quote.PriceImpact,
-		RoutePlan:       quote.RoutePlan,
-		InputMint:       quote.InputMint,
-		OutputMint:      quote.OutputMint,
+		EstimatedAmount:  quote.EstimatedAmount,
+		ExchangeRate:     quote.ExchangeRate,
+		PriceImpact:      quote.PriceImpact,
+		RoutePlan:        quote.RoutePlan,
+		InputMint:        quote.InputMint,
+		OutputMint:       quote.OutputMint,
+		SolFeeBreakdown:  solFeeBreakdown,
+		TotalSolRequired: quote.TotalSolRequired,
+		TradingFeeSol:    quote.TradingFeeSol,
 	})
 	return res, nil
 }

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/trade.proto.
  */
 export const file_dankfolio_v1_trade: GenFile = /*@__PURE__*/
-  fileDesc("ChhkYW5rZm9saW8vdjEvdHJhZGUucHJvdG8SDGRhbmtmb2xpby52MSLBBAoFVHJhZGUSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIUCgxmcm9tX2NvaW5faWQYAyABKAkSEgoKdG9fY29pbl9pZBgEIAEoCRITCgtjb2luX3N5bWJvbBgFIAEoCRIMCgR0eXBlGAYgASgJEg4KBmFtb3VudBgHIAEoARINCgVwcmljZRgIIAEoARILCgNmZWUYCSABKAESDgoGc3RhdHVzGAogASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMY29tcGxldGVkX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgAiAEBEhUKDWNvbmZpcm1hdGlvbnMYDiABKAUSEQoJZmluYWxpemVkGA8gASgIEhIKBWVycm9yGBAgASgJSAGIAQESIAoTcGxhdGZvcm1fZmVlX2Ftb3VudBgTIAEoAUgCiAEBEiEKFHBsYXRmb3JtX2ZlZV9wZXJjZW50GBQgASgBSAOIAQESJQoYcGxhdGZvcm1fZmVlX2Rlc3RpbmF0aW9uGBUgASgJSASIAQFCDwoNX2NvbXBsZXRlZF9hdEIICgZfZXJyb3JCFgoUX3BsYXRmb3JtX2ZlZV9hbW91bnRCFwoVX3BsYXRmb3JtX2ZlZV9wZXJjZW50QhsKGV9wbGF0Zm9ybV9mZWVfZGVzdGluYXRpb24iZQoTR2V0U3dhcFF1b3RlUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJIqcBChRHZXRTd2FwUXVvdGVSZXNwb25zZRIYChBlc3RpbWF0ZWRfYW1vdW50GAEgASgJEhUKDWV4Y2hhbmdlX3JhdGUYAiABKAkSCwoDZmVlGAMgASgJEhQKDHByaWNlX2ltcGFjdBgEIAEoCRISCgpyb3V0ZV9wbGFuGAUgAygJEhIKCmlucHV0X21pbnQYBiABKAkSEwoLb3V0cHV0X21pbnQYByABKAkifQoSUHJlcGFyZVN3YXBSZXF1ZXN0EhQKDGZyb21fY29pbl9pZBgBIAEoCRISCgp0b19jb2luX2lkGAIgASgJEg4KBmFtb3VudBgDIAEoCRIUCgxzbGlwcGFnZV9icHMYBCABKAkSFwoPdXNlcl9wdWJsaWNfa2V5GAUgASgJIjMKE1ByZXBhcmVTd2FwUmVzcG9uc2USHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YASABKAkihwEKEVN1Ym1pdFN3YXBSZXF1ZXN0EhQKDGZyb21fY29pbl9pZBgBIAEoCRISCgp0b19jb2luX2lkGAIgASgJEg4KBmFtb3VudBgDIAEoARIaChJzaWduZWRfdHJhbnNhY3Rpb24YBCABKAkSHAoUdW5zaWduZWRfdHJhbnNhY3Rpb24YBSABKAkiQAoSU3VibWl0U3dhcFJlc3BvbnNlEhAKCHRyYWRlX2lkGAEgASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYAiABKAkiSQoPR2V0VHJhZGVSZXF1ZXN0EgwKAmlkGAEgASgJSAASGgoQdHJhbnNhY3Rpb25faGFzaBgCIAEoCUgAQgwKCmlkZW50aWZpZXIinAIKEUxpc3RUcmFkZXNSZXF1ZXN0Eg0KBWxpbWl0GAEgASgFEg4KBm9mZnNldBgCIAEoBRIPCgdzb3J0X2J5GAMgASgJEhEKCXNvcnRfZGVzYxgEIAEoCBIUCgd1c2VyX2lkGAUgASgJSACIAQESEwoGc3RhdHVzGAYgASgJSAGIAQESEQoEdHlwZRgHIAEoCUgCiAEBEh4KEWZyb21fY29pbl9hZGRyZXNzGAggASgJSAOIAQESHAoPdG9fY29pbl9hZGRyZXNzGAkgASgJSASIAQFCCgoIX3VzZXJfaWRCCQoHX3N0YXR1c0IHCgVfdHlwZUIUChJfZnJvbV9jb2luX2FkZHJlc3NCEgoQX3RvX2NvaW5fYWRkcmVzcyJOChJMaXN0VHJhZGVzUmVzcG9uc2USIwoGdHJhZGVzGAEgAygLMhMuZGFua2ZvbGlvLnYxLlRyYWRlEhMKC3RvdGFsX2NvdW50GAIgASgFMpsDCgxUcmFkZVNlcnZpY2USVQoMR2V0U3dhcFF1b3RlEiEuZGFua2ZvbGlvLnYxLkdldFN3YXBRdW90ZVJlcXVlc3QaIi5kYW5rZm9saW8udjEuR2V0U3dhcFF1b3RlUmVzcG9uc2USUgoLUHJlcGFyZVN3YXASIC5kYW5rZm9saW8udjEuUHJlcGFyZVN3YXBSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLlByZXBhcmVTd2FwUmVzcG9uc2USTwoKU3VibWl0U3dhcBIfLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVxdWVzdBogLmRhbmtmb2xpby52MS5TdWJtaXRTd2FwUmVzcG9uc2USPgoIR2V0VHJhZGUSHS5kYW5rZm9saW8udjEuR2V0VHJhZGVSZXF1ZXN0GhMuZGFua2ZvbGlvLnYxLlRyYWRlEk8KCkxpc3RUcmFkZXMSHy5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1JlcXVlc3QaIC5kYW5rZm9saW8udjEuTGlzdFRyYWRlc1Jlc3BvbnNlQrYBChBjb20uZGFua2ZvbGlvLnYxQgpUcmFkZVByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChhkYW5rZm9saW8vdjEvdHJhZGUucHJvdG8SDGRhbmtmb2xpby52MSLBBAoFVHJhZGUSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIUCgxmcm9tX2NvaW5faWQYAyABKAkSEgoKdG9fY29pbl9pZBgEIAEoCRITCgtjb2luX3N5bWJvbBgFIAEoCRIMCgR0eXBlGAYgASgJEg4KBmFtb3VudBgHIAEoARINCgVwcmljZRgIIAEoARILCgNmZWUYCSABKAESDgoGc3RhdHVzGAogASgJEhgKEHRyYW5zYWN0aW9uX2hhc2gYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNQoMY29tcGxldGVkX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgAiAEBEhUKDWNvbmZpcm1hdGlvbnMYDiABKAUSEQoJZmluYWxpemVkGA8gASgIEhIKBWVycm9yGBAgASgJSAGIAQESIAoTcGxhdGZvcm1fZmVlX2Ftb3VudBgTIAEoAUgCiAEBEiEKFHBsYXRmb3JtX2ZlZV9wZXJjZW50GBQgASgBSAOIAQESJQoYcGxhdGZvcm1fZmVlX2Rlc3RpbmF0aW9uGBUgASgJSASIAQFCDwoNX2NvbXBsZXRlZF9hdEIICgZfZXJyb3JCFgoUX3BsYXRmb3JtX2ZlZV9hbW91bnRCFwoVX3BsYXRmb3JtX2ZlZV9wZXJjZW50QhsKGV9wbGF0Zm9ybV9mZWVfZGVzdGluYXRpb24iZQoTR2V0U3dhcFF1b3RlUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJIp4BCg9Tb2xGZWVCcmVha2Rvd24SEwoLdHJhZGluZ19mZWUYASABKAkSFwoPdHJhbnNhY3Rpb25fZmVlGAIgASgJEhwKFGFjY291bnRfY3JlYXRpb25fZmVlGAMgASgJEhQKDHByaW9yaXR5X2ZlZRgEIAEoCRINCgV0b3RhbBgFIAEoCRIaChJhY2NvdW50c190b19jcmVhdGUYBiABKAUipAIKFEdldFN3YXBRdW90ZVJlc3BvbnNlEhgKEGVzdGltYXRlZF9hbW91bnQYASABKAkSFQoNZXhjaGFuZ2VfcmF0ZRgCIAEoCRIUCgxwcmljZV9pbXBhY3QYAyABKAkSEgoKcm91dGVfcGxhbhgEIAMoCRISCgppbnB1dF9taW50GAUgASgJEhMKC291dHB1dF9taW50GAYgASgJEj0KEXNvbF9mZWVfYnJlYWtkb3duGAcgASgLMh0uZGFua2ZvbGlvLnYxLlNvbEZlZUJyZWFrZG93bkgAiAEBEhoKEnRvdGFsX3NvbF9yZXF1aXJlZBgIIAEoCRIXCg90cmFkaW5nX2ZlZV9zb2wYCSABKAlCFAoSX3NvbF9mZWVfYnJlYWtkb3duIn0KElByZXBhcmVTd2FwUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAkSFAoMc2xpcHBhZ2VfYnBzGAQgASgJEhcKD3VzZXJfcHVibGljX2tleRgFIAEoCSIzChNQcmVwYXJlU3dhcFJlc3BvbnNlEhwKFHVuc2lnbmVkX3RyYW5zYWN0aW9uGAEgASgJIocBChFTdWJtaXRTd2FwUmVxdWVzdBIUCgxmcm9tX2NvaW5faWQYASABKAkSEgoKdG9fY29pbl9pZBgCIAEoCRIOCgZhbW91bnQYAyABKAESGgoSc2lnbmVkX3RyYW5zYWN0aW9uGAQgASgJEhwKFHVuc2lnbmVkX3RyYW5zYWN0aW9uGAUgASgJIkAKElN1Ym1pdFN3YXBSZXNwb25zZRIQCgh0cmFkZV9pZBgBIAEoCRIYChB0cmFuc2FjdGlvbl9oYXNoGAIgASgJIkkKD0dldFRyYWRlUmVxdWVzdBIMCgJpZBgBIAEoCUgAEhoKEHRyYW5zYWN0aW9uX2hhc2gYAiABKAlIAEIMCgppZGVudGlmaWVyIpwCChFMaXN0VHJhZGVzUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUSDwoHc29ydF9ieRgDIAEoCRIRCglzb3J0X2Rlc2MYBCABKAgSFAoHdXNlcl9pZBgFIAEoCUgAiAEBEhMKBnN0YXR1cxgGIAEoCUgBiAEBEhEKBHR5cGUYByABKAlIAogBARIeChFmcm9tX2NvaW5fYWRkcmVzcxgIIAEoCUgDiAEBEhwKD3RvX2NvaW5fYWRkcmVzcxgJIAEoCUgEiAEBQgoKCF91c2VyX2lkQgkKB19zdGF0dXNCBwoFX3R5cGVCFAoSX2Zyb21fY29pbl9hZGRyZXNzQhIKEF90b19jb2luX2FkZHJlc3MiTgoSTGlzdFRyYWRlc1Jlc3BvbnNlEiMKBnRyYWRlcxgBIAMoCzITLmRhbmtmb2xpby52MS5UcmFkZRITCgt0b3RhbF9jb3VudBgCIAEoBTKbAwoMVHJhZGVTZXJ2aWNlElUKDEdldFN3YXBRdW90ZRIhLmRhbmtmb2xpby52MS5HZXRTd2FwUXVvdGVSZXF1ZXN0GiIuZGFua2ZvbGlvLnYxLkdldFN3YXBRdW90ZVJlc3BvbnNlElIKC1ByZXBhcmVTd2FwEiAuZGFua2ZvbGlvLnYxLlByZXBhcmVTd2FwUmVxdWVzdBohLmRhbmtmb2xpby52MS5QcmVwYXJlU3dhcFJlc3BvbnNlEk8KClN1Ym1pdFN3YXASHy5kYW5rZm9saW8udjEuU3VibWl0U3dhcFJlcXVlc3QaIC5kYW5rZm9saW8udjEuU3VibWl0U3dhcFJlc3BvbnNlEj4KCEdldFRyYWRlEh0uZGFua2ZvbGlvLnYxLkdldFRyYWRlUmVxdWVzdBoTLmRhbmtmb2xpby52MS5UcmFkZRJPCgpMaXN0VHJhZGVzEh8uZGFua2ZvbGlvLnYxLkxpc3RUcmFkZXNSZXF1ZXN0GiAuZGFua2ZvbGlvLnYxLkxpc3RUcmFkZXNSZXNwb25zZUK2AQoQY29tLmRhbmtmb2xpby52MUIKVHJhZGVQcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * Trade represents a meme trading transaction
@@ -115,11 +115,6 @@ export type Trade = Message<"dankfolio.v1.Trade"> & {
   platformFeePercent?: number;
 
   /**
-   * Fields for new integer PKs, if they need to be exposed to clients.
-   * For now, assuming clients identify coins by mint address (from_coin_id, to_coin_id).
-   * optional uint64 from_coin_pk_id = 17;
-   * optional uint64 to_coin_pk_id = 18;
-   *
    * @generated from field: optional string platform_fee_destination = 21;
    */
   platformFeeDestination?: string;
@@ -171,6 +166,62 @@ export const GetSwapQuoteRequestSchema: GenMessage<GetSwapQuoteRequest> = /*@__P
   messageDesc(file_dankfolio_v1_trade, 1);
 
 /**
+ * SolFeeBreakdown provides detailed breakdown of all SOL costs
+ *
+ * @generated from message dankfolio.v1.SolFeeBreakdown
+ */
+export type SolFeeBreakdown = Message<"dankfolio.v1.SolFeeBreakdown"> & {
+  /**
+   * Route + platform fees in SOL
+   *
+   * @generated from field: string trading_fee = 1;
+   */
+  tradingFee: string;
+
+  /**
+   * Basic transaction cost
+   *
+   * @generated from field: string transaction_fee = 2;
+   */
+  transactionFee: string;
+
+  /**
+   * ATA creation costs
+   *
+   * @generated from field: string account_creation_fee = 3;
+   */
+  accountCreationFee: string;
+
+  /**
+   * Transaction prioritization fee
+   *
+   * @generated from field: string priority_fee = 4;
+   */
+  priorityFee: string;
+
+  /**
+   * Sum of all SOL fees
+   *
+   * @generated from field: string total = 5;
+   */
+  total: string;
+
+  /**
+   * Number of ATAs to create
+   *
+   * @generated from field: int32 accounts_to_create = 6;
+   */
+  accountsToCreate: number;
+};
+
+/**
+ * Describes the message dankfolio.v1.SolFeeBreakdown.
+ * Use `create(SolFeeBreakdownSchema)` to create a new message.
+ */
+export const SolFeeBreakdownSchema: GenMessage<SolFeeBreakdown> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_trade, 2);
+
+/**
  * GetSwapQuoteResponse is the response containing trade quote details
  *
  * @generated from message dankfolio.v1.GetSwapQuoteResponse
@@ -187,29 +238,45 @@ export type GetSwapQuoteResponse = Message<"dankfolio.v1.GetSwapQuoteResponse"> 
   exchangeRate: string;
 
   /**
-   * @generated from field: string fee = 3;
-   */
-  fee: string;
-
-  /**
-   * @generated from field: string price_impact = 4;
+   * @generated from field: string price_impact = 3;
    */
   priceImpact: string;
 
   /**
-   * @generated from field: repeated string route_plan = 5;
+   * @generated from field: repeated string route_plan = 4;
    */
   routePlan: string[];
 
   /**
-   * @generated from field: string input_mint = 6;
+   * @generated from field: string input_mint = 5;
    */
   inputMint: string;
 
   /**
-   * @generated from field: string output_mint = 7;
+   * @generated from field: string output_mint = 6;
    */
   outputMint: string;
+
+  /**
+   * Enhanced SOL fee breakdown
+   *
+   * @generated from field: optional dankfolio.v1.SolFeeBreakdown sol_fee_breakdown = 7;
+   */
+  solFeeBreakdown?: SolFeeBreakdown;
+
+  /**
+   * Total SOL needed for transaction
+   *
+   * @generated from field: string total_sol_required = 8;
+   */
+  totalSolRequired: string;
+
+  /**
+   * Trading fees in SOL
+   *
+   * @generated from field: string trading_fee_sol = 9;
+   */
+  tradingFeeSol: string;
 };
 
 /**
@@ -217,7 +284,7 @@ export type GetSwapQuoteResponse = Message<"dankfolio.v1.GetSwapQuoteResponse"> 
  * Use `create(GetSwapQuoteResponseSchema)` to create a new message.
  */
 export const GetSwapQuoteResponseSchema: GenMessage<GetSwapQuoteResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 2);
+  messageDesc(file_dankfolio_v1_trade, 3);
 
 /**
  * PrepareSwapRequest is the request for preparing a swap transaction
@@ -262,7 +329,7 @@ export type PrepareSwapRequest = Message<"dankfolio.v1.PrepareSwapRequest"> & {
  * Use `create(PrepareSwapRequestSchema)` to create a new message.
  */
 export const PrepareSwapRequestSchema: GenMessage<PrepareSwapRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 3);
+  messageDesc(file_dankfolio_v1_trade, 4);
 
 /**
  * PrepareSwapResponse is the response with the unsigned transaction
@@ -281,7 +348,7 @@ export type PrepareSwapResponse = Message<"dankfolio.v1.PrepareSwapResponse"> & 
  * Use `create(PrepareSwapResponseSchema)` to create a new message.
  */
 export const PrepareSwapResponseSchema: GenMessage<PrepareSwapResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 4);
+  messageDesc(file_dankfolio_v1_trade, 5);
 
 /**
  * SubmitSwapRequest is the request for submitting a trade
@@ -326,7 +393,7 @@ export type SubmitSwapRequest = Message<"dankfolio.v1.SubmitSwapRequest"> & {
  * Use `create(SubmitSwapRequestSchema)` to create a new message.
  */
 export const SubmitSwapRequestSchema: GenMessage<SubmitSwapRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 5);
+  messageDesc(file_dankfolio_v1_trade, 6);
 
 /**
  * SubmitSwapResponse is the response after submitting a trade
@@ -350,7 +417,7 @@ export type SubmitSwapResponse = Message<"dankfolio.v1.SubmitSwapResponse"> & {
  * Use `create(SubmitSwapResponseSchema)` to create a new message.
  */
 export const SubmitSwapResponseSchema: GenMessage<SubmitSwapResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 6);
+  messageDesc(file_dankfolio_v1_trade, 7);
 
 /**
  * GetTradeRequest is the request for getting trade details and status
@@ -381,7 +448,7 @@ export type GetTradeRequest = Message<"dankfolio.v1.GetTradeRequest"> & {
  * Use `create(GetTradeRequestSchema)` to create a new message.
  */
 export const GetTradeRequestSchema: GenMessage<GetTradeRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 7);
+  messageDesc(file_dankfolio_v1_trade, 8);
 
 /**
  * ListTradesRequest is the request for listing trades
@@ -452,7 +519,7 @@ export type ListTradesRequest = Message<"dankfolio.v1.ListTradesRequest"> & {
  * Use `create(ListTradesRequestSchema)` to create a new message.
  */
 export const ListTradesRequestSchema: GenMessage<ListTradesRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 8);
+  messageDesc(file_dankfolio_v1_trade, 9);
 
 /**
  * ListTradesResponse is the response containing a list of trades
@@ -478,7 +545,7 @@ export type ListTradesResponse = Message<"dankfolio.v1.ListTradesResponse"> & {
  * Use `create(ListTradesResponseSchema)` to create a new message.
  */
 export const ListTradesResponseSchema: GenMessage<ListTradesResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_trade, 9);
+  messageDesc(file_dankfolio_v1_trade, 10);
 
 /**
  * TradeService provides operations for trading coins on Solana

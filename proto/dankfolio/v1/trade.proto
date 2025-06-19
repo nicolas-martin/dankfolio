@@ -45,10 +45,6 @@ message Trade {
   optional double platform_fee_amount = 19;
   optional double platform_fee_percent = 20;
   optional string platform_fee_destination = 21;
-  // Fields for new integer PKs, if they need to be exposed to clients.
-  // For now, assuming clients identify coins by mint address (from_coin_id, to_coin_id).
-  // optional uint64 from_coin_pk_id = 17;
-  // optional uint64 to_coin_pk_id = 18;
 }
 
 // GetSwapQuoteRequest is the request for getting a trade quote
@@ -59,15 +55,27 @@ message GetSwapQuoteRequest {
   string slippage_bps = 4;
 }
 
+// SolFeeBreakdown provides detailed breakdown of all SOL costs
+message SolFeeBreakdown {
+  string trading_fee = 1;          // Route + platform fees in SOL
+  string transaction_fee = 2;      // Basic transaction cost
+  string account_creation_fee = 3; // ATA creation costs
+  string priority_fee = 4;         // Transaction prioritization fee
+  string total = 5;                // Sum of all SOL fees
+  int32 accounts_to_create = 6;    // Number of ATAs to create
+}
+
 // GetSwapQuoteResponse is the response containing trade quote details
 message GetSwapQuoteResponse {
   string estimated_amount = 1;
   string exchange_rate = 2;
-  string fee = 3;
-  string price_impact = 4;
-  repeated string route_plan = 5;
-  string input_mint = 6;
-  string output_mint = 7;
+  string price_impact = 3;
+  repeated string route_plan = 4;
+  string input_mint = 5;
+  string output_mint = 6;
+  optional SolFeeBreakdown sol_fee_breakdown = 7; // Enhanced SOL fee breakdown
+  string total_sol_required = 8;              // Total SOL needed for transaction
+  string trading_fee_sol = 9;                 // Trading fees in SOL
 }
 
 // PrepareSwapRequest is the request for preparing a swap transaction

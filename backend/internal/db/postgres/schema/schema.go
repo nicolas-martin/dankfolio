@@ -127,7 +127,7 @@ type Trade struct {
 	PriceImpactPercent float64 `gorm:"column:price_impact_percent;default:0.0"` // Price impact as percentage
 
 	Status              string    `gorm:"column:status;not null;index:idx_trades_status"` // e.g., "pending", "completed", "failed"
-	TransactionHash     string    `gorm:"column:transaction_hash;unique"`
+	TransactionHash     string    `gorm:"column:transaction_hash"`
 	UnsignedTransaction string    `gorm:"column:unsigned_transaction"` // For Solana, this could be base64 encoded transaction
 	CreatedAt           time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_trades_created_at"`
 	CompletedAt         time.Time `gorm:"column:completed_at"`

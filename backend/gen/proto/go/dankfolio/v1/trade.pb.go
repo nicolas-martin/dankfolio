@@ -280,23 +280,110 @@ func (x *GetSwapQuoteRequest) GetSlippageBps() string {
 	return ""
 }
 
+// SolFeeBreakdown provides detailed breakdown of all SOL costs
+type SolFeeBreakdown struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	TradingFee         string                 `protobuf:"bytes,1,opt,name=trading_fee,json=tradingFee,proto3" json:"trading_fee,omitempty"`                           // Route + platform fees in SOL
+	TransactionFee     string                 `protobuf:"bytes,2,opt,name=transaction_fee,json=transactionFee,proto3" json:"transaction_fee,omitempty"`               // Basic transaction cost
+	AccountCreationFee string                 `protobuf:"bytes,3,opt,name=account_creation_fee,json=accountCreationFee,proto3" json:"account_creation_fee,omitempty"` // ATA creation costs
+	PriorityFee        string                 `protobuf:"bytes,4,opt,name=priority_fee,json=priorityFee,proto3" json:"priority_fee,omitempty"`                        // Transaction prioritization fee
+	Total              string                 `protobuf:"bytes,5,opt,name=total,proto3" json:"total,omitempty"`                                                       // Sum of all SOL fees
+	AccountsToCreate   int32                  `protobuf:"varint,6,opt,name=accounts_to_create,json=accountsToCreate,proto3" json:"accounts_to_create,omitempty"`      // Number of ATAs to create
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SolFeeBreakdown) Reset() {
+	*x = SolFeeBreakdown{}
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SolFeeBreakdown) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SolFeeBreakdown) ProtoMessage() {}
+
+func (x *SolFeeBreakdown) ProtoReflect() protoreflect.Message {
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SolFeeBreakdown.ProtoReflect.Descriptor instead.
+func (*SolFeeBreakdown) Descriptor() ([]byte, []int) {
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SolFeeBreakdown) GetTradingFee() string {
+	if x != nil {
+		return x.TradingFee
+	}
+	return ""
+}
+
+func (x *SolFeeBreakdown) GetTransactionFee() string {
+	if x != nil {
+		return x.TransactionFee
+	}
+	return ""
+}
+
+func (x *SolFeeBreakdown) GetAccountCreationFee() string {
+	if x != nil {
+		return x.AccountCreationFee
+	}
+	return ""
+}
+
+func (x *SolFeeBreakdown) GetPriorityFee() string {
+	if x != nil {
+		return x.PriorityFee
+	}
+	return ""
+}
+
+func (x *SolFeeBreakdown) GetTotal() string {
+	if x != nil {
+		return x.Total
+	}
+	return ""
+}
+
+func (x *SolFeeBreakdown) GetAccountsToCreate() int32 {
+	if x != nil {
+		return x.AccountsToCreate
+	}
+	return 0
+}
+
 // GetSwapQuoteResponse is the response containing trade quote details
 type GetSwapQuoteResponse struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	EstimatedAmount string                 `protobuf:"bytes,1,opt,name=estimated_amount,json=estimatedAmount,proto3" json:"estimated_amount,omitempty"`
-	ExchangeRate    string                 `protobuf:"bytes,2,opt,name=exchange_rate,json=exchangeRate,proto3" json:"exchange_rate,omitempty"`
-	Fee             string                 `protobuf:"bytes,3,opt,name=fee,proto3" json:"fee,omitempty"`
-	PriceImpact     string                 `protobuf:"bytes,4,opt,name=price_impact,json=priceImpact,proto3" json:"price_impact,omitempty"`
-	RoutePlan       []string               `protobuf:"bytes,5,rep,name=route_plan,json=routePlan,proto3" json:"route_plan,omitempty"`
-	InputMint       string                 `protobuf:"bytes,6,opt,name=input_mint,json=inputMint,proto3" json:"input_mint,omitempty"`
-	OutputMint      string                 `protobuf:"bytes,7,opt,name=output_mint,json=outputMint,proto3" json:"output_mint,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	EstimatedAmount  string                 `protobuf:"bytes,1,opt,name=estimated_amount,json=estimatedAmount,proto3" json:"estimated_amount,omitempty"`
+	ExchangeRate     string                 `protobuf:"bytes,2,opt,name=exchange_rate,json=exchangeRate,proto3" json:"exchange_rate,omitempty"`
+	PriceImpact      string                 `protobuf:"bytes,3,opt,name=price_impact,json=priceImpact,proto3" json:"price_impact,omitempty"`
+	RoutePlan        []string               `protobuf:"bytes,4,rep,name=route_plan,json=routePlan,proto3" json:"route_plan,omitempty"`
+	InputMint        string                 `protobuf:"bytes,5,opt,name=input_mint,json=inputMint,proto3" json:"input_mint,omitempty"`
+	OutputMint       string                 `protobuf:"bytes,6,opt,name=output_mint,json=outputMint,proto3" json:"output_mint,omitempty"`
+	SolFeeBreakdown  *SolFeeBreakdown       `protobuf:"bytes,7,opt,name=sol_fee_breakdown,json=solFeeBreakdown,proto3,oneof" json:"sol_fee_breakdown,omitempty"` // Enhanced SOL fee breakdown
+	TotalSolRequired string                 `protobuf:"bytes,8,opt,name=total_sol_required,json=totalSolRequired,proto3" json:"total_sol_required,omitempty"`    // Total SOL needed for transaction
+	TradingFeeSol    string                 `protobuf:"bytes,9,opt,name=trading_fee_sol,json=tradingFeeSol,proto3" json:"trading_fee_sol,omitempty"`             // Trading fees in SOL
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetSwapQuoteResponse) Reset() {
 	*x = GetSwapQuoteResponse{}
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[2]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -308,7 +395,7 @@ func (x *GetSwapQuoteResponse) String() string {
 func (*GetSwapQuoteResponse) ProtoMessage() {}
 
 func (x *GetSwapQuoteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[2]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -321,7 +408,7 @@ func (x *GetSwapQuoteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSwapQuoteResponse.ProtoReflect.Descriptor instead.
 func (*GetSwapQuoteResponse) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{2}
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetSwapQuoteResponse) GetEstimatedAmount() string {
@@ -334,13 +421,6 @@ func (x *GetSwapQuoteResponse) GetEstimatedAmount() string {
 func (x *GetSwapQuoteResponse) GetExchangeRate() string {
 	if x != nil {
 		return x.ExchangeRate
-	}
-	return ""
-}
-
-func (x *GetSwapQuoteResponse) GetFee() string {
-	if x != nil {
-		return x.Fee
 	}
 	return ""
 }
@@ -373,6 +453,27 @@ func (x *GetSwapQuoteResponse) GetOutputMint() string {
 	return ""
 }
 
+func (x *GetSwapQuoteResponse) GetSolFeeBreakdown() *SolFeeBreakdown {
+	if x != nil {
+		return x.SolFeeBreakdown
+	}
+	return nil
+}
+
+func (x *GetSwapQuoteResponse) GetTotalSolRequired() string {
+	if x != nil {
+		return x.TotalSolRequired
+	}
+	return ""
+}
+
+func (x *GetSwapQuoteResponse) GetTradingFeeSol() string {
+	if x != nil {
+		return x.TradingFeeSol
+	}
+	return ""
+}
+
 // PrepareSwapRequest is the request for preparing a swap transaction
 type PrepareSwapRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -387,7 +488,7 @@ type PrepareSwapRequest struct {
 
 func (x *PrepareSwapRequest) Reset() {
 	*x = PrepareSwapRequest{}
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[3]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -399,7 +500,7 @@ func (x *PrepareSwapRequest) String() string {
 func (*PrepareSwapRequest) ProtoMessage() {}
 
 func (x *PrepareSwapRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[3]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -412,7 +513,7 @@ func (x *PrepareSwapRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrepareSwapRequest.ProtoReflect.Descriptor instead.
 func (*PrepareSwapRequest) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{3}
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PrepareSwapRequest) GetFromCoinId() string {
@@ -460,7 +561,7 @@ type PrepareSwapResponse struct {
 
 func (x *PrepareSwapResponse) Reset() {
 	*x = PrepareSwapResponse{}
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[4]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +573,7 @@ func (x *PrepareSwapResponse) String() string {
 func (*PrepareSwapResponse) ProtoMessage() {}
 
 func (x *PrepareSwapResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[4]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -485,7 +586,7 @@ func (x *PrepareSwapResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrepareSwapResponse.ProtoReflect.Descriptor instead.
 func (*PrepareSwapResponse) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{4}
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *PrepareSwapResponse) GetUnsignedTransaction() string {
@@ -509,7 +610,7 @@ type SubmitSwapRequest struct {
 
 func (x *SubmitSwapRequest) Reset() {
 	*x = SubmitSwapRequest{}
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[5]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -521,7 +622,7 @@ func (x *SubmitSwapRequest) String() string {
 func (*SubmitSwapRequest) ProtoMessage() {}
 
 func (x *SubmitSwapRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[5]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -534,7 +635,7 @@ func (x *SubmitSwapRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitSwapRequest.ProtoReflect.Descriptor instead.
 func (*SubmitSwapRequest) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{5}
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SubmitSwapRequest) GetFromCoinId() string {
@@ -583,7 +684,7 @@ type SubmitSwapResponse struct {
 
 func (x *SubmitSwapResponse) Reset() {
 	*x = SubmitSwapResponse{}
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[6]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -595,7 +696,7 @@ func (x *SubmitSwapResponse) String() string {
 func (*SubmitSwapResponse) ProtoMessage() {}
 
 func (x *SubmitSwapResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[6]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -608,7 +709,7 @@ func (x *SubmitSwapResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitSwapResponse.ProtoReflect.Descriptor instead.
 func (*SubmitSwapResponse) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{6}
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SubmitSwapResponse) GetTradeId() string {
@@ -639,7 +740,7 @@ type GetTradeRequest struct {
 
 func (x *GetTradeRequest) Reset() {
 	*x = GetTradeRequest{}
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[7]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -651,7 +752,7 @@ func (x *GetTradeRequest) String() string {
 func (*GetTradeRequest) ProtoMessage() {}
 
 func (x *GetTradeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[7]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -664,7 +765,7 @@ func (x *GetTradeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTradeRequest.ProtoReflect.Descriptor instead.
 func (*GetTradeRequest) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{7}
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetTradeRequest) GetIdentifier() isGetTradeRequest_Identifier {
@@ -726,7 +827,7 @@ type ListTradesRequest struct {
 
 func (x *ListTradesRequest) Reset() {
 	*x = ListTradesRequest{}
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[8]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -738,7 +839,7 @@ func (x *ListTradesRequest) String() string {
 func (*ListTradesRequest) ProtoMessage() {}
 
 func (x *ListTradesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[8]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -751,7 +852,7 @@ func (x *ListTradesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTradesRequest.ProtoReflect.Descriptor instead.
 func (*ListTradesRequest) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{8}
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListTradesRequest) GetLimit() int32 {
@@ -828,7 +929,7 @@ type ListTradesResponse struct {
 
 func (x *ListTradesResponse) Reset() {
 	*x = ListTradesResponse{}
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[9]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -840,7 +941,7 @@ func (x *ListTradesResponse) String() string {
 func (*ListTradesResponse) ProtoMessage() {}
 
 func (x *ListTradesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dankfolio_v1_trade_proto_msgTypes[9]
+	mi := &file_dankfolio_v1_trade_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -853,7 +954,7 @@ func (x *ListTradesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTradesResponse.ProtoReflect.Descriptor instead.
 func (*ListTradesResponse) Descriptor() ([]byte, []int) {
-	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{9}
+	return file_dankfolio_v1_trade_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListTradesResponse) GetTrades() []*Trade {
@@ -911,18 +1012,29 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\n" +
 	"to_coin_id\x18\x02 \x01(\tR\btoCoinId\x12\x16\n" +
 	"\x06amount\x18\x03 \x01(\tR\x06amount\x12!\n" +
-	"\fslippage_bps\x18\x04 \x01(\tR\vslippageBps\"\xfa\x01\n" +
+	"\fslippage_bps\x18\x04 \x01(\tR\vslippageBps\"\xf4\x01\n" +
+	"\x0fSolFeeBreakdown\x12\x1f\n" +
+	"\vtrading_fee\x18\x01 \x01(\tR\n" +
+	"tradingFee\x12'\n" +
+	"\x0ftransaction_fee\x18\x02 \x01(\tR\x0etransactionFee\x120\n" +
+	"\x14account_creation_fee\x18\x03 \x01(\tR\x12accountCreationFee\x12!\n" +
+	"\fpriority_fee\x18\x04 \x01(\tR\vpriorityFee\x12\x14\n" +
+	"\x05total\x18\x05 \x01(\tR\x05total\x12,\n" +
+	"\x12accounts_to_create\x18\x06 \x01(\x05R\x10accountsToCreate\"\xa4\x03\n" +
 	"\x14GetSwapQuoteResponse\x12)\n" +
 	"\x10estimated_amount\x18\x01 \x01(\tR\x0festimatedAmount\x12#\n" +
-	"\rexchange_rate\x18\x02 \x01(\tR\fexchangeRate\x12\x10\n" +
-	"\x03fee\x18\x03 \x01(\tR\x03fee\x12!\n" +
-	"\fprice_impact\x18\x04 \x01(\tR\vpriceImpact\x12\x1d\n" +
+	"\rexchange_rate\x18\x02 \x01(\tR\fexchangeRate\x12!\n" +
+	"\fprice_impact\x18\x03 \x01(\tR\vpriceImpact\x12\x1d\n" +
 	"\n" +
-	"route_plan\x18\x05 \x03(\tR\troutePlan\x12\x1d\n" +
+	"route_plan\x18\x04 \x03(\tR\troutePlan\x12\x1d\n" +
 	"\n" +
-	"input_mint\x18\x06 \x01(\tR\tinputMint\x12\x1f\n" +
-	"\voutput_mint\x18\a \x01(\tR\n" +
-	"outputMint\"\xb7\x01\n" +
+	"input_mint\x18\x05 \x01(\tR\tinputMint\x12\x1f\n" +
+	"\voutput_mint\x18\x06 \x01(\tR\n" +
+	"outputMint\x12N\n" +
+	"\x11sol_fee_breakdown\x18\a \x01(\v2\x1d.dankfolio.v1.SolFeeBreakdownH\x00R\x0fsolFeeBreakdown\x88\x01\x01\x12,\n" +
+	"\x12total_sol_required\x18\b \x01(\tR\x10totalSolRequired\x12&\n" +
+	"\x0ftrading_fee_sol\x18\t \x01(\tR\rtradingFeeSolB\x14\n" +
+	"\x12_sol_fee_breakdown\"\xb7\x01\n" +
 	"\x12PrepareSwapRequest\x12 \n" +
 	"\ffrom_coin_id\x18\x01 \x01(\tR\n" +
 	"fromCoinId\x12\x1c\n" +
@@ -992,39 +1104,41 @@ func file_dankfolio_v1_trade_proto_rawDescGZIP() []byte {
 	return file_dankfolio_v1_trade_proto_rawDescData
 }
 
-var file_dankfolio_v1_trade_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_dankfolio_v1_trade_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_dankfolio_v1_trade_proto_goTypes = []any{
 	(*Trade)(nil),                 // 0: dankfolio.v1.Trade
 	(*GetSwapQuoteRequest)(nil),   // 1: dankfolio.v1.GetSwapQuoteRequest
-	(*GetSwapQuoteResponse)(nil),  // 2: dankfolio.v1.GetSwapQuoteResponse
-	(*PrepareSwapRequest)(nil),    // 3: dankfolio.v1.PrepareSwapRequest
-	(*PrepareSwapResponse)(nil),   // 4: dankfolio.v1.PrepareSwapResponse
-	(*SubmitSwapRequest)(nil),     // 5: dankfolio.v1.SubmitSwapRequest
-	(*SubmitSwapResponse)(nil),    // 6: dankfolio.v1.SubmitSwapResponse
-	(*GetTradeRequest)(nil),       // 7: dankfolio.v1.GetTradeRequest
-	(*ListTradesRequest)(nil),     // 8: dankfolio.v1.ListTradesRequest
-	(*ListTradesResponse)(nil),    // 9: dankfolio.v1.ListTradesResponse
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
+	(*SolFeeBreakdown)(nil),       // 2: dankfolio.v1.SolFeeBreakdown
+	(*GetSwapQuoteResponse)(nil),  // 3: dankfolio.v1.GetSwapQuoteResponse
+	(*PrepareSwapRequest)(nil),    // 4: dankfolio.v1.PrepareSwapRequest
+	(*PrepareSwapResponse)(nil),   // 5: dankfolio.v1.PrepareSwapResponse
+	(*SubmitSwapRequest)(nil),     // 6: dankfolio.v1.SubmitSwapRequest
+	(*SubmitSwapResponse)(nil),    // 7: dankfolio.v1.SubmitSwapResponse
+	(*GetTradeRequest)(nil),       // 8: dankfolio.v1.GetTradeRequest
+	(*ListTradesRequest)(nil),     // 9: dankfolio.v1.ListTradesRequest
+	(*ListTradesResponse)(nil),    // 10: dankfolio.v1.ListTradesResponse
+	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
 }
 var file_dankfolio_v1_trade_proto_depIdxs = []int32{
-	10, // 0: dankfolio.v1.Trade.created_at:type_name -> google.protobuf.Timestamp
-	10, // 1: dankfolio.v1.Trade.completed_at:type_name -> google.protobuf.Timestamp
-	0,  // 2: dankfolio.v1.ListTradesResponse.trades:type_name -> dankfolio.v1.Trade
-	1,  // 3: dankfolio.v1.TradeService.GetSwapQuote:input_type -> dankfolio.v1.GetSwapQuoteRequest
-	3,  // 4: dankfolio.v1.TradeService.PrepareSwap:input_type -> dankfolio.v1.PrepareSwapRequest
-	5,  // 5: dankfolio.v1.TradeService.SubmitSwap:input_type -> dankfolio.v1.SubmitSwapRequest
-	7,  // 6: dankfolio.v1.TradeService.GetTrade:input_type -> dankfolio.v1.GetTradeRequest
-	8,  // 7: dankfolio.v1.TradeService.ListTrades:input_type -> dankfolio.v1.ListTradesRequest
-	2,  // 8: dankfolio.v1.TradeService.GetSwapQuote:output_type -> dankfolio.v1.GetSwapQuoteResponse
-	4,  // 9: dankfolio.v1.TradeService.PrepareSwap:output_type -> dankfolio.v1.PrepareSwapResponse
-	6,  // 10: dankfolio.v1.TradeService.SubmitSwap:output_type -> dankfolio.v1.SubmitSwapResponse
-	0,  // 11: dankfolio.v1.TradeService.GetTrade:output_type -> dankfolio.v1.Trade
-	9,  // 12: dankfolio.v1.TradeService.ListTrades:output_type -> dankfolio.v1.ListTradesResponse
-	8,  // [8:13] is the sub-list for method output_type
-	3,  // [3:8] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	11, // 0: dankfolio.v1.Trade.created_at:type_name -> google.protobuf.Timestamp
+	11, // 1: dankfolio.v1.Trade.completed_at:type_name -> google.protobuf.Timestamp
+	2,  // 2: dankfolio.v1.GetSwapQuoteResponse.sol_fee_breakdown:type_name -> dankfolio.v1.SolFeeBreakdown
+	0,  // 3: dankfolio.v1.ListTradesResponse.trades:type_name -> dankfolio.v1.Trade
+	1,  // 4: dankfolio.v1.TradeService.GetSwapQuote:input_type -> dankfolio.v1.GetSwapQuoteRequest
+	4,  // 5: dankfolio.v1.TradeService.PrepareSwap:input_type -> dankfolio.v1.PrepareSwapRequest
+	6,  // 6: dankfolio.v1.TradeService.SubmitSwap:input_type -> dankfolio.v1.SubmitSwapRequest
+	8,  // 7: dankfolio.v1.TradeService.GetTrade:input_type -> dankfolio.v1.GetTradeRequest
+	9,  // 8: dankfolio.v1.TradeService.ListTrades:input_type -> dankfolio.v1.ListTradesRequest
+	3,  // 9: dankfolio.v1.TradeService.GetSwapQuote:output_type -> dankfolio.v1.GetSwapQuoteResponse
+	5,  // 10: dankfolio.v1.TradeService.PrepareSwap:output_type -> dankfolio.v1.PrepareSwapResponse
+	7,  // 11: dankfolio.v1.TradeService.SubmitSwap:output_type -> dankfolio.v1.SubmitSwapResponse
+	0,  // 12: dankfolio.v1.TradeService.GetTrade:output_type -> dankfolio.v1.Trade
+	10, // 13: dankfolio.v1.TradeService.ListTrades:output_type -> dankfolio.v1.ListTradesResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_dankfolio_v1_trade_proto_init() }
@@ -1033,18 +1147,19 @@ func file_dankfolio_v1_trade_proto_init() {
 		return
 	}
 	file_dankfolio_v1_trade_proto_msgTypes[0].OneofWrappers = []any{}
-	file_dankfolio_v1_trade_proto_msgTypes[7].OneofWrappers = []any{
+	file_dankfolio_v1_trade_proto_msgTypes[3].OneofWrappers = []any{}
+	file_dankfolio_v1_trade_proto_msgTypes[8].OneofWrappers = []any{
 		(*GetTradeRequest_Id)(nil),
 		(*GetTradeRequest_TransactionHash)(nil),
 	}
-	file_dankfolio_v1_trade_proto_msgTypes[8].OneofWrappers = []any{}
+	file_dankfolio_v1_trade_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dankfolio_v1_trade_proto_rawDesc), len(file_dankfolio_v1_trade_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
