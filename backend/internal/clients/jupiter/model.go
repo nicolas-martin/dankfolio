@@ -9,6 +9,43 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 )
 
+// JupiterSwapResponse is used to unmarshal the swap transaction response
+type JupiterSwapResponse struct {
+	SwapTransaction string `json:"swapTransaction"`
+}
+
+// SwapResponse represents the complete response from Jupiter's /swap endpoint
+type SwapResponse struct {
+	SwapTransaction           string                `json:"swapTransaction"`
+	SetupTransaction          string                `json:"setupTransaction,omitempty"`
+	CleanupTransaction        string                `json:"cleanupTransaction,omitempty"`
+	LastValidBlockHeight      int64                 `json:"lastValidBlockHeight"`
+	PrioritizationFeeLamports int64                 `json:"prioritizationFeeLamports"`
+	ComputeUnitLimit          int64                 `json:"computeUnitLimit"`
+	PrioritizationType        PrioritizationType    `json:"prioritizationType"`
+	DynamicSlippageReport     DynamicSlippageReport `json:"dynamicSlippageReport"`
+	SimulationError           any                   `json:"simulationError"`
+}
+
+// PrioritizationType represents priority fee calculation details
+type PrioritizationType struct {
+	ComputeBudget ComputeBudget `json:"computeBudget"`
+}
+
+// ComputeBudget represents compute budget details
+type ComputeBudget struct {
+	MicroLamports          int64 `json:"microLamports"`
+	EstimatedMicroLamports int64 `json:"estimatedMicroLamports"`
+}
+
+// DynamicSlippageReport represents the dynamic slippage calculation results
+type DynamicSlippageReport struct {
+	SlippageBps                  int    `json:"slippageBps"`
+	OtherAmount                  int64  `json:"otherAmount"`
+	SimulatedIncurredSlippageBps int    `json:"simulatedIncurredSlippageBps"`
+	AmplificationRatio           string `json:"amplificationRatio"`
+}
+
 // PriceResponse represents the response from Jupiter Price API V2
 type PriceResponse struct {
 	Data map[string]CoinData `json:"data"`
@@ -160,7 +197,7 @@ func (t *CoinListInfo) ToRawCoin() *model.RawCoin {
 	}
 
 	return &model.RawCoin{
-		Address:      t.Address,
+		Address:          t.Address,
 		Name:             t.Name,
 		Symbol:           t.Symbol,
 		Decimals:         t.Decimals,
@@ -217,7 +254,7 @@ func (t *NewTokenInfo) ToRawCoin() *model.RawCoin {
 	}
 
 	return &model.RawCoin{
-		Address:      t.Mint, // Use Mint field instead of Address
+		Address:          t.Mint, // Use Mint field instead of Address
 		Name:             t.Name,
 		Symbol:           t.Symbol,
 		Decimals:         t.Decimals,
