@@ -56,6 +56,7 @@ const Trade: React.FC = () => {
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const [isNavigating, setIsNavigating] = useState(false); // This one IS used by TradeStatusModal
 	const [hasSufficientSolBalance, setHasSufficientSolBalance] = useState<boolean>(true); // Track SOL balance validation
+	const [preparedTransaction, setPreparedTransaction] = useState<string | null>(null); // Store prepared unsigned transaction
 	const [actualFeeBreakdown, setActualFeeBreakdown] = useState<TradeDetailsProps | null>(null); // Store actual fees from PrepareSwap
 	const [preparedTransaction, setPreparedTransaction] = useState<{
 		unsignedTransaction: string;
@@ -63,8 +64,6 @@ const Trade: React.FC = () => {
 		totalSolRequired: string;
 		tradingFeeSol: string;
 	} | null>(null); // Store prepared transaction data
-	const [isPreparingSwap, setIsPreparingSwap] = useState<boolean>(false); // New state for preparing swap
-	const [prepareSwapError, setPrepareSwapError] = useState<string | null>(null); // Error state for prepare swap
 
 	const {
 		txHash: polledTxHash,
@@ -258,17 +257,20 @@ const Trade: React.FC = () => {
 		[fromCoin, toCoin, debouncedFetchQuote, setFromAmount, setToAmount, setTradeDetails, setIsQuoteLoading] // Added setters (setToAmount is already there but good to be explicit)
 	);
 
-	const handleTradeSubmitClick = async () => {
-		// First prepare the swap to get detailed fee breakdown
-		const prepareSuccess = await prepareSwapTransaction();
-		
-		if (!prepareSuccess) {
-			// prepareSwapTransaction already showed error toast
-			return;
-		}
-
-		// If preparation was successful, show confirmation modal
-		setIsConfirmationVisible(true);
+	const handleTradeSubmitClick = () => {
+		// pollingIntervalRef removed from args as it's managed by the hook now
+		handleTradeSubmit(
+			fromAmount,
+			toAmount,
+			wallet,
+			fromCoin,
+			fromPortfolioToken,
+			solPortfolioToken,
+			tradeDetails.totalSolRequired || tradeDetails.totalFee, // Pass comprehensive SOL requirement
+			// pollingIntervalRef,
+			setIsConfirmationVisible,
+			showToast
+		);
 	};
 
 	const handleTradeConfirmClick = async () => {
@@ -331,70 +333,6 @@ const Trade: React.FC = () => {
 		styles.detailLabel,
 		styles.exchangeRateLabelText
 	], [styles.detailLabel, styles.exchangeRateLabelText]);
-
-	// Function to prepare swap with detailed fee breakdown
-	const prepareSwapTransaction = async () => {
-		if (!fromCoin || !toCoin || !fromAmount || !wallet?.address) {
-			showToast({ type: 'error', message: 'Missing required trade information' });
-			return false;
-		}
-
-		setIsPreparingSwap(true);
-		setPrepareSwapError(null);
-
-		try {
-			const prepareResponse = await grpcApi.prepareSwap({
-				fromCoinId: fromCoin.address,
-				toCoinId: toCoin.address,
-				amount: fromAmount,
-				slippageBps: '50', // 0.5% default slippage
-				userPublicKey: wallet.address
-			});
-
-			// Store the prepared transaction data
-			setPreparedTransaction({
-				unsignedTransaction: prepareResponse.unsignedTransaction,
-				solFeeBreakdown: prepareResponse.solFeeBreakdown,
-				totalSolRequired: prepareResponse.totalSolRequired,
-				tradingFeeSol: prepareResponse.tradingFeeSol
-			});
-
-			// Update trade details with actual fees from PrepareSwap
-			if (prepareResponse.solFeeBreakdown) {
-				setActualFeeBreakdown({
-					exchangeRate: tradeDetails.exchangeRate,
-					gasFee: prepareResponse.totalSolRequired,
-					priceImpactPct: tradeDetails.priceImpactPct,
-					totalFee: prepareResponse.totalSolRequired,
-					solFeeBreakdown: prepareResponse.solFeeBreakdown,
-					totalSolRequired: prepareResponse.totalSolRequired,
-					tradingFeeSol: prepareResponse.tradingFeeSol
-				});
-			}
-
-			// Final SOL balance validation with actual fees
-			const isValid = validateSolBalanceForQuote(
-				solPortfolioToken,
-				prepareResponse.totalSolRequired,
-				showToast,
-				setHasSufficientSolBalance,
-				prepareResponse.solFeeBreakdown
-			);
-
-			if (!isValid) {
-				return false;
-			}
-
-			return true;
-		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : 'Failed to prepare swap';
-			setPrepareSwapError(errorMessage);
-			showToast({ type: 'error', message: errorMessage });
-			return false;
-		} finally {
-			setIsPreparingSwap(false);
-		}
-	};
 
 	if (!wallet) {
 		return (
@@ -585,14 +523,14 @@ const Trade: React.FC = () => {
 				<Button
 					mode="contained"
 					onPress={handleTradeSubmitClick}
-					disabled={!fromAmount || !toAmount || isQuoteLoading || !hasSufficientSolBalance || isPreparingSwap}
-					loading={isQuoteLoading || isPreparingSwap}
+					disabled={!fromAmount || !toAmount || isQuoteLoading || !hasSufficientSolBalance}
+					loading={isQuoteLoading}
 					style={styles.tradeButton}
 					contentStyle={styles.tradeButtonContent}
 					labelStyle={styles.tradeButtonLabel}
 					testID="trade-button"
 				>
-					{isPreparingSwap ? 'Preparing Swap...' : isQuoteLoading ? 'Fetching Quote...' : 'Trade'}
+					{isQuoteLoading ? 'Fetching Quote...' : 'Trade'}
 				</Button>
 			</View>
 
@@ -606,7 +544,7 @@ const Trade: React.FC = () => {
 					toAmount={toAmount}
 					fromToken={fromCoin}
 					toToken={toCoin}
-					fees={actualFeeBreakdown || tradeDetails}
+					fees={tradeDetails}
 					isLoading={isLoadingTrade}
 				/>
 			)}
