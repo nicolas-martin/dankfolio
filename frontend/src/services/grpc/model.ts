@@ -185,7 +185,7 @@ export interface API {
 	search: (params: SearchRequest) => Promise<SearchResponse>;
 	searchCoinByAddress: (mintAddress: string) => Promise<SearchCoinByAddressResponse>;
 	submitSwap: (payload: TradePayload) => Promise<SubmitSwapResponse>;
-	getSwapQuote: (fromCoin: string, toCoin: string, amount: string) => Promise<SwapQuoteResponse>;
+	getSwapQuote: (fromCoin: string, toCoin: string, amount: string, includeFeeBreakdown?: boolean, userPublicKey?: string) => Promise<SwapQuoteResponse>;
 	getSwapStatus: (txHash: string) => Promise<TradeStatusResponse>;
 	getPriceHistory: (address: string, type: string, time: string, addressType: string) => Promise<PriceHistoryResponse>;
 	getWalletBalance: (address: string) => Promise<WalletBalanceResponse>;
@@ -196,7 +196,7 @@ export interface API {
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
 	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string; solFeeBreakdown?: any; totalSolRequired: string; tradingFeeSol: string }>;
 	listTrades: (params: ListTradesRequest) => Promise<ListTradesResponse>;
-	getFullSwapQuoteOrchestrated: (amount: string, fromCoin: Coin, toCoin: Coin) => Promise<FullSwapQuoteDetails>;
+	getFullSwapQuoteOrchestrated: (amount: string, fromCoin: Coin, toCoin: Coin, includeFeeBreakdown?: boolean, userPublicKey?: string) => Promise<FullSwapQuoteDetails>;
 	getNewCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getTrendingCoins: (limit?: number, offset?: number) => Promise<Coin[]>;
 	getTopGainersCoins: (limit?: number, offset?: number) => Promise<Coin[]>;

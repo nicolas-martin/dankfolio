@@ -213,13 +213,15 @@ func (x *Trade) GetPlatformFeeDestination() string {
 
 // GetSwapQuoteRequest is the request for getting a trade quote
 type GetSwapQuoteRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	FromCoinId    string                 `protobuf:"bytes,1,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"` // Typically mint address
-	ToCoinId      string                 `protobuf:"bytes,2,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`       // Typically mint address
-	Amount        string                 `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	SlippageBps   string                 `protobuf:"bytes,4,opt,name=slippage_bps,json=slippageBps,proto3" json:"slippage_bps,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	FromCoinId          string                 `protobuf:"bytes,1,opt,name=from_coin_id,json=fromCoinId,proto3" json:"from_coin_id,omitempty"` // Typically mint address
+	ToCoinId            string                 `protobuf:"bytes,2,opt,name=to_coin_id,json=toCoinId,proto3" json:"to_coin_id,omitempty"`       // Typically mint address
+	Amount              string                 `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
+	SlippageBps         string                 `protobuf:"bytes,4,opt,name=slippage_bps,json=slippageBps,proto3" json:"slippage_bps,omitempty"`
+	IncludeFeeBreakdown bool                   `protobuf:"varint,5,opt,name=include_fee_breakdown,json=includeFeeBreakdown,proto3" json:"include_fee_breakdown,omitempty"` // Whether to include detailed SOL fee breakdown (requires CreateSwapTransaction call)
+	UserPublicKey       *string                `protobuf:"bytes,6,opt,name=user_public_key,json=userPublicKey,proto3,oneof" json:"user_public_key,omitempty"`              // Required when include_fee_breakdown=true
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetSwapQuoteRequest) Reset() {
@@ -276,6 +278,20 @@ func (x *GetSwapQuoteRequest) GetAmount() string {
 func (x *GetSwapQuoteRequest) GetSlippageBps() string {
 	if x != nil {
 		return x.SlippageBps
+	}
+	return ""
+}
+
+func (x *GetSwapQuoteRequest) GetIncludeFeeBreakdown() bool {
+	if x != nil {
+		return x.IncludeFeeBreakdown
+	}
+	return false
+}
+
+func (x *GetSwapQuoteRequest) GetUserPublicKey() string {
+	if x != nil && x.UserPublicKey != nil {
+		return *x.UserPublicKey
 	}
 	return ""
 }
@@ -1029,14 +1045,17 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"\x06_errorB\x16\n" +
 	"\x14_platform_fee_amountB\x17\n" +
 	"\x15_platform_fee_percentB\x1b\n" +
-	"\x19_platform_fee_destination\"\x90\x01\n" +
+	"\x19_platform_fee_destination\"\x85\x02\n" +
 	"\x13GetSwapQuoteRequest\x12 \n" +
 	"\ffrom_coin_id\x18\x01 \x01(\tR\n" +
 	"fromCoinId\x12\x1c\n" +
 	"\n" +
 	"to_coin_id\x18\x02 \x01(\tR\btoCoinId\x12\x16\n" +
 	"\x06amount\x18\x03 \x01(\tR\x06amount\x12!\n" +
-	"\fslippage_bps\x18\x04 \x01(\tR\vslippageBps\"\xf4\x01\n" +
+	"\fslippage_bps\x18\x04 \x01(\tR\vslippageBps\x122\n" +
+	"\x15include_fee_breakdown\x18\x05 \x01(\bR\x13includeFeeBreakdown\x12+\n" +
+	"\x0fuser_public_key\x18\x06 \x01(\tH\x00R\ruserPublicKey\x88\x01\x01B\x12\n" +
+	"\x10_user_public_key\"\xf4\x01\n" +
 	"\x0fSolFeeBreakdown\x12\x1f\n" +
 	"\vtrading_fee\x18\x01 \x01(\tR\n" +
 	"tradingFee\x12'\n" +
@@ -1176,6 +1195,7 @@ func file_dankfolio_v1_trade_proto_init() {
 		return
 	}
 	file_dankfolio_v1_trade_proto_msgTypes[0].OneofWrappers = []any{}
+	file_dankfolio_v1_trade_proto_msgTypes[1].OneofWrappers = []any{}
 	file_dankfolio_v1_trade_proto_msgTypes[3].OneofWrappers = []any{}
 	file_dankfolio_v1_trade_proto_msgTypes[5].OneofWrappers = []any{}
 	file_dankfolio_v1_trade_proto_msgTypes[8].OneofWrappers = []any{

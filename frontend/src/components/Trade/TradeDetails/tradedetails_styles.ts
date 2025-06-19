@@ -6,6 +6,25 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	const colors = theme.colors;
 	const styles = StyleSheet.create({
+		// Accordion styles
+		accordionContainer: {
+			backgroundColor: 'transparent',
+			marginHorizontal: 0,
+			paddingHorizontal: 0,
+			borderRadius: theme.borderRadius.sm,
+		},
+		accordionDescription: {
+			color: theme.colors.onSurfaceVariant,
+			fontSize: 12,
+		},
+		accordionIcon: {
+			marginLeft: 0,
+		},
+		accordionTitle: {
+			color: theme.colors.onSurface,
+			fontSize: 14,
+			fontWeight: '600',
+		},
 		container: {
 			backgroundColor: theme.colors.background,
 			borderRadius: theme.borderRadius.md,
@@ -16,32 +35,22 @@ export const useStyles = () => {
 			color: theme.colors.onSurface,
 			marginBottom: theme.spacing.sm,
 		},
-		feeDetail: {
-			color: theme.colors.onSurfaceVariant,
-			marginBottom: theme.spacing.xs,
-		},
-		// New styles for comprehensive fee breakdown
 		feeBreakdownContainer: {
+			marginBottom: theme.spacing.sm,
 			marginTop: theme.spacing.sm,
-			marginBottom: theme.spacing.sm,
-		},
-		totalFeeHeader: {
-			color: theme.colors.onSurface,
-			fontWeight: '600',
-			marginBottom: theme.spacing.sm,
 		},
 		feeBreakdownDetails: {
-			marginLeft: theme.spacing.sm,
 			marginBottom: theme.spacing.xs,
+			marginLeft: theme.spacing.sm,
 		},
 		feeBreakdownItem: {
 			color: theme.colors.onSurfaceVariant,
-			marginBottom: theme.spacing.xs,
 			fontSize: 12,
+			marginBottom: theme.spacing.xs,
 		},
-		majorCostItem: {
-			color: theme.colors.primary,
-			fontWeight: '500',
+		feeDetail: {
+			color: theme.colors.onSurfaceVariant,
+			marginBottom: theme.spacing.xs,
 		},
 		helpText: {
 			color: theme.colors.onSurfaceVariant,
@@ -49,6 +58,19 @@ export const useStyles = () => {
 			fontStyle: 'italic',
 			marginTop: theme.spacing.xs,
 			opacity: 0.8,
+		},
+		listItemStyle: {
+			paddingHorizontal: 0,
+			paddingVertical: theme.spacing.xs,
+		},
+		majorCostItem: {
+			color: theme.colors.primary,
+			fontWeight: '500',
+		},
+		totalFeeHeader: {
+			color: theme.colors.onSurface,
+			fontWeight: '600',
+			marginBottom: theme.spacing.sm,
 		},
 	})
 	return {

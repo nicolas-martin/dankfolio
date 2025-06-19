@@ -14,12 +14,13 @@ import TradeStatusModal from '@components/Trade/TradeStatusModal';
 import { TradeScreenNavigationProp, TradeScreenRouteProp } from './types';
 
 import {
-	executeTrade,
 	handleSwapCoins as swapCoinsUtil,
 	handleSelectToken,
 	handleTradeSubmit,
 	validateSolBalanceForQuote,
 } from './scripts';
+import { signSwapTransaction } from '@/services/solana';
+import { getActiveWalletKeys } from '@/store/portfolio';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 import { logger } from '@/utils/logger';
@@ -28,6 +29,7 @@ import { useTransactionsStore } from '@/store/transactions';
 import { grpcApi } from '@/services/grpcApi';
 import { useTransactionPolling, PollingStatus } from '@/hooks/useTransactionPolling';
 import InfoState from '@/components/Common/InfoState';
+import { toRawAmount } from '@/utils/numberFormat';
 
 
 const QUOTE_DEBOUNCE_MS = 1000;
@@ -56,14 +58,8 @@ const Trade: React.FC = () => {
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const [isNavigating, setIsNavigating] = useState(false); // This one IS used by TradeStatusModal
 	const [hasSufficientSolBalance, setHasSufficientSolBalance] = useState<boolean>(true); // Track SOL balance validation
-	const [preparedTransaction, setPreparedTransaction] = useState<string | null>(null); // Store prepared unsigned transaction
-	const [actualFeeBreakdown, setActualFeeBreakdown] = useState<TradeDetailsProps | null>(null); // Store actual fees from PrepareSwap
-	const [preparedTransaction, setPreparedTransaction] = useState<{
-		unsignedTransaction: string;
-		solFeeBreakdown?: any;
-		totalSolRequired: string;
-		tradingFeeSol: string;
-	} | null>(null); // Store prepared transaction data
+	const [hasDetailedFeeBreakdown, setHasDetailedFeeBreakdown] = useState<boolean>(false); // Track if we've fetched detailed fees for current pair
+
 
 	const {
 		txHash: polledTxHash,
@@ -108,16 +104,16 @@ const Trade: React.FC = () => {
 	// Fetch portfolio balance if wallet exists and tokens are empty
 	useEffect(() => {
 		if (wallet?.address && tokens.length === 0) {
-			logger.log('[Trade] Portfolio tokens empty, fetching portfolio balance...', { 
-				walletAddress: wallet.address, 
-				tokensLength: tokens.length 
+			logger.log('[Trade] Portfolio tokens empty, fetching portfolio balance...', {
+				walletAddress: wallet.address,
+				tokensLength: tokens.length
 			});
 			fetchPortfolioBalance(wallet.address).catch(error => {
 				logger.error('[Trade] Failed to fetch portfolio balance:', error);
 			});
 		} else {
-			logger.log('[Trade] Portfolio fetch not needed', { 
-				hasWallet: !!wallet?.address, 
+			logger.log('[Trade] Portfolio fetch not needed', {
+				hasWallet: !!wallet?.address,
 				tokensLength: tokens.length,
 				tokens: tokens.map(t => ({ symbol: t.coin.symbol, amount: t.amount }))
 			});
@@ -154,11 +150,22 @@ const Trade: React.FC = () => {
 			// Determine which amount to set based on direction
 			const setTargetAmount = direction === 'from' ? setToAmount : setFromAmount;
 			try {
+				// Only request detailed fee breakdown if we haven't fetched it yet for this pair
+				// or if user wallet is available and we don't have breakdown yet
+				const shouldIncludeFeeBreakdown = !hasDetailedFeeBreakdown && !!wallet?.address;
+
 				const quoteData = await grpcApi.getFullSwapQuoteOrchestrated(
 					currentAmount,
 					direction === 'from' ? currentFromCoin : currentToCoin, // actual fromCoin for API
-					direction === 'from' ? currentToCoin : currentFromCoin  // actual toCoin for API
+					direction === 'from' ? currentToCoin : currentFromCoin,  // actual toCoin for API
+					shouldIncludeFeeBreakdown, // includeFeeBreakdown - only first call or when needed
+					wallet?.address // userPublicKey - needed for accurate fee calculation
 				);
+
+				// Mark that we've fetched detailed breakdown for this pair
+				if (shouldIncludeFeeBreakdown && quoteData.solFeeBreakdown) {
+					setHasDetailedFeeBreakdown(true);
+				}
 
 				setTargetAmount(quoteData.estimatedAmount);
 				setTradeDetails({
@@ -174,9 +181,9 @@ const Trade: React.FC = () => {
 
 				// Validate SOL balance for transaction fees immediately after quote
 				validateSolBalanceForQuote(
-					solPortfolioToken, 
-					quoteData.totalSolRequired || quoteData.totalFee, 
-					showToast, 
+					solPortfolioToken,
+					quoteData.totalSolRequired || quoteData.totalFee,
+					showToast,
 					setHasSufficientSolBalance,
 					quoteData.solFeeBreakdown
 				);
@@ -187,6 +194,7 @@ const Trade: React.FC = () => {
 				setTargetAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
 				setHasSufficientSolBalance(true); // Reset SOL balance validation on error
+				setHasDetailedFeeBreakdown(false); // Reset fee breakdown flag on error
 			} finally {
 				setIsQuoteLoading(false);
 			}
@@ -197,7 +205,11 @@ const Trade: React.FC = () => {
 	const handleSelectFromToken = (token: Coin) => {
 		handleSelectToken(
 			'from', token, fromCoin, toCoin, setFromCoin,
-			() => { setFromAmount(''); setToAmount(''); setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' }); },
+			() => {
+				setFromAmount('');
+				setToAmount('');
+				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+			},
 			handleSwapCoins
 		);
 	};
@@ -205,7 +217,11 @@ const Trade: React.FC = () => {
 	const handleSelectToToken = (token: Coin) => {
 		handleSelectToken(
 			'to', token, toCoin, fromCoin, setToCoin,
-			() => { setFromAmount(''); setToAmount(''); setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' }); },
+			() => {
+				setFromAmount('');
+				setToAmount('');
+				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+			},
 			handleSwapCoins
 		);
 	};
@@ -258,53 +274,78 @@ const Trade: React.FC = () => {
 	);
 
 	const handleTradeSubmitClick = () => {
-		// pollingIntervalRef removed from args as it's managed by the hook now
-		handleTradeSubmit(
+		// Validate trade parameters and show confirmation modal
+		// The detailed fee breakdown is already available from the quote
+		const isValid = handleTradeSubmit(
 			fromAmount,
 			toAmount,
 			wallet,
 			fromCoin,
 			fromPortfolioToken,
 			solPortfolioToken,
-			tradeDetails.totalSolRequired || tradeDetails.totalFee, // Pass comprehensive SOL requirement
-			// pollingIntervalRef,
+			tradeDetails.totalSolRequired || tradeDetails.totalFee,
 			setIsConfirmationVisible,
 			showToast
 		);
+
+		if (!isValid) return;
+
+		// Show confirmation modal with the detailed fee breakdown from the quote
+		setIsConfirmationVisible(true);
 	};
 
 	const handleTradeConfirmClick = async () => {
 		logger.breadcrumb({ category: 'trade', message: 'Trade confirmed by user', data: { fromCoin: fromCoin?.symbol, toCoin: toCoin?.symbol, fromAmount } });
-		if (!fromCoin || !toCoin || !fromAmount) {
+		if (!fromCoin || !toCoin || !fromAmount || !wallet?.address) {
 			showToast({ type: 'error', message: 'Missing required trade parameters' });
 			return;
 		}
-		logger.info('[Trade] Stopping price polling and progress tracking before trade execution.');
-
-		// Stop polling related to price quotes if any was active, before starting trade execution polling
-		// This was previously clearing pollingIntervalRef, which is now managed by the hook for TX polling.
-		// If there was a separate interval for price quotes, that would be cleared here.
-		// For now, assuming quote fetching is timeout-based, not interval.
-		// The main transaction polling is handled by useTransactionPolling.
 
 		try {
-			setIsLoadingTrade(true); // Indicate trade execution is starting
+			setIsLoadingTrade(true);
 			setIsConfirmationVisible(false);
 
-			const txHash = await executeTrade(fromCoin, toCoin, fromAmount, 1, showToast); // Modified executeTrade
+			// Convert amount to raw format for PrepareSwap
+			const rawAmount = Number(toRawAmount(fromAmount, fromCoin.decimals));
 
-			if (txHash) {
-				// setSubmittedTxHash(txHash); // Not needed, txHash set via startTxPolling
+			// Call PrepareSwap to get the unsigned transaction
+			const prepareResponse = await grpcApi.prepareSwap({
+				fromCoinId: fromCoin.address,
+				toCoinId: toCoin.address,
+				amount: rawAmount.toString(),
+				slippageBps: (1 * 100).toString(), // Default 1% slippage
+				userPublicKey: wallet.address
+			});
+
+			// Sign the prepared transaction
+			const keys = await getActiveWalletKeys();
+			if (!keys?.privateKey || !keys?.publicKey) {
+				throw new Error('Failed to retrieve wallet keys for signing.');
+			}
+
+			const signedTx = await signSwapTransaction(prepareResponse.unsignedTransaction, keys.publicKey, keys.privateKey);
+
+			// Submit the signed transaction
+			const tradePayload = {
+				fromCoinMintAddress: fromCoin.address,
+				toCoinMintAddress: toCoin.address,
+				amount: rawAmount,
+				signedTransaction: signedTx,
+				unsignedTransaction: prepareResponse.unsignedTransaction,
+			};
+
+			const result = await grpcApi.submitSwap(tradePayload);
+
+			if (result.transactionHash) {
+				logger.info('Trade submitted successfully:', { txHash: result.transactionHash });
 				setIsStatusModalVisible(true);
-				startTxPolling(txHash);
+				startTxPolling(result.transactionHash);
 			} else {
-				// Handle case where executeTrade didn't return a hash (e.g., pre-flight error)
 				setIsLoadingTrade(false);
+				showToast({ type: 'error', message: 'Failed to submit transaction' });
 			}
 		} catch (error) {
-			// executeTrade should ideally handle its own errors and show toasts
-			// If it re-throws, catch here
-			logger.error('[Trade] Error during executeTrade or starting polling:', error);
+			logger.error('[Trade] Error during trade confirmation:', error);
 			setIsLoadingTrade(false);
 			showToast({ type: 'error', message: error instanceof Error ? error.message : 'Trade execution failed' });
 		}
@@ -317,6 +358,8 @@ const Trade: React.FC = () => {
 			{ fromCoin, toCoin, fromAmount, toAmount },
 			{ setFromCoin, setToCoin, setFromAmount, setToAmount }
 		);
+
+
 	};
 
 	const handleCloseConfirmationModal = () => {
@@ -440,10 +483,66 @@ const Trade: React.FC = () => {
 						</Text>
 					</View>
 
-					<View style={styles.detailRow}>
-						<Text style={styles.detailLabel}>Network Fee</Text>
-						<Text testID="trade-details-network-fee" style={styles.detailValue}>{tradeDetails.totalFee} SOL</Text>
-					</View>
+					{/* Enhanced fee breakdown display */}
+					{tradeDetails.solFeeBreakdown ? (
+						<>
+							<View style={styles.detailRow}>
+								<Text style={styles.detailLabel}>Total Network Fee</Text>
+								<Text testID="trade-details-total-fee" style={styles.detailValue}>
+									{tradeDetails.totalSolRequired || tradeDetails.totalFee} SOL
+								</Text>
+							</View>
+
+							{/* Detailed fee breakdown */}
+							{parseFloat(tradeDetails.solFeeBreakdown.tradingFee) > 0 && (
+								<View style={styles.detailRow}>
+									<Text style={styles.detailSubLabel}>• Trading Fee</Text>
+									<Text testID="trade-details-trading-fee" style={styles.detailSubValue}>
+										{parseFloat(tradeDetails.solFeeBreakdown.tradingFee).toFixed(6)} SOL
+									</Text>
+								</View>
+							)}
+
+							{parseFloat(tradeDetails.solFeeBreakdown.transactionFee) > 0 && (
+								<View style={styles.detailRow}>
+									<Text style={styles.detailSubLabel}>• Transaction Fee</Text>
+									<Text testID="trade-details-tx-fee" style={styles.detailSubValue}>
+										{parseFloat(tradeDetails.solFeeBreakdown.transactionFee).toFixed(6)} SOL
+									</Text>
+								</View>
+							)}
+
+							{parseFloat(tradeDetails.solFeeBreakdown.accountCreationFee) > 0 && (
+								<View style={styles.detailRow}>
+									<Text style={styles.detailSubLabel}>
+										• Account Creation
+										{tradeDetails.solFeeBreakdown.accountsToCreate > 0 &&
+											` (${tradeDetails.solFeeBreakdown.accountsToCreate} account${tradeDetails.solFeeBreakdown.accountsToCreate > 1 ? 's' : ''})`
+										}
+									</Text>
+									<Text testID="trade-details-account-fee" style={styles.detailSubValue}>
+										{parseFloat(tradeDetails.solFeeBreakdown.accountCreationFee).toFixed(6)} SOL
+									</Text>
+								</View>
+							)}
+
+							{parseFloat(tradeDetails.solFeeBreakdown.priorityFee) > 0 && (
+								<View style={styles.detailRow}>
+									<Text style={styles.detailSubLabel}>• Priority Fee</Text>
+									<Text testID="trade-details-priority-fee" style={styles.detailSubValue}>
+										{parseFloat(tradeDetails.solFeeBreakdown.priorityFee).toFixed(6)} SOL
+									</Text>
+								</View>
+							)}
+						</>
+					) : (
+						<View style={styles.detailRow}>
+							<Text style={styles.detailLabel}>Network Fee</Text>
+							<Text testID="trade-details-network-fee" style={styles.detailValue}>
+								{tradeDetails.totalSolRequired || tradeDetails.totalFee} SOL
+							</Text>
+						</View>
+					)}
 
 					{tradeDetails.route && (
 						<View style={styles.detailRow}>
@@ -451,16 +550,6 @@ const Trade: React.FC = () => {
 							<Text testID="trade-details-route" style={styles.detailValue}>{tradeDetails.route}</Text>
 						</View>
 					)}
-
-					<View style={styles.exchangeRateRow}>
-						<View style={styles.exchangeRateLabel}>
-							<Icon source="swap-horizontal" size={16} color={styles.colors.onSurfaceVariant} />
-							<Text style={exchangeRateLabelTextStyle}>Exchange Rate</Text>
-						</View>
-						<Text testID="trade-details-exchange-rate" style={styles.exchangeRateValue}>
-							1 {fromCoin?.symbol} = {(parseFloat(tradeDetails.exchangeRate) || 0).toFixed(6)} {toCoin?.symbol}
-						</Text>
-					</View>
 				</Card.Content>
 			</Card>
 		);

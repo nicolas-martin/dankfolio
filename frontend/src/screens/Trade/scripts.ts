@@ -27,30 +27,7 @@ export const validateSolBalanceForQuote = (
 		// Use comprehensive SOL requirement from quote
 		if (solBalance < requiredSol) {
 			const shortfall = requiredSol - solBalance;
-			let message = `Insufficient SOL for transaction.\n\nRequired: ${requiredSol.toFixed(6)} SOL\nBalance: ${solBalance.toFixed(6)} SOL\nNeed: ${shortfall.toFixed(6)} more SOL`;
-			
-			// Add simplified breakdown if available
-			if (solFeeBreakdown) {
-				const breakdown = [];
-				
-				if (parseFloat(solFeeBreakdown.tradingFee) > 0) {
-					breakdown.push(`Trading: ${parseFloat(solFeeBreakdown.tradingFee).toFixed(6)} SOL`);
-				}
-				if (parseFloat(solFeeBreakdown.accountCreationFee) > 0) {
-					const accounts = solFeeBreakdown.accountsToCreate > 0 ? ` (${solFeeBreakdown.accountsToCreate} account${solFeeBreakdown.accountsToCreate > 1 ? 's' : ''})` : '';
-					breakdown.push(`Account creation: ${parseFloat(solFeeBreakdown.accountCreationFee).toFixed(6)} SOL${accounts}`);
-				}
-				if (parseFloat(solFeeBreakdown.transactionFee) > 0) {
-					breakdown.push(`Transaction: ${parseFloat(solFeeBreakdown.transactionFee).toFixed(6)} SOL`);
-				}
-				if (parseFloat(solFeeBreakdown.priorityFee) > 0) {
-					breakdown.push(`Priority: ${parseFloat(solFeeBreakdown.priorityFee).toFixed(6)} SOL`);
-				}
-				
-				if (breakdown.length > 0) {
-					message += `\n\nBreakdown:\n${breakdown.map(item => `• ${item}`).join('\n')}`;
-				}
-			}
+			const message = `Insufficient SOL for transaction fees. Required: ${requiredSol.toFixed(6)} SOL, Balance: ${solBalance.toFixed(6)} SOL, Need: ${shortfall.toFixed(6)} more SOL.`;
 			
 			showToast({
 				type: 'error',
