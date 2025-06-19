@@ -169,7 +169,7 @@ func (s *Service) Shutdown() {
 
 func (s *Service) GetCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
 	if opts.SortBy == nil || *opts.SortBy == "" {
-		defaultSortBy := "volume_24h"
+		defaultSortBy := "volume_24h_usd"
 		defaultSortDesc := true
 		opts.SortBy = &defaultSortBy
 		opts.SortDesc = &defaultSortDesc
