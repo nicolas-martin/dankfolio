@@ -370,3 +370,13 @@ func CoinsToProto(coins []Coin) ([]*pb.Coin, error) {
 // These would typically be at the top of the file.
 // import pb "github.com/nicolas-martin/dankfolio/gen/go/dankfolio/v1"
 // import "google.golang.org/protobuf/types/known/timestamppb"
+
+// NaughtyWord represents a word that should be filtered at the application level.
+type NaughtyWord struct {
+	Word string
+}
+
+// GetID implements the Entity interface for NaughtyWord.
+func (nw NaughtyWord) GetID() string {
+	return nw.Word
+}

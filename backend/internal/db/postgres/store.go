@@ -26,6 +26,7 @@ type Store struct {
 	rawCoinsRepo db.Repository[model.RawCoin]
 	walletRepo   db.Repository[model.Wallet]
 	apiStatsRepo db.Repository[model.ApiStat]
+	naughtyWordsRepo db.Repository[model.NaughtyWord] // <<< ADD THIS LINE
 }
 
 var _ db.Store = (*Store)(nil) // Compile-time check for interface implementation
@@ -40,6 +41,7 @@ func NewStoreWithDB(database *gorm.DB) *Store {
 		rawCoinsRepo: NewRepository[schema.RawCoin, model.RawCoin](database),
 		walletRepo:   NewRepository[schema.Wallet, model.Wallet](database),
 		apiStatsRepo: NewRepository[model.ApiStat, model.ApiStat](database), // Use generic repo; S=model.ApiStat, M=model.ApiStat
+		naughtyWordsRepo: NewRepository[schema.NaughtyWord, model.NaughtyWord](database), // <<< ADD THIS LINE
 	}
 }
 
@@ -73,8 +75,8 @@ func NewStore(dsn string, enableAutoMigrate bool, appLogLevel slog.Level, env st
 	}
 
 	if enableAutoMigrate {
-		// Auto-migrate the schema, now including model.ApiStat
-		if err := db.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}, &model.ApiStat{}); err != nil {
+		// Auto-migrate the schema, now including model.ApiStat and schema.NaughtyWord
+		if err := db.AutoMigrate(&schema.Coin{}, &schema.Trade{}, &schema.RawCoin{}, &schema.Wallet{}, &model.ApiStat{}, &schema.NaughtyWord{}); err != nil {
 			return nil, fmt.Errorf("failed to auto-migrate schemas: %w", err)
 		}
 	}
@@ -120,6 +122,11 @@ func (s *Store) RawCoins() db.Repository[model.RawCoin] {
 
 func (s *Store) ApiStats() db.Repository[model.ApiStat] { // Changed return type
 	return s.apiStatsRepo
+}
+
+// NaughtyWords returns the repository for NaughtyWord entities.
+func (s *Store) NaughtyWords() db.Repository[model.NaughtyWord] { // <<< ADD THIS METHOD
+	return s.naughtyWordsRepo
 }
 
 // --- Custom Operations ---
