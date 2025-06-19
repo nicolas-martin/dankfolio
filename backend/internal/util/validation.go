@@ -14,9 +14,9 @@ const (
 	maxAddressLength = 44
 )
 
-// IsValidSolanaAddress checks if the given address string is a valid Solana public key
-// that lies on the ed25519 curve.
-// This means it will return `false` for Program Derived Addresses (PDAs), as they are not on the curve.
+// IsValidSolanaAddress checks if the given address string is a valid Solana address.
+// This includes both regular addresses (on ed25519 curve) and Program Derived Addresses (PDAs).
+// PDAs are valid Solana addresses but are not on the curve by design.
 func IsValidSolanaAddress(address string) bool {
 	if len(address) < minAddressLength || len(address) > maxAddressLength {
 		return false
@@ -27,17 +27,14 @@ func IsValidSolanaAddress(address string) bool {
 		return false
 	}
 
-	pubKey, err := solana.PublicKeyFromBase58(address)
+	_, err := solana.PublicKeyFromBase58(address)
 	if err != nil {
 		return false // Error during Base58 decoding or if not a valid pubkey format for the lib
 	}
 
-	// A valid public key must be on the ed25519 curve.
-	// Note: Program Derived Addresses (PDAs) are *not* on the curve by design.
-	// This function will return false for PDAs. If PDA validation is needed,
-	// (e.g. checking if an address *could* be a PDA or is a valid address format regardless of curve status),
-	// a different or more nuanced function would be required.
-	return pubKey.IsOnCurve()
+	// If we can successfully parse it as a PublicKey, it's a valid Solana address.
+	// This includes both regular addresses (on curve) and PDAs (off curve).
+	return true
 }
 
 // IsValidBase58 checks if the given string contains only Base58 characters.
