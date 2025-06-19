@@ -91,6 +91,9 @@ message PrepareSwapRequest {
 // PrepareSwapResponse is the response with the unsigned transaction
 message PrepareSwapResponse {
   string unsigned_transaction = 1;
+  optional SolFeeBreakdown sol_fee_breakdown = 2; // Enhanced SOL fee breakdown
+  string total_sol_required = 3;                  // Total SOL needed for transaction
+  string trading_fee_sol = 4;                     // Trading fees in SOL
 }
 
 // SubmitSwapRequest is the request for submitting a trade

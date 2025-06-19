@@ -9,6 +9,14 @@ type PrepareSwapRequestData struct {
 	FromAddress         string // User's wallet public key
 }
 
+// PrepareSwapResponse holds the response data from PrepareSwap operation.
+type PrepareSwapResponse struct {
+	UnsignedTransaction string           `json:"unsignedTransaction"`
+	SolFeeBreakdown     *SolFeeBreakdown `json:"solFeeBreakdown,omitempty"`
+	TotalSolRequired    string           `json:"totalSolRequired"`
+	TradingFeeSol       string           `json:"tradingFeeSol"`
+}
+
 // TradeQuote represents a quote for a trade
 type TradeQuote struct {
 	EstimatedAmount string   `json:"estimatedAmount"`
