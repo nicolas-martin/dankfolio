@@ -176,6 +176,74 @@ func (_c *MockSolanaRPCClientAPI_GetBalanceConfirmed_Call) RunAndReturn(run func
 	return _c
 }
 
+// GetFeeForMessage provides a mock function for the type MockSolanaRPCClientAPI
+func (_mock *MockSolanaRPCClientAPI) GetFeeForMessage(ctx context.Context, message solana.Message) (*rpc.GetFeeForMessageResult, error) {
+	ret := _mock.Called(ctx, message)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFeeForMessage")
+	}
+
+	var r0 *rpc.GetFeeForMessageResult
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, solana.Message) (*rpc.GetFeeForMessageResult, error)); ok {
+		return returnFunc(ctx, message)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, solana.Message) *rpc.GetFeeForMessageResult); ok {
+		r0 = returnFunc(ctx, message)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*rpc.GetFeeForMessageResult)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, solana.Message) error); ok {
+		r1 = returnFunc(ctx, message)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockSolanaRPCClientAPI_GetFeeForMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFeeForMessage'
+type MockSolanaRPCClientAPI_GetFeeForMessage_Call struct {
+	*mock.Call
+}
+
+// GetFeeForMessage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - message solana.Message
+func (_e *MockSolanaRPCClientAPI_Expecter) GetFeeForMessage(ctx interface{}, message interface{}) *MockSolanaRPCClientAPI_GetFeeForMessage_Call {
+	return &MockSolanaRPCClientAPI_GetFeeForMessage_Call{Call: _e.mock.On("GetFeeForMessage", ctx, message)}
+}
+
+func (_c *MockSolanaRPCClientAPI_GetFeeForMessage_Call) Run(run func(ctx context.Context, message solana.Message)) *MockSolanaRPCClientAPI_GetFeeForMessage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 solana.Message
+		if args[1] != nil {
+			arg1 = args[1].(solana.Message)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockSolanaRPCClientAPI_GetFeeForMessage_Call) Return(getFeeForMessageResult *rpc.GetFeeForMessageResult, err error) *MockSolanaRPCClientAPI_GetFeeForMessage_Call {
+	_c.Call.Return(getFeeForMessageResult, err)
+	return _c
+}
+
+func (_c *MockSolanaRPCClientAPI_GetFeeForMessage_Call) RunAndReturn(run func(ctx context.Context, message solana.Message) (*rpc.GetFeeForMessageResult, error)) *MockSolanaRPCClientAPI_GetFeeForMessage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLatestBlockhashConfirmed provides a mock function for the type MockSolanaRPCClientAPI
 func (_mock *MockSolanaRPCClientAPI) GetLatestBlockhashConfirmed(ctx context.Context) (*rpc.GetLatestBlockhashResult, error) {
 	ret := _mock.Called(ctx)

@@ -243,19 +243,16 @@ func (c *Client) GetNewCoins(ctx context.Context, params *NewCoinsParams) ([]*Ne
 }
 
 // JupiterSwapResponse is used to unmarshal the swap transaction response
-type JupiterSwapResponse struct {
-	SwapTransaction string `json:"swapTransaction"`
-}
 
 // CreateSwapTransaction requests an unsigned swap transaction from Jupiter
-func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey, feeAccount string) (string, error) {
+func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solanago.PublicKey, feeAccount string) (*SwapResponse, error) {
 	// Log the raw quoteResp for debugging
 	slog.Debug("Jupiter quote response (raw)", "payload", string(quoteResp))
 
 	// Unmarshal quoteResp to a map so it is sent as a JSON object, not a string
 	var quoteObj map[string]any
 	if err := json.Unmarshal(quoteResp, &quoteObj); err != nil {
-		return "", fmt.Errorf("failed to unmarshal quoteResp: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal quoteResp: %w", err)
 	}
 
 	swapReqBody := map[string]any{
@@ -281,15 +278,15 @@ func (c *Client) CreateSwapTransaction(ctx context.Context, quoteResp []byte, us
 	// Log the full outgoing payload for debugging
 	slog.Debug("Outgoing swap payload", "url", url, "payload", fmt.Sprintf("%+v", swapReqBody))
 
-	swapRespData, err := PostRequest[JupiterSwapResponse](c, ctx, url, swapReqBody)
+	swapRespData, err := PostRequest[SwapResponse](c, ctx, url, swapReqBody)
 	if err != nil {
-		return "", fmt.Errorf("swap request failed: %w", err)
+		return nil, fmt.Errorf("swap request failed: %w", err)
 	}
 
 	if swapRespData.SwapTransaction == "" {
-		return "", fmt.Errorf("no swap transaction received from Jupiter")
+		return nil, fmt.Errorf("no swap transaction received from Jupiter")
 	}
-	return swapRespData.SwapTransaction, nil
+	return &swapRespData, nil
 }
 
 // GetRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response

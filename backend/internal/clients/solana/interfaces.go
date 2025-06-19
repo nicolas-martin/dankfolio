@@ -23,4 +23,5 @@ type SolanaRPCClientAPI interface {
 	SendTransactionWithCustomOpts(ctx context.Context, tx *solana.Transaction, opts model.TransactionOptions) (solana.Signature, error)
 	GetBalanceConfirmed(ctx context.Context, account solana.PublicKey) (*rpc.GetBalanceResult, error)
 	GetTokenAccountsByOwnerConfirmed(ctx context.Context, owner solana.PublicKey, opts model.GetTokenAccountsOptions) (*rpc.GetTokenAccountsResult, error)
+	GetFeeForMessage(ctx context.Context, message solana.Message) (*rpc.GetFeeForMessageResult, error)
 }

@@ -40,22 +40,24 @@ func (_m *MockClientAPI) EXPECT() *MockClientAPI_Expecter {
 }
 
 // CreateSwapTransaction provides a mock function for the type MockClientAPI
-func (_mock *MockClientAPI) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solana.PublicKey, feeAccount string) (string, error) {
+func (_mock *MockClientAPI) CreateSwapTransaction(ctx context.Context, quoteResp []byte, userPublicKey solana.PublicKey, feeAccount string) (*jupiter.SwapResponse, error) {
 	ret := _mock.Called(ctx, quoteResp, userPublicKey, feeAccount)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateSwapTransaction")
 	}
 
-	var r0 string
+	var r0 *jupiter.SwapResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte, solana.PublicKey, string) (string, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte, solana.PublicKey, string) (*jupiter.SwapResponse, error)); ok {
 		return returnFunc(ctx, quoteResp, userPublicKey, feeAccount)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte, solana.PublicKey, string) string); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte, solana.PublicKey, string) *jupiter.SwapResponse); ok {
 		r0 = returnFunc(ctx, quoteResp, userPublicKey, feeAccount)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*jupiter.SwapResponse)
+		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, []byte, solana.PublicKey, string) error); ok {
 		r1 = returnFunc(ctx, quoteResp, userPublicKey, feeAccount)
@@ -107,12 +109,12 @@ func (_c *MockClientAPI_CreateSwapTransaction_Call) Run(run func(ctx context.Con
 	return _c
 }
 
-func (_c *MockClientAPI_CreateSwapTransaction_Call) Return(s string, err error) *MockClientAPI_CreateSwapTransaction_Call {
-	_c.Call.Return(s, err)
+func (_c *MockClientAPI_CreateSwapTransaction_Call) Return(swapResponse *jupiter.SwapResponse, err error) *MockClientAPI_CreateSwapTransaction_Call {
+	_c.Call.Return(swapResponse, err)
 	return _c
 }
 
-func (_c *MockClientAPI_CreateSwapTransaction_Call) RunAndReturn(run func(ctx context.Context, quoteResp []byte, userPublicKey solana.PublicKey, feeAccount string) (string, error)) *MockClientAPI_CreateSwapTransaction_Call {
+func (_c *MockClientAPI_CreateSwapTransaction_Call) RunAndReturn(run func(ctx context.Context, quoteResp []byte, userPublicKey solana.PublicKey, feeAccount string) (*jupiter.SwapResponse, error)) *MockClientAPI_CreateSwapTransaction_Call {
 	_c.Call.Return(run)
 	return _c
 }
