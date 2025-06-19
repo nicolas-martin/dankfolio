@@ -221,7 +221,7 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 	if err == nil {
 		slog.DebugContext(ctx, "Coin found in 'coins' table, updating price", slog.String("address", address))
 		// Just fetch and update the latest price for cached coins
-		return s.updateCoinPrice(ctx, coin)
+		return s.updateCoin(ctx, coin)
 	}
 	if errors.Is(err, db.ErrNotFound) {
 		slog.InfoContext(ctx, "Coin not found in 'coins' table, checking 'raw_coins' table.", slog.String("address", address))
@@ -241,7 +241,7 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 }
 
 func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCoin) (*model.Coin, error) {
-	slog.InfoContext(ctx, "Starting enrichment from raw_coin data", slog.String("mintAddress", rawCoin.Address), slog.String("rawCoinSymbol", rawCoin.Symbol))
+	slog.InfoContext(ctx, "Starting enrichment from raw_coin data", slog.String("address", rawCoin.Address), slog.String("rawCoinSymbol", rawCoin.Symbol))
 	initialData := &birdeye.TokenDetails{
 		Address:  rawCoin.Address,
 		Name:     rawCoin.Name,
@@ -251,48 +251,48 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 	}
 	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
 	if err != nil {
-		slog.ErrorContext(ctx, "Enrichment from raw_coin failed", slog.String("mintAddress", rawCoin.Address), slog.Any("error", err))
+		slog.ErrorContext(ctx, "Enrichment from raw_coin failed", slog.String("address", rawCoin.Address), slog.Any("error", err))
 		return nil, fmt.Errorf("failed to enrich raw_coin %s: %w", rawCoin.Address, err)
 	}
 	existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
 	if getErr == nil && existingCoin != nil {
 		enrichedCoin.ID = existingCoin.ID
 		if dbErr := s.store.Coins().Update(ctx, enrichedCoin); dbErr != nil {
-			slog.WarnContext(ctx, "Failed to update enriched coin (from raw) in store", slog.String("mintAddress", enrichedCoin.Address), slog.Any("error", dbErr))
+			slog.WarnContext(ctx, "Failed to update enriched coin (from raw) in store", slog.String("address", enrichedCoin.Address), slog.Any("error", dbErr))
 		} else {
-			slog.InfoContext(ctx, "Successfully updated coin in 'coins' table from raw_coin enrichment", slog.String("mintAddress", enrichedCoin.Address))
+			slog.InfoContext(ctx, "Successfully updated coin in 'coins' table from raw_coin enrichment", slog.String("address", enrichedCoin.Address))
 		}
 	} else if errors.Is(getErr, db.ErrNotFound) {
 		if dbErr := s.store.Coins().Create(ctx, enrichedCoin); dbErr != nil {
-			slog.WarnContext(ctx, "Failed to create enriched coin (from raw) in store", slog.String("mintAddress", enrichedCoin.Address), slog.Any("error", dbErr))
+			slog.WarnContext(ctx, "Failed to create enriched coin (from raw) in store", slog.String("address", enrichedCoin.Address), slog.Any("error", dbErr))
 		} else {
-			slog.InfoContext(ctx, "Successfully created coin in 'coins' table from raw_coin enrichment", slog.String("mintAddress", enrichedCoin.Address))
+			slog.InfoContext(ctx, "Successfully created coin in 'coins' table from raw_coin enrichment", slog.String("address", enrichedCoin.Address))
 		}
 	} else if getErr != nil {
-		slog.ErrorContext(ctx, "Error checking for existing coin before saving enriched (from raw) coin", slog.String("mintAddress", enrichedCoin.Address), slog.Any("error", getErr))
+		slog.ErrorContext(ctx, "Error checking for existing coin before saving enriched (from raw) coin", slog.String("address", enrichedCoin.Address), slog.Any("error", getErr))
 		return nil, fmt.Errorf("error checking existing coin %s before save: %w", enrichedCoin.Address, getErr)
 	}
 	rawCoinPKIDStr := strconv.FormatUint(rawCoin.ID, 10)
-	slog.DebugContext(ctx, "Attempting to delete processed coin from 'raw_coins' table", slog.String("mintAddress", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr))
+	slog.DebugContext(ctx, "Attempting to delete processed coin from 'raw_coins' table", slog.String("address", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr))
 	if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStr); delErr != nil {
-		slog.WarnContext(ctx, "Failed to delete coin from 'raw_coins' table after successful enrichment", slog.String("mintAddress", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr), slog.Any("error", delErr))
+		slog.WarnContext(ctx, "Failed to delete coin from 'raw_coins' table after successful enrichment", slog.String("address", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr), slog.Any("error", delErr))
 	} else {
-		slog.InfoContext(ctx, "Successfully deleted coin from 'raw_coins' table after enrichment", slog.String("mintAddress", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr))
+		slog.InfoContext(ctx, "Successfully deleted coin from 'raw_coins' table after enrichment", slog.String("address", rawCoin.Address), slog.String("rawCoinID", rawCoinPKIDStr))
 	}
-	slog.InfoContext(ctx, "Successfully enriched and saved coin from raw_coin data", slog.String("mintAddress", enrichedCoin.Address))
+	slog.InfoContext(ctx, "Successfully enriched and saved coin from raw_coin data", slog.String("address", enrichedCoin.Address))
 	return enrichedCoin, nil
 }
 
-func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*model.Coin, error) {
-	slog.DebugContext(ctx, "Starting dynamic coin enrichment", slog.String("mintAddress", mintAddress))
+func (s *Service) fetchAndCacheCoin(ctx context.Context, address string) (*model.Coin, error) {
+	slog.DebugContext(ctx, "Starting dynamic coin enrichment", slog.String("address", address))
 
 	// First try to fetch market data from Birdeye
 	var initialData *birdeye.TokenDetails
-	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, mintAddress)
+	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, address)
 	if err != nil {
-		slog.WarnContext(ctx, "Failed to fetch token overview from Birdeye, using minimal data", slog.String("mintAddress", mintAddress), slog.Any("error", err))
+		slog.WarnContext(ctx, "Failed to fetch token overview from Birdeye, using minimal data", slog.String("address", address), slog.Any("error", err))
 		// Fallback to minimal data if Birdeye fails
-		initialData = &birdeye.TokenDetails{Address: mintAddress}
+		initialData = &birdeye.TokenDetails{Address: address}
 	} else if tokenOverview.Success && tokenOverview.Data.Address != "" {
 		// Convert TokenOverviewData to TokenDetails
 		initialData = &birdeye.TokenDetails{
@@ -311,66 +311,42 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, mintAddress string) (*m
 			Price24hChangePercent:  tokenOverview.Data.Price24hChangePercent,
 			Tags:                   tokenOverview.Data.Tags,
 		}
-		slog.DebugContext(ctx, "Successfully fetched token overview from Birdeye", slog.String("mintAddress", mintAddress), slog.String("name", initialData.Name), slog.String("symbol", initialData.Symbol), slog.Float64("price", initialData.Price), slog.Float64("marketcap", initialData.MarketCap))
+		slog.DebugContext(ctx, "Successfully fetched token overview from Birdeye", slog.String("address", address), slog.String("name", initialData.Name), slog.String("symbol", initialData.Symbol), slog.Float64("price", initialData.Price), slog.Float64("marketcap", initialData.MarketCap))
 	} else {
-		slog.WarnContext(ctx, "Birdeye token overview returned unsuccessful or empty data, using minimal data", slog.String("mintAddress", mintAddress))
+		slog.WarnContext(ctx, "Birdeye token overview returned unsuccessful or empty data, using minimal data", slog.String("address", address))
 		// Fallback to minimal data if response is unsuccessful
-		initialData = &birdeye.TokenDetails{Address: mintAddress}
+		initialData = &birdeye.TokenDetails{Address: address}
 	}
 
 	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
 	if err != nil {
-		slog.ErrorContext(ctx, "Dynamic coin enrichment failed", slog.String("mintAddress", mintAddress), slog.Any("error", err))
-		return nil, fmt.Errorf("failed to enrich coin %s: %w", mintAddress, err)
+		slog.ErrorContext(ctx, "Dynamic coin enrichment failed", slog.String("address", address), slog.Any("error", err))
+		return nil, fmt.Errorf("failed to enrich coin %s: %w", address, err)
 	}
 	existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
 	if getErr == nil && existingCoin != nil {
 		enrichedCoin.ID = existingCoin.ID
 		if dbErr := s.store.Coins().Update(ctx, enrichedCoin); dbErr != nil {
-			slog.WarnContext(ctx, "Failed to update enriched coin in store", slog.String("mintAddress", enrichedCoin.Address), slog.Any("error", dbErr))
+			slog.WarnContext(ctx, "Failed to update enriched coin in store", slog.String("address", enrichedCoin.Address), slog.Any("error", dbErr))
 		}
 	} else {
 		if dbErr := s.store.Coins().Create(ctx, enrichedCoin); dbErr != nil {
-			slog.WarnContext(ctx, "Failed to create enriched coin in store", slog.String("mintAddress", enrichedCoin.Address), slog.Any("error", dbErr))
+			slog.WarnContext(ctx, "Failed to create enriched coin in store", slog.String("address", enrichedCoin.Address), slog.Any("error", dbErr))
 		}
 	}
-	slog.DebugContext(ctx, "Dynamic coin enrichment and storage attempt complete", slog.String("mintAddress", mintAddress))
+	slog.DebugContext(ctx, "Dynamic coin enrichment and storage attempt complete", slog.String("address", address))
 	return enrichedCoin, nil
 }
 
-// updateCoinPrice updates the price and market stats of a cached coin with fresh data from Birdeye
-func (s *Service) updateCoinPrice(ctx context.Context, coin *model.Coin) (*model.Coin, error) {
-	slog.DebugContext(ctx, "Updating price and market stats for cached coin", slog.String("mintAddress", coin.Address), slog.Float64("currentPrice", coin.Price))
+// updateCoin updates the price and market stats of a cached coin with fresh data from Birdeye
+func (s *Service) updateCoin(ctx context.Context, coin *model.Coin) (*model.Coin, error) {
+	slog.DebugContext(ctx, "Updating price and market stats for cached coin", slog.String("address", coin.Address), slog.Float64("currentPrice", coin.Price))
 
 	// Fetch current price and market data from Birdeye token overview
 	tokenOverview, err := s.birdeyeClient.GetTokenOverview(ctx, coin.Address)
 	if err != nil {
-		slog.WarnContext(ctx, "Failed to fetch token overview from Birdeye, falling back to Jupiter price", slog.String("mintAddress", coin.Address), slog.Any("error", err))
-
-		// Fallback to Jupiter for price only if Birdeye fails
-		prices, jupiterErr := s.jupiterClient.GetCoinPrices(ctx, []string{coin.Address})
-		if jupiterErr != nil {
-			slog.WarnContext(ctx, "Both Birdeye and Jupiter failed, returning cached coin", slog.String("mintAddress", coin.Address), slog.Any("birdeyeError", err), slog.Any("jupiterError", jupiterErr))
-			return coin, nil // Return cached coin if both fail
-		}
-
-		if price, exists := prices[coin.Address]; exists && price > 0 {
-			coin.Price = price
-			coin.LastUpdated = time.Now().Format(time.RFC3339)
-			slog.DebugContext(ctx, "Successfully updated price from Jupiter (fallback)", slog.String("mintAddress", coin.Address), slog.Float64("newPrice", price))
-		}
-
-		// Update in database and return
-		if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
-			slog.WarnContext(ctx, "Failed to update coin with new price in database", slog.String("mintAddress", coin.Address), slog.Any("error", updateErr))
-		}
-		return coin, nil
-	}
-
-	// Check if Birdeye response is successful and has data
-	if !tokenOverview.Success || tokenOverview.Data.Address == "" {
-		slog.WarnContext(ctx, "Birdeye token overview returned unsuccessful or empty data, keeping cached data", slog.String("mintAddress", coin.Address))
-		return coin, nil
+		slog.WarnContext(ctx, "Failed to fetch token overview from Birdeye", slog.String("address", coin.Address), slog.Any("error", err))
+		return nil, err
 	}
 
 	// Update coin with fresh data from Birdeye token overview
@@ -391,12 +367,14 @@ func (s *Service) updateCoinPrice(ctx context.Context, coin *model.Coin) (*model
 	}
 
 	// Update tags if available and we don't have any
+	// TODO: We might want to keep our OWN tags since we use them
+	// for filetering ie: trending, new, top-gainer, etc.
 	if len(data.Tags) > 0 && len(coin.Tags) == 0 {
 		coin.Tags = data.Tags
 	}
 
 	slog.DebugContext(ctx, "Successfully updated coin with fresh data from Birdeye token overview",
-		slog.String("mintAddress", coin.Address),
+		slog.String("address", coin.Address),
 		slog.Float64("newPrice", coin.Price),
 		slog.Float64("marketCap", coin.Marketcap),
 		slog.Float64("volume24h", coin.Volume24hUSD),
@@ -404,10 +382,10 @@ func (s *Service) updateCoinPrice(ctx context.Context, coin *model.Coin) (*model
 
 	// Update the coin in the database with the new data
 	if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
-		slog.WarnContext(ctx, "Failed to update coin with fresh data in database", slog.String("mintAddress", coin.Address), slog.Any("error", updateErr))
+		slog.WarnContext(ctx, "Failed to update coin with fresh data in database", slog.String("address", coin.Address), slog.Any("error", updateErr))
 		// Continue anyway, return the coin with updated data even if DB update fails
 	} else {
-		slog.DebugContext(ctx, "Successfully updated coin with fresh data in database", slog.String("mintAddress", coin.Address))
+		slog.DebugContext(ctx, "Successfully updated coin with fresh data in database", slog.String("address", coin.Address))
 	}
 
 	return coin, nil
@@ -467,16 +445,16 @@ func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
 				if getErr == nil && existingCoin != nil {
 					currentCoin.ID = existingCoin.ID
 					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
-						slog.WarnContext(ctx, "Failed to update trending coin", slog.String("mintAddress", currentCoin.Address), slog.Any("error", errUpdate))
+						slog.WarnContext(ctx, "Failed to update trending coin", slog.String("address", currentCoin.Address), slog.Any("error", errUpdate))
 						storeErrors = append(storeErrors, errUpdate.Error())
 					}
 				} else if errors.Is(getErr, db.ErrNotFound) {
 					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
-						slog.WarnContext(ctx, "Failed to create trending coin", slog.String("mintAddress", currentCoin.Address), slog.Any("error", errCreate))
+						slog.WarnContext(ctx, "Failed to create trending coin", slog.String("address", currentCoin.Address), slog.Any("error", errCreate))
 						storeErrors = append(storeErrors, errCreate.Error())
 					}
 				} else if getErr != nil {
-					slog.WarnContext(ctx, "Error checking coin before upsert during trending refresh", slog.String("mintAddress", currentCoin.Address), slog.Any("error", getErr))
+					slog.WarnContext(ctx, "Error checking coin before upsert during trending refresh", slog.String("address", currentCoin.Address), slog.Any("error", getErr))
 					storeErrors = append(storeErrors, getErr.Error())
 				}
 			}
@@ -561,16 +539,16 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 				if getErr == nil && existingCoin != nil {
 					currentCoin.ID = existingCoin.ID
 					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
-						slog.WarnContext(ctx, "Failed to update top gainer coin", slog.String("mintAddress", currentCoin.Address), slog.Any("error", errUpdate))
+						slog.WarnContext(ctx, "Failed to update top gainer coin", slog.String("address", currentCoin.Address), slog.Any("error", errUpdate))
 						storeErrors = append(storeErrors, errUpdate.Error())
 					}
 				} else if errors.Is(getErr, db.ErrNotFound) {
 					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
-						slog.WarnContext(ctx, "Failed to create top gainer coin", slog.String("mintAddress", currentCoin.Address), slog.Any("error", errCreate))
+						slog.WarnContext(ctx, "Failed to create top gainer coin", slog.String("address", currentCoin.Address), slog.Any("error", errCreate))
 						storeErrors = append(storeErrors, errCreate.Error())
 					}
 				} else if getErr != nil {
-					slog.WarnContext(ctx, "Error checking coin before upsert during top gainers refresh", slog.String("mintAddress", currentCoin.Address), slog.Any("error", getErr))
+					slog.WarnContext(ctx, "Error checking coin before upsert during top gainers refresh", slog.String("address", currentCoin.Address), slog.Any("error", getErr))
 					storeErrors = append(storeErrors, getErr.Error())
 				}
 			}
@@ -710,16 +688,16 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 				if getErr == nil && existingCoin != nil {
 					currentCoin.ID = existingCoin.ID
 					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
-						slog.WarnContext(ctx, "Failed to update new coin", slog.String("mintAddress", currentCoin.Address), slog.Any("error", errUpdate))
+						slog.WarnContext(ctx, "Failed to update new coin", slog.String("address", currentCoin.Address), slog.Any("error", errUpdate))
 						storeErrors = append(storeErrors, errUpdate.Error())
 					}
 				} else if errors.Is(getErr, db.ErrNotFound) {
 					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
-						slog.WarnContext(ctx, "Failed to create new coin", slog.String("mintAddress", currentCoin.Address), slog.Any("error", errCreate))
+						slog.WarnContext(ctx, "Failed to create new coin", slog.String("address", currentCoin.Address), slog.Any("error", errCreate))
 						storeErrors = append(storeErrors, errCreate.Error())
 					}
 				} else if getErr != nil {
-					slog.WarnContext(ctx, "Error checking coin before upsert during new coins refresh", slog.String("mintAddress", currentCoin.Address), slog.Any("error", getErr))
+					slog.WarnContext(ctx, "Error checking coin before upsert during new coins refresh", slog.String("address", currentCoin.Address), slog.Any("error", getErr))
 					storeErrors = append(storeErrors, getErr.Error())
 				}
 			}

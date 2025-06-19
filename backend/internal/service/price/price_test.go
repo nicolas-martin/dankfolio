@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
+	cacheMocks "github.com/nicolas-martin/dankfolio/backend/internal/cache/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye"
 	birdeye_mocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/birdeye/mocks"
 	jupiter_mocks "github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter/mocks"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
-	pricemocks "github.com/nicolas-martin/dankfolio/backend/internal/service/price/mocks"
 )
 
 // NOTE: The original tests (TestRoundDateDown, TestTimeRangeCalculationWithRealConfigs, TestMinimumTimeSpanLogic)
@@ -45,7 +45,8 @@ func TestService_GetPriceHistory(t *testing.T) {
 	}
 
 	t.Run("cache hit", func(t *testing.T) {
-		mockCache := new(pricemocks.MockPriceHistoryCache)
+		mockCache := cacheMocks.NewMockGenericCache[*birdeye.PriceHistory](t)
+
 		mockBirdeyeClient := new(birdeye_mocks.MockClientAPI)
 
 		mockCache.On("Get", cacheKey).Return(expectedHistory, true).Once()
@@ -61,7 +62,7 @@ func TestService_GetPriceHistory(t *testing.T) {
 	})
 
 	t.Run("cache miss and successful fetch", func(t *testing.T) {
-		mockCache := new(pricemocks.MockPriceHistoryCache)
+		mockCache := cacheMocks.NewMockGenericCache[*birdeye.PriceHistory](t)
 		mockBirdeyeClient := new(birdeye_mocks.MockClientAPI)
 
 		mockCache.On("Get", cacheKey).Return(nil, false).Once()
@@ -85,7 +86,7 @@ func TestService_GetPriceHistory(t *testing.T) {
 	})
 
 	t.Run("birdeye client error", func(t *testing.T) {
-		mockCache := new(pricemocks.MockPriceHistoryCache)
+		mockCache := cacheMocks.NewMockGenericCache[*birdeye.PriceHistory](t)
 		mockBirdeyeClient := new(birdeye_mocks.MockClientAPI)
 		expectedClientError := fmt.Errorf("birdeye client error")
 
@@ -104,7 +105,7 @@ func TestService_GetPriceHistory(t *testing.T) {
 	})
 
 	t.Run("debug mode for GetPriceHistory", func(t *testing.T) { // Renamed t.Run for clarity
-		mockCache := new(pricemocks.MockPriceHistoryCache)
+		mockCache := cacheMocks.NewMockGenericCache[*birdeye.PriceHistory](t)
 		mockBirdeyeClient := new(birdeye_mocks.MockClientAPI)
 
 		debugCtx := context.WithValue(ctx, model.DebugModeKey, true)
@@ -298,7 +299,7 @@ func TestService_GetPriceHistory_TimeRounding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mockCache := new(pricemocks.MockPriceHistoryCache)
+			mockCache := cacheMocks.NewMockGenericCache[*birdeye.PriceHistory](t)
 			mockBirdeyeClient := new(birdeye_mocks.MockClientAPI)
 
 			// Use HistoryType from the config for the cache key
