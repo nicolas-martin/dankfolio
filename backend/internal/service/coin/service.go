@@ -366,6 +366,11 @@ func (s *Service) updateCoin(ctx context.Context, coin *model.Coin) (*model.Coin
 		coin.LogoURI = data.LogoURI
 	}
 
+	// Ensure ResolvedIconUrl is populated from LogoURI if empty
+	if coin.ResolvedIconUrl == "" && coin.LogoURI != "" {
+		coin.ResolvedIconUrl = coin.LogoURI
+	}
+
 	// Update tags if available and we don't have any
 	// TODO: We might want to keep our OWN tags since we use them
 	// for filetering ie: trending, new, top-gainer, etc.

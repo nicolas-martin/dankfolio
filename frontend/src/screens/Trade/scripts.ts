@@ -9,8 +9,45 @@ import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
 import { REFRESH_INTERVALS } from '@/utils/constants';
 import { RefObject } from 'react';
 
-export const DEFAULT_AMOUNT = "0.0001";
 export const QUOTE_DEBOUNCE_MS = 1000;
+
+// Validate SOL balance for transaction fees after quote is received
+export const validateSolBalanceForQuote = (
+	solPortfolioToken: { amount: number } | undefined,
+	estimatedTotalFee: string,
+	showToast: (params: ToastProps) => void,
+	setHasSufficientSolBalance: (sufficient: boolean) => void
+): boolean => {
+	const solBalance = solPortfolioToken?.amount ?? 0;
+	const requiredSolFee = parseFloat(estimatedTotalFee) || 0;
+	
+	// Only validate SOL fees if we have a fee estimate or if SOL balance is critically low
+	if (requiredSolFee > 0) {
+		// Use exact fee from quote
+		if (solBalance < requiredSolFee) {
+			showToast({
+				type: 'error', // Same error behavior as insufficient balance
+				message: `Insufficient SOL for transaction fees. You need ${requiredSolFee.toFixed(6)} SOL but only have ${solBalance.toFixed(6)} SOL.`
+			});
+			setHasSufficientSolBalance(false);
+			return false;
+		}
+	} else {
+		// Fallback check for minimum SOL balance when no quote available
+		const minimumSolRequired = 0.002; // Conservative estimate for any transaction
+		if (solBalance < minimumSolRequired) {
+			showToast({
+				type: 'error', // Same error behavior as insufficient balance
+				message: `Insufficient SOL for transaction fees. You need at least ${minimumSolRequired} SOL but only have ${solBalance.toFixed(6)} SOL.`
+			});
+			setHasSufficientSolBalance(false);
+			return false;
+		}
+	}
+	
+	setHasSufficientSolBalance(true);
+	return true; // SOL balance is sufficient
+};
 export const PRICE_REFRESH_INTERVAL_MS = REFRESH_INTERVALS.TRADE_PRICES;
 
 // getCoinPrices and fetchTradeQuote have been removed from this file.
@@ -278,6 +315,8 @@ export const handleTradeSubmit = (
 	wallet: Wallet | null,
 	fromCoin: Coin | null,
 	fromPortfolioToken: { amount: number } | undefined,
+	solPortfolioToken: { amount: number } | undefined,
+	estimatedTotalFee: string, // Exact fee from quote API
 	// pollingIntervalRef: RefObject<ReturnType<typeof setTimeout> | null>, // No longer needed here
 	setIsConfirmationVisible: (visible: boolean) => void,
 	showToast: (params: ToastProps) => void
@@ -299,12 +338,39 @@ export const handleTradeSubmit = (
 	const numericFromAmount = parseFloat(fromAmount);
 	const availableBalance = fromPortfolioToken?.amount ?? 0;
 
+	// Check if user has enough of the FROM token
 	if (numericFromAmount > availableBalance) {
 		showToast({
 			type: 'error',
 			message: `Insufficient ${fromCoin?.symbol ?? 'funds'}. You only have ${availableBalance.toFixed(6)} ${fromCoin?.symbol ?? ''}.`
 		});
 		return false;
+	}
+
+		// Check if user has enough SOL for transaction fees
+	const solBalance = solPortfolioToken?.amount ?? 0;
+	const requiredSolFee = parseFloat(estimatedTotalFee) || 0;
+	
+	// Only validate SOL fees if we have a fee estimate or if SOL balance is critically low
+	if (requiredSolFee > 0) {
+		// Use exact fee from quote
+		if (solBalance < requiredSolFee) {
+			showToast({
+				type: 'error',
+				message: `Insufficient SOL for transaction fees. You need ${requiredSolFee.toFixed(6)} SOL but only have ${solBalance.toFixed(6)} SOL.`
+			});
+			return false;
+		}
+	} else {
+		// Fallback check for minimum SOL balance when no quote available
+		const minimumSolRequired = 0.002; // Conservative estimate for any transaction
+		if (solBalance < minimumSolRequired) {
+			showToast({
+				type: 'error',
+				message: `Insufficient SOL for transaction fees. You need at least ${minimumSolRequired} SOL but only have ${solBalance.toFixed(6)} SOL.`
+			});
+			return false;
+		}
 	}
 
 	logger.info('[Trade] Validation successful, proceeding to confirmation modal.');

@@ -18,6 +18,7 @@ import {
 	handleSwapCoins as swapCoinsUtil,
 	handleSelectToken,
 	handleTradeSubmit,
+	validateSolBalanceForQuote,
 } from './scripts';
 import { SOLANA_ADDRESS } from '@/utils/constants';
 import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
@@ -36,7 +37,7 @@ const Trade: React.FC = () => {
 	const route = useRoute<TradeScreenRouteProp>();
 	const [fromCoin, setFromCoin] = useState<Coin | null>(route.params.initialFromCoin || null);
 	const [toCoin, setToCoin] = useState<Coin | null>(route.params.initialToCoin || null)
-	const { tokens, wallet } = usePortfolioStore();
+	const { tokens, wallet, fetchPortfolioBalance } = usePortfolioStore();
 	const { getCoinByID } = useCoinStore();
 	const [fromAmount, setFromAmount] = useState<string>('');
 	const [toAmount, setToAmount] = useState<string>('');
@@ -54,6 +55,7 @@ const Trade: React.FC = () => {
 	const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
 	const [pollingError, setPollingError] = useState<string | null>(null);
 	const [isNavigating, setIsNavigating] = useState(false); // This one IS used by TradeStatusModal
+	const [hasSufficientSolBalance, setHasSufficientSolBalance] = useState<boolean>(true); // Track SOL balance validation
 
 	const {
 		txHash: polledTxHash,
@@ -95,12 +97,32 @@ const Trade: React.FC = () => {
 		}
 	}, [fromCoin, getCoinByID, toCoin?.symbol]);
 
+	// Fetch portfolio balance if wallet exists and tokens are empty
+	useEffect(() => {
+		if (wallet?.address && tokens.length === 0) {
+			logger.log('[Trade] Portfolio tokens empty, fetching portfolio balance...', { 
+				walletAddress: wallet.address, 
+				tokensLength: tokens.length 
+			});
+			fetchPortfolioBalance(wallet.address).catch(error => {
+				logger.error('[Trade] Failed to fetch portfolio balance:', error);
+			});
+		} else {
+			logger.log('[Trade] Portfolio fetch not needed', { 
+				hasWallet: !!wallet?.address, 
+				tokensLength: tokens.length,
+				tokens: tokens.map(t => ({ symbol: t.coin.symbol, amount: t.amount }))
+			});
+		}
+	}, [wallet?.address, tokens.length, fetchPortfolioBalance]);
+
 	// Memoized portfolio tokens
 	const fromPortfolioToken = useMemo(() => tokens.find(token => token.coin.address === fromCoin?.address), [tokens, fromCoin]);
+	const solPortfolioToken = useMemo(() => tokens.find(token => token.coin.address === SOLANA_ADDRESS), [tokens]);
 
 	// Memoized objects to prevent JSX object creation
 	const toTextInputProps = useMemo(() => ({
-		placeholder: '0.0000'
+		placeholder: '0.00'
 	}), []);
 
 	useEffect(() => {
@@ -139,11 +161,15 @@ const Trade: React.FC = () => {
 					route: quoteData.route
 				});
 
+				// Validate SOL balance for transaction fees immediately after quote
+				validateSolBalanceForQuote(solPortfolioToken, quoteData.totalFee, showToast, setHasSufficientSolBalance);
+
 			} catch (error) {
 				showToast({ type: 'error', message: error instanceof Error ? error.message : 'Failed to fetch quote' });
 				// Reset relevant states on error
 				setTargetAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+				setHasSufficientSolBalance(true); // Reset SOL balance validation on error
 			} finally {
 				setIsQuoteLoading(false);
 			}
@@ -176,6 +202,7 @@ const Trade: React.FC = () => {
 				if (!amount || amount === '.' || amount.endsWith('.') || parseFloat(amount) <= 0) {
 					setToAmount('');
 					setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+					setHasSufficientSolBalance(true); // Reset SOL balance validation when clearing amounts
 					setIsQuoteLoading(false);
 					return;
 				}
@@ -185,6 +212,7 @@ const Trade: React.FC = () => {
 				setIsQuoteLoading(false);
 				setToAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+				setHasSufficientSolBalance(true); // Reset SOL balance validation when no coins selected
 			}
 		},
 		// Dependencies no longer include inputUnit, exchangeRate, setUsdAmount
@@ -198,6 +226,7 @@ const Trade: React.FC = () => {
 				if (!amount || amount === '.' || amount.endsWith('.')) {
 					setFromAmount('');
 					setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
+					setHasSufficientSolBalance(true); // Reset SOL balance validation when clearing amounts
 					setIsQuoteLoading(false);
 					return;
 				}
@@ -219,6 +248,8 @@ const Trade: React.FC = () => {
 			wallet,
 			fromCoin,
 			fromPortfolioToken,
+			solPortfolioToken,
+			tradeDetails.totalFee, // Pass exact fee from quote
 			// pollingIntervalRef,
 			setIsConfirmationVisible,
 			showToast
@@ -280,6 +311,7 @@ const Trade: React.FC = () => {
 	};
 
 	// All hooks must be at top level before any conditional returns
+	// TODO: Move this to the style file
 	const exchangeRateLabelTextStyle = useMemo(() => [
 		styles.detailLabel,
 		styles.exchangeRateLabelText
@@ -474,7 +506,7 @@ const Trade: React.FC = () => {
 				<Button
 					mode="contained"
 					onPress={handleTradeSubmitClick}
-					disabled={!fromAmount || !toAmount || isQuoteLoading}
+					disabled={!fromAmount || !toAmount || isQuoteLoading || !hasSufficientSolBalance}
 					loading={isQuoteLoading}
 					style={styles.tradeButton}
 					contentStyle={styles.tradeButtonContent}
