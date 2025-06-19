@@ -107,6 +107,18 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		return nil, fmt.Errorf("invalid to_coin_mint_address: %s", params.ToCoinMintAddress)
 	}
 
+	// Fetch coin models to get their PKIDs and decimals for conversion
+	fromCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.FromCoinMintAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fromCoin details for %s: %w", params.FromCoinMintAddress, err)
+	}
+	toCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.ToCoinMintAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get toCoin details for %s: %w", params.ToCoinMintAddress, err)
+	}
+
+	// Convert decimal amount to raw amount (lamports for SOL)
+	// Frontend sends decimal amounts like "0.000883387", but Jupiter expects raw amounts like "883387"
 	amountFloat, err := strconv.ParseFloat(params.Amount, 64)
 	if err != nil {
 		return nil, fmt.Errorf("invalid amount: %w", err)
@@ -114,6 +126,15 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	if amountFloat <= 0 {
 		return nil, fmt.Errorf("amount must be positive: %s", params.Amount)
 	}
+
+	// Convert to raw amount using token decimals
+	rawAmountFloat := amountFloat * math.Pow(10, float64(fromCoinModel.Decimals))
+	rawAmount := fmt.Sprintf("%.0f", rawAmountFloat) // Remove decimal places
+
+	slog.Debug("Amount conversion",
+		"decimal_amount", params.Amount,
+		"raw_amount", rawAmount,
+		"token_decimals", fromCoinModel.Decimals)
 
 	slippageBpsInt, err := strconv.Atoi(params.SlippageBps) // Atoi implies base 10
 	if err != nil {
@@ -128,18 +149,9 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	if err != nil {
 		return nil, fmt.Errorf("invalid from address: %w", err) // Should be caught by IsValidSolanaAddress, but good to keep for specific parsing error
 	}
-	// Fetch coin models to get their PKIDs
-	fromCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.FromCoinMintAddress)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get fromCoin details for %s: %w", params.FromCoinMintAddress, err)
-	}
-	toCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.ToCoinMintAddress)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get toCoin details for %s: %w", params.ToCoinMintAddress, err)
-	}
 
-	// 1. Use the TradeService's GetSwapQuote for all conversion and logic
-	tradeQuote, err := s.GetSwapQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, params.Amount, params.SlippageBps)
+	// 1. Use the TradeService's GetSwapQuote with converted raw amount
+	tradeQuote, err := s.GetSwapQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, rawAmount, params.SlippageBps)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trade quote: %w", err)
 	}
