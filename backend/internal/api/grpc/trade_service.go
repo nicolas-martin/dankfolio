@@ -61,7 +61,17 @@ func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Req
 		slippageBps = "50"
 	}
 
-	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps)
+	// Validate user_public_key if include_fee_breakdown is requested
+	if req.Msg.IncludeFeeBreakdown && (req.Msg.UserPublicKey == nil || *req.Msg.UserPublicKey == "") {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("user_public_key is required when include_fee_breakdown=true"))
+	}
+
+	var userPublicKey string
+	if req.Msg.UserPublicKey != nil {
+		userPublicKey = *req.Msg.UserPublicKey
+	}
+
+	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, req.Msg.IncludeFeeBreakdown, userPublicKey)
 	if err != nil {
 		slog.Error("Failed to fetch trade quote", "error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))

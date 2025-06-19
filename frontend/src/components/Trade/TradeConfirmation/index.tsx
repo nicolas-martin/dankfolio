@@ -9,6 +9,7 @@ import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
 import { formatPrice, formatAddress as utilFormatAddress } from '@/utils/numberFormat';
 import ModalActionButtons from 'components/Common/ModalActionButton';
+import TradeDetails from '@components/Trade/TradeDetails';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,
@@ -187,11 +188,17 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 					)}
 				</View>
 
-				{/* Network Fee */}
-				<View style={styles.feeContainer} testID="fee-section">
-					<Text style={styles.feeLabel} testID="fee-label">Network Fee</Text>
-					<Text style={styles.feeValue} testID="fee-value">{formatPrice(Number(fees.totalFee))}</Text>
-				</View>
+				{/* Fee Details */}
+				<TradeDetails
+					exchangeRate={fees.exchangeRate}
+					gasFee={fees.gasFee}
+					priceImpactPct={fees.priceImpactPct}
+					totalFee={fees.totalFee}
+					route={fees.route}
+					solFeeBreakdown={fees.solFeeBreakdown}
+					totalSolRequired={fees.totalSolRequired}
+					tradingFeeSol={fees.tradingFeeSol}
+				/>
 
 				{/* Action Buttons */}
 				<ModalActionButtons

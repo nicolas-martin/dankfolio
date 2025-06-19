@@ -1,96 +1,115 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, List, Icon } from 'react-native-paper';
 import { TradeDetailsProps } from './tradedetails_types';
 import { useStyles } from './tradedetails_styles';
-import { 
-	formatExchangeRate, 
-	formatPriceImpactPct, 
-	formatSolAmount, 
+import {
+	formatPriceImpactPct,
+	formatSolAmount,
 	formatTotalSolRequired,
 	hasSolFeeBreakdown,
 	isAccountCreationMajorCost
 } from './tradedetails_scripts';
 
 const TradeDetails: React.FC<TradeDetailsProps> = ({
-	exchangeRate,
 	totalFee,
 	priceImpactPct,
 	route,
 	solFeeBreakdown,
 	totalSolRequired,
-	tradingFeeSol,
 }) => {
 	const styles = useStyles();
+	const [expanded, setExpanded] = React.useState(false);
 
 	// Use the comprehensive SOL requirement if available, otherwise fall back to totalFee
 	const displayTotalFee = totalSolRequired || totalFee;
 	const showDetailedBreakdown = hasSolFeeBreakdown(solFeeBreakdown);
 	const accountCreationIsMajorCost = isAccountCreationMajorCost(solFeeBreakdown);
 
+	const handlePress = () => setExpanded(!expanded);
+
 	return (
 		<View style={styles.container}>
-			<Text variant="bodyMedium" style={styles.exchangeRate}>
-				{formatExchangeRate(exchangeRate)}
-			</Text>
 			<Text variant="bodySmall" style={styles.feeDetail}>
 				{formatPriceImpactPct(priceImpactPct)}
 			</Text>
-			
+
 			{/* Show detailed SOL fee breakdown if available */}
 			{showDetailedBreakdown && solFeeBreakdown ? (
-				<View style={styles.feeBreakdownContainer}>
-					<Text variant="bodyMedium" style={styles.totalFeeHeader}>
-						{formatTotalSolRequired(displayTotalFee)}
-					</Text>
-					
-					{/* Fee breakdown details */}
-					<View style={styles.feeBreakdownDetails}>
+				<List.Section style={styles.feeBreakdownContainer}>
+					<List.Accordion
+						title={formatTotalSolRequired(displayTotalFee)}
+						description="Tap to see fee breakdown"
+						titleStyle={styles.accordionTitle}
+						descriptionStyle={styles.accordionDescription}
+						style={styles.accordionContainer}
+						expanded={expanded}
+						onPress={handlePress}
+						right={({ isExpanded }) => (
+							<Icon 
+								source={isExpanded ? "chevron-up" : "chevron-down"} 
+								size={20}
+								color={styles.colors.onSurface}
+							/>
+						)}
+					>
+						{/* Fee breakdown details */}
 						{parseFloat(solFeeBreakdown.tradingFee) > 0 && (
-							<Text variant="bodySmall" style={styles.feeBreakdownItem}>
-								• Trading: {formatSolAmount(solFeeBreakdown.tradingFee)}
-							</Text>
+							<List.Item
+								title={`Trading: ${formatSolAmount(solFeeBreakdown.tradingFee)}`}
+								titleStyle={styles.feeBreakdownItem}
+								style={styles.listItemStyle}
+							/>
 						)}
-						
+
 						{parseFloat(solFeeBreakdown.transactionFee) > 0 && (
-							<Text variant="bodySmall" style={styles.feeBreakdownItem}>
-								• Transaction: {formatSolAmount(solFeeBreakdown.transactionFee)}
-							</Text>
+							<List.Item
+								title={`Transaction: ${formatSolAmount(solFeeBreakdown.transactionFee)}`}
+								titleStyle={styles.feeBreakdownItem}
+								style={styles.listItemStyle}
+							/>
 						)}
-						
+
 						{parseFloat(solFeeBreakdown.accountCreationFee) > 0 && (
-							<Text variant="bodySmall" style={[
-								styles.feeBreakdownItem,
-								accountCreationIsMajorCost && styles.majorCostItem
-							]}>
-								• Account creation: {formatSolAmount(solFeeBreakdown.accountCreationFee)}
-								{solFeeBreakdown.accountsToCreate > 0 && 
-									` (${solFeeBreakdown.accountsToCreate} account${solFeeBreakdown.accountsToCreate > 1 ? 's' : ''})`
-								}
-							</Text>
+							<List.Item
+								title={`Account creation: ${formatSolAmount(solFeeBreakdown.accountCreationFee)}${
+									solFeeBreakdown.accountsToCreate > 0 
+										? ` (${solFeeBreakdown.accountsToCreate} account${solFeeBreakdown.accountsToCreate > 1 ? 's' : ''})`
+										: ''
+								}`}
+								titleStyle={[
+									styles.feeBreakdownItem,
+									accountCreationIsMajorCost && styles.majorCostItem
+								]}
+								style={styles.listItemStyle}
+							/>
 						)}
-						
+
 						{parseFloat(solFeeBreakdown.priorityFee) > 0 && (
-							<Text variant="bodySmall" style={styles.feeBreakdownItem}>
-								• Priority: {formatSolAmount(solFeeBreakdown.priorityFee)}
-							</Text>
+							<List.Item
+								title={`Priority: ${formatSolAmount(solFeeBreakdown.priorityFee)}`}
+								titleStyle={styles.feeBreakdownItem}
+								style={styles.listItemStyle}
+							/>
 						)}
-					</View>
-					
-					{/* Helpful note for account creation costs */}
-					{accountCreationIsMajorCost && (
-						<Text variant="bodySmall" style={styles.helpText}>
-							💡 Most cost is for creating new token accounts (one-time setup)
-						</Text>
-					)}
-				</View>
+
+						{/* Helpful note for account creation costs */}
+						{accountCreationIsMajorCost && (
+							<List.Item
+								title="💡 Most cost is for creating new token accounts (one-time setup)"
+								titleStyle={styles.helpText}
+								style={styles.listItemStyle}
+							/>
+						)}
+					</List.Accordion>
+				</List.Section>
 			) : (
 				/* Fallback to simple fee display */
 				<Text variant="bodySmall" style={styles.feeDetail}>
 					Total Fee: {formatSolAmount(displayTotalFee)}
 				</Text>
 			)}
-			
+
 			{route && (
 				<Text variant="bodySmall" style={styles.feeDetail}>
 					Route: {route}

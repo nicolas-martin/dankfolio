@@ -1,4 +1,5 @@
 import { Coin } from '@/types';
+import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 
 interface TradeConfirmationProps {
 	isVisible: boolean;
@@ -8,12 +9,7 @@ interface TradeConfirmationProps {
 	toAmount: string;
 	fromToken: Coin;
 	toToken?: Coin;
-	fees: {
-		gasFee: string;
-		priceImpactPct: string;
-		totalFee: string;
-		route?: string;
-	};
+	fees: TradeDetailsProps;
 	isLoading?: boolean;
 	operationType?: 'swap' | 'send';
 	recipientAddress?: string;

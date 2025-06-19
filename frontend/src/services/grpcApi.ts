@@ -104,16 +104,18 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
-	getSwapQuote: async (fromCoin: string, toCoin: string, amount: string): Promise<grpcModel.SwapQuoteResponse> => {
+	getSwapQuote: async (fromCoin: string, toCoin: string, amount: string, includeFeeBreakdown: boolean = false, userPublicKey?: string): Promise<grpcModel.SwapQuoteResponse> => {
 		const serviceName = 'TradeService';
 		const methodName = 'getTradeQuote';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { fromCoin, toCoin, amount });
+			grpcUtils.logRequest(serviceName, methodName, { fromCoin, toCoin, amount, includeFeeBreakdown, userPublicKey });
 
 			const response = await tradeClient.getSwapQuote({
 				fromCoinId: fromCoin,
 				toCoinId: toCoin,
-				amount: amount
+				amount: amount,
+				includeFeeBreakdown: includeFeeBreakdown,
+				userPublicKey: userPublicKey
 			}, { headers: grpcUtils.getRequestHeaders() });
 
 			grpcUtils.logResponse(serviceName, methodName, response);
@@ -612,11 +614,11 @@ export const grpcApi: grpcModel.API = {
 	},
 
 	// New method to orchestrate fetching full swap quote details
-	getFullSwapQuoteOrchestrated: async (amount: string, fromCoin: grpcModel.Coin, toCoin: grpcModel.Coin): Promise<grpcModel.FullSwapQuoteDetails> => {
+	getFullSwapQuoteOrchestrated: async (amount: string, fromCoin: grpcModel.Coin, toCoin: grpcModel.Coin, includeFeeBreakdown: boolean = false, userPublicKey?: string): Promise<grpcModel.FullSwapQuoteDetails> => {
 		const serviceName = 'TradeService';
 		const methodName = 'getFullSwapQuoteOrchestrated';
 		try {
-			grpcUtils.logRequest(serviceName, methodName, { amount, fromCoinSymbol: fromCoin.symbol, toCoinSymbol: toCoin.symbol });
+			grpcUtils.logRequest(serviceName, methodName, { amount, fromCoinSymbol: fromCoin.symbol, toCoinSymbol: toCoin.symbol, includeFeeBreakdown, userPublicKey });
 
 			if (!fromCoin || !toCoin || !amount || parseFloat(amount) <= 0) {
 				throw new Error("Invalid parameters for getFullSwapQuoteOrchestrated");
@@ -636,7 +638,7 @@ export const grpcApi: grpcModel.API = {
 			// 2. Get swap quote using updated prices
 			const rawAmount = commonToRawAmount(amount, updatedFromCoin.decimals); // Use imported toRawAmount
 
-			const quoteResponse = await grpcApi.getSwapQuote(updatedFromCoin.address, updatedToCoin.address, rawAmount);
+			const quoteResponse = await grpcApi.getSwapQuote(updatedFromCoin.address, updatedToCoin.address, rawAmount, includeFeeBreakdown, userPublicKey);
 
 			// 3. Format and return the combined result
 			const fullQuote: grpcModel.FullSwapQuoteDetails = {

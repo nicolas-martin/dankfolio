@@ -151,7 +151,8 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	}
 
 	// 1. Use the TradeService's GetSwapQuote with converted raw amount
-	tradeQuote, err := s.GetSwapQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, rawAmount, params.SlippageBps)
+	// For PrepareSwap, we don't need fee breakdown since we'll calculate it from the actual swap transaction
+	tradeQuote, err := s.GetSwapQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, rawAmount, params.SlippageBps, false, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trade quote: %w", err)
 	}
@@ -361,7 +362,7 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 }
 
 // GetSwapQuote gets a quote for a potential trade
-func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinMintAddress string, inputAmount string, slippageBsp string) (*TradeQuote, error) {
+func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinMintAddress string, inputAmount string, slippageBsp string, includeFeeBreakdown bool, userPublicKey string) (*TradeQuote, error) {
 	if !util.IsValidSolanaAddress(fromCoinMintAddress) {
 		return nil, fmt.Errorf("invalid from_coin_mint_address: %s", fromCoinMintAddress)
 	}
@@ -482,8 +483,64 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 
 	truncatedPriceImpact := truncateDecimals(quote.PriceImpactPct, 6)
 
+	// Calculate detailed SOL fee breakdown only if requested
+	var feeBreakdown *SolFeeBreakdown
+	var totalSolRequired, tradingFeeSol string
+
+	if includeFeeBreakdown {
+		if userPublicKey == "" {
+			return nil, fmt.Errorf("user_public_key is required when includeFeeBreakdown=true")
+		}
+
+		// Validate user public key
+		if !util.IsValidSolanaAddress(userPublicKey) {
+			return nil, fmt.Errorf("invalid user_public_key: %s", userPublicKey)
+		}
+
+		// Parse user public key for swap transaction creation
+		fromPubKey, err := solanago.PublicKeyFromBase58(userPublicKey)
+		if err != nil {
+			return nil, fmt.Errorf("invalid user public key: %w", err)
+		}
+
+		// Create swap transaction to get accurate fee breakdown
+		swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, quote.RawPayload, fromPubKey, s.platformFeeAccountAddress)
+		if err != nil {
+			slog.Warn("Failed to create swap transaction for fee breakdown", "error", err)
+			// Fall back to quote-only calculation
+			feeBreakdown, totalSolRequired, tradingFeeSol, err = s.calculateSolFeeBreakdownFromQuote(quote)
+			if err != nil {
+				slog.Warn("Failed to calculate SOL fee breakdown from quote", "error", err)
+				feeBreakdown = nil
+				totalSolRequired = "0"
+				tradingFeeSol = "0"
+			}
+		} else {
+			// Calculate accurate fee breakdown using both quote and swap response
+			feeBreakdown, totalSolRequired, tradingFeeSol, err = s.calculateSolFeeBreakdown(&TradeQuote{Raw: quote.RawPayload}, swapResponse)
+			if err != nil {
+				slog.Warn("Failed to calculate SOL fee breakdown", "error", err)
+				feeBreakdown = nil
+				totalSolRequired = "0"
+				tradingFeeSol = "0"
+			}
+		}
+	} else {
+		// No fee breakdown requested - use default values
+		feeBreakdown = nil
+		totalSolRequired = "0"
+		tradingFeeSol = "0"
+	}
+
 	// Log detailed quote information
-	slog.Info("Jupiter Quote Details", "input", fmt.Sprintf("%v %s", initialAmount, fromCoin.Symbol), "output", fmt.Sprintf("%v %s", estimatedAmountInCoin, toCoin.Symbol), "price_impact", quote.PriceImpactPct, "route", routeSummary, "total_fee", totalFeeInUSD)
+	slog.Info("Jupiter Quote Details",
+		"input", fmt.Sprintf("%v %s", initialAmount, fromCoin.Symbol),
+		"output", fmt.Sprintf("%v %s", estimatedAmountInCoin, toCoin.Symbol),
+		"price_impact", quote.PriceImpactPct,
+		"route", routeSummary,
+		"total_fee_usd", totalFeeInUSD,
+		"total_sol_required", totalSolRequired,
+		"trading_fee_sol", tradingFeeSol)
 
 	return &TradeQuote{
 		EstimatedAmount:  TruncateAndFormatFloat(estimatedAmountInCoin, 6),
@@ -494,9 +551,9 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 		InputMint:        quote.InputMint,
 		OutputMint:       quote.OutputMint,
 		Raw:              quote.RawPayload,
-		SolFeeBreakdown:  nil, // Will be calculated later when we have swap transaction
-		TotalSolRequired: "0", // Will be calculated later when we have swap transaction
-		TradingFeeSol:    "0", // Will be calculated later when we have swap transaction
+		SolFeeBreakdown:  feeBreakdown,     // Now calculated from quote
+		TotalSolRequired: totalSolRequired, // Now calculated from quote
+		TradingFeeSol:    tradingFeeSol,    // Now calculated from quote
 	}, nil
 }
 
@@ -745,6 +802,86 @@ func (s *Service) calculateSolFeeBreakdown(
 		"priority_fee", bd.PriorityFee,
 		"total_sol_required", bd.Total,
 		"accounts_to_create", bd.AccountsToCreate,
+	)
+
+	return bd, bd.Total, bd.TradingFee, nil
+}
+
+// calculateSolFeeBreakdownFromQuote calculates fee breakdown from quote only (without swap transaction)
+// This provides upfront fee estimates during quote phase
+func (s *Service) calculateSolFeeBreakdownFromQuote(
+	quote *jupiter.QuoteResponse,
+) (*SolFeeBreakdown, string, string, error) {
+	const (
+		solMint          = "So11111111111111111111111111111111111111112"
+		ataRentLamports  = 2_039_280 // rent-exempt minimum
+		priorityLamports = 1_000_000 // tip per tx (estimated)
+	)
+
+	// 1. Extract SOL route & platform fees from the Jupiter quote response
+	var routeFee, platformFee uint64
+
+	// Extract route fees from the quote
+	for _, route := range quote.RoutePlan {
+		if route.SwapInfo.FeeMint == solMint && route.SwapInfo.FeeAmount != "" {
+			if feeAmount, err := strconv.ParseUint(route.SwapInfo.FeeAmount, 10, 64); err == nil {
+				routeFee += feeAmount
+			}
+		}
+	}
+
+	// Extract platform fees from the quote
+	if quote.PlatformFee != nil && quote.PlatformFee.FeeMint == solMint {
+		if platformAmount, err := strconv.ParseUint(quote.PlatformFee.Amount, 10, 64); err == nil {
+			platformFee = platformAmount
+		}
+	}
+
+	// 2. Estimate ATA creation needs (conservative approach)
+	// Most swaps require 1-2 ATA creations, so we'll conservatively assume 2
+	const assumedATACount = 2
+	ataCount := uint64(assumedATACount)
+	netRent := ataCount * ataRentLamports
+
+	// 3. Estimate transaction count and fees (without actual swap transaction)
+	// Assume 1 main transaction + possible setup/cleanup
+	txCount := uint64(1) // Main swap transaction
+	// Add estimated setup/cleanup transactions for complex routes
+	if len(quote.RoutePlan) > 1 {
+		txCount++ // Likely needs setup transaction for multi-hop swaps
+	}
+
+	// 4. Use estimated priority fee (since we don't have actual swap response)
+	prioFeePerTx := uint64(priorityLamports)
+
+	// 5. Estimate base transaction fees (conservative estimate)
+	const baseTransactionFee = 5000 // lamports per transaction
+	baseFee := uint64(baseTransactionFee) * txCount
+	prioFee := prioFeePerTx * txCount
+	totalLam := routeFee + platformFee + baseFee + prioFee + netRent
+
+	// 6. Format lamports to SOL strings
+	fmtSol := func(v uint64) string {
+		return TruncateAndFormatFloat(float64(v)/1e9, 9)
+	}
+
+	bd := &SolFeeBreakdown{
+		TradingFee:         fmtSol(routeFee + platformFee), // Combine route and platform fees
+		TransactionFee:     fmtSol(baseFee),
+		AccountCreationFee: fmtSol(netRent),
+		PriorityFee:        fmtSol(prioFee),
+		Total:              fmtSol(totalLam),
+		AccountsToCreate:   int(ataCount),
+	}
+
+	slog.Info("SOL Fee Breakdown (from quote)",
+		"trading_fee", bd.TradingFee,
+		"transaction_fee", bd.TransactionFee,
+		"account_creation_fee", bd.AccountCreationFee,
+		"priority_fee", bd.PriorityFee,
+		"total_sol_required", bd.Total,
+		"accounts_to_create", bd.AccountsToCreate,
+		"estimated", true,
 	)
 
 	return bd, bd.Total, bd.TradingFee, nil

@@ -37,6 +37,16 @@ export const useStyles = () => {
 				justifyContent: 'space-between',
 				marginBottom: theme.spacing.md,
 			},
+			detailSubLabel: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
+				marginLeft: theme.spacing.sm,
+			},
+			detailSubValue: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: theme.typography.fontSize.xs,
+				fontWeight: '500',
+			},
 			detailValue: {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.sm,

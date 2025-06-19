@@ -53,6 +53,8 @@ message GetSwapQuoteRequest {
   string to_coin_id = 2;   // Typically mint address
   string amount = 3;
   string slippage_bps = 4;
+  bool include_fee_breakdown = 5; // Whether to include detailed SOL fee breakdown (requires CreateSwapTransaction call)
+  optional string user_public_key = 6; // Required when include_fee_breakdown=true
 }
 
 // SolFeeBreakdown provides detailed breakdown of all SOL costs
