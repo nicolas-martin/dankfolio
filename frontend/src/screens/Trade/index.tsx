@@ -158,11 +158,20 @@ const Trade: React.FC = () => {
 					gasFee: quoteData.fee,
 					priceImpactPct: quoteData.priceImpactPct,
 					totalFee: quoteData.totalFee,
-					route: quoteData.route
+					route: quoteData.route,
+					solFeeBreakdown: quoteData.solFeeBreakdown,
+					totalSolRequired: quoteData.totalSolRequired,
+					tradingFeeSol: quoteData.tradingFeeSol
 				});
 
 				// Validate SOL balance for transaction fees immediately after quote
-				validateSolBalanceForQuote(solPortfolioToken, quoteData.totalFee, showToast, setHasSufficientSolBalance);
+				validateSolBalanceForQuote(
+					solPortfolioToken, 
+					quoteData.totalSolRequired || quoteData.totalFee, 
+					showToast, 
+					setHasSufficientSolBalance,
+					quoteData.solFeeBreakdown
+				);
 
 			} catch (error) {
 				showToast({ type: 'error', message: error instanceof Error ? error.message : 'Failed to fetch quote' });
@@ -249,7 +258,7 @@ const Trade: React.FC = () => {
 			fromCoin,
 			fromPortfolioToken,
 			solPortfolioToken,
-			tradeDetails.totalFee, // Pass exact fee from quote
+			tradeDetails.totalSolRequired || tradeDetails.totalFee, // Pass comprehensive SOL requirement
 			// pollingIntervalRef,
 			setIsConfirmationVisible,
 			showToast

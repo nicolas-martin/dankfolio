@@ -530,18 +530,28 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 
 	truncatedPriceImpact := truncateDecimals(quote.PriceImpactPct, 6)
 
+	// Calculate comprehensive SOL fee breakdown
+	solFeeBreakdown, totalSolRequired, tradingFeeSol, err := s.calculateSolFeeBreakdown(quote, fromCoinMintAddress, toCoinMintAddress, inputAmount)
+	if err != nil {
+		slog.Warn("Failed to calculate SOL fee breakdown", "error", err)
+		// Continue with basic fee calculation as fallback
+	}
+
 	// Log detailed quote information
-	slog.Info("Jupiter Quote Details", "input", fmt.Sprintf("%v %s", initialAmount, fromCoin.Symbol), "output", fmt.Sprintf("%v %s", estimatedAmountInCoin, toCoin.Symbol), "price_impact", quote.PriceImpactPct, "route", routeSummary, "total_fee", totalFeeInUSD)
+	slog.Info("Jupiter Quote Details", "input", fmt.Sprintf("%v %s", initialAmount, fromCoin.Symbol), "output", fmt.Sprintf("%v %s", estimatedAmountInCoin, toCoin.Symbol), "price_impact", quote.PriceImpactPct, "route", routeSummary, "total_fee", totalFeeInUSD, "total_sol_required", totalSolRequired)
 
 	return &TradeQuote{
-		EstimatedAmount: TruncateAndFormatFloat(estimatedAmountInCoin, 6),
-		ExchangeRate:    TruncateAndFormatFloat(exchangeRate, 6),
-		Fee:             TruncateAndFormatFloat(totalFeeInUSDCoin, 9),
-		PriceImpact:     truncatedPriceImpact,
-		RoutePlan:       routeSummary,
-		InputMint:       quote.InputMint,
-		OutputMint:      quote.OutputMint,
-		Raw:             quote.RawPayload,
+		EstimatedAmount:  TruncateAndFormatFloat(estimatedAmountInCoin, 6),
+		ExchangeRate:     TruncateAndFormatFloat(exchangeRate, 6),
+		Fee:              TruncateAndFormatFloat(totalFeeInUSDCoin, 9),
+		PriceImpact:      truncatedPriceImpact,
+		RoutePlan:        routeSummary,
+		InputMint:        quote.InputMint,
+		OutputMint:       quote.OutputMint,
+		Raw:              quote.RawPayload,
+		SolFeeBreakdown:  solFeeBreakdown,
+		TotalSolRequired: totalSolRequired,
+		TradingFeeSol:    tradingFeeSol,
 	}, nil
 }
 
@@ -694,4 +704,89 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 // GetTransactionStatus gets the confirmation status of a transaction
 func (s *Service) GetTransactionStatus(ctx context.Context, txHash string) (*bmodel.TransactionStatus, error) {
 	return s.chainClient.GetTransactionStatus(ctx, bmodel.Signature(txHash))
+}
+
+// calculateSolFeeBreakdown calculates comprehensive SOL requirements for a swap
+func (s *Service) calculateSolFeeBreakdown(quote *jupiter.QuoteResponse, fromCoinMintAddress, toCoinMintAddress, inputAmount string) (*SolFeeBreakdown, string, string, error) {
+	// Constants for Solana network costs (in lamports)
+	const (
+		BASE_TRANSACTION_FEE = 5000    // ~0.000005 SOL
+		ATA_CREATION_COST    = 2039280 // ~0.002039 SOL (rent-exempt minimum)
+		PRIORITY_FEE_HIGH    = 1000000 // ~0.001 SOL (from swap config)
+	)
+
+	var totalTradingFeeLamports float64 = 0
+	var accountsToCreate int = 0
+
+	// Calculate trading fees from Jupiter quote (route fees)
+	for _, route := range quote.RoutePlan {
+		if route.SwapInfo.FeeAmount != "" {
+			feeAmount, err := strconv.ParseFloat(route.SwapInfo.FeeAmount, 64)
+			if err == nil {
+				// Only count SOL fees for SOL requirement calculation
+				if route.SwapInfo.FeeMint == "So11111111111111111111111111111111111111112" {
+					totalTradingFeeLamports += feeAmount
+				}
+			}
+		}
+	}
+
+	// Add platform fee if present and in SOL
+	if quote.PlatformFee != nil && quote.PlatformFee.FeeMint == "So11111111111111111111111111111111111111112" {
+		if platformFeeAmount, err := strconv.ParseFloat(quote.PlatformFee.Amount, 64); err == nil {
+			totalTradingFeeLamports += platformFeeAmount
+		}
+	}
+
+	// Check if we need to create Associated Token Accounts (ATAs)
+	// This is a simplified check - in practice, you'd query the blockchain to see if ATAs exist
+	// For now, we'll assume we need to create ATAs for new token swaps
+
+	// If swapping FROM SOL to another token, likely need to create ATA for output token
+	if fromCoinMintAddress == "So11111111111111111111111111111111111111112" && toCoinMintAddress != "So11111111111111111111111111111111111111112" {
+		accountsToCreate = 1
+	}
+	// If swapping TO SOL from another token, might need wrapped SOL account
+	if toCoinMintAddress == "So11111111111111111111111111111111111111112" && fromCoinMintAddress != "So11111111111111111111111111111111111111112" {
+		accountsToCreate = 1
+	}
+	// If swapping between two non-SOL tokens, might need both ATAs
+	if fromCoinMintAddress != "So11111111111111111111111111111111111111112" && toCoinMintAddress != "So11111111111111111111111111111111111111112" {
+		accountsToCreate = 2
+	}
+
+	// Calculate individual fee components
+	tradingFeeLamports := totalTradingFeeLamports
+	transactionFeeLamports := float64(BASE_TRANSACTION_FEE)
+	accountCreationFeeLamports := float64(accountsToCreate * ATA_CREATION_COST)
+	priorityFeeLamports := float64(PRIORITY_FEE_HIGH) // Using high priority as shown in logs
+
+	// Calculate total SOL required
+	totalLamports := tradingFeeLamports + transactionFeeLamports + accountCreationFeeLamports + priorityFeeLamports
+
+	// Convert lamports to SOL for display
+	tradingFeeSol := TruncateAndFormatFloat(tradingFeeLamports/1e9, 9)
+	transactionFeeSol := TruncateAndFormatFloat(transactionFeeLamports/1e9, 9)
+	accountCreationFeeSol := TruncateAndFormatFloat(accountCreationFeeLamports/1e9, 9)
+	priorityFeeSol := TruncateAndFormatFloat(priorityFeeLamports/1e9, 9)
+	totalSol := TruncateAndFormatFloat(totalLamports/1e9, 9)
+
+	breakdown := &SolFeeBreakdown{
+		TradingFee:         tradingFeeSol,
+		TransactionFee:     transactionFeeSol,
+		AccountCreationFee: accountCreationFeeSol,
+		PriorityFee:        priorityFeeSol,
+		Total:              totalSol,
+		AccountsToCreate:   accountsToCreate,
+	}
+
+	slog.Info("SOL Fee Breakdown",
+		"trading_fee", tradingFeeSol,
+		"transaction_fee", transactionFeeSol,
+		"account_creation_fee", accountCreationFeeSol,
+		"priority_fee", priorityFeeSol,
+		"total_sol_required", totalSol,
+		"accounts_to_create", accountsToCreate)
+
+	return breakdown, totalSol, tradingFeeSol, nil
 }

@@ -14,30 +14,57 @@ export const QUOTE_DEBOUNCE_MS = 1000;
 // Validate SOL balance for transaction fees after quote is received
 export const validateSolBalanceForQuote = (
 	solPortfolioToken: { amount: number } | undefined,
-	estimatedTotalFee: string,
+	totalSolRequired: string,
 	showToast: (params: ToastProps) => void,
-	setHasSufficientSolBalance: (sufficient: boolean) => void
+	setHasSufficientSolBalance: (sufficient: boolean) => void,
+	solFeeBreakdown?: { tradingFee: string; transactionFee: string; accountCreationFee: string; priorityFee: string; total: string; accountsToCreate: number }
 ): boolean => {
 	const solBalance = solPortfolioToken?.amount ?? 0;
-	const requiredSolFee = parseFloat(estimatedTotalFee) || 0;
+	const requiredSol = parseFloat(totalSolRequired) || 0;
 	
-	// Only validate SOL fees if we have a fee estimate or if SOL balance is critically low
-	if (requiredSolFee > 0) {
-		// Use exact fee from quote
-		if (solBalance < requiredSolFee) {
+	// Only validate SOL fees if we have a comprehensive fee estimate or if SOL balance is critically low
+	if (requiredSol > 0) {
+		// Use comprehensive SOL requirement from quote
+		if (solBalance < requiredSol) {
+			const shortfall = requiredSol - solBalance;
+			let message = `Insufficient SOL for transaction.\n\nRequired: ${requiredSol.toFixed(6)} SOL\nBalance: ${solBalance.toFixed(6)} SOL\nNeed: ${shortfall.toFixed(6)} more SOL`;
+			
+			// Add simplified breakdown if available
+			if (solFeeBreakdown) {
+				const breakdown = [];
+				
+				if (parseFloat(solFeeBreakdown.tradingFee) > 0) {
+					breakdown.push(`Trading: ${parseFloat(solFeeBreakdown.tradingFee).toFixed(6)} SOL`);
+				}
+				if (parseFloat(solFeeBreakdown.accountCreationFee) > 0) {
+					const accounts = solFeeBreakdown.accountsToCreate > 0 ? ` (${solFeeBreakdown.accountsToCreate} account${solFeeBreakdown.accountsToCreate > 1 ? 's' : ''})` : '';
+					breakdown.push(`Account creation: ${parseFloat(solFeeBreakdown.accountCreationFee).toFixed(6)} SOL${accounts}`);
+				}
+				if (parseFloat(solFeeBreakdown.transactionFee) > 0) {
+					breakdown.push(`Transaction: ${parseFloat(solFeeBreakdown.transactionFee).toFixed(6)} SOL`);
+				}
+				if (parseFloat(solFeeBreakdown.priorityFee) > 0) {
+					breakdown.push(`Priority: ${parseFloat(solFeeBreakdown.priorityFee).toFixed(6)} SOL`);
+				}
+				
+				if (breakdown.length > 0) {
+					message += `\n\nBreakdown:\n${breakdown.map(item => `• ${item}`).join('\n')}`;
+				}
+			}
+			
 			showToast({
-				type: 'error', // Same error behavior as insufficient balance
-				message: `Insufficient SOL for transaction fees. You need ${requiredSolFee.toFixed(6)} SOL but only have ${solBalance.toFixed(6)} SOL.`
+				type: 'error',
+				message
 			});
 			setHasSufficientSolBalance(false);
 			return false;
 		}
 	} else {
 		// Fallback check for minimum SOL balance when no quote available
-		const minimumSolRequired = 0.002; // Conservative estimate for any transaction
+		const minimumSolRequired = 0.003; // Increased conservative estimate to include ATA creation
 		if (solBalance < minimumSolRequired) {
 			showToast({
-				type: 'error', // Same error behavior as insufficient balance
+				type: 'error',
 				message: `Insufficient SOL for transaction fees. You need at least ${minimumSolRequired} SOL but only have ${solBalance.toFixed(6)} SOL.`
 			});
 			setHasSufficientSolBalance(false);

@@ -118,15 +118,31 @@ export const grpcApi: grpcModel.API = {
 
 			grpcUtils.logResponse(serviceName, methodName, response);
 
-			// Return the response directly as it matches the expected structure
+			// Convert SolFeeBreakdown from protobuf if available
+			let solFeeBreakdown: grpcModel.SolFeeBreakdown | undefined;
+			if (response.solFeeBreakdown) {
+				solFeeBreakdown = {
+					tradingFee: response.solFeeBreakdown.tradingFee,
+					transactionFee: response.solFeeBreakdown.transactionFee,
+					accountCreationFee: response.solFeeBreakdown.accountCreationFee,
+					priorityFee: response.solFeeBreakdown.priorityFee,
+					total: response.solFeeBreakdown.total,
+					accountsToCreate: response.solFeeBreakdown.accountsToCreate,
+				};
+			}
+
+			// Return the response with enhanced SOL fee breakdown
 			return {
 				estimatedAmount: response.estimatedAmount,
 				exchangeRate: response.exchangeRate,
-				fee: response.fee,
+				fee: response.tradingFeeSol || "0", // Use tradingFeeSol as the fee field for backward compatibility
 				priceImpact: response.priceImpact,
 				routePlan: response.routePlan,
 				inputMint: response.inputMint,
-				outputMint: response.outputMint
+				outputMint: response.outputMint,
+				solFeeBreakdown: solFeeBreakdown,
+				totalSolRequired: response.totalSolRequired || "0",
+				tradingFeeSol: response.tradingFeeSol || "0",
 			};
 		} catch (error: unknown) {
 			if (error instanceof Error) {
@@ -623,8 +639,11 @@ export const grpcApi: grpcModel.API = {
 				exchangeRate: quoteResponse.exchangeRate,
 				fee: quoteResponse.fee, // gasFee and totalFee are the same in current fetchTradeQuote
 				priceImpactPct: quoteResponse.priceImpact,
-				totalFee: quoteResponse.fee,
+				totalFee: quoteResponse.totalSolRequired || quoteResponse.fee, // Use comprehensive SOL requirement
 				route: quoteResponse.routePlan.join(' → '), // Assuming routePlan is string[]
+				solFeeBreakdown: quoteResponse.solFeeBreakdown,
+				totalSolRequired: quoteResponse.totalSolRequired || quoteResponse.fee,
+				tradingFeeSol: quoteResponse.tradingFeeSol || "0",
 				// Optionally include updated coin data if useful for the frontend
 				// updatedFromCoin: updatedFromCoin,
 				// updatedToCoin: updatedToCoin,
