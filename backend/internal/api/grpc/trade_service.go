@@ -115,13 +115,29 @@ func (s *tradeServiceHandler) PrepareSwap(ctx context.Context, req *connect.Requ
 		UserWalletAddress:   req.Msg.UserPublicKey,
 	}
 
-	unsignedTx, err := s.tradeService.PrepareSwap(ctx, params)
+	prepareResponse, err := s.tradeService.PrepareSwap(ctx, params)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to prepare swap: %w", err))
 	}
 
+	// Convert SolFeeBreakdown to protobuf format
+	var solFeeBreakdown *pb.SolFeeBreakdown
+	if prepareResponse.SolFeeBreakdown != nil {
+		solFeeBreakdown = &pb.SolFeeBreakdown{
+			TradingFee:         prepareResponse.SolFeeBreakdown.TradingFee,
+			TransactionFee:     prepareResponse.SolFeeBreakdown.TransactionFee,
+			AccountCreationFee: prepareResponse.SolFeeBreakdown.AccountCreationFee,
+			PriorityFee:        prepareResponse.SolFeeBreakdown.PriorityFee,
+			Total:              prepareResponse.SolFeeBreakdown.Total,
+			AccountsToCreate:   int32(prepareResponse.SolFeeBreakdown.AccountsToCreate),
+		}
+	}
+
 	res := connect.NewResponse(&pb.PrepareSwapResponse{
-		UnsignedTransaction: unsignedTx,
+		UnsignedTransaction: prepareResponse.UnsignedTransaction,
+		SolFeeBreakdown:     solFeeBreakdown,
+		TotalSolRequired:    prepareResponse.TotalSolRequired,
+		TradingFeeSol:       prepareResponse.TradingFeeSol,
 	})
 
 	return res, nil

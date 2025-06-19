@@ -555,6 +555,9 @@ func (x *PrepareSwapRequest) GetUserPublicKey() string {
 type PrepareSwapResponse struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	UnsignedTransaction string                 `protobuf:"bytes,1,opt,name=unsigned_transaction,json=unsignedTransaction,proto3" json:"unsigned_transaction,omitempty"`
+	SolFeeBreakdown     *SolFeeBreakdown       `protobuf:"bytes,2,opt,name=sol_fee_breakdown,json=solFeeBreakdown,proto3,oneof" json:"sol_fee_breakdown,omitempty"` // Enhanced SOL fee breakdown
+	TotalSolRequired    string                 `protobuf:"bytes,3,opt,name=total_sol_required,json=totalSolRequired,proto3" json:"total_sol_required,omitempty"`    // Total SOL needed for transaction
+	TradingFeeSol       string                 `protobuf:"bytes,4,opt,name=trading_fee_sol,json=tradingFeeSol,proto3" json:"trading_fee_sol,omitempty"`             // Trading fees in SOL
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -592,6 +595,27 @@ func (*PrepareSwapResponse) Descriptor() ([]byte, []int) {
 func (x *PrepareSwapResponse) GetUnsignedTransaction() string {
 	if x != nil {
 		return x.UnsignedTransaction
+	}
+	return ""
+}
+
+func (x *PrepareSwapResponse) GetSolFeeBreakdown() *SolFeeBreakdown {
+	if x != nil {
+		return x.SolFeeBreakdown
+	}
+	return nil
+}
+
+func (x *PrepareSwapResponse) GetTotalSolRequired() string {
+	if x != nil {
+		return x.TotalSolRequired
+	}
+	return ""
+}
+
+func (x *PrepareSwapResponse) GetTradingFeeSol() string {
+	if x != nil {
+		return x.TradingFeeSol
 	}
 	return ""
 }
@@ -1042,9 +1066,13 @@ const file_dankfolio_v1_trade_proto_rawDesc = "" +
 	"to_coin_id\x18\x02 \x01(\tR\btoCoinId\x12\x16\n" +
 	"\x06amount\x18\x03 \x01(\tR\x06amount\x12!\n" +
 	"\fslippage_bps\x18\x04 \x01(\tR\vslippageBps\x12&\n" +
-	"\x0fuser_public_key\x18\x05 \x01(\tR\ruserPublicKey\"H\n" +
+	"\x0fuser_public_key\x18\x05 \x01(\tR\ruserPublicKey\"\x84\x02\n" +
 	"\x13PrepareSwapResponse\x121\n" +
-	"\x14unsigned_transaction\x18\x01 \x01(\tR\x13unsignedTransaction\"\xcd\x01\n" +
+	"\x14unsigned_transaction\x18\x01 \x01(\tR\x13unsignedTransaction\x12N\n" +
+	"\x11sol_fee_breakdown\x18\x02 \x01(\v2\x1d.dankfolio.v1.SolFeeBreakdownH\x00R\x0fsolFeeBreakdown\x88\x01\x01\x12,\n" +
+	"\x12total_sol_required\x18\x03 \x01(\tR\x10totalSolRequired\x12&\n" +
+	"\x0ftrading_fee_sol\x18\x04 \x01(\tR\rtradingFeeSolB\x14\n" +
+	"\x12_sol_fee_breakdown\"\xcd\x01\n" +
 	"\x11SubmitSwapRequest\x12 \n" +
 	"\ffrom_coin_id\x18\x01 \x01(\tR\n" +
 	"fromCoinId\x12\x1c\n" +
@@ -1123,22 +1151,23 @@ var file_dankfolio_v1_trade_proto_depIdxs = []int32{
 	11, // 0: dankfolio.v1.Trade.created_at:type_name -> google.protobuf.Timestamp
 	11, // 1: dankfolio.v1.Trade.completed_at:type_name -> google.protobuf.Timestamp
 	2,  // 2: dankfolio.v1.GetSwapQuoteResponse.sol_fee_breakdown:type_name -> dankfolio.v1.SolFeeBreakdown
-	0,  // 3: dankfolio.v1.ListTradesResponse.trades:type_name -> dankfolio.v1.Trade
-	1,  // 4: dankfolio.v1.TradeService.GetSwapQuote:input_type -> dankfolio.v1.GetSwapQuoteRequest
-	4,  // 5: dankfolio.v1.TradeService.PrepareSwap:input_type -> dankfolio.v1.PrepareSwapRequest
-	6,  // 6: dankfolio.v1.TradeService.SubmitSwap:input_type -> dankfolio.v1.SubmitSwapRequest
-	8,  // 7: dankfolio.v1.TradeService.GetTrade:input_type -> dankfolio.v1.GetTradeRequest
-	9,  // 8: dankfolio.v1.TradeService.ListTrades:input_type -> dankfolio.v1.ListTradesRequest
-	3,  // 9: dankfolio.v1.TradeService.GetSwapQuote:output_type -> dankfolio.v1.GetSwapQuoteResponse
-	5,  // 10: dankfolio.v1.TradeService.PrepareSwap:output_type -> dankfolio.v1.PrepareSwapResponse
-	7,  // 11: dankfolio.v1.TradeService.SubmitSwap:output_type -> dankfolio.v1.SubmitSwapResponse
-	0,  // 12: dankfolio.v1.TradeService.GetTrade:output_type -> dankfolio.v1.Trade
-	10, // 13: dankfolio.v1.TradeService.ListTrades:output_type -> dankfolio.v1.ListTradesResponse
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	2,  // 3: dankfolio.v1.PrepareSwapResponse.sol_fee_breakdown:type_name -> dankfolio.v1.SolFeeBreakdown
+	0,  // 4: dankfolio.v1.ListTradesResponse.trades:type_name -> dankfolio.v1.Trade
+	1,  // 5: dankfolio.v1.TradeService.GetSwapQuote:input_type -> dankfolio.v1.GetSwapQuoteRequest
+	4,  // 6: dankfolio.v1.TradeService.PrepareSwap:input_type -> dankfolio.v1.PrepareSwapRequest
+	6,  // 7: dankfolio.v1.TradeService.SubmitSwap:input_type -> dankfolio.v1.SubmitSwapRequest
+	8,  // 8: dankfolio.v1.TradeService.GetTrade:input_type -> dankfolio.v1.GetTradeRequest
+	9,  // 9: dankfolio.v1.TradeService.ListTrades:input_type -> dankfolio.v1.ListTradesRequest
+	3,  // 10: dankfolio.v1.TradeService.GetSwapQuote:output_type -> dankfolio.v1.GetSwapQuoteResponse
+	5,  // 11: dankfolio.v1.TradeService.PrepareSwap:output_type -> dankfolio.v1.PrepareSwapResponse
+	7,  // 12: dankfolio.v1.TradeService.SubmitSwap:output_type -> dankfolio.v1.SubmitSwapResponse
+	0,  // 13: dankfolio.v1.TradeService.GetTrade:output_type -> dankfolio.v1.Trade
+	10, // 14: dankfolio.v1.TradeService.ListTrades:output_type -> dankfolio.v1.ListTradesResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_dankfolio_v1_trade_proto_init() }
@@ -1148,6 +1177,7 @@ func file_dankfolio_v1_trade_proto_init() {
 	}
 	file_dankfolio_v1_trade_proto_msgTypes[0].OneofWrappers = []any{}
 	file_dankfolio_v1_trade_proto_msgTypes[3].OneofWrappers = []any{}
+	file_dankfolio_v1_trade_proto_msgTypes[5].OneofWrappers = []any{}
 	file_dankfolio_v1_trade_proto_msgTypes[8].OneofWrappers = []any{
 		(*GetTradeRequest_Id)(nil),
 		(*GetTradeRequest_TransactionHash)(nil),

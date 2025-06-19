@@ -521,7 +521,7 @@ export const grpcApi: grpcModel.API = {
 		amount: string;
 		slippageBps: string;
 		userPublicKey: string;
-	}): Promise<{ unsignedTransaction: string }> => {
+	}): Promise<{ unsignedTransaction: string; solFeeBreakdown?: any; totalSolRequired: string; tradingFeeSol: string }> => {
 		const serviceName = 'TradeService';
 		const methodName = 'prepareSwap';
 		try {
@@ -534,7 +534,12 @@ export const grpcApi: grpcModel.API = {
 				userPublicKey
 			}, { headers: grpcUtils.getRequestHeaders() });
 			grpcUtils.logResponse(serviceName, methodName, response);
-			return { unsignedTransaction: response.unsignedTransaction };
+			return {
+				unsignedTransaction: response.unsignedTransaction,
+				solFeeBreakdown: response.solFeeBreakdown,
+				totalSolRequired: response.totalSolRequired,
+				tradingFeeSol: response.tradingFeeSol
+			};
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				return grpcUtils.handleGrpcError(error, serviceName, methodName);

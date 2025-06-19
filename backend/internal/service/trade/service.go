@@ -96,58 +96,58 @@ func (s *Service) DeleteTrade(ctx context.Context, id string) error {
 }
 
 // PrepareSwap prepares an unsigned swap transaction and creates a trade record
-func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapRequestData) (string, error) {
+func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapRequestData) (*PrepareSwapResponse, error) {
 	if !util.IsValidSolanaAddress(params.UserWalletAddress) {
-		return "", fmt.Errorf("invalid user_wallet_address: %s", params.UserWalletAddress)
+		return nil, fmt.Errorf("invalid user_wallet_address: %s", params.UserWalletAddress)
 	}
 	if !util.IsValidSolanaAddress(params.FromCoinMintAddress) {
-		return "", fmt.Errorf("invalid from_coin_mint_address: %s", params.FromCoinMintAddress)
+		return nil, fmt.Errorf("invalid from_coin_mint_address: %s", params.FromCoinMintAddress)
 	}
 	if !util.IsValidSolanaAddress(params.ToCoinMintAddress) {
-		return "", fmt.Errorf("invalid to_coin_mint_address: %s", params.ToCoinMintAddress)
+		return nil, fmt.Errorf("invalid to_coin_mint_address: %s", params.ToCoinMintAddress)
 	}
 
 	amountFloat, err := strconv.ParseFloat(params.Amount, 64)
 	if err != nil {
-		return "", fmt.Errorf("invalid amount: %w", err)
+		return nil, fmt.Errorf("invalid amount: %w", err)
 	}
 	if amountFloat <= 0 {
-		return "", fmt.Errorf("amount must be positive: %s", params.Amount)
+		return nil, fmt.Errorf("amount must be positive: %s", params.Amount)
 	}
 
 	slippageBpsInt, err := strconv.Atoi(params.SlippageBps) // Atoi implies base 10
 	if err != nil {
-		return "", fmt.Errorf("invalid slippage_bps: %w", err)
+		return nil, fmt.Errorf("invalid slippage_bps: %w", err)
 	}
 	if slippageBpsInt < 0 || slippageBpsInt > 5000 { // 5000 bps = 50%
-		return "", fmt.Errorf("slippage_bps out of range (0-5000): %d", slippageBpsInt)
+		return nil, fmt.Errorf("slippage_bps out of range (0-5000): %d", slippageBpsInt)
 	}
 
 	// Parse and validate fromAddress (public key)
 	fromPubKey, err := solanago.PublicKeyFromBase58(params.UserWalletAddress)
 	if err != nil {
-		return "", fmt.Errorf("invalid from address: %w", err) // Should be caught by IsValidSolanaAddress, but good to keep for specific parsing error
+		return nil, fmt.Errorf("invalid from address: %w", err) // Should be caught by IsValidSolanaAddress, but good to keep for specific parsing error
 	}
 	// Fetch coin models to get their PKIDs
 	fromCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.FromCoinMintAddress)
 	if err != nil {
-		return "", fmt.Errorf("failed to get fromCoin details for %s: %w", params.FromCoinMintAddress, err)
+		return nil, fmt.Errorf("failed to get fromCoin details for %s: %w", params.FromCoinMintAddress, err)
 	}
 	toCoinModel, err := s.coinService.GetCoinByAddress(ctx, params.ToCoinMintAddress)
 	if err != nil {
-		return "", fmt.Errorf("failed to get toCoin details for %s: %w", params.ToCoinMintAddress, err)
+		return nil, fmt.Errorf("failed to get toCoin details for %s: %w", params.ToCoinMintAddress, err)
 	}
 
 	// 1. Use the TradeService's GetSwapQuote for all conversion and logic
 	tradeQuote, err := s.GetSwapQuote(ctx, params.FromCoinMintAddress, params.ToCoinMintAddress, params.Amount, params.SlippageBps)
 	if err != nil {
-		return "", fmt.Errorf("failed to get trade quote: %w", err)
+		return nil, fmt.Errorf("failed to get trade quote: %w", err)
 	}
 	slog.Debug("tradeQuote.Raw after GetSwapQuote", "trade_quote", string(tradeQuote.Raw))
 
 	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, s.platformFeeAccountAddress)
 	if err != nil {
-		return "", fmt.Errorf("failed to create swap transaction: %w", err)
+		return nil, fmt.Errorf("failed to create swap transaction: %w", err)
 	}
 
 	// Calculate comprehensive SOL fee breakdown using both quote and swap responses
@@ -163,15 +163,15 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	// Convert basic trade values
 	price, err := strconv.ParseFloat(tradeQuote.ExchangeRate, 64)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse exchange rate: %w", err)
+		return nil, fmt.Errorf("failed to parse exchange rate: %w", err)
 	}
 	fee, err := strconv.ParseFloat(tradeQuote.Fee, 64)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse fee: %w", err)
+		return nil, fmt.Errorf("failed to parse fee: %w", err)
 	}
 	amount, err := strconv.ParseFloat(params.Amount, 64)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse input amount: %w", err)
+		return nil, fmt.Errorf("failed to parse input amount: %w", err)
 	}
 
 	// Create trade record with essential information
@@ -211,10 +211,16 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		"fee_breakdown", feeBreakdown)
 
 	if err := s.store.Trades().Create(ctx, trade); err != nil {
-		return "", fmt.Errorf("failed to create trade record: %w", err)
+		return nil, fmt.Errorf("failed to create trade record: %w", err)
 	}
 
-	return swapResponse.SwapTransaction, nil
+	// Return structured response with fee breakdown
+	return &PrepareSwapResponse{
+		UnsignedTransaction: swapResponse.SwapTransaction,
+		SolFeeBreakdown:     feeBreakdown,
+		TotalSolRequired:    totalSolRequired,
+		TradingFeeSol:       tradingFeeSol,
+	}, nil
 }
 
 // ExecuteTrade executes a trade based on the provided request
