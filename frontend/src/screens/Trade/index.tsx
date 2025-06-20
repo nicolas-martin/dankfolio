@@ -481,6 +481,16 @@ const Trade: React.FC = () => {
 						</Text>
 					</View>
 
+					{/* Total amount required (trade amount + fees) */}
+					{fromCoin?.symbol === 'SOL' && (
+						<View style={styles.detailRow}>
+							<Text style={styles.detailLabel}>Total SOL Required</Text>
+							<Text testID="trade-details-total-amount-required" style={styles.detailValue}>
+								{(parseFloat(fromAmount) + parseFloat(tradeDetails.totalSolRequired || tradeDetails.totalFee || '0')).toFixed(6)} SOL
+							</Text>
+						</View>
+					)}
+
 					{/* Enhanced fee breakdown display */}
 					{tradeDetails.solFeeBreakdown ? (
 						<>
@@ -631,7 +641,6 @@ const Trade: React.FC = () => {
 					toAmount={toAmount}
 					fromToken={fromCoin}
 					toToken={toCoin}
-					fees={tradeDetails}
 					isLoading={isLoadingTrade}
 				/>
 			)}
