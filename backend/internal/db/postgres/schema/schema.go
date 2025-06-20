@@ -145,3 +145,19 @@ func (t Trade) GetID() string {
 func (Trade) TableName() string {
 	return "trades"
 }
+
+// NaughtyWord represents a word that should be filtered.
+type NaughtyWord struct {
+	Word string `gorm:"primaryKey;type:varchar(255);column:word"`
+}
+
+// TableName overrides the default table name generation for NaughtyWord.
+func (NaughtyWord) TableName() string {
+	return "naughty_words"
+}
+
+// GetID returns the primary key field for NaughtyWord.
+// For consistency with other models, though it's just the word itself.
+func (n NaughtyWord) GetID() string {
+	return n.Word
+}

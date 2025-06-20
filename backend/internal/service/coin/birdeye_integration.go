@@ -79,97 +79,98 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 }
 
 // processBirdeyeTokens takes Birdeye token details and enriches them using external APIs concurrently.
+// It now filters out tokens with naughty names or descriptions.
 func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []birdeye.TokenDetails) ([]model.Coin, error) {
 	scrapeMaxConcurrentEnrich := 3
-	slog.Info("Executing token enrichment with Birdeye data",
-		"token_count", len(tokensToEnrich),
-		"concurrency", scrapeMaxConcurrentEnrich)
+	slog.InfoContext(ctx, "Executing token enrichment with Birdeye data",
+		slog.Int("token_count", len(tokensToEnrich)),
+		slog.Int("concurrency", scrapeMaxConcurrentEnrich))
 
-	enrichedCoins := make([]model.Coin, 0, len(tokensToEnrich))
+	enrichedCoinsResult := make([]model.Coin, 0, len(tokensToEnrich))
 	var wg sync.WaitGroup
-	var mu sync.Mutex
+	var mu sync.Mutex // Protects enrichedCoinsResult
 	sem := make(chan struct{}, scrapeMaxConcurrentEnrich)
 	var encounteredErrors []error
 	var errMu sync.Mutex // Mutex to protect encounteredErrors slice
 
-	// Derive a context for the enrichment phase from the incoming context
-	// Allow roughly 20s per token enrichment as a timeout for this phase.
 	enrichPhaseTimeout := time.Duration(len(tokensToEnrich)*20) * time.Second
 	enrichCtx, cancelEnrich := context.WithTimeout(ctx, enrichPhaseTimeout)
 	defer cancelEnrich()
 
-	for _, birdeyeToken := range tokensToEnrich { // Renamed loop variable for clarity
+	for _, birdeyeTokenLoopVar := range tokensToEnrich {
+		token := birdeyeTokenLoopVar // Capture range variable
+
+		// Check name before starting goroutine and enrichment
+		if s.containsNaughtyWord(token.Name) {
+			slog.InfoContext(ctx, "Skipping token due to naughty name (pre-enrichment)",
+				slog.String("name", token.Name),
+				slog.String("address", token.Address))
+			continue // Skip this token entirely
+		}
+
 		wg.Add(1)
-		sem <- struct{}{} // Acquire semaphore slot
+		sem <- struct{}{}
 
-		go func(token birdeye.TokenDetails) { // Type updated here
+		go func(currentToken birdeye.TokenDetails) { // Use currentToken which is a copy
 			defer wg.Done()
-			defer func() { <-sem }() // Release semaphore slot
+			defer func() { <-sem }()
 
-			// Create a context for this specific enrichment task
-			enrichTaskCtx, enrichTaskCancel := context.WithTimeout(enrichCtx, 45*time.Second) // Timeout for one token
+			enrichTaskCtx, enrichTaskCancel := context.WithTimeout(enrichCtx, 45*time.Second)
 			defer enrichTaskCancel()
 
-			slog.Debug("Enriching token from Birdeye data", "name", token.Name, "mint_address", token.Address) // Use token.Address
+			slog.DebugContext(enrichTaskCtx, "Enriching token from Birdeye data", "name", currentToken.Name, "mint_address", currentToken.Address)
 
-			// Direct field access for Price, Volume, MarketCap, etc. No parsing needed.
-			// Ensure EnrichCoinData is updated to accept these types and new fields.
-			enriched, err := s.EnrichCoinData(enrichTaskCtx, &token)
+			enriched, err := s.EnrichCoinData(enrichTaskCtx, &currentToken) // Pass address of currentToken
 			if err != nil {
-				errMessage := fmt.Sprintf("Failed EnrichCoinData for %s (%s): %v", token.Name, token.Address, err)
-				slog.Error("Enrichment failed",
-					"name", token.Name,
-					"mint_address", token.Address,
-					"error", err)
+				errMessage := fmt.Sprintf("Failed EnrichCoinData for %s (%s): %v", currentToken.Name, currentToken.Address, err)
+				slog.ErrorContext(enrichTaskCtx, "Enrichment failed",
+					slog.String("name", currentToken.Name),
+					slog.String("mint_address", currentToken.Address),
+					slog.Any("error", err))
 				errMu.Lock()
-				encounteredErrors = append(encounteredErrors, fmt.Errorf("%s", errMessage)) // Append formatted error
+				encounteredErrors = append(encounteredErrors, fmt.Errorf("%s", errMessage))
 				errMu.Unlock()
-				// Decide whether to add partial data if available
 				if enriched == nil {
-					return // Skip if enrichment critically failed
+					return
 				}
-				slog.Warn("Adding partially enriched data despite error", "name", token.Name, "mint_address", token.Address) // Use token.Address
+				slog.WarnContext(enrichTaskCtx, "Adding partially enriched data despite error", "name", currentToken.Name, "mint_address", currentToken.Address)
 			}
 
 			if enriched == nil {
-				slog.Error("EnrichCoinData returned nil without explicit error",
-					"name", token.Name,
-					"mint_address", token.Address) // Use token.Address
+				slog.ErrorContext(enrichTaskCtx, "EnrichCoinData returned nil without explicit error",
+					slog.String("name", currentToken.Name),
+					slog.String("mint_address", currentToken.Address))
 				return
 			}
 
-			// Add successfully (or partially) enriched coin
+			// Check description after enrichment
+			if s.containsNaughtyWord(enriched.Description) {
+				slog.InfoContext(enrichTaskCtx, "Skipping token due to naughty description (post-enrichment)",
+					slog.String("name", enriched.Name),
+					slog.String("address", enriched.Address),
+					slog.String("description_preview", enriched.Description[:min(len(enriched.Description), 100)]))
+				return // Skip this token
+			}
+
 			mu.Lock()
-			// IsTrending field has been removed - now using tags system only
-			enrichedCoins = append(enrichedCoins, *enriched)
+			enrichedCoinsResult = append(enrichedCoinsResult, *enriched)
 			mu.Unlock()
-			slog.Info("Successfully processed enrichment", "name", enriched.Name, "address", enriched.Address)
-		}(birdeyeToken) // Pass birdeyeToken to the goroutine
+			slog.InfoContext(enrichTaskCtx, "Successfully processed and kept token after enrichment", "name", enriched.Name, "address", enriched.Address)
+		}(token) // Pass the captured token to the goroutine
 	}
 
 	wg.Wait()
 	close(sem)
 
-	// Check if any errors occurred during enrichment
 	if len(encounteredErrors) > 0 {
-		// Log that errors occurred, but don't return an error here.
-		// We want to proceed to save the partially enriched data.
-		slog.Warn("Enrichment finished with errors, proceeding with successful tokens",
-			"error_count", len(encounteredErrors))
-		// return enrichedCoins, fmt.Errorf("enrichment failed for one or more tokens (first error: %w)", encounteredErrors[0])
+		slog.WarnContext(ctx, "Enrichment finished with errors, proceeding with successfully enriched and non-naughty tokens",
+			slog.Int("error_count", len(encounteredErrors)))
 	}
 
-	// This logging might be redundant now, consider removing or adjusting
-	slog.Info("Enrichment summary",
-		"successful_tokens", len(enrichedCoins),
-		"error_count", len(encounteredErrors))
+	slog.InfoContext(ctx, "Enrichment summary",
+		slog.Int("input_token_count", len(tokensToEnrich)),
+		slog.Int("processed_and_kept_tokens", len(enrichedCoinsResult)),
+		slog.Int("error_count", len(encounteredErrors)))
 
-	// This block seems like a leftover from previous attempts, ensure it's fully commented or removed if the above check handles it.
-	// if len(encounteredErrors) > 0 {
-	//      log.Printf("Enrichment finished with %d errors. Proceeding to save successfully enriched tokens.", len(encounteredErrors))
-	//      // Don't return the error here, allow saving partial results.
-	//      // return fmt.Errorf("encountered errors during enrichment process: %w", encounteredErrors[0])
-	// }
-
-	return enrichedCoins, nil // Return successfully enriched coins and nil error
+	return enrichedCoinsResult, nil
 }
