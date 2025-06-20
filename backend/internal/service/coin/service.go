@@ -30,15 +30,15 @@ const (
 type Service struct {
 	config         *Config
 	jupiterClient  jupiter.ClientAPI
-	chainClient    clients.GenericClientAPI // Changed from solanaClient
+	chainClient    clients.GenericClientAPI
 	offchainClient offchain.ClientAPI
 	store          db.Store
-	fetcherCtx     context.Context    // Context for the new token fetcher goroutine
-	fetcherCancel  context.CancelFunc // Cancel function for the fetcher goroutine
+	fetcherCtx     context.Context
+	fetcherCancel  context.CancelFunc
 	birdeyeClient  birdeye.ClientAPI
 	apiTracker     telemetry.TelemetryAPI
 	cache          CoinCache
-	naughtyWordSet map[string]struct{} // <<< ADD THIS LINE
+	naughtyWordSet map[string]struct{}
 }
 
 // min is a helper function to find the minimum of two integers.
@@ -72,9 +72,6 @@ func NewService(
 		naughtyWordSet: make(map[string]struct{}),
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
-	if service.config.CacheExpiry == 0 {
-		slog.Warn("Coin service cache expiration is not set")
-	}
 
 	// Load naughty words during initialization
 	go func() {
@@ -445,11 +442,13 @@ func (s *Service) FechAndStoreTrendingTokens(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to fetch and enrich trending coins: %w", err)
 		}
+		limit := 20
+		offset := 0
 
 		// Get existing coins with "trending" tag to clear them
-		existingTrendingCoins, err := txStore.SearchCoins(ctx, "", []string{"trending"}, 0, 1000, 0, "", false)
+		existingTrendingCoins, _, err := txStore.ListTrendingCoins(ctx, db.ListOptions{Limit: &limit, Offset: &offset})
 		if err != nil {
-			return fmt.Errorf("failed to search for existing trending coins: %w", err)
+			return fmt.Errorf("failed to ListTrendingCoins for existing trending coins: %w", err)
 		}
 
 		// Clear "trending" tag from existing trending coins
@@ -541,10 +540,12 @@ func (s *Service) FetchAndStoreTopGainersTokens(ctx context.Context) error {
 			return fmt.Errorf("failed to enrich top gainers tokens: %w", err)
 		}
 
+		limit := 20
+		offset := 0
 		// Get existing coins with "top-gainer" tag to clear them
-		existingTopGainers, err := txStore.SearchCoins(ctx, "", []string{"top-gainer"}, 0, 1000, 0, "", false)
+		existingTopGainers, _, err := txStore.ListTopGainersCoins(ctx, db.ListOptions{Limit: &limit, Offset: &offset})
 		if err != nil {
-			return fmt.Errorf("failed to search for existing top gainers: %w", err)
+			return fmt.Errorf("failed to ListTopGainersCoins for existing top gainers: %w", err)
 		}
 
 		// Clear "top-gainer" tag from existing top gainers
@@ -724,14 +725,10 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		}
 
 		// Get existing coins with "new-coin" tag to clear them
-		// Define default ListOptions for SearchCoins
-		searchLimit := 1000
-		// searchOffset := 0 // Offset not needed if we process all returned by ListWithOpts
-		// emptyString := "" // Not needed if default sort is fine
-		// falseBool := false // Not needed if default sort is fine
-		existingNewCoins, _, listErr := txStore.Coins().ListWithOpts(ctx, db.ListOptions{Filters: []db.FilterOption{{Field: "tags", Operator: db.FilterArrayOpAny, Value: "new-coin"}}, Limit: &searchLimit})
-		if listErr != nil && !errors.Is(listErr, db.ErrNotFound) {
-			slog.ErrorContext(ctx, "Failed to search for existing new coins to clear tags", slog.Any("error", listErr))
+		listOpts := db.ListOptions{Limit: &limit, Offset: &offset}
+		existingNewCoins, _, err := s.store.ListNewestCoins(ctx, listOpts)
+		if err != nil && !errors.Is(err, db.ErrNotFound) {
+			slog.ErrorContext(ctx, "Failed to ListNewestCoins for existing new coins to clear tags", slog.Any("error", err))
 			// Continue, as this is not a fatal error for processing new coins
 		}
 
@@ -869,8 +866,7 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 		listOpts.Offset = &offsetInt
 	}
 
-	// First, check if we have any existing new coins
-	existingNewCoins, err := s.store.SearchCoins(ctx, "", []string{"new-coin"}, 0, 1, 0, "", false)
+	existingNewCoins, _, err := s.store.ListNewestCoins(ctx, listOpts)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to check for existing new coins", "error", err)
 		// Continue with the normal flow even if check fails
@@ -890,7 +886,7 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 		slog.ErrorContext(ctx, "Failed to list newest coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list newest coins: %w", err)
 	}
-	s.cache.Set(cacheKey_new, modelCoins, s.config.CacheExpiry)
+	s.cache.Set(cacheKey_new, modelCoins, s.config.NewCoinsFetchInterval)
 
 	return modelCoins, totalCount, nil
 }
@@ -983,7 +979,7 @@ func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) 
 	}
 
 	// First, check if we have any existing trending coins
-	existingTrendingCoins, err := s.store.SearchCoins(ctx, "", []string{"trending"}, 0, 1, 0, "", false)
+	existingTrendingCoins, _, err := s.store.ListTrendingCoins(ctx, listOpts)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to check for existing trending coins", "error", err)
 		// Continue with the normal flow even if check fails
@@ -1003,7 +999,7 @@ func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) 
 		slog.ErrorContext(ctx, "Failed to list trending coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list trending coins: %w", err)
 	}
-	s.cache.Set(cacheKey_trending, modelCoins, s.config.CacheExpiry)
+	s.cache.Set(cacheKey_trending, modelCoins, s.config.TrendingFetchInterval)
 
 	return modelCoins, totalCount, nil
 }
@@ -1025,7 +1021,7 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 	}
 
 	// First, check if we have any existing top gainers
-	existingTopGainers, err := s.store.SearchCoins(ctx, "", []string{"top-gainer"}, 0, 1, 0, "", false)
+	existingTopGainers, _, err := s.store.ListTopGainersCoins(ctx, listOpts)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to check for existing top gainers", "error", err)
 		// Continue with the normal flow even if check fails
@@ -1046,7 +1042,7 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 		return nil, 0, fmt.Errorf("failed to list top gainers coins: %w", err)
 	}
 
-	s.cache.Set(cacheKey_top, modelCoins, s.config.CacheExpiry)
+	s.cache.Set(cacheKey_top, modelCoins, s.config.TopGainersFetchInterval)
 
 	return modelCoins, totalCount, nil
 }

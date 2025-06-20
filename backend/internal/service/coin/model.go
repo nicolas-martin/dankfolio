@@ -14,7 +14,6 @@ type Config struct {
 	NewCoinsFetchInterval   time.Duration
 	TrendingFetchInterval   time.Duration
 	TopGainersFetchInterval time.Duration
-	CacheExpiry             time.Duration
 }
 
 // --- Structs for Trending Tokens Output ---

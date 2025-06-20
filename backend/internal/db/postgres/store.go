@@ -20,12 +20,12 @@ import (
 
 // Store implements the db.Store interface using PostgreSQL and GORM.
 type Store struct {
-	db           *gorm.DB
-	coinsRepo    db.Repository[model.Coin]
-	tradesRepo   db.Repository[model.Trade]
-	rawCoinsRepo db.Repository[model.RawCoin]
-	walletRepo   db.Repository[model.Wallet]
-	apiStatsRepo db.Repository[model.ApiStat]
+	db               *gorm.DB
+	coinsRepo        db.Repository[model.Coin]
+	tradesRepo       db.Repository[model.Trade]
+	rawCoinsRepo     db.Repository[model.RawCoin]
+	walletRepo       db.Repository[model.Wallet]
+	apiStatsRepo     db.Repository[model.ApiStat]
 	naughtyWordsRepo db.Repository[model.NaughtyWord] // <<< ADD THIS LINE
 }
 
@@ -35,12 +35,12 @@ var _ db.Store = (*Store)(nil) // Compile-time check for interface implementatio
 // This is used internally for creating transactional stores.
 func NewStoreWithDB(database *gorm.DB) *Store {
 	return &Store{
-		db:           database,
-		coinsRepo:    NewRepository[schema.Coin, model.Coin](database),
-		tradesRepo:   NewRepository[schema.Trade, model.Trade](database),
-		rawCoinsRepo: NewRepository[schema.RawCoin, model.RawCoin](database),
-		walletRepo:   NewRepository[schema.Wallet, model.Wallet](database),
-		apiStatsRepo: NewRepository[model.ApiStat, model.ApiStat](database), // Use generic repo; S=model.ApiStat, M=model.ApiStat
+		db:               database,
+		coinsRepo:        NewRepository[schema.Coin, model.Coin](database),
+		tradesRepo:       NewRepository[schema.Trade, model.Trade](database),
+		rawCoinsRepo:     NewRepository[schema.RawCoin, model.RawCoin](database),
+		walletRepo:       NewRepository[schema.Wallet, model.Wallet](database),
+		apiStatsRepo:     NewRepository[model.ApiStat, model.ApiStat](database),          // Use generic repo; S=model.ApiStat, M=model.ApiStat
 		naughtyWordsRepo: NewRepository[schema.NaughtyWord, model.NaughtyWord](database), // <<< ADD THIS LINE
 	}
 }

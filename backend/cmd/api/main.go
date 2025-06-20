@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -31,13 +32,13 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+
 	// "github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema" // Not directly needed for count if repo has Count
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
-	"strings"
 )
 
 var populateNaughtyWords = flag.Bool("populate-naughty-words", false, "If set, fetches the naughty word list and populates the database.")
@@ -155,7 +156,6 @@ func main() {
 		NewCoinsFetchInterval:   config.NewCoinsFetchInterval,
 		TrendingFetchInterval:   config.TrendingCoinsFetchInterval,
 		TopGainersFetchInterval: config.TopGainersFetchInterval,
-		CacheExpiry:             config.CoinServiceCacheExpiry,
 	}
 
 	coinCache, err := coin.NewCoinCache()
@@ -238,9 +238,9 @@ func main() {
 
 				for _, lang := range languages {
 					slog.InfoContext(ctx, "Downloading banned words", slog.String("language", lang.Name), slog.String("code", lang.Code))
-					
+
 					wordListURL := fmt.Sprintf("https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/%s", lang.Code)
-					
+
 					client := &http.Client{Timeout: 30 * time.Second}
 					resp, httpErr := client.Get(wordListURL)
 					if httpErr != nil {
@@ -288,9 +288,9 @@ func main() {
 
 					totalWordsFetched += len(wordsToCreate)
 					totalWordsAdded += languageWordsAdded
-					
-					slog.InfoContext(ctx, "Completed language", 
-						slog.String("language", lang.Name), 
+
+					slog.InfoContext(ctx, "Completed language",
+						slog.String("language", lang.Name),
 						slog.Int("words_fetched", len(wordsToCreate)),
 						slog.Int("words_added", languageWordsAdded))
 
@@ -298,8 +298,8 @@ func main() {
 					time.Sleep(100 * time.Millisecond)
 				}
 
-				slog.InfoContext(ctx, "Finished populating naughty words table from all languages.", 
-					slog.Int("total_words_added", totalWordsAdded), 
+				slog.InfoContext(ctx, "Finished populating naughty words table from all languages.",
+					slog.Int("total_words_added", totalWordsAdded),
 					slog.Int("total_words_fetched", totalWordsFetched),
 					slog.Int("languages_processed", len(languages)))
 
@@ -419,7 +419,6 @@ type Config struct {
 	PlatformFeeBps             int           `envconfig:"PLATFORM_FEE_BPS" required:"true"`             // Basis points for platform fee, e.g., 100 = 1%
 	PlatformFeeAccountAddress  string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS" required:"true"` // Conditionally required, handled in validation
 	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`
-	CoinServiceCacheExpiry     time.Duration `envconfig:"COIN_SERVICE_CACHE_EXPIRY" required:"true"` // Default to 1 hour
 }
 
 func loadConfig() *Config {
