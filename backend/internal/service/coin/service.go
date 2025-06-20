@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -271,85 +272,10 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 		Decimals: rawCoin.Decimals,
 	}
 
-	// <<< NAUGHTY WORD CHECK FOR NAME (from rawCoin) >>>
-	if s.containsNaughtyWord(initialData.Name) {
-		slog.WarnContext(ctx, "Raw coin name identified as naughty during enrichRawCoinAndSave (pre-enrichment)",
-			slog.String("name", initialData.Name),
-			slog.String("address", rawCoin.Address))
-		// Attempt to delete the unusable rawCoin
-		rawCoinPKIDStrDel := strconv.FormatUint(rawCoin.ID, 10)
-		if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStrDel); delErr != nil {
-			slog.WarnContext(ctx, "Failed to delete naughty raw_coin", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
-		} else {
-			slog.InfoContext(ctx, "Successfully deleted naughty raw_coin", slog.String("address", rawCoin.Address))
-		}
-		return nil, fmt.Errorf("raw coin name contains inappropriate content: %s", initialData.Name)
-	}
-
-	// <<< NAUGHTY WORD CHECK FOR SYMBOL (from rawCoin) >>>
-	if s.containsNaughtyWord(initialData.Symbol) {
-		slog.WarnContext(ctx, "Raw coin symbol identified as naughty during enrichRawCoinAndSave (pre-enrichment)",
-			slog.String("symbol", initialData.Symbol),
-			slog.String("address", rawCoin.Address))
-		// Attempt to delete the unusable rawCoin
-		rawCoinPKIDStrDel := strconv.FormatUint(rawCoin.ID, 10)
-		if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStrDel); delErr != nil {
-			slog.WarnContext(ctx, "Failed to delete naughty raw_coin", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
-		} else {
-			slog.InfoContext(ctx, "Successfully deleted naughty raw_coin", slog.String("address", rawCoin.Address))
-		}
-		return nil, fmt.Errorf("raw coin symbol contains inappropriate content: %s", initialData.Symbol)
-	}
-
 	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
 	if err != nil {
 		slog.ErrorContext(ctx, "Enrichment from raw_coin failed", slog.String("address", rawCoin.Address), slog.Any("error", err))
 		return nil, fmt.Errorf("failed to enrich raw_coin %s: %w", rawCoin.Address, err)
-	}
-
-	// <<< NAUGHTY WORD CHECK FOR NAME (post-enrichment) >>>
-	if enrichedCoin != nil && s.containsNaughtyWord(enrichedCoin.Name) {
-		slog.WarnContext(ctx, "Enriched coin name identified as naughty during enrichRawCoinAndSave (post-enrichment)",
-			slog.String("name", enrichedCoin.Name),
-			slog.String("address", enrichedCoin.Address))
-		// Attempt to delete the original rawCoin as its enrichment is problematic
-		rawCoinPKIDStrDel := strconv.FormatUint(rawCoin.ID, 10)
-		if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStrDel); delErr != nil {
-			slog.WarnContext(ctx, "Failed to delete raw_coin after its name was found naughty post-enrichment", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
-		} else {
-			slog.InfoContext(ctx, "Successfully deleted raw_coin as its name was naughty post-enrichment", slog.String("address", rawCoin.Address))
-		}
-		return nil, fmt.Errorf("token name contains inappropriate content for address: %s", enrichedCoin.Address)
-	}
-
-	// <<< NAUGHTY WORD CHECK FOR SYMBOL (post-enrichment) >>>
-	if enrichedCoin != nil && s.containsNaughtyWord(enrichedCoin.Symbol) {
-		slog.WarnContext(ctx, "Enriched coin symbol identified as naughty during enrichRawCoinAndSave (post-enrichment)",
-			slog.String("symbol", enrichedCoin.Symbol),
-			slog.String("address", enrichedCoin.Address))
-		// Attempt to delete the original rawCoin as its enrichment is problematic
-		rawCoinPKIDStrDel := strconv.FormatUint(rawCoin.ID, 10)
-		if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStrDel); delErr != nil {
-			slog.WarnContext(ctx, "Failed to delete raw_coin after its symbol was found naughty post-enrichment", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
-		} else {
-			slog.InfoContext(ctx, "Successfully deleted raw_coin as its symbol was naughty post-enrichment", slog.String("address", rawCoin.Address))
-		}
-		return nil, fmt.Errorf("token symbol contains inappropriate content for address: %s", enrichedCoin.Address)
-	}
-
-	// <<< NAUGHTY WORD CHECK FOR DESCRIPTION (post-enrichment) >>>
-	if enrichedCoin != nil && s.containsNaughtyWord(enrichedCoin.Description) {
-		slog.WarnContext(ctx, "Enriched coin description identified as naughty during enrichRawCoinAndSave (post-enrichment)",
-			slog.String("description", enrichedCoin.Description),
-			slog.String("address", enrichedCoin.Address))
-		// Attempt to delete the original rawCoin as its enrichment is problematic
-		rawCoinPKIDStrDel := strconv.FormatUint(rawCoin.ID, 10)
-		if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStrDel); delErr != nil {
-			slog.WarnContext(ctx, "Failed to delete raw_coin after its description was found naughty post-enrichment", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
-		} else {
-			slog.InfoContext(ctx, "Successfully deleted raw_coin as its description was naughty post-enrichment", slog.String("address", rawCoin.Address))
-		}
-		return nil, fmt.Errorf("token description contains inappropriate content for address: %s", enrichedCoin.Address)
 	}
 
 	existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
@@ -416,20 +342,8 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, address string) (*model
 		initialData = &birdeye.TokenDetails{Address: address}
 	}
 
-	// <<< NAUGHTY WORD CHECK FOR NAME (pre-enrichment) >>>
-	if initialData != nil && s.containsNaughtyWord(initialData.Name) {
-		slog.WarnContext(ctx, "Token name identified as naughty during fetchAndCacheCoin (pre-enrichment)",
-			slog.String("name", initialData.Name),
-			slog.String("address", address))
+	if initialData != nil && s.coinContainsNaughtyWord(initialData.Name, initialData.Symbol) {
 		return nil, fmt.Errorf("token name contains inappropriate content: %s", initialData.Name)
-	}
-
-	// <<< NAUGHTY WORD CHECK FOR SYMBOL (pre-enrichment) >>>
-	if initialData != nil && s.containsNaughtyWord(initialData.Symbol) {
-		slog.WarnContext(ctx, "Token symbol identified as naughty during fetchAndCacheCoin (pre-enrichment)",
-			slog.String("symbol", initialData.Symbol),
-			slog.String("address", address))
-		return nil, fmt.Errorf("token symbol contains inappropriate content: %s", initialData.Symbol)
 	}
 
 	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
@@ -439,27 +353,8 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, address string) (*model
 	}
 
 	// <<< NAUGHTY WORD CHECK FOR NAME (post-enrichment) >>>
-	if enrichedCoin != nil && s.containsNaughtyWord(enrichedCoin.Name) {
-		slog.WarnContext(ctx, "Token name identified as naughty during fetchAndCacheCoin (post-enrichment)",
-			slog.String("name", enrichedCoin.Name),
-			slog.String("address", enrichedCoin.Address))
-		return nil, fmt.Errorf("token name contains inappropriate content for address: %s", enrichedCoin.Address)
-	}
-
-	// <<< NAUGHTY WORD CHECK FOR SYMBOL (post-enrichment) >>>
-	if enrichedCoin != nil && s.containsNaughtyWord(enrichedCoin.Symbol) {
-		slog.WarnContext(ctx, "Token symbol identified as naughty during fetchAndCacheCoin (post-enrichment)",
-			slog.String("symbol", enrichedCoin.Symbol),
-			slog.String("address", enrichedCoin.Address))
-		return nil, fmt.Errorf("token symbol contains inappropriate content for address: %s", enrichedCoin.Address)
-	}
-
-	// <<< NAUGHTY WORD CHECK FOR DESCRIPTION (post-enrichment) >>>
-	if enrichedCoin != nil && s.containsNaughtyWord(enrichedCoin.Description) {
-		slog.WarnContext(ctx, "Token description identified as naughty during fetchAndCacheCoin (post-enrichment)",
-			slog.String("description", enrichedCoin.Description),
-			slog.String("address", enrichedCoin.Address))
-		return nil, fmt.Errorf("token description contains inappropriate content for address: %s", enrichedCoin.Address)
+	if enrichedCoin != nil && s.coinContainsNaughtyWord(enrichedCoin.Name, enrichedCoin.Description) {
+		return nil, fmt.Errorf("token name contains inappropriate content for address: %s after enrich", enrichedCoin.Address)
 	}
 
 	existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
@@ -722,12 +617,7 @@ func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, 
 	slog.InfoContext(ctx, "Successfully fetched all coins from Jupiter", slog.Int("fetched_count", len(resp.Coins)))
 	rawCoinsToUpsert := make([]model.RawCoin, 0, len(resp.Coins))
 	for _, jupiterCoin := range resp.Coins {
-		// jupiterCoin is of type jupiter.CoinListInfo (struct, not pointer), so no nil check needed
-		// <<< NAUGHTY WORD CHECK FOR NAME >>>
-		if s.containsNaughtyWord(jupiterCoin.Symbol) {
-			slog.InfoContext(ctx, "Skipping Jupiter token in GetAllTokens due to naughty symbol",
-				slog.String("symbol", jupiterCoin.Symbol),
-				slog.String("address", jupiterCoin.Address))
+		if s.coinContainsNaughtyWord(jupiterCoin.Symbol, jupiterCoin.Name) {
 			continue // Skip this token
 		}
 		rawCoinModelPtr := jupiterCoin.ToRawCoin()
@@ -782,12 +672,8 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			if newToken == nil { // Safety check for pointer
 				continue
 			}
-			// <<< NAUGHTY WORD CHECK FOR NAME >>>
-			if s.containsNaughtyWord(newToken.Symbol) {
-				slog.InfoContext(ctx, "Skipping Jupiter new token due to naughty symbol",
-					slog.String("symbol", newToken.Symbol),
-					slog.String("mint", newToken.Mint))
-				continue // Skip this token
+			if s.coinContainsNaughtyWord(newToken.Symbol, newToken.Name) {
+				continue
 			}
 			// Add to filtered list if not naughty
 			filteredJupiterTokens = append(filteredJupiterTokens, newToken)
@@ -834,7 +720,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		// searchOffset := 0 // Offset not needed if we process all returned by ListWithOpts
 		// emptyString := "" // Not needed if default sort is fine
 		// falseBool := false // Not needed if default sort is fine
-		existingNewCoins, _, listErr := txStore.Coins().ListWithOpts(ctx, db.ListOptions{Filters: []db.FilterOption{{Field: "tags", Operator: db.FilterOpLike, Value: "%new-coin%"}}, Limit: &searchLimit})
+		existingNewCoins, _, listErr := txStore.Coins().ListWithOpts(ctx, db.ListOptions{Filters: []db.FilterOption{{Field: "tags", Operator: db.FilterArrayOpAny, Value: "new-coin"}}, Limit: &searchLimit})
 		if listErr != nil && !errors.Is(listErr, db.ErrNotFound) {
 			slog.ErrorContext(ctx, "Failed to search for existing new coins to clear tags", slog.Any("error", listErr))
 			// Continue, as this is not a fatal error for processing new coins
@@ -875,13 +761,7 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			for _, coin := range enrichedCoins { // Iterate over copies
 				currentCoin := coin // Create a new instance or copy
 				// Add "new-coin" tag if not already present (processBirdeyeTokens might not add specific tags)
-				isNewCoinTagPresent := false
-				for _, tag := range currentCoin.Tags {
-					if tag == "new-coin" {
-						isNewCoinTagPresent = true
-						break
-					}
-				}
+				isNewCoinTagPresent := slices.Contains(currentCoin.Tags, "new-coin")
 				if !isNewCoinTagPresent {
 					currentCoin.Tags = append(currentCoin.Tags, "new-coin")
 				}
@@ -1055,6 +935,14 @@ func (s *Service) isWordNaughty(word string) bool {
 	return found
 }
 
+func (s *Service) coinContainsNaughtyWord(name, description string) bool {
+	found := s.containsNaughtyWord(name)
+	if found {
+		return found
+	}
+	return s.containsNaughtyWord(description)
+}
+
 // containsNaughtyWord checks if any word in the input text is a naughty word.
 func (s *Service) containsNaughtyWord(text string) bool {
 	if text == "" {
@@ -1069,8 +957,8 @@ func (s *Service) containsNaughtyWord(text string) bool {
 	for _, word := range words {
 		// Trim additional common punctuation that might remain after FieldsFunc
 		cleanedWord := strings.Trim(word, ".,;:!?'\"()[]{}<>")
-		if cleanedWord != "" && s.isWordNaughty(cleanedWord) { // isWordNaughty already handles lowercase
-			slog.DebugContext(context.Background(), "Naughty word found in text", slog.String("word", cleanedWord), slog.String("text_preview", text[:min(len(text), 100)]))
+		if cleanedWord != "" && s.isWordNaughty(cleanedWord) {
+			slog.Warn("Naughty word found in text", slog.String("word", cleanedWord), slog.String("text_preview", text[:min(len(text), 100)]))
 			return true
 		}
 	}

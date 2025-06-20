@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/lib/pq"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -240,14 +241,28 @@ func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions
 	// Base query for the specific schema type S
 	query := r.db.WithContext(ctx).Model(new(S))
 
+	// 16:09:25 /Users/nma/dev/dankfolio/backend/internal/db/postgres/repository.go:252 ERROR: operator does not exist: text[] ~~ unknown (SQLSTATE 42883)
+	// [rows:0] SELECT count(*) FROM "coins" WHERE tags LIKE '%new-coin%'
+	// ERROR Failed to search for existing new coins to clear tags error=failed to count items: ERROR: operator does not exist: text[] ~~ unknown (SQLSTATE 42883)
+
 	// Apply filters for counting
 	countQuery := query
 	for _, filter := range opts.Filters {
-		op := filter.Operator
-		if op == "" {
-			op = db.FilterOpEqual
+		switch filter.Operator {
+		case db.FilterArrayOpAny:
+			query = query.Where("? = ANY("+filter.Field+")", filter.Value)
+		case db.FilterArrayOpContains:
+			// array contains all of these values
+			vals := filter.Value.([]string)
+			query = query.Where(filter.Field+" @> ?", pq.Array(vals))
+		default:
+			// your existing =, !=, <, >, LIKE, IN, etc.
+			query = query.Where(
+				fmt.Sprintf("%s %s ?", filter.Field, filter.Operator),
+				filter.Value,
+			)
 		}
-		countQuery = countQuery.Where(fmt.Sprintf("%s %s ?", filter.Field, string(op)), filter.Value)
+		countQuery = countQuery.Where(fmt.Sprintf("%s %s ?", filter.Field, string(filter.Operator)), filter.Value)
 	}
 	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count items: %w", err)

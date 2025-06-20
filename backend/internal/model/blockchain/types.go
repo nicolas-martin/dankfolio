@@ -123,15 +123,15 @@ type TradeQuote struct {
 	PriceImpactPct           float64
 	Route                    string // Description of the trade route
 	// Other generic fields like slippage, etc.
-	RawQuote interface{} // To store chain-specific raw quote if needed for execution
+	RawQuote any // To store chain-specific raw quote if needed for execution
 }
 
 // TokenMetadata represents generic metadata for a token/mint.
 type TokenMetadata struct {
 	Name      string
 	Symbol    string
-	URI       string                 // Link to off-chain JSON metadata often following a standard
-	Decimals  uint8                  // Added, as this is crucial mint info often with metadata
-	Supply    string                 // Total supply as a string
-	OtherData map[string]interface{} // For any other chain-specific metadata
+	URI       string         // Link to off-chain JSON metadata often following a standard
+	Decimals  uint8          // Added, as this is crucial mint info often with metadata
+	Supply    string         // Total supply as a string
+	OtherData map[string]any // For any other chain-specific metadata
 }

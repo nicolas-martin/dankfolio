@@ -33,7 +33,7 @@ func (s *Service) UpdateTrendingTokensFromBirdeye(ctx context.Context) (*Trendin
 	slog.Info("Successfully received trending tokens from Birdeye", "count", len(birdeyeTokens.Data.Tokens))
 
 	// Step 2: Enrich the Birdeye tokens concurrently
-	enrichedCoins, err := s.processBirdeyeTokens(ctx, birdeyeTokens.Data.Tokens) // Pass birdeye.TokenDetails directly
+	enrichedCoins, err := s.processBirdeyeTokens(ctx, birdeyeTokens.Data.Tokens)
 	if err != nil {
 		return nil, fmt.Errorf("error during token enrichment process: %w", err)
 	}
@@ -86,18 +86,26 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []bir
 		slog.Int("token_count", len(tokensToEnrich)),
 		slog.Int("concurrency", scrapeMaxConcurrentEnrich))
 
-	enrichedCoinsResult := make([]model.Coin, 0, len(tokensToEnrich))
+	cleanedToken := make([]birdeye.TokenDetails, 0)
+	for _, token := range tokensToEnrich {
+		// Check if the token name is naughty before proceeding
+		if s.coinContainsNaughtyWord(token.Name, token.Symbol) {
+			continue
+		}
+		cleanedToken = append(cleanedToken, token)
+	}
+	enrichedCoinsResult := make([]model.Coin, 0, len(cleanedToken))
 	var wg sync.WaitGroup
 	var mu sync.Mutex // Protects enrichedCoinsResult
 	sem := make(chan struct{}, scrapeMaxConcurrentEnrich)
 	var encounteredErrors []error
 	var errMu sync.Mutex // Mutex to protect encounteredErrors slice
 
-	enrichPhaseTimeout := time.Duration(len(tokensToEnrich)*20) * time.Second
+	enrichPhaseTimeout := time.Duration(len(cleanedToken)*20) * time.Second
 	enrichCtx, cancelEnrich := context.WithTimeout(ctx, enrichPhaseTimeout)
 	defer cancelEnrich()
 
-	for _, birdeyeTokenLoopVar := range tokensToEnrich {
+	for _, birdeyeTokenLoopVar := range cleanedToken {
 		token := birdeyeTokenLoopVar // Capture range variable
 
 		// Check name before starting goroutine and enrichment
@@ -168,7 +176,7 @@ func (s *Service) processBirdeyeTokens(ctx context.Context, tokensToEnrich []bir
 	}
 
 	slog.InfoContext(ctx, "Enrichment summary",
-		slog.Int("input_token_count", len(tokensToEnrich)),
+		slog.Int("input_token_count", len(cleanedToken)),
 		slog.Int("processed_and_kept_tokens", len(enrichedCoinsResult)),
 		slog.Int("error_count", len(encounteredErrors)))
 

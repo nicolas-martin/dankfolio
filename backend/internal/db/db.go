@@ -25,7 +25,7 @@ type Store interface {
 	RawCoins() Repository[model.RawCoin]
 	Wallet() Repository[model.Wallet]
 	// ApiStats() ApiStatsRepository // Changed to use generic repository
-	ApiStats() Repository[model.ApiStat] // model.ApiStat will be used as T in Repository[T Entity]
+	ApiStats() Repository[model.ApiStat]         // model.ApiStat will be used as T in Repository[T Entity]
 	NaughtyWords() Repository[model.NaughtyWord] // <<< ADD THIS LINE
 
 	// Custom operations
@@ -65,6 +65,9 @@ const (
 	FilterOpIn           FilterOperator = "IN"
 	FilterOpNotIn        FilterOperator = "NOT IN"
 	FilterOpLike         FilterOperator = "LIKE"
+	// array filter operations
+	FilterArrayOpAny      FilterOperator = "ANY"
+	FilterArrayOpContains FilterOperator = "@>"
 )
 
 // FilterOption represents a single filter condition.
