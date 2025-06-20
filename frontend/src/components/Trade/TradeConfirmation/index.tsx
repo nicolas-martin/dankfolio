@@ -9,7 +9,6 @@ import { Coin } from '@/types';
 import CachedImage from '@/components/Common/CachedImage';
 import { formatPrice, formatAddress as utilFormatAddress } from '@/utils/numberFormat';
 import ModalActionButtons from 'components/Common/ModalActionButton';
-import TradeDetails from '@components/Trade/TradeDetails';
 
 const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	isVisible,
@@ -19,7 +18,6 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 	toAmount,
 	fromToken,
 	toToken,
-	fees,
 	isLoading = false,
 	operationType = 'swap',
 	recipientAddress,
@@ -188,17 +186,6 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 					)}
 				</View>
 
-				{/* Fee Details */}
-				<TradeDetails
-					exchangeRate={fees.exchangeRate}
-					gasFee={fees.gasFee}
-					priceImpactPct={fees.priceImpactPct}
-					totalFee={fees.totalFee}
-					route={fees.route}
-					solFeeBreakdown={fees.solFeeBreakdown}
-					totalSolRequired={fees.totalSolRequired}
-					tradingFeeSol={fees.tradingFeeSol}
-				/>
 
 				{/* Action Buttons */}
 				<ModalActionButtons

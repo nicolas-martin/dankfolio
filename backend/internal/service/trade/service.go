@@ -117,22 +117,19 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		return nil, fmt.Errorf("failed to get toCoin details for %s: %w", params.ToCoinMintAddress, err)
 	}
 
-	// Convert decimal amount to raw amount (lamports for SOL)
-	// Frontend sends decimal amounts like "0.000883387", but Jupiter expects raw amounts like "883387"
-	amountFloat, err := strconv.ParseFloat(params.Amount, 64)
+	// Frontend already sends raw amounts (lamports for SOL), so use directly
+	rawAmount := params.Amount
+	
+	// Validate that amount is a positive integer
+	amountInt, err := strconv.ParseUint(rawAmount, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("invalid amount: %w", err)
+		return nil, fmt.Errorf("invalid amount (must be positive integer in raw units): %w", err)
 	}
-	if amountFloat <= 0 {
-		return nil, fmt.Errorf("amount must be positive: %s", params.Amount)
+	if amountInt == 0 {
+		return nil, fmt.Errorf("amount must be positive: %s", rawAmount)
 	}
 
-	// Convert to raw amount using token decimals
-	rawAmountFloat := amountFloat * math.Pow(10, float64(fromCoinModel.Decimals))
-	rawAmount := fmt.Sprintf("%.0f", rawAmountFloat) // Remove decimal places
-
-	slog.Debug("Amount conversion",
-		"decimal_amount", params.Amount,
+	slog.Debug("Using raw amount from frontend",
 		"raw_amount", rawAmount,
 		"token_decimals", fromCoinModel.Decimals)
 
@@ -182,10 +179,8 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse fee: %w", err)
 	}
-	amount, err := strconv.ParseFloat(params.Amount, 64)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse input amount: %w", err)
-	}
+	// Convert raw amount to decimal for storage
+	amount := float64(amountInt) / math.Pow(10, float64(fromCoinModel.Decimals))
 
 	// Create trade record with essential information
 	trade := &model.Trade{
@@ -370,11 +365,12 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 		return nil, fmt.Errorf("invalid to_coin_mint_address: %s", toCoinMintAddress)
 	}
 
-	amountFloat, err := strconv.ParseFloat(inputAmount, 64)
+	// Frontend already sends raw amounts (lamports for SOL), so validate as integer
+	amountInt, err := strconv.ParseUint(inputAmount, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("invalid input_amount: %w", err)
+		return nil, fmt.Errorf("invalid input_amount (must be positive integer in raw units): %w", err)
 	}
-	if amountFloat <= 0 {
+	if amountInt == 0 {
 		return nil, fmt.Errorf("input_amount must be positive: %s", inputAmount)
 	}
 
@@ -478,7 +474,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 	totalFeeInUSDCoin := totalFeeInUSD / math.Pow10(9)
 
 	// Calculate exchange rate
-	initialAmount, _ := strconv.ParseFloat(inputAmount, 64)
+	initialAmount := float64(amountInt)
 	exchangeRate := outAmount / initialAmount
 
 	truncatedPriceImpact := truncateDecimals(quote.PriceImpactPct, 6)

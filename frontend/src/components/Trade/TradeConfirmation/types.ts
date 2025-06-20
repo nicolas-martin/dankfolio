@@ -9,7 +9,6 @@ interface TradeConfirmationProps {
 	toAmount: string;
 	fromToken: Coin;
 	toToken?: Coin;
-	fees: TradeDetailsProps;
 	isLoading?: boolean;
 	operationType?: 'swap' | 'send';
 	recipientAddress?: string;
