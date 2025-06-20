@@ -5,7 +5,7 @@ import { useTheme } from 'react-native-paper';
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	const colors = theme.colors;
-	
+
 	const createChangeTextStyle = (isPositive: boolean) => [
 		{
 			fontSize: theme.typography.fontSize.base,
@@ -43,6 +43,7 @@ export const useStyles = () => {
 		coinInfoContainer: {
 			flex: 1,
 			justifyContent: 'center',
+			paddingLeft: theme.spacing.md,
 		},
 		container: {
 			padding: theme.spacing.lg,

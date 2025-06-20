@@ -19,6 +19,7 @@ Dankfolio is a Solana-based meme coin trading application with a React Native fr
 - `make backend-build` - Compile Go code
 - `make mocks` - Generate interface mocks using mockery v3.3.2
 - `make proto` - Generate protobuf files
+- `go run cmd/banned-words-manager/main.go` - Manage banned words from multiple languages
 
 ### Frontend (run from `./frontend/`)
 - `yarn test` - Run Jest tests (logic only, excludes UI tests)
@@ -104,6 +105,14 @@ ComponentName/
 - Never expose private keys or sensitive data
 - Input validation on all endpoints
 - Secure keychain storage for wallet data
+- Multi-language banned words filtering for user-generated content
+
+### Banned Words Management
+The system includes comprehensive banned words filtering across 28 languages:
+- `--populate-naughty-words` flag downloads all languages automatically
+- Standalone utility: `go run cmd/banned-words-manager/main.go`
+- Languages include: Arabic, Czech, Danish, German, English, Spanish, French, Hindi, Japanese, Korean, Russian, Chinese, and more
+- Words stored with language codes for targeted filtering
 
 ## Lint & Build Requirements
 

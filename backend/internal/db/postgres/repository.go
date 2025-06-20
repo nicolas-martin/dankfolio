@@ -18,20 +18,20 @@ import (
 // S is the schema type (used with GORM), M is the model type (used in services).
 // For ApiStat, S and M might be the same (model.ApiStat).
 type Repository[S interface {
-	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet | model.ApiStat // Added model.ApiStat for S
+	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet | model.ApiStat | schema.NaughtyWord // Added schema.NaughtyWord for S
 	db.Entity
 }, M interface {
-	model.Coin | model.Trade | model.RawCoin | model.Wallet | model.ApiStat // Added model.ApiStat for M
+	model.Coin | model.Trade | model.RawCoin | model.Wallet | model.ApiStat | model.NaughtyWord // Added model.NaughtyWord for M
 }] struct {
 	db *gorm.DB
 }
 
 // NewRepository creates a new GORM repository.
 func NewRepository[S interface {
-	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet | model.ApiStat
+	schema.Coin | schema.Trade | schema.RawCoin | schema.Wallet | model.ApiStat | schema.NaughtyWord
 	db.Entity
 }, M interface {
-	model.Coin | model.Trade | model.RawCoin | model.Wallet | model.ApiStat
+	model.Coin | model.Trade | model.RawCoin | model.Wallet | model.ApiStat | model.NaughtyWord
 }](db *gorm.DB) *Repository[S, M] {
 	return &Repository[S, M]{db: db}
 }

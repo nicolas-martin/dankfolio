@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -195,56 +196,117 @@ func main() {
 			count = int64(total)
 
 			if count == 0 {
-				slog.InfoContext(ctx, "Naughty words table is empty (or was not found), proceeding with population.")
+				slog.InfoContext(ctx, "Naughty words table is empty (or was not found), proceeding with population from all languages.")
 
-				wordListURL := "https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en"
-				resp, httpErr := http.Get(wordListURL)
-				if httpErr != nil {
-					slog.ErrorContext(ctx, "Failed to fetch naughty word list", slog.String("url", wordListURL), slog.Any("error", httpErr))
-					return
+				// All available languages from the LDNOOBW repository
+				languages := []struct {
+					Code string
+					Name string
+				}{
+					{"ar", "Arabic"},
+					{"cs", "Czech"},
+					{"da", "Danish"},
+					{"de", "German"},
+					{"en", "English"},
+					{"eo", "Esperanto"},
+					{"es", "Spanish"},
+					{"fa", "Persian"},
+					{"fi", "Finnish"},
+					{"fil", "Filipino"},
+					{"fr", "French"},
+					{"fr-CA-u-sd-caqc", "Canadian French"},
+					{"hi", "Hindi"},
+					{"hu", "Hungarian"},
+					{"it", "Italian"},
+					{"ja", "Japanese"},
+					{"kab", "Kabyle"},
+					{"ko", "Korean"},
+					{"nl", "Dutch"},
+					{"no", "Norwegian"},
+					{"pl", "Polish"},
+					{"pt", "Portuguese"},
+					{"ru", "Russian"},
+					{"sv", "Swedish"},
+					{"th", "Thai"},
+					{"tlh", "Klingon"},
+					{"tr", "Turkish"},
+					{"zh", "Chinese"},
 				}
-				defer resp.Body.Close()
 
-				if resp.StatusCode != http.StatusOK {
-					slog.ErrorContext(ctx, "Failed to fetch naughty word list, non-OK status", slog.String("url", wordListURL), slog.Int("status_code", resp.StatusCode))
-					return
-				}
+				totalWordsAdded := 0
+				totalWordsFetched := 0
 
-				scanner := bufio.NewScanner(resp.Body)
-				var wordsToCreate []model.NaughtyWord
-				for scanner.Scan() {
-					word := strings.TrimSpace(scanner.Text())
-					if word != "" {
-						wordsToCreate = append(wordsToCreate, model.NaughtyWord{Word: word})
+				for _, lang := range languages {
+					slog.InfoContext(ctx, "Downloading banned words", slog.String("language", lang.Name), slog.String("code", lang.Code))
+					
+					wordListURL := fmt.Sprintf("https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/%s", lang.Code)
+					
+					client := &http.Client{Timeout: 30 * time.Second}
+					resp, httpErr := client.Get(wordListURL)
+					if httpErr != nil {
+						slog.WarnContext(ctx, "Failed to fetch word list for language", slog.String("language", lang.Name), slog.String("url", wordListURL), slog.Any("error", httpErr))
+						continue
 					}
-				}
-				if scanErr := scanner.Err(); scanErr != nil {
-					slog.ErrorContext(ctx, "Error reading naughty word list", slog.Any("error", scanErr))
-					return
-				}
 
-				if len(wordsToCreate) > 0 {
-					createdCount := 0
+					if resp.StatusCode != http.StatusOK {
+						slog.WarnContext(ctx, "Failed to fetch word list, non-OK status", slog.String("language", lang.Name), slog.String("url", wordListURL), slog.Int("status_code", resp.StatusCode))
+						resp.Body.Close()
+						continue
+					}
+
+					scanner := bufio.NewScanner(resp.Body)
+					var wordsToCreate []model.NaughtyWord
+					for scanner.Scan() {
+						word := strings.TrimSpace(scanner.Text())
+						if word != "" && !strings.HasPrefix(word, "#") { // Skip comments
+							wordsToCreate = append(wordsToCreate, model.NaughtyWord{
+								Word:     word,
+								Language: lang.Code,
+							})
+						}
+					}
+					resp.Body.Close()
+
+					if scanErr := scanner.Err(); scanErr != nil {
+						slog.WarnContext(ctx, "Error reading word list", slog.String("language", lang.Name), slog.Any("error", scanErr))
+						continue
+					}
+
+					// Create words for this language
+					languageWordsAdded := 0
 					for _, nw := range wordsToCreate {
 						createCtx, cancelCreate := context.WithTimeout(ctx, 5*time.Second)
 
 						createErr := coinService.GetStore().NaughtyWords().Create(createCtx, &nw)
 						if createErr != nil {
-							slog.WarnContext(createCtx, "Failed to create naughty word entry", slog.String("word", nw.Word), slog.Any("error", createErr))
+							slog.DebugContext(createCtx, "Failed to create word entry (may already exist)", slog.String("word", nw.Word), slog.String("language", nw.Language), slog.Any("error", createErr))
 						} else {
-							createdCount++
+							languageWordsAdded++
 						}
 						cancelCreate()
 					}
-					slog.InfoContext(ctx, "Finished populating naughty words table.", slog.Int("words_added", createdCount), slog.Int("words_fetched", len(wordsToCreate)))
 
-					if reloadErr := coinService.LoadNaughtyWords(ctx); reloadErr != nil {
-						slog.ErrorContext(ctx, "Failed to reload naughty words in CoinService after populating table", slog.Any("error", reloadErr))
-					} else {
-						slog.InfoContext(ctx, "CoinService naughty words reloaded successfully after table population.")
-					}
+					totalWordsFetched += len(wordsToCreate)
+					totalWordsAdded += languageWordsAdded
+					
+					slog.InfoContext(ctx, "Completed language", 
+						slog.String("language", lang.Name), 
+						slog.Int("words_fetched", len(wordsToCreate)),
+						slog.Int("words_added", languageWordsAdded))
+
+					// Small delay between requests to be respectful
+					time.Sleep(100 * time.Millisecond)
+				}
+
+				slog.InfoContext(ctx, "Finished populating naughty words table from all languages.", 
+					slog.Int("total_words_added", totalWordsAdded), 
+					slog.Int("total_words_fetched", totalWordsFetched),
+					slog.Int("languages_processed", len(languages)))
+
+				if reloadErr := coinService.LoadNaughtyWords(ctx); reloadErr != nil {
+					slog.ErrorContext(ctx, "Failed to reload naughty words in CoinService after populating table", slog.Any("error", reloadErr))
 				} else {
-					slog.InfoContext(ctx, "No words found in the fetched list to populate.")
+					slog.InfoContext(ctx, "CoinService naughty words reloaded successfully after table population.")
 				}
 			} else {
 				slog.InfoContext(ctx, "Naughty words table is not empty, skipping population.", slog.Int64("existing_word_count", count))
