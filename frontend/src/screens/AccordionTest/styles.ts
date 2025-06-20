@@ -1,82 +1,71 @@
 import { StyleSheet } from 'react-native';
-import { AppTheme } from '@/utils/theme'; // Import AppTheme
+import { AppTheme } from '@/utils/theme';
 import { useTheme } from 'react-native-paper';
 
 export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	const colors = theme.colors;
+	
 	const styles = StyleSheet.create({
-		// Accordion styles
 		accordionContainer: {
 			backgroundColor: 'transparent',
 			borderRadius: theme.borderRadius.sm,
 			marginHorizontal: 0,
 			paddingHorizontal: 0,
-			// Ensure touch events are not blocked
-			pointerEvents: 'auto',
 		},
 		accordionDescription: {
 			color: theme.colors.onSurfaceVariant,
 			fontSize: 12,
-		},
-		accordionIcon: {
-			marginLeft: 0,
 		},
 		accordionTitle: {
 			color: theme.colors.onSurface,
 			fontSize: 14,
 			fontWeight: '600',
 		},
+		card: {
+			backgroundColor: theme.colors.surface,
+			borderRadius: theme.borderRadius.md,
+			marginBottom: theme.spacing.md,
+		},
 		container: {
 			backgroundColor: theme.colors.background,
-			borderRadius: theme.borderRadius.md,
-			marginTop: theme.spacing.xl,
-			padding: theme.spacing.lg,
+			flex: 1,
 		},
-		exchangeRate: {
+		debugButton: {
+			marginTop: theme.spacing.md,
+		},
+		debugText: {
 			color: theme.colors.onSurface,
-			marginBottom: theme.spacing.sm,
-		},
-		feeBreakdownContainer: {
-			marginBottom: theme.spacing.sm,
-			marginTop: theme.spacing.sm,
-			// Ensure touch events are not blocked
-			pointerEvents: 'auto',
-		},
-		feeBreakdownDetails: {
+			fontSize: 14,
 			marginBottom: theme.spacing.xs,
-			marginLeft: theme.spacing.sm,
 		},
 		feeBreakdownItem: {
 			color: theme.colors.onSurfaceVariant,
 			fontSize: 12,
-			marginBottom: theme.spacing.xs,
-		},
-		feeDetail: {
-			color: theme.colors.onSurfaceVariant,
-			marginBottom: theme.spacing.xs,
 		},
 		helpText: {
 			color: theme.colors.onSurfaceVariant,
 			fontSize: 11,
 			fontStyle: 'italic',
-			marginTop: theme.spacing.xs,
 			opacity: 0.8,
 		},
-		listItemStyle: {
-			paddingHorizontal: 0,
-			paddingVertical: theme.spacing.xs,
-		},
-		majorCostItem: {
-			color: theme.colors.primary,
-			fontWeight: '500',
-		},
-		totalFeeHeader: {
+		listItemTitle: {
 			color: theme.colors.onSurface,
-			fontWeight: '600',
-			marginBottom: theme.spacing.sm,
+			fontSize: 14,
 		},
-	})
+		scrollView: {
+			flex: 1,
+			paddingHorizontal: theme.spacing.lg,
+		},
+		title: {
+			color: theme.colors.onBackground,
+			fontWeight: 'bold',
+			marginBottom: theme.spacing.lg,
+			marginTop: theme.spacing.lg,
+			textAlign: 'center',
+		},
+	});
+
 	return {
 		...styles,
 		colors,

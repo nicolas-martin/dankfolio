@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
-import { Text, List, Icon } from 'react-native-paper';
+import { Text, List } from 'react-native-paper';
 import { TradeDetailsProps } from './tradedetails_types';
 import { useStyles } from './tradedetails_styles';
 import {
@@ -19,14 +19,26 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 	totalSolRequired,
 }) => {
 	const styles = useStyles();
-	const [expanded, setExpanded] = React.useState(false);
+	const [expanded, setExpanded] = useState(false);
 
-	// Use the comprehensive SOL requirement if available, otherwise fall back to totalFee
-	const displayTotalFee = totalSolRequired || totalFee;
-	const showDetailedBreakdown = hasSolFeeBreakdown(solFeeBreakdown);
-	const accountCreationIsMajorCost = isAccountCreationMajorCost(solFeeBreakdown);
+	// Memoize calculated values to prevent unnecessary re-renders
+	const displayTotalFee = useMemo(() => totalSolRequired || totalFee, [totalSolRequired, totalFee]);
+	const showDetailedBreakdown = useMemo(() => hasSolFeeBreakdown(solFeeBreakdown), [solFeeBreakdown]);
+	const accountCreationIsMajorCost = useMemo(() => isAccountCreationMajorCost(solFeeBreakdown), [solFeeBreakdown]);
 
-	const handlePress = () => setExpanded(!expanded);
+	const accordionKey = useMemo(() => `fee-breakdown-${expanded}`, [expanded]);
+
+	// Memoize combined styles to avoid creating new arrays
+	const accountCreationTitleStyle = useMemo(() => 
+		accountCreationIsMajorCost ? 
+			[styles.feeBreakdownItem, styles.majorCostItem] : 
+			styles.feeBreakdownItem,
+		[accountCreationIsMajorCost, styles.feeBreakdownItem, styles.majorCostItem]
+	);
+
+	const handlePress = useCallback(() => {
+		setExpanded(!expanded);
+	}, [expanded]);
 
 	return (
 		<View style={styles.container}>
@@ -36,8 +48,9 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 
 			{/* Show detailed SOL fee breakdown if available */}
 			{showDetailedBreakdown && solFeeBreakdown ? (
-				<List.Section style={styles.feeBreakdownContainer}>
+				<View style={styles.feeBreakdownContainer}>
 					<List.Accordion
+						key={accordionKey}
 						title={formatTotalSolRequired(displayTotalFee)}
 						description="Tap to see fee breakdown"
 						titleStyle={styles.accordionTitle}
@@ -45,13 +58,7 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 						style={styles.accordionContainer}
 						expanded={expanded}
 						onPress={handlePress}
-						right={({ isExpanded }) => (
-							<Icon 
-								source={isExpanded ? "chevron-up" : "chevron-down"} 
-								size={20}
-								color={styles.colors.onSurface}
-							/>
-						)}
+						testID="fee-breakdown-accordion"
 					>
 						{/* Fee breakdown details */}
 						{parseFloat(solFeeBreakdown.tradingFee) > 0 && (
@@ -72,15 +79,11 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 
 						{parseFloat(solFeeBreakdown.accountCreationFee) > 0 && (
 							<List.Item
-								title={`Account creation: ${formatSolAmount(solFeeBreakdown.accountCreationFee)}${
-									solFeeBreakdown.accountsToCreate > 0 
-										? ` (${solFeeBreakdown.accountsToCreate} account${solFeeBreakdown.accountsToCreate > 1 ? 's' : ''})`
-										: ''
-								}`}
-								titleStyle={[
-									styles.feeBreakdownItem,
-									accountCreationIsMajorCost && styles.majorCostItem
-								]}
+								title={`Account creation: ${formatSolAmount(solFeeBreakdown.accountCreationFee)}${solFeeBreakdown.accountsToCreate > 0
+									? ` (${solFeeBreakdown.accountsToCreate} account${solFeeBreakdown.accountsToCreate > 1 ? 's' : ''})`
+									: ''
+									}`}
+								titleStyle={accountCreationTitleStyle}
 								style={styles.listItemStyle}
 							/>
 						)}
@@ -102,9 +105,8 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 							/>
 						)}
 					</List.Accordion>
-				</List.Section>
+				</View>
 			) : (
-				/* Fallback to simple fee display */
 				<Text variant="bodySmall" style={styles.feeDetail}>
 					Total Fee: {formatSolAmount(displayTotalFee)}
 				</Text>
@@ -119,4 +121,4 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 	);
 };
 
-export default TradeDetails;
+export default React.memo(TradeDetails);
