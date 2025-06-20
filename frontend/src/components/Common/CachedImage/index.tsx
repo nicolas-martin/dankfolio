@@ -36,7 +36,10 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	}, [loadStartTime, uri, size]);
 
 	const handleError = useCallback((error: unknown) => {
-		logger.warn('[CachedImage] ❌ Load Error:', uri, error);
+		const msg = error instanceof Error
+			? error.message
+			: String(error);
+		logger.warn('[CachedImage] ❌ Load Error:', uri, msg);
 		setIsLoading(false);
 		setHasError(true);
 	}, [uri]);

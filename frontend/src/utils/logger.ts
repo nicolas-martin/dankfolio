@@ -21,13 +21,22 @@ function captureSentry(level: LogLevel, args: unknown[]) {
 		if (typeof a === 'string') {
 			return a;
 		}
-		// Use JSON.stringify with a replacer for BigInt
-		return JSON.stringify(a, (key, value) => {
-			if (typeof value === 'bigint') {
-				return value.toString(); // Convert BigInt to string
+		try {
+			// Use JSON.stringify with a replacer for BigInt and cyclical references
+			return JSON.stringify(a, (key, value) => {
+				if (typeof value === 'bigint') {
+					return value.toString(); // Convert BigInt to string
+				}
+				return value; // Return other values unchanged
+			});
+		} catch (error) {
+			// Handle cyclical structure errors
+			if (error instanceof Error && error.message.includes('cyclical')) {
+				return `[Cyclical Object: ${typeof a}]`;
 			}
-			return value; // Return other values unchanged
-		});
+			// For other errors, return a safe string representation
+			return `[Object: ${typeof a}]`;
+		}
 	}).join(' ');
 
 	if (level === 'error') {
