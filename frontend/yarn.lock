@@ -5716,10 +5716,10 @@ expo-build-properties@~0.14.6:
     ajv "^8.11.0"
     semver "^7.6.0"
 
-expo-cached-image@^53.0.11:
-  version "53.0.11"
-  resolved "https://registry.yarnpkg.com/expo-cached-image/-/expo-cached-image-53.0.11.tgz#0f1f0bac7d2851c288c759e980c19f50f21477c5"
-  integrity sha512-i4p8ZVjZAX+N/sFU5detoFnIq6pVxFpl5HBgzheFsCzDH2FTx8YE5lnbhSLDRmVnr1fHljuQOH4OUYRla3kPkg==
+expo-cached-image@^53.0.12:
+  version "53.0.12"
+  resolved "https://registry.yarnpkg.com/expo-cached-image/-/expo-cached-image-53.0.12.tgz#0ef8b57007165562754dec18f1ef97405829ea1b"
+  integrity sha512-nejyb1neoLd3wDAf2EZrWZ1X6w7JX9NhGglf6fRuLUuBAPvua6kKaDyeDXWi96v/RKiMpt0H0KaAwsSoze7eHQ==
   dependencies:
     expo "~53.0.11"
 
