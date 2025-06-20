@@ -373,7 +373,8 @@ func CoinsToProto(coins []Coin) ([]*pb.Coin, error) {
 
 // NaughtyWord represents a word that should be filtered at the application level.
 type NaughtyWord struct {
-	Word string
+	Word     string
+	Language string
 }
 
 // GetID implements the Entity interface for NaughtyWord.

@@ -148,7 +148,8 @@ func (Trade) TableName() string {
 
 // NaughtyWord represents a word that should be filtered.
 type NaughtyWord struct {
-	Word string `gorm:"primaryKey;type:varchar(255);column:word"`
+	Word     string `gorm:"primaryKey;type:varchar(255);column:word"`
+	Language string `gorm:"column:language;type:varchar(10);default:'en';index:idx_naughty_words_language"`
 }
 
 // TableName overrides the default table name generation for NaughtyWord.
