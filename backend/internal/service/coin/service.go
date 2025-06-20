@@ -20,6 +20,12 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
+const (
+	cacheKey_trending = "trendingCoins_rpc"
+	cacheKey_new      = "newCoins"
+	cacheKey_top      = "topGainersCoins"
+)
+
 // Service handles coin-related operations
 type Service struct {
 	config         *Config
@@ -118,7 +124,8 @@ func (s *Service) runTrendingTokenFetcher(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			slog.InfoContext(ctx, "Periodically fetching trending tokens...")
-			if err := s.FechAndStoreTrendingTokens(ctx); err != nil {
+			_, _, err := s.GetTrendingCoinsRPC(ctx, 10, 0)
+			if err != nil {
 				slog.ErrorContext(ctx, "Failed to fetch and store trending tokens periodically", slog.Any("error", err))
 			} else {
 				slog.InfoContext(ctx, "Successfully fetched and stored trending tokens periodically.")
@@ -143,7 +150,8 @@ func (s *Service) runNewTokenFetcher(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			slog.InfoContext(ctx, "Periodically fetching new tokens...")
-			if err := s.FetchAndStoreNewTokens(ctx); err != nil {
+			_, _, err := s.GetNewCoins(ctx, 10, 0)
+			if err != nil {
 				slog.ErrorContext(ctx, "Failed to fetch and store new tokens periodically", slog.Any("error", err))
 			} else {
 				slog.InfoContext(ctx, "Successfully fetched and stored new tokens periodically.")
@@ -168,7 +176,8 @@ func (s *Service) runTopGainersTokenFetcher(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			slog.InfoContext(ctx, "Periodically fetching top gainers tokens...")
-			if err := s.FetchAndStoreTopGainersTokens(ctx); err != nil {
+			_, _, err := s.GetTopGainersCoins(ctx, 10, 0)
+			if err != nil {
 				slog.ErrorContext(ctx, "Failed to fetch and store top gainers tokens periodically", slog.Any("error", err))
 			} else {
 				slog.InfoContext(ctx, "Successfully fetched and stored top gainers tokens periodically.")
@@ -846,15 +855,7 @@ const (
 
 // GetNewCoins implements the RPC method with domain types.
 func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
-	cacheKey := "newCoins"
-	if limit > 0 {
-		cacheKey = fmt.Sprintf("%s_limit_%d", cacheKey, limit)
-	}
-	if offset > 0 {
-		cacheKey = fmt.Sprintf("%s_offset_%d", cacheKey, offset)
-	}
-
-	if cachedCoin, found := s.cache.Get(cacheKey); found {
+	if cachedCoin, found := s.cache.Get(cacheKey_new); found {
 		return cachedCoin, int32(len(cachedCoin)), nil
 	}
 
@@ -889,7 +890,7 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 		slog.ErrorContext(ctx, "Failed to list newest coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list newest coins: %w", err)
 	}
-	s.cache.Set(cacheKey, modelCoins, s.config.CacheExpiry)
+	s.cache.Set(cacheKey_new, modelCoins, s.config.CacheExpiry)
 
 	return modelCoins, totalCount, nil
 }
@@ -967,15 +968,7 @@ func (s *Service) containsNaughtyWord(text string) bool {
 
 // GetTrendingCoinsRPC implements the RPC method with domain types (renamed to avoid conflict).
 func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
-	cacheKey := "trendingCoins_rpc"
-	if limit > 0 {
-		cacheKey = fmt.Sprintf("%s_limit_%d", cacheKey, limit)
-	}
-	if offset > 0 {
-		cacheKey = fmt.Sprintf("%s_offset_%d", cacheKey, offset)
-	}
-
-	if cachedCoin, found := s.cache.Get(cacheKey); found {
+	if cachedCoin, found := s.cache.Get(cacheKey_trending); found {
 		return cachedCoin, int32(len(cachedCoin)), nil
 	}
 
@@ -1010,22 +1003,14 @@ func (s *Service) GetTrendingCoinsRPC(ctx context.Context, limit, offset int32) 
 		slog.ErrorContext(ctx, "Failed to list trending coins from store", "error", err)
 		return nil, 0, fmt.Errorf("failed to list trending coins: %w", err)
 	}
-	s.cache.Set(cacheKey, modelCoins, s.config.CacheExpiry)
+	s.cache.Set(cacheKey_trending, modelCoins, s.config.CacheExpiry)
 
 	return modelCoins, totalCount, nil
 }
 
 // GetTopGainersCoins implements the RPC method with domain types.
 func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) ([]model.Coin, int32, error) {
-	cacheKey := "topGainersCoins"
-	if limit > 0 {
-		cacheKey = fmt.Sprintf("%s_limit_%d", cacheKey, limit)
-	}
-	if offset > 0 {
-		cacheKey = fmt.Sprintf("%s_offset_%d", cacheKey, offset)
-	}
-
-	if cachedCoin, found := s.cache.Get(cacheKey); found {
+	if cachedCoin, found := s.cache.Get(cacheKey_top); found {
 		return cachedCoin, int32(len(cachedCoin)), nil
 	}
 
@@ -1061,7 +1046,7 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 		return nil, 0, fmt.Errorf("failed to list top gainers coins: %w", err)
 	}
 
-	s.cache.Set(cacheKey, modelCoins, s.config.CacheExpiry)
+	s.cache.Set(cacheKey_top, modelCoins, s.config.CacheExpiry)
 
 	return modelCoins, totalCount, nil
 }
