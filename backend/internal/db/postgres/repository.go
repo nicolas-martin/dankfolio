@@ -382,6 +382,11 @@ func (r *Repository[S, M]) toModel(s S) any {
 		// If M is also model.ApiStat, this is direct.
 		copiedStat := v // Create a copy
 		return &copiedStat
+	case schema.NaughtyWord:
+		return &model.NaughtyWord{
+			Word:     v.Word,
+			Language: v.Language,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported type for toModel: %T", s))
 	}
@@ -486,6 +491,11 @@ func (r *Repository[S, M]) fromModel(m M) any {
 		// If S is also model.ApiStat, this is direct.
 		copiedStat := v // Create a copy
 		return &copiedStat
+	case model.NaughtyWord:
+		return &schema.NaughtyWord{
+			Word:     v.Word,
+			Language: v.Language,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported type for fromModel: %T", m))
 	}
@@ -522,6 +532,9 @@ func getColumnNames(data any) []string {
 	case *model.ApiStat: // If S is model.ApiStat
 		// Columns for ApiStat to update on conflict. ID is PK. Date, ServiceName, EndpointName are part of conflict key.
 		return []string{"count"}
+	case *schema.NaughtyWord:
+		// Columns for NaughtyWord to update on conflict. Word is PK.
+		return []string{"language"}
 	default:
 		panic(fmt.Sprintf("unsupported type for getColumnNames: %T", data))
 	}
