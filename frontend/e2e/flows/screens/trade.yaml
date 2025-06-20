@@ -19,10 +19,10 @@ env:
 
 - assertVisible: "FROM"
 - assertVisible:
-      id: "from-token-selector-${FROM_SYMBOL}"
+      id: "from-token-selector"
 - assertVisible: "TO"
 - assertVisible:
-      id: "to-token-selector-${TO_SYMBOL}"
+      id: "to-token-selector"
 
 - tapOn:
       id: "from-token-selector-amount-input"

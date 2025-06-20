@@ -427,7 +427,6 @@ const Trade: React.FC = () => {
 	) => (
 		<View
 			style={styles.tradeCard}
-			accessible={false}
 		>
 			<Text style={styles.cardLabel}>{label}</Text>
 			{/* USD Toggle Switch and related UI removed from here, will be inside TokenSelector for 'From' card */}
