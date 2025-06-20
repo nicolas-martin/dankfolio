@@ -185,7 +185,6 @@ const Trade: React.FC = () => {
 					quoteData.totalSolRequired || quoteData.totalFee,
 					showToast,
 					setHasSufficientSolBalance,
-					quoteData.solFeeBreakdown
 				);
 
 			} catch (error) {
