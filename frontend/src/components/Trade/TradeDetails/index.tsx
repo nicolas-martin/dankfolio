@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
-import { Text, List } from 'react-native-paper';
+import { Text, List, Card } from 'react-native-paper';
 import { TradeDetailsProps } from './tradedetails_types';
 import { useStyles } from './tradedetails_styles';
 import {
@@ -29,9 +29,9 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 	const accordionKey = useMemo(() => `fee-breakdown-${expanded}`, [expanded]);
 
 	// Memoize combined styles to avoid creating new arrays
-	const accountCreationTitleStyle = useMemo(() => 
-		accountCreationIsMajorCost ? 
-			[styles.feeBreakdownItem, styles.majorCostItem] : 
+	const accountCreationTitleStyle = useMemo(() =>
+		accountCreationIsMajorCost ?
+			[styles.feeBreakdownItem, styles.majorCostItem] :
 			styles.feeBreakdownItem,
 		[accountCreationIsMajorCost, styles.feeBreakdownItem, styles.majorCostItem]
 	);
@@ -41,13 +41,15 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 	}, [expanded]);
 
 	return (
-		<View style={styles.container}>
+		// <Card style={styles.container}>
+		<Card >
 			<Text variant="bodySmall" style={styles.feeDetail}>
 				{formatPriceImpactPct(priceImpactPct)}
 			</Text>
 
 			{/* Show detailed SOL fee breakdown if available */}
 			{showDetailedBreakdown && solFeeBreakdown ? (
+				// <View style={styles.feeBreakdownContainer}>
 				<View style={styles.feeBreakdownContainer}>
 					<List.Accordion
 						key={accordionKey}
@@ -117,8 +119,9 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 					Route: {route}
 				</Text>
 			)}
-		</View>
+		</Card>
 	);
 };
 
-export default React.memo(TradeDetails);
+// export default React.memo(TradeDetails);
+export default TradeDetails;

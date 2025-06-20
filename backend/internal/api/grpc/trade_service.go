@@ -71,7 +71,8 @@ func (s *tradeServiceHandler) GetSwapQuote(ctx context.Context, req *connect.Req
 		userPublicKey = *req.Msg.UserPublicKey
 	}
 
-	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, req.Msg.IncludeFeeBreakdown, userPublicKey)
+	// quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, req.Msg.IncludeFeeBreakdown, userPublicKey)
+	quote, err := s.tradeService.GetSwapQuote(requestCtx, req.Msg.FromCoinId, req.Msg.ToCoinId, req.Msg.Amount, slippageBps, true, userPublicKey)
 	if err != nil {
 		slog.Error("Failed to fetch trade quote", "error", err)
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get trade quote: %w", err))
