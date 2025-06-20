@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"errors"
+	"flag"
 	"log"
 	"log/slog"
 	"net/http"
@@ -23,16 +26,23 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/offchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 	tracker "github.com/nicolas-martin/dankfolio/backend/internal/clients/tracker"
+	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres"
 	"github.com/nicolas-martin/dankfolio/backend/internal/logger"
+	"github.com/nicolas-martin/dankfolio/backend/internal/model"
+	// "github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema" // Not directly needed for count if repo has Count
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/trade"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/wallet"
+	"strings"
 )
 
+var populateNaughtyWords = flag.Bool("populate-naughty-words", false, "If set, fetches the naughty word list and populates the database.")
+
 func main() {
+	flag.Parse()
 	logLevel := slog.LevelDebug
 	var handler slog.Handler
 
@@ -167,6 +177,83 @@ func main() {
 	)
 	slog.Info("Coin service initialized.")
 
+	// Populate Naughty Words if the flag is set
+	if *populateNaughtyWords {
+		slog.Info("The --populate-naughty-words flag is set. Attempting to populate naughty words table...")
+		go func() { // Keep this in a goroutine to avoid blocking startup for HTTP fetch
+			ctx := context.Background()
+			// Check if the table is empty first
+			var count int64
+			// Simplified check: Attempt to list one item. If error or empty, assume we can populate.
+			_, total, listErr := coinService.GetStore().NaughtyWords().List(ctx, db.ListOptions{Limit: pint(1)})
+			if listErr != nil {
+				slog.ErrorContext(ctx, "Failed to check existing naughty words (error on list)", slog.Any("error", listErr))
+				if !errors.Is(listErr, db.ErrNotFound) {
+					return
+				}
+			}
+			count = int64(total)
+
+			if count == 0 {
+				slog.InfoContext(ctx, "Naughty words table is empty (or was not found), proceeding with population.")
+
+				wordListURL := "https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en"
+				resp, httpErr := http.Get(wordListURL)
+				if httpErr != nil {
+					slog.ErrorContext(ctx, "Failed to fetch naughty word list", slog.String("url", wordListURL), slog.Any("error", httpErr))
+					return
+				}
+				defer resp.Body.Close()
+
+				if resp.StatusCode != http.StatusOK {
+					slog.ErrorContext(ctx, "Failed to fetch naughty word list, non-OK status", slog.String("url", wordListURL), slog.Int("status_code", resp.StatusCode))
+					return
+				}
+
+				scanner := bufio.NewScanner(resp.Body)
+				var wordsToCreate []model.NaughtyWord
+				for scanner.Scan() {
+					word := strings.TrimSpace(scanner.Text())
+					if word != "" {
+						wordsToCreate = append(wordsToCreate, model.NaughtyWord{Word: word})
+					}
+				}
+				if scanErr := scanner.Err(); scanErr != nil {
+					slog.ErrorContext(ctx, "Error reading naughty word list", slog.Any("error", scanErr))
+					return
+				}
+
+				if len(wordsToCreate) > 0 {
+					createdCount := 0
+					for _, nw := range wordsToCreate {
+						createCtx, cancelCreate := context.WithTimeout(ctx, 5*time.Second)
+
+						createErr := coinService.GetStore().NaughtyWords().Create(createCtx, &nw)
+						if createErr != nil {
+							slog.WarnContext(createCtx, "Failed to create naughty word entry", slog.String("word", nw.Word), slog.Any("error", createErr))
+						} else {
+							createdCount++
+						}
+						cancelCreate()
+					}
+					slog.InfoContext(ctx, "Finished populating naughty words table.", slog.Int("words_added", createdCount), slog.Int("words_fetched", len(wordsToCreate)))
+
+					if reloadErr := coinService.LoadNaughtyWords(ctx); reloadErr != nil {
+						slog.ErrorContext(ctx, "Failed to reload naughty words in CoinService after populating table", slog.Any("error", reloadErr))
+					} else {
+						slog.InfoContext(ctx, "CoinService naughty words reloaded successfully after table population.")
+					}
+				} else {
+					slog.InfoContext(ctx, "No words found in the fetched list to populate.")
+				}
+			} else {
+				slog.InfoContext(ctx, "Naughty words table is not empty, skipping population.", slog.Int64("existing_word_count", count))
+			}
+		}()
+	} else {
+		slog.Info("The --populate-naughty-words flag is not set. Skipping DB population of naughty words.")
+	}
+
 	priceCache, err := price.NewPriceHistoryCache()
 	if err != nil {
 		slog.Error("Failed to create price cache", slog.Any("error", err))
@@ -247,6 +334,11 @@ func main() {
 	// }
 
 	slog.Info("Server shutdown completed.")
+}
+
+// Helper function to get a pointer to an int.
+func pint(i int) *int {
+	return &i
 }
 
 type Config struct {

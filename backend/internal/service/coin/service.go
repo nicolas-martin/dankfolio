@@ -4,8 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"strconv"
+	"strings" // <<< ADD THIS IMPORT IF NOT PRESENT
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
@@ -30,6 +34,15 @@ type Service struct {
 	birdeyeClient  birdeye.ClientAPI
 	apiTracker     telemetry.TelemetryAPI
 	cache          CoinCache
+	naughtyWordSet map[string]struct{} // <<< ADD THIS LINE
+}
+
+// min is a helper function to find the minimum of two integers.
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // NewService creates a new CoinService instance
@@ -41,7 +54,7 @@ func NewService(
 	birdeyeClient birdeye.ClientAPI,
 	apiTracker telemetry.TelemetryAPI,
 	offchainClient offchain.ClientAPI,
-	coinCache CoinCache, // <--- ADD THIS PARAMETER
+	coinCache CoinCache,
 ) *Service {
 	service := &Service{
 		config:         config,
@@ -51,12 +64,23 @@ func NewService(
 		store:          store,
 		birdeyeClient:  birdeyeClient,
 		apiTracker:     apiTracker,
-		cache:          coinCache, // <--- ADD THIS LINE
+		cache:          coinCache,
+		naughtyWordSet: make(map[string]struct{}), // <<< INITIALIZE THE SET
 	}
 	service.fetcherCtx, service.fetcherCancel = context.WithCancel(context.Background())
 	if service.config.CacheExpiry == 0 {
 		slog.Warn("Coin service cache expiration is not set")
 	}
+
+	// Load naughty words during initialization
+	go func() {
+		backgroundCtx := context.Background()
+		if err := service.loadNaughtyWords(backgroundCtx); err != nil {
+			slog.ErrorContext(backgroundCtx, "Failed to load naughty words during service initialization", slog.Any("error", err))
+		} else {
+			slog.InfoContext(backgroundCtx, "Naughty words loaded successfully during service initialization")
+		}
+	}()
 
 	if service.config != nil {
 		if service.config.TrendingFetchInterval > 0 {
@@ -249,11 +273,43 @@ func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCo
 		LogoURI:  rawCoin.LogoUrl,
 		Decimals: rawCoin.Decimals,
 	}
+
+	// <<< NAUGHTY WORD CHECK FOR NAME (from rawCoin) >>>
+	if s.containsNaughtyWord(initialData.Name) { // initialData.Name is rawCoin.Name
+		slog.WarnContext(ctx, "Raw coin name identified as naughty during enrichRawCoinAndSave (pre-enrichment)",
+			slog.String("name", initialData.Name),
+			slog.String("address", rawCoin.Address))
+		// Attempt to delete the unusable rawCoin
+		rawCoinPKIDStrDel := strconv.FormatUint(rawCoin.ID, 10)
+		if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStrDel); delErr != nil {
+			slog.WarnContext(ctx, "Failed to delete naughty raw_coin", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
+		} else {
+			slog.InfoContext(ctx, "Successfully deleted naughty raw_coin", slog.String("address", rawCoin.Address))
+		}
+		return nil, fmt.Errorf("raw coin name contains inappropriate content: %s", initialData.Name)
+	}
+
 	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
 	if err != nil {
 		slog.ErrorContext(ctx, "Enrichment from raw_coin failed", slog.String("address", rawCoin.Address), slog.Any("error", err))
 		return nil, fmt.Errorf("failed to enrich raw_coin %s: %w", rawCoin.Address, err)
 	}
+
+	// <<< NAUGHTY WORD CHECK FOR DESCRIPTION >>>
+	if enrichedCoin != nil && s.containsNaughtyWord(enrichedCoin.Description) {
+		slog.WarnContext(ctx, "Enriched coin description identified as naughty during enrichRawCoinAndSave (post-enrichment)",
+			slog.String("name", enrichedCoin.Name),
+			slog.String("address", enrichedCoin.Address))
+		// Attempt to delete the original rawCoin as its enrichment is problematic
+		rawCoinPKIDStrDel := strconv.FormatUint(rawCoin.ID, 10)
+		if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStrDel); delErr != nil {
+			slog.WarnContext(ctx, "Failed to delete raw_coin after its description was found naughty post-enrichment", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
+		} else {
+			slog.InfoContext(ctx, "Successfully deleted raw_coin as its description was naughty post-enrichment", slog.String("address", rawCoin.Address))
+		}
+		return nil, fmt.Errorf("token description contains inappropriate content for address: %s", enrichedCoin.Address)
+	}
+
 	existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
 	if getErr == nil && existingCoin != nil {
 		enrichedCoin.ID = existingCoin.ID
@@ -318,11 +374,31 @@ func (s *Service) fetchAndCacheCoin(ctx context.Context, address string) (*model
 		initialData = &birdeye.TokenDetails{Address: address}
 	}
 
+	// <<< NAUGHTY WORD CHECK FOR NAME >>>
+	if initialData != nil && s.containsNaughtyWord(initialData.Name) {
+		slog.WarnContext(ctx, "Token name identified as naughty during fetchAndCacheCoin (pre-enrichment)",
+			slog.String("name", initialData.Name),
+			slog.String("address", address))
+		return nil, fmt.Errorf("token name contains inappropriate content: %s", initialData.Name)
+	}
+
 	enrichedCoin, err := s.EnrichCoinData(ctx, initialData)
 	if err != nil {
 		slog.ErrorContext(ctx, "Dynamic coin enrichment failed", slog.String("address", address), slog.Any("error", err))
 		return nil, fmt.Errorf("failed to enrich coin %s: %w", address, err)
 	}
+
+	// <<< NAUGHTY WORD CHECK FOR DESCRIPTION >>>
+	if enrichedCoin != nil && s.containsNaughtyWord(enrichedCoin.Description) {
+		slog.WarnContext(ctx, "Token description identified as naughty during fetchAndCacheCoin (post-enrichment)",
+			slog.String("name", enrichedCoin.Name),
+			slog.String("address", enrichedCoin.Address))
+		// Decide if we should delete it if it exists, or just prevent saving/updating.
+		// For fetchAndCacheCoin, it might be updating an existing coin.
+		// Returning an error prevents the update/creation.
+		return nil, fmt.Errorf("token description contains inappropriate content for address: %s", enrichedCoin.Address)
+	}
+
 	existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
 	if getErr == nil && existingCoin != nil {
 		enrichedCoin.ID = existingCoin.ID
@@ -583,6 +659,16 @@ func (s *Service) GetAllTokens(ctx context.Context) (*jupiter.CoinListResponse, 
 	slog.InfoContext(ctx, "Successfully fetched all coins from Jupiter", slog.Int("fetched_count", len(resp.Coins)))
 	rawCoinsToUpsert := make([]model.RawCoin, 0, len(resp.Coins))
 	for _, jupiterCoin := range resp.Coins {
+		if jupiterCoin == nil { // Safety check
+			continue
+		}
+		// <<< NAUGHTY WORD CHECK FOR NAME >>>
+		if s.containsNaughtyWord(jupiterCoin.Name) {
+			slog.InfoContext(ctx, "Skipping Jupiter token in GetAllTokens due to naughty name",
+				slog.String("name", jupiterCoin.Name),
+				slog.String("address", jupiterCoin.Address)) // Assuming jupiter.Coin has Address field, if not, use Mint
+			continue // Skip this token
+		}
 		rawCoinModelPtr := jupiterCoin.ToRawCoin()
 		if rawCoinModelPtr != nil {
 			rawCoinsToUpsert = append(rawCoinsToUpsert, *rawCoinModelPtr)
@@ -607,8 +693,19 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 		slog.InfoContext(ctx, "Starting to fetch and store new tokens from Jupiter")
 		limit := 50
 		offset := 0
-		params := &jupiter.NewCoinsParams{Limit: limit, Offset: offset}
-		resp, err := s.jupiterClient.GetNewCoins(ctx, params)
+		// Create params using a pointer to satisfy jupiter.NewCoinsParams if it's defined as a struct
+		// If NewCoinsParams is an alias to a struct pointer, then this is fine.
+		// Based on previous usage, it seems it might be a struct, so ensure it's passed as a pointer if the client expects that.
+		// Assuming jupiter.NewCoinsParams is a struct type:
+		params := jupiter.NewCoinsParams{Limit: limit, Offset: offset}
+
+		// If jupiterClient.GetNewCoins expects *jupiter.NewCoinsParams, then:
+		// params := &jupiter.NewCoinsParams{Limit: limit, Offset: offset}
+		// For this example, I'll assume the client method handles whether it needs a pointer or value.
+		// Let's stick to what was likely working before:
+		// params := &jupiter.NewCoinsParams{Limit: limit, Offset: offset}
+
+		resp, err := s.jupiterClient.GetNewCoins(ctx, &params) // Pass as pointer if that's what GetNewCoins expects
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to get new coins from Jupiter", slog.Any("error", err))
 			return fmt.Errorf("failed to get new coins from Jupiter: %w", err)
@@ -618,39 +715,68 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			return nil
 		}
 
-		// Convert Jupiter new coins to BirdEye token details for enrichment
-		tokenDetails := make([]birdeye.TokenDetails, 0, len(resp))
+		// Filtered list of Jupiter NewCoin objects
+		var filteredJupiterTokens []*jupiter.NewCoin // Assuming NewCoin is a struct, use a slice of pointers
 		for _, newToken := range resp {
 			if newToken == nil {
 				continue
 			}
+			// <<< NAUGHTY WORD CHECK FOR NAME >>>
+			if s.containsNaughtyWord(newToken.Name) {
+				slog.InfoContext(ctx, "Skipping Jupiter new token due to naughty name",
+					slog.String("name", newToken.Name),
+					slog.String("mint", newToken.Mint))
+				continue // Skip this token
+			}
+			// Add to filtered list if not naughty
+			filteredJupiterTokens = append(filteredJupiterTokens, newToken)
+		}
 
+		if len(filteredJupiterTokens) == 0 {
+			slog.InfoContext(ctx, "No valid (non-naughty name) tokens to process from Jupiter after filtering.")
+			return nil
+		}
+
+		// Convert Jupiter new coins (filtered) to BirdEye token details for enrichment
+		tokenDetails := make([]birdeye.TokenDetails, 0, len(filteredJupiterTokens))
+		for _, jupiterToken := range filteredJupiterTokens {
+			// newToken is already checked for nil above, and here jupiterToken is from filteredJupiterTokens
 			tokenDetail := birdeye.TokenDetails{
-				Address:  newToken.Mint,
-				Name:     newToken.Name,
-				Symbol:   newToken.Symbol,
-				LogoURI:  newToken.LogoURI,
-				Decimals: newToken.Decimals,
-				// Note: CreatedAt is not part of TokenDetails, it will be handled during enrichment
+				Address:  jupiterToken.Mint, // Assuming Mint is the field for address
+				Name:     jupiterToken.Name,
+				Symbol:   jupiterToken.Symbol,
+				LogoURI:  jupiterToken.LogoURI,
+				Decimals: jupiterToken.Decimals,
+				// Note: CreatedAt from Jupiter's NewCoin (e.g., jupiterToken.CreatedAt) is not directly part of
+				// birdeye.TokenDetails. It will be handled during model.Coin creation or enrichment if needed.
 			}
 			tokenDetails = append(tokenDetails, tokenDetail)
 		}
 
 		if len(tokenDetails) == 0 {
-			slog.InfoContext(ctx, "No valid tokens to process from Jupiter.")
+			// This case should ideally not be hit if filteredJupiterTokens was not empty,
+			// but as a safeguard:
+			slog.InfoContext(ctx, "No Birdeye token details to process after mapping from Jupiter tokens.")
 			return nil
 		}
 
 		// Enrich the tokens using the existing enrichment process
+		// This process already has naughty word checks for name (redundant here but harmless) and description.
 		enrichedCoins, err := s.processBirdeyeTokens(ctx, tokenDetails)
 		if err != nil {
-			return fmt.Errorf("failed to enrich new tokens: %w", err)
+			return fmt.Errorf("failed to enrich new tokens from Jupiter source: %w", err)
 		}
 
 		// Get existing coins with "new-coin" tag to clear them
-		existingNewCoins, err := txStore.SearchCoins(ctx, "", []string{"new-coin"}, 0, 1000, 0, "", false)
-		if err != nil {
-			return fmt.Errorf("failed to search for existing new coins: %w", err)
+		// Define default ListOptions for SearchCoins
+		searchLimit := 1000
+		// searchOffset := 0 // Offset not needed if we process all returned by ListWithOpts
+		// emptyString := "" // Not needed if default sort is fine
+		// falseBool := false // Not needed if default sort is fine
+		existingNewCoins, _, listErr := txStore.Coins().ListWithOpts(ctx, db.ListOptions{Filters: []db.FilterOption{{Field: "tags", Operator: db.FilterOpLike, Value: "%new-coin%"}}, Limit: &searchLimit})
+		if listErr != nil && !errors.Is(listErr, db.ErrNotFound) {
+			slog.ErrorContext(ctx, "Failed to search for existing new coins to clear tags", slog.Any("error", listErr))
+			// Continue, as this is not a fatal error for processing new coins
 		}
 
 		// Clear "new-coin" tag from existing new coins
@@ -658,11 +784,10 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 			slog.DebugContext(ctx, "Clearing new coins status for existing new coins", slog.Int("count", len(existingNewCoins)))
 			coinsToUpdate := make([]model.Coin, 0, len(existingNewCoins))
 			currentTime := time.Now().Format(time.RFC3339)
-			for _, coin := range existingNewCoins {
-				modifiedCoin := coin
-				// Remove "new-coin" tag
-				newTags := make([]string, 0, len(coin.Tags))
-				for _, tag := range coin.Tags {
+			for _, existingCoin := range existingNewCoins { // Iterate over copies
+				modifiedCoin := existingCoin // Create a new instance or copy
+				newTags := make([]string, 0, len(existingCoin.Tags))
+				for _, tag := range existingCoin.Tags {
 					if tag != "new-coin" {
 						newTags = append(newTags, tag)
 					}
@@ -674,46 +799,59 @@ func (s *Service) FetchAndStoreNewTokens(ctx context.Context) error {
 
 			if len(coinsToUpdate) > 0 {
 				slog.DebugContext(ctx, "Bulk updating existing new coins to clear status", slog.Int("count", len(coinsToUpdate)))
-				if _, err := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); err != nil {
-					slog.ErrorContext(ctx, "Failed to bulk update new coins status for coins", slog.Any("error", err))
+				// Use BulkUpsert on the repository from txStore
+				if _, bulkErr := txStore.Coins().BulkUpsert(ctx, &coinsToUpdate); bulkErr != nil {
+					slog.ErrorContext(ctx, "Failed to bulk update new coins status for coins", slog.Any("error", bulkErr))
+					// Non-fatal, continue
 				}
 			}
 		}
 
 		// Store/update enriched new coins
 		if len(enrichedCoins) > 0 {
-			slog.DebugContext(ctx, "Storing/updating enriched new coins", slog.Int("count", len(enrichedCoins)))
+			slog.DebugContext(ctx, "Storing/updating enriched new coins from Jupiter source", slog.Int("count", len(enrichedCoins)))
 			var storeErrors []string
-			for _, coin := range enrichedCoins {
-				currentCoin := coin
-				// Add "new-coin" tag
-				currentCoin.Tags = append(currentCoin.Tags, "new-coin")
+			for _, coin := range enrichedCoins { // Iterate over copies
+				currentCoin := coin // Create a new instance or copy
+				// Add "new-coin" tag if not already present (processBirdeyeTokens might not add specific tags)
+				isNewCoinTagPresent := false
+				for _, tag := range currentCoin.Tags {
+					if tag == "new-coin" {
+						isNewCoinTagPresent = true
+						break
+					}
+				}
+				if !isNewCoinTagPresent {
+					currentCoin.Tags = append(currentCoin.Tags, "new-coin")
+				}
 
 				existingCoin, getErr := txStore.Coins().GetByField(ctx, "address", currentCoin.Address)
 				if getErr == nil && existingCoin != nil {
-					currentCoin.ID = existingCoin.ID
+					currentCoin.ID = existingCoin.ID // Preserve existing primary key
 					if errUpdate := txStore.Coins().Update(ctx, &currentCoin); errUpdate != nil {
-						slog.WarnContext(ctx, "Failed to update new coin", slog.String("address", currentCoin.Address), slog.Any("error", errUpdate))
+						slog.WarnContext(ctx, "Failed to update new coin (Jupiter source)", slog.String("address", currentCoin.Address), slog.Any("error", errUpdate))
 						storeErrors = append(storeErrors, errUpdate.Error())
 					}
 				} else if errors.Is(getErr, db.ErrNotFound) {
 					if errCreate := txStore.Coins().Create(ctx, &currentCoin); errCreate != nil {
-						slog.WarnContext(ctx, "Failed to create new coin", slog.String("address", currentCoin.Address), slog.Any("error", errCreate))
+						slog.WarnContext(ctx, "Failed to create new coin (Jupiter source)", slog.String("address", currentCoin.Address), slog.Any("error", errCreate))
 						storeErrors = append(storeErrors, errCreate.Error())
 					}
 				} else if getErr != nil {
-					slog.WarnContext(ctx, "Error checking coin before upsert during new coins refresh", slog.String("address", currentCoin.Address), slog.Any("error", getErr))
+					slog.WarnContext(ctx, "Error checking coin before upsert during new coins refresh (Jupiter source)", slog.String("address", currentCoin.Address), slog.Any("error", getErr))
 					storeErrors = append(storeErrors, getErr.Error())
 				}
 			}
 			if len(storeErrors) > 0 {
-				slog.ErrorContext(ctx, "Encountered errors during storing new coins in transaction", slog.Int("error_count", len(storeErrors)))
+				slog.ErrorContext(ctx, "Encountered errors during storing new coins (Jupiter source) in transaction", slog.Int("error_count", len(storeErrors)))
+				// Potentially return an aggregated error or the first one
+				// return fmt.Errorf("encountered %d errors while storing new coins from Jupiter: %s", len(storeErrors), storeErrors[0])
 			}
 		} else {
-			slog.InfoContext(ctx, "No new coins to store from this refresh.")
+			slog.InfoContext(ctx, "No new coins (Jupiter source) to store from this refresh after enrichment/filtering.")
 		}
 
-		slog.InfoContext(ctx, "New coins store refresh transaction complete", slog.Int("enrichedCoinsProcessed", len(enrichedCoins)))
+		slog.InfoContext(ctx, "New coins store refresh (Jupiter source) transaction complete", slog.Int("enriched_coins_processed_count", len(enrichedCoins)))
 		return nil
 	})
 }
@@ -813,6 +951,59 @@ func (s *Service) GetNewCoins(ctx context.Context, limit, offset int32) ([]model
 	s.cache.Set(cacheKey, modelCoins, s.config.CacheExpiry)
 
 	return modelCoins, totalCount, nil
+}
+
+// loadNaughtyWords fetches all words from the naughty_words table and populates the in-memory set.
+func (s *Service) loadNaughtyWords(ctx context.Context) error {
+	slog.InfoContext(ctx, "Loading naughty words into memory...")
+	limit := 10000
+	offset := 0
+	// Prepare ListOptions. Ensure all fields are pointers as per db.ListOptions definition.
+	opts := db.ListOptions{Limit: &limit, Offset: &offset}
+
+	naughtyWordModels, totalCount, err := s.store.NaughtyWords().List(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("failed to list naughty words from store: %w", err)
+	}
+	slog.DebugContext(ctx, "Fetched naughty words from DB", slog.Int("count", len(naughtyWordModels)), slog.Int32("total_db_count", totalCount))
+
+	newSet := make(map[string]struct{}, len(naughtyWordModels))
+	for _, nwModel := range naughtyWordModels {
+		newSet[strings.ToLower(nwModel.Word)] = struct{}{}
+	}
+
+	s.naughtyWordSet = newSet
+	slog.InfoContext(ctx, "Naughty words loaded into memory.", slog.Int("count", len(s.naughtyWordSet)))
+	return nil
+}
+
+// isWordNaughty checks if a single word is in the loaded naughty word set.
+// Assumes word is already normalized (e.g., lowercase).
+func (s *Service) isWordNaughty(word string) bool {
+	_, found := s.naughtyWordSet[strings.ToLower(word)] // Ensure word is lowercased before check
+	return found
+}
+
+// containsNaughtyWord checks if any word in the input text is a naughty word.
+func (s *Service) containsNaughtyWord(text string) bool {
+	if text == "" {
+		return false
+	}
+	normalizedText := strings.ToLower(text)
+	words := strings.FieldsFunc(normalizedText, func(r rune) bool {
+		// Consider more comprehensive punctuation/splitters if needed
+		return r == ' ' || r == ',' || r == '.' || r == ';' || r == ':' || r == '-' || r == '_' || r == '\n' || r == '/' || r == '(' || r == ')' || r == '[' || r == ']' || r == '{' || r == '}' || r == '"' || r == '\''
+	})
+
+	for _, word := range words {
+		// Trim additional common punctuation that might remain after FieldsFunc
+		cleanedWord := strings.Trim(word, ".,;:!?'\"()[]{}<>")
+		if cleanedWord != "" && s.isWordNaughty(cleanedWord) { // isWordNaughty already handles lowercase
+			slog.DebugContext(context.Background(), "Naughty word found in text", slog.String("word", cleanedWord), slog.String("text_preview", text[:min(len(text), 100)]))
+			return true
+		}
+	}
+	return false
 }
 
 // GetTrendingCoinsRPC implements the RPC method with domain types (renamed to avoid conflict).
