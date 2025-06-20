@@ -2,7 +2,7 @@ import { Coin, Wallet } from '@/types';
 import { logger } from '@/utils/logger';
 import { grpcApi } from '@/services/grpcApi';
 import { prepareSwapRequest, signSwapTransaction } from '@/services/solana';
-import { toRawAmount } from '../../utils/numberFormat';
+import { toRawAmount, formatTokenBalance } from '@/utils/numberFormat';
 import { usePortfolioStore, getActiveWalletKeys } from '@/store/portfolio';
 import type { ToastProps } from '@/components/Common/Toast/toast_types';
 import { PollingStatus } from '@components/Trade/TradeStatusModal/types';
@@ -17,18 +17,17 @@ export const validateSolBalanceForQuote = (
 	totalSolRequired: string,
 	showToast: (params: ToastProps) => void,
 	setHasSufficientSolBalance: (sufficient: boolean) => void,
-	solFeeBreakdown?: { tradingFee: string; transactionFee: string; accountCreationFee: string; priorityFee: string; total: string; accountsToCreate: number }
 ): boolean => {
 	const solBalance = solPortfolioToken?.amount ?? 0;
 	const requiredSol = parseFloat(totalSolRequired) || 0;
-	
+
 	// Only validate SOL fees if we have a comprehensive fee estimate or if SOL balance is critically low
 	if (requiredSol > 0) {
 		// Use comprehensive SOL requirement from quote
 		if (solBalance < requiredSol) {
-			const shortfall = requiredSol - solBalance;
-			const message = `Insufficient SOL for transaction fees. Required: ${requiredSol.toFixed(6)} SOL, Balance: ${solBalance.toFixed(6)} SOL, Need: ${shortfall.toFixed(6)} more SOL.`;
-			
+			// const shortfall = requiredSol - solBalance;
+			const message = `Insufficient SOL for transaction fees. Required: ${formatTokenBalance(requiredSol)} SOL, Balance: ${formatTokenBalance(solBalance)} SOL`;
+
 			showToast({
 				type: 'error',
 				message
@@ -42,13 +41,13 @@ export const validateSolBalanceForQuote = (
 		if (solBalance < minimumSolRequired) {
 			showToast({
 				type: 'error',
-				message: `Insufficient SOL for transaction fees. You need at least ${minimumSolRequired} SOL but only have ${solBalance.toFixed(6)} SOL.`
+				message: `Insufficient SOL for transaction fees. You need at least ${formatTokenBalance(minimumSolRequired)} SOL but only have ${formatTokenBalance(solBalance)} SOL.`
 			});
 			setHasSufficientSolBalance(false);
 			return false;
 		}
 	}
-	
+
 	setHasSufficientSolBalance(true);
 	return true; // SOL balance is sufficient
 };
@@ -351,10 +350,10 @@ export const handleTradeSubmit = (
 		return false;
 	}
 
-		// Check if user has enough SOL for transaction fees
+	// Check if user has enough SOL for transaction fees
 	const solBalance = solPortfolioToken?.amount ?? 0;
 	const requiredSolFee = parseFloat(estimatedTotalFee) || 0;
-	
+
 	// Only validate SOL fees if we have a fee estimate or if SOL balance is critically low
 	if (requiredSolFee > 0) {
 		// Use exact fee from quote

@@ -41,14 +41,6 @@ type Service struct {
 	naughtyWordSet map[string]struct{}
 }
 
-// min is a helper function to find the minimum of two integers.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // NewService creates a new CoinService instance
 func NewService(
 	config *Config,
@@ -85,18 +77,21 @@ func NewService(
 
 	if service.config != nil {
 		if service.config.TrendingFetchInterval > 0 {
+			slog.Info("Starting trending token fetcher with configured interval", slog.Duration("interval", service.config.TrendingFetchInterval))
 			go service.runTrendingTokenFetcher(service.fetcherCtx)
 		} else {
 			slog.Warn("Trending token fetcher is disabled as TrendingFetchInterval is not configured or is zero.")
 		}
 
 		if service.config.NewCoinsFetchInterval > 0 {
+			slog.Info("Starting new token fetcher with configured interval", slog.Duration("interval", service.config.NewCoinsFetchInterval))
 			go service.runNewTokenFetcher(service.fetcherCtx)
 		} else {
 			slog.Warn("New token fetcher is disabled as NewCoinsFetchInterval is not configured or is zero.")
 		}
 
 		if service.config.TopGainersFetchInterval > 0 {
+			slog.Info("Starting top gainers token fetcher with configured interval", slog.Duration("interval", service.config.TopGainersFetchInterval))
 			go service.runTopGainersTokenFetcher(service.fetcherCtx)
 		} else {
 			slog.Warn("Top gainers token fetcher is disabled as TopGainersFetchInterval is not configured or is zero.")
@@ -1045,4 +1040,12 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 	s.cache.Set(cacheKey_top, modelCoins, s.config.TopGainersFetchInterval)
 
 	return modelCoins, totalCount, nil
+}
+
+// min is a helper function to find the minimum of two integers.
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
