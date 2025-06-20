@@ -2,13 +2,19 @@ import React from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
 import { Text, List, Switch, Divider } from 'react-native-paper';
 import Constants from 'expo-constants';
+import { useNavigation } from '@react-navigation/native';
 import { useThemeStore } from '@/store/theme';
 import { usePortfolioStore } from '@/store/portfolio';
 import { useStyles } from './settings_styles';
 import CopyToClipboard from '@/components/Common/CopyToClipboard';
+import type { RootStackParamList } from '@/types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type SettingsNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
 const Settings: React.FC = () => {
 	const styles = useStyles();
+	const navigation = useNavigation<SettingsNavigationProp>();
 
 	const { themeType, toggleTheme, isLoading: isThemeLoading } = useThemeStore();
 	const isDarkTheme = themeType === 'neon';
@@ -81,6 +87,19 @@ const Settings: React.FC = () => {
 							)}
 						/>
 					</List.Section>
+
+					{__DEV__ && (
+						<List.Section title="Developer Tools" titleStyle={styles.sectionTitle}>
+							<List.Item
+								title="Accordion Test"
+								description="Test List.Accordion functionality"
+								titleStyle={styles.listItemTitle}
+								descriptionStyle={styles.listItemDescription}
+								left={props => <List.Icon {...props} icon="test-tube" />}
+								onPress={() => navigation.navigate('AccordionTest')}
+							/>
+						</List.Section>
+					)}
 				</View>
 			</ScrollView>
 		</SafeAreaView>
