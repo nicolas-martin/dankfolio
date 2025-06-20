@@ -236,6 +236,7 @@ export const useStyles = () => {
 			flexDirection: 'row',
 			flex: 1,
 			paddingVertical: theme.spacing.xs, // Add some padding for better touch target
+			maxWidth: '50%', // Added this line
 		},
 		tokenSymbol: {
 			...theme.fonts.titleMedium,
