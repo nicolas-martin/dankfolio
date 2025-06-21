@@ -161,7 +161,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	}
 
 	// Calculate comprehensive SOL fee breakdown using both quote and swap responses
-	feeBreakdown, totalSolRequired, tradingFeeSol, err := s.calculateSolFeeBreakdown(tradeQuote, swapResponse)
+	feeBreakdown, totalSolRequired, tradingFeeSol, err := s.calculateSolFeeBreakdown(ctx, tradeQuote, swapResponse, params.UserWalletAddress, params.FromCoinMintAddress, params.ToCoinMintAddress)
 	if err != nil {
 		slog.Warn("Failed to calculate SOL fee breakdown", "error", err)
 		// Use fallback values
@@ -504,7 +504,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 		if err != nil {
 			slog.Warn("Failed to create swap transaction for fee breakdown", "error", err)
 			// Fall back to quote-only calculation
-			feeBreakdown, totalSolRequired, tradingFeeSol, err = s.calculateSolFeeBreakdownFromQuote(quote)
+			feeBreakdown, totalSolRequired, tradingFeeSol, err = s.calculateSolFeeBreakdownFromQuote(ctx, quote, userPublicKey, fromCoinMintAddress, toCoinMintAddress)
 			if err != nil {
 				slog.Warn("Failed to calculate SOL fee breakdown from quote", "error", err)
 				feeBreakdown = nil
@@ -513,7 +513,7 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 			}
 		} else {
 			// Calculate accurate fee breakdown using both quote and swap response
-			feeBreakdown, totalSolRequired, tradingFeeSol, err = s.calculateSolFeeBreakdown(&TradeQuote{Raw: quote.RawPayload}, swapResponse)
+			feeBreakdown, totalSolRequired, tradingFeeSol, err = s.calculateSolFeeBreakdown(ctx, &TradeQuote{Raw: quote.RawPayload}, swapResponse, userPublicKey, fromCoinMintAddress, toCoinMintAddress)
 			if err != nil {
 				slog.Warn("Failed to calculate SOL fee breakdown", "error", err)
 				feeBreakdown = nil
@@ -713,10 +713,84 @@ func (s *Service) GetFeeForMessage(ctx context.Context, message solanago.Message
 	return nil, fmt.Errorf("chain client does not support GetFeeForMessage")
 }
 
+// checkRequiredATAs determines how many ATAs need to be created for a swap
+func (s *Service) checkRequiredATAs(ctx context.Context, userPublicKey, inputMint, outputMint string) (int, error) {
+	const solMint = "So11111111111111111111111111111111111111112"
+	
+	// Parse the user's public key
+	userPubkey, err := solanago.PublicKeyFromBase58(userPublicKey)
+	if err != nil {
+		return 0, fmt.Errorf("invalid user public key: %w", err)
+	}
+
+	atasToCreate := 0
+
+	// Check input mint ATA (skip if it's SOL)
+	if inputMint != solMint {
+		inputMintPubkey, err := solanago.PublicKeyFromBase58(inputMint)
+		if err != nil {
+			return 0, fmt.Errorf("invalid input mint: %w", err)
+		}
+		
+		inputATA, _, err := solanago.FindAssociatedTokenAddress(userPubkey, inputMintPubkey)
+		if err != nil {
+			return 0, fmt.Errorf("failed to derive input ATA address: %w", err)
+		}
+
+		// Check if ATA exists
+		if !s.ataExists(ctx, inputATA) {
+			atasToCreate++
+			slog.Debug("Input ATA needs creation", "ata", inputATA.String(), "mint", inputMint)
+		}
+	}
+
+	// Check output mint ATA (skip if it's SOL)
+	if outputMint != solMint {
+		outputMintPubkey, err := solanago.PublicKeyFromBase58(outputMint)
+		if err != nil {
+			return 0, fmt.Errorf("invalid output mint: %w", err)
+		}
+		
+		outputATA, _, err := solanago.FindAssociatedTokenAddress(userPubkey, outputMintPubkey)
+		if err != nil {
+			return 0, fmt.Errorf("failed to derive output ATA address: %w", err)
+		}
+
+		// Check if ATA exists
+		if !s.ataExists(ctx, outputATA) {
+			atasToCreate++
+			slog.Debug("Output ATA needs creation", "ata", outputATA.String(), "mint", outputMint)
+		}
+	}
+
+	slog.Info("Dynamic ATA calculation", 
+		"user", userPublicKey, 
+		"input_mint", inputMint, 
+		"output_mint", outputMint, 
+		"atas_to_create", atasToCreate)
+
+	return atasToCreate, nil
+}
+
+// ataExists checks if an Associated Token Account exists on-chain
+func (s *Service) ataExists(ctx context.Context, ataAddress solanago.PublicKey) bool {
+	accountInfo, err := s.chainClient.GetAccountInfo(ctx, bmodel.Address(ataAddress.String()))
+	if err != nil {
+		slog.Debug("Failed to get ATA account info", "ata", ataAddress.String(), "error", err)
+		return false
+	}
+
+	// Account exists if it's not nil and not owned by the system program (uninitialized)
+	systemProgram := bmodel.Address(solanago.SystemProgramID.String())
+	return accountInfo != nil && accountInfo.Owner != systemProgram
+}
+
 // calculateSolFeeBreakdown sums all SOL lamport needs and returns formatted breakdown
 func (s *Service) calculateSolFeeBreakdown(
+	ctx context.Context,
 	quote *TradeQuote,
 	swapTx *jupiter.SwapResponse,
+	userPublicKey, inputMint, outputMint string,
 ) (*SolFeeBreakdown, string, string, error) {
 	const (
 		solMint          = "So11111111111111111111111111111111111111112"
@@ -750,10 +824,13 @@ func (s *Service) calculateSolFeeBreakdown(
 		}
 	}
 
-	// 2. Assume ATA creation (simplified approach)
-	// Most swaps require 1-2 ATA creations, so we'll conservatively assume 2
-	const assumedATACount = 2
-	ataCount := uint64(assumedATACount)
+	// 2. Calculate actual ATA creation needs dynamically
+	atasToCreate, err := s.checkRequiredATAs(ctx, userPublicKey, inputMint, outputMint)
+	if err != nil {
+		slog.Warn("Failed to check required ATAs, falling back to conservative estimate", "error", err)
+		atasToCreate = 2 // Fallback to conservative estimate
+	}
+	ataCount := uint64(atasToCreate)
 	netRent := ataCount * ataRentLamports
 
 	// 3. Estimate transaction count and fees
@@ -806,7 +883,9 @@ func (s *Service) calculateSolFeeBreakdown(
 // calculateSolFeeBreakdownFromQuote calculates fee breakdown from quote only (without swap transaction)
 // This provides upfront fee estimates during quote phase
 func (s *Service) calculateSolFeeBreakdownFromQuote(
+	ctx context.Context,
 	quote *jupiter.QuoteResponse,
+	userPublicKey, inputMint, outputMint string,
 ) (*SolFeeBreakdown, string, string, error) {
 	const (
 		solMint          = "So11111111111111111111111111111111111111112"
@@ -833,10 +912,13 @@ func (s *Service) calculateSolFeeBreakdownFromQuote(
 		}
 	}
 
-	// 2. Estimate ATA creation needs (conservative approach)
-	// Most swaps require 1-2 ATA creations, so we'll conservatively assume 2
-	const assumedATACount = 2
-	ataCount := uint64(assumedATACount)
+	// 2. Calculate actual ATA creation needs dynamically
+	atasToCreate, err := s.checkRequiredATAs(ctx, userPublicKey, inputMint, outputMint)
+	if err != nil {
+		slog.Warn("Failed to check required ATAs in quote-only calculation, falling back to conservative estimate", "error", err)
+		atasToCreate = 2 // Fallback to conservative estimate
+	}
+	ataCount := uint64(atasToCreate)
 	netRent := ataCount * ataRentLamports
 
 	// 3. Estimate transaction count and fees (without actual swap transaction)
