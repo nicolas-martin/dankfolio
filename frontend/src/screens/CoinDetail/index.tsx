@@ -36,10 +36,7 @@ const CoinDetail: React.FC = () => {
 		loadCoin();
 	}, [mintAddress, initialCoinFromParams]);
 
-	const [selectedTimeframe, setSelectedTimeframe] = useState("4H");
-	// const [loading, setLoading] = useState(true); // Replaced by hook's isLoading
-	// const [isTimeframeLoading, setIsTimeframeLoading] = useState(false); // Replaced by hook's isLoading
-	// const [priceHistory, setPriceHistory] = useState<PriceData[]>([]); // Replaced by hook's priceHistory
+	const [selectedTimeframe, setSelectedTimeframe] = useState(TIMEFRAMES.find(tf => tf.value === "4H")?.value || TIMEFRAMES[0]?.value || "4H"); // Default to 4H or first available
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
 	const { showToast } = useToast();
 	const { tokens } = usePortfolioStore();
@@ -79,36 +76,49 @@ const CoinDetail: React.FC = () => {
 	}, []);
 
 
+	const allTimeframeValues = useMemo(() => TIMEFRAMES.map(tf => tf.value), []);
+
 	const {
-		priceHistory,
-		isLoading: isPriceHistoryLoading,
-		error: priceHistoryError,
-		fetchHistory
+		priceHistoryCollection,
+		isLoading: isOverallPriceHistoryLoading, // Renamed for clarity
+		errors: priceHistoryErrors, // Renamed for clarity
+		fetchHistoryForTimeframes,
+		// fetchSingleTimeframeHistory // Available if needed for individual refresh
 	} = usePriceHistory(
-		mintAddress,
-		selectedTimeframe,
+		mintAddress, // initialCoinId
+		allTimeframeValues, // initialTimeframes to fetch all
 		adaptedFetchPriceHistory
 	);
 
-	// Effect to show toast on error
+	// Effect to show toast on error for the selected timeframe
 	useEffect(() => {
-		if (priceHistoryError) {
-			showToast({ type: 'error', message: priceHistoryError.message || 'Failed to load chart data.' });
+		const errorForSelectedTimeframe = priceHistoryErrors[selectedTimeframe];
+		if (errorForSelectedTimeframe) {
+			showToast({ type: 'error', message: errorForSelectedTimeframe.message || `Failed to load chart data for ${selectedTimeframe}.` });
 		}
-	}, [priceHistoryError, showToast]);
+		// Do not show toasts for all errors, only the active one, or a generic one if many fail.
+	}, [priceHistoryErrors, selectedTimeframe, showToast]);
 
-	// Effect to re-fetch when selectedTimeframe or displayCoin (for address) changes
+	// Effect to fetch all timeframes when coin changes
 	useEffect(() => {
 		if (displayCoin?.address) {
-			fetchHistory(displayCoin.address, selectedTimeframe);
+			logger.info(`[CoinDetail] Display coin changed to ${displayCoin.symbol}, fetching all timeframes.`);
+			fetchHistoryForTimeframes(displayCoin.address, allTimeframeValues);
 		}
-	}, [selectedTimeframe, displayCoin?.address, fetchHistory]);
+		// This effect should run when displayCoin.address or allTimeframeValues change.
+		// fetchHistoryForTimeframes is memoized in the hook.
+	}, [displayCoin?.address, allTimeframeValues, fetchHistoryForTimeframes]);
+
+	// Data for the currently selected timeframe to be passed to the chart and other components
+	const currentSelectedPriceHistory = useMemo(() => {
+		return priceHistoryCollection[selectedTimeframe] || [];
+	}, [priceHistoryCollection, selectedTimeframe]);
 
 
 	const displayData = useMemo(() => {
-		const currentPriceHistory = priceHistory || []; // Use priceHistory from hook
-		const lastDataPoint = currentPriceHistory.length > 0 ? currentPriceHistory[currentPriceHistory.length - 1] : null;
-		const firstDataPoint = currentPriceHistory.length > 0 ? currentPriceHistory[0] : null;
+		const activePriceHistory = currentSelectedPriceHistory; // Use data for selected timeframe
+		const lastDataPoint = activePriceHistory.length > 0 ? activePriceHistory[activePriceHistory.length - 1] : null;
+		const firstDataPoint = activePriceHistory.length > 0 ? activePriceHistory[0] : null;
 
 		const lastValue = parseValue(lastDataPoint?.value);
 		const firstValue = parseValue(firstDataPoint?.value);
@@ -122,6 +132,7 @@ const CoinDetail: React.FC = () => {
 		let periodChange = 0;
 		let valueChange = 0;
 
+		// Calculate change based on the first point of the *selected timeframe's* history
 		if (firstDataPoint && firstValue !== 0) {
 			periodChange = ((currentPrice - firstValue) / firstValue) * 100;
 			valueChange = currentPrice - firstValue;
@@ -135,17 +146,18 @@ const CoinDetail: React.FC = () => {
 			periodChange,
 			valueChange,
 		};
-	}, [priceHistory, hoverPoint, parseValue]);
+	}, [currentSelectedPriceHistory, hoverPoint, parseValue]);
 
 	const portfolioToken = useMemo(() => {
 		if (!displayCoin?.address) return null;
 		return tokens.find(token => token.mintAddress === displayCoin.address);
 	}, [tokens, displayCoin?.address]);
 
-	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description) || isPriceHistoryLoading; // Combine loading states
+	// isLoadingDetails should reflect the overall loading state, especially for the initial data population.
+	// isOverallPriceHistoryLoading covers the parallel fetching.
+	// Individual timeframe errors are handled by priceHistoryErrors[selectedTimeframe].
+	const isLoadingGlobal = !displayCoin || (displayCoin && !displayCoin.description) || isOverallPriceHistoryLoading;
 
-	// All hooks must be at the top level - moved from after render functions
-	const chartData = useMemo(() => priceHistory || [], [priceHistory]);
 
 	const coinInfoMetadata = useMemo(() => ({
 		name: displayCoin?.name || '',
@@ -160,12 +172,16 @@ const CoinDetail: React.FC = () => {
 	}), [displayCoin]);
 
 	const timeframeButtonsRowStyle = useMemo(() => [
-		styles.timeframeButtonsRow, 
-		isPriceHistoryLoading && styles.timeframeButtonsRowLoading
-	], [styles.timeframeButtonsRow, styles.timeframeButtonsRowLoading, isPriceHistoryLoading]);
+		styles.timeframeButtonsRow,
+		// Consider if individual timeframe loading indication is needed here,
+		// for now, global loading affects the shimmer placeholders.
+		// (priceHistoryErrors[selectedTimeframe] || isOverallPriceHistoryLoading) && styles.timeframeButtonsRowLoading
+		isOverallPriceHistoryLoading && styles.timeframeButtonsRowLoading // Simplified for now
+	], [styles.timeframeButtonsRow, styles.timeframeButtonsRowLoading, isOverallPriceHistoryLoading]);
 
 	const timeframeButtonStyle = useMemo(() => ({
-		style: styles.timeframeButton
+		style: styles.timeframeButton,
+		// disabled: isOverallPriceHistoryLoading || !!priceHistoryErrors[selectedTimeframe] // Example: disable if loading or error for this timeframe
 	}), [styles.timeframeButton]);
 
 	const onRefresh = useCallback(async () => {
@@ -177,11 +193,13 @@ const CoinDetail: React.FC = () => {
 			// setLoading(true); // setLoading was removed, isPriceHistoryLoading is used for RefreshControl
 			try {
 				await useCoinStore.getState().getCoinByID(mintAddress, true);
-				// Price history will refresh via the useEffect dependency on 'displayCoin' changing.
-				// If getCoinByID doesn't result in a change to 'displayCoin' object reference,
-				// the effect won't re-run. This might be desired if data is identical.
-				// However, if a forced chart refresh is needed even if coin data is same,
-				// we might need a manual trigger for loadData() here.
+				// This will re-trigger the useEffect that calls fetchHistoryForTimeframes
+				// if displayCoin.address changes, or if getCoinByID itself causes a re-render
+				// and fetchHistoryForTimeframes is called again.
+				// For a more direct refresh of price history:
+				if (displayCoin?.address) {
+					await fetchHistoryForTimeframes(displayCoin.address, allTimeframeValues);
+				}
 			} catch (error: unknown) {
 				if (error instanceof Error) {
 					logger.error("Error during refresh:", error.message);
@@ -201,10 +219,9 @@ const CoinDetail: React.FC = () => {
 			// setTimeout(() => setLoading(false), 1000); // setLoading was removed
 
 
-		} else {
-			// setLoading(false); // Ensure loading stops if there's no mintAddress // setLoading was removed
 		}
-	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
+		// Overall loading state is managed by the usePriceHistory hook
+	}, [mintAddress, showToast, fetchHistoryForTimeframes, allTimeframeValues, displayCoin?.address]);
 
 	const handleTradePress = useCallback(async () => {
 		if (displayCoin) {
@@ -314,7 +331,8 @@ const CoinDetail: React.FC = () => {
 		</View>
 	);
 
-	if (!displayCoin && !isLoadingDetails) { // This condition means displayCoin is null AND we are not in any loading state for details.
+	// Check if the essential displayCoin is missing and we are not in a global loading state.
+	if (!displayCoin && !isLoadingGlobal) {
 		return (
 			<SafeAreaView style={styles.container}>
 				<InfoState
@@ -327,7 +345,12 @@ const CoinDetail: React.FC = () => {
 	}
 
 	const renderPriceCard = () => {
-		if (!displayCoin || priceHistory.length < 2 || !displayCoin.resolvedIconUrl) return null;
+		// Show placeholder if global loading or if the specific selected timeframe data is missing/empty
+		if (isLoadingGlobal || !displayCoin || currentSelectedPriceHistory.length < 2 || !displayCoin.resolvedIconUrl) {
+			// If it's not global loading but data is missing for selected, could show a mini-error/empty state for price card
+			// For now, defer to global placeholder logic.
+			return null; // Will be handled by isLoadingGlobal ? renderPlaceholderPriceCard()
+		}
 
 		return (
 			<View style={styles.priceCard} testID={`coin-detail-price-card-${displayCoin?.symbol?.toLowerCase()}`}>
@@ -346,15 +369,28 @@ const CoinDetail: React.FC = () => {
 	};
 
 	const renderChartCard = () => {
+		// Determine if chart should show its internal loader:
+		// True if overall history is loading AND the specific timeframe has no data yet OR has an error.
+		const chartShouldShowLoader = isOverallPriceHistoryLoading &&
+			(!currentSelectedPriceHistory || currentSelectedPriceHistory.length === 0 || !!priceHistoryErrors[selectedTimeframe]);
+
 		return (
 			<View style={styles.chartContainer} testID={`coin-detail-chart-card-${displayCoin?.symbol?.toLowerCase()}`}>
 				<View style={styles.chartCardContent}>
 					<CoinChart
-						data={chartData}
-						loading={isPriceHistoryLoading && (!priceHistory || priceHistory.length === 0)} // Show loading overlay if history is empty
+						data={currentSelectedPriceHistory} // Pass data for the selected timeframe
+						loading={chartShouldShowLoader}
 						onHover={handleChartHover}
 						period={selectedTimeframe}
 					/>
+					{/* Optionally, show a specific error message for this timeframe if needed */}
+					{priceHistoryErrors[selectedTimeframe] && !chartShouldShowLoader && (
+						<View style={styles.chartErrorOverlay}>
+							<Text style={styles.chartErrorText}>
+								Error loading data for {selectedTimeframe}.
+							</Text>
+						</View>
+					)}
 				</View>
 			</View>
 		);
@@ -372,12 +408,19 @@ const CoinDetail: React.FC = () => {
 							data: { timeframe: value, coinSymbol: displayCoin?.symbol },
 						});
 						setSelectedTimeframe(value);
+						// Data is already fetched, just changing view.
+						// If individual refresh on select was desired:
+						// if (displayCoin?.address) {
+						//   fetchSingleTimeframeHistory(displayCoin.address, value);
+						// }
 					}}
 					buttons={TIMEFRAMES.map(tf => ({
 						value: tf.value,
 						testID: `coin-detail-timeframe-button-${tf.value}`,
 						label: tf.label,
-						...timeframeButtonStyle
+						...timeframeButtonStyle,
+						// Optionally disable button if its data is errored and not loading
+						// disabled: !!priceHistoryErrors[tf.value] && !isOverallPriceHistoryLoading,
 					}))}
 					density="small"
 					style={timeframeButtonsRowStyle}
@@ -387,7 +430,7 @@ const CoinDetail: React.FC = () => {
 	};
 
 	const renderMarketStatsCard = () => {
-		if (!displayCoin) return null;
+		if (isLoadingGlobal || !displayCoin) return null; // Defer to global placeholder
 
 		return (
 			<View style={styles.marketStatsCard} testID="coin-detail-market-stats-card">
@@ -397,7 +440,7 @@ const CoinDetail: React.FC = () => {
 	};
 
 	const renderHoldingsCard = () => {
-		if (!portfolioToken) return null;
+		if (isLoadingGlobal ||!portfolioToken) return null; // Defer to global placeholder or hide if no holdings
 
 		return (
 			<View style={styles.holdingsCard} testID="coin-detail-holdings-card">
@@ -461,19 +504,19 @@ const CoinDetail: React.FC = () => {
 					keyboardShouldPersistTaps="handled"
 					refreshControl={
 						<RefreshControl
-							refreshing={isPriceHistoryLoading} // Use isLoading from hook
+							refreshing={isOverallPriceHistoryLoading} // Use overall loading state
 							onRefresh={onRefresh}
 							tintColor={styles.colors.primary}
 						/>
 					}
 				>
-					{/* Show placeholders when loading details, otherwise show real content */}
-					{isLoadingDetails ? renderPlaceholderPriceCard() : renderPriceCard()}
-					{isLoadingDetails ? renderPlaceholderChartCard() : renderChartCard()}
-					{!isLoadingDetails && renderTimeframeCard()}
-					{!isLoadingDetails && renderMarketStatsCard()}
-					{!isLoadingDetails && renderHoldingsCard()}
-					{isLoadingDetails ? renderPlaceholderAboutCard() : renderAboutCard()}
+					{/* Conditional rendering based on global loading state */}
+					{isLoadingGlobal ? renderPlaceholderPriceCard() : renderPriceCard()}
+					{isLoadingGlobal ? renderPlaceholderChartCard() : renderChartCard()}
+					{isLoadingGlobal ? null : renderTimeframeCard()}
+					{isLoadingGlobal ? null : renderMarketStatsCard()}
+					{isLoadingGlobal ? null : renderHoldingsCard()}
+					{isLoadingGlobal ? renderPlaceholderAboutCard() : renderAboutCard()}
 				</ScrollView>
 
 				{/* Show trade button with placeholder text when loading */}
@@ -483,9 +526,9 @@ const CoinDetail: React.FC = () => {
 						onPress={handleTradePress} // Use memoized handler
 						style={styles.tradeButton}
 						testID={`trade-button-${displayCoin?.symbol?.toLowerCase()}`}
-						disabled={isLoadingDetails}
+						disabled={isLoadingGlobal} // Disable if globally loading
 					>
-						{isLoadingDetails ? 'Loading...' : `Trade ${displayCoin?.symbol || ''}`}
+						{isLoadingGlobal ? 'Loading...' : `Trade ${displayCoin?.symbol || ''}`}
 					</Button>
 				</View>
 			</View>

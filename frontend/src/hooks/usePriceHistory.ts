@@ -1,70 +1,119 @@
 import { useState, useEffect, useCallback } from 'react';
-// Assuming PriceData is the correct type for a single point in price history.
-// If PriceHistoryPoint is a different, more specific type from the store, adjust as needed.
-import { PriceData as PriceHistoryPoint } from '@/types'; // Adjusted to use existing PriceData as PriceHistoryPoint
-import { logger } from '@/utils/logger'; // Assuming logger path
+import { PriceData as PriceHistoryPoint } from '@/types';
+import { logger } from '@/utils/logger';
 
-// Placeholder for the actual API call function.
-// In a real app, this would be imported from a service, e.g.,
-// import { fetchPriceHistoryFromApi } from '@/services/coinDataService';
+export interface PriceHistoryCollection {
+  [timeframe: string]: PriceHistoryPoint[];
+}
+
+export interface ErrorCollection {
+  [timeframe: string]: Error | null;
+}
 
 export interface UsePriceHistoryReturn {
-  priceHistory: PriceHistoryPoint[];
+  priceHistoryCollection: PriceHistoryCollection;
   isLoading: boolean;
-  error: Error | null;
-  fetchHistory: (coinId: string, timeframe: string) => Promise<void>; // Made Promise<void>
+  errors: ErrorCollection;
+  fetchHistoryForTimeframes: (coinId: string, timeframes: string[]) => Promise<void>;
+  fetchSingleTimeframeHistory: (coinId: string, timeframe: string) => Promise<void>; // Added for individual fetching
 }
 
 export const usePriceHistory = (
   initialCoinId?: string,
-  initialTimeframe?: string,
-  // Allow passing the actual API call function as a dependency for testability and flexibility
+  // initialTimeframe is removed as we might fetch multiple timeframes
+  initialTimeframes?: string[], // Optional: to fetch specific timeframes on init
   fetchPriceHistoryApiCall?: (coinId: string, timeframe: string) => Promise<PriceHistoryPoint[]>
 ): UsePriceHistoryReturn => {
-  const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
+  const [priceHistoryCollection, setPriceHistoryCollection] = useState<PriceHistoryCollection>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [errors, setErrors] = useState<ErrorCollection>({});
 
-  const fetchHistory = useCallback(async (coinId: string, timeframe: string) => {
+  const fetchSingleTimeframeHistory = useCallback(async (coinId: string, timeframe: string) => {
     if (!fetchPriceHistoryApiCall) {
-      logger.warn('[usePriceHistory] fetchPriceHistoryApiCall not provided. Cannot fetch history.');
-      // Optionally set an error state or return early if critical
-      setError(new Error("API call function not provided to usePriceHistory hook."));
-      setPriceHistory([]); // Clear any existing history
+      logger.warn('[usePriceHistory] fetchPriceHistoryApiCall not provided. Cannot fetch history for timeframe:', timeframe);
+      setErrors(prev => ({ ...prev, [timeframe]: new Error("API call function not provided.") }));
+      setPriceHistoryCollection(prev => ({ ...prev, [timeframe]: [] }));
       return;
     }
     if (!coinId || !timeframe) {
-        logger.warn('[usePriceHistory] coinId or timeframe is invalid. Cannot fetch history.');
-        setPriceHistory([]); // Clear history if params are invalid
-        setIsLoading(false); // Ensure loading stops
-        return;
+      logger.warn('[usePriceHistory] coinId or timeframe is invalid for timeframe:', timeframe);
+      setErrors(prev => ({ ...prev, [timeframe]: new Error("Invalid coinId or timeframe.") }));
+      setPriceHistoryCollection(prev => ({ ...prev, [timeframe]: [] }));
+      return;
     }
 
-    logger.info(`[usePriceHistory] Fetching history for ${coinId} (${timeframe})`);
-    setIsLoading(true);
-    setError(null);
+    logger.info(`[usePriceHistory] Fetching history for ${coinId} (Timeframe: ${timeframe})`);
+    // Potentially set individual loading state if needed: setIsLoadingPerTimeframe(prev => ({...prev, [timeframe]: true}));
+    // For now, global isLoading is managed by fetchHistoryForTimeframes
+
     try {
       const history = await fetchPriceHistoryApiCall(coinId, timeframe);
-      setPriceHistory(history);
+      setPriceHistoryCollection(prev => ({ ...prev, [timeframe]: history }));
+      setErrors(prev => ({ ...prev, [timeframe]: null }));
     } catch (e) {
-      const errorToSet = e instanceof Error ? e : new Error(String(e?.message || 'An unknown error occurred'));
-      logger.error('[usePriceHistory] Failed to fetch price history', { error: errorToSet.message, coinId, timeframe });
-      setError(errorToSet);
-      setPriceHistory([]); // Clear history on error
+      const errorToSet = e instanceof Error ? e : new Error(String(e?.message || `Unknown error fetching ${timeframe}`));
+      logger.error('[usePriceHistory] Failed to fetch price history for timeframe:', { error: errorToSet.message, coinId, timeframe });
+      setErrors(prev => ({ ...prev, [timeframe]: errorToSet }));
+      setPriceHistoryCollection(prev => ({ ...prev, [timeframe]: [] })); // Clear history for this timeframe on error
     } finally {
-      setIsLoading(false);
+      // Potentially set individual loading state: setIsLoadingPerTimeframe(prev => ({...prev, [timeframe]: false}));
     }
-  }, [fetchPriceHistoryApiCall]); // fetchPriceHistoryApiCall is a dependency
+  }, [fetchPriceHistoryApiCall]);
+
+  const fetchHistoryForTimeframes = useCallback(async (coinId: string, timeframes: string[]) => {
+    if (!fetchPriceHistoryApiCall) {
+      logger.warn('[usePriceHistory] fetchPriceHistoryApiCall not provided. Cannot fetch history.');
+      const newErrors: ErrorCollection = {};
+      timeframes.forEach(tf => newErrors[tf] = new Error("API call function not provided."));
+      setErrors(newErrors);
+      setPriceHistoryCollection({});
+      return;
+    }
+    if (!coinId || !timeframes || timeframes.length === 0) {
+      logger.warn('[usePriceHistory] coinId or timeframes array is invalid.');
+      setErrors({}); // Or set specific errors
+      setPriceHistoryCollection({});
+      return;
+    }
+
+    logger.info(`[usePriceHistory] Fetching history for ${coinId} (Timeframes: ${timeframes.join(', ')})`);
+    setIsLoading(true);
+    // Reset errors for the timeframes being fetched
+    const initialErrors: ErrorCollection = { ...errors };
+    timeframes.forEach(tf => initialErrors[tf] = null);
+    setErrors(initialErrors);
+
+    const results = await Promise.allSettled(
+      timeframes.map(timeframe => fetchPriceHistoryApiCall(coinId, timeframe))
+    );
+
+    const newHistoryCollection: PriceHistoryCollection = { ...priceHistoryCollection };
+    const newErrorsCollection: ErrorCollection = { ...errors };
+
+    results.forEach((result, index) => {
+      const timeframe = timeframes[index];
+      if (result.status === 'fulfilled') {
+        newHistoryCollection[timeframe] = result.value;
+        newErrorsCollection[timeframe] = null;
+      } else {
+        const errorToSet = result.reason instanceof Error ? result.reason : new Error(String(result.reason?.message || `Unknown error fetching ${timeframe}`));
+        logger.error('[usePriceHistory] Failed to fetch price history for timeframe in parallel:', { error: errorToSet.message, coinId, timeframe });
+        newErrorsCollection[timeframe] = errorToSet;
+        newHistoryCollection[timeframe] = []; // Clear or keep stale data for this timeframe on error
+      }
+    });
+
+    setPriceHistoryCollection(newHistoryCollection);
+    setErrors(newErrorsCollection);
+    setIsLoading(false);
+  }, [fetchPriceHistoryApiCall, errors, priceHistoryCollection]); // Added dependencies
 
   useEffect(() => {
-    if (initialCoinId && initialTimeframe && fetchPriceHistoryApiCall) {
-      // Initial fetch if parameters are provided
-      fetchHistory(initialCoinId, initialTimeframe);
+    if (initialCoinId && initialTimeframes && initialTimeframes.length > 0 && fetchPriceHistoryApiCall) {
+      fetchHistoryForTimeframes(initialCoinId, initialTimeframes);
     }
-    // Intentionally not re-fetching if fetchHistory changes due to fetchPriceHistoryApiCall changing,
-    // as that should ideally be stable or trigger a conscious re-call of fetchHistory by the consumer.
-    // If fetchPriceHistoryApiCall could change and an auto-refetch is desired, it needs more complex handling.
-  }, [initialCoinId, initialTimeframe, fetchPriceHistoryApiCall, fetchHistory]); // Only re-run initial fetch if these specific initial params or the function itself change
+    // This effect is for initial load. Subsequent fetches are manual.
+  }, [initialCoinId, fetchPriceHistoryApiCall]); // Removed initialTimeframes from deps to prevent re-fetch if it changes post-init. fetchHistoryForTimeframes handles its own logic.
 
-  return { priceHistory, isLoading, error, fetchHistory };
+  return { priceHistoryCollection, isLoading, errors, fetchHistoryForTimeframes, fetchSingleTimeframeHistory };
 };
