@@ -9,9 +9,11 @@ import { useLoadingState } from './scripts';
 import { useStyle } from './styles';
 
 const Splash = () => {
-	const navigation = useNavigation<SplashScreenNavigationProp>();
+	// Navigation is no longer directly initiated by Splash screen after these changes
+	// const navigation = useNavigation<SplashScreenNavigationProp>();
 	const styles = useStyle();
-	const loadingState = useLoadingState(navigation);
+	// Pass undefined or remove navigation if useLoadingState no longer needs it
+	const loadingState = useLoadingState();
 
 	return (
 		<View style={styles.container}>

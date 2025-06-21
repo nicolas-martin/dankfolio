@@ -68,8 +68,8 @@ import { initializeDebugWallet } from '@/utils/debugWallet'; // Import for debug
 import { retrieveWalletFromStorage } from '@/utils/keychainService'; // Import for wallet retrieval
 import { logger } from '@/utils/logger';
 import { initializeFirebaseServices } from '@/services/firebaseInit';
-import * as SplashScreen from 'expo-splash-screen';
 import { useThemeStore } from '@/store/theme';
+import Splash from '@screens/Splash';
 
 // DEBUG: Log all environment variables at app startup
 console.log('| ==== ENVIRONMENT VARIABLES DEBUG ====');
@@ -83,13 +83,6 @@ console.log('| DEBUG_MODE:', env.debugMode);
 console.log('| LOAD_DEBUG_WALLET:', env.loadDebugWallet);
 console.log('| E2E_MOCKING_ENABLED:', env.e2eMockingEnabled);
 console.log('| ==== END ENVIRONMENT VARIABLES DEBUG ====');
-
-// Keep the splash screen visible while we fetch resources
-try {
-	SplashScreen.preventAutoHideAsync();
-} catch (error) {
-	logger.warn('Failed to prevent splash screen auto hide:', error);
-}
 
 // Disable Reanimated strict mode warnings
 configureReanimatedLogger({
@@ -224,20 +217,9 @@ const App: React.FC = () => {
 		}
 	}, [wallet?.address]);
 
-	const onLayoutRootView = useCallback(async () => {
-		if (appIsReady && needsWalletSetup !== null) {
-			// Hide the splash screen once the app is ready
-			try {
-				await SplashScreen.hideAsync();
-				logger.info('Splash screen hidden successfully');
-			} catch (error) {
-				logger.warn('Failed to hide splash screen:', error);
-			}
-		}
-	}, [appIsReady, needsWalletSetup]);
-
 	if (!appIsReady || needsWalletSetup === null) {
-		return null;
+		// Show Splash screen while app is not ready or wallet setup state is unknown
+		return <Splash />;
 	}
 
 	// Get the current theme and merge with extended properties
@@ -256,7 +238,7 @@ const App: React.FC = () => {
 		<PaperProvider theme={paperTheme}>
 			<StatusBar style={statusBarStyle} />
 			<SafeAreaProvider>
-				<GestureHandlerRootView style={styles.gestureHandlerRoot} onLayout={onLayoutRootView}>
+				<GestureHandlerRootView style={styles.gestureHandlerRoot}>
 					<ToastProvider>
 						<BottomSheetModalProvider>
 							<View style={styles.container}>
