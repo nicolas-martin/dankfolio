@@ -134,170 +134,47 @@ func (s *Store) NaughtyWords() db.Repository[model.NaughtyWord] { // <<< ADD THI
 func (s *Store) ListTrendingCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
 	slog.DebugContext(ctx, "PostgresStore: ListTrendingCoins called", "limit", opts.Limit, "offset", opts.Offset)
 
-	// Use SearchCoins to filter by the "trending" tag
-	limit := int32(10) // default limit
-	offset := int32(0)
-
-	if opts.Limit != nil {
-		limit = int32(*opts.Limit)
+	// Default limit and offset if not provided
+	if opts.Limit == nil {
+		defaultLimit := 10
+		opts.Limit = &defaultLimit
 	}
-	if opts.Offset != nil {
-		offset = int32(*opts.Offset)
-	}
-
-	// Define default sorting by volume_24h descending
-	sortBy := "volume_24h"
-	sortDesc := true
-
-	if opts.SortBy != nil && *opts.SortBy != "" {
-		sortBy = *opts.SortBy
-	}
-	if opts.SortDesc != nil {
-		sortDesc = *opts.SortDesc
+	if opts.Offset == nil {
+		defaultOffset := 0
+		opts.Offset = &defaultOffset
 	}
 
-	// Search for coins with the "trending" tag
-	coins, err := s.SearchCoins(ctx, "", []string{"trending"}, 0, limit, offset, sortBy, sortDesc)
+	// Add filter for "trending" tag
+	opts.Filters = append(opts.Filters, db.FilterOption{
+		Field:    "tags",
+		Operator: db.FilterArrayOpContains,
+		Value:    pq.Array([]string{"trending"}),
+	})
+
+	// Define default sorting if not provided in opts
+	if opts.SortBy == nil || *opts.SortBy == "" {
+		defaultSortBy := "volume_24h_usd" // Mapped from "volume_24h"
+		opts.SortBy = &defaultSortBy
+		// Set SortDesc only if SortBy was also defaulted, to maintain original behavior
+		if opts.SortDesc == nil {
+			defaultSortDesc := true
+			opts.SortDesc = &defaultSortDesc
+		}
+	}
+
+	// Ensure ResolvedIconUrl is populated for all coins. This logic might be better in the service layer.
+	// For now, keeping the direct call to ListWithOpts as the primary goal.
+	// Image resolution should ideally happen after fetching.
+
+	coins, totalCount, err := s.coinsRepo.ListWithOpts(ctx, opts)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to search for trending coins: %w", err)
+		return nil, 0, fmt.Errorf("failed to list trending coins using ListWithOpts: %w", err)
 	}
 
-	return coins, int32(len(coins)), nil
+	return coins, totalCount, nil
 }
 
-func (s *Store) SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error) {
-	if strings.ToLower(sortBy) == "listed_at" || strings.ToLower(sortBy) == "jupiter_listed_at" {
-		slog.Debug("SearchCoins: Sorting by 'listed_at' or 'jupiter_listed_at', querying raw_coins directly.")
-		var rawCoins []schema.RawCoin
-		rawTx := s.db.WithContext(ctx).Model(&schema.RawCoin{})
-
-		if query != "" {
-			searchQuery := "%" + strings.ToLower(query) + "%"
-			rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(address) LIKE ?", searchQuery, searchQuery, searchQuery)
-		}
-
-		dbSortColumn := "jupiter_created_at"
-		order := "DESC"
-		if !sortDesc {
-			order = "ASC"
-		}
-		rawTx = rawTx.Order(fmt.Sprintf("%s %s NULLS LAST", dbSortColumn, order))
-
-		if limit > 0 {
-			rawTx = rawTx.Limit(int(limit))
-		}
-		if offset > 0 {
-			rawTx = rawTx.Offset(int(offset))
-		}
-
-		if err := rawTx.Find(&rawCoins).Error; err != nil {
-			return nil, fmt.Errorf("failed to search raw coins by listed_at: %w", err)
-		}
-		return mapRawCoinsToModel(rawCoins), nil
-	}
-
-	slog.Debug("SearchCoins: Using default search logic (enriched then raw).")
-	var schemaCoins []schema.Coin
-	tx := s.db.WithContext(ctx).Model(&schema.Coin{})
-
-	if query != "" {
-		searchQuery := "%" + strings.ToLower(query) + "%"
-		tx = tx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(address) LIKE ?", searchQuery, searchQuery, searchQuery)
-	}
-	if len(tags) > 0 {
-		tx = tx.Where("tags @> ?", pq.Array(tags))
-	}
-	if minVolume24h > 0 {
-		tx = tx.Where("volume_24h >= ?", minVolume24h)
-	}
-
-	if sortBy != "" {
-		dbColumn := mapSortBy(sortBy)
-		order := "ASC"
-		if sortDesc {
-			order = "DESC"
-		}
-		tx = tx.Order(fmt.Sprintf("%s %s", dbColumn, order))
-	} else {
-		tx = tx.Order("marketcap DESC NULLS LAST, volume_24h_usd DESC NULLS LAST, created_at DESC")
-	}
-
-	if limit > 0 {
-		tx = tx.Limit(int(limit))
-	}
-	if offset > 0 {
-		tx = tx.Offset(int(offset))
-	}
-
-	if err := tx.Find(&schemaCoins).Error; err != nil {
-		return nil, fmt.Errorf("failed to search enriched coins: %w", err)
-	}
-	enriched := mapSchemaCoinsToModel(schemaCoins)
-
-	// If filtering by tags, only return enriched coins (raw_coins don't have tags)
-	if len(tags) > 0 {
-		slog.DebugContext(ctx, "SearchCoins: Filtering by tags, returning only enriched coins", "tags", tags, "count", len(enriched))
-		return enriched, nil
-	}
-
-	// Only search raw_coins if no tag filtering is required
-	var rawCoins []schema.RawCoin
-	rawTx := s.db.WithContext(ctx).Model(&schema.RawCoin{})
-	if query != "" {
-		searchQuery := "%" + strings.ToLower(query) + "%"
-		rawTx = rawTx.Where("LOWER(name) LIKE ? OR LOWER(symbol) LIKE ? OR LOWER(address) LIKE ?", searchQuery, searchQuery, searchQuery)
-	}
-	if limit > 0 {
-		rawTx = rawTx.Limit(int(limit))
-	}
-	if offset > 0 {
-		rawTx = rawTx.Offset(int(offset))
-	}
-
-	if err := rawTx.Find(&rawCoins).Error; err != nil {
-		slog.Error("Failed to search raw coins for secondary fill", "error", err)
-	}
-	rawMapped := mapRawCoinsToModel(rawCoins)
-
-	coinMap := make(map[string]model.Coin)
-	result := make([]model.Coin, 0, len(enriched)+len(rawMapped))
-
-	for _, coin := range enriched {
-		coinMap[coin.Address] = coin
-		result = append(result, coin)
-	}
-	for _, coin := range rawMapped {
-		if _, exists := coinMap[coin.Address]; !exists {
-			result = append(result, coin)
-		}
-	}
-	return result, nil
-}
-
-func mapSortBy(sortBy string) string {
-	switch strings.ToLower(sortBy) {
-	case "name":
-		return "name"
-	case "symbol":
-		return "symbol"
-	case "price":
-		return "price"
-	case "volume24h":
-		return "volume_24h_usd"
-	case "marketcap":
-		return "marketcap"
-	case "created_at":
-		return "created_at"
-	case "last_updated":
-		return "last_updated"
-	case "listed_at", "jupiter_listed_at":
-		return "jupiter_created_at"
-	case "price_24h_change_percent":
-		return "price_24h_change_percent"
-	default:
-		return "created_at"
-	}
-}
+// mapSortBy was here, it's being removed.
 
 func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 	coins := make([]model.Coin, len(schemaCoins))
@@ -338,59 +215,78 @@ func mapSchemaCoinsToModel(schemaCoins []schema.Coin) []model.Coin {
 func (s *Store) ListNewestCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
 	slog.DebugContext(ctx, "PostgresStore: ListNewestCoins called", "limit", opts.Limit, "offset", opts.Offset)
 
-	// Use SearchCoins to filter by the "new-coin" tag
-	limit := int32(10) // default limit
-	offset := int32(0)
-
-	if opts.Limit != nil {
-		limit = int32(*opts.Limit)
+	// Default limit and offset if not provided
+	if opts.Limit == nil {
+		defaultLimit := 10
+		opts.Limit = &defaultLimit
 	}
-	if opts.Offset != nil {
-		offset = int32(*opts.Offset)
-	}
-
-	// Define default sorting by created_at descending (newest first)
-	sortBy := "created_at"
-	sortDesc := true
-
-	if opts.SortBy != nil && *opts.SortBy != "" {
-		sortBy = *opts.SortBy
-	}
-	if opts.SortDesc != nil {
-		sortDesc = *opts.SortDesc
+	if opts.Offset == nil {
+		defaultOffset := 0
+		opts.Offset = &defaultOffset
 	}
 
-	// Search for coins with the "new-coin" tag
-	coins, err := s.SearchCoins(ctx, "", []string{"new-coin"}, 0, limit, offset, sortBy, sortDesc)
+	// Add filter for "new-coin" tag
+	opts.Filters = append(opts.Filters, db.FilterOption{
+		Field:    "tags",
+		Operator: db.FilterArrayOpContains,
+		Value:    pq.Array([]string{"new-coin"}),
+	})
+
+	// Define default sorting if not provided in opts
+	if opts.SortBy == nil || *opts.SortBy == "" {
+		defaultSortBy := "created_at"
+		opts.SortBy = &defaultSortBy
+		if opts.SortDesc == nil {
+			defaultSortDesc := true
+			opts.SortDesc = &defaultSortDesc
+		}
+	}
+
+	coins, totalCount, err := s.coinsRepo.ListWithOpts(ctx, opts)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to search for new coins: %w", err)
+		return nil, 0, fmt.Errorf("failed to list newest coins using ListWithOpts: %w", err)
 	}
 
-	return coins, int32(len(coins)), nil
+	return coins, totalCount, nil
 }
 
 // ListTopGainersCoins fetches coins with the highest positive price change in 24h.
 func (s *Store) ListTopGainersCoins(ctx context.Context, opts db.ListOptions) ([]model.Coin, int32, error) {
 	slog.DebugContext(ctx, "PostgresStore: ListTopGainersCoins called", "limit", opts.Limit, "offset", opts.Offset)
 
-	// Use SearchCoins to filter by the "top-gainer" tag
-	limit := int32(10) // default limit
-	offset := int32(0)
-
-	if opts.Limit != nil {
-		limit = int32(*opts.Limit)
+	// Default limit and offset if not provided
+	if opts.Limit == nil {
+		defaultLimit := 10
+		opts.Limit = &defaultLimit
 	}
-	if opts.Offset != nil {
-		offset = int32(*opts.Offset)
+	if opts.Offset == nil {
+		defaultOffset := 0
+		opts.Offset = &defaultOffset
 	}
 
-	// Search for coins with the "top-gainer" tag, sorted by price change percentage descending
-	coins, err := s.SearchCoins(ctx, "", []string{"top-gainer"}, 0, limit, offset, "price_24h_change_percent", true)
+	// Add filter for "top-gainer" tag
+	opts.Filters = append(opts.Filters, db.FilterOption{
+		Field:    "tags",
+		Operator: db.FilterArrayOpContains,
+		Value:    pq.Array([]string{"top-gainer"}),
+	})
+
+	// Define default sorting if not provided in opts (original was hardcoded)
+	if opts.SortBy == nil || *opts.SortBy == "" {
+		defaultSortBy := "price_24h_change_percent"
+		opts.SortBy = &defaultSortBy
+		if opts.SortDesc == nil {
+			defaultSortDesc := true
+			opts.SortDesc = &defaultSortDesc
+		}
+	}
+
+	coins, totalCount, err := s.coinsRepo.ListWithOpts(ctx, opts)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to search for top gainer coins: %w", err)
+		return nil, 0, fmt.Errorf("failed to list top gainer coins using ListWithOpts: %w", err)
 	}
 
-	return coins, int32(len(coins)), nil
+	return coins, totalCount, nil
 }
 
 func mapRawCoinsToModel(rawCoins []schema.RawCoin) []model.Coin {

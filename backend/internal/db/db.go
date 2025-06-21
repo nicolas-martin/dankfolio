@@ -30,7 +30,6 @@ type Store interface {
 
 	// Custom operations
 	ListTrendingCoins(ctx context.Context, opts ListOptions) ([]model.Coin, int32, error)
-	SearchCoins(ctx context.Context, query string, tags []string, minVolume24h float64, limit, offset int32, sortBy string, sortDesc bool) ([]model.Coin, error)
 	ListNewestCoins(ctx context.Context, opts ListOptions) ([]model.Coin, int32, error)
 	ListTopGainersCoins(ctx context.Context, opts ListOptions) ([]model.Coin, int32, error)
 
@@ -48,7 +47,7 @@ type Repository[T Entity] interface {
 	BulkUpsert(ctx context.Context, items *[]T) (int64, error)
 	Delete(ctx context.Context, id string) error
 	GetByField(ctx context.Context, field string, value any) (*T, error)
-	ListWithOpts(ctx context.Context, opts ListOptions) ([]T, int32, error) // Returns entities and total count
+	ListWithOpts(ctx context.Context, opts ListOptions, baseQuery ...*gorm.DB) ([]T, int32, error) // Returns entities and total count, accepts optional base query
 }
 
 // FilterOperator defines the type for filter operations.

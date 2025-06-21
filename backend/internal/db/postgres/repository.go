@@ -238,64 +238,90 @@ func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions
 	var schemaItems []S
 	var total int64
 
-	// Base query for the specific schema type S
-	query := r.db.WithContext(ctx).Model(new(S))
+// applyListOptions applies filters, sorting, and pagination to a base query.
+// It's an unexported method of Repository.
+// baseQuery should already be context-aware (e.g., r.db.WithContext(ctx))
+func (r *Repository[S, M]) applyListOptions(baseQuery *gorm.DB, opts db.ListOptions) (processedQuery *gorm.DB, totalCount int64, err error) {
+	processedQuery = baseQuery // Start with the passed-in baseQuery
+	var currentTotal int64
 
-	// 16:09:25 /Users/nma/dev/dankfolio/backend/internal/db/postgres/repository.go:252 ERROR: operator does not exist: text[] ~~ unknown (SQLSTATE 42883)
-	// [rows:0] SELECT count(*) FROM "coins" WHERE tags LIKE '%new-coin%'
-	// ERROR Failed to search for existing new coins to clear tags error=failed to count items: ERROR: operator does not exist: text[] ~~ unknown (SQLSTATE 42883)
-
-	// Apply filters for counting
-	countQuery := query
-	for _, filter := range opts.Filters {
-		switch filter.Operator {
-		case db.FilterArrayOpAny:
-			query = query.Where("? = ANY("+filter.Field+")", filter.Value)
-		case db.FilterArrayOpContains:
-			// array contains all of these values
-			vals := filter.Value.([]string)
-			query = query.Where(filter.Field+" @> ?", pq.Array(vals))
-		default:
-			// your existing =, !=, <, >, LIKE, IN, etc.
-			query = query.Where(
-				fmt.Sprintf("%s %s ?", filter.Field, filter.Operator),
-				filter.Value,
-			)
-		}
-		countQuery = countQuery.Where(fmt.Sprintf("%s %s ?", filter.Field, string(filter.Operator)), filter.Value)
-	}
-	if err := countQuery.Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to count items: %w", err)
-	}
-
-	// Apply filters, sorting, pagination for fetching items
-	itemQuery := query
+	// Apply filters
 	for _, filter := range opts.Filters {
 		op := filter.Operator
 		if op == "" {
-			op = db.FilterOpEqual
+			op = db.FilterOpEqual // Default operator
 		}
-		itemQuery = itemQuery.Where(fmt.Sprintf("%s %s ?", filter.Field, string(op)), filter.Value)
+
+		// It's crucial that filter.Field is a valid and safe column name.
+		// And filter.Value is of the correct type for the operation.
+		switch op {
+		case db.FilterArrayOpAny: // e.g., value = ANY(column_array) -> column_array && ARRAY[value]
+			// GORM syntax for "value = ANY(array_column)" is typically Where("? = ANY(column_name)", value)
+			// Or for "array_column @> ARRAY[value]" (array contains element)
+			// The current db.FilterArrayOpAny seems to intend the first, based on `? = ANY(field)`
+			// Let's assume filter.Value is a single value to check against elements of array column filter.Field
+			processedQuery = processedQuery.Where(fmt.Sprintf("? = ANY(%s)", filter.Field), filter.Value)
+		case db.FilterArrayOpContains: // e.g., column_array @> value_array
+			// filter.Value should be correctly typed, e.g., pq.Array([]string{"tag1", "tag2"})
+			processedQuery = processedQuery.Where(fmt.Sprintf("%s @> ?", filter.Field), filter.Value)
+		default: // =, !=, <, >, LIKE, IN, etc.
+			processedQuery = processedQuery.Where(fmt.Sprintf("%s %s ?", filter.Field, string(op)), filter.Value)
+		}
 	}
 
+	// Perform count on the filtered query.
+	// The model for Count() should be correctly inferred if baseQuery was already Model-scoped.
+	// Or, explicitly set it: .Model(new(S))
+	// Cloning the query before Count to ensure it doesn't affect the main query chain for Find.
+	countQuery := processedQuery.Model(new(S)) // Ensures Model context for Count.
+	if err := countQuery.Count(&currentTotal).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count items: %w", err)
+	}
+
+	// Apply sorting
 	if opts.SortBy != nil && *opts.SortBy != "" {
 		orderStr := *opts.SortBy
-		if opts.SortDesc != nil && *opts.SortDesc {
-			orderStr += " DESC"
+		// Standardized NULLS LAST for common cases, can be adjusted
+		if strings.HasSuffix(strings.ToLower(*opts.SortBy), "_at") || // Covers created_at, updated_at, jupiter_created_at
+			*opts.SortBy == "marketcap" || *opts.SortBy == "volume_24h_usd" {
+			if opts.SortDesc != nil && *opts.SortDesc {
+				orderStr += " DESC NULLS LAST"
+			} else {
+				orderStr += " ASC NULLS LAST"
+			}
 		} else {
-			orderStr += " ASC"
+			if opts.SortDesc != nil && *opts.SortDesc {
+				orderStr += " DESC"
+			} else {
+				orderStr += " ASC"
+			}
 		}
-		itemQuery = itemQuery.Order(orderStr)
+		processedQuery = processedQuery.Order(orderStr)
 	}
 
+	// Apply pagination
 	if opts.Limit != nil && *opts.Limit > 0 {
-		itemQuery = itemQuery.Limit(*opts.Limit)
+		processedQuery = processedQuery.Limit(*opts.Limit)
 	}
 	if opts.Offset != nil && *opts.Offset >= 0 {
-		itemQuery = itemQuery.Offset(*opts.Offset)
+		processedQuery = processedQuery.Offset(*opts.Offset)
 	}
 
-	if err := itemQuery.Find(&schemaItems).Error; err != nil {
+	return processedQuery, currentTotal, nil
+}
+
+// ListWithOpts retrieves a paginated, sorted, and filtered list of entities.
+func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions) ([]M, int32, error) {
+	var schemaItems []S
+	// Initialize the base query for this standard ListWithOpts call
+	initialQuery := r.db.WithContext(ctx).Model(new(S))
+
+	itemsQuery, total, err := r.applyListOptions(initialQuery, opts) // Pass ctx for applyListOptions if it needs it directly
+	if err != nil {
+		return nil, 0, err // Error from applyListOptions (e.g., count failed)
+	}
+
+	if err := itemsQuery.Find(&schemaItems).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to list items with options: %w", err)
 	}
 

@@ -18,6 +18,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/telemetry"
 	"github.com/nicolas-martin/dankfolio/backend/internal/util"
+	"github.com/lib/pq" // Still needed for pq.Array for tag filters
 )
 
 const (
@@ -822,14 +823,142 @@ func (s *Service) SearchCoins(ctx context.Context, query string, tags []string, 
 	if opts.SortBy != nil {
 		sortBy = *opts.SortBy
 	}
-	if opts.SortDesc != nil {
-		sortDesc = *opts.SortDesc
+	// Refactored SearchCoins to use ListWithOpts.
+	// Note: OR logic for text search across multiple fields is not directly supported by ListWithOpts.
+	// This implementation will use AND for text search fields if `query` is provided.
+	// This is a change in behavior from the original SearchCoins.
+
+	slog.DebugContext(ctx, "Service.SearchCoins: Refactored method called",
+		"query", query, "tags", tags, "minVolume", minVolume24h, "opts", opts)
+
+	mapSortByField := func(apiSortBy string) string {
+		switch strings.ToLower(apiSortBy) {
+		case "name": return "name"
+		case "symbol": return "symbol"
+		case "price": return "price"
+		case "volume24h": return "volume_24h_usd"
+		case "marketcap": return "marketcap"
+		case "created_at": return "created_at"
+		case "last_updated": return "last_updated"
+		case "listed_at", "jupiter_listed_at": return "jupiter_created_at"
+		case "price_24h_change_percent": return "price_24h_change_percent"
+		default: return "created_at"
+		}
 	}
-	coins, err := s.store.SearchCoins(ctx, query, tags, minVolume24h, limit, offset, sortBy, sortDesc)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to search coins via store: %w", err)
+
+	var finalCoins []model.Coin
+	var finalTotalCount int32
+	var err error
+
+	listOptions := db.ListOptions{
+		Limit:    opts.Limit,
+		Offset:   opts.Offset,
+		SortDesc: opts.SortDesc,
 	}
-	return coins, int32(len(coins)), nil
+	if opts.SortBy != nil && *opts.SortBy != "" {
+		mappedSort := mapSortByField(*opts.SortBy)
+		listOptions.SortBy = &mappedSort
+	}
+
+
+	// Case 1: Sort by "listed_at" or "jupiter_listed_at"
+	if listOptions.SortBy != nil && (*listOptions.SortBy == "jupiter_created_at") {
+		slog.DebugContext(ctx, "Service.SearchCoins: Sorting by 'jupiter_created_at', querying raw_coins directly.")
+
+		var rawFilters []db.FilterOption
+		if query != "" {
+			searchQuery := "%" + strings.ToLower(query) + "%"
+			// Adding separate LIKE filters (implicitly ANDed by ListWithOpts)
+			// This is a change from original OR logic.
+			rawFilters = append(rawFilters, db.FilterOption{Field: "LOWER(name)", Operator: db.FilterOpLike, Value: searchQuery})
+			// Consider adding more filters if needed, or a more complex filter setup in ListWithOpts for OR
+		}
+		listOptions.Filters = rawFilters
+
+		// s.store.RawCoins() returns Repository[model.RawCoin], not model.Coin
+		// So mapping will be needed after fetching.
+		rawCoins, count, fetchErr := s.store.RawCoins().ListWithOpts(ctx, listOptions)
+		if fetchErr != nil {
+			return nil, 0, fmt.Errorf("failed to search raw coins (listed_at): %w", fetchErr)
+		}
+		finalTotalCount = count
+		finalCoins = make([]model.Coin, len(rawCoins))
+		for i, rc := range rawCoins {
+			finalCoins[i] = model.Coin{ // Manual map from model.RawCoin to model.Coin
+				ID: rc.ID, Address: rc.Address, Name: rc.Name, Symbol: rc.Symbol, Decimals: rc.Decimals, LogoURI: rc.LogoUrl, JupiterListedAt: rc.JupiterCreatedAt,
+			}
+		}
+	} else {
+		// Case 2: Default search logic
+		var enrichedFilters []db.FilterOption
+		if query != "" {
+			searchQuery := "%" + strings.ToLower(query) + "%"
+			// Change from OR to AND logic for text search due to ListWithOpts current filter structure
+			enrichedFilters = append(enrichedFilters, db.FilterOption{Field: "LOWER(name)", Operator: db.FilterOpLike, Value: searchQuery})
+			// enrichedFilters = append(enrichedFilters, db.FilterOption{Field: "LOWER(symbol)", Operator: db.FilterOpLike, Value: searchQuery})
+			// enrichedFilters = append(enrichedFilters, db.FilterOption{Field: "LOWER(address)", Operator: db.FilterOpLike, Value: searchQuery})
+		}
+		if len(tags) > 0 {
+			enrichedFilters = append(enrichedFilters, db.FilterOption{Field: "tags", Operator: db.FilterArrayOpContains, Value: pq.Array(tags)})
+		}
+		if minVolume24h > 0 {
+			enrichedFilters = append(enrichedFilters, db.FilterOption{Field: "volume_24h_usd", Operator: db.FilterOpGreaterEqual, Value: minVolume24h})
+		}
+		listOptions.Filters = enrichedFilters
+
+		if listOptions.SortBy == nil { // Apply complex default sort if no sort is specified
+			// This complex sort cannot be directly passed to ListWithOpts.SortBy.
+			// This part of the logic is lost with simple ListWithOpts usage.
+			// For now, if no sort is specified, it will use ListWithOpts's default (likely creation time or ID).
+			// Or, the caller of Service.SearchCoins must provide a sort.
+			// To somewhat replicate:
+			defaultSort := mapSortByField("marketcap") // Default to marketcap if no sort specified
+			defaultDesc := true
+			listOptions.SortBy = &defaultSort
+			listOptions.SortDesc = &defaultDesc
+		}
+
+		enrichedModelCoins, count, fetchErr := s.store.Coins().ListWithOpts(ctx, listOptions)
+		if fetchErr != nil {
+			return nil, 0, fmt.Errorf("failed to search enriched coins: %w", fetchErr)
+		}
+		finalTotalCount = count
+
+		if len(tags) > 0 {
+			finalCoins = enrichedModelCoins
+		} else {
+			// Query Raw Coins for supplement
+			rawSupplementListOpts := db.ListOptions{Limit: listOptions.Limit, Offset: listOptions.Offset} // Keep pagination
+			var rawFiltersSupplement []db.FilterOption
+			if query != "" {
+				searchQuery := "%" + strings.ToLower(query) + "%"
+				rawFiltersSupplement = append(rawFiltersSupplement, db.FilterOption{Field: "LOWER(name)", Operator: db.FilterOpLike, Value: searchQuery})
+			}
+			rawSupplementListOpts.Filters = rawFiltersSupplement
+
+			rawCoinsSupplement, _, supErr := s.store.RawCoins().ListWithOpts(ctx, rawSupplementListOpts)
+			if supErr != nil {
+				slog.ErrorContext(ctx, "Failed to search raw coin supplement", "error", supErr)
+			}
+
+			// Merge
+			coinMap := make(map[string]model.Coin)
+			finalCoins = make([]model.Coin, 0, len(enrichedModelCoins)+len(rawCoinsSupplement))
+			for _, coin := range enrichedModelCoins {
+				coinMap[coin.Address] = coin
+				finalCoins = append(finalCoins, coin)
+			}
+			for _, rc := range rawCoinsSupplement {
+				// Map model.RawCoin to model.Coin for merging
+				coinToMerge := model.Coin{ID: rc.ID, Address: rc.Address, Name: rc.Name, Symbol: rc.Symbol, Decimals: rc.Decimals, LogoURI: rc.LogoUrl, JupiterListedAt: rc.JupiterCreatedAt}
+				if _, exists := coinMap[coinToMerge.Address]; !exists && coinToMerge.Address != "" {
+					coinMap[coinToMerge.Address] = coinToMerge
+					finalCoins = append(finalCoins, coinToMerge)
+				}
+			}
+		}
+	}
+	return finalCoins, finalTotalCount, nil
 }
 
 /*
