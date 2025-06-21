@@ -16,17 +16,11 @@ export const useStyles = () => {
                 overflow: 'hidden', // Important for BlurView and borderRadius to work together
             },
             blurView: {
-                // Style for the BlurView itself
-                // The button will be a child of this, so padding should be on the button or an inner view
+                // This view will wrap the button content.
+                // It should allow the button's padding to define its size.
+                // No specific width/height needed here as it expands with content.
             },
-            androidFallbackContainer: {
-                // Specific to Android fallback
-                backgroundColor: 'rgba(230, 230, 230, 0.9)', // Light semi-transparent background for a blur-like effect
-                // Add elevation for a slight shadow if desired, consistent with Material Design
-                ...(Platform.OS === 'android' && {
-                    elevation: 3,
-                }),
-            },
+            // androidFallbackContainer is no longer needed as expo-blur is cross-platform.
             button: {
                 // Style for the react-native-paper Button
                 borderRadius: theme.borderRadius.xl, // Ensure button itself also has the radius

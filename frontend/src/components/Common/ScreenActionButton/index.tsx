@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Platform } from 'react-native';
+import { View, Platform } from 'react-native'; // Platform might still be useful for fine-tuning intensity
 import { Button } from 'react-native-paper';
 import { useStyles } from './ScreenActionButton.styles';
-import { BlurView } from '@react-native-community/blur'; // Assuming this package is available
+import { BlurView } from 'expo-blur'; // Using expo-blur
 
 interface ScreenActionButtonProps {
     text: string;
@@ -36,30 +36,19 @@ const ScreenActionButton: React.FC<ScreenActionButtonProps> = ({
         </Button>
     );
 
-    // BlurView might not work correctly in all simulators/emulators or older OS versions.
-    // It's also iOS-specific by default with @react-native-community/blur.
-    // For Android, a common approach is to use a semi-transparent background color
-    // or a third-party library that provides cross-platform blur.
-
-    if (Platform.OS === 'ios') {
-        return (
-            <View style={styles.container}>
-                <BlurView
-                    style={styles.blurView}
-                    blurType="light" // Or "dark", "xlight", "prominent", etc.
-                    blurAmount={10} // Adjust blur intensity
-                    reducedTransparencyFallbackColor="white" // Fallback for reduced transparency mode
-                >
-                    <ButtonContent />
-                </BlurView>
-            </View>
-        );
-    }
-
-    // Fallback for Android or if BlurView is not desired/working
+    // expo-blur works on both iOS and Android.
+    // We can use a single implementation.
+    // `tint` prop can be 'light', 'dark', or 'default'.
+    // `intensity` is a value between 0 and 100.
     return (
-        <View style={[styles.container, styles.androidFallbackContainer]}>
-            <ButtonContent />
+        <View style={styles.container}>
+            <BlurView
+                style={styles.blurView} // Ensure this style allows BlurView to fill the container
+                tint="light"
+                intensity={85} // Default intensity, can be adjusted
+            >
+                <ButtonContent />
+            </BlurView>
         </View>
     );
 };
