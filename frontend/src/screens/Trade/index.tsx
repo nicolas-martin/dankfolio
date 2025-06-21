@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, SafeAreaView } from 'react-native';
-import { Text, Button, IconButton, Icon, Card } from 'react-native-paper';
+import { Text, IconButton, Icon, Card } from 'react-native-paper'; // Button removed
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import { useStyles } from './styles';
@@ -30,6 +30,7 @@ import { grpcApi } from '@/services/grpcApi';
 import { useTransactionPolling, PollingStatus } from '@/hooks/useTransactionPolling';
 import InfoState from '@/components/Common/InfoState';
 import { toRawAmount } from '@/utils/numberFormat';
+import ScreenActionButton from '@components/Common/ScreenActionButton'; // Import the new button
 
 
 const QUOTE_DEBOUNCE_MS = 1000;
@@ -616,20 +617,13 @@ const Trade: React.FC = () => {
 			</ScrollView>
 
 			{/* Action Button */}
-			<View style={styles.actionContainer}>
-				<Button
-					mode="contained"
-					onPress={handleTradeSubmitClick}
-					disabled={!fromAmount || !toAmount || isQuoteLoading || !hasSufficientSolBalance}
-					loading={isQuoteLoading}
-					style={styles.tradeButton}
-					contentStyle={styles.tradeButtonContent}
-					labelStyle={styles.tradeButtonLabel}
-					testID="trade-button"
-				>
-					{isQuoteLoading ? 'Fetching Quote...' : 'Trade'}
-				</Button>
-			</View>
+			<ScreenActionButton
+				text={isQuoteLoading ? 'Fetching Quote...' : 'Trade'}
+				onPress={handleTradeSubmitClick}
+				disabled={!fromAmount || !toAmount || isQuoteLoading || !hasSufficientSolBalance}
+				loading={isQuoteLoading}
+				testID="trade-button"
+			/>
 
 			{/* Modals */}
 			{fromCoin && toCoin && (
