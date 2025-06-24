@@ -7,34 +7,34 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 
 	return useMemo(() => {
-		const colors = theme.colors; // Ensure colors is defined inside useMemo
-		
-		// Base style objects for composition
+		const colors = theme.colors;
+
 		const tokenNameBase = {
 			color: theme.colors.onSurfaceVariant,
 			fontSize: theme.typography.fontSize.xs,
+			marginLeft: theme.spacing.sm,
 		};
-		
+
 		const recipientAddressLinkBase = {
 			textDecorationLine: 'underline' as const,
 		};
-		
+
 		const primaryColorTextBase = {
 			color: colors.primary,
 		};
-		
+
 		const solscanTextStyleBase = {
 			fontSize: theme.typography.fontSize.xs,
 			fontWeight: '500' as const,
 		};
-		
+
 		const tokenIconBase = {
 			borderRadius: theme.borderRadius.lg,
 			height: theme.spacing['3xl'],
-			marginRight: theme.spacing.md,
+			marginRight: theme.spacing.lg,
 			width: theme.spacing['3xl'],
 		};
-		
+
 		const tokenIconPlaceholderBgBase = {
 			backgroundColor: '#f0f0f0',
 		};
@@ -338,6 +338,7 @@ export const useStyles = () => {
 				fontSize: theme.typography.fontSize.base,
 				fontWeight: '600',
 				marginBottom: 2,
+				marginLeft: theme.spacing.sm,
 			},
 			totalFeeLabel: {
 				color: theme.colors.onSurface,
