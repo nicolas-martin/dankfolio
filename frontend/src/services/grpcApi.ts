@@ -289,6 +289,37 @@ export const grpcApi: grpcModel.API = {
 		}
 	},
 
+	getCoinsByIDs: async (addresses: string[]): Promise<grpcModel.Coin[]> => {
+		const serviceName = 'CoinService';
+		const methodName = 'getCoinsByIDs';
+		try {
+			grpcUtils.logRequest(serviceName, methodName, { addresses, count: addresses.length });
+
+			// Validate batch size limit
+			const maxBatchSize = 50;
+			if (addresses.length > maxBatchSize) {
+				throw new Error(`Batch size ${addresses.length} exceeds maximum allowed ${maxBatchSize}`);
+			}
+
+			const response = await coinClient.getCoinsByIDs(
+				{ addresses },
+				{ headers: grpcUtils.getRequestHeaders() }
+			);
+
+			grpcUtils.logResponse(serviceName, methodName, { ...response, returned_count: response.coins.length });
+
+			// Convert the response to match our frontend model
+			return response.coins.map(mapGrpcCoinToFrontendCoin);
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				return grpcUtils.handleGrpcError(error, serviceName, methodName);
+			} else {
+				console.error("An unknown error occurred:", error);
+				throw new Error("An unknown error occurred in getCoinsByIDs");
+			}
+		}
+	},
+
 	getCoinPrices: async (coinIds: string[]): Promise<Record<string, number>> => {
 		const serviceName = 'PriceService';
 		const methodName = 'getCoinPrices';

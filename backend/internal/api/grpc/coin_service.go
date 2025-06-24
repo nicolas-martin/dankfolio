@@ -89,6 +89,45 @@ func (s *coinServiceHandler) GetCoinByID(ctx context.Context, req *connect.Reque
 	return res, nil
 }
 
+// GetCoinsByIDs returns multiple coins by their addresses in a single request
+func (s *coinServiceHandler) GetCoinsByIDs(ctx context.Context, req *connect.Request[pb.GetCoinsByIDsRequest]) (*connect.Response[pb.GetCoinsByIDsResponse], error) {
+	slog.DebugContext(ctx, "gRPC GetCoinsByIDs request received", "addresses_count", len(req.Msg.Addresses))
+	
+	if len(req.Msg.Addresses) == 0 {
+		return connect.NewResponse(&pb.GetCoinsByIDsResponse{
+			Coins: []*pb.Coin{},
+		}), nil
+	}
+
+	// Validate batch size limit
+	const maxBatchSize = 50
+	if len(req.Msg.Addresses) > maxBatchSize {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("batch size %d exceeds maximum allowed %d", len(req.Msg.Addresses), maxBatchSize))
+	}
+
+	// Call the batch service method
+	coins, err := s.coinService.GetCoinsByAddresses(ctx, req.Msg.Addresses)
+	if err != nil {
+		slog.ErrorContext(ctx, "GetCoinsByIDs service call failed", "error", err, "addresses_count", len(req.Msg.Addresses))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get coins by addresses: %w", err))
+	}
+
+	// Convert model coins to protobuf coins
+	pbCoins := make([]*pb.Coin, len(coins))
+	for i, coinModel := range coins {
+		pbCoins[i] = convertModelCoinToPbCoin(&coinModel)
+	}
+
+	slog.InfoContext(ctx, "Successfully processed batch coin request", 
+		"requested_count", len(req.Msg.Addresses), 
+		"returned_count", len(pbCoins))
+
+	res := connect.NewResponse(&pb.GetCoinsByIDsResponse{
+		Coins: pbCoins,
+	})
+	return res, nil
+}
+
 // SearchCoinByAddress searches for a coin by address
 func (s *coinServiceHandler) SearchCoinByAddress(
 	ctx context.Context,

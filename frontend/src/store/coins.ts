@@ -24,18 +24,19 @@ interface CoinState {
 	setCoin: (coin: Coin) => void;
 }
 
-export const useCoinStore = create<CoinState>((set, get) => ({
-	availableCoins: [],
-	newCoins: [],
-	trendingCoins: [],
-	topGainersCoins: [],
-	coinMap: {},
-	newCoinsLoading: false,
-	trendingCoinsLoading: false,
-	topGainersCoinsLoading: false,
-	newCoinsError: undefined,
-	trendingCoinsError: undefined,
-	topGainersCoinsError: undefined,
+export const useCoinStore = create<CoinState>((set, get) => {
+	return {
+		availableCoins: [],
+		newCoins: [],
+		trendingCoins: [],
+		topGainersCoins: [],
+		coinMap: {},
+		newCoinsLoading: false,
+		trendingCoinsLoading: false,
+		topGainersCoinsLoading: false,
+		newCoinsError: undefined,
+		trendingCoinsError: undefined,
+		topGainersCoinsError: undefined,
 
 	fetchAvailableCoins: async (limit?: number, offset?: number) => {
 		try {
@@ -111,4 +112,5 @@ export const useCoinStore = create<CoinState>((set, get) => ({
 			return null;
 		}
 	},
-}));
+	};
+});

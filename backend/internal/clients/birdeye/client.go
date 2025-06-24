@@ -16,9 +16,12 @@ import (
 )
 
 const (
-	priceHistoryEndpoint   = "defi/history_price"
-	trendingTokensEndpoint = "defi/token_trending"
-	tokenOverviewEndpoint  = "defi/token_overview"
+	priceHistoryEndpoint             = "defi/history_price"
+	trendingTokensEndpoint           = "defi/token_trending"
+	tokenOverviewEndpoint            = "defi/token_overview"
+	tokenMetadataMultipleEndpoint    = "defi/v3/token/meta-data/multiple"
+	tokenMarketDataMultipleEndpoint  = "defi/v3/token/market-data/multiple"
+	tokenTradeDataMultipleEndpoint   = "defi/v3/token/trade-data/multiple"
 )
 
 // Client handles interactions with the BirdEye API
@@ -113,6 +116,160 @@ func (c *Client) GetTokenOverview(ctx context.Context, address string) (*TokenOv
 	}
 
 	return tokenOverviewResponse, nil
+}
+
+// GetTokensOverviewBatch retrieves overview information for multiple tokens by combining metadata and market data endpoints
+func (c *Client) GetTokensOverviewBatch(ctx context.Context, addresses []string) ([]TokenOverviewData, error) {
+	if len(addresses) == 0 {
+		return []TokenOverviewData{}, nil
+	}
+
+	// Limit batch size to 20 (market data endpoint limit)
+	const maxBatchSize = 20
+	if len(addresses) > maxBatchSize {
+		return nil, fmt.Errorf("batch size %d exceeds maximum allowed %d", len(addresses), maxBatchSize)
+	}
+
+	// Build query parameters for both endpoints
+	queryParams := url.Values{}
+	for _, address := range addresses {
+		queryParams.Add("list_address", address)
+	}
+
+	// Call both endpoints in parallel
+	type metadataResult struct {
+		data *TokenMetadataMultiple
+		err  error
+	}
+	type tradeDataResult struct {
+		data *TokenTradeDataMultiple
+		err  error
+	}
+
+	metadataChan := make(chan metadataResult, 1)
+	tradeDataChan := make(chan tradeDataResult, 1)
+
+	// Fetch metadata
+	go func() {
+		metadataURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenMetadataMultipleEndpoint, queryParams.Encode())
+		slog.Debug("Fetching token metadata from BirdEye", "url", metadataURL, "addresses", addresses)
+		
+		metadata, err := getRequest[TokenMetadataMultiple](c, ctx, metadataURL)
+		metadataChan <- metadataResult{data: metadata, err: err}
+	}()
+
+	// Fetch trade data with 24h timeframe
+	go func() {
+		tradeDataParams := url.Values{}
+		for _, address := range addresses {
+			tradeDataParams.Add("list_address", address)
+		}
+		tradeDataParams.Add("time_from", "24h") // 24 hour window
+		
+		tradeDataURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenTradeDataMultipleEndpoint, tradeDataParams.Encode())
+		slog.Debug("Fetching token trade data from BirdEye", "url", tradeDataURL, "addresses", addresses)
+		
+		tradeData, err := getRequest[TokenTradeDataMultiple](c, ctx, tradeDataURL)
+		tradeDataChan <- tradeDataResult{data: tradeData, err: err}
+	}()
+
+	// Wait for both results
+	metadataRes := <-metadataChan
+	tradeDataRes := <-tradeDataChan
+
+	if metadataRes.err != nil {
+		return nil, fmt.Errorf("failed to get token metadata: %w", metadataRes.err)
+	}
+	if tradeDataRes.err != nil {
+		return nil, fmt.Errorf("failed to get token trade data: %w", tradeDataRes.err)
+	}
+
+	// Combine the results
+	var results []TokenOverviewData
+	for _, address := range addresses {
+		metadata, hasMetadata := metadataRes.data.Data[address]
+		tradeData, hasTradeData := tradeDataRes.data.Data[address]
+
+		// Skip tokens that don't exist in either response
+		if !hasMetadata && !hasTradeData {
+			slog.Warn("Token not found in either metadata or trade data", "address", address)
+			continue
+		}
+
+		// Combine the data into TokenOverviewData format
+		tokenData := TokenOverviewData{
+			Address: address,
+		}
+
+		// Set metadata fields if available
+		if hasMetadata {
+			tokenData.Name = metadata.Name
+			tokenData.Symbol = metadata.Symbol
+			tokenData.Decimals = metadata.Decimals
+			tokenData.LogoURI = metadata.LogoURI
+			tokenData.Tags = metadata.Tags
+		}
+
+		// Set trade data fields if available
+		if hasTradeData {
+			tokenData.Price = tradeData.Price
+			tokenData.MarketCap = tradeData.MarketCap
+			tokenData.Volume24hUSD = tradeData.Volume24hUSD
+			tokenData.Volume24hChangePercent = tradeData.Volume24hChangePercent
+			tokenData.Price24hChangePercent = tradeData.Price24hChangePercent
+			tokenData.Liquidity = tradeData.Liquidity
+			tokenData.FDV = tradeData.FDV
+			tokenData.Rank = tradeData.Rank
+		}
+
+		results = append(results, tokenData)
+	}
+
+	slog.Debug("Successfully combined batch token data", "requested", len(addresses), "found", len(results))
+	return results, nil
+}
+
+// GetTokensTradeDataBatch retrieves trade data for multiple tokens with 24h timeframe (price, volume, market cap, etc.)
+// This is optimized for price updates when we already have token metadata
+func (c *Client) GetTokensTradeDataBatch(ctx context.Context, addresses []string) ([]TokenTradeData, error) {
+	if len(addresses) == 0 {
+		return []TokenTradeData{}, nil
+	}
+
+	// Limit batch size to 20 (trade data endpoint limit)
+	const maxBatchSize = 20
+	if len(addresses) > maxBatchSize {
+		return nil, fmt.Errorf("batch size %d exceeds maximum allowed %d", len(addresses), maxBatchSize)
+	}
+
+	// Build query parameters with 24h timeframe
+	queryParams := url.Values{}
+	for _, address := range addresses {
+		queryParams.Add("list_address", address)
+	}
+	queryParams.Add("time_from", "24h") // 24 hour window
+
+	// Fetch trade data only
+	tradeDataURL := fmt.Sprintf("%s/%s?%s", c.baseURL, tokenTradeDataMultipleEndpoint, queryParams.Encode())
+	slog.Debug("Fetching token trade data from BirdEye", "url", tradeDataURL, "addresses", addresses)
+	
+	tradeDataResponse, err := getRequest[TokenTradeDataMultiple](c, ctx, tradeDataURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token trade data: %w", err)
+	}
+
+	// Convert map response to slice, maintaining order
+	var results []TokenTradeData
+	for _, address := range addresses {
+		if tradeData, exists := tradeDataResponse.Data[address]; exists {
+			results = append(results, tradeData)
+		} else {
+			slog.Warn("Token trade data not found", "address", address)
+		}
+	}
+
+	slog.Debug("Successfully fetched batch trade data", "requested", len(addresses), "found", len(results))
+	return results, nil
 }
 
 // getRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response

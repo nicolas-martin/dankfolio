@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/coin.proto.
  */
 export const file_dankfolio_v1_coin: GenFile = /*@__PURE__*/
-  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIssGCgRDb2luEg8KB2FkZHJlc3MYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZzeW1ib2wYAyABKAkSEAoIZGVjaW1hbHMYBCABKAUSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIbG9nb191cmkYBiABKAkSHgoRcmVzb2x2ZWRfaWNvbl91cmwYByABKAlIAIgBARIMCgR0YWdzGAggAygJEg0KBXByaWNlGAkgASgBEiQKF3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50GAogASgBSAGIAQESFgoJbWFya2V0Y2FwGAsgASgBSAKIAQESGgoNdm9sdW1lMjRoX3VzZBgMIAEoAUgDiAEBEiUKGHZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudBgNIAEoAUgEiAEBEhYKCWxpcXVpZGl0eRgOIAEoAUgFiAEBEhAKA2ZkdhgPIAEoAUgGiAEBEhEKBHJhbmsYECABKAVIB4gBARIUCgd3ZWJzaXRlGBEgASgJSAiIAQESFAoHdHdpdHRlchgSIAEoCUgJiAEBEhUKCHRlbGVncmFtGBMgASgJSAqIAQESFAoHZGlzY29yZBgUIAEoCUgLiAEBEi4KCmNyZWF0ZWRfYXQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjUKDGxhc3RfdXBkYXRlZBgWIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDIgBARI6ChFqdXBpdGVyX2xpc3RlZF9hdBgXIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDYgBAUIUChJfcmVzb2x2ZWRfaWNvbl91cmxCGgoYX3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50QgwKCl9tYXJrZXRjYXBCEAoOX3ZvbHVtZTI0aF91c2RCGwoZX3ZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudEIMCgpfbGlxdWlkaXR5QgYKBF9mZHZCBwoFX3JhbmtCCgoIX3dlYnNpdGVCCgoIX3R3aXR0ZXJCCwoJX3RlbGVncmFtQgoKCF9kaXNjb3JkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjkKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIiUKEkdldENvaW5CeUlEUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIi0KGlNlYXJjaENvaW5CeUFkZHJlc3NSZXF1ZXN0Eg8KB2FkZHJlc3MYASABKAkiPwobU2VhcmNoQ29pbkJ5QWRkcmVzc1Jlc3BvbnNlEiAKBGNvaW4YASABKAsyEi5kYW5rZm9saW8udjEuQ29pbiIUChJHZXRBbGxDb2luc1JlcXVlc3QiOAoTR2V0QWxsQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luIqQBCg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEgwKBHRhZ3MYAiADKAkSFgoObWluX3ZvbHVtZV8yNGgYAyABKAESDQoFbGltaXQYBCABKAUSDgoGb2Zmc2V0GAUgASgFEiwKB3NvcnRfYnkYBiABKA4yGy5kYW5rZm9saW8udjEuQ29pblNvcnRGaWVsZBIRCglzb3J0X2Rlc2MYByABKAgiSAoOU2VhcmNoUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbhITCgt0b3RhbF9jb3VudBgCIAEoBSJSChJHZXROZXdDb2luc1JlcXVlc3QSEgoFbGltaXQYASABKAVIAIgBARITCgZvZmZzZXQYAiABKAVIAYgBAUIICgZfbGltaXRCCQoHX29mZnNldCJXChdHZXRUcmVuZGluZ0NvaW5zUmVxdWVzdBISCgVsaW1pdBgBIAEoBUgAiAEBEhMKBm9mZnNldBgCIAEoBUgBiAEBQggKBl9saW1pdEIJCgdfb2Zmc2V0IlkKGUdldFRvcEdhaW5lcnNDb2luc1JlcXVlc3QSEgoFbGltaXQYASABKAVIAIgBARITCgZvZmZzZXQYAiABKAVIAYgBAUIICgZfbGltaXRCCQoHX29mZnNldCr+AQoNQ29pblNvcnRGaWVsZBIfChtDT0lOX1NPUlRfRklFTERfVU5TUEVDSUZJRUQQABIvCitDT0lOX1NPUlRfRklFTERfUFJJQ0VfQ0hBTkdFX1BFUkNFTlRBR0VfMjRIEAESJQohQ09JTl9TT1JUX0ZJRUxEX0pVUElURVJfTElTVEVEX0FUEAISHgoaQ09JTl9TT1JUX0ZJRUxEX1ZPTFVNRV8yNEgQAxIYChRDT0lOX1NPUlRfRklFTERfTkFNRRAEEhoKFkNPSU5fU09SVF9GSUVMRF9TWU1CT0wQBRIeChpDT0lOX1NPUlRfRklFTERfTUFSS0VUX0NBUBAGMuMFCgtDb2luU2VydmljZRJkChFHZXRBdmFpbGFibGVDb2lucxImLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRJDCgtHZXRDb2luQnlJRBIgLmRhbmtmb2xpby52MS5HZXRDb2luQnlJRFJlcXVlc3QaEi5kYW5rZm9saW8udjEuQ29pbhJqChNTZWFyY2hDb2luQnlBZGRyZXNzEiguZGFua2ZvbGlvLnYxLlNlYXJjaENvaW5CeUFkZHJlc3NSZXF1ZXN0GikuZGFua2ZvbGlvLnYxLlNlYXJjaENvaW5CeUFkZHJlc3NSZXNwb25zZRJSCgtHZXRBbGxDb2lucxIgLmRhbmtmb2xpby52MS5HZXRBbGxDb2luc1JlcXVlc3QaIS5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXNwb25zZRJDCgZTZWFyY2gSGy5kYW5rZm9saW8udjEuU2VhcmNoUmVxdWVzdBocLmRhbmtmb2xpby52MS5TZWFyY2hSZXNwb25zZRJYCgtHZXROZXdDb2lucxIgLmRhbmtmb2xpby52MS5HZXROZXdDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRJiChBHZXRUcmVuZGluZ0NvaW5zEiUuZGFua2ZvbGlvLnYxLkdldFRyZW5kaW5nQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USZgoSR2V0VG9wR2FpbmVyc0NvaW5zEicuZGFua2ZvbGlvLnYxLkdldFRvcEdhaW5lcnNDb2luc1JlcXVlc3QaJy5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZUK1AQoQY29tLmRhbmtmb2xpby52MUIJQ29pblByb3RvUAFaRWdpdGh1Yi5jb20vbmljb2xhcy1tYXJ0aW4vZGFua2ZvbGlvL2JhY2tlbmQvZ2VuL3Byb3RvL2dvL2Rhbmtmb2xpby92MaICA0RYWKoCDERhbmtmb2xpby5WMcoCDERhbmtmb2xpb1xWMeICGERhbmtmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDURhbmtmb2xpbzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIssGCgRDb2luEg8KB2FkZHJlc3MYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZzeW1ib2wYAyABKAkSEAoIZGVjaW1hbHMYBCABKAUSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIbG9nb191cmkYBiABKAkSHgoRcmVzb2x2ZWRfaWNvbl91cmwYByABKAlIAIgBARIMCgR0YWdzGAggAygJEg0KBXByaWNlGAkgASgBEiQKF3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50GAogASgBSAGIAQESFgoJbWFya2V0Y2FwGAsgASgBSAKIAQESGgoNdm9sdW1lMjRoX3VzZBgMIAEoAUgDiAEBEiUKGHZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudBgNIAEoAUgEiAEBEhYKCWxpcXVpZGl0eRgOIAEoAUgFiAEBEhAKA2ZkdhgPIAEoAUgGiAEBEhEKBHJhbmsYECABKAVIB4gBARIUCgd3ZWJzaXRlGBEgASgJSAiIAQESFAoHdHdpdHRlchgSIAEoCUgJiAEBEhUKCHRlbGVncmFtGBMgASgJSAqIAQESFAoHZGlzY29yZBgUIAEoCUgLiAEBEi4KCmNyZWF0ZWRfYXQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjUKDGxhc3RfdXBkYXRlZBgWIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDIgBARI6ChFqdXBpdGVyX2xpc3RlZF9hdBgXIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDYgBAUIUChJfcmVzb2x2ZWRfaWNvbl91cmxCGgoYX3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50QgwKCl9tYXJrZXRjYXBCEAoOX3ZvbHVtZTI0aF91c2RCGwoZX3ZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudEIMCgpfbGlxdWlkaXR5QgYKBF9mZHZCBwoFX3JhbmtCCgoIX3dlYnNpdGVCCgoIX3R3aXR0ZXJCCwoJX3RlbGVncmFtQgoKCF9kaXNjb3JkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjkKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIiUKEkdldENvaW5CeUlEUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIikKFEdldENvaW5zQnlJRHNSZXF1ZXN0EhEKCWFkZHJlc3NlcxgBIAMoCSI6ChVHZXRDb2luc0J5SURzUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiItChpTZWFyY2hDb2luQnlBZGRyZXNzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIj8KG1NlYXJjaENvaW5CeUFkZHJlc3NSZXNwb25zZRIgCgRjb2luGAEgASgLMhIuZGFua2ZvbGlvLnYxLkNvaW4iFAoSR2V0QWxsQ29pbnNSZXF1ZXN0IjgKE0dldEFsbENvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiKkAQoNU2VhcmNoUmVxdWVzdBINCgVxdWVyeRgBIAEoCRIMCgR0YWdzGAIgAygJEhYKDm1pbl92b2x1bWVfMjRoGAMgASgBEg0KBWxpbWl0GAQgASgFEg4KBm9mZnNldBgFIAEoBRIsCgdzb3J0X2J5GAYgASgOMhsuZGFua2ZvbGlvLnYxLkNvaW5Tb3J0RmllbGQSEQoJc29ydF9kZXNjGAcgASgIIkgKDlNlYXJjaFJlc3BvbnNlEiEKBWNvaW5zGAEgAygLMhIuZGFua2ZvbGlvLnYxLkNvaW4SEwoLdG90YWxfY291bnQYAiABKAUiUgoSR2V0TmV3Q29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQiVwoXR2V0VHJlbmRpbmdDb2luc1JlcXVlc3QSEgoFbGltaXQYASABKAVIAIgBARITCgZvZmZzZXQYAiABKAVIAYgBAUIICgZfbGltaXRCCQoHX29mZnNldCJZChlHZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQq/gEKDUNvaW5Tb3J0RmllbGQSHwobQ09JTl9TT1JUX0ZJRUxEX1VOU1BFQ0lGSUVEEAASLworQ09JTl9TT1JUX0ZJRUxEX1BSSUNFX0NIQU5HRV9QRVJDRU5UQUdFXzI0SBABEiUKIUNPSU5fU09SVF9GSUVMRF9KVVBJVEVSX0xJU1RFRF9BVBACEh4KGkNPSU5fU09SVF9GSUVMRF9WT0xVTUVfMjRIEAMSGAoUQ09JTl9TT1JUX0ZJRUxEX05BTUUQBBIaChZDT0lOX1NPUlRfRklFTERfU1lNQk9MEAUSHgoaQ09JTl9TT1JUX0ZJRUxEX01BUktFVF9DQVAQBjK9BgoLQ29pblNlcnZpY2USZAoRR2V0QXZhaWxhYmxlQ29pbnMSJi5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USQwoLR2V0Q29pbkJ5SUQSIC5kYW5rZm9saW8udjEuR2V0Q29pbkJ5SURSZXF1ZXN0GhIuZGFua2ZvbGlvLnYxLkNvaW4SWAoNR2V0Q29pbnNCeUlEcxIiLmRhbmtmb2xpby52MS5HZXRDb2luc0J5SURzUmVxdWVzdBojLmRhbmtmb2xpby52MS5HZXRDb2luc0J5SURzUmVzcG9uc2USagoTU2VhcmNoQ29pbkJ5QWRkcmVzcxIoLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlBZGRyZXNzUmVxdWVzdBopLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlBZGRyZXNzUmVzcG9uc2USUgoLR2V0QWxsQ29pbnMSIC5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLkdldEFsbENvaW5zUmVzcG9uc2USQwoGU2VhcmNoEhsuZGFua2ZvbGlvLnYxLlNlYXJjaFJlcXVlc3QaHC5kYW5rZm9saW8udjEuU2VhcmNoUmVzcG9uc2USWAoLR2V0TmV3Q29pbnMSIC5kYW5rZm9saW8udjEuR2V0TmV3Q29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USYgoQR2V0VHJlbmRpbmdDb2lucxIlLmRhbmtmb2xpby52MS5HZXRUcmVuZGluZ0NvaW5zUmVxdWVzdBonLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1Jlc3BvbnNlEmYKEkdldFRvcEdhaW5lcnNDb2lucxInLmRhbmtmb2xpby52MS5HZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2VCtQEKEGNvbS5kYW5rZm9saW8udjFCCUNvaW5Qcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * Coin represents a coin or currency (unified definition)
@@ -224,6 +224,40 @@ export const GetCoinByIDRequestSchema: GenMessage<GetCoinByIDRequest> = /*@__PUR
   messageDesc(file_dankfolio_v1_coin, 3);
 
 /**
+ * @generated from message dankfolio.v1.GetCoinsByIDsRequest
+ */
+export type GetCoinsByIDsRequest = Message<"dankfolio.v1.GetCoinsByIDsRequest"> & {
+  /**
+   * @generated from field: repeated string addresses = 1;
+   */
+  addresses: string[];
+};
+
+/**
+ * Describes the message dankfolio.v1.GetCoinsByIDsRequest.
+ * Use `create(GetCoinsByIDsRequestSchema)` to create a new message.
+ */
+export const GetCoinsByIDsRequestSchema: GenMessage<GetCoinsByIDsRequest> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_coin, 4);
+
+/**
+ * @generated from message dankfolio.v1.GetCoinsByIDsResponse
+ */
+export type GetCoinsByIDsResponse = Message<"dankfolio.v1.GetCoinsByIDsResponse"> & {
+  /**
+   * @generated from field: repeated dankfolio.v1.Coin coins = 1;
+   */
+  coins: Coin[];
+};
+
+/**
+ * Describes the message dankfolio.v1.GetCoinsByIDsResponse.
+ * Use `create(GetCoinsByIDsResponseSchema)` to create a new message.
+ */
+export const GetCoinsByIDsResponseSchema: GenMessage<GetCoinsByIDsResponse> = /*@__PURE__*/
+  messageDesc(file_dankfolio_v1_coin, 5);
+
+/**
  * @generated from message dankfolio.v1.SearchCoinByAddressRequest
  */
 export type SearchCoinByAddressRequest = Message<"dankfolio.v1.SearchCoinByAddressRequest"> & {
@@ -238,7 +272,7 @@ export type SearchCoinByAddressRequest = Message<"dankfolio.v1.SearchCoinByAddre
  * Use `create(SearchCoinByAddressRequestSchema)` to create a new message.
  */
 export const SearchCoinByAddressRequestSchema: GenMessage<SearchCoinByAddressRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 4);
+  messageDesc(file_dankfolio_v1_coin, 6);
 
 /**
  * @generated from message dankfolio.v1.SearchCoinByAddressResponse
@@ -255,7 +289,7 @@ export type SearchCoinByAddressResponse = Message<"dankfolio.v1.SearchCoinByAddr
  * Use `create(SearchCoinByAddressResponseSchema)` to create a new message.
  */
 export const SearchCoinByAddressResponseSchema: GenMessage<SearchCoinByAddressResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 5);
+  messageDesc(file_dankfolio_v1_coin, 7);
 
 /**
  * Empty request
@@ -270,7 +304,7 @@ export type GetAllCoinsRequest = Message<"dankfolio.v1.GetAllCoinsRequest"> & {
  * Use `create(GetAllCoinsRequestSchema)` to create a new message.
  */
 export const GetAllCoinsRequestSchema: GenMessage<GetAllCoinsRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 6);
+  messageDesc(file_dankfolio_v1_coin, 8);
 
 /**
  * @generated from message dankfolio.v1.GetAllCoinsResponse
@@ -287,7 +321,7 @@ export type GetAllCoinsResponse = Message<"dankfolio.v1.GetAllCoinsResponse"> & 
  * Use `create(GetAllCoinsResponseSchema)` to create a new message.
  */
 export const GetAllCoinsResponseSchema: GenMessage<GetAllCoinsResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 7);
+  messageDesc(file_dankfolio_v1_coin, 9);
 
 /**
  * @generated from message dankfolio.v1.SearchRequest
@@ -348,7 +382,7 @@ export type SearchRequest = Message<"dankfolio.v1.SearchRequest"> & {
  * Use `create(SearchRequestSchema)` to create a new message.
  */
 export const SearchRequestSchema: GenMessage<SearchRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 8);
+  messageDesc(file_dankfolio_v1_coin, 10);
 
 /**
  * @generated from message dankfolio.v1.SearchResponse
@@ -374,7 +408,7 @@ export type SearchResponse = Message<"dankfolio.v1.SearchResponse"> & {
  * Use `create(SearchResponseSchema)` to create a new message.
  */
 export const SearchResponseSchema: GenMessage<SearchResponse> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 9);
+  messageDesc(file_dankfolio_v1_coin, 11);
 
 /**
  * @generated from message dankfolio.v1.GetNewCoinsRequest
@@ -396,7 +430,7 @@ export type GetNewCoinsRequest = Message<"dankfolio.v1.GetNewCoinsRequest"> & {
  * Use `create(GetNewCoinsRequestSchema)` to create a new message.
  */
 export const GetNewCoinsRequestSchema: GenMessage<GetNewCoinsRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 10);
+  messageDesc(file_dankfolio_v1_coin, 12);
 
 /**
  * @generated from message dankfolio.v1.GetTrendingCoinsRequest
@@ -418,7 +452,7 @@ export type GetTrendingCoinsRequest = Message<"dankfolio.v1.GetTrendingCoinsRequ
  * Use `create(GetTrendingCoinsRequestSchema)` to create a new message.
  */
 export const GetTrendingCoinsRequestSchema: GenMessage<GetTrendingCoinsRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 11);
+  messageDesc(file_dankfolio_v1_coin, 13);
 
 /**
  * @generated from message dankfolio.v1.GetTopGainersCoinsRequest
@@ -440,7 +474,7 @@ export type GetTopGainersCoinsRequest = Message<"dankfolio.v1.GetTopGainersCoins
  * Use `create(GetTopGainersCoinsRequestSchema)` to create a new message.
  */
 export const GetTopGainersCoinsRequestSchema: GenMessage<GetTopGainersCoinsRequest> = /*@__PURE__*/
-  messageDesc(file_dankfolio_v1_coin, 12);
+  messageDesc(file_dankfolio_v1_coin, 14);
 
 /**
  * @generated from enum dankfolio.v1.CoinSortField
@@ -513,6 +547,16 @@ export const CoinService: GenService<{
     methodKind: "unary";
     input: typeof GetCoinByIDRequestSchema;
     output: typeof CoinSchema;
+  },
+  /**
+   * GetCoinsByIDs returns multiple coins by their IDs in a single request
+   *
+   * @generated from rpc dankfolio.v1.CoinService.GetCoinsByIDs
+   */
+  getCoinsByIDs: {
+    methodKind: "unary";
+    input: typeof GetCoinsByIDsRequestSchema;
+    output: typeof GetCoinsByIDsResponseSchema;
   },
   /**
    * SearchCoinByAddress searches for a coin by mint address
