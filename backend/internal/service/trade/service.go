@@ -155,7 +155,19 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	}
 	slog.Debug("tradeQuote.Raw after GetSwapQuote", "trade_quote", string(tradeQuote.Raw))
 
-	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, s.platformFeeAccountAddress)
+	// Calculate proper ATA for platform fee collection
+	// Use input mint ATA as the fee account (Jupiter docs: fee account must be for input or output mint)
+	fromMintPubKey, err := solanago.PublicKeyFromBase58(params.FromCoinMintAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid from coin mint address: %w", err)
+	}
+	
+	feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(fromPubKey, fromMintPubKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate fee account ATA: %w", err)
+	}
+	
+	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, feeAccountATA.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create swap transaction: %w", err)
 	}
@@ -408,12 +420,6 @@ func (s *Service) ExecuteTrade(ctx context.Context, req model.TradeRequest) (*mo
 	// Decode the signed transaction if it's base64 encoded
 	rawTxBytes, err := base64.StdEncoding.DecodeString(req.SignedTransaction)
 	if err != nil {
-		// Handle error: maybe the transaction is not encoded, or encoding is invalid
-		// For now, assume it might not be encoded and use as is, or return error
-		// This depends on how SignedTransaction is consistently formatted.
-		// If it should always be base64, this is an error.
-		// If it could be raw bytes already, then this step is conditional.
-		// Let's assume for now it should be base64 encoded.
 		return nil, fmt.Errorf("failed to decode base64 signed transaction: %w", err)
 	}
 
@@ -493,16 +499,14 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 
 	// Get quote from Jupiter with enhanced parameters
 	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
-		InputMint:      fromCoinMintAddress, // Use mint address
-		OutputMint:     toCoinMintAddress,   // Use mint address
-		Amount:         inputAmount,         // Amount is already in raw units (lamports for SOL)
-		SlippageBps:    slippageBpsInt,
-		PlatformFeeBps: s.platformFeeBps, // Use configured platform fee BPS (renamed from FeeBps)
-		SwapMode:       "ExactIn",
-		// NOTE: Allow indirect routes for better prices
-		// NOTE: Indirect routes will have different feeMints
-		// I'm not sure how the indirect route will affect the transaction submission
-		OnlyDirectRoutes: true,
+		InputMint:           fromCoinMintAddress, // Use mint address
+		OutputMint:          toCoinMintAddress,   // Use mint address
+		Amount:              inputAmount,         // Amount is already in raw units (lamports for SOL)
+		SlippageBps:         slippageBpsInt,
+		PlatformFeeBps:      s.platformFeeBps, // Re-enabled: use proper ATA as fee account
+		SwapMode:            "ExactIn",
+		OnlyDirectRoutes:    true, // Keep simple routing for now
+		AsLegacyTransaction: true, // Additional safety measure
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Jupiter quote: %w", err)
