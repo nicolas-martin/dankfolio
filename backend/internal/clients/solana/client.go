@@ -189,7 +189,11 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Sign
 	}
 
 	if rpcStatusResult == nil || len(rpcStatusResult.Value) == 0 || rpcStatusResult.Value[0] == nil {
-		slog.DebugContext(ctx, "Transaction not yet found or processed for GetTransactionStatus", "signature", sigStr)
+		slog.InfoContext(ctx, "Transaction not yet found or processed, returning Unknown status",
+			"signature", sigStr,
+			"result_nil", rpcStatusResult == nil,
+			"value_empty", rpcStatusResult != nil && len(rpcStatusResult.Value) == 0,
+			"first_value_nil", rpcStatusResult != nil && len(rpcStatusResult.Value) > 0 && rpcStatusResult.Value[0] == nil)
 		return &bmodel.TransactionStatus{Status: "Unknown", Signature: signature}, nil
 	}
 
@@ -214,13 +218,33 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature bmodel.Sign
 			txStatus.Status = "Finalized"
 		default:
 			txStatus.Status = "Unknown"
+			slog.WarnContext(ctx, "@@@@@@@@@ Unknown confirmation status for GetTransactionStatus",
+				"confirmation_status", string(rpcStatus.ConfirmationStatus),
+				"signature", sigStr,
+				"slot", rpcStatus.Slot,
+				"has_confirmations", rpcStatus.Confirmations != nil,
+				"confirmations_value", func() any {
+					if rpcStatus.Confirmations != nil {
+						return *rpcStatus.Confirmations
+					}
+					return "nil"
+				}())
 		}
 	}
 
-	slog.DebugContext(ctx, "Transaction status retrieved successfully for GetTransactionStatus",
+	slog.InfoContext(ctx, "Transaction status retrieved for GetTransactionStatus",
 		"signature", sigStr,
 		"status", txStatus.Status,
-		"confirmations", txStatus.Confirmations)
+		"confirmations", txStatus.Confirmations,
+		"slot", txStatus.Slot,
+		"raw_confirmation_status", string(rpcStatus.ConfirmationStatus),
+		"has_error", rpcStatus.Err != nil,
+		"error_value", func() interface{} {
+			if rpcStatus.Err != nil {
+				return rpcStatus.Err
+			}
+			return "none"
+		}())
 	return txStatus, nil
 }
 
@@ -561,7 +585,7 @@ func (c *Client) GetTokenMetadata(ctx context.Context, mintAddress bmodel.Addres
 		URI:       uri,
 		Decimals:  decimals,
 		Supply:    supply,
-		OtherData: make(map[string]interface{}), // Initialize if needed
+		OtherData: make(map[string]any), // Initialize if needed
 	}, nil
 }
 

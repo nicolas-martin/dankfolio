@@ -228,7 +228,7 @@ func (s *tradeServiceHandler) GetTrade(ctx context.Context, req *connect.Request
 
 			// Update status if it changed
 			if status.Status != trade.Status {
-				slog.Debug("Updating trade status based on blockchain", "trade_id", trade.ID, "old_status", trade.Status, "new_status", status.Status)
+				slog.Info("Updating trade status", "trade_id", trade.ID, "from", fmt.Sprintf("%q", trade.Status), "to", fmt.Sprintf("%q", status.Status))
 				trade.Status = status.Status
 				statusChanged = true
 			}
