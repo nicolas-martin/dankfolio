@@ -282,32 +282,7 @@ export const useStyles = () => {
 				shadowOpacity: 0.8, // No exact match
 				shadowRadius: theme.spacing.sm,
 			},
-			tradeButtonContainer: {
-				backgroundColor: theme.colors.surface,
-				borderTopColor: theme.colors.outline,
-				borderTopWidth: 1,
-				bottom: 0,
-				left: 0,
-				paddingBottom: Platform.select({
-					ios: 34, // No exact match
-					android: theme.spacing.lg, // 16 is theme.spacing.lg
-				}),
-				paddingHorizontal: theme.spacing.lg,
-				paddingTop: theme.spacing.lg,
-				position: 'absolute',
-				right: 0,
-				...Platform.select({
-					ios: {
-						shadowColor: theme.shadows.sm.shadowColor,
-						shadowOffset: { width: 0, height: -2 }, // No exact match
-						shadowOpacity: 0.1, // No exact match
-						shadowRadius: theme.spacing.sm,
-					},
-					android: {
-						elevation: 8, // No exact match
-					},
-				}),
-			},
+			// tradeButtonContainer is removed as ScreenActionButton has its own container styling
 		});
 		return {
 			...styles,

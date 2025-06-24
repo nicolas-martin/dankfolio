@@ -8,10 +8,7 @@ export const useStyles = () => {
 	return useMemo(() => {
 		const colors = theme.colors; // Ensure colors is defined inside useMemo
 		const styles = StyleSheet.create({
-			actionContainer: {
-				padding: theme.spacing.xl,
-				paddingTop: 0,
-			},
+			// actionContainer is removed as ScreenActionButton has its own container styling
 			cardLabel: {
 				color: colors.onSurfaceVariant, // Use local colors variable
 				fontSize: theme.typography.fontSize.sm,
@@ -214,22 +211,8 @@ export const useStyles = () => {
 				marginTop: -8, // No exact match
 				position: 'relative',
 			},
-			tradeButton: {
-				borderRadius: theme.borderRadius.lg,
-				elevation: 2, // No exact match
-				paddingVertical: theme.spacing.xs,
-				shadowColor: '#00FF9F', // Specific color
-				shadowOffset: { width: 0, height: 0 },
-				shadowOpacity: 0.8, // No exact match
-				shadowRadius: theme.spacing.sm,
-			},
-			tradeButtonContent: {
-				paddingVertical: theme.spacing.md,
-			},
-			tradeButtonLabel: {
-				fontSize: theme.typography.fontSize.lg,
-				fontWeight: '700',
-			},
+			// tradeButton, tradeButtonContent, and tradeButtonLabel are removed
+			// as ScreenActionButton handles its own styling.
 			tradeCard: {
 				backgroundColor: theme.colors.surfaceVariant,
 				borderRadius: theme.spacing.xl,
