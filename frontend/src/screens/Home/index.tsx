@@ -18,7 +18,6 @@ import { Coin, PriceData } from '@/types';
 import { logger } from '@/utils/logger';
 import { useThemeStore } from '@/store/theme';
 import { env } from '@/utils/env';
-import { PRICE_HISTORY_FETCH_DELAY_MS } from '@/utils/constants';
 import { grpcApi } from '@/services/grpcApi';
 
 const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ data: PriceData[], error: Error | null }> => {
@@ -199,85 +198,52 @@ const HomeScreen = () => {
 			'env.e2eMockingEnabled': env.e2eMockingEnabled,
 			'process.env.E2E_MOCKING_ENABLED': process.env.E2E_MOCKING_ENABLED,
 			'isE2EMode': env.e2eMockingEnabled,
-			willUseSequential: !env.e2eMockingEnabled && env.appEnv != 'development',
 			topCoinsCount: topCoins.length
 		};
 		console.log('🔍 [HomeScreen] Price history fetch decision:', debugInfo);
 		logger.info('[HomeScreen] Price history fetch decision:', debugInfo);
 
-		// we don't want sequential fetching in E2E mode or development
-		if (!env.e2eMockingEnabled && env.appEnv != 'development') {
-			logger.info('[HomeScreen] 🐌 Using SEQUENTIAL price history fetching');
-			// Sequential fetching (existing logic, could also be batched but less critical due to delays)
-			const processCoinsSequentially = async () => {
-				let newHistories: Record<string, PriceData[]> = {};
-				let newLoadingStates: Record<string, boolean> = {};
-				for (const coin of topCoins) {
-					if (!coin || !coin.address) continue;
-					newLoadingStates[coin.address] = true;
-					setIsLoadingPriceHistories(prev => ({ ...prev, ...newLoadingStates })); // Update loading state immediately for this coin
-					try {
-						const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
-						newHistories[coin.address] = result.data || [];
-						if (result.error) logger.error(`[HomeScreen] Error fetching (seq) ${coin.symbol}:`, result.error);
-					} catch (e) {
-						logger.error(`[HomeScreen] Exception fetching (seq) ${coin.symbol}:`, e);
-						newHistories[coin.address] = [];
-					} finally {
-						newLoadingStates[coin.address] = false;
-						// Batching updates within sequential is tricky if we want immediate feedback per coin.
-						// For now, individual updates for loading/history in sequential remain.
-						setPriceHistories(prev => ({ ...prev, [coin.address!]: newHistories[coin.address!] }));
-						setIsLoadingPriceHistories(prev => ({ ...prev, [coin.address!]: false }));
-					}
-					await new Promise(resolve => setTimeout(resolve, PRICE_HISTORY_FETCH_DELAY_MS));
-				}
-			};
-			processCoinsSequentially().catch(e => logger.error('[HomeScreen] Error in processCoinsSequentially:', e));
+		logger.info('[HomeScreen] 🚀 Using PARALLEL price history fetching', { coinCount: topCoins.length });
 
-		} else { // Parallel fetching with batched state updates
-			logger.info('[HomeScreen] 🚀 Using PARALLEL price history fetching', { coinCount: topCoins.length });
+		// Set initial loading states for all coins to be fetched
+		const initialLoadingStates = topCoins.reduce((acc, coin) => {
+			if (coin?.address) acc[coin.address] = true;
+			return acc;
+		}, {} as Record<string, boolean>);
+		setIsLoadingPriceHistories(prev => ({ ...prev, ...initialLoadingStates }));
 
-			// Set initial loading states for all coins to be fetched
-			const initialLoadingStates = topCoins.reduce((acc, coin) => {
-				if (coin?.address) acc[coin.address] = true;
-				return acc;
-			}, {} as Record<string, boolean>);
-			setIsLoadingPriceHistories(prev => ({ ...prev, ...initialLoadingStates }));
-
-			Promise.allSettled(
-				topCoins.map(async (coin): Promise<{ address: string; data: PriceData[]; error: Error | null; } | null> => {
-					if (!coin || !coin.address) return Promise.resolve(null); // Skip invalid coins
-					const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
-					return ({
-						address: coin.address!,
-						data: result.data || [],
-						error: result.error
-					});
-				})
-			).then(results => {
-				const newHistoriesBatch: Record<string, PriceData[]> = {};
-				const newLoadingStatesBatch: Record<string, boolean> = {};
-
-				results.forEach(settledResult => {
-					if (settledResult.status === 'fulfilled' && settledResult.value) {
-						const { address, data, error } = settledResult.value;
-						newHistoriesBatch[address] = data;
-						newLoadingStatesBatch[address] = false;
-						if (error) {
-							logger.error(`[HomeScreen] Error fetching (parallel) ${address}:`, error);
-						}
-					} else if (settledResult.status === 'rejected') {
-						// Handle rejected promises if fetchPriceHistory can throw directly (though it returns {data, error})
-						// This path might not be hit if fetchPriceHistory always resolves.
-						logger.error(`[HomeScreen] Promise rejected for a coin:`, settledResult.reason);
-					}
+		Promise.allSettled(
+			topCoins.map(async (coin): Promise<{ address: string; data: PriceData[]; error: Error | null; } | null> => {
+				if (!coin || !coin.address) return Promise.resolve(null); // Skip invalid coins
+				const result = await fetchPriceHistory(coin, fourHourTimeframeKey);
+				return ({
+					address: coin.address!,
+					data: result.data || [],
+					error: result.error
 				});
+			})
+		).then(results => {
+			const newHistoriesBatch: Record<string, PriceData[]> = {};
+			const newLoadingStatesBatch: Record<string, boolean> = {};
 
-				setPriceHistories(prev => ({ ...prev, ...newHistoriesBatch }));
-				setIsLoadingPriceHistories(prev => ({ ...prev, ...newLoadingStatesBatch }));
+			results.forEach(settledResult => {
+				if (settledResult.status === 'fulfilled' && settledResult.value) {
+					const { address, data, error } = settledResult.value;
+					newHistoriesBatch[address] = data;
+					newLoadingStatesBatch[address] = false;
+					if (error) {
+						logger.error(`[HomeScreen] Error fetching (parallel) ${address}:`, error);
+					}
+				} else if (settledResult.status === 'rejected') {
+					// Handle rejected promises if fetchPriceHistory can throw directly (though it returns {data, error})
+					// This path might not be hit if fetchPriceHistory always resolves.
+					logger.error(`[HomeScreen] Promise rejected for a coin:`, settledResult.reason);
+				}
 			});
-		}
+
+			setPriceHistories(prev => ({ ...prev, ...newHistoriesBatch }));
+			setIsLoadingPriceHistories(prev => ({ ...prev, ...newLoadingStatesBatch }));
+		});
 	}, [trendingCoins]); // Removed showToast from deps as logger is used
 
 	// Shared logic for fetching trending coins and portfolio
