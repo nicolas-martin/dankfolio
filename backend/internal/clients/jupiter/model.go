@@ -137,7 +137,7 @@ type QuoteParams struct {
 	Amount              string `json:"amount"`
 	SwapMode            string `json:"swapMode,omitempty"`
 	SlippageBps         int    `json:"slippageBps,omitempty"`
-	FeeBps              int    `json:"feeBps,omitempty"`
+	PlatformFeeBps      int    `json:"platformFeeBps,omitempty"` // Renamed from FeeBps to match Jupiter API
 	OnlyDirectRoutes    bool   `json:"onlyDirectRoutes,omitempty"`
 	AsLegacyTransaction bool   `json:"asLegacyTransaction,omitempty"`
 }

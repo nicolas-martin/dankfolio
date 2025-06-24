@@ -493,12 +493,12 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 
 	// Get quote from Jupiter with enhanced parameters
 	quote, err := s.jupiterClient.GetQuote(ctx, jupiter.QuoteParams{
-		InputMint:   fromCoinMintAddress, // Use mint address
-		OutputMint:  toCoinMintAddress,   // Use mint address
-		Amount:      inputAmount,         // Amount is already in raw units (lamports for SOL)
-		SlippageBps: slippageBpsInt,
-		FeeBps:      s.platformFeeBps, // Use configured platform fee BPS
-		SwapMode:    "ExactIn",
+		InputMint:      fromCoinMintAddress, // Use mint address
+		OutputMint:     toCoinMintAddress,   // Use mint address
+		Amount:         inputAmount,         // Amount is already in raw units (lamports for SOL)
+		SlippageBps:    slippageBpsInt,
+		PlatformFeeBps: s.platformFeeBps, // Use configured platform fee BPS (renamed from FeeBps)
+		SwapMode:       "ExactIn",
 		// NOTE: Allow indirect routes for better prices
 		// NOTE: Indirect routes will have different feeMints
 		// I'm not sure how the indirect route will affect the transaction submission
