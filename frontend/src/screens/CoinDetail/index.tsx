@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl } from 'react-native';
-import { Text, Button, Icon, SegmentedButtons } from 'react-native-paper';
+import { Text, Icon, SegmentedButtons } from 'react-native-paper'; // Button removed
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useToast } from '@components/Common/Toast';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
@@ -20,6 +20,7 @@ import { logger } from '@/utils/logger';
 import { useCoinStore } from '@store/coins';
 import { grpcApi } from '@/services/grpcApi';
 import InfoState from '@/components/Common/InfoState'; // Import InfoState
+import ScreenActionButton from '@components/Common/ScreenActionButton'; // Import the new button
 
 const CoinDetail: React.FC = () => {
 	const navigation = useNavigation<CoinDetailScreenNavigationProp>();
@@ -477,17 +478,12 @@ const CoinDetail: React.FC = () => {
 				</ScrollView>
 
 				{/* Show trade button with placeholder text when loading */}
-				<View style={styles.tradeButtonContainer}>
-					<Button
-						mode="contained"
-						onPress={handleTradePress} // Use memoized handler
-						style={styles.tradeButton}
-						testID={`trade-button-${displayCoin?.symbol?.toLowerCase()}`}
-						disabled={isLoadingDetails}
-					>
-						{isLoadingDetails ? 'Loading...' : `Trade ${displayCoin?.symbol || ''}`}
-					</Button>
-				</View>
+				<ScreenActionButton
+					text={isLoadingDetails ? 'Loading...' : `Trade ${displayCoin?.symbol || ''}`}
+					onPress={handleTradePress}
+					disabled={isLoadingDetails}
+					testID={`trade-button-${displayCoin?.symbol?.toLowerCase()}`}
+				/>
 			</View>
 		</SafeAreaView>
 	);
