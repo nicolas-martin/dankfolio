@@ -240,27 +240,225 @@ func (s *Service) GetCoinByAddress(ctx context.Context, address string) (*model.
 	if !util.IsValidSolanaAddress(address) {
 		return nil, fmt.Errorf("invalid address: %s", address)
 	}
+
+	// Step 1: Always check database first
 	coin, err := s.store.Coins().GetByField(ctx, "address", address)
 	if err == nil {
-		slog.DebugContext(ctx, "Coin found in 'coins' table, updating price", slog.String("address", address))
-		// Just fetch and update the latest price for cached coins
-		return s.updateCoin(ctx, coin)
-	}
-	if errors.Is(err, db.ErrNotFound) {
-		slog.InfoContext(ctx, "Coin not found in 'coins' table, checking 'raw_coins' table.", slog.String("address", address))
-		rawCoin, rawErr := s.store.RawCoins().GetByField(ctx, "address", address)
-		if rawErr == nil {
-			slog.InfoContext(ctx, "Coin found in 'raw_coins' table, proceeding with enrichment.", slog.String("address", address))
-			return s.enrichRawCoinAndSave(ctx, rawCoin)
+		// Check if market data is fresh (< 24 hours old)
+		if s.isCoinMarketDataFresh(coin) {
+			slog.DebugContext(ctx, "Coin found with fresh market data", slog.String("address", address), slog.String("lastUpdated", coin.LastUpdated))
+			return coin, nil
 		}
-		if errors.Is(rawErr, db.ErrNotFound) {
-			slog.InfoContext(ctx, "Coin not found in 'raw_coins' table either. Enriching from scratch.", slog.String("address", address))
-			return s.fetchAndCacheCoin(ctx, address)
-		}
-		slog.ErrorContext(ctx, "Error fetching coin from 'raw_coins' table", slog.String("address", address), slog.Any("error", rawErr))
+		
+		// Market data is stale, refresh with market data only
+		slog.DebugContext(ctx, "Coin found but market data is stale, refreshing", slog.String("address", address), slog.String("lastUpdated", coin.LastUpdated))
+		return s.updateCoinMarketData(ctx, coin)
 	}
-	slog.ErrorContext(ctx, "Error fetching coin from 'coins' table", slog.String("address", address), slog.Any("error", err))
-	return nil, fmt.Errorf("error fetching coin %s from 'coins': %w", address, err)
+
+	if !errors.Is(err, db.ErrNotFound) {
+		return nil, fmt.Errorf("error fetching coin %s from database: %w", address, err)
+	}
+
+	// Step 2: Check raw_coins table for metadata
+	rawCoin, rawErr := s.store.RawCoins().GetByField(ctx, "address", address)
+	if rawErr == nil {
+		slog.InfoContext(ctx, "Coin found in raw_coins table, enriching with market data", slog.String("address", address))
+		return s.enrichRawCoinWithMarketData(ctx, rawCoin)
+	}
+
+	if !errors.Is(rawErr, db.ErrNotFound) {
+		return nil, fmt.Errorf("error fetching coin %s from raw_coins: %w", address, rawErr)
+	}
+
+	// Step 3: Fetch completely new coin from Birdeye
+	slog.InfoContext(ctx, "Coin not found in database, fetching from Birdeye", slog.String("address", address))
+	return s.fetchNewCoin(ctx, address)
+}
+
+// isCoinMarketDataFresh checks if coin market data was updated within the last 24 hours
+func (s *Service) isCoinMarketDataFresh(coin *model.Coin) bool {
+	if coin.LastUpdated == "" {
+		return false
+	}
+	
+	lastUpdated, err := time.Parse(time.RFC3339, coin.LastUpdated)
+	if err != nil {
+		slog.Warn("Failed to parse LastUpdated time", "address", coin.Address, "lastUpdated", coin.LastUpdated, "error", err)
+		return false
+	}
+	
+	// Consider fresh if updated within last 24 hours
+	return time.Since(lastUpdated) < 24*time.Hour
+}
+
+// updateCoinMarketData updates only the market data (price, volume, etc.) for an existing coin
+func (s *Service) updateCoinMarketData(ctx context.Context, coin *model.Coin) (*model.Coin, error) {
+	// Use the new trade data batch endpoint for single coin (more efficient than token overview)
+	tradeData, err := s.birdeyeClient.GetTokensTradeDataBatch(ctx, []string{coin.Address})
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to fetch trade data from Birdeye", slog.String("address", coin.Address), slog.Any("error", err))
+		return coin, nil // Return stale data rather than failing
+	}
+
+	if len(tradeData) == 0 {
+		slog.WarnContext(ctx, "No trade data returned for coin", slog.String("address", coin.Address))
+		return coin, nil // Return stale data
+	}
+
+	// Update coin with fresh trade data
+	data := tradeData[0]
+	coin.Price = data.Price
+	coin.Price24hChangePercent = data.Price24hChangePercent
+	coin.Marketcap = data.MarketCap
+	coin.Volume24hUSD = data.Volume24hUSD
+	coin.Volume24hChangePercent = data.Volume24hChangePercent
+	coin.Liquidity = data.Liquidity
+	coin.FDV = data.FDV
+	coin.Rank = data.Rank
+	coin.LastUpdated = time.Now().Format(time.RFC3339)
+
+	// Update in database
+	if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
+		slog.WarnContext(ctx, "Failed to update coin market data in database", slog.String("address", coin.Address), slog.Any("error", updateErr))
+		// Continue anyway, return the coin with updated data even if DB update fails
+	} else {
+		slog.DebugContext(ctx, "Successfully updated coin market data", slog.String("address", coin.Address), slog.Float64("price", coin.Price))
+	}
+
+	return coin, nil
+}
+
+// enrichRawCoinWithMarketData creates a full coin from raw coin metadata + fresh market data
+func (s *Service) enrichRawCoinWithMarketData(ctx context.Context, rawCoin *model.RawCoin) (*model.Coin, error) {
+	// Get trade data from Birdeye
+	tradeData, err := s.birdeyeClient.GetTokensTradeDataBatch(ctx, []string{rawCoin.Address})
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to fetch trade data for raw coin", slog.String("address", rawCoin.Address), slog.Any("error", err))
+		// Create coin with zero trade data if Birdeye fails
+		tradeData = []birdeye.TokenTradeData{{Address: rawCoin.Address}}
+	}
+
+	// Check for naughty words
+	if s.coinContainsNaughtyWord(rawCoin.Name, rawCoin.Symbol) {
+		return nil, fmt.Errorf("token contains inappropriate content: %s", rawCoin.Name)
+	}
+
+	// Create coin from raw coin metadata
+	coin := &model.Coin{
+		Address:     rawCoin.Address,
+		Name:        rawCoin.Name,
+		Symbol:      rawCoin.Symbol,
+		Decimals:    rawCoin.Decimals,
+		LogoURI:     rawCoin.LogoUrl,
+		Tags:        []string{}, // Raw coins don't have tags
+		CreatedAt:   time.Now().Format(time.RFC3339),
+		LastUpdated: time.Now().Format(time.RFC3339),
+	}
+
+	// Add trade data if available
+	if len(tradeData) > 0 {
+		data := tradeData[0]
+		coin.Price = data.Price
+		coin.Price24hChangePercent = data.Price24hChangePercent
+		coin.Marketcap = data.MarketCap
+		coin.Volume24hUSD = data.Volume24hUSD
+		coin.Volume24hChangePercent = data.Volume24hChangePercent
+		coin.Liquidity = data.Liquidity
+		coin.FDV = data.FDV
+		coin.Rank = data.Rank
+	}
+
+	// Save to coins table
+	if createErr := s.store.Coins().Create(ctx, coin); createErr != nil {
+		slog.WarnContext(ctx, "Failed to create enriched coin from raw coin", slog.String("address", coin.Address), slog.Any("error", createErr))
+	}
+
+	// Delete from raw_coins table
+	rawCoinPKIDStr := strconv.FormatUint(rawCoin.ID, 10)
+	if delErr := s.store.RawCoins().Delete(ctx, rawCoinPKIDStr); delErr != nil {
+		slog.WarnContext(ctx, "Failed to delete processed raw coin", slog.String("address", rawCoin.Address), slog.Any("error", delErr))
+	}
+
+	slog.InfoContext(ctx, "Successfully enriched raw coin with trade data", slog.String("address", coin.Address))
+	return coin, nil
+}
+
+// fetchNewCoin fetches a completely new coin from Birdeye (metadata + market data)
+func (s *Service) fetchNewCoin(ctx context.Context, address string) (*model.Coin, error) {
+	// Use the batch overview endpoint for complete data
+	tokenOverviews, err := s.birdeyeClient.GetTokensOverviewBatch(ctx, []string{address})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch token overview from Birdeye: %w", err)
+	}
+
+	if len(tokenOverviews) == 0 {
+		return nil, fmt.Errorf("token not found in Birdeye: %s", address)
+	}
+
+	tokenData := tokenOverviews[0]
+
+	// Check for naughty words
+	if s.coinContainsNaughtyWord(tokenData.Name, "") {
+		return nil, fmt.Errorf("token contains inappropriate content: %s", tokenData.Name)
+	}
+
+	// Create coin from Birdeye data
+	coin := &model.Coin{
+		Address:                tokenData.Address,
+		Name:                   tokenData.Name,
+		Symbol:                 tokenData.Symbol,
+		Decimals:               tokenData.Decimals,
+		LogoURI:                tokenData.LogoURI,
+		Tags:                   tokenData.Tags,
+		Price:                  tokenData.Price,
+		Price24hChangePercent:  tokenData.Price24hChangePercent,
+		Marketcap:              tokenData.MarketCap,
+		Volume24hUSD:           tokenData.Volume24hUSD,
+		Volume24hChangePercent: tokenData.Volume24hChangePercent,
+		Liquidity:              tokenData.Liquidity,
+		FDV:                    tokenData.FDV,
+		Rank:                   tokenData.Rank,
+		CreatedAt:              time.Now().Format(time.RFC3339),
+		LastUpdated:            time.Now().Format(time.RFC3339),
+	}
+
+	// Enrich with additional metadata if needed
+	enrichedCoin, err := s.EnrichCoinData(ctx, &birdeye.TokenDetails{
+		Address:  tokenData.Address,
+		Name:     tokenData.Name,
+		Symbol:   tokenData.Symbol,
+		Decimals: tokenData.Decimals,
+		LogoURI:  tokenData.LogoURI,
+	})
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to enrich coin data, using basic data", slog.String("address", address), slog.Any("error", err))
+		// Use the coin we created above instead of failing
+	} else {
+		// Update with enriched data but preserve market data from Birdeye
+		enrichedCoin.Price = coin.Price
+		enrichedCoin.Price24hChangePercent = coin.Price24hChangePercent
+		enrichedCoin.Marketcap = coin.Marketcap
+		enrichedCoin.Volume24hUSD = coin.Volume24hUSD
+		enrichedCoin.Volume24hChangePercent = coin.Volume24hChangePercent
+		enrichedCoin.Liquidity = coin.Liquidity
+		enrichedCoin.FDV = coin.FDV
+		enrichedCoin.Rank = coin.Rank
+		enrichedCoin.LastUpdated = coin.LastUpdated
+		coin = enrichedCoin
+	}
+
+	// Final naughty word check after enrichment
+	if s.coinContainsNaughtyWord(coin.Name, coin.Description) {
+		return nil, fmt.Errorf("token contains inappropriate content after enrichment: %s", coin.Name)
+	}
+
+	// Save to database
+	if createErr := s.store.Coins().Create(ctx, coin); createErr != nil {
+		slog.WarnContext(ctx, "Failed to create new coin in database", slog.String("address", coin.Address), slog.Any("error", createErr))
+	}
+
+	slog.InfoContext(ctx, "Successfully fetched and saved new coin", slog.String("address", coin.Address))
+	return coin, nil
 }
 
 func (s *Service) enrichRawCoinAndSave(ctx context.Context, rawCoin *model.RawCoin) (*model.Coin, error) {
@@ -1040,6 +1238,267 @@ func (s *Service) GetTopGainersCoins(ctx context.Context, limit, offset int32) (
 	s.cache.Set(cacheKey_top, modelCoins, s.config.TopGainersFetchInterval)
 
 	return modelCoins, totalCount, nil
+}
+
+// GetCoinsByAddresses retrieves multiple coins by their addresses using batch operations when possible
+func (s *Service) GetCoinsByAddresses(ctx context.Context, addresses []string) ([]model.Coin, error) {
+	if len(addresses) == 0 {
+		return []model.Coin{}, nil
+	}
+
+	// Validate addresses
+	var validAddresses []string
+	for _, address := range addresses {
+		if util.IsValidSolanaAddress(address) {
+			validAddresses = append(validAddresses, address)
+		} else {
+			slog.WarnContext(ctx, "Invalid Solana address provided", "address", address)
+		}
+	}
+
+	if len(validAddresses) == 0 {
+		return []model.Coin{}, nil
+	}
+
+	slog.InfoContext(ctx, "Getting multiple coins by addresses", "count", len(validAddresses))
+
+	// Step 1: Try to get coins from the database first
+	existingCoins, err := s.getExistingCoinsByAddresses(ctx, validAddresses)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to get existing coins from database", "error", err)
+		return nil, fmt.Errorf("failed to get existing coins: %w", err)
+	}
+
+	// Step 2: Identify missing coins and addresses that need updates
+	existingAddresses := make(map[string]*model.Coin)
+	var addressesToFetch []string
+
+	for _, coin := range existingCoins {
+		coinCopy := coin
+		existingAddresses[coin.Address] = &coinCopy
+	}
+
+	for _, address := range validAddresses {
+		if _, exists := existingAddresses[address]; !exists {
+			addressesToFetch = append(addressesToFetch, address)
+		}
+	}
+
+	slog.InfoContext(ctx, "Coin retrieval status", 
+		"total_requested", len(validAddresses),
+		"found_in_db", len(existingCoins),
+		"need_to_fetch", len(addressesToFetch))
+
+	// Step 3: Fetch missing coins using batch API if we have addresses to fetch
+	if len(addressesToFetch) > 0 {
+		newCoins, err := s.fetchCoinsBatch(ctx, addressesToFetch)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to fetch missing coins in batch", "error", err, "addresses", addressesToFetch)
+			// Don't return error, just log and continue with existing coins
+		} else {
+			// Add newly fetched coins to our results
+			existingCoins = append(existingCoins, newCoins...)
+			slog.InfoContext(ctx, "Successfully fetched missing coins", "count", len(newCoins))
+		}
+	}
+
+	// Step 4: Update price data for existing coins using batch update
+	if len(existingCoins) > 0 {
+		updatedCoins, err := s.updateCoinsBatch(ctx, existingCoins)
+		if err != nil {
+			slog.WarnContext(ctx, "Failed to update coins with fresh price data", "error", err)
+			// Continue with existing data
+		} else {
+			existingCoins = updatedCoins
+		}
+	}
+
+	slog.InfoContext(ctx, "Completed batch coin retrieval", "final_count", len(existingCoins))
+	return existingCoins, nil
+}
+
+// getExistingCoinsByAddresses fetches coins that already exist in the database
+func (s *Service) getExistingCoinsByAddresses(ctx context.Context, addresses []string) ([]model.Coin, error) {
+	var allCoins []model.Coin
+
+	// Batch database queries - get coins by addresses in chunks to avoid query size limits
+	const dbBatchSize = 50
+	for i := 0; i < len(addresses); i += dbBatchSize {
+		end := i + dbBatchSize
+		if end > len(addresses) {
+			end = len(addresses)
+		}
+		batchAddresses := addresses[i:end]
+
+		coins, err := s.store.Coins().GetByAddresses(ctx, batchAddresses)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get coins by addresses from database", "error", err, "batch", i/dbBatchSize)
+			continue // Continue with other batches
+		}
+		allCoins = append(allCoins, coins...)
+	}
+
+	return allCoins, nil
+}
+
+// fetchCoinsBatch fetches missing coins using the Birdeye batch API
+func (s *Service) fetchCoinsBatch(ctx context.Context, addresses []string) ([]model.Coin, error) {
+	const birdeyeBatchSize = 20 // Maximum batch size for Birdeye market data endpoint
+	var allCoins []model.Coin
+
+	// Process addresses in batches
+	for i := 0; i < len(addresses); i += birdeyeBatchSize {
+		end := i + birdeyeBatchSize
+		if end > len(addresses) {
+			end = len(addresses)
+		}
+		batchAddresses := addresses[i:end]
+
+		// Use the new batch Birdeye API
+		tokenOverviews, err := s.birdeyeClient.GetTokensOverviewBatch(ctx, batchAddresses)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to fetch token overviews batch from Birdeye", "error", err, "addresses", batchAddresses)
+			// Fallback to individual calls for this batch
+			fallbackCoins, fallbackErr := s.fetchCoinsIndividually(ctx, batchAddresses)
+			if fallbackErr != nil {
+				slog.ErrorContext(ctx, "Fallback individual fetch also failed", "error", fallbackErr)
+				continue
+			}
+			allCoins = append(allCoins, fallbackCoins...)
+			continue
+		}
+
+		// Process each token overview and enrich
+		for _, tokenOverview := range tokenOverviews {
+			// Check for naughty words
+			if s.coinContainsNaughtyWord(tokenOverview.Name, "") {
+				slog.InfoContext(ctx, "Skipping token with inappropriate content", "address", tokenOverview.Address, "name", tokenOverview.Name)
+				continue
+			}
+
+			// Convert to TokenDetails format for enrichment
+			tokenDetails := &birdeye.TokenDetails{
+				Address:                tokenOverview.Address,
+				Name:                   tokenOverview.Name,
+				Symbol:                 tokenOverview.Symbol,
+				Decimals:               tokenOverview.Decimals,
+				LogoURI:                tokenOverview.LogoURI,
+				Price:                  tokenOverview.Price,
+				Volume24hUSD:           tokenOverview.Volume24hUSD,
+				Volume24hChangePercent: tokenOverview.Volume24hChangePercent,
+				MarketCap:              tokenOverview.MarketCap,
+				Liquidity:              tokenOverview.Liquidity,
+				FDV:                    tokenOverview.FDV,
+				Rank:                   tokenOverview.Rank,
+				Price24hChangePercent:  tokenOverview.Price24hChangePercent,
+				Tags:                   tokenOverview.Tags,
+			}
+
+			// Enrich the coin data
+			enrichedCoin, err := s.EnrichCoinData(ctx, tokenDetails)
+			if err != nil {
+				slog.ErrorContext(ctx, "Failed to enrich coin data", "error", err, "address", tokenOverview.Address)
+				continue
+			}
+
+			// Check for naughty words after enrichment
+			if s.coinContainsNaughtyWord(enrichedCoin.Name, enrichedCoin.Description) {
+				slog.InfoContext(ctx, "Skipping enriched token with inappropriate content", "address", enrichedCoin.Address, "name", enrichedCoin.Name)
+				continue
+			}
+
+			// Save to database
+			existingCoin, getErr := s.store.Coins().GetByField(ctx, "address", enrichedCoin.Address)
+			if getErr == nil && existingCoin != nil {
+				enrichedCoin.ID = existingCoin.ID
+				if updateErr := s.store.Coins().Update(ctx, enrichedCoin); updateErr != nil {
+					slog.WarnContext(ctx, "Failed to update enriched coin in batch processing", "address", enrichedCoin.Address, "error", updateErr)
+				}
+			} else if errors.Is(getErr, db.ErrNotFound) {
+				if createErr := s.store.Coins().Create(ctx, enrichedCoin); createErr != nil {
+					slog.WarnContext(ctx, "Failed to create enriched coin in batch processing", "address", enrichedCoin.Address, "error", createErr)
+				}
+			}
+
+			allCoins = append(allCoins, *enrichedCoin)
+		}
+	}
+
+	return allCoins, nil
+}
+
+// fetchCoinsIndividually is a fallback method that fetches coins one by one
+func (s *Service) fetchCoinsIndividually(ctx context.Context, addresses []string) ([]model.Coin, error) {
+	var coins []model.Coin
+
+	for _, address := range addresses {
+		coin, err := s.GetCoinByAddress(ctx, address)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to fetch individual coin", "error", err, "address", address)
+			continue
+		}
+		coins = append(coins, *coin)
+	}
+
+	return coins, nil
+}
+
+// updateCoinsBatch updates multiple coins with fresh price data
+func (s *Service) updateCoinsBatch(ctx context.Context, coins []model.Coin) ([]model.Coin, error) {
+	// Extract addresses from coins
+	addresses := make([]string, len(coins))
+	coinMap := make(map[string]*model.Coin)
+
+	for i, coin := range coins {
+		addresses[i] = coin.Address
+		coinCopy := coin
+		coinMap[coin.Address] = &coinCopy
+	}
+
+	// Fetch fresh data in batches
+	const batchSize = 20
+	for i := 0; i < len(addresses); i += batchSize {
+		end := i + batchSize
+		if end > len(addresses) {
+			end = len(addresses)
+		}
+		batchAddresses := addresses[i:end]
+
+		// Get fresh market data
+		tokenOverviews, err := s.birdeyeClient.GetTokensOverviewBatch(ctx, batchAddresses)
+		if err != nil {
+			slog.WarnContext(ctx, "Failed to get batch market data for price updates", "error", err, "addresses", batchAddresses)
+			continue
+		}
+
+		// Update coins with fresh data
+		for _, tokenOverview := range tokenOverviews {
+			if coin, exists := coinMap[tokenOverview.Address]; exists {
+				coin.Price = tokenOverview.Price
+				coin.Price24hChangePercent = tokenOverview.Price24hChangePercent
+				coin.Marketcap = tokenOverview.MarketCap
+				coin.Volume24hUSD = tokenOverview.Volume24hUSD
+				coin.Volume24hChangePercent = tokenOverview.Volume24hChangePercent
+				coin.Liquidity = tokenOverview.Liquidity
+				coin.FDV = tokenOverview.FDV
+				coin.Rank = tokenOverview.Rank
+				coin.LastUpdated = time.Now().Format(time.RFC3339)
+
+				// Update in database
+				if updateErr := s.store.Coins().Update(ctx, coin); updateErr != nil {
+					slog.WarnContext(ctx, "Failed to update coin with fresh price data", "address", coin.Address, "error", updateErr)
+				}
+			}
+		}
+	}
+
+	// Convert map back to slice
+	var updatedCoins []model.Coin
+	for _, coin := range coinMap {
+		updatedCoins = append(updatedCoins, *coin)
+	}
+
+	return updatedCoins, nil
 }
 
 // min is a helper function to find the minimum of two integers.

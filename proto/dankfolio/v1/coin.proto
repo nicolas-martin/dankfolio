@@ -11,6 +11,9 @@ service CoinService {
   // GetCoinByID returns a specific coin by ID
   rpc GetCoinByID(GetCoinByIDRequest) returns (Coin);
 
+  // GetCoinsByIDs returns multiple coins by their IDs in a single request
+  rpc GetCoinsByIDs(GetCoinsByIDsRequest) returns (GetCoinsByIDsResponse);
+
   // SearchCoinByAddress searches for a coin by mint address
   rpc SearchCoinByAddress(SearchCoinByAddressRequest) returns (SearchCoinByAddressResponse);
 
@@ -75,6 +78,14 @@ message GetAvailableCoinsResponse {
 
 message GetCoinByIDRequest {
   string address = 1;
+}
+
+message GetCoinsByIDsRequest {
+  repeated string addresses = 1;
+}
+
+message GetCoinsByIDsResponse {
+  repeated Coin coins = 1;
 }
 
 message SearchCoinByAddressRequest {

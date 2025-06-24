@@ -115,3 +115,57 @@ type TrendingTokensParams struct {
 	Offset   int      // Pagination offset (starting point in the token list)
 	Limit    int      // Number of results to return (max 50)
 }
+
+// TokenMetadataMultiple represents the response from the bulk metadata API
+type TokenMetadataMultiple struct {
+	Data    map[string]TokenMetadataData `json:"data"`
+	Success bool                         `json:"success"`
+}
+
+// TokenMetadataData contains the metadata information for a token
+type TokenMetadataData struct {
+	Address   string   `json:"address"`
+	Name      string   `json:"name"`
+	Symbol    string   `json:"symbol"`
+	Decimals  int      `json:"decimals"`
+	LogoURI   string   `json:"logoURI"`
+	Tags      []string `json:"tags,omitempty"`
+}
+
+// TokenMarketDataMultiple represents the response from the bulk market data API
+type TokenMarketDataMultiple struct {
+	Data    map[string]TokenMarketData `json:"data"`
+	Success bool                       `json:"success"`
+}
+
+// TokenMarketData contains the market data information for a token
+type TokenMarketData struct {
+	Address                string  `json:"address"`
+	Price                  float64 `json:"price"`
+	MarketCap              float64 `json:"marketCap"`
+	Volume24hUSD           float64 `json:"v24hUSD"`
+	Volume24hChangePercent float64 `json:"v24hChangePercent"`
+	Price24hChangePercent  float64 `json:"priceChange24hPercent"`
+	Liquidity              float64 `json:"liquidity"`
+	FDV                    float64 `json:"fdv"`
+	Rank                   int     `json:"rank"`
+}
+
+// TokenTradeDataMultiple represents the response from the bulk trade data API
+type TokenTradeDataMultiple struct {
+	Data    map[string]TokenTradeData `json:"data"`
+	Success bool                      `json:"success"`
+}
+
+// TokenTradeData contains the trade data information for a token
+type TokenTradeData struct {
+	Address                string  `json:"address"`
+	Price                  float64 `json:"price"`
+	MarketCap              float64 `json:"marketCap"`
+	Volume24hUSD           float64 `json:"v24hUSD"`
+	Volume24hChangePercent float64 `json:"v24hChangePercent"`
+	Price24hChangePercent  float64 `json:"priceChange24hPercent"`
+	Liquidity              float64 `json:"liquidity"`
+	FDV                    float64 `json:"fdv"`
+	Rank                   int     `json:"rank"`
+}

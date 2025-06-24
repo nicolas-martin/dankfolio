@@ -119,16 +119,58 @@ export const usePortfolioStore = create<PortfolioState>((set, _get) => ({
 			let coinMap = coinStore.coinMap;
 
 			const balanceIds = balance.balances.map((b: { id: string }) => b.id);
-			log.log('📊 [PortfolioStore] Balance IDs:', balanceIds);
+			log.log(`📊 [PortfolioStore] Found ${balanceIds.length} portfolio tokens to fetch:`, balanceIds.slice(0, 5), balanceIds.length > 5 ? `... and ${balanceIds.length - 5} more` : '');
 
-			// Check for missing coins and fetch them
+			// Use batch API to fetch all portfolio coins efficiently
+			const startTime = Date.now();
 			const missingCoinIds: string[] = [];
-			for (const id of balanceIds) {
-				const coin = await coinStore.getCoinByID(id, forceRefresh); // Pass forceRefresh parameter
-				if (!coin) {
-					missingCoinIds.push(id);
+			
+			// Check which coins are already cached vs need to be fetched
+			const cachedCoins: (typeof coinStore.coinMap[string])[] = [];
+			const addressesToFetch: string[] = [];
+			
+			balanceIds.forEach(id => {
+				const existingCoin = coinStore.coinMap[id];
+				if (existingCoin && !forceRefresh) {
+					cachedCoins.push(existingCoin);
+				} else {
+					addressesToFetch.push(id);
+				}
+			});
+			
+			// Fetch missing coins using batch API
+			let fetchedCoins: typeof cachedCoins = [];
+			if (addressesToFetch.length > 0) {
+				try {
+					log.log(`📊 [PortfolioStore] Using batch API to fetch ${addressesToFetch.length} portfolio tokens`);
+					fetchedCoins = await grpcApi.getCoinsByIDs(addressesToFetch);
+					
+					// Update coin store with fetched coins
+					fetchedCoins.forEach(coin => {
+						coinStore.setCoin(coin);
+					});
+				} catch (error) {
+					log.error(`❌ [PortfolioStore] Batch fetch failed, falling back to individual calls:`, error);
+					
+					// Fallback to individual calls if batch fails
+					const individualResults = await Promise.all(
+						addressesToFetch.map(id => coinStore.getCoinByID(id, forceRefresh))
+					);
+					
+					fetchedCoins = individualResults.filter((coin): coin is NonNullable<typeof coin> => coin !== null);
+					
+					// Track failed individual fetches
+					addressesToFetch.forEach((id, index) => {
+						if (!individualResults[index]) {
+							missingCoinIds.push(id);
+						}
+					});
 				}
 			}
+			
+			const fetchTime = Date.now() - startTime;
+			const totalFetched = cachedCoins.length + fetchedCoins.length;
+			log.log(`📊 [PortfolioStore] Portfolio coin fetch complete: ${totalFetched}/${balanceIds.length} coins in ${fetchTime}ms (${cachedCoins.length} cached, ${fetchedCoins.length} fetched, ${missingCoinIds.length} missing)`);
 
 			// Re-read coinMap after fetching coins (especially if forceRefresh was used)
 			coinMap = useCoinStore.getState().coinMap;

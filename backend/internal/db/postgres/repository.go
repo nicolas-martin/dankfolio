@@ -308,6 +308,30 @@ func (r *Repository[S, M]) ListWithOpts(ctx context.Context, opts db.ListOptions
 	return modelItems, int32(total), nil
 }
 
+// GetByAddresses retrieves multiple entities by their address field.
+// This method is specifically optimized for retrieving multiple coins by address.
+func (r *Repository[S, M]) GetByAddresses(ctx context.Context, addresses []string) ([]M, error) {
+	if len(addresses) == 0 {
+		return []M{}, nil
+	}
+
+	var schemaItems []S
+	
+	// Use IN clause to get all items matching the provided addresses
+	if err := r.db.WithContext(ctx).Where("address IN ?", addresses).Find(&schemaItems).Error; err != nil {
+		return nil, fmt.Errorf("failed to get items by addresses: %w", err)
+	}
+
+	// Convert schema items to model items
+	modelItems := make([]M, len(schemaItems))
+	for i, item := range schemaItems {
+		modelItem := r.toModel(item)
+		modelItems[i] = *modelItem.(*M)
+	}
+
+	return modelItems, nil
+}
+
 // --- Mapping Functions ---
 
 // toModel converts a schema type (S) to a model type (M).
