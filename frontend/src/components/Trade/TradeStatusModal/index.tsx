@@ -244,6 +244,8 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 	const memoizedBottomSheetProps = useMemo(() => ({
 		enablePanDownToClose: isFinal,
+		enableHandlePanningGesture: isFinal,
+		enableContentPanningGesture: false,
 	}), [isFinal]);
 
 	const statusSectionStyle = useMemo(() => [
@@ -266,6 +268,7 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			isVisible={isVisible}
 			onClose={onClose}
 			snapPoints={snapPoints}
+			enableBackdropPress={isFinal}
 			bottomSheetModalProps={memoizedBottomSheetProps}
 		>
 			{/* Header */}

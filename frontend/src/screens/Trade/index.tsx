@@ -380,6 +380,32 @@ const Trade: React.FC = () => {
 		logger.info('[Trade] Confirmation modal closed - refresh timers remain disabled');
 	};
 
+	const handleCloseStatusModal = useCallback(() => {
+		logger.breadcrumb({ category: 'ui', message: 'Trade status modal closed', data: { txHash: polledTxHash, finalStatus: currentPollingStatus } });
+
+		// Prevent double navigation
+		if (isNavigating) {
+			logger.info('[Trade] Navigation already in progress, skipping duplicate navigation');
+			return;
+		}
+
+		setIsNavigating(true);
+		setIsStatusModalVisible(false);
+		resetTxPolling(); // Reset hook state
+		
+		// Navigate back to previous screen (typically Home) with slide-left animation
+		if (navigation.canGoBack()) {
+			navigation.goBack();
+		} else {
+			// Fallback to Home tab if no navigation history
+			navigation.navigate('MainTabs', { screen: 'Home' });
+		}
+
+		setTimeout(() => {
+			setIsNavigating(false);
+		}, 150);
+	}, [isNavigating, polledTxHash, currentPollingStatus, setIsStatusModalVisible, resetTxPolling, navigation]);
+
 	if (!wallet) {
 		return (
 			<SafeAreaView style={styles.container}>
@@ -642,24 +668,7 @@ const Trade: React.FC = () => {
 				/>
 			)}
 			<TradeStatusModal
-				onClose={() => {
-					logger.breadcrumb({ category: 'ui', message: 'Trade status modal closed', data: { txHash: polledTxHash, finalStatus: currentPollingStatus } });
-
-					// Prevent double navigation
-					if (isNavigating) {
-						logger.info('[Trade] Navigation already in progress, skipping duplicate navigation');
-						return;
-					}
-
-					setIsNavigating(true);
-					setIsStatusModalVisible(false);
-					resetTxPolling(); // Reset hook state
-					navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] });
-
-					setTimeout(() => {
-						setIsNavigating(false);
-					}, 100);
-				}}
+				onClose={handleCloseStatusModal}
 				isVisible={isStatusModalVisible}
 				txHash={polledTxHash}
 				status={currentPollingStatus as PollingStatus}
