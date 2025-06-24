@@ -523,7 +523,7 @@ export const grpcApi: grpcModel.API = {
 		amount: string;
 		slippageBps: string;
 		userPublicKey: string;
-	}): Promise<{ unsignedTransaction: string; solFeeBreakdown?: any; totalSolRequired: string; tradingFeeSol: string }> => {
+	}): Promise<{ unsignedTransaction: string; solFeeBreakdown?: grpcModel.SolFeeBreakdown; totalSolRequired: string; tradingFeeSol: string }> => {
 		const serviceName = 'TradeService';
 		const methodName = 'prepareSwap';
 		try {

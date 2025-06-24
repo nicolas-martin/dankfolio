@@ -194,7 +194,7 @@ export interface API {
 	submitCoinTransfer: (payload: CoinTransferSubmitRequest) => Promise<CoinTransferResponse>;
 	createWallet: () => Promise<CreateWalletResponse>;
 	getProxiedImage: (imageUrl: string) => Promise<GetProxiedImageResponse>;
-	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string; solFeeBreakdown?: any; totalSolRequired: string; tradingFeeSol: string }>;
+	prepareSwap: (params: PrepareSwapRequest) => Promise<{ unsignedTransaction: string; solFeeBreakdown?: SolFeeBreakdown; totalSolRequired: string; tradingFeeSol: string }>;
 	listTrades: (params: ListTradesRequest) => Promise<ListTradesResponse>;
 	getFullSwapQuoteOrchestrated: (amount: string, fromCoin: Coin, toCoin: Coin, includeFeeBreakdown?: boolean, userPublicKey?: string) => Promise<FullSwapQuoteDetails>;
 	getNewCoins: (limit?: number, offset?: number) => Promise<Coin[]>;

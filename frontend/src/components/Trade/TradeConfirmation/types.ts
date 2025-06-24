@@ -1,5 +1,4 @@
 import { Coin } from '@/types';
-import { TradeDetailsProps } from '@components/Trade/TradeDetails/tradedetails_types';
 
 interface TradeConfirmationProps {
 	isVisible: boolean;

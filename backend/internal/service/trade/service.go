@@ -679,7 +679,16 @@ func (s *Service) GetTradeByTransactionHash(ctx context.Context, txHash string) 
 
 		case "Unknown", "Pending":
 			// Transaction status is unknown or still pending - log for monitoring
-			slog.Info("Transaction status is unknown or still pending", "trade_id", trade.ID, "status", chainStatus.Status, "confirmations", trade.Confirmations)
+			confirmations := 0
+			if chainStatus.Confirmations != nil {
+				confirmations = int(*chainStatus.Confirmations)
+			}
+			slog.Info("Transaction status is unknown or still pending", "trade_id", trade.ID, "status", chainStatus.Status, "confirmations", confirmations)
+			// Clear any previous error for unknown/pending status
+			if trade.Error != "" {
+				trade.Error = ""
+				statusChanged = true
+			}
 
 		default:
 			// Unexpected status - log for monitoring

@@ -61,6 +61,22 @@ const Trade: React.FC = () => {
 	const [hasDetailedFeeBreakdown, setHasDetailedFeeBreakdown] = useState<boolean>(false); // Track if we've fetched detailed fees for current pair
 
 
+	// Memoize polling callbacks to prevent hook recreation
+	const onPollingError = useCallback((errorMsg: string | null) => {
+		showToast({ type: 'error', message: errorMsg || 'Transaction polling failed' });
+	}, [showToast]);
+
+	const onPollingFinalized = useCallback((finalData: any) => {
+		if (wallet?.address && finalData && !finalData.error) {
+			logger.info('[Trade] Transaction finalized successfully, refreshing portfolio.');
+			usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
+			useTransactionsStore.getState().fetchRecentTransactions(wallet.address);
+		}
+	}, [wallet?.address]);
+
+	// Memoize the polling function to ensure it's stable
+	const pollingFunction = useCallback(grpcApi.getSwapStatus, []);
+
 	const {
 		txHash: polledTxHash,
 		status: currentPollingStatus,
@@ -69,16 +85,10 @@ const Trade: React.FC = () => {
 		startPolling: startTxPolling,
 		resetPolling: resetTxPolling
 	} = useTransactionPolling(
-		grpcApi.getSwapStatus,
+		pollingFunction,
 		undefined, // onSuccess
-		(errorMsg) => showToast({ type: 'error', message: errorMsg || 'Transaction polling failed' }),
-		(finalData) => {
-			if (wallet?.address && finalData && !finalData.error) {
-				logger.info('[Trade] Transaction finalized successfully, refreshing portfolio.');
-				usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
-				useTransactionsStore.getState().fetchRecentTransactions(wallet.address);
-			}
-		}
+		onPollingError,
+		onPollingFinalized
 	);
 
 	// useEffect to update local pollingError state if currentPollingErrorFromHook changes
@@ -368,13 +378,6 @@ const Trade: React.FC = () => {
 		// DISABLED: Restart refresh timers - this was causing infinite loops
 		logger.info('[Trade] Confirmation modal closed - refresh timers remain disabled');
 	};
-
-	// All hooks must be at top level before any conditional returns
-	// TODO: Move this to the style file
-	const exchangeRateLabelTextStyle = useMemo(() => [
-		styles.detailLabel,
-		styles.exchangeRateLabelText
-	], [styles.detailLabel, styles.exchangeRateLabelText]);
 
 	if (!wallet) {
 		return (

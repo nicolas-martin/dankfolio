@@ -17,6 +17,7 @@ import (
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 )
 
+// #region test
 // coinServiceHandler implements the CoinService API
 type coinServiceHandler struct {
 	dankfoliov1connect.UnimplementedCoinServiceHandler
@@ -30,11 +31,10 @@ func newCoinServiceHandler(coinService *coin.Service) *coinServiceHandler {
 	}
 }
 
+// #endregion
+
 // GetAvailableCoins returns a list of available coins
-func (s *coinServiceHandler) GetAvailableCoins(
-	ctx context.Context,
-	req *connect.Request[pb.GetAvailableCoinsRequest],
-) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
+func (s *coinServiceHandler) GetAvailableCoins(ctx context.Context, req *connect.Request[pb.GetAvailableCoinsRequest]) (*connect.Response[pb.GetAvailableCoinsResponse], error) {
 	var coins []model.Coin
 	var err error
 	var totalCount int32
@@ -79,10 +79,7 @@ func (s *coinServiceHandler) GetAvailableCoins(
 }
 
 // GetCoinByID returns a specific coin by ID
-func (s *coinServiceHandler) GetCoinByID(
-	ctx context.Context,
-	req *connect.Request[pb.GetCoinByIDRequest],
-) (*connect.Response[pb.Coin], error) {
+func (s *coinServiceHandler) GetCoinByID(ctx context.Context, req *connect.Request[pb.GetCoinByIDRequest]) (*connect.Response[pb.Coin], error) {
 	coin, err := s.coinService.GetCoinByAddress(ctx, req.Msg.Address)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin: %w", err))

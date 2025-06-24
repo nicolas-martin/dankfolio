@@ -149,8 +149,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 
 		if (!shouldShowProgress) return null;
 
-
-
 		// For pending state without txHash, show preparing message
 		if (displayStatus === 'pending' && !txHash) {
 			return (
