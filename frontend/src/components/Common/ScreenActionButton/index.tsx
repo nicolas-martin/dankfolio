@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Platform } from 'react-native'; // Platform might still be useful for fine-tuning intensity
+import { View } from 'react-native'; // Platform might still be useful for fine-tuning intensity
 import { Button } from 'react-native-paper';
 import { useStyles } from './ScreenActionButton.styles';
 import { BlurView } from 'expo-blur'; // Using expo-blur
