@@ -113,10 +113,10 @@ type Trade struct {
 	TotalFeeMint   string  `gorm:"column:total_fee_mint"`               // Mint address of the token used for total fees
 
 	// Platform Fee Information
-	PlatformFeeAmount      float64 `gorm:"column:platform_fee_amount;default:0.0"`  // Platform fee amount in native units
-	PlatformFeePercent     float64 `gorm:"column:platform_fee_percent;default:0.0"` // Platform fee percentage (e.g., 0.2 for 0.2%)
-	PlatformFeeMint        string  `gorm:"column:platform_fee_mint"`                // Mint address of the token used for platform fees
-	PlatformFeeDestination string  `gorm:"column:platform_fee_destination"`         // Account receiving platform fees
+	PlatformFeeAmount      float64 `gorm:"column:platform_fee_amount;default:0.0"` // Platform fee amount in native units
+	PlatformFeeBps         int     `gorm:"column:platform_fee_bps;default:0"`
+	PlatformFeeMint        string  `gorm:"column:platform_fee_mint"`        // Mint address of the token used for platform fees
+	PlatformFeeDestination string  `gorm:"column:platform_fee_destination"` // Account receiving platform fees
 
 	// Route Fee Information (from Jupiter route plan)
 	RouteFeeAmount  float64        `gorm:"column:route_fee_amount;default:0.0"` // Total route fees in native units

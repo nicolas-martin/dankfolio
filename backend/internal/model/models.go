@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	pb "github.com/nicolas-martin/dankfolio/backend/gen/proto/go/dankfolio/v1"
 )
 
 const (
@@ -84,7 +85,7 @@ type Trade struct {
 
 	// Platform Fee Information
 	PlatformFeeAmount      float64 `json:"platform_fee_amount,omitempty"`      // Platform fee amount in native units
-	PlatformFeePercent     float64 `json:"platform_fee_percent,omitempty"`     // Platform fee percentage (e.g., 0.2 for 0.2%)
+	PlatformFeeBps         int     `json:"platform_fee_bps,omitempty"`         // Platform fee basis points (e.g., 10 for 0.1%)
 	PlatformFeeMint        string  `json:"platform_fee_mint,omitempty"`        // Mint address of the token used for platform fees
 	PlatformFeeDestination string  `json:"platform_fee_destination,omitempty"` // Account receiving platform fees
 

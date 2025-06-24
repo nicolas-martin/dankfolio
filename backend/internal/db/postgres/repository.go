@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/lib/pq"
+
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/db/postgres/schema"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -316,7 +317,7 @@ func (r *Repository[S, M]) GetByAddresses(ctx context.Context, addresses []strin
 	}
 
 	var schemaItems []S
-	
+
 	// Use IN clause to get all items matching the provided addresses
 	if err := r.db.WithContext(ctx).Where("address IN ?", addresses).Find(&schemaItems).Error; err != nil {
 		return nil, fmt.Errorf("failed to get items by addresses: %w", err)
@@ -381,7 +382,7 @@ func (r *Repository[S, M]) toModel(s S) any {
 			TotalFeeAmount:         v.TotalFeeAmount,
 			TotalFeeMint:           v.TotalFeeMint,
 			PlatformFeeAmount:      v.PlatformFeeAmount,
-			PlatformFeePercent:     v.PlatformFeePercent,
+			PlatformFeeBps:         v.PlatformFeeBps,
 			PlatformFeeMint:        v.PlatformFeeMint,
 			PlatformFeeDestination: v.PlatformFeeDestination,
 			RouteFeeAmount:         v.RouteFeeAmount,
@@ -481,7 +482,7 @@ func (r *Repository[S, M]) fromModel(m M) any {
 			TotalFeeAmount:         v.TotalFeeAmount,
 			TotalFeeMint:           v.TotalFeeMint,
 			PlatformFeeAmount:      v.PlatformFeeAmount,
-			PlatformFeePercent:     v.PlatformFeePercent,
+			PlatformFeeBps:         v.PlatformFeeBps,
 			PlatformFeeMint:        v.PlatformFeeMint,
 			PlatformFeeDestination: v.PlatformFeeDestination,
 			RouteFeeAmount:         v.RouteFeeAmount,
