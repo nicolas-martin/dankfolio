@@ -47,6 +47,23 @@ const ManagedBottomSheetModal: React.FC<ManagedBottomSheetModalComponentProps> =
 		}
 	}, [isVisible]);
 
+	// Track if modal is currently closing to prevent duplicate onClose calls
+	const isClosingRef = useRef(false);
+
+	const handleClose = useCallback(() => {
+		if (isClosingRef.current) {
+			logger.info('[ManagedBottomSheetModal] Close already in progress, ignoring duplicate call');
+			return;
+		}
+		isClosingRef.current = true;
+		onClose();
+		
+		// Reset the flag after a short delay to allow for the next modal session
+		setTimeout(() => {
+			isClosingRef.current = false;
+		}, 500);
+	}, [onClose]);
+
 	const renderBackdrop = useCallback(
 		(props: BottomSheetBackdropProps) => (
 			<BottomSheetBackdrop
@@ -54,7 +71,7 @@ const ManagedBottomSheetModal: React.FC<ManagedBottomSheetModalComponentProps> =
 				disappearsOnIndex={-1}
 				appearsOnIndex={0}
 				opacity={0.8} // Standard opacity
-				onPress={enableBackdropPress ? onClose : undefined}
+				onPress={enableBackdropPress ? handleClose : undefined}
 				accessible={enableBackdropPress}
 				accessibilityRole={enableBackdropPress ? "button" : undefined}
 				accessibilityLabel={enableBackdropPress ? "Close modal" : undefined}
@@ -63,7 +80,7 @@ const ManagedBottomSheetModal: React.FC<ManagedBottomSheetModalComponentProps> =
 				<BlurView intensity={20} style={styles.blurViewStyle} />
 			</BottomSheetBackdrop>
 		),
-		[onClose, enableBackdropPress, styles.blurViewStyle]
+		[handleClose, enableBackdropPress, styles.blurViewStyle]
 	);
 
 	return (
@@ -71,7 +88,7 @@ const ManagedBottomSheetModal: React.FC<ManagedBottomSheetModalComponentProps> =
 			ref={bottomSheetModalRef}
 			index={0} // Default to first snap point
 			snapPoints={snapPoints}
-			onDismiss={onClose} // Ensure onClose is called when dismissed by pan gesture etc.
+			onDismiss={handleClose} // Use handleClose to prevent duplicate calls
 			backdropComponent={renderBackdrop}
 			handleIndicatorStyle={styles.handleIndicator}
 			backgroundStyle={styles.bottomSheetBackground}

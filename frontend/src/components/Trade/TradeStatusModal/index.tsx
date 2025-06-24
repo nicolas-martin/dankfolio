@@ -236,9 +236,10 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 	// For this refactor, we assume the standard backdrop is sufficient or onClose logic is handled by button.
 
 	// Handle button close with programmatic flag
-	const handleButtonClose = () => {
+	const handleButtonClose = useCallback(() => {
+		logger.info('[TradeStatusModal] Button close pressed');
 		onClose();
-	};
+	}, [onClose]);
 
 	const snapPoints = useMemo(() => ['75%'], []);
 

@@ -104,9 +104,10 @@ func (c *Client) GetQuote(ctx context.Context, params QuoteParams) (*QuoteRespon
 	if params.SlippageBps != 0 {
 		queryParams.Set("slippageBps", strconv.Itoa(params.SlippageBps))
 	}
-	if params.FeeBps != 0 {
-		queryParams.Set("feeBps", strconv.Itoa(params.FeeBps))
+	if params.PlatformFeeBps != 0 {
+		queryParams.Set("platformFeeBps", strconv.Itoa(params.PlatformFeeBps))
 	}
+	// NOTE: WE MIGHT WANT TO BE MORE FLEXIBLE IN THE ROUTES
 	if params.OnlyDirectRoutes {
 		queryParams.Set("onlyDirectRoutes", "true")
 	}
