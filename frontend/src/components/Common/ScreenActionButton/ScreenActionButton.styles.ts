@@ -13,22 +13,17 @@ export const useStyles = () => {
 				// It should allow the button's padding to define its size.
 				// No specific width/height needed here as it expands with content.
 			},
-			// androidFallbackContainer is no longer needed as expo-blur is cross-platform.
 			button: {
-				// Style for the react-native-paper Button
-				borderRadius: theme.borderRadius.lg, // Standardized border radius from theme
-				// The height will be primarily controlled by padding and labelStyle
-				paddingVertical: theme.spacing.sm, // Standardized vertical padding
+				borderRadius: theme.borderRadius.lg,
+				paddingVertical: theme.spacing.sm,
 			},
 			buttonContent: {
-				// Style for the Button's content wrapper (used to control height effectively)
-				paddingVertical: theme.spacing.xs, // Adjust as needed for desired button height
+				paddingVertical: theme.spacing.xs,
 				// minHeight: 50, // Example of setting a minimum height
 			},
 			buttonLabel: {
-				// Style for the Button's label text
-				fontSize: theme.typography.fontSize.lg, // Standardized font size
-				fontWeight: 'bold', // Standardized font weight
+				fontSize: theme.typography.fontSize.lg,
+				fontWeight: 'bold',
 				textAlign: 'center',
 			},
 			container: {

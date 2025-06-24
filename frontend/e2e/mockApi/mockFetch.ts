@@ -3,11 +3,13 @@ import { env } from '@/utils/env';
 import { create } from '@bufbuild/protobuf';
 import {
 	GetAvailableCoinsResponseSchema, SearchResponseSchema, SearchCoinByAddressResponseSchema, type Coin as ProtobufCoin, CoinSchema, CoinSortField,
+	GetCoinsByIDsResponseSchema, GetAllCoinsResponseSchema,
 } from '@/gen/dankfolio/v1/coin_pb';
 import {
 	GetWalletBalancesResponseSchema,
 	BalanceSchema,
 	WalletBalanceSchema,
+	CreateWalletResponseSchema,
 } from '@/gen/dankfolio/v1/wallet_pb';
 import {
 	GetPriceHistoryResponseSchema,
@@ -19,7 +21,11 @@ import {
 	SubmitSwapResponseSchema,
 	TradeSchema,
 	ListTradesResponseSchema,
+	SolFeeBreakdownSchema,
 } from '@/gen/dankfolio/v1/trade_pb';
+import {
+	GetProxiedImageResponseSchema,
+} from '@/gen/dankfolio/v1/utility_pb';
 
 import { MOCK_TRENDING_COINS, MOCK_TOP_GAINER_COINS, MOCK_NEW_COINS, ALL_MOCK_COINS, MOCK_WALLET_BALANCES, CAPTURED_TRANSACTION_DATA } from './mockData';
 import { generatePriceHistory } from './helpers';
@@ -182,6 +188,38 @@ async function handleGetCoinById(options?: FetchInit) {
 	return create(CoinSchema, coin);
 }
 
+async function handleGetCoinsByIDs(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const addresses = requestData.addresses || [];
+
+	if (!addresses || addresses.length === 0) {
+		// Return empty response for no addresses
+		return create(GetCoinsByIDsResponseSchema, {
+			coins: [],
+		});
+	}
+
+	// Find all matching coins
+	const coins = addresses
+		.map((address: string) => 
+			ALL_MOCK_COINS.find((c: ProtobufCoin) =>
+				c.address.toLowerCase() === address.toLowerCase()
+			)
+		)
+		.filter((coin): coin is ProtobufCoin => coin !== undefined);
+
+	return create(GetCoinsByIDsResponseSchema, {
+		coins,
+	});
+}
+
+async function handleGetAllCoins(_options?: FetchInit) {
+	// Return all mock coins without pagination
+	return create(GetAllCoinsResponseSchema, {
+		coins: ALL_MOCK_COINS,
+	});
+}
+
 async function handleGetWalletBalances(options?: FetchInit) {
 	const requestData = parseRequestBody(options);
 	const walletAddress = requestData.address || '';
@@ -296,6 +334,29 @@ async function handleGetSwapQuote(options?: FetchInit) {
 	// Calculate price impact (simulate based on amount - larger amounts have higher impact)
 	const priceImpact = Math.min(decimalAmount / 1000 * 0.1, 2.0); // Max 2% impact
 
+	// Calculate detailed fee breakdown
+	const tradingFeeSol = (feeAmount * fromCoin.price / 98.45).toFixed(9); // Convert to SOL (assuming SOL price ~98.45)
+	const transactionFee = '0.000005'; // Base transaction fee (5000 lamports)
+	const priorityFee = '0.000001'; // Priority fee
+	const accountsToCreate = requestData.includeFeeBreakdown ? 1 : 0; // Simulate 1 ATA creation if detailed breakdown requested
+	const accountCreationFee = accountsToCreate > 0 ? '0.00203928' : '0'; // ATA creation cost
+	const totalSolFees = (
+		parseFloat(tradingFeeSol) + 
+		parseFloat(transactionFee) + 
+		parseFloat(priorityFee) + 
+		parseFloat(accountCreationFee)
+	).toFixed(9);
+
+	// Create fee breakdown if requested
+	const solFeeBreakdown = requestData.includeFeeBreakdown ? create(SolFeeBreakdownSchema, {
+		tradingFee: tradingFeeSol,
+		transactionFee: transactionFee,
+		accountCreationFee: accountCreationFee,
+		priorityFee: priorityFee,
+		total: totalSolFees,
+		accountsToCreate: accountsToCreate,
+	}) : undefined;
+
 	return create(GetSwapQuoteResponseSchema, {
 		estimatedAmount: slippageAdjustedAmount.toFixed(6), // Return as decimal string like backend
 		exchangeRate: exchangeRate.toFixed(6),
@@ -304,13 +365,62 @@ async function handleGetSwapQuote(options?: FetchInit) {
 		routePlan: ['Direct'],
 		inputMint: fromCoinId,
 		outputMint: toCoinId,
+		solFeeBreakdown: solFeeBreakdown,
+		totalSolRequired: totalSolFees,
+		tradingFeeSol: tradingFeeSol,
 	});
 }
 
-async function handlePrepareSwap(_options?: FetchInit) {
+async function handlePrepareSwap(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const { fromCoinId, toCoinId, amount } = requestData;
+
+	// Find the coins to calculate fees
+	const fromCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
+		c.address.toLowerCase() === (fromCoinId || '').toLowerCase()
+	);
+	const toCoin = ALL_MOCK_COINS.find((c: ProtobufCoin) =>
+		c.address.toLowerCase() === (toCoinId || '').toLowerCase()
+	);
+
+	// Calculate trading fee
+	let tradingFeeSol = '0.000025'; // Default trading fee
+	if (fromCoin && amount) {
+		const rawAmount = parseFloat(amount);
+		const decimalAmount = rawAmount / Math.pow(10, fromCoin.decimals);
+		const feeAmount = decimalAmount * 0.005; // 0.5% fee
+		tradingFeeSol = (feeAmount * fromCoin.price / 98.45).toFixed(9); // Convert to SOL
+	}
+
+	// Calculate detailed fee breakdown
+	const transactionFee = '0.000005'; // Base transaction fee (5000 lamports)
+	const priorityFee = '0.000001'; // Priority fee
+	const accountsToCreate = 1; // Simulate 1 ATA creation for PrepareSwap
+	const accountCreationFee = '0.00203928'; // ATA creation cost
+	const totalSolFees = (
+		parseFloat(tradingFeeSol) + 
+		parseFloat(transactionFee) + 
+		parseFloat(priorityFee) + 
+		parseFloat(accountCreationFee)
+	).toFixed(9);
+
+	// Create fee breakdown
+	const solFeeBreakdown = create(SolFeeBreakdownSchema, {
+		tradingFee: tradingFeeSol,
+		transactionFee: transactionFee,
+		accountCreationFee: accountCreationFee,
+		priorityFee: priorityFee,
+		total: totalSolFees,
+		accountsToCreate: accountsToCreate,
+	});
+
 	const mockTransactionBase64 = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAGCekCd/S1HV8txmyKfIAWKWxswDuUWLUqjZYc6PbaNJgCS6xdNRGIgknfxCI44w8fMixamF6aM2jvWuJv9F6HQGCYGhB4xuDMrDdhavUhIeB7Cm55/scPKspWwzD2R6pEoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAAAEedVb8jHAbu50xW7OaBUH/bGy3qP0jlECsc2iVrwTjwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fm0P/on9df2SnTAmx8pWHneSwmrNt/J3VFLMhqns4zl6Ay7y3ZxksVsqzi2N3jHaFEqLW3iYBGcYX3hKK2J6TtECAQABQILSwIABAAJA6AsAAAAAAAABwYAAgAPAwYBAQMCAAIMAgAAAIwMCAAAAAAABgECAREHBgABABEDBgEBBRsGAAIBBREFCAUOCw4NCgIBEQ8JDgAGBhAODAUj5RfLl3rjrSoBAAAAJmQAAYwMCAAAAAAA3IhZ0AEAAABQAAAGAwIAAAEJAWpgiN9xbBUoxnUHH86lRaehpUhg3jmT4dhHYEv2EYR2BX9ZW36DBC4CdVo=';
+	
 	return create(PrepareSwapResponseSchema, {
 		unsignedTransaction: mockTransactionBase64,
+		solFeeBreakdown: solFeeBreakdown,
+		totalSolRequired: totalSolFees,
+		tradingFeeSol: tradingFeeSol,
 	});
 }
 
@@ -320,6 +430,38 @@ async function handlePrepareTransfer(_options?: FetchInit) {
 
 async function handleSubmitTransfer(_options?: FetchInit) {
 	return { transactionHash: CAPTURED_TRANSACTION_DATA.MOCK_TX_HASH }; // This endpoint returns a plain object
+}
+
+async function handleCreateWallet(_options?: FetchInit) {
+	// Generate mock wallet data for testing
+	const mockPublicKey = 'E2eMockWallet' + Math.random().toString(36).substring(2, 15);
+	const mockSecretKey = 'MockSecret' + Math.random().toString(36).substring(2, 50);
+	const mockMnemonic = 'mock test wallet seed phrase example words for testing purposes only twelve words total';
+	
+	return create(CreateWalletResponseSchema, {
+		publicKey: mockPublicKey,
+		secretKey: mockSecretKey,
+		mnemonic: mockMnemonic,
+	});
+}
+
+async function handleGetProxiedImage(options?: FetchInit) {
+	const requestData = parseRequestBody(options);
+	const imageUrl = requestData.imageUrl || '';
+
+	if (!imageUrl) {
+		throw new Error('INVALID_ARGUMENT: imageUrl is required');
+	}
+
+	// Return mock image data (1x1 transparent PNG)
+	// This is a base64-encoded 1x1 transparent PNG
+	const mockImageBytes = [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 218, 98, 100, 96, 248, 95, 15, 0, 0, 2, 133, 1, 128, 235, 71, 186, 146, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130];
+	const mockImageData = new Uint8Array(mockImageBytes);
+
+	return create(GetProxiedImageResponseSchema, {
+		imageData: mockImageData,
+		contentType: 'image/png',
+	});
 }
 
 async function handleSubmitSwap(_options?: FetchInit) {
@@ -396,11 +538,17 @@ const endpointHandlers: { [key: string]: (options?: FetchInit) => Promise<any> }
 	
 	// Coin info endpoints
 	'/dankfolio.v1.coinservice/getcoinbyid': handleGetCoinById,
+	'/dankfolio.v1.coinservice/getcoinsbyids': handleGetCoinsByIDs,
+	'/dankfolio.v1.coinservice/getallcoins': handleGetAllCoins,
 	
 	// Wallet endpoints
 	'/dankfolio.v1.walletservice/getwalletbalances': handleGetWalletBalances,
+	'/dankfolio.v1.walletservice/createwallet': handleCreateWallet,
 	'/dankfolio.v1.walletservice/preparetransfer': handlePrepareTransfer,
 	'/dankfolio.v1.walletservice/submittransfer': handleSubmitTransfer,
+	
+	// Utility endpoints
+	'/dankfolio.v1.utilityservice/getproxiedimage': handleGetProxiedImage,
 	
 	// Price endpoints
 	'/dankfolio.v1.priceservice/getpricehistory': handleGetPriceHistory,
