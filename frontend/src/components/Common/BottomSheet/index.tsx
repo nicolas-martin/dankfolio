@@ -18,6 +18,7 @@ interface ManagedBottomSheetModalComponentProps {
 	children: React.ReactNode;
 	snapPoints?: string[]; // e.g., ['50%', '90%']
 	title?: string;
+	enableBackdropPress?: boolean; // Allow disabling backdrop press
 	// Allow passing other BottomSheetModalProps
 	bottomSheetModalProps?: Omit<BottomSheetModalProps, 'snapPoints' | 'children' | 'ref' | 'onDismiss' | 'backdropComponent' | 'handleIndicatorStyle' | 'backgroundStyle'>;
 }
@@ -28,6 +29,7 @@ const ManagedBottomSheetModal: React.FC<ManagedBottomSheetModalComponentProps> =
 	children,
 	snapPoints: customSnapPoints,
 	title,
+	enableBackdropPress = true,
 	bottomSheetModalProps,
 }) => {
 	const styles = useStyles();
@@ -52,16 +54,16 @@ const ManagedBottomSheetModal: React.FC<ManagedBottomSheetModalComponentProps> =
 				disappearsOnIndex={-1}
 				appearsOnIndex={0}
 				opacity={0.8} // Standard opacity
-				onPress={onClose}
-				accessible={true}
-				accessibilityRole="button"
-				accessibilityLabel="Close modal"
-				accessibilityHint="Tap to close the modal"
+				onPress={enableBackdropPress ? onClose : undefined}
+				accessible={enableBackdropPress}
+				accessibilityRole={enableBackdropPress ? "button" : undefined}
+				accessibilityLabel={enableBackdropPress ? "Close modal" : undefined}
+				accessibilityHint={enableBackdropPress ? "Tap to close the modal" : undefined}
 			>
 				<BlurView intensity={20} style={styles.blurViewStyle} />
 			</BottomSheetBackdrop>
 		),
-		[onClose, styles.blurViewStyle]
+		[onClose, enableBackdropPress, styles.blurViewStyle]
 	);
 
 	return (

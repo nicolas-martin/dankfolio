@@ -119,7 +119,7 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 
 	// Frontend already sends raw amounts (lamports for SOL), so use directly
 	rawAmount := params.Amount
-	
+
 	// Validate that amount is a positive integer
 	amountInt, err := strconv.ParseUint(rawAmount, 10, 64)
 	if err != nil {
@@ -199,6 +199,104 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 		CreatedAt:           time.Now(),
 		Confirmations:       0,
 		Finalized:           false,
+	}
+
+	// Apply comprehensive fee breakdown if available
+	if feeBreakdown != nil {
+		// Extract fee information from Jupiter quote response
+		var platformFeeMint, totalFeeMint string
+		var actualPlatformFee float64
+		routeFeeMintsMap := make(map[string]bool) // Track unique route fee mints
+
+		if tradeQuote.Raw != nil {
+			var jupiterQuote jupiter.QuoteResponse
+			if err := json.Unmarshal(tradeQuote.Raw, &jupiterQuote); err == nil {
+				// Extract platform fee information
+				if jupiterQuote.PlatformFee != nil {
+					platformFeeMint = jupiterQuote.PlatformFee.FeeMint
+					if platformAmount, err := strconv.ParseUint(jupiterQuote.PlatformFee.Amount, 10, 64); err == nil {
+						// Get decimals for the fee mint token
+						decimals := 9.0 // Default to SOL decimals
+						// NOTE: Shortcut
+						// if platformFeeMint != "" {
+						// 	if feeTokenModel, err := s.coinService.GetCoinByAddress(ctx, platformFeeMint); err == nil && feeTokenModel != nil {
+						// 		decimals = float64(feeTokenModel.Decimals)
+						// 	}
+						// }
+						actualPlatformFee = float64(platformAmount) / math.Pow(10, decimals)
+					}
+				}
+
+				// Extract route fee mints from all routes
+				for _, route := range jupiterQuote.RoutePlan {
+					if route.SwapInfo.FeeMint != "" {
+						routeFeeMintsMap[route.SwapInfo.FeeMint] = true
+					}
+				}
+
+				// Determine the total fee mint - prioritize platform fee mint, then most common route mint, then SOL
+				if platformFeeMint != "" {
+					totalFeeMint = platformFeeMint
+				} else if len(routeFeeMintsMap) > 0 {
+					// Use the first route fee mint (could be enhanced to find most common)
+					for mint := range routeFeeMintsMap {
+						totalFeeMint = mint
+						break
+					}
+				} else {
+					totalFeeMint = "So11111111111111111111111111111111111111112" // Fallback to SOL
+				}
+			}
+		}
+
+		// Set total fee amount and mint
+		if totalSolFee, err := strconv.ParseFloat(totalSolRequired, 64); err == nil {
+			trade.TotalFeeAmount = totalSolFee
+			trade.TotalFeeMint = totalFeeMint
+
+			slog.Info("Applied dynamic fee mints to trade",
+				"total_fee_mint", totalFeeMint,
+				"platform_fee_mint", platformFeeMint,
+				"platform_fee_amount", actualPlatformFee,
+				"route_fee_mints", len(routeFeeMintsMap))
+		}
+
+		// Set platform fee information
+		trade.PlatformFeeAmount = actualPlatformFee
+		if actualPlatformFee > 0 && platformFeeMint != "" {
+			trade.PlatformFeeMint = platformFeeMint
+		}
+
+		// Set route fee (trading fee minus platform fee) and route fee mints
+		if tradingFee, err := strconv.ParseFloat(feeBreakdown.TradingFee, 64); err == nil {
+			routeFee := tradingFee - actualPlatformFee
+			if routeFee > 0 {
+				trade.RouteFeeAmount = routeFee
+
+				// Convert route fee mints map to slice
+				routeFeeMintsSlice := make([]string, 0, len(routeFeeMintsMap))
+				for mint := range routeFeeMintsMap {
+					routeFeeMintsSlice = append(routeFeeMintsSlice, mint)
+				}
+
+				// Use route fee mints if available, otherwise fall back to total fee mint
+				if len(routeFeeMintsSlice) > 0 {
+					trade.RouteFeeMints = routeFeeMintsSlice
+				} else if totalFeeMint != "" {
+					trade.RouteFeeMints = []string{totalFeeMint}
+				}
+			}
+		}
+
+		// Store detailed fee breakdown as JSON
+		if feeBreakdownJSON, err := json.Marshal(feeBreakdown); err == nil {
+			trade.RouteFeeDetails = string(feeBreakdownJSON)
+		}
+
+		// Set price impact if available from the quote
+		if priceImpact, err := strconv.ParseFloat(tradeQuote.PriceImpact, 64); err == nil {
+			trade.PriceImpactPercent = priceImpact
+		}
 	}
 
 	// Set platform fee fallback
@@ -725,7 +823,7 @@ func (s *Service) GetFeeForMessage(ctx context.Context, message solanago.Message
 // checkRequiredATAs determines how many ATAs need to be created for a swap
 func (s *Service) checkRequiredATAs(ctx context.Context, userPublicKey, inputMint, outputMint string) (int, error) {
 	const solMint = "So11111111111111111111111111111111111111112"
-	
+
 	// Parse the user's public key
 	userPubkey, err := solanago.PublicKeyFromBase58(userPublicKey)
 	if err != nil {
@@ -740,7 +838,7 @@ func (s *Service) checkRequiredATAs(ctx context.Context, userPublicKey, inputMin
 		if err != nil {
 			return 0, fmt.Errorf("invalid input mint: %w", err)
 		}
-		
+
 		inputATA, _, err := solanago.FindAssociatedTokenAddress(userPubkey, inputMintPubkey)
 		if err != nil {
 			return 0, fmt.Errorf("failed to derive input ATA address: %w", err)
@@ -759,7 +857,7 @@ func (s *Service) checkRequiredATAs(ctx context.Context, userPublicKey, inputMin
 		if err != nil {
 			return 0, fmt.Errorf("invalid output mint: %w", err)
 		}
-		
+
 		outputATA, _, err := solanago.FindAssociatedTokenAddress(userPubkey, outputMintPubkey)
 		if err != nil {
 			return 0, fmt.Errorf("failed to derive output ATA address: %w", err)
@@ -772,10 +870,10 @@ func (s *Service) checkRequiredATAs(ctx context.Context, userPublicKey, inputMin
 		}
 	}
 
-	slog.Info("Dynamic ATA calculation", 
-		"user", userPublicKey, 
-		"input_mint", inputMint, 
-		"output_mint", outputMint, 
+	slog.Info("Dynamic ATA calculation",
+		"user", userPublicKey,
+		"input_mint", inputMint,
+		"output_mint", outputMint,
 		"atas_to_create", atasToCreate)
 
 	return atasToCreate, nil

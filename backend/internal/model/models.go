@@ -100,7 +100,7 @@ type Trade struct {
 	TransactionHash     string    `json:"transaction_hash"`
 	UnsignedTransaction string    `json:"unsigned_transaction,omitempty"`
 	CreatedAt           time.Time `json:"created_at"`
-	CompletedAt         time.Time `json:"completed_at,omitempty"`
+	CompletedAt         time.Time `json:"completed_at"`
 	Confirmations       int32     `json:"confirmations"`
 	Finalized           bool      `json:"finalized"`
 	Error               string    `json:"error,omitempty"`
