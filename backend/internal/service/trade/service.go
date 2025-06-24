@@ -15,6 +15,7 @@ import (
 
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
@@ -161,12 +162,12 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	if err != nil {
 		return nil, fmt.Errorf("invalid from coin mint address: %w", err)
 	}
-	
+
 	feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(fromPubKey, fromMintPubKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate fee account ATA: %w", err)
 	}
-	
+
 	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, feeAccountATA.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create swap transaction: %w", err)
@@ -312,8 +313,8 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	}
 
 	// Set platform fee fallback
-	if trade.PlatformFeePercent == 0 && s.platformFeeBps > 0 {
-		trade.PlatformFeePercent = float64(s.platformFeeBps) / 100.0
+	if trade.PlatformFeeBps == 0 && s.platformFeeBps > 0 {
+		trade.PlatformFeeBps = s.platformFeeBps
 		slog.Debug("Using configured platform fee", "fee_bps", s.platformFeeBps)
 	}
 

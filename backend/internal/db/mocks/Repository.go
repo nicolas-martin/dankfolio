@@ -286,6 +286,74 @@ func (_c *MockRepository_Get_Call[T]) RunAndReturn(run func(ctx context.Context,
 	return _c
 }
 
+// GetByAddresses provides a mock function for the type MockRepository
+func (_mock *MockRepository[T]) GetByAddresses(ctx context.Context, addresses []string) ([]T, error) {
+	ret := _mock.Called(ctx, addresses)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByAddresses")
+	}
+
+	var r0 []T
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) ([]T, error)); ok {
+		return returnFunc(ctx, addresses)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) []T); ok {
+		r0 = returnFunc(ctx, addresses)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]T)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = returnFunc(ctx, addresses)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_GetByAddresses_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByAddresses'
+type MockRepository_GetByAddresses_Call[T db.Entity] struct {
+	*mock.Call
+}
+
+// GetByAddresses is a helper method to define mock.On call
+//   - ctx context.Context
+//   - addresses []string
+func (_e *MockRepository_Expecter[T]) GetByAddresses(ctx interface{}, addresses interface{}) *MockRepository_GetByAddresses_Call[T] {
+	return &MockRepository_GetByAddresses_Call[T]{Call: _e.mock.On("GetByAddresses", ctx, addresses)}
+}
+
+func (_c *MockRepository_GetByAddresses_Call[T]) Run(run func(ctx context.Context, addresses []string)) *MockRepository_GetByAddresses_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []string
+		if args[1] != nil {
+			arg1 = args[1].([]string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_GetByAddresses_Call[T]) Return(vs []T, err error) *MockRepository_GetByAddresses_Call[T] {
+	_c.Call.Return(vs, err)
+	return _c
+}
+
+func (_c *MockRepository_GetByAddresses_Call[T]) RunAndReturn(run func(ctx context.Context, addresses []string) ([]T, error)) *MockRepository_GetByAddresses_Call[T] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetByField provides a mock function for the type MockRepository
 func (_mock *MockRepository[T]) GetByField(ctx context.Context, field string, value any) (*T, error) {
 	ret := _mock.Called(ctx, field, value)

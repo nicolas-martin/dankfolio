@@ -174,6 +174,142 @@ func (_c *MockClientAPI_GetTokenOverview_Call) RunAndReturn(run func(ctx context
 	return _c
 }
 
+// GetTokensOverviewBatch provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetTokensOverviewBatch(ctx context.Context, addresses []string) ([]birdeye.TokenOverviewData, error) {
+	ret := _mock.Called(ctx, addresses)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTokensOverviewBatch")
+	}
+
+	var r0 []birdeye.TokenOverviewData
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) ([]birdeye.TokenOverviewData, error)); ok {
+		return returnFunc(ctx, addresses)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) []birdeye.TokenOverviewData); ok {
+		r0 = returnFunc(ctx, addresses)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]birdeye.TokenOverviewData)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = returnFunc(ctx, addresses)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClientAPI_GetTokensOverviewBatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTokensOverviewBatch'
+type MockClientAPI_GetTokensOverviewBatch_Call struct {
+	*mock.Call
+}
+
+// GetTokensOverviewBatch is a helper method to define mock.On call
+//   - ctx context.Context
+//   - addresses []string
+func (_e *MockClientAPI_Expecter) GetTokensOverviewBatch(ctx interface{}, addresses interface{}) *MockClientAPI_GetTokensOverviewBatch_Call {
+	return &MockClientAPI_GetTokensOverviewBatch_Call{Call: _e.mock.On("GetTokensOverviewBatch", ctx, addresses)}
+}
+
+func (_c *MockClientAPI_GetTokensOverviewBatch_Call) Run(run func(ctx context.Context, addresses []string)) *MockClientAPI_GetTokensOverviewBatch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []string
+		if args[1] != nil {
+			arg1 = args[1].([]string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_GetTokensOverviewBatch_Call) Return(tokenOverviewDatas []birdeye.TokenOverviewData, err error) *MockClientAPI_GetTokensOverviewBatch_Call {
+	_c.Call.Return(tokenOverviewDatas, err)
+	return _c
+}
+
+func (_c *MockClientAPI_GetTokensOverviewBatch_Call) RunAndReturn(run func(ctx context.Context, addresses []string) ([]birdeye.TokenOverviewData, error)) *MockClientAPI_GetTokensOverviewBatch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTokensTradeDataBatch provides a mock function for the type MockClientAPI
+func (_mock *MockClientAPI) GetTokensTradeDataBatch(ctx context.Context, addresses []string) ([]birdeye.TokenTradeData, error) {
+	ret := _mock.Called(ctx, addresses)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTokensTradeDataBatch")
+	}
+
+	var r0 []birdeye.TokenTradeData
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) ([]birdeye.TokenTradeData, error)); ok {
+		return returnFunc(ctx, addresses)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) []birdeye.TokenTradeData); ok {
+		r0 = returnFunc(ctx, addresses)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]birdeye.TokenTradeData)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = returnFunc(ctx, addresses)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockClientAPI_GetTokensTradeDataBatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTokensTradeDataBatch'
+type MockClientAPI_GetTokensTradeDataBatch_Call struct {
+	*mock.Call
+}
+
+// GetTokensTradeDataBatch is a helper method to define mock.On call
+//   - ctx context.Context
+//   - addresses []string
+func (_e *MockClientAPI_Expecter) GetTokensTradeDataBatch(ctx interface{}, addresses interface{}) *MockClientAPI_GetTokensTradeDataBatch_Call {
+	return &MockClientAPI_GetTokensTradeDataBatch_Call{Call: _e.mock.On("GetTokensTradeDataBatch", ctx, addresses)}
+}
+
+func (_c *MockClientAPI_GetTokensTradeDataBatch_Call) Run(run func(ctx context.Context, addresses []string)) *MockClientAPI_GetTokensTradeDataBatch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []string
+		if args[1] != nil {
+			arg1 = args[1].([]string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockClientAPI_GetTokensTradeDataBatch_Call) Return(tokenTradeDatas []birdeye.TokenTradeData, err error) *MockClientAPI_GetTokensTradeDataBatch_Call {
+	_c.Call.Return(tokenTradeDatas, err)
+	return _c
+}
+
+func (_c *MockClientAPI_GetTokensTradeDataBatch_Call) RunAndReturn(run func(ctx context.Context, addresses []string) ([]birdeye.TokenTradeData, error)) *MockClientAPI_GetTokensTradeDataBatch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTrendingTokens provides a mock function for the type MockClientAPI
 func (_mock *MockClientAPI) GetTrendingTokens(ctx context.Context, params birdeye.TrendingTokensParams) (*birdeye.TokenTrendingResponse, error) {
 	ret := _mock.Called(ctx, params)

@@ -337,7 +337,7 @@ func (s *Service) PrepareTransfer(ctx context.Context, fromAddress, toAddress, c
 		TotalFeeAmount:         calculatedFeeSOL,
 		TotalFeeMint:           model.SolMint,
 		PlatformFeeAmount:      0.0, // Explicitly 0 for transfers
-		PlatformFeePercent:     0.0, // Explicitly 0 for transfers
+		PlatformFeeBps:         0, // Explicitly 0 for transfers
 		PlatformFeeMint:        "",
 		PlatformFeeDestination: "",
 		RouteFeeAmount:         0.0,
