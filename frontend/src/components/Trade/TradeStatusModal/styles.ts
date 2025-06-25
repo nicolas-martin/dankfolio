@@ -144,7 +144,7 @@ export const useStyles = () => {
 			fontWeight: '600',
 		},
 		closeButton: {
-			backgroundColor: '#4CAF50',
+			backgroundColor: theme.colors.primary,
 			borderRadius: theme.borderRadius.lg,
 			elevation: 3,
 			paddingVertical: theme.spacing.sm,

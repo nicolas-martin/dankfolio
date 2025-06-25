@@ -40,6 +40,10 @@ export const useStyles = () => {
 		};
 
 		const styles = StyleSheet.create({
+			actionSection: {
+				paddingHorizontal: theme.spacing.xl,
+				width: '100%',
+			},
 			amount: {
 				color: colors.onSurface, // Use local colors variable
 				fontSize: theme.typography.fontSize.base,
@@ -150,18 +154,8 @@ export const useStyles = () => {
 				fontWeight: '600',
 			},
 			container: {
-				alignSelf: 'center',
-				backgroundColor: theme.colors.surface,
-				borderRadius: theme.spacing['2xl'],
-				elevation: 8,
-				margin: theme.spacing.lg,
-				maxWidth: 500,
-				padding: theme.spacing['3xl'],
-				shadowColor: theme.colors.onBackground,
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.1,
-				shadowRadius: theme.spacing.lg,
-				width: '90%',
+				flex: 1,
+				padding: theme.spacing.xl,
 			},
 			divider: {
 				backgroundColor: theme.colors.outline,
@@ -233,6 +227,7 @@ export const useStyles = () => {
 			header: {
 				alignItems: 'center',
 				marginBottom: theme.spacing['2xl'],
+				paddingHorizontal: theme.spacing.xl,
 			},
 			label: {
 				color: theme.colors.onSurfaceVariant,
@@ -240,6 +235,7 @@ export const useStyles = () => {
 			loadingContainer: {
 				alignItems: 'center',
 				justifyContent: 'center',
+				paddingHorizontal: theme.spacing.xl,
 				paddingVertical: 60,
 			},
 			loadingText: {
@@ -310,9 +306,8 @@ export const useStyles = () => {
 			},
 			title: {
 				color: theme.colors.onSurface,
-				fontSize: theme.typography.fontSize['2xl'],
+				fontSize: 22,
 				fontWeight: '700',
-				marginBottom: theme.spacing['4xl'],
 				textAlign: 'center',
 			},
 			tokenDetails: {
@@ -371,10 +366,10 @@ export const useStyles = () => {
 			},
 			tradeContainer: {
 				backgroundColor: theme.colors.surfaceVariant,
-				borderRadius: theme.spacing.xl,
-				marginBottom: theme.spacing['3xl'],
-				padding: theme.spacing['2xl'],
-				position: 'relative',
+				borderRadius: theme.borderRadius.lg,
+				marginBottom: theme.spacing['2xl'],
+				marginHorizontal: theme.spacing.xl,
+				padding: theme.spacing.xl,
 			},
 			tradeRow: {
 				alignItems: 'center',
