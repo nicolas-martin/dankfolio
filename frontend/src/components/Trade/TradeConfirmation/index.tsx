@@ -147,18 +147,21 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		const loadingText = operationType === 'send' ? 'Preparing send...' : 'Preparing trade...';
 
 		return (
-			<View style={styles.container}>
-				<Text style={styles.title}>{title}</Text>
+			<>
+				<View style={styles.header}>
+					<Text style={styles.title}>{title}</Text>
+				</View>
 				<View style={styles.loadingContainer}>
 					<LoadingAnimation size={100} />
 					<Text style={styles.loadingText}>{loadingText}</Text>
 				</View>
-			</View>
+			</>
 		);
-	};
+		};
 
 	const renderContent = () => {
 		const isSend = operationType === 'send';
+		const title = isSend ? 'Confirm Send' : 'Confirm Trade';
 
 		// Check if we have required data
 		if (isSend && (!fromToken || !recipientAddress)) {
@@ -169,7 +172,12 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 		}
 
 		return (
-			<View style={styles.container}>
+			<>
+				{/* Header */}
+				<View style={styles.header}>
+					<Text style={styles.title}>{title}</Text>
+				</View>
+
 				{/* Trade/Send Display */}
 				<View style={styles.tradeContainer}>
 					{/* From Token */}
@@ -186,22 +194,23 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 					)}
 				</View>
 
-
 				{/* Action Buttons */}
-				<ModalActionButtons
-					primaryButtonText={isLoading ? 'Processing...' : 'Confirm'}
-					onPrimaryButtonPress={onConfirm}
-					primaryButtonLoading={isLoading}
-					primaryButtonDisabled={isLoading}
-					primaryButtonTestID={`confirm-${operationType}-button`}
-					secondaryButtonText="Cancel"
-					onSecondaryButtonPress={onClose}
-					secondaryButtonDisabled={isLoading}
-					secondaryButtonTestID={`cancel-${operationType}-button`}
-				/>
-			</View>
+				<View style={styles.actionSection}>
+					<ModalActionButtons
+						primaryButtonText={isLoading ? 'Processing...' : 'Confirm'}
+						onPrimaryButtonPress={onConfirm}
+						primaryButtonLoading={isLoading}
+						primaryButtonDisabled={isLoading}
+						primaryButtonTestID={`confirm-${operationType}-button`}
+						secondaryButtonText="Cancel"
+						onSecondaryButtonPress={onClose}
+						secondaryButtonDisabled={isLoading}
+						secondaryButtonTestID={`cancel-${operationType}-button`}
+					/>
+				</View>
+			</>
 		);
-	};
+		};
 
 	// Determine snap points, could be dynamic or fixed
 	const snapPoints = React.useMemo(() => ['80%'], []); // Example fixed snap point
