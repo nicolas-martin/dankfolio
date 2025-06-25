@@ -29,9 +29,9 @@ type Coin struct {
 	ResolvedIconUrl        string         `gorm:"column:resolved_icon_url"` // Keep for our internal optimization
 	Tags                   pq.StringArray `gorm:"column:tags;type:text[];index:idx_coins_tags,type:gin"`
 	Price                  float64        `gorm:"column:price;default:0.0"`
-	Price24hChangePercent  float64        `gorm:"column:price_24h_change_percent;default:0.0"` // Keep this one (BirdEye standard)
-	Marketcap              float64        `gorm:"column:marketcap;default:0.0"`                // Was: MarketCap (BirdEye uses lowercase)
-	Volume24hUSD           float64        `gorm:"column:volume_24h_usd;default:0.0"`           // Was: Volume24h (BirdEye uses volume24hUSD)
+	Price24hChangePercent  float64        `gorm:"column:price_24h_change_percent;default:0.0;index:idx_coins_price_change_desc"` // Keep this one (BirdEye standard)
+	Marketcap              float64        `gorm:"column:marketcap;default:0.0;index:idx_coins_marketcap_desc"`                // Was: MarketCap (BirdEye uses lowercase)
+	Volume24hUSD           float64        `gorm:"column:volume_24h_usd;default:0.0;index:idx_coins_volume_desc"`           // Was: Volume24h (BirdEye uses volume24hUSD)
 	Volume24hChangePercent float64        `gorm:"column:volume_24h_change_percent;default:0.0"`
 	Liquidity              float64        `gorm:"column:liquidity;default:0.0"`
 	FDV                    float64        `gorm:"column:fdv;default:0.0"` // Keep uppercase (BirdEye uses FDV)
@@ -40,7 +40,7 @@ type Coin struct {
 	Twitter                string         `gorm:"column:twitter"`
 	Telegram               string         `gorm:"column:telegram"`
 	Discord                string         `gorm:"column:discord"`
-	CreatedAt              time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
+	CreatedAt              time.Time      `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_coins_created_at_desc"`
 	LastUpdated            time.Time      `gorm:"column:last_updated;default:CURRENT_TIMESTAMP"`
 	JupiterCreatedAt       *time.Time     `gorm:"column:jupiter_created_at;index"`
 }
@@ -128,7 +128,7 @@ type Trade struct {
 
 	Status              string    `gorm:"column:status;not null;index:idx_trades_status"` // e.g., "pending", "completed", "failed"
 	TransactionHash     string    `gorm:"column:transaction_hash"`
-	UnsignedTransaction string    `gorm:"column:unsigned_transaction"` // For Solana, this could be base64 encoded transaction
+	UnsignedTransaction string    `gorm:"column:unsigned_transaction;index:idx_trades_unsigned_tx"` // For Solana, this could be base64 encoded transaction
 	CreatedAt           time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP;index:idx_trades_created_at"`
 	CompletedAt         time.Time `gorm:"column:completed_at"`
 	Confirmations       int32     `gorm:"column:confirmations;default:0"`
