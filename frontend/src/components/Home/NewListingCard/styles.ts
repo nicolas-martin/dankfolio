@@ -28,6 +28,16 @@ export const useStyles = () => {
 				marginRight: theme.spacing.xs,
 				width: 20,
 			},
+			shimmerIcon: {
+				borderRadius: 10,
+				height: 20,
+				width: 20,
+			},
+			shimmerSymbol: {
+				borderRadius: theme.borderRadius.sm,
+				flex: 1,
+				height: 12,
+			},
 			symbol: {
 				color: theme.colors.onSurface,
 				flex: 1,

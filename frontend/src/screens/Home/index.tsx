@@ -46,6 +46,8 @@ const HomeScreen = () => {
 	const { themeType: _themeType } = useThemeStore(); // Prefixed themeType
 
 	const emptyFlatListData = useMemo(() => [], []);
+	const placeholderIndices = useMemo(() => [1, 2, 3, 4], []);
+	const placeholderTrendingIndices = useMemo(() => [1, 2, 3, 4, 5], []);
 
 	// Coin and loading states - Updated to use new coin store structure
 	const trendingCoins = useCoinStore(state => state.trendingCoins);
@@ -135,7 +137,7 @@ const HomeScreen = () => {
 				/>
 			</View>
 			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.newCoinsPlaceholderScrollContent}>
-				{[1, 2, 3, 4].map((index) => (
+				{placeholderIndices.map((index) => (
 					<View key={index} style={styles.newCoinsPlaceholderCard}>
 						<ShimmerPlaceholder
 							width={48}
@@ -172,7 +174,7 @@ const HomeScreen = () => {
 			<View style={styles.sectionHeader}>
 				<Text style={styles.sectionTitle}>Trending Coins</Text>
 			</View>
-			{[1, 2, 3, 4, 5].map((index) => (
+			{placeholderTrendingIndices.map((index) => (
 				<View key={`placeholder-trending-${index}`}>
 					{renderPlaceholderCoinCard()}
 				</View>

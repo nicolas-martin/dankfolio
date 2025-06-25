@@ -16,7 +16,7 @@ const HorizontalScrollContainer = <T,>({
 	containerStyle,
 	testIdPrefix = 'horizontal-scroll',
 	keyExtractor,
-	onItemPress,
+	onItemPress: _onItemPress,
 }: HorizontalScrollContainerProps<T>) => {
 	const styles = useStyles();
 
@@ -37,8 +37,11 @@ const HorizontalScrollContainer = <T,>({
 			}
 			// Fallback: try to use common properties or index
 			if (typeof item === 'object' && item !== null) {
-				const obj = item as any;
-				return obj.address || obj.id || obj.symbol || `item-${index}`;
+				const obj = item as Record<string, unknown>;
+				const address = obj.address as string | undefined;
+				const id = obj.id as string | undefined;
+				const symbol = obj.symbol as string | undefined;
+				return address || id || symbol || `item-${index}`;
 			}
 			return `item-${index}`;
 		},
@@ -83,10 +86,16 @@ const HorizontalScrollContainer = <T,>({
 		[styles.listContentContainer, contentPadding]
 	);
 
+	// Memoized container styles
+	const containerStyles = useMemo(
+		() => containerStyle ? [styles.container, containerStyle] : styles.container,
+		[styles.container, containerStyle]
+	);
+
 	// Show loading state
 	if (isLoading && data.length === 0) {
 		return (
-			<View style={[styles.container, containerStyle]}>
+			<View style={containerStyles}>
 				<Animated.FlatList
 					data={placeholderData}
 					renderItem={renderPlaceholderWrapper}

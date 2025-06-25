@@ -36,6 +36,26 @@ export const useStyles = () => {
 				justifyContent: 'center',
 				marginBottom: 10,
 			},
+			shimmerChange: {
+				alignSelf: 'center',
+				borderRadius: theme.borderRadius.sm,
+				height: 14,
+				width: '60%',
+			},
+			shimmerIcon: {
+				alignSelf: 'center',
+				borderRadius: 24,
+				height: 48,
+				marginBottom: 10,
+				width: 48,
+			},
+			shimmerSymbol: {
+				alignSelf: 'center',
+				borderRadius: theme.borderRadius.sm,
+				height: 16,
+				marginBottom: theme.spacing.xs,
+				width: '80%',
+			},
 			symbol: {
 				color: theme.colors.onSurface,
 				fontFamily: theme.typography.fontFamily.semiBold,
