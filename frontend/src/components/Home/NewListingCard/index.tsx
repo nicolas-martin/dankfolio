@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import CachedImage from '@/components/Common/CachedImage';
@@ -17,9 +17,13 @@ const NewListingCard: React.FC<NewListingCardProps> = ({
 		onPress(coin);
 	}, [coin, onPress]);
 
+	const cardStyle = useMemo(() => {
+		return containerStyle ? [styles.card, containerStyle] : styles.card;
+	}, [styles.card, containerStyle]);
+
 	return (
 		<TouchableOpacity
-			style={[styles.card, containerStyle]}
+			style={cardStyle}
 			onPress={handlePress}
 			testID={`${testIdPrefix}-card-${coin.symbol.toLowerCase()}`}
 			accessible={false}

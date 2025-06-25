@@ -49,6 +49,6 @@ module.exports = {
     '^@store/(.*)$': '<rootDir>/src/store/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
   },
-  setupFilesAfterEnv: ['<rootDir>/src/__mocks__/setup.js'], // Explicitly load setup file
+  // setupFilesAfterEnv: ['<rootDir>/src/__mocks__/setup.js'], // Explicitly load setup file
   verbose: true,
 };

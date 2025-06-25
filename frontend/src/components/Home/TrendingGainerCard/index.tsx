@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { formatPercentage } from '@/utils/numberFormat';
@@ -22,9 +22,17 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 	const changeValue = coin.price24hChangePercent;
 	const trendColor = styles.getTrendColor(changeValue);
 
+	const cardStyle = useMemo(() => {
+		return containerStyle ? [styles.card, containerStyle] : styles.card;
+	}, [styles.card, containerStyle]);
+
+	const changeTextStyle = useMemo(() => {
+		return [styles.changeText, { color: trendColor }];
+	}, [styles.changeText, trendColor]);
+
 	return (
 		<TouchableOpacity
-			style={[styles.card, containerStyle]}
+			style={cardStyle}
 			onPress={handlePress}
 			testID={`${testIdPrefix}-card-${coin.symbol.toLowerCase()}`}
 			accessible={false}
@@ -56,7 +64,7 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 						/>
 					)}
 					<Text
-						style={[styles.changeText, { color: trendColor }]}
+						style={changeTextStyle}
 						numberOfLines={1}
 						testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}
 						accessible={true}

@@ -31,6 +31,7 @@ import { useTransactionPolling, PollingStatus } from '@/hooks/useTransactionPoll
 import InfoState from '@/components/Common/InfoState';
 import { toRawAmount } from '@/utils/numberFormat';
 import ScreenActionButton from '@components/Common/ScreenActionButton'; // Import the new button
+import { TradeStatusResponse } from '@/services/grpc/model';
 
 
 const QUOTE_DEBOUNCE_MS = 1000;
@@ -67,7 +68,7 @@ const Trade: React.FC = () => {
 		showToast({ type: 'error', message: errorMsg || 'Transaction polling failed' });
 	}, [showToast]);
 
-	const onPollingFinalized = useCallback((finalData: any) => {
+	const onPollingFinalized = useCallback((finalData: TradeStatusResponse | null) => {
 		if (wallet?.address && finalData && !finalData.error) {
 			logger.info('[Trade] Transaction finalized successfully, refreshing portfolio.');
 			usePortfolioStore.getState().fetchPortfolioBalance(wallet.address);
@@ -496,7 +497,7 @@ const Trade: React.FC = () => {
 			<Card style={styles.detailsCard} testID="trade-details-card">
 				<Card.Title
 					title="Trade Details"
-					left={(_props) => (
+					left={() => (
 						<View style={styles.detailsIcon}>
 							<Icon source="information" size={14} color={styles.colors.onPrimary} />
 						</View>

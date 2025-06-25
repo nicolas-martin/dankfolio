@@ -9,30 +9,13 @@ const TrendingGainerPlaceholderCard: React.FC = () => {
 	return (
 		<View style={styles.card}>
 			<ShimmerPlaceholder 
-				style={{
-					width: 48,
-					height: 48,
-					borderRadius: 24,
-					marginBottom: 10,
-					alignSelf: 'center',
-				}}
+				style={styles.shimmerIcon}
 			/>
 			<ShimmerPlaceholder 
-				style={{
-					width: '80%',
-					height: 16,
-					marginBottom: styles.theme.spacing.xs,
-					borderRadius: styles.theme.borderRadius.sm,
-					alignSelf: 'center',
-				}}
+				style={styles.shimmerSymbol}
 			/>
 			<ShimmerPlaceholder 
-				style={{
-					width: '60%',
-					height: 14,
-					borderRadius: styles.theme.borderRadius.sm,
-					alignSelf: 'center',
-				}}
+				style={styles.shimmerChange}
 			/>
 		</View>
 	);

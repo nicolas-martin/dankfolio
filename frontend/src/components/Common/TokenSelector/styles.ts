@@ -145,7 +145,7 @@ export const useStyles = () => {
 			marginLeft: theme.spacing.md,
 		},
 		selectorButtonContainer: {
-			alignItems: 'center', // Sorted
+			alignItems: 'center',
 			flex: 1, // Takes less space than the input container
 			flexDirection: 'row',
 			justifyContent: 'space-between',
@@ -233,10 +233,10 @@ export const useStyles = () => {
 		},
 		tokenSelectorContainer: {
 			alignItems: 'center',
-			flexDirection: 'row',
 			flex: 1,
-			paddingVertical: theme.spacing.xs, // Add some padding for better touch target
+			flexDirection: 'row',
 			maxWidth: '50%', // Added this line
+			paddingVertical: theme.spacing.xs, // Add some padding for better touch target
 		},
 		tokenSymbol: {
 			...theme.fonts.titleMedium,

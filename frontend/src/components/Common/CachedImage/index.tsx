@@ -61,7 +61,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 	}
 
 	return (
-		<View style={{ width: size, height: size, position: 'relative' }}>
+		<View style={styles.createContainerStyle(size)}>
 			{isLoading && (
 				<ShimmerPlaceholder
 					width={size}
@@ -73,7 +73,7 @@ const CachedImage: React.FC<CachedImageProps> = ({
 				source={imageSource} // Use memoized source
 				style={[
 					styles.createImageStyle(size, finalBorderRadius, style), // Use function from styles
-					isLoading && { position: 'absolute', opacity: 0 } // Hide image while loading
+					isLoading && styles.hiddenImage // Use styles for hidden image
 				]}
 				cacheKey={`${uri}-${size}x${size}`}
 				onLoadStart={handleLoadStart}

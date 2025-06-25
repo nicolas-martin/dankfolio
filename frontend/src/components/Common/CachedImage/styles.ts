@@ -25,18 +25,26 @@ export const useStyles = () => {
     style
   ].filter(Boolean);
 
+  const createContainerStyle = (size: number) => ({
+    width: size,
+    height: size,
+    position: 'relative' as const
+  });
+
   const styles = StyleSheet.create({
+    hiddenImage: {
+      opacity: 0,
+      position: 'absolute' as const
+    },
     placeholder: {
       backgroundColor: theme.colors.surfaceVariant, // Use a themed color
-    },
-    // Add any other styles for CachedImage if they were defined locally
-    // and need to be part of the useStyles hook.
-    // For now, only 'placeholder' is being moved from the original local StyleSheet.
+    }
   });
 
   return {
     ...styles,
     createPlaceholderStyle,
-    createImageStyle
+    createImageStyle,
+    createContainerStyle
   };
 };
