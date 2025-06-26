@@ -157,18 +157,30 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	slog.Debug("tradeQuote.Raw after GetSwapQuote", "trade_quote", string(tradeQuote.Raw))
 
 	// Calculate proper ATA for platform fee collection
-	// Use input mint ATA as the fee account (Jupiter docs: fee account must be for input or output mint)
+	// Calculate the platform fee account ATA for the input mint
 	fromMintPubKey, err := solanago.PublicKeyFromBase58(params.FromCoinMintAddress)
 	if err != nil {
 		return nil, fmt.Errorf("invalid from coin mint address: %w", err)
 	}
 
-	feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(fromPubKey, fromMintPubKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate fee account ATA: %w", err)
+	// Use platform fee account address if configured
+	var feeAccount string
+	if s.platformFeeAccountAddress != "" {
+		platformFeePubKey, err := solanago.PublicKeyFromBase58(s.platformFeeAccountAddress)
+		if err != nil {
+			return nil, fmt.Errorf("invalid platform fee account address: %w", err)
+		}
+		
+		// Calculate ATA for platform fee account with the input mint
+		feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, fromMintPubKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate platform fee account ATA: %w", err)
+		}
+		feeAccount = feeAccountATA.String()
+		slog.Debug("Using platform fee account ATA", "platform_fee_account", s.platformFeeAccountAddress, "fee_account_ata", feeAccount)
 	}
 
-	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, feeAccountATA.String())
+	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, feeAccount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create swap transaction: %w", err)
 	}
@@ -602,8 +614,23 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 			return nil, fmt.Errorf("invalid user public key: %w", err)
 		}
 
+		// Calculate platform fee account ATA for fee breakdown
+		var feeAccount string
+		if s.platformFeeAccountAddress != "" && fromCoinMintAddress != "" {
+			fromMintPubKey, err := solanago.PublicKeyFromBase58(fromCoinMintAddress)
+			if err == nil {
+				platformFeePubKey, err := solanago.PublicKeyFromBase58(s.platformFeeAccountAddress)
+				if err == nil {
+					feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, fromMintPubKey)
+					if err == nil {
+						feeAccount = feeAccountATA.String()
+					}
+				}
+			}
+		}
+		
 		// Create swap transaction to get accurate fee breakdown
-		swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, quote.RawPayload, fromPubKey, s.platformFeeAccountAddress)
+		swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, quote.RawPayload, fromPubKey, feeAccount)
 		if err != nil {
 			slog.Warn("Failed to create swap transaction for fee breakdown", "error", err)
 			// Fall back to quote-only calculation
