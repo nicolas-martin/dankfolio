@@ -57,7 +57,7 @@ const ManagedBottomSheetModal: React.FC<ManagedBottomSheetModalComponentProps> =
 		}
 		isClosingRef.current = true;
 		onClose();
-		
+
 		// Reset the flag after a short delay to allow for the next modal session
 		setTimeout(() => {
 			isClosingRef.current = false;

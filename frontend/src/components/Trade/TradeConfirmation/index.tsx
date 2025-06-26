@@ -157,7 +157,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				</View>
 			</>
 		);
-		};
+	};
 
 	const renderContent = () => {
 		const isSend = operationType === 'send';
@@ -210,7 +210,7 @@ const TradeConfirmation: React.FC<TradeConfirmationProps> = ({
 				</View>
 			</>
 		);
-		};
+	};
 
 	// Determine snap points, could be dynamic or fixed
 	const snapPoints = React.useMemo(() => ['80%'], []); // Example fixed snap point

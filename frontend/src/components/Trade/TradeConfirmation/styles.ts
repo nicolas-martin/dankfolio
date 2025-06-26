@@ -50,9 +50,6 @@ export const useStyles = () => {
 				fontWeight: '600',
 				marginBottom: 2,
 			},
-			amountContainer: { // Legacy
-				alignItems: 'flex-end',
-			},
 			amountInfo: {
 				alignItems: 'flex-end',
 				flex: 1,
@@ -386,7 +383,7 @@ export const useStyles = () => {
 		});
 		return {
 			...styles,
-			colors: theme.colors, // Return original theme.colors for consistency
+			colors: theme.colors,
 			theme
 		};
 	}, [theme]);
