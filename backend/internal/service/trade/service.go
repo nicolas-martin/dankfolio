@@ -157,27 +157,74 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	slog.Debug("tradeQuote.Raw after GetSwapQuote", "trade_quote", string(tradeQuote.Raw))
 
 	// Calculate proper ATA for platform fee collection
-	// Calculate the platform fee account ATA for the input mint
-	fromMintPubKey, err := solanago.PublicKeyFromBase58(params.FromCoinMintAddress)
-	if err != nil {
-		return nil, fmt.Errorf("invalid from coin mint address: %w", err)
-	}
-
-	// Use platform fee account address if configured
+	// According to Jupiter docs: fee account must be for input or output mint
+	const solMint = "So11111111111111111111111111111111111111112"
+	
 	var feeAccount string
+	var actualFeeMint string // Track the actual mint used for fee collection
+	
 	if s.platformFeeAccountAddress != "" {
 		platformFeePubKey, err := solanago.PublicKeyFromBase58(s.platformFeeAccountAddress)
 		if err != nil {
 			return nil, fmt.Errorf("invalid platform fee account address: %w", err)
 		}
 		
-		// Calculate ATA for platform fee account with the input mint
-		feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, fromMintPubKey)
-		if err != nil {
-			return nil, fmt.Errorf("failed to calculate platform fee account ATA: %w", err)
+		// Determine which mint to use for fee collection
+		// If either input or output is SOL, use that for fee collection
+		var feeMint string
+		var useDirectAccount bool
+		
+		if params.FromCoinMintAddress == solMint {
+			feeMint = solMint
+			useDirectAccount = true // For SOL, use the account directly
+			slog.Debug("Using SOL as fee mint (from input)", "fee_mint", "SOL")
+		} else if params.ToCoinMintAddress == solMint {
+			feeMint = solMint
+			useDirectAccount = true // For SOL, use the account directly
+			slog.Debug("Using SOL as fee mint (from output)", "fee_mint", "SOL")
+		} else {
+			// Neither is SOL, prefer input mint for fee collection
+			feeMint = params.FromCoinMintAddress
+			useDirectAccount = false
+			slog.Debug("Using input mint as fee mint", "fee_mint", feeMint)
 		}
-		feeAccount = feeAccountATA.String()
-		slog.Debug("Using platform fee account ATA", "platform_fee_account", s.platformFeeAccountAddress, "fee_account_ata", feeAccount)
+		
+		if useDirectAccount {
+			// For SOL, use the account directly (no ATA needed)
+			feeAccount = s.platformFeeAccountAddress
+			actualFeeMint = feeMint // Track that we're collecting fees in this mint
+			slog.Debug("Using platform fee account directly for SOL", 
+				"platform_fee_account", s.platformFeeAccountAddress)
+		} else {
+			// For SPL tokens, calculate the ATA
+			feeMintPubKey, err := solanago.PublicKeyFromBase58(feeMint)
+			if err != nil {
+				return nil, fmt.Errorf("invalid fee mint address: %w", err)
+			}
+			
+			// Calculate ATA for platform fee account with the chosen mint
+			feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, feeMintPubKey)
+			if err != nil {
+				return nil, fmt.Errorf("failed to calculate platform fee account ATA: %w", err)
+			}
+			
+			// Only use the fee account if the ATA exists
+			if s.ataExists(ctx, feeAccountATA) {
+				feeAccount = feeAccountATA.String()
+				actualFeeMint = feeMint // Track that we're collecting fees in this mint
+				slog.Debug("Using existing platform fee account ATA", 
+					"platform_fee_account", s.platformFeeAccountAddress, 
+					"fee_account_ata", feeAccount, 
+					"fee_mint", feeMint)
+			} else {
+				slog.Warn("Platform fee account ATA does not exist, skipping fee collection", 
+					"platform_fee_account", s.platformFeeAccountAddress, 
+					"fee_account_ata", feeAccountATA.String(), 
+					"fee_mint", feeMint)
+				// Don't set feeAccount - Jupiter will handle the swap without fees
+				// actualFeeMint remains empty to indicate no fee collection
+			}
+		}
 	}
 
 	swapResponse, err := s.jupiterClient.CreateSwapTransaction(ctx, tradeQuote.Raw, fromPubKey, feeAccount)
@@ -288,8 +335,18 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 
 		// Set platform fee information
 		trade.PlatformFeeAmount = actualPlatformFee
-		if actualPlatformFee > 0 && platformFeeMint != "" {
+		// Use the actual fee mint we determined above (either SOL if available, or input mint)
+		if actualPlatformFee > 0 && actualFeeMint != "" {
+			trade.PlatformFeeMint = actualFeeMint
+			slog.Debug("Setting platform fee mint from actual fee collection", 
+				"platform_fee_mint", actualFeeMint,
+				"platform_fee_amount", actualPlatformFee)
+		} else if actualPlatformFee > 0 && platformFeeMint != "" {
+			// Fallback to Jupiter's platform fee mint if we didn't set one
 			trade.PlatformFeeMint = platformFeeMint
+			slog.Debug("Setting platform fee mint from Jupiter response", 
+				"platform_fee_mint", platformFeeMint,
+				"platform_fee_amount", actualPlatformFee)
 		}
 
 		// Set route fee (trading fee minus platform fee) and route fee mints
@@ -615,15 +672,42 @@ func (s *Service) GetSwapQuote(ctx context.Context, fromCoinMintAddress, toCoinM
 		}
 
 		// Calculate platform fee account ATA for fee breakdown
+		// According to Jupiter docs: fee account must be for input or output mint
+		const solMint = "So11111111111111111111111111111111111111112"
+		
 		var feeAccount string
-		if s.platformFeeAccountAddress != "" && fromCoinMintAddress != "" {
-			fromMintPubKey, err := solanago.PublicKeyFromBase58(fromCoinMintAddress)
+		if s.platformFeeAccountAddress != "" && fromCoinMintAddress != "" && toCoinMintAddress != "" {
+			platformFeePubKey, err := solanago.PublicKeyFromBase58(s.platformFeeAccountAddress)
 			if err == nil {
-				platformFeePubKey, err := solanago.PublicKeyFromBase58(s.platformFeeAccountAddress)
-				if err == nil {
-					feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, fromMintPubKey)
+				// Determine which mint to use for fee collection
+				var feeMint string
+				var useDirectAccount bool
+				
+				if fromCoinMintAddress == solMint {
+					feeMint = solMint
+					useDirectAccount = true
+				} else if toCoinMintAddress == solMint {
+					feeMint = solMint
+					useDirectAccount = true
+				} else {
+					feeMint = fromCoinMintAddress
+					useDirectAccount = false
+				}
+				
+				if useDirectAccount {
+					// For SOL, use the account directly
+					feeAccount = s.platformFeeAccountAddress
+				} else {
+					// For SPL tokens, calculate the ATA
+					feeMintPubKey, err := solanago.PublicKeyFromBase58(feeMint)
 					if err == nil {
-						feeAccount = feeAccountATA.String()
+						feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, feeMintPubKey)
+						if err == nil {
+							// Check if ATA exists before using it
+							if s.ataExists(ctx, feeAccountATA) {
+								feeAccount = feeAccountATA.String()
+							}
+						}
 					}
 				}
 			}
