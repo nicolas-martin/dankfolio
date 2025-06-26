@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'; // Add useMemo
+import React, { useEffect, useMemo } from 'react';
 import {
 	Modal,
 	View,
@@ -24,21 +24,31 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 	const animationValue = useSharedValue(0);
 
 	useEffect(() => {
-		let timing = 0;
 		if (isVisible) {
-			timing = 1;
+			animationValue.value = withTiming(1, {
+				duration: 200,
+				easing: Easing.out(Easing.quad),
+			});
+		} else {
+			animationValue.value = withTiming(0, {
+				duration: 200,
+				easing: Easing.in(Easing.quad),
+			});
 		}
-
-		animationValue.value = withTiming(timing, {
-			duration: 150,
-			easing: Easing.linear,
-		});
 	}, [isVisible, animationValue]);
 
 	const animatedStyle = useAnimatedStyle(() => {
+		// Simple animation: start small from top-left, move to center and grow
+		const scale = 0.1 + (animationValue.value * 0.9); // Scale from 10% to 100%
+		const translateY = (1 - animationValue.value) * -300; // Start 300px above
+		const translateX = (1 - animationValue.value) * -150; // Start 150px left
+
 		return {
-			opacity: animationValue.value,
-			transform: [{ scale: animationValue.value }],
+			transform: [
+				{ translateX },
+				{ translateY },
+				{ scale },
+			],
 		};
 	});
 
@@ -48,7 +58,6 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 		};
 	});
 
-	// All hooks must be at top level before any conditional returns
 	const animatedViewStyle = useMemo(() => [
 		styles.blurContainer,
 		backgroundStyle
@@ -58,21 +67,17 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 		uri: imageUri || ''
 	}), [imageUri]);
 
-	// Return null if not visible and animation is complete to prevent flicker
-	// This logic might need adjustment based on how `Modal` handles visibility and animation state.
-	// For now, we rely on Modal's `visible` prop primarily.
 	if (!isVisible && animationValue.value === 0) return null;
 
 	return (
 		<Modal
 			transparent={true}
-			visible={isVisible} // Keep this to control modal presence
+			visible={isVisible}
 			onRequestClose={onClose}
-		// animationType="fade" // Removed
 		>
 			<Animated.View style={animatedViewStyle}>
 				<BlurView
-					style={styles.blurContainer} // Keep original styles for BlurView if necessary
+					style={styles.blurContainer}
 					intensity={30}
 					tint="dark"
 				>
@@ -88,7 +93,7 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 							>
 								<Animated.View style={animatedStyle}>
 									<Image
-										source={imageSource} // Use memoized source
+										source={imageSource}
 										style={styles.image}
 										resizeMode="cover"
 									/>
@@ -102,4 +107,4 @@ const ImageZoomModal: React.FC<ImageZoomModalProps> = ({
 	);
 };
 
-export default ImageZoomModal; 
+export default ImageZoomModal;
