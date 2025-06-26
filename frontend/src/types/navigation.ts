@@ -7,7 +7,6 @@ export type RootStackParamList = {
 	WalletSetup: undefined;
 	SendTokens: undefined;
 	Settings: undefined;
-	AccordionTest: undefined;
 
 	CoinDetail: {
 		coin: Coin;

@@ -23,6 +23,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 		? formatValueChange(valueChange, periodChange)
 		: '---';
 
+
 	// Early return with a placeholder if any required values are invalid
 	if (isNaN(price) || price === null || price === undefined) {
 		// Return a static display instead of null to prevent layout shifts

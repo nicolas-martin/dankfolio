@@ -88,18 +88,6 @@ const Settings: React.FC = () => {
 						/>
 					</List.Section>
 
-					{__DEV__ && (
-						<List.Section title="Developer Tools" titleStyle={styles.sectionTitle}>
-							<List.Item
-								title="Accordion Test"
-								description="Test List.Accordion functionality"
-								titleStyle={styles.listItemTitle}
-								descriptionStyle={styles.listItemDescription}
-								left={props => <List.Icon {...props} icon="test-tube" />}
-								onPress={() => navigation.navigate('AccordionTest')}
-							/>
-						</List.Section>
-					)}
 				</View>
 			</ScrollView>
 		</SafeAreaView>
