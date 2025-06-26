@@ -4,6 +4,7 @@ import { Text, Button, ActivityIndicator, Icon } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import { TradeStatusModalProps } from './types';
 import ManagedBottomSheetModal from '@/components/Common/BottomSheet';
+import ModalActionButtons from '@/components/Common/ModalActionButton';
 import { useStyles } from './styles';
 import { openSolscanUrl } from '@/utils/url';
 import {
@@ -182,7 +183,6 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 				</View>
 				{isInProgress && (
 					<View style={styles.progressIndicator}>
-						{/* false && <ActivityIndicator size={12} color={theme.colors.primary} /> Removed */}
 						<Text style={styles.progressText}>
 							{displayStatus === 'polling' ? 'Confirming...' : 'Processing...'}
 						</Text>
@@ -302,17 +302,11 @@ const TradeStatusModal: React.FC<TradeStatusModalProps> = ({
 			{/* Action Button */}
 			{isFinal && (
 				<View style={styles.actionSection}>
-					<Button
-						testID="trade-status-action-button"
-						mode="contained"
-						onPress={handleButtonClose}
-						style={styles.closeButton}
-						accessible={true}
-						accessibilityRole="button"
-						accessibilityLabel={displayStatus === 'failed' ? 'Try again' : 'Close modal'}
-					>
-						{displayStatus === 'failed' ? 'Try Again' : 'Done'}
-					</Button>
+					<ModalActionButtons
+						primaryButtonText={displayStatus === 'failed' ? 'Try Again' : 'Done'}
+						onPrimaryButtonPress={handleButtonClose}
+						primaryButtonTestID="trade-status-action-button"
+					/>
 				</View>
 			)}
 		</ManagedBottomSheetModal>
