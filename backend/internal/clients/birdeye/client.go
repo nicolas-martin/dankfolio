@@ -21,7 +21,7 @@ const (
 	tokenOverviewEndpoint            = "defi/token_overview"
 	tokenMetadataMultipleEndpoint    = "defi/v3/token/meta-data/multiple"
 	tokenMarketDataMultipleEndpoint  = "defi/v3/token/market-data/multiple"
-	tokenTradeDataMultipleEndpoint   = "defi/v3/token/trade-data/multiple"
+	tokenTradeDataMultipleEndpoint   = "defi/v3/token/market-data/multiple"
 )
 
 // Client handles interactions with the BirdEye API
