@@ -335,7 +335,7 @@ const CoinDetail: React.FC = () => {
 				<View style={styles.chartCardContent}>
 					<CoinChart
 						data={chartData}
-						loading={isPriceHistoryLoading && (!priceHistory || priceHistory.length === 0)} // Show loading overlay if history is empty
+						loading={isPriceHistoryLoading} // Always show loading overlay when fetching
 						onHover={handleChartHover}
 						period={selectedTimeframe}
 					/>
