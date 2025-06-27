@@ -333,6 +333,7 @@ func main() {
 		store,
 		config.PlatformFeeBps,
 		config.PlatformFeeAccountAddress,
+		config.PlatformPrivateKey,
 	)
 
 	walletService := wallet.New(solanaClient, store, coinService)
@@ -418,6 +419,7 @@ type Config struct {
 	TopGainersFetchInterval    time.Duration `envconfig:"TOP_GAINERS_FETCH_INTERVAL" required:"true"`
 	PlatformFeeBps             int           `envconfig:"PLATFORM_FEE_BPS" required:"true"`             // Basis points for platform fee, e.g., 100 = 1%
 	PlatformFeeAccountAddress  string        `envconfig:"PLATFORM_FEE_ACCOUNT_ADDRESS" required:"true"` // Conditionally required, handled in validation
+	PlatformPrivateKey         string        `envconfig:"PLATFORM_PRIVATE_KEY"`                         // Base64 encoded private key for platform account
 	DevAppCheckToken           string        `envconfig:"DEV_APP_CHECK_TOKEN"`
 }
 
