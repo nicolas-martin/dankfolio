@@ -185,6 +185,7 @@ export const grpcApi: grpcModel.API = {
 				"1D": GetPriceHistoryRequest_PriceHistoryType.ONE_DAY,
 				"3D": GetPriceHistoryRequest_PriceHistoryType.THREE_DAY,
 				"1W": GetPriceHistoryRequest_PriceHistoryType.ONE_WEEK,
+				"1M": GetPriceHistoryRequest_PriceHistoryType.ONE_MONTH,
 			};
 
 			const priceHistoryType = typeMap[type] ?? GetPriceHistoryRequest_PriceHistoryType.PRICE_HISTORY_TYPE_UNSPECIFIED;
