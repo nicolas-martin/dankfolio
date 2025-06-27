@@ -159,7 +159,10 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	slog.Debug("tradeQuote.Raw after GetSwapQuote", "trade_quote", string(tradeQuote.Raw))
 
 	// Calculate proper ATA for platform fee collection
-	// According to Jupiter docs: fee account must be for input or output mint
+	// Platform Fee Collection Strategy (validated through testing):
+	// 1. For swaps involving WSOL: Always collect fees in WSOL (better liquidity)
+	// 2. For token-to-token swaps: Collect fees in input mint
+	// 3. Jupiter API rule: ExactOut swaps MUST use input mint only
 	const solMint = "So11111111111111111111111111111111111111112"
 
 	var feeAccount string
@@ -171,82 +174,80 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 			return nil, fmt.Errorf("invalid platform fee account address: %w", err)
 		}
 
-		// Determine which mint to use for fee collection
-		// If either input or output is SOL, use that for fee collection
+		// Determine fee mint based on swap type and tokens involved
 		var feeMint string
-		var useDirectAccount bool
-
-		if params.FromCoinMintAddress == solMint {
-			feeMint = solMint
-			useDirectAccount = true // For SOL, use the account directly
-			slog.Debug("Using SOL as fee mint (from input)", "fee_mint", "SOL")
-		} else if params.ToCoinMintAddress == solMint {
-			feeMint = solMint
-			useDirectAccount = true // For SOL, use the account directly
-			slog.Debug("Using SOL as fee mint (from output)", "fee_mint", "SOL")
-		} else {
-			// Neither is SOL, prefer input mint for fee collection
-			feeMint = params.FromCoinMintAddress
-			useDirectAccount = false
-			slog.Debug("Using input mint as fee mint", "fee_mint", feeMint)
+		
+		// Check swap mode first - ExactOut has strict requirements
+		swapMode := "ExactIn" // Default
+		if tradeQuote.Raw != nil {
+			var quoteData map[string]interface{}
+			if err := json.Unmarshal(tradeQuote.Raw, &quoteData); err == nil {
+				if mode, ok := quoteData["swapMode"].(string); ok {
+					swapMode = mode
+				}
+			}
 		}
 
-		if useDirectAccount {
-			// For SOL, we still need to use the wrapped SOL ATA, not the account directly
-			// Jupiter expects a token account even for SOL fees
-			feeMintPubKey, err := solanago.PublicKeyFromBase58(feeMint)
-			if err != nil {
-				return nil, fmt.Errorf("invalid SOL mint address: %w", err)
-			}
-
-			// Calculate wrapped SOL ATA for platform fee account
-			feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, feeMintPubKey)
-			if err != nil {
-				return nil, fmt.Errorf("failed to calculate platform fee account SOL ATA: %w", err)
-			}
-
-			// Check if the SOL ATA exists before using it
-			if s.ataExists(ctx, feeAccountATA) {
-				feeAccount = feeAccountATA.String()
-				actualFeeMint = feeMint // Track that we're collecting fees in this mint
-				slog.Debug("Using platform fee account SOL ATA",
-					"platform_fee_account", s.platformFeeAccountAddress,
-					"fee_account_ata", feeAccount)
-			} else {
-				slog.Error("Platform fee account SOL ATA does not exist, skipping fee collection",
-					"platform_fee_account", s.platformFeeAccountAddress,
-					"fee_account_ata", feeAccountATA.String())
-				// Don't set feeAccount - Jupiter will handle the swap without fees
-			}
+		if swapMode == "ExactOut" {
+			// ExactOut: MUST use input mint (Jupiter requirement)
+			feeMint = params.FromCoinMintAddress
+			slog.Info("ExactOut swap: using input mint for fees",
+				"fee_mint", feeMint,
+				"input", params.FromCoinMintAddress,
+				"output", params.ToCoinMintAddress)
 		} else {
-			// For SPL tokens, calculate the ATA
-			feeMintPubKey, err := solanago.PublicKeyFromBase58(feeMint)
-			if err != nil {
-				return nil, fmt.Errorf("invalid fee mint address: %w", err)
-			}
-
-			// Calculate ATA for platform fee account with the chosen mint
-			feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, feeMintPubKey)
-			if err != nil {
-				return nil, fmt.Errorf("failed to calculate platform fee account ATA: %w", err)
-			}
-
-			// Only use the fee account if the ATA exists
-			if s.ataExists(ctx, feeAccountATA) {
-				feeAccount = feeAccountATA.String()
-				actualFeeMint = feeMint // Track that we're collecting fees in this mint
-				slog.Debug("Using existing platform fee account ATA",
-					"platform_fee_account", s.platformFeeAccountAddress,
-					"fee_account_ata", feeAccount,
-					"fee_mint", feeMint)
+			// ExactIn: Prefer WSOL if involved, otherwise use input mint
+			if params.ToCoinMintAddress == solMint {
+				// Output is WSOL - use WSOL for fees
+				feeMint = solMint
+				slog.Info("Swap to WSOL: collecting fees in WSOL",
+					"input", params.FromCoinMintAddress,
+					"output", "WSOL")
+			} else if params.FromCoinMintAddress == solMint {
+				// Input is WSOL - use WSOL for fees
+				feeMint = solMint
+				slog.Info("Swap from WSOL: collecting fees in WSOL",
+					"input", "WSOL",
+					"output", params.ToCoinMintAddress)
 			} else {
-				slog.Warn("Platform fee account ATA does not exist, skipping fee collection",
-					"platform_fee_account", s.platformFeeAccountAddress,
-					"fee_account_ata", feeAccountATA.String(),
-					"fee_mint", feeMint)
-				// Don't set feeAccount - Jupiter will handle the swap without fees
-				// actualFeeMint remains empty to indicate no fee collection
+				// Token-to-token swap - use input mint
+				feeMint = params.FromCoinMintAddress
+				slog.Info("Token-to-token swap: collecting fees in input mint",
+					"fee_mint", feeMint,
+					"input", params.FromCoinMintAddress,
+					"output", params.ToCoinMintAddress)
 			}
+		}
+
+		// Calculate ATA for the selected fee mint
+		feeMintPubKey, err := solanago.PublicKeyFromBase58(feeMint)
+		if err != nil {
+			return nil, fmt.Errorf("invalid fee mint address %s: %w", feeMint, err)
+		}
+
+		feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, feeMintPubKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate platform fee ATA: %w", err)
+		}
+
+		// Check if the ATA exists
+		if s.ataExists(ctx, feeAccountATA) {
+			feeAccount = feeAccountATA.String()
+			actualFeeMint = feeMint
+			slog.Info("Platform fee collection enabled",
+				"platform_account", s.platformFeeAccountAddress,
+				"fee_ata", feeAccount,
+				"fee_mint", feeMint,
+				"fee_bps", s.platformFeeBps)
+		} else {
+			// For now, skip fee collection if ATA doesn't exist
+			// In production, we should pre-create ATAs for WSOL and USDC at minimum
+			slog.Warn("Platform fee ATA does not exist - fees will not be collected",
+				"platform_account", s.platformFeeAccountAddress,
+				"missing_ata", feeAccountATA.String(),
+				"fee_mint", feeMint,
+				"action", "ATA needs to be created before fees can be collected")
+			// Don't set feeAccount - Jupiter will handle the swap without platform fees
 		}
 	}
 
