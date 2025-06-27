@@ -62,8 +62,8 @@ export const useStyles = () => {
 		];
 		const styles = StyleSheet.create({
 			actionSection: {
-				marginTop: theme.spacing.xl,
 				marginBottom: theme.spacing.lg,
+				marginTop: theme.spacing.xl,
 				width: '100%',
 		},
 		amount: {
