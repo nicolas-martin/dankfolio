@@ -32,6 +32,7 @@ import InfoState from '@/components/Common/InfoState';
 import { toRawAmount } from '@/utils/numberFormat';
 import ScreenActionButton from '@components/Common/ScreenActionButton'; // Import the new button
 import { TradeStatusResponse } from '@/services/grpc/model';
+import { getUserFriendlyTradeError, isRetryableTradeError } from '@/utils/errorUtils';
 
 
 const QUOTE_DEBOUNCE_MS = 1000;
@@ -200,7 +201,18 @@ const Trade: React.FC = () => {
 				);
 
 			} catch (error) {
-				showToast({ type: 'error', message: error instanceof Error ? error.message : 'Failed to fetch quote' });
+				logger.error('[Trade] Quote fetch error:', error);
+
+				// Get user-friendly error message
+				const userFriendlyMessage = getUserFriendlyTradeError(error);
+				const isRetryable = isRetryableTradeError(error);
+
+				// Show appropriate toast with retry suggestion if applicable
+				showToast({
+					type: 'error',
+					message: isRetryable ? `${userFriendlyMessage} Tap to retry.` : userFriendlyMessage
+				});
+
 				// Reset relevant states on error
 				setTargetAmount('');
 				setTradeDetails({ exchangeRate: '0', gasFee: '0', priceImpactPct: '0', totalFee: '0', route: '' });
@@ -358,7 +370,10 @@ const Trade: React.FC = () => {
 		} catch (error) {
 			logger.error('[Trade] Error during trade confirmation:', error);
 			setIsLoadingTrade(false);
-			showToast({ type: 'error', message: error instanceof Error ? error.message : 'Trade execution failed' });
+
+			// Get user-friendly error message for trade execution
+			const userFriendlyMessage = getUserFriendlyTradeError(error);
+			showToast({ type: 'error', message: userFriendlyMessage });
 		}
 	};
 
@@ -393,7 +408,7 @@ const Trade: React.FC = () => {
 		setIsNavigating(true);
 		setIsStatusModalVisible(false);
 		resetTxPolling(); // Reset hook state
-		
+
 		// Navigate back to previous screen (typically Home) with slide-left animation
 		if (navigation.canGoBack()) {
 			navigation.goBack();

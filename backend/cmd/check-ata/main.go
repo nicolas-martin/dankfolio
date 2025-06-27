@@ -27,6 +27,9 @@ import (
 const (
 	ownerAddress = "GgaBFkzjuvMV7RCrZyt65zx7iRo7W6Af4cGXZMKNxK2R"
 	mintAddress  = "So11111111111111111111111111111111111111112"
+	// Platform account and the ATA that was just created
+	platformAddress = "AxuPakGELZ17KYvDzTCqgDaQZV1a6hSMuRyeJSzXs4mh"
+	maskMint = "6MQpbiTC2YcogidTmKqMLK82qvE9z5QEm7EP3AEDpump"
 )
 
 type Config struct {
@@ -145,6 +148,43 @@ func main() {
 		fmt.Printf("✅ SOL ATA exists: %s\n", ataAddress.String())
 	} else {
 		fmt.Printf("❌ SOL ATA does not exist: %s\n", ataAddress.String())
+	}
+
+	// Check platform's MASK ATA that was just created
+	fmt.Printf("\nPlatform MASK ATA Check (from swap failure):\n")
+	platformPubKey, err := solanago.PublicKeyFromBase58(platformAddress)
+	if err != nil {
+		log.Fatalf("Invalid platform address: %v", err)
+	}
+
+	maskMintPubKey, err := solanago.PublicKeyFromBase58(maskMint)
+	if err != nil {
+		log.Fatalf("Invalid mask mint address: %v", err)
+	}
+
+	hasPlatformMaskATA, err := HasATA(ctx, solanaClient, platformPubKey, maskMintPubKey)
+	if err != nil {
+		log.Fatalf("Error checking platform MASK ATA: %v", err)
+	}
+
+	platformMaskATA, _, err := solanago.FindAssociatedTokenAddress(platformPubKey, maskMintPubKey)
+	if err != nil {
+		log.Fatalf("Failed to calculate platform MASK ATA address: %v", err)
+	}
+
+	if hasPlatformMaskATA {
+		fmt.Printf("✅ Platform MASK ATA exists: %s\n", platformMaskATA.String())
+		
+		// Get the account info to check if it's properly initialized
+		accountInfo, err := solanaClient.GetAccountInfo(ctx, bmodel.Address(platformMaskATA.String()))
+		if err != nil {
+			fmt.Printf("   ⚠️  Failed to get account info: %v\n", err)
+		} else if accountInfo != nil {
+			fmt.Printf("   📊 Account info: Owner=%s, Lamports=%d, DataLen=%d\n", 
+				accountInfo.Owner, accountInfo.Lamports, len(accountInfo.Data))
+		}
+	} else {
+		fmt.Printf("❌ Platform MASK ATA does not exist: %s\n", platformMaskATA.String())
 	}
 }
 

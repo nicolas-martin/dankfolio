@@ -4,6 +4,7 @@ import { Coin as FrontendCoin } from '@/types';
 import { Coin as pbCoin } from '@/gen/dankfolio/v1/coin_pb';
 import { env } from '@utils/env';
 import { Timestamp, timestampFromDate } from '@bufbuild/protobuf/wkt';
+import { getUserFriendlyTradeError } from '@/utils/errorUtils';
 
 export function mapGrpcCoinToFrontendCoin(grpcCoin: pbCoin): FrontendCoin {
 	return {
@@ -145,6 +146,13 @@ export const handleGrpcError = (error: unknown, serviceName: string, methodName:
 
 			// No special handling needed for App Check tokens as they're obtained on each request
 		}
+
+		// For trade-related services, provide user-friendly error messages
+		if (serviceName === 'TradeService') {
+			const userFriendlyMessage = getUserFriendlyTradeError(error);
+			throw new Error(userFriendlyMessage);
+		}
+
 		throw new Error(`${error.code}: ${error.message}`);
 	}
 	throw error;
