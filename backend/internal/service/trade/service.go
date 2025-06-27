@@ -14,20 +14,19 @@ import (
 	"time"
 
 	solanago "github.com/gagliardetto/solana-go"
+	associatedtokenaccount "github.com/gagliardetto/solana-go/programs/associated-token-account"
 	"github.com/gagliardetto/solana-go/rpc"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/solana"
 
-	// "github.com/nicolas-martin/dankfolio/backend/internal/clients/solana" // To be replaced
-
 	"github.com/nicolas-martin/dankfolio/backend/internal/db"
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
 	bmodel "github.com/nicolas-martin/dankfolio/backend/internal/model/blockchain"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/coin"
 	"github.com/nicolas-martin/dankfolio/backend/internal/service/price"
-	"github.com/nicolas-martin/dankfolio/backend/internal/util" // Import the new util package
+	"github.com/nicolas-martin/dankfolio/backend/internal/util"
 )
 
 // Service handles trade-related operations
@@ -37,8 +36,10 @@ type Service struct {
 	priceService              price.PriceServiceAPI    // Use PriceServiceAPI interface from price package
 	jupiterClient             jupiter.ClientAPI
 	store                     db.Store
-	platformFeeBps            int    // Platform fee in basis points
-	platformFeeAccountAddress string // Solana address for collecting platform fees
+	platformFeeBps            int                   // Platform fee in basis points
+	platformFeeAccountAddress string                // Solana address for collecting platform fees
+	platformPrivateKey        *solanago.PrivateKey  // Platform private key for ATA creation
+	feeMintSelector           *FeeMintSelector      // Handles fee mint selection logic
 }
 
 // NewService creates a new TradeService instance
@@ -48,18 +49,50 @@ func NewService(
 	ps price.PriceServiceAPI,
 	jc jupiter.ClientAPI,
 	store db.Store,
-	configuredPlatformFeeBps int, // New parameter
-	configuredPlatformFeeAccountAddress string, // New parameter
+	configuredPlatformFeeBps int,           // Platform fee in basis points
+	configuredPlatformFeeAccountAddress string, // Platform fee account address
+	platformPrivateKeyBase64 string,        // Platform private key for ATA creation
 ) *Service {
+	// Parse platform private key
+	var platformKey *solanago.PrivateKey
+	if platformPrivateKeyBase64 != "" {
+		keyBytes, err := base64.StdEncoding.DecodeString(platformPrivateKeyBase64)
+		if err != nil {
+			slog.Error("Failed to decode platform private key", "error", err)
+		} else if len(keyBytes) != 64 {
+			slog.Error("Invalid platform private key length", "expected", 64, "got", len(keyBytes))
+		} else {
+			key := solanago.PrivateKey(keyBytes)
+			platformKey = &key
+		}
+	}
+
 	service := &Service{
-		chainClient:               chainClient, // Changed assignment
+		chainClient:               chainClient,
 		coinService:               cs,
 		priceService:              ps,
 		jupiterClient:             jc,
 		store:                     store,
-		platformFeeBps:            configuredPlatformFeeBps,            // Store configured value
-		platformFeeAccountAddress: configuredPlatformFeeAccountAddress, // Store configured value
+		platformFeeBps:            configuredPlatformFeeBps,
+		platformFeeAccountAddress: configuredPlatformFeeAccountAddress,
+		platformPrivateKey:        platformKey,
 	}
+
+	// Initialize fee mint selector with ATA checker and creator
+	ataChecker := func(ctx context.Context, ata solanago.PublicKey) bool {
+		return service.ataExists(ctx, ata)
+	}
+	
+	ataCreator := func(ctx context.Context, owner, mint solanago.PublicKey, signerKey *solanago.PrivateKey) error {
+		return service.createATA(ctx, owner, mint, signerKey)
+	}
+
+	service.feeMintSelector = NewFeeMintSelector(
+		configuredPlatformFeeAccountAddress,
+		platformKey,
+		ataChecker,
+		ataCreator,
+	)
 
 	return service
 }
@@ -158,26 +191,13 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 	}
 	slog.Debug("tradeQuote.Raw after GetSwapQuote", "trade_quote", string(tradeQuote.Raw))
 
-	// Calculate proper ATA for platform fee collection
-	// Platform Fee Collection Strategy (validated through testing):
-	// 1. For swaps involving WSOL: Always collect fees in WSOL (better liquidity)
-	// 2. For token-to-token swaps: Collect fees in input mint
-	// 3. Jupiter API rule: ExactOut swaps MUST use input mint only
-	const solMint = "So11111111111111111111111111111111111111112"
-
+	// Use FeeMintSelector to determine optimal fee collection setup
 	var feeAccount string
 	var actualFeeMint string // Track the actual mint used for fee collection
 
 	if s.platformFeeAccountAddress != "" {
-		platformFeePubKey, err := solanago.PublicKeyFromBase58(s.platformFeeAccountAddress)
-		if err != nil {
-			return nil, fmt.Errorf("invalid platform fee account address: %w", err)
-		}
-
-		// Determine fee mint based on swap type and tokens involved
-		var feeMint string
-		
-		// Check swap mode first - ExactOut has strict requirements
+		// Parse Jupiter quote to extract swap mode and other info
+		var jupiterQuote *jupiter.QuoteResponse
 		swapMode := "ExactIn" // Default
 		if tradeQuote.Raw != nil {
 			var quoteData map[string]interface{}
@@ -186,68 +206,41 @@ func (s *Service) PrepareSwap(ctx context.Context, params model.PrepareSwapReque
 					swapMode = mode
 				}
 			}
-		}
 
-		if swapMode == "ExactOut" {
-			// ExactOut: MUST use input mint (Jupiter requirement)
-			feeMint = params.FromCoinMintAddress
-			slog.Info("ExactOut swap: using input mint for fees",
-				"fee_mint", feeMint,
-				"input", params.FromCoinMintAddress,
-				"output", params.ToCoinMintAddress)
-		} else {
-			// ExactIn: Prefer WSOL if involved, otherwise use input mint
-			if params.ToCoinMintAddress == solMint {
-				// Output is WSOL - use WSOL for fees
-				feeMint = solMint
-				slog.Info("Swap to WSOL: collecting fees in WSOL",
-					"input", params.FromCoinMintAddress,
-					"output", "WSOL")
-			} else if params.FromCoinMintAddress == solMint {
-				// Input is WSOL - use WSOL for fees
-				feeMint = solMint
-				slog.Info("Swap from WSOL: collecting fees in WSOL",
-					"input", "WSOL",
-					"output", params.ToCoinMintAddress)
-			} else {
-				// Token-to-token swap - use input mint
-				feeMint = params.FromCoinMintAddress
-				slog.Info("Token-to-token swap: collecting fees in input mint",
-					"fee_mint", feeMint,
-					"input", params.FromCoinMintAddress,
-					"output", params.ToCoinMintAddress)
+			// Parse full quote for fee mint selector
+			var fullQuote jupiter.QuoteResponse
+			if err := json.Unmarshal(tradeQuote.Raw, &fullQuote); err == nil {
+				jupiterQuote = &fullQuote
 			}
 		}
 
-		// Calculate ATA for the selected fee mint
-		feeMintPubKey, err := solanago.PublicKeyFromBase58(feeMint)
+		// Use fee mint selector to determine optimal fee collection
+		feeAccountATA, selectedFeeMint, err := s.feeMintSelector.SelectFeeMint(
+			ctx,
+			params.FromCoinMintAddress,
+			params.ToCoinMintAddress,
+			swapMode,
+			jupiterQuote,
+		)
 		if err != nil {
-			return nil, fmt.Errorf("invalid fee mint address %s: %w", feeMint, err)
+			return nil, fmt.Errorf("failed to select fee mint: %w", err)
 		}
 
-		feeAccountATA, _, err := solanago.FindAssociatedTokenAddress(platformFeePubKey, feeMintPubKey)
-		if err != nil {
-			return nil, fmt.Errorf("failed to calculate platform fee ATA: %w", err)
-		}
-
-		// Check if the ATA exists
-		if s.ataExists(ctx, feeAccountATA) {
-			feeAccount = feeAccountATA.String()
-			actualFeeMint = feeMint
+		if feeAccountATA != "" && selectedFeeMint != "" {
+			feeAccount = feeAccountATA
+			actualFeeMint = selectedFeeMint
 			slog.Info("Platform fee collection enabled",
 				"platform_account", s.platformFeeAccountAddress,
 				"fee_ata", feeAccount,
-				"fee_mint", feeMint,
-				"fee_bps", s.platformFeeBps)
+				"fee_mint", selectedFeeMint,
+				"fee_bps", s.platformFeeBps,
+				"swap_mode", swapMode)
 		} else {
-			// For now, skip fee collection if ATA doesn't exist
-			// In production, we should pre-create ATAs for WSOL and USDC at minimum
-			slog.Warn("Platform fee ATA does not exist - fees will not be collected",
+			slog.Info("Platform fee collection disabled - no suitable ATA found",
 				"platform_account", s.platformFeeAccountAddress,
-				"missing_ata", feeAccountATA.String(),
-				"fee_mint", feeMint,
-				"action", "ATA needs to be created before fees can be collected")
-			// Don't set feeAccount - Jupiter will handle the swap without platform fees
+				"input_mint", params.FromCoinMintAddress,
+				"output_mint", params.ToCoinMintAddress,
+				"swap_mode", swapMode)
 		}
 	}
 
@@ -1039,6 +1032,83 @@ func (s *Service) ataExists(ctx context.Context, ataAddress solanago.PublicKey) 
 	// Account exists if it's not nil and not owned by the system program (uninitialized)
 	systemProgram := bmodel.Address(solanago.SystemProgramID.String())
 	return accountInfo != nil && accountInfo.Owner != systemProgram
+}
+
+// createATA creates an Associated Token Account for the given owner and mint
+func (s *Service) createATA(ctx context.Context, owner, mint solanago.PublicKey, signerKey *solanago.PrivateKey) error {
+	if signerKey == nil {
+		return fmt.Errorf("signer key is required for ATA creation")
+	}
+
+	// Calculate ATA address
+	ata, _, err := solanago.FindAssociatedTokenAddress(owner, mint)
+	if err != nil {
+		return fmt.Errorf("failed to calculate ATA: %w", err)
+	}
+
+	// Check if ATA already exists
+	if s.ataExists(ctx, ata) {
+		slog.Debug("ATA already exists, skipping creation", "ata", ata.String(), "mint", mint.String())
+		return nil
+	}
+
+	slog.Info("Creating ATA", "ata", ata.String(), "owner", owner.String(), "mint", mint.String())
+
+	// Create ATA instruction
+	instruction := associatedtokenaccount.NewCreateInstruction(
+		owner, // payer (platform account pays for creation)
+		owner, // wallet (owner of the ATA)
+		mint,  // mint
+	).Build()
+
+	// Get recent blockhash
+	recentBlockhash, err := s.chainClient.GetLatestBlockhash(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get blockhash: %w", err)
+	}
+
+	blockhash, err := solanago.HashFromBase58(string(recentBlockhash))
+	if err != nil {
+		return fmt.Errorf("failed to parse blockhash: %w", err)
+	}
+
+	// Create transaction
+	tx, err := solanago.NewTransaction(
+		[]solanago.Instruction{instruction},
+		blockhash,
+		solanago.TransactionPayer(owner),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	// Sign transaction
+	_, err = tx.Sign(func(key solanago.PublicKey) *solanago.PrivateKey {
+		if key == owner {
+			return signerKey
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	// Send transaction
+	txBytes, err := tx.MarshalBinary()
+	if err != nil {
+		return fmt.Errorf("failed to marshal transaction: %w", err)
+	}
+
+	sig, err := s.chainClient.SendRawTransaction(ctx, txBytes, bmodel.TransactionOptions{
+		SkipPreflight:       false,
+		PreflightCommitment: "confirmed",
+	})
+	if err != nil {
+		return fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	slog.Info("ATA creation transaction sent", "signature", sig, "ata", ata.String())
+	return nil
 }
 
 // calculateSolFeeBreakdown sums all SOL lamport needs and returns formatted breakdown

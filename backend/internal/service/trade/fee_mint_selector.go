@@ -3,9 +3,11 @@ package trade
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 
 	solanago "github.com/gagliardetto/solana-go"
+
 	"github.com/nicolas-martin/dankfolio/backend/internal/clients/jupiter"
 )
 
@@ -18,14 +20,23 @@ const (
 // based on Jupiter's rules and the swap parameters
 type FeeMintSelector struct {
 	platformFeeAccount string
+	platformKey        *solanago.PrivateKey
 	ataChecker         func(context.Context, solanago.PublicKey) bool
+	ataCreator         func(context.Context, solanago.PublicKey, solanago.PublicKey, *solanago.PrivateKey) error
 }
 
 // NewFeeMintSelector creates a new fee mint selector
-func NewFeeMintSelector(platformFeeAccount string, ataChecker func(context.Context, solanago.PublicKey) bool) *FeeMintSelector {
+func NewFeeMintSelector(
+	platformFeeAccount string,
+	platformKey *solanago.PrivateKey,
+	ataChecker func(context.Context, solanago.PublicKey) bool,
+	ataCreator func(context.Context, solanago.PublicKey, solanago.PublicKey, *solanago.PrivateKey) error,
+) *FeeMintSelector {
 	return &FeeMintSelector{
 		platformFeeAccount: platformFeeAccount,
+		platformKey:        platformKey,
 		ataChecker:         ataChecker,
+		ataCreator:         ataCreator,
 	}
 }
 
@@ -52,7 +63,7 @@ func (s *FeeMintSelector) SelectFeeMint(
 	if jupiterQuote != nil && jupiterQuote.PlatformFee != nil && jupiterQuote.PlatformFee.FeeMint != "" {
 		recommendedMint := jupiterQuote.PlatformFee.FeeMint
 		slog.Debug("Jupiter recommends fee mint", "mint", recommendedMint)
-		
+
 		ata, err := s.calculateAndCheckATA(ctx, platformPubKey, recommendedMint)
 		if err == nil && ata != "" {
 			return ata, recommendedMint, nil
@@ -60,60 +71,56 @@ func (s *FeeMintSelector) SelectFeeMint(
 		slog.Warn("Jupiter recommended fee mint ATA not available", "mint", recommendedMint)
 	}
 
-	// Priority 2: Apply our fee mint selection logic
-	var candidateMints []string
-	
+	// Priority 2: Apply our proven fee mint selection logic (from platform-fee-test)
 	switch swapMode {
 	case "ExactOut":
 		// For ExactOut, must use input mint ONLY (Jupiter requirement)
-		candidateMints = []string{inputMint}
+		selectedFeeMint = inputMint
 		slog.Debug("ExactOut swap: must use input mint for fees", "mint", inputMint)
-		
+
 	case "ExactIn", "":
-		// For ExactIn, we can use either input or output mint
-		// Prefer WSOL if it's involved (better liquidity for fee collection)
+		// For ExactIn, prefer WSOL if it's involved (better liquidity for fee collection)
 		if outputMint == WSOLMint {
-			candidateMints = []string{WSOLMint, inputMint}
-			slog.Debug("ExactIn swap with WSOL output: preferring WSOL for fees")
+			selectedFeeMint = WSOLMint
+			slog.Debug("ExactIn swap with WSOL output: using WSOL for fees")
 		} else if inputMint == WSOLMint {
-			candidateMints = []string{WSOLMint, outputMint}
-			slog.Debug("ExactIn swap with WSOL input: preferring WSOL for fees")
+			selectedFeeMint = WSOLMint
+			slog.Debug("ExactIn swap with WSOL input: using WSOL for fees")
 		} else {
-			// Token-to-token swap: try input first, then output
-			candidateMints = []string{inputMint, outputMint}
-			slog.Debug("ExactIn token-to-token swap: trying input mint first", 
+			// Token-to-token swap: use input mint (proven strategy)
+			selectedFeeMint = inputMint
+			slog.Debug("ExactIn token-to-token swap: using input mint for fees",
 				"input", inputMint, "output", outputMint)
 		}
-		
+
 	default:
 		slog.Warn("Unknown swap mode, defaulting to input mint", "swapMode", swapMode)
-		candidateMints = []string{inputMint}
+		selectedFeeMint = inputMint
 	}
 
-	// Try each candidate mint in order of preference
-	for _, mint := range candidateMints {
-		ata, err := s.calculateAndCheckATA(ctx, platformPubKey, mint)
-		if err != nil {
-			slog.Debug("Error calculating ATA", "mint", mint, "error", err)
-			continue
-		}
-		if ata != "" {
-			slog.Info("Selected fee mint with existing ATA", 
-				"mint", mint, 
-				"ata", ata,
-				"swapMode", swapMode)
-			return ata, mint, nil
-		}
+	// Check if the selected fee mint has an ATA, create if needed
+	ata, err := s.ensureATA(ctx, platformPubKey, selectedFeeMint)
+	if err != nil {
+		slog.Error("Error ensuring ATA for selected fee mint", "mint", selectedFeeMint, "error", err)
+		return "", "", err
 	}
 
-	// No suitable ATA found
-	slog.Warn("No platform ATAs exist for fee collection",
+	if ata != "" {
+		slog.Info("Selected fee mint with ATA",
+			"mint", selectedFeeMint,
+			"ata", ata,
+			"swapMode", swapMode)
+		return ata, selectedFeeMint, nil
+	}
+
+	// Failed to ensure ATA
+	slog.Error("Failed to ensure platform ATA for selected fee mint",
 		"inputMint", inputMint,
 		"outputMint", outputMint,
 		"swapMode", swapMode,
-		"candidateMints", candidateMints)
-	
-	return "", "", nil
+		"selectedFeeMint", selectedFeeMint)
+
+	return "", "", fmt.Errorf("failed to ensure ATA for fee mint %s", selectedFeeMint)
 }
 
 // calculateAndCheckATA calculates the ATA address and checks if it exists
@@ -140,6 +147,45 @@ func (s *FeeMintSelector) calculateAndCheckATA(
 	return "", nil
 }
 
+// ensureATA calculates the ATA address, checks if it exists, and creates it if needed
+func (s *FeeMintSelector) ensureATA(
+	ctx context.Context,
+	owner solanago.PublicKey,
+	mint string,
+) (string, error) {
+	mintPubKey, err := solanago.PublicKeyFromBase58(mint)
+	if err != nil {
+		return "", err
+	}
+
+	ata, _, err := solanago.FindAssociatedTokenAddress(owner, mintPubKey)
+	if err != nil {
+		return "", err
+	}
+
+	// Check if ATA exists
+	if s.ataChecker(ctx, ata) {
+		slog.Debug("ATA already exists", "mint", mint, "ata", ata.String())
+		return ata.String(), nil
+	}
+
+	// ATA doesn't exist, create it if we have the creator function and platform key
+	if s.ataCreator != nil && s.platformKey != nil {
+		slog.Info("Creating platform ATA for fee collection", "mint", mint, "ata", ata.String())
+
+		if err := s.ataCreator(ctx, owner, mintPubKey, s.platformKey); err != nil {
+			return "", fmt.Errorf("failed to create ATA: %w", err)
+		}
+
+		slog.Info("Successfully created platform ATA", "mint", mint, "ata", ata.String())
+		return ata.String(), nil
+	}
+
+	// No ATA creator available
+	slog.Warn("ATA does not exist and no creator function available", "mint", mint, "ata", ata.String())
+	return "", nil
+}
+
 // AnalyzeQuoteFeeMint extracts the platform fee mint from a Jupiter quote response
 func AnalyzeQuoteFeeMint(quoteRaw []byte) string {
 	if len(quoteRaw) == 0 {
@@ -157,9 +203,9 @@ func AnalyzeQuoteFeeMint(quoteRaw []byte) string {
 	}
 
 	// Fallback: check raw JSON structure
-	var rawQuote map[string]interface{}
+	var rawQuote map[string]any
 	if err := json.Unmarshal(quoteRaw, &rawQuote); err == nil {
-		if platformFee, ok := rawQuote["platformFee"].(map[string]interface{}); ok {
+		if platformFee, ok := rawQuote["platformFee"].(map[string]any); ok {
 			if feeMint, ok := platformFee["feeMint"].(string); ok {
 				return feeMint
 			}
@@ -173,14 +219,16 @@ func AnalyzeQuoteFeeMint(quoteRaw []byte) string {
 func DetermineFeeMintForSwap(
 	ctx context.Context,
 	platformFeeAccount string,
+	platformKey *solanago.PrivateKey,
 	inputMint string,
 	outputMint string,
 	swapMode string,
 	quoteRaw []byte,
 	ataChecker func(context.Context, solanago.PublicKey) bool,
+	ataCreator func(context.Context, solanago.PublicKey, solanago.PublicKey, *solanago.PrivateKey) error,
 ) (feeAccountATA string, selectedFeeMint string) {
-	selector := NewFeeMintSelector(platformFeeAccount, ataChecker)
-	
+	selector := NewFeeMintSelector(platformFeeAccount, platformKey, ataChecker, ataCreator)
+
 	// Parse quote if available
 	var quote *jupiter.QuoteResponse
 	if len(quoteRaw) > 0 {
