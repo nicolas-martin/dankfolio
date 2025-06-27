@@ -293,14 +293,17 @@ export default function CoinChart({
 
 	const activeX = chartPress.x.value.value;
 
+	const showLoading = loading || !processedChartData.length;
+
 	return (
 		<ChartWrapper active={!loading}>
-			{loading || !processedChartData.length ? (
-				<View style={styles.loadingContainer}>
-					<ActivityIndicator animating={true} size="large" testID="loading-indicator" />
-				</View>
-			) : (
-				<View style={styles.chartContainer} testID="coin-chart-container">
+			<View style={styles.chartContainer} testID="coin-chart-container">
+				{showLoading && (
+					<View style={styles.loadingOverlay}>
+						<ActivityIndicator animating={true} size="large" testID="loading-indicator" />
+					</View>
+				)}
+				{!showLoading && (
 					<CartesianChart
 						key={chartKey}
 						data={processedChartData}
@@ -420,8 +423,8 @@ export default function CoinChart({
 							);
 						}}
 					</CartesianChart>
-				</View>
-			)}
+				)}
+			</View>
 		</ChartWrapper>
 	);
 }
