@@ -42,6 +42,7 @@ const CoinDetail: React.FC = () => {
 	// const [isTimeframeLoading, setIsTimeframeLoading] = useState(false); // Replaced by hook's isLoading
 	// const [priceHistory, setPriceHistory] = useState<PriceData[]>([]); // Replaced by hook's priceHistory
 	const [hoverPoint, setHoverPoint] = useState<PricePoint | null>(null);
+	const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 	const { showToast } = useToast();
 	const { tokens } = usePortfolioStore();
 	const styles = useStyles();
@@ -143,7 +144,7 @@ const CoinDetail: React.FC = () => {
 		return tokens.find(token => token.mintAddress === displayCoin.address);
 	}, [tokens, displayCoin?.address]);
 
-	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description) || isPriceHistoryLoading; // Combine loading states
+	const isLoadingDetails = !displayCoin || (displayCoin && !displayCoin.description); // Removed isPriceHistoryLoading to prevent flickering
 
 	// All hooks must be at the top level - moved from after render functions
 	const chartData = useMemo(() => priceHistory || [], [priceHistory]);
@@ -161,7 +162,7 @@ const CoinDetail: React.FC = () => {
 	}), [displayCoin]);
 
 	const timeframeButtonsRowStyle = useMemo(() => [
-		styles.timeframeButtonsRow, 
+		styles.timeframeButtonsRow,
 		isPriceHistoryLoading && styles.timeframeButtonsRowLoading
 	], [styles.timeframeButtonsRow, styles.timeframeButtonsRowLoading, isPriceHistoryLoading]);
 
@@ -171,18 +172,11 @@ const CoinDetail: React.FC = () => {
 
 	const onRefresh = useCallback(async () => {
 		if (mintAddress) {
-			// We use the general 'loading' state for RefreshControl indication here.
-			// Alternatively, a new state like 'isRefreshing' could be introduced
-			// if we want to differentiate Lottie loader from pull-to-refresh loader.
-			// For now, existing `loading` state will make the chart loader appear during refresh.
-			// setLoading(true); // setLoading was removed, isPriceHistoryLoading is used for RefreshControl
+			setIsManualRefreshing(true);
 			try {
 				await useCoinStore.getState().getCoinByID(mintAddress, true);
-				// Price history will refresh via the useEffect dependency on 'displayCoin' changing.
-				// If getCoinByID doesn't result in a change to 'displayCoin' object reference,
-				// the effect won't re-run. This might be desired if data is identical.
-				// However, if a forced chart refresh is needed even if coin data is same,
-				// we might need a manual trigger for loadData() here.
+				// Also manually refresh price history
+				await fetchHistory(mintAddress, selectedTimeframe);
 			} catch (error: unknown) {
 				if (error instanceof Error) {
 					logger.error("Error during refresh:", error.message);
@@ -190,22 +184,11 @@ const CoinDetail: React.FC = () => {
 					logger.error("An unknown error occurred during refresh:", error);
 				}
 				showToast({ type: 'error', message: 'Failed to refresh data.' });
-				// Ensure loading is false if refresh fails before history fetch can
-				// setLoading(false); // setLoading was removed
+			} finally {
+				setIsManualRefreshing(false);
 			}
-			// setLoading(false) is now primarily handled by the data fetching useEffect's finally block. // setLoading was removed
-			// If the displayCoin data doesn't change after getCoinByID, the effect might not run.
-			// To ensure the RefreshControl spinner stops, we might need to explicitly stop it
-			// if the effect doesn't run. This can be tricky.
-			// A simple approach: if data fetching effect is not re-triggered, stop loading.
-			// This timeout is a pragmatic way to ensure it stops if the effect doesn't.
-			// setTimeout(() => setLoading(false), 1000); // setLoading was removed
-
-
-		} else {
-			// setLoading(false); // Ensure loading stops if there's no mintAddress // setLoading was removed
 		}
-	}, [mintAddress, showToast]); // Removed displayCoin from here as its change triggers the other effect.
+	}, [mintAddress, showToast, fetchHistory]); // Added fetchHistory to dependencies
 
 	const handleTradePress = useCallback(async () => {
 		if (displayCoin) {
@@ -462,7 +445,7 @@ const CoinDetail: React.FC = () => {
 					keyboardShouldPersistTaps="handled"
 					refreshControl={
 						<RefreshControl
-							refreshing={isPriceHistoryLoading} // Use isLoading from hook
+							refreshing={isManualRefreshing} // Only show during manual refresh, not timeframe changes
 							onRefresh={onRefresh}
 							tintColor={styles.colors.primary}
 						/>

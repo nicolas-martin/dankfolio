@@ -40,6 +40,17 @@ export const useStyles = () => {
 			backgroundColor: theme.colors.surface,
 			borderRadius: theme.spacing.sm,
 		},
+		loadingOverlay: {
+			position: 'absolute',
+			top: 0,
+			left: 0,
+			right: 0,
+			bottom: 0,
+			justifyContent: 'center',
+			alignItems: 'center',
+			backgroundColor: theme.colors.surface,
+			zIndex: 1,
+		},
 		tooltipText: {
 			color: theme.colors.onSurface,
 			fontSize: theme.typography.fontSize.xs,
