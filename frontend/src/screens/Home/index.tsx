@@ -3,7 +3,7 @@ import { View, SafeAreaView, FlatList, RefreshControl, ScrollView } from 'react-
 import { Text } from 'react-native-paper';
 import { LoadingAnimation } from '@components/Common/Animations';
 import ShimmerPlaceholder from '@components/Common/ShimmerPlaceholder';
-import CoinCard from '@components/Home/CoinCard';
+import TokenListCard from '@components/Home/TokenListCard';
 import InfoState from '@/components/Common/InfoState';
 import NewCoins from '@components/Home/NewCoins/NewCoins';
 import TopTrendingGainers from 'components/Home/TopTrendingGainers';
@@ -25,12 +25,8 @@ const fetchPriceHistory = async (coin: Coin, timeframeKey: string): Promise<{ da
 		return { data: [], error: new Error("Invalid coin or mint address") };
 	}
 	try {
-		// Assuming timeframeKey like "4H" needs to be processed or is directly usable by API
-		// grpcApi.getPriceHistory expects (address: string, type: string, timeStr: string, addressType: string)
-		// 'type' could be the timeframeKey, 'timeStr' the current time, 'addressType' as "token"
 		const currentTime = new Date().toISOString();
 		const response = await grpcApi.getPriceHistory(coin.address, timeframeKey, currentTime, "token");
-		// Extract the items array from the response data - no conversion needed since grpcApi handles it
 		const data = response.data?.items || [];
 		return { data, error: null };
 	} catch (e: unknown) {
@@ -409,10 +405,6 @@ const HomeScreen = () => {
 					renderPlaceholderTrendingSection()
 				) : (
 					<>
-						<View style={styles.sectionHeader}>
-							<Text style={styles.sectionTitle}>Trending Coins</Text>
-						</View>
-
 						{isLoadingTrending && !hasTrendingCoins && !isFirstTimeLoading && (
 							<View style={styles.loadingContainer}>
 								<LoadingAnimation size={80} />
@@ -429,23 +421,14 @@ const HomeScreen = () => {
 						)}
 
 						{hasTrendingCoins && (
-							<FlatList
-								data={trendingCoins}
-								keyExtractor={(item, index) => `trending-${item.address || item.symbol || index}`}
-								renderItem={renderTrendingCoinItem}
-								scrollEnabled={false}
-								// Performance optimizations to prevent UI blocking
-								maxToRenderPerBatch={5}
-								updateCellsBatchingPeriod={50}
-								initialNumToRender={10}
-								windowSize={10}
-								getItemLayout={(_, index) => ({
-									length: 130, // Adjusted approximate height of each CoinCard with sparkline + margin
-									offset: 130 * index, // Adjusted offset
-									index,
-								})}
-								// Optimize re-renders
-								keyboardShouldPersistTaps="handled"
+							<TokenListCard
+								title="Trending Coins"
+								coins={trendingCoins}
+								priceHistories={priceHistories}
+								isLoadingPriceHistories={isLoadingPriceHistories}
+								onCoinPress={handlePressCoinCard}
+								showSparkline={true}
+								testIdPrefix="trending-coin"
 							/>
 						)}
 					</>
@@ -454,28 +437,6 @@ const HomeScreen = () => {
 		);
 	};
 
-	// Extracted renderItem function for trending coins FlatList
-	const renderTrendingCoinItem = useCallback(({ item }: { item: Coin }) => {
-		const history = priceHistories[item.address!];
-		const isLoadingHistory = isLoadingPriceHistories[item.address!];
-
-		return (
-			<View style={styles.coinCardContainerStyle}>
-				<CoinCard
-					coin={item}
-					// Pass handlePressCoinCard directly for the onPressCoin prop (or similar name)
-					// The actual name of the prop in CoinCard will need to match (e.g., onPressCoin)
-					// And CoinCard's internal logic will use this prop and its own coin prop.
-					onPressCoin={handlePressCoinCard} // Pass the memoized callback
-					priceHistory={history}
-					isPriceHistoryLoading={isLoadingHistory}
-					testIdPrefix="trending-coin"
-				/>
-			</View>
-		);
-		// handlePressCoinCard is already a useCallback.
-		// styles.coinCardContainerStyle should be stable due to useStyles memoization.
-	}, [priceHistories, isLoadingPriceHistories, handlePressCoinCard, styles.coinCardContainerStyle]);
 
 
 	return (

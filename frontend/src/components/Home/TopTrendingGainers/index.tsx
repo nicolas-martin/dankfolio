@@ -10,8 +10,8 @@ import TrendingGainerPlaceholderCard from '@/components/Home/TrendingGainerCard/
 import { useStyles } from './TopTrendingGainers.styles';
 import { Coin } from '@/types';
 
-const CARD_WIDTH = 140;
-const CARD_MARGIN = 16; // Increased from 8 to 16 for more spacing
+const CARD_WIDTH = 120;
+const CARD_MARGIN = 12;
 
 type TopTrendingGainersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CoinDetail'>;
 
@@ -71,28 +71,32 @@ const TopTrendingGainers: React.FC<TopTrendingGainersProps> = ({
 
 	return (
 		<View style={styles.container}>
-			<View style={styles.titleContainer}>
-				{isLoading && topTrendingGainers.length === 0 ? (
-					<ShimmerPlaceholder style={styles.titleShimmer} />
-				) : (
-					<Text style={styles.title}>Trending Gainers</Text>
-				)}
+			<View style={styles.cardContainer}>
+				<View style={styles.titleContainer}>
+					{isLoading && topTrendingGainers.length === 0 ? (
+						<ShimmerPlaceholder style={styles.titleShimmer} />
+					) : (
+						<Text style={styles.title}>Trending Gainers</Text>
+					)}
+				</View>
+				<View style={styles.scrollContent}>
+					<HorizontalScrollContainer
+						data={topTrendingGainers}
+						renderItem={renderTrendingGainerCard}
+						cardWidth={CARD_WIDTH}
+						cardMargin={CARD_MARGIN}
+						isLoading={isLoading}
+						placeholderCount={5}
+						renderPlaceholder={renderPlaceholder}
+						contentPadding={{
+							paddingLeft: styles.theme.spacing.md,
+							paddingRight: styles.theme.spacing.xs,
+						}}
+						testIdPrefix="trending-gainers"
+						keyExtractor={keyExtractor}
+					/>
+				</View>
 			</View>
-			<HorizontalScrollContainer
-				data={topTrendingGainers}
-				renderItem={renderTrendingGainerCard}
-				cardWidth={CARD_WIDTH}
-				cardMargin={CARD_MARGIN}
-				isLoading={isLoading}
-				placeholderCount={5}
-				renderPlaceholder={renderPlaceholder}
-				contentPadding={{
-					paddingLeft: styles.theme.spacing.lg,
-					paddingRight: styles.theme.spacing.xs,
-				}}
-				testIdPrefix="trending-gainers"
-				keyExtractor={keyExtractor}
-			/>
 		</View>
 	);
 };
