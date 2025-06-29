@@ -42,7 +42,7 @@ const TrendingGainerCard: React.FC<TrendingGainerCardProps> = ({
 		>
 			<CoinInfoBlock
 				iconUri={coin.resolvedIconUrl}
-				iconSize={48}
+				iconSize={40}
 				primaryText={coin.symbol}
 				primaryTextStyle={styles.symbol}
 				iconStyle={styles.iconContainer}

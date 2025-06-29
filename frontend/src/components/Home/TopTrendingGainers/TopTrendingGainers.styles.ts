@@ -7,9 +7,19 @@ export const useStyles = () => {
 	const theme = useTheme() as AppTheme;
 	return useMemo(() => {
 		const styles = StyleSheet.create({
+			cardContainer: {
+				backgroundColor: theme.colors.surface,
+				borderRadius: theme.borderRadius.lg,
+				elevation: 2,
+				marginHorizontal: theme.spacing.lg,
+				shadowColor: theme.shadows.sm.shadowColor,
+				shadowOffset: theme.shadows.sm.shadowOffset,
+				shadowOpacity: 0.08,
+				shadowRadius: theme.spacing.xs,
+			},
 			container: {
-				paddingBottom: theme.spacing['2xl'],
-				paddingTop: theme.spacing.lg,
+				paddingBottom: theme.spacing.lg,
+				paddingTop: theme.spacing.sm,
 			},
 			emptyText: {
 				color: theme.colors.onSurfaceVariant,
@@ -18,17 +28,18 @@ export const useStyles = () => {
 				paddingVertical: theme.spacing.lg,
 				textAlign: 'center',
 			},
+			scrollContent: {
+				paddingVertical: theme.spacing.md,
+			},
 			title: {
 				color: theme.colors.onSurface,
 				fontSize: theme.typography.fontSize.xl,
 				fontWeight: '600',
 			},
 			titleContainer: {
-				alignItems: 'flex-start',
-				flexDirection: 'row',
-				justifyContent: 'space-between',
-				marginBottom: theme.spacing.lg,
+				paddingBottom: theme.spacing.sm,
 				paddingHorizontal: theme.spacing.lg,
+				paddingTop: theme.spacing.lg,
 			},
 			titleShimmer: {
 				backgroundColor: theme.colors.surface,
