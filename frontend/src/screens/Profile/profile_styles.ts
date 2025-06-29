@@ -205,6 +205,11 @@ export const useStyles = () => {
 				backgroundColor: theme.colors.primary,
 				opacity: 0.5,
 			},
+			sendButtonText: {
+				color: theme.colors.onPrimary,
+				fontSize: 16,
+				fontWeight: '600',
+			},
 			settingsButton: {
 				marginRight: -8, // No exact match
 			},
