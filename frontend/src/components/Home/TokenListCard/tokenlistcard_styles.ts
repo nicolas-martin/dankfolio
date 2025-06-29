@@ -8,6 +8,13 @@ export const useStyles = () => {
 
 	return useMemo(() => {
 		const styles = StyleSheet.create({
+			balance: {
+				color: theme.colors.onSurface,
+				fontSize: 15,
+				fontWeight: '500',
+				letterSpacing: 0,
+				textAlign: 'right',
+			},
 			change: {
 				fontSize: 13,
 				fontWeight: '500',
@@ -105,6 +112,14 @@ export const useStyles = () => {
 				fontSize: theme.typography.fontSize.xl,
 				fontWeight: '600',
 				letterSpacing: 0,
+			},
+			value: {
+				color: theme.colors.onSurfaceVariant,
+				fontSize: 13,
+				fontWeight: '400',
+				letterSpacing: 0,
+				marginTop: 2,
+				textAlign: 'right',
 			},
 			volume: {
 				color: theme.colors.onSurfaceVariant,

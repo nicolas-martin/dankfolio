@@ -5,8 +5,8 @@ import { FlatList } from 'react-native';
 import CoinInfoBlock from '@components/Common/CoinInfoBlock';
 import ShimmerPlaceholder from '@/components/Common/ShimmerPlaceholder';
 import SparklineChart from '@/components/Chart/SparklineChart';
-import { formatPercentage } from '@/utils/numberFormat';
-import { TokenListCardProps, TokenListItemProps } from './tokenlistcard_types';
+import { formatPercentage, formatTokenBalance, formatPrice } from '@/utils/numberFormat';
+import { TokenListCardProps, TokenListItemProps, ExtendedCoin } from './tokenlistcard_types';
 import { useStyles } from './tokenlistcard_styles';
 import { handleTokenPress } from './tokenlistcard_scripts';
 import { Coin } from '@/types';
@@ -19,6 +19,7 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 	priceHistory,
 	isPriceHistoryLoading,
 	showSparkline = true,
+	showBalanceAndValue = false,
 	isLastItem = false,
 	testIdPrefix = 'token',
 }) => {
@@ -79,30 +80,51 @@ const TokenListItem: React.FC<TokenListItemProps> = React.memo(({
 					)}
 
 					<View style={styles.rightSection}>
-						{coin.price24hChangePercent !== undefined ? (
-							<Text
-								style={[
-									styles.percentChange,
-									coin.price24hChangePercent > 0
-										? styles.changePositive
-										: coin.price24hChangePercent < 0
-											? styles.changeNegative
-											: styles.changeNeutral
-								]}
-								numberOfLines={1}
-								testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}
-								accessible={true}
-								accessibilityRole="text"
-							>
-								{formatPercentage(coin.price24hChangePercent, 1, true)}
-							</Text>
+						{showBalanceAndValue && 'balance' in coin && 'value' in coin ? (
+							<>
+								<Text
+									style={styles.balance}
+									numberOfLines={1}
+									testID={`${testIdPrefix}-balance-${coin.symbol.toLowerCase()}`}
+								>
+									{formatTokenBalance((coin as ExtendedCoin).balance || 0)}
+								</Text>
+								<Text
+									style={styles.value}
+									numberOfLines={1}
+									testID={`${testIdPrefix}-value-${coin.symbol.toLowerCase()}`}
+								>
+									{formatPrice((coin as ExtendedCoin).value || 0, true)}
+								</Text>
+							</>  
 						) : (
-							<Text
-								style={[styles.percentChange, styles.changeNeutral]}
-								numberOfLines={1}
-							>
-								--%
-							</Text>
+							<>
+								{coin.price24hChangePercent !== undefined ? (
+									<Text
+										style={[
+											styles.percentChange,
+											coin.price24hChangePercent > 0
+												? styles.changePositive
+												: coin.price24hChangePercent < 0
+													? styles.changeNegative
+													: styles.changeNeutral
+										]}
+										numberOfLines={1}
+										testID={`${testIdPrefix}-change-${coin.symbol.toLowerCase()}`}
+										accessible={true}
+										accessibilityRole="text"
+									>
+										{formatPercentage(coin.price24hChangePercent, 1, true)}
+									</Text>
+								) : (
+									<Text
+										style={[styles.percentChange, styles.changeNeutral]}
+										numberOfLines={1}
+									>
+										--%
+									</Text>
+								)}
+							</>  
 						)}
 					</View>
 				</View>
@@ -136,6 +158,8 @@ const TokenListCard: React.FC<TokenListCardProps> = ({
 	isLoadingPriceHistories = {},
 	onCoinPress,
 	showSparkline = true,
+	showBalanceAndValue = false,
+	noHorizontalMargin = false,
 	testIdPrefix = 'token-list',
 }) => {
 	const styles = useStyles();
@@ -152,14 +176,19 @@ const TokenListCard: React.FC<TokenListCardProps> = ({
 				priceHistory={history}
 				isPriceHistoryLoading={isLoadingHistory}
 				showSparkline={showSparkline}
+				showBalanceAndValue={showBalanceAndValue}
 				isLastItem={isLastItem}
 				testIdPrefix={testIdPrefix}
 			/>
 		);
-	}, [coins.length, priceHistories, isLoadingPriceHistories, onCoinPress, showSparkline, testIdPrefix]);
+	}, [coins.length, priceHistories, isLoadingPriceHistories, onCoinPress, showSparkline, showBalanceAndValue, testIdPrefix]);
+
+	const containerStyle = noHorizontalMargin 
+		? [styles.container, { marginHorizontal: 0 }]
+		: styles.container;
 
 	return (
-		<View style={styles.container} testID={`${testIdPrefix}-card`}>
+		<View style={containerStyle} testID={`${testIdPrefix}-card`}>
 			<View style={styles.header}>
 				<Text style={styles.title}>{title}</Text>
 			</View>

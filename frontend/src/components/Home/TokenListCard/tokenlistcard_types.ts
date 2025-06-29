@@ -13,6 +13,7 @@ export interface TokenListCardProps {
   onCoinPress: (coin: Coin | ExtendedCoin) => void;
   showSparkline?: boolean;
   showBalanceAndValue?: boolean;
+  noHorizontalMargin?: boolean;
   testIdPrefix?: string;
 }
 
