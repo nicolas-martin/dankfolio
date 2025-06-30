@@ -169,8 +169,8 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 
 	// Convert protobuf request to internal types
 	query := req.Msg.GetQuery()
-	tags := req.Msg.GetTags()
-	minVolume24h := req.Msg.GetMinVolume_24H()
+	tags := []string{} // Always empty for simplified search
+	minVolume24h := float64(0) // Always 0 for simplified search
 
 	// Prepare ListOptions from the request
 	opts := db.ListOptions{}
@@ -183,29 +183,23 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 		opts.Offset = &val
 	}
 
-	// Convert protobuf sort field to internal string representation
-	if sortBy := req.Msg.GetSortBy(); sortBy != pb.CoinSortField_COIN_SORT_FIELD_UNSPECIFIED {
-		var sortByStr string
+	// Handle sort_by string - default to "volume_24h" if not specified
+	sortByStr := "volume_24h" // Default sort
+	if sortBy := req.Msg.GetSortBy(); sortBy != "" {
+		// Map frontend sort values to backend values
 		switch sortBy {
-		case pb.CoinSortField_COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H:
-			sortByStr = "price_24h_change_percent"
-		case pb.CoinSortField_COIN_SORT_FIELD_JUPITER_LISTED_AT:
-			sortByStr = "jupiter_listed_at"
-		case pb.CoinSortField_COIN_SORT_FIELD_VOLUME_24H:
+		case "volume24h":
 			sortByStr = "volume_24h"
-		case pb.CoinSortField_COIN_SORT_FIELD_NAME:
-			sortByStr = "name"
-		case pb.CoinSortField_COIN_SORT_FIELD_SYMBOL:
-			sortByStr = "symbol"
-		case pb.CoinSortField_COIN_SORT_FIELD_MARKET_CAP:
-			sortByStr = "marketcap"
+		case "jupiter_listed_at":
+			sortByStr = "jupiter_listed_at"
 		default:
-			sortByStr = "volume_24h" // Default sort
+			sortByStr = "volume_24h" // Fallback to default
 		}
-		opts.SortBy = &sortByStr
 	}
+	opts.SortBy = &sortByStr
 
-	isDesc := req.Msg.GetSortDesc() // GetSortDesc returns bool directly
+	// Always sort descending for simplified search
+	isDesc := true
 	opts.SortDesc = &isDesc
 
 	// Call the internal service method with converted types

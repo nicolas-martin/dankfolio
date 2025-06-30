@@ -2,7 +2,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Coin } from '@/types';
 import type { RootStackParamList } from '@/types/navigation';
-import { SearchSortByOption } from '@/services/grpc/model';
 
 export type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Search'>;
 
@@ -10,12 +9,7 @@ export type SearchScreenRouteProp = RouteProp<RootStackParamList, 'Search'>;
 
 export interface SearchFilters {
 	query: string;
-	tags?: string[];
-	minVolume24h?: number;
-	limit?: number;
-	offset?: number;
-	sortBy?: SearchSortByOption;
-	sortDesc?: boolean;
+	sortBy: string; // "volume24h" or "jupiter_listed_at"
 }
 
 export interface SearchState {

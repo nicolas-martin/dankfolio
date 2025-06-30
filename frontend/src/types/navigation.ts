@@ -1,5 +1,4 @@
 import { Coin } from '@/types';
-import { SearchSortByOption } from '@/services/grpc/model';
 
 export type RootStackParamList = {
 	Home: undefined;
@@ -12,8 +11,7 @@ export type RootStackParamList = {
 		coin: Coin;
 	};
 	Search: {
-		defaultSortBy?: SearchSortByOption | string;
-		defaultSortDesc?: boolean;
+		defaultSortBy?: string;
 	} | undefined;
 	Trade: {
 		initialFromCoin?: Coin | null;

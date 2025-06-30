@@ -4,7 +4,6 @@ import { Text } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 // Assuming RootStackParamList is here
 import { SearchScreenRouteProp, SearchScreenNavigationProp, SearchState } from './types';
-import { SearchSortByOption } from '@/services/grpc/model'; // Import the type
 import { performSearch, DEBOUNCE_DELAY, handleCoinNavigation } from './scripts';
 import { Coin } from '@/types';
 import SearchResultItem from '@/components/Common/SearchResultItem';
@@ -21,10 +20,7 @@ const initialState: SearchState = {
 	results: [],
 	filters: {
 		query: '',
-		tags: [],
-		minVolume24h: 0,
-		sortBy: 'volume24h', // Changed default
-		sortDesc: true
+		sortBy: 'volume24h'
 	}
 };
 
@@ -33,10 +29,7 @@ const SearchScreen: React.FC = () => {
 	const route = useRoute<SearchScreenRouteProp>();
 	const defaultFiltersFromRoute = route.params?.defaultSortBy ? {
 		query: '',
-		tags: [],
-		minVolume24h: 0,
-		sortBy: route.params.defaultSortBy as SearchSortByOption, // Cast if necessary, ensure type safety
-		sortDesc: route.params.defaultSortDesc !== undefined ? route.params.defaultSortDesc : true,
+		sortBy: route.params.defaultSortBy
 	} : initialState.filters;
 
 	const [state, setState] = useState<SearchState>({
@@ -83,16 +76,15 @@ const SearchScreen: React.FC = () => {
 		// This effect now calls the debounced function whenever relevant filter criteria change.
 		debouncedSearchTrigger();
 		// The cleanup of the timeout is handled inside useDebouncedCallback.
-	}, [state.filters.query, state.filters.sortBy, state.filters.sortDesc, state.results.length, debouncedSearchTrigger]);
+	}, [state.filters.query, state.filters.sortBy, state.results.length, debouncedSearchTrigger]);
 
 
-	const setSortOrder = (sortBy: SearchSortByOption, sortDesc: boolean) => {
+	const setSortOrder = (sortBy: string) => {
 		setState(prev => ({
 			...prev,
 			filters: {
 				...prev.filters,
 				sortBy,
-				sortDesc,
 			},
 			results: [], // Clear previous results
 			loading: true, // Set loading true immediately
@@ -153,10 +145,10 @@ const SearchScreen: React.FC = () => {
 					</View>
 					{/* Sort Buttons */}
 					<View style={styles.sortButtonsContainer}>
-						<TouchableOpacity onPress={() => setSortOrder('volume24h', true)} style={styles.sortButton}>
+						<TouchableOpacity onPress={() => setSortOrder('volume24h')} style={styles.sortButton}>
 							<Text style={styles.sortButtonText}>Sort by Volume</Text>
 						</TouchableOpacity>
-						<TouchableOpacity onPress={() => setSortOrder('jupiter_listed_at', true)} style={styles.sortButton}>
+						<TouchableOpacity onPress={() => setSortOrder('jupiter_listed_at')} style={styles.sortButton}>
 							<Text style={styles.sortButtonText}>Sort by Newly Listed</Text>
 						</TouchableOpacity>
 					</View>

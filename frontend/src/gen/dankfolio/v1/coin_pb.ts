@@ -2,8 +2,8 @@
 // @generated from file dankfolio/v1/coin.proto (package dankfolio.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dankfolio/v1/coin.proto.
  */
 export const file_dankfolio_v1_coin: GenFile = /*@__PURE__*/
-  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIssGCgRDb2luEg8KB2FkZHJlc3MYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZzeW1ib2wYAyABKAkSEAoIZGVjaW1hbHMYBCABKAUSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIbG9nb191cmkYBiABKAkSHgoRcmVzb2x2ZWRfaWNvbl91cmwYByABKAlIAIgBARIMCgR0YWdzGAggAygJEg0KBXByaWNlGAkgASgBEiQKF3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50GAogASgBSAGIAQESFgoJbWFya2V0Y2FwGAsgASgBSAKIAQESGgoNdm9sdW1lMjRoX3VzZBgMIAEoAUgDiAEBEiUKGHZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudBgNIAEoAUgEiAEBEhYKCWxpcXVpZGl0eRgOIAEoAUgFiAEBEhAKA2ZkdhgPIAEoAUgGiAEBEhEKBHJhbmsYECABKAVIB4gBARIUCgd3ZWJzaXRlGBEgASgJSAiIAQESFAoHdHdpdHRlchgSIAEoCUgJiAEBEhUKCHRlbGVncmFtGBMgASgJSAqIAQESFAoHZGlzY29yZBgUIAEoCUgLiAEBEi4KCmNyZWF0ZWRfYXQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjUKDGxhc3RfdXBkYXRlZBgWIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDIgBARI6ChFqdXBpdGVyX2xpc3RlZF9hdBgXIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDYgBAUIUChJfcmVzb2x2ZWRfaWNvbl91cmxCGgoYX3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50QgwKCl9tYXJrZXRjYXBCEAoOX3ZvbHVtZTI0aF91c2RCGwoZX3ZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudEIMCgpfbGlxdWlkaXR5QgYKBF9mZHZCBwoFX3JhbmtCCgoIX3dlYnNpdGVCCgoIX3R3aXR0ZXJCCwoJX3RlbGVncmFtQgoKCF9kaXNjb3JkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjkKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIiUKEkdldENvaW5CeUlEUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIikKFEdldENvaW5zQnlJRHNSZXF1ZXN0EhEKCWFkZHJlc3NlcxgBIAMoCSI6ChVHZXRDb2luc0J5SURzUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiItChpTZWFyY2hDb2luQnlBZGRyZXNzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIj8KG1NlYXJjaENvaW5CeUFkZHJlc3NSZXNwb25zZRIgCgRjb2luGAEgASgLMhIuZGFua2ZvbGlvLnYxLkNvaW4iFAoSR2V0QWxsQ29pbnNSZXF1ZXN0IjgKE0dldEFsbENvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiKkAQoNU2VhcmNoUmVxdWVzdBINCgVxdWVyeRgBIAEoCRIMCgR0YWdzGAIgAygJEhYKDm1pbl92b2x1bWVfMjRoGAMgASgBEg0KBWxpbWl0GAQgASgFEg4KBm9mZnNldBgFIAEoBRIsCgdzb3J0X2J5GAYgASgOMhsuZGFua2ZvbGlvLnYxLkNvaW5Tb3J0RmllbGQSEQoJc29ydF9kZXNjGAcgASgIIkgKDlNlYXJjaFJlc3BvbnNlEiEKBWNvaW5zGAEgAygLMhIuZGFua2ZvbGlvLnYxLkNvaW4SEwoLdG90YWxfY291bnQYAiABKAUiUgoSR2V0TmV3Q29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQiVwoXR2V0VHJlbmRpbmdDb2luc1JlcXVlc3QSEgoFbGltaXQYASABKAVIAIgBARITCgZvZmZzZXQYAiABKAVIAYgBAUIICgZfbGltaXRCCQoHX29mZnNldCJZChlHZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0EhIKBWxpbWl0GAEgASgFSACIAQESEwoGb2Zmc2V0GAIgASgFSAGIAQFCCAoGX2xpbWl0QgkKB19vZmZzZXQq/gEKDUNvaW5Tb3J0RmllbGQSHwobQ09JTl9TT1JUX0ZJRUxEX1VOU1BFQ0lGSUVEEAASLworQ09JTl9TT1JUX0ZJRUxEX1BSSUNFX0NIQU5HRV9QRVJDRU5UQUdFXzI0SBABEiUKIUNPSU5fU09SVF9GSUVMRF9KVVBJVEVSX0xJU1RFRF9BVBACEh4KGkNPSU5fU09SVF9GSUVMRF9WT0xVTUVfMjRIEAMSGAoUQ09JTl9TT1JUX0ZJRUxEX05BTUUQBBIaChZDT0lOX1NPUlRfRklFTERfU1lNQk9MEAUSHgoaQ09JTl9TT1JUX0ZJRUxEX01BUktFVF9DQVAQBjK9BgoLQ29pblNlcnZpY2USZAoRR2V0QXZhaWxhYmxlQ29pbnMSJi5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USQwoLR2V0Q29pbkJ5SUQSIC5kYW5rZm9saW8udjEuR2V0Q29pbkJ5SURSZXF1ZXN0GhIuZGFua2ZvbGlvLnYxLkNvaW4SWAoNR2V0Q29pbnNCeUlEcxIiLmRhbmtmb2xpby52MS5HZXRDb2luc0J5SURzUmVxdWVzdBojLmRhbmtmb2xpby52MS5HZXRDb2luc0J5SURzUmVzcG9uc2USagoTU2VhcmNoQ29pbkJ5QWRkcmVzcxIoLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlBZGRyZXNzUmVxdWVzdBopLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlBZGRyZXNzUmVzcG9uc2USUgoLR2V0QWxsQ29pbnMSIC5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLkdldEFsbENvaW5zUmVzcG9uc2USQwoGU2VhcmNoEhsuZGFua2ZvbGlvLnYxLlNlYXJjaFJlcXVlc3QaHC5kYW5rZm9saW8udjEuU2VhcmNoUmVzcG9uc2USWAoLR2V0TmV3Q29pbnMSIC5kYW5rZm9saW8udjEuR2V0TmV3Q29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USYgoQR2V0VHJlbmRpbmdDb2lucxIlLmRhbmtmb2xpby52MS5HZXRUcmVuZGluZ0NvaW5zUmVxdWVzdBonLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1Jlc3BvbnNlEmYKEkdldFRvcEdhaW5lcnNDb2lucxInLmRhbmtmb2xpby52MS5HZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2VCtQEKEGNvbS5kYW5rZm9saW8udjFCCUNvaW5Qcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChdkYW5rZm9saW8vdjEvY29pbi5wcm90bxIMZGFua2ZvbGlvLnYxIssGCgRDb2luEg8KB2FkZHJlc3MYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZzeW1ib2wYAyABKAkSEAoIZGVjaW1hbHMYBCABKAUSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIbG9nb191cmkYBiABKAkSHgoRcmVzb2x2ZWRfaWNvbl91cmwYByABKAlIAIgBARIMCgR0YWdzGAggAygJEg0KBXByaWNlGAkgASgBEiQKF3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50GAogASgBSAGIAQESFgoJbWFya2V0Y2FwGAsgASgBSAKIAQESGgoNdm9sdW1lMjRoX3VzZBgMIAEoAUgDiAEBEiUKGHZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudBgNIAEoAUgEiAEBEhYKCWxpcXVpZGl0eRgOIAEoAUgFiAEBEhAKA2ZkdhgPIAEoAUgGiAEBEhEKBHJhbmsYECABKAVIB4gBARIUCgd3ZWJzaXRlGBEgASgJSAiIAQESFAoHdHdpdHRlchgSIAEoCUgJiAEBEhUKCHRlbGVncmFtGBMgASgJSAqIAQESFAoHZGlzY29yZBgUIAEoCUgLiAEBEi4KCmNyZWF0ZWRfYXQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjUKDGxhc3RfdXBkYXRlZBgWIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDIgBARI6ChFqdXBpdGVyX2xpc3RlZF9hdBgXIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBIDYgBAUIUChJfcmVzb2x2ZWRfaWNvbl91cmxCGgoYX3ByaWNlMjRoX2NoYW5nZV9wZXJjZW50QgwKCl9tYXJrZXRjYXBCEAoOX3ZvbHVtZTI0aF91c2RCGwoZX3ZvbHVtZTI0aF9jaGFuZ2VfcGVyY2VudEIMCgpfbGlxdWlkaXR5QgYKBF9mZHZCBwoFX3JhbmtCCgoIX3dlYnNpdGVCCgoIX3R3aXR0ZXJCCwoJX3RlbGVncmFtQgoKCF9kaXNjb3JkQg8KDV9sYXN0X3VwZGF0ZWRCFAoSX2p1cGl0ZXJfbGlzdGVkX2F0IjkKGEdldEF2YWlsYWJsZUNvaW5zUmVxdWVzdBINCgVsaW1pdBgBIAEoBRIOCgZvZmZzZXQYAiABKAUiUwoZR2V0QXZhaWxhYmxlQ29pbnNSZXNwb25zZRIhCgVjb2lucxgBIAMoCzISLmRhbmtmb2xpby52MS5Db2luEhMKC3RvdGFsX2NvdW50GAIgASgFIiUKEkdldENvaW5CeUlEUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIikKFEdldENvaW5zQnlJRHNSZXF1ZXN0EhEKCWFkZHJlc3NlcxgBIAMoCSI6ChVHZXRDb2luc0J5SURzUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiItChpTZWFyY2hDb2luQnlBZGRyZXNzUmVxdWVzdBIPCgdhZGRyZXNzGAEgASgJIj8KG1NlYXJjaENvaW5CeUFkZHJlc3NSZXNwb25zZRIgCgRjb2luGAEgASgLMhIuZGFua2ZvbGlvLnYxLkNvaW4iFAoSR2V0QWxsQ29pbnNSZXF1ZXN0IjgKE0dldEFsbENvaW5zUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbiJfCg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEg0KBWxpbWl0GAIgASgFEg4KBm9mZnNldBgDIAEoBRIUCgdzb3J0X2J5GAQgASgJSACIAQFCCgoIX3NvcnRfYnkiSAoOU2VhcmNoUmVzcG9uc2USIQoFY29pbnMYASADKAsyEi5kYW5rZm9saW8udjEuQ29pbhITCgt0b3RhbF9jb3VudBgCIAEoBSJSChJHZXROZXdDb2luc1JlcXVlc3QSEgoFbGltaXQYASABKAVIAIgBARITCgZvZmZzZXQYAiABKAVIAYgBAUIICgZfbGltaXRCCQoHX29mZnNldCJXChdHZXRUcmVuZGluZ0NvaW5zUmVxdWVzdBISCgVsaW1pdBgBIAEoBUgAiAEBEhMKBm9mZnNldBgCIAEoBUgBiAEBQggKBl9saW1pdEIJCgdfb2Zmc2V0IlkKGUdldFRvcEdhaW5lcnNDb2luc1JlcXVlc3QSEgoFbGltaXQYASABKAVIAIgBARITCgZvZmZzZXQYAiABKAVIAYgBAUIICgZfbGltaXRCCQoHX29mZnNldDK9BgoLQ29pblNlcnZpY2USZAoRR2V0QXZhaWxhYmxlQ29pbnMSJi5kYW5rZm9saW8udjEuR2V0QXZhaWxhYmxlQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USQwoLR2V0Q29pbkJ5SUQSIC5kYW5rZm9saW8udjEuR2V0Q29pbkJ5SURSZXF1ZXN0GhIuZGFua2ZvbGlvLnYxLkNvaW4SWAoNR2V0Q29pbnNCeUlEcxIiLmRhbmtmb2xpby52MS5HZXRDb2luc0J5SURzUmVxdWVzdBojLmRhbmtmb2xpby52MS5HZXRDb2luc0J5SURzUmVzcG9uc2USagoTU2VhcmNoQ29pbkJ5QWRkcmVzcxIoLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlBZGRyZXNzUmVxdWVzdBopLmRhbmtmb2xpby52MS5TZWFyY2hDb2luQnlBZGRyZXNzUmVzcG9uc2USUgoLR2V0QWxsQ29pbnMSIC5kYW5rZm9saW8udjEuR2V0QWxsQ29pbnNSZXF1ZXN0GiEuZGFua2ZvbGlvLnYxLkdldEFsbENvaW5zUmVzcG9uc2USQwoGU2VhcmNoEhsuZGFua2ZvbGlvLnYxLlNlYXJjaFJlcXVlc3QaHC5kYW5rZm9saW8udjEuU2VhcmNoUmVzcG9uc2USWAoLR2V0TmV3Q29pbnMSIC5kYW5rZm9saW8udjEuR2V0TmV3Q29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2USYgoQR2V0VHJlbmRpbmdDb2lucxIlLmRhbmtmb2xpby52MS5HZXRUcmVuZGluZ0NvaW5zUmVxdWVzdBonLmRhbmtmb2xpby52MS5HZXRBdmFpbGFibGVDb2luc1Jlc3BvbnNlEmYKEkdldFRvcEdhaW5lcnNDb2lucxInLmRhbmtmb2xpby52MS5HZXRUb3BHYWluZXJzQ29pbnNSZXF1ZXN0GicuZGFua2ZvbGlvLnYxLkdldEF2YWlsYWJsZUNvaW5zUmVzcG9uc2VCtQEKEGNvbS5kYW5rZm9saW8udjFCCUNvaW5Qcm90b1ABWkVnaXRodWIuY29tL25pY29sYXMtbWFydGluL2Rhbmtmb2xpby9iYWNrZW5kL2dlbi9wcm90by9nby9kYW5rZm9saW8vdjGiAgNEWFiqAgxEYW5rZm9saW8uVjHKAgxEYW5rZm9saW9cVjHiAhhEYW5rZm9saW9cVjFcR1BCTWV0YWRhdGHqAg1EYW5rZm9saW86OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * Coin represents a coin or currency (unified definition)
@@ -335,46 +335,25 @@ export type SearchRequest = Message<"dankfolio.v1.SearchRequest"> & {
   query: string;
 
   /**
-   * Filter by tags
-   *
-   * @generated from field: repeated string tags = 2;
-   */
-  tags: string[];
-
-  /**
-   * Minimum 24h volume
-   *
-   * @generated from field: double min_volume_24h = 3;
-   */
-  minVolume24h: number;
-
-  /**
    * Maximum number of results (default: 20)
    *
-   * @generated from field: int32 limit = 4;
+   * @generated from field: int32 limit = 2;
    */
   limit: number;
 
   /**
    * Offset for pagination
    *
-   * @generated from field: int32 offset = 5;
+   * @generated from field: int32 offset = 3;
    */
   offset: number;
 
   /**
-   * Sort field
+   * Sort field: "volume24h" or "jupiter_listed_at" (default: "volume24h")
    *
-   * @generated from field: dankfolio.v1.CoinSortField sort_by = 6;
+   * @generated from field: optional string sort_by = 4;
    */
-  sortBy: CoinSortField;
-
-  /**
-   * Sort direction (default: true)
-   *
-   * @generated from field: bool sort_desc = 7;
-   */
-  sortDesc: boolean;
+  sortBy?: string;
 };
 
 /**
@@ -475,52 +454,6 @@ export type GetTopGainersCoinsRequest = Message<"dankfolio.v1.GetTopGainersCoins
  */
 export const GetTopGainersCoinsRequestSchema: GenMessage<GetTopGainersCoinsRequest> = /*@__PURE__*/
   messageDesc(file_dankfolio_v1_coin, 14);
-
-/**
- * @generated from enum dankfolio.v1.CoinSortField
- */
-export enum CoinSortField {
-  /**
-   * @generated from enum value: COIN_SORT_FIELD_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: COIN_SORT_FIELD_PRICE_CHANGE_PERCENTAGE_24H = 1;
-   */
-  PRICE_CHANGE_PERCENTAGE_24H = 1,
-
-  /**
-   * @generated from enum value: COIN_SORT_FIELD_JUPITER_LISTED_AT = 2;
-   */
-  JUPITER_LISTED_AT = 2,
-
-  /**
-   * @generated from enum value: COIN_SORT_FIELD_VOLUME_24H = 3;
-   */
-  VOLUME_24H = 3,
-
-  /**
-   * @generated from enum value: COIN_SORT_FIELD_NAME = 4;
-   */
-  NAME = 4,
-
-  /**
-   * @generated from enum value: COIN_SORT_FIELD_SYMBOL = 5;
-   */
-  SYMBOL = 5,
-
-  /**
-   * @generated from enum value: COIN_SORT_FIELD_MARKET_CAP = 6;
-   */
-  MARKET_CAP = 6,
-}
-
-/**
- * Describes the enum dankfolio.v1.CoinSortField.
- */
-export const CoinSortFieldSchema: GenEnum<CoinSortField> = /*@__PURE__*/
-  enumDesc(file_dankfolio_v1_coin, 0);
 
 /**
  * CoinService provides methods for interacting with coin data
