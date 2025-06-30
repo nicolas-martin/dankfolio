@@ -12,6 +12,7 @@ import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useStyles } from './styles';
 import { SearchIcon } from '@components/Common/Icons';
 import { logger } from '@/utils/logger';
+import { getUserFriendlySearchError } from '@/utils/errorUtils';
 import InfoState from '@/components/Common/InfoState'; // Import InfoState
 
 const initialState: SearchState = {
@@ -55,19 +56,12 @@ const SearchScreen: React.FC = () => {
 			const results = await performSearch(query, state.filters);
 			setState(prev => ({ ...prev, loading: false, results }));
 		} catch (error: unknown) {
-			if (error instanceof Error) {
-				setState(prev => ({
-					...prev,
-					loading: false,
-					error: error.message
-				}));
-			} else {
-				setState(prev => ({
-					...prev,
-					loading: false,
-					error: 'An unknown error occurred'
-				}));
-			}
+			const userFriendlyError = getUserFriendlySearchError(error);
+			setState(prev => ({
+				...prev,
+				loading: false,
+				error: userFriendlyError
+			}));
 		}
 	}, [state.filters]); // Keep existing dependencies for handleSearch itself
 

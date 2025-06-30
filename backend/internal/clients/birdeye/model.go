@@ -229,3 +229,61 @@ type NewListingTokensParams struct {
 	MemePlatformEnabled bool // Enable meme platform tokens (pump.fun, etc.)
 	TimeTo              int
 }
+
+// SearchResponse represents the response from the search API
+type SearchResponse struct {
+	Data    SearchData `json:"data"`
+	Success bool       `json:"success"`
+}
+
+// SearchData contains the search results
+type SearchData struct {
+	Items []SearchItem `json:"items"`
+}
+
+// SearchItem represents an item in search results
+type SearchItem struct {
+	Type   string        `json:"type"`
+	Result []SearchToken `json:"result"`
+}
+
+// SearchToken represents a token in search results
+type SearchToken struct {
+	Address                string   `json:"address"`
+	Name                   string   `json:"name"`
+	Symbol                 string   `json:"symbol"`
+	Decimals               int      `json:"decimals"`
+	LogoURI                string   `json:"logo_uri,omitempty"`
+	Tags                   []string `json:"tags,omitempty"`
+	Price                  float64  `json:"price"`
+	MarketCap              float64  `json:"market_cap"`
+	Volume24hUSD           float64  `json:"volume_24h_usd"`
+	Volume24hChangePercent float64  `json:"volume_24h_change_percent"`
+	Price24hChangePercent  float64  `json:"price_change_24h_percent"`
+	Liquidity              float64  `json:"liquidity"`
+	FDV                    float64  `json:"fdv"`
+	Verified               bool     `json:"verified"`
+	Network                string   `json:"network"`
+}
+
+// SearchBy represents the search type for token search
+type SearchBy string
+
+const (
+	SearchBySymbol      SearchBy = "symbol"
+	SearchByName        SearchBy = "name"
+	SearchByAddress     SearchBy = "address"
+	SearchByCombination SearchBy = "combination"
+)
+
+func (s SearchBy) String() string {
+	return string(s)
+}
+
+// SearchParams contains parameters for the Search request
+type SearchParams struct {
+	Keyword  string   // Search keyword
+	SearchBy SearchBy // Search by type (default: SearchByCombination)
+	Limit    int      // Number of results to return (max 50)
+	Offset   int      // Pagination offset
+}

@@ -135,7 +135,8 @@ func (s *coinServiceHandler) SearchCoinByAddress(
 ) (*connect.Response[pb.SearchCoinByAddressResponse], error) {
 	coin, err := s.coinService.GetCoinByAddress(ctx, req.Msg.Address)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for address %s: %w", req.Msg.Address, err))
+		// Return user-friendly error message instead of technical details
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("%v", err))
 	}
 
 	res := connect.NewResponse(&pb.SearchCoinByAddressResponse{
@@ -160,7 +161,8 @@ func (s *coinServiceHandler) Search(ctx context.Context, req *connect.Request[pb
 	if err == nil {
 		coin, err := s.coinService.GetCoinByAddress(ctx, solanaAddress.String())
 		if err != nil {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("failed to get coin for mint address %s: %w", solanaAddress.String(), err))
+			// Return user-friendly error message instead of technical details
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("%v", err))
 		}
 		return connect.NewResponse(&pb.SearchResponse{Coins: []*pb.Coin{convertModelCoinToPbCoin(coin)}}), nil
 	}

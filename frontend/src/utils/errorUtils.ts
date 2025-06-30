@@ -144,3 +144,81 @@ export const getErrorCode = (error: unknown): string | number | undefined => {
 	}
 	return undefined;
 };
+
+/**
+ * Search-specific error messages that provide user-friendly alternatives
+ * to technical gRPC/API error messages
+ */
+export const SEARCH_ERROR_MESSAGES = {
+	// API/Market data errors
+	MARKET_DATA_UNAVAILABLE: 'Unable to access market data at this time. Please try again later.',
+	TOKEN_NOT_FOUND: 'Token not found. Please check the address and try again.',
+	INVALID_ADDRESS: 'Invalid token address. Please enter a valid Solana token address.',
+	
+	// Generic fallbacks
+	SEARCH_FAILED: 'Search failed. Please try again.',
+	NETWORK_ERROR: 'Network error. Please check your connection and try again.',
+} as const;
+
+/**
+ * Extract user-friendly error message from search errors
+ */
+export const getUserFriendlySearchError = (error: unknown): string => {
+	let errorMessage = '';
+
+	if (error instanceof Error) {
+		errorMessage = error.message;
+	} else if (typeof error === 'string') {
+		errorMessage = error;
+	} else {
+		logger.warn('[ErrorUtils] Unknown search error type received:', error);
+		return SEARCH_ERROR_MESSAGES.SEARCH_FAILED;
+	}
+
+	// Log the original error for debugging
+	logger.error('[ErrorUtils] Processing search error:', errorMessage);
+
+	// Check for specific error patterns
+	if (errorMessage.toLowerCase().includes('unable to access market data')) {
+		return SEARCH_ERROR_MESSAGES.MARKET_DATA_UNAVAILABLE;
+	}
+
+	if (errorMessage.toLowerCase().includes('token not found')) {
+		return SEARCH_ERROR_MESSAGES.TOKEN_NOT_FOUND;
+	}
+
+	if (errorMessage.toLowerCase().includes('invalid address') || 
+		errorMessage.toLowerCase().includes('invalid token address')) {
+		return SEARCH_ERROR_MESSAGES.INVALID_ADDRESS;
+	}
+
+	if (errorMessage.toLowerCase().includes('unable to fetch token data')) {
+		return SEARCH_ERROR_MESSAGES.MARKET_DATA_UNAVAILABLE;
+	}
+
+	// Network errors
+	if ((errorMessage.toLowerCase().includes('network') ||
+		errorMessage.toLowerCase().includes('connection')) &&
+		!errorMessage.toLowerCase().includes('please')) {
+		return SEARCH_ERROR_MESSAGES.NETWORK_ERROR;
+	}
+
+	// Check if the message already looks user-friendly
+	const userFriendlyPatterns = [
+		/please try again/i,
+		/unable to/i,
+		/check the address/i
+	];
+
+	const isUserFriendly = userFriendlyPatterns.some(pattern =>
+		pattern.test(errorMessage)
+	);
+
+	// If it already looks user-friendly, return it
+	if (isUserFriendly && errorMessage.length > 0 && errorMessage.length < 100) {
+		return errorMessage;
+	}
+
+	// For unknown/technical errors, use generic fallback
+	return SEARCH_ERROR_MESSAGES.SEARCH_FAILED;
+};

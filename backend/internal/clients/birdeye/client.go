@@ -313,6 +313,73 @@ func (c *Client) GetNewListingTokens(ctx context.Context, params NewListingToken
 	return newListingResponse, nil
 }
 
+// Search searches for tokens by keyword
+func (c *Client) Search(ctx context.Context, params SearchParams) (*SearchResponse, error) {
+	// Build query parameters
+	queryParams := url.Values{}
+
+	// Hardcode required parameters
+	queryParams.Add("chain", "solana")
+	queryParams.Add("target", "token")
+	queryParams.Add("verify_token", "true")
+	queryParams.Add("search_mode", "fuzzy")
+	queryParams.Add("sort_by", "volume_24h_usd")
+	queryParams.Add("sort_type", "desc")
+
+	if params.Keyword != "" {
+		queryParams.Add("keyword", params.Keyword)
+	}
+
+	// Default to combination if not specified
+	searchBy := params.SearchBy
+	if searchBy == "" {
+		searchBy = SearchByCombination
+	}
+	queryParams.Add("search_by", searchBy.String())
+
+	// Limit defaults to 10, max is 50
+	limit := params.Limit
+	if limit <= 0 {
+		limit = 10
+	} else if limit > 50 {
+		limit = 50
+	}
+	queryParams.Add("limit", strconv.Itoa(limit))
+
+	// Offset for pagination
+	if params.Offset > 0 {
+		queryParams.Add("offset", strconv.Itoa(params.Offset))
+	}
+
+	requestURL := fmt.Sprintf("%s/defi/v3/search?%s", c.baseURL, queryParams.Encode())
+
+	slog.DebugContext(ctx, "Searching tokens from BirdEye",
+		"url", requestURL,
+		"keyword", params.Keyword,
+		"searchBy", searchBy.String(),
+	)
+
+	searchResponse, err := getRequest[SearchResponse](c, ctx, requestURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search tokens: %w", err)
+	}
+
+	// Debug log the response
+	tokenCount := 0
+	for _, item := range searchResponse.Data.Items {
+		if item.Type == "token" {
+			tokenCount += len(item.Result)
+		}
+	}
+	slog.DebugContext(ctx, "Birdeye search response",
+		"success", searchResponse.Success,
+		"itemTypes", len(searchResponse.Data.Items),
+		"tokenCount", tokenCount,
+	)
+
+	return searchResponse, nil
+}
+
 // getRequest is a helper function to perform an HTTP GET request, check status, and unmarshal response
 func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, error) {
 	// Extract endpointName from URL
@@ -380,6 +447,14 @@ func getRequest[T any](c *Client, ctx context.Context, requestURL string) (*T, e
 			"url", requestURL,
 			"content_type", resp.Header.Get("Content-Type"))
 		return nil, fmt.Errorf("BirdEye API returned HTML page instead of JSON data for %s - this may indicate an API endpoint issue or rate limiting", requestURL)
+	}
+
+	// Debug log successful response body
+	if slog.Default().Enabled(ctx, slog.LevelDebug) {
+		bodyForLog := util.TruncateForLogging(string(respBody), 1000)
+		slog.DebugContext(ctx, "BirdEye API response",
+			"url", requestURL,
+			"body_preview", bodyForLog)
 	}
 
 	var responseObject T
