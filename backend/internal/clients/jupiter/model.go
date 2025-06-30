@@ -2,8 +2,6 @@ package jupiter
 
 import (
 	"encoding/json"
-	"log/slog"
-	"strconv"
 	"time"
 
 	"github.com/nicolas-martin/dankfolio/backend/internal/model"
@@ -189,23 +187,6 @@ func (t *CoinListInfo) ToModelCoin() *model.Coin {
 	}
 }
 
-// ToRawCoin converts CoinListInfo to model.RawCoin
-func (t *CoinListInfo) ToRawCoin() *model.RawCoin {
-	var jupiterCreatedAtTime time.Time
-	if !t.CreatedAt.IsZero() {
-		jupiterCreatedAtTime = t.CreatedAt
-	}
-
-	return &model.RawCoin{
-		Address:          t.Address,
-		Name:             t.Name,
-		Symbol:           t.Symbol,
-		Decimals:         t.Decimals,
-		LogoUrl:          t.LogoURI,
-		UpdatedAt:        time.Now().Format(time.RFC3339),
-		JupiterCreatedAt: jupiterCreatedAtTime,
-	}
-}
 
 // SwapQuoteRequestBody represents the structure sent as quoteResponse in the Jupiter swap transaction request
 type SwapQuoteRequestBody struct {
@@ -239,30 +220,6 @@ type NewTokenInfo struct {
 	FreezeAuthority   any      `json:"freeze_authority"` // Can be null
 }
 
-// ToRawCoin converts NewTokenInfo to model.RawCoin
-func (t *NewTokenInfo) ToRawCoin() *model.RawCoin {
-	var jupiterCreatedAtTime time.Time
-	if t.CreatedAt != "" {
-		unixTimestamp, err := strconv.ParseInt(t.CreatedAt, 10, 64)
-		if err != nil {
-			slog.Error("Failed to parse Jupiter CreatedAt timestamp", "value", t.CreatedAt, "error", err)
-			// jupiterCreatedAtTime remains nil
-		} else {
-			tm := time.Unix(unixTimestamp, 0)
-			jupiterCreatedAtTime = tm
-		}
-	}
-
-	return &model.RawCoin{
-		Address:          t.Mint, // Use Mint field instead of Address
-		Name:             t.Name,
-		Symbol:           t.Symbol,
-		Decimals:         t.Decimals,
-		LogoUrl:          t.LogoURI, // Use LogoURI field
-		UpdatedAt:        time.Now().Format(time.RFC3339),
-		JupiterCreatedAt: jupiterCreatedAtTime,
-	}
-}
 
 // ToModelCoin converts NewTokenInfo to model.Coin
 func (t *NewTokenInfo) ToModelCoin() *model.Coin {
