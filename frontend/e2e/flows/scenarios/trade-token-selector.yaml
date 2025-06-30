@@ -9,12 +9,27 @@ env:
 
 # Navigate to trade screen via trending coin
 - tapOn:
-      id: "trending-coin-card-jup.*"
+      id: "trending-coin-item-${jupSymbol}"
 - tapOn:
-      id: "trade-button.*"
+      id: "trade-button-${jupSymbol}"
 
-# # Test 1: Initial SOL -> JUP setup - enter amount first to have visible values
-# # SOL price: $98.45, so 0.1 SOL = $9.84
+# Test 1: First test token selector interaction without keyboard interference
+# Test changing TO token to DANK before entering any amounts
+- assertVisible:
+      id: "to-token-selector"
+- tapOn:
+      id: "to-token-selector"
+- waitForAnimationToEnd:
+      timeout: 3000
+# Assert modal is open
+- assertVisible:
+      id: "token-search-input"
+- tapOn:
+      id: "search-result-${dankSymbol}"
+- waitForAnimationToEnd
+
+# Test 2: Now enter amount with SOL -> DANK setup
+# SOL price: $98.45, so 0.1 SOL = $9.84
 - tapOn:
       id: "from-token-selector-amount-input"
 - inputText: "0.1"
@@ -28,27 +43,18 @@ env:
           FROM_AMOUNT: "0.1"
           FROM_BALANCE: "2.5"
           FROM_USD_VALUE: "9.84"
-          TO_SYMBOL: ${jupSymbol}
-          TO_AMOUNT: "11.25"
-          TO_BALANCE: "150"
+          TO_SYMBOL: ${dankSymbol}
+          TO_AMOUNT: "233232.73"
+          TO_BALANCE: "5,000,000"
 
-# Test 2: Change TO token to DANK and validate with amounts
-- tapOn:
-      id: "to-token-selector"
-# Wait for modal to open
-- waitForAnimationToEnd
-# Assert that the token search modal is visible before interacting with it
-- assertVisible:
-      id: "token-search-input"
-- tapOn:
-      id: "search-result-dank"
-
+# Test 3: Change amount and validate
 # SOL price: $98.45, so 1 SOL = $98.45
 - tapOn:
       id: "from-token-selector-amount-input"
+- eraseText
 - inputText: "1"
-- waitForAnimationToEnd
 - hideKeyboard
+- waitForAnimationToEnd
 
 - runFlow:
       file: ../components/trade-token-selector.yaml
@@ -58,7 +64,7 @@ env:
           FROM_BALANCE: "2.50"
           FROM_USD_VALUE: "98.45"
           TO_SYMBOL: ${dankSymbol}
-          TO_AMOUNT: "2332327.38"
+          TO_AMOUNT: "23332327.38"
           TO_BALANCE: "5,000,000"
 
 # HACK: SAD
@@ -72,32 +78,35 @@ env:
       file: ../components/trade-token-selector.yaml
       env:
           FROM_SYMBOL: ${dankSymbol}
-          FROM_AMOUNT: "2332327.38"
+          FROM_AMOUNT: "23332327.38"
           FROM_BALANCE: "5,000,000"
-          # it's an approximation
           FROM_USD_VALUE: "97.95"
           TO_SYMBOL: ${solSymbol}
           TO_AMOUNT: "1"
           TO_BALANCE: "2.5"
 
 # Test 4: Change FROM token to USDC and validate with amounts
+# Ensure keyboard is hidden before opening modal
+- hideKeyboard
 - tapOn:
       id: "from-token-selector"
 # Wait for modal to open
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+      timeout: 3000
 # Assert that the token search modal is visible before interacting with it
 - assertVisible:
       id: "token-search-input"
 - tapOn:
-      id: "search-result-usdc"
+      id: "search-result-${usdcSymbol}"
 
 # Clear and enter new amount
 # USDC price: $1.0, so 100 USDC = $100.00
 - tapOn:
       id: "from-token-selector-amount-input"
+- eraseText
 - inputText: "100"
-- waitForAnimationToEnd
 - hideKeyboard
+- waitForAnimationToEnd
 
 - runFlow:
       file: ../components/trade-token-selector.yaml
@@ -114,7 +123,6 @@ env:
       id: "amount-percentage-text-50"
 - waitForAnimationToEnd
 
-# USDC price: $1.0, so 500 USDC = $500.00
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
@@ -123,16 +131,19 @@ env:
           FROM_BALANCE: "1,000"
           FROM_USD_VALUE: "500.00"
           TO_SYMBOL: ${solSymbol}
-          TO_AMOUNT: "1.01"
+          TO_AMOUNT: "5.05"
           TO_BALANCE: "2.5"
 
+# Ensure keyboard is hidden before opening modal
+- hideKeyboard
 - tapOn:
       id: "from-token-selector"
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+      timeout: 3000
 - assertVisible:
       id: "token-search-input"
 - tapOn:
-      id: "search-result-dank"
+      id: "search-result-${dankSymbol}"
 - tapOn:
       id: "amount-percentage-text-50"
 
@@ -150,12 +161,13 @@ env:
 
 # swap to usd value
 - tapOn:
-      id: ".*swap-button.*"
+      id: "from-token-selector-swap-button"
 - tapOn:
       id: "from-token-selector-amount-input"
-- waitForAnimationToEnd
 - eraseText
 - inputText: "40"
+- hideKeyboard
+- waitForAnimationToEnd
 - runFlow:
       file: ../components/trade-token-selector.yaml
       env:
